@@ -20,6 +20,8 @@ export class Mosfet extends NormalComponent<typeof mosfetProps> {
     const source_component = db.source_component.insert({
       ftype: "simple_mosfet",
       name: this.name,
+      manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
+      supplier_part_numbers: props.supplierPartNumbers,
       mosfet_mode: props.mosfetMode,
       channel_type: props.channelType,
       display_name: props.displayName,
