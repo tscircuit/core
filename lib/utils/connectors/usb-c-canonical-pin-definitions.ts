@@ -3,7 +3,7 @@
  * also the stable fallback pin-number order when no physical part can be
  * resolved.
  */
-export const USB_C_CANONICAL_PIN_DEFINITIONS = [
+export const STANDARD_USB_C_PIN_LABELS = [
   { label: "GND1", aliases: [] },
   { label: "VBUS1", aliases: [] },
   { label: "CC1", aliases: [] },

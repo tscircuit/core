@@ -1,5 +1,5 @@
 import type { AnyCircuitElement } from "circuit-json"
-import { USB_C_CANONICAL_PIN_DEFINITIONS } from "./usb-c-canonical-pin-definitions"
+import { STANDARD_USB_C_PIN_LABELS } from "./usb-c-canonical-pin-definitions"
 
 const PIN_NUMBER_HINT_PATTERN = /^(?:pin)?(\d+)$/i
 const dedupeHintsPreservingOrder = (hints: string[]): string[] =>
@@ -29,7 +29,7 @@ export const convertCircuitJsonToUsbCStandardCircuitJson = (
   }
 
   const canonicalHintsByPin: Record<`pin${number}`, string[]> = {}
-  for (const { label, aliases } of USB_C_CANONICAL_PIN_DEFINITIONS) {
+  for (const { label, aliases } of STANDARD_USB_C_PIN_LABELS) {
     const canonicalAndAliasHintsUpper = [label, ...aliases].map((s) =>
       s.toUpperCase(),
     )

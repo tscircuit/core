@@ -10,7 +10,7 @@ import type { AnyCircuitElement, SourceSimpleConnector } from "circuit-json"
 import { source_part_not_found_warning } from "circuit-json"
 import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromCircuitJson"
 import { convertCircuitJsonToUsbCStandardCircuitJson } from "lib/utils/connectors/convertCircuitJsonToUsbCStandardCircuitJson"
-import { USB_C_CANONICAL_PIN_DEFINITIONS } from "lib/utils/connectors/usb-c-canonical-pin-definitions"
+import { STANDARD_USB_C_PIN_LABELS } from "lib/utils/connectors/usb-c-canonical-pin-definitions"
 import {
   getAllDimensionsForSchematicBox,
   type SchematicBoxDimensions,
@@ -95,7 +95,7 @@ export class Connector<
     if (this.selectAll("port").length > 0) return
 
     this.addAll(
-      USB_C_CANONICAL_PIN_DEFINITIONS.map(
+      STANDARD_USB_C_PIN_LABELS.map(
         ({ label, aliases }, pinIndex) =>
           new Port({
             pinNumber: pinIndex + 1,
