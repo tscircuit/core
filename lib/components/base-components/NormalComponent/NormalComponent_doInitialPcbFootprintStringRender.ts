@@ -1,23 +1,32 @@
-import { NormalComponent } from "./NormalComponent"
-import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromCircuitJson"
-import { isValidElement as isReactElement } from "react"
-import { Footprint } from "lib/components/primitive-components/Footprint"
-import { isHttpUrl } from "./utils/isHttpUrl"
-import { parseLibraryFootprintRef } from "./utils/parseLibraryFootprintRef"
-import type { CadModelProp } from "@tscircuit/props"
+import type { FootprintLibraryResult } from "@tscircuit/props"
 import {
   circuit_json_footprint_load_error,
   external_footprint_load_error,
 } from "circuit-json"
-import { getFileExtension } from "./utils/getFileExtension"
-import { isStaticAssetPath } from "./utils/isStaticAssetPath"
-import { resolveStaticFileImport } from "lib/utils/resolveStaticFileImport"
-import { extractCadModelFromCircuitJson } from "lib/utils/connectors/extractCadModelFromCircuitJson"
+import type { AnyCircuitElement } from "circuit-json"
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
+import { Footprint } from "lib/components/primitive-components/Footprint"
+import { extractCadModelFromCircuitJson } from "lib/utils/connectors/extractCadModelFromCircuitJson"
+import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromCircuitJson"
+import { resolveStaticFileImport } from "lib/utils/resolveStaticFileImport"
+import { isValidElement as isReactElement } from "react"
+import { NormalComponent } from "./NormalComponent"
+import { getFileExtension } from "./utils/getFileExtension"
+import { isHttpUrl } from "./utils/isHttpUrl"
+import { isStaticAssetPath } from "./utils/isStaticAssetPath"
+import { parseLibraryFootprintRef } from "./utils/parseLibraryFootprintRef"
 
-interface FootprintLibraryResult {
-  footprintCircuitJson: any[]
-  cadModel?: CadModelProp
+type FootprintLibraryResolver = (
+  path: string,
+) => Promise<FootprintLibraryResult | AnyCircuitElement[]>
+
+const normalizeJlcpcbSupplierPartNumber = (partNumber: string) => {
+  const trimmedPartNumber = partNumber.trim()
+  if (/^\d+$/.test(trimmedPartNumber)) return `C${trimmedPartNumber}`
+  if (/^c\d+$/i.test(trimmedPartNumber)) {
+    return `C${trimmedPartNumber.slice(1)}`
+  }
+  return trimmedPartNumber
 }
 
 const shouldAddOutsideFootprintWrapper = (component: PrimitiveComponent) =>
@@ -67,9 +76,7 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
         const db = component.root?.db
         if (db && component.source_component_id && component.pcb_component_id) {
           const subcircuit = component.getSubcircuit()
-          const errorMsg =
-            `${component.getString()} failed to load footprint "${footprintUrl}": ` +
-            (err instanceof Error ? err.message : String(err))
+          const errorMsg = `${component.getString()} failed to load footprint "${footprintUrl}": ${err instanceof Error ? err.message : String(err)}`
           const errorObj = external_footprint_load_error.parse({
             type: "external_footprint_load_error",
             message: errorMsg,
@@ -114,9 +121,7 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
         const db = component.root?.db
         if (db && component.source_component_id && component.pcb_component_id) {
           const subcircuit = component.getSubcircuit()
-          const errorMsg =
-            `${component.getString()} failed to load external footprint "${url}": ` +
-            (err instanceof Error ? err.message : String(err))
+          const errorMsg = `${component.getString()} failed to load external footprint "${url}": ${err instanceof Error ? err.message : String(err)}`
           const errorObj = external_footprint_load_error.parse({
             type: "external_footprint_load_error",
             message: errorMsg,
@@ -145,17 +150,42 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
     const platform = component.root?.platform
     const libMap = platform?.footprintLibraryMap?.[libRef.footprintLib]
 
-    // Find resolver: library can be a function or an object of resolvers
-    let resolverFn:
-      | ((path: string) => Promise<FootprintLibraryResult | any[]>)
-      | undefined
+    let resolverFn: FootprintLibraryResolver | undefined
     if (typeof libMap === "function") {
-      resolverFn = libMap as (
-        path: string,
-      ) => Promise<FootprintLibraryResult | any[]>
+      resolverFn = libMap as FootprintLibraryResolver
     }
 
-    if (!resolverFn) return
+    // A platform may provide a parts engine without carrying over its built-in
+    // footprint library map (for example when platform overrides are merged).
+    // Explicit jlcpcb: references can still be resolved through that engine.
+    if (
+      !resolverFn &&
+      libRef.footprintLib.toLowerCase() === "jlcpcb" &&
+      platform?.partsEngine?.fetchPartCircuitJson
+    ) {
+      const fetchPartCircuitJson = platform.partsEngine.fetchPartCircuitJson
+      resolverFn = async (partNumber) => {
+        const supplierPartNumber = normalizeJlcpcbSupplierPartNumber(partNumber)
+        const footprintCircuitJson = await fetchPartCircuitJson({
+          supplierPartNumber,
+          platformFetch: platform.platformFetch,
+        })
+        if (!Array.isArray(footprintCircuitJson)) {
+          throw new Error(
+            `Parts engine returned no circuit JSON for JLCPCB footprint "${supplierPartNumber}".`,
+          )
+        }
+        return { footprintCircuitJson }
+      }
+    }
+
+    if (!resolverFn) {
+      resolverFn = async () => {
+        throw new Error(
+          `No footprint resolver is configured for library "${libRef.footprintLib}".`,
+        )
+      }
+    }
 
     queueAsyncEffect("load-lib-footprint", async () => {
       try {
@@ -166,7 +196,11 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
         } else if (Array.isArray(result.footprintCircuitJson)) {
           circuitJson = result.footprintCircuitJson
         }
-        if (!circuitJson) return
+        if (!circuitJson || circuitJson.length === 0) {
+          throw new Error(
+            `Footprint resolver returned no circuit elements for "${footprint}".`,
+          )
+        }
         const fpComponents = createComponentsFromCircuitJson(
           {
             componentName: component.name,
@@ -206,9 +240,7 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
         const db = component.root?.db
         if (db && component.source_component_id && component.pcb_component_id) {
           const subcircuit = component.getSubcircuit()
-          const errorMsg =
-            `${component.getString()} failed to load external footprint "${footprint}": ` +
-            (err instanceof Error ? err.message : String(err))
+          const errorMsg = `${component.getString()} failed to load external footprint "${footprint}": ${err instanceof Error ? err.message : String(err)}`
           const errorObj = external_footprint_load_error.parse({
             type: "external_footprint_load_error",
             message: errorMsg,
@@ -254,9 +286,7 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
       const db = component.root?.db
       if (db && component.source_component_id && component.pcb_component_id) {
         const subcircuit = component.getSubcircuit()
-        const errorMsg =
-          `${component.getString()} failed to load json footprint: ` +
-          (err instanceof Error ? err.message : String(err))
+        const errorMsg = `${component.getString()} failed to load json footprint: ${err instanceof Error ? err.message : String(err)}`
         const errorObj = circuit_json_footprint_load_error.parse({
           type: "circuit_json_footprint_load_error",
           message: errorMsg,
