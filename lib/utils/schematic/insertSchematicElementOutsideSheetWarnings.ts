@@ -1,24 +1,12 @@
-import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
-import type {
-  SchematicComponent,
-  SchematicNetLabel,
-  SchematicTrace,
-} from "circuit-json"
-import { getSchematicNetLabelTextWidth } from "./computeSchematicNetLabelCenter"
+import {
+  type CircuitJsonUtilObjects,
+  type SchematicElementWithBounds,
+  getSchematicElementBounds,
+} from "@tscircuit/circuit-json-util"
 
 type Point = { x: number; y: number }
 
-type SchematicElementBounds = {
-  minX: number
-  maxX: number
-  minY: number
-  maxY: number
-}
-
-type CheckedSchematicElement =
-  | SchematicComponent
-  | SchematicNetLabel
-  | SchematicTrace
+type CheckedSchematicElement = SchematicElementWithBounds
 
 // These dimensions match circuit-to-svg's A4 landscape schematic sheet.
 const SCHEMATIC_UNIT_TO_MM = 10.16 / 1.1
@@ -26,97 +14,7 @@ export const DEFAULT_SCHEMATIC_SHEET_WIDTH = 297 / SCHEMATIC_UNIT_TO_MM
 export const DEFAULT_SCHEMATIC_SHEET_HEIGHT = 210 / SCHEMATIC_UNIT_TO_MM
 const SCHEMATIC_SHEET_INNER_MARGIN = 5 / SCHEMATIC_UNIT_TO_MM
 
-const SCHEMATIC_TRACE_HALF_WIDTH = 0.05
-const SCHEMATIC_NET_LABEL_HEIGHT = 0.2
 const BOUNDS_EPSILON = 1e-6
-
-const getSchematicNetLabelBounds = (
-  schematicNetLabel: SchematicNetLabel,
-): SchematicElementBounds => {
-  const labelLength = getSchematicNetLabelTextWidth({
-    text: schematicNetLabel.text,
-  })
-  const anchor = schematicNetLabel.anchor_position
-
-  if (!anchor) {
-    const isVertical =
-      schematicNetLabel.anchor_side === "top" ||
-      schematicNetLabel.anchor_side === "bottom"
-    const width = isVertical ? SCHEMATIC_NET_LABEL_HEIGHT : labelLength
-    const height = isVertical ? labelLength : SCHEMATIC_NET_LABEL_HEIGHT
-    return {
-      minX: schematicNetLabel.center.x - width / 2,
-      maxX: schematicNetLabel.center.x + width / 2,
-      minY: schematicNetLabel.center.y - height / 2,
-      maxY: schematicNetLabel.center.y + height / 2,
-    }
-  }
-
-  switch (schematicNetLabel.anchor_side) {
-    case "left":
-      return {
-        minX: anchor.x,
-        maxX: anchor.x + labelLength,
-        minY: anchor.y - SCHEMATIC_NET_LABEL_HEIGHT / 2,
-        maxY: anchor.y + SCHEMATIC_NET_LABEL_HEIGHT / 2,
-      }
-    case "right":
-      return {
-        minX: anchor.x - labelLength,
-        maxX: anchor.x,
-        minY: anchor.y - SCHEMATIC_NET_LABEL_HEIGHT / 2,
-        maxY: anchor.y + SCHEMATIC_NET_LABEL_HEIGHT / 2,
-      }
-    case "top":
-      return {
-        minX: anchor.x - SCHEMATIC_NET_LABEL_HEIGHT / 2,
-        maxX: anchor.x + SCHEMATIC_NET_LABEL_HEIGHT / 2,
-        minY: anchor.y - labelLength,
-        maxY: anchor.y,
-      }
-    case "bottom":
-      return {
-        minX: anchor.x - SCHEMATIC_NET_LABEL_HEIGHT / 2,
-        maxX: anchor.x + SCHEMATIC_NET_LABEL_HEIGHT / 2,
-        minY: anchor.y,
-        maxY: anchor.y + labelLength,
-      }
-  }
-}
-
-const getSchematicElementBounds = (
-  schematicElement: CheckedSchematicElement,
-): SchematicElementBounds | null => {
-  if (schematicElement.type === "schematic_component") {
-    return {
-      minX: schematicElement.center.x - schematicElement.size.width / 2,
-      maxX: schematicElement.center.x + schematicElement.size.width / 2,
-      minY: schematicElement.center.y - schematicElement.size.height / 2,
-      maxY: schematicElement.center.y + schematicElement.size.height / 2,
-    }
-  }
-
-  if (schematicElement.type === "schematic_net_label") {
-    return getSchematicNetLabelBounds(schematicElement)
-  }
-
-  const points = [
-    ...schematicElement.edges.flatMap((edge) => [edge.from, edge.to]),
-    ...schematicElement.junctions,
-  ]
-  if (points.length === 0) return null
-
-  return {
-    minX:
-      Math.min(...points.map((point) => point.x)) - SCHEMATIC_TRACE_HALF_WIDTH,
-    maxX:
-      Math.max(...points.map((point) => point.x)) + SCHEMATIC_TRACE_HALF_WIDTH,
-    minY:
-      Math.min(...points.map((point) => point.y)) - SCHEMATIC_TRACE_HALF_WIDTH,
-    maxY:
-      Math.max(...points.map((point) => point.y)) + SCHEMATIC_TRACE_HALF_WIDTH,
-  }
-}
 
 const getSchematicElementId = (
   schematicElement: CheckedSchematicElement,
