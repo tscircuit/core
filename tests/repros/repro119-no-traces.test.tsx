@@ -44,5 +44,12 @@ test("repro119", async () => {
     }
   })
 
+  const fallbackLabels = [
+    ...new Set(
+      circuit.db.schematic_net_label.list().map((label) => label.text),
+    ),
+  ].sort()
+
+  expect(fallbackLabels).toEqual(["U1_pin2", "U1_pin4"])
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })

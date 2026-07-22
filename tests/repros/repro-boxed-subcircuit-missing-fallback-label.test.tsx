@@ -1,5 +1,5 @@
-import type { SubcircuitProps } from "@tscircuit/props"
 import { expect, test } from "bun:test"
+import type { SubcircuitProps } from "@tscircuit/props"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 const Power = (props: SubcircuitProps) => (
@@ -26,7 +26,7 @@ const Mcu = (props: SubcircuitProps) => (
   </subcircuit>
 )
 
-test("cross-subcircuit anonymous net labels use NAME?", async () => {
+test("cross-subcircuit anonymous net labels use a readable endpoint name", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -48,7 +48,7 @@ test("cross-subcircuit anonymous net labels use NAME?", async () => {
         color="blue"
       />
       <schematictext
-        text={'EXPECTED: TRACE 2 falls back to "NAME?" labels'}
+        text={'EXPECTED: TRACE 2 falls back to "mcu_GND" labels'}
         schX={0}
         schY={-1}
         fontSize={0.3}
@@ -56,7 +56,7 @@ test("cross-subcircuit anonymous net labels use NAME?", async () => {
         color="blue"
       />
       <schematictext
-        text={'BOTH GND ports show "NAME?"'}
+        text={'BOTH GND ports show "mcu_GND"'}
         schX={0}
         schY={-1.45}
         fontSize={0.26}

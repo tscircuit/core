@@ -1,3 +1,4 @@
+import { getNetNameFromSourcePorts } from "lib/utils/schematic/getSourcePortNetLabelText"
 import { Port } from "../../Port"
 
 /**
@@ -19,8 +20,18 @@ export const getNetNameFromPorts = (
     }
   }
 
-  return {
-    name: ports.length > 0 ? "NAME?" : "",
-    wasAssignedDisplayLabel: false,
-  }
+  const db = ports.find((port) => port.root)?.root?.db
+  const sourcePortIds = ports
+    .map((port) => port.source_port_id)
+    .filter((sourcePortId): sourcePortId is string => Boolean(sourcePortId))
+  const netName = db
+    ? getNetNameFromSourcePorts(db, sourcePortIds)
+    : ports
+        .map((port) => port._getNetLabelText())
+        .filter((name): name is string => Boolean(name))
+        .sort((a, b) =>
+          a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }),
+        )[0]
+
+  return { name: netName ?? "", wasAssignedDisplayLabel: false }
 }

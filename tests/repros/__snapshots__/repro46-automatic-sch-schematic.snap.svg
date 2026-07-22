@@ -26,15 +26,15 @@
   " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="2.852479279908px"/><text class="net-label-text sch-net-label-text" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_4" x="850.050710742843" y="513.71250178281" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="25.672313519172px" transform="">SDA</text><path class="net-label sch-net-label" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_5" d="
     M 658.22147916903,503.3722643931435
     L 665.9231732247815,489.1098679936035
-    L 766.9960223761884,489.1098679936035
-    L 766.9960223761884,517.6346607926835
+    L 786.8302616358153,489.1098679936035
+    L 786.8302616358153,517.6346607926835
     L 665.9231732247815,517.6346607926835
     Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="2.852479279908px"/><text class="net-label-text sch-net-label-text" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_5" x="671.0576359286159" y="503.3722643931435" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="25.672313519172px" transform="">NAME?</text><path class="net-label sch-net-label" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_6" d="
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="2.852479279908px"/><text class="net-label-text sch-net-label-text" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_5" x="671.0576359286159" y="503.3722643931435" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="25.672313519172px" transform="">SJ1_pin1</text><path class="net-label sch-net-label" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_6" d="
     M 937.051328780037,214.20217739247002
     L 922.788932380497,206.50048333671842
-    L 922.788932380497,105.4276341853116
-    L 951.313725179577,105.4276341853116
+    L 922.788932380497,85.59339492568466
+    L 951.313725179577,85.59339492568466
     L 951.313725179577,206.50048333671842
     Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="2.852479279908px"/><text class="net-label-text sch-net-label-text" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_6" x="937.051328780037" y="201.36602063288402" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="25.672313519172px" transform="rotate(-90 937.051328780037 201.36602063288402)">NAME?</text></svg>
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="2.852479279908px"/><text class="net-label-text sch-net-label-text" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_6" x="937.051328780037" y="201.36602063288402" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="25.672313519172px" transform="rotate(-90 937.051328780037 201.36602063288402)">SJ1_pin1</text></svg>
