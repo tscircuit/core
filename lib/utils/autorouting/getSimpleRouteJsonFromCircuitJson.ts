@@ -649,14 +649,10 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     ...connectionsFromNets,
     ...connectionsFromBreakoutPoints,
   ]
-  const fallbackMinTraceWidth = minTraceWidth ?? board?.min_trace_width ?? 0.1
-  // Connections without an explicit width (e.g. from a trace's `thickness`)
-  // default to the requested nominal trace width when one is provided;
-  // `fallbackMinTraceWidth` is only used as the routing lower bound.
-  const defaultConnectionTraceWidth = nominalTraceWidth ?? fallbackMinTraceWidth
+  const defaultTraceWidth = minTraceWidth ?? board?.min_trace_width ?? 0.1
   for (const conn of allConns) {
-    conn.nominalTraceWidth ??= defaultConnectionTraceWidth
-    conn.width ??= defaultConnectionTraceWidth
+    conn.nominalTraceWidth ??= nominalTraceWidth ?? defaultTraceWidth
+    conn.width ??= nominalTraceWidth ?? defaultTraceWidth
   }
 
   const differentialPairs: DifferentialPair[] =
@@ -734,7 +730,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
           : undefined,
       layerCount: board?.num_layers ?? 2,
       minTraceWidth: Math.min(
-        fallbackMinTraceWidth,
+        defaultTraceWidth,
         ...allConns.map((c) => c.width!),
       ),
       minViaDiameter: resolvedMinViaPadDiameter,
