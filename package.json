@@ -50,8 +50,8 @@
     "@tscircuit/matchpack": "^0.0.43",
     "@tscircuit/math-utils": "^0.0.36",
     "@tscircuit/miniflex": "^0.0.4",
-    "@tscircuit/ngspice-spice-engine": "^0.0.19",
-    "@tscircuit/props": "^0.0.589",
+    "@tscircuit/ngspice-spice-engine": "github:tscircuit/ngspice-spice-engine#744c31adc94d4edea2f815df1860b17104b3b799",
+    "@tscircuit/props": "github:tscircuit/props#cf9c187f5318d3b8b71062779a99f456bc312e3c",
     "@tscircuit/schematic-match-adapt": "^0.0.18",
     "@tscircuit/schematic-trace-solver": "^0.0.106",
     "@tscircuit/solver-utils": "^0.0.16",
@@ -65,11 +65,11 @@
     "bun-match-svg": "0.0.12",
     "calculate-elbow": "^0.0.12",
     "chokidar-cli": "^3.0.0",
-    "circuit-json": "^0.0.453",
+    "circuit-json": "github:tscircuit/circuit-json#72b4fd2b88decced344cdf8c28d6d36a73696b1b",
     "circuit-json-to-bpc": "^0.0.13",
     "circuit-json-to-connectivity-map": "^0.0.23",
     "circuit-json-to-gltf": "^0.0.107",
-    "circuit-json-to-spice": "^0.0.43",
+    "circuit-json-to-spice": "github:tscircuit/circuit-json-to-spice#4eb62507b177c0965d74e08c6800162159adad17",
     "circuit-to-svg": "^0.0.391",
     "concurrently": "^9.1.2",
     "connectivity-map": "^1.0.0",
@@ -88,7 +88,7 @@
     "react-dom": "^19.1.0",
     "schematic-symbols": "^0.0.233",
     "spicets": "^0.0.2",
-    "spicey": "^0.0.14",
+    "spicey": "github:tscircuit/spicey#8a3e33231758f7358f1617ec025689027b0869a8",
     "stack-svgs": "^0.0.1",
     "ts-expect": "^1.3.0",
     "tsup": "^8.2.4"
@@ -124,5 +124,15 @@
     "svg-path-commander": "^2.1.11",
     "transformation-matrix": "^2.16.1",
     "zod": "^3.25.67"
-  }
+  },
+  "trustedDependencies": [
+    "@resvg/resvg-js",
+    "@tscircuit/ngspice-spice-engine",
+    "@tscircuit/props",
+    "circuit-json",
+    "circuit-json-to-spice",
+    "esbuild",
+    "sharp",
+    "spicey"
+  ]
 }

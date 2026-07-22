@@ -1,23 +1,37 @@
-import { SpiceNetlist, circuitJsonToSpice } from "circuit-json-to-spice"
 import type { AnyCircuitElement, SimulationCurrentProbe } from "circuit-json"
 import Debug from "debug"
 import { getTransientVoltageGraphNamesFromSpiceNetlist } from "lib/utils/simulation/get-transient-voltage-graph-names-from-spice-netlist"
 import { resetSimulationColorState } from "lib/utils/simulation/getSimulationColorForId"
 import { getSpiceyEngine } from "../../../spice/get-spicey-engine"
 import type { Ammeter } from "../../normal-components/Ammeter"
+import type { AnalogAcSweepSimulation } from "../AnalogAcSweepSimulation"
+import type { AnalogDcOperatingPointSimulation } from "../AnalogDcOperatingPointSimulation"
+import type { AnalogDcSweepSimulation } from "../AnalogDcSweepSimulation"
 import type { AnalogSimulation } from "../AnalogSimulation"
+import type { AnalogTransientSimulation } from "../AnalogTransientSimulation"
 import type { VoltageProbe } from "../VoltageProbe"
 import type { GraphDisplayOverrides } from "./GraphDisplayOverrides"
+import type { Group } from "./Group"
+import type { InsertedSimulationGraph } from "./InsertedSimulationGraph"
+import { attachSweepPointToSimulationResult } from "./attachSweepPointToSimulationResult"
+import { createSimulationRuns } from "./createSimulationRuns"
 import {
   getAmmeterGraphDisplayOverrides,
   getVoltageProbeGraphDisplayOverrides,
 } from "./getGraphDisplayOverrides"
-import type { InsertedSimulationGraph } from "./InsertedSimulationGraph"
-import type { Group } from "./Group"
 import { insertIndependentAxisScopeTraces } from "./insertIndependentAxisScopeTraces"
 import { isCircuitElementInput } from "./isCircuitElementInput"
 import { isCurrentGraph } from "./isCurrentGraph"
+import { isSimulationCurrentResult } from "./isSimulationCurrentResult"
+import { isSimulationVoltageResult } from "./isSimulationVoltageResult"
 import { isVoltageGraph } from "./isVoltageGraph"
+
+type AnalogSimulationComponent =
+  | AnalogSimulation
+  | AnalogTransientSimulation
+  | AnalogDcOperatingPointSimulation
+  | AnalogDcSweepSimulation
+  | AnalogAcSweepSimulation
 
 const debug = Debug("tscircuit:core:Group_doInitialSimulationSpiceEngineRender")
 
@@ -42,6 +56,20 @@ const getCircuitJsonForAnalogSimulation = ({
       .map((ammeter) => ammeter.simulation_current_probe_id)
       .filter((id): id is string => Boolean(id)),
   )
+  const parameterSweepIds = new Set(
+    circuitJson
+      .filter(
+        (
+          element,
+        ): element is Extract<
+          AnyCircuitElement,
+          { type: "simulation_parameter_sweep" }
+        > =>
+          element.type === "simulation_parameter_sweep" &&
+          element.simulation_experiment_id === simulationExperimentId,
+      )
+      .map((parameterSweep) => parameterSweep.simulation_parameter_sweep_id),
+  )
 
   return circuitJson.filter((element) => {
     if (element.type === "simulation_experiment") {
@@ -52,6 +80,12 @@ const getCircuitJsonForAnalogSimulation = ({
     }
     if (element.type === "simulation_current_probe") {
       return currentProbeIds.has(element.simulation_current_probe_id)
+    }
+    if (element.type === "simulation_parameter_sweep") {
+      return element.simulation_experiment_id === simulationExperimentId
+    }
+    if (element.type === "simulation_parameter_sweep_point") {
+      return parameterSweepIds.has(element.simulation_parameter_sweep_id)
     }
     if (element.type === "simulation_oscilloscope_trace") {
       if (element.simulation_voltage_probe_id) {
@@ -64,6 +98,12 @@ const getCircuitJsonForAnalogSimulation = ({
     if (
       element.type === "simulation_transient_voltage_graph" ||
       element.type === "simulation_transient_current_graph" ||
+      element.type === "simulation_dc_operating_point_voltage" ||
+      element.type === "simulation_dc_operating_point_current" ||
+      element.type === "simulation_dc_sweep_voltage_graph" ||
+      element.type === "simulation_dc_sweep_current_graph" ||
+      element.type === "simulation_ac_sweep_voltage_graph" ||
+      element.type === "simulation_ac_sweep_current_graph" ||
       element.type === "simulation_unknown_experiment_error"
     ) {
       return false
@@ -79,7 +119,15 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
   const { root } = group
   if (!root) return
 
-  const analogSims = group.selectAll<AnalogSimulation>("analogsimulation")
+  const analogSims: AnalogSimulationComponent[] = [
+    ...group.selectAll<AnalogSimulation>("analogsimulation"),
+    ...group.selectAll<AnalogTransientSimulation>("analogtransientsimulation"),
+    ...group.selectAll<AnalogDcOperatingPointSimulation>(
+      "analogdcoperatingpointsimulation",
+    ),
+    ...group.selectAll<AnalogDcSweepSimulation>("analogdcsweepsimulation"),
+    ...group.selectAll<AnalogAcSweepSimulation>("analogacsweepsimulation"),
+  ]
 
   if (analogSims.length === 0) return
 
@@ -117,12 +165,17 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
       ammeters,
     })
 
-    let spiceString: string
-    let spiceNetlist: SpiceNetlist
+    let simulationRuns: ReturnType<typeof createSimulationRuns>
     try {
-      spiceNetlist = circuitJsonToSpice(circuitJson)
-      spiceString = spiceNetlist.toSpiceString()
-      debug(`Generated SPICE string:\n${spiceString}`)
+      simulationRuns = createSimulationRuns({
+        circuitJson,
+        simulationExperimentId,
+      })
+      debug(
+        `Generated ${simulationRuns.length} SPICE run(s):\n${simulationRuns
+          .map((simulationRun) => simulationRun.spiceString)
+          .join("\n")}`,
+      )
     } catch (error) {
       debug(`Failed to convert circuit JSON to SPICE: ${error}`)
       root.db.simulation_unknown_experiment_error.insert({
@@ -184,8 +237,10 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
       .filter((probe) =>
         voltageProbesById.has(probe.simulation_voltage_probe_id),
       )
-    const graphNamesFromNetlist =
-      getTransientVoltageGraphNamesFromSpiceNetlist(spiceNetlist)
+    const firstSpiceNetlist = simulationRuns[0]?.spiceNetlist
+    const graphNamesFromNetlist = firstSpiceNetlist
+      ? getTransientVoltageGraphNamesFromSpiceNetlist(firstSpiceNetlist)
+      : []
 
     if (graphNamesFromNetlist.length === orderedSimulationProbes.length) {
       for (const [
@@ -206,7 +261,7 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
       )
     }
 
-    const engineName = analogSim._parsedProps.spiceEngine ?? "spicey"
+    const engineName = analogSim.getSpiceEngineName() ?? "spicey"
     const spiceEngine = spiceEngineMap[engineName]
 
     if (!spiceEngine) {
@@ -225,71 +280,103 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
 
     group._queueAsyncEffect(effectId, async () => {
       try {
-        debug(`Running simulation with engine: ${engineName}`)
-        const result = await spiceEngine.simulate(spiceString)
-
-        debug(
-          `Simulation completed, received ${result.simulationResultCircuitJson.length} elements`,
-        )
-
         // Add simulation results to the database
         const insertedVoltageGraphs: InsertedSimulationGraph[] = []
         const insertedCurrentGraphs: InsertedSimulationGraph[] = []
 
-        for (const rawElement of result.simulationResultCircuitJson) {
-          if (!isCircuitElementInput(rawElement)) {
-            debug("Skipping invalid simulation result element")
-            continue
-          }
+        for (const simulationRun of simulationRuns) {
+          debug(`Running simulation with engine: ${engineName}`)
+          const result = await spiceEngine.simulate(simulationRun.spiceString)
 
-          const element = rawElement
+          debug(
+            `Simulation completed, received ${result.simulationResultCircuitJson.length} elements`,
+          )
 
-          if (isVoltageGraph(element)) {
-            element.simulation_experiment_id =
-              simulationExperiment.simulation_experiment_id
-
-            const probeMatch = element.name
-              ? graphNameToProbe.get(element.name)
-              : undefined
-            if (probeMatch) {
-              element.color = probeMatch.color ?? undefined
-              element.source_probe_id =
-                probeMatch.simulation_voltage_probe_id ?? undefined
+          for (const rawElement of result.simulationResultCircuitJson) {
+            if (!isCircuitElementInput(rawElement)) {
+              debug("Skipping invalid simulation result element")
+              continue
             }
-          }
 
-          if (isCurrentGraph(element)) {
-            element.simulation_experiment_id =
-              simulationExperiment.simulation_experiment_id
+            const element = attachSweepPointToSimulationResult({
+              simulationResult: rawElement,
+              simulationParameterSweepPointId:
+                simulationRun.simulationParameterSweepPointId,
+            })
 
-            const probeMatch =
-              (element.source_probe_id
-                ? currentProbesById.get(element.source_probe_id)
-                : undefined) ??
-              (element.name ? currentProbesByName.get(element.name) : undefined)
-            if (probeMatch) {
-              element.color = probeMatch.color
-              element.source_probe_id = probeMatch.simulation_current_probe_id
+            if (isVoltageGraph(element)) {
+              element.simulation_experiment_id =
+                simulationExperiment.simulation_experiment_id
+
+              const probeMatch = element.name
+                ? graphNameToProbe.get(element.name)
+                : undefined
+              if (probeMatch) {
+                element.color = probeMatch.color ?? undefined
+                element.source_probe_id =
+                  probeMatch.simulation_voltage_probe_id ?? undefined
+              }
+            } else if (isSimulationVoltageResult(element)) {
+              element.simulation_experiment_id =
+                simulationExperiment.simulation_experiment_id
+              const probeMatch =
+                voltageProbesById.get(element.simulation_voltage_probe_id) ??
+                (element.name ? graphNameToProbe.get(element.name) : undefined)
+              if (probeMatch?.simulation_voltage_probe_id) {
+                element.color = probeMatch.color ?? undefined
+                element.simulation_voltage_probe_id =
+                  probeMatch.simulation_voltage_probe_id
+              }
             }
-          }
 
-          const insertedElement = root.db.insert(element)
-          if (isVoltageGraph(insertedElement)) {
-            insertedVoltageGraphs.push({
-              type: "voltage",
-              graph: insertedElement,
-            })
+            if (isCurrentGraph(element)) {
+              element.simulation_experiment_id =
+                simulationExperiment.simulation_experiment_id
+
+              const probeMatch =
+                (element.source_probe_id
+                  ? currentProbesById.get(element.source_probe_id)
+                  : undefined) ??
+                (element.name
+                  ? currentProbesByName.get(element.name)
+                  : undefined)
+              if (probeMatch) {
+                element.color = probeMatch.color
+                element.source_probe_id = probeMatch.simulation_current_probe_id
+              }
+            } else if (isSimulationCurrentResult(element)) {
+              element.simulation_experiment_id =
+                simulationExperiment.simulation_experiment_id
+              const probeMatch =
+                currentProbesById.get(element.simulation_current_probe_id) ??
+                (element.name
+                  ? currentProbesByName.get(element.name)
+                  : undefined)
+              if (probeMatch) {
+                element.color = probeMatch.color
+                element.simulation_current_probe_id =
+                  probeMatch.simulation_current_probe_id
+              }
+            }
+
+            const insertedElement = root.db.insert(element)
+            if (isVoltageGraph(insertedElement)) {
+              insertedVoltageGraphs.push({
+                type: "voltage",
+                graph: insertedElement,
+              })
+            }
+            if (isCurrentGraph(insertedElement)) {
+              insertedCurrentGraphs.push({
+                type: "current",
+                graph: insertedElement,
+              })
+            }
+            debug(`Inserted ${element.type} into database`)
           }
-          if (isCurrentGraph(insertedElement)) {
-            insertedCurrentGraphs.push({
-              type: "current",
-              graph: insertedElement,
-            })
-          }
-          debug(`Inserted ${element.type} into database`)
         }
 
-        if (analogSim._parsedProps.graphIndependentAxes) {
+        if (analogSim.usesIndependentGraphAxes()) {
           insertIndependentAxisScopeTraces({
             db: root.db,
             graphs: [...insertedVoltageGraphs, ...insertedCurrentGraphs],
