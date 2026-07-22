@@ -6,27 +6,27 @@ import { getPinNumberFromPinLabelsKey } from "lib/utils/schematic/getPinNumberFr
 import type { Chip } from "../../normal-components/Chip"
 import type { SchematicBox } from "./SchematicBox"
 
-const getLocalPinLabels = (
+const getSchematicBoxPinLabels = (
   pinLabels: PinLabelsProp | undefined,
 ): Array<{
-  localPinNumber: number
+  pinNumber: number
   displayPinLabel: string
   pinAliases: string[]
 }> => {
   if (!pinLabels) return []
 
-  return Object.entries(pinLabels).map(([localPinKey, pinLabel]) => {
-    const localPinNumber = getPinNumberFromPinLabelsKey(localPinKey)
-    if (localPinNumber === null) {
+  return Object.entries(pinLabels).map(([pinKey, pinLabel]) => {
+    const pinNumber = getPinNumberFromPinLabelsKey(pinKey)
+    if (pinNumber === null) {
       throw new Error(
-        `Invalid schematicbox pinLabels key "${localPinKey}". Expected pin<number>.`,
+        `Invalid schematicbox pinLabels key "${pinKey}". Expected pin<number>.`,
       )
     }
 
     const pinAliases = typeof pinLabel === "string" ? [pinLabel] : [...pinLabel]
     return {
-      localPinNumber,
-      displayPinLabel: pinAliases[0] ?? localPinKey,
+      pinNumber,
+      displayPinLabel: pinAliases[0] ?? pinKey,
       pinAliases,
     }
   })
@@ -43,17 +43,17 @@ export const SchematicBox_doInitialSchematicComponentRender = (
 
   const referencedChip = schematicBox
     .getSubcircuit()
-    .selectOne(`.${props.chipRef}`) as Chip | null
+    .selectOne(props.chipRef) as Chip | null
   if (!referencedChip?.source_component_id) {
     throw new Error(
       `Could not resolve chipRef "${props.chipRef}" for ${schematicBox.getString()}`,
     )
   }
 
-  const localPinLabels = getLocalPinLabels(props.pinLabels)
-  const pinLabelsByLocalPinKey = Object.fromEntries(
-    localPinLabels.map(({ localPinNumber, displayPinLabel }) => [
-      `pin${localPinNumber}`,
+  const schematicBoxPinLabels = getSchematicBoxPinLabels(props.pinLabels)
+  const pinLabelsByPinKey = Object.fromEntries(
+    schematicBoxPinLabels.map(({ pinNumber, displayPinLabel }) => [
+      `pin${pinNumber}`,
       displayPinLabel,
     ]),
   )
@@ -64,16 +64,16 @@ export const SchematicBox_doInitialSchematicComponentRender = (
     schWidth: props.width,
     schHeight: props.height,
     schPinSpacing: 0.2,
-    pinCount: localPinLabels.length,
+    pinCount: schematicBoxPinLabels.length,
     schPortArrangement: props.schPinArrangement,
-    pinLabels: pinLabelsByLocalPinKey,
+    pinLabels: pinLabelsByPinKey,
   })
   const center = schematicBox._getGlobalSchematicPositionBeforeLayout()
   const size = dimensions.getSize()
   const schematicSheetId = schematicBox._resolveSchematicSheetId()
   const portLabels = Object.fromEntries(
-    localPinLabels.map(({ localPinNumber, displayPinLabel }) => [
-      String(localPinNumber),
+    schematicBoxPinLabels.map(({ pinNumber, displayPinLabel }) => [
+      String(pinNumber),
       displayPinLabel,
     ]),
   )
@@ -92,10 +92,10 @@ export const SchematicBox_doInitialSchematicComponentRender = (
     schematicComponent.schematic_component_id
 
   for (const {
-    localPinNumber,
+    pinNumber,
     displayPinLabel,
     pinAliases,
-  } of localPinLabels) {
+  } of schematicBoxPinLabels) {
     const referencedSourcePort = sourcePorts.find((sourcePort) =>
       pinAliases.some(
         (pinAlias) =>
@@ -109,11 +109,10 @@ export const SchematicBox_doInitialSchematicComponentRender = (
       )
     }
 
-    const localPortPosition =
-      dimensions.getPortPositionByPinNumber(localPinNumber)
-    if (!localPortPosition) {
+    const portPosition = dimensions.getPortPositionByPinNumber(pinNumber)
+    if (!portPosition) {
       throw new Error(
-        `Could not determine schematic position for ${schematicBox.getString()} pin${localPinNumber}`,
+        `Could not determine schematic position for ${schematicBox.getString()} pin${pinNumber}`,
       )
     }
 
@@ -122,20 +121,20 @@ export const SchematicBox_doInitialSchematicComponentRender = (
       right: "right",
       top: "up",
       bottom: "down",
-    }[localPortPosition.side] as SchematicPort["facing_direction"]
+    }[portPosition.side] as SchematicPort["facing_direction"]
 
     db.schematic_port.insert({
       schematic_component_id: schematicComponent.schematic_component_id,
       center: {
-        x: center.x + localPortPosition.x,
-        y: center.y + localPortPosition.y,
+        x: center.x + portPosition.x,
+        y: center.y + portPosition.y,
       },
       source_port_id: referencedSourcePort.source_port_id,
       facing_direction: facingDirection,
       distance_from_component_edge: 0.4,
-      side_of_component: localPortPosition.side,
-      pin_number: localPinNumber,
-      true_ccw_index: localPortPosition.trueIndex,
+      side_of_component: portPosition.side,
+      pin_number: pinNumber,
+      true_ccw_index: portPosition.trueIndex,
       display_pin_label: displayPinLabel,
       is_connected: false,
       schematic_sheet_id: schematicSheetId,
