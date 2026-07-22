@@ -2,6 +2,7 @@ import { PrimitiveComponent } from "../../base-components/PrimitiveComponent"
 import { schematicBoxProps } from "@tscircuit/props"
 import type { Port } from "../Port"
 import { getTitleAnchorAndPosition } from "../getTitleAnchorAndPosition"
+import { SchematicBox_doInitialSchematicComponentRender } from "./SchematicBox_doInitialSchematicComponentRender"
 
 export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
   isSchematicPrimitive = true
@@ -14,11 +15,16 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
     }
   }
 
+  doInitialSchematicComponentRender(): void {
+    SchematicBox_doInitialSchematicComponentRender(this)
+  }
+
   doInitialSchematicPrimitiveRender(): void {
     if (this.root?.schematicDisabled) return
     if (this.getCollapsedSchematicBoxAncestor()) return
     const { db } = this.root!
     const { _parsedProps: props } = this
+    if (props.chipRef) return
 
     const basePadding = 0.6
     const generalPadding = typeof props.padding === "number" ? props.padding : 0
@@ -111,6 +117,7 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
       x,
       y,
       is_dashed: props.strokeStyle === "dashed",
+      schematic_sheet_id: this._resolveSchematicSheetId(),
     })
 
     if (props.title) {

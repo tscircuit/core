@@ -11,14 +11,15 @@ import { getSchematicPortIdsWithRoutedTraces } from "./getSchematicPortIdsWithRo
 const debug = Debug("Group_doInitialSchematicTraceRender")
 
 /**
- * Render all traces within this subcircuit
+ * Render traces within one schematic sheet of this subcircuit.
  */
-export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
-  if (!group.root?._featureMspSchematicTraceRouting) return
-  if (!group.isSubcircuit) return
-  if (group.root?.schematicDisabled) return
-
-  // Prepare the solver input and context
+const renderSchematicTracesForSheet = ({
+  group,
+  schematicSheetId,
+}: {
+  group: Group<any>
+  schematicSheetId?: string
+}) => {
   const {
     inputProblem,
     pinIdToSchematicPortId,
@@ -27,7 +28,7 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
     schPortIdToSourcePortId,
     userNetIdToConnKey,
     connKeysWithExplicitPortNetTraces,
-  } = createSchematicTraceSolverInputProblem(group)
+  } = createSchematicTraceSolverInputProblem(group, { schematicSheetId })
 
   if (inputProblem.chips.length === 0) return
 
@@ -101,4 +102,50 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
     schPortIdToSourcePortId,
     connKeyToSourceNet,
   })
+}
+
+/**
+ * Render all traces within this subcircuit. Each schematic sheet is solved
+ * independently because their component coordinates occupy separate drawing
+ * spaces and may overlap numerically.
+ */
+export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
+  if (!group.root?._featureMspSchematicTraceRouting) return
+  if (!group.isSubcircuit) return
+  if (group.root?.schematicDisabled) return
+
+  const schematicGroupIds = new Set(
+    [
+      group,
+      ...group
+        .getDescendants()
+        .filter(
+          (component): component is Group<any> => component instanceof Group,
+        ),
+    ]
+      .map((schematicGroup) => schematicGroup.schematic_group_id)
+      .filter((schematicGroupId): schematicGroupId is string =>
+        Boolean(schematicGroupId),
+      ),
+  )
+  const schematicSheetIds = new Set(
+    group.root.db.schematic_component
+      .list()
+      .filter((schematicComponent) =>
+        schematicGroupIds.has(schematicComponent.schematic_group_id!),
+      )
+      .map((schematicComponent) => schematicComponent.schematic_sheet_id)
+      .filter((schematicSheetId): schematicSheetId is string =>
+        Boolean(schematicSheetId),
+      ),
+  )
+
+  if (schematicSheetIds.size === 0) {
+    renderSchematicTracesForSheet({ group })
+    return
+  }
+
+  for (const schematicSheetId of schematicSheetIds) {
+    renderSchematicTracesForSheet({ group, schematicSheetId })
+  }
 }

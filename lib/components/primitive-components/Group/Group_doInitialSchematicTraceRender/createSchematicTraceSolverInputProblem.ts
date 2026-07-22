@@ -62,6 +62,7 @@ export type SolverInputContext = {
 
 export function createSchematicTraceSolverInputProblem(
   group: Group<any>,
+  opts: { schematicSheetId?: string } = {},
 ): SolverInputContext {
   const { db } = group.root!
 
@@ -91,6 +92,11 @@ export function createSchematicTraceSolverInputProblem(
   const schematicComponents = db.schematic_component
     .list()
     .filter((a) => allSchematicGroupIds.includes(a.schematic_group_id!))
+    .filter(
+      (schematicComponent) =>
+        opts.schematicSheetId === undefined ||
+        schematicComponent.schematic_sheet_id === opts.schematicSheetId,
+    )
   const schematicComponentIds = new Set(
     schematicComponents.map((component) => component.schematic_component_id),
   )
@@ -275,11 +281,11 @@ export function createSchematicTraceSolverInputProblem(
       continue
     }
     const connected = (st.connected_source_port_ids ?? [])
-      .map((srcId: string) => sourcePortIdToSchPortId.get(srcId))
+      .map((sourcePortId) => sourcePortIdToSchPortId.get(sourcePortId))
       .filter(
-        (sourcePortId): sourcePortId is string =>
-          Boolean(sourcePortId) &&
-          allSourceAndSchematicPortIdsInScope.has(sourcePortId!),
+        (schematicPortId): schematicPortId is string =>
+          Boolean(schematicPortId) &&
+          allSourceAndSchematicPortIdsInScope.has(schematicPortId!),
       )
 
     if (connected.length >= 2) {

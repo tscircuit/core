@@ -28,7 +28,7 @@ test("multiple schematic sheets to represent the same chip component", async () 
           name="U1A"
           width={2.245}
           height={1.0}
-          chipRef="U1"
+          chipRef=".U1"
           pinLabels={{
             pin1: "VCC",
             pin2: "GND",
@@ -51,7 +51,7 @@ test("multiple schematic sheets to represent the same chip component", async () 
           name="U1B"
           width={2.245}
           height={1.0}
-          chipRef="U1"
+          chipRef=".U1"
           pinLabels={{
             pin1: "IO0",
             pin2: "IO1",
