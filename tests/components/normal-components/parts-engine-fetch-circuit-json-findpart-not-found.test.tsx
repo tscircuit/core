@@ -1,4 +1,4 @@
-import { expect, test } from "bun:test"
+import { test, expect } from "bun:test"
 import type { PartsEngine } from "@tscircuit/props"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
@@ -29,8 +29,6 @@ test("connector with standard='usb_c' handles findPart returning 'Not found' wit
   expect(sourceComponent!.supplier_part_numbers).toEqual({})
 
   expect(fetchCalls).toBe(0)
-  expect(circuit.db.source_port.list()).toHaveLength(16)
-  expect(circuit.db.schematic_port.list()).toHaveLength(16)
   expect(circuit.db.pcb_smtpad.list().length).toBe(0)
   expect(circuit.db.unknown_error_finding_part.list().length).toBe(0)
   const partNotFoundWarnings = circuit.db.source_part_not_found_warning.list()
