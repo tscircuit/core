@@ -1,7 +1,7 @@
-import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
+import { PrimitiveComponent } from "../../base-components/PrimitiveComponent"
 import { schematicBoxProps } from "@tscircuit/props"
-import type { Port } from "./Port"
-import { getTitleAnchorAndPosition } from "./getTitleAnchorAndPosition"
+import type { Port } from "../Port"
+import { getTitleAnchorAndPosition } from "../getTitleAnchorAndPosition"
 
 export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
   isSchematicPrimitive = true
