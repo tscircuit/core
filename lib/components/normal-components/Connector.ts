@@ -1,26 +1,26 @@
 import { guessCableInsertCenter } from "@tscircuit/infer-cable-insertion-point"
 import {
+  connectorProps,
   type ConnectorProps,
   type PartsEngine,
   type SchematicPinStyle,
   type SchematicPortArrangement,
-  connectorProps,
 } from "@tscircuit/props"
 import type { AnyCircuitElement, SourceSimpleConnector } from "circuit-json"
 import { source_part_not_found_warning } from "circuit-json"
-import { convertCircuitJsonToUsbCStandardCircuitJson } from "lib/utils/connectors/convertCircuitJsonToUsbCStandardCircuitJson"
-import { extractCadModelFromCircuitJson } from "lib/utils/connectors/extractCadModelFromCircuitJson"
-import { USB_C_CANONICAL_PIN_DEFINITIONS } from "lib/utils/connectors/usb-c-canonical-pin-definitions"
 import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromCircuitJson"
+import { convertCircuitJsonToUsbCStandardCircuitJson } from "lib/utils/connectors/convertCircuitJsonToUsbCStandardCircuitJson"
+import { USB_C_CANONICAL_PIN_DEFINITIONS } from "lib/utils/connectors/usb-c-canonical-pin-definitions"
 import {
-  type SchematicBoxDimensions,
   getAllDimensionsForSchematicBox,
+  type SchematicBoxDimensions,
 } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
 import { getNumericSchPinStyle } from "lib/utils/schematic/getNumericSchPinStyle"
+import { extractCadModelFromCircuitJson } from "lib/utils/connectors/extractCadModelFromCircuitJson"
 import { symbols } from "schematic-symbols"
-import { Port } from "../primitive-components/Port"
 import { Chip } from "./Chip"
 import { insertInnerSymbolInSchematicBox } from "./Connector_insertInnerSymbolInSchematicBox"
+import { Port } from "../primitive-components/Port"
 
 const USB_C_SIGNAL_LABELS_IN_ORDER = [
   "VBUS1",

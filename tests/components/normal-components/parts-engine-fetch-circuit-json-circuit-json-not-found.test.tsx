@@ -1,4 +1,4 @@
-import { expect, test } from "bun:test"
+import { test, expect } from "bun:test"
 import type { PartsEngine } from "@tscircuit/props"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
