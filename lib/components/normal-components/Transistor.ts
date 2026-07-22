@@ -4,7 +4,15 @@ import {
   type Ftype,
   type TransistorPorts,
 } from "lib/utils/constants"
+import { getPinNumberFromLabels } from "lib/utils/getPortFromHints"
+import type { Port } from "../primitive-components/Port"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
+
+const SHORT_ALIASES: Record<string, string[]> = {
+  collector: ["c"],
+  base: ["b"],
+  emitter: ["e"],
+}
 
 export class Transistor extends NormalComponent<
   typeof transistorProps,
@@ -27,21 +35,40 @@ export class Transistor extends NormalComponent<
   }
 
   initPorts() {
-    const pinAliases = {
-      pin1: ["collector", "c"],
-      pin2: ["base", "b"],
-      pin3: ["emitter", "e"],
+    // Pin roles come from the schematic symbol's named port labels
+    // (e.g. [["1","collector"],["2","base"],["3","emitter"]]) rather than a
+    // hardcoded pin-number map; only short aliases ("c"/"b"/"e") are added
+    // here, attached to whichever pin the symbol labels with the long name.
+    const additionalAliases: Record<`pin${number}`, string[]> = {}
+    const symbol = this.getSchematicSymbol()
+    for (const symPort of symbol?.ports ?? []) {
+      const pinNumber = getPinNumberFromLabels(symPort.labels)
+      if (!pinNumber) continue
+      for (const label of symPort.labels) {
+        const shortAliases = SHORT_ALIASES[label]
+        if (shortAliases) {
+          additionalAliases[`pin${pinNumber}`] = shortAliases
+        }
+      }
     }
 
     super.initPorts({
       pinCount: 3,
-      additionalAliases: pinAliases,
+      additionalAliases,
     })
   }
 
-  collector = this.portMap.pin1
-  base = this.portMap.pin2
-  emitter = this.portMap.pin3
+  get collector(): Port {
+    return this.portMap.collector
+  }
+
+  get base(): Port {
+    return this.portMap.base
+  }
+
+  get emitter(): Port {
+    return this.portMap.emitter
+  }
 
   doInitialCreateNetsFromProps() {
     this._createNetsFromProps([...this._getNetsFromConnectionsProp()])
