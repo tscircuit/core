@@ -1935,11 +1935,12 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     }
   }
 
+  // `defaultTraceWidth` takes precedence over `nominalTraceWidth` when both
   _resolveNominalTraceWidth(props: SubcircuitGroupProps): number | undefined {
-    const rawNominalTraceWidth =
+    const preferredTraceWidth =
       props.defaultTraceWidth ?? props.nominalTraceWidth
-    if (rawNominalTraceWidth === undefined) return undefined
-    return Number(rawNominalTraceWidth)
+    if (preferredTraceWidth === undefined) return undefined
+    return Number(preferredTraceWidth)
   }
 
   _getAutorouterConfig(): AutorouterConfig {
