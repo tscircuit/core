@@ -76,28 +76,48 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
     if (!connectsTo) return []
 
     const connectedPorts: Port[] = []
+    const db = this.root?.db
+
     for (const connection of connectsTo) {
       let selected: any = null
       try {
-        selected = this.getSubcircuit().selectOne(connection)
-        if (
-          !selected &&
-          !connection.startsWith(".") &&
-          !connection.startsWith("#")
-        ) {
-          selected = this.getSubcircuit().selectOne(
-            connection.startsWith("net.") ? connection : `net.${connection}`,
-            { type: "net" },
-          )
-        }
+        selected =
+          this.getSubcircuit()?.selectOne(connection, { type: "port" }) ??
+          this.getSubcircuit()?.selectOne(connection)
       } catch {
         selected = null
       }
+
       if (selected && "isPort" in selected && selected.isPort) {
         connectedPorts.push(selected as Port)
       } else if (selected && "isNet" in selected && selected.isNet) {
         const netPorts = (selected as any).getAllConnectedPorts()
         connectedPorts.push(...netPorts)
+      } else if (db && connection.startsWith("net.")) {
+        const netName = connection.replace(/^net\./, "")
+        const sourceNet = db.source_net
+          .list()
+          .find((sn) => sn.name === netName || sn.name === connection)
+        if (sourceNet) {
+          const sourcePortsOnNet = db.source_port.list().filter((sp) => {
+            if (sp.source_net_id === sourceNet.source_net_id) return true
+            return (
+              sp.subcircuit_connectivity_map_key &&
+              sp.subcircuit_connectivity_map_key ===
+                sourceNet.subcircuit_connectivity_map_key
+            )
+          })
+          const allPorts =
+            (this.getSubcircuit()?.selectAll("port") as Port[]) ?? []
+          for (const sp of sourcePortsOnNet) {
+            const matchedPort = allPorts.find(
+              (p) => p.source_port_id === sp.source_port_id,
+            )
+            if (matchedPort && !connectedPorts.includes(matchedPort)) {
+              connectedPorts.push(matchedPort)
+            }
+          }
+        }
       }
     }
 
