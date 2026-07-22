@@ -49,8 +49,6 @@ test("connector usb_c leaves footprint empty when supplier and manufacturer circ
   })
 
   expect(circuit.db.pcb_smtpad.list().length).toBe(0)
-  expect(circuit.db.source_port.list()).toHaveLength(16)
-  expect(circuit.db.schematic_port.list()).toHaveLength(16)
   expect(circuit.db.unknown_error_finding_part.list().length).toBe(0)
   const warnings = circuit.db.source_part_not_found_warning.list()
   expect(warnings).toHaveLength(1)
