@@ -62,6 +62,7 @@ export type SolverInputContext = {
 
 export function createSchematicTraceSolverInputProblem(
   group: Group<any>,
+  opts: { schematicSheetId?: string } = {},
 ): SolverInputContext {
   const { db } = group.root!
 
@@ -91,6 +92,11 @@ export function createSchematicTraceSolverInputProblem(
   const schematicComponents = db.schematic_component
     .list()
     .filter((a) => allSchematicGroupIds.includes(a.schematic_group_id!))
+    .filter(
+      (schematicComponent) =>
+        opts.schematicSheetId === undefined ||
+        schematicComponent.schematic_sheet_id === opts.schematicSheetId,
+    )
   const schematicComponentIds = new Set(
     schematicComponents.map((component) => component.schematic_component_id),
   )
@@ -100,6 +106,16 @@ export function createSchematicTraceSolverInputProblem(
       component,
     ]),
   )
+  const schematicComponentCountBySourceComponentId = new Map<string, number>()
+  for (const schematicComponent of schematicComponents) {
+    if (!schematicComponent.source_component_id) continue
+    schematicComponentCountBySourceComponentId.set(
+      schematicComponent.source_component_id,
+      (schematicComponentCountBySourceComponentId.get(
+        schematicComponent.source_component_id,
+      ) ?? 0) + 1,
+    )
+  }
   const textBoxes = db.schematic_text
     .list()
     .filter(
@@ -152,12 +168,18 @@ export function createSchematicTraceSolverInputProblem(
 
     for (const schematicPort of schematicPorts) {
       const sourcePort = db.source_port.get(schematicPort.source_port_id)!
-      const selector = getSchematicPortSelector({
+      const baseSelector = getSchematicPortSelector({
         componentName:
           sourceComponent?.name ?? schematicComponent.schematic_component_id,
         schematicPort,
         sourcePort,
       })
+      const selector =
+        (schematicComponentCountBySourceComponentId.get(
+          schematicComponent.source_component_id!,
+        ) ?? 0) > 1
+          ? `${baseSelector}::${schematicComponent.schematic_component_id}`
+          : baseSelector
       pinIdToSchematicPortId.set(selector, schematicPort.schematic_port_id)
       schematicPortIdToPinId.set(schematicPort.schematic_port_id, selector)
     }
@@ -206,7 +228,7 @@ export function createSchematicTraceSolverInputProblem(
   // Maps for ports within this scope
   const allSourceAndSchematicPortIdsInScope = new Set<string>()
   const schPortIdToSourcePortId = new Map<string, string>()
-  const sourcePortIdToSchPortId = new Map<string, string>()
+  const schematicPortIdsBySourcePortId = new Map<string, string[]>()
   const userNetIdToConnKey = new Map<string, string>()
   for (const sc of schematicComponents) {
     const ports = db.schematic_port.list({
@@ -216,7 +238,10 @@ export function createSchematicTraceSolverInputProblem(
       allSourceAndSchematicPortIdsInScope.add(sp.schematic_port_id)
       if (sp.source_port_id) {
         schPortIdToSourcePortId.set(sp.schematic_port_id, sp.source_port_id)
-        sourcePortIdToSchPortId.set(sp.source_port_id, sp.schematic_port_id)
+        const schematicPortIds =
+          schematicPortIdsBySourcePortId.get(sp.source_port_id) ?? []
+        schematicPortIds.push(sp.schematic_port_id)
+        schematicPortIdsBySourcePortId.set(sp.source_port_id, schematicPortIds)
       }
     }
   }
@@ -234,7 +259,7 @@ export function createSchematicTraceSolverInputProblem(
   const tracesInScope = db.source_trace.list().filter((st) => {
     if (st.subcircuit_id === group.subcircuit_id) return true
     for (const source_port_id of st.connected_source_port_ids) {
-      if (sourcePortIdToSchPortId.has(source_port_id)) return true
+      if (schematicPortIdsBySourcePortId.has(source_port_id)) return true
     }
     return false
   })
@@ -274,57 +299,84 @@ export function createSchematicTraceSolverInputProblem(
     if (st.subcircuit_id && !allowedSubcircuitIds.has(st.subcircuit_id)) {
       continue
     }
-    const connected = (st.connected_source_port_ids ?? [])
-      .map((srcId: string) => sourcePortIdToSchPortId.get(srcId))
-      .filter(
-        (sourcePortId): sourcePortId is string =>
-          Boolean(sourcePortId) &&
-          allSourceAndSchematicPortIdsInScope.has(sourcePortId!),
+    const connectedSchematicPortIds = (st.connected_source_port_ids ?? [])
+      .map((sourcePortId) =>
+        (schematicPortIdsBySourcePortId.get(sourcePortId) ?? []).filter(
+          (schematicPortId) =>
+            allSourceAndSchematicPortIdsInScope.has(schematicPortId),
+        ),
+      )
+      .filter((schematicPortIds) => schematicPortIds.length > 0)
+
+    if (connectedSchematicPortIds.length >= 2) {
+      const [firstSchematicPortIds, secondSchematicPortIds] =
+        connectedSchematicPortIds.slice(0, 2)
+      const connectedPortPairs = firstSchematicPortIds.flatMap(
+        (firstSchematicPortId) =>
+          secondSchematicPortIds
+            .filter((secondSchematicPortId) => {
+              const firstSchematicPort =
+                db.schematic_port.get(firstSchematicPortId)
+              const secondSchematicPort = db.schematic_port.get(
+                secondSchematicPortId,
+              )
+              return (
+                firstSchematicPort?.schematic_sheet_id ===
+                secondSchematicPort?.schematic_sheet_id
+              )
+            })
+            .map(
+              (secondSchematicPortId) =>
+                [firstSchematicPortId, secondSchematicPortId] as const,
+            ),
       )
 
-    if (connected.length >= 2) {
-      const [a, b] = connected.slice(0, 2)
-      const pairKey = [a, b].sort().join("::")
-      if (!connectedPairKeys.has(pairKey)) {
-        connectedPairKeys.add(pairKey)
-        const traceLabel = st.name ?? st.display_name
-        const userNetId = traceLabel ?? st.source_trace_id
-        if (st.subcircuit_connectivity_map_key) {
-          userNetIdToConnKey.set(userNetId, st.subcircuit_connectivity_map_key)
+      for (const [a, b] of connectedPortPairs) {
+        const pairKey = [a, b].sort().join("::")
+        if (!connectedPairKeys.has(pairKey)) {
+          connectedPairKeys.add(pairKey)
+          const traceLabel = st.name ?? st.display_name
+          const userNetId = traceLabel ?? st.source_trace_id
+          if (st.subcircuit_connectivity_map_key) {
+            userNetIdToConnKey.set(
+              userNetId,
+              st.subcircuit_connectivity_map_key,
+            )
+          }
+          const portA = db.schematic_port.get(a)
+          const portB = db.schematic_port.get(b)
+          let portDistance = 0
+          if (portA && portB) {
+            portDistance = Math.sqrt(
+              (portA.center.x - portB.center.x) ** 2 +
+                (portA.center.y - portB.center.y) ** 2,
+            )
+          }
+          const maxMspDist =
+            group._parsedProps.schMaxTraceDistance ??
+            DEFAULT_MAX_MSP_PAIR_DISTANCE
+          let netLabelWidth: number | undefined
+          if (
+            traceLabel &&
+            !traceLabel.startsWith(".") &&
+            portDistance > maxMspDist
+          ) {
+            netLabelWidth = Number(
+              getSchematicNetLabelTextWidth({
+                text: String(traceLabel),
+                font_size: 0.14,
+              }).toFixed(2),
+            )
+          }
+          directConnections.push({
+            pinIds: [a, b].map((id) => schematicPortIdToPinId.get(id)!) as [
+              string,
+              string,
+            ],
+            netId: userNetId,
+            netLabelWidth,
+          })
         }
-        const portA = db.schematic_port.get(a)
-        const portB = db.schematic_port.get(b)
-        let portDistance = 0
-        if (portA && portB) {
-          portDistance = Math.sqrt(
-            (portA.center.x - portB.center.x) ** 2 +
-              (portA.center.y - portB.center.y) ** 2,
-          )
-        }
-        const maxMspDist =
-          group._parsedProps.schMaxTraceDistance ??
-          DEFAULT_MAX_MSP_PAIR_DISTANCE
-        let netLabelWidth: number | undefined
-        if (
-          traceLabel &&
-          !traceLabel.startsWith(".") &&
-          portDistance > maxMspDist
-        ) {
-          netLabelWidth = Number(
-            getSchematicNetLabelTextWidth({
-              text: String(traceLabel),
-              font_size: 0.14,
-            }).toFixed(2),
-          )
-        }
-        directConnections.push({
-          pinIds: [a, b].map((id) => schematicPortIdToPinId.get(id)!) as [
-            string,
-            string,
-          ],
-          netId: userNetId,
-          netLabelWidth,
-        })
       }
     }
   }
