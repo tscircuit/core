@@ -32,6 +32,9 @@ const DEFAULT_AVAILABLE_ROTATIONS = [0, 90, 180, 270] as const
 type MatchpackRotation = (typeof DEFAULT_AVAILABLE_ROTATIONS)[number]
 type SourceComponentId = SourceComponentBase["source_component_id"]
 type SchematicSheetId = SchematicSheet["schematic_sheet_id"]
+type SchematicMatchPackLayoutOptions = {
+  schematicSheetId?: SchematicSheetId
+}
 
 type NestedGroupMatchpackProxy = {
   center: Point
@@ -374,7 +377,7 @@ function convertTreeToMatchPackInputProblem(
   tree: CircuitJsonTreeNode,
   db: CircuitJsonUtilObjects,
   group: Group<any>,
-  schematicSheetId?: SchematicSheetId,
+  opts: SchematicMatchPackLayoutOptions = {},
 ): {
   inputProblem: InputProblem
   nestedGroupMatchpackProxyMap: Record<string, NestedGroupMatchpackProxy>
@@ -423,7 +426,7 @@ function convertTreeToMatchPackInputProblem(
       const schematicComponent = getSchematicComponentForSourceComponent({
         db,
         sourceComponentId: child.sourceComponent.source_component_id,
-        schematicSheetId,
+        schematicSheetId: opts.schematicSheetId,
       })
 
       if (!schematicComponent) return
@@ -803,7 +806,7 @@ export function applySchematicMatchPackLayoutToTree<
 >(
   group: Group<Props>,
   tree: CircuitJsonTreeNode,
-  opts: { schematicSheetId?: SchematicSheetId } = {},
+  opts: SchematicMatchPackLayoutOptions = {},
 ): void {
   const { db } = group.root!
 
@@ -821,7 +824,7 @@ export function applySchematicMatchPackLayoutToTree<
 
   debug("Converting circuit tree to InputProblem...")
   const { inputProblem, nestedGroupMatchpackProxyMap } =
-    convertTreeToMatchPackInputProblem(tree, db, group, opts.schematicSheetId)
+    convertTreeToMatchPackInputProblem(tree, db, group, opts)
 
   if (debug.enabled) {
     group.root?.emit("debug:logOutput", {
