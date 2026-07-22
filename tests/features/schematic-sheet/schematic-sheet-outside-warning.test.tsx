@@ -1,14 +1,5 @@
 import { expect, test } from "bun:test"
-import type { AnyCircuitElement } from "circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
-
-type SchematicElementOutsideSheetWarningRecord = {
-  type: "schematic_element_outside_sheet_warning"
-  schematic_element_type:
-    | "schematic_component"
-    | "schematic_net_label"
-    | "schematic_trace"
-}
 
 test("warns when components, net labels, and traces extend outside a schematic sheet", async () => {
   const { circuit } = getTestFixture()
@@ -43,13 +34,7 @@ test("warns when components, net labels, and traces extend outside a schematic s
 
   await circuit.renderUntilSettled()
 
-  const circuitJson = circuit.db.toArray() as unknown as Array<
-    AnyCircuitElement | SchematicElementOutsideSheetWarningRecord
-  >
-  const warnings = circuitJson.filter(
-    (element): element is SchematicElementOutsideSheetWarningRecord =>
-      element.type === "schematic_element_outside_sheet_warning",
-  )
+  const warnings = circuit.db.schematic_element_outside_sheet_warning.list()
   expect(
     warnings.map((warning) => warning.schematic_element_type).sort(),
   ).toEqual([

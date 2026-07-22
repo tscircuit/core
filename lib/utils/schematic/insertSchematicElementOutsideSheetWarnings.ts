@@ -1,6 +1,5 @@
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import type {
-  AnyCircuitElementInput,
   SchematicComponent,
   SchematicNetLabel,
   SchematicTrace,
@@ -20,17 +19,6 @@ type CheckedSchematicElement =
   | SchematicComponent
   | SchematicNetLabel
   | SchematicTrace
-
-// This named boundary type can be replaced by the Circuit JSON export after
-// tscircuit/circuit-json#658 is released.
-type SchematicElementOutsideSheetWarningInput = {
-  type: "schematic_element_outside_sheet_warning"
-  warning_type: "schematic_element_outside_sheet_warning"
-  message: string
-  schematic_sheet_id: string
-  schematic_element_type: CheckedSchematicElement["type"]
-  schematic_element_id: string
-}
 
 // These dimensions match circuit-to-svg's A4 landscape schematic sheet.
 const SCHEMATIC_UNIT_TO_MM = 10.16 / 1.1
@@ -193,14 +181,12 @@ export const insertSchematicElementOutsideSheetWarnings = ({
     if (!isOutsideSheet) continue
 
     const schematicElementId = getSchematicElementId(schematicElement)
-    const warning: SchematicElementOutsideSheetWarningInput = {
-      type: "schematic_element_outside_sheet_warning",
+    db.schematic_element_outside_sheet_warning.insert({
       warning_type: "schematic_element_outside_sheet_warning",
       message: `${schematicElement.type} ${schematicElementId} extends outside the drawing area of schematic sheet "${schematicSheetName}"`,
       schematic_sheet_id: schematicSheetId,
       schematic_element_type: schematicElement.type,
       schematic_element_id: schematicElementId,
-    }
-    db.insert(warning as unknown as AnyCircuitElementInput)
+    })
   }
 }
