@@ -50,7 +50,7 @@
     "@tscircuit/matchpack": "^0.0.43",
     "@tscircuit/math-utils": "^0.0.36",
     "@tscircuit/miniflex": "^0.0.4",
-    "@tscircuit/ngspice-spice-engine": "github:tscircuit/ngspice-spice-engine#744c31adc94d4edea2f815df1860b17104b3b799",
+    "@tscircuit/ngspice-spice-engine": "github:tscircuit/ngspice-spice-engine#a2eda4935f14fec18c7eed1e622f1122cd4b5a9a",
     "@tscircuit/props": "github:tscircuit/props#7285ee7858d05b1e9e3218cbd15c0ca7d4c827ab",
     "@tscircuit/schematic-match-adapt": "^0.0.18",
     "@tscircuit/schematic-trace-solver": "^0.0.106",
@@ -88,7 +88,7 @@
     "react-dom": "^19.1.0",
     "schematic-symbols": "^0.0.233",
     "spicets": "^0.0.2",
-    "spicey": "github:tscircuit/spicey#8a3e33231758f7358f1617ec025689027b0869a8",
+    "spicey": "github:tscircuit/spicey#b1c1b946ae34ed27f341bddcbc4175554fb66754",
     "stack-svgs": "^0.0.1",
     "ts-expect": "^1.3.0",
     "tsup": "^8.2.4"
