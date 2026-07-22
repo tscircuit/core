@@ -10,12 +10,12 @@ import {
 } from "@tscircuit/schematic-trace-solver"
 import type { SourceNet } from "circuit-json"
 import { getSchematicNetLabelTextWidth } from "lib/utils/schematic/computeSchematicNetLabelCenter"
-import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
 import { convertFacingDirectionToElbowDirection } from "lib/utils/schematic/convertFacingDirectionToElbowDirection"
+import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
 import { Group } from "../Group"
+import { getSchematicPortSelector } from "./getSchematicPortSelector"
 import type { AxisDirection } from "./getSide"
 import { schematicTextToTextBox } from "./schematicTextToTextBounds"
-import { getSchematicPortSelector } from "./getSchematicPortSelector"
 
 const DEFAULT_MAX_MSP_PAIR_DISTANCE = 2.4
 const SCHEMATIC_RAIL_NET_LABEL_HEIGHT = 0.42
@@ -392,6 +392,16 @@ export function createSchematicTraceSolverInputProblem(
   for (const [connKey, schematicPortIds] of connKeyToPinIds) {
     const sourceNet = connKeyToSourceNet.get(connKey)
     if (sourceNet && schematicPortIds.length >= 1) {
+      // Same-net ports at one rendered position are one solver endpoint.
+      const seenPositions = new Set<string>()
+      const uniqueSchematicPortIds = schematicPortIds.filter((portId) => {
+        const center = db.schematic_port.get(portId)?.center
+        if (!center) return true
+        const positionKey = `${center.x},${center.y}`
+        if (seenPositions.has(positionKey)) return false
+        seenPositions.add(positionKey)
+        return true
+      })
       const userNetId = String(
         sourceNet.name || sourceNet.source_net_id || connKey,
       )
@@ -419,7 +429,7 @@ export function createSchematicTraceSolverInputProblem(
 
       netConnections.push({
         netId: userNetId,
-        pinIds: schematicPortIds.map(
+        pinIds: uniqueSchematicPortIds.map(
           (portId) => schematicPortIdToPinId.get(portId)!,
         ),
         netLabelWidth,

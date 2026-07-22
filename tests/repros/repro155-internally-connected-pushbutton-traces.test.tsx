@@ -39,5 +39,16 @@ test("repro155: redundant connections to internally connected pushbutton pins re
   circuit.render()
 
   expect(circuit.db.source_trace.list()).toHaveLength(4)
+  expect(
+    circuit.db.schematic_net_label
+      .list()
+      .map((label) => label.text)
+      .sort(),
+  ).toEqual(["GND", "SIGNAL"])
+  const gndLabel = circuit.db.schematic_net_label
+    .list()
+    .find((label) => label.text === "GND")!
+  const gndTrace = circuit.db.schematic_trace.list()[0]
+  expect(gndTrace.edges.at(-1)?.to).toEqual(gndLabel.anchor_position)
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })

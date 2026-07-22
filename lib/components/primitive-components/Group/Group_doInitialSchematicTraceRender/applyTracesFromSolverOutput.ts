@@ -1,12 +1,12 @@
-import { Group } from "../Group"
-import { SchematicTracePipelineSolver } from "@tscircuit/schematic-trace-solver"
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
+import { SchematicTracePipelineSolver } from "@tscircuit/schematic-trace-solver"
 import type { SchematicTrace } from "circuit-json"
+import Debug from "debug"
+import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
+import { Group } from "../Group"
 import { computeCrossings } from "./compute-crossings"
 import { computeJunctions } from "./compute-junctions"
 import { removeOverlappingSameNetCrossingSegments } from "./remove-overlapping-same-net-crossing-segments"
-import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
-import Debug from "debug"
 
 const debug = Debug("Group_doInitialSchematicTraceRender")
 
@@ -233,6 +233,30 @@ export function applyTracesFromSolverOutput(args: {
       schematicSheetId = endpointSchematicSheetIds.values().next().value
     } else if (endpointSchematicSheetIds.size === 0) {
       schematicSheetId = group._resolveSchematicSheetId()
+    }
+
+    // One rendered endpoint can represent several coincident physical pins.
+    if (subcircuit_connectivity_map_key) {
+      const endpoints = [edges[0]?.from, edges.at(-1)?.to]
+      for (const schematicPort of db.schematic_port.list()) {
+        const sourcePort = schematicPort.source_port_id
+          ? db.source_port.get(schematicPort.source_port_id)
+          : undefined
+        if (
+          sourcePort?.subcircuit_connectivity_map_key ===
+            subcircuit_connectivity_map_key &&
+          schematicPort.schematic_sheet_id === schematicSheetId &&
+          endpoints.some(
+            (point) =>
+              point?.x === schematicPort.center.x &&
+              point.y === schematicPort.center.y,
+          )
+        ) {
+          db.schematic_port.update(schematicPort.schematic_port_id, {
+            is_connected: true,
+          })
+        }
+      }
     }
 
     pendingTraces.push({
