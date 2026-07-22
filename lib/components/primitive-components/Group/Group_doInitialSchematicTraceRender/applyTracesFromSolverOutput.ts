@@ -94,6 +94,7 @@ export function applyTracesFromSolverOutput(args: {
   pinIdToSchematicPortId: Map<string, string>
   userNetIdToConnKey: Map<string, string>
   schematicPortIdsWithPreExistingNetLabels: Set<string>
+  logicalSchematicPortIdBySchematicPortId: Map<string, string>
 }) {
   const {
     group,
@@ -101,6 +102,7 @@ export function applyTracesFromSolverOutput(args: {
     pinIdToSchematicPortId,
     userNetIdToConnKey,
     schematicPortIdsWithPreExistingNetLabels,
+    logicalSchematicPortIdBySchematicPortId,
   } = args
   const { db } = group.root!
 
@@ -187,10 +189,24 @@ export function applyTracesFromSolverOutput(args: {
       const pA = pinIdToSchematicPortId.get(solvedTracePath.pins[0]?.pinId!)
       const pB = pinIdToSchematicPortId.get(solvedTracePath.pins[1]?.pinId!)
       if (pA && pB) {
-        // Mark ports as connected on schematic
-        for (const schPid of [pA, pB]) {
-          const existing = db.schematic_port.get(schPid)
-          if (existing) db.schematic_port.update(schPid, { is_connected: true })
+        // Propagate routed state to every physical port represented by either
+        // routed logical symbol port.
+        const routedLogicalPortIds = new Set(
+          [pA, pB].map(
+            (portId) =>
+              logicalSchematicPortIdBySchematicPortId.get(portId) ?? portId,
+          ),
+        )
+        for (const schematicPort of db.schematic_port.list()) {
+          const logicalPortId =
+            logicalSchematicPortIdBySchematicPortId.get(
+              schematicPort.schematic_port_id,
+            ) ?? schematicPort.schematic_port_id
+          if (routedLogicalPortIds.has(logicalPortId)) {
+            db.schematic_port.update(schematicPort.schematic_port_id, {
+              is_connected: true,
+            })
+          }
         }
 
         subcircuit_connectivity_map_key = userNetIdToConnKey.get(
@@ -233,30 +249,6 @@ export function applyTracesFromSolverOutput(args: {
       schematicSheetId = endpointSchematicSheetIds.values().next().value
     } else if (endpointSchematicSheetIds.size === 0) {
       schematicSheetId = group._resolveSchematicSheetId()
-    }
-
-    // One rendered endpoint can represent several coincident physical pins.
-    if (subcircuit_connectivity_map_key) {
-      const endpoints = [edges[0]?.from, edges.at(-1)?.to]
-      for (const schematicPort of db.schematic_port.list()) {
-        const sourcePort = schematicPort.source_port_id
-          ? db.source_port.get(schematicPort.source_port_id)
-          : undefined
-        if (
-          sourcePort?.subcircuit_connectivity_map_key ===
-            subcircuit_connectivity_map_key &&
-          schematicPort.schematic_sheet_id === schematicSheetId &&
-          endpoints.some(
-            (point) =>
-              point?.x === schematicPort.center.x &&
-              point.y === schematicPort.center.y,
-          )
-        ) {
-          db.schematic_port.update(schematicPort.schematic_port_id, {
-            is_connected: true,
-          })
-        }
-      }
     }
 
     pendingTraces.push({

@@ -12,6 +12,7 @@ import type { SourceNet } from "circuit-json"
 import { getSchematicNetLabelTextWidth } from "lib/utils/schematic/computeSchematicNetLabelCenter"
 import { convertFacingDirectionToElbowDirection } from "lib/utils/schematic/convertFacingDirectionToElbowDirection"
 import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
+import { Port } from "../../Port"
 import { Group } from "../Group"
 import { getSchematicPortSelector } from "./getSchematicPortSelector"
 import type { AxisDirection } from "./getSide"
@@ -58,6 +59,7 @@ export type SolverInputContext = {
 
   allSourceAndSchematicPortIdsInScope: Set<string>
   schPortIdToSourcePortId: Map<string, string>
+  logicalSchematicPortIdBySchematicPortId: Map<string, string>
 }
 
 export function createSchematicTraceSolverInputProblem(
@@ -232,6 +234,48 @@ export function createSchematicTraceSolverInputProblem(
     }
   }
 
+  // Physical pins that resolve to the same schematic symbol port share one
+  // logical solver endpoint. Explicitly positioned ports remain independent.
+  const logicalSchematicPortIdBySchematicPortId = new Map<string, string>()
+  for (const port of group.selectAll<Port>("port")) {
+    const schematicPortId = port.schematic_port_id
+    if (
+      !schematicPortId ||
+      !allSourceAndSchematicPortIdsInScope.has(schematicPortId)
+    ) {
+      continue
+    }
+    const hasExplicitSchematicPosition =
+      port._parsedProps.schX !== undefined &&
+      port._parsedProps.schY !== undefined
+    if (hasExplicitSchematicPosition) {
+      logicalSchematicPortIdBySchematicPortId.set(
+        schematicPortId,
+        schematicPortId,
+      )
+      continue
+    }
+    if (!port.getParentNormalComponent()?.getSchematicSymbol()) continue
+    const internallyConnectedPorts =
+      port._getPortsInternallyConnectedToThisPort()
+    const logicalSymbolPortDef =
+      port.schematicSymbolPortDef ??
+      internallyConnectedPorts.find(
+        (connectedPort) => connectedPort.schematicSymbolPortDef,
+      )?.schematicSymbolPortDef
+    if (!logicalSymbolPortDef) continue
+    const representativeSchematicPortId = internallyConnectedPorts.find(
+      (connectedPort) =>
+        connectedPort.schematicSymbolPortDef === logicalSymbolPortDef,
+    )?.schematic_port_id
+    if (representativeSchematicPortId) {
+      logicalSchematicPortIdBySchematicPortId.set(
+        schematicPortId,
+        representativeSchematicPortId,
+      )
+    }
+  }
+
   // Determine allowed subcircuits (this group and its child groups)
   const allowedSubcircuitIds = new Set<string>()
   if (group.subcircuit_id) allowedSubcircuitIds.add(group.subcircuit_id)
@@ -392,14 +436,12 @@ export function createSchematicTraceSolverInputProblem(
   for (const [connKey, schematicPortIds] of connKeyToPinIds) {
     const sourceNet = connKeyToSourceNet.get(connKey)
     if (sourceNet && schematicPortIds.length >= 1) {
-      // Same-net ports at one rendered position are one solver endpoint.
-      const seenPositions = new Set<string>()
+      const seenLogicalPortIds = new Set<string>()
       const uniqueSchematicPortIds = schematicPortIds.filter((portId) => {
-        const center = db.schematic_port.get(portId)?.center
-        if (!center) return true
-        const positionKey = `${center.x},${center.y}`
-        if (seenPositions.has(positionKey)) return false
-        seenPositions.add(positionKey)
+        const logicalPortId =
+          logicalSchematicPortIdBySchematicPortId.get(portId) ?? portId
+        if (seenLogicalPortIds.has(logicalPortId)) return false
+        seenLogicalPortIds.add(logicalPortId)
         return true
       })
       const userNetId = String(
@@ -479,5 +521,6 @@ export function createSchematicTraceSolverInputProblem(
     connKeysWithExplicitPortNetTraces,
     allSourceAndSchematicPortIdsInScope,
     schPortIdToSourcePortId,
+    logicalSchematicPortIdBySchematicPortId,
   }
 }
