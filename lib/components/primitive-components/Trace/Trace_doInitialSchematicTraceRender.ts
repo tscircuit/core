@@ -63,12 +63,10 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
 
   const resolveSchematicPortForSheet = (port: Port) => {
     if (schematicSheetId && port.source_port_id) {
-      const sheetSchematicPort = db.schematic_port
-        .list({ source_port_id: port.source_port_id })
-        .find(
-          (schematicPort) =>
-            schematicPort.schematic_sheet_id === schematicSheetId,
-        )
+      const sheetSchematicPort = db.schematic_port.getWhere({
+        source_port_id: port.source_port_id,
+        schematic_sheet_id: schematicSheetId,
+      })
       if (sheetSchematicPort) return sheetSchematicPort
     }
 
