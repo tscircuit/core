@@ -14,7 +14,7 @@ export function Group_doInitialSchematicLayoutMatchPack<
     source_group_id: group.source_group_id!,
   })
 
-  for (const tree of trees) {
-    applySchematicMatchPackLayoutToTree(group, tree)
+  for (const { tree, schematicSheetId } of trees) {
+    applySchematicMatchPackLayoutToTree(group, tree, { schematicSheetId })
   }
 }
