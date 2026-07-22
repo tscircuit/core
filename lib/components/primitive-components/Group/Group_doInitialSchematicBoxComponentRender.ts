@@ -1,8 +1,9 @@
+import type { SchematicComponent } from "circuit-json"
 import { underscorifyPinStyles } from "lib/soup/underscorifyPinStyles"
 import { underscorifyPortArrangement } from "lib/soup/underscorifyPortArrangement"
-import type { Group } from "./Group"
+import { insertSchematicBoxTooSmallWarnings } from "lib/utils/schematic/insert-schematic-box-too-small-warnings"
 import type { Port } from "../Port/Port"
-import type { SchematicComponent } from "circuit-json"
+import type { Group } from "./Group"
 
 const parsePinNumberFromPortName = (
   name: string | undefined,
@@ -89,6 +90,7 @@ export const Group_doInitialSchematicBoxComponentRender = (
 
   const dimensions = group._getSchematicBoxDimensions()
   if (!dimensions) return
+  insertSchematicBoxTooSmallWarnings(group, dimensions)
 
   const center = group._getGlobalSchematicPositionBeforeLayout()
   const size = dimensions.getSize()

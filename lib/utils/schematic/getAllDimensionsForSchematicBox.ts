@@ -89,6 +89,7 @@ export interface SchematicBoxDimensions {
     pinNumber: number,
   ): SchematicBoxPortPositionWithMetadata | null
   getSize(): { width: number; height: number }
+  getMinimumSizeForPins(): { width: number; height: number }
   getSizeIncludingPins(): { width: number; height: number }
 }
 
@@ -611,6 +612,12 @@ export const getAllDimensionsForSchematicBox = (
     },
     getSize(): { width: number; height: number } {
       return { width: resolvedSchWidth, height: schHeight }
+    },
+    getMinimumSizeForPins(): { width: number; height: number } {
+      return {
+        width: Math.max(sideLengths.top, sideLengths.bottom),
+        height: Math.max(sideLengths.left, sideLengths.right),
+      }
     },
     getSizeIncludingPins(): { width: number; height: number } {
       return {

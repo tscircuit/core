@@ -1,4 +1,5 @@
 import { schematic_manual_edit_conflict_warning } from "circuit-json"
+import { insertSchematicBoxTooSmallWarnings } from "lib/utils/schematic/insert-schematic-box-too-small-warnings"
 import { isValidElement as isReactElement } from "react"
 import type { NormalComponent } from "./NormalComponent"
 
@@ -56,6 +57,7 @@ export function NormalComponent_doInitialSchematicComponentRender(
   } else {
     const dimensions = component._getSchematicBoxDimensions()
     if (dimensions) {
+      insertSchematicBoxTooSmallWarnings(component, dimensions)
       component._doInitialSchematicComponentRenderWithSchematicBoxDimensions()
     }
   }
