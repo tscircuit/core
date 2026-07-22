@@ -51,7 +51,7 @@
     "@tscircuit/math-utils": "^0.0.36",
     "@tscircuit/miniflex": "^0.0.4",
     "@tscircuit/ngspice-spice-engine": "github:tscircuit/ngspice-spice-engine#744c31adc94d4edea2f815df1860b17104b3b799",
-    "@tscircuit/props": "github:tscircuit/props#cf9c187f5318d3b8b71062779a99f456bc312e3c",
+    "@tscircuit/props": "github:tscircuit/props#7285ee7858d05b1e9e3218cbd15c0ca7d4c827ab",
     "@tscircuit/schematic-match-adapt": "^0.0.18",
     "@tscircuit/schematic-trace-solver": "^0.0.106",
     "@tscircuit/solver-utils": "^0.0.16",
