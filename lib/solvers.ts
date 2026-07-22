@@ -1,9 +1,8 @@
-import { PackSolver2 } from "calculate-packing"
 import {
-  AutoroutingPipelineSolver,
   AssignableAutoroutingPipeline2,
-  AutoroutingPipeline1_OriginalUnravel,
   AssignableAutoroutingPipeline3,
+  AutoroutingPipeline1_OriginalUnravel,
+  AutoroutingPipelineSolver,
   AutoroutingPipelineSolver3_HgPortPointPathing,
   AutoroutingPipelineSolver4,
   AutoroutingPipelineSolver5,
@@ -11,7 +10,9 @@ import {
   AutoroutingPipelineSolver8,
 } from "@tscircuit/capacity-autorouter"
 import { CopperPourPipelineSolver } from "@tscircuit/copper-pour-solver"
+import { CreateFdmEnclosureSolver } from "@tscircuit/create-fdm-enclosure"
 import { SchematicTracePipelineSolver } from "@tscircuit/schematic-trace-solver"
+import { PackSolver2 } from "calculate-packing"
 
 export const SOLVERS = {
   PackSolver2,
@@ -25,6 +26,7 @@ export const SOLVERS = {
   AutoroutingPipelineSolver7_MultiGraph,
   AutoroutingPipelineSolver8,
   CopperPourPipelineSolver,
+  CreateFdmEnclosureSolver,
   SchematicTracePipelineSolver,
 }
 
