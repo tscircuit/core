@@ -770,7 +770,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
               input_simple_route_json: getSimpleRouteJsonFromCircuitJson({
                 db,
                 minTraceWidth: Number(props.minTraceWidth ?? 0.15),
-                nominalTraceWidth: this.props.nominalTraceWidth,
+                nominalTraceWidth: this._resolveNominalTraceWidth(props),
                 subcircuit_id: this.subcircuit_id,
                 subcircuitComponent: this,
               }).simpleRouteJson,
@@ -897,7 +897,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const isSingleLayerBoard = this._getSubcircuitLayerCount() === 1
 
     const minTraceWidth = Number(props.minTraceWidth ?? 0.15)
-    const nominalTraceWidth = Number(props.nominalTraceWidth ?? 0.15)
+    const nominalTraceWidth = this._resolveNominalTraceWidth(props)
 
     const { simpleRouteJson: baseSimpleRouteJson } =
       getSimpleRouteJsonFromCircuitJson({
@@ -1933,6 +1933,14 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       minY: minY - padding,
       maxY: maxY + padding,
     }
+  }
+
+  // `defaultTraceWidth` takes precedence over `nominalTraceWidth` when both
+  _resolveNominalTraceWidth(props: SubcircuitGroupProps): number | undefined {
+    const preferredTraceWidth =
+      props.defaultTraceWidth ?? props.nominalTraceWidth
+    if (preferredTraceWidth === undefined) return undefined
+    return Number(preferredTraceWidth)
   }
 
   _getAutorouterConfig(): AutorouterConfig {

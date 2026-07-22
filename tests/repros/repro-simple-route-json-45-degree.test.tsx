@@ -56,7 +56,7 @@ test("45 degree rects bug", () => {
       "minViaPadDiameter": 0.3,
       "min_via_hole_diameter": 0.2,
       "min_via_pad_diameter": 0.3,
-      "nominalTraceWidth": undefined,
+      "nominalTraceWidth": 0.1,
       "obstacles": [
         {
           "ccwRotationDegrees": 45,
