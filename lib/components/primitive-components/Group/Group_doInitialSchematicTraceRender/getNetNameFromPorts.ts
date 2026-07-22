@@ -19,6 +19,8 @@ export const getNetNameFromPorts = (
     }
   }
 
-  const netName = ports.map((p) => p._getNetLabelText()).join("/")
-  return { name: netName, wasAssignedDisplayLabel: false }
+  return {
+    name: ports.length > 0 ? "NAME?" : "",
+    wasAssignedDisplayLabel: false,
+  }
 }

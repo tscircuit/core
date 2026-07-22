@@ -30,5 +30,5 @@ export const getNetNameFromSourcePorts = (
     .filter((name): name is string => Boolean(name))
 
   if (portNames.length === 0) return undefined
-  return [...new Set(portNames)].join("/")
+  return "NAME?"
 }

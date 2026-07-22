@@ -137,10 +137,14 @@ export const insertNetLabelsForPortsMissingTrace = ({
     if (wasAssignedDisplayLabel) {
       assignedPortNetLabelText = resolvedPortNetLabelText
     }
-    const implicitPortLabelText = connectedSourcePortIdsForKey
+    const fallbackPortNetLabelText = wasAssignedDisplayLabel
+      ? undefined
+      : resolvedPortNetLabelText || undefined
+    const implicitPortLabels = connectedSourcePortIdsForKey
       .map((sourcePortId) => getSourcePortNetLabelText(db, sourcePortId))
       .filter((label): label is string => Boolean(label))
-      .join("/")
+    const implicitPortLabelText =
+      implicitPortLabels.length > 0 ? "NAME?" : undefined
     const directCrossSubcircuitConnectionLabelText =
       getDirectCrossSubcircuitConnectionLabelText(db, srcPortId)
     const text =
@@ -148,6 +152,7 @@ export const insertNetLabelsForPortsMissingTrace = ({
       sourceNet?.source_net_id ||
       assignedPortNetLabelText ||
       directCrossSubcircuitConnectionLabelText ||
+      fallbackPortNetLabelText ||
       implicitPortLabelText ||
       connKey
 
