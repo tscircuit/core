@@ -1,4 +1,4 @@
-import { test, expect } from "bun:test"
+import { expect, test } from "bun:test"
 import type { PartsEngine } from "@tscircuit/props"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
@@ -23,5 +23,7 @@ test("connector usb_c without footprint emits warning when partsEngine.fetchPart
   expect(warnings[0].message).toContain(
     "fetchPartCircuitJson is not configured",
   )
+  expect(circuit.db.source_port.list()).toHaveLength(16)
+  expect(circuit.db.schematic_port.list()).toHaveLength(16)
   expect(circuit.db.pcb_smtpad.list().length).toBe(0)
 })

@@ -1,25 +1,26 @@
 import { guessCableInsertCenter } from "@tscircuit/infer-cable-insertion-point"
 import {
-  connectorProps,
   type ConnectorProps,
   type PartsEngine,
   type SchematicPinStyle,
   type SchematicPortArrangement,
+  connectorProps,
 } from "@tscircuit/props"
 import type { AnyCircuitElement, SourceSimpleConnector } from "circuit-json"
 import { source_part_not_found_warning } from "circuit-json"
-import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromCircuitJson"
 import { convertCircuitJsonToUsbCStandardCircuitJson } from "lib/utils/connectors/convertCircuitJsonToUsbCStandardCircuitJson"
+import { extractCadModelFromCircuitJson } from "lib/utils/connectors/extractCadModelFromCircuitJson"
+import { USB_C_CANONICAL_PIN_DEFINITIONS } from "lib/utils/connectors/usb-c-canonical-pin-definitions"
+import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromCircuitJson"
 import {
-  getAllDimensionsForSchematicBox,
   type SchematicBoxDimensions,
+  getAllDimensionsForSchematicBox,
 } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
 import { getNumericSchPinStyle } from "lib/utils/schematic/getNumericSchPinStyle"
-import { extractCadModelFromCircuitJson } from "lib/utils/connectors/extractCadModelFromCircuitJson"
 import { symbols } from "schematic-symbols"
+import { Port } from "../primitive-components/Port"
 import { Chip } from "./Chip"
 import { insertInnerSymbolInSchematicBox } from "./Connector_insertInnerSymbolInSchematicBox"
-import type { Port } from "../primitive-components/Port"
 
 const USB_C_SIGNAL_LABELS_IN_ORDER = [
   "VBUS1",
@@ -90,7 +91,23 @@ export class Connector<
     return true
   }
 
-  private _insertStandardConnectorCircuitJsonError(
+  private _addUsbCCanonicalFallbackPorts(): void {
+    if (this.selectAll("port").length > 0) return
+
+    this.addAll(
+      USB_C_CANONICAL_PIN_DEFINITIONS.map(
+        ({ label, aliases }, pinIndex) =>
+          new Port({
+            pinNumber: pinIndex + 1,
+            name: label,
+            aliases: [...aliases],
+          }),
+      ),
+    )
+    this._markDirty("InitializePortsFromChildren")
+  }
+
+  private _handleStandardConnectorCircuitJsonFailure(
     standard: string,
     message: string,
   ): void {
@@ -107,6 +124,10 @@ export class Connector<
       part_name: this.name,
     })
     db.source_part_not_found_warning.insert(warning)
+
+    if (standard === "usb_c") {
+      this._addUsbCCanonicalFallbackPorts()
+    }
   }
 
   private _getSupplierPartNumbersToTry(
@@ -345,7 +366,7 @@ export class Connector<
       | PartsEngine
       | undefined
     if (partsEngine && !partsEngine.fetchPartCircuitJson) {
-      this._insertStandardConnectorCircuitJsonError(
+      this._handleStandardConnectorCircuitJsonFailure(
         standard,
         "partsEngine.fetchPartCircuitJson is not configured",
       )
@@ -388,7 +409,7 @@ export class Connector<
           sourceComponentForQuery.manufacturer_part_number,
         )
         if (!circuitJson) {
-          this._insertStandardConnectorCircuitJsonError(
+          this._handleStandardConnectorCircuitJsonFailure(
             standard,
             "part circuit JSON was not found",
           )
@@ -402,7 +423,7 @@ export class Connector<
             supplier_part_numbers: {},
           })
         }
-        this._insertStandardConnectorCircuitJsonError(standard, error.message)
+        this._handleStandardConnectorCircuitJsonFailure(standard, error.message)
       }
     })
   }

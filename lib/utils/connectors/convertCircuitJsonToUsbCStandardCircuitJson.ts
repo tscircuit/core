@@ -1,28 +1,5 @@
 import type { AnyCircuitElement } from "circuit-json"
-
-/**
- * Canonical USB-C pin labels every USB-C connector schematic should expose.
- * The order matters: earlier labels get first pick when multiple unassigned
- * ports could match.
- */
-const STANDARD_USB_C_PIN_LABELS: Array<{ label: string; aliases: string[] }> = [
-  { label: "GND1", aliases: [] },
-  { label: "VBUS1", aliases: [] },
-  { label: "CC1", aliases: [] },
-  { label: "DP1", aliases: [] },
-  { label: "DM1", aliases: ["DN1"] },
-  { label: "SBU1", aliases: [] },
-  { label: "SBU2", aliases: [] },
-  { label: "DM2", aliases: ["DN2"] },
-  { label: "DP2", aliases: [] },
-  { label: "CC2", aliases: [] },
-  { label: "VBUS2", aliases: [] },
-  { label: "GND2", aliases: [] },
-  { label: "SHELL1", aliases: ["MH1", "EH1", "MOUNT1"] },
-  { label: "SHELL2", aliases: ["MH2", "EH2", "MOUNT2"] },
-  { label: "SHELL3", aliases: ["MH3", "EH3", "MOUNT3"] },
-  { label: "SHELL4", aliases: ["MH4", "EH4", "MOUNT4"] },
-]
+import { USB_C_CANONICAL_PIN_DEFINITIONS } from "./usb-c-canonical-pin-definitions"
 
 const PIN_NUMBER_HINT_PATTERN = /^(?:pin)?(\d+)$/i
 const dedupeHintsPreservingOrder = (hints: string[]): string[] =>
@@ -52,7 +29,7 @@ export const convertCircuitJsonToUsbCStandardCircuitJson = (
   }
 
   const canonicalHintsByPin: Record<`pin${number}`, string[]> = {}
-  for (const { label, aliases } of STANDARD_USB_C_PIN_LABELS) {
+  for (const { label, aliases } of USB_C_CANONICAL_PIN_DEFINITIONS) {
     const canonicalAndAliasHintsUpper = [label, ...aliases].map((s) =>
       s.toUpperCase(),
     )
