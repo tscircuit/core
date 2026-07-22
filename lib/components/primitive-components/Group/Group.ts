@@ -1935,9 +1935,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     }
   }
 
-  _resolveNominalTraceWidth(
-    props: SubcircuitGroupProps,
-  ): number | undefined {
+  _resolveNominalTraceWidth(props: SubcircuitGroupProps): number | undefined {
     const rawNominalTraceWidth =
       props.defaultTraceWidth ?? props.nominalTraceWidth
     if (rawNominalTraceWidth === undefined) return undefined
