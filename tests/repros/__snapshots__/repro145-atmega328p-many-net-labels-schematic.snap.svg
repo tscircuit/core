@@ -40,18 +40,18 @@
   " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.4523273545859998px"/><text class="net-label-text sch-net-label-text" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_8" x="404.9282308233331" y="300.45748311650993" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="13.070946191273999px" transform="">Y_IN2</text><path class="net-label sch-net-label" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_9" d="
     M 760.0222690196099,249.62602570600006
     L 756.1009851622277,256.88766247893005
-    L 576.5739597706703,256.88766247893005
-    L 576.5739597706703,242.36438893307005
+    L 662.4742817032502,256.88766247893005
+    L 662.4742817032502,242.36438893307005
     L 756.1009851622277,242.36438893307007
     Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.4523273545859998px"/><text class="net-label-text sch-net-label-text" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_9" x="753.4867959239729" y="249.62602570600006" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="13.070946191273999px" transform="">U_MCU_AREF/C_AREF_pin1</text><path class="net-label sch-net-label" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_10" d="
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.4523273545859998px"/><text class="net-label-text sch-net-label-text" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_9" x="753.4867959239729" y="249.62602570600006" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="13.070946191273999px" transform="">U_MCU_AREF</text><path class="net-label sch-net-label" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_10" d="
     M 571.2197129234299,314.98075666237
     L 575.1409967808121,307.71911988944004
-    L 754.6680221723695,307.71911988944004
-    L 754.6680221723695,322.2423934353
+    L 668.7677002397896,307.71911988944004
+    L 668.7677002397896,322.2423934353
     L 575.1409967808121,322.2423934353
     Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.4523273545859998px"/><text class="net-label-text sch-net-label-text" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_10" x="577.755186019067" y="314.98075666237" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="13.070946191273999px" transform="">U_MCU_AREF/C_AREF_pin1</text><path class="net-label sch-net-label" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_11" d="
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.4523273545859998px"/><text class="net-label-text sch-net-label-text" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_10" x="577.755186019067" y="314.98075666237" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="13.070946191273999px" transform="">U_MCU_AREF</text><path class="net-label sch-net-label" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_11" d="
     M 571.2197129234299,271.4109360247901
     L 575.1409967808121,264.1492992518601
     L 623.6971413358041,264.1492992518601
