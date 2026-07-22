@@ -1,6 +1,7 @@
 import { schematicSheetProps } from "@tscircuit/props"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { getBoundsForSchematic } from "lib/utils/autorouting/getBoundsForSchematic"
+import { insertSchematicElementOutsideSheetWarnings } from "lib/utils/schematic/insertSchematicElementOutsideSheetWarnings"
 
 export class SchematicSheet extends PrimitiveComponent<
   typeof schematicSheetProps
@@ -48,23 +49,31 @@ export class SchematicSheet extends PrimitiveComponent<
         (element as any).schematic_sheet_id === this.schematic_sheet_id,
     )
 
-    if (schematicElements.length === 0) return
+    let schematicSheetCenter = { x: 0, y: 0 }
+    if (schematicElements.length > 0) {
+      const bounds = getBoundsForSchematic(schematicElements)
+      if (
+        Number.isFinite(bounds.minX) &&
+        Number.isFinite(bounds.maxX) &&
+        Number.isFinite(bounds.minY) &&
+        Number.isFinite(bounds.maxY)
+      ) {
+        schematicSheetCenter = {
+          x: (bounds.minX + bounds.maxX) / 2,
+          y: (bounds.minY + bounds.maxY) / 2,
+        }
 
-    const bounds = getBoundsForSchematic(schematicElements)
-    if (
-      !Number.isFinite(bounds.minX) ||
-      !Number.isFinite(bounds.maxX) ||
-      !Number.isFinite(bounds.minY) ||
-      !Number.isFinite(bounds.maxY)
-    ) {
-      return
+        db.schematic_sheet.update(this.schematic_sheet_id, {
+          center: schematicSheetCenter,
+        } as any)
+      }
     }
 
-    db.schematic_sheet.update(this.schematic_sheet_id, {
-      center: {
-        x: (bounds.minX + bounds.maxX) / 2,
-        y: (bounds.minY + bounds.maxY) / 2,
-      },
-    } as any)
+    insertSchematicElementOutsideSheetWarnings({
+      db,
+      schematicSheetId: this.schematic_sheet_id,
+      schematicSheetName: this._parsedProps.displayName,
+      schematicSheetCenter,
+    })
   }
 }
