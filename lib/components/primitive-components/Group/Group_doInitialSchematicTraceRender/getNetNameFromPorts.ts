@@ -6,35 +6,32 @@ import { Port } from "../../Port"
  * trace can't be routed.
  */
 export const getNetNameFromPorts = (
-  connectedPorts: Port[],
+  ports: Port[],
 ): { name: string; wasAssignedDisplayLabel: boolean } => {
   // Are any of these ports connected to a trace with a display label?
-  for (const port of connectedPorts) {
-    const directlyConnectedTraces = port._getDirectlyConnectedTraces()
+  for (const port of ports) {
+    const traces = port._getDirectlyConnectedTraces()
 
-    for (const trace of directlyConnectedTraces) {
-      const explicitDisplayLabel = trace._getSchematicNetLabelText()
-      if (explicitDisplayLabel) {
-        return { name: explicitDisplayLabel, wasAssignedDisplayLabel: true }
+    for (const trace of traces) {
+      const displayLabel = trace._getSchematicNetLabelText()
+      if (displayLabel) {
+        return { name: displayLabel, wasAssignedDisplayLabel: true }
       }
     }
   }
 
-  const circuitJsonDb = connectedPorts.find((port) => port.root)?.root?.db
-  const connectedSourcePortIds = connectedPorts
+  const db = ports.find((port) => port.root)?.root?.db
+  const sourcePortIds = ports
     .map((port) => port.source_port_id)
     .filter((sourcePortId): sourcePortId is string => Boolean(sourcePortId))
-  const fallbackNetName = circuitJsonDb
-    ? getNetNameFromSourcePorts(circuitJsonDb, connectedSourcePortIds)
-    : connectedPorts
+  const netName = db
+    ? getNetNameFromSourcePorts(db, sourcePortIds)
+    : ports
         .map((port) => port._getNetLabelText())
         .filter((name): name is string => Boolean(name))
-        .sort((firstName, secondName) =>
-          firstName.localeCompare(secondName, undefined, {
-            numeric: true,
-            sensitivity: "base",
-          }),
+        .sort((a, b) =>
+          a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }),
         )[0]
 
-  return { name: fallbackNetName ?? "", wasAssignedDisplayLabel: false }
+  return { name: netName ?? "", wasAssignedDisplayLabel: false }
 }

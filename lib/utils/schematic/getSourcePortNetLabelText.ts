@@ -7,15 +7,15 @@ const compareNamesAlphanumerically = (firstName: string, secondName: string) =>
     sensitivity: "base",
   })
 
-const getComponentOrGroupNameForPort = (
-  circuitJsonDb: CircuitJsonUtilObjects,
+const getSourcePortOwnerName = (
+  db: CircuitJsonUtilObjects,
   sourcePort: SourcePort,
 ): string | undefined => {
   const sourceComponent = sourcePort.source_component_id
-    ? circuitJsonDb.source_component.get(sourcePort.source_component_id)
+    ? db.source_component.get(sourcePort.source_component_id)
     : undefined
   const sourceGroup = !sourceComponent
-    ? circuitJsonDb.source_group
+    ? db.source_group
         .list()
         .find((group) => group.subcircuit_id === sourcePort.subcircuit_id)
     : undefined
@@ -24,33 +24,30 @@ const getComponentOrGroupNameForPort = (
 }
 
 export const getSourcePortNetLabelText = (
-  circuitJsonDb: CircuitJsonUtilObjects,
+  db: CircuitJsonUtilObjects,
   sourcePortId: string,
 ): string | undefined => {
-  const sourcePort = circuitJsonDb.source_port.get(sourcePortId)
+  const sourcePort = db.source_port.get(sourcePortId)
   if (!sourcePort?.name) return undefined
 
-  const componentOrGroupName = getComponentOrGroupNameForPort(
-    circuitJsonDb,
-    sourcePort,
-  )
-  if (!componentOrGroupName) return undefined
+  const ownerName = getSourcePortOwnerName(db, sourcePort)
+  if (!ownerName) return undefined
 
-  return `${componentOrGroupName}_${sourcePort.name}`
+  return `${ownerName}_${sourcePort.name}`
 }
 
 export const getNetNameFromSourcePorts = (
-  circuitJsonDb: CircuitJsonUtilObjects,
-  connectedSourcePortIds: string[],
+  db: CircuitJsonUtilObjects,
+  sourcePortIds: string[],
 ): string | undefined => {
-  const connectedSourcePorts = connectedSourcePortIds
-    .map((sourcePortId) => circuitJsonDb.source_port.get(sourcePortId))
+  const sourcePorts = sourcePortIds
+    .map((sourcePortId) => db.source_port.get(sourcePortId))
     .filter((sourcePort): sourcePort is SourcePort => Boolean(sourcePort))
 
-  if (connectedSourcePorts.length === 0) return undefined
+  if (sourcePorts.length === 0) return undefined
 
   const pinCountByComponentId = new Map<string, number>()
-  for (const sourcePort of circuitJsonDb.source_port.list()) {
+  for (const sourcePort of db.source_port.list()) {
     if (!sourcePort.source_component_id) continue
     pinCountByComponentId.set(
       sourcePort.source_component_id,
@@ -58,19 +55,16 @@ export const getNetNameFromSourcePorts = (
     )
   }
 
-  const netLabelCandidates = connectedSourcePorts
+  const candidates = sourcePorts
     .map((sourcePort) => {
-      const componentOrGroupName = getComponentOrGroupNameForPort(
-        circuitJsonDb,
-        sourcePort,
-      )
-      if (!componentOrGroupName || !sourcePort.name) return null
+      const ownerName = getSourcePortOwnerName(db, sourcePort)
+      if (!ownerName || !sourcePort.name) return null
 
       return {
         sourcePort,
-        componentOrGroupName,
-        labelText: `${componentOrGroupName}_${sourcePort.name}`,
-        componentPinCount: sourcePort.source_component_id
+        ownerName,
+        label: `${ownerName}_${sourcePort.name}`,
+        ownerPinCount: sourcePort.source_component_id
           ? (pinCountByComponentId.get(sourcePort.source_component_id) ?? 0)
           : 0,
       }
@@ -79,18 +73,18 @@ export const getNetNameFromSourcePorts = (
       Boolean(candidate),
     )
 
-  netLabelCandidates.sort((firstCandidate, secondCandidate) => {
+  candidates.sort((firstCandidate, secondCandidate) => {
     // Prefer a pin on the component with the most pins, then its lower-numbered
     // connected pin (for example, U1_X1 before U1_X2).
-    const componentPinCountDifference =
-      secondCandidate.componentPinCount - firstCandidate.componentPinCount
-    if (componentPinCountDifference !== 0) return componentPinCountDifference
+    const pinCountDifference =
+      secondCandidate.ownerPinCount - firstCandidate.ownerPinCount
+    if (pinCountDifference !== 0) return pinCountDifference
 
-    const componentNameDifference = compareNamesAlphanumerically(
-      firstCandidate.componentOrGroupName,
-      secondCandidate.componentOrGroupName,
+    const ownerNameDifference = compareNamesAlphanumerically(
+      firstCandidate.ownerName,
+      secondCandidate.ownerName,
     )
-    if (componentNameDifference !== 0) return componentNameDifference
+    if (ownerNameDifference !== 0) return ownerNameDifference
 
     const firstPinNumber =
       firstCandidate.sourcePort.pin_number ?? Number.POSITIVE_INFINITY
@@ -105,5 +99,5 @@ export const getNetNameFromSourcePorts = (
     )
   })
 
-  return netLabelCandidates[0]?.labelText
+  return candidates[0]?.label
 }
