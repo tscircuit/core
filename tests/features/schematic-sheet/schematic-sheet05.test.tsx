@@ -50,7 +50,6 @@ test("schematic boxes connect on sheets through schSheetName", async () => {
       />
       <resistor
         name="R1"
-        schSheetName="Power Sheet"
         resistance="10k"
         footprint="0402"
         schX={-2.5}
@@ -76,7 +75,6 @@ test("schematic boxes connect on sheets through schSheetName", async () => {
       />
       <resistor
         name="R2"
-        schSheetName="Interface Sheet"
         resistance="1k"
         footprint="0402"
         schX={-2.5}

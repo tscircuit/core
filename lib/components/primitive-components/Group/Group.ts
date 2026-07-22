@@ -53,6 +53,7 @@ import { Port } from "../Port/Port"
 import { Trace } from "../Trace/Trace"
 import { TraceHint } from "../TraceHint"
 import type { RoutingPhasePlan } from "./GroupRoutingPhasePlan"
+import { Group_doInitialAssignSchematicSheetToConnectedComponents } from "./Group_doInitialAssignSchematicSheetToConnectedComponents"
 import { Group_doInitialPcbCalcPlacementResolution } from "./Group_doInitialPcbCalcPlacementResolution"
 import { Group_doInitialPcbComponentAnchorAlignment } from "./Group_doInitialPcbComponentAnchorAlignment"
 import { Group_doInitialPcbLayoutFlex } from "./Group_doInitialPcbLayoutFlex"
@@ -650,6 +651,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   doInitialSourceAddConnectivityMapKey(): void {
     Group_doInitialSourceAddConnectivityMapKey(this)
+    Group_doInitialAssignSchematicSheetToConnectedComponents(this)
   }
 
   _areChildSubcircuitsRouted(): boolean {

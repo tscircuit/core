@@ -6,7 +6,7 @@ import { getPinNumberFromPinLabelsKey } from "lib/utils/schematic/getPinNumberFr
 import type { Chip } from "../../normal-components/Chip"
 import type { SchematicBox } from "./SchematicBox"
 
-const getSchematicBoxPinLabels = (
+export const getSchematicBoxPinLabels = (
   pinLabels: PinLabelsProp | undefined,
 ): Array<{
   pinNumber: number
