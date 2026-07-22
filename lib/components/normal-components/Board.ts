@@ -8,7 +8,12 @@ import {
 import { jlcMinTolerances } from "@tscircuit/jlcpcb-manufacturing-specs"
 import { getBoundsFromPoints } from "@tscircuit/math-utils"
 import { boardProps } from "@tscircuit/props"
-import type { AnyCircuitElement, LayerRef, PcbBoard } from "circuit-json"
+import type {
+  AnyCircuitElement,
+  LayerRef,
+  PcbBoard,
+  SchematicComponentOverlapWarning,
+} from "circuit-json"
 import { getBoardAvailableLayers } from "lib/utils/getViaSpanLayers"
 import { type Matrix, compose, translate } from "transformation-matrix"
 import { getDescendantSubcircuitIds } from "../../utils/autorouting/getAncestorSubcircuitIds"
@@ -23,6 +28,7 @@ import { Subcircuit_doInitialRenderIsolatedSubcircuits } from "../primitive-comp
 import { Subcircuit_getSubcircuitPropHash } from "../primitive-components/Group/Subcircuit_getSubcircuitPropHash"
 import type { BoardI } from "./BoardI"
 import { Board_doInitialPcbPlacementDesignRuleChecks } from "./Board_doInitialPcbPlacementDesignRuleChecks"
+import { Board_doInitialSchematicDesignRuleChecks } from "./Board_doInitialSchematicDesignRuleChecks"
 
 const MIN_EFFECTIVE_BORDER_RADIUS_MM = 0.01
 
@@ -101,6 +107,9 @@ export class Board
   source_board_id: string | null = null
   _drcChecksComplete = false
   _drcChecksInProgress = false
+  _schematicComponentOverlapWarningIds: Array<
+    SchematicComponentOverlapWarning["schematic_component_overlap_warning_id"]
+  > = []
   _connectedSchematicPortPairs = new Set<string>()
   _panelPositionOffset: { x: number; y: number } | null = null
 
@@ -574,6 +583,23 @@ export class Board
 
     super.doInitialPcbDesignRuleChecks()
     this.updatePcbDesignRuleChecks()
+  }
+
+  doInitialSchematicDesignRuleChecks() {
+    Board_doInitialSchematicDesignRuleChecks(this)
+  }
+
+  updateSchematicDesignRuleChecks() {
+    this.removeSchematicDesignRuleChecks()
+    Board_doInitialSchematicDesignRuleChecks(this)
+  }
+
+  removeSchematicDesignRuleChecks() {
+    const { db } = this.root!
+    for (const warningId of this._schematicComponentOverlapWarningIds) {
+      db.schematic_component_overlap_warning.delete(warningId)
+    }
+    this._schematicComponentOverlapWarningIds = []
   }
 
   doInitialPcbPlacementDesignRuleChecks() {

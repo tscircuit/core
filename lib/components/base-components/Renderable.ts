@@ -48,6 +48,7 @@ export const orderedRenderPhases = [
   "SchematicTraceRender",
   "SchematicSheetRender",
   "SchematicReplaceNetLabelsWithSymbols",
+  "SchematicDesignRuleChecks",
   "PanelBoardLayout",
   "ValidatePcbCoordinates",
   "PcbComponentRender",
