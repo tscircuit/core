@@ -115,7 +115,11 @@ export abstract class PrimitiveComponent<
   }
 
   getSchematicSectionName(): string | null {
-    return this._parsedProps?.schSectionName ?? null
+    return (
+      this._parsedProps?.schSectionName ??
+      this.parent?.getSchematicSectionName?.() ??
+      null
+    )
   }
 
   get lowercaseComponentName() {

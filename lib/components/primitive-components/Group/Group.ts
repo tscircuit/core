@@ -68,6 +68,7 @@ import { Group_doInitialSchematicLayoutGrid } from "./Group_doInitialSchematicLa
 import { Group_doInitialSchematicLayoutMatchAdapt } from "./Group_doInitialSchematicLayoutMatchAdapt"
 import { Group_doInitialSchematicLayoutMatchPack } from "./Group_doInitialSchematicLayoutMatchPack"
 import { Group_doInitialSchematicLayoutSections } from "./Group_doInitialSchematicLayoutSections"
+import { getDirectSchematicLayoutChildren } from "./get-direct-schematic-layout-children"
 import { Group_doInitialSchematicTraceRender } from "./Group_doInitialSchematicTraceRender/Group_doInitialSchematicTraceRender"
 import { Group_doInitialSimulationSpiceEngineRender } from "./Group_doInitialSimulationSpiceEngineRender"
 import { Group_doInitialSourceAddConnectivityMapKey } from "./Group_doInitialSourceAddConnectivityMapKey"
@@ -1635,15 +1636,11 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     // unless any direct layout child defines schX or schY.
     // Schematic primitives (e.g. schematictext) can have explicit coordinates
     // without opting the entire group out of auto layout.
-    const anyLayoutChildHasSchCoords = this.children.some((child) => {
+    const anyLayoutChildHasSchCoords = getDirectSchematicLayoutChildren(
+      this,
+    ).some((child) => {
       const cProps = (child as any)._parsedProps
-      const participatesInAutoLayout =
-        (child as any).source_component_id !== null ||
-        (child as any).source_group_id !== null
-      return (
-        participatesInAutoLayout &&
-        (cProps?.schX !== undefined || cProps?.schY !== undefined)
-      )
+      return cProps?.schX !== undefined || cProps?.schY !== undefined
     })
     const hasManualEdits =
       (props.manualEdits?.schematic_placements?.length ?? 0) > 0
@@ -1666,10 +1663,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       return
     }
 
-    const hasAnySectionName = this.children.some(
+    const hasAnySectionName = getDirectSchematicLayoutChildren(this).some(
       (c) =>
-        c.source_component_id !== null &&
-        c._parsedProps?.schSectionName !== undefined,
+        c.source_component_id !== null && c.getSchematicSectionName() !== null,
     )
     const hasSections = hasAnySectionName
     if (hasSections) {

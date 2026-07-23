@@ -18,6 +18,10 @@ export class SchematicSection extends PrimitiveComponent<
     }
   }
 
+  getSchematicSectionName(): string {
+    return this._parsedProps.name
+  }
+
   // Pass null to compute bounds for components with no schSectionName
   _computeSectionBounds(
     board: PrimitiveComponent,
