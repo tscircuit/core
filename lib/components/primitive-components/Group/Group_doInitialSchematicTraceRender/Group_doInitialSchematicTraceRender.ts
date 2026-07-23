@@ -7,6 +7,7 @@ import { applyNetLabelPlacements } from "./applyNetLabelPlacements"
 import { insertNetLabelsForPortsMissingTrace } from "./insertNetLabelsForPortsMissingTrace"
 import { getSchematicPortIdsWithAssignedNetLabels } from "./getSchematicPortIdsWithAssignedNetLabels"
 import { getSchematicPortIdsWithRoutedTraces } from "./getSchematicPortIdsWithRoutedTraces"
+import type { ZodTypeAny } from "zod"
 
 const debug = Debug("Group_doInitialSchematicTraceRender")
 
@@ -109,7 +110,9 @@ const renderSchematicTracesForSheet = ({
  * independently because their component coordinates occupy separate drawing
  * spaces and may overlap numerically.
  */
-export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
+export const Group_doInitialSchematicTraceRender = <Props extends ZodTypeAny>(
+  group: Group<Props>,
+) => {
   if (!group.root?._featureMspSchematicTraceRouting) return
   if (!group.isSubcircuit) return
   if (group.root?.schematicDisabled) return

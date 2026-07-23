@@ -31,6 +31,7 @@ test("group schematic box", () => {
           "schematic_component_0",
         ],
         "schematic_group_id": "schematic_group_0",
+        "schematic_sheet_id": "schematic_sheet_0",
         "show_as_schematic_box": true,
         "source_group_id": "source_group_0",
         "subcircuit_id": null,

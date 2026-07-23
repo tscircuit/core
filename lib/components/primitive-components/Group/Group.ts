@@ -48,6 +48,7 @@ import { getViaDiameterDefaults } from "lib/utils/pcbStyle/getViaDiameterDefault
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/public-exports"
 import { getPinsFromPortArrangement } from "lib/utils/schematic/getSizeOfSidesFromPortArrangement"
 import {
+  assignSchematicElementsToSheet,
   type SchematicSheetInsert,
   renderSchematicSheet,
 } from "lib/utils/schematic/renderSchematicSheet"
@@ -175,6 +176,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   _isInflatedFromCircuitJson = false
 
   _isolatedCircuitJson: AnyCircuitElement[] | null = null
+
+  _defaultSchematicSheetId: string | null = null
 
   get _isIsolatedSubcircuit(): boolean {
     return Boolean(this.getInheritedProperty("_subcircuitCachingEnabled"))
@@ -410,9 +413,13 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
     const isRootGroup =
       this.root?.isRootCircuit && this.root.firstChild === this
+    const hasExplicitSchematicSheet = this.getDescendants().some(
+      (component) => component.componentName === "SchematicSheet",
+    )
     if (
       isRootGroup &&
       !this.root.schematicDisabled &&
+      !hasExplicitSchematicSheet &&
       db.schematic_sheet.list().length === 0
     ) {
       const defaultSchematicSheetInput: SchematicSheetInsert = {
@@ -424,27 +431,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       const defaultSchematicSheet = db.schematic_sheet.insert(
         defaultSchematicSheetInput,
       )
-      this.schematic_sheet_id = defaultSchematicSheet.schematic_sheet_id
+      this._defaultSchematicSheetId = defaultSchematicSheet.schematic_sheet_id
     }
-  }
-
-  doInitialSchematicSheetRender() {
-    const isRootGroup =
-      this.root?.isRootCircuit && this.root.firstChild === this
-    if (
-      !isRootGroup ||
-      !this.schematic_sheet_id ||
-      this.root?.schematicDisabled
-    ) {
-      return
-    }
-
-    const { db } = this.root!
-    renderSchematicSheet({
-      db,
-      schematicSheetId: this.schematic_sheet_id,
-      schematicSheetName: "Default Sheet",
-    })
   }
 
   doInitialSourceRender() {
@@ -1351,7 +1339,19 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   doInitialSchematicTraceRender() {
     if (this._parsedProps.showAsSchematicBox) return
-    Group_doInitialSchematicTraceRender(this as any)
+    Group_doInitialSchematicTraceRender(this)
+
+    if (!this._defaultSchematicSheetId || !this.root) return
+
+    assignSchematicElementsToSheet({
+      db: this.root.db,
+      schematicSheetId: this._defaultSchematicSheetId,
+    })
+    renderSchematicSheet({
+      db: this.root.db,
+      schematicSheetId: this._defaultSchematicSheetId,
+      schematicSheetName: "Default Sheet",
+    })
   }
 
   updatePcbTraceRender() {
