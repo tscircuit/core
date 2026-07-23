@@ -94,7 +94,7 @@ export function applyTracesFromSolverOutput(args: {
   pinIdToSchematicPortId: Map<string, string>
   userNetIdToConnKey: Map<string, string>
   schematicPortIdsWithPreExistingNetLabels: Set<string>
-  logicalSchematicPortIdBySchematicPortId: Map<string, string>
+  routeSchematicPortIdBySchematicPortId: Map<string, string>
 }) {
   const {
     group,
@@ -102,7 +102,7 @@ export function applyTracesFromSolverOutput(args: {
     pinIdToSchematicPortId,
     userNetIdToConnKey,
     schematicPortIdsWithPreExistingNetLabels,
-    logicalSchematicPortIdBySchematicPortId,
+    routeSchematicPortIdBySchematicPortId,
   } = args
   const { db } = group.root!
 
@@ -189,20 +189,19 @@ export function applyTracesFromSolverOutput(args: {
       const pA = pinIdToSchematicPortId.get(solvedTracePath.pins[0]?.pinId!)
       const pB = pinIdToSchematicPortId.get(solvedTracePath.pins[1]?.pinId!)
       if (pA && pB) {
-        // Propagate routed state to every physical port represented by either
-        // routed logical symbol port.
-        const routedLogicalPortIds = new Set(
+        // Mark every physical pin that uses either routed schematic symbol port.
+        const routedSchematicPortIds = new Set(
           [pA, pB].map(
             (portId) =>
-              logicalSchematicPortIdBySchematicPortId.get(portId) ?? portId,
+              routeSchematicPortIdBySchematicPortId.get(portId) ?? portId,
           ),
         )
         for (const schematicPort of db.schematic_port.list()) {
-          const logicalPortId =
-            logicalSchematicPortIdBySchematicPortId.get(
+          const routeSchematicPortId =
+            routeSchematicPortIdBySchematicPortId.get(
               schematicPort.schematic_port_id,
             ) ?? schematicPort.schematic_port_id
-          if (routedLogicalPortIds.has(logicalPortId)) {
+          if (routedSchematicPortIds.has(routeSchematicPortId)) {
             db.schematic_port.update(schematicPort.schematic_port_id, {
               is_connected: true,
             })

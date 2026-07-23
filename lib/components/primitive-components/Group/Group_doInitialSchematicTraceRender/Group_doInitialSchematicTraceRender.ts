@@ -28,7 +28,7 @@ const renderSchematicTracesForSheet = ({
     schPortIdToSourcePortId,
     userNetIdToConnKey,
     connKeysWithExplicitPortNetTraces,
-    logicalSchematicPortIdBySchematicPortId,
+    routeSchematicPortIdBySchematicPortId,
   } = createSchematicTraceSolverInputProblem(group, { schematicSheetId })
 
   if (inputProblem.chips.length === 0) return
@@ -83,7 +83,7 @@ const renderSchematicTracesForSheet = ({
     pinIdToSchematicPortId,
     userNetIdToConnKey,
     schematicPortIdsWithPreExistingNetLabels,
-    logicalSchematicPortIdBySchematicPortId,
+    routeSchematicPortIdBySchematicPortId,
   })
 
   // Apply net labels (from solver placements and net-only ports)
