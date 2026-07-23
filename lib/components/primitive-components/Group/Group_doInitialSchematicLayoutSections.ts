@@ -6,7 +6,6 @@ import type { Group } from "./Group"
 const debug = Debug("Group_doInitialSchematicLayoutSections")
 import { applySchematicMatchPackLayoutToTree } from "./Group_doInitialSchematicLayoutMatchPack"
 import { computeSchematicSectionLayoutUsingRows } from "./computeSchematicSectionLayoutUsingRows"
-import { getDirectSchematicLayoutChildren } from "./get-direct-schematic-layout-children"
 import { updateSchematicPrimitivesForLayoutShift } from "./utils/updateSchematicPrimitivesForLayoutShift"
 
 type SectionBoundsWithChildren = {
@@ -20,7 +19,13 @@ export function Group_doInitialSchematicLayoutSections<
   Props extends z.ZodType<any, any, any>,
 >(group: Group<Props>): void {
   const { db } = group.root!
-  const schematicLayoutChildren = getDirectSchematicLayoutChildren(group)
+  const schematicLayoutChildren = group
+    .getDescendants()
+    .filter(
+      (component) =>
+        component.source_component_id !== null &&
+        component.getGroup()?.source_group_id === group.source_group_id,
+    )
 
   const sectionNamesUsedByChildren = new Set<string>()
   let hasChildrenWithoutSection = false
