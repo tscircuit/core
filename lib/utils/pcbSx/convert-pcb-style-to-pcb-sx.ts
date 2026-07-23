@@ -47,4 +47,3 @@ export function convertPcbStyleToPcbSx(
   if (Object.keys(sx).length === 0) return undefined
   return sx
 }
-

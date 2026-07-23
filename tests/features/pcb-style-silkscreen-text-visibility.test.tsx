@@ -35,13 +35,7 @@ test("pcbStyle.silkscreenTextVisibility on component hides only that component's
         pcbY={0}
         pcbStyle={{ silkscreenTextVisibility: "hidden" }}
       />
-      <resistor
-        name="R2"
-        resistance="1k"
-        footprint="0402"
-        pcbX={5}
-        pcbY={0}
-      />
+      <resistor name="R2" resistance="1k" footprint="0402" pcbX={5} pcbY={0} />
     </board>,
   )
 
@@ -101,6 +95,3 @@ test("pcbStyle.silkscreenTextPosition 'none' hides footprint designator text", (
   const text = circuit.db.pcb_silkscreen_text.getWhere({ text: "R1" })
   expect(text).toBeUndefined()
 })
-
-
-
