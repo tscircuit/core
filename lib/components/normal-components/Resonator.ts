@@ -34,6 +34,7 @@ export class Resonator extends NormalComponent<typeof resonatorProps> {
     const source_component = db.source_component.insert({
       ftype: "simple_resonator",
       name: this.name,
+      manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
       frequency: props.frequency,
       load_capacitance: props.loadCapacitance,
       supplier_part_numbers: props.supplierPartNumbers,

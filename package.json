@@ -1,7 +1,7 @@
 {
   "name": "@tscircuit/core",
   "type": "module",
-  "version": "0.0.1489",
+  "version": "0.0.1495",
   "types": "dist/index.d.ts",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -53,7 +53,7 @@
     "@tscircuit/ngspice-spice-engine": "^0.0.19",
     "@tscircuit/props": "^0.0.589",
     "@tscircuit/schematic-match-adapt": "^0.0.18",
-    "@tscircuit/schematic-trace-solver": "^0.0.105",
+    "@tscircuit/schematic-trace-solver": "^0.0.106",
     "@tscircuit/solver-utils": "^0.0.16",
     "@tscircuit/soup-util": "^0.0.41",
     "@types/bun": "^1.2.16",
