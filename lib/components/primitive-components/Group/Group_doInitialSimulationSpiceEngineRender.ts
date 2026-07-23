@@ -1,4 +1,10 @@
-import type { AnyCircuitElement, SimulationCurrentProbe } from "circuit-json"
+import type {
+  AnyCircuitElement,
+  SimulationCurrentProbe,
+  SimulationExperiment,
+  SimulationParameterSweep,
+  SimulationVoltageProbe,
+} from "circuit-json"
 import Debug from "debug"
 import { getTransientVoltageGraphNamesFromSpiceNetlist } from "lib/utils/simulation/get-transient-voltage-graph-names-from-spice-netlist"
 import { resetSimulationColorState } from "lib/utils/simulation/getSimulationColorForId"
@@ -32,6 +38,31 @@ type AnalogSimulationComponent =
   | AnalogDcOperatingPointSimulation
   | AnalogDcSweepSimulation
   | AnalogAcSweepSimulation
+type SimulationGraphName = NonNullable<
+  SimulationVoltageProbe["name"] | SimulationCurrentProbe["name"]
+>
+type SimulationVoltageProbeId =
+  SimulationVoltageProbe["simulation_voltage_probe_id"]
+type SimulationCurrentProbeId =
+  SimulationCurrentProbe["simulation_current_probe_id"]
+type SimulationExperimentId = SimulationExperiment["simulation_experiment_id"]
+type SimulationParameterSweepId =
+  SimulationParameterSweep["simulation_parameter_sweep_id"]
+type SimulationProbeId = SimulationVoltageProbeId | SimulationCurrentProbeId
+type VoltageProbeByGraphName = Map<SimulationGraphName, VoltageProbe>
+type VoltageProbeById = Map<SimulationVoltageProbeId, VoltageProbe>
+type GraphDisplayOverridesByProbeId = Map<
+  SimulationProbeId,
+  GraphDisplayOverrides
+>
+type SimulationCurrentProbeById = Map<
+  SimulationCurrentProbeId,
+  SimulationCurrentProbe
+>
+type SimulationCurrentProbeByName = Map<
+  SimulationGraphName,
+  SimulationCurrentProbe
+>
 
 const debug = Debug("tscircuit:core:Group_doInitialSimulationSpiceEngineRender")
 
@@ -42,29 +73,34 @@ const getCircuitJsonForAnalogSimulation = ({
   ammeters,
 }: {
   circuitJson: AnyCircuitElement[]
-  simulationExperimentId: string
+  simulationExperimentId: SimulationExperimentId
   voltageProbes: VoltageProbe[]
   ammeters: Ammeter[]
 }) => {
   const voltageProbeIds = new Set(
     voltageProbes
-      .map((probe) => probe.simulation_voltage_probe_id)
-      .filter((id): id is string => Boolean(id)),
+      .map((voltageProbe) => voltageProbe.simulation_voltage_probe_id)
+      .filter(
+        (
+          simulationVoltageProbeId,
+        ): simulationVoltageProbeId is SimulationVoltageProbeId =>
+          Boolean(simulationVoltageProbeId),
+      ),
   )
   const currentProbeIds = new Set(
     ammeters
       .map((ammeter) => ammeter.simulation_current_probe_id)
-      .filter((id): id is string => Boolean(id)),
-  )
-  const parameterSweepIds = new Set(
-    circuitJson
       .filter(
         (
-          element,
-        ): element is Extract<
-          AnyCircuitElement,
-          { type: "simulation_parameter_sweep" }
-        > =>
+          simulationCurrentProbeId,
+        ): simulationCurrentProbeId is SimulationCurrentProbeId =>
+          Boolean(simulationCurrentProbeId),
+      ),
+  )
+  const parameterSweepIds: Set<SimulationParameterSweepId> = new Set(
+    circuitJson
+      .filter(
+        (element): element is SimulationParameterSweep =>
           element.type === "simulation_parameter_sweep" &&
           element.simulation_experiment_id === simulationExperimentId,
       )
@@ -186,18 +222,16 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
       continue
     }
 
-    const graphNameToProbe = new Map<string, VoltageProbe>()
-    const voltageProbesById = new Map<string, VoltageProbe>()
-    const graphDisplayOverridesByProbeId = new Map<
-      string,
-      GraphDisplayOverrides
-    >()
+    const voltageProbeByGraphName: VoltageProbeByGraphName = new Map()
+    const voltageProbeById: VoltageProbeById = new Map()
+    const graphDisplayOverridesByProbeId: GraphDisplayOverridesByProbeId =
+      new Map()
     for (const probe of voltageProbes) {
       if (probe.finalProbeName) {
-        graphNameToProbe.set(probe.finalProbeName, probe)
+        voltageProbeByGraphName.set(probe.finalProbeName, probe)
       }
       if (probe.simulation_voltage_probe_id) {
-        voltageProbesById.set(probe.simulation_voltage_probe_id, probe)
+        voltageProbeById.set(probe.simulation_voltage_probe_id, probe)
         graphDisplayOverridesByProbeId.set(
           probe.simulation_voltage_probe_id,
           getVoltageProbeGraphDisplayOverrides(probe),
@@ -217,25 +251,30 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
     const scopedCurrentProbeIds = new Set(
       ammeters
         .map((ammeter) => ammeter.simulation_current_probe_id)
-        .filter((id): id is string => Boolean(id)),
+        .filter(
+          (
+            simulationCurrentProbeId,
+          ): simulationCurrentProbeId is SimulationCurrentProbeId =>
+            Boolean(simulationCurrentProbeId),
+        ),
     )
-    const currentProbesById = new Map<string, SimulationCurrentProbe>()
-    const currentProbesByName = new Map<string, SimulationCurrentProbe>()
+    const currentProbeById: SimulationCurrentProbeById = new Map()
+    const currentProbeByName: SimulationCurrentProbeByName = new Map()
     for (const probe of root.db.simulation_current_probe
       .list()
       .filter((probe) =>
         scopedCurrentProbeIds.has(probe.simulation_current_probe_id),
       )) {
-      currentProbesById.set(probe.simulation_current_probe_id, probe)
+      currentProbeById.set(probe.simulation_current_probe_id, probe)
       if (probe.name !== undefined) {
-        currentProbesByName.set(probe.name, probe)
+        currentProbeByName.set(probe.name, probe)
       }
     }
 
     const orderedSimulationProbes = root.db.simulation_voltage_probe
       .list()
       .filter((probe) =>
-        voltageProbesById.has(probe.simulation_voltage_probe_id),
+        voltageProbeById.has(probe.simulation_voltage_probe_id),
       )
     const firstSpiceNetlist = simulationRuns[0]?.spiceNetlist
     const graphNamesFromNetlist = firstSpiceNetlist
@@ -244,15 +283,15 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
 
     if (graphNamesFromNetlist.length === orderedSimulationProbes.length) {
       for (const [
-        index,
+        simulationProbeIndex,
         simulationProbe,
       ] of orderedSimulationProbes.entries()) {
-        const probe = voltageProbesById.get(
+        const probe = voltageProbeById.get(
           simulationProbe.simulation_voltage_probe_id,
         )
-        const graphName = graphNamesFromNetlist[index]
+        const graphName = graphNamesFromNetlist[simulationProbeIndex]
         if (probe && graphName) {
-          graphNameToProbe.set(graphName, probe)
+          voltageProbeByGraphName.set(graphName, probe)
         }
       }
     } else {
@@ -314,7 +353,9 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
                 simulationExperiment.simulation_experiment_id
 
               const probeMatch = simulationResultWithSweepPoint.name
-                ? graphNameToProbe.get(simulationResultWithSweepPoint.name)
+                ? voltageProbeByGraphName.get(
+                    simulationResultWithSweepPoint.name,
+                  )
                 : undefined
               if (probeMatch) {
                 simulationResultWithSweepPoint.color =
@@ -328,11 +369,13 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
               simulationResultWithSweepPoint.simulation_experiment_id =
                 simulationExperiment.simulation_experiment_id
               const probeMatch =
-                voltageProbesById.get(
+                voltageProbeById.get(
                   simulationResultWithSweepPoint.simulation_voltage_probe_id,
                 ) ??
                 (simulationResultWithSweepPoint.name
-                  ? graphNameToProbe.get(simulationResultWithSweepPoint.name)
+                  ? voltageProbeByGraphName.get(
+                      simulationResultWithSweepPoint.name,
+                    )
                   : undefined)
               if (probeMatch?.simulation_voltage_probe_id) {
                 simulationResultWithSweepPoint.color =
@@ -348,12 +391,12 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
 
               const probeMatch =
                 (simulationResultWithSweepPoint.source_probe_id
-                  ? currentProbesById.get(
+                  ? currentProbeById.get(
                       simulationResultWithSweepPoint.source_probe_id,
                     )
                   : undefined) ??
                 (simulationResultWithSweepPoint.name
-                  ? currentProbesByName.get(simulationResultWithSweepPoint.name)
+                  ? currentProbeByName.get(simulationResultWithSweepPoint.name)
                   : undefined)
               if (probeMatch) {
                 simulationResultWithSweepPoint.color = probeMatch.color
@@ -366,11 +409,11 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
               simulationResultWithSweepPoint.simulation_experiment_id =
                 simulationExperiment.simulation_experiment_id
               const probeMatch =
-                currentProbesById.get(
+                currentProbeById.get(
                   simulationResultWithSweepPoint.simulation_current_probe_id,
                 ) ??
                 (simulationResultWithSweepPoint.name
-                  ? currentProbesByName.get(simulationResultWithSweepPoint.name)
+                  ? currentProbeByName.get(simulationResultWithSweepPoint.name)
                   : undefined)
               if (probeMatch) {
                 simulationResultWithSweepPoint.color = probeMatch.color

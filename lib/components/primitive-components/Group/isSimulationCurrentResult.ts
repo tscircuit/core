@@ -1,18 +1,11 @@
-import type { AnyCircuitElementInput } from "circuit-json"
-
-export type SimulationCurrentResultInput = Extract<
+import type {
   AnyCircuitElementInput,
-  {
-    type:
-      | "simulation_dc_operating_point_current"
-      | "simulation_dc_sweep_current_graph"
-      | "simulation_ac_sweep_current_graph"
-  }
->
+  SimulationNonTransientCurrentAnalysisResultInput,
+} from "circuit-json"
 
 export const isSimulationCurrentResult = (
   circuitElement: AnyCircuitElementInput,
-): circuitElement is SimulationCurrentResultInput =>
+): circuitElement is SimulationNonTransientCurrentAnalysisResultInput =>
   circuitElement.type === "simulation_dc_operating_point_current" ||
   circuitElement.type === "simulation_dc_sweep_current_graph" ||
   circuitElement.type === "simulation_ac_sweep_current_graph"

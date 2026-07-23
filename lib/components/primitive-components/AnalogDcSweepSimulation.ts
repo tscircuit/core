@@ -1,7 +1,15 @@
 import { analogDcSweepSimulationProps } from "@tscircuit/props"
+import type {
+  SimulationCurrentSource,
+  SimulationVoltageSource,
+} from "circuit-json"
 import { CurrentSource } from "../normal-components/CurrentSource"
 import { VoltageSource } from "../normal-components/VoltageSource"
 import { AnalogAnalysisSimulation } from "./AnalogAnalysisSimulation"
+
+type SimulationDcSweepSourceId =
+  | SimulationVoltageSource["simulation_voltage_source_id"]
+  | SimulationCurrentSource["simulation_current_source_id"]
 
 export class AnalogDcSweepSimulation extends AnalogAnalysisSimulation<
   typeof analogDcSweepSimulationProps
@@ -24,26 +32,24 @@ export class AnalogDcSweepSimulation extends AnalogAnalysisSimulation<
     } = this._parsedProps
     const simulationScope = this.getGroup() ?? this.getSubcircuit()
     const sweepSourceComponent = simulationScope?.selectOne(sweepSource)
-    if (
-      sweepSourceComponent instanceof VoltageSource ||
-      sweepSourceComponent instanceof CurrentSource
-    ) {
+    let sweepSourceId: SimulationDcSweepSourceId | null
+    let sweepSourceType: "voltage" | "current"
+    if (sweepSourceComponent instanceof VoltageSource) {
       sweepSourceComponent.runRenderPhase("SimulationRender")
+      sweepSourceId = sweepSourceComponent.simulation_voltage_source_id
+      sweepSourceType = "voltage"
+    } else if (sweepSourceComponent instanceof CurrentSource) {
+      sweepSourceComponent.runRenderPhase("SimulationRender")
+      sweepSourceId = sweepSourceComponent.simulation_current_source_id
+      sweepSourceType = "current"
+    } else {
+      this.renderError(
+        `DC sweep source "${sweepSource}" must resolve to one voltage or current source.`,
+      )
+      return null
     }
-    const sweepSourceId =
-      sweepSourceComponent instanceof VoltageSource
-        ? sweepSourceComponent.simulation_voltage_source_id
-        : sweepSourceComponent instanceof CurrentSource
-          ? sweepSourceComponent.simulation_current_source_id
-          : null
-    const sweepSourceType =
-      sweepSourceComponent instanceof VoltageSource
-        ? ("voltage" as const)
-        : sweepSourceComponent instanceof CurrentSource
-          ? ("current" as const)
-          : null
 
-    if (!sweepSourceId || !sweepSourceType) {
+    if (!sweepSourceId) {
       this.renderError(
         `DC sweep source "${sweepSource}" must resolve to one voltage or current source.`,
       )

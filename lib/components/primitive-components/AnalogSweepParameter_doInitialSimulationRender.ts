@@ -1,22 +1,24 @@
 import type { AnalogSweepParameterProps } from "@tscircuit/props"
 import type {
   SimulationParameterSweep,
+  SimulationParameterType,
   SimulationParameterUnit,
 } from "circuit-json"
 import { AnalogAnalysisSimulation } from "./AnalogAnalysisSimulation"
 import type { AnalogSweepParameter } from "./AnalogSweepParameter"
 import type { Net } from "./Net"
 
-const parameterUnits: Record<
-  "resistance" | "capacitance" | "inductance" | "voltage" | "current",
-  SimulationParameterUnit
-> = {
-  resistance: "Ω",
-  capacitance: "F",
-  inductance: "H",
-  voltage: "V",
-  current: "A",
-}
+type SimulationParameterSweepId =
+  SimulationParameterSweep["simulation_parameter_sweep_id"]
+
+const parameterUnits: Record<SimulationParameterType, SimulationParameterUnit> =
+  {
+    resistance: "Ω",
+    capacitance: "F",
+    inductance: "H",
+    voltage: "V",
+    current: "A",
+  }
 
 const isParameterSweepCoordinateInRange = ({
   parameterSweepCoordinate,
@@ -79,24 +81,6 @@ const getParameterSweepTargetSelector = (
   }
 }
 
-type SimulationParameterSweepInsert =
-  SimulationParameterSweep extends infer ParameterSweep
-    ? ParameterSweep extends SimulationParameterSweep
-      ? Omit<ParameterSweep, "type" | "simulation_parameter_sweep_id">
-      : never
-    : never
-
-const insertSimulationParameterSweep = ({
-  analogSweepParameter,
-  parameterSweep,
-}: {
-  analogSweepParameter: AnalogSweepParameter
-  parameterSweep: SimulationParameterSweepInsert
-}) =>
-  analogSweepParameter.root!.db.simulation_parameter_sweep.insert(
-    parameterSweep,
-  ).simulation_parameter_sweep_id
-
 export const AnalogSweepParameter_doInitialSimulationRender = (
   analogSweepParameter: AnalogSweepParameter,
 ): void => {
@@ -124,6 +108,8 @@ export const AnalogSweepParameter_doInitialSimulationRender = (
     analogSweepParameter.parent.getSubcircuit()
   const targetSelector = getParameterSweepTargetSelector(props)
   const parameterUnit = parameterUnits[props.parameterType]
+  const simulationParameterSweepTable =
+    analogSweepParameter.root!.db.simulation_parameter_sweep
   const simulationParameterSweepFields = {
     simulation_experiment_id: simulationExperiment.simulation_experiment_id,
     name: props.name,
@@ -132,7 +118,7 @@ export const AnalogSweepParameter_doInitialSimulationRender = (
     parameter_unit: parameterUnit,
   }
 
-  let simulationParameterSweepId: string
+  let simulationParameterSweepId: SimulationParameterSweepId
   if (props.parameterType === "voltage") {
     const sweepNet = simulationScope?.selectOne<Net>(targetSelector, {
       type: "net",
@@ -143,14 +129,11 @@ export const AnalogSweepParameter_doInitialSimulationRender = (
       )
       return
     }
-    simulationParameterSweepId = insertSimulationParameterSweep({
-      analogSweepParameter,
-      parameterSweep: {
-        ...simulationParameterSweepFields,
-        parameter_type: "voltage",
-        source_net_id: sweepNet.source_net_id,
-      },
-    })
+    simulationParameterSweepId = simulationParameterSweepTable.insert({
+      ...simulationParameterSweepFields,
+      parameter_type: "voltage",
+      source_net_id: sweepNet.source_net_id,
+    }).simulation_parameter_sweep_id
   } else {
     const sweepTarget = simulationScope?.selectOne(targetSelector)
     const sourceComponentId = sweepTarget?.source_component_id
@@ -162,41 +145,29 @@ export const AnalogSweepParameter_doInitialSimulationRender = (
     }
 
     if (props.parameterType === "resistance") {
-      simulationParameterSweepId = insertSimulationParameterSweep({
-        analogSweepParameter,
-        parameterSweep: {
-          ...simulationParameterSweepFields,
-          parameter_type: "resistance",
-          resistor_source_component_id: sourceComponentId,
-        },
-      })
+      simulationParameterSweepId = simulationParameterSweepTable.insert({
+        ...simulationParameterSweepFields,
+        parameter_type: "resistance",
+        resistor_source_component_id: sourceComponentId,
+      }).simulation_parameter_sweep_id
     } else if (props.parameterType === "capacitance") {
-      simulationParameterSweepId = insertSimulationParameterSweep({
-        analogSweepParameter,
-        parameterSweep: {
-          ...simulationParameterSweepFields,
-          parameter_type: "capacitance",
-          capacitor_source_component_id: sourceComponentId,
-        },
-      })
+      simulationParameterSweepId = simulationParameterSweepTable.insert({
+        ...simulationParameterSweepFields,
+        parameter_type: "capacitance",
+        capacitor_source_component_id: sourceComponentId,
+      }).simulation_parameter_sweep_id
     } else if (props.parameterType === "inductance") {
-      simulationParameterSweepId = insertSimulationParameterSweep({
-        analogSweepParameter,
-        parameterSweep: {
-          ...simulationParameterSweepFields,
-          parameter_type: "inductance",
-          inductor_source_component_id: sourceComponentId,
-        },
-      })
+      simulationParameterSweepId = simulationParameterSweepTable.insert({
+        ...simulationParameterSweepFields,
+        parameter_type: "inductance",
+        inductor_source_component_id: sourceComponentId,
+      }).simulation_parameter_sweep_id
     } else {
-      simulationParameterSweepId = insertSimulationParameterSweep({
-        analogSweepParameter,
-        parameterSweep: {
-          ...simulationParameterSweepFields,
-          parameter_type: "current",
-          current_source_component_id: sourceComponentId,
-        },
-      })
+      simulationParameterSweepId = simulationParameterSweepTable.insert({
+        ...simulationParameterSweepFields,
+        parameter_type: "current",
+        current_source_component_id: sourceComponentId,
+      }).simulation_parameter_sweep_id
     }
   }
 

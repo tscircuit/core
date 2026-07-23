@@ -3,15 +3,21 @@ import type {
   SimulationCurrentSource,
   SimulationDcVoltageSource,
   SimulationParameterSweep,
+  SimulationParameterSweepPoint,
   SourceSimpleCapacitor,
   SourceSimpleInductor,
   SourceSimpleResistor,
+  SourcePort,
 } from "circuit-json"
 
 type SweepableSourceComponent =
   | SourceSimpleResistor
   | SourceSimpleCapacitor
   | SourceSimpleInductor
+type SweepableSourceComponentId =
+  SweepableSourceComponent["source_component_id"]
+type SimulationParameterSweepPointId =
+  SimulationParameterSweepPoint["simulation_parameter_sweep_point_id"]
 
 const getSourceComponentOrThrow = <
   SourceComponent extends SweepableSourceComponent,
@@ -21,7 +27,7 @@ const getSourceComponentOrThrow = <
   isMatchingSourceComponent,
 }: {
   circuitJson: AnyCircuitElement[]
-  sourceComponentId: string
+  sourceComponentId: SweepableSourceComponentId
   isMatchingSourceComponent: (
     circuitElement: AnyCircuitElement,
   ) => circuitElement is SourceComponent
@@ -46,7 +52,7 @@ export const applyParameterSweepPoint = ({
   circuitJson: AnyCircuitElement[]
   parameterSweep: SimulationParameterSweep
   parameterSweepCoordinate: number
-  simulationParameterSweepPointId: string
+  simulationParameterSweepPointId: SimulationParameterSweepPointId
 }): AnyCircuitElement[] => {
   const sweptCircuitJson = structuredClone(circuitJson)
 
@@ -117,12 +123,7 @@ export const applyParameterSweepPoint = ({
     const currentSourcePortIds = new Set(
       sweptCircuitJson
         .filter(
-          (
-            circuitElement,
-          ): circuitElement is Extract<
-            AnyCircuitElement,
-            { type: "source_port" }
-          > =>
+          (circuitElement): circuitElement is SourcePort =>
             circuitElement.type === "source_port" &&
             circuitElement.source_component_id ===
               parameterSweep.current_source_component_id,

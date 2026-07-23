@@ -1,15 +1,20 @@
 import type {
   AnyCircuitElement,
+  SimulationExperiment,
   SimulationParameterSweep,
   SimulationParameterSweepPoint,
 } from "circuit-json"
 import { type SpiceNetlist, circuitJsonToSpice } from "circuit-json-to-spice"
 import { applyParameterSweepPoint } from "./applyParameterSweepPoint"
 
+type SimulationExperimentId = SimulationExperiment["simulation_experiment_id"]
+type SimulationParameterSweepPointId =
+  SimulationParameterSweepPoint["simulation_parameter_sweep_point_id"]
+
 export interface SimulationRun {
   spiceNetlist: SpiceNetlist
   spiceString: string
-  simulationParameterSweepPointId?: string
+  simulationParameterSweepPointId?: SimulationParameterSweepPointId
 }
 
 const createSimulationRun = ({
@@ -17,7 +22,7 @@ const createSimulationRun = ({
   simulationParameterSweepPointId,
 }: {
   circuitJson: AnyCircuitElement[]
-  simulationParameterSweepPointId?: string
+  simulationParameterSweepPointId?: SimulationParameterSweepPointId
 }): SimulationRun => {
   const spiceNetlist = circuitJsonToSpice(circuitJson)
   return {
@@ -32,7 +37,7 @@ export const createSimulationRuns = ({
   simulationExperimentId,
 }: {
   circuitJson: AnyCircuitElement[]
-  simulationExperimentId: string
+  simulationExperimentId: SimulationExperimentId
 }): SimulationRun[] => {
   const parameterSweep = circuitJson.find(
     (circuitElement): circuitElement is SimulationParameterSweep =>
@@ -54,8 +59,8 @@ export const createSimulationRuns = ({
       (firstPoint, secondPoint) =>
         firstPoint.sweep_index - secondPoint.sweep_index,
     )
-    .map((sweepPoint) => {
-      return createSimulationRun({
+    .map((sweepPoint) =>
+      createSimulationRun({
         circuitJson: applyParameterSweepPoint({
           circuitJson,
           parameterSweep,
@@ -65,6 +70,6 @@ export const createSimulationRuns = ({
         }),
         simulationParameterSweepPointId:
           sweepPoint.simulation_parameter_sweep_point_id,
-      })
-    })
+      }),
+    )
 }

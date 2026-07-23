@@ -1,11 +1,17 @@
-import type { AnyCircuitElementInput } from "circuit-json"
+import type {
+  AnyCircuitElementInput,
+  SimulationParameterSweepPoint,
+} from "circuit-json"
+
+type SimulationParameterSweepPointId =
+  SimulationParameterSweepPoint["simulation_parameter_sweep_point_id"]
 
 export const attachSweepPointToSimulationResult = ({
   simulationResult,
   simulationParameterSweepPointId,
 }: {
   simulationResult: AnyCircuitElementInput
-  simulationParameterSweepPointId?: string
+  simulationParameterSweepPointId?: SimulationParameterSweepPointId
 }): AnyCircuitElementInput => {
   if (!simulationParameterSweepPointId) return simulationResult
 
