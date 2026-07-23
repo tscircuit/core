@@ -47,6 +47,7 @@ import { getRoutePointPosition } from "lib/utils/pcb-trace-route-point-utils"
 import { getViaDiameterDefaults } from "lib/utils/pcbStyle/getViaDiameterDefaults"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/public-exports"
 import { getPinsFromPortArrangement } from "lib/utils/schematic/getSizeOfSidesFromPortArrangement"
+import { renderSchematicSheet } from "lib/utils/schematic/renderSchematicSheet"
 import { z } from "zod"
 import { NormalComponent } from "../../base-components/NormalComponent/NormalComponent"
 import { Port } from "../Port/Port"
@@ -403,6 +404,37 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         subcircuit_id: this.subcircuit_id!,
       })
     }
+
+    if (
+      (this.parent as any)?.isRootCircuit &&
+      !this.root?.schematicDisabled &&
+      db.schematic_sheet.list().length === 0
+    ) {
+      const defaultSchematicSheet = db.schematic_sheet.insert({
+        name: "Main Sheet",
+        display_name: "Main Sheet",
+        sheet_index: 0,
+        subcircuit_id: this.subcircuit_id,
+      } as any)
+      this.schematic_sheet_id = defaultSchematicSheet.schematic_sheet_id
+    }
+  }
+
+  doInitialSchematicSheetRender() {
+    if (
+      !(this.parent as any)?.isRootCircuit ||
+      !this.schematic_sheet_id ||
+      this.root?.schematicDisabled
+    ) {
+      return
+    }
+
+    const { db } = this.root!
+    renderSchematicSheet({
+      db,
+      schematicSheetId: this.schematic_sheet_id,
+      schematicSheetName: "Main Sheet",
+    })
   }
 
   doInitialSourceRender() {

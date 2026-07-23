@@ -13,6 +13,7 @@ test("Subcircuit group should have subcircuit_id", async () => {
   expect(circuit.db.toArray().map((c) => c.type)).toMatchInlineSnapshot(`
 [
   "source_group",
+  "schematic_sheet",
   "schematic_group",
   "pcb_group",
 ]
