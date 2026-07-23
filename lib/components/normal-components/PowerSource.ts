@@ -40,6 +40,7 @@ export class PowerSource extends NormalComponent<
       name: this.name,
       voltage: props.voltage,
       supplier_part_numbers: props.supplierPartNumbers,
+      manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
       are_pins_interchangeable: false,
       display_name: props.displayName,
     } as any)

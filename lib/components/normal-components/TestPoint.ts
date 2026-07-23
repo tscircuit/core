@@ -104,6 +104,7 @@ export class TestPoint extends NormalComponent<typeof testpointProps> {
       ftype: FTYPE.simple_test_point,
       name: this.name,
       supplier_part_numbers: props.supplierPartNumbers,
+      manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
       footprint_variant: footprintVariant,
       pad_shape: padShape,
       pad_diameter: padDiameter,
