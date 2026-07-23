@@ -17,8 +17,8 @@ test("core emits a default schematic sheet", async () => {
   const schematicSheets = circuit.db.schematic_sheet.list()
   expect(schematicSheets).toHaveLength(1)
   expect(schematicSheets[0]).toMatchObject({
-    name: "Main Sheet",
-    display_name: "Main Sheet",
+    name: "Default Sheet",
+    display_name: "Default Sheet",
     sheet_index: 0,
     center: {
       x: 100,

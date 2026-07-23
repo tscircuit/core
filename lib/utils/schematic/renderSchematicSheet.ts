@@ -1,6 +1,17 @@
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
+import type { Point, SchematicSheet } from "circuit-json"
 import { getBoundsForSchematic } from "lib/utils/autorouting/getBoundsForSchematic"
 import { insertSchematicElementOutsideSheetWarnings } from "./insertSchematicElementOutsideSheetWarnings"
+
+export type SchematicSheetWithRenderMetadata = SchematicSheet & {
+  display_name?: string
+  center?: Point
+}
+
+export type SchematicSheetInsert = Omit<
+  SchematicSheetWithRenderMetadata,
+  "type" | "schematic_sheet_id"
+>
 
 export const renderSchematicSheet = ({
   db,
@@ -20,9 +31,7 @@ export const renderSchematicSheet = ({
     ...db.schematic_circle.list(),
     ...db.schematic_arc.list(),
     ...db.schematic_path.list(),
-  ].filter(
-    (element) => (element as any).schematic_sheet_id === schematicSheetId,
-  )
+  ].filter((element) => element.schematic_sheet_id === schematicSheetId)
 
   let schematicSheetCenter = { x: 0, y: 0 }
   if (schematicElements.length > 0) {
@@ -38,9 +47,10 @@ export const renderSchematicSheet = ({
         y: (bounds.minY + bounds.maxY) / 2,
       }
 
-      db.schematic_sheet.update(schematicSheetId, {
+      const sheetUpdate: Partial<SchematicSheetWithRenderMetadata> = {
         center: schematicSheetCenter,
-      } as any)
+      }
+      db.schematic_sheet.update(schematicSheetId, sheetUpdate)
     }
   }
 

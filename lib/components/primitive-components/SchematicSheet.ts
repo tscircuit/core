@@ -1,6 +1,9 @@
 import { schematicSheetProps } from "@tscircuit/props"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
-import { renderSchematicSheet } from "lib/utils/schematic/renderSchematicSheet"
+import {
+  type SchematicSheetInsert,
+  renderSchematicSheet,
+} from "lib/utils/schematic/renderSchematicSheet"
 
 export class SchematicSheet extends PrimitiveComponent<
   typeof schematicSheetProps
@@ -19,12 +22,13 @@ export class SchematicSheet extends PrimitiveComponent<
     const { db } = this.root!
     const { _parsedProps: props } = this
 
-    const schematicSheet = db.schematic_sheet.insert({
+    const schematicSheetInput: SchematicSheetInsert = {
       name: props.name,
       display_name: props.displayName,
       sheet_index: props.sheetIndex,
       subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
-    } as any)
+    }
+    const schematicSheet = db.schematic_sheet.insert(schematicSheetInput)
 
     this.schematic_sheet_id = schematicSheet.schematic_sheet_id
   }
