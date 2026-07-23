@@ -87,6 +87,7 @@ export class VoltageSource extends NormalComponent<
       pulse_width: props.pulseWidth,
       period: props.period,
       supplier_part_numbers: props.supplierPartNumbers,
+      manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
       are_pins_interchangeable: true,
       display_name: props.displayName,
     } as any)
