@@ -21,6 +21,7 @@
   "scripts": {
     "build": "tsup-node",
     "format": "biome format . --write",
+    "lint:map-keys": "bun run scripts/check-for-new-map-string-keys.ts",
     "measure-bundle": "howfat -r table .",
     "pkg-pr-new-release": "bunx pkg-pr-new publish --comment=off --peerDeps",
     "smoke-test:dist": "bun run scripts/smoke-tests/test-dist-simple-circuit.tsx",

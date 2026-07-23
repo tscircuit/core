@@ -13,6 +13,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup bun
         uses: oven-sh/setup-bun@v2
@@ -21,6 +23,11 @@ jobs:
 
       - name: Install dependencies
         run: bun i
+
+      - name: Reject new string-keyed Map types
+        env:
+          LINT_BASE_REF: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || 'HEAD^' }}
+        run: bun run lint:map-keys
 
       - name: Run typecheck
         run: bunx tsc --noEmit

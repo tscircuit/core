@@ -115,9 +115,9 @@ circuit.selectOne("resistor") // Find first resistor
 - Do not introduce transport, protocol, or serialization vocabulary into the
   internal domain model. Translate domain identifiers into boundary-specific
   fields only at the serialization or adapter boundary.
-- **`Map<string, ...>` is banned.** Always use an existing named or branded key
-  type, such as `Map<SchematicPortId, ...>`, and name mapping variables to make
-  both key and value meanings clear.
+- Do not use raw `Map<string, ...>` types for domain identifiers. Use an existing
+  named or branded key type, such as `Map<SourceTraceId, ...>`, and name mapping
+  variables to make both key and value meanings clear.
 - Do not widen domain identifiers or keys to `string` in parameters, return
   types, collections, or intermediate values. Use or export the canonical named
   or branded type, such as `SourceTraceId` or `SubcircuitConnectivityMapKey`.
