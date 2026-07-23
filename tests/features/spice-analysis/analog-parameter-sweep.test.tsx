@@ -46,11 +46,9 @@ test("analog parameter sweeps execute one run per ordered sweep point", async ()
 
   await circuit.renderUntilSettled()
 
-  const sweepPoints = circuit.db.simulation_parameter_sweep_point.list()
+  const parameterSweep = circuit.db.simulation_parameter_sweep.list()[0]
   const results = circuit.db.simulation_dc_operating_point_voltage.list()
-  expect(sweepPoints.map((sweepPoint) => sweepPoint.parameter_value)).toEqual([
-    100, 200, 300,
-  ])
+  expect(parameterSweep?.parameter_values).toEqual([100, 200, 300])
   expect(spiceStrings).toHaveLength(3)
   expect(
     spiceStrings.map(
@@ -58,12 +56,15 @@ test("analog parameter sweeps execute one run per ordered sweep point", async ()
     ),
   ).toEqual(["100", "200", "300"])
   expect(
-    results.map((result) => result.simulation_parameter_sweep_point_id),
-  ).toEqual(
-    sweepPoints.map(
-      (sweepPoint) => sweepPoint.simulation_parameter_sweep_point_id,
+    results.map(
+      (result) => result.simulation_parameter_sweep_coordinate?.parameter_value,
     ),
-  )
+  ).toEqual([100, 200, 300])
+  expect(
+    results.map(
+      (result) => result.simulation_parameter_sweep_coordinate?.sweep_index,
+    ),
+  ).toEqual([0, 1, 2])
   expect(results.map((result) => result.voltage)).toEqual([1, 2, 3])
   expect(circuit.db.simulation_unknown_experiment_error.list()).toHaveLength(0)
   await expect(circuit).toMatchSimulationSnapshot(import.meta.path)

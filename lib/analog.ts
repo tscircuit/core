@@ -33,6 +33,8 @@ function AcSweepSimulationElement(
 }
 
 function SweepParameterElement(props: AnalogSweepParameterProps): ReactElement {
+  // Narrow the discriminated union so React selects the matching intrinsic
+  // element overload for each parameter-specific target prop.
   switch (props.parameterType) {
     case "resistance":
       return createElement("analogsweepparameter", props)

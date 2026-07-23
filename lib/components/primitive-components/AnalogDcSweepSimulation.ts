@@ -24,26 +24,45 @@ export class AnalogDcSweepSimulation extends AnalogAnalysisSimulation<
     } = this._parsedProps
     const simulationScope = this.getGroup() ?? this.getSubcircuit()
     const sweepSourceComponent = simulationScope?.selectOne(sweepSource)
-    if (
-      sweepSourceComponent instanceof VoltageSource ||
-      sweepSourceComponent instanceof CurrentSource
-    ) {
-      sweepSourceComponent.runRenderPhase("SimulationRender")
-    }
-    const sweepSourceId =
-      sweepSourceComponent instanceof VoltageSource
-        ? sweepSourceComponent.simulation_voltage_source_id
-        : sweepSourceComponent instanceof CurrentSource
-          ? sweepSourceComponent.simulation_current_source_id
-          : null
-    const sweepSourceType =
-      sweepSourceComponent instanceof VoltageSource
-        ? ("voltage" as const)
-        : sweepSourceComponent instanceof CurrentSource
-          ? ("current" as const)
-          : null
+    let dcSweepSourceFields:
+      | {
+          dc_sweep_voltage_source_id: string
+          dc_sweep_unit: "V"
+        }
+      | {
+          dc_sweep_current_source_id: string
+          dc_sweep_unit: "A"
+        }
 
-    if (!sweepSourceId || !sweepSourceType) {
+    if (sweepSourceComponent instanceof VoltageSource) {
+      sweepSourceComponent.runRenderPhase("SimulationRender")
+      const simulationVoltageSourceId =
+        sweepSourceComponent.simulation_voltage_source_id
+      if (!simulationVoltageSourceId) {
+        this.renderError(
+          `DC sweep source "${sweepSource}" must resolve to one voltage or current source.`,
+        )
+        return null
+      }
+      dcSweepSourceFields = {
+        dc_sweep_voltage_source_id: simulationVoltageSourceId,
+        dc_sweep_unit: "V",
+      }
+    } else if (sweepSourceComponent instanceof CurrentSource) {
+      sweepSourceComponent.runRenderPhase("SimulationRender")
+      const simulationCurrentSourceId =
+        sweepSourceComponent.simulation_current_source_id
+      if (!simulationCurrentSourceId) {
+        this.renderError(
+          `DC sweep source "${sweepSource}" must resolve to one voltage or current source.`,
+        )
+        return null
+      }
+      dcSweepSourceFields = {
+        dc_sweep_current_source_id: simulationCurrentSourceId,
+        dc_sweep_unit: "A",
+      }
+    } else {
       this.renderError(
         `DC sweep source "${sweepSource}" must resolve to one voltage or current source.`,
       )
@@ -54,12 +73,10 @@ export class AnalogDcSweepSimulation extends AnalogAnalysisSimulation<
       name: name ?? "spice_dc_sweep",
       experiment_type: "spice_dc_sweep",
       spice_options: spiceOptions,
-      dc_sweep_source_id: sweepSourceId,
-      dc_sweep_source_type: sweepSourceType,
+      ...dcSweepSourceFields,
       dc_sweep_start: sweepStart,
       dc_sweep_stop: sweepStop,
       dc_sweep_step: sweepStep,
-      dc_sweep_unit: sweepSourceType === "voltage" ? "V" : "A",
     })
   }
 }

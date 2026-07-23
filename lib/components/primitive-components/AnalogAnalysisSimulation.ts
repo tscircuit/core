@@ -2,10 +2,12 @@ import type { SimulationExperiment } from "circuit-json"
 import type { ZodType } from "zod"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
+type SimulationExperimentId = SimulationExperiment["simulation_experiment_id"]
+
 export abstract class AnalogAnalysisSimulation<
   PropsSchema extends ZodType,
 > extends PrimitiveComponent<PropsSchema> {
-  simulation_experiment_id: string | null = null
+  simulation_experiment_id: SimulationExperimentId | null = null
 
   protected abstract insertSimulationExperiment(): SimulationExperiment | null
 

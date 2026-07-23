@@ -1,5 +1,5 @@
 import { voltageSourceProps } from "@tscircuit/props"
-import type { SimulationAcVoltageSource } from "circuit-json"
+import type { SimulationVoltageSource } from "circuit-json"
 import { formatSiUnit } from "format-si-unit"
 import { type BaseSymbolName, type Ftype } from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
@@ -8,11 +8,14 @@ import type { RenderPhase } from "lib/components/base-components/Renderable"
 
 export type WaveShape = "sinewave" | "square" | "triangle" | "sawtooth"
 
+type SimulationVoltageSourceId =
+  SimulationVoltageSource["simulation_voltage_source_id"]
+
 export class VoltageSource extends NormalComponent<
   typeof voltageSourceProps,
   "terminal1" | "terminal2"
 > {
-  simulation_voltage_source_id: string | null = null
+  simulation_voltage_source_id: SimulationVoltageSourceId | null = null
 
   get config() {
     const isSquare = this.props.waveShape === "square"
@@ -102,10 +105,9 @@ export class VoltageSource extends NormalComponent<
     const terminal1Port = this.portMap.terminal1!
     const terminal2Port = this.portMap.terminal2!
     const simulationVoltageSource = db.simulation_voltage_source.insert({
-      type: "simulation_voltage_source",
       is_dc_source: false,
-      terminal1_source_port_id: terminal1Port.source_port_id,
-      terminal2_source_port_id: terminal2Port.source_port_id,
+      terminal1_source_port_id: terminal1Port.source_port_id ?? undefined,
+      terminal2_source_port_id: terminal2Port.source_port_id ?? undefined,
       voltage: props.voltage,
       frequency: props.frequency,
       peak_to_peak_voltage: props.peakToPeakVoltage,
@@ -119,7 +121,7 @@ export class VoltageSource extends NormalComponent<
       period: props.period,
       ac_magnitude: props.acMagnitude,
       ac_phase: props.acPhase,
-    } as SimulationAcVoltageSource)
+    })
     this.simulation_voltage_source_id =
       simulationVoltageSource.simulation_voltage_source_id
   }

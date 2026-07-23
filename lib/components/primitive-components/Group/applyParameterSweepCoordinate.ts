@@ -3,15 +3,19 @@ import type {
   SimulationCurrentSource,
   SimulationDcVoltageSource,
   SimulationParameterSweep,
+  SimulationParameterSweepCoordinate,
   SourceSimpleCapacitor,
   SourceSimpleInductor,
   SourceSimpleResistor,
+  SourcePort,
 } from "circuit-json"
 
 type SweepableSourceComponent =
   | SourceSimpleResistor
   | SourceSimpleCapacitor
   | SourceSimpleInductor
+type SweepableSourceComponentId =
+  SweepableSourceComponent["source_component_id"]
 
 const getSourceComponentOrThrow = <
   SourceComponent extends SweepableSourceComponent,
@@ -21,7 +25,7 @@ const getSourceComponentOrThrow = <
   isMatchingSourceComponent,
 }: {
   circuitJson: AnyCircuitElement[]
-  sourceComponentId: string
+  sourceComponentId: SweepableSourceComponentId
   isMatchingSourceComponent: (
     circuitElement: AnyCircuitElement,
   ) => circuitElement is SourceComponent
@@ -37,18 +41,17 @@ const getSourceComponentOrThrow = <
   return sourceComponent
 }
 
-export const applyParameterSweepPoint = ({
+export const applyParameterSweepCoordinate = ({
   circuitJson,
   parameterSweep,
-  parameterSweepCoordinate,
-  simulationParameterSweepPointId,
+  simulationParameterSweepCoordinate,
 }: {
   circuitJson: AnyCircuitElement[]
   parameterSweep: SimulationParameterSweep
-  parameterSweepCoordinate: number
-  simulationParameterSweepPointId: string
+  simulationParameterSweepCoordinate: SimulationParameterSweepCoordinate
 }): AnyCircuitElement[] => {
   const sweptCircuitJson = structuredClone(circuitJson)
+  const parameterValue = simulationParameterSweepCoordinate.parameter_value
 
   if (parameterSweep.parameter_type === "resistance") {
     const resistor = getSourceComponentOrThrow<SourceSimpleResistor>({
@@ -60,7 +63,7 @@ export const applyParameterSweepPoint = ({
         circuitElement.type === "source_component" &&
         circuitElement.ftype === "simple_resistor",
     })
-    resistor.resistance = parameterSweepCoordinate
+    resistor.resistance = parameterValue
     return sweptCircuitJson
   }
 
@@ -74,7 +77,7 @@ export const applyParameterSweepPoint = ({
         circuitElement.type === "source_component" &&
         circuitElement.ftype === "simple_capacitor",
     })
-    capacitor.capacitance = parameterSweepCoordinate
+    capacitor.capacitance = parameterValue
     return sweptCircuitJson
   }
 
@@ -88,7 +91,7 @@ export const applyParameterSweepPoint = ({
         circuitElement.type === "source_component" &&
         circuitElement.ftype === "simple_inductor",
     })
-    inductor.inductance = parameterSweepCoordinate
+    inductor.inductance = parameterValue
     return sweptCircuitJson
   }
 
@@ -103,11 +106,11 @@ export const applyParameterSweepPoint = ({
     }
     const sweepVoltageSource: SimulationDcVoltageSource = {
       type: "simulation_voltage_source",
-      simulation_voltage_source_id: `simulation_voltage_source_${simulationParameterSweepPointId}`,
+      simulation_voltage_source_id: `simulation_voltage_source_${simulationParameterSweepCoordinate.simulation_parameter_sweep_id}_${simulationParameterSweepCoordinate.sweep_index}`,
       is_dc_source: true,
       positive_source_net_id: parameterSweep.source_net_id,
       negative_source_net_id: groundNet.source_net_id,
-      voltage: parameterSweepCoordinate,
+      voltage: parameterValue,
     }
     sweptCircuitJson.push(sweepVoltageSource)
     return sweptCircuitJson
@@ -117,12 +120,7 @@ export const applyParameterSweepPoint = ({
     const currentSourcePortIds = new Set(
       sweptCircuitJson
         .filter(
-          (
-            circuitElement,
-          ): circuitElement is Extract<
-            AnyCircuitElement,
-            { type: "source_port" }
-          > =>
+          (circuitElement): circuitElement is SourcePort =>
             circuitElement.type === "source_port" &&
             circuitElement.source_component_id ===
               parameterSweep.current_source_component_id,
@@ -151,7 +149,7 @@ export const applyParameterSweepPoint = ({
         `Current sweep target ${parameterSweep.current_source_component_id} has no simulation source`,
       )
     }
-    currentSource.current = parameterSweepCoordinate
+    currentSource.current = parameterValue
     return sweptCircuitJson
   }
 
