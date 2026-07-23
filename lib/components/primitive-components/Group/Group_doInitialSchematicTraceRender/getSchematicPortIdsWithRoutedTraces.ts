@@ -1,18 +1,19 @@
 import type { SchematicTracePipelineSolver } from "@tscircuit/schematic-trace-solver"
+import type { SchematicPort } from "circuit-json"
+
+type SchematicPortId = SchematicPort["schematic_port_id"]
 
 export const getSchematicPortIdsWithRoutedTraces = ({
   solver,
-  pinIdToSchematicPortId,
 }: {
   solver: SchematicTracePipelineSolver
-  pinIdToSchematicPortId: Map<string, string>
-}): Set<string> => {
+}): Set<SchematicPortId> => {
   const solvedTraces =
     solver.traceCleanupSolver?.getOutput().traces ??
     solver.traceLabelOverlapAvoidanceSolver?.getOutput().traces ??
     solver.schematicTraceLinesSolver?.solvedTracePaths ??
     []
-  const schematicPortIdsWithRoutedTraces = new Set<string>()
+  const schematicPortIdsWithRoutedTraces = new Set<SchematicPortId>()
 
   for (const solvedTrace of solvedTraces) {
     const points = solvedTrace?.tracePath as Array<{ x: number; y: number }>
@@ -21,10 +22,9 @@ export const getSchematicPortIdsWithRoutedTraces = ({
       ? solvedTrace.pins.map((pin) => pin.pinId)
       : solvedTrace.pinIds
 
-    for (const pinId of pinIds) {
-      const schPortId = pinIdToSchematicPortId.get(pinId)
-      if (schPortId) {
-        schematicPortIdsWithRoutedTraces.add(schPortId)
+    for (const schematicPortId of pinIds) {
+      if (schematicPortId) {
+        schematicPortIdsWithRoutedTraces.add(schematicPortId)
       }
     }
   }

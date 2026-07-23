@@ -15,14 +15,12 @@ import { convertFacingDirectionToElbowDirection } from "lib/utils/schematic/conv
 import { Group } from "../Group"
 import type { AxisDirection } from "./getSide"
 import { schematicTextToTextBox } from "./schematicTextToTextBounds"
-import { getSchematicPortSelector } from "./getSchematicPortSelector"
 
 const DEFAULT_MAX_MSP_PAIR_DISTANCE = 2.4
 const SCHEMATIC_RAIL_NET_LABEL_HEIGHT = 0.42
 
 export type SolverInputContext = {
   inputProblem: InputProblem
-  pinIdToSchematicPortId: Map<string, string>
   /**
    * Subcircuit connectivity map key to source_net
    * e.g.
@@ -139,10 +137,11 @@ export function createSchematicTraceSolverInputProblem(
     }
   }
 
-  // Build chips and pinId maps
+  // Build chips using canonical schematic port ids as solver pin ids.
+  // A source port can have multiple schematic representations (for example,
+  // a chip and a schematicbox with chipRef), so source-derived selectors are
+  // not unique enough to identify a pin in the schematic solver.
   const chips: InputChip[] = []
-  const pinIdToSchematicPortId = new Map<string, string>()
-  const schematicPortIdToPinId = new Map<string, string>()
 
   for (const schematicComponent of schematicComponents) {
     const chipId = schematicComponent.schematic_component_id
@@ -157,21 +156,8 @@ export function createSchematicTraceSolverInputProblem(
     })
 
     for (const schematicPort of schematicPorts) {
-      const sourcePort = db.source_port.get(schematicPort.source_port_id)!
-      const selector = getSchematicPortSelector({
-        componentName:
-          sourceComponent?.name ?? schematicComponent.schematic_component_id,
-        schematicPort,
-        sourcePort,
-      })
-      pinIdToSchematicPortId.set(selector, schematicPort.schematic_port_id)
-      schematicPortIdToPinId.set(schematicPort.schematic_port_id, selector)
-    }
-
-    for (const schematicPort of schematicPorts) {
-      const pinId = schematicPortIdToPinId.get(schematicPort.schematic_port_id)!
       pins.push({
-        pinId,
+        pinId: schematicPort.schematic_port_id,
         x: schematicPort.center.x,
         y: schematicPort.center.y,
         // Pass the port's true facing direction (known from the schematic
@@ -324,10 +310,7 @@ export function createSchematicTraceSolverInputProblem(
           )
         }
         directConnections.push({
-          pinIds: [a, b].map((id) => schematicPortIdToPinId.get(id)!) as [
-            string,
-            string,
-          ],
+          pinIds: [a, b],
           netId: userNetId,
           netLabelWidth,
         })
@@ -394,9 +377,7 @@ export function createSchematicTraceSolverInputProblem(
 
       netConnections.push({
         netId: userNetId,
-        pinIds: schematicPortIds.map(
-          (portId) => schematicPortIdToPinId.get(portId)!,
-        ),
+        pinIds: schematicPortIds,
         netLabelWidth,
         netLabelHeight,
       })
@@ -438,7 +419,6 @@ export function createSchematicTraceSolverInputProblem(
 
   return {
     inputProblem,
-    pinIdToSchematicPortId,
     connKeyToSourceNet,
     userNetIdToConnKey,
     connKeysWithExplicitPortNetTraces,

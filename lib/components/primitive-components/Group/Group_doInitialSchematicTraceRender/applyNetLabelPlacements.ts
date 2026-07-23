@@ -58,7 +58,6 @@ export function applyNetLabelPlacements(args: {
   solver: SchematicTracePipelineSolver
   userNetIdToConnKey: Map<string, string>
   connKeyToSourceNet: Map<string, SourceNet>
-  pinIdToSchematicPortId: Map<string, string>
   connKeysWithExplicitPortNetTraces: Set<string>
   schematicPortIdsWithPreExistingNetLabels: Set<string>
   schematicPortIdsWithRoutedTraces: Set<string>
@@ -68,7 +67,6 @@ export function applyNetLabelPlacements(args: {
     solver,
     connKeyToSourceNet,
     userNetIdToConnKey,
-    pinIdToSchematicPortId,
     connKeysWithExplicitPortNetTraces,
     schematicPortIdsWithPreExistingNetLabels,
     schematicPortIdsWithRoutedTraces,
@@ -152,9 +150,7 @@ export function applyNetLabelPlacements(args: {
       sourceNet = connKeyToSourceNet.get(placementConnKey)
     }
 
-    const schPortIds = placement.pinIds.map(
-      (pinId) => pinIdToSchematicPortId.get(pinId)!,
-    )
+    const schPortIds = placement.pinIds
     // Solver labels belong to the same sheet as their connected port.
     let schematicSheetId = group._resolveSchematicSheetId()
     const schematicPort = db.schematic_port.get(schPortIds[0])

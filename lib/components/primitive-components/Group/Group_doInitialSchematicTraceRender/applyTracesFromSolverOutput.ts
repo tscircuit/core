@@ -91,14 +91,12 @@ function extendTraceEndpointsToReachPinsInsideExpandedBoundingBox(
 export function applyTracesFromSolverOutput(args: {
   group: Group<any>
   solver: SchematicTracePipelineSolver
-  pinIdToSchematicPortId: Map<string, string>
   userNetIdToConnKey: Map<string, string>
   schematicPortIdsWithPreExistingNetLabels: Set<string>
 }) {
   const {
     group,
     solver,
-    pinIdToSchematicPortId,
     userNetIdToConnKey,
     schematicPortIdsWithPreExistingNetLabels,
   } = args
@@ -134,8 +132,6 @@ export function applyTracesFromSolverOutput(args: {
   for (const solvedTracePath of traces ?? []) {
     const uniquePinIds = Array.from(new Set(solvedTracePath.pinIds ?? []))
     const solvedTraceSchematicPortIds = uniquePinIds
-      .map((pinId) => pinIdToSchematicPortId.get(pinId))
-      .filter((id): id is string => Boolean(id))
     const isNetLabelCoveredTrace =
       solvedTraceSchematicPortIds.length > 0 &&
       solvedTraceSchematicPortIds.every((id) =>
@@ -183,8 +179,8 @@ export function applyTracesFromSolverOutput(args: {
       Array.isArray(solvedTracePath?.pins) &&
       solvedTracePath.pins.length === 2
     ) {
-      const pA = pinIdToSchematicPortId.get(solvedTracePath.pins[0]?.pinId!)
-      const pB = pinIdToSchematicPortId.get(solvedTracePath.pins[1]?.pinId!)
+      const pA = solvedTracePath.pins[0]?.pinId
+      const pB = solvedTracePath.pins[1]?.pinId
       if (pA && pB) {
         // Mark ports as connected on schematic
         for (const schPid of [pA, pB]) {
