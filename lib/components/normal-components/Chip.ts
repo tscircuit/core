@@ -81,29 +81,6 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
     super.doInitialSchematicComponentRender()
   }
 
-  _getSchematicBoxDimensions(): SchematicBoxDimensions | null {
-    if (
-      this._parsedProps.schShowInternalCircuit &&
-      this._parsedProps.internalCircuit
-    ) {
-      return null
-    }
-    return super._getSchematicBoxDimensions()
-  }
-
-  doInitialReactSubtreesRender(): void {
-    super.doInitialReactSubtreesRender()
-
-    const internalCircuit = this._parsedProps.internalCircuit
-    if (
-      this._parsedProps.schShowInternalCircuit &&
-      internalCircuit &&
-      !this.children.some((child) => child.componentName === "InternalCircuit")
-    ) {
-      this.add(internalCircuit)
-    }
-  }
-
   doInitialSourceRender(): void {
     const { db } = this.root!
     const { _parsedProps: props } = this

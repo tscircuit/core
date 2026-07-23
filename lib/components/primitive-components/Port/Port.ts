@@ -431,11 +431,6 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       return
     }
 
-    const pcbMatches = matchedComponents.filter((c) => c.isPcbPrimitive)
-
-    // A port without a matched PCB primitive has no PCB representation.
-    if (pcbMatches.length === 0) return
-
     const parentNormalComponent = this.getParentNormalComponent()
     const parentWithPcbComponentId = this.parent?.pcb_component_id
       ? this.parent
@@ -446,6 +441,10 @@ export class Port extends PrimitiveComponent<typeof portProps> {
         `${this.getString()} has no parent pcb component, cannot render pcb_port (parent: ${this.parent?.getString()}, parentNormalComponent: ${parentNormalComponent?.getString()})`,
       )
     }
+
+    const pcbMatches = matchedComponents.filter((c) => c.isPcbPrimitive)
+
+    if (pcbMatches.length === 0) return
 
     let matchCenter: { x: number; y: number } | null = null
 
