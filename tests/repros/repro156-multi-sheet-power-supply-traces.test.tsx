@@ -7,12 +7,13 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
  * disappeared from the stacked view.
  *
  * The circuit deliberately places every component and its
- * `connections`-generated traces directly inside a `<schematicsheet>`. There
- * are no groups or subcircuits involved: Core must infer sheet ownership from
- * the component tree and stamp every resulting schematic trace with the sheet
- * it belongs to.
+ * `connections`-generated traces directly inside a `<schematicsheet>`, with
+ * components divided into schematic sections on both sheets. There are no
+ * groups or subcircuits involved: Core must infer sheet ownership from the
+ * component tree and stamp every resulting schematic trace with the sheet it
+ * belongs to.
  */
-test("repro156: direct schematic-sheet children retain routed traces", async () => {
+test("repro156: sectioned schematic-sheet children retain routed traces", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -184,12 +185,26 @@ test("repro156: direct schematic-sheet children retain routed traces", async () 
         displayName="2. GaN Active-Clamp Flyback"
         sheetIndex={1}
       >
+        <schematicsection
+          name="auxiliary_supply"
+          displayName="Auxiliary Supply"
+        />
+        <schematicsection
+          name="primary_control"
+          displayName="Primary Control"
+        />
+        <schematicsection
+          name="flyback_transformer"
+          displayName="Flyback Transformer"
+        />
+
         <capacitor
           name="C8"
           capacitance="10uF"
           footprint="0805"
           schX={-7}
           schY={1.8}
+          schSectionName="auxiliary_supply"
           connections={{
             pin1: "net.VDD_PRIMARY",
             pin2: "net.PRIMARY_GND",
@@ -201,6 +216,7 @@ test("repro156: direct schematic-sheet children retain routed traces", async () 
           footprint="0603"
           schX={-5.2}
           schY={1.8}
+          schSectionName="auxiliary_supply"
           connections={{ pin1: "net.AUX_RAW", pin2: "net.PRIMARY_GND" }}
         />
         <diode
@@ -208,6 +224,7 @@ test("repro156: direct schematic-sheet children retain routed traces", async () 
           footprint="sod123"
           schX={-3.4}
           schY={1.8}
+          schSectionName="auxiliary_supply"
           connections={{
             anode: "net.AUX_RAW",
             cathode: "net.VDD_PRIMARY",
@@ -219,6 +236,7 @@ test("repro156: direct schematic-sheet children retain routed traces", async () 
           footprint="1206"
           schX={-1.5}
           schY={1.8}
+          schSectionName="auxiliary_supply"
           connections={{ pin1: "net.HOT_GND", pin2: "net.AUX_RAW" }}
         />
         <diode
@@ -226,6 +244,7 @@ test("repro156: direct schematic-sheet children retain routed traces", async () 
           footprint="sod123"
           schX={0.4}
           schY={1.8}
+          schSectionName="auxiliary_supply"
           connections={{
             anode: "net.AUX_RAW",
             cathode: "net.VDD_PRIMARY",
@@ -237,6 +256,7 @@ test("repro156: direct schematic-sheet children retain routed traces", async () 
           footprint="soic8"
           schX={-4.5}
           schY={-0.8}
+          schSectionName="primary_control"
           pinLabels={{
             pin1: "VDD",
             pin2: "GND",
@@ -265,6 +285,7 @@ test("repro156: direct schematic-sheet children retain routed traces", async () 
           footprint="soic8"
           schX={0}
           schY={-0.8}
+          schSectionName="primary_control"
           pinLabels={{
             pin1: "VIN",
             pin2: "GND",
@@ -293,6 +314,7 @@ test("repro156: direct schematic-sheet children retain routed traces", async () 
           footprint="soic8"
           schX={5}
           schY={-0.5}
+          schSectionName="flyback_transformer"
           pinLabels={{
             pin1: "PRI_DOT",
             pin2: "PRI_RET",
@@ -322,6 +344,7 @@ test("repro156: direct schematic-sheet children retain routed traces", async () 
           footprint="0603"
           schX={-3.5}
           schY={3}
+          schSectionName="primary_control"
           connections={{ pin1: "net.PWM_MAIN", pin2: "net.CLAMP_DRAIN" }}
         />
         <capacitor
@@ -330,6 +353,7 @@ test("repro156: direct schematic-sheet children retain routed traces", async () 
           footprint="0603"
           schX={-1.5}
           schY={3}
+          schSectionName="auxiliary_supply"
           connections={{ pin1: "net.VDD_PRIMARY", pin2: "net.PRIMARY_GND" }}
         />
         <capacitor
@@ -338,6 +362,7 @@ test("repro156: direct schematic-sheet children retain routed traces", async () 
           footprint="0805"
           schX={0.5}
           schY={3}
+          schSectionName="auxiliary_supply"
           connections={{ pin1: "net.VDD_PRIMARY", pin2: "net.PRIMARY_GND" }}
         />
       </schematicsheet>
