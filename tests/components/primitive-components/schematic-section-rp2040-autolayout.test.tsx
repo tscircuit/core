@@ -230,7 +230,6 @@ test("RP2040 auto-layout with schematic sections", () => {
         frequency="12MHz"
         loadCapacitance="10pF"
         footprint="pinrow2"
-        schOrientation="vertical"
         schSectionName="clk"
         connections={{ left: "net.XIN", right: "net.XOUT" }}
       />
@@ -238,7 +237,6 @@ test("RP2040 auto-layout with schematic sections", () => {
         name="C19"
         capacitance="22pF"
         footprint="0402"
-        schOrientation="vertical"
         schSectionName="clk"
         connections={{ pin1: "net.XIN", pin2: "net.GND" }}
       />
@@ -246,7 +244,6 @@ test("RP2040 auto-layout with schematic sections", () => {
         name="C20"
         capacitance="22pF"
         footprint="0402"
-        schOrientation="vertical"
         schSectionName="clk"
         connections={{ pin1: "net.XOUT", pin2: "net.GND" }}
       />
