@@ -1,12 +1,14 @@
-import { Group } from "../Group"
-import { SchematicTracePipelineSolver } from "@tscircuit/schematic-trace-solver"
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
+import { SchematicTracePipelineSolver } from "@tscircuit/schematic-trace-solver"
 import type { SchematicTrace } from "circuit-json"
+import Debug from "debug"
+import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
+import { Port } from "../../Port"
+import { Group } from "../Group"
 import { computeCrossings } from "./compute-crossings"
 import { computeJunctions } from "./compute-junctions"
+import { getPortForSchematicSymbolPort } from "./getPortForSchematicSymbolPort"
 import { removeOverlappingSameNetCrossingSegments } from "./remove-overlapping-same-net-crossing-segments"
-import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
-import Debug from "debug"
 
 const debug = Debug("Group_doInitialSchematicTraceRender")
 
@@ -104,6 +106,20 @@ export function applyTracesFromSolverOutput(args: {
   } = args
   const { db } = group.root!
 
+  const schematicPortIdsByRoutedSchematicPortId = new Map<string, string[]>()
+  for (const port of group.selectAll<Port>("port")) {
+    const routedSchematicPortId =
+      getPortForSchematicSymbolPort(port).schematic_port_id
+    if (!routedSchematicPortId || !port.schematic_port_id) continue
+    const schematicPortIds =
+      schematicPortIdsByRoutedSchematicPortId.get(routedSchematicPortId) ?? []
+    schematicPortIds.push(port.schematic_port_id)
+    schematicPortIdsByRoutedSchematicPortId.set(
+      routedSchematicPortId,
+      schematicPortIds,
+    )
+  }
+
   const eligiblePortIds = new Set<string>()
   for (const schematicComponent of db.schematic_component.list()) {
     if (!getSchematicComponentWithTextBounds({ db, schematicComponent })) {
@@ -187,9 +203,18 @@ export function applyTracesFromSolverOutput(args: {
       const pB = pinIdToSchematicPortId.get(solvedTracePath.pins[1]?.pinId!)
       if (pA && pB) {
         // Mark ports as connected on schematic
-        for (const schPid of [pA, pB]) {
-          const existing = db.schematic_port.get(schPid)
-          if (existing) db.schematic_port.update(schPid, { is_connected: true })
+        const routedSchematicPortIds = new Set([pA, pB])
+        for (const routedSchematicPortId of routedSchematicPortIds) {
+          db.schematic_port.update(routedSchematicPortId, {
+            is_connected: true,
+          })
+          for (const schematicPortId of schematicPortIdsByRoutedSchematicPortId.get(
+            routedSchematicPortId,
+          ) ?? []) {
+            db.schematic_port.update(schematicPortId, {
+              is_connected: true,
+            })
+          }
         }
 
         subcircuit_connectivity_map_key = userNetIdToConnKey.get(
