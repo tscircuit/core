@@ -30,11 +30,7 @@ const TPS61222 = (props: ChipProps) => (
 )
 
 const TPS61222TraceIntersectionRepro = (props: SubcircuitProps) => (
-  <subcircuit
-    {...props}
-    routingDisabled
-    schMaxTraceDistance={20}
-  >
+  <subcircuit {...props} routingDisabled schMaxTraceDistance={20}>
     <TPS61222
       name="U2"
       schX={0}
