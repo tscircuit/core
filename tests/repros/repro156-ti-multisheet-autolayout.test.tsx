@@ -11,12 +11,8 @@ test("repro156: TI wireless subcircuits PCB autolayout", async () => {
 
   circuit.add(
     <board routingDisabled>
-      <WirelessMCU_CC3235SF
-        name="radio_transceiver"
-      />
-      <LevelShifter_TXB0104
-        name="radio_level_shifter"
-      />
+      <WirelessMCU_CC3235SF name="radio_transceiver" />
+      <LevelShifter_TXB0104 name="radio_level_shifter" />
       <WirelessMCU_CC2745R10 name="ble_module" />
     </board>,
   )
