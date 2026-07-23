@@ -119,7 +119,7 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
   const { root } = group
   if (!root) return
 
-  const analogSims: AnalogSimulationComponent[] = [
+  const analogSimulations: AnalogSimulationComponent[] = [
     ...group.selectAll<AnalogSimulation>("analogsimulation"),
     ...group.selectAll<AnalogTransientSimulation>("analogtransientsimulation"),
     ...group.selectAll<AnalogDcOperatingPointSimulation>(
@@ -129,7 +129,7 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
     ...group.selectAll<AnalogAcSweepSimulation>("analogacsweepsimulation"),
   ]
 
-  if (analogSims.length === 0) return
+  if (analogSimulations.length === 0) return
 
   resetSimulationColorState()
 
@@ -140,8 +140,8 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
   }
 
   // Run simulation for each analogsimulation component
-  for (const analogSim of analogSims) {
-    const simulationExperimentId = analogSim.simulation_experiment_id
+  for (const analogSimulation of analogSimulations) {
+    const simulationExperimentId = analogSimulation.simulation_experiment_id
     if (!simulationExperimentId) {
       debug("No simulation experiment id found, skipping simulation")
       continue
@@ -154,7 +154,7 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
       continue
     }
 
-    const simulationScope = analogSim.getGroup() ?? group
+    const simulationScope = analogSimulation.getGroup() ?? group
     const voltageProbes =
       simulationScope.selectAll<VoltageProbe>("voltageprobe")
     const ammeters = simulationScope.selectAll<Ammeter>("ammeter")
@@ -261,13 +261,15 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
       )
     }
 
-    const engineName = analogSim.getSpiceEngineName() ?? "spicey"
+    const engineName = analogSimulation.getSpiceEngineName() ?? "spicey"
     const spiceEngine = spiceEngineMap[engineName]
 
     if (!spiceEngine) {
       throw new Error(
         `SPICE engine "${engineName}" not found in platform config. Available engines: ${JSON.stringify(
-          Object.keys(spiceEngineMap).filter((k) => k !== "spicey"),
+          Object.keys(spiceEngineMap).filter(
+            (spiceEngineName) => spiceEngineName !== "spicey",
+          ),
         )}`,
       )
     }
@@ -286,97 +288,119 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
 
         for (const simulationRun of simulationRuns) {
           debug(`Running simulation with engine: ${engineName}`)
-          const result = await spiceEngine.simulate(simulationRun.spiceString)
-
-          debug(
-            `Simulation completed, received ${result.simulationResultCircuitJson.length} elements`,
+          const simulationResult = await spiceEngine.simulate(
+            simulationRun.spiceString,
           )
 
-          for (const rawElement of result.simulationResultCircuitJson) {
-            if (!isCircuitElementInput(rawElement)) {
+          debug(
+            `Simulation completed, received ${simulationResult.simulationResultCircuitJson.length} elements`,
+          )
+
+          for (const simulationResultCircuitElement of simulationResult.simulationResultCircuitJson) {
+            if (!isCircuitElementInput(simulationResultCircuitElement)) {
               debug("Skipping invalid simulation result element")
               continue
             }
 
-            const element = attachSweepPointToSimulationResult({
-              simulationResult: rawElement,
-              simulationParameterSweepPointId:
-                simulationRun.simulationParameterSweepPointId,
-            })
+            const simulationResultWithSweepPoint =
+              attachSweepPointToSimulationResult({
+                simulationResult: simulationResultCircuitElement,
+                simulationParameterSweepPointId:
+                  simulationRun.simulationParameterSweepPointId,
+              })
 
-            if (isVoltageGraph(element)) {
-              element.simulation_experiment_id =
+            if (isVoltageGraph(simulationResultWithSweepPoint)) {
+              simulationResultWithSweepPoint.simulation_experiment_id =
                 simulationExperiment.simulation_experiment_id
 
-              const probeMatch = element.name
-                ? graphNameToProbe.get(element.name)
+              const probeMatch = simulationResultWithSweepPoint.name
+                ? graphNameToProbe.get(simulationResultWithSweepPoint.name)
                 : undefined
               if (probeMatch) {
-                element.color = probeMatch.color ?? undefined
-                element.source_probe_id =
+                simulationResultWithSweepPoint.color =
+                  probeMatch.color ?? undefined
+                simulationResultWithSweepPoint.source_probe_id =
                   probeMatch.simulation_voltage_probe_id ?? undefined
               }
-            } else if (isSimulationVoltageResult(element)) {
-              element.simulation_experiment_id =
+            } else if (
+              isSimulationVoltageResult(simulationResultWithSweepPoint)
+            ) {
+              simulationResultWithSweepPoint.simulation_experiment_id =
                 simulationExperiment.simulation_experiment_id
               const probeMatch =
-                voltageProbesById.get(element.simulation_voltage_probe_id) ??
-                (element.name ? graphNameToProbe.get(element.name) : undefined)
+                voltageProbesById.get(
+                  simulationResultWithSweepPoint.simulation_voltage_probe_id,
+                ) ??
+                (simulationResultWithSweepPoint.name
+                  ? graphNameToProbe.get(simulationResultWithSweepPoint.name)
+                  : undefined)
               if (probeMatch?.simulation_voltage_probe_id) {
-                element.color = probeMatch.color ?? undefined
-                element.simulation_voltage_probe_id =
+                simulationResultWithSweepPoint.color =
+                  probeMatch.color ?? undefined
+                simulationResultWithSweepPoint.simulation_voltage_probe_id =
                   probeMatch.simulation_voltage_probe_id
               }
             }
 
-            if (isCurrentGraph(element)) {
-              element.simulation_experiment_id =
+            if (isCurrentGraph(simulationResultWithSweepPoint)) {
+              simulationResultWithSweepPoint.simulation_experiment_id =
                 simulationExperiment.simulation_experiment_id
 
               const probeMatch =
-                (element.source_probe_id
-                  ? currentProbesById.get(element.source_probe_id)
+                (simulationResultWithSweepPoint.source_probe_id
+                  ? currentProbesById.get(
+                      simulationResultWithSweepPoint.source_probe_id,
+                    )
                   : undefined) ??
-                (element.name
-                  ? currentProbesByName.get(element.name)
+                (simulationResultWithSweepPoint.name
+                  ? currentProbesByName.get(simulationResultWithSweepPoint.name)
                   : undefined)
               if (probeMatch) {
-                element.color = probeMatch.color
-                element.source_probe_id = probeMatch.simulation_current_probe_id
+                simulationResultWithSweepPoint.color = probeMatch.color
+                simulationResultWithSweepPoint.source_probe_id =
+                  probeMatch.simulation_current_probe_id
               }
-            } else if (isSimulationCurrentResult(element)) {
-              element.simulation_experiment_id =
+            } else if (
+              isSimulationCurrentResult(simulationResultWithSweepPoint)
+            ) {
+              simulationResultWithSweepPoint.simulation_experiment_id =
                 simulationExperiment.simulation_experiment_id
               const probeMatch =
-                currentProbesById.get(element.simulation_current_probe_id) ??
-                (element.name
-                  ? currentProbesByName.get(element.name)
+                currentProbesById.get(
+                  simulationResultWithSweepPoint.simulation_current_probe_id,
+                ) ??
+                (simulationResultWithSweepPoint.name
+                  ? currentProbesByName.get(simulationResultWithSweepPoint.name)
                   : undefined)
               if (probeMatch) {
-                element.color = probeMatch.color
-                element.simulation_current_probe_id =
+                simulationResultWithSweepPoint.color = probeMatch.color
+                simulationResultWithSweepPoint.simulation_current_probe_id =
                   probeMatch.simulation_current_probe_id
               }
             }
 
-            const insertedElement = root.db.insert(element)
-            if (isVoltageGraph(insertedElement)) {
+            const insertedSimulationResult = root.db.insert(
+              simulationResultWithSweepPoint,
+            )
+            if (isVoltageGraph(insertedSimulationResult)) {
               insertedVoltageGraphs.push({
                 type: "voltage",
-                graph: insertedElement,
+                graph: insertedSimulationResult,
               })
             }
-            if (isCurrentGraph(insertedElement)) {
+            if (isCurrentGraph(insertedSimulationResult)) {
               insertedCurrentGraphs.push({
                 type: "current",
-                graph: insertedElement,
+                graph: insertedSimulationResult,
               })
             }
-            debug(`Inserted ${element.type} into database`)
+            debug(
+              `Inserted ${simulationResultWithSweepPoint.type} into database`,
+            )
           }
         }
 
-        if (analogSim.usesIndependentGraphAxes()) {
+        if (analogSimulation.usesIndependentGraphAxes()) {
           insertIndependentAxisScopeTraces({
             db: root.db,
             graphs: [...insertedVoltageGraphs, ...insertedCurrentGraphs],
