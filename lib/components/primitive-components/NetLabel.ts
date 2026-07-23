@@ -88,9 +88,9 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
         selected = null
       }
 
-      if (selected && "isPort" in selected && selected.isPort) {
+      if (selected?.config?.componentName === "Port") {
         connectedPorts.push(selected as Port)
-      } else if (selected && "isNet" in selected && selected.isNet) {
+      } else if (selected?.config?.componentName === "Net") {
         const netPorts = (selected as any).getAllConnectedPorts()
         connectedPorts.push(...netPorts)
       } else if (db && connection.startsWith("net.")) {
@@ -100,7 +100,6 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
           .find((sn) => sn.name === netName || sn.name === connection)
         if (sourceNet) {
           const sourcePortsOnNet = db.source_port.list().filter((sp) => {
-            if (sp.source_net_id === sourceNet.source_net_id) return true
             return (
               sp.subcircuit_connectivity_map_key &&
               sp.subcircuit_connectivity_map_key ===
