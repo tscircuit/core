@@ -1,15 +1,16 @@
-import { ConnectivityMap } from "circuit-json-to-connectivity-map"
-import type { Group } from "./Group"
 import type { SourceTrace } from "circuit-json"
-import type { TraceI } from "../Trace/TraceI"
+import { ConnectivityMap } from "circuit-json-to-connectivity-map"
+import type { Trace } from "../Trace/Trace"
 import type { Via } from "../Via"
+import type { Group } from "./Group"
+import { propagateCrystalTraceLengthConstraints } from "./propagate-crystal-trace-length-constraints"
 
 export function Group_doInitialSourceAddConnectivityMapKey(group: Group<any>) {
   if (!group.isSubcircuit) return
   const { db } = group.root!
   // Find all traces that belong to this subcircuit, generate a connectivity
   // map, and add source_trace.subcircuit_connectivity_map_key
-  const traces = group.selectAll("trace") as TraceI[]
+  const traces = group.selectAll("trace") as Trace[]
   const vias = group.selectAll("via") as Via[]
   const nets = group.selectAll("net") as any[]
   const connMap = new ConnectivityMap({})
@@ -51,6 +52,8 @@ export function Group_doInitialSourceAddConnectivityMapKey(group: Group<any>) {
       subcircuit_connectivity_map_key: trace.subcircuit_connectivity_map_key!,
     })
   }
+
+  propagateCrystalTraceLengthConstraints({ db, traces })
 
   // Update source_port.subcircuit_connectivity_map_key for ports connected to the same net
   const allSourcePortIds = new Set<string>()

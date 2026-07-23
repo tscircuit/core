@@ -21,6 +21,7 @@ import { Group } from "../primitive-components/Group/Group"
 import type { SubcircuitI } from "../primitive-components/Group/Subcircuit/SubcircuitI"
 import { Subcircuit_doInitialRenderIsolatedSubcircuits } from "../primitive-components/Group/Subcircuit/Subcircuit_doInitialRenderIsolatedSubcircuits"
 import { Subcircuit_getSubcircuitPropHash } from "../primitive-components/Group/Subcircuit_getSubcircuitPropHash"
+import { insertPcbTraceTooLongWarnings } from "../primitive-components/Group/insert-pcb-trace-too-long-warnings"
 import type { BoardI } from "./BoardI"
 import { Board_doInitialPcbPlacementDesignRuleChecks } from "./Board_doInitialPcbPlacementDesignRuleChecks"
 
@@ -695,6 +696,10 @@ export class Board
     this._queueAsyncEffect("board:drc-checks", async () => {
       try {
         await runDrcChecks(subcircuitCircuitJson)
+        insertPcbTraceTooLongWarnings({
+          db,
+          subcircuitId: this.subcircuit_id!,
+        })
         this._drcChecksComplete = true
       } finally {
         this._drcChecksInProgress = false
