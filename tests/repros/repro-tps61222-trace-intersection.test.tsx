@@ -33,7 +33,6 @@ const TPS61222TraceIntersectionRepro = (props: SubcircuitProps) => (
   <subcircuit
     {...props}
     routingDisabled
-    schTraceAutoLabelEnabled={false}
     schMaxTraceDistance={20}
   >
     <TPS61222
