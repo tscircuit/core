@@ -20,7 +20,7 @@ test("repro156: TI wireless subcircuits PCB autolayout", async () => {
   await circuit.renderUntilSettled()
 
   const footprintOverlapErrors = circuit.db.pcb_footprint_overlap_error.list()
-  expect(footprintOverlapErrors.length).toBeGreaterThan(0)
+  expect(footprintOverlapErrors).toHaveLength(0)
 
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 }, 30_000)

@@ -133,15 +133,18 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
     }
   }
 
+  const initialPackOutput = convertCircuitJsonToPackOutput(
+    filteredCircuitJson,
+    {
+      source_group_id: group.source_group_id!,
+      // shouldAddInnerObstacles: true,
+      chipMarginsMap,
+      staticPcbComponentIds: Array.from(staticPcbComponentIds),
+    },
+  )
+
   const packInput: PackInput = {
-    ...convertPackOutputToPackInput(
-      convertCircuitJsonToPackOutput(filteredCircuitJson, {
-        source_group_id: group.source_group_id!,
-        // shouldAddInnerObstacles: true,
-        chipMarginsMap,
-        staticPcbComponentIds: Array.from(staticPcbComponentIds),
-      }),
-    ),
+    ...convertPackOutputToPackInput(initialPackOutput),
     // @ts-expect-error calculate-packing is missing some supported strategies
     packOrderStrategy: packOrderStrategy ?? "largest_to_smallest",
     packPlacementStrategy:
@@ -198,7 +201,7 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
     global.debugGraphics?.push(graphics)
   }
 
-  applyPackOutput(group, packOutput, clusterMap)
+  applyPackOutput(group, packOutput, clusterMap, initialPackOutput)
 
   // Emit packing:end event
   group.root?.emit("packing:end", {
