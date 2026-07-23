@@ -1,9 +1,7 @@
+import type { DifferentialPairConstraints } from "@tscircuit/length-matching-post-process"
 import type { SubcircuitGroupProps } from "@tscircuit/props"
 import { SOLVERS } from "lib/solvers"
-import type {
-  SimpleRouteDifferentialPair,
-  SimpleRouteJson,
-} from "lib/utils/autorouting/SimpleRouteJson"
+import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 import { applyDifferentialPairSolverOutput } from "lib/utils/autorouting/differential-pair-post-processing/apply-differential-pair-solver-output"
 import {
@@ -61,7 +59,7 @@ const insertDifferentialPairPostProcessError = ({
   group: Group<any>
   error: unknown
   simpleRouteJson: SimpleRouteJson
-  differentialPairs: readonly SimpleRouteDifferentialPair[]
+  differentialPairs: readonly DifferentialPairConstraints[]
 }): void => {
   const errorMessage = error instanceof Error ? error.message : String(error)
   const differentialPairContext = differentialPairs

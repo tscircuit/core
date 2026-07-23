@@ -2,6 +2,7 @@ import type {
   SimpleRouteJson as AutorouterSimpleRouteJson,
   SimplifiedPcbTrace as AutorouterSimplifiedPcbTrace,
 } from "@tscircuit/capacity-autorouter"
+import type { DifferentialPairConstraints } from "@tscircuit/length-matching-post-process"
 
 export type SimplifiedPcbTrace = Omit<
   AutorouterSimplifiedPcbTrace,
@@ -92,12 +93,6 @@ export type SimpleRouteConnection = {
   externallyConnectedPointIds?: string[][]
 }
 
-/** Length-matching constraints for two connections in Simple Route JSON. */
-export type SimpleRouteDifferentialPair = {
-  connectionNames: [SrjConnectionName, SrjConnectionName]
-  lengthTolerance: number
-}
-
 export type SimpleRouteJson = Omit<
   AutorouterSimpleRouteJson,
   | "connections"
@@ -146,7 +141,7 @@ export type SimpleRouteJson = Omit<
    * @deprecated Pass differential-pair constraints as the second
    * `DifferentialPairSolver` constructor argument.
    */
-  differentialPairs?: SimpleRouteDifferentialPair[]
+  differentialPairs?: DifferentialPairConstraints[]
 }
 
 // declare module "autorouting-dataset" {

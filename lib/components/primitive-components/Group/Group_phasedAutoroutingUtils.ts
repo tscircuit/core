@@ -1,6 +1,6 @@
+import type { DifferentialPairConstraints } from "@tscircuit/length-matching-post-process"
 import type {
   Obstacle,
-  SimpleRouteDifferentialPair,
   SimpleRouteConnection,
   SimpleRouteJson,
   SimplifiedPcbTrace,
@@ -210,7 +210,7 @@ export function Group_filterSimpleRouteJsonForPhase(
     includedConnectionNames.add(connection.name)
   }
 
-  const differentialPairs: SimpleRouteDifferentialPair[] = []
+  const differentialPairs: DifferentialPairConstraints[] = []
   for (const differentialPair of simpleRouteJson.differentialPairs ?? []) {
     const positiveConnectionIncluded: boolean = includedConnectionNames.has(
       differentialPair.connectionNames[0],

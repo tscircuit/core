@@ -1,5 +1,5 @@
+import type { DifferentialPairConstraints } from "@tscircuit/length-matching-post-process"
 import type {
-  SimpleRouteDifferentialPair,
   SimpleRouteJson,
   SimplifiedPcbTrace,
   SrjConnectionName,
@@ -54,7 +54,7 @@ export const getSimplifiedPcbTraceConnectionName = (
   trace.pcb_trace_id
 
 export const getDifferentialPairConnectionNames = (
-  differentialPairs: readonly SimpleRouteDifferentialPair[],
+  differentialPairs: readonly DifferentialPairConstraints[],
 ): Set<SrjConnectionName> =>
   new Set(
     differentialPairs.flatMap(
@@ -258,7 +258,7 @@ export const validateDifferentialPairSolverOutput = ({
 }: {
   inputSimpleRouteJson: SimpleRouteJson
   outputSimpleRouteJson: SimpleRouteJson
-  differentialPairs: readonly SimpleRouteDifferentialPair[]
+  differentialPairs: readonly DifferentialPairConstraints[]
 }): void => {
   if (
     !valuesAreStructurallyEqual(
@@ -385,7 +385,7 @@ export const differentialPairSolverOutputChangesRoutes = ({
 }: {
   inputSimpleRouteJson: SimpleRouteJson
   outputSimpleRouteJson: SimpleRouteJson
-  differentialPairs: readonly SimpleRouteDifferentialPair[]
+  differentialPairs: readonly DifferentialPairConstraints[]
 }): boolean => {
   const differentialPairConnectionNames =
     getDifferentialPairConnectionNames(differentialPairs)

@@ -1,8 +1,6 @@
 import { expect, test } from "bun:test"
-import type {
-  SimpleRouteDifferentialPair,
-  SimpleRouteJson,
-} from "lib/utils/autorouting/SimpleRouteJson"
+import type { DifferentialPairConstraints } from "@tscircuit/length-matching-post-process"
+import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import { SOLVERS } from "lib/solvers"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
@@ -18,7 +16,7 @@ test("rejects invalid solver output without changing PCB traces", async () => {
 
     constructor(
       simpleRouteJson: SimpleRouteJson,
-      differentialPairs: readonly SimpleRouteDifferentialPair[],
+      differentialPairs: readonly DifferentialPairConstraints[],
     ) {
       pcbTracesAtSolverStart = structuredClone(circuit.db.pcb_trace.list())
       this.outputSimpleRouteJson = structuredClone(simpleRouteJson)

@@ -1,9 +1,9 @@
+import type { DifferentialPairConstraints } from "@tscircuit/length-matching-post-process"
 import type { SourcePort, SourceTrace } from "circuit-json"
 import type { DifferentialPair } from "lib/components/primitive-components/DifferentialPair"
 import type { Port } from "lib/components/primitive-components/Port/Port"
 import type {
   SimpleRouteConnection,
-  SimpleRouteDifferentialPair,
   SrjConnectionName,
 } from "./SimpleRouteJson"
 
@@ -160,8 +160,8 @@ export const getDifferentialPairsForSimpleRouteJson = ({
   differentialPairs,
   sourceTraces,
   subcircuitId,
-}: GetDifferentialPairsParams): SimpleRouteDifferentialPair[] | undefined => {
-  const srjDifferentialPairs: SimpleRouteDifferentialPair[] = []
+}: GetDifferentialPairsParams): DifferentialPairConstraints[] | undefined => {
+  const srjDifferentialPairs: DifferentialPairConstraints[] = []
   for (const differentialPair of differentialPairs) {
     const differentialPairSubcircuitId =
       differentialPair.getSubcircuit().subcircuit_id

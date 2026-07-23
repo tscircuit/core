@@ -1,14 +1,11 @@
 import { su } from "@tscircuit/circuit-json-util"
+import type { DifferentialPairConstraints } from "@tscircuit/length-matching-post-process"
 import type { LayerRef, PcbTrace } from "circuit-json"
 import type { Group } from "lib/components/primitive-components/Group"
 import { getSourceTraceIdForRoutedTrace } from "lib/components/primitive-components/Group/get-source-trace-id-for-routed-trace"
 import { getViaBoardLayers } from "lib/utils/getViaSpanLayers"
 import { getViaDiameterDefaults } from "lib/utils/pcbStyle/getViaDiameterDefaults"
-import type {
-  SimpleRouteDifferentialPair,
-  SimpleRouteJson,
-  SimplifiedPcbTrace,
-} from "../SimpleRouteJson"
+import type { SimpleRouteJson, SimplifiedPcbTrace } from "../SimpleRouteJson"
 import {
   differentialPairSolverOutputChangesRoutes,
   getDifferentialPairConnectionNames,
@@ -43,7 +40,7 @@ export const applyDifferentialPairSolverOutput = ({
   group: Group<any>
   inputSimpleRouteJson: SimpleRouteJson
   outputSimpleRouteJson: SimpleRouteJson
-  differentialPairs: readonly SimpleRouteDifferentialPair[]
+  differentialPairs: readonly DifferentialPairConstraints[]
 }): boolean => {
   if (
     !differentialPairSolverOutputChangesRoutes({

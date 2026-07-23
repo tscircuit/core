@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test"
+import type { DifferentialPairConstraints } from "@tscircuit/length-matching-post-process"
 import type {
-  SimpleRouteDifferentialPair,
   SimpleRouteJson,
   SimplifiedPcbTrace,
 } from "lib/utils/autorouting/SimpleRouteJson"
@@ -19,7 +19,7 @@ test("atomically applies changed pair routes without changing unrelated traces",
 
     constructor(
       simpleRouteJson: SimpleRouteJson,
-      differentialPairs: readonly SimpleRouteDifferentialPair[],
+      differentialPairs: readonly DifferentialPairConstraints[],
     ) {
       this.outputSimpleRouteJson = structuredClone(simpleRouteJson)
       const positiveConnectionName = differentialPairs[0]?.connectionNames[0]
