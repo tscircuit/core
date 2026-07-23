@@ -35,6 +35,7 @@ export class Battery extends NormalComponent<
       ftype: "simple_power_source" as Ftype,
       capacity: props.capacity,
       supplier_part_numbers: props.supplierPartNumbers,
+      manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
       are_pins_interchangeable: false,
       display_name: props.displayName,
     } as SourceSimpleBatteryInput)
