@@ -142,9 +142,9 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
         staticPcbComponentIds: Array.from(staticPcbComponentIds),
       }),
     ),
-    // @ts-expect-error we're missing some pack order strategies
-    orderStrategy: packOrderStrategy ?? "largest_to_smallest",
-    placementStrategy:
+    // @ts-expect-error calculate-packing is missing some supported strategies
+    packOrderStrategy: packOrderStrategy ?? "largest_to_smallest",
+    packPlacementStrategy:
       packPlacementStrategy ?? "minimum_sum_squared_distance_to_network",
     minGap: gapMm,
     bounds,
