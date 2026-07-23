@@ -232,6 +232,7 @@ export class SolderJumper<
       subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
       do_not_place: props.doNotPlace ?? false,
       obstructs_within_bounds: props.obstructsWithinBounds ?? true,
+      is_allowed_to_be_off_board: props.allowOffBoard ?? false,
       metadata: props.kicadFootprintMetadata
         ? { kicad_footprint: props.kicadFootprintMetadata }
         : undefined,
