@@ -9,6 +9,16 @@ test("chip-backed schematic boxes participate in schematic sections", () => {
 
   circuit.add(
     <board width="20mm" height="20mm" routingDisabled>
+      <schematicsection
+        name="power"
+        displayName="PWR"
+        sectionTitleFontSize={0.1}
+      />
+      <schematicsection
+        name="io"
+        displayName="I/O"
+        sectionTitleFontSize={0.1}
+      />
       <chip
         name="U1"
         footprint="soic8"
@@ -24,7 +34,7 @@ test("chip-backed schematic boxes participate in schematic sections", () => {
         name="U1 Power"
         chipRef=".U1"
         schSectionName="power"
-        schX={-2}
+        schX={-2.5}
         width={2}
         height={1}
         pinLabels={{ pin1: "VCC", pin2: "GND" }}
@@ -37,7 +47,7 @@ test("chip-backed schematic boxes participate in schematic sections", () => {
         name="U1 I/O"
         chipRef=".U1"
         schSectionName="io"
-        schX={2}
+        schX={2.5}
         width={2}
         height={1}
         pinLabels={{ pin1: "TX", pin2: "RX" }}
