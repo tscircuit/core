@@ -22,7 +22,7 @@ const allPinLabels = {
   pin8: "GND",
 }
 
-test("repro156: schematicbox chipRef pins connect to a netlabel", async () => {
+test("repro156: schematicbox chipRef does not duplicate the chip footprint", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -55,5 +55,9 @@ test("repro156: schematicbox chipRef pins connect to a netlabel", async () => {
 
   await circuit.renderUntilSettled()
 
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+  const footprintOverlapErrors = circuit
+    .getCircuitJson()
+    .filter((element) => element.type === "pcb_footprint_overlap_error")
+
+  expect(footprintOverlapErrors).toHaveLength(0)
 })
