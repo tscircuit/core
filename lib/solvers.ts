@@ -11,6 +11,7 @@ import {
 } from "@tscircuit/capacity-autorouter"
 import { CopperPourPipelineSolver } from "@tscircuit/copper-pour-solver"
 import { CreateFdmEnclosureSolver } from "@tscircuit/create-fdm-enclosure"
+import { DifferentialPairSolver } from "@tscircuit/length-matching-solver"
 import { SchematicTracePipelineSolver } from "@tscircuit/schematic-trace-solver"
 import { PackSolver2 } from "calculate-packing"
 
@@ -27,6 +28,7 @@ export const SOLVERS = {
   AutoroutingPipelineSolver8,
   CopperPourPipelineSolver,
   CreateFdmEnclosureSolver,
+  DifferentialPairSolver,
   SchematicTracePipelineSolver,
 }
 
