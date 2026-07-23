@@ -5,6 +5,9 @@ import {
 } from "calculate-cell-boundaries"
 import { schematicSectionProps } from "@tscircuit/props"
 import type { Bounds } from "@tscircuit/math-utils"
+import type { SchematicSheet } from "circuit-json"
+
+type SchematicSheetId = SchematicSheet["schematic_sheet_id"]
 
 export class SchematicSection extends PrimitiveComponent<
   typeof schematicSectionProps
@@ -22,6 +25,7 @@ export class SchematicSection extends PrimitiveComponent<
   _computeSectionBounds(
     board: PrimitiveComponent,
     sectionName: string | null,
+    schematicSheetId: SchematicSheetId | undefined,
   ): Bounds | null {
     const { db } = this.root!
 
@@ -38,6 +42,7 @@ export class SchematicSection extends PrimitiveComponent<
       if (!schematicComponentId) continue
       const schComp = db.schematic_component.get(schematicComponentId)
       if (!schComp) continue
+      if (schComp.schematic_sheet_id !== schematicSheetId) continue
 
       const hw = schComp.size.width / 2
       const hh = schComp.size.height / 2
@@ -59,10 +64,17 @@ export class SchematicSection extends PrimitiveComponent<
     const board = this.root?._getBoard()
     if (!board) return
 
-    // Only the first SchematicSection in the tree renders everything
+    const schematicSheetId = this._resolveSchematicSheetId()
+
+    // Only the first SchematicSection on each sheet renders that sheet's
+    // sections. Sheetless sections continue to share the implicit sheet.
     const allSections = board
       .getDescendants()
-      .filter((c): c is SchematicSection => c instanceof SchematicSection)
+      .filter(
+        (component): component is SchematicSection =>
+          component instanceof SchematicSection &&
+          component._resolveSchematicSheetId() === schematicSheetId,
+      )
 
     if (allSections[0] !== this) return
 
@@ -77,6 +89,7 @@ export class SchematicSection extends PrimitiveComponent<
         const bounds = section._computeSectionBounds(
           board,
           section._parsedProps.name,
+          schematicSheetId,
         )
         if (!bounds) return null
         return {
@@ -94,7 +107,11 @@ export class SchematicSection extends PrimitiveComponent<
       .filter((s): s is NonNullable<typeof s> => s !== null)
 
     // Include unsectioned components (no schSectionName) as a virtual section
-    const unsectionedBounds = this._computeSectionBounds(board, null)
+    const unsectionedBounds = this._computeSectionBounds(
+      board,
+      null,
+      schematicSheetId,
+    )
     const allSectionsWithBounds = [...namedSectionsWithBounds]
     if (unsectionedBounds)
       allSectionsWithBounds.push({
@@ -135,7 +152,7 @@ export class SchematicSection extends PrimitiveComponent<
         stroke_width: STROKE_WIDTH,
         color: "#000000",
         is_dashed: false,
-        schematic_sheet_id: this._resolveSchematicSheetId(),
+        schematic_sheet_id: schematicSheetId,
       })
     }
 
@@ -175,7 +192,7 @@ export class SchematicSection extends PrimitiveComponent<
           y: topBoundary - LABEL_PADDING,
         },
         rotation: 0,
-        schematic_sheet_id: this._resolveSchematicSheetId(),
+        schematic_sheet_id: schematicSheetId,
       })
     }
   }
