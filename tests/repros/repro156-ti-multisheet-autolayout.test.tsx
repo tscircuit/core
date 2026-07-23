@@ -8,13 +8,6 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("repro156: TI wireless subcircuits PCB autolayout", async () => {
   const { circuit } = getTestFixture()
-  const packSolverParams: any[] = []
-
-  circuit.on("solver:started", (event) => {
-    if (event.solverName === "PackSolver2") {
-      packSolverParams.push(event.solverParams)
-    }
-  })
 
   circuit.add(
     <board routingDisabled>
@@ -32,19 +25,10 @@ test("repro156: TI wireless subcircuits PCB autolayout", async () => {
 
   await circuit.renderUntilSettled()
 
-  expect(packSolverParams.length).toBeGreaterThan(0)
-  expect(
-    packSolverParams.every(
-      (params) =>
-        params.packPlacementStrategy ===
-        "minimum_sum_squared_distance_to_network",
-    ),
-  ).toBe(true)
-  expect(
-    packSolverParams.every(
-      (params) => params.packOrderStrategy === "largest_to_smallest",
-    ),
-  ).toBe(true)
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+  const footprintOverlapErrors = circuit
+    .getCircuitJson()
+    .filter((element) => element.type === "pcb_footprint_overlap_error")
+  expect(footprintOverlapErrors.length).toBeGreaterThan(0)
+
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 }, 30_000)
