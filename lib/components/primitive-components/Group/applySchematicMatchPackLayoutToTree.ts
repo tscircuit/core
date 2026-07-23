@@ -484,6 +484,7 @@ function convertTreeToMatchPackInputProblem(
           chipGap: problem.chipGap,
         }),
         isCapacitor: child.sourceComponent.ftype === "simple_capacitor",
+        isCrystal: child.sourceComponent.ftype === "simple_crystal",
         availableRotations,
         ...(explicitlyPositioned && {
           fixedPosition: {
