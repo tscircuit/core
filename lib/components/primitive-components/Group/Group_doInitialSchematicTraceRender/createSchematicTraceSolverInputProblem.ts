@@ -6,9 +6,10 @@ import {
   type InputChip,
   type InputPin,
   type InputProblem,
+  type SectionId,
   type TextBoxes,
 } from "@tscircuit/schematic-trace-solver"
-import type { SourceNet } from "circuit-json"
+import type { SchematicComponent, SourceNet } from "circuit-json"
 import { getSchematicNetLabelTextWidth } from "lib/utils/schematic/computeSchematicNetLabelCenter"
 import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
 import { convertFacingDirectionToElbowDirection } from "lib/utils/schematic/convertFacingDirectionToElbowDirection"
@@ -19,6 +20,7 @@ import { getSchematicPortSelector } from "./getSchematicPortSelector"
 
 const DEFAULT_MAX_MSP_PAIR_DISTANCE = 2.4
 const SCHEMATIC_RAIL_NET_LABEL_HEIGHT = 0.42
+type SchematicComponentId = SchematicComponent["schematic_component_id"]
 
 export type SolverInputContext = {
   inputProblem: InputProblem
@@ -129,13 +131,15 @@ export function createSchematicTraceSolverInputProblem(
     })
     .filter((textBox): textBox is TextBoxes => Boolean(textBox))
 
-  const componentNameToSectionId = new Map<string, string>()
-  for (const component of group.getDescendants() as any[]) {
-    if (component.name && component._parsedProps?.schSectionName) {
-      componentNameToSectionId.set(
-        component.name,
-        component._parsedProps.schSectionName,
-      )
+  const sectionIdBySchematicComponentId = new Map<
+    SchematicComponentId,
+    SectionId
+  >()
+  for (const component of group.getDescendants()) {
+    const schematicComponentId = component.schematic_component_id
+    const sectionId = component.getSchematicSectionName()
+    if (schematicComponentId && sectionId) {
+      sectionIdBySchematicComponentId.set(schematicComponentId, sectionId)
     }
   }
 
@@ -191,10 +195,9 @@ export function createSchematicTraceSolverInputProblem(
       })
     }
 
-    let sectionId: string | undefined
-    if (sourceComponent?.name) {
-      sectionId = componentNameToSectionId.get(sourceComponent.name)
-    }
+    const sectionId = sectionIdBySchematicComponentId.get(
+      schematicComponent.schematic_component_id,
+    )
 
     const layoutBounds =
       getSchematicComponentWithTextBounds({ db, schematicComponent }) ??
