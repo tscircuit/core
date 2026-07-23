@@ -136,15 +136,14 @@ export function applyTracesFromSolverOutput(args: {
     const solvedTraceSchematicPortIds = uniquePinIds
       .map((pinId) => pinIdToSchematicPortId.get(pinId))
       .filter((id): id is string => Boolean(id))
-    const isNetLabelStubTrace =
-      uniquePinIds.length <= 1 &&
+    const isNetLabelCoveredTrace =
       solvedTraceSchematicPortIds.length > 0 &&
       solvedTraceSchematicPortIds.every((id) =>
         schematicPortIdsWithPreExistingNetLabels.has(id),
       )
-    if (isNetLabelStubTrace) {
+    if (isNetLabelCoveredTrace) {
       debug(
-        `Skipping solver netlabel stub trace ${solvedTracePath?.mspPairId} because schematic port already has a netlabel`,
+        `Skipping solver netlabel-covered trace ${solvedTracePath?.mspPairId} because all schematic ports already have netlabels`,
       )
       continue
     }
