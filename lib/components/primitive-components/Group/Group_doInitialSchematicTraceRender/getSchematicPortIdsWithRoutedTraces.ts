@@ -1,12 +1,10 @@
 import type { SchematicTracePipelineSolver } from "@tscircuit/schematic-trace-solver"
-import type { SchematicPortId } from "./port-id-types"
+import { type SchematicPortId, asSchematicPortId } from "./port-id-types"
 
 export const getSchematicPortIdsWithRoutedTraces = ({
   solver,
-  pinIdToSchematicPortId,
 }: {
   solver: SchematicTracePipelineSolver
-  pinIdToSchematicPortId: Map<string, SchematicPortId>
 }): Set<SchematicPortId> => {
   const solvedTraces =
     solver.traceCleanupSolver?.getOutput().traces ??
@@ -23,7 +21,7 @@ export const getSchematicPortIdsWithRoutedTraces = ({
       : solvedTrace.pinIds
 
     for (const pinId of pinIds) {
-      const schPortId = pinIdToSchematicPortId.get(pinId)
+      const schPortId = asSchematicPortId(pinId)
       if (schPortId) {
         schematicPortIdsWithRoutedTraces.add(schPortId)
       }
