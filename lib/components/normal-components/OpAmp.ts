@@ -67,6 +67,7 @@ export class OpAmp extends NormalComponent<typeof opampProps, OpAmpPinLabels> {
       ftype: "simple_op_amp",
       name: this.name,
       supplier_part_numbers: props.supplierPartNumbers,
+      manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
       display_name: props.displayName,
     } as Omit<SourceSimpleOpAmp, "source_component_id" | "type">)
 

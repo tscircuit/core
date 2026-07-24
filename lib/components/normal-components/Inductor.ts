@@ -47,6 +47,7 @@ export class Inductor extends NormalComponent<
       inductance: this.props.inductance,
       display_inductance: this._getSchematicSymbolDisplayValue(),
       supplier_part_numbers: props.supplierPartNumbers,
+      manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
       are_pins_interchangeable: true,
       display_name: props.displayName,
     } as Omit<SourceSimpleInductor, "source_component_id" | "type">)

@@ -57,6 +57,7 @@ export const applyPackOutput = (
   group: Group,
   packOutput: PackOutput,
   clusterMap: Record<string, ClusterInfo>,
+  initialPackOutput: PackOutput,
 ) => {
   const { db } = group.root!
 
@@ -151,7 +152,12 @@ export const applyPackOutput = (
       .find((g) => g.source_group_id === componentId)
     if (!pcbGroup) continue
 
-    const originalCenter = pcbGroup.center
+    const initialPackedComponent = initialPackOutput.components.find(
+      (component) => component.componentId === componentId,
+    )
+    // The converter's aggregate center is the origin used for descendant
+    // offsets. pcb_group.center can still contain its pre-layout default.
+    const originalCenter = initialPackedComponent?.center ?? pcbGroup.center
     const rotationDegrees = ccwRotationDegrees ?? ccwRotationOffset ?? 0
     const transformMatrix = compose(
       group._computePcbGlobalTransformBeforeLayout(),
