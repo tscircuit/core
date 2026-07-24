@@ -8,7 +8,7 @@ it("registers a differential pair using port selectors", (): void => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="20mm" height="10mm" routingDisabled>
+    <board width="20mm" height="10mm">
       <differentialpair
         name="USB"
         positiveConnection=".TP1 > .pin1"
@@ -24,10 +24,30 @@ it("registers a differential pair using port selectors", (): void => {
         pcbY={2}
         pcbRotation={180}
       />
-      <led name="LED1" footprint="0402" pcbX={6} pcbY={-2} />
-      <led name="LED2" footprint="0402" pcbX={6} pcbY={2} />
-      <trace name="USB_P" from=".TP1 > .pin1" to=".LED1 > .anode" />
-      <trace name="USB_N" from=".R2 > .pin1" to=".LED2 > .anode" />
+      <chip
+        name="OUT"
+        pcbX={6}
+        footprint={
+          <footprint>
+            <smtpad
+              portHints={["pin1"]}
+              pcbY={-0.15}
+              width={0.1}
+              height={0.1}
+              shape="rect"
+            />
+            <smtpad
+              portHints={["pin2"]}
+              pcbY={0.15}
+              width={0.1}
+              height={0.1}
+              shape="rect"
+            />
+          </footprint>
+        }
+      />
+      <trace name="USB_P" from=".TP1 > .pin1" to=".OUT > .pin1" />
+      <trace name="USB_N" from=".R2 > .pin1" to=".OUT > .pin2" />
       <pcbnotetext
         pcbX={0}
         pcbY={0}
