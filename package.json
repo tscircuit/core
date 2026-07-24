@@ -41,7 +41,7 @@
     "@tscircuit/common": "^0.0.20",
     "@tscircuit/copper-pour-solver": "0.0.39",
     "@tscircuit/create-fdm-enclosure": "0.0.3",
-    "@tscircuit/footprinter": "^0.0.380",
+    "@tscircuit/footprinter": "^0.0.386",
     "@tscircuit/image-utils": "^0.0.8",
     "@tscircuit/infer-cable-insertion-point": "^0.0.2",
     "@tscircuit/infgrid-ijump-astar": "^0.0.35",

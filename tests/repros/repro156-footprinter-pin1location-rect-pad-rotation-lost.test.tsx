@@ -26,6 +26,6 @@ test("repro: Footprinter pin1location rect pad rotation is lost", () => {
     )
 
   // 90° from the footprint plus 90° from the chip must yield 180°.
-  expect(pads).toHaveLength(0)
-  expect(pads.map((pad) => pad.ccw_rotation)).toEqual([])
+  expect(pads).toHaveLength(8)
+  expect(pads.map((pad) => pad.ccw_rotation)).toEqual(Array(8).fill(180))
 })
