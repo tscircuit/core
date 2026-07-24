@@ -10,12 +10,14 @@ import {
 } from "@tscircuit/schematic-trace-solver"
 import type { SourceNet } from "circuit-json"
 import { getSchematicNetLabelTextWidth } from "lib/utils/schematic/computeSchematicNetLabelCenter"
-import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
 import { convertFacingDirectionToElbowDirection } from "lib/utils/schematic/convertFacingDirectionToElbowDirection"
+import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
+import { Port } from "../../Port"
 import { Group } from "../Group"
+import { getPortForSchematicSymbolPort } from "./getPortForSchematicSymbolPort"
+import { getSchematicPortSelector } from "./getSchematicPortSelector"
 import type { AxisDirection } from "./getSide"
 import { schematicTextToTextBox } from "./schematicTextToTextBounds"
-import { getSchematicPortSelector } from "./getSchematicPortSelector"
 
 const DEFAULT_MAX_MSP_PAIR_DISTANCE = 2.4
 const SCHEMATIC_RAIL_NET_LABEL_HEIGHT = 0.42
@@ -214,6 +216,12 @@ export function createSchematicTraceSolverInputProblem(
   const schPortIdToSourcePortId = new Map<string, string>()
   const sourcePortIdToSchPortId = new Map<string, string>()
   const userNetIdToConnKey = new Map<string, string>()
+  const componentPortBySourcePortId = new Map(
+    group
+      .selectAll<Port>("port")
+      .filter((port) => port.source_port_id)
+      .map((port) => [port.source_port_id!, port]),
+  )
   for (const sc of schematicComponents) {
     const ports = db.schematic_port.list({
       schematic_component_id: sc.schematic_component_id,
@@ -367,6 +375,23 @@ export function createSchematicTraceSolverInputProblem(
   for (const [connKey, schematicPortIds] of connKeyToPinIds) {
     const sourceNet = connKeyToSourceNet.get(connKey)
     if (sourceNet && schematicPortIds.length >= 1) {
+      const seenSchematicSymbolPortIds = new Set<string>()
+      const uniqueSchematicPortIds = schematicPortIds.filter(
+        (schematicPortId) => {
+          const sourcePortId =
+            schPortIdToSourcePortId.get(schematicPortId) ?? ""
+          const componentPort = componentPortBySourcePortId.get(sourcePortId)
+          const schematicSymbolPortId =
+            (componentPort
+              ? getPortForSchematicSymbolPort(componentPort).schematic_port_id
+              : null) ?? schematicPortId
+          if (seenSchematicSymbolPortIds.has(schematicSymbolPortId)) {
+            return false
+          }
+          seenSchematicSymbolPortIds.add(schematicSymbolPortId)
+          return true
+        },
+      )
       const userNetId = String(
         sourceNet.name || sourceNet.source_net_id || connKey,
       )
@@ -394,7 +419,7 @@ export function createSchematicTraceSolverInputProblem(
 
       netConnections.push({
         netId: userNetId,
-        pinIds: schematicPortIds.map(
+        pinIds: uniqueSchematicPortIds.map(
           (portId) => schematicPortIdToPinId.get(portId)!,
         ),
         netLabelWidth,
