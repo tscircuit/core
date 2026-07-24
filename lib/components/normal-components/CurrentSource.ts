@@ -91,6 +91,7 @@ export class CurrentSource extends NormalComponent<
       phase: props.phase,
       duty_cycle: props.dutyCycle,
       supplier_part_numbers: props.supplierPartNumbers,
+      manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
       are_pins_interchangeable: true,
       display_name: props.displayName,
     } as SourceSimpleCurrentSourceInput)

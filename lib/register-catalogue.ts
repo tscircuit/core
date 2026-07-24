@@ -1,8 +1,5 @@
 import * as Components from "./components"
-import {
-  extendCatalogue,
-  extendInternalCircuitCatalogue,
-} from "./fiber/catalogue"
+import { extendCatalogue } from "./fiber/catalogue"
 
 // Register all components, generally you don't need to manually
 // register a component, as long as it's exported from lib/components
@@ -16,8 +13,4 @@ extendCatalogue({
   "enclosure.fdm.box": Components.EnclosureFdmBox,
   Fanout: Components.Breakout,
   FanoutPoint: Components.BreakoutPoint,
-})
-
-extendInternalCircuitCatalogue({
-  Mosfet: Components.InternalCircuitMosfet,
 })
