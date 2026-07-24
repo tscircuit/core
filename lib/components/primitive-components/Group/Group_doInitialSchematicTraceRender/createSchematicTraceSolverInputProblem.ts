@@ -10,12 +10,12 @@ import {
 } from "@tscircuit/schematic-trace-solver"
 import type { SourceNet } from "circuit-json"
 import { getSchematicNetLabelTextWidth } from "lib/utils/schematic/computeSchematicNetLabelCenter"
-import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
 import { convertFacingDirectionToElbowDirection } from "lib/utils/schematic/convertFacingDirectionToElbowDirection"
+import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
 import { Group } from "../Group"
+import { getSchematicPortSelector } from "./getSchematicPortSelector"
 import type { AxisDirection } from "./getSide"
 import { schematicTextToTextBox } from "./schematicTextToTextBounds"
-import { getSchematicPortSelector } from "./getSchematicPortSelector"
 
 const DEFAULT_MAX_MSP_PAIR_DISTANCE = 2.4
 const SCHEMATIC_RAIL_NET_LABEL_HEIGHT = 0.42
@@ -191,13 +191,21 @@ export function createSchematicTraceSolverInputProblem(
       sectionId = componentNameToSectionId.get(sourceComponent.name)
     }
 
+    const componentBodyBounds = getBoundFromCenteredRect({
+      center: schematicComponent.center,
+      width: schematicComponent.size.width,
+      height: schematicComponent.size.height,
+    })
+    // Crystal load-cap layouts intentionally align other components to the
+    // crystal's electrical ports. A text-inclusive crystal box puts those ports
+    // inside the obstacle and causes schematic-trace-solver to snap them
+    // outward, destroying that alignment. Keep the crystal obstacle on its
+    // physical body; its text remains a separate textBoxes obstacle.
     const layoutBounds =
-      getSchematicComponentWithTextBounds({ db, schematicComponent }) ??
-      getBoundFromCenteredRect({
-        center: schematicComponent.center,
-        width: schematicComponent.size.width,
-        height: schematicComponent.size.height,
-      })
+      sourceComponent?.ftype === "simple_crystal"
+        ? componentBodyBounds
+        : (getSchematicComponentWithTextBounds({ db, schematicComponent }) ??
+          componentBodyBounds)
 
     chips.push({
       chipId,
