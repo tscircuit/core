@@ -13,6 +13,14 @@ export class AnalogSimulation extends PrimitiveComponent<
     }
   }
 
+  getSpiceEngineName(): string | undefined {
+    return this._parsedProps.spiceEngine
+  }
+
+  usesIndependentGraphAxes(): boolean {
+    return this._parsedProps.graphIndependentAxes === true
+  }
+
   doInitialSimulationRender(): void {
     const { db } = this.root!
     const { duration, name, startTime, timePerStep, spiceOptions } =
