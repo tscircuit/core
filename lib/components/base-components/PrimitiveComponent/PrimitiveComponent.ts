@@ -775,10 +775,9 @@ export abstract class PrimitiveComponent<
       )
     }
 
-    const isQualifiedSymbolName = /_(horz|vert|up|down|left|right)$/.test(
-      base_symbol_name,
-    )
-    if (isQualifiedSymbolName && base_symbol_name in symbols) {
+    const hasOrientationOrDirectionSuffix =
+      /_(horz|vert|up|down|left|right)$/.test(base_symbol_name)
+    if (hasOrientationOrDirectionSuffix && base_symbol_name in symbols) {
       const rotatedSymbolName = getRotatedSymbolName(
         base_symbol_name,
         normalizedRotation,
