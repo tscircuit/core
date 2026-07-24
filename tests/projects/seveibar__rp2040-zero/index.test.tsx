@@ -60,6 +60,16 @@ test("seveibar__rp2040-zero matches snapshots", async () => {
   expect(decouplingRailTraces.length).toBeGreaterThan(0)
   expect(railEdgesIntersectingU2).toHaveLength(0)
 
+  const packingErrors = circuit.db.pcb_packing_error.list()
+  expect(packingErrors).toHaveLength(1)
+  expect(packingErrors[0]).toMatchObject({
+    type: "pcb_packing_error",
+    error_type: "pcb_packing_error",
+    message: expect.stringContaining(
+      "Unable to pack all PCB components within the layout bounds",
+    ),
+  })
+
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 }, 200_000)
