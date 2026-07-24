@@ -1,14 +1,20 @@
 import type { SpiceEngine } from "@tscircuit/props"
-import { simulateToCircuitJson } from "spicey"
+import { simulate, spiceyTranToVGraphs } from "spicey"
 
 export const getSpiceyEngine = (): SpiceEngine => {
   return {
     async simulate(spiceString: string) {
+      const simulation_experiment_id = "spice-experiment-1"
+
+      const { circuit: parsedCircuit, tran } = simulate(spiceString)
+      const voltageGraphs = spiceyTranToVGraphs(
+        tran,
+        parsedCircuit,
+        simulation_experiment_id,
+      )
+
       return {
-        simulationResultCircuitJson: simulateToCircuitJson({
-          spiceString,
-          simulationExperimentId: "placeholder_simulation_experiment_id",
-        }),
+        simulationResultCircuitJson: voltageGraphs,
       }
     },
   }
