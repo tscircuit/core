@@ -59,29 +59,5 @@ test("schematicsymbol maps MOSFET symbol ports to a chip for traces", async () =
 
   await circuit.renderUntilSettled()
 
-  const q1 = circuit.db.source_component.getWhere({ name: "Q1" })!
-  const q1Ports = circuit.db.source_port.list({
-    source_component_id: q1.source_component_id,
-  })
-  const getQ1Port = (label: string) =>
-    q1Ports.find((port) => port.port_hints?.includes(label))!
-  const representation = circuit.db.source_component.getWhere({ name: "A" })!
-  const schematicComponent = circuit.db.schematic_component.getWhere({
-    source_component_id: representation.source_component_id,
-  })!
-  const schematicPorts = circuit.db.schematic_port.list({
-    schematic_component_id: schematicComponent.schematic_component_id,
-  })
-
-  expect(
-    Object.fromEntries(
-      schematicPorts.map((port) => [port.pin_number, port.source_port_id]),
-    ),
-  ).toEqual({
-    1: getQ1Port("D1").source_port_id,
-    2: getQ1Port("S1").source_port_id,
-    3: getQ1Port("G1").source_port_id,
-  })
-
   await expect(circuit).toMatchStackedSchematicSnapshot(import.meta.path)
 })

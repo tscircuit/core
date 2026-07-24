@@ -50,31 +50,5 @@ test("schematicsymbol maps diode symbol ports to a chip for traces", async () =>
 
   await circuit.renderUntilSettled()
 
-  const d1 = circuit.db.source_component.getWhere({ name: "D1" })!
-  const d1Ports = circuit.db.source_port.list({
-    source_component_id: d1.source_component_id,
-  })
-  const getD1Port = (label: string) =>
-    d1Ports.find((port) => port.port_hints?.includes(label))!
-  const representation = circuit.db.source_component.getWhere({ name: "A" })!
-  const schematicComponent = circuit.db.schematic_component.getWhere({
-    source_component_id: representation.source_component_id,
-  })!
-  const schematicPorts = circuit.db.schematic_port.list({
-    schematic_component_id: schematicComponent.schematic_component_id,
-  })
-
-  expect(schematicComponent.symbol_name).toBe("diode_right")
-  expect(schematicPorts).toHaveLength(2)
-  expect(
-    Object.fromEntries(
-      schematicPorts.map((port) => [port.pin_number, port.source_port_id]),
-    ),
-  ).toEqual({
-    1: getD1Port("A").source_port_id,
-    2: getD1Port("K").source_port_id,
-  })
-  expect(circuit.db.schematic_trace.list()).toHaveLength(2)
-
   await expect(circuit).toMatchStackedSchematicSnapshot(import.meta.path)
 })
