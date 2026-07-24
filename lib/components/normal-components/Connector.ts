@@ -365,15 +365,16 @@ export class Connector<
     const partsEngine = this.getInheritedProperty("partsEngine") as
       | PartsEngine
       | undefined
-    if (partsEngine && !partsEngine.fetchPartCircuitJson) {
+    const fetchPartCircuitJson = partsEngine?.fetchPartCircuitJson
+    if (!fetchPartCircuitJson) {
       this._handleStandardConnectorCircuitJsonFailure(
         standard,
-        "partsEngine.fetchPartCircuitJson is not configured",
+        partsEngine
+          ? "partsEngine.fetchPartCircuitJson is not configured"
+          : "no partsEngine configured",
       )
       return
     }
-    const fetchPartCircuitJson = partsEngine?.fetchPartCircuitJson
-    if (!fetchPartCircuitJson) return
 
     this._hasStartedFootprintUrlLoad = true
 
