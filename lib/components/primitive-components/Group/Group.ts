@@ -88,7 +88,6 @@ import type { ISubcircuit } from "./Subcircuit/ISubcircuit"
 import { addPortIdsToTracesAtJumperPads } from "./add-port-ids-to-traces-at-jumper-pads"
 import { getSourceTraceIdForRoutedTrace } from "./get-source-trace-id-for-routed-trace"
 import { insertAutoplacedJumpers } from "./insert-autoplaced-jumpers"
-import { insertPcbTraceTooLongWarnings } from "./insert-pcb-trace-too-long-warnings"
 import {
   deleteExistingPcbTracesReplacedBy,
   getExistingPcbTracesForReroute,
@@ -2061,11 +2060,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           })
         }
       }
-
-      insertPcbTraceTooLongWarnings({
-        db,
-        subcircuitId: this.subcircuit_id!,
-      })
     }
   }
 

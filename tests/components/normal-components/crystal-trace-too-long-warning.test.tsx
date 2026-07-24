@@ -1,46 +1,55 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("crystal traces warn above the default or configured maximum length", () => {
+test("traces on a crystal net inherit its maximum length and warn when too long", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="40mm" height="20mm">
+    <board width="60mm" height="30mm">
+      <net name="XTAL_IN" />
       <crystal
         name="Y1"
         frequency="12MHz"
         loadCapacitance="10pF"
         footprint="0402"
-        pcbX={-8}
-        pcbY={4}
+        pcbX={-20}
+        pcbY={0}
       />
-      <resistor name="R1" resistance="1k" footprint="0402" pcbX={8} pcbY={4} />
-      <trace from=".Y1 > .pin1" to=".R1 > .pin1" pcbStraightLine />
-
-      <crystal
-        name="Y2"
-        frequency="12MHz"
-        loadCapacitance="10pF"
+      <chip
+        name="U1"
+        footprint="soic8"
+        pcbX={20}
+        pcbY={0}
+        pinLabels={{ "1": "XTAL_IN", "2": "GND" }}
+      />
+      <capacitor
+        name="C1"
+        capacitance="10pF"
         footprint="0402"
-        pcbX={-8}
-        pcbY={-4}
-        maxTraceLength="20mm"
+        pcbX={0}
+        pcbY={10}
       />
-      <resistor name="R2" resistance="1k" footprint="0402" pcbX={8} pcbY={-4} />
-      <trace from=".Y2 > .pin1" to=".R2 > .pin1" pcbStraightLine />
+      <trace from=".Y1 > .pin1" to="net.XTAL_IN" />
+      <trace from=".U1 > .XTAL_IN" to="net.XTAL_IN" />
+      <trace from=".C1 > .pin1" to="net.XTAL_IN" />
     </board>,
   )
 
-  circuit.render()
+  await circuit.renderUntilSettled()
 
   const sourceTraces = circuit.db.source_trace.list()
-  expect(sourceTraces.map((trace) => trace.max_length)).toEqual([10, 20])
+  expect(sourceTraces.map((trace) => trace.max_length)).toEqual([10, 10, 10])
 
   const warnings = circuit.db.pcb_trace_too_long_warning.list()
-  expect(warnings).toHaveLength(1)
-  expect(warnings[0]).toMatchObject({
-    source_trace_id: sourceTraces[0].source_trace_id,
-    maximum_trace_length: 10,
-  })
-  expect(warnings[0].actual_trace_length).toBeGreaterThan(10)
+  expect(warnings).toHaveLength(2)
+  expect(warnings.map((warning) => warning.source_trace_id).sort()).toEqual(
+    [sourceTraces[0].source_trace_id, sourceTraces[1].source_trace_id].sort(),
+  )
+  expect(
+    warnings.every(
+      (warning) =>
+        warning.maximum_trace_length === 10 &&
+        warning.actual_trace_length > warning.maximum_trace_length,
+    ),
+  ).toBe(true)
 })

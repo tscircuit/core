@@ -18,19 +18,9 @@ export const getMaxLengthFromConnectedComponents = (
         return sourceComponent.max_decoupling_trace_length
       }
 
-      if (sourceComponent?.ftype === "simple_crystal") {
-        const crystalProps = (
-          port.parent as unknown as {
-            _parsedProps?: { maxTraceLength?: number }
-          }
-        )?._parsedProps
-
-        return crystalProps?.maxTraceLength ?? 10
-      }
-
       return null
     })
-    .filter((length): length is number => length !== null)
+    .filter((length): length is number => typeof length === "number")
 
   if (componentMaxLengths.length === 0) return undefined
   return Math.min(...componentMaxLengths)
