@@ -63,6 +63,17 @@ export interface BaseComponentConfig {
  * React subtrees or explicit handling of the "footprint" prop. But otherwise
  * has most of the features of a NormalComponent.
  */
+/**
+ * Shared base config: `get config()` is a plain getter accessed thousands of
+ * times per build, and constructing a fresh `z.object({}).passthrough()` per
+ * access retains ~15 eagerly-bound Zod v3 methods per instance — a major
+ * contributor to the heap growth in #2810.
+ */
+const basePrimitiveComponentConfig: BaseComponentConfig = {
+  componentName: "",
+  zodProps: z.object({}).passthrough(),
+}
+
 export abstract class PrimitiveComponent<
   ZodProps extends ZodType = any,
 > extends Renderable {
@@ -71,10 +82,7 @@ export abstract class PrimitiveComponent<
   childrenPendingRemoval: PrimitiveComponent[]
 
   get config(): BaseComponentConfig {
-    return {
-      componentName: "",
-      zodProps: z.object({}).passthrough(),
-    }
+    return basePrimitiveComponentConfig
   }
 
   props: z.input<ZodProps>
