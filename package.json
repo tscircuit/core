@@ -47,6 +47,7 @@
     "@tscircuit/infgrid-ijump-astar": "^0.0.35",
     "@tscircuit/jlcpcb-manufacturing-specs": "git+https://github.com/tscircuit/jlcpcb-manufacturing-specs#e08af159db01a37db007e33f0a7268d0e4a279a5",
     "@tscircuit/krt-wasm": "^0.1.1",
+    "@tscircuit/length-matching-post-process": "git+https://github.com/tscircuit/length-matching-post-process.git#6501cff9504e1cd167d61de0f57134c79f72d55b",
     "@tscircuit/log-soup": "^1.0.2",
     "@tscircuit/matchpack": "^0.0.43",
     "@tscircuit/math-utils": "^0.0.36",

@@ -56,6 +56,7 @@ import type { RoutingPhasePlan } from "./GroupRoutingPhasePlan"
 import { Group_doInitialAssignSchematicSheetToConnectedComponents } from "./Group_doInitialAssignSchematicSheetToConnectedComponents"
 import { Group_doInitialPcbCalcPlacementResolution } from "./Group_doInitialPcbCalcPlacementResolution"
 import { Group_doInitialPcbComponentAnchorAlignment } from "./Group_doInitialPcbComponentAnchorAlignment"
+import { Group_doInitialPcbDifferentialPairPostProcess } from "./Group_doInitialPcbDifferentialPairPostProcess"
 import { Group_doInitialPcbLayoutFlex } from "./Group_doInitialPcbLayoutFlex"
 import { Group_doInitialPcbLayoutGrid } from "./Group_doInitialPcbLayoutGrid"
 import { Group_doInitialPcbLayoutPack } from "./Group_doInitialPcbLayoutPack/Group_doInitialPcbLayoutPack"
@@ -1358,6 +1359,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       this._updatePcbTraceRenderFromPcbTraces()
       return
     }
+  }
+
+  doInitialPcbDifferentialPairPostProcess() {
+    Group_doInitialPcbDifferentialPairPostProcess(this)
   }
 
   _updatePcbTraceRenderFromSimpleRouteJson() {

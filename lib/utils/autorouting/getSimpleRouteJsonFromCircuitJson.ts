@@ -1,5 +1,6 @@
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import { su } from "@tscircuit/circuit-json-util"
+import type { DifferentialPairConstraints } from "@tscircuit/length-matching-post-process"
 import type { AnyCircuitElement, PcbBoard } from "circuit-json"
 import {
   ConnectivityMap,
@@ -8,11 +9,7 @@ import {
 import { DifferentialPair } from "lib/components/primitive-components/DifferentialPair"
 import type { ISubcircuit } from "lib/components/primitive-components/Group/Subcircuit/ISubcircuit"
 import { getObstaclesFromCircuitJson } from "../obstacles/getObstaclesFromCircuitJson"
-import type {
-  SimpleRouteConnection,
-  SimpleRouteDifferentialPair,
-  SimpleRouteJson,
-} from "./SimpleRouteJson"
+import type { SimpleRouteConnection, SimpleRouteJson } from "./SimpleRouteJson"
 import { getDescendantSubcircuitIds } from "./getAncestorSubcircuitIds"
 import { getDifferentialPairsForSimpleRouteJson } from "./getDifferentialPairsForSimpleRouteJson"
 import { getPreservedRoutedSubcircuitTraces } from "./getPreservedRoutedSubcircuitTraces"
@@ -658,7 +655,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   const differentialPairs: DifferentialPair[] =
     subcircuitComponent?.selectAll<DifferentialPair>("differentialpair") ?? []
 
-  const srjDifferentialPairs: SimpleRouteDifferentialPair[] | undefined =
+  const srjDifferentialPairs: DifferentialPairConstraints[] | undefined =
     getDifferentialPairsForSimpleRouteJson({
       srjConnections: allConns,
       differentialPairs,
