@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import type { SchematicPort, SchematicText, SchematicTrace } from "circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 const chipSelector = ".U1"
@@ -63,5 +64,34 @@ test("repro156: schematicbox chipRef pins connect to a netlabel", async () => {
 
   await circuit.renderUntilSettled()
 
+  const circuitJson = circuit.getCircuitJson()
+  const u1aSchematicText = circuitJson.find(
+    (element): element is SchematicText =>
+      element.type === "schematic_text" && element.text === "U1A",
+  )
+  const u1aGndSchematicPort = circuitJson.find(
+    (element): element is SchematicPort =>
+      element.type === "schematic_port" &&
+      element.schematic_component_id ===
+        u1aSchematicText?.schematic_component_id &&
+      element.display_pin_label === "GND",
+  )
+
+  expect(u1aGndSchematicPort).toBeDefined()
+  const u1aGndCenter = u1aGndSchematicPort!.center
+  const schematicTraceReachesU1aGnd = circuitJson
+    .filter(
+      (element): element is SchematicTrace =>
+        element.type === "schematic_trace",
+    )
+    .some((trace) =>
+      trace.edges.some(
+        (edge) =>
+          (edge.from.x === u1aGndCenter.x && edge.from.y === u1aGndCenter.y) ||
+          (edge.to.x === u1aGndCenter.x && edge.to.y === u1aGndCenter.y),
+      ),
+    )
+
+  expect(schematicTraceReachesU1aGnd).toBeTrue()
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
