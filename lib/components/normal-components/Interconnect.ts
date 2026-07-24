@@ -41,12 +41,15 @@ export class Interconnect extends NormalComponent<typeof interconnectProps> {
 
   doInitialSourceRender() {
     const { db } = this.root!
+    const { _parsedProps: props } = this
 
     const source_component = db.source_component.insert({
       ftype: "interconnect" as Ftype,
       name: this.name,
+      manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
+      supplier_part_numbers: props.supplierPartNumbers,
       are_pins_interchangeable: true,
-      display_name: this._parsedProps.displayName,
+      display_name: props.displayName,
     })
 
     this.source_component_id = source_component.source_component_id

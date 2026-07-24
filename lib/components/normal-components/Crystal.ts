@@ -60,6 +60,8 @@ export class Crystal extends NormalComponent<
     const source_component = db.source_component.insert({
       name: this.name,
       ftype: "simple_crystal",
+      manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
+      supplier_part_numbers: props.supplierPartNumbers,
       frequency: props.frequency,
       load_capacitance: props.loadCapacitance,
       pin_variant: props.pinVariant || "two_pin",
