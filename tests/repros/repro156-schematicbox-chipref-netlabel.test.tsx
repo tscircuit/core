@@ -49,6 +49,14 @@ test("repro156: schematicbox chipRef pins connect to a netlabel", async () => {
         }}
       />
 
+      <resistor
+        name="R1"
+        resistance={1000}
+        connections={{
+          pin1: "U1.GND",
+        }}
+      />
+
       <netlabel schX={3} schY={2} net="GND" connectsTo="U1.GND" />
     </board>,
   )
