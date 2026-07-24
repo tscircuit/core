@@ -19,10 +19,17 @@ export function Group_doInitialSchematicLayoutSections<
   Props extends z.ZodType<any, any, any>,
 >(group: Group<Props>): void {
   const { db } = group.root!
+  const schematicLayoutChildren = group
+    .getDescendants()
+    .filter(
+      (component) =>
+        component.source_component_id !== null &&
+        component.getGroup()?.source_group_id === group.source_group_id,
+    )
 
   const sectionNamesUsedByChildren = new Set<string>()
   let hasChildrenWithoutSection = false
-  for (const child of group.children) {
+  for (const child of schematicLayoutChildren) {
     if (!child.source_component_id) continue
     const sectionName = child.getSchematicSectionName()
     if (sectionName !== null) {
@@ -46,7 +53,7 @@ export function Group_doInitialSchematicLayoutSections<
     })
     sectionTree.childNodes = sectionTree.childNodes.filter((child) => {
       if (child.nodeType !== "component" || !child.sourceComponent) return false
-      const component = group.children.find(
+      const component = schematicLayoutChildren.find(
         (c) =>
           c.source_component_id === child.sourceComponent?.source_component_id,
       )
@@ -71,7 +78,7 @@ export function Group_doInitialSchematicLayoutSections<
     let maxY = -Infinity
     const sourceCompIds = new Set<string>()
 
-    for (const child of group.children) {
+    for (const child of schematicLayoutChildren) {
       const sourceComponentId = child.source_component_id
       if (!sourceComponentId) continue
 
@@ -107,7 +114,7 @@ export function Group_doInitialSchematicLayoutSections<
   // Sections containing a manually positioned component are anchored — their
   // position is already set by phase 1 and must not be overridden by row packing.
   const anchoredSections = new Set<string | null>()
-  for (const child of group.children) {
+  for (const child of schematicLayoutChildren) {
     if (!child.source_component_id) continue
     const props = (child as any)._parsedProps
     if (props?.schX !== undefined || props?.schY !== undefined) {

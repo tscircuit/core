@@ -1666,10 +1666,11 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       return
     }
 
-    const hasAnySectionName = this.children.some(
-      (c) =>
-        c.source_component_id !== null &&
-        c._parsedProps?.schSectionName !== undefined,
+    const hasAnySectionName = this.getDescendants().some(
+      (component) =>
+        component.source_component_id !== null &&
+        component.getGroup()?.source_group_id === this.source_group_id &&
+        component.getSchematicSectionName() !== null,
     )
     const hasSections = hasAnySectionName
     if (hasSections) {
