@@ -406,6 +406,15 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       return
     }
 
+    // Schematic-only NormalComponents intentionally have no source component.
+    if (parentNormalComponent?.isSchematicPrimitive) {
+      db.source_port.update(this.source_port_id!, {
+        source_component_id: null as any,
+        subcircuit_id: this.getSubcircuit()?.subcircuit_id!,
+      })
+      return
+    }
+
     if (!parentWithSourceId?.source_component_id) {
       throw new Error(
         `${this.getString()} has no parent source component (parent: ${this.parent?.getString()})`,
@@ -424,6 +433,9 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const { matchedComponents } = this
+    const parentNormalComponent = this.getParentNormalComponent()
+
+    if (parentNormalComponent?.isSchematicPrimitive) return
 
     // Handle group ports separately
     if (this.isGroupPort()) {
@@ -431,7 +443,6 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       return
     }
 
-    const parentNormalComponent = this.getParentNormalComponent()
     const parentWithPcbComponentId = this.parent?.pcb_component_id
       ? this.parent
       : parentNormalComponent

@@ -895,7 +895,7 @@ export class NormalComponent<
   }
 
   doInitialPcbComponentRender() {
-    if (this.root?.pcbDisabled) return
+    if (this.root?.pcbDisabled || this.isSchematicPrimitive) return
     const { db } = this.root!
     const { _parsedProps: props } = this
     const subcircuit = this.getSubcircuit()
