@@ -151,15 +151,15 @@ test("repro44 - pcbPack and schematic", async () => {
       },
       {
         "center": {
-          "x": 7.75,
-          "y": -2.995,
+          "x": -2.04,
+          "y": -7.623,
         },
-        "height": 2.85,
+        "height": 1.4,
         "layer": "top",
         "name": "R3",
         "positionMode": "packed",
-        "rotation": -90,
-        "width": 1.4,
+        "rotation": 0,
+        "width": 2.85,
       },
       {
         "center": {

@@ -22,6 +22,7 @@ import type {
   SchematicBoxComponentDimensions,
   SchematicBoxDimensions,
 } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
+import { getRotatedSymbolName } from "lib/utils/schematic/getRotatedSymbolName"
 import { isMatchingSelector } from "lib/utils/selector-matching"
 import { type SchSymbol, symbols } from "schematic-symbols"
 import {
@@ -63,6 +64,17 @@ export interface BaseComponentConfig {
  * React subtrees or explicit handling of the "footprint" prop. But otherwise
  * has most of the features of a NormalComponent.
  */
+/**
+ * Shared base config: `get config()` is a plain getter accessed thousands of
+ * times per build, and constructing a fresh `z.object({}).passthrough()` per
+ * access retains ~15 eagerly-bound Zod v3 methods per instance — a major
+ * contributor to the heap growth in #2810.
+ */
+const basePrimitiveComponentConfig: BaseComponentConfig = {
+  componentName: "",
+  zodProps: z.object({}).passthrough(),
+}
+
 export abstract class PrimitiveComponent<
   ZodProps extends ZodType = any,
 > extends Renderable {
@@ -71,10 +83,7 @@ export abstract class PrimitiveComponent<
   childrenPendingRemoval: PrimitiveComponent[]
 
   get config(): BaseComponentConfig {
-    return {
-      componentName: "",
-      zodProps: z.object({}).passthrough(),
-    }
+    return basePrimitiveComponentConfig
   }
 
   props: z.input<ZodProps>
@@ -772,6 +781,19 @@ export abstract class PrimitiveComponent<
       throw new Error(
         `Schematic rotation ${props.schRotation} is not supported for ${this.componentName}`,
       )
+    }
+
+    const hasOrientationOrDirectionSuffix =
+      /_(horz|vert|up|down|left|right)$/.test(base_symbol_name)
+    if (hasOrientationOrDirectionSuffix && base_symbol_name in symbols) {
+      const rotatedSymbolName = getRotatedSymbolName(
+        base_symbol_name,
+        normalizedRotation,
+      )
+      if (rotatedSymbolName && rotatedSymbolName in symbols) {
+        return rotatedSymbolName as keyof typeof symbols
+      }
+      return base_symbol_name
     }
 
     const symbol_name_horz = `${base_symbol_name}_horz` as keyof typeof symbols
