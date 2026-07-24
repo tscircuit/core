@@ -12,6 +12,7 @@ import Debug from "debug"
 import { applyComponentConstraintClusters } from "./applyComponentConstraintClusters"
 import { applyPackOutput } from "./applyPackOutput"
 import type { NormalComponent } from "lib/components/base-components/NormalComponent"
+import { removeObstaclesDuplicatedByPackedGroups } from "./removeObstaclesDuplicatedByPackedGroups"
 
 const DEFAULT_MIN_GAP = "1mm"
 const debug = Debug("Group_doInitialPcbLayoutPack")
@@ -142,6 +143,11 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
       staticPcbComponentIds: Array.from(staticPcbComponentIds),
     },
   )
+
+  removeObstaclesDuplicatedByPackedGroups({
+    db,
+    packOutput: initialPackOutput,
+  })
 
   const packInput: PackInput = {
     ...convertPackOutputToPackInput(initialPackOutput),
