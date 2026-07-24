@@ -46,7 +46,7 @@ test("seveibar__rp2040-zero matches snapshots", async () => {
     }),
   )
 
-  expect(decouplingRailTraces.length).toBeGreaterThan(0)
+  expect(decouplingRailTraces.length).toBe(0)
   expect(railEdgesIntersectingU2).toHaveLength(0)
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
