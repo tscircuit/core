@@ -6,7 +6,7 @@ test("registers a differential pair using a trace name and port selector", (): v
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="20mm" height="10mm">
+    <board width="20mm" height="10mm" routingDisabled>
       <differentialpair
         name="USB"
         positiveConnection="USB_P"

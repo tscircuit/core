@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("crystal traces warn above the default or configured maximum length", () => {
+test("crystal traces warn above the default or configured maximum length", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -31,7 +31,7 @@ test("crystal traces warn above the default or configured maximum length", () =>
     </board>,
   )
 
-  circuit.render()
+  await circuit.renderUntilSettled()
 
   const sourceTraces = circuit.db.source_trace.list()
   expect(sourceTraces.map((trace) => trace.max_length)).toEqual([10, 20])

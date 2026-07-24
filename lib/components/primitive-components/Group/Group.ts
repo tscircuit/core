@@ -59,6 +59,7 @@ import { Group_doInitialPcbComponentAnchorAlignment } from "./Group_doInitialPcb
 import { Group_doInitialPcbLayoutFlex } from "./Group_doInitialPcbLayoutFlex"
 import { Group_doInitialPcbLayoutGrid } from "./Group_doInitialPcbLayoutGrid"
 import { Group_doInitialPcbLayoutPack } from "./Group_doInitialPcbLayoutPack/Group_doInitialPcbLayoutPack"
+import { Group_doInitialPcbTracePostProcessing } from "./Group_doInitialPcbTracePostProcessing"
 import {
   Group_doInitialSchematicBoxComponentRender,
   getGroupSchematicBoxPinLabels,
@@ -1305,6 +1306,14 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     )
       return
     this._startAsyncAutorouting()
+  }
+
+  doInitialPcbTracePostProcessing(): void {
+    Group_doInitialPcbTracePostProcessing(this)
+  }
+
+  updatePcbTracePostProcessing(): void {
+    Group_doInitialPcbTracePostProcessing(this)
   }
 
   doInitialSchematicTraceRender() {

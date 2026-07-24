@@ -6,7 +6,7 @@ it("registers a differential pair routing constraint", (): void => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="20mm" height="10mm">
+    <board width="20mm" height="10mm" routingDisabled>
       <differentialpair
         name="USB"
         positiveConnection="USB_P"

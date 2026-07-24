@@ -1,8 +1,9 @@
 import { expect, test } from "bun:test"
+import { DifferentialPairInputError } from "@tscircuit/length-matching-solver"
 import { createAutoroutingPhaseIoStack } from "tests/fixtures/create-autorouting-phase-io-stack"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("routes both differential pair traces in the same routing phase", async (): Promise<void> => {
+test("routes both pair traces in one phase before rejecting invalid terminal spacing", async (): Promise<void> => {
   const { circuit } = getTestFixture()
   const autoroutingPhaseIoStack = createAutoroutingPhaseIoStack(circuit)
 
@@ -37,8 +38,15 @@ test("routes both differential pair traces in the same routing phase", async ():
     </board>,
   )
 
-  await circuit.renderUntilSettled()
+  let renderError: unknown
+  try {
+    await circuit.renderUntilSettled()
+  } catch (error) {
+    renderError = error
+  }
 
+  expect(renderError).toBeInstanceOf(DifferentialPairInputError)
+  expect((renderError as DifferentialPairInputError).code).toBe("invalid_state")
   expect(
     autoroutingPhaseIoStack[0]?.startSimpleRouteJson?.differentialPairs,
   ).toHaveLength(1)
@@ -47,5 +55,5 @@ test("routes both differential pair traces in the same routing phase", async ():
     "differential-pair-routing-phase",
     circuit,
   )
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  expect(circuit.db.toArray()).toMatchPcbSnapshot(import.meta.path)
 })
