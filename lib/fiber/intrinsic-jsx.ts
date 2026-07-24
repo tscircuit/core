@@ -25,6 +25,7 @@ export interface TscircuitElements {
   schematicsheet: Props.SchematicSheetProps
   via: Props.ViaProps
   schematicbox: Props.SchematicBoxProps
+  schematicsymbol: Props.SchematicSymbolProps
   schematicline: Props.SchematicLineProps
   schematicrect: Props.SchematicRectProps
   schematicarc: Props.SchematicArcProps
