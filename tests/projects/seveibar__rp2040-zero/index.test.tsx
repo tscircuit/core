@@ -25,10 +25,21 @@ test("seveibar__rp2040-zero matches snapshots", async () => {
       if (!trace.source_trace_id) return false
       const endpointComponentNames = trace.source_trace_id
         .split("-")
-        .map((portRef) => portRef.split(".")[0])
+        .map((schematicPortId) => {
+          const schematicPort = circuit.db.schematic_port.get(schematicPortId)
+          const sourcePort = schematicPort?.source_port_id
+            ? circuit.db.source_port.get(schematicPort.source_port_id)
+            : undefined
+          const sourceComponentId = sourcePort?.source_component_id
+          return sourceComponentId
+            ? circuit.db.source_component.get(sourceComponentId)?.name
+            : undefined
+        })
       return (
         endpointComponentNames.length === 2 &&
-        endpointComponentNames.every((name) => decouplingCapNames.has(name))
+        endpointComponentNames.every(
+          (name) => name !== undefined && decouplingCapNames.has(name),
+        )
       )
     })
   const railEdgesIntersectingU2 = decouplingRailTraces.flatMap((trace) =>
@@ -46,7 +57,7 @@ test("seveibar__rp2040-zero matches snapshots", async () => {
     }),
   )
 
-  expect(decouplingRailTraces.length).toBe(0)
+  expect(decouplingRailTraces.length).toBeGreaterThan(0)
   expect(railEdgesIntersectingU2).toHaveLength(0)
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)

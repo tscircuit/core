@@ -368,21 +368,24 @@ export function createSchematicTraceSolverInputProblem(
   for (const [connKey, schematicPortIds] of connKeyToPinIds) {
     const sourceNet = connKeyToSourceNet.get(connKey)
     if (sourceNet && schematicPortIds.length >= 1) {
-      const uniqueRoutedSchematicPortIds: SchematicPortId[] = []
       const seenRoutedSchematicPortIds = new Set<SchematicPortId>()
-      for (const schematicPortId of schematicPortIds) {
-        const componentPort =
-          componentPortBySchematicPortId.get(schematicPortId)
-        const routedSchematicPortIdValue = componentPort
-          ? getPortForSchematicSymbolPort(componentPort).schematic_port_id
-          : null
-        const routedSchematicPortId = routedSchematicPortIdValue
-          ? asSchematicPortId(routedSchematicPortIdValue)
-          : schematicPortId
-        if (seenRoutedSchematicPortIds.has(routedSchematicPortId)) continue
-        seenRoutedSchematicPortIds.add(routedSchematicPortId)
-        uniqueRoutedSchematicPortIds.push(routedSchematicPortId)
-      }
+      const uniqueSchematicPortIds = schematicPortIds.filter(
+        (schematicPortId) => {
+          const componentPort =
+            componentPortBySchematicPortId.get(schematicPortId)
+          const routedSchematicPortIdValue = componentPort
+            ? getPortForSchematicSymbolPort(componentPort).schematic_port_id
+            : null
+          const routedSchematicPortId = routedSchematicPortIdValue
+            ? asSchematicPortId(routedSchematicPortIdValue)
+            : schematicPortId
+          if (seenRoutedSchematicPortIds.has(routedSchematicPortId)) {
+            return false
+          }
+          seenRoutedSchematicPortIds.add(routedSchematicPortId)
+          return true
+        },
+      )
       const userNetId = String(
         sourceNet.name || sourceNet.source_net_id || connKey,
       )
@@ -410,7 +413,7 @@ export function createSchematicTraceSolverInputProblem(
 
       netConnections.push({
         netId: userNetId,
-        pinIds: uniqueRoutedSchematicPortIds,
+        pinIds: uniqueSchematicPortIds,
         netLabelWidth,
         netLabelHeight,
       })
