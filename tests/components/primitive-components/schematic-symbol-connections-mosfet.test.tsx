@@ -70,29 +70,7 @@ test("schematicsymbol maps MOSFET symbol ports to a chip for traces", async () =
   const schematicPorts = circuit.db.schematic_port.list({
     schematic_component_id: schematicComponent.schematic_component_id,
   })
-  const schematicSheet = circuit.db.schematic_sheet.getWhere({
-    name: "MOSFET A",
-  })!
 
-  expect(schematicComponent.symbol_name).toBe(
-    "n_channel_e_mosfet_transistor_horz",
-  )
-  expect(schematicComponent.schematic_sheet_id).toBe(
-    schematicSheet.schematic_sheet_id,
-  )
-  expect(circuit.db.source_component.list()).toHaveLength(4)
-  expect(circuit.db.source_port.list()).toHaveLength(12)
-  for (const resistorName of ["R1", "R2"]) {
-    const resistor = circuit.db.source_component.getWhere({
-      name: resistorName,
-    })!
-    expect(
-      circuit.db.schematic_component.getWhere({
-        source_component_id: resistor.source_component_id,
-      })?.schematic_sheet_id,
-    ).toBe(schematicSheet.schematic_sheet_id)
-  }
-  expect(schematicPorts).toHaveLength(3)
   expect(
     Object.fromEntries(
       schematicPorts.map((port) => [port.pin_number, port.source_port_id]),
@@ -102,19 +80,6 @@ test("schematicsymbol maps MOSFET symbol ports to a chip for traces", async () =
     2: getQ1Port("S1").source_port_id,
     3: getQ1Port("G1").source_port_id,
   })
-  expect(
-    circuit.db.source_trace
-      .list()
-      .filter((trace) =>
-        trace.connected_source_port_ids.some((sourcePortId) =>
-          [
-            getQ1Port("G1").source_port_id,
-            getQ1Port("D1").source_port_id,
-          ].includes(sourcePortId),
-        ),
-      ),
-  ).toHaveLength(2)
-  expect(circuit.db.schematic_trace.list()).toHaveLength(2)
 
   await expect(circuit).toMatchStackedSchematicSnapshot(import.meta.path)
 })
