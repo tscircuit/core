@@ -22,7 +22,6 @@ const renderSchematicTracesForSheet = ({
 }) => {
   const {
     inputProblem,
-    pinIdToSchematicPortId,
     connKeyToSourceNet,
     allSourceAndSchematicPortIdsInScope,
     schPortIdToSourcePortId,
@@ -72,14 +71,12 @@ const renderSchematicTracesForSheet = ({
 
   const schematicPortIdsWithRoutedTraces = getSchematicPortIdsWithRoutedTraces({
     solver,
-    pinIdToSchematicPortId,
   })
 
   // Apply traces
   applyTracesFromSolverOutput({
     group,
     solver,
-    pinIdToSchematicPortId,
     userNetIdToConnKey,
     schematicPortIdsWithPreExistingNetLabels,
   })
@@ -89,7 +86,6 @@ const renderSchematicTracesForSheet = ({
     group,
     solver,
     connKeyToSourceNet,
-    pinIdToSchematicPortId,
     userNetIdToConnKey,
     connKeysWithExplicitPortNetTraces,
     schematicPortIdsWithPreExistingNetLabels,
