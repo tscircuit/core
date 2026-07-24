@@ -191,13 +191,19 @@ export function createSchematicTraceSolverInputProblem(
       sectionId = componentNameToSectionId.get(sourceComponent.name)
     }
 
-    const layoutBounds =
+    const componentBodyBounds = getBoundFromCenteredRect({
+      center: schematicComponent.center,
+      width: schematicComponent.size.width,
+      height: schematicComponent.size.height,
+    })
+    let layoutBounds =
       getSchematicComponentWithTextBounds({ db, schematicComponent }) ??
-      getBoundFromCenteredRect({
-        center: schematicComponent.center,
-        width: schematicComponent.size.width,
-        height: schematicComponent.size.height,
-      })
+      componentBodyBounds
+
+    // Preserve crystal port alignment from matchpack.
+    if (sourceComponent?.ftype === "simple_crystal") {
+      layoutBounds = componentBodyBounds
+    }
 
     chips.push({
       chipId,
