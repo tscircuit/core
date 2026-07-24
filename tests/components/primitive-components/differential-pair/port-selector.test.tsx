@@ -16,7 +16,14 @@ it("registers a differential pair using port selectors", (): void => {
         maxLengthSkew={0.1}
       />
       <testpoint name="TP1" footprintVariant="pad" pcbX={-6} pcbY={-2} />
-      <resistor name="R2" resistance="1k" footprint="0402" pcbX={-4} pcbY={2} />
+      <resistor
+        name="R2"
+        resistance="1k"
+        footprint="0402"
+        pcbX={-4}
+        pcbY={2}
+        pcbRotation={180}
+      />
       <led name="LED1" footprint="0402" pcbX={6} pcbY={-2} />
       <led name="LED2" footprint="0402" pcbX={6} pcbY={2} />
       <trace name="USB_P" from=".TP1 > .pin1" to=".LED1 > .anode" />
