@@ -18,11 +18,6 @@ import { applyPinAttributesToSourcePort } from "./apply-pin-attributes-to-source
 import { Port_doInitialCreateTracesFromProps } from "./Port_doInitialCreateTracesFromProps"
 import { Port_tryRenderGroupPcbPort } from "./Port_tryRenderGroupPcbPort"
 import { getSourcePortNetLabelText } from "lib/utils/schematic/getSourcePortNetLabelText"
-import {
-  getInternalCircuitPortMappedToChipPort,
-  isInternalCircuitPort,
-  isInternalCircuitPortMappedToChipPort,
-} from "./internalCircuitPortMapping"
 
 export class Port extends PrimitiveComponent<typeof portProps> {
   source_port_id: string | null = null
@@ -166,12 +161,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
    * internallyConnectedPorts or externallyConnectedPorts to ensure the things
    * are rendered properly.
    */
-  _hasSchematicPort(): boolean {
-    const mappedInternalPort = getInternalCircuitPortMappedToChipPort(this)
-    if (mappedInternalPort) {
-      return mappedInternalPort._hasSchematicPort()
-    }
-
+  _hasSchematicPort() {
     const { schX, schY } = this._parsedProps
     if (schX !== undefined && schY !== undefined) {
       return true
@@ -205,11 +195,6 @@ export class Port extends PrimitiveComponent<typeof portProps> {
   }
 
   _getGlobalSchematicPositionBeforeLayout(): { x: number; y: number } {
-    const mappedInternalPort = getInternalCircuitPortMappedToChipPort(this)
-    if (mappedInternalPort) {
-      return mappedInternalPort._getGlobalSchematicPositionBeforeLayout()
-    }
-
     const { schX, schY } = this._parsedProps
     if (schX !== undefined && schY !== undefined) {
       // For ports with explicit coordinates in custom React symbols,
@@ -446,11 +431,6 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       return
     }
 
-    const pcbMatches = matchedComponents.filter((c) => c.isPcbPrimitive)
-
-    // A port without a matched PCB primitive has no PCB representation.
-    if (pcbMatches.length === 0) return
-
     const parentNormalComponent = this.getParentNormalComponent()
     const parentWithPcbComponentId = this.parent?.pcb_component_id
       ? this.parent
@@ -461,6 +441,10 @@ export class Port extends PrimitiveComponent<typeof portProps> {
         `${this.getString()} has no parent pcb component, cannot render pcb_port (parent: ${this.parent?.getString()}, parentNormalComponent: ${parentNormalComponent?.getString()})`,
       )
     }
+
+    const pcbMatches = matchedComponents.filter((c) => c.isPcbPrimitive)
+
+    if (pcbMatches.length === 0) return
 
     let matchCenter: { x: number; y: number } | null = null
 
@@ -617,29 +601,22 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     const { db } = this.root!
     const { _parsedProps: props } = this
 
-    const mappedInternalPort = getInternalCircuitPortMappedToChipPort(this)
-    const schematicPlacementPort = mappedInternalPort ?? this
-    const schematicPlacementProps = schematicPlacementPort._parsedProps
-
-    const { schX, schY } = schematicPlacementProps
+    const { schX, schY } = props
     const container =
       schX !== undefined && schY !== undefined
-        ? schematicPlacementPort.getParentNormalComponent()
-        : schematicPlacementPort.getPrimitiveContainer()
+        ? this.getParentNormalComponent()
+        : this.getPrimitiveContainer()
 
     if (!container) return
     if (!this._hasSchematicPort()) return
 
     const containerCenter = container._getGlobalSchematicPositionBeforeLayout()
-    const portCenter =
-      schematicPlacementPort._getGlobalSchematicPositionBeforeLayout()
+    const portCenter = this._getGlobalSchematicPositionBeforeLayout()
 
     let localPortInfo: SchematicBoxPortPositionWithMetadata | null = null
     const containerDims = container._getSchematicBoxDimensions()
-    if (containerDims && schematicPlacementProps.pinNumber !== undefined) {
-      localPortInfo = containerDims.getPortPositionByPinNumber(
-        schematicPlacementProps.pinNumber,
-      )
+    if (containerDims && props.pinNumber !== undefined) {
+      localPortInfo = containerDims.getPortPositionByPinNumber(props.pinNumber)
     }
 
     // For each obstacle, create a schematic_debug_object
@@ -656,14 +633,12 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     }
 
     const isExplicitCustomSymbolPort =
-      schX !== undefined &&
-      schY !== undefined &&
-      !!schematicPlacementPort._getSymbolAncestor()
+      schX !== undefined && schY !== undefined && !!this._getSymbolAncestor()
 
     if (!localPortInfo?.side) {
       this.facingDirection = getRelativeDirection(containerCenter, portCenter)
-      if (isExplicitCustomSymbolPort && schematicPlacementProps.direction) {
-        this.facingDirection = schematicPlacementProps.direction
+      if (isExplicitCustomSymbolPort && props.direction) {
+        this.facingDirection = props.direction
       }
     } else {
       this.facingDirection = {
@@ -675,21 +650,16 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     }
 
     const bestDisplayPinLabel = this._getBestDisplayPinLabel()
-    const parentNormalComponent =
-      schematicPlacementPort.getParentNormalComponent()
+    const parentNormalComponent = this.getParentNormalComponent()
 
     // Derive side_of_component from direction prop for custom symbols
     const sideOfComponent =
       localPortInfo?.side ??
-      (schematicPlacementProps.direction === "up"
+      (props.direction === "up"
         ? "top"
-        : schematicPlacementProps.direction === "down"
+        : props.direction === "down"
           ? "bottom"
-          : schematicPlacementProps.direction)
-
-    const isInternalPort = isInternalCircuitPort(this)
-    const isMappedInternalPort =
-      isInternalPort && isInternalCircuitPortMappedToChipPort(this)
+          : props.direction)
 
     const schematicPortInsertProps: Omit<SchematicPort, "schematic_port_id"> = {
       type: "schematic_port",
@@ -697,16 +667,12 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       center: portCenter,
       source_port_id: this.source_port_id!,
       facing_direction: this.facingDirection,
-      distance_from_component_edge:
-        schematicPlacementProps.schStemLength ?? 0.4,
+      distance_from_component_edge: props.schStemLength ?? 0.4,
       side_of_component: sideOfComponent,
       pin_number: props.pinNumber,
       true_ccw_index: localPortInfo?.trueIndex,
       display_pin_label: bestDisplayPinLabel,
-      is_connected: mappedInternalPort !== null || isMappedInternalPort,
-      is_internal_circuit_port: isInternalPort ? true : undefined,
-      is_overlapping_internal_circuit_port:
-        mappedInternalPort !== null ? true : undefined,
+      is_connected: false,
       schematic_sheet_id: this._resolveSchematicSheetId(),
     }
 
@@ -724,12 +690,8 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     this.schematic_port_id = schematic_port.schematic_port_id
 
     // Create schematic_line for port stem when schStemLength is specified
-    if (
-      !mappedInternalPort &&
-      schematicPlacementProps.schStemLength !== undefined &&
-      schematicPlacementProps.schStemLength !== 0
-    ) {
-      const { schStemLength, direction } = schematicPlacementProps
+    if (props.schStemLength !== undefined && props.schStemLength !== 0) {
+      const { schStemLength, direction } = props
       let x2 = portCenter.x
       let y2 = portCenter.y
 
@@ -758,9 +720,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     if (this.root?.schematicDisabled) return
     if (!this.schematic_port_id) return
 
-    const mappedInternalPort = getInternalCircuitPortMappedToChipPort(this)
-    const schematicPlacementPort = mappedInternalPort ?? this
-    const symbol = schematicPlacementPort._getSymbolAncestor()
+    const symbol = this._getSymbolAncestor()
     const transform = symbol?.getUserCoordinateToResizedSymbolTransform()
     if (!transform) return
 

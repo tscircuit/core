@@ -437,11 +437,9 @@ function convertTreeToMatchPackInputProblem(
           child.sourceComponent?.source_component_id,
       )
 
-      const portsDefiningLayout = db.schematic_port
-        .list({
-          schematic_component_id: schematicComponent.schematic_component_id,
-        })
-        .filter((port) => !port.is_overlapping_internal_circuit_port)
+      const ports = db.schematic_port.list({
+        schematic_component_id: schematicComponent.schematic_component_id,
+      })
 
       let availableRotations: MatchpackRotation[] = [
         ...DEFAULT_AVAILABLE_ROTATIONS,
@@ -466,10 +464,7 @@ function convertTreeToMatchPackInputProblem(
       // A power/ground 2-pin part is locked to the single rotation that places
       // its rail pin on the correct side (power up, ground down).
       if (availableRotations.length === DEFAULT_AVAILABLE_ROTATIONS.length) {
-        const forcedRotation = getPowerGroundForcedRotation(
-          db,
-          portsDefiningLayout,
-        )
+        const forcedRotation = getPowerGroundForcedRotation(db, ports)
         if (forcedRotation !== null) availableRotations = [forcedRotation]
       }
 
@@ -489,6 +484,8 @@ function convertTreeToMatchPackInputProblem(
           chipGap: problem.chipGap,
         }),
         isCapacitor: child.sourceComponent.ftype === "simple_capacitor",
+        isCrystal: child.sourceComponent.ftype === "simple_crystal",
+        isResistor: child.sourceComponent.ftype === "simple_resistor",
         availableRotations,
         ...(explicitlyPositioned && {
           fixedPosition: {
@@ -498,7 +495,7 @@ function convertTreeToMatchPackInputProblem(
         }),
       }
 
-      for (const port of portsDefiningLayout) {
+      for (const port of ports) {
         const sourcePort = db.source_port.get(port.source_port_id)
         if (!sourcePort) continue
 
@@ -560,13 +557,11 @@ function convertTreeToMatchPackInputProblem(
 
         const groupPins: string[] = []
         for (const comp of groupComponents) {
-          const portsDefiningLayout = db.schematic_port
-            .list({
-              schematic_component_id: comp.schematic_component_id,
-            })
-            .filter((port) => !port.is_overlapping_internal_circuit_port)
+          const ports = db.schematic_port.list({
+            schematic_component_id: comp.schematic_component_id,
+          })
 
-          for (const port of portsDefiningLayout) {
+          for (const port of ports) {
             const sourcePort = db.source_port.get(port.source_port_id)
             if (!sourcePort) continue
 

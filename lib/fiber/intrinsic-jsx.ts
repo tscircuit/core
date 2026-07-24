@@ -25,6 +25,7 @@ export interface TscircuitElements {
   schematicsheet: Props.SchematicSheetProps
   via: Props.ViaProps
   schematicbox: Props.SchematicBoxProps
+  schematicsymbol: Props.SchematicSymbolProps
   schematicline: Props.SchematicLineProps
   schematicrect: Props.SchematicRectProps
   schematicarc: Props.SchematicArcProps
@@ -88,7 +89,6 @@ export interface TscircuitElements {
   transistor: Props.TransistorProps
   switch: Props.SwitchProps
   mosfet: Props.MosfetProps
-  internalcircuit: Props.InternalCircuitProps
   testpoint: Props.TestpointProps
   voltagesource: Props.VoltageSourceProps
   currentsource: Props.CurrentSourceProps
@@ -96,6 +96,11 @@ export interface TscircuitElements {
   voltageprobe: Props.VoltageProbeProps
   copperpour: Props.CopperPourProps
   analogsimulation: Props.AnalogSimulationProps
+  analogtransientsimulation: Props.AnalogTransientSimulationProps
+  analogdcoperatingpointsimulation: Props.AnalogDcOperatingPointSimulationProps
+  analogdcsweepsimulation: Props.AnalogDcSweepSimulationProps
+  analogacsweepsimulation: Props.AnalogAcSweepSimulationProps
+  analogsweepparameter: Props.AnalogSweepParameterProps
   spicemodel: Props.SpiceModelProps
   fiducial: Props.FiducialProps
   jscad: any

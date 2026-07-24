@@ -13,7 +13,7 @@ import { DefaultEventPriority } from "react-reconciler/constants.js"
 import { type Renderable } from "lib/components/base-components/Renderable"
 import { type NormalComponent } from "lib/components/base-components/NormalComponent"
 import type { ReactElement, ReactNode } from "react"
-import { catalogue, internalCircuitCatalogue, type Instance } from "./catalogue"
+import { catalogue, type Instance } from "./catalogue"
 import { InvalidProps } from "lib/errors/InvalidProps"
 import { identity } from "transformation-matrix"
 import type { RootCircuit } from "lib/RootCircuit"
@@ -26,10 +26,6 @@ export type ReactSubtree = {
 
 // biome-ignore lint/suspicious/noEmptyInterface: TODO when we have local state
 interface LocalState {}
-
-interface TscircuitHostContext {
-  isInsideInternalCircuit: boolean
-}
 
 export function prepare<T extends Renderable>(
   object: T,
@@ -60,25 +56,13 @@ const hostConfig: HostConfig<
   any
 > = {
   supportsMutation: true,
-  createInstance(
-    type: string,
-    props: any,
-    _rootContainer: any,
-    hostContext: TscircuitHostContext,
-  ) {
-    const target = hostContext.isInsideInternalCircuit
-      ? internalCircuitCatalogue[type]
-      : catalogue[type]
+  createInstance(type: string, props: any) {
+    const target = catalogue[type]
 
     if (!target) {
       if (Object.keys(catalogue).length === 0) {
         throw new Error(
           "No components registered in catalogue, did you forget to import lib/register-catalogue in your test file?",
-        )
-      }
-      if (hostContext.isInsideInternalCircuit) {
-        throw new Error(
-          `Unsupported component type "${type}" inside <internalcircuit>. No schematic-only implementation is registered for this element.`,
         )
       }
       throw new Error(
@@ -124,20 +108,11 @@ const hostConfig: HostConfig<
   shouldSetTextContent() {
     return false
   },
-  getRootHostContext(): TscircuitHostContext {
-    return { isInsideInternalCircuit: false }
+  getRootHostContext() {
+    return {}
   },
-  getChildHostContext(
-    parentHostContext: TscircuitHostContext,
-    type: string,
-  ): TscircuitHostContext {
-    // Keep InternalCircuit as a passive container. Its descendants select
-    // context-specific classes through the reconciler instead.
-    if (parentHostContext.isInsideInternalCircuit) return parentHostContext
-    if (type === "internalcircuit") {
-      return { isInsideInternalCircuit: true }
-    }
-    return parentHostContext
+  getChildHostContext() {
+    return {}
   },
   prepareForCommit() {
     return null
