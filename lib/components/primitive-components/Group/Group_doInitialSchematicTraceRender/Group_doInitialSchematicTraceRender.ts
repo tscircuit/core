@@ -1,12 +1,12 @@
-import { Group } from "../Group"
 import { SchematicTracePipelineSolver } from "@tscircuit/schematic-trace-solver"
 import Debug from "debug"
-import { createSchematicTraceSolverInputProblem } from "./createSchematicTraceSolverInputProblem"
-import { applyTracesFromSolverOutput } from "./applyTracesFromSolverOutput"
+import { Group } from "../Group"
 import { applyNetLabelPlacements } from "./applyNetLabelPlacements"
-import { insertNetLabelsForPortsMissingTrace } from "./insertNetLabelsForPortsMissingTrace"
+import { applyTracesFromSolverOutput } from "./applyTracesFromSolverOutput"
+import { createSchematicTraceSolverInputProblem } from "./createSchematicTraceSolverInputProblem"
 import { getSchematicPortIdsWithAssignedNetLabels } from "./getSchematicPortIdsWithAssignedNetLabels"
 import { getSchematicPortIdsWithRoutedTraces } from "./getSchematicPortIdsWithRoutedTraces"
+import { insertNetLabelsForPortsMissingTrace } from "./insertNetLabelsForPortsMissingTrace"
 
 const debug = Debug("Group_doInitialSchematicTraceRender")
 
@@ -23,7 +23,7 @@ const renderSchematicTracesForSheet = ({
   const {
     inputProblem,
     connKeyToSourceNet,
-    allSourceAndSchematicPortIdsInScope,
+    schematicPortIdsInScope,
     schPortIdToSourcePortId,
     userNetIdToConnKey,
     connKeysWithExplicitPortNetTraces,
@@ -41,7 +41,7 @@ const renderSchematicTracesForSheet = ({
   if (!hasRouteableSchematicConnections) {
     insertNetLabelsForPortsMissingTrace({
       group,
-      allSourceAndSchematicPortIdsInScope,
+      schematicPortIdsInScope,
       schPortIdToSourcePortId,
       connKeyToSourceNet,
     })
@@ -94,7 +94,7 @@ const renderSchematicTracesForSheet = ({
 
   insertNetLabelsForPortsMissingTrace({
     group,
-    allSourceAndSchematicPortIdsInScope,
+    schematicPortIdsInScope,
     schPortIdToSourcePortId,
     connKeyToSourceNet,
   })
