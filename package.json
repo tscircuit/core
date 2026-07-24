@@ -1,7 +1,7 @@
 {
   "name": "@tscircuit/core",
   "type": "module",
-  "version": "0.0.1493",
+  "version": "0.0.1498",
   "types": "dist/index.d.ts",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -32,6 +32,7 @@
   "devDependencies": {
     "@biomejs/biome": "^1.8.3",
     "@resvg/resvg-js": "^2.6.2",
+    "@tsci/tscircuit.ti": "github:tscircuit/ti#57e314be4b2b06bc546d4def7453e619604d1157",
     "@tscircuit/alphabet": "0.0.25",
     "@tscircuit/breakout-point-solver": "github:tscircuit/breakout-point-solver#bac9629",
     "@tscircuit/capacity-autorouter": "^0.0.710",
@@ -47,7 +48,7 @@
     "@tscircuit/jlcpcb-manufacturing-specs": "git+https://github.com/tscircuit/jlcpcb-manufacturing-specs#e08af159db01a37db007e33f0a7268d0e4a279a5",
     "@tscircuit/krt-wasm": "^0.1.1",
     "@tscircuit/log-soup": "^1.0.2",
-    "@tscircuit/matchpack": "^0.0.43",
+    "@tscircuit/matchpack": "^0.0.46",
     "@tscircuit/math-utils": "^0.0.36",
     "@tscircuit/miniflex": "^0.0.4",
     "@tscircuit/ngspice-spice-engine": "^0.0.19",
