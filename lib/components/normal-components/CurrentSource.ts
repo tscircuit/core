@@ -1,19 +1,24 @@
 import { currentSourceProps } from "@tscircuit/props"
-import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
-import { type BaseSymbolName, type Ftype } from "lib/utils/constants"
 import type {
   SimulationCurrentSource,
   SourceSimpleCurrentSourceInput,
 } from "circuit-json"
 import { formatSiUnit } from "format-si-unit"
+import { type BaseSymbolName, type Ftype } from "lib/utils/constants"
+import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 
 import type { RenderPhase } from "lib/components/base-components/Renderable"
 import { type WaveShape } from "./VoltageSource"
+
+type SimulationCurrentSourceId =
+  SimulationCurrentSource["simulation_current_source_id"]
 
 export class CurrentSource extends NormalComponent<
   typeof currentSourceProps,
   "pos" | "neg"
 > {
+  simulation_current_source_id: SimulationCurrentSourceId | null = null
+
   get config() {
     const symbolName = "current_source"
 
@@ -100,33 +105,41 @@ export class CurrentSource extends NormalComponent<
     const isAc =
       props.frequency !== undefined ||
       props.peakToPeakCurrent !== undefined ||
-      props.waveShape !== undefined
+      props.waveShape !== undefined ||
+      props.acMagnitude !== undefined ||
+      props.acPhase !== undefined
 
     const posPort = this.portMap.pos!
     const negPort = this.portMap.neg!
 
     if (isAc) {
-      db.simulation_current_source.insert({
-        type: "simulation_current_source",
+      const simulationCurrentSource = db.simulation_current_source.insert({
         is_dc_source: false,
-        terminal1_source_port_id: posPort.source_port_id,
-        terminal2_source_port_id: negPort.source_port_id,
+        terminal1_source_port_id: posPort.source_port_id ?? undefined,
+        terminal2_source_port_id: negPort.source_port_id ?? undefined,
         current: props.current, // DC offset
         frequency: props.frequency,
         peak_to_peak_current: props.peakToPeakCurrent,
         wave_shape: props.waveShape,
         phase: props.phase,
         duty_cycle: props.dutyCycle,
-      } as SimulationCurrentSource)
+        ac_magnitude: props.acMagnitude,
+        ac_phase: props.acPhase,
+      })
+      this.simulation_current_source_id =
+        simulationCurrentSource.simulation_current_source_id
     } else {
       if (props.current === undefined) return
-      db.simulation_current_source.insert({
-        type: "simulation_current_source",
+      const simulationCurrentSource = db.simulation_current_source.insert({
         is_dc_source: true,
-        positive_source_port_id: posPort.source_port_id,
-        negative_source_port_id: negPort.source_port_id,
+        positive_source_port_id: posPort.source_port_id ?? undefined,
+        negative_source_port_id: negPort.source_port_id ?? undefined,
         current: props.current,
-      } as SimulationCurrentSource)
+        ac_magnitude: props.acMagnitude,
+        ac_phase: props.acPhase,
+      })
+      this.simulation_current_source_id =
+        simulationCurrentSource.simulation_current_source_id
     }
   }
 

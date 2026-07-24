@@ -95,6 +95,11 @@ export interface TscircuitElements {
   voltageprobe: Props.VoltageProbeProps
   copperpour: Props.CopperPourProps
   analogsimulation: Props.AnalogSimulationProps
+  analogtransientsimulation: Props.AnalogTransientSimulationProps
+  analogdcoperatingpointsimulation: Props.AnalogDcOperatingPointSimulationProps
+  analogdcsweepsimulation: Props.AnalogDcSweepSimulationProps
+  analogacsweepsimulation: Props.AnalogAcSweepSimulationProps
+  analogsweepparameter: Props.AnalogSweepParameterProps
   spicemodel: Props.SpiceModelProps
   fiducial: Props.FiducialProps
   jscad: any
