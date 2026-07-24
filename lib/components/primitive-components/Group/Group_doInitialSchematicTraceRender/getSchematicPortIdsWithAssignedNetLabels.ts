@@ -1,9 +1,12 @@
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
-import type { Group } from "../Group"
 import type { NetLabel } from "../../NetLabel"
+import type { Group } from "../Group"
+import { type SchematicPortId, asSchematicPortId } from "./port-id-types"
 
-export const getSchematicPortIdsWithAssignedNetLabels = (group: Group<any>) => {
-  const schematicPortIdsWithNetLabels = new Set<string>()
+export const getSchematicPortIdsWithAssignedNetLabels = (
+  group: Group<any>,
+): Set<SchematicPortId> => {
+  const schematicPortIdsWithNetLabels = new Set<SchematicPortId>()
 
   const netLabels = group.selectAll("netlabel") as NetLabel[]
 
@@ -11,7 +14,9 @@ export const getSchematicPortIdsWithAssignedNetLabels = (group: Group<any>) => {
     const netLabelPorts = netLabel._getConnectedPorts()
     for (const port of netLabelPorts) {
       if (!port.schematic_port_id) continue
-      schematicPortIdsWithNetLabels.add(port.schematic_port_id)
+      schematicPortIdsWithNetLabels.add(
+        asSchematicPortId(port.schematic_port_id),
+      )
     }
   }
 

@@ -8,6 +8,7 @@ import { Group } from "../Group"
 import { computeCrossings } from "./compute-crossings"
 import { computeJunctions } from "./compute-junctions"
 import { getPortForSchematicSymbolPort } from "./getPortForSchematicSymbolPort"
+import { type SchematicPortId, asSchematicPortId } from "./port-id-types"
 import { removeOverlappingSameNetCrossingSegments } from "./remove-overlapping-same-net-crossing-segments"
 
 const debug = Debug("Group_doInitialSchematicTraceRender")
@@ -28,8 +29,8 @@ const MAX_PIN_SNAP_GAP = 1.5
 function extendTraceEndpointsToReachPinsInsideExpandedBoundingBox(
   params: {
     points: Array<{ x: number; y: number }>
-    schematicPortIds: string[]
-    eligiblePortIds: Set<string>
+    schematicPortIds: SchematicPortId[]
+    eligiblePortIds: Set<SchematicPortId>
   },
   db: CircuitJsonUtilObjects,
 ): Array<{ x: number; y: number }> {
@@ -93,9 +94,9 @@ function extendTraceEndpointsToReachPinsInsideExpandedBoundingBox(
 export function applyTracesFromSolverOutput(args: {
   group: Group<any>
   solver: SchematicTracePipelineSolver
-  pinIdToSchematicPortId: Map<string, string>
+  pinIdToSchematicPortId: Map<string, SchematicPortId>
   userNetIdToConnKey: Map<string, string>
-  schematicPortIdsWithPreExistingNetLabels: Set<string>
+  schematicPortIdsWithPreExistingNetLabels: Set<SchematicPortId>
 }) {
   const {
     group,
@@ -106,21 +107,27 @@ export function applyTracesFromSolverOutput(args: {
   } = args
   const { db } = group.root!
 
-  const schematicPortIdsByRoutedSchematicPortId = new Map<string, string[]>()
+  const schematicPortIdsByRoutedSchematicPortId = new Map<
+    SchematicPortId,
+    SchematicPortId[]
+  >()
   for (const port of group.selectAll<Port>("port")) {
-    const routedSchematicPortId =
+    const routedSchematicPortIdValue =
       getPortForSchematicSymbolPort(port).schematic_port_id
-    if (!routedSchematicPortId || !port.schematic_port_id) continue
+    const schematicPortIdValue = port.schematic_port_id
+    if (!routedSchematicPortIdValue || !schematicPortIdValue) continue
+    const routedSchematicPortId = asSchematicPortId(routedSchematicPortIdValue)
+    const schematicPortId = asSchematicPortId(schematicPortIdValue)
     const schematicPortIds =
       schematicPortIdsByRoutedSchematicPortId.get(routedSchematicPortId) ?? []
-    schematicPortIds.push(port.schematic_port_id)
+    schematicPortIds.push(schematicPortId)
     schematicPortIdsByRoutedSchematicPortId.set(
       routedSchematicPortId,
       schematicPortIds,
     )
   }
 
-  const eligiblePortIds = new Set<string>()
+  const eligiblePortIds = new Set<SchematicPortId>()
   for (const schematicComponent of db.schematic_component.list()) {
     if (!getSchematicComponentWithTextBounds({ db, schematicComponent })) {
       continue
@@ -128,7 +135,7 @@ export function applyTracesFromSolverOutput(args: {
     for (const port of db.schematic_port.list({
       schematic_component_id: schematicComponent.schematic_component_id,
     })) {
-      eligiblePortIds.add(port.schematic_port_id)
+      eligiblePortIds.add(asSchematicPortId(port.schematic_port_id))
     }
   }
 
@@ -151,7 +158,7 @@ export function applyTracesFromSolverOutput(args: {
     const uniquePinIds = Array.from(new Set(solvedTracePath.pinIds ?? []))
     const solvedTraceSchematicPortIds = uniquePinIds
       .map((pinId) => pinIdToSchematicPortId.get(pinId))
-      .filter((id): id is string => Boolean(id))
+      .filter((id): id is SchematicPortId => Boolean(id))
     const isNetLabelCoveredTrace =
       solvedTraceSchematicPortIds.length > 0 &&
       solvedTraceSchematicPortIds.every((id) =>
