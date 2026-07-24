@@ -9,11 +9,7 @@ import {
   type SectionId,
   type TextBoxes,
 } from "@tscircuit/schematic-trace-solver"
-import type {
-  SchematicComponent,
-  SourceComponentBase,
-  SourceNet,
-} from "circuit-json"
+import type { SchematicComponent, SourceNet } from "circuit-json"
 import { getSchematicNetLabelTextWidth } from "lib/utils/schematic/computeSchematicNetLabelCenter"
 import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
 import { convertFacingDirectionToElbowDirection } from "lib/utils/schematic/convertFacingDirectionToElbowDirection"
@@ -25,7 +21,6 @@ import { getSchematicPortSelector } from "./getSchematicPortSelector"
 const DEFAULT_MAX_MSP_PAIR_DISTANCE = 2.4
 const SCHEMATIC_RAIL_NET_LABEL_HEIGHT = 0.42
 type SchematicComponentId = SchematicComponent["schematic_component_id"]
-type SourceComponentId = SourceComponentBase["source_component_id"]
 
 export type SolverInputContext = {
   inputProblem: InputProblem
@@ -152,19 +147,6 @@ export function createSchematicTraceSolverInputProblem(
   const chips: InputChip[] = []
   const pinIdToSchematicPortId = new Map<string, string>()
   const schematicPortIdToPinId = new Map<string, string>()
-  const schematicComponentCountBySourceComponentId = new Map<
-    SourceComponentId,
-    number
-  >()
-  for (const schematicComponent of schematicComponents) {
-    if (!schematicComponent.source_component_id) continue
-    schematicComponentCountBySourceComponentId.set(
-      schematicComponent.source_component_id,
-      (schematicComponentCountBySourceComponentId.get(
-        schematicComponent.source_component_id,
-      ) ?? 0) + 1,
-    )
-  }
 
   for (const schematicComponent of schematicComponents) {
     const chipId = schematicComponent.schematic_component_id
@@ -177,22 +159,18 @@ export function createSchematicTraceSolverInputProblem(
     const schematicPorts = db.schematic_port.list({
       schematic_component_id: schematicComponent.schematic_component_id,
     })
-    const hasMultipleSchematicRepresentations =
-      schematicComponent.source_component_id != null &&
-      (schematicComponentCountBySourceComponentId.get(
-        schematicComponent.source_component_id,
-      ) ?? 0) > 1
-    const schematicComponentSelectorPrefix = hasMultipleSchematicRepresentations
-      ? schematicComponent.schematic_component_id
-      : (sourceComponent?.name ?? schematicComponent.schematic_component_id)
 
     for (const schematicPort of schematicPorts) {
       const sourcePort = db.source_port.get(schematicPort.source_port_id)!
-      const selector = getSchematicPortSelector({
-        schematicComponentSelectorPrefix,
+      const baseSelector = getSchematicPortSelector({
+        componentName:
+          sourceComponent?.name ?? schematicComponent.schematic_component_id,
         schematicPort,
         sourcePort,
       })
+      const selector = pinIdToSchematicPortId.has(baseSelector)
+        ? `${baseSelector}:${schematicPort.schematic_port_id}`
+        : baseSelector
       pinIdToSchematicPortId.set(selector, schematicPort.schematic_port_id)
       schematicPortIdToPinId.set(schematicPort.schematic_port_id, selector)
     }
