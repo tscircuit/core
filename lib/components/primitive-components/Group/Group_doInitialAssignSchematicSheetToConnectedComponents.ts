@@ -1,9 +1,7 @@
 import type { SchematicSheet, SourcePort } from "circuit-json"
 import { NormalComponent } from "../../base-components/NormalComponent/NormalComponent"
-import type { Port } from "../Port"
 import { SchematicBox } from "../SchematicBox/SchematicBox"
 import { getSchematicBoxPinLabels } from "../SchematicBox/SchematicBox_doInitialSchematicComponentRender"
-import { SchematicSymbol } from "../SchematicSymbol/SchematicSymbol"
 import type { Group } from "./Group"
 
 type SourceComponentId = SourcePort["source_component_id"]
@@ -22,26 +20,7 @@ export const Group_doInitialAssignSchematicSheetToConnectedComponents = (
     SubcircuitConnectivityMapKey,
     Set<SchematicSheetId>
   >()
-  const projectedSourceComponentIds = new Set<SourceComponentId>()
-
-  const associateSourcePortWithSheet = (
-    sourcePort: SourcePort | undefined,
-    schematicSheetId: SchematicSheetId,
-  ) => {
-    const subcircuitConnectivityMapKey =
-      sourcePort?.subcircuit_connectivity_map_key
-    if (!subcircuitConnectivityMapKey) return
-
-    const schematicSheetIds =
-      schematicSheetIdsBySubcircuitConnectivityMapKey.get(
-        subcircuitConnectivityMapKey,
-      ) ?? new Set<SchematicSheetId>()
-    schematicSheetIds.add(schematicSheetId)
-    schematicSheetIdsBySubcircuitConnectivityMapKey.set(
-      subcircuitConnectivityMapKey,
-      schematicSheetIds,
-    )
-  }
+  const schematicBoxReferencedSourceComponentIds = new Set<SourceComponentId>()
 
   const schematicBoxes = group
     .getDescendants()
@@ -60,7 +39,9 @@ export const Group_doInitialAssignSchematicSheetToConnectedComponents = (
     if (!(referencedComponent instanceof NormalComponent)) continue
     if (!referencedComponent.source_component_id) continue
 
-    projectedSourceComponentIds.add(referencedComponent.source_component_id)
+    schematicBoxReferencedSourceComponentIds.add(
+      referencedComponent.source_component_id,
+    )
     const referencedSourcePorts = db.source_port.list({
       source_component_id: referencedComponent.source_component_id,
     })
@@ -73,53 +54,19 @@ export const Group_doInitialAssignSchematicSheetToConnectedComponents = (
             sourcePort.port_hints?.includes(pinAlias),
         ),
       )
-      associateSourcePortWithSheet(referencedSourcePort, schematicSheetId)
-    }
-  }
+      const subcircuitConnectivityMapKey =
+        referencedSourcePort?.subcircuit_connectivity_map_key
+      if (!subcircuitConnectivityMapKey) continue
 
-  const schematicSymbols = group
-    .getDescendants()
-    .filter(
-      (component): component is SchematicSymbol =>
-        component instanceof SchematicSymbol &&
-        component.getSubcircuit() === group,
-    )
-
-  for (const schematicSymbol of schematicSymbols) {
-    const { chipRef, connections } = schematicSymbol._parsedProps
-    const schematicSheetId = schematicSymbol._resolveSchematicSheetId()
-    if (!chipRef || !connections || !schematicSheetId) continue
-
-    const referencedComponent = schematicSymbol
-      .getSubcircuit()
-      .selectOne(chipRef)
-    if (!(referencedComponent instanceof NormalComponent)) continue
-    if (!referencedComponent.source_component_id) continue
-
-    projectedSourceComponentIds.add(referencedComponent.source_component_id)
-
-    for (const connectionTarget of Object.values(connections)) {
-      const targetSelectors =
-        typeof connectionTarget === "string"
-          ? [connectionTarget]
-          : connectionTarget
-      for (const targetSelector of targetSelectors) {
-        const referencedPort = schematicSymbol
-          .getSubcircuit()
-          .selectOne(targetSelector, { type: "port" }) as Port | null
-        if (!referencedPort?.source_port_id) continue
-
-        const referencedSourcePort = db.source_port.get(
-          referencedPort.source_port_id,
-        )
-        if (
-          referencedSourcePort?.source_component_id !==
-          referencedComponent.source_component_id
-        ) {
-          continue
-        }
-        associateSourcePortWithSheet(referencedSourcePort, schematicSheetId)
-      }
+      const schematicSheetIds =
+        schematicSheetIdsBySubcircuitConnectivityMapKey.get(
+          subcircuitConnectivityMapKey,
+        ) ?? new Set<SchematicSheetId>()
+      schematicSheetIds.add(schematicSheetId)
+      schematicSheetIdsBySubcircuitConnectivityMapKey.set(
+        subcircuitConnectivityMapKey,
+        schematicSheetIds,
+      )
     }
   }
 
@@ -133,7 +80,11 @@ export const Group_doInitialAssignSchematicSheetToConnectedComponents = (
 
   for (const normalComponent of normalComponents) {
     if (!normalComponent.source_component_id) continue
-    if (projectedSourceComponentIds.has(normalComponent.source_component_id)) {
+    if (
+      schematicBoxReferencedSourceComponentIds.has(
+        normalComponent.source_component_id,
+      )
+    ) {
       continue
     }
     if (normalComponent._resolveSchematicSheetId()) continue

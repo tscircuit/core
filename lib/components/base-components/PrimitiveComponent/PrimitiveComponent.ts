@@ -22,6 +22,7 @@ import type {
   SchematicBoxComponentDimensions,
   SchematicBoxDimensions,
 } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
+import { getRotatedSymbolName } from "lib/utils/schematic/getRotatedSymbolName"
 import { isMatchingSelector } from "lib/utils/selector-matching"
 import { type SchSymbol, symbols } from "schematic-symbols"
 import {
@@ -772,6 +773,20 @@ export abstract class PrimitiveComponent<
       throw new Error(
         `Schematic rotation ${props.schRotation} is not supported for ${this.componentName}`,
       )
+    }
+
+    const isQualifiedSymbolName = /_(horz|vert|up|down|left|right)$/.test(
+      base_symbol_name,
+    )
+    if (isQualifiedSymbolName && base_symbol_name in symbols) {
+      const rotatedSymbolName = getRotatedSymbolName(
+        base_symbol_name,
+        normalizedRotation,
+      )
+      if (rotatedSymbolName && rotatedSymbolName in symbols) {
+        return rotatedSymbolName as keyof typeof symbols
+      }
+      return base_symbol_name
     }
 
     const symbol_name_horz = `${base_symbol_name}_horz` as keyof typeof symbols

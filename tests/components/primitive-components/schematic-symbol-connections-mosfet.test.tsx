@@ -24,6 +24,7 @@ test("schematicsymbol maps MOSFET symbol ports to a chip for traces", async () =
         name="R1"
         resistance="10k"
         footprint="0402"
+        schSheetName="MOSFET A"
         schX={-2}
         schY={-0.1}
       />
@@ -31,6 +32,7 @@ test("schematicsymbol maps MOSFET symbol ports to a chip for traces", async () =
         name="R2"
         resistance="10k"
         footprint="0402"
+        schSheetName="MOSFET A"
         schX={2}
         schY={0.55}
       />
