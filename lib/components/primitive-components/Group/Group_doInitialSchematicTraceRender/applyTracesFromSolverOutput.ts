@@ -1,12 +1,12 @@
-import { Group } from "../Group"
-import { SchematicTracePipelineSolver } from "@tscircuit/schematic-trace-solver"
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
+import { SchematicTracePipelineSolver } from "@tscircuit/schematic-trace-solver"
 import type { SchematicTrace } from "circuit-json"
+import Debug from "debug"
+import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
+import { Group } from "../Group"
 import { computeCrossings } from "./compute-crossings"
 import { computeJunctions } from "./compute-junctions"
 import { removeOverlappingSameNetCrossingSegments } from "./remove-overlapping-same-net-crossing-segments"
-import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
-import Debug from "debug"
 
 const debug = Debug("Group_doInitialSchematicTraceRender")
 
@@ -116,6 +116,27 @@ export function applyTracesFromSolverOutput(args: {
     }
   }
 
+  const getConnectivityEndpointKey = (
+    connectivityKey: string,
+    point: { x: number; y: number },
+  ) => JSON.stringify([connectivityKey, point.x, point.y])
+  const schematicPortIdsByConnectivityEndpoint = new Map<string, string[]>()
+  for (const schematicPort of db.schematic_port.list()) {
+    const sourcePort = schematicPort.source_port_id
+      ? db.source_port.get(schematicPort.source_port_id)
+      : undefined
+    const connectivityKey = sourcePort?.subcircuit_connectivity_map_key
+    if (!connectivityKey) continue
+    const endpointKey = getConnectivityEndpointKey(
+      connectivityKey,
+      schematicPort.center,
+    )
+    const portIds =
+      schematicPortIdsByConnectivityEndpoint.get(endpointKey) ?? []
+    portIds.push(schematicPort.schematic_port_id)
+    schematicPortIdsByConnectivityEndpoint.set(endpointKey, portIds)
+  }
+
   // Use the overlap-corrected traces from the pipeline
   const traces =
     solver.netLabelTraceCollisionSolver?.getOutput().traces ??
@@ -132,7 +153,10 @@ export function applyTracesFromSolverOutput(args: {
   debug(`Traces inside SchematicTraceSolver output: ${(traces ?? []).length}`)
 
   for (const solvedTracePath of traces ?? []) {
-    const uniquePinIds = Array.from(new Set(solvedTracePath.pinIds ?? []))
+    const tracePinIds = Array.isArray(solvedTracePath.pins)
+      ? solvedTracePath.pins.map((pin) => pin.pinId)
+      : (solvedTracePath.pinIds ?? [])
+    const uniquePinIds = Array.from(new Set(tracePinIds))
     const solvedTraceSchematicPortIds = uniquePinIds
       .map((pinId) => pinIdToSchematicPortId.get(pinId))
       .filter((id): id is string => Boolean(id))
@@ -178,6 +202,12 @@ export function applyTracesFromSolverOutput(args: {
     }
 
     const source_trace_id = String(solvedTracePath?.mspPairId)
+    // A routed trace connects every mapped schematic endpoint, including
+    // one-pin stubs that terminate at a solver-placed net label.
+    for (const schematicPortId of solvedTraceSchematicPortIds) {
+      db.schematic_port.update(schematicPortId, { is_connected: true })
+    }
+
     let subcircuit_connectivity_map_key: string | undefined
     if (
       Array.isArray(solvedTracePath?.pins) &&
@@ -186,12 +216,6 @@ export function applyTracesFromSolverOutput(args: {
       const pA = pinIdToSchematicPortId.get(solvedTracePath.pins[0]?.pinId!)
       const pB = pinIdToSchematicPortId.get(solvedTracePath.pins[1]?.pinId!)
       if (pA && pB) {
-        // Mark ports as connected on schematic
-        for (const schPid of [pA, pB]) {
-          const existing = db.schematic_port.get(schPid)
-          if (existing) db.schematic_port.update(schPid, { is_connected: true })
-        }
-
         subcircuit_connectivity_map_key = userNetIdToConnKey.get(
           String(solvedTracePath.userNetId),
         )
@@ -215,6 +239,26 @@ export function applyTracesFromSolverOutput(args: {
       const uniqueSourcePortConnKeys = new Set(sourcePortConnKeys)
       if (uniqueSourcePortConnKeys.size === 1) {
         subcircuit_connectivity_map_key = sourcePortConnKeys[0]
+      }
+    }
+
+    // The solver can collapse several internally connected physical pins onto
+    // one schematic endpoint. Mark every same-net port at either rendered trace
+    // endpoint as connected so fallback labels cannot move the routed label away.
+    if (subcircuit_connectivity_map_key) {
+      for (const endpoint of [edges[0]?.from, edges.at(-1)?.to]) {
+        if (!endpoint) continue
+        const endpointKey = getConnectivityEndpointKey(
+          subcircuit_connectivity_map_key,
+          endpoint,
+        )
+        for (const schematicPortId of schematicPortIdsByConnectivityEndpoint.get(
+          endpointKey,
+        ) ?? []) {
+          db.schematic_port.update(schematicPortId, {
+            is_connected: true,
+          })
+        }
       }
     }
 
