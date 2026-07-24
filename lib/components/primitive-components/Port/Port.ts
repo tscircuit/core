@@ -598,6 +598,13 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     const collapsedAncestor = this.getCollapsedSchematicBoxAncestor()
     if (collapsedAncestor && this.parent !== collapsedAncestor) return
 
+    if (
+      this.getParentNormalComponent()?._parsedProps
+        ?.noSchematicRepresentation === true
+    ) {
+      return
+    }
+
     const { db } = this.root!
     const { _parsedProps: props } = this
 
