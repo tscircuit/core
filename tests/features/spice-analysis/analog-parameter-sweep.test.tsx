@@ -27,13 +27,17 @@ test("analog parameter sweeps execute one run per ordered sweep point", async ()
 
   circuit.add(
     <board routingDisabled>
-      <voltagesource name="V1" voltage="5V" />
+      <voltagesource name="V1" voltage="5V" schX={-1.5} schY={0} />
       <resistor
         name="R1"
         resistance="1k"
-        connections={{ pin1: ".V1 > .pin1", pin2: ".V1 > .pin2" }}
+        schX={1.5}
+        schY={0}
+        schRotation={180}
       />
-      <voltageprobe name="VOUT" connectsTo=".R1 > .pin1" />
+      <trace from=".V1 > .pin1" to=".R1 > .pin1" schDisplayLabel="GND" />
+      <trace from=".V1 > .pin2" to=".R1 > .pin2" />
+      <voltageprobe name="VOUT" connectsTo=".R1 > .pin2" />
       <analog.dcoperatingpointsimulation name="swept-op" spiceEngine="fake">
         <analog.sweepparameter
           parameterType="resistance"
