@@ -46,9 +46,7 @@ export class SchematicSymbol extends PrimitiveComponent<
   }
 
   /*
-   * This first implementation intentionally treats <schematicsymbol> as a
-   * standalone schematic element. chipRef-based connection mapping will be
-   * implemented separately. displayName rendering is also deferred until its
-   * Circuit JSON representation is defined.
+   * displayName rendering is deferred until its Circuit JSON representation is
+   * defined. Avoid special-casing schematic_component rendering for it.
    */
 }
