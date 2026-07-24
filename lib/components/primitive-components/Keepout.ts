@@ -1,8 +1,8 @@
-import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { pcbKeepoutProps } from "@tscircuit/props"
-import type { RenderPhaseFn } from "../base-components/Renderable"
 import type { PCBKeepout } from "circuit-json"
 import { decomposeTSR } from "transformation-matrix"
+import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
+import type { RenderPhaseFn } from "../base-components/Renderable"
 
 export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
   pcb_keepout_id: string | null = null
@@ -32,7 +32,11 @@ export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
       layers = [props.layer]
     }
     if (!layers) {
-      layers = ["top"]
+      // Default to ALL copper layers: a keepout that silently guards only
+      // the top layer lets the autorouter route straight through the region
+      // on the bottom (see #2613). KiCad rule areas default to all layers
+      // for the same reason.
+      layers = [...(this.root?._getBoard()?.allLayers ?? ["top", "bottom"])]
     }
 
     let pcb_keepout: PCBKeepout | null = null

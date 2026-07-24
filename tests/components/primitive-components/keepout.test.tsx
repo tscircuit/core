@@ -1,4 +1,4 @@
-import { test, expect } from "bun:test"
+import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("Keepout component rendering", () => {
@@ -56,4 +56,24 @@ test("Keepout supports layer and layers props", () => {
     shape: "circle",
     layers: ["top", "bottom"],
   })
+})
+
+test("Keepout without layers defaults to all board copper layers", () => {
+  const { circuit } = getTestFixture()
+
+  circuit.add(
+    <board width="30mm" height="20mm">
+      <keepout shape="rect" width="5mm" height="3mm" />
+    </board>,
+  )
+
+  circuit.render()
+
+  const keepouts = circuit
+    .getCircuitJson()
+    .filter((element) => element.type === "pcb_keepout")
+  expect(keepouts).toHaveLength(1)
+  // https://github.com/tscircuit/core/issues/2613 — top-only silent default
+  // let the autorouter route through the keepout region on the bottom layer
+  expect([...(keepouts[0] as any).layers].sort()).toEqual(["bottom", "top"])
 })
