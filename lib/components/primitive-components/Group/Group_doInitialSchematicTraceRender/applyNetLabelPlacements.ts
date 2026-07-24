@@ -128,8 +128,7 @@ export function applyNetLabelPlacements(args: {
         schematicPortIds: label
           ._getConnectedPorts()
           .map((port) => port.schematic_port_id)
-          .filter((id): id is string => Boolean(id))
-          .map(asSchematicPortId),
+          .filter((id): id is SchematicPortId => Boolean(id)),
       }
     })
     .filter((label): label is UserDefinedNetLabel => label !== null)
@@ -150,10 +149,10 @@ export function applyNetLabelPlacements(args: {
       sourceNet = connKeyToSourceNet.get(placementConnKey)
     }
 
-    const schematicPortIds = placement.pinIds.map(asSchematicPortId)
+    const schPortIds = placement.pinIds.map(asSchematicPortId)
     // Solver labels belong to the same sheet as their connected port.
     let schematicSheetId = group._resolveSchematicSheetId()
-    const schematicPort = db.schematic_port.get(schematicPortIds[0])
+    const schematicPort = db.schematic_port.get(schPortIds[0])
     if (schematicPort?.schematic_sheet_id) {
       schematicSheetId = schematicPort.schematic_sheet_id
     }
@@ -172,16 +171,16 @@ export function applyNetLabelPlacements(args: {
     // on !is_connected (the same signal that pass uses) so already-drawn
     // connections keep the solver's intentional edge placement.
     let anchor_position = placement.anchorPoint
-    if (schematicPortIds.length === 1 && schematicPortIds[0]) {
-      const anchorSchPort = db.schematic_port.get(schematicPortIds[0])
+    if (schPortIds.length === 1 && schPortIds[0]) {
+      const anchorSchPort = db.schematic_port.get(schPortIds[0])
       if (anchorSchPort?.center && !anchorSchPort.is_connected) {
         anchor_position = anchorSchPort.center
       }
     }
 
     if (
-      schematicPortIds.some((schematicPortId) =>
-        schematicPortIdsWithPreExistingNetLabels.has(schematicPortId),
+      schPortIds.some((schPortId) =>
+        schematicPortIdsWithPreExistingNetLabels.has(schPortId),
       )
     ) {
       debug(
@@ -195,9 +194,8 @@ export function applyNetLabelPlacements(args: {
       const hasExplicitPortNetTrace = connKeysWithExplicitPortNetTraces.has(
         placementConnKey!,
       )
-      const hasRoutedTraceForPlacementPort = schematicPortIds.some(
-        (schematicPortId) =>
-          schematicPortIdsWithRoutedTraces.has(schematicPortId),
+      const hasRoutedTraceForPlacementPort = schPortIds.some((id) =>
+        schematicPortIdsWithRoutedTraces.has(id),
       )
       const hasSingleLabelPlacement =
         (netLabelPlacementCountByGlobalNetId.get(placement.globalConnNetId) ??
@@ -227,7 +225,7 @@ export function applyNetLabelPlacements(args: {
         const solverPlacement = {
           sourceNet,
           text,
-          schematicPortIds: new Set(schematicPortIds),
+          schematicPortIds: new Set(schPortIds),
           bounds: getNetLabelTextBounds({ center, text }),
         }
         if (
@@ -280,8 +278,8 @@ export function applyNetLabelPlacements(args: {
     if (
       !wasAssignedDisplayLabel &&
       !shouldKeepRoutedPairLabel &&
-      schematicPortIds.some((schematicPortId) =>
-        schematicPortIdsWithRoutedTraces.has(schematicPortId),
+      schPortIds.some((schPortId) =>
+        schematicPortIdsWithRoutedTraces.has(schPortId),
       )
     ) {
       debug(

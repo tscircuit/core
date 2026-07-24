@@ -21,8 +21,9 @@ export const getSchematicPortIdsWithRoutedTraces = ({
       : solvedTrace.pinIds
 
     for (const pinId of pinIds) {
-      if (pinId) {
-        schematicPortIdsWithRoutedTraces.add(asSchematicPortId(pinId))
+      const schPortId = asSchematicPortId(pinId)
+      if (schPortId) {
+        schematicPortIdsWithRoutedTraces.add(schPortId)
       }
     }
   }
