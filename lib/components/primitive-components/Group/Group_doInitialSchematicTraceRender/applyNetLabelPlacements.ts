@@ -1,20 +1,19 @@
-import { Group } from "../Group"
+import { type Bounds, doBoundsOverlap } from "@tscircuit/math-utils"
 import { SchematicTracePipelineSolver } from "@tscircuit/schematic-trace-solver"
+import type { SchematicNetLabel, SourceNet } from "circuit-json"
+import Debug from "debug"
 import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
+import { getNetNameFromSourcePorts } from "lib/utils/schematic/getSourcePortNetLabelText"
+import type { NetLabel } from "../../NetLabel"
+import { Port } from "../../Port"
+import { Group } from "../Group"
+import { getNetLabelTextBounds } from "./getNetLabelTextBounds"
+import { getNetNameFromPorts } from "./getNetNameFromPorts"
 import type { AxisDirection } from "./getSide"
 import { oppositeSide } from "./oppositeSide"
-import { Port } from "../../Port"
-import type { NetLabel } from "../../NetLabel"
-import { getNetNameFromPorts } from "./getNetNameFromPorts"
-import { getNetLabelTextBounds } from "./getNetLabelTextBounds"
-import Debug from "debug"
-import type { SchematicNetLabel, SourceNet } from "circuit-json"
-import { doBoundsOverlap, type Bounds } from "@tscircuit/math-utils"
-import { getNetNameFromSourcePorts } from "lib/utils/schematic/getSourcePortNetLabelText"
+import type { SchematicPortId } from "./port-id-types"
 
 const debug = Debug("Group_doInitialSchematicTraceRender")
-
-type SchematicPortId = string
 
 // User-defined net labels are placed directly via a <netlabel/> in the source,
 // as opposed to labels the trace solver places automatically.
@@ -58,10 +57,10 @@ export function applyNetLabelPlacements(args: {
   solver: SchematicTracePipelineSolver
   userNetIdToConnKey: Map<string, string>
   connKeyToSourceNet: Map<string, SourceNet>
-  pinIdToSchematicPortId: Map<string, string>
+  pinIdToSchematicPortId: Map<string, SchematicPortId>
   connKeysWithExplicitPortNetTraces: Set<string>
-  schematicPortIdsWithPreExistingNetLabels: Set<string>
-  schematicPortIdsWithRoutedTraces: Set<string>
+  schematicPortIdsWithPreExistingNetLabels: Set<SchematicPortId>
+  schematicPortIdsWithRoutedTraces: Set<SchematicPortId>
 }) {
   const {
     group,

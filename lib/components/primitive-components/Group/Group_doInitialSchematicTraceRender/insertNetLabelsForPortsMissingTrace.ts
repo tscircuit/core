@@ -8,6 +8,7 @@ import {
 } from "lib/utils/schematic/getSourcePortNetLabelText"
 import type { Port } from "../../Port"
 import { getNetNameFromPorts } from "./getNetNameFromPorts"
+import type { SchematicPortId, SourcePortId } from "./port-id-types"
 
 const NEAR_EXISTING_NET_LABEL_DISTANCE = 0.5
 const SAME_ANCHOR_POSITION_DISTANCE = 0.1
@@ -70,26 +71,24 @@ const getDirectCrossSubcircuitConnectionLabelText = (
 }
 
 export const insertNetLabelsForPortsMissingTrace = ({
-  allSourceAndSchematicPortIdsInScope,
+  schematicPortIdsInScope,
   group,
   schPortIdToSourcePortId,
   connKeyToSourceNet,
 }: {
   group: Group<any>
-  allSourceAndSchematicPortIdsInScope: Set<string>
-  schPortIdToSourcePortId: Map<string, string>
+  schematicPortIdsInScope: Set<SchematicPortId>
+  schPortIdToSourcePortId: Map<SchematicPortId, SourcePortId>
   connKeyToSourceNet: Map<string, SourceNet>
 }) => {
   const { db } = group.root!
 
   // Create net labels for ports connected only to a net (no trace connected)
-  for (const schOrSrcPortId of Array.from(
-    allSourceAndSchematicPortIdsInScope,
-  )) {
-    const schPort = db.schematic_port.get(schOrSrcPortId)
+  for (const schematicPortId of schematicPortIdsInScope) {
+    const schPort = db.schematic_port.get(schematicPortId)
     if (!schPort) continue
     if (schPort.is_connected) continue
-    const srcPortId = schPortIdToSourcePortId.get(schOrSrcPortId)
+    const srcPortId = schPortIdToSourcePortId.get(schematicPortId)
     if (!srcPortId) continue
 
     const sourcePort = db.source_port.get(srcPortId)
@@ -119,11 +118,9 @@ export const insertNetLabelsForPortsMissingTrace = ({
     const portSchematicSheetId =
       schComponent?.schematic_sheet_id ?? group._resolveSchematicSheetId()
 
-    const connectedSourcePortIdsForKey = Array.from(
-      allSourceAndSchematicPortIdsInScope,
-    )
+    const connectedSourcePortIdsForKey = Array.from(schematicPortIdsInScope)
       .map((portId) => schPortIdToSourcePortId.get(portId))
-      .filter((sourcePortId): sourcePortId is string => {
+      .filter((sourcePortId): sourcePortId is SourcePortId => {
         if (!sourcePortId) return false
         return (
           db.source_port.get(sourcePortId)?.subcircuit_connectivity_map_key ===
@@ -175,16 +172,16 @@ export const insertNetLabelsForPortsMissingTrace = ({
     // visually open. Preserve labels only when the user explicitly named one.
     if (isCollapsedBoxPort && !hasExternalTrace && !hasExplicitLabel) continue
 
-    const connectedPortCountForKey = Array.from(
-      allSourceAndSchematicPortIdsInScope,
-    ).filter((portId) => {
-      const sourcePortId = schPortIdToSourcePortId.get(portId)
-      if (!sourcePortId) return false
-      return (
-        db.source_port.get(sourcePortId)?.subcircuit_connectivity_map_key ===
-        connKey
-      )
-    }).length
+    const connectedPortCountForKey = Array.from(schematicPortIdsInScope).filter(
+      (portId) => {
+        const sourcePortId = schPortIdToSourcePortId.get(portId)
+        if (!sourcePortId) return false
+        return (
+          db.source_port.get(sourcePortId)?.subcircuit_connectivity_map_key ===
+          connKey
+        )
+      },
+    ).length
     const isGndNet = sourceNet?.is_ground ?? false
     const isPowerNet = !isGndNet && (sourceNet?.is_power ?? false)
     let side: "top" | "bottom" | "left" | "right"
