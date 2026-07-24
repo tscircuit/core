@@ -13,6 +13,8 @@ test("schematicsymbol maps a MOSFET and op-amp across two sheets", async () => {
         name="Q1"
         footprint="sot23"
         noSchematicRepresentation
+        pcbX={-4}
+        pcbY={0}
         pinLabels={{ pin1: "G", pin2: "S", pin3: "D" }}
       />
       <schematicsymbol
@@ -30,6 +32,8 @@ test("schematicsymbol maps a MOSFET and op-amp across two sheets", async () => {
         name="R1"
         resistance="10k"
         footprint="0402"
+        pcbX={-8}
+        pcbY={-1.5}
         schSheetName="MOSFET"
         schX={-2}
       />
@@ -37,6 +41,8 @@ test("schematicsymbol maps a MOSFET and op-amp across two sheets", async () => {
         name="R2"
         resistance="1k"
         footprint="0402"
+        pcbX={0}
+        pcbY={1.5}
         schSheetName="MOSFET"
         schX={2}
       />
@@ -47,6 +53,8 @@ test("schematicsymbol maps a MOSFET and op-amp across two sheets", async () => {
         name="U1"
         footprint="soic8"
         noSchematicRepresentation
+        pcbX={4}
+        pcbY={0}
         pinLabels={{ pin1: "INP", pin2: "INN", pin3: "OUT" }}
       />
       <schematicsymbol
@@ -64,6 +72,8 @@ test("schematicsymbol maps a MOSFET and op-amp across two sheets", async () => {
         name="R3"
         resistance="22k"
         footprint="0402"
+        pcbX={0}
+        pcbY={-2}
         schSheetName="Op-Amp"
         schX={-2}
       />
@@ -71,6 +81,8 @@ test("schematicsymbol maps a MOSFET and op-amp across two sheets", async () => {
         name="C1"
         capacitance="1uF"
         footprint="0402"
+        pcbX={8}
+        pcbY={-2}
         schSheetName="Op-Amp"
         schX={2}
       />
@@ -97,4 +109,5 @@ test("schematicsymbol maps a MOSFET and op-amp across two sheets", async () => {
   })
 
   await expect(circuit).toMatchStackedSchematicSnapshot(import.meta.path)
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

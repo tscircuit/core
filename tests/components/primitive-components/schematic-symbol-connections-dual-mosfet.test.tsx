@@ -10,6 +10,8 @@ test("schematicsymbol renders two MOSFET representations without a schematic she
         name="Q1"
         footprint="soic8"
         noSchematicRepresentation
+        pcbX={0}
+        pcbY={0}
         pinLabels={{
           pin1: "G1",
           pin2: "S1",
@@ -49,14 +51,26 @@ test("schematicsymbol renders two MOSFET representations without a schematic she
         name="R1"
         resistance="10k"
         footprint="0402"
+        pcbX={-5}
+        pcbY={2}
         schX={-4.5}
         schY={-0.1}
       />
-      <led name="D1" color="red" footprint="0603" schX={-1} schY={0.55} />
+      <led
+        name="D1"
+        color="red"
+        footprint="0603"
+        pcbX={5}
+        pcbY={2}
+        schX={-1}
+        schY={0.55}
+      />
       <resistor
         name="R2"
         resistance="22k"
         footprint="0402"
+        pcbX={-5}
+        pcbY={-2}
         schX={0.5}
         schY={-0.1}
       />
@@ -64,6 +78,8 @@ test("schematicsymbol renders two MOSFET representations without a schematic she
         name="C1"
         capacitance="1uF"
         footprint="0402"
+        pcbX={5}
+        pcbY={-2}
         schX={4}
         schY={0.55}
       />
@@ -92,4 +108,5 @@ test("schematicsymbol renders two MOSFET representations without a schematic she
   expect(circuit.db.schematic_trace.list()).toHaveLength(4)
 
   await expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

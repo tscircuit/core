@@ -24,6 +24,8 @@ test("schematicsymbol maps MOSFET symbol ports to a chip for traces", async () =
         name="R1"
         resistance="10k"
         footprint="0402"
+        pcbX={-5}
+        pcbY={1}
         schSheetName="MOSFET A"
         schX={-2}
         schY={-0.1}
@@ -32,6 +34,8 @@ test("schematicsymbol maps MOSFET symbol ports to a chip for traces", async () =
         name="R2"
         resistance="10k"
         footprint="0402"
+        pcbX={5}
+        pcbY={1}
         schSheetName="MOSFET A"
         schX={2}
         schY={0.55}
@@ -43,6 +47,8 @@ test("schematicsymbol maps MOSFET symbol ports to a chip for traces", async () =
         name="Q1"
         footprint="soic8"
         noSchematicRepresentation
+        pcbX={0}
+        pcbY={0}
         pinLabels={{
           pin1: "G1",
           pin2: "S1",
@@ -60,4 +66,5 @@ test("schematicsymbol maps MOSFET symbol ports to a chip for traces", async () =
   await circuit.renderUntilSettled()
 
   await expect(circuit).toMatchStackedSchematicSnapshot(import.meta.path)
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

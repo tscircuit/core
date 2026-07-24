@@ -24,6 +24,7 @@ test("schematicsymbol maps diode symbol ports to a chip for traces", async () =>
         resistance="1k"
         footprint="0402"
         connections={{ pin2: "D1.A" }}
+        pcbX={-3}
         schSheetName="Diode"
         schX={-2}
       />
@@ -32,6 +33,7 @@ test("schematicsymbol maps diode symbol ports to a chip for traces", async () =>
         resistance="1k"
         footprint="0402"
         connections={{ pin1: "D1.K" }}
+        pcbX={3}
         schSheetName="Diode"
         schX={2}
       />
@@ -40,6 +42,7 @@ test("schematicsymbol maps diode symbol ports to a chip for traces", async () =>
         name="D1"
         footprint="0402"
         noSchematicRepresentation
+        pcbX={0}
         pinLabels={{
           pin1: "A",
           pin2: "K",
@@ -51,4 +54,5 @@ test("schematicsymbol maps diode symbol ports to a chip for traces", async () =>
   await circuit.renderUntilSettled()
 
   await expect(circuit).toMatchStackedSchematicSnapshot(import.meta.path)
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
