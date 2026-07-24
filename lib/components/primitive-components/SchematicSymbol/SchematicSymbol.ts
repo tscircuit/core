@@ -1,38 +1,24 @@
 import { schematicSymbolProps } from "@tscircuit/props"
-import type { RenderPhase } from "lib/components/base-components/Renderable"
 import { getRotatedSymbolName } from "lib/utils/schematic/getRotatedSymbolName"
 import { symbols } from "schematic-symbols"
-import { NormalComponent } from "../../base-components/NormalComponent"
+import { PrimitiveComponent } from "../../base-components/PrimitiveComponent"
+import { SchematicSymbol_doInitialSchematicComponentRender } from "./SchematicSymbol_doInitialSchematicComponentRender"
 
-export class SchematicSymbol extends NormalComponent<
+export class SchematicSymbol extends PrimitiveComponent<
   typeof schematicSymbolProps
 > {
+  isSchematicPrimitive = true
+
   get config() {
     return {
       componentName: "SchematicSymbol",
       schematicSymbolName: this.props.symbolName,
       zodProps: schematicSymbolProps,
-      shouldRenderAsSchematicBox: false,
     }
   }
 
-  runRenderPhaseForChildren(phase: RenderPhase): void {
-    if (phase.startsWith("Pcb")) return
-    super.runRenderPhaseForChildren(phase)
-  }
-
-  doInitialSourceRender(): void {
-    const sourceComponent = this.root!.db.source_component.insert({
-      ftype: "simple_chip",
-      name: this.name,
-      are_pins_interchangeable: false,
-    })
-
-    this.source_component_id = sourceComponent.source_component_id
-  }
-
-  doInitialPcbComponentRender(): void {
-    // A schematicsymbol has no PCB representation.
+  doInitialSchematicComponentRender(): void {
+    SchematicSymbol_doInitialSchematicComponentRender(this)
   }
 
   override _getSchematicSymbolName(): keyof typeof symbols | undefined {
@@ -62,8 +48,7 @@ export class SchematicSymbol extends NormalComponent<
   /*
    * This first implementation intentionally treats <schematicsymbol> as a
    * standalone schematic element. chipRef-based connection mapping will be
-   * implemented separately. displayName is intentionally not written to its
-   * temporary source representation; rendering it will be implemented without
-   * special-casing schematic_component.
+   * implemented separately. displayName rendering is also deferred until its
+   * Circuit JSON representation is defined.
    */
 }

@@ -25,26 +25,15 @@ test("schematicsymbol renders a standalone library symbol", async () => {
     center: { x: 1, y: -1 },
     symbol_name: "n_channel_e_mosfet_transistor_vert",
   })
-  const sourceComponent = circuit.db.source_component.list()[0]
-  expect(sourceComponent).toMatchObject({
-    ftype: "simple_chip",
-    name: "Q1",
-  })
-  expect(schematicComponent?.source_component_id).toBe(
-    sourceComponent?.source_component_id,
-  )
-  expect(circuit.db.source_component.list()).toHaveLength(1)
+  expect(schematicComponent?.source_component_id).toBeUndefined()
+  expect(circuit.db.source_component.list()).toHaveLength(0)
   expect(circuit.db.source_port.list()).toHaveLength(3)
   expect(circuit.db.pcb_component.list()).toHaveLength(0)
   expect(circuit.db.pcb_missing_footprint_error.list()).toHaveLength(0)
   expect(
     circuit.db.source_port
       .list()
-      .every(
-        (sourcePort) =>
-          sourcePort.source_component_id ===
-          sourceComponent?.source_component_id,
-      ),
+      .every((sourcePort) => sourcePort.source_component_id === undefined),
   ).toBe(true)
   expect(circuit.db.schematic_port.list()).toHaveLength(3)
 
