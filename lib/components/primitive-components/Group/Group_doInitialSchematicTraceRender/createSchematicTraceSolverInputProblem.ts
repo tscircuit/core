@@ -177,20 +177,19 @@ export function createSchematicTraceSolverInputProblem(
     const schematicPorts = db.schematic_port.list({
       schematic_component_id: schematicComponent.schematic_component_id,
     })
-    const componentName =
-      sourceComponent?.name ?? schematicComponent.schematic_component_id
     const hasMultipleSchematicRepresentations =
       schematicComponent.source_component_id != null &&
       (schematicComponentCountBySourceComponentId.get(
         schematicComponent.source_component_id,
       ) ?? 0) > 1
+    const schematicComponentSelectorPrefix = hasMultipleSchematicRepresentations
+      ? schematicComponent.schematic_component_id
+      : (sourceComponent?.name ?? schematicComponent.schematic_component_id)
 
     for (const schematicPort of schematicPorts) {
       const sourcePort = db.source_port.get(schematicPort.source_port_id)!
       const selector = getSchematicPortSelector({
-        componentName: hasMultipleSchematicRepresentations
-          ? `${componentName}:${schematicComponent.schematic_component_id}`
-          : componentName,
+        schematicComponentSelectorPrefix,
         schematicPort,
         sourcePort,
       })
