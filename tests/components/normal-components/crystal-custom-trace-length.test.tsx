@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("configured crystal maximum trace length propagates across its net", () => {
+test("configured crystal maximum propagates without replacing stricter limits", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -15,7 +15,7 @@ test("configured crystal maximum trace length propagates across its net", () => 
         maxTraceLength="5mm"
       />
       <chip name="U1" pinLabels={{ "1": "XTAL_OUT", "2": "OTHER" }} />
-      <capacitor name="C1" capacitance="10pF" />
+      <capacitor name="C1" capacitance="10pF" maxDecouplingTraceLength={3} />
       <capacitor name="C2" capacitance="10pF" />
       <trace from=".Y1 > .pin1" to="net.XTAL_OUT" />
       <trace from=".U1 > .XTAL_OUT" to="net.XTAL_OUT" />
@@ -34,7 +34,7 @@ test("configured crystal maximum trace length propagates across its net", () => 
   ).toEqual({
     ".Y1 > .pin1 to net.XTAL_OUT": 5,
     ".U1 > .XTAL_OUT to net.XTAL_OUT": 5,
-    ".C1 > .pin1 to net.XTAL_OUT": 5,
+    ".C1 > .pin1 to net.XTAL_OUT": 3,
     ".C2 > .pin1 to net.UNRELATED": undefined,
   })
 })
