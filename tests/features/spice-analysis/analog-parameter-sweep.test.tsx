@@ -69,6 +69,11 @@ test("analog parameter sweeps execute one run per ordered sweep point", async ()
       (result) => result.simulation_parameter_sweep_coordinate?.sweep_index,
     ),
   ).toEqual([0, 1, 2])
+  expect(
+    new Set(
+      results.map((result) => result.simulation_dc_operating_point_voltage_id),
+    ).size,
+  ).toBe(results.length)
   expect(results.map((result) => result.voltage)).toEqual([1, 2, 3])
   expect(circuit.db.simulation_unknown_experiment_error.list()).toHaveLength(0)
   await expect(circuit).toMatchSimulationSnapshot(import.meta.path)

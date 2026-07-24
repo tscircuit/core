@@ -67,18 +67,11 @@ const getGeneratedParameterSweepCoordinates = ({
 const getParameterSweepTargetSelector = (
   props: AnalogSweepParameterProps,
 ): string => {
-  switch (props.parameterType) {
-    case "resistance":
-      return props.resistorRef
-    case "capacitance":
-      return props.capacitorRef
-    case "inductance":
-      return props.inductorRef
-    case "voltage":
-      return props.net
-    case "current":
-      return props.currentSourceRef
-  }
+  if (props.parameterType === "resistance") return props.resistorRef
+  if (props.parameterType === "capacitance") return props.capacitorRef
+  if (props.parameterType === "inductance") return props.inductorRef
+  if (props.parameterType === "voltage") return props.net
+  return props.currentSourceRef
 }
 
 export const AnalogSweepParameter_doInitialSimulationRender = (
