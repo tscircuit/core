@@ -36,13 +36,17 @@ test("snapshots analog DC operating point voltage and current results", async ()
 
   circuit.add(
     <board routingDisabled>
-      <voltagesource name="V1" voltage="5V" />
+      <voltagesource name="V1" voltage="5V" schX={-1.5} schY={0} />
       <resistor
         name="Rload"
         resistance="1kΩ"
-        connections={{ pin1: ".V1 > .pin1", pin2: ".V1 > .pin2" }}
+        schX={1.5}
+        schY={0}
+        schRotation={180}
       />
-      <voltageprobe name="VOUT" connectsTo=".Rload > .pin1" />
+      <trace from=".V1 > .pin1" to=".Rload > .pin1" schDisplayLabel="GND" />
+      <trace from=".V1 > .pin2" to=".Rload > .pin2" />
+      <voltageprobe name="VOUT" connectsTo=".Rload > .pin2" />
       <analog.dcoperatingpointsimulation
         name="DC Bias Point"
         spiceEngine="fake"

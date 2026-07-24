@@ -56,13 +56,23 @@ test("snapshots analog AC sweep magnitude graphs", async () => {
 
   circuit.add(
     <board routingDisabled>
-      <voltagesource name="Vin" voltage="5V" acMagnitude="1V" />
+      <voltagesource
+        name="Vin"
+        voltage="5V"
+        acMagnitude="1V"
+        schX={-1.5}
+        schY={0}
+      />
       <resistor
         name="Rload"
         resistance="1kΩ"
-        connections={{ pin1: ".Vin > .pin1", pin2: ".Vin > .pin2" }}
+        schX={1.5}
+        schY={0}
+        schRotation={180}
       />
-      <voltageprobe name="VOUT" connectsTo=".Rload > .pin1" />
+      <trace from=".Vin > .pin1" to=".Rload > .pin1" schDisplayLabel="GND" />
+      <trace from=".Vin > .pin2" to=".Rload > .pin2" />
+      <voltageprobe name="VOUT" connectsTo=".Rload > .pin2" />
       <analog.acsweepsimulation
         name="Frequency Response"
         sweepType="decade"
