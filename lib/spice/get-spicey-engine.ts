@@ -6,7 +6,10 @@ export const getSpiceyEngine = (): SpiceEngine => {
     async simulate(spiceString: string) {
       const simulation_experiment_id = "spice-experiment-1"
 
+      // Run spicey simulation
       const { circuit: parsedCircuit, tran } = simulate(spiceString)
+
+      // Convert transient results to voltage graphs
       const voltageGraphs = spiceyTranToVGraphs(
         tran,
         parsedCircuit,
