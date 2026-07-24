@@ -91,19 +91,19 @@ test("repro44 - pcbPack and schematic", async () => {
     [
       {
         "center": {
-          "x": 1.77,
-          "y": -6.053,
+          "x": -2.81,
+          "y": 4.902,
         },
-        "height": 4.05,
+        "height": 1.75,
         "layer": "top",
         "name": "C1",
         "positionMode": "packed",
-        "rotation": -90,
-        "width": 1.75,
+        "rotation": 180,
+        "width": 4.05,
       },
       {
         "center": {
-          "x": -2.04,
+          "x": -1.12,
           "y": -4.723,
         },
         "height": 1.4,
@@ -115,8 +115,8 @@ test("repro44 - pcbPack and schematic", async () => {
       },
       {
         "center": {
-          "x": 7.54,
-          "y": -7.135,
+          "x": -5.28,
+          "y": -4.503,
         },
         "height": 0.95,
         "layer": "top",
@@ -127,38 +127,38 @@ test("repro44 - pcbPack and schematic", async () => {
       },
       {
         "center": {
-          "x": 5.58,
-          "y": 0.635,
-        },
-        "height": 1.4,
-        "layer": "top",
-        "name": "R1",
-        "positionMode": "packed",
-        "rotation": 180,
-        "width": 2.85,
-      },
-      {
-        "center": {
           "x": 4.85,
-          "y": -2.995,
+          "y": -0.092,
         },
         "height": 2.85,
         "layer": "top",
-        "name": "R2",
+        "name": "R1",
         "positionMode": "packed",
         "rotation": -90,
         "width": 1.4,
       },
       {
         "center": {
-          "x": -2.04,
-          "y": -7.623,
+          "x": 2.15,
+          "y": 4.723,
+        },
+        "height": 1.4,
+        "layer": "top",
+        "name": "R2",
+        "positionMode": "packed",
+        "rotation": 0,
+        "width": 2.85,
+      },
+      {
+        "center": {
+          "x": -5.58,
+          "y": -1.823,
         },
         "height": 1.4,
         "layer": "top",
         "name": "R3",
         "positionMode": "packed",
-        "rotation": 0,
+        "rotation": 180,
         "width": 2.85,
       },
       {
