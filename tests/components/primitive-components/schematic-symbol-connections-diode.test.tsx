@@ -6,33 +6,35 @@ test("schematicsymbol maps diode symbol ports to a chip for traces", async () =>
 
   circuit.add(
     <board width="16mm" height="10mm">
-      <schematicsheet name="Diode" displayName="Diode" sheetIndex={0}>
-        <schematicsymbol
-          name="A"
-          chipRef=".D1"
-          symbolName="diode_right"
-          connections={{
-            pin1: "D1.A",
-            pin2: "D1.K",
-          }}
-          schX={0}
-          schY={0}
-        />
-        <resistor
-          name="R1"
-          resistance="1k"
-          footprint="0402"
-          connections={{ pin2: "D1.A" }}
-          schX={-2}
-        />
-        <resistor
-          name="R2"
-          resistance="1k"
-          footprint="0402"
-          connections={{ pin1: "D1.K" }}
-          schX={2}
-        />
-      </schematicsheet>
+      <schematicsheet name="Diode" displayName="Diode" sheetIndex={0} />
+      <schematicsymbol
+        name="A"
+        chipRef=".D1"
+        symbolName="diode_right"
+        connections={{
+          pin1: "D1.A",
+          pin2: "D1.K",
+        }}
+        schSheetName="Diode"
+        schX={0}
+        schY={0}
+      />
+      <resistor
+        name="R1"
+        resistance="1k"
+        footprint="0402"
+        connections={{ pin2: "D1.A" }}
+        schSheetName="Diode"
+        schX={-2}
+      />
+      <resistor
+        name="R2"
+        resistance="1k"
+        footprint="0402"
+        connections={{ pin1: "D1.K" }}
+        schSheetName="Diode"
+        schX={2}
+      />
 
       <chip
         name="D1"
@@ -54,8 +56,9 @@ test("schematicsymbol maps diode symbol ports to a chip for traces", async () =>
   })
   const getD1Port = (label: string) =>
     d1Ports.find((port) => port.port_hints?.includes(label))!
+  const representation = circuit.db.source_component.getWhere({ name: "A" })!
   const schematicComponent = circuit.db.schematic_component.getWhere({
-    source_component_id: d1.source_component_id,
+    source_component_id: representation.source_component_id,
   })!
   const schematicPorts = circuit.db.schematic_port.list({
     schematic_component_id: schematicComponent.schematic_component_id,

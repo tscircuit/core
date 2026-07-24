@@ -63,8 +63,9 @@ test("schematicsymbol maps MOSFET symbol ports to a chip for traces", async () =
   })
   const getQ1Port = (label: string) =>
     q1Ports.find((port) => port.port_hints?.includes(label))!
+  const representation = circuit.db.source_component.getWhere({ name: "A" })!
   const schematicComponent = circuit.db.schematic_component.getWhere({
-    source_component_id: q1.source_component_id,
+    source_component_id: representation.source_component_id,
   })!
   const schematicPorts = circuit.db.schematic_port.list({
     schematic_component_id: schematicComponent.schematic_component_id,
@@ -79,7 +80,7 @@ test("schematicsymbol maps MOSFET symbol ports to a chip for traces", async () =
   expect(schematicComponent.schematic_sheet_id).toBe(
     schematicSheet.schematic_sheet_id,
   )
-  expect(circuit.db.source_component.list()).toHaveLength(3)
+  expect(circuit.db.source_component.list()).toHaveLength(4)
   expect(circuit.db.source_port.list()).toHaveLength(12)
   for (const resistorName of ["R1", "R2"]) {
     const resistor = circuit.db.source_component.getWhere({

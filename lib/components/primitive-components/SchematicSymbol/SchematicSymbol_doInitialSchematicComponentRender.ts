@@ -135,7 +135,7 @@ export const SchematicSymbol_doInitialSchematicComponentRender = (
     size: { ...symbol.size },
     is_box_with_pins: true,
     symbol_name: symbolName,
-    source_component_id: referencedChip?.source_component_id ?? undefined,
+    source_component_id: schematicSymbol.source_component_id ?? undefined,
     schematic_sheet_id: schematicSheetId,
   })
 
@@ -156,6 +156,7 @@ export const SchematicSymbol_doInitialSchematicComponentRender = (
         name: portName,
         pin_number: pinNumber ? Number(pinNumber) : undefined,
         port_hints: [...symbolPort.labels],
+        source_component_id: schematicSymbol.source_component_id ?? undefined,
         subcircuit_id: subcircuitId,
       }).source_port_id
     const portCenter = {

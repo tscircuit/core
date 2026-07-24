@@ -17,6 +17,15 @@ export class SchematicSymbol extends PrimitiveComponent<
     }
   }
 
+  doInitialSourceRender(): void {
+    const sourceComponent = this.root!.db.source_component.insert({
+      ftype: "simple_chip",
+      name: this.name,
+      are_pins_interchangeable: false,
+    })
+    this.source_component_id = sourceComponent.source_component_id
+  }
+
   doInitialSchematicComponentRender(): void {
     SchematicSymbol_doInitialSchematicComponentRender(this)
   }
@@ -46,7 +55,7 @@ export class SchematicSymbol extends PrimitiveComponent<
   }
 
   /*
-   * displayName rendering is deferred until its Circuit JSON representation is
-   * defined. Avoid special-casing schematic_component rendering for it.
+   * displayName cannot be supported until schematic_component has its own
+   * display_name field. Avoid special-casing schematic rendering for it.
    */
 }
