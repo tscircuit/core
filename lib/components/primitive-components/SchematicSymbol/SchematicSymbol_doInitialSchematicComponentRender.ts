@@ -43,22 +43,32 @@ export const SchematicSymbol_doInitialSchematicComponentRender = (
 
   const { chipRef, connections } = schematicSymbol._parsedProps
   if (chipRef && !connections) {
-    throw new Error(
-      `${schematicSymbol.getString()} with chipRef "${chipRef}" requires explicit connections`,
-    )
+    db.source_property_ignored_warning.insert({
+      source_component_id: schematicSymbol.source_component_id!,
+      property_name: "chipRef",
+      message: `${schematicSymbol.getString()} has chipRef "${chipRef}" without connections. chipRef will be ignored.`,
+      error_type: "source_property_ignored_warning",
+      subcircuit_id: schematicSymbol.getSubcircuit().subcircuit_id ?? undefined,
+    })
   }
   if (connections && !chipRef) {
-    throw new Error(
-      `${schematicSymbol.getString()} with connections requires a chipRef`,
-    )
+    db.source_property_ignored_warning.insert({
+      source_component_id: schematicSymbol.source_component_id!,
+      property_name: "connections",
+      message: `${schematicSymbol.getString()} has connections without chipRef. connections will be ignored.`,
+      error_type: "source_property_ignored_warning",
+      subcircuit_id: schematicSymbol.getSubcircuit().subcircuit_id ?? undefined,
+    })
   }
 
-  const referencedChip = chipRef
-    ? schematicSymbol.getSubcircuit().selectOne(chipRef)
+  const effectiveChipRef = connections ? chipRef : undefined
+  const effectiveConnections = chipRef ? connections : undefined
+  const referencedChip = effectiveChipRef
+    ? schematicSymbol.getSubcircuit().selectOne(effectiveChipRef)
     : null
-  if (chipRef && !referencedChip?.source_component_id) {
+  if (effectiveChipRef && !referencedChip?.source_component_id) {
     throw new Error(
-      `Could not resolve chipRef "${chipRef}" for ${schematicSymbol.getString()}`,
+      `Could not resolve chipRef "${effectiveChipRef}" for ${schematicSymbol.getString()}`,
     )
   }
 
@@ -68,10 +78,10 @@ export const SchematicSymbol_doInitialSchematicComponentRender = (
     string
   >()
 
-  if (connections && referencedChip?.source_component_id) {
+  if (effectiveConnections && referencedChip?.source_component_id) {
     for (const symbolPort of symbol.ports) {
       const connectionNames = getConnectionNamesForSymbolPort(symbolPort.labels)
-      const matchingConnections = Object.entries(connections).filter(
+      const matchingConnections = Object.entries(effectiveConnections).filter(
         ([connectionName]) => connectionNames.includes(connectionName),
       )
       if (matchingConnections.length === 0) {
@@ -109,14 +119,14 @@ export const SchematicSymbol_doInitialSchematicComponentRender = (
         referencedChip.source_component_id
       ) {
         throw new Error(
-          `Connection "${connectionName}" target "${targetSelector}" does not belong to chipRef "${chipRef}"`,
+          `Connection "${connectionName}" target "${targetSelector}" does not belong to chipRef "${effectiveChipRef}"`,
         )
       }
 
       referencedSourcePortIds.set(symbolPort, referencedPort.source_port_id)
     }
 
-    const unusedConnectionNames = Object.keys(connections).filter(
+    const unusedConnectionNames = Object.keys(effectiveConnections).filter(
       (connectionName) => !usedConnectionNames.has(connectionName),
     )
     if (unusedConnectionNames.length > 0) {

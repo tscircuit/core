@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("schematicsymbol does not auto-match chip ports", async () => {
+test("schematicsymbol ignores chipRef without connections", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -20,7 +20,16 @@ test("schematicsymbol does not auto-match chip ports", async () => {
     </board>,
   )
 
-  await expect(circuit.renderUntilSettled()).rejects.toThrow(
-    'with chipRef ".Q1" requires explicit connections',
-  )
+  await circuit.renderUntilSettled()
+
+  expect(circuit.db.source_property_ignored_warning.list()).toEqual([
+    expect.objectContaining({
+      property_name: "chipRef",
+      message: expect.stringContaining(
+        'has chipRef ".Q1" without connections. chipRef will be ignored.',
+      ),
+    }),
+  ])
+
+  await expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
