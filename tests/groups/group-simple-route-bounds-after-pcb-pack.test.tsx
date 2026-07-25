@@ -11,6 +11,8 @@ test("simple route json bounds include post-pack component positions", async () 
         <resistor name="R1" resistance="1k" footprint="0402" />
         <resistor name="R2" resistance="2k" footprint="0402" />
         <resistor name="R3" resistance="3k" footprint="0402" />
+        <trace from=".R1 > .pin1" to=".R2 > .pin1" />
+        <trace from=".R2 > .pin2" to=".R3 > .pin1" />
       </subcircuit>
       <pcbnotetext
         pcbX={0}
@@ -31,12 +33,13 @@ test("simple route json bounds include post-pack component positions", async () 
     subcircuit_id: sourceGroup.subcircuit_id,
   })
 
-  expect(simpleRouteJson.bounds).toEqual({
+  const preLayoutGroupBounds = {
     minX: pcbGroup.center.x - pcbGroup.width! / 2,
     maxX: pcbGroup.center.x + pcbGroup.width! / 2,
     minY: pcbGroup.center.y - pcbGroup.height! / 2,
     maxY: pcbGroup.center.y + pcbGroup.height! / 2,
-  })
+  }
+  expect(simpleRouteJson.bounds).not.toEqual(preLayoutGroupBounds)
 
   for (const obstacle of simpleRouteJson.obstacles) {
     expect(obstacle.center.x - obstacle.width / 2).toBeGreaterThanOrEqual(
@@ -51,6 +54,16 @@ test("simple route json bounds include post-pack component positions", async () 
     expect(obstacle.center.y + obstacle.height / 2).toBeLessThanOrEqual(
       simpleRouteJson.bounds.maxY,
     )
+  }
+
+  expect(simpleRouteJson.connections.length).toBeGreaterThan(0)
+  for (const connection of simpleRouteJson.connections) {
+    for (const point of connection.pointsToConnect) {
+      expect(point.x).toBeGreaterThanOrEqual(simpleRouteJson.bounds.minX)
+      expect(point.x).toBeLessThanOrEqual(simpleRouteJson.bounds.maxX)
+      expect(point.y).toBeGreaterThanOrEqual(simpleRouteJson.bounds.minY)
+      expect(point.y).toBeLessThanOrEqual(simpleRouteJson.bounds.maxY)
+    }
   }
 
   expect(circuit).toMatchPcbSnapshot(import.meta.path)

@@ -84,7 +84,6 @@ import {
   Group_hasPhasedAutorouting,
   connectionIsInRoutingPhase,
 } from "./Group_phasedAutoroutingUtils"
-import { Group_updatePcbGroupBoundsAfterLayout } from "./Group_updatePcbGroupBoundsAfterLayout"
 import type { ISubcircuit } from "./Subcircuit/ISubcircuit"
 import { addPortIdsToTracesAtJumperPads } from "./add-port-ids-to-traces-at-jumper-pads"
 import { getSourceTraceIdForRoutedTrace } from "./get-source-trace-id-for-routed-trace"
@@ -1818,8 +1817,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     } else if (pcbLayoutMode === "flex") {
       this._doInitialPcbLayoutFlex()
     }
-
-    Group_updatePcbGroupBoundsAfterLayout(this, pcbLayoutMode)
   }
 
   _doInitialPcbLayoutGrid(): void {
