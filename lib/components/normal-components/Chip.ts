@@ -1,9 +1,9 @@
 import { chipProps } from "@tscircuit/props"
 import { pcb_component_invalid_layer_error } from "circuit-json"
 import { NormalComponent } from "lib/components/base-components/NormalComponent"
-import { type SchematicBoxDimensions } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
-import { Trace } from "lib/components/primitive-components/Trace/Trace"
 import { Port } from "lib/components/primitive-components/Port"
+import { Trace } from "lib/components/primitive-components/Trace/Trace"
+import { type SchematicBoxDimensions } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
 import type { z } from "zod"
 
 export class Chip<PinLabels extends string = never> extends NormalComponent<
@@ -88,7 +88,7 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
     const source_component = db.source_component.insert({
       ftype: "simple_chip",
       name: this.name,
-      manufacturer_part_number: props.manufacturerPartNumber,
+      manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
       supplier_part_numbers: props.supplierPartNumbers,
       display_name: props.displayName,
     })

@@ -1,13 +1,13 @@
-import { NormalComponent } from "lib/components/base-components/NormalComponent"
 import { jumperProps } from "@tscircuit/props"
-import { Port } from "../primitive-components/Port"
+import { NormalComponent } from "lib/components/base-components/NormalComponent"
+import { underscorifyPinStyles } from "lib/soup/underscorifyPinStyles"
+import { underscorifyPortArrangement } from "lib/soup/underscorifyPortArrangement"
 import type { BaseSymbolName } from "lib/utils/constants"
 import {
-  getAllDimensionsForSchematicBox,
   type SchematicBoxDimensions,
+  getAllDimensionsForSchematicBox,
 } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
-import { underscorifyPortArrangement } from "lib/soup/underscorifyPortArrangement"
-import { underscorifyPinStyles } from "lib/soup/underscorifyPinStyles"
+import { Port } from "../primitive-components/Port"
 
 export class Jumper<PinLabels extends string = never> extends NormalComponent<
   typeof jumperProps,
@@ -54,7 +54,7 @@ export class Jumper<PinLabels extends string = never> extends NormalComponent<
     const source_component = db.source_component.insert({
       ftype: "simple_chip", // TODO unknown or jumper
       name: this.name,
-      manufacturer_part_number: props.manufacturerPartNumber,
+      manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
       supplier_part_numbers: props.supplierPartNumbers,
       are_pins_interchangeable: true,
       display_name: props.displayName,
@@ -106,7 +106,7 @@ export class Jumper<PinLabels extends string = never> extends NormalComponent<
       if (typeof sourcePort?.pin_number === "number") {
         pinLabel = sourcePort.pin_number.toString()
       } else if (Array.isArray(sourcePort?.port_hints)) {
-        let matchedHint = sourcePort.port_hints.find((h: string) =>
+        const matchedHint = sourcePort.port_hints.find((h: string) =>
           /^(pin)?\d+$/.test(h),
         )
         if (matchedHint) {

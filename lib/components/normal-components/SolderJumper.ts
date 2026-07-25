@@ -1,7 +1,7 @@
-import { NormalComponent } from "lib/components/base-components/NormalComponent"
 import { solderjumperProps } from "@tscircuit/props"
-import { Port } from "../primitive-components/Port"
+import { NormalComponent } from "lib/components/base-components/NormalComponent"
 import type { SchematicBoxDimensions } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
+import { Port } from "../primitive-components/Port"
 
 export class SolderJumper<
   PinLabels extends string = never,
@@ -203,7 +203,7 @@ export class SolderJumper<
     const source_component = db.source_component.insert({
       ftype: "simple_chip", // TODO unknown or jumper
       name: this.name,
-      manufacturer_part_number: props.manufacturerPartNumber,
+      manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
       supplier_part_numbers: props.supplierPartNumbers,
       are_pins_interchangeable: true,
       display_name: props.displayName,
@@ -255,7 +255,7 @@ export class SolderJumper<
       if (typeof sourcePort?.pin_number === "number") {
         pinLabel = sourcePort.pin_number.toString()
       } else if (Array.isArray(sourcePort?.port_hints)) {
-        let matchedHint = sourcePort.port_hints.find((h: string) =>
+        const matchedHint = sourcePort.port_hints.find((h: string) =>
           /^(pin)?\d+$/.test(h),
         )
         if (matchedHint) {
