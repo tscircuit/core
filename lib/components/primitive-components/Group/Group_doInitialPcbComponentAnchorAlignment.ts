@@ -1,6 +1,7 @@
 import type { Group } from "./Group"
 import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
 import { getBoundsFromPoints } from "@tscircuit/math-utils"
+import { formatDisplayOffset } from "lib/utils/format-display-offset"
 
 export function Group_doInitialPcbComponentAnchorAlignment(
   group: Group<any>,
@@ -119,7 +120,7 @@ export function Group_doInitialPcbComponentAnchorAlignment(
   db.pcb_group.update(group.pcb_group_id, {
     anchor_position: targetPosition,
     anchor_alignment: pcbPositionAnchor,
-    display_offset_x: pcbX,
-    display_offset_y: pcbY,
+    display_offset_x: formatDisplayOffset(pcbX),
+    display_offset_y: formatDisplayOffset(pcbY),
   })
 }

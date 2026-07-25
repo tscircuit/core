@@ -94,6 +94,7 @@ import { inferInternallyConnectedPinNamesFromPorts } from "./utils/inferInternal
 import { isHttpUrl } from "./utils/isHttpUrl"
 import { isStaticAssetPath } from "./utils/isStaticAssetPath"
 import { parseLibraryFootprintRef } from "./utils/parseLibraryFootprintRef"
+import { formatDisplayOffset } from "lib/utils/format-display-offset"
 
 const debug = Debug("tscircuit:core")
 
@@ -2270,8 +2271,8 @@ export class NormalComponent<
       position_mode: "relative_to_group_anchor",
       positioned_relative_to_pcb_group_id: positionedRelativeToGroupId,
       positioned_relative_to_pcb_board_id: positionedRelativeToBoardId,
-      display_offset_x: resolvedPcbX as any,
-      display_offset_y: resolvedPcbY as any,
+      display_offset_x: formatDisplayOffset(resolvedPcbX),
+      display_offset_y: formatDisplayOffset(resolvedPcbY),
     })
   }
 

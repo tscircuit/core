@@ -96,6 +96,7 @@ import {
 } from "./region-replacement"
 import { splitPcbTracesOnJumperSegments } from "./split-pcb-traces-on-jumper-segments"
 import { computeCenterFromAnchorPosition } from "./utils/computeCenterFromAnchorPosition"
+import { formatDisplayOffset } from "lib/utils/format-display-offset"
 
 const getDistanceToPoint = (
   routePoint: PcbTrace["route"][number],
@@ -1802,8 +1803,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           position_mode: "relative_to_group_anchor",
           positioned_relative_to_pcb_group_id: pcbParentGroupId,
           positioned_relative_to_pcb_board_id: positionedRelativeToBoardId,
-          display_offset_x: props.pcbX,
-          display_offset_y: props.pcbY,
+          display_offset_x: formatDisplayOffset(props.pcbX),
+          display_offset_y: formatDisplayOffset(props.pcbY),
         })
       }
     }
