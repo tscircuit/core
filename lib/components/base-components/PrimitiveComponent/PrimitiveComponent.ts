@@ -1384,22 +1384,56 @@ export abstract class PrimitiveComponent<
 
   getString(): string {
     const { lowercaseComponentName: cname, _parsedProps: props, parent } = this
+    const id = this._getCircuitRelativeRenderId()
     if (props?.pinNumber !== undefined && parent?.props?.name && props?.name) {
-      return `<${cname}#${this._renderId}(pin:${props.pinNumber} .${parent?.props.name}>.${props.name}) />`
+      return `<${cname}#${id}(pin:${props.pinNumber} .${parent?.props.name}>.${props.name}) />`
     }
     if (parent?.props?.name && props?.name) {
-      return `<${cname}#${this._renderId}(.${parent?.props.name}>.${props?.name}) />`
+      return `<${cname}#${id}(.${parent?.props.name}>.${props?.name}) />`
     }
     if (props?.from && props?.to) {
-      return `<${cname}#${this._renderId}(from:${props.from} to:${props?.to}) />`
+      return `<${cname}#${id}(from:${props.from} to:${props?.to}) />`
     }
     if (props?.name) {
-      return `<${cname}#${this._renderId} name=".${props?.name}" />`
+      return `<${cname}#${id} name=".${props?.name}" />`
     }
     if (props?.portHints) {
-      return `<${cname}#${this._renderId}(${props.portHints.map((ph: string) => `.${ph}`).join(", ")}) />`
+      return `<${cname}#${id}(${props.portHints.map((ph: string) => `.${ph}`).join(", ")}) />`
     }
-    return `<${cname}#${this._renderId} />`
+    return `<${cname}#${id} />`
+  }
+
+  /**
+   * A render id that is stable for a given circuit.
+   *
+   * `_renderId` comes from a module-level counter that is never reset, so it
+   * keeps climbing across every circuit built in the same process. That leaks
+   * into user-facing warnings and errors via `getString()`, making the same
+   * board produce different messages on each render. This offsets it against
+   * the lowest id seen in the circuit, so the number is relative to the
+   * circuit rather than to the process.
+   */
+  _getCircuitRelativeRenderId(): string {
+    const root = this.root as unknown as {
+      _renderIdOrigin?: number
+      children?: any[]
+    } | null
+    if (!root) return this._renderId
+
+    if (root._renderIdOrigin === undefined) {
+      let lowest = Number.POSITIVE_INFINITY
+      const visit = (node: any) => {
+        const value = Number(node?._renderId)
+        if (Number.isFinite(value)) lowest = Math.min(lowest, value)
+        for (const child of node?.children ?? []) visit(child)
+      }
+      for (const child of root.children ?? []) visit(child)
+      root._renderIdOrigin = Number.isFinite(lowest) ? lowest : 0
+    }
+
+    const relative = Number(this._renderId) - root._renderIdOrigin
+    if (!Number.isFinite(relative) || relative < 0) return this._renderId
+    return `${relative}`
   }
 
   getDisplayName(): string {
