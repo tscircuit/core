@@ -28,7 +28,13 @@ export class Fuse extends NormalComponent<typeof fuseProps, PassivePorts> {
     const voltage =
       typeof rawVoltage === "string" ? parseFloat(rawVoltage) : rawVoltage
 
-    return `${formatSiUnit(current)}A / ${formatSiUnit(voltage)}V`
+    const currentDisplay = `${formatSiUnit(current)}A`
+
+    // `voltageRating` is optional, so drop that half of the label when it isn't
+    // given rather than rendering a bare unit (previously "1A / V").
+    if (voltage === undefined || Number.isNaN(voltage)) return currentDisplay
+
+    return `${currentDisplay} / ${formatSiUnit(voltage)}V`
   }
 
   doInitialSourceRender() {
@@ -53,7 +59,10 @@ export class Fuse extends NormalComponent<typeof fuseProps, PassivePorts> {
       current_rating_amps: currentRating,
       voltage_rating_volts: voltageRating,
       display_current_rating: `${formatSiUnit(currentRating)}A`,
-      display_voltage_rating: `${formatSiUnit(voltageRating)}V`,
+      display_voltage_rating:
+        voltageRating === undefined || Number.isNaN(voltageRating)
+          ? undefined
+          : `${formatSiUnit(voltageRating)}V`,
       display_name: props.displayName,
     } as any)
 
