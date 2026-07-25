@@ -8,6 +8,7 @@ import { Group } from "../Group"
 import { computeCrossings } from "./compute-crossings"
 import { computeJunctions } from "./compute-junctions"
 import { getPortForSchematicSymbolPort } from "./getPortForSchematicSymbolPort"
+import { getTracesFromSolverOutput } from "./getTracesFromSolverOutput"
 import { type SchematicPortId, asSchematicPortId } from "./port-id-types"
 import { removeOverlappingSameNetCrossingSegments } from "./remove-overlapping-same-net-crossing-segments"
 
@@ -138,11 +139,7 @@ export function applyTracesFromSolverOutput(args: {
   }
 
   // Use the overlap-corrected traces from the pipeline
-  const traces =
-    solver.netLabelTraceCollisionSolver?.getOutput().traces ??
-    solver.traceCleanupSolver?.getOutput().traces ??
-    solver.traceLabelOverlapAvoidanceSolver?.getOutput().traces ??
-    solver.schematicTraceLinesSolver?.solvedTracePaths
+  const traces = getTracesFromSolverOutput(solver)
   const pendingTraces: Array<{
     source_trace_id: string
     edges: SchematicTrace["edges"]
