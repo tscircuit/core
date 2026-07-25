@@ -268,6 +268,28 @@ export class Trace
 
     if (!allPortsFound) return
 
+    // A trace whose endpoints resolve to the same port connects nothing. It is
+    // almost always a copy-paste slip (`from=".R1 > .pin1" to=".R1 > .pin1"`),
+    // and today it silently produces a source_trace listing the same port
+    // twice with no diagnostic at all.
+    const resolvedPortIds = ports.map((p) => p.port.source_port_id)
+    if (
+      resolvedPortIds.length >= 2 &&
+      new Set(resolvedPortIds).size === 1 &&
+      this._findConnectedNets().nets.length === 0
+    ) {
+      const subcircuit = this.getSubcircuit()
+      db.source_trace_not_connected_error.insert({
+        error_type: "source_trace_not_connected_error",
+        message: `${this.getString()} connects a port to itself; both ends resolve to the same port. Did you mean to connect two different pins?`,
+        subcircuit_id: subcircuit.subcircuit_id ?? undefined,
+        source_group_id: subcircuit.getGroup()?.source_group_id ?? undefined,
+        selectors_not_found: [],
+      } as any)
+      this._couldNotFindPort = true
+      return
+    }
+
     this._traceConnectionHash = this._computeTraceConnectionHash()
 
     const existingTraces = db.source_trace.list()
