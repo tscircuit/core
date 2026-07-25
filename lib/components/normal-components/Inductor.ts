@@ -6,7 +6,7 @@ import {
 } from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { Port } from "../primitive-components/Port"
-import { formatSiUnit } from "format-si-unit"
+import { formatSiUnit, parseAndConvertSiUnit } from "format-si-unit"
 import type { SourceSimpleInductor } from "circuit-json"
 
 export class Inductor extends NormalComponent<
@@ -41,11 +41,28 @@ export class Inductor extends NormalComponent<
   doInitialSourceRender() {
     const { db } = this.root!
     const { _parsedProps: props } = this
+    // `maxCurrentRating` is declared on InductorProps and `max_current_rating`
+    // exists on the simple_inductor schema, but the value was never carried
+    // across. Unlike capacitor's `maxVoltageRating`, this prop has no zod
+    // transform, so the raw string arrives here. `parseAndConvertSiUnit`
+    // handles the unit suffix, so "500mA" becomes 0.5 rather than 500.
+    const rawMaxCurrentRating = props.maxCurrentRating
+    const maxCurrentRating =
+      typeof rawMaxCurrentRating === "string"
+        ? parseAndConvertSiUnit(rawMaxCurrentRating).value
+        : rawMaxCurrentRating
+
     const source_component = db.source_component.insert({
       name: this.name,
       ftype: FTYPE.simple_inductor,
       inductance: this.props.inductance,
       display_inductance: this._getSchematicSymbolDisplayValue(),
+      max_current_rating:
+        maxCurrentRating === undefined ||
+        maxCurrentRating === null ||
+        Number.isNaN(maxCurrentRating as number)
+          ? undefined
+          : maxCurrentRating,
       supplier_part_numbers: props.supplierPartNumbers,
       manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
       are_pins_interchangeable: true,
