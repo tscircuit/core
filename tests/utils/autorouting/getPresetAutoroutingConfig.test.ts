@@ -27,4 +27,27 @@ describe("getPresetAutoroutingConfig", () => {
 
     expect(alias).toEqual(expected)
   })
+
+  test("topola preset points at local solve-endpoint", () => {
+    const config = getPresetAutoroutingConfig(
+      "topola" as unknown as AutorouterConfig,
+    )
+    expect(config).toMatchObject({
+      local: false,
+      groupMode: "subcircuit",
+      serverUrl: "http://127.0.0.1:3099",
+      serverMode: "solve-endpoint",
+      inputFormat: "simplified",
+      serverCacheEnabled: false,
+    })
+  })
+
+  test("topola preset allows overriding serverUrl", () => {
+    const config = getPresetAutoroutingConfig({
+      preset: "topola",
+      serverUrl: "http://127.0.0.1:4099",
+    } as AutorouterConfig)
+    expect(config.serverUrl).toBe("http://127.0.0.1:4099")
+    expect(config.serverMode).toBe("solve-endpoint")
+  })
 })

@@ -116,6 +116,23 @@ export function getPresetAutoroutingConfig(
         ...rest,
       }
     }
+    case "topola": {
+      const {
+        preset: _preset,
+        local: _local,
+        groupMode: _groupMode,
+        ...rest
+      } = providedConfig
+      return {
+        local: false,
+        groupMode: "subcircuit",
+        serverUrl: "http://127.0.0.1:3099",
+        serverMode: "solve-endpoint",
+        inputFormat: "simplified",
+        serverCacheEnabled: false,
+        ...rest,
+      }
+    }
     default:
       return {
         local: true,
