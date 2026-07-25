@@ -28,6 +28,12 @@ export class Fuse extends NormalComponent<typeof fuseProps, PassivePorts> {
     const voltage =
       typeof rawVoltage === "string" ? parseFloat(rawVoltage) : rawVoltage
 
+    // `schShowRatings` is declared on FuseProps but was never read, so
+    // `schShowRatings={false}` had no effect. Unlike capacitor's, this prop has
+    // no schema default, so `undefined` keeps the existing "always show"
+    // behaviour and only an explicit `false` suppresses the ratings.
+    if (this._parsedProps.schShowRatings === false) return undefined
+
     return `${formatSiUnit(current)}A / ${formatSiUnit(voltage)}V`
   }
 
