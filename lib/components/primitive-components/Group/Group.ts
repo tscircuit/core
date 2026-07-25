@@ -476,11 +476,11 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     }
   }
 
-  doInitialPcbPrimitiveRender(): void {
+  doInitialPcbComponentSizeCalculation(): void {
     this.calculatePcbGroupBounds()
   }
 
-  calculatePcbGroupBounds(bounds = getBoundsOfPcbComponents(this.children)) {
+  calculatePcbGroupBounds() {
     if (!this.pcb_group_id) return
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
@@ -522,6 +522,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       return
     }
 
+    const bounds = getBoundsOfPcbComponents(this.children)
     let width = bounds.width
     let height = bounds.height
     let centerX = (bounds.minX + bounds.maxX) / 2
@@ -578,8 +579,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     })
   }
 
-  updatePcbPrimitiveRender(): void {
-    this.calculatePcbGroupBounds()
+  updatePcbComponentSizeCalculation(): void {
+    this.doInitialPcbComponentSizeCalculation()
   }
 
   unnamedElementCounter: Record<string, number> = {}

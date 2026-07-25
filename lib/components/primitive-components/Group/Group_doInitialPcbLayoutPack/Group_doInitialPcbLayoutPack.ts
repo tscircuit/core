@@ -12,7 +12,6 @@ import Debug from "debug"
 import { applyComponentConstraintClusters } from "./applyComponentConstraintClusters"
 import { applyPackOutput } from "./applyPackOutput"
 import type { NormalComponent } from "lib/components/base-components/NormalComponent"
-import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
 
 const DEFAULT_MIN_GAP = "1mm"
 const debug = Debug("Group_doInitialPcbLayoutPack")
@@ -223,11 +222,7 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
   }
 
   applyPackOutput(group, packOutput, clusterMap, initialPackOutput)
-  group.calculatePcbGroupBounds(
-    getBoundsOfPcbComponents(group.children, {
-      pcbLayoutPhase: "after_layout",
-    }),
-  )
+  group.calculatePcbGroupBounds()
 
   if (packingFailed) return
 

@@ -9,14 +9,7 @@ const NON_PHYSICAL_PCB_PRIMITIVE_PREFIXES = [
   "FabricationNote",
 ]
 
-export function getBoundsOfPcbComponents(
-  components: PrimitiveComponent[],
-  {
-    pcbLayoutPhase = "before_layout",
-  }: {
-    pcbLayoutPhase?: "before_layout" | "after_layout"
-  } = {},
-) {
+export function getBoundsOfPcbComponents(components: PrimitiveComponent[]) {
   const boundsPoints: Array<{ x: number; y: number }> = []
   const addRect = ({
     center,
@@ -35,7 +28,7 @@ export function getBoundsOfPcbComponents(
 
   for (const child of components) {
     const childGroup = child as unknown as IGroup
-    if (pcbLayoutPhase === "after_layout" && childGroup.pcb_group_id) {
+    if (childGroup.pcb_group_id) {
       const pcbGroup = child.root?.db.pcb_group.get(childGroup.pcb_group_id)
       if (pcbGroup?.outline?.length) {
         boundsPoints.push(...pcbGroup.outline)
@@ -46,7 +39,7 @@ export function getBoundsOfPcbComponents(
           height: pcbGroup.height ?? 0,
         })
       }
-    } else if (pcbLayoutPhase === "after_layout" && child.pcb_component_id) {
+    } else if (child.pcb_component_id) {
       const childBounds = child._getPcbCircuitJsonBounds()
       if (childBounds.width || childBounds.height) addRect(childBounds)
     } else if (
@@ -55,18 +48,11 @@ export function getBoundsOfPcbComponents(
         child.componentName.startsWith(prefix),
       )
     ) {
-      if (pcbLayoutPhase === "after_layout") {
-        const childBounds = child._getPcbCircuitJsonBounds()
-        if (childBounds.width || childBounds.height) addRect(childBounds)
-      } else {
-        const center = child._getGlobalPcbPositionBeforeLayout()
-        const { width, height } = child.getPcbSize()
-        addRect({ center, width, height })
-      }
+      const center = child._getGlobalPcbPositionBeforeLayout()
+      const { width, height } = child.getPcbSize()
+      addRect({ center, width, height })
     } else if (child.children.length > 0) {
-      const childBounds = getBoundsOfPcbComponents(child.children, {
-        pcbLayoutPhase,
-      })
+      const childBounds = getBoundsOfPcbComponents(child.children)
       if (childBounds.width > 0 || childBounds.height > 0) {
         boundsPoints.push(
           { x: childBounds.minX, y: childBounds.minY },

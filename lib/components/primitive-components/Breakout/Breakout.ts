@@ -123,8 +123,4 @@ export class Breakout extends Group<typeof breakoutProps> {
       }
     }
   }
-
-  doInitialPcbPrimitiveRender(): void {
-    super.doInitialPcbPrimitiveRender()
-  }
 }
