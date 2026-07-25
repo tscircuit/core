@@ -38,7 +38,7 @@ test("Chip not having name messes up the connections, uses the pin of the first 
     [
       {
         "error_type": "source_trace_not_connected_error",
-        "message": "Could not find port for selector ".unnamed_chip1 > .pin1". Component ".unnamed_chip1 > " not found",
+        "message": "Could not find port for selector ".unnamed_chip1 > .pin1". Component ".unnamed_chip1" not found",
         "selectors_not_found": [
           ".unnamed_chip1 > .pin1",
         ],

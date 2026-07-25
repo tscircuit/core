@@ -57,6 +57,11 @@ export function Trace__findConnectedPorts(trace: Trace):
         parentSelector = match?.[1]?.trim() ?? ""
         portToken = match?.[2] ?? selector
       }
+      // Both branches can leave the child combinator behind: ".U1 > .pin1"
+      // yields ".U1 > ". That string doesn't select the component — it
+      // resolves to an arbitrary descendant — so the error message ends up
+      // naming the wrong element and reporting "It has no ports".
+      parentSelector = parentSelector.replace(/[\s>]+$/, "")
       let targetComponent = parentSelector
         ? trace.getSubcircuit().selectOne(parentSelector)
         : null
