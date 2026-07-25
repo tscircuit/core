@@ -480,7 +480,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     this.calculatePcbGroupBounds()
   }
 
-  calculatePcbGroupBounds() {
+  calculatePcbGroupBounds(boundsOptions?: {
+    usePostLayoutBounds?: boolean
+  }) {
     if (!this.pcb_group_id) return
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
@@ -523,7 +525,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     }
 
     // Original logic for groups without outline
-    const bounds = getBoundsOfPcbComponents(this.children)
+    const bounds = getBoundsOfPcbComponents(this.children, boundsOptions)
 
     let width = bounds.width
     let height = bounds.height
@@ -543,14 +545,19 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const resolvedHeight = Number(props.height ?? height)
     const existingPcbGroup = db.pcb_group.get(this.pcb_group_id)
 
-    // Preserve explicit positioning when pcbX/pcbY are set. If an anchor
-    // alignment is provided, recompute the center after auto-sizing so the
-    // requested pcbX/pcbY corresponds to that anchor rather than the center.
+    // Fixed dimensions remain centered on the authored group position. An
+    // auto-sized dimension follows the actual packed bounds after layout.
+    const existingCenter = existingPcbGroup?.center ?? {
+      x: centerX,
+      y: centerY,
+    }
     let center = hasExplicitPositioning
-      ? (existingPcbGroup?.center ?? {
-          x: centerX,
-          y: centerY,
-        })
+      ? boundsOptions?.usePostLayoutBounds
+        ? {
+            x: props.width === undefined ? centerX : existingCenter.x,
+            y: props.height === undefined ? centerY : existingCenter.y,
+          }
+        : existingCenter
       : { x: centerX, y: centerY }
 
     if (hasExplicitPositioning && props.pcbAnchorAlignment) {

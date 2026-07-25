@@ -222,6 +222,7 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
   }
 
   applyPackOutput(group, packOutput, clusterMap, initialPackOutput)
+  group.calculatePcbGroupBounds({ usePostLayoutBounds: true })
 
   if (packingFailed) return
 
