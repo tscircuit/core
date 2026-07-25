@@ -15,6 +15,7 @@ import { convertFacingDirectionToElbowDirection } from "lib/utils/schematic/conv
 import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
 import { Port } from "../../Port"
 import { Group } from "../Group"
+import { getNetNameFromPorts } from "./getNetNameFromPorts"
 import { getPortForSchematicSymbolPort } from "./getPortForSchematicSymbolPort"
 import type { AxisDirection } from "./getSide"
 import {
@@ -314,17 +315,26 @@ export function createSchematicTraceSolverInputProblem(
         const maxMspDist =
           group._parsedProps.schMaxTraceDistance ??
           DEFAULT_MAX_MSP_PAIR_DISTANCE
+        const usesGeneratedTraceLabel =
+          !traceLabel || traceLabel.startsWith(".")
+        const portsForConnection = usesGeneratedTraceLabel
+          ? [a, b]
+              .map((schematicPortId) =>
+                componentPortBySchematicPortId.get(schematicPortId),
+              )
+              .filter((port): port is Port => Boolean(port))
+          : []
+        const renderedNetLabelText = usesGeneratedTraceLabel
+          ? getNetNameFromPorts(portsForConnection).name
+          : traceLabel
         let netLabelWidth: number | undefined
-        if (
-          traceLabel &&
-          !traceLabel.startsWith(".") &&
-          portDistance > maxMspDist
-        ) {
+        if (renderedNetLabelText && portDistance > maxMspDist) {
           netLabelWidth = Number(
-            getSchematicNetLabelTextWidth({
-              text: String(traceLabel),
-              font_size: 0.14,
-            }).toFixed(2),
+            getSchematicNetLabelTextWidth(
+              usesGeneratedTraceLabel
+                ? { text: renderedNetLabelText }
+                : { text: renderedNetLabelText, font_size: 0.14 },
+            ).toFixed(2),
           )
         }
         directConnections.push({
