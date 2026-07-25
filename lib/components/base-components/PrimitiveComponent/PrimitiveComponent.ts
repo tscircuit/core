@@ -176,7 +176,7 @@ export abstract class PrimitiveComponent<
   cad_component_id: string | null = null
   _reportedInvalidPcbCalcWarnings = new Set<string>()
 
-  private _reportInvalidComponentPropertyError(
+  protected _reportInvalidComponentPropertyError(
     propertyName: string,
     message: string,
   ): void {
