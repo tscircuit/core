@@ -23,6 +23,7 @@ import { Subcircuit_doInitialRenderIsolatedSubcircuits } from "../primitive-comp
 import { Subcircuit_getSubcircuitPropHash } from "../primitive-components/Group/Subcircuit_getSubcircuitPropHash"
 import type { BoardI } from "./BoardI"
 import { Board_doInitialPcbPlacementDesignRuleChecks } from "./Board_doInitialPcbPlacementDesignRuleChecks"
+import { Board_doInitialSchematicDimensionChecks } from "./Board_doInitialSchematicDimensionChecks"
 
 const MIN_EFFECTIVE_BORDER_RADIUS_MM = 0.01
 
@@ -578,6 +579,11 @@ export class Board
 
   doInitialPcbPlacementDesignRuleChecks() {
     Board_doInitialPcbPlacementDesignRuleChecks(this)
+  }
+
+  doInitialSchematicTraceRender() {
+    super.doInitialSchematicTraceRender?.()
+    Board_doInitialSchematicDimensionChecks(this)
   }
 
   updatePcbDesignRuleChecks() {
