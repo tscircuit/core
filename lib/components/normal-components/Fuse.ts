@@ -48,6 +48,8 @@ export class Fuse extends NormalComponent<typeof fuseProps, PassivePorts> {
     const source_component = db.source_component.insert({
       name: this.name,
       ftype: FTYPE.simple_fuse,
+      manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
+      supplier_part_numbers: props.supplierPartNumbers,
       current_rating_amps: currentRating,
       voltage_rating_volts: voltageRating,
       display_current_rating: `${formatSiUnit(currentRating)}A`,
