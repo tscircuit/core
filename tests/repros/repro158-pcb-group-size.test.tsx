@@ -27,10 +27,10 @@ test("repro158: PCB group size", async () => {
         },
         "autorouter_configuration": undefined,
         "center": {
-          "x": 0,
-          "y": 0,
+          "x": -0.23499999999999943,
+          "y": -0.28999999999999915,
         },
-        "height": 6.8999999999999995,
+        "height": 25.04,
         "is_subcircuit": true,
         "name": "ble_module",
         "pcb_component_ids": [],
@@ -38,7 +38,7 @@ test("repro158: PCB group size", async () => {
         "source_group_id": "source_group_0",
         "subcircuit_id": "subcircuit_source_group_0",
         "type": "pcb_group",
-        "width": 6.8999999999999995,
+        "width": 19.41,
       },
     ]
   `)
@@ -49,7 +49,7 @@ test("repro158: PCB group size", async () => {
       {
         "center": {
           "x": -0.23499999999999943,
-          "y": -0.29000000000000004,
+          "y": -0.28999999999999915,
         },
         "height": 29.04,
         "material": "fr4",
