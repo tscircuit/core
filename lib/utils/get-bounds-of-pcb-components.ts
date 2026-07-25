@@ -28,6 +28,12 @@ export function getBoundsOfPcbComponents(
         child.componentName.startsWith(prefix),
       )
     ) {
+      if (
+        boundsOptions?.usePostLayoutBounds &&
+        !child.renderPhaseStates.PcbPrimitiveRender.initialized
+      ) {
+        continue
+      }
       const circuitJsonBounds = boundsOptions?.usePostLayoutBounds
         ? child._getPcbCircuitJsonBounds()
         : null
