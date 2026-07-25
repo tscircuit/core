@@ -1,4 +1,6 @@
+import { getBoundsFromPoints } from "@tscircuit/math-utils"
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
+import type { IGroup } from "lib/components/primitive-components/Group/IGroup"
 
 const NON_PHYSICAL_PCB_PRIMITIVE_PREFIXES = [
   "Silkscreen",
@@ -7,42 +9,75 @@ const NON_PHYSICAL_PCB_PRIMITIVE_PREFIXES = [
   "FabricationNote",
 ]
 
-export function getBoundsOfPcbComponents(components: PrimitiveComponent[]) {
-  let minX = Infinity
-  let minY = Infinity
-  let maxX = -Infinity
-  let maxY = -Infinity
-  let hasValidComponents = false
+export function getBoundsOfPcbComponents(
+  components: PrimitiveComponent[],
+  {
+    pcbLayoutPhase = "before_layout",
+  }: {
+    pcbLayoutPhase?: "before_layout" | "after_layout"
+  } = {},
+) {
+  const boundsPoints: Array<{ x: number; y: number }> = []
+  const addRect = ({
+    center,
+    width,
+    height,
+  }: {
+    center: { x: number; y: number }
+    width: number
+    height: number
+  }) => {
+    boundsPoints.push(
+      { x: center.x - width / 2, y: center.y - height / 2 },
+      { x: center.x + width / 2, y: center.y + height / 2 },
+    )
+  }
 
   for (const child of components) {
-    if (
+    const childGroup = child as unknown as IGroup
+    if (pcbLayoutPhase === "after_layout" && childGroup.pcb_group_id) {
+      const pcbGroup = child.root?.db.pcb_group.get(childGroup.pcb_group_id)
+      if (pcbGroup?.outline?.length) {
+        boundsPoints.push(...pcbGroup.outline)
+      } else if (pcbGroup && (pcbGroup.width || pcbGroup.height)) {
+        addRect({
+          center: pcbGroup.center,
+          width: pcbGroup.width ?? 0,
+          height: pcbGroup.height ?? 0,
+        })
+      }
+    } else if (pcbLayoutPhase === "after_layout" && child.pcb_component_id) {
+      const childBounds = child._getPcbCircuitJsonBounds()
+      if (childBounds.width || childBounds.height) addRect(childBounds)
+    } else if (
       child.isPcbPrimitive &&
       !NON_PHYSICAL_PCB_PRIMITIVE_PREFIXES.some((prefix) =>
         child.componentName.startsWith(prefix),
       )
     ) {
-      const { x, y } = child._getGlobalPcbPositionBeforeLayout()
-      const { width, height } = child.getPcbSize()
-      minX = Math.min(minX, x - width / 2)
-      minY = Math.min(minY, y - height / 2)
-      maxX = Math.max(maxX, x + width / 2)
-      maxY = Math.max(maxY, y + height / 2)
-      hasValidComponents = true
-    }
-    // Handle components that contain PCB primitives (like resistors)
-    else if (child.children.length > 0) {
-      const childBounds = getBoundsOfPcbComponents(child.children)
+      if (pcbLayoutPhase === "after_layout") {
+        const childBounds = child._getPcbCircuitJsonBounds()
+        if (childBounds.width || childBounds.height) addRect(childBounds)
+      } else {
+        const center = child._getGlobalPcbPositionBeforeLayout()
+        const { width, height } = child.getPcbSize()
+        addRect({ center, width, height })
+      }
+    } else if (child.children.length > 0) {
+      const childBounds = getBoundsOfPcbComponents(child.children, {
+        pcbLayoutPhase,
+      })
       if (childBounds.width > 0 || childBounds.height > 0) {
-        minX = Math.min(minX, childBounds.minX)
-        minY = Math.min(minY, childBounds.minY)
-        maxX = Math.max(maxX, childBounds.maxX)
-        maxY = Math.max(maxY, childBounds.maxY)
-        hasValidComponents = true
+        boundsPoints.push(
+          { x: childBounds.minX, y: childBounds.minY },
+          { x: childBounds.maxX, y: childBounds.maxY },
+        )
       }
     }
   }
 
-  if (!hasValidComponents) {
+  const bounds = getBoundsFromPoints(boundsPoints)
+  if (!bounds) {
     return {
       minX: 0,
       minY: 0,
@@ -53,18 +88,9 @@ export function getBoundsOfPcbComponents(components: PrimitiveComponent[]) {
     }
   }
 
-  let width = maxX - minX
-  let height = maxY - minY
-
-  if (width < 0) width = 0
-  if (height < 0) height = 0
-
   return {
-    minX,
-    minY,
-    maxX,
-    maxY,
-    width,
-    height,
+    ...bounds,
+    width: bounds.maxX - bounds.minX,
+    height: bounds.maxY - bounds.minY,
   }
 }
