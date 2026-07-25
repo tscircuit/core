@@ -167,6 +167,113 @@ export type RenderPhaseStates = Record<
   }
 >
 
+/**
+ * Backing store for `renderPhaseStates`.
+ *
+ * Every Renderable used to allocate one `{ initialized, dirty }` object per
+ * render phase in its constructor. With 63 phases that is 63 objects plus the
+ * containing record for every component in the tree, which made the Renderable
+ * constructor the single largest allocation site during generation.
+ *
+ * The flags now live in two `Uint8Array`s (one byte per phase each), and the
+ * per-phase objects are materialized lazily and cached only for the phases a
+ * caller actually touches. The public shape of `renderPhaseStates` is
+ * unchanged: it still reads and writes as
+ * `renderPhaseStates[phase].initialized` / `.dirty`, still enumerates every
+ * phase, and still serializes identically in `getRenderGraph()`.
+ */
+class RenderPhaseStateStore {
+  readonly initializedFlags: Uint8Array
+  readonly dirtyFlags: Uint8Array
+  private _views: Array<RenderPhaseStateView | undefined>
+
+  constructor() {
+    this.initializedFlags = new Uint8Array(orderedRenderPhases.length)
+    this.dirtyFlags = new Uint8Array(orderedRenderPhases.length)
+    this._views = new Array(orderedRenderPhases.length)
+  }
+
+  getView(phaseIndex: number): RenderPhaseStateView {
+    let view = this._views[phaseIndex]
+    if (view === undefined) {
+      view = new RenderPhaseStateView(this, phaseIndex)
+      this._views[phaseIndex] = view
+    }
+    return view
+  }
+}
+
+/**
+ * A live view onto one phase's flags. Reads and writes go straight to the
+ * shared typed arrays, so this stays in sync with `_markDirty` and with any
+ * other view of the same phase.
+ */
+class RenderPhaseStateView {
+  constructor(
+    private readonly _store: RenderPhaseStateStore,
+    private readonly _phaseIndex: number,
+  ) {}
+
+  get initialized(): boolean {
+    return this._store.initializedFlags[this._phaseIndex] === 1
+  }
+
+  set initialized(value: boolean) {
+    this._store.initializedFlags[this._phaseIndex] = value ? 1 : 0
+  }
+
+  get dirty(): boolean {
+    return this._store.dirtyFlags[this._phaseIndex] === 1
+  }
+
+  set dirty(value: boolean) {
+    this._store.dirtyFlags[this._phaseIndex] = value ? 1 : 0
+  }
+
+  /** Keeps `JSON.stringify(getRenderGraph())` byte-identical to before. */
+  toJSON() {
+    return { initialized: this.initialized, dirty: this.dirty }
+  }
+}
+
+/**
+ * Compatibility view over the flag arrays, built only if something actually
+ * reads `renderPhaseStates`. The hot paths (`runRenderPhase`, `_markDirty`)
+ * read and write the typed arrays directly and never construct this.
+ */
+const createRenderPhaseStates = (
+  store: RenderPhaseStateStore,
+): RenderPhaseStates =>
+  new Proxy({} as RenderPhaseStates, {
+    get(_target, prop) {
+      if (typeof prop !== "string") return undefined
+      const phaseIndex = renderPhaseIndexMap.get(prop as RenderPhase)
+      if (phaseIndex === undefined) return undefined
+      return store.getView(phaseIndex)
+    },
+    has(_target, prop) {
+      return (
+        typeof prop === "string" && renderPhaseIndexMap.has(prop as RenderPhase)
+      )
+    },
+    ownKeys() {
+      return [...orderedRenderPhases]
+    },
+    getOwnPropertyDescriptor(_target, prop) {
+      if (
+        typeof prop !== "string" ||
+        !renderPhaseIndexMap.has(prop as RenderPhase)
+      ) {
+        return undefined
+      }
+      return {
+        enumerable: true,
+        configurable: true,
+        value: store.getView(renderPhaseIndexMap.get(prop as RenderPhase)!),
+      }
+    },
+  })
+
 export type AsyncEffect = {
   asyncEffectId: string
   effectName: string
@@ -191,7 +298,6 @@ export type IRenderable = RenderPhaseFunctions & {
 let globalRenderCounter = 0
 let globalAsyncEffectCounter = 0
 export abstract class Renderable implements IRenderable {
-  renderPhaseStates: RenderPhaseStates
   shouldBeRemoved = false
   children: IRenderable[]
 
@@ -210,22 +316,25 @@ export abstract class Renderable implements IRenderable {
   constructor(props: any) {
     this._renderId = `${globalRenderCounter++}`
     this.children = []
-    this.renderPhaseStates = {} as RenderPhaseStates
-    for (const phase of orderedRenderPhases) {
-      this.renderPhaseStates[phase] = {
-        initialized: false,
-        dirty: false,
-      }
+    this._renderPhaseStateStore = new RenderPhaseStateStore()
+  }
+
+  private _renderPhaseStateStore: RenderPhaseStateStore
+  private _renderPhaseStatesView: RenderPhaseStates | null = null
+
+  get renderPhaseStates(): RenderPhaseStates {
+    if (this._renderPhaseStatesView === null) {
+      this._renderPhaseStatesView = createRenderPhaseStates(
+        this._renderPhaseStateStore,
+      )
     }
+    return this._renderPhaseStatesView
   }
 
   _markDirty(phase: RenderPhase) {
-    this.renderPhaseStates[phase].dirty = true
     // Mark all subsequent phases as dirty
     const phaseIndex = renderPhaseIndexMap.get(phase)!
-    for (let i = phaseIndex + 1; i < orderedRenderPhases.length; i++) {
-      this.renderPhaseStates[orderedRenderPhases[i]].dirty = true
-    }
+    this._renderPhaseStateStore.dirtyFlags.fill(1, phaseIndex)
 
     if (this.parent?._markDirty) {
       this.parent._markDirty(phase)
@@ -385,9 +494,10 @@ export abstract class Renderable implements IRenderable {
    */
   runRenderPhase(phase: RenderPhase) {
     this._currentRenderPhase = phase
-    const phaseState = this.renderPhaseStates[phase]
-    const isInitialized = phaseState.initialized
-    const isDirty = phaseState.dirty
+    const store = this._renderPhaseStateStore
+    const phaseIndex = renderPhaseIndexMap.get(phase)!
+    const isInitialized = store.initializedFlags[phaseIndex] === 1
+    const isDirty = store.dirtyFlags[phaseIndex] === 1
 
     // Skip if component is being removed and not initialized
     if (!isInitialized && this.shouldBeRemoved) return
@@ -395,14 +505,14 @@ export abstract class Renderable implements IRenderable {
     if (this.shouldBeRemoved && isInitialized) {
       this._emitRenderLifecycleEvent(phase, "start")
       ;(this as any)?.[`remove${phase}`]?.()
-      phaseState.initialized = false
-      phaseState.dirty = false
+      store.initializedFlags[phaseIndex] = 0
+      store.dirtyFlags[phaseIndex] = 0
       this._emitRenderLifecycleEvent(phase, "end")
       return
     }
 
     // Check for incomplete async effects from previous phases
-    const prevPhaseIndex = renderPhaseIndexMap.get(phase)! - 1
+    const prevPhaseIndex = phaseIndex - 1
     if (prevPhaseIndex >= 0) {
       const prevPhase = orderedRenderPhases[prevPhaseIndex]
       const hasIncompleteEffects = this._asyncEffects
@@ -427,15 +537,15 @@ export abstract class Renderable implements IRenderable {
     if (isInitialized) {
       if (isDirty) {
         ;(this as any)?.[`update${phase}`]?.()
-        phaseState.dirty = false
+        store.dirtyFlags[phaseIndex] = 0
       }
       this._emitRenderLifecycleEvent(phase, "end")
       return
     }
     // Initial render
-    phaseState.dirty = false
+    store.dirtyFlags[phaseIndex] = 0
     ;(this as any)?.[`doInitial${phase}`]?.()
-    phaseState.initialized = true
+    store.initializedFlags[phaseIndex] = 1
     this._emitRenderLifecycleEvent(phase, "end")
   }
 
