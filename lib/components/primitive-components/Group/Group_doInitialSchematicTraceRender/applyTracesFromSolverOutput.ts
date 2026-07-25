@@ -1,4 +1,5 @@
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
+import { type Bounds, pointToBoundsDistance } from "@tscircuit/math-utils"
 import { SchematicTracePipelineSolver } from "@tscircuit/schematic-trace-solver"
 import type { SchematicTrace } from "circuit-json"
 import Debug from "debug"
@@ -16,29 +17,38 @@ const debug = Debug("Group_doInitialSchematicTraceRender")
 const MAX_PIN_SNAP_GAP = 1.5
 
 /**
- * Extends a trace's start/end to land on a pin center.
+ * Adds the internal pin stub omitted by the schematic trace solver.
  *
- * When a schematic component's bounding box is expanded to fit large text,
- * the box can grow large enough that the component's pins end up *inside* the
- * box. The trace solver routes up to the edge of the bounding box, so the
- * trace stops short of the pin and never visually connects. This walks each
- * endpoint to the nearest eligible pin center (within MAX_PIN_SNAP_GAP, and
- * only if axis-aligned), prepending/appending a point so the trace reaches
- * the pin.
+ * A component's routing box can be expanded to include its text, placing its
+ * actual pins inside the box. The solver intentionally projects those pins to
+ * the box edge. Core already closes small solver-to-pin gaps; for larger gaps,
+ * only connect the endpoint back to the real pin when it lies within that
+ * component's text-expanded bounds.
  */
 function extendTraceEndpointsToReachPinsInsideExpandedBoundingBox(
   params: {
     points: Array<{ x: number; y: number }>
     schematicPortIds: SchematicPortId[]
-    eligiblePortIds: Set<SchematicPortId>
+    expandedBoundsByPortId: Map<SchematicPortId, Bounds>
   },
   db: CircuitJsonUtilObjects,
 ): Array<{ x: number; y: number }> {
-  const { points, schematicPortIds, eligiblePortIds } = params
+  const { points, schematicPortIds, expandedBoundsByPortId } = params
   const centers = schematicPortIds
-    .filter((id) => eligiblePortIds.has(id))
-    .map((id) => db.schematic_port.get(id)?.center)
-    .filter((c): c is { x: number; y: number } => Boolean(c))
+    .map((id) => {
+      const center = db.schematic_port.get(id)?.center
+      const bounds = expandedBoundsByPortId.get(id)
+      if (!center || !bounds) return null
+      return { center, bounds }
+    })
+    .filter(
+      (
+        port,
+      ): port is {
+        center: { x: number; y: number }
+        bounds: Bounds
+      } => Boolean(port),
+    )
   if (centers.length === 0) return points
 
   const result = points.map((p) => ({ x: p.x, y: p.y }))
@@ -47,7 +57,7 @@ function extendTraceEndpointsToReachPinsInsideExpandedBoundingBox(
   const usedCenters = new Set<number>()
 
   for (let i = 0; i < centers.length; i++) {
-    if (result.some((p) => d2(centers[i]!, p) <= 1e-12)) {
+    if (result.some((p) => d2(centers[i]!.center, p) <= 1e-12)) {
       usedCenters.add(i)
     }
   }
@@ -64,12 +74,17 @@ function extendTraceEndpointsToReachPinsInsideExpandedBoundingBox(
       endpoint === "start" ? result[0]! : result[result.length - 1]!
     for (let i = 0; i < centers.length; i++) {
       if (usedCenters.has(i)) continue
-      const center = centers[i]!
+      const { center, bounds } = centers[i]!
       const dist = d2(center, endpointPoint)
-      if (dist > MAX_PIN_SNAP_GAP ** 2) continue
       if (
         Math.abs(center.x - endpointPoint.x) > ALIGN_EPS &&
         Math.abs(center.y - endpointPoint.y) > ALIGN_EPS
+      ) {
+        continue
+      }
+      if (
+        dist > MAX_PIN_SNAP_GAP ** 2 &&
+        pointToBoundsDistance(endpointPoint, bounds) > ALIGN_EPS
       ) {
         continue
       }
@@ -84,7 +99,7 @@ function extendTraceEndpointsToReachPinsInsideExpandedBoundingBox(
     usedCenters.add(centerIndex)
     usedEndpoints.add(endpoint)
     if (dist <= 1e-12) continue
-    const center = centers[centerIndex]!
+    const center = centers[centerIndex]!.center
     if (endpoint === "start") result.unshift({ x: center.x, y: center.y })
     else result.push({ x: center.x, y: center.y })
   }
@@ -125,15 +140,20 @@ export function applyTracesFromSolverOutput(args: {
     )
   }
 
-  const eligiblePortIds = new Set<SchematicPortId>()
+  const expandedBoundsByPortId = new Map<SchematicPortId, Bounds>()
   for (const schematicComponent of db.schematic_component.list()) {
-    if (!getSchematicComponentWithTextBounds({ db, schematicComponent })) {
-      continue
-    }
+    const bounds = getSchematicComponentWithTextBounds({
+      db,
+      schematicComponent,
+    })
+    if (!bounds) continue
     for (const port of db.schematic_port.list({
       schematic_component_id: schematicComponent.schematic_component_id,
     })) {
-      eligiblePortIds.add(asSchematicPortId(port.schematic_port_id))
+      expandedBoundsByPortId.set(
+        asSchematicPortId(port.schematic_port_id),
+        bounds,
+      )
     }
   }
 
@@ -183,7 +203,7 @@ export function applyTracesFromSolverOutput(args: {
         {
           points,
           schematicPortIds: solvedTraceSchematicPortIds,
-          eligiblePortIds,
+          expandedBoundsByPortId,
         },
         db,
       )

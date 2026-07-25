@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("repro: long transistor name disconnects shared base junction", async () => {
+test("long transistor name keeps shared base junction connected", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
