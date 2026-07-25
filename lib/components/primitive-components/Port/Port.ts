@@ -444,7 +444,35 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
     const pcbMatches = matchedComponents.filter((c) => c.isPcbPrimitive)
 
-    if (pcbMatches.length === 0) return
+    if (pcbMatches.length === 0) {
+      // A port that matches no PCB primitive can never be routed. This happens
+      // when `pinLabels` names a pin the footprint doesn't have (e.g. `pin99`
+      // on a soic8): the source port is created, but there is no pad behind it.
+      // Without this the only feedback is a later "trace is not connected"
+      // error, which points at the trace rather than the bad pin label.
+      const parentComponent = this.getParentNormalComponent()
+      const sourceComponentId = parentComponent?.source_component_id
+      // Only meaningful when the component has *some* pads: a component with no
+      // footprint at all (e.g. a bare `<solderjumper />`) legitimately has no
+      // PCB primitives, and every one of its pins would otherwise be flagged.
+      const parentHasAnyPcbPrimitive = (parentComponent?.children ?? []).some(
+        (child: any) => child.isPcbPrimitive,
+      )
+      if (
+        sourceComponentId &&
+        parentHasAnyPcbPrimitive &&
+        this._parsedProps.pinNumber !== undefined
+      ) {
+        const componentName = parentComponent?.props?.name ?? "unknown"
+        const portLabel = this.props.name ?? `pin${this._parsedProps.pinNumber}`
+        db.source_component_misconfigured_error.insert({
+          error_type: "source_component_misconfigured_error",
+          source_component_ids: [sourceComponentId],
+          message: `Pin "${portLabel}" on ${componentName} has no matching pad in its footprint, so it cannot be connected. Check that pinLabels only names pins the footprint provides.`,
+        } as any)
+      }
+      return
+    }
 
     let matchCenter: { x: number; y: number } | null = null
 
