@@ -76,6 +76,7 @@ export class CopperPour extends PrimitiveComponent<typeof copperPourProps> {
           layer: props.layer,
           brep_shape,
           source_net_id: net.source_net_id,
+          pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
           subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
           covered_with_solder_mask: coveredWithSolderMask,
         } as PcbCopperPour)
