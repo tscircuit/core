@@ -167,6 +167,7 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
         source_trace_id: trace.source_trace_id!,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: trace.getGroup()?.pcb_group_id ?? undefined,
+        highlight_color: trace._getHighlightColor(),
       })
       const pcbStyle = trace.getInheritedMergedProperty("pcbStyle")
       const { holeDiameter, padDiameter } = getViaDiameterDefaults(pcbStyle)
@@ -291,6 +292,7 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       pcb_group_id: trace.getGroup()?.pcb_group_id ?? undefined,
       trace_length: traceLength,
+      highlight_color: trace._getHighlightColor(),
     })
     trace._portsRoutedOnPcb = ports
     trace.pcb_trace_id = pcb_trace.pcb_trace_id
@@ -429,6 +431,7 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
     subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
     pcb_group_id: trace.getGroup()?.pcb_group_id ?? undefined,
     trace_length: traceLength,
+    highlight_color: trace._getHighlightColor(),
   })
   const subcircuitConnectivityMapKey =
     trace.subcircuit_connectivity_map_key ??

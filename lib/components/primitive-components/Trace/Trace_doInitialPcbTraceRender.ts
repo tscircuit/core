@@ -111,6 +111,7 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
       source_trace_id: trace.source_trace_id!,
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       pcb_group_id: trace.getGroup()?.pcb_group_id ?? undefined,
+      highlight_color: trace._getHighlightColor(),
     })
     trace.pcb_trace_id = pcb_trace.pcb_trace_id
     return
@@ -512,6 +513,7 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
     source_trace_id: trace.source_trace_id!,
     subcircuit_id: trace.getSubcircuit()?.subcircuit_id!,
     trace_length: traceLength,
+    highlight_color: trace._getHighlightColor(),
   })
   const subcircuitConnectivityMapKey =
     trace.subcircuit_connectivity_map_key ??

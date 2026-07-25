@@ -96,6 +96,7 @@ import {
 } from "./region-replacement"
 import { splitPcbTracesOnJumperSegments } from "./split-pcb-traces-on-jumper-segments"
 import { computeCenterFromAnchorPosition } from "./utils/computeCenterFromAnchorPosition"
+import { getHighlightColorForSourceTrace } from "lib/utils/get-highlight-color-for-source-trace"
 
 const getDistanceToPoint = (
   routePoint: PcbTrace["route"][number],
@@ -1509,6 +1510,11 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             ...pcb_trace,
             source_trace_id: sourceTraceId,
             route: segment,
+            highlight_color: getHighlightColorForSourceTrace({
+              db,
+              group: this,
+              sourceTraceId,
+            }),
           })
         }
       }

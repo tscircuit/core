@@ -73,6 +73,21 @@ export class Trace
     return this._parsedProps.thickness ?? this._parsedProps.width
   }
 
+  /**
+   * The `highlightColor` of a net this trace is connected to, if any.
+   *
+   * `pcb_trace.highlight_color` exists on the circuit-JSON schema and
+   * `NetProps.highlightColor` is documented, but nothing carried the value
+   * across, so the prop had no effect.
+   */
+  _getHighlightColor(): string | undefined {
+    for (const net of this._findConnectedNets().nets) {
+      const highlightColor = net?._parsedProps?.highlightColor
+      if (highlightColor) return highlightColor
+    }
+    return undefined
+  }
+
   _getSchematicNetLabelText(): string | undefined {
     return (
       this._parsedProps.schDisplayLabel ??
