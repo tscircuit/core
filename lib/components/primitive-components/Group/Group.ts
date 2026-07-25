@@ -465,7 +465,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             trace_clearance: props.autorouter.traceClearance,
           }
         : undefined,
-      anchor_alignment: props.pcbAnchorAlignment ?? null,
+      // circuit-json declares this as `ninePointAnchor.default("center")`, so a
+      // `null` fails validation while omitting it lets the schema default apply.
+      anchor_alignment: props.pcbAnchorAlignment ?? undefined,
     })
     this.pcb_group_id = pcb_group.pcb_group_id
 
@@ -1587,7 +1589,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const { _parsedProps: props } = this
     const schematic_group = db.schematic_group.insert({
       is_subcircuit: this.isSubcircuit,
-      subcircuit_id: this.subcircuit_id!,
+      // `subcircuit_id` is `string | null` on the component but
+      // `z.string().optional()` on the schema, so `null` fails validation.
+      // A group outside any subcircuit simply has none.
+      subcircuit_id: this.subcircuit_id ?? undefined,
       name: this.name,
       center: this._getGlobalSchematicPositionBeforeLayout(),
       width: 0,
