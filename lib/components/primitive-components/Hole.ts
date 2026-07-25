@@ -8,6 +8,7 @@ import type {
   PcbHoleRect,
   PcbHoleCircle,
 } from "circuit-json"
+import { optionalId } from "lib/utils/optional-id"
 
 export class Hole extends PrimitiveComponent<typeof holeProps> {
   pcb_hole_id: string | null = null
@@ -52,9 +53,13 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
     const position = this._getGlobalPcbPositionBeforeLayout()
     const soldermaskMargin = props.solderMaskMargin
     const isCoveredWithSolderMask = props.coveredWithSolderMask ?? false
-    const pcb_component_id =
+    // `pcb_component_id` is `string | null` on PrimitiveComponent, and `??`
+    // only falls through on `undefined` — a board-level hole has no owning
+    // component, so the `null` used to reach circuit JSON and fail validation.
+    const pcb_component_id = optionalId(
       this.parent?.pcb_component_id ??
-      this.getPrimitiveContainer()?.pcb_component_id
+        this.getPrimitiveContainer()?.pcb_component_id,
+    )
 
     this.emitSolderMaskMarginWarning(isCoveredWithSolderMask, soldermaskMargin)
 

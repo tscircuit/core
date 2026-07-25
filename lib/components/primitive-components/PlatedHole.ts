@@ -13,6 +13,7 @@ import type {
 } from "circuit-json"
 import { decomposeTSR } from "transformation-matrix"
 import { selectPortForPcbPrimitive } from "./Port/selectPortForPcbPrimitive"
+import { optionalId } from "lib/utils/optional-id"
 
 export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
   pcb_plated_hole_id: string | null = null
@@ -125,9 +126,12 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
     const { db } = this.root!
     const { _parsedProps: props } = this
     const position = this._getGlobalPcbPositionBeforeLayout()
-    const pcb_component_id =
+    // See `optionalId`: `pcb_component_id` is `string | null`, and a
+    // board-level plated hole has no owning component.
+    const pcb_component_id = optionalId(
       this.parent?.pcb_component_id ??
-      this.getPrimitiveContainer()?.pcb_component_id!
+        this.getPrimitiveContainer()?.pcb_component_id,
+    )
     const subcircuit = this.getSubcircuit()
     const platedHoleLayers = this.getAvailablePcbLayers()
     const soldermaskMargin = props.solderMaskMargin
@@ -265,6 +269,10 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         rect_pad_width: props.rectPadWidth,
         rect_pad_height: props.rectPadHeight,
         shape: "circular_hole_with_rect_pad" as const,
+        // Required by the `circular_hole_with_rect_pad` schema variant; the
+        // sibling pill variants below already set them.
+        hole_shape: "circle" as const,
+        pad_shape: "rect" as const,
         port_hints: this.getNameAndAliases(),
         x: position.x,
         y: position.y,
