@@ -1,5 +1,8 @@
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
-import { SchematicTracePipelineSolver } from "@tscircuit/schematic-trace-solver"
+import {
+  SchematicTracePipelineSolver,
+  SchematicTraceSingleLineSolver2,
+} from "@tscircuit/schematic-trace-solver"
 import type { SchematicTrace } from "circuit-json"
 import Debug from "debug"
 import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
@@ -10,6 +13,7 @@ import { computeJunctions } from "./compute-junctions"
 import { getPortForSchematicSymbolPort } from "./getPortForSchematicSymbolPort"
 import { type SchematicPortId, asSchematicPortId } from "./port-id-types"
 import { removeOverlappingSameNetCrossingSegments } from "./remove-overlapping-same-net-crossing-segments"
+import { simplifyShortBacktrackingTracePath } from "./simplify-short-backtracking-trace-path"
 
 const debug = Debug("Group_doInitialSchematicTraceRender")
 
@@ -187,12 +191,29 @@ export function applyTracesFromSolverOutput(args: {
         },
         db,
       )
+    const simplifiedPoints = simplifyShortBacktrackingTracePath({
+      points: snappedPoints,
+      pins: solvedTracePath.pins ?? [],
+      getObstacles: () => {
+        const schematicTraceLinesSolver = solver.schematicTraceLinesSolver
+        if (!schematicTraceLinesSolver) return undefined
+        return new SchematicTraceSingleLineSolver2({
+          pins: solvedTracePath.pins,
+          connectionPair: solvedTracePath,
+          inputProblem: solver.inputProblem,
+          chipMap: schematicTraceLinesSolver.chipMap,
+        }).obstacles
+      },
+    })
 
     const edges: SchematicTrace["edges"] = []
-    for (let i = 0; i < snappedPoints.length - 1; i++) {
+    for (let i = 0; i < simplifiedPoints.length - 1; i++) {
       edges.push({
-        from: { x: snappedPoints[i]!.x, y: snappedPoints[i]!.y },
-        to: { x: snappedPoints[i + 1]!.x, y: snappedPoints[i + 1]!.y },
+        from: { x: simplifiedPoints[i]!.x, y: simplifiedPoints[i]!.y },
+        to: {
+          x: simplifiedPoints[i + 1]!.x,
+          y: simplifiedPoints[i + 1]!.y,
+        },
       })
     }
 

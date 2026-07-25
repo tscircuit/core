@@ -72,5 +72,36 @@ test("repro47P: 3x3 switch matrix with diodes", async () => {
 
   await circuit.render()
 
+  const diodeToSwitchConnectivityKeys = circuit.db.source_trace
+    .list()
+    .filter((sourceTrace) => sourceTrace.display_name?.includes("cathode"))
+    .map((sourceTrace) => sourceTrace.subcircuit_connectivity_map_key)
+  const diodeToSwitchTraces = circuit.db.schematic_trace
+    .list()
+    .filter((schematicTrace) =>
+      diodeToSwitchConnectivityKeys.includes(
+        schematicTrace.subcircuit_connectivity_map_key,
+      ),
+    )
+
+  expect(diodeToSwitchTraces).toHaveLength(9)
+  expect(
+    diodeToSwitchTraces.every((schematicTrace) => {
+      const firstEdge = schematicTrace.edges[0]!
+      const lastEdge = schematicTrace.edges[schematicTrace.edges.length - 1]!
+      const minimumOrthogonalLength =
+        Math.abs(lastEdge.to.x - firstEdge.from.x) +
+        Math.abs(lastEdge.to.y - firstEdge.from.y)
+      const routedLength = schematicTrace.edges.reduce(
+        (length, edge) =>
+          length +
+          Math.abs(edge.to.x - edge.from.x) +
+          Math.abs(edge.to.y - edge.from.y),
+        0,
+      )
+      return Math.abs(routedLength - minimumOrthogonalLength) < 1e-6
+    }),
+  ).toBe(true)
+
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
