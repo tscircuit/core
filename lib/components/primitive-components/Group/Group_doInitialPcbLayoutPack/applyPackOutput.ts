@@ -220,4 +220,6 @@ export const applyPackOutput = (
     transformPCBElements(relatedElements as any, transformMatrix)
     db.pcb_group.update(pcbGroup.pcb_group_id, { center })
   }
+
+  group.calculatePcbGroupBounds({ usePostLayoutBounds: true })
 }
