@@ -1002,10 +1002,78 @@ export class NormalComponent<
       width: bounds.width,
       height: bounds.height,
     })
+
+    this._addSilkscreenReferenceDesignatorForInlineFootprint(bounds)
   }
 
   updatePcbComponentSizeCalculation(): void {
     this.doInitialPcbComponentSizeCalculation()
+  }
+
+  /**
+   * String footprints get a reference designator for free: footprinter emits a
+   * `pcb_silkscreen_text` placeholder and `createComponentsFromCircuitJson`
+   * rewrites it to the component name. Inline `<footprint>` JSX never goes
+   * through that path, so the component rendered with no reference designator at
+   * all — which also left the exported KiCad footprint without an `fp_text
+   * reference` (tscircuit/circuit-json-to-kicad#51).
+   *
+   * This adds the same text for inline footprints, placed just above the
+   * footprint bounds the way footprinter places it.
+   */
+  _addSilkscreenReferenceDesignatorForInlineFootprint(bounds: {
+    minX: number
+    maxX: number
+    minY: number
+    maxY: number
+    width: number
+    height: number
+  }): void {
+    if (this.root?.pcbDisabled) return
+    if (!this.pcb_component_id) return
+
+    // Only for inline footprints — string footprints already have their text.
+    const footprint = this.resolveFootprint?.()
+    if (typeof footprint === "string" || !footprint) return
+
+    const componentName = this.name ?? this.componentName
+    if (!componentName) return
+
+    const { db } = this.root!
+
+    // Don't add a second one if the footprint itself declared a silkscreen text
+    // with this name, or if a previous render phase already added ours.
+    const existing = db.pcb_silkscreen_text.list({
+      pcb_component_id: this.pcb_component_id,
+    })
+    if (existing.some((text) => text.text === componentName)) return
+
+    const componentLayer = this._getPcbComponentLayer()
+    const layer =
+      componentLayer === "top" || componentLayer === "bottom"
+        ? componentLayer
+        : "top"
+
+    // Matches how footprinter sizes and places the designator: a fraction of the
+    // footprint height, sitting just clear of the top edge.
+    const fontSize = Math.max(
+      0.2,
+      Math.min(0.6, Math.max(bounds.width, bounds.height) / 5),
+    )
+
+    db.pcb_silkscreen_text.insert({
+      anchor_position: {
+        x: (bounds.minX + bounds.maxX) / 2,
+        y: bounds.maxY + fontSize,
+      },
+      anchor_alignment: "center",
+      font: "tscircuit2024",
+      font_size: fontSize,
+      layer,
+      text: componentName,
+      pcb_component_id: this.pcb_component_id,
+      subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
+    } as any)
   }
 
   /**
