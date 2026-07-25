@@ -7,14 +7,7 @@ const NON_PHYSICAL_PCB_PRIMITIVE_PREFIXES = [
   "FabricationNote",
 ]
 
-/**
- * Layout solvers update Circuit JSON without changing authored transforms, so
- * post-layout callers must read each primitive's transformed bounds.
- */
-export function getBoundsOfPcbComponents(
-  components: PrimitiveComponent[],
-  boundsOptions?: { usePostLayoutBounds?: boolean },
-) {
+export function getBoundsOfPcbComponents(components: PrimitiveComponent[]) {
   let minX = Infinity
   let minY = Infinity
   let maxX = -Infinity
@@ -28,19 +21,8 @@ export function getBoundsOfPcbComponents(
         child.componentName.startsWith(prefix),
       )
     ) {
-      if (
-        boundsOptions?.usePostLayoutBounds &&
-        !child.renderPhaseStates.PcbPrimitiveRender.initialized
-      ) {
-        continue
-      }
-      const circuitJsonBounds = boundsOptions?.usePostLayoutBounds
-        ? child._getPcbCircuitJsonBounds()
-        : null
-      const { x, y } = circuitJsonBounds
-        ? circuitJsonBounds.center
-        : child._getGlobalPcbPositionBeforeLayout()
-      const { width, height } = circuitJsonBounds ?? child.getPcbSize()
+      const { x, y } = child._getGlobalPcbPositionBeforeLayout()
+      const { width, height } = child.getPcbSize()
       minX = Math.min(minX, x - width / 2)
       minY = Math.min(minY, y - height / 2)
       maxX = Math.max(maxX, x + width / 2)
@@ -49,10 +31,7 @@ export function getBoundsOfPcbComponents(
     }
     // Handle components that contain PCB primitives (like resistors)
     else if (child.children.length > 0) {
-      const childBounds = getBoundsOfPcbComponents(
-        child.children,
-        boundsOptions,
-      )
+      const childBounds = getBoundsOfPcbComponents(child.children)
       if (childBounds.width > 0 || childBounds.height > 0) {
         minX = Math.min(minX, childBounds.minX)
         minY = Math.min(minY, childBounds.minY)

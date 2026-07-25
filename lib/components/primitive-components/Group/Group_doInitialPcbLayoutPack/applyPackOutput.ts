@@ -1,6 +1,7 @@
 import type { Group } from "../Group"
 import { translate, rotate, compose } from "transformation-matrix"
 import {
+  findBoundsAndCenter,
   transformPCBElements,
   type CircuitJsonUtilObjects,
 } from "@tscircuit/circuit-json-util"
@@ -221,5 +222,12 @@ export const applyPackOutput = (
     db.pcb_group.update(pcbGroup.pcb_group_id, { center })
   }
 
-  group.calculatePcbGroupBounds({ usePostLayoutBounds: true })
+  // Packing transforms Circuit JSON, so derive the group bounds from the
+  // transformed PCB components instead of their authored positions.
+  if (group.pcb_group_id) {
+    const groupPcbComponents = db.pcb_component.list({
+      pcb_group_id: group.pcb_group_id,
+    })
+    group.calculatePcbGroupBounds(findBoundsAndCenter(groupPcbComponents))
+  }
 }

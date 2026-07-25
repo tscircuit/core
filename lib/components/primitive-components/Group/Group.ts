@@ -6,7 +6,7 @@ import {
   reconnectReroutedSimpleRouteJsonRegion,
 } from "@tscircuit/capacity-autorouter"
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
-import { getBoundsFromPoints } from "@tscircuit/math-utils"
+import { type Box, getBoundsFromPoints } from "@tscircuit/math-utils"
 import {
   type AutorouterConfig,
   type SchematicPortArrangement,
@@ -480,9 +480,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     this.calculatePcbGroupBounds()
   }
 
-  calculatePcbGroupBounds(boundsOptions?: {
-    usePostLayoutBounds?: boolean
-  }) {
+  calculatePcbGroupBounds(pcbContentBounds?: Box) {
     if (!this.pcb_group_id) return
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
@@ -524,13 +522,21 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       return
     }
 
-    // Original logic for groups without outline
-    const bounds = getBoundsOfPcbComponents(this.children, boundsOptions)
+    let contentBounds = pcbContentBounds
+    if (!contentBounds) {
+      const bounds = getBoundsOfPcbComponents(this.children)
+      contentBounds = {
+        center: {
+          x: (bounds.minX + bounds.maxX) / 2,
+          y: (bounds.minY + bounds.maxY) / 2,
+        },
+        width: bounds.width,
+        height: bounds.height,
+      }
+    }
 
-    let width = bounds.width
-    let height = bounds.height
-    let centerX = (bounds.minX + bounds.maxX) / 2
-    let centerY = (bounds.minY + bounds.maxY) / 2
+    let { width, height } = contentBounds
+    let { x: centerX, y: centerY } = contentBounds.center
 
     if (this.isSubcircuit) {
       const { padLeft, padRight, padTop, padBottom } = this._resolvePcbPadding()
@@ -552,7 +558,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       y: centerY,
     }
     let center = hasExplicitPositioning
-      ? boundsOptions?.usePostLayoutBounds
+      ? pcbContentBounds
         ? {
             x: props.width === undefined ? centerX : existingCenter.x,
             y: props.height === undefined ? centerY : existingCenter.y,
