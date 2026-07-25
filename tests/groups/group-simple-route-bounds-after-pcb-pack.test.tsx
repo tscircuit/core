@@ -33,13 +33,12 @@ test("simple route json bounds include post-pack component positions", async () 
     subcircuit_id: sourceGroup.subcircuit_id,
   })
 
-  const preLayoutGroupBounds = {
+  expect(simpleRouteJson.bounds).toEqual({
     minX: pcbGroup.center.x - pcbGroup.width! / 2,
     maxX: pcbGroup.center.x + pcbGroup.width! / 2,
     minY: pcbGroup.center.y - pcbGroup.height! / 2,
     maxY: pcbGroup.center.y + pcbGroup.height! / 2,
-  }
-  expect(simpleRouteJson.bounds).not.toEqual(preLayoutGroupBounds)
+  })
 
   for (const obstacle of simpleRouteJson.obstacles) {
     expect(obstacle.center.x - obstacle.width / 2).toBeGreaterThanOrEqual(

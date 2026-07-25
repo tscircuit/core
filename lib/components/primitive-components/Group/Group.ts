@@ -480,7 +480,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     this.calculatePcbGroupBounds()
   }
 
-  calculatePcbGroupBounds() {
+  calculatePcbGroupBounds(bounds = getBoundsOfPcbComponents(this.children)) {
     if (!this.pcb_group_id) return
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
@@ -521,9 +521,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       })
       return
     }
-
-    // Original logic for groups without outline
-    const bounds = getBoundsOfPcbComponents(this.children)
 
     let width = bounds.width
     let height = bounds.height

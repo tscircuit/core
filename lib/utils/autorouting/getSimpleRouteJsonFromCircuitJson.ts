@@ -1,6 +1,5 @@
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import { su } from "@tscircuit/circuit-json-util"
-import { getBoundsFromPoints } from "@tscircuit/math-utils"
 import type { AnyCircuitElement, PcbBoard } from "circuit-json"
 import {
   ConnectivityMap,
@@ -655,13 +654,6 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     conn.nominalTraceWidth ??= nominalTraceWidth ?? defaultTraceWidth
     conn.width ??= nominalTraceWidth ?? defaultTraceWidth
   }
-
-  bounds = getBoundsFromPoints([
-    { x: bounds.minX, y: bounds.minY },
-    { x: bounds.maxX, y: bounds.maxY },
-    ...allPoints,
-    ...allConns.flatMap((connection) => connection.pointsToConnect),
-  ])!
 
   const differentialPairs: DifferentialPair[] =
     subcircuitComponent?.selectAll<DifferentialPair>("differentialpair") ?? []
