@@ -56,6 +56,16 @@ export const getSizeOfSidesFromPortArrangement = (
       bottomSize: getPinsFromSideDefinition(pa.bottomSide).length,
     }
   }
-  const { leftSize = 0, rightSize = 0, topSize = 0, bottomSize = 0 } = pa as any
-  return { leftSize, rightSize, topSize, bottomSize }
+  // `${side}PinCount` is the current spelling; `${side}Size` is the deprecated
+  // one (see schematicPortArrangement in @tscircuit/props, where the Size fields
+  // are marked "@deprecated, use ...PinCount"). Only the deprecated form was
+  // read here, so an arrangement written with the current names produced a box
+  // with zero pins on every side.
+  const arrangement = pa as any
+  return {
+    leftSize: arrangement.leftPinCount ?? arrangement.leftSize ?? 0,
+    rightSize: arrangement.rightPinCount ?? arrangement.rightSize ?? 0,
+    topSize: arrangement.topPinCount ?? arrangement.topSize ?? 0,
+    bottomSize: arrangement.bottomPinCount ?? arrangement.bottomSize ?? 0,
+  }
 }

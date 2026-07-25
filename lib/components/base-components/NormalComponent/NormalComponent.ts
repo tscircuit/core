@@ -332,7 +332,13 @@ export class NormalComponent<
       const sides = ["left", "right", "top", "bottom"]
       let pinNum = 1
       for (const side of sides) {
-        const size = (schPortArrangement as any)[`${side}Size`]
+        // `${side}PinCount` is the current spelling and `${side}Size` is the
+        // deprecated one (see schematicPortArrangement in @tscircuit/props).
+        // Only the deprecated form was read here, so an arrangement written with
+        // the current names created no ports at all.
+        const size =
+          (schPortArrangement as any)[`${side}PinCount`] ??
+          (schPortArrangement as any)[`${side}Size`]
         for (let i = 0; i < size; i++) {
           const nextPinNumber = pinNum++
           if (hasExistingOrQueuedPortWithPinNumber(nextPinNumber)) continue
