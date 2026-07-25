@@ -100,7 +100,22 @@ export function Trace__findConnectedPorts(trace: Trace):
       const labelList = Array.from(new Set(portNames)).join(", ")
       let detail: string
       if (ports.length === 0) {
-        detail = "It has no ports"
+        // A group is a container, not a component with pins — telling the user
+        // it "has no ports" is true but useless. Point at what they can
+        // actually connect to instead.
+        const namedChildren = targetComponent.children
+          .filter((c) => (c as any).props?.name)
+          .map((c) => `.${(c as any).props.name}`)
+        if (
+          targetComponent.componentName === "Group" ||
+          targetComponent.componentName === "Subcircuit"
+        ) {
+          detail = namedChildren.length
+            ? `It is a group, which has no pins of its own. Select a component inside it, e.g. "${namedChildren[0]} > .${portLabel}". It contains [${Array.from(new Set(namedChildren)).join(", ")}]`
+            : "It is a group, which has no pins of its own, and it contains no named components"
+        } else {
+          detail = "It has no ports"
+        }
       } else if (!hasCustomLabels) {
         detail = `It has ${ports.length} pins and no pinLabels (consider adding pinLabels)`
       } else {
