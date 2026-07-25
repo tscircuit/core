@@ -131,14 +131,12 @@ test("reproduces RP2040 gamepad trace routing", async () => {
         resistance="5.1k"
         schX={-5.5}
         schY={0.7}
-        schRotation={90}
       />
       <resistor
         name="R2"
         resistance="5.1k"
         schX={-4}
         schY={0.7}
-        schRotation={90}
       />
 
       <chip
