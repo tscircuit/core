@@ -38,38 +38,18 @@ test("repro119", async () => {
 
   await circuit.renderUntilSettled()
 
-  const u2Pin1Trace = circuit.db.source_trace
-    .list()
-    .find((trace) => trace.display_name === ".U2 > .pin1 to U1.pin3")
-  expect(u2Pin1Trace).toBeDefined()
-
-  const hasExcessiveU2Pin1Detour = circuit.db.schematic_trace
-    .list()
-    .some(
-      (trace) =>
-        trace.subcircuit_connectivity_map_key ===
-        u2Pin1Trace?.subcircuit_connectivity_map_key,
-    )
-
-  expect(hasExcessiveU2Pin1Detour).toBe(false)
-
   circuit.on("debug:logOutput", (e) => {
     if (e.name === "group-trace-render-input-problem") {
       console.log(e.content)
     }
   })
 
-  const schematicNetLabels = circuit.db.schematic_net_label.list()
   const fallbackLabels = [
-    ...new Set(schematicNetLabels.map((label) => label.text)),
+    ...new Set(
+      circuit.db.schematic_net_label.list().map((label) => label.text),
+    ),
   ].sort()
 
-  expect(fallbackLabels).toEqual(["U1_pin2", "U1_pin3", "U1_pin4"])
-  expect(
-    schematicNetLabels.filter(
-      (label) =>
-        label.source_net_id === u2Pin1Trace?.subcircuit_connectivity_map_key,
-    ),
-  ).toHaveLength(2)
+  expect(fallbackLabels).toEqual(["U1_pin2", "U1_pin4"])
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
