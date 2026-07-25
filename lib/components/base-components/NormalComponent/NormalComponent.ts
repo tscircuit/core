@@ -2107,6 +2107,25 @@ export class NormalComponent<
       for (const [pinName, target] of Object.entries(props.connections)) {
         const targets = Array.isArray(target) ? target : [target]
         for (const targetPath of targets) {
+          // An empty or whitespace-only target isn't a selector. Passing it
+          // through produces `to: ""`, which reaches the CSS selector parser and
+          // throws `Expected name, found .` — an internal parser error that
+          // aborts the whole render and names neither the component nor the pin.
+          if (
+            targetPath === undefined ||
+            targetPath === null ||
+            String(targetPath).trim() === ""
+          ) {
+            const { db } = this.root!
+            db.source_component_misconfigured_error.insert({
+              error_type: "source_component_misconfigured_error",
+              source_component_ids: this.source_component_id
+                ? [this.source_component_id]
+                : [],
+              message: `${this.getString()} has an empty connections target for pin "${pinName}". Provide a selector such as ".R1 > .pin1" or "net.VCC", or remove the entry.`,
+            })
+            continue
+          }
           this.add(
             new Trace({
               from: `.${this.name} > .${pinName}`,
