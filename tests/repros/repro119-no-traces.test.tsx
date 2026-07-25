@@ -1,8 +1,16 @@
 import { expect, test } from "bun:test"
+import type { InputProblem } from "@tscircuit/schematic-trace-solver"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("repro119", async () => {
   const { circuit } = getTestFixture()
+  let solverInputProblem: InputProblem | undefined
+
+  circuit.on("solver:started", (event) => {
+    if (event.solverName === "SchematicTracePipelineSolver") {
+      solverInputProblem = event.solverParams as InputProblem
+    }
+  })
 
   circuit.add(
     <board width="20mm" height="20mm">
@@ -38,12 +46,6 @@ test("repro119", async () => {
 
   await circuit.renderUntilSettled()
 
-  circuit.on("debug:logOutput", (e) => {
-    if (e.name === "group-trace-render-input-problem") {
-      console.log(e.content)
-    }
-  })
-
   const fallbackLabels = [
     ...new Set(
       circuit.db.schematic_net_label.list().map((label) => label.text),
@@ -51,5 +53,10 @@ test("repro119", async () => {
   ].sort()
 
   expect(fallbackLabels).toEqual(["U1_pin2", "U1_pin4"])
+  expect(
+    solverInputProblem?.directConnections.find(
+      (connection) => connection.netId === ".U2 > .pin2 to U1.pin4",
+    )?.netLabelWidth,
+  ).toBe(0.96)
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
