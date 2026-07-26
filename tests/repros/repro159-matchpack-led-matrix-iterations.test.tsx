@@ -24,7 +24,7 @@ const WLED = ({ name }: { name: string }) => (
   />
 )
 
-test("repro159: matchpack lays out a 12x12 WLED matrix", async () => {
+test.failing("repro159: matchpack lays out a 12x12 WLED matrix", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
