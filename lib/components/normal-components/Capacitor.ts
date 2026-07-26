@@ -41,11 +41,7 @@ export class Capacitor extends NormalComponent<
   }
 
   _getSchematicSymbolDisplayValue(): string | undefined {
-    const inputCapacitance = this.props.capacitance
-    const capacitanceDisplay =
-      typeof inputCapacitance === "string"
-        ? inputCapacitance
-        : `${formatSiUnit(this._parsedProps.capacitance)}F`
+    const capacitanceDisplay = `${formatSiUnit(this._parsedProps.capacitance)}F`
 
     if (
       this._parsedProps.schShowRatings &&
