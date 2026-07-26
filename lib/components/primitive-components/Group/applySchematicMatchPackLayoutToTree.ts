@@ -2,7 +2,11 @@ import {
   type CircuitJsonTreeNode,
   type CircuitJsonUtilObjects,
 } from "@tscircuit/circuit-json-util"
-import { type InputProblem, LayoutPipelineSolver } from "@tscircuit/matchpack"
+import {
+  type InputProblem,
+  LayoutPipelineSolver,
+  type OutputLayout,
+} from "@tscircuit/matchpack"
 import { getBoundFromCenteredRect } from "@tscircuit/math-utils"
 import type {
   Point,
@@ -39,6 +43,67 @@ type SchematicMatchPackLayoutOptions = {
 type NestedGroupMatchpackProxy = {
   center: Point
   size: Point
+}
+
+const getDeterministicFallbackLayout = (
+  inputProblem: InputProblem,
+): OutputLayout => {
+  const chipEntries = Object.entries(inputProblem.chipMap)
+  const fixedChipEntries = chipEntries.filter(([, chip]) => chip.fixedPosition)
+  const dynamicChipEntries = chipEntries.filter(
+    ([, chip]) => !chip.fixedPosition,
+  )
+  const chipPlacements: OutputLayout["chipPlacements"] = {}
+
+  for (const [chipId, chip] of fixedChipEntries) {
+    chipPlacements[chipId] = {
+      x: chip.fixedPosition!.x,
+      y: chip.fixedPosition!.y,
+      ccwRotationDegrees: chip.availableRotations?.[0] ?? 0,
+    }
+  }
+
+  if (dynamicChipEntries.length === 0) {
+    return { chipPlacements, groupPlacements: {} }
+  }
+
+  const maximumChipWidth = Math.max(
+    ...dynamicChipEntries.map(([, chip]) => chip.size.x),
+  )
+  const maximumChipHeight = Math.max(
+    ...dynamicChipEntries.map(([, chip]) => chip.size.y),
+  )
+  const gap = Math.max(inputProblem.chipGap, inputProblem.partitionGap)
+  const cellWidth = maximumChipWidth + gap
+  const cellHeight = maximumChipHeight + gap
+  const columnCount = Math.ceil(Math.sqrt(dynamicChipEntries.length))
+  const rowCount = Math.ceil(dynamicChipEntries.length / columnCount)
+
+  const fixedMaximumX =
+    fixedChipEntries.length > 0
+      ? Math.max(
+          ...fixedChipEntries.map(
+            ([, chip]) => chip.fixedPosition!.x + chip.size.x / 2,
+          ),
+        )
+      : null
+  const firstColumnX =
+    fixedMaximumX === null
+      ? -((columnCount - 1) * cellWidth) / 2
+      : fixedMaximumX + gap + maximumChipWidth / 2
+  const firstRowY = ((rowCount - 1) * cellHeight) / 2
+
+  dynamicChipEntries.forEach(([chipId, chip], chipIndex) => {
+    const columnIndex = chipIndex % columnCount
+    const rowIndex = Math.floor(chipIndex / columnCount)
+    chipPlacements[chipId] = {
+      x: firstColumnX + columnIndex * cellWidth,
+      y: firstRowY - rowIndex * cellHeight,
+      ccwRotationDegrees: chip.availableRotations?.[0] ?? 0,
+    }
+  })
+
+  return { chipPlacements, groupPlacements: {} }
 }
 
 const ROTATION_TO_PLACE_SIDE_ON_TOP: Record<AxisDirection, MatchpackRotation> =
@@ -853,15 +918,27 @@ export function applySchematicMatchPackLayoutToTree<
   debug(`Solver completed in ${solver.iterations} iterations`)
   debug(`Solved: ${solver.solved}, Failed: ${solver.failed}`)
 
+  let outputLayout: OutputLayout
   if (solver.failed) {
-    debug(`Solver failed with error: ${solver.error}`)
-    throw new Error(`Matchpack layout solver failed: ${solver.error}`)
+    const solverError = solver.error ?? "Unknown Matchpack failure"
+    debug(`Solver failed with error: ${solverError}`)
+    db.schematic_layout_error.insert({
+      error_type: "schematic_layout_error",
+      message: `Matchpack layout solver failed; using deterministic fallback layout: ${solverError}`,
+      is_fatal: false,
+      source_group_id: group.source_group_id!,
+      schematic_group_id: group.schematic_group_id!,
+      subcircuit_id: group.subcircuit_id ?? undefined,
+    })
+    outputLayout = getDeterministicFallbackLayout(inputProblem)
+  } else {
+    outputLayout = solver.getOutputLayout()
   }
-
-  const outputLayout = solver.getOutputLayout()
   debug("OutputLayout:", JSON.stringify(outputLayout, null, 2))
 
-  debug("Solver completed successfully:", !solver.failed)
+  debug(
+    `Using ${solver.failed ? "deterministic fallback" : "Matchpack"} layout`,
+  )
 
   if (debug.enabled && global?.debugGraphics) {
     const finalViz = solver.visualize()
@@ -1128,5 +1205,5 @@ export function applySchematicMatchPackLayoutToTree<
     }
   }
 
-  debug("Matchpack layout completed successfully")
+  debug("Schematic layout completed successfully")
 }
