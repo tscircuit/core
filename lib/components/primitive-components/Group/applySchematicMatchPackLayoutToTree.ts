@@ -870,7 +870,7 @@ export function applySchematicMatchPackLayoutToTree<
   const outputLayout = solver.getOutputLayout()
   debug("OutputLayout:", JSON.stringify(outputLayout, null, 2))
 
-  debug("Using Matchpack layout")
+  debug("Solver completed successfully:", !solver.failed)
 
   if (debug.enabled && global?.debugGraphics) {
     const finalViz = solver.visualize()
@@ -1137,5 +1137,5 @@ export function applySchematicMatchPackLayoutToTree<
     }
   }
 
-  debug("Schematic layout completed successfully")
+  debug("Matchpack layout completed successfully")
 }
