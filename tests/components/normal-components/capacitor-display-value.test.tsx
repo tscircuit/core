@@ -172,3 +172,31 @@ test("capacitor with numeric values handles display correctly", () => {
     import.meta.path + "-capacitor-numeric-values",
   )
 })
+
+test("capacitor with invalid capacitance string outputs NaNpF display_capacitance", () => {
+  const { project } = getTestFixture()
+
+  project.add(
+    <board width="10mm" height="10mm">
+      <capacitor
+        name="C1"
+        capacitance="lijF"
+        footprint="0402"
+        pcbX={0}
+        pcbY={0}
+      />
+    </board>,
+  )
+
+  project.render()
+
+  const capacitors = project.db.source_component.list({
+    ftype: "simple_capacitor",
+  }) as Array<{
+    ftype: "simple_capacitor"
+    display_capacitance?: string
+  }>
+
+  expect(capacitors).toHaveLength(1)
+  expect(capacitors[0].display_capacitance).toBe("NaNpF")
+})

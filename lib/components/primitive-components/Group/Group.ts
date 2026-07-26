@@ -6,7 +6,7 @@ import {
   reconnectReroutedSimpleRouteJsonRegion,
 } from "@tscircuit/capacity-autorouter"
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
-import { getBoundsFromPoints } from "@tscircuit/math-utils"
+import { type Box, getBoundsFromPoints } from "@tscircuit/math-utils"
 import {
   type AutorouterConfig,
   type SchematicPortArrangement,
@@ -53,6 +53,7 @@ import { Port } from "../Port/Port"
 import { Trace } from "../Trace/Trace"
 import { TraceHint } from "../TraceHint"
 import type { RoutingPhasePlan } from "./GroupRoutingPhasePlan"
+import { Group_doInitialAssignSchematicSheetToConnectedComponents } from "./Group_doInitialAssignSchematicSheetToConnectedComponents"
 import { Group_doInitialPcbCalcPlacementResolution } from "./Group_doInitialPcbCalcPlacementResolution"
 import { Group_doInitialPcbComponentAnchorAlignment } from "./Group_doInitialPcbComponentAnchorAlignment"
 import { Group_doInitialPcbLayoutFlex } from "./Group_doInitialPcbLayoutFlex"
@@ -87,7 +88,6 @@ import type { ISubcircuit } from "./Subcircuit/ISubcircuit"
 import { addPortIdsToTracesAtJumperPads } from "./add-port-ids-to-traces-at-jumper-pads"
 import { getSourceTraceIdForRoutedTrace } from "./get-source-trace-id-for-routed-trace"
 import { insertAutoplacedJumpers } from "./insert-autoplaced-jumpers"
-import { insertPcbTraceTooLongWarnings } from "./insert-pcb-trace-too-long-warnings"
 import {
   deleteExistingPcbTracesReplacedBy,
   getExistingPcbTracesForReroute,
@@ -480,7 +480,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     this.calculatePcbGroupBounds()
   }
 
-  calculatePcbGroupBounds() {
+  calculatePcbGroupBounds(pcbContentBounds?: Box) {
     if (!this.pcb_group_id) return
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
@@ -522,13 +522,21 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       return
     }
 
-    // Original logic for groups without outline
-    const bounds = getBoundsOfPcbComponents(this.children)
+    let contentBounds = pcbContentBounds
+    if (!contentBounds) {
+      const bounds = getBoundsOfPcbComponents(this.children)
+      contentBounds = {
+        center: {
+          x: (bounds.minX + bounds.maxX) / 2,
+          y: (bounds.minY + bounds.maxY) / 2,
+        },
+        width: bounds.width,
+        height: bounds.height,
+      }
+    }
 
-    let width = bounds.width
-    let height = bounds.height
-    let centerX = (bounds.minX + bounds.maxX) / 2
-    let centerY = (bounds.minY + bounds.maxY) / 2
+    let { width, height } = contentBounds
+    let { x: centerX, y: centerY } = contentBounds.center
 
     if (this.isSubcircuit) {
       const { padLeft, padRight, padTop, padBottom } = this._resolvePcbPadding()
@@ -543,14 +551,19 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const resolvedHeight = Number(props.height ?? height)
     const existingPcbGroup = db.pcb_group.get(this.pcb_group_id)
 
-    // Preserve explicit positioning when pcbX/pcbY are set. If an anchor
-    // alignment is provided, recompute the center after auto-sizing so the
-    // requested pcbX/pcbY corresponds to that anchor rather than the center.
+    // Fixed dimensions remain centered on the authored group position. An
+    // auto-sized dimension follows the actual packed bounds after layout.
+    const existingCenter = existingPcbGroup?.center ?? {
+      x: centerX,
+      y: centerY,
+    }
     let center = hasExplicitPositioning
-      ? (existingPcbGroup?.center ?? {
-          x: centerX,
-          y: centerY,
-        })
+      ? pcbContentBounds
+        ? {
+            x: props.width === undefined ? centerX : existingCenter.x,
+            y: props.height === undefined ? centerY : existingCenter.y,
+          }
+        : existingCenter
       : { x: centerX, y: centerY }
 
     if (hasExplicitPositioning && props.pcbAnchorAlignment) {
@@ -650,6 +663,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   doInitialSourceAddConnectivityMapKey(): void {
     Group_doInitialSourceAddConnectivityMapKey(this)
+    Group_doInitialAssignSchematicSheetToConnectedComponents(this)
   }
 
   _areChildSubcircuitsRouted(): boolean {
@@ -762,6 +776,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     if (serverMode === "solve-endpoint") {
       // Legacy solve endpoint mode
       if (this.props.autorouter?.inputFormat === "simplified") {
+        const preferredTraceWidth =
+          props.defaultTraceWidth ?? props.nominalTraceWidth
         const { autorouting_result } = await fetchWithDebug(
           `${serverUrl}/autorouting/solve`,
           {
@@ -770,7 +786,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
               input_simple_route_json: getSimpleRouteJsonFromCircuitJson({
                 db,
                 minTraceWidth: Number(props.minTraceWidth ?? 0.15),
-                nominalTraceWidth: this.props.nominalTraceWidth,
+                nominalTraceWidth:
+                  preferredTraceWidth != null
+                    ? Number(preferredTraceWidth)
+                    : undefined,
                 subcircuit_id: this.subcircuit_id,
                 subcircuitComponent: this,
               }).simpleRouteJson,
@@ -897,7 +916,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const isSingleLayerBoard = this._getSubcircuitLayerCount() === 1
 
     const minTraceWidth = Number(props.minTraceWidth ?? 0.15)
-    const nominalTraceWidth = Number(props.nominalTraceWidth ?? 0.15)
+    const nominalTraceWidth = Number(
+      props.defaultTraceWidth ?? props.nominalTraceWidth ?? minTraceWidth,
+    )
 
     const { simpleRouteJson: baseSimpleRouteJson } =
       getSimpleRouteJsonFromCircuitJson({
@@ -2052,11 +2073,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           })
         }
       }
-
-      insertPcbTraceTooLongWarnings({
-        db,
-        subcircuitId: this.subcircuit_id!,
-      })
     }
   }
 

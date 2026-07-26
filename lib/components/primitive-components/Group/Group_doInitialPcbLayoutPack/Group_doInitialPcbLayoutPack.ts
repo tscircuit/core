@@ -133,18 +133,21 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
     }
   }
 
+  const initialPackOutput = convertCircuitJsonToPackOutput(
+    filteredCircuitJson,
+    {
+      source_group_id: group.source_group_id!,
+      // shouldAddInnerObstacles: true,
+      chipMarginsMap,
+      staticPcbComponentIds: Array.from(staticPcbComponentIds),
+    },
+  )
+
   const packInput: PackInput = {
-    ...convertPackOutputToPackInput(
-      convertCircuitJsonToPackOutput(filteredCircuitJson, {
-        source_group_id: group.source_group_id!,
-        // shouldAddInnerObstacles: true,
-        chipMarginsMap,
-        staticPcbComponentIds: Array.from(staticPcbComponentIds),
-      }),
-    ),
-    // @ts-expect-error we're missing some pack order strategies
-    orderStrategy: packOrderStrategy ?? "largest_to_smallest",
-    placementStrategy:
+    ...convertPackOutputToPackInput(initialPackOutput),
+    // @ts-expect-error calculate-packing is missing some supported strategies
+    packOrderStrategy: packOrderStrategy ?? "largest_to_smallest",
+    packPlacementStrategy:
       packPlacementStrategy ?? "minimum_sum_squared_distance_to_network",
     minGap: gapMm,
     bounds,
@@ -166,6 +169,23 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
   }
 
   let packOutput: PackOutput
+  let packingFailed = false
+  const reportPackingError = (solverErrorMessage: string) => {
+    const message = `Unable to pack all PCB components within the layout bounds: ${solverErrorMessage}`
+
+    db.pcb_packing_error.insert({
+      error_type: "pcb_packing_error",
+      message,
+      pcb_group_id: group.pcb_group_id ?? undefined,
+      subcircuit_id: group.subcircuit_id ?? undefined,
+    })
+    group.root?.emit("packing:error", {
+      subcircuit_id: group.subcircuit_id,
+      componentDisplayName: group.getString(),
+      error: { message },
+    })
+  }
+
   try {
     const solver = new PackSolver2(packInput)
     group.root?.emit("solver:started", {
@@ -177,18 +197,21 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
 
     solver.solve()
 
+    if (solver.failed) {
+      packingFailed = true
+      const solverErrorMessage =
+        solver.error ??
+        solver.activeSubSolver?.error ??
+        "No valid packing solution found"
+      reportPackingError(solverErrorMessage)
+    }
+
     packOutput = {
       ...packInput,
       components: solver.packedComponents,
     }
   } catch (error) {
-    group.root?.emit("packing:error", {
-      subcircuit_id: group.subcircuit_id,
-      componentDisplayName: group.getString(),
-      error: {
-        message: error instanceof Error ? error.message : String(error),
-      },
-    })
+    reportPackingError(error instanceof Error ? error.message : String(error))
     throw error
   }
 
@@ -198,7 +221,9 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
     global.debugGraphics?.push(graphics)
   }
 
-  applyPackOutput(group, packOutput, clusterMap)
+  applyPackOutput(group, packOutput, clusterMap, initialPackOutput)
+
+  if (packingFailed) return
 
   // Emit packing:end event
   group.root?.emit("packing:end", {

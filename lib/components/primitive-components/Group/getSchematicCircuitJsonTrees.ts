@@ -2,21 +2,39 @@ import {
   getCircuitJsonTree,
   type CircuitJsonTreeNode,
 } from "@tscircuit/circuit-json-util"
-import type { AnyCircuitElement } from "circuit-json"
+import type {
+  AnyCircuitElement,
+  SchematicSheet,
+  SourceComponentBase,
+  SourceGroup,
+} from "circuit-json"
+
+type SourceComponentId = SourceComponentBase["source_component_id"]
+type SourceGroupId = SourceGroup["source_group_id"]
+type SchematicSheetId = SchematicSheet["schematic_sheet_id"]
+type SchematicCircuitJsonTreeForSheet = {
+  tree: CircuitJsonTreeNode
+  schematicSheetId?: SchematicSheetId
+}
 
 /**
- * The schematic sheet each source group lives on. A source group does not carry
- * schematic_sheet_id, so it is inferred from the components below it - a
- * component is always on a single sheet, so one id per group is enough.
+ * The schematic sheets each source group lives on. A source group does not
+ * carry schematic_sheet_id, so they are inferred from the components below it.
  */
-function getSchematicSheetIdByGroupId({
+function getSchematicSheetIdsBySourceGroupId({
   circuitJson,
-  sheetIdBySourceComponentId,
+  schematicSheetIdsBySourceComponentId,
 }: {
   circuitJson: AnyCircuitElement[]
-  sheetIdBySourceComponentId: Map<string, string>
-}): Map<string, string> {
-  const parentBySourceGroupId = new Map<string, string | undefined>()
+  schematicSheetIdsBySourceComponentId: Map<
+    SourceComponentId,
+    Set<SchematicSheetId>
+  >
+}): Map<SourceGroupId, Set<SchematicSheetId>> {
+  const parentBySourceGroupId = new Map<
+    SourceGroupId,
+    SourceGroupId | undefined
+  >()
   for (const element of circuitJson) {
     if (element.type === "source_group") {
       parentBySourceGroupId.set(
@@ -26,21 +44,35 @@ function getSchematicSheetIdByGroupId({
     }
   }
 
-  const sheetIdByGroupId = new Map<string, string>()
+  const schematicSheetIdsBySourceGroupId = new Map<
+    SourceGroupId,
+    Set<SchematicSheetId>
+  >()
   for (const element of circuitJson) {
     if (element.type !== "source_component") continue
     if (!element.source_group_id) continue
-    const sheetId = sheetIdBySourceComponentId.get(element.source_component_id)
-    if (sheetId === undefined) continue
-    // Propagate the component's sheet up to its ancestor groups. The `has` guard
-    // stops at the first already-resolved group (and prevents cyclic loops).
-    let groupId: string | undefined = element.source_group_id
-    while (groupId && !sheetIdByGroupId.has(groupId)) {
-      sheetIdByGroupId.set(groupId, sheetId)
-      groupId = parentBySourceGroupId.get(groupId)
+    const schematicSheetIds = schematicSheetIdsBySourceComponentId.get(
+      element.source_component_id,
+    )
+    if (schematicSheetIds === undefined) continue
+    for (const schematicSheetId of schematicSheetIds) {
+      let sourceGroupId: SourceGroupId | undefined = element.source_group_id
+      const visitedSourceGroupIds = new Set<SourceGroupId>()
+      while (sourceGroupId && !visitedSourceGroupIds.has(sourceGroupId)) {
+        visitedSourceGroupIds.add(sourceGroupId)
+        const groupSchematicSheetIds =
+          schematicSheetIdsBySourceGroupId.get(sourceGroupId) ??
+          new Set<SchematicSheetId>()
+        groupSchematicSheetIds.add(schematicSheetId)
+        schematicSheetIdsBySourceGroupId.set(
+          sourceGroupId,
+          groupSchematicSheetIds,
+        )
+        sourceGroupId = parentBySourceGroupId.get(sourceGroupId)
+      }
     }
   }
-  return sheetIdByGroupId
+  return schematicSheetIdsBySourceGroupId
 }
 
 /**
@@ -49,22 +81,27 @@ function getSchematicSheetIdByGroupId({
  */
 function getCircuitJsonScopedToSchematicSheet({
   circuitJson,
-  sheetId,
+  schematicSheetId,
   rootSourceGroupId,
-  sheetIdBySourceComponentId,
-  sheetIdByGroupId,
+  schematicSheetIdsBySourceComponentId,
+  schematicSheetIdsBySourceGroupId,
 }: {
   circuitJson: AnyCircuitElement[]
-  sheetId: string
-  rootSourceGroupId: string
-  sheetIdBySourceComponentId: Map<string, string>
-  sheetIdByGroupId: Map<string, string>
+  schematicSheetId: SchematicSheetId
+  rootSourceGroupId: SourceGroupId
+  schematicSheetIdsBySourceComponentId: Map<
+    SourceComponentId,
+    Set<SchematicSheetId>
+  >
+  schematicSheetIdsBySourceGroupId: Map<SourceGroupId, Set<SchematicSheetId>>
 }): AnyCircuitElement[] {
   // The root group holds every sheet's children, so it is always kept; only its
   // descendants are filtered down to the sheet being laid out.
-  const isGroupOnSheet = (sourceGroupId: string): boolean =>
+  const isGroupOnSheet = (sourceGroupId: SourceGroupId): boolean =>
     sourceGroupId === rootSourceGroupId ||
-    sheetIdByGroupId.get(sourceGroupId) === sheetId
+    schematicSheetIdsBySourceGroupId
+      .get(sourceGroupId)
+      ?.has(schematicSheetId) === true
 
   return circuitJson.filter((element) => {
     if (element.type === "source_group") {
@@ -72,7 +109,9 @@ function getCircuitJsonScopedToSchematicSheet({
     }
     if (element.type === "source_component") {
       if (
-        sheetIdBySourceComponentId.get(element.source_component_id) !== sheetId
+        schematicSheetIdsBySourceComponentId
+          .get(element.source_component_id)
+          ?.has(schematicSheetId) !== true
       ) {
         return false
       }
@@ -97,43 +136,61 @@ function getCircuitJsonScopedToSchematicSheet({
  */
 export function getSchematicCircuitJsonTrees(
   circuitJson: AnyCircuitElement[],
-  opts: { source_group_id: string },
-): CircuitJsonTreeNode[] {
+  opts: { source_group_id: SourceGroupId },
+): SchematicCircuitJsonTreeForSheet[] {
   const { source_group_id } = opts
-  const sheetIdBySourceComponentId = new Map<string, string>()
+  const schematicSheetIdsBySourceComponentId = new Map<
+    SourceComponentId,
+    Set<SchematicSheetId>
+  >()
   for (const element of circuitJson) {
     if (element.type !== "schematic_component") continue
     if (!element.source_component_id) continue
     if (!element.schematic_sheet_id) continue
-    sheetIdBySourceComponentId.set(
+    const schematicSheetIds =
+      schematicSheetIdsBySourceComponentId.get(element.source_component_id) ??
+      new Set<SchematicSheetId>()
+    schematicSheetIds.add(element.schematic_sheet_id)
+    schematicSheetIdsBySourceComponentId.set(
       element.source_component_id,
-      element.schematic_sheet_id,
+      schematicSheetIds,
     )
   }
 
-  const sheetIds = new Set<string>(sheetIdBySourceComponentId.values())
+  const schematicSheetIds = new Set<SchematicSheetId>()
+  for (const componentSchematicSheetIds of schematicSheetIdsBySourceComponentId.values()) {
+    for (const schematicSheetId of componentSchematicSheetIds) {
+      schematicSheetIds.add(schematicSheetId)
+    }
+  }
 
   // Without components spread across at least two sheets there is nothing to
   // separate - build the tree exactly as before.
-  if (sheetIds.size <= 1) {
-    return [getCircuitJsonTree(circuitJson, { source_group_id })]
+  if (schematicSheetIds.size <= 1) {
+    return [
+      {
+        tree: getCircuitJsonTree(circuitJson, { source_group_id }),
+        schematicSheetId: schematicSheetIds.values().next().value,
+      },
+    ]
   }
 
-  const sheetIdByGroupId = getSchematicSheetIdByGroupId({
+  const schematicSheetIdsBySourceGroupId = getSchematicSheetIdsBySourceGroupId({
     circuitJson,
-    sheetIdBySourceComponentId,
+    schematicSheetIdsBySourceComponentId,
   })
 
-  return Array.from(sheetIds).map((sheetId) =>
-    getCircuitJsonTree(
+  return Array.from(schematicSheetIds).map((schematicSheetId) => ({
+    tree: getCircuitJsonTree(
       getCircuitJsonScopedToSchematicSheet({
         circuitJson,
-        sheetId,
+        schematicSheetId,
         rootSourceGroupId: source_group_id,
-        sheetIdBySourceComponentId,
-        sheetIdByGroupId,
+        schematicSheetIdsBySourceComponentId,
+        schematicSheetIdsBySourceGroupId,
       }),
       { source_group_id },
     ),
-  )
+    schematicSheetId,
+  }))
 }

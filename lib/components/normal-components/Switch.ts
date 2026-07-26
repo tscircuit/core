@@ -55,6 +55,8 @@ export class Switch extends NormalComponent<typeof switchProps> {
     const source_component = db.source_component.insert({
       ftype: "simple_switch",
       name: this.name,
+      manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
+      supplier_part_numbers: props.supplierPartNumbers,
       are_pins_interchangeable: this._getSwitchType() === "spst",
       display_name: props?.displayName,
     })

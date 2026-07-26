@@ -138,11 +138,11 @@ function getCornerOrientationAtPoint(
  *
  * Junctions are created when:
  * - Same-net trace edges intersect away from endpoints
- * - An endpoint of one trace lies on another trace's edge (including its endpoints)
- * - Two trace endpoints coincide
+ * - A same-net endpoint lies on another trace's edge (including its endpoints)
+ * - Two same-net trace endpoints coincide
  *
- * Different-net middle-to-middle intersections are handled by computeCrossings()
- * and are not included as junctions here.
+ * Different-net intersections and contacts are handled by computeCrossings()
+ * or overlap resolution and are not included as junctions here.
  */
 export function computeJunctions(
   traces: TraceEdges[],
@@ -171,18 +171,18 @@ export function computeJunctions(
         A.connectivity_key !== undefined &&
         A.connectivity_key === B.connectivity_key
 
-      if (isSameNet) {
-        for (const eA of A.edges) {
-          for (const eB of B.edges) {
-            const p = segmentIntersection(eA.from, eA.to, eB.from, eB.to, tol)
-            if (!p) continue
-            if (isEndpointOfEdge(p, eA, tol) || isEndpointOfEdge(p, eB, tol)) {
-              continue
-            }
-            result[A.source_trace_id]!.push(p)
-            if (A.source_trace_id !== B.source_trace_id) {
-              result[B.source_trace_id]!.push(p)
-            }
+      if (!isSameNet) continue
+
+      for (const eA of A.edges) {
+        for (const eB of B.edges) {
+          const p = segmentIntersection(eA.from, eA.to, eB.from, eB.to, tol)
+          if (!p) continue
+          if (isEndpointOfEdge(p, eA, tol) || isEndpointOfEdge(p, eB, tol)) {
+            continue
+          }
+          result[A.source_trace_id]!.push(p)
+          if (A.source_trace_id !== B.source_trace_id) {
+            result[B.source_trace_id]!.push(p)
           }
         }
       }

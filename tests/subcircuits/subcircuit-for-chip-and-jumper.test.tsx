@@ -58,6 +58,7 @@ test("subcircuit-id property for jumper", async () => {
       "do_not_place": false,
       "height": 3,
       "insertion_direction": undefined,
+      "is_allowed_to_be_off_board": false,
       "layer": "top",
       "metadata": undefined,
       "obstructs_within_bounds": true,

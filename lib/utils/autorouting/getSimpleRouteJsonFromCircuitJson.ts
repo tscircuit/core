@@ -651,8 +651,8 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   ]
   const defaultTraceWidth = minTraceWidth ?? board?.min_trace_width ?? 0.1
   for (const conn of allConns) {
-    conn.nominalTraceWidth ??= defaultTraceWidth
-    conn.width ??= defaultTraceWidth
+    conn.nominalTraceWidth ??= nominalTraceWidth ?? defaultTraceWidth
+    conn.width ??= nominalTraceWidth ?? defaultTraceWidth
   }
 
   const differentialPairs: DifferentialPair[] =

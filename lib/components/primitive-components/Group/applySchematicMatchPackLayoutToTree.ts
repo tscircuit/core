@@ -9,6 +9,8 @@ import type {
   SchematicComponent,
   SchematicGroup,
   SchematicPort,
+  SchematicSheet,
+  SourceComponentBase,
 } from "circuit-json"
 import Debug from "debug"
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
@@ -28,6 +30,11 @@ const debug = Debug("Group_doInitialSchematicLayoutMatchpack")
 
 const DEFAULT_AVAILABLE_ROTATIONS = [0, 90, 180, 270] as const
 type MatchpackRotation = (typeof DEFAULT_AVAILABLE_ROTATIONS)[number]
+type SourceComponentId = SourceComponentBase["source_component_id"]
+type SchematicSheetId = SchematicSheet["schematic_sheet_id"]
+type SchematicMatchPackLayoutOptions = {
+  schematicSheetId?: SchematicSheetId
+}
 
 type NestedGroupMatchpackProxy = {
   center: Point
@@ -352,10 +359,25 @@ function getTreeChildChipId(
   return null
 }
 
+const getSchematicComponentForSourceComponent = ({
+  db,
+  sourceComponentId,
+  schematicSheetId,
+}: {
+  db: CircuitJsonUtilObjects
+  sourceComponentId: SourceComponentId
+  schematicSheetId?: SchematicSheetId
+}) =>
+  db.schematic_component.getWhere({
+    source_component_id: sourceComponentId,
+    ...(schematicSheetId ? { schematic_sheet_id: schematicSheetId } : {}),
+  })
+
 function convertTreeToMatchPackInputProblem(
   tree: CircuitJsonTreeNode,
   db: CircuitJsonUtilObjects,
   group: Group<any>,
+  opts: SchematicMatchPackLayoutOptions = {},
 ): {
   inputProblem: InputProblem
   nestedGroupMatchpackProxyMap: Record<string, NestedGroupMatchpackProxy>
@@ -401,8 +423,10 @@ function convertTreeToMatchPackInputProblem(
     }
     if (child.nodeType === "component" && child.sourceComponent) {
       const chipId = getTreeChildChipId(child, index)!
-      const schematicComponent = db.schematic_component.getWhere({
-        source_component_id: child.sourceComponent.source_component_id,
+      const schematicComponent = getSchematicComponentForSourceComponent({
+        db,
+        sourceComponentId: child.sourceComponent.source_component_id,
+        schematicSheetId: opts.schematicSheetId,
       })
 
       if (!schematicComponent) return
@@ -460,6 +484,8 @@ function convertTreeToMatchPackInputProblem(
           chipGap: problem.chipGap,
         }),
         isCapacitor: child.sourceComponent.ftype === "simple_capacitor",
+        isCrystal: child.sourceComponent.ftype === "simple_crystal",
+        isResistor: child.sourceComponent.ftype === "simple_resistor",
         availableRotations,
         ...(explicitlyPositioned && {
           fixedPosition: {
@@ -779,7 +805,11 @@ function convertTreeToMatchPackInputProblem(
 
 export function applySchematicMatchPackLayoutToTree<
   Props extends z.ZodType<any, any, any>,
->(group: Group<Props>, tree: CircuitJsonTreeNode): void {
+>(
+  group: Group<Props>,
+  tree: CircuitJsonTreeNode,
+  opts: SchematicMatchPackLayoutOptions = {},
+): void {
   const { db } = group.root!
 
   debug(
@@ -796,7 +826,7 @@ export function applySchematicMatchPackLayoutToTree<
 
   debug("Converting circuit tree to InputProblem...")
   const { inputProblem, nestedGroupMatchpackProxyMap } =
-    convertTreeToMatchPackInputProblem(tree, db, group)
+    convertTreeToMatchPackInputProblem(tree, db, group, opts)
 
   if (debug.enabled) {
     group.root?.emit("debug:logOutput", {
@@ -824,8 +854,17 @@ export function applySchematicMatchPackLayoutToTree<
   debug(`Solved: ${solver.solved}, Failed: ${solver.failed}`)
 
   if (solver.failed) {
-    debug(`Solver failed with error: ${solver.error}`)
-    throw new Error(`Matchpack layout solver failed: ${solver.error}`)
+    const solverError = solver.error ?? "Unknown Matchpack failure"
+    debug(`Solver failed with error: ${solverError}`)
+    db.schematic_layout_error.insert({
+      error_type: "schematic_layout_error",
+      message: `Matchpack layout solver failed: ${solverError}`,
+      is_fatal: false,
+      source_group_id: group.source_group_id!,
+      schematic_group_id: group.schematic_group_id!,
+      subcircuit_id: group.subcircuit_id ?? undefined,
+    })
+    return
   }
 
   const outputLayout = solver.getOutputLayout()
@@ -910,8 +949,10 @@ export function applySchematicMatchPackLayoutToTree<
         continue
       }
 
-      const schematicComponent = db.schematic_component.getWhere({
-        source_component_id: treeNode.sourceComponent.source_component_id,
+      const schematicComponent = getSchematicComponentForSourceComponent({
+        db,
+        sourceComponentId: treeNode.sourceComponent.source_component_id,
+        schematicSheetId: opts.schematicSheetId,
       })
 
       if (schematicComponent) {

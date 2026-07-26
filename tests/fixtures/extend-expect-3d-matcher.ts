@@ -1,15 +1,18 @@
-import { expect, type MatcherResult } from "bun:test"
-import type { AnyCircuitElement, PcbBoard } from "circuit-json"
+import { type MatcherResult, expect } from "bun:test"
 import * as fs from "node:fs"
 import * as path from "node:path"
-import looksSame from "looks-same"
-import { RootCircuit } from "lib/RootCircuit"
-import {
-  renderGLTFToPNGFromGLB,
-  type RenderGLTFToPNGFromGLBOptions as PoppyglOptions,
-} from "poppygl"
-import { convertCircuitJsonToGltf } from "circuit-json-to-gltf"
 import { cju } from "@tscircuit/circuit-json-util"
+import type { AnyCircuitElement, PcbBoard } from "circuit-json"
+import {
+  convertCircuitJsonToGltf,
+  getBestCameraPosition,
+} from "circuit-json-to-gltf"
+import { RootCircuit } from "lib/RootCircuit"
+import looksSame from "looks-same"
+import {
+  type RenderGLTFToPNGFromGLBOptions as PoppyglOptions,
+  renderGLTFToPNGFromGLB,
+} from "poppygl"
 
 /** [0,1] percentage of the image that is different */
 const ACCEPTABLE_DIFF_FRACTION = 0.01
@@ -21,7 +24,8 @@ export type Match3dSnapshotOptions = {
   gltf?: Record<string, unknown>
   poppygl?: PoppyglOptions
   camPos?: CameraPosition
-  cameraPreset?: "bottom_angled"
+  cameraPreset?: "bottom_angled" | "top_down_orthographic"
+  snapshotSuffix?: string
 }
 
 export async function resolvePoppyglOptions(
@@ -63,6 +67,24 @@ export async function resolvePoppyglOptions(
           board.height! / 2,
         ]
         break
+      case "top_down_orthographic": {
+        const camera = getBestCameraPosition(circuitJson, {
+          preset: "top_down",
+          ortho: true,
+          aspectRatio: resolvedOpts.width! / resolvedOpts.height!,
+        })
+        // Camera fitting uses PCB bounds. Leave additional room for mechanical
+        // geometry, such as an enclosure, that extends beyond the board.
+        const mechanicalFramingScale = 1.35
+        resolvedOpts.camPos = camera.camPos.map(
+          (coordinate, axis) =>
+            camera.lookAt[axis] +
+            (coordinate - camera.lookAt[axis]) * mechanicalFramingScale,
+        ) as CameraPosition
+        resolvedOpts.lookAt = camera.lookAt
+        resolvedOpts.fov = camera.fov
+        break
+      }
       default:
         throw new Error(`Unknown camera preset: ${cameraPreset}`)
     }
@@ -94,7 +116,10 @@ async function save3dSnapshotOfCircuitJson({
 }): Promise<MatcherResult> {
   testPath = testPath.replace(/\.test\.tsx?$/, "")
   const snapshotDir = path.join(path.dirname(testPath || ""), "__snapshots__")
-  const snapshotName = `${path.basename(testPath || "")}-simple-3d.snap.png`
+  const snapshotSuffix = options?.snapshotSuffix
+    ? `-${options.snapshotSuffix}`
+    : ""
+  const snapshotName = `${path.basename(testPath || "")}${snapshotSuffix}-simple-3d.snap.png`
   const filePath = path.join(snapshotDir, snapshotName)
 
   const gltfOrGlb = await convertCircuitJsonToGltf(soup, {

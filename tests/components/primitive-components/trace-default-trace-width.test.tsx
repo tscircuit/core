@@ -23,8 +23,6 @@ test("trace routing uses board defaultTraceWidth when thickness is omitted", asy
     )
 
   expect(routedWireWidths.length).toBeGreaterThan(0)
-  // Bug repro: board.defaultTraceWidth is 0.3mm, but autorouted wires still
-  // come out at 0.15mm. The expected fixed behavior should be 0.3.
-  expect(routedWireWidths.every((width) => width === 0.15)).toBe(true)
+  expect(routedWireWidths.every((width) => width === 0.3)).toBe(true)
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

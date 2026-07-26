@@ -28,9 +28,9 @@ test("rotate silkscreen text ccw", async () => {
   expect(pcb_silkscreen_text).toMatchInlineSnapshot(`
     [
       {
-        "anchor_alignment": "center_left",
+        "anchor_alignment": "center_right",
         "anchor_position": {
-          "x": 1.41,
+          "x": 1.54,
           "y": -1.27,
         },
         "ccw_rotation": 90,
@@ -47,9 +47,9 @@ test("rotate silkscreen text ccw", async () => {
         "type": "pcb_silkscreen_text",
       },
       {
-        "anchor_alignment": "center_left",
+        "anchor_alignment": "center_right",
         "anchor_position": {
-          "x": 1.41,
+          "x": 1.54,
           "y": 1.27,
         },
         "ccw_rotation": 90,

@@ -1,8 +1,8 @@
-import { ConnectivityMap } from "circuit-json-to-connectivity-map"
-import type { Group } from "./Group"
 import type { SourceTrace } from "circuit-json"
+import { ConnectivityMap } from "circuit-json-to-connectivity-map"
 import type { TraceI } from "../Trace/TraceI"
 import type { Via } from "../Via"
+import type { Group } from "./Group"
 
 export function Group_doInitialSourceAddConnectivityMapKey(group: Group<any>) {
   if (!group.isSubcircuit) return

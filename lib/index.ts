@@ -1,4 +1,5 @@
 export * from "./components"
+export * from "./namespaced-elements"
 export * from "./IIsolatedCircuit"
 export * from "./IRootCircuit"
 export * from "./IsolatedCircuit"

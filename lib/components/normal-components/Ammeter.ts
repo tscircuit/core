@@ -71,6 +71,8 @@ export class Ammeter extends NormalComponent<
       ftype: "simple_ammeter",
       name: this.name,
       supplier_part_numbers: supplierPartNumbers,
+      manufacturer_part_number:
+        this._parsedProps.manufacturerPartNumber ?? this._parsedProps.mfn,
       display_name: displayName,
     } as SourceSimpleAmmeterInput)
     this.source_component_id = source_component.source_component_id

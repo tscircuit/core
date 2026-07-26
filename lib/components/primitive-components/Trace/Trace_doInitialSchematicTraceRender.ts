@@ -1,30 +1,30 @@
 import { MultilayerIjump } from "@tscircuit/infgrid-ijump-astar"
-import { type SchematicNetLabel, type SchematicTrace } from "circuit-json"
+import { type Point, doesLineIntersectLine } from "@tscircuit/math-utils"
 import { calculateElbow } from "calculate-elbow"
-import { doesLineIntersectLine, type Point } from "@tscircuit/math-utils"
+import { type SchematicNetLabel, type SchematicTrace } from "circuit-json"
 import { DirectLineRouter } from "lib/utils/autorouting/DirectLineRouter"
 import type {
+  Obstacle,
   SimpleRouteConnection,
   SimpleRouteJson,
   SimplifiedPcbTrace,
-  Obstacle,
 } from "lib/utils/autorouting/SimpleRouteJson"
 import { computeObstacleBounds } from "lib/utils/autorouting/computeObstacleBounds"
 import { getDominantDirection } from "lib/utils/autorouting/getDominantDirection"
+import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
+import { convertFacingDirectionToElbowDirection } from "lib/utils/schematic/convertFacingDirectionToElbowDirection"
 import { countComplexElements } from "lib/utils/schematic/countComplexElements"
 import { getEnteringEdgeFromDirection } from "lib/utils/schematic/getEnteringEdgeFromDirection"
 import { getStubEdges } from "lib/utils/schematic/getStubEdges"
+import { TraceConnectionError } from "../../../errors"
 import type { NetLabel } from "../NetLabel"
 import type { Port } from "../Port"
+import { Trace } from "./Trace"
 import { createSchematicTraceCrossingSegments } from "./trace-utils/create-schematic-trace-crossing-segments"
 import { createSchematicTraceJunctions } from "./trace-utils/create-schematic-trace-junctions"
 import { getSchematicObstaclesForTrace } from "./trace-utils/get-obstacles-for-trace"
 import { getOtherSchematicTraces } from "./trace-utils/get-other-schematic-traces"
 import { pushEdgesOfSchematicTraceToPreventOverlap } from "./trace-utils/push-edges-of-schematic-trace-to-prevent-overlap"
-import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
-import { Trace } from "./Trace"
-import { convertFacingDirectionToElbowDirection } from "lib/utils/schematic/convertFacingDirectionToElbowDirection"
-import { TraceConnectionError } from "../../../errors"
 
 export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
   if (trace.root?._featureMspSchematicTraceRouting) return
@@ -61,7 +61,50 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
 
   if (!allPortsFound) return
 
-  const portIds = connectedPorts.map((p) => p.port.schematic_port_id).sort()
+  const resolveSchematicPortForSheet = (port: Port) => {
+    if (schematicSheetId && port.source_port_id) {
+      const sheetSchematicPort = db.schematic_port.getWhere({
+        source_port_id: port.source_port_id,
+        schematic_sheet_id: schematicSheetId,
+      })
+      if (sheetSchematicPort) return sheetSchematicPort
+    }
+
+    if (port.schematic_port_id) {
+      return db.schematic_port.get(port.schematic_port_id) ?? null
+    }
+
+    if (!schematicSheetId && port.source_port_id) {
+      const unassignedSchematicPorts = db.schematic_port
+        .list({ source_port_id: port.source_port_id })
+        .filter((schematicPort) => !schematicPort.schematic_sheet_id)
+      if (unassignedSchematicPorts.length === 1) {
+        return unassignedSchematicPorts[0]
+      }
+    }
+
+    return null
+  }
+
+  const portsWithPosition = connectedPorts.flatMap(({ port }) => {
+    const schematicPort = resolveSchematicPortForSheet(port)
+    if (!schematicPort) return []
+    return [
+      {
+        port,
+        position: schematicPort.center,
+        schematic_port_id: schematicPort.schematic_port_id,
+        facingDirection: schematicPort.facing_direction ?? null,
+      },
+    ]
+  })
+  const portIds = portsWithPosition
+    .map(({ schematic_port_id }) => schematic_port_id)
+    .sort()
+  const hasSheetLocalSchematicPortRepresentation = portsWithPosition.some(
+    ({ port, schematic_port_id }) =>
+      port.schematic_port_id !== schematic_port_id,
+  )
   const portPairKey = portIds.join(",")
   const board = trace.root?._getBoard()
   if (board?._connectedSchematicPortPairs)
@@ -74,16 +117,6 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
     pointsToConnect: [],
   }
   const obstacles = getSchematicObstaclesForTrace(trace)
-
-  // Get port positions for later use, filter out ports without schematic representation
-  const portsWithPosition = connectedPorts
-    .filter(({ port }) => port.schematic_port_id !== null)
-    .map(({ port }) => ({
-      port,
-      position: port._getGlobalSchematicPositionAfterLayout(),
-      schematic_port_id: port.schematic_port_id ?? undefined,
-      facingDirection: port.facingDirection,
-    }))
 
   const isPortAndNetConnection =
     portsWithPosition.length === 1 && netsWithSelectors.length === 1
@@ -193,7 +226,7 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
     return
   }
 
-  if (schematicNetLabelText) {
+  if (schematicNetLabelText && !hasSheetLocalSchematicPortRepresentation) {
     if (
       ("from" in trace.props && "to" in trace.props) ||
       "path" in trace.props
@@ -352,9 +385,10 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
 
     if (results.length === 0) {
       if (
-        trace._isSymbolToChipConnection() ||
-        trace._isSymbolToSymbolConnection() ||
-        trace._isChipToChipConnection()
+        !hasSheetLocalSchematicPortRepresentation &&
+        (trace._isSymbolToChipConnection() ||
+          trace._isSymbolToSymbolConnection() ||
+          trace._isChipToChipConnection())
       ) {
         trace._doInitialSchematicTraceRenderWithDisplayLabel()
         return
@@ -450,6 +484,7 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
   }
 
   if (
+    !hasSheetLocalSchematicPortRepresentation &&
     trace.getSubcircuit()._parsedProps.schTraceAutoLabelEnabled &&
     countComplexElements(junctions, edges) >= 5 &&
     (trace._isSymbolToChipConnection() ||
@@ -471,10 +506,8 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
   })
   trace.schematic_trace_id = dbTrace.schematic_trace_id
 
-  for (const { port } of connectedPorts) {
-    if (port.schematic_port_id) {
-      db.schematic_port.update(port.schematic_port_id, { is_connected: true })
-    }
+  for (const { schematic_port_id } of portsWithPosition) {
+    db.schematic_port.update(schematic_port_id, { is_connected: true })
   }
 
   if (board?._connectedSchematicPortPairs)
