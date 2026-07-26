@@ -854,8 +854,17 @@ export function applySchematicMatchPackLayoutToTree<
   debug(`Solved: ${solver.solved}, Failed: ${solver.failed}`)
 
   if (solver.failed) {
-    debug(`Solver failed with error: ${solver.error}`)
-    throw new Error(`Matchpack layout solver failed: ${solver.error}`)
+    const solverError = solver.error ?? "Unknown Matchpack failure"
+    debug(`Solver failed with error: ${solverError}`)
+    db.schematic_layout_error.insert({
+      error_type: "schematic_layout_error",
+      message: `Matchpack layout solver failed: ${solverError}`,
+      is_fatal: false,
+      source_group_id: group.source_group_id!,
+      schematic_group_id: group.schematic_group_id!,
+      subcircuit_id: group.subcircuit_id ?? undefined,
+    })
+    return
   }
 
   const outputLayout = solver.getOutputLayout()
