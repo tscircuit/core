@@ -4,26 +4,27 @@ import type { SchematicNetLabel, SourceNet } from "circuit-json"
 import Debug from "debug"
 import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
 import { getNetNameFromSourcePorts } from "lib/utils/schematic/getSourcePortNetLabelText"
-import type { NetLabel } from "../../NetLabel"
 import { Port } from "../../Port"
 import { Group } from "../Group"
+import { getNetLabelsInSchematicTraceScope } from "./getNetLabelsInSchematicTraceScope"
 import { getNetLabelTextBounds } from "./getNetLabelTextBounds"
 import { getNetNameFromPorts } from "./getNetNameFromPorts"
 import type { AxisDirection } from "./getSide"
 import { oppositeSide } from "./oppositeSide"
 import { type SchematicPortId, asSchematicPortId } from "./port-id-types"
+import { shouldUseSchematicTraceSolverForNetLabel } from "./shouldUseSchematicTraceSolverForNetLabel"
 
 const debug = Debug("Group_doInitialSchematicTraceRender")
 
-// User-defined net labels are placed directly via a <netlabel/> in the source,
-// as opposed to labels the trace solver places automatically.
-interface UserDefinedNetLabel extends SchematicNetLabel {
-  component: NetLabel
+interface UserDefinedNetLabel {
+  schematicNetLabel: SchematicNetLabel
   schematicPortIds: SchematicPortId[]
+  shouldUseSchematicTraceSolver: boolean
 }
 
 const isSameNet = (label: UserDefinedNetLabel, sourceNet: SourceNet) =>
-  label.source_net_id != null && label.source_net_id === sourceNet.source_net_id
+  label.schematicNetLabel.source_net_id != null &&
+  label.schematicNetLabel.source_net_id === sourceNet.source_net_id
 
 // A user-defined label is redundant with a solver placement when it labels the
 // same net and either shares one of the placement's ports or visually overlaps it.
@@ -46,9 +47,12 @@ const isUserDefinedNetLabelRedundantWithPlacement = (
   ) {
     return true
   }
-  if (!label.center) return false
+  if (!label.schematicNetLabel.center) return false
   return doBoundsOverlap(
-    getNetLabelTextBounds({ center: label.center, text: label.text }),
+    getNetLabelTextBounds({
+      center: label.schematicNetLabel.center,
+      text: label.schematicNetLabel.text,
+    }),
     solverPlacement.bounds,
   )
 }
@@ -117,21 +121,20 @@ export function applyNetLabelPlacements(args: {
     }
   }
   const globalConnMap = solver.mspConnectionPairSolver!.globalConnMap
-  const netLabelComponents =
-    group._getBoard()?.selectAll<NetLabel>("netlabel") ??
-    (group.selectAll("netlabel") as NetLabel[])
+  const netLabelComponents = getNetLabelsInSchematicTraceScope(group)
   const userDefinedNetLabels: UserDefinedNetLabel[] = netLabelComponents
     .map((label) => {
       if (!label.schematic_net_label_id) return null
       const dbLabel = db.schematic_net_label.get(label.schematic_net_label_id)
       if (!dbLabel) return null
       return {
-        ...dbLabel,
-        component: label,
+        schematicNetLabel: dbLabel,
         schematicPortIds: label
           ._getConnectedPorts()
           .map((port) => port.schematic_port_id)
           .filter((id): id is SchematicPortId => Boolean(id)),
+        shouldUseSchematicTraceSolver:
+          shouldUseSchematicTraceSolverForNetLabel(label),
       }
     })
     .filter((label): label is UserDefinedNetLabel => label !== null)
@@ -226,14 +229,13 @@ export function applyNetLabelPlacements(args: {
 
       const solverManagedUserNetLabel = userDefinedNetLabels.find(
         (label) =>
-          label.component._parsedProps.schX === undefined &&
-          label.component._parsedProps.schY === undefined &&
+          label.shouldUseSchematicTraceSolver &&
           isSameNet(label, sourceNet) &&
           label.schematicPortIds.some((id) => schPortIds.includes(id)),
       )
       if (solverManagedUserNetLabel) {
         db.schematic_net_label.update(
-          solverManagedUserNetLabel.schematic_net_label_id,
+          solverManagedUserNetLabel.schematicNetLabel.schematic_net_label_id,
           {
             anchor_position,
             center,

@@ -13,9 +13,9 @@ import type { SchematicComponent, SourceNet } from "circuit-json"
 import { getSchematicNetLabelTextWidth } from "lib/utils/schematic/computeSchematicNetLabelCenter"
 import { convertFacingDirectionToElbowDirection } from "lib/utils/schematic/convertFacingDirectionToElbowDirection"
 import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
-import type { NetLabel } from "../../NetLabel"
 import { Port } from "../../Port"
 import { Group } from "../Group"
+import { getNetLabelsInSchematicTraceScope } from "./getNetLabelsInSchematicTraceScope"
 import { getNetNameFromPorts } from "./getNetNameFromPorts"
 import { getPortForSchematicSymbolPort } from "./getPortForSchematicSymbolPort"
 import type { AxisDirection } from "./getSide"
@@ -26,6 +26,7 @@ import {
   asSourcePortId,
 } from "./port-id-types"
 import { schematicTextToTextBox } from "./schematicTextToTextBounds"
+import { shouldUseSchematicTraceSolverForNetLabel } from "./shouldUseSchematicTraceSolverForNetLabel"
 
 const DEFAULT_MAX_MSP_PAIR_DISTANCE = 2.4
 const SCHEMATIC_RAIL_NET_LABEL_HEIGHT = 0.42
@@ -222,12 +223,8 @@ export function createSchematicTraceSolverInputProblem(
       .map((port) => [asSchematicPortId(port.schematic_port_id!), port]),
   )
   const solverManagedNetLabelSchematicPortIds = new Set(
-    (group._getBoard()?.selectAll<NetLabel>("netlabel") ?? [])
-      .filter(
-        (netLabel) =>
-          netLabel._parsedProps.schX === undefined &&
-          netLabel._parsedProps.schY === undefined,
-      )
+    getNetLabelsInSchematicTraceScope(group)
+      .filter(shouldUseSchematicTraceSolverForNetLabel)
       .flatMap((netLabel) => netLabel._getConnectedPorts())
       .map((port) => port.schematic_port_id)
       .filter(
