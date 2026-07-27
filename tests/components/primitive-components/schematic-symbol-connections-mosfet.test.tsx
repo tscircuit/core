@@ -67,15 +67,19 @@ test("schematicsymbol maps MOSFET symbol ports to a chip for traces", async () =
 
   await circuit.renderUntilSettled()
 
-  const schematicGatePort = circuit.selectOne<Port>(".Q1A > .gate", {
-    type: "port",
-  })
-  const physicalGatePort = circuit.selectOne<Port>("Q1.G1", {
-    type: "port",
-  })
-  expect(schematicGatePort?.source_port_id).toBe(
-    physicalGatePort!.source_port_id,
-  )
+  const mappedSelectorPairs = [
+    ["Q1A.pin1", "Q1.pin7"],
+    ["Q1A.pin3", "Q1.pin1"],
+  ] as const
+  for (const [schematicSelector, physicalSelector] of mappedSelectorPairs) {
+    const schematicPort = circuit.selectOne<Port>(schematicSelector, {
+      type: "port",
+    })
+    const physicalPort = circuit.selectOne<Port>(physicalSelector, {
+      type: "port",
+    })
+    expect(schematicPort?.source_port_id).toBe(physicalPort!.source_port_id)
+  }
 
   await expect(circuit).toMatchStackedSchematicSnapshot(import.meta.path)
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
