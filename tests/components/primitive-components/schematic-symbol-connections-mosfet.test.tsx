@@ -9,6 +9,7 @@ test("schematicsymbol maps MOSFET symbol ports to a chip for traces", async () =
       <schematicsheet name="MOSFET A" displayName="MOSFET A" sheetIndex={0} />
       <schematicsymbol
         name="A"
+        displayName="Q1A"
         chipRef=".Q1"
         symbolName="n_channel_e_mosfet_transistor_horz"
         connections={{

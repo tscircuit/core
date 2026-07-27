@@ -19,6 +19,7 @@ export class SchematicSymbol extends PrimitiveComponent<
     const sourceComponent = this.root!.db.source_component.insert({
       ftype: "simple_chip",
       name: this.name,
+      display_name: this._parsedProps.displayName,
       are_pins_interchangeable: false,
     })
     this.source_component_id = sourceComponent.source_component_id
@@ -27,9 +28,4 @@ export class SchematicSymbol extends PrimitiveComponent<
   doInitialSchematicComponentRender(): void {
     SchematicSymbol_doInitialSchematicComponentRender(this)
   }
-
-  /*
-   * displayName cannot be supported until schematic_component has its own
-   * display_name field. Avoid special-casing schematic rendering for it.
-   */
 }
