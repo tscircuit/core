@@ -20,4 +20,5 @@ test("repro161: render the PowerSection Circuit JSON schematic", async () => {
   expect(j1PcbComponent?.layer).toBe("top")
 
   expect(circuitJson).toMatchSchematicSnapshot(import.meta.path)
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
