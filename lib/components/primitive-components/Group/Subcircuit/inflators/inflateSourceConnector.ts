@@ -1,3 +1,4 @@
+import type { SchematicPortArrangement } from "@tscircuit/props"
 import type {
   CadComponent,
   PcbComponent,
@@ -9,6 +10,49 @@ import { Connector } from "lib/components/normal-components/Connector"
 import type { InflatorContext } from "../InflatorFn"
 import { getInflatedPcbPlacement } from "./getInflatedPcbPlacement"
 import { inflateFootprintComponent } from "./inflateFootprintComponent"
+
+const getImportedSchPortArrangement = (
+  schematicElm: SchematicComponent | null,
+): SchematicPortArrangement | undefined => {
+  const arrangement = schematicElm?.port_arrangement
+  if (!arrangement) return undefined
+
+  if ("left_size" in arrangement) {
+    return {
+      leftPinCount: arrangement.left_size,
+      rightPinCount: arrangement.right_size,
+      topPinCount: arrangement.top_size,
+      bottomPinCount: arrangement.bottom_size,
+    }
+  }
+
+  return {
+    leftSide: arrangement.left_side
+      ? {
+          pins: arrangement.left_side.pins,
+          direction: arrangement.left_side.direction ?? "top-to-bottom",
+        }
+      : undefined,
+    rightSide: arrangement.right_side
+      ? {
+          pins: arrangement.right_side.pins,
+          direction: arrangement.right_side.direction ?? "top-to-bottom",
+        }
+      : undefined,
+    topSide: arrangement.top_side
+      ? {
+          pins: arrangement.top_side.pins,
+          direction: arrangement.top_side.direction ?? "left-to-right",
+        }
+      : undefined,
+    bottomSide: arrangement.bottom_side
+      ? {
+          pins: arrangement.bottom_side.pins,
+          direction: arrangement.bottom_side.direction ?? "left-to-right",
+        }
+      : undefined,
+  }
+}
 
 const getImportedConnectorPinLabels = (
   sourceElm: SourceSimpleConnector,
@@ -70,7 +114,7 @@ export function inflateSourceConnector(
       getImportedConnectorPinLabels(sourceElm, inflatorContext) ??
       schematicElm?.port_labels ??
       undefined,
-    schPortArrangement: schematicElm?.port_arrangement,
+    schPortArrangement: getImportedSchPortArrangement(schematicElm),
     schWidth: schematicElm?.size?.width,
     schHeight: schematicElm?.size?.height,
     schPinSpacing: schematicElm?.pin_spacing,
