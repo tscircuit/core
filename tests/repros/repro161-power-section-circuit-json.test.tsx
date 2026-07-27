@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import circuitJson from "./assets/power-section.circuit.json"
 
-test("repro160: render the PowerSection Circuit JSON schematic", async () => {
+test("repro161: render the PowerSection Circuit JSON schematic", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(<board circuitJson={circuitJson as any} />)
