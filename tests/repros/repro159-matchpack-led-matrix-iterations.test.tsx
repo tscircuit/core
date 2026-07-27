@@ -24,7 +24,7 @@ const WLED = ({ name }: { name: string }) => (
   />
 )
 
-test("repro159: matchpack reports a nonfatal error for a 12x12 WLED matrix schematic", async () => {
+test("repro159: matchpack lays out a 12x12 WLED matrix schematic", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -112,8 +112,6 @@ test("repro159: matchpack reports a nonfatal error for a 12x12 WLED matrix schem
   await circuit.renderUntilSettled()
 
   const layoutErrors = circuit.db.schematic_layout_error.list()
-  expect(layoutErrors).toHaveLength(1)
-  expect(layoutErrors[0].is_fatal).toBeFalse()
-  expect(layoutErrors[0].message).toContain("PackSolver2 ran out of iterations")
+  expect(layoutErrors).toHaveLength(0)
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 }, 90_000)
