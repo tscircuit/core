@@ -1,7 +1,6 @@
-import { TraceConnectionError } from "../../../errors"
 import type { Port } from "../Port/Port"
-import { SchematicSymbol } from "../SchematicSymbol/SchematicSymbol"
 import type { Trace } from "./Trace"
+import { TraceConnectionError } from "../../../errors"
 
 export function Trace__findConnectedPorts(trace: Trace):
   | {
@@ -19,22 +18,6 @@ export function Trace__findConnectedPorts(trace: Trace):
   if (!parent) throw new Error("Trace has no parent")
 
   const portSelectors = trace.getTracePortPathSelectors()
-
-  const resolveMappedPort = (selector: string): Port | null => {
-    const match = selector
-      .trim()
-      .match(/^(.*?)\s*(?:>\s*|\s+|\.)\.?([A-Za-z0-9_-]+)$/)
-    if (!match) return null
-
-    const [, parentSelector, portName] = match
-    let targetComponent = trace.getSubcircuit().selectOne(parentSelector)
-    if (!targetComponent && !/[.#\[]/.test(parentSelector)) {
-      targetComponent = trace.getSubcircuit().selectOne(`.${parentSelector}`)
-    }
-    if (!(targetComponent instanceof SchematicSymbol)) return null
-
-    return targetComponent._resolveMappedPort(portName)
-  }
 
   const resolveImplicitSinglePort = (selector: string): Port | null => {
     const hasExplicitPortToken =
@@ -58,7 +41,6 @@ export function Trace__findConnectedPorts(trace: Trace):
     selector,
     port:
       (trace.getSubcircuit().selectOne(selector, { type: "port" }) as Port) ??
-      resolveMappedPort(selector) ??
       resolveImplicitSinglePort(selector),
   }))
 
