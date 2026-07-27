@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import { getFullConnectivityMapFromCircuitJson } from "circuit-json-to-connectivity-map"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("repro162: thermal vias inside an exposed pad have no connectivity", async () => {
+test("repro162: thermal vias inside an exposed pad inherit its connectivity", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -56,7 +56,7 @@ test("repro162: thermal vias inside an exposed pad have no connectivity", async 
       <pcbnotetext
         pcbY="-3mm"
         fontSize="0.45mm"
-        text="BUG: THERMAL VIAS HAVE NO GND CONNECTIVITY"
+        text="THERMAL VIAS INHERIT GND CONNECTIVITY"
       />
     </board>,
   )
@@ -78,11 +78,14 @@ test("repro162: thermal vias inside an exposed pad have no connectivity", async 
   ).toBeDefined()
   expect(thermalVias).toHaveLength(4)
   for (const thermalVia of thermalVias) {
-    expect(thermalVia.subcircuit_connectivity_map_key).toBeUndefined()
-    expect(thermalVia.pcb_trace_id).toBeUndefined()
-    expect(
-      connectivityMap.getNetConnectedToId(thermalVia.pcb_via_id),
-    ).toBeUndefined()
+    expect(thermalVia.subcircuit_connectivity_map_key).toBe(
+      gndNet?.subcircuit_connectivity_map_key,
+    )
+    expect(thermalVia.subcircuit_connectivity_map_key).toBeDefined()
+    expect(thermalVia.pcb_trace_id).toBeDefined()
+    expect(connectivityMap.getNetConnectedToId(thermalVia.pcb_via_id)).toBe(
+      connectivityMap.getNetConnectedToId(exposedPad.pcb_smtpad_id),
+    )
   }
 
   expect(circuit).toMatchPcbSnapshot(import.meta.path)

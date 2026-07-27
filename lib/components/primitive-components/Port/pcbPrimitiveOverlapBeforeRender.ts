@@ -40,6 +40,22 @@ export function doPcbPrimitivesOverlapBeforeRender(
   )
 }
 
+export function isPcbPrimitiveContainedWithinBeforeRender(
+  inner: PrimitiveComponent,
+  outer: PrimitiveComponent,
+): boolean {
+  const innerBounds = getPcbPrimitiveBoundsBeforeRender(inner)
+  const outerBounds = getPcbPrimitiveBoundsBeforeRender(outer)
+  if (!innerBounds || !outerBounds) return false
+
+  return (
+    innerBounds.left >= outerBounds.left &&
+    innerBounds.right <= outerBounds.right &&
+    innerBounds.bottom >= outerBounds.bottom &&
+    innerBounds.top <= outerBounds.top
+  )
+}
+
 export function getConnectedPcbPrimitiveClustersBeforeRender(
   primitives: PrimitiveComponent[],
 ): PrimitiveComponent[][] {
