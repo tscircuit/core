@@ -59,6 +59,12 @@ export interface BaseComponentConfig {
   shouldRenderAsSchematicBox?: boolean
 }
 
+export interface ScopedPortSelectorAlias {
+  componentAliases: string[]
+  portAliases: string[]
+  port: PrimitiveComponent
+}
+
 /**
  * A PrimitiveComponent (SmtPad, Port etc.) doesn't have the ability to contain
  * React subtrees or explicit handling of the "footprint" prop. But otherwise
@@ -1139,6 +1145,30 @@ export abstract class PrimitiveComponent<
     const ports = this.selectAll("port")
     const isValidShorthandName = (name: string) =>
       /^[A-Za-z_][A-Za-z0-9_-]*$/.test(name)
+    const addPortSelector = (
+      componentAlias: string,
+      portAlias: string,
+      port: PrimitiveComponent,
+    ) => {
+      const selectors = [
+        `.${componentAlias} > .${portAlias}`,
+        `.${componentAlias} .${portAlias}`,
+      ]
+      if (
+        isValidShorthandName(componentAlias) &&
+        isValidShorthandName(portAlias)
+      ) {
+        selectors.push(`${componentAlias}.${portAlias}`)
+      }
+      for (const selector of selectors) {
+        const matchingPorts = this._cachedSelectAllQueries.get(selector)
+        if (matchingPorts) {
+          if (!matchingPorts.includes(port)) matchingPorts.push(port)
+        } else {
+          this._cachedSelectAllQueries.set(selector, [port])
+        }
+      }
+    }
 
     for (const port of ports) {
       // For ports inside primitive containers (like Symbol), use getParentNormalComponent
@@ -1149,23 +1179,20 @@ export abstract class PrimitiveComponent<
       if (!parentAliases) continue
       for (const parentAlias of parentAliases) {
         for (const portAlias of portAliases) {
-          const selectors = [
-            `.${parentAlias} > .${portAlias}`,
-            `.${parentAlias} .${portAlias}`,
-          ]
-          if (
-            isValidShorthandName(parentAlias) &&
-            isValidShorthandName(portAlias)
-          ) {
-            selectors.push(`${parentAlias}.${portAlias}`)
-          }
-          for (const selector of selectors) {
-            const ar = this._cachedSelectAllQueries.get(selector)
-            if (ar) {
-              ar.push(port)
-            } else {
-              this._cachedSelectAllQueries.set(selector, [port])
-            }
+          addPortSelector(parentAlias, portAlias, port)
+        }
+      }
+    }
+
+    for (const component of this.selectAll("*")) {
+      for (const {
+        componentAliases,
+        portAliases,
+        port,
+      } of component.getScopedPortSelectorAliases()) {
+        for (const componentAlias of componentAliases) {
+          for (const portAlias of portAliases) {
+            addPortSelector(componentAlias, portAlias, port)
           }
         }
       }
@@ -1175,6 +1202,10 @@ export abstract class PrimitiveComponent<
         this._cachedSelectOneQueries.set(selector, ports[0])
       }
     }
+  }
+
+  getScopedPortSelectorAliases(): ScopedPortSelectorAlias[] {
+    return []
   }
 
   /**

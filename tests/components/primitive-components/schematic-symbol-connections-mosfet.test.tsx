@@ -41,7 +41,7 @@ test("schematicsymbol maps MOSFET symbol ports to a chip for traces", async () =
         schX={2}
         schY={0.55}
       />
-      <trace from=".R1 > .pin2" to=".Q1 > .G1" />
+      <trace from=".R1 > .pin2" to=".Q1A > .gate" />
       <trace from=".R2 > .pin1" to=".Q1 > .D1" />
 
       <chip
@@ -65,6 +65,11 @@ test("schematicsymbol maps MOSFET symbol ports to a chip for traces", async () =
   )
 
   await circuit.renderUntilSettled()
+
+  const physicalGatePort = circuit.selectOne("Q1.G1", { type: "port" })
+  const schematicGatePort = circuit.selectOne("Q1A.gate", { type: "port" })
+
+  expect(schematicGatePort).toBe(physicalGatePort)
 
   await expect(circuit).toMatchStackedSchematicSnapshot(import.meta.path)
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
