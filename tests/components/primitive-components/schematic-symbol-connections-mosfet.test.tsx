@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import type { Port } from "lib/components/primitive-components/Port"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("schematicsymbol maps MOSFET symbol ports to a chip for traces", async () => {
@@ -41,7 +42,7 @@ test("schematicsymbol maps MOSFET symbol ports to a chip for traces", async () =
         schX={2}
         schY={0.55}
       />
-      <trace from=".R1 > .pin2" to=".Q1 > .G1" />
+      <trace from=".R1 > .pin2" to=".Q1A > .gate" />
       <trace from=".R2 > .pin1" to=".Q1 > .D1" />
 
       <chip
@@ -65,6 +66,16 @@ test("schematicsymbol maps MOSFET symbol ports to a chip for traces", async () =
   )
 
   await circuit.renderUntilSettled()
+
+  const schematicGatePort = circuit.selectOne<Port>(".Q1A > .gate", {
+    type: "port",
+  })
+  const physicalGatePort = circuit.selectOne<Port>("Q1.G1", {
+    type: "port",
+  })
+  expect(schematicGatePort?.source_port_id).toBe(
+    physicalGatePort!.source_port_id,
+  )
 
   await expect(circuit).toMatchStackedSchematicSnapshot(import.meta.path)
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)

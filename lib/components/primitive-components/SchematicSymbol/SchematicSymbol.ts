@@ -1,11 +1,17 @@
 import { schematicSymbolProps } from "@tscircuit/props"
+import { type SchSymbol, symbols } from "schematic-symbols"
+import type { z } from "zod"
+import { getPinNumberFromLabels } from "../../../utils/getPortFromHints"
 import { PrimitiveComponent } from "../../base-components/PrimitiveComponent"
+import { Port } from "../Port"
 import { SchematicSymbol_doInitialSchematicComponentRender } from "./SchematicSymbol_doInitialSchematicComponentRender"
+import { SchematicSymbol_doInitialPortMatching } from "./SchematicSymbol_doInitialPortMatching"
 
 export class SchematicSymbol extends PrimitiveComponent<
   typeof schematicSymbolProps
 > {
   isSchematicPrimitive = true
+  isPrimitiveContainer = true
 
   get config() {
     return {
@@ -13,6 +19,48 @@ export class SchematicSymbol extends PrimitiveComponent<
       schematicSymbolName: this.props.symbolName,
       zodProps: schematicSymbolProps,
     }
+  }
+
+  constructor(props: z.input<typeof schematicSymbolProps>) {
+    super(props)
+
+    const symbol = symbols[this._getSchematicSymbolNameOrThrow()]!
+    const shouldCreateSourcePort = !(
+      this._parsedProps.chipRef && this._parsedProps.connections
+    )
+
+    for (const symbolPort of symbol.ports) {
+      const pinNumber = getPinNumberFromLabels(symbolPort.labels)
+      if (!pinNumber) {
+        throw new Error(
+          `Schematic symbol port must have a numeric pin label: ${symbolPort.labels.join("/")}`,
+        )
+      }
+      const aliases = symbolPort.labels.filter(
+        (label) =>
+          label !== pinNumber.toString() && label !== `pin${pinNumber}`,
+      )
+      const port = new Port(
+        {
+          pinNumber,
+          aliases,
+        },
+        { shouldCreateSourcePort },
+      )
+      port.schematicSymbolPortDef = symbolPort
+      this.add(port)
+    }
+  }
+
+  get ports(): Port[] {
+    return this.children.filter((child): child is Port => child instanceof Port)
+  }
+
+  getPortForSymbolPort(symbolPort: SchSymbol["ports"][number]): Port | null {
+    return (
+      this.ports.find((port) => port.schematicSymbolPortDef === symbolPort) ??
+      null
+    )
   }
 
   doInitialSourceRender(): void {
@@ -23,6 +71,10 @@ export class SchematicSymbol extends PrimitiveComponent<
       are_pins_interchangeable: false,
     })
     this.source_component_id = sourceComponent.source_component_id
+  }
+
+  doInitialPortMatching(): void {
+    SchematicSymbol_doInitialPortMatching(this)
   }
 
   doInitialSchematicComponentRender(): void {
