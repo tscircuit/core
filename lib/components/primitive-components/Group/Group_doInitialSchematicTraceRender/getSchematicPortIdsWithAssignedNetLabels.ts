@@ -8,9 +8,14 @@ export const getSchematicPortIdsWithAssignedNetLabels = (
 ): Set<SchematicPortId> => {
   const schematicPortIdsWithNetLabels = new Set<SchematicPortId>()
 
-  const netLabels = group.selectAll("netlabel") as NetLabel[]
+  const netLabels =
+    group._getBoard()?.selectAll<NetLabel>("netlabel") ??
+    (group.selectAll("netlabel") as NetLabel[])
 
   for (const netLabel of netLabels) {
+    const { schX, schY } = netLabel._parsedProps
+    if (schX === undefined && schY === undefined) continue
+
     const netLabelPorts = netLabel._getConnectedPorts()
     for (const port of netLabelPorts) {
       if (!port.schematic_port_id) continue
