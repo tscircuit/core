@@ -111,7 +111,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
   _getGlobalPcbPositionBeforeLayout(): { x: number; y: number } {
     if (this.pcb_port_id) {
       const pcbPort = this.root?.db.pcb_port.get(this.pcb_port_id)
-      if (pcbPort) return { x: pcbPort.x, y: pcbPort.y }
+      if (pcbPort?.pcb_component_id) return { x: pcbPort.x, y: pcbPort.y }
     }
 
     const matchedPcbElm = this.matchedComponents.find((c) => c.isPcbPrimitive)
@@ -347,7 +347,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     if (layer) return [layer as LayerRef]
     if (this.pcb_port_id) {
       const pcbPort = this.root?.db.pcb_port.get(this.pcb_port_id)
-      if (pcbPort) return pcbPort.layers as LayerRef[]
+      if (pcbPort?.pcb_component_id) return pcbPort.layers as LayerRef[]
     }
     return Array.from(
       new Set(this.matchedComponents.flatMap((c) => c.getAvailablePcbLayers())),
@@ -586,7 +586,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     if (!this.pcb_port_id && this.source_port_id) {
       const existingPcbPort = this.root?.db.pcb_port
         .list({ source_port_id: this.source_port_id })
-        .at(0)
+        .find((pcbPort) => Boolean(pcbPort.pcb_component_id))
       if (existingPcbPort) {
         this.pcb_port_id = existingPcbPort.pcb_port_id
         return
@@ -809,8 +809,11 @@ export class Port extends PrimitiveComponent<typeof portProps> {
   }
 
   _hasMatchedPcbPrimitive(): boolean {
+    const pcbPort = this.pcb_port_id
+      ? this.root?.db.pcb_port.get(this.pcb_port_id)
+      : null
     return (
-      Boolean(this.pcb_port_id) ||
+      Boolean(pcbPort?.pcb_component_id) ||
       this.matchedComponents.some((c) => c.isPcbPrimitive)
     )
   }

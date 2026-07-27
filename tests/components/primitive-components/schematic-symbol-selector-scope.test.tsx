@@ -8,6 +8,7 @@ test("schematicsymbol and physical chip selectors share mapped connections", asy
     <board width="20mm" height="12mm">
       <schematicsymbol
         name="Q1A"
+        displayName="MOSFET A"
         chipRef=".Q1"
         symbolName="n_channel_e_mosfet_transistor_horz"
         connections={{
