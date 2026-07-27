@@ -72,12 +72,14 @@ const getDirectCrossSubcircuitConnectionLabelText = (
 
 export const insertNetLabelsForPortsMissingTrace = ({
   schematicPortIdsInScope,
+  schematicPortIdsWithExternallyRoutedRepresentations,
   group,
   schPortIdToSourcePortId,
   connKeyToSourceNet,
 }: {
   group: Group<any>
   schematicPortIdsInScope: Set<SchematicPortId>
+  schematicPortIdsWithExternallyRoutedRepresentations: Set<SchematicPortId>
   schPortIdToSourcePortId: Map<SchematicPortId, SourcePortId>
   connKeyToSourceNet: Map<string, SourceNet>
 }) => {
@@ -85,6 +87,10 @@ export const insertNetLabelsForPortsMissingTrace = ({
 
   // Create net labels for ports connected only to a net (no trace connected)
   for (const schematicPortId of schematicPortIdsInScope) {
+    if (
+      schematicPortIdsWithExternallyRoutedRepresentations.has(schematicPortId)
+    )
+      continue
     const schPort = db.schematic_port.get(schematicPortId)
     if (!schPort) continue
     if (schPort.is_connected) continue
