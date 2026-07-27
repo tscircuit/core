@@ -24,6 +24,7 @@ const renderSchematicTracesForSheet = ({
     inputProblem,
     connKeyToSourceNet,
     schematicPortIdsInScope,
+    schematicPortIdsWithExternallyRoutedRepresentations,
     schPortIdToSourcePortId,
     userNetIdToConnKey,
     connKeysWithExplicitPortNetTraces,
@@ -42,6 +43,7 @@ const renderSchematicTracesForSheet = ({
     insertNetLabelsForPortsMissingTrace({
       group,
       schematicPortIdsInScope,
+      schematicPortIdsWithExternallyRoutedRepresentations,
       schPortIdToSourcePortId,
       connKeyToSourceNet,
     })
@@ -95,6 +97,7 @@ const renderSchematicTracesForSheet = ({
   insertNetLabelsForPortsMissingTrace({
     group,
     schematicPortIdsInScope,
+    schematicPortIdsWithExternallyRoutedRepresentations,
     schPortIdToSourcePortId,
     connKeyToSourceNet,
   })
