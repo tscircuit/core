@@ -13,5 +13,11 @@ test("repro160: render the PowerSection Circuit JSON schematic", async () => {
     .find((connector) => connector.name === "J1")
   expect(j1?.selectAll("port")).toHaveLength(16)
 
+  const j1PcbComponent = circuit.db.pcb_component.getWhere({
+    source_component_id: j1?.source_component_id,
+  })
+  expect(j1PcbComponent?.center).toEqual({ x: 0, y: 0 })
+  expect(j1PcbComponent?.layer).toBe("top")
+
   expect(circuitJson).toMatchSchematicSnapshot(import.meta.path)
 })

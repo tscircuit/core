@@ -1,4 +1,4 @@
-import type { SchematicPortArrangement } from "@tscircuit/props"
+import type { ConnectorProps, SchematicPortArrangement } from "@tscircuit/props"
 import type {
   CadComponent,
   PcbComponent,
@@ -26,32 +26,34 @@ const getImportedSchPortArrangement = (
     }
   }
 
-  return {
-    leftSide: arrangement.left_side
-      ? {
-          pins: arrangement.left_side.pins,
-          direction: arrangement.left_side.direction ?? "top-to-bottom",
-        }
-      : undefined,
-    rightSide: arrangement.right_side
-      ? {
-          pins: arrangement.right_side.pins,
-          direction: arrangement.right_side.direction ?? "top-to-bottom",
-        }
-      : undefined,
-    topSide: arrangement.top_side
-      ? {
-          pins: arrangement.top_side.pins,
-          direction: arrangement.top_side.direction ?? "left-to-right",
-        }
-      : undefined,
-    bottomSide: arrangement.bottom_side
-      ? {
-          pins: arrangement.bottom_side.pins,
-          direction: arrangement.bottom_side.direction ?? "left-to-right",
-        }
-      : undefined,
+  const importedArrangement: SchematicPortArrangement = {}
+
+  if (arrangement.left_side) {
+    importedArrangement.leftSide = {
+      pins: arrangement.left_side.pins,
+      direction: arrangement.left_side.direction ?? "top-to-bottom",
+    }
   }
+  if (arrangement.right_side) {
+    importedArrangement.rightSide = {
+      pins: arrangement.right_side.pins,
+      direction: arrangement.right_side.direction ?? "top-to-bottom",
+    }
+  }
+  if (arrangement.top_side) {
+    importedArrangement.topSide = {
+      pins: arrangement.top_side.pins,
+      direction: arrangement.top_side.direction ?? "left-to-right",
+    }
+  }
+  if (arrangement.bottom_side) {
+    importedArrangement.bottomSide = {
+      pins: arrangement.bottom_side.pins,
+      direction: arrangement.bottom_side.direction ?? "left-to-right",
+    }
+  }
+
+  return importedArrangement
 }
 
 const getImportedConnectorPinLabels = (
@@ -80,7 +82,8 @@ const getImportedConnectorPinLabels = (
     if (labels.length > 0) pinLabels[`pin${pinNumber}`] = labels
   }
 
-  return Object.keys(pinLabels).length > 0 ? pinLabels : undefined
+  if (Object.keys(pinLabels).length === 0) return undefined
+  return pinLabels
 }
 
 export function inflateSourceConnector(
@@ -105,7 +108,7 @@ export function inflateSourceConnector(
     inflatorContext,
   })
 
-  const connector = new Connector({
+  const connectorProps: ConnectorProps = {
     name: sourceElm.name,
     standard: sourceElm.standard,
     manufacturerPartNumber: sourceElm.manufacturer_part_number,
@@ -126,7 +129,8 @@ export function inflateSourceConnector(
     pcbRotation: pcbElm?.rotation,
     doNotPlace: pcbElm?.do_not_place,
     obstructsWithinBounds: pcbElm?.obstructs_within_bounds,
-  })
+  }
+  const connector = new Connector(connectorProps)
 
   if (cadElm?.footprinter_string) {
     Object.assign(connector.props, { footprint: cadElm.footprinter_string })
