@@ -22,7 +22,7 @@ import type { SubcircuitI } from "../primitive-components/Group/Subcircuit/Subci
 import { Subcircuit_doInitialRenderIsolatedSubcircuits } from "../primitive-components/Group/Subcircuit/Subcircuit_doInitialRenderIsolatedSubcircuits"
 import { Subcircuit_getSubcircuitPropHash } from "../primitive-components/Group/Subcircuit_getSubcircuitPropHash"
 import type { BoardI } from "./BoardI"
-import { Board_doInitialDifferentialPairSolver } from "./Board_doInitialDifferentialPairSolver"
+import { Board_doDifferentialPairSolver } from "./Board_doDifferentialPairSolver"
 import { Board_doInitialPcbPlacementDesignRuleChecks } from "./Board_doInitialPcbPlacementDesignRuleChecks"
 
 const MIN_EFFECTIVE_BORDER_RADIUS_MM = 0.01
@@ -571,11 +571,11 @@ export class Board
   }
 
   doInitialDifferentialPairSolver() {
-    Board_doInitialDifferentialPairSolver(this)
+    Board_doDifferentialPairSolver(this)
   }
 
   updateDifferentialPairSolver() {
-    Board_doInitialDifferentialPairSolver(this)
+    Board_doDifferentialPairSolver(this)
   }
 
   doInitialPcbDesignRuleChecks() {

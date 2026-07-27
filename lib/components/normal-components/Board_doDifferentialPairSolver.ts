@@ -4,7 +4,7 @@ import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimp
 import { getExistingSimplifiedPcbTracesForReroute } from "../primitive-components/Group/region-replacement"
 import type { Board } from "./Board"
 
-export const Board_doInitialDifferentialPairSolver = (board: Board) => {
+export const Board_doDifferentialPairSolver = (board: Board) => {
   if (
     board.root?.pcbDisabled ||
     board.root?.pcbRoutingDisabled ||
