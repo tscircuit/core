@@ -98,6 +98,12 @@ export type SimpleRouteDifferentialPair = {
   lengthTolerance: number
 }
 
+/** A group of connections that an autorouter should keep together. */
+export type SimpleRouteBus = {
+  name?: string
+  connectionNames: SrjConnectionName[]
+}
+
 export type SimpleRouteJson = Omit<
   AutorouterSimpleRouteJson,
   | "connections"
@@ -108,6 +114,7 @@ export type SimpleRouteJson = Omit<
   | "allowJumpers"
   | "availableJumperTypes"
   | "differentialPairs"
+  | "buses"
 > & {
   layerCount: number
   minTraceWidth: number
@@ -143,6 +150,7 @@ export type SimpleRouteJson = Omit<
   allowJumpers?: boolean
   availableJumperTypes?: Array<"1206x4" | "0603">
   differentialPairs?: SimpleRouteDifferentialPair[]
+  buses?: SimpleRouteBus[]
 }
 
 // declare module "autorouting-dataset" {

@@ -5,6 +5,7 @@ import {
   ConnectivityMap,
   getFullConnectivityMapFromCircuitJson,
 } from "circuit-json-to-connectivity-map"
+import { Bus } from "lib/components/primitive-components/Bus"
 import { DifferentialPair } from "lib/components/primitive-components/DifferentialPair"
 import type { ISubcircuit } from "lib/components/primitive-components/Group/Subcircuit/ISubcircuit"
 import { getObstaclesFromCircuitJson } from "../obstacles/getObstaclesFromCircuitJson"
@@ -14,6 +15,7 @@ import type {
   SimpleRouteJson,
 } from "./SimpleRouteJson"
 import { getDescendantSubcircuitIds } from "./getAncestorSubcircuitIds"
+import { getBusesForSimpleRouteJson } from "./getBusesForSimpleRouteJson"
 import { getDifferentialPairsForSimpleRouteJson } from "./getDifferentialPairsForSimpleRouteJson"
 import { getPreservedRoutedSubcircuitTraces } from "./getPreservedRoutedSubcircuitTraces"
 import { getUnbrokenCopperPourObstacles } from "./getUnbrokenCopperPourObstacles"
@@ -658,6 +660,8 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   const differentialPairs: DifferentialPair[] =
     subcircuitComponent?.selectAll<DifferentialPair>("differentialpair") ?? []
 
+  const buses: Bus[] = subcircuitComponent?.selectAll<Bus>("bus") ?? []
+
   const srjDifferentialPairs: SimpleRouteDifferentialPair[] | undefined =
     getDifferentialPairsForSimpleRouteJson({
       srjConnections: allConns,
@@ -665,6 +669,13 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       sourceTraces: db.source_trace.list(),
       subcircuitId: subcircuit_id,
     })
+
+  const srjBuses = getBusesForSimpleRouteJson({
+    srjConnections: allConns,
+    buses,
+    sourceTraces: db.source_trace.list(),
+    subcircuitId: subcircuit_id,
+  })
 
   if (subcircuit_id) {
     const pointIdToConn = new Map<string, SimpleRouteConnection>()
@@ -724,6 +735,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       obstacles,
       connections: allConns,
       differentialPairs: srjDifferentialPairs,
+      ...(srjBuses ? { buses: srjBuses } : {}),
       traces:
         preservedRoutedSubcircuitTraces.length > 0
           ? preservedRoutedSubcircuitTraces
