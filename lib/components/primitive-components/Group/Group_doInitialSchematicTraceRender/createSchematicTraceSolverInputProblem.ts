@@ -13,9 +13,9 @@ import type { SchematicComponent, SourceNet } from "circuit-json"
 import { getSchematicNetLabelTextWidth } from "lib/utils/schematic/computeSchematicNetLabelCenter"
 import { convertFacingDirectionToElbowDirection } from "lib/utils/schematic/convertFacingDirectionToElbowDirection"
 import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
+import type { NetLabel } from "../../NetLabel"
 import { Port } from "../../Port"
 import { Group } from "../Group"
-import { getNetLabelsInSchematicTraceScope } from "./getNetLabelsInSchematicTraceScope"
 import { getNetNameFromPorts } from "./getNetNameFromPorts"
 import { getPortForSchematicSymbolPort } from "./getPortForSchematicSymbolPort"
 import type { AxisDirection } from "./getSide"
@@ -73,11 +73,12 @@ export type SolverInputContext = {
    */
   schematicPortIdsWithExternallyRoutedRepresentations: Set<SchematicPortId>
   schPortIdToSourcePortId: Map<SchematicPortId, SourcePortId>
+  netLabelsInScope: NetLabel[]
 }
 
 export function createSchematicTraceSolverInputProblem(
   group: Group<any>,
-  opts: { schematicSheetId?: string } = {},
+  opts: { schematicSheetId?: string; netLabels?: NetLabel[] } = {},
 ): SolverInputContext {
   const { db } = group.root!
 
@@ -221,21 +222,6 @@ export function createSchematicTraceSolverInputProblem(
       .filter((port) => port.schematic_port_id)
       .map((port) => [asSchematicPortId(port.schematic_port_id!), port]),
   )
-  const solverManagedNetLabelSchematicPortIds = new Set(
-    getNetLabelsInSchematicTraceScope(group)
-      .filter(
-        (netLabel) =>
-          netLabel._parsedProps.schX === undefined &&
-          netLabel._parsedProps.schY === undefined,
-      )
-      .flatMap((netLabel) => netLabel._getConnectedPorts())
-      .map((port) => port.schematic_port_id)
-      .filter(
-        (schematicPortId): schematicPortId is SchematicPortId =>
-          schematicPortId !== null && schematicPortId !== undefined,
-      )
-      .map(asSchematicPortId),
-  )
   for (const sc of schematicComponents) {
     const ports = db.schematic_port.list({
       schematic_component_id: sc.schematic_component_id,
@@ -250,6 +236,29 @@ export function createSchematicTraceSolverInputProblem(
       }
     }
   }
+  const netLabelsInScope = (opts.netLabels ?? []).filter((netLabel) =>
+    netLabel._getConnectedPorts().some((port) => {
+      if (!port.schematic_port_id) return false
+      return schematicPortIdsInScope.has(
+        asSchematicPortId(port.schematic_port_id),
+      )
+    }),
+  )
+  const solverManagedNetLabelSchematicPortIds = new Set(
+    netLabelsInScope
+      .filter(
+        (netLabel) =>
+          netLabel._parsedProps.schX === undefined &&
+          netLabel._parsedProps.schY === undefined,
+      )
+      .flatMap((netLabel) => netLabel._getConnectedPorts())
+      .map((port) => port.schematic_port_id)
+      .filter(
+        (schematicPortId): schematicPortId is SchematicPortId =>
+          schematicPortId !== null && schematicPortId !== undefined,
+      )
+      .map(asSchematicPortId),
+  )
 
   // Determine allowed subcircuits (this group and its child groups)
   const allowedSubcircuitIds = new Set<string>()
@@ -539,5 +548,6 @@ export function createSchematicTraceSolverInputProblem(
     schematicPortIdsInScope,
     schematicPortIdsWithExternallyRoutedRepresentations,
     schPortIdToSourcePortId,
+    netLabelsInScope,
   }
 }

@@ -4,9 +4,9 @@ import type { SchematicNetLabel, SourceNet } from "circuit-json"
 import Debug from "debug"
 import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
 import { getNetNameFromSourcePorts } from "lib/utils/schematic/getSourcePortNetLabelText"
+import type { NetLabel } from "../../NetLabel"
 import { Port } from "../../Port"
 import { Group } from "../Group"
-import { getNetLabelsInSchematicTraceScope } from "./getNetLabelsInSchematicTraceScope"
 import { getNetLabelTextBounds } from "./getNetLabelTextBounds"
 import { getNetNameFromPorts } from "./getNetNameFromPorts"
 import type { AxisDirection } from "./getSide"
@@ -64,6 +64,7 @@ export function applyNetLabelPlacements(args: {
   connKeysWithExplicitPortNetTraces: Set<string>
   schematicPortIdsWithPreExistingNetLabels: Set<SchematicPortId>
   schematicPortIdsWithRoutedTraces: Set<SchematicPortId>
+  netLabels: NetLabel[]
 }) {
   const {
     group,
@@ -73,6 +74,7 @@ export function applyNetLabelPlacements(args: {
     connKeysWithExplicitPortNetTraces,
     schematicPortIdsWithPreExistingNetLabels,
     schematicPortIdsWithRoutedTraces,
+    netLabels,
   } = args
   const { db } = group.root!
 
@@ -120,8 +122,7 @@ export function applyNetLabelPlacements(args: {
     }
   }
   const globalConnMap = solver.mspConnectionPairSolver!.globalConnMap
-  const netLabelComponents = getNetLabelsInSchematicTraceScope(group)
-  const userDefinedNetLabels: UserDefinedNetLabel[] = netLabelComponents
+  const userDefinedNetLabels: UserDefinedNetLabel[] = netLabels
     .map((label) => {
       if (!label.schematic_net_label_id) return null
       const dbLabel = db.schematic_net_label.get(label.schematic_net_label_id)

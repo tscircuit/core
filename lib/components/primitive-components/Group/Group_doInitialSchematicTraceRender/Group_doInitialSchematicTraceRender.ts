@@ -1,5 +1,7 @@
 import { SchematicTracePipelineSolver } from "@tscircuit/schematic-trace-solver"
 import Debug from "debug"
+import type { PrimitiveComponent } from "../../../base-components/PrimitiveComponent"
+import { NetLabel } from "../../NetLabel"
 import { Group } from "../Group"
 import { applyNetLabelPlacements } from "./applyNetLabelPlacements"
 import { applyTracesFromSolverOutput } from "./applyTracesFromSolverOutput"
@@ -16,9 +18,11 @@ const debug = Debug("Group_doInitialSchematicTraceRender")
 const renderSchematicTracesForSheet = ({
   group,
   schematicSheetId,
+  netLabels,
 }: {
   group: Group<any>
   schematicSheetId?: string
+  netLabels: NetLabel[]
 }) => {
   const {
     inputProblem,
@@ -28,12 +32,16 @@ const renderSchematicTracesForSheet = ({
     schPortIdToSourcePortId,
     userNetIdToConnKey,
     connKeysWithExplicitPortNetTraces,
-  } = createSchematicTraceSolverInputProblem(group, { schematicSheetId })
+    netLabelsInScope,
+  } = createSchematicTraceSolverInputProblem(group, {
+    schematicSheetId,
+    netLabels,
+  })
 
   if (inputProblem.chips.length === 0) return
 
   const schematicPortIdsWithPreExistingNetLabels =
-    getSchematicPortIdsWithAssignedNetLabels(group)
+    getSchematicPortIdsWithAssignedNetLabels(netLabelsInScope)
 
   const hasRouteableSchematicConnections =
     inputProblem.directConnections.length > 0 ||
@@ -92,6 +100,7 @@ const renderSchematicTracesForSheet = ({
     connKeysWithExplicitPortNetTraces,
     schematicPortIdsWithPreExistingNetLabels,
     schematicPortIdsWithRoutedTraces,
+    netLabels: netLabelsInScope,
   })
 
   insertNetLabelsForPortsMissingTrace({
@@ -112,6 +121,25 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
   if (!group.root?._featureMspSchematicTraceRouting) return
   if (!group.isSubcircuit) return
   if (group.root?.schematicDisabled) return
+
+  // A net label that targets this group can be declared in the group itself or
+  // in any enclosing schematic scope (as in a board-level label targeting a
+  // port inside a subcircuit). Collect those scopes once for all sheet passes.
+  // selectAll intentionally stops at child subcircuit boundaries, so walking
+  // upward includes ancestor-owned labels without pulling in sibling labels.
+  const netLabels = new Set<NetLabel>()
+  const board = group._getBoard()
+  let schematicScope: PrimitiveComponent | null = group
+  while (schematicScope) {
+    if (schematicScope instanceof Group) {
+      for (const netLabel of schematicScope.selectAll<NetLabel>("netlabel")) {
+        netLabels.add(netLabel)
+      }
+    }
+    if (schematicScope === board) break
+    schematicScope = schematicScope.parent
+  }
+  const netLabelComponents = [...netLabels]
 
   const schematicGroupIds = new Set(
     [
@@ -140,11 +168,15 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
   )
 
   if (schematicSheetIds.size === 0) {
-    renderSchematicTracesForSheet({ group })
+    renderSchematicTracesForSheet({ group, netLabels: netLabelComponents })
     return
   }
 
   for (const schematicSheetId of schematicSheetIds) {
-    renderSchematicTracesForSheet({ group, schematicSheetId })
+    renderSchematicTracesForSheet({
+      group,
+      schematicSheetId,
+      netLabels: netLabelComponents,
+    })
   }
 }
