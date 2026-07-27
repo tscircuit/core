@@ -52,7 +52,7 @@
     "@tscircuit/math-utils": "^0.0.36",
     "@tscircuit/miniflex": "^0.0.4",
     "@tscircuit/ngspice-spice-engine": "^0.0.20",
-    "@tscircuit/props": "^0.0.592",
+    "@tscircuit/props": "^0.0.593",
     "@tscircuit/schematic-match-adapt": "^0.0.18",
     "@tscircuit/schematic-trace-solver": "^0.0.111",
     "@tscircuit/solver-utils": "^0.0.16",
