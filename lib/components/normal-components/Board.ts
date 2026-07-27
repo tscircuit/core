@@ -22,6 +22,7 @@ import type { SubcircuitI } from "../primitive-components/Group/Subcircuit/Subci
 import { Subcircuit_doInitialRenderIsolatedSubcircuits } from "../primitive-components/Group/Subcircuit/Subcircuit_doInitialRenderIsolatedSubcircuits"
 import { Subcircuit_getSubcircuitPropHash } from "../primitive-components/Group/Subcircuit_getSubcircuitPropHash"
 import type { BoardI } from "./BoardI"
+import { Board_doInitialDifferentialPairSolver } from "./Board_doInitialDifferentialPairSolver"
 import { Board_doInitialPcbPlacementDesignRuleChecks } from "./Board_doInitialPcbPlacementDesignRuleChecks"
 
 const MIN_EFFECTIVE_BORDER_RADIUS_MM = 0.01
@@ -567,6 +568,14 @@ export class Board
     if (!this.pcb_board_id) return
     db.pcb_board.delete(this.pcb_board_id!)
     this.pcb_board_id = null
+  }
+
+  doInitialDifferentialPairSolver() {
+    Board_doInitialDifferentialPairSolver(this)
+  }
+
+  updateDifferentialPairSolver() {
+    Board_doInitialDifferentialPairSolver(this)
   }
 
   doInitialPcbDesignRuleChecks() {
