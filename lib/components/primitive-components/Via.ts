@@ -4,8 +4,10 @@ import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
 import { getViaDiameterDefaultsWithOverrides } from "lib/utils/pcbStyle/getViaDiameterDefaults"
 import { z } from "zod"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
-import type { Net } from "./Net"
+import { Net } from "./Net"
 import { Port } from "./Port"
+import { isPcbPrimitiveContainedWithinBeforeRender } from "./Port/pcbPrimitiveOverlapBeforeRender"
+import type { SmtPad } from "./SmtPad"
 import type { Trace } from "./Trace/Trace"
 export class Via extends PrimitiveComponent<typeof viaProps> {
   pcb_via_id: string | null = null
@@ -106,7 +108,12 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
    */
   _getConnectedNetOrTrace(): Net | Trace | null {
     const connectsTo = this._parsedProps.connectsTo
-    if (!connectsTo) return null
+    if (!connectsTo) {
+      return (
+        this._getPortFromContainingPad()?._getDirectlyConnectedTraces()[0] ??
+        null
+      )
+    }
 
     const subcircuit = this.getSubcircuit()
     const selectors = Array.isArray(connectsTo) ? connectsTo : [connectsTo]
@@ -123,6 +130,21 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
 
     return null
   }
+
+  private _getPortFromContainingPad(): Port | null {
+    if (this.parent?.componentName !== "Footprint") return null
+
+    const containingPadPorts = new Set(
+      this.parent.children
+        .filter((child): child is SmtPad => child.componentName === "SmtPad")
+        .filter((pad) => isPcbPrimitiveContainedWithinBeforeRender(this, pad))
+        .map((pad) => pad.matchedPort)
+        .filter((port): port is Port => port !== null),
+    )
+
+    return containingPadPorts.size === 1 ? [...containingPadPorts][0] : null
+  }
+
   doInitialPcbComponentRender(): void {
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
@@ -184,10 +206,14 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
     } as Omit<PcbVia & { net_is_assignable?: boolean }, "type" | "pcb_via_id">)
     this.pcb_via_id = pcb_via.pcb_via_id
 
-    const connected = this._getConnectedNetOrTrace()
-    if (connected && "source_net_id" in connected && connected.source_net_id) {
+    const connectedNetOrTrace = this._getConnectedNetOrTrace()
+    const pcbConnectivityId =
+      connectedNetOrTrace instanceof Net
+        ? connectedNetOrTrace.source_net_id
+        : connectedNetOrTrace?.source_trace_id
+    if (pcbConnectivityId) {
       db.pcb_via.update(this.pcb_via_id, {
-        pcb_trace_id: connected.source_net_id,
+        pcb_trace_id: pcbConnectivityId,
       })
     }
   }
