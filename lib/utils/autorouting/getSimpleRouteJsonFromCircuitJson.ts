@@ -735,7 +735,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       obstacles,
       connections: allConns,
       differentialPairs: srjDifferentialPairs,
-      buses: srjBuses,
+      ...(srjBuses ? { buses: srjBuses } : {}),
       traces:
         preservedRoutedSubcircuitTraces.length > 0
           ? preservedRoutedSubcircuitTraces

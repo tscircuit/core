@@ -33,6 +33,7 @@ test("45 degree rects bug", () => {
 
   // we should only be seeing one obstacle here, but we see 2
   expect(simpleRouteJson.obstacles.length).toBe(1)
+  expect(simpleRouteJson).not.toHaveProperty("buses")
   expect(simpleRouteJson).toMatchInlineSnapshot(`
     {
       "bounds": {
@@ -41,7 +42,6 @@ test("45 degree rects bug", () => {
         "minX": -3.95,
         "minY": -2.45,
       },
-      "buses": undefined,
       "connections": [],
       "differentialPairs": undefined,
       "layerCount": 2,
