@@ -1,8 +1,6 @@
 import { schematicSymbolProps } from "@tscircuit/props"
-import {
-  PrimitiveComponent,
-  type ScopedPortSelectorAlias,
-} from "../../base-components/PrimitiveComponent"
+import { PrimitiveComponent } from "../../base-components/PrimitiveComponent"
+import type { Port } from "../Port"
 import {
   type MappedSchematicSymbolPort,
   SchematicSymbol_doInitialPortMatching,
@@ -38,12 +36,12 @@ export class SchematicSymbol extends PrimitiveComponent<
     SchematicSymbol_doInitialPortMatching(this)
   }
 
-  getScopedPortSelectorAliases(): ScopedPortSelectorAlias[] {
-    return this.mappedPorts.map(({ symbolPort, referencedPort }) => ({
-      componentAliases: this.getNameAndAliases(),
-      portAliases: getConnectionNamesForSymbolPort(symbolPort.labels),
-      port: referencedPort,
-    }))
+  _resolveMappedPort(portName: string): Port | null {
+    return (
+      this.mappedPorts.find(({ symbolPort }) =>
+        getConnectionNamesForSymbolPort(symbolPort.labels).includes(portName),
+      )?.referencedPort ?? null
+    )
   }
 
   doInitialSchematicComponentRender(): void {
