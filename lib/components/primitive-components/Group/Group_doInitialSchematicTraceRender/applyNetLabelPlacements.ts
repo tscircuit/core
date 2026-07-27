@@ -12,7 +12,6 @@ import { getNetNameFromPorts } from "./getNetNameFromPorts"
 import type { AxisDirection } from "./getSide"
 import { oppositeSide } from "./oppositeSide"
 import { type SchematicPortId, asSchematicPortId } from "./port-id-types"
-import { shouldUseSchematicTraceSolverForNetLabel } from "./shouldUseSchematicTraceSolverForNetLabel"
 
 const debug = Debug("Group_doInitialSchematicTraceRender")
 
@@ -134,7 +133,8 @@ export function applyNetLabelPlacements(args: {
           .map((port) => port.schematic_port_id)
           .filter((id): id is SchematicPortId => Boolean(id)),
         shouldUseSchematicTraceSolver:
-          shouldUseSchematicTraceSolverForNetLabel(label),
+          label._parsedProps.schX === undefined &&
+          label._parsedProps.schY === undefined,
       }
     })
     .filter((label): label is UserDefinedNetLabel => label !== null)

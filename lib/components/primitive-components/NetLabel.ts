@@ -14,7 +14,6 @@ import {
 import { calculateElbow } from "calculate-elbow"
 import { convertFacingDirectionToElbowDirection } from "lib/utils/schematic/convertFacingDirectionToElbowDirection"
 import { getEnteringEdgeFromDirection } from "lib/utils/schematic/getEnteringEdgeFromDirection"
-import { shouldUseSchematicTraceSolverForNetLabel } from "./Group/Group_doInitialSchematicTraceRender/shouldUseSchematicTraceSolverForNetLabel"
 
 export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
   source_net_label_id?: string
@@ -188,7 +187,8 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
     if (!this.root?._featureMspSchematicTraceRouting) return
     if (this.root?.schematicDisabled) return
     if (this.getCollapsedSchematicBoxAncestor()) return
-    if (shouldUseSchematicTraceSolverForNetLabel(this)) return
+    const { schX, schY } = this._parsedProps
+    if (schX === undefined && schY === undefined) return
 
     const { db } = this.root!
     const connectsTo = this._resolveConnectsTo()

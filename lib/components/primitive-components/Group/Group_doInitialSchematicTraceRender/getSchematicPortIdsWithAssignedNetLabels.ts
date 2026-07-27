@@ -2,7 +2,6 @@ import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import type { Group } from "../Group"
 import { getNetLabelsInSchematicTraceScope } from "./getNetLabelsInSchematicTraceScope"
 import { type SchematicPortId, asSchematicPortId } from "./port-id-types"
-import { shouldUseSchematicTraceSolverForNetLabel } from "./shouldUseSchematicTraceSolverForNetLabel"
 
 export const getSchematicPortIdsWithAssignedNetLabels = (
   group: Group<any>,
@@ -12,7 +11,8 @@ export const getSchematicPortIdsWithAssignedNetLabels = (
   const netLabels = getNetLabelsInSchematicTraceScope(group)
 
   for (const netLabel of netLabels) {
-    if (shouldUseSchematicTraceSolverForNetLabel(netLabel)) continue
+    const { schX, schY } = netLabel._parsedProps
+    if (schX === undefined && schY === undefined) continue
 
     const netLabelPorts = netLabel._getConnectedPorts()
     for (const port of netLabelPorts) {

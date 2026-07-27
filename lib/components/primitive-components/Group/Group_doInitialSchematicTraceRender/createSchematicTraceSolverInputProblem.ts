@@ -26,7 +26,6 @@ import {
   asSourcePortId,
 } from "./port-id-types"
 import { schematicTextToTextBox } from "./schematicTextToTextBounds"
-import { shouldUseSchematicTraceSolverForNetLabel } from "./shouldUseSchematicTraceSolverForNetLabel"
 
 const DEFAULT_MAX_MSP_PAIR_DISTANCE = 2.4
 const SCHEMATIC_RAIL_NET_LABEL_HEIGHT = 0.42
@@ -224,7 +223,11 @@ export function createSchematicTraceSolverInputProblem(
   )
   const solverManagedNetLabelSchematicPortIds = new Set(
     getNetLabelsInSchematicTraceScope(group)
-      .filter(shouldUseSchematicTraceSolverForNetLabel)
+      .filter(
+        (netLabel) =>
+          netLabel._parsedProps.schX === undefined &&
+          netLabel._parsedProps.schY === undefined,
+      )
       .flatMap((netLabel) => netLabel._getConnectedPorts())
       .map((port) => port.schematic_port_id)
       .filter(
