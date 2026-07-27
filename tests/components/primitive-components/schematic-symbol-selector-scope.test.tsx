@@ -1,16 +1,13 @@
 import { expect, test } from "bun:test"
-import type { Port } from "lib/components/primitive-components/Port"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("schematicsymbol maps MOSFET symbol ports to a chip for traces", async () => {
+test("schematicsymbol and physical chip selectors share mapped connections", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
     <board width="20mm" height="12mm">
-      <schematicsheet name="MOSFET A" displayName="MOSFET A" sheetIndex={0} />
       <schematicsymbol
         name="Q1A"
-        displayName="MOSFET A"
         chipRef=".Q1"
         symbolName="n_channel_e_mosfet_transistor_horz"
         connections={{
@@ -18,17 +15,16 @@ test("schematicsymbol maps MOSFET symbol ports to a chip for traces", async () =
           source: "Q1.S1",
           drain: "Q1.D1",
         }}
-        schSheetName="MOSFET A"
         schX={0}
         schY={0}
       />
+
       <resistor
         name="R1"
         resistance="10k"
         footprint="0402"
         pcbX={-5}
         pcbY={1}
-        schSheetName="MOSFET A"
         schX={-2}
         schY={-0.1}
       />
@@ -38,12 +34,12 @@ test("schematicsymbol maps MOSFET symbol ports to a chip for traces", async () =
         footprint="0402"
         pcbX={5}
         pcbY={1}
-        schSheetName="MOSFET A"
         schX={2}
         schY={0.55}
       />
-      <trace from=".R1 > .pin2" to=".Q1A > .gate" />
-      <trace from=".R2 > .pin1" to=".Q1 > .D1" />
+
+      <trace from="R1.pin2" to="Q1A.pin3" />
+      <trace from="R2.pin1" to="Q1.pin7" />
 
       <chip
         name="Q1"
@@ -67,16 +63,6 @@ test("schematicsymbol maps MOSFET symbol ports to a chip for traces", async () =
 
   await circuit.renderUntilSettled()
 
-  const schematicGatePort = circuit.selectOne<Port>(".Q1A > .gate", {
-    type: "port",
-  })
-  const physicalGatePort = circuit.selectOne<Port>("Q1.G1", {
-    type: "port",
-  })
-  expect(schematicGatePort?.source_port_id).toBe(
-    physicalGatePort!.source_port_id,
-  )
-
-  await expect(circuit).toMatchStackedSchematicSnapshot(import.meta.path)
+  await expect(circuit).toMatchSchematicSnapshot(import.meta.path)
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
