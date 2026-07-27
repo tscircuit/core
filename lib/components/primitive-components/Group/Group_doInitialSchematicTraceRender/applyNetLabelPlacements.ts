@@ -15,14 +15,15 @@ import { type SchematicPortId, asSchematicPortId } from "./port-id-types"
 
 const debug = Debug("Group_doInitialSchematicTraceRender")
 
-// User-defined net labels are placed directly via a <netlabel/> in the source,
-// as opposed to labels the trace solver places automatically.
-interface UserDefinedNetLabel extends SchematicNetLabel {
+interface UserDefinedNetLabel {
+  schematicNetLabel: SchematicNetLabel
   schematicPortIds: SchematicPortId[]
+  shouldUseSchematicTraceSolver: boolean
 }
 
 const isSameNet = (label: UserDefinedNetLabel, sourceNet: SourceNet) =>
-  label.source_net_id != null && label.source_net_id === sourceNet.source_net_id
+  label.schematicNetLabel.source_net_id != null &&
+  label.schematicNetLabel.source_net_id === sourceNet.source_net_id
 
 // A user-defined label is redundant with a solver placement when it labels the
 // same net and either shares one of the placement's ports or visually overlaps it.
@@ -45,9 +46,12 @@ const isUserDefinedNetLabelRedundantWithPlacement = (
   ) {
     return true
   }
-  if (!label.center) return false
+  if (!label.schematicNetLabel.center) return false
   return doBoundsOverlap(
-    getNetLabelTextBounds({ center: label.center, text: label.text }),
+    getNetLabelTextBounds({
+      center: label.schematicNetLabel.center,
+      text: label.schematicNetLabel.text,
+    }),
     solverPlacement.bounds,
   )
 }
@@ -60,6 +64,7 @@ export function applyNetLabelPlacements(args: {
   connKeysWithExplicitPortNetTraces: Set<string>
   schematicPortIdsWithPreExistingNetLabels: Set<SchematicPortId>
   schematicPortIdsWithRoutedTraces: Set<SchematicPortId>
+  netLabels: NetLabel[]
 }) {
   const {
     group,
@@ -69,6 +74,7 @@ export function applyNetLabelPlacements(args: {
     connKeysWithExplicitPortNetTraces,
     schematicPortIdsWithPreExistingNetLabels,
     schematicPortIdsWithRoutedTraces,
+    netLabels,
   } = args
   const { db } = group.root!
 
@@ -116,19 +122,20 @@ export function applyNetLabelPlacements(args: {
     }
   }
   const globalConnMap = solver.mspConnectionPairSolver!.globalConnMap
-  const userDefinedNetLabels: UserDefinedNetLabel[] = (
-    group.selectAll("netlabel") as NetLabel[]
-  )
+  const userDefinedNetLabels: UserDefinedNetLabel[] = netLabels
     .map((label) => {
       if (!label.schematic_net_label_id) return null
       const dbLabel = db.schematic_net_label.get(label.schematic_net_label_id)
       if (!dbLabel) return null
       return {
-        ...dbLabel,
+        schematicNetLabel: dbLabel,
         schematicPortIds: label
           ._getConnectedPorts()
           .map((port) => port.schematic_port_id)
           .filter((id): id is SchematicPortId => Boolean(id)),
+        shouldUseSchematicTraceSolver:
+          label._parsedProps.schX === undefined &&
+          label._parsedProps.schY === undefined,
       }
     })
     .filter((label): label is UserDefinedNetLabel => label !== null)
@@ -220,6 +227,25 @@ export function applyNetLabelPlacements(args: {
         anchor_side,
         text,
       })
+
+      const solverManagedUserNetLabel = userDefinedNetLabels.find(
+        (label) =>
+          label.shouldUseSchematicTraceSolver &&
+          isSameNet(label, sourceNet) &&
+          label.schematicPortIds.some((id) => schPortIds.includes(id)),
+      )
+      if (solverManagedUserNetLabel) {
+        db.schematic_net_label.update(
+          solverManagedUserNetLabel.schematicNetLabel.schematic_net_label_id,
+          {
+            anchor_position,
+            center,
+            anchor_side,
+            schematic_sheet_id: schematicSheetId,
+          },
+        )
+        continue
+      }
 
       if (!isPowerOrGroundNet) {
         const solverPlacement = {

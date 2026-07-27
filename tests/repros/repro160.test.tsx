@@ -51,8 +51,7 @@ test("repro160: netlabel selector targets chip represented by schematicbox", asy
         }}
       />
 
-      {/* Undefined behavior: should the netlabel connect to U1 or U1A? */}
-      <netlabel schX={3} schY={2} net="GND" connectsTo="U1.GND" />
+      <netlabel net="GND" connectsTo="U1.GND" />
     </board>,
   )
 

@@ -187,6 +187,9 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
     if (!this.root?._featureMspSchematicTraceRouting) return
     if (this.root?.schematicDisabled) return
     if (this.getCollapsedSchematicBoxAncestor()) return
+    const { schX, schY } = this._parsedProps
+    if (schX === undefined && schY === undefined) return
+
     const { db } = this.root!
     const connectsTo = this._resolveConnectsTo()
     if (!connectsTo || connectsTo.length === 0) return
