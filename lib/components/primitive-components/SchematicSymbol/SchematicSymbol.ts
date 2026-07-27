@@ -1,6 +1,5 @@
 import { schematicSymbolProps } from "@tscircuit/props"
 import { type SchSymbol, symbols } from "schematic-symbols"
-import type { z } from "zod"
 import { getPinNumberFromLabels } from "../../../utils/getPortFromHints"
 import { PrimitiveComponent } from "../../base-components/PrimitiveComponent"
 import { Port } from "../Port"
@@ -21,9 +20,7 @@ export class SchematicSymbol extends PrimitiveComponent<
     }
   }
 
-  constructor(props: z.input<typeof schematicSymbolProps>) {
-    super(props)
-
+  initPorts(): void {
     const symbol = symbols[this._getSchematicSymbolNameOrThrow()]!
     const shouldCreateSourcePort = !(
       this._parsedProps.chipRef && this._parsedProps.connections
@@ -35,6 +32,13 @@ export class SchematicSymbol extends PrimitiveComponent<
         throw new Error(
           `Schematic symbol port must have a numeric pin label: ${symbolPort.labels.join("/")}`,
         )
+      }
+      const existingPort = this.ports.find(
+        (port) => port._parsedProps.pinNumber === pinNumber,
+      )
+      if (existingPort) {
+        existingPort.schematicSymbolPortDef = symbolPort
+        continue
       }
       const aliases = symbolPort.labels.filter(
         (label) =>
@@ -50,6 +54,14 @@ export class SchematicSymbol extends PrimitiveComponent<
       port.schematicSymbolPortDef = symbolPort
       this.add(port)
     }
+  }
+
+  doInitialInitializePortsFromChildren(): void {
+    this.initPorts()
+  }
+
+  updateInitializePortsFromChildren(): void {
+    this.initPorts()
   }
 
   get ports(): Port[] {
