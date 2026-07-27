@@ -22,7 +22,7 @@ const powerPinLabels = {
   pin8: "GND",
 }
 
-test("netlabel selector targets chip represented by schematicbox", async () => {
+test("repro160: netlabel selector targets chip represented by schematicbox", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
