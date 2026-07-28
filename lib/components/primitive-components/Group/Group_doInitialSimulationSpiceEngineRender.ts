@@ -12,18 +12,24 @@ import type { Ammeter } from "../../normal-components/Ammeter"
 import type { AnalogAcSweepSimulation } from "../AnalogAcSweepSimulation"
 import type { AnalogDcOperatingPointSimulation } from "../AnalogDcOperatingPointSimulation"
 import type { AnalogDcSweepSimulation } from "../AnalogDcSweepSimulation"
+import type { AnalogMeasurement } from "../AnalogMeasurement"
 import type { AnalogSimulation } from "../AnalogSimulation"
-import type { AnalogTransientSimulation } from "../AnalogTransientSimulation"
+import { AnalogTransientSimulation } from "../AnalogTransientSimulation"
 import type { VoltageProbe } from "../VoltageProbe"
 import type { GraphDisplayOverrides } from "./GraphDisplayOverrides"
 import type { Group } from "./Group"
 import type { InsertedSimulationGraph } from "./InsertedSimulationGraph"
 import { attachSweepCoordinateToSimulationResult } from "./attachSweepCoordinateToSimulationResult"
 import { createSimulationRuns } from "./createSimulationRuns"
+import { evaluateAnalogMeasurement } from "./evaluateAnalogMeasurement"
 import {
   getAmmeterGraphDisplayOverrides,
   getVoltageProbeGraphDisplayOverrides,
 } from "./getGraphDisplayOverrides"
+import {
+  addImplicitMeasurementVoltageProbes,
+  isImplicitMeasurementVoltageProbeId,
+} from "./implicit-measurement-voltage-probes"
 import { insertIndependentAxisScopeTraces } from "./insertIndependentAxisScopeTraces"
 import { isCircuitElementInput } from "./isCircuitElementInput"
 import { isCurrentGraph } from "./isCurrentGraph"
@@ -124,6 +130,7 @@ const getCircuitJsonForAnalogSimulation = ({
       element.type === "simulation_dc_sweep_current_graph" ||
       element.type === "simulation_ac_sweep_voltage_graph" ||
       element.type === "simulation_ac_sweep_current_graph" ||
+      element.type === "simulation_measurement_result" ||
       element.type === "simulation_unknown_experiment_error"
     ) {
       return false
@@ -175,15 +182,26 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
     }
 
     const simulationScope = analogSimulation.getGroup() ?? group
+    const analogMeasurements =
+      analogSimulation instanceof AnalogTransientSimulation
+        ? analogSimulation.children.filter(
+            (child): child is AnalogMeasurement =>
+              child.componentName === "AnalogMeasurement",
+          )
+        : []
     const voltageProbes =
       simulationScope.selectAll<VoltageProbe>("voltageprobe")
     const ammeters = simulationScope.selectAll<Ammeter>("ammeter")
-    const circuitJson = getCircuitJsonForAnalogSimulation({
+    const scopedCircuitJson = getCircuitJsonForAnalogSimulation({
       circuitJson: root.db.toArray(),
       simulationExperimentId,
       voltageProbes,
       ammeters,
     })
+    const circuitJson =
+      analogMeasurements.length > 0
+        ? addImplicitMeasurementVoltageProbes(scopedCircuitJson)
+        : scopedCircuitJson
 
     let simulationRuns: ReturnType<typeof createSimulationRuns>
     try {
@@ -308,8 +326,18 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
         // Add simulation results to the database
         const insertedVoltageGraphs: InsertedSimulationGraph[] = []
         const insertedCurrentGraphs: InsertedSimulationGraph[] = []
+        const measurementValuesByComponent = new Map<
+          AnalogMeasurement,
+          number[]
+        >(
+          analogMeasurements.map((analogMeasurement) => [
+            analogMeasurement,
+            [],
+          ]),
+        )
 
         for (const simulationRun of simulationRuns) {
+          const insertedSimulationGraphsForRun: InsertedSimulationGraph[] = []
           debug(`Running simulation with engine: ${engineName}`)
           const simulationResult = await spiceEngine.simulate(
             simulationRun.spiceString,
@@ -328,8 +356,8 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
             const simulationResultWithSweepCoordinate =
               attachSweepCoordinateToSimulationResult({
                 simulationResult: simulationResultCircuitElement,
-                simulationParameterSweepCoordinate:
-                  simulationRun.simulationParameterSweepCoordinate,
+                simulationParameterSweepCoordinates:
+                  simulationRun.simulationParameterSweepCoordinates,
               })
 
             if (isVoltageGraph(simulationResultWithSweepCoordinate)) {
@@ -410,25 +438,77 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
               }
             }
 
-            const insertedSimulationResult = root.db.insert(
-              simulationResultWithSweepCoordinate,
-            )
+            const isImplicitMeasurementGraph =
+              isVoltageGraph(simulationResultWithSweepCoordinate) &&
+              isImplicitMeasurementVoltageProbeId(
+                simulationResultWithSweepCoordinate.source_probe_id,
+              )
+            const insertedSimulationResult = isImplicitMeasurementGraph
+              ? simulationResultWithSweepCoordinate
+              : root.db.insert(simulationResultWithSweepCoordinate)
             if (isVoltageGraph(insertedSimulationResult)) {
-              insertedVoltageGraphs.push({
+              const insertedVoltageGraph: InsertedSimulationGraph = {
                 type: "voltage",
                 graph: insertedSimulationResult,
-              })
+              }
+              if (!isImplicitMeasurementGraph) {
+                insertedVoltageGraphs.push(insertedVoltageGraph)
+              }
+              insertedSimulationGraphsForRun.push(insertedVoltageGraph)
             }
             if (isCurrentGraph(insertedSimulationResult)) {
-              insertedCurrentGraphs.push({
+              const insertedCurrentGraph: InsertedSimulationGraph = {
                 type: "current",
                 graph: insertedSimulationResult,
-              })
+              }
+              insertedCurrentGraphs.push(insertedCurrentGraph)
+              insertedSimulationGraphsForRun.push(insertedCurrentGraph)
             }
             debug(
-              `Inserted ${simulationResultWithSweepCoordinate.type} into database`,
+              isImplicitMeasurementGraph
+                ? `Collected ${simulationResultWithSweepCoordinate.type} for measurement`
+                : `Inserted ${simulationResultWithSweepCoordinate.type} into database`,
             )
           }
+
+          for (const analogMeasurement of analogMeasurements) {
+            const measurementValues =
+              measurementValuesByComponent.get(analogMeasurement)
+            if (!measurementValues) {
+              throw new Error("Analog measurement result collector is missing")
+            }
+            measurementValues.push(
+              evaluateAnalogMeasurement({
+                analogMeasurement,
+                simulationScope,
+                simulationGraphs: insertedSimulationGraphsForRun,
+              }),
+            )
+          }
+        }
+
+        for (const analogMeasurement of analogMeasurements) {
+          const measurementValues =
+            measurementValuesByComponent.get(analogMeasurement)
+          if (!measurementValues) {
+            throw new Error("Analog measurement result collector is missing")
+          }
+          const simulationParameterSweepCoordinateSets = simulationRuns.map(
+            (simulationRun) =>
+              simulationRun.simulationParameterSweepCoordinates ?? [],
+          )
+          const hasParameterSweep = simulationParameterSweepCoordinateSets.some(
+            (coordinateSet) => coordinateSet.length > 0,
+          )
+          root.db.simulation_measurement_result.insert({
+            simulation_experiment_id: simulationExperimentId,
+            name: analogMeasurement._parsedProps.name,
+            measurement_values: measurementValues,
+            measurement_unit: analogMeasurement._parsedProps.unit,
+            simulation_parameter_sweep_coordinate_sets: hasParameterSweep
+              ? simulationParameterSweepCoordinateSets
+              : undefined,
+          })
         }
 
         if (analogSimulation.usesIndependentGraphAxes()) {

@@ -30,16 +30,6 @@ export abstract class AnalogAnalysisSimulation<
       )
     }
 
-    const sweepParameterCount = this.children.filter(
-      (child) => child.componentName === "AnalogSweepParameter",
-    ).length
-    if (sweepParameterCount > 1) {
-      this.renderError(
-        "An analog simulation can contain at most one sweep parameter.",
-      )
-      return null
-    }
-
     const simulationExperiment = this.insertSimulationExperiment()
     this.simulation_experiment_id =
       simulationExperiment?.simulation_experiment_id ?? null

@@ -12,21 +12,21 @@ type SimulationExperimentId = SimulationExperiment["simulation_experiment_id"]
 export interface SimulationRun {
   spiceNetlist: SpiceNetlist
   spiceString: string
-  simulationParameterSweepCoordinate?: SimulationParameterSweepCoordinate
+  simulationParameterSweepCoordinates?: SimulationParameterSweepCoordinate[]
 }
 
 const createSimulationRun = ({
   circuitJson,
-  simulationParameterSweepCoordinate,
+  simulationParameterSweepCoordinates,
 }: {
   circuitJson: AnyCircuitElement[]
-  simulationParameterSweepCoordinate?: SimulationParameterSweepCoordinate
+  simulationParameterSweepCoordinates?: SimulationParameterSweepCoordinate[]
 }): SimulationRun => {
   const spiceNetlist = circuitJsonToSpice(circuitJson)
   return {
     spiceNetlist,
     spiceString: spiceNetlist.toSpiceString(),
-    simulationParameterSweepCoordinate,
+    simulationParameterSweepCoordinates,
   }
 }
 
@@ -37,31 +37,61 @@ export const createSimulationRuns = ({
   circuitJson: AnyCircuitElement[]
   simulationExperimentId: SimulationExperimentId
 }): SimulationRun[] => {
-  const parameterSweep = circuitJson.find(
+  const parameterSweeps = circuitJson.filter(
     (circuitElement): circuitElement is SimulationParameterSweep =>
       circuitElement.type === "simulation_parameter_sweep" &&
       circuitElement.simulation_experiment_id === simulationExperimentId,
   )
-  if (!parameterSweep) {
+  if (parameterSweeps.length === 0) {
     return [createSimulationRun({ circuitJson })]
   }
 
-  return parameterSweep.parameter_values.map((parameterValue, sweepIndex) => {
-    const simulationParameterSweepCoordinate: SimulationParameterSweepCoordinate =
-      {
-        simulation_parameter_sweep_id:
-          parameterSweep.simulation_parameter_sweep_id,
-        sweep_index: sweepIndex,
-        parameter_value: parameterValue,
-        parameter_unit: parameterSweep.parameter_unit,
+  let sweepCoordinateSets: SimulationParameterSweepCoordinate[][] = [[]]
+  for (const parameterSweep of parameterSweeps) {
+    const runCount =
+      sweepCoordinateSets.length * parameterSweep.parameter_values.length
+    if (runCount > 1_000_000) {
+      throw new Error(
+        "Parameter sweep Cartesian product exceeds 1,000,000 runs",
+      )
+    }
+    sweepCoordinateSets = sweepCoordinateSets.flatMap((coordinateSet) =>
+      parameterSweep.parameter_values.map((parameterValue, sweepIndex) => [
+        ...coordinateSet,
+        {
+          simulation_parameter_sweep_id:
+            parameterSweep.simulation_parameter_sweep_id,
+          sweep_index: sweepIndex,
+          parameter_value: parameterValue,
+          parameter_unit: parameterSweep.parameter_unit,
+        },
+      ]),
+    )
+  }
+
+  return sweepCoordinateSets.map((simulationParameterSweepCoordinates) => {
+    let sweptCircuitJson = circuitJson
+    for (
+      let parameterSweepIndex = 0;
+      parameterSweepIndex < parameterSweeps.length;
+      parameterSweepIndex++
+    ) {
+      const parameterSweep = parameterSweeps[parameterSweepIndex]
+      const simulationParameterSweepCoordinate =
+        simulationParameterSweepCoordinates[parameterSweepIndex]
+      if (!parameterSweep || !simulationParameterSweepCoordinate) {
+        throw new Error("Parameter sweep coordinate set is incomplete")
       }
-    return createSimulationRun({
-      circuitJson: applyParameterSweepCoordinate({
-        circuitJson,
+      sweptCircuitJson = applyParameterSweepCoordinate({
+        circuitJson: sweptCircuitJson,
         parameterSweep,
         simulationParameterSweepCoordinate,
-      }),
-      simulationParameterSweepCoordinate,
+      })
+    }
+
+    return createSimulationRun({
+      circuitJson: sweptCircuitJson,
+      simulationParameterSweepCoordinates,
     })
   })
 }

@@ -96,6 +96,15 @@ export const AnalogSweepParameter_doInitialSimulationRender = (
       stop: props.stop!,
       step: props.step!,
     })
+  if (
+    props.displayValues &&
+    props.displayValues.length !== parameterSweepCoordinates.length
+  ) {
+    analogSweepParameter.renderError(
+      "analog.sweepparameter displayValues must match the generated coordinate count.",
+    )
+    return
+  }
   const simulationScope =
     analogSweepParameter.parent.getGroup() ??
     analogSweepParameter.parent.getSubcircuit()
@@ -109,6 +118,8 @@ export const AnalogSweepParameter_doInitialSimulationRender = (
     parameter_type: props.parameterType,
     parameter_values: parameterSweepCoordinates,
     parameter_unit: parameterUnit,
+    display_parameter_values: props.displayValues,
+    display_parameter_unit: props.displayUnit,
   }
 
   let simulationParameterSweepId: SimulationParameterSweepId

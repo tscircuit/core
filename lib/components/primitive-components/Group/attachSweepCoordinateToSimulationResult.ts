@@ -6,13 +6,13 @@ import { isSimulationAnalysisResult } from "./isSimulationAnalysisResult"
 
 export const attachSweepCoordinateToSimulationResult = ({
   simulationResult,
-  simulationParameterSweepCoordinate,
+  simulationParameterSweepCoordinates,
 }: {
   simulationResult: AnyCircuitElementInput
-  simulationParameterSweepCoordinate?: SimulationParameterSweepCoordinate
+  simulationParameterSweepCoordinates?: SimulationParameterSweepCoordinate[]
 }): AnyCircuitElementInput => {
   if (
-    !simulationParameterSweepCoordinate ||
+    !simulationParameterSweepCoordinates?.length ||
     !isSimulationAnalysisResult(simulationResult)
   ) {
     return simulationResult
@@ -24,7 +24,12 @@ export const attachSweepCoordinateToSimulationResult = ({
     simulationResultWithSweepCoordinate,
     simulationResultIdKey,
   )
-  simulationResultWithSweepCoordinate.simulation_parameter_sweep_coordinate =
-    simulationParameterSweepCoordinate
+  if (simulationParameterSweepCoordinates.length === 1) {
+    simulationResultWithSweepCoordinate.simulation_parameter_sweep_coordinate =
+      simulationParameterSweepCoordinates[0]
+  } else {
+    simulationResultWithSweepCoordinate.simulation_parameter_sweep_coordinates =
+      simulationParameterSweepCoordinates
+  }
   return simulationResultWithSweepCoordinate
 }

@@ -106,6 +106,7 @@ export class CurrentSource extends NormalComponent<
       props.frequency !== undefined ||
       props.peakToPeakCurrent !== undefined ||
       props.waveShape !== undefined ||
+      props.currentWaveform !== undefined ||
       props.acMagnitude !== undefined ||
       props.acPhase !== undefined
 
@@ -123,6 +124,14 @@ export class CurrentSource extends NormalComponent<
         wave_shape: props.waveShape,
         phase: props.phase,
         duty_cycle: props.dutyCycle,
+        current_waveform: props.currentWaveform
+          ? {
+              timestamps_ms: props.currentWaveform.map((point) => point.time),
+              current_values: props.currentWaveform.map(
+                (point) => point.current,
+              ),
+            }
+          : undefined,
         ac_magnitude: props.acMagnitude,
         ac_phase: props.acPhase,
       })

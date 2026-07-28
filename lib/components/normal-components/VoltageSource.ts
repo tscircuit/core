@@ -120,6 +120,12 @@ export class VoltageSource extends NormalComponent<
       fall_time: props.fallTime,
       pulse_width: props.pulseWidth,
       period: props.period,
+      voltage_waveform: props.voltageWaveform
+        ? {
+            timestamps_ms: props.voltageWaveform.map((point) => point.time),
+            voltage_values: props.voltageWaveform.map((point) => point.voltage),
+          }
+        : undefined,
       ac_magnitude: props.acMagnitude,
       ac_phase: props.acPhase,
     })

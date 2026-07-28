@@ -2,6 +2,7 @@ import type {
   AnalogAcSweepSimulationProps,
   AnalogDcOperatingPointSimulationProps,
   AnalogDcSweepSimulationProps,
+  AnalogMeasurementProps,
   AnalogSweepParameterProps,
   AnalogTransientSimulationProps,
 } from "@tscircuit/props"
@@ -24,4 +25,6 @@ export const analog = {
   sweepparameter: createNamespacedElement<AnalogSweepParameterProps>(
     "analogsweepparameter",
   ),
+  measurement:
+    createNamespacedElement<AnalogMeasurementProps>("analogmeasurement"),
 } as const
