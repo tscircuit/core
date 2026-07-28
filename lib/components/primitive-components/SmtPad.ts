@@ -15,6 +15,7 @@ import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import type { Port } from "./Port"
 import { selectPortForPcbPrimitive } from "./Port/selectPortForPcbPrimitive"
 import { getAxisAlignedSizeFromRotatedRect } from "lib/utils/pcb/get-axis-aligned-size-from-rotated-rect"
+import { getRectsInsidePolygon } from "lib/utils/pcb/get-rects-inside-polygon"
 
 export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
   pcb_smtpad_id: string | null = null
@@ -294,6 +295,29 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
       } as PcbSmtPadPolygon) as PcbSmtPadPolygon
+
+      if (shouldCreateSolderPaste) {
+        // The rects tile the pad, so they are emitted 1:1 - shrinking each rect
+        // would open gaps between them instead of insetting the aperture.
+        // 0.05mm floor: no stencil can release a smaller aperture, and float
+        // noise after a 90-degree rotation otherwise yields sliver rects.
+        for (const rect of getRectsInsidePolygon(transformedPoints, {
+          minRectDim: 0.05,
+        })) {
+          db.pcb_solder_paste.insert({
+            layer: pcb_smtpad.layer,
+            shape: "rect",
+            width: rect.width,
+            height: rect.height,
+            x: rect.x,
+            y: rect.y,
+            pcb_component_id: pcb_smtpad.pcb_component_id,
+            pcb_smtpad_id: pcb_smtpad.pcb_smtpad_id,
+            subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+            pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
+          } as PcbSmtPadRect)
+        }
+      }
     } else if (props.shape === "pill") {
       if (finalRotationDegrees !== 0) {
         pcb_smtpad = db.pcb_smtpad.insert({
@@ -477,18 +501,34 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
 
   _setPositionFromLayout(newCenter: { x: number; y: number }) {
     const { db } = this.root!
-    db.pcb_smtpad.update(this.pcb_smtpad_id!, {
-      x: newCenter.x,
-      y: newCenter.y,
-    })
+    const pad = db.pcb_smtpad.get(this.pcb_smtpad_id!)!
+    const { center } = this._getPcbCircuitJsonBounds()
+    const deltaX = newCenter.x - center.x
+    const deltaY = newCenter.y - center.y
 
-    const solderPaste = db.pcb_solder_paste
-      .list()
-      .find((elm) => elm.pcb_smtpad_id === this.pcb_smtpad_id)
-    if (solderPaste) {
-      db.pcb_solder_paste.update(solderPaste.pcb_solder_paste_id, {
+    if (pad.shape === "polygon") {
+      db.pcb_smtpad.update(this.pcb_smtpad_id!, {
+        points: pad.points.map((p) => ({
+          x: p.x + deltaX,
+          y: p.y + deltaY,
+        })),
+      })
+    } else {
+      db.pcb_smtpad.update(this.pcb_smtpad_id!, {
         x: newCenter.x,
         y: newCenter.y,
+      })
+    }
+
+    // A polygon pad is tiled by several paste rects that are not concentric
+    // with the pad, so every paste element is translated by the pad's delta
+    // rather than snapped to its new center.
+    for (const solderPaste of db.pcb_solder_paste
+      .list()
+      .filter((elm) => elm.pcb_smtpad_id === this.pcb_smtpad_id)) {
+      db.pcb_solder_paste.update(solderPaste.pcb_solder_paste_id, {
+        x: solderPaste.x + deltaX,
+        y: solderPaste.y + deltaY,
       })
     }
 
@@ -514,18 +554,11 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
     ) {
       this._setPositionFromLayout({ x: pad.x + deltaX, y: pad.y + deltaY })
     } else if (pad.shape === "polygon") {
-      db.pcb_smtpad.update(this.pcb_smtpad_id, {
-        points: pad.points.map((p) => ({
-          x: p.x + deltaX,
-          y: p.y + deltaY,
-        })),
+      const { center } = this._getPcbCircuitJsonBounds()
+      this._setPositionFromLayout({
+        x: center.x + deltaX,
+        y: center.y + deltaY,
       })
-
-      const newCenter = {
-        x: this._getPcbCircuitJsonBounds().center.x + deltaX / 2,
-        y: this._getPcbCircuitJsonBounds().center.y + deltaY / 2,
-      }
-      this.matchedPort?._setPositionFromLayout(newCenter)
     }
   }
 }
