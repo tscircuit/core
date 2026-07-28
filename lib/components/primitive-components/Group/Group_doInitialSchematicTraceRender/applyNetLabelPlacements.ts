@@ -62,7 +62,7 @@ export function applyNetLabelPlacements(args: {
   userNetIdToConnKey: Map<string, string>
   connKeyToSourceNet: Map<string, SourceNet>
   connKeysWithExplicitPortNetTraces: Set<string>
-  schematicPortIdsWithPreExistingNetLabels: Set<SchematicPortId>
+  schematicPortIdsWithManuallyPositionedNetLabels: Set<SchematicPortId>
   schematicPortIdsWithRoutedTraces: Set<SchematicPortId>
   netLabels: NetLabel[]
 }) {
@@ -72,7 +72,7 @@ export function applyNetLabelPlacements(args: {
     connKeyToSourceNet,
     userNetIdToConnKey,
     connKeysWithExplicitPortNetTraces,
-    schematicPortIdsWithPreExistingNetLabels,
+    schematicPortIdsWithManuallyPositionedNetLabels,
     schematicPortIdsWithRoutedTraces,
     netLabels,
   } = args
@@ -187,7 +187,7 @@ export function applyNetLabelPlacements(args: {
 
     if (
       schPortIds.some((schPortId) =>
-        schematicPortIdsWithPreExistingNetLabels.has(schPortId),
+        schematicPortIdsWithManuallyPositionedNetLabels.has(schPortId),
       )
     ) {
       debug(

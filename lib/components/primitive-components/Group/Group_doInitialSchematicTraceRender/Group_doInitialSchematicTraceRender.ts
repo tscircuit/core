@@ -6,7 +6,10 @@ import { Group } from "../Group"
 import { applyNetLabelPlacements } from "./applyNetLabelPlacements"
 import { applyTracesFromSolverOutput } from "./applyTracesFromSolverOutput"
 import { createSchematicTraceSolverInputProblem } from "./createSchematicTraceSolverInputProblem"
-import { getSchematicPortIdsWithAssignedNetLabels } from "./getSchematicPortIdsWithAssignedNetLabels"
+import {
+  getSchematicPortIdsWithAssignedNetLabels,
+  getSchematicPortIdsWithManuallyPositionedNetLabels,
+} from "./getSchematicPortIdsWithAssignedNetLabels"
 import { getSchematicPortIdsWithRoutedTraces } from "./getSchematicPortIdsWithRoutedTraces"
 import { insertNetLabelsForPortsMissingTrace } from "./insertNetLabelsForPortsMissingTrace"
 
@@ -40,8 +43,10 @@ const renderSchematicTracesForSheet = ({
 
   if (inputProblem.chips.length === 0) return
 
-  const schematicPortIdsWithPreExistingNetLabels =
+  const schematicPortIdsWithExplicitNetLabels =
     getSchematicPortIdsWithAssignedNetLabels(netLabelsInScope)
+  const schematicPortIdsWithManuallyPositionedNetLabels =
+    getSchematicPortIdsWithManuallyPositionedNetLabels(netLabelsInScope)
 
   const hasRouteableSchematicConnections =
     inputProblem.directConnections.length > 0 ||
@@ -88,7 +93,8 @@ const renderSchematicTracesForSheet = ({
     group,
     solver,
     userNetIdToConnKey,
-    schematicPortIdsWithPreExistingNetLabels,
+    schematicPortIdsWithExplicitNetLabels,
+    schematicPortIdsWithManuallyPositionedNetLabels,
   })
 
   // Apply net labels (from solver placements and net-only ports)
@@ -98,7 +104,7 @@ const renderSchematicTracesForSheet = ({
     connKeyToSourceNet,
     userNetIdToConnKey,
     connKeysWithExplicitPortNetTraces,
-    schematicPortIdsWithPreExistingNetLabels,
+    schematicPortIdsWithManuallyPositionedNetLabels,
     schematicPortIdsWithRoutedTraces,
     netLabels: netLabelsInScope,
   })

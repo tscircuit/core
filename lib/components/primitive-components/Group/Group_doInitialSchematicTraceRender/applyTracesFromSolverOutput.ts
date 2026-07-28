@@ -110,13 +110,15 @@ export function applyTracesFromSolverOutput(args: {
   group: Group<any>
   solver: SchematicTracePipelineSolver
   userNetIdToConnKey: Map<string, string>
-  schematicPortIdsWithPreExistingNetLabels: Set<SchematicPortId>
+  schematicPortIdsWithExplicitNetLabels: Set<SchematicPortId>
+  schematicPortIdsWithManuallyPositionedNetLabels: Set<SchematicPortId>
 }) {
   const {
     group,
     solver,
     userNetIdToConnKey,
-    schematicPortIdsWithPreExistingNetLabels,
+    schematicPortIdsWithExplicitNetLabels,
+    schematicPortIdsWithManuallyPositionedNetLabels,
   } = args
   const { db } = group.root!
 
@@ -175,11 +177,20 @@ export function applyTracesFromSolverOutput(args: {
   for (const solvedTracePath of traces ?? []) {
     const uniquePinIds = Array.from(new Set(solvedTracePath.pinIds ?? []))
     const solvedTraceSchematicPortIds = uniquePinIds.map(asSchematicPortId)
-    const isNetLabelCoveredTrace =
+    const areAllTracePortsCoveredByExplicitNetLabels =
       solvedTraceSchematicPortIds.length > 0 &&
       solvedTraceSchematicPortIds.every((id) =>
-        schematicPortIdsWithPreExistingNetLabels.has(id),
+        schematicPortIdsWithExplicitNetLabels.has(id),
       )
+    const areAllTracePortsCoveredByManuallyPositionedNetLabels =
+      solvedTraceSchematicPortIds.length > 0 &&
+      solvedTraceSchematicPortIds.every((id) =>
+        schematicPortIdsWithManuallyPositionedNetLabels.has(id),
+      )
+    const isNetLabelCoveredTrace =
+      areAllTracePortsCoveredByManuallyPositionedNetLabels ||
+      (solvedTraceSchematicPortIds.length > 1 &&
+        areAllTracePortsCoveredByExplicitNetLabels)
     if (isNetLabelCoveredTrace) {
       debug(
         `Skipping solver netlabel-covered trace ${solvedTracePath?.mspPairId} because all schematic ports already have netlabels`,
