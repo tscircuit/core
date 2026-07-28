@@ -1169,6 +1169,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
               simpleRouteJson,
               commonAutorouterOptions,
               busFanoutDirections: routingPhasePlan.busFanoutDirections,
+              fanoutBoundaryPadding: routingPhasePlan.fanoutBoundaryPadding,
             })
           }
 

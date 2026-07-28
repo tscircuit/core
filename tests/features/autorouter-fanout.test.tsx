@@ -82,6 +82,7 @@ test('autorouter="fanout" escapes an inner BGA bus before board routing', async 
       <autoroutingphase
         autorouter="fanout"
         busFanoutDirections={{ DATA: { direction: "center_right" } }}
+        fanoutBoundaryPadding={{ right: "1.2mm" }}
       />
       <chip name="U1" pcbX={-4} footprint={<footprint>{bgaPads}</footprint>} />
       <bus
@@ -121,6 +122,37 @@ test('autorouter="fanout" escapes an inner BGA bus before board routing', async 
     4,
   )
   expect(autoroutingPhaseIoStack[1]?.endSimpleRouteJson?.traces).toHaveLength(8)
+
+  const u1SourceComponent = circuit.db.source_component.getWhere({
+    name: "U1",
+  })
+  const u1PcbComponent = circuit.db.pcb_component.getWhere({
+    source_component_id: u1SourceComponent?.source_component_id,
+  })
+  const u1PadObstacles =
+    autoroutingPhaseIoStack[0]?.startSimpleRouteJson?.obstacles.filter(
+      (obstacle) =>
+        obstacle.componentId === u1PcbComponent?.pcb_component_id &&
+        obstacle.connectedTo.length > 0,
+    ) ?? []
+  const expectedRightBoundary =
+    Math.max(
+      ...u1PadObstacles.map(
+        (obstacle) => obstacle.center.x + obstacle.width / 2,
+      ),
+    ) + 1.2
+  for (const fanoutTrace of autoroutingPhaseIoStack[0]?.endSimpleRouteJson
+    ?.traces ?? []) {
+    const exitPoint = fanoutTrace.route.findLast(
+      (routePoint) => "x" in routePoint,
+    )
+    expect(exitPoint).toBeDefined()
+    if (!exitPoint || !("x" in exitPoint)) {
+      throw new Error("Expected the fanout trace to end at a point")
+    }
+    expect(exitPoint.x).toBeCloseTo(expectedRightBoundary)
+  }
+
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
   await expect(autoroutingPhaseIoStack).toMatchAutoroutingPhaseIoStackSnapshot(
     import.meta.path,

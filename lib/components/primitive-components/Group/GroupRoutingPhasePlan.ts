@@ -21,6 +21,7 @@ export interface RoutingPhasePlan {
   region?: AutoroutingPhaseProps["region"]
   connectionSelectors?: string[]
   busFanoutDirections?: AutoroutingPhaseProps["busFanoutDirections"]
+  fanoutBoundaryPadding?: AutoroutingPhaseProps["fanoutBoundaryPadding"]
   drcTolerances?: RoutingPhaseDrcTolerances
   nets: Net[]
   traces: Trace[]
