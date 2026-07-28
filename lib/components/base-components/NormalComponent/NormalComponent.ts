@@ -97,8 +97,6 @@ import { parseLibraryFootprintRef } from "./utils/parseLibraryFootprintRef"
 
 const debug = Debug("tscircuit:core")
 
-const CAD_MODEL_FOOTPRINTER_STRING = "footprinter_string" as const
-
 const rotation3 = z.object({
   x: rotation,
   y: rotation,
@@ -1780,17 +1778,19 @@ export class NormalComponent<
     // Use post-layout bounds
     const bounds = this._getPcbCircuitJsonBounds()
 
-    if (cadModel === CAD_MODEL_FOOTPRINTER_STRING) {
-      if (!footprintIsFootprinterString) {
+    let cadModelFootprinterString: string | undefined
+    if (typeof cadModel === "string") {
+      if (
+        parseLibraryFootprintRef(cadModel) ||
+        isHttpUrl(cadModel) ||
+        isStaticAssetPath(cadModel)
+      ) {
         throw new Error(
-          `${this.getString()} cannot use cadModel="footprinter_string" because its footprint does not resolve to a Footprinter string`,
+          `${this.getString()} cadModel string must be a Footprinter string, received "${cadModel}"`,
         )
       }
+      cadModelFootprinterString = cadModel
       cadModel = undefined
-    }
-
-    if (typeof cadModel === "string") {
-      throw new Error("String cadModel not yet implemented")
     }
 
     const sourceRotationOffset =
@@ -1835,7 +1835,11 @@ export class NormalComponent<
         : preLayoutRotation
     const isBottomLayer = computedLayer === "bottom"
 
-    if (!cadModel && !footprintIsFootprinterString) {
+    if (
+      !cadModel &&
+      !cadModelFootprinterString &&
+      !footprintIsFootprinterString
+    ) {
       const cad_component = db.cad_component.insert({
         position: {
           x: bounds.center.x,
@@ -1863,10 +1867,9 @@ export class NormalComponent<
 
     const rotationWithOffset = totalRotation + (rotationOffset.z ?? 0)
     const cadRotationZ = normalizeDegrees(rotationWithOffset)
-    let footprinterStringForCadComponent: string | undefined
-    if (!cadModel && footprintIsFootprinterString) {
-      footprinterStringForCadComponent = footprintString
-    }
+    const footprinterStringForCadComponent =
+      cadModelFootprinterString ??
+      (!cadModel && footprintIsFootprinterString ? footprintString : undefined)
 
     const cad_model = db.cad_component.insert({
       // TODO z maybe depends on layer

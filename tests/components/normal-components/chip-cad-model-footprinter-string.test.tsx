@@ -2,12 +2,23 @@ import { expect, test } from "bun:test"
 import { Chip } from "lib/components/normal-components/Chip"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test('cadModel="footprinter_string" generates CAD from the resolved footprint', async () => {
+test('cadModel="soic8" generates CAD independently of the PCB footprint', async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
     <board width="10mm" height="10mm">
-      <chip name="U1" footprint="soic8" cadModel="footprinter_string" />
+      <chip name="U1" cadModel="soic8">
+        <footprint>
+          <smtpad
+            portHints={["1"]}
+            pcbX={0}
+            pcbY={0}
+            width="1mm"
+            height="1mm"
+            shape="rect"
+          />
+        </footprint>
+      </chip>
     </board>,
   )
 
