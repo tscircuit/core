@@ -20,3 +20,26 @@ test("<fuse /> component", async () => {
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
+
+test("<fuse /> schShowRatings={false}", async () => {
+  const { circuit } = getTestFixture()
+
+  circuit.add(
+    <board width="12mm" height="10mm">
+      <fuse
+        name="F1"
+        currentRating="1A"
+        voltageRating="24V"
+        schShowRatings={false}
+        pcbX={0}
+        pcbY={0}
+      />
+    </board>,
+  )
+
+  circuit.render()
+
+  const circuitJson = circuit.getCircuitJson()
+  const schComponent = circuitJson.find((c: any) => c.type === "schematic_component") as any
+  expect(schComponent.symbol_display_value).toBeUndefined()
+})
