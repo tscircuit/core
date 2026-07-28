@@ -97,6 +97,8 @@ import { parseLibraryFootprintRef } from "./utils/parseLibraryFootprintRef"
 
 const debug = Debug("tscircuit:core")
 
+const CAD_MODEL_FOOTPRINTER_STRING = "footprinter_string" as const
+
 const rotation3 = z.object({
   x: rotation,
   y: rotation,
@@ -1760,7 +1762,7 @@ export class NormalComponent<
     const { db } = this.root!
     const { boardThickness = 0 } = this._getBoard() ?? {}
     const cadModelProp = this._parsedProps.cadModel
-    const cadModel =
+    let cadModel =
       cadModelProp === undefined ? this._asyncFootprintCadModel : cadModelProp
     const footprintString = this.getFootprinterString() ?? undefined
 
@@ -1777,6 +1779,15 @@ export class NormalComponent<
 
     // Use post-layout bounds
     const bounds = this._getPcbCircuitJsonBounds()
+
+    if (cadModel === CAD_MODEL_FOOTPRINTER_STRING) {
+      if (!footprintIsFootprinterString) {
+        throw new Error(
+          `${this.getString()} cannot use cadModel="footprinter_string" because its footprint does not resolve to a Footprinter string`,
+        )
+      }
+      cadModel = undefined
+    }
 
     if (typeof cadModel === "string") {
       throw new Error("String cadModel not yet implemented")
