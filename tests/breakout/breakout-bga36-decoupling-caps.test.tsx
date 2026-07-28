@@ -41,7 +41,7 @@ test("breakout defaults to fanout for a 6x6 BGA surrounded by four 0603 decoupli
       minViaHoleDiameter="0.2mm"
       minViaPadDiameter="0.5mm"
     >
-      <breakout name="BGA_BREAKOUT" padding="1.2mm">
+      <breakout name="BGA_BREAKOUT" padding="1.2mm" fanoutBoundaryPadding="1mm">
         <chip name="U1" footprint={bgaFootprint} pcbX={0} pcbY={0} />
 
         <DecouplingCap name="C_TOP" pcbX={0} pcbY={4.2} />
@@ -88,6 +88,64 @@ test("breakout defaults to fanout for a 6x6 BGA surrounded by four 0603 decoupli
   expect(breakoutPhases[0]?.endSimpleRouteJson?.traces).toHaveLength(8)
   expect(breakoutPhases[1]?.startSimpleRouteJson?.traces).toHaveLength(8)
   expect(breakoutPhases[1]?.endSimpleRouteJson?.traces).toHaveLength(16)
+
+  const u1SourceComponent = circuit.db.source_component.getWhere({
+    name: "U1",
+  })
+  const u1PcbComponent = circuit.db.pcb_component.getWhere({
+    source_component_id: u1SourceComponent?.source_component_id,
+  })
+  const u1PadObstacles =
+    breakoutPhases[0]?.startSimpleRouteJson?.obstacles.filter(
+      (obstacle) =>
+        obstacle.componentId === u1PcbComponent?.pcb_component_id &&
+        obstacle.connectedTo.length > 0,
+    ) ?? []
+  expect(u1PadObstacles.length).toBeGreaterThan(0)
+
+  const expectedFanoutBoundary = {
+    minX:
+      Math.min(
+        ...u1PadObstacles.map(
+          (obstacle) => obstacle.center.x - obstacle.width / 2,
+        ),
+      ) - 1,
+    maxX:
+      Math.max(
+        ...u1PadObstacles.map(
+          (obstacle) => obstacle.center.x + obstacle.width / 2,
+        ),
+      ) + 1,
+    minY:
+      Math.min(
+        ...u1PadObstacles.map(
+          (obstacle) => obstacle.center.y - obstacle.height / 2,
+        ),
+      ) - 1,
+    maxY:
+      Math.max(
+        ...u1PadObstacles.map(
+          (obstacle) => obstacle.center.y + obstacle.height / 2,
+        ),
+      ) + 1,
+  }
+  for (const fanoutTrace of breakoutPhases[0]?.endSimpleRouteJson?.traces ??
+    []) {
+    const exitPoint = fanoutTrace.route.findLast(
+      (routePoint) => "x" in routePoint,
+    )
+    expect(exitPoint).toBeDefined()
+    if (!exitPoint || !("x" in exitPoint)) {
+      throw new Error("Expected the fanout trace to end at a point")
+    }
+    expect(
+      Math.abs(exitPoint.x - expectedFanoutBoundary.minX) < 1e-6 ||
+        Math.abs(exitPoint.x - expectedFanoutBoundary.maxX) < 1e-6 ||
+        Math.abs(exitPoint.y - expectedFanoutBoundary.minY) < 1e-6 ||
+        Math.abs(exitPoint.y - expectedFanoutBoundary.maxY) < 1e-6,
+    ).toBe(true)
+  }
+
   expect(
     breakoutPhases[0]?.endSimpleRouteJson?.traces
       ?.flatMap((trace) => trace.route)

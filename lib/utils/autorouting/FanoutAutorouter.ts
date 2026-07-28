@@ -3,7 +3,11 @@ import {
   type FanoutBorderTarget,
   type FanoutSolverOptions,
 } from "@tscircuit/fanout-solver"
-import type { BusFanoutDirection, NinePointAnchor } from "@tscircuit/props"
+import type {
+  BusFanoutDirection,
+  FanoutBoundaryPadding,
+  NinePointAnchor,
+} from "@tscircuit/props"
 import { getViaBoardLayers } from "../getViaSpanLayers"
 import type {
   AutorouterCompleteEvent,
@@ -13,12 +17,14 @@ import type {
   GenericLocalAutorouter,
 } from "./GenericLocalAutorouter"
 import type { SimpleRouteJson, SimplifiedPcbTrace } from "./SimpleRouteJson"
+import { getFanoutSharedBoundary } from "./get-fanout-shared-boundary"
 
 export type FanoutAutorouterMode = "single_layer_fanout" | "fanout"
 
 export interface FanoutAutorouterOptions {
   mode: FanoutAutorouterMode
   busFanoutDirections?: Readonly<Record<string, BusFanoutDirection>>
+  fanoutBoundaryPadding?: FanoutBoundaryPadding
 }
 
 const getNinePointAnchor = (
@@ -181,10 +187,24 @@ export class FanoutAutorouter implements GenericLocalAutorouter {
     fanoutTraces: SimplifiedPcbTrace[]
     debugGraphics: AutorouterProgressEvent["debugGraphics"]
   } {
-    const fanoutSolver = new FanoutSolver(
+    const fanoutSolverOptions = this.getFanoutSolverOptions()
+    let fanoutSolver = new FanoutSolver(
       this.input as unknown as ConstructorParameters<typeof FanoutSolver>[0],
-      this.getFanoutSolverOptions(),
+      fanoutSolverOptions,
     )
+    const sharedBoundary = getFanoutSharedBoundary({
+      preparedBuses: fanoutSolver.preparedBuses,
+      padding: this.options.fanoutBoundaryPadding,
+    })
+    if (sharedBoundary) {
+      fanoutSolver = new FanoutSolver(
+        this.input as unknown as ConstructorParameters<typeof FanoutSolver>[0],
+        {
+          ...fanoutSolverOptions,
+          sharedBoundary,
+        },
+      )
+    }
     fanoutSolver.solve()
     if (fanoutSolver.failed) {
       throw new Error(fanoutSolver.error ?? "Fanout routing failed")
