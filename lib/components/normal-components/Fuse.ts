@@ -19,7 +19,7 @@ export class Fuse extends NormalComponent<typeof fuseProps, PassivePorts> {
   }
 
   _getSchematicSymbolDisplayValue(): string | undefined {
-    if (!this._parsedProps.schShowRatings) {
+    if (this._parsedProps.schShowRatings === false) {
       return undefined
     }
 
@@ -56,10 +56,10 @@ export class Fuse extends NormalComponent<typeof fuseProps, PassivePorts> {
       supplier_part_numbers: props.supplierPartNumbers,
       current_rating_amps: currentRating,
       voltage_rating_volts: voltageRating,
-      display_current_rating: props.schShowRatings
+      display_current_rating: props.schShowRatings !== false
         ? `${formatSiUnit(currentRating)}A`
         : undefined,
-      display_voltage_rating: props.schShowRatings
+      display_voltage_rating: props.schShowRatings !== false
         ? `${formatSiUnit(voltageRating)}V`
         : undefined,
       display_name: props.displayName,
