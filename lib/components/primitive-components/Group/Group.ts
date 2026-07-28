@@ -27,7 +27,7 @@ import type { GraphicsObject } from "graphics-debug"
 
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import { AutorouterError } from "lib/errors/AutorouterError"
-import { TscircuitAutorouter } from "lib/utils/autorouting/CapacityMeshAutorouter"
+import type { AutorouterOptions } from "lib/utils/autorouting/CapacityMeshAutorouter"
 import type { GenericLocalAutorouter } from "lib/utils/autorouting/GenericLocalAutorouter"
 import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
@@ -36,6 +36,7 @@ import {
   type NormalizedAutorouterConfig,
   getPresetAutoroutingConfig,
 } from "lib/utils/autorouting/getPresetAutoroutingConfig"
+import { getLocalAutorouterStrategy } from "lib/utils/autorouting/localAutorouterStrategies"
 import { shouldSkipAutoroutingBecauseOfPlacementErrors } from "lib/utils/autorouting/should-skip-autorouting-because-of-placement-errors"
 import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
 import { getViaBoardLayers } from "lib/utils/getViaSpanLayers"
@@ -1088,9 +1089,13 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         simpleRouteJson,
       })
 
-      const cacheEngine = phaseAutorouterConfig.algorithmFn
-        ? undefined
-        : this.root?.platform?.localCacheEngine
+      const localAutorouterStrategy = getLocalAutorouterStrategy(
+        phaseAutorouterConfig.preset,
+      )
+      const cacheEngine =
+        phaseAutorouterConfig.algorithmFn || !localAutorouterStrategy.cacheable
+          ? undefined
+          : this.root?.platform?.localCacheEngine
       const cacheKey = cacheEngine
         ? getLocalAutoroutingCacheKey(simpleRouteJson)
         : undefined
@@ -1114,7 +1119,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             const effort = effortLevel
               ? Number.parseInt(effortLevel.replace("x", ""), 10)
               : undefined
-            autorouter = new TscircuitAutorouter(simpleRouteJson, {
+            const commonAutorouterOptions: AutorouterOptions = {
               capacityDepth: phaseAutorouterConfig.capacityDepth,
               targetMinCapacity: phaseAutorouterConfig.targetMinCapacity,
               useAssignableSolver:
@@ -1130,6 +1135,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
                   solverParams,
                   componentName: this.getString(),
                 }),
+            }
+            autorouter = localAutorouterStrategy.create({
+              simpleRouteJson,
+              commonAutorouterOptions,
             })
           }
 
