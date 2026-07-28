@@ -2,6 +2,17 @@ import { getSizeOfSidesFromPortArrangement } from "./getSizeOfSidesFromPortArran
 import { parsePinNumberFromLabelsOrThrow } from "./parsePinNumberFromLabelsOrThrow"
 
 const DEFAULT_SCHEMATIC_BOX_PADDING_MM = 0.4
+const ESTIMATED_PIN_LABEL_CHARACTER_WIDTH = 0.1
+const PIN_LABEL_EDGE_PADDING = 0.1
+
+type PinLabel = string | readonly string[]
+
+const getDisplayedPinLabel = (pinLabel: PinLabel | undefined): string =>
+  typeof pinLabel === "string" ? pinLabel : (pinLabel?.[0] ?? "")
+
+const getEstimatedPinLabelWidth = (pinLabel: PinLabel | undefined): number =>
+  Array.from(getDisplayedPinLabel(pinLabel)).length *
+  ESTIMATED_PIN_LABEL_CHARACTER_WIDTH
 
 export type VerticalPortSideConfiguration = {
   direction?: "top-to-bottom" | "bottom-to-top"
@@ -67,7 +78,7 @@ interface Params {
   numericSchPinStyle?: NumericSchPinStyle
   pinCount?: number
   schPortArrangement?: PortArrangement
-  pinLabels?: Record<string, string>
+  pinLabels?: Record<string, PinLabel>
 }
 
 type Side = "left" | "right" | "top" | "bottom"
@@ -378,7 +389,7 @@ export const getAllDimensionsForSchematicBox = (
     const labelWidth = params.pinLabels
       ? Math.max(
           ...Object.values(params.pinLabels).map(
-            (label) => label.length * 0.1, // Estimated text width
+            (label) => label.length * ESTIMATED_PIN_LABEL_CHARACTER_WIDTH,
           ),
         )
       : 0
@@ -386,6 +397,28 @@ export const getAllDimensionsForSchematicBox = (
     // When label is present, only then add some padding to the width
     const LABEL_PADDING = labelWidth > 0 ? 1.1 : 0
     resolvedSchWidth = Math.max(resolvedSchWidth, labelWidth + LABEL_PADDING)
+
+    const maxLabelWidthBySide = {
+      left: 0,
+      right: 0,
+    }
+    for (const port of orderedTruePorts) {
+      if (port.side !== "left" && port.side !== "right") continue
+      const pinLabel =
+        params.pinLabels?.[`pin${port.pinNumber}`] ??
+        params.pinLabels?.[port.pinNumber]
+      maxLabelWidthBySide[port.side] = Math.max(
+        maxLabelWidthBySide[port.side],
+        getEstimatedPinLabelWidth(pinLabel),
+      )
+    }
+
+    resolvedSchWidth = Math.max(
+      resolvedSchWidth,
+      maxLabelWidthBySide.left +
+        maxLabelWidthBySide.right +
+        2 * PIN_LABEL_EDGE_PADDING,
+    )
   }
 
   let schHeight = params.schHeight
@@ -399,7 +432,7 @@ export const getAllDimensionsForSchematicBox = (
   // Enforce minimum dimensions only when current inner label rectangles overlap.
   if (params.pinLabels) {
     const CHAR_WIDTH = 0.13 // FALLBACK_CHARACTER_WIDTH
-    const LABEL_EDGE_OFFSET = 0.1 // PIN_LABEL_EDGE_PADDING in the renderer
+    const LABEL_EDGE_OFFSET = PIN_LABEL_EDGE_PADDING
     const HALF_TEXT = 0.075 // PIN_LABEL_TEXT_HEIGHT / 2
     type LabelRect = {
       minX: number
