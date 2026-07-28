@@ -2,10 +2,6 @@
 
 This file provides guidance to Codex (Codex.ai/code) when working with code in this repository.
 
-## Push and CI
-
-- When asked to push changes, ensure CI is green before pushing, unless explicitly instructed otherwise.
-
 ## Essential Commands
 
 **Build & Development:**
