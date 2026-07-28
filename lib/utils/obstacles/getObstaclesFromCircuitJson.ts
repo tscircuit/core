@@ -63,8 +63,8 @@ export const getObstaclesFromCircuitJson = (
       if (element.shape === "circle") {
         obstacles.push({
           componentId: pcbComponentId,
-          // @ts-ignore
-          type: "oval",
+          type: "rect",
+          shape: "circle",
           layers: [element.layer],
           center: {
             x: element.x,

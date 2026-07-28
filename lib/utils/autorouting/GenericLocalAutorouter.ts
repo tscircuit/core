@@ -39,6 +39,12 @@ export interface GenericLocalAutorouter {
   solveSync(): SimplifiedPcbTrace[]
 
   /**
+   * Return a transformed routing problem for a subsequent autorouting phase.
+   * Autorouters that only produce final traces can omit this method.
+   */
+  getOutputSimpleRouteJson?(): SimpleRouteJson | undefined
+
+  /**
    * Get the mapping of obstacle IDs to root connection names that were
    * connected via off-board paths (e.g., interconnects).
    * Returns empty object if not supported by the autorouter.

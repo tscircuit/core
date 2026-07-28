@@ -20,6 +20,7 @@ export interface RoutingPhasePlan {
   reroute?: boolean
   region?: AutoroutingPhaseProps["region"]
   connectionSelectors?: string[]
+  busFanoutDirections?: AutoroutingPhaseProps["busFanoutDirections"]
   drcTolerances?: RoutingPhaseDrcTolerances
   nets: Net[]
   traces: Trace[]

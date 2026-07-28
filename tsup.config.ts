@@ -6,6 +6,7 @@ export default defineConfig({
   dts: true,
   noExternal: [
     "@tscircuit/breakout-point-solver",
+    "@tscircuit/fanout-solver",
     "@tscircuit/jlcpcb-manufacturing-specs",
   ],
 })

@@ -269,6 +269,7 @@ export function Group_getRoutingPhasePlans(
     plan.connectionSelectors = phaseProps
       ? getConnectionSelectorsFromAutoroutingPhaseProps(phaseProps)
       : undefined
+    plan.busFanoutDirections = phaseProps?.busFanoutDirections
     plan.drcTolerances = phaseProps
       ? getDrcTolerancesFromAutoroutingPhaseProps(phaseProps)
       : undefined

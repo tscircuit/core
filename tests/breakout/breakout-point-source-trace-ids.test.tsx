@@ -6,7 +6,7 @@ test("breakout points use cross-boundary source trace ids", async () => {
 
   circuit.add(
     <board width="18mm" height="12mm">
-      <breakout name="REG_BREAKOUT" padding="0.7mm">
+      <breakout name="REG_BREAKOUT" autorouter="auto" padding="0.7mm">
         <chip
           name="U1"
           footprint="sot23"
