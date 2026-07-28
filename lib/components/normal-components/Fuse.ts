@@ -49,6 +49,14 @@ export class Fuse extends NormalComponent<typeof fuseProps, PassivePorts> {
         ? parseFloat(props.voltageRating)
         : props.voltageRating
 
+    let display_current_rating: string | undefined
+    let display_voltage_rating: string | undefined
+
+    if (props.schShowRatings !== false) {
+      display_current_rating = `${formatSiUnit(currentRating)}A`
+      display_voltage_rating = `${formatSiUnit(voltageRating)}V`
+    }
+
     const source_component = db.source_component.insert({
       name: this.name,
       ftype: FTYPE.simple_fuse,
@@ -56,14 +64,8 @@ export class Fuse extends NormalComponent<typeof fuseProps, PassivePorts> {
       supplier_part_numbers: props.supplierPartNumbers,
       current_rating_amps: currentRating,
       voltage_rating_volts: voltageRating,
-      display_current_rating:
-        props.schShowRatings !== false
-          ? `${formatSiUnit(currentRating)}A`
-          : undefined,
-      display_voltage_rating:
-        props.schShowRatings !== false
-          ? `${formatSiUnit(voltageRating)}V`
-          : undefined,
+      display_current_rating,
+      display_voltage_rating,
       display_name: props.displayName,
     } as any)
 
