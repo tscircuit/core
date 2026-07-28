@@ -44,6 +44,7 @@ test("registers a bus routing constraint from trace names", (): void => {
 
   expect(simpleRouteJson.buses).toEqual([
     {
+      busId: "DATA",
       name: "DATA",
       connectionNames: sourceTraceIds,
     },

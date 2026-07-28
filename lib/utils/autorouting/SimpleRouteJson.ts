@@ -50,7 +50,8 @@ export type Obstacle = {
   obstacleId?: string
   componentId?: string
   // TODO include ovals
-  type: "rect" // NOTE: most datasets do not contain ovals
+  type: "rect"
+  shape?: "circle"
   layers: string[]
   zLayers?: number[]
   center: { x: number; y: number }
@@ -100,6 +101,7 @@ export type SimpleRouteDifferentialPair = {
 
 /** A group of connections that an autorouter should keep together. */
 export type SimpleRouteBus = {
+  busId: string
   name?: string
   connectionNames: SrjConnectionName[]
 }

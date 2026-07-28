@@ -2,8 +2,8 @@ import type { SourcePort, SourceTrace } from "circuit-json"
 import type { Bus } from "lib/components/primitive-components/Bus"
 import type { Port } from "lib/components/primitive-components/Port/Port"
 import type {
-  SimpleRouteBus,
   SimpleRouteConnection,
+  SimpleRouteBus,
   SrjConnectionName,
 } from "./SimpleRouteJson"
 
@@ -147,6 +147,7 @@ export const getBusesForSimpleRouteJson = ({
     }
 
     srjBuses.push({
+      busId: bus.name,
       name: bus.name,
       connectionNames,
     })

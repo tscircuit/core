@@ -7,7 +7,7 @@ test("fanout routes a chip pin through a fanoutpoint", async () => {
 
   circuit.add(
     <board width="20mm" height="16mm">
-      <fanout name="U1_FANOUT">
+      <fanout name="U1_FANOUT" autorouter="auto">
         <chip
           name="U1"
           footprint="soic8"
