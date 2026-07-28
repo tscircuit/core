@@ -63,6 +63,8 @@ test("repro: custom symbol name label missing when is_box_with_pins is false", (
   expect(schComp).toBeDefined()
   expect(schComp?.is_box_with_pins).toBe(false)
 
+  // custom symbol components with is_box_with_pins: false get no
+  // schematic_text for their name, unlike box components
   const schematicTexts = circuit.db.schematic_text
     .list()
     .filter((t) => t.schematic_component_id === schComp?.schematic_component_id)
