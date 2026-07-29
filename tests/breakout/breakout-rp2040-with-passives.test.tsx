@@ -68,7 +68,7 @@ test.skip("breakout routes rp2040 pins to nearby capacitors and resistors", asyn
 
   circuit.add(
     <board width="72mm" height="48mm">
-      <breakout name="RP2040_BREAKOUT" padding="3mm">
+      <breakout name="RP2040_BREAKOUT" autorouter="auto" padding="3mm">
         <chip
           name="U1"
           footprint="qfn56"

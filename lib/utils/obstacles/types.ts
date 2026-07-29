@@ -1,7 +1,7 @@
 export type Obstacle = {
   componentId?: string
-  // TODO include ovals
-  type: "rect" // NOTE: most datasets do not contain ovals
+  shape?: "circle"
+  type: "rect"
   layers: string[]
   zLayers?: number[]
   center: { x: number; y: number }

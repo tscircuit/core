@@ -27,4 +27,17 @@ describe("getPresetAutoroutingConfig", () => {
 
     expect(alias).toEqual(expected)
   })
+
+  test("normalizes fanout presets to local subcircuit routing", () => {
+    expect(getPresetAutoroutingConfig("single_layer_fanout")).toMatchObject({
+      local: true,
+      groupMode: "subcircuit",
+      preset: "single_layer_fanout",
+    })
+    expect(getPresetAutoroutingConfig("fanout")).toMatchObject({
+      local: true,
+      groupMode: "subcircuit",
+      preset: "fanout",
+    })
+  })
 })
