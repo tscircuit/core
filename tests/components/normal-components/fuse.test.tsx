@@ -43,5 +43,5 @@ test("<fuse /> schShowRatings={false}", async () => {
   const schComponent = circuitJson.find(
     (c: any) => c.type === "schematic_component",
   ) as any
-  expect(schComponent.symbol_display_value).toBeUndefined()
+  expect(schComponent.symbol_display_value).toBe("")
 })
