@@ -1,6 +1,6 @@
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import { su } from "@tscircuit/circuit-json-util"
-import type { AnyCircuitElement, PcbBoard } from "circuit-json"
+import type { AnyCircuitElement, PcbBoard, SourcePort } from "circuit-json"
 import {
   ConnectivityMap,
   getFullConnectivityMapFromCircuitJson,
@@ -107,6 +107,14 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   }
 
   db = su(subcircuitElements)
+  const getPortSelector = (sourcePort: SourcePort | null | undefined) => {
+    if (!sourcePort?.source_component_id) return undefined
+    const sourceComponent = db.source_component.get(
+      sourcePort.source_component_id,
+    )
+    if (!sourceComponent?.name) return undefined
+    return `${sourceComponent.name}.${sourcePort.name}`
+  }
   const pcbGroup = subcircuit_id
     ? db.pcb_group.getWhere({ subcircuit_id })
     : undefined
@@ -404,8 +412,14 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         sourcePortId: string,
       ) => {
         const bp = sourcePortIdToBreakoutPoint.get(sourcePortId)
+        const portSelector = getPortSelector(db.source_port.get(sourcePortId))
         if (bp && bp.subcircuit_id !== subcircuit_id) {
-          return { x: bp.x, y: bp.y, layer }
+          return {
+            x: bp.x,
+            y: bp.y,
+            layer,
+            port_selector: portSelector,
+          }
         }
         return {
           x: port.x!,
@@ -413,6 +427,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
           layer,
           pointId: port.pcb_port_id,
           pcb_port_id: port.pcb_port_id,
+          port_selector: portSelector,
         }
       }
       return {
@@ -569,6 +584,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
           layer: (p.layers?.[0] as any) ?? "top",
           pointId: p.pcb_port_id,
           pcb_port_id: p.pcb_port_id,
+          port_selector: getPortSelector(db.source_port.get(p.source_port_id)),
         })
       }
     }
@@ -605,6 +621,9 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         layer: (pcb_port.layers?.[0] as any) ?? "top",
         pointId: pcb_port.pcb_port_id,
         pcb_port_id: pcb_port.pcb_port_id,
+        port_selector: getPortSelector(
+          db.source_port.get(pcb_port.source_port_id),
+        ),
       }
 
       // Inner routing (same subcircuit): create [port → bp] so the
