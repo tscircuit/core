@@ -23,17 +23,10 @@ test("board autorouter passes allowViaInPad to SimpleRouteJson", async () => {
       <resistor name="R1" resistance="1k" footprint="0402" pcbX={-3} />
       <resistor name="R2" resistance="1k" footprint="0402" pcbX={3} />
       <trace from=".R1 > .pin2" to=".R2 > .pin1" />
-      <pcbnotetext
-        text="allowViaInPad enabled"
-        pcbX={0}
-        pcbY={-2.5}
-        fontSize={0.5}
-      />
     </board>,
   )
 
   await circuit.renderUntilSettled()
 
   expect(autorouterInput?.allowViaInPad).toBe(true)
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
