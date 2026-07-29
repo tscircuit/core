@@ -66,30 +66,16 @@ test.failing(
 
     await circuit.renderUntilSettled()
 
+    expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+
     const sourceComponent = circuit.db.source_component.getWhere({
       name: "L1",
-    })!
-    const schComp = circuit.db.schematic_component.getWhere({
-      source_component_id: sourceComponent.source_component_id,
     })
 
-    expect(schComp).toBeDefined()
-    expect(schComp?.is_box_with_pins).toBe(false)
+    expect(sourceComponent).toBeDefined()
+    expect(sourceComponent?.name).toBe("L1")
 
-    // No schematic_text entries are generated for the component name
-    const schematicTexts = circuit.db.schematic_text
-      .list()
-      .filter(
-        (t) => t.schematic_component_id === schComp?.schematic_component_id,
-      )
-
-    expect(schematicTexts).toHaveLength(0)
-
-    // Inspect the SVG — the component name "L1" should appear but doesn't
     const svg = await circuit.getSvg({ view: "schematic" })
-    expect(svg).toContain("sch-component")
-    expect(svg).toMatch(/sch-component-name.*L1/)
-
-    await expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+    expect(svg).toMatch(/sch-component-name[^<]*L1/)
   },
 )
