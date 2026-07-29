@@ -79,7 +79,7 @@
     "flatbush": "^4.5.0",
     "graphics-debug": "^0.0.95",
     "howfat": "^0.3.8",
-    "kicad-to-circuit-json": "^0.0.113",
+    "kicad-to-circuit-json": "^0.0.116",
     "kicadts": "^0.0.51",
     "live-server": "^1.2.2",
     "looks-same": "^9.0.1",
