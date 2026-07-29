@@ -784,16 +784,19 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           {
             method: "POST",
             body: JSON.stringify({
-              input_simple_route_json: getSimpleRouteJsonFromCircuitJson({
-                db,
-                minTraceWidth: Number(props.minTraceWidth ?? 0.15),
-                nominalTraceWidth:
-                  preferredTraceWidth != null
-                    ? Number(preferredTraceWidth)
-                    : undefined,
-                subcircuit_id: this.subcircuit_id,
-                subcircuitComponent: this,
-              }).simpleRouteJson,
+              input_simple_route_json: {
+                ...getSimpleRouteJsonFromCircuitJson({
+                  db,
+                  minTraceWidth: Number(props.minTraceWidth ?? 0.15),
+                  nominalTraceWidth:
+                    preferredTraceWidth != null
+                      ? Number(preferredTraceWidth)
+                      : undefined,
+                  subcircuit_id: this.subcircuit_id,
+                  subcircuitComponent: this,
+                }).simpleRouteJson,
+                allowViaInPad: autorouterConfig.allowViaInPad,
+              },
               subcircuit_id: this.subcircuit_id!,
             }),
             headers: {
@@ -1074,6 +1077,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         simpleRouteJson,
         routingPhasePlan.drcTolerances,
       )
+      simpleRouteJson = {
+        ...simpleRouteJson,
+        allowViaInPad: phaseAutorouterConfig.allowViaInPad,
+      }
 
       if (
         (hasPhasedAutorouting || isReroutePhase) &&
