@@ -28,6 +28,7 @@ test.failing(
     // But DRC falsely reports "disconnected endpoint" because
     // |0.7112 - 1.0414| = 0.33020000000000005 > 0.3302 (halfWidth)
     const traceErrors = circuit.db.pcb_trace_error?.list() ?? []
+    console.log(traceErrors[0]?.message)
     expect(traceErrors.length).toBe(0)
   },
 )
