@@ -58,18 +58,6 @@ const getDirectCrossSubcircuitConnectedSourcePortId = (
   }
 }
 
-const getDirectCrossSubcircuitConnectionLabelText = (
-  db: NonNullable<Group<any>["root"]>["db"],
-  sourcePortId: string,
-) => {
-  const otherSourcePortId = getDirectCrossSubcircuitConnectedSourcePortId(
-    db,
-    sourcePortId,
-  )
-  if (!otherSourcePortId) return undefined
-  return getSourcePortNetLabelText(db, otherSourcePortId)
-}
-
 export const insertNetLabelsForPortsMissingTrace = ({
   schematicPortIdsInScope,
   schematicPortIdsWithExternallyRoutedRepresentations,
@@ -150,8 +138,25 @@ export const insertNetLabelsForPortsMissingTrace = ({
       db,
       connectedSourcePortIdsForKey,
     )
+    const directCrossSubcircuitConnectedSourcePortId =
+      getDirectCrossSubcircuitConnectedSourcePortId(db, srcPortId)
     const directCrossSubcircuitConnectionLabelText =
-      getDirectCrossSubcircuitConnectionLabelText(db, srcPortId)
+      directCrossSubcircuitConnectedSourcePortId
+        ? getSourcePortNetLabelText(
+            db,
+            directCrossSubcircuitConnectedSourcePortId,
+          )
+        : undefined
+    const directCrossSubcircuitPortAlsoNeedsNetLabel =
+      directCrossSubcircuitConnectedSourcePortId
+        ? db.schematic_port
+            .list({
+              source_port_id: directCrossSubcircuitConnectedSourcePortId,
+            })
+            .some((port) => !port.is_connected)
+        : false
+    const shouldPreserveDirectCrossSubcircuitEndpointLabels =
+      directCrossSubcircuitPortAlsoNeedsNetLabel && !wasAssignedDisplayLabel
     const text =
       sourceNet?.name ||
       sourceNet?.source_net_id ||
@@ -221,7 +226,8 @@ export const insertNetLabelsForPortsMissingTrace = ({
 
     if (
       existingNetLabelForCurrentSourceConnection &&
-      connectedPortCountForKey <= 1
+      connectedPortCountForKey <= 1 &&
+      !shouldPreserveDirectCrossSubcircuitEndpointLabels
     ) {
       db.schematic_net_label.update(
         existingNetLabelForCurrentSourceConnection.schematic_net_label_id,
@@ -300,7 +306,7 @@ export const insertNetLabelsForPortsMissingTrace = ({
       if (existingAtPort) continue
     }
 
-    if (!sourceNet) {
+    if (!sourceNet && !shouldPreserveDirectCrossSubcircuitEndpointLabels) {
       for (const nl of db.schematic_net_label.list()) {
         if (nl.source_net_id !== connKey) continue
         if (nl.schematic_sheet_id !== portSchematicSheetId) continue
