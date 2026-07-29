@@ -779,24 +779,24 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       if (this.props.autorouter?.inputFormat === "simplified") {
         const preferredTraceWidth =
           props.defaultTraceWidth ?? props.nominalTraceWidth
+        const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
+          db,
+          minTraceWidth: Number(props.minTraceWidth ?? 0.15),
+          nominalTraceWidth:
+            preferredTraceWidth != null
+              ? Number(preferredTraceWidth)
+              : undefined,
+          subcircuit_id: this.subcircuit_id,
+          subcircuitComponent: this,
+        })
+        simpleRouteJson.allowViaInPad = autorouterConfig.allowViaInPad
+
         const { autorouting_result } = await fetchWithDebug(
           `${serverUrl}/autorouting/solve`,
           {
             method: "POST",
             body: JSON.stringify({
-              input_simple_route_json: {
-                ...getSimpleRouteJsonFromCircuitJson({
-                  db,
-                  minTraceWidth: Number(props.minTraceWidth ?? 0.15),
-                  nominalTraceWidth:
-                    preferredTraceWidth != null
-                      ? Number(preferredTraceWidth)
-                      : undefined,
-                  subcircuit_id: this.subcircuit_id,
-                  subcircuitComponent: this,
-                }).simpleRouteJson,
-                allowViaInPad: autorouterConfig.allowViaInPad,
-              },
+              input_simple_route_json: simpleRouteJson,
               subcircuit_id: this.subcircuit_id!,
             }),
             headers: {
@@ -1077,10 +1077,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         simpleRouteJson,
         routingPhasePlan.drcTolerances,
       )
-      simpleRouteJson = {
-        ...simpleRouteJson,
-        allowViaInPad: phaseAutorouterConfig.allowViaInPad,
-      }
+      simpleRouteJson.allowViaInPad = phaseAutorouterConfig.allowViaInPad
 
       if (
         (hasPhasedAutorouting || isReroutePhase) &&
