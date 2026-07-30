@@ -9,10 +9,6 @@ import type {
 
 type SourcePortId = NonNullable<SourcePort["source_port_id"]>
 type SubcircuitId = NonNullable<SourceTrace["subcircuit_id"]>
-type SubcircuitConnectivityMapKey = NonNullable<
-  SourceTrace["subcircuit_connectivity_map_key"]
->
-
 type GetBusesParams = {
   srjConnections: SimpleRouteConnection[]
   buses: Bus[]
@@ -20,7 +16,7 @@ type GetBusesParams = {
   subcircuitId?: SubcircuitId | null
 }
 
-const getBusSourceTraceSubcircuitConnectivityMapKeyOrThrow = ({
+const getBusSourceTraceOrThrow = ({
   bus,
   busSourceTraces,
   traceNameOrPortSelector,
@@ -28,7 +24,7 @@ const getBusSourceTraceSubcircuitConnectivityMapKeyOrThrow = ({
   bus: Bus
   busSourceTraces: SourceTrace[]
   traceNameOrPortSelector: string
-}): SubcircuitConnectivityMapKey => {
+}): SourceTrace => {
   const sourceTracesWithMatchingName = busSourceTraces.filter(
     (sourceTrace) => sourceTrace.name === traceNameOrPortSelector,
   )
@@ -57,34 +53,48 @@ const getBusSourceTraceSubcircuitConnectivityMapKeyOrThrow = ({
     )
   }
 
-  const sourceTrace = matchingSourceTraces[0]
-  if (!sourceTrace?.subcircuit_connectivity_map_key) {
+  const sourceTrace = matchingSourceTraces[0]!
+  if (!sourceTrace.subcircuit_connectivity_map_key) {
     throw new Error(
       `Source trace for "${traceNameOrPortSelector}" does not have a subcircuit connectivity map key in bus "${bus.name}"`,
     )
   }
 
-  return sourceTrace.subcircuit_connectivity_map_key
+  return sourceTrace
 }
 
 const getBusSrjConnectionNameOrThrow = ({
   srjConnections,
   bus,
   busSourceTraces,
-  traceSubcircuitConnectivityMapKey,
+  sourceTrace,
   traceNameOrPortSelector,
 }: {
   srjConnections: SimpleRouteConnection[]
   bus: Bus
   busSourceTraces: SourceTrace[]
-  traceSubcircuitConnectivityMapKey: SubcircuitConnectivityMapKey
+  sourceTrace: SourceTrace
   traceNameOrPortSelector: string
 }): SrjConnectionName => {
+  const exactSrjConnections = srjConnections.filter(
+    (srjConnection) =>
+      srjConnection.source_trace_id === sourceTrace.source_trace_id,
+  )
+  if (exactSrjConnections.length === 1) {
+    return exactSrjConnections[0]!.name
+  }
+  if (exactSrjConnections.length > 1) {
+    throw new Error(
+      `Trace name or port selector "${traceNameOrPortSelector}" matches multiple SRJ connections in bus "${bus.name}"`,
+    )
+  }
+
+  const connectivityMapKey = sourceTrace.subcircuit_connectivity_map_key
   const sourceTraceIds = busSourceTraces
     .filter(
-      (sourceTrace) =>
-        sourceTrace.subcircuit_connectivity_map_key ===
-        traceSubcircuitConnectivityMapKey,
+      (candidateSourceTrace) =>
+        candidateSourceTrace.subcircuit_connectivity_map_key ===
+        connectivityMapKey,
     )
     .map((sourceTrace) => sourceTrace.source_trace_id)
   const matchingSrjConnections = srjConnections.filter(
@@ -107,6 +117,37 @@ const getBusSrjConnectionNameOrThrow = ({
   return matchingSrjConnections[0]!.name
 }
 
+export const getPlaneTerminatedBusSourceTraceIds = ({
+  buses,
+  sourceTraces,
+  subcircuitId,
+}: Pick<
+  GetBusesParams,
+  "buses" | "sourceTraces" | "subcircuitId"
+>): Set<string> => {
+  const sourceTraceIds = new Set<string>()
+  for (const bus of buses) {
+    if (bus._parsedProps.fanoutTermination?.type !== "plane") continue
+
+    const busSubcircuitId = bus.getSubcircuit().subcircuit_id
+    if (subcircuitId && busSubcircuitId !== subcircuitId) continue
+
+    const busSourceTraces = sourceTraces.filter(
+      (sourceTrace) => sourceTrace.subcircuit_id === busSubcircuitId,
+    )
+    for (const traceNameOrPortSelector of bus._parsedProps.connections) {
+      sourceTraceIds.add(
+        getBusSourceTraceOrThrow({
+          bus,
+          busSourceTraces,
+          traceNameOrPortSelector,
+        }).source_trace_id,
+      )
+    }
+  }
+  return sourceTraceIds
+}
+
 /** Converts bus trace names or port selectors into SRJ constraints. */
 export const getBusesForSimpleRouteJson = ({
   srjConnections,
@@ -124,17 +165,16 @@ export const getBusesForSimpleRouteJson = ({
     )
     const connectionNames = bus._parsedProps.connections.map(
       (traceNameOrPortSelector) => {
-        const traceSubcircuitConnectivityMapKey =
-          getBusSourceTraceSubcircuitConnectivityMapKeyOrThrow({
-            bus,
-            busSourceTraces,
-            traceNameOrPortSelector,
-          })
+        const sourceTrace = getBusSourceTraceOrThrow({
+          bus,
+          busSourceTraces,
+          traceNameOrPortSelector,
+        })
         return getBusSrjConnectionNameOrThrow({
           srjConnections,
           bus,
           busSourceTraces,
-          traceSubcircuitConnectivityMapKey,
+          sourceTrace,
           traceNameOrPortSelector,
         })
       },
@@ -150,6 +190,9 @@ export const getBusesForSimpleRouteJson = ({
       busId: bus.name,
       name: bus.name,
       connectionNames,
+      ...(bus._parsedProps.fanoutTermination
+        ? { termination: bus._parsedProps.fanoutTermination }
+        : {}),
     })
   }
 

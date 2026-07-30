@@ -15,7 +15,10 @@ import type {
   SimpleRouteJson,
 } from "./SimpleRouteJson"
 import { getDescendantSubcircuitIds } from "./getAncestorSubcircuitIds"
-import { getBusesForSimpleRouteJson } from "./getBusesForSimpleRouteJson"
+import {
+  getBusesForSimpleRouteJson,
+  getPlaneTerminatedBusSourceTraceIds,
+} from "./getBusesForSimpleRouteJson"
 import { getDifferentialPairsForSimpleRouteJson } from "./getDifferentialPairsForSimpleRouteJson"
 import { getPreservedRoutedSubcircuitTraces } from "./getPreservedRoutedSubcircuitTraces"
 import { getUnbrokenCopperPourObstacles } from "./getUnbrokenCopperPourObstacles"
@@ -341,8 +344,14 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   // here so it is preserved as fixed copper instead of re-routed.
   // For cross-boundary traces, add breakout points as additional
   // waypoints so the autorouter routes through the boundary.
-  const directTraceConnections = db.source_trace
-    .list()
+  const sourceTraces = db.source_trace.list()
+  const buses: Bus[] = subcircuitComponent?.selectAll<Bus>("bus") ?? []
+  const planeTerminatedBusSourceTraceIds = getPlaneTerminatedBusSourceTraceIds({
+    buses,
+    sourceTraces,
+    subcircuitId: subcircuit_id,
+  })
+  const directTraceConnections = sourceTraces
     .filter(
       (trace) =>
         !sourceTraceIdsAlreadyPreservedAsSrjTraces.has(trace.source_trace_id),
@@ -361,7 +370,15 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         }
       })
 
-      if (connectedPorts.length < 2) return null
+      const isPlaneTerminatedSourceTrace = planeTerminatedBusSourceTraceIds.has(
+        trace.source_trace_id,
+      )
+      if (
+        connectedPorts.length < 2 &&
+        !(isPlaneTerminatedSourceTrace && connectedPorts.length === 1)
+      ) {
+        return null
+      }
 
       // TODO handle trace.connected_source_net_ids
       for (const connectedPort of connectedPorts) {
@@ -464,9 +481,9 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   // eligible through an explicit current-scope net reference or exposed-net
   // contract.
   const sourceNetIds = new Set(source_nets.map((net) => net.source_net_id))
-  const currentSubcircuitSourceTraces = db.source_trace
-    .list()
-    .filter((trace) => !subcircuit_id || trace.subcircuit_id === subcircuit_id)
+  const currentSubcircuitSourceTraces = sourceTraces.filter(
+    (trace) => !subcircuit_id || trace.subcircuit_id === subcircuit_id,
+  )
   const exposedBridgeSourceTraceIds = new Set(
     (subcircuitComponent?.selectAll("trace") ?? []).flatMap((trace) => {
       const candidate = trace as {
@@ -505,8 +522,10 @@ export const getSimpleRouteJsonFromCircuitJson = ({
           .filter((id): id is string => Boolean(id))
       : [],
   )
-  const sourceTracesEligibleForNetConnections = db.source_trace
-    .list()
+  const sourceTracesEligibleForNetConnections = sourceTraces
+    .filter(
+      (trace) => !planeTerminatedBusSourceTraceIds.has(trace.source_trace_id),
+    )
     .filter(
       (trace) =>
         // Existing copper must still contribute endpoint connectivity when it
@@ -592,6 +611,8 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       width: nominalTraceWidthFromConnectedTraces,
       pointsToConnect,
     }
+    if (pointsToConnect.length === 0) continue
+
     connectionsFromNets.push(connection)
     for (const sourceNetId of connectedSourceNetIds) {
       connectionFromNetId.set(sourceNetId, connection)
@@ -674,20 +695,18 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   const differentialPairs: DifferentialPair[] =
     subcircuitComponent?.selectAll<DifferentialPair>("differentialpair") ?? []
 
-  const buses: Bus[] = subcircuitComponent?.selectAll<Bus>("bus") ?? []
-
   const srjDifferentialPairs: SimpleRouteDifferentialPair[] | undefined =
     getDifferentialPairsForSimpleRouteJson({
       srjConnections: allConns,
       differentialPairs,
-      sourceTraces: db.source_trace.list(),
+      sourceTraces,
       subcircuitId: subcircuit_id,
     })
 
   const srjBuses = getBusesForSimpleRouteJson({
     srjConnections: allConns,
     buses,
-    sourceTraces: db.source_trace.list(),
+    sourceTraces,
     subcircuitId: subcircuit_id,
   })
 

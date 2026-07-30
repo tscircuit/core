@@ -1,6 +1,7 @@
 import {
   FanoutSolver,
   type FanoutBorderTarget,
+  type FanoutDirection,
   type FanoutSolverOptions,
 } from "@tscircuit/fanout-solver"
 import type {
@@ -56,6 +57,27 @@ const getFanoutBorderTarget = (
       return "bottom"
     case "bottom_right":
       return "bottom-right"
+  }
+}
+
+const getPlaneFanoutDirection = (
+  anchor: NinePointAnchor,
+): FanoutDirection | undefined => {
+  switch (anchor) {
+    case "top_left":
+    case "top_center":
+    case "top_right":
+      return "up"
+    case "center_left":
+      return "left"
+    case "center":
+      return undefined
+    case "center_right":
+      return "right"
+    case "bottom_left":
+    case "bottom_center":
+    case "bottom_right":
+      return "down"
   }
 }
 
@@ -151,6 +173,11 @@ export class FanoutAutorouter implements GenericLocalAutorouter {
     | undefined {
     if (!this.options.busFanoutDirections) return undefined
     const knownBusIds = new Set(this.input.buses?.map((bus) => bus.busId) ?? [])
+    const planeBusIds = new Set(
+      this.input.buses
+        ?.filter((bus) => bus.termination?.type === "plane")
+        .map((bus) => bus.busId) ?? [],
+    )
     const preferences: Record<string, FanoutBorderTarget> = {}
     for (const [busId, fanoutDirection] of Object.entries(
       this.options.busFanoutDirections,
@@ -160,16 +187,40 @@ export class FanoutAutorouter implements GenericLocalAutorouter {
           `Fanout direction references unknown bus "${busId}" in this autorouting phase`,
         )
       }
+      if (planeBusIds.has(busId)) continue
       const target = getFanoutBorderTarget(getNinePointAnchor(fanoutDirection))
       if (target) preferences[busId] = target
     }
     return Object.keys(preferences).length > 0 ? preferences : undefined
   }
 
+  private getPlaneBusDirections():
+    | Readonly<Record<string, FanoutDirection>>
+    | undefined {
+    if (!this.options.busFanoutDirections) return undefined
+    const planeBusIds = new Set(
+      this.input.buses
+        ?.filter((bus) => bus.termination?.type === "plane")
+        .map((bus) => bus.busId) ?? [],
+    )
+    const directions: Record<string, FanoutDirection> = {}
+    for (const [busId, fanoutDirection] of Object.entries(
+      this.options.busFanoutDirections,
+    )) {
+      if (!planeBusIds.has(busId)) continue
+      const direction = getPlaneFanoutDirection(
+        getNinePointAnchor(fanoutDirection),
+      )
+      if (direction) directions[busId] = direction
+    }
+    return Object.keys(directions).length > 0 ? directions : undefined
+  }
+
   private getFanoutSolverOptions(): FanoutSolverOptions {
     const commonOptions: FanoutSolverOptions = {
       borderDistribution: "even",
       compactBusTracks: true,
+      busDirections: this.getPlaneBusDirections(),
       busExitPreferences: this.getBusExitPreferences(),
     }
     if (this.options.mode === "single_layer_fanout") {
