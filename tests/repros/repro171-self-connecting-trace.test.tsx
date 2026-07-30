@@ -42,6 +42,14 @@ test.failing(
       }
     }
 
+    // The misleading downstream error DOES exist
+    const missingTraceErrors = circuit.db.pcb_trace_missing_error.list()
+    for (const err of missingTraceErrors) {
+      console.log(`MISLEADING ERROR: ${(err as any).message}`)
+    }
+    expect(missingTraceErrors.length).toBeGreaterThan(0)
+
+    // But the correct direct error does NOT exist — this is the bug
     const errors = circuit.db.source_trace_not_connected_error.list()
     expect(errors.length).toBeGreaterThan(0)
   },
