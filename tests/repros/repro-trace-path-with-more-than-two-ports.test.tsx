@@ -5,7 +5,7 @@ test("repro: trace path with more than two ports", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="16mm" height="12mm">
+    <board width="16mm" height="12mm" schMaxTraceDistance={4}>
       <chip
         name="mcu"
         footprint="soic8"
