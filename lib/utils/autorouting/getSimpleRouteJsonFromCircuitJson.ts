@@ -16,8 +16,9 @@ import type {
 } from "./SimpleRouteJson"
 import { getDescendantSubcircuitIds } from "./getAncestorSubcircuitIds"
 import {
+  type FanoutPourNetMap,
   getBusesForSimpleRouteJson,
-  getPlaneTerminatedBusSourceTraceIds,
+  getPlaneTerminatedSourceTraceLayers,
 } from "./getBusesForSimpleRouteJson"
 import { getDifferentialPairsForSimpleRouteJson } from "./getDifferentialPairsForSimpleRouteJson"
 import { getPreservedRoutedSubcircuitTraces } from "./getPreservedRoutedSubcircuitTraces"
@@ -41,6 +42,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   minViaPadDiameter,
   nominalTraceWidth,
   subcircuitComponent,
+  fanoutPourNetMap,
   ignoreExistingTopLevelPcbRouteState = false,
 }: {
   db?: CircuitJsonUtilObjects
@@ -57,6 +59,11 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   minViaHoleDiameter?: number
   minViaPadDiameter?: number
   subcircuitComponent?: Pick<ISubcircuit, "selectAll">
+  /**
+   * Copper plane intent used by fanout routing. Source-only traces whose nets
+   * are mapped here become internal plane-terminated buses in SRJ.
+   */
+  fanoutPourNetMap?: FanoutPourNetMap
   /**
    * Excludes existing root-level PCB route state from a fresh routing problem.
    * Routed child-subcircuit traces and vias remain fixed routing geometry.
@@ -345,9 +352,9 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   // For cross-boundary traces, add breakout points as additional
   // waypoints so the autorouter routes through the boundary.
   const sourceTraces = db.source_trace.list()
-  const buses: Bus[] = subcircuitComponent?.selectAll<Bus>("bus") ?? []
-  const planeTerminatedBusSourceTraceIds = getPlaneTerminatedBusSourceTraceIds({
-    buses,
+  const planeTerminatedSourceTraceLayers = getPlaneTerminatedSourceTraceLayers({
+    fanoutPourNetMap,
+    sourceNets: db.source_net.list(),
     sourceTraces,
     subcircuitId: subcircuit_id,
   })
@@ -370,7 +377,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         }
       })
 
-      const isPlaneTerminatedSourceTrace = planeTerminatedBusSourceTraceIds.has(
+      const isPlaneTerminatedSourceTrace = planeTerminatedSourceTraceLayers.has(
         trace.source_trace_id,
       )
       if (
@@ -481,9 +488,9 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   // eligible through an explicit current-scope net reference or exposed-net
   // contract.
   const sourceNetIds = new Set(source_nets.map((net) => net.source_net_id))
-  const currentSubcircuitSourceTraces = sourceTraces.filter(
-    (trace) => !subcircuit_id || trace.subcircuit_id === subcircuit_id,
-  )
+  const currentSubcircuitSourceTraces = db.source_trace
+    .list()
+    .filter((trace) => !subcircuit_id || trace.subcircuit_id === subcircuit_id)
   const exposedBridgeSourceTraceIds = new Set(
     (subcircuitComponent?.selectAll("trace") ?? []).flatMap((trace) => {
       const candidate = trace as {
@@ -522,9 +529,10 @@ export const getSimpleRouteJsonFromCircuitJson = ({
           .filter((id): id is string => Boolean(id))
       : [],
   )
-  const sourceTracesEligibleForNetConnections = sourceTraces
+  const sourceTracesEligibleForNetConnections = db.source_trace
+    .list()
     .filter(
-      (trace) => !planeTerminatedBusSourceTraceIds.has(trace.source_trace_id),
+      (trace) => !planeTerminatedSourceTraceLayers.has(trace.source_trace_id),
     )
     .filter(
       (trace) =>
@@ -695,19 +703,22 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   const differentialPairs: DifferentialPair[] =
     subcircuitComponent?.selectAll<DifferentialPair>("differentialpair") ?? []
 
+  const buses: Bus[] = subcircuitComponent?.selectAll<Bus>("bus") ?? []
+
   const srjDifferentialPairs: SimpleRouteDifferentialPair[] | undefined =
     getDifferentialPairsForSimpleRouteJson({
       srjConnections: allConns,
       differentialPairs,
-      sourceTraces,
+      sourceTraces: db.source_trace.list(),
       subcircuitId: subcircuit_id,
     })
 
   const srjBuses = getBusesForSimpleRouteJson({
     srjConnections: allConns,
     buses,
-    sourceTraces,
+    sourceTraces: db.source_trace.list(),
     subcircuitId: subcircuit_id,
+    planeTerminatedSourceTraceLayers,
   })
 
   if (subcircuit_id) {

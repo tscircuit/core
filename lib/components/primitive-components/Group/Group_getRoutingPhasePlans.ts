@@ -280,6 +280,7 @@ export function Group_getRoutingPhasePlans(
     plan.fanoutRoutingLayers = phaseProps?.fanoutRoutingLayers?.map((layer) =>
       typeof layer === "string" ? layer : layer.name,
     )
+    plan.fanoutPourNetMap = phaseProps?.fanoutPourNetMap
     plan.drcTolerances = phaseProps
       ? getDrcTolerancesFromAutoroutingPhaseProps(phaseProps)
       : undefined
