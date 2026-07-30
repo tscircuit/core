@@ -113,6 +113,15 @@ test("fanout drops source-only power and ground connections to internal planes",
   const vias = circuit.db.pcb_via.list()
   expect(vias.some((via) => via.to_layer === "inner1")).toBe(true)
   expect(vias.some((via) => via.to_layer === "inner2")).toBe(true)
+  expect(vias.find((via) => via.to_layer === "inner1")?.layers).toEqual([
+    "top",
+    "inner1",
+  ])
+  expect(vias.find((via) => via.to_layer === "inner2")?.layers).toEqual([
+    "top",
+    "inner1",
+    "inner2",
+  ])
 
   const signalSourceTraceIds = new Set(
     ["SIGNAL", "SIGNAL_RETURN"].map(

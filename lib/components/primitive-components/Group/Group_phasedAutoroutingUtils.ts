@@ -1,3 +1,4 @@
+import type { LayerRef } from "circuit-json"
 import type {
   Obstacle,
   SimpleRouteDifferentialPair,
@@ -5,7 +6,7 @@ import type {
   SimpleRouteJson,
   SimplifiedPcbTrace,
 } from "lib/utils/autorouting/SimpleRouteJson"
-import { getViaBoardLayers } from "lib/utils/getViaSpanLayers"
+import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
 import type {
   RoutingPhaseDrcTolerances,
   RoutingPhasePlan,
@@ -126,7 +127,11 @@ function createViaObstacle(
   return {
     obstacleId: `${connectedTo}_phase_via_obstacle_${obstacleIndex}`,
     type: "rect",
-    layers: getViaBoardLayers(layerCount),
+    layers: getViaSpanLayers({
+      fromLayer: point.from_layer as LayerRef,
+      toLayer: point.to_layer as LayerRef,
+      layerCount,
+    }),
     center: { x: point.x, y: point.y },
     width: 0.6,
     height: 0.6,

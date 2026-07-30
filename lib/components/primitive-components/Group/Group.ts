@@ -39,7 +39,7 @@ import {
 import { getLocalAutoroutingStages } from "lib/utils/autorouting/localAutorouterStrategies"
 import { shouldSkipAutoroutingBecauseOfPlacementErrors } from "lib/utils/autorouting/should-skip-autorouting-because-of-placement-errors"
 import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
-import { getViaBoardLayers } from "lib/utils/getViaSpanLayers"
+import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
 import {
   GROUND_NET_REGEX,
   POWER_NET_REGEX,
@@ -1648,7 +1648,11 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
                 routedViaPoint.via_diameter ??
                 routedViaPoint.outer_diameter ??
                 routedViaPadDiameter,
-              layers: getViaBoardLayers(this._getSubcircuitLayerCount()),
+              layers: getViaSpanLayers({
+                fromLayer,
+                toLayer,
+                layerCount: this._getSubcircuitLayerCount(),
+              }),
               from_layer: fromLayer,
               to_layer: toLayer,
               subcircuit_id: this.subcircuit_id!,
