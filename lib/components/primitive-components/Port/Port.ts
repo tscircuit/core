@@ -25,6 +25,12 @@ export class Port extends PrimitiveComponent<typeof portProps> {
   schematic_port_id: string | null = null
   schematic_stem_line_id: string | null = null
 
+  /**
+   * False when a parent component will assign an existing source_port_id
+   * during a later render phase.
+   */
+  readonly shouldCreateSourcePort: boolean
+
   schematicSymbolPortDef: SchSymbol["ports"][number] | null = null
   matchedComponents: PrimitiveComponent[]
   _isPrimaryPort = true
@@ -42,7 +48,10 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
   constructor(
     props: z.input<typeof portProps>,
-    opts: { originDescription?: string } = {},
+    opts: {
+      originDescription?: string
+      shouldCreateSourcePort?: boolean
+    } = {},
   ) {
     if (!props.name && props.pinNumber !== undefined)
       props.name = `pin${props.pinNumber}`
@@ -53,6 +62,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     if (opts.originDescription) {
       this.originDescription = opts.originDescription
     }
+    this.shouldCreateSourcePort = opts.shouldCreateSourcePort ?? true
     this.matchedComponents = []
   }
 
@@ -99,6 +109,11 @@ export class Port extends PrimitiveComponent<typeof portProps> {
   }
 
   _getGlobalPcbPositionBeforeLayout(): { x: number; y: number } {
+    if (this.pcb_port_id) {
+      const pcbPort = this.root?.db.pcb_port.get(this.pcb_port_id)
+      if (pcbPort?.pcb_component_id) return { x: pcbPort.x, y: pcbPort.y }
+    }
+
     const matchedPcbElm = this.matchedComponents.find((c) => c.isPcbPrimitive)
     const parentComponent = this.parent
 
@@ -330,6 +345,10 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     const { layer, layers } = this._parsedProps
     if (layers) return layers as LayerRef[]
     if (layer) return [layer as LayerRef]
+    if (this.pcb_port_id) {
+      const pcbPort = this.root?.db.pcb_port.get(this.pcb_port_id)
+      if (pcbPort?.pcb_component_id) return pcbPort.layers as LayerRef[]
+    }
     return Array.from(
       new Set(this.matchedComponents.flatMap((c) => c.getAvailablePcbLayers())),
     ) as LayerRef[]
@@ -355,6 +374,8 @@ export class Port extends PrimitiveComponent<typeof portProps> {
   }
 
   doInitialSourceRender(): void {
+    if (!this.shouldCreateSourcePort) return
+
     const { db } = this.root!
     const { _parsedProps: props } = this
 
@@ -391,6 +412,8 @@ export class Port extends PrimitiveComponent<typeof portProps> {
   }
 
   doInitialSourceParentAttachment(): void {
+    if (!this.shouldCreateSourcePort) return
+
     const { db } = this.root!
     const parentNormalComponent = this.getParentNormalComponent()
     const parentWithSourceId = this.parent?.source_component_id
@@ -422,6 +445,8 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
   doInitialPcbPortRender(): void {
     if (this.root?.pcbDisabled) return
+    if (this.getPrimitiveContainer()?.isSchematicPrimitive) return
+
     const { db } = this.root!
     const { matchedComponents } = this
 
@@ -506,6 +531,8 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
   updatePcbPortRender(): void {
     if (this.root?.pcbDisabled) return
+    if (this.getPrimitiveContainer()?.isSchematicPrimitive) return
+
     const { db } = this.root!
 
     // If pcb_port already exists, nothing to do
@@ -556,6 +583,15 @@ export class Port extends PrimitiveComponent<typeof portProps> {
   }
 
   doInitialPcbPortAttachment(): void {
+    if (!this.pcb_port_id && this.source_port_id) {
+      const existingPcbPort = this.root?.db.pcb_port
+        .list({ source_port_id: this.source_port_id })
+        .find((pcbPort) => Boolean(pcbPort.pcb_component_id))
+      if (existingPcbPort) {
+        this.pcb_port_id = existingPcbPort.pcb_port_id
+        return
+      }
+    }
     if (!this.isGroupPort() || this.pcb_port_id) return
     Port_tryRenderGroupPcbPort(this)
   }
@@ -772,8 +808,14 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     })
   }
 
-  _hasMatchedPcbPrimitive() {
-    return this.matchedComponents.some((c) => c.isPcbPrimitive)
+  _hasMatchedPcbPrimitive(): boolean {
+    const pcbPort = this.pcb_port_id
+      ? this.root?.db.pcb_port.get(this.pcb_port_id)
+      : null
+    return (
+      Boolean(pcbPort?.pcb_component_id) ||
+      this.matchedComponents.some((c) => c.isPcbPrimitive)
+    )
   }
 
   /**

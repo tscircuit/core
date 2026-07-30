@@ -1,10 +1,11 @@
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import { su } from "@tscircuit/circuit-json-util"
-import type { AnyCircuitElement, PcbBoard } from "circuit-json"
+import type { AnyCircuitElement, PcbBoard, SourcePort } from "circuit-json"
 import {
   ConnectivityMap,
   getFullConnectivityMapFromCircuitJson,
 } from "circuit-json-to-connectivity-map"
+import { Bus } from "lib/components/primitive-components/Bus"
 import { DifferentialPair } from "lib/components/primitive-components/DifferentialPair"
 import type { ISubcircuit } from "lib/components/primitive-components/Group/Subcircuit/ISubcircuit"
 import { getObstaclesFromCircuitJson } from "../obstacles/getObstaclesFromCircuitJson"
@@ -14,6 +15,7 @@ import type {
   SimpleRouteJson,
 } from "./SimpleRouteJson"
 import { getDescendantSubcircuitIds } from "./getAncestorSubcircuitIds"
+import { getBusesForSimpleRouteJson } from "./getBusesForSimpleRouteJson"
 import { getDifferentialPairsForSimpleRouteJson } from "./getDifferentialPairsForSimpleRouteJson"
 import { getPreservedRoutedSubcircuitTraces } from "./getPreservedRoutedSubcircuitTraces"
 import { getUnbrokenCopperPourObstacles } from "./getUnbrokenCopperPourObstacles"
@@ -105,6 +107,14 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   }
 
   db = su(subcircuitElements)
+  const getPortSelector = (sourcePort: SourcePort | null | undefined) => {
+    if (!sourcePort?.source_component_id) return undefined
+    const sourceComponent = db.source_component.get(
+      sourcePort.source_component_id,
+    )
+    if (!sourceComponent?.name) return undefined
+    return `${sourceComponent.name}.${sourcePort.name}`
+  }
   const pcbGroup = subcircuit_id
     ? db.pcb_group.getWhere({ subcircuit_id })
     : undefined
@@ -402,8 +412,14 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         sourcePortId: string,
       ) => {
         const bp = sourcePortIdToBreakoutPoint.get(sourcePortId)
+        const portSelector = getPortSelector(db.source_port.get(sourcePortId))
         if (bp && bp.subcircuit_id !== subcircuit_id) {
-          return { x: bp.x, y: bp.y, layer }
+          return {
+            x: bp.x,
+            y: bp.y,
+            layer,
+            port_selector: portSelector,
+          }
         }
         return {
           x: port.x!,
@@ -411,6 +427,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
           layer,
           pointId: port.pcb_port_id,
           pcb_port_id: port.pcb_port_id,
+          port_selector: portSelector,
         }
       }
       return {
@@ -567,6 +584,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
           layer: (p.layers?.[0] as any) ?? "top",
           pointId: p.pcb_port_id,
           pcb_port_id: p.pcb_port_id,
+          port_selector: getPortSelector(db.source_port.get(p.source_port_id)),
         })
       }
     }
@@ -603,6 +621,9 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         layer: (pcb_port.layers?.[0] as any) ?? "top",
         pointId: pcb_port.pcb_port_id,
         pcb_port_id: pcb_port.pcb_port_id,
+        port_selector: getPortSelector(
+          db.source_port.get(pcb_port.source_port_id),
+        ),
       }
 
       // Inner routing (same subcircuit): create [port → bp] so the
@@ -658,6 +679,8 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   const differentialPairs: DifferentialPair[] =
     subcircuitComponent?.selectAll<DifferentialPair>("differentialpair") ?? []
 
+  const buses: Bus[] = subcircuitComponent?.selectAll<Bus>("bus") ?? []
+
   const srjDifferentialPairs: SimpleRouteDifferentialPair[] | undefined =
     getDifferentialPairsForSimpleRouteJson({
       srjConnections: allConns,
@@ -665,6 +688,13 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       sourceTraces: db.source_trace.list(),
       subcircuitId: subcircuit_id,
     })
+
+  const srjBuses = getBusesForSimpleRouteJson({
+    srjConnections: allConns,
+    buses,
+    sourceTraces: db.source_trace.list(),
+    subcircuitId: subcircuit_id,
+  })
 
   if (subcircuit_id) {
     const pointIdToConn = new Map<string, SimpleRouteConnection>()
@@ -724,6 +754,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       obstacles,
       connections: allConns,
       differentialPairs: srjDifferentialPairs,
+      ...(srjBuses ? { buses: srjBuses } : {}),
       traces:
         preservedRoutedSubcircuitTraces.length > 0
           ? preservedRoutedSubcircuitTraces

@@ -190,6 +190,11 @@ export function Group_getRoutingPhasePlans(
   const plansByPhaseIndex = new Map<number | null, RoutingPhasePlan>()
   const autoroutersByPhaseIndex = getAutoroutersByPhaseIndex(group)
   const phasePropsByPhaseIndex = getAutoroutingPhasePropsByPhaseIndex(group)
+  const groupFanoutBoundaryPadding = (
+    group._parsedProps as {
+      fanoutBoundaryPadding?: AutoroutingPhaseProps["fanoutBoundaryPadding"]
+    }
+  ).fanoutBoundaryPadding
   const hasDirectRoutingTargets = traces.length > 0 || nets.length > 0
   const hasReroutePhase = Array.from(phasePropsByPhaseIndex.values()).some(
     (phaseProps) => phaseProps.reroute,
@@ -269,6 +274,9 @@ export function Group_getRoutingPhasePlans(
     plan.connectionSelectors = phaseProps
       ? getConnectionSelectorsFromAutoroutingPhaseProps(phaseProps)
       : undefined
+    plan.busFanoutDirections = phaseProps?.busFanoutDirections
+    plan.fanoutBoundaryPadding =
+      phaseProps?.fanoutBoundaryPadding ?? groupFanoutBoundaryPadding
     plan.drcTolerances = phaseProps
       ? getDrcTolerancesFromAutoroutingPhaseProps(phaseProps)
       : undefined

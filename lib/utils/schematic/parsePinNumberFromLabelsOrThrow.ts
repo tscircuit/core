@@ -2,7 +2,7 @@ import { getPinNumberFromPinLabelsKey } from "./getPinNumberFromPinLabelsKey"
 
 export const parsePinNumberFromLabelsOrThrow = (
   pinNumberOrLabel: string | number,
-  pinLabels?: Record<string, string[] | string> | null,
+  pinLabels?: Record<string, readonly string[] | string> | null,
 ): number => {
   if (typeof pinNumberOrLabel === "number") {
     return pinNumberOrLabel

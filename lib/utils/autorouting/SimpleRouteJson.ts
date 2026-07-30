@@ -50,7 +50,8 @@ export type Obstacle = {
   obstacleId?: string
   componentId?: string
   // TODO include ovals
-  type: "rect" // NOTE: most datasets do not contain ovals
+  type: "rect"
+  shape?: "circle"
   layers: string[]
   zLayers?: number[]
   center: { x: number; y: number }
@@ -66,6 +67,21 @@ export type Obstacle = {
 /** A connection identifier in Simple Route JSON. */
 export type SrjConnectionName = string
 
+export type SimpleRoutePoint = {
+  x: number
+  y: number
+  layer: string
+  layers?: string[]
+  pointId?: string
+  pcb_port_id?: string
+  /** Stable semantic selector for the source port, e.g. `U1.USB_DM`. */
+  port_selector?: string
+  terminalVia?: {
+    toLayer: string
+    viaDiameter?: number
+  }
+}
+
 export type SimpleRouteConnection = {
   name: SrjConnectionName
   source_trace_id?: string
@@ -76,18 +92,7 @@ export type SimpleRouteConnection = {
   nominalTraceWidth?: number
   /** @deprecated Use `nominalTraceWidth` instead. */
   width?: number
-  pointsToConnect: Array<{
-    x: number
-    y: number
-    layer: string
-    layers?: string[]
-    pointId?: string
-    pcb_port_id?: string
-    terminalVia?: {
-      toLayer: string
-      viaDiameter?: number
-    }
-  }>
+  pointsToConnect: SimpleRoutePoint[]
   /** @deprecated DO NOT USE **/
   externallyConnectedPointIds?: string[][]
 }
@@ -96,6 +101,13 @@ export type SimpleRouteConnection = {
 export type SimpleRouteDifferentialPair = {
   connectionNames: [SrjConnectionName, SrjConnectionName]
   lengthTolerance: number
+}
+
+/** A group of connections that an autorouter should keep together. */
+export type SimpleRouteBus = {
+  busId: string
+  name?: string
+  connectionNames: SrjConnectionName[]
 }
 
 export type SimpleRouteJson = Omit<
@@ -108,6 +120,7 @@ export type SimpleRouteJson = Omit<
   | "allowJumpers"
   | "availableJumperTypes"
   | "differentialPairs"
+  | "buses"
 > & {
   layerCount: number
   minTraceWidth: number
@@ -143,6 +156,7 @@ export type SimpleRouteJson = Omit<
   allowJumpers?: boolean
   availableJumperTypes?: Array<"1206x4" | "0603">
   differentialPairs?: SimpleRouteDifferentialPair[]
+  buses?: SimpleRouteBus[]
 }
 
 // declare module "autorouting-dataset" {

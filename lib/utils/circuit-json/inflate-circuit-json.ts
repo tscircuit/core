@@ -9,11 +9,13 @@ import type { SubcircuitI } from "../../components/primitive-components/Group/Su
 import { inflatePcbBoard } from "../../components/primitive-components/Group/Subcircuit/inflators/inflatePcbBoard"
 import { inflateSourceCapacitor } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceCapacitor"
 import { inflateSourceChip } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceChip"
+import { inflateSourceConnector } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceConnector"
 import { inflateSourceDiode } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceDiode"
 import { inflateSourceFiducial } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceFiducial"
 import { inflateSourceGroup } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceGroup"
 import { inflateSourceInductor } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceInductor"
 import { inflateSourceLed } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceLed"
+import { inflateSourceMosfet } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceMosfet"
 import { inflateSourcePort } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourcePort"
 import { inflateSourcePushButton } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourcePushButton"
 import { inflateSourceResistor } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceResistor"
@@ -100,8 +102,14 @@ export const inflateCircuitJson = (
       case "simple_chip":
         inflateSourceChip(sourceComponent, inflationCtx)
         break
+      case "simple_connector":
+        inflateSourceConnector(sourceComponent, inflationCtx)
+        break
       case "simple_transistor":
         inflateSourceTransistor(sourceComponent, inflationCtx)
+        break
+      case "simple_mosfet":
+        inflateSourceMosfet(sourceComponent, inflationCtx)
         break
       case "simple_push_button":
         inflateSourcePushButton(sourceComponent, inflationCtx)

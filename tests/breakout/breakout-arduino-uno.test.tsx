@@ -61,7 +61,7 @@ test.skip("breakout routes Arduino Uno ATmega pins to board headers", async () =
         pcbRotation={90}
       />
 
-      <breakout name="ATMEGA_BREAKOUT" padding="2mm">
+      <breakout name="ATMEGA_BREAKOUT" autorouter="auto" padding="2mm">
         <chip
           name="U1"
           footprint="tqfp32"

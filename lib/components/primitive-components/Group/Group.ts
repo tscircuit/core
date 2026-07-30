@@ -27,7 +27,7 @@ import type { GraphicsObject } from "graphics-debug"
 
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import { AutorouterError } from "lib/errors/AutorouterError"
-import { TscircuitAutorouter } from "lib/utils/autorouting/CapacityMeshAutorouter"
+import type { AutorouterOptions } from "lib/utils/autorouting/CapacityMeshAutorouter"
 import type { GenericLocalAutorouter } from "lib/utils/autorouting/GenericLocalAutorouter"
 import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
@@ -36,6 +36,7 @@ import {
   type NormalizedAutorouterConfig,
   getPresetAutoroutingConfig,
 } from "lib/utils/autorouting/getPresetAutoroutingConfig"
+import { getLocalAutoroutingStages } from "lib/utils/autorouting/localAutorouterStrategies"
 import { shouldSkipAutoroutingBecauseOfPlacementErrors } from "lib/utils/autorouting/should-skip-autorouting-because-of-placement-errors"
 import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
 import { getViaBoardLayers } from "lib/utils/getViaSpanLayers"
@@ -778,21 +779,24 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       if (this.props.autorouter?.inputFormat === "simplified") {
         const preferredTraceWidth =
           props.defaultTraceWidth ?? props.nominalTraceWidth
+        const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
+          db,
+          minTraceWidth: Number(props.minTraceWidth ?? 0.15),
+          nominalTraceWidth:
+            preferredTraceWidth != null
+              ? Number(preferredTraceWidth)
+              : undefined,
+          subcircuit_id: this.subcircuit_id,
+          subcircuitComponent: this,
+        })
+        simpleRouteJson.allowViaInPad = autorouterConfig.allowViaInPad
+
         const { autorouting_result } = await fetchWithDebug(
           `${serverUrl}/autorouting/solve`,
           {
             method: "POST",
             body: JSON.stringify({
-              input_simple_route_json: getSimpleRouteJsonFromCircuitJson({
-                db,
-                minTraceWidth: Number(props.minTraceWidth ?? 0.15),
-                nominalTraceWidth:
-                  preferredTraceWidth != null
-                    ? Number(preferredTraceWidth)
-                    : undefined,
-                subcircuit_id: this.subcircuit_id,
-                subcircuitComponent: this,
-              }).simpleRouteJson,
+              input_simple_route_json: simpleRouteJson,
               subcircuit_id: this.subcircuit_id!,
             }),
             headers: {
@@ -930,6 +934,22 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       })
     const routingPhasePlans = this._getRoutingPhasePlans()
     const hasPhasedAutorouting = Group_hasPhasedAutorouting(routingPhasePlans)
+    const routingStages = routingPhasePlans.flatMap((routingPhasePlan) => {
+      const phaseAutorouterConfig: NormalizedAutorouterConfig =
+        routingPhasePlan.autorouter
+          ? getPresetAutoroutingConfig(
+              routingPhasePlan.autorouter,
+              this.root?.platform,
+            )
+          : autorouterConfig
+      return getLocalAutoroutingStages(
+        phaseAutorouterConfig,
+        this.root?.platform,
+      ).map((stage) => ({
+        ...stage,
+        routingPhasePlan,
+      }))
+    })
     const outputTraces: SimplifiedPcbTrace[] = []
     const outputJumpers: Array<{
       jumper_footprint: string
@@ -977,15 +997,27 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       })
     }
 
-    for (const routingPhasePlan of routingPhasePlans) {
-      const phaseAutorouterConfig: NormalizedAutorouterConfig =
-        routingPhasePlan.autorouter
-          ? getPresetAutoroutingConfig(
-              routingPhasePlan.autorouter,
-              this.root?.platform,
-            )
-          : autorouterConfig
-      let simpleRouteJson = baseSimpleRouteJson
+    let previousStageOutputSimpleRouteJson: SimpleRouteJson | undefined
+
+    for (const {
+      routingPhasePlan,
+      autorouterConfig: phaseAutorouterConfig,
+      strategy: localAutorouterStrategy,
+      usesPreviousStageOutput,
+    } of routingStages) {
+      if (!usesPreviousStageOutput) {
+        previousStageOutputSimpleRouteJson = undefined
+      }
+      if (
+        usesPreviousStageOutput &&
+        previousStageOutputSimpleRouteJson === undefined
+      ) {
+        throw new Error(
+          "Autorouting follow-up stage is missing the preceding stage output",
+        )
+      }
+      let simpleRouteJson =
+        previousStageOutputSimpleRouteJson ?? baseSimpleRouteJson
       const isRegionReroutePhase = Boolean(
         routingPhasePlan.reroute && routingPhasePlan.region,
       )
@@ -1002,7 +1034,11 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           }
         : null
 
-      if (isRegionReroutePhase && rerouteOriginalSrj) {
+      if (
+        !usesPreviousStageOutput &&
+        isRegionReroutePhase &&
+        rerouteOriginalSrj
+      ) {
         simpleRouteJson = getRerouteSimpleRouteJson(
           rerouteOriginalSrj as AutorouterSimpleRouteJson,
           {
@@ -1010,7 +1046,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             ...routingPhasePlan.region,
           } as RerouteRectRegion,
         ) as SimpleRouteJson
-      } else if (isConnectionReroutePhase) {
+      } else if (!usesPreviousStageOutput && isConnectionReroutePhase) {
         simpleRouteJson = Group_filterSimpleRouteJsonForPhase(
           baseSimpleRouteJson,
           routingPhasePlan,
@@ -1024,7 +1060,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             baseSimpleRouteJson.layerCount,
           ),
         ]
-      } else if (hasPhasedAutorouting) {
+      } else if (!usesPreviousStageOutput && hasPhasedAutorouting) {
         simpleRouteJson = Group_filterSimpleRouteJsonForPhase(
           baseSimpleRouteJson,
           routingPhasePlan,
@@ -1041,6 +1077,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         simpleRouteJson,
         routingPhasePlan.drcTolerances,
       )
+      simpleRouteJson.allowViaInPad = phaseAutorouterConfig.allowViaInPad
 
       if (
         (hasPhasedAutorouting || isReroutePhase) &&
@@ -1088,9 +1125,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         simpleRouteJson,
       })
 
-      const cacheEngine = phaseAutorouterConfig.algorithmFn
-        ? undefined
-        : this.root?.platform?.localCacheEngine
+      const cacheEngine =
+        phaseAutorouterConfig.algorithmFn || !localAutorouterStrategy.cacheable
+          ? undefined
+          : this.root?.platform?.localCacheEngine
       const cacheKey = cacheEngine
         ? getLocalAutoroutingCacheKey(simpleRouteJson)
         : undefined
@@ -1114,7 +1152,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             const effort = effortLevel
               ? Number.parseInt(effortLevel.replace("x", ""), 10)
               : undefined
-            autorouter = new TscircuitAutorouter(simpleRouteJson, {
+            const commonAutorouterOptions: AutorouterOptions = {
               capacityDepth: phaseAutorouterConfig.capacityDepth,
               targetMinCapacity: phaseAutorouterConfig.targetMinCapacity,
               useAssignableSolver:
@@ -1130,6 +1168,12 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
                   solverParams,
                   componentName: this.getString(),
                 }),
+            }
+            autorouter = localAutorouterStrategy.create({
+              simpleRouteJson,
+              commonAutorouterOptions,
+              busFanoutDirections: routingPhasePlan.busFanoutDirections,
+              fanoutBoundaryPadding: routingPhasePlan.fanoutBoundaryPadding,
             })
           }
 
@@ -1165,16 +1209,30 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           traces = await routingPromise
         }
 
-        const outputSimpleRouteJson = {
-          ...simpleRouteJson,
-          traces,
+        const transformedSimpleRouteJson =
+          autorouter?.getOutputSimpleRouteJson?.()
+        let stageOutputTraces = traces
+        if (transformedSimpleRouteJson?.traces) {
+          stageOutputTraces = transformedSimpleRouteJson.traces
+        } else if (usesPreviousStageOutput) {
+          stageOutputTraces = [...(simpleRouteJson.traces ?? []), ...traces]
         }
+        const outputSimpleRouteJson = {
+          ...(transformedSimpleRouteJson ?? simpleRouteJson),
+          traces: stageOutputTraces,
+        }
+        previousStageOutputSimpleRouteJson = transformedSimpleRouteJson
+          ? outputSimpleRouteJson
+          : undefined
 
         if (!cachedResult && cacheKey) {
           await cacheLocalAutoroutingPhaseResult({
             cacheEngine,
             cacheKey,
-            result: outputSimpleRouteJson,
+            result: {
+              ...simpleRouteJson,
+              traces,
+            },
           })
         }
 
@@ -1276,7 +1334,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     if (this._hasStartedAsyncAutorouting) return
     this._hasStartedAsyncAutorouting = true
     if (this._getAutorouterConfig().local) {
-      this._queueAsyncEffect("capacity-mesh-autorouting", async () =>
+      this._queueAsyncEffect("autorouting", async () =>
         this._runLocalAutorouting(),
       )
     } else {

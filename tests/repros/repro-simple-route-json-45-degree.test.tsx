@@ -33,6 +33,7 @@ test("45 degree rects bug", () => {
 
   // we should only be seeing one obstacle here, but we see 2
   expect(simpleRouteJson.obstacles.length).toBe(1)
+  expect(simpleRouteJson).not.toHaveProperty("buses")
   expect(simpleRouteJson).toMatchInlineSnapshot(`
     {
       "bounds": {
