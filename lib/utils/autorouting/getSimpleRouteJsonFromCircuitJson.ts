@@ -364,29 +364,21 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       if (connectedPorts.length < 2) return null
 
       // TODO handle trace.connected_source_net_ids
-      const [portA, portB] = connectedPorts
-
-      if (portA.x === undefined || portA.y === undefined) {
-        console.error(
-          `(source_port_id: ${portA.source_port_id}) for trace ${trace.source_trace_id} does not have x/y coordinates. Skipping this trace.`,
-        )
-        return null
-      }
-      if (portB.x === undefined || portB.y === undefined) {
-        console.error(
-          `(source_port_id: ${portB.source_port_id}) for trace ${trace.source_trace_id} does not have x/y coordinates. Skipping this trace.`,
-        )
-        return null
+      for (const connectedPort of connectedPorts) {
+        if (connectedPort.x === undefined || connectedPort.y === undefined) {
+          console.error(
+            `(source_port_id: ${connectedPort.source_port_id}) for trace ${trace.source_trace_id} does not have x/y coordinates. Skipping this trace.`,
+          )
+          return null
+        }
       }
 
-      const layerA = portA.layers?.[0] ?? "top"
-      const layerB = portB.layers?.[0] ?? "top"
-
-      // Collect all traceHints that apply to either port
-      const matchingHints = traceHints.filter(
-        (hint) =>
-          hint.pcb_port_id === portA.pcb_port_id ||
-          hint.pcb_port_id === portB.pcb_port_id,
+      const connectedPcbPortIds = new Set(
+        connectedPorts.map((port) => port.pcb_port_id),
+      )
+      // Collect all traceHints that apply to any connected port
+      const matchingHints = traceHints.filter((hint) =>
+        connectedPcbPortIds.has(hint.pcb_port_id),
       )
 
       const hintPoints: { x: number; y: number; layer: string }[] = []
@@ -430,6 +422,15 @@ export const getSimpleRouteJsonFromCircuitJson = ({
           port_selector: portSelector,
         }
       }
+      const connectedPortRoutePoints = connectedPorts.map((port, index) =>
+        getPortOrBreakoutPoint(
+          port,
+          port.layers?.[0] ?? "top",
+          trace.connected_source_port_ids[index],
+        ),
+      )
+      const [firstConnectedPortRoutePoint, ...remainingPortRoutePoints] =
+        connectedPortRoutePoints
       return {
         name:
           trace.source_trace_id ??
@@ -438,18 +439,12 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         source_trace_id: trace.source_trace_id,
         nominalTraceWidth: trace.min_trace_thickness,
         width: trace.min_trace_thickness,
+        // Simple Route JSON connections are multi-terminal, so retain every
+        // source trace endpoint in the autorouter input.
         pointsToConnect: [
-          getPortOrBreakoutPoint(
-            portA,
-            layerA,
-            trace.connected_source_port_ids[0],
-          ),
+          firstConnectedPortRoutePoint,
           ...hintPoints,
-          getPortOrBreakoutPoint(
-            portB,
-            layerB,
-            trace.connected_source_port_ids[1],
-          ),
+          ...remainingPortRoutePoints,
         ],
       } as SimpleRouteConnection
     })
