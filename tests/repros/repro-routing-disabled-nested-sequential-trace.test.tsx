@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("repro: nested sequential trace ignores inherited routingDisabled", () => {
+test("nested sequential trace inherits routingDisabled", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -17,7 +17,7 @@ test("repro: nested sequential trace ignores inherited routingDisabled", () => {
         <trace from=".R1 > .pin1" to=".R2 > .pin1" />
       </subcircuit>
       <pcbnotetext
-        text="BUG: routingDisabled but child trace is routed"
+        text="routingDisabled prevents child routing"
         fontSize={0.4}
         pcbY={-3}
       />
