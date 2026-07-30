@@ -36,6 +36,7 @@ import { isCurrentGraph } from "./isCurrentGraph"
 import { isSimulationCurrentResult } from "./isSimulationCurrentResult"
 import { isSimulationVoltageResult } from "./isSimulationVoltageResult"
 import { isVoltageGraph } from "./isVoltageGraph"
+import { runSpiceSimulations } from "./run-spice-simulations"
 
 type AnalogSimulationComponent =
   | AnalogSimulation
@@ -336,12 +337,20 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
           ]),
         )
 
-        for (const simulationRun of simulationRuns) {
+        const simulationResults = await runSpiceSimulations({
+          spiceEngine,
+          simulationRuns,
+        })
+
+        for (const [
+          simulationRunIndex,
+          simulationRun,
+        ] of simulationRuns.entries()) {
           const insertedSimulationGraphsForRun: InsertedSimulationGraph[] = []
-          debug(`Running simulation with engine: ${engineName}`)
-          const simulationResult = await spiceEngine.simulate(
-            simulationRun.spiceString,
-          )
+          const simulationResult = simulationResults[simulationRunIndex]
+          if (!simulationResult) {
+            throw new Error("SPICE simulation result is missing")
+          }
 
           debug(
             `Simulation completed, received ${simulationResult.simulationResultCircuitJson.length} elements`,
