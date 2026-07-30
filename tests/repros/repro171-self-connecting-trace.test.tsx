@@ -5,14 +5,11 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
  * Bug: A trace connecting a port to itself is accepted silently
  * (#2859)
  *
- * When a trace's from and to resolve to the same port, no error
- * is emitted. The source_trace lists the same port twice and the
- * trace can never be routed — but the user gets no feedback.
- *
- * Expected: a source_trace_not_connected_error with a clear message
- * Actual: no error about the self-connection. Indirectly a
- * pcb_trace_missing_error is emitted downstream because no PCB
- * trace was created, but it doesn't point to the real mistake.
+ * When <trace from=".R1 > .pin1" to=".R1 > .pin1" /> resolves
+ * both ends to the same port, a source_trace is created with the
+ * same port listed twice. No PCB trace can be routed (no distance
+ * between endpoints). No source_trace_not_connected_error is
+ * emitted. Instead a pcb_trace_missing_error is produced.
  */
 test.failing(
   "trace connecting a port to itself should produce an error",
@@ -30,27 +27,30 @@ test.failing(
 
     expect(circuit).toMatchPcbSnapshot(import.meta.path)
 
+    // A source_trace was created but with the same port on both ends
     const sourceTraces = circuit.db.source_trace.list() as any[]
-    for (const st of sourceTraces) {
-      if (
-        st.connected_source_port_ids?.length === 2 &&
-        st.connected_source_port_ids[0] === st.connected_source_port_ids[1]
-      ) {
-        console.log(
-          `source_trace has duplicate port: ${st.connected_source_port_ids[0]}`,
-        )
-      }
-    }
+    expect(sourceTraces.length).toBe(1)
+    expect(sourceTraces[0].connected_source_port_ids).toEqual([
+      sourceTraces[0].connected_source_port_ids[0],
+      sourceTraces[0].connected_source_port_ids[0],
+    ])
+    console.log(
+      `source_trace has duplicate port: ${sourceTraces[0].connected_source_port_ids[0]}`,
+    )
 
-    // The misleading downstream error DOES exist
+    // No PCB trace was created (nothing to route between same point)
+    const pcbTraces = circuit.db.pcb_trace.list()
+    expect(pcbTraces.length).toBe(0)
+
+    // A pcb_trace_missing_error is produced downstream
     const missingTraceErrors = circuit.db.pcb_trace_missing_error.list()
-    for (const err of missingTraceErrors) {
-      console.log(`MISLEADING ERROR: ${(err as any).message}`)
-    }
     expect(missingTraceErrors.length).toBeGreaterThan(0)
+    console.log(
+      `pcb_trace_missing_error: ${(missingTraceErrors[0] as any).message}`,
+    )
 
-    // But the correct direct error does NOT exist — this is the bug
-    const errors = circuit.db.source_trace_not_connected_error.list()
-    expect(errors.length).toBeGreaterThan(0)
+    // No source_trace_not_connected_error is emitted
+    const directErrors = circuit.db.source_trace_not_connected_error.list()
+    expect(directErrors.length).toBeGreaterThan(0)
   },
 )
