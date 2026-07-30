@@ -15,7 +15,11 @@ import type {
   SimpleRouteJson,
 } from "./SimpleRouteJson"
 import { getDescendantSubcircuitIds } from "./getAncestorSubcircuitIds"
-import { getBusesForSimpleRouteJson } from "./getBusesForSimpleRouteJson"
+import {
+  type FanoutPourNetMap,
+  getBusesForSimpleRouteJson,
+  getPlaneTerminatedSourceTraceLayers,
+} from "./getBusesForSimpleRouteJson"
 import { getDifferentialPairsForSimpleRouteJson } from "./getDifferentialPairsForSimpleRouteJson"
 import { getPreservedRoutedSubcircuitTraces } from "./getPreservedRoutedSubcircuitTraces"
 import { getUnbrokenCopperPourObstacles } from "./getUnbrokenCopperPourObstacles"
@@ -38,6 +42,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   minViaPadDiameter,
   nominalTraceWidth,
   subcircuitComponent,
+  fanoutPourNetMap,
   ignoreExistingTopLevelPcbRouteState = false,
 }: {
   db?: CircuitJsonUtilObjects
@@ -54,6 +59,11 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   minViaHoleDiameter?: number
   minViaPadDiameter?: number
   subcircuitComponent?: Pick<ISubcircuit, "selectAll">
+  /**
+   * Copper plane intent used by fanout routing. Source-only traces whose nets
+   * are mapped here become internal plane-terminated buses in SRJ.
+   */
+  fanoutPourNetMap?: FanoutPourNetMap
   /**
    * Excludes existing root-level PCB route state from a fresh routing problem.
    * Routed child-subcircuit traces and vias remain fixed routing geometry.
@@ -341,8 +351,14 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   // here so it is preserved as fixed copper instead of re-routed.
   // For cross-boundary traces, add breakout points as additional
   // waypoints so the autorouter routes through the boundary.
-  const directTraceConnections = db.source_trace
-    .list()
+  const sourceTraces = db.source_trace.list()
+  const planeTerminatedSourceTraceLayers = getPlaneTerminatedSourceTraceLayers({
+    fanoutPourNetMap,
+    sourceNets: db.source_net.list(),
+    sourceTraces,
+    subcircuitId: subcircuit_id,
+  })
+  const directTraceConnections = sourceTraces
     .filter(
       (trace) =>
         !sourceTraceIdsAlreadyPreservedAsSrjTraces.has(trace.source_trace_id),
@@ -361,7 +377,15 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         }
       })
 
-      if (connectedPorts.length < 2) return null
+      const isPlaneTerminatedSourceTrace = planeTerminatedSourceTraceLayers.has(
+        trace.source_trace_id,
+      )
+      if (
+        connectedPorts.length < 2 &&
+        !(isPlaneTerminatedSourceTrace && connectedPorts.length === 1)
+      ) {
+        return null
+      }
 
       // TODO handle trace.connected_source_net_ids
       for (const connectedPort of connectedPorts) {
@@ -508,6 +532,9 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   const sourceTracesEligibleForNetConnections = db.source_trace
     .list()
     .filter(
+      (trace) => !planeTerminatedSourceTraceLayers.has(trace.source_trace_id),
+    )
+    .filter(
       (trace) =>
         // Existing copper must still contribute endpoint connectivity when it
         // belongs to the scope currently being routed. Descendant copper is
@@ -592,6 +619,8 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       width: nominalTraceWidthFromConnectedTraces,
       pointsToConnect,
     }
+    if (pointsToConnect.length === 0) continue
+
     connectionsFromNets.push(connection)
     for (const sourceNetId of connectedSourceNetIds) {
       connectionFromNetId.set(sourceNetId, connection)
@@ -689,6 +718,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     buses,
     sourceTraces: db.source_trace.list(),
     subcircuitId: subcircuit_id,
+    planeTerminatedSourceTraceLayers,
   })
 
   if (subcircuit_id) {

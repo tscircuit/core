@@ -104,10 +104,20 @@ export type SimpleRouteDifferentialPair = {
 }
 
 /** A group of connections that an autorouter should keep together. */
+export type SimpleRouteBusTermination =
+  | {
+      type: "boundary"
+    }
+  | {
+      type: "plane"
+      layer: string
+    }
+
 export type SimpleRouteBus = {
   busId: string
   name?: string
   connectionNames: SrjConnectionName[]
+  termination?: SimpleRouteBusTermination
 }
 
 export type SimpleRouteJson = Omit<
