@@ -4,8 +4,13 @@ import { isValidElement as isReactElement } from "react"
 import { Footprint } from "lib/components/primitive-components/Footprint"
 import { isHttpUrl } from "./utils/isHttpUrl"
 import { parseLibraryFootprintRef } from "./utils/parseLibraryFootprintRef"
-import type { CadModelProp } from "@tscircuit/props"
+import type {
+  FootprintLibraryResult,
+  PartsEngine,
+  SupplierPartNumbers,
+} from "@tscircuit/props"
 import {
+  type AnyCircuitElement,
   circuit_json_footprint_load_error,
   external_footprint_load_error,
 } from "circuit-json"
@@ -15,13 +20,43 @@ import { resolveStaticFileImport } from "lib/utils/resolveStaticFileImport"
 import { extractCadModelFromCircuitJson } from "lib/utils/connectors/extractCadModelFromCircuitJson"
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 
-interface FootprintLibraryResult {
-  footprintCircuitJson: any[]
-  cadModel?: CadModelProp
-}
+type FootprintLibraryResolver = (
+  footprintName: string,
+) => Promise<FootprintLibraryResult | AnyCircuitElement[]>
 
 const shouldAddOutsideFootprintWrapper = (component: PrimitiveComponent) =>
   component.componentName === "Symbol" || component.isSchematicPrimitive
+
+const getSupplierPartCircuitJsonResolver = (
+  component: NormalComponent<any, any>,
+  footprintLibrary: string,
+  footprintName: string,
+): FootprintLibraryResolver | undefined => {
+  if (component.getInheritedProperty("partsEngineDisabled")) return
+
+  const supplierPartNumbers = component.props.supplierPartNumbers as
+    | SupplierPartNumbers
+    | undefined
+  const matchingSupplierPartNumbers = Object.entries(
+    supplierPartNumbers ?? {},
+  ).find(([supplierName]) => supplierName === footprintLibrary)?.[1]
+
+  if (!matchingSupplierPartNumbers?.includes(footprintName)) return
+
+  const partsEngine = component.getInheritedProperty("partsEngine") as
+    | PartsEngine
+    | undefined
+  const fetchPartCircuitJson = partsEngine?.fetchPartCircuitJson
+  if (!fetchPartCircuitJson) return
+
+  return async (supplierPartNumber) => {
+    const footprintCircuitJson = await fetchPartCircuitJson({
+      supplierPartNumber,
+      platformFetch: component.root?.platform?.platformFetch,
+    })
+    return { footprintCircuitJson: footprintCircuitJson ?? [] }
+  }
+}
 
 export function NormalComponent_doInitialPcbFootprintStringRender(
   component: NormalComponent<any, any>,
@@ -145,28 +180,38 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
     const platform = component.root?.platform
     const libMap = platform?.footprintLibraryMap?.[libRef.footprintLib]
 
-    // Find resolver: library can be a function or an object of resolvers
-    let resolverFn:
-      | ((path: string) => Promise<FootprintLibraryResult | any[]>)
-      | undefined
-    if (typeof libMap === "function") {
-      resolverFn = libMap as (
-        path: string,
-      ) => Promise<FootprintLibraryResult | any[]>
-    }
-
-    if (!resolverFn) return
+    const configuredResolver =
+      typeof libMap === "function"
+        ? (libMap as FootprintLibraryResolver)
+        : undefined
+    const supplierPartCircuitJsonResolver = getSupplierPartCircuitJsonResolver(
+      component,
+      libRef.footprintLib,
+      libRef.footprintName,
+    )
+    const resolverFn =
+      configuredResolver ??
+      supplierPartCircuitJsonResolver ??
+      (async () => {
+        throw new Error(
+          `No footprint resolver is configured for library "${libRef.footprintLib}".`,
+        )
+      })
 
     queueAsyncEffect("load-lib-footprint", async () => {
       try {
-        const result = await resolverFn!(libRef.footprintName)
-        let circuitJson: any[] | null = null
+        const result = await resolverFn(libRef.footprintName)
+        let circuitJson: AnyCircuitElement[] | null = null
         if (Array.isArray(result)) {
           circuitJson = result
         } else if (Array.isArray(result.footprintCircuitJson)) {
-          circuitJson = result.footprintCircuitJson
+          circuitJson = result.footprintCircuitJson as AnyCircuitElement[]
         }
-        if (!circuitJson) return
+        if (!circuitJson || circuitJson.length === 0) {
+          throw new Error(
+            `Footprint resolver returned no circuit elements for "${footprint}".`,
+          )
+        }
         const fpComponents = createComponentsFromCircuitJson(
           {
             componentName: component.name,
