@@ -9,8 +9,10 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
  * is emitted. The source_trace lists the same port twice and the
  * trace can never be routed — but the user gets no feedback.
  *
- * Expected: a pcb_trace_error or source_trace_not_connected_error
- * Actual: silent acceptance with duplicate source_port_ids
+ * Expected: a source_trace_not_connected_error with a clear message
+ * Actual: no error about the self-connection. Indirectly a
+ * pcb_trace_missing_error is emitted downstream because no PCB
+ * trace was created, but it doesn't point to the real mistake.
  */
 test.failing(
   "trace connecting a port to itself should produce an error",
@@ -40,7 +42,7 @@ test.failing(
       }
     }
 
-    const traceErrors = circuit.db.pcb_trace_error.list()
-    expect(traceErrors.length).toBeGreaterThan(0)
+    const errors = circuit.db.source_trace_not_connected_error.list()
+    expect(errors.length).toBeGreaterThan(0)
   },
 )
