@@ -4,10 +4,12 @@ import { isValidElement as isReactElement } from "react"
 import { Footprint } from "lib/components/primitive-components/Footprint"
 import { isHttpUrl } from "./utils/isHttpUrl"
 import { parseLibraryFootprintRef } from "./utils/parseLibraryFootprintRef"
-import type {
-  FootprintLibraryResult,
-  PartsEngine,
-  SupplierPartNumbers,
+import {
+  type FootprintLibraryResult,
+  type PartsEngine,
+  type SupplierName,
+  type SupplierPartNumbers,
+  supplierProps,
 } from "@tscircuit/props"
 import {
   type AnyCircuitElement,
@@ -24,6 +26,9 @@ type FootprintLibraryResolver = (
   footprintName: string,
 ) => Promise<FootprintLibraryResult | AnyCircuitElement[]>
 
+const supplierNames = supplierProps.shape.supplierPartNumbers.unwrap().keySchema
+  .options satisfies SupplierName[]
+
 const shouldAddOutsideFootprintWrapper = (component: PrimitiveComponent) =>
   component.componentName === "Symbol" || component.isSchematicPrimitive
 
@@ -37,10 +42,12 @@ const getSupplierPartCircuitJsonResolver = (
   const supplierPartNumbers = component.props.supplierPartNumbers as
     | SupplierPartNumbers
     | undefined
-  const matchingSupplierPartNumbers = Object.entries(
-    supplierPartNumbers ?? {},
-  ).find(([supplierName]) => supplierName === footprintLibrary)?.[1]
+  const supplierName = supplierNames.find(
+    (candidateSupplierName) => candidateSupplierName === footprintLibrary,
+  )
+  if (!supplierName) return
 
+  const matchingSupplierPartNumbers = supplierPartNumbers?.[supplierName]
   if (!matchingSupplierPartNumbers?.includes(footprintName)) return
 
   const partsEngine = component.getInheritedProperty("partsEngine") as
@@ -56,6 +63,20 @@ const getSupplierPartCircuitJsonResolver = (
     })
     return { footprintCircuitJson: footprintCircuitJson ?? [] }
   }
+}
+
+const loadFootprintLibraryResultOrThrow = async (
+  footprintLibraryResolver: FootprintLibraryResolver | undefined,
+  footprintLibrary: string,
+  footprintName: string,
+) => {
+  if (!footprintLibraryResolver) {
+    throw new Error(
+      `No footprint resolver is configured for library "${footprintLibrary}".`,
+    )
+  }
+
+  return footprintLibraryResolver(footprintName)
 }
 
 export function NormalComponent_doInitialPcbFootprintStringRender(
@@ -178,29 +199,28 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
     component._hasStartedFootprintUrlLoad = true
 
     const platform = component.root?.platform
-    const libMap = platform?.footprintLibraryMap?.[libRef.footprintLib]
+    const footprintLibraryEntry =
+      platform?.footprintLibraryMap?.[libRef.footprintLib]
 
-    const configuredResolver =
-      typeof libMap === "function"
-        ? (libMap as FootprintLibraryResolver)
+    const configuredFootprintLibraryResolver =
+      typeof footprintLibraryEntry === "function"
+        ? (footprintLibraryEntry as FootprintLibraryResolver)
         : undefined
     const supplierPartCircuitJsonResolver = getSupplierPartCircuitJsonResolver(
       component,
       libRef.footprintLib,
       libRef.footprintName,
     )
-    const resolverFn =
-      configuredResolver ??
-      supplierPartCircuitJsonResolver ??
-      (async () => {
-        throw new Error(
-          `No footprint resolver is configured for library "${libRef.footprintLib}".`,
-        )
-      })
+    const footprintLibraryResolver =
+      configuredFootprintLibraryResolver ?? supplierPartCircuitJsonResolver
 
     queueAsyncEffect("load-lib-footprint", async () => {
       try {
-        const result = await resolverFn(libRef.footprintName)
+        const result = await loadFootprintLibraryResultOrThrow(
+          footprintLibraryResolver,
+          libRef.footprintLib,
+          libRef.footprintName,
+        )
         let circuitJson: AnyCircuitElement[] | null = null
         if (Array.isArray(result)) {
           circuitJson = result
