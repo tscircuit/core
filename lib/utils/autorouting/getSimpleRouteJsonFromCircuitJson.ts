@@ -7,6 +7,7 @@ import {
 } from "circuit-json-to-connectivity-map"
 import { Bus } from "lib/components/primitive-components/Bus"
 import { DifferentialPair } from "lib/components/primitive-components/DifferentialPair"
+import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import type { ISubcircuit } from "lib/components/primitive-components/Group/Subcircuit/ISubcircuit"
 import { getObstaclesFromCircuitJson } from "../obstacles/getObstaclesFromCircuitJson"
 import type {
@@ -53,7 +54,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   minBoardEdgeClearance?: number
   minViaHoleDiameter?: number
   minViaPadDiameter?: number
-  subcircuitComponent?: Pick<ISubcircuit, "selectAll">
+  subcircuitComponent?: Pick<ISubcircuit, "selectAll" | "children">
   /**
    * Excludes existing root-level PCB route state from a fresh routing problem.
    * Routed child-subcircuit traces and vias remain fixed routing geometry.
@@ -469,30 +470,55 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   // eligible through an explicit current-scope net reference or exposed-net
   // contract.
   const sourceNetIds = new Set(source_nets.map((net) => net.source_net_id))
-  const currentSubcircuitSourceTraces = db.source_trace
-    .list()
-    .filter((trace) => !subcircuit_id || trace.subcircuit_id === subcircuit_id)
-  const exposedBridgeSourceTraceIds = new Set(
-    (subcircuitComponent?.selectAll("trace") ?? []).flatMap((trace) => {
-      const candidate = trace as {
+  // Subcircuit creates exposed-net bridge traces with this explicit marker.
+  // A trace display name is user-facing and must not determine routing scope.
+  // selectAll doesn't descend into nested subcircuits, so walk the component
+  // tree to also find bridge traces that deeper subcircuit levels created.
+  const exposedBridgeSourceTraceIds = new Set<string>()
+  {
+    const stack = [...(subcircuitComponent?.children ?? [])]
+    while (stack.length > 0) {
+      const candidate = stack.pop() as {
+        children?: PrimitiveComponent[]
         source_trace_id?: string | null
         _exposesSubcircuitConnection?: boolean
       }
-      return candidate._exposesSubcircuitConnection && candidate.source_trace_id
-        ? [candidate.source_trace_id]
-        : []
-    }),
-  )
-  const exposedDescendantSourceNetIds = new Set<string>()
-  for (const trace of currentSubcircuitSourceTraces) {
-    // Subcircuit creates exposed-net bridge traces with this explicit marker.
-    // A trace display name is user-facing and must not determine routing scope.
-    if (!exposedBridgeSourceTraceIds.has(trace.source_trace_id)) {
-      continue
+      if (candidate._exposesSubcircuitConnection && candidate.source_trace_id) {
+        exposedBridgeSourceTraceIds.add(candidate.source_trace_id)
+      }
+      if (candidate.children?.length) {
+        stack.push(...candidate.children)
+      }
     }
+  }
+  const exposedBridgeSourceTraces = db.source_trace
+    .list()
+    .filter((trace) => exposedBridgeSourceTraceIds.has(trace.source_trace_id))
+  const exposedDescendantSourceNetIds = new Set<string>()
+  const exposedNetIdsToVisit: string[] = []
+  for (const trace of exposedBridgeSourceTraces) {
+    if (subcircuit_id && trace.subcircuit_id !== subcircuit_id) continue
     for (const sourceNetId of trace.connected_source_net_ids ?? []) {
       if (!sourceNetIds.has(sourceNetId)) {
         exposedDescendantSourceNetIds.add(sourceNetId)
+        exposedNetIdsToVisit.push(sourceNetId)
+      }
+    }
+  }
+  // A net exposed into the current scope may itself be the parent side of a
+  // deeper bridge trace. Follow the bridge chain so nets exposed through
+  // multiple nested subcircuit levels stay reachable from the current scope.
+  while (exposedNetIdsToVisit.length > 0) {
+    const exposedNetId = exposedNetIdsToVisit.pop()!
+    for (const trace of exposedBridgeSourceTraces) {
+      if (!(trace.connected_source_net_ids ?? []).includes(exposedNetId)) {
+        continue
+      }
+      for (const sourceNetId of trace.connected_source_net_ids ?? []) {
+        if (sourceNetIds.has(sourceNetId)) continue
+        if (exposedDescendantSourceNetIds.has(sourceNetId)) continue
+        exposedDescendantSourceNetIds.add(sourceNetId)
+        exposedNetIdsToVisit.push(sourceNetId)
       }
     }
   }
