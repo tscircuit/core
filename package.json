@@ -80,7 +80,7 @@
     "graphics-debug": "^0.0.95",
     "howfat": "^0.3.8",
     "kicad-to-circuit-json": "^0.0.117",
-    "kicadts": "^0.0.51",
+    "kicadts": "^0.0.53",
     "live-server": "^1.2.2",
     "looks-same": "^9.0.1",
     "minicssgrid": "^0.0.9",
