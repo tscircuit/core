@@ -277,6 +277,9 @@ export function Group_getRoutingPhasePlans(
     plan.busFanoutDirections = phaseProps?.busFanoutDirections
     plan.fanoutBoundaryPadding =
       phaseProps?.fanoutBoundaryPadding ?? groupFanoutBoundaryPadding
+    plan.fanoutRoutingLayers = phaseProps?.fanoutRoutingLayers?.map((layer) =>
+      typeof layer === "string" ? layer : layer.name,
+    )
     plan.drcTolerances = phaseProps
       ? getDrcTolerancesFromAutoroutingPhaseProps(phaseProps)
       : undefined

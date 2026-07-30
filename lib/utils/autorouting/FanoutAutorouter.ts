@@ -26,6 +26,7 @@ export interface FanoutAutorouterOptions {
   mode: FanoutAutorouterMode
   busFanoutDirections?: Readonly<Record<string, BusFanoutDirection>>
   fanoutBoundaryPadding?: FanoutBoundaryPadding
+  fanoutRoutingLayers?: string[]
 }
 
 const getNinePointAnchor = (
@@ -222,6 +223,7 @@ export class FanoutAutorouter implements GenericLocalAutorouter {
       compactBusTracks: true,
       busDirections: this.getPlaneBusDirections(),
       busExitPreferences: this.getBusExitPreferences(),
+      escapeLayers: this.options.fanoutRoutingLayers,
     }
     if (this.options.mode === "single_layer_fanout") {
       return {

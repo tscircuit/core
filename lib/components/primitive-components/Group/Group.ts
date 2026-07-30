@@ -1174,6 +1174,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
               commonAutorouterOptions,
               busFanoutDirections: routingPhasePlan.busFanoutDirections,
               fanoutBoundaryPadding: routingPhasePlan.fanoutBoundaryPadding,
+              fanoutRoutingLayers: routingPhasePlan.fanoutRoutingLayers,
             })
           }
 

@@ -39,7 +39,7 @@ test("fanout drops source-only power and ground connections to internal planes",
     <board
       width="12mm"
       height="10mm"
-      layers={4}
+      layers={6}
       minTraceWidth="0.1mm"
       defaultTraceWidth="0.1mm"
       minTraceToPadEdgeClearance="0.1mm"
@@ -49,12 +49,15 @@ test("fanout drops source-only power and ground connections to internal planes",
     >
       <autoroutingphase
         autorouter="fanout"
+        fanoutRoutingLayers={["top", "inner3", "bottom"]}
         busFanoutDirections={{
           GND_B2_PLANE: "center_left",
           VCC_C3_PLANE: "center_right",
+          SIGNAL_BUS: "center_right",
         }}
       />
       <chip name="U1" footprint={<footprint>{bgaPads}</footprint>} />
+      <resistor name="R1" resistance="1k" footprint="0402" pcbX={4} pcbY={0} />
       <bus
         name="GND_B2_PLANE"
         connections={["GND_B2"]}
@@ -65,8 +68,11 @@ test("fanout drops source-only power and ground connections to internal planes",
         connections={["VCC_C3"]}
         fanoutTermination={{ type: "plane", layer: "inner2" }}
       />
+      <bus name="SIGNAL_BUS" connections={["SIGNAL", "SIGNAL_RETURN"]} />
       <trace name="GND_B2" from=".U1 > .pin6" to="net.GND" />
       <trace name="VCC_C3" from=".U1 > .pin11" to="net.VCC" />
+      <trace name="SIGNAL" from=".U1 > .pin7" to=".R1 > .pin1" />
+      <trace name="SIGNAL_RETURN" from=".U1 > .pin8" to=".R1 > .pin2" />
     </board>,
   )
 
@@ -79,11 +85,11 @@ test("fanout drops source-only power and ground connections to internal planes",
   expect(autoroutingPhaseIoStack).toHaveLength(2)
 
   const fanoutInput = autoroutingPhaseIoStack[0]!.startSimpleRouteJson!
-  expect(fanoutInput.connections).toHaveLength(2)
+  expect(fanoutInput.connections).toHaveLength(4)
   expect(
-    fanoutInput.connections.every(
-      (connection) => connection.pointsToConnect.length === 1,
-    ),
+    fanoutInput.connections
+      .slice(0, 2)
+      .every((connection) => connection.pointsToConnect.length === 1),
   ).toBe(true)
   expect(fanoutInput.buses).toEqual([
     {
@@ -98,18 +104,41 @@ test("fanout drops source-only power and ground connections to internal planes",
       connectionNames: [fanoutInput.connections[1]!.name],
       termination: { type: "plane", layer: "inner2" },
     },
+    {
+      busId: "SIGNAL_BUS",
+      name: "SIGNAL_BUS",
+      connectionNames: fanoutInput.connections
+        .slice(2)
+        .map((connection) => connection.name),
+    },
   ])
-  expect(autoroutingPhaseIoStack[0]!.endSimpleRouteJson!.connections).toEqual(
-    [],
-  )
+  expect(
+    autoroutingPhaseIoStack[0]!.endSimpleRouteJson!.connections,
+  ).toHaveLength(2)
 
   const vias = circuit.db.pcb_via.list()
-  expect(vias).toHaveLength(2)
-  expect(vias.map((via) => via.to_layer).toSorted()).toEqual([
-    "inner1",
-    "inner2",
-  ])
-  expect(circuit.db.pcb_trace.list()).toHaveLength(2)
+  expect(vias.some((via) => via.to_layer === "inner1")).toBe(true)
+  expect(vias.some((via) => via.to_layer === "inner2")).toBe(true)
+
+  const signalSourceTraceIds = new Set(
+    ["SIGNAL", "SIGNAL_RETURN"].map(
+      (name) => circuit.db.source_trace.getWhere({ name })!.source_trace_id,
+    ),
+  )
+  const signalPcbTraces = circuit.db.pcb_trace
+    .list()
+    .filter((trace) => signalSourceTraceIds.has(trace.source_trace_id!))
+  const signalLayers = signalPcbTraces.flatMap((trace) =>
+    trace.route.flatMap((routePoint) => {
+      if (routePoint.route_type === "wire") return [routePoint.layer]
+      if (routePoint.route_type === "via") {
+        return [routePoint.from_layer, routePoint.to_layer]
+      }
+      return []
+    }),
+  )
+  expect(signalLayers).not.toContain("inner1")
+  expect(signalLayers).not.toContain("inner2")
 
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
   await expect(autoroutingPhaseIoStack).toMatchAutoroutingPhaseIoStackSnapshot(
