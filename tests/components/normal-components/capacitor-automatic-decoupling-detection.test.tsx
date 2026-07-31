@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import type { SourceSimpleCapacitor } from "circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("a capacitor between an inferred chip power pin and ground defaults to a 1mm trace limit", () => {
+test("automatic decoupling preserves existing trace limits", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -16,7 +16,7 @@ test("a capacitor between an inferred chip power pin and ground defaults to a 1m
         }}
       />
       <capacitor name="C1" capacitance="100nF" footprint="0402" />
-      <trace from=".U1 > .VCC" to=".C1 > .1" />
+      <trace from=".U1 > .VCC" to=".C1 > .1" maxLength={5} />
       <trace from=".C1 > .2" to="net.GND" />
       <trace from=".U1 > .GND" to="net.GND" />
     </board>,
@@ -52,5 +52,5 @@ test("a capacitor between an inferred chip power pin and ground defaults to a 1m
   expect(capacitorSourceComponent?.max_decoupling_trace_length).toBe(1)
   expect(
     capacitorSourceTraces.map((sourceTrace) => sourceTrace.max_length),
-  ).toEqual([1, 1])
+  ).toEqual([5, 1])
 })

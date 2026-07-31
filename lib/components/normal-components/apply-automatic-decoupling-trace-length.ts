@@ -1,13 +1,10 @@
 import type { SourcePort } from "circuit-json"
+import type { SubcircuitConnectivityMapKey } from "lib/utils/circuit-json/subcircuit-connectivity-map-key"
 import type { Capacitor } from "./Capacitor"
 import { chipSourcePortShouldHaveDecouplingCapacitor } from "./chip-source-port-should-have-decoupling-capacitor"
 import { sourcePortIsGround } from "./source-port-is-ground"
 
 const DEFAULT_MAX_DECOUPLING_TRACE_LENGTH_MM = 1
-
-type SubcircuitConnectivityMapKey = NonNullable<
-  SourcePort["subcircuit_connectivity_map_key"]
->
 
 /**
  * Detects a capacitor bridging a chip power pin and ground, then applies the
@@ -93,6 +90,7 @@ export const applyAutomaticDecouplingTraceLength = (
   )
   for (const sourceTrace of db.source_trace.list()) {
     if (
+      sourceTrace.max_length !== undefined ||
       !sourceTrace.connected_source_port_ids.some((sourcePortId) =>
         capacitorSourcePortIds.has(sourcePortId),
       )
@@ -101,10 +99,7 @@ export const applyAutomaticDecouplingTraceLength = (
     }
 
     db.source_trace.update(sourceTrace.source_trace_id, {
-      max_length: Math.min(
-        sourceTrace.max_length ?? DEFAULT_MAX_DECOUPLING_TRACE_LENGTH_MM,
-        DEFAULT_MAX_DECOUPLING_TRACE_LENGTH_MM,
-      ),
+      max_length: DEFAULT_MAX_DECOUPLING_TRACE_LENGTH_MM,
     })
   }
 }
