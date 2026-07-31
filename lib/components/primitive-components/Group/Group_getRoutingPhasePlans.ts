@@ -1,4 +1,8 @@
-import type { AutorouterProp, AutoroutingPhaseProps } from "@tscircuit/props"
+import type {
+  AutorouterProp,
+  AutoroutingPhaseProps,
+  BreakoutProps,
+} from "@tscircuit/props"
 import type { z } from "zod"
 import type { Bus } from "../Bus"
 import type { Net } from "../Net"
@@ -11,7 +15,7 @@ import type {
 } from "./GroupRoutingPhasePlan"
 
 type GroupFanoutProps = Pick<
-  AutoroutingPhaseProps,
+  BreakoutProps,
   | "busFanoutDirections"
   | "fanoutBoundaryPadding"
   | "fanoutRoutingLayers"
