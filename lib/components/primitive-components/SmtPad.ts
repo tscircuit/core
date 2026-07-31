@@ -9,6 +9,7 @@ import {
   type PcbSmtPadRotatedRect,
   type PcbSmtPadPill,
   type PcbSmtPadRotatedPill,
+  type PcbSolderPasteRotatedPill,
 } from "circuit-json"
 import { applyToPoint, decomposeTSR } from "transformation-matrix"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
@@ -342,13 +343,12 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         } as PcbSmtPadRotatedPill)
 
         if (shouldCreateSolderPaste)
-          // circuit-json has no rotated-pill paste variant; a 0.7-scaled
-          // rotated rect is always contained within the pill outline
           db.pcb_solder_paste.insert({
             layer: maybeFlipLayer(props.layer ?? "top"),
-            shape: "rotated_rect",
+            shape: "rotated_pill",
             width: props.width! * 0.7,
             height: props.height! * 0.7,
+            radius: props.radius! * 0.7,
             x: position.x,
             y: position.y,
             ccw_rotation: finalRotationDegrees,
@@ -356,7 +356,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
             pcb_smtpad_id: pcb_smtpad.pcb_smtpad_id,
             subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
             pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
-          } as PcbSmtPadRotatedRect)
+          } as PcbSolderPasteRotatedPill)
       } else {
         pcb_smtpad = db.pcb_smtpad.insert({
           pcb_component_id,
