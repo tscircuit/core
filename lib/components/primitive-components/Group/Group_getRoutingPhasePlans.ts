@@ -1,5 +1,10 @@
-import type { AutorouterProp, AutoroutingPhaseProps } from "@tscircuit/props"
+import type {
+  AutorouterProp,
+  AutoroutingPhaseProps,
+  BreakoutProps,
+} from "@tscircuit/props"
 import type { z } from "zod"
+import type { Bus } from "../Bus"
 import type { Net } from "../Net"
 import type { Trace } from "../Trace/Trace"
 import type { AutoroutingPhase } from "../AutoroutingPhase"
@@ -8,6 +13,14 @@ import type {
   RoutingPhaseDrcTolerances,
   RoutingPhasePlan,
 } from "./GroupRoutingPhasePlan"
+
+type GroupFanoutProps = Pick<
+  BreakoutProps,
+  | "busFanoutDirections"
+  | "fanoutBoundaryPadding"
+  | "fanoutRoutingLayers"
+  | "fanoutPourNetMap"
+>
 
 function getPhaseSortValue(routingPhaseIndex: number | null): number {
   return routingPhaseIndex === null
@@ -41,7 +54,35 @@ function getNetRoutingPhaseIndex(net: Net): number | null {
   return net.props.routingPhaseIndex ?? null
 }
 
-function getTraceRoutingPhaseIndex(trace: Trace): number | null {
+function getTraceRoutingPhaseIndex(
+  trace: Trace,
+  buses: Bus[] = [],
+): number | null {
+  const busRoutingPhaseIndexes = new Set<number | null>()
+  for (const bus of buses) {
+    if (bus._parsedProps.routingPhaseIndex === undefined) continue
+    const traceIsInBus = bus._parsedProps.connections.some(
+      (connection) =>
+        connection === trace.name ||
+        traceHasEndpointMatchingConnectionSelector(
+          trace,
+          convertPortSelectorToEndpointKey(connection),
+        ),
+    )
+    if (traceIsInBus) {
+      busRoutingPhaseIndexes.add(bus._parsedProps.routingPhaseIndex)
+    }
+  }
+  if (busRoutingPhaseIndexes.size > 1) {
+    throw new Error(
+      `Trace "${trace.name}" belongs to buses with different routing phases`,
+    )
+  }
+  const busRoutingPhaseIndex = busRoutingPhaseIndexes.values().next().value
+  if (busRoutingPhaseIndex !== undefined) {
+    return busRoutingPhaseIndex
+  }
+
   const traceRoutingPhaseIndex = trace.props.routingPhaseIndex
   if (traceRoutingPhaseIndex !== undefined) return traceRoutingPhaseIndex
 
@@ -186,15 +227,12 @@ export function Group_getRoutingPhasePlans(
 ): RoutingPhasePlan[] {
   const traces = group.selectAll("trace") as Trace[]
   const nets = group.selectAll("net") as Net[]
+  const buses = group.selectAll("bus") as Bus[]
 
   const plansByPhaseIndex = new Map<number | null, RoutingPhasePlan>()
   const autoroutersByPhaseIndex = getAutoroutersByPhaseIndex(group)
   const phasePropsByPhaseIndex = getAutoroutingPhasePropsByPhaseIndex(group)
-  const groupFanoutBoundaryPadding = (
-    group._parsedProps as {
-      fanoutBoundaryPadding?: AutoroutingPhaseProps["fanoutBoundaryPadding"]
-    }
-  ).fanoutBoundaryPadding
+  const groupFanoutProps = group._parsedProps as GroupFanoutProps
   const hasDirectRoutingTargets = traces.length > 0 || nets.length > 0
   const hasReroutePhase = Array.from(phasePropsByPhaseIndex.values()).some(
     (phaseProps) => phaseProps.reroute,
@@ -221,7 +259,7 @@ export function Group_getRoutingPhasePlans(
   }
 
   for (const trace of traces) {
-    const routingPhaseIndex = getTraceRoutingPhaseIndex(trace)
+    const routingPhaseIndex = getTraceRoutingPhaseIndex(trace, buses)
     getOrCreateRoutingPhasePlan(
       plansByPhaseIndex,
       routingPhaseIndex,
@@ -274,9 +312,18 @@ export function Group_getRoutingPhasePlans(
     plan.connectionSelectors = phaseProps
       ? getConnectionSelectorsFromAutoroutingPhaseProps(phaseProps)
       : undefined
-    plan.busFanoutDirections = phaseProps?.busFanoutDirections
+    plan.busFanoutDirections =
+      phaseProps?.busFanoutDirections ?? groupFanoutProps.busFanoutDirections
     plan.fanoutBoundaryPadding =
-      phaseProps?.fanoutBoundaryPadding ?? groupFanoutBoundaryPadding
+      phaseProps?.fanoutBoundaryPadding ??
+      groupFanoutProps.fanoutBoundaryPadding
+    const fanoutRoutingLayers =
+      phaseProps?.fanoutRoutingLayers ?? groupFanoutProps.fanoutRoutingLayers
+    plan.fanoutRoutingLayers = fanoutRoutingLayers?.map((layer) =>
+      typeof layer === "string" ? layer : layer.name,
+    )
+    plan.fanoutPourNetMap =
+      phaseProps?.fanoutPourNetMap ?? groupFanoutProps.fanoutPourNetMap
     plan.drcTolerances = phaseProps
       ? getDrcTolerancesFromAutoroutingPhaseProps(phaseProps)
       : undefined

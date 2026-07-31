@@ -39,7 +39,7 @@ import {
 import { getLocalAutoroutingStages } from "lib/utils/autorouting/localAutorouterStrategies"
 import { shouldSkipAutoroutingBecauseOfPlacementErrors } from "lib/utils/autorouting/should-skip-autorouting-because-of-placement-errors"
 import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
-import { getViaBoardLayers } from "lib/utils/getViaSpanLayers"
+import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
 import {
   GROUND_NET_REGEX,
   POWER_NET_REGEX,
@@ -73,6 +73,7 @@ import { Group_doInitialSchematicTraceRender } from "./Group_doInitialSchematicT
 import { Group_doInitialSimulationSpiceEngineRender } from "./Group_doInitialSimulationSpiceEngineRender"
 import { Group_doInitialSourceAddConnectivityMapKey } from "./Group_doInitialSourceAddConnectivityMapKey"
 import { Group_getRoutingPhasePlans } from "./Group_getRoutingPhasePlans"
+import { Group_getFanoutPourNetMap } from "./Group_getFanoutPourNetMap"
 import {
   cacheLocalAutoroutingPhaseResult,
   getCachedLocalAutoroutingPhaseResult,
@@ -924,14 +925,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       props.defaultTraceWidth ?? props.nominalTraceWidth ?? minTraceWidth,
     )
 
-    const { simpleRouteJson: baseSimpleRouteJson } =
-      getSimpleRouteJsonFromCircuitJson({
-        db,
-        minTraceWidth,
-        nominalTraceWidth,
-        subcircuit_id: this.subcircuit_id,
-        subcircuitComponent: this,
-      })
     const routingPhasePlans = this._getRoutingPhasePlans()
     const hasPhasedAutorouting = Group_hasPhasedAutorouting(routingPhasePlans)
     const routingStages = routingPhasePlans.flatMap((routingPhasePlan) => {
@@ -950,6 +943,21 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         routingPhasePlan,
       }))
     })
+    const hasFanoutStage = routingStages.some(({ autorouterConfig }) =>
+      ["fanout", "single_layer_fanout"].includes(autorouterConfig.preset ?? ""),
+    )
+    const fanoutPourNetMap = hasFanoutStage
+      ? Group_getFanoutPourNetMap(this, routingPhasePlans)
+      : undefined
+    const { simpleRouteJson: baseSimpleRouteJson } =
+      getSimpleRouteJsonFromCircuitJson({
+        db,
+        minTraceWidth,
+        nominalTraceWidth,
+        subcircuit_id: this.subcircuit_id,
+        subcircuitComponent: this,
+        fanoutPourNetMap,
+      })
     const outputTraces: SimplifiedPcbTrace[] = []
     const outputJumpers: Array<{
       jumper_footprint: string
@@ -1174,6 +1182,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
               commonAutorouterOptions,
               busFanoutDirections: routingPhasePlan.busFanoutDirections,
               fanoutBoundaryPadding: routingPhasePlan.fanoutBoundaryPadding,
+              fanoutRoutingLayers: routingPhasePlan.fanoutRoutingLayers,
             })
           }
 
@@ -1639,7 +1648,11 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
                 routedViaPoint.via_diameter ??
                 routedViaPoint.outer_diameter ??
                 routedViaPadDiameter,
-              layers: getViaBoardLayers(this._getSubcircuitLayerCount()),
+              layers: getViaSpanLayers({
+                fromLayer,
+                toLayer,
+                layerCount: this._getSubcircuitLayerCount(),
+              }),
               from_layer: fromLayer,
               to_layer: toLayer,
               subcircuit_id: this.subcircuit_id!,

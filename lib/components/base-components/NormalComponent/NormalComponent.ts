@@ -91,6 +91,7 @@ import { NormalComponent_doInitialSupplierFootprintMismatchWarning } from "./Nor
 import { canMergePortDefinitions } from "./utils/canMergePortDefinitions"
 import { getPrimaryPortsFromPortHintGroups } from "./utils/getPrimaryPortsFromPortHintGroups"
 import { inferInternallyConnectedPinNamesFromPorts } from "./utils/inferInternallyConnectedPinNamesFromPorts"
+import { isBlobUrl } from "./utils/isBlobUrl"
 import { isHttpUrl } from "./utils/isHttpUrl"
 import { isStaticAssetPath } from "./utils/isStaticAssetPath"
 import { parseLibraryFootprintRef } from "./utils/parseLibraryFootprintRef"
@@ -580,6 +581,7 @@ export class NormalComponent<
 
     if (typeof footprint === "string") {
       if (isHttpUrl(footprint)) return
+      if (isBlobUrl(footprint)) return
       if (isStaticAssetPath(footprint)) return
       if (parseLibraryFootprintRef(footprint)) return
       let fpCircuitJson: AnyCircuitElement[]
@@ -1403,6 +1405,7 @@ export class NormalComponent<
 
     if (typeof footprint === "string") {
       if (isHttpUrl(footprint)) return []
+      if (isBlobUrl(footprint)) return []
       if (isStaticAssetPath(footprint)) return []
       if (parseLibraryFootprintRef(footprint)) return []
       let fpCircuitJson: AnyCircuitElement[]
@@ -1769,6 +1772,7 @@ export class NormalComponent<
       footprintIsFootprinterString =
         !parseLibraryFootprintRef(footprintString) &&
         !isHttpUrl(footprintString) &&
+        !isBlobUrl(footprintString) &&
         !isStaticAssetPath(footprintString)
     }
 

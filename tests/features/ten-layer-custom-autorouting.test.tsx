@@ -96,7 +96,7 @@ test("Core carries an inner8 route through the full autorouting pipeline", async
       ),
   ).toBe(true)
 
-  const allCopperLayers: LayerRef[] = [
+  const topToInner8Layers: LayerRef[] = [
     "top",
     "inner1",
     "inner2",
@@ -106,14 +106,10 @@ test("Core carries an inner8 route through the full autorouting pipeline", async
     "inner6",
     "inner7",
     "inner8",
-    "bottom",
   ]
   expect(circuit.db.pcb_via.list()).toHaveLength(2)
-  expect(
-    circuit.db.pcb_via
-      .list()
-      .every((via) =>
-        allCopperLayers.every((layer) => via.layers.includes(layer)),
-      ),
-  ).toBe(true)
+  expect(circuit.db.pcb_via.list().map((via) => via.layers)).toEqual([
+    topToInner8Layers,
+    [...topToInner8Layers].reverse(),
+  ])
 })

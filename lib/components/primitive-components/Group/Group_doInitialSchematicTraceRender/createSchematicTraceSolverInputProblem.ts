@@ -358,49 +358,56 @@ export function createSchematicTraceSolverInputProblem(
       )
 
     if (connected.length >= 2) {
-      const [a, b] = connected.slice(0, 2)
-      const pairKey = [a, b].sort().join("::")
-      if (!connectedPairKeys.has(pairKey)) {
-        connectedPairKeys.add(pairKey)
-        const traceLabel = st.name ?? st.display_name
-        const userNetId = traceLabel ?? st.source_trace_id
-        if (st.subcircuit_connectivity_map_key) {
-          userNetIdToConnKey.set(userNetId, st.subcircuit_connectivity_map_key)
-        }
+      const traceLabel = st.name ?? st.display_name
+      const userNetId = traceLabel ?? st.source_trace_id
+      if (st.subcircuit_connectivity_map_key) {
+        userNetIdToConnKey.set(userNetId, st.subcircuit_connectivity_map_key)
+      }
+      const maxMspDist =
+        group._parsedProps.schMaxTraceDistance ?? DEFAULT_MAX_MSP_PAIR_DISTANCE
+      const usesGeneratedTraceLabel = !traceLabel || traceLabel.startsWith(".")
+      const portsForConnection = usesGeneratedTraceLabel
+        ? connected
+            .map((schematicPortId) =>
+              componentPortBySchematicPortId.get(schematicPortId),
+            )
+            .filter((port): port is Port => Boolean(port))
+        : []
+      const renderedNetLabelText = usesGeneratedTraceLabel
+        ? getNetNameFromPorts(portsForConnection).name
+        : traceLabel
+      const shouldRenderNetLabels = connected.slice(1).some((b, index) => {
+        const a = connected[index]
         const portA = db.schematic_port.get(a)
         const portB = db.schematic_port.get(b)
-        let portDistance = 0
-        if (portA && portB) {
-          portDistance = Math.sqrt(
+        if (!portA || !portB) return false
+        return (
+          Math.sqrt(
             (portA.center.x - portB.center.x) ** 2 +
               (portA.center.y - portB.center.y) ** 2,
-          )
-        }
-        const maxMspDist =
-          group._parsedProps.schMaxTraceDistance ??
-          DEFAULT_MAX_MSP_PAIR_DISTANCE
-        const usesGeneratedTraceLabel =
-          !traceLabel || traceLabel.startsWith(".")
-        const portsForConnection = usesGeneratedTraceLabel
-          ? [a, b]
-              .map((schematicPortId) =>
-                componentPortBySchematicPortId.get(schematicPortId),
-              )
-              .filter((port): port is Port => Boolean(port))
-          : []
-        const renderedNetLabelText = usesGeneratedTraceLabel
-          ? getNetNameFromPorts(portsForConnection).name
-          : traceLabel
-        let netLabelWidth: number | undefined
-        if (renderedNetLabelText && portDistance > maxMspDist) {
-          netLabelWidth = Number(
-            getSchematicNetLabelTextWidth(
-              usesGeneratedTraceLabel
-                ? { text: renderedNetLabelText }
-                : { text: renderedNetLabelText, font_size: 0.14 },
-            ).toFixed(2),
-          )
-        }
+          ) > maxMspDist
+        )
+      })
+      const netLabelWidth =
+        renderedNetLabelText && shouldRenderNetLabels
+          ? Number(
+              getSchematicNetLabelTextWidth(
+                usesGeneratedTraceLabel
+                  ? { text: renderedNetLabelText }
+                  : { text: renderedNetLabelText, font_size: 0.14 },
+              ).toFixed(2),
+            )
+          : undefined
+
+      // The schematic solver accepts two-terminal direct connections. Expand
+      // the ordered source trace path into adjacent edges that share one net ID
+      // so its connectivity map retains every terminal as a single net.
+      for (let i = 0; i < connected.length - 1; i++) {
+        const a = connected[i]
+        const b = connected[i + 1]
+        const pairKey = [a, b].sort().join("::")
+        if (connectedPairKeys.has(pairKey)) continue
+        connectedPairKeys.add(pairKey)
         directConnections.push({
           schematicPortIds: [a, b],
           netId: userNetId,

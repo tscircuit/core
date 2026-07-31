@@ -72,13 +72,11 @@ test("unbroken inner-layer copper pours participate in autorouting", async () =>
       .list()
       .every((via) => via.subcircuit_connectivity_map_key),
   ).toBe(true)
-  expect(topToInner2Vias.every((via) => via.layers.includes("inner1"))).toBe(
-    true,
-  )
-  expect(topToInner2Vias.every((via) => via.layers.includes("bottom"))).toBe(
-    true,
-  )
-  expect(topToInner2Vias.every((via) => via.layers.length === 4)).toBe(true)
+  expect(
+    topToInner2Vias.every(
+      (via) => via.layers.join(",") === "top,inner1,inner2",
+    ),
+  ).toBe(true)
 
   const vccNet = circuit.db.source_net.list().find((net) => net.name === "VCC")
   expect(vccNet?.subcircuit_connectivity_map_key).toBeDefined()
