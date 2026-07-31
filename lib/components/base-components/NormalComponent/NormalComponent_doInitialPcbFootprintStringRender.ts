@@ -1,9 +1,3 @@
-import { NormalComponent } from "./NormalComponent"
-import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromCircuitJson"
-import { isValidElement as isReactElement } from "react"
-import { Footprint } from "lib/components/primitive-components/Footprint"
-import { isHttpUrl } from "./utils/isHttpUrl"
-import { parseLibraryFootprintRef } from "./utils/parseLibraryFootprintRef"
 import {
   type FootprintLibraryResult,
   type PartsEngine,
@@ -16,11 +10,18 @@ import {
   circuit_json_footprint_load_error,
   external_footprint_load_error,
 } from "circuit-json"
-import { getFileExtension } from "./utils/getFileExtension"
-import { isStaticAssetPath } from "./utils/isStaticAssetPath"
-import { resolveStaticFileImport } from "lib/utils/resolveStaticFileImport"
-import { extractCadModelFromCircuitJson } from "lib/utils/connectors/extractCadModelFromCircuitJson"
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
+import { Footprint } from "lib/components/primitive-components/Footprint"
+import { extractCadModelFromCircuitJson } from "lib/utils/connectors/extractCadModelFromCircuitJson"
+import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromCircuitJson"
+import { resolveStaticFileImport } from "lib/utils/resolveStaticFileImport"
+import { isValidElement as isReactElement } from "react"
+import { NormalComponent } from "./NormalComponent"
+import { getFileExtension } from "./utils/getFileExtension"
+import { isBlobUrl } from "./utils/isBlobUrl"
+import { isHttpUrl } from "./utils/isHttpUrl"
+import { isStaticAssetPath } from "./utils/isStaticAssetPath"
+import { parseLibraryFootprintRef } from "./utils/parseLibraryFootprintRef"
 
 type FootprintLibraryResolver = (
   footprintName: string,
@@ -95,15 +96,18 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
     : null
   if (
     typeof footprint === "string" &&
-    (isHttpUrl(footprint) || isStaticAssetPath(footprint)) &&
+    (isHttpUrl(footprint) ||
+      isBlobUrl(footprint) ||
+      isStaticAssetPath(footprint)) &&
     footprintParser
   ) {
     if (component._hasStartedFootprintUrlLoad) return
     component._hasStartedFootprintUrlLoad = true
     queueAsyncEffect("load-footprint-from-platform-file-parser", async () => {
-      const footprintUrl = isHttpUrl(footprint)
-        ? footprint
-        : await resolveStaticFileImport(footprint, component.root?.platform)
+      const footprintUrl =
+        isHttpUrl(footprint) || isBlobUrl(footprint)
+          ? footprint
+          : await resolveStaticFileImport(footprint, component.root?.platform)
       try {
         const result = await footprintParser.loadFromUrl(footprintUrl)
         const fpComponents = createComponentsFromCircuitJson(
@@ -187,6 +191,9 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
         throw err
       }
     })
+    return
+  }
+  if (typeof footprint === "string" && isBlobUrl(footprint)) {
     return
   }
 
