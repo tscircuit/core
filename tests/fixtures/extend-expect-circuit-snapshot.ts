@@ -9,7 +9,6 @@ import {
   convertCircuitJsonToPcbSvg,
   convertCircuitJsonToPinoutSvg,
   convertCircuitJsonToSchematicSvg,
-  convertCircuitJsonToSolderPasteMask,
   convertCircuitJsonToStackedSchematicSheetsSvg,
 } from "circuit-to-svg"
 import { RootCircuit } from "lib/RootCircuit"
@@ -26,7 +25,7 @@ async function saveSvgSnapshotOfCircuitJson({
 }: {
   soup: AnyCircuitElement[]
   testPath: string
-  mode: "pcb" | "schematic" | "schematic_stacked" | "pinout" | "solder-paste"
+  mode: "pcb" | "schematic" | "schematic_stacked" | "pinout"
   updateSnapshot: boolean
   forceUpdateSnapshot: boolean
   options?: any
@@ -49,12 +48,6 @@ async function saveSvgSnapshotOfCircuitJson({
       break
     case "pinout":
       content = convertCircuitJsonToPinoutSvg(soup, options)
-      break
-    case "solder-paste":
-      content = convertCircuitJsonToSolderPasteMask(soup, {
-        layer: "top",
-        ...options,
-      })
       break
   }
 
@@ -130,34 +123,6 @@ expect.extend({
       soup: circuitJson,
       testPath: args[0],
       mode: "pcb",
-      options: args[1],
-      updateSnapshot:
-        process.argv.includes("--update-snapshots") ||
-        process.argv.includes("-u") ||
-        Boolean(process.env.BUN_UPDATE_SNAPSHOTS),
-      forceUpdateSnapshot:
-        process.argv.includes("--force-update-snapshots") ||
-        process.argv.includes("-f") ||
-        Boolean(process.env.BUN_FORCE_UPDATE_SNAPSHOTS),
-    })
-  },
-  async toMatchSolderPasteSnapshot(
-    this: any,
-    received: unknown,
-    ...args: any[]
-  ): Promise<MatcherResult> {
-    let circuitJson: AnyCircuitElement[]
-    if (received instanceof RootCircuit) {
-      await received.renderUntilSettled()
-      circuitJson = await received.getCircuitJson()
-    } else {
-      circuitJson = received as AnyCircuitElement[]
-    }
-
-    return saveSvgSnapshotOfCircuitJson({
-      soup: circuitJson,
-      testPath: args[0],
-      mode: "solder-paste",
       options: args[1],
       updateSnapshot:
         process.argv.includes("--update-snapshots") ||
@@ -308,12 +273,6 @@ declare module "bun:test" {
     toMatchPcbSnapshot(
       testPath: string,
       options?: Parameters<typeof convertCircuitJsonToPcbSvg>[1],
-    ): Promise<MatcherResult>
-    toMatchSolderPasteSnapshot(
-      testPath: string,
-      options?: Partial<
-        Parameters<typeof convertCircuitJsonToSolderPasteMask>[1]
-      >,
     ): Promise<MatcherResult>
     toMatchSchematicSnapshot(
       testPath: string,
