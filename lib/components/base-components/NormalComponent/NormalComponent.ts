@@ -229,7 +229,7 @@ export class NormalComponent<
 
     const root = this.root!
 
-    const nameMap = this.getSubcircuit().getNormalComponentNameMap?.()
+    const nameMap = this.getSelectorScope().getNormalComponentNameMap?.()
     const componentsWithSameName = nameMap?.get(this.props.name) ?? []
 
     // Check if any of these components have already been processed (initialized this phase)

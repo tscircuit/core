@@ -134,7 +134,7 @@ export class Trace
   }
 
   _resolveNet(selector: string): Net | null {
-    const direct = this.getSubcircuit().selectOne(selector, {
+    const direct = this.getSelectorScope().selectOne(selector, {
       type: "net",
     }) as Net | null
     if (direct) return direct

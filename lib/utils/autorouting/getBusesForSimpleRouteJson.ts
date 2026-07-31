@@ -39,7 +39,7 @@ const getBusSourceTraceSubcircuitConnectivityMapKeyOrThrow = ({
   )
   const selectedPort =
     sourceTracesWithMatchingName.length === 0
-      ? bus.getSubcircuit().selectOne<Port>(traceNameOrPortSelector, {
+      ? bus.getSelectorScope().selectOne<Port>(traceNameOrPortSelector, {
           type: "port",
         })
       : null

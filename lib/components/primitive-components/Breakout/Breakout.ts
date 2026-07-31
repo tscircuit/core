@@ -9,6 +9,10 @@ import type { z } from "zod"
 import { createBreakoutPointSolverInput } from "./createBreakoutPointSolverInput"
 
 export class Breakout extends Group<typeof breakoutProps> {
+  override get isSelectorScope() {
+    return false
+  }
+
   get config() {
     return {
       ...super.config,

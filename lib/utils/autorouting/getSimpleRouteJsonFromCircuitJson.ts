@@ -1,6 +1,11 @@
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import { su } from "@tscircuit/circuit-json-util"
-import type { AnyCircuitElement, PcbBoard, SourcePort } from "circuit-json"
+import type {
+  AnyCircuitElement,
+  PcbBoard,
+  SourcePort,
+  SourceTrace,
+} from "circuit-json"
 import {
   ConnectivityMap,
   getFullConnectivityMapFromCircuitJson,
@@ -93,10 +98,28 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     }
   }
 
-  const subcircuitElements = (circuitJson ?? db.toArray()).filter(
-    (e) =>
+  const allCircuitElements = circuitJson ?? db.toArray()
+  const sourceNetIdsReferencedByRoutingScope = new Set<string>()
+  for (const element of allCircuitElements) {
+    if (element.type !== "source_trace") continue
+    const sourceTrace = element as SourceTrace
+    if (
+      subcircuit_id &&
+      !relevantSubcircuitIds!.has(sourceTrace.subcircuit_id!)
+    ) {
+      continue
+    }
+    for (const sourceNetId of sourceTrace.connected_source_net_ids ?? []) {
+      sourceNetIdsReferencedByRoutingScope.add(sourceNetId)
+    }
+  }
+  const subcircuitElements = allCircuitElements.filter(
+    (element) =>
       !subcircuit_id ||
-      ("subcircuit_id" in e && relevantSubcircuitIds!.has(e.subcircuit_id!)),
+      ("subcircuit_id" in element &&
+        relevantSubcircuitIds!.has(element.subcircuit_id!)) ||
+      (element.type === "source_net" &&
+        sourceNetIdsReferencedByRoutingScope.has(element.source_net_id)),
   )
 
   let board: PcbBoard | undefined | null = null

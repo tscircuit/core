@@ -3,6 +3,7 @@ import type {
   AutoroutingPhaseProps,
   BreakoutProps,
 } from "@tscircuit/props"
+import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import type { z } from "zod"
 import type { Bus } from "../Bus"
 import type { Net } from "../Net"
@@ -21,6 +22,33 @@ type GroupFanoutProps = Pick<
   | "fanoutRoutingLayers"
   | "fanoutPourNetMap"
 >
+
+const getDescendantsInRoutingScope = (
+  group: Group<z.ZodType>,
+): PrimitiveComponent[] => {
+  const descendants: PrimitiveComponent[] = []
+  const visitChildren = (children: PrimitiveComponent[]) => {
+    for (const child of children) {
+      if (child.isSubcircuit) continue
+      descendants.push(child)
+      visitChildren(child.children)
+    }
+  }
+  visitChildren(group.children)
+  return descendants
+}
+
+const selectAllInRoutingScope = <T extends PrimitiveComponent>(
+  group: Group<z.ZodType>,
+  componentName: string,
+): T[] => {
+  if (!Array.isArray(group.children)) {
+    return group.selectAll(componentName) as T[]
+  }
+  return getDescendantsInRoutingScope(group).filter(
+    (component) => component.lowercaseComponentName === componentName,
+  ) as T[]
+}
 
 function getPhaseSortValue(routingPhaseIndex: number | null): number {
   return routingPhaseIndex === null
@@ -137,9 +165,10 @@ function traceHasEndpointMatchingConnectionSelector(
 function getAutoroutersByPhaseIndex(
   group: Group<z.ZodType>,
 ): Map<number | null, AutorouterProp> {
-  const autoroutingPhases = group.selectAll(
+  const autoroutingPhases = selectAllInRoutingScope<AutoroutingPhase>(
+    group,
     "autoroutingphase",
-  ) as AutoroutingPhase[]
+  )
   const autoroutersByPhaseIndex = new Map<number | null, AutorouterProp>()
 
   for (const autoroutingPhase of autoroutingPhases) {
@@ -154,9 +183,10 @@ function getAutoroutersByPhaseIndex(
 function getAutoroutingPhasePropsByPhaseIndex(
   group: Group<z.ZodType>,
 ): Map<number | null, AutoroutingPhaseProps> {
-  const autoroutingPhases = group.selectAll(
+  const autoroutingPhases = selectAllInRoutingScope<AutoroutingPhase>(
+    group,
     "autoroutingphase",
-  ) as AutoroutingPhase[]
+  )
   const propsByPhaseIndex = new Map<number | null, AutoroutingPhaseProps>()
 
   for (const autoroutingPhase of autoroutingPhases) {
@@ -225,9 +255,9 @@ function getDrcTolerancesFromAutoroutingPhaseProps(
 export function Group_getRoutingPhasePlans(
   group: Group<z.ZodType>,
 ): RoutingPhasePlan[] {
-  const traces = group.selectAll("trace") as Trace[]
-  const nets = group.selectAll("net") as Net[]
-  const buses = group.selectAll("bus") as Bus[]
+  const traces = selectAllInRoutingScope<Trace>(group, "trace")
+  const nets = selectAllInRoutingScope<Net>(group, "net")
+  const buses = selectAllInRoutingScope<Bus>(group, "bus")
 
   const plansByPhaseIndex = new Map<number | null, RoutingPhasePlan>()
   const autoroutersByPhaseIndex = getAutoroutersByPhaseIndex(group)
