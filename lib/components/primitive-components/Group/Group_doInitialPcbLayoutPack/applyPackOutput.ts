@@ -63,6 +63,8 @@ export const applyPackOutput = (
   const { db } = group.root!
 
   for (const packedComponent of packOutput.components) {
+    if (packedComponent.isStatic) continue
+
     const { center, componentId, ccwRotationOffset, ccwRotationDegrees } =
       packedComponent
 

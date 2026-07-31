@@ -1,17 +1,20 @@
-import type { Group } from "../Group"
 import {
+  type PackInput,
+  type PackOutput,
   PackSolver2,
   convertCircuitJsonToPackOutput,
   convertPackOutputToPackInput,
   getGraphicsFromPackOutput,
-  type PackInput,
-  type PackOutput,
 } from "calculate-packing"
 import { type PcbComponent, length } from "circuit-json"
 import Debug from "debug"
+import type { NormalComponent } from "lib/components/base-components/NormalComponent"
+import { getDecouplingCapacitorRelationships } from "lib/utils/decoupling-capacitors/get-decoupling-capacitor-relationships"
+import type { Constraint } from "../../Constraint"
+import type { Group } from "../Group"
+import { applyDecouplingCapacitorPacking } from "./apply-decoupling-capacitor-packing"
 import { applyComponentConstraintClusters } from "./applyComponentConstraintClusters"
 import { applyPackOutput } from "./applyPackOutput"
-import type { NormalComponent } from "lib/components/base-components/NormalComponent"
 
 const DEFAULT_MIN_GAP = "1mm"
 const debug = Debug("Group_doInitialPcbLayoutPack")
@@ -44,7 +47,7 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
 
   // Collect pcb_component_ids that should be treated as static by the packer
   // Only collect from DIRECT children, not all descendants
-  const staticPcbComponentIds = new Set<string>()
+  const staticPcbComponentIds = new Set<PcbComponent["pcb_component_id"]>()
 
   // Recursively collect margins from all descendants
   const collectMargins = (comp: any) => {
@@ -112,8 +115,51 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
     }
   }
 
-  // Keep all circuit elements; static components will remain fixed during packing
-  const filteredCircuitJson = db.toArray()
+  const constrainedPcbComponentIds = new Set<PcbComponent["pcb_component_id"]>()
+  for (const constraint of group.children.filter(
+    (child): child is Constraint =>
+      child.componentName === "Constraint" &&
+      "_parsedProps" in child &&
+      (child._parsedProps as { pcb?: boolean }).pcb === true,
+  )) {
+    const referencedPcbComponentIds = new Set(
+      constraint
+        ._getAllReferencedComponents()
+        .componentsWithSelectors.map(
+          ({ component }) => component.pcb_component_id,
+        )
+        .filter(
+          (
+            pcbComponentId,
+          ): pcbComponentId is PcbComponent["pcb_component_id"] =>
+            pcbComponentId !== null,
+        ),
+    )
+    if (referencedPcbComponentIds.size < 2) continue
+    for (const pcbComponentId of referencedPcbComponentIds) {
+      constrainedPcbComponentIds.add(pcbComponentId)
+    }
+  }
+  const hasConstrainedStaticPcbComponent = [...staticPcbComponentIds].some(
+    (pcbComponentId) => constrainedPcbComponentIds.has(pcbComponentId),
+  )
+  const currentPcbGroupId = group.pcb_group_id ?? undefined
+  const decouplingCapacitorRelationships = getDecouplingCapacitorRelationships(
+    db,
+  ).filter((relationship) => {
+    const chipPcbComponent = db.pcb_component.getWhere({
+      source_component_id: relationship.chipSourceComponent.source_component_id,
+    })
+    const capacitorPcbComponent = db.pcb_component.getWhere({
+      source_component_id:
+        relationship.capacitorSourceComponent.source_component_id,
+    })
+    if (!chipPcbComponent || !capacitorPcbComponent) return false
+    return (
+      chipPcbComponent.pcb_group_id === currentPcbGroupId &&
+      capacitorPcbComponent.pcb_group_id === currentPcbGroupId
+    )
+  })
 
   // Calculate bounds if width and height are specified
   let bounds:
@@ -133,15 +179,58 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
     }
   }
 
-  const initialPackOutput = convertCircuitJsonToPackOutput(
-    filteredCircuitJson,
-    {
-      source_group_id: group.source_group_id!,
-      // shouldAddInnerObstacles: true,
-      chipMarginsMap,
-      staticPcbComponentIds: Array.from(staticPcbComponentIds),
-    },
-  )
+  const circuitJson = db.toArray()
+  const packConversionOptions = {
+    source_group_id: group.source_group_id!,
+    // shouldAddInnerObstacles: true,
+    chipMarginsMap,
+    staticPcbComponentIds: Array.from(staticPcbComponentIds),
+  }
+  const initialPackOutputWithoutStaticPromotion =
+    convertCircuitJsonToPackOutput(circuitJson, packConversionOptions)
+  const representedPcbComponentIds = new Set([
+    ...initialPackOutputWithoutStaticPromotion.components.map(
+      (packComponent) => packComponent.componentId,
+    ),
+    ...(initialPackOutputWithoutStaticPromotion.obstacles ?? []).map(
+      (packObstacle) => packObstacle.obstacleId,
+    ),
+  ])
+  const hasFixedChipWithDynamicDecouplingCapacitor =
+    !hasConstrainedStaticPcbComponent &&
+    decouplingCapacitorRelationships.some((relationship) => {
+      const chipPcbComponent = db.pcb_component.getWhere({
+        source_component_id:
+          relationship.chipSourceComponent.source_component_id,
+      })
+      const capacitorPcbComponent = db.pcb_component.getWhere({
+        source_component_id:
+          relationship.capacitorSourceComponent.source_component_id,
+      })
+      if (!chipPcbComponent || !capacitorPcbComponent) return false
+      return (
+        staticPcbComponentIds.has(chipPcbComponent.pcb_component_id) &&
+        !staticPcbComponentIds.has(capacitorPcbComponent.pcb_component_id) &&
+        representedPcbComponentIds.has(chipPcbComponent.pcb_component_id) &&
+        representedPcbComponentIds.has(capacitorPcbComponent.pcb_component_id)
+      )
+    })
+
+  // The pack converter normally turns relatively positioned components into
+  // padless obstacles. On this local copy, expose known static components as
+  // full pack components so their real pads can attract connected components.
+  const initialPackOutput = hasFixedChipWithDynamicDecouplingCapacitor
+    ? convertCircuitJsonToPackOutput(
+        circuitJson.map((element) =>
+          element.type === "pcb_component" &&
+          element.position_mode === "relative_to_group_anchor" &&
+          staticPcbComponentIds.has(element.pcb_component_id)
+            ? { ...element, position_mode: "packed" as const }
+            : element,
+        ),
+        packConversionOptions,
+      )
+    : initialPackOutputWithoutStaticPromotion
 
   const packInput: PackInput = {
     ...convertPackOutputToPackInput(initialPackOutput),
@@ -154,6 +243,12 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
   }
 
   const clusterMap = applyComponentConstraintClusters(group, packInput)
+
+  applyDecouplingCapacitorPacking(
+    db,
+    packInput,
+    decouplingCapacitorRelationships,
+  )
 
   if (debug.enabled) {
     group.root?.emit("debug:logOutput", {

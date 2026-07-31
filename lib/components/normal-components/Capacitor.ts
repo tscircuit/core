@@ -1,13 +1,14 @@
 import { capacitorProps } from "@tscircuit/props"
 import type { SourceSimpleCapacitorInput } from "circuit-json"
+import { formatSiUnit } from "format-si-unit"
 import {
-  FTYPE,
   type BaseSymbolName,
+  FTYPE,
   type PolarizedPassivePorts,
 } from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { Trace } from "../primitive-components/Trace/Trace"
-import { formatSiUnit } from "format-si-unit"
+import { Capacitor_getPcbComponentLayer } from "./Capacitor_getPcbComponentLayer"
 
 export class Capacitor extends NormalComponent<
   typeof capacitorProps,
@@ -89,6 +90,13 @@ export class Capacitor extends NormalComponent<
       )
     }
     this._createTracesFromConnectionsProp()
+  }
+
+  protected override _getPcbComponentLayer() {
+    if (this._getFootprintOriginalLayer() !== undefined) {
+      return super._getPcbComponentLayer()
+    }
+    return Capacitor_getPcbComponentLayer(this) ?? super._getPcbComponentLayer()
   }
 
   doInitialSourceRender() {
