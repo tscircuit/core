@@ -1,4 +1,8 @@
-import type { AutorouterProp, AutoroutingPhaseProps } from "@tscircuit/props"
+import type {
+  AutorouterProp,
+  AutoroutingPhaseProps,
+  BreakoutProps,
+} from "@tscircuit/props"
 import type { z } from "zod"
 import type { Bus } from "../Bus"
 import type { Net } from "../Net"
@@ -9,6 +13,14 @@ import type {
   RoutingPhaseDrcTolerances,
   RoutingPhasePlan,
 } from "./GroupRoutingPhasePlan"
+
+type GroupFanoutProps = Pick<
+  BreakoutProps,
+  | "busFanoutDirections"
+  | "fanoutBoundaryPadding"
+  | "fanoutRoutingLayers"
+  | "fanoutPourNetMap"
+>
 
 function getPhaseSortValue(routingPhaseIndex: number | null): number {
   return routingPhaseIndex === null
@@ -220,11 +232,7 @@ export function Group_getRoutingPhasePlans(
   const plansByPhaseIndex = new Map<number | null, RoutingPhasePlan>()
   const autoroutersByPhaseIndex = getAutoroutersByPhaseIndex(group)
   const phasePropsByPhaseIndex = getAutoroutingPhasePropsByPhaseIndex(group)
-  const groupFanoutBoundaryPadding = (
-    group._parsedProps as {
-      fanoutBoundaryPadding?: AutoroutingPhaseProps["fanoutBoundaryPadding"]
-    }
-  ).fanoutBoundaryPadding
+  const groupFanoutProps = group._parsedProps as GroupFanoutProps
   const hasDirectRoutingTargets = traces.length > 0 || nets.length > 0
   const hasReroutePhase = Array.from(phasePropsByPhaseIndex.values()).some(
     (phaseProps) => phaseProps.reroute,
@@ -304,13 +312,18 @@ export function Group_getRoutingPhasePlans(
     plan.connectionSelectors = phaseProps
       ? getConnectionSelectorsFromAutoroutingPhaseProps(phaseProps)
       : undefined
-    plan.busFanoutDirections = phaseProps?.busFanoutDirections
+    plan.busFanoutDirections =
+      phaseProps?.busFanoutDirections ?? groupFanoutProps.busFanoutDirections
     plan.fanoutBoundaryPadding =
-      phaseProps?.fanoutBoundaryPadding ?? groupFanoutBoundaryPadding
-    plan.fanoutRoutingLayers = phaseProps?.fanoutRoutingLayers?.map((layer) =>
+      phaseProps?.fanoutBoundaryPadding ??
+      groupFanoutProps.fanoutBoundaryPadding
+    const fanoutRoutingLayers =
+      phaseProps?.fanoutRoutingLayers ?? groupFanoutProps.fanoutRoutingLayers
+    plan.fanoutRoutingLayers = fanoutRoutingLayers?.map((layer) =>
       typeof layer === "string" ? layer : layer.name,
     )
-    plan.fanoutPourNetMap = phaseProps?.fanoutPourNetMap
+    plan.fanoutPourNetMap =
+      phaseProps?.fanoutPourNetMap ?? groupFanoutProps.fanoutPourNetMap
     plan.drcTolerances = phaseProps
       ? getDrcTolerancesFromAutoroutingPhaseProps(phaseProps)
       : undefined
