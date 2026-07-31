@@ -10,6 +10,7 @@ import { DifferentialPair } from "lib/components/primitive-components/Differenti
 import type { ISubcircuit } from "lib/components/primitive-components/Group/Subcircuit/ISubcircuit"
 import { getObstaclesFromCircuitJson } from "../obstacles/getObstaclesFromCircuitJson"
 import type {
+  PcbGroupId,
   SimpleRouteConnection,
   SimpleRouteDifferentialPair,
   SimpleRouteJson,
@@ -58,7 +59,9 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   minBoardEdgeClearance?: number
   minViaHoleDiameter?: number
   minViaPadDiameter?: number
-  subcircuitComponent?: Pick<ISubcircuit, "selectAll">
+  subcircuitComponent?: Pick<ISubcircuit, "selectAll"> & {
+    pcb_group_id?: PcbGroupId | null
+  }
   /**
    * Copper plane intent used by fanout routing. Source-only traces whose nets
    * are mapped here become internal plane-terminated buses in SRJ.
@@ -128,6 +131,9 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   const pcbGroup = subcircuit_id
     ? db.pcb_group.getWhere({ subcircuit_id })
     : undefined
+  const activeRoutingPcbGroupId =
+    subcircuitComponent?.pcb_group_id ??
+    (!subcircuitIsBoard ? pcbGroup?.pcb_group_id : undefined)
 
   const sharedConnMap =
     getFullConnectivityMapFromCircuitJson(subcircuitElements)
@@ -137,6 +143,13 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     .filter(
       (bp) => !subcircuit_id || relevantSubcircuitIds?.has(bp.subcircuit_id!),
     )
+  const breakoutPointIsInActiveRoutingGroup = (
+    breakoutPoint: (typeof breakoutPoints)[number],
+  ) =>
+    breakoutPoint.subcircuit_id === subcircuit_id &&
+    (activeRoutingPcbGroupId
+      ? breakoutPoint.pcb_group_id === activeRoutingPcbGroupId
+      : !subcircuitIsBoard)
 
   const obstacles = getObstaclesFromCircuitJson(
     [
@@ -429,7 +442,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       ) => {
         const bp = sourcePortIdToBreakoutPoint.get(sourcePortId)
         const portSelector = getPortSelector(db.source_port.get(sourcePortId))
-        if (bp && bp.subcircuit_id !== subcircuit_id) {
+        if (bp && !breakoutPointIsInActiveRoutingGroup(bp)) {
           return {
             x: bp.x,
             y: bp.y,
@@ -650,14 +663,22 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         ),
       }
 
-      // Inner routing (same subcircuit): create [port → bp] so the
-      // inner autorouter connects the chip pin to the boundary.
-      // Outer routing (parent): the cross-boundary trace already
-      // uses the bp instead of the inner port — no connection needed.
-      if (bp.subcircuit_id === subcircuit_id) {
+      const isInActiveRoutingGroup = breakoutPointIsInActiveRoutingGroup(bp)
+      const isInTransparentChildRoutingGroup =
+        !isInActiveRoutingGroup && bp.subcircuit_id === subcircuit_id
+
+      // A subcircuit routes its own [port → breakout point] connection.
+      // A transparent breakout adds the same connection to its board-level
+      // routing directive, identified by the breakout's pcb_group_id.
+      if (isInActiveRoutingGroup || isInTransparentChildRoutingGroup) {
         connectionsFromBreakoutPoints.push({
-          name: bpSourcePortId,
+          name: isInTransparentChildRoutingGroup
+            ? `breakout:${bp.pcb_breakout_point_id}`
+            : bpSourcePortId,
           source_trace_id: bp.source_trace_id,
+          routingPcbGroupId: isInTransparentChildRoutingGroup
+            ? bp.pcb_group_id
+            : undefined,
           pointsToConnect: [portPt, pt],
         })
         continue

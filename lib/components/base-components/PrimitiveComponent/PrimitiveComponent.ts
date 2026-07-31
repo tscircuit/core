@@ -151,6 +151,10 @@ export abstract class PrimitiveComponent<
     return this.lowercaseComponentName === "group"
   }
 
+  get isRoutingDirective() {
+    return false
+  }
+
   get name() {
     return (this._parsedProps as any).name ?? this.fallbackUnassignedName
   }

@@ -3,25 +3,20 @@ import { BreakoutPointSolver } from "@tscircuit/breakout-point-solver"
 import { Group } from "../Group/Group"
 import { AutoplacedBreakoutPoint } from "../AutoplacedBreakoutPoint"
 import { BreakoutPoint } from "../BreakoutPoint"
-import { Trace } from "../Trace/Trace"
+import type { Trace } from "../Trace/Trace"
 import type { Port } from "../Port"
-import type { z } from "zod"
 import { createBreakoutPointSolverInput } from "./createBreakoutPointSolverInput"
 
 export class Breakout extends Group<typeof breakoutProps> {
+  override get isRoutingDirective() {
+    return true
+  }
+
   get config() {
     return {
       ...super.config,
       zodProps: breakoutProps,
     }
-  }
-
-  constructor(props: z.input<typeof breakoutProps>) {
-    super({
-      ...props,
-      // @ts-ignore
-      subcircuit: true,
-    })
   }
 
   /**
@@ -47,13 +42,10 @@ export class Breakout extends Group<typeof breakoutProps> {
         .filter(Boolean),
     )
 
-    // Walk traces on the parent board to find cross-boundary connections
-    const board = this.parent
-    if (!board) return
-
-    const allTraces = board.children.filter(
-      (c) => c instanceof Trace,
-    ) as Trace[]
+    // Walk every trace in the enclosing routing scope. Connection props can
+    // create traces below components (for example, below a resistor), so
+    // checking only direct board children misses valid boundary crossings.
+    const allTraces = this.getSubcircuit().selectAll("trace") as Trace[]
 
     const autoPlacedPorts = new Set<Port>()
 

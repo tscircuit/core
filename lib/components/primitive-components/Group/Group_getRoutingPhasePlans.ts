@@ -5,6 +5,7 @@ import type {
 } from "@tscircuit/props"
 import type { z } from "zod"
 import type { Bus } from "../Bus"
+import type { Breakout } from "../Breakout/Breakout"
 import type { Net } from "../Net"
 import type { Trace } from "../Trace/Trace"
 import type { AutoroutingPhase } from "../AutoroutingPhase"
@@ -228,6 +229,20 @@ export function Group_getRoutingPhasePlans(
   const traces = group.selectAll("trace") as Trace[]
   const nets = group.selectAll("net") as Net[]
   const buses = group.selectAll("bus") as Bus[]
+  const breakouts = (group.selectAll("group") as Group<z.ZodType>[]).filter(
+    (candidate): candidate is Breakout => candidate.isRoutingDirective,
+  )
+  const breakoutByTrace = new Map<Trace, Breakout>()
+  for (const trace of traces) {
+    let ancestor = trace.parent
+    while (ancestor && ancestor !== group) {
+      if (ancestor.isRoutingDirective) {
+        breakoutByTrace.set(trace, ancestor as Breakout)
+        break
+      }
+      ancestor = ancestor.parent
+    }
+  }
 
   const plansByPhaseIndex = new Map<number | null, RoutingPhasePlan>()
   const autoroutersByPhaseIndex = getAutoroutersByPhaseIndex(group)
@@ -247,7 +262,8 @@ export function Group_getRoutingPhasePlans(
   if (
     !hasDirectRoutingTargets &&
     !hasReroutePhase &&
-    !hasConnectionTargetedPhase
+    !hasConnectionTargetedPhase &&
+    breakouts.length === 0
   )
     return []
 
@@ -259,6 +275,7 @@ export function Group_getRoutingPhasePlans(
   }
 
   for (const trace of traces) {
+    if (breakoutByTrace.has(trace)) continue
     const routingPhaseIndex = getTraceRoutingPhaseIndex(trace, buses)
     getOrCreateRoutingPhasePlan(
       plansByPhaseIndex,
@@ -277,6 +294,7 @@ export function Group_getRoutingPhasePlans(
       plan.connectionSelectors = connectionSelectors
 
       for (const trace of traces) {
+        if (breakoutByTrace.has(trace)) continue
         if (
           connectionSelectorEndpointKeys.some((endpointKey) =>
             traceHasEndpointMatchingConnectionSelector(trace, endpointKey),
@@ -329,6 +347,36 @@ export function Group_getRoutingPhasePlans(
       : undefined
   }
 
+  const breakoutPlans: RoutingPhasePlan[] = []
+  for (const breakout of breakouts) {
+    const breakoutProps = breakout._parsedProps as BreakoutProps
+    const pcbGroup = breakout.pcb_group_id
+      ? breakout.root?.db.pcb_group.get(breakout.pcb_group_id)
+      : null
+    breakoutPlans.push({
+      routingPhaseIndex: null,
+      routingPcbGroupId: breakout.pcb_group_id ?? undefined,
+      routingBounds:
+        pcbGroup?.width && pcbGroup.height
+          ? {
+              minX: pcbGroup.center.x - pcbGroup.width / 2,
+              maxX: pcbGroup.center.x + pcbGroup.width / 2,
+              minY: pcbGroup.center.y - pcbGroup.height / 2,
+              maxY: pcbGroup.center.y + pcbGroup.height / 2,
+            }
+          : undefined,
+      autorouter: breakoutProps.autorouter ?? "fanout",
+      busFanoutDirections: breakoutProps.busFanoutDirections,
+      fanoutBoundaryPadding: breakoutProps.fanoutBoundaryPadding,
+      fanoutRoutingLayers: breakoutProps.fanoutRoutingLayers?.map((layer) =>
+        typeof layer === "string" ? layer : layer.name,
+      ),
+      fanoutPourNetMap: breakoutProps.fanoutPourNetMap,
+      nets: [],
+      traces: traces.filter((trace) => breakoutByTrace.get(trace) === breakout),
+    })
+  }
+
   const defaultPhaseProps = phasePropsByPhaseIndex.get(null)
   if (
     hasDirectRoutingTargets &&
@@ -339,6 +387,7 @@ export function Group_getRoutingPhasePlans(
   ) {
     const reroutePlan = plans[0]
     return [
+      ...breakoutPlans,
       {
         routingPhaseIndex: null,
         nets: [...reroutePlan.nets],
@@ -348,5 +397,5 @@ export function Group_getRoutingPhasePlans(
     ]
   }
 
-  return plans
+  return [...breakoutPlans, ...plans]
 }

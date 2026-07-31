@@ -2,6 +2,15 @@ import type {
   SimpleRouteJson as AutorouterSimpleRouteJson,
   SimplifiedPcbTrace as AutorouterSimplifiedPcbTrace,
 } from "@tscircuit/capacity-autorouter"
+import type { PcbGroup } from "circuit-json"
+
+export type PcbGroupId = PcbGroup["pcb_group_id"]
+export type SimpleRouteBounds = {
+  minX: number
+  maxX: number
+  minY: number
+  maxY: number
+}
 
 export type SimplifiedPcbTrace = Omit<
   AutorouterSimplifiedPcbTrace,
@@ -84,6 +93,7 @@ export type SimpleRoutePoint = {
 
 export type SimpleRouteConnection = {
   name: SrjConnectionName
+  routingPcbGroupId?: PcbGroupId
   source_trace_id?: string
   rootConnectionName?: string
   mergedConnectionNames?: string[]
@@ -150,7 +160,7 @@ export type SimpleRouteJson = Omit<
   minBoardEdgeClearance?: number
   obstacles: Obstacle[]
   connections: SimpleRouteConnection[]
-  bounds: { minX: number; maxX: number; minY: number; maxY: number }
+  bounds: SimpleRouteBounds
   outline?: Array<{ x: number; y: number }>
   // NOTE: this is only present after an autorouter solves the input
   traces?: SimplifiedPcbTrace[]

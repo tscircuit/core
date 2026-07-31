@@ -44,7 +44,6 @@ test("autorouter uses breakout point", async () => {
     ),
   )
   expect(hasPointNear).toBe(true)
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
 
   const traceErrors = circuit.db.pcb_trace_error.list()
   const clearanceErrors = circuit.db.pcb_pad_trace_clearance_error.list()
@@ -65,4 +64,5 @@ test("autorouter uses breakout point", async () => {
   ).toHaveLength(0)
   expect(clearanceErrors).toHaveLength(0)
   expect(clearanceErrors[0]?.message).not.toInclude("too close")
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

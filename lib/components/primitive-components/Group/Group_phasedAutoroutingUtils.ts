@@ -172,6 +172,10 @@ export function connectionIsInRoutingPhase(
   connection: SimpleRouteConnection,
   phasePlan: RoutingPhasePlan,
 ): boolean {
+  if (connection.routingPcbGroupId) {
+    return connection.routingPcbGroupId === phasePlan.routingPcbGroupId
+  }
+
   for (const trace of phasePlan.traces) {
     if (!trace.source_trace_id) continue
     if (connection.source_trace_id === trace.source_trace_id) return true
@@ -194,6 +198,7 @@ export function Group_hasPhasedAutorouting(
   routingPhasePlans: RoutingPhasePlan[],
 ): boolean {
   for (const plan of routingPhasePlans) {
+    if (plan.routingPcbGroupId) return true
     if (plan.routingPhaseIndex !== null) return true
   }
   return false
@@ -242,6 +247,7 @@ export function Group_filterSimpleRouteJsonForPhase(
 
   return {
     ...simpleRouteJson,
+    bounds: phasePlan.routingBounds ?? simpleRouteJson.bounds,
     connections,
     differentialPairs:
       differentialPairs.length > 0 ? differentialPairs : undefined,

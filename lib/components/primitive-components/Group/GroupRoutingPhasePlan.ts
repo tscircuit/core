@@ -1,6 +1,10 @@
 import type { Net } from "../Net"
 import type { Trace } from "../Trace/Trace"
 import type { AutorouterProp, AutoroutingPhaseProps } from "@tscircuit/props"
+import type {
+  PcbGroupId,
+  SimpleRouteBounds,
+} from "lib/utils/autorouting/SimpleRouteJson"
 
 export interface RoutingPhaseDrcTolerances {
   minTraceWidth?: number
@@ -16,6 +20,8 @@ export interface RoutingPhaseDrcTolerances {
 
 export interface RoutingPhasePlan {
   routingPhaseIndex: number | null
+  routingPcbGroupId?: PcbGroupId
+  routingBounds?: SimpleRouteBounds
   autorouter?: AutorouterProp
   reroute?: boolean
   region?: AutoroutingPhaseProps["region"]

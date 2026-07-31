@@ -2,6 +2,31 @@ import { expect, test } from "bun:test"
 import { createAutoroutingPhaseIoStack } from "tests/fixtures/create-autorouting-phase-io-stack"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
+const isPointInPolygon = (
+  point: { x: number; y: number },
+  vertices: Array<{ x: number; y: number }>,
+) => {
+  let isInside = false
+  for (
+    let vertexIndex = 0, previousVertexIndex = vertices.length - 1;
+    vertexIndex < vertices.length;
+    previousVertexIndex = vertexIndex++
+  ) {
+    const vertex = vertices[vertexIndex]!
+    const previousVertex = vertices[previousVertexIndex]!
+    if (
+      vertex.y > point.y !== previousVertex.y > point.y &&
+      point.x <
+        ((previousVertex.x - vertex.x) * (point.y - vertex.y)) /
+          (previousVertex.y - vertex.y) +
+          vertex.x
+    ) {
+      isInside = !isInside
+    }
+  }
+  return isInside
+}
+
 const TestPad = ({
   pinNumber,
   pcbX,
@@ -49,6 +74,13 @@ test("breakout fanout props escape buses and plane nets without a phase", async 
     >
       <copperpour layer="inner1" connectsTo="net.GND" />
       <copperpour layer="inner2" connectsTo="net.VCC" />
+      <pcbnotetext
+        text="Breakout shares board GND and VCC nets"
+        pcbX={0}
+        pcbY={4}
+        fontSize="0.2mm"
+        anchorAlignment="center"
+      />
       <breakout
         name="BGA_BREAKOUT"
         width="10mm"
@@ -86,6 +118,18 @@ test("breakout fanout props escape buses and plane nets without a phase", async 
   expect(circuit.db.pcb_pad_trace_clearance_error.list()).toEqual([])
   expect(circuit.db.pcb_via_clearance_error.list()).toEqual([])
   expect(autoroutingPhaseIoStack).toHaveLength(2)
+  expect(circuit.selectOne(".U1")).not.toBeNull()
+  expect(circuit.selectOne(".R1")).not.toBeNull()
+
+  const breakoutSourceGroup = circuit.db.source_group.getWhere({
+    name: "BGA_BREAKOUT",
+  })
+  expect(breakoutSourceGroup?.is_subcircuit).toBeFalsy()
+  expect(breakoutSourceGroup?.subcircuit_id).toBeUndefined()
+
+  const sourceNets = circuit.db.source_net.list()
+  expect(sourceNets.filter((net) => net.name === "GND")).toHaveLength(1)
+  expect(sourceNets.filter((net) => net.name === "VCC")).toHaveLength(1)
 
   const fanoutInput = autoroutingPhaseIoStack[0]!.startSimpleRouteJson!
   expect(fanoutInput.buses).toEqual([
@@ -110,7 +154,35 @@ test("breakout fanout props escape buses and plane nets without a phase", async 
     },
   ])
 
-  const vias = circuit.db.pcb_via.list()
-  expect(vias.some((via) => via.to_layer === "inner1")).toBe(true)
-  expect(vias.some((via) => via.to_layer === "inner2")).toBe(true)
+  const planeVias = circuit.db.pcb_via
+    .list()
+    .filter(
+      (via): via is typeof via & { to_layer: string; pcb_trace_id: string } =>
+        (via.to_layer === "inner1" || via.to_layer === "inner2") &&
+        via.pcb_trace_id !== undefined,
+    )
+  expect(planeVias.map((via) => via.to_layer).sort()).toEqual([
+    "inner1",
+    "inner2",
+  ])
+
+  const pours = circuit.db.pcb_copper_pour.list()
+  for (const via of planeVias) {
+    const pour = pours.find((candidate) => candidate.layer === via.to_layer)
+    expect(pour).toBeDefined()
+    expect(pour?.shape).toBe("brep")
+    if (!pour || pour.shape !== "brep") continue
+
+    const sourceTrace = circuit.db.source_trace.get(
+      via.pcb_trace_id.replace(/^fanout:/, ""),
+    )
+    expect(sourceTrace?.connected_source_net_ids).toContain(pour.source_net_id)
+    expect(
+      pour.brep_shape.inner_rings.some((ring) =>
+        isPointInPolygon(via, ring.vertices),
+      ),
+    ).toBe(false)
+  }
+
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
