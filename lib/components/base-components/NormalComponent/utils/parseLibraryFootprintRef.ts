@@ -1,3 +1,4 @@
+import { isBlobUrl } from "./isBlobUrl"
 import { isHttpUrl } from "./isHttpUrl"
 
 /**
@@ -6,7 +7,7 @@ import { isHttpUrl } from "./isHttpUrl"
 export const parseLibraryFootprintRef = (
   s: string,
 ): { footprintLib: string; footprintName: string } | null => {
-  if (isHttpUrl(s)) return null
+  if (isHttpUrl(s) || isBlobUrl(s)) return null
   const idx = s.indexOf(":")
   if (idx <= 0) return null
   const footprintLib = s.slice(0, idx)
