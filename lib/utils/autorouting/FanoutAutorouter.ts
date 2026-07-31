@@ -17,7 +17,12 @@ import type {
   AutorouterProgressEvent,
   GenericLocalAutorouter,
 } from "./GenericLocalAutorouter"
-import type { SimpleRouteJson, SimplifiedPcbTrace } from "./SimpleRouteJson"
+import type {
+  SimpleRouteBus,
+  SimpleRouteJson,
+  SimpleRoutePoint,
+  SimplifiedPcbTrace,
+} from "./SimpleRouteJson"
 import { getFanoutSharedBoundary } from "./get-fanout-shared-boundary"
 
 export type FanoutAutorouterMode = "single_layer_fanout" | "fanout"
@@ -80,6 +85,97 @@ const getPlaneFanoutDirection = (
     case "bottom_right":
       return "down"
   }
+}
+
+const getSourceComponentIdForPoint = (
+  input: SimpleRouteJson,
+  point: SimpleRoutePoint,
+): string | undefined => {
+  const matchingObstacle = input.obstacles.find(
+    (obstacle) =>
+      obstacle.componentId &&
+      obstacle.layers.includes(point.layer) &&
+      ((point.pointId && obstacle.connectedTo.includes(point.pointId)) ||
+        (point.x >= obstacle.center.x - obstacle.width / 2 &&
+          point.x <= obstacle.center.x + obstacle.width / 2 &&
+          point.y >= obstacle.center.y - obstacle.height / 2 &&
+          point.y <= obstacle.center.y + obstacle.height / 2)),
+  )
+  return matchingObstacle?.componentId
+}
+
+/**
+ * Plane drops do not have a board-level target from which to infer a direction.
+ * Choose an internal via escape orientation from each source pad's position
+ * within its component instead of requiring a user-facing bus direction.
+ */
+const inferPlaneBusDirection = (
+  input: SimpleRouteJson,
+  bus: SimpleRouteBus,
+): FanoutDirection | undefined => {
+  const connectionNames = new Set(bus.connectionNames)
+  const sourcePointsByComponentId = new Map<string, SimpleRoutePoint[]>()
+  for (const connection of input.connections) {
+    if (!connectionNames.has(connection.name)) continue
+    for (const point of connection.pointsToConnect) {
+      const componentId = getSourceComponentIdForPoint(input, point)
+      if (!componentId) continue
+      const sourcePoints = sourcePointsByComponentId.get(componentId) ?? []
+      sourcePoints.push(point)
+      sourcePointsByComponentId.set(componentId, sourcePoints)
+    }
+  }
+  const sourceComponent = [...sourcePointsByComponentId.entries()].sort(
+    ([firstComponentId, firstPoints], [secondComponentId, secondPoints]) =>
+      secondPoints.length - firstPoints.length ||
+      firstComponentId.localeCompare(secondComponentId),
+  )[0]
+  if (!sourceComponent) return undefined
+
+  const [sourceComponentId, sourcePoints] = sourceComponent
+  const componentObstacles = input.obstacles.filter(
+    (obstacle) => obstacle.componentId === sourceComponentId,
+  )
+  if (componentObstacles.length === 0) return undefined
+
+  const componentXCoordinates = componentObstacles.map(
+    (obstacle) => obstacle.center.x,
+  )
+  const componentYCoordinates = componentObstacles.map(
+    (obstacle) => obstacle.center.y,
+  )
+  const minComponentX = Math.min(...componentXCoordinates)
+  const maxComponentX = Math.max(...componentXCoordinates)
+  const minComponentY = Math.min(...componentYCoordinates)
+  const maxComponentY = Math.max(...componentYCoordinates)
+  const componentCenter = {
+    x: (minComponentX + maxComponentX) / 2,
+    y: (minComponentY + maxComponentY) / 2,
+  }
+  const componentHalfSpan = {
+    x: Math.max((maxComponentX - minComponentX) / 2, 1e-6),
+    y: Math.max((maxComponentY - minComponentY) / 2, 1e-6),
+  }
+  const averageSourcePoint = {
+    x:
+      sourcePoints.reduce((sum, point) => sum + point.x, 0) /
+      sourcePoints.length,
+    y:
+      sourcePoints.reduce((sum, point) => sum + point.y, 0) /
+      sourcePoints.length,
+  }
+  const normalizedOffset = {
+    x: (averageSourcePoint.x - componentCenter.x) / componentHalfSpan.x,
+    y: (averageSourcePoint.y - componentCenter.y) / componentHalfSpan.y,
+  }
+
+  if (Math.abs(normalizedOffset.x) > Math.abs(normalizedOffset.y)) {
+    return normalizedOffset.x >= 0 ? "right" : "left"
+  }
+  if (Math.abs(normalizedOffset.y) > 1e-9) {
+    return normalizedOffset.y >= 0 ? "up" : "down"
+  }
+  return "right"
 }
 
 const createDownstreamSimpleRouteJson = ({
@@ -198,21 +294,23 @@ export class FanoutAutorouter implements GenericLocalAutorouter {
   private getPlaneBusDirections():
     | Readonly<Record<string, FanoutDirection>>
     | undefined {
-    if (!this.options.busFanoutDirections) return undefined
-    const planeBusIds = new Set(
-      this.input.buses
-        ?.filter((bus) => bus.termination?.type === "plane")
-        .map((bus) => bus.busId) ?? [],
-    )
+    const planeBuses =
+      this.input.buses?.filter((bus) => bus.termination?.type === "plane") ?? []
+    const planeBusIds = new Set(planeBuses.map((bus) => bus.busId))
     const directions: Record<string, FanoutDirection> = {}
     for (const [busId, fanoutDirection] of Object.entries(
-      this.options.busFanoutDirections,
+      this.options.busFanoutDirections ?? {},
     )) {
       if (!planeBusIds.has(busId)) continue
       const direction = getPlaneFanoutDirection(
         getNinePointAnchor(fanoutDirection),
       )
       if (direction) directions[busId] = direction
+    }
+    for (const planeBus of planeBuses) {
+      if (directions[planeBus.busId]) continue
+      const direction = inferPlaneBusDirection(this.input, planeBus)
+      if (direction) directions[planeBus.busId] = direction
     }
     return Object.keys(directions).length > 0 ? directions : undefined
   }

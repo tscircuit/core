@@ -55,8 +55,6 @@ test("fanout drops source-only power and ground connections to internal planes",
           inner2: "VCC",
         }}
         busFanoutDirections={{
-          GND_B2: "center_left",
-          VCC_C3: "center_right",
           SIGNAL_BUS: "center_right",
         }}
       />
@@ -160,10 +158,7 @@ test("fanout infers plane nets from copper pours", async () => {
       minViaHoleDiameter="0.2mm"
       minViaPadDiameter="0.5mm"
     >
-      <autoroutingphase
-        autorouter="fanout"
-        busFanoutDirections={{ GND_A1: "center_left" }}
-      />
+      <autoroutingphase autorouter="fanout" />
       <chip
         name="U1"
         footprint={

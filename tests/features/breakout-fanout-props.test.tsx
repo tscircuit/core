@@ -59,8 +59,6 @@ test("breakout fanout props escape buses and plane nets without a phase", async 
           inner2: "VCC",
         }}
         busFanoutDirections={{
-          GND_B2: "center_left",
-          VCC_C3: "center_right",
           SIGNAL_BUS: "center_right",
         }}
       >
@@ -73,8 +71,8 @@ test("breakout fanout props escape buses and plane nets without a phase", async 
           pcbY={0}
         />
         <bus name="SIGNAL_BUS" connections={["SIGNAL", "SIGNAL_RETURN"]} />
-        <trace name="GND_B2" from=".U1 > .pin6" to="net.GND" />
-        <trace name="VCC_C3" from=".U1 > .pin11" to="net.VCC" />
+        <trace name="GND_DROP" from=".U1 > .pin6" to="net.GND" />
+        <trace name="VCC_DROP" from=".U1 > .pin11" to="net.VCC" />
         <trace name="SIGNAL" from=".U1 > .pin7" to=".R1 > .pin1" />
         <trace name="SIGNAL_RETURN" from=".U1 > .pin8" to=".R1 > .pin2" />
       </breakout>
@@ -92,14 +90,14 @@ test("breakout fanout props escape buses and plane nets without a phase", async 
   const fanoutInput = autoroutingPhaseIoStack[0]!.startSimpleRouteJson!
   expect(fanoutInput.buses).toEqual([
     {
-      busId: "GND_B2",
-      name: "GND_B2",
+      busId: "GND_DROP",
+      name: "GND_DROP",
       connectionNames: [fanoutInput.connections[0]!.name],
       termination: { type: "plane", layer: "inner1" },
     },
     {
-      busId: "VCC_C3",
-      name: "VCC_C3",
+      busId: "VCC_DROP",
+      name: "VCC_DROP",
       connectionNames: [fanoutInput.connections[1]!.name],
       termination: { type: "plane", layer: "inner2" },
     },
