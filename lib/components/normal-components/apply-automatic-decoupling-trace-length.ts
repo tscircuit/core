@@ -1,40 +1,20 @@
 import type { SourcePort } from "circuit-json"
-import {
-  GROUND_NET_REGEX,
-  POWER_NET_REGEX,
-} from "lib/utils/gnd-power-net-regex"
 import type { Capacitor } from "./Capacitor"
+import { chipSourcePortShouldHaveDecouplingCapacitor } from "./chip-source-port-should-have-decoupling-capacitor"
+import { sourcePortIsGround } from "./source-port-is-ground"
 
 const DEFAULT_MAX_DECOUPLING_TRACE_LENGTH_MM = 1
 
-const portHintsMatch = (sourcePort: SourcePort, pattern: RegExp): boolean =>
-  sourcePort.port_hints?.some((portHint) => pattern.test(portHint)) ?? false
+type SubcircuitConnectivityMapKey = NonNullable<
+  SourcePort["subcircuit_connectivity_map_key"]
+>
 
-const chipPortShouldHaveDecouplingCapacitor = (
-  sourcePort: SourcePort,
-  capacitor: Capacitor,
-): boolean => {
-  if (!sourcePort.source_component_id) return false
-
-  const sourceComponent = capacitor.root!.db.source_component.get(
-    sourcePort.source_component_id,
-  )
-  if (sourceComponent?.ftype !== "simple_chip") return false
-
-  if (sourcePort.should_have_decoupling_capacitor !== undefined) {
-    return sourcePort.should_have_decoupling_capacitor
-  }
-
-  return (
-    sourcePort.requires_power ?? portHintsMatch(sourcePort, POWER_NET_REGEX)
-  )
-}
-
-const sourcePortIsGround = (sourcePort: SourcePort): boolean =>
-  sourcePort.provides_ground === true ||
-  sourcePort.requires_ground === true ||
-  portHintsMatch(sourcePort, GROUND_NET_REGEX)
-
+/**
+ * Detects a capacitor bridging a chip power pin and ground, then applies the
+ * default decoupling trace limit to the capacitor and its attached traces.
+ * Explicit maxDecouplingTraceLength values and unrelated capacitors are left
+ * unchanged.
+ */
 export const applyAutomaticDecouplingTraceLength = (
   capacitor: Capacitor,
 ): void => {
@@ -47,37 +27,44 @@ export const applyAutomaticDecouplingTraceLength = (
 
   const { db } = capacitor.root!
   const allSourcePorts = db.source_port.list()
-  const capacitorSourcePorts = allSourcePorts.filter(
-    (sourcePort) =>
-      sourcePort.source_component_id === capacitor.source_component_id,
-  )
+  const capacitorSourcePorts: SourcePort[] = []
+  const chipPowerConnectivityMapKeys = new Set<SubcircuitConnectivityMapKey>()
+  const groundConnectivityMapKeys = new Set<SubcircuitConnectivityMapKey>()
 
-  const chipPowerConnectivityMapKeys = new Set(
-    allSourcePorts
-      .filter(
-        (sourcePort) =>
-          sourcePort.subcircuit_connectivity_map_key !== undefined &&
-          chipPortShouldHaveDecouplingCapacitor(sourcePort, capacitor),
+  for (const sourcePort of allSourcePorts) {
+    if (sourcePort.source_component_id === capacitor.source_component_id) {
+      capacitorSourcePorts.push(sourcePort)
+    }
+
+    const connectivityMapKey = sourcePort.subcircuit_connectivity_map_key
+    if (!connectivityMapKey) continue
+
+    const sourcePortParent = sourcePort.source_component_id
+      ? db.source_component.get(sourcePort.source_component_id)
+      : undefined
+    const sourcePortParentIsChip =
+      sourcePortParent !== null &&
+      sourcePortParent !== undefined &&
+      "ftype" in sourcePortParent &&
+      sourcePortParent.ftype === "simple_chip"
+    if (
+      chipSourcePortShouldHaveDecouplingCapacitor(
+        sourcePort,
+        sourcePortParentIsChip,
       )
-      .map((sourcePort) => sourcePort.subcircuit_connectivity_map_key!),
-  )
-  const groundConnectivityMapKeys = new Set([
-    ...db.source_net
-      .list()
-      .filter(
-        (sourceNet) =>
-          sourceNet.is_ground === true &&
-          sourceNet.subcircuit_connectivity_map_key !== undefined,
-      )
-      .map((sourceNet) => sourceNet.subcircuit_connectivity_map_key!),
-    ...allSourcePorts
-      .filter(
-        (sourcePort) =>
-          sourcePort.subcircuit_connectivity_map_key !== undefined &&
-          sourcePortIsGround(sourcePort),
-      )
-      .map((sourcePort) => sourcePort.subcircuit_connectivity_map_key!),
-  ])
+    ) {
+      chipPowerConnectivityMapKeys.add(connectivityMapKey)
+    }
+    if (sourcePortIsGround(sourcePort)) {
+      groundConnectivityMapKeys.add(connectivityMapKey)
+    }
+  }
+
+  for (const sourceNet of db.source_net.list()) {
+    if (sourceNet.is_ground && sourceNet.subcircuit_connectivity_map_key) {
+      groundConnectivityMapKeys.add(sourceNet.subcircuit_connectivity_map_key)
+    }
+  }
 
   const powerSideSourcePort = capacitorSourcePorts.find(
     (sourcePort) =>
