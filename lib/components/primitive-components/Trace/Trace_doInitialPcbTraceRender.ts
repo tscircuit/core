@@ -95,7 +95,10 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
 
   if (!parent) throw new Error("Trace has no parent")
 
-  if (subcircuit._parsedProps.routingDisabled) {
+  if (
+    trace.root?.pcbRoutingDisabled ||
+    subcircuit.getInheritedProperty("routingDisabled")
+  ) {
     return
   }
 
