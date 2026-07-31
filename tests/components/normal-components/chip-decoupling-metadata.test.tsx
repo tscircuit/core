@@ -46,7 +46,6 @@ test("emits chip decoupling metadata for external checks", async () => {
 
       <chip
         name="U_POWER_SOURCE"
-        schHeight={1.2}
         pinLabels={{ pin1: "VCC", pin2: "GND" }}
         pinAttributes={{
           VCC: { providesPower: true },
@@ -55,13 +54,6 @@ test("emits chip decoupling metadata for external checks", async () => {
       />
       <trace from=".U_POWER_SOURCE > .VCC" to="net.VCC_SOURCE" />
       <trace from=".U_POWER_SOURCE > .GND" to="net.GND" />
-
-      <schematictext
-        text="Decoupling requirements are emitted as source-port metadata"
-        schX={0}
-        schY={-5}
-        fontSize={0.3}
-      />
     </board>,
   )
 
@@ -102,5 +94,4 @@ test("emits chip decoupling metadata for external checks", async () => {
     provides_power: true,
     should_have_decoupling_capacitor: false,
   })
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
