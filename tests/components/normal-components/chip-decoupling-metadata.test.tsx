@@ -89,7 +89,6 @@ test("emits chip decoupling metadata for external checks", async () => {
   })
   expect(getSourcePortByHint("U_MISSING", "GND")).toMatchObject({
     requires_ground: true,
-    should_have_decoupling_capacitor: false,
   })
   expect(getSourcePortByHint("U_WITH_CAP", "VDD")).toMatchObject({
     should_have_decoupling_capacitor: true,

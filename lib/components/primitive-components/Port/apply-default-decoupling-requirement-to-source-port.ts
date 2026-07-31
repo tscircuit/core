@@ -26,7 +26,11 @@ export const applyDefaultDecouplingRequirementToSourcePort = ({
     return
   }
 
-  sourcePortAttributes.should_have_decoupling_capacitor = sourcePortLabels.some(
-    (sourcePortLabel) => POWER_NET_REGEX.test(sourcePortLabel),
-  )
+  if (
+    sourcePortLabels.some((sourcePortLabel) =>
+      POWER_NET_REGEX.test(sourcePortLabel),
+    )
+  ) {
+    sourcePortAttributes.should_have_decoupling_capacitor = true
+  }
 }
