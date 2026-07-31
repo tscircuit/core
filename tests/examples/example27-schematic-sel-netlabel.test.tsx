@@ -20,7 +20,7 @@ test("example27 schematic sel netlabel", async () => {
       />
       <capacitor
         name="C2"
-        capacitance="10nf"
+        capacitance="10nF"
         schRotation={90}
         schX={1.4}
         schY={0.55}

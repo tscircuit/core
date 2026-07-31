@@ -36,7 +36,7 @@ export default test("repro46: automatic schematic snapshot", async () => {
 
       <capacitor
         name="C2"
-        capacitance="0.1uf"
+        capacitance="0.1uF"
         connections={{
           pin1: sel.net.GND,
           pin2: sel.net.V3_3,

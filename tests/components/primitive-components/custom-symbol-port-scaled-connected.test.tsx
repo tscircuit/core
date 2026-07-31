@@ -60,7 +60,7 @@ test("Port schStemLength in custom symbol with width/height scaling connecting t
           OUT: ".C1 > .pin1",
         }}
       />
-      <capacitor name="C1" capacitance="10uf" schX={4} schY={0} />
+      <capacitor name="C1" capacitance="10uF" schX={4} schY={0} />
     </board>,
   )
 
