@@ -88,6 +88,7 @@ import { NormalComponent_doInitialSchematicComponentRender } from "./NormalCompo
 import { NormalComponent_doInitialSilkscreenOverlapAdjustment } from "./NormalComponent_doInitialSilkscreenOverlapAdjustment"
 import { NormalComponent_doInitialSourceDesignRuleChecks } from "./NormalComponent_doInitialSourceDesignRuleChecks"
 import { NormalComponent_doInitialSupplierFootprintMismatchWarning } from "./NormalComponent_doInitialSupplierFootprintMismatchWarning"
+import { getNormalComponentPcbLayer } from "./get-normal-component-pcb-layer"
 import { canMergePortDefinitions } from "./utils/canMergePortDefinitions"
 import { getPrimaryPortsFromPortHintGroups } from "./utils/getPrimaryPortsFromPortHintGroups"
 import { inferInternallyConnectedPinNamesFromPorts } from "./utils/inferInternallyConnectedPinNamesFromPorts"
@@ -1198,10 +1199,7 @@ export class NormalComponent<
   }
 
   protected _getPcbComponentLayer(): LayerRef {
-    return (
-      this._parsedProps.layer ??
-      (this._getFootprintOriginalLayer() === "bottom" ? "bottom" : "top")
-    )
+    return getNormalComponentPcbLayer(this)
   }
 
   protected _getFootprintOriginalLayer(): LayerRef | undefined {

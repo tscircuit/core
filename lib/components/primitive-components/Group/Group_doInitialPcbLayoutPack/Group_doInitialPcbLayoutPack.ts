@@ -1,17 +1,18 @@
-import type { Group } from "../Group"
 import {
+  type PackInput,
+  type PackOutput,
   PackSolver2,
   convertCircuitJsonToPackOutput,
   convertPackOutputToPackInput,
   getGraphicsFromPackOutput,
-  type PackInput,
-  type PackOutput,
 } from "calculate-packing"
 import { type PcbComponent, length } from "circuit-json"
 import Debug from "debug"
+import type { NormalComponent } from "lib/components/base-components/NormalComponent"
+import type { Group } from "../Group"
+import { applyDecouplingCapacitorPacking } from "./apply-decoupling-capacitor-packing"
 import { applyComponentConstraintClusters } from "./applyComponentConstraintClusters"
 import { applyPackOutput } from "./applyPackOutput"
-import type { NormalComponent } from "lib/components/base-components/NormalComponent"
 
 const DEFAULT_MIN_GAP = "1mm"
 const debug = Debug("Group_doInitialPcbLayoutPack")
@@ -152,6 +153,8 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
     minGap: gapMm,
     bounds,
   }
+
+  applyDecouplingCapacitorPacking(db, packInput)
 
   const clusterMap = applyComponentConstraintClusters(group, packInput)
 

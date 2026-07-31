@@ -75,6 +75,8 @@ export class IsolatedCircuit {
   projectUrl?: string
 
   _hasRenderedAtleastOnce = false
+  /** Incremented at the start of every render pass for render-scoped caches. */
+  _renderCycleId = 0
   private _asyncEffectIdsByPhase = new Map<RenderPhase, Set<string>>()
   private _asyncEffectPhaseById = new Map<string, RenderPhase>()
   private _hasUnrenderedUpdatesFromAsyncEffects = false
@@ -185,6 +187,7 @@ export class IsolatedCircuit {
   }
 
   render() {
+    this._renderCycleId += 1
     if (!this.firstChild) {
       this._guessRootComponent()
     }
