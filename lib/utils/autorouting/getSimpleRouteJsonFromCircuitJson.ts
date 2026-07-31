@@ -1,6 +1,6 @@
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import { su } from "@tscircuit/circuit-json-util"
-import type { AnyCircuitElement, PcbBoard } from "circuit-json"
+import type { AnyCircuitElement, PcbBoard, SourcePort } from "circuit-json"
 import {
   ConnectivityMap,
   getFullConnectivityMapFromCircuitJson,
@@ -15,7 +15,11 @@ import type {
   SimpleRouteJson,
 } from "./SimpleRouteJson"
 import { getDescendantSubcircuitIds } from "./getAncestorSubcircuitIds"
-import { getBusesForSimpleRouteJson } from "./getBusesForSimpleRouteJson"
+import {
+  type FanoutPourNetMap,
+  getBusesForSimpleRouteJson,
+  getPlaneTerminatedSourceTraceLayers,
+} from "./getBusesForSimpleRouteJson"
 import { getDifferentialPairsForSimpleRouteJson } from "./getDifferentialPairsForSimpleRouteJson"
 import { getPreservedRoutedSubcircuitTraces } from "./getPreservedRoutedSubcircuitTraces"
 import { getUnbrokenCopperPourObstacles } from "./getUnbrokenCopperPourObstacles"
@@ -38,6 +42,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   minViaPadDiameter,
   nominalTraceWidth,
   subcircuitComponent,
+  fanoutPourNetMap,
   ignoreExistingTopLevelPcbRouteState = false,
 }: {
   db?: CircuitJsonUtilObjects
@@ -54,6 +59,11 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   minViaHoleDiameter?: number
   minViaPadDiameter?: number
   subcircuitComponent?: Pick<ISubcircuit, "selectAll">
+  /**
+   * Copper plane intent used by fanout routing. Source-only traces whose nets
+   * are mapped here become internal plane-terminated buses in SRJ.
+   */
+  fanoutPourNetMap?: FanoutPourNetMap
   /**
    * Excludes existing root-level PCB route state from a fresh routing problem.
    * Routed child-subcircuit traces and vias remain fixed routing geometry.
@@ -107,6 +117,14 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   }
 
   db = su(subcircuitElements)
+  const getPortSelector = (sourcePort: SourcePort | null | undefined) => {
+    if (!sourcePort?.source_component_id) return undefined
+    const sourceComponent = db.source_component.get(
+      sourcePort.source_component_id,
+    )
+    if (!sourceComponent?.name) return undefined
+    return `${sourceComponent.name}.${sourcePort.name}`
+  }
   const pcbGroup = subcircuit_id
     ? db.pcb_group.getWhere({ subcircuit_id })
     : undefined
@@ -333,8 +351,14 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   // here so it is preserved as fixed copper instead of re-routed.
   // For cross-boundary traces, add breakout points as additional
   // waypoints so the autorouter routes through the boundary.
-  const directTraceConnections = db.source_trace
-    .list()
+  const sourceTraces = db.source_trace.list()
+  const planeTerminatedSourceTraceLayers = getPlaneTerminatedSourceTraceLayers({
+    fanoutPourNetMap,
+    sourceNets: db.source_net.list(),
+    sourceTraces,
+    subcircuitId: subcircuit_id,
+  })
+  const directTraceConnections = sourceTraces
     .filter(
       (trace) =>
         !sourceTraceIdsAlreadyPreservedAsSrjTraces.has(trace.source_trace_id),
@@ -353,32 +377,32 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         }
       })
 
-      if (connectedPorts.length < 2) return null
+      const isPlaneTerminatedSourceTrace = planeTerminatedSourceTraceLayers.has(
+        trace.source_trace_id,
+      )
+      if (
+        connectedPorts.length < 2 &&
+        !(isPlaneTerminatedSourceTrace && connectedPorts.length === 1)
+      ) {
+        return null
+      }
 
       // TODO handle trace.connected_source_net_ids
-      const [portA, portB] = connectedPorts
-
-      if (portA.x === undefined || portA.y === undefined) {
-        console.error(
-          `(source_port_id: ${portA.source_port_id}) for trace ${trace.source_trace_id} does not have x/y coordinates. Skipping this trace.`,
-        )
-        return null
-      }
-      if (portB.x === undefined || portB.y === undefined) {
-        console.error(
-          `(source_port_id: ${portB.source_port_id}) for trace ${trace.source_trace_id} does not have x/y coordinates. Skipping this trace.`,
-        )
-        return null
+      for (const connectedPort of connectedPorts) {
+        if (connectedPort.x === undefined || connectedPort.y === undefined) {
+          console.error(
+            `(source_port_id: ${connectedPort.source_port_id}) for trace ${trace.source_trace_id} does not have x/y coordinates. Skipping this trace.`,
+          )
+          return null
+        }
       }
 
-      const layerA = portA.layers?.[0] ?? "top"
-      const layerB = portB.layers?.[0] ?? "top"
-
-      // Collect all traceHints that apply to either port
-      const matchingHints = traceHints.filter(
-        (hint) =>
-          hint.pcb_port_id === portA.pcb_port_id ||
-          hint.pcb_port_id === portB.pcb_port_id,
+      const connectedPcbPortIds = new Set(
+        connectedPorts.map((port) => port.pcb_port_id),
+      )
+      // Collect all traceHints that apply to any connected port
+      const matchingHints = traceHints.filter((hint) =>
+        connectedPcbPortIds.has(hint.pcb_port_id),
       )
 
       const hintPoints: { x: number; y: number; layer: string }[] = []
@@ -404,8 +428,14 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         sourcePortId: string,
       ) => {
         const bp = sourcePortIdToBreakoutPoint.get(sourcePortId)
+        const portSelector = getPortSelector(db.source_port.get(sourcePortId))
         if (bp && bp.subcircuit_id !== subcircuit_id) {
-          return { x: bp.x, y: bp.y, layer }
+          return {
+            x: bp.x,
+            y: bp.y,
+            layer,
+            port_selector: portSelector,
+          }
         }
         return {
           x: port.x!,
@@ -413,8 +443,18 @@ export const getSimpleRouteJsonFromCircuitJson = ({
           layer,
           pointId: port.pcb_port_id,
           pcb_port_id: port.pcb_port_id,
+          port_selector: portSelector,
         }
       }
+      const connectedPortRoutePoints = connectedPorts.map((port, index) =>
+        getPortOrBreakoutPoint(
+          port,
+          port.layers?.[0] ?? "top",
+          trace.connected_source_port_ids[index],
+        ),
+      )
+      const [firstConnectedPortRoutePoint, ...remainingPortRoutePoints] =
+        connectedPortRoutePoints
       return {
         name:
           trace.source_trace_id ??
@@ -423,18 +463,12 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         source_trace_id: trace.source_trace_id,
         nominalTraceWidth: trace.min_trace_thickness,
         width: trace.min_trace_thickness,
+        // Simple Route JSON connections are multi-terminal, so retain every
+        // source trace endpoint in the autorouter input.
         pointsToConnect: [
-          getPortOrBreakoutPoint(
-            portA,
-            layerA,
-            trace.connected_source_port_ids[0],
-          ),
+          firstConnectedPortRoutePoint,
           ...hintPoints,
-          getPortOrBreakoutPoint(
-            portB,
-            layerB,
-            trace.connected_source_port_ids[1],
-          ),
+          ...remainingPortRoutePoints,
         ],
       } as SimpleRouteConnection
     })
@@ -497,6 +531,9 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   )
   const sourceTracesEligibleForNetConnections = db.source_trace
     .list()
+    .filter(
+      (trace) => !planeTerminatedSourceTraceLayers.has(trace.source_trace_id),
+    )
     .filter(
       (trace) =>
         // Existing copper must still contribute endpoint connectivity when it
@@ -569,6 +606,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
           layer: (p.layers?.[0] as any) ?? "top",
           pointId: p.pcb_port_id,
           pcb_port_id: p.pcb_port_id,
+          port_selector: getPortSelector(db.source_port.get(p.source_port_id)),
         })
       }
     }
@@ -581,6 +619,8 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       width: nominalTraceWidthFromConnectedTraces,
       pointsToConnect,
     }
+    if (pointsToConnect.length === 0) continue
+
     connectionsFromNets.push(connection)
     for (const sourceNetId of connectedSourceNetIds) {
       connectionFromNetId.set(sourceNetId, connection)
@@ -605,6 +645,9 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         layer: (pcb_port.layers?.[0] as any) ?? "top",
         pointId: pcb_port.pcb_port_id,
         pcb_port_id: pcb_port.pcb_port_id,
+        port_selector: getPortSelector(
+          db.source_port.get(pcb_port.source_port_id),
+        ),
       }
 
       // Inner routing (same subcircuit): create [port → bp] so the
@@ -675,6 +718,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     buses,
     sourceTraces: db.source_trace.list(),
     subcircuitId: subcircuit_id,
+    planeTerminatedSourceTraceLayers,
   })
 
   if (subcircuit_id) {

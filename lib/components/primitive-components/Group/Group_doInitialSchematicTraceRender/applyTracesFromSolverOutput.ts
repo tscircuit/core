@@ -157,8 +157,9 @@ export function applyTracesFromSolverOutput(args: {
     }
   }
 
-  // Use the overlap-corrected traces from the pipeline
+  // Use the final pipeline output so same-net branches share clean junctions.
   const traces =
+    solver.sameNetJunctionAlignmentSolver?.getOutput().traces ??
     solver.netLabelTraceCollisionSolver?.getOutput().traces ??
     solver.traceCleanupSolver?.getOutput().traces ??
     solver.traceLabelOverlapAvoidanceSolver?.getOutput().traces ??
