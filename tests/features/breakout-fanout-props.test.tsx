@@ -121,6 +121,12 @@ test("breakout fanout props escape buses and plane nets without a phase", async 
   expect(circuit.selectOne(".U1")).not.toBeNull()
   expect(circuit.selectOne(".R1")).not.toBeNull()
 
+  const breakoutSourceGroup = circuit.db.source_group.getWhere({
+    name: "BGA_BREAKOUT",
+  })
+  expect(breakoutSourceGroup?.is_subcircuit).toBeFalsy()
+  expect(breakoutSourceGroup?.subcircuit_id).toBeUndefined()
+
   const sourceNets = circuit.db.source_net.list()
   expect(sourceNets.filter((net) => net.name === "GND")).toHaveLength(1)
   expect(sourceNets.filter((net) => net.name === "VCC")).toHaveLength(1)
@@ -151,9 +157,7 @@ test("breakout fanout props escape buses and plane nets without a phase", async 
   const planeVias = circuit.db.pcb_via
     .list()
     .filter(
-      (
-        via,
-      ): via is typeof via & { to_layer: string; pcb_trace_id: string } =>
+      (via): via is typeof via & { to_layer: string; pcb_trace_id: string } =>
         (via.to_layer === "inner1" || via.to_layer === "inner2") &&
         via.pcb_trace_id !== undefined,
     )

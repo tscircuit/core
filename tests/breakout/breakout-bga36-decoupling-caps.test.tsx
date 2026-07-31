@@ -79,9 +79,14 @@ test("breakout defaults to fanout for a 6x6 BGA surrounded by four 0603 decoupli
     name: "BGA_BREAKOUT",
   })
   expect(breakoutSourceGroup).toBeDefined()
+  expect(breakoutSourceGroup?.is_subcircuit).toBeFalsy()
+  expect(breakoutSourceGroup?.subcircuit_id).toBeUndefined()
 
+  const boardSourceGroup = circuit.db.source_group
+    .list()
+    .find((sourceGroup) => sourceGroup.is_subcircuit)
   const breakoutPhases = autoroutingPhaseIoStack.filter(
-    (phase) => phase.subcircuit_id === breakoutSourceGroup?.subcircuit_id,
+    (phase) => phase.subcircuit_id === boardSourceGroup?.subcircuit_id,
   )
   expect(breakoutPhases).toHaveLength(2)
   expect(breakoutPhases[0]?.startSimpleRouteJson?.traces ?? []).toHaveLength(0)

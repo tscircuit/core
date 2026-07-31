@@ -147,17 +147,12 @@ export abstract class PrimitiveComponent<
     )
   }
 
-  /**
-   * Whether this component creates an opaque selector and net scope.
-   * Routing boundaries such as breakouts can be subcircuits without hiding
-   * their descendants or creating private nets.
-   */
-  get isSelectorScope() {
-    return this.isSubcircuit
-  }
-
   get isGroup() {
     return this.lowercaseComponentName === "group"
+  }
+
+  get isRoutingDirective() {
+    return false
   }
 
   get name() {
@@ -1063,7 +1058,7 @@ export abstract class PrimitiveComponent<
       : this.lowercaseComponentName
 
     if (!this.parent) return endPart
-    if (this.parent.isSelectorScope) return endPart
+    if (this.parent.isSubcircuit) return endPart
     return `${this.parent.getSubcircuitSelector()} > ${endPart}`
   }
 
@@ -1116,15 +1111,6 @@ export abstract class PrimitiveComponent<
     if (!group)
       throw new Error("Component is not inside an opaque group (no board?)")
     return group
-  }
-
-  getSelectorScope(): ISubcircuit {
-    if (this.isSelectorScope) return this as unknown as ISubcircuit
-    const selectorScope = this.parent?.getSelectorScope?.()
-    if (!selectorScope) {
-      throw new Error("Component is not inside a selector scope (no board?)")
-    }
-    return selectorScope
   }
 
   getGroup(): IGroup | null {
@@ -1333,7 +1319,7 @@ export abstract class PrimitiveComponent<
   getSelectableDescendants(): PrimitiveComponent[] {
     const descendants: PrimitiveComponent[] = []
     for (const child of this.children) {
-      if (child.isSelectorScope) {
+      if (child.isSubcircuit) {
         descendants.push(child)
       } else {
         descendants.push(child)

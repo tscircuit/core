@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("breakout points use cross-boundary source trace ids", async () => {
+test("transparent breakout points use board source trace ids", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -84,6 +84,12 @@ test("breakout points use cross-boundary source trace ids", async () => {
     expect(sourceTrace!.connected_source_port_ids).toContain(
       breakoutPoint.source_port_id!,
     )
-    expect(sourceTrace!.subcircuit_id).not.toBe(breakoutPoint.subcircuit_id)
+    expect(sourceTrace!.subcircuit_id).toBe(breakoutPoint.subcircuit_id)
   }
+
+  const breakoutSourceGroup = circuit.db.source_group.getWhere({
+    name: "REG_BREAKOUT",
+  })
+  expect(breakoutSourceGroup?.is_subcircuit).toBeFalsy()
+  expect(breakoutSourceGroup?.subcircuit_id).toBeUndefined()
 })

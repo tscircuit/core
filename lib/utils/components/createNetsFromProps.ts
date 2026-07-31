@@ -25,12 +25,12 @@ export const createNetsFromProps = (
           `Net name "${netName}" cannot start with a number, try using a prefix like "VBUS1"`,
         )
       }
-      const selectorScope = component.getSelectorScope()
-      if (!selectorScope.selectOne(prop)) {
+      const subcircuit = component.getSubcircuit()
+      if (!subcircuit.selectOne(prop)) {
         const net = new Net({
           name: prop.split("net.")[1],
         })
-        selectorScope.add(net)
+        subcircuit.add(net)
       }
     }
   }

@@ -85,7 +85,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       : [connectsTo]
 
     for (const connection of connectsToArray) {
-      const port = this.getSelectorScope().selectOne(connection, {
+      const port = this.getSubcircuit().selectOne(connection, {
         type: "port",
       }) as Port | null
       if (port) {
@@ -358,7 +358,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
    * Return traces that are explicitly connected to this port (not via a net)
    */
   _getDirectlyConnectedTraces(): Trace[] {
-    const allSubcircuitTraces = this.getSelectorScope().selectAll(
+    const allSubcircuitTraces = this.getSubcircuit().selectAll(
       "trace",
     ) as Trace[]
 

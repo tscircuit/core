@@ -207,7 +207,7 @@ export const cssSelectPrimitiveComponentAdapterWithoutSubcircuits: Required<
 > = {
   ...cssSelectPrimitiveComponentAdapter,
   getChildren: (node: PrimitiveComponent) =>
-    node.children.filter((c) => !c.isSelectorScope),
+    node.children.filter((c) => !c.isSubcircuit),
 }
 
 export const cssSelectPrimitiveComponentAdapterOnlySubcircuits: Required<
@@ -215,5 +215,5 @@ export const cssSelectPrimitiveComponentAdapterOnlySubcircuits: Required<
 > = {
   ...cssSelectPrimitiveComponentAdapter,
   getChildren: (node: PrimitiveComponent) =>
-    node.children.filter((c) => c.isSelectorScope),
+    node.children.filter((c) => c.isSubcircuit),
 }
