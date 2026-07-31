@@ -1,5 +1,6 @@
 import type { AutorouterProp, AutoroutingPhaseProps } from "@tscircuit/props"
 import type { z } from "zod"
+import type { Bus } from "../Bus"
 import type { Net } from "../Net"
 import type { Trace } from "../Trace/Trace"
 import type { AutoroutingPhase } from "../AutoroutingPhase"
@@ -41,7 +42,35 @@ function getNetRoutingPhaseIndex(net: Net): number | null {
   return net.props.routingPhaseIndex ?? null
 }
 
-function getTraceRoutingPhaseIndex(trace: Trace): number | null {
+function getTraceRoutingPhaseIndex(
+  trace: Trace,
+  buses: Bus[] = [],
+): number | null {
+  const busRoutingPhaseIndexes = new Set<number | null>()
+  for (const bus of buses) {
+    if (bus._parsedProps.routingPhaseIndex === undefined) continue
+    const traceIsInBus = bus._parsedProps.connections.some(
+      (connection) =>
+        connection === trace.name ||
+        traceHasEndpointMatchingConnectionSelector(
+          trace,
+          convertPortSelectorToEndpointKey(connection),
+        ),
+    )
+    if (traceIsInBus) {
+      busRoutingPhaseIndexes.add(bus._parsedProps.routingPhaseIndex)
+    }
+  }
+  if (busRoutingPhaseIndexes.size > 1) {
+    throw new Error(
+      `Trace "${trace.name}" belongs to buses with different routing phases`,
+    )
+  }
+  const busRoutingPhaseIndex = busRoutingPhaseIndexes.values().next().value
+  if (busRoutingPhaseIndex !== undefined) {
+    return busRoutingPhaseIndex
+  }
+
   const traceRoutingPhaseIndex = trace.props.routingPhaseIndex
   if (traceRoutingPhaseIndex !== undefined) return traceRoutingPhaseIndex
 
@@ -186,6 +215,7 @@ export function Group_getRoutingPhasePlans(
 ): RoutingPhasePlan[] {
   const traces = group.selectAll("trace") as Trace[]
   const nets = group.selectAll("net") as Net[]
+  const buses = group.selectAll("bus") as Bus[]
 
   const plansByPhaseIndex = new Map<number | null, RoutingPhasePlan>()
   const autoroutersByPhaseIndex = getAutoroutersByPhaseIndex(group)
@@ -221,7 +251,7 @@ export function Group_getRoutingPhasePlans(
   }
 
   for (const trace of traces) {
-    const routingPhaseIndex = getTraceRoutingPhaseIndex(trace)
+    const routingPhaseIndex = getTraceRoutingPhaseIndex(trace, buses)
     getOrCreateRoutingPhasePlan(
       plansByPhaseIndex,
       routingPhaseIndex,

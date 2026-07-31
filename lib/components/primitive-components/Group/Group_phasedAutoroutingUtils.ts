@@ -231,11 +231,21 @@ export function Group_filterSimpleRouteJsonForPhase(
     if (positiveConnectionIncluded) differentialPairs.push(differentialPair)
   }
 
+  const buses = (simpleRouteJson.buses ?? [])
+    .map((bus) => ({
+      ...bus,
+      connectionNames: bus.connectionNames.filter((connectionName) =>
+        includedConnectionNames.has(connectionName),
+      ),
+    }))
+    .filter((bus) => bus.connectionNames.length > 0)
+
   return {
     ...simpleRouteJson,
     connections,
     differentialPairs:
       differentialPairs.length > 0 ? differentialPairs : undefined,
+    buses: buses.length > 0 ? buses : undefined,
   }
 }
 
