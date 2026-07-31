@@ -46,6 +46,7 @@ test("emits chip decoupling metadata for external checks", async () => {
 
       <chip
         name="U_POWER_SOURCE"
+        schHeight={1.2}
         pinLabels={{ pin1: "VCC", pin2: "GND" }}
         pinAttributes={{
           VCC: { providesPower: true },
