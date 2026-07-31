@@ -9,12 +9,13 @@ import { applyToPoint, compose, translate } from "transformation-matrix"
 import { z } from "zod"
 import { PrimitiveComponent } from "../../base-components/PrimitiveComponent"
 import type { Trace } from "../Trace/Trace"
-import type { LayerRef, SchematicPort } from "circuit-json"
+import type { LayerRef, SchematicPort, SourcePort } from "circuit-json"
 import { areAllPcbPrimitivesOverlapping } from "./areAllPcbPrimitivesOverlapping"
 import { getCenterOfPcbPrimitives } from "./getCenterOfPcbPrimitives"
 import { type PinAttributeMap, portProps } from "@tscircuit/props"
 import type { INormalComponent } from "lib/components/base-components/NormalComponent/INormalComponent"
 import { applyPinAttributesToSourcePort } from "./apply-pin-attributes-to-source-port"
+import { applyDefaultDecouplingRequirementToSourcePort } from "./apply-default-decoupling-requirement-to-source-port"
 import { Port_doInitialCreateTracesFromProps } from "./Port_doInitialCreateTracesFromProps"
 import { Port_tryRenderGroupPcbPort } from "./Port_tryRenderGroupPcbPort"
 import { getSourcePortNetLabelText } from "lib/utils/schematic/getSourcePortNetLabelText"
@@ -393,11 +394,16 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
     // Get pin attributes from parent component and apply them to this port
     const pinAttributes = this._getMatchingPinAttributes()
-    const portAttributesFromParent: Record<string, unknown> = {}
+    const sourcePortAttributes: Partial<SourcePort> = {}
 
     for (const attributes of pinAttributes) {
-      applyPinAttributesToSourcePort(portAttributesFromParent, attributes)
+      applyPinAttributesToSourcePort(sourcePortAttributes, attributes)
     }
+    applyDefaultDecouplingRequirementToSourcePort({
+      sourcePortAttributes,
+      sourcePortLabels: port_hints,
+      parentNormalComponentName: parentNormalComponent?.config.componentName,
+    })
 
     const source_port = db.source_port.insert({
       name: props.name!,
@@ -405,7 +411,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       port_hints,
       source_component_id: source_component_id!,
       subcircuit_id: this.getSubcircuit()?.subcircuit_id!,
-      ...portAttributesFromParent,
+      ...sourcePortAttributes,
     })
 
     this.source_port_id = source_port.source_port_id

@@ -84,10 +84,15 @@ test("emits chip decoupling metadata for external checks", async () => {
 
   expect(getSourcePortByHint("U_MISSING", "VCC")).toMatchObject({
     requires_power: true,
+    should_have_decoupling_capacitor: true,
     recommended_decoupling_capacitor_capacitance: "100nF",
   })
   expect(getSourcePortByHint("U_MISSING", "GND")).toMatchObject({
     requires_ground: true,
+    should_have_decoupling_capacitor: false,
+  })
+  expect(getSourcePortByHint("U_WITH_CAP", "VDD")).toMatchObject({
+    should_have_decoupling_capacitor: true,
   })
   expect(getSourcePortByHint("U_OPT_OUT", "VBAT")).toMatchObject({
     requires_power: true,
@@ -95,6 +100,7 @@ test("emits chip decoupling metadata for external checks", async () => {
   })
   expect(getSourcePortByHint("U_POWER_SOURCE", "VCC")).toMatchObject({
     provides_power: true,
+    should_have_decoupling_capacitor: false,
   })
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })

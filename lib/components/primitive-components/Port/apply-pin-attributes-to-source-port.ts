@@ -1,7 +1,8 @@
 import type { PinAttributeMap } from "@tscircuit/props"
+import type { SourcePort } from "circuit-json"
 
 export const applyPinAttributesToSourcePort = (
-  sourcePortProps: Record<string, unknown>,
+  sourcePortProps: Partial<SourcePort>,
   attributes: PinAttributeMap,
 ): void => {
   if (attributes.mustBeConnected !== undefined) {
