@@ -1,6 +1,5 @@
 import type { NormalComponent } from "./NormalComponent"
 import type { Port } from "../../primitive-components/Port"
-import { NormalComponent_doInitialDecouplingCapacitorWarnings } from "./NormalComponent_doInitialDecouplingCapacitorWarnings"
 
 export const NormalComponent_doInitialSourceDesignRuleChecks = (
   component: NormalComponent,
@@ -43,8 +42,6 @@ export const NormalComponent_doInitialSourceDesignRuleChecks = (
       warning_type: "source_pin_missing_trace_warning",
     })
   }
-
-  NormalComponent_doInitialDecouplingCapacitorWarnings(component)
 }
 
 export const shouldCheckPortForMissingTrace = (

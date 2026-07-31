@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("warns when a chip power pin does not have a decoupling capacitor", async () => {
+test("emits chip decoupling metadata for external checks", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -54,20 +54,47 @@ test("warns when a chip power pin does not have a decoupling capacitor", async (
       />
       <trace from=".U_POWER_SOURCE > .VCC" to="net.VCC_SOURCE" />
       <trace from=".U_POWER_SOURCE > .GND" to="net.GND" />
+
+      <schematictext
+        text="Decoupling requirements are emitted as source-port metadata"
+        schX={0}
+        schY={-5}
+        fontSize={0.3}
+      />
     </board>,
   )
 
   await circuit.renderUntilSettled()
 
-  const decouplingCapacitorWarnings =
-    circuit.db.source_pin_missing_trace_warning
+  const sourceComponentsByName = new Map(
+    circuit.db.source_component
       .list()
-      .filter((warning) => warning.message.includes("decoupling capacitor"))
+      .map((sourceComponent) => [sourceComponent.name, sourceComponent]),
+  )
+  const getSourcePortByHint = (sourceComponentName: string, portHint: string) =>
+    circuit.db.source_port
+      .list()
+      .find(
+        (sourcePort) =>
+          sourcePort.source_component_id ===
+            sourceComponentsByName.get(sourceComponentName)
+              ?.source_component_id &&
+          sourcePort.port_hints?.includes(portHint),
+      )
 
-  expect(decouplingCapacitorWarnings).toHaveLength(1)
-  expect(decouplingCapacitorWarnings[0]).toMatchObject({
-    warning_type: "source_pin_missing_trace_warning",
-    message:
-      "Power pin VCC on U_MISSING should have a 100nF decoupling capacitor connected to ground",
+  expect(getSourcePortByHint("U_MISSING", "VCC")).toMatchObject({
+    requires_power: true,
+    recommended_decoupling_capacitor_capacitance: "100nF",
   })
+  expect(getSourcePortByHint("U_MISSING", "GND")).toMatchObject({
+    requires_ground: true,
+  })
+  expect(getSourcePortByHint("U_OPT_OUT", "VBAT")).toMatchObject({
+    requires_power: true,
+    should_have_decoupling_capacitor: false,
+  })
+  expect(getSourcePortByHint("U_POWER_SOURCE", "VCC")).toMatchObject({
+    provides_power: true,
+  })
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
