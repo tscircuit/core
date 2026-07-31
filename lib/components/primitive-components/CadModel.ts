@@ -69,7 +69,7 @@ export class CadModel extends PrimitiveComponent<typeof cadmodelProps> {
         ? distance.parse(props.zOffsetFromSurface)
         : 0
 
-    const layer = pcb_component?.layer === "bottom" ? "bottom" : "top"
+    const layer = parent.props.layer === "bottom" ? "bottom" : "top"
 
     const ext = props.modelUrl ? getFileExtension(props.modelUrl) : undefined
     const modelUrlWithoutExtFragment = props.modelUrl?.replace(/#ext=\w+$/, "")

@@ -1,5 +1,6 @@
 import type { NormalComponent } from "./NormalComponent"
 import type { Port } from "../../primitive-components/Port"
+import { getChipSourcePortsMissingDecouplingCapacitor } from "lib/utils/source/get-chip-source-ports-missing-decoupling-capacitor"
 
 export const NormalComponent_doInitialSourceDesignRuleChecks = (
   component: NormalComponent,
@@ -38,6 +39,32 @@ export const NormalComponent_doInitialSourceDesignRuleChecks = (
       message: `Port ${port.getNameAndAliases()[0]} on ${component.props.name} is missing a trace`,
       source_component_id: component.source_component_id,
       source_port_id: port.source_port_id,
+      subcircuit_id: component.getSubcircuit().subcircuit_id ?? undefined,
+      warning_type: "source_pin_missing_trace_warning",
+    })
+  }
+
+  if (component.config.componentName !== "Chip") return
+
+  const sourcePortsMissingDecouplingCapacitor =
+    getChipSourcePortsMissingDecouplingCapacitor(
+      db,
+      component.source_component_id,
+    )
+  for (const sourcePort of sourcePortsMissingDecouplingCapacitor) {
+    const sourcePortLabel =
+      sourcePort.port_hints?.find((sourcePortHint) =>
+        /[A-Za-z]/.test(sourcePortHint),
+      ) ?? sourcePort.name
+    const recommendedCapacitance =
+      sourcePort.recommended_decoupling_capacitor_capacitance
+    const capacitanceDescription =
+      recommendedCapacitance === undefined ? "" : ` ${recommendedCapacitance}`
+
+    db.source_pin_missing_trace_warning.insert({
+      message: `Power pin ${sourcePortLabel} on ${component.props.name} should have a${capacitanceDescription} decoupling capacitor connected to ground`,
+      source_component_id: component.source_component_id,
+      source_port_id: sourcePort.source_port_id,
       subcircuit_id: component.getSubcircuit().subcircuit_id ?? undefined,
       warning_type: "source_pin_missing_trace_warning",
     })

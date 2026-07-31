@@ -1815,8 +1815,9 @@ export class NormalComponent<
           : 0
         : 0
 
+    const computedLayer = this.props.layer === "bottom" ? "bottom" : "top"
+
     const pcbComponent = db.pcb_component.get(this.pcb_component_id)
-    const computedLayer = pcbComponent?.layer === "bottom" ? "bottom" : "top"
     const globalTransform = this._computePcbGlobalTransformBeforeLayout()
     const decomposedTransform = decomposeTSR(globalTransform)
     const preLayoutRotation =
