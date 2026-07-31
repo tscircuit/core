@@ -958,6 +958,58 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         subcircuitComponent: this,
         fanoutPourNetMap,
       })
+    const normalizeRoutedTraces = (
+      routedTraces: SimplifiedPcbTrace[],
+      phaseInput: SimpleRouteJson,
+    ): SimplifiedPcbTrace[] => {
+      const connectionsByName = new Map(
+        phaseInput.connections.map((connection) => [
+          connection.name,
+          connection,
+        ]),
+      )
+
+      return routedTraces.map((trace) => {
+        const connectionName = trace.connection_name ?? trace.pcb_trace_id
+        const connection = connectionsByName.get(connectionName)
+        if (!connection) return trace
+
+        const route = trace.route.map((point) => ({ ...point }))
+        const wirePointIndexes = route.flatMap((point, index) =>
+          point.route_type === "wire" ? [index] : [],
+        )
+        const endpointIndexes = [
+          wirePointIndexes[0],
+          wirePointIndexes[wirePointIndexes.length - 1],
+        ].filter((index): index is number => index !== undefined)
+
+        // Capacity routing can move an endpoint by a few microns while
+        // improving DRC. Preserve the exact phase boundary connection.
+        for (const endpointIndex of endpointIndexes) {
+          const endpoint = route[endpointIndex]
+          if (!endpoint || endpoint.route_type !== "wire") continue
+          const matchingPoint = connection.pointsToConnect
+            .filter((point) => point.layer === endpoint.layer)
+            .map((point) => ({
+              point,
+              distanceSquared:
+                (point.x - endpoint.x) ** 2 + (point.y - endpoint.y) ** 2,
+            }))
+            .sort((a, b) => a.distanceSquared - b.distanceSquared)[0]
+          if (!matchingPoint || matchingPoint.distanceSquared > 0.01 ** 2) {
+            continue
+          }
+          endpoint.x = matchingPoint.point.x
+          endpoint.y = matchingPoint.point.y
+        }
+
+        return {
+          ...trace,
+          source_trace_id: trace.source_trace_id ?? connection.source_trace_id,
+          route,
+        }
+      })
+    }
     const outputTraces: SimplifiedPcbTrace[] = []
     const outputJumpers: Array<{
       jumper_footprint: string
@@ -1218,11 +1270,16 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           traces = await routingPromise
         }
 
+        traces = normalizeRoutedTraces(traces, simpleRouteJson)
+
         const transformedSimpleRouteJson =
           autorouter?.getOutputSimpleRouteJson?.()
         let stageOutputTraces = traces
         if (transformedSimpleRouteJson?.traces) {
-          stageOutputTraces = transformedSimpleRouteJson.traces
+          stageOutputTraces = normalizeRoutedTraces(
+            transformedSimpleRouteJson.traces,
+            transformedSimpleRouteJson,
+          )
         } else if (usesPreviousStageOutput) {
           stageOutputTraces = [...(simpleRouteJson.traces ?? []), ...traces]
         }

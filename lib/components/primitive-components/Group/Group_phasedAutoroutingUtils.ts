@@ -32,8 +32,15 @@ function isJumperPoint(
   return point.route_type === "jumper"
 }
 
-function getTraceConnectionName(trace: SimplifiedPcbTrace): string {
-  return trace.connection_name ?? trace.pcb_trace_id
+function getTraceConnectionNames(trace: SimplifiedPcbTrace): string[] {
+  const connectionName = trace.connection_name ?? trace.pcb_trace_id
+  return Array.from(
+    new Set(
+      [connectionName, trace.source_trace_id].filter((name): name is string =>
+        Boolean(name),
+      ),
+    ),
+  )
 }
 
 function getWireWidth(start: RoutePoint, end: RoutePoint): number {
@@ -65,7 +72,7 @@ function getRoutePointY(point: RoutePoint): number | null {
 function createWireObstacle(
   start: RoutePoint,
   end: RoutePoint,
-  connectedTo: string,
+  connectedTo: readonly string[],
   obstacleIndex: number,
 ): Obstacle | null {
   const startX = getRoutePointX(start)
@@ -82,7 +89,7 @@ function createWireObstacle(
   const dy = Math.abs(startY - endY)
 
   return {
-    obstacleId: `${connectedTo}_phase_obstacle_${obstacleIndex}`,
+    obstacleId: `${connectedTo[0]}_phase_obstacle_${obstacleIndex}`,
     type: "rect",
     layers: [layer],
     center: {
@@ -91,13 +98,13 @@ function createWireObstacle(
     },
     width: dx + width,
     height: dy + width,
-    connectedTo: [connectedTo],
+    connectedTo: [...connectedTo],
   }
 }
 
 function createJumperObstacle(
   point: Extract<RoutePoint, { route_type: "jumper" }>,
-  connectedTo: string,
+  connectedTo: readonly string[],
   obstacleIndex: number,
 ): Obstacle {
   const dx = Math.abs(point.start.x - point.end.x)
@@ -105,7 +112,7 @@ function createJumperObstacle(
   const width = 0.6
 
   return {
-    obstacleId: `${connectedTo}_phase_jumper_obstacle_${obstacleIndex}`,
+    obstacleId: `${connectedTo[0]}_phase_jumper_obstacle_${obstacleIndex}`,
     type: "rect",
     layers: [point.layer],
     center: {
@@ -114,18 +121,18 @@ function createJumperObstacle(
     },
     width: dx + width,
     height: dy + width,
-    connectedTo: [connectedTo],
+    connectedTo: [...connectedTo],
   }
 }
 
 function createViaObstacle(
   point: Extract<RoutePoint, { route_type: "via" }>,
-  connectedTo: string,
+  connectedTo: readonly string[],
   obstacleIndex: number,
   layerCount: number,
 ): Obstacle {
   return {
-    obstacleId: `${connectedTo}_phase_via_obstacle_${obstacleIndex}`,
+    obstacleId: `${connectedTo[0]}_phase_via_obstacle_${obstacleIndex}`,
     type: "rect",
     layers: getViaSpanLayers({
       fromLayer: point.from_layer as LayerRef,
@@ -135,7 +142,7 @@ function createViaObstacle(
     center: { x: point.x, y: point.y },
     width: 0.6,
     height: 0.6,
-    connectedTo: [connectedTo],
+    connectedTo: [...connectedTo],
   }
 }
 
@@ -144,7 +151,7 @@ function addTraceObstacles(
   trace: SimplifiedPcbTrace,
   layerCount: number,
 ): void {
-  const connectedTo = getTraceConnectionName(trace)
+  const connectedTo = getTraceConnectionNames(trace)
 
   for (let routeIndex = 0; routeIndex < trace.route.length; routeIndex++) {
     const routePoint = trace.route[routeIndex]
