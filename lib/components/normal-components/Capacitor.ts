@@ -8,6 +8,7 @@ import {
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { Trace } from "../primitive-components/Trace/Trace"
 import { formatSiUnit } from "format-si-unit"
+import { applyAutomaticDecouplingTraceLength } from "./apply-automatic-decoupling-trace-length"
 
 export class Capacitor extends NormalComponent<
   typeof capacitorProps,
@@ -108,5 +109,10 @@ export class Capacitor extends NormalComponent<
     } as SourceSimpleCapacitorInput)
 
     this.source_component_id = source_component.source_component_id
+  }
+
+  override doInitialSourceDesignRuleChecks(): void {
+    super.doInitialSourceDesignRuleChecks()
+    applyAutomaticDecouplingTraceLength(this)
   }
 }
