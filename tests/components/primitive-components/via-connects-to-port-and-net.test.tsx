@@ -68,9 +68,7 @@ test("via connectsTo joins a component port to a net", async () => {
   expect(pcbPad).toBeDefined()
   expect(pcbVia).toBeDefined()
   expect(pcbVia.source_trace_id).toBe(sourceTrace.source_trace_id)
-  // Retain the legacy field until all connectivity consumers understand
-  // pcb_via.source_trace_id.
-  expect(pcbVia.pcb_trace_id).toBe(sourceTrace.source_trace_id)
+  expect(pcbVia.pcb_trace_id).toBeUndefined()
   expect(
     sourceConnectivityMap.areIdsConnected(
       sourcePort!.source_port_id,

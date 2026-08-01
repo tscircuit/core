@@ -284,14 +284,13 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
       (connectedNetOrTrace instanceof Net
         ? undefined
         : connectedNetOrTrace?.source_trace_id)
-    const pcbConnectivityId =
-      sourceTraceId ??
-      (connectedNetOrTrace instanceof Net
+    const pcbTraceId =
+      !sourceTraceId && connectedNetOrTrace instanceof Net
         ? connectedNetOrTrace.source_net_id
-        : undefined)
-    if (pcbConnectivityId) {
+        : undefined
+    if (sourceTraceId || pcbTraceId) {
       db.pcb_via.update(this.pcb_via_id, {
-        pcb_trace_id: pcbConnectivityId,
+        pcb_trace_id: pcbTraceId,
         source_trace_id: sourceTraceId ?? undefined,
       })
     }
