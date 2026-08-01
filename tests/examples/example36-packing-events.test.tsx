@@ -81,4 +81,7 @@ test("solver:started fires with packing solver details", async () => {
   expect(solverStartedEvent?.solverParams).toMatchObject({
     minGap: expect.any(Number),
   })
+  expect(solverStartedEvent?.solverConstructorArgs).toEqual([
+    solverStartedEvent?.solverParams,
+  ])
 })

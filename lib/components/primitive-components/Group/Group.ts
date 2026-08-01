@@ -1174,6 +1174,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
                   type: "solver:started",
                   solverName,
                   solverParams,
+                  solverConstructorArgs: [solverParams],
                   componentName: this.getString(),
                 }),
             }
@@ -2160,14 +2161,17 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       const net = subtree.source_net.get(nl.source_net_id)
       const text = nl.text || net?.name || ""
 
-      if (nl.anchor_side === "top" && GROUND_NET_REGEX.test(text)) {
+      const isGroundNet = net?.is_ground || GROUND_NET_REGEX.test(text)
+      const isPowerNet = net?.is_power || POWER_NET_REGEX.test(text)
+
+      if (nl.anchor_side === "top" && isGroundNet) {
         subtree.schematic_net_label.update(nl.schematic_net_label_id, {
           symbol_name: "rail_down",
         })
         continue
       }
 
-      if (nl.anchor_side === "bottom" && POWER_NET_REGEX.test(text)) {
+      if (nl.anchor_side === "bottom" && isPowerNet) {
         subtree.schematic_net_label.update(nl.schematic_net_label_id, {
           symbol_name: "rail_up",
         })

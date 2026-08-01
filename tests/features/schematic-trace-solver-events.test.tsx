@@ -46,5 +46,9 @@ test("schematic trace routing emits solver:started event", async () => {
     directConnections: expect.any(Array),
     netConnections: expect.any(Array),
   })
+  expect(schematicTraceSolverEvent?.solverConstructorArgs).toEqual([
+    schematicTraceSolverEvent?.solverParams,
+    { hideRatsNet: false },
+  ])
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })

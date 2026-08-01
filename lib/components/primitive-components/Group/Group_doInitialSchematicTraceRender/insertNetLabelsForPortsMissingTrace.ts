@@ -248,13 +248,19 @@ export const insertNetLabelsForPortsMissingTrace = ({
 
       if (labelIsNearPort) {
         if (isGndNet) {
+          const anchor_side =
+            existingNetLabelForCurrentSourceConnection.anchor_side ?? side
           db.schematic_net_label.update(
             existingNetLabelForCurrentSourceConnection.schematic_net_label_id,
             {
               text,
               anchor_position: schPort.center,
-              center,
-              anchor_side: side,
+              center: computeSchematicNetLabelCenter({
+                anchor_position: schPort.center,
+                anchor_side,
+                text,
+              }),
+              anchor_side,
             },
           )
         } else if (

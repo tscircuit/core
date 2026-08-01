@@ -59,10 +59,12 @@ export const EnclosureFdmBox_doInitialCadModelRender = (
   }
 
   const solver = new CreateFdmEnclosureSolver(inputProblem)
+  const solverConstructorArgs = solver.getConstructorParams()
   root.emit("solver:started", {
     type: "solver:started",
     solverName: "CreateFdmEnclosureSolver",
-    solverParams: solver.getConstructorParams()[0],
+    solverParams: solverConstructorArgs[0],
+    solverConstructorArgs,
     componentName: component.getString(),
   })
   solver.solve()

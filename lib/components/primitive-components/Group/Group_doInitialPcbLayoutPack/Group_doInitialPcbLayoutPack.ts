@@ -188,10 +188,12 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
 
   try {
     const solver = new PackSolver2(packInput)
+    const solverParams = solver.getConstructorParams()
     group.root?.emit("solver:started", {
       type: "solver:started",
       solverName: "PackSolver2",
-      solverParams: solver.getConstructorParams(),
+      solverParams,
+      solverConstructorArgs: [solverParams],
       componentName: group.getString(),
     })
 
