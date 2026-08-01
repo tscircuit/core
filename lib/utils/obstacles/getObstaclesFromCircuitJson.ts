@@ -440,6 +440,7 @@ export const getObstaclesFromCircuitJson = (
       obstacles.push({
         componentId: pcbComponentId,
         type: "rect",
+        shape: "circle",
         layers: element.layers,
         center: {
           x: element.x,
