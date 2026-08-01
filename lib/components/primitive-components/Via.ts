@@ -9,7 +9,7 @@ import { Net } from "./Net"
 import { Port } from "./Port"
 import { isPcbPrimitiveContainedWithinBeforeRender } from "./Port/pcbPrimitiveOverlapBeforeRender"
 import type { SmtPad } from "./SmtPad"
-import { Trace } from "./Trace/Trace"
+import type { Trace } from "./Trace/Trace"
 export class Via extends PrimitiveComponent<typeof viaProps> {
   pcb_via_id: string | null = null
   matchedPort: Port | null = null
@@ -253,22 +253,6 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
     })
   }
 
-  doInitialSourceAddConnectivityMapKey(): void {
-    if (this._parsedProps.connectsTo) return
-
-    const connectedTrace = this._getConnectedNetOrTrace()
-    if (!(connectedTrace instanceof Trace) || !connectedTrace.source_trace_id) {
-      return
-    }
-
-    const { db } = this.root!
-    const sourceTrace = db.source_trace.get(connectedTrace.source_trace_id)
-    this.source_trace_id = connectedTrace.source_trace_id
-    db.source_manually_placed_via.update(this.source_manually_placed_via_id!, {
-      source_net_id: sourceTrace?.connected_source_net_ids[0] ?? "",
-      source_trace_id: connectedTrace.source_trace_id,
-    })
-  }
   doInitialPcbPrimitiveRender(): void {
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
@@ -296,15 +280,21 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
     this.pcb_via_id = pcb_via.pcb_via_id
 
     const connectedNetOrTrace = this._getConnectedNetOrTrace()
-    const pcbConnectivityId =
+    const sourceTraceId =
       this.source_trace_id ??
       (connectedNetOrTrace instanceof Net
-        ? connectedNetOrTrace.source_net_id
+        ? undefined
         : connectedNetOrTrace?.source_trace_id)
+    const pcbConnectivityId =
+      sourceTraceId ??
+      (connectedNetOrTrace instanceof Net
+        ? connectedNetOrTrace.source_net_id
+        : undefined)
     if (pcbConnectivityId) {
       db.pcb_via.update(this.pcb_via_id, {
         pcb_trace_id: pcbConnectivityId,
-      })
+        source_trace_id: sourceTraceId,
+      } as Partial<PcbVia> & { source_trace_id?: string })
     }
   }
 }

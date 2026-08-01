@@ -1,7 +1,7 @@
+import type { SourceTrace } from "circuit-json"
 import { ConnectivityMap } from "circuit-json-to-connectivity-map"
 import type { TraceI } from "../Trace/TraceI"
 import type { Via } from "../Via"
-import { Net } from "../Net"
 import type { Group } from "./Group"
 
 export function Group_doInitialSourceAddConnectivityMapKey(group: Group<any>) {
@@ -12,16 +12,22 @@ export function Group_doInitialSourceAddConnectivityMapKey(group: Group<any>) {
   const traces = group.selectAll("trace") as TraceI[]
   const vias = group.selectAll("via") as Via[]
   const nets = group.selectAll("net") as any[]
-  const sourceTraces = db.source_trace
-    .list()
-    .filter((trace) => trace.subcircuit_id === group.subcircuit_id)
   const connMap = new ConnectivityMap({})
   connMap.addConnections(
-    sourceTraces.map((sourceTrace) => [
-      sourceTrace.source_trace_id,
-      ...sourceTrace.connected_source_port_ids,
-      ...sourceTrace.connected_source_net_ids,
-    ]),
+    traces
+      .map((t) => {
+        const source_trace = db.source_trace.get(
+          t.source_trace_id!,
+        ) as SourceTrace
+        if (!source_trace) return null
+
+        return [
+          source_trace.source_trace_id,
+          ...source_trace.connected_source_port_ids,
+          ...source_trace.connected_source_net_ids,
+        ]
+      })
+      .filter((c): c is string[] => c !== null),
   )
 
   // Add source_nets to the connectivity map so vias and other components
@@ -36,24 +42,25 @@ export function Group_doInitialSourceAddConnectivityMapKey(group: Group<any>) {
   const { name: subcircuitName } = group._parsedProps
 
   // Update source_trace.subcircuit_connectivity_map_key
-  for (const sourceTrace of sourceTraces) {
-    const connNetId = connMap.getNetConnectedToId(sourceTrace.source_trace_id)
+  for (const trace of traces) {
+    if (!trace.source_trace_id) continue
+    const connNetId = connMap.getNetConnectedToId(trace.source_trace_id)
     if (!connNetId) continue
-    const connectivityMapKey = `${subcircuitName ?? `unnamedsubcircuit${group.subcircuit_id ?? group.source_group_id ?? group._renderId}`}_${connNetId}`
-    db.source_trace.update(sourceTrace.source_trace_id, {
-      subcircuit_connectivity_map_key: connectivityMapKey,
+    trace.subcircuit_connectivity_map_key = `${subcircuitName ?? `unnamedsubcircuit${group.subcircuit_id ?? group.source_group_id ?? group._renderId}`}_${connNetId}`
+    db.source_trace.update(trace.source_trace_id, {
+      subcircuit_connectivity_map_key: trace.subcircuit_connectivity_map_key!,
     })
-
-    const trace = traces.find(
-      (trace) => trace.source_trace_id === sourceTrace.source_trace_id,
-    )
-    if (trace) trace.subcircuit_connectivity_map_key = connectivityMapKey
   }
 
   // Update source_port.subcircuit_connectivity_map_key for ports connected to the same net
   const allSourcePortIds = new Set<string>()
-  for (const sourceTrace of sourceTraces) {
-    for (const id of sourceTrace.connected_source_port_ids) {
+  for (const trace of traces) {
+    if (!trace.source_trace_id) continue
+    const source_trace = db.source_trace.get(
+      trace.source_trace_id,
+    ) as SourceTrace
+    if (!source_trace) continue
+    for (const id of source_trace.connected_source_port_ids) {
       allSourcePortIds.add(id)
     }
   }
@@ -70,8 +77,13 @@ export function Group_doInitialSourceAddConnectivityMapKey(group: Group<any>) {
   // Update source_net.subcircuit_connectivity_map_key for all nets in this subcircuit
   // Start with nets connected through traces
   const allSourceNetIds = new Set<string>()
-  for (const sourceTrace of sourceTraces) {
-    for (const source_net_id of sourceTrace.connected_source_net_ids) {
+  for (const trace of traces) {
+    if (!trace.source_trace_id) continue
+    const source_trace = db.source_trace.get(
+      trace.source_trace_id,
+    ) as SourceTrace
+    if (!source_trace) continue
+    for (const source_net_id of source_trace.connected_source_net_ids) {
       allSourceNetIds.add(source_net_id)
     }
   }
@@ -98,18 +110,14 @@ export function Group_doInitialSourceAddConnectivityMapKey(group: Group<any>) {
 
   // Update Via.subcircuit_connectivity_map_key for vias
   for (const via of vias) {
+    // Find the Net or Trace connected to this via
     const connectedNetOrTrace = via._getConnectedNetOrTrace()
-    const connectivityId =
-      via.source_trace_id ??
-      (connectedNetOrTrace
-        ? connectedNetOrTrace instanceof Net
-          ? connectedNetOrTrace.source_net_id
-          : connectedNetOrTrace.source_trace_id
-        : null)
-    if (!connectivityId) continue
+    if (!connectedNetOrTrace) continue
 
-    const connNetId = connMap.getNetConnectedToId(connectivityId)
-    if (!connNetId) continue
-    via.subcircuit_connectivity_map_key = `${subcircuitName ?? `unnamedsubcircuit${group.subcircuit_id ?? group.source_group_id ?? group._renderId}`}_${connNetId}`
+    // Copy the connectivity map key directly from the Net or Trace instance
+    if (connectedNetOrTrace.subcircuit_connectivity_map_key) {
+      via.subcircuit_connectivity_map_key =
+        connectedNetOrTrace.subcircuit_connectivity_map_key
+    }
   }
 }
