@@ -1,4 +1,5 @@
 import { test, expect } from "bun:test"
+import type { SolverStartedEvent } from "lib/events"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 const BOARD_SIZE = "10mm"
@@ -6,9 +7,11 @@ const BOARD_SIZE = "10mm"
 test("emit solver:started event for Copper Pour pipeline execution", async () => {
   const { circuit } = getTestFixture()
 
-  let copperPourEvent = false
+  let copperPourEvent: SolverStartedEvent | undefined
   circuit.on("solver:started", (data) => {
-    copperPourEvent = true
+    if (data.solverName === "CopperPourPipelineSolver") {
+      copperPourEvent = data
+    }
   })
 
   circuit.add(
@@ -19,5 +22,7 @@ test("emit solver:started event for Copper Pour pipeline execution", async () =>
 
   await circuit.renderUntilSettled()
 
-  expect(copperPourEvent).toBe(true)
+  expect(copperPourEvent?.solverConstructorArgs).toEqual([
+    copperPourEvent?.solverParams,
+  ])
 })

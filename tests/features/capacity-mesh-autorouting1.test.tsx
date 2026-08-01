@@ -4,10 +4,10 @@ import { getTestFixture } from "../fixtures/get-test-fixture"
 
 test("board with local group autorouter (capacity mesh)", async () => {
   const { circuit } = getTestFixture()
-  let solverStartedName: SolverStartedEvent["solverName"] | undefined
+  let solverStartedEvent: SolverStartedEvent | undefined
 
   circuit.on("solver:started", (event: SolverStartedEvent) => {
-    solverStartedName = event.solverName
+    solverStartedEvent = event
   })
 
   // Create a circuit with two components that need to be connected by a trace
@@ -47,7 +47,12 @@ test("board with local group autorouter (capacity mesh)", async () => {
   // Verify that we have PCB traces in the output
   const traces = circuit.selectAll("trace")
   expect(traces.length).toBeGreaterThan(0)
-  expect(solverStartedName).toBe("AutoroutingPipelineSolver7_MultiGraph")
+  expect(solverStartedEvent?.solverName).toBe(
+    "AutoroutingPipelineSolver7_MultiGraph",
+  )
+  expect(solverStartedEvent?.solverConstructorArgs).toEqual([
+    solverStartedEvent?.solverParams,
+  ])
 
   // Match against a PCB snapshot to verify routing
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
