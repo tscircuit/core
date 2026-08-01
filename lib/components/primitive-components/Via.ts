@@ -185,7 +185,6 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
 
     const source_via = db.source_manually_placed_via.insert({
       source_group_id: group?.source_group_id!,
-      source_net_id: "",
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
     })
 
@@ -248,7 +247,7 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
     }
 
     db.source_manually_placed_via.update(this.source_manually_placed_via_id!, {
-      source_net_id: connectedNets[0]?.source_net_id ?? "",
+      source_net_id: connectedNets[0]?.source_net_id,
       source_trace_id: this.source_trace_id ?? undefined,
     })
   }
