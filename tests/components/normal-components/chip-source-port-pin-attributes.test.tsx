@@ -13,7 +13,7 @@ test("chip pinAttributes are copied onto source_port records", async () => {
           pin1: "VCC",
           pin2: "GND",
           pin3: "VOUT",
-          pin4: "SCK",
+          pin4: "NC",
         }}
         pinAttributes={{
           VCC: { requiresPower: true, mustBeConnected: true },
@@ -21,12 +21,26 @@ test("chip pinAttributes are copied onto source_port records", async () => {
           VOUT: {
             providesPower: true,
             providesVoltage: 3.3,
-            capabilities: ["i2c_sda", "spi_mosi", "uart_tx"],
-            activeCapabilities: ["i2c_sda", "uart_tx"],
-          },
-          SCK: {
-            capabilities: ["spi_sck"],
-            activeCapability: "spi_sck",
+            capabilities: [
+              "i2c_sda",
+              "i2c_scl",
+              "spi_cs",
+              "spi_sck",
+              "spi_mosi",
+              "spi_miso",
+              "uart_tx",
+              "uart_rx",
+            ],
+            activeCapabilities: [
+              "i2c_sda",
+              "i2c_scl",
+              "spi_cs",
+              "spi_sck",
+              "spi_mosi",
+              "spi_miso",
+              "uart_tx",
+            ],
+            activeCapability: "uart_rx",
           },
         }}
       />
@@ -45,10 +59,19 @@ test("chip pinAttributes are copied onto source_port records", async () => {
   expect(getPort("VOUT")?.provides_power).toBe(true)
   expect(getPort("VOUT")?.provides_voltage).toBe(3.3)
   expect(getPort("VOUT")?.supports_i2c_sda).toBe(true)
+  expect(getPort("VOUT")?.supports_i2c_scl).toBe(true)
+  expect(getPort("VOUT")?.supports_spi_cs).toBe(true)
+  expect(getPort("VOUT")?.supports_spi_sck).toBe(true)
   expect(getPort("VOUT")?.supports_spi_mosi).toBe(true)
+  expect(getPort("VOUT")?.supports_spi_miso).toBe(true)
   expect(getPort("VOUT")?.supports_uart_tx).toBe(true)
+  expect(getPort("VOUT")?.supports_uart_rx).toBe(true)
   expect(getPort("VOUT")?.is_configured_for_i2c_sda).toBe(true)
+  expect(getPort("VOUT")?.is_configured_for_i2c_scl).toBe(true)
+  expect(getPort("VOUT")?.is_configured_for_spi_cs).toBe(true)
+  expect(getPort("VOUT")?.is_configured_for_spi_sck).toBe(true)
+  expect(getPort("VOUT")?.is_configured_for_spi_mosi).toBe(true)
+  expect(getPort("VOUT")?.is_configured_for_spi_miso).toBe(true)
   expect(getPort("VOUT")?.is_configured_for_uart_tx).toBe(true)
-  expect(getPort("SCK")?.supports_spi_sck).toBe(true)
-  expect(getPort("SCK")?.is_configured_for_spi_sck).toBe(true)
+  expect(getPort("VOUT")?.is_configured_for_uart_rx).toBe(true)
 })
