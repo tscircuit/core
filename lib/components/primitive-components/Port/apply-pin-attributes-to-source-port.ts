@@ -1,9 +1,97 @@
-import type { PinAttributeMap } from "@tscircuit/props"
+import type { PinAttributeMap, PinCapability } from "@tscircuit/props"
+import type { SourcePinAttributes } from "circuit-json"
+
+const setSupportedCapability = (
+  sourcePortProps: SourcePinAttributes,
+  capability: PinCapability,
+): void => {
+  switch (capability) {
+    case "i2c_sda":
+      sourcePortProps.supports_i2c_sda = true
+      return
+    case "i2c_scl":
+      sourcePortProps.supports_i2c_scl = true
+      return
+    case "spi_cs":
+      sourcePortProps.supports_spi_cs = true
+      return
+    case "spi_sck":
+      sourcePortProps.supports_spi_sck = true
+      return
+    case "spi_mosi":
+      sourcePortProps.supports_spi_mosi = true
+      return
+    case "spi_miso":
+      sourcePortProps.supports_spi_miso = true
+      return
+    case "uart_tx":
+      sourcePortProps.supports_uart_tx = true
+      return
+    case "uart_rx":
+      sourcePortProps.supports_uart_rx = true
+      return
+    default: {
+      const unhandledCapability: never = capability
+      throw new Error(`Unhandled pin capability: ${unhandledCapability}`)
+    }
+  }
+}
+
+const setConfiguredCapability = (
+  sourcePortProps: SourcePinAttributes,
+  capability: PinCapability,
+): void => {
+  switch (capability) {
+    case "i2c_sda":
+      sourcePortProps.is_configured_for_i2c_sda = true
+      return
+    case "i2c_scl":
+      sourcePortProps.is_configured_for_i2c_scl = true
+      return
+    case "spi_cs":
+      sourcePortProps.is_configured_for_spi_cs = true
+      return
+    case "spi_sck":
+      sourcePortProps.is_configured_for_spi_sck = true
+      return
+    case "spi_mosi":
+      sourcePortProps.is_configured_for_spi_mosi = true
+      return
+    case "spi_miso":
+      sourcePortProps.is_configured_for_spi_miso = true
+      return
+    case "uart_tx":
+      sourcePortProps.is_configured_for_uart_tx = true
+      return
+    case "uart_rx":
+      sourcePortProps.is_configured_for_uart_rx = true
+      return
+    default: {
+      const unhandledCapability: never = capability
+      throw new Error(
+        `Unhandled configured pin capability: ${unhandledCapability}`,
+      )
+    }
+  }
+}
 
 export const applyPinAttributesToSourcePort = (
-  sourcePortProps: Record<string, unknown>,
+  sourcePortProps: SourcePinAttributes,
   attributes: PinAttributeMap,
 ): void => {
+  for (const capability of attributes.capabilities ?? []) {
+    setSupportedCapability(sourcePortProps, capability)
+  }
+
+  const configuredCapabilities = new Set([
+    ...(attributes.activeCapabilities ?? []),
+    ...(attributes.activeCapability ? [attributes.activeCapability] : []),
+  ])
+
+  for (const capability of configuredCapabilities) {
+    setConfiguredCapability(sourcePortProps, capability)
+  }
+
   if (attributes.mustBeConnected !== undefined) {
     sourcePortProps.must_be_connected = attributes.mustBeConnected
   }

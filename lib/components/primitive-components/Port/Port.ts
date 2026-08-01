@@ -9,7 +9,7 @@ import { applyToPoint, compose, translate } from "transformation-matrix"
 import { z } from "zod"
 import { PrimitiveComponent } from "../../base-components/PrimitiveComponent"
 import type { Trace } from "../Trace/Trace"
-import type { LayerRef, SchematicPort } from "circuit-json"
+import type { LayerRef, SchematicPort, SourcePinAttributes } from "circuit-json"
 import { areAllPcbPrimitivesOverlapping } from "./areAllPcbPrimitivesOverlapping"
 import { getCenterOfPcbPrimitives } from "./getCenterOfPcbPrimitives"
 import { type PinAttributeMap, portProps } from "@tscircuit/props"
@@ -393,7 +393,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
     // Get pin attributes from parent component and apply them to this port
     const pinAttributes = this._getMatchingPinAttributes()
-    const portAttributesFromParent: Record<string, unknown> = {}
+    const portAttributesFromParent: SourcePinAttributes = {}
 
     for (const attributes of pinAttributes) {
       applyPinAttributesToSourcePort(portAttributesFromParent, attributes)
