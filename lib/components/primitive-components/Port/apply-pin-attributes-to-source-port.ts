@@ -4,6 +4,19 @@ export const applyPinAttributesToSourcePort = (
   sourcePortProps: Record<string, unknown>,
   attributes: PinAttributeMap,
 ): void => {
+  for (const capability of attributes.capabilities ?? []) {
+    sourcePortProps[`supports_${capability}`] = true
+  }
+
+  const configuredCapabilities = new Set([
+    ...(attributes.activeCapabilities ?? []),
+    ...(attributes.activeCapability ? [attributes.activeCapability] : []),
+  ])
+
+  for (const capability of configuredCapabilities) {
+    sourcePortProps[`is_configured_for_${capability}`] = true
+  }
+
   if (attributes.mustBeConnected !== undefined) {
     sourcePortProps.must_be_connected = attributes.mustBeConnected
   }
