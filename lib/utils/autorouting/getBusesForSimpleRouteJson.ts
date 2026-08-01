@@ -2,8 +2,8 @@ import type { SourceNet, SourcePort, SourceTrace } from "circuit-json"
 import type { Bus } from "lib/components/primitive-components/Bus"
 import type { Port } from "lib/components/primitive-components/Port/Port"
 import type {
-  SimpleRouteConnection,
   SimpleRouteBus,
+  SimpleRouteConnection,
   SrjConnectionName,
 } from "./SimpleRouteJson"
 
@@ -72,7 +72,7 @@ const getBusSourceTraceSubcircuitConnectivityMapKeyOrThrow = ({
   return sourceTrace.subcircuit_connectivity_map_key
 }
 
-const getBusSrjConnectionNameOrThrow = ({
+const getBusSrjConnectionNamesOrThrow = ({
   srjConnections,
   bus,
   busSourceTraces,
@@ -84,7 +84,7 @@ const getBusSrjConnectionNameOrThrow = ({
   busSourceTraces: SourceTrace[]
   traceSubcircuitConnectivityMapKey: SubcircuitConnectivityMapKey
   traceNameOrPortSelector: string
-}): SrjConnectionName => {
+}): SrjConnectionName[] => {
   const sourceTraceIds = busSourceTraces
     .filter(
       (sourceTrace) =>
@@ -103,13 +103,7 @@ const getBusSrjConnectionNameOrThrow = ({
       `Could not find an SRJ connection for "${traceNameOrPortSelector}" in bus "${bus.name}"`,
     )
   }
-  if (matchingSrjConnections.length > 1) {
-    throw new Error(
-      `Trace name or port selector "${traceNameOrPortSelector}" matches multiple SRJ connections in bus "${bus.name}"`,
-    )
-  }
-
-  return matchingSrjConnections[0]!.name
+  return matchingSrjConnections.map((srjConnection) => srjConnection.name)
 }
 
 const normalizeNetName = (netNameOrSelector: string): string =>
@@ -189,7 +183,7 @@ export const getBusesForSimpleRouteJson = ({
     const busSourceTraces = sourceTraces.filter(
       (sourceTrace) => sourceTrace.subcircuit_id === busSubcircuitId,
     )
-    const connectionNames = bus._parsedProps.connections.map(
+    const connectionNames = bus._parsedProps.connections.flatMap(
       (traceNameOrPortSelector) => {
         const traceSubcircuitConnectivityMapKey =
           getBusSourceTraceSubcircuitConnectivityMapKeyOrThrow({
@@ -197,7 +191,7 @@ export const getBusesForSimpleRouteJson = ({
             busSourceTraces,
             traceNameOrPortSelector,
           })
-        return getBusSrjConnectionNameOrThrow({
+        return getBusSrjConnectionNamesOrThrow({
           srjConnections,
           bus,
           busSourceTraces,
