@@ -7,6 +7,7 @@ import {
 } from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { Trace } from "../primitive-components/Trace/Trace"
+import { Capacitor_getAutomaticMaxDecouplingTraceLength } from "./Capacitor_getAutomaticMaxDecouplingTraceLength"
 import { formatSiUnit } from "format-si-unit"
 
 export class Capacitor extends NormalComponent<
@@ -101,7 +102,9 @@ export class Capacitor extends NormalComponent<
       supplier_part_numbers: props.supplierPartNumbers,
       capacitance: props.capacitance,
       max_voltage_rating: props.maxVoltageRating,
-      max_decoupling_trace_length: props.maxDecouplingTraceLength,
+      max_decoupling_trace_length:
+        props.maxDecouplingTraceLength ??
+        Capacitor_getAutomaticMaxDecouplingTraceLength(this),
       display_capacitance: this._getSchematicSymbolDisplayValue(),
       are_pins_interchangeable: !props.polarized,
       display_name: props.displayName,
