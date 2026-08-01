@@ -1,4 +1,5 @@
 export type Obstacle = {
+  obstacleId?: string
   componentId?: string
   shape?: "circle"
   type: "rect"

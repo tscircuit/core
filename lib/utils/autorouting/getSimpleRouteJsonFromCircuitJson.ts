@@ -8,7 +8,10 @@ import {
 import { Bus } from "lib/components/primitive-components/Bus"
 import { DifferentialPair } from "lib/components/primitive-components/DifferentialPair"
 import type { ISubcircuit } from "lib/components/primitive-components/Group/Subcircuit/ISubcircuit"
+import { Keepout } from "lib/components/primitive-components/Keepout"
+import type { PcbComponentId } from "lib/utils/circuit-json/circuit-json-id-types"
 import { getObstaclesFromCircuitJson } from "../obstacles/getObstaclesFromCircuitJson"
+import type { Obstacle } from "../obstacles/types"
 import type {
   PcbGroupId,
   SimpleRouteConnection,
@@ -184,6 +187,47 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       group: pcbGroup,
     }),
   )
+
+  if (subcircuitComponent) {
+    const pcbConnectionIdsByComponentId = new Map<
+      PcbComponentId,
+      Obstacle["connectedTo"]
+    >()
+    const addPcbConnectionId = (
+      pcbComponentId: PcbComponentId | undefined,
+      pcbConnectionId: Obstacle["connectedTo"][number],
+    ) => {
+      if (!pcbComponentId) return
+      const ids = pcbConnectionIdsByComponentId.get(pcbComponentId) ?? []
+      ids.push(pcbConnectionId)
+      const netId = sharedConnMap.getNetConnectedToId(pcbConnectionId)
+      if (netId) ids.push(netId)
+      pcbConnectionIdsByComponentId.set(pcbComponentId, ids)
+    }
+
+    for (const smtpad of db.pcb_smtpad.list()) {
+      addPcbConnectionId(smtpad.pcb_component_id, smtpad.pcb_smtpad_id)
+    }
+    for (const platedHole of db.pcb_plated_hole.list()) {
+      addPcbConnectionId(
+        platedHole.pcb_component_id,
+        platedHole.pcb_plated_hole_id,
+      )
+    }
+
+    for (const keepout of subcircuitComponent.selectAll<Keepout>("keepout")) {
+      const keepoutObstacle = obstacles.find(
+        (obstacle) => obstacle.obstacleId === keepout.pcb_keepout_id,
+      )
+      if (!keepoutObstacle) continue
+
+      for (const pcbComponentId of keepout.getExcludedPcbComponentIds()) {
+        keepoutObstacle.connectedTo.push(
+          ...(pcbConnectionIdsByComponentId.get(pcbComponentId) ?? []),
+        )
+      }
+    }
+  }
 
   // SRJ uses two separate fields for routing state:
   // - connections: copper the current autorouter still needs to create.

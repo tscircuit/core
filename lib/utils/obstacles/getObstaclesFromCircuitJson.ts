@@ -157,6 +157,7 @@ export const getObstaclesFromCircuitJson = (
     } else if (element.type === "pcb_keepout") {
       if (element.shape === "circle") {
         obstacles.push({
+          obstacleId: element.pcb_keepout_id,
           componentId: pcbComponentId,
           // @ts-ignore
           type: "oval",
@@ -171,6 +172,7 @@ export const getObstaclesFromCircuitJson = (
         })
       } else if (element.shape === "rect") {
         obstacles.push({
+          obstacleId: element.pcb_keepout_id,
           componentId: pcbComponentId,
           type: "rect",
           layers: element.layers,
