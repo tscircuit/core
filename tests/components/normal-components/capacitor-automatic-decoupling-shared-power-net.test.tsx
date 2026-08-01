@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import type { SourceSimpleCapacitor } from "circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("capacitor connected to a chip power pin through a shared net gets trace limits", () => {
+test("capacitor on shared power and ground nets is not inferred as decoupling", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -38,11 +38,11 @@ test("capacitor connected to a chip power pin through a shared net gets trace li
       .map((sourceTrace) => [sourceTrace.display_name, sourceTrace.max_length]),
   )
 
-  expect(capacitorSourceComponent?.max_decoupling_trace_length).toBe(1)
+  expect(capacitorSourceComponent?.max_decoupling_trace_length).toBeUndefined()
   expect(sourceTraceMaxLengths).toEqual({
     ".U1 > .VCC to net.VCC": undefined,
-    ".C1 > .1 to net.VCC": 1,
-    ".C1 > .2 to net.GND": 1,
+    ".C1 > .1 to net.VCC": undefined,
+    ".C1 > .2 to net.GND": undefined,
     ".U1 > .GND to net.GND": undefined,
   })
 })
