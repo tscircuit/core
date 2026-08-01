@@ -1,8 +1,9 @@
-import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { pcbKeepoutProps } from "@tscircuit/props"
-import type { RenderPhaseFn } from "../base-components/Renderable"
 import type { PCBKeepout } from "circuit-json"
+import type { PcbComponentId } from "lib/utils/circuit-json/circuit-json-id-types"
 import { decomposeTSR } from "transformation-matrix"
+import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
+import type { RenderPhaseFn } from "../base-components/Renderable"
 
 export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
   pcb_keepout_id: string | null = null
@@ -14,6 +15,18 @@ export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
       componentName: "Keepout",
       zodProps: pcbKeepoutProps,
     }
+  }
+
+  getExcludedPcbComponentIds(): PcbComponentId[] {
+    const excludedPcbComponentIds =
+      this._parsedProps.excludeRefs?.flatMap((selector) =>
+        this.getSubcircuit()
+          .selectAll(selector)
+          .map((component) => component.pcb_component_id)
+          .filter((id): id is PcbComponentId => id !== null),
+      ) ?? []
+
+    return Array.from(new Set(excludedPcbComponentIds))
   }
 
   doInitialPcbPrimitiveRender(): void {
@@ -34,12 +47,18 @@ export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
     if (!layers) {
       layers = ["top"]
     }
+    const excludedPcbComponentIds = this.getExcludedPcbComponentIds()
+    const pcbKeepoutExclusionProps =
+      excludedPcbComponentIds.length > 0
+        ? { excluded_pcb_component_ids: excludedPcbComponentIds }
+        : {}
 
     let pcb_keepout: PCBKeepout | null = null
     if (props.shape === "circle") {
       pcb_keepout = db.pcb_keepout.insert({
         layers,
         shape: "circle",
+        ...pcbKeepoutExclusionProps,
         // @ts-ignore: no idea why this is triggering
         radius: props.radius,
         center: {
@@ -53,6 +72,7 @@ export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
       pcb_keepout = db.pcb_keepout.insert({
         layers,
         shape: "rect",
+        ...pcbKeepoutExclusionProps,
         ...(isRotated90
           ? { width: props.height, height: props.width }
           : { width: props.width, height: props.height }),
