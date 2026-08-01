@@ -5,6 +5,10 @@ import { decomposeTSR } from "transformation-matrix"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import type { RenderPhaseFn } from "../base-components/Renderable"
 
+type PCBKeepoutExclusionProps = {
+  excluded_pcb_component_ids?: PcbComponentId[]
+}
+
 export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
   pcb_keepout_id: string | null = null
 
@@ -47,12 +51,18 @@ export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
     if (!layers) {
       layers = ["top"]
     }
+    const excludedPcbComponentIds = this.getExcludedPcbComponentIds()
+    const pcbKeepoutExclusionProps: PCBKeepoutExclusionProps =
+      excludedPcbComponentIds.length > 0
+        ? { excluded_pcb_component_ids: excludedPcbComponentIds }
+        : {}
 
     let pcb_keepout: PCBKeepout | null = null
     if (props.shape === "circle") {
       pcb_keepout = db.pcb_keepout.insert({
         layers,
         shape: "circle",
+        ...pcbKeepoutExclusionProps,
         // @ts-ignore: no idea why this is triggering
         radius: props.radius,
         center: {
@@ -66,6 +76,7 @@ export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
       pcb_keepout = db.pcb_keepout.insert({
         layers,
         shape: "rect",
+        ...pcbKeepoutExclusionProps,
         ...(isRotated90
           ? { width: props.height, height: props.width }
           : { width: props.width, height: props.height }),

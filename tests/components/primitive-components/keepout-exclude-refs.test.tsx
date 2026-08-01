@@ -1,26 +1,24 @@
 import { expect, test } from "bun:test"
+import type { PCBKeepout } from "circuit-json"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
+import type { PcbComponentId } from "lib/utils/circuit-json/circuit-json-id-types"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("keepout excludeRefs suppresses only matching manual trace DRC errors", async () => {
+type PCBKeepoutWithExclusions = PCBKeepout & {
+  excluded_pcb_component_ids?: PcbComponentId[]
+}
+
+test("keepout excludeRefs serializes selected PCB component IDs without weakening the obstacle", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
     <board width="22mm" height="12mm">
       <pcbnotetext
-        text="Only the manual ANT1 feed violation is excluded"
+        text="ANT1 is DRC-exempt; keepout remains a hard routing obstacle"
         pcbX={-10}
         pcbY={5}
         fontSize={0.5}
         anchorAlignment="top_left"
-      />
-      <testpoint
-        name="SOURCE"
-        footprintVariant="pad"
-        schX={-3}
-        schY={1}
-        pcbX={-7}
-        pcbY={0}
       />
       <testpoint
         name="ANT1"
@@ -31,20 +29,12 @@ test("keepout excludeRefs suppresses only matching manual trace DRC errors", asy
         pcbY={0}
       />
       <testpoint
-        name="OTHER_SOURCE"
+        name="OTHER"
         footprintVariant="pad"
         schX={-3}
         schY={-1}
-        pcbX={-7}
-        pcbY={-2}
-      />
-      <testpoint
-        name="OTHER_TARGET"
-        footprintVariant="pad"
-        schX={3}
-        schY={-1}
-        pcbX={4}
-        pcbY={-2}
+        pcbX={-4}
+        pcbY={0}
       />
       <keepout
         shape="rect"
@@ -54,18 +44,6 @@ test("keepout excludeRefs suppresses only matching manual trace DRC errors", asy
         pcbY={0}
         excludeRefs={[".ANT1"]}
       />
-      <trace
-        name="ANTENNA_FEED"
-        from=".SOURCE > .pin1"
-        to=".ANT1 > .pin1"
-        pcbPath={[{ x: 7, y: 0 }]}
-      />
-      <trace
-        name="OTHER_TRACE"
-        from=".OTHER_SOURCE > .pin1"
-        to=".OTHER_TARGET > .pin1"
-        pcbPath={[{ x: 7, y: 0 }]}
-      />
     </board>,
   )
 
@@ -74,19 +52,21 @@ test("keepout excludeRefs suppresses only matching manual trace DRC errors", asy
   const board = circuit.firstChild
   if (!board) throw new Error("Expected a board component")
 
-  const antennaFeedSourceTrace = circuit.db.source_trace.getWhere({
-    name: "ANTENNA_FEED",
+  const antennaSourceComponent = circuit.db.source_component.getWhere({
+    name: "ANT1",
   })
-  const otherSourceTrace = circuit.db.source_trace.getWhere({
-    name: "OTHER_TRACE",
+  const antennaPcbComponent = circuit.db.pcb_component.getWhere({
+    source_component_id: antennaSourceComponent!.source_component_id,
   })
-  const antennaFeedPcbTrace = circuit.db.pcb_trace.getWhere({
-    source_trace_id: antennaFeedSourceTrace!.source_trace_id,
+  const otherSourceComponent = circuit.db.source_component.getWhere({
+    name: "OTHER",
   })
-  const otherPcbTrace = circuit.db.pcb_trace.getWhere({
-    source_trace_id: otherSourceTrace!.source_trace_id,
+  const otherPcbComponent = circuit.db.pcb_component.getWhere({
+    source_component_id: otherSourceComponent!.source_component_id,
   })
-  const keepout = circuit.db.pcb_keepout.list()[0]
+  const keepout = circuit.db.pcb_keepout.list()[0] as
+    | PCBKeepoutWithExclusions
+    | undefined
 
   const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
     db: circuit.db,
@@ -100,19 +80,13 @@ test("keepout excludeRefs suppresses only matching manual trace DRC errors", asy
       obstacle.width === 8 &&
       obstacle.height === 6,
   )
-  const traceErrors = circuit.db.pcb_trace_error.list()
 
+  expect(keepout?.excluded_pcb_component_ids).toEqual([
+    antennaPcbComponent!.pcb_component_id,
+  ])
+  expect(keepout?.excluded_pcb_component_ids).not.toContain(
+    otherPcbComponent!.pcb_component_id,
+  )
   expect(keepoutObstacle?.connectedTo).toEqual([])
-  expect(circuit.db.pcb_trace.list()).toHaveLength(2)
-  expect(
-    traceErrors.some(
-      (error) => error.pcb_trace_id === antennaFeedPcbTrace!.pcb_trace_id,
-    ),
-  ).toBe(false)
-  expect(
-    traceErrors.some(
-      (error) => error.pcb_trace_id === otherPcbTrace!.pcb_trace_id,
-    ),
-  ).toBe(true)
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
