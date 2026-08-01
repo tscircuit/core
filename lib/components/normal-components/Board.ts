@@ -14,17 +14,27 @@ import { type Matrix, compose, translate } from "transformation-matrix"
 import { getDescendantSubcircuitIds } from "../../utils/autorouting/getAncestorSubcircuitIds"
 import { getBoardCenterFromAnchor } from "../../utils/boards/get-board-center-from-anchor"
 import { inflateCircuitJson } from "../../utils/circuit-json/inflate-circuit-json"
+import { filterKeepoutExcludedRefDrcErrors } from "../../utils/pcb/filterKeepoutExcludedRefDrcErrors"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
+import type { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import type { RenderPhase } from "../base-components/Renderable"
 import { DrcCheck } from "../primitive-components/DrcCheck"
 import { Group } from "../primitive-components/Group/Group"
 import type { SubcircuitI } from "../primitive-components/Group/Subcircuit/SubcircuitI"
 import { Subcircuit_doInitialRenderIsolatedSubcircuits } from "../primitive-components/Group/Subcircuit/Subcircuit_doInitialRenderIsolatedSubcircuits"
 import { Subcircuit_getSubcircuitPropHash } from "../primitive-components/Group/Subcircuit_getSubcircuitPropHash"
+import { Keepout } from "../primitive-components/Keepout"
 import type { BoardI } from "./BoardI"
 import { Board_doInitialPcbPlacementDesignRuleChecks } from "./Board_doInitialPcbPlacementDesignRuleChecks"
 
 const MIN_EFFECTIVE_BORDER_RADIUS_MM = 0.01
+
+const getKeepoutsInComponentTree = (
+  component: PrimitiveComponent,
+): Keepout[] => [
+  ...(component instanceof Keepout ? [component] : []),
+  ...component.children.flatMap(getKeepoutsInComponentTree),
+]
 
 const getRoundedRectOutline = (
   width: number,
@@ -685,7 +695,12 @@ export class Board
       }
 
       const checkResults = await Promise.all(checksToRun)
-      db.insertAll(dedupePcbDrcErrors(checkResults.flat()))
+      const filteredCheckResults = filterKeepoutExcludedRefDrcErrors({
+        circuitJson,
+        drcResults: checkResults.flat(),
+        keepouts: getKeepoutsInComponentTree(this),
+      })
+      db.insertAll(dedupePcbDrcErrors(filteredCheckResults))
     }
 
     const subcircuit = db.subtree({ subcircuit_id: this.subcircuit_id })
