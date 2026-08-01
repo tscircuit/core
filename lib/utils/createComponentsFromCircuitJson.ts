@@ -629,6 +629,7 @@ export const createComponentsFromCircuitJson = (
           anchorAlignment: elm.anchor_alignment,
           color: elm.color,
           font: elm.font,
+          pcbRotation: elm.ccw_rotation,
         }),
       )
     } else if (elm.type === "pcb_fabrication_note_path") {
