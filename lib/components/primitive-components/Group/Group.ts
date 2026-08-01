@@ -38,6 +38,7 @@ import {
 } from "lib/utils/autorouting/getPresetAutoroutingConfig"
 import { getLocalAutoroutingStages } from "lib/utils/autorouting/localAutorouterStrategies"
 import { shouldSkipAutoroutingBecauseOfPlacementErrors } from "lib/utils/autorouting/should-skip-autorouting-because-of-placement-errors"
+import { applyAutomaticDecouplingTraceLengths } from "lib/utils/decoupling-capacitors/apply-automatic-decoupling-trace-lengths"
 import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
 import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
 import {
@@ -416,6 +417,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         source_group_id: this.source_group_id!,
       })
     }
+
+    applyAutomaticDecouplingTraceLengths(this)
   }
 
   doInitialSourceParentAttachment() {
