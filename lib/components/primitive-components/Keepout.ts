@@ -5,10 +5,6 @@ import { decomposeTSR } from "transformation-matrix"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import type { RenderPhaseFn } from "../base-components/Renderable"
 
-type PCBKeepoutExclusionProps = {
-  excluded_pcb_component_ids?: PcbComponentId[]
-}
-
 export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
   pcb_keepout_id: string | null = null
 
@@ -52,7 +48,7 @@ export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
       layers = ["top"]
     }
     const excludedPcbComponentIds = this.getExcludedPcbComponentIds()
-    const pcbKeepoutExclusionProps: PCBKeepoutExclusionProps =
+    const pcbKeepoutExclusionProps =
       excludedPcbComponentIds.length > 0
         ? { excluded_pcb_component_ids: excludedPcbComponentIds }
         : {}
