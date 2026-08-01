@@ -3,7 +3,7 @@ import type { Port } from "lib/components/primitive-components/Port"
 import { GROUND_NET_REGEX } from "lib/utils/gnd-power-net-regex"
 
 /** Resolves whether a port represents ground from its attributes or labels. */
-export const portIsGround = (sourcePort: Port): boolean => {
+export function portIsGround(sourcePort: Port): boolean {
   const sourceComponent = sourcePort.getParentNormalComponent()
   const pinAttributes = sourceComponent?._parsedProps.pinAttributes as
     | Record<string, PinAttributeMap>
@@ -22,11 +22,10 @@ export const portIsGround = (sourcePort: Port): boolean => {
     }
   }
 
-  return (
-    requiresGround === true ||
-    providesGround === true ||
-    sourcePort
-      .getNameAndAliases()
-      .some((portName) => GROUND_NET_REGEX.test(portName))
-  )
+  if (requiresGround === true || providesGround === true) return true
+
+  for (const portName of sourcePort.getNameAndAliases()) {
+    if (GROUND_NET_REGEX.test(portName)) return true
+  }
+  return false
 }

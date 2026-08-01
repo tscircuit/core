@@ -6,9 +6,9 @@ import { POWER_NET_REGEX } from "lib/utils/gnd-power-net-regex"
  * Resolves whether a chip port should be decoupled, honoring an explicit
  * opt-out before requiresPower and common power-pin label inference.
  */
-export const chipPortShouldHaveDecouplingCapacitor = (
+export function chipPortShouldHaveDecouplingCapacitor(
   sourcePort: Port,
-): boolean => {
+): boolean {
   const sourceComponent = sourcePort.getParentNormalComponent()
   if (sourceComponent?.config.componentName !== "Chip") return false
 
@@ -40,7 +40,8 @@ export const chipPortShouldHaveDecouplingCapacitor = (
   if (requiresPower !== undefined) return requiresPower
   if (providesPower === true) return false
 
-  return sourcePort
-    .getNameAndAliases()
-    .some((portName) => POWER_NET_REGEX.test(portName))
+  for (const portName of sourcePort.getNameAndAliases()) {
+    if (POWER_NET_REGEX.test(portName)) return true
+  }
+  return false
 }
