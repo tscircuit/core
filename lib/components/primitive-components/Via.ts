@@ -293,8 +293,8 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
     if (pcbConnectivityId) {
       db.pcb_via.update(this.pcb_via_id, {
         pcb_trace_id: pcbConnectivityId,
-        source_trace_id: sourceTraceId,
-      } as Partial<PcbVia> & { source_trace_id?: string })
+        source_trace_id: sourceTraceId ?? undefined,
+      })
     }
   }
 }
