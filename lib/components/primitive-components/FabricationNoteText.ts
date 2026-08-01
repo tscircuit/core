@@ -2,6 +2,7 @@ import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { fabricationNoteTextProps } from "@tscircuit/props"
 import { normalizeTextForCircuitJson } from "lib/utils/normalizeTextForCircuitJson"
 import { resolvePcbProperty } from "lib/utils/pcbSx/resolve-pcb-property"
+import { decomposeTSR } from "transformation-matrix"
 
 export class FabricationNoteText extends PrimitiveComponent<
   typeof fabricationNoteTextProps
@@ -21,6 +22,12 @@ export class FabricationNoteText extends PrimitiveComponent<
     const { db } = this.root!
     const { _parsedProps: props } = this
     const position = this._getGlobalPcbPositionBeforeLayout()
+    const decomposedTransform = decomposeTSR(
+      this._computePcbGlobalTransformBeforeLayout(),
+    )
+    const ccwRotationDegrees =
+      (decomposedTransform.rotation.angle * 180) / Math.PI
+    const ccwRotation = ((ccwRotationDegrees % 360) + 360) % 360
     const container = this.getPrimitiveContainer()!
     const subcircuit = this.getSubcircuit()
     const resolvedPcbSxVisibility = resolvePcbProperty({
@@ -42,6 +49,7 @@ export class FabricationNoteText extends PrimitiveComponent<
       font_size: props.fontSize ?? 1,
       layer: "top",
       color: props.color,
+      ccw_rotation: ccwRotation,
       text: normalizeTextForCircuitJson(props.text ?? ""),
       pcb_component_id: container.pcb_component_id!,
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
