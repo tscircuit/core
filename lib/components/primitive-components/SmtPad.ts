@@ -16,6 +16,10 @@ import type { Port } from "./Port"
 import { selectPortForPcbPrimitive } from "./Port/selectPortForPcbPrimitive"
 import { getAxisAlignedSizeFromRotatedRect } from "lib/utils/pcb/get-axis-aligned-size-from-rotated-rect"
 
+type PcbSmtPadWithSolderPasteMargin<T extends PcbSmtPad> = T & {
+  solderpaste_margin?: number
+}
+
 export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
   pcb_smtpad_id: string | null = null
 
@@ -153,10 +157,11 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         port_hints: portHints,
         is_covered_with_solder_mask: isCoveredWithSolderMask,
         soldermask_margin: soldermaskMargin,
+        solderpaste_margin: solderPasteMargin,
         x: position.x,
         y: position.y,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
-      } as PcbSmtPadCircle) as PcbSmtPadCircle
+      } as PcbSmtPadWithSolderPasteMargin<PcbSmtPadCircle>) as PcbSmtPadCircle
       const pasteRadius = getSolderPasteSize(pcb_smtpad.radius, 1)
       if (shouldCreateSolderPaste && pasteRadius > 0)
         db.pcb_solder_paste.insert({
@@ -187,9 +192,10 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
           port_hints: portHints,
           is_covered_with_solder_mask: isCoveredWithSolderMask,
           soldermask_margin: soldermaskMargin,
+          solderpaste_margin: solderPasteMargin,
           subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
           pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
-        } as PcbSmtPadRotatedRect) as PcbSmtPadRotatedRect
+        } as PcbSmtPadWithSolderPasteMargin<PcbSmtPadRotatedRect>) as PcbSmtPadRotatedRect
       } else {
         pcb_smtpad = db.pcb_smtpad.insert({
           pcb_component_id,
@@ -202,11 +208,12 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
           port_hints: portHints,
           is_covered_with_solder_mask: isCoveredWithSolderMask,
           soldermask_margin: soldermaskMargin,
+          solderpaste_margin: solderPasteMargin,
           x: position.x,
           y: position.y,
           subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
           pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
-        } as PcbSmtPadRect) as PcbSmtPadRect
+        } as PcbSmtPadWithSolderPasteMargin<PcbSmtPadRect>) as PcbSmtPadRect
       }
       const pasteWidth = getSolderPasteSize(pcb_smtpad.width)
       const pasteHeight = getSolderPasteSize(pcb_smtpad.height)
@@ -262,9 +269,10 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         port_hints: portHints,
         is_covered_with_solder_mask: isCoveredWithSolderMask,
         soldermask_margin: soldermaskMargin,
+        solderpaste_margin: solderPasteMargin,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
-      } as PcbSmtPadRotatedRect) as PcbSmtPadRotatedRect
+      } as PcbSmtPadWithSolderPasteMargin<PcbSmtPadRotatedRect>) as PcbSmtPadRotatedRect
 
       const pasteWidth = getSolderPasteSize(pcb_smtpad.width)
       const pasteHeight = getSolderPasteSize(pcb_smtpad.height)
@@ -303,9 +311,10 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         port_hints: portHints,
         is_covered_with_solder_mask: isCoveredWithSolderMask,
         soldermask_margin: soldermaskMargin,
+        solderpaste_margin: solderPasteMargin,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
-      } as PcbSmtPadPolygon) as PcbSmtPadPolygon
+      } as PcbSmtPadWithSolderPasteMargin<PcbSmtPadPolygon>) as PcbSmtPadPolygon
     } else if (props.shape === "pill") {
       if (finalRotationDegrees !== 0) {
         pcb_smtpad = db.pcb_smtpad.insert({
@@ -322,9 +331,10 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
           port_hints: portHints,
           is_covered_with_solder_mask: isCoveredWithSolderMask,
           soldermask_margin: soldermaskMargin,
+          solderpaste_margin: solderPasteMargin,
           subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
           pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
-        } as PcbSmtPadRotatedPill)
+        } as PcbSmtPadWithSolderPasteMargin<PcbSmtPadRotatedPill>)
       } else {
         pcb_smtpad = db.pcb_smtpad.insert({
           pcb_component_id,
@@ -339,9 +349,10 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
           port_hints: portHints,
           is_covered_with_solder_mask: isCoveredWithSolderMask,
           soldermask_margin: soldermaskMargin,
+          solderpaste_margin: solderPasteMargin,
           subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
           pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
-        } as PcbSmtPadPill)
+        } as PcbSmtPadWithSolderPasteMargin<PcbSmtPadPill>)
       }
     }
     if (pcb_smtpad) {

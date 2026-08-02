@@ -17,6 +17,12 @@ test("solderPasteMargin applies an absolute per-side margin instead of the 0.7 s
   )
   circuit.render()
 
+  const [smtpad] = circuit.db.pcb_smtpad.list()
+  expect(
+    (smtpad as typeof smtpad & { solderpaste_margin?: number })
+      .solderpaste_margin,
+  ).toBe(-0.1)
+
   const [solder_paste] = circuit.db.pcb_solder_paste.list()
   expect(solder_paste.shape).toBe("rect")
   if (solder_paste.shape === "rect") {
