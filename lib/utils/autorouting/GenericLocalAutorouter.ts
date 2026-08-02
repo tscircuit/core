@@ -1,14 +1,5 @@
 import type { GraphicsObject } from "graphics-debug"
-import type {
-  SimpleRouteBounds,
-  SimpleRouteJson,
-  SimplifiedPcbTrace,
-} from "./SimpleRouteJson"
-
-export interface FanoutBoundaryResult {
-  resolvedBoundary?: SimpleRouteBounds
-  fanoutPaddingBoundary?: SimpleRouteBounds
-}
+import type { SimpleRouteJson, SimplifiedPcbTrace } from "./SimpleRouteJson"
 
 export type AutorouterCompleteEvent = {
   type: "complete"
@@ -52,9 +43,6 @@ export interface GenericLocalAutorouter {
    * Autorouters that only produce final traces can omit this method.
    */
   getOutputSimpleRouteJson?(): SimpleRouteJson | undefined
-
-  /** Returns the boundary selected by a fanout autorouter, when applicable. */
-  getFanoutBoundaryResult?(): FanoutBoundaryResult
 
   /**
    * Get the mapping of obstacle IDs to root connection names that were

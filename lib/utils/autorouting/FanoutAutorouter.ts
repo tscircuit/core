@@ -15,7 +15,6 @@ import type {
   AutorouterErrorEvent,
   AutorouterEvent,
   AutorouterProgressEvent,
-  FanoutBoundaryResult,
   GenericLocalAutorouter,
 } from "./GenericLocalAutorouter"
 import type {
@@ -32,9 +31,49 @@ export type FanoutAutorouterMode = "single_layer_fanout" | "fanout"
 export interface FanoutAutorouterOptions {
   mode: FanoutAutorouterMode
   busFanoutDirections?: Readonly<Record<string, BusFanoutDirection>>
-  fanoutBoundary?: SimpleRouteBounds
-  fanoutBoundaryPadding?: FanoutBoundaryPadding
+  fanoutBounds?: SimpleRouteBounds
   fanoutRoutingLayers?: string[]
+}
+
+export interface ResolveFanoutBoundsOptions extends FanoutAutorouterOptions {
+  fanoutBoundaryPadding?: FanoutBoundaryPadding
+  breakoutPoints?: ReadonlyArray<{ x: number; y: number }>
+  onFanoutBoundsConflict?: () => void
+}
+
+const boundsDiffer = (
+  first: SimpleRouteBounds,
+  second: SimpleRouteBounds,
+): boolean =>
+  Math.abs(first.minX - second.minX) > 1e-6 ||
+  Math.abs(first.maxX - second.maxX) > 1e-6 ||
+  Math.abs(first.minY - second.minY) > 1e-6 ||
+  Math.abs(first.maxY - second.maxY) > 1e-6
+
+const expandBoundsToIncludePoints = (
+  bounds: SimpleRouteBounds | undefined,
+  points: ReadonlyArray<{ x: number; y: number }>,
+): SimpleRouteBounds | undefined => {
+  if (!bounds && points.length === 0) return undefined
+
+  return {
+    minX: Math.min(
+      bounds?.minX ?? Number.POSITIVE_INFINITY,
+      ...points.map((p) => p.x),
+    ),
+    maxX: Math.max(
+      bounds?.maxX ?? Number.NEGATIVE_INFINITY,
+      ...points.map((p) => p.x),
+    ),
+    minY: Math.min(
+      bounds?.minY ?? Number.POSITIVE_INFINITY,
+      ...points.map((p) => p.y),
+    ),
+    maxY: Math.max(
+      bounds?.maxY ?? Number.NEGATIVE_INFINITY,
+      ...points.map((p) => p.y),
+    ),
+  }
 }
 
 const getNinePointAnchor = (
@@ -252,7 +291,6 @@ const createDownstreamSimpleRouteJson = ({
 export class FanoutAutorouter implements GenericLocalAutorouter {
   isRouting = false
   private outputSimpleRouteJson?: SimpleRouteJson
-  private fanoutBoundaryResult: FanoutBoundaryResult = {}
   private startTimeoutId?: number
   private eventHandlers: {
     complete: Array<(event: AutorouterCompleteEvent) => void>
@@ -337,34 +375,52 @@ export class FanoutAutorouter implements GenericLocalAutorouter {
     return commonOptions
   }
 
+  static resolveFanoutBounds(
+    input: SimpleRouteJson,
+    options: ResolveFanoutBoundsOptions,
+  ): SimpleRouteBounds | undefined {
+    let paddingBounds: SimpleRouteBounds | undefined
+    if (options.fanoutBoundaryPadding !== undefined) {
+      const boundsResolver = new FanoutAutorouter(input, options)
+      const fanoutSolver = new FanoutSolver(
+        input as unknown as ConstructorParameters<typeof FanoutSolver>[0],
+        boundsResolver.getFanoutSolverOptions(),
+      )
+      paddingBounds = getFanoutSharedBoundary({
+        preparedBuses: fanoutSolver.preparedBuses,
+        padding: options.fanoutBoundaryPadding,
+      })
+    }
+
+    if (
+      options.fanoutBounds &&
+      paddingBounds &&
+      boundsDiffer(options.fanoutBounds, paddingBounds)
+    ) {
+      options.onFanoutBoundsConflict?.()
+    }
+
+    return expandBoundsToIncludePoints(
+      options.fanoutBounds ?? paddingBounds,
+      options.breakoutPoints ?? [],
+    )
+  }
+
   private solveFanout(): {
     downstreamSimpleRouteJson: SimpleRouteJson
     fanoutTraces: SimplifiedPcbTrace[]
     debugGraphics: AutorouterProgressEvent["debugGraphics"]
   } {
     const fanoutSolverOptions = this.getFanoutSolverOptions()
-    let fanoutSolver = new FanoutSolver(
+    const fanoutSolver = new FanoutSolver(
       this.input as unknown as ConstructorParameters<typeof FanoutSolver>[0],
-      fanoutSolverOptions,
+      {
+        ...fanoutSolverOptions,
+        ...(this.options.fanoutBounds
+          ? { sharedBoundary: this.options.fanoutBounds }
+          : {}),
+      },
     )
-    const fanoutPaddingBoundary = getFanoutSharedBoundary({
-      preparedBuses: fanoutSolver.preparedBuses,
-      padding: this.options.fanoutBoundaryPadding,
-    })
-    const sharedBoundary = this.options.fanoutBoundary ?? fanoutPaddingBoundary
-    this.fanoutBoundaryResult = {
-      resolvedBoundary: sharedBoundary,
-      fanoutPaddingBoundary,
-    }
-    if (sharedBoundary) {
-      fanoutSolver = new FanoutSolver(
-        this.input as unknown as ConstructorParameters<typeof FanoutSolver>[0],
-        {
-          ...fanoutSolverOptions,
-          sharedBoundary,
-        },
-      )
-    }
     fanoutSolver.solve()
     if (fanoutSolver.failed) {
       throw new Error(fanoutSolver.error ?? "Fanout routing failed")
@@ -479,9 +535,5 @@ export class FanoutAutorouter implements GenericLocalAutorouter {
 
   getOutputSimpleRouteJson(): SimpleRouteJson | undefined {
     return this.outputSimpleRouteJson
-  }
-
-  getFanoutBoundaryResult(): FanoutBoundaryResult {
-    return this.fanoutBoundaryResult
   }
 }

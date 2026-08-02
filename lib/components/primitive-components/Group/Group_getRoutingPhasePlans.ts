@@ -25,31 +25,6 @@ type GroupFanoutProps = Pick<
   | "fanoutPourNetMap"
 >
 
-type RawBreakoutBoundaryProps = BreakoutProps & {
-  paddingX?: unknown
-  paddingY?: unknown
-  pcbLayout?: Record<string, unknown>
-}
-
-const hasExplicitBreakoutPadding = (
-  props: RawBreakoutBoundaryProps,
-): boolean => {
-  const paddingPropertyNames = [
-    "padding",
-    "paddingX",
-    "paddingY",
-    "paddingLeft",
-    "paddingRight",
-    "paddingTop",
-    "paddingBottom",
-  ] as const
-  return paddingPropertyNames.some(
-    (propertyName) =>
-      props[propertyName] !== undefined ||
-      props.pcbLayout?.[propertyName] !== undefined,
-  )
-}
-
 function getPhaseSortValue(routingPhaseIndex: number | null): number {
   return routingPhaseIndex === null
     ? Number.POSITIVE_INFINITY
@@ -409,41 +384,22 @@ export function Group_getRoutingPhasePlans(
             maxY: pcbGroup.center.y + routingHeight / 2,
           }
         : undefined
-    const rawBreakoutProps = breakout.props as RawBreakoutBoundaryProps
+    const rawBreakoutProps = breakout.props
     const hasExplicitGeometry =
       rawBreakoutProps.width !== undefined ||
       rawBreakoutProps.height !== undefined ||
       Boolean(rawBreakoutProps.outline?.length)
     const hasExplicitFanoutBoundaryPadding =
       rawBreakoutProps.fanoutBoundaryPadding !== undefined
-    const hasExplicitPadding = hasExplicitBreakoutPadding(rawBreakoutProps)
-    const resolvedBreakoutPadding = breakout._resolvePcbPadding()
-    const breakoutPaddingBoundary =
-      routingBounds && hasExplicitPadding
-        ? {
-            minX: routingBounds.minX - resolvedBreakoutPadding.padLeft,
-            maxX: routingBounds.maxX + resolvedBreakoutPadding.padRight,
-            minY: routingBounds.minY - resolvedBreakoutPadding.padBottom,
-            maxY: routingBounds.maxY + resolvedBreakoutPadding.padTop,
-          }
-        : undefined
     const breakoutPlan: RoutingPhasePlan = {
       routingPhaseIndex: null,
       routingPcbGroupId: breakout.pcb_group_id ?? undefined,
       routingBounds,
-      fanoutBoundary:
-        hasExplicitGeometry
-          ? routingBounds
-          : hasExplicitFanoutBoundaryPadding
-            ? undefined
-            : (breakoutPaddingBoundary ?? routingBounds),
-      breakoutPaddingBoundary,
-      ignoredFanoutBoundaryProperty:
-        hasExplicitGeometry && hasExplicitFanoutBoundaryPadding
-          ? "fanoutBoundaryPadding"
-          : hasExplicitPadding && hasExplicitFanoutBoundaryPadding
-            ? "padding"
-            : undefined,
+      fanoutBounds: hasExplicitGeometry
+        ? routingBounds
+        : hasExplicitFanoutBoundaryPadding
+          ? undefined
+          : routingBounds,
       autorouter: breakoutProps.autorouter ?? "fanout",
       busFanoutDirections: breakoutProps.busFanoutDirections,
       fanoutBoundaryPadding: breakoutProps.fanoutBoundaryPadding,

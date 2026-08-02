@@ -22,9 +22,8 @@ export interface RoutingPhasePlan {
   routingPhaseIndex: number | null
   routingPcbGroupId?: PcbGroupId
   routingBounds?: SimpleRouteBounds
-  fanoutBoundary?: SimpleRouteBounds
-  breakoutPaddingBoundary?: SimpleRouteBounds
-  ignoredFanoutBoundaryProperty?: "fanoutBoundaryPadding" | "padding"
+  /** The single breakout/fanout boundary; breakout points may expand it. */
+  fanoutBounds?: SimpleRouteBounds
   autorouter?: AutorouterProp
   reroute?: boolean
   region?: AutoroutingPhaseProps["region"]

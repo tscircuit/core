@@ -19,8 +19,7 @@ export interface LocalAutorouterStrategyContext {
   simpleRouteJson: SimpleRouteJson
   commonAutorouterOptions: AutorouterOptions
   busFanoutDirections?: AutoroutingPhaseProps["busFanoutDirections"]
-  fanoutBoundary?: SimpleRouteBounds
-  fanoutBoundaryPadding?: AutoroutingPhaseProps["fanoutBoundaryPadding"]
+  fanoutBounds?: SimpleRouteBounds
   fanoutRoutingLayers?: string[]
 }
 
@@ -50,15 +49,13 @@ const createFanoutAutorouterStrategy = (
   create: ({
     simpleRouteJson,
     busFanoutDirections,
-    fanoutBoundary,
-    fanoutBoundaryPadding,
+    fanoutBounds,
     fanoutRoutingLayers,
   }) =>
     new FanoutAutorouter(simpleRouteJson, {
       mode,
       busFanoutDirections,
-      fanoutBoundary,
-      fanoutBoundaryPadding,
+      fanoutBounds,
       fanoutRoutingLayers,
     }),
 })

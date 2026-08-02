@@ -41,7 +41,7 @@ test("breakout defaults to fanout for a 6x6 BGA surrounded by four 0603 decoupli
       minViaHoleDiameter="0.2mm"
       minViaPadDiameter="0.5mm"
     >
-      <breakout name="BGA_BREAKOUT" padding="1.2mm" fanoutBoundaryPadding="1mm">
+      <breakout name="BGA_BREAKOUT" fanoutBoundaryPadding="1mm">
         <chip name="U1" footprint={bgaFootprint} pcbX={0} pcbY={0} />
 
         <DecouplingCap name="C_TOP" pcbX={0} pcbY={4.2} />
@@ -148,13 +148,6 @@ test("breakout defaults to fanout for a 6x6 BGA surrounded by four 0603 decoupli
   )
   expect(breakoutPcbGroup?.center.y).toBeCloseTo(
     (expectedFanoutBoundary.minY + expectedFanoutBoundary.maxY) / 2,
-  )
-  const boundaryConflictWarnings = circuit.db.source_property_ignored_warning
-    .list()
-    .filter((warning) => warning.property_name === "padding")
-  expect(boundaryConflictWarnings).toHaveLength(1)
-  expect(boundaryConflictWarnings[0]?.message).toContain(
-    "fanoutBoundaryPadding takes precedence",
   )
   for (const fanoutTrace of breakoutPhases[0]?.endSimpleRouteJson?.traces ??
     []) {
