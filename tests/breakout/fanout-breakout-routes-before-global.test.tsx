@@ -158,6 +158,11 @@ test("fanout breakout routes signals and plane drops before global routing", asy
       (connection) => connection.pointsToConnect.filter(isOnBreakoutBoundary),
     ) ?? []
   expect(globalBoundaryPoints).toHaveLength(8)
+  expect(
+    globalBoundaryPoints.every(
+      (point) => point.layers !== undefined || !("layers" in point),
+    ),
+  ).toBe(true)
 
   const fanoutWirePoints = autoroutingPhaseIoStack
     .slice(0, 2)

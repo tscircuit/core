@@ -144,14 +144,25 @@ export function Group_syncFanoutExitsWithGlobalConnections({
     if (changedPointIndex < 0) continue
     const fanoutExitPoint = outputConnection.pointsToConnect[changedPointIndex]
 
-    globalConnection.pointsToConnect[previousGlobalPointIndex] = {
-      ...previousPoint,
+    const {
+      layers: _previousLayers,
+      terminalVia: _previousTerminalVia,
+      ...previousPointWithoutLayerOverrides
+    } = previousPoint
+    const synchronizedGlobalPoint: SimpleRoutePoint = {
+      ...previousPointWithoutLayerOverrides,
       x: fanoutExitPoint.x,
       y: fanoutExitPoint.y,
       layer: fanoutExitPoint.layer,
-      layers: fanoutExitPoint.layers,
-      terminalVia: fanoutExitPoint.terminalVia,
+      ...(fanoutExitPoint.layers
+        ? { layers: [...fanoutExitPoint.layers] }
+        : {}),
+      ...(fanoutExitPoint.terminalVia
+        ? { terminalVia: { ...fanoutExitPoint.terminalVia } }
+        : {}),
     }
+    globalConnection.pointsToConnect[previousGlobalPointIndex] =
+      synchronizedGlobalPoint
     synchronizedBreakoutPoints.push({
       sourceTraceId: inputConnection.source_trace_id,
       routingPcbGroupId,
