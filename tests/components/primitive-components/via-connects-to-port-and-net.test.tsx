@@ -69,6 +69,7 @@ test("via connectsTo joins a component port to a net", async () => {
   expect(pcbVia).toBeDefined()
   expect(pcbVia.source_trace_id).toBe(sourceTrace.source_trace_id)
   expect(pcbVia.pcb_trace_id).toBeUndefined()
+  expect(Object.hasOwn(pcbVia, "pcb_trace_id")).toBe(false)
   expect(
     sourceConnectivityMap.areIdsConnected(
       sourcePort!.source_port_id,
