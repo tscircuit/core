@@ -521,6 +521,9 @@ export class Board
         y: point.y + (props.outlineOffsetY ?? 0) + outlineTranslation.y,
       })),
       material: props.material,
+      ...(props.isViaInPadAllowed !== undefined && {
+        is_via_in_pad_allowed: props.isViaInPadAllowed,
+      }),
       ...(props.solderMaskColor !== undefined && {
         solder_mask_color: props.solderMaskColor,
       }),
