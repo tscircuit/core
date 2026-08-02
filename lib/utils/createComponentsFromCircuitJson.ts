@@ -556,7 +556,15 @@ export const createComponentsFromCircuitJson = (
       } else {
         const silkscreenText = new SilkscreenText({
           anchorAlignment: elm.anchor_alignment || "center",
-          text: componentName || elm.text,
+          // Footprinter-generated reference text is a placeholder that should
+          // resolve to the component name. Literal text is an intentional
+          // custom label (for example a module name) and must be preserved.
+          text:
+            elm.text === "{REF}" ||
+            elm.text === "{NAME}" ||
+            elm.text === "{REFERENCE}"
+              ? componentName
+              : elm.text,
           pcbX: Number.isNaN(elm.anchor_position.x) ? 0 : elm.anchor_position.x,
           pcbY: elm.anchor_position.y,
           pcbRotation: ccwRotation ?? 0,
