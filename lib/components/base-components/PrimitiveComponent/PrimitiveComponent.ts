@@ -246,10 +246,31 @@ export abstract class PrimitiveComponent<
     return pcbRotation ?? null
   }
 
-  getResolvedPcbPositionProp(): { pcbX: number; pcbY: number } {
+  /**
+   * Resolve pcbOffsetX/pcbOffsetY, which shift a component away from the
+   * position it resolves to (pcbX/pcbY or an edge anchor).
+   */
+  _getResolvedPcbOffset(): { offsetX: number; offsetY: number } {
+    const props = this._parsedProps as any
     return {
-      pcbX: this._resolvePcbCoordinate((this._parsedProps as any).pcbX, "pcbX"),
-      pcbY: this._resolvePcbCoordinate((this._parsedProps as any).pcbY, "pcbY"),
+      offsetX: this._resolvePcbCoordinate(props.pcbOffsetX, "pcbX", {
+        propertyName: "pcbOffsetX",
+      }),
+      offsetY: this._resolvePcbCoordinate(props.pcbOffsetY, "pcbY", {
+        propertyName: "pcbOffsetY",
+      }),
+    }
+  }
+
+  getResolvedPcbPositionProp(): { pcbX: number; pcbY: number } {
+    const { offsetX, offsetY } = this._getResolvedPcbOffset()
+    return {
+      pcbX:
+        this._resolvePcbCoordinate((this._parsedProps as any).pcbX, "pcbX") +
+        offsetX,
+      pcbY:
+        this._resolvePcbCoordinate((this._parsedProps as any).pcbY, "pcbY") +
+        offsetY,
     }
   }
 

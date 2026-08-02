@@ -231,6 +231,25 @@ export function Group_doInitialPcbCalcPlacementResolution(
       nextCenter.y = resolvedPcbY
     }
 
+    // pcbOffsetX/pcbOffsetY shift the component away from the position it just
+    // resolved to. Only offset the axes resolved here — an axis left untouched
+    // already carries the offset from computePcbPropsTransform.
+    const { offsetX, offsetY } = component._getResolvedPcbOffset()
+    if (
+      rawPcbX !== undefined ||
+      rawPcbLeftEdgeX !== undefined ||
+      rawPcbRightEdgeX !== undefined
+    ) {
+      nextCenter.x += offsetX
+    }
+    if (
+      rawPcbY !== undefined ||
+      rawPcbTopEdgeY !== undefined ||
+      rawPcbBottomEdgeY !== undefined
+    ) {
+      nextCenter.y += offsetY
+    }
+
     component._repositionOnPcb(nextCenter)
     updateVarsForNamedComponent(component, componentVars)
   }
