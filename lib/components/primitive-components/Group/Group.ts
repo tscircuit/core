@@ -72,8 +72,8 @@ import { Group_doInitialSchematicLayoutSections } from "./Group_doInitialSchemat
 import { Group_doInitialSchematicTraceRender } from "./Group_doInitialSchematicTraceRender/Group_doInitialSchematicTraceRender"
 import { Group_doInitialSimulationSpiceEngineRender } from "./Group_doInitialSimulationSpiceEngineRender"
 import { Group_doInitialSourceAddConnectivityMapKey } from "./Group_doInitialSourceAddConnectivityMapKey"
-import { Group_getRoutingPhasePlans } from "./Group_getRoutingPhasePlans"
 import { Group_getFanoutPourNetMap } from "./Group_getFanoutPourNetMap"
+import { Group_getRoutingPhasePlans } from "./Group_getRoutingPhasePlans"
 import {
   cacheLocalAutoroutingPhaseResult,
   getCachedLocalAutoroutingPhaseResult,
@@ -86,6 +86,7 @@ import {
   Group_hasPhasedAutorouting,
   connectionIsInRoutingPhase,
 } from "./Group_phasedAutoroutingUtils"
+import { Group_removeBreakoutBoundaryContinuations } from "./Group_removeBreakoutBoundaryContinuations"
 import type { ISubcircuit } from "./Subcircuit/ISubcircuit"
 import { addPortIdsToTracesAtJumperPads } from "./add-port-ids-to-traces-at-jumper-pads"
 import { getSourceTraceIdForRoutedTrace } from "./get-source-trace-id-for-routed-trace"
@@ -1026,6 +1027,12 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       }
       let simpleRouteJson =
         previousStageOutputSimpleRouteJson ?? baseSimpleRouteJson
+      if (usesPreviousStageOutput) {
+        simpleRouteJson = Group_removeBreakoutBoundaryContinuations(
+          simpleRouteJson,
+          routingPhasePlan,
+        )
+      }
       const isRegionReroutePhase = Boolean(
         routingPhasePlan.reroute && routingPhasePlan.region,
       )
