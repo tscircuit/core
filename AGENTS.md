@@ -152,5 +152,8 @@ circuit.selectOne("resistor") // Find first resistor
 
 ## IMPORTANT REVIEW RULES
 
-- Do not assign/change to _parsedProps or props
+- Treat `_parsedProps` and `props` as immutable user input. `_parsedProps` cannot
+  be modified inside a constructor or anywhere else. Use `resolve*`-style
+  functions for derived, normalized, or default values without modifying the
+  user input.
 - Do not add a ton of instance methods to classes, especially large classes like NormalComponent
