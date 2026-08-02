@@ -21,7 +21,7 @@ const getImportedText = (text: string) => {
     {
       componentName: "U1",
       componentRotation: "0",
-      footprinterString: "pinrow14_silkscreenlabel(XIAO RP2040)",
+      footprinterString: "headermodule14_silkscreenlabel(XIAO RP2040)",
     },
     [importedSilkscreenText(text)],
   ).find((candidate) => candidate instanceof SilkscreenText) as
