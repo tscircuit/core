@@ -1,10 +1,10 @@
-import type { Net } from "../Net"
-import type { Trace } from "../Trace/Trace"
 import type { AutorouterProp, AutoroutingPhaseProps } from "@tscircuit/props"
 import type {
   PcbGroupId,
   SimpleRouteBounds,
 } from "lib/utils/autorouting/SimpleRouteJson"
+import type { Net } from "../Net"
+import type { Trace } from "../Trace/Trace"
 
 export interface RoutingPhaseDrcTolerances {
   minTraceWidth?: number
@@ -22,6 +22,8 @@ export interface RoutingPhasePlan {
   routingPhaseIndex: number | null
   routingPcbGroupId?: PcbGroupId
   routingBounds?: SimpleRouteBounds
+  /** The single breakout/fanout boundary; breakout points may expand it. */
+  fanoutBounds?: SimpleRouteBounds
   autorouter?: AutorouterProp
   reroute?: boolean
   region?: AutoroutingPhaseProps["region"]

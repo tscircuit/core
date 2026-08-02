@@ -41,7 +41,7 @@ test("breakout defaults to fanout for a 6x6 BGA surrounded by four 0603 decoupli
       minViaHoleDiameter="0.2mm"
       minViaPadDiameter="0.5mm"
     >
-      <breakout name="BGA_BREAKOUT" padding="1.2mm" fanoutBoundaryPadding="1mm">
+      <breakout name="BGA_BREAKOUT" fanoutBoundaryPadding="1mm">
         <chip name="U1" footprint={bgaFootprint} pcbX={0} pcbY={0} />
 
         <DecouplingCap name="C_TOP" pcbX={0} pcbY={4.2} />
@@ -134,6 +134,21 @@ test("breakout defaults to fanout for a 6x6 BGA surrounded by four 0603 decoupli
         ),
       ) + 1,
   }
+  const breakoutPcbGroup = circuit.db.pcb_group.getWhere({
+    source_group_id: breakoutSourceGroup?.source_group_id,
+  })
+  expect(breakoutPcbGroup?.width).toBeCloseTo(
+    expectedFanoutBoundary.maxX - expectedFanoutBoundary.minX,
+  )
+  expect(breakoutPcbGroup?.height).toBeCloseTo(
+    expectedFanoutBoundary.maxY - expectedFanoutBoundary.minY,
+  )
+  expect(breakoutPcbGroup?.center.x).toBeCloseTo(
+    (expectedFanoutBoundary.minX + expectedFanoutBoundary.maxX) / 2,
+  )
+  expect(breakoutPcbGroup?.center.y).toBeCloseTo(
+    (expectedFanoutBoundary.minY + expectedFanoutBoundary.maxY) / 2,
+  )
   for (const fanoutTrace of breakoutPhases[0]?.endSimpleRouteJson?.traces ??
     []) {
     const exitPoint = fanoutTrace.route.findLast(

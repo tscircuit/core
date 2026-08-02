@@ -28,6 +28,7 @@ import type { GraphicsObject } from "graphics-debug"
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import { AutorouterError } from "lib/errors/AutorouterError"
 import type { AutorouterOptions } from "lib/utils/autorouting/CapacityMeshAutorouter"
+import { FanoutAutorouter } from "lib/utils/autorouting/FanoutAutorouter"
 import type { GenericLocalAutorouter } from "lib/utils/autorouting/GenericLocalAutorouter"
 import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
@@ -72,8 +73,8 @@ import { Group_doInitialSchematicLayoutSections } from "./Group_doInitialSchemat
 import { Group_doInitialSchematicTraceRender } from "./Group_doInitialSchematicTraceRender/Group_doInitialSchematicTraceRender"
 import { Group_doInitialSimulationSpiceEngineRender } from "./Group_doInitialSimulationSpiceEngineRender"
 import { Group_doInitialSourceAddConnectivityMapKey } from "./Group_doInitialSourceAddConnectivityMapKey"
-import { Group_getRoutingPhasePlans } from "./Group_getRoutingPhasePlans"
 import { Group_getFanoutPourNetMap } from "./Group_getFanoutPourNetMap"
+import { Group_getRoutingPhasePlans } from "./Group_getRoutingPhasePlans"
 import {
   cacheLocalAutoroutingPhaseResult,
   getCachedLocalAutoroutingPhaseResult,
@@ -86,6 +87,7 @@ import {
   Group_hasPhasedAutorouting,
   connectionIsInRoutingPhase,
 } from "./Group_phasedAutoroutingUtils"
+import { Group_syncFanoutExitsWithGlobalConnections } from "./Group_syncFanoutExitsWithGlobalConnections"
 import type { ISubcircuit } from "./Subcircuit/ISubcircuit"
 import { addPortIdsToTracesAtJumperPads } from "./add-port-ids-to-traces-at-jumper-pads"
 import { getSourceTraceIdForRoutedTrace } from "./get-source-trace-id-for-routed-trace"
@@ -949,7 +951,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const fanoutPourNetMap = hasFanoutStage
       ? Group_getFanoutPourNetMap(this, routingPhasePlans)
       : undefined
-    const { simpleRouteJson: baseSimpleRouteJson } =
+    let { simpleRouteJson: baseSimpleRouteJson } =
       getSimpleRouteJsonFromCircuitJson({
         db,
         minTraceWidth,
@@ -1112,6 +1114,70 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         }
       }
 
+      const fanoutMode = phaseAutorouterConfig.preset
+      if (fanoutMode === "fanout" || fanoutMode === "single_layer_fanout") {
+        const breakoutPoints = routingPhasePlan.routingPcbGroupId
+          ? db.pcb_breakout_point
+              .list()
+              .filter(
+                (point) =>
+                  point.pcb_group_id === routingPhasePlan.routingPcbGroupId,
+              )
+              .map((point) => ({ x: point.x, y: point.y }))
+          : []
+        const emitFanoutBoundsConflictWarning = () => {
+          const routingPcbGroupId = routingPhasePlan.routingPcbGroupId
+          if (!routingPcbGroupId) return
+          const pcbGroup = db.pcb_group.get(routingPcbGroupId)
+          const sourceComponentId = db.pcb_component
+            .list()
+            .find(
+              (component) => component.pcb_group_id === routingPcbGroupId,
+            )?.source_component_id
+          if (!sourceComponentId) return
+          const message = `${pcbGroup?.name ?? "Breakout"} defines conflicting fanout bounds with explicit breakout geometry and fanoutBoundaryPadding. Explicit breakout geometry takes precedence, so fanoutBoundaryPadding is ignored.`
+          const warningAlreadyExists = db.source_property_ignored_warning
+            .list()
+            .some(
+              (warning) =>
+                warning.source_component_id === sourceComponentId &&
+                warning.property_name === "fanoutBoundaryPadding" &&
+                warning.message === message,
+            )
+          if (warningAlreadyExists) return
+          db.source_property_ignored_warning.insert({
+            source_component_id: sourceComponentId,
+            property_name: "fanoutBoundaryPadding",
+            message,
+            error_type: "source_property_ignored_warning",
+            subcircuit_id: pcbGroup?.subcircuit_id,
+          })
+        }
+        routingPhasePlan.fanoutBounds = FanoutAutorouter.resolveFanoutBounds(
+          simpleRouteJson,
+          {
+            mode: fanoutMode,
+            busFanoutDirections: routingPhasePlan.busFanoutDirections,
+            fanoutBounds: routingPhasePlan.fanoutBounds,
+            fanoutBoundaryPadding: routingPhasePlan.fanoutBoundaryPadding,
+            fanoutRoutingLayers: routingPhasePlan.fanoutRoutingLayers,
+            breakoutPoints,
+            onFanoutBoundsConflict: emitFanoutBoundsConflictWarning,
+          },
+        )
+        const { fanoutBounds, routingPcbGroupId } = routingPhasePlan
+        if (fanoutBounds && routingPcbGroupId) {
+          db.pcb_group.update(routingPcbGroupId, {
+            center: {
+              x: (fanoutBounds.minX + fanoutBounds.maxX) / 2,
+              y: (fanoutBounds.minY + fanoutBounds.maxY) / 2,
+            },
+            width: fanoutBounds.maxX - fanoutBounds.minX,
+            height: fanoutBounds.maxY - fanoutBounds.minY,
+          })
+        }
+      }
+
       if (debug.enabled) {
         ;(global as any).debugOutputArray?.push({
           name: `simpleroutejson-${this.props.name}.json`,
@@ -1182,7 +1248,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
               simpleRouteJson,
               commonAutorouterOptions,
               busFanoutDirections: routingPhasePlan.busFanoutDirections,
-              fanoutBoundaryPadding: routingPhasePlan.fanoutBoundaryPadding,
+              fanoutBounds: routingPhasePlan.fanoutBounds,
               fanoutRoutingLayers: routingPhasePlan.fanoutRoutingLayers,
             })
           }
@@ -1219,8 +1285,46 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           traces = await routingPromise
         }
 
-        const transformedSimpleRouteJson =
+        let transformedSimpleRouteJson =
           autorouter?.getOutputSimpleRouteJson?.()
+        if (
+          transformedSimpleRouteJson &&
+          !usesPreviousStageOutput &&
+          ["fanout", "single_layer_fanout"].includes(
+            phaseAutorouterConfig.preset ?? "",
+          ) &&
+          routingPhasePlan.routingPcbGroupId
+        ) {
+          const synchronizedFanout = Group_syncFanoutExitsWithGlobalConnections(
+            {
+              fanoutInputSimpleRouteJson: simpleRouteJson,
+              fanoutOutputSimpleRouteJson: transformedSimpleRouteJson,
+              baseSimpleRouteJson,
+              routingPhasePlan,
+            },
+          )
+          baseSimpleRouteJson = synchronizedFanout.baseSimpleRouteJson
+          transformedSimpleRouteJson =
+            synchronizedFanout.downstreamSimpleRouteJson
+
+          for (const synchronizedPoint of synchronizedFanout.synchronizedBreakoutPoints) {
+            const breakoutPoint = db.pcb_breakout_point
+              .list()
+              .find(
+                (point) =>
+                  point.pcb_group_id === synchronizedPoint.routingPcbGroupId &&
+                  point.source_trace_id === synchronizedPoint.sourceTraceId &&
+                  Math.abs(point.x - synchronizedPoint.previousPoint.x) <=
+                    1e-6 &&
+                  Math.abs(point.y - synchronizedPoint.previousPoint.y) <= 1e-6,
+              )
+            if (!breakoutPoint) continue
+            db.pcb_breakout_point.update(breakoutPoint.pcb_breakout_point_id, {
+              x: synchronizedPoint.fanoutExitPoint.x,
+              y: synchronizedPoint.fanoutExitPoint.y,
+            })
+          }
+        }
         let stageOutputTraces = traces
         if (transformedSimpleRouteJson?.traces) {
           stageOutputTraces = transformedSimpleRouteJson.traces

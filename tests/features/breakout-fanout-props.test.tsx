@@ -83,6 +83,7 @@ test("breakout fanout props escape buses and plane nets without a phase", async 
       />
       <breakout
         name="BGA_BREAKOUT"
+        pcbX={0}
         width="10mm"
         height="8mm"
         fanoutRoutingLayers={["top", "inner3", "bottom"]}

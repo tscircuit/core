@@ -1,3 +1,4 @@
+import { getBoundsFromPoints } from "@tscircuit/math-utils"
 import type {
   AutorouterProp,
   AutoroutingPhaseProps,
@@ -365,18 +366,40 @@ export function Group_getRoutingPhasePlans(
     const pcbGroup = breakout.pcb_group_id
       ? breakout.root?.db.pcb_group.get(breakout.pcb_group_id)
       : null
+    const outlineBounds = pcbGroup?.outline
+      ? getBoundsFromPoints(pcbGroup.outline)
+      : null
+    const routingWidth =
+      pcbGroup?.width ??
+      (outlineBounds ? outlineBounds.maxX - outlineBounds.minX : undefined)
+    const routingHeight =
+      pcbGroup?.height ??
+      (outlineBounds ? outlineBounds.maxY - outlineBounds.minY : undefined)
+    const routingBounds =
+      pcbGroup && routingWidth && routingHeight
+        ? {
+            minX: pcbGroup.center.x - routingWidth / 2,
+            maxX: pcbGroup.center.x + routingWidth / 2,
+            minY: pcbGroup.center.y - routingHeight / 2,
+            maxY: pcbGroup.center.y + routingHeight / 2,
+          }
+        : undefined
+    const rawBreakoutProps = breakout.props
+    const hasExplicitGeometry =
+      rawBreakoutProps.width !== undefined ||
+      rawBreakoutProps.height !== undefined ||
+      Boolean(rawBreakoutProps.outline?.length)
+    const hasExplicitFanoutBoundaryPadding =
+      rawBreakoutProps.fanoutBoundaryPadding !== undefined
     const breakoutPlan: RoutingPhasePlan = {
       routingPhaseIndex: null,
       routingPcbGroupId: breakout.pcb_group_id ?? undefined,
-      routingBounds:
-        pcbGroup?.width && pcbGroup.height
-          ? {
-              minX: pcbGroup.center.x - pcbGroup.width / 2,
-              maxX: pcbGroup.center.x + pcbGroup.width / 2,
-              minY: pcbGroup.center.y - pcbGroup.height / 2,
-              maxY: pcbGroup.center.y + pcbGroup.height / 2,
-            }
-          : undefined,
+      routingBounds,
+      fanoutBounds: hasExplicitGeometry
+        ? routingBounds
+        : hasExplicitFanoutBoundaryPadding
+          ? undefined
+          : routingBounds,
       autorouter: breakoutProps.autorouter ?? "fanout",
       busFanoutDirections: breakoutProps.busFanoutDirections,
       fanoutBoundaryPadding: breakoutProps.fanoutBoundaryPadding,
