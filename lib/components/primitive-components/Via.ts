@@ -230,7 +230,7 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
       connectedPorts.push(port)
     }
 
-    if (connectedPorts.length > 0) {
+    if (connectedPorts.length > 0 || connectedNets.length > 0) {
       const sourceTrace = db.source_trace.insert({
         connected_source_port_ids: connectedPorts.map(
           (port) => port.source_port_id!,
@@ -287,10 +287,6 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
     if (sourceTraceId) {
       db.pcb_via.update(this.pcb_via_id, {
         source_trace_id: sourceTraceId,
-      })
-    } else if (connectedNetOrTrace instanceof Net) {
-      db.pcb_via.update(this.pcb_via_id, {
-        pcb_trace_id: connectedNetOrTrace.source_net_id,
       })
     }
   }
