@@ -82,7 +82,8 @@ test("repro162: thermal vias inside an exposed pad inherit its connectivity", as
       gndNet?.subcircuit_connectivity_map_key,
     )
     expect(thermalVia.subcircuit_connectivity_map_key).toBeDefined()
-    expect(thermalVia.pcb_trace_id).toBeDefined()
+    expect(thermalVia.source_trace_id).toBeDefined()
+    expect(thermalVia.pcb_trace_id).toBeUndefined()
     expect(connectivityMap.getNetConnectedToId(thermalVia.pcb_via_id)).toBe(
       connectivityMap.getNetConnectedToId(exposedPad.pcb_smtpad_id),
     )
