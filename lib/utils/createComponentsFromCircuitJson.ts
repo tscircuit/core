@@ -543,7 +543,11 @@ export const createComponentsFromCircuitJson = (
         componentRotation,
         elm.ccw_rotation,
       )
-      if (footprinterString?.includes("pinrow") && elm.text.includes("PIN")) {
+      if (
+        (footprinterString?.includes("pinrow") ||
+          footprinterString?.includes("headermodule")) &&
+        elm.text.includes("PIN")
+      ) {
         components.push(
           createPinrowSilkscreenText({
             elm,
