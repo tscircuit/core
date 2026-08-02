@@ -1,3 +1,4 @@
+import { getBoundsFromPoints } from "@tscircuit/math-utils"
 import type {
   AutorouterProp,
   AutoroutingPhaseProps,
@@ -23,6 +24,31 @@ type GroupFanoutProps = Pick<
   | "fanoutRoutingLayers"
   | "fanoutPourNetMap"
 >
+
+type RawBreakoutBoundaryProps = BreakoutProps & {
+  paddingX?: unknown
+  paddingY?: unknown
+  pcbLayout?: Record<string, unknown>
+}
+
+const hasExplicitBreakoutPadding = (
+  props: RawBreakoutBoundaryProps,
+): boolean => {
+  const paddingPropertyNames = [
+    "padding",
+    "paddingX",
+    "paddingY",
+    "paddingLeft",
+    "paddingRight",
+    "paddingTop",
+    "paddingBottom",
+  ] as const
+  return paddingPropertyNames.some(
+    (propertyName) =>
+      props[propertyName] !== undefined ||
+      props.pcbLayout?.[propertyName] !== undefined,
+  )
+}
 
 function getPhaseSortValue(routingPhaseIndex: number | null): number {
   return routingPhaseIndex === null
@@ -365,18 +391,57 @@ export function Group_getRoutingPhasePlans(
     const pcbGroup = breakout.pcb_group_id
       ? breakout.root?.db.pcb_group.get(breakout.pcb_group_id)
       : null
+    const outlineBounds = pcbGroup?.outline
+      ? getBoundsFromPoints(pcbGroup.outline)
+      : null
+    const routingWidth =
+      pcbGroup?.width ??
+      (outlineBounds ? outlineBounds.maxX - outlineBounds.minX : undefined)
+    const routingHeight =
+      pcbGroup?.height ??
+      (outlineBounds ? outlineBounds.maxY - outlineBounds.minY : undefined)
+    const routingBounds =
+      pcbGroup && routingWidth && routingHeight
+        ? {
+            minX: pcbGroup.center.x - routingWidth / 2,
+            maxX: pcbGroup.center.x + routingWidth / 2,
+            minY: pcbGroup.center.y - routingHeight / 2,
+            maxY: pcbGroup.center.y + routingHeight / 2,
+          }
+        : undefined
+    const rawBreakoutProps = breakout.props as RawBreakoutBoundaryProps
+    const hasExplicitGeometry =
+      rawBreakoutProps.width !== undefined ||
+      rawBreakoutProps.height !== undefined ||
+      Boolean(rawBreakoutProps.outline?.length)
+    const hasExplicitFanoutBoundaryPadding =
+      rawBreakoutProps.fanoutBoundaryPadding !== undefined
+    const hasExplicitPadding = hasExplicitBreakoutPadding(rawBreakoutProps)
+    const resolvedBreakoutPadding = breakout._resolvePcbPadding()
+    const breakoutPaddingBoundary =
+      routingBounds && hasExplicitPadding
+        ? {
+            minX: routingBounds.minX - resolvedBreakoutPadding.padLeft,
+            maxX: routingBounds.maxX + resolvedBreakoutPadding.padRight,
+            minY: routingBounds.minY - resolvedBreakoutPadding.padBottom,
+            maxY: routingBounds.maxY + resolvedBreakoutPadding.padTop,
+          }
+        : undefined
     const breakoutPlan: RoutingPhasePlan = {
       routingPhaseIndex: null,
       routingPcbGroupId: breakout.pcb_group_id ?? undefined,
-      routingBounds:
-        pcbGroup?.width && pcbGroup.height
-          ? {
-              minX: pcbGroup.center.x - pcbGroup.width / 2,
-              maxX: pcbGroup.center.x + pcbGroup.width / 2,
-              minY: pcbGroup.center.y - pcbGroup.height / 2,
-              maxY: pcbGroup.center.y + pcbGroup.height / 2,
-            }
+      routingBounds,
+      fanoutBoundary:
+        hasExplicitGeometry || !hasExplicitFanoutBoundaryPadding
+          ? routingBounds
           : undefined,
+      breakoutPaddingBoundary,
+      ignoredFanoutBoundaryProperty:
+        hasExplicitGeometry && hasExplicitFanoutBoundaryPadding
+          ? "fanoutBoundaryPadding"
+          : hasExplicitPadding && hasExplicitFanoutBoundaryPadding
+            ? "padding"
+            : undefined,
       autorouter: breakoutProps.autorouter ?? "fanout",
       busFanoutDirections: breakoutProps.busFanoutDirections,
       fanoutBoundaryPadding: breakoutProps.fanoutBoundaryPadding,

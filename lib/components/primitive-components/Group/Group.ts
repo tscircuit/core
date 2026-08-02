@@ -54,6 +54,7 @@ import { Port } from "../Port/Port"
 import { Trace } from "../Trace/Trace"
 import { TraceHint } from "../TraceHint"
 import type { RoutingPhasePlan } from "./GroupRoutingPhasePlan"
+import { Group_applyResolvedFanoutBoundary } from "./Group_applyResolvedFanoutBoundary"
 import { Group_doInitialAssignSchematicSheetToConnectedComponents } from "./Group_doInitialAssignSchematicSheetToConnectedComponents"
 import { Group_doInitialPcbCalcPlacementResolution } from "./Group_doInitialPcbCalcPlacementResolution"
 import { Group_doInitialPcbComponentAnchorAlignment } from "./Group_doInitialPcbComponentAnchorAlignment"
@@ -86,7 +87,7 @@ import {
   Group_hasPhasedAutorouting,
   connectionIsInRoutingPhase,
 } from "./Group_phasedAutoroutingUtils"
-import { Group_removeBreakoutBoundaryContinuations } from "./Group_removeBreakoutBoundaryContinuations"
+import { Group_syncFanoutExitsWithGlobalConnections } from "./Group_syncFanoutExitsWithGlobalConnections"
 import type { ISubcircuit } from "./Subcircuit/ISubcircuit"
 import { addPortIdsToTracesAtJumperPads } from "./add-port-ids-to-traces-at-jumper-pads"
 import { getSourceTraceIdForRoutedTrace } from "./get-source-trace-id-for-routed-trace"
@@ -950,7 +951,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const fanoutPourNetMap = hasFanoutStage
       ? Group_getFanoutPourNetMap(this, routingPhasePlans)
       : undefined
-    const { simpleRouteJson: baseSimpleRouteJson } =
+    let { simpleRouteJson: baseSimpleRouteJson } =
       getSimpleRouteJsonFromCircuitJson({
         db,
         minTraceWidth,
@@ -1027,12 +1028,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       }
       let simpleRouteJson =
         previousStageOutputSimpleRouteJson ?? baseSimpleRouteJson
-      if (usesPreviousStageOutput) {
-        simpleRouteJson = Group_removeBreakoutBoundaryContinuations(
-          simpleRouteJson,
-          routingPhasePlan,
-        )
-      }
       const isRegionReroutePhase = Boolean(
         routingPhasePlan.reroute && routingPhasePlan.region,
       )
@@ -1189,6 +1184,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
               simpleRouteJson,
               commonAutorouterOptions,
               busFanoutDirections: routingPhasePlan.busFanoutDirections,
+              fanoutBoundary: routingPhasePlan.fanoutBoundary,
               fanoutBoundaryPadding: routingPhasePlan.fanoutBoundaryPadding,
               fanoutRoutingLayers: routingPhasePlan.fanoutRoutingLayers,
             })
@@ -1226,8 +1222,51 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           traces = await routingPromise
         }
 
-        const transformedSimpleRouteJson =
+        let transformedSimpleRouteJson =
           autorouter?.getOutputSimpleRouteJson?.()
+        Group_applyResolvedFanoutBoundary({
+          db,
+          routingPhasePlan,
+          fanoutBoundaryResult: autorouter?.getFanoutBoundaryResult?.(),
+        })
+        if (
+          transformedSimpleRouteJson &&
+          !usesPreviousStageOutput &&
+          ["fanout", "single_layer_fanout"].includes(
+            phaseAutorouterConfig.preset ?? "",
+          ) &&
+          routingPhasePlan.routingPcbGroupId
+        ) {
+          const synchronizedFanout = Group_syncFanoutExitsWithGlobalConnections(
+            {
+              fanoutInputSimpleRouteJson: simpleRouteJson,
+              fanoutOutputSimpleRouteJson: transformedSimpleRouteJson,
+              baseSimpleRouteJson,
+              routingPhasePlan,
+            },
+          )
+          baseSimpleRouteJson = synchronizedFanout.baseSimpleRouteJson
+          transformedSimpleRouteJson =
+            synchronizedFanout.downstreamSimpleRouteJson
+
+          for (const synchronizedPoint of synchronizedFanout.synchronizedBreakoutPoints) {
+            const breakoutPoint = db.pcb_breakout_point
+              .list()
+              .find(
+                (point) =>
+                  point.pcb_group_id === synchronizedPoint.routingPcbGroupId &&
+                  point.source_trace_id === synchronizedPoint.sourceTraceId &&
+                  Math.abs(point.x - synchronizedPoint.previousPoint.x) <=
+                    1e-6 &&
+                  Math.abs(point.y - synchronizedPoint.previousPoint.y) <= 1e-6,
+              )
+            if (!breakoutPoint) continue
+            db.pcb_breakout_point.update(breakoutPoint.pcb_breakout_point_id, {
+              x: synchronizedPoint.fanoutExitPoint.x,
+              y: synchronizedPoint.fanoutExitPoint.y,
+            })
+          }
+        }
         let stageOutputTraces = traces
         if (transformedSimpleRouteJson?.traces) {
           stageOutputTraces = transformedSimpleRouteJson.traces

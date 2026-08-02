@@ -9,7 +9,7 @@ import {
 } from "./CapacityMeshAutorouter"
 import { FanoutAutorouter, type FanoutAutorouterMode } from "./FanoutAutorouter"
 import type { GenericLocalAutorouter } from "./GenericLocalAutorouter"
-import type { SimpleRouteJson } from "./SimpleRouteJson"
+import type { SimpleRouteBounds, SimpleRouteJson } from "./SimpleRouteJson"
 import {
   type NormalizedAutorouterConfig,
   getPresetAutoroutingConfig,
@@ -19,6 +19,7 @@ export interface LocalAutorouterStrategyContext {
   simpleRouteJson: SimpleRouteJson
   commonAutorouterOptions: AutorouterOptions
   busFanoutDirections?: AutoroutingPhaseProps["busFanoutDirections"]
+  fanoutBoundary?: SimpleRouteBounds
   fanoutBoundaryPadding?: AutoroutingPhaseProps["fanoutBoundaryPadding"]
   fanoutRoutingLayers?: string[]
 }
@@ -49,12 +50,14 @@ const createFanoutAutorouterStrategy = (
   create: ({
     simpleRouteJson,
     busFanoutDirections,
+    fanoutBoundary,
     fanoutBoundaryPadding,
     fanoutRoutingLayers,
   }) =>
     new FanoutAutorouter(simpleRouteJson, {
       mode,
       busFanoutDirections,
+      fanoutBoundary,
       fanoutBoundaryPadding,
       fanoutRoutingLayers,
     }),

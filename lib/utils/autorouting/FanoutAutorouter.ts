@@ -1,7 +1,7 @@
 import {
-  FanoutSolver,
   type FanoutBorderTarget,
   type FanoutDirection,
+  FanoutSolver,
   type FanoutSolverOptions,
 } from "@tscircuit/fanout-solver"
 import type {
@@ -15,9 +15,11 @@ import type {
   AutorouterErrorEvent,
   AutorouterEvent,
   AutorouterProgressEvent,
+  FanoutBoundaryResult,
   GenericLocalAutorouter,
 } from "./GenericLocalAutorouter"
 import type {
+  SimpleRouteBounds,
   SimpleRouteBus,
   SimpleRouteJson,
   SimpleRoutePoint,
@@ -30,6 +32,7 @@ export type FanoutAutorouterMode = "single_layer_fanout" | "fanout"
 export interface FanoutAutorouterOptions {
   mode: FanoutAutorouterMode
   busFanoutDirections?: Readonly<Record<string, BusFanoutDirection>>
+  fanoutBoundary?: SimpleRouteBounds
   fanoutBoundaryPadding?: FanoutBoundaryPadding
   fanoutRoutingLayers?: string[]
 }
@@ -249,6 +252,7 @@ const createDownstreamSimpleRouteJson = ({
 export class FanoutAutorouter implements GenericLocalAutorouter {
   isRouting = false
   private outputSimpleRouteJson?: SimpleRouteJson
+  private fanoutBoundaryResult: FanoutBoundaryResult = {}
   private startTimeoutId?: number
   private eventHandlers: {
     complete: Array<(event: AutorouterCompleteEvent) => void>
@@ -343,10 +347,15 @@ export class FanoutAutorouter implements GenericLocalAutorouter {
       this.input as unknown as ConstructorParameters<typeof FanoutSolver>[0],
       fanoutSolverOptions,
     )
-    const sharedBoundary = getFanoutSharedBoundary({
+    const fanoutPaddingBoundary = getFanoutSharedBoundary({
       preparedBuses: fanoutSolver.preparedBuses,
       padding: this.options.fanoutBoundaryPadding,
     })
+    const sharedBoundary = this.options.fanoutBoundary ?? fanoutPaddingBoundary
+    this.fanoutBoundaryResult = {
+      resolvedBoundary: sharedBoundary,
+      fanoutPaddingBoundary,
+    }
     if (sharedBoundary) {
       fanoutSolver = new FanoutSolver(
         this.input as unknown as ConstructorParameters<typeof FanoutSolver>[0],
@@ -470,5 +479,9 @@ export class FanoutAutorouter implements GenericLocalAutorouter {
 
   getOutputSimpleRouteJson(): SimpleRouteJson | undefined {
     return this.outputSimpleRouteJson
+  }
+
+  getFanoutBoundaryResult(): FanoutBoundaryResult {
+    return this.fanoutBoundaryResult
   }
 }

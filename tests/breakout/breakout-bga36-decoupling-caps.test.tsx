@@ -134,6 +134,28 @@ test("breakout defaults to fanout for a 6x6 BGA surrounded by four 0603 decoupli
         ),
       ) + 1,
   }
+  const breakoutPcbGroup = circuit.db.pcb_group.getWhere({
+    source_group_id: breakoutSourceGroup?.source_group_id,
+  })
+  expect(breakoutPcbGroup?.width).toBeCloseTo(
+    expectedFanoutBoundary.maxX - expectedFanoutBoundary.minX,
+  )
+  expect(breakoutPcbGroup?.height).toBeCloseTo(
+    expectedFanoutBoundary.maxY - expectedFanoutBoundary.minY,
+  )
+  expect(breakoutPcbGroup?.center.x).toBeCloseTo(
+    (expectedFanoutBoundary.minX + expectedFanoutBoundary.maxX) / 2,
+  )
+  expect(breakoutPcbGroup?.center.y).toBeCloseTo(
+    (expectedFanoutBoundary.minY + expectedFanoutBoundary.maxY) / 2,
+  )
+  const boundaryConflictWarnings = circuit.db.source_property_ignored_warning
+    .list()
+    .filter((warning) => warning.property_name === "padding")
+  expect(boundaryConflictWarnings).toHaveLength(1)
+  expect(boundaryConflictWarnings[0]?.message).toContain(
+    "fanoutBoundaryPadding takes precedence",
+  )
   for (const fanoutTrace of breakoutPhases[0]?.endSimpleRouteJson?.traces ??
     []) {
     const exitPoint = fanoutTrace.route.findLast(
