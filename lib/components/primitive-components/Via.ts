@@ -262,6 +262,16 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
       this._getResolvedViaDiameters(pcbStyle)
     const position = this._getGlobalPcbPositionBeforeLayout()
     const subcircuit = this.getSubcircuit()
+    const connectedNetOrTrace = this._getConnectedNetOrTrace()
+    const sourceTraceId =
+      this.source_trace_id ??
+      (connectedNetOrTrace instanceof Net
+        ? undefined
+        : connectedNetOrTrace?.source_trace_id)
+    const sourceNetId =
+      !sourceTraceId && connectedNetOrTrace instanceof Net
+        ? connectedNetOrTrace.source_net_id
+        : undefined
     const pcb_via = db.pcb_via.insert({
       x: position.x,
       y: position.y,
@@ -275,24 +285,9 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
         this.subcircuit_connectivity_map_key ?? undefined,
       pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
       net_is_assignable: this._parsedProps.netIsAssignable ?? undefined,
+      ...(sourceTraceId ? { source_trace_id: sourceTraceId } : {}),
+      ...(sourceNetId ? { source_net_id: sourceNetId } : {}),
     } as Omit<PcbVia & { net_is_assignable?: boolean }, "type" | "pcb_via_id">)
     this.pcb_via_id = pcb_via.pcb_via_id
-
-    const connectedNetOrTrace = this._getConnectedNetOrTrace()
-    const sourceTraceId =
-      this.source_trace_id ??
-      (connectedNetOrTrace instanceof Net
-        ? undefined
-        : connectedNetOrTrace?.source_trace_id)
-    const pcbTraceId =
-      !sourceTraceId && connectedNetOrTrace instanceof Net
-        ? connectedNetOrTrace.source_net_id
-        : undefined
-    if (sourceTraceId || pcbTraceId) {
-      db.pcb_via.update(this.pcb_via_id, {
-        pcb_trace_id: pcbTraceId,
-        source_trace_id: sourceTraceId ?? undefined,
-      })
-    }
   }
 }

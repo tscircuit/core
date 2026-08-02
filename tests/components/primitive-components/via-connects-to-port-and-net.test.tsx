@@ -69,6 +69,8 @@ test("via connectsTo joins a component port to a net", async () => {
   expect(pcbVia).toBeDefined()
   expect(pcbVia.source_trace_id).toBe(sourceTrace.source_trace_id)
   expect(pcbVia.pcb_trace_id).toBeUndefined()
+  expect(Object.hasOwn(pcbVia, "pcb_trace_id")).toBe(false)
+  expect(Object.hasOwn(pcbVia, "source_net_id")).toBe(false)
   expect(
     sourceConnectivityMap.areIdsConnected(
       sourcePort!.source_port_id,
@@ -85,4 +87,46 @@ test("via connectsTo joins a component port to a net", async () => {
   ).toBe(true)
   expect(circuit.db.source_pin_missing_trace_warning.list()).toHaveLength(0)
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
+})
+
+test("via connectsTo a net directly without mixing ids", async () => {
+  const { circuit } = getTestFixture()
+
+  circuit.add(
+    <board width="10mm" height="10mm">
+      <via
+        name="VIA_GND"
+        pcbX={0}
+        pcbY={0}
+        holeDiameter="0.3mm"
+        outerDiameter="0.6mm"
+        connectsTo="net.GND"
+      />
+    </board>,
+  )
+
+  await circuit.renderUntilSettled()
+
+  const circuitJson = circuit.getCircuitJson()
+  const sourceNet = circuit.db.source_net
+    .list()
+    .find((net) => net.name === "GND")
+  const sourceTrace = circuit.db.source_trace.list()[0]
+  const sourceVia = circuit.db.source_manually_placed_via.list()[0]
+  const pcbVia = circuit.db.pcb_via.list()[0]
+  const fullConnectivityMap = getFullConnectivityMapFromCircuitJson(circuitJson)
+
+  expect(sourceNet).toBeDefined()
+  expect(sourceTrace).toBeUndefined()
+  expect(sourceVia.source_net_id).toBe(sourceNet!.source_net_id)
+  expect(sourceVia.source_trace_id).toBeUndefined()
+  expect(pcbVia.source_net_id).toBe(sourceNet!.source_net_id)
+  expect(Object.hasOwn(pcbVia, "source_trace_id")).toBe(false)
+  expect(Object.hasOwn(pcbVia, "pcb_trace_id")).toBe(false)
+  expect(
+    fullConnectivityMap.areIdsConnected(
+      pcbVia.pcb_via_id,
+      sourceNet!.source_net_id,
+    ),
+  ).toBe(true)
 })
