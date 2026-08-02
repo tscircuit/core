@@ -44,5 +44,7 @@ test("smtpad solder paste config", async () => {
   )
   circuit.render()
 
-  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
+    showSolderPaste: true,
+  })
 })
