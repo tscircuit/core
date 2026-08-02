@@ -2270,18 +2270,12 @@ export class NormalComponent<
               componentHeight / 2
             : undefined)
 
-    const { offsetX, offsetY } = this._getResolvedPcbOffset()
-    const offsetPcbX =
-      resolvedPcbX === undefined ? undefined : resolvedPcbX + offsetX
-    const offsetPcbY =
-      resolvedPcbY === undefined ? undefined : resolvedPcbY + offsetY
-
     db.pcb_component.update(this.pcb_component_id, {
       position_mode: "relative_to_group_anchor",
       positioned_relative_to_pcb_group_id: positionedRelativeToGroupId,
       positioned_relative_to_pcb_board_id: positionedRelativeToBoardId,
-      display_offset_x: offsetPcbX as any,
-      display_offset_y: offsetPcbY as any,
+      display_offset_x: resolvedPcbX as any,
+      display_offset_y: resolvedPcbY as any,
     })
   }
 

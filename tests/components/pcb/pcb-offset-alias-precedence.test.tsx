@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("pcbOffsetX/pcbOffsetY apply once when no explicit pcb position is set", async () => {
+test("pcbX/pcbY win when both they and their pcbOffsetX/pcbOffsetY aliases are set", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -10,8 +10,10 @@ test("pcbOffsetX/pcbOffsetY apply once when no explicit pcb position is set", as
         name="C1"
         capacitance="1uF"
         footprint="0402"
-        pcbOffsetX={8}
-        pcbOffsetY={-8}
+        pcbX={8}
+        pcbY={-8}
+        pcbOffsetX={2}
+        pcbOffsetY={2}
       />
     </board>,
   )

@@ -16,6 +16,7 @@ import {
   extractCalcIdentifiers,
 } from "lib/utils/evaluateCalcString"
 import { getSubcircuitPcbCalcVariables } from "lib/utils/getSubcircuitPcbCalcVariables"
+import { applyPcbPositionPropAliases } from "lib/utils/pcb/apply-pcb-position-prop-aliases"
 import { isFootprintFlipped } from "lib/utils/pcb/transform-footprint-insertion-direction"
 import { getResolvedPcbSx } from "lib/utils/pcbSx/get-resolved-pcb-sx"
 import type {
@@ -212,7 +213,9 @@ export abstract class PrimitiveComponent<
         : this.config.zodProps
     const parsePropsResult = zodProps.safeParse(props ?? {})
     if (parsePropsResult.success) {
-      this._parsedProps = parsePropsResult.data as z.infer<ZodProps>
+      this._parsedProps = applyPcbPositionPropAliases(
+        parsePropsResult.data,
+      ) as z.infer<ZodProps>
     } else {
       throw new InvalidProps(
         this.lowercaseComponentName,
@@ -229,7 +232,9 @@ export abstract class PrimitiveComponent<
     }) as z.infer<ZodProps>
     const oldProps = this.props
     this.props = newProps
-    this._parsedProps = this.config.zodProps.parse(props) as z.infer<ZodProps>
+    this._parsedProps = applyPcbPositionPropAliases(
+      this.config.zodProps.parse(props),
+    ) as z.infer<ZodProps>
     this.onPropsChange({
       oldProps,
       newProps,
@@ -246,31 +251,10 @@ export abstract class PrimitiveComponent<
     return pcbRotation ?? null
   }
 
-  /**
-   * Resolve pcbOffsetX/pcbOffsetY, which shift a component away from the
-   * position it resolves to (pcbX/pcbY or an edge anchor).
-   */
-  _getResolvedPcbOffset(): { offsetX: number; offsetY: number } {
-    const props = this._parsedProps as any
-    return {
-      offsetX: this._resolvePcbCoordinate(props.pcbOffsetX, "pcbX", {
-        propertyName: "pcbOffsetX",
-      }),
-      offsetY: this._resolvePcbCoordinate(props.pcbOffsetY, "pcbY", {
-        propertyName: "pcbOffsetY",
-      }),
-    }
-  }
-
   getResolvedPcbPositionProp(): { pcbX: number; pcbY: number } {
-    const { offsetX, offsetY } = this._getResolvedPcbOffset()
     return {
-      pcbX:
-        this._resolvePcbCoordinate((this._parsedProps as any).pcbX, "pcbX") +
-        offsetX,
-      pcbY:
-        this._resolvePcbCoordinate((this._parsedProps as any).pcbY, "pcbY") +
-        offsetY,
+      pcbX: this._resolvePcbCoordinate((this._parsedProps as any).pcbX, "pcbX"),
+      pcbY: this._resolvePcbCoordinate((this._parsedProps as any).pcbY, "pcbY"),
     }
   }
 
