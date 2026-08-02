@@ -82,6 +82,9 @@ test("generates an FDM enclosure and USB-C aperture with the enclosure solver", 
   expect(enclosureSolverEvent?.solverParams.apertures[0].centerZ).toBeCloseTo(
     5.7,
   )
+  expect(enclosureSolverEvent?.solverConstructorArgs).toEqual([
+    enclosureSolverEvent?.solverParams,
+  ])
   const enclosureCadComponent = circuit.db.cad_component
     .list()
     .find((cadComponent) => cadComponent.model_jscad)

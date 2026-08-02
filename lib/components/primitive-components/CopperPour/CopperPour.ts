@@ -61,8 +61,10 @@ export class CopperPour extends PrimitiveComponent<typeof copperPourProps> {
       const solver = new CopperPourPipelineSolver(inputProblem)
 
       this.root!.emit("solver:started", {
+        type: "solver:started",
         solverName: "CopperPourPipelineSolver",
         solverParams: inputProblem,
+        solverConstructorArgs: [inputProblem],
         componentName: this.props.name,
       })
 

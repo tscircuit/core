@@ -76,6 +76,8 @@ export interface SolverStartedEvent {
   type: "solver:started"
   solverName: keyof typeof SOLVERS
   solverParams: any
+  /** Full constructor tuple for deterministic solver reproduction. */
+  solverConstructorArgs: readonly unknown[]
   componentName: string
 }
 

@@ -69,12 +69,14 @@ const renderSchematicTracesForSheet = ({
 
   // Solve routing
   const solver = new SchematicTracePipelineSolver(inputProblem)
+  const solverConstructorArgs = solver.getConstructorParams()
   group.root?.emit("solver:started", {
     type: "solver:started",
     solverName: "SchematicTracePipelineSolver",
-    // getConstructorParams() now returns the full constructor tuple
-    // [inputProblem, opts?]; the event exposes the input problem itself.
-    solverParams: solver.getConstructorParams()[0],
+    // Keep the legacy field as the input problem while also exposing the exact
+    // [inputProblem, opts?] tuple needed to reconstruct the solver.
+    solverParams: solverConstructorArgs[0],
+    solverConstructorArgs,
     componentName: group.getString(),
   })
   solver.solve()

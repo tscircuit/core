@@ -4,11 +4,12 @@ import type {
   BreakoutProps,
 } from "@tscircuit/props"
 import type { z } from "zod"
-import type { Bus } from "../Bus"
+import type { AutoroutingPhase } from "../AutoroutingPhase"
 import type { Breakout } from "../Breakout/Breakout"
+import { BreakoutPoint } from "../BreakoutPoint"
+import type { Bus } from "../Bus"
 import type { Net } from "../Net"
 import type { Trace } from "../Trace/Trace"
-import type { AutoroutingPhase } from "../AutoroutingPhase"
 import type { Group } from "./Group"
 import type {
   RoutingPhaseDrcTolerances,
@@ -350,10 +351,21 @@ export function Group_getRoutingPhasePlans(
   const breakoutPlans: RoutingPhasePlan[] = []
   for (const breakout of breakouts) {
     const breakoutProps = breakout._parsedProps as BreakoutProps
+    const hasManualBreakoutPoints = breakout.children.some(
+      (child) => child instanceof BreakoutPoint,
+    )
+    const shouldUseDefaultAutorouterForBreakoutPoints =
+      hasManualBreakoutPoints && breakout.props.autorouter === undefined
+    const breakoutTraces = traces.filter(
+      (trace) => breakoutByTrace.get(trace) === breakout,
+    )
+    const unroutedBreakoutTraces = breakoutTraces.filter(
+      (trace) => !trace.pcb_trace_id,
+    )
     const pcbGroup = breakout.pcb_group_id
       ? breakout.root?.db.pcb_group.get(breakout.pcb_group_id)
       : null
-    breakoutPlans.push({
+    const breakoutPlan: RoutingPhasePlan = {
       routingPhaseIndex: null,
       routingPcbGroupId: breakout.pcb_group_id ?? undefined,
       routingBounds:
@@ -373,8 +385,53 @@ export function Group_getRoutingPhasePlans(
       ),
       fanoutPourNetMap: breakoutProps.fanoutPourNetMap,
       nets: [],
-      traces: traces.filter((trace) => breakoutByTrace.get(trace) === breakout),
+      traces: breakoutTraces,
+    }
+
+    if (!shouldUseDefaultAutorouterForBreakoutPoints) {
+      breakoutPlans.push(breakoutPlan)
+      continue
+    }
+
+    breakoutPlans.push({
+      ...breakoutPlan,
+      autorouter: "default",
+      traces: [],
     })
+    if (unroutedBreakoutTraces.length > 0) {
+      const automaticFanoutBusIds = new Set(
+        buses
+          .filter((bus) =>
+            unroutedBreakoutTraces.some((trace) =>
+              bus._parsedProps.connections.some(
+                (connection) =>
+                  connection === trace.name ||
+                  traceHasEndpointMatchingConnectionSelector(
+                    trace,
+                    convertPortSelectorToEndpointKey(connection),
+                  ),
+              ),
+            ),
+          )
+          .map((bus) => bus.name),
+      )
+      for (const trace of unroutedBreakoutTraces) {
+        if (trace.name) automaticFanoutBusIds.add(trace.name)
+      }
+      const automaticBusFanoutDirections = breakoutProps.busFanoutDirections
+        ? Object.fromEntries(
+            Object.entries(breakoutProps.busFanoutDirections).filter(
+              ([busId]) => automaticFanoutBusIds.has(busId),
+            ),
+          )
+        : undefined
+      breakoutPlans.push({
+        ...breakoutPlan,
+        routingPcbGroupId: undefined,
+        busFanoutDirections: automaticBusFanoutDirections,
+        traces: unroutedBreakoutTraces,
+      })
+    }
   }
 
   const defaultPhaseProps = phasePropsByPhaseIndex.get(null)
