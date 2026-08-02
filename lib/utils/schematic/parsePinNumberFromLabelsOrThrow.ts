@@ -1,4 +1,13 @@
 import { getPinNumberFromPinLabelsKey } from "./getPinNumberFromPinLabelsKey"
+import { getPinLabelRecommendation } from "../filterPinLabels"
+
+const getInvalidPinLabelMessage = (pinNumberOrLabel: string): string => {
+  const recommendation = getPinLabelRecommendation(pinNumberOrLabel)
+  const recommendationMessage = recommendation
+    ? ` Try using "${recommendation}" instead.`
+    : ""
+  return `No pin labels provided and pin number or label is not a number: "${pinNumberOrLabel}".${recommendationMessage}`
+}
 
 export const parsePinNumberFromLabelsOrThrow = (
   pinNumberOrLabel: string | number,
@@ -20,9 +29,7 @@ export const parsePinNumberFromLabelsOrThrow = (
   }
 
   if (!pinLabels) {
-    throw new Error(
-      `No pin labels provided and pin number or label is not a number: "${pinNumberOrLabel}"`,
-    )
+    throw new Error(getInvalidPinLabelMessage(pinNumberOrLabel))
   }
 
   for (const pinNumberKey in pinLabels) {
@@ -41,7 +48,5 @@ export const parsePinNumberFromLabelsOrThrow = (
     }
   }
 
-  throw new Error(
-    `No pin labels provided and pin number or label is not a number: "${pinNumberOrLabel}"`,
-  )
+  throw new Error(getInvalidPinLabelMessage(pinNumberOrLabel))
 }

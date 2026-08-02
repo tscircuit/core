@@ -31,8 +31,12 @@ export function filterPinLabels(
       if (isValidPinLabel(pin, label)) {
         validLabels.push(label)
       } else {
+        const recommendation = getPinLabelRecommendation(label)
+        const recommendationMessage = recommendation
+          ? ` Try using "${recommendation}" instead.`
+          : ""
         invalidPinLabelsMessages.push(
-          `Invalid pin label: ${pin} = '${label}' - excluding from component. Pin labels can only contain letters, numbers and underscores.`,
+          `Invalid pin label: ${pin} = '${label}' - excluding from component. Pin labels can only contain letters, numbers and underscores.${recommendationMessage}`,
         )
       }
     }
@@ -58,4 +62,28 @@ export function filterPinLabels(
  */
 function isValidPinLabel(_pin: string, label: string): boolean {
   return /^[A-Za-z0-9_]+$/.test(label)
+}
+
+/**
+ * Returns the preferred identifier for common power-rail pin labels that use
+ * punctuation. Pin labels are identifiers, so voltage values are written as
+ * V3_3, V5, etc. rather than 3.3V or +5V.
+ */
+export function getPinLabelRecommendation(label: string): string | undefined {
+  const decimalVoltage = label.match(/^\+?(\d+)\.(\d+)V(_\d+)?$/i)
+  if (decimalVoltage) {
+    return `V${decimalVoltage[1]}_${decimalVoltage[2]}${decimalVoltage[3] ?? ""}`
+  }
+
+  const splitVoltage = label.match(/^\+?(\d+)V(\d+)(_\d+)?$/i)
+  if (splitVoltage) {
+    return `V${splitVoltage[1]}_${splitVoltage[2]}${splitVoltage[3] ?? ""}`
+  }
+
+  const wholeVoltage = label.match(/^\+?(\d+)V(_\d+)?$/i)
+  if (wholeVoltage) {
+    return `V${wholeVoltage[1]}${wholeVoltage[2] ?? ""}`
+  }
+
+  return undefined
 }
