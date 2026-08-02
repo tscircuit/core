@@ -432,9 +432,11 @@ export function Group_getRoutingPhasePlans(
       routingPcbGroupId: breakout.pcb_group_id ?? undefined,
       routingBounds,
       fanoutBoundary:
-        hasExplicitGeometry || !hasExplicitFanoutBoundaryPadding
+        hasExplicitGeometry
           ? routingBounds
-          : undefined,
+          : hasExplicitFanoutBoundaryPadding
+            ? undefined
+            : (breakoutPaddingBoundary ?? routingBounds),
       breakoutPaddingBoundary,
       ignoredFanoutBoundaryProperty:
         hasExplicitGeometry && hasExplicitFanoutBoundaryPadding
