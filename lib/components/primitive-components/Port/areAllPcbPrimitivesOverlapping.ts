@@ -5,14 +5,21 @@ export const areAllPcbPrimitivesOverlapping = (
 ): boolean => {
   if (pcbPrimitives.length <= 1) return true
 
-  // Get bounds of all primitives
+  // Get bounds of all primitives.
+  //
+  // `_getPcbCircuitJsonBounds()` is implemented with two opposite Y
+  // conventions across the codebase: Cutout, PlatedHole and SmtPad's
+  // rect/polygon shapes return top > bottom, while Via, PcbVia, Hole and
+  // SmtPad's circle/pill/rotated_* shapes return top < bottom. The overlap
+  // test below only holds for the first convention, so the axes are
+  // normalised here rather than assumed.
   const bounds = pcbPrimitives.map((p) => {
     const circuitBounds = p._getPcbCircuitJsonBounds()
     return {
-      left: circuitBounds.bounds.left,
-      right: circuitBounds.bounds.right,
-      top: circuitBounds.bounds.top,
-      bottom: circuitBounds.bounds.bottom,
+      left: Math.min(circuitBounds.bounds.left, circuitBounds.bounds.right),
+      right: Math.max(circuitBounds.bounds.left, circuitBounds.bounds.right),
+      top: Math.max(circuitBounds.bounds.top, circuitBounds.bounds.bottom),
+      bottom: Math.min(circuitBounds.bounds.top, circuitBounds.bounds.bottom),
     }
   })
 
