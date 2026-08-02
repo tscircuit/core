@@ -118,13 +118,7 @@ test("via connectsTo a net directly without mixing ids", async () => {
   expect(sourceTrace).toBeUndefined()
   expect(sourceVia.source_net_id).toBe(sourceNet!.source_net_id)
   expect(sourceVia.source_trace_id).toBeUndefined()
-  expect(
-    (
-      pcbVia as typeof pcbVia & {
-        source_net_id?: string
-      }
-    ).source_net_id,
-  ).toBe(sourceNet!.source_net_id)
+  expect(pcbVia.source_net_id).toBe(sourceNet!.source_net_id)
   expect(Object.hasOwn(pcbVia, "source_trace_id")).toBe(false)
   expect(Object.hasOwn(pcbVia, "pcb_trace_id")).toBe(false)
 })
