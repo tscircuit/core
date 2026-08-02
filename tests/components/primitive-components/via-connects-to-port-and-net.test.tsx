@@ -70,6 +70,7 @@ test("via connectsTo joins a component port to a net", async () => {
   expect(pcbVia.source_trace_id).toBe(sourceTrace.source_trace_id)
   expect(pcbVia.pcb_trace_id).toBeUndefined()
   expect(Object.hasOwn(pcbVia, "pcb_trace_id")).toBe(false)
+  expect(Object.hasOwn(pcbVia, "source_net_id")).toBe(false)
   expect(
     sourceConnectivityMap.areIdsConnected(
       sourcePort!.source_port_id,
@@ -88,7 +89,7 @@ test("via connectsTo joins a component port to a net", async () => {
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
 
-test("via connectsTo a net through a source trace without mixing ids", async () => {
+test("via connectsTo a net directly without mixing ids", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -106,30 +107,24 @@ test("via connectsTo a net through a source trace without mixing ids", async () 
 
   await circuit.renderUntilSettled()
 
-  const circuitJson = circuit.getCircuitJson()
   const sourceNet = circuit.db.source_net
     .list()
     .find((net) => net.name === "GND")
   const sourceTrace = circuit.db.source_trace.list()[0]
   const sourceVia = circuit.db.source_manually_placed_via.list()[0]
   const pcbVia = circuit.db.pcb_via.list()[0]
-  const fullConnectivityMap = getFullConnectivityMapFromCircuitJson(circuitJson)
 
   expect(sourceNet).toBeDefined()
-  expect(sourceTrace).toBeDefined()
-  expect(sourceTrace.connected_source_port_ids).toEqual([])
-  expect(sourceTrace.connected_source_net_ids).toEqual([
-    sourceNet!.source_net_id,
-  ])
+  expect(sourceTrace).toBeUndefined()
   expect(sourceVia.source_net_id).toBe(sourceNet!.source_net_id)
-  expect(sourceVia.source_trace_id).toBe(sourceTrace.source_trace_id)
-  expect(pcbVia.source_trace_id).toBe(sourceTrace.source_trace_id)
-  expect(Object.hasOwn(pcbVia, "pcb_trace_id")).toBe(false)
+  expect(sourceVia.source_trace_id).toBeUndefined()
   expect(
-    fullConnectivityMap.areAllIdsConnected([
-      sourceNet!.source_net_id,
-      sourceTrace.source_trace_id,
-      pcbVia.pcb_via_id,
-    ]),
-  ).toBe(true)
+    (
+      pcbVia as typeof pcbVia & {
+        source_net_id?: string
+      }
+    ).source_net_id,
+  ).toBe(sourceNet!.source_net_id)
+  expect(Object.hasOwn(pcbVia, "source_trace_id")).toBe(false)
+  expect(Object.hasOwn(pcbVia, "pcb_trace_id")).toBe(false)
 })
