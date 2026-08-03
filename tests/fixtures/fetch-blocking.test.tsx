@@ -14,7 +14,7 @@ for (const url of urls) {
   })
 }
 
-it("blocks auto-cloud autorouter requests", async () => {
+it("blocks remote autorouter requests", async () => {
   const { circuit } = getTestFixture()
   const originalError = console.error
   const errors: string[] = []
@@ -23,7 +23,14 @@ it("blocks auto-cloud autorouter requests", async () => {
     originalError(...args)
   }
   circuit.add(
-    <board width="20mm" height="20mm" autorouter="auto-cloud">
+    <board
+      width="20mm"
+      height="20mm"
+      autorouter={{
+        serverUrl: "https://registry-api.tscircuit.com",
+        serverMode: "job",
+      }}
+    >
       <chip name="U1" footprint="soic8" pcbX={5} pcbY={0} />
       <resistor
         name="R1"

@@ -7,7 +7,7 @@ test(
     const { circuit, logSoup } = getTestFixture()
 
     circuit.add(
-      <board width="12mm" height="10mm" autorouter="sequential-trace">
+      <board width="12mm" height="10mm" autorouter="default">
         <resistor
           name="R1"
           resistance="10k"
@@ -37,7 +37,7 @@ test(
       </board>,
     )
 
-    circuit.render()
+    await circuit.renderUntilSettled()
 
     expect(circuit).toMatchPcbSnapshot(import.meta.path)
   },

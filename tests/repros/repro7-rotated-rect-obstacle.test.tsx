@@ -5,7 +5,7 @@ test("repro7-rotated-rect-obstacle", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="30mm" height="30mm" autorouter="sequential-trace">
+    <board width="30mm" height="30mm" autorouter="default">
       <resistor
         name="R1"
         resistance="10k"
@@ -50,7 +50,7 @@ test("repro7-rotated-rect-obstacle", async () => {
     </board>,
   )
 
-  circuit.render()
+  await circuit.renderUntilSettled()
 
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

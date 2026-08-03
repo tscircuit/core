@@ -33,10 +33,7 @@ test("subcircuit3-dependent-autorouting", async () => {
         />
         <trace from=".R1 .pin1" to=".R2 .pin2" />
       </subcircuit>
-      <subcircuit
-        name="S2"
-        autorouter={{ local: true, groupMode: "sequential-trace" }}
-      >
+      <subcircuit name="S2" autorouter="default">
         <capacitor
           capacitance="1000pF"
           footprint="0603"
@@ -60,8 +57,8 @@ test("subcircuit3-dependent-autorouting", async () => {
 
   await circuit.renderUntilSettled()
 
-  // Check the order of the async effect, should be S1 then board, and S2 is
-  // synchronously routed so has no effect
+  // Check the order of remote effects. S2 uses the local default autorouter,
+  // so it does not produce an HTTP autorouting effect.
   expect(
     asyncEffectEndEvents
       .filter((event) => event.effectName === "make-http-autorouting-request")

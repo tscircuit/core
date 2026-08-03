@@ -1,6 +1,5 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "../fixtures/get-test-fixture"
-import { getTestAutoroutingServer } from "tests/fixtures/get-test-autorouting-server"
 
 test.skip("remote-autorouter-5 with job mode against production server", async () => {
   if (process.env.CI) return
@@ -8,7 +7,14 @@ test.skip("remote-autorouter-5 with job mode against production server", async (
 
   // Create a basic circuit that needs routing
   circuit.add(
-    <board width="20mm" height="20mm" autorouter="auto-cloud">
+    <board
+      width="20mm"
+      height="20mm"
+      autorouter={{
+        serverUrl: "https://registry-api.tscircuit.com",
+        serverMode: "job",
+      }}
+    >
       <chip name="U1" footprint="soic8" pcbX={5} pcbY={0} />
       <resistor
         name="R1"

@@ -18,7 +18,7 @@ test("remote-autorouter-7 with preset config", async () => {
     <board
       width="20mm"
       height="20mm"
-      autorouter={{ preset: "auto-cloud", serverUrl: autoroutingServerUrl }}
+      autorouter={{ serverUrl: autoroutingServerUrl }}
     >
       <resistor name="R2" pcbX={5} pcbY={0} resistance={100} footprint="0402" />
       <resistor

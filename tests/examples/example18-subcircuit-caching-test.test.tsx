@@ -54,7 +54,7 @@ test.skip("subcircuit autorouting max traces test", async () => {
     <board
       width={`${boardWidth}mm`}
       height={`${boardHeight}mm`}
-      autorouter={"auto-cloud"}
+      autorouter="default"
     >
       {Array.from({ length: totalLEDSubcircuits }, (_, index) => {
         const row = Math.floor(index / gridSize)
@@ -71,7 +71,7 @@ test.skip("subcircuit autorouting max traces test", async () => {
               name={columnName}
               pcbX={pcbX}
               pcbY={pcbY}
-              autorouter={"auto-cloud"}
+              autorouter="default"
             />
             {prevColumnName && (
               <trace

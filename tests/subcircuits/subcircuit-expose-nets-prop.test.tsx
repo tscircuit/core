@@ -5,7 +5,7 @@ test("subcircuit exposeNets connects child nets to parent nets", async () => {
   const { circuit } = await getTestFixture()
 
   circuit.add(
-    <board width="10mm" height="5mm" autorouter="sequential-trace">
+    <board width="10mm" height="5mm" autorouter="default">
       <net name="GND" />
       <pinheader
         name="J1"

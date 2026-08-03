@@ -25,7 +25,7 @@ test(
       16: ["GND2", "B1"],
     } as const
     circuit.add(
-      <board width={50} height={50} autorouter="sequential-trace">
+      <board width={50} height={50} autorouter="default">
         <pushbutton name="PB1" footprint={"pushbutton"} pcbX="0" pcbY="10" />
 
         <chip
@@ -286,7 +286,7 @@ test(
       </board>,
     )
 
-    circuit.render()
+    await circuit.renderUntilSettled()
 
     expect(circuit.db.pcb_trace_error.list()).toHaveLength(0)
     expect(circuit.db.pcb_trace.list().length).toBeGreaterThan(0)

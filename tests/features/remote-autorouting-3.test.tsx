@@ -9,7 +9,15 @@ test.skip("remote autorouter 3 cloud-auto", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="20mm" height="20mm" autorouter="auto-cloud">
+    <board
+      width="20mm"
+      height="20mm"
+      autorouter={{
+        serverUrl: autoroutingServerUrl,
+        serverMode: "solve-endpoint",
+        inputFormat: "simplified",
+      }}
+    >
       <chip name="U1" footprint="soic8" pcbX={5} pcbY={0} />
       <resistor
         name="R1"

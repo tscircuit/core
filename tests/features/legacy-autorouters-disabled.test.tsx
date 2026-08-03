@@ -1,5 +1,4 @@
 import { expect, test } from "bun:test"
-import type { PlatformConfig } from "@tscircuit/props"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 const addRoutableBoard = (
@@ -65,7 +64,7 @@ test("legacy autorouters are disabled unless the platform allows them", async ()
   const { circuit: legacyCircuit } = getTestFixture({
     platform: {
       allowLegacyAutorouters: true,
-    } as PlatformConfig & { allowLegacyAutorouters: boolean },
+    },
   })
   addRoutableBoard(legacyCircuit, "sequential-trace")
 

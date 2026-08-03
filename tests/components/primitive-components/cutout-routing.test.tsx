@@ -5,7 +5,7 @@ test("PCB routing with cutouts", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="50mm" height="30mm" autorouter="sequential-trace">
+    <board width="50mm" height="30mm" autorouter="default">
       <resistor
         resistance={1}
         name="R1"
