@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 
-import { writeFileSync, mkdirSync } from "fs"
+import { mkdirSync, rmSync, writeFileSync } from "node:fs"
 import { Glob } from "bun"
 
 interface TestMatrix {
@@ -8,9 +8,26 @@ interface TestMatrix {
   globPatterns: string[]
 }
 
+const DEFAULT_NODE_COUNT = 4
+const TEST_PLAN_DIRECTORY = ".github/test-plans"
+
+function getNodeCount(): number {
+  const configuredNodeCount = process.env.TEST_PLAN_NODE_COUNT
+  if (!configuredNodeCount) return DEFAULT_NODE_COUNT
+
+  const nodeCount = Number(configuredNodeCount)
+  if (!Number.isInteger(nodeCount) || nodeCount < 1) {
+    throw new Error(
+      `TEST_PLAN_NODE_COUNT must be a positive integer, received: ${configuredNodeCount}`,
+    )
+  }
+
+  return nodeCount
+}
+
 // Configuration for test matrix
 const TEST_MATRIX: TestMatrix = {
-  nodeCount: 4,
+  nodeCount: getNodeCount(),
   globPatterns: [
     "tests/components/normal-components/**/*.test.tsx",
     "tests/components/primitive-components/**/*.test.tsx",
@@ -79,9 +96,10 @@ function generateTestPlans() {
 
   // Write test plans to files
   console.log(`\n📝 Writing test plans for ${TEST_MATRIX.nodeCount} nodes...`)
-  mkdirSync(".github/test-plans", { recursive: true })
+  rmSync(TEST_PLAN_DIRECTORY, { recursive: true, force: true })
+  mkdirSync(TEST_PLAN_DIRECTORY, { recursive: true })
   for (let i = 0; i < TEST_MATRIX.nodeCount; i++) {
-    const planFile = `.github/test-plans/node${i + 1}-testplan.txt`
+    const planFile = `${TEST_PLAN_DIRECTORY}/node${i + 1}-testplan.txt`
     const content = nodePlans[i].join("\n")
     writeFileSync(planFile, content, "utf8")
     console.log(`  ${planFile}: ${nodePlans[i].length} tests`)
