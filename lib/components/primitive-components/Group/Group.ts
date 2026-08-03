@@ -1207,7 +1207,11 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         ? getLocalAutoroutingCacheKey(simpleRouteJson)
         : undefined
       const cachedResult = cacheKey
-        ? await getCachedLocalAutoroutingPhaseResult({ cacheEngine, cacheKey })
+        ? await getCachedLocalAutoroutingPhaseResult({
+            cacheEngine,
+            cacheKey,
+            simpleRouteJson,
+          })
         : null
       let autorouter: GenericLocalAutorouter | undefined
 

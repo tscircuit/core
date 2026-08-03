@@ -53,7 +53,10 @@ test("built-in local autorouting caches each phase and custom algorithms bypass 
     },
   )
 
-  const renderCircuit = async (algorithmFn?: typeof customAlgorithmFn) => {
+  const renderCircuit = async (
+    algorithmFn?: typeof customAlgorithmFn,
+    pcbOffset = { x: 0, y: 0 },
+  ) => {
     const { circuit } = getTestFixture({ platform: { localCacheEngine } })
     let autoroutingProgressCount = 0
     circuit.on("autorouting:progress", () => {
@@ -63,6 +66,8 @@ test("built-in local autorouting caches each phase and custom algorithms bypass 
       <board
         width="20mm"
         height="20mm"
+        pcbX={pcbOffset.x}
+        pcbY={pcbOffset.y}
         autorouter={algorithmFn ? { algorithmFn } : undefined}
       >
         <resistor
@@ -121,6 +126,28 @@ test("built-in local autorouting caches each phase and custom algorithms bypass 
   )
   expect(getKeys.slice(-2)).toEqual(setKeys)
   expect(setKeys).toHaveLength(2)
+
+  const translatedOffset = { x: 30, y: 20 }
+  const translatedRender = await renderCircuit(undefined, translatedOffset)
+  expect(translatedRender.autoroutingProgressCount).toBe(0)
+  expect(getKeys.slice(-2)).toEqual(setKeys)
+  expect(setKeys).toHaveLength(2)
+
+  const firstTraces = firstCircuit.db.pcb_trace.list()
+  const translatedTraces = translatedRender.circuit.db.pcb_trace.list()
+  expect(translatedTraces).toHaveLength(firstTraces.length)
+  for (let traceIndex = 0; traceIndex < firstTraces.length; traceIndex++) {
+    const firstRoute = firstTraces[traceIndex]!.route
+    const translatedRoute = translatedTraces[traceIndex]!.route
+    expect(translatedRoute).toHaveLength(firstRoute.length)
+    for (let pointIndex = 0; pointIndex < firstRoute.length; pointIndex++) {
+      const firstPoint = firstRoute[pointIndex]!
+      const translatedPoint = translatedRoute[pointIndex]!
+      if (!("x" in firstPoint) || !("x" in translatedPoint)) continue
+      expect(translatedPoint.x - firstPoint.x).toBeCloseTo(translatedOffset.x)
+      expect(translatedPoint.y - firstPoint.y).toBeCloseTo(translatedOffset.y)
+    }
+  }
 
   const getCountBeforeCustomAutorouting = getKeys.length
   const setCountBeforeCustomAutorouting = setKeys.length
