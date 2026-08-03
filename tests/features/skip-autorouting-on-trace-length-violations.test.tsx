@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("autorouting is skipped for a courtyard-only placement error", async () => {
+test("autorouting is skipped when straight-line distance exceeds maxLength", async () => {
   const { circuit } = getTestFixture()
   let autoroutingStartCount = 0
 
@@ -11,30 +11,25 @@ test("autorouting is skipped for a courtyard-only placement error", async () => 
 
   circuit.add(
     <board
-      width="12mm"
+      width="16mm"
       height="8mm"
       autorouter={{ local: true, groupMode: "subcircuit" }}
     >
       <pcbnotetext
         pcbY={-3}
         fontSize={0.7}
-        text="PLACEMENT ERROR: ROUTING SKIPPED"
+        text="IMPOSSIBLE TRACE LENGTH: ROUTING SKIPPED"
       />
-      <resistor
-        name="R1"
-        resistance="1k"
+      <capacitor
+        name="C1"
+        capacitance="100nF"
         footprint="0402"
-        pcbX={0}
-        pcbY={-0.45}
+        maxDecouplingTraceLength={2}
+        pcbX={-4}
       />
-      <resistor
-        name="R2"
-        resistance="1k"
-        footprint="0402"
-        pcbX={0}
-        pcbY={0.45}
-      />
-      <trace from=".R1 > .pin1" to=".R2 > .pin2" />
+      <resistor name="R1" resistance="1k" footprint="0402" pcbX={4} />
+      <trace from=".C1 > .pin1" to="net.VCC" />
+      <trace from=".R1 > .pin1" to="net.VCC" />
     </board>,
   )
 
@@ -43,17 +38,11 @@ test("autorouting is skipped for a courtyard-only placement error", async () => 
   const autoroutingErrors = circuit.db.pcb_autorouting_error.list()
   expect(autoroutingStartCount).toBe(0)
   expect(circuit.db.pcb_trace.list()).toHaveLength(0)
-  expect(circuit.db.pcb_footprint_overlap_error.list()).toHaveLength(0)
-  expect(circuit.db.pcb_courtyard_overlap_error.list().length).toBeGreaterThan(
-    0,
-  )
   expect(autoroutingErrors).toHaveLength(1)
-  expect(autoroutingErrors[0].message).toContain(
-    "Autorouting was skipped because",
-  )
+  expect(autoroutingErrors[0].message).toContain("cannot be satisfied")
+  expect(autoroutingErrors[0].message).toContain("endpoints are")
 
   expect(circuit).toMatchPcbSnapshot(import.meta.path, {
     shouldDrawErrors: true,
-    showCourtyards: true,
   })
 })

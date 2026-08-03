@@ -1,8 +1,8 @@
-import { it, expect } from "bun:test"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { expect, it } from "bun:test"
 import type { Net } from "lib/components/primitive-components/Net"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-it("should create a Net component with correct properties", () => {
+it("should create a Net component with correct properties", async () => {
   const { project } = getTestFixture()
 
   project.add(
@@ -25,7 +25,7 @@ it("should create a Net component with correct properties", () => {
     </board>,
   )
 
-  project.render()
+  await project.renderUntilSettled()
 
   const pcbTraces = project.db.pcb_trace.list()
 
