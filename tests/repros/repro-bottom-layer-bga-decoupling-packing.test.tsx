@@ -67,6 +67,7 @@ test("pcbPack places bottom-layer decoupling capacitors underneath a BGA", async
     shouldDrawRatsNest: true,
   })
   // Centering the capacitors on the two connected BGA rows gives about
-  // 0.44 mm total distance; 2 mm leaves room for sequential packing choices.
+  // 0.44 mm total distance. Layer-aware sequential packing currently produces
+  // about 1.17 mm, so 2 mm leaves room for deterministic packing choices.
   expect(totalStraightLineConnectionDistance).toBeLessThan(2)
 })
