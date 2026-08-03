@@ -63,7 +63,9 @@ test("pcbPack places bottom-layer decoupling capacitors underneath a BGA", async
     0,
   )
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  expect(circuit).toMatchPcbSnapshot(import.meta.path, {
+    shouldDrawRatsNest: true,
+  })
   // Centering the capacitors on the two connected BGA rows gives about
   // 0.44 mm total distance; 2 mm leaves room for sequential packing choices.
   expect(totalStraightLineConnectionDistance).toBeLessThan(2)
