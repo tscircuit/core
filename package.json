@@ -37,7 +37,7 @@
     "@tscircuit/breakout-point-solver": "github:tscircuit/breakout-point-solver#bac9629",
     "@tscircuit/capacity-autorouter": "^0.0.722",
     "@tscircuit/checks": "0.0.151",
-    "@tscircuit/circuit-json-util": "^0.0.102",
+    "@tscircuit/circuit-json-util": "^0.0.104",
     "@tscircuit/common": "^0.0.20",
     "@tscircuit/copper-pour-solver": "0.0.42",
     "@tscircuit/create-fdm-enclosure": "0.0.3",
@@ -53,7 +53,7 @@
     "@tscircuit/math-utils": "^0.0.36",
     "@tscircuit/miniflex": "^0.0.4",
     "@tscircuit/ngspice-spice-engine": "^0.0.20",
-    "@tscircuit/props": "^0.0.609",
+    "@tscircuit/props": "^0.0.610",
     "@tscircuit/schematic-match-adapt": "^0.0.18",
     "@tscircuit/schematic-trace-solver": "^0.0.121",
     "@tscircuit/solver-utils": "^0.0.16",
@@ -67,7 +67,7 @@
     "bun-match-svg": "0.0.12",
     "calculate-elbow": "^0.0.12",
     "chokidar-cli": "^3.0.0",
-    "circuit-json": "^0.0.460",
+    "circuit-json": "^0.0.464",
     "circuit-json-to-bpc": "^0.0.13",
     "circuit-json-to-gltf": "^0.0.111",
     "circuit-json-to-connectivity-map": "^0.0.27",
@@ -128,5 +128,10 @@
     "svg-path-commander": "^2.1.11",
     "transformation-matrix": "^2.16.1",
     "zod": "^3.25.67"
+  },
+  "overrides": {
+    "@tscircuit/circuit-json-util": "^0.0.104",
+    "@tscircuit/props": "^0.0.610",
+    "circuit-json": "^0.0.464"
   }
 }
