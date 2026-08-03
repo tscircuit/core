@@ -42,6 +42,11 @@ test.failing(
 
     await circuit.renderUntilSettled()
 
+    expect(circuit).toMatchPcbSnapshot(import.meta.path)
+    await expect(circuit).toMatchSimple3dSnapshot(import.meta.path, {
+      cameraPreset: "top_down_orthographic",
+    })
+
     const pads = circuit.db.pcb_smtpad.list()
     const rotatedPillPads = pads.filter(
       (pad): pad is PcbSmtPadRotatedPill => pad.shape === "rotated_pill",
