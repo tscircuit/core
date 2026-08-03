@@ -1,4 +1,5 @@
 import { chipProps } from "@tscircuit/props"
+import { normalizeDegrees } from "@tscircuit/math-utils"
 import { pcb_component_invalid_layer_error } from "circuit-json"
 import { NormalComponent } from "lib/components/base-components/NormalComponent"
 import { type SchematicBoxDimensions } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
@@ -141,7 +142,7 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
         componentLayer === "top" || componentLayer === "bottom"
           ? componentLayer
           : "top",
-      rotation: props.pcbRotation ?? globalTransformRotation,
+      rotation: normalizeDegrees(globalTransformRotation),
       insertion_direction: this._getPcbComponentInsertionDirection(
         componentLayer,
         globalTransformRotation,

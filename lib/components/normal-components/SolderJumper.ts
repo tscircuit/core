@@ -1,5 +1,6 @@
 import { NormalComponent } from "lib/components/base-components/NormalComponent"
 import { solderjumperProps } from "@tscircuit/props"
+import { normalizeDegrees } from "@tscircuit/math-utils"
 import { Port } from "../primitive-components/Port"
 import type { SchematicBoxDimensions } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
 
@@ -223,7 +224,7 @@ export class SolderJumper<
       width: 2, // Default width, adjust as needed
       height: 3, // Default height, adjust as needed
       layer: props.layer ?? "top",
-      rotation: props.pcbRotation ?? globalTransformRotation,
+      rotation: normalizeDegrees(globalTransformRotation),
       insertion_direction: this._getPcbComponentInsertionDirection(
         props.layer ?? "top",
         globalTransformRotation,
