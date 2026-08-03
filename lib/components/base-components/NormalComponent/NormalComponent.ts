@@ -928,7 +928,7 @@ export class NormalComponent<
         componentLayer === "top" || componentLayer === "bottom"
           ? componentLayer
           : "top",
-      rotation: props.pcbRotation ?? globalTransformRotation,
+      rotation: normalizeDegrees(globalTransformRotation),
       insertion_direction: this._getPcbComponentInsertionDirection(
         componentLayer,
         globalTransformRotation,
