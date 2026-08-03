@@ -1,4 +1,4 @@
-import { type Pin1Location, analyzePin1Location } from "@tscircuit/footprinter"
+import { analyzePcbPin1Location } from "@tscircuit/circuit-json-util"
 import type {
   PartsEngine,
   SupplierName,
@@ -58,14 +58,6 @@ const getSupplierPartCandidates = (
     }
   }
   return candidates
-}
-
-const toPcbPin1Location = (
-  pin1Location: Pin1Location | null,
-): PcbPin1Location | null => {
-  if (!pin1Location) return null
-  const result = pcb_pin1_location.safeParse(pin1Location.join("_"))
-  return result.success ? result.data : null
 }
 
 const getExplicitPcbPin1Location = (
@@ -189,9 +181,7 @@ const analyzeSupplierPin1Location = async ({
     )
     if (!supplierCircuitJson?.length) return null
 
-    const pin1Location = toPcbPin1Location(
-      analyzePin1Location(supplierCircuitJson),
-    )
+    const pin1Location = analyzePcbPin1Location(supplierCircuitJson)
     try {
       await component.root?.platform?.localCacheEngine?.setItem(
         cacheKey,
@@ -226,14 +216,12 @@ export const NormalComponent_doInitialPartOrientationAnalysis = (
   ] as AnyCircuitElement[]
   const localPin1Location =
     getExplicitPcbPin1Location(component.resolveFootprint()) ??
-    toPcbPin1Location(
-      analyzePin1Location(
-        getUnrotatedLocalPcbElements({
-          component,
-          pcbComponent,
-          pcbElements,
-        }),
-      ),
+    analyzePcbPin1Location(
+      getUnrotatedLocalPcbElements({
+        component,
+        pcbComponent,
+        pcbElements,
+      }),
     )
   if (!localPin1Location) return
 
