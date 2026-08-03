@@ -1,15 +1,16 @@
-import { expect, type MatcherResult } from "bun:test"
+import { type MatcherResult, expect } from "bun:test"
 import * as fs from "node:fs"
 import * as path from "node:path"
 import looksSame from "looks-same"
 
 const DIFF_THRESHOLD_PERCENT = 1 // only update snapshot if >1% difference
 
-async function toMatchSvgSnapshot(
+export async function toMatchSvgSnapshot(
   this: any,
   received: string | Promise<string>,
   testPathOriginal: string,
   svgName?: string,
+  options?: { diffThresholdPercent?: number },
 ): Promise<MatcherResult> {
   const svg = await received
   const testPath = testPathOriginal.replace(/\.test\.tsx?$/, "")
@@ -60,9 +61,11 @@ async function toMatchSvgSnapshot(
     0,
   )
   const diffPercent = (diffPixels / totalPixels) * 100
+  const diffThresholdPercent =
+    options?.diffThresholdPercent ?? DIFF_THRESHOLD_PERCENT
 
   if (updateSnapshot) {
-    if (result.equal || diffPercent <= DIFF_THRESHOLD_PERCENT) {
+    if (result.equal || diffPercent <= diffThresholdPercent) {
       return {
         message: () => "Snapshot matches",
         pass: true,
@@ -76,7 +79,7 @@ async function toMatchSvgSnapshot(
     }
   }
 
-  if (result.equal || diffPercent <= DIFF_THRESHOLD_PERCENT) {
+  if (result.equal || diffPercent <= diffThresholdPercent) {
     return {
       message: () => "Snapshot matches",
       pass: true,
