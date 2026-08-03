@@ -12,7 +12,7 @@ jobs:
     timeout-minutes: 15
     strategy:
       matrix:
-        node: [1, 2, 3, 4]
+        node: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
     steps:
       - name: Checkout code
@@ -27,6 +27,8 @@ jobs:
         run: bun install
 
       - name: Generate test plans
+        env:
+          TEST_PLAN_NODE_COUNT: ${{ strategy.job-total }}
         run: bun run scripts/generate-test-plan.ts
 
       - name: Run tests for node ${{ matrix.node }}
