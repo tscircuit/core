@@ -5,7 +5,7 @@ test("Should not render any schematic components", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width={20} height={20} autorouter="sequential-trace">
+    <board width={20} height={20} autorouter="default">
       <resistor
         name="R1"
         footprint="0603"
@@ -56,7 +56,7 @@ test("Should not render any schematic components", async () => {
     </board>,
   )
 
-  circuit.render()
+  await circuit.renderUntilSettled()
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })

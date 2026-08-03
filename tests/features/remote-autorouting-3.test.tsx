@@ -6,7 +6,9 @@ import { getTestAutoroutingServer } from "tests/fixtures/get-test-autorouting-se
 test.skip("remote autorouter 3 cloud-auto", async () => {
   const { autoroutingServerUrl } = getTestAutoroutingServer()
 
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture({
+    platform: { allowLegacyAutorouters: true },
+  })
 
   circuit.add(
     <board width="20mm" height="20mm" autorouter="auto-cloud">

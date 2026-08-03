@@ -4,7 +4,7 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 test("example1", async () => {
   const { circuit, logSoup } = getTestFixture()
   circuit.add(
-    <board width="12mm" height="10mm" autorouter="sequential-trace">
+    <board width="12mm" height="10mm" autorouter="default">
       <chip
         name="U1"
         footprint="soic8"
@@ -46,7 +46,7 @@ test("example1", async () => {
     </board>,
   )
 
-  circuit.render()
+  await circuit.renderUntilSettled()
 
   // the PcbPortAttachment phase should configure all the port ids
   expect(

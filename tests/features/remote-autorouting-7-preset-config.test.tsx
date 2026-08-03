@@ -4,7 +4,9 @@ import { getTestFixture } from "../fixtures/get-test-fixture"
 
 test("remote-autorouter-7 with preset config", async () => {
   const { autoroutingServerUrl } = getTestAutoroutingServer()
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture({
+    platform: { allowLegacyAutorouters: true },
+  })
 
   const asyncEffectStartEvents: any[] = []
   circuit.on("asyncEffect:start", (event) => {

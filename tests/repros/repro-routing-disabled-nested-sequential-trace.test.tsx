@@ -2,7 +2,9 @@ import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("nested sequential trace inherits routingDisabled", () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture({
+    platform: { allowLegacyAutorouters: true },
+  })
 
   circuit.add(
     <board

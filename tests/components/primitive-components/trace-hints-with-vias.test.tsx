@@ -5,7 +5,7 @@ test("trace hints with vias", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="20mm" height="20mm" autorouter="sequential-trace">
+    <board width="20mm" height="20mm" autorouter="default">
       <resistor
         name="R1"
         resistance="10k"
@@ -24,16 +24,13 @@ test("trace hints with vias", async () => {
   const pcbTraces = circuit.db.pcb_trace.list()
   expect(pcbTraces.length).toBeGreaterThan(0)
 
+  const route = pcbTraces.flatMap((trace) => trace.route)
   expect(
-    pcbTraces[0].route.some(
-      (p) => p.route_type === "wire" && p.start_pcb_port_id,
-    ),
+    route.some((p) => p.route_type === "wire" && p.start_pcb_port_id),
   ).toBe(true)
-  expect(
-    pcbTraces[0].route.some(
-      (p) => p.route_type === "wire" && p.end_pcb_port_id,
-    ),
-  ).toBe(true)
+  expect(route.some((p) => p.route_type === "wire" && p.end_pcb_port_id)).toBe(
+    true,
+  )
 
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

@@ -38,7 +38,9 @@ const LedColumns = (props: {
 }
 
 test.skip("subcircuit autorouting max traces test", async () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture({
+    platform: { allowLegacyAutorouters: true },
+  })
   const totalLEDSubcircuits = 25 // Total number of LED column groups
   const gridSize = Math.ceil(Math.sqrt(totalLEDSubcircuits)) // Calculate grid dimensions (3x3 for 9 columns)
   const spacing = 30

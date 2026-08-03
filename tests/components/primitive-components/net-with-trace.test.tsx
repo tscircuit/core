@@ -6,7 +6,7 @@ it("should create a Net component with correct properties", async () => {
   const { project } = getTestFixture()
 
   project.add(
-    <board width="10mm" height="10mm" autorouter="sequential-trace">
+    <board width="10mm" height="10mm" autorouter="default">
       <net name="COM" />
       <resistor name="R1" resistance="10k" pcbX={-2} footprint="0402" />
       <resistor name="R2" resistance="10k" pcbX={2} footprint="0402" />

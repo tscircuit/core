@@ -110,6 +110,8 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
   // Check for cached route
   const cachedRoute = subcircuit._parsedProps.pcbRouteCache?.pcbTraces
   if (cachedRoute) {
+    if (subcircuit._isLegacyAutorouterDisabled()) return
+
     const pcb_trace = db.pcb_trace.insert({
       route: cachedRoute.flatMap((trace) => trace.route),
       source_trace_id: trace.source_trace_id!,

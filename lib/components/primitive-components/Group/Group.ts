@@ -9,6 +9,7 @@ import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import { type Box, getBoundsFromPoints } from "@tscircuit/math-utils"
 import {
   type AutorouterConfig,
+  type AutorouterProp,
   type SchematicPortArrangement,
   type SubcircuitGroupProps,
   groupProps,
@@ -34,7 +35,9 @@ import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import { createSourceTracesFromOffboardConnections } from "lib/utils/autorouting/createSourceTracesFromOffboardConnections"
 import {
+  type LegacyAutorouterPreset,
   type NormalizedAutorouterConfig,
+  getLegacyAutorouterPreset,
   getPresetAutoroutingConfig,
 } from "lib/utils/autorouting/getPresetAutoroutingConfig"
 import { getLocalAutoroutingStages } from "lib/utils/autorouting/localAutorouterStrategies"
@@ -108,6 +111,49 @@ const getDistanceToPoint = (
 ) => {
   const position = getRoutePointPosition(routePoint)
   return Math.hypot(position.x - targetPoint.x, position.y - targetPoint.y)
+}
+
+const platformAllowsLegacyAutorouters = (group: Group<z.ZodType>): boolean => {
+  const platform = group.root?.platform
+  return (
+    platform !== undefined &&
+    "allowLegacyAutorouters" in platform &&
+    platform.allowLegacyAutorouters === true
+  )
+}
+
+const getDisabledLegacyGroupAutorouterPreset = (
+  group: Group<z.ZodType>,
+): LegacyAutorouterPreset | null => {
+  if (platformAllowsLegacyAutorouters(group)) return null
+
+  const resolvedGroupAutorouter =
+    (group._parsedProps as SubcircuitGroupProps).autorouter ??
+    group.getInheritedProperty("autorouter")
+  return getLegacyAutorouterPreset(resolvedGroupAutorouter)
+}
+
+const getDisabledLegacyAutorouterPreset = (
+  group: Group<z.ZodType>,
+): LegacyAutorouterPreset | null => {
+  if (platformAllowsLegacyAutorouters(group)) return null
+
+  const legacyGroupAutorouterPreset =
+    getDisabledLegacyGroupAutorouterPreset(group)
+  if (legacyGroupAutorouterPreset) return legacyGroupAutorouterPreset
+
+  const routingPhaseAutorouters = (
+    group.selectAll("autoroutingphase") as Array<{
+      _parsedProps: { autorouter?: AutorouterProp }
+    }>
+  ).map((autoroutingPhase) => autoroutingPhase._parsedProps.autorouter)
+
+  for (const autorouter of routingPhaseAutorouters) {
+    const legacyAutorouterPreset = getLegacyAutorouterPreset(autorouter)
+    if (legacyAutorouterPreset) return legacyAutorouterPreset
+  }
+
+  return null
 }
 
 const reversePcbTraceRoute = (route: PcbTrace["route"]): PcbTrace["route"] =>
@@ -423,6 +469,20 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         source_group_id: this.source_group_id!,
       })
     }
+
+    if (!this.isSubcircuit) return
+
+    const disabledLegacyAutorouterPreset =
+      getDisabledLegacyAutorouterPreset(this)
+    if (!disabledLegacyAutorouterPreset) return
+
+    db.source_property_ignored_warning.insert({
+      source_component_id: this.source_component_id ?? "",
+      property_name: "autorouter",
+      subcircuit_id: this.subcircuit_id ?? undefined,
+      error_type: "source_property_ignored_warning",
+      message: `The "${disabledLegacyAutorouterPreset}" autorouter is deprecated, so autorouting has been disabled for this subcircuit. Use the default autorouter and introduce <autoroutingphase /> or <fanout /> elements as needed.`,
+    })
   }
 
   doInitialSourceParentAttachment() {
@@ -715,6 +775,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   _shouldRouteAsync(): boolean {
+    if (this._isLegacyAutorouterDisabled()) return false
     const autorouter = this._getAutorouterConfig()
     if (autorouter.groupMode === "sequential-trace") return false
     // Local subcircuit mode should use async routing with the CapacityMeshAutorouter
@@ -1473,6 +1534,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     )
       return
     if (this._isInflatedFromCircuitJson) return
+    if (this._isLegacyAutorouterDisabled()) return
     if (this._shouldUseTraceByTraceRouting()) return
 
     if (!this._areChildSubcircuitsRouted()) {
@@ -1514,6 +1576,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     debug(`[${this.getString()}] updating...`)
     if (!this.isSubcircuit) return
     if (this._isInflatedFromCircuitJson) return
+    if (this._isLegacyAutorouterDisabled()) return
     if (
       this._shouldRouteAsync() &&
       this._hasTracesToRoute() &&
@@ -2159,6 +2222,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     return getPresetAutoroutingConfig(autorouter, this.root?.platform)
   }
 
+  _isLegacyAutorouterDisabled(): boolean {
+    return getDisabledLegacyAutorouterPreset(this) !== null
+  }
+
   _isLaserPrefabAutorouter(
     autorouterConfig: AutorouterConfig = this._getAutorouterConfig(),
   ): boolean {
@@ -2202,6 +2269,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
    * or if using a "fullview" or "rip and replace" autorouting mode
    */
   _shouldUseTraceByTraceRouting(): boolean {
+    if (getDisabledLegacyGroupAutorouterPreset(this)) return false
     // Inherit from parent if not set by props
     const autorouter = this._getAutorouterConfig()
     return autorouter.groupMode === "sequential-trace"
@@ -2209,6 +2277,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   doInitialPcbDesignRuleChecks() {
     if (this.root?.pcbDisabled) return
+    if (this._isLegacyAutorouterDisabled()) return
     if (
       this.root?.pcbRoutingDisabled ||
       this.getInheritedProperty("routingDisabled")

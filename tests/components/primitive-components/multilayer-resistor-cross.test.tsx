@@ -5,7 +5,7 @@ test("four 0402 resistors with crossing traces", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="10mm" height="10mm" autorouter="sequential-trace">
+    <board width="10mm" height="10mm" autorouter="default">
       <resistor name="R1" footprint="0402" resistance="10k" pcbX={-3} />
       <resistor name="R2" footprint="0402" resistance="10k" pcbX={3} />
       <resistor name="R3" footprint="0402" resistance="10k" pcbY={3} />

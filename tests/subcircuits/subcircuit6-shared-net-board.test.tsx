@@ -5,7 +5,7 @@ test("subcircuits and board share net — extra GND resistor inside S1", async (
   const { circuit } = await getTestFixture()
 
   circuit.add(
-    <board width="10mm" height="10mm" autorouter="sequential-trace">
+    <board width="10mm" height="10mm" autorouter="default">
       <subcircuit name="S1">
         <resistor
           resistance="100"
