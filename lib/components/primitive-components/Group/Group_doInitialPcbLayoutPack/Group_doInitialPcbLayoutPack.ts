@@ -1,17 +1,18 @@
-import type { Group } from "../Group"
 import {
+  type PackInput,
+  type PackOutput,
   PackSolver2,
   convertCircuitJsonToPackOutput,
   convertPackOutputToPackInput,
   getGraphicsFromPackOutput,
-  type PackInput,
-  type PackOutput,
 } from "calculate-packing"
 import { type PcbComponent, length } from "circuit-json"
 import Debug from "debug"
+import type { NormalComponent } from "lib/components/base-components/NormalComponent"
+import type { Group } from "../Group"
 import { applyComponentConstraintClusters } from "./applyComponentConstraintClusters"
 import { applyPackOutput } from "./applyPackOutput"
-import type { NormalComponent } from "lib/components/base-components/NormalComponent"
+import { getPackInputsByPcbLayer } from "./getPackInputsByPcbLayer"
 
 const DEFAULT_MIN_GAP = "1mm"
 const debug = Debug("Group_doInitialPcbLayoutPack")
@@ -168,7 +169,11 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
     })
   }
 
-  let packOutput: PackOutput
+  const packInputs = getPackInputsByPcbLayer(packInput, db)
+  const packOutput: PackOutput = {
+    ...packInput,
+    components: [],
+  }
   let packingFailed = false
   const reportPackingError = (solverErrorMessage: string) => {
     const message = `Unable to pack all PCB components within the layout bounds: ${solverErrorMessage}`
@@ -187,30 +192,57 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
   }
 
   try {
-    const solver = new PackSolver2(packInput)
-    const solverParams = solver.getConstructorParams()
-    group.root?.emit("solver:started", {
-      type: "solver:started",
-      solverName: "PackSolver2",
-      solverParams,
-      solverConstructorArgs: [solverParams],
-      componentName: group.getString(),
-    })
+    for (const layerPackInput of packInputs) {
+      const componentIdsForLayer = new Set(
+        layerPackInput.components.map((component) => component.componentId),
+      )
+      const networkReferenceComponents = packOutput.components.map(
+        (component) => ({
+          ...component,
+          componentId: `network_reference_${component.componentId}`,
+          isStatic: true,
+          // Keep opposite-layer pads available to the placement objective while
+          // reducing their collision geometry to a point at the component center.
+          courtyard: {
+            offsetFromCenter: { x: 0, y: 0 },
+            width: Number.EPSILON,
+            height: Number.EPSILON,
+          },
+        }),
+      )
+      const solverInput = {
+        ...layerPackInput,
+        components: [
+          ...networkReferenceComponents,
+          ...layerPackInput.components,
+        ],
+      }
+      const solver = new PackSolver2(solverInput)
+      const solverParams = solver.getConstructorParams()
+      group.root?.emit("solver:started", {
+        type: "solver:started",
+        solverName: "PackSolver2",
+        solverParams,
+        solverConstructorArgs: [solverParams],
+        componentName: group.getString(),
+      })
 
-    solver.solve()
+      solver.solve()
 
-    if (solver.failed) {
-      packingFailed = true
-      const solverErrorMessage =
-        solver.error ??
-        solver.activeSubSolver?.error ??
-        "No valid packing solution found"
-      reportPackingError(solverErrorMessage)
-    }
+      if (solver.failed) {
+        packingFailed = true
+        const solverErrorMessage =
+          solver.error ??
+          solver.activeSubSolver?.error ??
+          "No valid packing solution found"
+        reportPackingError(solverErrorMessage)
+      }
 
-    packOutput = {
-      ...packInput,
-      components: solver.packedComponents,
+      packOutput.components.push(
+        ...solver.packedComponents.filter((component) =>
+          componentIdsForLayer.has(component.componentId),
+        ),
+      )
     }
   } catch (error) {
     reportPackingError(error instanceof Error ? error.message : String(error))
