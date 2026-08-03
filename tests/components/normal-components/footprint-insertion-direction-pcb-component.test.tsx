@@ -161,7 +161,9 @@ test("footprint insertionDirection populates pcb_component post-transform proper
 
   expect(getInsertionDirection("R1")).toBe("from_top")
   expect(getInsertionDirection("R2")).toBe("from_left")
-  expect(getInsertionDirection("R3")).toBe("from_bottom")
+  // R3 sits on the bottom layer with no rotation. Flipping mirrors the
+  // footprint across its X axis, which leaves a +Y insertion pointing at +Y.
+  expect(getInsertionDirection("R3")).toBe("from_top")
   expect(getInsertionDirection("R4")).toBe("from_left")
   expect(getInsertionDirection("J1")).toBe("from_top")
 })
