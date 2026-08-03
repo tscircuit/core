@@ -138,6 +138,12 @@ const getDifferentialPairSrjConnectionNameOrThrow = ({
       `Could not find an SRJ connection for trace name or port selector "${traceNameOrPortSelector}" in differential pair "${differentialPairName}"`,
     )
   }
+  const unscopedSrjConnections = matchingSrjConnections.filter(
+    (srjConnection) => srjConnection.routingPcbGroupId === undefined,
+  )
+  if (unscopedSrjConnections.length === 1) {
+    return unscopedSrjConnections[0]!.name
+  }
   if (matchingSrjConnections.length > 1) {
     throw new Error(
       `Subcircuit connectivity map key "${traceSubcircuitConnectivityMapKey}" matches multiple SRJ connections for differential pair "${differentialPairName}"`,

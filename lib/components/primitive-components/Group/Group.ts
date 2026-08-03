@@ -1141,10 +1141,63 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           baseSimpleRouteJson,
           routingPhasePlan,
         )
+        // Normalize earlier copper to global connection names so custom phase
+        // routers can apply end-to-end constraints across completed fanouts.
+        let routedTracesForCustomPhase = outputTraces
+        if (phaseAutorouterConfig.algorithmFn) {
+          routedTracesForCustomPhase = outputTraces.map((trace) => {
+            const traceConnectionIds = new Set(
+              [
+                trace.connection_name,
+                trace.pcb_trace_id,
+                ...getSourceTraceIdsFromRerouteName(
+                  trace.connection_name ?? trace.pcb_trace_id,
+                ),
+              ].filter((id): id is string => Boolean(id)),
+            )
+            for (const connection of baseSimpleRouteJson.connections) {
+              if (
+                ![
+                  connection.name,
+                  ...(connection.mergedConnectionNames ?? []),
+                ].some((id) => traceConnectionIds.has(id))
+              ) {
+                continue
+              }
+              for (const id of [
+                connection.source_trace_id,
+                connection.rootConnectionName,
+              ]) {
+                if (id) traceConnectionIds.add(id)
+              }
+            }
+            const globalConnection = baseSimpleRouteJson.connections.find(
+              (connection) =>
+                connection.routingPcbGroupId === undefined &&
+                [
+                  connection.name,
+                  connection.source_trace_id,
+                  connection.rootConnectionName,
+                  ...(connection.mergedConnectionNames ?? []),
+                ].some((id) => id && traceConnectionIds.has(id)),
+            )
+            return globalConnection
+              ? { ...trace, connection_name: globalConnection.name }
+              : trace
+          })
+          simpleRouteJson.traces = [
+            ...(simpleRouteJson.traces ?? []),
+            ...routedTracesForCustomPhase.filter((trace) =>
+              simpleRouteJson.connections.some(
+                (connection) => connection.name === trace.connection_name,
+              ),
+            ),
+          ]
+        }
         simpleRouteJson.obstacles = [
           ...simpleRouteJson.obstacles,
           ...Group_getObstaclesFromRoutedTraces(
-            outputTraces,
+            routedTracesForCustomPhase,
             baseSimpleRouteJson.layerCount,
           ),
         ]
