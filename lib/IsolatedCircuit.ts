@@ -12,6 +12,7 @@ import type { BoardI } from "./components/normal-components/BoardI"
 import { Group } from "./components/primitive-components/Group"
 import type { RootCircuitEventName } from "./events"
 import { createInstanceFromReactElement } from "./fiber/create-instance-from-react-element"
+import { getGlobalLocalCacheEngine } from "./global-local-cache-engine"
 
 export class IsolatedCircuit {
   firstChild: PrimitiveComponent | null = null
@@ -100,12 +101,18 @@ export class IsolatedCircuit {
     cachedSubcircuits?: Map<string, AnyCircuitElement[]>
     pendingSubcircuitRenders?: Map<string, Promise<AnyCircuitElement[]>>
   } = {}) {
+    const globalLocalCacheEngine = getGlobalLocalCacheEngine()
+    const effectivePlatform =
+      !platform?.localCacheEngine && globalLocalCacheEngine
+        ? { ...platform, localCacheEngine: globalLocalCacheEngine }
+        : platform
+
     this.children = []
     this.db = su([])
-    this.platform = platform
+    this.platform = effectivePlatform
     this.projectUrl = projectUrl
-    this.pcbDisabled = platform?.pcbDisabled ?? false
-    this.pcbRoutingDisabled = platform?.routingDisabled ?? false
+    this.pcbDisabled = effectivePlatform?.pcbDisabled ?? false
+    this.pcbRoutingDisabled = effectivePlatform?.routingDisabled ?? false
     this.cachedSubcircuits = cachedSubcircuits
     this.pendingSubcircuitRenders = pendingSubcircuitRenders
     this.root = this
