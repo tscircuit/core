@@ -159,9 +159,9 @@ test("footprint insertionDirection populates pcb_component post-transform proper
     return pcbComponent?.insertion_direction
   }
 
-  expect(getInsertionDirection("R1")).toBe("from_front")
+  expect(getInsertionDirection("R1") as string).toBe("from_top")
   expect(getInsertionDirection("R2")).toBe("from_left")
-  expect(getInsertionDirection("R3")).toBe("from_back")
+  expect(getInsertionDirection("R3") as string).toBe("from_bottom")
   expect(getInsertionDirection("R4")).toBe("from_left")
-  expect(getInsertionDirection("J1")).toBe("from_front")
+  expect(getInsertionDirection("J1") as string).toBe("from_top")
 })
