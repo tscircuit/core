@@ -6,18 +6,12 @@ import { getTestAutoroutingServer } from "tests/fixtures/get-test-autorouting-se
 test.skip("remote autorouter 3 cloud-auto", async () => {
   const { autoroutingServerUrl } = getTestAutoroutingServer()
 
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture({
+    platform: { allowLegacyAutorouters: true },
+  })
 
   circuit.add(
-    <board
-      width="20mm"
-      height="20mm"
-      autorouter={{
-        serverUrl: autoroutingServerUrl,
-        serverMode: "solve-endpoint",
-        inputFormat: "simplified",
-      }}
-    >
+    <board width="20mm" height="20mm" autorouter="auto-cloud">
       <chip name="U1" footprint="soic8" pcbX={5} pcbY={0} />
       <resistor
         name="R1"

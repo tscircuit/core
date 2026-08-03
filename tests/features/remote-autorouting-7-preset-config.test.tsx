@@ -4,7 +4,9 @@ import { getTestFixture } from "../fixtures/get-test-fixture"
 
 test("remote-autorouter-7 with preset config", async () => {
   const { autoroutingServerUrl } = getTestAutoroutingServer()
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture({
+    platform: { allowLegacyAutorouters: true },
+  })
 
   const asyncEffectStartEvents: any[] = []
   circuit.on("asyncEffect:start", (event) => {
@@ -18,7 +20,7 @@ test("remote-autorouter-7 with preset config", async () => {
     <board
       width="20mm"
       height="20mm"
-      autorouter={{ serverUrl: autoroutingServerUrl }}
+      autorouter={{ preset: "auto-cloud", serverUrl: autoroutingServerUrl }}
     >
       <resistor name="R2" pcbX={5} pcbY={0} resistance={100} footprint="0402" />
       <resistor

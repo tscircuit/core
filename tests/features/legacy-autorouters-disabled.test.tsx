@@ -68,7 +68,7 @@ test("legacy autorouters are disabled unless the platform allows them", async ()
   })
   addRoutableBoard(legacyCircuit, "sequential-trace")
 
-  legacyCircuit.render()
+  await legacyCircuit.renderUntilSettled()
 
   expect(legacyCircuit.db.pcb_trace.list()).toHaveLength(1)
   expect(legacyCircuit.db.source_property_ignored_warning.list()).toHaveLength(
