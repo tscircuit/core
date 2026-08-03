@@ -111,6 +111,8 @@ export type SimpleRouteConnection = {
 export type SimpleRouteDifferentialPair = {
   connectionNames: [SrjConnectionName, SrjConnectionName]
   lengthTolerance: number
+  traceGap?: number
+  maxUncoupledLength?: number
 }
 
 /** A group of connections that an autorouter should keep together. */
@@ -127,6 +129,9 @@ export type SimpleRouteBus = {
   busId: string
   name?: string
   connectionNames: SrjConnectionName[]
+  maxLengthSkew?: number
+  traceWidth?: number
+  allowedLayers?: string[]
   termination?: SimpleRouteBusTermination
 }
 
