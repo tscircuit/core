@@ -211,6 +211,15 @@ export const getBusesForSimpleRouteJson = ({
       busId: bus.name,
       name: bus.name,
       connectionNames,
+      ...(bus._parsedProps.maxLengthSkew !== undefined
+        ? { maxLengthSkew: bus._parsedProps.maxLengthSkew }
+        : {}),
+      ...(bus._parsedProps.pcbTraceWidth !== undefined
+        ? { traceWidth: bus._parsedProps.pcbTraceWidth }
+        : {}),
+      ...(bus._parsedProps.pcbAllowedLayers !== undefined
+        ? { allowedLayers: bus._parsedProps.pcbAllowedLayers }
+        : {}),
     })
   }
 
