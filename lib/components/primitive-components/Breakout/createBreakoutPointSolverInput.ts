@@ -60,6 +60,14 @@ export const createBreakoutPointSolverInput = (
   const boundsMaxX = pcbGroup.center.x + pcbGroup.width / 2
   const boundsMinY = pcbGroup.center.y - pcbGroup.height / 2
   const boundsMaxY = pcbGroup.center.y + pcbGroup.height / 2
+  const board = db.pcb_board.list()[0]
+  const traceWidth = board?.min_trace_width ?? 0.15
+  const traceToPadEdgeClearance =
+    board?.min_trace_to_pad_edge_clearance ?? 0.1
+  const boundaryPointClearance =
+    board?.min_trace_to_pad_edge_clearance ?? 0.2
+  const viaPadDiameter = board?.min_via_pad_diameter ?? 0.3
+  const padEscapeClearance = traceWidth / 2 + traceToPadEdgeClearance
 
   const traces: BreakoutPointSolverInput["traces"] = []
   for (const sourceTrace of db.source_trace.list()) {
@@ -108,6 +116,13 @@ export const createBreakoutPointSolverInput = (
       center: padBounds.center,
       width: padBounds.width,
       height: padBounds.height,
+      // The trace from an inside port to its breakout point is fixed geometry,
+      // so reserve its full trace-to-pad clearance inside the breakout. Pads
+      // outside the group are target-side routing obstacles and are handled by
+      // the autorouter after the breakout point has been selected.
+      ...(pcbPort?.pcb_group_id === breakout.pcb_group_id
+        ? { clearance: padEscapeClearance }
+        : {}),
       layer: ((pad as any).layer as PcbLayer) ?? "top",
       sourcePortIds: pcbPort?.source_port_id ? [pcbPort.source_port_id] : [],
       label: getPortLabel(db, pcbPort?.source_port_id),
@@ -138,11 +153,8 @@ export const createBreakoutPointSolverInput = (
   // route. That needs room for a via pad in the middle with a trace +
   // clearance on each side, so the spacing scales with the board's trace
   // width, via size, and clearance.
-  const board = db.pcb_board.list()[0]
-  const traceWidth = board?.min_trace_width ?? 0.15
-  const clearance = board?.min_trace_to_pad_edge_clearance ?? 0.2
-  const viaPadDiameter = board?.min_via_pad_diameter ?? 0.3
-  const boundaryPointSpacing = viaPadDiameter + 2 * (traceWidth + clearance)
+  const boundaryPointSpacing =
+    viaPadDiameter + 2 * (traceWidth + boundaryPointClearance)
 
   return {
     bounds: {
