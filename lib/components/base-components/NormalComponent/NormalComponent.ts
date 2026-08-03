@@ -81,6 +81,10 @@ import {
   NormalComponent_doInitialCheckRefDesConvention,
   getDefaultExpectedRefDesPrefixesForFtype,
 } from "./NormalComponent_doInitialCheckRefDesConvention"
+import {
+  NormalComponent_doInitialPartOrientationAnalysis,
+  NormalComponent_updatePartOrientationAnalysis,
+} from "./NormalComponent_doInitialPartOrientationAnalysis"
 import { NormalComponent_doInitialPcbComponentAnchorAlignment } from "./NormalComponent_doInitialPcbComponentAnchorAlignment"
 import { NormalComponent_doInitialPcbFootprintStringRender } from "./NormalComponent_doInitialPcbFootprintStringRender"
 import { NormalComponent_doInitialResolveFootprintPinLabels } from "./NormalComponent_doInitialResolveFootprintPinLabels"
@@ -154,6 +158,8 @@ export class NormalComponent<
   _inferredInternallyConnectedPinNames: string[][] = []
   pcb_missing_footprint_error_id?: string
   _hasStartedFootprintUrlLoad = false
+  _hasStartedPartOrientationAnalysis = false
+  _asyncSupplierPin1LocationMap?: import("circuit-json").SupplierPin1LocationMap
   _hasStartedSupplierFootprintMismatchWarningCheck = false
   _hasInflatedCircuitJsonSymbol = false
   private _invalidFootprintPropMessages: string[] = []
@@ -1204,7 +1210,7 @@ export class NormalComponent<
     )
   }
 
-  protected _getFootprintOriginalLayer(): LayerRef | undefined {
+  _getFootprintOriginalLayer(): LayerRef | undefined {
     return this._getFootprintMetadataForPcbComponent()?.originalLayer
   }
 
@@ -2082,6 +2088,14 @@ export class NormalComponent<
       })
       return
     }
+  }
+
+  doInitialPartOrientationAnalysis(): void {
+    NormalComponent_doInitialPartOrientationAnalysis(this)
+  }
+
+  updatePartOrientationAnalysis(): void {
+    NormalComponent_updatePartOrientationAnalysis(this)
   }
 
   doInitialSupplierFootprintMismatchWarning(): void {

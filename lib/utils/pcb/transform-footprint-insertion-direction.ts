@@ -1,6 +1,6 @@
 import { normalizeDegrees } from "@tscircuit/math-utils"
 import type { FootprintInsertionDirection } from "@tscircuit/props"
-import type { LayerRef } from "circuit-json"
+import type { LayerRef, PcbComponent } from "circuit-json"
 
 type CanonicalInsertionDirection =
   | "from_left"
@@ -16,9 +16,18 @@ const insertionDirectionToCanonical: Record<
 > = {
   from_left: "from_left",
   from_right: "from_right",
+  from_top: "from_top",
+  from_bottom: "from_bottom",
+  from_below: "from_below",
   from_front: "from_top",
   from_back: "from_bottom",
   from_above: "from_above",
+  from_x_neg: "from_left",
+  from_x_pos: "from_right",
+  from_y_pos: "from_top",
+  from_y_neg: "from_bottom",
+  from_z_pos: "from_above",
+  from_z_neg: "from_below",
 }
 
 const insertionDirectionToVector: Record<
@@ -45,7 +54,7 @@ export const transformFootprintInsertionDirection = (params: {
   insertionDirection?: FootprintInsertionDirection
   rotationDegrees?: number
   isFlipped?: boolean
-}): FootprintInsertionDirection | undefined => {
+}): PcbComponent["insertion_direction"] | undefined => {
   const { insertionDirection, rotationDegrees = 0, isFlipped = false } = params
 
   if (!insertionDirection) return undefined
@@ -58,7 +67,7 @@ export const transformFootprintInsertionDirection = (params: {
   // Z-axis insertion directions do not change when a footprint is rotated or
   // mirrored in the PCB plane.
   if (baseVector.z !== 0) {
-    return canonicalDirection as FootprintInsertionDirection
+    return canonicalDirection
   }
 
   const angleRadians = (normalizeDegrees(rotationDegrees) * Math.PI) / 180
@@ -81,7 +90,5 @@ export const transformFootprintInsertionDirection = (params: {
   // `from_top` and `from_bottom` are canonical Circuit JSON values. The
   // props package still types this field with the deprecated union, so the
   // boundary cast keeps source compatibility while emitting the new values.
-  return (
-    finalVector.y >= 0 ? "from_top" : "from_bottom"
-  ) as FootprintInsertionDirection
+  return finalVector.y >= 0 ? "from_top" : "from_bottom"
 }
