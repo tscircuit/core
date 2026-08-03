@@ -9,6 +9,37 @@ export type NormalizedAutorouterConfig = AutorouterConfig & {
   targetMinCapacity?: number
 }
 
+export type LegacyAutorouterPreset = "sequential_trace" | "auto_cloud"
+
+const normalizeAutorouterName = (value?: string) => value?.replace(/-/g, "_")
+
+export function getLegacyAutorouterPreset(
+  autorouterConfig: AutorouterProp | undefined,
+): LegacyAutorouterPreset | null {
+  if (!autorouterConfig) return null
+
+  if (typeof autorouterConfig === "string") {
+    const normalizedAutorouterName = normalizeAutorouterName(autorouterConfig)
+    return normalizedAutorouterName === "sequential_trace" ||
+      normalizedAutorouterName === "auto_cloud"
+      ? normalizedAutorouterName
+      : null
+  }
+
+  const normalizedPreset = normalizeAutorouterName(autorouterConfig.preset)
+  if (
+    normalizedPreset === "sequential_trace" ||
+    normalizedPreset === "auto_cloud"
+  ) {
+    return normalizedPreset
+  }
+
+  return normalizeAutorouterName(autorouterConfig.groupMode) ===
+    "sequential_trace"
+    ? "sequential_trace"
+    : null
+}
+
 export function getPresetAutoroutingConfig(
   autorouterConfig: AutorouterProp | undefined,
   platformConfig?: PlatformConfig,
