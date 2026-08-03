@@ -20,6 +20,7 @@ test("led accepts legacy numeric pinLabels keys", () => {
   expect(circuit.db.source_failed_to_create_component_error.list()).toEqual([])
 
   const led = circuit.selectOne("led") as Led
+  expect(led._parsedProps.pinLabels).toEqual({ pin1: "pos", pin2: "neg" })
   expect(led.pos).toBeDefined()
   expect(led.pos._parsedProps.pinNumber).toBe(1)
   expect(led.neg).toBeDefined()
