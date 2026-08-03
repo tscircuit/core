@@ -62,10 +62,8 @@ export const createBreakoutPointSolverInput = (
   const boundsMaxY = pcbGroup.center.y + pcbGroup.height / 2
   const board = db.pcb_board.list()[0]
   const traceWidth = board?.min_trace_width ?? 0.15
-  const traceToPadEdgeClearance =
-    board?.min_trace_to_pad_edge_clearance ?? 0.1
-  const boundaryPointClearance =
-    board?.min_trace_to_pad_edge_clearance ?? 0.2
+  const traceToPadEdgeClearance = board?.min_trace_to_pad_edge_clearance ?? 0.1
+  const boundaryPointClearance = board?.min_trace_to_pad_edge_clearance ?? 0.2
   const viaPadDiameter = board?.min_via_pad_diameter ?? 0.3
   const padEscapeClearance = traceWidth / 2 + traceToPadEdgeClearance
 
