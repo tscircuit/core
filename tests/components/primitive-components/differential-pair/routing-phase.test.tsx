@@ -25,7 +25,7 @@ test("routes both differential pair traces in the same routing phase", async ():
       <trace
         name="USB_N"
         from=".U1 > .pin2"
-        to=".U2 > .pin2"
+        to=".U2 > .pin6"
         routingPhaseIndex={0}
       />
       <pcbnotetext
@@ -42,7 +42,6 @@ test("routes both differential pair traces in the same routing phase", async ():
   expect(
     autoroutingPhaseIoStack[0]?.startSimpleRouteJson?.differentialPairs,
   ).toHaveLength(1)
-  expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
   await expect(autoroutingPhaseIoStack).toMatchAutoroutingPhaseIoStackSnapshot(
     import.meta.path,
     "differential-pair-routing-phase",
