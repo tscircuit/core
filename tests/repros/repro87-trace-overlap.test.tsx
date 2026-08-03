@@ -322,7 +322,6 @@ export const RedLed = (props: RedLedProps) => {
         rotationOffset: { x: 0, y: 0, z: 0 },
         positionOffset: { x: 0, y: 0, z: 0 },
       }}
-      // @ts-ignore
       pinLabels={pinLabels2}
       supplierPartNumbers={{
         jlcpcb: ["C965799"],
