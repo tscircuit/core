@@ -303,6 +303,20 @@ export const createComponentsFromCircuitJson = (
           layer: elm.layer,
         }),
       )
+    } else if (elm.type === "pcb_smtpad" && elm.shape === "rotated_pill") {
+      components.push(
+        new SmtPad({
+          shape: "rotated_pill",
+          height: elm.height,
+          width: elm.width,
+          radius: elm.radius,
+          portHints: resolvedPortHints,
+          pcbX: elm.x,
+          pcbY: elm.y,
+          layer: elm.layer,
+          ccwRotation: elm.ccw_rotation,
+        }),
+      )
     } else if (elm.type === "pcb_smtpad" && elm.shape === "rotated_rect") {
       components.push(
         new SmtPad({

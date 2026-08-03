@@ -59,6 +59,14 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
     if (props.shape === "pill") {
       return { width: props.width!, height: props.height! }
     }
+    if (props.shape === "rotated_pill") {
+      const { width, height } = getAxisAlignedSizeFromRotatedRect({
+        width: props.width,
+        height: props.height,
+        ccwRotationDegrees: props.ccwRotation,
+      })
+      return { width, height }
+    }
     throw new Error(
       `getPcbSize for shape "${(props as any).shape}" not implemented for ${this.componentName}`,
     )
@@ -306,6 +314,30 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
       } as PcbSmtPadPolygon) as PcbSmtPadPolygon
+    } else if (props.shape === "rotated_pill") {
+      const combinedRotationBeforeFlip =
+        (transformRotationBeforeFlip + props.ccwRotation + 360) % 360
+      const padRotation = isFlipped
+        ? (360 - combinedRotationBeforeFlip + 360) % 360
+        : combinedRotationBeforeFlip
+
+      pcb_smtpad = db.pcb_smtpad.insert({
+        pcb_component_id,
+        pcb_port_id: this.matchedPort?.pcb_port_id!,
+        layer: maybeFlipLayer(props.layer ?? "top"),
+        shape: "rotated_pill",
+        x: position.x,
+        y: position.y,
+        radius: props.radius,
+        height: props.height,
+        width: props.width,
+        ccw_rotation: padRotation,
+        port_hints: portHints,
+        is_covered_with_solder_mask: isCoveredWithSolderMask,
+        soldermask_margin: soldermaskMargin,
+        subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+        pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
+      } as PcbSmtPadRotatedPill)
     } else if (props.shape === "pill") {
       if (finalRotationDegrees !== 0) {
         pcb_smtpad = db.pcb_smtpad.insert({
