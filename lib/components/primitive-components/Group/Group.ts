@@ -39,6 +39,7 @@ import {
 } from "lib/utils/autorouting/getPresetAutoroutingConfig"
 import { getLocalAutoroutingStages } from "lib/utils/autorouting/localAutorouterStrategies"
 import { shouldSkipAutoroutingBecauseOfPlacementErrors } from "lib/utils/autorouting/should-skip-autorouting-because-of-placement-errors"
+import { shouldSkipAutoroutingBecauseOfTraceLengthViolations } from "lib/utils/autorouting/should-skip-autorouting-because-of-trace-length-violations"
 import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
 import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
 import {
@@ -170,6 +171,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   _hasStartedAsyncAutorouting = false
 
   _pcbPlacementDrcErrorCount: number | null = null
+
+  _pcbPlacementDrcCheckError: string | null = null
+
+  _pcbPlacementDrcChecksPending = false
 
   _isInflatedFromCircuitJson = false
 
@@ -1481,11 +1486,19 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       `[${this.getString()}] no child subcircuits to wait for, initiating async routing`,
     )
     if (!this._hasTracesToRoute()) return
-    if (
+    const shouldSkipBecauseOfPlacementErrors =
       shouldSkipAutoroutingBecauseOfPlacementErrors({
         component: this,
         subcircuit: this,
       })
+    const shouldSkipBecauseOfTraceLengthViolations =
+      shouldSkipAutoroutingBecauseOfTraceLengthViolations({
+        component: this,
+        subcircuit: this,
+      })
+    if (
+      shouldSkipBecauseOfPlacementErrors ||
+      shouldSkipBecauseOfTraceLengthViolations
     )
       return
     this._startAsyncAutorouting()
@@ -1507,11 +1520,19 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       !this._hasStartedAsyncAutorouting
     ) {
       if (this._areChildSubcircuitsRouted()) {
-        if (
+        const shouldSkipBecauseOfPlacementErrors =
           shouldSkipAutoroutingBecauseOfPlacementErrors({
             component: this,
             subcircuit: this,
           })
+        const shouldSkipBecauseOfTraceLengthViolations =
+          shouldSkipAutoroutingBecauseOfTraceLengthViolations({
+            component: this,
+            subcircuit: this,
+          })
+        if (
+          shouldSkipBecauseOfPlacementErrors ||
+          shouldSkipBecauseOfTraceLengthViolations
         )
           return
         debug(

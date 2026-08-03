@@ -7,6 +7,7 @@ import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
 import { findPossibleTraceLayerCombinations } from "lib/utils/autorouting/findPossibleTraceLayerCombinations"
 import { mergeRoutes } from "lib/utils/autorouting/mergeRoutes"
 import { shouldSkipAutoroutingBecauseOfPlacementErrors } from "lib/utils/autorouting/should-skip-autorouting-because-of-placement-errors"
+import { shouldSkipAutoroutingBecauseOfTraceLengthViolations } from "lib/utils/autorouting/should-skip-autorouting-because-of-trace-length-violations"
 import { getClosest } from "lib/utils/getClosest"
 import {
   getBoardAvailableLayers,
@@ -132,14 +133,6 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
     return
   }
 
-  if (
-    shouldSkipAutoroutingBecauseOfPlacementErrors({
-      component: trace,
-      subcircuit,
-    })
-  )
-    return
-
   let allPortsFound: boolean
   let ports: Port[]
   let portsWithSelectors: Array<{ selector: string; port: Port }>
@@ -202,6 +195,22 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
     })
     return
   }
+
+  const shouldSkipBecauseOfPlacementErrors =
+    shouldSkipAutoroutingBecauseOfPlacementErrors({
+      component: trace,
+      subcircuit,
+    })
+  const shouldSkipBecauseOfTraceLengthViolations =
+    shouldSkipAutoroutingBecauseOfTraceLengthViolations({
+      component: trace,
+      subcircuit,
+    })
+  if (
+    shouldSkipBecauseOfPlacementErrors ||
+    shouldSkipBecauseOfTraceLengthViolations
+  )
+    return
 
   const nets = trace._findConnectedNets().netsWithSelectors
 

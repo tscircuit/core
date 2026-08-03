@@ -3,7 +3,9 @@ import { createAutoroutingPhaseIoStack } from "tests/fixtures/create-autorouting
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("fanout routes soic8 sensor support parts to an i2c header without fanoutpoints", async () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture({
+    platform: { placementDrcChecksDisabled: true },
+  })
   const autoroutingPhaseIoStack = createAutoroutingPhaseIoStack(circuit)
 
   circuit.add(

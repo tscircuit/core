@@ -1,13 +1,18 @@
-import {
-  checkConnectorAccessibleOrientation,
-  checkPadPadClearance,
-  checkPadTraceClearance,
-  checkPcbComponentOverlap,
-  checkPcbComponentsOutOfBoard,
-  checkViasOffBoard,
-} from "@tscircuit/checks"
+import { runAllPlacementChecks } from "@tscircuit/checks"
 import type { AnyCircuitElement } from "circuit-json"
+import type { Renderable } from "../base-components/Renderable"
 import type { Board } from "./Board"
+
+const resetPcbTraceRenderInSubtree = (renderable: Renderable) => {
+  if (renderable._pcbTraceRenderWaitingForPlacementChecks) {
+    renderable.renderPhaseStates.PcbTraceRender.initialized = false
+    renderable.renderPhaseStates.PcbTraceRender.dirty = false
+    renderable._pcbTraceRenderWaitingForPlacementChecks = false
+  }
+  for (const child of renderable.children) {
+    resetPcbTraceRenderInSubtree(child as Renderable)
+  }
+}
 
 export const Board_doInitialPcbPlacementDesignRuleChecks = (board: Board) => {
   if (board.root?.pcbDisabled) return
@@ -19,32 +24,46 @@ export const Board_doInitialPcbPlacementDesignRuleChecks = (board: Board) => {
     board.root?.platform?.drcChecksDisabled ??
     board.getInheritedProperty("drcChecksDisabled")
 
-  board._pcbPlacementDrcErrorCount = 0
-  if (placementDrcChecksDisabled || drcChecksDisabled) return
+  board._pcbPlacementDrcErrorCount = null
+  board._pcbPlacementDrcCheckError = null
+  board._pcbPlacementDrcChecksPending = false
+  if (placementDrcChecksDisabled || drcChecksDisabled) {
+    board._pcbPlacementDrcErrorCount = 0
+    return
+  }
 
   const { db } = board.root!
-  const existingPlacementErrorCount = db.pcb_placement_error.list().length
   const subcircuitCircuitJson = db
     .subtree({ subcircuit_id: board.subcircuit_id })
     .toArray()
+  const existingPlacementDiagnostics = db.toArray()
 
-  try {
-    const placementCheckResults = [
-      ...checkViasOffBoard(subcircuitCircuitJson),
-      ...checkPcbComponentsOutOfBoard(subcircuitCircuitJson),
-      ...checkPcbComponentOverlap(subcircuitCircuitJson),
-      ...checkPadPadClearance(subcircuitCircuitJson),
-      ...checkPadTraceClearance(subcircuitCircuitJson),
-      ...checkConnectorAccessibleOrientation(subcircuitCircuitJson),
-    ]
-    db.insertAll(placementCheckResults as AnyCircuitElement[])
-    board._pcbPlacementDrcErrorCount =
-      existingPlacementErrorCount +
-      placementCheckResults.filter((result) => result.type.endsWith("_error"))
-        .length
-  } catch {
-    // Some imported footprint polygons cannot be evaluated by placement DRC.
-    // Leave routing enabled and let the normal post-routing DRC report it.
-    board._pcbPlacementDrcErrorCount = existingPlacementErrorCount
-  }
+  board._pcbPlacementDrcChecksPending = true
+  board._queueAsyncEffect("board:pre-route-placement-checks", async () => {
+    try {
+      const placementCheckResults = await runAllPlacementChecks(
+        subcircuitCircuitJson,
+      )
+      const newPlacementDiagnostics = placementCheckResults.filter(
+        (result) =>
+          !existingPlacementDiagnostics.some(
+            (existing) =>
+              existing.type === result.type &&
+              "message" in existing &&
+              existing.message === result.message,
+          ),
+      )
+
+      db.insertAll(newPlacementDiagnostics as AnyCircuitElement[])
+      board._pcbPlacementDrcErrorCount = placementCheckResults.filter(
+        (result) => result.type.endsWith("_error"),
+      ).length
+    } catch (error) {
+      board._pcbPlacementDrcCheckError =
+        error instanceof Error ? error.message : String(error)
+    } finally {
+      board._pcbPlacementDrcChecksPending = false
+      resetPcbTraceRenderInSubtree(board)
+    }
+  })
 }

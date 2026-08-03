@@ -1,4 +1,4 @@
-import { test, expect } from "bun:test"
+import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 const FlippedChip = ({
@@ -51,7 +51,7 @@ test("chip with flipped layer should have traces on correct layer", async () => 
     </board>,
   )
 
-  circuit.render()
+  await circuit.renderUntilSettled()
 
   const traces = circuit.db.pcb_trace.list()
 

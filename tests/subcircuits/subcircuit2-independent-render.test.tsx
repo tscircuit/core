@@ -1,9 +1,11 @@
-import { test, expect, describe } from "bun:test"
+import { describe, expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 describe("subcircuit2-independent-render", () => {
   test("should be able to disable routing within a subcircuit", async () => {
-    const { circuit } = await getTestFixture()
+    const { circuit } = await getTestFixture({
+      platform: { placementDrcChecksDisabled: true },
+    })
 
     circuit.add(
       <board width="10mm" height="10mm" autorouter="sequential-trace">

@@ -1,4 +1,4 @@
-import { test, expect } from "bun:test"
+import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("manual trace hints correctly change trace routes", async () => {
@@ -41,7 +41,7 @@ test("manual trace hints correctly change trace routes", async () => {
     </board>,
   )
 
-  circuit.render()
+  await circuit.renderUntilSettled()
 
   expect(circuit.db.pcb_trace.list().length).toBe(1)
 
