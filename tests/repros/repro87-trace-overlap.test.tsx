@@ -324,17 +324,6 @@ export const RedLed = (props: RedLedProps) => {
       }}
       // @ts-ignore
       pinLabels={pinLabels2}
-      schPinSpacing={0.75}
-      schPortArrangement={{
-        leftSide: {
-          direction: "top-to-bottom",
-          pins: [1],
-        },
-        rightSide: {
-          direction: "bottom-to-top",
-          pins: [2],
-        },
-      }}
       supplierPartNumbers={{
         jlcpcb: ["C965799"],
       }}
@@ -467,7 +456,6 @@ export const NE555P = (props: Ne555Props) => {
         positionOffset: { x: 0, y: 0, z: 0 },
       }}
       pinLabels={pinLabels}
-      schPinSpacing={0.75}
       supplierPartNumbers={{
         lcsc: ["C46749"],
       }}
