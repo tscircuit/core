@@ -10,7 +10,7 @@ test("subcircuit-circuit-json07", async () => {
 
   const subcircuitCircuitJson = await renderToCircuitJson(
     <group name="G1">
-      <transistor name="Q1" type="npn" footprint="sot-23" />
+      <transistor name="Q1" type="npn" footprint="sot23" />
       <port name="P1" direction="left" connectsTo="Q1.collector" />
       <port name="P2" direction="right" connectsTo="Q1.emitter" />
     </group>,
