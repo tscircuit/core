@@ -103,7 +103,7 @@ test("part orientation analysis enriches pcb components and uses the platform ca
   const platform = {
     partsEngine,
     localCacheEngine,
-    usePartOrientationAnalysis: true,
+    enablePartOrientationAnalysis: true,
   }
 
   const firstFixture = getTestFixture({ platform })

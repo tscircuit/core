@@ -210,7 +210,7 @@ const analyzeSupplierPin1Location = async ({
 export const NormalComponent_doInitialPartOrientationAnalysis = (
   component: NormalComponent<any, any>,
 ) => {
-  if (!component.root?.platform?.usePartOrientationAnalysis) return
+  if (!component.root?.platform?.enablePartOrientationAnalysis) return
   if (component.root.pcbDisabled || component.props.doNotPlace) return
   if (!component.pcb_component_id) return
 
