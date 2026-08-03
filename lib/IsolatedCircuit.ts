@@ -12,7 +12,7 @@ import type { BoardI } from "./components/normal-components/BoardI"
 import { Group } from "./components/primitive-components/Group"
 import type { RootCircuitEventName } from "./events"
 import { createInstanceFromReactElement } from "./fiber/create-instance-from-react-element"
-import { getGlobalLocalCacheEngine } from "./global-local-cache-engine"
+import { getInheritedLocalCacheEngine } from "./inherited-local-cache-engine"
 
 export class IsolatedCircuit {
   firstChild: PrimitiveComponent | null = null
@@ -101,10 +101,10 @@ export class IsolatedCircuit {
     cachedSubcircuits?: Map<string, AnyCircuitElement[]>
     pendingSubcircuitRenders?: Map<string, Promise<AnyCircuitElement[]>>
   } = {}) {
-    const globalLocalCacheEngine = getGlobalLocalCacheEngine()
+    const inheritedLocalCacheEngine = getInheritedLocalCacheEngine()
     const effectivePlatform =
-      !platform?.localCacheEngine && globalLocalCacheEngine
-        ? { ...platform, localCacheEngine: globalLocalCacheEngine }
+      !platform?.localCacheEngine && inheritedLocalCacheEngine
+        ? { ...platform, localCacheEngine: inheritedLocalCacheEngine }
         : platform
 
     this.children = []

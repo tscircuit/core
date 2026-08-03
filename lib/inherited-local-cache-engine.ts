@@ -5,14 +5,16 @@ import type { LocalCacheEngine } from "./local-cache-engine"
  * cache engine before the circuit is created. `Symbol.for` keeps the contract
  * stable even when the host and core are bundled separately.
  */
-export const GLOBAL_LOCAL_CACHE_ENGINE_SYMBOL = Symbol.for(
-  "tscircuit.localCacheEngine",
+export const INHERITED_LOCAL_CACHE_ENGINE_SYMBOL = Symbol.for(
+  "tscircuit.inheritedLocalCacheEngine",
 )
 
-export const getGlobalLocalCacheEngine = (): LocalCacheEngine | undefined => {
+export const getInheritedLocalCacheEngine = ():
+  | LocalCacheEngine
+  | undefined => {
   const cacheEngine = Reflect.get(
     globalThis,
-    GLOBAL_LOCAL_CACHE_ENGINE_SYMBOL,
+    INHERITED_LOCAL_CACHE_ENGINE_SYMBOL,
   ) as Partial<LocalCacheEngine> | undefined
 
   if (
