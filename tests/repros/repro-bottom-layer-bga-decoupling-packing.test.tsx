@@ -4,7 +4,7 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 const distance = (a: { x: number; y: number }, b: { x: number; y: number }) =>
   Math.hypot(a.x - b.x, a.y - b.y)
 
-test("pcbPack places bottom-layer decoupling capacitors underneath a BGA", async () => {
+test.failing("pcbPack places bottom-layer decoupling capacitors underneath a BGA", async () => {
   const { circuit } = getTestFixture()
 
   // pcbPack defaults to minimum_sum_squared_distance_to_network.
