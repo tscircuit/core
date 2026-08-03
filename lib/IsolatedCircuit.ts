@@ -12,7 +12,6 @@ import type { BoardI } from "./components/normal-components/BoardI"
 import { Group } from "./components/primitive-components/Group"
 import type { RootCircuitEventName } from "./events"
 import { createInstanceFromReactElement } from "./fiber/create-instance-from-react-element"
-import { getInheritedLocalCacheEngine } from "./inherited-local-cache-engine"
 
 export class IsolatedCircuit {
   firstChild: PrimitiveComponent | null = null
@@ -101,18 +100,12 @@ export class IsolatedCircuit {
     cachedSubcircuits?: Map<string, AnyCircuitElement[]>
     pendingSubcircuitRenders?: Map<string, Promise<AnyCircuitElement[]>>
   } = {}) {
-    const inheritedLocalCacheEngine = getInheritedLocalCacheEngine()
-    const effectivePlatform =
-      !platform?.localCacheEngine && inheritedLocalCacheEngine
-        ? { ...platform, localCacheEngine: inheritedLocalCacheEngine }
-        : platform
-
     this.children = []
     this.db = su([])
-    this.platform = effectivePlatform
+    this.platform = platform
     this.projectUrl = projectUrl
-    this.pcbDisabled = effectivePlatform?.pcbDisabled ?? false
-    this.pcbRoutingDisabled = effectivePlatform?.routingDisabled ?? false
+    this.pcbDisabled = platform?.pcbDisabled ?? false
+    this.pcbRoutingDisabled = platform?.routingDisabled ?? false
     this.cachedSubcircuits = cachedSubcircuits
     this.pendingSubcircuitRenders = pendingSubcircuitRenders
     this.root = this

@@ -18,7 +18,6 @@ export * from "./utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 export * from "./utils/autorouting/unrouteCircuitJson"
 
 export type { LocalCacheEngine } from "./local-cache-engine"
-export { INHERITED_LOCAL_CACHE_ENGINE_SYMBOL } from "./inherited-local-cache-engine"
 
 export * from "./utils/autorouting/GenericLocalAutorouter"
 export * from "./utils/edit-events/apply-pcb-edit-events-to-manual-edits-file"
