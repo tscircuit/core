@@ -40,6 +40,9 @@ test("legacy autorouters are disabled unless the platform allows them", async ()
     expect(
       circuit.db.source_property_ignored_warning.list()[0]?.message,
     ).toContain("default autorouter")
+    expect(
+      circuit.db.source_property_ignored_warning.list()[0]?.message,
+    ).toContain("<fanout />")
   }
 
   const { circuit: phasedLegacyCircuit } = getTestFixture()

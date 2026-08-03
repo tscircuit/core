@@ -481,7 +481,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       property_name: "autorouter",
       subcircuit_id: this.subcircuit_id ?? undefined,
       error_type: "source_property_ignored_warning",
-      message: `The "${disabledLegacyAutorouterPreset}" autorouter is deprecated, so autorouting has been disabled for this subcircuit. Use the default autorouter with <autoroutingphase /> elements instead. A platform can temporarily set allowLegacyAutorouters to true during migration.`,
+      message: `The "${disabledLegacyAutorouterPreset}" autorouter is deprecated, so autorouting has been disabled for this subcircuit. Use the default autorouter and introduce <autoroutingphase /> or <fanout /> elements as needed.`,
     })
   }
 
