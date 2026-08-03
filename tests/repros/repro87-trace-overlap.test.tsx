@@ -322,8 +322,8 @@ export const RedLed = (props: RedLedProps) => {
         rotationOffset: { x: 0, y: 0, z: 0 },
         positionOffset: { x: 0, y: 0, z: 0 },
       }}
-      // @ts-ignore
       pinLabels={pinLabels2}
+      // @ts-ignore legacy registry component includes deprecated schematic layout props
       schPinSpacing={0.75}
       schPortArrangement={{
         leftSide: {
