@@ -163,6 +163,7 @@ export class NormalComponent<
   _hasStartedSupplierFootprintMismatchWarningCheck = false
   _hasInflatedCircuitJsonSymbol = false
   private _invalidFootprintPropMessages: string[] = []
+  private _invalidConnectionsPropMessages: string[] = []
 
   _invalidPinLabelMessages: string[] = []
   _impliedFootprintPinLabels?: Record<string, string | string[]>
@@ -2125,15 +2126,35 @@ export class NormalComponent<
       for (const [pinName, target] of Object.entries(props.connections)) {
         const targets = Array.isArray(target) ? target : [target]
         for (const targetPath of targets) {
+          const selector = String(targetPath)
+          if (selector.trim() === "") {
+            const message = `${this.getString()} has an empty connections target for pin "${pinName}". Provide a selector such as ".R1 > .pin1" or "net.VCC", or remove the entry.`
+            if (!this._invalidConnectionsPropMessages.includes(message)) {
+              this._invalidConnectionsPropMessages.push(message)
+            }
+            continue
+          }
           this.add(
             new Trace({
               from: `.${this.name} > .${pinName}`,
-              to: String(targetPath),
+              to: selector,
             }),
           )
         }
       }
     }
+  }
+
+  private _insertInvalidConnectionsPropErrors(): void {
+    for (const message of this._invalidConnectionsPropMessages) {
+      this.root!.db.source_invalid_component_property_error.insert({
+        source_component_id: this.source_component_id || "",
+        property_name: "connections",
+        message,
+        error_type: "source_invalid_component_property_error",
+      })
+    }
+    this._invalidConnectionsPropMessages = []
   }
 
   doInitialSourceDesignRuleChecks(): void {
@@ -2142,6 +2163,7 @@ export class NormalComponent<
 
   doInitialSourceComponentPropertyValidation(): void {
     this._insertInvalidFootprintPropErrors()
+    this._insertInvalidConnectionsPropErrors()
   }
 
   doInitialValidatePcbCoordinates(): void {
