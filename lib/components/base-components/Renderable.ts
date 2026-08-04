@@ -72,6 +72,7 @@ export const orderedRenderPhases = [
   "SilkscreenOverlapAdjustment",
   "CadModelRender",
   "PartsEngineRender",
+  "PartOrientationAnalysis",
   "SupplierFootprintMismatchWarning",
   "SimulationSpiceEngineRender",
 ] as const
@@ -117,6 +118,7 @@ const asyncPhaseDependencies: Partial<Record<RenderPhase, RenderPhase[]>> = {
   PcbCopperPourRender: [
     "PcbFootprintStringRender",
     "FetchPartFootprint",
+    "PcbPlacementDesignRuleChecks",
     "PcbTraceRender",
     "PcbRouteNetIslands",
   ],
@@ -125,14 +127,27 @@ const asyncPhaseDependencies: Partial<Record<RenderPhase, RenderPhase[]>> = {
     "FetchPartFootprint",
   ],
   PcbTraceRender: ["PcbFootprintStringRender", "FetchPartFootprint"],
-  PcbRouteNetIslands: ["PcbFootprintStringRender", "FetchPartFootprint"],
-  PcbDesignRuleChecks: ["PcbFootprintStringRender", "FetchPartFootprint"],
+  PcbRouteNetIslands: [
+    "PcbFootprintStringRender",
+    "FetchPartFootprint",
+    "PcbPlacementDesignRuleChecks",
+  ],
+  PcbDesignRuleChecks: [
+    "PcbFootprintStringRender",
+    "FetchPartFootprint",
+    "PcbPlacementDesignRuleChecks",
+  ],
   SilkscreenOverlapAdjustment: [
     "PcbFootprintStringRender",
     "FetchPartFootprint",
   ],
   CadModelRender: ["PcbFootprintStringRender", "FetchPartFootprint"],
   PartsEngineRender: ["PcbFootprintStringRender", "FetchPartFootprint"],
+  PartOrientationAnalysis: [
+    "PcbFootprintStringRender",
+    "FetchPartFootprint",
+    "PartsEngineRender",
+  ],
   SupplierFootprintMismatchWarning: [
     "PcbFootprintStringRender",
     "FetchPartFootprint",
@@ -202,6 +217,7 @@ export abstract class Renderable implements IRenderable {
 
   _renderId: string
   _currentRenderPhase: RenderPhase | null = null
+  _pcbTraceRenderWaitingForPlacementChecks = false
 
   private _asyncEffects: AsyncEffect[] = []
 

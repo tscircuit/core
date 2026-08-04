@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("traces on a crystal net inherit its maximum length and warn when too long", async () => {
+test("traces on a crystal net inherit their maximum length and skip impossible autorouting", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -40,16 +40,11 @@ test("traces on a crystal net inherit its maximum length and warn when too long"
   const sourceTraces = circuit.db.source_trace.list()
   expect(sourceTraces.map((trace) => trace.max_length)).toEqual([10, 10, 10])
 
-  const warnings = circuit.db.pcb_trace_too_long_warning.list()
-  expect(warnings).toHaveLength(2)
-  expect(warnings.map((warning) => warning.source_trace_id).sort()).toEqual(
-    [sourceTraces[0].source_trace_id, sourceTraces[1].source_trace_id].sort(),
-  )
-  expect(
-    warnings.every(
-      (warning) =>
-        warning.maximum_trace_length === 10 &&
-        warning.actual_trace_length > warning.maximum_trace_length,
-    ),
-  ).toBe(true)
+  expect(circuit.db.pcb_trace.list()).toHaveLength(0)
+  expect(circuit.db.pcb_trace_too_long_warning.list()).toHaveLength(0)
+
+  const autoroutingErrors = circuit.db.pcb_autorouting_error.list()
+  expect(autoroutingErrors).toHaveLength(1)
+  expect(autoroutingErrors[0].message).toContain("cannot be satisfied")
+  expect(autoroutingErrors[0].message).toContain("2 additional violations")
 })

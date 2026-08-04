@@ -7,6 +7,7 @@ import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
 import { findPossibleTraceLayerCombinations } from "lib/utils/autorouting/findPossibleTraceLayerCombinations"
 import { mergeRoutes } from "lib/utils/autorouting/mergeRoutes"
 import { shouldSkipAutoroutingBecauseOfPlacementErrors } from "lib/utils/autorouting/should-skip-autorouting-because-of-placement-errors"
+import { shouldSkipAutoroutingBecauseOfTraceLengthViolations } from "lib/utils/autorouting/should-skip-autorouting-because-of-trace-length-violations"
 import { getClosest } from "lib/utils/getClosest"
 import {
   getBoardAvailableLayers,
@@ -109,6 +110,8 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
   // Check for cached route
   const cachedRoute = subcircuit._parsedProps.pcbRouteCache?.pcbTraces
   if (cachedRoute) {
+    if (subcircuit._isLegacyAutorouterDisabled()) return
+
     const pcb_trace = db.pcb_trace.insert({
       route: cachedRoute.flatMap((trace) => trace.route),
       source_trace_id: trace.source_trace_id!,
@@ -131,14 +134,6 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
   if (!subcircuit._shouldUseTraceByTraceRouting()) {
     return
   }
-
-  if (
-    shouldSkipAutoroutingBecauseOfPlacementErrors({
-      component: trace,
-      subcircuit,
-    })
-  )
-    return
 
   let allPortsFound: boolean
   let ports: Port[]
@@ -202,6 +197,22 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
     })
     return
   }
+
+  const shouldSkipBecauseOfPlacementErrors =
+    shouldSkipAutoroutingBecauseOfPlacementErrors({
+      component: trace,
+      subcircuit,
+    })
+  const shouldSkipBecauseOfTraceLengthViolations =
+    shouldSkipAutoroutingBecauseOfTraceLengthViolations({
+      component: trace,
+      subcircuit,
+    })
+  if (
+    shouldSkipBecauseOfPlacementErrors ||
+    shouldSkipBecauseOfTraceLengthViolations
+  )
+    return
 
   const nets = trace._findConnectedNets().netsWithSelectors
 

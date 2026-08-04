@@ -9,7 +9,6 @@ test("complex chip schematic with multiple connections", () => {
       width="40mm"
       height="40mm"
       schTraceAutoLabelEnabled
-      autorouter="sequential-trace"
       schMaxTraceDistance={5}
     >
       {/* Central chip with 16 pins */}

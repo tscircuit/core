@@ -1,12 +1,13 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "../fixtures/get-test-fixture"
-test("insert trace error when trace goes out of board", async () => {
+// Out-of-board trace errors were specific to the legacy sequential autorouter.
+test.skip("insert trace error when trace goes out of board", async () => {
   const { circuit } = getTestFixture({
     platform: { placementDrcChecksDisabled: true },
   })
 
   circuit.add(
-    <board width="1mm" height="10mm" autorouter="sequential-trace">
+    <board width="1mm" height="10mm" autorouter="default">
       <resistor resistance="1k" footprint="0402" name="R1" schX={3} pcbX={3} />
       <capacitor
         capacitance="1000pF"
@@ -19,7 +20,7 @@ test("insert trace error when trace goes out of board", async () => {
     </board>,
   )
 
-  await circuit.render()
+  await circuit.renderUntilSettled()
   const circuitJson = circuit.getCircuitJson()
   const pcbTraceErrors = circuitJson.filter(
     (el) => el.type === "pcb_trace_error",

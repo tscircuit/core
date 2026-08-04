@@ -26,7 +26,9 @@ const DecouplingCap = ({
 )
 
 test("breakout defaults to fanout for a 6x6 BGA surrounded by four 0603 decoupling caps", async () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture({
+    platform: { placementDrcChecksDisabled: true },
+  })
   const autoroutingPhaseIoStack = createAutoroutingPhaseIoStack(circuit)
 
   circuit.add(

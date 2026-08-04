@@ -7,7 +7,7 @@ test("manual pcbPath with autorouter does not duplicate traces", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="10mm" height="10mm" autorouter="sequential-trace">
+    <board width="10mm" height="10mm" autorouter="default">
       <resistor
         name="R1"
         resistance="10k"
@@ -36,7 +36,7 @@ test("multiple manual pcbPaths from shared pad do not duplicate traces", async (
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="10mm" height="10mm" autorouter="sequential-trace">
+    <board width="10mm" height="10mm" autorouter="default">
       <group>
         <capacitor
           name="C1"

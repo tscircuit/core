@@ -4,7 +4,9 @@ import { getTestAutoroutingServer } from "tests/fixtures/get-test-autorouting-se
 
 test.skip("remote-autorouter-5 with job mode against production server", async () => {
   if (process.env.CI) return
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture({
+    platform: { allowLegacyAutorouters: true },
+  })
 
   // Create a basic circuit that needs routing
   circuit.add(

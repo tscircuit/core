@@ -214,6 +214,15 @@ export const getDifferentialPairsForSimpleRouteJson = ({
     srjDifferentialPairs.push({
       connectionNames: [positiveSrjConnectionName, negativeSrjConnectionName],
       lengthTolerance,
+      ...(differentialPair._parsedProps.pcbTraceGap !== undefined
+        ? { traceGap: differentialPair._parsedProps.pcbTraceGap }
+        : {}),
+      ...(differentialPair._parsedProps.maxUncoupledLength !== undefined
+        ? {
+            maxUncoupledLength:
+              differentialPair._parsedProps.maxUncoupledLength,
+          }
+        : {}),
     })
   }
 

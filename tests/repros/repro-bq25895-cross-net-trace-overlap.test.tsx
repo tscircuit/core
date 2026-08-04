@@ -169,7 +169,7 @@ const Repro = () => (
   </subcircuit>
 )
 
-test("BQ25895 CE trace overlaps the GND trace", async () => {
+test("BQ25895 CE trace keeps clearance from the GND trace", async () => {
   const { circuit } = getTestFixture()
   circuit.pcbDisabled = true
 
@@ -225,6 +225,6 @@ test("BQ25895 CE trace overlaps the GND trace", async () => {
     ),
   )
 
-  expect(hasCrossNetParallelOverlap).toBe(true)
+  expect(hasCrossNetParallelOverlap).toBe(false)
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })

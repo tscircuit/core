@@ -90,7 +90,7 @@ test("multiple copper pours on different layers", async () => {
 test("copper pour should avoid traces on different nets", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
-    <board width="20mm" height="20mm" autorouter="sequential-trace">
+    <board width="20mm" height="20mm" autorouter="default">
       <net name="GND" />
       <net name="VCC" />
       <resistor

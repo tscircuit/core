@@ -1,11 +1,12 @@
-import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
-import type { NormalComponent } from "lib/components/base-components/NormalComponent/NormalComponent"
 import type { AutorouterConfig, subcircuitGroupProps } from "@tscircuit/props"
-import { z } from "zod"
 import type { AnyCircuitElement } from "circuit-json"
+import type { NormalComponent } from "lib/components/base-components/NormalComponent/NormalComponent"
+import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
+import { z } from "zod"
 import type { RoutingPhasePlan } from "../GroupRoutingPhasePlan"
 
 export interface ISubcircuit extends PrimitiveComponent {
+  _isLegacyAutorouterDisabled(): boolean
   _shouldUseTraceByTraceRouting(): boolean
   _getRoutingPhasePlans(): RoutingPhasePlan[]
   _parsedProps: z.infer<typeof subcircuitGroupProps>

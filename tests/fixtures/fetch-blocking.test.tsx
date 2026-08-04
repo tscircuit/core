@@ -15,7 +15,9 @@ for (const url of urls) {
 }
 
 it("blocks auto-cloud autorouter requests", async () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture({
+    platform: { allowLegacyAutorouters: true },
+  })
   const originalError = console.error
   const errors: string[] = []
   console.error = (...args) => {
