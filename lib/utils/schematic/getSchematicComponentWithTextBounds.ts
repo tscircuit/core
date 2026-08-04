@@ -22,6 +22,7 @@ const TEXT_BOX_ENABLED_FTYPES = new Set([
   "simple_mosfet",
   "simple_op_amp",
   "simple_voltage_source",
+  "simple_test_point",
 ])
 
 function getTextBounds({
