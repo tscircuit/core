@@ -1,15 +1,16 @@
 import { type MatcherResult, expect } from "bun:test"
+import * as fs from "node:fs"
+import * as path from "node:path"
 import { convertSrjToGraphicsObject } from "@tscircuit/capacity-autorouter"
 import { getSvgFromGraphicsObject } from "graphics-debug"
-import type { AutoroutingPhaseIo } from "tests/fixtures/create-autorouting-phase-io-stack"
 import type {
   SimpleRouteJson,
   SimplifiedPcbTrace,
 } from "lib/utils/autorouting/SimpleRouteJson"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
-import * as fs from "node:fs"
-import * as path from "node:path"
 import { stackSvgsVertically } from "stack-svgs"
+import type { AutoroutingPhaseIo } from "tests/fixtures/create-autorouting-phase-io-stack"
+import { toMatchSvgSnapshot } from "./extend-expect-any-svg"
 
 const createPanelLabelSvg = (label: string) => `<svg
   xmlns="http://www.w3.org/2000/svg"
@@ -172,7 +173,9 @@ expect.extend({
       }
     }
 
-    return expect(svg).toMatchSvgSnapshot(args[0], args[1])
+    return toMatchSvgSnapshot.call(this, svg, args[0], args[1], {
+      diffThresholdPercent: 0.01,
+    })
   },
 })
 
