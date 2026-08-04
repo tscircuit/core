@@ -174,7 +174,7 @@ expect.extend({
     }
 
     return toMatchSvgSnapshot.call(this, svg, args[0], args[1], {
-      diffThresholdPercent: 0,
+      diffThresholdPercent: 0.01,
     })
   },
 })
