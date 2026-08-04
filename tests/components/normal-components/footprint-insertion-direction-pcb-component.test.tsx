@@ -12,7 +12,7 @@ test("footprint insertionDirection populates pcb_component post-transform proper
         pcbX={5}
         pcbY={5}
         footprint={
-          <footprint insertionDirection="from_front">
+          <footprint insertionDirection="from_top">
             <smtpad
               shape="rect"
               portHints={["pin1"]}
@@ -39,7 +39,7 @@ test("footprint insertionDirection populates pcb_component post-transform proper
         pcbY={5}
         pcbRotation={90}
         footprint={
-          <footprint insertionDirection="from_front">
+          <footprint insertionDirection="from_top">
             <smtpad
               shape="rect"
               portHints={["pin1"]}
@@ -66,7 +66,7 @@ test("footprint insertionDirection populates pcb_component post-transform proper
         pcbY={5}
         layer="bottom"
         footprint={
-          <footprint insertionDirection="from_front">
+          <footprint insertionDirection="from_top">
             <smtpad
               shape="rect"
               portHints={["pin1"]}
@@ -94,7 +94,7 @@ test("footprint insertionDirection populates pcb_component post-transform proper
         pcbRotation={90}
         layer="bottom"
         footprint={
-          <footprint insertionDirection="from_front">
+          <footprint insertionDirection="from_top">
             <smtpad
               shape="rect"
               portHints={["pin1"]}
@@ -122,7 +122,7 @@ test("footprint insertionDirection populates pcb_component post-transform proper
         manufacturerPartNumber="TEST"
         pinLabels={{ pin1: ["A"], pin2: ["B"] }}
         footprint={
-          <footprint insertionDirection="from_front" originalLayer="bottom">
+          <footprint insertionDirection="from_top" originalLayer="bottom">
             <smtpad
               shape="rect"
               portHints={["pin1"]}
@@ -159,9 +159,11 @@ test("footprint insertionDirection populates pcb_component post-transform proper
     return pcbComponent?.insertion_direction
   }
 
-  expect(getInsertionDirection("R1") as string).toBe("from_top")
+  expect(getInsertionDirection("R1")).toBe("from_top")
   expect(getInsertionDirection("R2")).toBe("from_left")
-  expect(getInsertionDirection("R3") as string).toBe("from_bottom")
+  // R3 sits on the bottom layer with no rotation. Flipping mirrors the
+  // footprint across its X axis, which leaves a +Y insertion pointing at +Y.
+  expect(getInsertionDirection("R3")).toBe("from_top")
   expect(getInsertionDirection("R4")).toBe("from_left")
-  expect(getInsertionDirection("J1") as string).toBe("from_top")
+  expect(getInsertionDirection("J1")).toBe("from_top")
 })

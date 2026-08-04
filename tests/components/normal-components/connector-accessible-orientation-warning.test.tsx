@@ -16,7 +16,7 @@ test("connector emits accessible orientation warning when facing away from neare
           pin2: ["B"],
         }}
         footprint={
-          <footprint insertionDirection="from_back">
+          <footprint insertionDirection="from_bottom">
             <smtpad
               portHints={["pin1"]}
               pcbX={-1}
