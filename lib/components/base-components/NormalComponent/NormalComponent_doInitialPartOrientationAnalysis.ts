@@ -8,8 +8,10 @@ import {
   type AnyCircuitElement,
   type PcbComponent,
   type PcbPin1Location,
+  type SourcePort,
   type SupplierPin1LocationMap,
   pcb_pin1_location,
+  source_component_misconfigured_error,
 } from "circuit-json"
 import { isFootprintFlipped } from "lib/utils/pcb/transform-footprint-insertion-direction"
 import type { NormalComponent } from "./NormalComponent"
@@ -19,28 +21,81 @@ type SupplierPartCandidate = {
   supplierPartNumber: string
 }
 
-type SupplierPin1LocationCacheKey =
-  `part-orientation-analysis:v1:${SupplierName}:${string}`
+type Pin1Polarity = "anode" | "cathode"
 
-type CachedSupplierPin1Location = {
-  pin1_location: PcbPin1Location | null
+type SupplierPartOrientationAnalysis = {
+  pin1Location: PcbPin1Location | null
+  pin1Polarity: Pin1Polarity | null
 }
 
-const pendingSupplierPin1LocationAnalyses = new WeakMap<
+type SupplierPartOrientationCacheKey =
+  `part-orientation-analysis:v2:${SupplierName}:${string}`
+
+type CachedSupplierPartOrientationAnalysis = {
+  pin1_location: PcbPin1Location | null
+  pin1_polarity: Pin1Polarity | null
+}
+
+const pendingSupplierPartOrientationAnalyses = new WeakMap<
   PartsEngine,
-  Map<SupplierPin1LocationCacheKey, Promise<PcbPin1Location | null>>
+  Map<SupplierPartOrientationCacheKey, Promise<SupplierPartOrientationAnalysis>>
 >()
 
-const getPendingSupplierPin1LocationAnalyses = (partsEngine: PartsEngine) => {
-  const existing = pendingSupplierPin1LocationAnalyses.get(partsEngine)
+const getPendingSupplierPartOrientationAnalyses = (
+  partsEngine: PartsEngine,
+) => {
+  const existing = pendingSupplierPartOrientationAnalyses.get(partsEngine)
   if (existing) return existing
 
   const pendingAnalyses = new Map<
-    SupplierPin1LocationCacheKey,
-    Promise<PcbPin1Location | null>
+    SupplierPartOrientationCacheKey,
+    Promise<SupplierPartOrientationAnalysis>
   >()
-  pendingSupplierPin1LocationAnalyses.set(partsEngine, pendingAnalyses)
+  pendingSupplierPartOrientationAnalyses.set(partsEngine, pendingAnalyses)
   return pendingAnalyses
+}
+
+const ANODE_HINTS = new Set(["a", "anode", "pos", "positive", "+"])
+const CATHODE_HINTS = new Set(["c", "k", "cathode", "neg", "negative", "-"])
+
+const normalizePolarityHint = (hint: string) =>
+  hint.toLowerCase().replace(/[^a-z0-9+-]/g, "")
+
+const getPin1SourcePort = (
+  circuitJson: AnyCircuitElement[],
+  sourceComponentId?: string,
+): SourcePort | null => {
+  const sourcePorts = circuitJson.filter(
+    (element): element is SourcePort =>
+      element.type === "source_port" &&
+      (!sourceComponentId || element.source_component_id === sourceComponentId),
+  )
+
+  return (
+    sourcePorts.find((port) => port.pin_number === 1) ??
+    sourcePorts.find((port) =>
+      [port.name, ...(port.port_hints ?? [])]
+        .map(normalizePolarityHint)
+        .includes("pin1"),
+    ) ??
+    null
+  )
+}
+
+const getPin1Polarity = (
+  sourcePort: SourcePort | null,
+): Pin1Polarity | null => {
+  if (!sourcePort) return null
+
+  const normalizedHints = [
+    sourcePort.name,
+    ...(sourcePort.port_hints ?? []),
+  ].map(normalizePolarityHint)
+  const hasAnodeHint = normalizedHints.some((hint) => ANODE_HINTS.has(hint))
+  const hasCathodeHint = normalizedHints.some((hint) => CATHODE_HINTS.has(hint))
+
+  if (hasAnodeHint === hasCathodeHint) return null
+  return hasAnodeHint ? "anode" : "cathode"
 }
 
 const getSupplierPartCandidates = (
@@ -122,40 +177,58 @@ const getUnrotatedLocalPcbElements = ({
   })
 }
 
-const getSupplierPin1LocationCacheKey = ({
+const getSupplierPartOrientationCacheKey = ({
   supplierName,
   supplierPartNumber,
-}: SupplierPartCandidate): SupplierPin1LocationCacheKey =>
-  `part-orientation-analysis:v1:${supplierName}:${supplierPartNumber}`
+}: SupplierPartCandidate): SupplierPartOrientationCacheKey =>
+  `part-orientation-analysis:v2:${supplierName}:${supplierPartNumber}`
 
-const readCachedSupplierPin1Location = async ({
+const readCachedSupplierPartOrientationAnalysis = async ({
   cacheKey,
   component,
 }: {
-  cacheKey: SupplierPin1LocationCacheKey
+  cacheKey: SupplierPartOrientationCacheKey
   component: NormalComponent<any, any>
 }): Promise<
-  { cacheHit: true; pin1Location: PcbPin1Location | null } | { cacheHit: false }
+  | { cacheHit: true; analysis: SupplierPartOrientationAnalysis }
+  | { cacheHit: false }
 > => {
   const cachedValue =
     await component.root?.platform?.localCacheEngine?.getItem(cacheKey)
   if (!cachedValue) return { cacheHit: false }
 
   try {
-    const cached = JSON.parse(cachedValue) as CachedSupplierPin1Location
-    if (cached.pin1_location === null) {
-      return { cacheHit: true, pin1Location: null }
+    const cached = JSON.parse(
+      cachedValue,
+    ) as CachedSupplierPartOrientationAnalysis
+    const pin1LocationResult = pcb_pin1_location.safeParse(cached.pin1_location)
+    const pin1Location =
+      cached.pin1_location === null
+        ? null
+        : pin1LocationResult.success
+          ? pin1LocationResult.data
+          : undefined
+    const pin1Polarity =
+      cached.pin1_polarity === null ||
+      cached.pin1_polarity === "anode" ||
+      cached.pin1_polarity === "cathode"
+        ? cached.pin1_polarity
+        : undefined
+
+    if (pin1Location === undefined || pin1Polarity === undefined) {
+      return { cacheHit: false }
     }
-    const result = pcb_pin1_location.safeParse(cached.pin1_location)
-    return result.success
-      ? { cacheHit: true, pin1Location: result.data }
-      : { cacheHit: false }
+
+    return {
+      cacheHit: true,
+      analysis: { pin1Location, pin1Polarity },
+    }
   } catch {
     return { cacheHit: false }
   }
 }
 
-const analyzeSupplierPin1Location = async ({
+const analyzeSupplierPartOrientation = async ({
   component,
   partsEngine,
   supplierPartCandidate,
@@ -163,12 +236,15 @@ const analyzeSupplierPin1Location = async ({
   component: NormalComponent<any, any>
   partsEngine: PartsEngine
   supplierPartCandidate: SupplierPartCandidate
-}): Promise<PcbPin1Location | null> => {
-  const cacheKey = getSupplierPin1LocationCacheKey(supplierPartCandidate)
-  const cached = await readCachedSupplierPin1Location({ cacheKey, component })
-  if (cached.cacheHit) return cached.pin1Location
+}): Promise<SupplierPartOrientationAnalysis> => {
+  const cacheKey = getSupplierPartOrientationCacheKey(supplierPartCandidate)
+  const cached = await readCachedSupplierPartOrientationAnalysis({
+    cacheKey,
+    component,
+  })
+  if (cached.cacheHit) return cached.analysis
 
-  const pendingAnalyses = getPendingSupplierPin1LocationAnalyses(partsEngine)
+  const pendingAnalyses = getPendingSupplierPartOrientationAnalyses(partsEngine)
   const existingAnalysis = pendingAnalyses.get(cacheKey)
   if (existingAnalysis) return existingAnalysis
 
@@ -179,16 +255,22 @@ const analyzeSupplierPin1Location = async ({
         platformFetch: component.root?.platform?.platformFetch,
       }),
     )
-    if (!supplierCircuitJson?.length) return null
+    if (!supplierCircuitJson?.length) {
+      return { pin1Location: null, pin1Polarity: null }
+    }
 
     const pin1Location = analyzePcbPin1Location(supplierCircuitJson)
+    const pin1Polarity = getPin1Polarity(getPin1SourcePort(supplierCircuitJson))
     try {
       await component.root?.platform?.localCacheEngine?.setItem(
         cacheKey,
-        JSON.stringify({ pin1_location: pin1Location }),
+        JSON.stringify({
+          pin1_location: pin1Location,
+          pin1_polarity: pin1Polarity,
+        } satisfies CachedSupplierPartOrientationAnalysis),
       )
     } catch {}
-    return pin1Location
+    return { pin1Location, pin1Polarity }
   })().finally(() => {
     pendingAnalyses.delete(cacheKey)
   })
@@ -223,11 +305,11 @@ export const NormalComponent_doInitialPartOrientationAnalysis = (
         pcbElements,
       }),
     )
-  if (!localPin1Location) return
-
-  db.pcb_component.update(component.pcb_component_id, {
-    pin1_location: localPin1Location,
-  })
+  if (localPin1Location) {
+    db.pcb_component.update(component.pcb_component_id, {
+      pin1_location: localPin1Location,
+    })
+  }
 
   if (component.getInheritedProperty("bomDisabled")) return
   if (component.getInheritedProperty("partsEngineDisabled")) return
@@ -238,6 +320,16 @@ export const NormalComponent_doInitialPartOrientationAnalysis = (
   const sourceComponent = db.source_component.get(
     component.source_component_id!,
   )
+  const shouldCheckPin1Polarity =
+    sourceComponent?.ftype === "simple_diode" ||
+    sourceComponent?.ftype === "simple_led"
+  const localPin1SourcePort = shouldCheckPin1Polarity
+    ? getPin1SourcePort(
+        db.source_port.list() as AnyCircuitElement[],
+        component.source_component_id ?? undefined,
+      )
+    : null
+  const localPin1Polarity = getPin1Polarity(localPin1SourcePort)
   const supplierPartCandidates = getSupplierPartCandidates(
     sourceComponent?.supplier_part_numbers,
   )
@@ -249,14 +341,31 @@ export const NormalComponent_doInitialPartOrientationAnalysis = (
     const supplierPin1LocationMap: SupplierPin1LocationMap = {}
     for (const supplierPartCandidate of supplierPartCandidates) {
       try {
-        const supplierPin1Location = await analyzeSupplierPin1Location({
-          component,
-          partsEngine,
-          supplierPartCandidate,
-        })
+        const { pin1Location: supplierPin1Location, pin1Polarity } =
+          await analyzeSupplierPartOrientation({
+            component,
+            partsEngine,
+            supplierPartCandidate,
+          })
         if (supplierPin1Location) {
           supplierPin1LocationMap[supplierPartCandidate.supplierName] =
             supplierPin1Location
+        }
+        if (
+          localPin1Polarity &&
+          pin1Polarity &&
+          localPin1Polarity !== pin1Polarity
+        ) {
+          const error = source_component_misconfigured_error.parse({
+            type: "source_component_misconfigured_error",
+            error_type: "source_component_misconfigured_error",
+            message: `${component.getString()} maps pin 1 to the ${localPin1Polarity}, but supplier part ${supplierPartCandidate.supplierName}:${supplierPartCandidate.supplierPartNumber} maps pin 1 to the ${pin1Polarity}. Update pinLabels or use a supplier part with matching diode polarity.`,
+            source_component_ids: [component.source_component_id!],
+            source_port_ids: localPin1SourcePort?.source_port_id
+              ? [localPin1SourcePort.source_port_id]
+              : undefined,
+          })
+          component.root!.db.source_component_misconfigured_error.insert(error)
         }
       } catch {}
     }

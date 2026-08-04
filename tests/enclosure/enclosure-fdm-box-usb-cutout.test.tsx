@@ -24,7 +24,7 @@ test("generates an FDM enclosure and USB-C aperture with the enclosure solver", 
           allowOffBoard
           pinLabels={{ pin1: ["VBUS"], pin2: ["GND"] }}
           footprint={
-            <footprint insertionDirection="from_front">
+            <footprint insertionDirection="from_top">
               <smtpad
                 portHints={["pin1"]}
                 pcbX="-1.5mm"
