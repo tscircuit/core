@@ -134,21 +134,10 @@ const getPointToPointWarningMessage = ({
   )
 }
 
-const removeStoredPointToPointWarnings = (
-  differentialPair: DifferentialPair,
-): void => {
-  const warningTable = differentialPair.root!.db.source_property_ignored_warning
-  for (const warningId of differentialPair._pointToPointWarningIds) {
-    warningTable.delete(warningId)
-  }
-  differentialPair._pointToPointWarningIds = []
-}
-
 export const DifferentialPair_doInitialSourceDesignRuleChecks = (
   differentialPair: DifferentialPair,
 ): void => {
   const { db } = differentialPair.root!
-  removeStoredPointToPointWarnings(differentialPair)
 
   const sourceComponentsById = new Map<SourceComponentId, { name: string }>()
   for (const sourceComponent of db.source_component.list()) {
@@ -179,7 +168,7 @@ export const DifferentialPair_doInitialSourceDesignRuleChecks = (
         getTerminalPinSelector(sourcePort, sourceComponentsById),
       )
       .sort((selectorA, selectorB) => selectorA.localeCompare(selectorB))
-    const insertedWarning = db.source_property_ignored_warning.insert({
+    db.source_property_ignored_warning.insert({
       source_component_id: warningSourceComponentId,
       property_name: `${connectionPolarity}Connection`,
       error_type: "source_property_ignored_warning",
@@ -193,14 +182,5 @@ export const DifferentialPair_doInitialSourceDesignRuleChecks = (
       subcircuit_id:
         differentialPair.getSubcircuit().subcircuit_id ?? undefined,
     })
-    differentialPair._pointToPointWarningIds.push(
-      insertedWarning.source_property_ignored_warning_id,
-    )
   }
-}
-
-export const DifferentialPair_removeSourceDesignRuleChecks = (
-  differentialPair: DifferentialPair,
-): void => {
-  removeStoredPointToPointWarnings(differentialPair)
 }

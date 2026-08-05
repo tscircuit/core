@@ -3,10 +3,7 @@ import {
   type BaseComponentConfig,
   PrimitiveComponent,
 } from "../base-components/PrimitiveComponent"
-import {
-  DifferentialPair_doInitialSourceDesignRuleChecks,
-  DifferentialPair_removeSourceDesignRuleChecks,
-} from "./DifferentialPair_doInitialSourceDesignRuleChecks"
+import { DifferentialPair_doInitialSourceDesignRuleChecks } from "./DifferentialPair_doInitialSourceDesignRuleChecks"
 
 /**
  * Declares the routing constraints for a positive and negative trace pair.
@@ -14,8 +11,6 @@ import {
 export class DifferentialPair extends PrimitiveComponent<
   typeof differentialPairProps
 > {
-  _pointToPointWarningIds: string[] = []
-
   override get config(): BaseComponentConfig {
     return {
       componentName: "DifferentialPair",
@@ -25,13 +20,5 @@ export class DifferentialPair extends PrimitiveComponent<
 
   doInitialSourceDesignRuleChecks(): void {
     DifferentialPair_doInitialSourceDesignRuleChecks(this)
-  }
-
-  updateSourceDesignRuleChecks(): void {
-    DifferentialPair_doInitialSourceDesignRuleChecks(this)
-  }
-
-  removeSourceDesignRuleChecks(): void {
-    DifferentialPair_removeSourceDesignRuleChecks(this)
   }
 }
