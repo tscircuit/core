@@ -15,6 +15,7 @@ type SubcircuitConnectivityMapKey = NonNullable<
 >
 
 const DEFAULT_CRYSTAL_MAX_TRACE_LENGTH_MM = 10
+const CRYSTAL_SIGNAL_PORT_LABELS = new Set(["x1", "x2"])
 
 export class Crystal extends NormalComponent<
   typeof crystalProps,
@@ -39,14 +40,14 @@ export class Crystal extends NormalComponent<
     const additionalAliases: Record<`pin${number}`, string[]> =
       this.props.pinVariant === "four_pin"
         ? {
-            pin1: ["left1", "1"],
+            pin1: ["left1", "1", "X1"],
             pin2: ["top1", "2", "gnd1"],
-            pin3: ["right1", "3"],
+            pin3: ["right1", "3", "X2"],
             pin4: ["bottom1", "4", "gnd2"],
           }
         : {
-            pin1: ["pos", "left"],
-            pin2: ["neg", "right"],
+            pin1: ["pos", "left", "X1"],
+            pin2: ["neg", "right", "X2"],
           }
 
     super.initPorts({
@@ -95,13 +96,10 @@ export class Crystal extends NormalComponent<
 
     for (const sourcePort of db.source_port.list()) {
       if (sourcePort.source_component_id !== this.source_component_id) continue
-      if (
-        this._parsedProps.pinVariant === "four_pin" &&
-        sourcePort.pin_number !== 1 &&
-        sourcePort.pin_number !== 3
-      ) {
-        continue
-      }
+      const isCrystalSignalPort = sourcePort.port_hints?.some((portLabel) =>
+        CRYSTAL_SIGNAL_PORT_LABELS.has(portLabel.toLowerCase()),
+      )
+      if (!isCrystalSignalPort) continue
 
       crystalSignalSourcePortIds.add(sourcePort.source_port_id)
       if (sourcePort.subcircuit_connectivity_map_key) {
