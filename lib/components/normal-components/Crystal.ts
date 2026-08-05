@@ -89,15 +89,23 @@ export class Crystal extends NormalComponent<
     const { db } = this.root!
     const maximumTraceLength =
       this._parsedProps.maxTraceLength ?? DEFAULT_CRYSTAL_MAX_TRACE_LENGTH_MM
-    const crystalSourcePortIds = new Set<SourcePortId>()
-    const crystalConnectivityMapKeys = new Set<SubcircuitConnectivityMapKey>()
+    const crystalSignalSourcePortIds = new Set<SourcePortId>()
+    const crystalSignalConnectivityMapKeys =
+      new Set<SubcircuitConnectivityMapKey>()
 
     for (const sourcePort of db.source_port.list()) {
       if (sourcePort.source_component_id !== this.source_component_id) continue
+      if (
+        this._parsedProps.pinVariant === "four_pin" &&
+        sourcePort.pin_number !== 1 &&
+        sourcePort.pin_number !== 3
+      ) {
+        continue
+      }
 
-      crystalSourcePortIds.add(sourcePort.source_port_id)
+      crystalSignalSourcePortIds.add(sourcePort.source_port_id)
       if (sourcePort.subcircuit_connectivity_map_key) {
-        crystalConnectivityMapKeys.add(
+        crystalSignalConnectivityMapKeys.add(
           sourcePort.subcircuit_connectivity_map_key,
         )
       }
@@ -106,11 +114,11 @@ export class Crystal extends NormalComponent<
     for (const sourceTrace of db.source_trace.list()) {
       const isDirectlyConnectedToCrystal =
         sourceTrace.connected_source_port_ids.some((sourcePortId) =>
-          crystalSourcePortIds.has(sourcePortId),
+          crystalSignalSourcePortIds.has(sourcePortId),
         )
       const isOnCrystalNet =
         sourceTrace.subcircuit_connectivity_map_key !== undefined &&
-        crystalConnectivityMapKeys.has(
+        crystalSignalConnectivityMapKeys.has(
           sourceTrace.subcircuit_connectivity_map_key,
         )
 
