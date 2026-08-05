@@ -1,5 +1,6 @@
-import type { ChipProps } from "@tscircuit/props"
 import { expect, test } from "bun:test"
+import type { ChipProps } from "@tscircuit/props"
+import type { InputProblem } from "@tscircuit/schematic-trace-solver"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 const denseTraceProps = { thickness: "0.1mm" } as const
@@ -108,6 +109,13 @@ const RP2040 = (props: ChipProps<typeof pinLabels>) => (
 
 test("repro170: complete RP2040 U1 schematic connections", async () => {
   const { circuit } = getTestFixture()
+  let schematicTraceInputProblem: InputProblem | undefined
+
+  circuit.on("solver:started", (event) => {
+    if (event.solverName === "SchematicTracePipelineSolver") {
+      schematicTraceInputProblem = event.solverParams as InputProblem
+    }
+  })
 
   circuit.add(
     <board width="30mm" height="30mm" routingDisabled>
@@ -433,6 +441,18 @@ test("repro170: complete RP2040 U1 schematic connections", async () => {
   )
 
   await circuit.renderUntilSettled()
+
+  expect(
+    schematicTraceInputProblem?.directConnections
+      .filter(({ netId }) =>
+        ["QSPI_SS", "BOOT_SW", "BOOT_R"].includes(netId ?? ""),
+      )
+      .map(({ netId, netLabelWidth }) => ({ netId, netLabelWidth })),
+  ).toEqual([
+    { netId: "QSPI_SS", netLabelWidth: 0.96 },
+    { netId: "BOOT_SW", netLabelWidth: 0.96 },
+    { netId: "BOOT_R", netLabelWidth: 0.96 },
+  ])
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
