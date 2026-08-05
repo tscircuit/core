@@ -24,10 +24,13 @@ test("accepts a two-terminal differential conductor split through a source net",
   circuit.render()
 
   expect(
-    (circuit.getCircuitJson() as unknown as Array<{ type: string }>).filter(
-      (element) =>
-        element.type === "source_differential_pair_not_point_to_point_error",
-    ),
+    circuit.db.source_property_ignored_warning
+      .list()
+      .filter(
+        (warning) =>
+          warning.property_name === "positiveConnection" ||
+          warning.property_name === "negativeConnection",
+      ),
   ).toEqual([])
 
   const boardSubcircuit = circuit.firstChild

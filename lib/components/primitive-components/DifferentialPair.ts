@@ -14,7 +14,7 @@ import {
 export class DifferentialPair extends PrimitiveComponent<
   typeof differentialPairProps
 > {
-  _pointToPointErrorIds: string[] = []
+  _pointToPointWarningIds: string[] = []
 
   override get config(): BaseComponentConfig {
     return {

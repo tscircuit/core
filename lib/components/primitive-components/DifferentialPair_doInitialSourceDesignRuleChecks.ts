@@ -1,50 +1,12 @@
-import type { BaseCircuitJsonError, SourcePort } from "circuit-json"
+import type { SourcePort } from "circuit-json"
 import {
   type ResolvedDifferentialPairConnection,
   resolveDifferentialPairConnectionOrThrow,
 } from "lib/utils/autorouting/resolve-differential-pair-connection"
 import type { DifferentialPair } from "./DifferentialPair"
 
-type ConnectionPolarity =
-  SourceDifferentialPairNotPointToPointError["connection_polarity"]
+type ConnectionPolarity = "positive" | "negative"
 type SourceComponentId = NonNullable<SourcePort["source_component_id"]>
-
-/**
- * Compatibility boundary for circuit-json#686. This can become an import from
- * circuit-json after that PR is released.
- */
-export interface SourceDifferentialPairNotPointToPointError
-  extends BaseCircuitJsonError {
-  type: "source_differential_pair_not_point_to_point_error"
-  source_differential_pair_not_point_to_point_error_id: string
-  error_type: "source_differential_pair_not_point_to_point_error"
-  subcircuit_id?: string
-  differential_pair_name?: string
-  connection_polarity: "positive" | "negative"
-  connection_selector: string
-  subcircuit_connectivity_map_key?: string
-  source_net_id?: string
-  connected_source_port_ids: string[]
-}
-
-type PointToPointErrorTable = {
-  delete: (errorId: string) => void
-  insert: (
-    error: Omit<
-      SourceDifferentialPairNotPointToPointError,
-      "type" | "source_differential_pair_not_point_to_point_error_id"
-    >,
-  ) => SourceDifferentialPairNotPointToPointError
-}
-
-const getPointToPointErrorTable = (
-  differentialPair: DifferentialPair,
-): PointToPointErrorTable =>
-  (
-    differentialPair.root!.db as unknown as {
-      source_differential_pair_not_point_to_point_error: PointToPointErrorTable
-    }
-  ).source_differential_pair_not_point_to_point_error
 
 const formatTerminalPinList = (terminalPinSelectors: string[]): string => {
   if (terminalPinSelectors.length <= 1) return terminalPinSelectors.join("")
@@ -68,7 +30,7 @@ const getTerminalPinSelector = (
   return `.${sourceComponent.name} > .${portName}`
 }
 
-const getPointToPointErrorMessage = ({
+const getPointToPointWarningMessage = ({
   differentialPairName,
   connectionPolarity,
   connectionSelector,
@@ -103,26 +65,25 @@ const getPointToPointErrorMessage = ({
   )
 }
 
-const removeStoredPointToPointErrors = (
+const removeStoredPointToPointWarnings = (
   differentialPair: DifferentialPair,
 ): void => {
-  const errorTable = getPointToPointErrorTable(differentialPair)
-  for (const errorId of differentialPair._pointToPointErrorIds) {
-    errorTable.delete(errorId)
+  const warningTable = differentialPair.root!.db.source_property_ignored_warning
+  for (const warningId of differentialPair._pointToPointWarningIds) {
+    warningTable.delete(warningId)
   }
-  differentialPair._pointToPointErrorIds = []
+  differentialPair._pointToPointWarningIds = []
 }
 
 export const DifferentialPair_doInitialSourceDesignRuleChecks = (
   differentialPair: DifferentialPair,
 ): void => {
   const { db } = differentialPair.root!
-  removeStoredPointToPointErrors(differentialPair)
+  removeStoredPointToPointWarnings(differentialPair)
 
   const sourceTraces = db.source_trace.list()
   const sourcePorts = db.source_port.list()
   const sourceNets = db.source_net.list()
-  const pointToPointErrorTable = getPointToPointErrorTable(differentialPair)
   const sourceComponentsById = new Map<SourceComponentId, { name: string }>()
   for (const sourceComponent of db.source_component.list()) {
     sourceComponentsById.set(sourceComponent.source_component_id, {
@@ -160,16 +121,19 @@ export const DifferentialPair_doInitialSourceDesignRuleChecks = (
       ).values(),
     ]
     if (terminalSourcePorts.length === 2) continue
+    const warningSourceComponentId = terminalSourcePorts[0]?.source_component_id
+    if (!warningSourceComponentId) continue
 
     const terminalPinSelectors = terminalSourcePorts
       .map((sourcePort) =>
         getTerminalPinSelector(sourcePort, sourceComponentsById),
       )
       .sort((selectorA, selectorB) => selectorA.localeCompare(selectorB))
-    const insertedError = pointToPointErrorTable.insert({
-      error_type: "source_differential_pair_not_point_to_point_error",
-      is_fatal: true,
-      message: getPointToPointErrorMessage({
+    const insertedWarning = db.source_property_ignored_warning.insert({
+      source_component_id: warningSourceComponentId,
+      property_name: `${connectionPolarity}Connection`,
+      error_type: "source_property_ignored_warning",
+      message: getPointToPointWarningMessage({
         differentialPairName: differentialPair.name,
         connectionPolarity,
         connectionSelector,
@@ -178,20 +142,9 @@ export const DifferentialPair_doInitialSourceDesignRuleChecks = (
       }),
       subcircuit_id:
         differentialPair.getSubcircuit().subcircuit_id ?? undefined,
-      differential_pair_name: differentialPair.name,
-      connection_polarity: connectionPolarity,
-      connection_selector: connectionSelector,
-      subcircuit_connectivity_map_key:
-        resolvedConnection.subcircuitConnectivityMapKey,
-      source_net_id: resolvedConnection.sourceNet?.source_net_id,
-      connected_source_port_ids: terminalSourcePorts
-        .map((sourcePort) => sourcePort.source_port_id)
-        .sort((sourcePortIdA, sourcePortIdB) =>
-          sourcePortIdA.localeCompare(sourcePortIdB),
-        ),
     })
-    differentialPair._pointToPointErrorIds.push(
-      insertedError.source_differential_pair_not_point_to_point_error_id,
+    differentialPair._pointToPointWarningIds.push(
+      insertedWarning.source_property_ignored_warning_id,
     )
   }
 }
@@ -199,5 +152,5 @@ export const DifferentialPair_doInitialSourceDesignRuleChecks = (
 export const DifferentialPair_removeSourceDesignRuleChecks = (
   differentialPair: DifferentialPair,
 ): void => {
-  removeStoredPointToPointErrors(differentialPair)
+  removeStoredPointToPointWarnings(differentialPair)
 }

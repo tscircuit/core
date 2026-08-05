@@ -1,9 +1,8 @@
 import { expect, test } from "bun:test"
-import type { SourceDifferentialPairNotPointToPointError } from "lib/components/primitive-components/DifferentialPair_doInitialSourceDesignRuleChecks"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("stores a Circuit JSON error and omits a branched differential pair from SRJ", (): void => {
+test("stores a property warning and omits a branched differential pair from SRJ", (): void => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -25,25 +24,15 @@ test("stores a Circuit JSON error and omits a branched differential pair from SR
 
   circuit.render()
 
-  const pointToPointErrors = (
-    circuit.getCircuitJson() as unknown as Array<{ type: string }>
-  ).filter(
-    (element) =>
-      element.type === "source_differential_pair_not_point_to_point_error",
-  ) as SourceDifferentialPairNotPointToPointError[]
-  expect(pointToPointErrors).toHaveLength(1)
-  expect(pointToPointErrors[0]).toMatchObject({
-    type: "source_differential_pair_not_point_to_point_error",
-    error_type: "source_differential_pair_not_point_to_point_error",
-    is_fatal: true,
-    differential_pair_name: "USB_DATA",
-    connection_polarity: "positive",
-    connection_selector: "DP_FROM_J1",
+  const pointToPointWarnings = circuit.db.source_property_ignored_warning.list()
+  expect(pointToPointWarnings).toHaveLength(1)
+  expect(pointToPointWarnings[0]).toMatchObject({
+    type: "source_property_ignored_warning",
+    error_type: "source_property_ignored_warning",
+    property_name: "positiveConnection",
   })
-  expect(pointToPointErrors[0]?.connected_source_port_ids).toHaveLength(3)
-  expect(pointToPointErrors[0]?.source_net_id).toBeDefined()
-  expect(pointToPointErrors[0]?.subcircuit_connectivity_map_key).toBeDefined()
-  expect(pointToPointErrors[0]?.message).toBe(
+  expect(pointToPointWarnings[0]?.source_component_id).toBeDefined()
+  expect(pointToPointWarnings[0]?.message).toBe(
     'Differential pair "USB_DATA" positiveConnection resolves to net.DP, which is not point-to-point. It connects to 3 pins: .J1 > .pin1, .TP1 > .pin1, and .U1 > .pin1. Remove the extra connection and prefer a pin selector such as positiveConnection=".J1 > .pin1".',
   )
 
