@@ -160,10 +160,16 @@ export const DifferentialPair_doInitialSourceDesignRuleChecks = (
 
     const terminalSourcePorts = resolvedConnection.sourcePorts
     if (terminalSourcePorts.length === 2) continue
-    const warningSourceComponentId =
-      terminalSourcePorts[0]?.source_component_id ??
-      differentialPair.source_component_id ??
-      ""
+    let warningSourceComponentId = ""
+    const firstTerminalSourcePort = terminalSourcePorts[0]
+    if (firstTerminalSourcePort) {
+      if (!firstTerminalSourcePort.source_component_id) {
+        throw new Error(
+          `Differential pair "${differentialPair.name}" resolved terminal port "${firstTerminalSourcePort.source_port_id}" without a source_component_id`,
+        )
+      }
+      warningSourceComponentId = firstTerminalSourcePort.source_component_id
+    }
 
     const terminalPinSelectors = terminalSourcePorts
       .map((sourcePort) =>
