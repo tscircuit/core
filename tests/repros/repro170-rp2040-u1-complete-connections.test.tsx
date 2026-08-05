@@ -442,16 +442,21 @@ test("repro170: complete RP2040 U1 schematic connections", async () => {
 
   await circuit.renderUntilSettled()
 
+  // These IDs identify direct connections on the same QSPI_SS net, so each
+  // connection must use the width of the canonical rendered QSPI_SS label.
   expect(
     schematicTraceInputProblem?.directConnections
       .filter(({ netId }) =>
         ["QSPI_SS", "BOOT_SW", "BOOT_R"].includes(netId ?? ""),
       )
-      .map(({ netId, netLabelWidth }) => ({ netId, netLabelWidth })),
+      .map(({ netId, netLabelWidth }) => ({
+        directConnectionNetId: netId,
+        canonicalNetLabelWidth: netLabelWidth,
+      })),
   ).toEqual([
-    { netId: "QSPI_SS", netLabelWidth: 0.96 },
-    { netId: "BOOT_SW", netLabelWidth: 0.96 },
-    { netId: "BOOT_R", netLabelWidth: 0.96 },
+    { directConnectionNetId: "QSPI_SS", canonicalNetLabelWidth: 0.96 },
+    { directConnectionNetId: "BOOT_SW", canonicalNetLabelWidth: 0.96 },
+    { directConnectionNetId: "BOOT_R", canonicalNetLabelWidth: 0.96 },
   ])
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
