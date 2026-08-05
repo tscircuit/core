@@ -37,8 +37,8 @@ test("four-pin crystal maximum trace length only applies to signal pins", async 
         pcbX={20}
         pcbY={0}
       />
-      <trace from=".Y1 > .pin1" to=".C_XIN > .pin1" />
-      <trace from=".Y1 > .pin3" to=".C_XOUT > .pin1" />
+      <trace from=".Y1 > .X1" to=".C_XIN > .pin1" />
+      <trace from=".Y1 > .X2" to=".C_XOUT > .pin1" />
       <trace from=".Y1 > .pin2" to="net.GND" />
       <trace from=".Y1 > .pin4" to="net.GND" />
       <trace from=".R_GND > .pin1" to="net.GND" />
@@ -54,8 +54,8 @@ test("four-pin crystal maximum trace length only applies to signal pins", async 
         .map((trace) => [trace.display_name, trace.max_length]),
     ),
   ).toEqual({
-    ".Y1 > .pin1 to .C_XIN > .pin1": 10,
-    ".Y1 > .pin3 to .C_XOUT > .pin1": 10,
+    ".Y1 > .X1 to .C_XIN > .pin1": 10,
+    ".Y1 > .X2 to .C_XOUT > .pin1": 10,
     ".Y1 > .pin2 to net.GND": undefined,
     ".Y1 > .pin4 to net.GND": undefined,
     ".R_GND > .pin1 to net.GND": undefined,
