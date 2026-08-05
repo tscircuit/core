@@ -2,7 +2,7 @@ import { expect, it } from "bun:test"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-it("stores a property warning when a differential pair port selector resolves to a branch", (): void => {
+it("stores a warning without changing the existing autorouter error", (): void => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -49,9 +49,12 @@ it("stores a property warning when a differential pair port selector resolves to
     'positiveConnection resolves to ".R1 > .pin1", which is not point-to-point',
   )
 
-  const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
-    circuitJson: circuit.getCircuitJson(),
-    subcircuitComponent: boardSubcircuit,
-  })
-  expect(simpleRouteJson.differentialPairs).toBeUndefined()
+  expect((): void => {
+    getSimpleRouteJsonFromCircuitJson({
+      circuitJson: circuit.getCircuitJson(),
+      subcircuitComponent: boardSubcircuit,
+    })
+  }).toThrow(
+    'Trace name or port selector ".R1 > .pin1" matches multiple source traces for differential pair "USB"',
+  )
 })

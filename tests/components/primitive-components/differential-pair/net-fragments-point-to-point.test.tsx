@@ -1,8 +1,7 @@
 import { expect, test } from "bun:test"
-import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("accepts a two-terminal differential conductor split through a source net", (): void => {
+test("does not warn for a two-terminal conductor split through a source net", (): void => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -11,7 +10,6 @@ test("accepts a two-terminal differential conductor split through a source net",
         name="USB_DATA"
         positiveConnection=".J1 > .pin1"
         negativeConnection="DM"
-        maxLengthSkew={0.05}
       />
       <chip name="J1" footprint="soic8" pcbX={-6} />
       <chip name="U1" footprint="soic8" pcbX={6} />
@@ -32,27 +30,4 @@ test("accepts a two-terminal differential conductor split through a source net",
           warning.property_name === "negativeConnection",
       ),
   ).toEqual([])
-
-  const boardSubcircuit = circuit.firstChild
-  if (!boardSubcircuit) throw new Error("Expected a board subcircuit")
-
-  const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
-    circuitJson: circuit.getCircuitJson(),
-    subcircuitComponent: boardSubcircuit,
-  })
-  const dpSourceNet = circuit.db.source_net.getWhere({ name: "DP" })
-  const dmSourceTrace = circuit.db.source_trace.getWhere({ name: "DM" })
-  if (!dpSourceNet || !dmSourceTrace) {
-    throw new Error("Expected DP source net and DM source trace")
-  }
-
-  expect(simpleRouteJson.differentialPairs).toEqual([
-    {
-      connectionNames: [
-        dpSourceNet.source_net_id,
-        dmSourceTrace.source_trace_id,
-      ],
-      lengthTolerance: 0.05,
-    },
-  ])
 })

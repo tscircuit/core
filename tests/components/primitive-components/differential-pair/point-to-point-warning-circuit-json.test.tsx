@@ -1,8 +1,7 @@
 import { expect, test } from "bun:test"
-import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("stores a property warning and omits a branched differential pair from SRJ", (): void => {
+test("stores a property warning for a branched differential pair", (): void => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -35,13 +34,4 @@ test("stores a property warning and omits a branched differential pair from SRJ"
   expect(pointToPointWarnings[0]?.message).toBe(
     'Differential pair "USB_DATA" positiveConnection resolves to net.DP, which is not point-to-point. It connects to 3 pins: .J1 > .pin1, .TP1 > .pin1, and .U1 > .pin1. Remove the extra connection and prefer a pin selector such as positiveConnection=".J1 > .pin1".',
   )
-
-  const boardSubcircuit = circuit.firstChild
-  if (!boardSubcircuit) throw new Error("Expected a board subcircuit")
-
-  const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
-    circuitJson: circuit.getCircuitJson(),
-    subcircuitComponent: boardSubcircuit,
-  })
-  expect(simpleRouteJson.differentialPairs).toBeUndefined()
 })

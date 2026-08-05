@@ -731,8 +731,6 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       srjConnections: allConns,
       differentialPairs,
       sourceTraces: db.source_trace.list(),
-      sourcePorts: db.source_port.list(),
-      sourceNets: db.source_net.list(),
       subcircuitId: subcircuit_id,
     })
 

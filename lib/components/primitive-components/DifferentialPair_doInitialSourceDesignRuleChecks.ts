@@ -1,12 +1,71 @@
 import type { SourcePort } from "circuit-json"
-import {
-  type ResolvedDifferentialPairConnection,
-  resolveDifferentialPairConnectionOrThrow,
-} from "lib/utils/autorouting/resolve-differential-pair-connection"
 import type { DifferentialPair } from "./DifferentialPair"
+import type { Port } from "./Port/Port"
 
 type ConnectionPolarity = "positive" | "negative"
 type SourceComponentId = NonNullable<SourcePort["source_component_id"]>
+
+type ResolvedPointToPointConnection = {
+  sourcePorts: SourcePort[]
+  sourceNetName?: string
+}
+
+const resolvePointToPointConnection = (
+  differentialPair: DifferentialPair,
+  connectionSelector: string,
+): ResolvedPointToPointConnection | undefined => {
+  const { db } = differentialPair.root!
+  const subcircuit = differentialPair.getSubcircuit()
+  const subcircuitSourceTraces = db.source_trace
+    .list()
+    .filter(
+      (sourceTrace) => sourceTrace.subcircuit_id === subcircuit.subcircuit_id,
+    )
+  const matchingSourceTraces = subcircuitSourceTraces.filter(
+    (sourceTrace) => sourceTrace.name === connectionSelector,
+  )
+  const connectivityMapKeys = new Set<string>()
+
+  if (matchingSourceTraces.length > 0) {
+    for (const sourceTrace of matchingSourceTraces) {
+      if (sourceTrace.subcircuit_connectivity_map_key) {
+        connectivityMapKeys.add(sourceTrace.subcircuit_connectivity_map_key)
+      }
+    }
+  } else {
+    const selectedPort = subcircuit.selectOne<Port>(connectionSelector, {
+      type: "port",
+    })
+    if (selectedPort?.source_port_id) {
+      const sourcePort = db.source_port.get(selectedPort.source_port_id)
+      if (sourcePort?.subcircuit_connectivity_map_key) {
+        connectivityMapKeys.add(sourcePort.subcircuit_connectivity_map_key)
+      }
+    }
+  }
+
+  if (connectivityMapKeys.size !== 1) return undefined
+  const connectivityMapKey = connectivityMapKeys.values().next().value
+  if (!connectivityMapKey) return undefined
+
+  const sourcePorts = db.source_port
+    .list()
+    .filter(
+      (sourcePort) =>
+        sourcePort.subcircuit_connectivity_map_key === connectivityMapKey,
+    )
+  const sourceNet = db.source_net
+    .list()
+    .find(
+      (sourceNet) =>
+        sourceNet.subcircuit_connectivity_map_key === connectivityMapKey,
+    )
+
+  return {
+    sourcePorts,
+    sourceNetName: sourceNet?.name,
+  }
+}
 
 const formatTerminalPinList = (terminalPinSelectors: string[]): string => {
   if (terminalPinSelectors.length <= 1) return terminalPinSelectors.join("")
@@ -91,9 +150,6 @@ export const DifferentialPair_doInitialSourceDesignRuleChecks = (
   const { db } = differentialPair.root!
   removeStoredPointToPointWarnings(differentialPair)
 
-  const sourceTraces = db.source_trace.list()
-  const sourcePorts = db.source_port.list()
-  const sourceNets = db.source_net.list()
   const sourceComponentsById = new Map<SourceComponentId, { name: string }>()
   for (const sourceComponent of db.source_component.list()) {
     sourceComponentsById.set(sourceComponent.source_component_id, {
@@ -107,29 +163,13 @@ export const DifferentialPair_doInitialSourceDesignRuleChecks = (
       connectionSelector = differentialPair._parsedProps.positiveConnection
     }
 
-    let resolvedConnection: ResolvedDifferentialPairConnection
-    try {
-      resolvedConnection = resolveDifferentialPairConnectionOrThrow({
-        differentialPair,
-        traceNameOrPortSelector: connectionSelector,
-        sourceTraces,
-        sourcePorts,
-        sourceNets,
-      })
-    } catch {
-      // Missing and unrelated ambiguous references retain their existing SRJ
-      // diagnostics. This DRC is specifically for resolved connectivity groups.
-      continue
-    }
+    const resolvedConnection = resolvePointToPointConnection(
+      differentialPair,
+      connectionSelector,
+    )
+    if (!resolvedConnection) continue
 
-    const terminalSourcePorts = [
-      ...new Map(
-        resolvedConnection.sourcePorts.map((sourcePort) => [
-          sourcePort.source_port_id,
-          sourcePort,
-        ]),
-      ).values(),
-    ]
+    const terminalSourcePorts = resolvedConnection.sourcePorts
     if (terminalSourcePorts.length === 2) continue
     const warningSourceComponentId = terminalSourcePorts[0]?.source_component_id
     if (!warningSourceComponentId) continue
@@ -147,7 +187,7 @@ export const DifferentialPair_doInitialSourceDesignRuleChecks = (
         differentialPairName: differentialPair.name,
         connectionPolarity,
         connectionSelector,
-        sourceNetName: resolvedConnection.sourceNet?.name,
+        sourceNetName: resolvedConnection.sourceNetName,
         terminalPinSelectors,
       }),
       subcircuit_id:
