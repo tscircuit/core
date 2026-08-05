@@ -25,6 +25,9 @@ export interface AutoroutingStartEvent {
   type: "autorouting:start"
   subcircuit_id: string
   componentDisplayName: string
+  phaseName?: string
+  phaseStageIndex?: number
+  phaseStageCount?: number
   simpleRouteJson: SimpleRouteJson
 }
 
@@ -32,6 +35,9 @@ export interface AutoroutingErrorEvent {
   type: "autorouting:error"
   subcircuit_id: string
   componentDisplayName: string
+  phaseName?: string
+  phaseStageIndex?: number
+  phaseStageCount?: number
   error?: { message: string; stack?: string }
   simpleRouteJson?: SimpleRouteJson
   debugGraphics?: any
@@ -41,6 +47,9 @@ export interface AutoroutingProgressEvent {
   type: "autorouting:progress"
   subcircuit_id: string
   componentDisplayName: string
+  phaseName?: string
+  phaseStageIndex?: number
+  phaseStageCount?: number
   progress: number
   iterationsPerSecond?: number
   debugGraphics?: any
@@ -50,6 +59,9 @@ export interface AutoroutingEndEvent {
   type: "autorouting:end"
   subcircuit_id: string
   componentDisplayName: string
+  phaseName?: string
+  phaseStageIndex?: number
+  phaseStageCount?: number
   simpleRouteJson: SimpleRouteJson
 }
 
