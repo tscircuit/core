@@ -160,8 +160,10 @@ export const DifferentialPair_doInitialSourceDesignRuleChecks = (
 
     const terminalSourcePorts = resolvedConnection.sourcePorts
     if (terminalSourcePorts.length === 2) continue
-    const warningSourceComponentId = terminalSourcePorts[0]?.source_component_id
-    if (!warningSourceComponentId) continue
+    const warningSourceComponentId =
+      terminalSourcePorts[0]?.source_component_id ??
+      differentialPair.source_component_id ??
+      ""
 
     const terminalPinSelectors = terminalSourcePorts
       .map((sourcePort) =>
