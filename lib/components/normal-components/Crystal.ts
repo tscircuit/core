@@ -8,14 +8,13 @@ import { formatSiUnit } from "format-si-unit"
 import { type BaseSymbolName, type Ftype } from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 
-type CrystalPorts = CrystalPinLabels
+type CrystalPorts = CrystalPinLabels | "X1" | "X2"
 type SourcePortId = SourcePort["source_port_id"]
 type SubcircuitConnectivityMapKey = NonNullable<
   SourceTrace["subcircuit_connectivity_map_key"]
 >
 
 const DEFAULT_CRYSTAL_MAX_TRACE_LENGTH_MM = 10
-const CRYSTAL_SIGNAL_PORT_LABELS = new Set(["x1", "x2"])
 
 export class Crystal extends NormalComponent<
   typeof crystalProps,
@@ -94,14 +93,12 @@ export class Crystal extends NormalComponent<
     const crystalSignalConnectivityMapKeys =
       new Set<SubcircuitConnectivityMapKey>()
 
-    for (const sourcePort of db.source_port.list()) {
-      if (sourcePort.source_component_id !== this.source_component_id) continue
-      const isCrystalSignalPort = sourcePort.port_hints?.some((portLabel) =>
-        CRYSTAL_SIGNAL_PORT_LABELS.has(portLabel.toLowerCase()),
-      )
-      if (!isCrystalSignalPort) continue
+    for (const signalPort of [this.portMap.X1, this.portMap.X2]) {
+      if (!signalPort.source_port_id) continue
+      const sourcePort = db.source_port.get(signalPort.source_port_id)
+      if (!sourcePort) continue
 
-      crystalSignalSourcePortIds.add(sourcePort.source_port_id)
+      crystalSignalSourcePortIds.add(signalPort.source_port_id)
       if (sourcePort.subcircuit_connectivity_map_key) {
         crystalSignalConnectivityMapKeys.add(
           sourcePort.subcircuit_connectivity_map_key,
