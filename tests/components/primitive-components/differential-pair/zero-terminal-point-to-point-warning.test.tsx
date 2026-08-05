@@ -30,6 +30,6 @@ test("stores a warning for a differential-pair connection with no terminal pins"
     property_name: "positiveConnection",
   })
   expect(warning?.message).toBe(
-    'Differential pair "USB_DATA" positiveConnection resolves to net.DP, which is not point-to-point. It connects to 0 pins. Connect exactly two terminal pins.',
+    'Differential pair "USB_DATA" positiveConnection references trace "DP_EMPTY", which is not point-to-point because it connects to 0 terminal pins.',
   )
 })
