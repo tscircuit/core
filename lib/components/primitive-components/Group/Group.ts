@@ -87,7 +87,6 @@ import {
 import {
   Group_applyDrcTolerancesToSimpleRouteJson,
   Group_filterSimpleRouteJsonForPhase,
-  Group_getObstaclesFromRoutedTraces,
   Group_hasPhasedAutorouting,
   connectionIsInRoutingPhase,
 } from "./Group_phasedAutoroutingUtils"
@@ -1128,31 +1127,32 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           } as RerouteRectRegion,
         ) as SimpleRouteJson
       } else if (!usesPreviousStageOutput && isConnectionReroutePhase) {
-        simpleRouteJson = Group_filterSimpleRouteJsonForPhase(
+        const phaseInput = Group_filterSimpleRouteJsonForPhase(
           baseSimpleRouteJson,
           routingPhasePlan,
         )
-        simpleRouteJson.obstacles = [
-          ...simpleRouteJson.obstacles,
-          ...Group_getObstaclesFromRoutedTraces(
-            outputTraces.filter(
+        // Preserve routed geometry as SRJ traces. The autorouter owns
+        // converting traces to obstacles and approximating diagonal segments.
+        simpleRouteJson = {
+          ...phaseInput,
+          traces: [
+            ...(phaseInput.traces ?? []),
+            ...outputTraces.filter(
               (trace) => !traceMatchesRoutingPhase(trace, routingPhasePlan),
             ),
-            baseSimpleRouteJson.layerCount,
-          ),
-        ]
+          ],
+        }
       } else if (!usesPreviousStageOutput && hasPhasedAutorouting) {
-        simpleRouteJson = Group_filterSimpleRouteJsonForPhase(
+        const phaseInput = Group_filterSimpleRouteJsonForPhase(
           baseSimpleRouteJson,
           routingPhasePlan,
         )
-        simpleRouteJson.obstacles = [
-          ...simpleRouteJson.obstacles,
-          ...Group_getObstaclesFromRoutedTraces(
-            outputTraces,
-            baseSimpleRouteJson.layerCount,
-          ),
-        ]
+        // Preserve routed geometry as SRJ traces. The autorouter owns
+        // converting traces to obstacles and approximating diagonal segments.
+        simpleRouteJson = {
+          ...phaseInput,
+          traces: [...(phaseInput.traces ?? []), ...outputTraces],
+        }
       }
       simpleRouteJson = Group_applyDrcTolerancesToSimpleRouteJson(
         simpleRouteJson,
