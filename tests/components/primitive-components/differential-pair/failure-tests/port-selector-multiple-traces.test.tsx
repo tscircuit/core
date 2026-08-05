@@ -1,8 +1,9 @@
 import { expect, it } from "bun:test"
+import type { SourceDifferentialPairNotPointToPointError } from "lib/components/primitive-components/DifferentialPair_doInitialSourceDesignRuleChecks"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-it("throws when a differential pair port selector matches multiple traces", (): void => {
+it("stores an error when a differential pair port selector resolves to a branch", (): void => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -36,12 +37,22 @@ it("throws when a differential pair port selector matches multiple traces", (): 
     throw new Error("Expected the circuit to contain a board")
   }
 
-  expect((): void => {
-    getSimpleRouteJsonFromCircuitJson({
-      circuitJson: circuit.getCircuitJson(),
-      subcircuitComponent: boardSubcircuit,
-    })
-  }).toThrow(
-    'Trace name or port selector ".R1 > .pin1" matches multiple source traces for differential pair "USB"',
-  )
+  const pointToPointError = (
+    circuit.getCircuitJson() as unknown as Array<{ type: string }>
+  ).find(
+    (element) =>
+      element.type === "source_differential_pair_not_point_to_point_error",
+  ) as SourceDifferentialPairNotPointToPointError | undefined
+  expect(pointToPointError).toMatchObject({
+    differential_pair_name: "USB",
+    connection_polarity: "positive",
+    connection_selector: ".R1 > .pin1",
+  })
+  expect(pointToPointError?.connected_source_port_ids).toHaveLength(3)
+
+  const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
+    circuitJson: circuit.getCircuitJson(),
+    subcircuitComponent: boardSubcircuit,
+  })
+  expect(simpleRouteJson.differentialPairs).toBeUndefined()
 })
