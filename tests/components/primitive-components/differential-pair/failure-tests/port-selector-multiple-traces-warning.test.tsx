@@ -1,7 +1,7 @@
-import { expect, it } from "bun:test"
+import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-it("stores a warning when a differential pair port selector matches multiple traces", (): void => {
+test("stores a warning when a differential pair port selector matches multiple traces", (): void => {
   const { circuit } = getTestFixture()
 
   circuit.add(
