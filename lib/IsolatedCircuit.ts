@@ -1,11 +1,11 @@
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import { su } from "@tscircuit/circuit-json-util"
-import type { PlatformConfig } from "@tscircuit/props"
 import type { AnyCircuitElement } from "circuit-json"
 import Debug from "debug"
 import { type ReactElement, isValidElement } from "react"
 import { type Matrix, identity } from "transformation-matrix"
 import pkgJson from "../package.json"
+import type { CorePlatformConfig } from "./CorePlatformConfig"
 import type { PrimitiveComponent } from "./components/base-components/PrimitiveComponent"
 import type { RenderPhase } from "./components/base-components/Renderable"
 import type { BoardI } from "./components/normal-components/BoardI"
@@ -65,7 +65,7 @@ export class IsolatedCircuit {
    */
   name?: string
 
-  platform?: PlatformConfig
+  platform?: CorePlatformConfig
 
   /**
    * Optional URL pointing to where this project is hosted or documented.
@@ -95,7 +95,7 @@ export class IsolatedCircuit {
     cachedSubcircuits,
     pendingSubcircuitRenders,
   }: {
-    platform?: PlatformConfig
+    platform?: CorePlatformConfig
     projectUrl?: string
     cachedSubcircuits?: Map<string, AnyCircuitElement[]>
     pendingSubcircuitRenders?: Map<string, Promise<AnyCircuitElement[]>>
@@ -122,7 +122,7 @@ export class IsolatedCircuit {
     this.children.push(component)
   }
 
-  setPlatform(platform: Partial<PlatformConfig>) {
+  setPlatform(platform: Partial<CorePlatformConfig>) {
     this.platform = {
       ...this.platform,
       ...platform,

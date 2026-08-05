@@ -1,5 +1,5 @@
-import type { PlatformConfig } from "@tscircuit/props"
 import type { AnyCircuitElement } from "circuit-json"
+import type { CorePlatformConfig } from "./CorePlatformConfig"
 import { IsolatedCircuit } from "./IsolatedCircuit"
 
 export class RootCircuit extends IsolatedCircuit {
@@ -8,7 +8,7 @@ export class RootCircuit extends IsolatedCircuit {
   constructor({
     platform,
     projectUrl,
-  }: { platform?: PlatformConfig; projectUrl?: string } = {}) {
+  }: { platform?: CorePlatformConfig; projectUrl?: string } = {}) {
     super({
       platform,
       projectUrl,

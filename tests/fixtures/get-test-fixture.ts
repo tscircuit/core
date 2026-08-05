@@ -7,13 +7,13 @@ import "./extend-expect-3d-matcher"
 import "./extend-expect-autorouting-phases-snapshot"
 import { preventExternalApiRequests } from "./prevent-external-api-requests"
 import { getTestStaticAssetsServer } from "./get-test-static-assets-server"
-import type { PlatformConfig } from "@tscircuit/props"
+import type { CorePlatformConfig } from "lib/CorePlatformConfig"
 
 export const getTestFixture = ({
   platform,
   withStaticAssetsServer = false,
 }: {
-  platform?: PlatformConfig
+  platform?: CorePlatformConfig
   withStaticAssetsServer?: boolean
 } = {}) => {
   global.debugGraphics = []
