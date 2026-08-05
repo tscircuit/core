@@ -919,7 +919,7 @@ test("example38 cad model placement snapshot", async () => {
         }
         cadModel={{
           objUrl:
-            "https://modelcdn.tscircuit.com/easyeda_models/download?uuid=4e90b6d8552a4e058d9ebe9d82e11f3a&pn=C9900017879",
+            "https://modelcdn.tscircuit.com/easyeda_models/assets/C9900017879.obj?uuid=4e90b6d8552a4e058d9ebe9d82e11f3a",
           modelOriginPosition: { x: 0, y: 0, z: -2.5 },
           pcbRotationOffset: 270,
         }}
