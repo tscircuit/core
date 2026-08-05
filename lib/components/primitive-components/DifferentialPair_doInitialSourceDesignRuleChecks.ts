@@ -7,7 +7,7 @@ type SourceComponentId = NonNullable<SourcePort["source_component_id"]>
 
 type ResolvedPointToPointConnection = {
   sourcePorts: SourcePort[]
-  sourceNetName?: string
+  sourceTraceName?: string
 }
 
 const resolvePointToPointConnection = (
@@ -54,16 +54,10 @@ const resolvePointToPointConnection = (
       (sourcePort) =>
         sourcePort.subcircuit_connectivity_map_key === connectivityMapKey,
     )
-  const sourceNet = db.source_net
-    .list()
-    .find(
-      (sourceNet) =>
-        sourceNet.subcircuit_connectivity_map_key === connectivityMapKey,
-    )
-
   return {
     sourcePorts,
-    sourceNetName: sourceNet?.name,
+    sourceTraceName:
+      matchingSourceTraces.length > 0 ? connectionSelector : undefined,
   }
 }
 
@@ -94,44 +88,23 @@ const getPointToPointWarningMessage = ({
   differentialPairName,
   connectionPolarity,
   connectionSelector,
-  sourceNetName,
+  sourceTraceName,
   terminalPinSelectors,
 }: {
   differentialPairName: string
   connectionPolarity: ConnectionPolarity
   connectionSelector: string
-  sourceNetName?: string
+  sourceTraceName?: string
   terminalPinSelectors: string[]
 }): string => {
-  let resolvedConnectionName = `"${connectionSelector}"`
-  if (sourceNetName) {
-    resolvedConnectionName = `net.${sourceNetName}`
-  }
-  const terminalCount = terminalPinSelectors.length
-  let pinOrPins = "pins"
-  if (terminalCount === 1) {
-    pinOrPins = "pin"
-  }
   const terminalList = formatTerminalPinList(terminalPinSelectors)
-  const suggestedSelector = terminalPinSelectors[0]
-  let correction = "Connect exactly two terminal pins"
-  if (terminalCount > 2) {
-    correction = "Remove the extra connection"
-  }
-  let selectorRecommendation = ""
-  if (suggestedSelector) {
-    selectorRecommendation = ` and prefer a pin selector such as ${connectionPolarity}Connection="${suggestedSelector}"`
-  }
-  let terminalListDescription = ""
-  if (terminalList) {
-    terminalListDescription = `: ${terminalList}`
+  const terminalListDescription = terminalList ? `: ${terminalList}` : ""
+
+  if (sourceTraceName && terminalPinSelectors.length > 2) {
+    return `Differential pair "${differentialPairName}" ${connectionPolarity}Connection uses the ambiguous trace name "${sourceTraceName}": its connection has more than 2 terminal pins${terminalListDescription}.`
   }
 
-  return (
-    `Differential pair "${differentialPairName}" ${connectionPolarity}Connection resolves to ${resolvedConnectionName}, which is not point-to-point. ` +
-    `It connects to ${terminalCount} ${pinOrPins}${terminalListDescription}. ` +
-    `${correction}${selectorRecommendation}.`
-  )
+  return `Differential pair "${differentialPairName}" ${connectionPolarity}Connection="${connectionSelector}" is not point-to-point: expected exactly 2 terminal pins, found ${terminalPinSelectors.length}${terminalListDescription}.`
 }
 
 export const DifferentialPair_doInitialSourceDesignRuleChecks = (
@@ -184,7 +157,7 @@ export const DifferentialPair_doInitialSourceDesignRuleChecks = (
         differentialPairName: differentialPair.name,
         connectionPolarity,
         connectionSelector,
-        sourceNetName: resolvedConnection.sourceNetName,
+        sourceTraceName: resolvedConnection.sourceTraceName,
         terminalPinSelectors,
       }),
       subcircuit_id:
