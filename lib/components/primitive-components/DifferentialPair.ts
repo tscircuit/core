@@ -3,6 +3,7 @@ import {
   type BaseComponentConfig,
   PrimitiveComponent,
 } from "../base-components/PrimitiveComponent"
+import { DifferentialPair_doInitialSourceDesignRuleChecks } from "./DifferentialPair_doInitialSourceDesignRuleChecks"
 
 /**
  * Declares the routing constraints for a positive and negative trace pair.
@@ -15,5 +16,9 @@ export class DifferentialPair extends PrimitiveComponent<
       componentName: "DifferentialPair",
       zodProps: differentialPairProps,
     }
+  }
+
+  doInitialSourceDesignRuleChecks(): void {
+    DifferentialPair_doInitialSourceDesignRuleChecks(this)
   }
 }
