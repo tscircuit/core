@@ -66,12 +66,12 @@ const getDifferentialPairSrjConnectionNameOrThrow = ({
       matchingTraceSrjConnections.push(srjConnection)
     }
   }
-  const matchingSrjConnections =
-    matchingTraceSrjConnections.length > 0
-      ? matchingTraceSrjConnections
-      : srjConnections.filter((srjConnection) =>
-          differentialPairSourceNetIds.has(srjConnection.name),
-        )
+  let matchingSrjConnections = matchingTraceSrjConnections
+  if (matchingSrjConnections.length === 0) {
+    matchingSrjConnections = srjConnections.filter((srjConnection) =>
+      differentialPairSourceNetIds.has(srjConnection.name),
+    )
+  }
 
   if (matchingSrjConnections.length === 0) {
     throw new Error(

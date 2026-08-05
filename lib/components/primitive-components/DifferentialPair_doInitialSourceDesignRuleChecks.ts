@@ -20,9 +20,10 @@ const getTerminalPinSelector = (
   sourcePort: SourcePort,
   sourceComponentsById: Map<SourceComponentId, { name: string }>,
 ): string => {
-  const sourceComponent = sourcePort.source_component_id
-    ? sourceComponentsById.get(sourcePort.source_component_id)
-    : undefined
+  let sourceComponent: { name: string } | undefined
+  if (sourcePort.source_component_id) {
+    sourceComponent = sourceComponentsById.get(sourcePort.source_component_id)
+  }
   if (!sourceComponent?.name) return sourcePort.source_port_id
 
   const portName =
@@ -43,24 +44,33 @@ const getPointToPointWarningMessage = ({
   sourceNetName?: string
   terminalPinSelectors: string[]
 }): string => {
-  const resolvedConnectionName = sourceNetName
-    ? `net.${sourceNetName}`
-    : `"${connectionSelector}"`
+  let resolvedConnectionName = `"${connectionSelector}"`
+  if (sourceNetName) {
+    resolvedConnectionName = `net.${sourceNetName}`
+  }
   const terminalCount = terminalPinSelectors.length
-  const pinOrPins = terminalCount === 1 ? "pin" : "pins"
+  let pinOrPins = "pins"
+  if (terminalCount === 1) {
+    pinOrPins = "pin"
+  }
   const terminalList = formatTerminalPinList(terminalPinSelectors)
   const suggestedSelector = terminalPinSelectors[0]
-  const correction =
-    terminalCount > 2
-      ? "Remove the extra connection"
-      : "Connect exactly two terminal pins"
-  const selectorRecommendation = suggestedSelector
-    ? ` and prefer a pin selector such as ${connectionPolarity}Connection="${suggestedSelector}"`
-    : ""
+  let correction = "Connect exactly two terminal pins"
+  if (terminalCount > 2) {
+    correction = "Remove the extra connection"
+  }
+  let selectorRecommendation = ""
+  if (suggestedSelector) {
+    selectorRecommendation = ` and prefer a pin selector such as ${connectionPolarity}Connection="${suggestedSelector}"`
+  }
+  let terminalListDescription = ""
+  if (terminalList) {
+    terminalListDescription = `: ${terminalList}`
+  }
 
   return (
     `Differential pair "${differentialPairName}" ${connectionPolarity}Connection resolves to ${resolvedConnectionName}, which is not point-to-point. ` +
-    `It connects to ${terminalCount} ${pinOrPins}${terminalList ? `: ${terminalList}` : ""}. ` +
+    `It connects to ${terminalCount} ${pinOrPins}${terminalListDescription}. ` +
     `${correction}${selectorRecommendation}.`
   )
 }
@@ -92,10 +102,10 @@ export const DifferentialPair_doInitialSourceDesignRuleChecks = (
   }
 
   for (const connectionPolarity of ["positive", "negative"] as const) {
-    const connectionSelector =
-      connectionPolarity === "positive"
-        ? differentialPair._parsedProps.positiveConnection
-        : differentialPair._parsedProps.negativeConnection
+    let connectionSelector = differentialPair._parsedProps.negativeConnection
+    if (connectionPolarity === "positive") {
+      connectionSelector = differentialPair._parsedProps.positiveConnection
+    }
 
     let resolvedConnection: ResolvedDifferentialPairConnection
     try {

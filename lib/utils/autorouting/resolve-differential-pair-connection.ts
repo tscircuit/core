@@ -62,19 +62,20 @@ export const resolveDifferentialPairConnectionOrThrow = ({
       differentialPairSourceTraces,
       traceNameOrPortSelector,
     )
-  const selectedPort =
-    sourceTracesWithMatchingName.length === 0
-      ? differentialPair
-          .getSubcircuit()
-          .selectOne<Port>(traceNameOrPortSelector, { type: "port" })
-      : null
+  let selectedPort: Port | null = null
+  if (sourceTracesWithMatchingName.length === 0) {
+    selectedPort = differentialPair
+      .getSubcircuit()
+      .selectOne<Port>(traceNameOrPortSelector, { type: "port" })
+  }
   const selectedSourcePortId = selectedPort?.source_port_id ?? undefined
-  const matchingSourceTraces = selectedSourcePortId
-    ? getDifferentialPairSourceTracesByPortId(
-        differentialPairSourceTraces,
-        selectedSourcePortId,
-      )
-    : sourceTracesWithMatchingName
+  let matchingSourceTraces = sourceTracesWithMatchingName
+  if (selectedSourcePortId) {
+    matchingSourceTraces = getDifferentialPairSourceTracesByPortId(
+      differentialPairSourceTraces,
+      selectedSourcePortId,
+    )
+  }
 
   if (matchingSourceTraces.length === 0) {
     throw new Error(
@@ -82,13 +83,14 @@ export const resolveDifferentialPairConnectionOrThrow = ({
     )
   }
 
-  const subcircuitConnectivityMapKeys = new Set(
-    matchingSourceTraces.flatMap((sourceTrace) =>
-      sourceTrace.subcircuit_connectivity_map_key
-        ? [sourceTrace.subcircuit_connectivity_map_key]
-        : [],
-    ),
-  )
+  const subcircuitConnectivityMapKeys = new Set<SubcircuitConnectivityMapKey>()
+  for (const sourceTrace of matchingSourceTraces) {
+    if (sourceTrace.subcircuit_connectivity_map_key) {
+      subcircuitConnectivityMapKeys.add(
+        sourceTrace.subcircuit_connectivity_map_key,
+      )
+    }
+  }
   if (subcircuitConnectivityMapKeys.size > 1) {
     throw new Error(
       `Trace name or port selector "${traceNameOrPortSelector}" matches multiple source traces for differential pair "${differentialPair.name}"`,
@@ -126,14 +128,17 @@ export const resolveDifferentialPairConnectionOrThrow = ({
   const sourcePortsById = new Map<SourcePortId, SourcePort>(
     sourcePorts.map((sourcePort) => [sourcePort.source_port_id, sourcePort]),
   )
-  const connectivityGroupSourcePorts = [...terminalSourcePortIds]
-    .sort((sourcePortIdA, sourcePortIdB) =>
+  const sortedTerminalSourcePortIds = [...terminalSourcePortIds].sort(
+    (sourcePortIdA, sourcePortIdB) =>
       sourcePortIdA.localeCompare(sourcePortIdB),
-    )
-    .flatMap((sourcePortId) => {
-      const sourcePort = sourcePortsById.get(sourcePortId)
-      return sourcePort ? [sourcePort] : []
-    })
+  )
+  const connectivityGroupSourcePorts: SourcePort[] = []
+  for (const sourcePortId of sortedTerminalSourcePortIds) {
+    const sourcePort = sourcePortsById.get(sourcePortId)
+    if (sourcePort) {
+      connectivityGroupSourcePorts.push(sourcePort)
+    }
+  }
 
   const directlyReferencedSourceNetIds = matchingSourceTraces.flatMap(
     (sourceTrace) => sourceTrace.connected_source_net_ids,
@@ -153,13 +158,19 @@ export const resolveDifferentialPairConnectionOrThrow = ({
     sourceNets.map((sourceNet) => [sourceNet.source_net_id, sourceNet]),
   )
 
+  let sourceNet: SourceNet | undefined
+  for (const sourceNetId of orderedSourceNetIds) {
+    const matchingSourceNet = sourceNetsById.get(sourceNetId)
+    if (matchingSourceNet) {
+      sourceNet = matchingSourceNet
+      break
+    }
+  }
+
   return {
     subcircuitConnectivityMapKey,
     sourceTraces: connectivityGroupSourceTraces,
     sourcePorts: connectivityGroupSourcePorts,
-    sourceNet: orderedSourceNetIds.flatMap((sourceNetId) => {
-      const sourceNet = sourceNetsById.get(sourceNetId)
-      return sourceNet ? [sourceNet] : []
-    })[0],
+    sourceNet,
   }
 }
