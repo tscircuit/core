@@ -7,7 +7,7 @@ type SourceComponentId = NonNullable<SourcePort["source_component_id"]>
 
 type ResolvedPointToPointConnection = {
   sourcePorts: SourcePort[]
-  referenceKind: "trace" | "selector"
+  sourceTraceName?: string
 }
 
 const resolvePointToPointConnection = (
@@ -54,10 +54,10 @@ const resolvePointToPointConnection = (
       (sourcePort) =>
         sourcePort.subcircuit_connectivity_map_key === connectivityMapKey,
     )
-
   return {
     sourcePorts,
-    referenceKind: matchingSourceTraces.length > 0 ? "trace" : "selector",
+    sourceTraceName:
+      matchingSourceTraces.length > 0 ? connectionSelector : undefined,
   }
 }
 
@@ -88,22 +88,23 @@ const getPointToPointWarningMessage = ({
   differentialPairName,
   connectionPolarity,
   connectionSelector,
-  referenceKind,
+  sourceTraceName,
   terminalPinSelectors,
 }: {
   differentialPairName: string
   connectionPolarity: ConnectionPolarity
   connectionSelector: string
-  referenceKind: ResolvedPointToPointConnection["referenceKind"]
+  sourceTraceName?: string
   terminalPinSelectors: string[]
 }): string => {
-  const terminalCount = terminalPinSelectors.length
-  const pinOrPins = terminalCount === 1 ? "terminal pin" : "terminal pins"
   const terminalList = formatTerminalPinList(terminalPinSelectors)
   const terminalListDescription = terminalList ? `: ${terminalList}` : ""
-  const problem = terminalCount > 2 ? "ambiguous" : "not point-to-point"
 
-  return `Differential pair "${differentialPairName}" ${connectionPolarity}Connection references ${referenceKind} "${connectionSelector}", which is ${problem} because it connects to ${terminalCount} ${pinOrPins}${terminalListDescription}.`
+  if (sourceTraceName && terminalPinSelectors.length > 2) {
+    return `Differential pair "${differentialPairName}" ${connectionPolarity}Connection uses the ambiguous trace name "${sourceTraceName}": its connection has more than 2 terminal pins${terminalListDescription}.`
+  }
+
+  return `Differential pair "${differentialPairName}" ${connectionPolarity}Connection="${connectionSelector}" is not point-to-point: expected exactly 2 terminal pins, found ${terminalPinSelectors.length}${terminalListDescription}.`
 }
 
 export const DifferentialPair_doInitialSourceDesignRuleChecks = (
@@ -156,7 +157,7 @@ export const DifferentialPair_doInitialSourceDesignRuleChecks = (
         differentialPairName: differentialPair.name,
         connectionPolarity,
         connectionSelector,
-        referenceKind: resolvedConnection.referenceKind,
+        sourceTraceName: resolvedConnection.sourceTraceName,
         terminalPinSelectors,
       }),
       subcircuit_id:

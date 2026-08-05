@@ -32,6 +32,6 @@ test("stores a property warning for a branched differential pair", (): void => {
   })
   expect(pointToPointWarnings[0]?.source_component_id).toBeDefined()
   expect(pointToPointWarnings[0]?.message).toBe(
-    'Differential pair "USB_DATA" positiveConnection references trace "DP_FROM_J1", which is ambiguous because it connects to 3 terminal pins: .J1 > .pin1, .TP1 > .pin1, and .U1 > .pin1.',
+    'Differential pair "USB_DATA" positiveConnection uses the ambiguous trace name "DP_FROM_J1": its connection has more than 2 terminal pins: .J1 > .pin1, .TP1 > .pin1, and .U1 > .pin1.',
   )
 })

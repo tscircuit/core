@@ -40,6 +40,10 @@ test("stores a warning when a differential pair port selector matches multiple t
     property_name: "positiveConnection",
   })
   expect(pointToPointWarning?.message).toContain(
-    'positiveConnection references selector ".R1 > .pin1", which is ambiguous because it connects to 3 terminal pins',
+    'positiveConnection=".R1 > .pin1" is not point-to-point: expected exactly 2 terminal pins, found 3',
   )
+  expect(pointToPointWarning?.message).not.toContain(
+    "Remove the extra connection",
+  )
+  expect(pointToPointWarning?.message).not.toContain("prefer a pin selector")
 })
