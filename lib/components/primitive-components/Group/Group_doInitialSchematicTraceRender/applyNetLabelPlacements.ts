@@ -3,12 +3,10 @@ import { SchematicTracePipelineSolver } from "@tscircuit/schematic-trace-solver"
 import type { SchematicNetLabel, SourceNet } from "circuit-json"
 import Debug from "debug"
 import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
-import { getNetNameFromSourcePorts } from "lib/utils/schematic/getSourcePortNetLabelText"
 import type { NetLabel } from "../../NetLabel"
-import { Port } from "../../Port"
 import { Group } from "../Group"
+import { createCanonicalSchematicNetLabelTextResolver } from "./createCanonicalSchematicNetLabelTextResolver"
 import { getNetLabelTextBounds } from "./getNetLabelTextBounds"
-import { getNetNameFromPorts } from "./getNetNameFromPorts"
 import type { AxisDirection } from "./getSide"
 import { oppositeSide } from "./oppositeSide"
 import { type SchematicPortId, asSchematicPortId } from "./port-id-types"
@@ -77,6 +75,8 @@ export function applyNetLabelPlacements(args: {
     netLabels,
   } = args
   const { db } = group.root!
+  const resolveCanonicalNetLabelText =
+    createCanonicalSchematicNetLabelTextResolver(group)
 
   // Place net labels suggested by the solver
   const netLabelPlacements =
@@ -155,6 +155,14 @@ export function applyNetLabelPlacements(args: {
     if (placementConnKey) {
       sourceNet = connKeyToSourceNet.get(placementConnKey)
     }
+    const canonicalNetLabel = placementConnKey
+      ? resolveCanonicalNetLabelText({
+          subcircuitConnectivityMapKey: placementConnKey,
+        })
+      : {
+          name: placement.netId ?? placement.globalConnNetId,
+          wasAssignedDisplayLabel: false,
+        }
 
     const schPortIds = placement.pinIds.map(asSchematicPortId)
     // Solver labels belong to the same sheet as their connected port.
@@ -220,7 +228,7 @@ export function applyNetLabelPlacements(args: {
         continue
       }
 
-      const text = sourceNet.name
+      const text = canonicalNetLabel.name
 
       const center = computeSchematicNetLabelCenter({
         anchor_position,
@@ -275,25 +283,7 @@ export function applyNetLabelPlacements(args: {
       continue
     }
 
-    const ports = group
-      .selectAll<Port>("port")
-      .filter((p) => p._getSubcircuitConnectivityKey() === placementConnKey)
-
-    const { name: portInstanceText, wasAssignedDisplayLabel } =
-      getNetNameFromPorts(ports)
-    const sourcePortIdsForConnection = placementConnKey
-      ? db.source_port
-          .list()
-          .filter(
-            (sourcePort) =>
-              sourcePort.subcircuit_connectivity_map_key === placementConnKey,
-          )
-          .map((sourcePort) => sourcePort.source_port_id)
-      : []
-    const text =
-      portInstanceText ||
-      getNetNameFromSourcePorts(db, sourcePortIdsForConnection) ||
-      ""
+    const { name: text, wasAssignedDisplayLabel } = canonicalNetLabel
     const isRoutedPairPlacement = (placement.pinIds?.length ?? 0) > 1
     const shouldKeepRoutedPairLabel =
       isRoutedPairPlacement &&

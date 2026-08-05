@@ -8,16 +8,19 @@ import { Port } from "../../Port"
 export const getNetNameFromPorts = (
   ports: Port[],
 ): { name: string; wasAssignedDisplayLabel: boolean } => {
-  // Are any of these ports connected to a trace with a display label?
-  for (const port of ports) {
-    const traces = port._getDirectlyConnectedTraces()
+  const directlyConnectedTraces = [
+    ...new Set(ports.flatMap((port) => port._getDirectlyConnectedTraces())),
+  ]
+  const displayLabel =
+    directlyConnectedTraces.find((trace) => trace._parsedProps.schDisplayLabel)
+      ?._parsedProps.schDisplayLabel ??
+    directlyConnectedTraces.find((trace) => trace._parsedProps.displayName)
+      ?._parsedProps.displayName ??
+    directlyConnectedTraces.find((trace) => trace._parsedProps.name)
+      ?._parsedProps.name
 
-    for (const trace of traces) {
-      const displayLabel = trace._getSchematicNetLabelText()
-      if (displayLabel) {
-        return { name: displayLabel, wasAssignedDisplayLabel: true }
-      }
-    }
+  if (displayLabel) {
+    return { name: displayLabel, wasAssignedDisplayLabel: true }
   }
 
   const db = ports.find((port) => port.root)?.root?.db

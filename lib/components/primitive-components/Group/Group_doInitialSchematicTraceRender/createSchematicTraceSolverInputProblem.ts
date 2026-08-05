@@ -16,6 +16,7 @@ import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSche
 import type { NetLabel } from "../../NetLabel"
 import { Port } from "../../Port"
 import { Group } from "../Group"
+import { createCanonicalSchematicNetLabelTextResolver } from "./createCanonicalSchematicNetLabelTextResolver"
 import { getNetNameFromPorts } from "./getNetNameFromPorts"
 import { getPortForSchematicSymbolPort } from "./getPortForSchematicSymbolPort"
 import type { AxisDirection } from "./getSide"
@@ -222,6 +223,8 @@ export function createSchematicTraceSolverInputProblem(
       .filter((port) => port.schematic_port_id)
       .map((port) => [asSchematicPortId(port.schematic_port_id!), port]),
   )
+  const resolveCanonicalNetLabelText =
+    createCanonicalSchematicNetLabelTextResolver(group)
   for (const sc of schematicComponents) {
     const ports = db.schematic_port.list({
       schematic_component_id: sc.schematic_component_id,
@@ -365,17 +368,16 @@ export function createSchematicTraceSolverInputProblem(
       }
       const maxMspDist =
         group._parsedProps.schMaxTraceDistance ?? DEFAULT_MAX_MSP_PAIR_DISTANCE
-      const usesGeneratedTraceLabel = !traceLabel || traceLabel.startsWith(".")
-      const portsForConnection = usesGeneratedTraceLabel
-        ? connected
-            .map((schematicPortId) =>
-              componentPortBySchematicPortId.get(schematicPortId),
-            )
-            .filter((port): port is Port => Boolean(port))
-        : []
-      const renderedNetLabelText = usesGeneratedTraceLabel
-        ? getNetNameFromPorts(portsForConnection).name
-        : traceLabel
+      const portsForConnection = connected
+        .map((schematicPortId) =>
+          componentPortBySchematicPortId.get(schematicPortId),
+        )
+        .filter((port): port is Port => Boolean(port))
+      const renderedNetLabelText = st.subcircuit_connectivity_map_key
+        ? resolveCanonicalNetLabelText({
+            subcircuitConnectivityMapKey: st.subcircuit_connectivity_map_key,
+          }).name
+        : getNetNameFromPorts(portsForConnection).name || traceLabel
       const shouldRenderNetLabels = connected.slice(1).some((b, index) => {
         const a = connected[index]
         const portA = db.schematic_port.get(a)
@@ -391,11 +393,9 @@ export function createSchematicTraceSolverInputProblem(
       const netLabelWidth =
         renderedNetLabelText && shouldRenderNetLabels
           ? Number(
-              getSchematicNetLabelTextWidth(
-                usesGeneratedTraceLabel
-                  ? { text: renderedNetLabelText }
-                  : { text: renderedNetLabelText, font_size: 0.14 },
-              ).toFixed(2),
+              getSchematicNetLabelTextWidth({
+                text: renderedNetLabelText,
+              }).toFixed(2),
             )
           : undefined
 
