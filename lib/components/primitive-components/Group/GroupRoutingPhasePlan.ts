@@ -20,6 +20,7 @@ export interface RoutingPhaseDrcTolerances {
 
 export interface RoutingPhasePlan {
   routingPhaseIndex: number | null
+  phaseName?: AutoroutingPhaseProps["name"]
   routingPcbGroupId?: PcbGroupId
   routingBounds?: SimpleRouteBounds
   /** The single breakout/fanout boundary; breakout points may expand it. */

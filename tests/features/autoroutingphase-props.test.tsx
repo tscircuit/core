@@ -10,6 +10,11 @@ test("autoroutingphase assigns autorouter config to matching trace phases", asyn
   const { circuit } = getTestFixture()
   const routedConnectionNamesByPhase: string[][] = []
   const routedConnectionCenterXByPhase: number[] = []
+  const autoroutingPhaseNames: string[] = []
+
+  circuit.on("autorouting:start", ({ phaseName }) => {
+    if (phaseName) autoroutingPhaseNames.push(phaseName)
+  })
 
   const createPhaseAutorouter = () =>
     createBasicAutorouter(async (simpleRouteJson: SimpleRouteJson) => {
@@ -47,6 +52,7 @@ test("autoroutingphase assigns autorouter config to matching trace phases", asyn
 
       <autoroutingphase
         phaseIndex={1}
+        name="route-signal"
         autorouter={{
           local: true,
           groupMode: "subcircuit",
@@ -55,6 +61,7 @@ test("autoroutingphase assigns autorouter config to matching trace phases", asyn
       />
       <autoroutingphase
         phaseIndex={0}
+        name="route-power"
         autorouter={{
           local: true,
           groupMode: "subcircuit",
@@ -74,5 +81,6 @@ test("autoroutingphase assigns autorouter config to matching trace phases", asyn
   expect(routedConnectionNamesByPhase[1]).toHaveLength(1)
   expect(routedConnectionCenterXByPhase[0]).toBeLessThan(0)
   expect(routedConnectionCenterXByPhase[1]).toBeGreaterThan(0)
+  expect(autoroutingPhaseNames).toEqual(["route-power", "route-signal"])
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
