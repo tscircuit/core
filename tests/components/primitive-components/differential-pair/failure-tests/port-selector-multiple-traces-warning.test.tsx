@@ -1,8 +1,7 @@
 import { expect, it } from "bun:test"
-import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-it("throws when a differential pair port selector matches multiple traces", (): void => {
+it("stores a warning when a differential pair port selector matches multiple traces", (): void => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -31,17 +30,16 @@ it("throws when a differential pair port selector matches multiple traces", (): 
 
   circuit.render()
 
-  const boardSubcircuit = circuit.firstChild
-  if (!boardSubcircuit) {
-    throw new Error("Expected the circuit to contain a board")
-  }
-
-  expect((): void => {
-    getSimpleRouteJsonFromCircuitJson({
-      circuitJson: circuit.getCircuitJson(),
-      subcircuitComponent: boardSubcircuit,
+  const pointToPointWarning =
+    circuit.db.source_property_ignored_warning.getWhere({
+      property_name: "positiveConnection",
     })
-  }).toThrow(
-    'Trace name or port selector ".R1 > .pin1" matches multiple source traces for differential pair "USB"',
+  expect(pointToPointWarning).toMatchObject({
+    type: "source_property_ignored_warning",
+    error_type: "source_property_ignored_warning",
+    property_name: "positiveConnection",
+  })
+  expect(pointToPointWarning?.message).toContain(
+    'positiveConnection resolves to ".R1 > .pin1", which is not point-to-point',
   )
 })
