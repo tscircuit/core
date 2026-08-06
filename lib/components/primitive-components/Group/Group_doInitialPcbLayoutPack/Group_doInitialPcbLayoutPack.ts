@@ -228,16 +228,17 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
         componentName: group.getString(),
       })
 
-      const packSolverTimeoutMs = group.root?.platform?.packSolverTimeoutMs
+      const pcbPackSolverTimeoutMs =
+        group.root?.platform?.pcbPackSolverTimeoutMs
       const { timedOut } = solvePackSolverWithTimeout(
         solver,
-        packSolverTimeoutMs,
+        pcbPackSolverTimeoutMs,
       )
 
       if (timedOut) {
         packingFailed = true
         reportPackingError(
-          `PackSolver2 timed out after ${packSolverTimeoutMs}ms`,
+          `PackSolver2 timed out after ${pcbPackSolverTimeoutMs}ms`,
         )
       }
 

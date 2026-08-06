@@ -18,7 +18,7 @@ test("platform pack solver timeout stops packing and reports an error", () => {
   expect(result).toEqual({ elapsedMs: 6, timedOut: true })
 
   const { circuit } = getTestFixture({
-    platform: { packSolverTimeoutMs: Number.EPSILON },
+    platform: { pcbPackSolverTimeoutMs: Number.EPSILON },
   })
 
   circuit.add(
