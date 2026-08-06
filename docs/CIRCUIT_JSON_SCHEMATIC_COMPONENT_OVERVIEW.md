@@ -168,7 +168,9 @@ An **inline net label** is the name drawn parallel to the wire it belongs to -
 above a horizontal trace, or to the left of a vertical one reading
 bottom-to-top. Because it is rotated, it cannot be a `schematic_net_label`
 (that element is always axis-aligned); it is emitted as a `schematic_text` with
-`anchor: "center"` and `rotation` of `0` or `-90`.
+`anchor: "center"`, `rotation` of `0` or `-90`, and the `source_trace_id` of the
+trace it names. That id is what distinguishes an inline net label from
+free-standing schematic text such as a reference designator.
 
 Inline labels are applied automatically to point-to-point signal traces - a net
 of exactly two ports, not power or ground, carrying a name the user chose

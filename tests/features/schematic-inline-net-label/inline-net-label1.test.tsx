@@ -34,6 +34,16 @@ test("named point-to-point trace gets a horizontal inline net label", async () =
       .filter((label) => label.text === "USER_LED_ANODE"),
   ).toHaveLength(0)
 
+  // The label points back at the trace it names, which is what tells it apart
+  // from free-standing schematic text like a reference designator.
+  const sourceTrace = circuit.db.source_trace.get(inlineLabel.source_trace_id!)
+  expect(sourceTrace).toBeTruthy()
+  expect(sourceTrace!.connected_source_port_ids).toHaveLength(2)
+  expect(
+    circuit.db.schematic_text.list().find((text) => text.text === "U1")
+      ?.source_trace_id,
+  ).toBeUndefined()
+
   // The wire is horizontal, so the label is unrotated and sits above it.
   expect(inlineLabel.rotation).toBe(0)
   const traceEdges = circuit.db.schematic_trace.list()[0]!.edges

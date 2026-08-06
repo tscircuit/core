@@ -31,8 +31,9 @@ export function applyInlineNetLabelPlacements(args: {
   group: Group<any>
   solver: SchematicTracePipelineSolver
   userNetIdToConnKey: Map<string, string>
+  sourceTraceIdByPinPairKey: Map<string, string>
 }) {
-  const { group, solver, userNetIdToConnKey } = args
+  const { group, solver, userNetIdToConnKey, sourceTraceIdByPinPairKey } = args
   const { db } = group.root!
 
   const inlineNetLabelPlacements =
@@ -73,6 +74,11 @@ export function applyInlineNetLabelPlacements(args: {
 
     db.schematic_text.insert({
       text,
+      // Links the label back to the trace it names, so a consumer can tell an
+      // inline net label apart from free-standing schematic text.
+      source_trace_id: sourceTraceIdByPinPairKey.get(
+        [...schematicPortIds].sort().join("::"),
+      ),
       anchor: "center",
       position: placement.center,
       rotation: placement.axis === "y" ? VERTICAL_INLINE_NET_LABEL_ROTATION : 0,

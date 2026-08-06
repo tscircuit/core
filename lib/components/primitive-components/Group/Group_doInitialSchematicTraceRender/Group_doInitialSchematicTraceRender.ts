@@ -34,6 +34,7 @@ const renderSchematicTracesForSheet = ({
     userNetIdToConnKey,
     connKeysWithExplicitPortNetTraces,
     netLabelsInScope,
+    sourceTraceIdByPinPairKey,
   } = createSchematicTraceSolverInputProblem(group, {
     schematicSheetId,
     netLabels,
@@ -111,6 +112,7 @@ const renderSchematicTracesForSheet = ({
     group,
     solver,
     userNetIdToConnKey,
+    sourceTraceIdByPinPairKey,
   })
 
   insertNetLabelsForPortsMissingTrace({
