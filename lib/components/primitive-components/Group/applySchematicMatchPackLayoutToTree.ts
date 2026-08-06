@@ -461,9 +461,12 @@ function convertTreeToMatchPackInputProblem(
         availableRotations = [0]
       }
 
-      // A power/ground 2-pin part is locked to the single rotation that places
-      // its rail pin on the correct side (power up, ground down).
-      if (availableRotations.length === DEFAULT_AVAILABLE_ROTATIONS.length) {
+      // Non-LED power/ground parts are locked to face their rail. LEDs remain
+      // rotatable so series-branch layout can align them with adjacent parts.
+      if (
+        availableRotations.length === DEFAULT_AVAILABLE_ROTATIONS.length &&
+        child.sourceComponent.ftype !== "simple_led"
+      ) {
         const forcedRotation = getPowerGroundForcedRotation(db, ports)
         if (forcedRotation !== null) availableRotations = [forcedRotation]
       }
