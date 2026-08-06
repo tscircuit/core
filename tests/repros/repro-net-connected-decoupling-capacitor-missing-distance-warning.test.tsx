@@ -9,9 +9,14 @@ test.failing(
     circuit.add(
       <board width="18mm" height="10mm">
         <pcbnotetext
-          pcbY={-4}
-          fontSize={0.6}
-          text="C1 IS TOO FAR FROM U1 BUT CONNECTED THROUGH VCC/GND NETS"
+          pcbY={-3.7}
+          fontSize={0.42}
+          text="C1 TOO FAR FROM U1; CONNECTED THROUGH VCC/GND NETS"
+        />
+        <pcbnotetext
+          pcbY={-4.35}
+          fontSize={0.42}
+          text="PCB_TRACE_TOO_LONG_WARNING: 0 (EXPECTED 1)"
         />
         <chip
           name="U1"
