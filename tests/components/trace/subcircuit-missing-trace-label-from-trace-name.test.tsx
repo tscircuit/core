@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test"
 import type { SubcircuitProps } from "@tscircuit/props"
+import { getSchematicNetLabelTexts } from "tests/fixtures/get-schematic-net-label-texts"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 const NamedTraceSubcircuit = (props: SubcircuitProps) => (
@@ -30,9 +31,7 @@ test("missing schematic trace labels inside subcircuit use trace name", async ()
 
   await circuit.renderUntilSettled()
 
-  const netLabelTexts = circuit.db.schematic_net_label
-    .list()
-    .map((label) => label.text)
+  const netLabelTexts = getSchematicNetLabelTexts(circuit)
 
   expect(netLabelTexts).toContain("INT_SIG")
   expect(netLabelTexts).not.toContain("U1_SIG")

@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { getSchematicNetLabelTexts } from "tests/fixtures/get-schematic-net-label-texts"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("trace displayName takes precedence over name for schematic net label text", async () => {
@@ -30,9 +31,7 @@ test("trace displayName takes precedence over name for schematic net label text"
   })
   expect(sourceTrace?.name).toBe("NAME_LABEL")
 
-  const netLabelTexts = circuit.db.schematic_net_label
-    .list()
-    .map((label) => label.text)
+  const netLabelTexts = getSchematicNetLabelTexts(circuit)
   expect(netLabelTexts).toContain("DISPLAY_LABEL")
   expect(netLabelTexts).not.toContain("NAME_LABEL")
 

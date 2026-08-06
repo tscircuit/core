@@ -79,7 +79,10 @@ export function applyNetLabelPlacements(args: {
     createCanonicalSchematicNetLabelTextResolver(group)
 
   // Place net labels suggested by the solver
+  // The inline solver runs last and removes the anchored placement for any net
+  // it labeled inline, so a net is never labeled both ways.
   const netLabelPlacements =
+    solver.inlineNetLabelSolver?.getOutput().netLabelPlacements ??
     solver.netLabelNetLabelCollisionSolver?.getOutput().netLabelPlacements ??
     solver.netLabelTraceCollisionSolver?.getOutput().netLabelPlacements ??
     solver.netLabelPlacementSolver?.netLabelPlacements ??

@@ -3,6 +3,7 @@ import Debug from "debug"
 import type { PrimitiveComponent } from "../../../base-components/PrimitiveComponent"
 import { NetLabel } from "../../NetLabel"
 import { Group } from "../Group"
+import { applyInlineNetLabelPlacements } from "./applyInlineNetLabelPlacements"
 import { applyNetLabelPlacements } from "./applyNetLabelPlacements"
 import { applyTracesFromSolverOutput } from "./applyTracesFromSolverOutput"
 import { createSchematicTraceSolverInputProblem } from "./createSchematicTraceSolverInputProblem"
@@ -103,6 +104,13 @@ const renderSchematicTracesForSheet = ({
     schematicPortIdsWithPreExistingNetLabels,
     schematicPortIdsWithRoutedTraces,
     netLabels: netLabelsInScope,
+  })
+
+  // Inline net labels (names drawn alongside point-to-point traces)
+  applyInlineNetLabelPlacements({
+    group,
+    solver,
+    userNetIdToConnKey,
   })
 
   insertNetLabelsForPortsMissingTrace({

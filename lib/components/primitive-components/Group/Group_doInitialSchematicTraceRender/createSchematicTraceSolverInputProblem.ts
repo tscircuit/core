@@ -16,6 +16,7 @@ import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSche
 import type { NetLabel } from "../../NetLabel"
 import { Port } from "../../Port"
 import { Group } from "../Group"
+import { applyInlineNetLabelEligibility } from "./applyInlineNetLabelEligibility"
 import { createCanonicalSchematicNetLabelTextResolver } from "./createCanonicalSchematicNetLabelTextResolver"
 import { getNetNameFromPorts } from "./getNetNameFromPorts"
 import { getPortForSchematicSymbolPort } from "./getPortForSchematicSymbolPort"
@@ -331,6 +332,13 @@ export function createSchematicTraceSolverInputProblem(
     schematicPortIds: [SchematicPortId, SchematicPortId]
     netId?: string
     netLabelWidth?: number
+    allowInlineNetLabel?: boolean
+    inlineNetLabelWidth?: number
+    /**
+     * Retained only to decide inline-label eligibility below; stripped before
+     * the problem is handed to the solver.
+     */
+    connKey?: string
   }> = []
   const connectedPairKeys = new Set<string>()
   const connKeysWithExplicitPortNetTraces = new Set<string>()
@@ -412,6 +420,7 @@ export function createSchematicTraceSolverInputProblem(
           schematicPortIds: [a, b],
           netId: userNetId,
           netLabelWidth,
+          connKey: st.subcircuit_connectivity_map_key,
         })
       }
     }
@@ -448,6 +457,13 @@ export function createSchematicTraceSolverInputProblem(
     }
     connKeyToSchematicPortIds.get(connKey)!.push(schId)
   }
+
+  applyInlineNetLabelEligibility({
+    directConnections,
+    connKeyToSchematicPortIds,
+    connKeyToSourceNet,
+    resolveCanonicalNetLabelText,
+  })
 
   for (const [connKey, schematicPortIds] of connKeyToSchematicPortIds) {
     const sourceNet = connKeyToSourceNet.get(connKey)
@@ -530,7 +546,7 @@ export function createSchematicTraceSolverInputProblem(
   const inputProblem: InputProblem = {
     chips,
     directConnections: directConnections.map(
-      ({ schematicPortIds, ...connection }) => ({
+      ({ schematicPortIds, connKey, ...connection }) => ({
         ...connection,
         pinIds: schematicPortIds,
       }),
