@@ -5,11 +5,7 @@ test("net-connected decoupling capacitor warns when placed far from its power pi
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board
-      width="18mm"
-      height="10mm"
-      autorouter={{ local: true, groupMode: "subcircuit" }}
-    >
+    <board width="18mm" height="10mm">
       <pcbnotetext
         pcbY={-4}
         fontSize={0.6}
