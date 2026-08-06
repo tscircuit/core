@@ -8,6 +8,7 @@ import {
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { Trace } from "../primitive-components/Trace/Trace"
 import { formatSiUnit } from "format-si-unit"
+import { getAutomaticDecouplingTraceConstraint } from "./Capacitor/get-automatic-decoupling-trace-constraint"
 
 export class Capacitor extends NormalComponent<
   typeof capacitorProps,
@@ -108,5 +109,35 @@ export class Capacitor extends NormalComponent<
     } as SourceSimpleCapacitorInput)
 
     this.source_component_id = source_component.source_component_id
+  }
+
+  /**
+   * Apply inferred limits after routing so they remain advisory DRC warnings.
+   * Explicit maxDecouplingTraceLength values remain pre-routing constraints.
+   */
+  doInitialPcbDesignRuleChecks(): void {
+    if (this._parsedProps.maxDecouplingTraceLength !== undefined) return
+
+    const constraint = getAutomaticDecouplingTraceConstraint(this)
+    if (!constraint) return
+
+    const { db } = this.root!
+    db.source_component.update(this.source_component_id!, {
+      max_decoupling_trace_length: constraint.maxLength,
+    })
+
+    for (const powerTrace of constraint.powerTraces) {
+      if (!powerTrace.source_trace_id) continue
+
+      const powerSourceTrace = db.source_trace.get(powerTrace.source_trace_id)
+      if (!powerSourceTrace) continue
+
+      db.source_trace.update(powerSourceTrace.source_trace_id, {
+        max_length: Math.min(
+          powerSourceTrace.max_length ?? constraint.maxLength,
+          constraint.maxLength,
+        ),
+      })
+    }
   }
 }

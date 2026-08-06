@@ -56,65 +56,78 @@ const createReproBoard = (observations: ReproStatusNotesProps = {}) => (
   </board>
 )
 
-test.failing(
-  "capacitor connections to chip VCC and ground should infer 1mm traces and emit a pcb_trace_too_long_warning for an over-length route",
-  async () => {
-    const { circuit } = getTestFixture()
-    circuit.add(createReproBoard())
+test("capacitor connections to chip VCC and ground should infer 1mm traces and emit a pcb_trace_too_long_warning for an over-length route", async () => {
+  const { circuit } = getTestFixture()
+  circuit.add(createReproBoard())
 
-    await circuit.renderUntilSettled()
+  await circuit.renderUntilSettled()
 
-    const capacitor = circuit.db.source_component
+  const capacitor = circuit.db.source_component
+    .list()
+    .find(
+      (component): component is SourceSimpleCapacitor =>
+        component.ftype === "simple_capacitor" && component.name === "C1",
+    )
+  const capacitorPortIds = new Set(
+    circuit.db.source_port
       .list()
-      .find(
-        (component): component is SourceSimpleCapacitor =>
-          component.ftype === "simple_capacitor" && component.name === "C1",
+      .filter(
+        (port) => port.source_component_id === capacitor?.source_component_id,
       )
-    const capacitorPortIds = new Set(
-      circuit.db.source_port
-        .list()
-        .filter(
-          (port) => port.source_component_id === capacitor?.source_component_id,
-        )
-        .map((port) => port.source_port_id),
-    )
-    const capacitorTraces = circuit.db.source_trace
-      .list()
-      .filter((trace) =>
-        trace.connected_source_port_ids.some((portId) =>
-          capacitorPortIds.has(portId),
-        ),
-      )
-    const traceTooLongWarnings =
-      circuit.db.pcb_trace_too_long_warning?.list() ?? []
-    const observedMaxLength = capacitor?.max_decoupling_trace_length ?? "none"
-
-    const { circuit: snapshotCircuit } = getTestFixture()
-    snapshotCircuit.add(
-      createReproBoard({
-        observedMaxLength,
-        observedTraceTooLongWarningCount: traceTooLongWarnings.length,
-      }),
-    )
-    await snapshotCircuit.renderUntilSettled()
-
-    expect(snapshotCircuit).toMatchPcbSnapshot(import.meta.path, {
-      shouldDrawErrors: true,
-    })
-    expect(capacitor?.max_decoupling_trace_length).toBe(
-      expectedMaxDecouplingTraceLength,
-    )
-    expect(
-      capacitorTraces.every(
-        (trace) => trace.max_length === expectedMaxDecouplingTraceLength,
+      .map((port) => port.source_port_id),
+  )
+  const capacitorTraces = circuit.db.source_trace
+    .list()
+    .filter((trace) =>
+      trace.connected_source_port_ids.some((portId) =>
+        capacitorPortIds.has(portId),
       ),
-    ).toBe(true)
-    expect(traceTooLongWarnings).toHaveLength(expectedTraceTooLongWarningCount)
-    expect(traceTooLongWarnings[0]?.maximum_trace_length).toBe(
-      expectedMaxDecouplingTraceLength,
     )
-    expect(traceTooLongWarnings[0]?.actual_trace_length).toBeGreaterThan(
-      expectedMaxDecouplingTraceLength,
-    )
-  },
-)
+  const chip = circuit.db.source_component
+    .list()
+    .find((component) => component.name === "U1")
+  const chipPowerPortId = circuit.db.source_port
+    .list()
+    .find(
+      (port) =>
+        port.source_component_id === chip?.source_component_id &&
+        port.name === "VCC",
+    )?.source_port_id
+  const capacitorPowerTrace = capacitorTraces.find(
+    (trace) =>
+      chipPowerPortId !== undefined &&
+      trace.connected_source_port_ids.includes(chipPowerPortId),
+  )
+  const traceTooLongWarnings =
+    circuit.db.pcb_trace_too_long_warning?.list() ?? []
+  const observedMaxLength = capacitor?.max_decoupling_trace_length ?? "none"
+
+  const { circuit: snapshotCircuit } = getTestFixture()
+  snapshotCircuit.add(
+    createReproBoard({
+      observedMaxLength,
+      observedTraceTooLongWarningCount: traceTooLongWarnings.length,
+    }),
+  )
+  await snapshotCircuit.renderUntilSettled()
+
+  expect(snapshotCircuit).toMatchPcbSnapshot(import.meta.path, {
+    shouldDrawErrors: true,
+  })
+  expect(capacitor?.max_decoupling_trace_length).toBe(
+    expectedMaxDecouplingTraceLength,
+  )
+  expect(capacitorPowerTrace?.max_length).toBe(expectedMaxDecouplingTraceLength)
+  expect(
+    capacitorTraces
+      .filter((trace) => trace !== capacitorPowerTrace)
+      .every((trace) => trace.max_length === undefined),
+  ).toBe(true)
+  expect(traceTooLongWarnings).toHaveLength(expectedTraceTooLongWarningCount)
+  expect(traceTooLongWarnings[0]?.maximum_trace_length).toBe(
+    expectedMaxDecouplingTraceLength,
+  )
+  expect(traceTooLongWarnings[0]?.actual_trace_length).toBeGreaterThan(
+    expectedMaxDecouplingTraceLength,
+  )
+})
