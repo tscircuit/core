@@ -28,6 +28,7 @@ test("stores a warning for a differential-pair connection with no terminal pins"
     source_component_id: "",
     error_type: "source_property_ignored_warning",
     property_name: "positiveConnection",
+    drc_category: "netlist",
   })
   expect(warning?.message).toBe(
     'Differential pair "USB_DATA" positiveConnection="DP_EMPTY" is not point-to-point: expected exactly 2 terminal pins, found 0.',

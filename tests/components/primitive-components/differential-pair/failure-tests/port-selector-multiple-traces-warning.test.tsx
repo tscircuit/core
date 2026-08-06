@@ -38,6 +38,7 @@ test("stores a warning when a differential pair port selector matches multiple t
     type: "source_property_ignored_warning",
     error_type: "source_property_ignored_warning",
     property_name: "positiveConnection",
+    drc_category: "netlist",
   })
   expect(pointToPointWarning?.message).toContain(
     'positiveConnection=".R1 > .pin1" is not point-to-point: expected exactly 2 terminal pins, found 3',

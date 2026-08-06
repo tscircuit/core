@@ -29,6 +29,7 @@ test("stores a property warning for a branched differential pair", (): void => {
     type: "source_property_ignored_warning",
     error_type: "source_property_ignored_warning",
     property_name: "positiveConnection",
+    drc_category: "netlist",
   })
   expect(pointToPointWarnings[0]?.source_component_id).toBeDefined()
   expect(pointToPointWarnings[0]?.message).toBe(

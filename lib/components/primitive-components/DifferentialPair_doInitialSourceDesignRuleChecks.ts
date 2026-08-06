@@ -152,6 +152,7 @@ export const DifferentialPair_doInitialSourceDesignRuleChecks = (
     db.source_property_ignored_warning.insert({
       source_component_id: warningSourceComponentId,
       property_name: `${connectionPolarity}Connection`,
+      drc_category: "netlist",
       error_type: "source_property_ignored_warning",
       message: getPointToPointWarningMessage({
         differentialPairName: differentialPair.name,

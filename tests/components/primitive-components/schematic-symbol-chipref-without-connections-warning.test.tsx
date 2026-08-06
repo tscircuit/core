@@ -30,6 +30,9 @@ test("schematicsymbol ignores chipRef without connections", async () => {
       ),
     }),
   ])
+  expect(
+    circuit.db.source_property_ignored_warning.list()[0]?.drc_category,
+  ).toBeUndefined()
 
   await expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
