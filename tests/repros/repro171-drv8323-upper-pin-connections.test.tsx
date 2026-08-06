@@ -170,91 +170,23 @@ test("repro171: DRV8323 upper-pin connections", async () => {
         schX={-2}
         schY={-8.5}
       />
-      <trace
-        from=".U_GATE > .VM"
-        to="net.VM"
-        {...logicTrace}
-      />
-      <trace
-        from=".U_GATE > .VDRAIN"
-        to="net.VM"
-        {...logicTrace}
-      />
-      <trace
-        from=".C_GATE_VM > .pin1"
-        to=".U_GATE > .VM"
-        {...logicTrace}
-      />
-      <trace
-        from=".C_GATE_VM > .pin2"
-        to="net.GND"
-        {...logicTrace}
-      />
-      <trace
-        from=".C_CP > .pin1"
-        to=".U_GATE > .CPH"
-        {...logicTrace}
-      />
-      <trace
-        from=".C_CP > .pin2"
-        to=".U_GATE > .CPL"
-        {...logicTrace}
-      />
-      <trace
-        from=".C_VCP > .pin1"
-        to=".U_GATE > .VCP"
-        {...logicTrace}
-      />
-      <trace
-        from=".C_VCP > .pin2"
-        to="net.VM"
-        {...logicTrace}
-      />
-      <trace
-        from=".C_DVDD > .pin1"
-        to=".U_GATE > .DVDD"
-        {...logicTrace}
-      />
-      <trace
-        from=".C_DVDD > .pin2"
-        to="net.GND"
-        {...logicTrace}
-      />
-      <trace
-        from=".U_GATE > .MODE"
-        to="net.GND"
-        {...logicTrace}
-      />
-      <trace
-        from=".U_GATE > .GAIN"
-        to=".R_GAIN > .pin1"
-        {...logicTrace}
-      />
-      <trace
-        from=".R_GAIN > .pin2"
-        to="net.GND"
-        {...logicTrace}
-      />
-      <trace
-        from=".U_GATE > .IDRIVE"
-        to=".R_IDRIVE > .pin1"
-        {...logicTrace}
-      />
-      <trace
-        from=".R_IDRIVE > .pin2"
-        to="net.GND"
-        {...logicTrace}
-      />
-      <trace
-        from=".U_GATE > .VDS"
-        to=".R_VDS > .pin1"
-        {...logicTrace}
-      />
-      <trace
-        from=".R_VDS > .pin2"
-        to="net.GND"
-        {...logicTrace}
-      />
+      <trace from=".U_GATE > .VM" to="net.VM" {...logicTrace} />
+      <trace from=".U_GATE > .VDRAIN" to="net.VM" {...logicTrace} />
+      <trace from=".C_GATE_VM > .pin1" to=".U_GATE > .VM" {...logicTrace} />
+      <trace from=".C_GATE_VM > .pin2" to="net.GND" {...logicTrace} />
+      <trace from=".C_CP > .pin1" to=".U_GATE > .CPH" {...logicTrace} />
+      <trace from=".C_CP > .pin2" to=".U_GATE > .CPL" {...logicTrace} />
+      <trace from=".C_VCP > .pin1" to=".U_GATE > .VCP" {...logicTrace} />
+      <trace from=".C_VCP > .pin2" to="net.VM" {...logicTrace} />
+      <trace from=".C_DVDD > .pin1" to=".U_GATE > .DVDD" {...logicTrace} />
+      <trace from=".C_DVDD > .pin2" to="net.GND" {...logicTrace} />
+      <trace from=".U_GATE > .MODE" to="net.GND" {...logicTrace} />
+      <trace from=".U_GATE > .GAIN" to=".R_GAIN > .pin1" {...logicTrace} />
+      <trace from=".R_GAIN > .pin2" to="net.GND" {...logicTrace} />
+      <trace from=".U_GATE > .IDRIVE" to=".R_IDRIVE > .pin1" {...logicTrace} />
+      <trace from=".R_IDRIVE > .pin2" to="net.GND" {...logicTrace} />
+      <trace from=".U_GATE > .VDS" to=".R_VDS > .pin1" {...logicTrace} />
+      <trace from=".R_VDS > .pin2" to="net.GND" {...logicTrace} />
     </board>,
   )
 
