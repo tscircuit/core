@@ -58,5 +58,6 @@ test("net-connected decoupling capacitor warns when placed far from its power pi
     shouldDrawErrors: true,
   })
 
+  expect(circuit.db.pcb_autorouting_error.list()).toHaveLength(0)
   expect(circuit.db.pcb_trace_too_long_warning.list()).toHaveLength(1)
 })
