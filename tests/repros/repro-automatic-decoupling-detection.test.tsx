@@ -3,14 +3,14 @@ import type { SourceSimpleCapacitor } from "circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 const expectedMaxDecouplingTraceLength = 1
-const expectedAutoroutingErrorCount = 1
+const expectedTraceTooLongWarningCount = 1
 
 const createReproBoard = ({
   observedMaxLength,
-  observedAutoroutingErrorCount,
+  observedTraceTooLongWarningCount,
 }: {
   observedMaxLength?: number | "none"
-  observedAutoroutingErrorCount?: number
+  observedTraceTooLongWarningCount?: number
 } = {}) => (
   <board width="24mm" height="20mm">
     <chip
@@ -44,18 +44,18 @@ const createReproBoard = ({
         text={`Expected max: ${expectedMaxDecouplingTraceLength}mm; observed: ${observedMaxLength}`}
       />
     )}
-    {observedAutoroutingErrorCount !== undefined && (
+    {observedTraceTooLongWarningCount !== undefined && (
       <pcbnotetext
         pcbY={-9}
         fontSize={0.65}
-        text={`Expected autorouting errors: ${expectedAutoroutingErrorCount}; observed: ${observedAutoroutingErrorCount}`}
+        text={`Expected pcb_trace_too_long_warning count: ${expectedTraceTooLongWarningCount}; observed: ${observedTraceTooLongWarningCount}`}
       />
     )}
   </board>
 )
 
 test.failing(
-  "capacitor connections to chip VCC and ground should infer 1mm traces and reject impossible routing",
+  "capacitor connections to chip VCC and ground should infer 1mm traces and emit a pcb_trace_too_long_warning for an over-length route",
   async () => {
     const { circuit } = getTestFixture()
     circuit.add(createReproBoard())
@@ -83,14 +83,15 @@ test.failing(
           capacitorPortIds.has(portId),
         ),
       )
-    const autoroutingErrors = circuit.db.pcb_autorouting_error?.list() ?? []
+    const traceTooLongWarnings =
+      circuit.db.pcb_trace_too_long_warning?.list() ?? []
     const observedMaxLength = capacitor?.max_decoupling_trace_length ?? "none"
 
     const { circuit: snapshotCircuit } = getTestFixture()
     snapshotCircuit.add(
       createReproBoard({
         observedMaxLength,
-        observedAutoroutingErrorCount: autoroutingErrors.length,
+        observedTraceTooLongWarningCount: traceTooLongWarnings.length,
       }),
     )
     await snapshotCircuit.renderUntilSettled()
@@ -106,7 +107,12 @@ test.failing(
         (trace) => trace.max_length === expectedMaxDecouplingTraceLength,
       ),
     ).toBe(true)
-    expect(autoroutingErrors).toHaveLength(expectedAutoroutingErrorCount)
-    expect(autoroutingErrors[0]?.message).toContain("cannot be satisfied")
+    expect(traceTooLongWarnings).toHaveLength(expectedTraceTooLongWarningCount)
+    expect(traceTooLongWarnings[0]?.maximum_trace_length).toBe(
+      expectedMaxDecouplingTraceLength,
+    )
+    expect(traceTooLongWarnings[0]?.actual_trace_length).toBeGreaterThan(
+      expectedMaxDecouplingTraceLength,
+    )
   },
 )
