@@ -1,12 +1,12 @@
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import { distance, pointToSegmentDistance } from "@tscircuit/math-utils"
-import { ConnectivityMap } from "circuit-json-to-connectivity-map"
 import type {
   PcbPlatedHole,
   PcbSmtPad,
   PcbTrace,
   SourceTrace,
 } from "circuit-json"
+import { ConnectivityMap } from "circuit-json-to-connectivity-map"
 import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
 
 type RoutedTrace = (PcbTrace | SimplifiedPcbTrace) & {
@@ -18,6 +18,7 @@ type RoutePointWithPortIds = {
   x?: number
   y?: number
   width?: number
+  layer?: string
   start_pcb_port_id?: string
   end_pcb_port_id?: string
 }
@@ -101,6 +102,12 @@ function getEndpointSourcePortIdsFromGeometry(
   for (const endpoint of endpoints) {
     for (const pcbPort of db.pcb_port.list()) {
       if (!pcbPort.source_port_id) continue
+      if (
+        endpoint.layer &&
+        pcbPort.layers &&
+        !pcbPort.layers.includes(endpoint.layer as any)
+      )
+        continue
       if (distance(endpoint, pcbPort) <= 0.01) {
         sourcePortIds.add(pcbPort.source_port_id)
       }
@@ -108,6 +115,7 @@ function getEndpointSourcePortIdsFromGeometry(
 
     for (const smtpad of db.pcb_smtpad.list()) {
       if (!smtpad.pcb_port_id) continue
+      if (endpoint.layer && smtpad.layer !== endpoint.layer) continue
       if (
         !isPointInSmtPad({
           point: endpoint,
