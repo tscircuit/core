@@ -1,0 +1,21 @@
+import { expect, test } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { getSourceCapacitor } from "./test-utils"
+
+test("does not infer decoupling when the other capacitor pin is a signal", async () => {
+  const { circuit } = getTestFixture()
+  circuit.add(
+    <board width="10mm" height="10mm" routingDisabled>
+      <chip name="U1" footprint="soic8" pinLabels={{ pin1: "VCC" }} />
+      <capacitor name="C1" capacitance="100nF" footprint="0402" />
+      <trace from=".U1 > .VCC" to=".C1 > .1" />
+      <trace from=".C1 > .2" to="net.SIGNAL" />
+    </board>,
+  )
+
+  await circuit.renderUntilSettled()
+
+  expect(
+    getSourceCapacitor(circuit, "C1")?.max_decoupling_trace_length,
+  ).toBeUndefined()
+})

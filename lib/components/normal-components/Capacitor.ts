@@ -8,6 +8,7 @@ import {
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { Trace } from "../primitive-components/Trace/Trace"
 import { formatSiUnit } from "format-si-unit"
+import { getAutomaticMaxDecouplingTraceLength } from "./Capacitor/get-automatic-max-decoupling-trace-length"
 
 export class Capacitor extends NormalComponent<
   typeof capacitorProps,
@@ -108,5 +109,18 @@ export class Capacitor extends NormalComponent<
     } as SourceSimpleCapacitorInput)
 
     this.source_component_id = source_component.source_component_id
+  }
+
+  doInitialSourceParentAttachment(): void {
+    super.doInitialSourceParentAttachment()
+
+    const maxDecouplingTraceLength =
+      this._parsedProps.maxDecouplingTraceLength ??
+      getAutomaticMaxDecouplingTraceLength(this)
+    if (maxDecouplingTraceLength === undefined) return
+
+    this.root!.db.source_component.update(this.source_component_id!, {
+      max_decoupling_trace_length: maxDecouplingTraceLength,
+    })
   }
 }
