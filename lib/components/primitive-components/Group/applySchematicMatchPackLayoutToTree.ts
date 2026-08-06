@@ -8,7 +8,6 @@ import type {
   Point,
   SchematicComponent,
   SchematicGroup,
-  SchematicPort,
   SchematicSheet,
   SourceComponentBase,
 } from "circuit-json"
@@ -41,14 +40,6 @@ type NestedGroupMatchpackProxy = {
   size: Point
 }
 
-const ROTATION_TO_PLACE_SIDE_ON_TOP: Record<AxisDirection, MatchpackRotation> =
-  {
-    "y+": 0,
-    "x+": 90,
-    "y-": 180,
-    "x-": 270,
-  }
-
 function facingDirectionToSide(
   facingDirection: string | undefined,
 ): AxisDirection {
@@ -64,50 +55,6 @@ function facingDirectionToSide(
     default:
       return "y+"
   }
-}
-
-/**
- * A 2-pin part with exactly one pin on a power/ground rail is locked to the
- * single rotation that places that pin on the correct side of the rail (power
- * up, ground down). Returns that rotation, or null if the part isn't a 2-pin
- * power/ground part (or its two pins disagree on which rotation to use).
- */
-function getPowerGroundForcedRotation(
-  db: CircuitJsonUtilObjects,
-  ports: SchematicPort[],
-): MatchpackRotation | null {
-  if (ports.length !== 2) return null
-
-  const powerGroundRotations = new Set<MatchpackRotation>()
-
-  for (const port of ports) {
-    const sourcePort = db.source_port.get(port.source_port_id)
-    const connectivityKey = sourcePort?.subcircuit_connectivity_map_key
-    if (!connectivityKey) continue
-
-    const net = db.source_net.getWhere({
-      subcircuit_connectivity_map_key: connectivityKey,
-    })
-    if (!net) continue
-
-    const isGround = net.is_ground ?? false
-    const isPositiveVoltageSource =
-      net.is_power === true || net.is_positive_voltage_source === true
-    if (isPositiveVoltageSource === isGround) continue
-
-    const rotationToPlacePinOnTop =
-      ROTATION_TO_PLACE_SIDE_ON_TOP[
-        facingDirectionToSide(port.facing_direction)
-      ]
-    const rotation = isPositiveVoltageSource
-      ? rotationToPlacePinOnTop
-      : (((rotationToPlacePinOnTop + 180) % 360) as MatchpackRotation)
-    powerGroundRotations.add(rotation)
-  }
-
-  return powerGroundRotations.size === 1
-    ? powerGroundRotations.values().next().value!
-    : null
 }
 
 /**
@@ -459,13 +406,6 @@ function convertTreeToMatchPackInputProblem(
       }
       if (component?.componentName === "Chip") {
         availableRotations = [0]
-      }
-
-      // A power/ground 2-pin part is locked to the single rotation that places
-      // its rail pin on the correct side (power up, ground down).
-      if (availableRotations.length === DEFAULT_AVAILABLE_ROTATIONS.length) {
-        const forcedRotation = getPowerGroundForcedRotation(db, ports)
-        if (forcedRotation !== null) availableRotations = [forcedRotation]
       }
 
       // With the rotation known, reserve the chip's size once in its final
