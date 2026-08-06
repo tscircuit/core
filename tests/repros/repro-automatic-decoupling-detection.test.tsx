@@ -5,13 +5,35 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 const expectedMaxDecouplingTraceLength = 1
 const expectedTraceTooLongWarningCount = 1
 
-const createReproBoard = ({
-  observedMaxLength,
-  observedTraceTooLongWarningCount,
-}: {
-  observedMaxLength?: number | "none"
-  observedTraceTooLongWarningCount?: number
-} = {}) => (
+interface ReproStatusNotesProps {
+  observedMaxLength?: number | "none" | "not measured"
+  observedTraceTooLongWarningCount?: number | "not measured"
+}
+
+const ReproStatusNotes = ({
+  observedMaxLength = "not measured",
+  observedTraceTooLongWarningCount = "not measured",
+}: ReproStatusNotesProps) => (
+  <>
+    <pcbnotetext
+      pcbY={-7}
+      fontSize={0.65}
+      text="Automatic decoupling detection repro"
+    />
+    <pcbnotetext
+      pcbY={-8}
+      fontSize={0.65}
+      text={`Expected max: ${expectedMaxDecouplingTraceLength}mm; observed: ${observedMaxLength}`}
+    />
+    <pcbnotetext
+      pcbY={-9}
+      fontSize={0.65}
+      text={`Expected pcb_trace_too_long_warning count: ${expectedTraceTooLongWarningCount}; observed: ${observedTraceTooLongWarningCount}`}
+    />
+  </>
+)
+
+const createReproBoard = (observations: ReproStatusNotesProps = {}) => (
   <board width="24mm" height="20mm">
     <chip
       name="U1"
@@ -30,27 +52,7 @@ const createReproBoard = ({
       connections={{ pin1: "U1.VCC", pin2: "net.GND" }}
     />
     <trace from=".U1 > .GND" to="net.GND" />
-    {observedMaxLength !== undefined && (
-      <pcbnotetext
-        pcbY={-7}
-        fontSize={0.65}
-        text="Automatic decoupling detection repro"
-      />
-    )}
-    {observedMaxLength !== undefined && (
-      <pcbnotetext
-        pcbY={-8}
-        fontSize={0.65}
-        text={`Expected max: ${expectedMaxDecouplingTraceLength}mm; observed: ${observedMaxLength}`}
-      />
-    )}
-    {observedTraceTooLongWarningCount !== undefined && (
-      <pcbnotetext
-        pcbY={-9}
-        fontSize={0.65}
-        text={`Expected pcb_trace_too_long_warning count: ${expectedTraceTooLongWarningCount}; observed: ${observedTraceTooLongWarningCount}`}
-      />
-    )}
+    <ReproStatusNotes {...observations} />
   </board>
 )
 
