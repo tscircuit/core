@@ -83,6 +83,12 @@ export type SolverInputContext = {
   schematicPortIdsWithExternallyRoutedRepresentations: Set<SchematicPortId>
   schPortIdToSourcePortId: Map<SchematicPortId, SourcePortId>
   netLabelsInScope: NetLabel[]
+
+  /**
+   * Solver pin pair (sorted schematic port ids joined by "::") to the
+   * source_trace_id it was derived from.
+   */
+  sourceTraceIdByPinPairKey: Map<string, string>
 }
 
 export function createSchematicTraceSolverInputProblem(
@@ -369,6 +375,11 @@ export function createSchematicTraceSolverInputProblem(
     SchematicPortId,
     string
   >()
+  /**
+   * Solver pin pair (sorted, "::"-joined) to the source trace it came from, so
+   * a placement the solver hands back can be traced to its source_trace.
+   */
+  const sourceTraceIdByPinPairKey = new Map<string, string>()
   const connKeysWithExplicitPortNetTraces = new Set<string>()
   for (const sourceTrace of tracesInScope) {
     if (
@@ -496,6 +507,7 @@ export function createSchematicTraceSolverInputProblem(
         const pairKey = [a, b].sort().join("::")
         if (connectedPairKeys.has(pairKey)) continue
         connectedPairKeys.add(pairKey)
+        sourceTraceIdByPinPairKey.set(pairKey, st.source_trace_id)
         directConnections.push({
           schematicPortIds: [a, b],
           netId: userNetId,
@@ -647,5 +659,6 @@ export function createSchematicTraceSolverInputProblem(
     schematicPortIdsWithExternallyRoutedRepresentations,
     schPortIdToSourcePortId,
     netLabelsInScope,
+    sourceTraceIdByPinPairKey,
   }
 }
