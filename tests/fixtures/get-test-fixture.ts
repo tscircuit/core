@@ -1,13 +1,13 @@
 import { afterAll } from "bun:test"
 import { RootCircuit } from "lib/RootCircuit"
 import { logSoup } from "@tscircuit/log-soup"
+import type { PlatformConfig } from "@tscircuit/props"
 import "lib/register-catalogue"
 import "./extend-expect-circuit-snapshot"
 import "./extend-expect-3d-matcher"
 import "./extend-expect-autorouting-phases-snapshot"
 import { preventExternalApiRequests } from "./prevent-external-api-requests"
 import { getTestStaticAssetsServer } from "./get-test-static-assets-server"
-import type { PlatformConfig } from "@tscircuit/props"
 
 export const getTestFixture = ({
   platform,
