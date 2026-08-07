@@ -1300,7 +1300,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             autorouter =
               await phaseAutorouterConfig.algorithmFn(simpleRouteJson)
           } else {
-            const autorouterVersion = this.props.autorouterVersion
+            const autorouterVersion =
+              phaseAutorouterConfig.autorouterVersion ??
+              this.props.autorouterVersion
             const effortLevel = this.props.autorouterEffortLevel
             const effort = effortLevel
               ? Number.parseInt(effortLevel.replace("x", ""), 10)

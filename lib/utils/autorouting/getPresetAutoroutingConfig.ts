@@ -3,10 +3,12 @@ import type {
   AutorouterProp,
   PlatformConfig,
 } from "@tscircuit/props"
+import type { AutorouterVersion } from "./autorouter-version"
 
 export type NormalizedAutorouterConfig = AutorouterConfig & {
   capacityDepth?: number
   targetMinCapacity?: number
+  autorouterVersion?: AutorouterVersion
 }
 
 export type LegacyAutorouterPreset = "sequential_trace" | "auto_cloud"
@@ -104,6 +106,12 @@ export function getPresetAutoroutingConfig(
       return {
         local: true,
         groupMode: "subcircuit",
+      }
+    case "beta-pipeline9":
+      return {
+        local: true,
+        groupMode: "subcircuit",
+        autorouterVersion: "beta_pipeline9",
       }
     case "single-layer-fanout":
       return {

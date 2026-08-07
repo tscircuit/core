@@ -20,6 +20,7 @@ import type {
   GenericLocalAutorouter,
 } from "./GenericLocalAutorouter"
 import { SOLVERS, type SolverName } from "lib/solvers"
+import type { AutorouterVersion } from "./autorouter-version"
 
 export interface SolverStartedDetails {
   solverName: SolverName
@@ -41,15 +42,7 @@ export interface AutorouterOptions {
   useAssignableSolver?: boolean
   useAutoJumperSolver?: boolean
   useLaserPrefabSolver?: boolean
-  autorouterVersion?:
-    | "v1"
-    | "v2"
-    | "v3"
-    | "v4"
-    | "v5"
-    | "v6"
-    | "beta_pipeline9"
-    | "latest"
+  autorouterVersion?: AutorouterVersion
   effort?: number
   onSolverStarted?: (details: SolverStartedDetails) => void
 }
