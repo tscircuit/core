@@ -45,7 +45,7 @@ const RouteResultExplanation = ({
   )
 }
 
-test.failing(
+test(
   "netlabel-connected pad is included in SRJ when schematic rendering is disabled",
   async () => {
     const { circuit } = getTestFixture()
@@ -56,7 +56,9 @@ test.failing(
     await circuit.renderUntilSettled()
 
     const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
-      circuitJson: circuit.getCircuitJson(),
+      circuitJson: circuit
+        .getCircuitJson()
+        .filter((element) => element.type !== "pcb_trace"),
     })
     const sdaConnection = simpleRouteJson.connections.find((connection) =>
       connection.pointsToConnect.some(
@@ -84,6 +86,7 @@ test.failing(
     expect(connectedPortSelectors).toMatchInlineSnapshot(`
       [
         "R1.pin1",
+        "R2.pin1",
       ]
     `)
     expect(actualRouteCount).toBe(1)

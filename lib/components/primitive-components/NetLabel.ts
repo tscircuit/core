@@ -166,7 +166,6 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
   }
 
   doInitialCreateTracesFromNetLabels(): void {
-    if (this.root?.schematicDisabled) return
     const connectsTo = this._resolveConnectsTo()
     if (!connectsTo) return
 
