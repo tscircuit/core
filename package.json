@@ -82,7 +82,6 @@
     "kicad-to-circuit-json": "^0.0.117",
     "kicadts": "^0.0.53",
     "live-server": "^1.2.2",
-    "looks-same": "^9.0.1",
     "minicssgrid": "^0.0.9",
     "pkg-pr-new": "^0.0.37",
     "poppygl": "^0.0.26",

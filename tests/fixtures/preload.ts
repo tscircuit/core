@@ -1,4 +1,3 @@
-import "bun-match-svg"
 import "./extend-expect-any-svg"
 import "./simulation-matcher"
 import "lib/register-catalogue"

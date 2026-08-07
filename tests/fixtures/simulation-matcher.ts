@@ -2,7 +2,7 @@ import { convertCircuitJsonToSchematicSimulationSvg } from "circuit-to-svg"
 import { expect, type MatcherResult } from "bun:test"
 import * as fs from "node:fs"
 import * as path from "node:path"
-import looksSame from "looks-same"
+import { compareImageBuffers, createImageDiff } from "./compare-image-buffers"
 import { RootCircuit } from "lib/RootCircuit"
 import type { AnyCircuitElement } from "circuit-json"
 
@@ -53,7 +53,7 @@ async function saveSvgSnapshotOfSimulation({
   const existingSnapshot = fs.readFileSync(filePath)
   const currentBuffer = Buffer.from(content)
 
-  const result = await looksSame(currentBuffer, existingSnapshot, {
+  const result = await compareImageBuffers(currentBuffer, existingSnapshot, {
     strict: false,
     tolerance: 2,
   })
@@ -75,10 +75,10 @@ async function saveSvgSnapshotOfSimulation({
   }
 
   const diffPath = filePath.replace(".snap.svg", ".diff.png")
-  await looksSame.createDiff({
+  await createImageDiff({
     reference: existingSnapshot,
     current: currentBuffer,
-    diff: diffPath,
+    diffPath,
     highlightColor: "#ff00ff",
   })
 

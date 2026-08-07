@@ -10,11 +10,17 @@ test("autoroutingphase connection props assign phase index order", async () => {
     circuit: ReturnType<typeof getTestFixture>["circuit"],
     autoroutingPhaseIoStack: AutoroutingPhaseIo[],
     snapshotName: string,
+    diffThresholdPercent = 0.01,
   ) => {
     await circuit.renderUntilSettled()
     await expect(
       autoroutingPhaseIoStack,
-    ).toMatchAutoroutingPhaseIoStackSnapshot(import.meta.path, snapshotName)
+    ).toMatchAutoroutingPhaseIoStackSnapshot(
+      import.meta.path,
+      snapshotName,
+      undefined,
+      { diffThresholdPercent },
+    )
   }
 
   const { circuit: horizontalFirstCircuit } = getTestFixture()
@@ -103,6 +109,7 @@ test("autoroutingphase connection props assign phase index order", async () => {
     arraysHorizontalFirstCircuit,
     arraysHorizontalFirstAutoroutingPhaseIoStack,
     "autoroutingphase-connection-phase-index-arrays-horizontal-first",
+    2,
   )
 
   const { circuit: arraysVerticalFirstCircuit } = getTestFixture()

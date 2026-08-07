@@ -8,7 +8,7 @@ import {
   getBestCameraPosition,
 } from "circuit-json-to-gltf"
 import { RootCircuit } from "lib/RootCircuit"
-import looksSame from "looks-same"
+import { compareImageBuffers, createImageDiff } from "./compare-image-buffers"
 import {
   type RenderGLTFToPNGFromGLBOptions as PoppyglOptions,
   renderGLTFToPNGFromGLB,
@@ -171,14 +171,11 @@ async function save3dSnapshotOfCircuitJson({
   const existingSnapshot = fs.readFileSync(filePath)
   const currentBuffer = Buffer.from(content)
 
-  const lsResult = await looksSame(currentBuffer, existingSnapshot, {
+  const lsResult = await compareImageBuffers(currentBuffer, existingSnapshot, {
     strict: false,
     tolerance: 7,
     ignoreAntialiasing: true,
     antialiasingTolerance: 4,
-    shouldCluster: true,
-    clustersSize: 10,
-    createDiffImage: true,
   })
 
   if (lsResult.equal) {
@@ -196,14 +193,9 @@ async function save3dSnapshotOfCircuitJson({
     }
   }
 
-  let areaOfDiffClusters = 0
-  for (const cluster of lsResult.diffClusters) {
-    areaOfDiffClusters +=
-      (cluster.right - cluster.left) * (cluster.bottom - cluster.top)
-  }
-
   /** [0,1] percentage of the image that is different */
-  const diffFraction = areaOfDiffClusters / lsResult.totalPixels
+  const diffFraction =
+    (lsResult.differentPixels ?? 0) / (lsResult.totalPixels ?? 1)
 
   if (diffFraction <= (options?.diffTolerance ?? ACCEPTABLE_DIFF_FRACTION)) {
     return {
@@ -228,7 +220,15 @@ async function save3dSnapshotOfCircuitJson({
   }
 
   const diffPath = filePath.replace(/\.snap\.(svg|png)$/, ".diff.png")
-  await lsResult.diffImage.save(diffPath)
+  await createImageDiff({
+    reference: existingSnapshot,
+    current: currentBuffer,
+    diffPath,
+    highlightColor: "#ff00ff",
+    tolerance: 7,
+    ignoreAntialiasing: true,
+    antialiasingTolerance: 4,
+  })
 
   return {
     message: () =>

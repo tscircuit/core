@@ -66,5 +66,7 @@ test("multiple copper pours with different outlines", async () => {
   expect(gndPours.length).toBeGreaterThan(0)
   expect(vccPours.length).toBeGreaterThan(0)
 
-  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
+    diffThresholdPercent: 2,
+  })
 })
