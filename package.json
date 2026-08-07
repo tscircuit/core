@@ -1,7 +1,7 @@
 {
   "name": "@tscircuit/core",
   "type": "module",
-  "version": "0.0.1610",
+  "version": "0.0.1611",
   "types": "dist/index.d.ts",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -119,7 +119,7 @@
     "@flatten-js/core": "^1.6.2",
     "@lume/kiwi": "^0.4.3",
     "calculate-cell-boundaries": "^0.0.13",
-    "calculate-packing": "^0.0.82",
+    "calculate-packing": "^0.0.86",
     "css-select": "5.1.0",
     "format-si-unit": "^0.0.7",
     "nanoid": "^5.0.7",
