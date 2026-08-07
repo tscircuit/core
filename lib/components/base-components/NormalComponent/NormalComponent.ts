@@ -860,9 +860,9 @@ export class NormalComponent<
       source_component_id: this.source_component_id!,
       schematic_sheet_id: this._resolveSchematicSheetId(),
     })
+    const hasTopPins = schPortArrangement?.topSide !== undefined
     const hasTopOrBottomPins =
-      schPortArrangement?.topSide !== undefined ||
-      schPortArrangement?.bottomSide !== undefined
+      hasTopPins || schPortArrangement?.bottomSide !== undefined
     const schematic_box_width = dimensions?.getSize().width
     const schematic_box_height = dimensions?.getSize().height
     const manufacturer_part_number_schematic_text = db.schematic_text.insert({
@@ -871,7 +871,7 @@ export class NormalComponent<
       anchor: "left",
       rotation: 0,
       position: {
-        x: hasTopOrBottomPins
+        x: hasTopPins
           ? center.x + (schematic_box_width ?? 0) / 2 + 0.1
           : center.x - (schematic_box_width ?? 0) / 2,
         y: hasTopOrBottomPins
@@ -888,7 +888,7 @@ export class NormalComponent<
       anchor: "left",
       rotation: 0,
       position: {
-        x: hasTopOrBottomPins
+        x: hasTopPins
           ? center.x + (schematic_box_width ?? 0) / 2 + 0.1
           : center.x - (schematic_box_width ?? 0) / 2,
         y: hasTopOrBottomPins
