@@ -43,6 +43,7 @@
     "@tscircuit/create-fdm-enclosure": "0.0.3",
     "@tscircuit/fanout-solver": "0.0.14",
     "@tscircuit/footprinter": "^0.0.409",
+    "@tscircuit/image-utils": "^0.0.8",
     "@tscircuit/infer-cable-insertion-point": "^0.0.3",
     "@tscircuit/infgrid-ijump-astar": "^0.0.35",
     "@tscircuit/jlcpcb-manufacturing-specs": "git+https://github.com/tscircuit/jlcpcb-manufacturing-specs#e08af159db01a37db007e33f0a7268d0e4a279a5",
@@ -98,6 +99,7 @@
     "@tscircuit/circuit-json-util": "*",
     "@tscircuit/create-fdm-enclosure": "*",
     "@tscircuit/footprinter": "*",
+    "@tscircuit/image-utils": "*",
     "@tscircuit/infgrid-ijump-astar": "*",
     "@tscircuit/math-utils": "*",
     "@tscircuit/props": "*",
@@ -115,7 +117,6 @@
   "dependencies": {
     "@flatten-js/core": "^1.6.2",
     "@lume/kiwi": "^0.4.3",
-    "@tscircuit/image-utils": "^0.0.8",
     "calculate-cell-boundaries": "^0.0.13",
     "calculate-packing": "^0.0.86",
     "css-select": "5.1.0",
