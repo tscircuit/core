@@ -415,6 +415,23 @@ export class FanoutAutorouter implements GenericLocalAutorouter {
     debugGraphics: AutorouterProgressEvent["debugGraphics"]
   } {
     const fanoutSolverOptions = this.getFanoutSolverOptions()
+    const sharedBoundary =
+      this.options.fanoutBounds ?? fanoutSolverOptions.sharedBoundary
+    if (sharedBoundary) {
+      const { bounds } = this.input
+      const outsideBy = Math.max(
+        bounds.minX - sharedBoundary.minX,
+        sharedBoundary.maxX - bounds.maxX,
+        bounds.minY - sharedBoundary.minY,
+        sharedBoundary.maxY - bounds.maxY,
+      )
+      if (outsideBy > 1e-6) {
+        throw new Error(
+          `Fanout boundary extends ${Math.round(outsideBy * 1000) / 1000}mm outside the routable area, so its escapes would have to terminate where copper cannot go. ` +
+            "This usually means the fanout boundary was widened without widening the routing bounds to match.",
+        )
+      }
+    }
     const fanoutSolver = new FanoutSolver(
       this.input as unknown as ConstructorParameters<typeof FanoutSolver>[0],
       {
