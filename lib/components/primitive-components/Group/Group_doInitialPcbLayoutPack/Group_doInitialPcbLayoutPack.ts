@@ -9,6 +9,7 @@ import {
 import { type PcbComponent, length } from "circuit-json"
 import Debug from "debug"
 import type { NormalComponent } from "lib/components/base-components/NormalComponent"
+import { solvePackSolverWithTimeout } from "lib/utils/packing/solvePackSolverWithTimeout"
 import type { Group } from "../Group"
 import { applyComponentConstraintClusters } from "./applyComponentConstraintClusters"
 import { applyPackOutput } from "./applyPackOutput"
@@ -227,7 +228,19 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
         componentName: group.getString(),
       })
 
-      solver.solve()
+      const pcbPackSolverTimeoutMs =
+        group.root?.platform?.pcbPackSolverTimeoutMs
+      const { timedOut } = solvePackSolverWithTimeout(
+        solver,
+        pcbPackSolverTimeoutMs,
+      )
+
+      if (timedOut) {
+        packingFailed = true
+        reportPackingError(
+          `PackSolver2 timed out after ${pcbPackSolverTimeoutMs}ms`,
+        )
+      }
 
       if (solver.failed) {
         packingFailed = true
@@ -243,6 +256,8 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
           componentIdsForLayer.has(component.componentId),
         ),
       )
+
+      if (timedOut) break
     }
   } catch (error) {
     reportPackingError(error instanceof Error ? error.message : String(error))
