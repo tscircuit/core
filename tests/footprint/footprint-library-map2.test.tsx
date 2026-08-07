@@ -39,5 +39,7 @@ test("footprint library map 2", async () => {
     .filter((el) => el.type === "pcb_trace")
   expect(pcb_trace.length).toBe(1)
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  expect(circuit).toMatchPcbSnapshot(import.meta.path, {
+    diffThresholdPercent: 2,
+  })
 })

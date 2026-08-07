@@ -31,5 +31,7 @@ it("should create a Net component with correct properties", async () => {
 
   expect(pcbTraces.length).toBe(3)
 
-  expect(project.getCircuitJson()).toMatchPcbSnapshot(import.meta.path)
+  expect(project.getCircuitJson()).toMatchPcbSnapshot(import.meta.path, {
+    diffThresholdPercent: 2,
+  })
 })

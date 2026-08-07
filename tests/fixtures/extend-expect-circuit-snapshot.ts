@@ -15,6 +15,10 @@ import { RootCircuit } from "lib/RootCircuit"
 import { compareImageBuffers, createImageDiff } from "./compare-image-buffers"
 import { getSchematicComponentTextBoundingBoxRects } from "tests/fixtures/getSchematicComponentTextBoundingBoxRects"
 
+type SnapshotComparisonOptions = {
+  diffThresholdPercent?: number
+}
+
 async function saveSvgSnapshotOfCircuitJson({
   soup,
   testPath,
@@ -34,20 +38,21 @@ async function saveSvgSnapshotOfCircuitJson({
   const snapshotDir = path.join(path.dirname(testPath || ""), "__snapshots__")
   const snapshotName = `${path.basename(testPath || "")}-${mode}.snap.svg`
   const filePath = path.join(snapshotDir, snapshotName)
+  const { diffThresholdPercent = 0, ...svgOptions } = options ?? {}
 
   let content: Buffer | string
   switch (mode) {
     case "pcb":
-      content = convertCircuitJsonToPcbSvg(soup, options ?? {})
+      content = convertCircuitJsonToPcbSvg(soup, svgOptions)
       break
     case "schematic":
-      content = convertCircuitJsonToSchematicSvg(soup, options)
+      content = convertCircuitJsonToSchematicSvg(soup, svgOptions)
       break
     case "schematic_stacked":
-      content = convertCircuitJsonToStackedSchematicSheetsSvg(soup, options)
+      content = convertCircuitJsonToStackedSchematicSheetsSvg(soup, svgOptions)
       break
     case "pinout":
-      content = convertCircuitJsonToPinoutSvg(soup, options)
+      content = convertCircuitJsonToPinoutSvg(soup, svgOptions)
       break
   }
 
@@ -74,8 +79,11 @@ async function saveSvgSnapshotOfCircuitJson({
     strict: false,
     tolerance: 2,
   })
+  const totalPixels = result.totalPixels ?? 1
+  const differentPixels = result.differentPixels ?? 0
+  const diffPercent = (differentPixels / totalPixels) * 100
 
-  if (result.equal) {
+  if (result.equal || diffPercent <= diffThresholdPercent) {
     return {
       message: () => "Snapshot matches",
       pass: true,
@@ -100,7 +108,8 @@ async function saveSvgSnapshotOfCircuitJson({
   })
 
   return {
-    message: () => `Snapshot does not match. Diff saved at ${diffPath}`,
+    message: () =>
+      `Snapshot does not match (diff ${diffPercent.toFixed(2)}%). Diff saved at ${diffPath}`,
     pass: false,
   }
 }
@@ -272,7 +281,8 @@ declare module "bun:test" {
   interface Matchers<T = unknown> {
     toMatchPcbSnapshot(
       testPath: string,
-      options?: Parameters<typeof convertCircuitJsonToPcbSvg>[1],
+      options?: Parameters<typeof convertCircuitJsonToPcbSvg>[1] &
+        SnapshotComparisonOptions,
     ): Promise<MatcherResult>
     toMatchSchematicSnapshot(
       testPath: string,

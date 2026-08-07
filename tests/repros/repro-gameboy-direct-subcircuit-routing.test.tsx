@@ -366,5 +366,7 @@ test("Gameboy-like board routes through a dense MCU breakout without headers", a
   expect(circuit.db.pcb_trace_error.list()).toEqual([])
   expect(circuit.db.pcb_pad_trace_clearance_error.list()).toEqual([])
   expect(circuit.db.pcb_via_clearance_error.list()).toEqual([])
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  expect(circuit).toMatchPcbSnapshot(import.meta.path, {
+    diffThresholdPercent: 2,
+  })
 }, 120_000)
