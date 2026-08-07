@@ -7,6 +7,20 @@ test.failing(
   async () => {
     const { circuit } = getTestFixture()
     const autoroutingPhaseIoStack = createAutoroutingPhaseIoStack(circuit)
+    let parentPortPointPathingProgressEvents = 0
+
+    circuit.on("autorouting:progress", (event) => {
+      if (autoroutingPhaseIoStack.length < 2) return
+      if (event.phase !== "portPointPathingSolver") return
+
+      parentPortPointPathingProgressEvents++
+      if (parentPortPointPathingProgressEvents < 8) return
+
+      // Bound the known parent-routing stall so this expected-failure repro
+      // terminates through the autorouter's normal error path before Bun's
+      // test timeout.
+      throw new Error("Parent autorouter remained in portPointPathingSolver")
+    })
 
     circuit.add(
       <board
@@ -320,10 +334,12 @@ test.failing(
     expect(parentPhase?.startSimpleRouteJson?.traces?.length).toBeGreaterThan(
       30,
     )
+    expect(parentPortPointPathingProgressEvents).toBe(8)
     expect(circuit).toMatchPcbSnapshot(import.meta.path)
 
     // Desired behavior: the direct board-to-MCU routes complete without a
-    // breakout component. This currently fails with "$F ran out of iterations".
+    // breakout component. The watchdog above records an autorouting error after
+    // the parent remains stuck in port-point pathing.
     expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
     expect(circuit.db.pcb_trace_error.list()).toEqual([])
     expect(circuit.db.pcb_pad_trace_clearance_error.list()).toEqual([])
