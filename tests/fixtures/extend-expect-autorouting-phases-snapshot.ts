@@ -8,9 +8,25 @@ import type {
   SimplifiedPcbTrace,
 } from "lib/utils/autorouting/SimpleRouteJson"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
-import { stackSvgsVertically } from "stack-svgs"
+import { stackSvgsHorizontally, stackSvgsVertically } from "stack-svgs"
 import type { AutoroutingPhaseIo } from "tests/fixtures/create-autorouting-phase-io-stack"
+import { calculateAutoroutingPhaseSnapshotGrid } from "./calculate-autorouting-phase-snapshot-grid"
 import { toMatchSvgSnapshot } from "./extend-expect-any-svg"
+import { splitAutoroutingPhaseSnapshotPanelsIntoRows } from "./split-autorouting-phase-snapshot-panels-into-rows"
+
+const PANEL_WIDTH = 800
+const PANEL_HEIGHT = 636
+const GRID_GAP = 16
+
+/** Creates a white SVG with exactly the same dimensions as a snapshot panel. */
+const createBlankPanelSvg = () => `<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="${PANEL_WIDTH}"
+  height="${PANEL_HEIGHT}"
+  viewBox="0 0 ${PANEL_WIDTH} ${PANEL_HEIGHT}"
+>
+  <rect width="${PANEL_WIDTH}" height="${PANEL_HEIGHT}" fill="#fff" />
+</svg>`
 
 const createPanelLabelSvg = (label: string) => `<svg
   xmlns="http://www.w3.org/2000/svg"
@@ -50,51 +66,70 @@ function createLabeledSrjSvg(label: string, srj: SimpleRouteJson) {
 function getAutoroutingPhasesSvg({
   autoroutingPhaseIoStack,
   snapshotName,
+  fullCircuitSvg,
 }: {
   autoroutingPhaseIoStack: AutoroutingPhaseIo[]
   snapshotName: string
+  fullCircuitSvg?: string
 }) {
-  return stackSvgsVertically(
-    autoroutingPhaseIoStack
-      .flatMap((phase, index) => {
-        const phaseNumber = index + 1
-        const phaseSvgs: string[] = []
+  const phasePanelPairs = autoroutingPhaseIoStack.map((phase, index) => {
+    const phaseNumber = index + 1
+    let startPanelSvg = createBlankPanelSvg()
+    let endPanelSvg = createBlankPanelSvg()
 
-        if (phase.startSimpleRouteJson) {
-          const srj = phase.startSimpleRouteJson
-          phaseSvgs.push(
-            createLabeledSrjSvg(
-              `AUTOROUTING PHASE ${phaseNumber} START: ${srj.connections.length} CONNECTIONS, ${
-                srj.traces?.length ?? 0
-              } TRACES`,
-              srj,
-            ),
-          )
-        }
+    if (phase.startSimpleRouteJson) {
+      const srj = phase.startSimpleRouteJson
+      startPanelSvg = createLabeledSrjSvg(
+        `AUTOROUTING PHASE ${phaseNumber} START: ${srj.connections.length} CONNECTIONS, ${
+          srj.traces?.length ?? 0
+        } TRACES`,
+        srj,
+      )
+    }
 
-        if (phase.endSimpleRouteJson) {
-          const srj = phase.endSimpleRouteJson
-          phaseSvgs.push(
-            createLabeledSrjSvg(
-              `AUTOROUTING PHASE ${phaseNumber} END: ${srj.connections.length} CONNECTIONS, ${
-                srj.traces?.length ?? 0
-              } TRACES`,
-              srj,
-            ),
-          )
-        }
+    if (phase.endSimpleRouteJson) {
+      const srj = phase.endSimpleRouteJson
+      endPanelSvg = createLabeledSrjSvg(
+        `AUTOROUTING PHASE ${phaseNumber} END: ${srj.connections.length} CONNECTIONS, ${
+          srj.traces?.length ?? 0
+        } TRACES`,
+        srj,
+      )
+    }
 
-        return phaseSvgs
-      })
-      .reverse(),
-    {
-      gap: 16,
+    return [startPanelSvg, endPanelSvg]
+  })
+  const panelSvgs = phasePanelPairs.flat()
+  let panelCount = autoroutingPhaseIoStack.length * 2
+  if (fullCircuitSvg) {
+    panelSvgs.push(fullCircuitSvg, createBlankPanelSvg())
+    panelCount += 1
+  }
+  const { columnCount } = calculateAutoroutingPhaseSnapshotGrid({
+    panelCount,
+    panelWidth: PANEL_WIDTH,
+    panelHeight: PANEL_HEIGHT,
+    gap: GRID_GAP,
+  })
+  const panelRows = splitAutoroutingPhaseSnapshotPanelsIntoRows({
+    panels: panelSvgs,
+    columnCount,
+    createBlankPanel: createBlankPanelSvg,
+  })
+  const rowSvgs = panelRows.map((row) =>
+    stackSvgsHorizontally(row, {
+      gap: GRID_GAP,
       normalizeSize: false,
-      rootAttributes: {
-        "data-testid": `${snapshotName}-autorouting-srj-stack`,
-      },
-    },
+    }),
   )
+
+  return stackSvgsVertically(rowSvgs, {
+    gap: GRID_GAP,
+    normalizeSize: false,
+    rootAttributes: {
+      "data-testid": `${snapshotName}-autorouting-srj-stack`,
+    },
+  })
 }
 
 expect.extend({
@@ -113,12 +148,7 @@ expect.extend({
 
     const circuit = args[2] as { getCircuitJson(): any[] } | undefined
 
-    const phaseSvg = getAutoroutingPhasesSvg({
-      autoroutingPhaseIoStack,
-      snapshotName: args[1],
-    })
-
-    let svg: string
+    let fullCircuitSvg: string | undefined
     if (circuit) {
       const circuitJson = circuit.getCircuitJson()
       const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
@@ -127,18 +157,16 @@ expect.extend({
       const pcbTraces = circuitJson.filter((e: any) => e.type === "pcb_trace")
       simpleRouteJson.traces = pcbTraces as SimplifiedPcbTrace[]
 
-      const fullCircuitSvg = createLabeledSrjSvg(
+      fullCircuitSvg = createLabeledSrjSvg(
         `FULL ROUTED CIRCUIT: ${simpleRouteJson.connections.length} CONNECTIONS, ${pcbTraces.length} TRACES`,
         simpleRouteJson,
       )
-
-      svg = stackSvgsVertically([fullCircuitSvg, phaseSvg], {
-        gap: 16,
-        normalizeSize: false,
-      })
-    } else {
-      svg = phaseSvg
     }
+    const svg = getAutoroutingPhasesSvg({
+      autoroutingPhaseIoStack,
+      snapshotName: args[1],
+      fullCircuitSvg,
+    })
     const testPath = args[0].replace(/\.test\.tsx?$/, "")
     const snapshotDir = path.join(path.dirname(testPath), "__snapshots__")
     const filePath = path.join(snapshotDir, `${args[1]}.snap.svg`)
