@@ -163,6 +163,7 @@ export class NormalComponent<
   _hasStartedSupplierFootprintMismatchWarningCheck = false
   _hasInflatedCircuitJsonSymbol = false
   private _invalidFootprintPropMessages: string[] = []
+  private _invalidConnectionsPropMessages: string[] = []
 
   _invalidPinLabelMessages: string[] = []
   _impliedFootprintPinLabels?: Record<string, string | string[]>
@@ -1507,6 +1508,27 @@ export class NormalComponent<
     this._invalidFootprintPropMessages = []
   }
 
+  private _queueInvalidConnectionsPropMessage(pinName: string): void {
+    const message =
+      `Invalid connections prop on ${this.getDisplayName()}: the target for pin "${pinName}" is empty. ` +
+      `Set it to a selector such as ".R1 > .pin1" or "net.GND". Remove the pin from connections if it is unconnected.`
+    if (!this._invalidConnectionsPropMessages.includes(message)) {
+      this._invalidConnectionsPropMessages.push(message)
+    }
+  }
+
+  private _insertInvalidConnectionsPropErrors(): void {
+    for (const message of this._invalidConnectionsPropMessages) {
+      this.root!.db.source_invalid_component_property_error.insert({
+        source_component_id: this.source_component_id || "",
+        property_name: "connections",
+        message,
+        error_type: "source_invalid_component_property_error",
+      })
+    }
+    this._invalidConnectionsPropMessages = []
+  }
+
   getPortsFromSchematicSymbol(): Port[] {
     if (this.root?.schematicDisabled) return []
     const { config } = this
@@ -2125,10 +2147,20 @@ export class NormalComponent<
       for (const [pinName, target] of Object.entries(props.connections)) {
         const targets = Array.isArray(target) ? target : [target]
         for (const targetPath of targets) {
+          const to = String(targetPath)
+          // An empty or whitespace-only target is not a selector. Left alone it
+          // reaches selectOne and css-what throws a raw "Expected name" parser
+          // error that names neither this component nor the pin, taking the
+          // whole render down. Record it as an invalid connections prop and skip
+          // the trace so the rest of the board still renders.
+          if (to.trim() === "") {
+            this._queueInvalidConnectionsPropMessage(pinName)
+            continue
+          }
           this.add(
             new Trace({
               from: `.${this.name} > .${pinName}`,
-              to: String(targetPath),
+              to,
             }),
           )
         }
@@ -2142,6 +2174,7 @@ export class NormalComponent<
 
   doInitialSourceComponentPropertyValidation(): void {
     this._insertInvalidFootprintPropErrors()
+    this._insertInvalidConnectionsPropErrors()
   }
 
   doInitialValidatePcbCoordinates(): void {
