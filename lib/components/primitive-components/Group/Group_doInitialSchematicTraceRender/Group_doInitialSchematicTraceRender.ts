@@ -31,6 +31,7 @@ const renderSchematicTracesForSheet = ({
     schematicPortIdsWithExternallyRoutedRepresentations,
     schPortIdToSourcePortId,
     userNetIdToConnKey,
+    crossSubcircuitTraceLabelTextBySchematicPortId,
     connKeysWithExplicitPortNetTraces,
     netLabelsInScope,
   } = createSchematicTraceSolverInputProblem(group, {
@@ -99,6 +100,7 @@ const renderSchematicTracesForSheet = ({
     solver,
     connKeyToSourceNet,
     userNetIdToConnKey,
+    crossSubcircuitTraceLabelTextBySchematicPortId,
     connKeysWithExplicitPortNetTraces,
     schematicPortIdsWithPreExistingNetLabels,
     schematicPortIdsWithRoutedTraces,
