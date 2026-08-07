@@ -1,0 +1,20 @@
+name: Codex Linux Snapshot
+
+on:
+  push:
+    branches: [up-99]
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+      - run: bun install
+      - run: BUN_UPDATE_SNAPSHOTS=1 bun test tests/repros/repro-gameboy-direct-subcircuit-routing.test.tsx --timeout 120000
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gameboy-linux-snapshot
+          path: tests/repros/__snapshots__/repro-gameboy-direct-subcircuit-routing-pcb.snap.svg
