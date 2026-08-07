@@ -163,4 +163,9 @@ test("beta_pipeline9 routes a later phase around preloaded traces", async () => 
   expect(circuit.db.pcb_via.list().length).toBeGreaterThanOrEqual(4)
 
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  await expect(autoroutingPhaseIoStack).toMatchAutoroutingPhaseIoStackSnapshot(
+    import.meta.path,
+    "autorouter-beta-pipeline9-multiple-phases-srj",
+    circuit,
+  )
 })
