@@ -12,7 +12,7 @@ import {
   convertCircuitJsonToStackedSchematicSheetsSvg,
 } from "circuit-to-svg"
 import { RootCircuit } from "lib/RootCircuit"
-import looksSame from "looks-same"
+import { compareImageBuffers, createImageDiff } from "./compare-image-buffers"
 import { getSchematicComponentTextBoundingBoxRects } from "tests/fixtures/getSchematicComponentTextBoundingBoxRects"
 
 async function saveSvgSnapshotOfCircuitJson({
@@ -70,7 +70,7 @@ async function saveSvgSnapshotOfCircuitJson({
     ? content
     : Buffer.from(content)
 
-  const result = await looksSame(currentBuffer, existingSnapshot, {
+  const result = await compareImageBuffers(currentBuffer, existingSnapshot, {
     strict: false,
     tolerance: 2,
   })
@@ -92,10 +92,10 @@ async function saveSvgSnapshotOfCircuitJson({
   }
 
   const diffPath = filePath.replace(/\.snap\.(svg|png)$/, ".diff.png")
-  await looksSame.createDiff({
+  await createImageDiff({
     reference: existingSnapshot,
     current: currentBuffer,
-    diff: diffPath,
+    diffPath,
     highlightColor: "#ff00ff",
   })
 

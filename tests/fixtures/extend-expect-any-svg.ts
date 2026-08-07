@@ -1,7 +1,7 @@
 import { type MatcherResult, expect } from "bun:test"
 import * as fs from "node:fs"
 import * as path from "node:path"
-import looksSame from "looks-same"
+import { compareImageBuffers, createImageDiff } from "./compare-image-buffers"
 
 const DIFF_THRESHOLD_PERCENT = 1 // only update snapshot if >1% difference
 
@@ -42,24 +42,17 @@ export async function toMatchSvgSnapshot(
 
   const existingSnapshot = fs.readFileSync(filePath, "utf-8")
 
-  const result: any = await looksSame(
+  const result = await compareImageBuffers(
     Buffer.from(svg),
     Buffer.from(existingSnapshot),
     {
       strict: false,
       tolerance: 2,
-      shouldCluster: true,
-      clustersSize: 10,
     },
   )
 
-  const totalPixels =
-    result.metaInfo.refImg.size.width * result.metaInfo.refImg.size.height
-  const diffPixels = result.diffClusters.reduce(
-    (sum: number, cluster: any) =>
-      sum + (cluster.right - cluster.left) * (cluster.bottom - cluster.top),
-    0,
-  )
+  const totalPixels = result.totalPixels ?? 1
+  const diffPixels = result.differentPixels ?? 0
   const diffPercent = (diffPixels / totalPixels) * 100
   const diffThresholdPercent =
     options?.diffThresholdPercent ?? DIFF_THRESHOLD_PERCENT
@@ -87,10 +80,10 @@ export async function toMatchSvgSnapshot(
   }
 
   const diffPath = filePath.replace(".snap.svg", ".diff.png")
-  await looksSame.createDiff({
+  await createImageDiff({
     reference: Buffer.from(existingSnapshot),
     current: Buffer.from(svg),
-    diff: diffPath,
+    diffPath,
     highlightColor: "#ff00ff",
   })
 
