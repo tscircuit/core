@@ -24,6 +24,25 @@ export function convertPcbStyleToPcbSx(
     silkscreenTextSx.visibility = pcbStyle.silkscreenTextVisibility
   }
 
+  if (pcbStyle.silkscreenTextPosition !== undefined) {
+    if (
+      typeof pcbStyle.silkscreenTextPosition === "object" &&
+      pcbStyle.silkscreenTextPosition !== null
+    ) {
+      if (pcbStyle.silkscreenTextPosition.offsetX !== undefined) {
+        silkscreenTextSx.pcbX = pcbStyle.silkscreenTextPosition.offsetX
+      }
+      if (pcbStyle.silkscreenTextPosition.offsetY !== undefined) {
+        silkscreenTextSx.pcbY = pcbStyle.silkscreenTextPosition.offsetY
+      }
+    } else if (pcbStyle.silkscreenTextPosition === "centered") {
+      silkscreenTextSx.pcbX = 0
+      silkscreenTextSx.pcbY = 0
+    } else if (pcbStyle.silkscreenTextPosition === "none") {
+      silkscreenTextSx.visibility = "hidden"
+    }
+  }
+
   if (Object.keys(silkscreenTextSx).length > 0) {
     sx["& silkscreentext"] = silkscreenTextSx
   }
