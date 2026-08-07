@@ -17,6 +17,10 @@ test("breakout routes sot23 regulator power rail parts without breakoutpoints", 
             pin2: "GND",
             pin3: "VOUT",
           }}
+          pinAttributes={{
+            VIN: { shouldHaveDecouplingCapacitor: false },
+            VOUT: { providesPower: true },
+          }}
           pcbX={0}
           pcbY={0}
         />

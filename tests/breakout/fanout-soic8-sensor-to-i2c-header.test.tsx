@@ -24,6 +24,9 @@ test("fanout routes soic8 sensor support parts to an i2c header without fanoutpo
             pin7: "NC2",
             pin8: "VCC",
           }}
+          pinAttributes={{
+            VCC: { shouldHaveDecouplingCapacitor: false },
+          }}
           pcbX={0}
           pcbY={0}
         />
