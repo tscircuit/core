@@ -3,20 +3,31 @@ import { sel } from "lib"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-const ExpectedFailureExplanation = () => (
-  <>
-    <pcbnotetext
-      pcbY={-5.5}
-      fontSize={0.55}
-      text="REPRO: schematicDisabled drops the netlabel-connected pad from SRJ"
-    />
-    <pcbnotetext
-      pcbY={-6.5}
-      fontSize={0.55}
-      text="EXPECTED FAILURE: R1.pin1 and R2.pin1 should be routed together"
-    />
-  </>
-)
+const ConnectionResultExplanation = ({
+  expectedCount,
+  actualCount,
+}: {
+  expectedCount: number
+  actualCount: number
+}) => {
+  let result = "SUCCEEDED"
+  if (actualCount !== expectedCount) result = "FAILED"
+
+  return (
+    <>
+      <pcbnotetext
+        pcbY={-5.5}
+        fontSize={0.55}
+        text="REPRO: netlabel connectivity with schematic rendering disabled"
+      />
+      <pcbnotetext
+        pcbY={-6.5}
+        fontSize={0.55}
+        text={`${result}: expected ${expectedCount} connected pads, got ${actualCount}`}
+      />
+    </>
+  )
+}
 
 test.failing(
   "netlabel-connected pad is included in SRJ when schematic rendering is disabled",
@@ -35,7 +46,6 @@ test.failing(
         />
         <resistor name="R2" resistance="1k" footprint="0603" pcbX={3} />
         <netlabel net="SDA" connection="R2.pin1" />
-        <ExpectedFailureExplanation />
       </board>,
     )
 
@@ -52,6 +62,15 @@ test.failing(
     const connectedPortSelectors = sdaConnection?.pointsToConnect.map(
       (point) => point.port_selector,
     )
+    const actualConnectedPadCount = connectedPortSelectors?.length ?? 0
+
+    circuit.add(
+      <ConnectionResultExplanation
+        expectedCount={2}
+        actualCount={actualConnectedPadCount}
+      />,
+    )
+    await circuit.renderUntilSettled()
 
     expect(circuit).toMatchPcbSnapshot(import.meta.path)
     expect(connectedPortSelectors).toMatchInlineSnapshot(`
