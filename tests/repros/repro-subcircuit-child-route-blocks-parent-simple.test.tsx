@@ -2,90 +2,6 @@ import { expect, test } from "bun:test"
 import { createAutoroutingPhaseIoStack } from "tests/fixtures/create-autorouting-phase-io-stack"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-const SinglePadChip = ({
-  name,
-  pcbX,
-  pcbY,
-}: {
-  name: string
-  pcbX: number
-  pcbY: number
-}) => (
-  <chip
-    name={name}
-    pcbX={pcbX}
-    pcbY={pcbY}
-    footprint={
-      <footprint>
-        <smtpad
-          portHints={["pin1"]}
-          shape="rect"
-          width="1.2mm"
-          height="1.2mm"
-        />
-      </footprint>
-    }
-  />
-)
-
-const BarrierChip = () => (
-  <chip
-    name="U_BARRIER"
-    pcbX={3}
-    pcbY={0}
-    footprint={
-      <footprint>
-        <smtpad
-          portHints={["pin1", "TOP"]}
-          pcbY={5.35}
-          shape="rect"
-          width="1.2mm"
-          height="1.2mm"
-        />
-        <smtpad
-          portHints={["pin2", "BOTTOM"]}
-          pcbY={-5.35}
-          shape="rect"
-          width="1.2mm"
-          height="1.2mm"
-        />
-      </footprint>
-    }
-  />
-)
-
-const BoardContents = ({ nested }: { nested: boolean }) => {
-  const childContents = (
-    <>
-      <BarrierChip />
-      <SinglePadChip name="U_TARGET" pcbX={0} pcbY={0} />
-      <trace
-        name="CHILD_INTERNAL"
-        from=".U_BARRIER > .TOP"
-        to=".U_BARRIER > .BOTTOM"
-        routingPhaseIndex={nested ? undefined : 1}
-      />
-    </>
-  )
-
-  return (
-    <>
-      {nested ? (
-        <subcircuit name="INNER">{childContents}</subcircuit>
-      ) : (
-        childContents
-      )}
-      <SinglePadChip name="U_OUTSIDE" pcbX={8} pcbY={0} />
-      <trace
-        name="PARENT_EXTERNAL"
-        from=".U_OUTSIDE > .pin1"
-        to={nested ? ".INNER .U_TARGET > .pin1" : ".U_TARGET > .pin1"}
-        routingPhaseIndex={nested ? undefined : 0}
-      />
-    </>
-  )
-}
-
 test.failing(
   "parent route should not cross a preserved child-subcircuit trace",
   async () => {
@@ -99,7 +15,71 @@ test.failing(
         defaultTraceWidth="0.15mm"
         minTraceToPadEdgeClearance="0.15mm"
       >
-        <BoardContents nested={false} />
+        <chip
+          name="U_BARRIER"
+          pcbX={3}
+          pcbY={0}
+          footprint={
+            <footprint>
+              <smtpad
+                portHints={["pin1", "TOP"]}
+                pcbY={5.35}
+                shape="rect"
+                width="1.2mm"
+                height="1.2mm"
+              />
+              <smtpad
+                portHints={["pin2", "BOTTOM"]}
+                pcbY={-5.35}
+                shape="rect"
+                width="1.2mm"
+                height="1.2mm"
+              />
+            </footprint>
+          }
+        />
+        <chip
+          name="U_TARGET"
+          pcbX={0}
+          pcbY={0}
+          footprint={
+            <footprint>
+              <smtpad
+                portHints={["pin1"]}
+                shape="rect"
+                width="1.2mm"
+                height="1.2mm"
+              />
+            </footprint>
+          }
+        />
+        <trace
+          name="CHILD_INTERNAL"
+          from=".U_BARRIER > .TOP"
+          to=".U_BARRIER > .BOTTOM"
+          routingPhaseIndex={1}
+        />
+        <chip
+          name="U_OUTSIDE"
+          pcbX={8}
+          pcbY={0}
+          footprint={
+            <footprint>
+              <smtpad
+                portHints={["pin1"]}
+                shape="rect"
+                width="1.2mm"
+                height="1.2mm"
+              />
+            </footprint>
+          }
+        />
+        <trace
+          name="PARENT_EXTERNAL"
+          from=".U_OUTSIDE > .pin1"
+          to=".U_TARGET > .pin1"
+          routingPhaseIndex={0}
+        />
       </board>,
     )
     await flatCircuit.renderUntilSettled()
@@ -122,7 +102,71 @@ test.failing(
         defaultTraceWidth="0.15mm"
         minTraceToPadEdgeClearance="0.15mm"
       >
-        <BoardContents nested />
+        <subcircuit name="INNER">
+          <chip
+            name="U_BARRIER"
+            pcbX={3}
+            pcbY={0}
+            footprint={
+              <footprint>
+                <smtpad
+                  portHints={["pin1", "TOP"]}
+                  pcbY={5.35}
+                  shape="rect"
+                  width="1.2mm"
+                  height="1.2mm"
+                />
+                <smtpad
+                  portHints={["pin2", "BOTTOM"]}
+                  pcbY={-5.35}
+                  shape="rect"
+                  width="1.2mm"
+                  height="1.2mm"
+                />
+              </footprint>
+            }
+          />
+          <chip
+            name="U_TARGET"
+            pcbX={0}
+            pcbY={0}
+            footprint={
+              <footprint>
+                <smtpad
+                  portHints={["pin1"]}
+                  shape="rect"
+                  width="1.2mm"
+                  height="1.2mm"
+                />
+              </footprint>
+            }
+          />
+          <trace
+            name="CHILD_INTERNAL"
+            from=".U_BARRIER > .TOP"
+            to=".U_BARRIER > .BOTTOM"
+          />
+        </subcircuit>
+        <chip
+          name="U_OUTSIDE"
+          pcbX={8}
+          pcbY={0}
+          footprint={
+            <footprint>
+              <smtpad
+                portHints={["pin1"]}
+                shape="rect"
+                width="1.2mm"
+                height="1.2mm"
+              />
+            </footprint>
+          }
+        />
+        <trace
+          name="PARENT_EXTERNAL"
+          from=".U_OUTSIDE > .pin1"
+          to=".INNER .U_TARGET > .pin1"
+        />
         <pcbnotetext
           pcbX={-4}
           pcbY={5.4}
