@@ -25,6 +25,7 @@ import type {
   SimplifiedPcbTrace,
 } from "./SimpleRouteJson"
 import { getFanoutSharedBoundary } from "./get-fanout-shared-boundary"
+import { getFanoutSpaceErrorMessage } from "./get-fanout-space-error-message"
 
 export type FanoutAutorouterMode = "single_layer_fanout" | "fanout"
 
@@ -33,6 +34,8 @@ export interface FanoutAutorouterOptions {
   busFanoutDirections?: Readonly<Record<string, BusFanoutDirection>>
   fanoutBounds?: SimpleRouteBounds
   fanoutRoutingLayers?: string[]
+  /** Used to name components in fanout failure messages. */
+  componentNamesById?: ReadonlyMap<string, string>
 }
 
 export interface ResolveFanoutBoundsOptions extends FanoutAutorouterOptions {
@@ -423,7 +426,18 @@ export class FanoutAutorouter implements GenericLocalAutorouter {
     )
     fanoutSolver.solve()
     if (fanoutSolver.failed) {
-      throw new Error(fanoutSolver.error ?? "Fanout routing failed")
+      throw new Error(
+        getFanoutSpaceErrorMessage({
+          input: this.input,
+          solverError: fanoutSolver.error,
+          componentIds: new Set(
+            fanoutSolver.preparedBuses.map((bus) => bus.componentId),
+          ),
+          sharedBoundary:
+            this.options.fanoutBounds ?? fanoutSolverOptions.sharedBoundary,
+          componentNamesById: this.options.componentNamesById,
+        }),
+      )
     }
     const output = fanoutSolver.getOutput()
     const fanoutSimpleRouteJson =
