@@ -45,47 +45,47 @@ const RouteResultExplanation = ({
   )
 }
 
-test.failing(
-  "netlabel-connected pad is included in SRJ when schematic rendering is disabled",
-  async () => {
-    const { circuit } = getTestFixture()
-    circuit.schematicDisabled = true
+test("netlabel-connected pad is included in SRJ when schematic rendering is disabled", async () => {
+  const { circuit } = getTestFixture()
+  circuit.schematicDisabled = true
 
-    circuit.add(<NetlabelReproBoard />)
+  circuit.add(<NetlabelReproBoard />)
 
-    await circuit.renderUntilSettled()
+  await circuit.renderUntilSettled()
 
-    const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
-      circuitJson: circuit.getCircuitJson(),
-    })
-    const sdaConnection = simpleRouteJson.connections.find((connection) =>
-      connection.pointsToConnect.some(
-        (point) => point.port_selector === "R1.pin1",
-      ),
-    )
-    const connectedPortSelectors = sdaConnection?.pointsToConnect.map(
-      (point) => point.port_selector,
-    )
-    const actualRouteCount = circuit.db.pcb_trace.list().length
+  const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
+    circuitJson: circuit
+      .getCircuitJson()
+      .filter((element) => element.type !== "pcb_trace"),
+  })
+  const sdaConnection = simpleRouteJson.connections.find((connection) =>
+    connection.pointsToConnect.some(
+      (point) => point.port_selector === "R1.pin1",
+    ),
+  )
+  const connectedPortSelectors = sdaConnection?.pointsToConnect.map(
+    (point) => point.port_selector,
+  )
+  const actualRouteCount = circuit.db.pcb_trace.list().length
 
-    const { circuit: snapshotCircuit } = getTestFixture()
-    snapshotCircuit.schematicDisabled = true
-    snapshotCircuit.add(
-      <NetlabelReproBoard>
-        <RouteResultExplanation
-          expectedRouteCount={1}
-          actualRouteCount={actualRouteCount}
-        />
-      </NetlabelReproBoard>,
-    )
-    await snapshotCircuit.renderUntilSettled()
+  const { circuit: snapshotCircuit } = getTestFixture()
+  snapshotCircuit.schematicDisabled = true
+  snapshotCircuit.add(
+    <NetlabelReproBoard>
+      <RouteResultExplanation
+        expectedRouteCount={1}
+        actualRouteCount={actualRouteCount}
+      />
+    </NetlabelReproBoard>,
+  )
+  await snapshotCircuit.renderUntilSettled()
 
-    expect(snapshotCircuit).toMatchPcbSnapshot(import.meta.path)
-    expect(connectedPortSelectors).toMatchInlineSnapshot(`
+  expect(snapshotCircuit).toMatchPcbSnapshot(import.meta.path)
+  expect(connectedPortSelectors).toMatchInlineSnapshot(`
       [
         "R1.pin1",
+        "R2.pin1",
       ]
     `)
-    expect(actualRouteCount).toBe(1)
-  },
-)
+  expect(actualRouteCount).toBe(1)
+})
