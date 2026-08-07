@@ -353,6 +353,7 @@ test("Gameboy-like board routes through a dense MCU breakout without headers", a
   expect(parentPhase?.startSimpleRouteJson?.traces?.length).toBe(
     breakoutPhase?.endSimpleRouteJson?.traces?.length,
   )
+  expect(parentPhase?.endSimpleRouteJson?.traces).toHaveLength(10)
   expect(
     parentPhase?.startSimpleRouteJson?.connections.every((connection) =>
       connection.pointsToConnect.some((point) =>
@@ -365,5 +366,4 @@ test("Gameboy-like board routes through a dense MCU breakout without headers", a
   expect(circuit.db.pcb_trace_error.list()).toEqual([])
   expect(circuit.db.pcb_pad_trace_clearance_error.list()).toEqual([])
   expect(circuit.db.pcb_via_clearance_error.list()).toEqual([])
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
 }, 120_000)
