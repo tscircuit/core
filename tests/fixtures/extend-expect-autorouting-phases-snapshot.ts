@@ -202,7 +202,7 @@ expect.extend({
     }
 
     return toMatchSvgSnapshot.call(this, svg, args[0], args[1], {
-      diffThresholdPercent: 0.01,
+      diffThresholdPercent: args[3]?.diffThresholdPercent ?? 0.01,
     })
   },
 })
@@ -213,6 +213,7 @@ declare module "bun:test" {
       testPath: string,
       snapshotName: string,
       circuit?: { getCircuitJson(): any[] },
+      options?: { diffThresholdPercent?: number },
     ): Promise<MatcherResult>
   }
 }
