@@ -90,7 +90,7 @@ export const getFanoutSpaceErrorMessage = ({
   }
 
   lines.push(
-    "Give the fanout more room by increasing the breakout's padding, or by extending the breakout to include the parts crowding it (decoupling capacitors, series resistors) so their pads sit inside the boundary instead of against it.",
+    "Give the fanout more room by setting `fanoutBoundaryPadding` on the breakout (note that `padding` only pads the group's layout, it does not move the fanout boundary), or by extending the breakout to include the parts crowding it (decoupling capacitors, series resistors) so their pads sit inside the boundary instead of against it.",
   )
 
   return lines.join(" ")

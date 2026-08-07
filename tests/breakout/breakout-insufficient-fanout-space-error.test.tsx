@@ -56,8 +56,9 @@ test("a breakout with too little room reports how to give the fanout space", asy
   expect(message).toContain("U1")
   // Says what went wrong in board terms.
   expect(message).toContain("escape to the breakout boundary")
-  // Says what to do about it -- both remedies.
-  expect(message).toContain("padding")
+  // Says what to do about it -- both remedies, naming the prop that actually
+  // moves the fanout boundary rather than the group's layout padding.
+  expect(message).toContain("fanoutBoundaryPadding")
   expect(message).toContain("decoupling capacitors")
   // Does not leak the raw solver phrasing.
   expect(message).not.toContain("best layer assignment")
