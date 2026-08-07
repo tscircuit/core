@@ -43,6 +43,7 @@ import {
 import { getLocalAutoroutingStages } from "lib/utils/autorouting/localAutorouterStrategies"
 import { shouldSkipAutoroutingBecauseOfPlacementErrors } from "lib/utils/autorouting/should-skip-autorouting-because-of-placement-errors"
 import { shouldSkipAutoroutingBecauseOfTraceLengthViolations } from "lib/utils/autorouting/should-skip-autorouting-because-of-trace-length-violations"
+import { getHighlightColorForRoutedTrace } from "lib/utils/get-highlight-color-for-routed-trace"
 import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
 import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
 import {
@@ -92,6 +93,7 @@ import {
 } from "./Group_phasedAutoroutingUtils"
 import { Group_syncFanoutExitsWithGlobalConnections } from "./Group_syncFanoutExitsWithGlobalConnections"
 import type { ISubcircuit } from "./Subcircuit/ISubcircuit"
+import type { Net } from "../Net"
 import { addPortIdsToTracesAtJumperPads } from "./add-port-ids-to-traces-at-jumper-pads"
 import { getSourceTraceIdForRoutedTrace } from "./get-source-trace-id-for-routed-trace"
 import { insertAutoplacedJumpers } from "./insert-autoplaced-jumpers"
@@ -1753,6 +1755,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       pcbTraceIdsToReplace: pcb_trace_ids_to_be_replaced,
     })
 
+    const netsForHighlightColor = this.selectAll<Net>("net")
+
     for (const pcb_trace of output_pcb_traces) {
       // vias can be included
       if (pcb_trace.type !== "pcb_trace") continue
@@ -1807,10 +1811,16 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             },
             subcircuit_id: this.subcircuit_id,
           })
+          const highlightColor = getHighlightColorForRoutedTrace({
+            db,
+            nets: netsForHighlightColor,
+            sourceTraceId,
+          })
           db.pcb_trace.insert({
             ...pcb_trace,
             source_trace_id: sourceTraceId,
             route: segment,
+            ...(highlightColor ? { highlight_color: highlightColor } : {}),
           })
         }
       }
