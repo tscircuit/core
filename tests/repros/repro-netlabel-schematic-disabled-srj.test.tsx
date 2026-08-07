@@ -2,6 +2,22 @@ import { expect, test } from "bun:test"
 import { sel } from "lib"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import type { PropsWithChildren } from "react"
+
+const NetlabelReproBoard = ({ children }: PropsWithChildren) => (
+  <board width="20mm" height="16mm">
+    <resistor
+      name="R1"
+      resistance="1k"
+      footprint="0603"
+      pcbX={-3}
+      connections={{ pin1: sel.net.SDA }}
+    />
+    <resistor name="R2" resistance="1k" footprint="0603" pcbX={3} />
+    <netlabel net="SDA" connection="R2.pin1" />
+    {children}
+  </board>
+)
 
 const ConnectionResultExplanation = ({
   expectedCount,
@@ -35,19 +51,7 @@ test.failing(
     const { circuit } = getTestFixture()
     circuit.schematicDisabled = true
 
-    circuit.add(
-      <board width="20mm" height="16mm">
-        <resistor
-          name="R1"
-          resistance="1k"
-          footprint="0603"
-          pcbX={-3}
-          connections={{ pin1: sel.net.SDA }}
-        />
-        <resistor name="R2" resistance="1k" footprint="0603" pcbX={3} />
-        <netlabel net="SDA" connection="R2.pin1" />
-      </board>,
-    )
+    circuit.add(<NetlabelReproBoard />)
 
     await circuit.renderUntilSettled()
 
@@ -64,15 +68,19 @@ test.failing(
     )
     const actualConnectedPadCount = connectedPortSelectors?.length ?? 0
 
-    circuit.add(
-      <ConnectionResultExplanation
-        expectedCount={2}
-        actualCount={actualConnectedPadCount}
-      />,
+    const { circuit: snapshotCircuit } = getTestFixture()
+    snapshotCircuit.schematicDisabled = true
+    snapshotCircuit.add(
+      <NetlabelReproBoard>
+        <ConnectionResultExplanation
+          expectedCount={2}
+          actualCount={actualConnectedPadCount}
+        />
+      </NetlabelReproBoard>,
     )
-    await circuit.renderUntilSettled()
+    await snapshotCircuit.renderUntilSettled()
 
-    expect(circuit).toMatchPcbSnapshot(import.meta.path)
+    expect(snapshotCircuit).toMatchPcbSnapshot(import.meta.path)
     expect(connectedPortSelectors).toMatchInlineSnapshot(`
       [
         "R1.pin1",
