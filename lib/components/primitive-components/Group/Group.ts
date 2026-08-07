@@ -29,6 +29,7 @@ import type { GraphicsObject } from "graphics-debug"
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import { AutorouterError } from "lib/errors/AutorouterError"
 import type { AutorouterOptions } from "lib/utils/autorouting/CapacityMeshAutorouter"
+import { getPcbComponentNamesById } from "lib/utils/autorouting/get-pcb-component-names-by-id"
 import { FanoutAutorouter } from "lib/utils/autorouting/FanoutAutorouter"
 import type { GenericLocalAutorouter } from "lib/utils/autorouting/GenericLocalAutorouter"
 import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
@@ -1328,6 +1329,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
               busFanoutDirections: routingPhasePlan.busFanoutDirections,
               fanoutBounds: routingPhasePlan.fanoutBounds,
               fanoutRoutingLayers: routingPhasePlan.fanoutRoutingLayers,
+              componentNamesById: getPcbComponentNamesById(db),
             })
           }
 
