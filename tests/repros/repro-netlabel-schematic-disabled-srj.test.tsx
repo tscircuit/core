@@ -19,15 +19,15 @@ const NetlabelReproBoard = ({ children }: PropsWithChildren) => (
   </board>
 )
 
-const ConnectionResultExplanation = ({
-  expectedCount,
-  actualCount,
+const RouteResultExplanation = ({
+  expectedRouteCount,
+  actualRouteCount,
 }: {
-  expectedCount: number
-  actualCount: number
+  expectedRouteCount: number
+  actualRouteCount: number
 }) => {
   let result = "SUCCEEDED"
-  if (actualCount !== expectedCount) result = "FAILED"
+  if (actualRouteCount !== expectedRouteCount) result = "FAILED"
 
   return (
     <>
@@ -39,7 +39,7 @@ const ConnectionResultExplanation = ({
       <pcbnotetext
         pcbY={-6.5}
         fontSize={0.55}
-        text={`${result}: expected ${expectedCount} connected pads, got ${actualCount}`}
+        text={`${result}: expected ${expectedRouteCount} routed trace, got ${actualRouteCount}`}
       />
     </>
   )
@@ -66,15 +66,15 @@ test.failing(
     const connectedPortSelectors = sdaConnection?.pointsToConnect.map(
       (point) => point.port_selector,
     )
-    const actualConnectedPadCount = connectedPortSelectors?.length ?? 0
+    const actualRouteCount = circuit.db.pcb_trace.list().length
 
     const { circuit: snapshotCircuit } = getTestFixture()
     snapshotCircuit.schematicDisabled = true
     snapshotCircuit.add(
       <NetlabelReproBoard>
-        <ConnectionResultExplanation
-          expectedCount={2}
-          actualCount={actualConnectedPadCount}
+        <RouteResultExplanation
+          expectedRouteCount={1}
+          actualRouteCount={actualRouteCount}
         />
       </NetlabelReproBoard>,
     )
@@ -86,6 +86,6 @@ test.failing(
         "R1.pin1",
       ]
     `)
-    expect(connectedPortSelectors).toHaveLength(2)
+    expect(actualRouteCount).toBe(1)
   },
 )
