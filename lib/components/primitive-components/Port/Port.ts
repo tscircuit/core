@@ -14,8 +14,11 @@ import { areAllPcbPrimitivesOverlapping } from "./areAllPcbPrimitivesOverlapping
 import { getCenterOfPcbPrimitives } from "./getCenterOfPcbPrimitives"
 import { type PinAttributeMap, portProps } from "@tscircuit/props"
 import type { INormalComponent } from "lib/components/base-components/NormalComponent/INormalComponent"
+import { TraceConnectionError } from "lib/errors"
 import { applyPinAttributesToSourcePort } from "./apply-pin-attributes-to-source-port"
 import { Port_doInitialCreateTracesFromProps } from "./Port_doInitialCreateTracesFromProps"
+import { Port_isConnectedToGround } from "./Port_isConnectedToGround"
+import { Port_isConnectedToPower } from "./Port_isConnectedToPower"
 import { Port_tryRenderGroupPcbPort } from "./Port_tryRenderGroupPcbPort"
 import { getSourcePortNetLabelText } from "lib/utils/schematic/getSourcePortNetLabelText"
 
@@ -300,7 +303,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     ) as string[]
   }
 
-  private _getMatchingPinAttributes(): PinAttributeMap[] {
+  _getMatchingPinAttributes(): PinAttributeMap[] {
     const parentProps = (this.parent as any)?._parsedProps
     const pinAttributes = parentProps?.pinAttributes as
       | Record<string, PinAttributeMap>
@@ -362,11 +365,28 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       "trace",
     ) as Trace[]
 
-    const connectedTraces = allSubcircuitTraces
-      .filter((trace) => !trace._couldNotFindPort)
-      .filter((trace) => trace._isExplicitlyConnectedToPort(this))
+    const connectedTraces: Trace[] = []
+    for (const trace of allSubcircuitTraces) {
+      if (trace._couldNotFindPort) continue
+      try {
+        if (trace._isExplicitlyConnectedToPort(this)) {
+          connectedTraces.push(trace)
+        }
+      } catch (error) {
+        if (error instanceof TraceConnectionError) continue
+        throw error
+      }
+    }
 
     return connectedTraces
+  }
+
+  isConnectedToPower(): boolean {
+    return Port_isConnectedToPower(this)
+  }
+
+  isConnectedToGround(): boolean {
+    return Port_isConnectedToGround(this)
   }
 
   doInitialCreateTracesFromProps(): void {

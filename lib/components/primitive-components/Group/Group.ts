@@ -87,7 +87,6 @@ import {
 import {
   Group_applyDrcTolerancesToSimpleRouteJson,
   Group_filterSimpleRouteJsonForPhase,
-  Group_getObstaclesFromRoutedTraces,
   Group_hasPhasedAutorouting,
   connectionIsInRoutingPhase,
 } from "./Group_phasedAutoroutingUtils"
@@ -1003,12 +1002,15 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
               this.root?.platform,
             )
           : autorouterConfig
-      return getLocalAutoroutingStages(
+      const stages = getLocalAutoroutingStages(
         phaseAutorouterConfig,
         this.root?.platform,
-      ).map((stage) => ({
+      )
+      return stages.map((stage, phaseStageIndex) => ({
         ...stage,
         routingPhasePlan,
+        phaseStageIndex,
+        phaseStageCount: stages.length,
       }))
     })
     const hasFanoutStage = routingStages.some(({ autorouterConfig }) =>
@@ -1080,6 +1082,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       autorouterConfig: phaseAutorouterConfig,
       strategy: localAutorouterStrategy,
       usesPreviousStageOutput,
+      phaseStageIndex,
+      phaseStageCount,
     } of routingStages) {
       if (!usesPreviousStageOutput) {
         previousStageOutputSimpleRouteJson = undefined
@@ -1123,31 +1127,32 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           } as RerouteRectRegion,
         ) as SimpleRouteJson
       } else if (!usesPreviousStageOutput && isConnectionReroutePhase) {
-        simpleRouteJson = Group_filterSimpleRouteJsonForPhase(
+        const phaseInput = Group_filterSimpleRouteJsonForPhase(
           baseSimpleRouteJson,
           routingPhasePlan,
         )
-        simpleRouteJson.obstacles = [
-          ...simpleRouteJson.obstacles,
-          ...Group_getObstaclesFromRoutedTraces(
-            outputTraces.filter(
+        // Preserve routed geometry as SRJ traces. The autorouter owns
+        // converting traces to obstacles and approximating diagonal segments.
+        simpleRouteJson = {
+          ...phaseInput,
+          traces: [
+            ...(phaseInput.traces ?? []),
+            ...outputTraces.filter(
               (trace) => !traceMatchesRoutingPhase(trace, routingPhasePlan),
             ),
-            baseSimpleRouteJson.layerCount,
-          ),
-        ]
+          ],
+        }
       } else if (!usesPreviousStageOutput && hasPhasedAutorouting) {
-        simpleRouteJson = Group_filterSimpleRouteJsonForPhase(
+        const phaseInput = Group_filterSimpleRouteJsonForPhase(
           baseSimpleRouteJson,
           routingPhasePlan,
         )
-        simpleRouteJson.obstacles = [
-          ...simpleRouteJson.obstacles,
-          ...Group_getObstaclesFromRoutedTraces(
-            outputTraces,
-            baseSimpleRouteJson.layerCount,
-          ),
-        ]
+        // Preserve routed geometry as SRJ traces. The autorouter owns
+        // converting traces to obstacles and approximating diagonal segments.
+        simpleRouteJson = {
+          ...phaseInput,
+          traces: [...(phaseInput.traces ?? []), ...outputTraces],
+        }
       }
       simpleRouteJson = Group_applyDrcTolerancesToSimpleRouteJson(
         simpleRouteJson,
@@ -1262,6 +1267,13 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       this.root?.emit("autorouting:start", {
         subcircuit_id: this.subcircuit_id,
         componentDisplayName: this.getString(),
+        ...(routingPhasePlan.phaseName !== undefined
+          ? {
+              phaseName: routingPhasePlan.phaseName,
+              phaseStageIndex,
+              phaseStageCount,
+            }
+          : {}),
         simpleRouteJson,
       })
 
@@ -1343,6 +1355,13 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             this.root?.emit("autorouting:progress", {
               subcircuit_id: this.subcircuit_id,
               componentDisplayName: this.getString(),
+              ...(routingPhasePlan.phaseName !== undefined
+                ? {
+                    phaseName: routingPhasePlan.phaseName,
+                    phaseStageIndex,
+                    phaseStageCount,
+                  }
+                : {}),
               ...event,
             })
           })
@@ -1420,6 +1439,13 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           type: "autorouting:end",
           subcircuit_id: this.subcircuit_id,
           componentDisplayName: this.getString(),
+          ...(routingPhasePlan.phaseName !== undefined
+            ? {
+                phaseName: routingPhasePlan.phaseName,
+                phaseStageIndex,
+                phaseStageCount,
+              }
+            : {}),
           simpleRouteJson: outputSimpleRouteJson,
         })
 
@@ -1485,6 +1511,13 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         this.root?.emit("autorouting:error", {
           subcircuit_id: this.subcircuit_id,
           componentDisplayName: this.getString(),
+          ...(routingPhasePlan.phaseName !== undefined
+            ? {
+                phaseName: routingPhasePlan.phaseName,
+                phaseStageIndex,
+                phaseStageCount,
+              }
+            : {}),
           error: {
             message: error instanceof Error ? error.message : String(error),
           },

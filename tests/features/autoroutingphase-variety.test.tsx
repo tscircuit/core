@@ -10,10 +10,18 @@ test("autoroutingphase supports net phases nested groups and configured phase au
   const { circuit } = getTestFixture()
   const routedConnectionCountsByPhase: number[] = []
   const routedConnectionCenterYByPhase: number[] = []
+  const preservedTraceCountsByPhase: number[] = []
+  const phaseReservationObstacleCountsByPhase: number[] = []
 
   const createPhaseAutorouter = () =>
     createBasicAutorouter(async (simpleRouteJson: SimpleRouteJson) => {
       routedConnectionCountsByPhase.push(simpleRouteJson.connections.length)
+      preservedTraceCountsByPhase.push(simpleRouteJson.traces?.length ?? 0)
+      phaseReservationObstacleCountsByPhase.push(
+        simpleRouteJson.obstacles.filter((obstacle) =>
+          obstacle.obstacleId?.includes("_phase_obstacle_"),
+        ).length,
+      )
       routedConnectionCenterYByPhase.push(
         simpleRouteJson.connections.reduce((connectionSum, connection) => {
           const centerY =
@@ -102,6 +110,8 @@ test("autoroutingphase supports net phases nested groups and configured phase au
   await circuit.renderUntilSettled()
 
   expect(routedConnectionCountsByPhase).toEqual([1, 1, 1, 1])
+  expect(preservedTraceCountsByPhase).toEqual([0, 1, 2, 3])
+  expect(phaseReservationObstacleCountsByPhase).toEqual([0, 0, 0, 0])
   expect(routedConnectionCenterYByPhase[0]).toBeGreaterThan(0)
   expect(routedConnectionCenterYByPhase[1]).toBeCloseTo(0, 1)
   expect(routedConnectionCenterYByPhase[2]).toBeGreaterThan(0)

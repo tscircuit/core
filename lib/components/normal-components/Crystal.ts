@@ -8,7 +8,7 @@ import { formatSiUnit } from "format-si-unit"
 import { type BaseSymbolName, type Ftype } from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 
-type CrystalPorts = CrystalPinLabels
+type CrystalPorts = CrystalPinLabels | "X1" | "X2"
 type SourcePortId = SourcePort["source_port_id"]
 type SubcircuitConnectivityMapKey = NonNullable<
   SourceTrace["subcircuit_connectivity_map_key"]
@@ -39,14 +39,14 @@ export class Crystal extends NormalComponent<
     const additionalAliases: Record<`pin${number}`, string[]> =
       this.props.pinVariant === "four_pin"
         ? {
-            pin1: ["left1", "1"],
+            pin1: ["left1", "1", "X1"],
             pin2: ["top1", "2", "gnd1"],
-            pin3: ["right1", "3"],
+            pin3: ["right1", "3", "X2"],
             pin4: ["bottom1", "4", "gnd2"],
           }
         : {
-            pin1: ["pos", "left"],
-            pin2: ["neg", "right"],
+            pin1: ["pos", "left", "X1"],
+            pin2: ["neg", "right", "X2"],
           }
 
     super.initPorts({
@@ -89,15 +89,18 @@ export class Crystal extends NormalComponent<
     const { db } = this.root!
     const maximumTraceLength =
       this._parsedProps.maxTraceLength ?? DEFAULT_CRYSTAL_MAX_TRACE_LENGTH_MM
-    const crystalSourcePortIds = new Set<SourcePortId>()
-    const crystalConnectivityMapKeys = new Set<SubcircuitConnectivityMapKey>()
+    const crystalSignalSourcePortIds = new Set<SourcePortId>()
+    const crystalSignalConnectivityMapKeys =
+      new Set<SubcircuitConnectivityMapKey>()
 
-    for (const sourcePort of db.source_port.list()) {
-      if (sourcePort.source_component_id !== this.source_component_id) continue
+    for (const signalPort of [this.portMap.X1, this.portMap.X2]) {
+      if (!signalPort.source_port_id) continue
+      const sourcePort = db.source_port.get(signalPort.source_port_id)
+      if (!sourcePort) continue
 
-      crystalSourcePortIds.add(sourcePort.source_port_id)
+      crystalSignalSourcePortIds.add(signalPort.source_port_id)
       if (sourcePort.subcircuit_connectivity_map_key) {
-        crystalConnectivityMapKeys.add(
+        crystalSignalConnectivityMapKeys.add(
           sourcePort.subcircuit_connectivity_map_key,
         )
       }
@@ -106,11 +109,11 @@ export class Crystal extends NormalComponent<
     for (const sourceTrace of db.source_trace.list()) {
       const isDirectlyConnectedToCrystal =
         sourceTrace.connected_source_port_ids.some((sourcePortId) =>
-          crystalSourcePortIds.has(sourcePortId),
+          crystalSignalSourcePortIds.has(sourcePortId),
         )
       const isOnCrystalNet =
         sourceTrace.subcircuit_connectivity_map_key !== undefined &&
-        crystalConnectivityMapKeys.has(
+        crystalSignalConnectivityMapKeys.has(
           sourceTrace.subcircuit_connectivity_map_key,
         )
 
