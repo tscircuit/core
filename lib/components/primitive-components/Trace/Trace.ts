@@ -268,6 +268,20 @@ export class Trace
 
     if (!allPortsFound) return
 
+    const distinctPortIds = new Set(ports.map((p) => p.port.source_port_id))
+    if (ports.length > 1 && distinctPortIds.size === 1) {
+      const subcircuit = this.getSubcircuit()
+      db.source_trace_not_connected_error.insert({
+        error_type: "source_trace_not_connected_error",
+        message: `${this.getString()} connects a port to itself; both ends resolve to the same port. Did you mean to connect two different pins?`,
+        subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+        source_group_id: subcircuit?.getGroup()?.source_group_id ?? undefined,
+        selectors_not_found: [],
+      })
+      this._couldNotFindPort = true
+      return
+    }
+
     this._traceConnectionHash = this._computeTraceConnectionHash()
 
     const existingTraces = db.source_trace.list()
