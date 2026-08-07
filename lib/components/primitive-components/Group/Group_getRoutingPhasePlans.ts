@@ -235,6 +235,7 @@ export function Group_getRoutingPhasePlans(
     (candidate): candidate is Breakout => candidate.isRoutingDirective,
   )
   const breakoutByTrace = new Map<Trace, Breakout>()
+  const breakoutByNet = new Map<Net, Breakout>()
   for (const trace of traces) {
     let ancestor = trace.parent
     while (ancestor && ancestor !== group) {
@@ -243,6 +244,17 @@ export function Group_getRoutingPhasePlans(
         break
       }
       ancestor = ancestor.parent
+    }
+  }
+  for (const net of nets) {
+    // A net belongs to a breakout only when the user explicitly declares it
+    // as a direct child. Nets inferred from component `connections` retain the
+    // enclosing group's established routing behavior.
+    if (
+      net.parent?.isRoutingDirective &&
+      breakouts.includes(net.parent as Breakout)
+    ) {
+      breakoutByNet.set(net, net.parent as Breakout)
     }
   }
 
@@ -270,6 +282,7 @@ export function Group_getRoutingPhasePlans(
     return []
 
   for (const net of nets) {
+    if (breakoutByNet.has(net)) continue
     const routingPhaseIndex = getNetRoutingPhaseIndex(net)
     getOrCreateRoutingPhasePlan(plansByPhaseIndex, routingPhaseIndex).nets.push(
       net,
@@ -408,7 +421,7 @@ export function Group_getRoutingPhasePlans(
         typeof layer === "string" ? layer : layer.name,
       ),
       fanoutPourNetMap: breakoutProps.fanoutPourNetMap,
-      nets: [],
+      nets: nets.filter((net) => breakoutByNet.get(net) === breakout),
       traces: breakoutTraces,
     }
 

@@ -447,6 +447,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
             x: bp.x,
             y: bp.y,
             layer,
+            pointId: bp.pcb_breakout_point_id,
             port_selector: portSelector,
           }
         }
@@ -644,7 +645,12 @@ export const getSimpleRouteJsonFromCircuitJson = ({
 
   for (const bp of breakoutPoints) {
     const bpSourcePortId = (bp as any).source_port_id as string | undefined
-    const pt = { x: bp.x, y: bp.y, layer: "top" as const }
+    const pt = {
+      x: bp.x,
+      y: bp.y,
+      layer: "top" as const,
+      pointId: bp.pcb_breakout_point_id,
+    }
 
     if (bpSourcePortId) {
       const pcb_port = db.pcb_port.getWhere({

@@ -58,6 +58,7 @@ export function applyNetLabelPlacements(args: {
   group: Group<any>
   solver: SchematicTracePipelineSolver
   userNetIdToConnKey: Map<string, string>
+  crossSubcircuitTraceLabelTextBySchematicPortId: Map<SchematicPortId, string>
   connKeyToSourceNet: Map<string, SourceNet>
   connKeysWithExplicitPortNetTraces: Set<string>
   schematicPortIdsWithPreExistingNetLabels: Set<SchematicPortId>
@@ -69,6 +70,7 @@ export function applyNetLabelPlacements(args: {
     solver,
     connKeyToSourceNet,
     userNetIdToConnKey,
+    crossSubcircuitTraceLabelTextBySchematicPortId,
     connKeysWithExplicitPortNetTraces,
     schematicPortIdsWithPreExistingNetLabels,
     schematicPortIdsWithRoutedTraces,
@@ -155,10 +157,21 @@ export function applyNetLabelPlacements(args: {
     if (placementConnKey) {
       sourceNet = connKeyToSourceNet.get(placementConnKey)
     }
+    const crossSubcircuitTraceLabelText =
+      placement.pinIds.length === 1
+        ? crossSubcircuitTraceLabelTextBySchematicPortId.get(
+            asSchematicPortId(placement.pinIds[0]!),
+          )
+        : undefined
     const canonicalNetLabel = placementConnKey
-      ? resolveCanonicalNetLabelText({
-          subcircuitConnectivityMapKey: placementConnKey,
-        })
+      ? crossSubcircuitTraceLabelText
+        ? {
+            name: crossSubcircuitTraceLabelText,
+            wasAssignedDisplayLabel: false,
+          }
+        : resolveCanonicalNetLabelText({
+            subcircuitConnectivityMapKey: placementConnKey,
+          })
       : {
           name: placement.netId ?? placement.globalConnNetId,
           wasAssignedDisplayLabel: false,

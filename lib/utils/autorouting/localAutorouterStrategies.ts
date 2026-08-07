@@ -21,6 +21,7 @@ export interface LocalAutorouterStrategyContext {
   busFanoutDirections?: AutoroutingPhaseProps["busFanoutDirections"]
   fanoutBounds?: SimpleRouteBounds
   fanoutRoutingLayers?: string[]
+  componentNamesById?: ReadonlyMap<string, string>
 }
 
 export interface LocalAutorouterStrategy {
@@ -51,12 +52,14 @@ const createFanoutAutorouterStrategy = (
     busFanoutDirections,
     fanoutBounds,
     fanoutRoutingLayers,
+    componentNamesById,
   }) =>
     new FanoutAutorouter(simpleRouteJson, {
       mode,
       busFanoutDirections,
       fanoutBounds,
       fanoutRoutingLayers,
+      componentNamesById,
     }),
 })
 

@@ -2,13 +2,11 @@ import type { SourceNet } from "circuit-json"
 import type { Group } from "lib/components"
 import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
 import { getEnteringEdgeFromDirection } from "lib/utils/schematic/getEnteringEdgeFromDirection"
-import {
-  getNetNameFromSourcePorts,
-  getSourcePortNetLabelText,
-} from "lib/utils/schematic/getSourcePortNetLabelText"
-import type { Port } from "../../Port"
-import { getNetNameFromPorts } from "./getNetNameFromPorts"
 import type { SchematicPortId, SourcePortId } from "./port-id-types"
+import {
+  getDirectCrossSubcircuitConnectedSourcePortId,
+  resolveNetLabelForPortMissingTrace,
+} from "./resolveNetLabelForPortMissingTrace"
 
 const NEAR_EXISTING_NET_LABEL_DISTANCE = 0.5
 const SAME_ANCHOR_POSITION_DISTANCE = 0.1
@@ -30,32 +28,6 @@ const doesSchematicNetLabelRepresentCurrentSourceConnection = (args: {
   }
 
   return nl.text === text
-}
-
-const getDirectCrossSubcircuitConnectedSourcePortId = (
-  db: NonNullable<Group<any>["root"]>["db"],
-  sourcePortId: string,
-) => {
-  const sourcePort = db.source_port.get(sourcePortId)
-  if (!sourcePort) return undefined
-
-  for (const sourceTrace of db.source_trace.list()) {
-    const connectedSourcePortIds = sourceTrace.connected_source_port_ids ?? []
-    if (connectedSourcePortIds.length !== 2) continue
-    if ((sourceTrace.connected_source_net_ids ?? []).length > 0) continue
-    if (!connectedSourcePortIds.includes(sourcePortId)) continue
-
-    const otherSourcePortId = connectedSourcePortIds.find(
-      (portId) => portId !== sourcePortId,
-    )
-    if (!otherSourcePortId) continue
-
-    const otherSourcePort = db.source_port.get(otherSourcePortId)
-    if (!otherSourcePort) continue
-    if (otherSourcePort.subcircuit_id === sourcePort.subcircuit_id) continue
-
-    return otherSourcePortId
-  }
 }
 
 export const insertNetLabelsForPortsMissingTrace = ({
@@ -122,31 +94,17 @@ export const insertNetLabelsForPortsMissingTrace = ({
         )
       })
 
-    const connectedPortsForKey = group
-      .selectAll<Port>("port")
-      .filter((port) => port._getSubcircuitConnectivityKey() === connKey)
-    const { name: resolvedPortNetLabelText, wasAssignedDisplayLabel } =
-      getNetNameFromPorts(connectedPortsForKey)
-    let assignedPortNetLabelText: string | undefined
-    if (wasAssignedDisplayLabel) {
-      assignedPortNetLabelText = resolvedPortNetLabelText
-    }
-    const fallbackPortNetLabelText = wasAssignedDisplayLabel
-      ? undefined
-      : resolvedPortNetLabelText || undefined
-    const implicitPortLabelText = getNetNameFromSourcePorts(
-      db,
+    const {
+      text,
+      wasAssignedDisplayLabel,
+      directCrossSubcircuitConnectedSourcePortId,
+    } = resolveNetLabelForPortMissingTrace({
+      group,
+      sourcePortId: srcPortId,
       connectedSourcePortIdsForKey,
-    )
-    const directCrossSubcircuitConnectedSourcePortId =
-      getDirectCrossSubcircuitConnectedSourcePortId(db, srcPortId)
-    const directCrossSubcircuitConnectionLabelText =
-      directCrossSubcircuitConnectedSourcePortId
-        ? getSourcePortNetLabelText(
-            db,
-            directCrossSubcircuitConnectedSourcePortId,
-          )
-        : undefined
+      connKey,
+      sourceNet,
+    })
     const directCrossSubcircuitPortAlsoNeedsNetLabel =
       directCrossSubcircuitConnectedSourcePortId
         ? db.schematic_port
@@ -157,15 +115,6 @@ export const insertNetLabelsForPortsMissingTrace = ({
         : false
     const shouldPreserveDirectCrossSubcircuitEndpointLabels =
       directCrossSubcircuitPortAlsoNeedsNetLabel && !wasAssignedDisplayLabel
-    const text =
-      sourceNet?.name ||
-      sourceNet?.source_net_id ||
-      assignedPortNetLabelText ||
-      directCrossSubcircuitConnectionLabelText ||
-      fallbackPortNetLabelText ||
-      implicitPortLabelText ||
-      connKey
-
     const isCollapsedBoxPort =
       schComponent?.is_box_with_pins &&
       sourcePort &&
@@ -177,7 +126,7 @@ export const insertNetLabelsForPortsMissingTrace = ({
           trace.connected_source_port_ids.includes(srcPortId) &&
           trace.subcircuit_id !== sourcePort?.subcircuit_id,
       )
-    const hasExplicitLabel = Boolean(sourceNet || assignedPortNetLabelText)
+    const hasExplicitLabel = Boolean(sourceNet || wasAssignedDisplayLabel)
 
     // A public pin without a trace leaving the collapsed subcircuit remains
     // visually open. Preserve labels only when the user explicitly named one.
