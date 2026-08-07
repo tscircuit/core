@@ -27,6 +27,14 @@ export const compareImageBuffers = async (
   current: Uint8Array,
   options: CompareImageOptions = {},
 ) => {
+  if (Buffer.from(reference).equals(Buffer.from(current))) {
+    return {
+      equal: true,
+      differentPixels: 0,
+      totalPixels: 1,
+    }
+  }
+
   return looksSame(
     toComparablePng(reference),
     toComparablePng(current),
