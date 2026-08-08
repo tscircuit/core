@@ -112,7 +112,11 @@ export class PinHeader extends NormalComponent<typeof pinHeaderProps> {
       "right"
     const schPinArrangement = this._parsedProps.schPinArrangement
 
-    const pins = Array.from({ length: pinCount }, (_, i) => `pin${i + 1}`)
+    // circuit-json's schematic_component_port_arrangement_by_sides requires
+    // pins to be pin numbers (number[]), not "pin1" style label strings, so
+    // emit the numeric pin number here. The schematic box layout resolves both
+    // forms to the same pin number, so this only affects the emitted value.
+    const pins = Array.from({ length: pinCount }, (_, i) => i + 1)
 
     if (facingDirection === "left") {
       return {
