@@ -5,7 +5,7 @@ import {
   type PassivePorts,
 } from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
-import { formatSiUnit } from "format-si-unit"
+import { formatSiUnit, parseAndConvertSiUnit } from "format-si-unit"
 
 export class Fuse extends NormalComponent<typeof fuseProps, PassivePorts> {
   get config() {
@@ -26,11 +26,9 @@ export class Fuse extends NormalComponent<typeof fuseProps, PassivePorts> {
     const rawCurrent = this._parsedProps.currentRating
     const rawVoltage = this._parsedProps.voltageRating
 
-    const current =
-      typeof rawCurrent === "string" ? parseFloat(rawCurrent) : rawCurrent
+    const current = parseAndConvertSiUnit(rawCurrent, "A").value ?? undefined
 
-    const voltage =
-      typeof rawVoltage === "string" ? parseFloat(rawVoltage) : rawVoltage
+    const voltage = parseAndConvertSiUnit(rawVoltage, "V").value ?? undefined
 
     return `${formatSiUnit(current)}A / ${formatSiUnit(voltage)}V`
   }
@@ -40,14 +38,10 @@ export class Fuse extends NormalComponent<typeof fuseProps, PassivePorts> {
     const { _parsedProps: props } = this
 
     const currentRating =
-      typeof props.currentRating === "string"
-        ? parseFloat(props.currentRating)
-        : props.currentRating
+      parseAndConvertSiUnit(props.currentRating, "A").value ?? undefined
 
     const voltageRating =
-      typeof props.voltageRating === "string"
-        ? parseFloat(props.voltageRating)
-        : props.voltageRating
+      parseAndConvertSiUnit(props.voltageRating, "V").value ?? undefined
 
     let display_current_rating: string | undefined
     let display_voltage_rating: string | undefined
