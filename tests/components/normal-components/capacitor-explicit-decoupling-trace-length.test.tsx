@@ -7,13 +7,13 @@ test("explicit trace maxLength overrides the inferred decoupling limit", async (
   circuit.add(
     <board width="20mm" height="20mm">
       <capacitor name="C1" capacitance="100nF" footprint="0402" pcbX={2} />
+      <resistor name="R_GND" resistance="0ohm" footprint="0402" pcbX={3.9} />
       <chip
         name="U1"
         footprint="soic8"
         pcbX={-3}
         pinLabels={{
           8: "VBAT",
-          5: "GND",
         }}
         pinAttributes={{
           VBAT: { requiresPower: true },
@@ -25,8 +25,8 @@ test("explicit trace maxLength overrides the inferred decoupling limit", async (
         to=".C1 > .1"
         maxLength="5.5mm"
       />
-      <trace from=".C1 > .2" to="net.GND" maxLength="5.5mm" />
-      <trace from=".U1 > .GND" to="net.GND" />
+      <trace from=".C1 > .2" to="net.GND" />
+      <trace from=".R_GND > .1" to="net.GND" />
       <pcbnotetext text="Explicit trace maxLength: 5.5mm" pcbX={0} pcbY={7} />
     </board>,
   )
