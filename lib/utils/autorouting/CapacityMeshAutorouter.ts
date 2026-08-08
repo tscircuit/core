@@ -12,6 +12,7 @@ import {
   getGlobalInMemoryCache,
   type CacheProvider,
 } from "@tscircuit/capacity-autorouter"
+import type { PlatformConfig } from "@tscircuit/props"
 import { AutorouterError } from "lib/errors/AutorouterError"
 import type { SimpleRouteJson, SimplifiedPcbTrace } from "./SimpleRouteJson"
 import type {
@@ -48,6 +49,14 @@ export interface AutorouterOptions {
   effort?: number
   cacheProvider?: CacheProvider | null
   onSolverStarted?: (details: SolverStartedDetails) => void
+}
+
+export function getCapacityAutorouterCacheProvider(
+  platformConfig?: Pick<PlatformConfig, "localCacheEngine">,
+): CacheProvider | null {
+  if (!platformConfig?.localCacheEngine) return null
+
+  return getGlobalInMemoryCache()
 }
 
 export class TscircuitAutorouter implements GenericLocalAutorouter {
@@ -116,12 +125,7 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
       solverName = "AutoroutingPipelineSolver7_MultiGraph"
     }
     const SolverClass = SOLVERS[solverName]
-    const solverCacheProvider =
-      cacheProvider !== undefined
-        ? cacheProvider
-        : autorouterVersion === "beta_pipeline9"
-          ? getGlobalInMemoryCache()
-          : null
+    const solverCacheProvider = cacheProvider ?? null
 
     this.solver = new SolverClass(input as any, {
       capacityDepth,
