@@ -10,24 +10,25 @@ const expectedOutput = {
 }
 
 const createReproBoard = (observedOutput?: string) => {
-  const status = observedOutput === JSON.stringify(expectedOutput) ? "correct" : "failing"
+  const status =
+    observedOutput === JSON.stringify(expectedOutput) ? "correct" : "failing"
 
   return (
-  <board
-    width="20mm"
-    height="10mm"
-    topSolderMaskColor="red"
-    bottomSolderMaskColor="blue"
-    topSilkscreenColor="white"
-    bottomSilkscreenColor="black"
-    doubleSidedAssembly
-  >
-    <pcbnotetext
-      pcbY={0}
-      fontSize={0.7}
-      text={`expected: ${JSON.stringify(expectedOutput)}\nobserved: ${observedOutput}\nstatus: ${status}`}
-    />
-  </board>
+    <board
+      width="20mm"
+      height="10mm"
+      topSolderMaskColor="red"
+      bottomSolderMaskColor="blue"
+      topSilkscreenColor="white"
+      bottomSilkscreenColor="black"
+      doubleSidedAssembly
+    >
+      <pcbnotetext
+        pcbY={0}
+        fontSize={0.7}
+        text={`expected: ${JSON.stringify(expectedOutput)}\nobserved: ${observedOutput}\nstatus: ${status}`}
+      />
+    </board>
   )
 }
 
