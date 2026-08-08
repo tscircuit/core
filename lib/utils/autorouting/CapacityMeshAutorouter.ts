@@ -9,7 +9,9 @@ import {
   AutoroutingPipelineSolver7_MultiGraph,
   AutoroutingPipelineSolver8,
   AutoroutingPipelineSolver9_PreloadedTraceGraph,
+  type CacheProvider,
 } from "@tscircuit/capacity-autorouter"
+import type { PlatformConfig } from "@tscircuit/props"
 import { AutorouterError } from "lib/errors/AutorouterError"
 import type { SimpleRouteJson, SimplifiedPcbTrace } from "./SimpleRouteJson"
 import type {
@@ -20,6 +22,7 @@ import type {
   GenericLocalAutorouter,
 } from "./GenericLocalAutorouter"
 import { SOLVERS, type SolverName } from "lib/solvers"
+import { getCacheProviderForLocalCacheEngine } from "./LocalCacheEngineCacheProvider"
 import type { AutorouterVersion } from "./autorouter-version"
 
 export interface SolverStartedDetails {
@@ -29,7 +32,7 @@ export interface SolverStartedDetails {
     options: {
       capacityDepth?: number
       targetMinCapacity?: number
-      cacheProvider: null
+      cacheProvider: CacheProvider | null
       effort?: number
     }
   }
@@ -44,7 +47,15 @@ export interface AutorouterOptions {
   useLaserPrefabSolver?: boolean
   autorouterVersion?: AutorouterVersion
   effort?: number
+  platformConfig?: Pick<PlatformConfig, "localCacheEngine">
   onSolverStarted?: (details: SolverStartedDetails) => void
+}
+
+function getCapacityAutorouterCacheProvider(
+  platformConfig?: Pick<PlatformConfig, "localCacheEngine">,
+): CacheProvider | null {
+  if (!platformConfig?.localCacheEngine) return null
+  return getCacheProviderForLocalCacheEngine(platformConfig.localCacheEngine)
 }
 
 export class TscircuitAutorouter implements GenericLocalAutorouter {
@@ -85,6 +96,7 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
       autorouterVersion,
       useLaserPrefabSolver = false,
       effort,
+      platformConfig,
       onSolverStarted,
     } = options
 
@@ -115,11 +127,13 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
       solverName = "AutoroutingPipelineSolver7_MultiGraph"
     }
     const SolverClass = SOLVERS[solverName]
+    const solverCacheProvider =
+      getCapacityAutorouterCacheProvider(platformConfig)
 
     this.solver = new SolverClass(input as any, {
       capacityDepth,
       targetMinCapacity,
-      cacheProvider: null,
+      cacheProvider: solverCacheProvider,
       effort,
     })
 
@@ -130,7 +144,7 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
         options: {
           capacityDepth,
           targetMinCapacity,
-          cacheProvider: null,
+          cacheProvider: solverCacheProvider,
           effort,
         },
       },

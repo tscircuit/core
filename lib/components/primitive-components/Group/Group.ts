@@ -1310,6 +1310,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             const commonAutorouterOptions: AutorouterOptions = {
               capacityDepth: phaseAutorouterConfig.capacityDepth,
               targetMinCapacity: phaseAutorouterConfig.targetMinCapacity,
+              platformConfig: this.root?.platform,
               useAssignableSolver:
                 phaseIsLaserPrefabPreset || isSingleLayerBoard,
               useAutoJumperSolver: phaseIsAutoJumperPreset,
