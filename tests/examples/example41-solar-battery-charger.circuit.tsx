@@ -1495,7 +1495,7 @@ export default () => (
     width="34.8mm"
     height="30mm"
     layers={4}
-    autorouterVersion="v6"
+    autorouterVersion="beta_pipeline7"
     minViaPadDiameter={0.45}
     minViaHoleDiameter={0.3}
   >

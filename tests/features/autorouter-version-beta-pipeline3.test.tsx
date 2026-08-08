@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "../fixtures/get-test-fixture"
 
-test("board with autorouterVersion v3 uses AutoroutingPipelineSolver3_HgPortPointPathing", async () => {
+test("board with autorouterVersion beta_pipeline3 uses AutoroutingPipelineSolver3_HgPortPointPathing", async () => {
   const { circuit } = getTestFixture()
 
   let solverStartedName: string | undefined
@@ -18,7 +18,7 @@ test("board with autorouterVersion v3 uses AutoroutingPipelineSolver3_HgPortPoin
         local: true,
         groupMode: "subcircuit",
       }}
-      autorouterVersion="v3"
+      autorouterVersion="beta_pipeline3"
     >
       <resistor
         name="R1"

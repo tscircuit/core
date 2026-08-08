@@ -1,7 +1,7 @@
-import { test, expect } from "bun:test"
+import { expect, test } from "bun:test"
 import { getTestFixture } from "../fixtures/get-test-fixture"
 
-test("board with autorouterVersion v1 uses AutoroutingPipeline1_OriginalUnravel", async () => {
+test("board with autorouterVersion beta_pipeline4 uses AutoroutingPipelineSolver4", async () => {
   const { circuit } = getTestFixture()
 
   let solverStartedName: string | undefined
@@ -18,7 +18,7 @@ test("board with autorouterVersion v1 uses AutoroutingPipeline1_OriginalUnravel"
         local: true,
         groupMode: "subcircuit",
       }}
-      autorouterVersion="v1"
+      autorouterVersion="beta_pipeline4"
     >
       <resistor
         name="R1"
@@ -33,16 +33,12 @@ test("board with autorouterVersion v1 uses AutoroutingPipeline1_OriginalUnravel"
     </board>,
   )
 
-  // Wait for the render to complete, including autorouting
   await circuit.renderUntilSettled()
 
-  // Verify that the correct solver was used
-  expect(solverStartedName).toBe("AutoroutingPipeline1_OriginalUnravel")
+  expect(solverStartedName).toBe("AutoroutingPipelineSolver4")
 
-  // Verify that we have PCB traces in the output
   const traces = circuit.selectAll("trace")
   expect(traces.length).toBeGreaterThan(0)
 
-  // Match against a PCB snapshot to verify routing
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

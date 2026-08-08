@@ -10,7 +10,7 @@ test("false positive accidental contact DRC (simplified) - fixed", async () => {
       height="28mm"
       schematicDisabled
       outlineOffsetX="-7.5mm"
-      autorouterVersion="v3"
+      autorouterVersion="beta_pipeline3"
     >
       <group name="greenpill">
         <chip

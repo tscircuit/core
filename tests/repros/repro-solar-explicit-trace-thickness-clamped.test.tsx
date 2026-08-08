@@ -107,7 +107,7 @@ test("repro: explicit trace thickness is not clamped to board minTraceWidth", as
     <board
       width="12mm"
       height="8mm"
-      autorouterVersion="v4"
+      autorouterVersion="beta_pipeline4"
       minTraceWidth="0.15mm"
     >
       <Wlcsp9 name="IC1" pcbX={-3} pcbY={1} />
