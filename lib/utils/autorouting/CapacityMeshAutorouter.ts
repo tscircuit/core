@@ -9,6 +9,8 @@ import {
   AutoroutingPipelineSolver7_MultiGraph,
   AutoroutingPipelineSolver8,
   AutoroutingPipelineSolver9_PreloadedTraceGraph,
+  getGlobalInMemoryCache,
+  type CacheProvider,
 } from "@tscircuit/capacity-autorouter"
 import { AutorouterError } from "lib/errors/AutorouterError"
 import type { SimpleRouteJson, SimplifiedPcbTrace } from "./SimpleRouteJson"
@@ -29,7 +31,7 @@ export interface SolverStartedDetails {
     options: {
       capacityDepth?: number
       targetMinCapacity?: number
-      cacheProvider: null
+      cacheProvider: CacheProvider | null
       effort?: number
     }
   }
@@ -44,6 +46,7 @@ export interface AutorouterOptions {
   useLaserPrefabSolver?: boolean
   autorouterVersion?: AutorouterVersion
   effort?: number
+  cacheProvider?: CacheProvider | null
   onSolverStarted?: (details: SolverStartedDetails) => void
 }
 
@@ -85,6 +88,7 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
       autorouterVersion,
       useLaserPrefabSolver = false,
       effort,
+      cacheProvider,
       onSolverStarted,
     } = options
 
@@ -112,11 +116,17 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
       solverName = "AutoroutingPipelineSolver7_MultiGraph"
     }
     const SolverClass = SOLVERS[solverName]
+    const solverCacheProvider =
+      cacheProvider !== undefined
+        ? cacheProvider
+        : autorouterVersion === "beta_pipeline9"
+          ? getGlobalInMemoryCache()
+          : null
 
     this.solver = new SolverClass(input as any, {
       capacityDepth,
       targetMinCapacity,
-      cacheProvider: null,
+      cacheProvider: solverCacheProvider,
       effort,
     })
 
@@ -127,7 +137,7 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
         options: {
           capacityDepth,
           targetMinCapacity,
-          cacheProvider: null,
+          cacheProvider: solverCacheProvider,
           effort,
         },
       },
