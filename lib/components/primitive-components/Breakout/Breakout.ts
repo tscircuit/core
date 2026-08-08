@@ -6,6 +6,7 @@ import { BreakoutPoint } from "../BreakoutPoint"
 import type { Trace } from "../Trace/Trace"
 import type { Port } from "../Port"
 import { createBreakoutPointSolverInput } from "./createBreakoutPointSolverInput"
+import { Breakout_warnAboutIgnoredPadding } from "./Breakout_warnAboutIgnoredPadding"
 
 export class Breakout extends Group<typeof breakoutProps> {
   override get isRoutingDirective() {
@@ -17,6 +18,11 @@ export class Breakout extends Group<typeof breakoutProps> {
       ...super.config,
       zodProps: breakoutProps,
     }
+  }
+
+  override doInitialSourceRender(): void {
+    super.doInitialSourceRender()
+    Breakout_warnAboutIgnoredPadding(this)
   }
 
   /**
