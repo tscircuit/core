@@ -534,7 +534,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             trace_clearance: props.autorouter.traceClearance,
           }
         : undefined,
-      anchor_alignment: props.pcbAnchorAlignment ?? null,
+      anchor_alignment: props.pcbAnchorAlignment ?? undefined,
     })
     this.pcb_group_id = pcb_group.pcb_group_id
 
@@ -1897,7 +1897,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const { _parsedProps: props } = this
     const schematic_group = db.schematic_group.insert({
       is_subcircuit: this.isSubcircuit,
-      subcircuit_id: this.subcircuit_id!,
+      subcircuit_id: this.subcircuit_id ?? undefined,
       name: this.name,
       center: this._getGlobalSchematicPositionBeforeLayout(),
       width: 0,
