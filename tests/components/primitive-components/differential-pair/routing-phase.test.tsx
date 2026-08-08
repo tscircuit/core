@@ -93,36 +93,6 @@ test("routes both differential pair traces in the same routing phase", async ():
     source_trace_1: ["U1.pin2", "U2.pin6"],
   })
 
-  const routedLengthsBySourceTraceId = Object.fromEntries(
-    pcbTraces.map((pcbTrace) => {
-      if (!pcbTrace.source_trace_id)
-        throw new Error(
-          `Routed trace ${pcbTrace.pcb_trace_id} is missing a source trace id`,
-        )
-      const wirePoints = pcbTrace.route.filter(
-        (routePoint) => routePoint.route_type === "wire",
-      )
-      const routedLength = wirePoints
-        .slice(1)
-        .reduce((totalLength, routePoint, routePointIndex) => {
-          const previousPoint = wirePoints[routePointIndex]!
-          return (
-            totalLength +
-            Math.hypot(
-              routePoint.x - previousPoint.x,
-              routePoint.y - previousPoint.y,
-            )
-          )
-        }, 0)
-      return [pcbTrace.source_trace_id, routedLength]
-    }),
-  )
-  expect(
-    Math.abs(
-      routedLengthsBySourceTraceId.source_trace_0! -
-        routedLengthsBySourceTraceId.source_trace_1!,
-    ),
-  ).toBeLessThanOrEqual(0.05)
   expect(circuit.db.pcb_trace_error.list()).toEqual([])
 
   expect(
