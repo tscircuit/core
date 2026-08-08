@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { getSchematicNetLabelTexts } from "tests/fixtures/get-schematic-net-label-texts"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("trace name is used as schematic net label fallback", async () => {
@@ -25,9 +26,7 @@ test("trace name is used as schematic net label fallback", async () => {
   })
   expect(sourceTrace?.name).toBe("NAME_LABEL")
 
-  const netLabelTexts = circuit.db.schematic_net_label
-    .list()
-    .map((label) => label.text)
+  const netLabelTexts = getSchematicNetLabelTexts(circuit)
   expect(netLabelTexts).toContain("NAME_LABEL")
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)

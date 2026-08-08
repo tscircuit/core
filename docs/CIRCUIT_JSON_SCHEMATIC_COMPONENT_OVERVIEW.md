@@ -155,3 +155,26 @@ interface SchematicText {
   anchor: "center" | "left" | "right" | "top" | "bottom"
 }
 ```
+
+## Net labels
+
+A net's name reaches the schematic in one of two forms.
+
+An **anchored net label** is a `schematic_net_label`: the tag symbol that hangs
+off the end of a wire, pointing back at it via `anchor_side`. This is the
+general case, and the only form used for power and ground rails.
+
+An **inline net label** is the name drawn parallel to the wire it belongs to -
+above a horizontal trace, or to the left of a vertical one reading
+bottom-to-top. Because it is rotated, it cannot be a `schematic_net_label`
+(that element is always axis-aligned); it is emitted as a `schematic_text` with
+`anchor: "center"`, `rotation` of `0` or `-90`, and the `source_trace_id` of the
+trace it names. That id is what distinguishes an inline net label from
+free-standing schematic text such as a reference designator.
+
+Inline labels are applied automatically to point-to-point signal traces - a net
+of exactly two ports, not power or ground, carrying a name the user chose
+(`schDisplayLabel`, `displayName`, or `name` on the trace, or a named net). The
+schematic trace solver places them and will decline when the wire has no room
+for the name, in which case the net falls back to an anchored label. A net never
+gets both forms.
