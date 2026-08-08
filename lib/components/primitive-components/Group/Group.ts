@@ -94,6 +94,7 @@ import {
 import { Group_syncFanoutExitsWithGlobalConnections } from "./Group_syncFanoutExitsWithGlobalConnections"
 import type { ISubcircuit } from "./Subcircuit/ISubcircuit"
 import { addPortIdsToTracesAtJumperPads } from "./add-port-ids-to-traces-at-jumper-pads"
+import { claimSrjAssignablePcbViasTraversedByRoute } from "./claim-srj-assignable-pcb-vias-traversed-by-route"
 import { getSourceTraceIdForRoutedTrace } from "./get-source-trace-id-for-routed-trace"
 import { insertAutoplacedJumpers } from "./insert-autoplaced-jumpers"
 import {
@@ -1811,10 +1812,15 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             },
             subcircuit_id: this.subcircuit_id,
           })
-          db.pcb_trace.insert({
+          const insertedPcbTrace = db.pcb_trace.insert({
             ...pcb_trace,
             source_trace_id: sourceTraceId,
             route: segment,
+          })
+          claimSrjAssignablePcbViasTraversedByRoute({
+            db,
+            inputSimpleRouteJson: input_simple_route_json,
+            pcbTrace: insertedPcbTrace,
           })
         }
       }
