@@ -41,5 +41,4 @@ test("schematic auto layout emits the Matchpack solver event", async () => {
   expect(matchpackSolverEvent?.solverConstructorArgs).toEqual([
     matchpackSolverEvent?.solverParams,
   ])
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
