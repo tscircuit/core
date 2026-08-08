@@ -5,7 +5,7 @@ import pkgJson from "../../package.json"
 import { createBasicAutorouter } from "../fixtures/createBasicAutorouter"
 import { getTestFixture } from "../fixtures/get-test-fixture"
 
-test("built-in local autorouting caches each phase and custom algorithms bypass the cache", async () => {
+test("built-in local autorouting caches each phase, speeds up cache hits, and custom algorithms bypass the cache", async () => {
   const cache = new Map<string, string>()
   const getKeys: string[] = []
   const setKeys: string[] = []
@@ -19,6 +19,7 @@ test("built-in local autorouting caches each phase and custom algorithms bypass 
       cache.set(key, value)
     },
   }
+  const platformConfig = { localCacheEngine }
 
   let customSolverCallCount = 0
   const customAlgorithmFn = createBasicAutorouter(
@@ -54,10 +55,21 @@ test("built-in local autorouting caches each phase and custom algorithms bypass 
   )
 
   const renderCircuit = async (algorithmFn?: typeof customAlgorithmFn) => {
-    const { circuit } = getTestFixture({ platform: { localCacheEngine } })
+    const { circuit } = getTestFixture({ platform: platformConfig })
+    const startTime = performance.now()
     let autoroutingProgressCount = 0
+    let autoroutingStartTime: number | null = null
+    let autoroutingTimeMs = 0
     circuit.on("autorouting:progress", () => {
       autoroutingProgressCount++
+    })
+    circuit.on("autorouting:start", () => {
+      autoroutingStartTime = performance.now()
+    })
+    circuit.on("autorouting:end", () => {
+      if (autoroutingStartTime === null) return
+      autoroutingTimeMs += performance.now() - autoroutingStartTime
+      autoroutingStartTime = null
     })
     circuit.add(
       <board
@@ -98,7 +110,12 @@ test("built-in local autorouting caches each phase and custom algorithms bypass 
       </board>,
     )
     await circuit.renderUntilSettled()
-    return { circuit, autoroutingProgressCount }
+    return {
+      circuit,
+      autoroutingProgressCount,
+      autoroutingTimeMs,
+      renderTimeMs: performance.now() - startTime,
+    }
   }
 
   const firstRender = await renderCircuit()
@@ -115,6 +132,12 @@ test("built-in local autorouting caches each phase and custom algorithms bypass 
 
   const secondRender = await renderCircuit()
   expect(secondRender.autoroutingProgressCount).toBe(0)
+  console.log(
+    `Local autorouting cache timing: ${firstRender.autoroutingTimeMs.toFixed(2)}ms -> ${secondRender.autoroutingTimeMs.toFixed(2)}ms (total render: ${firstRender.renderTimeMs.toFixed(2)}ms -> ${secondRender.renderTimeMs.toFixed(2)}ms)`,
+  )
+  expect(secondRender.autoroutingTimeMs).toBeLessThan(
+    firstRender.autoroutingTimeMs,
+  )
   const secondCircuit = secondRender.circuit
   expect(secondCircuit.db.pcb_trace.list()).toEqual(
     firstCircuit.db.pcb_trace.list(),
