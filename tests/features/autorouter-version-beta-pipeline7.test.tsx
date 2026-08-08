@@ -1,9 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "../fixtures/get-test-fixture"
 
-// Skipped by default because AutoroutingPipelineSolver5 relies on an external
-// high-density cache network call and can be flaky in offline/CI environments.
-test.skip("board with autorouterVersion v5 uses AutoroutingPipelineSolver5", async () => {
+test("board with autorouterVersion beta_pipeline7 uses AutoroutingPipelineSolver7_MultiGraph", async () => {
   const { circuit } = getTestFixture()
 
   let solverStartedName: string | undefined
@@ -20,7 +18,7 @@ test.skip("board with autorouterVersion v5 uses AutoroutingPipelineSolver5", asy
         local: true,
         groupMode: "subcircuit",
       }}
-      autorouterVersion="v5"
+      autorouterVersion="beta_pipeline7"
     >
       <resistor
         name="R1"
@@ -37,10 +35,5 @@ test.skip("board with autorouterVersion v5 uses AutoroutingPipelineSolver5", asy
 
   await circuit.renderUntilSettled()
 
-  expect(solverStartedName).toBe("AutoroutingPipelineSolver5")
-
-  const traces = circuit.selectAll("trace")
-  expect(traces.length).toBeGreaterThan(0)
-
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  expect(solverStartedName).toBe("AutoroutingPipelineSolver7_MultiGraph")
 })

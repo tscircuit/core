@@ -90,15 +90,18 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
 
     // Initialize the solver with input and optional configuration
     let solverName: keyof typeof SOLVERS
-    if (autorouterVersion === "v1") {
+    if (autorouterVersion === "beta_pipeline1") {
       solverName = "AutoroutingPipeline1_OriginalUnravel"
-    } else if (autorouterVersion === "v3") {
+    } else if (autorouterVersion === "beta_pipeline3") {
       solverName = "AutoroutingPipelineSolver3_HgPortPointPathing"
-    } else if (autorouterVersion === "v4") {
+    } else if (autorouterVersion === "beta_pipeline4") {
       solverName = "AutoroutingPipelineSolver4"
-    } else if (autorouterVersion === "v5") {
+    } else if (autorouterVersion === "beta_pipeline5") {
       solverName = "AutoroutingPipelineSolver5"
-    } else if (autorouterVersion === "v6" || autorouterVersion === "latest") {
+    } else if (
+      autorouterVersion === "beta_pipeline7" ||
+      autorouterVersion === "latest"
+    ) {
       solverName = "AutoroutingPipelineSolver7_MultiGraph"
     } else if (autorouterVersion === "beta_pipeline9") {
       solverName = "AutoroutingPipelineSolver9_PreloadedTraceGraph"

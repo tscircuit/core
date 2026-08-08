@@ -29,7 +29,7 @@ test(
         height="24mm"
         layers={10}
         autorouter={{ local: true, groupMode: "subcircuit" }}
-        autorouterVersion="v6"
+        autorouterVersion="beta_pipeline7"
       >
         <testpoint
           name="START"

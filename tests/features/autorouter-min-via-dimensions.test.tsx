@@ -17,7 +17,7 @@ test(
           local: true,
           groupMode: "subcircuit",
         }}
-        autorouterVersion="v4"
+        autorouterVersion="beta_pipeline4"
       >
         <testpoint
           name="TP_TOP"
