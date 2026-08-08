@@ -838,6 +838,13 @@ export function applySchematicMatchPackLayoutToTree<
   }
 
   const solver = new LayoutPipelineSolver(inputProblem)
+  group.root?.emit("solver:started", {
+    type: "solver:started",
+    solverName: "LayoutPipelineSolver",
+    solverParams: inputProblem,
+    solverConstructorArgs: [inputProblem],
+    componentName: group.getString(),
+  })
 
   debug("Starting LayoutPipelineSolver...")
 
