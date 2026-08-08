@@ -838,6 +838,13 @@ export function applySchematicMatchPackLayoutToTree<
   }
 
   const solver = new LayoutPipelineSolver(inputProblem)
+  group.root?.emit("solver:started", {
+    type: "solver:started",
+    solverName: "LayoutPipelineSolver",
+    solverParams: inputProblem,
+    solverConstructorArgs: [inputProblem],
+    componentName: group.getString(),
+  })
 
   debug("Starting LayoutPipelineSolver...")
 
@@ -850,6 +857,15 @@ export function applySchematicMatchPackLayoutToTree<
   }
 
   solver.solve()
+  group.root?.emit("solver:ended", {
+    type: "solver:ended",
+    solverName: "LayoutPipelineSolver",
+    componentName: group.getString(),
+    solved: solver.solved,
+    failed: solver.failed,
+    iterations: solver.iterations,
+    error: solver.error,
+  })
 
   debug(`Solver completed in ${solver.iterations} iterations`)
   debug(`Solved: ${solver.solved}, Failed: ${solver.failed}`)

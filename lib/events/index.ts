@@ -18,6 +18,7 @@ export type RootCircuitEventName =
   | "packing:end"
   | "packing:error"
   | "solver:started"
+  | "solver:ended"
   | "renderComplete"
   | "debug:logOutput"
 
@@ -91,6 +92,16 @@ export interface SolverStartedEvent {
   /** Full constructor tuple for deterministic solver reproduction. */
   solverConstructorArgs: readonly unknown[]
   componentName: string
+}
+
+export interface SolverEndedEvent {
+  type: "solver:ended"
+  solverName: keyof typeof SOLVERS
+  componentName: string
+  solved: boolean
+  failed: boolean
+  iterations: number
+  error: string | null
 }
 
 export interface DebugLogOutputEvent {
