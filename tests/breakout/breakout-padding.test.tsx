@@ -51,35 +51,32 @@ const BreakoutPaddingReproBoard = ({
   </board>
 )
 
-test.failing(
-  "breakout padding expands pcb_group bounds around child components",
-  async () => {
-    const { circuit } = getTestFixture()
-    circuit.add(<BreakoutPaddingReproBoard />)
+test("breakout padding expands pcb_group bounds around child components", async () => {
+  const { circuit } = getTestFixture()
+  circuit.add(<BreakoutPaddingReproBoard />)
 
-    await circuit.renderUntilSettled()
+  await circuit.renderUntilSettled()
 
-    const group = circuit.db.pcb_group.getWhere({ name: "B" })!
-    const resistorSource = circuit.db.source_component.getWhere({ name: "R1" })!
-    const resistor = circuit.db.pcb_component.getWhere({
-      source_component_id: resistorSource.source_component_id,
-    })!
-    const result = {
-      expectedWidth: resistor.width + breakoutPadding * 2,
-      expectedHeight: resistor.height + breakoutPadding * 2,
-      actualWidth: group.width!,
-      actualHeight: group.height!,
-    }
+  const group = circuit.db.pcb_group.getWhere({ name: "B" })!
+  const resistorSource = circuit.db.source_component.getWhere({ name: "R1" })!
+  const resistor = circuit.db.pcb_component.getWhere({
+    source_component_id: resistorSource.source_component_id,
+  })!
+  const result = {
+    expectedWidth: resistor.width + breakoutPadding * 2,
+    expectedHeight: resistor.height + breakoutPadding * 2,
+    actualWidth: group.width!,
+    actualHeight: group.height!,
+  }
 
-    const { circuit: snapshotCircuit } = getTestFixture()
-    snapshotCircuit.add(<BreakoutPaddingReproBoard result={result} />)
-    await snapshotCircuit.renderUntilSettled()
+  const { circuit: snapshotCircuit } = getTestFixture()
+  snapshotCircuit.add(<BreakoutPaddingReproBoard result={result} />)
+  await snapshotCircuit.renderUntilSettled()
 
-    await expect(snapshotCircuit).toMatchPcbSnapshot(import.meta.path, {
-      showPcbGroups: true,
-    })
+  await expect(snapshotCircuit).toMatchPcbSnapshot(import.meta.path, {
+    showPcbGroups: true,
+  })
 
-    expect(group.width).toBeCloseTo(result.expectedWidth)
-    expect(group.height).toBeCloseTo(result.expectedHeight)
-  },
-)
+  expect(group.width).toBeCloseTo(result.expectedWidth)
+  expect(group.height).toBeCloseTo(result.expectedHeight)
+})
