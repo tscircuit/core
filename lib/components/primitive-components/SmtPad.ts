@@ -36,7 +36,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
       return { width: props.radius! * 2, height: props.radius! * 2 }
     }
     if (props.shape === "rect") {
-      return { width: props.width!, height: props.height! }
+      return this._getRotationAwarePcbSize(props.width!, props.height!)
     }
     if (props.shape === "rotated_rect") {
       const { width, height } = getAxisAlignedSizeFromRotatedRect({
@@ -57,7 +57,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
       return { width: maxX - minX, height: maxY - minY }
     }
     if (props.shape === "pill") {
-      return { width: props.width!, height: props.height! }
+      return this._getRotationAwarePcbSize(props.width!, props.height!)
     }
     if (props.shape === "rotated_pill") {
       const { width, height } = getAxisAlignedSizeFromRotatedRect({
@@ -70,6 +70,44 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
     throw new Error(
       `getPcbSize for shape "${(props as any).shape}" not implemented for ${this.componentName}`,
     )
+  }
+
+  /**
+   * Axis-aligned footprint of a rect or pill pad, accounting for the
+   * component's PCB rotation. doInitialPcbPrimitiveRender swaps a rect pad's
+   * width/height at 90/270 (and emits a rotated shape for arbitrary angles),
+   * so the size used for component bounds and anchor alignment has to match.
+   * Without this a rotated component reports the wrong pcb_component
+   * width/height and pcbPositionAnchor places it in the wrong spot.
+   */
+  _getRotationAwarePcbSize(
+    width: number,
+    height: number,
+  ): { width: number; height: number } {
+    const decomposedTransform = decomposeTSR(
+      this._computePcbGlobalTransformBeforeLayout(),
+    )
+    const rotationDegrees = (decomposedTransform.rotation.angle * 180) / Math.PI
+    const normalizedRotationDegrees = ((rotationDegrees % 360) + 360) % 360
+    const rotationTolerance = 0.01
+    const isAxisAligned =
+      Math.abs(normalizedRotationDegrees) < rotationTolerance ||
+      Math.abs(normalizedRotationDegrees - 180) < rotationTolerance ||
+      Math.abs(normalizedRotationDegrees - 360) < rotationTolerance
+    const isRotated90Degrees =
+      Math.abs(normalizedRotationDegrees - 90) < rotationTolerance ||
+      Math.abs(normalizedRotationDegrees - 270) < rotationTolerance
+    if (isRotated90Degrees) {
+      return { width: height, height: width }
+    }
+    if (!isAxisAligned) {
+      return getAxisAlignedSizeFromRotatedRect({
+        width,
+        height,
+        ccwRotationDegrees: normalizedRotationDegrees,
+      })
+    }
+    return { width, height }
   }
 
   doInitialPortMatching(): void {
