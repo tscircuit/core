@@ -1238,6 +1238,18 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           },
         )
         const { fanoutBounds, routingPcbGroupId } = routingPhasePlan
+        if (fanoutBounds) {
+          // The fanout terminates exactly on these bounds, so the routing area
+          // has to contain them. fanoutBoundaryPadding moves the boundary
+          // without touching simpleRouteJson.bounds, which would otherwise
+          // leave every exit sitting outside the area copper may occupy.
+          simpleRouteJson.bounds = {
+            minX: Math.min(simpleRouteJson.bounds.minX, fanoutBounds.minX),
+            maxX: Math.max(simpleRouteJson.bounds.maxX, fanoutBounds.maxX),
+            minY: Math.min(simpleRouteJson.bounds.minY, fanoutBounds.minY),
+            maxY: Math.max(simpleRouteJson.bounds.maxY, fanoutBounds.maxY),
+          }
+        }
         if (fanoutBounds && routingPcbGroupId) {
           db.pcb_group.update(routingPcbGroupId, {
             center: {
