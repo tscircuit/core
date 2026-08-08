@@ -12,11 +12,13 @@ import {
 } from "@tscircuit/capacity-autorouter"
 import { CopperPourPipelineSolver } from "@tscircuit/copper-pour-solver"
 import { CreateFdmEnclosureSolver } from "@tscircuit/create-fdm-enclosure"
+import { LayoutPipelineSolver } from "@tscircuit/matchpack"
 import { SchematicTracePipelineSolver } from "@tscircuit/schematic-trace-solver"
 import { PackSolver2 } from "calculate-packing"
 
 export const SOLVERS = {
   PackSolver2,
+  LayoutPipelineSolver,
   AutoroutingPipelineSolver,
   AssignableAutoroutingPipeline2,
   AssignableAutoroutingPipeline3,
