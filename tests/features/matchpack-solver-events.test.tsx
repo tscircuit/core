@@ -1,13 +1,24 @@
 import { expect, test } from "bun:test"
-import type { SolverStartedEvent } from "lib/events"
+import type { SolverEndedEvent, SolverStartedEvent } from "lib/events"
 import { getTestFixture } from "../fixtures/get-test-fixture"
 
 test("schematic auto layout emits the Matchpack solver event", async () => {
   const { circuit } = getTestFixture()
   const solverStartedEvents: SolverStartedEvent[] = []
+  const solverEndedEvents: SolverEndedEvent[] = []
+  const solverLifecycleEvents: Array<"started" | "ended"> = []
 
   circuit.on("solver:started", (event) => {
     solverStartedEvents.push(event)
+    if (event.solverName === "LayoutPipelineSolver") {
+      solverLifecycleEvents.push("started")
+    }
+  })
+  circuit.on("solver:ended", (event) => {
+    solverEndedEvents.push(event)
+    if (event.solverName === "LayoutPipelineSolver") {
+      solverLifecycleEvents.push("ended")
+    }
   })
 
   circuit.add(
@@ -41,4 +52,17 @@ test("schematic auto layout emits the Matchpack solver event", async () => {
   expect(matchpackSolverEvent?.solverConstructorArgs).toEqual([
     matchpackSolverEvent?.solverParams,
   ])
+
+  const matchpackSolverEndedEvent = solverEndedEvents.find(
+    (event) => event.solverName === "LayoutPipelineSolver",
+  )
+
+  expect(matchpackSolverEndedEvent).toMatchObject({
+    componentName: matchpackSolverEvent?.componentName,
+    solved: true,
+    failed: false,
+    error: null,
+  })
+  expect(matchpackSolverEndedEvent?.iterations).toBeGreaterThan(0)
+  expect(solverLifecycleEvents).toEqual(["started", "ended"])
 })
