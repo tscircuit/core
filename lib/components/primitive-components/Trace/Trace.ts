@@ -291,10 +291,11 @@ export class Trace
       subcircuit_id: this.getSubcircuit()?.subcircuit_id!,
       name: props.name,
       max_length:
+        props.maxLength ??
         getMaxLengthFromConnectedComponents(
           ports.map((p) => p.port),
           { db },
-        ) ?? props.maxLength,
+        ),
       display_name: props.displayName ?? displayName,
       min_trace_thickness: this._getExplicitTraceThickness(),
     })
