@@ -5,7 +5,7 @@ import {
   type PassivePorts,
 } from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
-import { formatSiUnit } from "format-si-unit"
+import { formatSiUnit, parseAndConvertSiUnit } from "format-si-unit"
 
 export class Fuse extends NormalComponent<typeof fuseProps, PassivePorts> {
   get config() {
@@ -26,11 +26,9 @@ export class Fuse extends NormalComponent<typeof fuseProps, PassivePorts> {
     const rawCurrent = this._parsedProps.currentRating
     const rawVoltage = this._parsedProps.voltageRating
 
-    const current =
-      typeof rawCurrent === "string" ? parseFloat(rawCurrent) : rawCurrent
+    const current = parseAndConvertSiUnit(rawCurrent, "A").value
 
-    const voltage =
-      typeof rawVoltage === "string" ? parseFloat(rawVoltage) : rawVoltage
+    const voltage = parseAndConvertSiUnit(rawVoltage, "V").value
 
     return `${formatSiUnit(current)}A / ${formatSiUnit(voltage)}V`
   }
@@ -39,15 +37,9 @@ export class Fuse extends NormalComponent<typeof fuseProps, PassivePorts> {
     const { db } = this.root!
     const { _parsedProps: props } = this
 
-    const currentRating =
-      typeof props.currentRating === "string"
-        ? parseFloat(props.currentRating)
-        : props.currentRating
+    const currentRating = parseAndConvertSiUnit(props.currentRating, "A").value
 
-    const voltageRating =
-      typeof props.voltageRating === "string"
-        ? parseFloat(props.voltageRating)
-        : props.voltageRating
+    const voltageRating = parseAndConvertSiUnit(props.voltageRating, "V").value
 
     let display_current_rating: string | undefined
     let display_voltage_rating: string | undefined
@@ -62,8 +54,8 @@ export class Fuse extends NormalComponent<typeof fuseProps, PassivePorts> {
       ftype: FTYPE.simple_fuse,
       manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
       supplier_part_numbers: props.supplierPartNumbers,
-      current_rating_amps: currentRating,
-      voltage_rating_volts: voltageRating,
+      ...(currentRating != null ? { current_rating_amps: currentRating } : {}),
+      ...(voltageRating != null ? { voltage_rating_volts: voltageRating } : {}),
       display_current_rating,
       display_voltage_rating,
       display_name: props.displayName,
