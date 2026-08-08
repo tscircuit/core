@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import { createBasicAutorouter } from "tests/fixtures/createBasicAutorouter"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("through_obstacle route points are normalized before writing pcb_trace.route", async () => {
+test("through_obstacle claims the traversed assignable PCB via", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -12,7 +12,14 @@ test("through_obstacle route points are normalized before writing pcb_trace.rout
       autorouter={{
         algorithmFn: createBasicAutorouter(async (simpleRouteJson) => {
           const connection = simpleRouteJson.connections[0]
-          const [start, end] = connection.pointsToConnect
+          const topPoint = connection.pointsToConnect.find(
+            (point) => point.layer === "top",
+          )!
+          const bottomPoint = connection.pointsToConnect.find(
+            (point) => point.layer === "bottom",
+          )!
+          const traceWidth =
+            connection.nominalTraceWidth ?? simpleRouteJson.minTraceWidth
           return [
             {
               type: "pcb_trace",
@@ -21,22 +28,39 @@ test("through_obstacle route points are normalized before writing pcb_trace.rout
               route: [
                 {
                   route_type: "wire",
-                  x: start.x,
-                  y: start.y,
-                  width:
-                    connection.nominalTraceWidth ??
-                    simpleRouteJson.minTraceWidth,
-                  layer: start.layer,
+                  x: topPoint.x,
+                  y: topPoint.y,
+                  width: traceWidth,
+                  layer: "top",
+                },
+                {
+                  route_type: "wire",
+                  x: 0,
+                  y: 0,
+                  width: traceWidth,
+                  layer: "top",
                 },
                 {
                   route_type: "through_obstacle",
-                  start: { x: start.x, y: start.y },
-                  end: { x: end.x, y: end.y },
-                  from_layer: start.layer,
-                  to_layer: end.layer,
-                  width:
-                    connection.nominalTraceWidth ??
-                    simpleRouteJson.minTraceWidth,
+                  start: { x: 0, y: 0 },
+                  end: { x: 0, y: 0 },
+                  from_layer: "top",
+                  to_layer: "bottom",
+                  width: traceWidth,
+                },
+                {
+                  route_type: "wire",
+                  x: 0,
+                  y: 0,
+                  width: traceWidth,
+                  layer: "bottom",
+                },
+                {
+                  route_type: "wire",
+                  x: bottomPoint.x,
+                  y: bottomPoint.y,
+                  width: traceWidth,
+                  layer: "bottom",
                 },
               ],
             },
@@ -51,7 +75,30 @@ test("through_obstacle route points are normalized before writing pcb_trace.rout
         pcbX={-5}
         pcbY={0}
       />
-      <resistor name="R2" resistance="1k" footprint="0402" pcbX={5} pcbY={0} />
+      <resistor
+        name="R2"
+        resistance="1k"
+        footprint="0402"
+        layer="bottom"
+        pcbX={5}
+        pcbY={0}
+        pcbRotation={180}
+      />
+      <via
+        name="V1"
+        pcbX={0}
+        pcbY={0}
+        fromLayer="top"
+        toLayer="bottom"
+        holeDiameter={0.5}
+        outerDiameter={1}
+        netIsAssignable
+      />
+      <pcbnotetext
+        text="Autorouter claims existing assignable via"
+        pcbY={-3}
+        fontSize={0.4}
+      />
       <trace from=".R1 > .pin2" to=".R2 > .pin1" />
     </board>,
   )
@@ -66,6 +113,11 @@ test("through_obstacle route points are normalized before writing pcb_trace.rout
   expect(throughPadPoints).toHaveLength(1)
   expect(throughPadPoints[0]).toMatchObject({
     start_layer: "top",
-    end_layer: "top",
+    end_layer: "bottom",
   })
+  const assignedVia = circuit.db.pcb_via.list()[0]
+  expect(assignedVia.net_assigned).toBe(true)
+  expect(assignedVia.pcb_trace_id).toBe(routedTrace.pcb_trace_id)
+  expect(circuit.db.pcb_trace_error.list()).toEqual([])
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
