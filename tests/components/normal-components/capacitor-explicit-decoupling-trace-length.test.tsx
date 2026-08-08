@@ -1,19 +1,19 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("explicit trace maxLength overrides the inferred decoupling limit", () => {
+test("explicit trace maxLength overrides the inferred decoupling limit", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="20mm" height="20mm" routingDisabled>
-      <capacitor name="C1" capacitance="100nF" footprint="0402" pcbX={3} />
+    <board width="20mm" height="20mm">
+      <capacitor name="C1" capacitance="100nF" footprint="0402" pcbX={2} />
       <chip
         name="U1"
         footprint="soic8"
         pcbX={-3}
         pinLabels={{
-          1: "VBAT",
-          4: "GND",
+          8: "VBAT",
+          5: "GND",
         }}
         pinAttributes={{
           VBAT: { requiresPower: true },
@@ -25,17 +25,25 @@ test("explicit trace maxLength overrides the inferred decoupling limit", () => {
         to=".C1 > .1"
         maxLength="5.5mm"
       />
-      <trace from=".C1 > .2" to="net.GND" />
+      <trace from=".C1 > .2" to="net.GND" maxLength="5.5mm" />
       <trace from=".U1 > .GND" to="net.GND" />
       <pcbnotetext text="Explicit trace maxLength: 5.5mm" pcbX={0} pcbY={7} />
     </board>,
   )
 
-  circuit.render()
+  await circuit.renderUntilSettled()
 
+  const powerToDecouplingTrace = circuit.db.source_trace.getWhere({
+    name: "POWER_TO_DECOUPLING",
+  })
+
+  expect(powerToDecouplingTrace?.max_length).toBe(5.5)
+  expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
+  expect(circuit.db.pcb_trace_error.list()).toEqual([])
   expect(
-    circuit.db.source_trace.getWhere({ name: "POWER_TO_DECOUPLING" })
-      ?.max_length,
-  ).toBe(5.5)
+    circuit.db.pcb_trace.getWhere({
+      source_trace_id: powerToDecouplingTrace!.source_trace_id,
+    }),
+  ).toBeDefined()
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
