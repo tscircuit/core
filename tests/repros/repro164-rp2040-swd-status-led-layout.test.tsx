@@ -142,12 +142,7 @@ export default function StatusAndSwdDebug() {
       />
 
       <trace name="BOOT_SW" from=".SW_BOOT > .pin1" to="net.QSPI_SS" />
-      <trace
-        name="BOOT_G"
-        from=".SW_BOOT > .pin2"
-        to="net.GND"
-        {...gndLabel}
-      />
+      <trace name="BOOT_G" from=".SW_BOOT > .pin2" to="net.GND" {...gndLabel} />
       <trace name="BOOT_R" from=".R_BOOT > .pin1" to="net.QSPI_SS" />
       <trace
         name="BOOT_3V3"
@@ -164,21 +159,11 @@ export default function StatusAndSwdDebug() {
         {...v3v3Label}
       />
       <trace name="RUN_SW" from=".SW_RUN > .pin1" to="net.RUN" />
-      <trace
-        name="RUN_G"
-        from=".SW_RUN > .pin2"
-        to="net.GND"
-        {...gndLabel}
-      />
+      <trace name="RUN_G" from=".SW_RUN > .pin2" to="net.GND" {...gndLabel} />
 
       <trace name="LED_GP25" from="net.LED_GP25" to=".R_LED > .pin1" />
       <trace name="LED_D1" from=".R_LED > .pin2" to=".D1 > .anode" />
-      <trace
-        name="LED_G"
-        from=".D1 > .cathode"
-        to="net.GND"
-        {...gndLabel}
-      />
+      <trace name="LED_G" from=".D1 > .cathode" to="net.GND" {...gndLabel} />
 
       <trace
         name="PLED_3V3"
@@ -186,11 +171,7 @@ export default function StatusAndSwdDebug() {
         to=".R_PWR_LED > .pin1"
         {...v3v3Label}
       />
-      <trace
-        name="PLED_D"
-        from=".R_PWR_LED > .pin2"
-        to=".D_PWR > .anode"
-      />
+      <trace name="PLED_D" from=".R_PWR_LED > .pin2" to=".D_PWR > .anode" />
       <trace
         name="PLED_G"
         from=".D_PWR > .cathode"
@@ -200,12 +181,7 @@ export default function StatusAndSwdDebug() {
 
       <trace name="SWCLK" from="net.SWCLK" to=".TP_SWCLK > .pin1" />
       <trace name="SWD" from="net.SWD" to=".TP_SWDIO > .pin1" />
-      <trace
-        name="TP_G"
-        from=".TP_GND > .pin1"
-        to="net.GND"
-        {...gndLabel}
-      />
+      <trace name="TP_G" from=".TP_GND > .pin1" to="net.GND" {...gndLabel} />
       <trace
         name="TP3V3_T"
         from=".TP_3V3 > .pin1"
