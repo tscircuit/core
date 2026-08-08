@@ -22,6 +22,7 @@ import type {
   GenericLocalAutorouter,
 } from "./GenericLocalAutorouter"
 import { SOLVERS, type SolverName } from "lib/solvers"
+import { getCacheProviderForLocalCacheEngine } from "./LocalCacheEngineCacheProvider"
 import type { AutorouterVersion } from "./autorouter-version"
 
 export interface SolverStartedDetails {
@@ -37,10 +38,6 @@ export interface SolverStartedDetails {
   }
 }
 
-type AutorouterPlatformConfig = PlatformConfig & {
-  cacheProvider?: CacheProvider
-}
-
 export interface AutorouterOptions {
   capacityDepth?: number
   targetMinCapacity?: number
@@ -50,14 +47,15 @@ export interface AutorouterOptions {
   useLaserPrefabSolver?: boolean
   autorouterVersion?: AutorouterVersion
   effort?: number
-  platformConfig?: AutorouterPlatformConfig
+  platformConfig?: Pick<PlatformConfig, "localCacheEngine">
   onSolverStarted?: (details: SolverStartedDetails) => void
 }
 
 function getCapacityAutorouterCacheProvider(
-  platformConfig?: AutorouterPlatformConfig,
+  platformConfig?: Pick<PlatformConfig, "localCacheEngine">,
 ): CacheProvider | null {
-  return platformConfig?.cacheProvider ?? null
+  if (!platformConfig?.localCacheEngine) return null
+  return getCacheProviderForLocalCacheEngine(platformConfig.localCacheEngine)
 }
 
 export class TscircuitAutorouter implements GenericLocalAutorouter {

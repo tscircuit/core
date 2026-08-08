@@ -1,10 +1,10 @@
 import { expect, test } from "bun:test"
-import { InMemoryCache } from "@tscircuit/capacity-autorouter"
-import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
+import type { CacheProvider } from "@tscircuit/capacity-autorouter"
 import {
   type AutorouterOptions,
   TscircuitAutorouter,
 } from "lib/utils/autorouting/CapacityMeshAutorouter"
+import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 
 const simpleRouteJson: SimpleRouteJson = {
   layerCount: 2,
@@ -23,9 +23,15 @@ const simpleRouteJson: SimpleRouteJson = {
 }
 
 test("platform cache gates the provider supplied to every local pipeline", () => {
-  const cacheProvider = new InMemoryCache()
+  const cachedValues = new Map<string, string>()
+  const localCacheEngine = {
+    getItem: (cacheKey: string) => cachedValues.get(cacheKey) ?? null,
+    setItem: (cacheKey: string, value: string) => {
+      cachedValues.set(cacheKey, value)
+    },
+  }
   const platformConfig = {
-    cacheProvider,
+    localCacheEngine,
   }
   let implicitPipeline9CacheProvider: unknown
   new TscircuitAutorouter(structuredClone(simpleRouteJson), {
@@ -63,10 +69,17 @@ test("platform cache gates the provider supplied to every local pipeline", () =>
   })
 
   expect(pipelineCacheProviders).toHaveLength(pipelineOptions.length)
-  expect(pipelineCacheProviders[0]).toBe(cacheProvider)
+  const cacheProvider = pipelineCacheProviders[0] as CacheProvider
+  expect(cacheProvider).not.toBeNull()
   expect(
     pipelineCacheProviders.every(
       (cacheProvider) => cacheProvider === pipelineCacheProviders[0],
     ),
   ).toBeTrue()
+  cacheProvider.setCachedSolutionSync("test-prefix:key", { value: 123 })
+  expect(cacheProvider.getCachedSolutionSync("test-prefix:key")).toEqual({
+    value: 123,
+  })
+  expect(cachedValues.size).toBe(1)
+  expect(cacheProvider.cacheHitsByPrefix["test-prefix"]).toBe(1)
 })
