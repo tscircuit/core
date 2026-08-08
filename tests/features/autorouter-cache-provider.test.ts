@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { InMemoryCache } from "@tscircuit/capacity-autorouter"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import {
   type AutorouterOptions,
@@ -22,14 +23,9 @@ const simpleRouteJson: SimpleRouteJson = {
 }
 
 test("platform cache gates the provider supplied to every local pipeline", () => {
-  const valuesByCacheKey = new Map<string, string>()
+  const cacheProvider = new InMemoryCache()
   const platformConfig = {
-    localCacheEngine: {
-      getItem: (cacheKey: string) => valuesByCacheKey.get(cacheKey) ?? null,
-      setItem: (cacheKey: string, value: string) => {
-        valuesByCacheKey.set(cacheKey, value)
-      },
-    },
+    cacheProvider,
   }
   let implicitPipeline9CacheProvider: unknown
   new TscircuitAutorouter(structuredClone(simpleRouteJson), {
@@ -67,7 +63,7 @@ test("platform cache gates the provider supplied to every local pipeline", () =>
   })
 
   expect(pipelineCacheProviders).toHaveLength(pipelineOptions.length)
-  expect(pipelineCacheProviders[0]).not.toBeNull()
+  expect(pipelineCacheProviders[0]).toBe(cacheProvider)
   expect(
     pipelineCacheProviders.every(
       (cacheProvider) => cacheProvider === pipelineCacheProviders[0],

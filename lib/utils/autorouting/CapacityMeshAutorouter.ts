@@ -9,7 +9,6 @@ import {
   AutoroutingPipelineSolver7_MultiGraph,
   AutoroutingPipelineSolver8,
   AutoroutingPipelineSolver9_PreloadedTraceGraph,
-  getGlobalInMemoryCache,
   type CacheProvider,
 } from "@tscircuit/capacity-autorouter"
 import type { PlatformConfig } from "@tscircuit/props"
@@ -38,6 +37,10 @@ export interface SolverStartedDetails {
   }
 }
 
+type AutorouterPlatformConfig = PlatformConfig & {
+  cacheProvider?: CacheProvider
+}
+
 export interface AutorouterOptions {
   capacityDepth?: number
   targetMinCapacity?: number
@@ -47,16 +50,14 @@ export interface AutorouterOptions {
   useLaserPrefabSolver?: boolean
   autorouterVersion?: AutorouterVersion
   effort?: number
-  platformConfig?: Pick<PlatformConfig, "localCacheEngine">
+  platformConfig?: AutorouterPlatformConfig
   onSolverStarted?: (details: SolverStartedDetails) => void
 }
 
 function getCapacityAutorouterCacheProvider(
-  platformConfig?: Pick<PlatformConfig, "localCacheEngine">,
+  platformConfig?: AutorouterPlatformConfig,
 ): CacheProvider | null {
-  if (!platformConfig?.localCacheEngine) return null
-
-  return getGlobalInMemoryCache()
+  return platformConfig?.cacheProvider ?? null
 }
 
 export class TscircuitAutorouter implements GenericLocalAutorouter {
