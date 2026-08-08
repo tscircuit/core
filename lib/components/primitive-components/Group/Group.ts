@@ -607,7 +607,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     let { width, height } = contentBounds
     let { x: centerX, y: centerY } = contentBounds.center
 
-    if (this.isSubcircuit) {
+    if (this.isSubcircuit || this.isRoutingDirective) {
       const { padLeft, padRight, padTop, padBottom } = this._resolvePcbPadding()
 
       width += padLeft + padRight
