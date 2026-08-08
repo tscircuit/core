@@ -3,7 +3,6 @@ import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import {
   type AutorouterOptions,
   TscircuitAutorouter,
-  getCapacityAutorouterCacheProvider,
 } from "lib/utils/autorouting/CapacityMeshAutorouter"
 
 const simpleRouteJson: SimpleRouteJson = {
@@ -32,15 +31,6 @@ test("platform cache gates the provider supplied to every local pipeline", () =>
       },
     },
   }
-  const platformCacheProvider =
-    getCapacityAutorouterCacheProvider(platformConfig)
-
-  expect(getCapacityAutorouterCacheProvider()).toBeNull()
-  expect(platformCacheProvider).not.toBeNull()
-  expect(getCapacityAutorouterCacheProvider(platformConfig)).toBe(
-    platformCacheProvider,
-  )
-
   let implicitPipeline9CacheProvider: unknown
   new TscircuitAutorouter(structuredClone(simpleRouteJson), {
     autorouterVersion: "beta_pipeline9",
@@ -52,6 +42,7 @@ test("platform cache gates the provider supplied to every local pipeline", () =>
   expect(implicitPipeline9CacheProvider).toBeNull()
 
   const pipelineOptions: AutorouterOptions[] = [
+    {},
     { autorouterVersion: "v1" },
     { autorouterVersion: "v3" },
     { autorouterVersion: "v4" },
@@ -67,7 +58,7 @@ test("platform cache gates the provider supplied to every local pipeline", () =>
     let solverCacheProvider: unknown
     new TscircuitAutorouter(structuredClone(simpleRouteJson), {
       ...pipelineOption,
-      cacheProvider: platformCacheProvider,
+      platformConfig,
       onSolverStarted: (details) => {
         solverCacheProvider = details.solverParams.options.cacheProvider
       },
@@ -76,9 +67,10 @@ test("platform cache gates the provider supplied to every local pipeline", () =>
   })
 
   expect(pipelineCacheProviders).toHaveLength(pipelineOptions.length)
+  expect(pipelineCacheProviders[0]).not.toBeNull()
   expect(
     pipelineCacheProviders.every(
-      (cacheProvider) => cacheProvider === platformCacheProvider,
+      (cacheProvider) => cacheProvider === pipelineCacheProviders[0],
     ),
   ).toBeTrue()
 })

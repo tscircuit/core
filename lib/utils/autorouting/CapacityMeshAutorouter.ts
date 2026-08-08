@@ -47,11 +47,11 @@ export interface AutorouterOptions {
   useLaserPrefabSolver?: boolean
   autorouterVersion?: AutorouterVersion
   effort?: number
-  cacheProvider?: CacheProvider | null
+  platformConfig?: Pick<PlatformConfig, "localCacheEngine">
   onSolverStarted?: (details: SolverStartedDetails) => void
 }
 
-export function getCapacityAutorouterCacheProvider(
+function getCapacityAutorouterCacheProvider(
   platformConfig?: Pick<PlatformConfig, "localCacheEngine">,
 ): CacheProvider | null {
   if (!platformConfig?.localCacheEngine) return null
@@ -97,7 +97,7 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
       autorouterVersion,
       useLaserPrefabSolver = false,
       effort,
-      cacheProvider,
+      platformConfig,
       onSolverStarted,
     } = options
 
@@ -125,7 +125,8 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
       solverName = "AutoroutingPipelineSolver7_MultiGraph"
     }
     const SolverClass = SOLVERS[solverName]
-    const solverCacheProvider = cacheProvider ?? null
+    const solverCacheProvider =
+      getCapacityAutorouterCacheProvider(platformConfig)
 
     this.solver = new SolverClass(input as any, {
       capacityDepth,
