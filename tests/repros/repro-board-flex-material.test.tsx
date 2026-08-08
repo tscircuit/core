@@ -9,27 +9,30 @@ const createReproBoard = (observedMaterial?: string) => {
     : "failing"
 
   return (
-  <board width="20mm" height="10mm" material="flex">
-    <pcbnotetext
-      pcbY={0}
-      fontSize={0.7}
-      text={`requested material: flex\nallowed Circuit JSON materials: ${JSON.stringify(allowedCircuitJsonMaterials)}\nobserved material: ${observedMaterial}\nstatus: ${status}`}
-    />
-  </board>
+    <board width="20mm" height="10mm" material="flex">
+      <pcbnotetext
+        pcbY={0}
+        fontSize={0.7}
+        text={`requested material: flex\nallowed Circuit JSON materials: ${JSON.stringify(allowedCircuitJsonMaterials)}\nobserved material: ${observedMaterial}\nstatus: ${status}`}
+      />
+    </board>
   )
 }
 
-test.failing("board should reject material flex until Circuit JSON supports it", () => {
-  const { circuit } = getTestFixture()
-  circuit.add(createReproBoard())
-  circuit.render()
+test.failing(
+  "board should reject material flex until Circuit JSON supports it",
+  () => {
+    const { circuit } = getTestFixture()
+    circuit.add(createReproBoard())
+    circuit.render()
 
-  const board = circuit.db.pcb_board.list()[0]
+    const board = circuit.db.pcb_board.list()[0]
 
-  const { circuit: snapshotCircuit } = getTestFixture()
-  snapshotCircuit.add(createReproBoard(board?.material))
-  snapshotCircuit.render()
+    const { circuit: snapshotCircuit } = getTestFixture()
+    snapshotCircuit.add(createReproBoard(board?.material))
+    snapshotCircuit.render()
 
-  expect(snapshotCircuit).toMatchPcbSnapshot(import.meta.path)
-  expect(board?.material).not.toBe("flex")
-})
+    expect(snapshotCircuit).toMatchPcbSnapshot(import.meta.path)
+    expect(board?.material).not.toBe("flex")
+  },
+)
