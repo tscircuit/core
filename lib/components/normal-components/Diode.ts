@@ -21,15 +21,21 @@ export class Diode extends NormalComponent<
       photodiode: "photodiode",
     }
 
-    const variantSymbol = this.props.schottky
-      ? "schottky"
-      : this.props.avalanche
-        ? "avalanche"
-        : this.props.zener
-          ? "zener"
-          : this.props.photo
-            ? "photodiode"
-            : null
+    // The boolean shortcuts (schottky/zener/...) and the `variant` enum are
+    // equivalent: @tscircuit/props normalizes variant="zener" to zener: true.
+    // Honor both spellings so `variant="schottky"` selects the same symbol the
+    // boolean prop does.
+    const { variant } = this.props
+    const variantSymbol =
+      this.props.schottky || variant === "schottky"
+        ? "schottky"
+        : this.props.avalanche || variant === "avalanche"
+          ? "avalanche"
+          : this.props.zener || variant === "zener"
+            ? "zener"
+            : this.props.photo || variant === "photo"
+              ? "photodiode"
+              : null
 
     return {
       schematicSymbolName: variantSymbol
