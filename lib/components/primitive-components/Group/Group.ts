@@ -621,16 +621,20 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const existingPcbGroup = db.pcb_group.get(this.pcb_group_id)
 
     // Fixed dimensions remain centered on the authored group position. An
-    // auto-sized dimension follows the actual packed bounds after layout.
+    // auto-sized subcircuit or packed group follows its actual content bounds.
     const existingCenter = existingPcbGroup?.center ?? {
       x: centerX,
       y: centerY,
     }
+    const shouldUsePcbContentCenter =
+      this.isSubcircuit || pcbContentBounds !== undefined
     let center = hasExplicitPositioning
-      ? {
-          x: props.width === undefined ? centerX : existingCenter.x,
-          y: props.height === undefined ? centerY : existingCenter.y,
-        }
+      ? shouldUsePcbContentCenter
+        ? {
+            x: props.width === undefined ? centerX : existingCenter.x,
+            y: props.height === undefined ? centerY : existingCenter.y,
+          }
+        : existingCenter
       : { x: centerX, y: centerY }
 
     if (hasExplicitPositioning && props.pcbAnchorAlignment) {
