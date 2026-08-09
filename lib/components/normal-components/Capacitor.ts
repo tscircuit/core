@@ -1,14 +1,26 @@
 import { capacitorProps } from "@tscircuit/props"
 import type { SourceSimpleCapacitorInput } from "circuit-json"
+import { formatSiUnit } from "format-si-unit"
 import {
-  FTYPE,
   type BaseSymbolName,
+  FTYPE,
   type PolarizedPassivePorts,
 } from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { Trace } from "../primitive-components/Trace/Trace"
 import { Capacitor_getAutomaticMaxDecouplingTraceLength } from "./Capacitor_getAutomaticMaxDecouplingTraceLength"
-import { formatSiUnit } from "format-si-unit"
+
+const CAPACITOR_CHIP_FOOTPRINTS = new Set([
+  "01005",
+  "0201",
+  "0402",
+  "0603",
+  "0805",
+  "1206",
+  "1210",
+  "2010",
+  "2512",
+])
 
 export class Capacitor extends NormalComponent<
   typeof capacitorProps,
@@ -64,6 +76,14 @@ export class Capacitor extends NormalComponent<
       return `${capacitanceDisplay}/${formatSiUnit(this._parsedProps.maxVoltageRating)}V`
     }
     return capacitanceDisplay
+  }
+
+  getFootprinterString(): string | null {
+    const baseFootprint = super.getFootprinterString()
+    if (baseFootprint && CAPACITOR_CHIP_FOOTPRINTS.has(baseFootprint)) {
+      return `cap${baseFootprint}`
+    }
+    return baseFootprint
   }
 
   doInitialCreateNetsFromProps() {
