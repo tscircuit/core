@@ -60,13 +60,13 @@ export const getObstaclesFromCircuitJson = (
     const pcbComponentId = element.pcb_component_id ?? undefined
 
     if (element.type === "pcb_smtpad") {
-      const pcbSmtPadIdentity = {
+      const pcbSmtPadMetadata = {
         pcb_smtpad_id: element.pcb_smtpad_id,
         pcb_port_id: element.pcb_port_id,
       }
       if (element.shape === "circle") {
         obstacles.push({
-          ...pcbSmtPadIdentity,
+          metadata: pcbSmtPadMetadata,
           componentId: pcbComponentId,
           type: "rect",
           shape: "circle",
@@ -81,7 +81,7 @@ export const getObstaclesFromCircuitJson = (
         })
       } else if (element.shape === "rect") {
         obstacles.push({
-          ...pcbSmtPadIdentity,
+          metadata: pcbSmtPadMetadata,
           componentId: pcbComponentId,
           type: "rect",
           layers: [element.layer],
@@ -104,7 +104,7 @@ export const getObstaclesFromCircuitJson = (
         const rect = axisAlignedRect ?? rotatedRect
 
         obstacles.push({
-          ...pcbSmtPadIdentity,
+          metadata: pcbSmtPadMetadata,
           componentId: pcbComponentId,
           type: "rect",
           layers: [element.layer],
@@ -118,7 +118,7 @@ export const getObstaclesFromCircuitJson = (
         })
       } else if (element.shape === "pill" || element.shape === "rotated_pill") {
         obstacles.push({
-          ...pcbSmtPadIdentity,
+          metadata: pcbSmtPadMetadata,
           componentId: pcbComponentId,
           type: "rect",
           layers: [element.layer],
@@ -137,7 +137,7 @@ export const getObstaclesFromCircuitJson = (
         const axisAlignedRect = getAxisAlignedRectFromPolygon(element.points)
         if (axisAlignedRect) {
           obstacles.push({
-            ...pcbSmtPadIdentity,
+            metadata: pcbSmtPadMetadata,
             componentId: pcbComponentId,
             type: "rect",
             layers: [element.layer],
@@ -153,7 +153,7 @@ export const getObstaclesFromCircuitJson = (
 
         for (const rect of approximatingRects) {
           obstacles.push({
-            ...pcbSmtPadIdentity,
+            metadata: pcbSmtPadMetadata,
             componentId: pcbComponentId,
             type: "rect",
             layers: [element.layer],
@@ -323,13 +323,13 @@ export const getObstaclesFromCircuitJson = (
         })
       }
     } else if (element.type === "pcb_plated_hole") {
-      const pcbPlatedHoleIdentity = {
+      const pcbPlatedHoleMetadata = {
         pcb_plated_hole_id: element.pcb_plated_hole_id,
         pcb_port_id: element.pcb_port_id,
       }
       if (element.shape === "circle") {
         obstacles.push({
-          ...pcbPlatedHoleIdentity,
+          metadata: pcbPlatedHoleMetadata,
           componentId: pcbComponentId,
           // @ts-ignore
           type: "oval",
@@ -344,7 +344,7 @@ export const getObstaclesFromCircuitJson = (
         })
       } else if (element.shape === "circular_hole_with_rect_pad") {
         obstacles.push({
-          ...pcbPlatedHoleIdentity,
+          metadata: pcbPlatedHoleMetadata,
           componentId: pcbComponentId,
           // @ts-ignore
           type: "rect",
@@ -359,7 +359,7 @@ export const getObstaclesFromCircuitJson = (
         })
       } else if (element.shape === "oval") {
         obstacles.push({
-          ...pcbPlatedHoleIdentity,
+          metadata: pcbPlatedHoleMetadata,
           componentId: pcbComponentId,
           // @ts-ignore
           type: "oval",
@@ -374,7 +374,7 @@ export const getObstaclesFromCircuitJson = (
         })
       } else if (element.shape === "pill") {
         obstacles.push({
-          ...pcbPlatedHoleIdentity,
+          metadata: pcbPlatedHoleMetadata,
           componentId: pcbComponentId,
           type: "rect",
           layers: everyLayer,
@@ -403,7 +403,7 @@ export const getObstaclesFromCircuitJson = (
           const centerX = (minX + maxX) / 2
           const centerY = (minY + maxY) / 2
           obstacles.push({
-            ...pcbPlatedHoleIdentity,
+            metadata: pcbPlatedHoleMetadata,
             componentId: pcbComponentId,
             // @ts-ignore
             type: "rect",
@@ -457,7 +457,7 @@ export const getObstaclesFromCircuitJson = (
         (element as any).net_is_assignable ?? (element as any).netIsAssignable,
       )
       obstacles.push({
-        pcb_via_id: element.pcb_via_id,
+        metadata: { pcb_via_id: element.pcb_via_id },
         componentId: pcbComponentId,
         type: "rect",
         shape: "circle",

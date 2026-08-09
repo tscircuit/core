@@ -1,26 +1,21 @@
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
+import type { LayerRef, PcbTrace } from "circuit-json"
 import type { SimplifiedPcbTrace } from "./SimpleRouteJson"
 
-type PreservedTraceRoutePoint = {
-  route_type?: string
-  start_pcb_port_id?: string
-  end_pcb_port_id?: string
-}
-
-type PreservedTrace = {
-  pcb_trace_id: string
-  source_trace_id?: string
+type PreservedTrace = PcbTrace & {
   connection_name?: string
   connectsTo?: string[]
-  route?: PreservedTraceRoutePoint[]
 }
+
+const getLayerName = (layer: LayerRef | { name: string }): string =>
+  typeof layer === "string" ? layer : layer.name
 
 const getPreservedTraceConnectionName = (trace: PreservedTrace) =>
   trace.source_trace_id ?? trace.connection_name ?? trace.pcb_trace_id
 
 const getPhysicalConnectionIdsForPreservedTrace = (trace: PreservedTrace) => {
   const physicallyConnectedIds = new Set(trace.connectsTo ?? [])
-  for (const routePoint of trace.route ?? []) {
+  for (const routePoint of trace.route) {
     if (routePoint.route_type !== "wire") continue
     for (const pcbPortId of [
       routePoint.start_pcb_port_id,
@@ -32,6 +27,46 @@ const getPhysicalConnectionIdsForPreservedTrace = (trace: PreservedTrace) => {
 
   return Array.from(physicallyConnectedIds)
 }
+
+const getSimpleRouteForPreservedTrace = (
+  trace: PreservedTrace,
+): SimplifiedPcbTrace["route"] =>
+  trace.route.map((routePoint) => {
+    if (routePoint.route_type === "wire") {
+      return {
+        route_type: "wire",
+        x: routePoint.x,
+        y: routePoint.y,
+        width: routePoint.width,
+        layer: getLayerName(routePoint.layer),
+      }
+    }
+
+    if (routePoint.route_type === "via") {
+      return {
+        route_type: "via",
+        x: routePoint.x,
+        y: routePoint.y,
+        from_layer: getLayerName(routePoint.from_layer),
+        to_layer: getLayerName(routePoint.to_layer),
+        ...(routePoint.outer_diameter !== undefined
+          ? { via_diameter: routePoint.outer_diameter }
+          : {}),
+        ...(routePoint.hole_diameter !== undefined
+          ? { via_hole_diameter: routePoint.hole_diameter }
+          : {}),
+      }
+    }
+
+    return {
+      route_type: "through_obstacle",
+      start: routePoint.start,
+      end: routePoint.end,
+      from_layer: getLayerName(routePoint.start_layer),
+      to_layer: getLayerName(routePoint.end_layer),
+      width: routePoint.width,
+    }
+  })
 
 /**
  * Converts already-routed child subcircuit pcb_traces into SRJ `traces`.
@@ -71,7 +106,7 @@ export const getPreservedRoutedSubcircuitTraces = ({
         source_trace_id: trace.source_trace_id,
         connection_name: connectionName,
         connectsTo: getPhysicalConnectionIdsForPreservedTrace(preservedTrace),
-        route: trace.route as SimplifiedPcbTrace["route"],
+        route: getSimpleRouteForPreservedTrace(preservedTrace),
       }
     })
     .filter((trace) => trace.route.length >= 2)

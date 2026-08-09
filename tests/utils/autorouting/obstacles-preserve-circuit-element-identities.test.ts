@@ -31,13 +31,17 @@ test("pad obstacles preserve opaque Circuit JSON identities", () => {
   const [smtPadObstacle, platedHoleObstacle] =
     getObstaclesFromCircuitJson(circuitJson)
 
-  expect(smtPadObstacle.pcb_smtpad_id).toBe("opaque-smt-pad")
-  expect(smtPadObstacle.pcb_port_id).toBe("opaque-smt-port")
+  expect(smtPadObstacle.metadata).toEqual({
+    pcb_smtpad_id: "opaque-smt-pad",
+    pcb_port_id: "opaque-smt-port",
+  })
   expect(smtPadObstacle).toMatchObject({
     connectedTo: ["opaque-smt-pad"],
   })
-  expect(platedHoleObstacle.pcb_plated_hole_id).toBe("opaque-plated-hole")
-  expect(platedHoleObstacle.pcb_port_id).toBe("opaque-plated-hole-port")
+  expect(platedHoleObstacle.metadata).toEqual({
+    pcb_plated_hole_id: "opaque-plated-hole",
+    pcb_port_id: "opaque-plated-hole-port",
+  })
   expect(platedHoleObstacle).toMatchObject({
     connectedTo: ["opaque-plated-hole"],
   })

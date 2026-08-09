@@ -23,7 +23,7 @@ test("vias produce explicitly circular obstacles", () => {
     center: { x: 1, y: 2 },
     width: 0.6,
     height: 0.6,
-    pcb_via_id: "via_without_a_type_prefix",
+    metadata: { pcb_via_id: "via_without_a_type_prefix" },
     connectedTo: ["via_without_a_type_prefix"],
   })
 })
