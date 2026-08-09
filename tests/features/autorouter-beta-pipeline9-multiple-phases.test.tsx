@@ -160,6 +160,9 @@ test("beta_pipeline9 routes a later phase around preloaded traces", async () => 
     2,
   )
   expect(autoroutingPhaseIoStack[1]?.endSimpleRouteJson?.traces).toHaveLength(4)
+  const pcbTraces = circuit.db.pcb_trace.list()
+  expect(pcbTraces).toHaveLength(4)
+  expect(new Set(pcbTraces.map((trace) => trace.pcb_trace_id)).size).toBe(4)
   expect(circuit.db.pcb_via.list().length).toBeGreaterThanOrEqual(4)
 
   expect(circuit).toMatchPcbSnapshot(import.meta.path, {

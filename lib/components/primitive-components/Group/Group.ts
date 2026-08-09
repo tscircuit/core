@@ -94,6 +94,7 @@ import {
 import { Group_syncFanoutExitsWithGlobalConnections } from "./Group_syncFanoutExitsWithGlobalConnections"
 import type { ISubcircuit } from "./Subcircuit/ISubcircuit"
 import { addPortIdsToTracesAtJumperPads } from "./add-port-ids-to-traces-at-jumper-pads"
+import { getAccumulatedPcbTracesWithStageOutputReplacements } from "./get-accumulated-pcb-traces-with-stage-output-replacements"
 import { getSourceTraceIdForRoutedTrace } from "./get-source-trace-id-for-routed-trace"
 import { insertAutoplacedJumpers } from "./insert-autoplaced-jumpers"
 import {
@@ -1493,16 +1494,26 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             ...(reconnectedSrj.traces ?? []),
           )
         } else if (isConnectionReroutePhase) {
+          const retainedPcbTraces = outputTraces.filter(
+            (trace) => !traceMatchesRoutingPhase(trace, routingPhasePlan),
+          )
           outputTraces.splice(
             0,
             outputTraces.length,
-            ...outputTraces.filter(
-              (trace) => !traceMatchesRoutingPhase(trace, routingPhasePlan),
-            ),
-            ...traces,
+            ...getAccumulatedPcbTracesWithStageOutputReplacements({
+              accumulatedPcbTraces: retainedPcbTraces,
+              stageOutputPcbTraces: stageOutputTraces,
+            }),
           )
         } else {
-          outputTraces.push(...traces)
+          outputTraces.splice(
+            0,
+            outputTraces.length,
+            ...getAccumulatedPcbTracesWithStageOutputReplacements({
+              accumulatedPcbTraces: outputTraces,
+              stageOutputPcbTraces: stageOutputTraces,
+            }),
+          )
         }
       } catch (error) {
         const { db } = this.root!
