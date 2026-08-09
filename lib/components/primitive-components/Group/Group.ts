@@ -627,12 +627,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       y: centerY,
     }
     let center = hasExplicitPositioning
-      ? pcbContentBounds
-        ? {
-            x: props.width === undefined ? centerX : existingCenter.x,
-            y: props.height === undefined ? centerY : existingCenter.y,
-          }
-        : existingCenter
+      ? {
+          x: props.width === undefined ? centerX : existingCenter.x,
+          y: props.height === undefined ? centerY : existingCenter.y,
+        }
       : { x: centerX, y: centerY }
 
     if (hasExplicitPositioning && props.pcbAnchorAlignment) {
