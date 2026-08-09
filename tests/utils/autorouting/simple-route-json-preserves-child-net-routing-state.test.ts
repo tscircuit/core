@@ -32,9 +32,9 @@ test("board simple route json preserves child trace physical connectivity", () =
         }) as any,
     ),
     ...[
-      ["pcb_port_child_a", "source_port_child_a", -2, childSubcircuitId],
-      ["pcb_port_child_b", "source_port_child_b", 0, childSubcircuitId],
-      ["pcb_port_board", "source_port_board", 3, undefined],
+      ["opaque-child-a", "source_port_child_a", -2, childSubcircuitId],
+      ["opaque-child-b", "source_port_child_b", 0, childSubcircuitId],
+      ["opaque-board-port", "source_port_board", 3, undefined],
     ].map(
       ([pcb_port_id, source_port_id, x, subcircuit_id]) =>
         ({
@@ -69,7 +69,7 @@ test("board simple route json preserves child trace physical connectivity", () =
       pcb_trace_id: "pcb_trace_child_routed",
       source_trace_id: "source_trace_child_routed",
       subcircuit_id: childSubcircuitId,
-      connectsTo: ["pcb_port_child_a", "pcb_port_child_b"],
+      connectsTo: ["opaque-child-a", "opaque-child-b"],
       route: [
         {
           route_type: "wire",
@@ -77,7 +77,7 @@ test("board simple route json preserves child trace physical connectivity", () =
           y: 0,
           width: 0.1,
           layer: "top",
-          start_pcb_port_id: "pcb_port_child_a",
+          start_pcb_port_id: "opaque-child-a",
         },
         {
           route_type: "wire",
@@ -85,7 +85,7 @@ test("board simple route json preserves child trace physical connectivity", () =
           y: 0,
           width: 0.1,
           layer: "top",
-          end_pcb_port_id: "pcb_port_child_b",
+          end_pcb_port_id: "opaque-child-b",
         },
       ],
     } as any,
@@ -97,14 +97,19 @@ test("board simple route json preserves child trace physical connectivity", () =
   )
 
   expect(netConnection?.pointsToConnect.map((point) => point.pointId)).toEqual([
-    "pcb_port_child_a",
-    "pcb_port_child_b",
-    "pcb_port_board",
+    "opaque-child-a",
+    "opaque-child-b",
+    "opaque-board-port",
   ])
   expect(simpleRouteJson.traces).toEqual([
     expect.objectContaining({
       pcb_trace_id: "pcb_trace_child_routed",
-      connectsTo: ["pcb_port_child_a", "pcb_port_child_b"],
+      connectsTo: ["opaque-child-a", "opaque-child-b"],
     }),
+  ])
+
+  expect(simpleRouteJson.traces?.[0]?.route).toEqual([
+    expect.not.objectContaining({ start_pcb_port_id: expect.anything() }),
+    expect.not.objectContaining({ end_pcb_port_id: expect.anything() }),
   ])
 })

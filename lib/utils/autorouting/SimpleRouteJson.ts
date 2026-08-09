@@ -3,6 +3,9 @@ import type {
   SimplifiedPcbTrace as AutorouterSimplifiedPcbTrace,
 } from "@tscircuit/capacity-autorouter"
 import type { PcbGroup } from "circuit-json"
+import type { Obstacle } from "../obstacles/types"
+
+export type { CircuitJsonMetadata, Obstacle } from "../obstacles/types"
 
 export type PcbGroupId = PcbGroup["pcb_group_id"]
 export type SimpleRouteBounds = {
@@ -53,24 +56,6 @@ export type SimplifiedPcbTrace = Omit<
         width: number
       }
   >
-}
-
-export type Obstacle = {
-  obstacleId?: string
-  componentId?: string
-  // TODO include ovals
-  type: "rect"
-  shape?: "circle"
-  layers: string[]
-  zLayers?: number[]
-  center: { x: number; y: number }
-  width: number
-  height: number
-  ccwRotationDegrees?: number
-  connectedTo: string[]
-  isCopperPour?: boolean
-  netIsAssignable?: boolean
-  offBoardConnectsTo?: string[]
 }
 
 /** A connection identifier in Simple Route JSON. */
