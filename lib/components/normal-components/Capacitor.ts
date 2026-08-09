@@ -1,17 +1,23 @@
 import { capacitorProps } from "@tscircuit/props"
 import type { SourceSimpleCapacitorInput } from "circuit-json"
+import { formatSiUnit } from "format-si-unit"
 import {
-  FTYPE,
   type BaseSymbolName,
+  FTYPE,
   type PolarizedPassivePorts,
 } from "lib/utils/constants"
+import { z } from "zod"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { Trace } from "../primitive-components/Trace/Trace"
 import { Capacitor_getAutomaticMaxDecouplingTraceLength } from "./Capacitor_getAutomaticMaxDecouplingTraceLength"
-import { formatSiUnit } from "format-si-unit"
+
+const capacitorPropsWithFiniteCapacitance = capacitorProps.extend({
+  // Unit parsing is a transform, so validate its numeric output as well.
+  capacitance: capacitorProps.shape.capacitance.pipe(z.number().finite()),
+})
 
 export class Capacitor extends NormalComponent<
-  typeof capacitorProps,
+  typeof capacitorPropsWithFiniteCapacitance,
   PolarizedPassivePorts
 > {
   _adjustSilkscreenTextAutomatically = true
@@ -21,7 +27,7 @@ export class Capacitor extends NormalComponent<
       schematicSymbolName: this.props.polarized
         ? "capacitor_polarized"
         : (this.props.symbolName ?? ("capacitor" as BaseSymbolName)),
-      zodProps: capacitorProps,
+      zodProps: capacitorPropsWithFiniteCapacitance,
       sourceFtype: FTYPE.simple_capacitor,
     }
   }
@@ -41,21 +47,11 @@ export class Capacitor extends NormalComponent<
     }
   }
 
-  _getSchematicSymbolDisplayValue(): string | undefined {
-    const inputCapacitance = this.props.capacitance
-    let capacitanceDisplay: string | undefined
-
-    if (
-      this._parsedProps.capacitance !== undefined &&
-      !isNaN(this._parsedProps.capacitance)
-    ) {
-      capacitanceDisplay =
-        typeof inputCapacitance === "string"
-          ? inputCapacitance
-          : `${formatSiUnit(this._parsedProps.capacitance)}F`
-    } else {
-      capacitanceDisplay = `${formatSiUnit(this._parsedProps.capacitance)}F`
-    }
+  _getSchematicSymbolDisplayValue(): string {
+    const capacitanceDisplay =
+      typeof this.props.capacitance === "string"
+        ? this.props.capacitance
+        : `${formatSiUnit(this._parsedProps.capacitance)}F`
 
     if (
       this._parsedProps.schShowRatings &&
