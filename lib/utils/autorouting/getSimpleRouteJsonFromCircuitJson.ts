@@ -154,6 +154,9 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   const obstacles = getObstaclesFromCircuitJson(
     [
       ...(board ? [board] : []),
+      ...db.source_component.list(),
+      ...db.source_port.list(),
+      ...db.pcb_port.list(),
       ...db.pcb_component.list(),
       ...db.pcb_smtpad.list(),
       ...db.pcb_plated_hole.list(),

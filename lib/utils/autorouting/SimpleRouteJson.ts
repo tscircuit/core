@@ -5,7 +5,7 @@ import type {
 import type { PcbGroup } from "circuit-json"
 import type { Obstacle } from "../obstacles/types"
 
-export type { Obstacle } from "../obstacles/types"
+export type { CircuitJsonMetadata, Obstacle } from "../obstacles/types"
 
 export type PcbGroupId = PcbGroup["pcb_group_id"]
 export type SimpleRouteBounds = {
