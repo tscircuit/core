@@ -3,6 +3,9 @@ import type {
   SimplifiedPcbTrace as AutorouterSimplifiedPcbTrace,
 } from "@tscircuit/capacity-autorouter"
 import type { PcbGroup } from "circuit-json"
+import type { Obstacle } from "../obstacles/types"
+
+export type { Obstacle } from "../obstacles/types"
 
 export type PcbGroupId = PcbGroup["pcb_group_id"]
 export type SimpleRouteBounds = {
@@ -14,63 +17,10 @@ export type SimpleRouteBounds = {
 
 export type SimplifiedPcbTrace = Omit<
   AutorouterSimplifiedPcbTrace,
-  "connection_name" | "route"
+  "connection_name" | "connectsTo"
 > & {
-  type: "pcb_trace"
-  pcb_trace_id: string
   connection_name?: string
   connectsTo?: string[]
-  route: Array<
-    | {
-        route_type: "wire"
-        x: number
-        y: number
-        width: number
-        layer: string
-      }
-    | {
-        route_type: "via"
-        x: number
-        y: number
-        to_layer: string
-        from_layer: string
-        via_diameter?: number
-        via_hole_diameter?: number
-      }
-    | {
-        route_type: "jumper"
-        start: { x: number; y: number }
-        end: { x: number; y: number }
-        footprint: "0603" | "1206" | "1206x4_pair"
-        layer: string
-      }
-    | {
-        route_type: "through_obstacle"
-        start: { x: number; y: number }
-        end: { x: number; y: number }
-        from_layer: string
-        to_layer: string
-        width: number
-      }
-  >
-}
-
-export type Obstacle = {
-  obstacleId?: string
-  componentId?: string
-  // TODO include ovals
-  type: "rect"
-  shape?: "circle"
-  layers: string[]
-  zLayers?: number[]
-  center: { x: number; y: number }
-  width: number
-  height: number
-  ccwRotationDegrees?: number
-  connectedTo: string[]
-  isCopperPour?: boolean
-  netIsAssignable?: boolean
-  offBoardConnectsTo?: string[]
 }
 
 /** A connection identifier in Simple Route JSON. */
