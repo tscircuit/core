@@ -72,7 +72,7 @@ const ImportedFerriteBead = (props: ChipProps<typeof pinLabels>) => (
   />
 )
 
-test("repro: imported symbol ports are duplicated and miss the host offset", async () => {
+test("imported symbol ports and stems follow the host component offset", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -109,28 +109,15 @@ test("repro: imported symbol ports are duplicated and miss the host offset", asy
     schematic_component_id: schematicComponent.schematic_component_id,
   })
 
-  // Capture the current broken behavior until the imported-symbol port handling
-  // is fixed: pinLabels create a second pair of ports, while the explicit
-  // symbol ports and their stems remain in symbol-local coordinates.
-  expect(sourcePorts.map((port) => [port.name, port.pin_number])).toEqual([
-    ["pin1", 1],
-    ["pin2", 2],
-    ["pin1", 1],
-    ["pin2", 2],
+  expect(sourcePorts).toHaveLength(2)
+  expect(schematicPorts).toHaveLength(2)
+  expect(schematicPorts.map((port) => port.center)).toEqual([
+    { x: 3.492, y: 2 },
+    { x: 4.508, y: 2 },
   ])
-  expect(
-    schematicPorts.map((port) => ({
-      center: port.center,
-      isConnected: port.is_connected,
-    })),
-  ).toEqual([
-    { center: { x: -0.508, y: 0 }, isConnected: false },
-    { center: { x: 0.508, y: 0 }, isConnected: false },
-    { center: { x: 3, y: 2 }, isConnected: true },
-    { center: { x: 5, y: 2 }, isConnected: true },
-  ])
+  expect(circuit.db.source_trace_not_connected_error.list()).toHaveLength(0)
   expect(stems.map(({ x1, y1, x2, y2 }) => ({ x1, y1, x2, y2 }))).toEqual([
-    { x1: -0.508, y1: 0, x2: -0.4318, y2: 0 },
-    { x1: 0.508, y1: 0, x2: 0.4318, y2: 0 },
+    { x1: 3.492, y1: 2, x2: 3.5682, y2: 2 },
+    { x1: 4.508, y1: 2, x2: 4.4318, y2: 2 },
   ])
 })
