@@ -445,12 +445,13 @@ export class Board
       y: globalPos.y + (props.outlineOffsetY ?? 0),
     }
 
-    const { boardAnchorPosition, boardAnchorAlignment } = props
+    const { boardAnchorPosition, boardAnchorAlignment, anchorAlignment } = props
 
     if (boardAnchorPosition) {
       center = getBoardCenterFromAnchor({
         boardAnchorPosition,
-        boardAnchorAlignment: boardAnchorAlignment ?? "center",
+        boardAnchorAlignment:
+          anchorAlignment ?? boardAnchorAlignment ?? "center",
         width: computedWidth,
         height: computedHeight,
       })
