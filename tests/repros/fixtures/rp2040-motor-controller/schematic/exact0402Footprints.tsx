@@ -1,0 +1,41 @@
+export const resistor0402Footprint = () => (
+  <footprint>
+    <smtpad
+      portHints={["pin1"]}
+      pcbX="-0.432816mm"
+      pcbY="0mm"
+      width="0.565658mm"
+      height="0.540004mm"
+      shape="rect"
+    />
+    <smtpad
+      portHints={["pin2"]}
+      pcbX="0.432816mm"
+      pcbY="0mm"
+      width="0.565658mm"
+      height="0.540004mm"
+      shape="rect"
+    />
+  </footprint>
+)
+
+export const capacitor0402Footprint = () => (
+  <footprint>
+    <smtpad
+      portHints={["pin1"]}
+      pcbX="-0.420116mm"
+      pcbY="0mm"
+      width="0.499999mm"
+      height="0.540004mm"
+      shape="rect"
+    />
+    <smtpad
+      portHints={["pin2"]}
+      pcbX="0.420116mm"
+      pcbY="0mm"
+      width="0.499999mm"
+      height="0.540004mm"
+      shape="rect"
+    />
+  </footprint>
+)

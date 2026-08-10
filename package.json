@@ -39,6 +39,7 @@
     "@tscircuit/checks": "0.0.152",
     "@tscircuit/circuit-json-util": "^0.0.106",
     "@tscircuit/common": "^0.0.20",
+    "@tscircuit/common-rp2040-fixture": "github:tscircuit/common#bf11f5109b119d4d052a7a7a3415a122b4921f9c",
     "@tscircuit/copper-pour-solver": "0.0.42",
     "@tscircuit/create-fdm-enclosure": "0.0.3",
     "@tscircuit/fanout-solver": "0.0.16",
@@ -132,5 +133,9 @@
     "@tscircuit/circuit-json-util": "^0.0.106",
     "@tscircuit/props": "^0.0.618",
     "circuit-json": "^0.0.465"
-  }
+  },
+  "trustedDependencies": [
+    "@tscircuit/common",
+    "@tscircuit/common-rp2040-fixture"
+  ]
 }
