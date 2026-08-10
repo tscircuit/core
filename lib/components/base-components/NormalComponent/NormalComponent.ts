@@ -19,6 +19,7 @@ import {
   type LayerRef,
   type PcbComponent,
   distance,
+  external_footprint_load_error,
   pcb_component_invalid_layer_error,
   pcb_manual_edit_conflict_warning,
   point3,
@@ -93,6 +94,7 @@ import { NormalComponent_doInitialSilkscreenOverlapAdjustment } from "./NormalCo
 import { NormalComponent_doInitialSourceDesignRuleChecks } from "./NormalComponent_doInitialSourceDesignRuleChecks"
 import { NormalComponent_doInitialSupplierFootprintMismatchWarning } from "./NormalComponent_doInitialSupplierFootprintMismatchWarning"
 import { canMergePortDefinitions } from "./utils/canMergePortDefinitions"
+import { getCadModelObjFromUrl } from "./utils/getCadModelObjFromUrl"
 import { getPrimaryPortsFromPortHintGroups } from "./utils/getPrimaryPortsFromPortHintGroups"
 import { inferInternallyConnectedPinNamesFromPorts } from "./utils/inferInternallyConnectedPinNamesFromPorts"
 import { isBlobUrl } from "./utils/isBlobUrl"
@@ -1777,7 +1779,7 @@ export class NormalComponent<
     const { db } = this.root!
     const { boardThickness = 0 } = this._getBoard() ?? {}
     const cadModelProp = this._parsedProps.cadModel
-    const cadModel =
+    let cadModel =
       cadModelProp === undefined ? this._asyncFootprintCadModel : cadModelProp
     const footprintString = this.getFootprinterString() ?? undefined
 
@@ -1797,7 +1799,22 @@ export class NormalComponent<
     const bounds = this._getPcbCircuitJsonBounds()
 
     if (typeof cadModel === "string") {
-      throw new Error("String cadModel not yet implemented")
+      const cadModelObjFromUrl = getCadModelObjFromUrl(cadModel)
+      if (cadModelObjFromUrl === null) {
+        const subcircuit = this.getSubcircuit()
+        db.external_footprint_load_error.insert(
+          external_footprint_load_error.parse({
+            type: "external_footprint_load_error",
+            message: `${this.getString()} has a cadModel URL with an unsupported file extension: "${cadModel}"`,
+            pcb_component_id: this.pcb_component_id,
+            source_component_id: this.source_component_id!,
+            subcircuit_id: subcircuit.subcircuit_id ?? undefined,
+            pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
+          }),
+        )
+        return
+      }
+      cadModel = cadModelObjFromUrl
     }
 
     const sourceRotationOffset =
