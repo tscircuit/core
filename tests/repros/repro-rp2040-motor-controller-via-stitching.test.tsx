@@ -62,6 +62,108 @@ const VIA_STITCHING_ROTATIONS = [0, 15, -15, 30, -30, 45, -45].map(
   (degrees) => (degrees * Math.PI) / 180,
 )
 
+const routeLongestWideConnectionThroughTwoVias = createBasicAutorouter(
+  async (simpleRouteJson): Promise<SimplifiedPcbTrace[]> => {
+    const minViaDiameter =
+      simpleRouteJson.min_via_pad_diameter ??
+      simpleRouteJson.minViaPadDiameter ??
+      simpleRouteJson.minViaDiameter ??
+      0.6
+    const wideConnection = simpleRouteJson.connections
+      .flatMap((connection) => {
+        const start = connection.pointsToConnect[0]
+        const end = connection.pointsToConnect.at(-1)
+        const traceWidth =
+          connection.nominalTraceWidth ??
+          connection.width ??
+          simpleRouteJson.minTraceWidth
+        if (
+          !start ||
+          !end ||
+          start.layer !== end.layer ||
+          (start.layer !== "top" && start.layer !== "bottom") ||
+          traceWidth <= minViaDiameter
+        ) {
+          return []
+        }
+
+        return [
+          {
+            connection,
+            start,
+            end,
+            traceWidth,
+            length: Math.hypot(end.x - start.x, end.y - start.y),
+          },
+        ]
+      })
+      .sort((a, b) => b.length - a.length)[0]
+
+    if (!wideConnection || wideConnection.length < 4) {
+      throw new Error(
+        "Expected a wide connection long enough for via stitching",
+      )
+    }
+
+    const { connection, start, end, traceWidth } = wideConnection
+    const oppositeLayer = start.layer === "top" ? "bottom" : "top"
+    const interpolate = (ratio: number): Point => ({
+      x: start.x + (end.x - start.x) * ratio,
+      y: start.y + (end.y - start.y) * ratio,
+    })
+    const firstVia = interpolate(0.4)
+    const secondVia = interpolate(0.6)
+
+    return [
+      {
+        type: "pcb_trace",
+        pcb_trace_id: `${connection.name}_baseline`,
+        connection_name: connection.source_trace_id ?? connection.name,
+        route: [
+          { route_type: "wire", ...start, width: traceWidth },
+          {
+            route_type: "wire",
+            ...firstVia,
+            width: traceWidth,
+            layer: start.layer,
+          },
+          {
+            route_type: "via",
+            ...firstVia,
+            from_layer: start.layer,
+            to_layer: oppositeLayer,
+          },
+          {
+            route_type: "wire",
+            ...firstVia,
+            width: traceWidth,
+            layer: oppositeLayer,
+          },
+          {
+            route_type: "wire",
+            ...secondVia,
+            width: traceWidth,
+            layer: oppositeLayer,
+          },
+          {
+            route_type: "via",
+            ...secondVia,
+            from_layer: oppositeLayer,
+            to_layer: start.layer,
+          },
+          {
+            route_type: "wire",
+            ...secondVia,
+            width: traceWidth,
+            layer: start.layer,
+          },
+          { route_type: "wire", ...end, width: traceWidth },
+        ],
+      },
+    ]
+  },
+)
+
 const getConnectionNames = (value: unknown): string[] => {
   if (typeof value !== "string" || value.length === 0) return []
 
@@ -556,7 +658,11 @@ test("repro: RP2040 motor controller stitches wide traces after autorouting", as
         coveredWithSolderMask
       />
 
-      <autoroutingphase name="route-board" phaseIndex={0} />
+      <autoroutingphase
+        name="route-board"
+        phaseIndex={0}
+        autorouter={{ algorithmFn: routeLongestWideConnectionThroughTwoVias }}
+      />
       <autoroutingphase
         name="stitch-wide-traces"
         phaseIndex={1}
