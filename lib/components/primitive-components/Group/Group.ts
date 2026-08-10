@@ -2138,6 +2138,12 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       this._doInitialPcbLayoutPack()
     } else if (pcbLayoutMode === "flex") {
       this._doInitialPcbLayoutFlex()
+    } else if (pcbLayoutMode === "match-adapt") {
+      // There is no dedicated PCB match-adapt layout. Without this branch the
+      // mode falls through and every component stays on the group origin,
+      // producing overlapping footprints. Fall back to packing so the board is
+      // still laid out. Schematic match-adapt is handled separately.
+      this._doInitialPcbLayoutPack()
     }
   }
 
