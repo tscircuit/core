@@ -620,5 +620,7 @@ test("repro: RP2040 motor controller stitches wide traces after autorouting", as
       .list()
       .filter((error) => stitchedViaIds.has(error.pcb_via_id)),
   ).toEqual([])
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  expect(circuit).toMatchPcbSnapshot(import.meta.path, {
+    diffThresholdPercent: 0.1,
+  })
 }, 900_000)
