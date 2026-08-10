@@ -44,7 +44,7 @@ export class Inductor extends NormalComponent<
     const source_component = db.source_component.insert({
       name: this.name,
       ftype: FTYPE.simple_inductor,
-      inductance: this.props.inductance,
+      inductance: props.inductance,
       display_inductance: this._getSchematicSymbolDisplayValue(),
       supplier_part_numbers: props.supplierPartNumbers,
       manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
