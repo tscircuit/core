@@ -373,7 +373,14 @@ export class Connector<
       return
     }
     const fetchPartCircuitJson = partsEngine?.fetchPartCircuitJson
-    if (!fetchPartCircuitJson) return
+    if (!fetchPartCircuitJson) {
+      // No parts engine is configured, so no physical part can be resolved.
+      // Expose the canonical USB-C ports anyway so traces can still connect.
+      if (standard === "usb_c") {
+        this._addUsbCCanonicalFallbackPorts()
+      }
+      return
+    }
 
     this._hasStartedFootprintUrlLoad = true
 
