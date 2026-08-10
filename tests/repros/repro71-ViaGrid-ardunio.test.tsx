@@ -7,7 +7,7 @@ test("ViaGridBoard ", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <ViaGridBoard name="VIA_GRID_BOARD">
+    <ViaGridBoard>
       <resistor name="R1" resistance="10k" footprint="0402" />
       <RP2040 name="U1" />
     </ViaGridBoard>,
