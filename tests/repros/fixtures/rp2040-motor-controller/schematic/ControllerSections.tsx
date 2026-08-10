@@ -1,4 +1,4 @@
-import { Microcontroller_RP2040 } from "@tscircuit/common-rp2040-fixture"
+import { Microcontroller_RP2040 } from "@tscircuit/common"
 import { schematicSheets } from "./config"
 
 /**
