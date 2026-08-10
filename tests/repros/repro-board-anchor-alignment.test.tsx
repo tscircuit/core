@@ -10,7 +10,6 @@ const ALIGNMENT_TEST_CASES = [
   { alignment: "top_right", expectedCenter: { x: 0, y: 15 } },
   { alignment: "bottom_left", expectedCenter: { x: 20, y: 25 } },
   { alignment: "bottom_right", expectedCenter: { x: 0, y: 25 } },
-
   { alignment: "center", expectedCenter: { x: 10, y: 20 } },
   { alignment: "top_center", expectedCenter: { x: 10, y: 15 } },
   { alignment: "bottom_center", expectedCenter: { x: 10, y: 25 } },
