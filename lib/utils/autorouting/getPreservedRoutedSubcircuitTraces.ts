@@ -69,7 +69,9 @@ const getSimpleRouteForPreservedTrace = (
   })
 
 /**
- * Converts already-routed child subcircuit pcb_traces into SRJ `traces`.
+ * Converts PCB traces that already exist when autorouting starts into SRJ
+ * `traces`. This includes manual copper rendered in an earlier render phase
+ * and routed child-subcircuit copper.
  *
  * `connectsTo` is physical routing state, not electrical-net metadata. It must
  * contain only the PCB points joined by this exact copper trace so the parent
@@ -78,23 +80,18 @@ const getSimpleRouteForPreservedTrace = (
  */
 export const getPreservedRoutedSubcircuitTraces = ({
   scopedDb,
-  currentSubcircuitId,
   relevantSubcircuitIds,
 }: {
   scopedDb: CircuitJsonUtilObjects
-  currentSubcircuitId?: string | null
   relevantSubcircuitIds: Set<string> | null
 }): SimplifiedPcbTrace[] =>
   scopedDb.pcb_trace
     .list()
     .filter((trace) => {
       if (!trace.subcircuit_id) return false
-
-      if (!currentSubcircuitId) return true
-
       return (
-        trace.subcircuit_id !== currentSubcircuitId &&
-        relevantSubcircuitIds!.has(trace.subcircuit_id)
+        relevantSubcircuitIds === null ||
+        relevantSubcircuitIds.has(trace.subcircuit_id)
       )
     })
     .map((trace) => {

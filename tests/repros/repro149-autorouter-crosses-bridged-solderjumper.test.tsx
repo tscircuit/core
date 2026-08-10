@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("repro: autorouter crosses a closed solderjumper bridge", async () => {
+test("autorouter routes around a closed solderjumper bridge", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
