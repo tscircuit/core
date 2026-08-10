@@ -87,25 +87,31 @@ export class Capacitor extends NormalComponent<
   }
 
   doInitialCreateNetsFromProps() {
+    // bypassFor/bypassTo are aliases for decouplingFor/decouplingTo
+    const decouplingFor = this.props.decouplingFor ?? this.props.bypassFor
+    const decouplingTo = this.props.decouplingTo ?? this.props.bypassTo
     this._createNetsFromProps([
-      this.props.decouplingFor,
-      this.props.decouplingTo,
+      decouplingFor,
+      decouplingTo,
       ...this._getNetsFromConnectionsProp(),
     ])
   }
 
   doInitialCreateTracesFromProps() {
-    if (this.props.decouplingFor && this.props.decouplingTo) {
+    // bypassFor/bypassTo are aliases for decouplingFor/decouplingTo
+    const decouplingFor = this.props.decouplingFor ?? this.props.bypassFor
+    const decouplingTo = this.props.decouplingTo ?? this.props.bypassTo
+    if (decouplingFor && decouplingTo) {
       this.add(
         new Trace({
           from: `${this.getSubcircuitSelector()} > port.1`,
-          to: this.props.decouplingFor,
+          to: decouplingFor,
         }),
       )
       this.add(
         new Trace({
           from: `${this.getSubcircuitSelector()} > port.2`,
-          to: this.props.decouplingTo,
+          to: decouplingTo,
         }),
       )
     }
