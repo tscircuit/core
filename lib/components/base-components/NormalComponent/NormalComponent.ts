@@ -290,6 +290,14 @@ export class NormalComponent<
       ignoreSymbolPorts?: boolean
     } = {},
   ) {
+    // React symbol ports are added during ReactSubtreesRender. Wait for them so
+    // pinLabels and footprint inference can reuse those ports instead of
+    // creating a duplicate set during construction.
+    const hasPendingReactSymbol =
+      isValidElement(this.props.symbol) &&
+      !this.children.some((child) => child.componentName === "Symbol")
+    if (hasPendingReactSymbol) return
+
     this._inferredInternallyConnectedPinNames = []
     const { config } = this
     const portsToCreate: Port[] = []
