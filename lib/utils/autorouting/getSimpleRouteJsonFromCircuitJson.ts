@@ -15,6 +15,7 @@ import type {
   SimpleRouteDifferentialPair,
   SimpleRouteJson,
 } from "./SimpleRouteJson"
+import { assertSrjConnectionPointsWithinBounds } from "./assert-srj-connection-points-within-bounds"
 import { getDescendantSubcircuitIds } from "./getAncestorSubcircuitIds"
 import {
   type FanoutPourNetMap,
@@ -729,6 +730,11 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     conn.nominalTraceWidth ??= nominalTraceWidth ?? defaultTraceWidth
     conn.width ??= nominalTraceWidth ?? defaultTraceWidth
   }
+
+  assertSrjConnectionPointsWithinBounds({
+    bounds,
+    connections: allConns,
+  })
 
   const differentialPairs: DifferentialPair[] =
     subcircuitComponent?.selectAll<DifferentialPair>("differentialpair") ?? []
