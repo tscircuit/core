@@ -24,7 +24,7 @@ test("validate pcb coordinates reports original edge property name", () => {
     .map((element) => element.message)
     .join("\n")
   expect(message).toMatchInlineSnapshot(
-    `"Invalid pcbLeftEdgeX value for Resistor: Invalid calc() expression. expression="calc board.minX + 1mm)""`,
+    `"Invalid pcbLeftEdgeX value for Resistor: Invalid calc() expression: "calc board.minX + 1mm)". expression="calc board.minX + 1mm)""`,
   )
 
   expect(

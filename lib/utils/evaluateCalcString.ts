@@ -21,10 +21,9 @@ type Token = NumberToken | StringToken
 
 const defaultUnits: Record<string, number> = {
   mm: 1,
-  // You can add more if you need them:
-  // cm: 10,
-  // in: 25.4,
-  // mil: 0.0254,
+  cm: 10,
+  in: 25.4,
+  mil: 0.0254,
 }
 
 export function evaluateCalcString(
@@ -119,6 +118,22 @@ function tokenize(expr: string, units: Record<string, number>): Token[] {
           i++
         } else {
           break
+        }
+      }
+
+      // Optional exponent, e.g. "1e-13" or "2.5E+3". A near-zero coordinate
+      // often serializes to exponent notation, so the scanner must read it.
+      if (expr[i] === "e" || expr[i] === "E") {
+        let exponentEnd = i + 1
+        if (expr[exponentEnd] === "+" || expr[exponentEnd] === "-") {
+          exponentEnd++
+        }
+        if (isDigit(expr[exponentEnd])) {
+          exponentEnd++
+          while (isDigit(expr[exponentEnd])) {
+            exponentEnd++
+          }
+          i = exponentEnd
         }
       }
 

@@ -287,10 +287,11 @@ export abstract class PrimitiveComponent<
     let calcIdentifiers: string[] = []
     try {
       calcIdentifiers = extractCalcIdentifiers(rawValue)
-    } catch {
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : String(error)
       this._reportInvalidComponentPropertyError(
         propertyName,
-        `Invalid ${propertyName} value for ${this.componentName}: Invalid calc() expression. expression="${rawValue}"`,
+        `Invalid ${propertyName} value for ${this.componentName}: ${reason}. expression="${rawValue}"`,
       )
       return
     }

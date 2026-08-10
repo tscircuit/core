@@ -50,7 +50,7 @@ test("SilkscreenText malformed calc does not throw and reports validation error"
     .map((element) => element.message)
     .join("\n")
   expect(message).toMatchInlineSnapshot(
-    `"Invalid pcbX value for SilkscreenText: Invalid calc() expression. expression="calc board.minX + 1mm)""`,
+    `"Invalid pcbX value for SilkscreenText: Invalid calc() expression: "calc board.minX + 1mm)". expression="calc board.minX + 1mm)""`,
   )
 
   const silkscreenTexts = project.db.pcb_silkscreen_text.list()
