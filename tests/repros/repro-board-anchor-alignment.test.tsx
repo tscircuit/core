@@ -17,7 +17,7 @@ test.failing(
         boardAnchorPosition={boardAnchorPosition}
         anchorAlignment="top_left"
       >
-        <resistor resistance={1} name="R1" pcbX={0} pcbY={0} footprint="0402" />
+        <resistor resistance={1} name="R1" pcbX={25} pcbY={15} footprint="0402" />
       </board>,
     )
     circuit.render()
@@ -33,7 +33,7 @@ test.failing(
         boardAnchorPosition={boardAnchorPosition}
         anchorAlignment="top_left"
       >
-        <resistor resistance={1} name="R1" pcbX={0} pcbY={0} footprint="0402" />
+        <resistor resistance={1} name="R1" pcbX={25} pcbY={15} footprint="0402" />
         <pcbnotetext
           pcbX={10}
           pcbY={25}
