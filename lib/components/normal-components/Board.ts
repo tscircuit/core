@@ -10,6 +10,7 @@ import { getBoundsFromPoints } from "@tscircuit/math-utils"
 import { boardProps } from "@tscircuit/props"
 import type { AnyCircuitElement, LayerRef, PcbBoard } from "circuit-json"
 import { getBoardAvailableLayers } from "lib/utils/getViaSpanLayers"
+import { filterSubToleranceOutOfBoardErrors } from "lib/utils/pcb/filter-sub-tolerance-out-of-board-errors"
 import { type Matrix, compose, translate } from "transformation-matrix"
 import { getDescendantSubcircuitIds } from "../../utils/autorouting/getAncestorSubcircuitIds"
 import { getBoardCenterFromAnchor } from "../../utils/boards/get-board-center-from-anchor"
@@ -654,7 +655,7 @@ export class Board
         const existingPlacementDiagnostics = db.toArray()
         checksToRun.push(
           runAllPlacementChecks(circuitJson).then((results) =>
-            results.filter(
+            filterSubToleranceOutOfBoardErrors(results, circuitJson).filter(
               (result) =>
                 !existingPlacementDiagnostics.some(
                   (existing) =>

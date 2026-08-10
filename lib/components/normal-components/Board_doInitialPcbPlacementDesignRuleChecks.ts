@@ -1,5 +1,6 @@
 import { runAllPlacementChecks } from "@tscircuit/checks"
 import type { AnyCircuitElement } from "circuit-json"
+import { filterSubToleranceOutOfBoardErrors } from "lib/utils/pcb/filter-sub-tolerance-out-of-board-errors"
 import type { Renderable } from "../base-components/Renderable"
 import type { Board } from "./Board"
 
@@ -41,7 +42,8 @@ export const Board_doInitialPcbPlacementDesignRuleChecks = (board: Board) => {
   board._pcbPlacementDrcChecksPending = true
   board._queueAsyncEffect("board:pre-route-placement-checks", async () => {
     try {
-      const placementCheckResults = await runAllPlacementChecks(
+      const placementCheckResults = filterSubToleranceOutOfBoardErrors(
+        await runAllPlacementChecks(subcircuitCircuitJson),
         subcircuitCircuitJson,
       )
       const newPlacementDiagnostics = placementCheckResults.filter(
