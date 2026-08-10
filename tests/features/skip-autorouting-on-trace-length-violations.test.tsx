@@ -41,6 +41,7 @@ test("autorouting is skipped when straight-line distance exceeds maxLength", asy
   expect(autoroutingErrors).toHaveLength(1)
   expect(autoroutingErrors[0].message).toContain("cannot be satisfied")
   expect(autoroutingErrors[0].message).toContain("endpoints are")
+  expect(autoroutingErrors[0].message).toContain("max_length is")
 
   expect(circuit).toMatchPcbSnapshot(import.meta.path, {
     shouldDrawErrors: true,

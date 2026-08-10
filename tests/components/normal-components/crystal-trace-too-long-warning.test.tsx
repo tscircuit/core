@@ -46,5 +46,7 @@ test("traces on a crystal net inherit their maximum length and skip impossible a
   const autoroutingErrors = circuit.db.pcb_autorouting_error.list()
   expect(autoroutingErrors).toHaveLength(1)
   expect(autoroutingErrors[0].message).toContain("cannot be satisfied")
-  expect(autoroutingErrors[0].message).toContain("2 additional violations")
+  expect(autoroutingErrors[0].message).toContain(
+    "3 trace max_length constraints cannot be satisfied",
+  )
 })

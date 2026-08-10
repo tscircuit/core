@@ -194,20 +194,20 @@ export const shouldSkipAutoroutingBecauseOfTraceLengthViolations = ({
     .some((error) => error.pcb_error_id === pcbErrorId)
 
   if (!errorAlreadyExists) {
-    const firstViolation = violations[0]
-    const traceName =
-      firstViolation.traceDisplayName ?? firstViolation.sourceTraceId
-    const additionalViolationCount = violations.length - 1
-    const additionalViolationMessage =
-      additionalViolationCount > 0
-        ? ` (${additionalViolationCount} additional violation${additionalViolationCount === 1 ? "" : "s"})`
-        : ""
+    const violationClauses = violations.map((violation) => {
+      const traceName = violation.traceDisplayName ?? violation.sourceTraceId
+      return `${traceName}: its endpoints are ${violation.straightLineDistance.toFixed(2)}mm apart but its max_length is ${violation.maximumTraceLength}mm`
+    })
+    const summary =
+      violations.length === 1
+        ? "a trace max_length constraint cannot be satisfied"
+        : `${violations.length} trace max_length constraints cannot be satisfied`
 
     db.pcb_autorouting_error.insert({
       pcb_error_id: pcbErrorId,
       error_type: "pcb_autorouting_error",
       subcircuit_id: subcircuit.subcircuit_id ?? undefined,
-      message: `Autorouting was skipped because the ${firstViolation.maximumTraceLength}mm maximum length for ${traceName} cannot be satisfied: its endpoints are ${firstViolation.straightLineDistance.toFixed(2)}mm apart${additionalViolationMessage}.`,
+      message: `Autorouting was skipped because ${summary}. Increase the max_length or move the connected pads closer. Affected trace${violations.length === 1 ? "" : "s"}: ${violationClauses.join("; ")}.`,
     })
   }
 

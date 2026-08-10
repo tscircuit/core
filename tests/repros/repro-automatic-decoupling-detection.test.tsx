@@ -109,6 +109,6 @@ test("capacitor connections to chip VCC and ground should infer 1mm traces and r
   ).toBe(true)
   expect(autoroutingErrors).toHaveLength(expectedAutoroutingErrorCount)
   expect(autoroutingErrors[0]?.message).toContain(
-    `${expectedMaxDecouplingTraceLength}mm maximum length`,
+    `max_length is ${expectedMaxDecouplingTraceLength}mm`,
   )
 })
