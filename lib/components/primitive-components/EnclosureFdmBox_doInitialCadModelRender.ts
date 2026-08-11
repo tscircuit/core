@@ -7,6 +7,12 @@ import { EnclosureCutoutAperture } from "./EnclosureCutoutAperture"
 import type { EnclosureFdmBox } from "./EnclosureFdmBox"
 import { getReferencedEnclosureBoard } from "./get-referenced-enclosure-board"
 
+/**
+ * Consume the staged solver while preserving Core's published Circuit JSON
+ * representation. The complete assembled plan remains one synthetic
+ * `cad_component.model_jscad`; typed per-part records arrive in the later schema
+ * migration without blocking the geometry/authoring rollout.
+ */
 export const EnclosureFdmBox_doInitialCadModelRender = (
   component: EnclosureFdmBox,
 ): void => {
@@ -43,19 +49,23 @@ export const EnclosureFdmBox_doInitialCadModelRender = (
     height: props.height,
     depth: props.depth,
     wallThickness: props.wallThickness,
-    apertures: board
-      .getDescendants()
-      .filter(
-        (descendant): descendant is EnclosureCutoutAperture =>
-          descendant instanceof EnclosureCutoutAperture,
-      )
-      .map((aperture) =>
-        aperture.getFdmEnclosureSolverInput({
-          board,
-          pcbBoard,
-          floorThickness: props.wallThickness,
-        }),
-      ),
+    floorThickness: props.floorThickness,
+    lidThickness: props.lidThickness,
+    boardClearance: props.boardClearance,
+    standoffHeight: props.standoffHeight,
+    topHeadroom: props.topHeadroom,
+    lidLipDepth: props.lidLipDepth,
+    apertures: props.disableCutouts
+      ? []
+      : board
+          .getDescendants()
+          .filter(
+            (descendant): descendant is EnclosureCutoutAperture =>
+              descendant instanceof EnclosureCutoutAperture,
+          )
+          .map((aperture) =>
+            aperture.getFdmEnclosureSolverInput({ board, pcbBoard }),
+          ),
   }
 
   const solver = new CreateFdmEnclosureSolver(inputProblem)
@@ -83,11 +93,17 @@ export const EnclosureFdmBox_doInitialCadModelRender = (
     position: {
       x: pcbBoard.center.x,
       y: pcbBoard.center.y,
-      z: -boardThickness / 2 - output.dimensions.floorThickness,
+      z:
+        -boardThickness / 2 -
+        output.dimensions.floorThickness -
+        output.dimensions.standoffHeight,
     },
     rotation: { x: 0, y: 0, z: 0 },
     pcb_component_id: component.pcb_component_id,
     source_component_id: component.source_component_id,
+    // Compatibility representation: the solver exposes base/lid separately,
+    // but existing Circuit JSON carries their assembled union until the typed
+    // per-part schema and renderer PRs land.
     model_jscad: output.jscadPlan,
     model_unit_to_mm_scale_factor: 1,
     model_object_fit: "contain_within_bounds",
