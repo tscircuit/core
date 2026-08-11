@@ -76,12 +76,6 @@ export class PushButton extends NormalComponent<
     }
   }
 
-  doInitialSchematicComponentRender(): void {
-    const { _parsedProps: props } = this
-    if (props?.noSchematicRepresentation === true) return
-    super.doInitialSchematicComponentRender()
-  }
-
   doInitialSourceRender() {
     const { db } = this.root!
     const { _parsedProps: props } = this
