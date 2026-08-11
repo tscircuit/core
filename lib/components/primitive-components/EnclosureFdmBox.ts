@@ -13,6 +13,19 @@ export class EnclosureFdmBox extends PrimitiveComponent<
     }
   }
 
+  /** assembly.device is a product container, not a subcircuit naming scope. */
+  override doInitialAssignNameToUnnamedComponents(): void {
+    if ((this._parsedProps as { name?: string }).name) return
+    let top: PrimitiveComponent = this
+    while (top.parent instanceof PrimitiveComponent) top = top.parent
+    const enclosureBoxes = [top, ...top.getDescendants()].filter(
+      (component): component is EnclosureFdmBox =>
+        component instanceof EnclosureFdmBox,
+    )
+    const index = enclosureBoxes.indexOf(this)
+    this.fallbackUnassignedName = `unnamed_enclosure_fdm_box_${index === -1 ? 0 : index + 1}`
+  }
+
   doInitialSourceRender(): void {
     const sourceComponent = this.root!.db.source_component.insert({
       ftype: "simple_chip",
