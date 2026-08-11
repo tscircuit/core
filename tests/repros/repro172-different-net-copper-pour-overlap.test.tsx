@@ -50,7 +50,7 @@ test.failing(
 
     circuit.add(
       <board width="20mm" height="12mm">
-        <net name="GND" />
+        <net name="GND" isGroundNet />
         <net name="AISEN" />
         <copperpour
           name="GND_BOTTOM"
@@ -66,9 +66,89 @@ test.failing(
           outline={aisenPourOutline}
         />
         <pcbnotetext
-          text="BUG: GND and AISEN pours overlap at center"
-          pcbY={4.8}
-          fontSize="0.35mm"
+          text="Different-net bottom pours must not overlap"
+          pcbY={5.15}
+          fontSize="0.45mm"
+          color="#ffffff"
+        />
+        <pcbnoterect
+          width="19mm"
+          height="11mm"
+          strokeWidth="0.12mm"
+          color="#60a5fa"
+          isStrokeDashed
+        />
+        <pcbnotetext
+          text="GND: full-board pour"
+          pcbX={-5.8}
+          pcbY={4.25}
+          fontSize="0.4mm"
+          color="#60a5fa"
+        />
+        <pcbnoteline
+          x1={-7.2}
+          y1={4}
+          x2={-8.4}
+          y2={3.35}
+          strokeWidth="0.12mm"
+          color="#60a5fa"
+        />
+        <pcbnoterect
+          width="4mm"
+          height="4mm"
+          strokeWidth="0.16mm"
+          color="#facc15"
+        />
+        <pcbnotetext
+          text="AISEN: inset pour"
+          pcbX={5.1}
+          pcbY={2.7}
+          fontSize="0.4mm"
+          color="#facc15"
+        />
+        <pcbnoteline
+          x1={3.8}
+          y1={2.45}
+          x2={2}
+          y2={1.5}
+          strokeWidth="0.12mm"
+          color="#facc15"
+        />
+        <pcbnoteline
+          x1={-0.4}
+          y1={-0.4}
+          x2={0.4}
+          y2={0.4}
+          strokeWidth="0.18mm"
+          color="#ff453a"
+        />
+        <pcbnoteline
+          x1={-0.4}
+          y1={0.4}
+          x2={0.4}
+          y2={-0.4}
+          strokeWidth="0.18mm"
+          color="#ff453a"
+        />
+        <pcbnoteline
+          x1={0}
+          y1={-0.55}
+          x2={0}
+          y2={-2.45}
+          strokeWidth="0.12mm"
+          color="#ff453a"
+        />
+        <pcbnotetext
+          text="SHORT: GND + AISEN occupy this point"
+          pcbY={-2.85}
+          fontSize="0.45mm"
+          color="#ff453a"
+        />
+        <pcbnotetext
+          text="Expected: 0.2 mm clearance between pours"
+          pcbY={-4.65}
+          fontSize="0.4mm"
+          color="#34d399"
         />
       </board>,
     )
