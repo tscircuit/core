@@ -1,14 +1,6 @@
 import { copperPourProps, type CopperPourProps } from "@tscircuit/props"
-import {
-  CopperPourPipelineSolver,
-  convertCircuitJsonToInputProblem,
-  initializeManifoldGeometry,
-} from "@tscircuit/copper-pour-solver"
 import { PrimitiveComponent } from "../../base-components/PrimitiveComponent"
 import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
-import type { Net } from "../Net"
-import type { PcbCopperPour } from "circuit-json"
-import { markTraceSegmentsInsideCopperPour } from "./utils/mark-trace-segments-inside-copper-pour"
 
 export type { CopperPourProps }
 
@@ -29,64 +21,5 @@ export class CopperPour extends PrimitiveComponent<typeof copperPourProps> {
   doInitialCreateNetsFromProps(): void {
     const { _parsedProps: props } = this
     createNetsFromProps(this, [props.connectsTo])
-  }
-
-  doInitialPcbCopperPourRender() {
-    if (this.root?.pcbDisabled) return
-    this._queueAsyncEffect("PcbCopperPourRender", async () => {
-      const { db } = this.root!
-      const { _parsedProps: props } = this
-
-      const net = this.getSubcircuit().selectOne(props.connectsTo) as Net | null
-      if (!net || !net.source_net_id) {
-        this.renderError(`Net "${props.connectsTo}" not found for copper pour`)
-        return
-      }
-      const subcircuit = this.getSubcircuit()
-      const circuitJson = db.toArray()
-
-      const clearance = props.clearance ?? 0.2
-      const inputProblem = convertCircuitJsonToInputProblem(circuitJson, {
-        layer: props.layer,
-        subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
-        source_net_id: net.source_net_id,
-        pad_margin: props.padMargin ?? clearance,
-        trace_margin: props.traceMargin ?? clearance,
-        board_edge_margin: props.boardEdgeMargin ?? clearance,
-        cutout_margin: props.cutoutMargin ?? clearance,
-        outline: props.outline,
-      })
-
-      await initializeManifoldGeometry()
-      const solver = new CopperPourPipelineSolver(inputProblem)
-
-      this.root!.emit("solver:started", {
-        type: "solver:started",
-        solverName: "CopperPourPipelineSolver",
-        solverParams: inputProblem,
-        solverConstructorArgs: [inputProblem],
-        componentName: this.props.name,
-      })
-
-      const { brep_shapes } = solver.getOutput()
-
-      const coveredWithSolderMask = props.coveredWithSolderMask ?? false
-
-      for (const brep_shape of brep_shapes) {
-        const insertedPour = db.pcb_copper_pour.insert({
-          shape: "brep",
-          layer: props.layer,
-          brep_shape,
-          source_net_id: net.source_net_id,
-          subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
-          covered_with_solder_mask: coveredWithSolderMask,
-        } as PcbCopperPour)
-
-        markTraceSegmentsInsideCopperPour({
-          db,
-          copperPour: insertedPour,
-        })
-      }
-    })
   }
 }

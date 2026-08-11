@@ -56,6 +56,8 @@ import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/public-exports"
 import { getPinsFromPortArrangement } from "lib/utils/schematic/getSizeOfSidesFromPortArrangement"
 import { z } from "zod"
 import { NormalComponent } from "../../base-components/NormalComponent/NormalComponent"
+import type { CopperPour } from "../CopperPour/CopperPour"
+import { renderCopperPoursForSubcircuit } from "../CopperPour/utils/render-copper-pours-for-subcircuit"
 import { Port } from "../Port/Port"
 import { Trace } from "../Trace/Trace"
 import { TraceHint } from "../TraceHint"
@@ -1615,6 +1617,19 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     )
       return
     this._startAsyncAutorouting()
+  }
+
+  doInitialPcbCopperPourRender() {
+    if (!this.isSubcircuit || this.root?.pcbDisabled) return
+
+    const copperPours = this.selectAll<CopperPour>("copperpour").filter(
+      (copperPour) => copperPour.getSubcircuit() === this,
+    )
+    if (copperPours.length === 0) return
+
+    this._queueAsyncEffect("PcbCopperPourRender", () =>
+      renderCopperPoursForSubcircuit(this, copperPours),
+    )
   }
 
   doInitialSchematicTraceRender() {
