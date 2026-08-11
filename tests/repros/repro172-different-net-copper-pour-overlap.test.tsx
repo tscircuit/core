@@ -45,6 +45,13 @@ const aisenPourOutline = [
 
 test("repro172: different-net copper pours should clear each other", async () => {
   const { circuit } = getTestFixture()
+  let copperPourSolverStartCount = 0
+
+  circuit.on("solver:started", (event) => {
+    if (event.solverName === "CopperPourPipelineSolver") {
+      copperPourSolverStartCount++
+    }
+  })
 
   circuit.add(
     <board width="20mm" height="12mm">
@@ -180,6 +187,7 @@ test("repro172: different-net copper pours should clear each other", async () =>
     .find((sourceNet) => sourceNet.name === "AISEN")?.source_net_id
 
   expect(bottomBrepPours).toHaveLength(2)
+  expect(copperPourSolverStartCount).toBe(1)
   expect(poursContainingBoardCenter).toHaveLength(1)
   expect(poursContainingBoardCenter[0]?.source_net_id).toBe(aisenSourceNetId)
   expect(poursContainingClearanceGap).toHaveLength(0)

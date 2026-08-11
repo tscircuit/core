@@ -9,13 +9,17 @@ import type { Net } from "../../Net"
 import type { CopperPour } from "../CopperPour"
 import { markTraceSegmentsInsideCopperPour } from "./mark-trace-segments-inside-copper-pour"
 
-export const renderCopperPoursForSubcircuit = async (
-  subcircuit: ISubcircuit,
-  copperPours: CopperPour[],
-) => {
+// Each CopperPour owns its render effect, while pours in the same subcircuit
+// share the single batch solve needed for pour-to-pour clearance.
+const pendingCopperPourRenders = new WeakMap<ISubcircuit, Promise<void>>()
+
+const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
   if (!subcircuit.root) return
 
   const { db } = subcircuit.root
+  const copperPours = subcircuit
+    .selectAll<CopperPour>("copperpour")
+    .filter((copperPour) => copperPour.getSubcircuit() === subcircuit)
   const resolvedCopperPours: Array<{
     copperPour: CopperPour
     sourceNetId: string
@@ -92,4 +96,18 @@ export const renderCopperPoursForSubcircuit = async (
       })
     }
   }
+}
+
+export const renderCopperPoursForSubcircuit = (
+  copperPour: CopperPour,
+): Promise<void> => {
+  const subcircuit = copperPour.getSubcircuit()
+  const pendingRender = pendingCopperPourRenders.get(subcircuit)
+  if (pendingRender) return pendingRender
+
+  const renderPromise = renderAllCopperPoursForSubcircuit(subcircuit).finally(
+    () => pendingCopperPourRenders.delete(subcircuit),
+  )
+  pendingCopperPourRenders.set(subcircuit, renderPromise)
+  return renderPromise
 }
