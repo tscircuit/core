@@ -37,7 +37,7 @@ test("SchematicRect with traces using connections prop", async () => {
               height={2}
               isFilled={false}
             />
-            <port name="pin1" direction="left" schX={4} schY={0} />
+            <port name="pin1" direction="left" schX={0} schY={0} />
           </symbol>
         }
         connections={{

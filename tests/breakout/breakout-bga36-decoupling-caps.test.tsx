@@ -172,11 +172,11 @@ test("breakout defaults to fanout for a 6x6 BGA surrounded by four 0603 decoupli
     breakoutPhases[0]?.endSimpleRouteJson?.traces
       ?.flatMap((trace) => trace.route)
       .filter((routePoint) => routePoint.route_type === "via"),
-  ).toHaveLength(8)
+  ).toHaveLength(0)
 
   expect(circuit.db.pcb_breakout_point.list()).toHaveLength(0)
   expect(circuit.db.pcb_trace.list()).toHaveLength(16)
-  expect(circuit.db.pcb_via.list().length).toBeGreaterThanOrEqual(8)
+  expect(circuit.db.pcb_via.list()).toHaveLength(0)
   expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
   expect(circuit.db.pcb_trace_error.list()).toEqual([])
   expect(circuit.db.pcb_pad_trace_clearance_error.list()).toEqual([])

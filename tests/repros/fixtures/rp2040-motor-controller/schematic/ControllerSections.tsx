@@ -6,9 +6,12 @@ import { schematicSheets } from "./config"
  * sub-sections, so they remain one reusable controller subsystem here.
  */
 export const ControllerSections = () => (
+  // Keep the MCU's local routing box centered on its authored pcbX/pcbY.
   <Microcontroller_RP2040
     name="MCU"
     autorouter="auto_local"
+    width="22.47mm"
+    height="66.075mm"
     schAutoLayoutEnabled
     schSheetName={schematicSheets.controller}
     pcbX={-25}

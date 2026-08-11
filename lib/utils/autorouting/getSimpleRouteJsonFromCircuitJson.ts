@@ -193,16 +193,15 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   // - connections: copper the current autorouter still needs to create.
   // - traces: copper that already exists and must be preserved.
   //
-  // Child subcircuits are autorouted before their parent board. Those
-  // child routes belong in `traces`, not `connections`; otherwise the parent
-  // autorouter receives the same child-internal source_trace as new work and
-  // may route it a second time.
+  // Manual copper is rendered before autorouting, and child subcircuits are
+  // autorouted before their parent board. Those existing routes belong in
+  // `traces`, not `connections`; otherwise later routing can cross or recreate
+  // them.
   //
   // Keep connectivity metadata on preserved traces so parent routes can
   // legally touch child fanout copper that belongs to the same connected net.
   const preservedRoutedSubcircuitTraces = getPreservedRoutedSubcircuitTraces({
     scopedDb: db,
-    currentSubcircuitId: subcircuit_id,
     relevantSubcircuitIds,
   })
 

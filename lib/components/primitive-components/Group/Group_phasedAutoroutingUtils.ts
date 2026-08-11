@@ -3,6 +3,7 @@ import type {
   SimpleRouteDifferentialPair,
   SimpleRouteJson,
 } from "lib/utils/autorouting/SimpleRouteJson"
+import { expandSrjBoundsToIncludeConnectionPoints } from "lib/utils/autorouting/expand-srj-bounds-to-include-connection-points"
 import type {
   RoutingPhaseDrcTolerances,
   RoutingPhasePlan,
@@ -85,9 +86,14 @@ export function Group_filterSimpleRouteJsonForPhase(
     }))
     .filter((bus) => bus.connectionNames.length > 0)
 
+  const bounds = expandSrjBoundsToIncludeConnectionPoints({
+    bounds: phasePlan.routingBounds ?? simpleRouteJson.bounds,
+    connections,
+  })
+
   return {
     ...simpleRouteJson,
-    bounds: phasePlan.routingBounds ?? simpleRouteJson.bounds,
+    bounds,
     connections,
     differentialPairs:
       differentialPairs.length > 0 ? differentialPairs : undefined,
