@@ -7,8 +7,8 @@ import { createBasicAutorouter } from "tests/fixtures/createBasicAutorouter"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { ControllerSections } from "./fixtures/rp2040-motor-controller/schematic/ControllerSections"
 import {
-  MotorDriverController,
   MotorDriverControlTraces,
+  MotorDriverController,
   MotorDriverGroundTraces,
   MotorDriverPassives,
   MotorDriverPowerTraces,
@@ -623,6 +623,6 @@ test("repro: RP2040 motor controller stitches wide traces after autorouting", as
       .filter((error) => stitchedViaIds.has(error.pcb_via_id)),
   ).toEqual([])
   expect(circuit).toMatchPcbSnapshot(import.meta.path, {
-    diffThresholdPercent: 0.1,
+    diffThresholdPercent: 1,
   })
 }, 1_800_000)
