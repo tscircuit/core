@@ -120,7 +120,7 @@
     "calculate-cell-boundaries": "^0.0.13",
     "calculate-packing": "^0.0.86",
     "css-select": "5.1.0",
-    "format-si-unit": "^0.0.7",
+    "format-si-unit": "^0.0.12",
     "nanoid": "^5.0.7",
     "performance-now": "^2.1.0",
     "react-reconciler": "^0.32.0",
