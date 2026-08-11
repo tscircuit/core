@@ -6,12 +6,15 @@ test("pushbutton no schematic", () => {
 
   circuit.add(
     <board width="10mm" height="10mm">
-      <pushbutton name="PB1" noSchematicRepresentation={true} />
+      <pushbutton name="PB1" footprint="pushbutton" noSchematicRepresentation />
     </board>,
   )
 
   circuit.render()
 
-  const schematicComponents = circuit.selectAll("schematic_component")
+  const circuitJson = circuit.getCircuitJson()
+  const schematicComponents = circuitJson.filter(
+    (c) => c.type === "schematic_component",
+  )
   expect(schematicComponents.length).toBe(0)
 })
