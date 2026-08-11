@@ -3,7 +3,6 @@ import {
   convertCircuitJsonToInputProblem,
   initializeManifoldGeometry,
 } from "@tscircuit/copper-pour-solver"
-import type { PcbCopperPour } from "circuit-json"
 import type { ISubcircuit } from "../Group/Subcircuit/ISubcircuit"
 import type { Net } from "../Net"
 import type { CopperPour } from "./CopperPour"
@@ -27,7 +26,7 @@ const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
 
   for (const copperPour of copperPours) {
     const { _parsedProps: props } = copperPour
-    const net = subcircuit.selectOne(props.connectsTo) as Net | null
+    const net = subcircuit.selectOne<Net>(props.connectsTo)
     const sourceNetId = net?.source_net_id
     if (!sourceNetId) {
       copperPour.renderError(
@@ -88,7 +87,7 @@ const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
         source_net_id: sourceNetId,
         subcircuit_id: subcircuit.subcircuit_id ?? undefined,
         covered_with_solder_mask: coveredWithSolderMask,
-      } as PcbCopperPour)
+      })
 
       markTraceSegmentsInsideCopperPour({
         db,
