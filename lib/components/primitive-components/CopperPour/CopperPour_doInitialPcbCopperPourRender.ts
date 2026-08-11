@@ -4,13 +4,13 @@ import {
   initializeManifoldGeometry,
 } from "@tscircuit/copper-pour-solver"
 import type { PcbCopperPour } from "circuit-json"
-import type { ISubcircuit } from "../../Group/Subcircuit/ISubcircuit"
-import type { Net } from "../../Net"
-import type { CopperPour } from "../CopperPour"
-import { markTraceSegmentsInsideCopperPour } from "./mark-trace-segments-inside-copper-pour"
+import type { ISubcircuit } from "../Group/Subcircuit/ISubcircuit"
+import type { Net } from "../Net"
+import type { CopperPour } from "./CopperPour"
+import { markTraceSegmentsInsideCopperPour } from "./utils/mark-trace-segments-inside-copper-pour"
 
-// Each CopperPour owns its render effect, while pours in the same subcircuit
-// share the single batch solve needed for pour-to-pour clearance.
+// Each CopperPour queues this phase, but the solver processes every pour in a
+// subcircuit together. Share that batch across the component-owned effects.
 const pendingCopperPourRenders = new WeakMap<ISubcircuit, Promise<void>>()
 
 const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
@@ -98,16 +98,25 @@ const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
   }
 }
 
-export const renderCopperPoursForSubcircuit = (
+export function CopperPour_doInitialPcbCopperPourRender(
   copperPour: CopperPour,
-): Promise<void> => {
-  const subcircuit = copperPour.getSubcircuit()
-  const pendingRender = pendingCopperPourRenders.get(subcircuit)
-  if (pendingRender) return pendingRender
+): void {
+  if (copperPour.root?.pcbDisabled) return
 
-  const renderPromise = renderAllCopperPoursForSubcircuit(subcircuit).finally(
-    () => pendingCopperPourRenders.delete(subcircuit),
-  )
-  pendingCopperPourRenders.set(subcircuit, renderPromise)
-  return renderPromise
+  copperPour._queueAsyncEffect("PcbCopperPourRender", async () => {
+    const subcircuit = copperPour.getSubcircuit()
+    const pendingRender = pendingCopperPourRenders.get(subcircuit)
+    if (pendingRender) {
+      await pendingRender
+      return
+    }
+
+    const renderPromise = renderAllCopperPoursForSubcircuit(subcircuit)
+    pendingCopperPourRenders.set(subcircuit, renderPromise)
+    try {
+      await renderPromise
+    } finally {
+      pendingCopperPourRenders.delete(subcircuit)
+    }
+  })
 }
