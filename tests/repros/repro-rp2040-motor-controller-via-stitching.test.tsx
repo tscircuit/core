@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { convertPcbTraceToSimplifiedPcbTrace } from "lib/components/primitive-components/Group/region-replacement"
 import type {
   SimpleRouteJson,
   SimplifiedPcbTrace,
@@ -480,7 +481,17 @@ test("repro: RP2040 motor controller stitches wide traces after autorouting", as
 
   circuit.on("autorouting:end", ({ phaseName, simpleRouteJson }) => {
     if (phaseName !== "route-board") return
-    routedBoard = structuredClone(simpleRouteJson)
+
+    const childSubcircuitTraces = circuit.db.pcb_trace
+      .list()
+      .map(convertPcbTraceToSimplifiedPcbTrace)
+    routedBoard = {
+      ...structuredClone(simpleRouteJson),
+      traces: [
+        ...childSubcircuitTraces,
+        ...structuredClone(simpleRouteJson.traces ?? []),
+      ],
+    }
   })
 
   const addViaStitching = createBasicAutorouter(async (simpleRouteJson) => {
@@ -622,6 +633,16 @@ test("repro: RP2040 motor controller stitches wide traces after autorouting", as
       .list()
       .filter((error) => stitchedViaIds.has(error.pcb_via_id)),
   ).toEqual([])
+  expect(
+    circuit.db.pcb_trace
+      .list()
+      .some((trace) =>
+        trace.route.some(
+          (point) =>
+            point.route_type === "wire" && point.x < -20 && point.y > 20,
+        ),
+      ),
+  ).toBe(true)
   expect(circuit).toMatchPcbSnapshot(import.meta.path, {
     diffThresholdPercent: 1,
   })
