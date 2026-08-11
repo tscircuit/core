@@ -1,7 +1,7 @@
 {
   "name": "@tscircuit/core",
   "type": "module",
-  "version": "0.0.1655",
+  "version": "0.0.1656",
   "types": "dist/index.d.ts",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -36,7 +36,7 @@
     "@tscircuit/alphabet": "0.0.25",
     "@tscircuit/breakout-point-solver": "github:tscircuit/breakout-point-solver#bac9629",
     "@tscircuit/capacity-autorouter": "^0.0.790",
-    "@tscircuit/checks": "0.0.155",
+    "@tscircuit/checks": "0.0.156",
     "@tscircuit/circuit-json-util": "^0.0.106",
     "@tscircuit/common": "^0.0.20",
     "@tscircuit/copper-pour-solver": "0.0.44",
