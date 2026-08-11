@@ -506,6 +506,7 @@ test("repro: RP2040 motor controller stitches wide traces after autorouting", as
       schematicDisabled
       minViaPadDiameter="0.45mm"
       minViaHoleDiameter="0.3mm"
+      // Let the full-board route converge before post-route via stitching.
       autorouterEffortLevel="2x"
       autorouter={{
         local: true,
