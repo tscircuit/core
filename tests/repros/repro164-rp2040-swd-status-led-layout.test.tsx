@@ -15,31 +15,14 @@ export default function StatusAndSwdDebug() {
   const statusSection = "status_swd_debug"
 
   return (
-    <board width="40mm" height="25mm" routingDisabled>
-      <pushbutton
-        name="SW_BOOT"
-        schX={-5}
-        schY={2}
-        doNotPlace
-        pcbX={-15}
-        pcbY={5}
-      />
-      <pushbutton
-        name="SW_RUN"
-        schX={2}
-        schY={2}
-        doNotPlace
-        pcbX={-10}
-        pcbY={5}
-      />
+    <board width="40mm" height="25mm" routingDisabled schAutoLayoutEnabled>
+      <pushbutton name="SW_BOOT" doNotPlace pcbX={-15} pcbY={5} />
+      <pushbutton name="SW_RUN" doNotPlace pcbX={-10} pcbY={5} />
 
       <resistor
         name="R_BOOT"
         resistance="10k"
         footprint="0402"
-        schX={-5}
-        schY={0.5}
-        schRotation={90}
         doNotPlace
         pcbX={-5}
         pcbY={5}
@@ -48,9 +31,6 @@ export default function StatusAndSwdDebug() {
         name="R_RUN"
         resistance="10k"
         footprint="0402"
-        schX={2}
-        schY={0.5}
-        schRotation={90}
         doNotPlace
         pcbX={0}
         pcbY={5}
@@ -60,53 +40,27 @@ export default function StatusAndSwdDebug() {
         name="R_LED"
         resistance="330"
         footprint="0402"
-        schX={-1.5}
-        schY={2}
-        schRotation={270}
         doNotPlace
         pcbX={5}
         pcbY={5}
       />
-      <led
-        name="D1"
-        color="green"
-        schX={-1.5}
-        schY={0.5}
-        schRotation={270}
-        doNotPlace
-        pcbX={10}
-        pcbY={5}
-      />
+      <led name="D1" color="green" doNotPlace pcbX={10} pcbY={5} />
 
       <resistor
         name="R_PWR_LED"
         resistance="330"
         footprint="0402"
-        schX={5.5}
-        schY={2}
-        schRotation={270}
         doNotPlace
         pcbX={15}
         pcbY={5}
       />
-      <led
-        name="D_PWR"
-        color="green"
-        schX={5.5}
-        schY={0.5}
-        schRotation={270}
-        doNotPlace
-        pcbX={15}
-        pcbY={-2}
-      />
+      <led name="D_PWR" color="green" doNotPlace pcbX={15} pcbY={-2} />
 
       <testpoint
         name="TP_SWCLK"
         footprintVariant="pad"
         padShape="circle"
         padDiameter="1.1mm"
-        schX={-4.5}
-        schY={-2.5}
         pcbX={-6}
         pcbY={-8}
       />
@@ -115,8 +69,6 @@ export default function StatusAndSwdDebug() {
         footprintVariant="pad"
         padShape="circle"
         padDiameter="1.1mm"
-        schX={-1.5}
-        schY={-2.5}
         pcbX={-2}
         pcbY={-8}
       />
@@ -125,8 +77,6 @@ export default function StatusAndSwdDebug() {
         footprintVariant="pad"
         padShape="circle"
         padDiameter="1.1mm"
-        schX={1.5}
-        schY={-2.5}
         pcbX={2}
         pcbY={-8}
       />
@@ -135,8 +85,6 @@ export default function StatusAndSwdDebug() {
         footprintVariant="pad"
         padShape="circle"
         padDiameter="1.1mm"
-        schX={4.5}
-        schY={-2.5}
         pcbX={6}
         pcbY={-8}
       />
