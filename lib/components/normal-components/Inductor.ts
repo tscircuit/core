@@ -6,7 +6,7 @@ import {
 } from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { Port } from "../primitive-components/Port"
-import { formatSiUnit } from "format-si-unit"
+import { formatSiUnit, parseAndConvertSiUnit } from "format-si-unit"
 import type { SourceSimpleInductor } from "circuit-json"
 
 export class Inductor extends NormalComponent<
@@ -45,6 +45,10 @@ export class Inductor extends NormalComponent<
       name: this.name,
       ftype: FTYPE.simple_inductor,
       inductance: this.props.inductance,
+      max_current_rating:
+        props.maxCurrentRating === undefined
+          ? undefined
+          : parseAndConvertSiUnit(props.maxCurrentRating, "A").value,
       display_inductance: this._getSchematicSymbolDisplayValue(),
       supplier_part_numbers: props.supplierPartNumbers,
       manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
