@@ -18,14 +18,22 @@ import {
  * directions are handled separately because rotating a footprint within the
  * board plane cannot change them.
  */
-const inPlaneDirectionToVector: Record<
-  Exclude<InsertionDirection, "from_above" | "from_below">,
-  { x: number; y: number }
+const insertionDirectionToVector: Record<
+  InsertionDirection,
+  { x: number; y: number; z: number }
 > = {
-  from_left: { x: -1, y: 0 },
-  from_right: { x: 1, y: 0 },
-  from_top: { x: 0, y: 1 },
-  from_bottom: { x: 0, y: -1 },
+  from_left: { x: -1, y: 0, z: 0 },
+  from_right: { x: 1, y: 0, z: 0 },
+  from_top: { x: 0, y: 1, z: 0 },
+  from_bottom: { x: 0, y: -1, z: 0 },
+  from_above: { x: 0, y: 0, z: 1 },
+  from_below: { x: 0, y: 0, z: -1 },
+}
+
+export interface BoardDirectionVector {
+  x: number
+  y: number
+  z: number
 }
 
 export const isFootprintFlipped = (params: {
@@ -37,31 +45,28 @@ export const isFootprintFlipped = (params: {
 }
 
 /**
- * Converts a footprint-frame insertion direction into board coordinates by
- * applying the component's rotation and layer.
+ * Converts a footprint-local direction into a unit direction vector in the
+ * board's right-handed XYZ frame (+Z above the board), applying the exact same
+ * rotation and layer transform as the footprint's pads. This is a direction,
+ * not a point: it receives no translation. Millimetres therefore do not apply.
  *
- * Accepts either spelling the props enum allows and always returns one of the
- * six canonical named directions.
+ * Unlike `transformFootprintInsertionDirection`, this retains the continuous
+ * in-plane angle. Consumers that orient physical geometry must use this vector;
+ * the named direction is intentionally quantized and is only suitable for
+ * choosing the nearest Cartesian side.
  */
-export const transformFootprintInsertionDirection = (params: {
+export const transformFootprintInsertionDirectionVector = (params: {
   insertionDirection?: FootprintInsertionDirection
   rotationDegrees?: number
   isFlipped?: boolean
-}): InsertionDirection | undefined => {
+}): BoardDirectionVector | undefined => {
   const { insertionDirection, rotationDegrees = 0, isFlipped = false } = params
-
   if (!insertionDirection) return undefined
 
   // Circuit JSON accepts deprecated and Cartesian direction names at input,
-  // but pcb_component.insertion_direction is written with the canonical names.
+  // but internal geometry uses the six canonical axes.
   const direction = insertionDirectionToCanonical[insertionDirection]
-
-  // A footprint moved to the other layer is rotated 180 degrees about the
-  // board's Y axis, so an insertion along Z now points the opposite way.
-  if (direction === "from_above" || direction === "from_below") {
-    if (!isFlipped) return direction
-    return direction === "from_above" ? "from_below" : "from_above"
-  }
+  const localVector = insertionDirectionToVector[direction]
 
   // Reuse the transform PrimitiveComponent applies to the footprint's own
   // geometry, so this direction cannot drift from where the pads land. From
@@ -75,16 +80,38 @@ export const transformFootprintInsertionDirection = (params: {
   //   )
   //
   // compose() applies right to left, so the footprint is flipped in its own
-  // frame and the component's rotation is applied after. flipY() mirrors on
-  // the y-axis, which negates X and leaves Y alone.
+  // frame and the component's rotation is applied after. In board 3D, flipY()
+  // is the XY projection of the layer's 180-degree turn about Y: it negates X,
+  // leaves Y alone, and the corresponding Z component is negated explicitly.
   const transform = compose(
     rotate((normalizeDegrees(rotationDegrees) * Math.PI) / 180),
     isFlipped ? flipY() : identity(),
   )
-  const finalVector = applyToPoint(
-    transform,
-    inPlaneDirectionToVector[direction],
-  )
+  const transformedXy = applyToPoint(transform, localVector)
+
+  return {
+    x: transformedXy.x,
+    y: transformedXy.y,
+    z: isFlipped ? -localVector.z : localVector.z,
+  }
+}
+
+/**
+ * Converts a footprint-frame insertion direction into the nearest canonical
+ * board axis. This quantized result chooses a wall; use the paired vector
+ * transform above to orient geometry within that choice.
+ */
+export const transformFootprintInsertionDirection = (params: {
+  insertionDirection?: FootprintInsertionDirection
+  rotationDegrees?: number
+  isFlipped?: boolean
+}): InsertionDirection | undefined => {
+  const finalVector = transformFootprintInsertionDirectionVector(params)
+  if (!finalVector) return undefined
+
+  if (finalVector.z !== 0) {
+    return finalVector.z > 0 ? "from_above" : "from_below"
+  }
 
   if (Math.abs(finalVector.x) >= Math.abs(finalVector.y)) {
     return finalVector.x >= 0 ? "from_right" : "from_left"
