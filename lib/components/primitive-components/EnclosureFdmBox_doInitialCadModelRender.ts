@@ -94,6 +94,7 @@ export const EnclosureFdmBox_doInitialCadModelRender = (
     model_origin_alignment: "bottom_center_of_component",
     anchor_alignment: "center",
     show_as_translucent_model: false,
+    show_hidden_edges: props.showHiddenEdges,
   })
   component.cad_component_id = cadComponent.cad_component_id
 }
