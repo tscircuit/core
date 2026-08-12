@@ -7,6 +7,7 @@ import {
 } from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { Port } from "../primitive-components/Port"
+import { Trace } from "../primitive-components/Trace/Trace"
 import { symbols } from "schematic-symbols"
 
 export class PushButton extends NormalComponent<
@@ -25,6 +26,23 @@ export class PushButton extends NormalComponent<
 
   get defaultInternallyConnectedPinNames(): string[][] {
     return []
+  }
+
+  doInitialCreateTracesFromProps() {
+    const { _parsedProps: props } = this
+
+    if (props.externallyConnectedPins) {
+      for (const [pin1, pin2] of props.externallyConnectedPins) {
+        this.add(
+          new Trace({
+            from: `${this.getSubcircuitSelector()} > port.${pin1}`,
+            to: `${this.getSubcircuitSelector()} > port.${pin2}`,
+          }),
+        )
+      }
+    }
+
+    this._createTracesFromConnectionsProp()
   }
 
   override initPorts() {
