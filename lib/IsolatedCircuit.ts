@@ -12,6 +12,7 @@ import type { BoardI } from "./components/normal-components/BoardI"
 import { Group } from "./components/primitive-components/Group"
 import type { RootCircuitEventName } from "./events"
 import { createInstanceFromReactElement } from "./fiber/create-instance-from-react-element"
+import { isAssemblyDeviceContainer } from "./components/base-components/is-assembly-device-container"
 
 export class IsolatedCircuit {
   firstChild: PrimitiveComponent | null = null
@@ -139,12 +140,23 @@ export class IsolatedCircuit {
    * Get the main board for this Circuit.
    */
   _getBoard(): (PrimitiveComponent & BoardI) | undefined {
-    const directBoard = this.children.find((c) => c.componentName === "Board")
-    if (directBoard) {
-      return directBoard as any
+    // `<assembly.device>` may contain the board, so the board is not always a
+    // direct child. Descend through assembly-device containers only -- a board
+    // nested inside an ordinary group is still not the circuit's root board.
+    const findBoard = (
+      components: PrimitiveComponent[],
+    ): PrimitiveComponent | undefined => {
+      for (const child of components) {
+        if (child.componentName === "Board") return child
+        if (isAssemblyDeviceContainer(child)) {
+          const nested = findBoard(child.children)
+          if (nested) return nested
+        }
+      }
+      return undefined
     }
 
-    return undefined
+    return findBoard(this.children) as (PrimitiveComponent & BoardI) | undefined
   }
 
   _guessRootComponent() {
@@ -172,7 +184,10 @@ export class IsolatedCircuit {
       return
     }
 
-    if (this.children.length === 1 && this.children[0].isGroup) {
+    if (
+      this.children.length === 1 &&
+      (this.children[0].isGroup || isAssemblyDeviceContainer(this.children[0]))
+    ) {
       this.firstChild = this.children[0]
       return
     }
