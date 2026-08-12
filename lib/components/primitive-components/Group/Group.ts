@@ -66,6 +66,7 @@ import { Group_doInitialPcbComponentAnchorAlignment } from "./Group_doInitialPcb
 import { Group_doInitialPcbLayoutFlex } from "./Group_doInitialPcbLayoutFlex"
 import { Group_doInitialPcbLayoutGrid } from "./Group_doInitialPcbLayoutGrid"
 import { Group_doInitialPcbLayoutPack } from "./Group_doInitialPcbLayoutPack/Group_doInitialPcbLayoutPack"
+import { isAssemblyDeviceContainer } from "lib/components/base-components/is-assembly-device-container"
 import {
   Group_doInitialSchematicBoxComponentRender,
   getGroupSchematicBoxPinLabels,
@@ -496,6 +497,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     }
 
     if (!this.isSubcircuit) return
+    // An assembly-device container is not a subcircuit, so a board under
+    // one has no parent subcircuit to attach to and getSubcircuit() would throw.
+    if (isAssemblyDeviceContainer(this.parent)) return
     const parent_subcircuit_id = this.parent?.getSubcircuit?.()?.subcircuit_id
     if (!parent_subcircuit_id) return
     db.source_group.update(this.source_group_id!, {
