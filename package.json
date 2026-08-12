@@ -53,7 +53,7 @@
     "@tscircuit/math-utils": "^0.0.36",
     "@tscircuit/miniflex": "^0.0.4",
     "@tscircuit/ngspice-spice-engine": "^0.0.20",
-    "@tscircuit/props": "^0.0.618",
+    "@tscircuit/props": "^0.0.620",
     "@tscircuit/schematic-match-adapt": "^0.0.18",
     "@tscircuit/schematic-trace-solver": "^0.0.129",
     "@tscircuit/solver-utils": "^0.0.16",
@@ -67,9 +67,9 @@
     "bun-match-svg": "0.0.12",
     "calculate-elbow": "^0.0.12",
     "chokidar-cli": "^3.0.0",
-    "circuit-json": "^0.0.465",
+    "circuit-json": "^0.0.466",
     "circuit-json-to-bpc": "^0.0.13",
-    "circuit-json-to-gltf": "^0.0.111",
+    "circuit-json-to-gltf": "^0.0.117",
     "circuit-json-to-connectivity-map": "^0.0.27",
     "circuit-json-to-spice": "^0.0.45",
     "circuit-to-svg": "^0.0.400",
@@ -84,7 +84,7 @@
     "live-server": "^1.2.2",
     "minicssgrid": "^0.0.9",
     "pkg-pr-new": "^0.0.37",
-    "poppygl": "^0.0.26",
+    "poppygl": "^0.0.27",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "schematic-symbols": "^0.0.238",
@@ -130,7 +130,7 @@
   },
   "overrides": {
     "@tscircuit/circuit-json-util": "^0.0.106",
-    "@tscircuit/props": "^0.0.618",
-    "circuit-json": "^0.0.465"
+    "@tscircuit/props": "^0.0.620",
+    "circuit-json": "^0.0.466"
   }
 }

@@ -62,7 +62,7 @@ test("generates an FDM enclosure and USB-C aperture with the enclosure solver", 
           />
         </connector>
       </board>
-      <enclosure.fdm.box boardRef=".main-board" />
+      <enclosure.fdm.box boardRef=".main-board" showHiddenEdges />
     </group>,
   )
 
@@ -88,10 +88,13 @@ test("generates an FDM enclosure and USB-C aperture with the enclosure solver", 
   const enclosureCadComponent = circuit.db.cad_component
     .list()
     .find((cadComponent) => cadComponent.model_jscad)
+  expect(enclosureCadComponent).toBeDefined()
   expect(enclosureCadComponent?.show_as_translucent_model).toBe(false)
+  expect(enclosureCadComponent?.show_hidden_edges).toBe(true)
 
   await expect(circuit).toMatchSimple3dSnapshot(import.meta.path, {
     camPos: [30, 24, 50],
+    diffTolerance: 0,
     poppygl: {
       lookAt: [0, 0, 3.5],
       backgroundColor: [1, 1, 1],
