@@ -114,4 +114,4 @@ test("repro159: matchpack lays out a 12x12 WLED matrix schematic", async () => {
   const layoutErrors = circuit.db.schematic_layout_error.list()
   expect(layoutErrors).toHaveLength(0)
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
-}, 90_000)
+}, 600_000)

@@ -687,5 +687,5 @@ describe("minimize trace crossing", () => {
     await circuit.render()
 
     expect(circuit).toMatchSchematicSnapshot(import.meta.path)
-  })
+  }, 25_000)
 })

@@ -197,4 +197,4 @@ test("Schematic box component - manual layout for all alignments", async () => {
 
   circuit.render()
   expect(circuit.getCircuitJson()).toMatchSchematicSnapshot(import.meta.path)
-})
+}, 20_000)

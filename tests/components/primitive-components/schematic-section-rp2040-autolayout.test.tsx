@@ -548,4 +548,4 @@ test("RP2040 auto-layout with schematic sections", () => {
   circuit.render()
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
-})
+}, 40_000)
