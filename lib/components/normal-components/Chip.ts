@@ -73,15 +73,6 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
     }
   }
 
-  doInitialSchematicComponentRender(): void {
-    const { _parsedProps: props } = this
-    // Early return if noSchematicRepresentation is true
-    if (props?.noSchematicRepresentation === true) return
-
-    // Continue with normal schematic rendering
-    super.doInitialSchematicComponentRender()
-  }
-
   doInitialSourceRender(): void {
     const { db } = this.root!
     const { _parsedProps: props } = this
