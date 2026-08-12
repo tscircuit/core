@@ -1972,17 +1972,19 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         (cProps?.schX !== undefined || cProps?.schY !== undefined)
       )
     })
-    const hasManualEdits =
-      (props.manualEdits?.schematic_placements?.length ?? 0) > 0
 
-    // For boards, schAutoLayoutEnabled should keep auto layout enabled for
+    // A manual placement fixes one component, not the whole group, so it must
+    // not turn off auto layout. Matchpack fixes each manually placed component
+    // in place, the same way it fixes children with explicit schX/schY, and
+    // keeps laying out the rest.
+
+    // For boards, schAutoLayoutEnabled keeps auto layout enabled for
     // unpositioned children even if some siblings have explicit schX/schY.
-    // Explicitly positioned children are skipped by matchpack.
-    if (schAutoLayoutEnabled && !hasManualEdits) return "match-adapt"
+    if (schAutoLayoutEnabled) return "match-adapt"
 
     // Use match-adapt if no explicit positioning is set, even with group
     // children. This allows nested groups to be laid out properly.
-    if (!anyLayoutChildHasSchCoords && !hasManualEdits) return "match-adapt"
+    if (!anyLayoutChildHasSchCoords) return "match-adapt"
     return "relative"
   }
 

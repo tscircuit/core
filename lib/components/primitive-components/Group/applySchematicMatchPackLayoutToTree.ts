@@ -318,7 +318,7 @@ function getNestedGroupMatchpackProxy({
 
 function isTreeChildExplicitlyPositioned(
   treeChild: CircuitJsonTreeNode,
-  group: Group,
+  group: Group<any>,
 ): boolean {
   if (treeChild.nodeType === "component" && treeChild.sourceComponent) {
     const component = group.children.find(
@@ -326,9 +326,17 @@ function isTreeChildExplicitlyPositioned(
         groupChild.source_component_id ===
         treeChild.sourceComponent?.source_component_id,
     )
+    if (!component) return false
+    if (
+      component._parsedProps?.schX !== undefined ||
+      component._parsedProps?.schY !== undefined
+    ) {
+      return true
+    }
     return (
-      component?._parsedProps?.schX !== undefined ||
-      component?._parsedProps?.schY !== undefined
+      component
+        .getSubcircuit()
+        ?._getSchematicManualPlacementForComponent(component) != null
     )
   }
 
@@ -953,15 +961,7 @@ export function applySchematicMatchPackLayoutToTree<
     }
 
     if (treeNode.nodeType === "component" && treeNode.sourceComponent) {
-      const groupChild = group.children.find(
-        (c: any) =>
-          c.source_component_id ===
-          treeNode.sourceComponent?.source_component_id,
-      ) as any
-      if (
-        groupChild?._parsedProps?.schX !== undefined ||
-        groupChild?._parsedProps?.schY !== undefined
-      ) {
+      if (isTreeChildExplicitlyPositioned(treeNode, group)) {
         debug(`Skipping position update for fixed chip ${chipId}`)
         continue
       }
