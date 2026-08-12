@@ -85,11 +85,16 @@ test("generates an FDM enclosure and USB-C aperture with the enclosure solver", 
   const enclosureCadComponents = circuit.db.cad_component
     .list()
     .filter((cadComponent) => cadComponent.model_jscad)
-  // This staged Core PR preserves the published combined CAD representation.
-  // Separate typed base/lid records arrive with the later Circuit JSON PR.
-  expect(enclosureCadComponents).toHaveLength(1)
-  expect(enclosureCadComponents[0]?.show_as_translucent_model).toBe(false)
-  expect(enclosureCadComponents[0]?.show_hidden_edges).toBe(true)
+  // Base and lid are independently renderable CAD meshes, sharing the existing
+  // synthetic PCB owner until the typed schema adds durable part roles.
+  expect(enclosureCadComponents).toHaveLength(2)
+  expect(
+    new Set(enclosureCadComponents.map((cad) => cad.cad_component_id)).size,
+  ).toBe(2)
+  for (const cad of enclosureCadComponents) {
+    expect(cad.show_as_translucent_model).toBe(false)
+    expect(cad.show_hidden_edges).toBe(true)
+  }
 
   await expect(circuit).toMatchSimple3dSnapshot(import.meta.path, {
     camPos: [30, 24, 50],

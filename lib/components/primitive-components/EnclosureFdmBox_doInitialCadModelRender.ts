@@ -89,28 +89,37 @@ export const EnclosureFdmBox_doInitialCadModelRender = (
     height: output.dimensions.height,
   } as Partial<PcbComponent>)
 
-  const cadComponent = db.cad_component.insert({
-    position: {
-      x: pcbBoard.center.x,
-      y: pcbBoard.center.y,
-      z:
-        -boardThickness / 2 -
-        output.dimensions.floorThickness -
-        output.dimensions.standoffHeight,
-    },
-    rotation: { x: 0, y: 0, z: 0 },
-    pcb_component_id: component.pcb_component_id,
-    source_component_id: component.source_component_id,
-    // Compatibility representation: the solver exposes base/lid separately,
-    // but existing Circuit JSON carries their assembled union until the typed
-    // per-part schema and renderer PRs land.
-    model_jscad: output.jscadPlan,
-    model_unit_to_mm_scale_factor: 1,
-    model_object_fit: "contain_within_bounds",
-    model_origin_alignment: "bottom_center_of_component",
-    anchor_alignment: "center",
-    show_as_translucent_model: false,
-    show_hidden_edges: props.showHiddenEdges,
-  })
-  component.cad_component_id = cadComponent.cad_component_id
+  const position = {
+    x: pcbBoard.center.x,
+    y: pcbBoard.center.y,
+    z:
+      -boardThickness / 2 -
+      output.dimensions.floorThickness -
+      output.dimensions.standoffHeight,
+  }
+
+  // Existing Circuit JSON already permits several cad_component records to
+  // share one PCB owner (the same relationship a cadassembly uses). Emit the
+  // solver's base and lid plans separately now, while both still share the
+  // synthetic enclosure source/PCB compatibility owner. The later typed schema
+  // adds durable base/lid role names; this stage gives renderers two meshes but
+  // intentionally does not infer a role from IDs or names.
+  const cadComponents = output.parts.map((part) =>
+    db.cad_component.insert({
+      position,
+      rotation: { x: 0, y: 0, z: 0 },
+      pcb_component_id: component.pcb_component_id!,
+      source_component_id: component.source_component_id!,
+      model_jscad: part.jscadPlan,
+      model_unit_to_mm_scale_factor: 1,
+      model_object_fit: "contain_within_bounds",
+      model_origin_alignment: "bottom_center_of_component",
+      anchor_alignment: "center",
+      show_as_translucent_model: false,
+      show_hidden_edges: props.showHiddenEdges,
+    }),
+  )
+  // PrimitiveComponent exposes one compatibility id; keep the first generated
+  // part there while the database remains the source of truth for both records.
+  component.cad_component_id = cadComponents[0]?.cad_component_id ?? null
 }
