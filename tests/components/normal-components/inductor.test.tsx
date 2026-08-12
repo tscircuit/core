@@ -9,6 +9,7 @@ test("<inductor /> component", async () => {
       <inductor
         name="U1"
         inductance="10"
+        maxCurrentRating="2A"
         footprint="axial_p0.3in"
         pcbX={0}
         pcbY={0}
@@ -17,6 +18,12 @@ test("<inductor /> component", async () => {
   )
 
   circuit.render()
+
+  expect(circuit.db.source_component.getWhere({ name: "U1" })).toMatchObject({
+    ftype: "simple_inductor",
+    inductance: "10",
+    max_current_rating: 2,
+  })
 
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
