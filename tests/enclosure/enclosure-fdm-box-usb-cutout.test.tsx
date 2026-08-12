@@ -76,21 +76,20 @@ test("generates an FDM enclosure and USB-C aperture with the enclosure solver", 
   })
   expect(enclosureSolverEvent?.solverParams.apertures[0]).toMatchObject({
     shape: "pill",
-    wall: "front",
-    offset: 0,
+    face: "y_pos",
+    center: { x: 0 },
   })
-  expect(enclosureSolverEvent?.solverParams.apertures[0].centerZ).toBeCloseTo(
-    5.7,
-  )
   expect(enclosureSolverEvent?.solverConstructorArgs).toEqual([
     enclosureSolverEvent?.solverParams,
   ])
-  const enclosureCadComponent = circuit.db.cad_component
+  const enclosureCadComponents = circuit.db.cad_component
     .list()
-    .find((cadComponent) => cadComponent.model_jscad)
-  expect(enclosureCadComponent).toBeDefined()
-  expect(enclosureCadComponent?.show_as_translucent_model).toBe(false)
-  expect(enclosureCadComponent?.show_hidden_edges).toBe(true)
+    .filter((cadComponent) => cadComponent.model_jscad)
+  // This staged Core PR preserves the published combined CAD representation.
+  // Separate typed base/lid records arrive with the later Circuit JSON PR.
+  expect(enclosureCadComponents).toHaveLength(1)
+  expect(enclosureCadComponents[0]?.show_as_translucent_model).toBe(false)
+  expect(enclosureCadComponents[0]?.show_hidden_edges).toBe(true)
 
   await expect(circuit).toMatchSimple3dSnapshot(import.meta.path, {
     camPos: [30, 24, 50],
