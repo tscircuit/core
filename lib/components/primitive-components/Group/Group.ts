@@ -1604,16 +1604,13 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         component: this,
         subcircuit: this,
       })
-    const shouldSkipBecauseOfTraceLengthViolations =
-      shouldSkipAutoroutingBecauseOfTraceLengthViolations({
-        component: this,
-        subcircuit: this,
-      })
-    if (
-      shouldSkipBecauseOfPlacementErrors ||
-      shouldSkipBecauseOfTraceLengthViolations
-    )
-      return
+    // Record impossible length constraints without preventing unaffected nets
+    // in this subcircuit from being routed.
+    shouldSkipAutoroutingBecauseOfTraceLengthViolations({
+      component: this,
+      subcircuit: this,
+    })
+    if (shouldSkipBecauseOfPlacementErrors) return
     this._startAsyncAutorouting()
   }
 
@@ -1639,16 +1636,13 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             component: this,
             subcircuit: this,
           })
-        const shouldSkipBecauseOfTraceLengthViolations =
-          shouldSkipAutoroutingBecauseOfTraceLengthViolations({
-            component: this,
-            subcircuit: this,
-          })
-        if (
-          shouldSkipBecauseOfPlacementErrors ||
-          shouldSkipBecauseOfTraceLengthViolations
-        )
-          return
+        // Record impossible length constraints without preventing unaffected
+        // nets in this subcircuit from being routed.
+        shouldSkipAutoroutingBecauseOfTraceLengthViolations({
+          component: this,
+          subcircuit: this,
+        })
+        if (shouldSkipBecauseOfPlacementErrors) return
         debug(
           `[${this.getString()}] child subcircuits are now routed, starting async autorouting`,
         )

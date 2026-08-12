@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("autorouting is skipped when straight-line distance exceeds maxLength", async () => {
+test("autorouting continues when one trace exceeds maxLength", async () => {
   const { circuit } = getTestFixture()
   let autoroutingStartCount = 0
 
@@ -18,7 +18,7 @@ test("autorouting is skipped when straight-line distance exceeds maxLength", asy
       <pcbnotetext
         pcbY={-3}
         fontSize={0.7}
-        text="IMPOSSIBLE TRACE LENGTH: ROUTING SKIPPED"
+        text="IMPOSSIBLE TRACE LENGTH: ROUTING CONTINUES"
       />
       <capacitor
         name="C1"
@@ -36,8 +36,8 @@ test("autorouting is skipped when straight-line distance exceeds maxLength", asy
   await circuit.renderUntilSettled()
 
   const autoroutingErrors = circuit.db.pcb_autorouting_error.list()
-  expect(autoroutingStartCount).toBe(0)
-  expect(circuit.db.pcb_trace.list()).toHaveLength(0)
+  expect(autoroutingStartCount).toBeGreaterThan(0)
+  expect(circuit.db.pcb_trace.list().length).toBeGreaterThan(0)
   expect(autoroutingErrors).toHaveLength(1)
   expect(autoroutingErrors[0].message).toContain("cannot be satisfied")
   expect(autoroutingErrors[0].message).toContain("endpoints are")

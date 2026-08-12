@@ -203,16 +203,14 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
       component: trace,
       subcircuit,
     })
-  const shouldSkipBecauseOfTraceLengthViolations =
-    shouldSkipAutoroutingBecauseOfTraceLengthViolations({
-      component: trace,
-      subcircuit,
-    })
-  if (
-    shouldSkipBecauseOfPlacementErrors ||
-    shouldSkipBecauseOfTraceLengthViolations
-  )
-    return
+  // Keep reporting impossible length constraints, but do not block routing for
+  // every other trace in the subcircuit. The routed output will retain the
+  // constraint violation for DRC/UI reporting.
+  shouldSkipAutoroutingBecauseOfTraceLengthViolations({
+    component: trace,
+    subcircuit,
+  })
+  if (shouldSkipBecauseOfPlacementErrors) return
 
   const nets = trace._findConnectedNets().netsWithSelectors
 
