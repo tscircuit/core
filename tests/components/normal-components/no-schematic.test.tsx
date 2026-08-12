@@ -1,7 +1,7 @@
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { test, expect } from "bun:test"
 
-test("pushbutton no schematic", () => {
+test("no schematic representation", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
