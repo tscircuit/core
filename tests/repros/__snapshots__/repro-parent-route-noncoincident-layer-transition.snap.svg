@@ -4,18 +4,19 @@
   <text x="40" y="42" font-family="sans-serif" font-size="22" font-weight="700" fill="#111827">Parent-route simplification failure</text>
   <text x="40" y="70" font-family="sans-serif" font-size="15" fill="#4b5563">The orange segment changes layers between different XY coordinates, but contains no via.</text>
 
-  <line x1="286" y1="27" x2="286" y2="99" stroke="#d32f2f" stroke-width="11" stroke-linecap="round"/><line x1="286" y1="99" x2="286" y2="531" stroke="#3367a8" stroke-width="11" stroke-linecap="round"/><line x1="286" y1="531" x2="286" y2="603" stroke="#d32f2f" stroke-width="11" stroke-linecap="round"/><line x1="520" y1="225" x2="502" y2="243" stroke="#f97316" stroke-width="11" stroke-linecap="round" stroke-dasharray="8 6"/><path d="M 513 218 l 14 14 m 0 -14 l -14 14 M 495 236 l 14 14 m 0 -14 l -14 14" stroke="#f97316" stroke-width="4"/><line x1="502" y1="243" x2="430" y2="243" stroke="#3367a8" stroke-width="11" stroke-linecap="round"/><line x1="430" y1="243" x2="214" y2="243" stroke="#d32f2f" stroke-width="11" stroke-linecap="round"/><line x1="502" y1="387" x2="430" y2="387" stroke="#3367a8" stroke-width="11" stroke-linecap="round"/><line x1="430" y1="387" x2="214" y2="387" stroke="#d32f2f" stroke-width="11" stroke-linecap="round"/>
-  <circle cx="286" cy="99" r="14" fill="#ff20d6" stroke="#7e0b69" stroke-width="3"/><circle cx="286" cy="531" r="14" fill="#ff20d6" stroke="#7e0b69" stroke-width="3"/><circle cx="430" cy="243" r="14" fill="#ff20d6" stroke="#7e0b69" stroke-width="3"/><circle cx="430" cy="387" r="14" fill="#ff20d6" stroke="#7e0b69" stroke-width="3"/>
+  <line x1="286" y1="27" x2="286" y2="99" stroke="#d32f2f" stroke-width="11" stroke-linecap="round"/><line x1="286" y1="99" x2="286" y2="531" stroke="#3367a8" stroke-width="11" stroke-linecap="round"/><line x1="286" y1="531" x2="286" y2="603" stroke="#d32f2f" stroke-width="11" stroke-linecap="round"/><line x1="520" y1="225" x2="503.44" y2="225.79199999999997" stroke="#f97316" stroke-width="11" stroke-linecap="round" stroke-dasharray="8 6"/><path d="M 513 218 l 14 14 m 0 -14 l -14 14 M 496.44 218.79199999999997 l 14 14 m 0 -14 l -14 14" stroke="#f97316" stroke-width="4"/><line x1="503.44" y1="225.79199999999997" x2="430" y2="225.79199999999997" stroke="#3367a8" stroke-width="11" stroke-linecap="round"/><line x1="430" y1="225.79199999999997" x2="214" y2="225.79199999999997" stroke="#d32f2f" stroke-width="11" stroke-linecap="round"/><line x1="502" y1="387" x2="430" y2="387" stroke="#3367a8" stroke-width="11" stroke-linecap="round"/><line x1="430" y1="387" x2="214" y2="387" stroke="#d32f2f" stroke-width="11" stroke-linecap="round"/>
+  <circle cx="286" cy="99" r="14" fill="#ff20d6" stroke="#7e0b69" stroke-width="3"/><circle cx="286" cy="531" r="14" fill="#ff20d6" stroke="#7e0b69" stroke-width="3"/><circle cx="430" cy="225.79199999999997" r="14" fill="#ff20d6" stroke="#7e0b69" stroke-width="3"/><circle cx="430" cy="387" r="14" fill="#ff20d6" stroke="#7e0b69" stroke-width="3"/>
+  <circle cx="519.67335042645" cy="212.5022904" r="18" fill="#22d3ee80" stroke="#0891b2" stroke-width="4"/>
 
-  <path d="M 690 170 C 640 185, 585 205, 530 225" fill="none" stroke="#f97316" stroke-width="3" marker-end="url(#arrow)"/>
+  <path d="M 585 170 C 575 185, 555 205, 530 225" fill="none" stroke="#f97316" stroke-width="3" marker-end="url(#arrow)"/>
   <defs>
     <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
       <path d="M 0 0 L 9 3 L 0 6 Z" fill="#f97316"/>
     </marker>
   </defs>
-  <text x="675" y="116" font-family="sans-serif" font-size="16" font-weight="700" fill="#c2410c">BUG</text>
-  <text x="675" y="138" font-family="sans-serif" font-size="14" fill="#c2410c">Top → bottom diagonally</text>
-  <text x="675" y="158" font-family="sans-serif" font-size="14" fill="#c2410c">No via at either endpoint</text>
+  <text x="570" y="116" font-family="sans-serif" font-size="16" font-weight="700" fill="#c2410c">BUG: marker removed</text>
+  <text x="570" y="138" font-family="sans-serif" font-size="14" fill="#c2410c">Becomes a diagonal</text>
+  <text x="570" y="158" font-family="sans-serif" font-size="14" fill="#c2410c">layer jump without a via</text>
 
   <g font-family="sans-serif" font-size="14" fill="#374151">
     <line x1="40" y1="565" x2="78" y2="565" stroke="#d32f2f" stroke-width="6" stroke-linecap="round"/>
