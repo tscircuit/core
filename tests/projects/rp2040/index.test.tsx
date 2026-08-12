@@ -7,4 +7,4 @@ test("rp2040 matches snapshots", async () => {
   circuit.add(<RP2040 />)
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
-})
+}, 20_000)

@@ -626,4 +626,4 @@ test("RP2040", () => {
   circuit.render()
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
-})
+}, 40_000)

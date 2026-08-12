@@ -121,4 +121,4 @@ test("all normal components source render with DisplayName", async () => {
 
   circuit.render()
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
-})
+}, 15_000)

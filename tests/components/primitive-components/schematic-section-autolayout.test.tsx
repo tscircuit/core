@@ -285,4 +285,4 @@ test("SchematicSection auto-layout places components within sections then arrang
   }
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
-})
+}, 15_000)

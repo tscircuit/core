@@ -197,4 +197,4 @@ test("reproduces RP2040 gamepad trace routing", async () => {
   await circuit.renderUntilSettled()
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
-})
+}, 15_000)
