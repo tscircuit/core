@@ -27,7 +27,10 @@ import {
   asSchematicPortId,
   asSourcePortId,
 } from "./port-id-types"
-import { resolveNetLabelForPortMissingTrace } from "./resolveNetLabelForPortMissingTrace"
+import {
+  isDirectConnectionEndpointOutsideSchematicScope,
+  resolveNetLabelForPortMissingTrace,
+} from "./resolveNetLabelForPortMissingTrace"
 import { schematicTextToTextBox } from "./schematicTextToTextBounds"
 
 const DEFAULT_MAX_MSP_PAIR_DISTANCE = 2.4
@@ -253,6 +256,7 @@ export function createSchematicTraceSolverInputProblem(
       }
     }
   }
+  const sourcePortIdsInSchematicScope = new Set(sourcePortIdToSchPortId.keys())
   const netLabelsInScope = (opts.netLabels ?? []).filter((netLabel) =>
     netLabel._getConnectedPorts().some((port) => {
       if (!port.schematic_port_id) return false
@@ -404,20 +408,34 @@ export function createSchematicTraceSolverInputProblem(
           schematicPortIdsInScope.has(schematicPortId!),
       )
 
-    const [firstSourcePort, secondSourcePort] =
-      st.connected_source_port_ids.map((sourcePortId) =>
-        db.source_port.get(sourcePortId),
-      )
-    const crossesSubcircuitBoundary = Boolean(
-      firstSourcePort &&
-        secondSourcePort &&
-        firstSourcePort.subcircuit_id !== secondSourcePort.subcircuit_id,
+    const sourcePortIdForSingleConnectedEndpoint =
+      connected.length === 1
+        ? schPortIdToSourcePortId.get(connected[0])
+        : undefined
+    const otherSourcePortId = sourcePortIdForSingleConnectedEndpoint
+      ? st.connected_source_port_ids
+          .map(asSourcePortId)
+          .find(
+            (sourcePortId) =>
+              sourcePortId !== sourcePortIdForSingleConnectedEndpoint,
+          )
+      : undefined
+    const crossesSchematicScopeBoundary = Boolean(
+      sourcePortIdForSingleConnectedEndpoint &&
+        otherSourcePortId &&
+        isDirectConnectionEndpointOutsideSchematicScope({
+          db,
+          sourcePortId: sourcePortIdForSingleConnectedEndpoint,
+          otherSourcePortId,
+          sourcePortIdsInSchematicScope,
+          schematicSheetId: opts.schematicSheetId,
+        }),
     )
 
     if (
       connected.length === 1 &&
       st.connected_source_port_ids.length === 2 &&
-      crossesSubcircuitBoundary &&
+      crossesSchematicScopeBoundary &&
       st.connected_source_net_ids.length === 0 &&
       st.subcircuit_connectivity_map_key
     ) {
@@ -438,6 +456,8 @@ export function createSchematicTraceSolverInputProblem(
           group,
           sourcePortId,
           connectedSourcePortIdsForKey,
+          sourcePortIdsInSchematicScope,
+          schematicSheetId: opts.schematicSheetId,
           connKey,
           sourceNet: connKeyToSourceNet.get(connKey),
         })

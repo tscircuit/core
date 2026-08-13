@@ -59,12 +59,11 @@ const drv8711PinLabels = {
  *
  * The four dual MOSFETs are on "Power stage", while their eight gate-drive
  * endpoints are on U1 on "Controller and interface". Core therefore inserts
- * fallback net labels for those direct cross-sheet traces. At the source
- * design's component spacing, labels such as U1_A2LS overlap adjacent net
- * labels and symbols. The second sheet is intentionally retained because a
- * single-sheet fixture does not exercise the cross-sheet fallback labels.
+ * fallback net labels for those direct cross-sheet traces. The second sheet is
+ * intentionally retained because a single-sheet fixture does not exercise the
+ * cross-sheet fallback labels.
  */
-test("BOOST-DRV8711 power stage reproduces cross-sheet net-label overlap", async () => {
+test("BOOST-DRV8711 power stage avoids cross-sheet net-label overlap", async () => {
   const { circuit } = getTestFixture()
   circuit.pcbDisabled = true
 
