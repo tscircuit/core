@@ -78,6 +78,7 @@ export const insertNetLabelsForPortsMissingTrace = ({
         db,
         sourcePortId: srcPortId,
         sourcePortIdsInSchematicScope,
+        schematicSheetId: schPort.schematic_sheet_id,
       })
     ) {
       continue
@@ -115,6 +116,7 @@ export const insertNetLabelsForPortsMissingTrace = ({
       sourcePortId: srcPortId,
       connectedSourcePortIdsForKey,
       sourcePortIdsInSchematicScope,
+      schematicSheetId: schPort.schematic_sheet_id,
       connKey,
       sourceNet,
     })

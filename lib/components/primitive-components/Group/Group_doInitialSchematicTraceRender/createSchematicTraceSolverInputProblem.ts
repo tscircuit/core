@@ -428,6 +428,7 @@ export function createSchematicTraceSolverInputProblem(
           sourcePortId: sourcePortIdForSingleConnectedEndpoint,
           otherSourcePortId,
           sourcePortIdsInSchematicScope,
+          schematicSheetId: opts.schematicSheetId,
         }),
     )
 
@@ -456,6 +457,7 @@ export function createSchematicTraceSolverInputProblem(
           sourcePortId,
           connectedSourcePortIdsForKey,
           sourcePortIdsInSchematicScope,
+          schematicSheetId: opts.schematicSheetId,
           connKey,
           sourceNet: connKeyToSourceNet.get(connKey),
         })

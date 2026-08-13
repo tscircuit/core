@@ -17,11 +17,13 @@ export const isDirectConnectionEndpointOutsideSchematicScope = ({
   sourcePortId,
   otherSourcePortId,
   sourcePortIdsInSchematicScope,
+  schematicSheetId,
 }: {
   db: NonNullable<Group<any>["root"]>["db"]
   sourcePortId: SourcePortId
   otherSourcePortId: SourcePortId
   sourcePortIdsInSchematicScope: Set<SourcePortId>
+  schematicSheetId?: string
 }) => {
   if (sourcePortIdsInSchematicScope.has(otherSourcePortId)) return false
 
@@ -30,28 +32,18 @@ export const isDirectConnectionEndpointOutsideSchematicScope = ({
   if (!sourcePort || !otherSourcePort) return false
 
   if (sourcePort.subcircuit_id !== otherSourcePort.subcircuit_id) return true
+  if (!schematicSheetId) return false
 
-  const getSchematicSheetIds = (portId: SourcePortId) =>
-    new Set(
-      db.schematic_port
-        .list({ source_port_id: portId })
-        .map((schematicPort) =>
-          schematicPort.schematic_component_id
-            ? db.schematic_component.get(schematicPort.schematic_component_id)
-                ?.schematic_sheet_id
-            : undefined,
-        )
-        .filter((sheetId): sheetId is string => sheetId !== undefined),
-    )
+  const otherEndpointSchematicPorts = db.schematic_port.list({
+    source_port_id: otherSourcePortId,
+  })
+  const hasOtherEndpointOnCurrentSheet = otherEndpointSchematicPorts.some(
+    (schematicPort) => schematicPort.schematic_sheet_id === schematicSheetId,
+  )
+  if (hasOtherEndpointOnCurrentSheet) return false
 
-  const sourcePortSchematicSheetIds = getSchematicSheetIds(sourcePortId)
-  const otherSourcePortSchematicSheetIds =
-    getSchematicSheetIds(otherSourcePortId)
-
-  return (
-    sourcePortSchematicSheetIds.size > 0 &&
-    otherSourcePortSchematicSheetIds.size > 0 &&
-    sourcePortSchematicSheetIds.isDisjointFrom(otherSourcePortSchematicSheetIds)
+  return otherEndpointSchematicPorts.some(
+    (schematicPort) => schematicPort.schematic_sheet_id !== undefined,
   )
 }
 
@@ -65,10 +57,12 @@ export const getDirectConnectionOutsideSchematicScopeSourcePortId = ({
   db,
   sourcePortId,
   sourcePortIdsInSchematicScope,
+  schematicSheetId,
 }: {
   db: NonNullable<Group<any>["root"]>["db"]
   sourcePortId: SourcePortId
   sourcePortIdsInSchematicScope: Set<SourcePortId>
+  schematicSheetId?: string
 }) => {
   if (!db.source_port.get(sourcePortId)) return undefined
 
@@ -92,6 +86,7 @@ export const getDirectConnectionOutsideSchematicScopeSourcePortId = ({
         sourcePortId,
         otherSourcePortId: typedOtherSourcePortId,
         sourcePortIdsInSchematicScope,
+        schematicSheetId,
       })
     ) {
       continue
@@ -106,6 +101,7 @@ export const resolveNetLabelForPortMissingTrace = ({
   sourcePortId,
   connectedSourcePortIdsForKey,
   sourcePortIdsInSchematicScope,
+  schematicSheetId,
   connKey,
   sourceNet,
 }: {
@@ -113,6 +109,7 @@ export const resolveNetLabelForPortMissingTrace = ({
   sourcePortId: SourcePortId
   connectedSourcePortIdsForKey: SourcePortId[]
   sourcePortIdsInSchematicScope: Set<SourcePortId>
+  schematicSheetId?: string
   connKey: SubcircuitConnectivityMapKey
   sourceNet?: SourceNet
 }) => {
@@ -137,6 +134,7 @@ export const resolveNetLabelForPortMissingTrace = ({
       db,
       sourcePortId,
       sourcePortIdsInSchematicScope,
+      schematicSheetId,
     })
   const directConnectionOutsideSchematicScopeLabelText =
     directConnectionOutsideSchematicScopeSourcePortId
