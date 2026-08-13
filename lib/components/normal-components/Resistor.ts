@@ -6,6 +6,13 @@ import { Port } from "../primitive-components/Port"
 import { Trace } from "../primitive-components/Trace/Trace"
 import { formatSiUnit } from "format-si-unit"
 
+// `circuit-json` versions that predate resistor tolerance do not expose this
+// optional field in `SourceSimpleResistorInput` yet. Keep the boundary type
+// local until the dependency publishes the field.
+type SourceSimpleResistorWithTolerance = SourceSimpleResistorInput & {
+  tolerance?: number
+}
+
 export class Resistor extends NormalComponent<
   typeof resistorProps,
   PassivePorts
@@ -86,10 +93,11 @@ export class Resistor extends NormalComponent<
       supplier_part_numbers: props.supplierPartNumbers,
 
       resistance: props.resistance,
+      tolerance: props.tolerance,
       display_resistance: this._getSchematicSymbolDisplayValue(),
       are_pins_interchangeable: true,
       display_name: props.displayName,
-    } as SourceSimpleResistorInput)
+    } as SourceSimpleResistorWithTolerance)
     this.source_component_id = source_component.source_component_id
   }
 }
