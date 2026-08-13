@@ -67,7 +67,9 @@ export const getDirectConnectionOutsideSchematicScopeSourcePortId = ({
   if (!db.source_port.get(sourcePortId)) return undefined
 
   for (const sourceTrace of db.source_trace.list()) {
-    const connectedSourcePortIds = sourceTrace.connected_source_port_ids ?? []
+    const connectedSourcePortIds = (
+      sourceTrace.connected_source_port_ids ?? []
+    ).map(asSourcePortId)
     if (connectedSourcePortIds.length !== 2) continue
     if ((sourceTrace.connected_source_net_ids ?? []).length > 0) continue
     if (!connectedSourcePortIds.includes(sourcePortId)) continue
@@ -77,14 +79,11 @@ export const getDirectConnectionOutsideSchematicScopeSourcePortId = ({
     )
     if (!otherSourcePortId) continue
 
-    const otherSourcePort = db.source_port.get(otherSourcePortId)
-    if (!otherSourcePort) continue
-    const typedOtherSourcePortId = asSourcePortId(otherSourcePortId)
     if (
       !isDirectConnectionEndpointOutsideSchematicScope({
         db,
         sourcePortId,
-        otherSourcePortId: typedOtherSourcePortId,
+        otherSourcePortId,
         sourcePortIdsInSchematicScope,
         schematicSheetId,
       })
@@ -92,7 +91,7 @@ export const getDirectConnectionOutsideSchematicScopeSourcePortId = ({
       continue
     }
 
-    return typedOtherSourcePortId
+    return otherSourcePortId
   }
 }
 
