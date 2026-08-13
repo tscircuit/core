@@ -7,15 +7,13 @@ test.failing("parent net should route to a child breakout point", async () => {
   const autoroutingPhaseIoStack = createAutoroutingPhaseIoStack(circuit)
 
   circuit.add(
-    <board width="18mm" height="10mm" layers={2}>
+    <board width="18mm" height="10mm">
       <net name="VCC" />
-      <subcircuit name="S1" autorouter="auto">
-        <breakout name="B1" autorouter="auto" width="8mm" height="8mm">
-          <net name="VCC" />
-          <chip name="U1" footprint="soic8" pcbX={-1} />
-          <breakoutpoint connection=".U1 > .pin1" pcbX={3.9999} pcbY={1.905} />
-          <trace name="INTERNAL_VCC" from=".U1 > .pin1" to="net.VCC" />
-        </breakout>
+      <subcircuit name="S1">
+        <net name="VCC" />
+        <chip name="U1" footprint="soic8" pcbX={-1} />
+        <breakoutpoint connection=".U1 > .pin1" pcbX={3.9999} pcbY={1.905} />
+        <trace name="INTERNAL_VCC" from=".U1 > .pin1" to="net.VCC" />
       </subcircuit>
 
       <resistor name="R1" resistance="1k" footprint="0402" pcbX={7} />
