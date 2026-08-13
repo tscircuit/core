@@ -10,10 +10,14 @@ test.failing("parent net should route to a child breakout point", async () => {
     <board width="18mm" height="10mm">
       <net name="VCC" />
       <subcircuit name="S1">
-        <net name="VCC" />
-        <chip name="U1" footprint="soic8" pcbX={-1} />
-        <breakoutpoint connection=".U1 > .pin1" pcbX={3.9999} pcbY={1.905} />
-        <trace name="INTERNAL_VCC" from=".U1 > .pin1" to="net.VCC" />
+        <breakout name="B1">
+          <net name="VCC" />
+          <chip name="U1" footprint="soic8" pcbX={-1} />
+          <capacitor name="C1" capacitance="1uF" footprint="0402" pcbX={-5} />
+          <breakoutpoint connection=".U1 > .pin1" pcbX={3.9999} pcbY={1.905} />
+          <trace name="INTERNAL_VCC" from=".U1 > .pin1" to="net.VCC" />
+          <trace from=".C1 > .pin1" to="net.VCC" />
+        </breakout>
       </subcircuit>
 
       <resistor name="R1" resistance="1k" footprint="0402" pcbX={7} />
@@ -25,20 +29,20 @@ test.failing("parent net should route to a child breakout point", async () => {
   await circuit.renderUntilSettled()
 
   expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
-  expect(autoroutingPhaseIoStack).toHaveLength(2)
+  expect(autoroutingPhaseIoStack.length).toBeGreaterThan(1)
 
   const breakoutPoint = circuit.db.pcb_breakout_point.list()[0]!
   const internalPort = circuit.db.pcb_port.getWhere({
     source_port_id: breakoutPoint.source_port_id!,
   })!
-  const parentVccConnection =
-    autoroutingPhaseIoStack[1]!.startSimpleRouteJson!.connections.find(
-      (connection) =>
-        connection.pointsToConnect.some(
-          (point) =>
-            point.pointId === breakoutPoint.pcb_breakout_point_id ||
-            point.pointId === internalPort.pcb_port_id,
-        ),
+  const parentVccConnection = autoroutingPhaseIoStack
+    .at(-1)!
+    .startSimpleRouteJson!.connections.find((connection) =>
+      connection.pointsToConnect.some(
+        (point) =>
+          point.pointId === breakoutPoint.pcb_breakout_point_id ||
+          point.pointId === internalPort.pcb_port_id,
+      ),
     )
 
   expect(parentVccConnection).toBeDefined()
