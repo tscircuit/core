@@ -615,36 +615,16 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         .filter((p) => st.connected_source_port_ids.includes(p.source_port_id))
 
       for (const p of pcb_ports) {
-        const breakoutPoint = sourcePortIdToBreakoutPoint.get(p.source_port_id)
-        const useBreakoutPoint =
-          breakoutPoint && !breakoutPointIsInActiveRoutingGroup(breakoutPoint)
-        const pointId = useBreakoutPoint
-          ? breakoutPoint.pcb_breakout_point_id
-          : p.pcb_port_id
-        if (addedPointIds.has(pointId)) continue
-        addedPointIds.add(pointId)
-        pointsToConnect.push(
-          useBreakoutPoint
-            ? {
-                x: breakoutPoint.x,
-                y: breakoutPoint.y,
-                layer: (p.layers?.[0] as any) ?? "top",
-                pointId,
-                port_selector: getPortSelector(
-                  db.source_port.get(p.source_port_id),
-                ),
-              }
-            : {
-                x: p.x!,
-                y: p.y!,
-                layer: (p.layers?.[0] as any) ?? "top",
-                pointId,
-                pcb_port_id: p.pcb_port_id,
-                port_selector: getPortSelector(
-                  db.source_port.get(p.source_port_id),
-                ),
-              },
-        )
+        if (addedPointIds.has(p.pcb_port_id)) continue
+        addedPointIds.add(p.pcb_port_id)
+        pointsToConnect.push({
+          x: p.x!,
+          y: p.y!,
+          layer: (p.layers?.[0] as any) ?? "top",
+          pointId: p.pcb_port_id,
+          pcb_port_id: p.pcb_port_id,
+          port_selector: getPortSelector(db.source_port.get(p.source_port_id)),
+        })
       }
     }
 
