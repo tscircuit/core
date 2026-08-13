@@ -131,6 +131,7 @@
   "overrides": {
     "@tscircuit/circuit-json-util": "^0.0.106",
     "@tscircuit/props": "^0.0.620",
-    "circuit-json": "^0.0.466"
+    "circuit-json": "^0.0.466",
+    "looks-same": "^10.0.1"
   }
 }
