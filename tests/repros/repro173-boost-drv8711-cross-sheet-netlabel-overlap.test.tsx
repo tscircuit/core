@@ -1,5 +1,19 @@
 import { expect, test } from "bun:test"
+import { doBoundsOverlap } from "@tscircuit/math-utils"
+import type { InputProblem } from "@tscircuit/schematic-trace-solver"
+import { getNetLabelTextBounds } from "lib/components/primitive-components/Group/Group_doInitialSchematicTraceRender/getNetLabelTextBounds"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
+
+const expectedCrossSheetGateDriveLabelTexts = [
+  "U1_A1HS",
+  "U1_A1LS",
+  "U1_A2HS",
+  "U1_A2LS",
+  "U1_B1HS",
+  "U1_B1LS",
+  "U1_B2HS",
+  "U1_B2LS",
+]
 
 const dualNmosPinLabels = {
   pin1: ["S1"],
@@ -59,13 +73,19 @@ const drv8711PinLabels = {
  *
  * The four dual MOSFETs are on "Power stage", while their eight gate-drive
  * endpoints are on U1 on "Controller and interface". Core therefore inserts
- * fallback net labels for those direct cross-sheet traces. At the source
- * design's component spacing, labels such as U1_A2LS overlap adjacent net
- * labels and symbols. The second sheet is intentionally retained because a
- * single-sheet fixture does not exercise the cross-sheet fallback labels.
+ * fallback net labels for those direct cross-sheet traces. This verifies those
+ * labels participate in normal solver placement instead of being inserted only
+ * after collision handling. The second sheet is intentionally retained because
+ * a single-sheet fixture does not exercise the cross-sheet fallback labels.
  */
-test("BOOST-DRV8711 power stage reproduces cross-sheet net-label overlap", async () => {
+test("BOOST-DRV8711 power stage avoids cross-sheet net-label overlap", async () => {
   const { circuit } = getTestFixture()
+  const solverInputProblems: InputProblem[] = []
+  circuit.on("solver:started", (event) => {
+    if (event.solverName === "SchematicTracePipelineSolver") {
+      solverInputProblems.push(event.solverParams as InputProblem)
+    }
+  })
   circuit.pcbDisabled = true
 
   circuit.add(
@@ -391,25 +411,54 @@ test("BOOST-DRV8711 power stage reproduces cross-sheet net-label overlap", async
   const powerStageSheet = circuit.db.schematic_sheet.getWhere({
     name: "Power stage",
   })!
-  const crossSheetGateDriveLabels = circuit.db.schematic_net_label
+  const powerStageNetLabels = circuit.db.schematic_net_label
     .list()
     .filter(
       (netLabel) =>
-        netLabel.schematic_sheet_id === powerStageSheet.schematic_sheet_id &&
-        /^U1_[AB][12][HL]S$/.test(netLabel.text),
+        netLabel.schematic_sheet_id === powerStageSheet.schematic_sheet_id,
     )
-    .map((netLabel) => netLabel.text)
+  const crossSheetGateDriveLabels = powerStageNetLabels.filter((netLabel) =>
+    /^U1_[AB][12][HL]S$/.test(netLabel.text),
+  )
+
+  expect(
+    crossSheetGateDriveLabels.map((netLabel) => netLabel.text).sort(),
+  ).toEqual(expectedCrossSheetGateDriveLabelTexts)
+  expect(
+    solverInputProblems
+      .flatMap((inputProblem) => inputProblem.netConnections)
+      .map((netConnection) => netConnection.netId)
+      .filter((netId) => /^U1_[AB][12][HL]S$/.test(netId))
+      .sort(),
+  ).toEqual(expectedCrossSheetGateDriveLabelTexts)
+
+  const overlappingGateDriveLabelPairs = crossSheetGateDriveLabels
+    .flatMap((gateDriveLabel) =>
+      powerStageNetLabels.map((otherNetLabel) => ({
+        gateDriveLabel,
+        otherNetLabel,
+      })),
+    )
+    .filter(
+      ({ gateDriveLabel, otherNetLabel }) =>
+        gateDriveLabel.schematic_net_label_id !==
+          otherNetLabel.schematic_net_label_id &&
+        doBoundsOverlap(
+          getNetLabelTextBounds({
+            center: gateDriveLabel.center,
+            text: gateDriveLabel.text,
+          }),
+          getNetLabelTextBounds({
+            center: otherNetLabel.center,
+            text: otherNetLabel.text,
+          }),
+        ),
+    )
+    .map(({ gateDriveLabel, otherNetLabel }) =>
+      [gateDriveLabel.text, otherNetLabel.text].sort().join(" / "),
+    )
     .sort()
 
-  expect(crossSheetGateDriveLabels).toEqual([
-    "U1_A1HS",
-    "U1_A1LS",
-    "U1_A2HS",
-    "U1_A2LS",
-    "U1_B1HS",
-    "U1_B1LS",
-    "U1_B2HS",
-    "U1_B2LS",
-  ])
+  expect(overlappingGateDriveLabelPairs).toEqual([])
   await expect(circuit).toMatchStackedSchematicSnapshot(import.meta.path)
 }, 120_000)

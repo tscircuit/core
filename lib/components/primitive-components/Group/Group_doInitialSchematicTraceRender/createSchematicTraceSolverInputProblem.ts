@@ -253,6 +253,7 @@ export function createSchematicTraceSolverInputProblem(
       }
     }
   }
+  const sourcePortIdsInSchematicScope = new Set(sourcePortIdToSchPortId.keys())
   const netLabelsInScope = (opts.netLabels ?? []).filter((netLabel) =>
     netLabel._getConnectedPorts().some((port) => {
       if (!port.schematic_port_id) return false
@@ -404,20 +405,17 @@ export function createSchematicTraceSolverInputProblem(
           schematicPortIdsInScope.has(schematicPortId!),
       )
 
-    const [firstSourcePort, secondSourcePort] =
-      st.connected_source_port_ids.map((sourcePortId) =>
-        db.source_port.get(sourcePortId),
+    const crossesSchematicScopeBoundary =
+      st.connected_source_port_ids.length === 2 &&
+      st.connected_source_port_ids.some(
+        (sourcePortId) =>
+          !sourcePortIdsInSchematicScope.has(asSourcePortId(sourcePortId)),
       )
-    const crossesSubcircuitBoundary = Boolean(
-      firstSourcePort &&
-        secondSourcePort &&
-        firstSourcePort.subcircuit_id !== secondSourcePort.subcircuit_id,
-    )
 
     if (
       connected.length === 1 &&
       st.connected_source_port_ids.length === 2 &&
-      crossesSubcircuitBoundary &&
+      crossesSchematicScopeBoundary &&
       st.connected_source_net_ids.length === 0 &&
       st.subcircuit_connectivity_map_key
     ) {
@@ -438,6 +436,7 @@ export function createSchematicTraceSolverInputProblem(
           group,
           sourcePortId,
           connectedSourcePortIdsForKey,
+          sourcePortIdsInSchematicScope,
           connKey,
           sourceNet: connKeyToSourceNet.get(connKey),
         })
