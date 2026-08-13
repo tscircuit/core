@@ -144,6 +144,81 @@ circuit.selectOne("resistor") // Find first resistor
   at an untrusted boundary; redundant internal guards add noise and hide broken
   type contracts.
 
+## Coordinate frames, side names, and transforms
+
+### Declare the frame at every boundary
+
+Any function or record carrying geometry states explicitly, in its docstring:
+**which frame** (footprint-local, board/circuit world, renderer scene), **what
+the axes mean**, **units** (mm throughout tscircuit), **handedness and which way
+is up**, and **whether the value is a point or a direction** — a point picks up
+translation, a direction must not. Most of the transform defects here were two
+functions silently disagreeing about which frame they were handed.
+
+### Validate a convention before copying it
+
+Matching surrounding code is the default *only* once you have confirmed the
+surrounding code is intentional. Prevailing patterns in this area have
+repeatedly turned out to be bugs, or compensations for bugs elsewhere. Before
+adopting one, find its origin commit, the test that pins it, or a measurement
+that confirms it — and prefer removing a compensation at its source over adding
+a matching one.
+
+### Canonical direction names
+
+Directions name **where something is**, in board space: +X `right`, −X `left`,
++Y `top`, −Y `bottom`, +Z `above`, −Z `below`. Published in `circuit-json` as
+`InsertionDirection` (`from_right`, `from_left`, `from_top`, …).
+
+`front` and `back` are retired and `@deprecated`: they named opposite axes in
+different packages (`3d-viewer`'s `Front` preset is −Y; `core`, `checks` and
+`circuit-json-to-gltf` treated front as +Y). They are accepted as input and
+normalized on parse, but never emitted — so never key a lookup on them.
+
+Beware that `top`/`bottom` mean **±Y** as a direction but **±Z** as a PCB
+**layer** (`layer`, `originalLayer`). A component carries `layer`; a
+`<footprint>` carries `originalLayer`; the part is mirrored when they differ.
+Enclosure and board faces avoid the ambiguity entirely by naming the axis:
+`BoardWall` and `EnclosureFace` are both
+`x_pos | x_neg | y_pos | y_neg | z_pos | z_neg`.
+
+### Transforms
+
+- **Compose; never hand-roll a rotation matrix.** Use `transformation-matrix`
+  with `compose()`/`applyToPoint()`.
+- **Orient from a paired reference transform.** When two places orient the same
+  physical thing, build both from the same expression rather than restating it.
+  `transformFootprintInsertionDirection` re-derived a footprint's placement by
+  hand, disagreed with the matrix `PrimitiveComponent` applies to the pads, and
+  reported the wrong side for every bottom-layer part. Cite the source
+  (file, symbol, expression) in a comment next to the copy.
+- **Order is load-bearing.** `compose(a, b)` applies **b** first, and rotations
+  and reflections do not commute (`F·R(θ) = R(−θ)·F`), so a re-statement that
+  differs only in order is wrong at *some* angles only — which is what lets it
+  survive review.
+- **A layer flip is a rotation, not an inversion.** Core flips with `flipY()`
+  (mirror on the y-axis, so it negates X), a 180° rotation about Y:
+  `(x, y, z) → (−x, y, −z)`. Exactly two components invert; negating all three
+  would be improper and would mirror the part.
+- **Never add a renderer compensation.** Fix the frame at its source. Core
+  previously swapped the +Y and −Y enclosure walls to offset a renderer bug;
+  such a flip is invisible once the bug it offsets is fixed, and then it *is*
+  the bug.
+- **State the frame** at every boundary carrying geometry: which frame, axis
+  meanings, units, handedness, and whether the value is a point (picks up
+  translation) or a direction (must not).
+
+### Testing geometry
+
+- Assert against **emitted geometry**, not a restatement of the transform — see
+  `tests/components/normal-components/footprint-insertion-direction-matches-pads.test.tsx`,
+  which derives every expectation from where pin1 actually lands.
+- Cover 0°/180° **and** 90°/270°, on both layers: each pair alone cannot
+  distinguish a wrong mirror axis, because there right and wrong agree exactly.
+- Make sure the test **can** fail. Where two inputs normally agree, place the
+  fixture where they disagree; otherwise the assertion holds no matter which one
+  the code used.
+
 ## Build Configuration
 
 - ESM output with TypeScript declarations
