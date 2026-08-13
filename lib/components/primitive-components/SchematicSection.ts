@@ -6,6 +6,7 @@ import {
 import { schematicSectionProps } from "@tscircuit/props"
 import type { Bounds } from "@tscircuit/math-utils"
 import type { SchematicSheet } from "circuit-json"
+import { getSchematicSectionLabelSize } from "../../utils/schematic/get-schematic-section-label-size"
 
 type SchematicSheetId = SchematicSheet["schematic_sheet_id"]
 
@@ -92,15 +93,30 @@ export class SchematicSection extends PrimitiveComponent<
           schematicSheetId,
         )
         if (!bounds) return null
+        const labelSize = getSchematicSectionLabelSize({
+          displayName: section._parsedProps.displayName,
+          sectionTitleFontSize: section._parsedProps.sectionTitleFontSize,
+        })
+        const shouldReserveTitleBounds = allSections.length > 1
+        const needsExtraTitleHeight =
+          shouldReserveTitleBounds && labelSize.height > PADDING - LABEL_PADDING
         return {
           displayName: section._parsedProps.displayName,
           sectionTitleFontSize: section._parsedProps.sectionTitleFontSize,
           rawBounds: bounds,
           cell: {
             minX: bounds.minX - PADDING,
-            maxX: bounds.maxX + PADDING,
+            maxX: shouldReserveTitleBounds
+              ? Math.max(
+                  bounds.maxX + PADDING,
+                  bounds.minX + labelSize.width + LABEL_PADDING * 2,
+                )
+              : bounds.maxX + PADDING,
             minY: bounds.minY - PADDING,
-            maxY: bounds.maxY + PADDING,
+            maxY:
+              bounds.maxY +
+              PADDING +
+              (needsExtraTitleHeight ? labelSize.height : 0),
           },
         }
       })

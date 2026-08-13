@@ -7,6 +7,8 @@ const debug = Debug("Group_doInitialSchematicLayoutSections")
 import { applySchematicMatchPackLayoutToTree } from "./Group_doInitialSchematicLayoutMatchPack"
 import { computeSchematicSectionLayoutUsingRows } from "./computeSchematicSectionLayoutUsingRows"
 import { updateSchematicPrimitivesForLayoutShift } from "./utils/updateSchematicPrimitivesForLayoutShift"
+import { getSchematicSectionLabelSize } from "../../../utils/schematic/get-schematic-section-label-size"
+import { SchematicSection } from "../SchematicSection"
 
 type SectionBoundsWithChildren = {
   sectionName: string | null
@@ -120,10 +122,30 @@ export function Group_doInitialSchematicLayoutSections<
     group._getGlobalSchematicPositionBeforeLayout()
   const sectionPlacements = computeSchematicSectionLayoutUsingRows({
     sectionBlocks: Array.from(sectionNameToBoundsWithChildren.values()).map(
-      (bounds) => ({
-        sectionName: bounds.sectionName,
-        size: bounds.size,
-      }),
+      (bounds) => {
+        const sectionDefinition = group.children.find(
+          (child) =>
+            child instanceof SchematicSection &&
+            child._parsedProps.name === bounds.sectionName,
+        )
+        const labelSize = getSchematicSectionLabelSize(
+          sectionDefinition
+            ? {
+                displayName: sectionDefinition._parsedProps.displayName,
+                sectionTitleFontSize:
+                  sectionDefinition._parsedProps.sectionTitleFontSize,
+              }
+            : {},
+        )
+
+        return {
+          sectionName: bounds.sectionName,
+          size: {
+            x: Math.max(bounds.size.x, labelSize.width),
+            y: bounds.size.y + (labelSize.height > 0.3 ? labelSize.height : 0),
+          },
+        }
+      },
     ),
     groupSchPositionBeforeLayout,
   })
