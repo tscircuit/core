@@ -40,6 +40,23 @@ const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
   if (resolvedCopperPours.length === 0) return
 
   const circuitJson = db.toArray()
+  const pcbBoard = circuitJson.find((element) => element.type === "pcb_board")
+  let resolvedPcbBoardOutline = pcbBoard?.outline?.length
+    ? pcbBoard.outline
+    : undefined
+  if (
+    !resolvedPcbBoardOutline &&
+    pcbBoard?.width !== undefined &&
+    pcbBoard.height !== undefined
+  ) {
+    const { center, width, height } = pcbBoard
+    resolvedPcbBoardOutline = [
+      { x: center.x - width / 2, y: center.y - height / 2 },
+      { x: center.x + width / 2, y: center.y - height / 2 },
+      { x: center.x + width / 2, y: center.y + height / 2 },
+      { x: center.x - width / 2, y: center.y + height / 2 },
+    ]
+  }
   const inputProblem = convertCircuitJsonToInputProblem(
     circuitJson,
     resolvedCopperPours.map(({ copperPour, sourceNetId }) => {
@@ -54,7 +71,7 @@ const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
         pour_margin: clearance,
         board_edge_margin: props.boardEdgeMargin ?? clearance,
         cutout_margin: props.cutoutMargin ?? clearance,
-        outline: props.outline,
+        outline: props.outline ?? resolvedPcbBoardOutline,
       }
     }),
   )
