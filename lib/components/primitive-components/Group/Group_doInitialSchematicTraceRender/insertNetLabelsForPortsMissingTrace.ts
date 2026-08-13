@@ -74,11 +74,11 @@ export const insertNetLabelsForPortsMissingTrace = ({
       group._parsedProps.showAsSchematicBox &&
       sourcePort?.subcircuit_id === group.subcircuit_id &&
       !sourcePort.source_component_id &&
-      getDirectConnectionOutsideSchematicScopeSourcePortId(
+      getDirectConnectionOutsideSchematicScopeSourcePortId({
         db,
-        srcPortId,
+        sourcePortId: srcPortId,
         sourcePortIdsInSchematicScope,
-      )
+      })
     ) {
       continue
     }

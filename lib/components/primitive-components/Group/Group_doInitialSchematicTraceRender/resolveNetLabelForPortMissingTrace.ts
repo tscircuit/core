@@ -18,11 +18,15 @@ type SubcircuitConnectivityMapKey = NonNullable<
  * both group- and sheet-specific, so this covers cross-subcircuit and
  * cross-sheet connections.
  */
-export const getDirectConnectionOutsideSchematicScopeSourcePortId = (
-  db: NonNullable<Group<any>["root"]>["db"],
-  sourcePortId: SourcePortId,
-  sourcePortIdsInSchematicScope: Set<SourcePortId>,
-) => {
+export const getDirectConnectionOutsideSchematicScopeSourcePortId = ({
+  db,
+  sourcePortId,
+  sourcePortIdsInSchematicScope,
+}: {
+  db: NonNullable<Group<any>["root"]>["db"]
+  sourcePortId: SourcePortId
+  sourcePortIdsInSchematicScope: Set<SourcePortId>
+}) => {
   if (!db.source_port.get(sourcePortId)) return undefined
 
   for (const sourceTrace of db.source_trace.list()) {
@@ -78,11 +82,11 @@ export const resolveNetLabelForPortMissingTrace = ({
     connectedSourcePortIdsForKey,
   )
   const directConnectionOutsideSchematicScopeSourcePortId =
-    getDirectConnectionOutsideSchematicScopeSourcePortId(
+    getDirectConnectionOutsideSchematicScopeSourcePortId({
       db,
       sourcePortId,
       sourcePortIdsInSchematicScope,
-    )
+    })
   const directConnectionOutsideSchematicScopeLabelText =
     directConnectionOutsideSchematicScopeSourcePortId
       ? getSourcePortNetLabelText(
