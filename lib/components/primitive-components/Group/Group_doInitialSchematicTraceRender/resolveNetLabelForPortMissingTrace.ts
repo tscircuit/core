@@ -12,6 +12,49 @@ type SubcircuitConnectivityMapKey = NonNullable<
   SourcePort["subcircuit_connectivity_map_key"]
 >
 
+export const isDirectConnectionEndpointOutsideSchematicScope = ({
+  db,
+  sourcePortId,
+  otherSourcePortId,
+  sourcePortIdsInSchematicScope,
+}: {
+  db: NonNullable<Group<any>["root"]>["db"]
+  sourcePortId: SourcePortId
+  otherSourcePortId: SourcePortId
+  sourcePortIdsInSchematicScope: Set<SourcePortId>
+}) => {
+  if (sourcePortIdsInSchematicScope.has(otherSourcePortId)) return false
+
+  const sourcePort = db.source_port.get(sourcePortId)
+  const otherSourcePort = db.source_port.get(otherSourcePortId)
+  if (!sourcePort || !otherSourcePort) return false
+
+  if (sourcePort.subcircuit_id !== otherSourcePort.subcircuit_id) return true
+
+  const getSchematicSheetIds = (portId: SourcePortId) =>
+    new Set(
+      db.schematic_port
+        .list({ source_port_id: portId })
+        .map((schematicPort) =>
+          schematicPort.schematic_component_id
+            ? db.schematic_component.get(schematicPort.schematic_component_id)
+                ?.schematic_sheet_id
+            : undefined,
+        )
+        .filter((sheetId): sheetId is string => sheetId !== undefined),
+    )
+
+  const sourcePortSchematicSheetIds = getSchematicSheetIds(sourcePortId)
+  const otherSourcePortSchematicSheetIds =
+    getSchematicSheetIds(otherSourcePortId)
+
+  return (
+    sourcePortSchematicSheetIds.size > 0 &&
+    otherSourcePortSchematicSheetIds.size > 0 &&
+    sourcePortSchematicSheetIds.isDisjointFrom(otherSourcePortSchematicSheetIds)
+  )
+}
+
 /**
  * Returns the other endpoint of a direct port-to-port trace when that endpoint
  * is not represented in the current schematic solver pass. Solver scope is
@@ -42,11 +85,19 @@ export const getDirectConnectionOutsideSchematicScopeSourcePortId = ({
 
     const otherSourcePort = db.source_port.get(otherSourcePortId)
     if (!otherSourcePort) continue
-    if (sourcePortIdsInSchematicScope.has(asSourcePortId(otherSourcePortId))) {
+    const typedOtherSourcePortId = asSourcePortId(otherSourcePortId)
+    if (
+      !isDirectConnectionEndpointOutsideSchematicScope({
+        db,
+        sourcePortId,
+        otherSourcePortId: typedOtherSourcePortId,
+        sourcePortIdsInSchematicScope,
+      })
+    ) {
       continue
     }
 
-    return asSourcePortId(otherSourcePortId)
+    return typedOtherSourcePortId
   }
 }
 

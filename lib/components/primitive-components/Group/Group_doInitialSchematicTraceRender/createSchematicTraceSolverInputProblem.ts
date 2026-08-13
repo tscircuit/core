@@ -27,7 +27,10 @@ import {
   asSchematicPortId,
   asSourcePortId,
 } from "./port-id-types"
-import { resolveNetLabelForPortMissingTrace } from "./resolveNetLabelForPortMissingTrace"
+import {
+  isDirectConnectionEndpointOutsideSchematicScope,
+  resolveNetLabelForPortMissingTrace,
+} from "./resolveNetLabelForPortMissingTrace"
 import { schematicTextToTextBox } from "./schematicTextToTextBounds"
 
 const DEFAULT_MAX_MSP_PAIR_DISTANCE = 2.4
@@ -405,12 +408,28 @@ export function createSchematicTraceSolverInputProblem(
           schematicPortIdsInScope.has(schematicPortId!),
       )
 
-    const crossesSchematicScopeBoundary =
-      st.connected_source_port_ids.length === 2 &&
-      st.connected_source_port_ids.some(
-        (sourcePortId) =>
-          !sourcePortIdsInSchematicScope.has(asSourcePortId(sourcePortId)),
-      )
+    const sourcePortIdForSingleConnectedEndpoint =
+      connected.length === 1
+        ? schPortIdToSourcePortId.get(connected[0])
+        : undefined
+    const otherSourcePortId = sourcePortIdForSingleConnectedEndpoint
+      ? st.connected_source_port_ids
+          .map(asSourcePortId)
+          .find(
+            (sourcePortId) =>
+              sourcePortId !== sourcePortIdForSingleConnectedEndpoint,
+          )
+      : undefined
+    const crossesSchematicScopeBoundary = Boolean(
+      sourcePortIdForSingleConnectedEndpoint &&
+        otherSourcePortId &&
+        isDirectConnectionEndpointOutsideSchematicScope({
+          db,
+          sourcePortId: sourcePortIdForSingleConnectedEndpoint,
+          otherSourcePortId,
+          sourcePortIdsInSchematicScope,
+        }),
+    )
 
     if (
       connected.length === 1 &&
