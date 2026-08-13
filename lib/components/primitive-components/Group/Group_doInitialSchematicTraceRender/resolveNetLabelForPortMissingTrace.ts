@@ -1,4 +1,4 @@
-import type { SourceNet, SourcePort } from "circuit-json"
+import type { SchematicSheet, SourceNet, SourcePort } from "circuit-json"
 import type { Group } from "lib/components"
 import {
   getNetNameFromSourcePorts,
@@ -11,6 +11,7 @@ import { type SourcePortId, asSourcePortId } from "./port-id-types"
 type SubcircuitConnectivityMapKey = NonNullable<
   SourcePort["subcircuit_connectivity_map_key"]
 >
+type SchematicSheetId = SchematicSheet["schematic_sheet_id"]
 
 export const isDirectConnectionEndpointOutsideSchematicScope = ({
   db,
@@ -23,7 +24,7 @@ export const isDirectConnectionEndpointOutsideSchematicScope = ({
   sourcePortId: SourcePortId
   otherSourcePortId: SourcePortId
   sourcePortIdsInSchematicScope: Set<SourcePortId>
-  schematicSheetId?: string
+  schematicSheetId?: SchematicSheetId
 }) => {
   if (sourcePortIdsInSchematicScope.has(otherSourcePortId)) return false
 
@@ -62,7 +63,7 @@ export const getDirectConnectionOutsideSchematicScopeSourcePortId = ({
   db: NonNullable<Group<any>["root"]>["db"]
   sourcePortId: SourcePortId
   sourcePortIdsInSchematicScope: Set<SourcePortId>
-  schematicSheetId?: string
+  schematicSheetId?: SchematicSheetId
 }) => {
   if (!db.source_port.get(sourcePortId)) return undefined
 
@@ -108,7 +109,7 @@ export const resolveNetLabelForPortMissingTrace = ({
   sourcePortId: SourcePortId
   connectedSourcePortIdsForKey: SourcePortId[]
   sourcePortIdsInSchematicScope: Set<SourcePortId>
-  schematicSheetId?: string
+  schematicSheetId?: SchematicSheetId
   connKey: SubcircuitConnectivityMapKey
   sourceNet?: SourceNet
 }) => {
