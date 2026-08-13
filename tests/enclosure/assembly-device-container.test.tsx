@@ -22,5 +22,5 @@ test("assembly.device wraps the staged board and enclosure", () => {
   expect(circuit.db.pcb_board.list()).toHaveLength(1)
   expect(
     circuit.db.cad_component.list().filter((cad) => cad.model_jscad),
-  ).toHaveLength(1)
+  ).toHaveLength(2)
 })
