@@ -1,4 +1,5 @@
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
+import { applyToPoint } from "transformation-matrix"
 
 const NON_PHYSICAL_PCB_PRIMITIVE_PREFIXES = [
   "Silkscreen",
@@ -21,12 +22,26 @@ export function getBoundsOfPcbComponents(components: PrimitiveComponent[]) {
         child.componentName.startsWith(prefix),
       )
     ) {
-      const { x, y } = child._getGlobalPcbPositionBeforeLayout()
       const { width, height } = child.getPcbSize()
-      minX = Math.min(minX, x - width / 2)
-      minY = Math.min(minY, y - height / 2)
-      maxX = Math.max(maxX, x + width / 2)
-      maxY = Math.max(maxY, y + height / 2)
+      const footprintLocalCorners = [
+        { x: -width / 2, y: -height / 2 },
+        { x: width / 2, y: -height / 2 },
+        { x: width / 2, y: height / 2 },
+        { x: -width / 2, y: height / 2 },
+      ]
+
+      // Points enter in the primitive's footprint-local frame and leave in the
+      // board-world frame. Axes are +X right, +Y top; all values are in mm.
+      const boardWorldCorners = footprintLocalCorners.map((corner) =>
+        applyToPoint(child._computePcbGlobalTransformBeforeLayout(), corner),
+      )
+      const cornerXs = boardWorldCorners.map((corner) => corner.x)
+      const cornerYs = boardWorldCorners.map((corner) => corner.y)
+
+      minX = Math.min(minX, ...cornerXs)
+      minY = Math.min(minY, ...cornerYs)
+      maxX = Math.max(maxX, ...cornerXs)
+      maxY = Math.max(maxY, ...cornerYs)
       hasValidComponents = true
     }
     // Handle components that contain PCB primitives (like resistors)

@@ -37,10 +37,10 @@ test("45 degree rects bug", () => {
   expect(simpleRouteJson).toMatchInlineSnapshot(`
     {
       "bounds": {
-        "maxX": 3.95,
-        "maxY": 2.45,
-        "minX": -3.95,
-        "minY": -2.45,
+        "maxX": 3.6970562748477143,
+        "maxY": 3.6970562748477143,
+        "minX": -3.6970562748477143,
+        "minY": -3.6970562748477143,
       },
       "connections": [],
       "differentialPairs": undefined,

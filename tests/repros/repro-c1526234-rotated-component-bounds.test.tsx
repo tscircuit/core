@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("repro: rotated rectangular pads create incorrect component bounds", () => {
+test("rotated rectangular pads create correct component bounds", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -74,15 +74,15 @@ test("repro: rotated rectangular pads create incorrect component bounds", () => 
       />
       <pcbnoterect
         pcbX={7.3}
-        pcbY={-18.9949984}
-        width={11.119993}
-        height={11.4398298}
-        color="#ef4444"
+        pcbY={-20.1}
+        width={6.6999866}
+        height={13.649833}
+        color="#22c55e"
         strokeWidth="0.12mm"
         isStrokeDashed
       />
       <pcbnotetext
-        text="RED: incorrect bounds overlap C2 by 0.64mm"
+        text="GREEN: corrected bounds clear C2 by 1.57mm"
         pcbX={8}
         pcbY={-10}
         fontSize="0.45mm"
@@ -99,9 +99,14 @@ test("repro: rotated rectangular pads create incorrect component bounds", () => 
   circuit.render()
 
   const [u1, c2] = circuit.db.pcb_component.list()
-  const bodyOverlap = u1.center.x + u1.width / 2 - (c2.center.x - c2.width / 2)
+  const bodyClearance =
+    c2.center.x - c2.width / 2 - (u1.center.x + u1.width / 2)
 
-  expect(bodyOverlap).toBeCloseTo(0.64, 2)
+  expect(u1.center.x).toBeCloseTo(7.3, 6)
+  expect(u1.center.y).toBeCloseTo(-20.1, 6)
+  expect(u1.width).toBeCloseTo(6.6999866, 6)
+  expect(u1.height).toBeCloseTo(13.649833, 6)
+  expect(bodyClearance).toBeCloseTo(1.57, 2)
   expect(circuit).toMatchPcbSnapshot(import.meta.path, {
     showCourtyards: true,
   })
