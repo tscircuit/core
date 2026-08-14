@@ -2,6 +2,48 @@ import type { Port } from "../Port/Port"
 import type { Trace } from "./Trace"
 import { TraceConnectionError } from "../../../errors"
 
+const areAllPortsInternallyConnected = (ports: Port[]): boolean => {
+  if (ports.length <= 1) return true
+
+  const internallyConnectedPorts =
+    ports[0]._getPortsInternallyConnectedToThisPort()
+  return ports.every((port) => internallyConnectedPorts.includes(port))
+}
+
+const getPhysicalPinSelector = (port: Port): string => {
+  const componentName = port.getParentNormalComponent()?.props.name
+  const pinNumber = port._parsedProps.pinNumber
+
+  if (componentName && pinNumber !== undefined) {
+    return `.${componentName} > .pin${pinNumber}`
+  }
+
+  return port.getString()
+}
+
+const throwAmbiguousPortSelectorError = ({
+  trace,
+  selector,
+  matchingPorts,
+}: {
+  trace: Trace
+  selector: string
+  matchingPorts: Port[]
+}): never => {
+  const subcircuit = trace.getSubcircuit()
+  const sourceGroup = subcircuit.getGroup()
+  const physicalPinSelectors = matchingPorts.map(getPhysicalPinSelector)
+
+  throw new TraceConnectionError({
+    error_type: "source_trace_not_connected_error",
+    message: `Port selector "${selector}" is ambiguous because it matches ${physicalPinSelectors.join(", ")}. Use a unique physical pin selector instead.`,
+    subcircuit_id: subcircuit.subcircuit_id ?? undefined,
+    source_group_id: sourceGroup?.source_group_id ?? undefined,
+    source_trace_id: trace.source_trace_id ?? undefined,
+    selectors_not_found: [selector],
+  })
+}
+
 export function Trace__findConnectedPorts(trace: Trace):
   | {
       allPortsFound: true
@@ -37,11 +79,25 @@ export function Trace__findConnectedPorts(trace: Trace):
     return ports.length === 1 ? ports[0] : null
   }
 
+  const resolvePort = (selector: string): Port | null => {
+    const matchingPorts = trace
+      .getSubcircuit()
+      .selectAll<Port>(selector)
+      .filter((component) => component.componentName === "Port")
+
+    if (
+      matchingPorts.length > 1 &&
+      !areAllPortsInternallyConnected(matchingPorts)
+    ) {
+      throwAmbiguousPortSelectorError({ trace, selector, matchingPorts })
+    }
+
+    return matchingPorts[0] ?? resolveImplicitSinglePort(selector)
+  }
+
   const portsWithSelectors = portSelectors.map((selector) => ({
     selector,
-    port:
-      (trace.getSubcircuit().selectOne(selector, { type: "port" }) as Port) ??
-      resolveImplicitSinglePort(selector),
+    port: resolvePort(selector),
   }))
 
   for (const { selector, port } of portsWithSelectors) {
@@ -117,7 +173,11 @@ export function Trace__findConnectedPorts(trace: Trace):
     }
   }
 
-  if (portsWithSelectors.some((p) => !p.port)) {
+  if (
+    !portsWithSelectors.every(
+      (entry): entry is { selector: string; port: Port } => entry.port !== null,
+    )
+  ) {
     return { allPortsFound: false }
   }
 

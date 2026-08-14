@@ -31,15 +31,21 @@ const getPortReferenceName = (
   return port.props.name ?? null
 }
 
-export function inferInternallyConnectedPinNamesFromPorts(
-  ports: Port[],
-  inferredInternallyConnectedPinNames: string[][],
-): void {
+export function inferInternallyConnectedPinNamesFromPorts({
+  ports,
+  inferredInternallyConnectedPinNames,
+  aliasesThatDoNotImplyConnectivity = new Set(),
+}: {
+  ports: Port[]
+  inferredInternallyConnectedPinNames: string[][]
+  aliasesThatDoNotImplyConnectivity?: Set<string>
+}): void {
   const portsByAlias = new Map<string, Port[]>()
 
   for (const port of ports) {
     for (const alias of new Set(port.getNameAndAliases())) {
       if (/^(pin)?\d+$/.test(alias)) continue
+      if (aliasesThatDoNotImplyConnectivity.has(alias)) continue
       if (!port._isPrimaryPort && alias === port.props.name) {
         continue
       }

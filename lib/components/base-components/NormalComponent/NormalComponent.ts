@@ -546,12 +546,18 @@ export class NormalComponent<
       )
     }
 
-    inferInternallyConnectedPinNamesFromPorts(
-      Array.from(
+    inferInternallyConnectedPinNamesFromPorts({
+      ports: Array.from(
         new Set([...this._getAllPortsFromChildren(), ...portsToCreate]),
       ),
-      this._inferredInternallyConnectedPinNames,
-    )
+      inferredInternallyConnectedPinNames:
+        this._inferredInternallyConnectedPinNames,
+      aliasesThatDoNotImplyConnectivity: new Set(
+        Object.values(pinLabelsFromProps ?? {}).flatMap((labelOrLabels) =>
+          Array.isArray(labelOrLabels) ? labelOrLabels : [labelOrLabels],
+        ),
+      ),
+    })
 
     // If no ports were created, don't throw an error
     if (portsToCreate.length > 0) {

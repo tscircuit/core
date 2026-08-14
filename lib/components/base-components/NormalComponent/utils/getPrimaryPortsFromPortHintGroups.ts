@@ -150,10 +150,14 @@ export function getPrimaryPortsFromPortHintGroups(
   }
 
   if (opts?.inferredInternallyConnectedPinNames) {
-    inferInternallyConnectedPinNamesFromPorts(
+    inferInternallyConnectedPinNamesFromPorts({
       ports,
-      opts.inferredInternallyConnectedPinNames,
-    )
+      inferredInternallyConnectedPinNames:
+        opts.inferredInternallyConnectedPinNames,
+      aliasesThatDoNotImplyConnectivity: new Set(
+        Object.values(opts.additionalAliases ?? {}).flat(),
+      ),
+    })
   }
 
   return ports

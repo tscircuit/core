@@ -1,8 +1,7 @@
 import { expect, test } from "bun:test"
-import type { Port } from "lib/components"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("ambiguous chip pin alias silently selects the first physical pin", async () => {
+test("ambiguous chip pin alias reports a connection error", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -47,25 +46,25 @@ test("ambiguous chip pin alias silently selects the first physical pin", async (
         color="blue"
       />
       <schematictext
-        text="ACTUAL: UCB0SDA silently selects physical pin 1"
+        text="FIXED: alias trace rejected; select pin1 or pin2"
         schX={0}
         schY={-2}
         fontSize={0.28}
-        color="red"
+        color="green"
       />
     </board>,
   )
 
   await circuit.renderUntilSettled()
 
-  const pin1 = circuit.selectOne(".U1 > .pin1") as Port
-  const pin2 = circuit.selectOne(".U1 > .pin2") as Port
-  const aliasTrace = circuit.db.source_trace.list()[1]!
+  const traceConnectionErrors =
+    circuit.db.source_trace_not_connected_error.list()
 
-  expect(circuit.db.source_trace_not_connected_error.list()).toHaveLength(0)
-  expect(aliasTrace.connected_source_port_ids).toContain(pin1.source_port_id!)
-  expect(aliasTrace.connected_source_port_ids).not.toContain(
-    pin2.source_port_id!,
+  expect(traceConnectionErrors).toHaveLength(1)
+  expect(traceConnectionErrors[0]?.message).toBe(
+    'Port selector ".U1 > .UCB0SDA" is ambiguous because it matches .U1 > .pin1, .U1 > .pin2. Use a unique physical pin selector instead.',
   )
+  expect(circuit.db.source_trace.list()).toHaveLength(1)
+  expect(circuit.db.source_component_internal_connection.list()).toHaveLength(0)
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
