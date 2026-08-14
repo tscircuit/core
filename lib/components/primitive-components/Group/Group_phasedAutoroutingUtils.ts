@@ -45,6 +45,45 @@ export function Group_hasPhasedAutorouting(
   return false
 }
 
+const pointsReferToSameEndpoint = (
+  first: { x: number; y: number; pointId?: string },
+  second: { x: number; y: number; pointId?: string },
+): boolean =>
+  first.pointId && second.pointId
+    ? first.pointId === second.pointId
+    : Math.abs(first.x - second.x) <= 1e-6 &&
+      Math.abs(first.y - second.y) <= 1e-6
+
+const getPairedExitTarget = (
+  simpleRouteJson: SimpleRouteJson,
+  connection: SimpleRouteConnection,
+): { x: number; y: number } | undefined => {
+  if (!connection.routingPcbGroupId || !connection.source_trace_id) {
+    return undefined
+  }
+  const globalConnection = simpleRouteJson.connections.find(
+    (candidate) =>
+      candidate.routingPcbGroupId !== connection.routingPcbGroupId &&
+      candidate.source_trace_id === connection.source_trace_id &&
+      candidate.pointsToConnect.some((globalPoint) =>
+        connection.pointsToConnect.some((localPoint) =>
+          pointsReferToSameEndpoint(globalPoint, localPoint),
+        ),
+      ),
+  )
+  if (!globalConnection) return undefined
+
+  const pairedPoints = globalConnection.pointsToConnect.filter(
+    (globalPoint) =>
+      !connection.pointsToConnect.some((localPoint) =>
+        pointsReferToSameEndpoint(globalPoint, localPoint),
+      ),
+  )
+  return pairedPoints.length === 1
+    ? { x: pairedPoints[0]!.x, y: pairedPoints[0]!.y }
+    : undefined
+}
+
 export function Group_filterSimpleRouteJsonForPhase(
   simpleRouteJson: SimpleRouteJson,
   phasePlan: RoutingPhasePlan,
@@ -77,13 +116,31 @@ export function Group_filterSimpleRouteJsonForPhase(
     if (positiveConnectionIncluded) differentialPairs.push(differentialPair)
   }
 
+  const connectionByName = new Map(
+    connections.map((connection) => [connection.name, connection]),
+  )
+
   const buses = (simpleRouteJson.buses ?? [])
-    .map((bus) => ({
-      ...bus,
-      connectionNames: bus.connectionNames.filter((connectionName) =>
+    .map((bus) => {
+      const connectionNames = bus.connectionNames.filter((connectionName) =>
         includedConnectionNames.has(connectionName),
-      ),
-    }))
+      )
+      const connectionExitTargets = Object.fromEntries(
+        connectionNames.flatMap((connectionName) => {
+          const connection = connectionByName.get(connectionName)
+          if (!connection) return []
+          const pairedTarget = getPairedExitTarget(simpleRouteJson, connection)
+          return pairedTarget ? [[connectionName, pairedTarget]] : []
+        }),
+      )
+      return {
+        ...bus,
+        connectionNames,
+        ...(Object.keys(connectionExitTargets).length > 0
+          ? { connectionExitTargets }
+          : {}),
+      }
+    })
     .filter((bus) => bus.connectionNames.length > 0)
 
   const bounds = expandSrjBoundsToIncludeConnectionPoints({

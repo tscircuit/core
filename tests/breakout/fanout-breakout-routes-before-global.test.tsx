@@ -123,6 +123,21 @@ test("fanout breakout routes signals and plane drops before global routing", asy
       (phaseIo) => phaseIo.startSimpleRouteJson?.connections.length,
     ),
   ).toEqual([5, 4, 4])
+  for (const phaseIo of autoroutingPhaseIoStack.slice(0, 2)) {
+    const dataBus = phaseIo.startSimpleRouteJson?.buses?.find(
+      (bus) => bus.busId === "DATA_BUS",
+    )
+    expect(Object.keys(dataBus?.connectionExitTargets ?? {}).sort()).toEqual(
+      [...(dataBus?.connectionNames ?? [])].sort(),
+    )
+  }
+  for (const connection of autoroutingPhaseIoStack[2]!.startSimpleRouteJson!
+    .connections) {
+    const [firstPoint, secondPoint] = connection.pointsToConnect
+    expect(firstPoint).toBeDefined()
+    expect(secondPoint).toBeDefined()
+    expect(Math.abs(firstPoint!.y - secondPoint!.y)).toBeLessThan(0.6)
+  }
 
   const breakoutGroups = ["U1_BREAKOUT", "U2_BREAKOUT"].map((name) => {
     const group = circuit.db.pcb_group.getWhere({ name })
