@@ -14,7 +14,8 @@ export type AutorouterErrorEvent = {
 export type AutorouterProgressEvent = {
   type: "progress"
   steps: number
-  progress: number
+  /** Omitted when the active solver cannot provide a meaningful estimate. */
+  progress?: number
   phase?: string
   iterationsPerSecond?: number
   debugGraphics?: GraphicsObject

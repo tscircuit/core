@@ -45,14 +45,14 @@ const createFakeSolver = ({
   },
 })
 
-test("repro: unknown progress is reported as 0% and stop leaks progress", async () => {
+test("unknown progress is indeterminate and stop prevents event leaks", async () => {
   const progressAutorouter = new TscircuitAutorouter(
     createTestSimpleRouteJson(),
   )
   const progressSolver = createFakeSolver({
     stepAsync: async () => {
       progressSolver.iterations++
-      progressSolver.solved = true
+      await new Promise((resolve) => setTimeout(resolve, 260))
     },
   })
   ;(progressAutorouter as any).solver = progressSolver
@@ -61,11 +61,11 @@ test("repro: unknown progress is reported as 0% and stop leaks progress", async 
   progressAutorouter.on("progress", (event) => {
     reportedProgressEvent = event
   })
-  await new Promise<void>((resolve, reject) => {
-    progressAutorouter.on("complete", () => resolve())
-    progressAutorouter.on("error", (event) => reject(event.error))
+  await new Promise<void>((resolve) => {
+    progressAutorouter.on("progress", () => resolve())
     progressAutorouter.start()
   })
+  progressAutorouter.stop()
 
   let releaseStep: (() => void) | undefined
   let markStepStarted: (() => void) | undefined
@@ -99,21 +99,22 @@ test("repro: unknown progress is reported as 0% and stop leaks progress", async 
   await new Promise((resolve) => setTimeout(resolve, 20))
 
   expect(reportedProgressEvent?.phase).toBe("exact_geometry_improvement")
-  expect(reportedProgressEvent?.progress).toBe(0)
-  expect(progressEventsAfterStop).toHaveLength(1)
+  expect(reportedProgressEvent?.progress).toBeUndefined()
+  expect(progressEventsAfterStop).toHaveLength(0)
 
-  const reportedProgress = `${Math.round(
-    (reportedProgressEvent?.progress ?? 0) * 100,
-  )}%`
+  const reportedProgress =
+    reportedProgressEvent?.progress === undefined
+      ? "indeterminate"
+      : `${Math.round(reportedProgressEvent.progress * 100)}%`
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="260" viewBox="0 0 800 260">
     <rect width="800" height="260" fill="#111827" />
-    <text x="400" y="42" text-anchor="middle" fill="#f9fafb" font-family="Arial" font-size="24" font-weight="700">Autorouter status reproduction</text>
-    <rect x="40" y="75" width="720" height="64" rx="8" fill="#450a0a" stroke="#ef4444" stroke-width="2" />
-    <text x="65" y="103" fill="#fecaca" font-family="Arial" font-size="18">exact_geometry_improvement reported progress: ${reportedProgress}</text>
-    <text x="65" y="127" fill="#fecaca" font-family="Arial" font-size="18">No phase estimate exists, but the API reports a definite zero.</text>
-    <rect x="40" y="158" width="720" height="64" rx="8" fill="#450a0a" stroke="#ef4444" stroke-width="2" />
-    <text x="65" y="186" fill="#fecaca" font-family="Arial" font-size="18">Progress events emitted after stop(): ${progressEventsAfterStop.length}</text>
-    <text x="65" y="210" fill="#fecaca" font-family="Arial" font-size="18">The in-flight cycle continues after cancellation.</text>
+    <text x="400" y="42" text-anchor="middle" fill="#f9fafb" font-family="Arial" font-size="24" font-weight="700">Autorouter status behavior</text>
+    <rect x="40" y="75" width="720" height="64" rx="8" fill="#052e16" stroke="#22c55e" stroke-width="2" />
+    <text x="65" y="103" fill="#bbf7d0" font-family="Arial" font-size="18">exact_geometry_improvement reported progress: ${reportedProgress}</text>
+    <text x="65" y="127" fill="#bbf7d0" font-family="Arial" font-size="18">Unknown estimates are explicit instead of a misleading hard zero.</text>
+    <rect x="40" y="158" width="720" height="64" rx="8" fill="#052e16" stroke="#22c55e" stroke-width="2" />
+    <text x="65" y="186" fill="#bbf7d0" font-family="Arial" font-size="18">Progress events emitted after stop(): ${progressEventsAfterStop.length}</text>
+    <text x="65" y="210" fill="#bbf7d0" font-family="Arial" font-size="18">The in-flight async step exits at its cooperative boundary.</text>
   </svg>`
   expect(svg).toMatchSvgSnapshot(import.meta.path)
 })

@@ -1,8 +1,8 @@
 import {
-  AutoroutingPipelineSolver,
   AssignableAutoroutingPipeline2,
   AssignableAutoroutingPipeline3,
   AutoroutingPipeline1_OriginalUnravel,
+  AutoroutingPipelineSolver,
   AutoroutingPipelineSolver3_HgPortPointPathing,
   AutoroutingPipelineSolver4,
   AutoroutingPipelineSolver5,
@@ -13,16 +13,16 @@ import {
 } from "@tscircuit/capacity-autorouter"
 import type { PlatformConfig } from "@tscircuit/props"
 import { AutorouterError } from "lib/errors/AutorouterError"
-import type { SimpleRouteJson, SimplifiedPcbTrace } from "./SimpleRouteJson"
+import { SOLVERS, type SolverName } from "lib/solvers"
 import type {
   AutorouterCompleteEvent,
   AutorouterErrorEvent,
-  AutorouterProgressEvent,
   AutorouterEvent,
+  AutorouterProgressEvent,
   GenericLocalAutorouter,
 } from "./GenericLocalAutorouter"
-import { SOLVERS, type SolverName } from "lib/solvers"
 import { getCacheProviderForLocalCacheEngine } from "./LocalCacheEngineCacheProvider"
+import type { SimpleRouteJson, SimplifiedPcbTrace } from "./SimpleRouteJson"
 import type { AutorouterVersion } from "./autorouter-version"
 
 export interface SolverStartedDetails {
@@ -210,12 +210,15 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
       const startTime = Date.now()
       const startIterations = this.solver.iterations
       while (
+        this.isRouting &&
         Date.now() - startTime < 250 &&
         !this.solver.failed &&
         !this.solver.solved
       ) {
         await this.stepSolver()
       }
+      if (!this.isRouting) return
+
       const iterationsPerSecond =
         ((this.solver.iterations - startIterations) /
           (Date.now() - startTime)) *
@@ -226,7 +229,12 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
       const debugGraphics = this.solver?.preview() || undefined
 
       // Report progress
-      const progress = this.solver.progress
+      const solverProgress = this.solver.progress
+      const progress = this.solver.solved
+        ? 1
+        : Number.isFinite(solverProgress) && solverProgress > 0
+          ? Math.min(1, solverProgress)
+          : undefined
 
       this.emitEvent({
         type: "progress",
@@ -251,6 +259,8 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
         ) as unknown as number
       }
     } catch (error) {
+      if (!this.isRouting) return
+
       // Handle any errors during the step
       this.emitEvent({
         type: "error",
