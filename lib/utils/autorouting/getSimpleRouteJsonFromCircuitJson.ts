@@ -497,7 +497,6 @@ export const getSimpleRouteJsonFromCircuitJson = ({
 
   const connectionsFromNets: SimpleRouteConnection[] = []
   const connectionFromNetId = new Map<string, SimpleRouteConnection>()
-  const planeTerminatedNetConnections = new Set<SimpleRouteConnection>()
   const handledNetConnectivityKeys = new Set<string>()
 
   // The scoped DB includes descendants so their routed copper can be preserved
@@ -640,13 +639,6 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     if (pointsToConnect.length === 0) continue
 
     connectionsFromNets.push(connection)
-    if (
-      connectedSourceTraces.some((trace) =>
-        planeTerminatedSourceTraceLayers.has(trace.source_trace_id),
-      )
-    ) {
-      planeTerminatedNetConnections.add(connection)
-    }
     for (const sourceNetId of connectedSourceNetIds) {
       connectionFromNetId.set(sourceNetId, connection)
     }
@@ -726,14 +718,11 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     }
   }
 
-  // A net with one physical point has nothing to route unless it terminates
-  // into a copper plane. Breakout-point processing above may have supplied a
-  // second point; otherwise, omit the connection instead of sending an
-  // impossible one-point connection to an autorouter phase.
+  // Plane-terminated one-point traces are emitted by directTraceConnections.
+  // A net-derived connection needs at least two physical points; breakout-point
+  // processing above may have supplied the second point.
   const routableConnectionsFromNets = connectionsFromNets.filter(
-    (connection) =>
-      connection.pointsToConnect.length >= 2 ||
-      planeTerminatedNetConnections.has(connection),
+    (connection) => connection.pointsToConnect.length >= 2,
   )
 
   // ----- 1. Gather all connections we are about to return
