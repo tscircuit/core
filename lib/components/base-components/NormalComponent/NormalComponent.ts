@@ -2002,6 +2002,8 @@ export class NormalComponent<
       ftype: source_component.ftype,
       name: source_component.name,
       manufacturer_part_number: source_component.manufacturer_part_number,
+      standard: source_component.standard,
+      pin_count: source_component.pin_count,
       footprinterString,
     })
   }
