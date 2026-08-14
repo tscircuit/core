@@ -37,6 +37,7 @@ import { Net } from "../Net"
 import type { NetLabel } from "../NetLabel"
 import type { Port } from "../Port"
 import type { TraceHint } from "../TraceHint"
+import { Via } from "../Via"
 import type { TraceI } from "./TraceI"
 import { Trace__doInitialSchematicTraceRenderWithDisplayLabel } from "./Trace__doInitialSchematicTraceRenderWithDisplayLabel"
 import { Trace__findConnectedPorts } from "./Trace__findConnectedPorts"
@@ -45,6 +46,23 @@ import { Trace_doInitialPcbTraceRender } from "./Trace_doInitialPcbTraceRender"
 import { Trace_doInitialSchematicTraceRender } from "./Trace_doInitialSchematicTraceRender"
 import { getMaxLengthFromConnectedComponents } from "./trace-utils/get-max-length-from-connected-components"
 import { getTraceDisplayName } from "./trace-utils/get-trace-display-name"
+
+function getNetsConnectedThroughViaPorts(
+  connectedTracePorts: Array<{ port: Port }>,
+): Net[] {
+  const connectedViaNets = new Set<Net>()
+
+  for (const { port } of connectedTracePorts) {
+    if (!(port.parent instanceof Via)) continue
+
+    const connectedNetOrTrace = port.parent._getConnectedNetOrTrace()
+    if (connectedNetOrTrace instanceof Net) {
+      connectedViaNets.add(connectedNetOrTrace)
+    }
+  }
+
+  return [...connectedViaNets]
+}
 
 export class Trace
   extends PrimitiveComponent<typeof traceProps>
@@ -284,6 +302,9 @@ export class Trace
     }
 
     const nets = this._findConnectedNets().nets
+    for (const connectedViaNet of getNetsConnectedThroughViaPorts(ports)) {
+      if (!nets.includes(connectedViaNet)) nets.push(connectedViaNet)
+    }
     const displayName = getTraceDisplayName({ ports: ports, nets: nets })
     const trace = db.source_trace.insert({
       connected_source_port_ids: ports.map((p) => p.port.source_port_id!),

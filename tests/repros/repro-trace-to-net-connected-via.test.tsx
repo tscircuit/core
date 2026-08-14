@@ -55,6 +55,9 @@ test("trace ending on a net-connected via should inherit the via net", async () 
 
   expect({
     sourceViaUsesGnd: sourceVia.source_net_id === sourceNet.source_net_id,
+    sourceTraceUsesGnd: sourceTrace.connected_source_net_ids.includes(
+      sourceNet.source_net_id,
+    ),
     sourceTraceKeyMatchesGnd:
       sourceTrace.subcircuit_connectivity_map_key ===
       sourceNet.subcircuit_connectivity_map_key,
@@ -69,6 +72,7 @@ test("trace ending on a net-connected via should inherit the via net", async () 
     traceErrors: circuit.db.pcb_trace_error.list(),
   }).toEqual({
     sourceViaUsesGnd: true,
+    sourceTraceUsesGnd: true,
     sourceTraceKeyMatchesGnd: true,
     pcbViaKeyMatchesGnd: true,
     traceViaAndNetAreConnected: true,
