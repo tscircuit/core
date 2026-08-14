@@ -46,6 +46,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   minPlatedHoleDrillEdgeToDrillEdgeClearance,
   minPadEdgeToPadEdgeClearance,
   minBoardEdgeClearance,
+  defaultObstacleMargin,
   minViaHoleDiameter,
   minViaPadDiameter,
   nominalTraceWidth,
@@ -64,6 +65,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   minPlatedHoleDrillEdgeToDrillEdgeClearance?: number
   minPadEdgeToPadEdgeClearance?: number
   minBoardEdgeClearance?: number
+  defaultObstacleMargin?: number
   minViaHoleDiameter?: number
   minViaPadDiameter?: number
   subcircuitComponent?: Pick<ISubcircuit, "selectAll"> & {
@@ -833,6 +835,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       minViaDiameter: resolvedMinViaPadDiameter,
       minViaHoleDiameter: resolvedMinViaHoleDiameter,
       minViaPadDiameter: resolvedMinViaPadDiameter,
+      defaultObstacleMargin,
       min_via_hole_diameter: resolvedMinViaHoleDiameter,
       min_via_pad_diameter: resolvedMinViaPadDiameter,
       minTraceToPadEdgeClearance: resolvedMinTraceToPadEdgeClearance,

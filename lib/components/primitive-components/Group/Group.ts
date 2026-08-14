@@ -27,14 +27,15 @@ import Debug from "debug"
 import type { GraphicsObject } from "graphics-debug"
 
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
+import { isAssemblyDeviceContainer } from "lib/components/base-components/is-assembly-device-container"
 import { AutorouterError } from "lib/errors/AutorouterError"
 import type { AutorouterOptions } from "lib/utils/autorouting/CapacityMeshAutorouter"
-import { getPcbComponentNamesById } from "lib/utils/autorouting/get-pcb-component-names-by-id"
 import { FanoutAutorouter } from "lib/utils/autorouting/FanoutAutorouter"
 import type { GenericLocalAutorouter } from "lib/utils/autorouting/GenericLocalAutorouter"
 import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import { createSourceTracesFromOffboardConnections } from "lib/utils/autorouting/createSourceTracesFromOffboardConnections"
+import { getPcbComponentNamesById } from "lib/utils/autorouting/get-pcb-component-names-by-id"
 import {
   type LegacyAutorouterPreset,
   type NormalizedAutorouterConfig,
@@ -66,7 +67,6 @@ import { Group_doInitialPcbComponentAnchorAlignment } from "./Group_doInitialPcb
 import { Group_doInitialPcbLayoutFlex } from "./Group_doInitialPcbLayoutFlex"
 import { Group_doInitialPcbLayoutGrid } from "./Group_doInitialPcbLayoutGrid"
 import { Group_doInitialPcbLayoutPack } from "./Group_doInitialPcbLayoutPack/Group_doInitialPcbLayoutPack"
-import { isAssemblyDeviceContainer } from "lib/components/base-components/is-assembly-device-container"
 import {
   Group_doInitialSchematicBoxComponentRender,
   getGroupSchematicBoxPinLabels,
@@ -114,6 +114,11 @@ const getDistanceToPoint = (
   const position = getRoutePointPosition(routePoint)
   return Math.hypot(position.x - targetPoint.x, position.y - targetPoint.y)
 }
+
+const parseAutorouterTraceClearance = (
+  traceClearance: AutorouterConfig["traceClearance"],
+): number | undefined =>
+  traceClearance === undefined ? undefined : distance.parse(traceClearance)
 
 const platformAllowsLegacyAutorouters = (group: Group<z.ZodType>): boolean => {
   const platform = group.root?.platform
@@ -858,6 +863,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
           db,
           minTraceWidth: Number(props.minTraceWidth ?? 0.15),
+          defaultObstacleMargin: parseAutorouterTraceClearance(
+            autorouterConfig.traceClearance,
+          ),
           nominalTraceWidth:
             preferredTraceWidth != null
               ? Number(preferredTraceWidth)
@@ -1032,6 +1040,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         db,
         minTraceWidth,
         nominalTraceWidth,
+        defaultObstacleMargin: parseAutorouterTraceClearance(
+          autorouterConfig.traceClearance,
+        ),
         subcircuit_id: this.subcircuit_id,
         subcircuitComponent: this,
         fanoutPourNetMap,
@@ -1166,6 +1177,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         simpleRouteJson,
         routingPhasePlan.drcTolerances,
       )
+      simpleRouteJson.defaultObstacleMargin =
+        parseAutorouterTraceClearance(phaseAutorouterConfig.traceClearance) ??
+        simpleRouteJson.defaultObstacleMargin
       simpleRouteJson.allowViaInPad = phaseAutorouterConfig.allowViaInPad
 
       if (

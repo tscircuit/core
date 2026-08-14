@@ -3,7 +3,7 @@ import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import { createBasicAutorouter } from "tests/fixtures/createBasicAutorouter"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("repro: autorouter traceClearance is not sent to the solver", async () => {
+test("autorouter traceClearance is sent to the solver", async () => {
   const { circuit } = getTestFixture()
   let receivedSimpleRouteJson: SimpleRouteJson | undefined
 
@@ -80,6 +80,6 @@ test("repro: autorouter traceClearance is not sent to the solver", async () => {
 
   await circuit.renderUntilSettled()
 
-  expect(receivedSimpleRouteJson?.defaultObstacleMargin).toBeUndefined()
+  expect(receivedSimpleRouteJson?.defaultObstacleMargin).toBe(0.8)
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
