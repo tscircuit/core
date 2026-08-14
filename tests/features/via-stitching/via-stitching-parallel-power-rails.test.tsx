@@ -2,21 +2,36 @@ import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { setupViaStitchingPhases } from "tests/fixtures/via-stitching"
 
-test("via stitching expands a TSSOP motor driver power pair", async () => {
+const vmRegionOutline = [
+  { x: -5, y: -5 },
+  { x: 5, y: -5 },
+  { x: 5, y: -1 },
+  { x: -5, y: -1 },
+]
+const gndRegionOutline = [
+  { x: -5, y: 1 },
+  { x: 5, y: 1 },
+  { x: 5, y: 5 },
+  { x: -5, y: 5 },
+]
+
+test("via stitching fills separate VM and PGND regions", async () => {
   const { circuit } = getTestFixture()
   const stitching = setupViaStitchingPhases({
     circuit,
     routedPhaseName: "route-power",
-    powerTraceRequirements: [
+    powerNetStitchingRegions: [
       {
-        traceName: "VM_POWER",
-        currentAmps: 8,
-        maxTemperatureRiseC: 3,
+        netName: "VM_RAIL",
+        outline: vmRegionOutline,
+        pitch: 2,
+        minimumViaCount: 6,
       },
       {
-        traceName: "GND_POWER",
-        currentAmps: 8,
-        maxTemperatureRiseC: 3,
+        netName: "PGND",
+        outline: gndRegionOutline,
+        pitch: 2,
+        minimumViaCount: 6,
       },
     ],
   })
@@ -35,6 +50,8 @@ test("via stitching expands a TSSOP motor driver power pair", async () => {
       minViaPadDiameter="0.6mm"
       autorouter={{ local: true, groupMode: "subcircuit" }}
     >
+      <net name="VM_RAIL" routingPhaseIndex={0} />
+      <net name="PGND" routingPhaseIndex={0} />
       <testpoint
         name="VM_CONNECTOR"
         footprintVariant="pad"
@@ -50,6 +67,42 @@ test("via stitching expands a TSSOP motor driver power pair", async () => {
         layer="top"
         pcbX={-16}
         pcbY={3}
+      />
+      <testpoint
+        name="VMT"
+        footprintVariant="pad"
+        padDiameter="1.2mm"
+        layer="top"
+        pcbX={-4.5}
+        pcbY={-3}
+        connections={{ pin1: "net.VM_RAIL" }}
+      />
+      <testpoint
+        name="VMB"
+        footprintVariant="pad"
+        padDiameter="1.2mm"
+        layer="bottom"
+        pcbX={4.5}
+        pcbY={-3}
+        connections={{ pin1: "net.VM_RAIL" }}
+      />
+      <testpoint
+        name="GT"
+        footprintVariant="pad"
+        padDiameter="1.2mm"
+        layer="top"
+        pcbX={-4.5}
+        pcbY={3}
+        connections={{ pin1: "net.PGND" }}
+      />
+      <testpoint
+        name="GB"
+        footprintVariant="pad"
+        padDiameter="1.2mm"
+        layer="bottom"
+        pcbX={4.5}
+        pcbY={3}
+        connections={{ pin1: "net.PGND" }}
       />
       <chip
         name="U_MOTOR"
@@ -95,17 +148,31 @@ test("via stitching expands a TSSOP motor driver power pair", async () => {
         pcbY={-8}
       />
       <trace
-        name="VM_POWER"
+        name="VM_FEED"
         from=".VM_CONNECTOR > .pin1"
-        to=".U_MOTOR > .VM"
-        thickness="2mm"
+        to=".VMT > .pin1"
+        thickness="0.8mm"
         routingPhaseIndex={0}
       />
       <trace
-        name="GND_POWER"
+        name="VM_TO_DRIVER"
+        from=".VMB > .pin1"
+        to=".U_MOTOR > .VM"
+        thickness="0.8mm"
+        routingPhaseIndex={0}
+      />
+      <trace
+        name="GND_FEED"
         from=".GND_CONNECTOR > .pin1"
+        to=".GT > .pin1"
+        thickness="0.8mm"
+        routingPhaseIndex={0}
+      />
+      <trace
+        name="GND_TO_DRIVER"
+        from=".GB > .pin1"
         to=".U_MOTOR > .GND"
-        thickness="2mm"
+        thickness="0.8mm"
         routingPhaseIndex={0}
       />
       <trace
@@ -146,8 +213,37 @@ test("via stitching expands a TSSOP motor driver power pair", async () => {
         autorouter={{ algorithmFn: stitching.addViaStitching }}
       />
 
+      <copperpour
+        name="VM_TOP_REGION"
+        connectsTo="net.VM_RAIL"
+        layer="top"
+        outline={vmRegionOutline}
+        clearance="0.15mm"
+      />
+      <copperpour
+        name="VM_BOTTOM_REGION"
+        connectsTo="net.VM_RAIL"
+        layer="bottom"
+        outline={vmRegionOutline}
+        clearance="0.15mm"
+      />
+      <copperpour
+        name="GND_TOP_REGION"
+        connectsTo="net.PGND"
+        layer="top"
+        outline={gndRegionOutline}
+        clearance="0.15mm"
+      />
+      <copperpour
+        name="GND_BOTTOM_REGION"
+        connectsTo="net.PGND"
+        layer="bottom"
+        outline={gndRegionOutline}
+        clearance="0.15mm"
+      />
+
       <pcbnotetext
-        text="TSSOP-20 driver: 8A VM + GND / 3 vias each"
+        text="TSSOP-20 driver: separately stitched VM + PGND regions"
         fontSize="0.45mm"
         pcbY={12.5}
       />
@@ -159,12 +255,11 @@ test("via stitching expands a TSSOP motor driver power pair", async () => {
   const result = stitching.getResult()
   expect(result.completedPhaseNames).toEqual(["route-power", "stitch-power"])
   expect(result.routedTraceCount).toBeGreaterThanOrEqual(2)
-  expect(result.wideTraceViaCount).toBeGreaterThanOrEqual(2)
-  expect(result.stitchedViaArrayCount).toBe(4)
-  expect(result.addedViaCount).toBe(8)
-  expect(result.insufficientArrayCapacityCount).toBe(0)
-  expect(circuit.db.pcb_component.list().length).toBeGreaterThanOrEqual(7)
-  expect(circuit.db.pcb_via.list().length).toBeGreaterThanOrEqual(6)
+  expect(result.stitchedRegionCount).toBe(2)
+  expect(result.placedRegionViaCount).toBeGreaterThanOrEqual(12)
+  expect(result.insufficientRegionCapacityCount).toBe(0)
+  expect(circuit.db.pcb_component.list().length).toBeGreaterThanOrEqual(11)
+  expect(circuit.db.pcb_via.list().length).toBeGreaterThanOrEqual(12)
   expect(
     circuit.db.pcb_trace
       .list()
@@ -172,7 +267,8 @@ test("via stitching expands a TSSOP motor driver power pair", async () => {
         (trace) =>
           trace.route.length === 1 && trace.route[0]?.route_type === "via",
       ).length,
-  ).toBeGreaterThanOrEqual(result.addedViaCount)
+  ).toBeGreaterThanOrEqual(result.placedRegionViaCount)
+  expect(circuit.db.pcb_copper_pour.list().length).toBeGreaterThanOrEqual(4)
   expect(circuit.db.pcb_via_clearance_error.list()).toEqual([])
   expect(circuit.db.pcb_via_trace_clearance_error.list()).toEqual([])
   expect(circuit).toMatchPcbSnapshot(import.meta.path)

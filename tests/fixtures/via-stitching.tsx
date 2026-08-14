@@ -1,4 +1,5 @@
 import { expect } from "bun:test"
+import type { LayerRef } from "circuit-json"
 import { convertPcbTraceToSimplifiedPcbTrace } from "lib/components/primitive-components/Group/region-replacement"
 import type { RootCircuit } from "lib/RootCircuit"
 import type {
@@ -7,6 +8,7 @@ import type {
 } from "lib/utils/autorouting/SimpleRouteJson"
 import { createBasicAutorouter } from "tests/fixtures/createBasicAutorouter"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
 import { ControllerSections } from "tests/repros/fixtures/rp2040-motor-controller/schematic/ControllerSections"
 import {
   MotorDriverControlTraces,
@@ -76,6 +78,19 @@ export type PowerTraceViaRequirement = {
   viaThermalResistanceCPerW?: number
 }
 
+export type PowerNetStitchingRegion = {
+  netName: string
+  outline: Point[]
+  fromLayer?: string
+  toLayer?: string
+  /** Center-to-center grid spacing, normally chosen from fabricator rules. */
+  pitch: number
+  /** Additional copper left between the via pad edge and region boundary. */
+  edgeMargin?: number
+  /** Electrical sizing remains external; fail rather than under-populate. */
+  minimumViaCount: number
+}
+
 type ResolvedPowerTraceViaRequirement = Omit<
   PowerTraceViaRequirement,
   "traceName"
@@ -90,6 +105,14 @@ type ViaStitchingOptions = {
     "connectionName"
   >
   minimumPowerTraceWidth?: number
+}
+
+type ResolvedPowerNetStitchingRegion = Omit<
+  PowerNetStitchingRegion,
+  "netName"
+> & {
+  connectionName: string
+  connectedTraceNames: string[]
 }
 
 export const SAME_POINT_TOLERANCE = 1e-9
@@ -220,6 +243,90 @@ const distancePointToSegment = (point: Point, start: Point, end: Point) => {
   return Math.hypot(
     point.x - (start.x + segmentX * projection),
     point.y - (start.y + segmentY * projection),
+  )
+}
+
+const pointIsInsidePolygon = (point: Point, outline: Point[]) => {
+  let inside = false
+  for (
+    let pointIndex = 0, previousIndex = outline.length - 1;
+    pointIndex < outline.length;
+    previousIndex = pointIndex++
+  ) {
+    const current = outline[pointIndex]!
+    const previous = outline[previousIndex]!
+    const crossesHorizontalRay =
+      current.y > point.y !== previous.y > point.y &&
+      point.x <
+        ((previous.x - current.x) * (point.y - current.y)) /
+          (previous.y - current.y) +
+          current.x
+    if (crossesHorizontalRay) inside = !inside
+  }
+  return inside
+}
+
+const distancePointToPolygonEdge = (point: Point, outline: Point[]) => {
+  let minimumDistance = Number.POSITIVE_INFINITY
+  for (let pointIndex = 0; pointIndex < outline.length; pointIndex++) {
+    const start = outline[pointIndex]!
+    const end = outline[(pointIndex + 1) % outline.length]!
+    if (Math.hypot(start.x - end.x, start.y - end.y) <= SAME_POINT_TOLERANCE) {
+      continue
+    }
+    minimumDistance = Math.min(
+      minimumDistance,
+      distancePointToSegment(point, start, end),
+    )
+  }
+  return minimumDistance
+}
+
+const createCenteredGridCoordinates = (
+  minimum: number,
+  maximum: number,
+  pitch: number,
+) => {
+  if (maximum < minimum) return []
+  const count = Math.floor((maximum - minimum) / pitch) + 1
+  const usedSpan = (count - 1) * pitch
+  const start = (minimum + maximum - usedSpan) / 2
+  return Array.from({ length: count }, (_, index) => start + index * pitch)
+}
+
+const pointIsClearOfObstacle = ({
+  point,
+  viaRadius,
+  clearance,
+  obstacle,
+  viaLayers,
+}: {
+  point: Point
+  viaRadius: number
+  clearance: number
+  obstacle: SimpleRouteJson["obstacles"][number]
+  viaLayers: Set<string>
+}) => {
+  if (obstacle.isCopperPour) return true
+  if (!obstacle.layers.some((layer) => viaLayers.has(layer))) return true
+
+  const obstacleClearance = viaRadius + clearance
+  const rotation = -((obstacle.ccwRotationDegrees ?? 0) * Math.PI) / 180
+  const deltaX = point.x - obstacle.center.x
+  const deltaY = point.y - obstacle.center.y
+  const localX = deltaX * Math.cos(rotation) - deltaY * Math.sin(rotation)
+  const localY = deltaX * Math.sin(rotation) + deltaY * Math.cos(rotation)
+
+  if (obstacle.shape === "circle") {
+    return (
+      Math.hypot(localX, localY) >
+      Math.max(obstacle.width, obstacle.height) / 2 + obstacleClearance
+    )
+  }
+
+  return !(
+    Math.abs(localX) <= obstacle.width / 2 + obstacleClearance &&
+    Math.abs(localY) <= obstacle.height / 2 + obstacleClearance
   )
 }
 
@@ -588,10 +695,7 @@ export const stitchWideTraceVias = (
       // same-net parallel connections rather than consecutive route points.
       const routedVia = viaStitches.reduce((closestVia, stitch) =>
         Math.hypot(stitch.x - routePoint.x, stitch.y - routePoint.y) <
-        Math.hypot(
-          closestVia.x - routePoint.x,
-          closestVia.y - routePoint.y,
-        )
+        Math.hypot(closestVia.x - routePoint.x, closestVia.y - routePoint.y)
           ? stitch
           : closestVia,
       )
@@ -624,20 +728,255 @@ export const stitchWideTraceVias = (
   }
 }
 
+const regionViaIsClearOfTraces = ({
+  via,
+  viaLayers,
+  viaDiameter,
+  targetConnectionNames,
+  allTraces,
+  routedBoard,
+  clearance,
+}: {
+  via: ViaRoutePoint
+  viaLayers: Set<string>
+  viaDiameter: number
+  targetConnectionNames: Set<string>
+  allTraces: SimplifiedPcbTrace[]
+  routedBoard: SimpleRouteJson
+  clearance: number
+}) => {
+  for (const trace of allTraces) {
+    const traceConnectionNames = getTraceConnectionNames(trace, routedBoard)
+    const traceIsOnTargetNet = [...traceConnectionNames].some((name) =>
+      targetConnectionNames.has(name),
+    )
+
+    for (const point of trace.route) {
+      if (point.route_type !== "via") continue
+      const otherViaDiameter = point.via_diameter ?? viaDiameter
+      if (
+        Math.hypot(via.x - point.x, via.y - point.y) <
+        viaDiameter / 2 +
+          otherViaDiameter / 2 +
+          clearance -
+          SAME_POINT_TOLERANCE
+      ) {
+        return false
+      }
+    }
+
+    if (traceIsOnTargetNet) continue
+
+    for (
+      let pointIndex = 0;
+      pointIndex < trace.route.length - 1;
+      pointIndex++
+    ) {
+      const start = trace.route[pointIndex]
+      const end = trace.route[pointIndex + 1]
+      if (
+        start?.route_type !== "wire" ||
+        end?.route_type !== "wire" ||
+        start.layer !== end.layer ||
+        !viaLayers.has(start.layer)
+      ) {
+        continue
+      }
+      if (
+        distancePointToSegment(via, start, end) <
+        viaDiameter / 2 +
+          Math.max(start.width, end.width) / 2 +
+          clearance -
+          SAME_POINT_TOLERANCE
+      ) {
+        return false
+      }
+    }
+  }
+
+  return true
+}
+
+export const stitchPowerNetRegions = (
+  traces: SimplifiedPcbTrace[],
+  simpleRouteJson: SimpleRouteJson,
+  routedBoard: SimpleRouteJson,
+  regions: ResolvedPowerNetStitchingRegion[],
+) => {
+  const outputTraces = structuredClone(traces)
+  const viaTraces: SimplifiedPcbTrace[] = []
+  const viaDiameter =
+    simpleRouteJson.min_via_pad_diameter ??
+    simpleRouteJson.minViaPadDiameter ??
+    simpleRouteJson.minViaDiameter ??
+    0.6
+  const viaHoleDiameter =
+    simpleRouteJson.min_via_hole_diameter ??
+    simpleRouteJson.minViaHoleDiameter ??
+    0.3
+  const electricalClearance = Math.max(
+    simpleRouteJson.defaultObstacleMargin ?? 0,
+    simpleRouteJson.minTraceToPadEdgeClearance ?? 0,
+    simpleRouteJson.minViaEdgeToPadEdgeClearance ?? 0,
+    0.1,
+  )
+  let stitchedRegionCount = 0
+  let placedViaCount = 0
+  let rejectedCandidateCount = 0
+  let insufficientRegionCapacityCount = 0
+  const stitchedViaCenters: Point[] = []
+
+  for (const [regionIndex, region] of regions.entries()) {
+    if (
+      region.outline.length < 3 ||
+      region.pitch <= 0 ||
+      region.minimumViaCount < 1
+    ) {
+      insufficientRegionCapacityCount++
+      continue
+    }
+
+    const fromLayer = region.fromLayer ?? "top"
+    const toLayer = region.toLayer ?? "bottom"
+    const viaLayers = new Set<string>(
+      getViaSpanLayers({
+        fromLayer: fromLayer as LayerRef,
+        toLayer: toLayer as LayerRef,
+        layerCount: simpleRouteJson.layerCount,
+      }),
+    )
+    const targetConnectionNames = new Set([
+      region.connectionName,
+      ...region.connectedTraceNames,
+    ])
+    const edgeInset = viaDiameter / 2 + (region.edgeMargin ?? 0.15)
+    const bounds = region.outline.reduce(
+      (currentBounds, point) => ({
+        minX: Math.min(currentBounds.minX, point.x),
+        maxX: Math.max(currentBounds.maxX, point.x),
+        minY: Math.min(currentBounds.minY, point.y),
+        maxY: Math.max(currentBounds.maxY, point.y),
+      }),
+      {
+        minX: Number.POSITIVE_INFINITY,
+        maxX: Number.NEGATIVE_INFINITY,
+        minY: Number.POSITIVE_INFINITY,
+        maxY: Number.NEGATIVE_INFINITY,
+      },
+    )
+    const gridX = createCenteredGridCoordinates(
+      bounds.minX + edgeInset,
+      bounds.maxX - edgeInset,
+      region.pitch,
+    )
+    const gridY = createCenteredGridCoordinates(
+      bounds.minY + edgeInset,
+      bounds.maxY - edgeInset,
+      region.pitch,
+    )
+    const viableVias: ViaRoutePoint[] = []
+
+    for (const y of gridY) {
+      for (const x of gridX) {
+        const candidate: ViaRoutePoint = {
+          route_type: "via",
+          x,
+          y,
+          from_layer: fromLayer,
+          to_layer: toLayer,
+          via_diameter: viaDiameter,
+          via_hole_diameter: viaHoleDiameter,
+        }
+        if (
+          !pointIsInsidePolygon(candidate, region.outline) ||
+          distancePointToPolygonEdge(candidate, region.outline) < edgeInset
+        ) {
+          rejectedCandidateCount++
+          continue
+        }
+        if (
+          !simpleRouteJson.obstacles.every((obstacle) =>
+            pointIsClearOfObstacle({
+              point: candidate,
+              viaRadius: viaDiameter / 2,
+              clearance: electricalClearance,
+              obstacle,
+              viaLayers,
+            }),
+          )
+        ) {
+          rejectedCandidateCount++
+          continue
+        }
+        if (
+          !regionViaIsClearOfTraces({
+            via: candidate,
+            viaLayers,
+            viaDiameter,
+            targetConnectionNames,
+            allTraces: [...outputTraces, ...viaTraces],
+            routedBoard,
+            clearance: electricalClearance,
+          })
+        ) {
+          rejectedCandidateCount++
+          continue
+        }
+        viableVias.push(candidate)
+      }
+    }
+
+    if (viableVias.length < region.minimumViaCount) {
+      insufficientRegionCapacityCount++
+      continue
+    }
+
+    viaTraces.push(
+      ...viableVias.map(
+        (via, viaIndex): SimplifiedPcbTrace => ({
+          type: "pcb_trace",
+          pcb_trace_id: `power_net_stitch_${regionIndex}_${viaIndex}`,
+          connection_name: region.connectionName,
+          connectsTo: [...targetConnectionNames],
+          route: [via],
+        }),
+      ),
+    )
+    stitchedViaCenters.push(...viableVias.map(({ x, y }) => ({ x, y })))
+    stitchedRegionCount++
+    placedViaCount += viableVias.length
+  }
+
+  return {
+    traces: [...outputTraces, ...viaTraces],
+    stitchedRegionCount,
+    placedViaCount,
+    rejectedCandidateCount,
+    insufficientRegionCapacityCount,
+    stitchedViaCenters,
+  }
+}
+
 export const setupViaStitchingPhases = ({
   circuit,
   routedPhaseName,
-  powerTraceRequirements,
+  powerTraceRequirements = [],
+  powerNetStitchingRegions = [],
 }: {
   circuit: RootCircuit
   routedPhaseName: string
-  powerTraceRequirements: PowerTraceViaRequirement[]
+  powerTraceRequirements?: PowerTraceViaRequirement[]
+  powerNetStitchingRegions?: PowerNetStitchingRegion[]
 }) => {
   let routedBoard: SimpleRouteJson | undefined
   let stitchedViaArrayCount = 0
   let addedViaCount = 0
   let wideTraceViaCount = 0
   let insufficientArrayCapacityCount = 0
+  let stitchedRegionCount = 0
+  let placedRegionViaCount = 0
+  let rejectedRegionCandidateCount = 0
+  let insufficientRegionCapacityCount = 0
   const stitchedViaCenters: Point[] = []
   const completedPhaseNames: string[] = []
 
@@ -660,6 +999,45 @@ export const setupViaStitchingPhases = ({
   const addViaStitching = createBasicAutorouter(async (simpleRouteJson) => {
     if (!routedBoard) {
       throw new Error("The board must be routed before stitching")
+    }
+
+    const resolvedPowerNetStitchingRegions = powerNetStitchingRegions.map(
+      ({ netName, ...region }) => {
+        const sourceNet = circuit.db.source_net
+          .list()
+          .find((net) => net.name === netName)
+        if (!sourceNet) {
+          throw new Error(
+            `Cannot stitch a power region: net "${netName}" was not found`,
+          )
+        }
+        const connectedTraceNames = circuit.db.source_trace
+          .list()
+          .filter((trace) =>
+            trace.connected_source_net_ids.includes(sourceNet.source_net_id),
+          )
+          .map((trace) => trace.source_trace_id)
+
+        return {
+          ...region,
+          connectionName: sourceNet.source_net_id,
+          connectedTraceNames,
+        }
+      },
+    )
+    if (resolvedPowerNetStitchingRegions.length > 0) {
+      const result = stitchPowerNetRegions(
+        routedBoard.traces ?? [],
+        simpleRouteJson,
+        routedBoard,
+        resolvedPowerNetStitchingRegions,
+      )
+      stitchedRegionCount += result.stitchedRegionCount
+      placedRegionViaCount += result.placedViaCount
+      rejectedRegionCandidateCount += result.rejectedCandidateCount
+      insufficientRegionCapacityCount += result.insufficientRegionCapacityCount
+      stitchedViaCenters.push(...result.stitchedViaCenters)
+      return result.traces
     }
 
     const resolvedPowerTraceRequirements = powerTraceRequirements.map(
@@ -701,6 +1079,10 @@ export const setupViaStitchingPhases = ({
       addedViaCount,
       wideTraceViaCount,
       insufficientArrayCapacityCount,
+      stitchedRegionCount,
+      placedRegionViaCount,
+      rejectedRegionCandidateCount,
+      insufficientRegionCapacityCount,
       stitchedViaCenters: [...stitchedViaCenters],
       completedPhaseNames: [...completedPhaseNames],
     }),

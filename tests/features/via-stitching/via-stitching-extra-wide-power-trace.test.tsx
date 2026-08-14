@@ -2,16 +2,24 @@ import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { setupViaStitchingPhases } from "tests/fixtures/via-stitching"
 
-test("via stitching expands a QFN hot-swap controller power trace", async () => {
+const batteryPlaneOutline = [
+  { x: -5, y: -3 },
+  { x: 6, y: -3 },
+  { x: 6, y: 3 },
+  { x: -5, y: 3 },
+]
+
+test("via stitching fills a distributed BAT copper region", async () => {
   const { circuit } = getTestFixture()
   const stitching = setupViaStitchingPhases({
     circuit,
     routedPhaseName: "route-power",
-    powerTraceRequirements: [
+    powerNetStitchingRegions: [
       {
-        traceName: "BATTERY_POWER",
-        currentAmps: 16,
-        maxTemperatureRiseC: 5,
+        netName: "BAT",
+        outline: batteryPlaneOutline,
+        pitch: 2,
+        minimumViaCount: 8,
       },
     ],
   })
@@ -30,12 +38,29 @@ test("via stitching expands a QFN hot-swap controller power trace", async () => 
       minViaPadDiameter="0.6mm"
       autorouter={{ local: true, groupMode: "subcircuit" }}
     >
+      <net name="BAT" routingPhaseIndex={0} />
       <testpoint
         name="BATTERY_POS"
         footprintVariant="pad"
         padDiameter="2mm"
         layer="top"
         pcbX={-15}
+      />
+      <testpoint
+        name="BT"
+        footprintVariant="pad"
+        padDiameter="1.2mm"
+        layer="top"
+        pcbX={-4.5}
+        connections={{ pin1: "net.BAT" }}
+      />
+      <testpoint
+        name="BB"
+        footprintVariant="pad"
+        padDiameter="1.2mm"
+        layer="bottom"
+        pcbX={5.5}
+        connections={{ pin1: "net.BAT" }}
       />
       <chip
         name="U_HOTSWAP"
@@ -81,10 +106,17 @@ test("via stitching expands a QFN hot-swap controller power trace", async () => 
         pcbY={-6}
       />
       <trace
-        name="BATTERY_POWER"
+        name="BATTERY_FEED"
         from=".BATTERY_POS > .pin1"
+        to=".BT > .pin1"
+        thickness="0.9mm"
+        routingPhaseIndex={0}
+      />
+      <trace
+        name="HOTSWAP_INPUT"
+        from=".BB > .pin1"
         to=".U_HOTSWAP > .VIN"
-        thickness="3.4mm"
+        thickness="0.9mm"
         routingPhaseIndex={0}
       />
       <trace
@@ -125,8 +157,23 @@ test("via stitching expands a QFN hot-swap controller power trace", async () => 
         autorouter={{ algorithmFn: stitching.addViaStitching }}
       />
 
+      <copperpour
+        name="BAT_TOP_PLANE"
+        connectsTo="net.BAT"
+        layer="top"
+        outline={batteryPlaneOutline}
+        clearance="0.15mm"
+      />
+      <copperpour
+        name="BAT_BOTTOM_PLANE"
+        connectsTo="net.BAT"
+        layer="bottom"
+        outline={batteryPlaneOutline}
+        clearance="0.15mm"
+      />
+
       <pcbnotetext
-        text="QFN-20 hot-swap: 16A BAT+ / 5C rise / 4 vias"
+        text="QFN-20 hot-swap: distributed BAT plane stitching"
         fontSize="0.45mm"
         pcbY={11.5}
       />
@@ -138,12 +185,11 @@ test("via stitching expands a QFN hot-swap controller power trace", async () => 
   const result = stitching.getResult()
   expect(result.completedPhaseNames).toEqual(["route-power", "stitch-power"])
   expect(result.routedTraceCount).toBeGreaterThan(0)
-  expect(result.wideTraceViaCount).toBeGreaterThan(0)
-  expect(result.stitchedViaArrayCount).toBe(1)
-  expect(result.addedViaCount).toBe(3)
-  expect(result.insufficientArrayCapacityCount).toBe(0)
-  expect(circuit.db.pcb_component.list().length).toBeGreaterThanOrEqual(6)
-  expect(circuit.db.pcb_via.list().length).toBeGreaterThanOrEqual(4)
+  expect(result.stitchedRegionCount).toBe(1)
+  expect(result.placedRegionViaCount).toBeGreaterThanOrEqual(8)
+  expect(result.insufficientRegionCapacityCount).toBe(0)
+  expect(circuit.db.pcb_component.list().length).toBeGreaterThanOrEqual(8)
+  expect(circuit.db.pcb_via.list().length).toBeGreaterThanOrEqual(8)
   expect(
     circuit.db.pcb_trace
       .list()
@@ -151,7 +197,8 @@ test("via stitching expands a QFN hot-swap controller power trace", async () => 
         (trace) =>
           trace.route.length === 1 && trace.route[0]?.route_type === "via",
       ).length,
-  ).toBeGreaterThanOrEqual(result.addedViaCount)
+  ).toBeGreaterThanOrEqual(result.placedRegionViaCount)
+  expect(circuit.db.pcb_copper_pour.list().length).toBeGreaterThanOrEqual(2)
   expect(circuit.db.pcb_via_clearance_error.list()).toEqual([])
   expect(circuit.db.pcb_via_trace_clearance_error.list()).toEqual([])
   expect(circuit).toMatchPcbSnapshot(import.meta.path)

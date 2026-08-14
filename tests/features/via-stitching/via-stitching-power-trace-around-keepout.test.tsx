@@ -2,16 +2,24 @@ import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { setupViaStitchingPhases } from "tests/fixtures/via-stitching"
 
-test("via stitching expands a QFN buck-regulator trace around a keepout", async () => {
+const vinRegionOutline = [
+  { x: -6, y: -5 },
+  { x: 6, y: -5 },
+  { x: 6, y: 5 },
+  { x: -6, y: 5 },
+]
+
+test("via stitching clips a VIN grid around a keepout", async () => {
   const { circuit } = getTestFixture()
   const stitching = setupViaStitchingPhases({
     circuit,
     routedPhaseName: "route-power",
-    powerTraceRequirements: [
+    powerNetStitchingRegions: [
       {
-        traceName: "VIN_POWER",
-        currentAmps: 8,
-        maxTemperatureRiseC: 3,
+        netName: "VIN_RAIL",
+        outline: vinRegionOutline,
+        pitch: 2,
+        minimumViaCount: 8,
       },
     ],
   })
@@ -30,12 +38,31 @@ test("via stitching expands a QFN buck-regulator trace around a keepout", async 
       minViaPadDiameter="0.6mm"
       autorouter={{ local: true, groupMode: "subcircuit" }}
     >
+      <net name="VIN_RAIL" routingPhaseIndex={0} />
       <testpoint
         name="VIN"
         footprintVariant="pad"
         padDiameter="2mm"
         layer="top"
         pcbX={-17}
+      />
+      <testpoint
+        name="VT"
+        footprintVariant="pad"
+        padDiameter="1.2mm"
+        layer="top"
+        pcbX={-5.5}
+        pcbY={-4.3}
+        connections={{ pin1: "net.VIN_RAIL" }}
+      />
+      <testpoint
+        name="VB"
+        footprintVariant="pad"
+        padDiameter="1.2mm"
+        layer="bottom"
+        pcbX={5.5}
+        pcbY={4.3}
+        connections={{ pin1: "net.VIN_RAIL" }}
       />
       <chip
         name="U_REGULATOR"
@@ -87,10 +114,17 @@ test("via stitching expands a QFN buck-regulator trace around a keepout", async 
         layers={["top", "bottom"]}
       />
       <trace
-        name="VIN_POWER"
+        name="VIN_FEED"
         from=".VIN > .pin1"
+        to=".VT > .pin1"
+        thickness="0.8mm"
+        routingPhaseIndex={0}
+      />
+      <trace
+        name="VIN_TO_REGULATOR"
+        from=".VB > .pin1"
         to=".U_REGULATOR > .VIN"
-        thickness="2mm"
+        thickness="0.8mm"
         routingPhaseIndex={0}
       />
       <trace
@@ -131,8 +165,23 @@ test("via stitching expands a QFN buck-regulator trace around a keepout", async 
         autorouter={{ algorithmFn: stitching.addViaStitching }}
       />
 
+      <copperpour
+        name="VIN_TOP_REGION"
+        connectsTo="net.VIN_RAIL"
+        layer="top"
+        outline={vinRegionOutline}
+        clearance="0.15mm"
+      />
+      <copperpour
+        name="VIN_BOTTOM_REGION"
+        connectsTo="net.VIN_RAIL"
+        layer="bottom"
+        outline={vinRegionOutline}
+        clearance="0.15mm"
+      />
+
       <pcbnotetext
-        text="QFN-32 buck: 8A VIN / 3C rise / 3 vias"
+        text="QFN-32 buck: stitched VIN region clipped by keepout"
         fontSize="0.45mm"
         pcbY={12.5}
       />
@@ -144,12 +193,12 @@ test("via stitching expands a QFN buck-regulator trace around a keepout", async 
   const result = stitching.getResult()
   expect(result.completedPhaseNames).toEqual(["route-power", "stitch-power"])
   expect(result.routedTraceCount).toBeGreaterThan(0)
-  expect(result.wideTraceViaCount).toBeGreaterThan(0)
-  expect(result.stitchedViaArrayCount).toBe(1)
-  expect(result.addedViaCount).toBe(2)
-  expect(result.insufficientArrayCapacityCount).toBe(0)
-  expect(circuit.db.pcb_component.list().length).toBeGreaterThanOrEqual(6)
-  expect(circuit.db.pcb_via.list().length).toBeGreaterThanOrEqual(3)
+  expect(result.stitchedRegionCount).toBe(1)
+  expect(result.placedRegionViaCount).toBeGreaterThanOrEqual(8)
+  expect(result.rejectedRegionCandidateCount).toBeGreaterThan(0)
+  expect(result.insufficientRegionCapacityCount).toBe(0)
+  expect(circuit.db.pcb_component.list().length).toBeGreaterThanOrEqual(8)
+  expect(circuit.db.pcb_via.list().length).toBeGreaterThanOrEqual(8)
   expect(
     circuit.db.pcb_trace
       .list()
@@ -157,7 +206,8 @@ test("via stitching expands a QFN buck-regulator trace around a keepout", async 
         (trace) =>
           trace.route.length === 1 && trace.route[0]?.route_type === "via",
       ).length,
-  ).toBeGreaterThanOrEqual(result.addedViaCount)
+  ).toBeGreaterThanOrEqual(result.placedRegionViaCount)
+  expect(circuit.db.pcb_copper_pour.list().length).toBeGreaterThanOrEqual(2)
   expect(circuit.db.pcb_via_clearance_error.list()).toEqual([])
   expect(circuit.db.pcb_via_trace_clearance_error.list()).toEqual([])
   expect(circuit).toMatchPcbSnapshot(import.meta.path)

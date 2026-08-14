@@ -2,16 +2,24 @@ import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { setupViaStitchingPhases } from "tests/fixtures/via-stitching"
 
-test("via stitching expands a straight power trace after routing", async () => {
+const vinStitchingOutline = [
+  { x: -4, y: -2 },
+  { x: 4, y: -2 },
+  { x: 4, y: 2 },
+  { x: -4, y: 2 },
+]
+
+test("via stitching fills an overlapping VIN landing after routing", async () => {
   const { circuit } = getTestFixture()
   const stitching = setupViaStitchingPhases({
     circuit,
     routedPhaseName: "route-power",
-    powerTraceRequirements: [
+    powerNetStitchingRegions: [
       {
-        traceName: "VIN_POWER",
-        currentAmps: 5,
-        maxTemperatureRiseC: 1,
+        netName: "VIN",
+        outline: vinStitchingOutline,
+        pitch: 2,
+        minimumViaCount: 4,
       },
     ],
   })
@@ -30,12 +38,29 @@ test("via stitching expands a straight power trace after routing", async () => {
       minViaPadDiameter="0.6mm"
       autorouter={{ local: true, groupMode: "subcircuit" }}
     >
+      <net name="VIN" routingPhaseIndex={0} />
       <testpoint
         name="VIN_CONNECTOR"
         footprintVariant="pad"
         padDiameter="2mm"
         layer="top"
         pcbX={-14}
+      />
+      <testpoint
+        name="VT"
+        footprintVariant="pad"
+        padDiameter="1.2mm"
+        layer="top"
+        pcbX={-3.5}
+        connections={{ pin1: "net.VIN" }}
+      />
+      <testpoint
+        name="VB"
+        footprintVariant="pad"
+        padDiameter="1.2mm"
+        layer="bottom"
+        pcbX={3.5}
+        connections={{ pin1: "net.VIN" }}
       />
       <chip
         name="U_BUCK"
@@ -83,10 +108,17 @@ test("via stitching expands a straight power trace after routing", async () => {
         pcbY={-5}
       />
       <trace
-        name="VIN_POWER"
+        name="VIN_SOURCE"
         from=".VIN_CONNECTOR > .pin1"
+        to=".VT > .pin1"
+        thickness="0.8mm"
+        routingPhaseIndex={0}
+      />
+      <trace
+        name="VIN_LOAD"
+        from=".VB > .pin1"
         to=".U_BUCK > .VIN"
-        thickness="2mm"
+        thickness="0.8mm"
         routingPhaseIndex={0}
       />
       <trace
@@ -127,8 +159,23 @@ test("via stitching expands a straight power trace after routing", async () => {
         autorouter={{ algorithmFn: stitching.addViaStitching }}
       />
 
+      <copperpour
+        name="VIN_TOP_REGION"
+        connectsTo="net.VIN"
+        layer="top"
+        outline={vinStitchingOutline}
+        clearance="0.15mm"
+      />
+      <copperpour
+        name="VIN_BOTTOM_REGION"
+        connectsTo="net.VIN"
+        layer="bottom"
+        outline={vinStitchingOutline}
+        clearance="0.15mm"
+      />
+
       <pcbnotetext
-        text="SOIC-8 buck: 5A VIN / 1C rise / 3-via array"
+        text="SOIC-8 buck: 0.8mm traces + stitched VIN landing"
         fontSize="0.45mm"
         pcbY={10.5}
       />
@@ -140,12 +187,11 @@ test("via stitching expands a straight power trace after routing", async () => {
   const result = stitching.getResult()
   expect(result.completedPhaseNames).toEqual(["route-power", "stitch-power"])
   expect(result.routedTraceCount).toBeGreaterThan(0)
-  expect(result.wideTraceViaCount).toBeGreaterThan(0)
-  expect(result.stitchedViaArrayCount).toBe(1)
-  expect(result.addedViaCount).toBe(2)
-  expect(result.insufficientArrayCapacityCount).toBe(0)
-  expect(circuit.db.pcb_component.list().length).toBeGreaterThanOrEqual(6)
-  expect(circuit.db.pcb_via.list().length).toBeGreaterThanOrEqual(3)
+  expect(result.stitchedRegionCount).toBe(1)
+  expect(result.placedRegionViaCount).toBeGreaterThanOrEqual(4)
+  expect(result.insufficientRegionCapacityCount).toBe(0)
+  expect(circuit.db.pcb_component.list().length).toBeGreaterThanOrEqual(8)
+  expect(circuit.db.pcb_via.list().length).toBeGreaterThanOrEqual(4)
   expect(
     circuit.db.pcb_trace
       .list()
@@ -153,7 +199,8 @@ test("via stitching expands a straight power trace after routing", async () => {
         (trace) =>
           trace.route.length === 1 && trace.route[0]?.route_type === "via",
       ).length,
-  ).toBeGreaterThanOrEqual(result.addedViaCount)
+  ).toBeGreaterThanOrEqual(result.placedRegionViaCount)
+  expect(circuit.db.pcb_copper_pour.list().length).toBeGreaterThanOrEqual(2)
   expect(circuit.db.pcb_via_clearance_error.list()).toEqual([])
   expect(circuit.db.pcb_via_trace_clearance_error.list()).toEqual([])
   expect(circuit).toMatchPcbSnapshot(import.meta.path)

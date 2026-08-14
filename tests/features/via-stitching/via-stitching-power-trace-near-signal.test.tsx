@@ -2,16 +2,24 @@ import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { setupViaStitchingPhases } from "tests/fixtures/via-stitching"
 
-test("via stitching keeps a SOT-23 load-switch rail clear of control routing", async () => {
+const vccRegionOutline = [
+  { x: -5, y: -2.5 },
+  { x: 5, y: -2.5 },
+  { x: 5, y: 3.5 },
+  { x: -5, y: 3.5 },
+]
+
+test("via stitching clips a VCC grid around control routing", async () => {
   const { circuit } = getTestFixture()
   const stitching = setupViaStitchingPhases({
     circuit,
     routedPhaseName: "route-board",
-    powerTraceRequirements: [
+    powerNetStitchingRegions: [
       {
-        traceName: "VCC_POWER",
-        currentAmps: 4,
-        maxTemperatureRiseC: 1,
+        netName: "VCC_STITCH",
+        outline: vccRegionOutline,
+        pitch: 2,
+        minimumViaCount: 6,
       },
     ],
   })
@@ -30,6 +38,7 @@ test("via stitching keeps a SOT-23 load-switch rail clear of control routing", a
       minViaPadDiameter="0.6mm"
       autorouter={{ local: true, groupMode: "subcircuit" }}
     >
+      <net name="VCC_STITCH" routingPhaseIndex={0} />
       <testpoint
         name="VCC_IN"
         footprintVariant="pad"
@@ -37,6 +46,24 @@ test("via stitching keeps a SOT-23 load-switch rail clear of control routing", a
         layer="top"
         pcbX={-16}
         pcbY={-3}
+      />
+      <testpoint
+        name="VCT"
+        footprintVariant="pad"
+        padDiameter="1.2mm"
+        layer="top"
+        pcbX={-4.5}
+        pcbY={-2}
+        connections={{ pin1: "net.VCC_STITCH" }}
+      />
+      <testpoint
+        name="VCB"
+        footprintVariant="pad"
+        padDiameter="1.2mm"
+        layer="bottom"
+        pcbX={4.5}
+        pcbY={-2}
+        connections={{ pin1: "net.VCC_STITCH" }}
       />
       <chip
         name="U_LOAD_SWITCH"
@@ -84,10 +111,17 @@ test("via stitching keeps a SOT-23 load-switch rail clear of control routing", a
         pcbY={7}
       />
       <trace
-        name="VCC_POWER"
+        name="VCC_FEED"
         from=".VCC_IN > .pin1"
+        to=".VCT > .pin1"
+        thickness="0.8mm"
+        routingPhaseIndex={0}
+      />
+      <trace
+        name="VCC_TO_SWITCH"
+        from=".VCB > .pin1"
         to=".U_LOAD_SWITCH > .VIN"
-        thickness="2mm"
+        thickness="0.8mm"
         routingPhaseIndex={0}
       />
       <trace
@@ -135,8 +169,23 @@ test("via stitching keeps a SOT-23 load-switch rail clear of control routing", a
         autorouter={{ algorithmFn: stitching.addViaStitching }}
       />
 
+      <copperpour
+        name="VCC_TOP_REGION"
+        connectsTo="net.VCC_STITCH"
+        layer="top"
+        outline={vccRegionOutline}
+        clearance="0.15mm"
+      />
+      <copperpour
+        name="VCC_BOTTOM_REGION"
+        connectsTo="net.VCC_STITCH"
+        layer="bottom"
+        outline={vccRegionOutline}
+        clearance="0.15mm"
+      />
+
       <pcbnotetext
-        text="SOT-23 switch: 4A VCC / 1C rise / EN clearance"
+        text="SOT-23 switch: VCC region clipped around EN routing"
         fontSize="0.45mm"
         pcbY={11.5}
       />
@@ -148,12 +197,12 @@ test("via stitching keeps a SOT-23 load-switch rail clear of control routing", a
   const result = stitching.getResult()
   expect(result.completedPhaseNames).toEqual(["route-board", "stitch-power"])
   expect(result.routedTraceCount).toBeGreaterThanOrEqual(2)
-  expect(result.wideTraceViaCount).toBeGreaterThan(0)
-  expect(result.stitchedViaArrayCount).toBe(1)
-  expect(result.addedViaCount).toBe(2)
-  expect(result.insufficientArrayCapacityCount).toBe(0)
-  expect(circuit.db.pcb_component.list().length).toBeGreaterThanOrEqual(7)
-  expect(circuit.db.pcb_via.list().length).toBeGreaterThanOrEqual(3)
+  expect(result.stitchedRegionCount).toBe(1)
+  expect(result.placedRegionViaCount).toBeGreaterThanOrEqual(6)
+  expect(result.rejectedRegionCandidateCount).toBeGreaterThan(0)
+  expect(result.insufficientRegionCapacityCount).toBe(0)
+  expect(circuit.db.pcb_component.list().length).toBeGreaterThanOrEqual(9)
+  expect(circuit.db.pcb_via.list().length).toBeGreaterThanOrEqual(6)
   expect(
     circuit.db.pcb_trace
       .list()
@@ -161,7 +210,8 @@ test("via stitching keeps a SOT-23 load-switch rail clear of control routing", a
         (trace) =>
           trace.route.length === 1 && trace.route[0]?.route_type === "via",
       ).length,
-  ).toBeGreaterThanOrEqual(result.addedViaCount)
+  ).toBeGreaterThanOrEqual(result.placedRegionViaCount)
+  expect(circuit.db.pcb_copper_pour.list().length).toBeGreaterThanOrEqual(2)
   expect(circuit.db.pcb_via_clearance_error.list()).toEqual([])
   expect(circuit.db.pcb_via_trace_clearance_error.list()).toEqual([])
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
