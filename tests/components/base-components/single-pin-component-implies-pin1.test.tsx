@@ -1,4 +1,4 @@
-import { test, expect } from "bun:test"
+import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("single-pin implicit pin1 renders expected schematic svg", async () => {
@@ -6,10 +6,12 @@ test("single-pin implicit pin1 renders expected schematic svg", async () => {
 
   circuit.add(
     <board width="10mm" height="10mm">
-      <testpoint name="TP1" footprintVariant="pad" />
+      <testpoint name="TP1" footprintVariant="pad" pcbX={-2.15} pcbY={3.5} />
       <chip
         name="U1"
         footprint="soic8"
+        pcbX={0}
+        pcbY={0}
         pinLabels={{
           pin1: "VCC",
           pin2: "SIG",
@@ -25,12 +27,15 @@ test("single-pin implicit pin1 renders expected schematic svg", async () => {
     </board>,
   )
 
-  circuit.render()
+  await circuit.renderUntilSettled()
 
   const errors = circuit
     .getCircuitJson()
     .filter((c: any) => c.type === "source_trace_not_connected_error")
   expect(errors).toHaveLength(0)
+  expect(circuit.db.pcb_placement_error.list()).toHaveLength(0)
+  expect(circuit.db.pcb_autorouting_error.list()).toHaveLength(0)
+  expect(circuit.db.pcb_trace.list()).toHaveLength(1)
 
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
   await expect(circuit).toMatchSchematicSnapshot(import.meta.path)
