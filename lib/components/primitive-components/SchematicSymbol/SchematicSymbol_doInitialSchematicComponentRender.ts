@@ -1,5 +1,6 @@
 import type { SchematicPort } from "circuit-json"
 import { getRelativeDirection } from "lib/utils/get-relative-direction"
+import { DEFAULT_SCHEMATIC_PORT_DISTANCE_FROM_EDGE } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
 import { symbols } from "schematic-symbols"
 import type { SchematicSymbol } from "./SchematicSymbol"
 
@@ -52,7 +53,7 @@ export const SchematicSymbol_doInitialSchematicComponentRender = (
         center,
         portCenter,
       ) as SchematicPort["facing_direction"],
-      distance_from_component_edge: 0.4,
+      distance_from_component_edge: DEFAULT_SCHEMATIC_PORT_DISTANCE_FROM_EDGE,
       pin_number: port._parsedProps.pinNumber,
       display_pin_label: port._parsedProps.aliases?.[0],
       is_connected: false,

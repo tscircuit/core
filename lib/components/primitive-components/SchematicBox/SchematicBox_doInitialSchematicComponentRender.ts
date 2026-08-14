@@ -1,7 +1,10 @@
 import type { SchematicPort } from "circuit-json"
 import type { PinLabelsProp } from "@tscircuit/props"
 import { underscorifyPortArrangement } from "lib/soup/underscorifyPortArrangement"
-import { getAllDimensionsForSchematicBox } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
+import {
+  DEFAULT_SCHEMATIC_PORT_DISTANCE_FROM_EDGE,
+  getAllDimensionsForSchematicBox,
+} from "lib/utils/schematic/getAllDimensionsForSchematicBox"
 import { getPinNumberFromPinLabelsKey } from "lib/utils/schematic/getPinNumberFromPinLabelsKey"
 import type { Chip } from "../../normal-components/Chip"
 import type { SchematicBox } from "./SchematicBox"
@@ -131,7 +134,7 @@ export const SchematicBox_doInitialSchematicComponentRender = (
       },
       source_port_id: referencedSourcePort.source_port_id,
       facing_direction: facingDirection,
-      distance_from_component_edge: 0.4,
+      distance_from_component_edge: DEFAULT_SCHEMATIC_PORT_DISTANCE_FROM_EDGE,
       side_of_component: portPosition.side,
       pin_number: pinNumber,
       true_ccw_index: portPosition.trueIndex,

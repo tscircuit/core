@@ -5,18 +5,8 @@ import type { ISymbol, SchematicSymbolBounds } from "./ISymbol"
 import { compose, translate, scale, type Matrix } from "transformation-matrix"
 import { getBoundsForSchematic } from "lib/utils/autorouting/getBoundsForSchematic"
 import { svgPathToPoints } from "lib/utils/schematic/svgPathToPoints"
-import type {
-  SchematicBoxDimensions,
-  SchematicBoxPortPositionWithMetadata,
-} from "lib/utils/schematic/getAllDimensionsForSchematicBox"
-
-type SymbolEdge = "left" | "right" | "top" | "bottom"
-
-type SymbolEdgePoint = {
-  x: number
-  y: number
-  side: SymbolEdge
-}
+import type { SchematicBoxDimensions } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
+import { getInferredSchematicPortDimensionsFromPaths } from "lib/utils/schematic/getInferredSchematicPortDimensionsFromPaths"
 
 export class SymbolComponent
   extends PrimitiveComponent<typeof symbolProps>
@@ -100,137 +90,12 @@ export class SymbolComponent
       if (svgPath) subpaths.push(...svgPathToPoints(svgPath))
     }
 
-    const allPoints = subpaths.flat()
-    if (allPoints.length === 0) return null
-
-    const bounds = {
-      minX: Math.min(...allPoints.map((point) => point.x)),
-      maxX: Math.max(...allPoints.map((point) => point.x)),
-      minY: Math.min(...allPoints.map((point) => point.y)),
-      maxY: Math.max(...allPoints.map((point) => point.y)),
-    }
-    const width = bounds.maxX - bounds.minX
-    const height = bounds.maxY - bounds.minY
-    const epsilon = Math.max(width, height, 1) * 1e-6
-    const pointsAreEqual = (
-      a: { x: number; y: number },
-      b: { x: number; y: number },
-    ) => Math.abs(a.x - b.x) <= epsilon && Math.abs(a.y - b.y) <= epsilon
-
-    const classifyBoundaryPoint = (point: {
-      x: number
-      y: number
-    }): SymbolEdgePoint | null => {
-      if (Math.abs(point.x - bounds.minX) <= epsilon) {
-        return { ...point, side: "left" }
-      }
-      if (Math.abs(point.x - bounds.maxX) <= epsilon) {
-        return { ...point, side: "right" }
-      }
-      if (Math.abs(point.y - bounds.minY) <= epsilon) {
-        return { ...point, side: "bottom" }
-      }
-      if (Math.abs(point.y - bounds.maxY) <= epsilon) {
-        return { ...point, side: "top" }
-      }
-      return null
-    }
-
-    const boundaryEndpoints: SymbolEdgePoint[] = []
-    for (const path of subpaths) {
-      if (path.length < 2) continue
-      const first = path[0]!
-      const last = path[path.length - 1]!
-      if (pointsAreEqual(first, last)) continue
-
-      for (const endpoint of [first, last]) {
-        const boundaryPoint = classifyBoundaryPoint(endpoint)
-        if (!boundaryPoint) continue
-        if (
-          boundaryEndpoints.some(
-            (candidate) =>
-              candidate.side === boundaryPoint.side &&
-              pointsAreEqual(candidate, boundaryPoint),
-          )
-        ) {
-          continue
-        }
-        boundaryEndpoints.push(boundaryPoint)
-      }
-    }
-
-    // Only infer when the geometry gives an unambiguous one-to-one mapping.
-    if (boundaryEndpoints.length !== pinCount) return null
-
-    const orderedEndpoints = [
-      ...boundaryEndpoints
-        .filter((point) => point.side === "left")
-        .sort((a, b) => b.y - a.y),
-      ...boundaryEndpoints
-        .filter((point) => point.side === "bottom")
-        .sort((a, b) => a.x - b.x),
-      ...boundaryEndpoints
-        .filter((point) => point.side === "right")
-        .sort((a, b) => a.y - b.y),
-      ...boundaryEndpoints
-        .filter((point) => point.side === "top")
-        .sort((a, b) => b.x - a.x),
-    ]
-
-    const targetWidth = this._parsedProps.width
-    const targetHeight = this._parsedProps.height
-    const scaleX =
-      targetWidth !== undefined && width > 0 ? targetWidth / width : 1
-    const scaleY =
-      targetHeight !== undefined && height > 0 ? targetHeight / height : 1
-    const center = {
-      x: (bounds.minX + bounds.maxX) / 2,
-      y: (bounds.minY + bounds.maxY) / 2,
-    }
-    const shouldCenterForResize =
-      targetWidth !== undefined || targetHeight !== undefined
-    const stemLength = 0.4
-    const outwardDirectionBySide = {
-      left: { x: -1, y: 0 },
-      right: { x: 1, y: 0 },
-      top: { x: 0, y: 1 },
-      bottom: { x: 0, y: -1 },
-    } satisfies Record<SymbolEdge, { x: number; y: number }>
-
-    const ports = orderedEndpoints.map((endpoint, index) => {
-      const bodyConnectionPoint = shouldCenterForResize
-        ? {
-            x: (endpoint.x - center.x) * scaleX,
-            y: (endpoint.y - center.y) * scaleY,
-          }
-        : endpoint
-      const outwardDirection = outwardDirectionBySide[endpoint.side]
-      return {
-        x: bodyConnectionPoint.x + outwardDirection.x * stemLength,
-        y: bodyConnectionPoint.y + outwardDirection.y * stemLength,
-        side: endpoint.side,
-        pinNumber: index + 1,
-        trueIndex: index,
-        distanceFromOrthogonalEdge: 0,
-        stemLength,
-      } satisfies SchematicBoxPortPositionWithMetadata
-    })
-
-    return {
+    return getInferredSchematicPortDimensionsFromPaths({
+      subpaths,
       pinCount,
-      getPortPositionByPinNumber(pinNumber) {
-        return ports.find((port) => port.pinNumber === pinNumber) ?? null
-      },
-      getSize() {
-        return {
-          width: targetWidth ?? width,
-          height: targetHeight ?? height,
-        }
-      },
-      getSizeIncludingPins() {
-        return this.getSize()
-      },
-    }
+      targetWidth: this._parsedProps.width,
+      targetHeight: this._parsedProps.height,
+    })
   }
 
   getUserCoordinateToResizedSymbolTransform(): Matrix | null {

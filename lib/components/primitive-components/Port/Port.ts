@@ -1,8 +1,9 @@
 import { getRelativeDirection } from "lib/utils/get-relative-direction"
 import { SCHEMATIC_COMPONENT_OUTLINE_COLOR } from "lib/utils/constants"
-import type {
-  SchematicBoxDimensions,
-  SchematicBoxPortPositionWithMetadata,
+import {
+  DEFAULT_SCHEMATIC_PORT_DISTANCE_FROM_EDGE,
+  type SchematicBoxDimensions,
+  type SchematicBoxPortPositionWithMetadata,
 } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
 import { type SchSymbol } from "schematic-symbols"
 import { applyToPoint, compose, translate } from "transformation-matrix"
@@ -727,7 +728,8 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       center: portCenter,
       source_port_id: this.source_port_id!,
       facing_direction: this.facingDirection,
-      distance_from_component_edge: stemLength ?? 0.4,
+      distance_from_component_edge:
+        stemLength ?? DEFAULT_SCHEMATIC_PORT_DISTANCE_FROM_EDGE,
       side_of_component: sideOfComponent,
       pin_number: props.pinNumber,
       true_ccw_index: localPortInfo?.trueIndex,

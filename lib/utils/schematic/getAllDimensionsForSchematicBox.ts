@@ -5,6 +5,8 @@ const DEFAULT_SCHEMATIC_BOX_PADDING_MM = 0.4
 const ESTIMATED_PIN_LABEL_CHARACTER_WIDTH = 0.1
 const PIN_LABEL_EDGE_PADDING = 0.1
 
+export const DEFAULT_SCHEMATIC_PORT_DISTANCE_FROM_EDGE = 0.4
+
 type PinLabel = string | readonly string[]
 
 const getDisplayedPinLabel = (pinLabel: PinLabel | undefined): string =>
@@ -125,7 +127,8 @@ export interface SchematicBoxComponentDimensions {
 export const getAllDimensionsForSchematicBox = (
   params: Params,
 ): SchematicBoxDimensions => {
-  const portDistanceFromEdge = params.portDistanceFromEdge ?? 0.4
+  const portDistanceFromEdge =
+    params.portDistanceFromEdge ?? DEFAULT_SCHEMATIC_PORT_DISTANCE_FROM_EDGE
 
   let sidePinCounts = params.schPortArrangement
     ? getSizeOfSidesFromPortArrangement(params.schPortArrangement)
