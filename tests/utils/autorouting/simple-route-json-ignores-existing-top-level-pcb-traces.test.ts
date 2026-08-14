@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import type { AnyCircuitElement } from "circuit-json"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 
-test("simple route json ignores existing top-level pcb traces as routing state", () => {
+test("simple route json preserves existing top-level pcb traces as routing state", () => {
   const circuitJson: AnyCircuitElement[] = [
     {
       type: "pcb_board",
@@ -103,12 +103,15 @@ test("simple route json ignores existing top-level pcb traces as routing state",
 
   expect(netConnection).toBeDefined()
   expect(netConnection!.pointsToConnect.map((p) => p.pointId)).toEqual([
-    "pcb_port_a",
     "pcb_port_b",
     "pcb_port_c",
   ])
   expect(netConnection!.externallyConnectedPointIds).toBeUndefined()
-  expect(simpleRouteJson.traces).toBeUndefined()
+  expect(simpleRouteJson.traces).toHaveLength(1)
+  expect(simpleRouteJson.traces?.[0].connectsTo).toEqual([
+    "pcb_port_a",
+    "pcb_port_b",
+  ])
 })
 
 test("simple route json keeps existing pcb traces as routing state inside subcircuits", () => {

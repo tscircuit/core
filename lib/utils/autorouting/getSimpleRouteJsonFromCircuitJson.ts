@@ -206,9 +206,10 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   //
   // Keep connectivity metadata on preserved traces so parent routes can
   // legally touch child fanout copper that belongs to the same connected net.
-  const preservedRoutedSubcircuitTraces = getPreservedRoutedSubcircuitTraces({
+  const preservedRoutedTraces = getPreservedRoutedSubcircuitTraces({
     scopedDb: db,
     relevantSubcircuitIds,
+    ignoreExistingTopLevelPcbRouteState,
   })
 
   // Add every equivalent ID from the shared connectivity map to each obstacle.
@@ -335,26 +336,14 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       maxY: Math.max(bounds.maxY, groupBounds.maxY),
     }
   }
+  const preservedPcbTraceIds = new Set(
+    preservedRoutedTraces.map((trace) => trace.pcb_trace_id),
+  )
   const sourceTraceIdsAlreadyPreservedAsSrjTraces = new Set(
     db.pcb_trace
       .list()
-      .filter((t) => {
-        if (!t.source_trace_id) return false
-
-        // While routing one subcircuit, skip source_traces already routed in
-        // that same subcircuit. Descendant routed traces are still preserved as
-        // fixed SRJ traces above.
-        if (subcircuit_id) return t.subcircuit_id === subcircuit_id
-
-        // While routing the board, only skip a source_trace when the existing
-        // pcb_trace is the child subcircuit's own routed copy. Cross-boundary
-        // or board-owned source_traces must remain routable board connections.
-        if (!t.subcircuit_id) return false
-
-        const sourceTrace = db.source_trace.get(t.source_trace_id)
-        return sourceTrace?.subcircuit_id === t.subcircuit_id
-      })
-      .map((t) => t.source_trace_id)
+      .filter((trace) => preservedPcbTraceIds.has(trace.pcb_trace_id))
+      .map((trace) => trace.source_trace_id)
       .filter((id): id is string => Boolean(id)),
   )
   // Build a map of source_port_id → breakout point for adding breakout
@@ -403,7 +392,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   }
 
   // Create connections from source traces in this routing scope. Any
-  // source_trace represented by `preservedRoutedSubcircuitTraces` is excluded
+  // source_trace represented by `preservedRoutedTraces` is excluded
   // here so it is preserved as fixed copper instead of re-routed.
   // For cross-boundary traces, add breakout points as additional
   // waypoints so the autorouter routes through the boundary.
@@ -822,9 +811,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       differentialPairs: srjDifferentialPairs,
       ...(srjBuses ? { buses: srjBuses } : {}),
       traces:
-        preservedRoutedSubcircuitTraces.length > 0
-          ? preservedRoutedSubcircuitTraces
-          : undefined,
+        preservedRoutedTraces.length > 0 ? preservedRoutedTraces : undefined,
       layerCount: board?.num_layers ?? 2,
       minTraceWidth: Math.min(
         defaultTraceWidth,

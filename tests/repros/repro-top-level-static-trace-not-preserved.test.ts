@@ -5,7 +5,7 @@ import { getSvgFromGraphicsObject } from "graphics-debug"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 import "tests/fixtures/get-test-fixture"
 
-test("repro: top-level static PCB traces are missing from autorouter input", () => {
+test("top-level static PCB traces are preserved in autorouter input", () => {
   const circuitJson: AnyCircuitElement[] = [
     {
       type: "pcb_board",
@@ -112,8 +112,16 @@ test("repro: top-level static PCB traces are missing from autorouter input", () 
 
   const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({ circuitJson })
 
-  expect(simpleRouteJson.connections).toHaveLength(2)
-  expect(simpleRouteJson.traces).toBeUndefined()
+  expect(simpleRouteJson.connections).toHaveLength(1)
+  expect(simpleRouteJson.traces).toHaveLength(1)
+
+  const { simpleRouteJson: freshRoutingInput } =
+    getSimpleRouteJsonFromCircuitJson({
+      circuitJson,
+      ignoreExistingTopLevelPcbRouteState: true,
+    })
+  expect(freshRoutingInput.connections).toHaveLength(2)
+  expect(freshRoutingInput.traces).toBeUndefined()
 
   const svg = getSvgFromGraphicsObject(
     convertSrjToGraphicsObject(simpleRouteJson as any),
