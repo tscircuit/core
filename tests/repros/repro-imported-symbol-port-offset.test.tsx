@@ -72,7 +72,7 @@ const ImportedFerriteBead = (props: ChipProps<typeof pinLabels>) => (
   />
 )
 
-test("repro: imported symbol ports are duplicated and miss the host offset", async () => {
+test("repro: imported symbol ports replace implicit ports and include the host offset", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -108,29 +108,24 @@ test("repro: imported symbol ports are duplicated and miss the host offset", asy
   const stems = circuit.db.schematic_line.list({
     schematic_component_id: schematicComponent.schematic_component_id,
   })
+  const sourceTraces = circuit.db.source_trace.list()
 
-  // Capture the current broken behavior until the imported-symbol port handling
-  // is fixed: pinLabels create a second pair of ports, while the explicit
-  // symbol ports and their stems remain in symbol-local coordinates.
+  // Explicit symbol ports replace the matching pinLabel-derived ports, and
+  // their symbol-local coordinates are translated by the component position.
   expect(sourcePorts.map((port) => [port.name, port.pin_number])).toEqual([
     ["pin1", 1],
     ["pin2", 2],
-    ["pin1", 1],
-    ["pin2", 2],
   ])
-  expect(
-    schematicPorts.map((port) => ({
-      center: port.center,
-      isConnected: port.is_connected,
-    })),
-  ).toEqual([
-    { center: { x: -0.508, y: 0 }, isConnected: false },
-    { center: { x: 0.508, y: 0 }, isConnected: false },
-    { center: { x: 3, y: 2 }, isConnected: true },
-    { center: { x: 5, y: 2 }, isConnected: true },
+  expect(schematicPorts.map((port) => port.center)).toEqual([
+    { x: 3.492, y: 2 },
+    { x: 4.508, y: 2 },
+  ])
+  expect(sourceTraces.map((trace) => trace.connected_source_port_ids)).toEqual([
+    [sourcePorts[0]!.source_port_id],
+    [sourcePorts[1]!.source_port_id],
   ])
   expect(stems.map(({ x1, y1, x2, y2 }) => ({ x1, y1, x2, y2 }))).toEqual([
-    { x1: -0.508, y1: 0, x2: -0.4318, y2: 0 },
-    { x1: 0.508, y1: 0, x2: 0.4318, y2: 0 },
+    { x1: 3.492, y1: 2, x2: 3.5682, y2: 2 },
+    { x1: 4.508, y1: 2, x2: 4.4318, y2: 2 },
   ])
 })
