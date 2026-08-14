@@ -18,11 +18,11 @@ import { NormalComponent } from "../base-components/NormalComponent/NormalCompon
 import type { RenderPhase } from "../base-components/Renderable"
 import { DrcCheck } from "../primitive-components/DrcCheck"
 import { Group } from "../primitive-components/Group/Group"
+import { Group_doInitialPcbPlacementDesignRuleChecks } from "../primitive-components/Group/Group_doInitialPcbPlacementDesignRuleChecks"
 import type { SubcircuitI } from "../primitive-components/Group/Subcircuit/SubcircuitI"
 import { Subcircuit_doInitialRenderIsolatedSubcircuits } from "../primitive-components/Group/Subcircuit/Subcircuit_doInitialRenderIsolatedSubcircuits"
 import { Subcircuit_getSubcircuitPropHash } from "../primitive-components/Group/Subcircuit_getSubcircuitPropHash"
 import type { BoardI } from "./BoardI"
-import { Board_doInitialPcbPlacementDesignRuleChecks } from "./Board_doInitialPcbPlacementDesignRuleChecks"
 
 const MIN_EFFECTIVE_BORDER_RADIUS_MM = 0.01
 
@@ -580,7 +580,10 @@ export class Board
   }
 
   doInitialPcbPlacementDesignRuleChecks() {
-    Board_doInitialPcbPlacementDesignRuleChecks(this)
+    Group_doInitialPcbPlacementDesignRuleChecks(
+      this,
+      "board:pre-route-placement-checks",
+    )
   }
 
   updatePcbDesignRuleChecks() {

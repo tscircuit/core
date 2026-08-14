@@ -1,8 +1,7 @@
 import { expect, test } from "bun:test"
-import { runAllPlacementChecks } from "@tscircuit/checks"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("boardless subcircuit autoroutes despite a courtyard overlap", async () => {
+test("boardless subcircuit skips autorouting for a courtyard overlap", async () => {
   const { circuit } = getTestFixture()
   let autoroutingStartCount = 0
 
@@ -15,7 +14,7 @@ test("boardless subcircuit autoroutes despite a courtyard overlap", async () => 
       <pcbnotetext
         pcbY={-2.5}
         fontSize={0.35}
-        text="BUG: OVERLAP STILL ROUTED"
+        text="PLACEMENT ERROR: ROUTING SKIPPED"
       />
       <resistor name="R1" resistance="1k" footprint="0402" pcbY={-0.45} />
       <resistor name="R2" resistance="1k" footprint="0402" pcbY={0.45} />
@@ -25,18 +24,15 @@ test("boardless subcircuit autoroutes despite a courtyard overlap", async () => 
 
   await circuit.renderUntilSettled()
 
-  const placementErrors = (
-    await runAllPlacementChecks(circuit.getCircuitJson())
-  ).filter((element) => element.type.endsWith("_error"))
-
-  expect(placementErrors.map((element) => element.type)).toContain(
-    "pcb_courtyard_overlap_error",
+  expect(circuit.db.pcb_courtyard_overlap_error.list().length).toBeGreaterThan(
+    0,
   )
-  expect(autoroutingStartCount).toBe(1)
-  expect(circuit.db.pcb_trace.list()).toHaveLength(1)
-  expect(circuit.db.pcb_autorouting_error.list()).toHaveLength(0)
+  expect(autoroutingStartCount).toBe(0)
+  expect(circuit.db.pcb_trace.list()).toHaveLength(0)
+  expect(circuit.db.pcb_autorouting_error.list()).toHaveLength(1)
 
   expect(circuit).toMatchPcbSnapshot(import.meta.path, {
+    shouldDrawErrors: true,
     showCourtyards: true,
   })
 })

@@ -59,6 +59,10 @@ export class Subpanel extends Group<typeof subpanelProps> {
   override doInitialSchematicLayout(): void {}
   override doInitialSchematicTraceRender(): void {}
 
+  // Child boards own placement DRC; running it at the panel level would
+  // duplicate their diagnostics and mix otherwise independent board scopes.
+  override doInitialPcbPlacementDesignRuleChecks(): void {}
+
   add(component: PrimitiveComponent) {
     // Subpanel can contain boards and other subpanels
     if (

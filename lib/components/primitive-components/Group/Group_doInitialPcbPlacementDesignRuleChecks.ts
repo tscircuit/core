@@ -1,7 +1,8 @@
 import { runAllPlacementChecks } from "@tscircuit/checks"
 import type { AnyCircuitElement } from "circuit-json"
-import type { Renderable } from "../base-components/Renderable"
-import type { Board } from "./Board"
+import type { ZodType } from "zod"
+import type { Renderable } from "../../base-components/Renderable"
+import type { Group } from "./Group"
 
 const resetPcbTraceRenderInSubtree = (renderable: Renderable) => {
   if (renderable._pcbTraceRenderWaitingForPlacementChecks) {
@@ -14,32 +15,37 @@ const resetPcbTraceRenderInSubtree = (renderable: Renderable) => {
   }
 }
 
-export const Board_doInitialPcbPlacementDesignRuleChecks = (board: Board) => {
-  if (board.root?.pcbDisabled) return
+export const Group_doInitialPcbPlacementDesignRuleChecks = <
+  Props extends ZodType,
+>(
+  group: Group<Props>,
+  effectName = "subcircuit:pre-route-placement-checks",
+) => {
+  if (group.root?.pcbDisabled) return
 
   const placementDrcChecksDisabled =
-    board.root?.platform?.placementDrcChecksDisabled ??
-    board.getInheritedProperty("placementDrcChecksDisabled")
+    group.root?.platform?.placementDrcChecksDisabled ??
+    group.getInheritedProperty("placementDrcChecksDisabled")
   const drcChecksDisabled =
-    board.root?.platform?.drcChecksDisabled ??
-    board.getInheritedProperty("drcChecksDisabled")
+    group.root?.platform?.drcChecksDisabled ??
+    group.getInheritedProperty("drcChecksDisabled")
 
-  board._pcbPlacementDrcErrorCount = null
-  board._pcbPlacementDrcCheckError = null
-  board._pcbPlacementDrcChecksPending = false
+  group._pcbPlacementDrcErrorCount = null
+  group._pcbPlacementDrcCheckError = null
+  group._pcbPlacementDrcChecksPending = false
   if (placementDrcChecksDisabled || drcChecksDisabled) {
-    board._pcbPlacementDrcErrorCount = 0
+    group._pcbPlacementDrcErrorCount = 0
     return
   }
 
-  const { db } = board.root!
+  const { db } = group.root!
   const subcircuitCircuitJson = db
-    .subtree({ subcircuit_id: board.subcircuit_id })
+    .subtree({ subcircuit_id: group.subcircuit_id })
     .toArray()
   const existingPlacementDiagnostics = db.toArray()
 
-  board._pcbPlacementDrcChecksPending = true
-  board._queueAsyncEffect("board:pre-route-placement-checks", async () => {
+  group._pcbPlacementDrcChecksPending = true
+  group._queueAsyncEffect(effectName, async () => {
     try {
       const placementCheckResults = await runAllPlacementChecks(
         subcircuitCircuitJson,
@@ -55,15 +61,15 @@ export const Board_doInitialPcbPlacementDesignRuleChecks = (board: Board) => {
       )
 
       db.insertAll(newPlacementDiagnostics as AnyCircuitElement[])
-      board._pcbPlacementDrcErrorCount = placementCheckResults.filter(
+      group._pcbPlacementDrcErrorCount = placementCheckResults.filter(
         (result) => result.type.endsWith("_error"),
       ).length
     } catch (error) {
-      board._pcbPlacementDrcCheckError =
+      group._pcbPlacementDrcCheckError =
         error instanceof Error ? error.message : String(error)
     } finally {
-      board._pcbPlacementDrcChecksPending = false
-      resetPcbTraceRenderInSubtree(board)
+      group._pcbPlacementDrcChecksPending = false
+      resetPcbTraceRenderInSubtree(group)
     }
   })
 }
