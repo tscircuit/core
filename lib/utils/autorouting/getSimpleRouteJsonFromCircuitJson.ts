@@ -1,6 +1,11 @@
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import { su } from "@tscircuit/circuit-json-util"
-import type { AnyCircuitElement, PcbBoard, SourcePort } from "circuit-json"
+import type {
+  AnyCircuitElement,
+  PcbBoard,
+  PcbPort,
+  SourcePort,
+} from "circuit-json"
 import {
   ConnectivityMap,
   getFullConnectivityMapFromCircuitJson,
@@ -14,6 +19,7 @@ import type {
   SimpleRouteConnection,
   SimpleRouteDifferentialPair,
   SimpleRouteJson,
+  SimpleRoutePoint,
 } from "./SimpleRouteJson"
 import { expandSrjBoundsToIncludeConnectionPoints } from "./expand-srj-bounds-to-include-connection-points"
 import { getDescendantSubcircuitIds } from "./getAncestorSubcircuitIds"
@@ -362,6 +368,40 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     if (spId) sourcePortIdToBreakoutPoint.set(spId, bp)
   }
 
+  const getPcbPortRoutePoint = (
+    pcbPort: PcbPort,
+  ): SimpleRoutePoint & { pointId: string } => {
+    const layer = pcbPort.layers?.[0] ?? "top"
+    const breakoutPoint = sourcePortIdToBreakoutPoint.get(
+      pcbPort.source_port_id,
+    )
+    const portSelector = getPortSelector(
+      db.source_port.get(pcbPort.source_port_id),
+    )
+
+    // A parent routing scope connects to the child's boundary endpoint. The
+    // child-owned routing scope still connects the physical pad to that same
+    // breakout point.
+    if (breakoutPoint && !breakoutPointIsInActiveRoutingGroup(breakoutPoint)) {
+      return {
+        x: breakoutPoint.x,
+        y: breakoutPoint.y,
+        layer,
+        pointId: breakoutPoint.pcb_breakout_point_id,
+        port_selector: portSelector,
+      }
+    }
+
+    return {
+      x: pcbPort.x,
+      y: pcbPort.y,
+      layer,
+      pointId: pcbPort.pcb_port_id,
+      pcb_port_id: pcbPort.pcb_port_id,
+      port_selector: portSelector,
+    }
+  }
+
   // Create connections from source traces in this routing scope. Any
   // source_trace represented by `preservedRoutedSubcircuitTraces` is excluded
   // here so it is preserved as fixed copper instead of re-routed.
@@ -384,27 +424,24 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         !subcircuit_id || (trace as any).subcircuit_id === subcircuit_id,
     )
     .map((trace) => {
-      const connectedPorts = trace.connected_source_port_ids.map((id) => {
-        const source_port = db.source_port.get(id)
-        const pcb_port = db.pcb_port.getWhere({ source_port_id: id })
-        return {
-          ...source_port,
-          ...pcb_port,
-        }
-      })
+      const connectedPcbPorts = trace.connected_source_port_ids
+        .map((sourcePortId) =>
+          db.pcb_port.getWhere({ source_port_id: sourcePortId }),
+        )
+        .filter((pcbPort): pcbPort is PcbPort => pcbPort !== null)
 
       const isPlaneTerminatedSourceTrace = planeTerminatedSourceTraceLayers.has(
         trace.source_trace_id,
       )
       if (
-        connectedPorts.length < 2 &&
-        !(isPlaneTerminatedSourceTrace && connectedPorts.length === 1)
+        connectedPcbPorts.length < 2 &&
+        !(isPlaneTerminatedSourceTrace && connectedPcbPorts.length === 1)
       ) {
         return null
       }
 
       // TODO handle trace.connected_source_net_ids
-      for (const connectedPort of connectedPorts) {
+      for (const connectedPort of connectedPcbPorts) {
         if (connectedPort.x === undefined || connectedPort.y === undefined) {
           console.error(
             `(source_port_id: ${connectedPort.source_port_id}) for trace ${trace.source_trace_id} does not have x/y coordinates. Skipping this trace.`,
@@ -414,7 +451,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       }
 
       const connectedPcbPortIds = new Set(
-        connectedPorts.map((port) => port.pcb_port_id),
+        connectedPcbPorts.map((port) => port.pcb_port_id),
       )
       // Collect all traceHints that apply to any connected port
       const matchingHints = traceHints.filter((hint) =>
@@ -435,40 +472,8 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         }
       }
 
-      // For cross-boundary traces, use the breakout point instead of
-      // the matched inner port so the autorouter routes to the breakout
-      // boundary, not directly to the inner port.
-      const getPortOrBreakoutPoint = (
-        port: (typeof connectedPorts)[0],
-        layer: string,
-        sourcePortId: string,
-      ) => {
-        const bp = sourcePortIdToBreakoutPoint.get(sourcePortId)
-        const portSelector = getPortSelector(db.source_port.get(sourcePortId))
-        if (bp && !breakoutPointIsInActiveRoutingGroup(bp)) {
-          return {
-            x: bp.x,
-            y: bp.y,
-            layer,
-            pointId: bp.pcb_breakout_point_id,
-            port_selector: portSelector,
-          }
-        }
-        return {
-          x: port.x!,
-          y: port.y!,
-          layer,
-          pointId: port.pcb_port_id,
-          pcb_port_id: port.pcb_port_id,
-          port_selector: portSelector,
-        }
-      }
-      const connectedPortRoutePoints = connectedPorts.map((port, index) =>
-        getPortOrBreakoutPoint(
-          port,
-          port.layers?.[0] ?? "top",
-          trace.connected_source_port_ids[index],
-        ),
+      const connectedPortRoutePoints = connectedPcbPorts.map((port) =>
+        getPcbPortRoutePoint(port),
       )
       const [firstConnectedPortRoutePoint, ...remainingPortRoutePoints] =
         connectedPortRoutePoints
@@ -615,16 +620,10 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         .filter((p) => st.connected_source_port_ids.includes(p.source_port_id))
 
       for (const p of pcb_ports) {
-        if (addedPointIds.has(p.pcb_port_id)) continue
-        addedPointIds.add(p.pcb_port_id)
-        pointsToConnect.push({
-          x: p.x!,
-          y: p.y!,
-          layer: (p.layers?.[0] as any) ?? "top",
-          pointId: p.pcb_port_id,
-          pcb_port_id: p.pcb_port_id,
-          port_selector: getPortSelector(db.source_port.get(p.source_port_id)),
-        })
+        const routePoint = getPcbPortRoutePoint(p)
+        if (addedPointIds.has(routePoint.pointId)) continue
+        addedPointIds.add(routePoint.pointId)
+        pointsToConnect.push(routePoint)
       }
     }
 

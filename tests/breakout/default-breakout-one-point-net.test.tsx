@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import { createAutoroutingPhaseIoStack } from "tests/fixtures/create-autorouting-phase-io-stack"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("default breakout routing should not emit a one-point net connection", async () => {
+test("parent net routing uses the child breakout point", async () => {
   const { circuit } = getTestFixture()
   const autoroutingPhaseIoStack = createAutoroutingPhaseIoStack(circuit)
 
@@ -36,6 +36,37 @@ test("default breakout routing should not emit a one-point net connection", asyn
     (phase.startSimpleRouteJson?.connections ?? []).filter(
       (connection) => connection.pointsToConnect.length < 2,
     ),
+  )
+
+  const breakoutPoint = circuit.db.pcb_breakout_point.list()[0]
+  const innerPcbPort = circuit.db.pcb_port.getWhere({
+    source_port_id: breakoutPoint.source_port_id!,
+  })
+  const parentResistor = circuit.db.source_component.getWhere({ name: "R1" })
+  const parentSourcePort = circuit.db.source_port
+    .list()
+    .find(
+      (sourcePort) =>
+        sourcePort.source_component_id ===
+          parentResistor?.source_component_id && sourcePort.name === "pin1",
+    )
+  const parentPcbPort = circuit.db.pcb_port.getWhere({
+    source_port_id: parentSourcePort!.source_port_id,
+  })
+  const parentNetConnection = autoroutingPhaseIoStack
+    .flatMap((phase) => phase.startSimpleRouteJson?.connections ?? [])
+    .find((connection) =>
+      connection.pointsToConnect.some(
+        (point) => point.pcb_port_id === parentPcbPort?.pcb_port_id,
+      ),
+    )
+
+  expect(parentNetConnection).toBeDefined()
+  expect(parentNetConnection!.pointsToConnect).toContainEqual(
+    expect.objectContaining({ pointId: breakoutPoint.pcb_breakout_point_id }),
+  )
+  expect(parentNetConnection!.pointsToConnect).not.toContainEqual(
+    expect.objectContaining({ pcb_port_id: innerPcbPort?.pcb_port_id }),
   )
   expect(onePointConnections).toEqual([])
   expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
