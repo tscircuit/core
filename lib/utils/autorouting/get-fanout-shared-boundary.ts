@@ -81,7 +81,7 @@ export const getFanoutSharedBoundary = ({
   })
   const directionalPadding = getDirectionalPadding(padding)
 
-  return {
+  const sharedBoundary = {
     minX:
       Math.min(...obstacleBounds.map((bounds) => bounds.minX)) -
       directionalPadding.left,
@@ -95,4 +95,31 @@ export const getFanoutSharedBoundary = ({
       Math.max(...obstacleBounds.map((bounds) => bounds.maxY)) +
       directionalPadding.top,
   }
+
+  for (const bus of preparedBuses) {
+    if (bus.termination.type !== "boundary") continue
+    for (const connection of bus.connections) {
+      if (bus.direction === "left" || bus.direction === "right") {
+        sharedBoundary.minY = Math.min(
+          sharedBoundary.minY,
+          connection.targetPoint.y,
+        )
+        sharedBoundary.maxY = Math.max(
+          sharedBoundary.maxY,
+          connection.targetPoint.y,
+        )
+      } else {
+        sharedBoundary.minX = Math.min(
+          sharedBoundary.minX,
+          connection.targetPoint.x,
+        )
+        sharedBoundary.maxX = Math.max(
+          sharedBoundary.maxX,
+          connection.targetPoint.x,
+        )
+      }
+    }
+  }
+
+  return sharedBoundary
 }

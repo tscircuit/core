@@ -61,10 +61,28 @@ test("fanout padding wraps the shared source-pad union", () => {
     }),
   ]
   const preparedBuses = [
-    { componentId: "U1", componentObstacles: u1Pads },
-    { componentId: "U1", componentObstacles: u1Pads },
-    { componentId: "U2", componentObstacles: u2Pads },
-  ] as FanoutSolver["preparedBuses"]
+    {
+      componentId: "U1",
+      componentObstacles: u1Pads,
+      direction: "right",
+      termination: { type: "boundary" },
+      connections: [],
+    },
+    {
+      componentId: "U1",
+      componentObstacles: u1Pads,
+      direction: "right",
+      termination: { type: "boundary" },
+      connections: [],
+    },
+    {
+      componentId: "U2",
+      componentObstacles: u2Pads,
+      direction: "up",
+      termination: { type: "boundary" },
+      connections: [],
+    },
+  ] as unknown as FanoutSolver["preparedBuses"]
 
   expect(
     getFanoutSharedBoundary({
