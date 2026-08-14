@@ -708,6 +708,19 @@ export class NormalComponent<
     return getDefaultExpectedRefDesPrefixesForFtype(this.config.sourceFtype)
   }
 
+  _hasCustomSchematicSymbol(): boolean {
+    return (
+      isReactElement(this.props.symbol) ||
+      isCircuitJsonSymbol(this.props.symbol) ||
+      this.children.some((component) => component.componentName === "Symbol")
+    )
+  }
+
+  override getSchematicSymbol(): SchSymbol | null {
+    if (this._hasCustomSchematicSymbol()) return null
+    return super.getSchematicSymbol()
+  }
+
   doInitialCheckRefDesConvention(): void {
     NormalComponent_doInitialCheckRefDesConvention(this)
   }
@@ -1716,7 +1729,8 @@ export class NormalComponent<
     if (this.getSchematicSymbol()) return null
     if (
       !this.config.shouldRenderAsSchematicBox &&
-      !this._parsedProps?.showAsSchematicBox
+      !this._parsedProps?.showAsSchematicBox &&
+      !this._hasCustomSchematicSymbol()
     ) {
       return null
     }
@@ -1724,6 +1738,17 @@ export class NormalComponent<
     const { _parsedProps: props } = this
 
     const pinCount = this._getPrimaryPinCount()
+
+    const customSymbol = this.children.find(
+      (component): component is SymbolComponent =>
+        component.componentName === "Symbol",
+    )
+    const inferredCustomSymbolDimensions = this._getSchematicPortArrangement()
+      ? null
+      : customSymbol?.getInferredSchematicPortDimensions(pinCount)
+    if (inferredCustomSymbolDimensions) {
+      return inferredCustomSymbolDimensions
+    }
 
     const pinSpacing = 0.2
 

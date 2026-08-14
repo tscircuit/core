@@ -28,6 +28,7 @@ export type SchematicBoxPortPositionWithMetadata = {
   pinNumber: number
   side: "left" | "right" | "top" | "bottom"
   distanceFromOrthogonalEdge: number
+  stemLength?: number
   x: number
   y: number
 }
