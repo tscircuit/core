@@ -7,7 +7,7 @@ import {
   type SchematicPinStyle,
   type SchematicPortArrangement,
 } from "@tscircuit/props"
-import type { AnyCircuitElement } from "circuit-json"
+import type { AnyCircuitElement, SourceSimpleConnector } from "circuit-json"
 import { source_part_not_found_warning } from "circuit-json"
 import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromCircuitJson"
 import { convertCircuitJsonToUsbCStandardCircuitJson } from "lib/utils/connectors/convertCircuitJsonToUsbCStandardCircuitJson"
@@ -372,9 +372,7 @@ export class Connector<
       display_name: props.displayName,
       standard: props.standard,
       pin_count: props.pinCount,
-      // circuit-json's SourceSimpleConnector type has not yet been widened to
-      // include JST standards and pin_count.
-    } as any)
+    } as SourceSimpleConnector)
 
     this.source_component_id = source_component.source_component_id!
 
