@@ -7,6 +7,18 @@ test("via stitching expands a TSSOP motor driver power pair", async () => {
   const stitching = setupViaStitchingPhases({
     circuit,
     routedPhaseName: "route-power",
+    powerTraceRequirements: [
+      {
+        traceName: "VM_POWER",
+        currentAmps: 8,
+        maxTemperatureRiseC: 3,
+      },
+      {
+        traceName: "GND_POWER",
+        currentAmps: 8,
+        maxTemperatureRiseC: 3,
+      },
+    ],
   })
 
   circuit.add(
@@ -86,14 +98,14 @@ test("via stitching expands a TSSOP motor driver power pair", async () => {
         name="VM_POWER"
         from=".VM_CONNECTOR > .pin1"
         to=".U_MOTOR > .VM"
-        thickness="1.4mm"
+        thickness="2mm"
         routingPhaseIndex={0}
       />
       <trace
         name="GND_POWER"
         from=".GND_CONNECTOR > .pin1"
         to=".U_MOTOR > .GND"
-        thickness="1.4mm"
+        thickness="2mm"
         routingPhaseIndex={0}
       />
       <trace
@@ -135,7 +147,7 @@ test("via stitching expands a TSSOP motor driver power pair", async () => {
       />
 
       <pcbnotetext
-        text="TSSOP-20 motor driver: stitched VM + GND rails"
+        text="TSSOP-20 driver: 8A VM + GND / 3 vias each"
         fontSize="0.45mm"
         pcbY={12.5}
       />
@@ -148,10 +160,19 @@ test("via stitching expands a TSSOP motor driver power pair", async () => {
   expect(result.completedPhaseNames).toEqual(["route-power", "stitch-power"])
   expect(result.routedTraceCount).toBeGreaterThanOrEqual(2)
   expect(result.wideTraceViaCount).toBeGreaterThanOrEqual(2)
-  expect(result.stitchedViaArrayCount).toBeGreaterThanOrEqual(2)
-  expect(result.addedViaCount).toBeGreaterThanOrEqual(2)
+  expect(result.stitchedViaArrayCount).toBe(4)
+  expect(result.addedViaCount).toBe(8)
+  expect(result.insufficientArrayCapacityCount).toBe(0)
   expect(circuit.db.pcb_component.list().length).toBeGreaterThanOrEqual(7)
-  expect(circuit.db.pcb_via.list().length).toBeGreaterThanOrEqual(4)
+  expect(circuit.db.pcb_via.list().length).toBeGreaterThanOrEqual(6)
+  expect(
+    circuit.db.pcb_trace
+      .list()
+      .filter(
+        (trace) =>
+          trace.route.length === 1 && trace.route[0]?.route_type === "via",
+      ).length,
+  ).toBeGreaterThanOrEqual(result.addedViaCount)
   expect(circuit.db.pcb_via_clearance_error.list()).toEqual([])
   expect(circuit.db.pcb_via_trace_clearance_error.list()).toEqual([])
   expect(circuit).toMatchPcbSnapshot(import.meta.path)

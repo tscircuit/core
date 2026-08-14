@@ -59,10 +59,74 @@ type ViaStitchingContext = {
   traceWidth: number
 }
 
+export type PowerTraceViaRequirement = {
+  traceName: string
+  currentAmps: number
+  maxTemperatureRiseC: number
+  /**
+   * First-order plated-barrel resistance. The default, 1.5 mOhm, follows the
+   * worked 10/20 mil via example in Altium's stitching-via guidance.
+   */
+  viaResistanceOhms?: number
+  /**
+   * First-order junction-to-ambient thermal resistance. The default, 180 C/W,
+   * follows the same Altium example. Production designs should replace both
+   * defaults with stackup/fabricator data and validate against IPC-2152.
+   */
+  viaThermalResistanceCPerW?: number
+}
+
+type ResolvedPowerTraceViaRequirement = Omit<
+  PowerTraceViaRequirement,
+  "traceName"
+> & {
+  connectionName: string
+}
+
+type ViaStitchingOptions = {
+  powerTraceRequirements?: ResolvedPowerTraceViaRequirement[]
+  defaultPowerTraceRequirement?: Omit<
+    ResolvedPowerTraceViaRequirement,
+    "connectionName"
+  >
+  minimumPowerTraceWidth?: number
+}
+
 export const SAME_POINT_TOLERANCE = 1e-9
+const DEFAULT_VIA_RESISTANCE_OHMS = 0.0015
+const DEFAULT_VIA_THERMAL_RESISTANCE_C_PER_W = 180
+const DEFAULT_MINIMUM_VIA_PAD_EDGE_GAP = 0.1
 const VIA_STITCHING_ROTATIONS = [0, 15, -15, 30, -30, 45, -45].map(
   (degrees) => (degrees * Math.PI) / 180,
 )
+
+/**
+ * With N identical vias sharing current equally:
+ *   deltaT_per_via = (I / N)^2 * R_via * theta_via
+ * Solve for the smallest integer N that stays below the allowed rise.
+ */
+export const calculateRequiredPowerViaCount = ({
+  currentAmps,
+  maxTemperatureRiseC,
+  viaResistanceOhms = DEFAULT_VIA_RESISTANCE_OHMS,
+  viaThermalResistanceCPerW = DEFAULT_VIA_THERMAL_RESISTANCE_C_PER_W,
+}: Omit<PowerTraceViaRequirement, "traceName">) => {
+  if (
+    currentAmps <= 0 ||
+    maxTemperatureRiseC <= 0 ||
+    viaResistanceOhms <= 0 ||
+    viaThermalResistanceCPerW <= 0
+  ) {
+    throw new Error("Power-via sizing inputs must all be positive")
+  }
+
+  return Math.ceil(
+    currentAmps *
+      Math.sqrt(
+        (viaResistanceOhms * viaThermalResistanceCPerW) / maxTemperatureRiseC,
+      ),
+  )
+}
 
 const getConnectionNames = (value: unknown): string[] => {
   if (typeof value !== "string" || value.length === 0) return []
@@ -335,21 +399,19 @@ const viaArrayIsClearOfOtherTraces = ({
 const createViaStitchCandidates = ({
   via,
   context,
+  viaCount,
   viaDiameter,
-  viaClearance,
+  viaPitch,
 }: {
   via: ViaRoutePoint
   context: ViaStitchingContext
+  viaCount: number
   viaDiameter: number
-  viaClearance: number
+  viaPitch: number
 }): ViaRoutePoint[][] => {
-  const viaCount = Math.floor(
-    (context.traceWidth + viaClearance) / (viaDiameter + viaClearance),
-  )
   if (viaCount < 2) return []
 
   const centerIndex = (viaCount - 1) / 2
-  const viaPitch = (context.traceWidth - viaDiameter) / (viaCount - 1)
 
   return VIA_STITCHING_ROTATIONS.flatMap((rotation) => {
     const cos = Math.cos(rotation)
@@ -388,18 +450,54 @@ const createViaStitchCandidates = ({
   })
 }
 
+const getPowerTraceRequirement = ({
+  trace,
+  routedBoard,
+  requestedTraceWidth,
+  options,
+}: {
+  trace: SimplifiedPcbTrace
+  routedBoard: SimpleRouteJson
+  requestedTraceWidth: number
+  options: ViaStitchingOptions
+}) => {
+  const traceConnectionNames = getTraceConnectionNames(trace, routedBoard)
+  const explicitRequirement = options.powerTraceRequirements?.find(
+    (requirement) =>
+      getConnectionNames(requirement.connectionName).some((name) =>
+        traceConnectionNames.has(name),
+      ),
+  )
+  if (explicitRequirement) return explicitRequirement
+
+  if (
+    options.defaultPowerTraceRequirement &&
+    requestedTraceWidth >= (options.minimumPowerTraceWidth ?? 0)
+  ) {
+    return options.defaultPowerTraceRequirement
+  }
+
+  return undefined
+}
+
 export const stitchWideTraceVias = (
   traces: SimplifiedPcbTrace[],
   simpleRouteJson: SimpleRouteJson,
   routedBoard: SimpleRouteJson,
+  options: ViaStitchingOptions = {},
 ) => {
   const stitchedTraces = structuredClone(traces)
+  const supplementalViaTraces: SimplifiedPcbTrace[] = []
   const viaDiameter =
     simpleRouteJson.min_via_pad_diameter ??
     simpleRouteJson.minViaPadDiameter ??
     simpleRouteJson.minViaDiameter ??
     0.6
-  const viaClearance = Math.max(
+  const viaHoleDiameter =
+    simpleRouteJson.min_via_hole_diameter ??
+    simpleRouteJson.minViaHoleDiameter ??
+    0.3
+  const electricalClearance = Math.max(
     simpleRouteJson.defaultObstacleMargin ?? 0,
     simpleRouteJson.minTraceToPadEdgeClearance ?? 0,
     0.1,
@@ -407,6 +505,7 @@ export const stitchWideTraceVias = (
   let stitchedViaArrayCount = 0
   let addedViaCount = 0
   let wideTraceViaCount = 0
+  let insufficientArrayCapacityCount = 0
   const stitchedViaCenters: Point[] = []
 
   for (const trace of stitchedTraces) {
@@ -420,12 +519,25 @@ export const stitchWideTraceVias = (
       routedTraceWidth,
       getRequestedTraceWidth(trace, routedBoard),
     )
+    const powerTraceRequirement = getPowerTraceRequirement({
+      trace,
+      routedBoard,
+      requestedTraceWidth,
+      options,
+    })
+    if (!powerTraceRequirement) continue
 
     for (let routeIndex = 0; routeIndex < trace.route.length; routeIndex++) {
       const routePoint = trace.route[routeIndex]
       if (routePoint?.route_type !== "via") continue
-      if (requestedTraceWidth <= viaDiameter) continue
       wideTraceViaCount++
+
+      const electricallyRequiredViaCount = calculateRequiredPowerViaCount(
+        powerTraceRequirement,
+      )
+      if (electricallyRequiredViaCount <= 1) continue
+
+      const placedViaCount = electricallyRequiredViaCount
 
       const context = getViaStitchingContext(
         trace.route,
@@ -436,36 +548,78 @@ export const stitchWideTraceVias = (
       if (!context) continue
 
       const stitchedViaDiameter = routePoint.via_diameter ?? viaDiameter
+      const stitchedViaHoleDiameter =
+        routePoint.via_hole_diameter ?? viaHoleDiameter
+      const stitchedViaPitch = Math.max(
+        stitchedViaDiameter + DEFAULT_MINIMUM_VIA_PAD_EDGE_GAP,
+        stitchedViaHoleDiameter +
+          (simpleRouteJson.minViaHoleEdgeToViaHoleEdgeClearance ?? 0.1),
+      )
+      const geometricViaCapacity =
+        Math.floor(
+          (context.traceWidth - stitchedViaDiameter) / stitchedViaPitch,
+        ) + 1
+      if (placedViaCount > geometricViaCapacity) {
+        insufficientArrayCapacityCount++
+        continue
+      }
+
       const viaStitches = createViaStitchCandidates({
         via: routePoint,
         context,
+        viaCount: placedViaCount,
         viaDiameter: stitchedViaDiameter,
-        viaClearance,
+        viaPitch: stitchedViaPitch,
       }).find((candidate) =>
         viaArrayIsClearOfOtherTraces({
           viaStitches: candidate,
           viaDiameter: stitchedViaDiameter,
           trace,
-          allTraces: stitchedTraces,
+          allTraces: [...stitchedTraces, ...supplementalViaTraces],
           routedBoard,
-          clearance: viaClearance,
+          clearance: electricalClearance,
         }),
       )
       if (!viaStitches) continue
 
-      trace.route.splice(routeIndex, 1, ...viaStitches)
+      // Preserve exactly one layer-transition event in the ordered route. For
+      // an even array, that transition moves slightly off the old center but
+      // remains inside both copper bands; all other vias are independent,
+      // same-net parallel connections rather than consecutive route points.
+      const routedVia = viaStitches.reduce((closestVia, stitch) =>
+        Math.hypot(stitch.x - routePoint.x, stitch.y - routePoint.y) <
+        Math.hypot(
+          closestVia.x - routePoint.x,
+          closestVia.y - routePoint.y,
+        )
+          ? stitch
+          : closestVia,
+      )
+      trace.route[routeIndex] = routedVia
+      const supplementalVias = viaStitches.filter(
+        (stitch) => stitch !== routedVia,
+      )
+      supplementalViaTraces.push(
+        ...supplementalVias.map(
+          (stitch, stitchIndex): SimplifiedPcbTrace => ({
+            ...trace,
+            pcb_trace_id: `${trace.pcb_trace_id}_power_via_${routeIndex}_${stitchIndex}`,
+            route: [stitch],
+          }),
+        ),
+      )
       stitchedViaCenters.push(...viaStitches.map(({ x, y }) => ({ x, y })))
-      routeIndex += viaStitches.length - 1
       stitchedViaArrayCount++
-      addedViaCount += viaStitches.length - 1
+      addedViaCount += supplementalVias.length
     }
   }
 
   return {
-    traces: stitchedTraces,
+    traces: [...stitchedTraces, ...supplementalViaTraces],
     stitchedViaArrayCount,
     addedViaCount,
     wideTraceViaCount,
+    insufficientArrayCapacityCount,
     stitchedViaCenters,
   }
 }
@@ -473,14 +627,17 @@ export const stitchWideTraceVias = (
 export const setupViaStitchingPhases = ({
   circuit,
   routedPhaseName,
+  powerTraceRequirements,
 }: {
   circuit: RootCircuit
   routedPhaseName: string
+  powerTraceRequirements: PowerTraceViaRequirement[]
 }) => {
   let routedBoard: SimpleRouteJson | undefined
   let stitchedViaArrayCount = 0
   let addedViaCount = 0
   let wideTraceViaCount = 0
+  let insufficientArrayCapacityCount = 0
   const stitchedViaCenters: Point[] = []
   const completedPhaseNames: string[] = []
 
@@ -505,14 +662,33 @@ export const setupViaStitchingPhases = ({
       throw new Error("The board must be routed before stitching")
     }
 
+    const resolvedPowerTraceRequirements = powerTraceRequirements.map(
+      ({ traceName, ...requirement }) => {
+        const sourceTrace = circuit.db.source_trace.getWhere({
+          name: traceName,
+        })
+        if (!sourceTrace) {
+          throw new Error(
+            `Cannot size a power-via array: trace "${traceName}" was not found`,
+          )
+        }
+
+        return {
+          ...requirement,
+          connectionName: sourceTrace.source_trace_id,
+        }
+      },
+    )
     const result = stitchWideTraceVias(
       routedBoard.traces ?? [],
       simpleRouteJson,
       routedBoard,
+      { powerTraceRequirements: resolvedPowerTraceRequirements },
     )
     stitchedViaArrayCount += result.stitchedViaArrayCount
     addedViaCount += result.addedViaCount
     wideTraceViaCount += result.wideTraceViaCount
+    insufficientArrayCapacityCount += result.insufficientArrayCapacityCount
     stitchedViaCenters.push(...result.stitchedViaCenters)
     return result.traces
   })
@@ -524,6 +700,7 @@ export const setupViaStitchingPhases = ({
       stitchedViaArrayCount,
       addedViaCount,
       wideTraceViaCount,
+      insufficientArrayCapacityCount,
       stitchedViaCenters: [...stitchedViaCenters],
       completedPhaseNames: [...completedPhaseNames],
     }),
@@ -565,6 +742,13 @@ export const runRp2040MotorControllerViaStitchingRepro = async (
       routedBoard.traces ?? [],
       simpleRouteJson,
       routedBoard,
+      {
+        defaultPowerTraceRequirement: {
+          currentAmps: 5,
+          maxTemperatureRiseC: 5,
+        },
+        minimumPowerTraceWidth: 1,
+      },
     )
     stitchedViaArrayCount += result.stitchedViaArrayCount
     addedViaCount += result.addedViaCount

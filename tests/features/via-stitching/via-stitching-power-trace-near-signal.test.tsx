@@ -7,6 +7,13 @@ test("via stitching keeps a SOT-23 load-switch rail clear of control routing", a
   const stitching = setupViaStitchingPhases({
     circuit,
     routedPhaseName: "route-board",
+    powerTraceRequirements: [
+      {
+        traceName: "VCC_POWER",
+        currentAmps: 4,
+        maxTemperatureRiseC: 1,
+      },
+    ],
   })
 
   circuit.add(
@@ -80,7 +87,7 @@ test("via stitching keeps a SOT-23 load-switch rail clear of control routing", a
         name="VCC_POWER"
         from=".VCC_IN > .pin1"
         to=".U_LOAD_SWITCH > .VIN"
-        thickness="1.6mm"
+        thickness="2mm"
         routingPhaseIndex={0}
       />
       <trace
@@ -129,7 +136,7 @@ test("via stitching keeps a SOT-23 load-switch rail clear of control routing", a
       />
 
       <pcbnotetext
-        text="SOT-23 load switch: stitched VCC beside EN signal"
+        text="SOT-23 switch: 4A VCC / 1C rise / EN clearance"
         fontSize="0.45mm"
         pcbY={11.5}
       />
@@ -142,10 +149,19 @@ test("via stitching keeps a SOT-23 load-switch rail clear of control routing", a
   expect(result.completedPhaseNames).toEqual(["route-board", "stitch-power"])
   expect(result.routedTraceCount).toBeGreaterThanOrEqual(2)
   expect(result.wideTraceViaCount).toBeGreaterThan(0)
-  expect(result.stitchedViaArrayCount).toBeGreaterThan(0)
-  expect(result.addedViaCount).toBeGreaterThan(0)
+  expect(result.stitchedViaArrayCount).toBe(1)
+  expect(result.addedViaCount).toBe(2)
+  expect(result.insufficientArrayCapacityCount).toBe(0)
   expect(circuit.db.pcb_component.list().length).toBeGreaterThanOrEqual(7)
-  expect(circuit.db.pcb_via.list().length).toBeGreaterThan(1)
+  expect(circuit.db.pcb_via.list().length).toBeGreaterThanOrEqual(3)
+  expect(
+    circuit.db.pcb_trace
+      .list()
+      .filter(
+        (trace) =>
+          trace.route.length === 1 && trace.route[0]?.route_type === "via",
+      ).length,
+  ).toBeGreaterThanOrEqual(result.addedViaCount)
   expect(circuit.db.pcb_via_clearance_error.list()).toEqual([])
   expect(circuit.db.pcb_via_trace_clearance_error.list()).toEqual([])
   expect(circuit).toMatchPcbSnapshot(import.meta.path)

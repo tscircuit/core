@@ -7,6 +7,13 @@ test("via stitching expands a QFN buck-regulator trace around a keepout", async 
   const stitching = setupViaStitchingPhases({
     circuit,
     routedPhaseName: "route-power",
+    powerTraceRequirements: [
+      {
+        traceName: "VIN_POWER",
+        currentAmps: 8,
+        maxTemperatureRiseC: 3,
+      },
+    ],
   })
 
   circuit.add(
@@ -56,15 +63,15 @@ test("via stitching expands a QFN buck-regulator trace around a keepout", async 
         inductance="4.7uH"
         footprint="1206"
         layer="bottom"
-        pcbX={5}
-        pcbY={-8}
+        pcbX={-5}
+        pcbY={-9}
       />
       <capacitor
         name="C_OUT"
         capacitance="47uF"
         footprint="1206"
-        pcbX={11}
-        pcbY={8}
+        pcbX={-12}
+        pcbY={7}
       />
       <resistor
         name="R_FB"
@@ -83,7 +90,7 @@ test("via stitching expands a QFN buck-regulator trace around a keepout", async 
         name="VIN_POWER"
         from=".VIN > .pin1"
         to=".U_REGULATOR > .VIN"
-        thickness="1.4mm"
+        thickness="2mm"
         routingPhaseIndex={0}
       />
       <trace
@@ -125,7 +132,7 @@ test("via stitching expands a QFN buck-regulator trace around a keepout", async 
       />
 
       <pcbnotetext
-        text="QFN-32 buck: stitched VIN routed around keepout"
+        text="QFN-32 buck: 8A VIN / 3C rise / 3 vias"
         fontSize="0.45mm"
         pcbY={12.5}
       />
@@ -138,10 +145,19 @@ test("via stitching expands a QFN buck-regulator trace around a keepout", async 
   expect(result.completedPhaseNames).toEqual(["route-power", "stitch-power"])
   expect(result.routedTraceCount).toBeGreaterThan(0)
   expect(result.wideTraceViaCount).toBeGreaterThan(0)
-  expect(result.stitchedViaArrayCount).toBeGreaterThan(0)
-  expect(result.addedViaCount).toBeGreaterThan(0)
+  expect(result.stitchedViaArrayCount).toBe(1)
+  expect(result.addedViaCount).toBe(2)
+  expect(result.insufficientArrayCapacityCount).toBe(0)
   expect(circuit.db.pcb_component.list().length).toBeGreaterThanOrEqual(6)
-  expect(circuit.db.pcb_via.list().length).toBeGreaterThan(1)
+  expect(circuit.db.pcb_via.list().length).toBeGreaterThanOrEqual(3)
+  expect(
+    circuit.db.pcb_trace
+      .list()
+      .filter(
+        (trace) =>
+          trace.route.length === 1 && trace.route[0]?.route_type === "via",
+      ).length,
+  ).toBeGreaterThanOrEqual(result.addedViaCount)
   expect(circuit.db.pcb_via_clearance_error.list()).toEqual([])
   expect(circuit.db.pcb_via_trace_clearance_error.list()).toEqual([])
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
