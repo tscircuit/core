@@ -155,4 +155,21 @@ export const SchematicBox_doInitialSchematicComponentRender = (
     font_size: 0.18,
     schematic_sheet_id: schematicSheetId,
   })
+
+  const referencedSourceComponent = db.source_component.get(
+    referencedChip.source_component_id,
+  )
+  db.schematic_text.insert({
+    text: referencedSourceComponent?.manufacturer_part_number ?? "",
+    schematic_component_id: schematicComponent.schematic_component_id,
+    anchor: "left",
+    rotation: 0,
+    position: {
+      x: center.x - size.width / 2,
+      y: center.y - size.height / 2 - 0.13,
+    },
+    color: "#006464",
+    font_size: 0.18,
+    schematic_sheet_id: schematicSheetId,
+  })
 }
