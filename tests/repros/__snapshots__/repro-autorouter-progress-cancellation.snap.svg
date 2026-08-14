@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="260" viewBox="0 0 800 260">
+    <rect width="800" height="260" fill="#111827" />
+    <text x="400" y="42" text-anchor="middle" fill="#f9fafb" font-family="Arial" font-size="24" font-weight="700">Autorouter status reproduction</text>
+    <rect x="40" y="75" width="720" height="64" rx="8" fill="#450a0a" stroke="#ef4444" stroke-width="2" />
+    <text x="65" y="103" fill="#fecaca" font-family="Arial" font-size="18">exact_geometry_improvement reported progress: 0%</text>
+    <text x="65" y="127" fill="#fecaca" font-family="Arial" font-size="18">No phase estimate exists, but the API reports a definite zero.</text>
+    <rect x="40" y="158" width="720" height="64" rx="8" fill="#450a0a" stroke="#ef4444" stroke-width="2" />
+    <text x="65" y="186" fill="#fecaca" font-family="Arial" font-size="18">Progress events emitted after stop(): 1</text>
+    <text x="65" y="210" fill="#fecaca" font-family="Arial" font-size="18">The in-flight cycle continues after cancellation.</text>
+  </svg>
