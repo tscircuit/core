@@ -2,22 +2,22 @@ import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { setupViaStitchingPhases } from "tests/fixtures/via-stitching"
 
-const vinRegionOutline = [
+const gndPourOutline = [
   { x: -6, y: -5 },
   { x: 6, y: -5 },
   { x: 6, y: 5 },
   { x: -6, y: 5 },
 ]
 
-test("via stitching clips a VIN grid around a keepout", async () => {
+test("GND-pour via stitching clips its grid around a keepout", async () => {
   const { circuit } = getTestFixture()
   const stitching = setupViaStitchingPhases({
     circuit,
     routedPhaseName: "route-power",
-    powerNetStitchingRegions: [
+    copperPourStitchingRegions: [
       {
-        netName: "VIN_RAIL",
-        outline: vinRegionOutline,
+        netName: "GND",
+        outline: gndPourOutline,
         pitch: 2,
         minimumViaCount: 8,
       },
@@ -39,6 +39,7 @@ test("via stitching clips a VIN grid around a keepout", async () => {
       autorouter={{ local: true, groupMode: "subcircuit" }}
     >
       <net name="VIN_RAIL" routingPhaseIndex={0} />
+      <net name="GND" routingPhaseIndex={0} />
       <testpoint
         name="VIN"
         footprintVariant="pad"
@@ -47,22 +48,13 @@ test("via stitching clips a VIN grid around a keepout", async () => {
         pcbX={-17}
       />
       <testpoint
-        name="VT"
+        name="GND_TEST"
         footprintVariant="pad"
-        padDiameter="1.2mm"
+        padDiameter="1.6mm"
         layer="top"
-        pcbX={-5.5}
-        pcbY={-4.3}
-        connections={{ pin1: "net.VIN_RAIL" }}
-      />
-      <testpoint
-        name="VB"
-        footprintVariant="pad"
-        padDiameter="1.2mm"
-        layer="bottom"
-        pcbX={5.5}
-        pcbY={4.3}
-        connections={{ pin1: "net.VIN_RAIL" }}
+        pcbX={-17}
+        pcbY={5}
+        connections={{ pin1: "net.GND" }}
       />
       <chip
         name="U_REGULATOR"
@@ -77,6 +69,7 @@ test("via stitching clips a VIN grid around a keepout", async () => {
         }}
         layer="bottom"
         pcbX={13}
+        connections={{ GND: "net.GND" }}
       />
       <capacitor
         name="C_IN"
@@ -116,13 +109,6 @@ test("via stitching clips a VIN grid around a keepout", async () => {
       <trace
         name="VIN_FEED"
         from=".VIN > .pin1"
-        to=".VT > .pin1"
-        thickness="0.8mm"
-        routingPhaseIndex={0}
-      />
-      <trace
-        name="VIN_TO_REGULATOR"
-        from=".VB > .pin1"
         to=".U_REGULATOR > .VIN"
         thickness="0.8mm"
         routingPhaseIndex={0}
@@ -155,10 +141,17 @@ test("via stitching clips a VIN grid around a keepout", async () => {
         thickness="0.25mm"
         routingPhaseIndex={0}
       />
+      <trace
+        name="FEEDBACK_GROUND"
+        from=".R_FB > .pin2"
+        to="net.GND"
+        thickness="0.25mm"
+        routingPhaseIndex={0}
+      />
 
       <autoroutingphase name="route-power" phaseIndex={0} />
       <autoroutingphase
-        name="stitch-power"
+        name="stitch-ground"
         phaseIndex={1}
         reroute
         region={{ minX: -20, maxX: 20, minY: -14, maxY: 14 }}
@@ -166,22 +159,22 @@ test("via stitching clips a VIN grid around a keepout", async () => {
       />
 
       <copperpour
-        name="VIN_TOP_REGION"
-        connectsTo="net.VIN_RAIL"
+        name="GND_TOP_POUR"
+        connectsTo="net.GND"
         layer="top"
-        outline={vinRegionOutline}
+        outline={gndPourOutline}
         clearance="0.15mm"
       />
       <copperpour
-        name="VIN_BOTTOM_REGION"
-        connectsTo="net.VIN_RAIL"
+        name="GND_BOTTOM_POUR"
+        connectsTo="net.GND"
         layer="bottom"
-        outline={vinRegionOutline}
+        outline={gndPourOutline}
         clearance="0.15mm"
       />
 
       <pcbnotetext
-        text="QFN-32 buck: stitched VIN region clipped by keepout"
+        text="QFN-32 buck: routed traces + stitched GND around keepout"
         fontSize="0.45mm"
         pcbY={12.5}
       />
@@ -191,13 +184,14 @@ test("via stitching clips a VIN grid around a keepout", async () => {
   await circuit.renderUntilSettled()
 
   const result = stitching.getResult()
-  expect(result.completedPhaseNames).toEqual(["route-power", "stitch-power"])
+  expect(result.completedPhaseNames).toEqual(["route-power", "stitch-ground"])
   expect(result.routedTraceCount).toBeGreaterThan(0)
+  expect(result.modifiedRoutedTraceCount).toBe(0)
   expect(result.stitchedRegionCount).toBe(1)
   expect(result.placedRegionViaCount).toBeGreaterThanOrEqual(8)
   expect(result.rejectedRegionCandidateCount).toBeGreaterThan(0)
   expect(result.insufficientRegionCapacityCount).toBe(0)
-  expect(circuit.db.pcb_component.list().length).toBeGreaterThanOrEqual(8)
+  expect(circuit.db.pcb_component.list().length).toBeGreaterThanOrEqual(7)
   expect(circuit.db.pcb_via.list().length).toBeGreaterThanOrEqual(8)
   expect(
     circuit.db.pcb_trace
@@ -208,6 +202,16 @@ test("via stitching clips a VIN grid around a keepout", async () => {
       ).length,
   ).toBeGreaterThanOrEqual(result.placedRegionViaCount)
   expect(circuit.db.pcb_copper_pour.list().length).toBeGreaterThanOrEqual(2)
+  const gndNet = circuit.db.source_net.list().find((net) => net.name === "GND")
+  expect(gndNet).toBeDefined()
+  expect(
+    new Set(
+      circuit.db.pcb_copper_pour
+        .list()
+        .filter((pour) => pour.source_net_id === gndNet?.source_net_id)
+        .map((pour) => pour.layer),
+    ),
+  ).toEqual(new Set(["top", "bottom"]))
   expect(circuit.db.pcb_via_clearance_error.list()).toEqual([])
   expect(circuit.db.pcb_via_trace_clearance_error.list()).toEqual([])
   expect(circuit).toMatchPcbSnapshot(import.meta.path)

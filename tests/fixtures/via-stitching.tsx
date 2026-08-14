@@ -78,7 +78,7 @@ export type PowerTraceViaRequirement = {
   viaThermalResistanceCPerW?: number
 }
 
-export type PowerNetStitchingRegion = {
+export type CopperPourStitchingRegion = {
   netName: string
   outline: Point[]
   fromLayer?: string
@@ -107,8 +107,8 @@ type ViaStitchingOptions = {
   minimumPowerTraceWidth?: number
 }
 
-type ResolvedPowerNetStitchingRegion = Omit<
-  PowerNetStitchingRegion,
+type ResolvedCopperPourStitchingRegion = Omit<
+  CopperPourStitchingRegion,
   "netName"
 > & {
   connectionName: string
@@ -732,25 +732,16 @@ const regionViaIsClearOfTraces = ({
   via,
   viaLayers,
   viaDiameter,
-  targetConnectionNames,
   allTraces,
-  routedBoard,
   clearance,
 }: {
   via: ViaRoutePoint
   viaLayers: Set<string>
   viaDiameter: number
-  targetConnectionNames: Set<string>
   allTraces: SimplifiedPcbTrace[]
-  routedBoard: SimpleRouteJson
   clearance: number
 }) => {
   for (const trace of allTraces) {
-    const traceConnectionNames = getTraceConnectionNames(trace, routedBoard)
-    const traceIsOnTargetNet = [...traceConnectionNames].some((name) =>
-      targetConnectionNames.has(name),
-    )
-
     for (const point of trace.route) {
       if (point.route_type !== "via") continue
       const otherViaDiameter = point.via_diameter ?? viaDiameter
@@ -764,8 +755,6 @@ const regionViaIsClearOfTraces = ({
         return false
       }
     }
-
-    if (traceIsOnTargetNet) continue
 
     for (
       let pointIndex = 0;
@@ -797,11 +786,10 @@ const regionViaIsClearOfTraces = ({
   return true
 }
 
-export const stitchPowerNetRegions = (
+export const stitchCopperPourRegions = (
   traces: SimplifiedPcbTrace[],
   simpleRouteJson: SimpleRouteJson,
-  routedBoard: SimpleRouteJson,
-  regions: ResolvedPowerNetStitchingRegion[],
+  regions: ResolvedCopperPourStitchingRegion[],
 ) => {
   const outputTraces = structuredClone(traces)
   const viaTraces: SimplifiedPcbTrace[] = []
@@ -913,9 +901,7 @@ export const stitchPowerNetRegions = (
             via: candidate,
             viaLayers,
             viaDiameter,
-            targetConnectionNames,
             allTraces: [...outputTraces, ...viaTraces],
-            routedBoard,
             clearance: electricalClearance,
           })
         ) {
@@ -961,12 +947,12 @@ export const setupViaStitchingPhases = ({
   circuit,
   routedPhaseName,
   powerTraceRequirements = [],
-  powerNetStitchingRegions = [],
+  copperPourStitchingRegions = [],
 }: {
   circuit: RootCircuit
   routedPhaseName: string
   powerTraceRequirements?: PowerTraceViaRequirement[]
-  powerNetStitchingRegions?: PowerNetStitchingRegion[]
+  copperPourStitchingRegions?: CopperPourStitchingRegion[]
 }) => {
   let routedBoard: SimpleRouteJson | undefined
   let stitchedViaArrayCount = 0
@@ -979,14 +965,19 @@ export const setupViaStitchingPhases = ({
   let insufficientRegionCapacityCount = 0
   const stitchedViaCenters: Point[] = []
   const completedPhaseNames: string[] = []
+  const routedTraceRoutesById = new Map<string, string>()
 
   circuit.on("autorouting:end", ({ phaseName, simpleRouteJson }) => {
     completedPhaseNames.push(phaseName)
     if (phaseName !== routedPhaseName) return
 
-    const materializedTraces = circuit.db.pcb_trace
-      .list()
-      .map(convertPcbTraceToSimplifiedPcbTrace)
+    const routedPcbTraces = circuit.db.pcb_trace.list()
+    for (const trace of routedPcbTraces) {
+      routedTraceRoutesById.set(trace.pcb_trace_id, JSON.stringify(trace.route))
+    }
+    const materializedTraces = routedPcbTraces.map(
+      convertPcbTraceToSimplifiedPcbTrace,
+    )
     routedBoard = {
       ...structuredClone(simpleRouteJson),
       traces: [
@@ -1001,14 +992,14 @@ export const setupViaStitchingPhases = ({
       throw new Error("The board must be routed before stitching")
     }
 
-    const resolvedPowerNetStitchingRegions = powerNetStitchingRegions.map(
+    const resolvedCopperPourStitchingRegions = copperPourStitchingRegions.map(
       ({ netName, ...region }) => {
         const sourceNet = circuit.db.source_net
           .list()
           .find((net) => net.name === netName)
         if (!sourceNet) {
           throw new Error(
-            `Cannot stitch a power region: net "${netName}" was not found`,
+            `Cannot stitch a copper-pour region: net "${netName}" was not found`,
           )
         }
         const connectedTraceNames = circuit.db.source_trace
@@ -1025,12 +1016,11 @@ export const setupViaStitchingPhases = ({
         }
       },
     )
-    if (resolvedPowerNetStitchingRegions.length > 0) {
-      const result = stitchPowerNetRegions(
+    if (resolvedCopperPourStitchingRegions.length > 0) {
+      const result = stitchCopperPourRegions(
         routedBoard.traces ?? [],
         simpleRouteJson,
-        routedBoard,
-        resolvedPowerNetStitchingRegions,
+        resolvedCopperPourStitchingRegions,
       )
       stitchedRegionCount += result.stitchedRegionCount
       placedRegionViaCount += result.placedViaCount
@@ -1073,19 +1063,34 @@ export const setupViaStitchingPhases = ({
 
   return {
     addViaStitching,
-    getResult: () => ({
-      routedTraceCount: routedBoard?.traces?.length ?? 0,
-      stitchedViaArrayCount,
-      addedViaCount,
-      wideTraceViaCount,
-      insufficientArrayCapacityCount,
-      stitchedRegionCount,
-      placedRegionViaCount,
-      rejectedRegionCandidateCount,
-      insufficientRegionCapacityCount,
-      stitchedViaCenters: [...stitchedViaCenters],
-      completedPhaseNames: [...completedPhaseNames],
-    }),
+    getResult: () => {
+      const finalTraceRoutesById = new Map(
+        circuit.db.pcb_trace
+          .list()
+          .map(
+            (trace) =>
+              [trace.pcb_trace_id, JSON.stringify(trace.route)] as const,
+          ),
+      )
+      const modifiedRoutedTraceCount = [...routedTraceRoutesById].filter(
+        ([traceId, route]) => finalTraceRoutesById.get(traceId) !== route,
+      ).length
+
+      return {
+        routedTraceCount: routedBoard?.traces?.length ?? 0,
+        modifiedRoutedTraceCount,
+        stitchedViaArrayCount,
+        addedViaCount,
+        wideTraceViaCount,
+        insufficientArrayCapacityCount,
+        stitchedRegionCount,
+        placedRegionViaCount,
+        rejectedRegionCandidateCount,
+        insufficientRegionCapacityCount,
+        stitchedViaCenters: [...stitchedViaCenters],
+        completedPhaseNames: [...completedPhaseNames],
+      }
+    },
   }
 }
 

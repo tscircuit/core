@@ -2,22 +2,22 @@ import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { setupViaStitchingPhases } from "tests/fixtures/via-stitching"
 
-const vccRegionOutline = [
+const gndPourOutline = [
   { x: -5, y: -2.5 },
   { x: 5, y: -2.5 },
   { x: 5, y: 3.5 },
   { x: -5, y: 3.5 },
 ]
 
-test("via stitching clips a VCC grid around control routing", async () => {
+test("GND-pour via stitching clips its grid around control routing", async () => {
   const { circuit } = getTestFixture()
   const stitching = setupViaStitchingPhases({
     circuit,
     routedPhaseName: "route-board",
-    powerNetStitchingRegions: [
+    copperPourStitchingRegions: [
       {
-        netName: "VCC_STITCH",
-        outline: vccRegionOutline,
+        netName: "GND",
+        outline: gndPourOutline,
         pitch: 2,
         minimumViaCount: 6,
       },
@@ -39,6 +39,7 @@ test("via stitching clips a VCC grid around control routing", async () => {
       autorouter={{ local: true, groupMode: "subcircuit" }}
     >
       <net name="VCC_STITCH" routingPhaseIndex={0} />
+      <net name="GND" routingPhaseIndex={0} />
       <testpoint
         name="VCC_IN"
         footprintVariant="pad"
@@ -48,22 +49,13 @@ test("via stitching clips a VCC grid around control routing", async () => {
         pcbY={-3}
       />
       <testpoint
-        name="VCT"
+        name="GND_TEST"
         footprintVariant="pad"
-        padDiameter="1.2mm"
+        padDiameter="1.6mm"
         layer="top"
-        pcbX={-4.5}
-        pcbY={-2}
-        connections={{ pin1: "net.VCC_STITCH" }}
-      />
-      <testpoint
-        name="VCB"
-        footprintVariant="pad"
-        padDiameter="1.2mm"
-        layer="bottom"
-        pcbX={4.5}
-        pcbY={-2}
-        connections={{ pin1: "net.VCC_STITCH" }}
+        pcbX={-16}
+        pcbY={7}
+        connections={{ pin1: "net.GND" }}
       />
       <chip
         name="U_LOAD_SWITCH"
@@ -113,13 +105,6 @@ test("via stitching clips a VCC grid around control routing", async () => {
       <trace
         name="VCC_FEED"
         from=".VCC_IN > .pin1"
-        to=".VCT > .pin1"
-        thickness="0.8mm"
-        routingPhaseIndex={0}
-      />
-      <trace
-        name="VCC_TO_SWITCH"
-        from=".VCB > .pin1"
         to=".U_LOAD_SWITCH > .VIN"
         thickness="0.8mm"
         routingPhaseIndex={0}
@@ -159,10 +144,17 @@ test("via stitching clips a VCC grid around control routing", async () => {
         thickness="0.25mm"
         routingPhaseIndex={0}
       />
+      <trace
+        name="SENSE_GROUND"
+        from=".R_SENSE > .pin2"
+        to="net.GND"
+        thickness="0.25mm"
+        routingPhaseIndex={0}
+      />
 
       <autoroutingphase name="route-board" phaseIndex={0} />
       <autoroutingphase
-        name="stitch-power"
+        name="stitch-ground"
         phaseIndex={1}
         reroute
         region={{ minX: -19, maxX: 19, minY: -13, maxY: 13 }}
@@ -170,22 +162,22 @@ test("via stitching clips a VCC grid around control routing", async () => {
       />
 
       <copperpour
-        name="VCC_TOP_REGION"
-        connectsTo="net.VCC_STITCH"
+        name="GND_TOP_POUR"
+        connectsTo="net.GND"
         layer="top"
-        outline={vccRegionOutline}
+        outline={gndPourOutline}
         clearance="0.15mm"
       />
       <copperpour
-        name="VCC_BOTTOM_REGION"
-        connectsTo="net.VCC_STITCH"
+        name="GND_BOTTOM_POUR"
+        connectsTo="net.GND"
         layer="bottom"
-        outline={vccRegionOutline}
+        outline={gndPourOutline}
         clearance="0.15mm"
       />
 
       <pcbnotetext
-        text="SOT-23 switch: VCC region clipped around EN routing"
+        text="SOT-23 switch: routed traces + stitched GND pours"
         fontSize="0.45mm"
         pcbY={11.5}
       />
@@ -195,13 +187,14 @@ test("via stitching clips a VCC grid around control routing", async () => {
   await circuit.renderUntilSettled()
 
   const result = stitching.getResult()
-  expect(result.completedPhaseNames).toEqual(["route-board", "stitch-power"])
+  expect(result.completedPhaseNames).toEqual(["route-board", "stitch-ground"])
   expect(result.routedTraceCount).toBeGreaterThanOrEqual(2)
+  expect(result.modifiedRoutedTraceCount).toBe(0)
   expect(result.stitchedRegionCount).toBe(1)
   expect(result.placedRegionViaCount).toBeGreaterThanOrEqual(6)
   expect(result.rejectedRegionCandidateCount).toBeGreaterThan(0)
   expect(result.insufficientRegionCapacityCount).toBe(0)
-  expect(circuit.db.pcb_component.list().length).toBeGreaterThanOrEqual(9)
+  expect(circuit.db.pcb_component.list().length).toBeGreaterThanOrEqual(8)
   expect(circuit.db.pcb_via.list().length).toBeGreaterThanOrEqual(6)
   expect(
     circuit.db.pcb_trace
@@ -212,6 +205,16 @@ test("via stitching clips a VCC grid around control routing", async () => {
       ).length,
   ).toBeGreaterThanOrEqual(result.placedRegionViaCount)
   expect(circuit.db.pcb_copper_pour.list().length).toBeGreaterThanOrEqual(2)
+  const gndNet = circuit.db.source_net.list().find((net) => net.name === "GND")
+  expect(gndNet).toBeDefined()
+  expect(
+    new Set(
+      circuit.db.pcb_copper_pour
+        .list()
+        .filter((pour) => pour.source_net_id === gndNet?.source_net_id)
+        .map((pour) => pour.layer),
+    ),
+  ).toEqual(new Set(["top", "bottom"]))
   expect(circuit.db.pcb_via_clearance_error.list()).toEqual([])
   expect(circuit.db.pcb_via_trace_clearance_error.list()).toEqual([])
   expect(circuit).toMatchPcbSnapshot(import.meta.path)

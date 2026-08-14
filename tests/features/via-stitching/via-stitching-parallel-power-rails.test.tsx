@@ -2,36 +2,24 @@ import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { setupViaStitchingPhases } from "tests/fixtures/via-stitching"
 
-const vmRegionOutline = [
-  { x: -5, y: -5 },
-  { x: 5, y: -5 },
-  { x: 5, y: -1 },
-  { x: -5, y: -1 },
-]
-const gndRegionOutline = [
-  { x: -5, y: 1 },
-  { x: 5, y: 1 },
-  { x: 5, y: 5 },
-  { x: -5, y: 5 },
+const gndPourOutline = [
+  { x: -6, y: -5 },
+  { x: 6, y: -5 },
+  { x: 6, y: 5 },
+  { x: -6, y: 5 },
 ]
 
-test("via stitching fills separate VM and PGND regions", async () => {
+test("via stitching joins GND pours without modifying VM or signal routes", async () => {
   const { circuit } = getTestFixture()
   const stitching = setupViaStitchingPhases({
     circuit,
     routedPhaseName: "route-power",
-    powerNetStitchingRegions: [
+    copperPourStitchingRegions: [
       {
-        netName: "VM_RAIL",
-        outline: vmRegionOutline,
+        netName: "GND",
+        outline: gndPourOutline,
         pitch: 2,
-        minimumViaCount: 6,
-      },
-      {
-        netName: "PGND",
-        outline: gndRegionOutline,
-        pitch: 2,
-        minimumViaCount: 6,
+        minimumViaCount: 8,
       },
     ],
   })
@@ -51,7 +39,7 @@ test("via stitching fills separate VM and PGND regions", async () => {
       autorouter={{ local: true, groupMode: "subcircuit" }}
     >
       <net name="VM_RAIL" routingPhaseIndex={0} />
-      <net name="PGND" routingPhaseIndex={0} />
+      <net name="GND" routingPhaseIndex={0} />
       <testpoint
         name="VM_CONNECTOR"
         footprintVariant="pad"
@@ -67,42 +55,16 @@ test("via stitching fills separate VM and PGND regions", async () => {
         layer="top"
         pcbX={-16}
         pcbY={3}
+        connections={{ pin1: "net.GND" }}
       />
       <testpoint
-        name="VMT"
+        name="VM_TEST"
         footprintVariant="pad"
         padDiameter="1.2mm"
         layer="top"
-        pcbX={-4.5}
+        pcbX={-13}
         pcbY={-3}
         connections={{ pin1: "net.VM_RAIL" }}
-      />
-      <testpoint
-        name="VMB"
-        footprintVariant="pad"
-        padDiameter="1.2mm"
-        layer="bottom"
-        pcbX={4.5}
-        pcbY={-3}
-        connections={{ pin1: "net.VM_RAIL" }}
-      />
-      <testpoint
-        name="GT"
-        footprintVariant="pad"
-        padDiameter="1.2mm"
-        layer="top"
-        pcbX={-4.5}
-        pcbY={3}
-        connections={{ pin1: "net.PGND" }}
-      />
-      <testpoint
-        name="GB"
-        footprintVariant="pad"
-        padDiameter="1.2mm"
-        layer="bottom"
-        pcbX={4.5}
-        pcbY={3}
-        connections={{ pin1: "net.PGND" }}
       />
       <chip
         name="U_MOTOR"
@@ -117,6 +79,7 @@ test("via stitching fills separate VM and PGND regions", async () => {
         }}
         layer="bottom"
         pcbX={9}
+        connections={{ GND: "net.GND" }}
       />
       <capacitor
         name="C_VM_BULK"
@@ -150,13 +113,6 @@ test("via stitching fills separate VM and PGND regions", async () => {
       <trace
         name="VM_FEED"
         from=".VM_CONNECTOR > .pin1"
-        to=".VMT > .pin1"
-        thickness="0.8mm"
-        routingPhaseIndex={0}
-      />
-      <trace
-        name="VM_TO_DRIVER"
-        from=".VMB > .pin1"
         to=".U_MOTOR > .VM"
         thickness="0.8mm"
         routingPhaseIndex={0}
@@ -164,13 +120,6 @@ test("via stitching fills separate VM and PGND regions", async () => {
       <trace
         name="GND_FEED"
         from=".GND_CONNECTOR > .pin1"
-        to=".GT > .pin1"
-        thickness="0.8mm"
-        routingPhaseIndex={0}
-      />
-      <trace
-        name="GND_TO_DRIVER"
-        from=".GB > .pin1"
         to=".U_MOTOR > .GND"
         thickness="0.8mm"
         routingPhaseIndex={0}
@@ -206,7 +155,7 @@ test("via stitching fills separate VM and PGND regions", async () => {
 
       <autoroutingphase name="route-power" phaseIndex={0} />
       <autoroutingphase
-        name="stitch-power"
+        name="stitch-ground"
         phaseIndex={1}
         reroute
         region={{ minX: -19, maxX: 19, minY: -14, maxY: 14 }}
@@ -214,36 +163,22 @@ test("via stitching fills separate VM and PGND regions", async () => {
       />
 
       <copperpour
-        name="VM_TOP_REGION"
-        connectsTo="net.VM_RAIL"
+        name="GND_TOP_POUR"
+        connectsTo="net.GND"
         layer="top"
-        outline={vmRegionOutline}
+        outline={gndPourOutline}
         clearance="0.15mm"
       />
       <copperpour
-        name="VM_BOTTOM_REGION"
-        connectsTo="net.VM_RAIL"
+        name="GND_BOTTOM_POUR"
+        connectsTo="net.GND"
         layer="bottom"
-        outline={vmRegionOutline}
-        clearance="0.15mm"
-      />
-      <copperpour
-        name="GND_TOP_REGION"
-        connectsTo="net.PGND"
-        layer="top"
-        outline={gndRegionOutline}
-        clearance="0.15mm"
-      />
-      <copperpour
-        name="GND_BOTTOM_REGION"
-        connectsTo="net.PGND"
-        layer="bottom"
-        outline={gndRegionOutline}
+        outline={gndPourOutline}
         clearance="0.15mm"
       />
 
       <pcbnotetext
-        text="TSSOP-20 driver: separately stitched VM + PGND regions"
+        text="TSSOP-20 driver: routed VM/signals + stitched GND pours"
         fontSize="0.45mm"
         pcbY={12.5}
       />
@@ -253,13 +188,14 @@ test("via stitching fills separate VM and PGND regions", async () => {
   await circuit.renderUntilSettled()
 
   const result = stitching.getResult()
-  expect(result.completedPhaseNames).toEqual(["route-power", "stitch-power"])
+  expect(result.completedPhaseNames).toEqual(["route-power", "stitch-ground"])
   expect(result.routedTraceCount).toBeGreaterThanOrEqual(2)
-  expect(result.stitchedRegionCount).toBe(2)
-  expect(result.placedRegionViaCount).toBeGreaterThanOrEqual(12)
+  expect(result.modifiedRoutedTraceCount).toBe(0)
+  expect(result.stitchedRegionCount).toBe(1)
+  expect(result.placedRegionViaCount).toBeGreaterThanOrEqual(8)
   expect(result.insufficientRegionCapacityCount).toBe(0)
-  expect(circuit.db.pcb_component.list().length).toBeGreaterThanOrEqual(11)
-  expect(circuit.db.pcb_via.list().length).toBeGreaterThanOrEqual(12)
+  expect(circuit.db.pcb_component.list().length).toBeGreaterThanOrEqual(8)
+  expect(circuit.db.pcb_via.list().length).toBeGreaterThanOrEqual(8)
   expect(
     circuit.db.pcb_trace
       .list()
@@ -268,7 +204,17 @@ test("via stitching fills separate VM and PGND regions", async () => {
           trace.route.length === 1 && trace.route[0]?.route_type === "via",
       ).length,
   ).toBeGreaterThanOrEqual(result.placedRegionViaCount)
-  expect(circuit.db.pcb_copper_pour.list().length).toBeGreaterThanOrEqual(4)
+  expect(circuit.db.pcb_copper_pour.list().length).toBeGreaterThanOrEqual(2)
+  const gndNet = circuit.db.source_net.list().find((net) => net.name === "GND")
+  expect(gndNet).toBeDefined()
+  expect(
+    new Set(
+      circuit.db.pcb_copper_pour
+        .list()
+        .filter((pour) => pour.source_net_id === gndNet?.source_net_id)
+        .map((pour) => pour.layer),
+    ),
+  ).toEqual(new Set(["top", "bottom"]))
   expect(circuit.db.pcb_via_clearance_error.list()).toEqual([])
   expect(circuit.db.pcb_via_trace_clearance_error.list()).toEqual([])
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
