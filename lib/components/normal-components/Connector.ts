@@ -266,7 +266,15 @@ export class Connector<
     const arrangement = super._getSchematicPortArrangement()
     if (arrangement && Object.keys(arrangement).length > 0) return arrangement
 
-    if (this._getConnectorProps().standard !== "usb_c") return arrangement
+    const props = this._getConnectorProps()
+    if (isJstConnectorStandard(props.standard)) {
+      return {
+        leftSize: 0,
+        rightSize: props.pinCount ?? 0,
+      }
+    }
+
+    if (props.standard !== "usb_c") return arrangement
 
     const labelToPinNumber = this._getUsbCCanonicalLabelToPinNumberMap()
     const rightPins = USB_C_SIGNAL_LABELS_IN_ORDER.map((label) =>

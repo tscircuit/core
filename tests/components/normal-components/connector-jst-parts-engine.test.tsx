@@ -144,6 +144,10 @@ test("JST connectors select parts by family and pin count while keeping a stable
   expect(
     getSchematicPortSummary(circuitA).map((port) => port.pinNumber),
   ).toEqual([1, 2])
+  expect(getSchematicPortSummary(circuitA).map((port) => port.side)).toEqual([
+    "right",
+    "right",
+  ])
   expect(
     getSchematicPortSummary(circuitA).map((port) => port.displayPinLabel),
   ).toEqual([undefined, undefined])
