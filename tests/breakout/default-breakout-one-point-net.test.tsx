@@ -9,13 +9,24 @@ test.failing(
     const autoroutingPhaseIoStack = createAutoroutingPhaseIoStack(circuit)
 
     circuit.add(
-      <board width="12mm" height="8mm">
-        <breakout name="B1">
-          <net name="VCC" />
-          <chip name="U1" footprint="soic8" pcbX={-1} />
-          <breakoutpoint connection=".U1 > .pin1" pcbX={3} pcbY={1.905} />
-          <trace from=".U1 > .pin1" to="net.VCC" />
-        </breakout>
+      <board width="18mm" height="10mm">
+        <net name="VCC" />
+        <subcircuit name="S1">
+          <breakout name="B1">
+            <net name="VCC" />
+            <chip name="U1" footprint="soic8" pcbX={-1} />
+            <breakoutpoint
+              connection=".U1 > .pin1"
+              pcbX={3.9999}
+              pcbY={1.905}
+            />
+            <trace name="INTERNAL_VCC" from=".U1 > .pin1" to="net.VCC" />
+          </breakout>
+        </subcircuit>
+
+        <resistor name="R1" resistance="1k" footprint="0402" pcbX={7} />
+        <trace name="CHILD_VCC" from=".S1 .U1 > .pin1" to="net.VCC" />
+        <trace name="LOAD_VCC" from=".R1 > .pin1" to="net.VCC" />
       </board>,
     )
 
