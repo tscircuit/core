@@ -1172,6 +1172,11 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         (hasPhasedAutorouting || isReroutePhase) &&
         simpleRouteJson.connections.length === 0
       ) {
+        // Keep an empty multi-stage phase as an empty no-op for its follow-up
+        // stages. Otherwise the next stage incorrectly reports that the
+        // preceding stage output is missing even though there was no routing
+        // work to perform.
+        previousStageOutputSimpleRouteJson = simpleRouteJson
         continue
       }
 
