@@ -58,8 +58,17 @@ test("parent autorouting net connections exclude private child subcircuit nets",
         pcbX={4}
         pcbY={0}
       />
+      <resistor
+        name="R_PARENT_2"
+        resistance="1k"
+        footprint="0402"
+        pcbX={6}
+        pcbY={0}
+      />
       <trace name="PARENT_VCC" from=".R_PARENT > .pin1" to="net.VCC" />
       <trace name="PARENT_GND" from=".R_PARENT > .pin2" to="net.GND" />
+      <trace name="PARENT_2_VCC" from=".R_PARENT_2 > .pin1" to="net.VCC" />
+      <trace name="PARENT_2_GND" from=".R_PARENT_2 > .pin2" to="net.GND" />
       <trace name="PICO_VCC" from="net.VCC" to=".PICO net.VCC" />
       <trace name="PICO_GND" from="net.GND" to=".PICO net.GND" />
     </board>,
@@ -91,6 +100,7 @@ test("parent autorouting net connections exclude private child subcircuit nets",
   )
 
   expect(connectionComponentNames).toContain("R_PARENT")
+  expect(connectionComponentNames).toContain("R_PARENT_2")
   expect(connectionComponentNames).not.toContain("R_CHILD")
   expect(connectionComponentNames).not.toContain("C_CHILD")
   expect(connectionComponentNames).not.toContain("R_PRIVATE")
