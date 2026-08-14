@@ -200,7 +200,10 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
     const { db } = this.root!
     const subcircuit = this.getSubcircuit()
     const selectors = Array.isArray(connectsTo) ? connectsTo : [connectsTo]
-    const connectedPorts: Port[] = []
+    const connectedPorts = this.children.filter(
+      (child): child is Port =>
+        child instanceof Port && child.source_port_id !== null,
+    )
     const connectedNets: Net[] = []
 
     for (const selector of selectors) {
@@ -227,24 +230,20 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
         this.renderError(`Could not find port for via selector "${selector}"`)
         return
       }
-      connectedPorts.push(port)
+      if (!connectedPorts.includes(port)) connectedPorts.push(port)
     }
 
-    if (connectedPorts.length > 0) {
-      const sourceTrace = db.source_trace.insert({
-        connected_source_port_ids: connectedPorts.map(
-          (port) => port.source_port_id!,
-        ),
-        connected_source_net_ids: connectedNets.map(
-          (net) => net.source_net_id!,
-        ),
-        subcircuit_id: subcircuit.subcircuit_id ?? undefined,
-        display_name: this._parsedProps.name
-          ? `${this._parsedProps.name} connectivity`
-          : "Manually placed via connectivity",
-      })
-      this.source_trace_id = sourceTrace.source_trace_id
-    }
+    const sourceTrace = db.source_trace.insert({
+      connected_source_port_ids: connectedPorts.map(
+        (port) => port.source_port_id!,
+      ),
+      connected_source_net_ids: connectedNets.map((net) => net.source_net_id!),
+      subcircuit_id: subcircuit.subcircuit_id ?? undefined,
+      display_name: this._parsedProps.name
+        ? `${this._parsedProps.name} connectivity`
+        : "Manually placed via connectivity",
+    })
+    this.source_trace_id = sourceTrace.source_trace_id
 
     db.source_manually_placed_via.update(this.source_manually_placed_via_id!, {
       source_net_id: connectedNets[0]?.source_net_id,
@@ -263,8 +262,12 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
     const position = this._getGlobalPcbPositionBeforeLayout()
     const subcircuit = this.getSubcircuit()
     const connectedNetOrTrace = this._getConnectedNetOrTrace()
+    const connectsTo = this._parsedProps.connectsTo
+    const hasConnectedPortSelector = (
+      Array.isArray(connectsTo) ? connectsTo : [connectsTo]
+    ).some((selector) => selector !== undefined && !selector.startsWith("net."))
     const sourceTraceId =
-      this.source_trace_id ??
+      (hasConnectedPortSelector ? this.source_trace_id : undefined) ??
       (connectedNetOrTrace instanceof Net
         ? undefined
         : connectedNetOrTrace?.source_trace_id)

@@ -117,9 +117,13 @@ test("via connectsTo a net directly without mixing ids", async () => {
   const fullConnectivityMap = getFullConnectivityMapFromCircuitJson(circuitJson)
 
   expect(sourceNet).toBeDefined()
-  expect(sourceTrace).toBeUndefined()
+  expect(sourceTrace).toBeDefined()
+  expect(sourceTrace.connected_source_net_ids).toEqual([
+    sourceNet!.source_net_id,
+  ])
+  expect(sourceTrace.connected_source_port_ids).toHaveLength(3)
   expect(sourceVia.source_net_id).toBe(sourceNet!.source_net_id)
-  expect(sourceVia.source_trace_id).toBeUndefined()
+  expect(sourceVia.source_trace_id).toBe(sourceTrace.source_trace_id)
   expect(pcbVia.source_net_id).toBe(sourceNet!.source_net_id)
   expect(Object.hasOwn(pcbVia, "source_trace_id")).toBe(false)
   expect(Object.hasOwn(pcbVia, "pcb_trace_id")).toBe(false)
