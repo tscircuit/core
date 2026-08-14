@@ -1,10 +1,108 @@
-import type { SourceTrace } from "circuit-json"
+import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
+import type { SourceNet, SourcePort, SourceTrace } from "circuit-json"
 import { ConnectivityMap } from "circuit-json-to-connectivity-map"
 import { Net } from "../Net"
 import { Port } from "../Port/Port"
 import type { TraceI } from "../Trace/TraceI"
 import type { Via } from "../Via"
 import type { Group } from "./Group"
+
+type SourceNetId = SourceNet["source_net_id"]
+type SourcePortId = SourcePort["source_port_id"]
+
+function getViaSourcePortIds(via: Via): SourcePortId[] {
+  const sourcePortIds: SourcePortId[] = []
+
+  for (const child of via.children) {
+    if (!(child instanceof Port) || child.source_port_id === null) continue
+    sourcePortIds.push(child.source_port_id)
+  }
+
+  return sourcePortIds
+}
+
+function sourceTraceConnectsToViaPort(
+  sourceTrace: SourceTrace,
+  viaSourcePortIds: Set<SourcePortId>,
+): boolean {
+  for (const sourcePortId of sourceTrace.connected_source_port_ids) {
+    if (viaSourcePortIds.has(sourcePortId)) return true
+  }
+
+  return false
+}
+
+function addSourceNetToTracesConnectedThroughVia({
+  db,
+  traces,
+  viaSourcePortIds,
+  sourceNetId,
+}: {
+  db: CircuitJsonUtilObjects
+  traces: TraceI[]
+  viaSourcePortIds: Set<SourcePortId>
+  sourceNetId: SourceNetId
+}) {
+  for (const trace of traces) {
+    if (!trace.source_trace_id) continue
+    const sourceTrace = db.source_trace.get(trace.source_trace_id)
+    if (!sourceTrace) continue
+    if (!sourceTraceConnectsToViaPort(sourceTrace, viaSourcePortIds)) continue
+    if (sourceTrace.connected_source_net_ids.includes(sourceNetId)) continue
+
+    db.source_trace.update(sourceTrace.source_trace_id, {
+      connected_source_net_ids: [
+        ...sourceTrace.connected_source_net_ids,
+        sourceNetId,
+      ],
+    })
+  }
+}
+
+function addViaPortConnectivityToMap({
+  db,
+  traces,
+  vias,
+  connectivityMap,
+}: {
+  db: CircuitJsonUtilObjects
+  traces: TraceI[]
+  vias: Via[]
+  connectivityMap: ConnectivityMap
+}): Set<SourcePortId> {
+  const allViaSourcePortIds = new Set<SourcePortId>()
+
+  for (const via of vias) {
+    const connectedNetOrTrace = via._getConnectedNetOrTrace()
+    if (!connectedNetOrTrace) continue
+
+    const connectedSourceId =
+      connectedNetOrTrace instanceof Net
+        ? connectedNetOrTrace.source_net_id
+        : connectedNetOrTrace.source_trace_id
+    if (!connectedSourceId) continue
+
+    const viaSourcePortIds = getViaSourcePortIds(via)
+    if (viaSourcePortIds.length === 0) continue
+
+    connectivityMap.addConnections([[connectedSourceId, ...viaSourcePortIds]])
+
+    if (connectedNetOrTrace instanceof Net) {
+      addSourceNetToTracesConnectedThroughVia({
+        db,
+        traces,
+        viaSourcePortIds: new Set(viaSourcePortIds),
+        sourceNetId: connectedSourceId,
+      })
+    }
+
+    for (const sourcePortId of viaSourcePortIds) {
+      allViaSourcePortIds.add(sourcePortId)
+    }
+  }
+
+  return allViaSourcePortIds
+}
 
 export function Group_doInitialSourceAddConnectivityMapKey(group: Group<any>) {
   if (!group.isSubcircuit) return
@@ -43,54 +141,12 @@ export function Group_doInitialSourceAddConnectivityMapKey(group: Group<any>) {
 
   // A via's layer ports are the same conductor as its connected net or trace.
   // Include that relationship before assigning connectivity map keys.
-  const viaSourcePortIds = new Set<string>()
-  for (const via of vias) {
-    const connectedNetOrTrace = via._getConnectedNetOrTrace()
-    if (!connectedNetOrTrace) continue
-
-    const connectedSourceId =
-      connectedNetOrTrace instanceof Net
-        ? connectedNetOrTrace.source_net_id
-        : connectedNetOrTrace.source_trace_id
-    if (!connectedSourceId) continue
-
-    const connectedViaSourcePortIds = via.children
-      .filter((child): child is Port => child instanceof Port)
-      .map((port) => port.source_port_id)
-      .filter((sourcePortId) => sourcePortId !== null)
-    if (connectedViaSourcePortIds.length === 0) continue
-
-    connMap.addConnections([[connectedSourceId, ...connectedViaSourcePortIds]])
-
-    if (connectedNetOrTrace instanceof Net) {
-      // Persist the inferred net on traces ending at a via port so downstream
-      // Circuit JSON connectivity and DRC agree with the subcircuit map.
-      for (const trace of traces) {
-        if (!trace.source_trace_id) continue
-        const sourceTrace = db.source_trace.get(trace.source_trace_id)
-        if (
-          !sourceTrace ||
-          !sourceTrace.connected_source_port_ids.some((sourcePortId) =>
-            connectedViaSourcePortIds.includes(sourcePortId),
-          ) ||
-          sourceTrace.connected_source_net_ids.includes(connectedSourceId)
-        ) {
-          continue
-        }
-
-        db.source_trace.update(sourceTrace.source_trace_id, {
-          connected_source_net_ids: [
-            ...sourceTrace.connected_source_net_ids,
-            connectedSourceId,
-          ],
-        })
-      }
-    }
-
-    for (const sourcePortId of connectedViaSourcePortIds) {
-      viaSourcePortIds.add(sourcePortId)
-    }
-  }
+  const viaSourcePortIds = addViaPortConnectivityToMap({
+    db,
+    traces,
+    vias,
+    connectivityMap: connMap,
+  })
 
   const { name: subcircuitName } = group._parsedProps
 
