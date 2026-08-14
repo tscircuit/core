@@ -1,5 +1,7 @@
 import type { SourceTrace } from "circuit-json"
 import { ConnectivityMap } from "circuit-json-to-connectivity-map"
+import { Net } from "../Net"
+import { Port } from "../Port/Port"
 import type { TraceI } from "../Trace/TraceI"
 import type { Via } from "../Via"
 import type { Group } from "./Group"
@@ -39,6 +41,57 @@ export function Group_doInitialSourceAddConnectivityMapKey(group: Group<any>) {
     connMap.addConnections([[sourceNet.source_net_id]])
   }
 
+  // A via's layer ports are the same conductor as its connected net or trace.
+  // Include that relationship before assigning connectivity map keys.
+  const viaSourcePortIds = new Set<string>()
+  for (const via of vias) {
+    const connectedNetOrTrace = via._getConnectedNetOrTrace()
+    if (!connectedNetOrTrace) continue
+
+    const connectedSourceId =
+      connectedNetOrTrace instanceof Net
+        ? connectedNetOrTrace.source_net_id
+        : connectedNetOrTrace.source_trace_id
+    if (!connectedSourceId) continue
+
+    const connectedViaSourcePortIds = via.children
+      .filter((child): child is Port => child instanceof Port)
+      .map((port) => port.source_port_id)
+      .filter((sourcePortId) => sourcePortId !== null)
+    if (connectedViaSourcePortIds.length === 0) continue
+
+    connMap.addConnections([[connectedSourceId, ...connectedViaSourcePortIds]])
+
+    if (connectedNetOrTrace instanceof Net) {
+      // Persist the inferred net on traces ending at a via port so downstream
+      // Circuit JSON connectivity and DRC agree with the subcircuit map.
+      for (const trace of traces) {
+        if (!trace.source_trace_id) continue
+        const sourceTrace = db.source_trace.get(trace.source_trace_id)
+        if (
+          !sourceTrace ||
+          !sourceTrace.connected_source_port_ids.some((sourcePortId) =>
+            connectedViaSourcePortIds.includes(sourcePortId),
+          ) ||
+          sourceTrace.connected_source_net_ids.includes(connectedSourceId)
+        ) {
+          continue
+        }
+
+        db.source_trace.update(sourceTrace.source_trace_id, {
+          connected_source_net_ids: [
+            ...sourceTrace.connected_source_net_ids,
+            connectedSourceId,
+          ],
+        })
+      }
+    }
+
+    for (const sourcePortId of connectedViaSourcePortIds) {
+      viaSourcePortIds.add(sourcePortId)
+    }
+  }
+
   const { name: subcircuitName } = group._parsedProps
 
   // Update source_trace.subcircuit_connectivity_map_key
@@ -63,6 +116,9 @@ export function Group_doInitialSourceAddConnectivityMapKey(group: Group<any>) {
     for (const id of source_trace.connected_source_port_ids) {
       allSourcePortIds.add(id)
     }
+  }
+  for (const sourcePortId of viaSourcePortIds) {
+    allSourcePortIds.add(sourcePortId)
   }
 
   for (const portId of allSourcePortIds) {
