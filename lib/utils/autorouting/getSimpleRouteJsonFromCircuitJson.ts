@@ -718,10 +718,17 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     }
   }
 
+  // Plane-terminated one-point traces are emitted by directTraceConnections.
+  // A net-derived connection needs at least two physical points; breakout-point
+  // processing above may have supplied the second point.
+  const routableConnectionsFromNets = connectionsFromNets.filter(
+    (connection) => connection.pointsToConnect.length >= 2,
+  )
+
   // ----- 1. Gather all connections we are about to return
   const allConns: SimpleRouteConnection[] = [
     ...directTraceConnections,
-    ...connectionsFromNets,
+    ...routableConnectionsFromNets,
     ...connectionsFromBreakoutPoints,
   ]
   const defaultTraceWidth = minTraceWidth ?? board?.min_trace_width ?? 0.1
