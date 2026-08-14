@@ -73,7 +73,11 @@ const hostConfig: HostConfig<
     }
 
     try {
-      const instance = prepare(new target(props) as any, {})
+      // React reserves `key` for reconciliation and installs a warning getter
+      // on the host props object. Component schemas must receive ordinary
+      // enumerable props rather than probing React's reserved metadata.
+      const intrinsicProps = { ...props }
+      const instance = prepare(new target(intrinsicProps) as any, {})
       return instance
     } catch (error: any) {
       return createErrorPlaceholderComponent(
