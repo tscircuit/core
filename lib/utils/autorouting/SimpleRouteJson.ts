@@ -114,6 +114,13 @@ export type SimpleRouteBus = {
   busId: string
   name?: string
   connectionNames: SrjConnectionName[]
+  /**
+   * Per-connection downstream points that should guide fanout boundary exits.
+   * These are routing hints and do not replace electrical endpoints.
+   */
+  connectionExitTargets?: Readonly<
+    Record<SrjConnectionName, { x: number; y: number }>
+  >
   maxLengthSkew?: number
   traceWidth?: number
   allowedLayers?: string[]

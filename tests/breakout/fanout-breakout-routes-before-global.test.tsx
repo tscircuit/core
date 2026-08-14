@@ -1,34 +1,18 @@
 import { expect, test } from "bun:test"
-import type {
-  SimpleRouteJson,
-  SimplifiedPcbTrace,
-} from "lib/utils/autorouting/SimpleRouteJson"
+import type { SolverStartedEvent } from "lib/events"
 import { Fragment } from "react"
 import { createAutoroutingPhaseIoStack } from "tests/fixtures/create-autorouting-phase-io-stack"
-import { createBasicAutorouter } from "tests/fixtures/createBasicAutorouter"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 const signalPinNumbers = [6, 7, 10, 11]
 
-const routeConnectionsDirectly = (
-  simpleRouteJson: SimpleRouteJson,
-): SimplifiedPcbTrace[] =>
-  simpleRouteJson.connections.map((connection) => ({
-    type: "pcb_trace",
-    pcb_trace_id: `${connection.name}_routed`,
-    connection_name: connection.source_trace_id ?? connection.name,
-    route: connection.pointsToConnect.map((point) => ({
-      route_type: "wire",
-      x: point.x,
-      y: point.y,
-      width: connection.nominalTraceWidth ?? 0.1,
-      layer: point.layer,
-    })),
-  }))
-
 test("fanout breakout routes signals and plane drops before global routing", async () => {
   const { circuit } = getTestFixture()
   const autoroutingPhaseIoStack = createAutoroutingPhaseIoStack(circuit)
+  const solverNames: string[] = []
+  circuit.on("solver:started", (event: SolverStartedEvent) => {
+    solverNames.push(event.solverName)
+  })
   const createBgaPads = () =>
     Array.from({ length: 16 }, (_, padIndex) => {
       const pinNumber = padIndex + 1
@@ -57,15 +41,7 @@ test("fanout breakout routes signals and plane drops before global routing", asy
       minViaHoleDiameter="0.2mm"
       minViaPadDiameter="0.5mm"
     >
-      <autoroutingphase
-        autorouter={{
-          local: true,
-          groupMode: "subcircuit",
-          algorithmFn: createBasicAutorouter(async (simpleRouteJson) =>
-            routeConnectionsDirectly(simpleRouteJson),
-          ),
-        }}
-      />
+      <autoroutingphase autorouter={{ local: true, groupMode: "subcircuit" }} />
       <copperpour layer="inner1" connectsTo="net.GND" />
       <breakout
         name="U1_BREAKOUT"
@@ -117,12 +93,28 @@ test("fanout breakout routes signals and plane drops before global routing", asy
   await circuit.renderUntilSettled()
 
   expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
+  expect(solverNames).toContain("AutoroutingPipelineSolver7_MultiGraph")
   expect(autoroutingPhaseIoStack).toHaveLength(3)
   expect(
     autoroutingPhaseIoStack.map(
       (phaseIo) => phaseIo.startSimpleRouteJson?.connections.length,
     ),
   ).toEqual([5, 4, 4])
+  for (const phaseIo of autoroutingPhaseIoStack.slice(0, 2)) {
+    const dataBus = phaseIo.startSimpleRouteJson?.buses?.find(
+      (bus) => bus.busId === "DATA_BUS",
+    )
+    expect(Object.keys(dataBus?.connectionExitTargets ?? {}).sort()).toEqual(
+      [...(dataBus?.connectionNames ?? [])].sort(),
+    )
+  }
+  for (const connection of autoroutingPhaseIoStack[2]!.startSimpleRouteJson!
+    .connections) {
+    const [firstPoint, secondPoint] = connection.pointsToConnect
+    expect(firstPoint).toBeDefined()
+    expect(secondPoint).toBeDefined()
+    expect(Math.abs(firstPoint!.y - secondPoint!.y)).toBeLessThan(0.6)
+  }
 
   const breakoutGroups = ["U1_BREAKOUT", "U2_BREAKOUT"].map((name) => {
     const group = circuit.db.pcb_group.getWhere({ name })
