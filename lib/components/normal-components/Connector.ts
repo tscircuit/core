@@ -1,6 +1,7 @@
 import { guessCableInsertCenter } from "@tscircuit/infer-cable-insertion-point"
 import {
   connectorProps,
+  type ConnectorStandard,
   type ConnectorProps,
   type PartsEngine,
   type SchematicPinStyle,
@@ -10,6 +11,7 @@ import type { AnyCircuitElement, SourceSimpleConnector } from "circuit-json"
 import { source_part_not_found_warning } from "circuit-json"
 import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromCircuitJson"
 import { convertCircuitJsonToUsbCStandardCircuitJson } from "lib/utils/connectors/convertCircuitJsonToUsbCStandardCircuitJson"
+import { convertCircuitJsonToJstStandardCircuitJson } from "lib/utils/connectors/convertCircuitJsonToJstStandardCircuitJson"
 import { STANDARD_USB_C_PIN_LABELS } from "lib/utils/connectors/usb-c-canonical-pin-definitions"
 import {
   getAllDimensionsForSchematicBox,
@@ -55,6 +57,19 @@ const USB_C_CANONICAL_LABELS = new Set<string>([
   ...USB_C_CANONICAL_LABELS_IN_ORDER,
 ])
 
+const JST_CONNECTOR_STANDARDS = new Set<ConnectorStandard>([
+  "jst_sh",
+  "jst_gh",
+  "jst_zh",
+  "jst_ph",
+  "jst_xh",
+  "jst_vh",
+])
+
+const isJstConnectorStandard = (
+  standard: ConnectorStandard | undefined,
+): boolean => standard !== undefined && JST_CONNECTOR_STANDARDS.has(standard)
+
 type SinglePinStyle = NonNullable<SchematicPinStyle[string]>
 const USB_C_DEFAULT_SCH_PIN_STYLE_BY_LABEL: ReadonlyArray<
   readonly [UsbCCanonicalLabel, SinglePinStyle]
@@ -73,6 +88,15 @@ export class Connector<
 > extends Chip<PinLabels> {
   private _getConnectorProps(): ConnectorProps {
     return this._parsedProps as ConnectorProps
+  }
+
+  initPorts(): void {
+    const props = this._getConnectorProps()
+    super.initPorts({
+      pinCount: isJstConnectorStandard(props.standard)
+        ? props.pinCount
+        : undefined,
+    })
   }
 
   private _hasExplicitFootprint(): boolean {
@@ -108,7 +132,7 @@ export class Connector<
   }
 
   private _handleStandardConnectorCircuitJsonFailure(
-    standard: string,
+    standard: ConnectorStandard,
     message: string,
   ): void {
     const { db } = this.root!
@@ -178,14 +202,19 @@ export class Connector<
   }
 
   private _addConnectorFootprintFromCircuitJson(
-    standard: string,
+    standard: ConnectorStandard,
     circuitJson: AnyCircuitElement[],
   ): void {
     const props = this._getConnectorProps()
     const standardizedCircuitJson =
       standard === "usb_c"
         ? convertCircuitJsonToUsbCStandardCircuitJson(circuitJson)
-        : circuitJson
+        : isJstConnectorStandard(standard)
+          ? convertCircuitJsonToJstStandardCircuitJson(
+              circuitJson,
+              props.pinCount ?? 0,
+            )
+          : circuitJson
 
     const fpComponents = createComponentsFromCircuitJson(
       {
@@ -237,7 +266,15 @@ export class Connector<
     const arrangement = super._getSchematicPortArrangement()
     if (arrangement && Object.keys(arrangement).length > 0) return arrangement
 
-    if (this._getConnectorProps().standard !== "usb_c") return arrangement
+    const props = this._getConnectorProps()
+    if (isJstConnectorStandard(props.standard)) {
+      return {
+        leftSize: 0,
+        rightSize: props.pinCount ?? 0,
+      }
+    }
+
+    if (props.standard !== "usb_c") return arrangement
 
     const labelToPinNumber = this._getUsbCCanonicalLabelToPinNumberMap()
     const rightPins = USB_C_SIGNAL_LABELS_IN_ORDER.map((label) =>
@@ -334,6 +371,7 @@ export class Connector<
       supplier_part_numbers: props.supplierPartNumbers,
       display_name: props.displayName,
       standard: props.standard,
+      pin_count: props.pinCount,
     } as SourceSimpleConnector)
 
     this.source_component_id = source_component.source_component_id!
@@ -344,7 +382,7 @@ export class Connector<
         standard: props.standard,
         subcircuit_id: this.getSubcircuit()?.subcircuit_id ?? undefined,
         warning_type: "source_missing_manufacturer_part_number_warning",
-        message: `${this.getString()} has standard="${props.standard}" but no manufacturerPartNumber (mfn). Add mfn if you do not want the USB-C part to change in future.`,
+        message: `${this.getString()} has standard="${props.standard}" but no manufacturerPartNumber (mfn). Add mfn if you do not want the connector part to change in future.`,
       })
     }
   }
@@ -386,6 +424,7 @@ export class Connector<
       name: this.name,
       manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
       standard,
+      pin_count: props.pinCount,
     }
 
     this._queueAsyncEffect("load-standard-connector-circuit-json", async () => {
