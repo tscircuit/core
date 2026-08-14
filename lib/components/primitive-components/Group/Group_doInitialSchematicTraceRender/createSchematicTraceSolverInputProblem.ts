@@ -363,6 +363,7 @@ export function createSchematicTraceSolverInputProblem(
     netLabelWidth?: number
     allowInlineNetLabel?: boolean
     inlineNetLabelWidth?: number
+    inlineNetLabelHeight?: number
     /**
      * Retained only to decide inline-label eligibility below; stripped before
      * the problem is handed to the solver.
