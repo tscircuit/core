@@ -33,6 +33,23 @@ export class SchematicRect extends PrimitiveComponent<
 
     const schematic_symbol_id = this._getSymbolAncestor()?.schematic_symbol_id
 
+    if (typeof props.width === "number" && props.width <= 0) {
+      db.source_invalid_component_property_error.insert({
+        source_component_id: schematic_component_id || "",
+        property_name: "width",
+        message: `Invalid width for SchematicRect: ${props.width}, which must be greater than zero.`,
+        error_type: "source_invalid_component_property_error",
+      })
+    }
+    if (typeof props.height === "number" && props.height <= 0) {
+      db.source_invalid_component_property_error.insert({
+        source_component_id: schematic_component_id || "",
+        property_name: "height",
+        message: `Invalid height for SchematicRect: ${props.height}, which must be greater than zero.`,
+        error_type: "source_invalid_component_property_error",
+      })
+    }
+
     const schematic_rect = db.schematic_rect.insert({
       schematic_symbol_id,
       center: {

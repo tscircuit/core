@@ -2196,6 +2196,23 @@ export class NormalComponent<
 
   doInitialSourceComponentPropertyValidation(): void {
     this._insertInvalidFootprintPropErrors()
+    const props = this._parsedProps
+    if (typeof props.schWidth === "number" && props.schWidth <= 0) {
+      this.root!.db.source_invalid_component_property_error.insert({
+        source_component_id: this.source_component_id || "",
+        property_name: "schWidth",
+        message: `Invalid schWidth for ${this.componentName} "${this.name}": ${props.schWidth}, which must be greater than zero.`,
+        error_type: "source_invalid_component_property_error",
+      })
+    }
+    if (typeof props.schHeight === "number" && props.schHeight <= 0) {
+      this.root!.db.source_invalid_component_property_error.insert({
+        source_component_id: this.source_component_id || "",
+        property_name: "schHeight",
+        message: `Invalid schHeight for ${this.componentName} "${this.name}": ${props.schHeight}, which must be greater than zero.`,
+        error_type: "source_invalid_component_property_error",
+      })
+    }
   }
 
   doInitialValidatePcbCoordinates(): void {

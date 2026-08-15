@@ -33,6 +33,15 @@ export class SchematicCircle extends PrimitiveComponent<
 
     const schematic_symbol_id = this._getSymbolAncestor()?.schematic_symbol_id
 
+    if (typeof props.radius === "number" && props.radius <= 0) {
+      db.source_invalid_component_property_error.insert({
+        source_component_id: schematic_component_id || "",
+        property_name: "radius",
+        message: `Invalid radius for SchematicCircle: ${props.radius}, which must be greater than zero.`,
+        error_type: "source_invalid_component_property_error",
+      })
+    }
+
     const schematic_circle = db.schematic_circle.insert({
       schematic_component_id,
       schematic_symbol_id,
