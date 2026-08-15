@@ -1583,7 +1583,9 @@ export class NormalComponent<
       for (const [pinName, target] of Object.entries(props.connections)) {
         const targets = Array.isArray(target) ? target : [target]
         for (const targetPath of targets) {
-          propsWithConnections.push(String(targetPath))
+          const targetStr = String(targetPath ?? "").trim()
+          if (!targetStr) continue
+          propsWithConnections.push(targetStr)
         }
       }
     }
@@ -2179,10 +2181,12 @@ export class NormalComponent<
       for (const [pinName, target] of Object.entries(props.connections)) {
         const targets = Array.isArray(target) ? target : [target]
         for (const targetPath of targets) {
+          const targetStr = String(targetPath ?? "").trim()
+          if (!targetStr) continue
           this.add(
             new Trace({
               from: `.${this.name} > .${pinName}`,
-              to: String(targetPath),
+              to: targetStr,
             }),
           )
         }
