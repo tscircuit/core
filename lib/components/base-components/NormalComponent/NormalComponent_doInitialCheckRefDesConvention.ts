@@ -66,9 +66,7 @@ export const NormalComponent_doInitialCheckRefDesConvention = (
     component.componentName === "Chip" &&
     sourceComponent.ftype === "simple_chip" &&
     actualPrefix !== undefined
-      ? chipRefDesRecommendations.find(({ prefix }) =>
-          actualPrefix.startsWith(prefix),
-        )
+      ? chipRefDesRecommendations.find(({ prefix }) => actualPrefix === prefix)
       : undefined
 
   const expectedPrefixes =
