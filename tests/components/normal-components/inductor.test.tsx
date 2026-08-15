@@ -56,8 +56,10 @@ test(
 
     const sourceComp = circuit.db.source_component.getWhere({ name: "L1" })!
     expect(sourceComp.ftype).toBe("simple_inductor")
-    expect(sourceComp.inductance).toBeCloseTo(10e-6, 8)
-    expect(sourceComp.display_inductance).toBe("10µH")
+    if (sourceComp.ftype === "simple_inductor") {
+      expect(sourceComp.inductance).toBeCloseTo(10e-6, 8)
+      expect(sourceComp.display_inductance).toBe("10µH")
+    }
   },
   { timeout: 30000 },
 )
