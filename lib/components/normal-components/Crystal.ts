@@ -15,6 +15,7 @@ type SubcircuitConnectivityMapKey = NonNullable<
 >
 
 const DEFAULT_CRYSTAL_MAX_TRACE_LENGTH_MM = 10
+const DEFAULT_CRYSTAL_MAX_VIA_COUNT = 0
 
 export class Crystal extends NormalComponent<
   typeof crystalProps,
@@ -118,15 +119,20 @@ export class Crystal extends NormalComponent<
         )
 
       if (!isDirectlyConnectedToCrystal && !isOnCrystalNet) continue
-      if (
-        typeof sourceTrace.max_length === "number" &&
-        sourceTrace.max_length <= maximumTraceLength
-      ) {
-        continue
-      }
+
+      const needsMaximumTraceLength =
+        typeof sourceTrace.max_length !== "number" ||
+        sourceTrace.max_length > maximumTraceLength
+      const needsMaximumViaCount =
+        sourceTrace.max_via_count !== DEFAULT_CRYSTAL_MAX_VIA_COUNT
+
+      if (!needsMaximumTraceLength && !needsMaximumViaCount) continue
 
       db.source_trace.update(sourceTrace.source_trace_id, {
-        max_length: maximumTraceLength,
+        ...(needsMaximumTraceLength ? { max_length: maximumTraceLength } : {}),
+        ...(needsMaximumViaCount
+          ? { max_via_count: DEFAULT_CRYSTAL_MAX_VIA_COUNT }
+          : {}),
       })
     }
   }

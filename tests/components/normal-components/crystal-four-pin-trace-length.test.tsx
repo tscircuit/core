@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("four-pin crystal maximum trace length only applies to signal pins", async () => {
+test("four-pin crystal routing constraints only apply to signal pins", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -56,6 +56,20 @@ test("four-pin crystal maximum trace length only applies to signal pins", async 
   ).toEqual({
     ".Y1 > .X1 to .C_XIN > .pin1": 10,
     ".Y1 > .X2 to .C_XOUT > .pin1": 10,
+    ".Y1 > .pin2 to net.GND": undefined,
+    ".Y1 > .pin4 to net.GND": undefined,
+    ".R_GND > .pin1 to net.GND": undefined,
+  })
+
+  expect(
+    Object.fromEntries(
+      circuit.db.source_trace
+        .list()
+        .map((trace) => [trace.display_name, trace.max_via_count]),
+    ),
+  ).toEqual({
+    ".Y1 > .X1 to .C_XIN > .pin1": 0,
+    ".Y1 > .X2 to .C_XOUT > .pin1": 0,
     ".Y1 > .pin2 to net.GND": undefined,
     ".Y1 > .pin4 to net.GND": undefined,
     ".R_GND > .pin1 to net.GND": undefined,
