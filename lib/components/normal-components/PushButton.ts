@@ -24,6 +24,13 @@ export class PushButton extends NormalComponent<
   }
 
   get defaultInternallyConnectedPinNames(): string[][] {
+    const ports = this.selectAll("port")
+    if (ports.length >= 4) {
+      return [
+        ["pin1", "pin2"],
+        ["pin3", "pin4"],
+      ]
+    }
     return []
   }
 
@@ -31,6 +38,10 @@ export class PushButton extends NormalComponent<
     super.initPorts({
       pinCount: 2,
       ignoreSymbolPorts: true,
+      additionalAliases: {
+        pin1: ["side1", "left", "anode", "pos", "1"],
+        pin2: ["side2", "right", "cathode", "neg", "2"],
+      },
     })
 
     const symbol = symbols[this._getSchematicSymbolNameOrThrow()]!
