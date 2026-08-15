@@ -317,6 +317,7 @@ export class Trace
           ports.map((p) => p.port),
           { db },
         ),
+      max_via_count: props.maxViaCount,
       display_name: props.displayName ?? displayName,
       min_trace_thickness: this._getExplicitTraceThickness(),
     })
