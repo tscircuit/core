@@ -55,19 +55,21 @@ export class Capacitor extends NormalComponent<
 
   _getSchematicSymbolDisplayValue(): string | undefined {
     const inputCapacitance = this.props.capacitance
-    let capacitanceDisplay: string | undefined
+    const capValue = this._parsedProps.capacitance
 
     if (
-      this._parsedProps.capacitance !== undefined &&
-      !isNaN(this._parsedProps.capacitance)
+      capValue === undefined ||
+      capValue === null ||
+      typeof capValue !== "number" ||
+      Number.isNaN(capValue)
     ) {
-      capacitanceDisplay =
-        typeof inputCapacitance === "string"
-          ? inputCapacitance
-          : `${formatSiUnit(this._parsedProps.capacitance)}F`
-    } else {
-      capacitanceDisplay = `${formatSiUnit(this._parsedProps.capacitance)}F`
+      return undefined
     }
+
+    let capacitanceDisplay: string =
+      typeof inputCapacitance === "string"
+        ? inputCapacitance
+        : `${formatSiUnit(capValue)}F`
 
     if (
       this._parsedProps.schShowRatings &&
@@ -115,6 +117,18 @@ export class Capacitor extends NormalComponent<
   doInitialSourceRender() {
     const { db } = this.root!
     const { _parsedProps: props } = this
+
+    if (
+      props.capacitance === undefined ||
+      props.capacitance === null ||
+      typeof props.capacitance !== "number" ||
+      Number.isNaN(props.capacitance)
+    ) {
+      throw new Error(
+        `Invalid capacitance for capacitor "${this.name}": "${this.props.capacitance}". Expected a valid numeric capacitance or SI unit string (e.g. "10uF", "100nF").`,
+      )
+    }
+
     const source_component = db.source_component.insert({
       ftype: "simple_capacitor",
       name: this.name,

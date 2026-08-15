@@ -173,7 +173,7 @@ test("capacitor with numeric values handles display correctly", () => {
   )
 })
 
-test("capacitor with invalid capacitance string outputs NaNpF display_capacitance", () => {
+test("capacitor with invalid capacitance string throws validation error (#3110)", () => {
   const { project } = getTestFixture()
 
   project.add(
@@ -188,15 +188,7 @@ test("capacitor with invalid capacitance string outputs NaNpF display_capacitanc
     </board>,
   )
 
-  project.render()
-
-  const capacitors = project.db.source_component.list({
-    ftype: "simple_capacitor",
-  }) as Array<{
-    ftype: "simple_capacitor"
-    display_capacitance?: string
-  }>
-
-  expect(capacitors).toHaveLength(1)
-  expect(capacitors[0].display_capacitance).toBe("NaNpF")
+  expect(() => project.render()).toThrow(
+    /Invalid capacitance for capacitor "C1": "lijF"/,
+  )
 })
