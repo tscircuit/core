@@ -348,7 +348,9 @@ export class NormalComponent<
       const sides = ["left", "right", "top", "bottom"]
       let pinNum = 1
       for (const side of sides) {
-        const size = (schPortArrangement as any)[`${side}Size`]
+        const size =
+          (schPortArrangement as any)[`${side}PinCount`] ??
+          (schPortArrangement as any)[`${side}Size`]
         for (let i = 0; i < size; i++) {
           const nextPinNumber = pinNum++
           if (hasExistingOrQueuedPortWithPinNumber(nextPinNumber)) continue
