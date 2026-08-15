@@ -25,6 +25,9 @@ export function inflateStandalonePcbPrimitives(
     "pcb_note_path",
     "pcb_note_line",
     "pcb_via",
+    "pcb_hole",
+    "pcb_plated_hole",
+    "pcb_cutout",
   ]
 
   const standalonePrimitives = injectionDb.toArray().filter((elm) => {
@@ -45,6 +48,12 @@ export function inflateStandalonePcbPrimitives(
         )
 
       return !isHandledByInflatedTrace
+    }
+    if (elm.type === "pcb_cutout") {
+      // A cutout is a hole in the board itself: `pcb_cutout` has no
+      // `pcb_component_id` field at all, so it is always standalone. The check
+      // below requires the key to be present and would drop every cutout.
+      return true
     }
     // Check for null or undefined pcb_component_id
     return (
