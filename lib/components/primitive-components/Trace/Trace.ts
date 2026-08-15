@@ -286,6 +286,19 @@ export class Trace
 
     if (!allPortsFound) return
 
+    const uniquePortIds = new Set(
+      ports.map((p) => p.port.source_port_id).filter(Boolean),
+    )
+    if (ports.length >= 2 && uniquePortIds.size === 1) {
+      db.source_trace_not_connected_error.insert({
+        message: `${this.getString()} connects a port to itself; both ends resolve to the same port.`,
+        subcircuit_id: this.getSubcircuit()?.subcircuit_id ?? undefined,
+        error_type: "source_trace_not_connected_error",
+      })
+      this._couldNotFindPort = true
+      return
+    }
+
     this._traceConnectionHash = this._computeTraceConnectionHash()
 
     const existingTraces = db.source_trace.list()
