@@ -25,6 +25,7 @@ import type { BoardI } from "./BoardI"
 import { Board_doInitialPcbPlacementDesignRuleChecks } from "./Board_doInitialPcbPlacementDesignRuleChecks"
 
 const MIN_EFFECTIVE_BORDER_RADIUS_MM = 0.01
+const DEFAULT_VIA_PAD_DIAMETER_OVER_HOLE_DIAMETER_MM = 0.15
 
 const getRoundedRectOutline = (
   width: number,
@@ -507,6 +508,15 @@ export class Board
       }
     }
     const subcircuitProps = this.getSubcircuit()._parsedProps
+    const resolvedMinViaHoleDiameter =
+      subcircuitProps.minViaHoleDiameter ??
+      jlcMinTolerances.min_via_hole_diameter
+    const resolvedMinViaPadDiameter =
+      subcircuitProps.minViaPadDiameter ??
+      (subcircuitProps.minViaHoleDiameter !== undefined
+        ? subcircuitProps.minViaHoleDiameter +
+          DEFAULT_VIA_PAD_DIAMETER_OVER_HOLE_DIAMETER_MM
+        : jlcMinTolerances.min_via_pad_diameter)
     const pcb_board = db.pcb_board.insert({
       source_board_id: this.source_board_id,
       center,
@@ -533,12 +543,8 @@ export class Board
 
       min_trace_width:
         subcircuitProps.minTraceWidth ?? jlcMinTolerances.min_trace_width,
-      min_via_hole_diameter:
-        subcircuitProps.minViaHoleDiameter ??
-        jlcMinTolerances.min_via_hole_diameter,
-      min_via_pad_diameter:
-        subcircuitProps.minViaPadDiameter ??
-        jlcMinTolerances.min_via_pad_diameter,
+      min_via_hole_diameter: resolvedMinViaHoleDiameter,
+      min_via_pad_diameter: resolvedMinViaPadDiameter,
       min_via_hole_edge_to_via_hole_edge_clearance:
         subcircuitProps.minViaHoleEdgeToViaHoleEdgeClearance ??
         jlcMinTolerances.min_via_hole_edge_to_via_hole_edge_clearance,
