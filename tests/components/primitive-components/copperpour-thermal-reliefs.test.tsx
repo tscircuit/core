@@ -29,7 +29,7 @@ test("copperpour creates thermal relief spokes around same-net plated holes", as
         connectsTo="net.GND"
         layer="top"
         padMargin="0.45mm"
-        thermalRelief={{ spokeWidth: "0.3mm", spokeCount: 4 }}
+        useThermalReliefs
       />
       <pcbnotetext
         pcbX={0}
@@ -45,7 +45,6 @@ test("copperpour creates thermal relief spokes around same-net plated holes", as
   expect(copperPourEvent?.solverParams.regionsForPour[0]).toMatchObject({
     use_thermal_reliefs: true,
     thermal_relief_spoke_width: 0.3,
-    thermal_relief_spoke_count: 4,
   })
   expect(circuit.db.pcb_plated_hole.list()).toHaveLength(4)
   expect(circuit.db.pcb_copper_pour.list().length).toBeGreaterThan(0)
