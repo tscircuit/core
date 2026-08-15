@@ -32,6 +32,7 @@ import {
   flipY,
   identity,
   rotate,
+  scale,
   translate,
 } from "transformation-matrix"
 import type { Primitive, ZodType } from "zod"
@@ -727,8 +728,35 @@ export abstract class PrimitiveComponent<
    * Computes a transformation matrix from the props of this component for
    * schematic components
    */
+  _getSchematicSymbolScale(): number {
+    const parsedSchSize = (this._parsedProps as any)?.schSize
+    const rawSchSize = (this.props as any)?.schSize
+    const schSize =
+      typeof parsedSchSize === "number" && !Number.isNaN(parsedSchSize)
+        ? parsedSchSize
+        : rawSchSize
+
+    if (!schSize) return 1
+    if (schSize === "xs") return 0.5
+    if (schSize === "sm" || schSize === "small") return 0.75
+    if (schSize === "default") return 1
+    if (schSize === "md") return 1.25
+    if (typeof schSize === "number" && !Number.isNaN(schSize)) {
+      const symbol = this.getSchematicSymbol()
+      if (symbol && symbol.size.width > 0) {
+        return schSize / symbol.size.width
+      }
+      return schSize
+    }
+    return 1
+  }
+
   computeSchematicPropsTransform(): Matrix {
     const { _parsedProps: props } = this
+    const s = this._getSchematicSymbolScale()
+    if (s !== 1) {
+      return compose(translate(props.schX ?? 0, props.schY ?? 0), scale(s, s))
+    }
     return compose(translate(props.schX ?? 0, props.schY ?? 0))
   }
 

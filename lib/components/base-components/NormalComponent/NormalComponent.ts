@@ -796,9 +796,13 @@ export class NormalComponent<
     const center = this._getGlobalSchematicPositionBeforeLayout()
 
     if (symbol) {
+      const s = this._getSchematicSymbolScale()
       const schematic_component = db.schematic_component.insert({
         center,
-        size: { ...symbol.size },
+        size: {
+          width: symbol.size.width * s,
+          height: symbol.size.height * s,
+        },
         source_component_id: this.source_component_id!,
         is_box_with_pins: true,
         symbol_name,
