@@ -162,11 +162,15 @@ const generateCutoutsAndMousebitesForOutline = (
       }
     }
 
-    // Create cutouts on both sides of the gap, extending them to overlap at corners
-    const cutoutParts = [
-      { start: 0 - start_ext, end: gapStartDist },
-      { start: gapEndDist, end: segmentLength + end_ext },
-    ]
+    // A zero-length gap is a continuous outline route, so emit one cutout for
+    // the segment instead of two adjacent cutouts that happen to meet.
+    const cutoutParts =
+      effectiveGapLength < 1e-6
+        ? [{ start: 0 - start_ext, end: segmentLength + end_ext }]
+        : [
+            { start: 0 - start_ext, end: gapStartDist },
+            { start: gapEndDist, end: segmentLength + end_ext },
+          ]
 
     const extrusion = normalVec.multiply(cutoutWidth)
 
@@ -299,4 +303,75 @@ export function generatePanelTabsAndMouseBites(
     tabCutouts,
     mouseBiteHoles,
   }
+}
+
+/**
+ * Creates continuous router-slot rectangles outside every board outline.
+ *
+ * Input and output geometry use circuit-world coordinates in millimeters:
+ * +X is right, +Y is top, and every outline entry is a position. The cutouts
+ * extend outward from each board edge so the finished board outline is not
+ * reduced by the routing width.
+ */
+export function generatePanelOutlineRoutingCutouts(
+  boards: PcbBoard[],
+  options: { cutoutWidth: number },
+): PcbCutout[] {
+  const boardsWithOutlines = boards.map((board) => {
+    if (
+      (!board.outline || board.outline.length === 0) &&
+      board.width &&
+      board.height
+    ) {
+      const halfWidth = board.width / 2
+      const halfHeight = board.height / 2
+      return {
+        ...board,
+        outline: [
+          {
+            x: board.center.x - halfWidth,
+            y: board.center.y - halfHeight,
+          },
+          {
+            x: board.center.x + halfWidth,
+            y: board.center.y - halfHeight,
+          },
+          {
+            x: board.center.x + halfWidth,
+            y: board.center.y + halfHeight,
+          },
+          {
+            x: board.center.x - halfWidth,
+            y: board.center.y + halfHeight,
+          },
+        ],
+      }
+    }
+    return board
+  })
+
+  const outlineRoutingCutouts = boardsWithOutlines.flatMap((board) => {
+    if (!board.outline || board.outline.length === 0) return []
+
+    const { tabCutouts } = generateCutoutsAndMousebitesForOutline(
+      board.outline,
+      {
+        gapLength: 0,
+        cutoutWidth: options.cutoutWidth,
+        mouseBites: false,
+        mouseBiteHoleDiameter: 0,
+        mouseBiteHoleSpacing: 0,
+      },
+    )
+
+    return tabCutouts.map((cutout) => ({
+      ...cutout,
+      pcb_board_id: board.pcb_board_id,
+    }))
+  })
+
+  return outlineRoutingCutouts.map((cutout, outlineRoutingCutoutIndex) => ({
+    ...cutout,
+    pcb_cutout_id: `panel_outline_routing_cutout_${outlineRoutingCutoutIndex}`,
+  }))
 }

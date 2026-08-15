@@ -11,7 +11,7 @@ import { Subpanel } from "./Subpanel"
  * - Can contain Board elements
  * - Can contain Subpanel elements (for nested grouping)
  * - Support grid layout mode for automatic board positioning
- * - Support tab routing and mouse bites for panelization
+ * - Support tab routing, outline routing, and mouse bites for panelization
  */
 export class Panel extends Subpanel {
   get config() {
