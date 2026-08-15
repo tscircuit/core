@@ -5,6 +5,24 @@ export const underscorifyPortArrangement = (
   portArrangement?: PortArrangement | undefined,
 ): SchematicComponentInput["port_arrangement"] | undefined => {
   if (!portArrangement) return undefined
+
+  const convertSide = (side?: {
+    pins?: (number | string)[]
+    direction?: "top-to-bottom" | "bottom-to-top" | "left-to-right" | "right-to-left"
+  }) => {
+    if (!side) return undefined
+    return {
+      ...side,
+      pins: side.pins
+        ?.map((p) => {
+          if (typeof p === "number") return p
+          const match = String(p).match(/^(?:pin)?(\d+)$/i)
+          return match ? parseInt(match[1]!, 10) : Number(p)
+        })
+        .filter((n) => Number.isFinite(n)),
+    }
+  }
+
   if (
     "leftSide" in portArrangement ||
     "rightSide" in portArrangement ||
@@ -12,11 +30,11 @@ export const underscorifyPortArrangement = (
     "bottomSide" in portArrangement
   ) {
     return {
-      left_side: portArrangement.leftSide,
-      right_side: portArrangement.rightSide,
-      top_side: portArrangement.topSide,
-      bottom_side: portArrangement.bottomSide,
-    }
+      left_side: convertSide(portArrangement.leftSide as any),
+      right_side: convertSide(portArrangement.rightSide as any),
+      top_side: convertSide(portArrangement.topSide as any),
+      bottom_side: convertSide(portArrangement.bottomSide as any),
+    } as any
   }
 
   if (
