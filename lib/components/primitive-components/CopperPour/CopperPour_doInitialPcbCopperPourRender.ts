@@ -71,6 +71,13 @@ const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
         pour_margin: clearance,
         board_edge_margin: props.boardEdgeMargin ?? clearance,
         cutout_margin: props.cutoutMargin ?? clearance,
+        ...(props.thermalRelief
+          ? {
+              use_thermal_reliefs: true,
+              thermal_relief_spoke_width: props.thermalRelief.spokeWidth,
+              thermal_relief_spoke_count: props.thermalRelief.spokeCount,
+            }
+          : {}),
         outline: props.outline ?? resolvedPcbBoardOutline,
       }
     }),
