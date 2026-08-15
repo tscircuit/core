@@ -26,7 +26,16 @@ export class Inductor extends NormalComponent<
   }
 
   _getSchematicSymbolDisplayValue(): string | undefined {
-    return `${formatSiUnit(this._parsedProps.inductance)}H`
+    const indValue = this._parsedProps.inductance
+    if (
+      indValue === undefined ||
+      indValue === null ||
+      typeof indValue !== "number" ||
+      Number.isNaN(indValue)
+    ) {
+      return undefined
+    }
+    return `${formatSiUnit(indValue)}H`
   }
 
   initPorts() {
@@ -41,10 +50,22 @@ export class Inductor extends NormalComponent<
   doInitialSourceRender() {
     const { db } = this.root!
     const { _parsedProps: props } = this
+
+    if (
+      props.inductance === undefined ||
+      props.inductance === null ||
+      typeof props.inductance !== "number" ||
+      Number.isNaN(props.inductance)
+    ) {
+      throw new Error(
+        `Invalid inductance for inductor "${this.name}": "${this.props.inductance}". Expected a valid numeric inductance or SI unit string (e.g. "10uH", "10mH", 1e-6).`,
+      )
+    }
+
     const source_component = db.source_component.insert({
       name: this.name,
       ftype: FTYPE.simple_inductor,
-      inductance: this.props.inductance,
+      inductance: props.inductance,
       max_current_rating:
         props.maxCurrentRating === undefined
           ? undefined
