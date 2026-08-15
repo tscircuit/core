@@ -11,6 +11,7 @@ import { markTraceSegmentsInsideCopperPour } from "./utils/mark-trace-segments-i
 // Each CopperPour queues this phase, but the solver processes every pour in a
 // subcircuit together. Share that batch across the component-owned effects.
 const pendingCopperPourRenders = new WeakMap<ISubcircuit, Promise<void>>()
+const DEFAULT_THERMAL_RELIEF_SPOKE_WIDTH_MM = 0.3
 
 const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
   if (!subcircuit.root) return
@@ -71,6 +72,12 @@ const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
         pour_margin: clearance,
         board_edge_margin: props.boardEdgeMargin ?? clearance,
         cutout_margin: props.cutoutMargin ?? clearance,
+        ...(props.useThermalReliefs
+          ? {
+              use_thermal_reliefs: true,
+              thermal_relief_spoke_width: DEFAULT_THERMAL_RELIEF_SPOKE_WIDTH_MM,
+            }
+          : {}),
         outline: props.outline ?? resolvedPcbBoardOutline,
       }
     }),
