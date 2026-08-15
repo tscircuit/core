@@ -5,6 +5,7 @@ import { compose, identity, translate } from "transformation-matrix"
 import {
   DEFAULT_TAB_LENGTH,
   DEFAULT_TAB_WIDTH,
+  generatePanelOutlineRoutingCutouts,
   generatePanelTabsAndMouseBites,
 } from "../../utils/panels/generate-panel-tabs-and-mouse-bites"
 import { packIntoGrid } from "../../utils/panels/pack-into-grid"
@@ -21,7 +22,7 @@ import { Board } from "./Board"
  */
 export class Subpanel extends Group<typeof subpanelProps> {
   pcb_panel_id: string | null = null
-  _tabsAndMouseBitesGenerated = false
+  _panelizationFeaturesGenerated = false
 
   get config() {
     return {
@@ -278,7 +279,7 @@ export class Subpanel extends Group<typeof subpanelProps> {
       }
     }
 
-    this._generateTabsAndMouseBites()
+    this._generatePanelizationFeatures()
   }
 
   /**
@@ -329,10 +330,10 @@ export class Subpanel extends Group<typeof subpanelProps> {
   }
 
   /**
-   * Generate tabs and mouse bites for panelization
+   * Generate routed cutouts and optional mouse bites for panelization.
    */
-  protected _generateTabsAndMouseBites() {
-    if (this._tabsAndMouseBitesGenerated) return
+  protected _generatePanelizationFeatures() {
+    if (this._panelizationFeaturesGenerated) return
 
     const { db } = this.root!
     const props = this._parsedProps
@@ -353,30 +354,43 @@ export class Subpanel extends Group<typeof subpanelProps> {
       if (boardsInPanel.length === 0) return
 
       const tabWidth = props.tabWidth ?? DEFAULT_TAB_WIDTH
-      const boardGap = props.boardGap ?? tabWidth
-      // Generate tabs and mouse bites
-      const { tabCutouts, mouseBiteHoles } = generatePanelTabsAndMouseBites(
-        boardsInPanel,
-        {
-          boardGap: boardGap,
-          tabWidth: tabWidth,
-          tabLength: props.tabLength ?? DEFAULT_TAB_LENGTH,
-          mouseBites: props.mouseBites ?? true,
-        },
-      )
 
-      // Insert tab cutouts into the database
-      for (const tabCutout of tabCutouts) {
-        db.pcb_cutout.insert(tabCutout)
-      }
+      if (panelizationMethod === "outline_routing") {
+        const outlineRoutingCutouts = generatePanelOutlineRoutingCutouts(
+          boardsInPanel,
+          { cutoutWidth: tabWidth },
+        )
 
-      // Insert mouse bite holes into the database
-      for (const mouseBiteHole of mouseBiteHoles) {
-        db.pcb_hole.insert(mouseBiteHole)
+        for (const outlineRoutingCutout of outlineRoutingCutouts) {
+          db.pcb_cutout.insert({
+            ...outlineRoutingCutout,
+            pcb_group_id: this.pcb_group_id ?? undefined,
+            pcb_panel_id: this.pcb_panel_id ?? undefined,
+          })
+        }
+      } else {
+        const boardGap = props.boardGap ?? tabWidth
+        const { tabCutouts, mouseBiteHoles } = generatePanelTabsAndMouseBites(
+          boardsInPanel,
+          {
+            boardGap,
+            tabWidth,
+            tabLength: props.tabLength ?? DEFAULT_TAB_LENGTH,
+            mouseBites: props.mouseBites ?? true,
+          },
+        )
+
+        for (const tabCutout of tabCutouts) {
+          db.pcb_cutout.insert(tabCutout)
+        }
+
+        for (const mouseBiteHole of mouseBiteHoles) {
+          db.pcb_hole.insert(mouseBiteHole)
+        }
       }
     }
 
-    this._tabsAndMouseBitesGenerated = true
+    this._panelizationFeaturesGenerated = true
   }
 
   /**
