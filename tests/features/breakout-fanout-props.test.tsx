@@ -174,9 +174,11 @@ test("breakout fanout props escape buses and plane nets without a phase", async 
     expect(pour?.shape).toBe("brep")
     if (!pour || pour.shape !== "brep") continue
 
-    const sourceTrace = circuit.db.source_trace.get(
-      via.pcb_trace_id.replace(/^fanout:/, ""),
-    )
+    const routedTrace = circuit.db.pcb_trace.get(via.pcb_trace_id)
+    expect(routedTrace?.source_trace_id).toBeDefined()
+    if (!routedTrace?.source_trace_id) continue
+
+    const sourceTrace = circuit.db.source_trace.get(routedTrace.source_trace_id)
     expect(sourceTrace?.connected_source_net_ids).toContain(pour.source_net_id)
     expect(
       pour.brep_shape.inner_rings.some((ring) =>
