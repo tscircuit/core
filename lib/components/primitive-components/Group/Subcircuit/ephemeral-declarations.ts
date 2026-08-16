@@ -1,18 +1,18 @@
 /**
  * A component that exists only in the render tree, with no Circuit JSON record
- * of its own.
+ * of its own, and therefore cannot be re-inflated.
  *
- * `<enclosure.cutoutaperture>` and `<enclosure.screwboss>` are the current
- * examples: they are read by the enclosure solver during the render and emit
- * nothing, deliberately, because a solver input is not something Circuit JSON
- * should have to carry (see the mounting-hardware RFC 1.5.3).
- *
- * That choice has one consequence, and this is it. Subcircuit isolation renders
- * a subtree separately, **replaces it with `AnyCircuitElement[]`** and rebuilds
- * components from those records with the inflators in `./inflators/`. Anything
- * with no record has nothing to rebuild from, so it silently disappears -- and
- * "silently" is the problem: the enclosure comes out missing a boss with no
- * error anywhere.
+ * Subcircuit isolation renders a subtree separately, **replaces it with
+ * `AnyCircuitElement[]`** and rebuilds components from those records with the
+ * inflators in `./inflators/`. Anything with no circuit-json record has nothing
+ * to rebuild from, so it silently disappears. So if we find any elements that are
+ * "Ephemeral" i.e. do not have a circuit-json representaiton in the tsx tree,
+ * disable caching. This is not especially important yet; subcircuit caching is
+ * not yet widely used nor does it boost performance substantially in most cases
+ * yet, this isolation guard is intended to be helpful to developers and agents
+ * who are writing new elements to alleviate concern that subcircuit isolation will
+ * cause silent bugs; now it won't, it will safely disable caching for subcircuits
+ * containing non-inflatable elements, which is fine for now.
  *
  * The subtree is checked in `./isolation-round-trip.ts`, which declines
  * isolation for any subcircuit containing one of these.
