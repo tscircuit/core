@@ -14,6 +14,13 @@ import {
 export class EnclosureCutoutAperture extends PrimitiveComponent<
   typeof enclosureCutoutApertureProps
 > {
+  /**
+   * No Circuit JSON record of its own, so it cannot survive being round-tripped
+   * through one. Subcircuit isolation checks this and declines to isolate a
+   * subtree containing it, rather than dropping it silently.
+   */
+  isEphemeralDeclaration = true as const
+
   get config() {
     return {
       componentName: "EnclosureCutoutAperture",

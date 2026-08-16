@@ -1,5 +1,9 @@
 import type { AnyCircuitElement } from "circuit-json"
 import { IsolatedCircuit } from "lib/IsolatedCircuit"
+import {
+  findComponentsThatCannotSurviveIsolation,
+  warnIsolationDeclined,
+} from "./isolation-round-trip"
 import type { ISubcircuit } from "./ISubcircuit"
 
 /**
@@ -26,6 +30,20 @@ export function Subcircuit_doInitialRenderIsolatedSubcircuits(
   if (subcircuit._isolatedCircuitJson) return
 
   if (!subcircuit.getSubcircuitPropHash) return
+
+  // Isolation is an optimization; correctness is not negotiable against it.
+  //
+  // This subtree is about to be replaced by Circuit JSON and rebuilt from it, so
+  // anything the inflators cannot put back would be dropped without a trace --
+  // an enclosure simply comes out missing a boss. Rendering this one subcircuit
+  // normally costs a cache miss and nothing else; measured, the whole feature is
+  // worth 1.0-1.3x on 4-24 identical modules, so declining it is a rounding
+  // error against getting the wrong board. See ./isolation-round-trip.ts.
+  const blockers = findComponentsThatCannotSurviveIsolation(subcircuit)
+  if (blockers.length > 0) {
+    warnIsolationDeclined(subcircuit, blockers)
+    return
+  }
 
   const propHash = subcircuit.getSubcircuitPropHash()
   const cachedSubcircuits = subcircuit.root?.cachedSubcircuits
