@@ -2,6 +2,7 @@ interface ViaStitchingPowerCircuitProps {
   chipFootprint: string
   circuitLabel: string
   passiveFootprints: [string, string, string, string?]
+  r1PcbX?: number
 }
 
 export const VIA_STITCHING_POWER_TRACE_WIDTH_MM = 0.8
@@ -10,6 +11,7 @@ const ViaStitchingPowerCircuit = ({
   chipFootprint,
   circuitLabel,
   passiveFootprints,
+  r1PcbX = -3,
 }: ViaStitchingPowerCircuitProps) => {
   const [powerCapFootprint, pullupFootprint, bypassFootprint, filterFootprint] =
     passiveFootprints
@@ -48,7 +50,7 @@ const ViaStitchingPowerCircuit = ({
         name="R1"
         resistance="10k"
         footprint={pullupFootprint}
-        pcbX={-3}
+        pcbX={r1PcbX}
         pcbY={7}
         connections={{
           pin1: "U1.pin3",
@@ -120,6 +122,7 @@ export const ViaStitchingSoic16Circuit = () => (
     chipFootprint="soic16"
     circuitLabel="SOIC-16 with 4 passives"
     passiveFootprints={["0805", "0603", "0402", "1206"]}
+    r1PcbX={-2}
   />
 )
 
