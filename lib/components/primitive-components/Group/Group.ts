@@ -82,6 +82,7 @@ import { Group_doInitialSchematicLayoutSections } from "./Group_doInitialSchemat
 import { Group_doInitialSchematicTraceRender } from "./Group_doInitialSchematicTraceRender/Group_doInitialSchematicTraceRender"
 import { Group_doInitialSimulationSpiceEngineRender } from "./Group_doInitialSimulationSpiceEngineRender"
 import { Group_doInitialSourceAddConnectivityMapKey } from "./Group_doInitialSourceAddConnectivityMapKey"
+import { Group_doInitialStandaloneSubcircuitPcbDesignRuleChecks } from "./Group_doInitialStandaloneSubcircuitPcbDesignRuleChecks"
 import { Group_getFanoutPourNetMap } from "./Group_getFanoutPourNetMap"
 import { Group_getRoutingPhasePlans } from "./Group_getRoutingPhasePlans"
 import {
@@ -242,6 +243,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   _pcbPlacementDrcCheckError: string | null = null
 
   _pcbPlacementDrcChecksPending = false
+
+  _standaloneSubcircuitDrcChecksComplete = false
+
+  _standaloneSubcircuitDrcChecksInProgress = false
 
   _isInflatedFromCircuitJson = false
 
@@ -2428,6 +2433,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         }
       }
     }
+
+    Group_doInitialStandaloneSubcircuitPcbDesignRuleChecks(this)
   }
 
   doInitialSchematicReplaceNetLabelsWithSymbols() {

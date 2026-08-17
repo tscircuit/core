@@ -136,6 +136,7 @@ const asyncPhaseDependencies: Partial<Record<RenderPhase, RenderPhase[]>> = {
     "PcbFootprintStringRender",
     "FetchPartFootprint",
     "PcbPlacementDesignRuleChecks",
+    "PcbTraceRender",
   ],
   SilkscreenOverlapAdjustment: [
     "PcbFootprintStringRender",
