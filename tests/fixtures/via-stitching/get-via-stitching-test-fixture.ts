@@ -23,8 +23,8 @@ export const getViaStitchingTestFixture = () => {
       const solver = new ViaStitchSolver({
         circuitJson: fixture.circuit.getCircuitJson(),
         options: {
-          minimumPourWidth: 1.8,
-          pourPadding: 0.5,
+          minimumPourWidth: 1.4,
+          pourPadding: 0.3,
           viaPitch: 2,
           viaHoleDiameter: 0.3,
           viaOuterDiameter: 0.6,

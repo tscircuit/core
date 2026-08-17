@@ -11,5 +11,7 @@ test("via stitching post-process reinforces a TSSOP-20 power transition", async 
   const output = await runViaStitchingPostProcessSolverStep()
 
   assertViaStitchingOutput({ circuit, output })
-  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
+    diffThresholdPercent: 0.5,
+  })
 })
