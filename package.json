@@ -58,7 +58,7 @@
     "@tscircuit/schematic-trace-solver": "^0.0.134",
     "@tscircuit/solver-utils": "^0.0.16",
     "@tscircuit/soup-util": "^0.0.41",
-    "@tscircuit/via-stitch-solver": "github:tscircuit/via-stitch-solver#f1b948ed00f6e44ab99151896549d0a3848e12f3",
+    "@tscircuit/via-stitch-solver": "github:tscircuit/via-stitch-solver#de2a4fbfebd47f6578f3e17387cbfe32650dcfcc",
     "@types/bun": "^1.2.16",
     "@types/debug": "^4.1.12",
     "@types/react": "^19.1.8",
