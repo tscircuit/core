@@ -9,6 +9,7 @@ import {
 } from "lib/utils/gnd-power-net-regex"
 import type { AnyCircuitElement, SourceTrace } from "circuit-json"
 import { autoroute } from "@tscircuit/infgrid-ijump-astar"
+import { Net_doInitialPcbViaStitchRender } from "./Net_doInitialPcbViaStitchRender"
 
 export class Net extends PrimitiveComponent<typeof netProps> {
   source_net_id?: string
@@ -223,6 +224,10 @@ export class Net extends PrimitiveComponent<typeof netProps> {
 
       db.pcb_trace.insert(trace as any)
     }
+  }
+
+  doInitialPcbViaStitchRender(): void {
+    Net_doInitialPcbViaStitchRender(this)
   }
 
   renderError(

@@ -1,14 +1,11 @@
 import { expect } from "bun:test"
-import type { ViaStitchSolverOutput } from "@tscircuit/via-stitch-solver"
 import type { RootCircuit } from "lib/RootCircuit"
 import { VIA_STITCHING_POWER_TRACE_WIDTH_MM } from "./via-stitching-test-circuits"
 
 export const assertViaStitchingOutput = ({
   circuit,
-  output,
 }: {
   circuit: RootCircuit
-  output: ViaStitchSolverOutput
 }) => {
   const powerSourceNetIds = new Set(
     circuit.db.source_net
@@ -62,39 +59,46 @@ export const assertViaStitchingOutput = ({
       .map((routePoint) => ({ x: routePoint.x, y: routePoint.y })),
   )
 
-  expect(output.processedPowerTraceCount).toBeGreaterThan(0)
-  expect(output.detectedLayerTransitionCount).toBeGreaterThan(0)
-  expect(output.pcbCopperPours.length).toBeGreaterThanOrEqual(
-    output.processedPowerTraceCount * 2,
-  )
-  expect(
-    new Set(output.pcbCopperPours.map((copperPour) => copperPour.layer)),
-  ).toEqual(new Set(["top", "bottom"]))
-  expect(
-    output.pcbCopperPours.every(
+  const powerCopperPours = circuit.db.pcb_copper_pour
+    .list()
+    .filter(
       (copperPour) =>
         copperPour.source_net_id !== undefined &&
-        powerSourceNetIds.has(copperPour.source_net_id) &&
-        copperPour.covered_with_solder_mask,
-    ),
-  ).toBe(true)
+        powerSourceNetIds.has(copperPour.source_net_id),
+    )
+  const powerStitchingVias = circuit.db.pcb_via
+    .list()
+    .filter(
+      (pcbVia) =>
+        pcbVia.source_net_id !== undefined &&
+        powerSourceNetIds.has(pcbVia.source_net_id),
+    )
 
-  expect(output.pcbVias.length).toBeGreaterThan(
-    output.detectedLayerTransitionCount,
+  expect(existingTransitionPoints.length).toBeGreaterThan(0)
+  expect(powerCopperPours.length).toBeGreaterThanOrEqual(
+    routedPowerTraces.length * 2,
   )
   expect(
-    output.pcbVias.every(
+    new Set(powerCopperPours.map((copperPour) => copperPour.layer)),
+  ).toEqual(new Set(["top", "bottom"]))
+  expect(
+    powerCopperPours.every((copperPour) => copperPour.covered_with_solder_mask),
+  ).toBe(true)
+
+  expect(powerStitchingVias.length).toBeGreaterThan(
+    existingTransitionPoints.length,
+  )
+  expect(
+    powerStitchingVias.every(
       (stitchingVia) =>
         stitchingVia.layers.join(",") === "top,bottom" &&
         stitchingVia.from_layer === "top" &&
         stitchingVia.to_layer === "bottom" &&
-        stitchingVia.source_net_id !== undefined &&
-        powerSourceNetIds.has(stitchingVia.source_net_id) &&
         stitchingVia.subcircuit_connectivity_map_key !== undefined,
     ),
   ).toBe(true)
   expect(
-    output.pcbVias.some((stitchingVia) =>
+    powerStitchingVias.some((stitchingVia) =>
       existingTransitionPoints.every(
         (transitionPoint) =>
           Math.hypot(
