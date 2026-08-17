@@ -10,7 +10,5 @@ test("via stitching post-process reinforces a QFN-32 power transition", async ()
   await circuit.renderUntilSettled()
 
   assertViaStitchingOutput({ circuit })
-  await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
-    diffThresholdPercent: 0.5,
-  })
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
