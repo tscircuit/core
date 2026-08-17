@@ -3,7 +3,7 @@ import type {
   SimplifiedPcbTrace as AutorouterSimplifiedPcbTrace,
 } from "@tscircuit/capacity-autorouter"
 import type { PcbGroup } from "circuit-json"
-import type { Obstacle } from "../obstacles/types"
+import type { CircuitJsonMetadata, Obstacle } from "../obstacles/types"
 
 export type { CircuitJsonMetadata, Obstacle } from "../obstacles/types"
 
@@ -54,6 +54,7 @@ export type SimplifiedPcbTrace = Omit<
         from_layer: string
         to_layer: string
         width: number
+        circuitJsonMetadata?: CircuitJsonMetadata
       }
   >
 }

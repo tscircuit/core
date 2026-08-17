@@ -20,6 +20,9 @@ test("through_obstacle claims the traversed assignable PCB via", async () => {
           )!
           const traceWidth =
             connection.nominalTraceWidth ?? simpleRouteJson.minTraceWidth
+          const assignableViaObstacle = simpleRouteJson.obstacles.find(
+            (obstacle) => obstacle.netIsAssignable,
+          )!
           return [
             {
               type: "pcb_trace",
@@ -47,6 +50,8 @@ test("through_obstacle claims the traversed assignable PCB via", async () => {
                   from_layer: "top",
                   to_layer: "bottom",
                   width: traceWidth,
+                  circuitJsonMetadata:
+                    assignableViaObstacle.circuitJsonMetadata,
                 },
                 {
                   route_type: "wire",
@@ -115,6 +120,7 @@ test("through_obstacle claims the traversed assignable PCB via", async () => {
     start_layer: "top",
     end_layer: "bottom",
   })
+  expect(throughPadPoints[0]).not.toHaveProperty("circuitJsonMetadata")
   const assignedVia = circuit.db.pcb_via.list()[0]
   expect(assignedVia.net_assigned).toBe(true)
   expect(assignedVia.pcb_trace_id).toBe(routedTrace.pcb_trace_id)

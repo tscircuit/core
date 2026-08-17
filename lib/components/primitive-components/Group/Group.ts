@@ -32,8 +32,11 @@ import { AutorouterError } from "lib/errors/AutorouterError"
 import type { AutorouterOptions } from "lib/utils/autorouting/CapacityMeshAutorouter"
 import { FanoutAutorouter } from "lib/utils/autorouting/FanoutAutorouter"
 import type { GenericLocalAutorouter } from "lib/utils/autorouting/GenericLocalAutorouter"
-import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
-import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
+import type {
+  CircuitJsonMetadata,
+  SimpleRouteJson,
+  SimplifiedPcbTrace,
+} from "lib/utils/autorouting/SimpleRouteJson"
 import { createSourceTracesFromOffboardConnections } from "lib/utils/autorouting/createSourceTracesFromOffboardConnections"
 import { getPcbComponentNamesById } from "lib/utils/autorouting/get-pcb-component-names-by-id"
 import {
@@ -67,7 +70,6 @@ import { Group_doInitialPcbComponentAnchorAlignment } from "./Group_doInitialPcb
 import { Group_doInitialPcbLayoutFlex } from "./Group_doInitialPcbLayoutFlex"
 import { Group_doInitialPcbLayoutGrid } from "./Group_doInitialPcbLayoutGrid"
 import { Group_doInitialPcbLayoutPack } from "./Group_doInitialPcbLayoutPack/Group_doInitialPcbLayoutPack"
-import { Group_doInitialStandaloneSubcircuitPcbDesignRuleChecks } from "./Group_doInitialStandaloneSubcircuitPcbDesignRuleChecks"
 import {
   Group_doInitialSchematicBoxComponentRender,
   getGroupSchematicBoxPinLabels,
@@ -80,6 +82,7 @@ import { Group_doInitialSchematicLayoutSections } from "./Group_doInitialSchemat
 import { Group_doInitialSchematicTraceRender } from "./Group_doInitialSchematicTraceRender/Group_doInitialSchematicTraceRender"
 import { Group_doInitialSimulationSpiceEngineRender } from "./Group_doInitialSimulationSpiceEngineRender"
 import { Group_doInitialSourceAddConnectivityMapKey } from "./Group_doInitialSourceAddConnectivityMapKey"
+import { Group_doInitialStandaloneSubcircuitPcbDesignRuleChecks } from "./Group_doInitialStandaloneSubcircuitPcbDesignRuleChecks"
 import { Group_getFanoutPourNetMap } from "./Group_getFanoutPourNetMap"
 import { Group_getRoutingPhasePlans } from "./Group_getRoutingPhasePlans"
 import {
@@ -116,6 +119,21 @@ const getDistanceToPoint = (
   const position = getRoutePointPosition(routePoint)
   return Math.hypot(position.x - targetPoint.x, position.y - targetPoint.y)
 }
+
+type PcbTraceRoutePointWithSrjMetadata = PcbTrace["route"][number] & {
+  circuitJsonMetadata?: CircuitJsonMetadata
+}
+
+const removeSrjMetadataFromPcbTraceRoute = (
+  route: PcbTraceRoutePointWithSrjMetadata[],
+): PcbTrace["route"] =>
+  route.map((routePoint) => {
+    const {
+      circuitJsonMetadata: _circuitJsonMetadata,
+      ...circuitJsonRoutePoint
+    } = routePoint
+    return circuitJsonRoutePoint as PcbTrace["route"][number]
+  })
 
 const platformAllowsLegacyAutorouters = (group: Group<z.ZodType>): boolean => {
   const platform = group.root?.platform
@@ -276,7 +294,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     output_pcb_traces?: (PcbTrace | PcbVia)[]
     // PCB traces that are being re-routed
     pcb_trace_ids_to_be_replaced?: string[]
-    input_simple_route_json?: SimpleRouteJson
     output_jumpers?: Array<{
       jumper_footprint: string
       center: { x: number; y: number }
@@ -1569,7 +1586,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       output_pcb_traces: outputTraces as any,
       output_jumpers: outputJumpers,
       pcb_trace_ids_to_be_replaced: [...pcbTraceIdsToDelete],
-      input_simple_route_json: baseSimpleRouteJson,
     }
 
     // Mark the component as needing to re-render the PCB traces
@@ -1717,6 +1733,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           start_layer: point.from_layer,
           end_layer: point.to_layer,
           width: point.width,
+          circuitJsonMetadata: point.circuitJsonMetadata,
         }
       })
       // const circuitTrace = circuitTraces.find(
@@ -1727,8 +1744,13 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       // TODO use upsert to make sure we're not re-creating traces
       const pcb_trace = db.pcb_trace.insert({
         subcircuit_id: this.subcircuit_id!,
-        route: cjRoute as any,
+        route: removeSrjMetadataFromPcbTraceRoute(cjRoute as any),
         // source_trace_id: circuitTrace.source_trace_id!,
+      })
+      claimSrjAssignablePcbViasTraversedByRoute({
+        db,
+        pcbTrace: pcb_trace,
+        routeWithSrjMetadata: cjRoute,
       })
       // circuitTrace.pcb_trace_id = pcb_trace.pcb_trace_id
 
@@ -1751,12 +1773,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   _updatePcbTraceRenderFromPcbTraces() {
-    const {
-      output_pcb_traces,
-      output_jumpers,
-      pcb_trace_ids_to_be_replaced,
-      input_simple_route_json,
-    } = this._asyncAutoroutingResult!
+    const { output_pcb_traces, output_jumpers, pcb_trace_ids_to_be_replaced } =
+      this._asyncAutoroutingResult!
     if (!output_pcb_traces) return
 
     const { db } = this.root!
@@ -1801,6 +1819,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           start_layer: point.from_layer,
           end_layer: point.to_layer,
           width: point.width,
+          circuitJsonMetadata: point.circuitJsonMetadata,
         }
       })
       const routeSourceTraceId = getSourceTraceIdForRoutedTrace({
@@ -1832,23 +1851,26 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       // Insert each segment as a separate trace
       for (const segment of processedSegments) {
         if (segment.length > 0) {
+          const circuitJsonSegment = removeSrjMetadataFromPcbTraceRoute(
+            segment as PcbTraceRoutePointWithSrjMetadata[],
+          )
           const sourceTraceId = getSourceTraceIdForRoutedTrace({
             db,
             trace: {
               ...pcb_trace,
-              route: segment,
+              route: circuitJsonSegment,
             },
             subcircuit_id: this.subcircuit_id,
           })
           const insertedPcbTrace = db.pcb_trace.insert({
             ...pcb_trace,
             source_trace_id: sourceTraceId,
-            route: segment,
+            route: circuitJsonSegment,
           })
           claimSrjAssignablePcbViasTraversedByRoute({
             db,
-            inputSimpleRouteJson: input_simple_route_json,
             pcbTrace: insertedPcbTrace,
+            routeWithSrjMetadata: segment,
           })
         }
       }
