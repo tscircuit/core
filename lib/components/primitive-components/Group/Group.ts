@@ -67,6 +67,7 @@ import { Group_doInitialPcbComponentAnchorAlignment } from "./Group_doInitialPcb
 import { Group_doInitialPcbLayoutFlex } from "./Group_doInitialPcbLayoutFlex"
 import { Group_doInitialPcbLayoutGrid } from "./Group_doInitialPcbLayoutGrid"
 import { Group_doInitialPcbLayoutPack } from "./Group_doInitialPcbLayoutPack/Group_doInitialPcbLayoutPack"
+import { Group_doInitialStandaloneSubcircuitPcbDesignRuleChecks } from "./Group_doInitialStandaloneSubcircuitPcbDesignRuleChecks"
 import {
   Group_doInitialSchematicBoxComponentRender,
   getGroupSchematicBoxPinLabels,
@@ -224,6 +225,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   _pcbPlacementDrcCheckError: string | null = null
 
   _pcbPlacementDrcChecksPending = false
+
+  _standaloneSubcircuitDrcChecksComplete = false
+
+  _standaloneSubcircuitDrcChecksInProgress = false
 
   _isInflatedFromCircuitJson = false
 
@@ -2406,6 +2411,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         }
       }
     }
+
+    Group_doInitialStandaloneSubcircuitPcbDesignRuleChecks(this)
   }
 
   doInitialSchematicReplaceNetLabelsWithSymbols() {
