@@ -58,7 +58,6 @@
     "@tscircuit/schematic-trace-solver": "^0.0.134",
     "@tscircuit/solver-utils": "^0.0.16",
     "@tscircuit/soup-util": "^0.0.41",
-    "@tscircuit/via-stitch-solver": "github:tscircuit/via-stitch-solver#de2a4fbfebd47f6578f3e17387cbfe32650dcfcc",
     "@types/bun": "^1.2.16",
     "@types/debug": "^4.1.12",
     "@types/react": "^19.1.8",
@@ -118,6 +117,7 @@
   "dependencies": {
     "@flatten-js/core": "^1.6.2",
     "@lume/kiwi": "^0.4.3",
+    "@tscircuit/via-stitch-solver": "github:tscircuit/via-stitch-solver#8192cdaff9bed4c7eab841420e16ee408a401796",
     "calculate-cell-boundaries": "^0.0.19",
     "calculate-packing": "^0.0.86",
     "css-select": "5.1.0",
@@ -133,8 +133,5 @@
     "@tscircuit/circuit-json-util": "^0.0.106",
     "@tscircuit/props": "^0.0.623",
     "circuit-json": "^0.0.469"
-  },
-  "trustedDependencies": [
-    "@tscircuit/via-stitch-solver"
-  ]
+  }
 }
