@@ -3,7 +3,7 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { assertViaStitchingOutput } from "./assert-via-stitching-output"
 import { ViaStitchingSoic16Circuit } from "./via-stitching-test-circuits"
 
-test("via stitching post-process reinforces an SOIC-16 power transition", async () => {
+test("via stitching connects SOIC-16 top and bottom GND pours", async () => {
   const { circuit } = getTestFixture()
   circuit.add(<ViaStitchingSoic16Circuit />)
 

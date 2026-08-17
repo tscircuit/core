@@ -1,18 +1,16 @@
-interface ViaStitchingPowerCircuitProps {
+interface CopperPourViaStitchingCircuitProps {
   chipFootprint: string
   circuitLabel: string
   passiveFootprints: [string, string, string, string?]
   r1PcbX?: number
 }
 
-export const VIA_STITCHING_POWER_TRACE_WIDTH_MM = 0.8
-
-const ViaStitchingPowerCircuit = ({
+const CopperPourViaStitchingCircuit = ({
   chipFootprint,
   circuitLabel,
   passiveFootprints,
   r1PcbX = -3,
-}: ViaStitchingPowerCircuitProps) => {
+}: CopperPourViaStitchingCircuitProps) => {
   const [powerCapFootprint, pullupFootprint, bypassFootprint, filterFootprint] =
     passiveFootprints
 
@@ -20,18 +18,19 @@ const ViaStitchingPowerCircuit = ({
     <board width="28mm" height="22mm">
       <pcbnotetext
         pcbX={0}
-        pcbY={10}
+        pcbY={9}
         fontSize={0.55}
-        text={`${circuitLabel}: full VCC route should have top/bottom corridor pours and distributed stitching vias`}
+        text={`${circuitLabel}: top and bottom GND pours are connected by a regular stitching-via grid`}
       />
-      <net name="VCC" isPowerNet />
       <net name="GND" isGroundNet />
+      <net name="VCC" isPowerNet />
       <chip
         name="U1"
         footprint={chipFootprint}
         pcbX={-6}
         pcbY={0}
         connections={{
+          pin1: "net.VCC",
           pin2: "net.GND",
         }}
       />
@@ -43,6 +42,7 @@ const ViaStitchingPowerCircuit = ({
         pcbX={8}
         pcbY={0}
         connections={{
+          pin1: "net.VCC",
           pin2: "net.GND",
         }}
       />
@@ -54,6 +54,7 @@ const ViaStitchingPowerCircuit = ({
         pcbY={7}
         connections={{
           pin1: "U1.pin3",
+          pin2: "net.VCC",
         }}
       />
       <capacitor
@@ -76,41 +77,18 @@ const ViaStitchingPowerCircuit = ({
           pcbY={7}
           connections={{
             pin1: "U1.pin5",
+            pin2: "net.GND",
           }}
         />
       )}
-      <trace
-        name="VCC_U1"
-        from="U1.pin1"
-        to="net.VCC"
-        thickness={VIA_STITCHING_POWER_TRACE_WIDTH_MM}
-      />
-      <trace
-        name="VCC_C1"
-        from="C1.pin1"
-        to="net.VCC"
-        thickness={VIA_STITCHING_POWER_TRACE_WIDTH_MM}
-      />
-      <trace
-        name="VCC_R1"
-        from="R1.pin2"
-        to="net.VCC"
-        thickness={VIA_STITCHING_POWER_TRACE_WIDTH_MM}
-      />
-      {filterFootprint && (
-        <trace
-          name="VCC_R2"
-          from="R2.pin2"
-          to="net.VCC"
-          thickness={VIA_STITCHING_POWER_TRACE_WIDTH_MM}
-        />
-      )}
+      <copperpour connectsTo="net.GND" layer="top" clearance="0.3mm" />
+      <copperpour connectsTo="net.GND" layer="bottom" clearance="0.3mm" />
     </board>
   )
 }
 
 export const ViaStitchingSoic8Circuit = () => (
-  <ViaStitchingPowerCircuit
+  <CopperPourViaStitchingCircuit
     chipFootprint="soic8"
     circuitLabel="SOIC-8 with 3 passives"
     passiveFootprints={["0603", "0402", "0805"]}
@@ -118,7 +96,7 @@ export const ViaStitchingSoic8Circuit = () => (
 )
 
 export const ViaStitchingSoic16Circuit = () => (
-  <ViaStitchingPowerCircuit
+  <CopperPourViaStitchingCircuit
     chipFootprint="soic16"
     circuitLabel="SOIC-16 with 4 passives"
     passiveFootprints={["0805", "0603", "0402", "1206"]}
@@ -127,7 +105,7 @@ export const ViaStitchingSoic16Circuit = () => (
 )
 
 export const ViaStitchingQfp16Circuit = () => (
-  <ViaStitchingPowerCircuit
+  <CopperPourViaStitchingCircuit
     chipFootprint="qfp16"
     circuitLabel="QFP-16 with 3 passives"
     passiveFootprints={["0402", "0805", "0603"]}
@@ -135,7 +113,7 @@ export const ViaStitchingQfp16Circuit = () => (
 )
 
 export const ViaStitchingQfn32Circuit = () => (
-  <ViaStitchingPowerCircuit
+  <CopperPourViaStitchingCircuit
     chipFootprint="qfn32"
     circuitLabel="QFN-32 with 4 passives"
     passiveFootprints={["1206", "0402", "0603", "0805"]}
@@ -143,7 +121,7 @@ export const ViaStitchingQfn32Circuit = () => (
 )
 
 export const ViaStitchingTssop20Circuit = () => (
-  <ViaStitchingPowerCircuit
+  <CopperPourViaStitchingCircuit
     chipFootprint="tssop20"
     circuitLabel="TSSOP-20 with 3 passives"
     passiveFootprints={["0603", "1206", "0402"]}

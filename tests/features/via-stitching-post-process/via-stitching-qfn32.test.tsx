@@ -3,7 +3,7 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { assertViaStitchingOutput } from "./assert-via-stitching-output"
 import { ViaStitchingQfn32Circuit } from "./via-stitching-test-circuits"
 
-test("via stitching post-process reinforces a QFN-32 power transition", async () => {
+test("via stitching connects QFN-32 top and bottom GND pours", async () => {
   const { circuit } = getTestFixture()
   circuit.add(<ViaStitchingQfn32Circuit />)
 
