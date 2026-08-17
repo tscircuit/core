@@ -20,7 +20,7 @@ const ViaStitchingPowerCircuit = ({
         pcbX={0}
         pcbY={10}
         fontSize={0.55}
-        text={`${circuitLabel}: top-bottom VCC transition should have paired pours and four stitching vias`}
+        text={`${circuitLabel}: full VCC route should have top/bottom corridor pours and distributed stitching vias`}
       />
       <net name="VCC" isPowerNet />
       <net name="GND" isGroundNet />
