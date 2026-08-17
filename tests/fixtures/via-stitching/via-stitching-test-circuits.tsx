@@ -4,6 +4,8 @@ interface ViaStitchingPowerCircuitProps {
   passiveFootprints: [string, string, string, string?]
 }
 
+export const VIA_STITCHING_POWER_TRACE_WIDTH_MM = 0.8
+
 const ViaStitchingPowerCircuit = ({
   chipFootprint,
   circuitLabel,
@@ -28,7 +30,6 @@ const ViaStitchingPowerCircuit = ({
         pcbX={-6}
         pcbY={0}
         connections={{
-          pin1: "net.VCC",
           pin2: "net.GND",
         }}
       />
@@ -40,7 +41,6 @@ const ViaStitchingPowerCircuit = ({
         pcbX={8}
         pcbY={0}
         connections={{
-          pin1: "net.VCC",
           pin2: "net.GND",
         }}
       />
@@ -52,7 +52,6 @@ const ViaStitchingPowerCircuit = ({
         pcbY={7}
         connections={{
           pin1: "U1.pin3",
-          pin2: "net.VCC",
         }}
       />
       <capacitor
@@ -75,8 +74,33 @@ const ViaStitchingPowerCircuit = ({
           pcbY={7}
           connections={{
             pin1: "U1.pin5",
-            pin2: "net.VCC",
           }}
+        />
+      )}
+      <trace
+        name="VCC_U1"
+        from="U1.pin1"
+        to="net.VCC"
+        thickness={VIA_STITCHING_POWER_TRACE_WIDTH_MM}
+      />
+      <trace
+        name="VCC_C1"
+        from="C1.pin1"
+        to="net.VCC"
+        thickness={VIA_STITCHING_POWER_TRACE_WIDTH_MM}
+      />
+      <trace
+        name="VCC_R1"
+        from="R1.pin2"
+        to="net.VCC"
+        thickness={VIA_STITCHING_POWER_TRACE_WIDTH_MM}
+      />
+      {filterFootprint && (
+        <trace
+          name="VCC_R2"
+          from="R2.pin2"
+          to="net.VCC"
+          thickness={VIA_STITCHING_POWER_TRACE_WIDTH_MM}
         />
       )}
     </board>
