@@ -71,7 +71,7 @@ test('autorouter="fanout" escapes an inner BGA bus before board routing', async 
     <board
       width="20mm"
       height="12mm"
-      layers={2}
+      layers={4}
       minTraceWidth="0.1mm"
       defaultTraceWidth="0.1mm"
       minTraceToPadEdgeClearance="0.1mm"
@@ -88,6 +88,8 @@ test('autorouter="fanout" escapes an inner BGA bus before board routing', async 
       <bus
         name="DATA"
         connections={innerPinNumbers.map((_, busIndex) => `D${busIndex}`)}
+        preferredLayer="inner2"
+        preferredLayers={["bottom"]}
       />
       {innerPinNumbers.map((pinNumber, busIndex) => (
         <TestResistor
@@ -103,7 +105,7 @@ test('autorouter="fanout" escapes an inner BGA bus before board routing', async 
         pcbX={0}
         pcbY={5}
         fontSize={0.5}
-        text='autorouter="fanout": inner 4x4 BGA bus'
+        text='autorouter="fanout": DATA prefers inner2'
       />
     </board>,
   )
@@ -117,6 +119,19 @@ test('autorouter="fanout" escapes an inner BGA bus before board routing', async 
   expect(circuit.db.pcb_trace.list().length).toBeGreaterThanOrEqual(8)
   expect(circuit.db.pcb_via.list().length).toBeGreaterThan(0)
   expect(autoroutingPhaseIoStack).toHaveLength(2)
+  const fanoutInput = autoroutingPhaseIoStack[0]?.startSimpleRouteJson
+  if (!fanoutInput) throw new Error("Expected fanout Simple Route JSON input")
+  expect(fanoutInput.buses).toEqual([
+    {
+      busId: "DATA",
+      name: "DATA",
+      connectionNames: fanoutInput.connections.map(
+        (connection) => connection.name,
+      ),
+      preferredLayer: "inner2",
+      preferredLayers: ["bottom"],
+    },
+  ])
   expect(autoroutingPhaseIoStack[0]?.endSimpleRouteJson?.traces).toHaveLength(4)
   expect(autoroutingPhaseIoStack[1]?.startSimpleRouteJson?.traces).toHaveLength(
     4,
@@ -143,6 +158,18 @@ test('autorouter="fanout" escapes an inner BGA bus before board routing', async 
     ) + 1.2
   for (const fanoutTrace of autoroutingPhaseIoStack[0]?.endSimpleRouteJson
     ?.traces ?? []) {
+    expect(
+      fanoutTrace.route.some(
+        (routePoint) =>
+          routePoint.route_type === "wire" && routePoint.layer === "inner2",
+      ),
+    ).toBe(true)
+    expect(
+      fanoutTrace.route.some(
+        (routePoint) =>
+          routePoint.route_type === "via" && routePoint.to_layer === "inner2",
+      ),
+    ).toBe(true)
     const exitPoint = fanoutTrace.route.findLast(
       (routePoint) => "x" in routePoint,
     )
