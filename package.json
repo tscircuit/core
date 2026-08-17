@@ -58,6 +58,7 @@
     "@tscircuit/schematic-trace-solver": "^0.0.134",
     "@tscircuit/solver-utils": "^0.0.16",
     "@tscircuit/soup-util": "^0.0.41",
+    "@tscircuit/via-stitch-solver": "github:tscircuit/via-stitch-solver#271c95d937eb5a8ff60c30269047d9d6fe53b938",
     "@types/bun": "^1.2.16",
     "@types/debug": "^4.1.12",
     "@types/react": "^19.1.8",
@@ -117,7 +118,6 @@
   "dependencies": {
     "@flatten-js/core": "^1.6.2",
     "@lume/kiwi": "^0.4.3",
-    "@tscircuit/via-stitch-solver": "github:tscircuit/via-stitch-solver#8192cdaff9bed4c7eab841420e16ee408a401796",
     "calculate-cell-boundaries": "^0.0.19",
     "calculate-packing": "^0.0.86",
     "css-select": "5.1.0",
