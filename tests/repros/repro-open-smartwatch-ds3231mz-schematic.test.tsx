@@ -44,21 +44,6 @@ const OpenSmartwatchRtc = () => (
       }}
       noConnect={["CLK32K", "RST"]}
     />
-
-    <capacitor
-      name="C11"
-      capacitance="0.1uF"
-      schX={-3}
-      schY={0}
-      connections={{ pin1: "net.V3V3", pin2: "net.GND" }}
-    />
-    <resistor
-      name="R18"
-      resistance="2.2kohm"
-      schX={1}
-      schY={0}
-      connections={{ pin1: "net.RTC_INT", pin2: "net.V3V3" }}
-    />
   </board>
 )
 
