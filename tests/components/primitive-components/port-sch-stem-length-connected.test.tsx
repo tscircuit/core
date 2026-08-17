@@ -53,7 +53,7 @@ test("Ports with schStemLength can be connected with traces", async () => {
             />
             <port
               name="IN"
-              schX={2.7}
+              schX={-1.3}
               schY={0}
               direction="left"
               schStemLength={0.8}

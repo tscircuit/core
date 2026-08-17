@@ -1,6 +1,6 @@
-import { test, expect } from "bun:test"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { expect, test } from "bun:test"
 import { sel } from "lib/sel"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("SchematicRect with traces using connections prop", async () => {
   const { circuit } = getTestFixture()
@@ -37,7 +37,7 @@ test("SchematicRect with traces using connections prop", async () => {
               height={2}
               isFilled={false}
             />
-            <port name="pin1" direction="left" schX={4} schY={0} />
+            <port name="pin1" direction="left" schX={-1} schY={0} />
           </symbol>
         }
         connections={{

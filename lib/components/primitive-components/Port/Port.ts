@@ -216,8 +216,9 @@ export class Port extends PrimitiveComponent<typeof portProps> {
   _getGlobalSchematicPositionBeforeLayout(): { x: number; y: number } {
     const { schX, schY } = this._parsedProps
     if (schX !== undefined && schY !== undefined) {
-      // For ports with explicit coordinates in custom React symbols,
-      // use them as absolute coordinates (not relative to the parent)
+      if (this._getSymbolAncestor()) {
+        return super._getGlobalSchematicPositionBeforeLayout()
+      }
       return { x: schX, y: schY }
     }
 

@@ -99,6 +99,7 @@ import { isBlobUrl } from "./utils/isBlobUrl"
 import { isHttpUrl } from "./utils/isHttpUrl"
 import { isStaticAssetPath } from "./utils/isStaticAssetPath"
 import { parseLibraryFootprintRef } from "./utils/parseLibraryFootprintRef"
+import { reconcilePortsWithExplicitSymbolPorts } from "./utils/reconcile-ports-with-explicit-symbol-ports"
 
 const debug = Debug("tscircuit:core")
 
@@ -301,6 +302,7 @@ export class NormalComponent<
             propsPinLabels.map((label, index) => [`pin${index + 1}`, label]),
           )
         : propsPinLabels
+    const explicitSymbolPorts = reconcilePortsWithExplicitSymbolPorts(this)
     const existingChildPorts = this._getAllPortsFromChildren()
     const hasExistingOrQueuedPortWithPinNumber = (pinNumber: number) =>
       existingChildPorts.some((p) => p._parsedProps.pinNumber === pinNumber) ||
@@ -403,7 +405,11 @@ export class NormalComponent<
       }
     }
 
-    if (config.schematicSymbolName && !opts.ignoreSymbolPorts) {
+    if (
+      config.schematicSymbolName &&
+      !opts.ignoreSymbolPorts &&
+      explicitSymbolPorts.length === 0
+    ) {
       const sym = symbols[this._getSchematicSymbolNameOrThrow()]
       if (!sym) return
 
