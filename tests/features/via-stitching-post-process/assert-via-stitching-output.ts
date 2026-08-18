@@ -1,4 +1,5 @@
 import { expect } from "bun:test"
+import type { Point } from "circuit-json"
 import type { RootCircuit } from "lib/RootCircuit"
 
 const getDistanceFromPointToRotatedRect = ({
@@ -106,5 +107,48 @@ export const assertViaStitchingOutput = ({
       )
       return clearsComponents && clearsSmtPads
     }),
+  ).toBe(true)
+}
+
+const isPointInsidePolygon = (point: Point, polygon: Point[]) => {
+  let isInside = false
+  for (
+    let currentIndex = 0, previousIndex = polygon.length - 1;
+    currentIndex < polygon.length;
+    previousIndex = currentIndex++
+  ) {
+    const current = polygon[currentIndex]!
+    const previous = polygon[previousIndex]!
+    const crossesRay =
+      current.y > point.y !== previous.y > point.y &&
+      point.x <
+        ((previous.x - current.x) * (point.y - current.y)) /
+          (previous.y - current.y) +
+          current.x
+    if (crossesRay) isInside = !isInside
+  }
+  return isInside
+}
+
+export const assertViaStitchingInsideOutline = ({
+  circuit,
+  outline,
+}: {
+  circuit: RootCircuit
+  outline: Point[]
+}) => {
+  const groundSourceNet = circuit.db.source_net
+    .list()
+    .find((sourceNet) => sourceNet.is_ground)
+  expect(groundSourceNet).toBeDefined()
+
+  const groundStitchingVias = circuit.db.pcb_via
+    .list()
+    .filter((pcbVia) => pcbVia.source_net_id === groundSourceNet!.source_net_id)
+  expect(groundStitchingVias.length).toBeGreaterThan(5)
+  expect(
+    groundStitchingVias.every((pcbVia) =>
+      isPointInsidePolygon(pcbVia, outline),
+    ),
   ).toBe(true)
 }

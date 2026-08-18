@@ -127,3 +127,135 @@ export const ViaStitchingTssop20Circuit = () => (
     passiveFootprints={["0603", "1206", "0402"]}
   />
 )
+
+export const convexPolygonCopperPourOutline = [
+  { x: -13, y: -8 },
+  { x: -4, y: -8 },
+  { x: 2, y: -3 },
+  { x: 2, y: 7 },
+  { x: -6, y: 9 },
+  { x: -13, y: 5 },
+  { x: -13, y: -8 },
+]
+
+export const concavePolygonCopperPourOutline = [
+  { x: -1, y: -9 },
+  { x: 13, y: -9 },
+  { x: 13, y: 7 },
+  { x: 7, y: 7 },
+  { x: 7, y: 1 },
+  { x: -1, y: 1 },
+  { x: -1, y: -9 },
+]
+
+export const ViaStitchingConvexPolygonCircuit = () => (
+  <board width="30mm" height="22mm">
+    <pcbnotetext
+      pcbX={0}
+      pcbY={9.8}
+      fontSize={0.55}
+      text="Convex fixed-outline GND pour with stitching vias only inside the polygon"
+    />
+    <net name="GND" isGroundNet />
+    <net name="VCC" isPowerNet />
+    <chip
+      name="U1"
+      footprint="soic8"
+      pcbX={-7}
+      pcbY={0}
+      connections={{ pin1: "net.GND", pin2: "net.VCC" }}
+    />
+    <capacitor
+      name="C1"
+      capacitance="100nF"
+      footprint="0603"
+      pcbX={-2}
+      pcbY={-5}
+      connections={{ pin1: "net.VCC", pin2: "net.GND" }}
+    />
+    <resistor
+      name="R1"
+      resistance="10k"
+      footprint="0402"
+      pcbX={-2}
+      pcbY={5}
+      connections={{ pin1: "U1.pin3", pin2: "net.VCC" }}
+    />
+    <capacitor
+      name="C2"
+      capacitance="1uF"
+      footprint="0805"
+      pcbX={-10}
+      pcbY={-6}
+      connections={{ pin1: "U1.pin4", pin2: "net.GND" }}
+    />
+    <copperpour
+      connectsTo="net.GND"
+      layer="top"
+      clearance="0.3mm"
+      outline={convexPolygonCopperPourOutline}
+    />
+    <copperpour
+      connectsTo="net.GND"
+      layer="bottom"
+      clearance="0.3mm"
+      outline={convexPolygonCopperPourOutline}
+    />
+  </board>
+)
+
+export const ViaStitchingConcavePolygonCircuit = () => (
+  <board width="30mm" height="22mm">
+    <pcbnotetext
+      pcbX={0}
+      pcbY={9.8}
+      fontSize={0.55}
+      text="Concave fixed-outline GND pour with stitching vias only inside the polygon"
+    />
+    <net name="GND" isGroundNet />
+    <net name="VCC" isPowerNet />
+    <chip
+      name="U1"
+      footprint="qfp16"
+      pcbX={7}
+      pcbY={-4}
+      connections={{ pin1: "net.GND", pin2: "net.VCC" }}
+    />
+    <capacitor
+      name="C1"
+      capacitance="100nF"
+      footprint="0402"
+      pcbX={2}
+      pcbY={-6}
+      connections={{ pin1: "net.VCC", pin2: "net.GND" }}
+    />
+    <resistor
+      name="R1"
+      resistance="4.7k"
+      footprint="0603"
+      pcbX={10}
+      pcbY={4}
+      connections={{ pin1: "U1.pin3", pin2: "net.VCC" }}
+    />
+    <capacitor
+      name="C2"
+      capacitance="1uF"
+      footprint="0805"
+      pcbX={4}
+      pcbY={-1}
+      connections={{ pin1: "U1.pin4", pin2: "net.GND" }}
+    />
+    <copperpour
+      connectsTo="net.GND"
+      layer="top"
+      clearance="0.3mm"
+      outline={concavePolygonCopperPourOutline}
+    />
+    <copperpour
+      connectsTo="net.GND"
+      layer="bottom"
+      clearance="0.3mm"
+      outline={concavePolygonCopperPourOutline}
+    />
+  </board>
+)
