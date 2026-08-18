@@ -79,6 +79,32 @@ const expandBoundsToIncludePoints = (
   }
 }
 
+export const getFanoutSolverBuses = (
+  buses: readonly SimpleRouteBus[] | undefined,
+): FanoutSolverOptions["buses"] =>
+  buses?.map((bus) => {
+    const { preferredLayer, preferredLayers, ...fanoutBusWithoutPreferences } =
+      bus
+    const requestedFanoutLayers = [
+      ...(preferredLayer === undefined ? [] : [preferredLayer]),
+      ...(preferredLayers ?? []),
+    ].filter((layer, index, layers) => layers.indexOf(layer) === index)
+    if (requestedFanoutLayers.length === 0) {
+      return fanoutBusWithoutPreferences
+    }
+    const busAllowedLayers = bus.allowedLayers
+    const allowedLayers =
+      busAllowedLayers === undefined
+        ? requestedFanoutLayers
+        : requestedFanoutLayers.filter((layer) =>
+            busAllowedLayers.includes(layer),
+          )
+    return {
+      ...fanoutBusWithoutPreferences,
+      allowedLayers,
+    }
+  })
+
 const getNinePointAnchor = (
   fanoutDirection: BusFanoutDirection,
 ): NinePointAnchor =>
@@ -362,6 +388,7 @@ export class FanoutAutorouter implements GenericLocalAutorouter {
 
   private getFanoutSolverOptions(): FanoutSolverOptions {
     const commonOptions: FanoutSolverOptions = {
+      buses: getFanoutSolverBuses(this.input.buses),
       borderDistribution: "even",
       compactBusTracks: true,
       busDirections: this.getPlaneBusDirections(),

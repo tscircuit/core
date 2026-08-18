@@ -136,6 +136,7 @@ test('autorouter="fanout" escapes an inner BGA bus before board routing', async 
   expect(autoroutingPhaseIoStack[1]?.startSimpleRouteJson?.traces).toHaveLength(
     4,
   )
+  const allowedFanoutLayers = new Set(["inner2", "bottom"])
   expect(autoroutingPhaseIoStack[1]?.endSimpleRouteJson?.traces).toHaveLength(8)
 
   const u1SourceComponent = circuit.db.source_component.getWhere({
@@ -161,13 +162,15 @@ test('autorouter="fanout" escapes an inner BGA bus before board routing', async 
     expect(
       fanoutTrace.route.some(
         (routePoint) =>
-          routePoint.route_type === "wire" && routePoint.layer === "inner2",
+          routePoint.route_type === "wire" &&
+          allowedFanoutLayers.has(routePoint.layer),
       ),
     ).toBe(true)
     expect(
       fanoutTrace.route.some(
         (routePoint) =>
-          routePoint.route_type === "via" && routePoint.to_layer === "inner2",
+          routePoint.route_type === "via" &&
+          allowedFanoutLayers.has(routePoint.to_layer),
       ),
     ).toBe(true)
     const exitPoint = fanoutTrace.route.findLast(
