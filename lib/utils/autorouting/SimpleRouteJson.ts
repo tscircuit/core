@@ -125,6 +125,10 @@ export type SimpleRouteBus = {
   maxLengthSkew?: number
   traceWidth?: number
   allowedLayers?: string[]
+  /** Highest-priority fanout layer for this bus. */
+  preferredLayer?: string
+  /** Additional preferred fanout layers for this bus, in priority order. */
+  preferredLayers?: string[]
   termination?: SimpleRouteBusTermination
 }
 

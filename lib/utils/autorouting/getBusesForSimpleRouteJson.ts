@@ -220,6 +220,12 @@ export const getBusesForSimpleRouteJson = ({
       ...(bus._parsedProps.pcbAllowedLayers !== undefined
         ? { allowedLayers: bus._parsedProps.pcbAllowedLayers }
         : {}),
+      ...(bus._parsedProps.preferredLayer !== undefined
+        ? { preferredLayer: bus._parsedProps.preferredLayer }
+        : {}),
+      ...(bus._parsedProps.preferredLayers !== undefined
+        ? { preferredLayers: bus._parsedProps.preferredLayers }
+        : {}),
     })
   }
 
