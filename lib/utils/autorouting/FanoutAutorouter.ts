@@ -36,6 +36,11 @@ export interface FanoutAutorouterOptions {
   fanoutRoutingLayers?: string[]
   /** Used to name components in fanout failure messages. */
   componentNamesById?: ReadonlyMap<string, string>
+  onSolverStarted?: (details: {
+    solverName: "FanoutSolver"
+    solverParams: ReturnType<FanoutSolver["getConstructorParams"]>[0]
+    solverConstructorArgs: ReturnType<FanoutSolver["getConstructorParams"]>
+  }) => void
 }
 
 export interface ResolveFanoutBoundsOptions extends FanoutAutorouterOptions {
@@ -451,6 +456,12 @@ export class FanoutAutorouter implements GenericLocalAutorouter {
           : {}),
       },
     )
+    const solverConstructorArgs = fanoutSolver.getConstructorParams()
+    this.options.onSolverStarted?.({
+      solverName: "FanoutSolver",
+      solverParams: solverConstructorArgs[0],
+      solverConstructorArgs,
+    })
     fanoutSolver.solve()
     if (fanoutSolver.failed) {
       throw new Error(

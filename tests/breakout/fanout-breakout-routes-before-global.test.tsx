@@ -9,9 +9,9 @@ const signalPinNumbers = [6, 7, 10, 11]
 test("fanout breakout routes signals and plane drops before global routing", async () => {
   const { circuit } = getTestFixture()
   const autoroutingPhaseIoStack = createAutoroutingPhaseIoStack(circuit)
-  const solverNames: string[] = []
+  const solverStartedEvents: SolverStartedEvent[] = []
   circuit.on("solver:started", (event: SolverStartedEvent) => {
-    solverNames.push(event.solverName)
+    solverStartedEvents.push(event)
   })
   const createBgaPads = () =>
     Array.from({ length: 16 }, (_, padIndex) => {
@@ -93,7 +93,30 @@ test("fanout breakout routes signals and plane drops before global routing", asy
   await circuit.renderUntilSettled()
 
   expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
-  expect(solverNames).toContain("AutoroutingPipelineSolver7_MultiGraph")
+  expect(
+    solverStartedEvents.some(
+      (event) => event.solverName === "AutoroutingPipelineSolver7_MultiGraph",
+    ),
+  ).toBe(true)
+  const fanoutSolverEvents = solverStartedEvents.filter(
+    (event) => event.solverName === "FanoutSolver",
+  )
+  expect(fanoutSolverEvents).toHaveLength(2)
+  for (const fanoutSolverEvent of fanoutSolverEvents) {
+    expect(fanoutSolverEvent.solverParams).toMatchObject({
+      connections: expect.any(Array),
+      obstacles: expect.any(Array),
+    })
+    expect(fanoutSolverEvent.solverConstructorArgs).toEqual([
+      fanoutSolverEvent.solverParams,
+      expect.objectContaining({
+        buses: expect.any(Array),
+        borderDistribution: "even",
+        compactBusTracks: true,
+        sharedBoundary: expect.any(Object),
+      }),
+    ])
+  }
   expect(autoroutingPhaseIoStack).toHaveLength(3)
   expect(
     autoroutingPhaseIoStack.map(
