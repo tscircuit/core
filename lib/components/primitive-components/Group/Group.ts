@@ -1352,14 +1352,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
               useLaserPrefabSolver: phaseIsLaserPrefabPreset,
               autorouterVersion,
               effort,
-              onSolverStarted: ({ solverName, solverParams }) =>
-                this.root?.emit("solver:started", {
-                  type: "solver:started",
-                  solverName,
-                  solverParams,
-                  solverConstructorArgs: [solverParams],
-                  componentName: this.getString(),
-                }),
             }
             autorouter = localAutorouterStrategy.create({
               simpleRouteJson,
@@ -1368,6 +1360,18 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
               fanoutBounds: routingPhasePlan.fanoutBounds,
               fanoutRoutingLayers: routingPhasePlan.fanoutRoutingLayers,
               componentNamesById: getPcbComponentNamesById(db),
+              onSolverStarted: ({
+                solverName,
+                solverParams,
+                solverConstructorArgs,
+              }) =>
+                this.root?.emit("solver:started", {
+                  type: "solver:started",
+                  solverName,
+                  solverParams,
+                  solverConstructorArgs,
+                  componentName: this.getString(),
+                }),
             })
           }
 

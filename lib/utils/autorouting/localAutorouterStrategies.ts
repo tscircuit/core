@@ -3,6 +3,7 @@ import type {
   AutoroutingPhaseProps,
   PlatformConfig,
 } from "@tscircuit/props"
+import type { SolverName } from "lib/solvers"
 import {
   type AutorouterOptions,
   TscircuitAutorouter,
@@ -22,6 +23,11 @@ export interface LocalAutorouterStrategyContext {
   fanoutBounds?: SimpleRouteBounds
   fanoutRoutingLayers?: string[]
   componentNamesById?: ReadonlyMap<string, string>
+  onSolverStarted?: (details: {
+    solverName: SolverName
+    solverParams: unknown
+    solverConstructorArgs: readonly unknown[]
+  }) => void
 }
 
 export interface LocalAutorouterStrategy {
@@ -38,8 +44,15 @@ export interface LocalAutoroutingStage {
 
 const defaultLocalAutorouterStrategy: LocalAutorouterStrategy = {
   cacheable: true,
-  create: ({ simpleRouteJson, commonAutorouterOptions }) =>
-    new TscircuitAutorouter(simpleRouteJson, commonAutorouterOptions),
+  create: ({ simpleRouteJson, commonAutorouterOptions, onSolverStarted }) =>
+    new TscircuitAutorouter(simpleRouteJson, {
+      ...commonAutorouterOptions,
+      onSolverStarted: (details) =>
+        onSolverStarted?.({
+          ...details,
+          solverConstructorArgs: [details.solverParams],
+        }),
+    }),
 }
 
 const createFanoutAutorouterStrategy = (
@@ -53,6 +66,7 @@ const createFanoutAutorouterStrategy = (
     fanoutBounds,
     fanoutRoutingLayers,
     componentNamesById,
+    onSolverStarted,
   }) =>
     new FanoutAutorouter(simpleRouteJson, {
       mode,
@@ -60,6 +74,7 @@ const createFanoutAutorouterStrategy = (
       fanoutBounds,
       fanoutRoutingLayers,
       componentNamesById,
+      onSolverStarted,
     }),
 })
 
