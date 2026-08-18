@@ -72,5 +72,7 @@ test("no schematic representation", () => {
   const schematicComponents = circuitJson.filter(
     (c) => c.type === "schematic_component",
   )
+  const schematicPorts = circuitJson.filter((c) => c.type === "schematic_port")
   expect(schematicComponents.length).toBe(0)
+  expect(schematicPorts.length).toBe(0)
 })
