@@ -180,12 +180,18 @@ export class Port extends PrimitiveComponent<typeof portProps> {
    * are rendered properly.
    */
   _hasSchematicPort() {
+    const parentNormalComponent = this.getParentNormalComponent()
+    if (
+      parentNormalComponent?._parsedProps?.noSchematicRepresentation === true
+    ) {
+      return false
+    }
+
     const { schX, schY } = this._parsedProps
     if (schX !== undefined && schY !== undefined) {
       return true
     }
 
-    const parentNormalComponent = this.getParentNormalComponent()
     const symbol = parentNormalComponent?.getSchematicSymbol()
     if (symbol) {
       if (this.schematicSymbolPortDef) return true

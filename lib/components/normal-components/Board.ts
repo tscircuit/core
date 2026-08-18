@@ -720,17 +720,12 @@ export class Board
     })
   }
 
-  override _emitRenderLifecycleEvent(
-    phase: RenderPhase,
-    startOrEnd: "start" | "end",
-  ) {
-    super._emitRenderLifecycleEvent(phase, startOrEnd)
-    if (startOrEnd === "start") {
-      this.root?.emit("board:renderPhaseStarted", {
-        renderId: this._renderId,
-        phase,
-      })
-    }
+  override runRenderPhaseForChildren(phase: RenderPhase): void {
+    this.root?.emit("board:renderPhaseStarted", {
+      renderId: this._renderId,
+      phase,
+    })
+    super.runRenderPhaseForChildren(phase)
   }
 
   _repositionOnPcb(position: { x: number; y: number }): void {
