@@ -7,7 +7,7 @@ test("truly cramped trace keeps its anchored net label instead of an inline one"
   circuit.add(
     <board width={20} height={20}>
       <chip name="U1" footprint="soic8" schX={0} schY={0} />
-      <led name="LED1" footprint="0603" schX={2.5} schY={0} />
+      <led name="LED1" footprint="0603" schX={2} schY={0} />
 
       <trace
         schDisplayLabel="USER_LED_ANODE"

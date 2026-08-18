@@ -2,10 +2,13 @@ import type { SourceNet } from "circuit-json"
 import { getSchematicNetLabelTextWidth } from "lib/utils/schematic/computeSchematicNetLabelCenter"
 import type { SchematicPortId } from "./port-id-types"
 
+export const INLINE_NET_LABEL_FONT_SIZE = 0.12
+
 type EligibleDirectConnection = {
   schematicPortIds: [SchematicPortId, SchematicPortId]
   allowInlineNetLabel?: boolean
   inlineNetLabelWidth?: number
+  inlineNetLabelHeight?: number
   connKey?: string
 }
 
@@ -53,8 +56,12 @@ export const applyInlineNetLabelEligibility = ({
     if (!name || !wasAssignedDisplayLabel) continue
 
     directConnection.allowInlineNetLabel = true
+    directConnection.inlineNetLabelHeight = INLINE_NET_LABEL_FONT_SIZE
     directConnection.inlineNetLabelWidth = Number(
-      getSchematicNetLabelTextWidth({ text: name }).toFixed(2),
+      getSchematicNetLabelTextWidth({
+        text: name,
+        font_size: INLINE_NET_LABEL_FONT_SIZE,
+      }).toFixed(2),
     )
   }
 }

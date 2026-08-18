@@ -72,6 +72,26 @@ export function applyInlineNetLabelPlacements(args: {
       schematicSheetId = schematicPort.schematic_sheet_id
     }
 
+    // Keep the text against its trace. The solver reserves a small collision
+    // margin, but rendering that margin makes labels between dense traces look
+    // like they belong to the neighboring wire.
+    const position = { ...placement.center }
+    const halfHeight = placement.height / 2
+    switch (placement.side) {
+      case "y+":
+        position.y = placement.anchorPoint.y + halfHeight
+        break
+      case "y-":
+        position.y = placement.anchorPoint.y - halfHeight
+        break
+      case "x+":
+        position.x = placement.anchorPoint.x + halfHeight
+        break
+      case "x-":
+        position.x = placement.anchorPoint.x - halfHeight
+        break
+    }
+
     db.schematic_text.insert({
       text,
       // Links the label back to the trace it names, so a consumer can tell an
@@ -80,7 +100,7 @@ export function applyInlineNetLabelPlacements(args: {
         [...schematicPortIds].sort().join("::"),
       ),
       anchor: "center",
-      position: placement.center,
+      position,
       rotation: placement.axis === "y" ? VERTICAL_INLINE_NET_LABEL_ROTATION : 0,
       font_size: placement.height,
       color: INLINE_NET_LABEL_COLOR,

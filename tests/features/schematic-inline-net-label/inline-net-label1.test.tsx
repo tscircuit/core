@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { INLINE_NET_LABEL_FONT_SIZE } from "lib/components/primitive-components/Group/Group_doInitialSchematicTraceRender/applyInlineNetLabelEligibility"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("named point-to-point trace gets a horizontal inline net label", async () => {
@@ -25,6 +26,7 @@ test("named point-to-point trace gets a horizontal inline net label", async () =
 
   expect(inlineLabels).toHaveLength(1)
   const inlineLabel = inlineLabels[0]!
+  expect(inlineLabel.font_size).toBe(INLINE_NET_LABEL_FONT_SIZE)
 
   // The label runs along the wire instead of hanging off the end of it, so no
   // anchored net label is emitted for this net.
@@ -44,13 +46,20 @@ test("named point-to-point trace gets a horizontal inline net label", async () =
       ?.source_trace_id,
   ).toBeUndefined()
 
-  // The wire is horizontal, so the label is unrotated and sits above it.
+  // The wire is horizontal, so the label is unrotated and its lower edge sits
+  // directly against the trace rather than floating in the gap above it.
   expect(inlineLabel.rotation).toBe(0)
   const traceEdges = circuit.db.schematic_trace.list()[0]!.edges
-  const horizontalEdge = traceEdges.find(
-    (edge) => Math.abs(edge.from.y - edge.to.y) < 1e-6,
-  )!
-  expect(inlineLabel.position.y).toBeGreaterThan(horizontalEdge.from.y)
+  const nearestHorizontalEdge = traceEdges
+    .filter((edge) => Math.abs(edge.from.y - edge.to.y) < 1e-6)
+    .sort(
+      (edgeA, edgeB) =>
+        Math.abs(inlineLabel.position.y - edgeA.from.y) -
+        Math.abs(inlineLabel.position.y - edgeB.from.y),
+    )[0]!
+  expect(inlineLabel.position.y - nearestHorizontalEdge.from.y).toBeCloseTo(
+    INLINE_NET_LABEL_FONT_SIZE / 2,
+  )
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
