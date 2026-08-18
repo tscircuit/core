@@ -129,39 +129,41 @@ export const ViaStitchingTssop20Circuit = () => (
 )
 
 export const convexPolygonCopperPourOutline = [
-  { x: -13, y: -8 },
+  { x: -15, y: -8 },
   { x: -4, y: -8 },
-  { x: 2, y: -3 },
-  { x: 2, y: 7 },
-  { x: -6, y: 9 },
-  { x: -13, y: 5 },
-  { x: -13, y: -8 },
+  { x: -1, y: -3 },
+  { x: -3, y: 6 },
+  { x: -10, y: 8 },
+  { x: -15, y: 4 },
+  { x: -15, y: -8 },
 ]
 
 export const concavePolygonCopperPourOutline = [
-  { x: -1, y: -9 },
-  { x: 13, y: -9 },
-  { x: 13, y: 7 },
-  { x: 7, y: 7 },
-  { x: 7, y: 1 },
-  { x: -1, y: 1 },
-  { x: -1, y: -9 },
+  { x: 1, y: -8 },
+  { x: 15, y: -8 },
+  { x: 15, y: 7 },
+  { x: 10, y: 7 },
+  { x: 10, y: 2 },
+  { x: 5, y: 2 },
+  { x: 5, y: 7 },
+  { x: 1, y: 7 },
+  { x: 1, y: -8 },
 ]
 
 export const ViaStitchingConvexPolygonCircuit = () => (
-  <board width="30mm" height="22mm">
+  <board width="34mm" height="24mm">
     <pcbnotetext
       pcbX={0}
-      pcbY={9.8}
+      pcbY={10.7}
       fontSize={0.55}
-      text="Convex fixed-outline GND pour with stitching vias only inside the polygon"
+      text="Full circuit with stitching confined to a partial-board convex GND pour"
     />
     <net name="GND" isGroundNet />
     <net name="VCC" isPowerNet />
     <chip
       name="U1"
       footprint="soic8"
-      pcbX={-7}
+      pcbX={-9}
       pcbY={0}
       connections={{ pin1: "net.GND", pin2: "net.VCC" }}
     />
@@ -169,7 +171,7 @@ export const ViaStitchingConvexPolygonCircuit = () => (
       name="C1"
       capacitance="100nF"
       footprint="0603"
-      pcbX={-2}
+      pcbX={-6}
       pcbY={-5}
       connections={{ pin1: "net.VCC", pin2: "net.GND" }}
     />
@@ -177,15 +179,15 @@ export const ViaStitchingConvexPolygonCircuit = () => (
       name="R1"
       resistance="10k"
       footprint="0402"
-      pcbX={-2}
-      pcbY={5}
+      pcbX={9}
+      pcbY={6}
       connections={{ pin1: "U1.pin3", pin2: "net.VCC" }}
     />
     <capacitor
       name="C2"
       capacitance="1uF"
       footprint="0805"
-      pcbX={-10}
+      pcbX={10}
       pcbY={-6}
       connections={{ pin1: "U1.pin4", pin2: "net.GND" }}
     />
@@ -205,27 +207,27 @@ export const ViaStitchingConvexPolygonCircuit = () => (
 )
 
 export const ViaStitchingConcavePolygonCircuit = () => (
-  <board width="30mm" height="22mm">
+  <board width="34mm" height="24mm">
     <pcbnotetext
       pcbX={0}
-      pcbY={9.8}
+      pcbY={10.7}
       fontSize={0.55}
-      text="Concave fixed-outline GND pour with stitching vias only inside the polygon"
+      text="Full circuit with stitching confined to a partial-board concave GND pour"
     />
     <net name="GND" isGroundNet />
     <net name="VCC" isPowerNet />
     <chip
       name="U1"
       footprint="qfp16"
-      pcbX={7}
-      pcbY={-4}
+      pcbX={9}
+      pcbY={-3}
       connections={{ pin1: "net.GND", pin2: "net.VCC" }}
     />
     <capacitor
       name="C1"
       capacitance="100nF"
       footprint="0402"
-      pcbX={2}
+      pcbX={5}
       pcbY={-6}
       connections={{ pin1: "net.VCC", pin2: "net.GND" }}
     />
@@ -233,16 +235,16 @@ export const ViaStitchingConcavePolygonCircuit = () => (
       name="R1"
       resistance="4.7k"
       footprint="0603"
-      pcbX={10}
-      pcbY={4}
+      pcbX={-10}
+      pcbY={6}
       connections={{ pin1: "U1.pin3", pin2: "net.VCC" }}
     />
     <capacitor
       name="C2"
       capacitance="1uF"
       footprint="0805"
-      pcbX={4}
-      pcbY={-1}
+      pcbX={-9}
+      pcbY={-6}
       connections={{ pin1: "U1.pin4", pin2: "net.GND" }}
     />
     <copperpour

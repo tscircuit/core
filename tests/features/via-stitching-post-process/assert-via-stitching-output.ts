@@ -152,3 +152,23 @@ export const assertViaStitchingInsideOutline = ({
     ),
   ).toBe(true)
 }
+
+export const assertComponentsSpanInsideAndOutsideOutline = ({
+  circuit,
+  outline,
+}: {
+  circuit: RootCircuit
+  outline: Point[]
+}) => {
+  const pcbComponents = circuit.db.pcb_component.list()
+  const componentsInsideOutline = pcbComponents.filter((pcbComponent) =>
+    isPointInsidePolygon(pcbComponent.center, outline),
+  )
+  const componentsOutsideOutline = pcbComponents.filter(
+    (pcbComponent) => !isPointInsidePolygon(pcbComponent.center, outline),
+  )
+
+  expect(pcbComponents.length).toBeGreaterThanOrEqual(4)
+  expect(componentsInsideOutline.length).toBeGreaterThan(0)
+  expect(componentsOutsideOutline.length).toBeGreaterThan(0)
+}

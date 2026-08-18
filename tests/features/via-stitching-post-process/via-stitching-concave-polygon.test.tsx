@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import {
+  assertComponentsSpanInsideAndOutsideOutline,
   assertViaStitchingInsideOutline,
   assertViaStitchingOutput,
 } from "./assert-via-stitching-output"
@@ -9,7 +10,7 @@ import {
   ViaStitchingConcavePolygonCircuit,
 } from "./via-stitching-test-circuits"
 
-test("via stitching stays inside a fixed concave GND-pour polygon", async () => {
+test("via stitching stays inside a partial-board concave GND-pour polygon", async () => {
   const { circuit } = getTestFixture()
   circuit.add(<ViaStitchingConcavePolygonCircuit />)
 
@@ -17,6 +18,10 @@ test("via stitching stays inside a fixed concave GND-pour polygon", async () => 
 
   assertViaStitchingOutput({ circuit })
   assertViaStitchingInsideOutline({
+    circuit,
+    outline: concavePolygonCopperPourOutline,
+  })
+  assertComponentsSpanInsideAndOutsideOutline({
     circuit,
     outline: concavePolygonCopperPourOutline,
   })
