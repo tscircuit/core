@@ -14,6 +14,7 @@ import { type Matrix, compose, translate } from "transformation-matrix"
 import { getDescendantSubcircuitIds } from "../../utils/autorouting/getAncestorSubcircuitIds"
 import { getBoardCenterFromAnchor } from "../../utils/boards/get-board-center-from-anchor"
 import { inflateCircuitJson } from "../../utils/circuit-json/inflate-circuit-json"
+import { getViaDiameterDefaults } from "../../utils/pcbStyle/getViaDiameterDefaults"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import type { RenderPhase } from "../base-components/Renderable"
 import { DrcCheck } from "../primitive-components/DrcCheck"
@@ -508,15 +509,23 @@ export class Board
       }
     }
     const subcircuitProps = this.getSubcircuit()._parsedProps
-    const resolvedMinViaHoleDiameter =
+    const pcbStyle = this.getInheritedMergedProperty("pcbStyle")
+    const styledViaDimensions = getViaDiameterDefaults(pcbStyle)
+    const configuredViaHoleDiameter =
       subcircuitProps.minViaHoleDiameter ??
-      jlcMinTolerances.min_via_hole_diameter
+      (pcbStyle?.viaHoleDiameter !== undefined
+        ? styledViaDimensions.holeDiameter
+        : undefined)
+    const resolvedMinViaHoleDiameter =
+      configuredViaHoleDiameter ?? jlcMinTolerances.min_via_hole_diameter
     const resolvedMinViaPadDiameter =
       subcircuitProps.minViaPadDiameter ??
-      (subcircuitProps.minViaHoleDiameter !== undefined
-        ? subcircuitProps.minViaHoleDiameter +
-          DEFAULT_VIA_PAD_DIAMETER_OVER_HOLE_DIAMETER_MM
-        : jlcMinTolerances.min_via_pad_diameter)
+      (pcbStyle?.viaPadDiameter !== undefined
+        ? styledViaDimensions.padDiameter
+        : configuredViaHoleDiameter !== undefined
+          ? configuredViaHoleDiameter +
+            DEFAULT_VIA_PAD_DIAMETER_OVER_HOLE_DIAMETER_MM
+          : jlcMinTolerances.min_via_pad_diameter)
     const pcb_board = db.pcb_board.insert({
       source_board_id: this.source_board_id,
       center,

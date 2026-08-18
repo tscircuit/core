@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import { getTestFixture } from "../fixtures/get-test-fixture"
 
 test(
-  "autorouter uses board min via dimensions for routed vias",
+  "autorouter uses pcbStyle via dimensions for routed vias",
   async () => {
     const { circuit } = getTestFixture()
 
@@ -11,11 +11,9 @@ test(
         width="12mm"
         height="12mm"
         layers={2}
-        minViaHoleDiameter={0.25}
-        minViaPadDiameter={0.8}
         pcbStyle={{
-          viaHoleDiameter: "0.3mm",
-          viaPadDiameter: "0.6mm",
+          viaHoleDiameter: "0.35mm",
+          viaPadDiameter: "0.8mm",
         }}
         autorouter={{
           local: true,
@@ -44,10 +42,14 @@ test(
 
     await circuit.renderUntilSettled()
 
+    const board = circuit.db.pcb_board.list()[0]
+    expect(board.min_via_hole_diameter).toBe(0.35)
+    expect(board.min_via_pad_diameter).toBe(0.8)
+
     const vias = circuit.db.pcb_via.list()
     expect(vias.length).toBeGreaterThan(0)
     expect(vias.every((via) => via.outer_diameter === 0.8)).toBe(true)
-    expect(vias.every((via) => via.hole_diameter === 0.25)).toBe(true)
+    expect(vias.every((via) => via.hole_diameter === 0.35)).toBe(true)
 
     expect(circuit).toMatchPcbSnapshot(import.meta.path)
   },
