@@ -8,11 +8,12 @@ import { type Matrix, identity } from "transformation-matrix"
 import pkgJson from "../package.json"
 import type { PrimitiveComponent } from "./components/base-components/PrimitiveComponent"
 import type { RenderPhase } from "./components/base-components/Renderable"
+import { isAssemblyDeviceContainer } from "./components/base-components/is-assembly-device-container"
 import type { BoardI } from "./components/normal-components/BoardI"
 import { Group } from "./components/primitive-components/Group"
 import type { RootCircuitEventName } from "./events"
 import { createInstanceFromReactElement } from "./fiber/create-instance-from-react-element"
-import { isAssemblyDeviceContainer } from "./components/base-components/is-assembly-device-container"
+import { updateMissingSchematicSheetWarning } from "./utils/schematic/update-missing-schematic-sheet-warning"
 
 export class IsolatedCircuit {
   firstChild: PrimitiveComponent | null = null
@@ -207,6 +208,12 @@ export class IsolatedCircuit {
     if (!firstChild) throw new Error("IsolatedCircuit has no root component")
     firstChild.parent = this as any
     firstChild.runRenderCycle()
+    if (this.isRootCircuit) {
+      updateMissingSchematicSheetWarning({
+        db,
+        schematicDisabled: this.schematicDisabled,
+      })
+    }
     this._hasUnrenderedUpdatesFromAsyncEffects = false
     this._hasRenderedAtleastOnce = true
   }
