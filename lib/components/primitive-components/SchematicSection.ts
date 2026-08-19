@@ -1,11 +1,11 @@
-import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
+import { type Bounds, doBoundsOverlap } from "@tscircuit/math-utils"
+import { schematicSectionProps } from "@tscircuit/props"
 import {
   calculateCellBoundaries,
   computeBoundsFromCellContents,
 } from "calculate-cell-boundaries"
-import { schematicSectionProps } from "@tscircuit/props"
-import type { Bounds } from "@tscircuit/math-utils"
 import type { SchematicSheet } from "circuit-json"
+import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
 type SchematicSheetId = SchematicSheet["schematic_sheet_id"]
 
@@ -132,16 +132,21 @@ export class SchematicSection extends PrimitiveComponent<
 
     const outer = computeBoundsFromCellContents(allCells)
 
-    // Internal dividing lines: use raw (unpadded) bounds so adjacent sections
-    // with small gaps don't overlap and prevent divider generation
     const CELL_MARGIN = 1
+    const rawBounds = allSectionsWithBounds.map((section) => section.rawBounds)
+    const marginExpandedBounds = rawBounds.map((bounds) => ({
+      minX: bounds.minX - CELL_MARGIN,
+      maxX: bounds.maxX + CELL_MARGIN,
+      minY: bounds.minY - CELL_MARGIN,
+      maxY: bounds.maxY + CELL_MARGIN,
+    }))
+    const marginCreatesOverlap = marginExpandedBounds.some((bounds, index) =>
+      marginExpandedBounds
+        .slice(index + 1)
+        .some((otherBounds) => doBoundsOverlap(bounds, otherBounds)),
+    )
     const dividers = calculateCellBoundaries(
-      allSectionsWithBounds.map((s) => ({
-        minX: s.rawBounds.minX - CELL_MARGIN,
-        maxX: s.rawBounds.maxX + CELL_MARGIN,
-        minY: s.rawBounds.minY - CELL_MARGIN,
-        maxY: s.rawBounds.maxY + CELL_MARGIN,
-      })),
+      marginCreatesOverlap ? rawBounds : marginExpandedBounds,
     )
     for (const line of dividers) {
       db.schematic_line.insert({

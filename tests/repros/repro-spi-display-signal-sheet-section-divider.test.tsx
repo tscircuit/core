@@ -39,13 +39,16 @@ test("spi display signal sheet sections with a narrow gap", async () => {
   await circuit.renderUntilSettled()
 
   const sectionDividers = circuit.db.schematic_line.list()
-  expect(sectionDividers).toHaveLength(0)
+  expect(sectionDividers).toHaveLength(1)
+  expect(sectionDividers[0].x1).toBeCloseTo(0.88125)
+  expect(sectionDividers[0].x2).toBeCloseTo(0.88125)
 
   const schematicWithoutManualDivider = (
     signalSheetCircuitJson as AnyCircuitElement[]
   ).filter((element) => element.type !== "schematic_line")
 
-  expect(schematicWithoutManualDivider).toMatchSchematicSnapshot(
-    import.meta.path,
-  )
+  expect([
+    ...schematicWithoutManualDivider,
+    ...sectionDividers,
+  ]).toMatchSchematicSnapshot(import.meta.path)
 })
