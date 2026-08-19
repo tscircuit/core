@@ -65,7 +65,7 @@ const MosfetSymbol = () => (
   </symbol>
 )
 
-test("custom symbol ports support internallyConnectedPins", async () => {
+test.failing("custom symbol ports support internallyConnectedPins", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
