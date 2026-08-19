@@ -23,6 +23,7 @@ import type {
   SchematicBoxDimensions,
 } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
 import { getRotatedSymbolName } from "lib/utils/schematic/getRotatedSymbolName"
+import { updateMissingSchematicSheetWarning } from "lib/utils/schematic/update-missing-schematic-sheet-warning"
 import { isMatchingSelector } from "lib/utils/selector-matching"
 import { type SchSymbol, symbols } from "schematic-symbols"
 import {
@@ -269,6 +270,28 @@ export abstract class PrimitiveComponent<
       rawValue: rawPcbY,
       axis: "pcbY",
       propertyName: "pcbY",
+    })
+  }
+
+  doInitialSchematicSheetRender(): void {
+    if (!(this.parent as IsolatedCircuit | null)?.isRootCircuit) return
+    const root = this.root
+    if (!root) return
+
+    updateMissingSchematicSheetWarning({
+      db: root.db,
+      schematicDisabled: root.schematicDisabled,
+    })
+  }
+
+  updateSchematicSheetRender(): void {
+    if (!(this.parent as IsolatedCircuit | null)?.isRootCircuit) return
+    const root = this.root
+    if (!root) return
+
+    updateMissingSchematicSheetWarning({
+      db: root.db,
+      schematicDisabled: root.schematicDisabled,
     })
   }
 
