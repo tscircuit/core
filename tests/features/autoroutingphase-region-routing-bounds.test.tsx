@@ -32,18 +32,8 @@ test("non-reroute autorouting phase region does not constrain routing bounds", a
 
   circuit.add(
     <board width="40mm" height="20mm">
-      <resistor
-        name="R1"
-        resistance="1k"
-        footprint="0402"
-        pcbX={-2}
-      />
-      <resistor
-        name="R2"
-        resistance="1k"
-        footprint="0402"
-        pcbX={2}
-      />
+      <resistor name="R1" resistance="1k" footprint="0402" pcbX={-2} />
+      <resistor name="R2" resistance="1k" footprint="0402" pcbX={2} />
       <autoroutingphase
         phaseIndex={0}
         region={{
