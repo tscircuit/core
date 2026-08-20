@@ -21,7 +21,7 @@ const createSimpleRouteJson = (
   bounds: { minX: -1, maxX: 10, minY: -1, maxY: 1 },
 })
 
-test("fanout handoff trace keeps its phase-local routing identity", () => {
+test("fanout handoff trace uses its source trace identity downstream", () => {
   const padPoint = { x: 0, y: 0, layer: "top", pointId: "soc:A1" }
   const remotePoint = { x: 10, y: 0, layer: "top", pointId: "memory:D1" }
   const fanoutExitPoint = {
@@ -82,8 +82,12 @@ test("fanout handoff trace keeps its phase-local routing identity", () => {
   })
 
   const handoffTrace = result.downstreamSimpleRouteJson.traces?.[0]
-  expect(handoffTrace?.connection_name).toBe(localConnectionName)
-  expect(handoffTrace?.connectsTo).not.toContain(sourceTraceId)
+  expect(handoffTrace?.connection_name).toBe(sourceTraceId)
+  expect(handoffTrace?.connectsTo).toEqual([
+    "soc:A1",
+    "breakout:DDR_D0",
+    sourceTraceId,
+  ])
   expect(
     result.baseSimpleRouteJson.connections[0]?.pointsToConnect[0],
   ).toMatchObject({ x: 3, y: 0, layer: "top", pointId: "soc:A1" })
