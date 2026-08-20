@@ -7,7 +7,6 @@ import { getBoundsForSchematic } from "lib/utils/autorouting/getBoundsForSchemat
 import {
   DEFAULT_SCHEMATIC_SHEET_HEIGHT,
   DEFAULT_SCHEMATIC_SHEET_WIDTH,
-  SCHEMATIC_SHEET_INNER_MARGIN,
 } from "lib/utils/schematic/insertSchematicElementOutsideSheetWarnings"
 import { applyToPoint, translate } from "transformation-matrix"
 
@@ -44,14 +43,10 @@ export const moveSchematicSheetContentsInsideFrame = ({
     return
   }
 
-  const sheetMinX =
-    -DEFAULT_SCHEMATIC_SHEET_WIDTH / 2 + SCHEMATIC_SHEET_INNER_MARGIN
-  const sheetMaxX =
-    DEFAULT_SCHEMATIC_SHEET_WIDTH / 2 - SCHEMATIC_SHEET_INNER_MARGIN
-  const sheetMinY =
-    -DEFAULT_SCHEMATIC_SHEET_HEIGHT / 2 + SCHEMATIC_SHEET_INNER_MARGIN
-  const sheetMaxY =
-    DEFAULT_SCHEMATIC_SHEET_HEIGHT / 2 - SCHEMATIC_SHEET_INNER_MARGIN
+  const sheetMinX = -DEFAULT_SCHEMATIC_SHEET_WIDTH / 2
+  const sheetMaxX = DEFAULT_SCHEMATIC_SHEET_WIDTH / 2
+  const sheetMinY = -DEFAULT_SCHEMATIC_SHEET_HEIGHT / 2
+  const sheetMaxY = DEFAULT_SCHEMATIC_SHEET_HEIGHT / 2
 
   const contentFitsInsideSheet =
     bounds.maxX - bounds.minX <= sheetMaxX - sheetMinX &&
