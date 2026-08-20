@@ -41,7 +41,7 @@
     "@tscircuit/common": "^0.0.20",
     "@tscircuit/copper-pour-solver": "^0.0.49",
     "@tscircuit/create-fdm-enclosure": "0.0.4",
-    "@tscircuit/fanout-solver": "github:tscircuit/fanout-solver#dad9d8bde92b8bee5bc731665c9d66422385c3c7",
+    "@tscircuit/fanout-solver": "0.0.33",
     "@tscircuit/footprinter": "^0.0.418",
     "@tscircuit/image-utils": "^0.0.8",
     "@tscircuit/infer-cable-insertion-point": "^0.0.4",
