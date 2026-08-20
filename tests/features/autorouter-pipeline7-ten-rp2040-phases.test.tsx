@@ -1,16 +1,16 @@
 import { expect, test } from "bun:test"
 import { createRp2040PhasedCircuit } from "./autorouter-ten-rp2040-phases.fixture"
 
-test("pipeline9 across ten one-trace RP2040 phases", async () => {
+test("pipeline7 across ten one-trace RP2040 phases", async () => {
   const { circuit, autoroutingPhaseIoStack, autoroutingSolverNames } =
-    createRp2040PhasedCircuit("beta_pipeline9")
+    createRp2040PhasedCircuit("beta_pipeline7")
 
   const start = performance.now()
   await circuit.renderUntilSettled()
   const durationMs = performance.now() - start
 
   console.table({
-    pipeline9: {
+    pipeline7: {
       durationMs: durationMs.toFixed(2),
       finalPhaseOutputTraces:
         autoroutingPhaseIoStack.at(-1)?.endSimpleRouteJson?.traces?.length ?? 0,
@@ -35,9 +35,9 @@ test("pipeline9 across ten one-trace RP2040 phases", async () => {
     autoroutingPhaseIoStack.map(
       (phase) => phase.endSimpleRouteJson?.traces?.length ?? 0,
     ),
-  ).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+  ).toEqual(Array(10).fill(1))
   expect(autoroutingSolverNames).toEqual(
-    Array(10).fill("AutoroutingPipelineSolver9_PreloadedTraceGraph"),
+    Array(10).fill("AutoroutingPipelineSolver7_MultiGraph"),
   )
   expect(circuit.db.pcb_trace.list()).toHaveLength(10)
   expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
@@ -45,7 +45,7 @@ test("pipeline9 across ten one-trace RP2040 phases", async () => {
 
   await expect(autoroutingPhaseIoStack).toMatchAutoroutingPhaseIoStackSnapshot(
     import.meta.path,
-    "autorouter-pipeline9-ten-rp2040-phases",
+    "autorouter-pipeline7-ten-rp2040-phases",
     circuit,
     { diffThresholdPercent: 2 },
   )
