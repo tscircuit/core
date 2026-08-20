@@ -758,6 +758,22 @@ export class NormalComponent<
     }
   }
 
+  updateSourceParentAttachment(): void {
+    const { db } = this.root!
+
+    for (const internalConnection of db.source_component_internal_connection.list(
+      {
+        source_component_id: this.source_component_id!,
+      },
+    )) {
+      db.source_component_internal_connection.delete(
+        internalConnection.source_component_internal_connection_id,
+      )
+    }
+
+    this.doInitialSourceParentAttachment()
+  }
+
   /**
    * Render the schematic component for this NormalComponent using the
    * config.schematicSymbolName if it exists, or create a generic box if
