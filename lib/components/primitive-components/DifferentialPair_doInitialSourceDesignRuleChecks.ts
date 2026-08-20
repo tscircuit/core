@@ -119,6 +119,28 @@ export const DifferentialPair_doInitialSourceDesignRuleChecks = (
     })
   }
 
+  const targetDifferentialImpedance =
+    differentialPair._parsedProps.targetDifferentialImpedance
+  if (targetDifferentialImpedance !== undefined) {
+    const positiveConnection = resolvePointToPointConnection(
+      differentialPair,
+      differentialPair._parsedProps.positiveConnection,
+    )
+    const warningSourceComponentId = positiveConnection?.sourcePorts.find(
+      (sourcePort) => sourcePort.source_component_id !== undefined,
+    )?.source_component_id
+    if (warningSourceComponentId) {
+      db.source_property_ignored_warning.insert({
+        source_component_id: warningSourceComponentId,
+        property_name: "targetDifferentialImpedance",
+        error_type: "source_property_ignored_warning",
+        message: `Differential pair "${differentialPair.name}" requests ${targetDifferentialImpedance} ohm differential impedance. This routing target does not verify controlled impedance or signal integrity; qualification still requires the fabricated stackup and field-solver or SI analysis.`,
+        subcircuit_id:
+          differentialPair.getSubcircuit().subcircuit_id ?? undefined,
+      })
+    }
+  }
+
   for (const connectionPolarity of ["positive", "negative"] as const) {
     let connectionSelector = differentialPair._parsedProps.negativeConnection
     if (connectionPolarity === "positive") {
