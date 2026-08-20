@@ -8,6 +8,8 @@ import { SchematicTracePipelineSolver } from "@tscircuit/schematic-trace-solver"
 import type { SchematicTrace } from "circuit-json"
 import Debug from "debug"
 import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
+import { isCircuitJsonSymbol } from "lib/utils/schematic/isCircuitJsonSymbol"
+import { isValidElement } from "react"
 import { Port } from "../../Port"
 import { Group } from "../Group"
 import { computeCrossings } from "./compute-crossings"
@@ -144,6 +146,22 @@ export function applyTracesFromSolverOutput(args: {
     )
   }
 
+  const customSymbolPortIds = new Set(
+    group
+      .selectAll<Port>("port")
+      .filter((port) => {
+        if (!port._getSymbolAncestor()) return false
+        const symbol = port.getParentNormalComponent()?._parsedProps.symbol
+        return isValidElement(symbol) || isCircuitJsonSymbol(symbol)
+      })
+      .map((port) => port.schematic_port_id)
+      .filter(
+        (schematicPortId): schematicPortId is string =>
+          schematicPortId !== null && schematicPortId !== undefined,
+      )
+      .map(asSchematicPortId),
+  )
+
   const componentBoundsByPortId = new Map<SchematicPortId, Bounds>()
   for (const schematicComponent of db.schematic_component.list()) {
     const textInclusiveBounds = getSchematicComponentWithTextBounds({
@@ -164,6 +182,11 @@ export function applyTracesFromSolverOutput(args: {
         port.center.y > componentBounds.minY &&
         port.center.y < componentBounds.maxY
 
+      const schematicPortId = asSchematicPortId(port.schematic_port_id)
+      if (!textInclusiveBounds && !customSymbolPortIds.has(schematicPortId)) {
+        continue
+      }
+
       // A custom symbol may intentionally place a port inside its body and
       // rely on the solver to project the trace to the body edge. Do not draw
       // back through the symbol in that case. Ports on or outside the normal
@@ -171,7 +194,7 @@ export function applyTracesFromSolverOutput(args: {
       if (!textInclusiveBounds && isInsideComponentBounds) continue
 
       componentBoundsByPortId.set(
-        asSchematicPortId(port.schematic_port_id),
+        schematicPortId,
         textInclusiveBounds ?? componentBounds,
       )
     }
