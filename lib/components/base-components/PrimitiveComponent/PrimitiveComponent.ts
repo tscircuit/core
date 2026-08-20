@@ -1037,6 +1037,7 @@ export abstract class PrimitiveComponent<
     component.onAddToParent(this)
     component.parent = this
     this.children.push(component)
+    this._clearSelectorCachesUpTree()
   }
 
   addAll(components: PrimitiveComponent[]) {
@@ -1049,6 +1050,16 @@ export abstract class PrimitiveComponent<
     this.children = this.children.filter((c) => c !== component)
     this.childrenPendingRemoval.push(component)
     component.shouldBeRemoved = true
+    this._clearSelectorCachesUpTree()
+  }
+
+  private _clearSelectorCachesUpTree(): void {
+    let currentComponent: PrimitiveComponent | null = this
+    while (currentComponent) {
+      currentComponent._cachedSelectAllQueries?.clear()
+      currentComponent._cachedSelectOneQueries?.clear()
+      currentComponent = currentComponent.parent
+    }
   }
 
   getSubcircuitSelector(): string {
