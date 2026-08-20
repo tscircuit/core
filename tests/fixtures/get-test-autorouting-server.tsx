@@ -1,8 +1,27 @@
 import { serve } from "bun"
 import { afterEach } from "bun:test"
 import { MultilayerIjump } from "@tscircuit/infgrid-ijump-astar"
+import { TscircuitAutorouter } from "lib/utils/autorouting/CapacityMeshAutorouter"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
+
+const solveSimpleRouteJson = (simpleRouteJson: SimpleRouteJson) => {
+  // The legacy A* test router only accepts two-terminal connections. Use the
+  // production capacity router when the input exercises SRJ multi-terminal or
+  // preconnected-point semantics.
+  if (
+    simpleRouteJson.connections.some(
+      (connection) => connection.pointsToConnect.length > 2,
+    )
+  ) {
+    return new TscircuitAutorouter(simpleRouteJson).solveSync()
+  }
+
+  return new MultilayerIjump({
+    input: simpleRouteJson,
+    OBSTACLE_MARGIN: 0.2,
+  }).solveAndMapToTraces()
+}
 
 export const getTestAutoroutingServer = ({
   requireDisplayName = false,
@@ -50,12 +69,7 @@ export const getTestAutoroutingServer = ({
           )
         }
 
-        const autorouter = new MultilayerIjump({
-          input: simpleRouteJson,
-          OBSTACLE_MARGIN: 0.2,
-        })
-
-        const traces = autorouter.solveAndMapToTraces()
+        const traces = solveSimpleRouteJson(simpleRouteJson)
 
         // Simulate failure in the first trace if the flag is set
         if (failInFirstTrace && traces.length > 0) {
@@ -107,12 +121,7 @@ export const getTestAutoroutingServer = ({
           circuitJson: body.input_circuit_json,
         })
 
-        const autorouter = new MultilayerIjump({
-          input: simpleRouteJson as any,
-          OBSTACLE_MARGIN: 0.2,
-        })
-
-        const traces = autorouter.solveAndMapToTraces()
+        const traces = solveSimpleRouteJson(simpleRouteJson)
 
         // Simulate failure in the first trace if the flag is set
         if (failInFirstTrace && traces.length > 0) {

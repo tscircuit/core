@@ -68,6 +68,11 @@ test("parent net routing uses the child breakout point", async () => {
   expect(parentNetConnection!.pointsToConnect).not.toContainEqual(
     expect.objectContaining({ pcb_port_id: innerPcbPort?.pcb_port_id }),
   )
+  expect(
+    parentNetConnection!.pointsToConnect.some((point) =>
+      point.pointId?.startsWith("pcb_trace_route_point_"),
+    ),
+  ).toBe(false)
   expect(onePointConnections).toEqual([])
   expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
   expect(circuit.db.pcb_trace_error.list()).toEqual([])

@@ -280,6 +280,11 @@ test("RP2040 subcircuit exposes slow parent autorouter input construction", asyn
           />
         </Fragment>
       ))}
+      <trace
+        name="FLASH_VCC"
+        from=".U_FLASH > .VCC"
+        to={`${rp2040Selector} > .IOVDD1`}
+      />
 
       <chip
         name="U_DEBUG_USB"
@@ -364,7 +369,7 @@ test("RP2040 subcircuit exposes slow parent autorouter input construction", asyn
     expect(autoroutingPhaseIoStack).toHaveLength(1)
     expect(
       autoroutingPhaseIoStack[0]?.startSimpleRouteJson?.connections,
-    ).toHaveLength(58)
+    ).toHaveLength(59)
     console.log(`Flat RP2040 autorouting took ${renderDurationMs.toFixed(0)}ms`)
     return
   }
@@ -373,7 +378,7 @@ test("RP2040 subcircuit exposes slow parent autorouter input construction", asyn
   const [subcircuitPhase, boardPhase] = autoroutingPhaseIoStack
   expect(subcircuitPhase?.startSimpleRouteJson?.connections).toHaveLength(11)
   expect(subcircuitPhase?.endSimpleRouteJson?.traces).toHaveLength(20)
-  expect(boardPhase?.startSimpleRouteJson?.connections).toHaveLength(47)
+  expect(boardPhase?.startSimpleRouteJson?.connections).toHaveLength(48)
   expect(boardPhase?.startSimpleRouteJson?.traces?.length).toBe(
     subcircuitPhase?.endSimpleRouteJson?.traces?.length,
   )
@@ -404,8 +409,8 @@ test("RP2040 subcircuit exposes slow parent autorouter input construction", asyn
   const rp2040ConnectionPoints = boardConnectionPoints.filter(
     (point) => point.pcb_port_id && rp2040PcbPortIds.has(point.pcb_port_id),
   )
-  expect(boardConnectionPoints).toHaveLength(94)
-  expect(rp2040ConnectionPoints).toHaveLength(45)
+  expect(boardConnectionPoints.length).toBeGreaterThan(96)
+  expect(rp2040ConnectionPoints).toHaveLength(46)
   expect(
     rp2040ConnectionPoints.every(
       (point) =>
@@ -435,11 +440,31 @@ test("RP2040 subcircuit exposes slow parent autorouter input construction", asyn
     ),
   ).toBe(true)
   expect(new Set(boardInputSrj.connections.map(({ name }) => name)).size).toBe(
-    47,
+    48,
   )
   expect(
     new Set(boardInputSrj.traces?.map(({ pcb_trace_id }) => pcb_trace_id)).size,
   ).toBe(20)
+
+  const childTraceConnectionPoints = boardConnectionPoints.filter((point) =>
+    point.pointId?.startsWith("pcb_trace_route_point_"),
+  )
+  expect(childTraceConnectionPoints.length).toBeGreaterThan(2)
+  const preservedTraceConnectedIds = new Set(
+    boardInputSrj.traces?.flatMap((trace) => trace.connectsTo ?? []),
+  )
+  expect(
+    childTraceConnectionPoints.every(
+      (point) => point.pointId && preservedTraceConnectedIds.has(point.pointId),
+    ),
+  ).toBe(true)
+  expect(
+    boardInputSrj.connections.filter((connection) =>
+      connection.pointsToConnect.some((point) =>
+        point.pointId?.startsWith("pcb_trace_route_point_"),
+      ),
+    ),
+  ).toHaveLength(1)
 
   console.log(
     `RP2040 subcircuit ${
