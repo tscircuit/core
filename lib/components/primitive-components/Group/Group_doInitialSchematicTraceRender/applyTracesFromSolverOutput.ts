@@ -1,5 +1,9 @@
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
-import { type Bounds, pointToBoundsDistance } from "@tscircuit/math-utils"
+import {
+  type Bounds,
+  getBoundFromCenteredRect,
+  pointToBoundsDistance,
+} from "@tscircuit/math-utils"
 import { SchematicTracePipelineSolver } from "@tscircuit/schematic-trace-solver"
 import type { SchematicTrace } from "circuit-json"
 import Debug from "debug"
@@ -19,25 +23,25 @@ const MAX_PIN_SNAP_GAP = 1.5
 /**
  * Adds the internal pin stub omitted by the schematic trace solver.
  *
- * A component's routing box can be expanded to include its text, placing its
- * actual pins inside the box. The solver intentionally projects those pins to
- * the box edge. Core already closes small solver-to-pin gaps; for larger gaps,
- * only connect the endpoint back to the real pin when it lies within that
- * component's text-expanded bounds.
+ * A component's routing box can be expanded to include its text or asymmetric
+ * custom-symbol pins, placing an actual pin inside the box. The solver projects
+ * that pin to the box edge. Close the resulting gap back to the real pin; for
+ * larger gaps, only do so when the projected endpoint lies within the
+ * component's routing bounds.
  */
 function extendTraceEndpointsToReachPinsInsideExpandedBoundingBox(
   params: {
     points: Array<{ x: number; y: number }>
     schematicPortIds: SchematicPortId[]
-    expandedBoundsByPortId: Map<SchematicPortId, Bounds>
+    componentBoundsByPortId: Map<SchematicPortId, Bounds>
   },
   db: CircuitJsonUtilObjects,
 ): Array<{ x: number; y: number }> {
-  const { points, schematicPortIds, expandedBoundsByPortId } = params
+  const { points, schematicPortIds, componentBoundsByPortId } = params
   const centers = schematicPortIds
     .map((id) => {
       const center = db.schematic_port.get(id)?.center
-      const bounds = expandedBoundsByPortId.get(id)
+      const bounds = componentBoundsByPortId.get(id)
       if (!center || !bounds) return null
       return { center, bounds }
     })
@@ -140,17 +144,22 @@ export function applyTracesFromSolverOutput(args: {
     )
   }
 
-  const expandedBoundsByPortId = new Map<SchematicPortId, Bounds>()
+  const componentBoundsByPortId = new Map<SchematicPortId, Bounds>()
   for (const schematicComponent of db.schematic_component.list()) {
-    const bounds = getSchematicComponentWithTextBounds({
-      db,
-      schematicComponent,
-    })
-    if (!bounds) continue
+    const bounds =
+      getSchematicComponentWithTextBounds({
+        db,
+        schematicComponent,
+      }) ??
+      getBoundFromCenteredRect({
+        center: schematicComponent.center,
+        width: schematicComponent.size.width,
+        height: schematicComponent.size.height,
+      })
     for (const port of db.schematic_port.list({
       schematic_component_id: schematicComponent.schematic_component_id,
     })) {
-      expandedBoundsByPortId.set(
+      componentBoundsByPortId.set(
         asSchematicPortId(port.schematic_port_id),
         bounds,
       )
@@ -204,7 +213,7 @@ export function applyTracesFromSolverOutput(args: {
         {
           points,
           schematicPortIds: solvedTraceSchematicPortIds,
-          expandedBoundsByPortId,
+          componentBoundsByPortId,
         },
         db,
       )

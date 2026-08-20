@@ -340,5 +340,23 @@ test("imported DMT6007LFG_7 custom symbol ports support internallyConnectedPins"
     anchor_side: "right",
   })
   expect(gateNetLabel!.center!.x).toBeLessThan(gateNetLabel!.anchor_position!.x)
+
+  const sourcePort = circuit.db.schematic_port
+    .list()
+    .find((port) => port.pin_number === 1)
+  expect(sourcePort).toBeDefined()
+  expect(
+    circuit.db.schematic_trace
+      .list()
+      .some((trace) =>
+        trace.edges.some(
+          (edge) =>
+            (edge.from.x === sourcePort!.center.x &&
+              edge.from.y === sourcePort!.center.y) ||
+            (edge.to.x === sourcePort!.center.x &&
+              edge.to.y === sourcePort!.center.y),
+        ),
+      ),
+  ).toBe(true)
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
