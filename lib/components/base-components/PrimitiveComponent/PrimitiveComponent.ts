@@ -985,6 +985,17 @@ export abstract class PrimitiveComponent<
     this.parent?.onChildChanged?.(child)
   }
 
+  /**
+   * Cached selectors can depend on any descendant in their search scope. Only
+   * invalidate them when that scope actually changes, and propagate the
+   * invalidation to ancestors whose cached queries can include this subtree.
+   */
+  _invalidateSelectorCachesForTreeMutation() {
+    this._cachedSelectAllQueries.clear()
+    this._cachedSelectOneQueries.clear()
+    this.parent?._invalidateSelectorCachesForTreeMutation?.()
+  }
+
   add(component: PrimitiveComponent) {
     // The react reconciler will try to add text nodes as children, but
     // we don't have a text component, so we just ignore them. The text is
@@ -1037,6 +1048,7 @@ export abstract class PrimitiveComponent<
     component.onAddToParent(this)
     component.parent = this
     this.children.push(component)
+    this._invalidateSelectorCachesForTreeMutation()
   }
 
   addAll(components: PrimitiveComponent[]) {
@@ -1046,9 +1058,11 @@ export abstract class PrimitiveComponent<
   }
 
   remove(component: PrimitiveComponent) {
+    const wasChild = this.children.includes(component)
     this.children = this.children.filter((c) => c !== component)
     this.childrenPendingRemoval.push(component)
     component.shouldBeRemoved = true
+    if (wasChild) this._invalidateSelectorCachesForTreeMutation()
   }
 
   getSubcircuitSelector(): string {
