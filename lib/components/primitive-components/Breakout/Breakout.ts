@@ -6,6 +6,10 @@ import { BreakoutPoint } from "../BreakoutPoint"
 import type { Trace } from "../Trace/Trace"
 import type { Port } from "../Port"
 import { createBreakoutPointSolverInput } from "./createBreakoutPointSolverInput"
+import {
+  type CoordinatedWindingBreakoutPoint,
+  solveCoordinatedWindingBreakoutPoints,
+} from "./solve-coordinated-winding-breakout-points"
 
 export class Breakout extends Group<typeof breakoutProps> {
   override get isRoutingDirective() {
@@ -80,9 +84,19 @@ export class Breakout extends Group<typeof breakoutProps> {
     const solverInput = createBreakoutPointSolverInput(this)
     if (!solverInput) return
 
-    const solver = new BreakoutPointSolver(solverInput)
-    solver.solve()
-    const output = solver.getOutput()
+    const coordinatedBreakoutPoints =
+      solveCoordinatedWindingBreakoutPoints(this)
+    let solvedBreakoutPoints: readonly Pick<
+      CoordinatedWindingBreakoutPoint,
+      "sourcePortId" | "sourceTraceId" | "x" | "y"
+    >[]
+    if (coordinatedBreakoutPoints) {
+      solvedBreakoutPoints = coordinatedBreakoutPoints
+    } else {
+      const solver = new BreakoutPointSolver(solverInput)
+      solver.solve()
+      solvedBreakoutPoints = solver.getOutput().breakoutPoints
+    }
 
     const autoBreakoutPoints = this.children.filter(
       (c) => c instanceof AutoplacedBreakoutPoint,
@@ -107,7 +121,7 @@ export class Breakout extends Group<typeof breakoutProps> {
       ),
     })
 
-    for (const solvedPoint of output.breakoutPoints) {
+    for (const solvedPoint of solvedBreakoutPoints) {
       const matchingBreakoutPoint = autoBreakoutPoints.find(
         (child) =>
           child.matchedPort?.source_port_id === solvedPoint.sourcePortId,
