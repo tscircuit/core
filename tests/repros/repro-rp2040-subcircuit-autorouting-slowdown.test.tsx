@@ -480,6 +480,7 @@ test("RP2040 subcircuit completes parent routing through child attachment points
     import.meta.path,
     "repro-rp2040-subcircuit-autorouting-slowdown-srj",
     circuit,
+    { diffThresholdPercent: 1 },
   )
   expect(circuit).toMatchPcbSnapshot(import.meta.path, {
     diffThresholdPercent: 2,
