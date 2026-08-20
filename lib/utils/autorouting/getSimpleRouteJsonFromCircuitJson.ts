@@ -21,6 +21,7 @@ import type {
   SimpleRouteJson,
   SimpleRoutePoint,
 } from "./SimpleRouteJson"
+import { addPreservedTraceConnectionPointsToConnections } from "./addPreservedTraceConnectionPointsToConnections"
 import { expandSrjBoundsToIncludeConnectionPoints } from "./expand-srj-bounds-to-include-connection-points"
 import { getDescendantSubcircuitIds } from "./getAncestorSubcircuitIds"
 import {
@@ -736,6 +737,27 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     conn.width ??= nominalTraceWidth ?? defaultTraceWidth
   }
 
+  // Child subcircuits route first. Give each electrically matching parent
+  // connection many possible attachment points along that preserved copper.
+  // The matching point IDs are also present in the preserved trace's
+  // `connectsTo`, so the router knows they are alternatives on an existing
+  // route rather than additional terminals that all need to be connected.
+  addPreservedTraceConnectionPointsToConnections({
+    connections: allConns,
+    preservedTraces: preservedRoutedSubcircuitTraces.filter(
+      (trace) =>
+        Boolean(trace.source_trace_id) &&
+        (!subcircuit_id || trace.subcircuit_id !== subcircuit_id),
+    ),
+    connMap: sharedConnMap,
+    // A breakout point is an explicit child/parent boundary. Connections that
+    // contain one must keep using that boundary instead of bypassing it via an
+    // interior point sampled from the child trace.
+    excludedConnectionPointIds: new Set(
+      breakoutPoints.map((point) => point.pcb_breakout_point_id),
+    ),
+  })
+
   bounds = expandSrjBoundsToIncludeConnectionPoints({
     bounds,
     connections: allConns,
@@ -761,39 +783,6 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     subcircuitId: subcircuit_id,
     planeTerminatedSourceTraceLayers,
   })
-
-  if (subcircuit_id) {
-    const pointIdToConn = new Map<string, SimpleRouteConnection>()
-    for (const conn of allConns) {
-      for (const pt of conn.pointsToConnect) {
-        if (pt.pointId) pointIdToConn.set(pt.pointId, conn)
-      }
-    }
-
-    const existingTraces = db.pcb_trace.list().filter((t) => {
-      return relevantSubcircuitIds?.has(t.subcircuit_id!)
-    })
-
-    for (const tr of existingTraces) {
-      const tracePortIds = new Set<string>()
-      for (const seg of tr.route as any[]) {
-        if (seg.start_pcb_port_id) tracePortIds.add(seg.start_pcb_port_id)
-        if (seg.end_pcb_port_id) tracePortIds.add(seg.end_pcb_port_id)
-      }
-      if (tracePortIds.size < 2) continue
-
-      const firstId = tracePortIds.values().next().value
-      if (!firstId) continue
-      const conn = pointIdToConn.get(firstId)
-      if (!conn) continue
-      if (![...tracePortIds].every((pid) => pointIdToConn.get(pid) === conn)) {
-        continue
-      }
-
-      conn.externallyConnectedPointIds ??= []
-      conn.externallyConnectedPointIds.push([...tracePortIds])
-    }
-  }
 
   const resolvedMinViaHoleDiameter =
     minViaHoleDiameter ?? board?.min_via_hole_diameter

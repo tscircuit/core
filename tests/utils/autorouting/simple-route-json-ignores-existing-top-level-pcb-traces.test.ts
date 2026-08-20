@@ -206,7 +206,13 @@ test("simple route json keeps existing pcb traces as routing state inside subcir
       (connection) => connection.source_trace_id === "source_trace_ab",
     ),
   ).toBe(false)
-  expect(netConnection!.externallyConnectedPointIds).toEqual([
-    ["pcb_port_a", "pcb_port_b"],
+  expect(netConnection!.externallyConnectedPointIds).toBeUndefined()
+  expect(netConnection!.pointsToConnect.map((point) => point.pointId)).toEqual([
+    "pcb_port_a",
+    "pcb_port_b",
+  ])
+  expect(simpleRouteJson.traces?.[0]?.connectsTo).toEqual([
+    "pcb_port_a",
+    "pcb_port_b",
   ])
 })

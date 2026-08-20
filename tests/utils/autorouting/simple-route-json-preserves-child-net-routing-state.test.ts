@@ -96,15 +96,27 @@ test("board simple route json preserves child trace physical connectivity", () =
     (connection) => connection.name === "source_net_shared",
   )
 
+  const childTracePointIds = [0, 1, 2, 3, 4].map(
+    (pointIndex) =>
+      `pcb_trace_route_point_pcb_trace_child_routed_${pointIndex}`,
+  )
   expect(netConnection?.pointsToConnect.map((point) => point.pointId)).toEqual([
     "opaque-child-a",
     "opaque-child-b",
     "opaque-board-port",
+    ...childTracePointIds,
+  ])
+  expect(netConnection?.pointsToConnect.slice(3)).toEqual([
+    { x: -2, y: 0, layer: "top", pointId: childTracePointIds[0] },
+    { x: -1.5, y: 0, layer: "top", pointId: childTracePointIds[1] },
+    { x: -1, y: 0, layer: "top", pointId: childTracePointIds[2] },
+    { x: -0.5, y: 0, layer: "top", pointId: childTracePointIds[3] },
+    { x: 0, y: 0, layer: "top", pointId: childTracePointIds[4] },
   ])
   expect(simpleRouteJson.traces).toEqual([
     expect.objectContaining({
       pcb_trace_id: "pcb_trace_child_routed",
-      connectsTo: ["opaque-child-a", "opaque-child-b"],
+      connectsTo: ["opaque-child-a", "opaque-child-b", ...childTracePointIds],
     }),
   ])
 
