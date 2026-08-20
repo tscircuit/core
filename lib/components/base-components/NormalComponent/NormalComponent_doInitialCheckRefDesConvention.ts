@@ -88,15 +88,6 @@ export const NormalComponent_doInitialCheckRefDesConvention = (
     ? `The "${chipRefDesRecommendation.prefix}" prefix is being used with a <chip />, try using it with ${chipRefDesRecommendation.recommendation}`
     : `Component ${sourceComponent.name} has ftype="${sourceComponent.ftype}" but reference designator should start with ${expectedPrefixMessage}`
 
-  if (chipRefDesRecommendation?.prefix === "J") {
-    db.pcb_placement_error.insert({
-      error_type: "pcb_placement_error",
-      message,
-      subcircuit_id: component.getSubcircuit().subcircuit_id ?? undefined,
-    })
-    return
-  }
-
   db.insert({
     type: "source_refdes_convention_warning",
     warning_type: "source_refdes_convention_warning",

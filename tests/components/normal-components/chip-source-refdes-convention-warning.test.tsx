@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("chip refdes conventions emit a placement error for J and warnings for other reserved prefixes", () => {
+test("source_refdes_convention_warning is emitted when a chip uses a refdes reserved for another component type", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -25,13 +25,13 @@ test("chip refdes conventions emit a placement error for J and warnings for othe
   circuit.render()
 
   const warnings = (circuit.db as any).source_refdes_convention_warning.list()
-  const placementErrors = circuit.db.pcb_placement_error.list()
 
-  expect(warnings).toHaveLength(9)
+  expect(warnings).toHaveLength(10)
   expect(warnings.map((warning: any) => warning.refdes).sort()).toEqual(
-    ["Q1", "C1", "R1", "L1", "Y1", "X1", "F1", "S1", "TP1"].sort(),
+    ["J1", "Q1", "C1", "R1", "L1", "Y1", "X1", "F1", "S1", "TP1"].sort(),
   )
   const expectedMessagesByRefDes: Record<string, string> = {
+    J1: 'The "J" prefix is being used with a <chip />, try using it with a <connector /> or <jumper />',
     Q1: 'The "Q" prefix is being used with a <chip />, try using it with a <transistor />',
     C1: 'The "C" prefix is being used with a <chip />, try using it with a <capacitor />',
     R1: 'The "R" prefix is being used with a <chip />, try using it with a <resistor />',
@@ -44,6 +44,7 @@ test("chip refdes conventions emit a placement error for J and warnings for othe
   }
   expect(warnings).toEqual(
     expect.arrayContaining([
+      expect.objectContaining({ actual_prefix: "J" }),
       expect.objectContaining({ actual_prefix: "Q" }),
       expect.objectContaining({ actual_prefix: "C" }),
       expect.objectContaining({ actual_prefix: "R" }),
@@ -64,11 +65,4 @@ test("chip refdes conventions emit a placement error for J and warnings for othe
       message: expectedMessagesByRefDes[warning.refdes],
     })
   }
-  expect(placementErrors).toHaveLength(1)
-  expect(placementErrors[0]).toMatchObject({
-    type: "pcb_placement_error",
-    error_type: "pcb_placement_error",
-    message:
-      'The "J" prefix is being used with a <chip />, try using it with a <connector /> or <jumper />',
-  })
 })

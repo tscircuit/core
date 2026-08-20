@@ -1,5 +1,6 @@
 import { runAllPlacementChecks } from "@tscircuit/checks"
 import type { AnyCircuitElement } from "circuit-json"
+import { checkPotentialConnectorOrientationForJRefdesChips } from "lib/utils/pcb/check-potential-connector-orientation-for-j-refdes-chips"
 import type { Renderable } from "../base-components/Renderable"
 import type { Board } from "./Board"
 
@@ -37,16 +38,27 @@ export const Board_doInitialPcbPlacementDesignRuleChecks = (board: Board) => {
     .subtree({ subcircuit_id: board.subcircuit_id })
     .toArray()
   const existingPlacementDiagnostics = db.toArray()
-  const existingPlacementErrorCount = subcircuitCircuitJson.filter(
-    (element) => element.type === "pcb_placement_error",
-  ).length
 
   board._pcbPlacementDrcChecksPending = true
   board._queueAsyncEffect("board:pre-route-placement-checks", async () => {
     try {
-      const placementCheckResults = await runAllPlacementChecks(
+      const standardPlacementCheckResults = await runAllPlacementChecks(
         subcircuitCircuitJson,
       )
+      const potentialConnectorOrientationWarnings =
+        checkPotentialConnectorOrientationForJRefdesChips(subcircuitCircuitJson)
+      const placementCheckResults = [
+        ...standardPlacementCheckResults,
+        ...potentialConnectorOrientationWarnings.filter(
+          (warning) =>
+            !standardPlacementCheckResults.some(
+              (result) =>
+                result.type === warning.type &&
+                "message" in result &&
+                result.message === warning.message,
+            ),
+        ),
+      ]
       const newPlacementDiagnostics = placementCheckResults.filter(
         (result) =>
           !existingPlacementDiagnostics.some(
@@ -58,10 +70,9 @@ export const Board_doInitialPcbPlacementDesignRuleChecks = (board: Board) => {
       )
 
       db.insertAll(newPlacementDiagnostics as AnyCircuitElement[])
-      board._pcbPlacementDrcErrorCount =
-        existingPlacementErrorCount +
-        placementCheckResults.filter((result) => result.type.endsWith("_error"))
-          .length
+      board._pcbPlacementDrcErrorCount = placementCheckResults.filter(
+        (result) => result.type.endsWith("_error"),
+      ).length
     } catch (error) {
       board._pcbPlacementDrcCheckError =
         error instanceof Error ? error.message : String(error)
