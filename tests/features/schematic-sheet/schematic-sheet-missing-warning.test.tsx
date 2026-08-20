@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { assembly } from "lib"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("warns when a schematic has no schematic sheet", async () => {
@@ -48,4 +49,23 @@ test("warns when a schematic has no schematic sheet", async () => {
   expect(
     schematicDisabledCircuit.db.schematic_component_styling_warning.list(),
   ).toEqual([])
+
+  const { circuit: assemblyCircuit } = getTestFixture()
+  assemblyCircuit.add(
+    <assembly.device name="controller">
+      <board routingDisabled>
+        <resistor name="R1" resistance="1k" footprint="0402" />
+      </board>
+    </assembly.device>,
+  )
+
+  await assemblyCircuit.renderUntilSettled()
+
+  expect(assemblyCircuit.db.schematic_component_styling_warning.list()).toEqual(
+    [
+      expect.objectContaining({
+        styling_issue_type: "missing_schematic_sheet",
+      }),
+    ],
+  )
 })

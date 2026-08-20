@@ -37,10 +37,6 @@ import {
 import type { Primitive, ZodType } from "zod"
 import { z } from "zod"
 import {
-  PrimitiveComponent_doInitialSchematicSheetRender,
-  PrimitiveComponent_updateSchematicSheetRender,
-} from "./PrimitiveComponent_doInitialSchematicSheetRender"
-import {
   cssSelectPrimitiveComponentAdapter,
   cssSelectPrimitiveComponentAdapterOnlySubcircuits,
   cssSelectPrimitiveComponentAdapterWithoutSubcircuits,
@@ -274,14 +270,6 @@ export abstract class PrimitiveComponent<
       axis: "pcbY",
       propertyName: "pcbY",
     })
-  }
-
-  doInitialSchematicSheetRender(): void {
-    PrimitiveComponent_doInitialSchematicSheetRender(this)
-  }
-
-  updateSchematicSheetRender(): void {
-    PrimitiveComponent_updateSchematicSheetRender(this)
   }
 
   protected _validatePcbCoordinateReferences(params: {
