@@ -1,5 +1,6 @@
 import { fp } from "@tscircuit/footprinter"
 import { normalizeDegrees } from "@tscircuit/math-utils"
+import { supplierProps } from "@tscircuit/props"
 import type {
   CadModelGlb,
   CadModelGltf,
@@ -10,12 +11,14 @@ import type {
   CadModelStl,
   CadModelWrl,
   FootprintInsertionDirection,
+  PartsEngine,
   SchematicPortArrangement,
   SpiceModelElement,
   SupplierPartNumbers,
 } from "@tscircuit/props"
 import {
   type AnyCircuitElement,
+  type AnySourceComponent,
   type LayerRef,
   type PcbComponent,
   distance,
@@ -102,6 +105,49 @@ import { isStaticAssetPath } from "./utils/isStaticAssetPath"
 import { parseLibraryFootprintRef } from "./utils/parseLibraryFootprintRef"
 
 const debug = Debug("tscircuit:core")
+
+const supplierPartRequestsByCircuit = new WeakMap<
+  object,
+  WeakMap<PartsEngine, Map<string, Promise<SupplierPartNumbers>>>
+>()
+const reportedSupplierPartFailuresByCircuit = new WeakMap<object, Set<string>>()
+const sourceComponentIdentityFields = new Set([
+  "source_component_id",
+  "source_group_id",
+  "subcircuit_id",
+  "name",
+])
+
+function getSupplierPartRequestCache(
+  circuit: object,
+  partsEngine: PartsEngine,
+): Map<string, Promise<SupplierPartNumbers>> {
+  let requestsByPartsEngine = supplierPartRequestsByCircuit.get(circuit)
+  if (!requestsByPartsEngine) {
+    requestsByPartsEngine = new WeakMap()
+    supplierPartRequestsByCircuit.set(circuit, requestsByPartsEngine)
+  }
+  let requestsByCacheKey = requestsByPartsEngine.get(partsEngine)
+  if (!requestsByCacheKey) {
+    requestsByCacheKey = new Map()
+    requestsByPartsEngine.set(partsEngine, requestsByCacheKey)
+  }
+  return requestsByCacheKey
+}
+
+function hasReportedSupplierPartFailure(
+  circuit: object,
+  cacheKey: string,
+): boolean {
+  let reportedCacheKeys = reportedSupplierPartFailuresByCircuit.get(circuit)
+  if (!reportedCacheKeys) {
+    reportedCacheKeys = new Set()
+    reportedSupplierPartFailuresByCircuit.set(circuit, reportedCacheKeys)
+  }
+  if (reportedCacheKeys.has(cacheKey)) return true
+  reportedCacheKeys.add(cacheKey)
+  return false
+}
 
 const rotation3 = z.object({
   x: rotation,
@@ -1998,28 +2044,29 @@ export class NormalComponent<
   }
 
   private _getPartsEngineCacheKey(
-    source_component: any,
+    sourceComponent: AnySourceComponent,
     footprinterString?: string,
   ): string {
+    const partSelectionProperties = Object.fromEntries(
+      Object.entries(sourceComponent).filter(
+        ([propertyName]) => !sourceComponentIdentityFields.has(propertyName),
+      ),
+    )
     return JSON.stringify({
-      ftype: source_component.ftype,
-      name: source_component.name,
-      manufacturer_part_number: source_component.manufacturer_part_number,
-      standard: source_component.standard,
-      pin_count: source_component.pin_count,
+      partSelectionProperties,
       footprinterString,
     })
   }
 
   protected async _getSupplierPartNumbers(
-    partsEngine: any,
-    source_component: any,
+    partsEngine: PartsEngine,
+    sourceComponent: AnySourceComponent,
     footprinterString: string | undefined,
-  ) {
+  ): Promise<SupplierPartNumbers> {
     if (this.props.doNotPlace) return {}
     const cacheEngine = this.root?.platform?.localCacheEngine
     const cacheKey = this._getPartsEngineCacheKey(
-      source_component,
+      sourceComponent,
       footprinterString,
     )
     if (cacheEngine) {
@@ -2030,52 +2077,64 @@ export class NormalComponent<
         } catch {}
       }
     }
-    const result = await Promise.resolve(
-      partsEngine.findPart({
-        sourceComponent: source_component,
-        footprinterString,
-      }),
-    )
+    const root = this.root
+    if (!root) return {}
+    const requestsByCacheKey = getSupplierPartRequestCache(root, partsEngine)
+    const existingRequest = requestsByCacheKey.get(cacheKey)
+    if (existingRequest) return existingRequest
 
-    // Validate the result format
-    if (typeof result === "string") {
-      // Check if it's an HTML error page or "Not found"
-      if (result.includes("<!DOCTYPE") || result.includes("<html")) {
-        throw new Error(
-          `Failed to fetch supplier part numbers: Received HTML response instead of JSON. Response starts with: ${result.substring(0, 100)}`,
-        )
-      }
-      if (result === "Not found") {
-        throw new Error(
-          `Part not found for ${this.getString()}${footprinterString ? ` with footprint "${footprinterString}"` : ""}`,
-        )
-      }
-      throw new Error(
-        `Invalid supplier part numbers format: Expected object but got string: "${result}"`,
+    const request = Promise.resolve()
+      .then(() =>
+        partsEngine.findPart({
+          sourceComponent,
+          footprinterString,
+        }),
       )
-    }
+      .then(async (partsEngineResult) => {
+        const result: unknown = partsEngineResult
+        if (typeof result === "string") {
+          if (result.includes("<!DOCTYPE") || result.includes("<html")) {
+            throw new Error(
+              `Failed to fetch supplier part numbers: Received HTML response instead of JSON. Response starts with: ${result.substring(0, 100)}`,
+            )
+          }
+          if (result === "Not found") {
+            throw new Error(
+              `Part not found for ${this.getString()}${footprinterString ? ` with footprint "${footprinterString}"` : ""}`,
+            )
+          }
+          throw new Error(
+            `Invalid supplier part numbers format: Expected object but got string: "${result}"`,
+          )
+        }
 
-    // Validate that result is an object (not array, null, etc.)
-    if (!result || Array.isArray(result) || typeof result !== "object") {
-      const actualType =
-        result === null
-          ? "null"
-          : Array.isArray(result)
-            ? "array"
-            : typeof result
-      throw new Error(
-        `Invalid supplier part numbers format: Expected object but got ${actualType}`,
-      )
-    }
+        if (!result || Array.isArray(result) || typeof result !== "object") {
+          const actualType =
+            result === null
+              ? "null"
+              : Array.isArray(result)
+                ? "array"
+                : typeof result
+          throw new Error(
+            `Invalid supplier part numbers format: Expected object but got ${actualType}`,
+          )
+        }
 
-    const supplierPartNumbers = result
-
-    if (cacheEngine) {
-      try {
-        await cacheEngine.setItem(cacheKey, JSON.stringify(supplierPartNumbers))
-      } catch {}
-    }
-    return supplierPartNumbers
+        const supplierPartNumbers = supplierProps.shape.supplierPartNumbers
+          .unwrap()
+          .parse(result)
+        if (cacheEngine) {
+          try {
+            await cacheEngine.setItem(
+              cacheKey,
+              JSON.stringify(supplierPartNumbers),
+            )
+          } catch {}
+        }
+        return supplierPartNumbers
+      })
+    requestsByCacheKey.set(cacheKey, request)
+    return request
   }
 
   doInitialPartsEngineRender(): void {
@@ -2114,6 +2173,14 @@ export class NormalComponent<
         })
         .catch((error: Error) => {
           this._asyncSupplierPartNumbers = {}
+          const cacheKey = this._getPartsEngineCacheKey(
+            source_component,
+            footprinterString,
+          )
+          if (hasReportedSupplierPartFailure(this.root!, cacheKey)) {
+            this._markDirty("PartsEngineRender")
+            return
+          }
           const warning = source_part_not_found_warning.parse({
             type: "source_part_not_found_warning",
             message: `Failed to fetch supplier part numbers for ${this.getString()}: ${error.message}`,
