@@ -57,6 +57,23 @@ const removeCompletedFanoutConnections = (
   }
 }
 
+const useSourceTraceIdentityForDownstreamHandoff = (
+  simpleRouteJson: SimpleRouteJson,
+): SimpleRouteJson => ({
+  ...simpleRouteJson,
+  traces: simpleRouteJson.traces?.map((trace) =>
+    trace.source_trace_id
+      ? {
+          ...trace,
+          connection_name: trace.source_trace_id,
+          connectsTo: Array.from(
+            new Set([...(trace.connectsTo ?? []), trace.source_trace_id]),
+          ),
+        }
+      : trace,
+  ),
+})
+
 export interface SynchronizedBreakoutPoint {
   sourceTraceId: string
   routingPcbGroupId: string
@@ -171,11 +188,15 @@ export function Group_syncFanoutExitsWithGlobalConnections({
     })
   }
 
-  return {
-    downstreamSimpleRouteJson: removeCompletedFanoutConnections(
+  const downstreamSimpleRouteJson = useSourceTraceIdentityForDownstreamHandoff(
+    removeCompletedFanoutConnections(
       fanoutOutputSimpleRouteJson,
       routingPcbGroupId,
     ),
+  )
+
+  return {
+    downstreamSimpleRouteJson,
     baseSimpleRouteJson: {
       ...baseSimpleRouteJson,
       connections: baseConnections,
