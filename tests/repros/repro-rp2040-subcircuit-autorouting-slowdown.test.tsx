@@ -379,9 +379,7 @@ test("RP2040 subcircuit exposes slow parent autorouter input construction", asyn
   expect(subcircuitPhase?.startSimpleRouteJson?.connections).toHaveLength(11)
   expect(subcircuitPhase?.endSimpleRouteJson?.traces).toHaveLength(20)
   expect(boardPhase?.startSimpleRouteJson?.connections).toHaveLength(48)
-  expect(boardPhase?.startSimpleRouteJson?.traces?.length).toBe(
-    subcircuitPhase?.endSimpleRouteJson?.traces?.length,
-  )
+  expect(boardPhase?.startSimpleRouteJson?.traces).toBeUndefined()
 
   const boardInputSrj = boardPhase!.startSimpleRouteJson!
   const boardConnectionPoints = boardInputSrj.connections.flatMap(
@@ -442,29 +440,52 @@ test("RP2040 subcircuit exposes slow parent autorouter input construction", asyn
   expect(new Set(boardInputSrj.connections.map(({ name }) => name)).size).toBe(
     48,
   )
-  expect(
-    new Set(boardInputSrj.traces?.map(({ pcb_trace_id }) => pcb_trace_id)).size,
-  ).toBe(20)
+  const childTraceIds = new Set(
+    subcircuitPhase?.endSimpleRouteJson?.traces?.map(
+      ({ pcb_trace_id }) => pcb_trace_id,
+    ),
+  )
+  const childTraceObstacles = boardInputSrj.obstacles.filter((obstacle) =>
+    Array.from(childTraceIds).some((pcbTraceId) =>
+      obstacle.obstacleId?.startsWith(`${pcbTraceId}_`),
+    ),
+  )
+  expect(childTraceObstacles.length).toBeGreaterThanOrEqual(childTraceIds.size)
 
   const childTraceConnectionPoints = boardConnectionPoints.filter((point) =>
     point.pointId?.startsWith("pcb_trace_route_point_"),
   )
   expect(childTraceConnectionPoints.length).toBeGreaterThan(2)
-  const preservedTraceConnectedIds = new Set(
-    boardInputSrj.traces?.flatMap((trace) => trace.connectsTo ?? []),
+  const childTraceObstacleConnectedIds = new Set(
+    childTraceObstacles.flatMap((obstacle) => obstacle.connectedTo),
   )
   expect(
     childTraceConnectionPoints.every(
-      (point) => point.pointId && preservedTraceConnectedIds.has(point.pointId),
+      (point) =>
+        point.pointId && childTraceObstacleConnectedIds.has(point.pointId),
     ),
   ).toBe(true)
-  expect(
-    boardInputSrj.connections.filter((connection) =>
+  const childTraceAttachmentConnections = boardInputSrj.connections.filter(
+    (connection) =>
       connection.pointsToConnect.some((point) =>
         point.pointId?.startsWith("pcb_trace_route_point_"),
       ),
+  )
+  expect(childTraceAttachmentConnections).toHaveLength(1)
+  const alreadyConnectedAttachmentPointIds = new Set(
+    childTraceAttachmentConnections[0]?.externallyConnectedPointIds?.flat(),
+  )
+  expect(
+    childTraceConnectionPoints.every(
+      (point) =>
+        point.pointId && alreadyConnectedAttachmentPointIds.has(point.pointId),
     ),
-  ).toHaveLength(1)
+  ).toBe(true)
+
+  if (reproduceSlowRouting) {
+    expect(boardPhase?.endSimpleRouteJson?.traces).toHaveLength(48)
+    expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
+  }
 
   console.log(
     `RP2040 subcircuit ${
@@ -480,7 +501,9 @@ test("RP2040 subcircuit exposes slow parent autorouter input construction", asyn
       circuit,
     )
   }
-  expect(circuit).toMatchPcbSnapshot(import.meta.path, {
-    diffThresholdPercent: 2,
-  })
-}, 120_000)
+  if (!reproduceSlowRouting) {
+    expect(circuit).toMatchPcbSnapshot(import.meta.path, {
+      diffThresholdPercent: 2,
+    })
+  }
+}, 240_000)

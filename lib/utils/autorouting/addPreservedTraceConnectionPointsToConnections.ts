@@ -90,6 +90,7 @@ export const addPreservedTraceConnectionPointsToConnections = ({
     trace.connectsTo.push(
       ...traceConnectionPoints.map((point) => point.pointId),
     )
+    const alreadyConnectedPointIds = [...trace.connectsTo]
 
     for (const connection of matchingConnections) {
       const existingPointIds = new Set(
@@ -102,6 +103,8 @@ export const addPreservedTraceConnectionPointsToConnections = ({
         existingPointIds.add(point.pointId)
         connection.pointsToConnect.push(point)
       }
+      connection.externallyConnectedPointIds ??= []
+      connection.externallyConnectedPointIds.push(alreadyConnectedPointIds)
     }
   }
 }

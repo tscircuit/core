@@ -1058,6 +1058,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         subcircuit_id: this.subcircuit_id,
         subcircuitComponent: this,
         fanoutPourNetMap,
+        allowReroutingDescendantTraces: routingPhasePlans.some(
+          (routingPhasePlan) => routingPhasePlan.reroute,
+        ),
       })
     const outputTraces: SimplifiedPcbTrace[] = []
     const outputJumpers: Array<{

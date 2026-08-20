@@ -20,6 +20,7 @@ import type {
   SimpleRouteDifferentialPair,
   SimpleRouteJson,
   SimpleRoutePoint,
+  SimplifiedPcbTrace,
 } from "./SimpleRouteJson"
 import { addPreservedTraceConnectionPointsToConnections } from "./addPreservedTraceConnectionPointsToConnections"
 import { expandSrjBoundsToIncludeConnectionPoints } from "./expand-srj-bounds-to-include-connection-points"
@@ -30,6 +31,7 @@ import {
   getPlaneTerminatedSourceTraceLayers,
 } from "./getBusesForSimpleRouteJson"
 import { getDifferentialPairsForSimpleRouteJson } from "./getDifferentialPairsForSimpleRouteJson"
+import { getObstaclesFromSrjTraces } from "./getObstaclesFromSrjTraces"
 import { getPreservedRoutedSubcircuitTraces } from "./getPreservedRoutedSubcircuitTraces"
 import { getUnbrokenCopperPourObstacles } from "./getUnbrokenCopperPourObstacles"
 
@@ -53,6 +55,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   subcircuitComponent,
   fanoutPourNetMap,
   ignoreExistingTopLevelPcbRouteState = false,
+  allowReroutingDescendantTraces = false,
 }: {
   db?: CircuitJsonUtilObjects
   circuitJson?: AnyCircuitElement[]
@@ -80,6 +83,11 @@ export const getSimpleRouteJsonFromCircuitJson = ({
    * Routed child-subcircuit traces and vias remain fixed routing geometry.
    */
   ignoreExistingTopLevelPcbRouteState?: boolean
+  /**
+   * Keeps descendant copper as preloaded trace geometry when an explicit
+   * reroute phase is allowed to replace it.
+   */
+  allowReroutingDescendantTraces?: boolean
 }): { simpleRouteJson: SimpleRouteJson; connMap: ConnectivityMap } => {
   if (!db && circuitJson) {
     db = su(circuitJson)
@@ -196,21 +204,24 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     }),
   )
 
-  // SRJ uses two separate fields for routing state:
-  // - connections: copper the current autorouter still needs to create.
-  // - traces: copper that already exists and must be preserved.
-  //
   // Manual copper is rendered before autorouting, and child subcircuits are
-  // autorouted before their parent board. Those existing routes belong in
-  // `traces`, not `connections`; otherwise later routing can cross or recreate
-  // them.
-  //
-  // Keep connectivity metadata on preserved traces so parent routes can
-  // legally touch child fanout copper that belongs to the same connected net.
+  // autorouted before their parent board. Capture those existing routes as
+  // simplified geometry. Descendant routes become immutable parent obstacles;
+  // current-scope routes remain available to explicit reroute phases.
   const preservedRoutedSubcircuitTraces = getPreservedRoutedSubcircuitTraces({
     scopedDb: db,
     relevantSubcircuitIds,
   })
+  const isDescendantTrace = (trace: SimplifiedPcbTrace) =>
+    subcircuit_id != null
+      ? trace.subcircuit_id !== subcircuit_id
+      : trace.subcircuit_id != null
+  const routedDescendantTraces = preservedRoutedSubcircuitTraces.filter(
+    (trace) => !allowReroutingDescendantTraces && isDescendantTrace(trace),
+  )
+  const currentScopePreloadedTraces = preservedRoutedSubcircuitTraces.filter(
+    (trace) => allowReroutingDescendantTraces || !isDescendantTrace(trace),
+  )
 
   // Add every equivalent ID from the shared connectivity map to each obstacle.
   for (const obstacle of obstacles) {
@@ -737,17 +748,16 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     conn.width ??= nominalTraceWidth ?? defaultTraceWidth
   }
 
-  // Child subcircuits route first. Give each electrically matching parent
-  // connection many possible attachment points along that preserved copper.
+  // Give each connection that matches existing fixed copper many possible
+  // attachment points along that preserved route. Child subcircuits route
+  // first, so their traces are included here when constructing parent input.
   // The matching point IDs are also present in the preserved trace's
   // `connectsTo`, so the router knows they are alternatives on an existing
   // route rather than additional terminals that all need to be connected.
   addPreservedTraceConnectionPointsToConnections({
     connections: allConns,
-    preservedTraces: preservedRoutedSubcircuitTraces.filter(
-      (trace) =>
-        Boolean(trace.source_trace_id) &&
-        (!subcircuit_id || trace.subcircuit_id !== subcircuit_id),
+    preservedTraces: routedDescendantTraces.filter((trace) =>
+      Boolean(trace.source_trace_id),
     ),
     connMap: sharedConnMap,
     // A breakout point is an explicit child/parent boundary. Connections that
@@ -803,6 +813,17 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   const resolvedMinBoardEdgeClearance =
     minBoardEdgeClearance ?? board?.min_board_edge_clearance
 
+  // Descendant routes are immutable during normal parent routing. Represent
+  // them as ordinary obstacles so the parent solver cannot edit them. Explicit
+  // reroute phases keep descendant geometry preloaded instead, allowing the
+  // selected region to replace it. Sampled IDs remain attachment options.
+  obstacles.push(
+    ...getObstaclesFromSrjTraces({
+      traces: routedDescendantTraces,
+      layerCount: board?.num_layers ?? 2,
+      viaDiameter: resolvedMinViaPadDiameter ?? 0.5,
+    }),
+  )
   return {
     simpleRouteJson: {
       bounds,
@@ -811,8 +832,8 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       differentialPairs: srjDifferentialPairs,
       ...(srjBuses ? { buses: srjBuses } : {}),
       traces:
-        preservedRoutedSubcircuitTraces.length > 0
-          ? preservedRoutedSubcircuitTraces
+        currentScopePreloadedTraces.length > 0
+          ? currentScopePreloadedTraces
           : undefined,
       layerCount: board?.num_layers ?? 2,
       minTraceWidth: Math.min(

@@ -113,15 +113,21 @@ test("board simple route json preserves child trace physical connectivity", () =
     { x: -0.5, y: 0, layer: "top", pointId: childTracePointIds[3] },
     { x: 0, y: 0, layer: "top", pointId: childTracePointIds[4] },
   ])
-  expect(simpleRouteJson.traces).toEqual([
-    expect.objectContaining({
-      pcb_trace_id: "pcb_trace_child_routed",
-      connectsTo: ["opaque-child-a", "opaque-child-b", ...childTracePointIds],
-    }),
+  expect(netConnection?.externallyConnectedPointIds).toEqual([
+    ["opaque-child-a", "opaque-child-b", ...childTracePointIds],
   ])
-
-  expect(simpleRouteJson.traces?.[0]?.route).toEqual([
-    expect.not.objectContaining({ start_pcb_port_id: expect.anything() }),
-    expect.not.objectContaining({ end_pcb_port_id: expect.anything() }),
-  ])
+  expect(simpleRouteJson.traces).toBeUndefined()
+  expect(
+    simpleRouteJson.obstacles.find(
+      (obstacle) => obstacle.obstacleId === "pcb_trace_child_routed_0_wire",
+    ),
+  ).toEqual({
+    obstacleId: "pcb_trace_child_routed_0_wire",
+    type: "rect",
+    layers: ["top"],
+    center: { x: -1, y: 0 },
+    width: 2,
+    height: 0.1,
+    connectedTo: ["opaque-child-a", "opaque-child-b", ...childTracePointIds],
+  })
 })

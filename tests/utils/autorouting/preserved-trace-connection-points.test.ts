@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test"
 import { TscircuitAutorouter } from "lib/utils/autorouting/CapacityMeshAutorouter"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
+import { getObstaclesFromSrjTraces } from "lib/utils/autorouting/getObstaclesFromSrjTraces"
 import { getPreservedTraceConnectionPoints } from "lib/utils/autorouting/getPreservedRoutedSubcircuitTraces"
 
 test("parent autorouting can attach to the closest point along child copper", () => {
@@ -16,16 +17,21 @@ test("parent autorouting can attach to the closest point along child copper", ()
   }
   const childTracePoints = getPreservedTraceConnectionPoints(preservedTrace)
   preservedTrace.connectsTo = childTracePoints.map((point) => point.pointId)
+  const preservedTraceObstacles = getObstaclesFromSrjTraces({
+    traces: [preservedTrace],
+    layerCount: 2,
+    viaDiameter: 0.5,
+  })
 
   const simpleRouteJson: SimpleRouteJson = {
     layerCount: 2,
     minTraceWidth: 0.1,
     bounds: { minX: -1, maxX: 11, minY: -1, maxY: 6 },
-    obstacles: [],
-    traces: [preservedTrace],
+    obstacles: preservedTraceObstacles,
     connections: [
       {
         name: "source_trace_parent",
+        externallyConnectedPointIds: [preservedTrace.connectsTo],
         pointsToConnect: [
           { x: 5, y: 5, layer: "top", pointId: "pcb_port_parent" },
           ...childTracePoints,
