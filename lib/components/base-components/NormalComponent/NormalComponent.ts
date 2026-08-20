@@ -671,11 +671,14 @@ export class NormalComponent<
       {},
       {
         get: (target, prop): Port => {
-          const port = this.children.find(
-            (c) =>
-              c.componentName === "Port" &&
-              (c as Port).isMatchingNameOrAlias(prop as string),
+          const symbol = this.children.find(
+            (child) => child.componentName === "Symbol",
           )
+          const port = [...this.children, ...(symbol?.children ?? [])].find(
+            (child) =>
+              child.componentName === "Port" &&
+              (child as Port).isMatchingNameOrAlias(prop as string),
+          ) as Port | undefined
           if (!port) {
             throw new Error(
               `There was an issue finding the port "${prop.toString()}" inside of a ${
