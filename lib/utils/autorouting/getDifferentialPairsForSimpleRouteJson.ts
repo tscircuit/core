@@ -113,15 +113,21 @@ const getDifferentialPairSrjConnectionNameOrThrow = ({
   traceSubcircuitConnectivityMapKey,
   traceNameOrPortSelector,
 }: GetDifferentialPairSrjConnectionNameOrThrowParams): SrjConnectionName => {
-  const differentialPairSourceTraceIds: SourceTraceId[] = []
-  for (const sourceTrace of differentialPairSourceTraces) {
-    if (
-      sourceTrace.subcircuit_connectivity_map_key ===
-      traceSubcircuitConnectivityMapKey
-    ) {
-      differentialPairSourceTraceIds.push(sourceTrace.source_trace_id)
-    }
-  }
+  const sourceTracesWithMatchingName =
+    getDifferentialPairSourceTracesByTraceName(
+      differentialPairSourceTraces,
+      traceNameOrPortSelector,
+    )
+  const selectedSourceTraces =
+    sourceTracesWithMatchingName.length === 1
+      ? sourceTracesWithMatchingName
+      : differentialPairSourceTraces.filter(
+          (sourceTrace) =>
+            sourceTrace.subcircuit_connectivity_map_key ===
+            traceSubcircuitConnectivityMapKey,
+        )
+  const differentialPairSourceTraceIds: SourceTraceId[] =
+    selectedSourceTraces.map((sourceTrace) => sourceTrace.source_trace_id)
 
   const matchingSrjConnections: SimpleRouteConnection[] = []
   for (const srjConnection of srjConnections) {
@@ -139,6 +145,12 @@ const getDifferentialPairSrjConnectionNameOrThrow = ({
     )
   }
   if (matchingSrjConnections.length > 1) {
+    const exactSourceTraceMatches = matchingSrjConnections.filter(
+      (connection) => differentialPairSourceTraceIds.includes(connection.name),
+    )
+    if (exactSourceTraceMatches.length === 1) {
+      return exactSourceTraceMatches[0]!.name
+    }
     throw new Error(
       `Subcircuit connectivity map key "${traceSubcircuitConnectivityMapKey}" matches multiple SRJ connections for differential pair "${differentialPairName}"`,
     )
