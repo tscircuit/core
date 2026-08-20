@@ -79,6 +79,10 @@ import { Group_doInitialSchematicLayoutGrid } from "./Group_doInitialSchematicLa
 import { Group_doInitialSchematicLayoutMatchAdapt } from "./Group_doInitialSchematicLayoutMatchAdapt"
 import { Group_doInitialSchematicLayoutMatchPack } from "./Group_doInitialSchematicLayoutMatchPack"
 import { Group_doInitialSchematicLayoutSections } from "./Group_doInitialSchematicLayoutSections"
+import {
+  Group_doInitialSchematicSheetRender,
+  Group_updateSchematicSheetRender,
+} from "./Group_doInitialSchematicSheetRender"
 import { Group_doInitialSchematicTraceRender } from "./Group_doInitialSchematicTraceRender/Group_doInitialSchematicTraceRender"
 import { Group_doInitialSimulationSpiceEngineRender } from "./Group_doInitialSimulationSpiceEngineRender"
 import { Group_doInitialSourceAddConnectivityMapKey } from "./Group_doInitialSourceAddConnectivityMapKey"
@@ -1655,6 +1659,14 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   doInitialSchematicTraceRender() {
     if (this._parsedProps.showAsSchematicBox) return
     Group_doInitialSchematicTraceRender(this as any)
+  }
+
+  doInitialSchematicSheetRender(): void {
+    Group_doInitialSchematicSheetRender(this)
+  }
+
+  updateSchematicSheetRender(): void {
+    Group_updateSchematicSheetRender(this)
   }
 
   updatePcbTraceRender() {
