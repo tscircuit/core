@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { Fragment } from "react"
 import { createAutoroutingPhaseIoStack } from "tests/fixtures/create-autorouting-phase-io-stack"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
@@ -8,14 +9,15 @@ test("fanout stage output drops source trace identity", async () => {
   const pads = Array.from({ length: 16 }, (_, padIndex) => {
     const pinNumber = padIndex + 1
     return (
-      <smtpad
-        key={pinNumber}
-        portHints={[`pin${pinNumber}`]}
-        pcbX={(padIndex % 4) * 0.8 - 1.2}
-        pcbY={Math.floor(padIndex / 4) * 0.8 - 1.2}
-        shape="circle"
-        radius="0.175mm"
-      />
+      <Fragment key={pinNumber}>
+        <smtpad
+          portHints={[`pin${pinNumber}`]}
+          pcbX={(padIndex % 4) * 0.8 - 1.2}
+          pcbY={Math.floor(padIndex / 4) * 0.8 - 1.2}
+          shape="circle"
+          radius="0.175mm"
+        />
+      </Fragment>
     )
   })
 
@@ -53,8 +55,17 @@ test("fanout stage output drops source trace identity", async () => {
   expect(autoroutingPhaseIoStack.length).toBeGreaterThanOrEqual(1)
   const fanoutTraces = autoroutingPhaseIoStack[0]!.endSimpleRouteJson?.traces
   expect(fanoutTraces).toHaveLength(2)
+  const fanoutTracesWithOptionalSourceTraceId = fanoutTraces as
+    | Array<
+        NonNullable<typeof fanoutTraces>[number] & {
+          source_trace_id?: string
+        }
+      >
+    | undefined
   expect(
-    fanoutTraces?.every((trace) => trace.source_trace_id === undefined),
+    fanoutTracesWithOptionalSourceTraceId?.every(
+      (trace) => trace.source_trace_id === undefined,
+    ),
   ).toBe(true)
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
