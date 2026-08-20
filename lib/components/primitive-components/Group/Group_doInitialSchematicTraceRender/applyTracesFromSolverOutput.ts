@@ -146,22 +146,33 @@ export function applyTracesFromSolverOutput(args: {
 
   const componentBoundsByPortId = new Map<SchematicPortId, Bounds>()
   for (const schematicComponent of db.schematic_component.list()) {
-    const bounds =
-      getSchematicComponentWithTextBounds({
-        db,
-        schematicComponent,
-      }) ??
-      getBoundFromCenteredRect({
-        center: schematicComponent.center,
-        width: schematicComponent.size.width,
-        height: schematicComponent.size.height,
-      })
+    const textInclusiveBounds = getSchematicComponentWithTextBounds({
+      db,
+      schematicComponent,
+    })
+    const componentBounds = getBoundFromCenteredRect({
+      center: schematicComponent.center,
+      width: schematicComponent.size.width,
+      height: schematicComponent.size.height,
+    })
     for (const port of db.schematic_port.list({
       schematic_component_id: schematicComponent.schematic_component_id,
     })) {
+      const isInsideComponentBounds =
+        port.center.x > componentBounds.minX &&
+        port.center.x < componentBounds.maxX &&
+        port.center.y > componentBounds.minY &&
+        port.center.y < componentBounds.maxY
+
+      // A custom symbol may intentionally place a port inside its body and
+      // rely on the solver to project the trace to the body edge. Do not draw
+      // back through the symbol in that case. Ports on or outside the normal
+      // boundary can still require reconnection after asymmetric expansion.
+      if (!textInclusiveBounds && isInsideComponentBounds) continue
+
       componentBoundsByPortId.set(
         asSchematicPortId(port.schematic_port_id),
-        bounds,
+        textInclusiveBounds ?? componentBounds,
       )
     }
   }
