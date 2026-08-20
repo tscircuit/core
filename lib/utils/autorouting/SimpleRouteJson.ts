@@ -91,7 +91,7 @@ export type SimpleRouteConnection = {
   /** @deprecated Use `nominalTraceWidth` instead. */
   width?: number
   pointsToConnect: SimpleRoutePoint[]
-  /** @deprecated DO NOT USE **/
+  /** Groups of point IDs that are already joined by fixed copper. */
   externallyConnectedPointIds?: string[][]
 }
 

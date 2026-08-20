@@ -113,15 +113,128 @@ test("board simple route json preserves child trace physical connectivity", () =
     { x: -0.5, y: 0, layer: "top", pointId: childTracePointIds[3] },
     { x: 0, y: 0, layer: "top", pointId: childTracePointIds[4] },
   ])
-  expect(simpleRouteJson.traces).toEqual([
-    expect.objectContaining({
-      pcb_trace_id: "pcb_trace_child_routed",
-      connectsTo: ["opaque-child-a", "opaque-child-b", ...childTracePointIds],
-    }),
+  expect(netConnection?.externallyConnectedPointIds).toEqual([
+    ["opaque-child-a", "opaque-child-b", ...childTracePointIds],
   ])
+  expect(simpleRouteJson.traces).toBeUndefined()
+  expect(
+    simpleRouteJson.obstacles.find(
+      (obstacle) => obstacle.obstacleId === "pcb_trace_child_routed_0_wire",
+    ),
+  ).toEqual({
+    obstacleId: "pcb_trace_child_routed_0_wire",
+    type: "rect",
+    layers: ["top"],
+    center: { x: -1, y: 0 },
+    width: 2,
+    height: 0.1,
+    connectedTo: ["opaque-child-a", "opaque-child-b", ...childTracePointIds],
+  })
+})
 
-  expect(simpleRouteJson.traces?.[0]?.route).toEqual([
-    expect.not.objectContaining({ start_pcb_port_id: expect.anything() }),
-    expect.not.objectContaining({ end_pcb_port_id: expect.anything() }),
+test("child net copper turns a one-point parent net into a routable connection", () => {
+  const parentSubcircuitId = "subcircuit_source_group_board"
+  const childSubcircuitId = "subcircuit_source_group_0"
+  const circuitJson: AnyCircuitElement[] = [
+    {
+      type: "pcb_board",
+      pcb_board_id: "pcb_board_0",
+      center: { x: 0, y: 0 },
+      width: 10,
+      height: 10,
+      num_layers: 2,
+    } as any,
+    {
+      type: "source_group",
+      source_group_id: "source_group_board",
+      subcircuit_id: parentSubcircuitId,
+      name: "BOARD",
+    } as any,
+    {
+      type: "source_group",
+      source_group_id: "source_group_child",
+      subcircuit_id: childSubcircuitId,
+      parent_subcircuit_id: parentSubcircuitId,
+      name: "CHILD",
+    } as any,
+    {
+      type: "source_net",
+      source_net_id: "source_net_shared",
+      name: "SHARED",
+      subcircuit_id: childSubcircuitId,
+    } as any,
+    {
+      type: "source_port",
+      source_port_id: "source_port_board",
+      name: "OUTSIDE",
+      subcircuit_id: parentSubcircuitId,
+    } as any,
+    {
+      type: "pcb_port",
+      pcb_port_id: "pcb_port_board",
+      source_port_id: "source_port_board",
+      x: 3,
+      y: 2,
+      layers: ["top"],
+      subcircuit_id: parentSubcircuitId,
+    } as any,
+    {
+      type: "source_trace",
+      source_trace_id: "source_trace_board_net_intent",
+      connected_source_port_ids: ["source_port_board"],
+      connected_source_net_ids: ["source_net_shared"],
+      subcircuit_id: parentSubcircuitId,
+    } as any,
+    {
+      type: "pcb_trace",
+      pcb_trace_id: "pcb_trace_child_net_fragment",
+      connection_name: "source_net_shared",
+      subcircuit_id: childSubcircuitId,
+      connectsTo: ["pcb_port_child_a", "pcb_port_child_b"],
+      route: [
+        {
+          route_type: "wire",
+          x: -2,
+          y: 0,
+          width: 0.1,
+          layer: "top",
+          start_pcb_port_id: "pcb_port_child_a",
+        },
+        {
+          route_type: "wire",
+          x: 0,
+          y: 0,
+          width: 0.1,
+          layer: "top",
+          end_pcb_port_id: "pcb_port_child_b",
+        },
+      ],
+    } as any,
+  ]
+
+  const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
+    circuitJson,
+    subcircuit_id: parentSubcircuitId,
+  })
+  const netConnection = simpleRouteJson.connections.find(
+    (connection) => connection.name === "source_trace_board_net_intent",
+  )
+
+  expect(netConnection?.pointsToConnect[0]?.pointId).toBe("pcb_port_board")
+  expect(
+    netConnection?.pointsToConnect.slice(1).map((point) => point.pointId),
+  ).toEqual(
+    [0, 1, 2, 3, 4].map(
+      (pointIndex) =>
+        `pcb_trace_route_point_pcb_trace_child_net_fragment_${pointIndex}`,
+    ),
+  )
+  expect(netConnection?.externallyConnectedPointIds?.[0]).toEqual([
+    "pcb_port_child_a",
+    "pcb_port_child_b",
+    ...[0, 1, 2, 3, 4].map(
+      (pointIndex) =>
+        `pcb_trace_route_point_pcb_trace_child_net_fragment_${pointIndex}`,
+    ),
   ])
 })

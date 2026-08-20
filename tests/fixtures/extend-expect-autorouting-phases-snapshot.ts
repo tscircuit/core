@@ -153,6 +153,9 @@ expect.extend({
       const circuitJson = circuit.getCircuitJson()
       const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
         circuitJson,
+        // This panel visualizes the completed circuit rather than constructing
+        // parent routing input, so keep all routed copper in `traces`.
+        allowReroutingDescendantTraces: true,
       })
       const pcbTraces = circuitJson.filter((e: any) => e.type === "pcb_trace")
       simpleRouteJson.traces = pcbTraces as SimplifiedPcbTrace[]

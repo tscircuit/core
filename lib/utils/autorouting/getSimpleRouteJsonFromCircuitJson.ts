@@ -20,6 +20,7 @@ import type {
   SimpleRouteDifferentialPair,
   SimpleRouteJson,
   SimpleRoutePoint,
+  SimplifiedPcbTrace,
 } from "./SimpleRouteJson"
 import { addPreservedTraceConnectionPointsToConnections } from "./addPreservedTraceConnectionPointsToConnections"
 import { expandSrjBoundsToIncludeConnectionPoints } from "./expand-srj-bounds-to-include-connection-points"
@@ -30,6 +31,7 @@ import {
   getPlaneTerminatedSourceTraceLayers,
 } from "./getBusesForSimpleRouteJson"
 import { getDifferentialPairsForSimpleRouteJson } from "./getDifferentialPairsForSimpleRouteJson"
+import { getObstaclesFromSrjTraces } from "./getObstaclesFromSrjTraces"
 import { getPreservedRoutedSubcircuitTraces } from "./getPreservedRoutedSubcircuitTraces"
 import { getUnbrokenCopperPourObstacles } from "./getUnbrokenCopperPourObstacles"
 
@@ -53,6 +55,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   subcircuitComponent,
   fanoutPourNetMap,
   ignoreExistingTopLevelPcbRouteState = false,
+  allowReroutingDescendantTraces = false,
 }: {
   db?: CircuitJsonUtilObjects
   circuitJson?: AnyCircuitElement[]
@@ -80,6 +83,11 @@ export const getSimpleRouteJsonFromCircuitJson = ({
    * Routed child-subcircuit traces and vias remain fixed routing geometry.
    */
   ignoreExistingTopLevelPcbRouteState?: boolean
+  /**
+   * Keeps descendant copper as preloaded trace geometry when an explicit
+   * reroute phase is allowed to replace it.
+   */
+  allowReroutingDescendantTraces?: boolean
 }): { simpleRouteJson: SimpleRouteJson; connMap: ConnectivityMap } => {
   if (!db && circuitJson) {
     db = su(circuitJson)
@@ -196,21 +204,24 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     }),
   )
 
-  // SRJ uses two separate fields for routing state:
-  // - connections: copper the current autorouter still needs to create.
-  // - traces: copper that already exists and must be preserved.
-  //
   // Manual copper is rendered before autorouting, and child subcircuits are
-  // autorouted before their parent board. Those existing routes belong in
-  // `traces`, not `connections`; otherwise later routing can cross or recreate
-  // them.
-  //
-  // Keep connectivity metadata on preserved traces so parent routes can
-  // legally touch child fanout copper that belongs to the same connected net.
+  // autorouted before their parent board. Capture those existing routes as
+  // simplified geometry. Descendant routes become immutable parent obstacles;
+  // current-scope routes remain available to explicit reroute phases.
   const preservedRoutedSubcircuitTraces = getPreservedRoutedSubcircuitTraces({
     scopedDb: db,
     relevantSubcircuitIds,
   })
+  const isDescendantTrace = (trace: SimplifiedPcbTrace) =>
+    subcircuit_id != null
+      ? trace.subcircuit_id !== subcircuit_id
+      : trace.subcircuit_id != null
+  const routedDescendantTraces = preservedRoutedSubcircuitTraces.filter(
+    (trace) => !allowReroutingDescendantTraces && isDescendantTrace(trace),
+  )
+  const currentScopePreloadedTraces = preservedRoutedSubcircuitTraces.filter(
+    (trace) => allowReroutingDescendantTraces || !isDescendantTrace(trace),
+  )
 
   // Add every equivalent ID from the shared connectivity map to each obstacle.
   for (const obstacle of obstacles) {
@@ -415,7 +426,11 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     sourceTraces,
     subcircuitId: subcircuit_id,
   })
-  const directTraceConnections = sourceTraces
+  const source_nets = db.source_net
+    .list()
+    .filter((e) => !subcircuit_id || e.subcircuit_id === subcircuit_id)
+  const sourceNetIds = new Set(source_nets.map((net) => net.source_net_id))
+  const directTraceConnectionCandidates = sourceTraces
     .filter(
       (trace) =>
         !sourceTraceIdsAlreadyPreservedAsSrjTraces.has(trace.source_trace_id),
@@ -434,9 +449,16 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       const isPlaneTerminatedSourceTrace = planeTerminatedSourceTraceLayers.has(
         trace.source_trace_id,
       )
+      const canAttachToConnectedNetCopper =
+        connectedPcbPorts.length === 1 &&
+        (trace.connected_source_net_ids?.some(
+          (sourceNetId) => !sourceNetIds.has(sourceNetId),
+        ) ??
+          false)
       if (
         connectedPcbPorts.length < 2 &&
-        !(isPlaneTerminatedSourceTrace && connectedPcbPorts.length === 1)
+        !(isPlaneTerminatedSourceTrace && connectedPcbPorts.length === 1) &&
+        !canAttachToConnectedNetCopper
       ) {
         return null
       }
@@ -497,10 +519,6 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     })
     .filter((c): c is SimpleRouteConnection => c !== null)
 
-  const source_nets = db.source_net
-    .list()
-    .filter((e) => !subcircuit_id || e.subcircuit_id === subcircuit_id)
-
   const connectionsFromNets: SimpleRouteConnection[] = []
   const connectionFromNetId = new Map<string, SimpleRouteConnection>()
   const handledNetConnectivityKeys = new Set<string>()
@@ -510,7 +528,6 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   // routing intent for the current subcircuit. Descendant endpoints are only
   // eligible through an explicit current-scope net reference or exposed-net
   // contract.
-  const sourceNetIds = new Set(source_nets.map((net) => net.source_net_id))
   const currentSubcircuitSourceTraces = db.source_trace
     .list()
     .filter((trace) => !subcircuit_id || trace.subcircuit_id === subcircuit_id)
@@ -718,37 +735,22 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     }
   }
 
-  // Plane-terminated one-point traces are emitted by directTraceConnections.
-  // A net-derived connection needs at least two physical points; breakout-point
-  // processing above may have supplied the second point.
-  const routableConnectionsFromNets = connectionsFromNets.filter(
-    (connection) => connection.pointsToConnect.length >= 2,
-  )
+  const connectionsEligibleForPreservedTraceAttachments: SimpleRouteConnection[] =
+    [
+      ...directTraceConnectionCandidates,
+      ...connectionsFromNets,
+      ...connectionsFromBreakoutPoints,
+    ]
 
-  // ----- 1. Gather all connections we are about to return
-  const allConns: SimpleRouteConnection[] = [
-    ...directTraceConnections,
-    ...routableConnectionsFromNets,
-    ...connectionsFromBreakoutPoints,
-  ]
-  const defaultTraceWidth = minTraceWidth ?? board?.min_trace_width ?? 0.1
-  for (const conn of allConns) {
-    conn.nominalTraceWidth ??= nominalTraceWidth ?? defaultTraceWidth
-    conn.width ??= nominalTraceWidth ?? defaultTraceWidth
-  }
-
-  // Child subcircuits route first. Give each electrically matching parent
-  // connection many possible attachment points along that preserved copper.
+  // Give each connection that matches existing fixed copper many possible
+  // attachment points along that preserved route. Child subcircuits route
+  // first, so their traces are included here when constructing parent input.
   // The matching point IDs are also present in the preserved trace's
   // `connectsTo`, so the router knows they are alternatives on an existing
   // route rather than additional terminals that all need to be connected.
   addPreservedTraceConnectionPointsToConnections({
-    connections: allConns,
-    preservedTraces: preservedRoutedSubcircuitTraces.filter(
-      (trace) =>
-        Boolean(trace.source_trace_id) &&
-        (!subcircuit_id || trace.subcircuit_id !== subcircuit_id),
-    ),
+    connections: connectionsEligibleForPreservedTraceAttachments,
+    preservedTraces: routedDescendantTraces,
     connMap: sharedConnMap,
     // A breakout point is an explicit child/parent boundary. Connections that
     // contain one must keep using that boundary instead of bypassing it via an
@@ -757,6 +759,30 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       breakoutPoints.map((point) => point.pcb_breakout_point_id),
     ),
   })
+
+  // Keep one-point connections only when plane termination, breakout
+  // processing, or fixed child copper supplies the remaining connectivity.
+  const routableConnectionsFromNets = connectionsFromNets.filter(
+    (connection) => connection.pointsToConnect.length >= 2,
+  )
+  const routableDirectTraceConnections = directTraceConnectionCandidates.filter(
+    (connection) =>
+      connection.pointsToConnect.length >= 2 ||
+      (connection.source_trace_id !== undefined &&
+        planeTerminatedSourceTraceLayers.has(connection.source_trace_id)),
+  )
+
+  // ----- 1. Gather all connections we are about to return
+  const allConns: SimpleRouteConnection[] = [
+    ...routableDirectTraceConnections,
+    ...routableConnectionsFromNets,
+    ...connectionsFromBreakoutPoints,
+  ]
+  const defaultTraceWidth = minTraceWidth ?? board?.min_trace_width ?? 0.1
+  for (const conn of allConns) {
+    conn.nominalTraceWidth ??= nominalTraceWidth ?? defaultTraceWidth
+    conn.width ??= nominalTraceWidth ?? defaultTraceWidth
+  }
 
   bounds = expandSrjBoundsToIncludeConnectionPoints({
     bounds,
@@ -803,6 +829,17 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   const resolvedMinBoardEdgeClearance =
     minBoardEdgeClearance ?? board?.min_board_edge_clearance
 
+  // Descendant routes are immutable during normal parent routing. Represent
+  // them as ordinary obstacles so the parent solver cannot edit them. Explicit
+  // reroute phases keep descendant geometry preloaded instead, allowing the
+  // selected region to replace it. Sampled IDs remain attachment options.
+  obstacles.push(
+    ...getObstaclesFromSrjTraces({
+      traces: routedDescendantTraces,
+      layerCount: board?.num_layers ?? 2,
+      viaDiameter: resolvedMinViaPadDiameter ?? 0.5,
+    }),
+  )
   return {
     simpleRouteJson: {
       bounds,
@@ -811,8 +848,8 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       differentialPairs: srjDifferentialPairs,
       ...(srjBuses ? { buses: srjBuses } : {}),
       traces:
-        preservedRoutedSubcircuitTraces.length > 0
-          ? preservedRoutedSubcircuitTraces
+        currentScopePreloadedTraces.length > 0
+          ? currentScopePreloadedTraces
           : undefined,
       layerCount: board?.num_layers ?? 2,
       minTraceWidth: Math.min(

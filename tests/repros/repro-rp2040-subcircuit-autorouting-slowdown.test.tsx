@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
+import { getPreservedTraceConnectionPoints } from "lib/utils/autorouting/getPreservedRoutedSubcircuitTraces"
 import { Fragment } from "react"
 import { createAutoroutingPhaseIoStack } from "tests/fixtures/create-autorouting-phase-io-stack"
-import { createBasicAutorouter } from "tests/fixtures/createBasicAutorouter"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 const rp2040PinLabels = {
@@ -77,9 +77,7 @@ const decouplingCapacitors = [
   { name: "C_USB", pin: "USB_VDD", pcbX: 2.7, pcbY: 6.2 },
 ] as const
 
-const reproduceSlowRouting = process.env.RUN_RP2040_SUBCIRCUIT_SLOWDOWN === "1"
 const runFlatComparison = process.env.RUN_RP2040_FLAT_COMPARISON === "1"
-const useRealBoardAutorouter = reproduceSlowRouting || runFlatComparison
 
 const gpioBanks = [
   {
@@ -140,18 +138,14 @@ const gpioBanks = [
 ] as const
 
 /**
- * Standard runs replace only the board-phase solver with a pass-through so the
- * exact expensive input can be snapshot-tested quickly. To run the real solver:
- *
- * RUN_RP2040_SUBCIRCUIT_SLOWDOWN=1 bun test \
- *   tests/repros/repro-rp2040-subcircuit-autorouting-slowdown.test.tsx
- *
- * The same circuit can be routed without the subcircuit phase split using:
+ * This regression intentionally runs the real child and parent autorouters so
+ * the phase snapshot proves that the outer connections finish routing. The
+ * same circuit can be routed without the subcircuit phase split using:
  *
  * RUN_RP2040_FLAT_COMPARISON=1 bun test \
  *   tests/repros/repro-rp2040-subcircuit-autorouting-slowdown.test.tsx
  */
-test("RP2040 subcircuit exposes slow parent autorouter input construction", async () => {
+test("RP2040 subcircuit completes parent routing through child attachment points", async () => {
   const { circuit } = getTestFixture()
   const autoroutingPhaseIoStack = createAutoroutingPhaseIoStack(circuit)
   const rp2040Selector = runFlatComparison ? ".U1" : ".RP2040_CORE .U1"
@@ -195,19 +189,7 @@ test("RP2040 subcircuit exposes slow parent autorouter input construction", asyn
       width="90mm"
       height="60mm"
       layers={2}
-      autorouter={
-        useRealBoardAutorouter
-          ? "auto"
-          : {
-              local: true,
-              groupMode: "subcircuit",
-              // Keep the expensive board-phase input intact for the SRJ
-              // snapshot without making every CI run wait for the timeout.
-              algorithmFn: createBasicAutorouter(async (simpleRouteJson) =>
-                structuredClone(simpleRouteJson.traces ?? []),
-              ),
-            }
-      }
+      autorouter="auto"
       minTraceWidth="0.1mm"
       defaultTraceWidth="0.1mm"
       minTraceToPadEdgeClearance="0.1mm"
@@ -280,6 +262,7 @@ test("RP2040 subcircuit exposes slow parent autorouter input construction", asyn
           />
         </Fragment>
       ))}
+      <trace name="FLASH_GND" from=".U_FLASH > .GND" to="net.GND" />
       <trace
         name="FLASH_VCC"
         from=".U_FLASH > .VCC"
@@ -378,10 +361,8 @@ test("RP2040 subcircuit exposes slow parent autorouter input construction", asyn
   const [subcircuitPhase, boardPhase] = autoroutingPhaseIoStack
   expect(subcircuitPhase?.startSimpleRouteJson?.connections).toHaveLength(11)
   expect(subcircuitPhase?.endSimpleRouteJson?.traces).toHaveLength(20)
-  expect(boardPhase?.startSimpleRouteJson?.connections).toHaveLength(48)
-  expect(boardPhase?.startSimpleRouteJson?.traces?.length).toBe(
-    subcircuitPhase?.endSimpleRouteJson?.traces?.length,
-  )
+  expect(boardPhase?.startSimpleRouteJson?.connections).toHaveLength(49)
+  expect(boardPhase?.startSimpleRouteJson?.traces).toBeUndefined()
 
   const boardInputSrj = boardPhase!.startSimpleRouteJson!
   const boardConnectionPoints = boardInputSrj.connections.flatMap(
@@ -409,7 +390,7 @@ test("RP2040 subcircuit exposes slow parent autorouter input construction", asyn
   const rp2040ConnectionPoints = boardConnectionPoints.filter(
     (point) => point.pcb_port_id && rp2040PcbPortIds.has(point.pcb_port_id),
   )
-  expect(boardConnectionPoints.length).toBeGreaterThan(96)
+  expect(boardConnectionPoints.length).toBeGreaterThan(200)
   expect(rp2040ConnectionPoints).toHaveLength(46)
   expect(
     rp2040ConnectionPoints.every(
@@ -440,47 +421,135 @@ test("RP2040 subcircuit exposes slow parent autorouter input construction", asyn
     ),
   ).toBe(true)
   expect(new Set(boardInputSrj.connections.map(({ name }) => name)).size).toBe(
-    48,
+    49,
   )
+  const gndSourceNet = circuit.db.source_net.getWhere({ name: "GND" })!
+  const parentGndSourceTrace = circuit.db.source_trace
+    .list()
+    .find(
+      (trace) =>
+        trace.subcircuit_id !== gndSourceNet.subcircuit_id &&
+        trace.connected_source_net_ids?.includes(gndSourceNet.source_net_id),
+    )!
+  const parentGndConnection = boardInputSrj.connections.find(
+    (connection) => connection.name === parentGndSourceTrace.source_trace_id,
+  )!
+  const childGndTraces = subcircuitPhase!.endSimpleRouteJson!.traces!.filter(
+    (trace) => trace.connection_name === gndSourceNet.source_net_id,
+  )
+  expect(childGndTraces).toHaveLength(10)
+  const expectedGndTracePointIds = new Set(
+    childGndTraces.flatMap((trace) =>
+      getPreservedTraceConnectionPoints(trace).map((point) => point.pointId),
+    ),
+  )
+  const parentGndTracePointIds = new Set(
+    parentGndConnection.pointsToConnect.flatMap((point) =>
+      point.pointId?.startsWith("pcb_trace_route_point_")
+        ? [point.pointId]
+        : [],
+    ),
+  )
+  expect(parentGndTracePointIds).toEqual(expectedGndTracePointIds)
+  const flashSourceComponent = circuit.db.source_component.getWhere({
+    name: "U_FLASH",
+  })!
+  const flashGndSourcePort = circuit.db.source_port
+    .list()
+    .find(
+      (sourcePort) =>
+        sourcePort.source_component_id ===
+          flashSourceComponent.source_component_id && sourcePort.name === "GND",
+    )!
+  const flashGndPcbPort = circuit.db.pcb_port.getWhere({
+    source_port_id: flashGndSourcePort.source_port_id,
+  })!
   expect(
-    new Set(boardInputSrj.traces?.map(({ pcb_trace_id }) => pcb_trace_id)).size,
-  ).toBe(20)
+    parentGndConnection.pointsToConnect
+      .filter((point) => !point.pointId?.startsWith("pcb_trace_route_point_"))
+      .map((point) => point.pointId),
+  ).toEqual([flashGndPcbPort.pcb_port_id])
+  const expectedAlreadyConnectedGndPointIds = new Set([
+    ...childGndTraces.flatMap((trace) => trace.connectsTo ?? []),
+    ...expectedGndTracePointIds,
+  ])
+  expect(
+    new Set(parentGndConnection.externallyConnectedPointIds?.flat()),
+  ).toEqual(expectedAlreadyConnectedGndPointIds)
+  const childTraceIds = new Set(
+    subcircuitPhase?.endSimpleRouteJson?.traces?.map(
+      ({ pcb_trace_id }) => pcb_trace_id,
+    ),
+  )
+  const childTraceObstacles = boardInputSrj.obstacles.filter((obstacle) =>
+    Array.from(childTraceIds).some((pcbTraceId) =>
+      obstacle.obstacleId?.startsWith(`${pcbTraceId}_`),
+    ),
+  )
+  expect(childTraceObstacles.length).toBeGreaterThanOrEqual(childTraceIds.size)
 
   const childTraceConnectionPoints = boardConnectionPoints.filter((point) =>
     point.pointId?.startsWith("pcb_trace_route_point_"),
   )
   expect(childTraceConnectionPoints.length).toBeGreaterThan(2)
-  const preservedTraceConnectedIds = new Set(
-    boardInputSrj.traces?.flatMap((trace) => trace.connectsTo ?? []),
+  const childTraceObstacleConnectedIds = new Set(
+    childTraceObstacles.flatMap((obstacle) => obstacle.connectedTo),
   )
   expect(
     childTraceConnectionPoints.every(
-      (point) => point.pointId && preservedTraceConnectedIds.has(point.pointId),
+      (point) =>
+        point.pointId && childTraceObstacleConnectedIds.has(point.pointId),
     ),
   ).toBe(true)
-  expect(
-    boardInputSrj.connections.filter((connection) =>
+  const childTraceAttachmentConnections = boardInputSrj.connections.filter(
+    (connection) =>
       connection.pointsToConnect.some((point) =>
         point.pointId?.startsWith("pcb_trace_route_point_"),
       ),
+  )
+  expect(childTraceAttachmentConnections).toHaveLength(2)
+  const alreadyConnectedAttachmentPointIds = new Set(
+    childTraceAttachmentConnections.flatMap(
+      (connection) => connection.externallyConnectedPointIds?.flat() ?? [],
     ),
-  ).toHaveLength(1)
+  )
+  expect(
+    childTraceConnectionPoints.every(
+      (point) =>
+        point.pointId && alreadyConnectedAttachmentPointIds.has(point.pointId),
+    ),
+  ).toBe(true)
+
+  const routedParentTraces = boardPhase?.endSimpleRouteJson?.traces ?? []
+  expect(routedParentTraces).toHaveLength(49)
+  const routedParentGndTrace = routedParentTraces.find(
+    (trace) => trace.connection_name === parentGndConnection.name,
+  )!
+  expect(routedParentGndTrace.connectsTo).toContain(flashGndPcbPort.pcb_port_id)
+  expect(
+    routedParentGndTrace.connectsTo?.some((pointId) =>
+      expectedGndTracePointIds.has(pointId),
+    ),
+  ).toBe(true)
+  expect(
+    new Set(routedParentTraces.map((trace) => trace.connection_name)),
+  ).toEqual(
+    new Set(boardInputSrj.connections.map((connection) => connection.name)),
+  )
+  expect(routedParentTraces.every((trace) => trace.route.length > 1)).toBe(true)
+  expect(circuit.db.pcb_trace.list()).toHaveLength(69)
+  expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
 
   console.log(
-    `RP2040 subcircuit ${
-      reproduceSlowRouting ? "autorouting" : "input capture"
-    } took ${renderDurationMs.toFixed(0)}ms`,
+    `RP2040 subcircuit autorouting took ${renderDurationMs.toFixed(0)}ms`,
   )
-  if (!reproduceSlowRouting) {
-    await expect(
-      autoroutingPhaseIoStack,
-    ).toMatchAutoroutingPhaseIoStackSnapshot(
-      import.meta.path,
-      "repro-rp2040-subcircuit-autorouting-slowdown-srj",
-      circuit,
-    )
-  }
+  await expect(autoroutingPhaseIoStack).toMatchAutoroutingPhaseIoStackSnapshot(
+    import.meta.path,
+    "repro-rp2040-subcircuit-autorouting-slowdown-srj",
+    circuit,
+    { diffThresholdPercent: 1 },
+  )
   expect(circuit).toMatchPcbSnapshot(import.meta.path, {
     diffThresholdPercent: 2,
   })
-}, 120_000)
+}, 600_000)

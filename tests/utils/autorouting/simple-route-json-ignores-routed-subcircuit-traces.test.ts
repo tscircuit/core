@@ -140,7 +140,7 @@ test("board simple route json ignores source traces already routed by child subc
   })
 
   // Child-internal routing is already represented by `pcb_trace_child_internal`,
-  // so board SRJ should preserve it in `traces` instead of re-routing the
+  // so board SRJ should preserve it as an obstacle instead of re-routing the
   // source_trace as a board-level connection.
   expect(
     simpleRouteJson.connections.some(
@@ -148,16 +148,15 @@ test("board simple route json ignores source traces already routed by child subc
         connection.source_trace_id === "source_trace_child_internal",
     ),
   ).toBe(false)
-  expect(simpleRouteJson.traces?.map((trace) => trace.pcb_trace_id)).toEqual([
-    "pcb_trace_child_internal",
-  ])
-
-  const preservedTrace = simpleRouteJson.traces?.[0]
-  expect(preservedTrace?.connectsTo).toEqual([
+  expect(simpleRouteJson.traces).toBeUndefined()
+  const preservedTraceObstacle = simpleRouteJson.obstacles.find(
+    (obstacle) => obstacle.obstacleId === "pcb_trace_child_internal_0_wire",
+  )
+  expect(preservedTraceObstacle?.connectedTo).toEqual([
     "pcb_port_child_a",
     "pcb_port_child_b",
   ])
-  expect(preservedTrace?.route.at(-1)).toMatchObject({ x: 0, y: 0 })
+  expect(preservedTraceObstacle?.center).toEqual({ x: -1, y: 0 })
 
   // The cross-boundary trace is still board-level routing intent, so it should
   // remain in `connections`.
