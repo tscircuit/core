@@ -23,7 +23,7 @@ const SinglePadChip = ({
   />
 )
 
-test("repro: fanout crosses a different-net trace routed by an earlier phase", async () => {
+test("fanout avoids a different-net trace routed by an earlier phase", async () => {
   const { circuit } = getTestFixture()
   const autoroutingPhaseIoStack = createAutoroutingPhaseIoStack(circuit)
 
@@ -70,7 +70,7 @@ test("repro: fanout crosses a different-net trace routed by an earlier phase", a
         pcbX={0}
         pcbY={1.5}
         fontSize={0.35}
-        text="REPRO: phase 1 fanout crosses phase 0 copper"
+        text="Phase 1 fanout avoids phase 0 copper"
       />
     </board>,
   )
@@ -111,12 +111,10 @@ test("repro: fanout crosses a different-net trace routed by an earlier phase", a
       (routePoint) =>
         routePoint.route_type === "wire" && routePoint.layer === "bottom",
     ),
-  ).toBe(false)
+  ).toBe(true)
 
   expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
-  const traceErrors = circuit.db.pcb_trace_error.list()
-  expect(traceErrors).toHaveLength(1)
-  expect(traceErrors[0]?.message).toContain("overlaps")
+  expect(circuit.db.pcb_trace_error.list()).toEqual([])
   expect(circuit.db.pcb_pad_trace_clearance_error.list()).toEqual([])
   expect(circuit.db.pcb_via_clearance_error.list()).toEqual([])
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
