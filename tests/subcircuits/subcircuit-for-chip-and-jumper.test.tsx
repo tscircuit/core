@@ -51,6 +51,10 @@ test("subcircuit-id property for jumper", async () => {
 
   expect(circuit.db.pcb_component.list()[0]).toMatchInlineSnapshot(`
     {
+      "cable_insertion_center": {
+        "x": -1.4,
+        "y": 0,
+      },
       "center": {
         "x": 0,
         "y": 0,

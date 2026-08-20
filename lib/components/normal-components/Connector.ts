@@ -1,4 +1,3 @@
-import { guessCableInsertCenter } from "@tscircuit/infer-cable-insertion-point"
 import {
   connectorProps,
   type ConnectorStandard,
@@ -491,47 +490,5 @@ export class Connector<
         insertInnerSymbolInSchematicBox(this, usbcSymbol)
       }
     }
-  }
-
-  doInitialPcbComponentSizeCalculation(): void {
-    super.doInitialPcbComponentSizeCalculation()
-    if (this.root?.pcbDisabled) return
-    if (!this.pcb_component_id || !this.source_component_id) return
-
-    const { db } = this.root!
-    const connectorCircuitJson = db.toArray().filter((elm: any) => {
-      if (elm.type === "pcb_component") {
-        return elm.pcb_component_id === this.pcb_component_id
-      }
-      if (elm.type === "source_component") {
-        return elm.source_component_id === this.source_component_id
-      }
-      if (
-        "pcb_component_id" in elm &&
-        elm.pcb_component_id === this.pcb_component_id
-      ) {
-        return true
-      }
-      if (
-        "source_component_id" in elm &&
-        elm.source_component_id === this.source_component_id
-      ) {
-        return true
-      }
-      return false
-    })
-
-    if (connectorCircuitJson.length === 0) return
-
-    const inferredInsertionCenter = guessCableInsertCenter(
-      connectorCircuitJson as any,
-    )
-
-    db.pcb_component.update(this.pcb_component_id, {
-      cable_insertion_center: {
-        x: inferredInsertionCenter.x,
-        y: inferredInsertionCenter.y,
-      },
-    })
   }
 }

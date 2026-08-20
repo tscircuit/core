@@ -87,6 +87,7 @@ import {
   NormalComponent_updatePartOrientationAnalysis,
 } from "./NormalComponent_doInitialPartOrientationAnalysis"
 import { NormalComponent_doInitialPcbComponentAnchorAlignment } from "./NormalComponent_doInitialPcbComponentAnchorAlignment"
+import { NormalComponent_doInitialPcbComponentCableInsertionCenter } from "./NormalComponent_doInitialPcbComponentCableInsertionCenter"
 import { NormalComponent_doInitialPcbFootprintStringRender } from "./NormalComponent_doInitialPcbFootprintStringRender"
 import { NormalComponent_doInitialResolveFootprintPinLabels } from "./NormalComponent_doInitialResolveFootprintPinLabels"
 import { NormalComponent_doInitialSchematicComponentRender } from "./NormalComponent_doInitialSchematicComponentRender"
@@ -1010,18 +1011,20 @@ export class NormalComponent<
 
     const bounds = getBoundsOfPcbComponents(this.children)
 
-    if (bounds.width === 0 || bounds.height === 0) return
+    if (bounds.width !== 0 && bounds.height !== 0) {
+      const center = {
+        x: (bounds.minX + bounds.maxX) / 2,
+        y: (bounds.minY + bounds.maxY) / 2,
+      }
 
-    const center = {
-      x: (bounds.minX + bounds.maxX) / 2,
-      y: (bounds.minY + bounds.maxY) / 2,
+      db.pcb_component.update(this.pcb_component_id!, {
+        center,
+        width: bounds.width,
+        height: bounds.height,
+      })
     }
 
-    db.pcb_component.update(this.pcb_component_id!, {
-      center,
-      width: bounds.width,
-      height: bounds.height,
-    })
+    NormalComponent_doInitialPcbComponentCableInsertionCenter(this)
   }
 
   updatePcbComponentSizeCalculation(): void {
