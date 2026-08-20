@@ -1,15 +1,25 @@
 import { expect, test } from "bun:test"
-import { resolveBusTargetLayer } from "lib/utils/autorouting/resolve-bus-target-layer"
+import { resolveBusTargetLayers } from "lib/utils/autorouting/resolve-bus-target-layer"
 
-test("resolves the shared fanout and winding bus target layer", () => {
+test("resolves shared fanout and winding bus target layers", () => {
   expect(
-    resolveBusTargetLayer({
-      preferredLayer: "inner2",
-      preferredLayers: ["bottom", "inner1"],
-    }),
-  ).toBe("inner2")
-  expect(resolveBusTargetLayer({ preferredLayers: ["inner1", "bottom"] })).toBe(
-    "inner1",
-  )
-  expect(resolveBusTargetLayer({})).toBe("top")
+    resolveBusTargetLayers(
+      {
+        preferredLayer: "inner2",
+        preferredLayers: ["bottom", "inner1"],
+      },
+      ["top", "bottom", "inner1", "inner2"],
+    ),
+  ).toEqual(["inner2"])
+  expect(
+    resolveBusTargetLayers({ preferredLayers: ["inner1", "bottom"] }, [
+      "top",
+      "bottom",
+      "inner1",
+      "inner2",
+    ]),
+  ).toEqual(["inner1", "bottom"])
+  expect(
+    resolveBusTargetLayers({}, ["top", "bottom", "inner1", "inner2"]),
+  ).toEqual(["top", "bottom", "inner1", "inner2"])
 })

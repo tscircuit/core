@@ -127,6 +127,7 @@ test("validates coordinated winding layers and endpoints", async () => {
     {
       id: "DEFAULTED",
       connectionIds: expect.any(Array),
+      preferredLayers: ["top", "bottom"],
     },
   ])
   expect(getSelectedLayerByConnectionName(validInput)).toEqual(
@@ -134,7 +135,7 @@ test("validates coordinated winding layers and endpoints", async () => {
       ["D0", "inner1"],
       ["D1", "inner1"],
       ["D2", "top"],
-      ["D3", "top"],
+      ["D3", "bottom"],
       ["D4", "top"],
     ]),
   )

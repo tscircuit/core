@@ -14,6 +14,8 @@ import type { DifferentialPair } from "../DifferentialPair"
 import type { Group } from "../Group/Group"
 import type { Port } from "../Port"
 import type { Breakout } from "./Breakout"
+import { getBoardAvailableLayers } from "../../../utils/getViaSpanLayers"
+import { resolveBusTargetLayers } from "../../../utils/autorouting/resolve-bus-target-layer"
 
 type SourceTraceId = SourceTrace["source_trace_id"]
 type SourcePortId = NonNullable<SourcePort["source_port_id"]>
@@ -67,11 +69,18 @@ const getAutomaticBreakouts = (routingScope: Group<z.ZodType>): Breakout[] => {
   return automaticBreakouts
 }
 
-export const hasMultipleAutomaticBreakoutsInScope = (
+export const shouldUseCoordinatedWindingBreakoutSolver = (
   breakout: Breakout,
 ): boolean => {
   const routingScope = getRoutingScopeOrThrow(breakout)
-  return getAutomaticBreakouts(routingScope).length >= 2
+  if (getAutomaticBreakouts(routingScope).length < 2) return false
+  const subcircuitId = routingScope.getSubcircuit().subcircuit_id
+  for (const bus of routingScope.selectAll("bus") as Bus[]) {
+    if (bus.getSubcircuit().subcircuit_id !== subcircuitId) continue
+    if (bus._parsedProps.preferredLayer !== undefined) return true
+    if (bus._parsedProps.preferredLayers !== undefined) return true
+  }
+  return false
 }
 
 /**
@@ -274,10 +283,12 @@ const getWindingSolverBuses = ({
   routingScope,
   sourceTraces,
   coordinatedSourceTraceIds,
+  availableLayers,
 }: {
   routingScope: Group<z.ZodType>
   sourceTraces: readonly SourceTrace[]
   coordinatedSourceTraceIds: ReadonlySet<SourceTraceId>
+  availableLayers: readonly string[]
 }): WindingBreakoutBusInput[] => {
   const solverBuses: WindingBreakoutBusInput[] = []
   const subcircuitId = routingScope.getSubcircuit().subcircuit_id
@@ -312,6 +323,15 @@ const getWindingSolverBuses = ({
       solverBus = {
         ...solverBus,
         preferredLayers: bus._parsedProps.preferredLayers,
+      }
+    }
+    if (
+      bus._parsedProps.preferredLayer === undefined &&
+      bus._parsedProps.preferredLayers === undefined
+    ) {
+      solverBus = {
+        ...solverBus,
+        preferredLayers: resolveBusTargetLayers({}, availableLayers),
       }
     }
     solverBuses.push(solverBus)
@@ -442,6 +462,9 @@ export const createCoordinatedWindingBreakoutInput = (
     routingScope,
     sourceTraces,
     coordinatedSourceTraceIds: sourceTraceIds,
+    availableLayers: getBoardAvailableLayers(
+      routingScope._getSubcircuitLayerCount(),
+    ),
   })
   const endpointsBySourceTraceId = new Map<
     SourceTraceId,

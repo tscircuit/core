@@ -35,7 +35,6 @@ test("fanout solver buses translate layer preferences into allowedLayers", () =>
     {
       busId: "UNCONSTRAINED",
       connectionNames: ["CLK"],
-      allowedLayers: ["top"],
     },
   ])
 })

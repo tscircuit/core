@@ -1,18 +1,27 @@
 export interface BusLayerPreferences {
+  allowedLayers?: readonly string[]
   preferredLayer?: string
   preferredLayers?: readonly string[]
 }
 
-/** Resolve the one PCB layer targeted by both breakout placement and fanout. */
-export const resolveBusTargetLayer = (bus: BusLayerPreferences): string => {
+/** Resolve PCB layer candidates for both breakout placement and fanout. */
+export const resolveBusTargetLayers = (
+  bus: BusLayerPreferences,
+  availableLayers: readonly string[],
+): string[] => {
   if (bus.preferredLayer !== undefined) {
-    return bus.preferredLayer
+    return [bus.preferredLayer]
   }
 
-  const firstPreferredLayer = bus.preferredLayers?.[0]
-  if (firstPreferredLayer !== undefined) {
-    return firstPreferredLayer
+  if (bus.preferredLayers !== undefined && bus.preferredLayers.length > 0) {
+    return [...new Set(bus.preferredLayers)]
   }
 
-  return "top"
+  if (bus.allowedLayers !== undefined && bus.allowedLayers.length > 0) {
+    return [...new Set(bus.allowedLayers)]
+  }
+
+  const uniqueAvailableLayers = [...new Set(availableLayers)]
+  if (uniqueAvailableLayers.length > 0) return uniqueAvailableLayers
+  return ["top"]
 }

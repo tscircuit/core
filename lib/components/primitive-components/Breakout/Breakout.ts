@@ -6,7 +6,7 @@ import { BreakoutPoint } from "../BreakoutPoint"
 import type { Trace } from "../Trace/Trace"
 import type { Port } from "../Port"
 import { createBreakoutPointSolverInput } from "./createBreakoutPointSolverInput"
-import { hasMultipleAutomaticBreakoutsInScope } from "./create-coordinated-winding-breakout-input"
+import { shouldUseCoordinatedWindingBreakoutSolver } from "./create-coordinated-winding-breakout-input"
 import { solveCoordinatedWindingBreakoutPoints } from "./solve-coordinated-winding-breakout-points"
 
 export class Breakout extends Group<typeof breakoutProps> {
@@ -93,7 +93,7 @@ export class Breakout extends Group<typeof breakoutProps> {
       )
     }
     let solvedBreakoutPoints
-    if (hasMultipleAutomaticBreakoutsInScope(this)) {
+    if (shouldUseCoordinatedWindingBreakoutSolver(this)) {
       solvedBreakoutPoints = solveCoordinatedWindingBreakoutPoints(this)
     } else {
       const solverInput = createBreakoutPointSolverInput(this)

@@ -26,7 +26,7 @@ import type {
 } from "./SimpleRouteJson"
 import { getFanoutSharedBoundary } from "./get-fanout-shared-boundary"
 import { getFanoutSpaceErrorMessage } from "./get-fanout-space-error-message"
-import { resolveBusTargetLayer } from "./resolve-bus-target-layer"
+import { resolveBusTargetLayers } from "./resolve-bus-target-layer"
 
 export type FanoutAutorouterMode = "single_layer_fanout" | "fanout"
 
@@ -97,9 +97,10 @@ export const getFanoutSolverBuses = (
         allowedLayers: [bus.termination.layer],
       }
     }
-    const allowedLayers = [
-      resolveBusTargetLayer({ preferredLayer, preferredLayers }),
-    ]
+    if (preferredLayer === undefined && preferredLayers === undefined) {
+      return fanoutBusWithoutPreferences
+    }
+    const allowedLayers = resolveBusTargetLayers(bus, [])
     return {
       ...fanoutBusWithoutPreferences,
       allowedLayers,
