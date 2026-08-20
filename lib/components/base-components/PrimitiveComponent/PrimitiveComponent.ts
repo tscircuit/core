@@ -23,7 +23,6 @@ import type {
   SchematicBoxDimensions,
 } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
 import { getRotatedSymbolName } from "lib/utils/schematic/getRotatedSymbolName"
-import { updateMissingSchematicSheetWarning } from "lib/utils/schematic/update-missing-schematic-sheet-warning"
 import { isMatchingSelector } from "lib/utils/selector-matching"
 import { type SchSymbol, symbols } from "schematic-symbols"
 import {
@@ -37,6 +36,10 @@ import {
 } from "transformation-matrix"
 import type { Primitive, ZodType } from "zod"
 import { z } from "zod"
+import {
+  PrimitiveComponent_doInitialSchematicSheetRender,
+  PrimitiveComponent_updateSchematicSheetRender,
+} from "./PrimitiveComponent_doInitialSchematicSheetRender"
 import {
   cssSelectPrimitiveComponentAdapter,
   cssSelectPrimitiveComponentAdapterOnlySubcircuits,
@@ -274,25 +277,11 @@ export abstract class PrimitiveComponent<
   }
 
   doInitialSchematicSheetRender(): void {
-    if (!(this.parent as IsolatedCircuit | null)?.isRootCircuit) return
-    const root = this.root
-    if (!root) return
-
-    updateMissingSchematicSheetWarning({
-      db: root.db,
-      schematicDisabled: root.schematicDisabled,
-    })
+    PrimitiveComponent_doInitialSchematicSheetRender(this)
   }
 
   updateSchematicSheetRender(): void {
-    if (!(this.parent as IsolatedCircuit | null)?.isRootCircuit) return
-    const root = this.root
-    if (!root) return
-
-    updateMissingSchematicSheetWarning({
-      db: root.db,
-      schematicDisabled: root.schematicDisabled,
-    })
+    PrimitiveComponent_updateSchematicSheetRender(this)
   }
 
   protected _validatePcbCoordinateReferences(params: {
