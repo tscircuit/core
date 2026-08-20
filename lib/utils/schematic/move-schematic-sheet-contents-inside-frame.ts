@@ -53,6 +53,11 @@ export const moveSchematicSheetContentsInsideFrame = ({
   const sheetMaxY =
     DEFAULT_SCHEMATIC_SHEET_HEIGHT / 2 - SCHEMATIC_SHEET_INNER_MARGIN
 
+  const contentFitsInsideSheet =
+    bounds.maxX - bounds.minX <= sheetMaxX - sheetMinX &&
+    bounds.maxY - bounds.minY <= sheetMaxY - sheetMinY
+  if (!contentFitsInsideSheet) return
+
   let translateX = 0
   let translateY = 0
   if (bounds.minX < sheetMinX) translateX = sheetMinX - bounds.minX
