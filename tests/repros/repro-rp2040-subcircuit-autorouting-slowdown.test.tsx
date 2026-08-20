@@ -1,7 +1,6 @@
 import { expect, test } from "bun:test"
 import { Fragment } from "react"
 import { createAutoroutingPhaseIoStack } from "tests/fixtures/create-autorouting-phase-io-stack"
-import { createBasicAutorouter } from "tests/fixtures/createBasicAutorouter"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 const rp2040PinLabels = {
@@ -77,9 +76,7 @@ const decouplingCapacitors = [
   { name: "C_USB", pin: "USB_VDD", pcbX: 2.7, pcbY: 6.2 },
 ] as const
 
-const reproduceSlowRouting = process.env.RUN_RP2040_SUBCIRCUIT_SLOWDOWN === "1"
 const runFlatComparison = process.env.RUN_RP2040_FLAT_COMPARISON === "1"
-const useRealBoardAutorouter = reproduceSlowRouting || runFlatComparison
 
 const gpioBanks = [
   {
@@ -140,18 +137,14 @@ const gpioBanks = [
 ] as const
 
 /**
- * Standard runs replace only the board-phase solver with a pass-through so the
- * exact expensive input can be snapshot-tested quickly. To run the real solver:
- *
- * RUN_RP2040_SUBCIRCUIT_SLOWDOWN=1 bun test \
- *   tests/repros/repro-rp2040-subcircuit-autorouting-slowdown.test.tsx
- *
- * The same circuit can be routed without the subcircuit phase split using:
+ * This regression intentionally runs the real child and parent autorouters so
+ * the phase snapshot proves that the outer connections finish routing. The
+ * same circuit can be routed without the subcircuit phase split using:
  *
  * RUN_RP2040_FLAT_COMPARISON=1 bun test \
  *   tests/repros/repro-rp2040-subcircuit-autorouting-slowdown.test.tsx
  */
-test("RP2040 subcircuit exposes slow parent autorouter input construction", async () => {
+test("RP2040 subcircuit completes parent routing through child attachment points", async () => {
   const { circuit } = getTestFixture()
   const autoroutingPhaseIoStack = createAutoroutingPhaseIoStack(circuit)
   const rp2040Selector = runFlatComparison ? ".U1" : ".RP2040_CORE .U1"
@@ -195,19 +188,7 @@ test("RP2040 subcircuit exposes slow parent autorouter input construction", asyn
       width="90mm"
       height="60mm"
       layers={2}
-      autorouter={
-        useRealBoardAutorouter
-          ? "auto"
-          : {
-              local: true,
-              groupMode: "subcircuit",
-              // Keep the expensive board-phase input intact for the SRJ
-              // snapshot without making every CI run wait for the timeout.
-              algorithmFn: createBasicAutorouter(async (simpleRouteJson) =>
-                structuredClone(simpleRouteJson.traces ?? []),
-              ),
-            }
-      }
+      autorouter="auto"
       minTraceWidth="0.1mm"
       defaultTraceWidth="0.1mm"
       minTraceToPadEdgeClearance="0.1mm"
@@ -482,28 +463,25 @@ test("RP2040 subcircuit exposes slow parent autorouter input construction", asyn
     ),
   ).toBe(true)
 
-  if (reproduceSlowRouting) {
-    expect(boardPhase?.endSimpleRouteJson?.traces).toHaveLength(48)
-    expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
-  }
+  const routedParentTraces = boardPhase?.endSimpleRouteJson?.traces ?? []
+  expect(routedParentTraces).toHaveLength(48)
+  expect(
+    new Set(routedParentTraces.map((trace) => trace.connection_name)),
+  ).toEqual(
+    new Set(boardInputSrj.connections.map((connection) => connection.name)),
+  )
+  expect(routedParentTraces.every((trace) => trace.route.length > 1)).toBe(true)
+  expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
 
   console.log(
-    `RP2040 subcircuit ${
-      reproduceSlowRouting ? "autorouting" : "input capture"
-    } took ${renderDurationMs.toFixed(0)}ms`,
+    `RP2040 subcircuit autorouting took ${renderDurationMs.toFixed(0)}ms`,
   )
-  if (!reproduceSlowRouting) {
-    await expect(
-      autoroutingPhaseIoStack,
-    ).toMatchAutoroutingPhaseIoStackSnapshot(
-      import.meta.path,
-      "repro-rp2040-subcircuit-autorouting-slowdown-srj",
-      circuit,
-    )
-  }
-  if (!reproduceSlowRouting) {
-    expect(circuit).toMatchPcbSnapshot(import.meta.path, {
-      diffThresholdPercent: 2,
-    })
-  }
-}, 240_000)
+  await expect(autoroutingPhaseIoStack).toMatchAutoroutingPhaseIoStackSnapshot(
+    import.meta.path,
+    "repro-rp2040-subcircuit-autorouting-slowdown-srj",
+    circuit,
+  )
+  expect(circuit).toMatchPcbSnapshot(import.meta.path, {
+    diffThresholdPercent: 2,
+  })
+}, 600_000)

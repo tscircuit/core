@@ -39,6 +39,10 @@ export const addPreservedTraceConnectionPointsToConnections = ({
   excludedConnectionPointIds?: ReadonlySet<string>
 }): void => {
   const connectionsByElectricalKey = new Map<string, SimpleRouteConnection[]>()
+  const alreadyConnectedPointIdsByConnection = new Map<
+    SimpleRouteConnection,
+    Map<string, Set<string>>
+  >()
   for (const connection of connections) {
     if (
       connection.pointsToConnect.some(
@@ -103,8 +107,28 @@ export const addPreservedTraceConnectionPointsToConnections = ({
         existingPointIds.add(point.pointId)
         connection.pointsToConnect.push(point)
       }
-      connection.externallyConnectedPointIds ??= []
-      connection.externallyConnectedPointIds.push(alreadyConnectedPointIds)
+      const childSubcircuitKey = trace.subcircuit_id ?? trace.pcb_trace_id
+      const groupsForConnection =
+        alreadyConnectedPointIdsByConnection.get(connection) ?? new Map()
+      const connectedPointIds =
+        groupsForConnection.get(childSubcircuitKey) ?? new Set<string>()
+      for (const pointId of alreadyConnectedPointIds) {
+        connectedPointIds.add(pointId)
+      }
+      groupsForConnection.set(childSubcircuitKey, connectedPointIds)
+      alreadyConnectedPointIdsByConnection.set(connection, groupsForConnection)
     }
+  }
+
+  for (const [
+    connection,
+    alreadyConnectedPointIdsBySubcircuit,
+  ] of alreadyConnectedPointIdsByConnection) {
+    connection.externallyConnectedPointIds ??= []
+    connection.externallyConnectedPointIds.push(
+      ...Array.from(alreadyConnectedPointIdsBySubcircuit.values(), (pointIds) =>
+        Array.from(pointIds),
+      ),
+    )
   }
 }
