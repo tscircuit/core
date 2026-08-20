@@ -702,11 +702,10 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     const isExplicitCustomSymbolPort =
       schX !== undefined && schY !== undefined && !!this._getSymbolAncestor()
 
-    if (!localPortInfo?.side) {
+    if (isExplicitCustomSymbolPort && props.direction) {
+      this.facingDirection = props.direction
+    } else if (!localPortInfo?.side) {
       this.facingDirection = getRelativeDirection(containerCenter, portCenter)
-      if (isExplicitCustomSymbolPort && props.direction) {
-        this.facingDirection = props.direction
-      }
     } else {
       this.facingDirection = {
         left: "left",
@@ -720,13 +719,18 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     const parentNormalComponent = this.getParentNormalComponent()
 
     // Derive side_of_component from direction prop for custom symbols
-    const sideOfComponent =
-      localPortInfo?.side ??
-      (props.direction === "up"
+    const sideFromDirection =
+      props.direction === "up"
         ? "top"
         : props.direction === "down"
           ? "bottom"
-          : props.direction)
+          : props.direction
+    const explicitCustomSymbolSide =
+      isExplicitCustomSymbolPort && props.direction
+        ? sideFromDirection
+        : undefined
+    const sideOfComponent =
+      explicitCustomSymbolSide ?? localPortInfo?.side ?? sideFromDirection
 
     const schematicPortInsertProps: Omit<SchematicPort, "schematic_port_id"> = {
       type: "schematic_port",

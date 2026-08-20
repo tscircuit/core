@@ -313,5 +313,50 @@ test("imported DMT6007LFG_7 custom symbol ports support internallyConnectedPins"
           : 0,
       ),
   ).toEqual([1, 2, 3])
+  expect(
+    circuit.db.schematic_port
+      .list()
+      .map(({ pin_number, facing_direction, side_of_component }) => ({
+        pinNumber: pin_number,
+        facingDirection: facing_direction,
+        sideOfComponent: side_of_component,
+      }))
+      .sort((portA, portB) => (portA.pinNumber ?? 0) - (portB.pinNumber ?? 0)),
+  ).toEqual([
+    { pinNumber: 1, facingDirection: "down", sideOfComponent: "bottom" },
+    { pinNumber: 2, facingDirection: "down", sideOfComponent: "bottom" },
+    { pinNumber: 3, facingDirection: "down", sideOfComponent: "bottom" },
+    { pinNumber: 4, facingDirection: "left", sideOfComponent: "left" },
+    { pinNumber: 5, facingDirection: "up", sideOfComponent: "top" },
+  ])
+
+  const schematicNetLabels = circuit.db.schematic_net_label.list()
+  expect(schematicNetLabels).toHaveLength(3)
+  const gateNetLabel = schematicNetLabels.find(
+    (netLabel) => netLabel.text === "GATE",
+  )
+  expect(gateNetLabel).toMatchObject({
+    anchor_position: { x: -0.4, y: 0 },
+    anchor_side: "right",
+  })
+  expect(gateNetLabel!.center!.x).toBeLessThan(gateNetLabel!.anchor_position!.x)
+
+  const sourcePort = circuit.db.schematic_port
+    .list()
+    .find((port) => port.pin_number === 1)
+  expect(sourcePort).toBeDefined()
+  expect(
+    circuit.db.schematic_trace
+      .list()
+      .some((trace) =>
+        trace.edges.some(
+          (edge) =>
+            (edge.from.x === sourcePort!.center.x &&
+              edge.from.y === sourcePort!.center.y) ||
+            (edge.to.x === sourcePort!.center.x &&
+              edge.to.y === sourcePort!.center.y),
+        ),
+      ),
+  ).toBe(true)
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
