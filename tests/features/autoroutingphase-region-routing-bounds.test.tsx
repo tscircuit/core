@@ -6,7 +6,7 @@ import type {
 import { createBasicAutorouter } from "tests/fixtures/createBasicAutorouter"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("non-reroute autorouting phase region does not constrain routing bounds", async () => {
+test("non-reroute autorouting phase region constrains routing bounds", async () => {
   const { circuit } = getTestFixture()
   let phaseInput: SimpleRouteJson | undefined
   const autorouter = createBasicAutorouter(
@@ -56,10 +56,10 @@ test("non-reroute autorouting phase region does not constrain routing bounds", a
 
   expect(phaseInput).toBeDefined()
   expect(phaseInput!.bounds).toEqual({
-    minX: -20,
-    maxX: 20,
-    minY: -10,
-    maxY: 10,
+    minX: -5,
+    maxX: 5,
+    minY: -3,
+    maxY: 3,
   })
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
