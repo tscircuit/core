@@ -3,7 +3,7 @@ import { Fragment } from "react"
 import { createAutoroutingPhaseIoStack } from "tests/fixtures/create-autorouting-phase-io-stack"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("fanout stage output drops source trace identity", async () => {
+test("fanout stage output preserves source trace identity", async () => {
   const { circuit } = getTestFixture()
   const autoroutingPhaseIoStack = createAutoroutingPhaseIoStack(circuit)
   const pads = Array.from({ length: 16 }, (_, padIndex) => {
@@ -55,17 +55,8 @@ test("fanout stage output drops source trace identity", async () => {
   expect(autoroutingPhaseIoStack.length).toBeGreaterThanOrEqual(1)
   const fanoutTraces = autoroutingPhaseIoStack[0]!.endSimpleRouteJson?.traces
   expect(fanoutTraces).toHaveLength(2)
-  const fanoutTracesWithOptionalSourceTraceId = fanoutTraces as
-    | Array<
-        NonNullable<typeof fanoutTraces>[number] & {
-          source_trace_id?: string
-        }
-      >
-    | undefined
   expect(
-    fanoutTracesWithOptionalSourceTraceId?.every(
-      (trace) => trace.source_trace_id === undefined,
-    ),
+    fanoutTraces?.every((trace) => trace.source_trace_id !== undefined),
   ).toBe(true)
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
