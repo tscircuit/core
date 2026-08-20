@@ -90,7 +90,7 @@ const PhasedTrace = ({
   pin,
   to,
 }: {
-  phaseIndex: number
+  phaseIndex?: number
   pin: string
   to: string
 }) => (
@@ -163,8 +163,9 @@ const usbCFootprint = (
 
 export const DENSE_RP2040_PHASE_COUNT = rp2040Connections.length
 
-export const createDenseRp2040PhasedCircuit = (
+const createDenseRp2040Circuit = (
   autorouterVersion: AutorouterVersion,
+  routingMode: "phased" | "unphased",
 ) => {
   const { circuit } = getTestFixture()
   const autoroutingPhaseIoStack = createAutoroutingPhaseIoStack(circuit)
@@ -188,9 +189,13 @@ export const createDenseRp2040PhasedCircuit = (
       minViaHoleDiameter="0.2mm"
       minViaPadDiameter="0.5mm"
     >
-      {rp2040Connections.map(({ pinNumber }, phaseIndex) => (
-        <AutoroutingPhase key={`phase-${pinNumber}`} phaseIndex={phaseIndex} />
-      ))}
+      {routingMode === "phased" &&
+        rp2040Connections.map(({ pinNumber }, phaseIndex) => (
+          <AutoroutingPhase
+            key={`phase-${pinNumber}`}
+            phaseIndex={phaseIndex}
+          />
+        ))}
 
       <chip
         name="U1"
@@ -246,7 +251,7 @@ export const createDenseRp2040PhasedCircuit = (
       {rp2040Connections.map(({ pin, pinNumber, to }, phaseIndex) => (
         <PhasedTrace
           key={`trace-${pinNumber}`}
-          phaseIndex={phaseIndex}
+          phaseIndex={routingMode === "phased" ? phaseIndex : undefined}
           pin={pin}
           to={to}
         />
@@ -256,10 +261,22 @@ export const createDenseRp2040PhasedCircuit = (
         pcbX={0}
         pcbY={10.5}
         fontSize={0.45}
-        text={`${autorouterVersion}: RP2040 + flash + USB-C, one trace per phase`}
+        text={`${autorouterVersion}: RP2040 + flash + USB-C, ${
+          routingMode === "phased"
+            ? "one trace per phase"
+            : "all traces together"
+        }`}
       />
     </board>,
   )
 
   return { circuit, autoroutingPhaseIoStack, autoroutingSolverNames }
 }
+
+export const createDenseRp2040PhasedCircuit = (
+  autorouterVersion: AutorouterVersion,
+) => createDenseRp2040Circuit(autorouterVersion, "phased")
+
+export const createDenseRp2040UnphasedCircuit = (
+  autorouterVersion: AutorouterVersion,
+) => createDenseRp2040Circuit(autorouterVersion, "unphased")
