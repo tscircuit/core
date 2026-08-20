@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { getPreservedTraceConnectionPoints } from "lib/utils/autorouting/getPreservedRoutedSubcircuitTraces"
 import { Fragment } from "react"
 import { createAutoroutingPhaseIoStack } from "tests/fixtures/create-autorouting-phase-io-stack"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
@@ -261,6 +262,7 @@ test("RP2040 subcircuit completes parent routing through child attachment points
           />
         </Fragment>
       ))}
+      <trace name="FLASH_GND" from=".U_FLASH > .GND" to="net.GND" />
       <trace
         name="FLASH_VCC"
         from=".U_FLASH > .VCC"
@@ -359,7 +361,7 @@ test("RP2040 subcircuit completes parent routing through child attachment points
   const [subcircuitPhase, boardPhase] = autoroutingPhaseIoStack
   expect(subcircuitPhase?.startSimpleRouteJson?.connections).toHaveLength(11)
   expect(subcircuitPhase?.endSimpleRouteJson?.traces).toHaveLength(20)
-  expect(boardPhase?.startSimpleRouteJson?.connections).toHaveLength(48)
+  expect(boardPhase?.startSimpleRouteJson?.connections).toHaveLength(49)
   expect(boardPhase?.startSimpleRouteJson?.traces).toBeUndefined()
 
   const boardInputSrj = boardPhase!.startSimpleRouteJson!
@@ -388,7 +390,7 @@ test("RP2040 subcircuit completes parent routing through child attachment points
   const rp2040ConnectionPoints = boardConnectionPoints.filter(
     (point) => point.pcb_port_id && rp2040PcbPortIds.has(point.pcb_port_id),
   )
-  expect(boardConnectionPoints.length).toBeGreaterThan(96)
+  expect(boardConnectionPoints.length).toBeGreaterThan(200)
   expect(rp2040ConnectionPoints).toHaveLength(46)
   expect(
     rp2040ConnectionPoints.every(
@@ -419,8 +421,61 @@ test("RP2040 subcircuit completes parent routing through child attachment points
     ),
   ).toBe(true)
   expect(new Set(boardInputSrj.connections.map(({ name }) => name)).size).toBe(
-    48,
+    49,
   )
+  const gndSourceNet = circuit.db.source_net.getWhere({ name: "GND" })!
+  const parentGndSourceTrace = circuit.db.source_trace
+    .list()
+    .find(
+      (trace) =>
+        trace.subcircuit_id !== gndSourceNet.subcircuit_id &&
+        trace.connected_source_net_ids?.includes(gndSourceNet.source_net_id),
+    )!
+  const parentGndConnection = boardInputSrj.connections.find(
+    (connection) => connection.name === parentGndSourceTrace.source_trace_id,
+  )!
+  const childGndTraces = subcircuitPhase!.endSimpleRouteJson!.traces!.filter(
+    (trace) => trace.connection_name === gndSourceNet.source_net_id,
+  )
+  expect(childGndTraces).toHaveLength(10)
+  const expectedGndTracePointIds = new Set(
+    childGndTraces.flatMap((trace) =>
+      getPreservedTraceConnectionPoints(trace).map((point) => point.pointId),
+    ),
+  )
+  const parentGndTracePointIds = new Set(
+    parentGndConnection.pointsToConnect.flatMap((point) =>
+      point.pointId?.startsWith("pcb_trace_route_point_")
+        ? [point.pointId]
+        : [],
+    ),
+  )
+  expect(parentGndTracePointIds).toEqual(expectedGndTracePointIds)
+  const flashSourceComponent = circuit.db.source_component.getWhere({
+    name: "U_FLASH",
+  })!
+  const flashGndSourcePort = circuit.db.source_port
+    .list()
+    .find(
+      (sourcePort) =>
+        sourcePort.source_component_id ===
+          flashSourceComponent.source_component_id && sourcePort.name === "GND",
+    )!
+  const flashGndPcbPort = circuit.db.pcb_port.getWhere({
+    source_port_id: flashGndSourcePort.source_port_id,
+  })!
+  expect(
+    parentGndConnection.pointsToConnect
+      .filter((point) => !point.pointId?.startsWith("pcb_trace_route_point_"))
+      .map((point) => point.pointId),
+  ).toEqual([flashGndPcbPort.pcb_port_id])
+  const expectedAlreadyConnectedGndPointIds = new Set([
+    ...childGndTraces.flatMap((trace) => trace.connectsTo ?? []),
+    ...expectedGndTracePointIds,
+  ])
+  expect(
+    new Set(parentGndConnection.externallyConnectedPointIds?.flat()),
+  ).toEqual(expectedAlreadyConnectedGndPointIds)
   const childTraceIds = new Set(
     subcircuitPhase?.endSimpleRouteJson?.traces?.map(
       ({ pcb_trace_id }) => pcb_trace_id,
@@ -452,9 +507,11 @@ test("RP2040 subcircuit completes parent routing through child attachment points
         point.pointId?.startsWith("pcb_trace_route_point_"),
       ),
   )
-  expect(childTraceAttachmentConnections).toHaveLength(1)
+  expect(childTraceAttachmentConnections).toHaveLength(2)
   const alreadyConnectedAttachmentPointIds = new Set(
-    childTraceAttachmentConnections[0]?.externallyConnectedPointIds?.flat(),
+    childTraceAttachmentConnections.flatMap(
+      (connection) => connection.externallyConnectedPointIds?.flat() ?? [],
+    ),
   )
   expect(
     childTraceConnectionPoints.every(
@@ -464,13 +521,23 @@ test("RP2040 subcircuit completes parent routing through child attachment points
   ).toBe(true)
 
   const routedParentTraces = boardPhase?.endSimpleRouteJson?.traces ?? []
-  expect(routedParentTraces).toHaveLength(48)
+  expect(routedParentTraces).toHaveLength(49)
+  const routedParentGndTrace = routedParentTraces.find(
+    (trace) => trace.connection_name === parentGndConnection.name,
+  )!
+  expect(routedParentGndTrace.connectsTo).toContain(flashGndPcbPort.pcb_port_id)
+  expect(
+    routedParentGndTrace.connectsTo?.some((pointId) =>
+      expectedGndTracePointIds.has(pointId),
+    ),
+  ).toBe(true)
   expect(
     new Set(routedParentTraces.map((trace) => trace.connection_name)),
   ).toEqual(
     new Set(boardInputSrj.connections.map((connection) => connection.name)),
   )
   expect(routedParentTraces.every((trace) => trace.route.length > 1)).toBe(true)
+  expect(circuit.db.pcb_trace.list()).toHaveLength(69)
   expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
 
   console.log(
