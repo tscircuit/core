@@ -67,6 +67,13 @@ const getAutomaticBreakouts = (routingScope: Group<z.ZodType>): Breakout[] => {
   return automaticBreakouts
 }
 
+export const hasMultipleAutomaticBreakoutsInScope = (
+  breakout: Breakout,
+): boolean => {
+  const routingScope = getRoutingScopeOrThrow(breakout)
+  return getAutomaticBreakouts(routingScope).length >= 2
+}
+
 /**
  * Collect a breakout region in board/circuit-world PCB coordinates. Bounds and
  * endpoint positions are points in millimeters with +X right and +Y top.

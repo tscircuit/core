@@ -1,9 +1,12 @@
 import { breakoutProps } from "@tscircuit/props"
+import { BreakoutPointSolver } from "@tscircuit/breakout-point-solver"
 import { Group } from "../Group/Group"
 import { AutoplacedBreakoutPoint } from "../AutoplacedBreakoutPoint"
 import { BreakoutPoint } from "../BreakoutPoint"
 import type { Trace } from "../Trace/Trace"
 import type { Port } from "../Port"
+import { createBreakoutPointSolverInput } from "./createBreakoutPointSolverInput"
+import { hasMultipleAutomaticBreakoutsInScope } from "./create-coordinated-winding-breakout-input"
 import { solveCoordinatedWindingBreakoutPoints } from "./solve-coordinated-winding-breakout-points"
 
 export class Breakout extends Group<typeof breakoutProps> {
@@ -89,7 +92,16 @@ export class Breakout extends Group<typeof breakoutProps> {
         `Automatic breakout "${this.name}" has invalid PCB region bounds`,
       )
     }
-    const solvedBreakoutPoints = solveCoordinatedWindingBreakoutPoints(this)
+    let solvedBreakoutPoints
+    if (hasMultipleAutomaticBreakoutsInScope(this)) {
+      solvedBreakoutPoints = solveCoordinatedWindingBreakoutPoints(this)
+    } else {
+      const solverInput = createBreakoutPointSolverInput(this)
+      if (!solverInput) return
+      const solver = new BreakoutPointSolver(solverInput)
+      solver.solve()
+      solvedBreakoutPoints = solver.getOutput().breakoutPoints
+    }
 
     // The solver places breakout points exactly on the group boundary
     // (bounds.minX/maxX/minY/maxY). When the autorouter later builds a

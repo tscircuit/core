@@ -36,6 +36,7 @@
     "@tsci/tscircuit.ti": "github:tscircuit/ti#57e314be4b2b06bc546d4def7453e619604d1157",
     "@tsci/tscircuit.ti-am62l-fixture": "github:tscircuit/ti#5d3365931dadfc51a2365c9903c349294b795f0e",
     "@tscircuit/alphabet": "0.0.25",
+    "@tscircuit/breakout-point-solver": "github:tscircuit/breakout-point-solver#bac9629",
     "@tscircuit/capacity-autorouter": "^0.0.822",
     "@tscircuit/checks": "^0.0.165",
     "@tscircuit/circuit-json-util": "^0.0.106",

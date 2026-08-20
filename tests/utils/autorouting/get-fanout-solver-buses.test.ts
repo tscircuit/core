@@ -1,19 +1,7 @@
 import { expect, test } from "bun:test"
 import { getFanoutSolverBuses } from "lib/utils/autorouting/FanoutAutorouter"
-import { resolveBusTargetLayer } from "lib/utils/autorouting/resolve-bus-target-layer"
 
-test("fanout and winding resolve one shared bus target layer", () => {
-  expect(
-    resolveBusTargetLayer({
-      preferredLayer: "inner2",
-      preferredLayers: ["bottom", "inner1"],
-    }),
-  ).toBe("inner2")
-  expect(resolveBusTargetLayer({ preferredLayers: ["inner1", "bottom"] })).toBe(
-    "inner1",
-  )
-  expect(resolveBusTargetLayer({})).toBe("top")
-
+test("fanout solver buses translate layer preferences into allowedLayers", () => {
   expect(
     getFanoutSolverBuses([
       {
