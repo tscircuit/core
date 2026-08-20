@@ -17,7 +17,6 @@ test("non-reroute autorouting phase region does not constrain routing bounds", a
           type: "pcb_trace",
           pcb_trace_id: `${connection.name}_routed`,
           connection_name: connection.source_trace_id ?? connection.name,
-          source_trace_id: connection.source_trace_id,
           route: connection.pointsToConnect.map((point) => ({
             route_type: "wire",
             x: point.x,
