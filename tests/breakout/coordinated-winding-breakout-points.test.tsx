@@ -1,9 +1,9 @@
-import { expect, test } from "bun:test"
+import { expect, spyOn, test } from "bun:test"
 import {
   WindingBreakoutSolver,
-  fullDdrExample,
   type ConnectionEndpoint,
 } from "@tscircuit/winding-breakout-point-solver"
+import type { Bus } from "lib/components/primitive-components/Bus"
 import type { Breakout } from "lib/components/primitive-components/Breakout/Breakout"
 import { createCoordinatedWindingBreakoutInput } from "lib/components/primitive-components/Breakout/create-coordinated-winding-breakout-input"
 import { solveCoordinatedWindingBreakoutPoints } from "lib/components/primitive-components/Breakout/solve-coordinated-winding-breakout-points"
@@ -18,29 +18,42 @@ interface ExpectedConnection {
 }
 
 const expectedConnectionByName = new Map<string, ExpectedConnection>()
-for (const connection of fullDdrExample.connections) {
-  if ("type" in connection) {
-    for (const pairMember of connection.connections) {
-      expectedConnectionByName.set(pairMember.id, {
-        layer: connection.layer,
-      })
-    }
-    continue
-  }
-  expectedConnectionByName.set(connection.id, { layer: connection.layer })
+const expectedLayerByBusName = {
+  DDR_BYTE0: "inner1",
+  DDR_BYTE1: "inner2",
+  DDR_ADDR_CTRL: "inner3",
+} as const
+for (const connection of DDR_CONNECTIONS) {
+  expectedConnectionByName.set(connection.traceName, {
+    layer: expectedLayerByBusName[connection.busName],
+  })
 }
 
 test("integrates the cloned AM62L/LPDDR4 breakout repro", async () => {
+  const windingSolveSpy = spyOn(WindingBreakoutSolver.prototype, "solve")
   const { circuit } = getTestFixture()
   circuit.add(<Am62lLpddr4BreakoutRepro routingDisabled />)
 
   await circuit.renderUntilSettled()
 
+  expect(windingSolveSpy).toHaveBeenCalledTimes(1)
+  windingSolveSpy.mockRestore()
+  const originalBuses = circuit.selectAll("bus") as Bus[]
+  expect(originalBuses.map((bus) => bus.name)).toEqual([
+    "DDR_BYTE0",
+    "DDR_BYTE1",
+    "DDR_ADDR_CTRL",
+  ])
+  expect(originalBuses.map((bus) => bus._parsedProps.preferredLayers)).toEqual([
+    ["inner1", "inner4"],
+    ["inner2", "inner5"],
+    ["inner3", "inner6"],
+  ])
+
   expect(circuit.db.source_trace.list()).toHaveLength(DDR_CONNECTIONS.length)
   const socBreakout = circuit.selectOne(".SOC_BREAKOUT") as Breakout
   const coordinatedInput = createCoordinatedWindingBreakoutInput(socBreakout)
-  expect(coordinatedInput).not.toBeNull()
-  const solverInput = coordinatedInput!.solverInput
+  const solverInput = coordinatedInput.solverInput
   expect(solverInput.regions.map((region) => region.bounds)).toEqual([
     {
       minX: -15.65,

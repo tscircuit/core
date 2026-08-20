@@ -1,15 +1,10 @@
 import { breakoutProps } from "@tscircuit/props"
-import { BreakoutPointSolver } from "@tscircuit/breakout-point-solver"
 import { Group } from "../Group/Group"
 import { AutoplacedBreakoutPoint } from "../AutoplacedBreakoutPoint"
 import { BreakoutPoint } from "../BreakoutPoint"
 import type { Trace } from "../Trace/Trace"
 import type { Port } from "../Port"
-import { createBreakoutPointSolverInput } from "./createBreakoutPointSolverInput"
-import {
-  type CoordinatedWindingBreakoutPoint,
-  solveCoordinatedWindingBreakoutPoints,
-} from "./solve-coordinated-winding-breakout-points"
+import { solveCoordinatedWindingBreakoutPoints } from "./solve-coordinated-winding-breakout-points"
 
 export class Breakout extends Group<typeof breakoutProps> {
   override get isRoutingDirective() {
@@ -81,26 +76,20 @@ export class Breakout extends Group<typeof breakoutProps> {
   doInitialPcbAutoplaceBreakoutPoints(): void {
     if (this.root?.pcbDisabled) return
 
-    const solverInput = createBreakoutPointSolverInput(this)
-    if (!solverInput) return
-
-    const coordinatedBreakoutPoints =
-      solveCoordinatedWindingBreakoutPoints(this)
-    let solvedBreakoutPoints: readonly Pick<
-      CoordinatedWindingBreakoutPoint,
-      "sourcePortId" | "sourceTraceId" | "x" | "y"
-    >[]
-    if (coordinatedBreakoutPoints) {
-      solvedBreakoutPoints = coordinatedBreakoutPoints
-    } else {
-      const solver = new BreakoutPointSolver(solverInput)
-      solver.solve()
-      solvedBreakoutPoints = solver.getOutput().breakoutPoints
-    }
-
     const autoBreakoutPoints = this.children.filter(
       (c) => c instanceof AutoplacedBreakoutPoint,
     ) as AutoplacedBreakoutPoint[]
+    if (autoBreakoutPoints.length === 0) return
+    if (!this.root || !this.pcb_group_id) {
+      throw new Error(`Automatic breakout "${this.name}" has no PCB region`)
+    }
+    const pcbGroup = this.root.db.pcb_group.get(this.pcb_group_id)
+    if (!pcbGroup || !pcbGroup.width || !pcbGroup.height) {
+      throw new Error(
+        `Automatic breakout "${this.name}" has invalid PCB region bounds`,
+      )
+    }
+    const solvedBreakoutPoints = solveCoordinatedWindingBreakoutPoints(this)
 
     // The solver places breakout points exactly on the group boundary
     // (bounds.minX/maxX/minY/maxY). When the autorouter later builds a
@@ -109,7 +98,12 @@ export class Breakout extends Group<typeof breakoutProps> {
     // can fall outside the nearest mesh node. Nudge solved positions a
     // fraction of a micrometer inward to keep them strictly inside.
     const BOUNDARY_INSET_MM = 1e-4 // 0.1 μm – well below PCB manufacturing precision
-    const { bounds } = solverInput
+    const bounds = {
+      minX: pcbGroup.center.x - pcbGroup.width / 2,
+      maxX: pcbGroup.center.x + pcbGroup.width / 2,
+      minY: pcbGroup.center.y - pcbGroup.height / 2,
+      maxY: pcbGroup.center.y + pcbGroup.height / 2,
+    }
     const insetWithinBounds = (x: number, y: number) => ({
       x: Math.max(
         bounds.minX + BOUNDARY_INSET_MM,

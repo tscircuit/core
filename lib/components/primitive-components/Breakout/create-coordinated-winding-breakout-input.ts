@@ -1,28 +1,31 @@
-import type { BreakoutPointSolverInput } from "@tscircuit/breakout-point-solver"
 import type {
+  Bounds,
   BreakoutEdge,
+  ConnectionEndpoint,
   ConnectionOrDifferentialPair,
   WindingBreakoutSolverInput,
 } from "@tscircuit/winding-breakout-point-solver"
 import type { PcbGroup, SourcePort, SourceTrace } from "circuit-json"
 import type { z } from "zod"
+import { resolveBusTargetLayer } from "../../../utils/autorouting/resolve-bus-target-layer"
+import { AutoplacedBreakoutPoint } from "../AutoplacedBreakoutPoint"
 import type { Bus } from "../Bus"
 import type { DifferentialPair } from "../DifferentialPair"
 import type { Group } from "../Group/Group"
 import type { Port } from "../Port"
-import { BreakoutPoint } from "../BreakoutPoint"
 import type { Breakout } from "./Breakout"
-import { createBreakoutPointSolverInput } from "./createBreakoutPointSolverInput"
 
 type SourceTraceId = SourceTrace["source_trace_id"]
 type SourcePortId = NonNullable<SourcePort["source_port_id"]>
 type PcbGroupId = PcbGroup["pcb_group_id"]
-type LegacyBreakoutPointSolverInput = BreakoutPointSolverInput
 
-interface BreakoutRegionInput {
+interface BreakoutRegionGeometry {
   breakout: Breakout
   pcbGroupId: PcbGroupId
-  legacyInput: LegacyBreakoutPointSolverInput
+  bounds: Bounds
+  center: { x: number; y: number }
+  endpointBySourceTraceId: ReadonlyMap<SourceTraceId, ConnectionEndpoint>
+  sourcePortIdBySourceTraceId: ReadonlyMap<SourceTraceId, SourcePortId>
 }
 
 interface DifferentialPairSourceTraces {
@@ -32,11 +35,192 @@ interface DifferentialPairSourceTraces {
 }
 
 export interface CoordinatedWindingBreakoutInput {
+  routingScope: Group<z.ZodType>
   solverInput: WindingBreakoutSolverInput
+  regionBoundsByRegionId: ReadonlyMap<PcbGroupId, Bounds>
   sourcePortIdByConnectionIdByRegionId: ReadonlyMap<
     PcbGroupId,
     ReadonlyMap<SourceTraceId, SourcePortId>
   >
+}
+
+const getRoutingScopeOrThrow = (breakout: Breakout): Group<z.ZodType> => {
+  const routingScope = breakout.parent as Group<z.ZodType> | null
+  if (!routingScope?.selectAll) {
+    throw new Error(
+      `Automatic breakout "${breakout.name}" has no coordinated routing scope`,
+    )
+  }
+  return routingScope
+}
+
+const getAutomaticBreakouts = (routingScope: Group<z.ZodType>): Breakout[] => {
+  const automaticBreakouts: Breakout[] = []
+  for (const group of routingScope.selectAll("group") as Group<z.ZodType>[]) {
+    if (!group.isRoutingDirective || group.parent !== routingScope) continue
+    const breakout = group as Breakout
+    const hasAutomaticBreakoutPoints = breakout.children.some(
+      (child) => child instanceof AutoplacedBreakoutPoint,
+    )
+    if (hasAutomaticBreakoutPoints) automaticBreakouts.push(breakout)
+  }
+  return automaticBreakouts
+}
+
+/**
+ * Collect a breakout region in board/circuit-world PCB coordinates. Bounds and
+ * endpoint positions are points in millimeters with +X right and +Y top.
+ */
+const collectBreakoutRegionGeometry = (
+  breakout: Breakout,
+): BreakoutRegionGeometry => {
+  if (!breakout.root || !breakout.pcb_group_id) {
+    throw new Error(`Automatic breakout "${breakout.name}" has no PCB region`)
+  }
+
+  const pcbGroup = breakout.root.db.pcb_group.get(breakout.pcb_group_id)
+  if (!pcbGroup || !pcbGroup.width || !pcbGroup.height) {
+    throw new Error(
+      `Automatic breakout "${breakout.name}" has invalid PCB region bounds`,
+    )
+  }
+  const bounds = {
+    minX: pcbGroup.center.x - pcbGroup.width / 2,
+    maxX: pcbGroup.center.x + pcbGroup.width / 2,
+    minY: pcbGroup.center.y - pcbGroup.height / 2,
+    maxY: pcbGroup.center.y + pcbGroup.height / 2,
+  }
+  const center = {
+    x: (bounds.minX + bounds.maxX) / 2,
+    y: (bounds.minY + bounds.maxY) / 2,
+  }
+
+  const endpointBySourceTraceId = new Map<SourceTraceId, ConnectionEndpoint>()
+  const sourcePortIdBySourceTraceId = new Map<SourceTraceId, SourcePortId>()
+  for (const breakoutPoint of breakout.children.filter(
+    (child) => child instanceof AutoplacedBreakoutPoint,
+  ) as AutoplacedBreakoutPoint[]) {
+    const matchedPort = breakoutPoint.matchedPort
+    if (!matchedPort?.pcb_port_id || !matchedPort.source_port_id) {
+      throw new Error(
+        `Automatic breakout "${breakout.name}" is missing a PCB endpoint`,
+      )
+    }
+    let sourceTraceId = breakoutPoint.matchedSourceTraceId
+    if (!sourceTraceId) {
+      const matchingSourceTraces = breakout.root.db.source_trace
+        .list()
+        .filter((sourceTrace) =>
+          sourceTrace.connected_source_port_ids.includes(
+            matchedPort.source_port_id!,
+          ),
+        )
+      if (matchingSourceTraces.length === 0) {
+        throw new Error(
+          `Automatic breakout "${breakout.name}" has a point without a source trace identity`,
+        )
+      }
+      if (matchingSourceTraces.length > 1) {
+        throw new Error(
+          `Automatic breakout "${breakout.name}" endpoint "${matchedPort.source_port_id}" resolves to duplicate connection identities`,
+        )
+      }
+      sourceTraceId = matchingSourceTraces[0]!.source_trace_id
+      breakoutPoint.matchedSourceTraceId = sourceTraceId
+    }
+    if (endpointBySourceTraceId.has(sourceTraceId)) {
+      throw new Error(
+        `Connection "${sourceTraceId}" has duplicate endpoint for region "${breakout.pcb_group_id}"`,
+      )
+    }
+    const pcbPort = breakout.root.db.pcb_port.get(matchedPort.pcb_port_id)
+    if (!pcbPort) {
+      throw new Error(
+        `Connection "${sourceTraceId}" references unknown PCB endpoint "${matchedPort.pcb_port_id}"`,
+      )
+    }
+    if (pcbPort.pcb_group_id !== breakout.pcb_group_id) {
+      throw new Error(
+        `Connection "${sourceTraceId}" endpoint references unknown region "${pcbPort.pcb_group_id ?? "unassigned"}" instead of "${breakout.pcb_group_id}"`,
+      )
+    }
+    if (pcbPort.x === undefined || pcbPort.y === undefined) {
+      throw new Error(
+        `Connection "${sourceTraceId}" is missing endpoint coordinates for region "${breakout.pcb_group_id}"`,
+      )
+    }
+
+    endpointBySourceTraceId.set(sourceTraceId, {
+      regionId: breakout.pcb_group_id,
+      position: { x: pcbPort.x, y: pcbPort.y },
+    })
+    sourcePortIdBySourceTraceId.set(sourceTraceId, matchedPort.source_port_id)
+  }
+
+  return {
+    breakout,
+    pcbGroupId: breakout.pcb_group_id,
+    bounds,
+    center,
+    endpointBySourceTraceId,
+    sourcePortIdBySourceTraceId,
+  }
+}
+
+const sortRegionsByPlacement = (
+  regions: BreakoutRegionGeometry[],
+): { regions: BreakoutRegionGeometry[]; horizontalPlacement: boolean } => {
+  const xCoordinates = regions.map((region) => region.center.x)
+  const yCoordinates = regions.map((region) => region.center.y)
+  const xSpan = Math.max(...xCoordinates) - Math.min(...xCoordinates)
+  const ySpan = Math.max(...yCoordinates) - Math.min(...yCoordinates)
+  const horizontalPlacement = xSpan >= ySpan
+  regions.sort((firstRegion, secondRegion) => {
+    if (horizontalPlacement) {
+      const xDifference = firstRegion.center.x - secondRegion.center.x
+      if (xDifference !== 0) return xDifference
+      const yDifference = firstRegion.center.y - secondRegion.center.y
+      if (yDifference !== 0) return yDifference
+    } else {
+      const yDifference = firstRegion.center.y - secondRegion.center.y
+      if (yDifference !== 0) return yDifference
+      const xDifference = firstRegion.center.x - secondRegion.center.x
+      if (xDifference !== 0) return xDifference
+    }
+    return firstRegion.breakout.name.localeCompare(secondRegion.breakout.name)
+  })
+  return { regions, horizontalPlacement }
+}
+
+const getFacingEdge = ({
+  region,
+  regionIndex,
+  regions,
+  horizontalPlacement,
+}: {
+  region: BreakoutRegionGeometry
+  regionIndex: number
+  regions: readonly BreakoutRegionGeometry[]
+  horizontalPlacement: boolean
+}): BreakoutEdge => {
+  const otherRegions = regions.filter((candidate) => candidate !== region)
+  const otherCenter = otherRegions.reduce(
+    (sum, candidate) => ({
+      x: sum.x + candidate.center.x / otherRegions.length,
+      y: sum.y + candidate.center.y / otherRegions.length,
+    }),
+    { x: 0, y: 0 },
+  )
+  if (horizontalPlacement) {
+    if (otherCenter.x > region.center.x) return "right"
+    if (otherCenter.x < region.center.x) return "left"
+    if (regionIndex < regions.length / 2) return "right"
+    return "left"
+  }
+  if (otherCenter.y > region.center.y) return "top"
+  if (otherCenter.y < region.center.y) return "bottom"
+  if (regionIndex < regions.length / 2) return "top"
+  return "bottom"
 }
 
 const getSourceTraceForConnectionOrThrow = ({
@@ -53,19 +237,18 @@ const getSourceTraceForConnectionOrThrow = ({
   const sourceTracesWithMatchingName = sourceTraces.filter(
     (sourceTrace) => sourceTrace.name === connectionSelector,
   )
-  let selectedPort: Port | null = null
-  if (sourceTracesWithMatchingName.length === 0) {
-    selectedPort = connectionOwner
+  let matchingSourceTraces = sourceTracesWithMatchingName
+  if (matchingSourceTraces.length === 0) {
+    const selectedPort = connectionOwner
       .getSubcircuit()
       .selectOne<Port>(connectionSelector, { type: "port" })
-  }
-  let matchingSourceTraces = sourceTracesWithMatchingName
-  if (selectedPort?.source_port_id) {
-    matchingSourceTraces = sourceTraces.filter((sourceTrace) =>
-      sourceTrace.connected_source_port_ids.includes(
-        selectedPort.source_port_id!,
-      ),
-    )
+    if (selectedPort?.source_port_id) {
+      matchingSourceTraces = sourceTraces.filter((sourceTrace) =>
+        sourceTrace.connected_source_port_ids.includes(
+          selectedPort.source_port_id!,
+        ),
+      )
+    }
   }
   if (matchingSourceTraces.length === 0) {
     throw new Error(
@@ -88,11 +271,11 @@ const getLayerBySourceTraceId = ({
   sourceTraces: readonly SourceTrace[]
 }): Map<SourceTraceId, string> => {
   const layerBySourceTraceId = new Map<SourceTraceId, string>()
+  const assigningBusNameBySourceTraceId = new Map<SourceTraceId, string>()
   const subcircuitId = routingScope.getSubcircuit().subcircuit_id
   for (const bus of routingScope.selectAll("bus") as Bus[]) {
     if (bus.getSubcircuit().subcircuit_id !== subcircuitId) continue
-    const declaredLayer = bus._parsedProps.preferredLayer
-    if (declaredLayer === undefined) continue
+    const resolvedTargetLayer = resolveBusTargetLayer(bus._parsedProps)
     for (const connectionSelector of bus._parsedProps.connections) {
       const sourceTrace = getSourceTraceForConnectionOrThrow({
         connectionOwner: bus,
@@ -103,97 +286,22 @@ const getLayerBySourceTraceId = ({
       const previousLayer = layerBySourceTraceId.get(
         sourceTrace.source_trace_id,
       )
-      if (previousLayer !== undefined && previousLayer !== declaredLayer) {
+      if (
+        previousLayer !== undefined &&
+        previousLayer !== resolvedTargetLayer
+      ) {
+        const previousBusName = assigningBusNameBySourceTraceId.get(
+          sourceTrace.source_trace_id,
+        )
         throw new Error(
-          `Connection "${sourceTrace.name ?? sourceTrace.source_trace_id}" has conflicting preferred layers "${previousLayer}" and "${declaredLayer}"`,
+          `Connection "${sourceTrace.name ?? sourceTrace.source_trace_id}" has conflicting bus target layers: bus "${previousBusName}" resolves to "${previousLayer}" and bus "${bus.name}" resolves to "${resolvedTargetLayer}"`,
         )
       }
-      layerBySourceTraceId.set(sourceTrace.source_trace_id, declaredLayer)
+      layerBySourceTraceId.set(sourceTrace.source_trace_id, resolvedTargetLayer)
+      assigningBusNameBySourceTraceId.set(sourceTrace.source_trace_id, bus.name)
     }
   }
   return layerBySourceTraceId
-}
-
-const getBreakoutRegionInputs = (
-  routingScope: Group<z.ZodType>,
-): BreakoutRegionInput[] => {
-  const breakoutRegions: BreakoutRegionInput[] = []
-  for (const group of routingScope.selectAll("group") as Group<z.ZodType>[]) {
-    if (!group.isRoutingDirective || group.parent !== routingScope) continue
-    const candidateBreakout = group as Breakout
-    if (
-      candidateBreakout.children.some((child) => child instanceof BreakoutPoint)
-    ) {
-      continue
-    }
-    const legacyInput = createBreakoutPointSolverInput(candidateBreakout)
-    if (!legacyInput || !candidateBreakout.pcb_group_id) continue
-    breakoutRegions.push({
-      breakout: candidateBreakout,
-      pcbGroupId: candidateBreakout.pcb_group_id,
-      legacyInput,
-    })
-  }
-  return breakoutRegions
-}
-
-const getSourceTraceIdsWithOneEndpoint = (
-  breakoutRegion: BreakoutRegionInput,
-): Set<SourceTraceId> =>
-  new Set(
-    breakoutRegion.legacyInput.traces.flatMap((trace) => {
-      if (trace.insidePorts.length !== 1) return []
-      return [trace.sourceTraceId]
-    }),
-  )
-
-const getSharedSourceTraceIds = (
-  firstRegion: BreakoutRegionInput,
-  secondRegion: BreakoutRegionInput,
-): SourceTraceId[] => {
-  const firstSourceTraceIds = getSourceTraceIdsWithOneEndpoint(firstRegion)
-  return [...getSourceTraceIdsWithOneEndpoint(secondRegion)].filter(
-    (sourceTraceId) => firstSourceTraceIds.has(sourceTraceId),
-  )
-}
-
-const getFacingEdges = (
-  firstRegion: BreakoutRegionInput,
-  secondRegion: BreakoutRegionInput,
-): ReadonlyMap<PcbGroupId, BreakoutEdge> | null => {
-  const firstBounds = firstRegion.legacyInput.bounds
-  const secondBounds = secondRegion.legacyInput.bounds
-  const firstCenter = {
-    x: (firstBounds.minX + firstBounds.maxX) / 2,
-    y: (firstBounds.minY + firstBounds.maxY) / 2,
-  }
-  const secondCenter = {
-    x: (secondBounds.minX + secondBounds.maxX) / 2,
-    y: (secondBounds.minY + secondBounds.maxY) / 2,
-  }
-  const deltaX = secondCenter.x - firstCenter.x
-  const deltaY = secondCenter.y - firstCenter.y
-  if (deltaX === 0 && deltaY === 0) return null
-
-  const edgeByRegionId = new Map<PcbGroupId, BreakoutEdge>()
-  if (Math.abs(deltaX) >= Math.abs(deltaY)) {
-    if (deltaX > 0) {
-      edgeByRegionId.set(firstRegion.pcbGroupId, "right")
-      edgeByRegionId.set(secondRegion.pcbGroupId, "left")
-    } else {
-      edgeByRegionId.set(firstRegion.pcbGroupId, "left")
-      edgeByRegionId.set(secondRegion.pcbGroupId, "right")
-    }
-    return edgeByRegionId
-  }
-  if (deltaY > 0) {
-    edgeByRegionId.set(firstRegion.pcbGroupId, "top")
-    edgeByRegionId.set(secondRegion.pcbGroupId, "bottom")
-  } else {
-    edgeByRegionId.set(firstRegion.pcbGroupId, "bottom")
-    edgeByRegionId.set(secondRegion.pcbGroupId, "top")
-  }
-  return edgeByRegionId
 }
 
 const getDifferentialPairSourceTraces = ({
@@ -232,100 +340,107 @@ const getDifferentialPairSourceTraces = ({
   return pairs
 }
 
-/**
- * Build the winding solver boundary input from Core's board/circuit-world PCB
- * geometry. Bounds and endpoint positions are points in millimeters with +X
- * right and +Y top. Only an explicitly parsed bus `preferredLayer` owns a
- * connection layer; allowed-layer sets and the board stackup are not used.
- */
+const getBoundaryPointSpacing = (breakout: Breakout): number => {
+  const board = breakout.root?.db.pcb_board.list()[0]
+  const traceWidth = board?.min_trace_width ?? 0.15
+  const boundaryPointClearance = board?.min_trace_to_pad_edge_clearance ?? 0.2
+  const viaPadDiameter = board?.min_via_pad_diameter ?? 0.3
+  return viaPadDiameter + 2 * (traceWidth + boundaryPointClearance)
+}
+
+/** Build one canonical winding input for every automatic breakout in a scope. */
 export const createCoordinatedWindingBreakoutInput = (
   breakout: Breakout,
-): CoordinatedWindingBreakoutInput | null => {
-  if (!breakout.root || !breakout.pcb_group_id) return null
-  const routingScope = breakout.parent as Group<z.ZodType> | null
-  if (!routingScope?.selectAll) return null
-  const subcircuitId = routingScope.getSubcircuit().subcircuit_id
+): CoordinatedWindingBreakoutInput => {
+  if (!breakout.root) {
+    throw new Error(`Automatic breakout "${breakout.name}" has no circuit root`)
+  }
+  const routingScope = getRoutingScopeOrThrow(breakout)
+  const automaticBreakouts = getAutomaticBreakouts(routingScope)
+  if (automaticBreakouts.length < 2) {
+    throw new Error(
+      `Coordinated winding breakout placement requires at least two automatic breakout regions in scope "${routingScope.name}"`,
+    )
+  }
+
+  const regionIds = new Set<PcbGroupId>()
+  const collectedRegions = automaticBreakouts.map((automaticBreakout) => {
+    const region = collectBreakoutRegionGeometry(automaticBreakout)
+    if (regionIds.has(region.pcbGroupId)) {
+      throw new Error(
+        `Duplicate automatic breakout region "${region.pcbGroupId}"`,
+      )
+    }
+    regionIds.add(region.pcbGroupId)
+    return region
+  })
+  const { regions, horizontalPlacement } =
+    sortRegionsByPlacement(collectedRegions)
+
+  const sourceTraceIds = new Set<SourceTraceId>()
+  for (const region of regions) {
+    for (const sourceTraceId of region.endpointBySourceTraceId.keys()) {
+      sourceTraceIds.add(sourceTraceId)
+    }
+  }
   const sourceTraces = breakout.root.db.source_trace
     .list()
-    .filter((sourceTrace) => sourceTrace.subcircuit_id === subcircuitId)
-  const layerBySourceTraceId = getLayerBySourceTraceId({
+    .filter(
+      (sourceTrace) =>
+        sourceTrace.subcircuit_id ===
+        routingScope.getSubcircuit().subcircuit_id,
+    )
+  const sourceTraceById = new Map<SourceTraceId, SourceTrace>()
+  for (const sourceTrace of sourceTraces) {
+    if (sourceTraceById.has(sourceTrace.source_trace_id)) {
+      throw new Error(
+        `Duplicate connection identity "${sourceTrace.source_trace_id}"`,
+      )
+    }
+    sourceTraceById.set(sourceTrace.source_trace_id, sourceTrace)
+  }
+  const sortedSourceTraceIds = [...sourceTraceIds].sort(
+    (firstSourceTraceId, secondSourceTraceId) => {
+      const firstName =
+        sourceTraceById.get(firstSourceTraceId)?.name ?? firstSourceTraceId
+      const secondName =
+        sourceTraceById.get(secondSourceTraceId)?.name ?? secondSourceTraceId
+      const nameDifference = firstName.localeCompare(secondName)
+      if (nameDifference !== 0) return nameDifference
+      return firstSourceTraceId.localeCompare(secondSourceTraceId)
+    },
+  )
+  for (const sourceTraceId of sortedSourceTraceIds) {
+    if (!sourceTraceById.has(sourceTraceId)) {
+      throw new Error(`Unknown connection identity "${sourceTraceId}"`)
+    }
+    for (const region of regions) {
+      if (!region.endpointBySourceTraceId.has(sourceTraceId)) {
+        throw new Error(
+          `Connection "${sourceTraceId}" is missing endpoint for region "${region.pcbGroupId}"`,
+        )
+      }
+    }
+  }
+
+  const declaredLayerBySourceTraceId = getLayerBySourceTraceId({
     routingScope,
     sourceTraces,
   })
-  if (layerBySourceTraceId.size === 0) return null
-
-  const breakoutRegions = getBreakoutRegionInputs(routingScope)
-  const currentRegion = breakoutRegions.find(
-    (candidate) => candidate.breakout === breakout,
-  )
-  if (!currentRegion) return null
-  const peerRegions = breakoutRegions.filter((candidate) => {
-    if (candidate === currentRegion) return false
-    return getSharedSourceTraceIds(currentRegion, candidate).length > 0
-  })
-  if (peerRegions.length !== 1) return null
-  const peerRegion = peerRegions[0]!
-  const coordinatedRegions = breakoutRegions.filter(
-    (candidate) => candidate === currentRegion || candidate === peerRegion,
-  )
-  const [firstRegion, secondRegion] = coordinatedRegions
-  if (!firstRegion || !secondRegion) return null
-  const edgeByRegionId = getFacingEdges(firstRegion, secondRegion)
-  if (!edgeByRegionId) return null
-
-  const sharedSourceTraceIds = getSharedSourceTraceIds(
-    firstRegion,
-    secondRegion,
-  ).sort((first, second) => first.localeCompare(second))
-  if (sharedSourceTraceIds.length === 0) return null
-  if (
-    sharedSourceTraceIds.some(
-      (sourceTraceId) => !layerBySourceTraceId.has(sourceTraceId),
-    )
-  ) {
-    return null
-  }
-  const sharedSourceTraceIdSet = new Set(sharedSourceTraceIds)
-
-  const traceBySourceTraceIdByRegionId = new Map(
-    coordinatedRegions.map((region) => [
-      region.pcbGroupId,
-      new Map(
-        region.legacyInput.traces.map((trace) => [trace.sourceTraceId, trace]),
-      ),
-    ]),
-  )
-  const sourcePortIdByConnectionIdByRegionId = new Map<
-    PcbGroupId,
-    Map<SourceTraceId, SourcePortId>
+  const getResolvedLayer = (sourceTraceId: SourceTraceId): string =>
+    declaredLayerBySourceTraceId.get(sourceTraceId) ?? "top"
+  const endpointsBySourceTraceId = new Map<
+    SourceTraceId,
+    readonly ConnectionEndpoint[]
   >()
-  for (const region of coordinatedRegions) {
-    const sourcePortIdByConnectionId = new Map<SourceTraceId, SourcePortId>()
-    const traceBySourceTraceId = traceBySourceTraceIdByRegionId.get(
-      region.pcbGroupId,
-    )!
-    for (const sourceTraceId of sharedSourceTraceIds) {
-      const insidePort =
-        traceBySourceTraceId.get(sourceTraceId)!.insidePorts[0]!
-      sourcePortIdByConnectionId.set(sourceTraceId, insidePort.sourcePortId)
-    }
-    sourcePortIdByConnectionIdByRegionId.set(
-      region.pcbGroupId,
-      sourcePortIdByConnectionId,
+  for (const sourceTraceId of sortedSourceTraceIds) {
+    endpointsBySourceTraceId.set(
+      sourceTraceId,
+      regions.map(
+        (region) => region.endpointBySourceTraceId.get(sourceTraceId)!,
+      ),
     )
   }
-
-  const endpointsBySourceTraceId = new Map(
-    sharedSourceTraceIds.map((sourceTraceId) => [
-      sourceTraceId,
-      coordinatedRegions.map((region) => ({
-        regionId: region.pcbGroupId,
-        position: traceBySourceTraceIdByRegionId
-          .get(region.pcbGroupId)!
-          .get(sourceTraceId)!.insidePorts[0]!.position,
-      })),
-    ]),
-  )
 
   const differentialPairBySourceTraceId = new Map<
     SourceTraceId,
@@ -335,19 +450,19 @@ export const createCoordinatedWindingBreakoutInput = (
     routingScope,
     sourceTraces,
   })) {
-    const positiveIsShared = sharedSourceTraceIdSet.has(
-      pair.positiveSourceTraceId,
-    )
-    const negativeIsShared = sharedSourceTraceIdSet.has(
-      pair.negativeSourceTraceId,
-    )
-    if (positiveIsShared !== negativeIsShared) return null
-    if (!positiveIsShared) continue
-    const positiveLayer = layerBySourceTraceId.get(pair.positiveSourceTraceId)!
-    const negativeLayer = layerBySourceTraceId.get(pair.negativeSourceTraceId)!
+    const positiveIsCoordinated = sourceTraceIds.has(pair.positiveSourceTraceId)
+    const negativeIsCoordinated = sourceTraceIds.has(pair.negativeSourceTraceId)
+    if (positiveIsCoordinated !== negativeIsCoordinated) {
+      throw new Error(
+        `Differential pair "${pair.differentialPair.name}" is missing one coordinated member`,
+      )
+    }
+    if (!positiveIsCoordinated) continue
+    const positiveLayer = getResolvedLayer(pair.positiveSourceTraceId)
+    const negativeLayer = getResolvedLayer(pair.negativeSourceTraceId)
     if (positiveLayer !== negativeLayer) {
       throw new Error(
-        `Differential pair "${pair.differentialPair.name}" declares layers "${positiveLayer}" and "${negativeLayer}"`,
+        `Differential pair "${pair.differentialPair.name}" has layer mismatch: positive member resolves to "${positiveLayer}" and negative member resolves to "${negativeLayer}"`,
       )
     }
     if (
@@ -362,12 +477,12 @@ export const createCoordinatedWindingBreakoutInput = (
 
   const connections: ConnectionOrDifferentialPair[] = []
   const addedDifferentialPairs = new Set<DifferentialPair>()
-  for (const sourceTraceId of sharedSourceTraceIds) {
+  for (const sourceTraceId of sortedSourceTraceIds) {
     const differentialPair = differentialPairBySourceTraceId.get(sourceTraceId)
     if (!differentialPair) {
       connections.push({
         id: sourceTraceId,
-        layer: layerBySourceTraceId.get(sourceTraceId)!,
+        layer: getResolvedLayer(sourceTraceId),
         endpoints: endpointsBySourceTraceId.get(sourceTraceId)!,
       })
       continue
@@ -376,7 +491,7 @@ export const createCoordinatedWindingBreakoutInput = (
     addedDifferentialPairs.add(differentialPair.differentialPair)
     connections.push({
       type: "differential",
-      layer: layerBySourceTraceId.get(differentialPair.positiveSourceTraceId)!,
+      layer: getResolvedLayer(differentialPair.positiveSourceTraceId),
       connections: [
         {
           id: differentialPair.positiveSourceTraceId,
@@ -394,20 +509,37 @@ export const createCoordinatedWindingBreakoutInput = (
     })
   }
 
+  const sourcePortIdByConnectionIdByRegionId = new Map<
+    PcbGroupId,
+    ReadonlyMap<SourceTraceId, SourcePortId>
+  >()
+  const regionBoundsByRegionId = new Map<PcbGroupId, Bounds>()
+  const solverRegions = regions.map((region, regionIndex) => {
+    sourcePortIdByConnectionIdByRegionId.set(
+      region.pcbGroupId,
+      region.sourcePortIdBySourceTraceId,
+    )
+    regionBoundsByRegionId.set(region.pcbGroupId, region.bounds)
+    return {
+      id: region.pcbGroupId,
+      bounds: region.bounds,
+      edge: getFacingEdge({
+        region,
+        regionIndex,
+        regions,
+        horizontalPlacement,
+      }),
+    }
+  })
+
   return {
+    routingScope,
     solverInput: {
-      regions: coordinatedRegions.map((region) => ({
-        id: region.pcbGroupId,
-        bounds: region.legacyInput.bounds,
-        edge: edgeByRegionId.get(region.pcbGroupId)!,
-      })),
+      regions: solverRegions,
       connections,
-      boundaryPointSpacing: Math.max(
-        ...coordinatedRegions.map(
-          (region) => region.legacyInput.boundaryPointSpacing ?? 0,
-        ),
-      ),
+      boundaryPointSpacing: getBoundaryPointSpacing(breakout),
     },
+    regionBoundsByRegionId,
     sourcePortIdByConnectionIdByRegionId,
   }
 }

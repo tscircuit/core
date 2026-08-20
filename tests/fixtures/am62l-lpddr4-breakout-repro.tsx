@@ -1,7 +1,8 @@
-import { MT53E1G16D1ZW, ballMap } from "@tsci/0hmX.mt53e1g16d1zw-footprint"
-import { AM62L32 } from "@tsci/tscircuit.ti-am62l-fixture"
-import { fullDdrExample } from "@tscircuit/winding-breakout-point-solver"
-import type { LayerRef } from "circuit-json"
+import {
+  MT53E1G16D1ZW,
+  ballMap,
+} from "@tsci/0hmX.mt53e1g16d1zw-footprint/lib/MT53E1G16D1ZW.tsx"
+import { AM62L32 } from "@tsci/tscircuit.ti-am62l-fixture/lib/chips/AM62L32.circuit.tsx"
 import { Fragment } from "react"
 
 export type DdrBusName = "DDR_BYTE0" | "DDR_BYTE1" | "DDR_ADDR_CTRL"
@@ -134,44 +135,15 @@ const SIGNAL_LAYERS = [
   "bottom",
 ] as const
 
-const layerByTraceName = new Map<string, LayerRef>()
-for (const connection of fullDdrExample.connections) {
-  if ("type" in connection) {
-    for (const pairMember of connection.connections) {
-      layerByTraceName.set(pairMember.id, connection.layer as LayerRef)
-    }
-    continue
-  }
-  layerByTraceName.set(connection.id, connection.layer as LayerRef)
-}
-
-const connectionNamesByLayer = new Map<LayerRef, string[]>()
-for (const { traceName } of DDR_CONNECTIONS) {
-  const layer = layerByTraceName.get(traceName)
-  if (!layer) throw new Error(`Missing solver layer for "${traceName}"`)
-  const connectionNames = connectionNamesByLayer.get(layer) ?? []
-  connectionNames.push(traceName)
-  connectionNamesByLayer.set(layer, connectionNames)
-}
-for (const [layer, connectionNames] of connectionNamesByLayer) {
-  if (connectionNames.length < 2) {
-    throw new Error(`Layer "${layer}" cannot form a Core bus`)
-  }
-}
-
-const windingLayerBuses = [...connectionNamesByLayer].map(
-  ([layer, connectionNames]) => ({
-    name: `WINDING_${layer.toUpperCase()}`,
-    layer,
-    connectionNames,
-  }),
-)
-const socFanoutDirections: Record<string, "center_right"> = Object.fromEntries(
-  windingLayerBuses.map((bus) => [bus.name, "center_right"]),
-)
-const ramFanoutDirections: Record<string, "center_left"> = Object.fromEntries(
-  windingLayerBuses.map((bus) => [bus.name, "center_left"]),
-)
+export const DDR_BYTE0_TRACE_NAMES = DDR_CONNECTIONS.filter(
+  ({ busName }) => busName === "DDR_BYTE0",
+).map(({ traceName }) => traceName)
+export const DDR_BYTE1_TRACE_NAMES = DDR_CONNECTIONS.filter(
+  ({ busName }) => busName === "DDR_BYTE1",
+).map(({ traceName }) => traceName)
+export const DDR_ADDR_CTRL_TRACE_NAMES = DDR_CONNECTIONS.filter(
+  ({ busName }) => busName === "DDR_ADDR_CTRL",
+).map(({ traceName }) => traceName)
 
 export const Am62lLpddr4BreakoutRepro = ({
   routingDisabled = false,
@@ -205,7 +177,11 @@ export const Am62lLpddr4BreakoutRepro = ({
         left: "1mm",
       }}
       fanoutRoutingLayers={[...SIGNAL_LAYERS]}
-      busFanoutDirections={socFanoutDirections}
+      busFanoutDirections={{
+        DDR_BYTE1: "top_right",
+        DDR_ADDR_CTRL: "center_right",
+        DDR_BYTE0: "bottom_right",
+      }}
     >
       <AM62L32
         name="U1"
@@ -229,7 +205,11 @@ export const Am62lLpddr4BreakoutRepro = ({
         left: "2mm",
       }}
       fanoutRoutingLayers={[...SIGNAL_LAYERS]}
-      busFanoutDirections={ramFanoutDirections}
+      busFanoutDirections={{
+        DDR_BYTE1: "top_left",
+        DDR_ADDR_CTRL: "center_left",
+        DDR_BYTE0: "bottom_left",
+      }}
     >
       <MT53E1G16D1ZW
         name="U2"
@@ -241,15 +221,21 @@ export const Am62lLpddr4BreakoutRepro = ({
       />
     </breakout>
 
-    {windingLayerBuses.map((bus) => (
-      <Fragment key={bus.name}>
-        <bus
-          name={bus.name}
-          connections={bus.connectionNames}
-          preferredLayer={bus.layer}
-        />
-      </Fragment>
-    ))}
+    <bus
+      name="DDR_BYTE0"
+      connections={DDR_BYTE0_TRACE_NAMES}
+      preferredLayers={["inner1", "inner4"]}
+    />
+    <bus
+      name="DDR_BYTE1"
+      connections={DDR_BYTE1_TRACE_NAMES}
+      preferredLayers={["inner2", "inner5"]}
+    />
+    <bus
+      name="DDR_ADDR_CTRL"
+      connections={DDR_ADDR_CTRL_TRACE_NAMES}
+      preferredLayers={["inner3", "inner6"]}
+    />
 
     <differentialpair
       name="DQS0_PAIR"

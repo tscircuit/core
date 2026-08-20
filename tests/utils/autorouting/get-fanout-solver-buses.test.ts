@@ -1,7 +1,19 @@
 import { expect, test } from "bun:test"
 import { getFanoutSolverBuses } from "lib/utils/autorouting/FanoutAutorouter"
+import { resolveBusTargetLayer } from "lib/utils/autorouting/resolve-bus-target-layer"
 
-test("fanout solver buses translate layer preferences into allowedLayers", () => {
+test("fanout and winding resolve one shared bus target layer", () => {
+  expect(
+    resolveBusTargetLayer({
+      preferredLayer: "inner2",
+      preferredLayers: ["bottom", "inner1"],
+    }),
+  ).toBe("inner2")
+  expect(resolveBusTargetLayer({ preferredLayers: ["inner1", "bottom"] })).toBe(
+    "inner1",
+  )
+  expect(resolveBusTargetLayer({})).toBe("top")
+
   expect(
     getFanoutSolverBuses([
       {
@@ -14,7 +26,6 @@ test("fanout solver buses translate layer preferences into allowedLayers", () =>
         busId: "CONTROL",
         connectionNames: ["CS"],
         allowedLayers: ["top", "inner1"],
-        preferredLayer: "inner2",
         preferredLayers: ["inner1"],
       },
       {
@@ -26,7 +37,7 @@ test("fanout solver buses translate layer preferences into allowedLayers", () =>
     {
       busId: "DATA",
       connectionNames: ["D0"],
-      allowedLayers: ["inner2", "bottom"],
+      allowedLayers: ["inner2"],
     },
     {
       busId: "CONTROL",
@@ -36,6 +47,7 @@ test("fanout solver buses translate layer preferences into allowedLayers", () =>
     {
       busId: "UNCONSTRAINED",
       connectionNames: ["CLK"],
+      allowedLayers: ["top"],
     },
   ])
 })
