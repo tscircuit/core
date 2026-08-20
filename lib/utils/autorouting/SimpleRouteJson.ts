@@ -86,6 +86,8 @@ export type SimpleRouteConnection = {
   isOffBoard?: boolean
   netConnectionName?: string
   nominalTraceWidth?: number
+  /** Maximum number of vias permitted across the routed connection. */
+  maxViaCount?: number
   /** @deprecated Use `nominalTraceWidth` instead. */
   width?: number
   pointsToConnect: SimpleRoutePoint[]
