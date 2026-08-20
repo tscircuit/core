@@ -343,6 +343,14 @@ export function Group_getRoutingPhasePlans(
     plan.phaseName = phaseProps?.name
     plan.reroute = phaseProps?.reroute
     plan.region = phaseProps?.region
+    if (phaseProps?.region) {
+      plan.routingBounds = {
+        minX: phaseProps.region.minX,
+        maxX: phaseProps.region.maxX,
+        minY: phaseProps.region.minY,
+        maxY: phaseProps.region.maxY,
+      }
+    }
     plan.connectionSelectors = phaseProps
       ? getConnectionSelectorsFromAutoroutingPhaseProps(phaseProps)
       : undefined
