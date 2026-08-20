@@ -44,6 +44,14 @@ const solveCoordinatedScope = (
   }
 
   const output = solver.getOutput()
+  let expectedConnectionCount = 0
+  for (const connection of input.solverInput.connections) {
+    if ("type" in connection) {
+      expectedConnectionCount += connection.connections.length
+      continue
+    }
+    expectedConnectionCount += 1
+  }
   const breakoutPointsByRegionId = new Map<
     PcbGroupId,
     CoordinatedWindingBreakoutPoint[]
@@ -76,26 +84,17 @@ const solveCoordinatedScope = (
         `Winding solver returned unknown connection "${breakoutPoint.connectionId}" for region "${breakoutPoint.regionId}"`,
       )
     }
-    const selectedLayer = output.layerByConnection[breakoutPoint.connectionId]
-    if (!selectedLayer) {
-      throw new Error(
-        `Winding solver omitted the selected layer for connection "${breakoutPoint.connectionId}"`,
-      )
-    }
     regionBreakoutPoints.push({
       sourcePortId,
       sourceTraceId: breakoutPoint.connectionId,
-      layer: selectedLayer,
+      layer: breakoutPoint.layer,
       x: breakoutPoint.x,
       y: breakoutPoint.y,
     })
   }
 
   for (const [regionId, regionBreakoutPoints] of breakoutPointsByRegionId) {
-    if (
-      regionBreakoutPoints.length !==
-      Object.keys(output.layerByConnection).length
-    ) {
+    if (regionBreakoutPoints.length !== expectedConnectionCount) {
       throw new Error(
         `Winding solver output is missing endpoints for region "${regionId}"`,
       )

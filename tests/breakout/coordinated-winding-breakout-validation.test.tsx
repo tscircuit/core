@@ -99,14 +99,16 @@ const getSelectedLayerByConnectionName = (
   )
   const solver = new WindingBreakoutSolver(input.solverInput)
   solver.solve()
-  return new Map(
-    Object.entries(solver.getOutput().layerByConnection).map(
-      ([connectionId, layer]) => [
-        sourceTraceNameById.get(connectionId)!,
-        layer,
-      ],
-    ),
-  )
+  const selectedLayerByConnectionName = new Map<string, string>()
+  for (const breakoutPoint of solver.getOutput().breakoutPoints) {
+    const connectionName = sourceTraceNameById.get(breakoutPoint.connectionId)!
+    const existingLayer = selectedLayerByConnectionName.get(connectionName)
+    if (existingLayer !== undefined && existingLayer !== breakoutPoint.layer) {
+      throw new Error(`Connection "${connectionName}" spans multiple layers`)
+    }
+    selectedLayerByConnectionName.set(connectionName, breakoutPoint.layer)
+  }
+  return selectedLayerByConnectionName
 }
 
 test("validates coordinated winding layers and endpoints", async () => {

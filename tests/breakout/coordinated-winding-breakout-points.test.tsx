@@ -183,20 +183,27 @@ test("integrates the cloned AM62L/LPDDR4 breakout repro", async () => {
     }
     expect(
       allowedLayersByConnectionId.get(breakoutPoint.connectionId),
-    ).toContain(output.layerByConnection[breakoutPoint.connectionId])
+    ).toContain(breakoutPoint.layer)
   }
   for (const differentialPair of differentialPairInputs) {
     const [positiveConnection, negativeConnection] =
       differentialPair.connections
-    const pairLayer = output.layerByConnection[positiveConnection.id]!
-    expect(output.layerByConnection[negativeConnection.id]).toBe(pairLayer)
+    const pairPoints = output.breakoutPoints.filter(
+      (point) =>
+        point.connectionId === positiveConnection.id ||
+        point.connectionId === negativeConnection.id,
+    )
+    const pairLayer = pairPoints.find(
+      (point) => point.connectionId === positiveConnection.id,
+    )!.layer
+    expect(new Set(pairPoints.map((point) => point.layer))).toEqual(
+      new Set([pairLayer]),
+    )
     for (const region of solverInput.regions) {
       const vertical = region.edge === "left" || region.edge === "right"
       const layerOrder = output.breakoutPoints
         .filter(
-          (point) =>
-            point.regionId === region.id &&
-            output.layerByConnection[point.connectionId] === pairLayer,
+          (point) => point.regionId === region.id && point.layer === pairLayer,
         )
         .sort((first, second) => {
           if (vertical) return first.y - second.y
