@@ -480,7 +480,12 @@ export class FanoutAutorouter implements GenericLocalAutorouter {
     const output = fanoutSolver.getOutput()
     const fanoutSimpleRouteJson =
       output.simpleRouteJson as unknown as SimpleRouteJson
-    const fanoutTraces = output.fanoutTraces as unknown as SimplifiedPcbTrace[]
+    const inputTraceIds = new Set(
+      (this.input.traces ?? []).map((trace) => trace.pcb_trace_id),
+    )
+    const fanoutTraces = (
+      output.fanoutTraces as unknown as SimplifiedPcbTrace[]
+    ).filter((trace) => !inputTraceIds.has(trace.pcb_trace_id))
     return {
       downstreamSimpleRouteJson: createDownstreamSimpleRouteJson({
         fanoutSimpleRouteJson,

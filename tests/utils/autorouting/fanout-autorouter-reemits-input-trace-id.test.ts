@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import { FanoutAutorouter } from "lib/utils/autorouting/FanoutAutorouter"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 
-test("fanout autorouter re-emits a trace already present in its input", () => {
+test("fanout autorouter does not re-emit a trace already present in its input", () => {
   const input: SimpleRouteJson = {
     layerCount: 2,
     minTraceWidth: 0.1,
@@ -58,8 +58,8 @@ test("fanout autorouter re-emits a trace already present in its input", () => {
   )
   const secondFanoutTraces = secondAutorouter.solveSync()
 
-  expect(secondFanoutTraces).toHaveLength(1)
-  expect(secondFanoutTraces[0]!.pcb_trace_id).toBe(
-    firstFanoutTraces[0]!.pcb_trace_id,
+  expect(secondFanoutTraces).toEqual([])
+  expect(secondAutorouter.getOutputSimpleRouteJson()?.traces).toContainEqual(
+    firstFanoutTraces[0],
   )
 })
