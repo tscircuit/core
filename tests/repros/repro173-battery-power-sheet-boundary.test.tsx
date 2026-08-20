@@ -3,7 +3,7 @@ import { getBoundsForSchematic } from "lib/utils/autorouting/getBoundsForSchemat
 import { DEFAULT_SCHEMATIC_SHEET_WIDTH } from "lib/utils/schematic/insertSchematicElementOutsideSheetWarnings"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("battery power sheet content stays inside the origin-centered frame", async () => {
+test("battery power sheet content stays inside the fixed frame", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -219,7 +219,6 @@ test("battery power sheet content stays inside the origin-centered frame", async
   const bounds = getBoundsForSchematic(schematicElements)
   expect(bounds.minX).toBeGreaterThanOrEqual(-DEFAULT_SCHEMATIC_SHEET_WIDTH / 2)
   expect(bounds.maxX).toBeLessThanOrEqual(DEFAULT_SCHEMATIC_SHEET_WIDTH / 2)
-  expect((bounds.minX + bounds.maxX) / 2).toBeCloseTo(0)
   expect(circuit.db.schematic_element_outside_sheet_warning.list()).toEqual([])
 
   await expect(circuit).toMatchStackedSchematicSnapshot(import.meta.path)

@@ -4,11 +4,16 @@ import {
 } from "@tscircuit/circuit-json-util"
 import type { SchematicSheet } from "circuit-json"
 import { getBoundsForSchematic } from "lib/utils/autorouting/getBoundsForSchematic"
+import {
+  DEFAULT_SCHEMATIC_SHEET_HEIGHT,
+  DEFAULT_SCHEMATIC_SHEET_WIDTH,
+  SCHEMATIC_SHEET_INNER_MARGIN,
+} from "lib/utils/schematic/insertSchematicElementOutsideSheetWarnings"
 import { applyToPoint, translate } from "transformation-matrix"
 
 type SchematicSheetId = SchematicSheet["schematic_sheet_id"]
 
-export const centerSchematicSheetContents = ({
+export const moveSchematicSheetContentsInsideFrame = ({
   db,
   schematicSheetId,
 }: {
@@ -39,10 +44,25 @@ export const centerSchematicSheetContents = ({
     return
   }
 
-  const schematicToOriginTransform = translate(
-    -(bounds.minX + bounds.maxX) / 2,
-    -(bounds.minY + bounds.maxY) / 2,
-  )
+  const sheetMinX =
+    -DEFAULT_SCHEMATIC_SHEET_WIDTH / 2 + SCHEMATIC_SHEET_INNER_MARGIN
+  const sheetMaxX =
+    DEFAULT_SCHEMATIC_SHEET_WIDTH / 2 - SCHEMATIC_SHEET_INNER_MARGIN
+  const sheetMinY =
+    -DEFAULT_SCHEMATIC_SHEET_HEIGHT / 2 + SCHEMATIC_SHEET_INNER_MARGIN
+  const sheetMaxY =
+    DEFAULT_SCHEMATIC_SHEET_HEIGHT / 2 - SCHEMATIC_SHEET_INNER_MARGIN
+
+  let translateX = 0
+  let translateY = 0
+  if (bounds.minX < sheetMinX) translateX = sheetMinX - bounds.minX
+  else if (bounds.maxX > sheetMaxX) translateX = sheetMaxX - bounds.maxX
+  if (bounds.minY < sheetMinY) translateY = sheetMinY - bounds.minY
+  else if (bounds.maxY > sheetMaxY) translateY = sheetMaxY - bounds.maxY
+
+  if (translateX === 0 && translateY === 0) return
+
+  const schematicIntoFrameTransform = translate(translateX, translateY)
 
   transformSchematicElements(
     [
@@ -50,7 +70,7 @@ export const centerSchematicSheetContents = ({
       ...db.schematic_net_label.list(schematicSheetFilter),
       ...db.schematic_trace.list(schematicSheetFilter),
     ],
-    schematicToOriginTransform,
+    schematicIntoFrameTransform,
   )
 
   for (const element of [
@@ -58,20 +78,20 @@ export const centerSchematicSheetContents = ({
     ...db.schematic_circle.list(schematicSheetFilter),
     ...db.schematic_arc.list(schematicSheetFilter),
   ]) {
-    element.center = applyToPoint(schematicToOriginTransform, element.center)
+    element.center = applyToPoint(schematicIntoFrameTransform, element.center)
   }
 
   for (const path of db.schematic_path.list(schematicSheetFilter)) {
     path.points = path.points.map((point) =>
-      applyToPoint(schematicToOriginTransform, point),
+      applyToPoint(schematicIntoFrameTransform, point),
     )
   }
 
   for (const netLabel of db.schematic_net_label.list(schematicSheetFilter)) {
-    netLabel.center = applyToPoint(schematicToOriginTransform, netLabel.center)
+    netLabel.center = applyToPoint(schematicIntoFrameTransform, netLabel.center)
     if (netLabel.anchor_position) {
       netLabel.anchor_position = applyToPoint(
-        schematicToOriginTransform,
+        schematicIntoFrameTransform,
         netLabel.anchor_position,
       )
     }

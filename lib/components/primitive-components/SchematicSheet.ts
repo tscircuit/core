@@ -1,6 +1,6 @@
 import { schematicSheetProps } from "@tscircuit/props"
-import { centerSchematicSheetContents } from "lib/utils/schematic/center-schematic-sheet-contents"
 import { insertSchematicElementOutsideSheetWarnings } from "lib/utils/schematic/insertSchematicElementOutsideSheetWarnings"
+import { moveSchematicSheetContentsInsideFrame } from "lib/utils/schematic/move-schematic-sheet-contents-inside-frame"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
 export class SchematicSheet extends PrimitiveComponent<
@@ -35,7 +35,7 @@ export class SchematicSheet extends PrimitiveComponent<
     if (!this.schematic_sheet_id) return
 
     const { db } = this.root!
-    centerSchematicSheetContents({
+    moveSchematicSheetContentsInsideFrame({
       db,
       schematicSheetId: this.schematic_sheet_id,
     })
