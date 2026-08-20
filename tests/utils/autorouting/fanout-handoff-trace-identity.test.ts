@@ -7,6 +7,10 @@ const routingPcbGroupId = "pcb_group_soc_breakout"
 const sourceTraceId = "source_trace_ddr_d0"
 const localConnectionName = "DDR_D0"
 
+type TraceWithSourceTraceId = NonNullable<SimpleRouteJson["traces"]>[number] & {
+  source_trace_id: string
+}
+
 const createSimpleRouteJson = (
   connections: SimpleRouteJson["connections"],
 ): SimpleRouteJson => ({
@@ -34,6 +38,17 @@ test("fanout handoff trace keeps its phase-local routing identity", () => {
       pointsToConnect: [padPoint, remotePoint],
     },
   ])
+  const fanoutTrace: TraceWithSourceTraceId = {
+    type: "pcb_trace",
+    pcb_trace_id: "pcb_trace_fanout_ddr_d0",
+    connection_name: localConnectionName,
+    source_trace_id: sourceTraceId,
+    connectsTo: ["soc:A1", "breakout:DDR_D0"],
+    route: [
+      { route_type: "wire", x: 0, y: 0, width: 0.1, layer: "top" },
+      { route_type: "wire", x: 3, y: 0, width: 0.1, layer: "top" },
+    ],
+  }
   const fanoutOutputSimpleRouteJson: SimpleRouteJson = {
     ...createSimpleRouteJson([
       {
@@ -43,19 +58,7 @@ test("fanout handoff trace keeps its phase-local routing identity", () => {
         pointsToConnect: [fanoutExitPoint, remotePoint],
       },
     ]),
-    traces: [
-      {
-        type: "pcb_trace",
-        pcb_trace_id: "pcb_trace_fanout_ddr_d0",
-        connection_name: localConnectionName,
-        source_trace_id: sourceTraceId,
-        connectsTo: ["soc:A1", "breakout:DDR_D0"],
-        route: [
-          { route_type: "wire", x: 0, y: 0, width: 0.1, layer: "top" },
-          { route_type: "wire", x: 3, y: 0, width: 0.1, layer: "top" },
-        ],
-      },
-    ],
+    traces: [fanoutTrace],
   }
   const baseSimpleRouteJson = createSimpleRouteJson([
     {
