@@ -33,22 +33,6 @@ const solutionByRoutingScope = new WeakMap<
   CoordinatedScopeSolution
 >()
 
-const getCanonicalLayerByConnectionId = (
-  input: CoordinatedWindingBreakoutInput,
-): Map<SourceTraceId, string> => {
-  const layerByConnectionId = new Map<SourceTraceId, string>()
-  for (const connection of input.solverInput.connections) {
-    if ("type" in connection) {
-      for (const pairMember of connection.connections) {
-        layerByConnectionId.set(pairMember.id, connection.layer)
-      }
-      continue
-    }
-    layerByConnectionId.set(connection.id, connection.layer)
-  }
-  return layerByConnectionId
-}
-
 const solveCoordinatedScope = (
   breakout: Breakout,
 ): CoordinatedScopeSolution => {
@@ -60,7 +44,6 @@ const solveCoordinatedScope = (
   }
 
   const output = solver.getOutput()
-  const layerByConnectionId = getCanonicalLayerByConnectionId(input)
   const breakoutPointsByRegionId = new Map<
     PcbGroupId,
     CoordinatedWindingBreakoutPoint[]
@@ -93,23 +76,26 @@ const solveCoordinatedScope = (
         `Winding solver returned unknown connection "${breakoutPoint.connectionId}" for region "${breakoutPoint.regionId}"`,
       )
     }
-    const declaredLayer = layerByConnectionId.get(breakoutPoint.connectionId)
-    if (declaredLayer !== breakoutPoint.layer) {
+    const selectedLayer = output.layerByConnection[breakoutPoint.connectionId]
+    if (!selectedLayer) {
       throw new Error(
-        `Winding solver reassigned connection "${breakoutPoint.connectionId}" from layer "${declaredLayer}" to "${breakoutPoint.layer}"`,
+        `Winding solver omitted the selected layer for connection "${breakoutPoint.connectionId}"`,
       )
     }
     regionBreakoutPoints.push({
       sourcePortId,
       sourceTraceId: breakoutPoint.connectionId,
-      layer: breakoutPoint.layer,
+      layer: selectedLayer,
       x: breakoutPoint.x,
       y: breakoutPoint.y,
     })
   }
 
   for (const [regionId, regionBreakoutPoints] of breakoutPointsByRegionId) {
-    if (regionBreakoutPoints.length !== layerByConnectionId.size) {
+    if (
+      regionBreakoutPoints.length !==
+      Object.keys(output.layerByConnection).length
+    ) {
       throw new Error(
         `Winding solver output is missing endpoints for region "${regionId}"`,
       )

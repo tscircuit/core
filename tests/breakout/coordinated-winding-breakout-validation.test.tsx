@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { WindingBreakoutSolver } from "@tscircuit/winding-breakout-point-solver"
 import { AutoplacedBreakoutPoint } from "lib/components/primitive-components/AutoplacedBreakoutPoint"
 import type { Breakout } from "lib/components/primitive-components/Breakout/Breakout"
 import { createCoordinatedWindingBreakoutInput } from "lib/components/primitive-components/Breakout/create-coordinated-winding-breakout-input"
@@ -88,7 +89,7 @@ const CoordinatedValidationBoard = ({
   )
 }
 
-const getConnectionLayerByName = (
+const getSelectedLayerByConnectionName = (
   input: ReturnType<typeof createCoordinatedWindingBreakoutInput>,
 ): Map<string, string> => {
   const sourceTraceNameById = new Map(
@@ -96,23 +97,16 @@ const getConnectionLayerByName = (
       .root!.db.source_trace.list()
       .map((sourceTrace) => [sourceTrace.source_trace_id, sourceTrace.name]),
   )
-  const layerByConnectionName = new Map<string, string>()
-  for (const connection of input.solverInput.connections) {
-    if ("type" in connection) {
-      for (const pairMember of connection.connections) {
-        layerByConnectionName.set(
-          sourceTraceNameById.get(pairMember.id)!,
-          connection.layer,
-        )
-      }
-      continue
-    }
-    layerByConnectionName.set(
-      sourceTraceNameById.get(connection.id)!,
-      connection.layer,
-    )
-  }
-  return layerByConnectionName
+  const solver = new WindingBreakoutSolver(input.solverInput)
+  solver.solve()
+  return new Map(
+    Object.entries(solver.getOutput().layerByConnection).map(
+      ([connectionId, layer]) => [
+        sourceTraceNameById.get(connectionId)!,
+        layer,
+      ],
+    ),
+  )
 }
 
 test("validates coordinated winding layers and endpoints", async () => {
@@ -121,7 +115,19 @@ test("validates coordinated winding layers and endpoints", async () => {
   await validFixture.circuit.renderUntilSettled()
   const leftBreakout = validFixture.circuit.selectOne(".LEFT") as Breakout
   const validInput = createCoordinatedWindingBreakoutInput(leftBreakout)
-  expect(getConnectionLayerByName(validInput)).toEqual(
+  expect(validInput.solverInput.buses).toEqual([
+    {
+      id: "EXPLICIT",
+      connectionIds: expect.any(Array),
+      preferredLayer: "inner1",
+      preferredLayers: ["bottom"],
+    },
+    {
+      id: "DEFAULTED",
+      connectionIds: expect.any(Array),
+    },
+  ])
+  expect(getSelectedLayerByConnectionName(validInput)).toEqual(
     new Map([
       ["D0", "inner1"],
       ["D1", "inner1"],
@@ -154,7 +160,7 @@ test("validates coordinated winding layers and endpoints", async () => {
   const conflictFixture = getTestFixture()
   conflictFixture.circuit.add(<CoordinatedValidationBoard variant="conflict" />)
   await expect(conflictFixture.circuit.renderUntilSettled()).rejects.toThrow(
-    /conflicting bus target layers/,
+    /belongs to multiple buses/,
   )
 
   const pairMismatchFixture = getTestFixture()
@@ -163,5 +169,5 @@ test("validates coordinated winding layers and endpoints", async () => {
   )
   await expect(
     pairMismatchFixture.circuit.renderUntilSettled(),
-  ).rejects.toThrow(/Differential pair.*layer mismatch/)
+  ).rejects.toThrow(/differential pair.*same bus/i)
 })

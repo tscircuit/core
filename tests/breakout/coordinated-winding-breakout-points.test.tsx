@@ -13,22 +13,6 @@ import {
 } from "tests/fixtures/am62l-lpddr4-breakout-repro"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-interface ExpectedConnection {
-  layer: string
-}
-
-const expectedConnectionByName = new Map<string, ExpectedConnection>()
-const expectedLayerByBusName = {
-  DDR_BYTE0: "inner1",
-  DDR_BYTE1: "inner2",
-  DDR_ADDR_CTRL: "inner3",
-} as const
-for (const connection of DDR_CONNECTIONS) {
-  expectedConnectionByName.set(connection.traceName, {
-    layer: expectedLayerByBusName[connection.busName],
-  })
-}
-
 test("integrates the cloned AM62L/LPDDR4 breakout repro", async () => {
   const windingSolveSpy = spyOn(WindingBreakoutSolver.prototype, "solve")
   const { circuit } = getTestFixture()
@@ -73,6 +57,29 @@ test("integrates the cloned AM62L/LPDDR4 breakout repro", async () => {
     "left",
   ])
   expect(solverInput.boundaryPointSpacing).toBeCloseTo(0.71976)
+  expect(
+    solverInput.buses.map((bus) => ({
+      id: bus.id,
+      preferredLayer: bus.preferredLayer,
+      preferredLayers: bus.preferredLayers,
+    })),
+  ).toEqual([
+    {
+      id: "DDR_BYTE0",
+      preferredLayer: undefined,
+      preferredLayers: ["inner1", "inner4"],
+    },
+    {
+      id: "DDR_BYTE1",
+      preferredLayer: undefined,
+      preferredLayers: ["inner2", "inner5"],
+    },
+    {
+      id: "DDR_ADDR_CTRL",
+      preferredLayer: undefined,
+      preferredLayers: ["inner3", "inner6"],
+    },
+  ])
 
   const sourceTraceById = new Map(
     circuit.db.source_trace
@@ -91,7 +98,6 @@ test("integrates the cloned AM62L/LPDDR4 breakout repro", async () => {
 
   const canonicalSolverConnections: Array<{
     id: string
-    layer: string
     endpoints: readonly ConnectionEndpoint[]
   }> = []
   for (const connection of solverInput.connections) {
@@ -99,7 +105,6 @@ test("integrates the cloned AM62L/LPDDR4 breakout repro", async () => {
       for (const pairMember of connection.connections) {
         canonicalSolverConnections.push({
           id: pairMember.id,
-          layer: connection.layer,
           endpoints: pairMember.endpoints,
         })
       }
@@ -113,11 +118,12 @@ test("integrates the cloned AM62L/LPDDR4 breakout repro", async () => {
     if (!sourceTrace?.name) {
       throw new Error(`Missing source trace for "${connection.id}"`)
     }
-    const expectedConnection = expectedConnectionByName.get(sourceTrace.name)
+    const expectedConnection = DDR_CONNECTIONS.find(
+      (candidate) => candidate.traceName === sourceTrace.name,
+    )
     if (!expectedConnection) {
       throw new Error(`Missing solver fixture connection "${sourceTrace.name}"`)
     }
-    expect(connection.layer).toBe(expectedConnection.layer)
     expect(connection.endpoints).toHaveLength(solverInput.regions.length)
     for (const endpoint of connection.endpoints) {
       const fixtureRegionId = fixtureRegionIdByPcbGroupId.get(endpoint.regionId)
@@ -153,23 +159,51 @@ test("integrates the cloned AM62L/LPDDR4 breakout repro", async () => {
   solver.solve()
   const output = solver.getOutput()
   expect(output.breakoutPoints).toHaveLength(DDR_CONNECTIONS.length * 2)
+  const allowedLayersByConnectionId = new Map(
+    solverInput.buses.flatMap((bus) =>
+      bus.connectionIds.map(
+        (connectionId) =>
+          [
+            connectionId,
+            bus.preferredLayer
+              ? [bus.preferredLayer]
+              : (bus.preferredLayers ?? ["top"]),
+          ] as const,
+      ),
+    ),
+  )
   for (const breakoutPoint of output.breakoutPoints) {
     const sourceTrace = sourceTraceById.get(breakoutPoint.connectionId)
     if (!sourceTrace?.name) {
       throw new Error(`Missing source trace "${breakoutPoint.connectionId}"`)
     }
-    const expectedConnection = expectedConnectionByName.get(sourceTrace.name)
+    const expectedConnection = DDR_CONNECTIONS.find(
+      (candidate) => candidate.traceName === sourceTrace.name,
+    )
     if (!expectedConnection) {
       throw new Error(`Missing expected connection "${sourceTrace.name}"`)
     }
-    expect(breakoutPoint.layer).toBe(expectedConnection.layer)
+    expect(
+      allowedLayersByConnectionId.get(breakoutPoint.connectionId),
+    ).toContain(output.layerByConnection[breakoutPoint.connectionId])
   }
   for (const differentialPair of differentialPairInputs) {
     const [positiveConnection, negativeConnection] =
       differentialPair.connections
+    const pairLayer = output.layerByConnection[positiveConnection.id]!
+    expect(output.layerByConnection[negativeConnection.id]).toBe(pairLayer)
     for (const region of solverInput.regions) {
-      const layerOrder =
-        output.gateOrderByLayerByRegion[region.id]![differentialPair.layer]!
+      const vertical = region.edge === "left" || region.edge === "right"
+      const layerOrder = output.breakoutPoints
+        .filter(
+          (point) =>
+            point.regionId === region.id &&
+            output.layerByConnection[point.connectionId] === pairLayer,
+        )
+        .sort((first, second) =>
+          vertical ? first.y - second.y : first.x - second.x,
+        )
+        .map((point) => point.connectionId)
       expect(
         Math.abs(
           layerOrder.indexOf(positiveConnection.id) -

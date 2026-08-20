@@ -3,11 +3,11 @@ import type {
   BreakoutEdge,
   ConnectionEndpoint,
   ConnectionOrDifferentialPair,
+  WindingBreakoutBusInput,
   WindingBreakoutSolverInput,
 } from "@tscircuit/winding-breakout-point-solver"
 import type { PcbGroup, SourcePort, SourceTrace } from "circuit-json"
 import type { z } from "zod"
-import { resolveBusTargetLayer } from "../../../utils/autorouting/resolve-bus-target-layer"
 import { AutoplacedBreakoutPoint } from "../AutoplacedBreakoutPoint"
 import type { Bus } from "../Bus"
 import type { DifferentialPair } from "../DifferentialPair"
@@ -263,19 +263,20 @@ const getSourceTraceForConnectionOrThrow = ({
   return matchingSourceTraces[0]!
 }
 
-const getLayerBySourceTraceId = ({
+const getWindingSolverBuses = ({
   routingScope,
   sourceTraces,
+  coordinatedSourceTraceIds,
 }: {
   routingScope: Group<z.ZodType>
   sourceTraces: readonly SourceTrace[]
-}): Map<SourceTraceId, string> => {
-  const layerBySourceTraceId = new Map<SourceTraceId, string>()
-  const assigningBusNameBySourceTraceId = new Map<SourceTraceId, string>()
+  coordinatedSourceTraceIds: ReadonlySet<SourceTraceId>
+}): WindingBreakoutBusInput[] => {
+  const solverBuses: WindingBreakoutBusInput[] = []
   const subcircuitId = routingScope.getSubcircuit().subcircuit_id
   for (const bus of routingScope.selectAll("bus") as Bus[]) {
     if (bus.getSubcircuit().subcircuit_id !== subcircuitId) continue
-    const resolvedTargetLayer = resolveBusTargetLayer(bus._parsedProps)
+    const connectionIds: SourceTraceId[] = []
     for (const connectionSelector of bus._parsedProps.connections) {
       const sourceTrace = getSourceTraceForConnectionOrThrow({
         connectionOwner: bus,
@@ -283,25 +284,25 @@ const getLayerBySourceTraceId = ({
         connectionSelector,
         sourceTraces,
       })
-      const previousLayer = layerBySourceTraceId.get(
-        sourceTrace.source_trace_id,
-      )
-      if (
-        previousLayer !== undefined &&
-        previousLayer !== resolvedTargetLayer
-      ) {
-        const previousBusName = assigningBusNameBySourceTraceId.get(
-          sourceTrace.source_trace_id,
-        )
-        throw new Error(
-          `Connection "${sourceTrace.name ?? sourceTrace.source_trace_id}" has conflicting bus target layers: bus "${previousBusName}" resolves to "${previousLayer}" and bus "${bus.name}" resolves to "${resolvedTargetLayer}"`,
-        )
+      if (coordinatedSourceTraceIds.has(sourceTrace.source_trace_id)) {
+        connectionIds.push(sourceTrace.source_trace_id)
       }
-      layerBySourceTraceId.set(sourceTrace.source_trace_id, resolvedTargetLayer)
-      assigningBusNameBySourceTraceId.set(sourceTrace.source_trace_id, bus.name)
     }
+    if (connectionIds.length === 0) continue
+    solverBuses.push({
+      id: bus.name,
+      connectionIds,
+      // NOTE: preferredLayer is a permanent assignment despite its legacy
+      // name. Pass it through unchanged so the solver can enforce that rule.
+      ...(bus._parsedProps.preferredLayer !== undefined
+        ? { preferredLayer: bus._parsedProps.preferredLayer }
+        : {}),
+      ...(bus._parsedProps.preferredLayers !== undefined
+        ? { preferredLayers: bus._parsedProps.preferredLayers }
+        : {}),
+    })
   }
-  return layerBySourceTraceId
+  return solverBuses
 }
 
 const getDifferentialPairSourceTraces = ({
@@ -423,12 +424,11 @@ export const createCoordinatedWindingBreakoutInput = (
     }
   }
 
-  const declaredLayerBySourceTraceId = getLayerBySourceTraceId({
+  const buses = getWindingSolverBuses({
     routingScope,
     sourceTraces,
+    coordinatedSourceTraceIds: sourceTraceIds,
   })
-  const getResolvedLayer = (sourceTraceId: SourceTraceId): string =>
-    declaredLayerBySourceTraceId.get(sourceTraceId) ?? "top"
   const endpointsBySourceTraceId = new Map<
     SourceTraceId,
     readonly ConnectionEndpoint[]
@@ -458,13 +458,6 @@ export const createCoordinatedWindingBreakoutInput = (
       )
     }
     if (!positiveIsCoordinated) continue
-    const positiveLayer = getResolvedLayer(pair.positiveSourceTraceId)
-    const negativeLayer = getResolvedLayer(pair.negativeSourceTraceId)
-    if (positiveLayer !== negativeLayer) {
-      throw new Error(
-        `Differential pair "${pair.differentialPair.name}" has layer mismatch: positive member resolves to "${positiveLayer}" and negative member resolves to "${negativeLayer}"`,
-      )
-    }
     if (
       differentialPairBySourceTraceId.has(pair.positiveSourceTraceId) ||
       differentialPairBySourceTraceId.has(pair.negativeSourceTraceId)
@@ -482,7 +475,6 @@ export const createCoordinatedWindingBreakoutInput = (
     if (!differentialPair) {
       connections.push({
         id: sourceTraceId,
-        layer: getResolvedLayer(sourceTraceId),
         endpoints: endpointsBySourceTraceId.get(sourceTraceId)!,
       })
       continue
@@ -491,7 +483,6 @@ export const createCoordinatedWindingBreakoutInput = (
     addedDifferentialPairs.add(differentialPair.differentialPair)
     connections.push({
       type: "differential",
-      layer: getResolvedLayer(differentialPair.positiveSourceTraceId),
       connections: [
         {
           id: differentialPair.positiveSourceTraceId,
@@ -537,6 +528,7 @@ export const createCoordinatedWindingBreakoutInput = (
     solverInput: {
       regions: solverRegions,
       connections,
+      buses,
       boundaryPointSpacing: getBoundaryPointSpacing(breakout),
     },
     regionBoundsByRegionId,

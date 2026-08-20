@@ -59,7 +59,7 @@
     "@tscircuit/schematic-trace-solver": "^0.0.137",
     "@tscircuit/solver-utils": "^0.0.16",
     "@tscircuit/soup-util": "^0.0.41",
-    "@tscircuit/winding-breakout-point-solver": "github:tscircuit/winding-breakout-point-solver#b53db4f0af0fcdfa1c6a6ed6d90d750df76cba9b",
+    "@tscircuit/winding-breakout-point-solver": "github:tscircuit/winding-breakout-point-solver#e9d90d4f4dfc99ea2efde16553d4e9cf7f322f44",
     "@types/bun": "^1.2.16",
     "@types/debug": "^4.1.12",
     "@types/react": "^19.1.8",
