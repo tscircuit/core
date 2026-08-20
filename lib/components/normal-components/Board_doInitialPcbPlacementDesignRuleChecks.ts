@@ -37,6 +37,9 @@ export const Board_doInitialPcbPlacementDesignRuleChecks = (board: Board) => {
     .subtree({ subcircuit_id: board.subcircuit_id })
     .toArray()
   const existingPlacementDiagnostics = db.toArray()
+  const existingPlacementErrorCount = subcircuitCircuitJson.filter(
+    (element) => element.type === "pcb_placement_error",
+  ).length
 
   board._pcbPlacementDrcChecksPending = true
   board._queueAsyncEffect("board:pre-route-placement-checks", async () => {
@@ -55,9 +58,10 @@ export const Board_doInitialPcbPlacementDesignRuleChecks = (board: Board) => {
       )
 
       db.insertAll(newPlacementDiagnostics as AnyCircuitElement[])
-      board._pcbPlacementDrcErrorCount = placementCheckResults.filter(
-        (result) => result.type.endsWith("_error"),
-      ).length
+      board._pcbPlacementDrcErrorCount =
+        existingPlacementErrorCount +
+        placementCheckResults.filter((result) => result.type.endsWith("_error"))
+          .length
     } catch (error) {
       board._pcbPlacementDrcCheckError =
         error instanceof Error ? error.message : String(error)

@@ -1,13 +1,13 @@
 import { expect, test } from "bun:test"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { sel } from "lib/sel"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("repro126-knockout-rotation", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
     <board>
-      <chip
+      <connector
         name="J1"
         footprint="pinrow2"
         manufacturerPartNumber="Adapter"
