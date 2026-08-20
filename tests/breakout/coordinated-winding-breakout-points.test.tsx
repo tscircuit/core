@@ -160,17 +160,15 @@ test("integrates the cloned AM62L/LPDDR4 breakout repro", async () => {
   const output = solver.getOutput()
   expect(output.breakoutPoints).toHaveLength(DDR_CONNECTIONS.length * 2)
   const allowedLayersByConnectionId = new Map(
-    solverInput.buses.flatMap((bus) =>
-      bus.connectionIds.map(
-        (connectionId) =>
-          [
-            connectionId,
-            bus.preferredLayer
-              ? [bus.preferredLayer]
-              : (bus.preferredLayers ?? ["top"]),
-          ] as const,
-      ),
-    ),
+    solverInput.buses.flatMap((bus) => {
+      let allowedLayers = bus.preferredLayers ?? ["top"]
+      if (bus.preferredLayer !== undefined) {
+        allowedLayers = [bus.preferredLayer]
+      }
+      return bus.connectionIds.map(
+        (connectionId) => [connectionId, allowedLayers] as const,
+      )
+    }),
   )
   for (const breakoutPoint of output.breakoutPoints) {
     const sourceTrace = sourceTraceById.get(breakoutPoint.connectionId)
@@ -200,9 +198,10 @@ test("integrates the cloned AM62L/LPDDR4 breakout repro", async () => {
             point.regionId === region.id &&
             output.layerByConnection[point.connectionId] === pairLayer,
         )
-        .sort((first, second) =>
-          vertical ? first.y - second.y : first.x - second.x,
-        )
+        .sort((first, second) => {
+          if (vertical) return first.y - second.y
+          return first.x - second.x
+        })
         .map((point) => point.connectionId)
       expect(
         Math.abs(

@@ -289,18 +289,25 @@ const getWindingSolverBuses = ({
       }
     }
     if (connectionIds.length === 0) continue
-    solverBuses.push({
+    let solverBus: WindingBreakoutBusInput = {
       id: bus.name,
       connectionIds,
       // NOTE: preferredLayer is a permanent assignment despite its legacy
       // name. Pass it through unchanged so the solver can enforce that rule.
-      ...(bus._parsedProps.preferredLayer !== undefined
-        ? { preferredLayer: bus._parsedProps.preferredLayer }
-        : {}),
-      ...(bus._parsedProps.preferredLayers !== undefined
-        ? { preferredLayers: bus._parsedProps.preferredLayers }
-        : {}),
-    })
+    }
+    if (bus._parsedProps.preferredLayer !== undefined) {
+      solverBus = {
+        ...solverBus,
+        preferredLayer: bus._parsedProps.preferredLayer,
+      }
+    }
+    if (bus._parsedProps.preferredLayers !== undefined) {
+      solverBus = {
+        ...solverBus,
+        preferredLayers: bus._parsedProps.preferredLayers,
+      }
+    }
+    solverBuses.push(solverBus)
   }
   return solverBuses
 }
