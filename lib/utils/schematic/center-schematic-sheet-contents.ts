@@ -1,6 +1,10 @@
-import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
+import {
+  type CircuitJsonUtilObjects,
+  transformSchematicElements,
+} from "@tscircuit/circuit-json-util"
 import type { SchematicSheet } from "circuit-json"
 import { getBoundsForSchematic } from "lib/utils/autorouting/getBoundsForSchematic"
+import { applyToPoint, translate } from "transformation-matrix"
 
 type SchematicSheetId = SchematicSheet["schematic_sheet_id"]
 
@@ -11,15 +15,16 @@ export const centerSchematicSheetContents = ({
   db: CircuitJsonUtilObjects
   schematicSheetId: SchematicSheetId
 }): void => {
+  const schematicSheetFilter = { schematic_sheet_id: schematicSheetId }
   const schematicElements = [
-    ...db.schematic_component.list({ schematic_sheet_id: schematicSheetId }),
-    ...db.schematic_port.list({ schematic_sheet_id: schematicSheetId }),
-    ...db.schematic_text.list({ schematic_sheet_id: schematicSheetId }),
-    ...db.schematic_line.list({ schematic_sheet_id: schematicSheetId }),
-    ...db.schematic_rect.list({ schematic_sheet_id: schematicSheetId }),
-    ...db.schematic_circle.list({ schematic_sheet_id: schematicSheetId }),
-    ...db.schematic_arc.list({ schematic_sheet_id: schematicSheetId }),
-    ...db.schematic_path.list({ schematic_sheet_id: schematicSheetId }),
+    ...db.schematic_component.list(schematicSheetFilter),
+    ...db.schematic_port.list(schematicSheetFilter),
+    ...db.schematic_text.list(schematicSheetFilter),
+    ...db.schematic_line.list(schematicSheetFilter),
+    ...db.schematic_rect.list(schematicSheetFilter),
+    ...db.schematic_circle.list(schematicSheetFilter),
+    ...db.schematic_arc.list(schematicSheetFilter),
+    ...db.schematic_path.list(schematicSheetFilter),
   ]
 
   if (schematicElements.length === 0) return
@@ -34,92 +39,41 @@ export const centerSchematicSheetContents = ({
     return
   }
 
-  const deltaX = -(bounds.minX + bounds.maxX) / 2
-  const deltaY = -(bounds.minY + bounds.maxY) / 2
+  const schematicToOriginTransform = translate(
+    -(bounds.minX + bounds.maxX) / 2,
+    -(bounds.minY + bounds.maxY) / 2,
+  )
 
-  for (const component of db.schematic_component.list({
-    schematic_sheet_id: schematicSheetId,
-  })) {
-    component.center.x += deltaX
-    component.center.y += deltaY
+  transformSchematicElements(
+    [
+      ...schematicElements,
+      ...db.schematic_net_label.list(schematicSheetFilter),
+      ...db.schematic_trace.list(schematicSheetFilter),
+    ],
+    schematicToOriginTransform,
+  )
+
+  for (const element of [
+    ...db.schematic_rect.list(schematicSheetFilter),
+    ...db.schematic_circle.list(schematicSheetFilter),
+    ...db.schematic_arc.list(schematicSheetFilter),
+  ]) {
+    element.center = applyToPoint(schematicToOriginTransform, element.center)
   }
 
-  for (const port of db.schematic_port.list({
-    schematic_sheet_id: schematicSheetId,
-  })) {
-    port.center.x += deltaX
-    port.center.y += deltaY
+  for (const path of db.schematic_path.list(schematicSheetFilter)) {
+    path.points = path.points.map((point) =>
+      applyToPoint(schematicToOriginTransform, point),
+    )
   }
 
-  for (const text of db.schematic_text.list({
-    schematic_sheet_id: schematicSheetId,
-  })) {
-    text.position.x += deltaX
-    text.position.y += deltaY
-  }
-
-  for (const line of db.schematic_line.list({
-    schematic_sheet_id: schematicSheetId,
-  })) {
-    line.x1 += deltaX
-    line.y1 += deltaY
-    line.x2 += deltaX
-    line.y2 += deltaY
-  }
-
-  for (const rect of db.schematic_rect.list({
-    schematic_sheet_id: schematicSheetId,
-  })) {
-    rect.center.x += deltaX
-    rect.center.y += deltaY
-  }
-
-  for (const circle of db.schematic_circle.list({
-    schematic_sheet_id: schematicSheetId,
-  })) {
-    circle.center.x += deltaX
-    circle.center.y += deltaY
-  }
-
-  for (const arc of db.schematic_arc.list({
-    schematic_sheet_id: schematicSheetId,
-  })) {
-    arc.center.x += deltaX
-    arc.center.y += deltaY
-  }
-
-  for (const path of db.schematic_path.list({
-    schematic_sheet_id: schematicSheetId,
-  })) {
-    for (const point of path.points) {
-      point.x += deltaX
-      point.y += deltaY
-    }
-  }
-
-  for (const netLabel of db.schematic_net_label.list({
-    schematic_sheet_id: schematicSheetId,
-  })) {
-    netLabel.center.x += deltaX
-    netLabel.center.y += deltaY
+  for (const netLabel of db.schematic_net_label.list(schematicSheetFilter)) {
+    netLabel.center = applyToPoint(schematicToOriginTransform, netLabel.center)
     if (netLabel.anchor_position) {
-      netLabel.anchor_position.x += deltaX
-      netLabel.anchor_position.y += deltaY
-    }
-  }
-
-  for (const trace of db.schematic_trace.list({
-    schematic_sheet_id: schematicSheetId,
-  })) {
-    for (const edge of trace.edges) {
-      edge.from.x += deltaX
-      edge.from.y += deltaY
-      edge.to.x += deltaX
-      edge.to.y += deltaY
-    }
-    for (const junction of trace.junctions) {
-      junction.x += deltaX
-      junction.y += deltaY
+      netLabel.anchor_position = applyToPoint(
+        schematicToOriginTransform,
+        netLabel.anchor_position,
+      )
     }
   }
 }
