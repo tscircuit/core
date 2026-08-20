@@ -1272,6 +1272,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             fanoutBounds: routingPhasePlan.fanoutBounds,
             fanoutBoundaryPadding: routingPhasePlan.fanoutBoundaryPadding,
             fanoutRoutingLayers: routingPhasePlan.fanoutRoutingLayers,
+            sourcePcbComponentIds: routingPhasePlan.fanoutSourcePcbComponentIds,
             breakoutPoints,
             onFanoutBoundsConflict: emitFanoutBoundsConflictWarning,
           },
@@ -1363,6 +1364,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
               busFanoutDirections: routingPhasePlan.busFanoutDirections,
               fanoutBounds: routingPhasePlan.fanoutBounds,
               fanoutRoutingLayers: routingPhasePlan.fanoutRoutingLayers,
+              sourcePcbComponentIds:
+                routingPhasePlan.fanoutSourcePcbComponentIds,
               componentNamesById: getPcbComponentNamesById(db),
               onSolverStarted: ({
                 solverName,

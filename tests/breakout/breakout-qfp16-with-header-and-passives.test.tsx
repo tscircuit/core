@@ -2,9 +2,7 @@ import { expect, test } from "bun:test"
 import { createAutoroutingPhaseIoStack } from "tests/fixtures/create-autorouting-phase-io-stack"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-const failingTest = test.failing
-
-failingTest("QFP breakout points avoid winding routes", async () => {
+test("QFP breakout points avoid winding routes", async () => {
   const { circuit } = getTestFixture()
   const autoroutingPhaseIoStack = createAutoroutingPhaseIoStack(circuit)
 

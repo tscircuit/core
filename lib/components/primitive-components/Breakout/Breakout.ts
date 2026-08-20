@@ -1,11 +1,30 @@
-import { breakoutProps } from "@tscircuit/props"
 import { BreakoutPointSolver } from "@tscircuit/breakout-point-solver"
-import { Group } from "../Group/Group"
+import { breakoutProps } from "@tscircuit/props"
 import { AutoplacedBreakoutPoint } from "../AutoplacedBreakoutPoint"
 import { BreakoutPoint } from "../BreakoutPoint"
-import type { Trace } from "../Trace/Trace"
+import { Group } from "../Group/Group"
 import type { Port } from "../Port"
+import type { Trace } from "../Trace/Trace"
 import { createBreakoutPointSolverInput } from "./createBreakoutPointSolverInput"
+
+const BREAKOUT_BOUNDARY_INSET_MM = 1e-4
+
+const insetPointWithinBounds = ({
+  point,
+  bounds,
+}: {
+  point: { x: number; y: number }
+  bounds: { minX: number; maxX: number; minY: number; maxY: number }
+}) => ({
+  x: Math.max(
+    bounds.minX + BREAKOUT_BOUNDARY_INSET_MM,
+    Math.min(bounds.maxX - BREAKOUT_BOUNDARY_INSET_MM, point.x),
+  ),
+  y: Math.max(
+    bounds.minY + BREAKOUT_BOUNDARY_INSET_MM,
+    Math.min(bounds.maxY - BREAKOUT_BOUNDARY_INSET_MM, point.y),
+  ),
+})
 
 export class Breakout extends Group<typeof breakoutProps> {
   override get isRoutingDirective() {
@@ -88,36 +107,22 @@ export class Breakout extends Group<typeof breakoutProps> {
       (c) => c instanceof AutoplacedBreakoutPoint,
     ) as AutoplacedBreakoutPoint[]
 
-    // The solver places breakout points exactly on the group boundary
-    // (bounds.minX/maxX/minY/maxY). When the autorouter later builds a
-    // quadtree mesh over the same bounds, repeated halving introduces
-    // floating-point drift (≈4e-16) so a point exactly at the boundary
-    // can fall outside the nearest mesh node. Nudge solved positions a
-    // fraction of a micrometer inward to keep them strictly inside.
-    const BOUNDARY_INSET_MM = 1e-4 // 0.1 μm – well below PCB manufacturing precision
-    const { bounds } = solverInput
-    const insetWithinBounds = (x: number, y: number) => ({
-      x: Math.max(
-        bounds.minX + BOUNDARY_INSET_MM,
-        Math.min(bounds.maxX - BOUNDARY_INSET_MM, x),
-      ),
-      y: Math.max(
-        bounds.minY + BOUNDARY_INSET_MM,
-        Math.min(bounds.maxY - BOUNDARY_INSET_MM, y),
-      ),
-    })
-
     for (const solvedPoint of output.breakoutPoints) {
       const matchingBreakoutPoint = autoBreakoutPoints.find(
         (child) =>
           child.matchedPort?.source_port_id === solvedPoint.sourcePortId,
       )
       if (matchingBreakoutPoint) {
-        matchingBreakoutPoint.matchedSourceTraceId = solvedPoint.sourceTraceId
-        const insetPoint = insetWithinBounds(solvedPoint.x, solvedPoint.y)
-        matchingBreakoutPoint._setPositionFromLayout({
-          x: insetPoint.x,
-          y: insetPoint.y,
+        // Exact boundary coordinates can drift outside a quadtree cell after
+        // repeated subdivision. A 0.1 μm inset keeps the routing endpoint
+        // inside the group without affecting manufacturable geometry.
+        const insetPoint = insetPointWithinBounds({
+          point: solvedPoint,
+          bounds: solverInput.bounds,
+        })
+        matchingBreakoutPoint._applySolvedBreakoutPoint({
+          sourceTraceId: solvedPoint.sourceTraceId,
+          position: insetPoint,
         })
       }
     }

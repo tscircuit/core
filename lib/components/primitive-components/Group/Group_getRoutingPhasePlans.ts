@@ -420,6 +420,15 @@ export function Group_getRoutingPhasePlans(
       fanoutRoutingLayers: breakoutProps.fanoutRoutingLayers?.map((layer) =>
         typeof layer === "string" ? layer : layer.name,
       ),
+      fanoutSourcePcbComponentIds: breakout.pcb_group_id
+        ? breakout.root?.db.pcb_component
+            .list()
+            .filter(
+              (pcbComponent) =>
+                pcbComponent.pcb_group_id === breakout.pcb_group_id,
+            )
+            .map((pcbComponent) => pcbComponent.pcb_component_id)
+        : undefined,
       fanoutPourNetMap: breakoutProps.fanoutPourNetMap,
       nets: nets.filter((net) => breakoutByNet.get(net) === breakout),
       traces: breakoutTraces,

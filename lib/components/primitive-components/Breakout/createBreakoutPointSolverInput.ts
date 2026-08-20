@@ -9,6 +9,9 @@ import {
 import type { PcbPort } from "circuit-json"
 import type { Breakout } from "./Breakout"
 
+const getOuterPcbLayer = (layer?: string): PcbLayer =>
+  layer === "bottom" ? "bottom" : "top"
+
 const getPortLabel = (db: CircuitJsonUtilObjects, sourcePortId?: string) => {
   if (!sourcePortId) return undefined
   const sourcePort = db.source_port.get(sourcePortId)
@@ -33,10 +36,10 @@ const toBreakoutPort = (db: CircuitJsonUtilObjects, pcbPort: PcbPort) => {
   const padBounds = pad ? findBoundsAndCenter([pad]) : null
 
   return {
-    sourcePortId: pcbPort.source_port_id!,
-    position: { x: pcbPort.x!, y: pcbPort.y! },
+    sourcePortId: pcbPort.source_port_id,
+    position: { x: pcbPort.x, y: pcbPort.y },
     ...(padBounds ? { width: padBounds.width, height: padBounds.height } : {}),
-    layer: (pcbPort.layers?.[0] as PcbLayer) ?? "top",
+    layer: getOuterPcbLayer(pcbPort.layers[0]),
     label: getPortLabel(db, pcbPort.source_port_id),
   }
 }
@@ -84,10 +87,10 @@ export const createBreakoutPointSolverInput = (
       (port) =>
         port.pcb_group_id !== breakout.pcb_group_id &&
         !(
-          port.x! >= boundsMinX &&
-          port.x! <= boundsMaxX &&
-          port.y! >= boundsMinY &&
-          port.y! <= boundsMaxY
+          port.x >= boundsMinX &&
+          port.x <= boundsMaxX &&
+          port.y >= boundsMinY &&
+          port.y <= boundsMaxY
         ),
     )
 
@@ -107,21 +110,19 @@ export const createBreakoutPointSolverInput = (
   for (const pad of allPadElements) {
     const padBounds = findBoundsAndCenter([pad])
     if (!padBounds.width || !padBounds.height) continue
-    const pcbPort = (pad as any).pcb_port_id
-      ? db.pcb_port.get((pad as any).pcb_port_id)
-      : null
+    const pcbPort = pad.pcb_port_id ? db.pcb_port.get(pad.pcb_port_id) : null
+    const padLayer = "layer" in pad ? pad.layer : pad.layers[0]
     pads.push({
       center: padBounds.center,
       width: padBounds.width,
       height: padBounds.height,
-      // The trace from an inside port to its breakout point is fixed geometry,
-      // so reserve its full trace-to-pad clearance inside the breakout. Pads
-      // outside the group are target-side routing obstacles and are handled by
-      // the autorouter after the breakout point has been selected.
+      // Inside-group clearance lets topology scoring distinguish crowded pad
+      // escapes. Outside pads remain target guides; the physical routers own
+      // the actual trace and clearance geometry on both sides of the boundary.
       ...(pcbPort?.pcb_group_id === breakout.pcb_group_id
         ? { clearance: padEscapeClearance }
         : {}),
-      layer: ((pad as any).layer as PcbLayer) ?? "top",
+      layer: getOuterPcbLayer(padLayer),
       sourcePortIds: pcbPort?.source_port_id ? [pcbPort.source_port_id] : [],
       label: getPortLabel(db, pcbPort?.source_port_id),
     })
@@ -135,7 +136,7 @@ export const createBreakoutPointSolverInput = (
       width: component.width,
       height: component.height,
       ccwRotationDegrees: component.rotation,
-      layer: component.layer as PcbLayer | undefined,
+      layer: component.layer ? getOuterPcbLayer(component.layer) : undefined,
       label: component.pcb_component_id,
     }))
 

@@ -34,6 +34,8 @@ export interface FanoutAutorouterOptions {
   busFanoutDirections?: Readonly<Record<string, BusFanoutDirection>>
   fanoutBounds?: SimpleRouteBounds
   fanoutRoutingLayers?: string[]
+  /** PCB components structurally contained by the fanout routing scope. */
+  sourcePcbComponentIds?: readonly string[]
   /** Used to name components in fanout failure messages. */
   componentNamesById?: ReadonlyMap<string, string>
   onSolverStarted?: (details: {
@@ -256,10 +258,10 @@ const inferPlaneBusDirection = (
 
 const createDownstreamSimpleRouteJson = ({
   fanoutSimpleRouteJson,
-  sourceComponentIds,
+  sourcePcbComponentIds,
 }: {
   fanoutSimpleRouteJson: SimpleRouteJson
-  sourceComponentIds: Set<string>
+  sourcePcbComponentIds: Set<string>
 }): SimpleRouteJson => {
   const sourceObstaclesByComponentId = new Map<
     string,
@@ -268,7 +270,7 @@ const createDownstreamSimpleRouteJson = ({
   for (const obstacle of fanoutSimpleRouteJson.obstacles) {
     if (
       !obstacle.componentId ||
-      !sourceComponentIds.has(obstacle.componentId)
+      !sourcePcbComponentIds.has(obstacle.componentId)
     ) {
       continue
     }
@@ -315,7 +317,7 @@ const createDownstreamSimpleRouteJson = ({
       ...fanoutSimpleRouteJson.obstacles.filter(
         (obstacle) =>
           !obstacle.componentId ||
-          !sourceComponentIds.has(obstacle.componentId),
+          !sourcePcbComponentIds.has(obstacle.componentId),
       ),
       ...sourceFootprintKeepouts,
     ],
@@ -399,6 +401,7 @@ export class FanoutAutorouter implements GenericLocalAutorouter {
       busDirections: this.getPlaneBusDirections(),
       busExitPreferences: this.getBusExitPreferences(),
       escapeLayers: this.options.fanoutRoutingLayers,
+      sourcePcbComponentIds: this.options.sourcePcbComponentIds,
     }
     if (this.options.mode === "single_layer_fanout") {
       return {
@@ -484,7 +487,7 @@ export class FanoutAutorouter implements GenericLocalAutorouter {
     return {
       downstreamSimpleRouteJson: createDownstreamSimpleRouteJson({
         fanoutSimpleRouteJson,
-        sourceComponentIds: new Set(
+        sourcePcbComponentIds: new Set(
           fanoutSolver.preparedBuses.map((bus) => bus.componentId),
         ),
       }),
