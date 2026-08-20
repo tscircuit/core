@@ -773,11 +773,24 @@ export class NormalComponent<
   _getInternallyConnectedPins(): Port[][] {
     if (this.internallyConnectedPinNames.length === 0) return []
 
+    const childPorts = this._getAllPortsFromChildren()
     const internallyConnectedPorts: Port[][] = []
     for (const netPortNames of this.internallyConnectedPinNames) {
       const ports: Port[] = []
       for (const portName of netPortNames) {
-        ports.push(this.portMap[portName as PortNames] as Port)
+        const port = childPorts.find((port) =>
+          port.isMatchingNameOrAlias(portName),
+        )
+        if (!port) {
+          throw new Error(
+            `There was an issue finding the port "${portName}" inside of a ${
+              this.componentName
+            } component with name: "${
+              this.props.name
+            }". This is a bug in @tscircuit/core`,
+          )
+        }
+        ports.push(port)
       }
       internallyConnectedPorts.push(ports)
     }

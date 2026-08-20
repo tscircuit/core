@@ -280,38 +280,35 @@ export const DMT6007LFG_7 = (props: ChipProps<typeof pinLabels>) => {
     />
   )
 }
-test.failing(
-  "imported DMT6007LFG_7 custom symbol supports internallyConnectedPins without traces or netlabels",
-  async () => {
-    const { circuit } = getTestFixture()
+test("imported DMT6007LFG_7 custom symbol supports internallyConnectedPins without traces or netlabels", async () => {
+  const { circuit } = getTestFixture()
 
-    circuit.add(
-      <board width="16mm" height="12mm">
-        <DMT6007LFG_7 name="Q1" internallyConnectedPins={[[1, 2, 3]]} />
-      </board>,
-    )
+  circuit.add(
+    <board width="16mm" height="12mm">
+      <DMT6007LFG_7 name="Q1" internallyConnectedPins={[[1, 2, 3]]} />
+    </board>,
+  )
 
-    await circuit.renderUntilSettled()
+  await circuit.renderUntilSettled()
 
-    const sourcePortsById = new Map(
-      circuit.db.source_port
-        .list()
-        .map((sourcePort) => [sourcePort.source_port_id, sourcePort]),
-    )
-    const internalConnections =
-      circuit.db.source_component_internal_connection.list()
+  const sourcePortsById = new Map(
+    circuit.db.source_port
+      .list()
+      .map((sourcePort) => [sourcePort.source_port_id, sourcePort]),
+  )
+  const internalConnections =
+    circuit.db.source_component_internal_connection.list()
 
-    expect(circuit.db.source_trace.list()).toHaveLength(0)
-    expect(internalConnections).toHaveLength(1)
-    expect(
-      internalConnections[0].source_port_ids
-        .map((sourcePortId) => sourcePortsById.get(sourcePortId)?.pin_number)
-        .sort((pinNumberA, pinNumberB) =>
-          pinNumberA !== undefined && pinNumberB !== undefined
-            ? pinNumberA - pinNumberB
-            : 0,
-        ),
-    ).toEqual([1, 2, 3])
-    expect(circuit).toMatchSchematicSnapshot(import.meta.path)
-  },
-)
+  expect(circuit.db.source_trace.list()).toHaveLength(0)
+  expect(internalConnections).toHaveLength(1)
+  expect(
+    internalConnections[0].source_port_ids
+      .map((sourcePortId) => sourcePortsById.get(sourcePortId)?.pin_number)
+      .sort((pinNumberA, pinNumberB) =>
+        pinNumberA !== undefined && pinNumberB !== undefined
+          ? pinNumberA - pinNumberB
+          : 0,
+      ),
+  ).toEqual([1, 2, 3])
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+})
