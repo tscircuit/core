@@ -1,28 +1,28 @@
 import { guessCableInsertCenter } from "@tscircuit/infer-cable-insertion-point"
 import {
-  connectorProps,
-  type ConnectorStandard,
   type ConnectorProps,
+  type ConnectorStandard,
   type PartsEngine,
   type SchematicPinStyle,
   type SchematicPortArrangement,
+  connectorProps,
 } from "@tscircuit/props"
 import type { AnyCircuitElement, SourceSimpleConnector } from "circuit-json"
 import { source_part_not_found_warning } from "circuit-json"
-import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromCircuitJson"
-import { convertCircuitJsonToUsbCStandardCircuitJson } from "lib/utils/connectors/convertCircuitJsonToUsbCStandardCircuitJson"
 import { convertCircuitJsonToJstStandardCircuitJson } from "lib/utils/connectors/convertCircuitJsonToJstStandardCircuitJson"
+import { convertCircuitJsonToUsbCStandardCircuitJson } from "lib/utils/connectors/convertCircuitJsonToUsbCStandardCircuitJson"
+import { extractCadModelFromCircuitJson } from "lib/utils/connectors/extractCadModelFromCircuitJson"
 import { STANDARD_USB_C_PIN_LABELS } from "lib/utils/connectors/usb-c-canonical-pin-definitions"
+import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromCircuitJson"
 import {
-  getAllDimensionsForSchematicBox,
   type SchematicBoxDimensions,
+  getAllDimensionsForSchematicBox,
 } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
 import { getNumericSchPinStyle } from "lib/utils/schematic/getNumericSchPinStyle"
-import { extractCadModelFromCircuitJson } from "lib/utils/connectors/extractCadModelFromCircuitJson"
 import { symbols } from "schematic-symbols"
+import { Port } from "../primitive-components/Port"
 import { Chip } from "./Chip"
 import { insertInnerSymbolInSchematicBox } from "./Connector_insertInnerSymbolInSchematicBox"
-import { Port } from "../primitive-components/Port"
 
 const USB_C_SIGNAL_LABELS_IN_ORDER = [
   "VBUS1",
@@ -419,8 +419,9 @@ export class Connector<
     // the first await in this async effect synchronous phases complete and
     // source_component_id will be available for db updates.
     const sourceComponentForQuery = {
-      type: "source_component",
-      ftype: "simple_connector",
+      type: "source_component" as const,
+      source_component_id: `pending_source_component_${this.name}`,
+      ftype: "simple_connector" as const,
       name: this.name,
       manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
       standard,
