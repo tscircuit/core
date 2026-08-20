@@ -1,5 +1,6 @@
 import { runAllPlacementChecks } from "@tscircuit/checks"
 import type { AnyCircuitElement } from "circuit-json"
+import { insertFinePitchFabricationWarnings } from "lib/utils/insert-fine-pitch-fabrication-warnings"
 import type { Renderable } from "../base-components/Renderable"
 import type { Board } from "./Board"
 
@@ -55,6 +56,12 @@ export const Board_doInitialPcbPlacementDesignRuleChecks = (board: Board) => {
       )
 
       db.insertAll(newPlacementDiagnostics as AnyCircuitElement[])
+      if (board.pcb_board_id) {
+        insertFinePitchFabricationWarnings({
+          db,
+          pcbBoardId: board.pcb_board_id,
+        })
+      }
       board._pcbPlacementDrcErrorCount = placementCheckResults.filter(
         (result) => result.type.endsWith("_error"),
       ).length
