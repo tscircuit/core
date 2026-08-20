@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("bus trace names sharing one connectivity key resolve ambiguously", async () => {
+test("bus exact trace names disambiguate a shared connectivity key", async () => {
   const { circuit } = getTestFixture()
   let asyncEffectError: string | undefined
 
@@ -22,7 +22,7 @@ test("bus trace names sharing one connectivity key resolve ambiguously", async (
 
   await circuit.renderUntilSettled()
 
-  expect(asyncEffectError).toContain(
-    'Bus "DATA" resolves multiple entries to one trace',
-  )
+  expect(asyncEffectError).toBeUndefined()
+  expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

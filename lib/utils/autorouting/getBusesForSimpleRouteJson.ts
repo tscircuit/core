@@ -85,13 +85,20 @@ const getBusSrjConnectionNamesOrThrow = ({
   traceSubcircuitConnectivityMapKey: SubcircuitConnectivityMapKey
   traceNameOrPortSelector: string
 }): SrjConnectionName[] => {
-  const sourceTraceIds = busSourceTraces
-    .filter(
-      (sourceTrace) =>
-        sourceTrace.subcircuit_connectivity_map_key ===
-        traceSubcircuitConnectivityMapKey,
-    )
-    .map((sourceTrace) => sourceTrace.source_trace_id)
+  const sourceTracesWithMatchingName = busSourceTraces.filter(
+    (sourceTrace) => sourceTrace.name === traceNameOrPortSelector,
+  )
+  const selectedSourceTraces =
+    sourceTracesWithMatchingName.length === 1
+      ? sourceTracesWithMatchingName
+      : busSourceTraces.filter(
+          (sourceTrace) =>
+            sourceTrace.subcircuit_connectivity_map_key ===
+            traceSubcircuitConnectivityMapKey,
+        )
+  const sourceTraceIds = selectedSourceTraces.map(
+    (sourceTrace) => sourceTrace.source_trace_id,
+  )
   const matchingSrjConnections = srjConnections.filter(
     (srjConnection) =>
       srjConnection.source_trace_id &&
