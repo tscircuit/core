@@ -1163,6 +1163,8 @@ export class NormalComponent<
 
   updateInitializePortsFromChildren(): void {
     this.initPorts()
+    this._cachedSelectAllQueries.clear()
+    this._cachedSelectOneQueries.clear()
   }
 
   protected getGlobalTransformRotation(): number {
