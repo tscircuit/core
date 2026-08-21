@@ -76,6 +76,7 @@ export class IsolatedCircuit {
   projectUrl?: string
 
   _hasRenderedAtleastOnce = false
+  _renderCycleIndex = 0
   private _asyncEffectIdsByPhase = new Map<RenderPhase, Set<string>>()
   private _asyncEffectPhaseById = new Map<string, RenderPhase>()
   private _hasUnrenderedUpdatesFromAsyncEffects = false
@@ -206,6 +207,7 @@ export class IsolatedCircuit {
     const { firstChild, db } = this
     if (!firstChild) throw new Error("IsolatedCircuit has no root component")
     firstChild.parent = this as any
+    this._renderCycleIndex++
     firstChild.runRenderCycle()
     this._hasUnrenderedUpdatesFromAsyncEffects = false
     this._hasRenderedAtleastOnce = true

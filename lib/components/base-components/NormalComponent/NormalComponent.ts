@@ -138,6 +138,10 @@ export class NormalComponent<
   extends PrimitiveComponent<ZodProps>
   implements INormalComponent
 {
+  private _schematicBoxDimensionsCache?: {
+    renderCycleIndex: number
+    dimensions: SchematicBoxDimensions | null
+  }
   reactSubtrees: Array<ReactSubtree> = []
   _impliedFootprint?: string | undefined
   _resolvedPcbCalcOffsetX: number | undefined
@@ -1779,6 +1783,26 @@ export class NormalComponent<
   }
 
   _getSchematicBoxDimensions(): SchematicBoxDimensions | null {
+    const renderCycleIndex = this.root?._renderCycleIndex
+    if (
+      renderCycleIndex !== undefined &&
+      this._schematicBoxDimensionsCache?.renderCycleIndex === renderCycleIndex
+    ) {
+      return this._schematicBoxDimensionsCache.dimensions
+    }
+
+    const dimensions = this._computeSchematicBoxDimensions()
+    if (renderCycleIndex !== undefined) {
+      this._schematicBoxDimensionsCache = {
+        renderCycleIndex,
+        dimensions,
+      }
+    }
+
+    return dimensions
+  }
+
+  _computeSchematicBoxDimensions(): SchematicBoxDimensions | null {
     // Only valid if we don't have a schematic symbol
     if (this.getSchematicSymbol()) return null
     if (
@@ -1804,7 +1828,7 @@ export class NormalComponent<
       this._getSchematicPortArrangement() ??
       this._getImplicitSparseSchematicPortArrangement(pinCount)
 
-    const dimensions = getAllDimensionsForSchematicBox({
+    return getAllDimensionsForSchematicBox({
       schWidth: props.schWidth,
       schHeight: props.schHeight,
       schPinSpacing: pinSpacing,
@@ -1818,8 +1842,6 @@ export class NormalComponent<
       schPortArrangement,
       pinLabels: allPinLabels,
     })
-
-    return dimensions
   }
 
   getFootprinterString(): string | null {
