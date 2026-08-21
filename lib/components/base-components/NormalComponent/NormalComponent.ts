@@ -138,10 +138,7 @@ export class NormalComponent<
   extends PrimitiveComponent<ZodProps>
   implements INormalComponent
 {
-  private _schematicBoxDimensionsCache?: {
-    renderCycleIndex: number
-    dimensions: SchematicBoxDimensions | null
-  }
+  schematicBoxDimensions: SchematicBoxDimensions | null = null
   reactSubtrees: Array<ReactSubtree> = []
   _impliedFootprint?: string | undefined
   _resolvedPcbCalcOffsetX: number | undefined
@@ -853,11 +850,13 @@ export class NormalComponent<
     this.schematic_component_id = schematic_component.schematic_component_id
   }
 
-  _doInitialSchematicComponentRenderWithSchematicBoxDimensions() {
+  _doInitialSchematicComponentRenderWithSchematicBoxDimensions(
+    dimensions: SchematicBoxDimensions,
+  ) {
     if (this.root?.schematicDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
-    const dimensions = this._getSchematicBoxDimensions()!
+    this.schematicBoxDimensions = dimensions
 
     const primaryPortLabels: Record<string, string> = {}
     if (Array.isArray(props.pinLabels)) {
@@ -1783,23 +1782,8 @@ export class NormalComponent<
   }
 
   _getSchematicBoxDimensions(): SchematicBoxDimensions | null {
-    const renderCycleIndex = this.root?._renderCycleIndex
-    if (
-      renderCycleIndex !== undefined &&
-      this._schematicBoxDimensionsCache?.renderCycleIndex === renderCycleIndex
-    ) {
-      return this._schematicBoxDimensionsCache.dimensions
-    }
-
-    const dimensions = this._computeSchematicBoxDimensions()
-    if (renderCycleIndex !== undefined) {
-      this._schematicBoxDimensionsCache = {
-        renderCycleIndex,
-        dimensions,
-      }
-    }
-
-    return dimensions
+    if (this.schematicBoxDimensions) return this.schematicBoxDimensions
+    return this._computeSchematicBoxDimensions()
   }
 
   _computeSchematicBoxDimensions(): SchematicBoxDimensions | null {

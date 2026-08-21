@@ -58,7 +58,9 @@ export function NormalComponent_doInitialSchematicComponentRender(
   } else {
     const dimensions = component._getSchematicBoxDimensions()
     if (dimensions) {
-      component._doInitialSchematicComponentRenderWithSchematicBoxDimensions()
+      component._doInitialSchematicComponentRenderWithSchematicBoxDimensions(
+        dimensions,
+      )
     }
   }
 
