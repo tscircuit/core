@@ -28,6 +28,7 @@ test.failing("RP2040 crystal traces honor their zero-via limit", async () => {
         pcbX={0}
         pcbY={0.5}
       />
+      {/* Four-pin crystals apply maxViaCount={0} to their X1/X2 nets. */}
       <crystal
         name="Y1"
         frequency="12MHz"
@@ -143,6 +144,22 @@ test.failing("RP2040 crystal traces honor their zero-via limit", async () => {
   )
 
   await circuit.renderUntilSettled()
+
+  expect(
+    Object.fromEntries(
+      circuit.db.source_trace
+        .list()
+        .filter((trace) =>
+          ["XIN", "XOUT", "CXIN", "CXOUT"].includes(trace.name ?? ""),
+        )
+        .map((trace) => [trace.name, trace.max_via_count]),
+    ),
+  ).toEqual({
+    XIN: 0,
+    XOUT: 0,
+    CXIN: 0,
+    CXOUT: 0,
+  })
 
   await expect(circuit.getCircuitJson()).toMatchPcbSnapshot(import.meta.path, {
     shouldDrawErrors: true,
