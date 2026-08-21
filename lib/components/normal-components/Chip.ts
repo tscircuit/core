@@ -1,21 +1,17 @@
-import { chipProps } from "@tscircuit/props"
 import { normalizeDegrees } from "@tscircuit/math-utils"
+import { chipProps } from "@tscircuit/props"
 import { pcb_component_invalid_layer_error } from "circuit-json"
 import { NormalComponent } from "lib/components/base-components/NormalComponent"
-import { type SchematicBoxDimensions } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
-import { Trace } from "lib/components/primitive-components/Trace/Trace"
 import { Port } from "lib/components/primitive-components/Port"
-import type { z } from "zod"
+import { Trace } from "lib/components/primitive-components/Trace/Trace"
+import { type SchematicBoxDimensions } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
+import { Chip_doInitialPcbPlacementDesignRuleChecks } from "./Chip_doInitialPcbPlacementDesignRuleChecks"
 
 export class Chip<PinLabels extends string = never> extends NormalComponent<
   typeof chipProps,
   PinLabels
 > {
   schematicBoxDimensions: SchematicBoxDimensions | null = null
-
-  constructor(props: z.input<typeof chipProps>) {
-    super(props)
-  }
 
   get config() {
     return {
@@ -149,6 +145,10 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
     })
 
     this.pcb_component_id = pcb_component.pcb_component_id
+  }
+
+  doInitialPcbPlacementDesignRuleChecks(): void {
+    Chip_doInitialPcbPlacementDesignRuleChecks(this)
   }
 
   doInitialCreateTracesFromProps(): void {

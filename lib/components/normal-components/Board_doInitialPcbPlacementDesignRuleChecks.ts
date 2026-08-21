@@ -1,6 +1,5 @@
 import { runAllPlacementChecks } from "@tscircuit/checks"
 import type { AnyCircuitElement } from "circuit-json"
-import { checkPotentialConnectorOrientationForJRefdesChips } from "lib/utils/pcb/check-potential-connector-orientation-for-j-refdes-chips"
 import type { Renderable } from "../base-components/Renderable"
 import type { Board } from "./Board"
 
@@ -42,23 +41,9 @@ export const Board_doInitialPcbPlacementDesignRuleChecks = (board: Board) => {
   board._pcbPlacementDrcChecksPending = true
   board._queueAsyncEffect("board:pre-route-placement-checks", async () => {
     try {
-      const standardPlacementCheckResults = await runAllPlacementChecks(
+      const placementCheckResults = await runAllPlacementChecks(
         subcircuitCircuitJson,
       )
-      const potentialConnectorOrientationWarnings =
-        checkPotentialConnectorOrientationForJRefdesChips(subcircuitCircuitJson)
-      const placementCheckResults = [
-        ...standardPlacementCheckResults,
-        ...potentialConnectorOrientationWarnings.filter(
-          (warning) =>
-            !standardPlacementCheckResults.some(
-              (result) =>
-                result.type === warning.type &&
-                "message" in result &&
-                result.message === warning.message,
-            ),
-        ),
-      ]
       const newPlacementDiagnostics = placementCheckResults.filter(
         (result) =>
           !existingPlacementDiagnostics.some(
