@@ -29,6 +29,7 @@ test(
     await expect(circuit).toMatchPcbSnapshot(bottomSnapshotPath, {
       layer: "bottom",
     })
+    await expect(circuit).toMatchPcbSnapshot(import.meta.path)
   },
   { timeout: 30_000 },
 )
