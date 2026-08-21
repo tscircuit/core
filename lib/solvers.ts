@@ -13,6 +13,7 @@ import {
 import { CopperPourPipelineSolver } from "@tscircuit/copper-pour-solver"
 import { CreateFdmEnclosureSolver } from "@tscircuit/create-fdm-enclosure"
 import { FanoutSolver } from "@tscircuit/fanout-solver"
+import { ImplicitCopperPourPipelineSolver } from "@tscircuit/implicit-copper-pour-solver/lib/index"
 import { LayoutPipelineSolver } from "@tscircuit/matchpack"
 import { SchematicTracePipelineSolver } from "@tscircuit/schematic-trace-solver"
 import { PackSolver2 } from "calculate-packing"
@@ -33,6 +34,7 @@ export const SOLVERS = {
   CopperPourPipelineSolver,
   CreateFdmEnclosureSolver,
   FanoutSolver,
+  ImplicitCopperPourPipelineSolver,
   SchematicTracePipelineSolver,
 }
 
