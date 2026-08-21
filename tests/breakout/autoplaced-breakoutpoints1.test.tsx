@@ -1,7 +1,9 @@
-import { expect, test } from "bun:test"
+import { expect, spyOn, test } from "bun:test"
+import { WindingBreakoutSolver } from "@tscircuit/winding-breakout-point-solver"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("autoplaced breakout points created for cross-boundary traces", async () => {
+  const windingSolveSpy = spyOn(WindingBreakoutSolver.prototype, "solve")
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -31,6 +33,9 @@ test("autoplaced breakout points created for cross-boundary traces", async () =>
   )
 
   await circuit.renderUntilSettled()
+
+  expect(windingSolveSpy).toHaveBeenCalledTimes(1)
+  windingSolveSpy.mockRestore()
 
   // R1.pin1 crosses the boundary — should have exactly 1 auto-placed breakout point
   const breakoutPoints = circuit.db.pcb_breakout_point.list()

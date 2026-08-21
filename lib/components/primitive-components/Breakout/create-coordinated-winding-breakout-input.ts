@@ -8,14 +8,14 @@ import type {
 } from "@tscircuit/winding-breakout-point-solver"
 import type { PcbGroup, SourcePort, SourceTrace } from "circuit-json"
 import type { z } from "zod"
+import { resolveBusTargetLayers } from "../../../utils/autorouting/resolve-bus-target-layer"
+import { getBoardAvailableLayers } from "../../../utils/getViaSpanLayers"
 import { AutoplacedBreakoutPoint } from "../AutoplacedBreakoutPoint"
 import type { Bus } from "../Bus"
 import type { DifferentialPair } from "../DifferentialPair"
 import type { Group } from "../Group/Group"
 import type { Port } from "../Port"
 import type { Breakout } from "./Breakout"
-import { getBoardAvailableLayers } from "../../../utils/getViaSpanLayers"
-import { resolveBusTargetLayers } from "../../../utils/autorouting/resolve-bus-target-layer"
 
 type SourceTraceId = SourceTrace["source_trace_id"]
 type SourcePortId = NonNullable<SourcePort["source_port_id"]>
@@ -67,20 +67,6 @@ const getAutomaticBreakouts = (routingScope: Group<z.ZodType>): Breakout[] => {
     if (hasAutomaticBreakoutPoints) automaticBreakouts.push(breakout)
   }
   return automaticBreakouts
-}
-
-export const shouldUseCoordinatedWindingBreakoutSolver = (
-  breakout: Breakout,
-): boolean => {
-  const routingScope = getRoutingScopeOrThrow(breakout)
-  if (getAutomaticBreakouts(routingScope).length < 2) return false
-  const subcircuitId = routingScope.getSubcircuit().subcircuit_id
-  for (const bus of routingScope.selectAll("bus") as Bus[]) {
-    if (bus.getSubcircuit().subcircuit_id !== subcircuitId) continue
-    if (bus._parsedProps.preferredLayer !== undefined) return true
-    if (bus._parsedProps.preferredLayers !== undefined) return true
-  }
-  return false
 }
 
 /**
@@ -136,12 +122,33 @@ const collectBreakoutRegionGeometry = (
           `Automatic breakout "${breakout.name}" has a point without a source trace identity`,
         )
       }
-      if (matchingSourceTraces.length > 1) {
-        throw new Error(
-          `Automatic breakout "${breakout.name}" endpoint "${matchedPort.source_port_id}" resolves to duplicate connection identities`,
-        )
-      }
-      sourceTraceId = matchingSourceTraces[0]!.source_trace_id
+      const boundaryCrossingSourceTraces = matchingSourceTraces.filter(
+        (sourceTrace) =>
+          sourceTrace.connected_source_port_ids.some((sourcePortId) => {
+            if (sourcePortId === matchedPort.source_port_id) return false
+            const pcbPort = breakout.root!.db.pcb_port.getWhere({
+              source_port_id: sourcePortId,
+            })
+            if (!pcbPort || pcbPort.pcb_group_id === breakout.pcb_group_id) {
+              return false
+            }
+            return !(
+              pcbPort.x! >= bounds.minX &&
+              pcbPort.x! <= bounds.maxX &&
+              pcbPort.y! >= bounds.minY &&
+              pcbPort.y! <= bounds.maxY
+            )
+          }),
+      )
+      const sourceTraceCandidates =
+        boundaryCrossingSourceTraces.length > 0
+          ? boundaryCrossingSourceTraces
+          : matchingSourceTraces
+      sourceTraceId = sourceTraceCandidates
+        .slice()
+        .sort((first, second) =>
+          first.source_trace_id.localeCompare(second.source_trace_id),
+        )[0]!.source_trace_id
       breakoutPoint.matchedSourceTraceId = sourceTraceId
     }
     if (endpointBySourceTraceId.has(sourceTraceId)) {
@@ -213,12 +220,17 @@ const getFacingEdge = ({
   regionIndex,
   regions,
   horizontalPlacement,
+  singleRegionPreferredEdge,
 }: {
   region: BreakoutRegionGeometry
   regionIndex: number
   regions: readonly BreakoutRegionGeometry[]
   horizontalPlacement: boolean
+  singleRegionPreferredEdge?: BreakoutEdge
 }): BreakoutEdge => {
+  if (regions.length === 1 && singleRegionPreferredEdge) {
+    return singleRegionPreferredEdge
+  }
   const otherRegions = regions.filter((candidate) => candidate !== region)
   const otherCenter = otherRegions.reduce(
     (sum, candidate) => ({
@@ -237,6 +249,90 @@ const getFacingEdge = ({
   if (otherCenter.y < region.center.y) return "bottom"
   if (regionIndex < regions.length / 2) return "top"
   return "bottom"
+}
+
+const getSingleRegionPreferredEdge = ({
+  region,
+  sourceTraces,
+}: {
+  region: BreakoutRegionGeometry
+  sourceTraces: readonly SourceTrace[]
+}): BreakoutEdge | undefined => {
+  const root = region.breakout.root
+  if (!root) return undefined
+
+  const internalSourcePortIds = new Set(
+    region.sourcePortIdBySourceTraceId.values(),
+  )
+  const externalPcbPorts = new Map<string, { x: number; y: number }>()
+  for (const sourceTrace of sourceTraces) {
+    if (
+      !sourceTrace.connected_source_port_ids.some((sourcePortId) =>
+        internalSourcePortIds.has(sourcePortId),
+      )
+    ) {
+      continue
+    }
+    for (const sourcePortId of sourceTrace.connected_source_port_ids) {
+      if (internalSourcePortIds.has(sourcePortId)) continue
+      const pcbPort = root.db.pcb_port.getWhere({
+        source_port_id: sourcePortId,
+      })
+      if (
+        !pcbPort?.pcb_port_id ||
+        pcbPort.x === undefined ||
+        pcbPort.y === undefined
+      ) {
+        continue
+      }
+      const isInsideRegion =
+        pcbPort.x >= region.bounds.minX &&
+        pcbPort.x <= region.bounds.maxX &&
+        pcbPort.y >= region.bounds.minY &&
+        pcbPort.y <= region.bounds.maxY
+      if (isInsideRegion) continue
+      externalPcbPorts.set(pcbPort.pcb_port_id, {
+        x: pcbPort.x,
+        y: pcbPort.y,
+      })
+    }
+  }
+  if (externalPcbPorts.size === 0) return undefined
+
+  const distanceToEdge = (
+    target: { x: number; y: number },
+    edge: BreakoutEdge,
+  ): number => {
+    const edgePoint =
+      edge === "left" || edge === "right"
+        ? {
+            x: edge === "left" ? region.bounds.minX : region.bounds.maxX,
+            y: Math.max(
+              region.bounds.minY,
+              Math.min(region.bounds.maxY, target.y),
+            ),
+          }
+        : {
+            x: Math.max(
+              region.bounds.minX,
+              Math.min(region.bounds.maxX, target.x),
+            ),
+            y: edge === "bottom" ? region.bounds.minY : region.bounds.maxY,
+          }
+    return Math.hypot(target.x - edgePoint.x, target.y - edgePoint.y)
+  }
+  const edges: BreakoutEdge[] = ["right", "left", "top", "bottom"]
+  return edges.reduce((bestEdge, edge) => {
+    const bestCost = [...externalPcbPorts.values()].reduce(
+      (sum, target) => sum + distanceToEdge(target, bestEdge),
+      0,
+    )
+    const edgeCost = [...externalPcbPorts.values()].reduce(
+      (sum, target) => sum + distanceToEdge(target, edge),
+      0,
+    )
+    return edgeCost < bestCost ? edge : bestEdge
+  }, edges[0]!)
 }
 
 const getSourceTraceForConnectionOrThrow = ({
@@ -383,6 +479,33 @@ const getBoundaryPointSpacing = (breakout: Breakout): number => {
   return viaPadDiameter + 2 * (traceWidth + boundaryPointClearance)
 }
 
+const getCoordinatedFanoutLayers = ({
+  routingScope,
+  automaticBreakouts,
+}: {
+  routingScope: Group<z.ZodType>
+  automaticBreakouts: readonly Breakout[]
+}): string[] => {
+  let coordinatedLayers = getBoardAvailableLayers(
+    routingScope._getSubcircuitLayerCount(),
+  )
+  for (const automaticBreakout of automaticBreakouts) {
+    const fanoutRoutingLayers =
+      automaticBreakout._parsedProps.fanoutRoutingLayers?.map(String)
+    if (!fanoutRoutingLayers) continue
+    const fanoutLayerSet = new Set(fanoutRoutingLayers)
+    coordinatedLayers = coordinatedLayers.filter((layer) =>
+      fanoutLayerSet.has(layer),
+    )
+  }
+  if (coordinatedLayers.length === 0) {
+    throw new Error(
+      `Automatic breakouts in routing scope "${routingScope.name}" have no shared fanout routing layer`,
+    )
+  }
+  return coordinatedLayers
+}
+
 /** Build one canonical winding input for every automatic breakout in a scope. */
 export const createCoordinatedWindingBreakoutInput = (
   breakout: Breakout,
@@ -392,11 +515,6 @@ export const createCoordinatedWindingBreakoutInput = (
   }
   const routingScope = getRoutingScopeOrThrow(breakout)
   const automaticBreakouts = getAutomaticBreakouts(routingScope)
-  if (automaticBreakouts.length < 2) {
-    throw new Error(
-      `Coordinated winding breakout placement requires at least two automatic breakout regions in scope "${routingScope.name}"`,
-    )
-  }
 
   const regionIds = new Set<PcbGroupId>()
   const collectedRegions = automaticBreakouts.map((automaticBreakout) => {
@@ -462,9 +580,10 @@ export const createCoordinatedWindingBreakoutInput = (
     routingScope,
     sourceTraces,
     coordinatedSourceTraceIds: sourceTraceIds,
-    availableLayers: getBoardAvailableLayers(
-      routingScope._getSubcircuitLayerCount(),
-    ),
+    availableLayers: getCoordinatedFanoutLayers({
+      routingScope,
+      automaticBreakouts,
+    }),
   })
   const endpointsBySourceTraceId = new Map<
     SourceTraceId,
@@ -542,6 +661,10 @@ export const createCoordinatedWindingBreakoutInput = (
     ReadonlyMap<SourceTraceId, SourcePortId>
   >()
   const regionBoundsByRegionId = new Map<PcbGroupId, Bounds>()
+  const singleRegionPreferredEdge =
+    regions.length === 1
+      ? getSingleRegionPreferredEdge({ region: regions[0]!, sourceTraces })
+      : undefined
   const solverRegions = regions.map((region, regionIndex) => {
     sourcePortIdByConnectionIdByRegionId.set(
       region.pcbGroupId,
@@ -556,6 +679,7 @@ export const createCoordinatedWindingBreakoutInput = (
         regionIndex,
         regions,
         horizontalPlacement,
+        singleRegionPreferredEdge,
       }),
     }
   })

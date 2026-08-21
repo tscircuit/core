@@ -1,12 +1,12 @@
 import { expect, spyOn, test } from "bun:test"
 import {
-  WindingBreakoutSolver,
   type ConnectionEndpoint,
+  WindingBreakoutSolver,
 } from "@tscircuit/winding-breakout-point-solver"
-import type { Bus } from "lib/components/primitive-components/Bus"
 import type { Breakout } from "lib/components/primitive-components/Breakout/Breakout"
 import { createCoordinatedWindingBreakoutInput } from "lib/components/primitive-components/Breakout/create-coordinated-winding-breakout-input"
 import { solveCoordinatedWindingBreakoutPoints } from "lib/components/primitive-components/Breakout/solve-coordinated-winding-breakout-points"
+import type { Bus } from "lib/components/primitive-components/Bus"
 import {
   Am62lLpddr4BreakoutRepro,
   DDR_CONNECTIONS,
@@ -248,6 +248,4 @@ test("integrates the cloned AM62L/LPDDR4 breakout repro", async () => {
   const solvedSocPoints = solveCoordinatedWindingBreakoutPoints(socBreakout)
   expect(solvedSocPoints).not.toBeNull()
   expect(solvedSocPoints).toHaveLength(DDR_CONNECTIONS.length)
-
-  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

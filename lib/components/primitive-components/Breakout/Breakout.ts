@@ -1,12 +1,10 @@
 import { breakoutProps } from "@tscircuit/props"
-import { BreakoutPointSolver } from "@tscircuit/breakout-point-solver"
-import { Group } from "../Group/Group"
+import { WindingBreakoutInfeasibleError } from "@tscircuit/winding-breakout-point-solver"
 import { AutoplacedBreakoutPoint } from "../AutoplacedBreakoutPoint"
 import { BreakoutPoint } from "../BreakoutPoint"
-import type { Trace } from "../Trace/Trace"
+import { Group } from "../Group/Group"
 import type { Port } from "../Port"
-import { createBreakoutPointSolverInput } from "./createBreakoutPointSolverInput"
-import { shouldUseCoordinatedWindingBreakoutSolver } from "./create-coordinated-winding-breakout-input"
+import type { Trace } from "../Trace/Trace"
 import { solveCoordinatedWindingBreakoutPoints } from "./solve-coordinated-winding-breakout-points"
 
 export class Breakout extends Group<typeof breakoutProps> {
@@ -92,15 +90,32 @@ export class Breakout extends Group<typeof breakoutProps> {
         `Automatic breakout "${this.name}" has invalid PCB region bounds`,
       )
     }
-    let solvedBreakoutPoints
-    if (shouldUseCoordinatedWindingBreakoutSolver(this)) {
+    let solvedBreakoutPoints: ReturnType<
+      typeof solveCoordinatedWindingBreakoutPoints
+    >
+    try {
       solvedBreakoutPoints = solveCoordinatedWindingBreakoutPoints(this)
-    } else {
-      const solverInput = createBreakoutPointSolverInput(this)
-      if (!solverInput) return
-      const solver = new BreakoutPointSolver(solverInput)
-      solver.solve()
-      solvedBreakoutPoints = solver.getOutput().breakoutPoints
+    } catch (error) {
+      if (!(error instanceof WindingBreakoutInfeasibleError)) throw error
+      const componentNames = this.root.db.pcb_component
+        .list()
+        .filter(
+          (pcbComponent) => pcbComponent.pcb_group_id === this.pcb_group_id,
+        )
+        .map((pcbComponent) =>
+          pcbComponent.source_component_id
+            ? this.root!.db.source_component.get(
+                pcbComponent.source_component_id,
+              )?.name
+            : undefined,
+        )
+        .filter((name): name is string => Boolean(name))
+      this.root.db.pcb_autorouting_error.insert({
+        pcb_error_id: `pcb_autorouting_error_winding_breakout_${this.pcb_group_id}`,
+        error_type: "pcb_autorouting_error",
+        message: `Winding fanout failed for ${componentNames.join(", ") || this.name}: ${error.message}. The connections could not escape to the breakout boundary. Give the fanout more room by increasing the breakout's padding, or by extending the breakout to include the parts crowding it (decoupling capacitors, series resistors).`,
+      })
+      return
     }
 
     // The solver places breakout points exactly on the group boundary
