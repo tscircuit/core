@@ -36,7 +36,7 @@ top" data-x="5" data-y="5" cx="760" cy="122.33766233766232" r="3" fill="hsl(170,
                 const h = svg.getElementById('crosshair-h');
                 const v = svg.getElementById('crosshair-v');
                 const coords = svg.getElementById('coordinates');
-
+                
                 crosshair.style.display = 'block';
                 h.setAttribute('x1', '0');
                 h.setAttribute('x2', '800');
@@ -55,13 +55,13 @@ top" data-x="5" data-y="5" cx="760" cy="122.33766233766232" r="3" fill="hsl(170,
                 // y' = (y - ty) / sy
                 const sx = matrix.a;
                 const sy = matrix.d;
-                const tx = matrix.e;
+                const tx = matrix.e; 
                 const ty = matrix.f;
                 const realPoint = {
                   x: (x - tx) / sx,
                   y: (y - ty) / sy // Flip y back since we used negative scale
                 }
-
+                
                 coords.textContent = `(${realPoint.x.toFixed(2)}, ${realPoint.y.toFixed(2)})`;
                 coords.setAttribute('x', (x + 5).toString());
                 coords.setAttribute('y', (y - 5).toString());
@@ -108,7 +108,7 @@ top" data-x="5" data-y="5" cx="760" cy="122.33766233766232" r="3" fill="hsl(170,
                 const h = svg.getElementById('crosshair-h');
                 const v = svg.getElementById('crosshair-v');
                 const coords = svg.getElementById('coordinates');
-
+                
                 crosshair.style.display = 'block';
                 h.setAttribute('x1', '0');
                 h.setAttribute('x2', '800');
@@ -127,13 +127,13 @@ top" data-x="5" data-y="5" cx="760" cy="122.33766233766232" r="3" fill="hsl(170,
                 // y' = (y - ty) / sy
                 const sx = matrix.a;
                 const sy = matrix.d;
-                const tx = matrix.e;
+                const tx = matrix.e; 
                 const ty = matrix.f;
                 const realPoint = {
                   x: (x - tx) / sx,
                   y: (y - ty) / sy // Flip y back since we used negative scale
                 }
-
+                
                 coords.textContent = `(${realPoint.x.toFixed(2)}, ${realPoint.y.toFixed(2)})`;
                 coords.setAttribute('x', (x + 5).toString());
                 coords.setAttribute('y', (y - 5).toString());
@@ -176,7 +176,7 @@ top" data-x="-5.51" data-y="0" cx="58.03339517625227" cy="456.28942486085344" r=
                 const h = svg.getElementById('crosshair-h');
                 const v = svg.getElementById('crosshair-v');
                 const coords = svg.getElementById('coordinates');
-
+                
                 crosshair.style.display = 'block';
                 h.setAttribute('x1', '0');
                 h.setAttribute('x2', '800');
@@ -195,13 +195,13 @@ top" data-x="-5.51" data-y="0" cx="58.03339517625227" cy="456.28942486085344" r=
                 // y' = (y - ty) / sy
                 const sx = matrix.a;
                 const sy = matrix.d;
-                const tx = matrix.e;
+                const tx = matrix.e; 
                 const ty = matrix.f;
                 const realPoint = {
                   x: (x - tx) / sx,
                   y: (y - ty) / sy // Flip y back since we used negative scale
                 }
-
+                
                 coords.textContent = `(${realPoint.x.toFixed(2)}, ${realPoint.y.toFixed(2)})`;
                 coords.setAttribute('x', (x + 5).toString());
                 coords.setAttribute('y', (y - 5).toString());
@@ -242,7 +242,7 @@ top" data-x="-5.51" data-y="0" cx="58.03339517625227" cy="456.28942486085344" r=
                 const h = svg.getElementById('crosshair-h');
                 const v = svg.getElementById('crosshair-v');
                 const coords = svg.getElementById('coordinates');
-
+                
                 crosshair.style.display = 'block';
                 h.setAttribute('x1', '0');
                 h.setAttribute('x2', '800');
@@ -261,13 +261,13 @@ top" data-x="-5.51" data-y="0" cx="58.03339517625227" cy="456.28942486085344" r=
                 // y' = (y - ty) / sy
                 const sx = matrix.a;
                 const sy = matrix.d;
-                const tx = matrix.e;
+                const tx = matrix.e; 
                 const ty = matrix.f;
                 const realPoint = {
                   x: (x - tx) / sx,
                   y: (y - ty) / sy // Flip y back since we used negative scale
                 }
-
+                
                 coords.textContent = `(${realPoint.x.toFixed(2)}, ${realPoint.y.toFixed(2)})`;
                 coords.setAttribute('x', (x + 5).toString());
                 coords.setAttribute('y', (y - 5).toString());
@@ -304,7 +304,7 @@ top" data-x="-5.51" data-y="0" cx="58.03339517625227" cy="456.28942486085344" r=
                 const h = svg.getElementById('crosshair-h');
                 const v = svg.getElementById('crosshair-v');
                 const coords = svg.getElementById('coordinates');
-
+                
                 crosshair.style.display = 'block';
                 h.setAttribute('x1', '0');
                 h.setAttribute('x2', '800');
@@ -323,13 +323,13 @@ top" data-x="-5.51" data-y="0" cx="58.03339517625227" cy="456.28942486085344" r=
                 // y' = (y - ty) / sy
                 const sx = matrix.a;
                 const sy = matrix.d;
-                const tx = matrix.e;
+                const tx = matrix.e; 
                 const ty = matrix.f;
                 const realPoint = {
                   x: (x - tx) / sx,
                   y: (y - ty) / sy // Flip y back since we used negative scale
                 }
-
+                
                 coords.textContent = `(${realPoint.x.toFixed(2)}, ${realPoint.y.toFixed(2)})`;
                 coords.setAttribute('x', (x + 5).toString());
                 coords.setAttribute('y', (y - 5).toString());
