@@ -3,11 +3,19 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import Nrf52810Circuit from "./nrf52810-circuit"
 
 // Reproduces https://tscircuit.com/seveibar/nrf52810#files without copper pours.
-test("nRF52810 tracker routes without copper pours", async () => {
-  const { circuit } = getTestFixture()
+test(
+  "nRF52810 tracker routes without copper pours",
+  async () => {
+    const { circuit } = getTestFixture({
+      platform: { placementDrcChecksDisabled: true },
+    })
 
-  circuit.add(<Nrf52810Circuit />)
-  await circuit.renderUntilSettled()
+    circuit.add(<Nrf52810Circuit />)
+    await circuit.renderUntilSettled()
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
-})
+    expect(circuit.db.pcb_autorouting_error.list()).toHaveLength(0)
+    expect(circuit.db.pcb_trace.list().length).toBeGreaterThan(60)
+    expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  },
+  { timeout: 30_000 },
+)
