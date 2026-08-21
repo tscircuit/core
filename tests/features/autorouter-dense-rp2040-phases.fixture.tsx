@@ -260,12 +260,12 @@ const createDenseRp2040Circuit = (
       <pcbnotetext
         pcbX={0}
         pcbY={10.5}
-        fontSize={0.45}
-        text={`${autorouterVersion}: RP2040 + flash + USB-C, ${
+        fontSize={routingMode === "phased" ? 0.45 : 0.6}
+        text={
           routingMode === "phased"
-            ? "one trace per phase"
-            : "all traces together"
-        }`}
+            ? `${autorouterVersion}: RP2040 + flash + USB-C, one trace per phase`
+            : `${autorouterVersion === "beta_pipeline7" ? "PIPELINE 7" : "PIPELINE 9"}: UNPHASED, ALL 18 CONNECTIONS TOGETHER`
+        }
       />
     </board>,
   )
