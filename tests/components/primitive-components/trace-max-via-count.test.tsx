@@ -147,12 +147,6 @@ test.failing("RP2040 crystal traces honor their zero-via limit", async () => {
   await expect(circuit.getCircuitJson()).toMatchPcbSnapshot(import.meta.path, {
     shouldDrawErrors: true,
     showErrorsInTextOverlay: true,
-    viewport: {
-      minX: -10,
-      minY: -13,
-      maxX: 5,
-      maxY: 0,
-    },
   })
 
   expect(
