@@ -15,7 +15,20 @@ test(
 
     expect(circuit.db.pcb_autorouting_error.list()).toHaveLength(0)
     expect(circuit.db.pcb_trace.list().length).toBeGreaterThan(60)
-    expect(circuit).toMatchPcbSnapshot(import.meta.path)
+
+    const topSnapshotPath = import.meta.path.replace(
+      /\.test\.tsx$/,
+      "-top.test.tsx",
+    )
+    const bottomSnapshotPath = import.meta.path.replace(
+      /\.test\.tsx$/,
+      "-bottom.test.tsx",
+    )
+
+    await expect(circuit).toMatchPcbSnapshot(topSnapshotPath, { layer: "top" })
+    await expect(circuit).toMatchPcbSnapshot(bottomSnapshotPath, {
+      layer: "bottom",
+    })
   },
   { timeout: 30_000 },
 )
