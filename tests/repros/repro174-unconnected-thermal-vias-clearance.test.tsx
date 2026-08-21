@@ -7,12 +7,32 @@ test("repro174: unconnected exposed pads report their thermal vias as clearance 
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="8mm" height="8mm">
+    <board width="30mm" height="20mm">
       <chip
         name="U1"
-        pinLabels={{ pin21: ["THERMAL_PAD"] }}
+        pinLabels={{
+          pin1: ["VIN"],
+          pin2: ["VOUT"],
+          pin21: ["THERMAL_PAD"],
+        }}
         footprint={
           <footprint>
+            <smtpad
+              portHints={["pin1"]}
+              pcbX="-2.5mm"
+              pcbY="0mm"
+              width="1mm"
+              height="0.6mm"
+              shape="rect"
+            />
+            <smtpad
+              portHints={["pin2"]}
+              pcbX="2.5mm"
+              pcbY="0mm"
+              width="1mm"
+              height="0.6mm"
+              shape="rect"
+            />
             <smtpad
               portHints={["pin21"]}
               pcbX="0mm"
@@ -48,8 +68,10 @@ test("repro174: unconnected exposed pads report their thermal vias as clearance 
           </footprint>
         }
       />
+      <capacitor name="C_IN" capacitance="10uF" footprint="0805" pcbX="-7mm" />
+      <capacitor name="C_OUT" capacitance="10uF" footprint="0805" pcbX="7mm" />
       <pcbnotetext
-        pcbY="-2mm"
+        pcbY="-4mm"
         fontSize="0.4mm"
         text="BUG: THERMAL VIAS ARE TREATED AS UNCONNECTED"
       />
@@ -59,7 +81,9 @@ test("repro174: unconnected exposed pads report their thermal vias as clearance 
   await circuit.renderUntilSettled()
 
   const circuitJson = circuit.getCircuitJson()
-  const exposedPad = circuit.db.pcb_smtpad.list()[0]
+  const exposedPad = circuit.db.pcb_smtpad
+    .list()
+    .find((pad) => pad.port_hints?.includes("pin21"))!
   const thermalVias = circuit.db.pcb_via.list()
   const connectivityMap = getFullConnectivityMapFromCircuitJson(circuitJson)
   const clearanceErrors = checkViaPadClearance(circuitJson)
