@@ -63,6 +63,32 @@ function createLabeledSrjSvg(label: string, srj: SimpleRouteJson) {
   })
 }
 
+/**
+ * Builds the full routed state after a phase. Some autorouters return only the
+ * traces routed by the current phase, while others also return preloaded traces.
+ */
+function getEndSrjWithPreloadedTraces(
+  startSrj: SimpleRouteJson | undefined,
+  endSrj: SimpleRouteJson,
+): SimpleRouteJson {
+  const endTraces = endSrj.traces ?? []
+  const outputOrReplacedTraceIds = new Set(
+    endTraces.flatMap((trace) =>
+      [trace.pcb_trace_id, trace.__replaces_pcb_trace_id].filter(
+        (traceId) => traceId !== undefined,
+      ),
+    ),
+  )
+  const preloadedTraces = (startSrj?.traces ?? []).filter(
+    (trace) => !outputOrReplacedTraceIds.has(trace.pcb_trace_id),
+  )
+
+  return {
+    ...endSrj,
+    traces: [...preloadedTraces, ...endTraces],
+  }
+}
+
 function getAutoroutingPhasesSvg({
   autoroutingPhaseIoStack,
   snapshotName,
@@ -88,7 +114,10 @@ function getAutoroutingPhasesSvg({
     }
 
     if (phase.endSimpleRouteJson) {
-      const srj = phase.endSimpleRouteJson
+      const srj = getEndSrjWithPreloadedTraces(
+        phase.startSimpleRouteJson,
+        phase.endSimpleRouteJson,
+      )
       endPanelSvg = createLabeledSrjSvg(
         `AUTOROUTING PHASE ${phaseNumber} END: ${srj.connections.length} CONNECTIONS, ${
           srj.traces?.length ?? 0
