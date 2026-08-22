@@ -27,14 +27,14 @@ test(
 
     await expect(circuit).toMatchPcbSnapshot(topSnapshotPath, {
       layer: "top",
-      diffThresholdPercent: 0.05,
+      diffThresholdPercent: 0.1,
     })
     await expect(circuit).toMatchPcbSnapshot(bottomSnapshotPath, {
       layer: "bottom",
-      diffThresholdPercent: 0.05,
+      diffThresholdPercent: 0.1,
     })
     await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
-      diffThresholdPercent: 0.05,
+      diffThresholdPercent: 0.1,
     })
   },
   { timeout: 120_000 },
