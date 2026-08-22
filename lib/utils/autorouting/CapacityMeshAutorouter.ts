@@ -51,6 +51,45 @@ export interface AutorouterOptions {
   onSolverStarted?: (details: SolverStartedDetails) => void
 }
 
+export const getTscircuitAutorouterSolverName = ({
+  autorouterVersion,
+  useAssignableSolver = false,
+  useAutoJumperSolver = false,
+  useLaserPrefabSolver = false,
+}: Pick<
+  AutorouterOptions,
+  | "autorouterVersion"
+  | "useAssignableSolver"
+  | "useAutoJumperSolver"
+  | "useLaserPrefabSolver"
+>): keyof typeof SOLVERS => {
+  if (autorouterVersion === "beta_pipeline1") {
+    return "AutoroutingPipeline1_OriginalUnravel"
+  }
+  if (autorouterVersion === "beta_pipeline3") {
+    return "AutoroutingPipelineSolver3_HgPortPointPathing"
+  }
+  if (autorouterVersion === "beta_pipeline4") {
+    return "AutoroutingPipelineSolver4"
+  }
+  if (autorouterVersion === "beta_pipeline5") {
+    return "AutoroutingPipelineSolver5"
+  }
+  if (autorouterVersion === "beta_pipeline7") {
+    return "AutoroutingPipelineSolver7_MultiGraph"
+  }
+  if (
+    autorouterVersion === "beta_pipeline9" ||
+    autorouterVersion === "latest"
+  ) {
+    return "AutoroutingPipelineSolver9_PreloadedTraceGraph"
+  }
+  if (useLaserPrefabSolver) return "AutoroutingPipelineSolver8"
+  if (useAutoJumperSolver) return "AssignableAutoroutingPipeline3"
+  if (useAssignableSolver) return "AssignableAutoroutingPipeline2"
+  return "AutoroutingPipelineSolver9_PreloadedTraceGraph"
+}
+
 function getCapacityAutorouterCacheProvider(
   platformConfig?: Pick<PlatformConfig, "localCacheEngine">,
 ): CacheProvider | null {
@@ -101,31 +140,12 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
     } = options
 
     // Initialize the solver with input and optional configuration
-    let solverName: keyof typeof SOLVERS
-    if (autorouterVersion === "beta_pipeline1") {
-      solverName = "AutoroutingPipeline1_OriginalUnravel"
-    } else if (autorouterVersion === "beta_pipeline3") {
-      solverName = "AutoroutingPipelineSolver3_HgPortPointPathing"
-    } else if (autorouterVersion === "beta_pipeline4") {
-      solverName = "AutoroutingPipelineSolver4"
-    } else if (autorouterVersion === "beta_pipeline5") {
-      solverName = "AutoroutingPipelineSolver5"
-    } else if (autorouterVersion === "beta_pipeline7") {
-      solverName = "AutoroutingPipelineSolver7_MultiGraph"
-    } else if (
-      autorouterVersion === "beta_pipeline9" ||
-      autorouterVersion === "latest"
-    ) {
-      solverName = "AutoroutingPipelineSolver9_PreloadedTraceGraph"
-    } else if (useLaserPrefabSolver) {
-      solverName = "AutoroutingPipelineSolver8"
-    } else if (useAutoJumperSolver) {
-      solverName = "AssignableAutoroutingPipeline3"
-    } else if (useAssignableSolver) {
-      solverName = "AssignableAutoroutingPipeline2"
-    } else {
-      solverName = "AutoroutingPipelineSolver9_PreloadedTraceGraph"
-    }
+    const solverName = getTscircuitAutorouterSolverName({
+      autorouterVersion,
+      useAssignableSolver,
+      useAutoJumperSolver,
+      useLaserPrefabSolver,
+    })
     const SolverClass = SOLVERS[solverName]
     const solverCacheProvider =
       getCapacityAutorouterCacheProvider(platformConfig)

@@ -33,5 +33,16 @@ test("unrelated automatic breakout cohorts solve independently", async () => {
 
   expect(circuit.db.pcb_breakout_point.list()).toHaveLength(4)
   expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
+  const layerChangesWithoutVias = circuit.db.pcb_trace.list().flatMap((trace) =>
+    trace.route.slice(1).flatMap((routePoint, routePointIndex) => {
+      const previousRoutePoint = trace.route[routePointIndex]
+      return previousRoutePoint?.route_type === "wire" &&
+        routePoint.route_type === "wire" &&
+        previousRoutePoint.layer !== routePoint.layer
+        ? [{ pcbTraceId: trace.pcb_trace_id, routePointIndex }]
+        : []
+    }),
+  )
+  expect(layerChangesWithoutVias).toEqual([])
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

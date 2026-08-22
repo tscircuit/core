@@ -29,7 +29,10 @@ import type { GraphicsObject } from "graphics-debug"
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import { isAssemblyDeviceContainer } from "lib/components/base-components/is-assembly-device-container"
 import { AutorouterError } from "lib/errors/AutorouterError"
-import type { AutorouterOptions } from "lib/utils/autorouting/CapacityMeshAutorouter"
+import {
+  type AutorouterOptions,
+  getTscircuitAutorouterSolverName,
+} from "lib/utils/autorouting/CapacityMeshAutorouter"
 import { FanoutAutorouter } from "lib/utils/autorouting/FanoutAutorouter"
 import type { GenericLocalAutorouter } from "lib/utils/autorouting/GenericLocalAutorouter"
 import type {
@@ -112,6 +115,7 @@ import {
 } from "./get-accumulated-pcb-traces-with-stage-output-replacements"
 import { getSourceTraceIdForRoutedTrace } from "./get-source-trace-id-for-routed-trace"
 import { insertAutoplacedJumpers } from "./insert-autoplaced-jumpers"
+import { insertMissingViasBetweenLayerTransitions } from "./insert-missing-vias-between-layer-transitions"
 import {
   deleteExistingPcbTracesReplacedBy,
   getExistingPcbTracesForReroute,
@@ -1349,6 +1353,29 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         simpleRouteJson,
       })
 
+      const autorouterVersion =
+        phaseAutorouterConfig.autorouterVersion ?? this.props.autorouterVersion
+      const effortLevel = this.props.autorouterEffortLevel
+      const effort = effortLevel
+        ? Number.parseInt(effortLevel.replace("x", ""), 10)
+        : undefined
+      const commonAutorouterOptions: AutorouterOptions = {
+        capacityDepth: phaseAutorouterConfig.capacityDepth,
+        targetMinCapacity: phaseAutorouterConfig.targetMinCapacity,
+        platformConfig: this.root?.platform,
+        useAssignableSolver: phaseIsLaserPrefabPreset || isSingleLayerBoard,
+        useAutoJumperSolver: phaseIsAutoJumperPreset,
+        useLaserPrefabSolver: phaseIsLaserPrefabPreset,
+        autorouterVersion,
+        effort,
+      }
+      const stageUsesPipeline9 =
+        !phaseAutorouterConfig.algorithmFn &&
+        phaseAutorouterConfig.preset !== "fanout" &&
+        phaseAutorouterConfig.preset !== "single_layer_fanout" &&
+        getTscircuitAutorouterSolverName(commonAutorouterOptions) ===
+          "AutoroutingPipelineSolver9_PreloadedTraceGraph"
+
       const cacheEngine =
         phaseAutorouterConfig.algorithmFn || !localAutorouterStrategy.cacheable
           ? undefined
@@ -1371,24 +1398,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             autorouter =
               await phaseAutorouterConfig.algorithmFn(simpleRouteJson)
           } else {
-            const autorouterVersion =
-              phaseAutorouterConfig.autorouterVersion ??
-              this.props.autorouterVersion
-            const effortLevel = this.props.autorouterEffortLevel
-            const effort = effortLevel
-              ? Number.parseInt(effortLevel.replace("x", ""), 10)
-              : undefined
-            const commonAutorouterOptions: AutorouterOptions = {
-              capacityDepth: phaseAutorouterConfig.capacityDepth,
-              targetMinCapacity: phaseAutorouterConfig.targetMinCapacity,
-              platformConfig: this.root?.platform,
-              useAssignableSolver:
-                phaseIsLaserPrefabPreset || isSingleLayerBoard,
-              useAutoJumperSolver: phaseIsAutoJumperPreset,
-              useLaserPrefabSolver: phaseIsLaserPrefabPreset,
-              autorouterVersion,
-              effort,
-            }
             autorouter = localAutorouterStrategy.create({
               simpleRouteJson,
               commonAutorouterOptions,
@@ -1497,6 +1506,12 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           stageOutputTraces = [...(simpleRouteJson.traces ?? []), ...traces]
         }
         stageOutputTraces = getUniquePcbTraces(stageOutputTraces)
+        if (stageUsesPipeline9) {
+          stageOutputTraces = stageOutputTraces.map((trace) => ({
+            ...trace,
+            route: insertMissingViasBetweenLayerTransitions(trace.route),
+          }))
+        }
         const outputSimpleRouteJson = {
           ...(transformedSimpleRouteJson ?? simpleRouteJson),
           traces: stageOutputTraces,
