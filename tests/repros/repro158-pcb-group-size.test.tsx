@@ -47,6 +47,7 @@ test("repro158: PCB group size", async () => {
   expect(pcb_boards).toMatchInlineSnapshot(`
     [
       {
+        "allow_blind_and_buried_vias": false,
         "center": {
           "x": -0.23499999999999943,
           "y": -0.28999999999999915,

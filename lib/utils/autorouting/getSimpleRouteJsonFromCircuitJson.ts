@@ -863,6 +863,9 @@ export const getSimpleRouteJsonFromCircuitJson = ({
           ? preservedRoutedSubcircuitTraces
           : undefined,
       layerCount: board?.num_layers ?? 2,
+      allowBlindAndBuriedVias: board
+        ? (board.allow_blind_and_buried_vias ?? false)
+        : undefined,
       minTraceWidth: Math.min(
         defaultTraceWidth,
         ...allConns.map((c) => c.width!),

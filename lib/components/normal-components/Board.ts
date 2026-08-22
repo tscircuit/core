@@ -532,6 +532,7 @@ export class Board
 
       thickness: this.boardThickness,
       num_layers: this.allLayers.length,
+      allow_blind_and_buried_vias: props.allowBlindAndBuriedVias ?? false,
 
       width: computedWidth!,
       height: computedHeight!,

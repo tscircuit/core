@@ -145,6 +145,8 @@ export type SimpleRouteJson = Omit<
   | "buses"
 > & {
   layerCount: number
+  /** Whether the autorouter may generate blind and buried vias. */
+  allowBlindAndBuriedVias?: boolean
   minTraceWidth: number
   nominalTraceWidth?: number
   /** @deprecated Use `min_via_pad_diameter` / `minViaPadDiameter` instead. */

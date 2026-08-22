@@ -38,6 +38,7 @@ test("footprint library map 3", async () => {
   expect(pcb_board).toMatchInlineSnapshot(`
     [
       {
+        "allow_blind_and_buried_vias": false,
         "center": {
           "x": 0,
           "y": 0,
