@@ -521,6 +521,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
           "",
         source_trace_id: trace.source_trace_id,
         nominalTraceWidth: trace.min_trace_thickness,
+        maxViaCount: trace.max_via_count,
         width: trace.min_trace_thickness,
         // Simple Route JSON connections are multi-terminal, so retain every
         // source trace endpoint in the autorouter input.
