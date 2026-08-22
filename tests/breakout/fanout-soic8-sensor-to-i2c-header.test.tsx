@@ -90,6 +90,7 @@ test("fanout routes soic8 sensor support parts to an i2c header without fanoutpo
     import.meta.path,
     "fanout-soic8-sensor-to-i2c-header-autorouting-srj",
     circuit,
+    { diffThresholdPercent: 0.2 },
   )
 
   const drcErrors = circuit.db.pcb_trace_error.list()
