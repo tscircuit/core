@@ -234,12 +234,14 @@ export async function expectArduinoUnoRerouteRegion({
   dataTestId,
   importMetaPath,
   label = "REROUTED REGION 10MM",
+  pcbSnapshotDiffThresholdPercent,
   rerouteRegion,
   snapshotName,
 }: {
   dataTestId?: string
   importMetaPath: string
   label?: string
+  pcbSnapshotDiffThresholdPercent?: number
   rerouteRegion: RectRerouteRegion
   snapshotName: string
 }) {
@@ -347,5 +349,7 @@ export async function expectArduinoUnoRerouteRegion({
     importMetaPath,
     snapshotName,
   })
-  expect(afterRerouteCircuit).toMatchPcbSnapshot(importMetaPath)
+  expect(afterRerouteCircuit).toMatchPcbSnapshot(importMetaPath, {
+    diffThresholdPercent: pcbSnapshotDiffThresholdPercent,
+  })
 }
