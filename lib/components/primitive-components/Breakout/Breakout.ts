@@ -1,12 +1,15 @@
 import { breakoutProps } from "@tscircuit/props"
-import { BreakoutPointSolver } from "@tscircuit/breakout-point-solver"
-import { Group } from "../Group/Group"
 import { AutoplacedBreakoutPoint } from "../AutoplacedBreakoutPoint"
 import { BreakoutPoint } from "../BreakoutPoint"
-import type { Trace } from "../Trace/Trace"
+import { Group } from "../Group/Group"
 import type { Port } from "../Port"
-import { createBreakoutPointSolverInput } from "./createBreakoutPointSolverInput"
-import { solveImplicitBreakoutPoints } from "./solve-implicit-breakout-points"
+import type { Trace } from "../Trace/Trace"
+import { defaultImplicitBreakoutPointSolverFn } from "./default-implicit-breakout-point-solver"
+import { reportWindingBreakoutInfeasibleError } from "./report-winding-breakout-infeasible-error"
+import {
+  type ImplicitBreakoutPointPlacement,
+  solveImplicitBreakoutPoints,
+} from "./solve-implicit-breakout-points"
 
 export class Breakout extends Group<typeof breakoutProps> {
   override get isRoutingDirective() {
@@ -89,35 +92,34 @@ export class Breakout extends Group<typeof breakoutProps> {
         : typeof inheritedAutorouter === "object"
           ? inheritedAutorouter.implicitBreakoutPointSolverFn
           : undefined
-    let solvedBreakoutPoints
-    let bounds
-    if (implicitBreakoutPointSolverFn) {
-      if (!this.root || !this.pcb_group_id) return
-      const pcbGroup = this.root.db.pcb_group.get(this.pcb_group_id)
-      if (!pcbGroup?.width || !pcbGroup.height) return
-      bounds = {
-        minX: pcbGroup.center.x - pcbGroup.width / 2,
-        maxX: pcbGroup.center.x + pcbGroup.width / 2,
-        minY: pcbGroup.center.y - pcbGroup.height / 2,
-        maxY: pcbGroup.center.y + pcbGroup.height / 2,
-      }
+    const autoBreakoutPoints = this.children.filter(
+      (child) => child instanceof AutoplacedBreakoutPoint,
+    ) as AutoplacedBreakoutPoint[]
+    if (autoBreakoutPoints.length === 0) return
+    if (!this.root || !this.pcb_group_id) return
+    const pcbGroup = this.root.db.pcb_group.get(this.pcb_group_id)
+    if (!pcbGroup?.width || !pcbGroup.height) return
+    const bounds = {
+      minX: pcbGroup.center.x - pcbGroup.width / 2,
+      maxX: pcbGroup.center.x + pcbGroup.width / 2,
+      minY: pcbGroup.center.y - pcbGroup.height / 2,
+      maxY: pcbGroup.center.y + pcbGroup.height / 2,
+    }
+    let solvedBreakoutPoints: readonly ImplicitBreakoutPointPlacement[]
+    try {
       solvedBreakoutPoints = solveImplicitBreakoutPoints(
         this,
-        implicitBreakoutPointSolverFn,
+        implicitBreakoutPointSolverFn ?? defaultImplicitBreakoutPointSolverFn,
       )
-    } else {
-      const solverInput = createBreakoutPointSolverInput(this)
-      if (!solverInput) return
-
-      const solver = new BreakoutPointSolver(solverInput)
-      solver.solve()
-      solvedBreakoutPoints = solver.getOutput().breakoutPoints
-      bounds = solverInput.bounds
+    } catch (error) {
+      if (
+        implicitBreakoutPointSolverFn ||
+        !reportWindingBreakoutInfeasibleError(this, error)
+      ) {
+        throw error
+      }
+      return
     }
-
-    const autoBreakoutPoints = this.children.filter(
-      (c) => c instanceof AutoplacedBreakoutPoint,
-    ) as AutoplacedBreakoutPoint[]
 
     // The solver places breakout points exactly on the group boundary
     // (bounds.minX/maxX/minY/maxY). When the autorouter later builds a
@@ -143,11 +145,10 @@ export class Breakout extends Group<typeof breakoutProps> {
           child.matchedPort?.source_port_id === solvedPoint.sourcePortId,
       )
       if (matchingBreakoutPoint) {
-        matchingBreakoutPoint.matchedSourceTraceId = solvedPoint.sourceTraceId
         const insetPoint = insetWithinBounds(solvedPoint.x, solvedPoint.y)
-        matchingBreakoutPoint._setPositionFromLayout({
-          x: insetPoint.x,
-          y: insetPoint.y,
+        matchingBreakoutPoint._applySolvedBreakoutPoint({
+          sourceTraceId: solvedPoint.sourceTraceId,
+          position: insetPoint,
         })
       }
     }

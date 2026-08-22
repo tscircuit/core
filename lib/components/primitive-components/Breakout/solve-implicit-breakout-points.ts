@@ -27,14 +27,14 @@ interface CoordinatedScopeSolution {
   >
 }
 
-interface CachedScopeSolution {
+interface CachedRoutingScopeSolutions {
   solverFn: ImplicitBreakoutPointSolverFn
-  solution: CoordinatedScopeSolution
+  solutions: CoordinatedScopeSolution[]
 }
 
-const cachedSolutionByRoutingScope = new WeakMap<
+const cachedSolutionsByRoutingScope = new WeakMap<
   Group<z.ZodType>,
-  CachedScopeSolution
+  CachedRoutingScopeSolutions
 >()
 
 const solveScope = (
@@ -118,15 +118,22 @@ export const solveImplicitBreakoutPoints = (
       `Automatic breakout "${breakout.name}" has no coordinated PCB region`,
     )
   }
-  let cachedSolution = cachedSolutionByRoutingScope.get(routingScope)
-  if (!cachedSolution || cachedSolution.solverFn !== solverFn) {
-    cachedSolution = {
+  let cachedSolutions = cachedSolutionsByRoutingScope.get(routingScope)
+  if (!cachedSolutions || cachedSolutions.solverFn !== solverFn) {
+    cachedSolutions = {
       solverFn,
-      solution: solveScope(breakout, solverFn),
+      solutions: [],
     }
-    cachedSolutionByRoutingScope.set(routingScope, cachedSolution)
+    cachedSolutionsByRoutingScope.set(routingScope, cachedSolutions)
   }
-  const breakoutPoints = cachedSolution.solution.breakoutPointsByRegionId.get(
+  let solution = cachedSolutions.solutions.find((candidateSolution) =>
+    candidateSolution.breakoutPointsByRegionId.has(breakout.pcb_group_id!),
+  )
+  if (!solution) {
+    solution = solveScope(breakout, solverFn)
+    cachedSolutions.solutions.push(solution)
+  }
+  const breakoutPoints = solution.breakoutPointsByRegionId.get(
     breakout.pcb_group_id,
   )
   if (!breakoutPoints) {
