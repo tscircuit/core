@@ -28,9 +28,11 @@ test("manual pcbPath rejects a via starting on the wrong layer", async () => {
   await circuit.renderUntilSettled()
 
   expect(
-    circuit.db.pcb_trace.list().flatMap((pcbTrace) =>
-      pcbTrace.route.map((routePoint) => routePoint.route_type),
-    ),
+    circuit.db.pcb_trace
+      .list()
+      .flatMap((pcbTrace) =>
+        pcbTrace.route.map((routePoint) => routePoint.route_type),
+      ),
   ).toEqual(["wire", "wire"])
   expect(circuit.db.pcb_trace_error.list()).toHaveLength(1)
   expect(circuit.db.pcb_trace_error.list()[0]?.message).toContain(
