@@ -34,6 +34,22 @@ parityTest(
     })
 
     expect(autoroutingPhaseIoStack).toHaveLength(CAPTURED_PHASE_COUNT)
+    const phaseStartObstacles = autoroutingPhaseIoStack.map(
+      (phase) => phase.startSimpleRouteJson!.obstacles,
+    )
+    expect(phaseStartObstacles.map((obstacles) => obstacles.length)).toEqual(
+      Array(CAPTURED_PHASE_COUNT).fill(phaseStartObstacles[0]!.length),
+    )
+    for (const obstacles of phaseStartObstacles.slice(1)) {
+      expect(obstacles).toEqual(phaseStartObstacles[0])
+    }
+    expect(
+      autoroutingPhaseIoStack.some((phase) =>
+        phase.startSimpleRouteJson?.traces?.some((trace) =>
+          trace.route.some((routePoint) => routePoint.route_type === "via"),
+        ),
+      ),
+    ).toBe(true)
     expect(
       autoroutingPhaseIoStack.map(
         (phase) => phase.startSimpleRouteJson?.connections.length,
