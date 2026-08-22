@@ -353,6 +353,22 @@ test("Gameboy-like board routes through a dense MCU breakout without headers", a
   expect(parentPhase?.startSimpleRouteJson?.traces?.length).toBe(
     breakoutPhase?.endSimpleRouteJson?.traces?.length,
   )
+  const parentPreloadedViaPoints =
+    parentPhase?.startSimpleRouteJson?.traces?.flatMap((trace) =>
+      trace.route.filter((routePoint) => routePoint.route_type === "via"),
+    ) ?? []
+  expect(parentPreloadedViaPoints.length).toBeGreaterThan(0)
+  expect(
+    parentPreloadedViaPoints.every(
+      (viaPoint) =>
+        !parentPhase?.startSimpleRouteJson?.obstacles.some(
+          (obstacle) =>
+            obstacle.circuitJsonMetadata?.pcb_via_id !== undefined &&
+            obstacle.center.x === viaPoint.x &&
+            obstacle.center.y === viaPoint.y,
+        ),
+    ),
+  ).toBe(true)
   expect(parentPhase?.endSimpleRouteJson?.traces).toHaveLength(10)
   expect(
     parentPhase?.startSimpleRouteJson?.connections.every((connection) =>
