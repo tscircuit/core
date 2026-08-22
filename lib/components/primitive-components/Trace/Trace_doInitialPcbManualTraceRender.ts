@@ -331,6 +331,31 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
     layer: currentLayer,
     start_pcb_port_id: anchorPort.pcb_port_id!,
   })
+  /**
+   * Append a circuit-world PCB wire point (x right, y up, millimetres), unless
+   * the immediately preceding point already represents the same layer/position.
+   */
+  const appendWirePoint = (x: number, y: number, layer: LayerRef) => {
+    const precedingPoint = route[route.length - 1]
+    if (
+      precedingPoint?.route_type === "wire" &&
+      precedingPoint.x === x &&
+      precedingPoint.y === y &&
+      precedingPoint.layer === layer
+    ) {
+      return precedingPoint
+    }
+
+    const wirePoint: PcbTraceRoutePoint = {
+      route_type: "wire",
+      x,
+      y,
+      width,
+      layer,
+    }
+    route.push(wirePoint)
+    return wirePoint
+  }
   const transform = subcircuit._isInflatedFromCircuitJson
     ? trace._computePcbGlobalTransformBeforeLayout()
     : anchorPort?._computePcbGlobalTransformBeforeLayout?.() || identity()
@@ -393,33 +418,38 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
       : applyToPoint(transform, coordinates)
 
     if (isViaPoint) {
+      const fromLayer = viaFromLayer ?? currentLayer
+      const toLayer = viaToLayer ?? currentLayer
+      if (fromLayer !== currentLayer) {
+        db.pcb_trace_error.insert({
+          error_type: "pcb_trace_error",
+          source_trace_id: trace.source_trace_id!,
+          message: `pcbPath via for ${trace} starts on ${fromLayer}, but the preceding path is on ${currentLayer}. Set fromLayer to ${currentLayer} or reverse the via transition.`,
+          pcb_trace_id: trace.pcb_trace_id!,
+          pcb_component_ids: [],
+          pcb_port_ids: ports.map((port) => port.pcb_port_id!).filter(Boolean),
+        })
+        return
+      }
+      appendWirePoint(finalCoordinates.x, finalCoordinates.y, fromLayer)
       route.push({
         route_type: "via",
         x: finalCoordinates.x,
         y: finalCoordinates.y,
-        from_layer: viaFromLayer ?? currentLayer,
-        to_layer: viaToLayer ?? currentLayer,
+        from_layer: fromLayer,
+        to_layer: toLayer,
       })
-      currentLayer = (viaToLayer ?? currentLayer) as LayerRef
+      appendWirePoint(finalCoordinates.x, finalCoordinates.y, toLayer)
+      currentLayer = toLayer
     } else {
-      route.push({
-        route_type: "wire",
-        x: finalCoordinates.x,
-        y: finalCoordinates.y,
-        width,
-        layer: currentLayer,
-      })
+      appendWirePoint(finalCoordinates.x, finalCoordinates.y, currentLayer)
     }
   }
   if (otherPort && otherPos) {
-    route.push({
-      route_type: "wire",
-      x: otherPos.x,
-      y: otherPos.y,
-      width,
-      layer: currentLayer,
-      end_pcb_port_id: otherPort.pcb_port_id!,
-    })
+    const finalWirePoint = appendWirePoint(otherPos.x, otherPos.y, currentLayer)
+    if (finalWirePoint.route_type === "wire") {
+      finalWirePoint.end_pcb_port_id = otherPort.pcb_port_id!
+    }
   }
 
   const traceLength = getTraceLength(route)
