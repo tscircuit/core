@@ -106,7 +106,10 @@ import { Group_syncFanoutExitsWithGlobalConnections } from "./Group_syncFanoutEx
 import type { ISubcircuit } from "./Subcircuit/ISubcircuit"
 import { addPortIdsToTracesAtJumperPads } from "./add-port-ids-to-traces-at-jumper-pads"
 import { claimSrjAssignablePcbViasTraversedByRoute } from "./claim-srj-assignable-pcb-vias-traversed-by-route"
-import { getAccumulatedPcbTracesWithStageOutputReplacements } from "./get-accumulated-pcb-traces-with-stage-output-replacements"
+import {
+  getAccumulatedPcbTracesWithStageOutputReplacements,
+  getUniquePcbTraces,
+} from "./get-accumulated-pcb-traces-with-stage-output-replacements"
 import { getSourceTraceIdForRoutedTrace } from "./get-source-trace-id-for-routed-trace"
 import { insertAutoplacedJumpers } from "./insert-autoplaced-jumpers"
 import {
@@ -1493,6 +1496,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         } else if (usesPreviousStageOutput) {
           stageOutputTraces = [...(simpleRouteJson.traces ?? []), ...traces]
         }
+        stageOutputTraces = getUniquePcbTraces(stageOutputTraces)
         const outputSimpleRouteJson = {
           ...(transformedSimpleRouteJson ?? simpleRouteJson),
           traces: stageOutputTraces,
@@ -1849,6 +1853,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       pcbTraceIdsToReplace: pcb_trace_ids_to_be_replaced,
     })
 
+    // A solver can split one trace into sections that share a boundary via.
+    const insertedViaKeys = new Set<string>()
     for (const pcb_trace of output_pcb_traces) {
       // vias can be included
       if (pcb_trace.type !== "pcb_trace") continue
@@ -1964,6 +1970,15 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             }
             const fromLayer = point.from_layer as LayerRef
             const toLayer = point.to_layer as LayerRef
+            const viaKey = [
+              pcb_trace.pcb_trace_id,
+              point.x,
+              point.y,
+              fromLayer,
+              toLayer,
+            ].join(":")
+            if (insertedViaKeys.has(viaKey)) continue
+            insertedViaKeys.add(viaKey)
             db.pcb_via.insert({
               pcb_trace_id: pcb_trace.pcb_trace_id,
               x: point.x,

@@ -2,12 +2,12 @@ import { expect, test } from "bun:test"
 import { createAutoroutingPhaseIoStack } from "tests/fixtures/create-autorouting-phase-io-stack"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("routes both differential pair traces in the same routing phase", async (): Promise<void> => {
+test("pipeline7 routes both differential pair traces in the same routing phase", async (): Promise<void> => {
   const { circuit } = getTestFixture()
   const autoroutingPhaseIoStack = createAutoroutingPhaseIoStack(circuit)
 
   circuit.add(
-    <board width="20mm" height="20mm">
+    <board width="20mm" height="20mm" autorouterVersion="beta_pipeline7">
       <chip name="U1" footprint="soic8" pcbX={-5} />
       <chip name="U2" footprint="soic8" pcbX={5} />
       <differentialpair
