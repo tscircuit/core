@@ -62,7 +62,7 @@ export const getTscircuitAutorouterSolverName = ({
   | "useAssignableSolver"
   | "useAutoJumperSolver"
   | "useLaserPrefabSolver"
->): keyof typeof SOLVERS => {
+>) => {
   if (autorouterVersion === "beta_pipeline1") {
     return "AutoroutingPipeline1_OriginalUnravel"
   }
