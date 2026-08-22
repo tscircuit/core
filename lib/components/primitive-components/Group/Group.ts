@@ -34,6 +34,7 @@ import { FanoutAutorouter } from "lib/utils/autorouting/FanoutAutorouter"
 import type { GenericLocalAutorouter } from "lib/utils/autorouting/GenericLocalAutorouter"
 import type {
   CircuitJsonMetadata,
+  SimpleRouteBounds,
   SimpleRouteJson,
   SimplifiedPcbTrace,
 } from "lib/utils/autorouting/SimpleRouteJson"
@@ -1029,6 +1030,41 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
     const routingPhasePlans = this._getRoutingPhasePlans()
     const hasPhasedAutorouting = Group_hasPhasedAutorouting(routingPhasePlans)
+    const shouldEmitRoutingPhaseDebugObjects = routingPhasePlans.length > 1
+    if (shouldEmitRoutingPhaseDebugObjects) {
+      for (const debugObject of db.pcb_debug_object.list()) {
+        if (
+          debugObject.subcircuit_id === this.subcircuit_id &&
+          debugObject.label?.startsWith("Autorouting phase: ")
+        ) {
+          db.pcb_debug_object.delete(debugObject.pcb_debug_object_id)
+        }
+      }
+    }
+    const emitRoutingPhaseDebugObject = (
+      routingPhasePlan: RoutingPhasePlan,
+      bounds: SimpleRouteBounds,
+    ) => {
+      if (!shouldEmitRoutingPhaseDebugObjects) return
+      const phaseLabel =
+        routingPhasePlan.phaseName ??
+        (routingPhasePlan.routingPhaseIndex === null
+          ? "default"
+          : String(routingPhasePlan.routingPhaseIndex))
+      db.pcb_debug_object.insert({
+        shape: "rect",
+        center: {
+          x: (bounds.minX + bounds.maxX) / 2,
+          y: (bounds.minY + bounds.maxY) / 2,
+        },
+        size: {
+          width: bounds.maxX - bounds.minX,
+          height: bounds.maxY - bounds.minY,
+        },
+        label: `Autorouting phase: ${phaseLabel}`,
+        subcircuit_id: this.subcircuit_id ?? undefined,
+      })
+    }
     const routingStages = routingPhasePlans.flatMap((routingPhasePlan) => {
       const phaseAutorouterConfig: NormalizedAutorouterConfig =
         routingPhasePlan.autorouter
@@ -1199,6 +1235,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         (hasPhasedAutorouting || isReroutePhase) &&
         simpleRouteJson.connections.length === 0
       ) {
+        if (phaseStageIndex === 0) {
+          emitRoutingPhaseDebugObject(routingPhasePlan, simpleRouteJson.bounds)
+        }
         // Keep an empty multi-stage phase as an empty no-op for its follow-up
         // stages. Otherwise the next stage incorrectly reports that the
         // preceding stage output is missing even though there was no routing
@@ -1287,6 +1326,13 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             height: fanoutBounds.maxY - fanoutBounds.minY,
           })
         }
+      }
+
+      if (phaseStageIndex === 0) {
+        emitRoutingPhaseDebugObject(
+          routingPhasePlan,
+          routingPhasePlan.fanoutBounds ?? simpleRouteJson.bounds,
+        )
       }
 
       if (debug.enabled) {
