@@ -1,5 +1,6 @@
 import type { PcbTrace } from "circuit-json"
 import { getRoutePointPosition } from "../pcb-trace-route-point-utils"
+import { reversePcbTraceRoute } from "../reverse-pcb-trace-route"
 
 function pdist(a: PcbTrace["route"][number], b: PcbTrace["route"][number]) {
   const aPosition = getRoutePointPosition(a)
@@ -43,7 +44,7 @@ export const mergeRoutes = (routes: PcbTrace["route"][]) => {
   )
 
   if (best_reverse_dist < best_normal_dist) {
-    merged.push(...routes[0].reverse())
+    merged.push(...reversePcbTraceRoute(routes[0]))
     // reverse_log.push(true)
   } else {
     merged.push(...routes[0])
@@ -65,7 +66,7 @@ export const mergeRoutes = (routes: PcbTrace["route"][]) => {
       merged.push(...next_route)
     } else {
       // reverse_log.push(true)
-      merged.push(...next_route.reverse())
+      merged.push(...reversePcbTraceRoute(next_route))
     }
   }
   // console.log(reverse_log)

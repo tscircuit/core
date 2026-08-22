@@ -17,6 +17,7 @@ import { getObstaclesFromCircuitJson } from "lib/utils/obstacles/getObstaclesFro
 import { pairs } from "lib/utils/pairs"
 import { getRoutePointPosition } from "lib/utils/pcb-trace-route-point-utils"
 import { getViaDiameterDefaults } from "lib/utils/pcbStyle/getViaDiameterDefaults"
+import { reversePcbTraceRoute } from "lib/utils/reverse-pcb-trace-route"
 import { tryNow } from "lib/utils/try-now"
 import type { Port } from "../Port"
 import type { TraceHint } from "../TraceHint"
@@ -52,28 +53,6 @@ const getDistanceToRouteObjective = (
   return Math.hypot(position.x - objective.x, position.y - objective.y)
 }
 
-const reverseRouteDirection = (route: PcbTrace["route"]): PcbTrace["route"] =>
-  route
-    .slice()
-    .reverse()
-    .map((point) => {
-      if (point.route_type === "via") {
-        return { ...point }
-      }
-
-      if (point.route_type === "through_pad") {
-        return {
-          ...point,
-          start: point.end,
-          end: point.start,
-          start_layer: point.end_layer,
-          end_layer: point.start_layer,
-        }
-      }
-
-      return { ...point }
-    })
-
 const ensureRouteStartsAtObjective = (
   route: PcbTrace["route"],
   objective: PcbRouteObjective,
@@ -84,7 +63,7 @@ const ensureRouteStartsAtObjective = (
   const lastPoint = route[route.length - 1]
   return getDistanceToRouteObjective(lastPoint, objective) <
     getDistanceToRouteObjective(firstPoint, objective)
-    ? reverseRouteDirection(route)
+    ? reversePcbTraceRoute(route)
     : route
 }
 

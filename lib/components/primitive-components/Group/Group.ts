@@ -58,6 +58,7 @@ import {
 import { getRoutePointPosition } from "lib/utils/pcb-trace-route-point-utils"
 import { getViaDiameterDefaults } from "lib/utils/pcbStyle/getViaDiameterDefaults"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/public-exports"
+import { reversePcbTraceRoute } from "lib/utils/reverse-pcb-trace-route"
 import { getPinsFromPortArrangement } from "lib/utils/schematic/getSizeOfSidesFromPortArrangement"
 import { z } from "zod"
 import { NormalComponent } from "../../base-components/NormalComponent/NormalComponent"
@@ -183,35 +184,15 @@ const getDisabledLegacyAutorouterPreset = (
   return null
 }
 
-const reversePcbTraceRoute = (route: PcbTrace["route"]): PcbTrace["route"] =>
-  route
-    .slice()
-    .reverse()
-    .map((point) => {
-      if (point.route_type === "via") {
-        return { ...point }
-      }
-
-      if (point.route_type === "through_pad") {
-        return {
-          ...point,
-          start: point.end,
-          end: point.start,
-          start_layer: point.end_layer,
-          end_layer: point.start_layer,
-        }
-      }
-
-      return { ...point }
-    })
-
 const ensureRouteStartsAtSourceTraceStart = ({
   db,
   route,
+  routeThicknessMode,
   sourceTraceId,
 }: {
   db: CircuitJsonUtilObjects
   route: PcbTrace["route"]
+  routeThicknessMode?: PcbTrace["route_thickness_mode"]
   sourceTraceId?: string
 }) => {
   if (!sourceTraceId || route.length < 2) return route
@@ -229,7 +210,7 @@ const ensureRouteStartsAtSourceTraceStart = ({
   const lastPoint = route[route.length - 1]
   return getDistanceToPoint(lastPoint, firstPcbPort) <
     getDistanceToPoint(firstPoint, firstPcbPort)
-    ? reversePcbTraceRoute(route)
+    ? reversePcbTraceRoute(route, routeThicknessMode)
     : route
 }
 
@@ -1897,6 +1878,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       cjRoute = ensureRouteStartsAtSourceTraceStart({
         db,
         route: cjRoute as PcbTrace["route"],
+        routeThicknessMode: pcb_trace.route_thickness_mode,
         sourceTraceId: routeSourceTraceId,
       })
       pcb_trace.route = cjRoute as typeof pcb_trace.route
