@@ -12,6 +12,7 @@ import {
   ConnectivityMap,
   getFullConnectivityMapFromCircuitJson,
 } from "circuit-json-to-connectivity-map"
+import { AutoplacedBreakoutPoint } from "lib/components/primitive-components/AutoplacedBreakoutPoint"
 import { Bus } from "lib/components/primitive-components/Bus"
 import { DifferentialPair } from "lib/components/primitive-components/DifferentialPair"
 import type { ISubcircuit } from "lib/components/primitive-components/Group/Subcircuit/ISubcircuit"
@@ -69,7 +70,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   minBoardEdgeClearance?: number
   minViaHoleDiameter?: number
   minViaPadDiameter?: number
-  subcircuitComponent?: Pick<ISubcircuit, "selectAll"> & {
+  subcircuitComponent?: Pick<ISubcircuit, "children" | "selectAll"> & {
     pcb_group_id?: PcbGroupId | null
   }
   /**
@@ -153,6 +154,29 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     .filter(
       (bp) => !subcircuit_id || relevantSubcircuitIds?.has(bp.subcircuit_id!),
     )
+  // pcb_breakout_point does not encode a layer, so retain the solver-selected
+  // layer from the live autoplaced component when constructing SRJ targets.
+  const autoplacedBreakoutPoints = [
+    ...(subcircuitComponent?.children ?? []),
+    ...(subcircuitComponent?.selectAll("group") ?? []).flatMap(
+      (group) => group.children,
+    ),
+  ].filter(
+    (child): child is AutoplacedBreakoutPoint =>
+      child instanceof AutoplacedBreakoutPoint,
+  )
+  const autoplacedBreakoutPointLayerByPcbBreakoutPointId = new Map(
+    autoplacedBreakoutPoints.flatMap((breakoutPoint) =>
+      breakoutPoint.pcb_breakout_point_id && breakoutPoint.matchedLayer
+        ? [
+            [
+              breakoutPoint.pcb_breakout_point_id,
+              breakoutPoint.matchedLayer,
+            ] as const,
+          ]
+        : [],
+    ),
+  )
   const breakoutPointIsInActiveRoutingGroup = (
     breakoutPoint: (typeof breakoutPoints)[number],
   ) =>
@@ -423,7 +447,10 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       return {
         x: breakoutPoint.x,
         y: breakoutPoint.y,
-        layer,
+        layer:
+          autoplacedBreakoutPointLayerByPcbBreakoutPointId.get(
+            breakoutPoint.pcb_breakout_point_id,
+          ) ?? layer,
         pointId: breakoutPoint.pcb_breakout_point_id,
         port_selector: portSelector,
       }
@@ -687,7 +714,10 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     const pt = {
       x: bp.x,
       y: bp.y,
-      layer: "top" as const,
+      layer:
+        autoplacedBreakoutPointLayerByPcbBreakoutPointId.get(
+          bp.pcb_breakout_point_id,
+        ) ?? ("top" as const),
       pointId: bp.pcb_breakout_point_id,
     }
 
