@@ -6,6 +6,7 @@ import { BreakoutPoint } from "../BreakoutPoint"
 import type { Trace } from "../Trace/Trace"
 import type { Port } from "../Port"
 import { createBreakoutPointSolverInput } from "./createBreakoutPointSolverInput"
+import { solveImplicitBreakoutPoints } from "./solve-implicit-breakout-points"
 
 export class Breakout extends Group<typeof breakoutProps> {
   override get isRoutingDirective() {
@@ -77,12 +78,42 @@ export class Breakout extends Group<typeof breakoutProps> {
   doInitialPcbAutoplaceBreakoutPoints(): void {
     if (this.root?.pcbDisabled) return
 
-    const solverInput = createBreakoutPointSolverInput(this)
-    if (!solverInput) return
+    const ownAutorouter = this.props.autorouter
+    const inheritedAutorouter =
+      ownAutorouter === undefined
+        ? this.parent?.getInheritedProperty("autorouter")
+        : undefined
+    const implicitBreakoutPointSolverFn =
+      typeof ownAutorouter === "object"
+        ? ownAutorouter.implicitBreakoutPointSolverFn
+        : typeof inheritedAutorouter === "object"
+          ? inheritedAutorouter.implicitBreakoutPointSolverFn
+          : undefined
+    let solvedBreakoutPoints
+    let bounds
+    if (implicitBreakoutPointSolverFn) {
+      if (!this.root || !this.pcb_group_id) return
+      const pcbGroup = this.root.db.pcb_group.get(this.pcb_group_id)
+      if (!pcbGroup?.width || !pcbGroup.height) return
+      bounds = {
+        minX: pcbGroup.center.x - pcbGroup.width / 2,
+        maxX: pcbGroup.center.x + pcbGroup.width / 2,
+        minY: pcbGroup.center.y - pcbGroup.height / 2,
+        maxY: pcbGroup.center.y + pcbGroup.height / 2,
+      }
+      solvedBreakoutPoints = solveImplicitBreakoutPoints(
+        this,
+        implicitBreakoutPointSolverFn,
+      )
+    } else {
+      const solverInput = createBreakoutPointSolverInput(this)
+      if (!solverInput) return
 
-    const solver = new BreakoutPointSolver(solverInput)
-    solver.solve()
-    const output = solver.getOutput()
+      const solver = new BreakoutPointSolver(solverInput)
+      solver.solve()
+      solvedBreakoutPoints = solver.getOutput().breakoutPoints
+      bounds = solverInput.bounds
+    }
 
     const autoBreakoutPoints = this.children.filter(
       (c) => c instanceof AutoplacedBreakoutPoint,
@@ -95,7 +126,6 @@ export class Breakout extends Group<typeof breakoutProps> {
     // can fall outside the nearest mesh node. Nudge solved positions a
     // fraction of a micrometer inward to keep them strictly inside.
     const BOUNDARY_INSET_MM = 1e-4 // 0.1 μm – well below PCB manufacturing precision
-    const { bounds } = solverInput
     const insetWithinBounds = (x: number, y: number) => ({
       x: Math.max(
         bounds.minX + BOUNDARY_INSET_MM,
@@ -107,7 +137,7 @@ export class Breakout extends Group<typeof breakoutProps> {
       ),
     })
 
-    for (const solvedPoint of output.breakoutPoints) {
+    for (const solvedPoint of solvedBreakoutPoints) {
       const matchingBreakoutPoint = autoBreakoutPoints.find(
         (child) =>
           child.matchedPort?.source_port_id === solvedPoint.sourcePortId,
