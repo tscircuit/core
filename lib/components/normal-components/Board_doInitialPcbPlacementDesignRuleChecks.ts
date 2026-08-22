@@ -2,6 +2,7 @@ import { runAllPlacementChecks } from "@tscircuit/checks"
 import type { AnyCircuitElement } from "circuit-json"
 import type { Renderable } from "../base-components/Renderable"
 import type { Board } from "./Board"
+import { getPcbPortNotMatchedErrors } from "./board-get-pcb-port-not-matched-errors"
 
 const resetPcbTraceRenderInSubtree = (renderable: Renderable) => {
   if (renderable._pcbTraceRenderWaitingForPlacementChecks) {
@@ -41,9 +42,10 @@ export const Board_doInitialPcbPlacementDesignRuleChecks = (board: Board) => {
   board._pcbPlacementDrcChecksPending = true
   board._queueAsyncEffect("board:pre-route-placement-checks", async () => {
     try {
-      const placementCheckResults = await runAllPlacementChecks(
-        subcircuitCircuitJson,
-      )
+      const placementCheckResults = [
+        ...getPcbPortNotMatchedErrors(subcircuitCircuitJson),
+        ...(await runAllPlacementChecks(subcircuitCircuitJson)),
+      ]
       const newPlacementDiagnostics = placementCheckResults.filter(
         (result) =>
           !existingPlacementDiagnostics.some(
