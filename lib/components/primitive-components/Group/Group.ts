@@ -1039,7 +1039,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         if (
           debugObject.subcircuit_id === this.subcircuit_id &&
           (debugObject.label?.startsWith("Autorouting phase: ") ||
-            /^autorouting phase \d+$/.test(debugObject.label ?? ""))
+            /^autorouting phase \d+(?: |$)/.test(debugObject.label ?? ""))
         ) {
           db.pcb_debug_object.delete(debugObject.pcb_debug_object_id)
         }
@@ -1052,6 +1052,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       if (!shouldEmitRoutingPhaseDebugObjects) return
       const phaseIndex = routingPhaseDisplayIndexes.get(routingPhasePlan)
       if (phaseIndex === undefined) return
+      const phaseName = routingPhasePlan.phaseName?.trim()
       db.pcb_debug_object.insert({
         shape: "rect",
         center: {
@@ -1062,7 +1063,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           width: bounds.maxX - bounds.minX,
           height: bounds.maxY - bounds.minY,
         },
-        label: `autorouting phase ${phaseIndex}`,
+        label: `autorouting phase ${phaseIndex}${phaseName ? ` ${phaseName}` : ""}`,
         subcircuit_id: this.subcircuit_id ?? undefined,
       })
     }

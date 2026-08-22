@@ -84,6 +84,9 @@ test("autoroutingphase assigns autorouter config to matching trace phases", asyn
   expect(autoroutingPhaseNames).toEqual(["route-power", "route-signal"])
   expect(
     circuit.db.pcb_debug_object.list().map((debugObject) => debugObject.label),
-  ).toEqual(["autorouting phase 0", "autorouting phase 1"])
+  ).toEqual([
+    "autorouting phase 0 route-power",
+    "autorouting phase 1 route-signal",
+  ])
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
