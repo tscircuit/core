@@ -1,9 +1,9 @@
 import type {
   ImplicitBreakoutBounds as Bounds,
-  ImplicitBreakoutBus,
+  ImplicitBreakoutEdge as BreakoutEdge,
   ImplicitBreakoutConnectionEndpoint as ConnectionEndpoint,
   ImplicitBreakoutConnectionOrDifferentialPair as ConnectionOrDifferentialPair,
-  ImplicitBreakoutEdge as BreakoutEdge,
+  ImplicitBreakoutBus,
   ImplicitBreakoutPointSolverInput,
 } from "@tscircuit/props"
 import type { PcbGroup, SourcePort, SourceTrace } from "circuit-json"
@@ -53,7 +53,10 @@ const getRoutingScopeOrThrow = (breakout: Breakout): Group<z.ZodType> => {
   return routingScope
 }
 
-const getAutomaticBreakouts = (routingScope: Group<z.ZodType>): Breakout[] => {
+const getAutomaticBreakouts = (
+  routingScope: Group<z.ZodType>,
+  breakoutToSolve: Breakout,
+): Breakout[] => {
   const automaticBreakouts: Breakout[] = []
   for (const group of routingScope.selectAll("group") as Group<z.ZodType>[]) {
     if (!group.isRoutingDirective || group.parent !== routingScope) continue
@@ -63,7 +66,20 @@ const getAutomaticBreakouts = (routingScope: Group<z.ZodType>): Breakout[] => {
     )
     if (hasAutomaticBreakoutPoints) automaticBreakouts.push(breakout)
   }
-  return automaticBreakouts
+  const getSourceTraceIds = (breakout: Breakout): Set<SourceTraceId> =>
+    new Set(
+      collectBreakoutRegionGeometry(breakout).endpointBySourceTraceId.keys(),
+    )
+  const sourceTraceIdsToSolve = getSourceTraceIds(breakoutToSolve)
+  return automaticBreakouts.filter((automaticBreakout) => {
+    const automaticBreakoutSourceTraceIds = getSourceTraceIds(automaticBreakout)
+    return (
+      automaticBreakoutSourceTraceIds.size === sourceTraceIdsToSolve.size &&
+      [...sourceTraceIdsToSolve].every((sourceTraceId) =>
+        automaticBreakoutSourceTraceIds.has(sourceTraceId),
+      )
+    )
+  })
 }
 
 /**
@@ -505,7 +521,7 @@ export const createImplicitBreakoutPointSolverContext = (
     throw new Error(`Automatic breakout "${breakout.name}" has no circuit root`)
   }
   const routingScope = getRoutingScopeOrThrow(breakout)
-  const automaticBreakouts = getAutomaticBreakouts(routingScope)
+  const automaticBreakouts = getAutomaticBreakouts(routingScope, breakout)
 
   const regionIds = new Set<PcbGroupId>()
   const collectedRegions = automaticBreakouts.map((automaticBreakout) => {

@@ -61,4 +61,6 @@ test("a breakout with too little room reports how to give the fanout space", asy
   expect(message).toContain("decoupling capacitors")
   // Does not leak the raw solver phrasing.
   expect(message).not.toContain("best layer assignment")
+  // A failed solve must not leave unresolved automatic points at the origin.
+  expect(circuit.db.pcb_breakout_point.list()).toEqual([])
 })
