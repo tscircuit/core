@@ -2,6 +2,7 @@ import { copperPourProps, type CopperPourProps } from "@tscircuit/props"
 import { PrimitiveComponent } from "../../base-components/PrimitiveComponent"
 import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
 import { CopperPour_doInitialPcbCopperPourRender } from "./CopperPour_doInitialPcbCopperPourRender"
+import { CopperPour_doInitialPcbViaStitchRender } from "./CopperPour_doInitialPcbViaStitchRender"
 
 export type { CopperPourProps }
 
@@ -26,5 +27,9 @@ export class CopperPour extends PrimitiveComponent<typeof copperPourProps> {
 
   doInitialPcbCopperPourRender(): void {
     CopperPour_doInitialPcbCopperPourRender(this)
+  }
+
+  doInitialPcbViaStitchRender(): void {
+    CopperPour_doInitialPcbViaStitchRender(this)
   }
 }
