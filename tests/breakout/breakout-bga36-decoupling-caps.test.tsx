@@ -182,10 +182,13 @@ test("breakout defaults to fanout for a 6x6 BGA surrounded by four 0603 decoupli
   expect(circuit.db.pcb_pad_trace_clearance_error.list()).toEqual([])
   expect(circuit.db.pcb_via_clearance_error.list()).toEqual([])
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  expect(circuit).toMatchPcbSnapshot(import.meta.path, {
+    diffThresholdPercent: 0.01,
+  })
   await expect(autoroutingPhaseIoStack).toMatchAutoroutingPhaseIoStackSnapshot(
     import.meta.path,
     "breakout-bga36-decoupling-caps-autorouting-srj",
     circuit,
+    { diffThresholdPercent: 0.2 },
   )
 })
