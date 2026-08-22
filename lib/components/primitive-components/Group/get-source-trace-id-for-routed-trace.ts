@@ -254,21 +254,43 @@ export function getSourceTraceIdForRoutedTrace({
   trace: RoutedTrace
   subcircuit_id?: string | null
 }) {
+  const sourcePortIds = getSourcePortIdsFromRoutedTrace(db, trace)
+  const attributedSourceElement = trace.source_trace_id
+    ? (db.source_trace.get(trace.source_trace_id) ??
+      db.source_net.get(trace.source_trace_id))
+    : undefined
+  const attributedConnectivityMapKey =
+    attributedSourceElement?.subcircuit_connectivity_map_key
+  const attributionMatchesEndpointKeys =
+    Boolean(attributedConnectivityMapKey) &&
+    sourcePortIds.every(
+      (sourcePortId) =>
+        db.source_port.get(sourcePortId)?.subcircuit_connectivity_map_key ===
+        attributedConnectivityMapKey,
+    )
+
   if (
     trace.source_trace_id &&
-    (db.source_trace.get(trace.source_trace_id) ??
-      db.source_net.get(trace.source_trace_id))
+    attributedSourceElement &&
+    (sourcePortIds.length === 0 || attributionMatchesEndpointKeys)
   ) {
     return trace.source_trace_id
   }
 
-  const sourcePortIds = getSourcePortIdsFromRoutedTrace(db, trace)
   if (sourcePortIds.length === 0) {
     return getSourceIdsFromConnectedPcbTraces(db, trace)[0]
   }
 
   const sourceTraces = db.source_trace.list()
   const connMap = buildSourceConnectivityMap(sourceTraces)
+  if (
+    trace.source_trace_id &&
+    attributedSourceElement &&
+    connMap.areAllIdsConnected([trace.source_trace_id, ...sourcePortIds])
+  ) {
+    return trace.source_trace_id
+  }
+
   const endpointNetIds = sourcePortIds
     .map((sourcePortId) => connMap.getNetConnectedToId(sourcePortId))
     .filter((netId): netId is string => Boolean(netId))
