@@ -138,6 +138,7 @@ export class NormalComponent<
   extends PrimitiveComponent<ZodProps>
   implements INormalComponent
 {
+  schematicBoxDimensions: SchematicBoxDimensions | null = null
   reactSubtrees: Array<ReactSubtree> = []
   _impliedFootprint?: string | undefined
   _resolvedPcbCalcOffsetX: number | undefined
@@ -849,11 +850,13 @@ export class NormalComponent<
     this.schematic_component_id = schematic_component.schematic_component_id
   }
 
-  _doInitialSchematicComponentRenderWithSchematicBoxDimensions() {
+  _doInitialSchematicComponentRenderWithSchematicBoxDimensions(
+    dimensions: SchematicBoxDimensions,
+  ) {
     if (this.root?.schematicDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
-    const dimensions = this._getSchematicBoxDimensions()!
+    this.schematicBoxDimensions = dimensions
 
     const primaryPortLabels: Record<string, string> = {}
     if (Array.isArray(props.pinLabels)) {
@@ -1779,6 +1782,11 @@ export class NormalComponent<
   }
 
   _getSchematicBoxDimensions(): SchematicBoxDimensions | null {
+    if (this.schematicBoxDimensions) return this.schematicBoxDimensions
+    return this._computeSchematicBoxDimensions()
+  }
+
+  _computeSchematicBoxDimensions(): SchematicBoxDimensions | null {
     // Only valid if we don't have a schematic symbol
     if (this.getSchematicSymbol()) return null
     if (
@@ -1804,7 +1812,7 @@ export class NormalComponent<
       this._getSchematicPortArrangement() ??
       this._getImplicitSparseSchematicPortArrangement(pinCount)
 
-    const dimensions = getAllDimensionsForSchematicBox({
+    return getAllDimensionsForSchematicBox({
       schWidth: props.schWidth,
       schHeight: props.schHeight,
       schPinSpacing: pinSpacing,
@@ -1818,8 +1826,6 @@ export class NormalComponent<
       schPortArrangement,
       pinLabels: allPinLabels,
     })
-
-    return dimensions
   }
 
   getFootprinterString(): string | null {
