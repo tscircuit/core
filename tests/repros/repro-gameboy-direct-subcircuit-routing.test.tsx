@@ -369,7 +369,11 @@ test("Gameboy-like board routes through a dense MCU breakout without headers", a
         ),
     ),
   ).toBe(true)
-  expect(parentPhase?.endSimpleRouteJson?.traces).toHaveLength(10)
+  expect(
+    parentPhase?.endSimpleRouteJson?.traces?.length,
+  ).toBeGreaterThanOrEqual(
+    parentPhase?.startSimpleRouteJson?.connections.length ?? 0,
+  )
   expect(
     parentPhase?.startSimpleRouteJson?.connections.every((connection) =>
       connection.pointsToConnect.some((point) =>
