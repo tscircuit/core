@@ -28,8 +28,19 @@ export class PushButton extends NormalComponent<
   }
 
   override initPorts() {
+    // A 4-leg tactile switch has four physical legs. Hardcoding pinCount: 2
+    // meant pins 3 and 4 never got ports — so those pads had no pcb_port, could
+    // not join a net, and vanished from connectivity analysis entirely. (It also
+    // left the pin3/pin4 lookups below undefined, which is what crashed when
+    // internallyConnectedPins was set.)
+    //
+    // With a footprint, let NormalComponent derive the ports from it, so a
+    // 4-leg part gets 4 and a 2-pin part gets 2. With no footprint there is
+    // nothing to derive from, so keep the historical 2-pin default — a bare
+    // <pushbutton /> is still a two-terminal switch schematically.
+    const hasFootprint = Boolean(this.props.footprint)
     super.initPorts({
-      pinCount: 2,
+      ...(hasFootprint ? {} : { pinCount: 2 }),
       ignoreSymbolPorts: true,
     })
 
@@ -39,25 +50,32 @@ export class PushButton extends NormalComponent<
     const symPort2 = symbol.ports.find((p) => p.labels.includes("2"))
 
     const ports = this.selectAll("port")
-    const pin1Port = ports.find((p) => p.props.pinNumber === 1)! as Port
-    const pin2Port = ports.find((p) => p.props.pinNumber === 2)! as Port
-    const pin3Port = ports.find((p) => p.props.pinNumber === 3)! as Port
-    const pin4Port = ports.find((p) => p.props.pinNumber === 4)! as Port
+    const getPortByPinNumber = (pinNumber: number) =>
+      ports.find((p) => p.props.pinNumber === pinNumber) as Port | undefined
 
+    const pin1Port = getPortByPinNumber(1)
     const { internallyConnectedPins } = this._parsedProps
 
-    pin1Port.schematicSymbolPortDef = symPort1!
+    // The schematic symbol only ever has two terminals ("1" and "2") — the
+    // extra legs of a 4-leg switch are the same two electrical nodes — so the
+    // mapping below assigns the symbol's second terminal to whichever pin
+    // represents it.
+    if (pin1Port) pin1Port.schematicSymbolPortDef = symPort1!
 
-    if (!internallyConnectedPins || internallyConnectedPins.length === 0) {
+    const pin2Port = getPortByPinNumber(2)
+    if (
+      pin2Port &&
+      (!internallyConnectedPins || internallyConnectedPins.length === 0)
+    ) {
       pin2Port.schematicSymbolPortDef = symPort2!
     }
 
     // Find the lowest-numbered pin that's not connected to pin1
-    for (const [pn, port] of [
-      [2, pin2Port],
-      [3, pin3Port],
-      [4, pin4Port],
-    ] as const) {
+    for (const pn of [2, 3, 4] as const) {
+      const port = getPortByPinNumber(pn)
+      // A 2-pin pushbutton simply has no pin3/pin4 — skip rather than crash.
+      if (!port) continue
+
       const internallyConnectedRow = internallyConnectedPins?.find(
         ([pin1, pin2]) => pin1 === `pin${pn}` || pin2 === `pin${pn}`,
       )
