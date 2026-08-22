@@ -532,6 +532,12 @@ export class Board
 
       thickness: this.boardThickness,
       num_layers: this.allLayers.length,
+      ...(props.routingLayers !== undefined && {
+        routing_layers: props.routingLayers,
+      }),
+      ...(props.viaSpanPolicy !== undefined && {
+        via_span_policy: props.viaSpanPolicy,
+      }),
 
       width: computedWidth!,
       height: computedHeight!,

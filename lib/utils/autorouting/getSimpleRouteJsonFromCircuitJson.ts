@@ -863,6 +863,10 @@ export const getSimpleRouteJsonFromCircuitJson = ({
           ? preservedRoutedSubcircuitTraces
           : undefined,
       layerCount: board?.num_layers ?? 2,
+      routingLayers: board?.routing_layers,
+      viaSpanPolicy: board
+        ? (board.via_span_policy ?? "through_only")
+        : undefined,
       minTraceWidth: Math.min(
         defaultTraceWidth,
         ...allConns.map((c) => c.width!),

@@ -145,6 +145,13 @@ export type SimpleRouteJson = Omit<
   | "buses"
 > & {
   layerCount: number
+  /**
+   * Copper layers available for newly autorouted wire segments and logical
+   * routing transitions. Physical via spans are controlled independently.
+   */
+  routingLayers?: string[]
+  /** Physical span policy for newly autorouted vias. */
+  viaSpanPolicy?: "through_only" | "unrestricted"
   minTraceWidth: number
   nominalTraceWidth?: number
   /** @deprecated Use `min_via_pad_diameter` / `minViaPadDiameter` instead. */
