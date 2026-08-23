@@ -148,6 +148,7 @@ export class Breakout extends Group<typeof breakoutProps> {
         const insetPoint = insetWithinBounds(solvedPoint.x, solvedPoint.y)
         matchingBreakoutPoint._applySolvedBreakoutPoint({
           sourceTraceId: solvedPoint.sourceTraceId,
+          layer: solvedPoint.layer,
           position: insetPoint,
         })
       }

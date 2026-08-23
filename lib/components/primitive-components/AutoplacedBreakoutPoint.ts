@@ -1,3 +1,4 @@
+import { layer_ref } from "circuit-json"
 import { BaseBreakoutPoint, baseBreakoutPointProps } from "./BaseBreakoutPoint"
 
 /**
@@ -20,13 +21,15 @@ export class AutoplacedBreakoutPoint extends BaseBreakoutPoint<
 
   _applySolvedBreakoutPoint({
     sourceTraceId,
+    layer,
     position,
   }: {
     sourceTraceId: string
+    layer: string
     position: { x: number; y: number }
   }): void {
     this.matchedSourceTraceId = sourceTraceId
-    this._renderPcbBreakoutPoint()
+    this._renderPcbBreakoutPoint({ layer: layer_ref.parse(layer) })
     this._setPositionFromLayout(position)
   }
 }

@@ -423,7 +423,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       return {
         x: breakoutPoint.x,
         y: breakoutPoint.y,
-        layer,
+        layer: breakoutPoint.layer ?? layer,
         pointId: breakoutPoint.pcb_breakout_point_id,
         port_selector: portSelector,
       }
@@ -687,7 +687,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     const pt = {
       x: bp.x,
       y: bp.y,
-      layer: "top" as const,
+      layer: bp.layer ?? "top",
       pointId: bp.pcb_breakout_point_id,
     }
 
