@@ -1197,15 +1197,35 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           ],
         }
       } else if (!usesPreviousStageOutput && hasPhasedAutorouting) {
+        const isCustomBreakoutRoutingPhase = Boolean(
+          routingPhasePlan.routingPcbGroupId &&
+            phaseAutorouterConfig.algorithmFn,
+        )
+        const phaseScopedSimpleRouteJson = isCustomBreakoutRoutingPhase
+          ? getSimpleRouteJsonFromCircuitJson({
+              db,
+              minTraceWidth,
+              nominalTraceWidth,
+              subcircuit_id: this.subcircuit_id,
+              subcircuitComponent: this,
+              routingPcbGroupId: routingPhasePlan.routingPcbGroupId,
+              fanoutPourNetMap,
+            }).simpleRouteJson
+          : baseSimpleRouteJson
         const phaseInput = Group_filterSimpleRouteJsonForPhase(
           baseSimpleRouteJson,
           routingPhasePlan,
         )
-        // Preserve routed geometry as SRJ traces. The autorouter owns
-        // converting traces to obstacles and approximating diagonal segments.
+        // Custom breakout algorithms receive only the active group's fixed
+        // geometry. Their outputs stay accumulated for the later parent/global
+        // phase, but must not leak into a sibling breakout's local problem.
         simpleRouteJson = {
           ...phaseInput,
-          traces: [...(phaseInput.traces ?? []), ...outputTraces],
+          obstacles: phaseScopedSimpleRouteJson.obstacles,
+          traces: [
+            ...(phaseInput.traces ?? []),
+            ...(isCustomBreakoutRoutingPhase ? [] : outputTraces),
+          ],
         }
       }
       simpleRouteJson = Group_applyDrcTolerancesToSimpleRouteJson(
