@@ -14,13 +14,13 @@ interface DdrConnection {
 }
 
 const DDR_CONNECTIONS: readonly DdrConnection[] = [
-  ...[0, 1].map((bit) => ({
+  ...[0, 1, 2, 3, 4, 5, 6, 7].map((bit) => ({
     busName: "DDR_BYTE0" as const,
     memorySignal: `DQ${bit}`,
     socSignal: `DDR0_DQ${bit}`,
     traceName: `DQ${bit}`,
   })),
-  ...[0, 1].map((offset) => {
+  ...[0, 1, 2, 3, 4, 5, 6, 7].map((offset) => {
     const bit = offset + 8
     return {
       busName: "DDR_BYTE1" as const,
@@ -36,10 +36,18 @@ const AM62L_PIN_LABELS = {
   pin91: ["F1", "DDR0_DQ2"],
   pin93: ["F3", "DDR0_DQ1"],
   pin94: ["F4", "DDR0_DQ0"],
+  pin105: ["G4", "DDR0_DQ4"],
+  pin121: ["H2", "DDR0_DQ6"],
+  pin122: ["H3", "DDR0_DQ7"],
+  pin123: ["H4", "DDR0_DQ5"],
   pin236: ["T1", "DDR0_DQ10"],
   pin238: ["T3", "DDR0_DQ9"],
   pin255: ["U1", "DDR0_DQ11"],
+  pin256: ["U2", "DDR0_DQ14"],
+  pin257: ["U4", "DDR0_DQ12"],
   pin275: ["V4", "DDR0_DQ8"],
+  pin276: ["V5", "DDR0_DQ13"],
+  pin284: ["W1", "DDR0_DQ15"],
 } as const
 
 // The real 373-ball FCCSP footprint is a 0.5 mm grid with depopulated rows.
@@ -119,12 +127,20 @@ const Am62l32 = (props: ChipProps<typeof AM62L_PIN_LABELS>) => (
 
 const LPDDR4_PIN_LABELS = {
   pin12: ["DQ0"],
+  pin14: ["DQ7"],
+  pin17: ["DQ15"],
   pin19: ["DQ8"],
   pin22: ["DQ1"],
+  pin24: ["DQ6"],
+  pin27: ["DQ14"],
   pin29: ["DQ9"],
   pin42: ["DQ2"],
+  pin44: ["DQ5"],
+  pin47: ["DQ13"],
   pin49: ["DQ10"],
   pin52: ["DQ3"],
+  pin54: ["DQ4"],
+  pin57: ["DQ12"],
   pin59: ["DQ11"],
 } as const
 
@@ -183,12 +199,12 @@ const FANOUT_BUSES = [
   {
     name: "DDR_BYTE0",
     connections: byte0TraceNames,
-    preferredLayer: "inner1",
+    preferredLayers: ["top", "inner1"],
   },
   {
     name: "DDR_BYTE1",
     connections: byte1TraceNames,
-    preferredLayer: "inner2",
+    preferredLayers: ["inner2", "bottom"],
   },
 ] as const
 
@@ -215,9 +231,13 @@ test("routes two DDR byte buses between AM62L and LPDDR4 fanouts", async () => {
       <breakout
         name="SOC_FANOUT"
         pcbX={-9.5}
-        padding="1.5mm"
+        padding="4mm"
         autorouter="fanout"
         fanoutRoutingLayers={[...SIGNAL_LAYERS]}
+        busFanoutDirections={{
+          DDR_BYTE0: "top_center",
+          DDR_BYTE1: "top_center",
+        }}
       >
         <Am62l32 name="U1" noSchematicRepresentation />
       </breakout>
@@ -226,19 +246,23 @@ test("routes two DDR byte buses between AM62L and LPDDR4 fanouts", async () => {
         name="DRAM_FANOUT"
         pcbX={9.616917}
         pcbY={-0.050917}
-        padding="1.5mm"
+        padding="4mm"
         autorouter="fanout"
         fanoutRoutingLayers={[...SIGNAL_LAYERS]}
+        busFanoutDirections={{
+          DDR_BYTE0: "center_left",
+          DDR_BYTE1: "center_left",
+        }}
       >
         <Mt53e1g16d1zw name="U2" pcbRotation={90} noSchematicRepresentation />
       </breakout>
 
-      {FANOUT_BUSES.map(({ name, connections, preferredLayer }) => (
+      {FANOUT_BUSES.map(({ name, connections, preferredLayers }) => (
         <Fragment key={name}>
           <bus
             name={name}
             connections={[...connections]}
-            preferredLayer={preferredLayer}
+            preferredLayers={[...preferredLayers]}
           />
         </Fragment>
       ))}
@@ -257,7 +281,7 @@ test("routes two DDR byte buses between AM62L and LPDDR4 fanouts", async () => {
         pcbX={0}
         pcbY={11.2}
         fontSize="0.7mm"
-        text="AM62L32 to LPDDR4: BYTE0 gold/inner1, BYTE1 green/inner2 (4 DQ signals)"
+        text="AM62L32 to LPDDR4: full BYTE0 DQ0-DQ7 top/inner1, full BYTE1 DQ8-DQ15 inner2/bottom"
       />
       <pcbnotetext
         pcbX={0}
@@ -276,10 +300,10 @@ test("routes two DDR byte buses between AM62L and LPDDR4 fanouts", async () => {
     autoroutingPhaseIoStack.map(
       (phaseIo) => phaseIo.startSimpleRouteJson?.connections.length,
     ),
-  ).toEqual([4, 4, 4])
+  ).toEqual([16, 16, 16])
   expect(autoroutingPhaseIoStack[2]?.startSimpleRouteJson?.traces).toHaveLength(
-    8,
+    32,
   )
-  expect(circuit.db.pcb_trace.list()).toHaveLength(12)
+  expect(circuit.db.pcb_trace.list()).toHaveLength(48)
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
-}, 120_000)
+}, 300_000)
