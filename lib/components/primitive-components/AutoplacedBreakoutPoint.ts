@@ -1,3 +1,4 @@
+import { layer_ref } from "circuit-json"
 import { BaseBreakoutPoint, baseBreakoutPointProps } from "./BaseBreakoutPoint"
 
 /**
@@ -11,9 +12,6 @@ import { BaseBreakoutPoint, baseBreakoutPointProps } from "./BaseBreakoutPoint"
 export class AutoplacedBreakoutPoint extends BaseBreakoutPoint<
   typeof baseBreakoutPointProps
 > {
-  /** Layer selected by the implicit breakout point solver. */
-  matchedLayer: string | null = null
-
   get config() {
     return {
       componentName: "AutoplacedBreakoutPoint",
@@ -31,8 +29,7 @@ export class AutoplacedBreakoutPoint extends BaseBreakoutPoint<
     position: { x: number; y: number }
   }): void {
     this.matchedSourceTraceId = sourceTraceId
-    this.matchedLayer = layer
-    this._renderPcbBreakoutPoint()
+    this._renderPcbBreakoutPoint({ layer: layer_ref.parse(layer) })
     this._setPositionFromLayout(position)
   }
 }

@@ -1,8 +1,9 @@
 import { pcbLayoutProps } from "@tscircuit/props"
-import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
-import type { Port } from "./Port"
-import type { Net } from "./Net"
+import type { LayerRef } from "circuit-json"
 import type { ZodType } from "zod"
+import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
+import type { Net } from "./Net"
+import type { Port } from "./Port"
 
 /**
  * Shared base props for breakout points — layout props without rotation/layer.
@@ -43,7 +44,11 @@ export class BaseBreakoutPoint<
     return trace?.connected_source_net_ids[0]
   }
 
-  _renderPcbBreakoutPoint(): void {
+  _renderPcbBreakoutPoint({
+    layer,
+  }: {
+    layer?: LayerRef
+  } = {}): void {
     if (this.pcb_breakout_point_id) return
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
@@ -64,6 +69,7 @@ export class BaseBreakoutPoint<
         : this.matchedPort
           ? this._getSourceNetIdForPort(this.matchedPort)
           : undefined,
+      layer,
       x: position.x,
       y: position.y,
     })
