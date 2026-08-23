@@ -32,9 +32,7 @@
   "devDependencies": {
     "@biomejs/biome": "^1.8.3",
     "@resvg/resvg-js": "^2.6.2",
-    "@tsci/0hmX.mt53e1g16d1zw-footprint": "1.0.2",
     "@tsci/tscircuit.ti": "github:tscircuit/ti#57e314be4b2b06bc546d4def7453e619604d1157",
-    "@tsci/tscircuit.ti-am62l": "npm:@tsci/tscircuit.ti@1.0.100",
     "@tscircuit/alphabet": "0.0.25",
     "@tscircuit/capacity-autorouter": "^0.0.832",
     "@tscircuit/checks": "^0.0.168",
