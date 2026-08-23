@@ -68,17 +68,19 @@ export function applyInlineNetLabelPlacements(args: {
     let sourceTraceId = sourceTraceIdByPinPairKey.get(
       [...schematicPortIds].sort().join("::"),
     )
-    if (!sourceTraceId && schematicPortIds.length === 1 && connKey) {
-      const schematicPort = db.schematic_port.get(schematicPortIds[0]!)
-      const sourcePortId = schematicPort?.source_port_id
+    if (!sourceTraceId && connKey) {
+      const sourcePortIds = schematicPortIds.flatMap((schematicPortId) => {
+        const sourcePortId =
+          db.schematic_port.get(schematicPortId)?.source_port_id
+        return sourcePortId ? [sourcePortId] : []
+      })
       sourceTraceId = db.source_trace
         .list()
         .find(
           (sourceTrace) =>
             sourceTrace.subcircuit_connectivity_map_key === connKey &&
-            Boolean(
-              sourcePortId &&
-                sourceTrace.connected_source_port_ids.includes(sourcePortId),
+            sourcePortIds.some((sourcePortId) =>
+              sourceTrace.connected_source_port_ids.includes(sourcePortId),
             ),
         )?.source_trace_id
     }

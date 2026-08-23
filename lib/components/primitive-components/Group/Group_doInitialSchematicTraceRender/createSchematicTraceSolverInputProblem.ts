@@ -640,6 +640,17 @@ export function createSchematicTraceSolverInputProblem(
     connKeyToSourceNet,
     connKeysWithExplicitPortNetTraces,
     schematicPortIdsWithExplicitNetLabels,
+    areSchematicPortsOnDifferentComponents: (schematicPortIds) => {
+      const componentIds = schematicPortIds.map(
+        (schematicPortId) =>
+          db.schematic_port.get(schematicPortId)?.schematic_component_id,
+      )
+      return (
+        componentIds.every((componentId): componentId is string =>
+          Boolean(componentId),
+        ) && componentIds[0] !== componentIds[1]
+      )
+    },
     resolveCanonicalNetLabelText,
   })
 

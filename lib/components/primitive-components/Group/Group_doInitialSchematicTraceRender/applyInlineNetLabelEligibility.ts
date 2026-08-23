@@ -32,11 +32,12 @@ type EligibleNetConnection = {
  * - the net has a name the user chose - a `schDisplayLabel`/`name` on the trace
  *   or a named net - rather than one derived from the ports it happens to hit.
  *
- * A single-port named signal net is also eligible when it comes from an
- * explicit port-to-net trace. The solver renders that as an outward trace
- * stub, so a component pin can carry an inline label without requiring a dummy
- * second chip. Ports with an explicit `<netlabel>` element are excluded so
- * their user-selected anchored-label semantics remain intact.
+ * A named signal net made from explicit port-to-net traces is also eligible
+ * when it has either one port or two ports on different components. A
+ * single-port net renders as one outward stub. A routed two-port net gets one
+ * label along its trace; when schematic sections suppress that route, both
+ * endpoints get outward stubs. Ports with an explicit `<netlabel>` element are
+ * excluded so their user-selected anchored-label semantics remain intact.
  *
  * The solver still has the last word: it falls back to an anchored label when
  * no collision-free inline placement exists.
@@ -48,6 +49,7 @@ export const applyInlineNetLabelEligibility = ({
   connKeyToSourceNet,
   connKeysWithExplicitPortNetTraces,
   schematicPortIdsWithExplicitNetLabels,
+  areSchematicPortsOnDifferentComponents,
   resolveCanonicalNetLabelText,
 }: {
   directConnections: EligibleDirectConnection[]
@@ -56,6 +58,9 @@ export const applyInlineNetLabelEligibility = ({
   connKeyToSourceNet: Map<string, SourceNet>
   connKeysWithExplicitPortNetTraces: Set<string>
   schematicPortIdsWithExplicitNetLabels: Set<SchematicPortId>
+  areSchematicPortsOnDifferentComponents: (
+    schematicPortIds: [SchematicPortId, SchematicPortId],
+  ) => boolean
   resolveCanonicalNetLabelText: (args: {
     subcircuitConnectivityMapKey: string
   }) => { name: string; wasAssignedDisplayLabel: boolean }
@@ -93,14 +98,20 @@ export const applyInlineNetLabelEligibility = ({
   }
 
   for (const netConnection of netConnections) {
-    if (netConnection.schematicPortIds.length !== 1) continue
-    if (
-      schematicPortIdsWithExplicitNetLabels.has(
-        netConnection.schematicPortIds[0]!,
+    const { schematicPortIds } = netConnection
+    const isSinglePort = schematicPortIds.length === 1
+    const isTwoPortChipToChip =
+      schematicPortIds.length === 2 &&
+      areSchematicPortsOnDifferentComponents(
+        schematicPortIds as [SchematicPortId, SchematicPortId],
       )
-    ) {
+    if (!isSinglePort && !isTwoPortChipToChip) continue
+    if (
+      schematicPortIds.some((schematicPortId) =>
+        schematicPortIdsWithExplicitNetLabels.has(schematicPortId),
+      )
+    )
       continue
-    }
     const { connKey } = netConnection
     if (!connKey) continue
     if (!connKeysWithExplicitPortNetTraces.has(connKey)) continue
