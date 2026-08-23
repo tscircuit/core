@@ -261,6 +261,9 @@ export function Group_getRoutingPhasePlans(
   const plansByPhaseIndex = new Map<number | null, RoutingPhasePlan>()
   const autoroutersByPhaseIndex = getAutoroutersByPhaseIndex(group)
   const phasePropsByPhaseIndex = getAutoroutingPhasePropsByPhaseIndex(group)
+  const inheritedAutorouter = group.getInheritedProperty("autorouter") as
+    | AutorouterProp
+    | undefined
   const groupFanoutProps = group._parsedProps as GroupFanoutProps
   const hasDirectRoutingTargets = traces.length > 0 || nets.length > 0
   const hasReroutePhase = Array.from(phasePropsByPhaseIndex.values()).some(
@@ -338,7 +341,8 @@ export function Group_getRoutingPhasePlans(
     compareRoutingPhasePlans,
   )
   for (const plan of plans) {
-    plan.autorouter = autoroutersByPhaseIndex.get(plan.routingPhaseIndex)
+    plan.autorouter =
+      autoroutersByPhaseIndex.get(plan.routingPhaseIndex) ?? inheritedAutorouter
     const phaseProps = phasePropsByPhaseIndex.get(plan.routingPhaseIndex)
     plan.phaseName = phaseProps?.name
     plan.reroute = phaseProps?.reroute
@@ -484,6 +488,7 @@ export function Group_getRoutingPhasePlans(
       ...breakoutPlans,
       {
         routingPhaseIndex: null,
+        autorouter: inheritedAutorouter,
         nets: [...reroutePlan.nets],
         traces: [...reroutePlan.traces],
       },

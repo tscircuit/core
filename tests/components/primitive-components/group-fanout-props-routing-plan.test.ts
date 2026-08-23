@@ -1,8 +1,8 @@
 import { expect, test } from "bun:test"
-import type { z } from "zod"
 import type { Group } from "lib/components/primitive-components/Group/Group"
 import { Group_getRoutingPhasePlans } from "lib/components/primitive-components/Group/Group_getRoutingPhasePlans"
 import type { Trace } from "lib/components/primitive-components/Trace/Trace"
+import type { z } from "zod"
 
 test("group fanout props configure its default routing plan", () => {
   const trace = {
@@ -22,6 +22,7 @@ test("group fanout props configure its default routing plan", () => {
         inner2: "VCC",
       },
     },
+    getInheritedProperty: () => undefined,
     selectAll: (selector: string) => (selector === "trace" ? [trace] : []),
   } as unknown as Group<z.ZodType>
 
