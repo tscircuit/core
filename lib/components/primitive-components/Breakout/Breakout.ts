@@ -5,6 +5,7 @@ import { Group } from "../Group/Group"
 import type { Port } from "../Port"
 import type { Trace } from "../Trace/Trace"
 import { defaultImplicitBreakoutPointSolverFn } from "./default-implicit-breakout-point-solver"
+import { Breakout_doInitialPcbPlacementDesignRuleChecks } from "./Breakout_doInitialPcbPlacementDesignRuleChecks"
 import { reportWindingBreakoutInfeasibleError } from "./report-winding-breakout-infeasible-error"
 import {
   type ImplicitBreakoutPointPlacement,
@@ -157,5 +158,9 @@ export class Breakout extends Group<typeof breakoutProps> {
 
   doInitialPcbPrimitiveRender(): void {
     super.doInitialPcbPrimitiveRender()
+  }
+
+  doInitialPcbPlacementDesignRuleChecks(): void {
+    Breakout_doInitialPcbPlacementDesignRuleChecks(this)
   }
 }
