@@ -1,16 +1,7 @@
 import { expect, test } from "bun:test"
 import type { ChipProps } from "@tscircuit/props"
-import type {
-  AutorouterCompleteEvent,
-  AutorouterErrorEvent,
-  AutorouterProgressEvent,
-  GenericLocalAutorouter,
-} from "lib/utils/autorouting/GenericLocalAutorouter"
-import type {
-  SimpleRouteJson,
-  SimplifiedPcbTrace,
-} from "lib/utils/autorouting/SimpleRouteJson"
 import { Fragment } from "react"
+import { createAutoroutingPhaseIoStack } from "tests/fixtures/create-autorouting-phase-io-stack"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 type DdrByteBusName = "DDR_BYTE0" | "DDR_BYTE1"
@@ -210,150 +201,9 @@ const FANOUT_BUSES = [
   },
 ] as const
 
-type ListenerMap = {
-  complete: Array<(event: AutorouterCompleteEvent) => void>
-  error: Array<(event: AutorouterErrorEvent) => void>
-  progress: Array<(event: AutorouterProgressEvent) => void>
-}
-
-/**
- * Join Core's synchronized breakout endpoints directly so this snapshot shows
- * fanout exit ordering without adding a second routing heuristic.
- */
-class DirectMiddleChannelAutorouter implements GenericLocalAutorouter {
-  isRouting = false
-  private outputSimpleRouteJson?: SimpleRouteJson
-  private readonly listeners: ListenerMap = {
-    complete: [],
-    error: [],
-    progress: [],
-  }
-
-  constructor(public readonly input: SimpleRouteJson) {}
-
-  private solve(): SimplifiedPcbTrace[] {
-    const traces = this.input.connections.map((connection) => {
-      if (connection.pointsToConnect.length !== 2) {
-        throw new Error(
-          `${connection.name} expected two synchronized fanout endpoints`,
-        )
-      }
-      const [first, second] = connection.pointsToConnect
-      if (!first || !second) {
-        throw new Error(`${connection.name} fanout endpoint is missing`)
-      }
-      const width =
-        connection.nominalTraceWidth ??
-        connection.width ??
-        this.input.nominalTraceWidth ??
-        this.input.minTraceWidth
-      const [left, right] =
-        first.x <= second.x ? [first, second] : [second, first]
-      const route: SimplifiedPcbTrace["route"] = [
-        {
-          route_type: "wire",
-          x: left.x,
-          y: left.y,
-          width,
-          layer: left.layer,
-        },
-        {
-          route_type: "wire",
-          x: right.x,
-          y: right.y,
-          width,
-          layer: left.layer,
-        },
-      ]
-      if (left.layer !== right.layer) {
-        route.push(
-          {
-            route_type: "via",
-            x: right.x,
-            y: right.y,
-            from_layer: left.layer,
-            to_layer: right.layer,
-          },
-          {
-            route_type: "wire",
-            x: right.x,
-            y: right.y,
-            width,
-            layer: right.layer,
-          },
-        )
-      }
-      return {
-        type: "pcb_trace" as const,
-        pcb_trace_id: `am62l-middle-${connection.name}`,
-        connection_name: connection.name,
-        connectsTo: connection.pointsToConnect.flatMap((point) =>
-          point.pointId ? [point.pointId] : [],
-        ),
-        route,
-      }
-    })
-    this.outputSimpleRouteJson = {
-      ...this.input,
-      traces: [...(this.input.traces ?? []), ...traces],
-    }
-    return traces
-  }
-
-  start(): void {
-    this.isRouting = true
-    queueMicrotask(() => {
-      try {
-        const traces = this.solve()
-        this.isRouting = false
-        for (const listener of this.listeners.complete) {
-          listener({ type: "complete", traces })
-        }
-      } catch (error) {
-        this.isRouting = false
-        const normalizedError =
-          error instanceof Error ? error : new Error(String(error))
-        for (const listener of this.listeners.error) {
-          listener({ type: "error", error: normalizedError })
-        }
-      }
-    })
-  }
-
-  stop(): void {
-    this.isRouting = false
-  }
-
-  on(
-    event: "complete",
-    callback: (event: AutorouterCompleteEvent) => void,
-  ): void
-  on(event: "error", callback: (event: AutorouterErrorEvent) => void): void
-  on(
-    event: "progress",
-    callback: (event: AutorouterProgressEvent) => void,
-  ): void
-  on(
-    event: keyof ListenerMap,
-    callback:
-      | ((event: AutorouterCompleteEvent) => void)
-      | ((event: AutorouterErrorEvent) => void)
-      | ((event: AutorouterProgressEvent) => void),
-  ): void {
-    this.listeners[event].push(callback as never)
-  }
-
-  solveSync(): SimplifiedPcbTrace[] {
-    return this.solve()
-  }
-
-  getOutputSimpleRouteJson(): SimpleRouteJson | undefined {
-    return this.outputSimpleRouteJson
-  }
-}
-
-test("routes two DDR byte buses through an AM62L BGA fanout", async () => {
+test("routes two DDR byte buses between AM62L and LPDDR4 fanouts", async () => {
   const { circuit } = getTestFixture()
+  const autoroutingPhaseIoStack = createAutoroutingPhaseIoStack(circuit)
 
   circuit.add(
     <board
@@ -369,11 +219,7 @@ test("routes two DDR byte buses through an AM62L BGA fanout", async () => {
       minViaHoleDiameter="0.1mm"
       minViaPadDiameter="0.24mm"
       pcbStyle={{ viaHoleDiameter: "0.1mm", viaPadDiameter: "0.24mm" }}
-      autorouter={{
-        local: true,
-        groupMode: "subcircuit",
-        algorithmFn: async (input) => new DirectMiddleChannelAutorouter(input),
-      }}
+      autorouter="default"
     >
       <breakout
         name="SOC_FANOUT"
@@ -385,26 +231,26 @@ test("routes two DDR byte buses through an AM62L BGA fanout", async () => {
         <Am62l32 name="U1" noSchematicRepresentation />
       </breakout>
 
-      <Mt53e1g16d1zw
-        name="U2"
+      <breakout
+        name="DRAM_FANOUT"
         pcbX={15.116917}
         pcbY={-0.050917}
-        pcbRotation={90}
-        noSchematicRepresentation
-      />
+        padding="4mm"
+        autorouter="fanout"
+        fanoutRoutingLayers={[...SIGNAL_LAYERS]}
+      >
+        <Mt53e1g16d1zw name="U2" pcbRotation={90} noSchematicRepresentation />
+      </breakout>
 
-      {FANOUT_BUSES.map(
-        ({ name, connections, preferredLayer }, routingPhaseIndex) => (
-          <Fragment key={name}>
-            <bus
-              name={name}
-              connections={[...connections]}
-              preferredLayer={preferredLayer}
-              routingPhaseIndex={routingPhaseIndex}
-            />
-          </Fragment>
-        ),
-      )}
+      {FANOUT_BUSES.map(({ name, connections, preferredLayer }) => (
+        <Fragment key={name}>
+          <bus
+            name={name}
+            connections={[...connections]}
+            preferredLayer={preferredLayer}
+          />
+        </Fragment>
+      ))}
 
       {DDR_CONNECTIONS.map(({ memorySignal, socSignal, traceName }) => (
         <Fragment key={traceName}>
@@ -426,7 +272,7 @@ test("routes two DDR byte buses through an AM62L BGA fanout", async () => {
         pcbX={0}
         pcbY={11.9}
         fontSize="0.6mm"
-        text="AM62L BGA fanout; straight middle channel exposes exit ordering"
+        text="AM62L fanout + DRAM fanout, then one default global routing phase"
       />
     </board>,
   )
@@ -434,6 +280,15 @@ test("routes two DDR byte buses through an AM62L BGA fanout", async () => {
   await circuit.renderUntilSettled()
 
   expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
-  expect(circuit.db.pcb_trace.list()).toHaveLength(16)
+  expect(autoroutingPhaseIoStack).toHaveLength(3)
+  expect(
+    autoroutingPhaseIoStack.map(
+      (phaseIo) => phaseIo.startSimpleRouteJson?.connections.length,
+    ),
+  ).toEqual([8, 8, 8])
+  expect(autoroutingPhaseIoStack[2]?.startSimpleRouteJson?.traces).toHaveLength(
+    16,
+  )
+  expect(circuit.db.pcb_trace.list()).toHaveLength(24)
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
