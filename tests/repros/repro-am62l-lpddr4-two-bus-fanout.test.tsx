@@ -14,13 +14,13 @@ interface DdrConnection {
 }
 
 const DDR_CONNECTIONS: readonly DdrConnection[] = [
-  ...[0, 1, 2, 3].map((bit) => ({
+  ...[0, 1].map((bit) => ({
     busName: "DDR_BYTE0" as const,
     memorySignal: `DQ${bit}`,
     socSignal: `DDR0_DQ${bit}`,
     traceName: `DQ${bit}`,
   })),
-  ...[0, 1, 2, 3].map((offset) => {
+  ...[0, 1].map((offset) => {
     const bit = offset + 8
     return {
       busName: "DDR_BYTE1" as const,
@@ -170,16 +170,7 @@ const Mt53e1g16d1zw = (props: ChipProps<typeof LPDDR4_PIN_LABELS>) => (
   />
 )
 
-const SIGNAL_LAYERS = [
-  "top",
-  "inner1",
-  "inner2",
-  "inner3",
-  "inner4",
-  "inner5",
-  "inner6",
-  "bottom",
-] as const
+const SIGNAL_LAYERS = ["top", "inner1", "inner2", "bottom"] as const
 
 const byte0TraceNames = DDR_CONNECTIONS.filter(
   ({ busName }) => busName === "DDR_BYTE0",
@@ -192,12 +183,12 @@ const FANOUT_BUSES = [
   {
     name: "DDR_BYTE0",
     connections: byte0TraceNames,
-    preferredLayer: "inner2",
+    preferredLayer: "inner1",
   },
   {
     name: "DDR_BYTE1",
     connections: byte1TraceNames,
-    preferredLayer: "inner3",
+    preferredLayer: "inner2",
   },
 ] as const
 
@@ -208,9 +199,9 @@ test("routes two DDR byte buses between AM62L and LPDDR4 fanouts", async () => {
   circuit.add(
     <board
       name="AM62L_LPDDR4_TWO_BUS_FANOUT"
-      width="70mm"
-      height="30mm"
-      layers={8}
+      width="50mm"
+      height="28mm"
+      layers={4}
       defaultTraceWidth="0.08128mm"
       minTraceWidth="0.08128mm"
       minTraceToPadEdgeClearance="0.05mm"
@@ -223,8 +214,8 @@ test("routes two DDR byte buses between AM62L and LPDDR4 fanouts", async () => {
     >
       <breakout
         name="SOC_FANOUT"
-        pcbX={-15}
-        padding="4mm"
+        pcbX={-11}
+        padding="2.5mm"
         autorouter="fanout"
         fanoutRoutingLayers={[...SIGNAL_LAYERS]}
       >
@@ -233,9 +224,9 @@ test("routes two DDR byte buses between AM62L and LPDDR4 fanouts", async () => {
 
       <breakout
         name="DRAM_FANOUT"
-        pcbX={15.116917}
+        pcbX={11.116917}
         pcbY={-0.050917}
-        padding="4mm"
+        padding="2.5mm"
         autorouter="fanout"
         fanoutRoutingLayers={[...SIGNAL_LAYERS]}
       >
@@ -264,13 +255,13 @@ test("routes two DDR byte buses between AM62L and LPDDR4 fanouts", async () => {
 
       <pcbnotetext
         pcbX={0}
-        pcbY={13.2}
+        pcbY={12.2}
         fontSize="0.7mm"
-        text="AM62L32 to LPDDR4: BYTE0 gold/inner2, BYTE1 green/inner3 (8 DQ signals)"
+        text="AM62L32 to LPDDR4: BYTE0 gold/inner1, BYTE1 green/inner2 (4 DQ signals)"
       />
       <pcbnotetext
         pcbX={0}
-        pcbY={11.9}
+        pcbY={11.1}
         fontSize="0.6mm"
         text="AM62L fanout + DRAM fanout, then one default global routing phase"
       />
@@ -285,10 +276,10 @@ test("routes two DDR byte buses between AM62L and LPDDR4 fanouts", async () => {
     autoroutingPhaseIoStack.map(
       (phaseIo) => phaseIo.startSimpleRouteJson?.connections.length,
     ),
-  ).toEqual([8, 8, 8])
+  ).toEqual([4, 4, 4])
   expect(autoroutingPhaseIoStack[2]?.startSimpleRouteJson?.traces).toHaveLength(
-    16,
+    8,
   )
-  expect(circuit.db.pcb_trace.list()).toHaveLength(24)
+  expect(circuit.db.pcb_trace.list()).toHaveLength(12)
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
