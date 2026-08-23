@@ -7,6 +7,10 @@ import {
   type ImplicitBreakoutPointSolverContext,
   createImplicitBreakoutPointSolverContext,
 } from "./create-implicit-breakout-point-solver-input"
+import {
+  defaultImplicitBreakoutPointSolverFn,
+  solveDefaultImplicitBreakoutPoints,
+} from "./default-implicit-breakout-point-solver"
 
 type SourceTraceId = SourceTrace["source_trace_id"]
 type SourcePortId = NonNullable<SourcePort["source_port_id"]>
@@ -42,7 +46,16 @@ const solveScope = (
   solverFn: ImplicitBreakoutPointSolverFn,
 ): CoordinatedScopeSolution => {
   const context = createImplicitBreakoutPointSolverContext(breakout)
-  const output = solverFn(context.input)
+  const output =
+    solverFn === defaultImplicitBreakoutPointSolverFn
+      ? solveDefaultImplicitBreakoutPoints({
+          input: context.input,
+          preferredEdgeByConnectionId:
+            context.singleRegionPreferredEdgeByConnectionId,
+          externalTargetByConnectionId:
+            context.singleRegionExternalTargetByConnectionId,
+        })
+      : solverFn(context.input)
   if (output instanceof Promise) {
     throw new Error(
       "Implicit breakout point solvers must return synchronously during PCB layout",

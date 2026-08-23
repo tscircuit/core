@@ -7,7 +7,7 @@ test("breakout routes qfp16 controller pins to header and passives with auto bre
   const autoroutingPhaseIoStack = createAutoroutingPhaseIoStack(circuit)
 
   circuit.add(
-    <board width="20mm" height="16mm" autorouterVersion="latest">
+    <board width="20mm" height="16mm" autorouterVersion="beta_pipeline9">
       <breakout name="MCU_BREAKOUT" autorouter="auto" padding="2mm">
         <chip
           footprint="qfp16"
@@ -164,7 +164,7 @@ test("breakout routes qfp16 controller pins to header and passives with auto bre
   expect(circuit.db.pcb_breakout_point.list().length).toBe(5)
   expect(autoroutingPhaseIoStack.length).toBeGreaterThanOrEqual(2)
   expect(circuit.db.pcb_trace.list().length).toBeGreaterThanOrEqual(6)
-  expect(circuit.db.pcb_via.list().length).toBeLessThanOrEqual(6)
+  expect(circuit.db.pcb_via.list()).toHaveLength(0)
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
   await expect(autoroutingPhaseIoStack).toMatchAutoroutingPhaseIoStackSnapshot(
     import.meta.path,

@@ -41,6 +41,14 @@ export interface ImplicitBreakoutPointSolverContext {
     PcbGroupId,
     ReadonlyMap<SourceTraceId, SourcePortId>
   >
+  singleRegionPreferredEdgeByConnectionId?: ReadonlyMap<
+    SourceTraceId,
+    BreakoutEdge
+  >
+  singleRegionExternalTargetByConnectionId?: ReadonlyMap<
+    SourceTraceId,
+    { x: number; y: number }
+  >
 }
 
 const getRoutingScopeOrThrow = (breakout: Breakout): Group<z.ZodType> => {
@@ -264,26 +272,38 @@ const getFacingEdge = ({
   return "bottom"
 }
 
-const getSingleRegionPreferredEdge = ({
+const getSingleRegionEdgePreferences = ({
   region,
   sourceTraces,
 }: {
   region: BreakoutRegionGeometry
   sourceTraces: readonly SourceTrace[]
-}): BreakoutEdge | undefined => {
+}):
+  | {
+      preferredEdge: BreakoutEdge
+      preferredEdgeByConnectionId: ReadonlyMap<SourceTraceId, BreakoutEdge>
+      externalTargetByConnectionId: ReadonlyMap<
+        SourceTraceId,
+        { x: number; y: number }
+      >
+    }
+  | undefined => {
   const root = region.breakout.root
   if (!root) return undefined
 
   const internalSourcePortIds = new Set(
     region.sourcePortIdBySourceTraceId.values(),
   )
-  const externalPcbPorts = new Map<string, { x: number; y: number }>()
+  const externalTargetsByConnectionId = new Map<
+    SourceTraceId,
+    Array<{ x: number; y: number }>
+  >()
+  const aggregateExternalTargetsByPcbPortId = new Map<
+    string,
+    { x: number; y: number }
+  >()
   for (const sourceTrace of sourceTraces) {
-    if (
-      !sourceTrace.connected_source_port_ids.some((sourcePortId) =>
-        internalSourcePortIds.has(sourcePortId),
-      )
-    ) {
+    if (!region.endpointBySourceTraceId.has(sourceTrace.source_trace_id)) {
       continue
     }
     for (const sourcePortId of sourceTrace.connected_source_port_ids) {
@@ -298,19 +318,27 @@ const getSingleRegionPreferredEdge = ({
       ) {
         continue
       }
-      const isInsideRegion =
+      const isInsideRegionBounds =
         pcbPort.x >= region.bounds.minX &&
         pcbPort.x <= region.bounds.maxX &&
         pcbPort.y >= region.bounds.minY &&
         pcbPort.y <= region.bounds.maxY
-      if (isInsideRegion) continue
-      externalPcbPorts.set(pcbPort.pcb_port_id, {
+      if (!isInsideRegionBounds) {
+        aggregateExternalTargetsByPcbPortId.set(pcbPort.pcb_port_id, {
+          x: pcbPort.x,
+          y: pcbPort.y,
+        })
+      }
+      const targets =
+        externalTargetsByConnectionId.get(sourceTrace.source_trace_id) ?? []
+      targets.push({
         x: pcbPort.x,
         y: pcbPort.y,
       })
+      externalTargetsByConnectionId.set(sourceTrace.source_trace_id, targets)
     }
   }
-  if (externalPcbPorts.size === 0) return undefined
+  if (externalTargetsByConnectionId.size === 0) return undefined
 
   const distanceToEdge = (
     target: { x: number; y: number },
@@ -335,17 +363,44 @@ const getSingleRegionPreferredEdge = ({
     return Math.hypot(target.x - edgePoint.x, target.y - edgePoint.y)
   }
   const edges: BreakoutEdge[] = ["right", "left", "top", "bottom"]
-  return edges.reduce((bestEdge, edge) => {
-    const bestCost = [...externalPcbPorts.values()].reduce(
-      (sum, target) => sum + distanceToEdge(target, bestEdge),
-      0,
-    )
-    const edgeCost = [...externalPcbPorts.values()].reduce(
-      (sum, target) => sum + distanceToEdge(target, edge),
-      0,
-    )
-    return edgeCost < bestCost ? edge : bestEdge
-  }, edges[0]!)
+  const getPreferredEdge = (targets: readonly { x: number; y: number }[]) =>
+    edges.reduce((bestEdge, edge) => {
+      const bestCost = targets.reduce(
+        (sum, target) => sum + distanceToEdge(target, bestEdge),
+        0,
+      )
+      const edgeCost = targets.reduce(
+        (sum, target) => sum + distanceToEdge(target, edge),
+        0,
+      )
+      return edgeCost < bestCost ? edge : bestEdge
+    }, edges[0]!)
+  const allExternalTargets = [...externalTargetsByConnectionId.values()].flat()
+  const aggregateExternalTargets = [
+    ...aggregateExternalTargetsByPcbPortId.values(),
+  ]
+  const preferredEdgeByConnectionId = new Map<SourceTraceId, BreakoutEdge>()
+  const externalTargetByConnectionId = new Map<
+    SourceTraceId,
+    { x: number; y: number }
+  >()
+  for (const [connectionId, targets] of externalTargetsByConnectionId) {
+    preferredEdgeByConnectionId.set(connectionId, getPreferredEdge(targets))
+    externalTargetByConnectionId.set(connectionId, {
+      x: targets.reduce((sum, target) => sum + target.x, 0) / targets.length,
+      y: targets.reduce((sum, target) => sum + target.y, 0) / targets.length,
+    })
+  }
+
+  return {
+    preferredEdge: getPreferredEdge(
+      aggregateExternalTargets.length > 0
+        ? aggregateExternalTargets
+        : allExternalTargets,
+    ),
+    preferredEdgeByConnectionId,
+    externalTargetByConnectionId,
+  }
 }
 
 const getSourceTraceForConnectionOrThrow = ({
@@ -667,9 +722,9 @@ export const createImplicitBreakoutPointSolverContext = (
     PcbGroupId,
     ReadonlyMap<SourceTraceId, SourcePortId>
   >()
-  const singleRegionPreferredEdge =
+  const singleRegionEdgePreferences =
     regions.length === 1
-      ? getSingleRegionPreferredEdge({ region: regions[0]!, sourceTraces })
+      ? getSingleRegionEdgePreferences({ region: regions[0]!, sourceTraces })
       : undefined
   const solverRegions = regions.map((region, regionIndex) => {
     sourcePortIdByConnectionIdByRegionId.set(
@@ -684,7 +739,7 @@ export const createImplicitBreakoutPointSolverContext = (
         regionIndex,
         regions,
         horizontalPlacement,
-        singleRegionPreferredEdge,
+        singleRegionPreferredEdge: singleRegionEdgePreferences?.preferredEdge,
       }),
     }
   })
@@ -697,5 +752,9 @@ export const createImplicitBreakoutPointSolverContext = (
       boundaryPointSpacing: getBoundaryPointSpacing(breakout),
     },
     sourcePortIdByConnectionIdByRegionId,
+    singleRegionPreferredEdgeByConnectionId:
+      singleRegionEdgePreferences?.preferredEdgeByConnectionId,
+    singleRegionExternalTargetByConnectionId:
+      singleRegionEdgePreferences?.externalTargetByConnectionId,
   }
 }
