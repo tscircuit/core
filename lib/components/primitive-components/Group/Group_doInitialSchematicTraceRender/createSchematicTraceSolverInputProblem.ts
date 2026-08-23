@@ -265,6 +265,16 @@ export function createSchematicTraceSolverInputProblem(
       )
     }),
   )
+  const schematicPortIdsWithExplicitNetLabels = new Set(
+    netLabelsInScope
+      .flatMap((netLabel) => netLabel._getConnectedPorts())
+      .map((port) => port.schematic_port_id)
+      .filter(
+        (schematicPortId): schematicPortId is SchematicPortId =>
+          schematicPortId !== null && schematicPortId !== undefined,
+      )
+      .map(asSchematicPortId),
+  )
   const solverManagedNetLabelSchematicPortIds = new Set(
     netLabelsInScope
       .filter(
@@ -628,6 +638,8 @@ export function createSchematicTraceSolverInputProblem(
     netConnections,
     connKeyToSchematicPortIds,
     connKeyToSourceNet,
+    connKeysWithExplicitPortNetTraces,
+    schematicPortIdsWithExplicitNetLabels,
     resolveCanonicalNetLabelText,
   })
 

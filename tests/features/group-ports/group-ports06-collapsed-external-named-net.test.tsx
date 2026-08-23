@@ -33,8 +33,11 @@ test("collapsed group port preserves an external named net label", async () => {
   await circuit.renderUntilSettled()
 
   const labels = circuit.db.schematic_net_label.list()
+  const inlineLabels = circuit.db.schematic_text
+    .list()
+    .filter((text) => text.source_trace_id)
 
-  expect(labels.some((label) => label.text === "ROW1")).toBe(true)
+  expect(inlineLabels.some((label) => label.text === "ROW1")).toBe(true)
   expect(
     labels.filter((label) => /unnamed|connectivity_net/.test(label.text)),
   ).toHaveLength(0)

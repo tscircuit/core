@@ -24,7 +24,14 @@ test("opamp component", async () => {
   await circuit.renderUntilSettled()
 
   const netLabels = circuit.db.schematic_net_label.list().map((l) => l.text)
-  expect(netLabels).toEqual(["in_pos", "in_neg", "out", "vcc", "vee"])
+  expect(netLabels).toEqual(["vcc", "vee"])
+  expect(
+    circuit.db.schematic_text
+      .list()
+      .filter((text) => text.source_trace_id)
+      .map((text) => text.text)
+      .sort(),
+  ).toEqual(["in_neg", "in_pos", "out"])
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })

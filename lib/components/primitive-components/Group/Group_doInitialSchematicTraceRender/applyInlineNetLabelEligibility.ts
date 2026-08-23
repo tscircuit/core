@@ -32,9 +32,11 @@ type EligibleNetConnection = {
  * - the net has a name the user chose - a `schDisplayLabel`/`name` on the trace
  *   or a named net - rather than one derived from the ports it happens to hit.
  *
- * A single-port named signal net is also eligible. The solver renders that as
- * an outward trace stub, so a component pin can carry an inline label without
- * requiring a dummy second chip.
+ * A single-port named signal net is also eligible when it comes from an
+ * explicit port-to-net trace. The solver renders that as an outward trace
+ * stub, so a component pin can carry an inline label without requiring a dummy
+ * second chip. Ports with an explicit `<netlabel>` element are excluded so
+ * their user-selected anchored-label semantics remain intact.
  *
  * The solver still has the last word: it falls back to an anchored label when
  * no collision-free inline placement exists.
@@ -44,12 +46,16 @@ export const applyInlineNetLabelEligibility = ({
   netConnections,
   connKeyToSchematicPortIds,
   connKeyToSourceNet,
+  connKeysWithExplicitPortNetTraces,
+  schematicPortIdsWithExplicitNetLabels,
   resolveCanonicalNetLabelText,
 }: {
   directConnections: EligibleDirectConnection[]
   netConnections: EligibleNetConnection[]
   connKeyToSchematicPortIds: Map<string, SchematicPortId[]>
   connKeyToSourceNet: Map<string, SourceNet>
+  connKeysWithExplicitPortNetTraces: Set<string>
+  schematicPortIdsWithExplicitNetLabels: Set<SchematicPortId>
   resolveCanonicalNetLabelText: (args: {
     subcircuitConnectivityMapKey: string
   }) => { name: string; wasAssignedDisplayLabel: boolean }
@@ -88,8 +94,16 @@ export const applyInlineNetLabelEligibility = ({
 
   for (const netConnection of netConnections) {
     if (netConnection.schematicPortIds.length !== 1) continue
+    if (
+      schematicPortIdsWithExplicitNetLabels.has(
+        netConnection.schematicPortIds[0]!,
+      )
+    ) {
+      continue
+    }
     const { connKey } = netConnection
     if (!connKey) continue
+    if (!connKeysWithExplicitPortNetTraces.has(connKey)) continue
 
     const sourceNet = connKeyToSourceNet.get(connKey)
     if (sourceNet?.is_power || sourceNet?.is_ground) continue
