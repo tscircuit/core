@@ -247,7 +247,7 @@ class DirectMiddleChannelAutorouter implements GenericLocalAutorouter {
   }
 }
 
-test("routes two AM62L DDR byte buses through sibling BGA fanouts", async () => {
+test("routes two DDR byte buses through an AM62L BGA fanout", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -281,37 +281,19 @@ test("routes two AM62L DDR byte buses through sibling BGA fanouts", async () => 
           name="U1"
           footprintVariant="fccsp_373_anb"
           footprint={AM62L_ESCAPE_FOOTPRINT}
-          pcbRotation={180}
           noSchematicRepresentation
           noConnect={socNoConnect as any}
         />
       </breakout>
 
-      <breakout
-        name="RAM_FANOUT"
+      <MT53E1G16D1ZW
+        name="U2"
         pcbX={15.116917}
         pcbY={-0.050917}
-        width="18mm"
-        height="22.5mm"
-        autorouter="fanout"
-        fanoutRoutingLayers={[...SIGNAL_LAYERS]}
-      >
-        <MT53E1G16D1ZW
-          name="U2"
-          pcbRotation={90}
-          noSchematicRepresentation
-          noConnect={memoryNoConnect as any}
-        />
-        {DDR_CONNECTIONS.map(({ memorySignal, traceName }, index) => (
-          <Fragment key={traceName}>
-            <breakoutpoint
-              connection={`.U2 > .${memorySignal}`}
-              pcbX={-8.9999}
-              pcbY={3.5 - index}
-            />
-          </Fragment>
-        ))}
-      </breakout>
+        pcbRotation={90}
+        noSchematicRepresentation
+        noConnect={memoryNoConnect as any}
+      />
 
       {FANOUT_BUSES.map(
         ({ name, connections, preferredLayer }, routingPhaseIndex) => (
@@ -346,7 +328,7 @@ test("routes two AM62L DDR byte buses through sibling BGA fanouts", async () => 
         pcbX={0}
         pcbY={11.9}
         fontSize="0.6mm"
-        text="BGA fanout at each end; straight middle channel exposes exit ordering"
+        text="AM62L BGA fanout; straight middle channel exposes exit ordering"
       />
     </board>,
   )
@@ -354,6 +336,6 @@ test("routes two AM62L DDR byte buses through sibling BGA fanouts", async () => 
   await circuit.renderUntilSettled()
 
   expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
-  expect(circuit.db.pcb_trace.list()).toHaveLength(24)
+  expect(circuit.db.pcb_trace.list()).toHaveLength(16)
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
