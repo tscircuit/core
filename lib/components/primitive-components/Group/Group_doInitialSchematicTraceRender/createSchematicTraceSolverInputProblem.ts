@@ -545,6 +545,11 @@ export function createSchematicTraceSolverInputProblem(
     schematicPortIds: SchematicPortId[]
     netLabelWidth?: number
     netLabelHeight?: number
+    allowInlineNetLabel?: boolean
+    inlineNetLabelWidth?: number
+    inlineNetLabelHeight?: number
+    /** Retained for inline-label eligibility; stripped at the solver boundary. */
+    connKey?: string
   }> = [...singlePortTraceNetConnections]
 
   /**
@@ -561,13 +566,6 @@ export function createSchematicTraceSolverInputProblem(
     }
     connKeyToSchematicPortIds.get(connKey)!.push(schId)
   }
-
-  applyInlineNetLabelEligibility({
-    directConnections,
-    connKeyToSchematicPortIds,
-    connKeyToSourceNet,
-    resolveCanonicalNetLabelText,
-  })
 
   for (const [connKey, schematicPortIds] of connKeyToSchematicPortIds) {
     const sourceNet = connKeyToSourceNet.get(connKey)
@@ -620,9 +618,18 @@ export function createSchematicTraceSolverInputProblem(
         schematicPortIds: uniqueSchematicPortIds,
         netLabelWidth,
         netLabelHeight,
+        connKey,
       })
     }
   }
+
+  applyInlineNetLabelEligibility({
+    directConnections,
+    netConnections,
+    connKeyToSchematicPortIds,
+    connKeyToSourceNet,
+    resolveCanonicalNetLabelText,
+  })
 
   // Available net label orientations from source_net naming conventions
   const availableNetLabelOrientations: Record<string, AxisDirection[]> =
@@ -659,7 +666,7 @@ export function createSchematicTraceSolverInputProblem(
       }),
     ),
     netConnections: netConnections.map(
-      ({ schematicPortIds, ...connection }) => ({
+      ({ schematicPortIds, connKey, ...connection }) => ({
         ...connection,
         pinIds: schematicPortIds,
       }),
