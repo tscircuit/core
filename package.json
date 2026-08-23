@@ -52,7 +52,7 @@
     "@tscircuit/math-utils": "^0.0.36",
     "@tscircuit/miniflex": "^0.0.4",
     "@tscircuit/ngspice-spice-engine": "^0.0.20",
-    "@tscircuit/props": "^0.0.628",
+    "@tscircuit/props": "^0.0.632",
     "@tscircuit/schematic-match-adapt": "^0.0.18",
     "@tscircuit/schematic-trace-solver": "^0.0.141",
     "@tscircuit/solver-utils": "^0.0.16",
@@ -130,7 +130,7 @@
   },
   "overrides": {
     "@tscircuit/circuit-json-util": "^0.0.106",
-    "@tscircuit/props": "^0.0.628",
+    "@tscircuit/props": "^0.0.632",
     "circuit-json": "^0.0.475"
   }
 }

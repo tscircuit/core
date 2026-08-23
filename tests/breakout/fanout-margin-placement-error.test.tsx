@@ -3,14 +3,9 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("fanout boundaries must maintain fanoutMargin", async () => {
   const { circuit } = getTestFixture()
-  const leftFanoutProps = {
-    name: "LEFT",
-    pcbX: -1.5,
-    fanoutMargin: "2.1mm",
-  } as const
   circuit.add(
     <board width="14mm" height="8mm" routingDisabled>
-      <fanout {...leftFanoutProps}>
+      <fanout name="LEFT" pcbX={-1.5} fanoutMargin="2.1mm">
         <resistor name="R1" resistance="1k" footprint="0402" />
       </fanout>
       <fanout name="RIGHT" pcbX={1.5}>

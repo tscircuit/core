@@ -1,5 +1,6 @@
 import { getBoundsFromPoints } from "@tscircuit/math-utils"
-import { distance, type PcbGroup } from "circuit-json"
+import type { BreakoutProps } from "@tscircuit/props"
+import type { PcbGroup } from "circuit-json"
 import type { Breakout } from "./Breakout"
 
 interface FanoutBounds {
@@ -64,15 +65,12 @@ export const Breakout_doInitialPcbPlacementDesignRuleChecks = (
     const otherBounds = getFanoutBounds(otherPcbGroup)
     if (!otherBounds) continue
 
-    const breakoutMargin = (
-      breakout.props as { fanoutMargin?: number | string }
-    ).fanoutMargin
-    const otherFanoutMargin = (
-      otherFanout.props as { fanoutMargin?: number | string }
-    ).fanoutMargin
+    const breakoutMargin = (breakout._parsedProps as BreakoutProps).fanoutMargin
+    const otherFanoutMargin = (otherFanout._parsedProps as BreakoutProps)
+      .fanoutMargin
     const requiredMargin = Math.max(
-      breakoutMargin === undefined ? 0 : distance.parse(breakoutMargin),
-      otherFanoutMargin === undefined ? 0 : distance.parse(otherFanoutMargin),
+      typeof breakoutMargin === "number" ? breakoutMargin : 0,
+      typeof otherFanoutMargin === "number" ? otherFanoutMargin : 0,
     )
     const horizontalGap = getAxisGap(
       bounds.minX,
