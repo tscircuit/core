@@ -348,6 +348,66 @@ const getSingleRegionPreferredEdge = ({
   }, edges[0]!)
 }
 
+/**
+ * Collect one downstream destination per connection in board/circuit-world PCB
+ * coordinates. Destinations are points in millimeters with +X right and +Y top.
+ * Ports used as endpoints by any coordinated breakout region are excluded.
+ */
+const getExternalDestinationBySourceTraceId = ({
+  regions,
+  sourceTraces,
+}: {
+  regions: readonly BreakoutRegionGeometry[]
+  sourceTraces: readonly SourceTrace[]
+}): ReadonlyMap<SourceTraceId, { x: number; y: number }> => {
+  const root = regions[0]?.breakout.root
+  if (!root) return new Map()
+  const internalSourcePortIds = new Set(
+    regions.flatMap((region) => [
+      ...region.sourcePortIdBySourceTraceId.values(),
+    ]),
+  )
+  const externalDestinationBySourceTraceId = new Map<
+    SourceTraceId,
+    { x: number; y: number }
+  >()
+  for (const sourceTrace of sourceTraces) {
+    const externalPcbPorts = new Map<string, { x: number; y: number }>()
+    for (const sourcePortId of sourceTrace.connected_source_port_ids) {
+      if (internalSourcePortIds.has(sourcePortId)) continue
+      const pcbPort = root.db.pcb_port.getWhere({
+        source_port_id: sourcePortId,
+      })
+      if (
+        !pcbPort?.pcb_port_id ||
+        pcbPort.x === undefined ||
+        pcbPort.y === undefined
+      ) {
+        continue
+      }
+      externalPcbPorts.set(pcbPort.pcb_port_id, {
+        x: pcbPort.x,
+        y: pcbPort.y,
+      })
+    }
+    if (externalPcbPorts.size === 0) continue
+    const externalDestinations = [...externalPcbPorts.values()]
+    externalDestinationBySourceTraceId.set(sourceTrace.source_trace_id, {
+      x:
+        externalDestinations.reduce(
+          (sum, destination) => sum + destination.x,
+          0,
+        ) / externalDestinations.length,
+      y:
+        externalDestinations.reduce(
+          (sum, destination) => sum + destination.y,
+          0,
+        ) / externalDestinations.length,
+    })
+  }
+  return externalDestinationBySourceTraceId
+}
+
 const getSourceTraceForConnectionOrThrow = ({
   connectionOwner,
   connectionOwnerLabel,
@@ -592,6 +652,8 @@ export const createImplicitBreakoutPointSolverContext = (
       automaticBreakouts,
     }),
   })
+  const externalDestinationBySourceTraceId =
+    getExternalDestinationBySourceTraceId({ regions, sourceTraces })
   const endpointsBySourceTraceId = new Map<
     SourceTraceId,
     readonly ConnectionEndpoint[]
@@ -599,9 +661,14 @@ export const createImplicitBreakoutPointSolverContext = (
   for (const sourceTraceId of sortedSourceTraceIds) {
     endpointsBySourceTraceId.set(
       sourceTraceId,
-      regions.map(
-        (region) => region.endpointBySourceTraceId.get(sourceTraceId)!,
-      ),
+      regions.map((region) => {
+        const endpoint = region.endpointBySourceTraceId.get(sourceTraceId)!
+        const externalDestination =
+          externalDestinationBySourceTraceId.get(sourceTraceId)
+        return externalDestination
+          ? { ...endpoint, externalDestination }
+          : endpoint
+      }),
     )
   }
 

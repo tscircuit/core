@@ -85,3 +85,51 @@ test("uses a custom implicit breakout point solver when provided", async () => {
   ])
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
+
+test("passes downstream PCB destinations to a custom implicit solver", async () => {
+  let receivedExternalDestination: { x: number; y: number } | undefined
+  const implicitBreakoutPointSolverFn = ((input) => {
+    const connection = input.connections.flatMap((candidate) =>
+      "type" in candidate ? candidate.connections : [candidate],
+    )[0]!
+    receivedExternalDestination = (
+      connection.endpoints[0] as (typeof connection.endpoints)[number] & {
+        externalDestination?: { x: number; y: number }
+      }
+    ).externalDestination
+    const region = input.regions[0]!
+    return {
+      breakoutPoints: [
+        {
+          regionId: region.regionId,
+          connectionId: connection.connectionId,
+          layer: "top",
+          x: region.bounds.maxX,
+          y: (region.bounds.minY + region.bounds.maxY) / 2,
+        },
+      ],
+    }
+  }) satisfies ImplicitBreakoutPointSolverFn
+
+  const { circuit } = getTestFixture()
+  circuit.add(
+    <board width="20mm" height="12mm">
+      <breakout
+        name="B1"
+        pcbX={-3}
+        padding="1mm"
+        autorouter={{ implicitBreakoutPointSolverFn }}
+      >
+        <resistor name="R1" resistance="1k" footprint="0402" />
+      </breakout>
+      <resistor name="R2" resistance="1k" footprint="0402" pcbX={3} />
+      <trace from="R1.1" to="R2.1" />
+    </board>,
+  )
+
+  await circuit.renderUntilSettled()
+
+  expect(receivedExternalDestination).toBeDefined()
+  expect(receivedExternalDestination!.x).toBeGreaterThan(0)
+  expect(Number.isFinite(receivedExternalDestination!.y)).toBe(true)
+})
