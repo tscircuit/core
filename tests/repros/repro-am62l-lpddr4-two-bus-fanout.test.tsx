@@ -134,14 +134,50 @@ class DirectMiddleChannelAutorouter implements GenericLocalAutorouter {
         )
       }
       const [first, second] = connection.pointsToConnect
-      if (!first || !second || first.layer !== second.layer) {
-        throw new Error(`${connection.name} fanout endpoint layers differ`)
+      if (!first || !second) {
+        throw new Error(`${connection.name} fanout endpoint is missing`)
       }
       const width =
         connection.nominalTraceWidth ??
         connection.width ??
         this.input.nominalTraceWidth ??
         this.input.minTraceWidth
+      const [left, right] =
+        first.x <= second.x ? [first, second] : [second, first]
+      const route: SimplifiedPcbTrace["route"] = [
+        {
+          route_type: "wire",
+          x: left.x,
+          y: left.y,
+          width,
+          layer: left.layer,
+        },
+        {
+          route_type: "wire",
+          x: right.x,
+          y: right.y,
+          width,
+          layer: left.layer,
+        },
+      ]
+      if (left.layer !== right.layer) {
+        route.push(
+          {
+            route_type: "via",
+            x: right.x,
+            y: right.y,
+            from_layer: left.layer,
+            to_layer: right.layer,
+          },
+          {
+            route_type: "wire",
+            x: right.x,
+            y: right.y,
+            width,
+            layer: right.layer,
+          },
+        )
+      }
       return {
         type: "pcb_trace" as const,
         pcb_trace_id: `am62l-middle-${connection.name}`,
@@ -149,13 +185,7 @@ class DirectMiddleChannelAutorouter implements GenericLocalAutorouter {
         connectsTo: connection.pointsToConnect.flatMap((point) =>
           point.pointId ? [point.pointId] : [],
         ),
-        route: [first, second].map((point) => ({
-          route_type: "wire" as const,
-          x: point.x,
-          y: point.y,
-          width,
-          layer: point.layer,
-        })),
+        route,
       }
     })
     this.outputSimpleRouteJson = {
@@ -261,7 +291,8 @@ test("routes two AM62L DDR byte buses through sibling BGA fanouts", async () => 
         name="RAM_FANOUT"
         pcbX={15.116917}
         pcbY={-0.050917}
-        padding="4mm"
+        width="18mm"
+        height="22.5mm"
         autorouter="fanout"
         fanoutRoutingLayers={[...SIGNAL_LAYERS]}
       >
@@ -271,6 +302,15 @@ test("routes two AM62L DDR byte buses through sibling BGA fanouts", async () => 
           noSchematicRepresentation
           noConnect={memoryNoConnect as any}
         />
+        {DDR_CONNECTIONS.map(({ memorySignal, traceName }, index) => (
+          <Fragment key={traceName}>
+            <breakoutpoint
+              connection={`.U2 > .${memorySignal}`}
+              pcbX={-8.9999}
+              pcbY={3.5 - index}
+            />
+          </Fragment>
+        ))}
       </breakout>
 
       {FANOUT_BUSES.map(
