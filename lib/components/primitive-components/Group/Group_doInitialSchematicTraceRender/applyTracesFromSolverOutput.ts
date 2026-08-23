@@ -202,6 +202,7 @@ export function applyTracesFromSolverOutput(args: {
 
   // Use the final pipeline output so same-net branches share clean junctions.
   const traces =
+    solver.inlineNetLabelSolver?.getOutput().traces ??
     solver.sameNetJunctionAlignmentSolver?.getOutput().traces ??
     solver.netLabelTraceCollisionSolver?.getOutput().traces ??
     solver.traceCleanupSolver?.getOutput().traces ??
