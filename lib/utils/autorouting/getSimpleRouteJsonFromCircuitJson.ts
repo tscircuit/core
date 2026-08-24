@@ -144,11 +144,12 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     if (!sourceComponent?.name) return undefined
     return `${sourceComponent.name}.${sourcePort.name}`
   }
-  const pcbGroup = routingPcbGroupId
-    ? db.pcb_group.get(routingPcbGroupId)
-    : subcircuit_id
-      ? db.pcb_group.getWhere({ subcircuit_id })
-      : undefined
+  let pcbGroup
+  if (routingPcbGroupId) {
+    pcbGroup = db.pcb_group.get(routingPcbGroupId)
+  } else if (subcircuit_id) {
+    pcbGroup = db.pcb_group.getWhere({ subcircuit_id })
+  }
   const activeRoutingPcbGroupId =
     subcircuitComponent?.pcb_group_id ??
     (!subcircuitIsBoard ? pcbGroup?.pcb_group_id : undefined)
