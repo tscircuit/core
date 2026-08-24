@@ -1,8 +1,8 @@
 import {
-  AutoroutingPipelineSolver,
   AssignableAutoroutingPipeline2,
   AssignableAutoroutingPipeline3,
   AutoroutingPipeline1_OriginalUnravel,
+  AutoroutingPipelineSolver,
   AutoroutingPipelineSolver3_HgPortPointPathing,
   AutoroutingPipelineSolver4,
   AutoroutingPipelineSolver5,
@@ -13,16 +13,16 @@ import {
 } from "@tscircuit/capacity-autorouter"
 import type { PlatformConfig } from "@tscircuit/props"
 import { AutorouterError } from "lib/errors/AutorouterError"
-import type { SimpleRouteJson, SimplifiedPcbTrace } from "./SimpleRouteJson"
+import { SOLVERS, type SolverName } from "lib/solvers"
 import type {
   AutorouterCompleteEvent,
   AutorouterErrorEvent,
-  AutorouterProgressEvent,
   AutorouterEvent,
+  AutorouterProgressEvent,
   GenericLocalAutorouter,
 } from "./GenericLocalAutorouter"
-import { SOLVERS, type SolverName } from "lib/solvers"
 import { getCacheProviderForLocalCacheEngine } from "./LocalCacheEngineCacheProvider"
+import type { SimpleRouteJson, SimplifiedPcbTrace } from "./SimpleRouteJson"
 import type { AutorouterVersion } from "./autorouter-version"
 
 export interface SolverStartedDetails {
@@ -110,10 +110,7 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
       solverName = "AutoroutingPipelineSolver4"
     } else if (autorouterVersion === "beta_pipeline5") {
       solverName = "AutoroutingPipelineSolver5"
-    } else if (
-      autorouterVersion === "beta_pipeline7" ||
-      autorouterVersion === "latest"
-    ) {
+    } else if (autorouterVersion === "beta_pipeline7") {
       solverName = "AutoroutingPipelineSolver7_MultiGraph"
     } else if (autorouterVersion === "beta_pipeline9") {
       solverName = "AutoroutingPipelineSolver9_PreloadedTraceGraph"
@@ -123,6 +120,8 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
       solverName = "AssignableAutoroutingPipeline3"
     } else if (useAssignableSolver) {
       solverName = "AssignableAutoroutingPipeline2"
+    } else if (input.traces && input.traces.length > 0) {
+      solverName = "AutoroutingPipelineSolver9_PreloadedTraceGraph"
     } else {
       solverName = "AutoroutingPipelineSolver7_MultiGraph"
     }
