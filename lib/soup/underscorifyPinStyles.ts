@@ -6,17 +6,15 @@ import { parsePinNumberFromLabelsOrThrow } from "../utils/schematic/parsePinNumb
 type UnderscorePinStyles = z.input<typeof schematic_component>["pin_styles"]
 
 export const underscorifyPinStyles = (
-  pinStyles: Record<string, SchematicPinStyle> | undefined,
-  pinLabels?: Record<string, string[] | string> | null,
+  pinStyles: SchematicPinStyle | undefined,
+  pinLabels?: Record<string, readonly string[] | string> | null,
 ): UnderscorePinStyles | undefined => {
   if (!pinStyles) return undefined
   const underscorePinStyles: UnderscorePinStyles = {}
-  const mergedStyles: Record<number, SchematicPinStyle> = {}
+  const mergedStyles: Record<number, SchematicPinStyle[string]> = {}
 
   // First pass: collect all styles by pin number
-  for (const [pinNameOrLabel, pinStyle] of Object.entries(pinStyles) as Array<
-    [string, SchematicPinStyle]
-  >) {
+  for (const [pinNameOrLabel, pinStyle] of Object.entries(pinStyles)) {
     const pinNumber = parsePinNumberFromLabelsOrThrow(pinNameOrLabel, pinLabels)
 
     // Merge with existing styles for this pin
