@@ -129,8 +129,7 @@ export const insertNetLabelsForPortsMissingTrace = ({
             .some((port) => !port.is_connected)
         : false
     const shouldPreserveDirectConnectionEndpointLabels =
-      directConnectionOutsideScopePortAlsoNeedsNetLabel &&
-      !wasAssignedDisplayLabel
+      directConnectionOutsideScopePortAlsoNeedsNetLabel
     const isCollapsedBoxPort =
       schComponent?.is_box_with_pins &&
       sourcePort &&

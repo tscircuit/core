@@ -110,6 +110,46 @@ test("cross-boundary subcircuit traces use trace name instead of selector fallba
   const netLabelTexts = circuit.db.schematic_net_label
     .list()
     .map((label) => label.text)
+  /** Returns a port center in schematic-world millimeters (+x right, +y up). */
+  const getSchematicPortCenter = (componentName: string, portName: string) => {
+    const sourceComponent = circuit.db.source_component.getWhere({
+      name: componentName,
+    })!
+    const sourcePort = circuit.db.source_port
+      .list({ source_component_id: sourceComponent.source_component_id })
+      .find((port) => port.name === portName)!
+    return circuit.db.schematic_port.getWhere({
+      source_port_id: sourcePort.source_port_id,
+    })!.center
+  }
+  const gp17Labels = circuit.db.schematic_net_label
+    .list()
+    .filter((label) => label.text === "GP17")
+  /** Compares schematic-world points in millimeters (+x right, +y up). */
+  const pointsMatch = (
+    first: { x: number; y: number },
+    second: { x: number; y: number },
+  ) =>
+    Math.abs(first.x - second.x) < 1e-6 && Math.abs(first.y - second.y) < 1e-6
+  /** Checks a label-to-port connection in schematic-world millimeters. */
+  const isGp17LabelConnectedTo = (
+    label: (typeof gp17Labels)[number],
+    center: { x: number; y: number },
+  ) => {
+    if (!label.anchor_position) return false
+    if (pointsMatch(label.anchor_position, center)) return true
+    return circuit.db.schematic_trace
+      .list()
+      .some((trace) =>
+        trace.edges.some(
+          (edge) =>
+            (pointsMatch(edge.from, label.anchor_position!) &&
+              pointsMatch(edge.to, center)) ||
+            (pointsMatch(edge.to, label.anchor_position!) &&
+              pointsMatch(edge.from, center)),
+        ),
+      )
+  }
   const sectionTitlePositions = circuit.db.schematic_text
     .list()
     .filter((text) =>
@@ -132,4 +172,24 @@ test("cross-boundary subcircuit traces use trace name instead of selector fallba
   expect(netLabelTexts).not.toContain("U1_GPIO3")
   expect(netLabelTexts).not.toContain("U1_GPIO17")
   expect(netLabelTexts).not.toContain("U1_GPIO18")
+  expect(gp17Labels).toHaveLength(2)
+  const internalGp17Trace = circuit.db.source_trace.getWhere({ name: "GP17" })!
+  const externalLcdCsTrace = circuit.db.source_trace.getWhere({
+    name: "LCD_CS",
+  })!
+  const u1Gp17Label = gp17Labels.find(
+    (label) => label.source_trace_id === internalGp17Trace.source_trace_id,
+  )!
+  const headerGp17Label = gp17Labels.find(
+    (label) => label.source_trace_id === externalLcdCsTrace.source_trace_id,
+  )!
+  expect(
+    isGp17LabelConnectedTo(u1Gp17Label, getSchematicPortCenter("U1", "GPIO17")),
+  ).toBe(true)
+  expect(
+    isGp17LabelConnectedTo(
+      headerGp17Label,
+      getSchematicPortCenter("J_RIGHT", "GP17"),
+    ),
+  ).toBe(true)
 })
