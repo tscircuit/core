@@ -13,7 +13,7 @@ import { parsePinNumberFromLabelsOrThrow } from "./parsePinNumberFromLabelsOrThr
  */
 export const getNumericSchPinStyle = (
   pinStyles: SchematicPinStyle | undefined,
-  pinLabels?: Record<string, string[] | string> | null,
+  pinLabels?: Record<string, readonly string[] | string> | null,
 ): NumericSchPinStyle | undefined => {
   if (!pinStyles) return undefined
 
