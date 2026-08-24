@@ -4,32 +4,38 @@ import Nrf52810Circuit from "./nrf52810-circuit"
 
 // Reproduces https://tscircuit.com/seveibar/nrf52810#files without copper pours.
 test(
-  "nRF52810 tracker routes without copper pours",
+  "nRF52810 tracker rejects an undersized autorouter result",
   async () => {
     const { circuit } = getTestFixture({
       platform: { placementDrcChecksDisabled: true },
+    })
+    let autoroutingEndCount = 0
+    circuit.on("autorouting:end", () => {
+      autoroutingEndCount++
     })
 
     circuit.add(<Nrf52810Circuit />)
     await circuit.renderUntilSettled()
 
-    expect(circuit.db.pcb_autorouting_error.list()).toHaveLength(0)
-    expect(circuit.db.pcb_trace.list().length).toBeGreaterThan(60)
-
-    const topSnapshotPath = import.meta.path.replace(
-      /\.test\.tsx$/,
-      "-top.test.tsx",
+    const autoroutingErrors = circuit.db.pcb_autorouting_error.list()
+    expect(autoroutingErrors).toHaveLength(1)
+    expect(autoroutingErrors[0]?.message).toContain(
+      'Autorouter output trace "source_trace_58_0" has maximum width 0.15mm, below min_trace_thickness 0.18mm',
     )
-    const bottomSnapshotPath = import.meta.path.replace(
-      /\.test\.tsx$/,
-      "-bottom.test.tsx",
-    )
+    expect(autoroutingEndCount).toBe(0)
 
-    await expect(circuit).toMatchPcbSnapshot(topSnapshotPath, { layer: "top" })
-    await expect(circuit).toMatchPcbSnapshot(bottomSnapshotPath, {
-      layer: "bottom",
-    })
-    await expect(circuit).toMatchPcbSnapshot(import.meta.path)
+    const rejectedSourceTraceId = autoroutingErrors[0]?.message.match(
+      /required by source trace (source_trace_\d+)/,
+    )?.[1]
+    expect(rejectedSourceTraceId).toBeDefined()
+    expect(
+      circuit.db.source_trace.get(rejectedSourceTraceId!)?.min_trace_thickness,
+    ).toBe(0.18)
+    expect(
+      circuit.db.pcb_trace
+        .list()
+        .filter((trace) => trace.source_trace_id === rejectedSourceTraceId),
+    ).toEqual([])
   },
   { timeout: 30_000 },
 )

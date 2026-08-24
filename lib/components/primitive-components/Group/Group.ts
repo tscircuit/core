@@ -105,6 +105,7 @@ import {
 import { Group_syncFanoutExitsWithGlobalConnections } from "./Group_syncFanoutExitsWithGlobalConnections"
 import type { ISubcircuit } from "./Subcircuit/ISubcircuit"
 import { addPortIdsToTracesAtJumperPads } from "./add-port-ids-to-traces-at-jumper-pads"
+import { assertAutoroutedTraceWidthsMeetSourceMinimums } from "./assert-autorouted-trace-widths-meet-source-minimums"
 import { claimSrjAssignablePcbViasTraversedByRoute } from "./claim-srj-assignable-pcb-vias-traversed-by-route"
 import { getAccumulatedPcbTracesWithStageOutputReplacements } from "./get-accumulated-pcb-traces-with-stage-output-replacements"
 import { getSourceTraceIdForRoutedTrace } from "./get-source-trace-id-for-routed-trace"
@@ -1520,11 +1521,23 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           ...(transformedSimpleRouteJson ?? simpleRouteJson),
           traces: stageOutputTraces,
         }
+        assertAutoroutedTraceWidthsMeetSourceMinimums({
+          simpleRouteJson,
+          outputPcbTraces: stageOutputTraces,
+          sourceTraces: db.source_trace.list(),
+        })
         previousStageOutputSimpleRouteJson = transformedSimpleRouteJson
           ? outputSimpleRouteJson
           : undefined
 
         if (!cachedResult && cacheKey) {
+          if (traces !== stageOutputTraces) {
+            assertAutoroutedTraceWidthsMeetSourceMinimums({
+              simpleRouteJson,
+              outputPcbTraces: traces,
+              sourceTraces: db.source_trace.list(),
+            })
+          }
           await cacheLocalAutoroutingPhaseResult({
             cacheEngine,
             cacheKey,
