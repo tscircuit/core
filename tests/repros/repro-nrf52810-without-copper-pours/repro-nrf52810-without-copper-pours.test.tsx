@@ -36,6 +36,7 @@ test(
         .list()
         .filter((trace) => trace.source_trace_id === rejectedSourceTraceId),
     ).toEqual([])
+    expect(circuit).toMatchPcbSnapshot(import.meta.path)
   },
   { timeout: 30_000 },
 )
