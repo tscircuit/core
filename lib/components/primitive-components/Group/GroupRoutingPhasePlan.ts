@@ -22,6 +22,8 @@ export interface RoutingPhasePlan {
   routingPhaseIndex: number | null
   phaseName?: AutoroutingPhaseProps["name"]
   routingPcbGroupId?: PcbGroupId
+  /** Stable physical breakout region owning this fanout phase. */
+  fanoutRegionPcbGroupId?: PcbGroupId
   routingBounds?: SimpleRouteBounds
   /** The single breakout/fanout boundary; breakout points may expand it. */
   fanoutBounds?: SimpleRouteBounds

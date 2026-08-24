@@ -92,7 +92,7 @@ test("breakout fanout props escape buses and plane nets without a phase", async 
           inner2: "VCC",
         }}
         busFanoutDirections={{
-          SIGNAL_BUS: "center_right",
+          SIGNAL_BUS: "rightside_center",
         }}
       >
         <chip name="U1" footprint={<footprint>{bgaPads}</footprint>} />

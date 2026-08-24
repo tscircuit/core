@@ -8,6 +8,7 @@ import type {
 } from "@tscircuit/props"
 import type { PcbGroup, SourcePort, SourceTrace } from "circuit-json"
 import type { z } from "zod"
+import { getFanoutBoundaryPointSpacing } from "../../../utils/autorouting/get-fanout-boundary-point-spacing"
 import { getBoardAvailableLayers } from "../../../utils/getViaSpanLayers"
 import { AutoplacedBreakoutPoint } from "../AutoplacedBreakoutPoint"
 import type { Bus } from "../Bus"
@@ -481,9 +482,13 @@ const getDifferentialPairSourceTraces = ({
 const getBoundaryPointSpacing = (breakout: Breakout): number => {
   const board = breakout.root?.db.pcb_board.list()[0]
   const traceWidth = board?.min_trace_width ?? 0.15
-  const boundaryPointClearance = board?.min_trace_to_pad_edge_clearance ?? 0.2
+  const traceToPadClearance = board?.min_trace_to_pad_edge_clearance ?? 0.2
   const viaPadDiameter = board?.min_via_pad_diameter ?? 0.3
-  return viaPadDiameter + 2 * (traceWidth + boundaryPointClearance)
+  return getFanoutBoundaryPointSpacing({
+    traceWidth,
+    traceToPadClearance,
+    viaPadDiameter,
+  })
 }
 
 const getCoordinatedFanoutLayers = ({
