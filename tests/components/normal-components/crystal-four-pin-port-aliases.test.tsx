@@ -47,35 +47,26 @@ test("four-pin crystal aliases resolve to distinct numbered pins", () => {
     anchor: "left",
     rotation: 0,
   })
-  expect(inlineLabelByText.get("PIN4_GND")).toMatchObject({
-    anchor: "left",
-    rotation: -90,
-  })
-  expect(inlineLabelByText.get("PIN2_GND")).toMatchObject({
-    anchor: "right",
-    rotation: -90,
-  })
 
-  for (const labelText of ["PIN4_GND", "PIN2_GND"]) {
-    const inlineLabel = inlineLabelByText.get(labelText)!
-    const inlineTrace = circuit.db.schematic_trace
+  const groundLabelsByText = new Map(
+    circuit.db.schematic_net_label
       .list()
-      .find((trace) => trace.source_trace_id === inlineLabel.source_trace_id)!
-    expect(inlineTrace.edges).toHaveLength(1)
-    expect(inlineTrace.edges[0]!.from.x).toBeCloseTo(
-      inlineTrace.edges[0]!.to.x,
-      9,
+      .map((netLabel) => [netLabel.text, netLabel]),
+  )
+
+  for (const groundNetName of ["PIN4_GND", "PIN2_GND"]) {
+    const groundLabel = groundLabelsByText.get(groundNetName)
+    expect(groundLabel).toMatchObject({
+      anchor_side: "top",
+      symbol_name: "rail_down",
+    })
+    expect(circuit.db.source_net.get(groundLabel!.source_net_id)).toMatchObject(
+      {
+        name: groundNetName,
+        is_ground: true,
+      },
     )
-    expect(inlineTrace.edges[0]!.from.y).not.toBe(inlineTrace.edges[0]!.to.y)
   }
-
-  expect(
-    circuit.db.schematic_trace
-      .list()
-      .some((trace) =>
-        trace.source_trace_id?.startsWith("available-net-orientation-"),
-      ),
-  ).toBe(false)
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
