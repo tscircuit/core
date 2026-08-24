@@ -1201,8 +1201,31 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           baseSimpleRouteJson,
           routingPhasePlan,
         )
-        // Preserve routed geometry as SRJ traces. The autorouter owns
-        // converting traces to obstacles and approximating diagonal segments.
+        const activeCustomBreakoutRoutingGroupId =
+          routingPhasePlan.routingPcbGroupId
+        if (activeCustomBreakoutRoutingGroupId) {
+          const activeGroupSimpleRouteJson = getSimpleRouteJsonFromCircuitJson({
+            db,
+            minTraceWidth,
+            nominalTraceWidth,
+            subcircuit_id: this.subcircuit_id,
+            subcircuitComponent: this,
+            routingPcbGroupId: activeCustomBreakoutRoutingGroupId,
+            fanoutPourNetMap,
+          }).simpleRouteJson
+          const activeGroupCopperPourObstacles =
+            activeGroupSimpleRouteJson.obstacles.filter(
+              (obstacle) => obstacle.isCopperPour,
+            )
+          const nonCopperPourObstacles = phaseInput.obstacles.filter(
+            (obstacle) => !obstacle.isCopperPour,
+          )
+          phaseInput.obstacles = nonCopperPourObstacles.concat(
+            activeGroupCopperPourObstacles,
+          )
+        }
+        // Preserve every fixed obstacle and prior routed trace. Only outline-less
+        // copper pours need phase-local group bounds.
         simpleRouteJson = {
           ...phaseInput,
           traces: [...(phaseInput.traces ?? []), ...outputTraces],
