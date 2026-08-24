@@ -100,8 +100,11 @@ export const getFanoutSolverBuses = (
       requestedDirection === undefined
         ? undefined
         : getBusFanoutDirectionLiteral(requestedDirection)
+    // `center` is shared with NinePointAnchor and has always meant
+    // unconstrained routing, so only edge-specific canonical values opt in.
     const exitPosition =
       requestedDirectionLiteral &&
+      requestedDirectionLiteral !== "center" &&
       isCanonicalBusFanoutDirection(requestedDirectionLiteral)
         ? requestedDirectionLiteral
         : undefined
