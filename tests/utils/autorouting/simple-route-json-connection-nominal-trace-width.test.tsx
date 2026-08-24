@@ -10,6 +10,11 @@ test("simple route json connection widths match trace thickness", async () => {
       <resistor resistance="1k" footprint="0402" name="R1" />
       <capacitor capacitance="1000pF" footprint="0402" name="C1" />
       <trace from="R1.pin1" to="C1.pin1" thickness="0.5mm" />
+      <pcbnotetext
+        text="0.5mm source trace -> SRJ hard minimum 0.5mm"
+        fontSize={0.4}
+        pcbY={3}
+      />
     </board>,
   )
 
