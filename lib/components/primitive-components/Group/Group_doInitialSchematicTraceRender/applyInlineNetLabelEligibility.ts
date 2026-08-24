@@ -12,11 +12,19 @@ type EligibleDirectConnection = {
   connKey?: string
 }
 
+type EligibleNetConnection = {
+  schematicPortIds: SchematicPortId[]
+  allowInlineNetLabel?: boolean
+  inlineNetLabelWidth?: number
+  inlineNetLabelHeight?: number
+  connKey?: string
+}
+
 /**
- * Marks the direct connections that should carry an "inline net label" - the
- * net name drawn alongside the trace instead of an anchored label at its end.
+ * Marks connections that should carry an "inline net label" - the net name
+ * drawn alongside a trace instead of an anchored label at its end.
  *
- * A connection qualifies when it is a genuine point-to-point signal:
+ * A direct connection qualifies when it is a genuine point-to-point signal:
  *
  * - the whole net is exactly these two ports (a third tap would make the label
  *   ambiguous about which leg it names),
@@ -24,22 +32,53 @@ type EligibleDirectConnection = {
  * - the net has a name the user chose - a `schDisplayLabel`/`name` on the trace
  *   or a named net - rather than one derived from the ports it happens to hit.
  *
- * The solver still has the last word: it only emits an inline label for a
- * connection it actually routed a trace for.
+ * A named signal net made from explicit port-to-net traces is also eligible
+ * when it has either one port or two ports on different components. A
+ * single-port net renders as one outward stub. A routed two-port net gets one
+ * label along its trace; when schematic sections suppress that route, both
+ * endpoints get outward stubs. Ports with an explicit `<netlabel>` element are
+ * excluded so their user-selected anchored-label semantics remain intact.
+ *
+ * The solver still has the last word: it falls back to an anchored label when
+ * no collision-free inline placement exists.
  */
 export const applyInlineNetLabelEligibility = ({
   directConnections,
+  netConnections,
   connKeyToSchematicPortIds,
   connKeyToSourceNet,
+  connKeysWithExplicitPortNetTraces,
+  schematicPortIdsWithExplicitNetLabels,
+  areSchematicPortsOnDifferentComponents,
   resolveCanonicalNetLabelText,
 }: {
   directConnections: EligibleDirectConnection[]
+  netConnections: EligibleNetConnection[]
   connKeyToSchematicPortIds: Map<string, SchematicPortId[]>
   connKeyToSourceNet: Map<string, SourceNet>
+  connKeysWithExplicitPortNetTraces: Set<string>
+  schematicPortIdsWithExplicitNetLabels: Set<SchematicPortId>
+  areSchematicPortsOnDifferentComponents: (
+    schematicPortIds: [SchematicPortId, SchematicPortId],
+  ) => boolean
   resolveCanonicalNetLabelText: (args: {
     subcircuitConnectivityMapKey: string
   }) => { name: string; wasAssignedDisplayLabel: boolean }
 }) => {
+  const markEligible = (
+    connection: EligibleDirectConnection | EligibleNetConnection,
+    name: string,
+  ) => {
+    connection.allowInlineNetLabel = true
+    connection.inlineNetLabelHeight = INLINE_NET_LABEL_FONT_SIZE
+    connection.inlineNetLabelWidth = Number(
+      getSchematicNetLabelTextWidth({
+        text: name,
+        font_size: INLINE_NET_LABEL_FONT_SIZE,
+      }).toFixed(2),
+    )
+  }
+
   for (const directConnection of directConnections) {
     const { connKey } = directConnection
     if (!connKey) continue
@@ -55,13 +94,36 @@ export const applyInlineNetLabelEligibility = ({
     })
     if (!name || !wasAssignedDisplayLabel) continue
 
-    directConnection.allowInlineNetLabel = true
-    directConnection.inlineNetLabelHeight = INLINE_NET_LABEL_FONT_SIZE
-    directConnection.inlineNetLabelWidth = Number(
-      getSchematicNetLabelTextWidth({
-        text: name,
-        font_size: INLINE_NET_LABEL_FONT_SIZE,
-      }).toFixed(2),
+    markEligible(directConnection, name)
+  }
+
+  for (const netConnection of netConnections) {
+    const { schematicPortIds } = netConnection
+    const isSinglePort = schematicPortIds.length === 1
+    const isTwoPortChipToChip =
+      schematicPortIds.length === 2 &&
+      areSchematicPortsOnDifferentComponents(
+        schematicPortIds as [SchematicPortId, SchematicPortId],
+      )
+    if (!isSinglePort && !isTwoPortChipToChip) continue
+    if (
+      schematicPortIds.some((schematicPortId) =>
+        schematicPortIdsWithExplicitNetLabels.has(schematicPortId),
+      )
     )
+      continue
+    const { connKey } = netConnection
+    if (!connKey) continue
+    if (!connKeysWithExplicitPortNetTraces.has(connKey)) continue
+
+    const sourceNet = connKeyToSourceNet.get(connKey)
+    if (sourceNet?.is_power || sourceNet?.is_ground) continue
+
+    const { name, wasAssignedDisplayLabel } = resolveCanonicalNetLabelText({
+      subcircuitConnectivityMapKey: connKey,
+    })
+    if (!name || !wasAssignedDisplayLabel) continue
+
+    markEligible(netConnection, name)
   }
 }

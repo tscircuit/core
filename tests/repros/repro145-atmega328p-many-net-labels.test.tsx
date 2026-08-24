@@ -118,14 +118,18 @@ test("repro145 atmega328p many net labels", async () => {
 
   await circuit.renderUntilSettled()
 
-  // net.FAULT connects exactly two ports (U_MCU.INT0 and R_FAULT_PULLUP.pin2),
-  // so it must render exactly two "FAULT" net labels - one per port. Previously
-  // R_FAULT_PULLUP.pin2 got a duplicate (a floating one from the solver plus a
-  // pin-anchored one from the missing-trace pass).
+  // net.FAULT connects exactly two components. When the long route is omitted,
+  // both endpoints become inline stubs together rather than leaving duplicate
+  // or mismatched anchored labels behind.
   const faultNetLabels = circuit.db.schematic_net_label
     .list()
     .filter((label) => label.text === "FAULT")
-  expect(faultNetLabels).toHaveLength(2)
+  const faultInlineTexts = circuit.db.schematic_text
+    .list()
+    .filter((text) => text.text === "FAULT" && text.source_trace_id)
+
+  expect(faultNetLabels).toHaveLength(0)
+  expect(faultInlineTexts).toHaveLength(2)
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })

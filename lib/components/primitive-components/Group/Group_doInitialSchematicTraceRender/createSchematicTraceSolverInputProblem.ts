@@ -265,6 +265,16 @@ export function createSchematicTraceSolverInputProblem(
       )
     }),
   )
+  const schematicPortIdsWithExplicitNetLabels = new Set(
+    netLabelsInScope
+      .flatMap((netLabel) => netLabel._getConnectedPorts())
+      .map((port) => port.schematic_port_id)
+      .filter(
+        (schematicPortId): schematicPortId is SchematicPortId =>
+          schematicPortId !== null && schematicPortId !== undefined,
+      )
+      .map(asSchematicPortId),
+  )
   const solverManagedNetLabelSchematicPortIds = new Set(
     netLabelsInScope
       .filter(
@@ -545,6 +555,11 @@ export function createSchematicTraceSolverInputProblem(
     schematicPortIds: SchematicPortId[]
     netLabelWidth?: number
     netLabelHeight?: number
+    allowInlineNetLabel?: boolean
+    inlineNetLabelWidth?: number
+    inlineNetLabelHeight?: number
+    /** Retained for inline-label eligibility; stripped at the solver boundary. */
+    connKey?: string
   }> = [...singlePortTraceNetConnections]
 
   /**
@@ -561,13 +576,6 @@ export function createSchematicTraceSolverInputProblem(
     }
     connKeyToSchematicPortIds.get(connKey)!.push(schId)
   }
-
-  applyInlineNetLabelEligibility({
-    directConnections,
-    connKeyToSchematicPortIds,
-    connKeyToSourceNet,
-    resolveCanonicalNetLabelText,
-  })
 
   for (const [connKey, schematicPortIds] of connKeyToSchematicPortIds) {
     const sourceNet = connKeyToSourceNet.get(connKey)
@@ -620,9 +628,31 @@ export function createSchematicTraceSolverInputProblem(
         schematicPortIds: uniqueSchematicPortIds,
         netLabelWidth,
         netLabelHeight,
+        connKey,
       })
     }
   }
+
+  applyInlineNetLabelEligibility({
+    directConnections,
+    netConnections,
+    connKeyToSchematicPortIds,
+    connKeyToSourceNet,
+    connKeysWithExplicitPortNetTraces,
+    schematicPortIdsWithExplicitNetLabels,
+    areSchematicPortsOnDifferentComponents: (schematicPortIds) => {
+      const componentIds = schematicPortIds.map(
+        (schematicPortId) =>
+          db.schematic_port.get(schematicPortId)?.schematic_component_id,
+      )
+      return (
+        componentIds.every((componentId): componentId is string =>
+          Boolean(componentId),
+        ) && componentIds[0] !== componentIds[1]
+      )
+    },
+    resolveCanonicalNetLabelText,
+  })
 
   // Available net label orientations from source_net naming conventions
   const availableNetLabelOrientations: Record<string, AxisDirection[]> =
@@ -659,7 +689,7 @@ export function createSchematicTraceSolverInputProblem(
       }),
     ),
     netConnections: netConnections.map(
-      ({ schematicPortIds, ...connection }) => ({
+      ({ schematicPortIds, connKey, ...connection }) => ({
         ...connection,
         pinIds: schematicPortIds,
       }),

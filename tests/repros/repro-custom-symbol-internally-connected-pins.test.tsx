@@ -330,16 +330,14 @@ test("imported DMT6007LFG_7 custom symbol ports support internallyConnectedPins"
     { pinNumber: 5, facingDirection: "up", sideOfComponent: "top" },
   ])
 
-  const schematicNetLabels = circuit.db.schematic_net_label.list()
-  expect(schematicNetLabels).toHaveLength(3)
-  const gateNetLabel = schematicNetLabels.find(
-    (netLabel) => netLabel.text === "GATE",
-  )
-  expect(gateNetLabel).toMatchObject({
-    anchor_position: { x: -0.4, y: 0 },
-    anchor_side: "right",
-  })
-  expect(gateNetLabel!.center!.x).toBeLessThan(gateNetLabel!.anchor_position!.x)
+  expect(circuit.db.schematic_net_label.list()).toHaveLength(0)
+  expect(
+    circuit.db.schematic_text
+      .list()
+      .filter((text) => text.source_trace_id)
+      .map((text) => text.text)
+      .sort(),
+  ).toEqual(["DRAIN", "GATE", "SOURCE"])
 
   const sourcePort = circuit.db.schematic_port
     .list()
