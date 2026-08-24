@@ -3,11 +3,15 @@ import {
   type FanoutDirection,
   FanoutSolver,
   type FanoutSolverOptions,
+  getFanoutExitPositionConfig,
 } from "@tscircuit/fanout-solver"
-import type {
-  BusFanoutDirection,
-  FanoutBoundaryPadding,
-  NinePointAnchor,
+import {
+  type BusFanoutDirection,
+  type BusFanoutDirectionLiteral,
+  type CanonicalBusFanoutDirection,
+  type FanoutBoundaryPadding,
+  type NinePointAnchor,
+  canonicalBusFanoutDirectionValues,
 } from "@tscircuit/props"
 import { getViaBoardLayers } from "../getViaSpanLayers"
 import type {
@@ -86,16 +90,38 @@ const expandBoundsToIncludePoints = (
 
 export const getFanoutSolverBuses = (
   buses: readonly SimpleRouteBus[] | undefined,
+  busFanoutDirections?: Readonly<Record<string, BusFanoutDirection>>,
 ): FanoutSolverOptions["buses"] =>
   buses?.map((bus) => {
     const { preferredLayer, preferredLayers, ...fanoutBusWithoutPreferences } =
       bus
+    const requestedDirection = busFanoutDirections?.[bus.busId]
+    const requestedDirectionLiteral =
+      requestedDirection === undefined
+        ? undefined
+        : getBusFanoutDirectionLiteral(requestedDirection)
+    // `center` is shared with NinePointAnchor and has always meant
+    // unconstrained routing, so only edge-specific canonical values opt in.
+    const exitPosition =
+      requestedDirectionLiteral &&
+      requestedDirectionLiteral !== "center" &&
+      isCanonicalBusFanoutDirection(requestedDirectionLiteral)
+        ? requestedDirectionLiteral
+        : undefined
+    const fanoutBus = {
+      ...fanoutBusWithoutPreferences,
+      ...(bus.termination?.type === "plane"
+        ? {}
+        : exitPosition
+          ? { exitPosition }
+          : {}),
+    }
     const requestedFanoutLayers = [
       ...(preferredLayer === undefined ? [] : [preferredLayer]),
       ...(preferredLayers ?? []),
     ].filter((layer, index, layers) => layers.indexOf(layer) === index)
     if (requestedFanoutLayers.length === 0) {
-      return fanoutBusWithoutPreferences
+      return fanoutBus
     }
     const busAllowedLayers = bus.allowedLayers
     const allowedLayers =
@@ -105,19 +131,28 @@ export const getFanoutSolverBuses = (
             busAllowedLayers.includes(layer),
           )
     return {
-      ...fanoutBusWithoutPreferences,
+      ...fanoutBus,
       allowedLayers,
     }
   })
 
-const getNinePointAnchor = (
+const getBusFanoutDirectionLiteral = (
   fanoutDirection: BusFanoutDirection,
-): NinePointAnchor =>
+): BusFanoutDirectionLiteral =>
   typeof fanoutDirection === "string"
     ? fanoutDirection
     : fanoutDirection.direction
 
-const getFanoutBorderTarget = (
+const canonicalBusFanoutDirections = new Set<CanonicalBusFanoutDirection>(
+  canonicalBusFanoutDirectionValues,
+)
+
+const isCanonicalBusFanoutDirection = (
+  direction: BusFanoutDirectionLiteral,
+): direction is CanonicalBusFanoutDirection =>
+  canonicalBusFanoutDirections.has(direction as CanonicalBusFanoutDirection)
+
+const getLegacyFanoutBorderTarget = (
   anchor: NinePointAnchor,
 ): FanoutBorderTarget | undefined => {
   switch (anchor) {
@@ -142,7 +177,7 @@ const getFanoutBorderTarget = (
   }
 }
 
-const getPlaneFanoutDirection = (
+const getLegacyFanoutDirection = (
   anchor: NinePointAnchor,
 ): FanoutDirection | undefined => {
   switch (anchor) {
@@ -161,6 +196,15 @@ const getPlaneFanoutDirection = (
     case "bottom_right":
       return "down"
   }
+}
+
+const getLocalFanoutDirection = (
+  fanoutDirection: BusFanoutDirection,
+): FanoutDirection | undefined => {
+  const directionLiteral = getBusFanoutDirectionLiteral(fanoutDirection)
+  return isCanonicalBusFanoutDirection(directionLiteral)
+    ? getFanoutExitPositionConfig(directionLiteral).direction
+    : getLegacyFanoutDirection(directionLiteral)
 }
 
 const getSourceComponentIdForPoint = (
@@ -301,6 +345,8 @@ const createDownstreamSimpleRouteJson = ({
     )
     sourceFootprintKeepouts.push({
       obstacleId: `fanout-source-keepout:${componentId}`,
+      componentId,
+      isFanoutSourceKeepout: true,
       type: "rect",
       layers: getViaBoardLayers(fanoutSimpleRouteJson.layerCount),
       center: { x: (minX + maxX) / 2, y: (minY + maxY) / 2 },
@@ -341,7 +387,7 @@ export class FanoutAutorouter implements GenericLocalAutorouter {
     private readonly options: FanoutAutorouterOptions,
   ) {}
 
-  private getBusExitPreferences():
+  private getLegacyBusExitPreferences():
     | Readonly<Record<string, FanoutBorderTarget>>
     | undefined {
     if (!this.options.busFanoutDirections) return undefined
@@ -361,7 +407,9 @@ export class FanoutAutorouter implements GenericLocalAutorouter {
         )
       }
       if (planeBusIds.has(busId)) continue
-      const target = getFanoutBorderTarget(getNinePointAnchor(fanoutDirection))
+      const directionLiteral = getBusFanoutDirectionLiteral(fanoutDirection)
+      if (isCanonicalBusFanoutDirection(directionLiteral)) continue
+      const target = getLegacyFanoutBorderTarget(directionLiteral)
       if (target) preferences[busId] = target
     }
     return Object.keys(preferences).length > 0 ? preferences : undefined
@@ -378,9 +426,7 @@ export class FanoutAutorouter implements GenericLocalAutorouter {
       this.options.busFanoutDirections ?? {},
     )) {
       if (!planeBusIds.has(busId)) continue
-      const direction = getPlaneFanoutDirection(
-        getNinePointAnchor(fanoutDirection),
-      )
+      const direction = getLocalFanoutDirection(fanoutDirection)
       if (direction) directions[busId] = direction
     }
     for (const planeBus of planeBuses) {
@@ -393,11 +439,14 @@ export class FanoutAutorouter implements GenericLocalAutorouter {
 
   private getFanoutSolverOptions(): FanoutSolverOptions {
     const commonOptions: FanoutSolverOptions = {
-      buses: getFanoutSolverBuses(this.input.buses),
+      buses: getFanoutSolverBuses(
+        this.input.buses,
+        this.options.busFanoutDirections,
+      ),
       borderDistribution: "even",
       compactBusTracks: true,
       busDirections: this.getPlaneBusDirections(),
-      busExitPreferences: this.getBusExitPreferences(),
+      busExitPreferences: this.getLegacyBusExitPreferences(),
       escapeLayers: this.options.fanoutRoutingLayers,
     }
     if (this.options.mode === "single_layer_fanout") {
@@ -415,6 +464,7 @@ export class FanoutAutorouter implements GenericLocalAutorouter {
     options: ResolveFanoutBoundsOptions,
   ): SimpleRouteBounds | undefined {
     let paddingBounds: SimpleRouteBounds | undefined
+    let inferredBounds: SimpleRouteBounds | undefined
     if (options.fanoutBoundaryPadding !== undefined) {
       const boundsResolver = new FanoutAutorouter(input, options)
       const fanoutSolver = new FanoutSolver(
@@ -425,6 +475,13 @@ export class FanoutAutorouter implements GenericLocalAutorouter {
         preparedBuses: fanoutSolver.preparedBuses,
         padding: options.fanoutBoundaryPadding,
       })
+    } else if (options.fanoutBounds === undefined) {
+      const boundsResolver = new FanoutAutorouter(input, options)
+      const fanoutSolver = new FanoutSolver(
+        input as unknown as ConstructorParameters<typeof FanoutSolver>[0],
+        boundsResolver.getFanoutSolverOptions(),
+      )
+      inferredBounds = fanoutSolver.preparedBuses[0]?.sharedBoundary
     }
 
     if (
@@ -436,7 +493,7 @@ export class FanoutAutorouter implements GenericLocalAutorouter {
     }
 
     return expandBoundsToIncludePoints(
-      options.fanoutBounds ?? paddingBounds,
+      options.fanoutBounds ?? paddingBounds ?? inferredBounds,
       options.breakoutPoints ?? [],
     )
   }

@@ -39,6 +39,7 @@ import type {
   SimplifiedPcbTrace,
 } from "lib/utils/autorouting/SimpleRouteJson"
 import { createSourceTracesFromOffboardConnections } from "lib/utils/autorouting/createSourceTracesFromOffboardConnections"
+import { getFanoutBoundaryPointSpacing } from "lib/utils/autorouting/get-fanout-boundary-point-spacing"
 import { getPcbComponentNamesById } from "lib/utils/autorouting/get-pcb-component-names-by-id"
 import {
   type LegacyAutorouterPreset,
@@ -106,6 +107,7 @@ import { Group_syncFanoutExitsWithGlobalConnections } from "./Group_syncFanoutEx
 import type { ISubcircuit } from "./Subcircuit/ISubcircuit"
 import { addPortIdsToTracesAtJumperPads } from "./add-port-ids-to-traces-at-jumper-pads"
 import { claimSrjAssignablePcbViasTraversedByRoute } from "./claim-srj-assignable-pcb-vias-traversed-by-route"
+import { findFanoutPhaseSeparationConflict } from "./find-fanout-phase-separation-conflict"
 import { getAccumulatedPcbTracesWithStageOutputReplacements } from "./get-accumulated-pcb-traces-with-stage-output-replacements"
 import { getSourceTraceIdForRoutedTrace } from "./get-source-trace-id-for-routed-trace"
 import { insertAutoplacedJumpers } from "./insert-autoplaced-jumpers"
@@ -1082,6 +1084,164 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         subcircuitComponent: this,
         fanoutPourNetMap,
       })
+
+    const emitFanoutBoundsConflictWarning = (
+      routingPhasePlan: RoutingPhasePlan,
+    ) => {
+      const fanoutRegionPcbGroupId = routingPhasePlan.fanoutRegionPcbGroupId
+      if (!fanoutRegionPcbGroupId) return
+      const pcbGroup = db.pcb_group.get(fanoutRegionPcbGroupId)
+      const sourceComponentId = db.pcb_component
+        .list()
+        .find(
+          (component) => component.pcb_group_id === fanoutRegionPcbGroupId,
+        )?.source_component_id
+      if (!sourceComponentId) return
+      const message = `${pcbGroup?.name ?? "Breakout"} defines conflicting fanout bounds with explicit breakout geometry and fanoutBoundaryPadding. Explicit breakout geometry takes precedence, so fanoutBoundaryPadding is ignored.`
+      const warningAlreadyExists = db.source_property_ignored_warning
+        .list()
+        .some(
+          (warning) =>
+            warning.source_component_id === sourceComponentId &&
+            warning.property_name === "fanoutBoundaryPadding" &&
+            warning.message === message,
+        )
+      if (warningAlreadyExists) return
+      db.source_property_ignored_warning.insert({
+        source_component_id: sourceComponentId,
+        property_name: "fanoutBoundaryPadding",
+        message,
+        error_type: "source_property_ignored_warning",
+        subcircuit_id: pcbGroup?.subcircuit_id,
+      })
+    }
+
+    const fanoutConfigByPhasePlan = new Map<
+      RoutingPhasePlan,
+      NormalizedAutorouterConfig
+    >()
+    for (const routingStage of routingStages) {
+      const fanoutMode = routingStage.autorouterConfig.preset
+      if (
+        (fanoutMode === "fanout" || fanoutMode === "single_layer_fanout") &&
+        !fanoutConfigByPhasePlan.has(routingStage.routingPhasePlan)
+      ) {
+        fanoutConfigByPhasePlan.set(
+          routingStage.routingPhasePlan,
+          routingStage.autorouterConfig,
+        )
+      }
+    }
+
+    const fanoutPhaseRegions = []
+    for (const [
+      routingPhasePlan,
+      phaseAutorouterConfig,
+    ] of fanoutConfigByPhasePlan) {
+      const fanoutRegionPcbGroupId = routingPhasePlan.fanoutRegionPcbGroupId
+      if (!fanoutRegionPcbGroupId) continue
+      let phaseSimpleRouteJson = Group_filterSimpleRouteJsonForPhase(
+        baseSimpleRouteJson,
+        routingPhasePlan,
+      )
+      if (phaseSimpleRouteJson.connections.length === 0) continue
+      phaseSimpleRouteJson = Group_applyDrcTolerancesToSimpleRouteJson(
+        phaseSimpleRouteJson,
+        routingPhasePlan.drcTolerances,
+      )
+      const breakoutPoints = db.pcb_breakout_point
+        .list()
+        .filter((point) => point.pcb_group_id === fanoutRegionPcbGroupId)
+        .map((point) => ({ x: point.x, y: point.y }))
+      const fanoutMode = phaseAutorouterConfig.preset as
+        | "fanout"
+        | "single_layer_fanout"
+      const fanoutBounds = FanoutAutorouter.resolveFanoutBounds(
+        phaseSimpleRouteJson,
+        {
+          mode: fanoutMode,
+          busFanoutDirections: routingPhasePlan.busFanoutDirections,
+          fanoutBounds: routingPhasePlan.fanoutBounds,
+          fanoutBoundaryPadding: routingPhasePlan.fanoutBoundaryPadding,
+          fanoutRoutingLayers: routingPhasePlan.fanoutRoutingLayers,
+          breakoutPoints,
+          onFanoutBoundsConflict: () =>
+            emitFanoutBoundsConflictWarning(routingPhasePlan),
+        },
+      )
+      routingPhasePlan.fanoutBounds = fanoutBounds
+      if (!fanoutBounds) continue
+
+      const pcbGroup = db.pcb_group.get(fanoutRegionPcbGroupId)
+
+      const maximumTraceWidth = Math.max(
+        phaseSimpleRouteJson.minTraceWidth,
+        ...phaseSimpleRouteJson.connections.map(
+          (connection) =>
+            connection.nominalTraceWidth ??
+            connection.width ??
+            phaseSimpleRouteJson.minTraceWidth,
+        ),
+      )
+      const viaPadDiameter =
+        phaseSimpleRouteJson.minViaPadDiameter ??
+        phaseSimpleRouteJson.min_via_pad_diameter ??
+        phaseSimpleRouteJson.minViaDiameter
+      const traceToPadClearance =
+        phaseSimpleRouteJson.minTraceToPadEdgeClearance ??
+        phaseSimpleRouteJson.defaultObstacleMargin ??
+        maximumTraceWidth
+      fanoutPhaseRegions.push({
+        regionId: fanoutRegionPcbGroupId,
+        name:
+          pcbGroup?.name ??
+          routingPhasePlan.phaseName ??
+          fanoutRegionPcbGroupId,
+        bounds: fanoutBounds,
+        boundaryKeepaway:
+          getFanoutBoundaryPointSpacing({
+            traceWidth: maximumTraceWidth,
+            traceToPadClearance,
+            viaPadDiameter,
+          }) / 2,
+      })
+    }
+
+    const fanoutSeparationConflict =
+      findFanoutPhaseSeparationConflict(fanoutPhaseRegions)
+    if (fanoutSeparationConflict) {
+      const { firstRegion, secondRegion, availableGap, requiredGap } =
+        fanoutSeparationConflict
+      const separationDescription =
+        availableGap < 0
+          ? `overlap by ${Math.abs(availableGap).toFixed(3)}mm`
+          : `are only ${availableGap.toFixed(3)}mm apart`
+      const message = `Fanout regions "${firstRegion.name}" and "${secondRegion.name}" ${separationDescription}, but at least ${requiredGap.toFixed(3)}mm of separation is required for a via-safe routing channel. Move the components farther apart or reduce their facing fanout padding.`
+      db.pcb_autorouting_error.insert({
+        pcb_error_id: `pcb_autorouter_error_subcircuit_${this.subcircuit_id}`,
+        error_type: "pcb_autorouting_error",
+        message,
+      })
+      this.root?.emit("autorouting:error", {
+        subcircuit_id: this.subcircuit_id,
+        componentDisplayName: this.getString(),
+        error: { message },
+        simpleRouteJson: baseSimpleRouteJson,
+      })
+      throw new Error(message)
+    }
+
+    for (const { regionId, bounds } of fanoutPhaseRegions) {
+      db.pcb_group.update(regionId, {
+        center: {
+          x: (bounds.minX + bounds.maxX) / 2,
+          y: (bounds.minY + bounds.maxY) / 2,
+        },
+        width: bounds.maxX - bounds.minX,
+        height: bounds.maxY - bounds.minY,
+      })
+    }
+
     const outputTraces: SimplifiedPcbTrace[] = []
     const outputJumpers: Array<{
       jumper_footprint: string
@@ -1271,44 +1431,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       }
 
       const fanoutMode = phaseAutorouterConfig.preset
-      if (fanoutMode === "fanout" || fanoutMode === "single_layer_fanout") {
-        const breakoutPoints = routingPhasePlan.routingPcbGroupId
-          ? db.pcb_breakout_point
-              .list()
-              .filter(
-                (point) =>
-                  point.pcb_group_id === routingPhasePlan.routingPcbGroupId,
-              )
-              .map((point) => ({ x: point.x, y: point.y }))
-          : []
-        const emitFanoutBoundsConflictWarning = () => {
-          const routingPcbGroupId = routingPhasePlan.routingPcbGroupId
-          if (!routingPcbGroupId) return
-          const pcbGroup = db.pcb_group.get(routingPcbGroupId)
-          const sourceComponentId = db.pcb_component
-            .list()
-            .find(
-              (component) => component.pcb_group_id === routingPcbGroupId,
-            )?.source_component_id
-          if (!sourceComponentId) return
-          const message = `${pcbGroup?.name ?? "Breakout"} defines conflicting fanout bounds with explicit breakout geometry and fanoutBoundaryPadding. Explicit breakout geometry takes precedence, so fanoutBoundaryPadding is ignored.`
-          const warningAlreadyExists = db.source_property_ignored_warning
-            .list()
-            .some(
-              (warning) =>
-                warning.source_component_id === sourceComponentId &&
-                warning.property_name === "fanoutBoundaryPadding" &&
-                warning.message === message,
-            )
-          if (warningAlreadyExists) return
-          db.source_property_ignored_warning.insert({
-            source_component_id: sourceComponentId,
-            property_name: "fanoutBoundaryPadding",
-            message,
-            error_type: "source_property_ignored_warning",
-            subcircuit_id: pcbGroup?.subcircuit_id,
-          })
-        }
+      if (
+        (fanoutMode === "fanout" || fanoutMode === "single_layer_fanout") &&
+        !routingPhasePlan.fanoutRegionPcbGroupId
+      ) {
         routingPhasePlan.fanoutBounds = FanoutAutorouter.resolveFanoutBounds(
           simpleRouteJson,
           {
@@ -1317,21 +1443,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             fanoutBounds: routingPhasePlan.fanoutBounds,
             fanoutBoundaryPadding: routingPhasePlan.fanoutBoundaryPadding,
             fanoutRoutingLayers: routingPhasePlan.fanoutRoutingLayers,
-            breakoutPoints,
-            onFanoutBoundsConflict: emitFanoutBoundsConflictWarning,
           },
         )
-        const { fanoutBounds, routingPcbGroupId } = routingPhasePlan
-        if (fanoutBounds && routingPcbGroupId) {
-          db.pcb_group.update(routingPcbGroupId, {
-            center: {
-              x: (fanoutBounds.minX + fanoutBounds.maxX) / 2,
-              y: (fanoutBounds.minY + fanoutBounds.maxY) / 2,
-            },
-            width: fanoutBounds.maxX - fanoutBounds.minX,
-            height: fanoutBounds.maxY - fanoutBounds.minY,
-          })
-        }
       }
 
       if (phaseStageIndex === 0) {

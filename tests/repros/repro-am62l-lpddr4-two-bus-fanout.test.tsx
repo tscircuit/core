@@ -231,12 +231,12 @@ test("routes two DDR byte buses between AM62L and LPDDR4 fanouts", async () => {
       <breakout
         name="SOC_FANOUT"
         pcbX={-9.5}
-        padding="4mm"
+        padding="2mm"
         autorouter="fanout"
         fanoutRoutingLayers={[...SIGNAL_LAYERS]}
         busFanoutDirections={{
-          DDR_BYTE0: "top_center",
-          DDR_BYTE1: "top_center",
+          DDR_BYTE0: "rightside_top",
+          DDR_BYTE1: "rightside_bottom",
         }}
       >
         <Am62l32 name="U1" noSchematicRepresentation />
@@ -246,12 +246,12 @@ test("routes two DDR byte buses between AM62L and LPDDR4 fanouts", async () => {
         name="DRAM_FANOUT"
         pcbX={9.616917}
         pcbY={-0.050917}
-        padding="4mm"
+        padding="2.5mm"
         autorouter="fanout"
         fanoutRoutingLayers={[...SIGNAL_LAYERS]}
         busFanoutDirections={{
-          DDR_BYTE0: "center_left",
-          DDR_BYTE1: "center_left",
+          DDR_BYTE0: "leftside_center",
+          DDR_BYTE1: "leftside_center",
         }}
       >
         <Mt53e1g16d1zw name="U2" pcbRotation={90} noSchematicRepresentation />
@@ -301,9 +301,66 @@ test("routes two DDR byte buses between AM62L and LPDDR4 fanouts", async () => {
       (phaseIo) => phaseIo.startSimpleRouteJson?.connections.length,
     ),
   ).toEqual([16, 16, 16])
+  const socFanoutPhase = autoroutingPhaseIoStack[0]!
+  const socFanoutInput = socFanoutPhase.startSimpleRouteJson!
+  const socFanoutCenterY =
+    (socFanoutInput.bounds.minY + socFanoutInput.bounds.maxY) / 2
+  for (const [busId, expectedYSign] of [
+    ["DDR_BYTE0", 1],
+    ["DDR_BYTE1", -1],
+  ] as const) {
+    const bus = socFanoutInput.buses?.find((bus) => bus.busId === busId)
+    expect(bus?.connectionNames).toHaveLength(8)
+    const connectionNames = new Set(bus?.connectionNames ?? [])
+    const exitPoints = (socFanoutPhase.endSimpleRouteJson?.traces ?? [])
+      .filter((trace) => connectionNames.has(trace.connection_name ?? ""))
+      .map((trace) =>
+        trace.route.findLast((routePoint) => routePoint.route_type === "wire"),
+      )
+    expect(exitPoints).toHaveLength(8)
+    for (const exitPoint of exitPoints) {
+      expect(exitPoint).toBeDefined()
+      if (!exitPoint) throw new Error(`Missing ${busId} fanout exit point`)
+      expect(exitPoint.x).toBeCloseTo(socFanoutInput.bounds.maxX)
+      expect((exitPoint.y - socFanoutCenterY) * expectedYSign).toBeGreaterThan(
+        0,
+      )
+      expect(exitPoint.y).toBeGreaterThan(socFanoutInput.bounds.minY)
+      expect(exitPoint.y).toBeLessThan(socFanoutInput.bounds.maxY)
+    }
+  }
   expect(autoroutingPhaseIoStack[2]?.startSimpleRouteJson?.traces).toHaveLength(
     32,
   )
+  const globalPhaseInput = autoroutingPhaseIoStack[2]!.startSimpleRouteJson!
+  const sourceKeepouts = globalPhaseInput.obstacles.filter(
+    (obstacle) =>
+      obstacle.isFanoutSourceKeepout === true &&
+      obstacle.componentId !== undefined,
+  )
+  expect(sourceKeepouts).toHaveLength(2)
+  const completedSourceComponentIds = new Set(
+    sourceKeepouts.flatMap((obstacle) =>
+      obstacle.componentId === undefined ? [] : [obstacle.componentId],
+    ),
+  )
+  expect(
+    globalPhaseInput.obstacles.filter(
+      (obstacle) =>
+        obstacle.componentId &&
+        completedSourceComponentIds.has(obstacle.componentId) &&
+        !obstacle.isFanoutSourceKeepout,
+    ),
+  ).toHaveLength(0)
+  const socFanoutGroup = circuit.db.pcb_group.getWhere({ name: "SOC_FANOUT" })!
+  const dramFanoutGroup = circuit.db.pcb_group.getWhere({
+    name: "DRAM_FANOUT",
+  })!
+  const horizontalFanoutGap =
+    dramFanoutGroup.center.x -
+    dramFanoutGroup.width! / 2 -
+    (socFanoutGroup.center.x + socFanoutGroup.width! / 2)
+  expect(horizontalFanoutGap).toBeGreaterThanOrEqual(0.50256 - 1e-6)
   expect(circuit.db.pcb_trace.list()).toHaveLength(48)
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 }, 300_000)

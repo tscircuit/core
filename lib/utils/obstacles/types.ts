@@ -10,6 +10,8 @@ export type CircuitJsonMetadata = {
 export type Obstacle = {
   obstacleId?: string
   componentId?: string
+  /** True when this obstacle replaces one completed fanout source footprint. */
+  isFanoutSourceKeepout?: boolean
   /** Circuit JSON provenance carried through SRJ but forbidden for routing. */
   circuitJsonMetadata?: CircuitJsonMetadata
   shape?: "circle"

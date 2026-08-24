@@ -408,6 +408,7 @@ export function Group_getRoutingPhasePlans(
     const breakoutPlan: RoutingPhasePlan = {
       routingPhaseIndex: null,
       routingPcbGroupId: breakout.pcb_group_id ?? undefined,
+      fanoutRegionPcbGroupId: breakout.pcb_group_id ?? undefined,
       routingBounds,
       fanoutBounds: hasExplicitGeometry
         ? routingBounds
