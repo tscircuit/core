@@ -6,7 +6,10 @@ import type {
 } from "circuit-json"
 import { underscorifyPinStyles } from "lib/soup/underscorifyPinStyles"
 import { underscorifyPortArrangement } from "lib/soup/underscorifyPortArrangement"
-import { getAllDimensionsForSchematicBox } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
+import {
+  getAllDimensionsForSchematicBox,
+  type NumericSchPinStyle,
+} from "lib/utils/schematic/getAllDimensionsForSchematicBox"
 import { getNumericSchPinStyle } from "lib/utils/schematic/getNumericSchPinStyle"
 import { getPinNumberFromPinLabelsKey } from "lib/utils/schematic/getPinNumberFromPinLabelsKey"
 import type { Chip } from "../../normal-components/Chip"
@@ -68,6 +71,26 @@ const getSchematicBoxPinStyleFromReferencedChip = ({
     : undefined
 }
 
+const mergeSchematicBoxPinStyles = ({
+  inheritedPinStyle,
+  overridePinStyle,
+}: {
+  inheritedPinStyle: SchematicPinStyle | undefined
+  overridePinStyle: NumericSchPinStyle | undefined
+}): SchematicPinStyle | undefined => {
+  if (!inheritedPinStyle && !overridePinStyle) return undefined
+
+  const mergedPinStyle: SchematicPinStyle = { ...inheritedPinStyle }
+  for (const [pinKey, pinStyle] of Object.entries(overridePinStyle ?? {})) {
+    mergedPinStyle[pinKey] = {
+      ...mergedPinStyle[pinKey],
+      ...pinStyle,
+    }
+  }
+
+  return Object.keys(mergedPinStyle).length > 0 ? mergedPinStyle : undefined
+}
+
 export const SchematicBox_doInitialSchematicComponentRender = (
   schematicBox: SchematicBox,
 ): void => {
@@ -112,9 +135,13 @@ export const SchematicBox_doInitialSchematicComponentRender = (
 
     return { ...schematicBoxPin, referencedSourcePort }
   })
-  const schematicBoxPinStyle = getSchematicBoxPinStyleFromReferencedChip({
+  const inheritedPinStyle = getSchematicBoxPinStyleFromReferencedChip({
     referencedChip,
     schematicBoxPins,
+  })
+  const schematicBoxPinStyle = mergeSchematicBoxPinStyles({
+    inheritedPinStyle,
+    overridePinStyle: getNumericSchPinStyle(props.schPinStyle, props.pinLabels),
   })
   const dimensions = getAllDimensionsForSchematicBox({
     schWidth: props.width,
