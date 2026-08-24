@@ -20,6 +20,7 @@ import type {
 import type {
   SimpleRouteBounds,
   SimpleRouteBus,
+  SimpleRouteConnection,
   SimpleRouteJson,
   SimpleRoutePoint,
   SimplifiedPcbTrace,
@@ -28,6 +29,10 @@ import { getFanoutSharedBoundary } from "./get-fanout-shared-boundary"
 import { getFanoutSpaceErrorMessage } from "./get-fanout-space-error-message"
 
 export type FanoutAutorouterMode = "single_layer_fanout" | "fanout"
+
+type FanoutTraceWithSourceTraceId = SimplifiedPcbTrace & {
+  source_trace_id?: string
+}
 
 export interface FanoutAutorouterOptions {
   mode: FanoutAutorouterMode
@@ -82,6 +87,32 @@ const expandBoundsToIncludePoints = (
       ...points.map((p) => p.y),
     ),
   }
+}
+
+const addSourceTraceIdentityFromInputConnections = ({
+  fanoutTraces,
+  inputConnections,
+}: {
+  fanoutTraces: readonly SimplifiedPcbTrace[]
+  inputConnections: readonly SimpleRouteConnection[]
+}): SimplifiedPcbTrace[] => {
+  const sourceTraceIdByConnectionName = new Map(
+    inputConnections.flatMap((connection) =>
+      connection.source_trace_id
+        ? [[connection.name, connection.source_trace_id] as const]
+        : [],
+    ),
+  )
+  const fanoutTracesWithOptionalSourceTraceId =
+    fanoutTraces as readonly FanoutTraceWithSourceTraceId[]
+  return fanoutTracesWithOptionalSourceTraceId.map((trace) => {
+    const sourceTraceId =
+      trace.source_trace_id ??
+      (trace.connection_name === undefined
+        ? undefined
+        : sourceTraceIdByConnectionName.get(trace.connection_name))
+    return sourceTraceId ? { ...trace, source_trace_id: sourceTraceId } : trace
+  })
 }
 
 export const getFanoutSolverBuses = (
@@ -478,9 +509,19 @@ export class FanoutAutorouter implements GenericLocalAutorouter {
       )
     }
     const output = fanoutSolver.getOutput()
-    const fanoutSimpleRouteJson =
+    const rawFanoutSimpleRouteJson =
       output.simpleRouteJson as unknown as SimpleRouteJson
-    const fanoutTraces = output.fanoutTraces as unknown as SimplifiedPcbTrace[]
+    const fanoutSimpleRouteJson = {
+      ...rawFanoutSimpleRouteJson,
+      traces: addSourceTraceIdentityFromInputConnections({
+        fanoutTraces: rawFanoutSimpleRouteJson.traces ?? [],
+        inputConnections: this.input.connections,
+      }),
+    }
+    const fanoutTraces = addSourceTraceIdentityFromInputConnections({
+      fanoutTraces: output.fanoutTraces as unknown as SimplifiedPcbTrace[],
+      inputConnections: this.input.connections,
+    })
     return {
       downstreamSimpleRouteJson: createDownstreamSimpleRouteJson({
         fanoutSimpleRouteJson,
