@@ -40,7 +40,7 @@ const routeConnectionsDirectly = (
     })),
   }))
 
-test("each breakout phase receives only its component obstacles and local pours", async () => {
+test("breakout phases retain full SRJ content with group-local pours", async () => {
   const { circuit } = getTestFixture({
     platform: { placementDrcChecksDisabled: true },
   })
@@ -132,14 +132,21 @@ test("each breakout phase receives only its component obstacles and local pours"
         obstacle.componentId ? [obstacle.componentId] : [],
       ),
     )
-  expect(getObstacleComponentIds(leftInput)).toEqual(
-    new Set([u1PcbComponentId]),
+  const allPcbComponentIds = new Set([
+    u1PcbComponentId,
+    u2PcbComponentId,
+    unrelatedPcbComponentId,
+  ])
+  expect(getObstacleComponentIds(leftInput)).toEqual(allPcbComponentIds)
+  expect(getObstacleComponentIds(rightInput)).toEqual(allPcbComponentIds)
+  expect(getObstacleComponentIds(globalInput)).toEqual(allPcbComponentIds)
+  const getNonPourObstacles = (simpleRouteJson: SimpleRouteJson) =>
+    simpleRouteJson.obstacles.filter((obstacle) => !obstacle.isCopperPour)
+  expect(getNonPourObstacles(rightInput)).toEqual(
+    getNonPourObstacles(leftInput),
   )
-  expect(getObstacleComponentIds(rightInput)).toEqual(
-    new Set([u2PcbComponentId]),
-  )
-  expect(getObstacleComponentIds(globalInput)).toEqual(
-    new Set([u1PcbComponentId, u2PcbComponentId, unrelatedPcbComponentId]),
+  expect(getNonPourObstacles(globalInput)).toEqual(
+    getNonPourObstacles(leftInput),
   )
 
   for (const [simpleRouteJson, expectedCenterX] of [
@@ -171,15 +178,18 @@ test("each breakout phase receives only its component obstacles and local pours"
   expect(
     globalCopperPourObstacles.every(
       (obstacle) =>
-        obstacle.center.x === 0 &&
+        obstacle.center.x === -10 &&
         obstacle.center.y === 0 &&
-        obstacle.width === 50 &&
-        obstacle.height === 20,
+        obstacle.width === 8 &&
+        obstacle.height === 8,
     ),
   ).toBe(true)
 
   expect(leftInput.traces ?? []).toHaveLength(0)
-  expect(rightInput.traces ?? []).toHaveLength(0)
+  expect(rightInput.traces?.map((trace) => trace.pcb_trace_id)).toEqual([
+    "left_0",
+    "left_1",
+  ])
   expect(globalInput.traces).toHaveLength(4)
   expect(leftInput.connections).toHaveLength(2)
   expect(rightInput.connections).toHaveLength(2)

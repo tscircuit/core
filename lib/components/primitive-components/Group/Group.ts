@@ -1197,11 +1197,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           ],
         }
       } else if (!usesPreviousStageOutput && hasPhasedAutorouting) {
-        const isCustomBreakoutRoutingPhase = Boolean(
-          routingPhasePlan.routingPcbGroupId &&
-            phaseAutorouterConfig.algorithmFn,
-        )
-        const phaseScopedSimpleRouteJson = isCustomBreakoutRoutingPhase
+        const phaseCopperPourObstacles = routingPhasePlan.routingPcbGroupId
           ? getSimpleRouteJsonFromCircuitJson({
               db,
               minTraceWidth,
@@ -1210,22 +1206,27 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
               subcircuitComponent: this,
               routingPcbGroupId: routingPhasePlan.routingPcbGroupId,
               fanoutPourNetMap,
-            }).simpleRouteJson
-          : baseSimpleRouteJson
+            }).simpleRouteJson.obstacles.filter(
+              (obstacle) => obstacle.isCopperPour,
+            )
+          : []
         const phaseInput = Group_filterSimpleRouteJsonForPhase(
           baseSimpleRouteJson,
           routingPhasePlan,
         )
-        // Custom breakout algorithms receive only the active group's fixed
-        // geometry. Their outputs stay accumulated for the later parent/global
-        // phase, but must not leak into a sibling breakout's local problem.
+        // Preserve every fixed obstacle and prior routed trace. Only outline-less
+        // copper pours need phase-local group bounds.
         simpleRouteJson = {
           ...phaseInput,
-          obstacles: phaseScopedSimpleRouteJson.obstacles,
-          traces: [
-            ...(phaseInput.traces ?? []),
-            ...(isCustomBreakoutRoutingPhase ? [] : outputTraces),
-          ],
+          obstacles: routingPhasePlan.routingPcbGroupId
+            ? [
+                ...phaseInput.obstacles.filter(
+                  (obstacle) => !obstacle.isCopperPour,
+                ),
+                ...phaseCopperPourObstacles,
+              ]
+            : phaseInput.obstacles,
+          traces: [...(phaseInput.traces ?? []), ...outputTraces],
         }
       }
       simpleRouteJson = Group_applyDrcTolerancesToSimpleRouteJson(

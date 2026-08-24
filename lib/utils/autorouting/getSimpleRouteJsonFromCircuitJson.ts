@@ -74,9 +74,8 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     pcb_group_id?: PcbGroupId | null
   }
   /**
-   * Restricts fixed PCB obstacles and outline-less copper pours to one active
-   * routing group. Connections retain their subcircuit-wide semantics so a
-   * later parent phase can still join breakout endpoints.
+   * Selects the routing group used to bound outline-less copper pours. Other
+   * SRJ content retains its normal subcircuit-wide semantics.
    */
   routingPcbGroupId?: PcbGroupId
   /**
@@ -147,11 +146,10 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   }
   const pcbGroup = routingPcbGroupId
     ? db.pcb_group.get(routingPcbGroupId)
-    : subcircuit_id && !subcircuitIsBoard
+    : subcircuit_id
       ? db.pcb_group.getWhere({ subcircuit_id })
       : undefined
   const activeRoutingPcbGroupId =
-    routingPcbGroupId ??
     subcircuitComponent?.pcb_group_id ??
     (!subcircuitIsBoard ? pcbGroup?.pcb_group_id : undefined)
 
@@ -219,30 +217,6 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     })
   }
 
-  const pcbComponentIdsInActiveRoutingGroup = new Set(
-    routingPcbGroupId ? (pcbGroup?.pcb_component_ids ?? []) : [],
-  )
-  if (routingPcbGroupId) {
-    for (const pcbComponent of db.pcb_component.list()) {
-      if (
-        pcbComponent.pcb_group_id === routingPcbGroupId ||
-        pcbComponent.positioned_relative_to_pcb_group_id === routingPcbGroupId
-      ) {
-        pcbComponentIdsInActiveRoutingGroup.add(pcbComponent.pcb_component_id)
-      }
-    }
-  }
-  const pcbElementIsInActiveRoutingGroup = (element: {
-    pcb_group_id?: string | null
-    pcb_component_id?: string | null
-  }): boolean =>
-    !routingPcbGroupId ||
-    element.pcb_group_id === routingPcbGroupId ||
-    Boolean(
-      element.pcb_component_id &&
-        pcbComponentIdsInActiveRoutingGroup.has(element.pcb_component_id),
-    )
-
   const obstacles = getObstaclesFromCircuitJson(
     [
       ...(board ? [board] : []),
@@ -250,14 +224,11 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       ...db.source_port.list(),
       ...db.pcb_port.list(),
       ...db.pcb_component.list(),
-      ...db.pcb_smtpad.list().filter(pcbElementIsInActiveRoutingGroup),
-      ...db.pcb_plated_hole.list().filter(pcbElementIsInActiveRoutingGroup),
-      ...db.pcb_hole.list().filter(pcbElementIsInActiveRoutingGroup),
+      ...db.pcb_smtpad.list(),
+      ...db.pcb_plated_hole.list(),
+      ...db.pcb_hole.list(),
       // Footprint copper primitives such as solder-jumper bridges are fixed.
-      ...db.pcb_trace
-        .list()
-        .filter((trace) => !trace.source_trace_id)
-        .filter(pcbElementIsInActiveRoutingGroup),
+      ...db.pcb_trace.list().filter((trace) => !trace.source_trace_id),
       ...db.pcb_via
         .list()
         .filter(
@@ -265,10 +236,9 @@ export const getSimpleRouteJsonFromCircuitJson = ({
             (!ignoreExistingTopLevelPcbRouteState ||
               Boolean(via.subcircuit_id)) &&
             !isPcbViaRepresentedByPreservedSrjTrace(via),
-        )
-        .filter(pcbElementIsInActiveRoutingGroup),
-      ...db.pcb_keepout.list().filter(pcbElementIsInActiveRoutingGroup),
-      ...db.pcb_cutout.list().filter(pcbElementIsInActiveRoutingGroup),
+        ),
+      ...db.pcb_keepout.list(),
+      ...db.pcb_cutout.list(),
     ].filter(
       (e) =>
         e.type === "pcb_board" ||
