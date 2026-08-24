@@ -171,16 +171,17 @@ export function Group_syncFanoutExitsWithGlobalConnections({
     })
   }
 
-  const keepoutPrefix = "fanout-source-keepout:"
   // FanoutAutorouter replaces the completed source footprint's individual pad
   // obstacles with one keepout. Mirror that transformation into the base SRJ
   // used by later phases, while leaving fanout copper represented by traces.
   const newFanoutSourceKeepouts = fanoutOutputSimpleRouteJson.obstacles.filter(
-    (obstacle) => obstacle.obstacleId?.startsWith(keepoutPrefix),
+    (obstacle) =>
+      obstacle.isFanoutSourceKeepout === true &&
+      obstacle.componentId !== undefined,
   )
   const completedSourceComponentIds = new Set(
-    newFanoutSourceKeepouts.map((obstacle) =>
-      obstacle.obstacleId!.slice(keepoutPrefix.length),
+    newFanoutSourceKeepouts.flatMap((obstacle) =>
+      obstacle.componentId === undefined ? [] : [obstacle.componentId],
     ),
   )
   const retainedBaseObstacles = baseSimpleRouteJson.obstacles.filter(
@@ -188,10 +189,6 @@ export function Group_syncFanoutExitsWithGlobalConnections({
       !obstacle.componentId ||
       !completedSourceComponentIds.has(obstacle.componentId),
   )
-  const newFanoutSourceKeepoutIds = new Set(
-    newFanoutSourceKeepouts.map((obstacle) => obstacle.obstacleId),
-  )
-
   return {
     downstreamSimpleRouteJson: removeCompletedFanoutConnections(
       fanoutOutputSimpleRouteJson,
@@ -200,12 +197,7 @@ export function Group_syncFanoutExitsWithGlobalConnections({
     baseSimpleRouteJson: {
       ...baseSimpleRouteJson,
       connections: baseConnections,
-      obstacles: [
-        ...retainedBaseObstacles.filter(
-          (obstacle) => !newFanoutSourceKeepoutIds.has(obstacle.obstacleId),
-        ),
-        ...newFanoutSourceKeepouts,
-      ],
+      obstacles: [...retainedBaseObstacles, ...newFanoutSourceKeepouts],
     },
     synchronizedBreakoutPoints,
   }

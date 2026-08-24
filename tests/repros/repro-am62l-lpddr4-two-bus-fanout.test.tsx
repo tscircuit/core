@@ -333,21 +333,23 @@ test("routes two DDR byte buses between AM62L and LPDDR4 fanouts", async () => {
     32,
   )
   const globalPhaseInput = autoroutingPhaseIoStack[2]!.startSimpleRouteJson!
-  const keepoutPrefix = "fanout-source-keepout:"
-  const sourceKeepouts = globalPhaseInput.obstacles.filter((obstacle) =>
-    obstacle.obstacleId?.startsWith(keepoutPrefix),
+  const sourceKeepouts = globalPhaseInput.obstacles.filter(
+    (obstacle) =>
+      obstacle.isFanoutSourceKeepout === true &&
+      obstacle.componentId !== undefined,
   )
   expect(sourceKeepouts).toHaveLength(2)
   const completedSourceComponentIds = new Set(
-    sourceKeepouts.map((obstacle) =>
-      obstacle.obstacleId!.slice(keepoutPrefix.length),
+    sourceKeepouts.flatMap((obstacle) =>
+      obstacle.componentId === undefined ? [] : [obstacle.componentId],
     ),
   )
   expect(
     globalPhaseInput.obstacles.filter(
       (obstacle) =>
         obstacle.componentId &&
-        completedSourceComponentIds.has(obstacle.componentId),
+        completedSourceComponentIds.has(obstacle.componentId) &&
+        !obstacle.isFanoutSourceKeepout,
     ),
   ).toHaveLength(0)
   const socFanoutGroup = circuit.db.pcb_group.getWhere({ name: "SOC_FANOUT" })!

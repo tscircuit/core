@@ -345,6 +345,8 @@ const createDownstreamSimpleRouteJson = ({
     )
     sourceFootprintKeepouts.push({
       obstacleId: `fanout-source-keepout:${componentId}`,
+      componentId,
+      isFanoutSourceKeepout: true,
       type: "rect",
       layers: getViaBoardLayers(fanoutSimpleRouteJson.layerCount),
       center: { x: (minX + maxX) / 2, y: (minY + maxY) / 2 },
