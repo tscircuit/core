@@ -1197,38 +1197,37 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           ],
         }
       } else if (!usesPreviousStageOutput && hasPhasedAutorouting) {
-        let phaseCopperPourObstacles: SimpleRouteJson["obstacles"] = []
-        if (routingPhasePlan.routingPcbGroupId) {
-          phaseCopperPourObstacles = getSimpleRouteJsonFromCircuitJson({
+        const phaseInput = Group_filterSimpleRouteJsonForPhase(
+          baseSimpleRouteJson,
+          routingPhasePlan,
+        )
+        const activeCustomBreakoutRoutingGroupId =
+          routingPhasePlan.routingPcbGroupId
+        if (activeCustomBreakoutRoutingGroupId) {
+          const activeGroupSimpleRouteJson = getSimpleRouteJsonFromCircuitJson({
             db,
             minTraceWidth,
             nominalTraceWidth,
             subcircuit_id: this.subcircuit_id,
             subcircuitComponent: this,
-            routingPcbGroupId: routingPhasePlan.routingPcbGroupId,
+            routingPcbGroupId: activeCustomBreakoutRoutingGroupId,
             fanoutPourNetMap,
-          }).simpleRouteJson.obstacles.filter(
-            (obstacle) => obstacle.isCopperPour,
+          }).simpleRouteJson
+          const activeGroupCopperPourObstacles =
+            activeGroupSimpleRouteJson.obstacles.filter(
+              (obstacle) => obstacle.isCopperPour,
+            )
+          const nonCopperPourObstacles = phaseInput.obstacles.filter(
+            (obstacle) => !obstacle.isCopperPour,
           )
-        }
-        const phaseInput = Group_filterSimpleRouteJsonForPhase(
-          baseSimpleRouteJson,
-          routingPhasePlan,
-        )
-        let phaseObstacles = phaseInput.obstacles
-        if (routingPhasePlan.routingPcbGroupId) {
-          phaseObstacles = [
-            ...phaseInput.obstacles.filter(
-              (obstacle) => !obstacle.isCopperPour,
-            ),
-            ...phaseCopperPourObstacles,
-          ]
+          phaseInput.obstacles = nonCopperPourObstacles.concat(
+            activeGroupCopperPourObstacles,
+          )
         }
         // Preserve every fixed obstacle and prior routed trace. Only outline-less
         // copper pours need phase-local group bounds.
         simpleRouteJson = {
           ...phaseInput,
-          obstacles: phaseObstacles,
           traces: [...(phaseInput.traces ?? []), ...outputTraces],
         }
       }

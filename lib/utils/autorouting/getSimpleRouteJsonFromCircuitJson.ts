@@ -150,9 +150,10 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   } else if (subcircuit_id) {
     pcbGroup = db.pcb_group.getWhere({ subcircuit_id })
   }
-  const activeRoutingPcbGroupId =
-    subcircuitComponent?.pcb_group_id ??
-    (!subcircuitIsBoard ? pcbGroup?.pcb_group_id : undefined)
+  let activeRoutingPcbGroupId = subcircuitComponent?.pcb_group_id
+  if (activeRoutingPcbGroupId == null && !subcircuitIsBoard) {
+    activeRoutingPcbGroupId = pcbGroup?.pcb_group_id
+  }
 
   const sharedConnMap =
     getFullConnectivityMapFromCircuitJson(subcircuitElements)
