@@ -280,6 +280,7 @@ export function createSchematicTraceSolverInputProblem(
   )
   const schematicPortIdsWithExplicitNetLabels = new Set(
     netLabelsInScope
+      .filter((netLabel) => !netLabel._parsedProps.inline)
       .flatMap((netLabel) => netLabel._getConnectedPorts())
       .map((port) => port.schematic_port_id)
       .filter(
@@ -292,9 +293,21 @@ export function createSchematicTraceSolverInputProblem(
     netLabelsInScope
       .filter(
         (netLabel) =>
-          netLabel._parsedProps.schX === undefined &&
-          netLabel._parsedProps.schY === undefined,
+          netLabel._parsedProps.inline ||
+          (netLabel._parsedProps.schX === undefined &&
+            netLabel._parsedProps.schY === undefined),
       )
+      .flatMap((netLabel) => netLabel._getConnectedPorts())
+      .map((port) => port.schematic_port_id)
+      .filter(
+        (schematicPortId): schematicPortId is SchematicPortId =>
+          schematicPortId !== null && schematicPortId !== undefined,
+      )
+      .map(asSchematicPortId),
+  )
+  const schematicPortIdsWithInlineNetLabels = new Set(
+    netLabelsInScope
+      .filter((netLabel) => netLabel._parsedProps.inline)
       .flatMap((netLabel) => netLabel._getConnectedPorts())
       .map((port) => port.schematic_port_id)
       .filter(
@@ -667,6 +680,7 @@ export function createSchematicTraceSolverInputProblem(
     connKeyToSourceNet,
     connKeysWithExplicitPortNetTraces,
     schematicPortIdsWithExplicitNetLabels,
+    schematicPortIdsWithInlineNetLabels,
     areSchematicPortsOnDifferentComponents: (schematicPortIds) => {
       const componentIds = schematicPortIds.map(
         (schematicPortId) =>
