@@ -39,7 +39,8 @@ type EligibleNetConnection = {
  * single-port net renders as one outward stub. A routed two-port net gets one
  * label along its trace; when schematic sections suppress that route, both
  * endpoints get outward stubs. Ports with an explicit `<netlabel>` element are
- * excluded so their user-selected anchored-label semantics remain intact.
+ * excluded so their user-selected anchored-label semantics remain intact,
+ * unless that label opts in with `inline`.
  *
  * The solver still has the last word: it falls back to an anchored label when
  * no collision-free inline placement exists.
@@ -51,6 +52,7 @@ export const applyInlineNetLabelEligibility = ({
   connKeyToSourceNet,
   connKeysWithExplicitPortNetTraces,
   schematicPortIdsWithExplicitNetLabels,
+  schematicPortIdsWithInlineNetLabels,
   areSchematicPortsOnDifferentComponents,
   resolveCanonicalNetLabelText,
 }: {
@@ -60,6 +62,7 @@ export const applyInlineNetLabelEligibility = ({
   connKeyToSourceNet: Map<string, SourceNet>
   connKeysWithExplicitPortNetTraces: Set<string>
   schematicPortIdsWithExplicitNetLabels: Set<SchematicPortId>
+  schematicPortIdsWithInlineNetLabels: Set<SchematicPortId>
   areSchematicPortsOnDifferentComponents: (
     schematicPortIds: [SchematicPortId, SchematicPortId],
   ) => boolean
@@ -104,14 +107,18 @@ export const applyInlineNetLabelEligibility = ({
 
   for (const netConnection of netConnections) {
     const { schematicPortIds } = netConnection
+    const hasInlineNetLabel = schematicPortIds.some((schematicPortId) =>
+      schematicPortIdsWithInlineNetLabels.has(schematicPortId),
+    )
     const isSinglePort = schematicPortIds.length === 1
     const isTwoPortChipToChip =
       schematicPortIds.length === 2 &&
       areSchematicPortsOnDifferentComponents(
         schematicPortIds as [SchematicPortId, SchematicPortId],
       )
-    if (!isSinglePort && !isTwoPortChipToChip) continue
+    if (!hasInlineNetLabel && !isSinglePort && !isTwoPortChipToChip) continue
     if (
+      !hasInlineNetLabel &&
       schematicPortIds.some((schematicPortId) =>
         schematicPortIdsWithExplicitNetLabels.has(schematicPortId),
       )
@@ -122,12 +129,14 @@ export const applyInlineNetLabelEligibility = ({
     if (!connKeysWithExplicitPortNetTraces.has(connKey)) continue
 
     const sourceNet = connKeyToSourceNet.get(connKey)
-    if (sourceNet?.is_power || sourceNet?.is_ground) continue
+    if (!hasInlineNetLabel && (sourceNet?.is_power || sourceNet?.is_ground)) {
+      continue
+    }
 
     const { name, wasAssignedDisplayLabel } = resolveCanonicalNetLabelText({
       subcircuitConnectivityMapKey: connKey,
     })
-    if (!name || !wasAssignedDisplayLabel) continue
+    if (!name || (!hasInlineNetLabel && !wasAssignedDisplayLabel)) continue
 
     markEligible(netConnection, name)
   }
