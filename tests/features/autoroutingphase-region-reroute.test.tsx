@@ -224,6 +224,7 @@ test("autoroutingphase can reroute middle components with a zigzag route", async
   expect(phaseInputs[0]!.minPadEdgeToPadEdgeClearance).toBe(0.12)
   expect(phaseInputs[0]!.minBoardEdgeClearance).toBe(0.31)
   expect(phaseInputs[0]!.minViaEdgeToPadEdgeClearance).toBe(0.14)
+  expect(phaseInputs[0]!.connections[0]!.minTraceWidth).toBe(0.42)
   expect(phaseInputs[0]!.connections[0]!.nominalTraceWidth).toBe(0.42)
   expect(rerouteConnectionNames).toHaveLength(1)
   expect(rerouteConnectionNames[0]).toContain("_reroute_")

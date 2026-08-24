@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("simple route json connection nominalTraceWidth matches trace thickness", async () => {
+test("simple route json connection widths match trace thickness", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -30,5 +30,6 @@ test("simple route json connection nominalTraceWidth matches trace thickness", a
   })
 
   expect(simpleRouteJson.connections).toHaveLength(1)
+  expect(simpleRouteJson.connections[0].minTraceWidth).toBe(0.5)
   expect(simpleRouteJson.connections[0].nominalTraceWidth).toBe(0.5)
 })

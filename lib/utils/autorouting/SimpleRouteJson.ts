@@ -85,6 +85,8 @@ export type SimpleRouteConnection = {
   mergedConnectionNames?: string[]
   isOffBoard?: boolean
   netConnectionName?: string
+  /** Hard lower bound for routed copper on this connection, in millimeters. */
+  minTraceWidth?: number
   nominalTraceWidth?: number
   /** @deprecated Use `nominalTraceWidth` instead. */
   width?: number

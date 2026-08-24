@@ -530,6 +530,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
           sharedConnMap.getNetConnectedToId(trace.source_trace_id) ??
           "",
         source_trace_id: trace.source_trace_id,
+        minTraceWidth: trace.min_trace_thickness,
         nominalTraceWidth: trace.min_trace_thickness,
         width: trace.min_trace_thickness,
         // Simple Route JSON connections are multi-terminal, so retain every
@@ -650,11 +651,11 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         ),
     )
 
-    let nominalTraceWidthFromConnectedTraces: number | undefined
+    let traceWidthFromConnectedTraces: number | undefined
     for (const sourceTrace of connectedSourceTraces) {
       if (sourceTrace.min_trace_thickness === undefined) continue
-      nominalTraceWidthFromConnectedTraces = Math.max(
-        nominalTraceWidthFromConnectedTraces ?? 0,
+      traceWidthFromConnectedTraces = Math.max(
+        traceWidthFromConnectedTraces ?? 0,
         sourceTrace.min_trace_thickness,
       )
     }
@@ -678,8 +679,9 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       name:
         net.source_net_id ??
         sharedConnMap.getNetConnectedToId(net.source_net_id),
-      nominalTraceWidth: nominalTraceWidthFromConnectedTraces,
-      width: nominalTraceWidthFromConnectedTraces,
+      minTraceWidth: traceWidthFromConnectedTraces,
+      nominalTraceWidth: traceWidthFromConnectedTraces,
+      width: traceWidthFromConnectedTraces,
       pointsToConnect,
     }
     if (pointsToConnect.length === 0) continue
@@ -731,6 +733,9 @@ export const getSimpleRouteJsonFromCircuitJson = ({
             ? `breakout:${bp.pcb_breakout_point_id}`
             : bpSourcePortId,
           source_trace_id: bp.source_trace_id,
+          minTraceWidth: bp.source_trace_id
+            ? db.source_trace.get(bp.source_trace_id)?.min_trace_thickness
+            : undefined,
           routingPcbGroupId: isInTransparentChildRoutingGroup
             ? bp.pcb_group_id
             : undefined,

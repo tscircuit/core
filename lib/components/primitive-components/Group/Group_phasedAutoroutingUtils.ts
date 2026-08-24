@@ -173,6 +173,10 @@ function applyMinTraceWidthToConnections(
 
   return connections.map((connection) => ({
     ...connection,
+    minTraceWidth: Math.max(
+      connection.minTraceWidth ?? minTraceWidth,
+      minTraceWidth,
+    ),
     nominalTraceWidth: Math.max(
       connection.nominalTraceWidth ?? minTraceWidth,
       minTraceWidth,
