@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import type { InputProblem } from "@tscircuit/schematic-trace-solver"
 import { sel } from "lib/sel"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
@@ -236,9 +237,22 @@ const TB67S579FTGBreakoutSchematic = () => (
 
 test("TB67S579FTG breakout renders named point-to-point traces", async () => {
   const { circuit } = getTestFixture()
+  let solverInputProblem: InputProblem | undefined
+
+  circuit.on("solver:started", (event) => {
+    if (event.solverName === "SchematicTracePipelineSolver") {
+      solverInputProblem = event.solverParams as InputProblem
+    }
+  })
 
   circuit.add(<TB67S579FTGBreakoutSchematic />)
   await circuit.renderUntilSettled()
+
+  expect(
+    solverInputProblem?.directConnections.find(
+      (connection) => connection.netId === "AGC_OUT",
+    )?.netLabelWidth,
+  ).toBe(0.96)
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
