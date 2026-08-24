@@ -1208,6 +1208,34 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           traces: [...(phaseInput.traces ?? []), ...outputTraces],
         }
       }
+      const activeCustomBreakoutRoutingGroupId =
+        routingPhasePlan.routingPcbGroupId
+      if (!usesPreviousStageOutput && activeCustomBreakoutRoutingGroupId) {
+        const activeGroupSimpleRouteJson = getSimpleRouteJsonFromCircuitJson({
+          db,
+          minTraceWidth,
+          nominalTraceWidth,
+          subcircuit_id: this.subcircuit_id,
+          subcircuitComponent: this,
+          routingPcbGroupId: activeCustomBreakoutRoutingGroupId,
+          fanoutPourNetMap,
+        }).simpleRouteJson
+        const activeGroupCopperPourObstacles =
+          activeGroupSimpleRouteJson.obstacles.filter(
+            (obstacle) => obstacle.isCopperPour,
+          )
+        const nonCopperPourObstacles = simpleRouteJson.obstacles.filter(
+          (obstacle) => !obstacle.isCopperPour,
+        )
+        // Only outline-less pours vary by active breakout. Preserve every other
+        // obstacle and all phase-local connections/traces exactly as selected.
+        simpleRouteJson = {
+          ...simpleRouteJson,
+          obstacles: nonCopperPourObstacles.concat(
+            activeGroupCopperPourObstacles,
+          ),
+        }
+      }
       simpleRouteJson = Group_applyDrcTolerancesToSimpleRouteJson(
         simpleRouteJson,
         routingPhasePlan.drcTolerances,

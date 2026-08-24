@@ -4,6 +4,7 @@ import type {
   AnyCircuitElement,
   LayerRef,
   PcbBoard,
+  PcbGroup,
   PcbPort,
   PcbVia,
   SourcePort,
@@ -53,6 +54,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   minViaPadDiameter,
   nominalTraceWidth,
   subcircuitComponent,
+  routingPcbGroupId,
   fanoutPourNetMap,
   ignoreExistingTopLevelPcbRouteState = false,
 }: {
@@ -72,6 +74,11 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   subcircuitComponent?: Pick<ISubcircuit, "selectAll"> & {
     pcb_group_id?: PcbGroupId | null
   }
+  /**
+   * Selects the routing group used to bound outline-less copper pours. Other
+   * SRJ content retains its normal subcircuit-wide semantics.
+   */
+  routingPcbGroupId?: PcbGroupId
   /**
    * Copper plane intent used by fanout routing. Source-only traces whose nets
    * are mapped here become internal plane-terminated buses in SRJ.
@@ -138,12 +145,17 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     if (!sourceComponent?.name) return undefined
     return `${sourceComponent.name}.${sourcePort.name}`
   }
-  const pcbGroup = subcircuit_id
-    ? db.pcb_group.getWhere({ subcircuit_id })
-    : undefined
-  const activeRoutingPcbGroupId =
-    subcircuitComponent?.pcb_group_id ??
-    (!subcircuitIsBoard ? pcbGroup?.pcb_group_id : undefined)
+  let pcbGroup: PcbGroup | undefined | null
+  if (routingPcbGroupId) {
+    pcbGroup = db.pcb_group.get(routingPcbGroupId)
+  } else if (subcircuit_id) {
+    pcbGroup = db.pcb_group.getWhere({ subcircuit_id })
+  }
+  let activeRoutingPcbGroupId =
+    routingPcbGroupId ?? subcircuitComponent?.pcb_group_id
+  if (activeRoutingPcbGroupId == null && !subcircuitIsBoard) {
+    activeRoutingPcbGroupId = pcbGroup?.pcb_group_id
+  }
 
   const sharedConnMap =
     getFullConnectivityMapFromCircuitJson(subcircuitElements)

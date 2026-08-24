@@ -133,13 +133,13 @@ test("custom breakout phases use their active copper-pour bounds", async () => {
   ])
   expect(getCopperPourBounds(rightInput)).toEqual([
     {
-      center: { x: -10, y: 0 },
+      center: { x: 10, y: 0 },
       width: 8,
       height: 8,
       layers: ["inner1"],
     },
     {
-      center: { x: -10, y: 0 },
+      center: { x: 10, y: 0 },
       width: 8,
       height: 8,
       layers: ["inner2"],
