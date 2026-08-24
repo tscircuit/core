@@ -17,6 +17,7 @@ import { DifferentialPair } from "lib/components/primitive-components/Differenti
 import type { ISubcircuit } from "lib/components/primitive-components/Group/Subcircuit/ISubcircuit"
 import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
 import { getObstaclesFromCircuitJson } from "../obstacles/getObstaclesFromCircuitJson"
+import type { Obstacle } from "../obstacles/types"
 import type {
   PcbGroupId,
   SimpleRouteConnection,
@@ -34,6 +35,11 @@ import {
 import { getDifferentialPairsForSimpleRouteJson } from "./getDifferentialPairsForSimpleRouteJson"
 import { getPreservedRoutedSubcircuitTraces } from "./getPreservedRoutedSubcircuitTraces"
 import { getUnbrokenCopperPourObstacles } from "./getUnbrokenCopperPourObstacles"
+
+export interface PrecomputedCopperPourObstacles {
+  defaultScope: Obstacle[]
+  byRoutingPcbGroupId: Map<PcbGroupId, Obstacle[]>
+}
 
 /**
  * This function can only be called in the PcbTraceRender phase or later
@@ -53,6 +59,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   minViaPadDiameter,
   nominalTraceWidth,
   subcircuitComponent,
+  copperPourRoutingPcbGroupIds,
   fanoutPourNetMap,
   ignoreExistingTopLevelPcbRouteState = false,
 }: {
@@ -73,6 +80,12 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     pcb_group_id?: PcbGroupId | null
   }
   /**
+   * Precomputes fully enriched unbroken copper-pour obstacles for phased
+   * routing. When provided, the returned SRJ contains only invariant
+   * non-copper-pour obstacles.
+   */
+  copperPourRoutingPcbGroupIds?: PcbGroupId[]
+  /**
    * Copper plane intent used by fanout routing. Source-only traces whose nets
    * are mapped here become internal plane-terminated buses in SRJ.
    */
@@ -82,7 +95,11 @@ export const getSimpleRouteJsonFromCircuitJson = ({
    * Routed child-subcircuit traces and vias remain fixed routing geometry.
    */
   ignoreExistingTopLevelPcbRouteState?: boolean
-}): { simpleRouteJson: SimpleRouteJson; connMap: ConnectivityMap } => {
+}): {
+  simpleRouteJson: SimpleRouteJson
+  connMap: ConnectivityMap
+  precomputedCopperPourObstacles?: PrecomputedCopperPourObstacles
+} => {
   if (!db && circuitJson) {
     db = su(circuitJson)
   }
@@ -239,21 +256,60 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     ),
     sharedConnMap,
   )
-  obstacles.push(
-    ...getUnbrokenCopperPourObstacles({
-      connMap: sharedConnMap,
-      subcircuitComponent,
-      board,
-      group: pcbGroup,
-    }),
-  )
+
+  let defaultCopperPourGroup = pcbGroup
+  if (subcircuitIsBoard) {
+    defaultCopperPourGroup = undefined
+  }
+  const defaultCopperPourObstacles = getUnbrokenCopperPourObstacles({
+    connMap: sharedConnMap,
+    subcircuitComponent,
+    board,
+    group: defaultCopperPourGroup,
+  })
+  let precomputedCopperPourObstacles: PrecomputedCopperPourObstacles | undefined
+  if (copperPourRoutingPcbGroupIds) {
+    const byRoutingPcbGroupId = new Map<PcbGroupId, Obstacle[]>()
+    const uniqueRoutingPcbGroupIds = new Set(copperPourRoutingPcbGroupIds)
+    for (const routingPcbGroupId of uniqueRoutingPcbGroupIds) {
+      const routingPcbGroup = db.pcb_group.get(routingPcbGroupId)
+      if (!routingPcbGroup) {
+        throw new Error(
+          `Could not precompute copper pours for missing PCB group "${routingPcbGroupId}"`,
+        )
+      }
+      const copperPourObstacles = getUnbrokenCopperPourObstacles({
+        connMap: sharedConnMap,
+        subcircuitComponent,
+        board,
+        group: routingPcbGroup,
+      })
+      byRoutingPcbGroupId.set(routingPcbGroupId, copperPourObstacles)
+    }
+    precomputedCopperPourObstacles = {
+      defaultScope: defaultCopperPourObstacles,
+      byRoutingPcbGroupId,
+    }
+  } else {
+    obstacles.push(...defaultCopperPourObstacles)
+  }
+
+  const obstacleCollections = [obstacles]
+  if (precomputedCopperPourObstacles) {
+    obstacleCollections.push(precomputedCopperPourObstacles.defaultScope)
+    for (const copperPourObstacles of precomputedCopperPourObstacles.byRoutingPcbGroupId.values()) {
+      obstacleCollections.push(copperPourObstacles)
+    }
+  }
 
   // Add every equivalent ID from the shared connectivity map to each obstacle.
-  for (const obstacle of obstacles) {
-    const additionalIds = obstacle.connectedTo.flatMap((id) =>
-      sharedConnMap.getIdsConnectedToNet(id),
-    )
-    obstacle.connectedTo.push(...additionalIds)
+  for (const obstacleCollection of obstacleCollections) {
+    for (const obstacle of obstacleCollection) {
+      const additionalIds = obstacle.connectedTo.flatMap((id) =>
+        sharedConnMap.getIdsConnectedToNet(id),
+      )
+      obstacle.connectedTo.push(...additionalIds)
+    }
   }
 
   // Build mapping from source_port_id to internal connection ID for interconnects
@@ -295,23 +351,31 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   }
 
   // Set offBoardConnectsTo and netIsAssignable for obstacles that are part of internal connections
-  for (const obstacle of obstacles) {
-    for (const connectedId of obstacle.connectedTo) {
-      const sourcePortId = pcbElementIdToSourcePortId.get(connectedId)
-      if (sourcePortId) {
-        const internalConnectionId =
-          sourcePortIdToInternalConnectionId.get(sourcePortId)
-        if (internalConnectionId) {
-          obstacle.offBoardConnectsTo = [internalConnectionId]
-          obstacle.netIsAssignable = true
-          break
+  for (const obstacleCollection of obstacleCollections) {
+    for (const obstacle of obstacleCollection) {
+      for (const connectedId of obstacle.connectedTo) {
+        const sourcePortId = pcbElementIdToSourcePortId.get(connectedId)
+        if (sourcePortId) {
+          const internalConnectionId =
+            sourcePortIdToInternalConnectionId.get(sourcePortId)
+          if (internalConnectionId) {
+            obstacle.offBoardConnectsTo = [internalConnectionId]
+            obstacle.netIsAssignable = true
+            break
+          }
         }
       }
     }
   }
 
   // Calculate bounds
-  const allPoints = obstacles
+  let obstaclesForBounds = obstacles
+  if (precomputedCopperPourObstacles) {
+    obstaclesForBounds = obstacles.concat(
+      precomputedCopperPourObstacles.defaultScope,
+    )
+  }
+  const allPoints = obstaclesForBounds
     .flatMap((o) => [
       {
         x: o.center.x - o.width / 2,
@@ -884,5 +948,6 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       outline: board?.outline?.map((point) => ({ ...point })),
     },
     connMap: sharedConnMap,
+    precomputedCopperPourObstacles,
   }
 }

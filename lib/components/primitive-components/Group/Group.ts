@@ -34,6 +34,7 @@ import { FanoutAutorouter } from "lib/utils/autorouting/FanoutAutorouter"
 import type { GenericLocalAutorouter } from "lib/utils/autorouting/GenericLocalAutorouter"
 import type {
   CircuitJsonMetadata,
+  PcbGroupId,
   SimpleRouteBounds,
   SimpleRouteJson,
   SimplifiedPcbTrace,
@@ -1073,15 +1074,51 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const fanoutPourNetMap = hasFanoutStage
       ? Group_getFanoutPourNetMap(this, routingPhasePlans)
       : undefined
-    let { simpleRouteJson: baseSimpleRouteJson } =
-      getSimpleRouteJsonFromCircuitJson({
-        db,
-        minTraceWidth,
-        nominalTraceWidth,
-        subcircuit_id: this.subcircuit_id,
-        subcircuitComponent: this,
-        fanoutPourNetMap,
-      })
+    let copperPourRoutingPcbGroupIds: PcbGroupId[] | undefined
+    if (hasPhasedAutorouting) {
+      const uniqueRoutingPcbGroupIds = new Set<PcbGroupId>()
+      for (const routingPhasePlan of routingPhasePlans) {
+        if (routingPhasePlan.routingPcbGroupId) {
+          uniqueRoutingPcbGroupIds.add(routingPhasePlan.routingPcbGroupId)
+        }
+      }
+      copperPourRoutingPcbGroupIds = Array.from(uniqueRoutingPcbGroupIds)
+    }
+    const baseSimpleRouteJsonResult = getSimpleRouteJsonFromCircuitJson({
+      db,
+      minTraceWidth,
+      nominalTraceWidth,
+      subcircuit_id: this.subcircuit_id,
+      subcircuitComponent: this,
+      copperPourRoutingPcbGroupIds,
+      fanoutPourNetMap,
+    })
+    let { simpleRouteJson: baseSimpleRouteJson } = baseSimpleRouteJsonResult
+    const { precomputedCopperPourObstacles } = baseSimpleRouteJsonResult
+    if (hasPhasedAutorouting && !precomputedCopperPourObstacles) {
+      throw new Error(
+        "Phased autorouting is missing precomputed copper-pour obstacles",
+      )
+    }
+    const getCopperPourObstaclesForPhase = (
+      routingPhasePlan: RoutingPhasePlan,
+    ): SimpleRouteJson["obstacles"] => {
+      if (!precomputedCopperPourObstacles) return []
+      const routingPcbGroupId = routingPhasePlan.routingPcbGroupId
+      if (!routingPcbGroupId) {
+        return precomputedCopperPourObstacles.defaultScope
+      }
+      const copperPourObstacles =
+        precomputedCopperPourObstacles.byRoutingPcbGroupId.get(
+          routingPcbGroupId,
+        )
+      if (!copperPourObstacles) {
+        throw new Error(
+          `Copper-pour obstacles were not precomputed for PCB group "${routingPcbGroupId}"`,
+        )
+      }
+      return copperPourObstacles
+    }
     const outputTraces: SimplifiedPcbTrace[] = []
     const outputJumpers: Array<{
       jumper_footprint: string
@@ -1130,6 +1167,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     }
 
     let previousStageOutputSimpleRouteJson: SimpleRouteJson | undefined
+    let currentPhaseBaseSimpleRouteJson = baseSimpleRouteJson
 
     for (const {
       routingPhasePlan,
@@ -1141,6 +1179,16 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     } of routingStages) {
       if (!usesPreviousStageOutput) {
         previousStageOutputSimpleRouteJson = undefined
+        currentPhaseBaseSimpleRouteJson = baseSimpleRouteJson
+        if (hasPhasedAutorouting) {
+          const copperPourObstacles =
+            getCopperPourObstaclesForPhase(routingPhasePlan)
+          currentPhaseBaseSimpleRouteJson = {
+            ...baseSimpleRouteJson,
+            obstacles:
+              baseSimpleRouteJson.obstacles.concat(copperPourObstacles),
+          }
+        }
       }
       if (
         usesPreviousStageOutput &&
@@ -1151,7 +1199,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         )
       }
       let simpleRouteJson =
-        previousStageOutputSimpleRouteJson ?? baseSimpleRouteJson
+        previousStageOutputSimpleRouteJson ?? currentPhaseBaseSimpleRouteJson
       const isRegionReroutePhase = Boolean(
         routingPhasePlan.reroute && routingPhasePlan.region,
       )
@@ -1163,7 +1211,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       const isReroutePhase = isRegionReroutePhase || isConnectionReroutePhase
       const rerouteOriginalSrj = isRegionReroutePhase
         ? {
-            ...baseSimpleRouteJson,
+            ...currentPhaseBaseSimpleRouteJson,
             traces: [...existingRerouteSeedTraces, ...outputTraces],
           }
         : null
@@ -1182,7 +1230,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         ) as SimpleRouteJson
       } else if (!usesPreviousStageOutput && isConnectionReroutePhase) {
         const phaseInput = Group_filterSimpleRouteJsonForPhase(
-          baseSimpleRouteJson,
+          currentPhaseBaseSimpleRouteJson,
           routingPhasePlan,
         )
         // Preserve routed geometry as SRJ traces. The autorouter owns
@@ -1198,7 +1246,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         }
       } else if (!usesPreviousStageOutput && hasPhasedAutorouting) {
         const phaseInput = Group_filterSimpleRouteJsonForPhase(
-          baseSimpleRouteJson,
+          currentPhaseBaseSimpleRouteJson,
           routingPhasePlan,
         )
         // Preserve routed geometry as SRJ traces. The autorouter owns
