@@ -4,7 +4,6 @@ import {
 } from "@tscircuit/math-utils"
 import {
   type InputChip,
-  type InputPin,
   type InputProblem,
   type SectionId,
   type TextBoxes,
@@ -196,16 +195,22 @@ export function createSchematicTraceSolverInputProblem(
 
   for (const schematicComponent of schematicComponents) {
     const chipId = schematicComponent.schematic_component_id
-    const pins: InputPin[] = []
 
     const schematicPorts = db.schematic_port.list({
       schematic_component_id: schematicComponent.schematic_component_id,
     })
 
-    for (const schematicPort of schematicPorts) {
+    const pins = schematicPorts.map((schematicPort) => {
       const schematicPortId = asSchematicPortId(schematicPort.schematic_port_id)
-      pins.push({
+      const sourcePort = schematicPort.source_port_id
+        ? db.source_port.get(schematicPort.source_port_id)
+        : undefined
+      return {
         pinId: schematicPortId,
+        displayName:
+          schematicPort.display_pin_label ??
+          schematicPort.pin_number?.toString() ??
+          sourcePort?.name,
         x: schematicPort.center.x,
         y: schematicPort.center.y,
         // Pass the port's true facing direction (known from the schematic
@@ -217,8 +222,8 @@ export function createSchematicTraceSolverInputProblem(
         _facingDirection: convertFacingDirectionToElbowDirection(
           schematicPort.facing_direction ?? null,
         ),
-      })
-    }
+      }
+    })
 
     const sectionId = sectionIdBySchematicComponentId.get(
       schematicComponent.schematic_component_id,
