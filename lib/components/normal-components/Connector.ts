@@ -303,9 +303,9 @@ export class Connector<
     return canonicalArrangement
   }
 
-  _getSchematicBoxDimensions(): SchematicBoxDimensions | null {
+  _computeSchematicBoxDimensions(): SchematicBoxDimensions | null {
     if (this._getConnectorProps().standard !== "usb_c") {
-      return super._getSchematicBoxDimensions()
+      return super._computeSchematicBoxDimensions()
     }
     if (this.getSchematicSymbol()) return null
     if (!this.config.shouldRenderAsSchematicBox) return null

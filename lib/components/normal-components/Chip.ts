@@ -4,15 +4,12 @@ import { pcb_component_invalid_layer_error } from "circuit-json"
 import { NormalComponent } from "lib/components/base-components/NormalComponent"
 import { Port } from "lib/components/primitive-components/Port"
 import { Trace } from "lib/components/primitive-components/Trace/Trace"
-import { type SchematicBoxDimensions } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
 import { Chip_doInitialPcbPlacementDesignRuleChecks } from "./Chip_doInitialPcbPlacementDesignRuleChecks"
 
 export class Chip<PinLabels extends string = never> extends NormalComponent<
   typeof chipProps,
   PinLabels
 > {
-  schematicBoxDimensions: SchematicBoxDimensions | null = null
-
   get config() {
     return {
       componentName: "Chip",
