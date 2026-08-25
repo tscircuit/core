@@ -91,6 +91,59 @@ export class Trace
     return this._parsedProps.thickness ?? this._parsedProps.width
   }
 
+  /**
+   * Get the widest nominalTraceWidth of the nets this trace connects to, e.g.
+   * <net name="VBUS" nominalTraceWidth="0.5mm" /> makes every trace on VBUS
+   * 0.5mm wide unless the trace sets its own thickness.
+   */
+  _getNominalTraceWidthFromConnectedNets(): number | undefined {
+    let nominalTraceWidth: number | undefined
+    for (const selector of this.getTracePathNetSelectors()) {
+      // _resolveNet is used instead of _findConnectedNets to avoid emitting a
+      // render error for unresolvable selectors during pcb rendering
+      const net = this._resolveNet(selector)
+      const netTraceWidth = net?._parsedProps.nominalTraceWidth
+      if (netTraceWidth === undefined) continue
+      nominalTraceWidth = Math.max(nominalTraceWidth ?? 0, netTraceWidth)
+    }
+    return nominalTraceWidth
+  }
+
+  /**
+   * Get the nominalTraceWidth/defaultTraceWidth of the closest ancestor group,
+   * e.g. <group nominalTraceWidth="0.4mm"> makes every trace inside the group
+   * 0.4mm wide. The enclosing subcircuit is not considered here because its
+   * value is applied to the whole SimpleRouteJson by Group._runLocalAutorouting.
+   */
+  _getNominalTraceWidthFromParentGroups(): number | undefined {
+    let ancestor = this.parent
+    while (ancestor && !ancestor.isSubcircuit) {
+      if (ancestor.isGroup) {
+        const groupProps = ancestor._parsedProps as {
+          defaultTraceWidth?: number
+          nominalTraceWidth?: number
+        }
+        const groupTraceWidth =
+          groupProps.defaultTraceWidth ?? groupProps.nominalTraceWidth
+        if (groupTraceWidth !== undefined) return groupTraceWidth
+      }
+      ancestor = ancestor.parent
+    }
+    return undefined
+  }
+
+  /**
+   * Get the width this trace should be routed at, falling back from the trace's
+   * own thickness to the nets it connects to, then to the groups it's inside of
+   */
+  _getEffectiveTraceThickness(): number | undefined {
+    return (
+      this._getExplicitTraceThickness() ??
+      this._getNominalTraceWidthFromConnectedNets() ??
+      this._getNominalTraceWidthFromParentGroups()
+    )
+  }
+
   _getSchematicNetLabelText(): string | undefined {
     return (
       this._parsedProps.schDisplayLabel ??
@@ -319,7 +372,7 @@ export class Trace
         ),
       max_via_count: props.maxViaCount,
       display_name: props.displayName ?? displayName,
-      min_trace_thickness: this._getExplicitTraceThickness(),
+      min_trace_thickness: this._getEffectiveTraceThickness(),
     })
 
     this.source_trace_id = trace.source_trace_id

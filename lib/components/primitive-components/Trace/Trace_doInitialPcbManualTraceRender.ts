@@ -116,7 +116,7 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
   }
 
   const width =
-    trace._getExplicitTraceThickness() ??
+    trace._getEffectiveTraceThickness() ??
     trace.getSubcircuit()._parsedProps.minTraceWidth ??
     jlcMinTolerances.min_trace_width!
 
