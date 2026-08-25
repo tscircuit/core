@@ -1,7 +1,16 @@
-import type { SchematicPort } from "circuit-json"
-import type { PinLabelsProp } from "@tscircuit/props"
+import type { PinLabelsProp, SchematicPinStyle } from "@tscircuit/props"
+import type {
+  SchematicComponent,
+  SchematicPort,
+  SourcePort,
+} from "circuit-json"
+import { underscorifyPinStyles } from "lib/soup/underscorifyPinStyles"
 import { underscorifyPortArrangement } from "lib/soup/underscorifyPortArrangement"
-import { getAllDimensionsForSchematicBox } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
+import {
+  getAllDimensionsForSchematicBox,
+  type NumericSchPinStyle,
+} from "lib/utils/schematic/getAllDimensionsForSchematicBox"
+import { getNumericSchPinStyle } from "lib/utils/schematic/getNumericSchPinStyle"
 import { getPinNumberFromPinLabelsKey } from "lib/utils/schematic/getPinNumberFromPinLabelsKey"
 import type { Chip } from "../../normal-components/Chip"
 import type { SchematicBox } from "./SchematicBox"
@@ -32,6 +41,56 @@ export const getSchematicBoxPinLabels = (
   })
 }
 
+const getSchematicBoxPinStyleFromReferencedChip = ({
+  referencedChip,
+  schematicBoxPins,
+}: {
+  referencedChip: Chip
+  schematicBoxPins: Array<{
+    pinNumber: number
+    referencedSourcePort: SourcePort
+  }>
+}): SchematicPinStyle | undefined => {
+  const referencedChipPinStyle = getNumericSchPinStyle(
+    referencedChip._parsedProps.schPinStyle,
+    referencedChip._parsedProps.pinLabels,
+  )
+  if (!referencedChipPinStyle) return undefined
+
+  const schematicBoxPinStyle: SchematicPinStyle = {}
+  for (const { pinNumber, referencedSourcePort } of schematicBoxPins) {
+    if (referencedSourcePort.pin_number === undefined) continue
+
+    const pinStyle =
+      referencedChipPinStyle[`pin${referencedSourcePort.pin_number}`]
+    if (pinStyle) schematicBoxPinStyle[`pin${pinNumber}`] = pinStyle
+  }
+
+  return Object.keys(schematicBoxPinStyle).length > 0
+    ? schematicBoxPinStyle
+    : undefined
+}
+
+const mergeSchematicBoxPinStyles = ({
+  inheritedPinStyle,
+  overridePinStyle,
+}: {
+  inheritedPinStyle: SchematicPinStyle | undefined
+  overridePinStyle: NumericSchPinStyle | undefined
+}): SchematicPinStyle | undefined => {
+  if (!inheritedPinStyle && !overridePinStyle) return undefined
+
+  const mergedPinStyle: SchematicPinStyle = { ...inheritedPinStyle }
+  for (const [pinKey, pinStyle] of Object.entries(overridePinStyle ?? {})) {
+    mergedPinStyle[pinKey] = {
+      ...mergedPinStyle[pinKey],
+      ...pinStyle,
+    }
+  }
+
+  return Object.keys(mergedPinStyle).length > 0 ? mergedPinStyle : undefined
+}
+
 export const SchematicBox_doInitialSchematicComponentRender = (
   schematicBox: SchematicBox,
 ): void => {
@@ -60,12 +119,37 @@ export const SchematicBox_doInitialSchematicComponentRender = (
   const sourcePorts = db.source_port.list({
     source_component_id: referencedChip.source_component_id,
   })
+  const schematicBoxPins = schematicBoxPinLabels.map((schematicBoxPin) => {
+    const referencedSourcePort = sourcePorts.find((sourcePort) =>
+      schematicBoxPin.pinAliases.some(
+        (pinAlias) =>
+          sourcePort.name === pinAlias ||
+          sourcePort.port_hints?.includes(pinAlias),
+      ),
+    )
+    if (!referencedSourcePort) {
+      throw new Error(
+        `Could not find pin "${schematicBoxPin.displayPinLabel}" on chipRef "${props.chipRef}"`,
+      )
+    }
+
+    return { ...schematicBoxPin, referencedSourcePort }
+  })
+  const inheritedPinStyle = getSchematicBoxPinStyleFromReferencedChip({
+    referencedChip,
+    schematicBoxPins,
+  })
+  const schematicBoxPinStyle = mergeSchematicBoxPinStyles({
+    inheritedPinStyle,
+    overridePinStyle: getNumericSchPinStyle(props.schPinStyle, props.pinLabels),
+  })
   const dimensions = getAllDimensionsForSchematicBox({
     schWidth: props.width,
     schHeight: props.height,
     schPinSpacing: 0.2,
     pinCount: schematicBoxPinLabels.length,
     schPortArrangement: props.schPinArrangement,
+    numericSchPinStyle: getNumericSchPinStyle(schematicBoxPinStyle),
     pinLabels: pinLabelsByPinKey,
   })
   const center = schematicBox._getGlobalSchematicPositionBeforeLayout()
@@ -86,6 +170,9 @@ export const SchematicBox_doInitialSchematicComponentRender = (
     port_arrangement: underscorifyPortArrangement(props.schPinArrangement),
     port_labels: portLabels,
     pin_spacing: 0.2,
+    pin_styles: underscorifyPinStyles(
+      schematicBoxPinStyle,
+    ) as SchematicComponent["pin_styles"],
     schematic_sheet_id: schematicSheetId,
   })
   schematicBox.schematic_component_id =
@@ -94,21 +181,8 @@ export const SchematicBox_doInitialSchematicComponentRender = (
   for (const {
     pinNumber,
     displayPinLabel,
-    pinAliases,
-  } of schematicBoxPinLabels) {
-    const referencedSourcePort = sourcePorts.find((sourcePort) =>
-      pinAliases.some(
-        (pinAlias) =>
-          sourcePort.name === pinAlias ||
-          sourcePort.port_hints?.includes(pinAlias),
-      ),
-    )
-    if (!referencedSourcePort) {
-      throw new Error(
-        `Could not find pin "${displayPinLabel}" on chipRef "${props.chipRef}"`,
-      )
-    }
-
+    referencedSourcePort,
+  } of schematicBoxPins) {
     const portPosition = dimensions.getPortPositionByPinNumber(pinNumber)
     if (!portPosition) {
       throw new Error(

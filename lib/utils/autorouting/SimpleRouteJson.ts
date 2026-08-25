@@ -117,10 +117,11 @@ export type SimpleRouteBus = {
   connectionNames: SrjConnectionName[]
   /**
    * Per-connection downstream points that should guide fanout boundary exits.
-   * These are routing hints and do not replace electrical endpoints.
+   * These are routing hints and do not replace electrical endpoints. A known
+   * layer lets paired fanouts preserve a compatible winding order.
    */
   connectionExitTargets?: Readonly<
-    Record<SrjConnectionName, { x: number; y: number }>
+    Record<SrjConnectionName, { x: number; y: number; layer?: string }>
   >
   maxLengthSkew?: number
   traceWidth?: number

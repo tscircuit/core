@@ -1,28 +1,28 @@
-import { guessCableInsertCenter } from "@tscircuit/infer-cable-insertion-point"
 import {
-  connectorProps,
-  type ConnectorStandard,
   type ConnectorProps,
+  type ConnectorStandard,
   type PartsEngine,
   type SchematicPinStyle,
   type SchematicPortArrangement,
+  connectorProps,
 } from "@tscircuit/props"
 import type { AnyCircuitElement, SourceSimpleConnector } from "circuit-json"
 import { source_part_not_found_warning } from "circuit-json"
-import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromCircuitJson"
-import { convertCircuitJsonToUsbCStandardCircuitJson } from "lib/utils/connectors/convertCircuitJsonToUsbCStandardCircuitJson"
 import { convertCircuitJsonToJstStandardCircuitJson } from "lib/utils/connectors/convertCircuitJsonToJstStandardCircuitJson"
+import { convertCircuitJsonToUsbCStandardCircuitJson } from "lib/utils/connectors/convertCircuitJsonToUsbCStandardCircuitJson"
+import { extractCadModelFromCircuitJson } from "lib/utils/connectors/extractCadModelFromCircuitJson"
 import { STANDARD_USB_C_PIN_LABELS } from "lib/utils/connectors/usb-c-canonical-pin-definitions"
+import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromCircuitJson"
+import { inferCableInsertionCenterForComponent } from "lib/utils/pcb/infer-cable-insertion-center-for-component"
 import {
-  getAllDimensionsForSchematicBox,
   type SchematicBoxDimensions,
+  getAllDimensionsForSchematicBox,
 } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
 import { getNumericSchPinStyle } from "lib/utils/schematic/getNumericSchPinStyle"
-import { extractCadModelFromCircuitJson } from "lib/utils/connectors/extractCadModelFromCircuitJson"
 import { symbols } from "schematic-symbols"
+import { Port } from "../primitive-components/Port"
 import { Chip } from "./Chip"
 import { insertInnerSymbolInSchematicBox } from "./Connector_insertInnerSymbolInSchematicBox"
-import { Port } from "../primitive-components/Port"
 
 const USB_C_SIGNAL_LABELS_IN_ORDER = [
   "VBUS1",
@@ -499,33 +499,12 @@ export class Connector<
     if (!this.pcb_component_id || !this.source_component_id) return
 
     const { db } = this.root!
-    const connectorCircuitJson = db.toArray().filter((elm: any) => {
-      if (elm.type === "pcb_component") {
-        return elm.pcb_component_id === this.pcb_component_id
-      }
-      if (elm.type === "source_component") {
-        return elm.source_component_id === this.source_component_id
-      }
-      if (
-        "pcb_component_id" in elm &&
-        elm.pcb_component_id === this.pcb_component_id
-      ) {
-        return true
-      }
-      if (
-        "source_component_id" in elm &&
-        elm.source_component_id === this.source_component_id
-      ) {
-        return true
-      }
-      return false
+    const inferredInsertionCenter = inferCableInsertionCenterForComponent({
+      circuitJson: db.toArray(),
+      pcbComponentId: this.pcb_component_id,
+      sourceComponentId: this.source_component_id,
     })
-
-    if (connectorCircuitJson.length === 0) return
-
-    const inferredInsertionCenter = guessCableInsertCenter(
-      connectorCircuitJson as any,
-    )
+    if (!inferredInsertionCenter) return
 
     db.pcb_component.update(this.pcb_component_id, {
       cable_insertion_center: {

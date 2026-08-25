@@ -32,5 +32,41 @@ test("four-pin crystal aliases resolve to distinct numbered pins", () => {
 
   const crystal = circuit.selectOne("crystal") as Crystal
 
+  const inlineLabels = circuit.db.schematic_text
+    .list()
+    .filter((text) => text.source_trace_id)
+  const inlineLabelByText = new Map(
+    inlineLabels.map((text) => [text.text, text]),
+  )
+
+  expect(inlineLabelByText.get("PIN1_SIGNAL")).toMatchObject({
+    anchor: "right",
+    rotation: 0,
+  })
+  expect(inlineLabelByText.get("PIN3_SIGNAL")).toMatchObject({
+    anchor: "left",
+    rotation: 0,
+  })
+
+  const groundLabelsByText = new Map(
+    circuit.db.schematic_net_label
+      .list()
+      .map((netLabel) => [netLabel.text, netLabel]),
+  )
+
+  for (const groundNetName of ["PIN4_GND", "PIN2_GND"]) {
+    const groundLabel = groundLabelsByText.get(groundNetName)
+    expect(groundLabel).toMatchObject({
+      anchor_side: "top",
+      symbol_name: "rail_down",
+    })
+    expect(circuit.db.source_net.get(groundLabel!.source_net_id)).toMatchObject(
+      {
+        name: groundNetName,
+        is_ground: true,
+      },
+    )
+  }
+
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })

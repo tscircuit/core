@@ -27,9 +27,16 @@ test("netlabel center offset", () => {
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 
-  const labels = circuit.db.schematic_net_label.list()
-
-  const label = labels.find((l) => l.text === "TESTNET")!
-  expect(label.anchor_side).toBe("right")
-  expect(label.center.x).toBeLessThan(label.anchor_position!.x)
+  expect(
+    circuit.db.schematic_net_label
+      .list()
+      .some((label) => label.text === "TESTNET"),
+  ).toBe(false)
+  expect(
+    circuit.db.schematic_text
+      .list()
+      .find((text) => text.source_trace_id && text.text === "TESTNET"),
+  ).toMatchObject({
+    anchor: "right",
+  })
 })

@@ -7,6 +7,14 @@ type PreservedTrace = PcbTrace & {
   connectsTo?: string[]
 }
 
+type PreservedViaRoutePoint = Extract<
+  PcbTrace["route"][number],
+  { route_type: "via" }
+> & {
+  via_diameter?: number
+  via_hole_diameter?: number
+}
+
 const getLayerName = (layer: LayerRef | { name: string }): string =>
   typeof layer === "string" ? layer : layer.name
 
@@ -43,17 +51,22 @@ const getSimpleRouteForPreservedTrace = (
     }
 
     if (routePoint.route_type === "via") {
+      const preservedViaRoutePoint = routePoint as PreservedViaRoutePoint
+      const viaDiameter =
+        preservedViaRoutePoint.outer_diameter ??
+        preservedViaRoutePoint.via_diameter
+      const viaHoleDiameter =
+        preservedViaRoutePoint.hole_diameter ??
+        preservedViaRoutePoint.via_hole_diameter
       return {
         route_type: "via",
         x: routePoint.x,
         y: routePoint.y,
         from_layer: getLayerName(routePoint.from_layer),
         to_layer: getLayerName(routePoint.to_layer),
-        ...(routePoint.outer_diameter !== undefined
-          ? { via_diameter: routePoint.outer_diameter }
-          : {}),
-        ...(routePoint.hole_diameter !== undefined
-          ? { via_hole_diameter: routePoint.hole_diameter }
+        ...(viaDiameter !== undefined ? { via_diameter: viaDiameter } : {}),
+        ...(viaHoleDiameter !== undefined
+          ? { via_hole_diameter: viaHoleDiameter }
           : {}),
       }
     }

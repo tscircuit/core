@@ -136,7 +136,9 @@ test("fanout breakout routes signals and plane drops before global routing", asy
     const [firstPoint, secondPoint] = connection.pointsToConnect
     expect(firstPoint).toBeDefined()
     expect(secondPoint).toBeDefined()
-    expect(Math.abs(firstPoint!.y - secondPoint!.y)).toBeLessThan(0.6)
+    // Winding preserves connection order, but may offset the two boundary
+    // endpoints by one fanout lane while distributing the bus.
+    expect(Math.abs(firstPoint!.y - secondPoint!.y)).toBeLessThan(1)
   }
 
   const breakoutGroups = ["U1_BREAKOUT", "U2_BREAKOUT"].map((name) => {

@@ -547,5 +547,25 @@ test("RP2040 auto-layout with schematic sections", () => {
 
   circuit.render()
 
+  const inlineTexts = circuit.db.schematic_text.list()
+  const anchoredLabels = circuit.db.schematic_net_label.list()
+
+  // D0 has exactly two schematic ports, IC2 and JP2. Because those components
+  // live in different schematic sections, the route is intentionally omitted
+  // and both endpoints become inline terminal stubs.
+  expect(
+    inlineTexts.filter(
+      (text) => text.text === "D0" && Boolean(text.source_trace_id),
+    ),
+  ).toHaveLength(2)
+  expect(anchoredLabels.filter((label) => label.text === "D0")).toHaveLength(0)
+
+  // XIN has three schematic ports (IC2, Y1, and C19), so it retains anchored
+  // labels rather than implying that one of its branches names the whole net.
+  expect(inlineTexts.filter((text) => text.text === "XIN")).toHaveLength(0)
+  expect(
+    anchoredLabels.filter((label) => label.text === "XIN").length,
+  ).toBeGreaterThan(0)
+
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 }, 40_000)

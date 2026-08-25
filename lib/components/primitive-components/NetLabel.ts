@@ -111,6 +111,16 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
     const { db } = this.root!
     const { _parsedProps: props } = this
 
+    // Inline labels are placed by the schematic trace solver. If it cannot
+    // find a collision-free inline placement, it emits the anchored fallback.
+    if (
+      props.inline &&
+      this.root?._featureMspSchematicTraceRouting &&
+      this._getConnectedPorts().length > 0
+    ) {
+      return
+    }
+
     const anchorPos = this._getGlobalSchematicPositionBeforeLayout()
 
     const net = this.getSubcircuit()!.selectOne(
@@ -186,6 +196,7 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
     if (!this.root?._featureMspSchematicTraceRouting) return
     if (this.root?.schematicDisabled) return
     if (this.getCollapsedSchematicBoxAncestor()) return
+    if (this._parsedProps.inline) return
     const { schX, schY } = this._parsedProps
     if (schX === undefined && schY === undefined) return
 

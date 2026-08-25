@@ -57,7 +57,7 @@ const pointsReferToSameEndpoint = (
 const getPairedExitTarget = (
   simpleRouteJson: SimpleRouteJson,
   connection: SimpleRouteConnection,
-): { x: number; y: number } | undefined => {
+): { x: number; y: number; layer: string } | undefined => {
   if (!connection.routingPcbGroupId || !connection.source_trace_id) {
     return undefined
   }
@@ -80,7 +80,11 @@ const getPairedExitTarget = (
       ),
   )
   return pairedPoints.length === 1
-    ? { x: pairedPoints[0]!.x, y: pairedPoints[0]!.y }
+    ? {
+        x: pairedPoints[0]!.x,
+        y: pairedPoints[0]!.y,
+        layer: pairedPoints[0]!.layer,
+      }
     : undefined
 }
 

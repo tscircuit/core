@@ -49,6 +49,13 @@ test("netlabel connection traces", () => {
 
   circuit.render()
 
-  expect(circuit.db.schematic_trace.list()).toHaveLength(2)
+  expect(circuit.db.schematic_trace.list()).toHaveLength(4)
+  expect(
+    circuit.db.schematic_text
+      .list()
+      .filter((text) => text.source_trace_id)
+      .map((text) => text.text)
+      .sort(),
+  ).toEqual(["SCL", "SDA"])
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })

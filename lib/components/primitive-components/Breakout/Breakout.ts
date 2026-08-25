@@ -1,11 +1,16 @@
 import { breakoutProps } from "@tscircuit/props"
-import { BreakoutPointSolver } from "@tscircuit/breakout-point-solver"
-import { Group } from "../Group/Group"
 import { AutoplacedBreakoutPoint } from "../AutoplacedBreakoutPoint"
 import { BreakoutPoint } from "../BreakoutPoint"
-import type { Trace } from "../Trace/Trace"
+import { Group } from "../Group/Group"
 import type { Port } from "../Port"
-import { createBreakoutPointSolverInput } from "./createBreakoutPointSolverInput"
+import type { Trace } from "../Trace/Trace"
+import { defaultImplicitBreakoutPointSolverFn } from "./default-implicit-breakout-point-solver"
+import { Breakout_doInitialPcbPlacementDesignRuleChecks } from "./Breakout_doInitialPcbPlacementDesignRuleChecks"
+import { reportWindingBreakoutInfeasibleError } from "./report-winding-breakout-infeasible-error"
+import {
+  type ImplicitBreakoutPointPlacement,
+  solveImplicitBreakoutPoints,
+} from "./solve-implicit-breakout-points"
 
 export class Breakout extends Group<typeof breakoutProps> {
   override get isRoutingDirective() {
@@ -77,16 +82,45 @@ export class Breakout extends Group<typeof breakoutProps> {
   doInitialPcbAutoplaceBreakoutPoints(): void {
     if (this.root?.pcbDisabled) return
 
-    const solverInput = createBreakoutPointSolverInput(this)
-    if (!solverInput) return
-
-    const solver = new BreakoutPointSolver(solverInput)
-    solver.solve()
-    const output = solver.getOutput()
-
+    const ownAutorouter = this.props.autorouter
+    const inheritedAutorouter =
+      ownAutorouter === undefined
+        ? this.parent?.getInheritedProperty("autorouter")
+        : undefined
+    const implicitBreakoutPointSolverFn =
+      typeof ownAutorouter === "object"
+        ? ownAutorouter.implicitBreakoutPointSolverFn
+        : typeof inheritedAutorouter === "object"
+          ? inheritedAutorouter.implicitBreakoutPointSolverFn
+          : undefined
     const autoBreakoutPoints = this.children.filter(
-      (c) => c instanceof AutoplacedBreakoutPoint,
+      (child) => child instanceof AutoplacedBreakoutPoint,
     ) as AutoplacedBreakoutPoint[]
+    if (autoBreakoutPoints.length === 0) return
+    if (!this.root || !this.pcb_group_id) return
+    const pcbGroup = this.root.db.pcb_group.get(this.pcb_group_id)
+    if (!pcbGroup?.width || !pcbGroup.height) return
+    const bounds = {
+      minX: pcbGroup.center.x - pcbGroup.width / 2,
+      maxX: pcbGroup.center.x + pcbGroup.width / 2,
+      minY: pcbGroup.center.y - pcbGroup.height / 2,
+      maxY: pcbGroup.center.y + pcbGroup.height / 2,
+    }
+    let solvedBreakoutPoints: readonly ImplicitBreakoutPointPlacement[]
+    try {
+      solvedBreakoutPoints = solveImplicitBreakoutPoints(
+        this,
+        implicitBreakoutPointSolverFn ?? defaultImplicitBreakoutPointSolverFn,
+      )
+    } catch (error) {
+      if (
+        implicitBreakoutPointSolverFn ||
+        !reportWindingBreakoutInfeasibleError(this, error)
+      ) {
+        throw error
+      }
+      return
+    }
 
     // The solver places breakout points exactly on the group boundary
     // (bounds.minX/maxX/minY/maxY). When the autorouter later builds a
@@ -95,7 +129,6 @@ export class Breakout extends Group<typeof breakoutProps> {
     // can fall outside the nearest mesh node. Nudge solved positions a
     // fraction of a micrometer inward to keep them strictly inside.
     const BOUNDARY_INSET_MM = 1e-4 // 0.1 μm – well below PCB manufacturing precision
-    const { bounds } = solverInput
     const insetWithinBounds = (x: number, y: number) => ({
       x: Math.max(
         bounds.minX + BOUNDARY_INSET_MM,
@@ -107,17 +140,17 @@ export class Breakout extends Group<typeof breakoutProps> {
       ),
     })
 
-    for (const solvedPoint of output.breakoutPoints) {
+    for (const solvedPoint of solvedBreakoutPoints) {
       const matchingBreakoutPoint = autoBreakoutPoints.find(
         (child) =>
           child.matchedPort?.source_port_id === solvedPoint.sourcePortId,
       )
       if (matchingBreakoutPoint) {
-        matchingBreakoutPoint.matchedSourceTraceId = solvedPoint.sourceTraceId
         const insetPoint = insetWithinBounds(solvedPoint.x, solvedPoint.y)
-        matchingBreakoutPoint._setPositionFromLayout({
-          x: insetPoint.x,
-          y: insetPoint.y,
+        matchingBreakoutPoint._applySolvedBreakoutPoint({
+          sourceTraceId: solvedPoint.sourceTraceId,
+          layer: solvedPoint.layer,
+          position: insetPoint,
         })
       }
     }
@@ -125,5 +158,9 @@ export class Breakout extends Group<typeof breakoutProps> {
 
   doInitialPcbPrimitiveRender(): void {
     super.doInitialPcbPrimitiveRender()
+  }
+
+  doInitialPcbPlacementDesignRuleChecks(): void {
+    Breakout_doInitialPcbPlacementDesignRuleChecks(this)
   }
 }

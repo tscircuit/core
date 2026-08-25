@@ -1,9 +1,10 @@
-import { chipProps } from "@tscircuit/props"
 import { normalizeDegrees } from "@tscircuit/math-utils"
+import { chipProps } from "@tscircuit/props"
 import { pcb_component_invalid_layer_error } from "circuit-json"
 import { NormalComponent } from "lib/components/base-components/NormalComponent"
-import { Trace } from "lib/components/primitive-components/Trace/Trace"
 import { Port } from "lib/components/primitive-components/Port"
+import { Trace } from "lib/components/primitive-components/Trace/Trace"
+import { Chip_doInitialPcbPlacementDesignRuleChecks } from "./Chip_doInitialPcbPlacementDesignRuleChecks"
 
 export class Chip<PinLabels extends string = never> extends NormalComponent<
   typeof chipProps,
@@ -141,6 +142,10 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
     })
 
     this.pcb_component_id = pcb_component.pcb_component_id
+  }
+
+  doInitialPcbPlacementDesignRuleChecks(): void {
+    Chip_doInitialPcbPlacementDesignRuleChecks(this)
   }
 
   doInitialCreateTracesFromProps(): void {
