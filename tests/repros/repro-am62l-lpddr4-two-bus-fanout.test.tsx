@@ -316,7 +316,7 @@ test("routes two DDR byte buses between AM62L and LPDDR4 fanouts", async () => {
       <breakout
         name="SOC_FANOUT"
         pcbX={-9.5}
-        padding="2.15mm"
+        padding="2mm"
         autorouter="fanout"
         fanoutRoutingLayers={[...SIGNAL_LAYERS]}
         busFanoutDirections={{
@@ -388,6 +388,26 @@ test("routes two DDR byte buses between AM62L and LPDDR4 fanouts", async () => {
       (phaseIo) => phaseIo.startSimpleRouteJson?.connections.length,
     ),
   ).toEqual([16, 16, 16])
+  for (const fanoutPhase of autoroutingPhaseIoStack.slice(0, 2)) {
+    const phaseConnectionNames = new Set(
+      fanoutPhase.startSimpleRouteJson?.connections.map(
+        (connection) => connection.name,
+      ) ?? [],
+    )
+    const routedFanoutTraces = (
+      fanoutPhase.endSimpleRouteJson?.traces ?? []
+    ).filter(
+      (trace) =>
+        trace.connection_name !== undefined &&
+        phaseConnectionNames.has(trace.connection_name),
+    )
+    expect(routedFanoutTraces).toHaveLength(16)
+    for (const trace of routedFanoutTraces) {
+      expect(
+        trace.route.filter((routePoint) => routePoint.route_type === "via"),
+      ).toHaveLength(1)
+    }
+  }
   const socFanoutPhase = autoroutingPhaseIoStack[0]!
   const socFanoutInput = socFanoutPhase.startSimpleRouteJson!
   const socFanoutCenterY =
