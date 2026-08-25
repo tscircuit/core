@@ -251,7 +251,7 @@ test("TB67S579FTG breakout renders named point-to-point traces", async () => {
   expect(
     solverInputProblem?.directConnections.find(
       (connection) => connection.netId === "AGC_OUT",
-    )?.fallbackNetLabelWidth,
+    )?.anchoredNetLabelWidth,
   ).toBe(0.96)
 
   for (const routedNetId of [

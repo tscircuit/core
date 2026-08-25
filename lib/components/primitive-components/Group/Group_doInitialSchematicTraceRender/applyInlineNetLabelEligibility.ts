@@ -6,7 +6,7 @@ export const INLINE_NET_LABEL_FONT_SIZE = 0.12
 
 type EligibleDirectConnection = {
   schematicPortIds: [SchematicPortId, SchematicPortId]
-  fallbackNetLabelWidth?: number
+  anchoredNetLabelWidth?: number
   allowInlineNetLabel?: boolean
   inlineNetLabelWidth?: number
   inlineNetLabelHeight?: number
@@ -15,7 +15,7 @@ type EligibleDirectConnection = {
 
 type EligibleNetConnection = {
   schematicPortIds: SchematicPortId[]
-  fallbackNetLabelWidth?: number
+  anchoredNetLabelWidth?: number
   allowInlineNetLabel?: boolean
   inlineNetLabelWidth?: number
   inlineNetLabelHeight?: number
@@ -74,7 +74,7 @@ export const applyInlineNetLabelEligibility = ({
     connection: EligibleDirectConnection | EligibleNetConnection,
     name: string,
   ) => {
-    connection.fallbackNetLabelWidth ??= Number(
+    connection.anchoredNetLabelWidth ??= Number(
       getSchematicNetLabelTextWidth({ text: name }).toFixed(2),
     )
     connection.allowInlineNetLabel = true
