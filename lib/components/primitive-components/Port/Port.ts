@@ -743,6 +743,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       pin_number: props.pinNumber,
       true_ccw_index: localPortInfo?.trueIndex,
       display_pin_label: bestDisplayPinLabel,
+      display_pin_label_font_size: props.schPinLabelFontSize,
       is_connected: false,
       schematic_sheet_id: this._resolveSchematicSheetId(),
     }
