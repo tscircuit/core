@@ -2226,6 +2226,12 @@ export class NormalComponent<
     NormalComponent_doInitialSourceDesignRuleChecks(this)
   }
 
+  updateSourceDesignRuleChecks(): void {
+    // Re-running clears stale missing-trace warnings recorded against
+    // intermediate connectivity states (see tscircuit/tscircuit#4442).
+    NormalComponent_doInitialSourceDesignRuleChecks(this)
+  }
+
   doInitialSourceComponentPropertyValidation(): void {
     this._insertInvalidFootprintPropErrors()
   }

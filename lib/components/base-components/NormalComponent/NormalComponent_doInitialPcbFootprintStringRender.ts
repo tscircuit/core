@@ -144,6 +144,16 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
             child._markDirty?.("PcbPortRender")
           }
         }
+        // Ports/traces may have been recreated above. Re-run trace resolution
+        // and design rule checks so source_traces point at the live port ids
+        // and missing-trace warnings reflect final connectivity instead of an
+        // intermediate pre-load state (tscircuit/tscircuit#4442).
+        const subcircuit = component.getSubcircuit()
+        for (const trace of (subcircuit?.selectAll("trace") ??
+          []) as PrimitiveComponent[]) {
+          trace._markDirty?.("SourceTraceRender")
+        }
+        component._markDirty("SourceDesignRuleChecks")
         component._markDirty("ResolveFootprintPinLabels")
         component._markDirty("InitializePortsFromChildren")
       } catch (err) {
