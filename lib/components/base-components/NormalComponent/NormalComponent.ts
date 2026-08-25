@@ -2198,6 +2198,19 @@ export class NormalComponent<
       for (const [pinName, target] of Object.entries(props.connections)) {
         const targets = Array.isArray(target) ? target : [target]
         for (const targetPath of targets) {
+          const targetStr =
+            typeof targetPath === "string" ? targetPath.trim() : ""
+          if (!targetStr) {
+            this.root?.db.source_component_misconfigured_error.insert({
+              type: "source_component_misconfigured_error",
+              error_type: "source_component_misconfigured_error",
+              message: `<${this.componentName} name=".${this.name}" /> has an empty connections target for pin "${pinName}". Provide a selector such as ".R1 > .pin1" or "net.VCC", or remove the entry.`,
+              source_component_ids: this.source_component_id
+                ? [this.source_component_id]
+                : [],
+            })
+            continue
+          }
           this.add(
             new Trace({
               from: `.${this.name} > .${pinName}`,
