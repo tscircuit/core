@@ -16,6 +16,9 @@ test(
 
     expect(circuit.db.pcb_autorouting_error.list()).toHaveLength(0)
     expect(circuit.db.pcb_trace.list().length).toBeGreaterThan(60)
+    const implicitPours = circuit.db.pcb_copper_pour.list()
+    expect(implicitPours.length).toBeGreaterThan(0)
+    expect(implicitPours.every((pour) => pour.shape === "brep")).toBe(true)
 
     const topSnapshotPath = import.meta.path.replace(
       /\.test\.tsx$/,

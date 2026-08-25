@@ -43,7 +43,7 @@
     "@tscircuit/fanout-solver": "0.0.37",
     "@tscircuit/footprinter": "^0.0.426",
     "@tscircuit/image-utils": "^0.0.8",
-    "@tscircuit/implicit-copper-pour-solver": "github:tscircuit/implicit-copper-pour-solver",
+    "@tscircuit/implicit-copper-pour-solver": "github:tscircuit/implicit-copper-pour-solver#47f930139fe969550e049aa7fb741bbcb1f08569",
     "@tscircuit/infer-cable-insertion-point": "^0.0.4",
     "@tscircuit/infgrid-ijump-astar": "^0.0.35",
     "@tscircuit/jlcpcb-manufacturing-specs": "git+https://github.com/tscircuit/jlcpcb-manufacturing-specs#e08af159db01a37db007e33f0a7268d0e4a279a5",

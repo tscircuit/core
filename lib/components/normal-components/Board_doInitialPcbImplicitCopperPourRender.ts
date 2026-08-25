@@ -1,4 +1,6 @@
 import { ImplicitCopperPourPipelineSolver } from "@tscircuit/implicit-copper-pour-solver/lib/index"
+import { CopperPour } from "../primitive-components/CopperPour"
+import type { Net } from "../primitive-components/Net"
 import type { Board } from "./Board"
 
 export const Board_doInitialPcbImplicitCopperPourRender = (board: Board) => {
@@ -36,5 +38,25 @@ export const Board_doInitialPcbImplicitCopperPourRender = (board: Board) => {
   })
 
   solver.solve()
-  db.insertAll(solver.getOutput())
+  const boardNets = board.selectAll<Net>("net")
+  for (const implicitRegion of solver.getOutput()) {
+    if (implicitRegion.shape !== "polygon") continue
+    const owningNet = boardNets.find(
+      (net) => net.source_net_id === implicitRegion.source_net_id,
+    )
+    if (!owningNet) {
+      throw new Error(
+        `Unable to find the power net for implicit copper region ${implicitRegion.pcb_copper_pour_id}`,
+      )
+    }
+
+    owningNet.getSubcircuit().add(
+      new CopperPour({
+        layer: implicitRegion.layer,
+        connectsTo: owningNet.getPortSelector(),
+        outline: implicitRegion.points,
+        coveredWithSolderMask: implicitRegion.covered_with_solder_mask,
+      }),
+    )
+  }
 }
