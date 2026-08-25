@@ -10,6 +10,7 @@ test(
     const { circuit } = getTestFixture({
       platform: { placementDrcChecksDisabled: true },
     })
+    circuit._featureImplicitCopperPours = true
 
     circuit.add(<Nrf52810Circuit />)
     await circuit.renderUntilSettled()
