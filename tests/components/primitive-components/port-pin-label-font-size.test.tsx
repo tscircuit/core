@@ -24,7 +24,14 @@ test("port forwards schematic pin-label font sizes to circuit json", () => {
               direction="left"
               schPinLabelFontSize="0.1mm"
             />
-            <port name="UNCHANGED" schX={-1} schY={-0.5} direction="left" />
+            <port
+              name="DEFAULT"
+              schX={-1}
+              schY={-0.5}
+              direction="left"
+              schPinLabelFontSize="default"
+            />
+            <port name="UNCHANGED" schX={-1} schY={-1} direction="left" />
           </symbol>
         }
       />
@@ -40,11 +47,14 @@ test("port forwards schematic pin-label font sizes to circuit json", () => {
   )
 
   expect(schematicPortsByLabel.get("SMALL")?.display_pin_label_font_size).toBe(
-    "sm",
+    0.12,
   )
   expect(schematicPortsByLabel.get("CUSTOM")?.display_pin_label_font_size).toBe(
     0.1,
   )
+  expect(
+    schematicPortsByLabel.get("DEFAULT")?.display_pin_label_font_size,
+  ).toBeUndefined()
   expect(
     schematicPortsByLabel.get("UNCHANGED")?.display_pin_label_font_size,
   ).toBeUndefined()
