@@ -51,13 +51,13 @@ export const Board_doInitialPcbImplicitCopperPourRender = (board: Board) => {
       )
     }
 
-    owningNet.getSubcircuit().add(
-      new CopperPour({
-        layer: implicitRegion.layer,
-        connectsTo: owningNet.getPortSelector(),
-        outline: implicitRegion.points,
-        coveredWithSolderMask: implicitRegion.covered_with_solder_mask,
-      }),
-    )
+    const copperPour = new CopperPour({
+      layer: implicitRegion.layer,
+      connectsTo: owningNet.getPortSelector(),
+      outline: implicitRegion.points,
+      coveredWithSolderMask: implicitRegion.covered_with_solder_mask,
+    })
+    copperPour._isImplicitCopperPour = true
+    owningNet.getSubcircuit().add(copperPour)
   }
 }
