@@ -1,7 +1,12 @@
 import { expect, test } from "bun:test"
 import type { ChipProps } from "@tscircuit/props"
+import type {
+  SimpleRouteJson,
+  SimplifiedPcbTrace,
+} from "lib/utils/autorouting/SimpleRouteJson"
 import { Fragment } from "react"
 import { createAutoroutingPhaseIoStack } from "tests/fixtures/create-autorouting-phase-io-stack"
+import { createBasicAutorouter } from "tests/fixtures/createBasicAutorouter"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 type DdrByteBusName = "DDR_BYTE0" | "DDR_BYTE1"
@@ -208,6 +213,81 @@ const FANOUT_BUSES = [
   },
 ] as const
 
+const routeConnectionsDirectly = async (
+  simpleRouteJson: SimpleRouteJson,
+): Promise<SimplifiedPcbTrace[]> =>
+  simpleRouteJson.connections.map((connection, connectionIndex) => ({
+    type: "pcb_trace",
+    pcb_trace_id: `straight_global_trace_${connectionIndex}`,
+    connection_name: connection.source_trace_id ?? connection.name,
+    route: connection.pointsToConnect.map((point) => ({
+      route_type: "wire",
+      x: point.x,
+      y: point.y,
+      width: connection.nominalTraceWidth ?? simpleRouteJson.minTraceWidth,
+      layer: point.layer,
+    })),
+  }))
+
+const getStraightLineWindingConflicts = (simpleRouteJson: SimpleRouteJson) => {
+  const epsilon = 1e-9
+  const segments = simpleRouteJson.connections.map((connection) => {
+    if (connection.pointsToConnect.length !== 2) {
+      throw new Error(
+        `Expected two global endpoints for ${connection.name}, received ${connection.pointsToConnect.length}`,
+      )
+    }
+    const [firstPoint, secondPoint] = connection.pointsToConnect
+    if (!firstPoint || !secondPoint) {
+      throw new Error(`Missing a global endpoint for ${connection.name}`)
+    }
+    const [left, right] =
+      firstPoint.x <= secondPoint.x
+        ? [firstPoint, secondPoint]
+        : [secondPoint, firstPoint]
+    if (right.x - left.x <= epsilon) {
+      throw new Error(
+        `Expected facing vertical fanout edges for ${connection.name}`,
+      )
+    }
+    if (left.layer !== right.layer) {
+      throw new Error(`Expected one global layer for ${connection.name}`)
+    }
+    return {
+      connectionName: connection.source_trace_id ?? connection.name,
+      layer: left.layer,
+      left,
+      right,
+    }
+  })
+
+  const conflicts: Array<{ first: string; second: string }> = []
+  for (let firstIndex = 0; firstIndex < segments.length; firstIndex++) {
+    const first = segments[firstIndex]!
+    for (
+      let secondIndex = firstIndex + 1;
+      secondIndex < segments.length;
+      secondIndex++
+    ) {
+      const second = segments[secondIndex]!
+      if (first.layer !== second.layer) continue
+      const leftDelta = first.left.y - second.left.y
+      const rightDelta = first.right.y - second.right.y
+      if (
+        Math.abs(leftDelta) <= epsilon ||
+        Math.abs(rightDelta) <= epsilon ||
+        leftDelta * rightDelta < 0
+      ) {
+        conflicts.push({
+          first: first.connectionName,
+          second: second.connectionName,
+        })
+      }
+    }
+  }
+  return conflicts
+}
+
 test("routes two DDR byte buses between AM62L and LPDDR4 fanouts", async () => {
   const { circuit } = getTestFixture()
   const autoroutingPhaseIoStack = createAutoroutingPhaseIoStack(circuit)
@@ -228,6 +308,11 @@ test("routes two DDR byte buses between AM62L and LPDDR4 fanouts", async () => {
       pcbStyle={{ viaHoleDiameter: "0.1mm", viaPadDiameter: "0.24mm" }}
       autorouter="default"
     >
+      <autoroutingphase
+        autorouter={{
+          algorithmFn: createBasicAutorouter(routeConnectionsDirectly),
+        }}
+      />
       <breakout
         name="SOC_FANOUT"
         pcbX={-9.5}
@@ -295,12 +380,34 @@ test("routes two DDR byte buses between AM62L and LPDDR4 fanouts", async () => {
   await circuit.renderUntilSettled()
 
   expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
+  expect(circuit.db.pcb_trace_error.list()).toEqual([])
+  expect(circuit.db.pcb_via_trace_clearance_error.list()).toEqual([])
   expect(autoroutingPhaseIoStack).toHaveLength(3)
   expect(
     autoroutingPhaseIoStack.map(
       (phaseIo) => phaseIo.startSimpleRouteJson?.connections.length,
     ),
   ).toEqual([16, 16, 16])
+  for (const fanoutPhase of autoroutingPhaseIoStack.slice(0, 2)) {
+    const phaseConnectionNames = new Set(
+      fanoutPhase.startSimpleRouteJson?.connections.map(
+        (connection) => connection.name,
+      ) ?? [],
+    )
+    const routedFanoutTraces = (
+      fanoutPhase.endSimpleRouteJson?.traces ?? []
+    ).filter(
+      (trace) =>
+        trace.connection_name !== undefined &&
+        phaseConnectionNames.has(trace.connection_name),
+    )
+    expect(routedFanoutTraces).toHaveLength(16)
+    for (const trace of routedFanoutTraces) {
+      expect(
+        trace.route.filter((routePoint) => routePoint.route_type === "via"),
+      ).toHaveLength(1)
+    }
+  }
   const socFanoutPhase = autoroutingPhaseIoStack[0]!
   const socFanoutInput = socFanoutPhase.startSimpleRouteJson!
   const socFanoutCenterY =
@@ -333,6 +440,7 @@ test("routes two DDR byte buses between AM62L and LPDDR4 fanouts", async () => {
     32,
   )
   const globalPhaseInput = autoroutingPhaseIoStack[2]!.startSimpleRouteJson!
+  expect(getStraightLineWindingConflicts(globalPhaseInput)).toEqual([])
   const sourceKeepouts = globalPhaseInput.obstacles.filter(
     (obstacle) =>
       obstacle.isFanoutSourceKeepout === true &&
