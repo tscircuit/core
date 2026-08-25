@@ -369,6 +369,10 @@ export function createSchematicTraceSolverInputProblem(
      * the problem is handed to the solver.
      */
     connKey?: string
+    /** Candidate branch name used only by core's v1 eligibility check. */
+    explicitBranchName?: string
+    /** Explicit branch name passed to the solver after eligibility is proven. */
+    netLabelText?: string
   }> = []
   const singlePortTraceNetConnections: Array<{
     netId: string
@@ -534,6 +538,9 @@ export function createSchematicTraceSolverInputProblem(
           netId: userNetId,
           netLabelWidth,
           connKey: st.subcircuit_connectivity_map_key,
+          // `netId` joins the electrical net; this text belongs only to this
+          // explicitly named source-trace branch.
+          explicitBranchName: st.name,
         })
       }
     }
@@ -653,7 +660,7 @@ export function createSchematicTraceSolverInputProblem(
   const inputProblem: InputProblem = {
     chips,
     directConnections: directConnections.map(
-      ({ schematicPortIds, connKey, ...connection }) => ({
+      ({ schematicPortIds, connKey, explicitBranchName, ...connection }) => ({
         ...connection,
         pinIds: schematicPortIds,
       }),

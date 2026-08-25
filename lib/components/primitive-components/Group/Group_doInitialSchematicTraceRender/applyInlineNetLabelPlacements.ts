@@ -54,10 +54,17 @@ export function applyInlineNetLabelPlacements(args: {
       ? userNetIdToConnKey.get(placementUserNetId)
       : undefined
 
-    const text = connKey
-      ? resolveCanonicalNetLabelText({ subcircuitConnectivityMapKey: connKey })
-          .name
-      : (placement.netId ?? placement.globalConnNetId)
+    // A trace-owned label names this routed branch. The canonical net name
+    // still handles ordinary point-to-point nets.
+    let text = placement.netLabelText
+    if (!text && connKey) {
+      text = resolveCanonicalNetLabelText({
+        subcircuitConnectivityMapKey: connKey,
+      }).name
+    }
+    if (!text) {
+      text = placement.netId ?? placement.globalConnNetId
+    }
     if (!text) {
       debug(
         `skipping inline net label for "${placement.netId}" REASON:no resolvable text`,
