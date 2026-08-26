@@ -41,4 +41,6 @@ test("explicit schematic sheet dimensions work without sheetSize", async () => {
   expect(
     circuit.db.schematic_element_outside_sheet_warning.list(),
   ).toHaveLength(0)
+
+  await expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
