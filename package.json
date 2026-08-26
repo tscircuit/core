@@ -36,7 +36,7 @@
     "@tscircuit/alphabet": "0.0.25",
     "@tscircuit/bga-fanout-solver": "github:tscircuit/bga-fanout-solver#03c67d2b00925a3ac24a822cd5a071d8ac2ad087",
     "@tscircuit/capacity-autorouter": "^0.0.845",
-    "@tscircuit/checks": "^0.0.174",
+    "@tscircuit/checks": "^0.0.175",
     "@tscircuit/circuit-json-util": "^0.0.106",
     "@tscircuit/common": "^0.0.20",
     "@tscircuit/copper-pour-solver": "https://pkg.pr.new/@tscircuit/copper-pour-solver@e9689c6486cff2b1fac01935a1d0ba7850355d24",
