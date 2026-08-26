@@ -7,6 +7,7 @@ export type { CopperPourProps }
 
 export class CopperPour extends PrimitiveComponent<typeof copperPourProps> {
   isPcbPrimitive = true
+  _isImplicitCopperPour = false
 
   get config() {
     return {

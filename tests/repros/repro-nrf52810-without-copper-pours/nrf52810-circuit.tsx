@@ -78,6 +78,7 @@ export default () => (
     silkscreenColor="white"
     doubleSidedAssembly
     isViaInPadAllowed={false}
+    automaticPoursEnabled
     schLayout={{ layoutMode: "relative" }}
     autorouter={{
       preset: "auto_local",
