@@ -317,7 +317,12 @@ export class Port extends PrimitiveComponent<typeof portProps> {
   }
 
   _getMatchingPinAttributes(): PinAttributeMap[] {
-    const parentProps = (this.parent as any)?._parsedProps
+    // A port in a custom symbol is parented by <symbol>, while pinAttributes
+    // and noConnect belong to the owning chip/connector. Primitive-owned ports
+    // (for example, vias) do not have a NormalComponent ancestor, so retain the
+    // direct parent as a fallback for them.
+    const pinAttributeOwner = this.getParentNormalComponent() ?? this.parent
+    const parentProps = (pinAttributeOwner as any)?._parsedProps
     const pinAttributes = parentProps?.pinAttributes as
       | Record<string, PinAttributeMap>
       | undefined
