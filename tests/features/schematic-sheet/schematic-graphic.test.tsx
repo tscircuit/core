@@ -48,9 +48,16 @@ test("schematic graphic renders as the first page of a multi-sheet schematic", a
     expect.objectContaining({
       type: "schematic_graphic",
       schematic_sheet_id: schematicSheet?.schematic_sheet_id,
-      svg_content: systemBlockDiagram,
+      asset: {
+        project_relative_path: "inline",
+        url: `data:image/svg+xml,${encodeURIComponent(systemBlockDiagram)}`,
+        mimetype: "image/svg+xml",
+      },
     }),
   ])
+  expect(circuit.db.schematic_graphic.list()[0]).not.toHaveProperty(
+    "svg_content",
+  )
 
   expect(
     circuit.db.schematic_sheet

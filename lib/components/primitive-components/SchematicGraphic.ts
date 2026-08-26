@@ -1,5 +1,8 @@
 import { schematicGraphicProps } from "@tscircuit/props"
-import type { SchematicGraphic as SchematicGraphicElement } from "circuit-json"
+import type {
+  Asset,
+  SchematicGraphic as SchematicGraphicElement,
+} from "circuit-json"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
 export class SchematicGraphic extends PrimitiveComponent<
@@ -21,8 +24,13 @@ export class SchematicGraphic extends PrimitiveComponent<
     if (this.getCollapsedSchematicBoxAncestor()) return
 
     const { db } = this.root!
+    const asset = {
+      project_relative_path: "inline",
+      url: `data:image/svg+xml,${encodeURIComponent(this._parsedProps.svgContent)}`,
+      mimetype: "image/svg+xml",
+    } satisfies Asset
     const schematicGraphic = db.schematic_graphic.insert({
-      svg_content: this._parsedProps.svgContent,
+      asset,
       schematic_sheet_id: this._resolveSchematicSheetId(),
     })
 
