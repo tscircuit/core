@@ -6,7 +6,7 @@ import type { Board } from "./Board"
 export const Board_doInitialPcbImplicitCopperPourRender = (board: Board) => {
   const { root } = board
   if (!root || root.pcbDisabled) return
-  if (!root._featureImplicitCopperPours) return
+  if (!board._parsedProps.automaticPoursEnabled) return
   if (root.pcbRoutingDisabled || board.getInheritedProperty("routingDisabled"))
     return
 

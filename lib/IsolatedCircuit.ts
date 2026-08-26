@@ -58,7 +58,6 @@ export class IsolatedCircuit {
   pcbRoutingDisabled = false
 
   _featureMspSchematicTraceRouting = true
-  _featureImplicitCopperPours = false
 
   /**
    * The IsolatedCircuit name is usually set by the platform, it's not required but
