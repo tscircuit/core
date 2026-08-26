@@ -72,7 +72,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
   }
 
   isGroupPort(): boolean {
-    return this.parent?.componentName === "Group"
+    return this.parent?.isGroup === true
   }
 
   isComponentPort(): boolean {

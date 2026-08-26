@@ -11,6 +11,7 @@ import { boardProps } from "@tscircuit/props"
 import type { AnyCircuitElement, LayerRef, PcbBoard } from "circuit-json"
 import { getBoardAvailableLayers } from "lib/utils/getViaSpanLayers"
 import { type Matrix, compose, translate } from "transformation-matrix"
+import type { z } from "zod"
 import { getDescendantSubcircuitIds } from "../../utils/autorouting/getAncestorSubcircuitIds"
 import { getBoardCenterFromAnchor } from "../../utils/boards/get-board-center-from-anchor"
 import { inflateCircuitJson } from "../../utils/circuit-json/inflate-circuit-json"
@@ -24,6 +25,7 @@ import { Subcircuit_doInitialRenderIsolatedSubcircuits } from "../primitive-comp
 import { Subcircuit_getSubcircuitPropHash } from "../primitive-components/Group/Subcircuit_getSubcircuitPropHash"
 import type { BoardI } from "./BoardI"
 import { Board_doInitialPcbPlacementDesignRuleChecks } from "./Board_doInitialPcbPlacementDesignRuleChecks"
+import { BoardCastellatedHole } from "./board-castellated-hole"
 
 const MIN_EFFECTIVE_BORDER_RADIUS_MM = 0.01
 const DEFAULT_VIA_PAD_DIAMETER_OVER_HOLE_DIAMETER_MM = 0.15
@@ -105,6 +107,19 @@ export class Board
   _drcChecksInProgress = false
   _connectedSchematicPortPairs = new Set<string>()
   _panelPositionOffset: { x: number; y: number } | null = null
+  readonly _castellatedHoles: BoardCastellatedHole[]
+
+  constructor(props: z.input<typeof boardProps>) {
+    super(props)
+    this._castellatedHoles = BoardCastellatedHole.fromBoardOutline(
+      this._parsedProps.outline,
+    )
+    for (const castellatedHole of this._castellatedHoles) {
+      if (castellatedHole.port) this.add(castellatedHole.port)
+      this.add(castellatedHole)
+      if (castellatedHole.trace) this.add(castellatedHole.trace)
+    }
+  }
 
   get isSubcircuit() {
     return true
@@ -661,7 +676,11 @@ export class Board
 
       if (shouldRunRoutingChecks) {
         checksToRun.push(
-          runAllRoutingChecks(circuitJson) as Promise<AnyCircuitElement[]>,
+          runAllRoutingChecks(circuitJson).then((results) =>
+            results.filter(
+              (result) => !this._isExpectedCastellatedHoleDrcError(result),
+            ),
+          ) as Promise<AnyCircuitElement[]>,
         )
       }
 
@@ -669,15 +688,19 @@ export class Board
         const existingPlacementDiagnostics = db.toArray()
         checksToRun.push(
           runAllPlacementChecks(circuitJson).then((results) =>
-            results.filter(
-              (result) =>
-                !existingPlacementDiagnostics.some(
-                  (existing) =>
-                    existing.type === result.type &&
-                    "message" in existing &&
-                    existing.message === result.message,
-                ),
-            ),
+            results
+              .filter(
+                (result) => !this._isExpectedCastellatedHoleDrcError(result),
+              )
+              .filter(
+                (result) =>
+                  !existingPlacementDiagnostics.some(
+                    (existing) =>
+                      existing.type === result.type &&
+                      "message" in existing &&
+                      existing.message === result.message,
+                  ),
+              ),
           ) as Promise<AnyCircuitElement[]>,
         )
       }
@@ -770,8 +793,17 @@ export class Board
           db.pcb_board.update(this.pcb_board_id, {
             outline: newOutline,
           })
+          for (const castellatedHole of this._castellatedHoles) {
+            castellatedHole.syncPositionToBoardOutline()
+          }
         }
       }
     }
+  }
+
+  _isExpectedCastellatedHoleDrcError(result: AnyCircuitElement): boolean {
+    return this._castellatedHoles.some((castellatedHole) =>
+      castellatedHole.isExpectedBoardEdgeDrcError(result),
+    )
   }
 }

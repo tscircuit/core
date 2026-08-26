@@ -44,7 +44,10 @@ export const Board_doInitialPcbPlacementDesignRuleChecks = (board: Board) => {
       const placementCheckResults = await runAllPlacementChecks(
         subcircuitCircuitJson,
       )
-      const newPlacementDiagnostics = placementCheckResults.filter(
+      const relevantPlacementCheckResults = placementCheckResults.filter(
+        (result) => !board._isExpectedCastellatedHoleDrcError(result),
+      )
+      const newPlacementDiagnostics = relevantPlacementCheckResults.filter(
         (result) =>
           !existingPlacementDiagnostics.some(
             (existing) =>
@@ -55,7 +58,7 @@ export const Board_doInitialPcbPlacementDesignRuleChecks = (board: Board) => {
       )
 
       db.insertAll(newPlacementDiagnostics as AnyCircuitElement[])
-      board._pcbPlacementDrcErrorCount = placementCheckResults.filter(
+      board._pcbPlacementDrcErrorCount = relevantPlacementCheckResults.filter(
         (result) => result.type.endsWith("_error"),
       ).length
     } catch (error) {
