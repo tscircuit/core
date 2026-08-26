@@ -25,6 +25,8 @@ export class SchematicSheet extends PrimitiveComponent<
       display_name: props.displayName,
       sheet_index: props.sheetIndex,
       sheet_size: props.sheetSize === "ANSI_B" ? "ansi_b" : "a4",
+      sheet_width: props.sheetWidth,
+      sheet_height: props.sheetHeight,
       subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
     } as any)
 
@@ -76,6 +78,8 @@ export class SchematicSheet extends PrimitiveComponent<
       schematicSheetName: this._parsedProps.displayName,
       schematicSheetCenter,
       sheetSize: this._parsedProps.sheetSize === "ANSI_B" ? "ansi_b" : "a4",
+      sheetWidth: this._parsedProps.sheetWidth,
+      sheetHeight: this._parsedProps.sheetHeight,
     })
   }
 }

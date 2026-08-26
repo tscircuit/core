@@ -44,32 +44,38 @@ export const insertSchematicElementOutsideSheetWarnings = ({
   schematicSheetName,
   schematicSheetCenter,
   sheetSize = "a4",
+  sheetWidth,
+  sheetHeight,
 }: {
   db: CircuitJsonUtilObjects
   schematicSheetId: string
   schematicSheetName: string
   schematicSheetCenter: Point
   sheetSize?: SchematicSheetSize
+  sheetWidth?: number
+  sheetHeight?: number
 }): void => {
   const sheetDimensions = SCHEMATIC_SHEET_DIMENSIONS_MM[sheetSize]
-  const sheetWidth = sheetDimensions.width / SCHEMATIC_UNIT_TO_MM
-  const sheetHeight = sheetDimensions.height / SCHEMATIC_UNIT_TO_MM
+  const sheetWidthInSchematicUnits =
+    (sheetWidth ?? sheetDimensions.width) / SCHEMATIC_UNIT_TO_MM
+  const sheetHeightInSchematicUnits =
+    (sheetHeight ?? sheetDimensions.height) / SCHEMATIC_UNIT_TO_MM
   const sheetContentBounds = {
     minX:
       schematicSheetCenter.x -
-      sheetWidth / 2 +
+      sheetWidthInSchematicUnits / 2 +
       SCHEMATIC_SHEET_INNER_MARGIN,
     maxX:
       schematicSheetCenter.x +
-      sheetWidth / 2 -
+      sheetWidthInSchematicUnits / 2 -
       SCHEMATIC_SHEET_INNER_MARGIN,
     minY:
       schematicSheetCenter.y -
-      sheetHeight / 2 +
+      sheetHeightInSchematicUnits / 2 +
       SCHEMATIC_SHEET_INNER_MARGIN,
     maxY:
       schematicSheetCenter.y +
-      sheetHeight / 2 -
+      sheetHeightInSchematicUnits / 2 -
       SCHEMATIC_SHEET_INNER_MARGIN,
   }
   const checkedElements: CheckedSchematicElement[] = [
