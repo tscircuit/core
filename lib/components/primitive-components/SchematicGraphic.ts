@@ -38,7 +38,12 @@ export class SchematicGraphic extends PrimitiveComponent<
         )
         const sourceImage = await loadImageSource(resolvedImageUrl).catch(
           (error) => {
-            if (svgContent === undefined) throw error
+            if (
+              svgContent === undefined ||
+              resolvedImageUrl.startsWith("data:")
+            ) {
+              throw error
+            }
             return null
           },
         )
