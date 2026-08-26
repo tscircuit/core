@@ -1,10 +1,11 @@
 import { resistorProps } from "@tscircuit/props"
 import type { SourceSimpleResistorInput } from "circuit-json"
-import type { BaseSymbolName, Ftype, PassivePorts } from "lib/utils/constants"
+import { formatSiUnit } from "format-si-unit"
+import type { Ftype, PassivePorts } from "lib/utils/constants"
+import { symbols } from "schematic-symbols"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { Port } from "../primitive-components/Port"
 import { Trace } from "../primitive-components/Trace/Trace"
-import { formatSiUnit } from "format-si-unit"
 
 export class Resistor extends NormalComponent<
   typeof resistorProps,
@@ -13,9 +14,24 @@ export class Resistor extends NormalComponent<
   _adjustSilkscreenTextAutomatically = true
 
   get config() {
+    const baseSymbolName = this.props.symbolName ?? "boxresistor"
+    const compactSize =
+      this.props.schSize === "sm" || this.props.schSize === "xs"
+        ? this.props.schSize
+        : undefined
+    const compactSymbolName =
+      compactSize &&
+      (baseSymbolName === "boxresistor" || baseSymbolName === "resistor")
+        ? `${baseSymbolName}_${compactSize}`
+        : undefined
+    const schematicSymbolName =
+      compactSymbolName && `${compactSymbolName}_right` in symbols
+        ? compactSymbolName
+        : baseSymbolName
+
     return {
       componentName: "Resistor",
-      schematicSymbolName: this.props.symbolName ?? "boxresistor",
+      schematicSymbolName,
       zodProps: resistorProps,
       sourceFtype: "simple_resistor" as Ftype,
     }
