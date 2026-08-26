@@ -7,6 +7,7 @@ export class SchematicSheet extends PrimitiveComponent<
   typeof schematicSheetProps
 > {
   isSchematicPrimitive = true
+  resolvedSchematicSheetDisplayName = "Schematic Sheet"
 
   get config() {
     return {
@@ -19,11 +20,35 @@ export class SchematicSheet extends PrimitiveComponent<
     if (this.root?.schematicDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
+    const explicitlyReservedSheetIndices = new Set(
+      this.root!.children.flatMap((component) => [
+        component,
+        ...component.getDescendants(),
+      ])
+        .filter((component) => component.componentName === "SchematicSheet")
+        .map((component) => component._parsedProps.sheetIndex)
+        .filter((sheetIndex): sheetIndex is number => sheetIndex !== undefined),
+    )
+    const occupiedSheetIndices = new Set([
+      ...explicitlyReservedSheetIndices,
+      ...db.schematic_sheet
+        .list()
+        .map((schematicSheet) => schematicSheet.sheet_index)
+        .filter((sheetIndex): sheetIndex is number => sheetIndex !== undefined),
+    ])
+    let nextAvailableSheetIndex = 0
+    while (occupiedSheetIndices.has(nextAvailableSheetIndex)) {
+      nextAvailableSheetIndex += 1
+    }
+    const sheetIndex = props.sheetIndex ?? nextAvailableSheetIndex
+    const name = props.name ?? props.displayName ?? `Sheet ${sheetIndex + 1}`
+    const displayName = props.displayName ?? name
+    this.resolvedSchematicSheetDisplayName = displayName
 
     const schematicSheet = db.schematic_sheet.insert({
-      name: props.name,
-      display_name: props.displayName,
-      sheet_index: props.sheetIndex,
+      name,
+      display_name: displayName,
+      sheet_index: sheetIndex,
       subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
     } as any)
 
@@ -72,7 +97,7 @@ export class SchematicSheet extends PrimitiveComponent<
     insertSchematicElementOutsideSheetWarnings({
       db,
       schematicSheetId: this.schematic_sheet_id,
-      schematicSheetName: this._parsedProps.displayName,
+      schematicSheetName: this.resolvedSchematicSheetDisplayName,
       schematicSheetCenter,
     })
   }
