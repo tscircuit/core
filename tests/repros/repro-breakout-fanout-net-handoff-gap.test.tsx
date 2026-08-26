@@ -17,7 +17,7 @@ const CONTROL_SIGNALS = [
   ["RESET_OUT_N", "R3", -3],
 ] as const
 
-test("repro: compacted fanout exits disconnect traces joined through nets", async () => {
+test("compacted fanout exits stay connected to traces joined through nets", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -98,6 +98,27 @@ test("repro: compacted fanout exits disconnect traces joined through nets", asyn
   await circuit.renderUntilSettled()
 
   expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
-  expect(circuit.db.pcb_breakout_point.list()).toHaveLength(3)
+  const breakoutPoints = circuit.db.pcb_breakout_point.list()
+  expect(breakoutPoints).toHaveLength(3)
+  for (const breakoutPoint of breakoutPoints) {
+    const tracesAtBreakout = circuit.db.pcb_trace
+      .list()
+      .filter((trace) =>
+        trace.route.some(
+          (routePoint) =>
+            routePoint.route_type === "wire" &&
+            Math.abs(routePoint.x - breakoutPoint.x) <= 1e-6 &&
+            Math.abs(routePoint.y - breakoutPoint.y) <= 1e-6,
+        ),
+      )
+    expect(
+      tracesAtBreakout.some(
+        (trace) => trace.source_trace_id === breakoutPoint.source_trace_id,
+      ),
+    ).toBe(true)
+    expect(
+      new Set(tracesAtBreakout.map((trace) => trace.source_trace_id)).size,
+    ).toBeGreaterThanOrEqual(2)
+  }
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
