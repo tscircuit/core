@@ -6,6 +6,18 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 test("Core keeps an inner8 logical route on physical through-all vias", async () => {
   const { circuit } = getTestFixture()
   let autorouterLayerCount: number | undefined
+  const throughAllLayers: LayerRef[] = [
+    "top",
+    "inner1",
+    "inner2",
+    "inner3",
+    "inner4",
+    "inner5",
+    "inner6",
+    "inner7",
+    "inner8",
+    "bottom",
+  ]
 
   circuit.add(
     <board
@@ -42,6 +54,7 @@ test("Core keeps an inner8 logical route on physical through-all vias", async ()
                   y: start.y,
                   from_layer: "top",
                   to_layer: "inner8",
+                  layers: throughAllLayers,
                 },
                 {
                   route_type: "wire",
@@ -63,6 +76,7 @@ test("Core keeps an inner8 logical route on physical through-all vias", async ()
                   y: end.y,
                   from_layer: "inner8",
                   to_layer: "top",
+                  layers: throughAllLayers,
                 },
                 {
                   route_type: "wire",
@@ -96,18 +110,13 @@ test("Core keeps an inner8 logical route on physical through-all vias", async ()
       ),
   ).toBe(true)
 
-  const throughAllLayers: LayerRef[] = [
-    "top",
-    "inner1",
-    "inner2",
-    "inner3",
-    "inner4",
-    "inner5",
-    "inner6",
-    "inner7",
-    "inner8",
-    "bottom",
-  ]
+  expect(
+    circuit.db.pcb_trace
+      .list()
+      .flatMap((trace) => trace.route)
+      .filter((routePoint) => routePoint.route_type === "via")
+      .every((routePoint) => !("layers" in routePoint)),
+  ).toBe(true)
   const vias = circuit.db.pcb_via.list()
   expect(vias).toHaveLength(2)
   expect(vias.map((via) => via.layers)).toEqual([

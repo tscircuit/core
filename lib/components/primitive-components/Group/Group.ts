@@ -33,12 +33,15 @@ import type { AutorouterOptions } from "lib/utils/autorouting/CapacityMeshAutoro
 import { FanoutAutorouter } from "lib/utils/autorouting/FanoutAutorouter"
 import type { GenericLocalAutorouter } from "lib/utils/autorouting/GenericLocalAutorouter"
 import type {
-  CircuitJsonMetadata,
   SimpleRouteBounds,
   SimpleRouteJson,
   SimplifiedPcbTrace,
 } from "lib/utils/autorouting/SimpleRouteJson"
 import { createSourceTracesFromOffboardConnections } from "lib/utils/autorouting/createSourceTracesFromOffboardConnections"
+import {
+  type PcbTraceRoutePointWithSrjMetadata,
+  getCircuitJsonPcbTraceRoute,
+} from "lib/utils/autorouting/get-circuit-json-pcb-trace-route"
 import { getFanoutBoundaryPointSpacing } from "lib/utils/autorouting/get-fanout-boundary-point-spacing"
 import { getPcbComponentNamesById } from "lib/utils/autorouting/get-pcb-component-names-by-id"
 import {
@@ -127,21 +130,6 @@ const getDistanceToPoint = (
   const position = getRoutePointPosition(routePoint)
   return Math.hypot(position.x - targetPoint.x, position.y - targetPoint.y)
 }
-
-type PcbTraceRoutePointWithSrjMetadata = PcbTrace["route"][number] & {
-  circuitJsonMetadata?: CircuitJsonMetadata
-}
-
-const removeSrjMetadataFromPcbTraceRoute = (
-  route: PcbTraceRoutePointWithSrjMetadata[],
-): PcbTrace["route"] =>
-  route.map((routePoint) => {
-    const {
-      circuitJsonMetadata: _circuitJsonMetadata,
-      ...circuitJsonRoutePoint
-    } = routePoint
-    return circuitJsonRoutePoint as PcbTrace["route"][number]
-  })
 
 const platformAllowsLegacyAutorouters = (group: Group<z.ZodType>): boolean => {
   const platform = group.root?.platform
@@ -1928,7 +1916,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       // TODO use upsert to make sure we're not re-creating traces
       const pcb_trace = db.pcb_trace.insert({
         subcircuit_id: this.subcircuit_id!,
-        route: removeSrjMetadataFromPcbTraceRoute(cjRoute as any),
+        route: getCircuitJsonPcbTraceRoute(cjRoute as any),
         // source_trace_id: circuitTrace.source_trace_id!,
       })
       claimSrjAssignablePcbViasTraversedByRoute({
@@ -2039,7 +2027,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       // Insert each segment as a separate trace
       for (const segment of processedSegments) {
         if (segment.length > 0) {
-          const circuitJsonSegment = removeSrjMetadataFromPcbTraceRoute(
+          const circuitJsonSegment = getCircuitJsonPcbTraceRoute(
             segment as PcbTraceRoutePointWithSrjMetadata[],
           )
           const sourceTraceId = getSourceTraceIdForRoutedTrace({

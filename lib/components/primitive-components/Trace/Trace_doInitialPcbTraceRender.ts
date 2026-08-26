@@ -5,6 +5,10 @@ import { getFullConnectivityMapFromCircuitJson } from "circuit-json-to-connectiv
 import { TraceConnectionError } from "lib/errors"
 import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
 import { findPossibleTraceLayerCombinations } from "lib/utils/autorouting/findPossibleTraceLayerCombinations"
+import {
+  type PcbTraceRoutePointWithSrjMetadata,
+  getCircuitJsonPcbTraceRoute,
+} from "lib/utils/autorouting/get-circuit-json-pcb-trace-route"
 import { mergeRoutes } from "lib/utils/autorouting/mergeRoutes"
 import { shouldSkipAutoroutingBecauseOfPlacementErrors } from "lib/utils/autorouting/should-skip-autorouting-because-of-placement-errors"
 import { shouldSkipAutoroutingBecauseOfTraceLengthViolations } from "lib/utils/autorouting/should-skip-autorouting-because-of-trace-length-violations"
@@ -505,7 +509,9 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
   const pcbStyle = trace.getInheritedMergedProperty("pcbStyle")
   const { holeDiameter, padDiameter } = getViaDiameterDefaults(pcbStyle)
   const pcb_trace = db.pcb_trace.insert({
-    route: mergedRoute,
+    route: getCircuitJsonPcbTraceRoute(
+      mergedRoute as PcbTraceRoutePointWithSrjMetadata[],
+    ),
     source_trace_id: trace.source_trace_id!,
     subcircuit_id: trace.getSubcircuit()?.subcircuit_id!,
     trace_length: traceLength,
