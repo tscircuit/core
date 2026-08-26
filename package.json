@@ -34,6 +34,7 @@
     "@resvg/resvg-js": "^2.6.2",
     "@tsci/tscircuit.ti": "github:tscircuit/ti#57e314be4b2b06bc546d4def7453e619604d1157",
     "@tscircuit/alphabet": "0.0.25",
+    "@tscircuit/bga-fanout-solver": "github:tscircuit/bga-fanout-solver#03c67d2b00925a3ac24a822cd5a071d8ac2ad087",
     "@tscircuit/capacity-autorouter": "^0.0.845",
     "@tscircuit/checks": "^0.0.171",
     "@tscircuit/circuit-json-util": "^0.0.106",
