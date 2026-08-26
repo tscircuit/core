@@ -22,29 +22,59 @@ test("connector no-connect attributes propagate to custom symbol ports", async (
         noConnect={["RING1"]}
         symbol={
           <symbol>
-            {/* PJ-320D (JLCPCB C431535) contact geometry, scaled 4x for legibility. */}
+            {/*
+              Conventional four-pole audio-jack topology: the jack opening and
+              sleeve are at the left, with the sleeve, ring, and tip contacts
+              stepping inward toward the plug axis. This is drawn from first
+              principles rather than copied from a third-party symbol library.
+            */}
+            <schematicrect
+              schX={-1.45}
+              schY={-0.2}
+              width={3.3}
+              height={3}
+              strokeWidth={0.025}
+            />
+            <schematicrect
+              schX={-3.35}
+              schY={-1.15}
+              width={0.5}
+              height={0.5}
+              strokeWidth={0.025}
+            />
             <schematicpath
               points={[
-                { x: 0, y: -1.6 },
-                { x: -1.84, y: -1.6 },
-                { x: -2, y: -1.28 },
-                { x: -2.16, y: -1.6 },
+                { x: 0.2, y: 0.9 },
+                { x: -2.5, y: 0.9 },
+                { x: -2.5, y: -1.05 },
+                { x: -2.7, y: -1.25 },
+                { x: -2.9, y: -1.05 },
               ]}
             />
             <schematicpath
               points={[
-                { x: 0, y: -0.8 },
-                { x: -1.44, y: -0.8 },
-                { x: -1.6, y: -0.48 },
-                { x: -1.76, y: -0.8 },
+                { x: 0.2, y: 0.2 },
+                { x: -1.8, y: 0.2 },
+                { x: -1.8, y: -1.05 },
+                { x: -2, y: -1.25 },
+                { x: -2.2, y: -1.05 },
               ]}
             />
             <schematicpath
               points={[
-                { x: 0.32, y: 0 },
-                { x: -1.04, y: 0 },
-                { x: -1.2, y: -0.32 },
-                { x: -1.36, y: 0 },
+                { x: 0.2, y: -0.5 },
+                { x: -1.1, y: -0.5 },
+                { x: -1.1, y: -1.05 },
+                { x: -1.3, y: -1.25 },
+                { x: -1.5, y: -1.05 },
+              ]}
+            />
+            <schematicpath
+              points={[
+                { x: 0.2, y: -1.2 },
+                { x: -0.4, y: -1.2 },
+                { x: -0.6, y: -1.4 },
+                { x: -0.8, y: -1.2 },
               ]}
             />
             <port
@@ -53,9 +83,9 @@ test("connector no-connect attributes propagate to custom symbol ports", async (
               aliases={["4"]}
               direction="right"
               schX={1.6}
-              schY={0}
-              schStemLength={1.6}
-              schPinLabelFontSize="sm"
+              schY={-1.2}
+              schStemLength={1.4}
+              schPinLabelFontSize={0.12}
             />
             <port
               name="pin2"
@@ -63,9 +93,9 @@ test("connector no-connect attributes propagate to custom symbol ports", async (
               aliases={["2"]}
               direction="right"
               schX={1.6}
-              schY={-1.6}
-              schStemLength={1.6}
-              schPinLabelFontSize="sm"
+              schY={0.2}
+              schStemLength={1.4}
+              schPinLabelFontSize={0.12}
             />
             <port
               name="pin3"
@@ -73,9 +103,9 @@ test("connector no-connect attributes propagate to custom symbol ports", async (
               aliases={["3"]}
               direction="right"
               schX={1.6}
-              schY={-0.8}
-              schStemLength={1.6}
-              schPinLabelFontSize="sm"
+              schY={-0.5}
+              schStemLength={1.4}
+              schPinLabelFontSize={0.12}
             />
             <port
               name="pin1"
@@ -83,28 +113,15 @@ test("connector no-connect attributes propagate to custom symbol ports", async (
               aliases={["1"]}
               direction="right"
               schX={1.6}
-              schY={0.8}
-              schStemLength={1.6}
-              schPinLabelFontSize="sm"
-            />
-            <schematicrect
-              schX={-3.2}
-              schY={-0.72}
-              width={0.48}
-              height={1.44}
-            />
-            <schematicpath
-              points={[
-                { x: 0, y: 0.8 },
-                { x: -3.2, y: 0.8 },
-                { x: -3.2, y: 0 },
-              ]}
+              schY={0.9}
+              schStemLength={1.4}
+              schPinLabelFontSize={0.12}
             />
             <schematictext
-              text="{NAME} PJ-320D"
-              fontSize={0.24}
-              schX={-1.2}
-              schY={1.3}
+              text="{NAME} AUDIO JACK (TRRS)"
+              fontSize={0.2}
+              schX={-1.45}
+              schY={1.7}
             />
           </symbol>
         }
