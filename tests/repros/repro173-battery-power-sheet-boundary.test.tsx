@@ -62,6 +62,8 @@ test(
     schematicSheetComponent.doInitialSchematicSheetRender()
 
     expect(circuit.db.schematic_component.list()).toHaveLength(18)
+    expect(schematicSheet).not.toHaveProperty("center")
+    await expect(circuit).toMatchStackedSchematicSnapshot(import.meta.path)
   },
   { timeout: 30_000 },
 )
