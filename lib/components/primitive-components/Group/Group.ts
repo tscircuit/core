@@ -47,11 +47,11 @@ import {
   getLegacyAutorouterPreset,
   getPresetAutoroutingConfig,
 } from "lib/utils/autorouting/getPresetAutoroutingConfig"
-import { getLocalAutoroutingStages } from "lib/utils/autorouting/localAutorouterStrategies"
+import { getLocalAutoroutingStages } from "lib/utils/autorouting/local-autorouter-strategies"
 import { shouldSkipAutoroutingBecauseOfPlacementErrors } from "lib/utils/autorouting/should-skip-autorouting-because-of-placement-errors"
 import { shouldSkipAutoroutingBecauseOfTraceLengthViolations } from "lib/utils/autorouting/should-skip-autorouting-because-of-trace-length-violations"
 import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
-import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
+import { getAutoroutedViaLayers } from "lib/utils/getViaSpanLayers"
 import {
   GROUND_NET_REGEX,
   POWER_NET_REGEX,
@@ -1164,6 +1164,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           fanoutBounds: routingPhasePlan.fanoutBounds,
           fanoutBoundaryPadding: routingPhasePlan.fanoutBoundaryPadding,
           fanoutRoutingLayers: routingPhasePlan.fanoutRoutingLayers,
+          allowBlindAndBuriedVias: phaseSimpleRouteJson.allowBlindAndBuriedVias,
           breakoutPoints,
           onFanoutBoundsConflict: () =>
             emitFanoutBoundsConflictWarning(routingPhasePlan),
@@ -1443,6 +1444,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             fanoutBounds: routingPhasePlan.fanoutBounds,
             fanoutBoundaryPadding: routingPhasePlan.fanoutBoundaryPadding,
             fanoutRoutingLayers: routingPhasePlan.fanoutRoutingLayers,
+            allowBlindAndBuriedVias: simpleRouteJson.allowBlindAndBuriedVias,
           },
         )
       }
@@ -1528,6 +1530,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
               busFanoutDirections: routingPhasePlan.busFanoutDirections,
               fanoutBounds: routingPhasePlan.fanoutBounds,
               fanoutRoutingLayers: routingPhasePlan.fanoutRoutingLayers,
+              allowBlindAndBuriedVias: simpleRouteJson.allowBlindAndBuriedVias,
               componentNamesById: getPcbComponentNamesById(db),
               onSolverStarted: ({
                 solverName,
@@ -1966,7 +1969,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     // Apply each routed trace to the corresponding circuit trace
     const pcbStyle = this.getInheritedMergedProperty("pcbStyle")
     const { holeDiameter, padDiameter } = getViaDiameterDefaults(pcbStyle)
-    const board = db.pcb_board.list()[0]
+    const boardComponent = this._getBoard()
+    const board = boardComponent?.pcb_board_id
+      ? db.pcb_board.get(boardComponent.pcb_board_id)
+      : db.pcb_board.list()[0]
     const routedViaHoleDiameter = board?.min_via_hole_diameter ?? holeDiameter
     const routedViaPadDiameter = board?.min_via_pad_diameter ?? padDiameter
 
@@ -2097,6 +2103,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
               via_hole_diameter?: number
               outer_diameter?: number
               hole_diameter?: number
+              layers?: string[]
             }
             const fromLayer = point.from_layer as LayerRef
             const toLayer = point.to_layer as LayerRef
@@ -2112,10 +2119,13 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
                 routedViaPoint.via_diameter ??
                 routedViaPoint.outer_diameter ??
                 routedViaPadDiameter,
-              layers: getViaSpanLayers({
+              layers: getAutoroutedViaLayers({
                 fromLayer,
                 toLayer,
                 layerCount: this._getSubcircuitLayerCount(),
+                allowBlindAndBuriedVias:
+                  board?.allow_blind_and_buried_vias ?? false,
+                physicalLayers: routedViaPoint.layers as LayerRef[] | undefined,
               }),
               from_layer: fromLayer,
               to_layer: toLayer,

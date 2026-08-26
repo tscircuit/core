@@ -38,6 +38,7 @@ export interface FanoutAutorouterOptions {
   busFanoutDirections?: Readonly<Record<string, BusFanoutDirection>>
   fanoutBounds?: SimpleRouteBounds
   fanoutRoutingLayers?: string[]
+  allowBlindAndBuriedVias?: boolean
   /** Used to name components in fanout failure messages. */
   componentNamesById?: ReadonlyMap<string, string>
   onSolverStarted?: (details: {
@@ -448,6 +449,9 @@ export class FanoutAutorouter implements GenericLocalAutorouter {
       busDirections: this.getPlaneBusDirections(),
       busExitPreferences: this.getLegacyBusExitPreferences(),
       escapeLayers: this.options.fanoutRoutingLayers,
+      allowBlindAndBuriedVias:
+        this.options.allowBlindAndBuriedVias ??
+        this.input.allowBlindAndBuriedVias,
     }
     if (this.options.mode === "single_layer_fanout") {
       return {

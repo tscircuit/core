@@ -35,6 +35,43 @@ import { getDifferentialPairsForSimpleRouteJson } from "./getDifferentialPairsFo
 import { getPreservedRoutedSubcircuitTraces } from "./getPreservedRoutedSubcircuitTraces"
 import { getUnbrokenCopperPourObstacles } from "./getUnbrokenCopperPourObstacles"
 
+const getOwningPcbBoardForSubcircuit = (
+  db: CircuitJsonUtilObjects,
+  subcircuitId: string,
+): { board: PcbBoard | null; subcircuitIsBoard: boolean } => {
+  const visitedSubcircuitIds = new Set<string>()
+  let currentSubcircuitId: string | null = subcircuitId
+  let isRequestedSubcircuit = true
+
+  while (
+    currentSubcircuitId &&
+    !visitedSubcircuitIds.has(currentSubcircuitId)
+  ) {
+    visitedSubcircuitIds.add(currentSubcircuitId)
+    const sourceGroup = db.source_group.getWhere({
+      subcircuit_id: currentSubcircuitId,
+    })
+    const sourceBoard = sourceGroup
+      ? db.source_board.getWhere({
+          source_group_id: sourceGroup.source_group_id,
+        })
+      : undefined
+    if (sourceBoard) {
+      return {
+        board:
+          db.pcb_board.getWhere({
+            source_board_id: sourceBoard.source_board_id,
+          }) ?? null,
+        subcircuitIsBoard: isRequestedSubcircuit,
+      }
+    }
+    currentSubcircuitId = sourceGroup?.parent_subcircuit_id ?? null
+    isRequestedSubcircuit = false
+  }
+
+  return { board: null, subcircuitIsBoard: false }
+}
+
 /**
  * This function can only be called in the PcbTraceRender phase or later
  */
@@ -121,14 +158,9 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   let board: PcbBoard | undefined | null = null
   let subcircuitIsBoard = false
   if (subcircuit_id) {
-    const source_group_id = subcircuit_id.replace(/^subcircuit_/, "")
-    const source_board = db.source_board.getWhere({ source_group_id })
-    if (source_board) {
-      board = db.pcb_board.getWhere({
-        source_board_id: source_board.source_board_id,
-      })
-      if (board) subcircuitIsBoard = true
-    }
+    const owningBoard = getOwningPcbBoardForSubcircuit(db, subcircuit_id)
+    board = owningBoard.board
+    subcircuitIsBoard = owningBoard.subcircuitIsBoard && board !== null
   }
 
   if (!board) {
@@ -144,12 +176,11 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     if (!sourceComponent?.name) return undefined
     return `${sourceComponent.name}.${sourcePort.name}`
   }
-  let pcbGroup
-  if (routingPcbGroupId) {
-    pcbGroup = db.pcb_group.get(routingPcbGroupId)
-  } else if (subcircuit_id) {
-    pcbGroup = db.pcb_group.getWhere({ subcircuit_id })
-  }
+  const pcbGroup = routingPcbGroupId
+    ? db.pcb_group.get(routingPcbGroupId)
+    : subcircuit_id
+      ? db.pcb_group.getWhere({ subcircuit_id })
+      : undefined
   let activeRoutingPcbGroupId = subcircuitComponent?.pcb_group_id
   if (activeRoutingPcbGroupId == null && !subcircuitIsBoard) {
     activeRoutingPcbGroupId = pcbGroup?.pcb_group_id
@@ -873,6 +904,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
           ? preservedRoutedSubcircuitTraces
           : undefined,
       layerCount: board?.num_layers ?? 2,
+      allowBlindAndBuriedVias: board?.allow_blind_and_buried_vias ?? false,
       minTraceWidth: Math.min(
         defaultTraceWidth,
         ...allConns.map((c) => c.width!),

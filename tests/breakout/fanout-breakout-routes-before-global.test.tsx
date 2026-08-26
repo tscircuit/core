@@ -70,12 +70,13 @@ test("fanout breakout routes signals and plane drops before global routing", asy
       </breakout>
 
       {signalPinNumbers.map((pinNumber, busIndex) => (
-        <trace
-          key={`${pinNumber}`}
-          name={`DATA${busIndex}`}
-          from={`.U1 > .pin${pinNumber}`}
-          to={`.U2 > .pin${pinNumber}`}
-        />
+        <Fragment key={pinNumber}>
+          <trace
+            name={`DATA${busIndex}`}
+            from={`.U1 > .pin${pinNumber}`}
+            to={`.U2 > .pin${pinNumber}`}
+          />
+        </Fragment>
       ))}
       <bus
         name="DATA_BUS"

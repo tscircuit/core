@@ -41,7 +41,7 @@
     "@tscircuit/common": "^0.0.20",
     "@tscircuit/copper-pour-solver": "https://pkg.pr.new/@tscircuit/copper-pour-solver@e9689c6486cff2b1fac01935a1d0ba7850355d24",
     "@tscircuit/create-fdm-enclosure": "0.0.4",
-    "@tscircuit/fanout-solver": "0.0.38",
+    "@tscircuit/fanout-solver": "github:tscircuit/fanout-solver#a5548b33b4dbef9a8b28b80613f86c19302d5e20",
     "@tscircuit/footprinter": "^0.0.426",
     "@tscircuit/image-utils": "^0.0.8",
     "@tscircuit/implicit-copper-pour-solver": "github:tscircuit/implicit-copper-pour-solver#47f930139fe969550e049aa7fb741bbcb1f08569",
