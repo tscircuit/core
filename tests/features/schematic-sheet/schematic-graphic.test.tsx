@@ -58,6 +58,8 @@ test("schematic graphic renders as the first page of a multi-sheet schematic", a
   expect(circuit.db.schematic_graphic.list()[0]).not.toHaveProperty(
     "svg_content",
   )
+  expect(circuit.db.schematic_graphic.list()[0]).not.toHaveProperty("width")
+  expect(circuit.db.schematic_graphic.list()[0]).not.toHaveProperty("height")
 
   expect(
     circuit.db.schematic_sheet

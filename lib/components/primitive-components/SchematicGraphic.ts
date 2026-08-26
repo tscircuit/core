@@ -1,3 +1,4 @@
+import { SVG_MIMETYPE, loadImageSource } from "@tscircuit/image-utils"
 import { schematicGraphicProps } from "@tscircuit/props"
 import type {
   Asset,
@@ -24,16 +25,58 @@ export class SchematicGraphic extends PrimitiveComponent<
     if (this.getCollapsedSchematicBoxAncestor()) return
 
     const { db } = this.root!
-    const asset = {
-      project_relative_path: "inline",
-      url: `data:image/svg+xml,${encodeURIComponent(this._parsedProps.svgContent)}`,
-      mimetype: "image/svg+xml",
-    } satisfies Asset
-    const schematicGraphic = db.schematic_graphic.insert({
-      asset,
-      schematic_sheet_id: this._resolveSchematicSheetId(),
-    })
+    const { imageUrl, svgContent, width, height } = this._parsedProps
 
-    this.schematic_graphic_id = schematicGraphic.schematic_graphic_id
+    if (imageUrl !== undefined) {
+      this._queueAsyncEffect("SchematicGraphicRender", async () => {
+        if (this.root?.schematicDisabled) return
+
+        const sourceImage = await loadImageSource(imageUrl)
+        if (sourceImage.mimetype !== SVG_MIMETYPE) {
+          throw new Error(
+            `Unsupported imageUrl for SchematicGraphic: "${imageUrl}". Expected an SVG image.`,
+          )
+        }
+
+        const asset = {
+          project_relative_path: sourceImage.projectRelativePath,
+          url: sourceImage.dataUrl,
+          mimetype: sourceImage.mimetype,
+        } satisfies Asset
+        const fallbackSvgContent =
+          svgContent ??
+          (sourceImage.dataUrl.startsWith("data:")
+            ? undefined
+            : sourceImage.text)
+        const schematicGraphic = this.root!.db.schematic_graphic.insert({
+          asset,
+          schematic_sheet_id: this._resolveSchematicSheetId(),
+          ...(fallbackSvgContent === undefined
+            ? {}
+            : { svg_content: fallbackSvgContent }),
+          ...(width === undefined ? {} : { width }),
+          ...(height === undefined ? {} : { height }),
+        })
+
+        this.schematic_graphic_id = schematicGraphic.schematic_graphic_id
+      })
+      return
+    }
+
+    if (svgContent !== undefined) {
+      const asset = {
+        project_relative_path: "inline",
+        url: `data:image/svg+xml,${encodeURIComponent(svgContent)}`,
+        mimetype: SVG_MIMETYPE,
+      } satisfies Asset
+      const schematicGraphic = db.schematic_graphic.insert({
+        asset,
+        schematic_sheet_id: this._resolveSchematicSheetId(),
+        ...(width === undefined ? {} : { width }),
+        ...(height === undefined ? {} : { height }),
+      })
+
+      this.schematic_graphic_id = schematicGraphic.schematic_graphic_id
+    }
   }
 }
