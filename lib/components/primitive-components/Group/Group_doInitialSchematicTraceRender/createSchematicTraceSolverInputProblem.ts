@@ -598,6 +598,7 @@ export function createSchematicTraceSolverInputProblem(
   const netConnections: Array<{
     netId: string
     schematicPortIds: SchematicPortId[]
+    isGround?: boolean
     netLabelWidth?: number
     netLabelHeight?: number
     allowInlineNetLabel?: boolean
@@ -671,6 +672,7 @@ export function createSchematicTraceSolverInputProblem(
       netConnections.push({
         netId: userNetId,
         schematicPortIds: uniqueSchematicPortIds,
+        isGround: sourceNet.is_ground,
         netLabelWidth,
         netLabelHeight,
         connKey,
