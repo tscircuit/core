@@ -1,6 +1,8 @@
 import { expect, test } from "bun:test"
+import { convertCircuitJsonToStackedSchematicSheetsSvg } from "circuit-to-svg"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import schematicGraphicSvgPath from "../../fixtures/assets/schematic-graphic.svg"
+import { getEmbeddedSchematicGraphicSvgContent } from "./get-embedded-schematic-graphic-svg-content"
 
 test("schematic graphic loads a sized SVG image URL exactly once", async () => {
   const svgContent = await Bun.file(schematicGraphicSvgPath).text()
@@ -34,5 +36,9 @@ test("schematic graphic loads a sized SVG image URL exactly once", async () => {
     "svg_content",
   )
 
-  await expect(circuit).toMatchStackedSchematicSnapshot(import.meta.path)
+  const stackedSvg = convertCircuitJsonToStackedSchematicSheetsSvg(
+    circuit.getCircuitJson(),
+  )
+  expect(stackedSvg).toContain("<image ")
+  expect(getEmbeddedSchematicGraphicSvgContent(stackedSvg)).toBe(svgContent)
 })

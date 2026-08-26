@@ -2,6 +2,7 @@ import { expect, test } from "bun:test"
 import { convertCircuitJsonToSchematicSvg } from "circuit-to-svg"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { getTestStaticAssetsServer } from "tests/fixtures/get-test-static-assets-server"
+import { getEmbeddedSchematicGraphicSvgContent } from "./get-embedded-schematic-graphic-svg-content"
 
 const explicitFallbackSvg =
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 10"><rect width="20" height="10" fill="red" /></svg>'
@@ -48,10 +49,14 @@ test("schematic graphic keeps a resolved external SVG canonical over explicit fa
   )
   expect(schematicGraphic?.svg_content).toContain("Input")
   expect(schematicGraphic?.svg_content).not.toBe(explicitFallbackSvg)
+  if (schematicGraphic?.svg_content === undefined) {
+    throw new Error("Expected the external SVG to be materialized")
+  }
 
   const renderedSvg = convertCircuitJsonToSchematicSvg(circuit.getCircuitJson())
-  expect(renderedSvg).toContain("Input")
-  expect(renderedSvg).not.toContain('fill="red"')
-
-  await expect(circuit).toMatchStackedSchematicSnapshot(import.meta.path)
+  const embeddedSvgContent = getEmbeddedSchematicGraphicSvgContent(renderedSvg)
+  expect(renderedSvg).toContain("<image ")
+  expect(embeddedSvgContent).toBe(schematicGraphic.svg_content)
+  expect(embeddedSvgContent).toContain("Input")
+  expect(embeddedSvgContent).not.toBe(explicitFallbackSvg)
 })

@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test"
 import { convertCircuitJsonToSchematicSvg } from "circuit-to-svg"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { getEmbeddedSchematicGraphicSvgContent } from "./get-embedded-schematic-graphic-svg-content"
 
 const assetSvg =
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 10"><rect width="20" height="10" fill="blue" /></svg>'
@@ -34,6 +35,7 @@ test("schematic graphic keeps explicit SVG content as an image URL fallback", as
   ])
 
   const renderedSvg = convertCircuitJsonToSchematicSvg(circuit.getCircuitJson())
-  expect(renderedSvg).toContain('fill="blue"')
-  expect(renderedSvg).not.toContain('fill="red"')
+  const embeddedSvgContent = getEmbeddedSchematicGraphicSvgContent(renderedSvg)
+  expect(embeddedSvgContent).toBe(assetSvg)
+  expect(embeddedSvgContent).not.toBe(fallbackSvg)
 })

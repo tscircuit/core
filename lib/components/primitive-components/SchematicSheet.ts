@@ -1,7 +1,7 @@
 import { schematicSheetProps } from "@tscircuit/props"
-import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { getBoundsForSchematic } from "lib/utils/autorouting/getBoundsForSchematic"
 import { insertSchematicElementOutsideSheetWarnings } from "lib/utils/schematic/insertSchematicElementOutsideSheetWarnings"
+import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
 export class SchematicSheet extends PrimitiveComponent<
   typeof schematicSheetProps

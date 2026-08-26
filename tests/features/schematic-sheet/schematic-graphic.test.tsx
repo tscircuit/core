@@ -1,5 +1,7 @@
 import { expect, test } from "bun:test"
+import { convertCircuitJsonToStackedSchematicSheetsSvg } from "circuit-to-svg"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { getEmbeddedSchematicGraphicSvgContent } from "./get-embedded-schematic-graphic-svg-content"
 
 const systemBlockDiagram = `
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400">
@@ -71,7 +73,25 @@ test("schematic graphic renders as the first page of a multi-sheet schematic", a
     ["Detailed Schematic", 1],
   ])
 
-  await expect(circuit).toMatchStackedSchematicSnapshot(import.meta.path)
+  const stackedSvg = convertCircuitJsonToStackedSchematicSheetsSvg(
+    circuit.getCircuitJson(),
+  )
+  const firstSheetLabelIndex = stackedSvg.indexOf(
+    'data-schematic-sheet-id="schematic_sheet_0">Sheet 1</text>',
+  )
+  const graphicIndex = stackedSvg.indexOf(
+    'data-schematic-graphic-id="schematic_graphic_0"',
+  )
+  const detailedSheetLabelIndex = stackedSvg.indexOf(
+    ">Detailed Schematic</text>",
+  )
+
+  expect(firstSheetLabelIndex).toBeGreaterThanOrEqual(0)
+  expect(graphicIndex).toBeGreaterThan(firstSheetLabelIndex)
+  expect(detailedSheetLabelIndex).toBeGreaterThan(graphicIndex)
+  expect(getEmbeddedSchematicGraphicSvgContent(stackedSvg)).toBe(
+    systemBlockDiagram,
+  )
 
   const { circuit: mixedIndexCircuit } = getTestFixture()
   mixedIndexCircuit.add(
