@@ -81,11 +81,9 @@ export class SchematicGraphic extends PrimitiveComponent<
           url: sourceImage.dataUrl,
           mimetype: sourceImage.mimetype,
         } satisfies Asset
-        const fallbackSvgContent =
-          svgContent ??
-          (sourceImage.dataUrl.startsWith("data:")
-            ? undefined
-            : sourceImage.text)
+        const fallbackSvgContent = sourceImage.dataUrl.startsWith("data:")
+          ? svgContent
+          : sourceImage.text
         const schematicGraphic = this.root!.db.schematic_graphic.insert({
           asset,
           schematic_sheet_id: this._resolveSchematicSheetId(),

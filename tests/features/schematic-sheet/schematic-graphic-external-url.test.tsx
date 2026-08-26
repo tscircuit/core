@@ -1,8 +1,12 @@
 import { expect, test } from "bun:test"
+import { convertCircuitJsonToSchematicSvg } from "circuit-to-svg"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { getTestStaticAssetsServer } from "tests/fixtures/get-test-static-assets-server"
 
-test("schematic graphic resolves a project SVG path through the platform", async () => {
+const explicitFallbackSvg =
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 10"><rect width="20" height="10" fill="red" /></svg>'
+
+test("schematic graphic keeps a resolved external SVG canonical over explicit fallback", async () => {
   let resolvedProjectPath: string | undefined
   const { url: staticAssetsServerUrl } = getTestStaticAssetsServer()
   const { circuit } = getTestFixture({
@@ -19,7 +23,10 @@ test("schematic graphic resolves a project SVG path through the platform", async
   circuit.add(
     <board routingDisabled>
       <schematicsheet>
-        <schematicgraphic imageUrl={imageUrl} />
+        <schematicgraphic
+          imageUrl={imageUrl}
+          svgContent={explicitFallbackSvg}
+        />
       </schematicsheet>
     </board>,
   )
@@ -39,6 +46,12 @@ test("schematic graphic resolves a project SVG path through the platform", async
       svg_content: expect.stringContaining("<svg"),
     }),
   )
+  expect(schematicGraphic?.svg_content).toContain("Input")
+  expect(schematicGraphic?.svg_content).not.toBe(explicitFallbackSvg)
+
+  const renderedSvg = convertCircuitJsonToSchematicSvg(circuit.getCircuitJson())
+  expect(renderedSvg).toContain("Input")
+  expect(renderedSvg).not.toContain('fill="red"')
 
   await expect(circuit).toMatchStackedSchematicSnapshot(import.meta.path)
 })
