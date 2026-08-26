@@ -35,12 +35,12 @@ type EligibleNetConnection = {
  *   or a named net - rather than one derived from the ports it happens to hit.
  *
  * A named signal net made from explicit port-to-net traces is also eligible
- * when it has either one port or two ports on different components. A
- * single-port net renders as one outward stub. A routed two-port net gets one
- * label along its trace; when schematic sections suppress that route, both
- * endpoints get outward stubs. Ports with an explicit `<netlabel>` element are
- * excluded so their user-selected anchored-label semantics remain intact,
- * unless that label opts in with `inline`.
+ * when it has either one port or ports on multiple components. A single-port
+ * net renders as one outward stub. A routed component gets one label along its
+ * trace, while disconnected endpoints get outward stubs. Ports with an
+ * explicit `<netlabel>` element are excluded so their user-selected
+ * anchored-label semantics remain intact, unless that label opts in with
+ * `inline`.
  *
  * The solver still has the last word: it falls back to an anchored label when
  * no collision-free inline placement exists.
@@ -111,12 +111,20 @@ export const applyInlineNetLabelEligibility = ({
       schematicPortIdsWithInlineNetLabels.has(schematicPortId),
     )
     const isSinglePort = schematicPortIds.length === 1
-    const isTwoPortChipToChip =
-      schematicPortIds.length === 2 &&
-      areSchematicPortsOnDifferentComponents(
-        schematicPortIds as [SchematicPortId, SchematicPortId],
-      )
-    if (!hasInlineNetLabel && !isSinglePort && !isTwoPortChipToChip) continue
+    const firstSchematicPortId = schematicPortIds[0]
+    const hasPortsOnDifferentComponents =
+      firstSchematicPortId !== undefined &&
+      schematicPortIds
+        .slice(1)
+        .some((otherSchematicPortId) =>
+          areSchematicPortsOnDifferentComponents([
+            firstSchematicPortId,
+            otherSchematicPortId,
+          ]),
+        )
+    if (!hasInlineNetLabel && !isSinglePort && !hasPortsOnDifferentComponents) {
+      continue
+    }
     if (
       !hasInlineNetLabel &&
       schematicPortIds.some((schematicPortId) =>
