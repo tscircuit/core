@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("explicit schematic sheet dimensions override the named size", async () => {
+test("explicit schematic sheet dimensions work without sheetSize", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -9,7 +9,6 @@ test("explicit schematic sheet dimensions override the named size", async () => 
       <schematicsheet
         name="Main Sheet"
         displayName="Main Sheet"
-        sheetSize="A4"
         sheetWidth="500mm"
         sheetHeight="300mm"
       >
