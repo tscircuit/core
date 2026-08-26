@@ -3,6 +3,7 @@ import type {
   SimpleRouteDifferentialPair,
   SimpleRouteJson,
 } from "lib/utils/autorouting/SimpleRouteJson"
+import { srjPointsReferToSameEndpoint } from "lib/utils/autorouting/compare-srj-points"
 import { expandSrjBoundsToIncludeConnectionPoints } from "lib/utils/autorouting/expand-srj-bounds-to-include-connection-points"
 import type {
   RoutingPhaseDrcTolerances,
@@ -45,15 +46,6 @@ export function Group_hasPhasedAutorouting(
   return false
 }
 
-const pointsReferToSameEndpoint = (
-  first: { x: number; y: number; pointId?: string },
-  second: { x: number; y: number; pointId?: string },
-): boolean =>
-  first.pointId && second.pointId
-    ? first.pointId === second.pointId
-    : Math.abs(first.x - second.x) <= 1e-6 &&
-      Math.abs(first.y - second.y) <= 1e-6
-
 const getPairedExitTarget = (
   simpleRouteJson: SimpleRouteJson,
   connection: SimpleRouteConnection,
@@ -67,7 +59,7 @@ const getPairedExitTarget = (
       candidate.source_trace_id === connection.source_trace_id &&
       candidate.pointsToConnect.some((globalPoint) =>
         connection.pointsToConnect.some((localPoint) =>
-          pointsReferToSameEndpoint(globalPoint, localPoint),
+          srjPointsReferToSameEndpoint(globalPoint, localPoint),
         ),
       ),
   )
@@ -76,7 +68,7 @@ const getPairedExitTarget = (
   const pairedPoints = globalConnection.pointsToConnect.filter(
     (globalPoint) =>
       !connection.pointsToConnect.some((localPoint) =>
-        pointsReferToSameEndpoint(globalPoint, localPoint),
+        srjPointsReferToSameEndpoint(globalPoint, localPoint),
       ),
   )
   return pairedPoints.length === 1

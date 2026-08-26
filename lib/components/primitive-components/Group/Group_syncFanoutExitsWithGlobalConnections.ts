@@ -4,14 +4,12 @@ import type {
   SimpleRouteJson,
   SimpleRoutePoint,
 } from "lib/utils/autorouting/SimpleRouteJson"
+import {
+  srjPointsHaveSameBoardPositionAndLayer,
+  srjPointsHaveSamePointId,
+  srjPointsReferToSameEndpoint,
+} from "lib/utils/autorouting/compare-srj-points"
 import type { RoutingPhasePlan } from "./GroupRoutingPhasePlan"
-
-const POINT_MATCH_TOLERANCE = 1e-6
-
-const pointsMatch = (first: SimpleRoutePoint, second: SimpleRoutePoint) =>
-  Math.abs(first.x - second.x) <= POINT_MATCH_TOLERANCE &&
-  Math.abs(first.y - second.y) <= POINT_MATCH_TOLERANCE &&
-  first.layer === second.layer
 
 const removeCompletedFanoutConnections = (
   simpleRouteJson: SimpleRouteJson,
@@ -113,22 +111,30 @@ export function Group_syncFanoutExitsWithGlobalConnections({
     const outputConnection = outputConnectionByName.get(inputConnection.name)
     if (!outputConnection) continue
 
-    const globalConnection = baseConnections.find(
-      (connection) =>
-        connection.routingPcbGroupId !== routingPcbGroupId &&
-        connection.source_trace_id === inputConnection.source_trace_id &&
-        connection.pointsToConnect.some((globalPoint) =>
-          inputConnection.pointsToConnect.some((inputPoint) =>
-            pointsMatch(globalPoint, inputPoint),
-          ),
+    const globalConnection = baseConnections.find((connection) => {
+      if (connection.routingPcbGroupId === routingPcbGroupId) return false
+
+      const sharesSourceTrace =
+        connection.source_trace_id === inputConnection.source_trace_id
+      const sharesPointId = connection.pointsToConnect.some((globalPoint) =>
+        inputConnection.pointsToConnect.some((inputPoint) =>
+          srjPointsHaveSamePointId(globalPoint, inputPoint),
         ),
-    )
+      )
+      if (!sharesSourceTrace && !sharesPointId) return false
+
+      return connection.pointsToConnect.some((globalPoint) =>
+        inputConnection.pointsToConnect.some((inputPoint) =>
+          srjPointsReferToSameEndpoint(globalPoint, inputPoint),
+        ),
+      )
+    })
     if (!globalConnection) continue
 
     const previousGlobalPointIndex = globalConnection.pointsToConnect.findIndex(
       (globalPoint) =>
         inputConnection.pointsToConnect.some((inputPoint) =>
-          pointsMatch(globalPoint, inputPoint),
+          srjPointsReferToSameEndpoint(globalPoint, inputPoint),
         ),
     )
     if (previousGlobalPointIndex < 0) continue
@@ -138,7 +144,10 @@ export function Group_syncFanoutExitsWithGlobalConnections({
     const changedPointIndex = outputConnection.pointsToConnect.findIndex(
       (outputPoint, pointIndex) => {
         const inputPoint = inputConnection.pointsToConnect[pointIndex]
-        return inputPoint !== undefined && !pointsMatch(outputPoint, inputPoint)
+        return (
+          inputPoint !== undefined &&
+          !srjPointsHaveSameBoardPositionAndLayer(outputPoint, inputPoint)
+        )
       },
     )
     if (changedPointIndex < 0) continue
