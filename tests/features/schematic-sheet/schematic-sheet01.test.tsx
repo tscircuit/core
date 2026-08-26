@@ -31,6 +31,7 @@ test("schematic sheet links schematic elements rendered inside it", async () => 
     name: "Main Sheet",
     display_name: "Main Sheet",
     sheet_index: 0,
+    sheet_size: "a4",
   })
 
   const sourceComponent = circuit.db.source_component.getWhere({ name: "R1" })

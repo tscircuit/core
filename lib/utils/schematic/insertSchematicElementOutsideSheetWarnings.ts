@@ -3,15 +3,24 @@ import {
   type SchematicElementWithBounds,
   getSchematicElementBounds,
 } from "@tscircuit/circuit-json-util"
+import type { SchematicSheetSize } from "circuit-json"
 
 type Point = { x: number; y: number }
 
 type CheckedSchematicElement = SchematicElementWithBounds
 
-// These dimensions match circuit-to-svg's A4 landscape schematic sheet.
 const SCHEMATIC_UNIT_TO_MM = 10.16 / 1.1
-export const DEFAULT_SCHEMATIC_SHEET_WIDTH = 297 / SCHEMATIC_UNIT_TO_MM
-export const DEFAULT_SCHEMATIC_SHEET_HEIGHT = 210 / SCHEMATIC_UNIT_TO_MM
+const SCHEMATIC_SHEET_DIMENSIONS_MM: Record<
+  SchematicSheetSize,
+  { width: number; height: number }
+> = {
+  a4: { width: 297, height: 210 },
+  ansi_b: { width: 431.8, height: 279.4 },
+}
+export const DEFAULT_SCHEMATIC_SHEET_WIDTH =
+  SCHEMATIC_SHEET_DIMENSIONS_MM.a4.width / SCHEMATIC_UNIT_TO_MM
+export const DEFAULT_SCHEMATIC_SHEET_HEIGHT =
+  SCHEMATIC_SHEET_DIMENSIONS_MM.a4.height / SCHEMATIC_UNIT_TO_MM
 const SCHEMATIC_SHEET_INNER_MARGIN = 5 / SCHEMATIC_UNIT_TO_MM
 
 const BOUNDS_EPSILON = 1e-6
@@ -34,28 +43,33 @@ export const insertSchematicElementOutsideSheetWarnings = ({
   schematicSheetId,
   schematicSheetName,
   schematicSheetCenter,
+  sheetSize = "a4",
 }: {
   db: CircuitJsonUtilObjects
   schematicSheetId: string
   schematicSheetName: string
   schematicSheetCenter: Point
+  sheetSize?: SchematicSheetSize
 }): void => {
+  const sheetDimensions = SCHEMATIC_SHEET_DIMENSIONS_MM[sheetSize]
+  const sheetWidth = sheetDimensions.width / SCHEMATIC_UNIT_TO_MM
+  const sheetHeight = sheetDimensions.height / SCHEMATIC_UNIT_TO_MM
   const sheetContentBounds = {
     minX:
       schematicSheetCenter.x -
-      DEFAULT_SCHEMATIC_SHEET_WIDTH / 2 +
+      sheetWidth / 2 +
       SCHEMATIC_SHEET_INNER_MARGIN,
     maxX:
       schematicSheetCenter.x +
-      DEFAULT_SCHEMATIC_SHEET_WIDTH / 2 -
+      sheetWidth / 2 -
       SCHEMATIC_SHEET_INNER_MARGIN,
     minY:
       schematicSheetCenter.y -
-      DEFAULT_SCHEMATIC_SHEET_HEIGHT / 2 +
+      sheetHeight / 2 +
       SCHEMATIC_SHEET_INNER_MARGIN,
     maxY:
       schematicSheetCenter.y +
-      DEFAULT_SCHEMATIC_SHEET_HEIGHT / 2 -
+      sheetHeight / 2 -
       SCHEMATIC_SHEET_INNER_MARGIN,
   }
   const checkedElements: CheckedSchematicElement[] = [
