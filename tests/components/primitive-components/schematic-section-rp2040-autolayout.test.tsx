@@ -560,12 +560,10 @@ test("RP2040 auto-layout with schematic sections", () => {
   ).toHaveLength(2)
   expect(anchoredLabels.filter((label) => label.text === "D0")).toHaveLength(0)
 
-  // XIN has three schematic ports (IC2, Y1, and C19), so it retains anchored
-  // labels rather than implying that one of its branches names the whole net.
-  expect(inlineTexts.filter((text) => text.text === "XIN")).toHaveLength(0)
-  expect(
-    anchoredLabels.filter((label) => label.text === "XIN").length,
-  ).toBeGreaterThan(0)
+  // XIN has three schematic ports (IC2, Y1, and C19) across multiple
+  // components, so its disconnected schematic endpoints use inline labels.
+  expect(inlineTexts.filter((text) => text.text === "XIN")).toHaveLength(2)
+  expect(anchoredLabels.filter((label) => label.text === "XIN")).toHaveLength(0)
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 }, 40_000)

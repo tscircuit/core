@@ -1025,7 +1025,7 @@ const remoteSignalLabels = [
   "SL_C",
 ]
 
-test("DRV8305 motor-driver remote signal labels render as anchored tags", async () => {
+test("DRV8305 motor-driver remote signal labels render inline", async () => {
   const { circuit } = getTestFixture()
   let solverInputProblem: InputProblem | undefined
 
@@ -1041,13 +1041,18 @@ test("DRV8305 motor-driver remote signal labels render as anchored tags", async 
   expect(solverInputProblem).toBeDefined()
   expect(solverInputProblem!.chips.length).toBeGreaterThan(20)
 
-  const anchoredRemoteSignalLabels = new Set(
-    circuit.db.schematic_net_label
+  const inlineRemoteSignalLabels = new Set(
+    circuit.db.schematic_text
       .list()
       .filter((label) => remoteSignalLabels.includes(label.text))
       .map((label) => label.text),
   )
 
-  expect(anchoredRemoteSignalLabels).toEqual(new Set(remoteSignalLabels))
+  expect(inlineRemoteSignalLabels).toEqual(new Set(remoteSignalLabels))
+  expect(
+    circuit.db.schematic_net_label
+      .list()
+      .filter((label) => remoteSignalLabels.includes(label.text)),
+  ).toHaveLength(0)
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 }, 120_000)
