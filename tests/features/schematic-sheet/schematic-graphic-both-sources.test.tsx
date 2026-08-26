@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { convertCircuitJsonToSchematicSvg } from "circuit-to-svg"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 const assetSvg =
@@ -31,4 +32,8 @@ test("schematic graphic keeps explicit SVG content as an image URL fallback", as
       svg_content: fallbackSvg,
     }),
   ])
+
+  const renderedSvg = convertCircuitJsonToSchematicSvg(circuit.getCircuitJson())
+  expect(renderedSvg).toContain('fill="blue"')
+  expect(renderedSvg).not.toContain('fill="red"')
 })

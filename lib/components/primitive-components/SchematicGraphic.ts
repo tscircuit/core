@@ -4,6 +4,7 @@ import type {
   Asset,
   SchematicGraphic as SchematicGraphicElement,
 } from "circuit-json"
+import { resolveStaticFileImport } from "lib/utils/resolveStaticFileImport"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
 export class SchematicGraphic extends PrimitiveComponent<
@@ -31,7 +32,37 @@ export class SchematicGraphic extends PrimitiveComponent<
       this._queueAsyncEffect("SchematicGraphicRender", async () => {
         if (this.root?.schematicDisabled) return
 
-        const sourceImage = await loadImageSource(imageUrl)
+        const resolvedImageUrl = await resolveStaticFileImport(
+          imageUrl,
+          this.root?.platform,
+        )
+        const sourceImage = await loadImageSource(resolvedImageUrl).catch(
+          (error) => {
+            if (svgContent === undefined) throw error
+            return null
+          },
+        )
+
+        if (sourceImage === null) {
+          const asset = {
+            project_relative_path: imageUrl.startsWith("data:")
+              ? "inline"
+              : imageUrl,
+            url: resolvedImageUrl,
+            mimetype: SVG_MIMETYPE,
+          } satisfies Asset
+          const schematicGraphic = this.root!.db.schematic_graphic.insert({
+            asset,
+            schematic_sheet_id: this._resolveSchematicSheetId(),
+            svg_content: svgContent,
+            ...(width === undefined ? {} : { width }),
+            ...(height === undefined ? {} : { height }),
+          })
+
+          this.schematic_graphic_id = schematicGraphic.schematic_graphic_id
+          return
+        }
+
         if (sourceImage.mimetype !== SVG_MIMETYPE) {
           throw new Error(
             `Unsupported imageUrl for SchematicGraphic: "${imageUrl}". Expected an SVG image.`,
@@ -39,7 +70,9 @@ export class SchematicGraphic extends PrimitiveComponent<
         }
 
         const asset = {
-          project_relative_path: sourceImage.projectRelativePath,
+          project_relative_path: imageUrl.startsWith("data:")
+            ? sourceImage.projectRelativePath
+            : imageUrl,
           url: sourceImage.dataUrl,
           mimetype: sourceImage.mimetype,
         } satisfies Asset
