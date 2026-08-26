@@ -22,6 +22,8 @@ import { Port_isConnectedToPower } from "./Port_isConnectedToPower"
 import { Port_tryRenderGroupPcbPort } from "./Port_tryRenderGroupPcbPort"
 import { getSourcePortNetLabelText } from "lib/utils/schematic/getSourcePortNetLabelText"
 
+const SMALL_SCHEMATIC_PIN_LABEL_FONT_SIZE = 0.12
+
 export class Port extends PrimitiveComponent<typeof portProps> {
   source_port_id: string | null = null
   pcb_port_id: string | null = null
@@ -70,7 +72,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
   }
 
   isGroupPort(): boolean {
-    return this.parent?.componentName === "Group"
+    return this.parent?.isGroup === true
   }
 
   isComponentPort(): boolean {
@@ -731,6 +733,12 @@ export class Port extends PrimitiveComponent<typeof portProps> {
         : undefined
     const sideOfComponent =
       explicitCustomSymbolSide ?? localPortInfo?.side ?? sideFromDirection
+    const displayPinLabelFontSize =
+      props.schPinLabelFontSize === "sm"
+        ? SMALL_SCHEMATIC_PIN_LABEL_FONT_SIZE
+        : props.schPinLabelFontSize === "default"
+          ? undefined
+          : props.schPinLabelFontSize
 
     const schematicPortInsertProps: Omit<SchematicPort, "schematic_port_id"> = {
       type: "schematic_port",
@@ -743,6 +751,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       pin_number: props.pinNumber,
       true_ccw_index: localPortInfo?.trueIndex,
       display_pin_label: bestDisplayPinLabel,
+      display_pin_label_font_size: displayPinLabelFontSize,
       is_connected: false,
       schematic_sheet_id: this._resolveSchematicSheetId(),
     }

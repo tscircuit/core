@@ -6,6 +6,7 @@ import {
   FTYPE,
   type PolarizedPassivePorts,
 } from "lib/utils/constants"
+import { symbols } from "schematic-symbols"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { Trace } from "../primitive-components/Trace/Trace"
 import { Capacitor_getAutomaticMaxDecouplingTraceLength } from "./Capacitor_getAutomaticMaxDecouplingTraceLength"
@@ -28,11 +29,25 @@ export class Capacitor extends NormalComponent<
 > {
   _adjustSilkscreenTextAutomatically = true
   get config() {
+    const baseSymbolName = this.props.symbolName ?? "capacitor"
+    const compactSize =
+      this.props.schSize === "sm" || this.props.schSize === "xs"
+        ? this.props.schSize
+        : undefined
+    const compactSymbolName =
+      compactSize && baseSymbolName === "capacitor"
+        ? (`capacitor_${compactSize}` as BaseSymbolName)
+        : undefined
+    const schematicSymbolName =
+      compactSymbolName && `${compactSymbolName}_right` in symbols
+        ? compactSymbolName
+        : (baseSymbolName as BaseSymbolName)
+
     return {
       componentName: "Capacitor",
       schematicSymbolName: this.props.polarized
         ? "capacitor_polarized"
-        : (this.props.symbolName ?? ("capacitor" as BaseSymbolName)),
+        : schematicSymbolName,
       zodProps: capacitorProps,
       sourceFtype: FTYPE.simple_capacitor,
     }

@@ -199,19 +199,43 @@ const byte0TraceNames = DDR_CONNECTIONS.filter(
 const byte1TraceNames = DDR_CONNECTIONS.filter(
   ({ busName }) => busName === "DDR_BYTE1",
 ).map(({ traceName }) => traceName)
+const BYTE0_MAX_FANOUT_SKEW = 8
 
 const FANOUT_BUSES = [
   {
     name: "DDR_BYTE0",
     connections: byte0TraceNames,
     preferredLayers: ["top", "inner1"],
+    maxLengthSkew: BYTE0_MAX_FANOUT_SKEW,
   },
   {
     name: "DDR_BYTE1",
     connections: byte1TraceNames,
     preferredLayers: ["inner2", "bottom"],
+    maxLengthSkew: undefined,
   },
 ] as const
+
+const getPlanarTraceLength = (trace: SimplifiedPcbTrace): number => {
+  let previousWire:
+    | Extract<SimplifiedPcbTrace["route"][number], { route_type: "wire" }>
+    | undefined
+  let length = 0
+  for (const routePoint of trace.route) {
+    if (routePoint.route_type !== "wire") {
+      previousWire = undefined
+      continue
+    }
+    if (previousWire?.layer === routePoint.layer) {
+      length += Math.hypot(
+        routePoint.x - previousWire.x,
+        routePoint.y - previousWire.y,
+      )
+    }
+    previousWire = routePoint
+  }
+  return length
+}
 
 const routeConnectionsDirectly = async (
   simpleRouteJson: SimpleRouteJson,
@@ -342,15 +366,18 @@ test("routes two DDR byte buses between AM62L and LPDDR4 fanouts", async () => {
         <Mt53e1g16d1zw name="U2" pcbRotation={90} noSchematicRepresentation />
       </breakout>
 
-      {FANOUT_BUSES.map(({ name, connections, preferredLayers }) => (
-        <Fragment key={name}>
-          <bus
-            name={name}
-            connections={[...connections]}
-            preferredLayers={[...preferredLayers]}
-          />
-        </Fragment>
-      ))}
+      {FANOUT_BUSES.map(
+        ({ name, connections, preferredLayers, maxLengthSkew }) => (
+          <Fragment key={name}>
+            <bus
+              name={name}
+              connections={[...connections]}
+              preferredLayers={[...preferredLayers]}
+              maxLengthSkew={maxLengthSkew}
+            />
+          </Fragment>
+        ),
+      )}
 
       {DDR_CONNECTIONS.map(({ memorySignal, socSignal, traceName }) => (
         <Fragment key={traceName}>
@@ -372,7 +399,7 @@ test("routes two DDR byte buses between AM62L and LPDDR4 fanouts", async () => {
         pcbX={0}
         pcbY={10.1}
         fontSize="0.6mm"
-        text="AM62L fanout + DRAM fanout, then one default global routing phase"
+        text={`BYTE0 fanout skew <= ${BYTE0_MAX_FANOUT_SKEW} mm; straight global phase verifies winding`}
       />
     </board>,
   )
@@ -407,6 +434,18 @@ test("routes two DDR byte buses between AM62L and LPDDR4 fanouts", async () => {
         trace.route.filter((routePoint) => routePoint.route_type === "via"),
       ).toHaveLength(1)
     }
+    const byte0Bus = fanoutPhase.startSimpleRouteJson?.buses?.find(
+      (bus) => bus.busId === "DDR_BYTE0",
+    )
+    expect(byte0Bus?.maxLengthSkew).toBe(BYTE0_MAX_FANOUT_SKEW)
+    const byte0ConnectionNames = new Set(byte0Bus?.connectionNames ?? [])
+    const byte0TraceLengths = routedFanoutTraces
+      .filter((trace) => byte0ConnectionNames.has(trace.connection_name ?? ""))
+      .map(getPlanarTraceLength)
+    expect(byte0TraceLengths).toHaveLength(8)
+    expect(
+      Math.max(...byte0TraceLengths) - Math.min(...byte0TraceLengths),
+    ).toBeLessThanOrEqual(BYTE0_MAX_FANOUT_SKEW + 1e-6)
   }
   const socFanoutPhase = autoroutingPhaseIoStack[0]!
   const socFanoutInput = socFanoutPhase.startSimpleRouteJson!

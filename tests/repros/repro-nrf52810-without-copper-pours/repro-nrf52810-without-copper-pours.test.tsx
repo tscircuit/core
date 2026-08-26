@@ -61,6 +61,15 @@ test(
       expect(keepoutOverlapArea).toBeCloseTo(0, 8)
     }
 
+    const traceErrors = circuit.db.pcb_trace_error.list()
+    const hasGndVbatContact = traceErrors.some(
+      (error) =>
+        error.message.includes(".U1 > port.pin45, .X1 > port.pin2") &&
+        error.message.includes(".U1 > port.pin13, .U1 > port.pin48"),
+    )
+    expect(hasGndVbatContact).toBe(false)
+    expect(circuit.db.pcb_pad_pad_clearance_error.list()).toHaveLength(0)
+
     const topSnapshotPath = import.meta.path.replace(
       /\.test\.tsx$/,
       "-top.test.tsx",
