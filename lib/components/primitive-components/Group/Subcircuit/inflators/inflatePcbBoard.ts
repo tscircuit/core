@@ -1,7 +1,7 @@
-import type { PcbBoard } from "circuit-json"
-import type { InflatorContext } from "../InflatorFn"
-import { Board } from "lib/components/normal-components/Board"
 import type { BoardProps } from "@tscircuit/props"
+import type { PcbBoard } from "circuit-json"
+import { Board } from "lib/components/normal-components/Board"
+import type { InflatorContext } from "../InflatorFn"
 
 export function inflatePcbBoard(
   pcbBoard: PcbBoard,
@@ -38,6 +38,12 @@ export function inflatePcbBoard(
   if (pcbBoard.outline) boardProps.outline = pcbBoard.outline
   if (pcbBoard.thickness) boardProps.thickness = pcbBoard.thickness
   if (pcbBoard.material) boardProps.material = pcbBoard.material
+  if (pcbBoard.is_via_in_pad_allowed !== undefined) {
+    boardProps.isViaInPadAllowed = pcbBoard.is_via_in_pad_allowed
+  }
+  if (pcbBoard.allow_blind_and_buried_vias !== undefined) {
+    boardProps.allowBlindAndBuriedVias = pcbBoard.allow_blind_and_buried_vias
+  }
 
   // Create the Board instance
   const board = new Board(boardProps)

@@ -47,6 +47,55 @@ export const getViaBoardLayers = (layerCount: number): LayerRef[] => {
 }
 
 /**
+ * Physical copper layers occupied by an autorouter-generated via.
+ *
+ * `fromLayer` and `toLayer` describe the logical trace transition. Unless the
+ * board explicitly permits blind or buried vias, the drilled barrel spans the
+ * complete board stack independently of that logical transition.
+ */
+export const getAutoroutedViaLayers = ({
+  fromLayer,
+  toLayer,
+  layerCount,
+  allowBlindAndBuriedVias = false,
+  physicalLayers,
+}: {
+  fromLayer: LayerRef
+  toLayer: LayerRef
+  layerCount: number
+  allowBlindAndBuriedVias?: boolean
+  physicalLayers?: readonly LayerRef[]
+}): LayerRef[] => {
+  const boardLayers = getViaBoardLayers(layerCount)
+  if (!allowBlindAndBuriedVias) return boardLayers
+
+  if (physicalLayers?.length) {
+    const physicalLayerSet = new Set(physicalLayers)
+    const occupiedBoardLayers = boardLayers.filter((layer) =>
+      physicalLayerSet.has(layer),
+    )
+    const firstOccupiedIndex = boardLayers.indexOf(occupiedBoardLayers[0]!)
+    const lastOccupiedIndex = boardLayers.indexOf(
+      occupiedBoardLayers[occupiedBoardLayers.length - 1]!,
+    )
+    const contiguousPhysicalSpan = boardLayers.slice(
+      firstOccupiedIndex,
+      lastOccupiedIndex + 1,
+    )
+    if (
+      physicalLayerSet.has(fromLayer) &&
+      physicalLayerSet.has(toLayer) &&
+      physicalLayerSet.size === contiguousPhysicalSpan.length &&
+      contiguousPhysicalSpan.every((layer) => physicalLayerSet.has(layer))
+    ) {
+      return contiguousPhysicalSpan
+    }
+  }
+
+  return getViaSpanLayers({ fromLayer, toLayer, layerCount })
+}
+
+/**
  * Copper layers ordered by routing preference. Outer layers retain their
  * historical priority, followed by inner layers from top to bottom.
  */

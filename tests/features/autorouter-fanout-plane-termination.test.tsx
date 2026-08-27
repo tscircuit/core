@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { getViaBoardLayers } from "lib/utils/getViaSpanLayers"
 import { createAutoroutingPhaseIoStack } from "tests/fixtures/create-autorouting-phase-io-stack"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
@@ -111,15 +112,12 @@ test("fanout drops source-only power and ground connections to internal planes",
   const vias = circuit.db.pcb_via.list()
   expect(vias.some((via) => via.to_layer === "inner1")).toBe(true)
   expect(vias.some((via) => via.to_layer === "inner2")).toBe(true)
-  expect(vias.find((via) => via.to_layer === "inner1")?.layers).toEqual([
-    "top",
-    "inner1",
-  ])
-  expect(vias.find((via) => via.to_layer === "inner2")?.layers).toEqual([
-    "top",
-    "inner1",
-    "inner2",
-  ])
+  expect(vias.find((via) => via.to_layer === "inner1")?.layers).toEqual(
+    getViaBoardLayers(6),
+  )
+  expect(vias.find((via) => via.to_layer === "inner2")?.layers).toEqual(
+    getViaBoardLayers(6),
+  )
 
   const signalSourceTraceIds = new Set(
     ["SIGNAL", "SIGNAL_RETURN"].map(

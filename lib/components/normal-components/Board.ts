@@ -452,6 +452,13 @@ export class Board
     const pcbBoardFromCircuitJson = circuitJsonElements?.find(
       (elm) => elm.type === "pcb_board",
     )
+    const rawProps = this.props
+    const resolvedIsViaInPadAllowed =
+      rawProps.isViaInPadAllowed ??
+      pcbBoardFromCircuitJson?.is_via_in_pad_allowed
+    const resolvedAllowBlindAndBuriedVias =
+      rawProps.allowBlindAndBuriedVias ??
+      pcbBoardFromCircuitJson?.allow_blind_and_buried_vias
 
     // Initialize with minimal dimensions if not provided
     // They will be updated in PcbBoardAutoSize phase
@@ -557,8 +564,11 @@ export class Board
         y: point.y + (props.outlineOffsetY ?? 0) + outlineTranslation.y,
       })),
       material: props.material,
-      ...(props.isViaInPadAllowed !== undefined && {
-        is_via_in_pad_allowed: props.isViaInPadAllowed,
+      ...(resolvedIsViaInPadAllowed !== undefined && {
+        is_via_in_pad_allowed: resolvedIsViaInPadAllowed,
+      }),
+      ...(resolvedAllowBlindAndBuriedVias !== undefined && {
+        allow_blind_and_buried_vias: resolvedAllowBlindAndBuriedVias,
       }),
       ...(props.solderMaskColor !== undefined && {
         solder_mask_color: props.solderMaskColor,

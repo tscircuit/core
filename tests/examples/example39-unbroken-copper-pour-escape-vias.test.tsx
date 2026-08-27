@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test"
 import "lib/register-catalogue"
+import { getViaBoardLayers } from "lib/utils/getViaSpanLayers"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("unbroken inner-layer copper pours participate in autorouting", async () => {
@@ -74,7 +75,7 @@ test("unbroken inner-layer copper pours participate in autorouting", async () =>
   ).toBe(true)
   expect(
     topToInner2Vias.every(
-      (via) => via.layers.join(",") === "top,inner1,inner2",
+      (via) => via.layers.join(",") === getViaBoardLayers(4).join(","),
     ),
   ).toBe(true)
 
