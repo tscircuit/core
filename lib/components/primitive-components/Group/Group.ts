@@ -17,6 +17,7 @@ import {
 import {
   type AnyCircuitElement,
   type LayerRef,
+  type PcbPort,
   type PcbTrace,
   type PcbVia,
   type SchematicComponent,
@@ -113,13 +114,18 @@ import { claimSrjAssignablePcbViasTraversedByRoute } from "./claim-srj-assignabl
 import { findFanoutPhaseSeparationConflict } from "./find-fanout-phase-separation-conflict"
 import { getAccumulatedPcbTracesWithStageOutputReplacements } from "./get-accumulated-pcb-traces-with-stage-output-replacements"
 import { getSourceTraceIdForRoutedTrace } from "./get-source-trace-id-for-routed-trace"
-import { insertAutoplacedJumpers } from "./insert-autoplaced-jumpers"
+import {
+  type AutoplacedJumperMaterialization,
+  createAutoplacedJumperMaterialization,
+  insertAutoplacedJumpers,
+} from "./insert-autoplaced-jumpers"
 import {
   deleteExistingPcbTracesReplacedBy,
   getExistingPcbTracesForReroute,
   getExistingSimplifiedPcbTracesForReroute,
   getSourceTraceIdsFromRerouteName,
 } from "./region-replacement"
+import { removeAutoplacedJumperMaterialization } from "./remove-autoplaced-jumper-materialization"
 import { splitPcbTracesOnJumperSegments } from "./split-pcb-traces-on-jumper-segments"
 import { computeCenterFromAnchorPosition } from "./utils/computeCenterFromAnchorPosition"
 
@@ -282,6 +288,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       }>
     }>
   } | null = null
+
+  _autoplacedJumperMaterialization: AutoplacedJumperMaterialization | null =
+    null
 
   get config() {
     return {
@@ -1965,13 +1974,31 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const routedViaPadDiameter = board?.min_via_pad_diameter ?? padDiameter
 
     // First, create jumper components from getOutputJumpers() result
+    const previousJumperMaterialization = this._autoplacedJumperMaterialization
+    let nextJumperMaterialization: AutoplacedJumperMaterialization | null = null
     if (output_jumpers && output_jumpers.length > 0) {
-      insertAutoplacedJumpers({
+      const materialization = createAutoplacedJumperMaterialization()
+      try {
+        insertAutoplacedJumpers({
+          db,
+          output_jumpers,
+          subcircuit_id: this.subcircuit_id,
+          materialization,
+        })
+      } catch (error) {
+        removeAutoplacedJumperMaterialization({ db, materialization })
+        throw error
+      }
+      nextJumperMaterialization = materialization
+    }
+
+    if (previousJumperMaterialization) {
+      removeAutoplacedJumperMaterialization({
         db,
-        output_jumpers,
-        subcircuit_id: this.subcircuit_id,
+        materialization: previousJumperMaterialization,
       })
     }
+    this._autoplacedJumperMaterialization = nextJumperMaterialization
 
     deleteExistingPcbTracesReplacedBy({
       group: this,
@@ -2022,7 +2049,12 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       }
 
       // Add port IDs to trace segments at jumper pad locations
-      const processedSegments = addPortIdsToTracesAtJumperPads(segments, db)
+      const processedSegments = addPortIdsToTracesAtJumperPads(
+        segments,
+        db,
+        this._autoplacedJumperMaterialization?.pcbPortIds ??
+          new Set<PcbPort["pcb_port_id"]>(),
+      )
 
       // Insert each segment as a separate trace
       for (const segment of processedSegments) {

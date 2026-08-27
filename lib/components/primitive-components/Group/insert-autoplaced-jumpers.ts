@@ -1,5 +1,44 @@
-import type { LayerRef, PcbSmtPadRect } from "circuit-json"
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
+import type {
+  LayerRef,
+  PcbComponent,
+  PcbPort,
+  PcbSmtPad,
+  PcbSmtPadRect,
+  SourceComponentBase,
+  SourceComponentInternalConnection,
+  SourcePort,
+} from "circuit-json"
+
+type SourceComponentId = SourceComponentBase["source_component_id"]
+type SourcePortId = SourcePort["source_port_id"]
+type SourceComponentInternalConnectionId =
+  SourceComponentInternalConnection["source_component_internal_connection_id"]
+type PcbComponentId = PcbComponent["pcb_component_id"]
+type PcbPortId = PcbPort["pcb_port_id"]
+type PcbSmtPadId = PcbSmtPad["pcb_smtpad_id"]
+
+export interface AutoplacedJumperMaterialization {
+  sourceComponentIds: Set<SourceComponentId>
+  sourcePortIds: Set<SourcePortId>
+  sourceComponentInternalConnectionIds: Set<SourceComponentInternalConnectionId>
+  pcbComponentIds: Set<PcbComponentId>
+  pcbPortIds: Set<PcbPortId>
+  pcbSmtPadIds: Set<PcbSmtPadId>
+  ownedElements: WeakSet<object>
+}
+
+export function createAutoplacedJumperMaterialization(): AutoplacedJumperMaterialization {
+  return {
+    sourceComponentIds: new Set(),
+    sourcePortIds: new Set(),
+    sourceComponentInternalConnectionIds: new Set(),
+    pcbComponentIds: new Set(),
+    pcbPortIds: new Set(),
+    pcbSmtPadIds: new Set(),
+    ownedElements: new WeakSet(),
+  }
+}
 
 export interface AutoplacedJumperPad {
   center: { x: number; y: number }
@@ -69,8 +108,9 @@ export function insertAutoplacedJumpers(params: {
   db: CircuitJsonUtilObjects
   output_jumpers: AutoplacedJumper[]
   subcircuit_id?: string | null
+  materialization: AutoplacedJumperMaterialization
 }): void {
-  const { db, output_jumpers, subcircuit_id } = params
+  const { db, output_jumpers, subcircuit_id, materialization } = params
 
   for (
     let jumperIndex = 0;
@@ -84,6 +124,8 @@ export function insertAutoplacedJumpers(params: {
       name: `__autoplaced_jumper_${jumperIndex}`,
       supplier_part_numbers: {},
     })
+    materialization.sourceComponentIds.add(sourceComponent.source_component_id)
+    materialization.ownedElements.add(sourceComponent)
 
     // Calculate rotation from orientation
     const rotation = jumper.orientation === "horizontal" ? 0 : 90
@@ -101,6 +143,8 @@ export function insertAutoplacedJumpers(params: {
       height: jumper.height || 0,
       obstructs_within_bounds: false,
     })
+    materialization.pcbComponentIds.add(pcbComponent.pcb_component_id)
+    materialization.ownedElements.add(pcbComponent)
 
     // Track created source_ports and pcb_smtpads for internal connections
     const padData: Array<{
@@ -120,6 +164,8 @@ export function insertAutoplacedJumpers(params: {
         name: `pin${pinNumber}`,
         pin_number: pinNumber,
       })
+      materialization.sourcePortIds.add(sourcePort.source_port_id)
+      materialization.ownedElements.add(sourcePort)
 
       // Get layer from pad - may be `layer` string or `layers` array
       const padLayer = pad.layer || pad.layers?.[0] || "top"
@@ -132,6 +178,8 @@ export function insertAutoplacedJumpers(params: {
         y: pad.center.y,
         layers: [padLayer as LayerRef],
       })
+      materialization.pcbPortIds.add(pcbPort.pcb_port_id)
+      materialization.ownedElements.add(pcbPort)
 
       // Create pcb_smtpad with link to pcb_port
       const pcbSmtpad = db.pcb_smtpad.insert({
@@ -144,6 +192,8 @@ export function insertAutoplacedJumpers(params: {
         height: pad.height,
         layer: padLayer as LayerRef,
       } as PcbSmtPadRect)
+      materialization.pcbSmtPadIds.add(pcbSmtpad.pcb_smtpad_id)
+      materialization.ownedElements.add(pcbSmtpad)
 
       padData.push({
         pad,
@@ -173,11 +223,16 @@ export function insertAutoplacedJumpers(params: {
       }
 
       if (sourcePortIds.length >= 2) {
-        db.source_component_internal_connection.insert({
-          source_component_id: sourceComponent.source_component_id,
-          subcircuit_id: subcircuit_id ?? undefined,
-          source_port_ids: sourcePortIds,
-        })
+        const internalConnection =
+          db.source_component_internal_connection.insert({
+            source_component_id: sourceComponent.source_component_id,
+            subcircuit_id: subcircuit_id ?? undefined,
+            source_port_ids: sourcePortIds,
+          })
+        materialization.sourceComponentInternalConnectionIds.add(
+          internalConnection.source_component_internal_connection_id,
+        )
+        materialization.ownedElements.add(internalConnection)
       }
     }
   }

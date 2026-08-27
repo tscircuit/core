@@ -1,8 +1,10 @@
-import type { PcbTrace } from "circuit-json"
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
+import type { PcbPort, PcbTrace } from "circuit-json"
+
+type PcbPortId = PcbPort["pcb_port_id"]
 
 interface JumperPadInfo {
-  pcb_port_id: string
+  pcb_port_id: PcbPortId
   x: number
   y: number
   minX: number
@@ -12,21 +14,20 @@ interface JumperPadInfo {
 }
 
 /**
- * Get all jumper pad positions and bounds from the database.
- * These are pads belonging to autoplaced jumper components.
+ * Get the pad positions and bounds for the exact PCB ports materialized by
+ * this Group's current autoplaced-jumper output.
  */
-function getJumperPadInfos(db: CircuitJsonUtilObjects): JumperPadInfo[] {
+function getJumperPadInfos(
+  db: CircuitJsonUtilObjects,
+  autoplacedJumperPcbPortIds: ReadonlySet<PcbPortId>,
+): JumperPadInfo[] {
   const padInfos: JumperPadInfo[] = []
-  const pcbSmtpads = db.pcb_smtpad.list()
-
-  const jumperSmtpads = pcbSmtpads.filter((pad) => {
-    const component = db.pcb_component.get(pad.pcb_component_id!)
-    if (!component) return false
-    const sourceComponent = db.source_component.get(
-      component.source_component_id!,
+  const jumperSmtpads = db.pcb_smtpad
+    .list()
+    .filter(
+      (pad) =>
+        pad.pcb_port_id && autoplacedJumperPcbPortIds.has(pad.pcb_port_id),
     )
-    return sourceComponent?.name?.startsWith("__autoplaced_jumper")
-  })
 
   for (const smtpad of jumperSmtpads) {
     // Skip polygon shapes which don't have x/y
@@ -70,7 +71,7 @@ function findJumperPortAtPosition(
   x: number,
   y: number,
   tolerance = 0.01,
-): string | undefined {
+): PcbPortId | undefined {
   for (const pad of padInfos) {
     if (Math.abs(pad.x - x) < tolerance && Math.abs(pad.y - y) < tolerance) {
       return pad.pcb_port_id
@@ -124,8 +125,7 @@ function splitRouteAtJumperPads(
         segments.push(currentSegment)
 
         // Start new segment from this point with start_pcb_port_id
-        const newStartPoint = { ...point }
-        delete (newStartPoint as any).end_pcb_port_id
+        const { end_pcb_port_id: _endPcbPortId, ...newStartPoint } = point
         if (!newStartPoint.start_pcb_port_id) {
           newStartPoint.start_pcb_port_id = padInfo.pcb_port_id
         }
@@ -143,6 +143,34 @@ function splitRouteAtJumperPads(
 }
 
 /**
+ * Clone wire points and remove PCB-port foreign keys that no longer resolve
+ * before adding jumper metadata. Via objects are kept by identity because
+ * later autorouting materialization associates them with their owning phase
+ * section.
+ */
+function cloneWirePointsAndRemoveDanglingPcbPortIds(
+  segments: Array<PcbTrace["route"]>,
+  db: CircuitJsonUtilObjects,
+): Array<PcbTrace["route"]> {
+  return segments.map((segment) =>
+    segment.map((point) => {
+      if (point.route_type !== "wire") return point
+
+      const { start_pcb_port_id, end_pcb_port_id, ...wirePoint } = point
+      return {
+        ...wirePoint,
+        ...(start_pcb_port_id && db.pcb_port.get(start_pcb_port_id)
+          ? { start_pcb_port_id }
+          : {}),
+        ...(end_pcb_port_id && db.pcb_port.get(end_pcb_port_id)
+          ? { end_pcb_port_id }
+          : {}),
+      }
+    }),
+  )
+}
+
+/**
  * Process trace segments to add port IDs for jumper pad connections.
  * This handles two cases:
  * 1. Segment endpoints that are exactly at jumper pad positions
@@ -150,18 +178,21 @@ function splitRouteAtJumperPads(
  *
  * @param segments - Array of trace route segments to process
  * @param db - Database for looking up jumper pad information
+ * @param autoplacedJumperPcbPortIds - Exact current Group-owned jumper ports
  * @returns Processed segments with port IDs added and splits performed
  */
 export function addPortIdsToTracesAtJumperPads(
   segments: Array<PcbTrace["route"]>,
   db: CircuitJsonUtilObjects,
+  autoplacedJumperPcbPortIds: ReadonlySet<PcbPortId>,
 ): Array<PcbTrace["route"]> {
-  const padInfos = getJumperPadInfos(db)
-  if (padInfos.length === 0) return segments
+  const cleanSegments = cloneWirePointsAndRemoveDanglingPcbPortIds(segments, db)
+  const padInfos = getJumperPadInfos(db, autoplacedJumperPcbPortIds)
+  if (padInfos.length === 0) return cleanSegments
 
   const result: Array<PcbTrace["route"]> = []
 
-  for (const segment of segments) {
+  for (const segment of cleanSegments) {
     // First, split at any intermediate points within jumper pad bounds
     const subSegments = splitRouteAtJumperPads(segment, padInfos)
 

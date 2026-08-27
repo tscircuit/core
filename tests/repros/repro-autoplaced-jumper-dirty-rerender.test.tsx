@@ -108,7 +108,7 @@ const createAutoplacedJumperAutorouter = async (
   })
 }
 
-test("dirty PCB trace rerender leaves stale autoplaced jumper elements", async () => {
+test("dirty PCB trace rerender replaces owned autoplaced jumper elements", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -201,6 +201,46 @@ test("dirty PCB trace rerender leaves stale autoplaced jumper elements", async (
   const userPcbComponent = circuit.db.pcb_component.getWhere({
     source_component_id: userSourceComponent.source_component_id,
   })!
+  const userSourcePortIds = circuit.db.source_port
+    .list({ source_component_id: userSourceComponent.source_component_id })
+    .map((port) => port.source_port_id)
+  const userPcbPortIds = circuit.db.pcb_port
+    .list({ pcb_component_id: userPcbComponent.pcb_component_id })
+    .map((port) => port.pcb_port_id)
+  const userPcbSmtpadIds = circuit.db.pcb_smtpad
+    .list({ pcb_component_id: userPcbComponent.pcb_component_id })
+    .map((pad) => pad.pcb_smtpad_id)
+  const initialAutoplacedSourceComponent = circuit.db.source_component.getWhere(
+    {
+      name: "__autoplaced_jumper_0",
+    },
+  )!
+  const initialAutoplacedPcbComponent = circuit.db.pcb_component.getWhere({
+    source_component_id: initialAutoplacedSourceComponent.source_component_id,
+  })!
+  const initialAutoplacedSourcePortIds = circuit.db.source_port
+    .list({
+      source_component_id: initialAutoplacedSourceComponent.source_component_id,
+    })
+    .map((port) => port.source_port_id)
+  const initialAutoplacedInternalConnectionIds =
+    circuit.db.source_component_internal_connection
+      .list({
+        source_component_id:
+          initialAutoplacedSourceComponent.source_component_id,
+      })
+      .map((connection) => connection.source_component_internal_connection_id)
+  const initialAutoplacedPcbPortIdList = circuit.db.pcb_port
+    .list({
+      pcb_component_id: initialAutoplacedPcbComponent.pcb_component_id,
+    })
+    .map((port) => port.pcb_port_id)
+  const initialAutoplacedPcbPortIds = new Set(initialAutoplacedPcbPortIdList)
+  const initialAutoplacedPcbSmtpadIds = circuit.db.pcb_smtpad
+    .list({
+      pcb_component_id: initialAutoplacedPcbComponent.pcb_component_id,
+    })
+    .map((pad) => pad.pcb_smtpad_id)
   const reservedPrefixUserSourceComponent = circuit.db.source_component.insert({
     ftype: "simple_chip",
     name: "__autoplaced_jumper_user_owned",
@@ -224,7 +264,7 @@ test("dirty PCB trace rerender leaves stale autoplaced jumper elements", async (
   const autoplacedSourceComponents = circuit.db.source_component
     .list()
     .filter((component) => component.name === "__autoplaced_jumper_0")
-  expect(autoplacedSourceComponents).toHaveLength(2)
+  expect(autoplacedSourceComponents).toHaveLength(1)
   const autoplacedSourceComponentIds = new Set(
     autoplacedSourceComponents.map(
       (component) => component.source_component_id,
@@ -237,7 +277,6 @@ test("dirty PCB trace rerender leaves stale autoplaced jumper elements", async (
       autoplacedSourceComponentIds.has(component.source_component_id!),
     )
   expect(autoplacedPcbComponents.map((component) => component.center)).toEqual([
-    { x: 0, y: INITIAL_JUMPER_Y },
     { x: 0, y: REPLACEMENT_JUMPER_Y },
   ])
   const replacementPcbComponent = autoplacedPcbComponents.find(
@@ -249,14 +288,14 @@ test("dirty PCB trace rerender leaves stale autoplaced jumper elements", async (
     .filter((port) =>
       autoplacedSourceComponentIds.has(port.source_component_id!),
     )
-  expect(autoplacedSourcePorts).toHaveLength(4)
+  expect(autoplacedSourcePorts).toHaveLength(2)
   expect(
     circuit.db.source_component_internal_connection
       .list()
       .filter((connection) =>
         autoplacedSourceComponentIds.has(connection.source_component_id),
       ),
-  ).toHaveLength(2)
+  ).toHaveLength(1)
 
   const autoplacedPcbPorts = circuit.db.pcb_port.list({
     pcb_component_id: replacementPcbComponent.pcb_component_id,
@@ -270,7 +309,7 @@ test("dirty PCB trace rerender leaves stale autoplaced jumper elements", async (
           (component) => component.pcb_component_id === pad.pcb_component_id,
         ),
       ),
-  ).toHaveLength(4)
+  ).toHaveLength(2)
 
   const autoplacedPcbPortIds = new Set(
     autoplacedPcbPorts.map((port) => port.pcb_port_id),
@@ -288,7 +327,54 @@ test("dirty PCB trace rerender leaves stale autoplaced jumper elements", async (
       ),
     )
   expect(tracesConnectedToReplacementJumper).toHaveLength(2)
+  expect(
+    circuit.db.pcb_trace
+      .list()
+      .some((trace) =>
+        trace.route.some(
+          (point) =>
+            point.route_type === "wire" &&
+            ((point.start_pcb_port_id &&
+              initialAutoplacedPcbPortIds.has(point.start_pcb_port_id)) ||
+              (point.end_pcb_port_id &&
+                initialAutoplacedPcbPortIds.has(point.end_pcb_port_id))),
+        ),
+      ),
+  ).toBe(false)
 
+  expect(
+    circuit.db.source_component.get(
+      initialAutoplacedSourceComponent.source_component_id,
+    ),
+  ).toBeUndefined()
+  expect(
+    circuit.db.pcb_component.get(
+      initialAutoplacedPcbComponent.pcb_component_id,
+    ),
+  ).toBeUndefined()
+  expect(
+    initialAutoplacedSourcePortIds.every(
+      (sourcePortId) => !circuit.db.source_port.get(sourcePortId),
+    ),
+  ).toBe(true)
+  expect(
+    initialAutoplacedInternalConnectionIds.every(
+      (internalConnectionId) =>
+        !circuit.db.source_component_internal_connection.get(
+          internalConnectionId,
+        ),
+    ),
+  ).toBe(true)
+  expect(
+    initialAutoplacedPcbPortIdList.every(
+      (pcbPortId) => !circuit.db.pcb_port.get(pcbPortId),
+    ),
+  ).toBe(true)
+  expect(
+    initialAutoplacedPcbSmtpadIds.every(
+      (pcbSmtpadId) => !circuit.db.pcb_smtpad.get(pcbSmtpadId),
+    ),
+  ).toBe(true)
   expect(
     circuit.db.source_component.get(userSourceComponent.source_component_id),
   ).toBeDefined()
@@ -296,10 +382,23 @@ test("dirty PCB trace rerender leaves stale autoplaced jumper elements", async (
     circuit.db.pcb_component.get(userPcbComponent.pcb_component_id),
   ).toBeDefined()
   expect(
+    userSourcePortIds.every((sourcePortId) =>
+      circuit.db.source_port.get(sourcePortId),
+    ),
+  ).toBe(true)
+  expect(
+    userPcbPortIds.every((pcbPortId) => circuit.db.pcb_port.get(pcbPortId)),
+  ).toBe(true)
+  expect(
+    userPcbSmtpadIds.every((pcbSmtpadId) =>
+      circuit.db.pcb_smtpad.get(pcbSmtpadId),
+    ),
+  ).toBe(true)
+  expect(
     circuit.db.source_component.get(
       reservedPrefixUserSourceComponent.source_component_id,
     ),
   ).toBeDefined()
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  expect(circuit.getCircuitJson()).toMatchPcbSnapshot(import.meta.path)
 })
