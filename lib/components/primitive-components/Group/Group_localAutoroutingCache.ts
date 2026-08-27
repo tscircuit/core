@@ -1,4 +1,5 @@
 import type { LocalCacheEngine } from "lib/local-cache-engine"
+import type { CapacityAutorouterSolverName } from "lib/utils/autorouting/CapacityMeshAutorouter"
 import type {
   SimpleRouteJson,
   SimplifiedPcbTrace,
@@ -14,14 +15,34 @@ const getFnv1aHash = (value: string): number => {
   return hash >>> 0
 }
 
-const getSrjHash = (simpleRouteJson: SimpleRouteJson): string => {
-  const serializedSrj = JSON.stringify(simpleRouteJson)
-  const hash1 = getFnv1aHash(serializedSrj)
-  const hash2 = getFnv1aHash(`${serializedSrj}${hash1}`)
+const getStringHash = (value: string): string => {
+  const hash1 = getFnv1aHash(value)
+  const hash2 = getFnv1aHash(`${value}${hash1}`)
   return `${hash1.toString(16).padStart(8, "0")}${hash2
     .toString(16)
     .padStart(8, "0")}`
 }
+
+const getSrjHash = (simpleRouteJson: SimpleRouteJson): string =>
+  getStringHash(JSON.stringify(simpleRouteJson))
+
+export interface LocalAutoroutingCacheConfig {
+  solverName: CapacityAutorouterSolverName
+  capacityDepth?: number
+  targetMinCapacity?: number
+  effort?: number
+}
+
+const getAutorouterOptionsHash = (
+  config: LocalAutoroutingCacheConfig,
+): string =>
+  getStringHash(
+    JSON.stringify({
+      capacityDepth: config.capacityDepth ?? null,
+      targetMinCapacity: config.targetMinCapacity ?? null,
+      effort: config.effort ?? null,
+    }),
+  )
 
 type CachedAutoroutingPhaseResult = SimpleRouteJson & {
   traces: SimplifiedPcbTrace[]
@@ -29,7 +50,15 @@ type CachedAutoroutingPhaseResult = SimpleRouteJson & {
 
 export const getLocalAutoroutingCacheKey = (
   simpleRouteJson: SimpleRouteJson,
-): string => `routes:core@${pkgJson.version}:srj:${getSrjHash(simpleRouteJson)}`
+  config: LocalAutoroutingCacheConfig,
+): string =>
+  [
+    `routes:core@${pkgJson.version}`,
+    "local:v1",
+    `solver:${config.solverName}`,
+    `options:${getAutorouterOptionsHash(config)}`,
+    `srj:${getSrjHash(simpleRouteJson)}`,
+  ].join(":")
 
 export const getCachedLocalAutoroutingPhaseResult = async ({
   cacheEngine,

@@ -109,7 +109,9 @@ test("built-in local autorouting caches each phase and custom algorithms bypass 
   expect(new Set(setKeys).size).toBe(2)
   for (const key of setKeys) {
     expect(key).toMatch(
-      new RegExp(`^routes:core@${pkgJson.version}:srj:[a-f0-9]{16}$`),
+      new RegExp(
+        `^routes:core@${pkgJson.version}:local:v1:solver:AutoroutingPipelineSolver7_MultiGraph:options:[a-f0-9]{16}:srj:[a-f0-9]{16}$`,
+      ),
     )
   }
 
