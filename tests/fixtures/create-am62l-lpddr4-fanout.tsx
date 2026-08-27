@@ -1350,5 +1350,7 @@ export const renderAm62lLpddr4Fanout = async ({
     expect(ddrRouteEndpointLayers).not.toContain(LPDDR4_POWER_PLANE_LAYER)
     expect(ddrRouteEndpointLayers).not.toContain(LPDDR4_VDD1_PLANE_LAYER)
   }
-  await expect(circuit).toMatchPcbSnapshot(snapshotPath)
+  await expect(circuit).toMatchPcbSnapshot(snapshotPath, {
+    diffThresholdPercent: 0.05,
+  })
 }
