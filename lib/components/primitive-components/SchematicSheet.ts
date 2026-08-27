@@ -1,5 +1,6 @@
 import { schematicSheetProps } from "@tscircuit/props"
 import { getBoundsForSchematic } from "lib/utils/autorouting/getBoundsForSchematic"
+import { resolveCircuitJsonSchematicSheetProperties } from "lib/utils/schematic/get-circuit-json-schematic-sheet-size"
 import { insertSchematicElementOutsideSheetWarnings } from "lib/utils/schematic/insertSchematicElementOutsideSheetWarnings"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
@@ -44,11 +45,16 @@ export class SchematicSheet extends PrimitiveComponent<
     const name = props.name ?? props.displayName ?? `Sheet ${sheetIndex + 1}`
     const displayName = props.displayName ?? name
     this.resolvedSchematicSheetDisplayName = displayName
+    const resolvedSheetProperties =
+      resolveCircuitJsonSchematicSheetProperties(props)
 
     const schematicSheet = db.schematic_sheet.insert({
       name,
       display_name: displayName,
       sheet_index: sheetIndex,
+      sheet_size: resolvedSheetProperties.sheetSize,
+      sheet_width: resolvedSheetProperties.sheetWidth,
+      sheet_height: resolvedSheetProperties.sheetHeight,
       subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
     } as any)
 
@@ -60,6 +66,9 @@ export class SchematicSheet extends PrimitiveComponent<
     if (!this.schematic_sheet_id) return
 
     const { db } = this.root!
+    const resolvedSheetProperties = resolveCircuitJsonSchematicSheetProperties(
+      this._parsedProps,
+    )
     const schematicElements = [
       ...db.schematic_component.list(),
       ...db.schematic_port.list(),
@@ -99,6 +108,8 @@ export class SchematicSheet extends PrimitiveComponent<
       schematicSheetId: this.schematic_sheet_id,
       schematicSheetName: this.resolvedSchematicSheetDisplayName,
       schematicSheetCenter,
+      sheetWidth: resolvedSheetProperties.sheetWidth,
+      sheetHeight: resolvedSheetProperties.sheetHeight,
     })
   }
 }

@@ -4,6 +4,7 @@ import { renderAm62lLpddr4TwoBusFanout } from "tests/fixtures/create-am62l-lpddr
 test("routes two DDR byte buses with the regular fanout solver", async () => {
   await renderAm62lLpddr4TwoBusFanout({
     fanoutSolverLabel: "@tscircuit/fanout-solver",
+    includePowerPlaneFanout: true,
     snapshotPath: import.meta.path,
   })
 }, 300_000)

@@ -3,15 +3,11 @@ import {
   type SchematicElementWithBounds,
   getSchematicElementBounds,
 } from "@tscircuit/circuit-json-util"
-
 type Point = { x: number; y: number }
 
 type CheckedSchematicElement = SchematicElementWithBounds
 
-// These dimensions match circuit-to-svg's A4 landscape schematic sheet.
 const SCHEMATIC_UNIT_TO_MM = 10.16 / 1.1
-export const DEFAULT_SCHEMATIC_SHEET_WIDTH = 297 / SCHEMATIC_UNIT_TO_MM
-export const DEFAULT_SCHEMATIC_SHEET_HEIGHT = 210 / SCHEMATIC_UNIT_TO_MM
 const SCHEMATIC_SHEET_INNER_MARGIN = 5 / SCHEMATIC_UNIT_TO_MM
 
 const BOUNDS_EPSILON = 1e-6
@@ -34,28 +30,34 @@ export const insertSchematicElementOutsideSheetWarnings = ({
   schematicSheetId,
   schematicSheetName,
   schematicSheetCenter,
+  sheetWidth,
+  sheetHeight,
 }: {
   db: CircuitJsonUtilObjects
   schematicSheetId: string
   schematicSheetName: string
   schematicSheetCenter: Point
+  sheetWidth: number
+  sheetHeight: number
 }): void => {
+  const sheetWidthInSchematicUnits = sheetWidth / SCHEMATIC_UNIT_TO_MM
+  const sheetHeightInSchematicUnits = sheetHeight / SCHEMATIC_UNIT_TO_MM
   const sheetContentBounds = {
     minX:
       schematicSheetCenter.x -
-      DEFAULT_SCHEMATIC_SHEET_WIDTH / 2 +
+      sheetWidthInSchematicUnits / 2 +
       SCHEMATIC_SHEET_INNER_MARGIN,
     maxX:
       schematicSheetCenter.x +
-      DEFAULT_SCHEMATIC_SHEET_WIDTH / 2 -
+      sheetWidthInSchematicUnits / 2 -
       SCHEMATIC_SHEET_INNER_MARGIN,
     minY:
       schematicSheetCenter.y -
-      DEFAULT_SCHEMATIC_SHEET_HEIGHT / 2 +
+      sheetHeightInSchematicUnits / 2 +
       SCHEMATIC_SHEET_INNER_MARGIN,
     maxY:
       schematicSheetCenter.y +
-      DEFAULT_SCHEMATIC_SHEET_HEIGHT / 2 -
+      sheetHeightInSchematicUnits / 2 -
       SCHEMATIC_SHEET_INNER_MARGIN,
   }
   const checkedElements: CheckedSchematicElement[] = [
