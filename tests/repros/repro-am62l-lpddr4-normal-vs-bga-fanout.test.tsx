@@ -1,6 +1,11 @@
 import { expect, test } from "bun:test"
+import type { AnyCircuitElement } from "circuit-json"
 import { convertCircuitJsonToPcbSvg } from "circuit-to-svg"
 import { stackSvgsHorizontally, stackSvgsVertically } from "stack-svgs"
+import {
+  altiumReferenceViewport,
+  getAltiumReferenceCircuitJson,
+} from "tests/fixtures/am62l-lpddr4-full-bga/altium-reference"
 import { Am62lLpddr4FullBgaBoard } from "tests/fixtures/am62l-lpddr4-full-bga/full-bga-board"
 import "tests/fixtures/extend-expect-any-svg"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
@@ -29,6 +34,17 @@ const createLabeledPanelSvg = (label: string, pcbSvg: string) =>
     normalizeSize: false,
   })
 
+const withoutPcbText = (circuitJson: AnyCircuitElement[]) =>
+  circuitJson.filter(
+    (element) =>
+      ![
+        "pcb_copper_text",
+        "pcb_fabrication_note_text",
+        "pcb_note_text",
+        "pcb_silkscreen_text",
+      ].includes(element.type),
+  )
+
 const renderFullBoard = async (fanoutSolver: "normal" | "bga") => {
   const { circuit } = getTestFixture()
   circuit.add(<Am62lLpddr4FullBgaBoard fanoutSolver={fanoutSolver} />)
@@ -36,25 +52,36 @@ const renderFullBoard = async (fanoutSolver: "normal" | "bga") => {
   return circuit
 }
 
-test("compares normal and BGA fanout on the full AM62L to LPDDR4 interface", async () => {
+test("compares default, BGA, and Altium fanout on the full AM62L to LPDDR4 interface", async () => {
   const normalCircuit = await renderFullBoard("normal")
   const bgaCircuit = await renderFullBoard("bga")
+  const altiumReferenceSvg = convertCircuitJsonToPcbSvg(
+    withoutPcbText(getAltiumReferenceCircuitJson()),
+    {
+      width: 800,
+      height: 600,
+      viewport: altiumReferenceViewport,
+    },
+  )
   const comparisonSvg = stackSvgsHorizontally(
     [
       createLabeledPanelSvg(
-        "Normal fanout solver",
-        convertCircuitJsonToPcbSvg(normalCircuit.getCircuitJson()),
+        "Default fanout solver",
+        convertCircuitJsonToPcbSvg(
+          withoutPcbText(normalCircuit.getCircuitJson()),
+        ),
       ),
       createLabeledPanelSvg(
         "BGA fanout solver",
-        convertCircuitJsonToPcbSvg(bgaCircuit.getCircuitJson()),
+        convertCircuitJsonToPcbSvg(withoutPcbText(bgaCircuit.getCircuitJson())),
       ),
+      createLabeledPanelSvg("Altium reference", altiumReferenceSvg),
     ],
     {
       gap: 16,
       normalizeSize: false,
       rootAttributes: {
-        "data-testid": "am62l-lpddr4-normal-vs-bga-fanout",
+        "data-testid": "am62l-lpddr4-default-vs-bga-vs-altium-fanout",
       },
     },
   )
