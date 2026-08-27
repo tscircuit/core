@@ -36,8 +36,8 @@
     "@tscircuit/alphabet": "0.0.25",
     "@tscircuit/bga-fanout-solver": "github:tscircuit/bga-fanout-solver#03c67d2b00925a3ac24a822cd5a071d8ac2ad087",
     "@tscircuit/capacity-autorouter": "^0.0.845",
-    "@tscircuit/checks": "https://pkg.pr.new/@tscircuit/checks@497617d",
-    "@tscircuit/circuit-json-util": "^0.0.106",
+    "@tscircuit/checks": "https://pkg.pr.new/@tscircuit/checks@245",
+    "@tscircuit/circuit-json-util": "https://pkg.pr.new/@tscircuit/circuit-json-util@121",
     "@tscircuit/common": "^0.0.20",
     "@tscircuit/copper-pour-solver": "https://pkg.pr.new/@tscircuit/copper-pour-solver@e9689c6",
     "@tscircuit/create-fdm-enclosure": "0.0.4",
@@ -71,7 +71,7 @@
     "chokidar-cli": "^3.0.0",
     "circuit-json": "^0.0.476",
     "circuit-json-to-bpc": "^0.0.13",
-    "circuit-json-to-connectivity-map": "^0.0.30",
+    "circuit-json-to-connectivity-map": "https://pkg.pr.new/circuit-json-to-connectivity-map@38",
     "circuit-json-to-gltf": "^0.0.118",
     "circuit-json-to-spice": "^0.0.45",
     "circuit-to-svg": "^0.0.407",
@@ -131,7 +131,7 @@
     "zod": "^3.25.67"
   },
   "overrides": {
-    "@tscircuit/circuit-json-util": "^0.0.106",
+    "@tscircuit/circuit-json-util": "https://pkg.pr.new/@tscircuit/circuit-json-util@121",
     "@tscircuit/props": "^0.0.637",
     "circuit-json": "^0.0.476"
   }
