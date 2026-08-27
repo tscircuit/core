@@ -16,7 +16,6 @@ import {
 } from "@tscircuit/props"
 import {
   type AnyCircuitElement,
-  type LayerRef,
   type PcbTrace,
   type PcbVia,
   type SchematicComponent,
@@ -54,7 +53,6 @@ import { getLocalAutoroutingStages } from "lib/utils/autorouting/local-autoroute
 import { shouldSkipAutoroutingBecauseOfPlacementErrors } from "lib/utils/autorouting/should-skip-autorouting-because-of-placement-errors"
 import { shouldSkipAutoroutingBecauseOfTraceLengthViolations } from "lib/utils/autorouting/should-skip-autorouting-because-of-trace-length-violations"
 import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
-import { getAutoroutedViaLayers } from "lib/utils/getViaSpanLayers"
 import {
   GROUND_NET_REGEX,
   POWER_NET_REGEX,
@@ -110,8 +108,16 @@ import { Group_syncFanoutExitsWithGlobalConnections } from "./Group_syncFanoutEx
 import type { ISubcircuit } from "./Subcircuit/ISubcircuit"
 import { addPortIdsToTracesAtJumperPads } from "./add-port-ids-to-traces-at-jumper-pads"
 import { claimSrjAssignablePcbViasTraversedByRoute } from "./claim-srj-assignable-pcb-vias-traversed-by-route"
+import {
+  createPcbTraceSectionIdAllocator,
+  type PcbTraceId,
+} from "./create-pcb-trace-section-id-allocator"
 import { findFanoutPhaseSeparationConflict } from "./find-fanout-phase-separation-conflict"
 import { getAccumulatedPcbTracesWithStageOutputReplacements } from "./get-accumulated-pcb-traces-with-stage-output-replacements"
+import {
+  assertNoConflictingSharedViaDimensions,
+  getAutoroutedViaRenderMetadata,
+} from "./get-autorouted-via-render-metadata"
 import { getSourceTraceIdForRoutedTrace } from "./get-source-trace-id-for-routed-trace"
 import { insertAutoplacedJumpers } from "./insert-autoplaced-jumpers"
 import {
@@ -269,7 +275,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     output_simple_route_json?: SimpleRouteJson
     output_pcb_traces?: (PcbTrace | PcbVia)[]
     // PCB traces that are being re-routed
-    pcb_trace_ids_to_be_replaced?: string[]
+    pcb_trace_ids_to_be_replaced?: PcbTraceId[]
     output_jumpers?: Array<{
       jumper_footprint: string
       center: { x: number; y: number }
@@ -282,6 +288,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       }>
     }>
   } | null = null
+
+  /** Exact DB IDs inserted from output_pcb_traces, including split sections. */
+  _materializedPcbTraceIdsFromPcbTraceOutput = new Set<PcbTraceId>()
 
   get config() {
     return {
@@ -1243,7 +1252,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         layer: string
       }>
     }> = []
-    const pcbTraceIdsToDelete = new Set<string>()
+    const pcbTraceIdsToDelete = new Set<PcbTraceId>()
     const existingRerouteSeedTraces =
       getExistingSimplifiedPcbTracesForReroute(this)
 
@@ -1963,6 +1972,18 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       : db.pcb_board.list()[0]
     const routedViaHoleDiameter = board?.min_via_hole_diameter ?? holeDiameter
     const routedViaPadDiameter = board?.min_via_pad_diameter ?? padDiameter
+    const autoroutedViaRenderOptions = {
+      defaultHoleDiameter: routedViaHoleDiameter,
+      defaultOuterDiameter: routedViaPadDiameter,
+      layerCount: this._getSubcircuitLayerCount(),
+      allowBlindAndBuriedVias: board?.allow_blind_and_buried_vias ?? false,
+    }
+
+    // Validate shared via metadata before replacing any existing copper.
+    assertNoConflictingSharedViaDimensions({
+      outputPcbTraces: output_pcb_traces,
+      ...autoroutedViaRenderOptions,
+    })
 
     // First, create jumper components from getOutputJumpers() result
     if (output_jumpers && output_jumpers.length > 0) {
@@ -1977,8 +1998,38 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       group: this,
       outputPcbTraces: output_pcb_traces,
       pcbTraceIdsToReplace: pcb_trace_ids_to_be_replaced,
+      ownedPcbTraceIds: this._materializedPcbTraceIdsFromPcbTraceOutput,
     })
+    this._materializedPcbTraceIdsFromPcbTraceOutput.clear()
 
+    const getUniqueInsertedPcbTraceId = createPcbTraceSectionIdAllocator({
+      existingPcbTraceIds: db.pcb_trace
+        .list()
+        .map((trace) => trace.pcb_trace_id),
+      requestedPcbTraceIds: output_pcb_traces.flatMap((trace) =>
+        trace.type === "pcb_trace" ? [trace.pcb_trace_id] : [],
+      ),
+    })
+    type PcbTraceInsertInput = Parameters<typeof db.pcb_trace.insert>[0]
+    const insertPcbTraceWithLogicalId = (
+      trace: PcbTraceInsertInput & Pick<PcbTrace, "pcb_trace_id">,
+    ) => {
+      // circuit-json-util accepts an explicit id at runtime even though its
+      // table insert type omits generated id fields. Reroute ids are observable
+      // and must remain stable, so keep the assertion at this boundary only.
+      return db.pcb_trace.insert(trace as PcbTraceInsertInput)
+    }
+    const insertedPcbTraceIdByOutputTrace = new Map<
+      PcbTrace,
+      PcbTrace["pcb_trace_id"]
+    >()
+    const insertedPcbTraceIdByRoutePoint = new Map<
+      PcbTrace["route"][number],
+      PcbTrace["pcb_trace_id"]
+    >()
+
+    // A solver can split one trace into sections that share a boundary via.
+    const insertedViaKeys = new Set<string>()
     for (const pcb_trace of output_pcb_traces) {
       // vias can be included
       if (pcb_trace.type !== "pcb_trace") continue
@@ -2038,11 +2089,35 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             },
             subcircuit_id: this.subcircuit_id,
           })
-          const insertedPcbTrace = db.pcb_trace.insert({
-            ...pcb_trace,
+          const {
+            type: _outputType,
+            pcb_trace_id: _outputPcbTraceId,
+            ...pcbTraceInsertProps
+          } = pcb_trace
+          const insertedPcbTraceId = getUniqueInsertedPcbTraceId(
+            pcb_trace.pcb_trace_id,
+          )
+          const insertedPcbTrace = insertPcbTraceWithLogicalId({
+            ...pcbTraceInsertProps,
+            pcb_trace_id: insertedPcbTraceId,
             source_trace_id: sourceTraceId,
             route: circuitJsonSegment,
           })
+          this._materializedPcbTraceIdsFromPcbTraceOutput.add(
+            insertedPcbTrace.pcb_trace_id,
+          )
+          if (!insertedPcbTraceIdByOutputTrace.has(pcb_trace)) {
+            insertedPcbTraceIdByOutputTrace.set(
+              pcb_trace,
+              insertedPcbTrace.pcb_trace_id,
+            )
+          }
+          for (const routePoint of segment) {
+            insertedPcbTraceIdByRoutePoint.set(
+              routePoint,
+              insertedPcbTrace.pcb_trace_id,
+            )
+          }
           claimSrjAssignablePcbViasTraversedByRoute({
             db,
             pcbTrace: insertedPcbTrace,
@@ -2086,37 +2161,25 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
         for (const point of pcb_trace.route) {
           if (point.route_type === "via") {
-            const routedViaPoint = point as typeof point & {
-              via_diameter?: number
-              via_hole_diameter?: number
-              outer_diameter?: number
-              hole_diameter?: number
-              layers?: string[]
-            }
-            const fromLayer = point.from_layer as LayerRef
-            const toLayer = point.to_layer as LayerRef
+            const viaMetadata = getAutoroutedViaRenderMetadata({
+              pcbTraceId: pcb_trace.pcb_trace_id,
+              point,
+              ...autoroutedViaRenderOptions,
+            })
+            if (insertedViaKeys.has(viaMetadata.logicalKey)) continue
+            insertedViaKeys.add(viaMetadata.logicalKey)
             db.pcb_via.insert({
-              pcb_trace_id: pcb_trace.pcb_trace_id,
+              pcb_trace_id:
+                insertedPcbTraceIdByRoutePoint.get(point) ??
+                insertedPcbTraceIdByOutputTrace.get(pcb_trace) ??
+                pcb_trace.pcb_trace_id,
               x: point.x,
               y: point.y,
-              hole_diameter:
-                routedViaPoint.via_hole_diameter ??
-                routedViaPoint.hole_diameter ??
-                routedViaHoleDiameter,
-              outer_diameter:
-                routedViaPoint.via_diameter ??
-                routedViaPoint.outer_diameter ??
-                routedViaPadDiameter,
-              layers: getAutoroutedViaLayers({
-                fromLayer,
-                toLayer,
-                layerCount: this._getSubcircuitLayerCount(),
-                allowBlindAndBuriedVias:
-                  board?.allow_blind_and_buried_vias ?? false,
-                physicalLayers: routedViaPoint.layers as LayerRef[] | undefined,
-              }),
-              from_layer: fromLayer,
-              to_layer: toLayer,
+              hole_diameter: viaMetadata.holeDiameter,
+              outer_diameter: viaMetadata.outerDiameter,
+              layers: viaMetadata.layers,
+              from_layer: viaMetadata.fromLayer,
+              to_layer: viaMetadata.toLayer,
               subcircuit_id: this.subcircuit_id!,
               pcb_group_id: this.pcb_group_id ?? undefined,
               subcircuit_connectivity_map_key: subcircuitConnectivityMapKey,

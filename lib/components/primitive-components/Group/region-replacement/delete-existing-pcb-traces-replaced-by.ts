@@ -1,7 +1,9 @@
 import type { PcbTrace, PcbVia } from "circuit-json"
 import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
+import type { PcbTraceId } from "../create-pcb-trace-section-id-allocator"
 import type { Group } from "../Group"
 import { getExistingPcbTracesForReroute } from "./get-existing-pcb-traces-for-reroute"
+import { getRelevantSubcircuitIdsForReroute } from "./get-relevant-subcircuit-ids-for-reroute"
 import { getSourceTraceIdsFromRerouteName } from "./get-source-trace-ids-from-reroute-name"
 
 /**
@@ -30,15 +32,17 @@ export function deleteExistingPcbTracesReplacedBy({
   group,
   outputPcbTraces,
   pcbTraceIdsToReplace = [],
+  ownedPcbTraceIds = new Set<PcbTraceId>(),
 }: {
   group: Group<any>
   outputPcbTraces: Array<SimplifiedPcbTrace | PcbTrace | PcbVia>
-  pcbTraceIdsToReplace?: string[]
+  pcbTraceIdsToReplace?: PcbTraceId[]
+  ownedPcbTraceIds?: ReadonlySet<PcbTraceId>
 }) {
   const db = group.root?.db
   if (!db) return
 
-  const replacementPcbTraceIds = new Set<string>(pcbTraceIdsToReplace)
+  const replacementPcbTraceIds = new Set<PcbTraceId>(pcbTraceIdsToReplace)
   const replacementSourceTraceIds = new Set<string>()
 
   for (const trace of outputPcbTraces) {
@@ -65,21 +69,42 @@ export function deleteExistingPcbTracesReplacedBy({
   }
 
   if (
+    ownedPcbTraceIds.size === 0 &&
     replacementPcbTraceIds.size === 0 &&
     replacementSourceTraceIds.size === 0
   ) {
     return
   }
 
-  const tracesToDelete = getExistingPcbTracesForReroute(group).filter(
-    (trace) =>
+  const tracesToDeleteByPcbTraceId = new Map<PcbTraceId, PcbTrace>()
+  const relevantSubcircuitIds = getRelevantSubcircuitIdsForReroute(group)
+  for (const ownedPcbTraceId of ownedPcbTraceIds) {
+    const ownedPcbTrace = db.pcb_trace.get(ownedPcbTraceId)
+    const ownedPcbTraceIsInScope =
+      !group.subcircuit_id ||
+      Boolean(
+        ownedPcbTrace?.subcircuit_id &&
+          relevantSubcircuitIds.has(ownedPcbTrace.subcircuit_id),
+      )
+    if (ownedPcbTrace && ownedPcbTraceIsInScope) {
+      tracesToDeleteByPcbTraceId.set(ownedPcbTraceId, ownedPcbTrace)
+    }
+  }
+
+  for (const trace of getExistingPcbTracesForReroute(group)) {
+    if (
       replacementPcbTraceIds.has(trace.pcb_trace_id) ||
       Boolean(
         trace.source_trace_id &&
           trace.subcircuit_id === group.subcircuit_id &&
           replacementSourceTraceIds.has(trace.source_trace_id),
-      ),
-  )
+      )
+    ) {
+      tracesToDeleteByPcbTraceId.set(trace.pcb_trace_id, trace)
+    }
+  }
+
+  const tracesToDelete = [...tracesToDeleteByPcbTraceId.values()]
 
   if (tracesToDelete.length === 0) return
 
