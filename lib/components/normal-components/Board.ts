@@ -4,6 +4,7 @@ import {
   runAllPinSpecificationChecks,
   runAllPlacementChecks,
   runAllRoutingChecks,
+  runAllSchematicChecks,
 } from "@tscircuit/checks"
 import { jlcMinTolerances } from "@tscircuit/jlcpcb-manufacturing-specs"
 import { getBoundsFromPoints } from "@tscircuit/math-utils"
@@ -451,6 +452,13 @@ export class Board
     const pcbBoardFromCircuitJson = circuitJsonElements?.find(
       (elm) => elm.type === "pcb_board",
     )
+    const rawProps = this.props
+    const resolvedIsViaInPadAllowed =
+      rawProps.isViaInPadAllowed ??
+      pcbBoardFromCircuitJson?.is_via_in_pad_allowed
+    const resolvedAllowBlindAndBuriedVias =
+      rawProps.allowBlindAndBuriedVias ??
+      pcbBoardFromCircuitJson?.allow_blind_and_buried_vias
 
     // Initialize with minimal dimensions if not provided
     // They will be updated in PcbBoardAutoSize phase
@@ -556,8 +564,11 @@ export class Board
         y: point.y + (props.outlineOffsetY ?? 0) + outlineTranslation.y,
       })),
       material: props.material,
-      ...(props.isViaInPadAllowed !== undefined && {
-        is_via_in_pad_allowed: props.isViaInPadAllowed,
+      ...(resolvedIsViaInPadAllowed !== undefined && {
+        is_via_in_pad_allowed: resolvedIsViaInPadAllowed,
+      }),
+      ...(resolvedAllowBlindAndBuriedVias !== undefined && {
+        allow_blind_and_buried_vias: resolvedAllowBlindAndBuriedVias,
       }),
       ...(props.solderMaskColor !== undefined && {
         solder_mask_color: props.solderMaskColor,
@@ -604,8 +615,6 @@ export class Board
   }
 
   doInitialPcbDesignRuleChecks() {
-    if (this.root?.pcbDisabled) return
-
     super.doInitialPcbDesignRuleChecks()
     this.updatePcbDesignRuleChecks()
   }
@@ -625,6 +634,7 @@ export class Board
       this.root?.pcbRoutingDisabled ||
       this.getInheritedProperty("routingDisabled")
     const pcbDisabled = this.root?.pcbDisabled
+    const schematicDisabled = this.root?.schematicDisabled
 
     const drcChecksDisabled =
       this.root?.platform?.drcChecksDisabled ??
@@ -647,6 +657,7 @@ export class Board
       !drcChecksDisabled && !netlistDrcChecksDisabled
     const shouldRunPinSpecificationChecks =
       !drcChecksDisabled && !pinSpecificationDrcChecksDisabled
+    const shouldRunSchematicChecks = !drcChecksDisabled && !schematicDisabled
     const shouldRunPlacementChecks =
       !drcChecksDisabled && !pcbDisabled && !placementDrcChecksDisabled
     const shouldRunRoutingChecks =
@@ -721,6 +732,12 @@ export class Board
           runAllPinSpecificationChecks(circuitJson) as Promise<
             AnyCircuitElement[]
           >,
+        )
+      }
+
+      if (shouldRunSchematicChecks) {
+        checksToRun.push(
+          runAllSchematicChecks(circuitJson) as Promise<AnyCircuitElement[]>,
         )
       }
 

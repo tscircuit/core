@@ -37,6 +37,8 @@ export type SimplifiedPcbTrace = Omit<
         y: number
         to_layer: string
         from_layer: string
+        /** Physical copper layers occupied by the drilled barrel. */
+        layers?: string[]
         via_diameter?: number
         via_hole_diameter?: number
       }
@@ -146,6 +148,8 @@ export type SimpleRouteJson = Omit<
   | "buses"
 > & {
   layerCount: number
+  /** Whether autorouters may use vias that do not span the full board stack. */
+  allowBlindAndBuriedVias?: boolean
   minTraceWidth: number
   nominalTraceWidth?: number
   /** @deprecated Use `min_via_pad_diameter` / `minViaPadDiameter` instead. */

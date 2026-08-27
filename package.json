@@ -1,7 +1,7 @@
 {
   "name": "@tscircuit/core",
   "type": "module",
-  "version": "0.0.1776",
+  "version": "0.0.1785",
   "types": "dist/index.d.ts",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -39,9 +39,9 @@
     "@tscircuit/checks": "https://pkg.pr.new/@tscircuit/checks@245",
     "@tscircuit/circuit-json-util": "https://pkg.pr.new/@tscircuit/circuit-json-util@121",
     "@tscircuit/common": "^0.0.20",
-    "@tscircuit/copper-pour-solver": "https://pkg.pr.new/@tscircuit/copper-pour-solver@e9689c6",
+    "@tscircuit/copper-pour-solver": "^0.0.51",
     "@tscircuit/create-fdm-enclosure": "0.0.4",
-    "@tscircuit/fanout-solver": "0.0.38",
+    "@tscircuit/fanout-solver": "0.0.39",
     "@tscircuit/footprinter": "^0.0.426",
     "@tscircuit/image-utils": "^0.0.8",
     "@tscircuit/implicit-copper-pour-solver": "github:tscircuit/implicit-copper-pour-solver#47f930139fe969550e049aa7fb741bbcb1f08569",
@@ -54,9 +54,9 @@
     "@tscircuit/math-utils": "^0.0.36",
     "@tscircuit/miniflex": "^0.0.4",
     "@tscircuit/ngspice-spice-engine": "^0.0.20",
-    "@tscircuit/props": "^0.0.637",
+    "@tscircuit/props": "^0.0.640",
     "@tscircuit/schematic-match-adapt": "^0.0.18",
-    "@tscircuit/schematic-trace-solver": "^0.0.164",
+    "@tscircuit/schematic-trace-solver": "^0.0.166",
     "@tscircuit/solver-utils": "^0.0.16",
     "@tscircuit/soup-util": "^0.0.41",
     "@tscircuit/winding-breakout-point-solver": "github:tscircuit/winding-breakout-point-solver#202dbe9eb0088633b6fa094120dba6f2f41f8803",
@@ -69,12 +69,12 @@
     "bun-match-svg": "0.0.12",
     "calculate-elbow": "^0.0.12",
     "chokidar-cli": "^3.0.0",
-    "circuit-json": "^0.0.476",
+    "circuit-json": "^0.0.479",
     "circuit-json-to-bpc": "^0.0.13",
     "circuit-json-to-connectivity-map": "https://pkg.pr.new/circuit-json-to-connectivity-map@38",
     "circuit-json-to-gltf": "^0.0.118",
     "circuit-json-to-spice": "^0.0.45",
-    "circuit-to-svg": "^0.0.407",
+    "circuit-to-svg": "^0.0.410",
     "concurrently": "^9.1.2",
     "connectivity-map": "^1.0.0",
     "debug": "^4.3.6",
@@ -132,7 +132,7 @@
   },
   "overrides": {
     "@tscircuit/circuit-json-util": "https://pkg.pr.new/@tscircuit/circuit-json-util@121",
-    "@tscircuit/props": "^0.0.637",
-    "circuit-json": "^0.0.476"
+    "@tscircuit/props": "^0.0.640",
+    "circuit-json": "^0.0.479"
   }
 }

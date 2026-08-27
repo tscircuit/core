@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { TscircuitAutorouter } from "lib/utils/autorouting/CapacityMeshAutorouter"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
-import { getLocalAutorouterStrategy } from "lib/utils/autorouting/localAutorouterStrategies"
+import { getLocalAutorouterStrategy } from "lib/utils/autorouting/local-autorouter-strategies"
 
 test("the default local autorouter strategy preserves existing behavior", () => {
   const simpleRouteJson: SimpleRouteJson = {

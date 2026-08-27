@@ -22,6 +22,7 @@ export interface LocalAutorouterStrategyContext {
   busFanoutDirections?: AutoroutingPhaseProps["busFanoutDirections"]
   fanoutBounds?: SimpleRouteBounds
   fanoutRoutingLayers?: string[]
+  allowBlindAndBuriedVias?: boolean
   componentNamesById?: ReadonlyMap<string, string>
   onSolverStarted?: (details: {
     solverName: SolverName
@@ -65,6 +66,7 @@ const createFanoutAutorouterStrategy = (
     busFanoutDirections,
     fanoutBounds,
     fanoutRoutingLayers,
+    allowBlindAndBuriedVias,
     componentNamesById,
     onSolverStarted,
   }) =>
@@ -73,6 +75,7 @@ const createFanoutAutorouterStrategy = (
       busFanoutDirections,
       fanoutBounds,
       fanoutRoutingLayers,
+      allowBlindAndBuriedVias,
       componentNamesById,
       onSolverStarted,
     }),
