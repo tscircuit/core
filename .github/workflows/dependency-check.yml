@@ -13,6 +13,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Reject preview package dependencies
+        run: |
+          if grep -nF "pkg.pr.new" package.json; then
+            echo "::error::Replace pkg.pr.new dependency specs with published package versions before merging."
+            exit 1
+          fi
+
       - name: Setup bun
         uses: oven-sh/setup-bun@v2
         with:
