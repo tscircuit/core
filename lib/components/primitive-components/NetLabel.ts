@@ -14,15 +14,22 @@ import {
 import { calculateElbow } from "calculate-elbow"
 import { convertFacingDirectionToElbowDirection } from "lib/utils/schematic/convertFacingDirectionToElbowDirection"
 import { getEnteringEdgeFromDirection } from "lib/utils/schematic/getEnteringEdgeFromDirection"
+import { z } from "zod"
 
-export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
+const netLabelPropsWithDisplayName = netLabelProps.extend({
+  displayName: z.string().optional(),
+})
+
+export class NetLabel extends PrimitiveComponent<
+  typeof netLabelPropsWithDisplayName
+> {
   source_net_label_id?: string
   schematic_net_label_id?: string
 
   get config() {
     return {
       componentName: "NetLabel",
-      zodProps: netLabelProps,
+      zodProps: netLabelPropsWithDisplayName,
     }
   }
 
@@ -128,14 +135,15 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
     )! as Net
 
     const anchorSide = this._getAnchorSide()
+    const displayText = props.displayName ?? props.net!
     const center = computeSchematicNetLabelCenter({
       anchor_position: anchorPos,
       anchor_side: anchorSide,
-      text: props.net!,
+      text: displayText,
     })
 
     const netLabel = db.schematic_net_label.insert({
-      text: props.net!,
+      text: displayText,
       source_net_id: net.source_net_id!,
       anchor_position: anchorPos,
       center,
