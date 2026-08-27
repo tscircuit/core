@@ -1,9 +1,9 @@
 import { test } from "bun:test"
+import { renderAm62lLpddr4Fanout } from "tests/fixtures/create-am62l-lpddr4-fanout"
 import { createBgaFanoutAlgorithm } from "tests/fixtures/create-bga-fanout-algorithm"
-import { renderAm62lLpddr4TwoBusFanout } from "tests/fixtures/create-am62l-lpddr4-two-bus-fanout"
 
 test("routes two DDR byte buses with bga-fanout-solver", async () => {
-  await renderAm62lLpddr4TwoBusFanout({
+  await renderAm62lLpddr4Fanout({
     fanoutAlgorithmFn: createBgaFanoutAlgorithm,
     fanoutSolverLabel: "@tscircuit/bga-fanout-solver",
     snapshotPath: import.meta.path,
