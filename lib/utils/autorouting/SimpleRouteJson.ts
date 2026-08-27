@@ -3,9 +3,17 @@ import type {
   SimplifiedPcbTrace as AutorouterSimplifiedPcbTrace,
 } from "@tscircuit/capacity-autorouter"
 import type { PcbGroup } from "circuit-json"
-import type { CircuitJsonMetadata, Obstacle } from "../obstacles/types"
+import type {
+  CircuitJsonMetadata,
+  Obstacle,
+  ObstacleRole,
+} from "../obstacles/types"
 
-export type { CircuitJsonMetadata, Obstacle } from "../obstacles/types"
+export type {
+  CircuitJsonMetadata,
+  Obstacle,
+  ObstacleRole,
+} from "../obstacles/types"
 
 export type PcbGroupId = PcbGroup["pcb_group_id"]
 export type SimpleRouteBounds = {

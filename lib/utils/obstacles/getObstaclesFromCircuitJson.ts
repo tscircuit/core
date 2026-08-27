@@ -129,6 +129,7 @@ export const getObstaclesFromCircuitJson = (
         obstacles.push({
           circuitJsonMetadata: pcbSmtPadCircuitJsonMetadata,
           componentId: pcbComponentId,
+          obstacleRole: "pad",
           type: "rect",
           shape: "circle",
           layers: [element.layer],
@@ -144,6 +145,7 @@ export const getObstaclesFromCircuitJson = (
         obstacles.push({
           circuitJsonMetadata: pcbSmtPadCircuitJsonMetadata,
           componentId: pcbComponentId,
+          obstacleRole: "pad",
           type: "rect",
           layers: [element.layer],
           center: {
@@ -167,6 +169,7 @@ export const getObstaclesFromCircuitJson = (
         obstacles.push({
           circuitJsonMetadata: pcbSmtPadCircuitJsonMetadata,
           componentId: pcbComponentId,
+          obstacleRole: "pad",
           type: "rect",
           layers: [element.layer],
           center: rect.center,
@@ -181,6 +184,7 @@ export const getObstaclesFromCircuitJson = (
         obstacles.push({
           circuitJsonMetadata: pcbSmtPadCircuitJsonMetadata,
           componentId: pcbComponentId,
+          obstacleRole: "pad",
           type: "rect",
           layers: [element.layer],
           center: {
@@ -200,6 +204,7 @@ export const getObstaclesFromCircuitJson = (
           obstacles.push({
             circuitJsonMetadata: pcbSmtPadCircuitJsonMetadata,
             componentId: pcbComponentId,
+            obstacleRole: "pad",
             type: "rect",
             layers: [element.layer],
             ...axisAlignedRect,
@@ -216,6 +221,7 @@ export const getObstaclesFromCircuitJson = (
           obstacles.push({
             circuitJsonMetadata: pcbSmtPadCircuitJsonMetadata,
             componentId: pcbComponentId,
+            obstacleRole: "pad",
             type: "rect",
             layers: [element.layer],
             center: rect.center,
@@ -229,6 +235,7 @@ export const getObstaclesFromCircuitJson = (
       if (element.shape === "circle") {
         obstacles.push({
           componentId: pcbComponentId,
+          obstacleRole: "keepout",
           // @ts-ignore
           type: "oval",
           layers: element.layers,
@@ -243,6 +250,7 @@ export const getObstaclesFromCircuitJson = (
       } else if (element.shape === "rect") {
         obstacles.push({
           componentId: pcbComponentId,
+          obstacleRole: "keepout",
           type: "rect",
           layers: element.layers,
           center: {
@@ -258,6 +266,7 @@ export const getObstaclesFromCircuitJson = (
       if (element.shape === "rect") {
         obstacles.push({
           componentId: pcbComponentId,
+          obstacleRole: "keepout",
           type: "rect",
           layers: everyLayer,
           center: {
@@ -280,6 +289,7 @@ export const getObstaclesFromCircuitJson = (
         for (const rect of approximatingRects) {
           obstacles.push({
             componentId: pcbComponentId,
+            obstacleRole: "keepout",
             type: "rect",
             layers: everyLayer,
             center: rect.center,
@@ -296,6 +306,7 @@ export const getObstaclesFromCircuitJson = (
         for (const rect of approximatingRects) {
           obstacles.push({
             componentId: pcbComponentId,
+            obstacleRole: "keepout",
             type: "rect",
             layers: everyLayer,
             center: rect.center,
@@ -396,6 +407,7 @@ export const getObstaclesFromCircuitJson = (
         obstacles.push({
           circuitJsonMetadata: pcbPlatedHoleCircuitJsonMetadata,
           componentId: pcbComponentId,
+          obstacleRole: "pad",
           // @ts-ignore
           type: "oval",
           layers: everyLayer,
@@ -411,6 +423,7 @@ export const getObstaclesFromCircuitJson = (
         obstacles.push({
           circuitJsonMetadata: pcbPlatedHoleCircuitJsonMetadata,
           componentId: pcbComponentId,
+          obstacleRole: "pad",
           // @ts-ignore
           type: "rect",
           layers: everyLayer,
@@ -426,6 +439,7 @@ export const getObstaclesFromCircuitJson = (
         obstacles.push({
           circuitJsonMetadata: pcbPlatedHoleCircuitJsonMetadata,
           componentId: pcbComponentId,
+          obstacleRole: "pad",
           // @ts-ignore
           type: "oval",
           layers: everyLayer,
@@ -441,6 +455,7 @@ export const getObstaclesFromCircuitJson = (
         obstacles.push({
           circuitJsonMetadata: pcbPlatedHoleCircuitJsonMetadata,
           componentId: pcbComponentId,
+          obstacleRole: "pad",
           type: "rect",
           layers: everyLayer,
           center: {
@@ -470,6 +485,7 @@ export const getObstaclesFromCircuitJson = (
           obstacles.push({
             circuitJsonMetadata: pcbPlatedHoleCircuitJsonMetadata,
             componentId: pcbComponentId,
+            obstacleRole: "pad",
             // @ts-ignore
             type: "rect",
             layers: everyLayer,

@@ -7,9 +7,13 @@ export type CircuitJsonMetadata = {
   source_port_name?: string
 }
 
+export type ObstacleRole = "pad" | "component_body" | "keepout"
+
 export type Obstacle = {
   obstacleId?: string
   componentId?: string
+  /** Routing-domain identity; unlike provenance metadata, routers may use it. */
+  obstacleRole?: ObstacleRole
   /** True when this obstacle replaces one completed fanout source footprint. */
   isFanoutSourceKeepout?: boolean
   /** Circuit JSON provenance carried through SRJ but forbidden for routing. */
