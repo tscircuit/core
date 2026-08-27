@@ -1,7 +1,7 @@
 import { schematicSheetProps } from "@tscircuit/props"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { getBoundsForSchematic } from "lib/utils/autorouting/getBoundsForSchematic"
-import { getCircuitJsonSchematicSheetSize } from "lib/utils/schematic/get-circuit-json-schematic-sheet-size"
+import { resolveCircuitJsonSchematicSheetProperties } from "lib/utils/schematic/get-circuit-json-schematic-sheet-size"
 import { insertSchematicElementOutsideSheetWarnings } from "lib/utils/schematic/insertSchematicElementOutsideSheetWarnings"
 
 export class SchematicSheet extends PrimitiveComponent<
@@ -20,14 +20,16 @@ export class SchematicSheet extends PrimitiveComponent<
     if (this.root?.schematicDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
+    const resolvedSheetProperties =
+      resolveCircuitJsonSchematicSheetProperties(props)
 
     const schematicSheet = db.schematic_sheet.insert({
       name: props.name,
       display_name: props.displayName,
       sheet_index: props.sheetIndex,
-      sheet_size: getCircuitJsonSchematicSheetSize(props.sheetSize),
-      sheet_width: props.sheetWidth,
-      sheet_height: props.sheetHeight,
+      sheet_size: resolvedSheetProperties.sheetSize,
+      sheet_width: resolvedSheetProperties.sheetWidth,
+      sheet_height: resolvedSheetProperties.sheetHeight,
       subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
     } as any)
 
@@ -39,6 +41,9 @@ export class SchematicSheet extends PrimitiveComponent<
     if (!this.schematic_sheet_id) return
 
     const { db } = this.root!
+    const resolvedSheetProperties = resolveCircuitJsonSchematicSheetProperties(
+      this._parsedProps,
+    )
     const schematicElements = [
       ...db.schematic_component.list(),
       ...db.schematic_port.list(),
@@ -78,9 +83,9 @@ export class SchematicSheet extends PrimitiveComponent<
       schematicSheetId: this.schematic_sheet_id,
       schematicSheetName: this._parsedProps.displayName,
       schematicSheetCenter,
-      sheetSize: getCircuitJsonSchematicSheetSize(this._parsedProps.sheetSize),
-      sheetWidth: this._parsedProps.sheetWidth,
-      sheetHeight: this._parsedProps.sheetHeight,
+      sheetSize: resolvedSheetProperties.sheetSize,
+      sheetWidth: resolvedSheetProperties.sheetWidth,
+      sheetHeight: resolvedSheetProperties.sheetHeight,
     })
   }
 }

@@ -34,6 +34,8 @@ test("ANSI B schematic sheets use the larger drawing area", async () => {
 
   expect(circuit.db.schematic_sheet.list()[0]).toMatchObject({
     sheet_size: "ansi_b",
+    sheet_width: 431.8,
+    sheet_height: 279.4,
   })
   expect(
     circuit.db.schematic_element_outside_sheet_warning.list(),
