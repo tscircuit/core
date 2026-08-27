@@ -2,6 +2,7 @@ import type { SourcePort, SourceTrace } from "circuit-json"
 import type { DifferentialPair } from "lib/components/primitive-components/DifferentialPair"
 import type { Port } from "lib/components/primitive-components/Port/Port"
 import type {
+  PcbGroupId,
   SimpleRouteConnection,
   SimpleRouteDifferentialPair,
   SrjConnectionName,
@@ -27,13 +28,20 @@ type GetDifferentialPairTraceSubcircuitConnectivityMapKeyOrThrowParams = {
   traceNameOrPortSelector: string
 }
 
-type GetDifferentialPairSrjConnectionNameOrThrowParams = {
+type GetDifferentialPairSrjConnectionNamesByCohortOrThrowParams = {
   srjConnections: SimpleRouteConnection[]
   differentialPairName: string
   differentialPairSourceTraces: SourceTrace[]
   traceSubcircuitConnectivityMapKey: SubcircuitConnectivityMapKey
   traceNameOrPortSelector: string
 }
+
+/**
+ * Automatic breakouts split one source trace into a global SRJ connection and
+ * one local connection per routing PCB group. `undefined` identifies the
+ * global cohort.
+ */
+type DifferentialPairSrjConnectionCohort = PcbGroupId | undefined
 
 const getDifferentialPairSourceTracesByTraceName = (
   differentialPairSourceTraces: SourceTrace[],
@@ -106,13 +114,16 @@ const getDifferentialPairTraceSubcircuitConnectivityMapKeyOrThrow = ({
   return subcircuitConnectivityMapKey
 }
 
-const getDifferentialPairSrjConnectionNameOrThrow = ({
+const getDifferentialPairSrjConnectionNamesByCohortOrThrow = ({
   srjConnections,
   differentialPairName,
   differentialPairSourceTraces,
   traceSubcircuitConnectivityMapKey,
   traceNameOrPortSelector,
-}: GetDifferentialPairSrjConnectionNameOrThrowParams): SrjConnectionName => {
+}: GetDifferentialPairSrjConnectionNamesByCohortOrThrowParams): Map<
+  DifferentialPairSrjConnectionCohort,
+  SrjConnectionName
+> => {
   const differentialPairSourceTraceIds: SourceTraceId[] = []
   for (const sourceTrace of differentialPairSourceTraces) {
     if (
@@ -138,21 +149,34 @@ const getDifferentialPairSrjConnectionNameOrThrow = ({
       `Could not find an SRJ connection for trace name or port selector "${traceNameOrPortSelector}" in differential pair "${differentialPairName}"`,
     )
   }
-  if (matchingSrjConnections.length > 1) {
-    throw new Error(
-      `Subcircuit connectivity map key "${traceSubcircuitConnectivityMapKey}" matches multiple SRJ connections for differential pair "${differentialPairName}"`,
-    )
+
+  const connectionNamesByCohort = new Map<
+    DifferentialPairSrjConnectionCohort,
+    SrjConnectionName
+  >()
+  for (const srjConnection of matchingSrjConnections) {
+    const cohort = srjConnection.routingPcbGroupId
+    if (connectionNamesByCohort.has(cohort)) {
+      const cohortLabel =
+        cohort === undefined
+          ? "the global routing cohort"
+          : `routing PCB group "${cohort}"`
+      throw new Error(
+        `Subcircuit connectivity map key "${traceSubcircuitConnectivityMapKey}" matches multiple SRJ connections in ${cohortLabel} for differential pair "${differentialPairName}"`,
+      )
+    }
+    connectionNamesByCohort.set(cohort, srjConnection.name)
   }
 
-  const srjConnection = matchingSrjConnections[0]
-  if (!srjConnection) {
-    throw new Error(
-      `Expected one SRJ connection for subcircuit connectivity map key "${traceSubcircuitConnectivityMapKey}"`,
-    )
-  }
-
-  return srjConnection.name
+  return connectionNamesByCohort
 }
+
+const getDifferentialPairCohortLabel = (
+  cohort: DifferentialPairSrjConnectionCohort,
+): string =>
+  cohort === undefined
+    ? "the global routing cohort"
+    : `routing PCB group "${cohort}"`
 
 /** Converts differential-pair trace names or port selectors into SRJ constraints. */
 export const getDifferentialPairsForSimpleRouteJson = ({
@@ -190,16 +214,16 @@ export const getDifferentialPairsForSimpleRouteJson = ({
         traceNameOrPortSelector: negativeTraceNameOrPortSelector,
       })
 
-    const positiveSrjConnectionName =
-      getDifferentialPairSrjConnectionNameOrThrow({
+    const positiveSrjConnectionNamesByCohort =
+      getDifferentialPairSrjConnectionNamesByCohortOrThrow({
         srjConnections,
         differentialPairName: differentialPair.name,
         differentialPairSourceTraces,
         traceSubcircuitConnectivityMapKey: positiveSubcircuitConnectivityMapKey,
         traceNameOrPortSelector: positiveTraceNameOrPortSelector,
       })
-    const negativeSrjConnectionName =
-      getDifferentialPairSrjConnectionNameOrThrow({
+    const negativeSrjConnectionNamesByCohort =
+      getDifferentialPairSrjConnectionNamesByCohortOrThrow({
         srjConnections,
         differentialPairName: differentialPair.name,
         differentialPairSourceTraces,
@@ -211,19 +235,38 @@ export const getDifferentialPairsForSimpleRouteJson = ({
     // maxLengthSkew unchanged.
     const lengthTolerance: number =
       differentialPair._parsedProps.maxLengthSkew ?? 0.1
-    srjDifferentialPairs.push({
-      connectionNames: [positiveSrjConnectionName, negativeSrjConnectionName],
-      lengthTolerance,
-      ...(differentialPair._parsedProps.pcbTraceGap !== undefined
-        ? { traceGap: differentialPair._parsedProps.pcbTraceGap }
-        : {}),
-      ...(differentialPair._parsedProps.maxUncoupledLength !== undefined
-        ? {
-            maxUncoupledLength:
-              differentialPair._parsedProps.maxUncoupledLength,
-          }
-        : {}),
-    })
+    for (const cohort of positiveSrjConnectionNamesByCohort.keys()) {
+      if (negativeSrjConnectionNamesByCohort.has(cohort)) continue
+      throw new Error(
+        `Differential pair "${differentialPair.name}" has a positive SRJ connection in ${getDifferentialPairCohortLabel(cohort)} without a matching negative SRJ connection`,
+      )
+    }
+    for (const cohort of negativeSrjConnectionNamesByCohort.keys()) {
+      if (positiveSrjConnectionNamesByCohort.has(cohort)) continue
+      throw new Error(
+        `Differential pair "${differentialPair.name}" has a negative SRJ connection in ${getDifferentialPairCohortLabel(cohort)} without a matching positive SRJ connection`,
+      )
+    }
+    for (const [
+      cohort,
+      positiveSrjConnectionName,
+    ] of positiveSrjConnectionNamesByCohort) {
+      const negativeSrjConnectionName =
+        negativeSrjConnectionNamesByCohort.get(cohort)!
+      srjDifferentialPairs.push({
+        connectionNames: [positiveSrjConnectionName, negativeSrjConnectionName],
+        lengthTolerance,
+        ...(differentialPair._parsedProps.pcbTraceGap !== undefined
+          ? { traceGap: differentialPair._parsedProps.pcbTraceGap }
+          : {}),
+        ...(differentialPair._parsedProps.maxUncoupledLength !== undefined
+          ? {
+              maxUncoupledLength:
+                differentialPair._parsedProps.maxUncoupledLength,
+            }
+          : {}),
+      })
+    }
   }
 
   return srjDifferentialPairs.length > 0 ? srjDifferentialPairs : undefined
