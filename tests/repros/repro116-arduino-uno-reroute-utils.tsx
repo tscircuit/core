@@ -277,6 +277,14 @@ export async function expectArduinoUnoRerouteRegion({
   }
 
   expect(afterRerouteCircuit.db.pcb_autorouting_error.list()).toHaveLength(0)
+  const finalPcbTraces = afterRerouteCircuit.db.pcb_trace.list()
+  const finalLogicalRouteSignatures = finalPcbTraces.map((trace) =>
+    JSON.stringify({
+      source_trace_id: trace.source_trace_id,
+      route: trace.route,
+    }),
+  )
+  expect(new Set(finalLogicalRouteSignatures).size).toBe(finalPcbTraces.length)
   expect(phaseInputs).toHaveLength(1)
   expect(phaseInputs[0]!.connections.length).toBeGreaterThan(0)
   for (const connection of phaseInputs[0]!.connections) {

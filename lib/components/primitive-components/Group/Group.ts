@@ -1618,7 +1618,11 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         if (transformedSimpleRouteJson?.traces) {
           stageOutputTraces = transformedSimpleRouteJson.traces
         } else if (usesPreviousStageOutput) {
-          stageOutputTraces = [...(simpleRouteJson.traces ?? []), ...traces]
+          stageOutputTraces =
+            getAccumulatedPcbTracesWithStageOutputReplacements({
+              accumulatedPcbTraces: simpleRouteJson.traces ?? [],
+              stageOutputPcbTraces: traces,
+            })
         }
         const outputSimpleRouteJson = {
           ...(transformedSimpleRouteJson ?? simpleRouteJson),
@@ -1683,7 +1687,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             rerouteOriginalSrj as AutorouterSimpleRouteJson,
             {
               ...simpleRouteJson,
-              traces: [...(simpleRouteJson.traces ?? []), ...traces],
+              traces: getAccumulatedPcbTracesWithStageOutputReplacements({
+                accumulatedPcbTraces: simpleRouteJson.traces ?? [],
+                stageOutputPcbTraces: stageOutputTraces,
+              }),
             } as AutorouterSimpleRouteJson,
           ) as SimpleRouteJson
           outputTraces.splice(
