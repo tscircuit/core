@@ -6,6 +6,7 @@ test("routes two DDR byte buses with bga-fanout-solver", async () => {
   await renderAm62lLpddr4TwoBusFanout({
     fanoutAlgorithmFn: createBgaFanoutAlgorithm,
     fanoutSolverLabel: "@tscircuit/bga-fanout-solver",
+    includePowerPlaneFanout: true,
     snapshotPath: import.meta.path,
   })
 }, 300_000)

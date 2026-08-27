@@ -779,6 +779,32 @@ export const renderAm62lLpddr4TwoBusFanout = async ({
   expect(circuit.db.pcb_via_trace_clearance_error.list()).toEqual([])
   const pcbBoard = circuit.db.pcb_board.list()[0]!
   if (includePowerPlaneFanout) {
+    expect(pcbBoard).toMatchObject({
+      width: 42,
+      height: 26,
+      num_layers: 8,
+    })
+    const socSourceComponent = circuit.db.source_component.getWhere({
+      name: "U1",
+    })!
+    const dramSourceComponent = circuit.db.source_component.getWhere({
+      name: "U2",
+    })!
+    const socPcbComponent = circuit.db.pcb_component.getWhere({
+      source_component_id: socSourceComponent.source_component_id,
+    })!
+    const dramPcbComponent = circuit.db.pcb_component.getWhere({
+      source_component_id: dramSourceComponent.source_component_id,
+    })!
+    expect(socPcbComponent.center).toEqual({ x: -9.5, y: 0 })
+    expect(dramPcbComponent.center).toEqual({
+      x: 9.616917,
+      y: -0.0509170000000001,
+    })
+    expect(dramPcbComponent.center.x - socPcbComponent.center.x).toBeCloseTo(
+      19.116917,
+      9,
+    )
     expect(circuit.db.pcb_pad_trace_clearance_error.list()).toEqual([])
     expect(circuit.db.pcb_via_clearance_error.list()).toEqual([])
     expect(pcbBoard.allow_blind_and_buried_vias).toBe(false)
@@ -944,6 +970,27 @@ export const renderAm62lLpddr4TwoBusFanout = async ({
 
   if (includePowerPlaneFanout) {
     const copperPours = circuit.db.pcb_copper_pour.list()
+    expect(copperPours.map((pour) => pour.pcb_copper_pour_id)).toEqual(
+      Array.from({ length: 15 }, (_, index) => `pcb_copper_pour_${index}`),
+    )
+    expect(
+      copperPours.map((pour) => ({
+        layer: pour.layer,
+        sourceNetId: pour.source_net_id,
+      })),
+    ).toEqual([
+      { layer: "inner1", sourceNetId: "source_net_0" },
+      ...Array.from({ length: 5 }, () => ({
+        layer: "inner2" as const,
+        sourceNetId: "source_net_1",
+      })),
+      ...Array.from({ length: 9 }, () => ({
+        layer: "inner3" as const,
+        sourceNetId: "source_net_2",
+      })),
+    ])
+    expect(circuit.db.source_trace.list()).toHaveLength(228)
+    expect(circuit.db.pcb_trace.list()).toHaveLength(260)
     for (const planeDrop of PLANE_DROPS) {
       const sourceComponent = circuit.db.source_component.getWhere({
         name: planeDrop.componentName,
