@@ -465,6 +465,7 @@ const byte1TraceNames = DDR_CONNECTIONS.filter(
   ({ busName }) => busName === "DDR_BYTE1",
 ).map(({ traceName }) => traceName)
 const BYTE0_MAX_FANOUT_SKEW = 8
+const BYTE1_MAX_FANOUT_SKEW = 14.5
 
 const FANOUT_BUSES = [
   {
@@ -477,7 +478,7 @@ const FANOUT_BUSES = [
     name: "DDR_BYTE1",
     connections: byte1TraceNames,
     preferredLayers: ["inner5", "bottom"],
-    maxLengthSkew: undefined,
+    maxLengthSkew: BYTE1_MAX_FANOUT_SKEW,
   },
 ] as const
 
@@ -619,6 +620,10 @@ export const renderAm62lLpddr4TwoBusFanout = async ({
     : SIGNAL_ONLY_LAYERS
   const fanoutBuses = FANOUT_BUSES.map((bus) => ({
     ...bus,
+    maxLengthSkew:
+      includePowerPlaneFanout || bus.name === "DDR_BYTE0"
+        ? bus.maxLengthSkew
+        : undefined,
     preferredLayers: includePowerPlaneFanout
       ? bus.preferredLayers
       : bus.name === "DDR_BYTE0"
@@ -760,7 +765,7 @@ export const renderAm62lLpddr4TwoBusFanout = async ({
         fontSize="0.6mm"
         text={
           includePowerPlaneFanout
-            ? `${fanoutSolverLabel}; BYTE0 skew <= ${BYTE0_MAX_FANOUT_SKEW} mm; 244 dogbone vias span all 8 layers`
+            ? `${fanoutSolverLabel}; BYTE0 skew <= ${BYTE0_MAX_FANOUT_SKEW} mm, BYTE1 <= ${BYTE1_MAX_FANOUT_SKEW} mm; 244 dogbone vias span all 8 layers`
             : `${fanoutSolverLabel}; BYTE0 fanout skew <= ${BYTE0_MAX_FANOUT_SKEW} mm`
         }
       />
@@ -836,18 +841,22 @@ export const renderAm62lLpddr4TwoBusFanout = async ({
         trace.route.filter((routePoint) => routePoint.route_type === "via"),
       ).toHaveLength(1)
     }
-    const byte0Bus = fanoutPhase.startSimpleRouteJson?.buses?.find(
-      (bus) => bus.busId === "DDR_BYTE0",
-    )
-    expect(byte0Bus?.maxLengthSkew).toBe(BYTE0_MAX_FANOUT_SKEW)
-    const byte0ConnectionNames = new Set(byte0Bus?.connectionNames ?? [])
-    const byte0TraceLengths = routedFanoutTraces
-      .filter((trace) => byte0ConnectionNames.has(trace.connection_name ?? ""))
-      .map(getPlanarTraceLength)
-    expect(byte0TraceLengths).toHaveLength(8)
-    expect(
-      Math.max(...byte0TraceLengths) - Math.min(...byte0TraceLengths),
-    ).toBeLessThanOrEqual(BYTE0_MAX_FANOUT_SKEW + 1e-6)
+    for (const expectedBus of fanoutBuses) {
+      const bus = fanoutPhase.startSimpleRouteJson?.buses?.find(
+        (candidate) => candidate.busId === expectedBus.name,
+      )
+      expect(bus?.maxLengthSkew).toBe(expectedBus.maxLengthSkew)
+      const connectionNames = new Set(bus?.connectionNames ?? [])
+      const traceLengths = routedFanoutTraces
+        .filter((trace) => connectionNames.has(trace.connection_name ?? ""))
+        .map(getPlanarTraceLength)
+      expect(traceLengths).toHaveLength(8)
+      if (expectedBus.maxLengthSkew !== undefined) {
+        expect(
+          Math.max(...traceLengths) - Math.min(...traceLengths),
+        ).toBeLessThanOrEqual(expectedBus.maxLengthSkew + 1e-6)
+      }
+    }
 
     const planeBuses =
       fanoutInput.buses?.filter((bus) => bus.termination?.type === "plane") ??
