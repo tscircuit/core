@@ -84,6 +84,7 @@ test("45 degree rects bug", () => {
           "layers": [
             "top",
           ],
+          "obstacleRole": "pad",
           "type": "rect",
           "width": 3.9,
         },
