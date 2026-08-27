@@ -93,6 +93,10 @@ test("schematic graphic renders as the first page of a multi-sheet schematic", a
     systemBlockDiagram,
   )
 
+  await expect(circuit).toMatchStackedSchematicSnapshot(import.meta.path, {
+    grid: false,
+  })
+
   const { circuit: mixedIndexCircuit } = getTestFixture()
   mixedIndexCircuit.add(
     <board routingDisabled>
