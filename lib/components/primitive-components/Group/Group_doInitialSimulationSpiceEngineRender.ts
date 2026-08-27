@@ -133,6 +133,8 @@ const getCircuitJsonForAnalogSimulation = ({
 }
 
 export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
+  if (group.getInheritedProperty("analogSimulationDisabled")) return
+
   // Only run spice simulation for subcircuits
   if (!group.isSubcircuit) return
 
