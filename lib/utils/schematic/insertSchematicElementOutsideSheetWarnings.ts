@@ -3,24 +3,11 @@ import {
   type SchematicElementWithBounds,
   getSchematicElementBounds,
 } from "@tscircuit/circuit-json-util"
-import type { SchematicSheetSize } from "circuit-json"
-
 type Point = { x: number; y: number }
 
 type CheckedSchematicElement = SchematicElementWithBounds
 
 const SCHEMATIC_UNIT_TO_MM = 10.16 / 1.1
-const SCHEMATIC_SHEET_DIMENSIONS_MM: Record<
-  SchematicSheetSize,
-  { width: number; height: number }
-> = {
-  a4: { width: 297, height: 210 },
-  ansi_b: { width: 431.8, height: 279.4 },
-}
-export const DEFAULT_SCHEMATIC_SHEET_WIDTH =
-  SCHEMATIC_SHEET_DIMENSIONS_MM.a4.width / SCHEMATIC_UNIT_TO_MM
-export const DEFAULT_SCHEMATIC_SHEET_HEIGHT =
-  SCHEMATIC_SHEET_DIMENSIONS_MM.a4.height / SCHEMATIC_UNIT_TO_MM
 const SCHEMATIC_SHEET_INNER_MARGIN = 5 / SCHEMATIC_UNIT_TO_MM
 
 const BOUNDS_EPSILON = 1e-6
@@ -43,7 +30,6 @@ export const insertSchematicElementOutsideSheetWarnings = ({
   schematicSheetId,
   schematicSheetName,
   schematicSheetCenter,
-  sheetSize = "a4",
   sheetWidth,
   sheetHeight,
 }: {
@@ -51,15 +37,11 @@ export const insertSchematicElementOutsideSheetWarnings = ({
   schematicSheetId: string
   schematicSheetName: string
   schematicSheetCenter: Point
-  sheetSize?: SchematicSheetSize
-  sheetWidth?: number
-  sheetHeight?: number
+  sheetWidth: number
+  sheetHeight: number
 }): void => {
-  const sheetDimensions = SCHEMATIC_SHEET_DIMENSIONS_MM[sheetSize]
-  const sheetWidthInSchematicUnits =
-    (sheetWidth ?? sheetDimensions.width) / SCHEMATIC_UNIT_TO_MM
-  const sheetHeightInSchematicUnits =
-    (sheetHeight ?? sheetDimensions.height) / SCHEMATIC_UNIT_TO_MM
+  const sheetWidthInSchematicUnits = sheetWidth / SCHEMATIC_UNIT_TO_MM
+  const sheetHeightInSchematicUnits = sheetHeight / SCHEMATIC_UNIT_TO_MM
   const sheetContentBounds = {
     minX:
       schematicSheetCenter.x -

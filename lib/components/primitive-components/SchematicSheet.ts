@@ -83,7 +83,6 @@ export class SchematicSheet extends PrimitiveComponent<
       schematicSheetId: this.schematic_sheet_id,
       schematicSheetName: this._parsedProps.displayName,
       schematicSheetCenter,
-      sheetSize: resolvedSheetProperties.sheetSize,
       sheetWidth: resolvedSheetProperties.sheetWidth,
       sheetHeight: resolvedSheetProperties.sheetHeight,
     })
