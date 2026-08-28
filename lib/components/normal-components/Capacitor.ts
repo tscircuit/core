@@ -131,6 +131,14 @@ export class Capacitor extends NormalComponent<
   doInitialSourceRender() {
     const { db } = this.root!
     const { _parsedProps: props } = this
+
+    if (props.capacitance === null || !Number.isFinite(props.capacitance)) {
+      this.renderError(
+        `Invalid capacitance "${this.props.capacitance}" for capacitor "${this.name}". Expected a finite value (e.g. "100nF").`,
+      )
+      return
+    }
+
     const source_component = db.source_component.insert({
       ftype: "simple_capacitor",
       name: this.name,
