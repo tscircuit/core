@@ -26,11 +26,16 @@ test("named traces crossing schematic sheets use inline label stubs", async () =
 
   await circuit.renderUntilSettled()
 
+  const sourceTrace = circuit.db.source_trace.getWhere({
+    name: "CROSS_SHEET_SIGNAL",
+  })!
   expect(
     circuit.db.schematic_text
       .list()
       .filter(
-        (text) => text.text === "CROSS_SHEET_SIGNAL" && text.source_trace_id,
+        (text) =>
+          text.text === "CROSS_SHEET_SIGNAL" &&
+          text.source_trace_id === sourceTrace.source_trace_id,
       ),
   ).toHaveLength(2)
   expect(

@@ -32,10 +32,15 @@ test("named traces crossing schematic sections use inline label stubs", async ()
 
   await circuit.renderUntilSettled()
 
+  const sourceTrace = circuit.db.source_trace.list()[0]!
   expect(
     circuit.db.schematic_text
       .list()
-      .filter((text) => text.text === "SECTION_SIG" && text.source_trace_id),
+      .filter(
+        (text) =>
+          text.text === "SECTION_SIG" &&
+          text.source_trace_id === sourceTrace.source_trace_id,
+      ),
   ).toHaveLength(2)
   expect(
     circuit.db.schematic_net_label

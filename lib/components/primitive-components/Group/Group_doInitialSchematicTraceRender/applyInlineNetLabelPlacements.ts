@@ -3,7 +3,7 @@ import type { SourceTrace } from "circuit-json"
 import Debug from "debug"
 import { Group } from "../Group"
 import { createCanonicalSchematicNetLabelTextResolver } from "./createCanonicalSchematicNetLabelTextResolver"
-import { asSchematicPortId } from "./port-id-types"
+import { type SchematicPortId, asSchematicPortId } from "./port-id-types"
 
 const debug = Debug("Group_doInitialSchematicTraceRender")
 
@@ -34,14 +34,19 @@ export function applyInlineNetLabelPlacements(args: {
   solver: SchematicTracePipelineSolver
   userNetIdToConnKey: Map<string, string>
   sourceTraceIdByPinPairKey: Map<string, SourceTraceId>
-  assignedSchematicNetLabelTextBySourceTraceId: Map<SourceTraceId, string>
+  crossSubcircuitTraceLabelBySchematicPortId: Map<
+    SchematicPortId,
+    { text: string; sourceTraceId: SourceTraceId }
+  >
+  schematicNetLabelTextBySourceTraceId: Map<SourceTraceId, string>
 }) {
   const {
     group,
     solver,
     userNetIdToConnKey,
     sourceTraceIdByPinPairKey,
-    assignedSchematicNetLabelTextBySourceTraceId,
+    crossSubcircuitTraceLabelBySchematicPortId,
+    schematicNetLabelTextBySourceTraceId,
   } = args
   const { db } = group.root!
 
@@ -63,9 +68,13 @@ export function applyInlineNetLabelPlacements(args: {
       ? userNetIdToConnKey.get(placementUserNetId)
       : undefined
 
-    let sourceTraceId = sourceTraceIdByPinPairKey.get(
-      [...schematicPortIds].sort().join("::"),
-    )
+    const crossSubcircuitTraceLabel =
+      schematicPortIds.length === 1
+        ? crossSubcircuitTraceLabelBySchematicPortId.get(schematicPortIds[0]!)
+        : undefined
+    let sourceTraceId =
+      crossSubcircuitTraceLabel?.sourceTraceId ??
+      sourceTraceIdByPinPairKey.get([...schematicPortIds].sort().join("::"))
     if (!sourceTraceId && connKey) {
       const sourcePortIds = schematicPortIds.flatMap((schematicPortId) => {
         const sourcePortId =
@@ -83,13 +92,11 @@ export function applyInlineNetLabelPlacements(args: {
         )?.source_trace_id
     }
 
-    // A local subcircuit cannot resolve labels declared on a parent-owned
-    // trace. Prefer the exact source trace's assigned label before falling back
-    // to the connection-wide canonical name.
     const text =
       (sourceTraceId
-        ? assignedSchematicNetLabelTextBySourceTraceId.get(sourceTraceId)
+        ? schematicNetLabelTextBySourceTraceId.get(sourceTraceId)
         : undefined) ??
+      crossSubcircuitTraceLabel?.text ??
       (connKey
         ? resolveCanonicalNetLabelText({
             subcircuitConnectivityMapKey: connKey,
