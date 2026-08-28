@@ -390,14 +390,15 @@ test("BOOST-DRV8711 power stage avoids cross-sheet net-label overlap", async () 
   const powerStageSheet = circuit.db.schematic_sheet.getWhere({
     name: "Power stage",
   })!
-  const crossSheetGateDriveLabels = circuit.db.schematic_net_label
+  const crossSheetGateDriveLabels = circuit.db.schematic_text
     .list()
     .filter(
-      (netLabel) =>
-        netLabel.schematic_sheet_id === powerStageSheet.schematic_sheet_id &&
-        /^U1_[AB][12][HL]S$/.test(netLabel.text),
+      (text) =>
+        text.schematic_sheet_id === powerStageSheet.schematic_sheet_id &&
+        text.source_trace_id &&
+        /^U1_[AB][12][HL]S$/.test(text.text),
     )
-    .map((netLabel) => netLabel.text)
+    .map((text) => text.text)
     .sort()
 
   expect(crossSheetGateDriveLabels).toEqual([

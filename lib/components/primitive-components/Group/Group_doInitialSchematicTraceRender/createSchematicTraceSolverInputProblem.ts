@@ -194,7 +194,8 @@ export function createSchematicTraceSolverInputProblem(
     SchematicComponentId,
     SectionId
   >()
-  for (const component of group.getDescendants()) {
+  const boardDescendants = group._getBoard()?.getDescendants() ?? []
+  for (const component of boardDescendants) {
     const schematicComponentId = component.schematic_component_id
     const sectionId = component.getSchematicSectionName()
     if (schematicComponentId && sectionId) {
@@ -381,11 +382,10 @@ export function createSchematicTraceSolverInputProblem(
       sourceTraceIdByNetId,
     )
   }
-  const board = group._getBoard()
   // Cross-scope traces are owned by an ancestor group, so the current group's
   // port resolver cannot see their JSX label props. Index all trace components
   // by exact source_trace_id to preserve that ownership through local solves.
-  for (const component of board?.getDescendants() ?? []) {
+  for (const component of boardDescendants) {
     if (!(component instanceof Trace)) continue
     const assignedSchematicNetLabelText = component._getSchematicNetLabelText()
     if (component.source_trace_id && assignedSchematicNetLabelText) {
@@ -535,6 +535,35 @@ export function createSchematicTraceSolverInputProblem(
           schematicSheetId: opts.schematicSheetId,
         }),
     )
+    const currentSchematicPort =
+      connected.length === 1 ? db.schematic_port.get(connected[0]) : undefined
+    const currentSchematicComponentId =
+      currentSchematicPort?.schematic_component_id
+    const currentSectionId = currentSchematicComponentId
+      ? sectionIdBySchematicComponentId.get(currentSchematicComponentId)
+      : undefined
+    const crossesSchematicSheetOrSectionBoundary = Boolean(
+      otherSourcePortId &&
+        currentSchematicPort &&
+        db.schematic_port
+          .list({ source_port_id: otherSourcePortId })
+          .some((otherSchematicPort) => {
+            const otherSchematicComponentId =
+              otherSchematicPort.schematic_component_id
+            const otherSectionId = otherSchematicComponentId
+              ? sectionIdBySchematicComponentId.get(otherSchematicComponentId)
+              : undefined
+            const crossesSheet =
+              currentSchematicPort.schematic_sheet_id !==
+                otherSchematicPort.schematic_sheet_id &&
+              (currentSchematicPort.schematic_sheet_id !== undefined ||
+                otherSchematicPort.schematic_sheet_id !== undefined)
+            const crossesSection =
+              currentSectionId !== otherSectionId &&
+              (currentSectionId !== undefined || otherSectionId !== undefined)
+            return crossesSheet || crossesSection
+          }),
+    )
 
     if (
       connected.length === 1 &&
@@ -585,21 +614,23 @@ export function createSchematicTraceSolverInputProblem(
                 getSchematicNetLabelTextWidth({ text }).toFixed(2),
               ),
             }
-          if (assignedSchematicNetLabelText) {
-            crossScopeTraceLabelTextBySourceTraceId.set(
-              st.source_trace_id,
-              assignedSchematicNetLabelText,
+          if (crossesSchematicSheetOrSectionBoundary) {
+            if (assignedSchematicNetLabelText) {
+              crossScopeTraceLabelTextBySourceTraceId.set(
+                st.source_trace_id,
+                assignedSchematicNetLabelText,
+              )
+            }
+            setCrossScopeTraceOwner({
+              schematicPortId,
+              netId: text,
+              sourceTraceId: st.source_trace_id,
+            })
+            markConnectionEligibleForInlineNetLabel(
+              singlePortTraceNetConnection,
+              text,
             )
           }
-          setCrossScopeTraceOwner({
-            schematicPortId,
-            netId: text,
-            sourceTraceId: st.source_trace_id,
-          })
-          markConnectionEligibleForInlineNetLabel(
-            singlePortTraceNetConnection,
-            text,
-          )
           singlePortTraceNetConnections.push(singlePortTraceNetConnection)
         }
       }

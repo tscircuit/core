@@ -103,17 +103,30 @@ test("multi-sheet shared bus: cross-subcircuit net label is created on every she
 
   await expect(circuit).toMatchStackedSchematicSnapshot(import.meta.path)
 
-  // The cross-subcircuit bus net labels (the auto-generated "connectivity"
-  // labels, as opposed to the named VDD/GND nets) on a given sheet.
+  // The cross-subcircuit bus labels (the auto-generated "connectivity"
+  // labels, as opposed to the named VDD/GND nets) on a given sheet. They may
+  // be anchored labels or inline schematic text depending on boundary type.
   const busLabelsOnSheet = (name: string) => {
     const sheet = circuit.db.schematic_sheet.getWhere({ name })!
-    return circuit.db.schematic_net_label
+    const anchoredLabels = circuit.db.schematic_net_label
       .list()
       .filter(
-        (l) =>
-          (l as any).schematic_sheet_id === sheet.schematic_sheet_id &&
-          (l as any).source_net_id?.includes("connectivity_net"),
+        (label) =>
+          label.schematic_sheet_id === sheet.schematic_sheet_id &&
+          label.source_net_id?.includes("connectivity_net"),
       )
+    const inlineLabels = circuit.db.schematic_text.list().filter((text) => {
+      if (
+        text.schematic_sheet_id !== sheet.schematic_sheet_id ||
+        !text.source_trace_id
+      ) {
+        return false
+      }
+      return circuit.db.source_trace
+        .get(text.source_trace_id)
+        ?.subcircuit_connectivity_map_key?.includes("connectivity_net")
+    })
+    return [...anchoredLabels, ...inlineLabels]
   }
 
   // The bus reaches the sensor and the power monitor, so each of their sheets

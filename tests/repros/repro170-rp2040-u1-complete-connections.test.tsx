@@ -442,21 +442,33 @@ test("repro170: complete RP2040 U1 schematic connections", async () => {
 
   await circuit.renderUntilSettled()
 
-  // These IDs identify direct connections on the same QSPI_SS net, so each
-  // connection must use the width of the canonical rendered QSPI_SS label.
+  // Cross-section traces are represented as one inline-label connection at
+  // each visible endpoint. Each connection uses the width of its displayed
+  // trace label rather than an anchored label shared across sections.
+  const qspiCrossSectionConnections =
+    schematicTraceInputProblem?.netConnections.filter(({ netId }) =>
+      ["QSPI_SS", "BOOT_SW", "BOOT_R"].includes(netId),
+    ) ?? []
+  expect(qspiCrossSectionConnections).toHaveLength(6)
   expect(
-    schematicTraceInputProblem?.directConnections
-      .filter(({ netId }) =>
-        ["QSPI_SS", "BOOT_SW", "BOOT_R"].includes(netId ?? ""),
-      )
-      .map(({ netId, netLabelWidth }) => ({
-        directConnectionNetId: netId,
-        canonicalNetLabelWidth: netLabelWidth,
-      })),
+    qspiCrossSectionConnections.every(
+      ({ pinIds, allowInlineNetLabel }) =>
+        pinIds.length === 1 && allowInlineNetLabel,
+    ),
+  ).toBe(true)
+  expect(
+    Array.from(
+      new Map(
+        qspiCrossSectionConnections.map(({ netId, netLabelWidth }) => [
+          netId,
+          netLabelWidth,
+        ]),
+      ),
+    ),
   ).toEqual([
-    { directConnectionNetId: "QSPI_SS", canonicalNetLabelWidth: 0.96 },
-    { directConnectionNetId: "BOOT_SW", canonicalNetLabelWidth: 0.96 },
-    { directConnectionNetId: "BOOT_R", canonicalNetLabelWidth: 0.96 },
+    ["QSPI_SS", 0.96],
+    ["BOOT_SW", 0.96],
+    ["BOOT_R", 0.84],
   ])
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
