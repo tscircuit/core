@@ -38,7 +38,11 @@ export function applyInlineNetLabelPlacements(args: {
     SchematicPortId,
     { text: string; sourceTraceId: SourceTraceId }
   >
-  schematicNetLabelTextBySourceTraceId: Map<SourceTraceId, string>
+  crossScopeTraceLabelTextBySourceTraceId: Map<SourceTraceId, string>
+  crossScopeSourceTraceIdByPortNetId: Map<
+    SchematicPortId,
+    Map<string, SourceTraceId>
+  >
 }) {
   const {
     group,
@@ -46,7 +50,8 @@ export function applyInlineNetLabelPlacements(args: {
     userNetIdToConnKey,
     sourceTraceIdByPinPairKey,
     crossSubcircuitTraceLabelBySchematicPortId,
-    schematicNetLabelTextBySourceTraceId,
+    crossScopeTraceLabelTextBySourceTraceId,
+    crossScopeSourceTraceIdByPortNetId,
   } = args
   const { db } = group.root!
 
@@ -72,7 +77,14 @@ export function applyInlineNetLabelPlacements(args: {
       schematicPortIds.length === 1
         ? crossSubcircuitTraceLabelBySchematicPortId.get(schematicPortIds[0]!)
         : undefined
+    const crossScopeSourceTraceId =
+      schematicPortIds.length === 1 && placement.netId
+        ? crossScopeSourceTraceIdByPortNetId
+            .get(schematicPortIds[0]!)
+            ?.get(placement.netId)
+        : undefined
     let sourceTraceId =
+      crossScopeSourceTraceId ??
       crossSubcircuitTraceLabel?.sourceTraceId ??
       sourceTraceIdByPinPairKey.get([...schematicPortIds].sort().join("::"))
     if (!sourceTraceId && connKey) {
@@ -94,7 +106,7 @@ export function applyInlineNetLabelPlacements(args: {
 
     const text =
       (sourceTraceId
-        ? schematicNetLabelTextBySourceTraceId.get(sourceTraceId)
+        ? crossScopeTraceLabelTextBySourceTraceId.get(sourceTraceId)
         : undefined) ??
       crossSubcircuitTraceLabel?.text ??
       (connKey

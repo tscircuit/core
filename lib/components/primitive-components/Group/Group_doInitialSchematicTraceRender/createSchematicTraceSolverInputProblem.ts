@@ -109,8 +109,14 @@ export type SolverInputContext = {
    */
   sourceTraceIdByPinPairKey: Map<string, SourceTraceId>
 
-  /** Exact user-assigned schematic label text, indexed by its owning trace. */
-  schematicNetLabelTextBySourceTraceId: Map<SourceTraceId, string>
+  /** Exact user-assigned label text for traces split across schematic scopes. */
+  crossScopeTraceLabelTextBySourceTraceId: Map<SourceTraceId, string>
+
+  /** Exact source trace for each port-only cross-scope solver connection. */
+  crossScopeSourceTraceIdByPortNetId: Map<
+    SchematicPortId,
+    Map<string, SourceTraceId>
+  >
 }
 
 export function createSchematicTraceSolverInputProblem(
@@ -350,6 +356,31 @@ export function createSchematicTraceSolverInputProblem(
   })
 
   const schematicNetLabelTextBySourceTraceId = new Map<SourceTraceId, string>()
+  const crossScopeTraceLabelTextBySourceTraceId = new Map<
+    SourceTraceId,
+    string
+  >()
+  const crossScopeSourceTraceIdByPortNetId = new Map<
+    SchematicPortId,
+    Map<string, SourceTraceId>
+  >()
+  const setCrossScopeTraceOwner = ({
+    schematicPortId,
+    netId,
+    sourceTraceId,
+  }: {
+    schematicPortId: SchematicPortId
+    netId: string
+    sourceTraceId: SourceTraceId
+  }) => {
+    const sourceTraceIdByNetId =
+      crossScopeSourceTraceIdByPortNetId.get(schematicPortId) ?? new Map()
+    sourceTraceIdByNetId.set(netId, sourceTraceId)
+    crossScopeSourceTraceIdByPortNetId.set(
+      schematicPortId,
+      sourceTraceIdByNetId,
+    )
+  }
   const board = group._getBoard()
   // Cross-scope traces are owned by an ancestor group, so the current group's
   // port resolver cannot see their JSX label props. Index all trace components
@@ -555,6 +586,15 @@ export function createSchematicTraceSolverInputProblem(
               ),
             }
           if (assignedSchematicNetLabelText) {
+            crossScopeTraceLabelTextBySourceTraceId.set(
+              st.source_trace_id,
+              assignedSchematicNetLabelText,
+            )
+            setCrossScopeTraceOwner({
+              schematicPortId,
+              netId: text,
+              sourceTraceId: st.source_trace_id,
+            })
             markConnectionEligibleForInlineNetLabel(
               singlePortTraceNetConnection,
               assignedSchematicNetLabelText,
@@ -622,19 +662,59 @@ export function createSchematicTraceSolverInputProblem(
         if (connectedPairKeys.has(pairKey)) continue
         connectedPairKeys.add(pairKey)
         sourceTraceIdByPinPairKey.set(pairKey, st.source_trace_id)
+        const schematicComponentIdA =
+          db.schematic_port.get(a)?.schematic_component_id
+        const schematicComponentIdB =
+          db.schematic_port.get(b)?.schematic_component_id
+        const sectionIdA = schematicComponentIdA
+          ? sectionIdBySchematicComponentId.get(schematicComponentIdA)
+          : undefined
+        const sectionIdB = schematicComponentIdB
+          ? sectionIdBySchematicComponentId.get(schematicComponentIdB)
+          : undefined
+        const crossesSchematicSection =
+          sectionIdA !== sectionIdB &&
+          (sectionIdA !== undefined || sectionIdB !== undefined)
+        const assignedSchematicNetLabelText =
+          schematicNetLabelTextBySourceTraceId.get(st.source_trace_id)
+        if (assignedSchematicNetLabelText && crossesSchematicSection) {
+          // Sections are independent drawings, just like sheets. Give each
+          // visible endpoint its own port-only connection so a collision in
+          // one section cannot force the other section back to an anchored
+          // label.
+          crossScopeTraceLabelTextBySourceTraceId.set(
+            st.source_trace_id,
+            assignedSchematicNetLabelText,
+          )
+          for (const schematicPortId of [a, b]) {
+            const portOnlyConnection: (typeof singlePortTraceNetConnections)[number] =
+              {
+                netId: assignedSchematicNetLabelText,
+                schematicPortIds: [schematicPortId],
+                netLabelWidth: Number(
+                  getSchematicNetLabelTextWidth({
+                    text: assignedSchematicNetLabelText,
+                  }).toFixed(2),
+                ),
+              }
+            markConnectionEligibleForInlineNetLabel(
+              portOnlyConnection,
+              assignedSchematicNetLabelText,
+            )
+            singlePortTraceNetConnections.push(portOnlyConnection)
+            setCrossScopeTraceOwner({
+              schematicPortId,
+              netId: assignedSchematicNetLabelText,
+              sourceTraceId: st.source_trace_id,
+            })
+          }
+          continue
+        }
         const directConnection: (typeof directConnections)[number] = {
           schematicPortIds: [a, b],
           netId: userNetId,
           netLabelWidth,
           connKey: st.subcircuit_connectivity_map_key,
-        }
-        const assignedSchematicNetLabelText =
-          schematicNetLabelTextBySourceTraceId.get(st.source_trace_id)
-        if (assignedSchematicNetLabelText) {
-          markConnectionEligibleForInlineNetLabel(
-            directConnection,
-            assignedSchematicNetLabelText,
-          )
         }
         directConnections.push(directConnection)
       }
@@ -817,6 +897,7 @@ export function createSchematicTraceSolverInputProblem(
     schPortIdToSourcePortId,
     netLabelsInScope,
     sourceTraceIdByPinPairKey,
-    schematicNetLabelTextBySourceTraceId,
+    crossScopeTraceLabelTextBySourceTraceId,
+    crossScopeSourceTraceIdByPortNetId,
   }
 }
