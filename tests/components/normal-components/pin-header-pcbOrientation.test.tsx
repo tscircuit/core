@@ -1,4 +1,4 @@
-import { test, expect } from "bun:test"
+import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 const boardSize = { width: "10mm", height: "10mm" }
@@ -15,16 +15,24 @@ test("pinheader pcbOrientation vertical places pins vertically", () => {
   circuit.render()
 
   const circuitJson = circuit.getCircuitJson()
-  const pcb_silkscreen_text = circuitJson.filter(
-    (c) => c.type === "pcb_silkscreen_text",
-  )
+  const pcb_silkscreen_text = circuitJson
+    .filter((c) => c.type === "pcb_silkscreen_text")
+    .map((text) => ({
+      ...text,
+      anchor_position: {
+        x:
+          Math.abs(text.anchor_position.x) < 1e-12 ? 0 : text.anchor_position.x,
+        y:
+          Math.abs(text.anchor_position.y) < 1e-12 ? 0 : text.anchor_position.y,
+      },
+    }))
   expect(pcb_silkscreen_text).toMatchInlineSnapshot(`
     [
       {
         "anchor_alignment": "center",
         "anchor_position": {
           "x": 2.54,
-          "y": 0.00000000000000015553014349171386,
+          "y": 0,
         },
         "ccw_rotation": -90,
         "font": "tscircuit2024",
