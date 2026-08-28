@@ -118,8 +118,13 @@ test("cross-boundary subcircuit fallback labels are included in solver input", a
   const netLabelTexts = circuit.db.schematic_net_label
     .list()
     .map((label) => label.text)
-  expect(netLabelTexts).toContain("J_RIGHT_GP17")
+  expect(netLabelTexts).not.toContain("J_RIGHT_GP17")
   expect(netLabelTexts).not.toContain("J_LCD_CS")
+  expect(
+    circuit.db.schematic_text
+      .list()
+      .some((text) => text.text === "J_RIGHT_GP17" && text.source_trace_id),
+  ).toBe(true)
   const internalGp17Trace = circuit.db.source_trace.getWhere({ name: "GP17" })!
   const internalGp17Label = circuit.db.schematic_text
     .list()

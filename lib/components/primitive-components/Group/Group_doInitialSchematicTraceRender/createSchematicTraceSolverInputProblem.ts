@@ -590,16 +590,16 @@ export function createSchematicTraceSolverInputProblem(
               st.source_trace_id,
               assignedSchematicNetLabelText,
             )
-            setCrossScopeTraceOwner({
-              schematicPortId,
-              netId: text,
-              sourceTraceId: st.source_trace_id,
-            })
-            markConnectionEligibleForInlineNetLabel(
-              singlePortTraceNetConnection,
-              assignedSchematicNetLabelText,
-            )
           }
+          setCrossScopeTraceOwner({
+            schematicPortId,
+            netId: text,
+            sourceTraceId: st.source_trace_id,
+          })
+          markConnectionEligibleForInlineNetLabel(
+            singlePortTraceNetConnection,
+            text,
+          )
           singlePortTraceNetConnections.push(singlePortTraceNetConnection)
         }
       }

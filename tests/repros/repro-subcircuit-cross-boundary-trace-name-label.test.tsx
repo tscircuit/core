@@ -129,6 +129,9 @@ test("cross-boundary subcircuit traces use trace name instead of selector fallba
   expect(netLabelTexts).not.toContain("U1_GPIO3")
   expect(netLabelTexts).not.toContain("U1_GPIO17")
   expect(netLabelTexts).not.toContain("U1_GPIO18")
+  const anchoredNetLabelTexts = circuit.db.schematic_net_label
+    .list()
+    .map((label) => label.text)
   for (const traceName of [
     "GP2",
     "GP3",
@@ -138,6 +141,7 @@ test("cross-boundary subcircuit traces use trace name instead of selector fallba
     "DN",
     "LCD_CS",
   ]) {
+    expect(anchoredNetLabelTexts).not.toContain(traceName)
     const sourceTrace = circuit.db.source_trace.getWhere({ name: traceName })!
     expect(
       circuit.db.schematic_text
