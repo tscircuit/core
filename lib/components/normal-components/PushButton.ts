@@ -47,6 +47,13 @@ export class PushButton extends NormalComponent<
     const { internallyConnectedPins } = this._parsedProps
 
     pin1Port.schematicSymbolPortDef = symPort1!
+    // Register the documented `side1`/`side2` aliases so connections like
+    // connections={{ side1: "net.LEFT", side2: "net.RIGHT" }} resolve.
+    // A 4-pin pushbutton has pins 1-2 on one side and 3-4 on the other.
+    pin1Port.externallyAddedAliases.push("side1")
+    pin2Port.externallyAddedAliases.push("side1")
+    pin3Port.externallyAddedAliases.push("side2")
+    pin4Port.externallyAddedAliases.push("side2")
 
     if (!internallyConnectedPins || internallyConnectedPins.length === 0) {
       pin2Port.schematicSymbolPortDef = symPort2!
