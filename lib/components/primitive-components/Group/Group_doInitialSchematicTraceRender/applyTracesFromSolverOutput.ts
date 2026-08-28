@@ -146,7 +146,7 @@ export function applyTracesFromSolverOutput(args: {
     )
   }
 
-  const customSymbolPortIds = new Set(
+  const customSymbolPortsById = new Map(
     group
       .selectAll<Port>("port")
       .filter((port) => {
@@ -154,12 +154,14 @@ export function applyTracesFromSolverOutput(args: {
         const symbol = port.getParentNormalComponent()?._parsedProps.symbol
         return isValidElement(symbol) || isCircuitJsonSymbol(symbol)
       })
-      .map((port) => port.schematic_port_id)
       .filter(
-        (schematicPortId): schematicPortId is string =>
-          schematicPortId !== null && schematicPortId !== undefined,
+        (port): port is Port & { schematic_port_id: string } =>
+          port.schematic_port_id !== null &&
+          port.schematic_port_id !== undefined,
       )
-      .map(asSchematicPortId),
+      .map(
+        (port) => [asSchematicPortId(port.schematic_port_id), port] as const,
+      ),
   )
 
   const componentBoundsByPortId = new Map<SchematicPortId, Bounds>()
@@ -183,15 +185,23 @@ export function applyTracesFromSolverOutput(args: {
         port.center.y < componentBounds.maxY
 
       const schematicPortId = asSchematicPortId(port.schematic_port_id)
-      if (!textInclusiveBounds && !customSymbolPortIds.has(schematicPortId)) {
+      const customSymbolPort = customSymbolPortsById.get(schematicPortId)
+      if (!textInclusiveBounds && !customSymbolPort) {
         continue
       }
 
-      // A custom symbol may intentionally place a port inside its body and
-      // rely on the solver to project the trace to the body edge. Do not draw
-      // back through the symbol in that case. Ports on or outside the normal
-      // boundary can still require reconnection after asymmetric expansion.
-      if (!textInclusiveBounds && isInsideComponentBounds) continue
+      // A stem marks the custom-symbol port as an explicit electrical terminal.
+      // Text and decorative primitives can expand the component bounds around
+      // that terminal, causing the solver to project its trace past the real
+      // port. Reconnect it. A stemless port inside the bounds may intentionally
+      // rely on projection to the body edge, so retain that behavior.
+      if (
+        !textInclusiveBounds &&
+        isInsideComponentBounds &&
+        !customSymbolPort?.schematic_stem_line_id
+      ) {
+        continue
+      }
 
       componentBoundsByPortId.set(
         schematicPortId,
