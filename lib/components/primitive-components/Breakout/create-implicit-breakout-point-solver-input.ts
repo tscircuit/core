@@ -16,6 +16,7 @@ import type { DifferentialPair } from "../DifferentialPair"
 import type { Group } from "../Group/Group"
 import type { Port } from "../Port"
 import type { Breakout } from "./Breakout"
+import type { ImplicitBreakoutBankPlanningContext } from "./plan-implicit-breakout-banks"
 
 type SourceTraceId = SourceTrace["source_trace_id"]
 type SourcePortId = NonNullable<SourcePort["source_port_id"]>
@@ -38,10 +39,60 @@ interface DifferentialPairSourceTraces {
 
 export interface ImplicitBreakoutPointSolverContext {
   input: ImplicitBreakoutPointSolverInput
+  bankPlanningContext: ImplicitBreakoutBankPlanningContext
   sourcePortIdByConnectionIdByRegionId: ReadonlyMap<
     PcbGroupId,
     ReadonlyMap<SourceTraceId, SourcePortId>
   >
+}
+
+const getBankPlanningContext = ({
+  breakout,
+  regions,
+}: {
+  breakout: Breakout
+  regions: readonly BreakoutRegionGeometry[]
+}): ImplicitBreakoutBankPlanningContext => {
+  const root = breakout.root
+  if (!root) {
+    throw new Error(`Automatic breakout "${breakout.name}" has no root`)
+  }
+  const board = root.db.pcb_board.list()[0]
+  const regionBounds = regions.map((region) => region.bounds)
+  const fallbackBoardBounds = {
+    minX: Math.min(...regionBounds.map((bounds) => bounds.minX)),
+    maxX: Math.max(...regionBounds.map((bounds) => bounds.maxX)),
+    minY: Math.min(...regionBounds.map((bounds) => bounds.minY)),
+    maxY: Math.max(...regionBounds.map((bounds) => bounds.maxY)),
+  }
+  const boardBounds =
+    board?.width && board.height
+      ? {
+          minX: board.center.x - board.width / 2,
+          maxX: board.center.x + board.width / 2,
+          minY: board.center.y - board.height / 2,
+          maxY: board.center.y + board.height / 2,
+        }
+      : fallbackBoardBounds
+  const regionIds = new Set(regions.map((region) => region.pcbGroupId))
+  const obstacles = root.db.pcb_group
+    .list()
+    .filter(
+      (pcbGroup) =>
+        !regionIds.has(pcbGroup.pcb_group_id) &&
+        pcbGroup.width !== undefined &&
+        pcbGroup.height !== undefined,
+    )
+    .map((pcbGroup) => ({
+      id: pcbGroup.pcb_group_id,
+      bounds: {
+        minX: pcbGroup.center.x - pcbGroup.width! / 2,
+        maxX: pcbGroup.center.x + pcbGroup.width! / 2,
+        minY: pcbGroup.center.y - pcbGroup.height! / 2,
+        maxY: pcbGroup.center.y + pcbGroup.height! / 2,
+      },
+    }))
+  return { boardBounds, obstacles }
 }
 
 const getRoutingScopeOrThrow = (breakout: Breakout): Group<z.ZodType> => {
@@ -701,6 +752,7 @@ export const createImplicitBreakoutPointSolverContext = (
       buses,
       boundaryPointSpacing: getBoundaryPointSpacing(breakout),
     },
+    bankPlanningContext: getBankPlanningContext({ breakout, regions }),
     sourcePortIdByConnectionIdByRegionId,
   }
 }

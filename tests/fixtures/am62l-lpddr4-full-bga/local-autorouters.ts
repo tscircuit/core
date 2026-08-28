@@ -8,6 +8,10 @@ import type {
   SimplifiedPcbTrace,
 } from "lib/utils/autorouting/SimpleRouteJson"
 import { createBasicAutorouter } from "tests/fixtures/createBasicAutorouter"
+import {
+  buildBusChannelPlan,
+  validateBusChannelTraces,
+} from "./bus-channel-plan"
 
 const solveFixedTargetBgaFanout = async (
   input: SimpleRouteJson,
@@ -43,7 +47,12 @@ const solveFixedTargetBgaFanout = async (
     }
   }
 
-  const solver = new FixedTargetBgaFanoutSolver(solverInput)
+  const solver = new FixedTargetBgaFanoutSolver(solverInput, {
+    compactViaPlacement: {
+      enabled: true,
+      maximumOutwardCopperEdgeDistanceMm: 5,
+    },
+  })
   solver.solve()
   if (solver.failed || !solver.solved) {
     throw new Error(solver.error ?? "Fixed-target BGA fanout failed")
@@ -97,8 +106,13 @@ const solveCapacityChannel = async (
   input: SimpleRouteJson,
 ): Promise<SimplifiedPcbTrace[]> => {
   const traces: SimplifiedPcbTrace[] = []
+  const channelPlan = buildBusChannelPlan(input)
+  const connectionByName = new Map(
+    input.connections.map((connection) => [connection.name, connection]),
+  )
 
-  for (const connection of input.connections) {
+  for (const connectionName of channelPlan.orderedConnectionNames) {
+    const connection = connectionByName.get(connectionName)!
     const xs = connection.pointsToConnect.map((point) => point.x)
     const ys = connection.pointsToConnect.map((point) => point.y)
     const routingMargin = Math.max(
@@ -168,6 +182,7 @@ const solveCapacityChannel = async (
     traces.push(outputTrace)
   }
 
+  validateBusChannelTraces(input, channelPlan, traces)
   return traces
 }
 

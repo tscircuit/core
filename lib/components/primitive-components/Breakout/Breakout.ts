@@ -122,8 +122,7 @@ export class Breakout extends Group<typeof breakoutProps> {
       return
     }
 
-    // The solver places breakout points exactly on the group boundary
-    // (bounds.minX/maxX/minY/maxY). When the autorouter later builds a
+    // Physical solver points lie exactly on the group boundary. When the autorouter later builds a
     // quadtree mesh over the same bounds, repeated halving introduces
     // floating-point drift (≈4e-16) so a point exactly at the boundary
     // can fall outside the nearest mesh node. Nudge solved positions a
@@ -146,7 +145,10 @@ export class Breakout extends Group<typeof breakoutProps> {
           child.matchedPort?.source_port_id === solvedPoint.sourcePortId,
       )
       if (matchingBreakoutPoint) {
-        const insetPoint = insetWithinBounds(solvedPoint.x, solvedPoint.y)
+        const insetPoint =
+          solvedPoint.placementKind === "virtual_bank"
+            ? { x: solvedPoint.x, y: solvedPoint.y }
+            : insetWithinBounds(solvedPoint.x, solvedPoint.y)
         matchingBreakoutPoint._applySolvedBreakoutPoint({
           sourceTraceId: solvedPoint.sourceTraceId,
           layer: solvedPoint.layer,

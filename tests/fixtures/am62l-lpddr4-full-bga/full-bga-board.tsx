@@ -1,6 +1,8 @@
 import { AM62L32 } from "@tsci/tscircuit.ti-am62l/lib/chips/AM62L32.circuit"
 import { AM62L32BOGHAANBR } from "@tsci/tscircuit.ti-am62l/lib/chips/AM62L32BOGHAANBR.circuit"
 import { Children, cloneElement, Fragment, isValidElement } from "react"
+import type { GenericLocalAutorouter } from "lib/utils/autorouting/GenericLocalAutorouter"
+import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import {
   DDR_ADDR_CTRL_TRACE_NAMES,
   DDR_BYTE0_TRACE_NAMES,
@@ -81,34 +83,6 @@ export const SIGNAL_LAYERS = [
   "bottom",
 ] as const
 
-const BYTE0_LAYER_ORDER = [
-  "inner2",
-  "inner3",
-  "inner4",
-  "inner5",
-  "inner6",
-  "bottom",
-  "inner1",
-] as const
-const BYTE1_LAYER_ORDER = [
-  "inner4",
-  "inner5",
-  "inner6",
-  "bottom",
-  "inner1",
-  "inner2",
-  "inner3",
-] as const
-const ADDR_CTRL_LAYER_ORDER = [
-  "bottom",
-  "inner1",
-  "inner2",
-  "inner3",
-  "inner4",
-  "inner5",
-  "inner6",
-] as const
-
 const fixedTargetBgaBreakoutAutorouter = {
   local: true,
   groupMode: "subcircuit" as const,
@@ -135,11 +109,26 @@ const POUR_MARGIN = "0.08128mm"
 
 export type Am62lLpddr4FanoutSolver = "normal" | "bga"
 
+type LocalAutorouterAlgorithmFn = (
+  input: SimpleRouteJson,
+) => Promise<GenericLocalAutorouter>
+
 export const Am62lLpddr4FullBgaBoard = ({
   fanoutSolver = "bga",
+  fanoutAlgorithmFn,
+  channelAlgorithmFn,
 }: {
   fanoutSolver?: Am62lLpddr4FanoutSolver
-}) => (
+  fanoutAlgorithmFn?: LocalAutorouterAlgorithmFn
+  channelAlgorithmFn?: LocalAutorouterAlgorithmFn
+}) => {
+  const selectedFanoutAutorouter = fanoutAlgorithmFn
+    ? { ...fixedTargetBgaBreakoutAutorouter, algorithmFn: fanoutAlgorithmFn }
+    : fixedTargetBgaBreakoutAutorouter
+  const selectedChannelAutorouter = channelAlgorithmFn
+    ? { ...capacityChannelAutorouter, algorithmFn: channelAlgorithmFn }
+    : capacityChannelAutorouter
+  return (
   <board
     name="AM62L_LPDDR4_BGA_FANOUT_COPPER_POUR"
     width={`${BOARD_SIZE.width}mm`}
@@ -161,7 +150,7 @@ export const Am62lLpddr4FullBgaBoard = ({
     <autoroutingphase
       name="inter-bga-ddr"
       phaseIndex={GLOBAL_ROUTING_PHASE}
-      autorouter={capacityChannelAutorouter}
+      autorouter={selectedChannelAutorouter}
     />
     <autoroutingphase
       name="existing-ground-copper"
@@ -174,7 +163,7 @@ export const Am62lLpddr4FullBgaBoard = ({
       routingPhaseIndex={GLOBAL_ROUTING_PHASE}
       pcbTraceWidth="0.08128mm"
       pcbAllowedLayers={[...SIGNAL_LAYERS]}
-      preferredLayers={[...BYTE0_LAYER_ORDER]}
+      preferredLayer="inner2"
     />
     <bus
       name="DDR_BYTE1"
@@ -182,7 +171,7 @@ export const Am62lLpddr4FullBgaBoard = ({
       routingPhaseIndex={GLOBAL_ROUTING_PHASE}
       pcbTraceWidth="0.08128mm"
       pcbAllowedLayers={[...SIGNAL_LAYERS]}
-      preferredLayers={[...BYTE1_LAYER_ORDER]}
+      preferredLayer="inner2"
     />
     <bus
       name="DDR_ADDR_CTRL"
@@ -190,7 +179,7 @@ export const Am62lLpddr4FullBgaBoard = ({
       routingPhaseIndex={GLOBAL_ROUTING_PHASE}
       pcbTraceWidth="0.08128mm"
       pcbAllowedLayers={[...SIGNAL_LAYERS]}
-      preferredLayers={[...ADDR_CTRL_LAYER_ORDER]}
+      preferredLayer="bottom"
     />
 
     <breakout
@@ -200,7 +189,7 @@ export const Am62lLpddr4FullBgaBoard = ({
       padding="5mm"
       paddingRight="18.5mm"
       autorouter={
-        fanoutSolver === "normal" ? "fanout" : fixedTargetBgaBreakoutAutorouter
+        fanoutSolver === "normal" ? "fanout" : selectedFanoutAutorouter
       }
       fanoutRoutingLayers={[...SIGNAL_LAYERS]}
       fanoutPourNetMap={{ inner1: "GND" }}
@@ -232,7 +221,7 @@ export const Am62lLpddr4FullBgaBoard = ({
       padding="5mm"
       paddingLeft="6.2mm"
       autorouter={
-        fanoutSolver === "normal" ? "fanout" : fixedTargetBgaBreakoutAutorouter
+        fanoutSolver === "normal" ? "fanout" : selectedFanoutAutorouter
       }
       fanoutRoutingLayers={[...SIGNAL_LAYERS]}
       fanoutPourNetMap={{ inner1: "GND" }}
@@ -311,6 +300,7 @@ export const Am62lLpddr4FullBgaBoard = ({
       boardEdgeMargin={POUR_MARGIN}
     />
   </board>
-)
+  )
+}
 
 export default Am62lLpddr4FullBgaBoard

@@ -4,9 +4,15 @@ import type { z } from "zod"
 import type { Group } from "../Group/Group"
 import type { Breakout } from "./Breakout"
 import {
+  defaultImplicitBreakoutPointSolverFn,
+  solveDefaultImplicitBreakoutPoints,
+} from "./default-implicit-breakout-point-solver"
+import {
   type ImplicitBreakoutPointSolverContext,
   createImplicitBreakoutPointSolverContext,
 } from "./create-implicit-breakout-point-solver-input"
+import { validateImplicitBreakoutBusOutput } from "./validate-implicit-breakout-bus-output"
+import type { PlannedImplicitBreakoutPointSolverOutput } from "./plan-implicit-breakout-banks"
 
 type SourceTraceId = SourceTrace["source_trace_id"]
 type SourcePortId = NonNullable<SourcePort["source_port_id"]>
@@ -18,6 +24,7 @@ export interface ImplicitBreakoutPointPlacement {
   layer: string
   x: number
   y: number
+  placementKind: "physical_boundary" | "virtual_bank"
 }
 
 interface CoordinatedScopeSolution {
@@ -42,7 +49,13 @@ const solveScope = (
   solverFn: ImplicitBreakoutPointSolverFn,
 ): CoordinatedScopeSolution => {
   const context = createImplicitBreakoutPointSolverContext(breakout)
-  const output = solverFn(context.input)
+  const output =
+    solverFn === defaultImplicitBreakoutPointSolverFn
+      ? solveDefaultImplicitBreakoutPoints(
+          context.input,
+          context.bankPlanningContext,
+        )
+      : solverFn(context.input)
   if (output instanceof Promise) {
     throw new Error(
       "Implicit breakout point solvers must return synchronously during PCB layout",
@@ -61,6 +74,12 @@ const solveScope = (
     ImplicitBreakoutPointPlacement[]
   >()
   const outputPointKeys = new Set<string>()
+  const virtualPointKeys = new Set(
+    "bankPlan" in output
+      ? (output as PlannedImplicitBreakoutPointSolverOutput).bankPlan
+          .virtualPointKeys
+      : [],
+  )
   for (const region of context.input.regions) {
     breakoutPointsByRegionId.set(region.regionId, [])
   }
@@ -94,6 +113,9 @@ const solveScope = (
       layer: breakoutPoint.layer,
       x: breakoutPoint.x,
       y: breakoutPoint.y,
+      placementKind: virtualPointKeys.has(outputPointKey)
+        ? "virtual_bank"
+        : "physical_boundary",
     })
   }
 
@@ -104,6 +126,7 @@ const solveScope = (
       )
     }
   }
+  validateImplicitBreakoutBusOutput(context.input, output)
   return { breakoutPointsByRegionId }
 }
 

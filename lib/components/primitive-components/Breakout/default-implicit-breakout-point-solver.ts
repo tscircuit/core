@@ -3,10 +3,17 @@ import type {
   ImplicitBreakoutPointSolverFn,
 } from "@tscircuit/props"
 import {
+  WindingBreakoutInfeasibleError,
   WindingBreakoutSolver,
   type WindingBreakoutSolverInput,
   type ConnectionInput as WindingConnectionInput,
 } from "@tscircuit/winding-breakout-point-solver"
+import {
+  ImplicitBreakoutBankInfeasibleError,
+  type ImplicitBreakoutBankPlanningContext,
+  planImplicitBreakoutBanks,
+} from "./plan-implicit-breakout-banks"
+import { planImplicitBreakoutBusLayers } from "./plan-implicit-breakout-bus-layers"
 
 const toWindingConnection = (
   connection: ImplicitBreakoutConnection,
@@ -16,9 +23,11 @@ const toWindingConnection = (
 })
 
 /** Adapt Core's canonical implicit-breakout contract to the winding solver. */
-export const defaultImplicitBreakoutPointSolverFn: ImplicitBreakoutPointSolverFn =
-  (input) => {
-    const windingInput = {
+export const solveDefaultImplicitBreakoutPoints = (
+  input: Parameters<ImplicitBreakoutPointSolverFn>[0],
+  bankPlanningContext?: ImplicitBreakoutBankPlanningContext,
+): ReturnType<ImplicitBreakoutPointSolverFn> => {
+    const baseWindingInput = {
       regions: input.regions.map((region) => ({
         id: region.regionId,
         bounds: region.bounds,
@@ -35,15 +44,57 @@ export const defaultImplicitBreakoutPointSolverFn: ImplicitBreakoutPointSolverFn
             }
           : toWindingConnection(connection),
       ),
-      buses: input.buses.map((bus) => ({
-        id: bus.busId,
-        connectionIds: bus.connectionIds,
-        preferredLayers: bus.targetLayers,
-      })),
       boundaryPointSpacing: input.boundaryPointSpacing,
-    } satisfies WindingBreakoutSolverInput
+    }
 
-    const solver = new WindingBreakoutSolver(windingInput)
-    solver.solve()
-    return solver.getOutput()
+    let lastInfeasibleError:
+      | WindingBreakoutInfeasibleError
+      | ImplicitBreakoutBankInfeasibleError
+      | undefined
+    const candidatePlans = planImplicitBreakoutBusLayers(input.buses)
+    for (const plan of candidatePlans) {
+      const layerByBusId = new Map(
+        plan.assignments.map((assignment) => [
+          assignment.busId,
+          assignment.selectedLayer,
+        ]),
+      )
+      const windingInput = {
+        ...baseWindingInput,
+        buses: input.buses.map((bus) => ({
+          id: bus.busId,
+          connectionIds: bus.connectionIds,
+          preferredLayer: layerByBusId.get(bus.busId),
+        })),
+      } satisfies WindingBreakoutSolverInput
+
+      try {
+        const solver = new WindingBreakoutSolver(windingInput)
+        solver.solve()
+        const baseOutput = solver.getOutput()
+        if (!bankPlanningContext) return baseOutput
+        return planImplicitBreakoutBanks({
+          input,
+          baseOutput,
+          context: bankPlanningContext,
+        })
+      } catch (error) {
+        if (
+          !(error instanceof WindingBreakoutInfeasibleError) &&
+          !(error instanceof ImplicitBreakoutBankInfeasibleError)
+        ) {
+          throw error
+        }
+        lastInfeasibleError = error
+      }
+    }
+    throw (
+      lastInfeasibleError ??
+      new WindingBreakoutInfeasibleError(
+        "WindingBreakoutSolver: no whole-bus layer plan is feasible",
+      )
+    )
   }
+
+export const defaultImplicitBreakoutPointSolverFn: ImplicitBreakoutPointSolverFn =
+  (input) => solveDefaultImplicitBreakoutPoints(input)
