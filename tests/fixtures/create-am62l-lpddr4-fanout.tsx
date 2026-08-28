@@ -11,7 +11,12 @@ import { createAutoroutingPhaseIoStack } from "tests/fixtures/create-autorouting
 import { createBasicAutorouter } from "tests/fixtures/createBasicAutorouter"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-type DdrBusName = "DDR_BYTE0" | "DDR_BYTE1" | "DDR_ADDR_CTRL" | "DDR_CLOCK"
+type DdrBusName =
+  | "DDR_BYTE0"
+  | "DDR_BYTE1"
+  | "DDR_ADDR_CTRL"
+  | "DDR_CLOCK"
+  | "DDR_RESET"
 
 interface DdrConnection {
   busName: DdrBusName
@@ -114,10 +119,22 @@ const DDR_CLOCK_CONNECTIONS: readonly DdrConnection[] =
     }),
   )
 
+const DDR_RESET_CONNECTION = {
+  busName: "DDR_RESET",
+  memoryBall: "T11",
+  memoryPinNumber: 139,
+  memorySignal: "RESET_n",
+  socBall: "J2",
+  socPinNumber: 140,
+  socSignal: "DDR0_RESET0_n",
+  traceName: "RESET_n",
+} as const satisfies DdrConnection
+
 const DDR_SIGNAL_CONNECTIONS = [
   ...DDR_CONNECTIONS,
   ...DDR_ADDR_CTRL_CONNECTIONS,
   ...DDR_CLOCK_CONNECTIONS,
+  DDR_RESET_CONNECTION,
 ] as const
 
 // The real 373-ball FCCSP footprint is a 0.5 mm grid with depopulated rows.
@@ -250,12 +267,14 @@ const AM62L_PIN_LABELS = {
     ]),
   ),
   ...Object.fromEntries(
-    [...DDR_ADDR_CTRL_CONNECTIONS, ...DDR_CLOCK_CONNECTIONS].map(
-      ({ socBall, socPinNumber, socSignal }) => [
-        `pin${socPinNumber}`,
-        [socBall, socSignal],
-      ],
-    ),
+    [
+      ...DDR_ADDR_CTRL_CONNECTIONS,
+      ...DDR_CLOCK_CONNECTIONS,
+      DDR_RESET_CONNECTION,
+    ].map(({ socBall, socPinNumber, socSignal }) => [
+      `pin${socPinNumber}`,
+      [socBall, socSignal],
+    ]),
   ),
   pin76: ["E1", "DDR0_DQ3"],
   pin91: ["F1", "DDR0_DQ2"],
@@ -390,12 +409,14 @@ const LPDDR4_PIN_LABELS = {
     ),
   ),
   ...Object.fromEntries(
-    [...DDR_ADDR_CTRL_CONNECTIONS, ...DDR_CLOCK_CONNECTIONS].map(
-      ({ memoryBall, memoryPinNumber, memorySignal }) => [
-        `pin${memoryPinNumber}`,
-        [memoryBall, memorySignal],
-      ],
-    ),
+    [
+      ...DDR_ADDR_CTRL_CONNECTIONS,
+      ...DDR_CLOCK_CONNECTIONS,
+      DDR_RESET_CONNECTION,
+    ].map(({ memoryBall, memoryPinNumber, memorySignal }) => [
+      `pin${memoryPinNumber}`,
+      [memoryBall, memorySignal],
+    ]),
   ),
   pin12: ["B2", "DQ0"],
   pin14: ["B4", "DQ7"],
@@ -552,6 +573,7 @@ const clockTraceNames: [string, string] = [
   DDR_CLOCK_CONNECTIONS[0]!.traceName,
   DDR_CLOCK_CONNECTIONS[1]!.traceName,
 ]
+const resetTraceNames = [DDR_RESET_CONNECTION.traceName] as const
 const BYTE0_MAX_FANOUT_SKEW = 8
 const BYTE1_MAX_FANOUT_SKEW = 14.5
 const ADDR_CTRL_MAX_FANOUT_SKEW = 15
@@ -582,6 +604,12 @@ const FANOUT_BUSES = [
     connections: clockTraceNames,
     preferredLayers: ["inner5"],
     maxLengthSkew: CLOCK_MAX_FANOUT_SKEW,
+  },
+  {
+    name: "DDR_RESET",
+    connections: resetTraceNames,
+    preferredLayers: ["inner6"],
+    maxLengthSkew: undefined,
   },
 ] as const
 
@@ -753,12 +781,16 @@ export const renderAm62lLpddr4Fanout = async ({
   expect(LPDDR4_VDDQ_BALLS).toHaveLength(20)
   expect(LPDDR4_VDD2_BALLS).toHaveLength(24)
   expect(LPDDR4_VDD1_BALLS).toHaveLength(8)
+  expect(signalConnections).toHaveLength(includePowerPlaneFanout ? 27 : 16)
+  expect(
+    signalConnections.filter(({ traceName }) => traceName === "RESET_n"),
+  ).toEqual(includePowerPlaneFanout ? [DDR_RESET_CONNECTION] : [])
 
   circuit.add(
     <board
       name={
         includePowerPlaneFanout
-          ? "AM62L_LPDDR4_FOUR_BUS_FANOUT"
+          ? "AM62L_LPDDR4_FIVE_BUS_FANOUT"
           : "AM62L_LPDDR4_TWO_BUS_FANOUT"
       }
       width="42mm"
@@ -807,6 +839,7 @@ export const renderAm62lLpddr4Fanout = async ({
             ? {
                 DDR_ADDR_CTRL: "rightside_center" as const,
                 DDR_CLOCK: "rightside_top" as const,
+                DDR_RESET: "rightside_center" as const,
               }
             : {}),
         }}
@@ -837,6 +870,7 @@ export const renderAm62lLpddr4Fanout = async ({
             ? {
                 DDR_ADDR_CTRL: "leftside_center" as const,
                 DDR_CLOCK: "leftside_top" as const,
+                DDR_RESET: "leftside_top" as const,
               }
             : {}),
         }}
@@ -891,7 +925,7 @@ export const renderAm62lLpddr4Fanout = async ({
         fontSize="0.7mm"
         text={
           includePowerPlaneFanout
-            ? "AM62L32 to LPDDR4: BYTE0 top/inner4, BYTE1 inner5/bottom, ADDR_CTRL inner6, CLOCK inner5; GND inner1, VDD_LPDDR4 inner2, SOC_DVDD1V8 inner3"
+            ? "AM62L32 to LPDDR4: BYTE0 top/inner4, BYTE1 inner5/bottom, ADDR_CTRL/RESET inner6, CLOCK inner5; GND inner1, VDD_LPDDR4 inner2, SOC_DVDD1V8 inner3"
             : "AM62L32 to LPDDR4: full BYTE0 DQ0-DQ7 top/inner1, full BYTE1 DQ8-DQ15 inner2/bottom"
         }
       />
@@ -1008,6 +1042,21 @@ export const renderAm62lLpddr4Fanout = async ({
       if (!clockConnectionNames || clockConnectionNames.length !== 2) {
         throw new Error("Expected two DDR_CLOCK fanout connections")
       }
+      const resetBus = boundaryBuses.find((bus) => bus.busId === "DDR_RESET")
+      expect(resetBus?.connectionNames).toHaveLength(1)
+      const resetSourceTrace = circuit.db.source_trace.getWhere({
+        name: DDR_RESET_CONNECTION.traceName,
+      })
+      if (!resetSourceTrace) throw new Error("Missing RESET_n source trace")
+      const resetPhaseConnection = fanoutInput.connections.find(
+        (connection) =>
+          connection.source_trace_id === resetSourceTrace.source_trace_id,
+      )
+      expect(resetPhaseConnection).toBeDefined()
+      if (!resetPhaseConnection) {
+        throw new Error("Missing RESET_n fanout phase connection")
+      }
+      expect(resetBus?.connectionNames).toEqual([resetPhaseConnection.name])
       expect(fanoutInput.differentialPairs).toEqual([
         {
           connectionNames: [clockConnectionNames[0]!, clockConnectionNames[1]!],
@@ -1115,6 +1164,49 @@ export const renderAm62lLpddr4Fanout = async ({
       expect(exitPoint.y).toBeGreaterThan(socFanoutInput.bounds.minY)
       expect(exitPoint.y).toBeLessThan(socFanoutInput.bounds.maxY)
     }
+    const resetBus = socFanoutInput.buses?.find(
+      (bus) => bus.busId === "DDR_RESET",
+    )
+    expect(resetBus?.connectionNames).toHaveLength(1)
+    const resetConnectionNames = new Set(resetBus?.connectionNames ?? [])
+    const resetExitPoints = (socFanoutPhase.endSimpleRouteJson?.traces ?? [])
+      .filter((trace) => resetConnectionNames.has(trace.connection_name ?? ""))
+      .map((trace) =>
+        trace.route.findLast((routePoint) => routePoint.route_type === "wire"),
+      )
+    expect(resetExitPoints).toHaveLength(1)
+    const resetExitPoint = resetExitPoints[0]
+    if (!resetExitPoint) throw new Error("Missing DDR_RESET fanout exit point")
+    expect(resetExitPoint.x).toBeCloseTo(socFanoutInput.bounds.maxX)
+    expect(resetExitPoint.layer).toBe("inner6")
+    expect(resetExitPoint.y).toBeGreaterThan(socFanoutInput.bounds.minY)
+    expect(resetExitPoint.y).toBeLessThan(socFanoutInput.bounds.maxY)
+
+    const dramFanoutPhase = autoroutingPhaseIoStack[1]!
+    const dramFanoutInput = dramFanoutPhase.startSimpleRouteJson!
+    const dramResetBus = dramFanoutInput.buses?.find(
+      (bus) => bus.busId === "DDR_RESET",
+    )
+    expect(dramResetBus?.connectionNames).toHaveLength(1)
+    const dramResetConnectionName = dramResetBus?.connectionNames[0]
+    if (!dramResetConnectionName) {
+      throw new Error("Missing DRAM DDR_RESET fanout connection")
+    }
+    const dramResetTrace = dramFanoutPhase.endSimpleRouteJson?.traces?.find(
+      (trace) => trace.connection_name === dramResetConnectionName,
+    )
+    const dramResetExitPoint = dramResetTrace?.route.findLast(
+      (routePoint) => routePoint.route_type === "wire",
+    )
+    if (!dramResetExitPoint) {
+      throw new Error("Missing DRAM DDR_RESET fanout exit point")
+    }
+    const dramFanoutCenterY =
+      (dramFanoutInput.bounds.minY + dramFanoutInput.bounds.maxY) / 2
+    expect(dramResetExitPoint.x).toBeCloseTo(dramFanoutInput.bounds.minX)
+    expect(dramResetExitPoint.layer).toBe("inner6")
+    expect(dramResetExitPoint.y).toBeGreaterThan(dramFanoutCenterY)
+    expect(dramResetExitPoint.y).toBeLessThan(dramFanoutInput.bounds.maxY)
   }
   expect(autoroutingPhaseIoStack[2]?.startSimpleRouteJson?.traces).toHaveLength(
     signalConnections.length * 2 + planeDrops.length,
