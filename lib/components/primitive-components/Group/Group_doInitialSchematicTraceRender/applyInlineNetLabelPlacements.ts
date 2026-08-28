@@ -1,4 +1,5 @@
 import type { SchematicTracePipelineSolver } from "@tscircuit/schematic-trace-solver"
+import type { SourceTrace } from "circuit-json"
 import Debug from "debug"
 import { Group } from "../Group"
 import { createCanonicalSchematicNetLabelTextResolver } from "./createCanonicalSchematicNetLabelTextResolver"
@@ -17,6 +18,7 @@ const INLINE_NET_LABEL_COLOR = "rgb(132, 0, 0)"
  * counter-clockwise quarter turn. SVG rotations are clockwise-positive.
  */
 const VERTICAL_INLINE_NET_LABEL_ROTATION = -90
+type SourceTraceId = SourceTrace["source_trace_id"]
 
 /**
  * Emits the solver's inline net labels - net names drawn parallel to the trace
@@ -31,9 +33,16 @@ export function applyInlineNetLabelPlacements(args: {
   group: Group<any>
   solver: SchematicTracePipelineSolver
   userNetIdToConnKey: Map<string, string>
-  sourceTraceIdByPinPairKey: Map<string, string>
+  sourceTraceIdByPinPairKey: Map<string, SourceTraceId>
+  assignedSchematicNetLabelTextBySourceTraceId: Map<SourceTraceId, string>
 }) {
-  const { group, solver, userNetIdToConnKey, sourceTraceIdByPinPairKey } = args
+  const {
+    group,
+    solver,
+    userNetIdToConnKey,
+    sourceTraceIdByPinPairKey,
+    assignedSchematicNetLabelTextBySourceTraceId,
+  } = args
   const { db } = group.root!
 
   const inlineNetLabelPlacements =
@@ -54,17 +63,6 @@ export function applyInlineNetLabelPlacements(args: {
       ? userNetIdToConnKey.get(placementUserNetId)
       : undefined
 
-    const text = connKey
-      ? resolveCanonicalNetLabelText({ subcircuitConnectivityMapKey: connKey })
-          .name
-      : (placement.netId ?? placement.globalConnNetId)
-    if (!text) {
-      debug(
-        `skipping inline net label for "${placement.netId}" REASON:no resolvable text`,
-      )
-      continue
-    }
-
     let sourceTraceId = sourceTraceIdByPinPairKey.get(
       [...schematicPortIds].sort().join("::"),
     )
@@ -83,6 +81,25 @@ export function applyInlineNetLabelPlacements(args: {
               sourceTrace.connected_source_port_ids.includes(sourcePortId),
             ),
         )?.source_trace_id
+    }
+
+    // A local subcircuit cannot resolve labels declared on a parent-owned
+    // trace. Prefer the exact source trace's assigned label before falling back
+    // to the connection-wide canonical name.
+    const text =
+      (sourceTraceId
+        ? assignedSchematicNetLabelTextBySourceTraceId.get(sourceTraceId)
+        : undefined) ??
+      (connKey
+        ? resolveCanonicalNetLabelText({
+            subcircuitConnectivityMapKey: connKey,
+          }).name
+        : (placement.netId ?? placement.globalConnNetId))
+    if (!text) {
+      debug(
+        `skipping inline net label for "${placement.netId}" REASON:no resolvable text`,
+      )
+      continue
     }
 
     // Inline labels belong to the same sheet as the trace they annotate.

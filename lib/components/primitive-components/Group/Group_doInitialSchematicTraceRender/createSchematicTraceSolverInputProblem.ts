@@ -14,6 +14,7 @@ import { convertFacingDirectionToElbowDirection } from "lib/utils/schematic/conv
 import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
 import type { NetLabel } from "../../NetLabel"
 import { Port } from "../../Port"
+import { Trace } from "../../Trace/Trace"
 import { Group } from "../Group"
 import { applyInlineNetLabelEligibility } from "./applyInlineNetLabelEligibility"
 import { createCanonicalSchematicNetLabelTextResolver } from "./createCanonicalSchematicNetLabelTextResolver"
@@ -104,6 +105,9 @@ export type SolverInputContext = {
    * source_trace_id it was derived from.
    */
   sourceTraceIdByPinPairKey: Map<string, SourceTraceId>
+
+  /** Exact user-assigned schematic label text for each rendered source trace. */
+  assignedSchematicNetLabelTextBySourceTraceId: Map<SourceTraceId, string>
 }
 
 export function createSchematicTraceSolverInputProblem(
@@ -342,6 +346,24 @@ export function createSchematicTraceSolverInputProblem(
     return false
   })
 
+  const assignedSchematicNetLabelTextBySourceTraceId = new Map<
+    SourceTraceId,
+    string
+  >()
+  const board = group._getBoard()
+  // Cross-scope traces are owned by an ancestor group, so the current group's
+  // port resolver cannot see their JSX label props. Index all trace components
+  // by exact source_trace_id to preserve that ownership through local solves.
+  for (const component of board?.getDescendants() ?? []) {
+    if (!(component instanceof Trace)) continue
+    const assignedSchematicNetLabelText = component._getSchematicNetLabelText()
+    if (component.source_trace_id && assignedSchematicNetLabelText) {
+      assignedSchematicNetLabelTextBySourceTraceId.set(
+        component.source_trace_id,
+        assignedSchematicNetLabelText,
+      )
+    }
+  }
   // A port-to-net trace owned by another subcircuit may target another
   // schematic representation of the same source port (for example, a
   // schematicbox in the parent). Only exclude the local representation in
@@ -415,6 +437,10 @@ export function createSchematicTraceSolverInputProblem(
     netId: string
     schematicPortIds: SchematicPortId[]
     netLabelWidth: number
+    connKey: string
+    hasExplicitSourceTrace: true
+    assignedSchematicNetLabelText?: string
+    isCrossScopeDirectTrace: true
   }> = []
   const connectedPairKeys = new Set<string>()
   const crossSubcircuitTraceLabelBySchematicPortId = new Map<
@@ -498,7 +524,7 @@ export function createSchematicTraceSolverInputProblem(
                 ?.subcircuit_connectivity_map_key === connKey
             )
           })
-        const { text } = resolveNetLabelForPortMissingTrace({
+        const { text: fallbackText } = resolveNetLabelForPortMissingTrace({
           group,
           sourcePortId,
           connectedSourcePortIdsForKey,
@@ -507,6 +533,9 @@ export function createSchematicTraceSolverInputProblem(
           connKey,
           sourceNet: connKeyToSourceNet.get(connKey),
         })
+        const assignedSchematicNetLabelText =
+          assignedSchematicNetLabelTextBySourceTraceId.get(st.source_trace_id)
+        const text = assignedSchematicNetLabelText ?? fallbackText
         if (
           text &&
           !crossSubcircuitTraceLabelBySchematicPortId.has(schematicPortId)
@@ -522,6 +551,10 @@ export function createSchematicTraceSolverInputProblem(
             netLabelWidth: Number(
               getSchematicNetLabelTextWidth({ text }).toFixed(2),
             ),
+            connKey,
+            hasExplicitSourceTrace: true,
+            assignedSchematicNetLabelText,
+            isCrossScopeDirectTrace: true,
           })
         }
       }
@@ -606,6 +639,12 @@ export function createSchematicTraceSolverInputProblem(
     inlineNetLabelHeight?: number
     /** Retained for inline-label eligibility; stripped at the solver boundary. */
     connKey?: string
+    /** Retained for inline-label eligibility; stripped at the solver boundary. */
+    hasExplicitSourceTrace?: boolean
+    /** Retained for inline-label eligibility; stripped at the solver boundary. */
+    assignedSchematicNetLabelText?: string
+    /** Retained for inline-label eligibility; stripped at the solver boundary. */
+    isCrossScopeDirectTrace?: boolean
   }> = [...singlePortTraceNetConnections]
 
   /**
@@ -676,6 +715,7 @@ export function createSchematicTraceSolverInputProblem(
         netLabelWidth,
         netLabelHeight,
         connKey,
+        hasExplicitSourceTrace: connKeysWithExplicitPortNetTraces.has(connKey),
       })
     }
   }
@@ -685,7 +725,6 @@ export function createSchematicTraceSolverInputProblem(
     netConnections,
     connKeyToSchematicPortIds,
     connKeyToSourceNet,
-    connKeysWithExplicitPortNetTraces,
     schematicPortIdsWithExplicitNetLabels,
     schematicPortIdsWithInlineNetLabels,
     areSchematicPortsOnDifferentComponents: (schematicPortIds) => {
@@ -737,7 +776,14 @@ export function createSchematicTraceSolverInputProblem(
       }),
     ),
     netConnections: netConnections.map(
-      ({ schematicPortIds, connKey, ...connection }) => ({
+      ({
+        schematicPortIds,
+        connKey,
+        hasExplicitSourceTrace,
+        assignedSchematicNetLabelText,
+        isCrossScopeDirectTrace,
+        ...connection
+      }) => ({
         ...connection,
         pinIds: schematicPortIds,
       }),
@@ -769,5 +815,6 @@ export function createSchematicTraceSolverInputProblem(
     schPortIdToSourcePortId,
     netLabelsInScope,
     sourceTraceIdByPinPairKey,
+    assignedSchematicNetLabelTextBySourceTraceId,
   }
 }
