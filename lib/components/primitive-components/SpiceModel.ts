@@ -4,8 +4,8 @@ import type {
   SourceInvalidComponentPropertyErrorInput,
 } from "circuit-json"
 import { parseSpiceNetlist } from "spicets"
-import { Port } from "./Port"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
+import { Port } from "./Port"
 
 export class SpiceModel extends PrimitiveComponent<typeof spicemodelProps> {
   get config() {
@@ -16,6 +16,8 @@ export class SpiceModel extends PrimitiveComponent<typeof spicemodelProps> {
   }
 
   doInitialSimulationRender() {
+    if (this.getInheritedProperty("analogSimulationDisabled")) return
+
     const parent = this.parent
     if (!parent) return
 

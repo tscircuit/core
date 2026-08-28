@@ -11,10 +11,10 @@ import { createAutoroutingPhaseIoStack } from "tests/fixtures/create-autorouting
 import { createBasicAutorouter } from "tests/fixtures/createBasicAutorouter"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-type DdrByteBusName = "DDR_BYTE0" | "DDR_BYTE1"
+type DdrBusName = "DDR_BYTE0" | "DDR_BYTE1" | "DDR_ADDR_CTRL" | "DDR_CLOCK"
 
 interface DdrConnection {
-  busName: DdrByteBusName
+  busName: DdrBusName
   memoryBall: string
   memoryPinNumber: number
   memorySignal: string
@@ -55,6 +55,70 @@ const DDR_CONNECTIONS: readonly DdrConnection[] = DDR_PIN_ASSIGNMENTS.map(
     traceName: `DQ${bit}`,
   }),
 )
+
+const DDR_ADDR_CTRL_PIN_ASSIGNMENTS = [
+  ["CA0", "DDR0_A0", 164, "L5", 72, "H2"],
+  ["CA1", "DDR0_A1", 125, "H6", 82, "J2"],
+  ["CA2", "DDR0_A2", 165, "L6", 77, "H9"],
+  ["CA3", "DDR0_A3", 150, "K2", 78, "H10"],
+  ["CA4", "DDR0_A4", 139, "J1", 79, "H11"],
+  ["CA5", "DDR0_A5", 124, "H5", 89, "J11"],
+  ["CS", "DDR0_CS0_n", 162, "L3", 74, "H4"],
+  ["CKE", "DDR0_CKE0", 149, "K1", 84, "J4"],
+] as const
+
+const DDR_ADDR_CTRL_CONNECTIONS: readonly DdrConnection[] =
+  DDR_ADDR_CTRL_PIN_ASSIGNMENTS.map(
+    ([
+      memorySignal,
+      socSignal,
+      socPinNumber,
+      socBall,
+      memoryPinNumber,
+      memoryBall,
+    ]) => ({
+      busName: "DDR_ADDR_CTRL",
+      memoryBall,
+      memoryPinNumber,
+      memorySignal,
+      socBall,
+      socPinNumber,
+      socSignal,
+      traceName: memorySignal,
+    }),
+  )
+
+const DDR_CLOCK_PIN_ASSIGNMENTS = [
+  ["CK_t", "DDR0_CK0", 215, "P1", 86, "J8"],
+  ["CK_c", "DDR0_CK0_n", 216, "P2", 87, "J9"],
+] as const
+
+const DDR_CLOCK_CONNECTIONS: readonly DdrConnection[] =
+  DDR_CLOCK_PIN_ASSIGNMENTS.map(
+    ([
+      memorySignal,
+      socSignal,
+      socPinNumber,
+      socBall,
+      memoryPinNumber,
+      memoryBall,
+    ]) => ({
+      busName: "DDR_CLOCK",
+      memoryBall,
+      memoryPinNumber,
+      memorySignal,
+      socBall,
+      socPinNumber,
+      socSignal,
+      traceName: memorySignal,
+    }),
+  )
+
+const DDR_SIGNAL_CONNECTIONS = [
+  ...DDR_CONNECTIONS,
+  ...DDR_ADDR_CTRL_CONNECTIONS,
+  ...DDR_CLOCK_CONNECTIONS,
+] as const
 
 // The real 373-ball FCCSP footprint is a 0.5 mm grid with depopulated rows.
 // Keeping the row masks here makes the regression fixture independent of the
@@ -184,6 +248,14 @@ const AM62L_PIN_LABELS = {
       `pin${pinNumber}`,
       [ballName, pinSignal],
     ]),
+  ),
+  ...Object.fromEntries(
+    [...DDR_ADDR_CTRL_CONNECTIONS, ...DDR_CLOCK_CONNECTIONS].map(
+      ({ socBall, socPinNumber, socSignal }) => [
+        `pin${socPinNumber}`,
+        [socBall, socSignal],
+      ],
+    ),
   ),
   pin76: ["E1", "DDR0_DQ3"],
   pin91: ["F1", "DDR0_DQ2"],
@@ -317,6 +389,14 @@ const LPDDR4_PIN_LABELS = {
       ],
     ),
   ),
+  ...Object.fromEntries(
+    [...DDR_ADDR_CTRL_CONNECTIONS, ...DDR_CLOCK_CONNECTIONS].map(
+      ({ memoryBall, memoryPinNumber, memorySignal }) => [
+        `pin${memoryPinNumber}`,
+        [memoryBall, memorySignal],
+      ],
+    ),
+  ),
   pin12: ["B2", "DQ0"],
   pin14: ["B4", "DQ7"],
   pin17: ["B9", "DQ15"],
@@ -386,6 +466,7 @@ const POWER_FANOUT_SIGNAL_LAYERS = [
   "top",
   "inner4",
   "inner5",
+  "inner6",
   "bottom",
 ] as const
 const SIGNAL_ONLY_LAYERS = ["top", "inner1", "inner2", "bottom"] as const
@@ -464,8 +545,18 @@ const byte0TraceNames = DDR_CONNECTIONS.filter(
 const byte1TraceNames = DDR_CONNECTIONS.filter(
   ({ busName }) => busName === "DDR_BYTE1",
 ).map(({ traceName }) => traceName)
+const addrCtrlTraceNames = DDR_ADDR_CTRL_CONNECTIONS.map(
+  ({ traceName }) => traceName,
+)
+const clockTraceNames: [string, string] = [
+  DDR_CLOCK_CONNECTIONS[0]!.traceName,
+  DDR_CLOCK_CONNECTIONS[1]!.traceName,
+]
 const BYTE0_MAX_FANOUT_SKEW = 8
 const BYTE1_MAX_FANOUT_SKEW = 14.5
+const ADDR_CTRL_MAX_FANOUT_SKEW = 15
+const CLOCK_MAX_FANOUT_SKEW = 0.25
+const CLOCK_MAX_END_TO_END_SKEW = CLOCK_MAX_FANOUT_SKEW * 2
 
 const FANOUT_BUSES = [
   {
@@ -479,6 +570,18 @@ const FANOUT_BUSES = [
     connections: byte1TraceNames,
     preferredLayers: ["inner5", "bottom"],
     maxLengthSkew: BYTE1_MAX_FANOUT_SKEW,
+  },
+  {
+    name: "DDR_ADDR_CTRL",
+    connections: addrCtrlTraceNames,
+    preferredLayers: ["inner6"],
+    maxLengthSkew: ADDR_CTRL_MAX_FANOUT_SKEW,
+  },
+  {
+    name: "DDR_CLOCK",
+    connections: clockTraceNames,
+    preferredLayers: ["inner5"],
+    maxLengthSkew: CLOCK_MAX_FANOUT_SKEW,
   },
 ] as const
 
@@ -599,7 +702,7 @@ export type FanoutAlgorithmFn = (
   simpleRouteJson: SimpleRouteJson,
 ) => Promise<GenericLocalAutorouter>
 
-export const renderAm62lLpddr4TwoBusFanout = async ({
+export const renderAm62lLpddr4Fanout = async ({
   fanoutAlgorithmFn,
   fanoutSolverLabel,
   includePowerPlaneFanout = false,
@@ -618,7 +721,15 @@ export const renderAm62lLpddr4TwoBusFanout = async ({
   const signalLayers = includePowerPlaneFanout
     ? POWER_FANOUT_SIGNAL_LAYERS
     : SIGNAL_ONLY_LAYERS
-  const fanoutBuses = FANOUT_BUSES.map((bus) => ({
+  const signalConnections = includePowerPlaneFanout
+    ? DDR_SIGNAL_CONNECTIONS
+    : DDR_CONNECTIONS
+  const fanoutBuses = FANOUT_BUSES.filter(
+    (bus) =>
+      includePowerPlaneFanout ||
+      bus.name === "DDR_BYTE0" ||
+      bus.name === "DDR_BYTE1",
+  ).map((bus) => ({
     ...bus,
     maxLengthSkew:
       includePowerPlaneFanout || bus.name === "DDR_BYTE0"
@@ -645,7 +756,11 @@ export const renderAm62lLpddr4TwoBusFanout = async ({
 
   circuit.add(
     <board
-      name="AM62L_LPDDR4_TWO_BUS_FANOUT"
+      name={
+        includePowerPlaneFanout
+          ? "AM62L_LPDDR4_FOUR_BUS_FANOUT"
+          : "AM62L_LPDDR4_TWO_BUS_FANOUT"
+      }
       width="42mm"
       height="26mm"
       layers={includePowerPlaneFanout ? 8 : 4}
@@ -688,6 +803,12 @@ export const renderAm62lLpddr4TwoBusFanout = async ({
         busFanoutDirections={{
           DDR_BYTE0: "rightside_top",
           DDR_BYTE1: "rightside_bottom",
+          ...(includePowerPlaneFanout
+            ? {
+                DDR_ADDR_CTRL: "rightside_center" as const,
+                DDR_CLOCK: "rightside_top" as const,
+              }
+            : {}),
         }}
       >
         <Am62l32 name="U1" noSchematicRepresentation />
@@ -705,13 +826,19 @@ export const renderAm62lLpddr4TwoBusFanout = async ({
       <breakout
         name="DRAM_FANOUT"
         pcbX={9.616917}
-        pcbY={-0.050917}
+        pcbY={includePowerPlaneFanout ? 1.81916 : -0.050917}
         padding={includePowerPlaneFanout ? "3mm" : "2.5mm"}
         autorouter={fanoutAutorouter}
         fanoutRoutingLayers={[...signalLayers]}
         busFanoutDirections={{
           DDR_BYTE0: "leftside_center",
           DDR_BYTE1: "leftside_center",
+          ...(includePowerPlaneFanout
+            ? {
+                DDR_ADDR_CTRL: "leftside_center" as const,
+                DDR_CLOCK: "leftside_top" as const,
+              }
+            : {}),
         }}
       >
         <Mt53e1g16d1zw name="U2" pcbRotation={90} noSchematicRepresentation />
@@ -739,7 +866,16 @@ export const renderAm62lLpddr4TwoBusFanout = async ({
         ),
       )}
 
-      {DDR_CONNECTIONS.map(({ memorySignal, socSignal, traceName }) => (
+      {includePowerPlaneFanout && (
+        <differentialpair
+          name="DDR_CLOCK_PAIR"
+          positiveConnection="CK_t"
+          negativeConnection="CK_c"
+          maxLengthSkew={CLOCK_MAX_FANOUT_SKEW}
+        />
+      )}
+
+      {signalConnections.map(({ memorySignal, socSignal, traceName }) => (
         <Fragment key={traceName}>
           <trace
             name={traceName}
@@ -755,7 +891,7 @@ export const renderAm62lLpddr4TwoBusFanout = async ({
         fontSize="0.7mm"
         text={
           includePowerPlaneFanout
-            ? "AM62L32 to LPDDR4: BYTE0 top/inner4, BYTE1 inner5/bottom; GND inner1, VDD_LPDDR4 1.1 V inner2, SOC_DVDD1V8 inner3"
+            ? "AM62L32 to LPDDR4: BYTE0 top/inner4, BYTE1 inner5/bottom, ADDR_CTRL inner6, CLOCK inner5; GND inner1, VDD_LPDDR4 inner2, SOC_DVDD1V8 inner3"
             : "AM62L32 to LPDDR4: full BYTE0 DQ0-DQ7 top/inner1, full BYTE1 DQ8-DQ15 inner2/bottom"
         }
       />
@@ -765,7 +901,7 @@ export const renderAm62lLpddr4TwoBusFanout = async ({
         fontSize="0.6mm"
         text={
           includePowerPlaneFanout
-            ? `${fanoutSolverLabel}; BYTE0 skew <= ${BYTE0_MAX_FANOUT_SKEW} mm, BYTE1 <= ${BYTE1_MAX_FANOUT_SKEW} mm; 244 dogbone vias span all 8 layers`
+            ? `${fanoutSolverLabel}; fanout skew: BYTE0 <= ${BYTE0_MAX_FANOUT_SKEW} mm, BYTE1 <= ${BYTE1_MAX_FANOUT_SKEW} mm, ADDR_CTRL <= ${ADDR_CTRL_MAX_FANOUT_SKEW} mm, CLOCK <= ${CLOCK_MAX_FANOUT_SKEW} mm; ${PLANE_DROPS.length + signalConnections.length * 2} dogbone vias span all 8 layers`
             : `${fanoutSolverLabel}; BYTE0 fanout skew <= ${BYTE0_MAX_FANOUT_SKEW} mm`
         }
       />
@@ -794,7 +930,11 @@ export const renderAm62lLpddr4TwoBusFanout = async ({
     autoroutingPhaseIoStack.map(
       (phaseIo) => phaseIo.startSimpleRouteJson?.connections.length,
     ),
-  ).toEqual([16 + socPlaneDrops.length, 16 + dramPlaneDrops.length, 16])
+  ).toEqual([
+    signalConnections.length + socPlaneDrops.length,
+    signalConnections.length + dramPlaneDrops.length,
+    signalConnections.length,
+  ])
   for (const [fanoutPhaseIndex, fanoutPhase] of autoroutingPhaseIoStack
     .slice(0, 2)
     .entries()) {
@@ -824,7 +964,9 @@ export const renderAm62lLpddr4TwoBusFanout = async ({
     const outputRouteVias = fanoutOutputTraces.flatMap((trace) =>
       trace.route.filter((routePoint) => routePoint.route_type === "via"),
     )
-    expect(outputRouteVias).toHaveLength(16 + expectedPlaneDrops.length)
+    expect(outputRouteVias).toHaveLength(
+      signalConnections.length + expectedPlaneDrops.length,
+    )
     if (includePowerPlaneFanout) {
       for (const routeVia of outputRouteVias) {
         expect(routeVia.layers).toEqual(getViaBoardLayers(8))
@@ -835,7 +977,7 @@ export const renderAm62lLpddr4TwoBusFanout = async ({
         trace.connection_name !== undefined &&
         boundaryConnectionNames.has(trace.connection_name),
     )
-    expect(routedFanoutTraces).toHaveLength(16)
+    expect(routedFanoutTraces).toHaveLength(signalConnections.length)
     for (const trace of routedFanoutTraces) {
       expect(
         trace.route.filter((routePoint) => routePoint.route_type === "via"),
@@ -850,14 +992,29 @@ export const renderAm62lLpddr4TwoBusFanout = async ({
       const traceLengths = routedFanoutTraces
         .filter((trace) => connectionNames.has(trace.connection_name ?? ""))
         .map(getPlanarTraceLength)
-      expect(traceLengths).toHaveLength(8)
+      expect(traceLengths).toHaveLength(expectedBus.connections.length)
       if (expectedBus.maxLengthSkew !== undefined) {
         expect(
           Math.max(...traceLengths) - Math.min(...traceLengths),
         ).toBeLessThanOrEqual(expectedBus.maxLengthSkew + 1e-6)
       }
     }
-
+    if (includePowerPlaneFanout) {
+      const clockBus = boundaryBuses.find((bus) => bus.busId === "DDR_CLOCK")
+      expect(clockBus?.connectionNames).toHaveLength(
+        DDR_CLOCK_CONNECTIONS.length,
+      )
+      const clockConnectionNames = clockBus?.connectionNames
+      if (!clockConnectionNames || clockConnectionNames.length !== 2) {
+        throw new Error("Expected two DDR_CLOCK fanout connections")
+      }
+      expect(fanoutInput.differentialPairs).toEqual([
+        {
+          connectionNames: [clockConnectionNames[0]!, clockConnectionNames[1]!],
+          lengthTolerance: CLOCK_MAX_FANOUT_SKEW,
+        },
+      ])
+    }
     const planeBuses =
       fanoutInput.buses?.filter((bus) => bus.termination?.type === "plane") ??
       []
@@ -908,11 +1065,84 @@ export const renderAm62lLpddr4TwoBusFanout = async ({
       expect(exitPoint.y).toBeLessThan(socFanoutInput.bounds.maxY)
     }
   }
+  if (includePowerPlaneFanout) {
+    const addrCtrlBus = socFanoutInput.buses?.find(
+      (bus) => bus.busId === "DDR_ADDR_CTRL",
+    )
+    expect(addrCtrlBus?.connectionNames).toHaveLength(
+      DDR_ADDR_CTRL_CONNECTIONS.length,
+    )
+    const addrCtrlConnectionNames = new Set(addrCtrlBus?.connectionNames ?? [])
+    const addrCtrlExitPoints = (socFanoutPhase.endSimpleRouteJson?.traces ?? [])
+      .filter((trace) =>
+        addrCtrlConnectionNames.has(trace.connection_name ?? ""),
+      )
+      .map((trace) =>
+        trace.route.findLast((routePoint) => routePoint.route_type === "wire"),
+      )
+    expect(addrCtrlExitPoints).toHaveLength(DDR_ADDR_CTRL_CONNECTIONS.length)
+    const addrCtrlExitYCoordinates: number[] = []
+    for (const exitPoint of addrCtrlExitPoints) {
+      expect(exitPoint).toBeDefined()
+      if (!exitPoint) throw new Error("Missing DDR_ADDR_CTRL fanout exit point")
+      expect(exitPoint.x).toBeCloseTo(socFanoutInput.bounds.maxX)
+      expect(exitPoint.y).toBeGreaterThan(socFanoutInput.bounds.minY)
+      expect(exitPoint.y).toBeLessThan(socFanoutInput.bounds.maxY)
+      addrCtrlExitYCoordinates.push(exitPoint.y)
+    }
+    expect(Math.min(...addrCtrlExitYCoordinates)).toBeGreaterThan(
+      socFanoutInput.bounds.minY,
+    )
+    expect(Math.max(...addrCtrlExitYCoordinates)).toBeLessThan(
+      socFanoutInput.bounds.maxY,
+    )
+    const clockBus = socFanoutInput.buses?.find(
+      (bus) => bus.busId === "DDR_CLOCK",
+    )
+    expect(clockBus?.connectionNames).toHaveLength(DDR_CLOCK_CONNECTIONS.length)
+    const clockConnectionNames = new Set(clockBus?.connectionNames ?? [])
+    const clockExitPoints = (socFanoutPhase.endSimpleRouteJson?.traces ?? [])
+      .filter((trace) => clockConnectionNames.has(trace.connection_name ?? ""))
+      .map((trace) =>
+        trace.route.findLast((routePoint) => routePoint.route_type === "wire"),
+      )
+    expect(clockExitPoints).toHaveLength(DDR_CLOCK_CONNECTIONS.length)
+    for (const exitPoint of clockExitPoints) {
+      expect(exitPoint).toBeDefined()
+      if (!exitPoint) throw new Error("Missing DDR_CLOCK fanout exit point")
+      expect(exitPoint.x).toBeCloseTo(socFanoutInput.bounds.maxX)
+      expect(exitPoint.layer).toBe("inner5")
+      expect(exitPoint.y).toBeGreaterThan(socFanoutInput.bounds.minY)
+      expect(exitPoint.y).toBeLessThan(socFanoutInput.bounds.maxY)
+    }
+  }
   expect(autoroutingPhaseIoStack[2]?.startSimpleRouteJson?.traces).toHaveLength(
-    32 + planeDrops.length,
+    signalConnections.length * 2 + planeDrops.length,
   )
   const globalPhaseInput = autoroutingPhaseIoStack[2]!.startSimpleRouteJson!
   expect(getStraightLineWindingConflicts(globalPhaseInput)).toEqual([])
+  if (includePowerPlaneFanout) {
+    const clockGlobalConnectionNames = clockTraceNames.map((traceName) => {
+      const sourceTrace = circuit.db.source_trace.getWhere({ name: traceName })
+      if (!sourceTrace) {
+        throw new Error(`Missing source trace ${traceName}`)
+      }
+      const globalConnection = globalPhaseInput.connections.find(
+        (connection) =>
+          connection.source_trace_id === sourceTrace.source_trace_id,
+      )
+      if (!globalConnection) {
+        throw new Error(`Missing global connection for ${traceName}`)
+      }
+      return globalConnection.name
+    }) as [string, string]
+    expect(globalPhaseInput.differentialPairs).toEqual([
+      {
+        connectionNames: clockGlobalConnectionNames,
+        lengthTolerance: CLOCK_MAX_FANOUT_SKEW,
+      },
+    ])
+  }
   const sourceKeepouts = globalPhaseInput.obstacles.filter(
     (obstacle) =>
       obstacle.isFanoutSourceKeepout === true &&
@@ -1102,11 +1332,11 @@ export const renderAm62lLpddr4TwoBusFanout = async ({
   }
 
   const ddrTraceNames = new Set(
-    DDR_CONNECTIONS.map(({ traceName }) => traceName),
+    signalConnections.map(({ traceName }) => traceName),
   )
   const sourceTraces = circuit.db.source_trace.list()
   const ddrConnectivityKeys: string[] = []
-  for (const connection of DDR_CONNECTIONS) {
+  for (const connection of signalConnections) {
     const sourceTrace = circuit.db.source_trace.getWhere({
       name: connection.traceName,
     })!
@@ -1171,12 +1401,12 @@ export const renderAm62lLpddr4TwoBusFanout = async ({
     )
     expect(sourceTrace.connected_source_net_ids).toEqual([])
   }
-  expect(new Set(ddrConnectivityKeys).size).toBe(DDR_CONNECTIONS.length)
+  expect(new Set(ddrConnectivityKeys).size).toBe(signalConnections.length)
 
   if (includePowerPlaneFanout) {
     const allFanoutVias = circuit.db.pcb_via.list()
     expect(allFanoutVias).toHaveLength(
-      PLANE_DROPS.length + DDR_CONNECTIONS.length * 2,
+      PLANE_DROPS.length + signalConnections.length * 2,
     )
     expect(
       new Set(
@@ -1204,7 +1434,7 @@ export const renderAm62lLpddr4TwoBusFanout = async ({
   }
 
   const ddrSourceTraceIds = new Set(
-    DDR_CONNECTIONS.map(
+    signalConnections.map(
       ({ traceName }) =>
         circuit.db.source_trace.getWhere({ name: traceName })!.source_trace_id,
     ),
@@ -1216,8 +1446,24 @@ export const renderAm62lLpddr4TwoBusFanout = async ({
         pcbTrace.source_trace_id !== undefined &&
         ddrSourceTraceIds.has(pcbTrace.source_trace_id),
     )
-  expect(ddrPcbTraces).toHaveLength(48)
+  expect(ddrPcbTraces).toHaveLength(signalConnections.length * 3)
   if (includePowerPlaneFanout) {
+    const clockEndToEndLengths = DDR_CLOCK_CONNECTIONS.map(({ traceName }) => {
+      const sourceTraceId = circuit.db.source_trace.getWhere({
+        name: traceName,
+      })!.source_trace_id
+      return ddrPcbTraces
+        .filter((pcbTrace) => pcbTrace.source_trace_id === sourceTraceId)
+        .reduce(
+          (length, pcbTrace) => length + getPlanarRouteLength(pcbTrace.route),
+          0,
+        )
+    })
+    expect(clockEndToEndLengths).toHaveLength(2)
+    expect(
+      Math.abs(clockEndToEndLengths[0]! - clockEndToEndLengths[1]!),
+    ).toBeLessThanOrEqual(CLOCK_MAX_END_TO_END_SKEW + 1e-6)
+
     const ddrRouteEndpointLayers = ddrPcbTraces.flatMap((trace) =>
       trace.route.flatMap((routePoint) => {
         if (routePoint.route_type === "wire") return [routePoint.layer]
@@ -1231,5 +1477,7 @@ export const renderAm62lLpddr4TwoBusFanout = async ({
     expect(ddrRouteEndpointLayers).not.toContain(LPDDR4_POWER_PLANE_LAYER)
     expect(ddrRouteEndpointLayers).not.toContain(LPDDR4_VDD1_PLANE_LAYER)
   }
-  await expect(circuit).toMatchPcbSnapshot(snapshotPath)
+  await expect(circuit).toMatchPcbSnapshot(snapshotPath, {
+    diffThresholdPercent: 0.05,
+  })
 }

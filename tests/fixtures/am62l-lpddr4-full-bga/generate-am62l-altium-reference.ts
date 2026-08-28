@@ -5,7 +5,7 @@ const outputFlagIndex = Bun.argv.indexOf("--output")
 
 if (odbRootFlagIndex < 0 || outputFlagIndex < 0) {
   throw new Error(
-    "Usage: bun scripts/generate-am62l-altium-reference.ts --odb-root <odb/steps/pcb> --output <fixture.json>",
+    "Usage: bun tests/fixtures/am62l-lpddr4-full-bga/generate-am62l-altium-reference.ts --odb-root <odb/steps/pcb> --output <fixture.json>",
   )
 }
 
