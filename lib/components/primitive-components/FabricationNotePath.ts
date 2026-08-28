@@ -1,6 +1,6 @@
 import { fabricationNotePathProps } from "@tscircuit/props"
-import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { applyToPoint } from "transformation-matrix"
+import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
 export class FabricationNotePath extends PrimitiveComponent<
   typeof fabricationNotePathProps
@@ -21,10 +21,11 @@ export class FabricationNotePath extends PrimitiveComponent<
     const subcircuit = this.getSubcircuit()
     const { _parsedProps: props } = this
 
-    const layer = props.layer ?? "top"
+    const { maybeFlipLayer } = this._getPcbPrimitiveFlippedHelpers()
+    const layer = maybeFlipLayer(props.layer ?? "top")
     if (layer !== "top" && layer !== "bottom") {
       throw new Error(
-        `Invalid layer "${layer}" for SilkscreenPath. Must be "top" or "bottom".`,
+        `Invalid layer "${layer}" for FabricationNotePath. Must be "top" or "bottom".`,
       )
     }
 
