@@ -22,6 +22,30 @@ type EligibleNetConnection = {
   connKey?: string
 }
 
+type InlineNetLabelEligibleConnection = {
+  anchoredNetLabelWidth?: number
+  allowInlineNetLabel?: boolean
+  inlineNetLabelWidth?: number
+  inlineNetLabelHeight?: number
+}
+
+export const markConnectionEligibleForInlineNetLabel = (
+  connection: InlineNetLabelEligibleConnection,
+  name: string,
+) => {
+  connection.anchoredNetLabelWidth ??= Number(
+    getSchematicNetLabelTextWidth({ text: name }).toFixed(2),
+  )
+  connection.allowInlineNetLabel = true
+  connection.inlineNetLabelHeight = INLINE_NET_LABEL_FONT_SIZE
+  connection.inlineNetLabelWidth = Number(
+    getSchematicNetLabelTextWidth({
+      text: name,
+      font_size: INLINE_NET_LABEL_FONT_SIZE,
+    }).toFixed(2),
+  )
+}
+
 /**
  * Marks connections that should carry an "inline net label" - the net name
  * drawn alongside a trace instead of an anchored label at its end.
@@ -70,24 +94,8 @@ export const applyInlineNetLabelEligibility = ({
     subcircuitConnectivityMapKey: string
   }) => { name: string; wasAssignedDisplayLabel: boolean }
 }) => {
-  const markEligible = (
-    connection: EligibleDirectConnection | EligibleNetConnection,
-    name: string,
-  ) => {
-    connection.anchoredNetLabelWidth ??= Number(
-      getSchematicNetLabelTextWidth({ text: name }).toFixed(2),
-    )
-    connection.allowInlineNetLabel = true
-    connection.inlineNetLabelHeight = INLINE_NET_LABEL_FONT_SIZE
-    connection.inlineNetLabelWidth = Number(
-      getSchematicNetLabelTextWidth({
-        text: name,
-        font_size: INLINE_NET_LABEL_FONT_SIZE,
-      }).toFixed(2),
-    )
-  }
-
   for (const directConnection of directConnections) {
+    if (directConnection.allowInlineNetLabel) continue
     const { connKey } = directConnection
     if (!connKey) continue
 
@@ -102,7 +110,7 @@ export const applyInlineNetLabelEligibility = ({
     })
     if (!name || !wasAssignedDisplayLabel) continue
 
-    markEligible(directConnection, name)
+    markConnectionEligibleForInlineNetLabel(directConnection, name)
   }
 
   for (const netConnection of netConnections) {
@@ -146,6 +154,6 @@ export const applyInlineNetLabelEligibility = ({
     })
     if (!name || (!hasInlineNetLabel && !wasAssignedDisplayLabel)) continue
 
-    markEligible(netConnection, name)
+    markConnectionEligibleForInlineNetLabel(netConnection, name)
   }
 }

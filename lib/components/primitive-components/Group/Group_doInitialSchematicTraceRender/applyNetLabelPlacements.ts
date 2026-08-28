@@ -59,9 +59,9 @@ export function applyNetLabelPlacements(args: {
   group: Group<any>
   solver: SchematicTracePipelineSolver
   userNetIdToConnKey: Map<string, string>
-  crossSubcircuitTraceLabelBySchematicPortId: Map<
+  crossScopeTraceLabelBySchematicPortIdAndNetId: Map<
     SchematicPortId,
-    { text: string; sourceTraceId: SourceTraceId }
+    Map<string, { text: string; sourceTraceId: SourceTraceId }>
   >
   sourceTraceIdByPortOnlyLabelSchematicPortId: Map<
     SchematicPortId,
@@ -78,7 +78,7 @@ export function applyNetLabelPlacements(args: {
     solver,
     connKeyToSourceNet,
     userNetIdToConnKey,
-    crossSubcircuitTraceLabelBySchematicPortId,
+    crossScopeTraceLabelBySchematicPortIdAndNetId,
     sourceTraceIdByPortOnlyLabelSchematicPortId,
     connKeysWithExplicitPortNetTraces,
     schematicPortIdsWithPreExistingNetLabels,
@@ -161,12 +161,14 @@ export function applyNetLabelPlacements(args: {
     // Port-only placements have no solver pair id. A boundary label is owned
     // by its exact crossing source trace; otherwise the input builder supplies
     // an owner only when exactly one in-scope source trace touches that port.
-    const crossSubcircuitTraceLabel =
+    const crossScopeTraceLabel =
       schPortIds.length === 1
-        ? crossSubcircuitTraceLabelBySchematicPortId.get(schPortIds[0]!)
+        ? crossScopeTraceLabelBySchematicPortIdAndNetId
+            .get(schPortIds[0]!)
+            ?.get(placement.netId ?? placement.globalConnNetId)
         : undefined
     const placementSourceTraceId =
-      crossSubcircuitTraceLabel?.sourceTraceId ??
+      crossScopeTraceLabel?.sourceTraceId ??
       (schPortIds.length === 1
         ? sourceTraceIdByPortOnlyLabelSchematicPortId.get(schPortIds[0]!)
         : undefined)
@@ -188,9 +190,9 @@ export function applyNetLabelPlacements(args: {
       sourceNet = connKeyToSourceNet.get(placementConnKey)
     }
     const canonicalNetLabel = placementConnKey
-      ? crossSubcircuitTraceLabel
+      ? crossScopeTraceLabel
         ? {
-            name: crossSubcircuitTraceLabel.text,
+            name: crossScopeTraceLabel.text,
             wasAssignedDisplayLabel: false,
           }
         : resolveCanonicalNetLabelText({
