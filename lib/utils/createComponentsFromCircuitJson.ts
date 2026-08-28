@@ -1,10 +1,10 @@
-import type { PinLabelsProp } from "@tscircuit/props"
 import { getUnitVectorFromDirection } from "@tscircuit/math-utils"
+import type { PinLabelsProp } from "@tscircuit/props"
 import type { AnyCircuitElement, SchematicComponent } from "circuit-json"
+import { CopperText } from "lib/components/primitive-components/CopperText"
 import { CourtyardCircle } from "lib/components/primitive-components/CourtyardCircle"
 import { CourtyardOutline } from "lib/components/primitive-components/CourtyardOutline"
 import { CourtyardRect } from "lib/components/primitive-components/CourtyardRect"
-import { CopperText } from "lib/components/primitive-components/CopperText"
 import { Cutout } from "lib/components/primitive-components/Cutout"
 import { FabricationNotePath } from "lib/components/primitive-components/FabricationNotePath"
 import { FabricationNoteRect } from "lib/components/primitive-components/FabricationNoteRect"
@@ -18,6 +18,7 @@ import { PcbNoteText } from "lib/components/primitive-components/PcbNoteText"
 import { PcbTrace } from "lib/components/primitive-components/PcbTrace"
 import { PcbVia } from "lib/components/primitive-components/PcbVia"
 import { PlatedHole } from "lib/components/primitive-components/PlatedHole"
+import { Port } from "lib/components/primitive-components/Port/Port"
 import { SchematicArc } from "lib/components/primitive-components/SchematicArc"
 import { SchematicCircle } from "lib/components/primitive-components/SchematicCircle"
 import { SchematicLine } from "lib/components/primitive-components/SchematicLine"
@@ -30,7 +31,6 @@ import { SilkscreenPath } from "lib/components/primitive-components/SilkscreenPa
 import { SilkscreenRect } from "lib/components/primitive-components/SilkscreenRect"
 import { SilkscreenText } from "lib/components/primitive-components/SilkscreenText"
 import { SmtPad } from "lib/components/primitive-components/SmtPad"
-import { Port } from "lib/components/primitive-components/Port/Port"
 import { SymbolComponent } from "lib/components/primitive-components/Symbol"
 import type { PrimitiveComponent } from "../components/base-components/PrimitiveComponent"
 import { createPinrowSilkscreenText } from "./createPinrowSilkscreenText"
@@ -658,6 +658,7 @@ export const createComponentsFromCircuitJson = (
           anchorAlignment: elm.anchor_alignment,
           color: elm.color,
           font: elm.font,
+          layer: elm.layer,
           pcbRotation: elm.ccw_rotation,
         }),
       )

@@ -1,8 +1,8 @@
-import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { fabricationNoteTextProps } from "@tscircuit/props"
 import { normalizeTextForCircuitJson } from "lib/utils/normalizeTextForCircuitJson"
 import { resolvePcbProperty } from "lib/utils/pcbSx/resolve-pcb-property"
 import { decomposeTSR } from "transformation-matrix"
+import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
 export class FabricationNoteText extends PrimitiveComponent<
   typeof fabricationNoteTextProps
@@ -30,6 +30,15 @@ export class FabricationNoteText extends PrimitiveComponent<
     const ccwRotation = ((ccwRotationDegrees % 360) + 360) % 360
     const container = this.getPrimitiveContainer()!
     const subcircuit = this.getSubcircuit()
+    const { maybeFlipLayer } = this._getPcbPrimitiveFlippedHelpers()
+    const layer = maybeFlipLayer(props.layer ?? "top")
+
+    if (layer !== "top" && layer !== "bottom") {
+      throw new Error(
+        `Invalid layer "${layer}" for FabricationNoteText. Must be "top" or "bottom".`,
+      )
+    }
+
     const resolvedPcbSxVisibility = resolvePcbProperty({
       propertyName: "visibility",
       resolvedPcbSx: this.getResolvedPcbSx(),
@@ -47,7 +56,7 @@ export class FabricationNoteText extends PrimitiveComponent<
       },
       font: props.font ?? "tscircuit2024",
       font_size: props.fontSize ?? 1,
-      layer: "top",
+      layer,
       color: props.color,
       ccw_rotation: ccwRotation,
       text: normalizeTextForCircuitJson(props.text ?? ""),
