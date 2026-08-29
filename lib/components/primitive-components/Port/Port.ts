@@ -1,26 +1,27 @@
-import { getRelativeDirection } from "lib/utils/get-relative-direction"
+import { type PinAttributeMap, portProps } from "@tscircuit/props"
+import type { LayerRef, SchematicPort, SourcePinAttributes } from "circuit-json"
+import type { INormalComponent } from "lib/components/base-components/NormalComponent/INormalComponent"
+import { TraceConnectionError } from "lib/errors"
 import { SCHEMATIC_COMPONENT_OUTLINE_COLOR } from "lib/utils/constants"
+import { getRelativeDirection } from "lib/utils/get-relative-direction"
+import { formatPinLabelForSchematicDisplay } from "lib/utils/schematic/formatPinLabelForSchematicDisplay"
 import type {
   SchematicBoxDimensions,
   SchematicBoxPortPositionWithMetadata,
 } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
+import { getSourcePortNetLabelText } from "lib/utils/schematic/getSourcePortNetLabelText"
 import { type SchSymbol } from "schematic-symbols"
 import { applyToPoint, compose, translate } from "transformation-matrix"
 import { z } from "zod"
 import { PrimitiveComponent } from "../../base-components/PrimitiveComponent"
 import type { Trace } from "../Trace/Trace"
-import type { LayerRef, SchematicPort, SourcePinAttributes } from "circuit-json"
-import { areAllPcbPrimitivesOverlapping } from "./areAllPcbPrimitivesOverlapping"
-import { getCenterOfPcbPrimitives } from "./getCenterOfPcbPrimitives"
-import { type PinAttributeMap, portProps } from "@tscircuit/props"
-import type { INormalComponent } from "lib/components/base-components/NormalComponent/INormalComponent"
-import { TraceConnectionError } from "lib/errors"
-import { applyPinAttributesToSourcePort } from "./apply-pin-attributes-to-source-port"
 import { Port_doInitialCreateTracesFromProps } from "./Port_doInitialCreateTracesFromProps"
 import { Port_isConnectedToGround } from "./Port_isConnectedToGround"
 import { Port_isConnectedToPower } from "./Port_isConnectedToPower"
 import { Port_tryRenderGroupPcbPort } from "./Port_tryRenderGroupPcbPort"
-import { getSourcePortNetLabelText } from "lib/utils/schematic/getSourcePortNetLabelText"
+import { applyPinAttributesToSourcePort } from "./apply-pin-attributes-to-source-port"
+import { areAllPcbPrimitivesOverlapping } from "./areAllPcbPrimitivesOverlapping"
+import { getCenterOfPcbPrimitives } from "./getCenterOfPcbPrimitives"
 
 const SMALL_SCHEMATIC_PIN_LABEL_FONT_SIZE = 0.12
 
@@ -656,11 +657,13 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
     const parentNormalComponent = this.getParentNormalComponent()
     const showPinAliases = parentNormalComponent?.props?.showPinAliases
+    const displayLabelHints = labelHints.map(formatPinLabelForSchematicDisplay)
 
-    if (showPinAliases && labelHints.length > 0) {
-      return labelHints.join("/")
-    } else if (labelHints.length > 0) {
-      return labelHints[0]
+    if (showPinAliases && displayLabelHints.length > 0) {
+      return displayLabelHints.join("/")
+    }
+    if (displayLabelHints.length > 0) {
+      return displayLabelHints[0]
     }
 
     return undefined

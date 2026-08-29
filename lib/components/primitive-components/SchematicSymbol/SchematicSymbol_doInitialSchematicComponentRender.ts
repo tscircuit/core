@@ -1,5 +1,6 @@
 import type { SchematicPort } from "circuit-json"
 import { getRelativeDirection } from "lib/utils/get-relative-direction"
+import { formatPinLabelForSchematicDisplay } from "lib/utils/schematic/formatPinLabelForSchematicDisplay"
 import { symbols } from "schematic-symbols"
 import type { SchematicSymbol } from "./SchematicSymbol"
 
@@ -54,7 +55,9 @@ export const SchematicSymbol_doInitialSchematicComponentRender = (
       ) as SchematicPort["facing_direction"],
       distance_from_component_edge: 0.4,
       pin_number: port._parsedProps.pinNumber,
-      display_pin_label: port._parsedProps.aliases?.[0],
+      display_pin_label: port._parsedProps.aliases?.[0]
+        ? formatPinLabelForSchematicDisplay(port._parsedProps.aliases[0])
+        : undefined,
       is_connected: false,
       schematic_sheet_id: schematicSheetId,
       subcircuit_id: subcircuitId,

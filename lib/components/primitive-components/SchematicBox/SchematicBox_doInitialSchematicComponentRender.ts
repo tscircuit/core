@@ -6,9 +6,10 @@ import type {
 } from "circuit-json"
 import { underscorifyPinStyles } from "lib/soup/underscorifyPinStyles"
 import { underscorifyPortArrangement } from "lib/soup/underscorifyPortArrangement"
+import { formatPinLabelForSchematicDisplay } from "lib/utils/schematic/formatPinLabelForSchematicDisplay"
 import {
-  getAllDimensionsForSchematicBox,
   type NumericSchPinStyle,
+  getAllDimensionsForSchematicBox,
 } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
 import { getNumericSchPinStyle } from "lib/utils/schematic/getNumericSchPinStyle"
 import { getPinNumberFromPinLabelsKey } from "lib/utils/schematic/getPinNumberFromPinLabelsKey"
@@ -35,7 +36,9 @@ export const getSchematicBoxPinLabels = (
     const pinAliases = typeof pinLabel === "string" ? [pinLabel] : [...pinLabel]
     return {
       pinNumber,
-      displayPinLabel: pinAliases[0] ?? pinKey,
+      displayPinLabel: formatPinLabelForSchematicDisplay(
+        pinAliases[0] ?? pinKey,
+      ),
       pinAliases,
     }
   })
