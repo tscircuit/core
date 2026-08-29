@@ -574,6 +574,13 @@ export function createSchematicTraceSolverInputProblem(
     string,
     SourceTrace["source_trace_id"]
   >()
+  const connKeysWithExplicitNamedTraces = new Set(
+    tracesInScope.flatMap((sourceTrace) =>
+      sourceTrace.name && sourceTrace.subcircuit_connectivity_map_key
+        ? [sourceTrace.subcircuit_connectivity_map_key]
+        : [],
+    ),
+  )
   const connKeysWithExplicitPortNetTraces = new Set<string>()
   for (const sourceTrace of tracesInScope) {
     if (
@@ -952,6 +959,7 @@ export function createSchematicTraceSolverInputProblem(
     netConnections,
     connKeyToSchematicPortIds,
     connKeyToSourceNet,
+    connKeysWithExplicitNamedTraces,
     connKeysWithExplicitPortNetTraces,
     schematicPortIdsWithExplicitNetLabels,
     schematicPortIdsWithInlineNetLabels,

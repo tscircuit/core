@@ -54,10 +54,11 @@ const markConnectionEligibleForInlineNetLabel = (
  * Marks connections that should carry an "inline net label" - the net name
  * drawn alongside a trace instead of an anchored label at its end.
  *
- * A direct connection qualifies when it is a genuine point-to-point signal:
+ * A direct connection qualifies when it is a genuine point-to-point signal,
+ * or when the user explicitly names a trace on the branched net:
  *
- * - the whole net is exactly these two ports (a third tap would make the label
- *   ambiguous about which leg it names),
+ * - the whole net is exactly these two ports, or one of its traces has an
+ *   explicit `name` showing that the branched net is intentionally named,
  * - the net is not power or ground (those render as rail symbols), and
  * - the net has a name the user chose - a `schDisplayLabel`/`name` on the trace
  *   or a named net - rather than one derived from the ports it happens to hit.
@@ -82,6 +83,7 @@ export const applyInlineNetLabelEligibility = ({
   netConnections,
   connKeyToSchematicPortIds,
   connKeyToSourceNet,
+  connKeysWithExplicitNamedTraces,
   connKeysWithExplicitPortNetTraces,
   schematicPortIdsWithExplicitNetLabels,
   schematicPortIdsWithInlineNetLabels,
@@ -92,6 +94,7 @@ export const applyInlineNetLabelEligibility = ({
   netConnections: EligibleNetConnection[]
   connKeyToSchematicPortIds: Map<string, SchematicPortId[]>
   connKeyToSourceNet: Map<string, SourceNet>
+  connKeysWithExplicitNamedTraces: Set<string>
   connKeysWithExplicitPortNetTraces: Set<string>
   schematicPortIdsWithExplicitNetLabels: Set<SchematicPortId>
   schematicPortIdsWithInlineNetLabels: Set<SchematicPortId>
@@ -107,7 +110,11 @@ export const applyInlineNetLabelEligibility = ({
     if (!connKey) continue
 
     const portsOnNet = connKeyToSchematicPortIds.get(connKey)
-    if (portsOnNet?.length !== 2) continue
+    if (
+      portsOnNet?.length !== 2 &&
+      !connKeysWithExplicitNamedTraces.has(connKey)
+    )
+      continue
 
     const sourceNet = connKeyToSourceNet.get(connKey)
     if (sourceNet?.is_power || sourceNet?.is_ground) continue
