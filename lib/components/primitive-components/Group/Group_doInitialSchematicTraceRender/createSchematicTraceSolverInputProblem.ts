@@ -16,6 +16,7 @@ import { convertFacingDirectionToElbowDirection } from "lib/utils/schematic/conv
 import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
 import type { NetLabel } from "../../NetLabel"
 import { Port } from "../../Port"
+import { Trace } from "../../Trace/Trace"
 import { Group } from "../Group"
 import { applyInlineNetLabelEligibility } from "./applyInlineNetLabelEligibility"
 import { createCanonicalSchematicNetLabelTextResolver } from "./createCanonicalSchematicNetLabelTextResolver"
@@ -389,6 +390,30 @@ export function createSchematicTraceSolverInputProblem(
     }
     return false
   })
+  const connKeysWithExplicitLabeledDirectTraces = new Set(
+    group
+      .getDescendants()
+      .filter((component): component is Trace => component instanceof Trace)
+      .flatMap((trace) => {
+        if (
+          !trace.source_trace_id ||
+          !(
+            trace._parsedProps.schDisplayLabel ||
+            trace._parsedProps.displayName ||
+            trace._parsedProps.name
+          )
+        ) {
+          return []
+        }
+        const sourceTrace = db.source_trace.get(trace.source_trace_id)
+        return sourceTrace &&
+          sourceTrace.connected_source_port_ids.length >= 2 &&
+          sourceTrace.connected_source_net_ids.length === 0 &&
+          sourceTrace.subcircuit_connectivity_map_key
+          ? [sourceTrace.subcircuit_connectivity_map_key]
+          : []
+      }),
+  )
 
   // A port-to-net trace owned by another subcircuit may target another
   // schematic representation of the same source port (for example, a
@@ -574,13 +599,6 @@ export function createSchematicTraceSolverInputProblem(
     string,
     SourceTrace["source_trace_id"]
   >()
-  const connKeysWithExplicitNamedTraces = new Set(
-    tracesInScope.flatMap((sourceTrace) =>
-      sourceTrace.name && sourceTrace.subcircuit_connectivity_map_key
-        ? [sourceTrace.subcircuit_connectivity_map_key]
-        : [],
-    ),
-  )
   const connKeysWithExplicitPortNetTraces = new Set<string>()
   for (const sourceTrace of tracesInScope) {
     if (
@@ -959,7 +977,7 @@ export function createSchematicTraceSolverInputProblem(
     netConnections,
     connKeyToSchematicPortIds,
     connKeyToSourceNet,
-    connKeysWithExplicitNamedTraces,
+    connKeysWithExplicitLabeledDirectTraces,
     connKeysWithExplicitPortNetTraces,
     schematicPortIdsWithExplicitNetLabels,
     schematicPortIdsWithInlineNetLabels,

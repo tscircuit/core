@@ -55,10 +55,10 @@ const markConnectionEligibleForInlineNetLabel = (
  * drawn alongside a trace instead of an anchored label at its end.
  *
  * A direct connection qualifies when it is a genuine point-to-point signal,
- * or when the user explicitly names a trace on the branched net:
+ * or when the user explicitly labels a direct trace leg on a branched net:
  *
- * - the whole net is exactly these two ports, or one of its traces has an
- *   explicit `name` showing that the branched net is intentionally named,
+ * - the whole net is exactly these two ports, or the branched net includes a
+ *   true port-to-port trace with an explicit `name`/`schDisplayLabel`,
  * - the net is not power or ground (those render as rail symbols), and
  * - the net has a name the user chose - a `schDisplayLabel`/`name` on the trace
  *   or a named net - rather than one derived from the ports it happens to hit.
@@ -83,7 +83,7 @@ export const applyInlineNetLabelEligibility = ({
   netConnections,
   connKeyToSchematicPortIds,
   connKeyToSourceNet,
-  connKeysWithExplicitNamedTraces,
+  connKeysWithExplicitLabeledDirectTraces,
   connKeysWithExplicitPortNetTraces,
   schematicPortIdsWithExplicitNetLabels,
   schematicPortIdsWithInlineNetLabels,
@@ -94,7 +94,7 @@ export const applyInlineNetLabelEligibility = ({
   netConnections: EligibleNetConnection[]
   connKeyToSchematicPortIds: Map<string, SchematicPortId[]>
   connKeyToSourceNet: Map<string, SourceNet>
-  connKeysWithExplicitNamedTraces: Set<string>
+  connKeysWithExplicitLabeledDirectTraces: Set<string>
   connKeysWithExplicitPortNetTraces: Set<string>
   schematicPortIdsWithExplicitNetLabels: Set<SchematicPortId>
   schematicPortIdsWithInlineNetLabels: Set<SchematicPortId>
@@ -110,11 +110,11 @@ export const applyInlineNetLabelEligibility = ({
     if (!connKey) continue
 
     const portsOnNet = connKeyToSchematicPortIds.get(connKey)
-    if (
-      portsOnNet?.length !== 2 &&
-      !connKeysWithExplicitNamedTraces.has(connKey)
-    )
-      continue
+    const isPointToPoint = portsOnNet?.length === 2
+    const hasExplicitlyLabeledDirectTrace =
+      (portsOnNet?.length ?? 0) > 2 &&
+      connKeysWithExplicitLabeledDirectTraces.has(connKey)
+    if (!isPointToPoint && !hasExplicitlyLabeledDirectTrace) continue
 
     const sourceNet = connKeyToSourceNet.get(connKey)
     if (sourceNet?.is_power || sourceNet?.is_ground) continue
