@@ -1,11 +1,11 @@
-import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
+import { type Bounds, doBoundsOverlap } from "@tscircuit/math-utils"
+import { schematicSectionProps } from "@tscircuit/props"
 import {
   calculateCellBoundaries,
   computeBoundsFromCellContents,
 } from "calculate-cell-boundaries"
-import { schematicSectionProps } from "@tscircuit/props"
-import { type Bounds, doBoundsOverlap } from "@tscircuit/math-utils"
 import type { SchematicSheet } from "circuit-json"
+import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
 type SchematicSheetId = SchematicSheet["schematic_sheet_id"]
 
@@ -22,20 +22,22 @@ export class SchematicSection extends PrimitiveComponent<
   }
 
   // Pass null to compute bounds for components with no schSectionName
-  _computeSectionBounds(
-    board: PrimitiveComponent,
-    sectionName: string | null,
-    schematicSheetId: SchematicSheetId | undefined,
-  ): Bounds | null {
+  _computeSectionMemberBounds({
+    board,
+    sectionName,
+    schematicSheetId,
+  }: {
+    board: PrimitiveComponent
+    sectionName: string | null
+    schematicSheetId: SchematicSheetId | undefined
+  }): Bounds[] {
     const { db } = this.root!
 
     const members = board
       .getDescendants()
       .filter((c) => c.getSchematicSectionName() === sectionName)
 
-    if (members.length === 0) return null
-
-    const positions: Bounds[] = []
+    const memberBounds: Bounds[] = []
 
     for (const member of members) {
       const schematicComponentId = (member as any).schematic_component_id
@@ -46,7 +48,7 @@ export class SchematicSection extends PrimitiveComponent<
 
       const hw = schComp.size.width / 2
       const hh = schComp.size.height / 2
-      positions.push({
+      memberBounds.push({
         minX: schComp.center.x - hw,
         maxX: schComp.center.x + hw,
         minY: schComp.center.y - hh,
@@ -54,8 +56,7 @@ export class SchematicSection extends PrimitiveComponent<
       })
     }
 
-    if (positions.length === 0) return null
-    return computeBoundsFromCellContents(positions)
+    return memberBounds
   }
 
   doInitialSchematicSectionRender(): void {
@@ -85,46 +86,53 @@ export class SchematicSection extends PrimitiveComponent<
     const TOL = 0.001
 
     const namedSectionsWithBounds = allSections
-      .map((section) => {
-        const bounds = section._computeSectionBounds(
+      .map((section, cellId) => {
+        const memberBounds = section._computeSectionMemberBounds({
           board,
-          section._parsedProps.name,
+          sectionName: section._parsedProps.name,
           schematicSheetId,
-        )
-        if (!bounds) return null
+        })
+        if (memberBounds.length === 0) return null
+        const rawBounds = computeBoundsFromCellContents(memberBounds)
         return {
+          cellId,
           displayName: section._parsedProps.displayName,
           sectionTitleFontSize: section._parsedProps.sectionTitleFontSize,
-          rawBounds: bounds,
+          memberBounds,
+          rawBounds,
           cell: {
-            minX: bounds.minX - PADDING,
-            maxX: bounds.maxX + PADDING,
-            minY: bounds.minY - PADDING,
-            maxY: bounds.maxY + PADDING,
+            minX: rawBounds.minX - PADDING,
+            maxX: rawBounds.maxX + PADDING,
+            minY: rawBounds.minY - PADDING,
+            maxY: rawBounds.maxY + PADDING,
           },
         }
       })
       .filter((s): s is NonNullable<typeof s> => s !== null)
 
     // Include unsectioned components (no schSectionName) as a virtual section
-    const unsectionedBounds = this._computeSectionBounds(
+    const unsectionedMemberBounds = this._computeSectionMemberBounds({
       board,
-      null,
+      sectionName: null,
       schematicSheetId,
-    )
+    })
     const allSectionsWithBounds = [...namedSectionsWithBounds]
-    if (unsectionedBounds)
+    if (unsectionedMemberBounds.length > 0) {
+      const rawBounds = computeBoundsFromCellContents(unsectionedMemberBounds)
       allSectionsWithBounds.push({
+        cellId: allSections.length,
         displayName: undefined,
         sectionTitleFontSize: undefined,
-        rawBounds: unsectionedBounds,
+        memberBounds: unsectionedMemberBounds,
+        rawBounds,
         cell: {
-          minX: unsectionedBounds.minX - PADDING,
-          maxX: unsectionedBounds.maxX + PADDING,
-          minY: unsectionedBounds.minY - PADDING,
-          maxY: unsectionedBounds.maxY + PADDING,
+          minX: rawBounds.minX - PADDING,
+          maxX: rawBounds.maxX + PADDING,
+          minY: rawBounds.minY - PADDING,
+          maxY: rawBounds.maxY + PADDING,
         },
       })
+    }
 
     if (allSectionsWithBounds.length === 0) return
 
@@ -135,14 +143,31 @@ export class SchematicSection extends PrimitiveComponent<
     // Internal dividing lines: use raw (unpadded) bounds so adjacent sections
     // with small gaps don't overlap and prevent divider generation
     const CELL_MARGIN = 1
-    const dividers = calculateCellBoundaries(
-      allSectionsWithBounds.map((s) => ({
-        minX: s.rawBounds.minX - CELL_MARGIN,
-        maxX: s.rawBounds.maxX + CELL_MARGIN,
-        minY: s.rawBounds.minY - CELL_MARGIN,
-        maxY: s.rawBounds.maxY + CELL_MARGIN,
-      })),
-    )
+    let dividers: ReturnType<typeof calculateCellBoundaries> = []
+    if (allSectionsWithBounds.length > 1) {
+      dividers = calculateCellBoundaries(
+        allSectionsWithBounds.flatMap((sectionWithBounds) => {
+          const overlapsAnotherSection = allSectionsWithBounds.some(
+            (section) =>
+              section !== sectionWithBounds &&
+              doBoundsOverlap(section.rawBounds, sectionWithBounds.rawBounds),
+          )
+          let boundaryMemberBounds = [sectionWithBounds.rawBounds]
+          if (overlapsAnotherSection) {
+            // Member bounds preserve non-convex section topology only where
+            // aggregate section bounds cannot be separated.
+            boundaryMemberBounds = sectionWithBounds.memberBounds
+          }
+          return boundaryMemberBounds.map((memberBounds) => ({
+            cellId: sectionWithBounds.cellId,
+            minX: memberBounds.minX - CELL_MARGIN,
+            maxX: memberBounds.maxX + CELL_MARGIN,
+            minY: memberBounds.minY - CELL_MARGIN,
+            maxY: memberBounds.maxY + CELL_MARGIN,
+          }))
+        }),
+      )
+    }
     for (const line of dividers) {
       db.schematic_line.insert({
         x1: line.start.x,

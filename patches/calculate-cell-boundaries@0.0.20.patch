@@ -1,0 +1,75 @@
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -379,0 +380 @@
++        cellGroupIndex: cell.cellGroupIndex,
+@@ -393,0 +395 @@
++          cellGroupIndex: -1,
+@@ -1652,0 +1655 @@
++var cellsBelongToSameGroup = (a, b) => a.cellId !== void 0 && a.cellId === b.cellId;
+@@ -1716,0 +1720 @@
++      if (cellsBelongToSameGroup(a, b)) continue;
+@@ -1840,0 +1845,3 @@
++      const a = cellContents[i];
++      const b = cellContents[j];
++      if (!a || !b || cellsBelongToSameGroup(a, b)) continue;
+@@ -2113,0 +2121 @@
++      cellId: c.cellGroupIndex,
+@@ -2119,0 +2128,12 @@
++    const hasGroupedCellContents = new Set(params.cellContents.map((cell) => cell.cellGroupIndex)).size < params.cellContents.length;
++    const reducedSharedCellRegionCount = sharedCellRegionCount(
++      params.reducedLines,
++      this._inputRects
++    );
++    const originalSharedCellRegionCount = sharedCellRegionCount(
++      params.originalLines,
++      this._inputRects
++    );
++    if (hasGroupedCellContents && originalSharedCellRegionCount < reducedSharedCellRegionCount) {
++      this._currentLines = params.originalLines;
++    }
+@@ -2225,0 +2246 @@
++var cellsBelongToSameGroup2 = (a, b) => a.cellId !== void 0 && a.cellId === b.cellId;
+@@ -2317,0 +2339 @@
++      if (cellsBelongToSameGroup2(a, b)) continue;
+@@ -2441,0 +2464,3 @@
++      const a = cellContents[i];
++      const b = cellContents[j];
++      if (!a || !b || cellsBelongToSameGroup2(a, b)) continue;
+@@ -3164,0 +3190 @@
++      cellId: c.cellGroupIndex,
+@@ -3553,4 +3579,21 @@
+-  const cellContents = inputCellContents.map((c, i) => ({
+-    ...c,
+-    cellId: `cell-${i}`
+-  }));
++  const cellGroupIndexById = /* @__PURE__ */ new Map();
++  let nextCellGroupIndex = 0;
++  const cellContents = inputCellContents.map((cell, index) => {
++    let cellGroupIndex = nextCellGroupIndex;
++    if (cell.cellId !== void 0) {
++      const existingCellGroupIndex = cellGroupIndexById.get(cell.cellId);
++      if (existingCellGroupIndex !== void 0) {
++        cellGroupIndex = existingCellGroupIndex;
++      } else {
++        cellGroupIndexById.set(cell.cellId, cellGroupIndex);
++        nextCellGroupIndex++;
++      }
++    } else {
++      nextCellGroupIndex++;
++    }
++    return {
++      ...cell,
++      cellId: `cell-${index}`,
++      cellGroupIndex
++    };
++  });
+@@ -3597,0 +3641 @@
++      cellId: c.cellId,
+--- a/dist/index.d.ts
++++ b/dist/index.d.ts
+@@ -6 +6 @@
+-    cellId?: string;
++    cellId?: string | number;
+@@ -32 +32 @@
+-declare const calculateCellBoundaries: (inputCellContents: Omit<InputRect, "cellId">[]) => Line[];
++declare const calculateCellBoundaries: (inputCellContents: InputRect[]) => Line[];

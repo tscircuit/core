@@ -120,7 +120,7 @@
   "dependencies": {
     "@flatten-js/core": "^1.6.2",
     "@lume/kiwi": "^0.4.3",
-    "calculate-cell-boundaries": "^0.0.19",
+    "calculate-cell-boundaries": "0.0.20",
     "calculate-packing": "^0.0.86",
     "css-select": "5.1.0",
     "format-si-unit": "^0.0.12",
@@ -135,5 +135,8 @@
     "@tscircuit/circuit-json-util": "^0.0.106",
     "@tscircuit/props": "^0.0.643",
     "circuit-json": "^0.0.479"
+  },
+  "patchedDependencies": {
+    "calculate-cell-boundaries@0.0.20": "patches/calculate-cell-boundaries@0.0.20.patch"
   }
 }
