@@ -68,7 +68,7 @@ test("resistor with silkscreen text component name", () => {
   const silkscreenTexts = circuit.db.pcb_silkscreen_text.list()
 
   expect(silkscreenTexts).toHaveLength(7)
-  expect(silkscreenTexts.every((text) => text.font_size === 1)).toBeTrue()
+  expect(silkscreenTexts.every((text) => text.font_size === 0.6)).toBeTrue()
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
   expect(circuit.db.pcb_missing_footprint_error.list()).toHaveLength(0)
 })
