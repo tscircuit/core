@@ -1894,9 +1894,10 @@ export class NormalComponent<
           : 0
         : 0
 
-    const computedLayer = this.props.layer === "bottom" ? "bottom" : "top"
-
     const pcbComponent = db.pcb_component.get(this.pcb_component_id)
+    // pcb_component.layer is the canonical resolved layer after aliases and
+    // footprint metadata have been applied during PCB component rendering.
+    const computedLayer = pcbComponent?.layer === "bottom" ? "bottom" : "top"
     const globalTransform = this._computePcbGlobalTransformBeforeLayout()
     const decomposedTransform = decomposeTSR(globalTransform)
     const preLayoutRotation =
