@@ -1,6 +1,5 @@
-import { AM62L32 } from "@tsci/tscircuit.ti-am62l/lib/chips/AM62L32.circuit"
-import { AM62L32BOGHAANBR } from "@tsci/tscircuit.ti-am62l/lib/chips/AM62L32BOGHAANBR.circuit"
-import { Children, cloneElement, Fragment, isValidElement } from "react"
+import { Fragment } from "react"
+import { Am62l32, SOC_GROUND_PINS } from "./am62l32"
 import {
   DDR_ADDR_CTRL_TRACE_NAMES,
   DDR_BYTE0_TRACE_NAMES,
@@ -8,26 +7,12 @@ import {
   DDR_CONNECTIONS,
   DDR_SOC_PHYSICAL_PINS,
 } from "./ddr-connections"
-import { MT53E1G16D1ZW, ballMap } from "./mt53e1g16d1zw"
 import {
   createCapacityChannelAutorouter,
   createExistingCopperConnectivityAutorouter,
   createFixedTargetBgaFanoutAutorouter,
 } from "./local-autorouters"
-
-const AM62L_PAD_DIAMETER_MM = 0.254
-const AM62L_PAD_RADIUS_MM = AM62L_PAD_DIAMETER_MM / 2
-const AM62L_DEFAULT_CHIP = AM62L32BOGHAANBR({} as any)
-
-export const SOC_GROUND_PINS = Object.entries(
-  AM62L_DEFAULT_CHIP.props.pinLabels,
-)
-  .filter(([, labels]) =>
-    (Array.isArray(labels) ? labels : [labels]).some((label) =>
-      String(label).startsWith("VSS"),
-    ),
-  )
-  .map(([selector]) => Number(selector.replace("pin", "")))
+import { MT53E1G16D1ZW, ballMap } from "./mt53e1g16d1zw"
 
 export const MEMORY_GROUND_PINS = ballMap
   .map(({ ball, signal }, index) => ({
@@ -36,21 +21,6 @@ export const MEMORY_GROUND_PINS = ballMap
     pin: index + 1,
   }))
   .filter(({ signal }) => signal === "VSS")
-
-const createAm62lEscapeFootprint = () => {
-  const defaultFootprint = AM62L_DEFAULT_CHIP.props.footprint
-  return cloneElement(
-    defaultFootprint,
-    {},
-    Children.map(defaultFootprint.props.children, (child) =>
-      isValidElement(child) && child.type === "smtpad"
-        ? cloneElement(child, { radius: `${AM62L_PAD_RADIUS_MM}mm` } as any)
-        : child,
-    ),
-  )
-}
-
-const AM62L_ESCAPE_FOOTPRINT = createAm62lEscapeFootprint()
 
 const usedSocPins = new Set<number>([
   ...DDR_SOC_PHYSICAL_PINS,
@@ -210,10 +180,8 @@ export const Am62lLpddr4FullBgaBoard = ({
         DDR_BYTE0: "rightside_bottom",
       }}
     >
-      <AM62L32
+      <Am62l32
         name="U1"
-        footprintVariant="fccsp_373_anb"
-        footprint={AM62L_ESCAPE_FOOTPRINT}
         pcbX={0}
         pcbY={0}
         pcbRotation={180}
