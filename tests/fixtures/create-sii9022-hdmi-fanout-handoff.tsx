@@ -50,8 +50,8 @@ const Sii9022Acnu = (props: ChipProps<typeof sii9022PinLabels>) => (
     footprint={
       <footprint>
         {pinNumberRange(1, 18).map((pinNumber) => (
+          /* biome-ignore lint/correctness/useJsxKeyInIterable: tscircuit fixtures do not require React keys */
           <smtpad
-            key={`pin${pinNumber}`}
             portHints={[`pin${pinNumber}`]}
             pcbX={-qfnPadInset + (pinNumber - 1) * qfnPadPitch}
             pcbY={-qfnPadEdge}
@@ -61,8 +61,8 @@ const Sii9022Acnu = (props: ChipProps<typeof sii9022PinLabels>) => (
           />
         ))}
         {pinNumberRange(19, 36).map((pinNumber) => (
+          /* biome-ignore lint/correctness/useJsxKeyInIterable: tscircuit fixtures do not require React keys */
           <smtpad
-            key={`pin${pinNumber}`}
             portHints={[`pin${pinNumber}`]}
             pcbX={qfnPadEdge}
             pcbY={-qfnPadInset + (pinNumber - 19) * qfnPadPitch}
@@ -72,8 +72,8 @@ const Sii9022Acnu = (props: ChipProps<typeof sii9022PinLabels>) => (
           />
         ))}
         {pinNumberRange(37, 54).map((pinNumber) => (
+          /* biome-ignore lint/correctness/useJsxKeyInIterable: tscircuit fixtures do not require React keys */
           <smtpad
-            key={`pin${pinNumber}`}
             portHints={[`pin${pinNumber}`]}
             pcbX={qfnPadInset - (pinNumber - 37) * qfnPadPitch}
             pcbY={qfnPadEdge}
@@ -83,8 +83,8 @@ const Sii9022Acnu = (props: ChipProps<typeof sii9022PinLabels>) => (
           />
         ))}
         {pinNumberRange(55, 72).map((pinNumber) => (
+          /* biome-ignore lint/correctness/useJsxKeyInIterable: tscircuit fixtures do not require React keys */
           <smtpad
-            key={`pin${pinNumber}`}
             portHints={[`pin${pinNumber}`]}
             pcbX={-qfnPadEdge}
             pcbY={qfnPadInset - (pinNumber - 55) * qfnPadPitch}
@@ -118,8 +118,8 @@ const Tpd12s016Pwr = (props: ChipProps<typeof tpd12s016PinLabels>) => (
     footprint={
       <footprint>
         {pinNumberRange(1, 12).map((pinNumber) => (
+          /* biome-ignore lint/correctness/useJsxKeyInIterable: tscircuit fixtures do not require React keys */
           <smtpad
-            key={`pin${pinNumber}`}
             portHints={[`pin${pinNumber}`]}
             pcbX={-tssopPadInset + (pinNumber - 1) * tssopPadPitch}
             pcbY={-3.0226}
@@ -129,8 +129,8 @@ const Tpd12s016Pwr = (props: ChipProps<typeof tpd12s016PinLabels>) => (
           />
         ))}
         {pinNumberRange(13, 24).map((pinNumber) => (
+          /* biome-ignore lint/correctness/useJsxKeyInIterable: tscircuit fixtures do not require React keys */
           <smtpad
-            key={`pin${pinNumber}`}
             portHints={[`pin${pinNumber}`]}
             pcbX={tssopPadInset - (pinNumber - 13) * tssopPadPitch}
             pcbY={3.0226}
@@ -154,8 +154,8 @@ const Hdmi001s = (props: ConnectorProps) => (
     footprint={
       <footprint>
         {pinNumberRange(1, 19).map((pinNumber) => (
+          /* biome-ignore lint/correctness/useJsxKeyInIterable: tscircuit fixtures do not require React keys */
           <smtpad
-            key={`pin${pinNumber}`}
             portHints={[`pin${pinNumber}`]}
             pcbX={4.499991 - (pinNumber - 1) * qfnPadPitch}
             pcbY={2.73504}
@@ -256,8 +256,8 @@ export const renderSii9022HdmiFanoutHandoff = async () => {
         fanoutRoutingLayers={["top"]}
       >
         {tmdsConnections.map(([, u5Pin], connectionIndex) => (
+          /* biome-ignore lint/correctness/useJsxKeyInIterable: tscircuit fixtures do not require React keys */
           <fanoutpoint
-            key={u5Pin}
             connection={`.U5 > .${u5Pin}`}
             pcbX={-12}
             pcbY={-2.750058 + connectionIndex * 0.5}
@@ -267,8 +267,8 @@ export const renderSii9022HdmiFanoutHandoff = async () => {
 
       {["TMDS_PAIR_0", "TMDS_PAIR_1", "TMDS_PAIR_2", "TMDS_PAIR_3"].map(
         (busName) => (
+          /* biome-ignore lint/correctness/useJsxKeyInIterable: tscircuit fixtures do not require React keys */
           <bus
-            key={busName}
             name={busName}
             connections={tmdsConnections
               .filter(
