@@ -11,6 +11,7 @@ type EligibleDirectConnection = {
   inlineNetLabelWidth?: number
   inlineNetLabelHeight?: number
   connKey?: string
+  explicitInlineNetLabelText?: string
 }
 
 type EligibleNetConnection = {
@@ -28,8 +29,8 @@ type EligibleNetConnection = {
  *
  * A direct connection qualifies when it is a genuine point-to-point signal:
  *
- * - the whole net is exactly these two ports (a third tap would make the label
- *   ambiguous about which leg it names),
+ * - the whole net is exactly these two ports, or the source trace explicitly
+ *   supplies `schDisplayLabel` to identify the branch that owns the text,
  * - the net is not power or ground (those render as rail symbols), and
  * - the net has a name the user chose - a `schDisplayLabel`/`name` on the trace
  *   or a named net - rather than one derived from the ports it happens to hit.
@@ -92,7 +93,9 @@ export const applyInlineNetLabelEligibility = ({
     if (!connKey) continue
 
     const portsOnNet = connKeyToSchematicPortIds.get(connKey)
-    if (portsOnNet?.length !== 2) continue
+    const explicitInlineNetLabelText =
+      directConnection.explicitInlineNetLabelText
+    if (!explicitInlineNetLabelText && portsOnNet?.length !== 2) continue
 
     const sourceNet = connKeyToSourceNet.get(connKey)
     if (sourceNet?.is_power || sourceNet?.is_ground) continue
@@ -100,9 +103,15 @@ export const applyInlineNetLabelEligibility = ({
     const { name, wasAssignedDisplayLabel } = resolveCanonicalNetLabelText({
       subcircuitConnectivityMapKey: connKey,
     })
-    if (!name || !wasAssignedDisplayLabel) continue
+    const inlineNetLabelText = explicitInlineNetLabelText ?? name
+    if (
+      !inlineNetLabelText ||
+      (!explicitInlineNetLabelText && !wasAssignedDisplayLabel)
+    ) {
+      continue
+    }
 
-    markEligible(directConnection, name)
+    markEligible(directConnection, inlineNetLabelText)
   }
 
   for (const netConnection of netConnections) {

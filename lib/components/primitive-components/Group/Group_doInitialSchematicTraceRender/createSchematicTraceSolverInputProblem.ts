@@ -14,6 +14,7 @@ import { convertFacingDirectionToElbowDirection } from "lib/utils/schematic/conv
 import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
 import type { NetLabel } from "../../NetLabel"
 import { Port } from "../../Port"
+import type { Trace } from "../../Trace/Trace"
 import { Group } from "../Group"
 import { applyInlineNetLabelEligibility } from "./applyInlineNetLabelEligibility"
 import { createCanonicalSchematicNetLabelTextResolver } from "./createCanonicalSchematicNetLabelTextResolver"
@@ -341,6 +342,12 @@ export function createSchematicTraceSolverInputProblem(
     }
     return false
   })
+  const traceComponentBySourceTraceId = new Map(
+    group
+      .selectAll<Trace>("trace")
+      .filter((trace) => trace.source_trace_id)
+      .map((trace) => [trace.source_trace_id!, trace]),
+  )
 
   // A port-to-net trace owned by another subcircuit may target another
   // schematic representation of the same source port (for example, a
@@ -410,6 +417,11 @@ export function createSchematicTraceSolverInputProblem(
      * the problem is handed to the solver.
      */
     connKey?: string
+    /**
+     * Exact text explicitly assigned to this source-trace branch. Retained for
+     * inline-label eligibility and stripped at the solver boundary.
+     */
+    explicitInlineNetLabelText?: string
   }> = []
   const singlePortTraceNetConnections: Array<{
     netId: string
@@ -573,10 +585,15 @@ export function createSchematicTraceSolverInputProblem(
               }).toFixed(2),
             )
           : undefined
+      const explicitInlineNetLabelText = traceComponentBySourceTraceId.get(
+        st.source_trace_id,
+      )?._parsedProps.schDisplayLabel
 
       // The schematic solver accepts two-terminal direct connections. Expand
       // the ordered source trace path into adjacent edges that share one net ID
-      // so its connectivity map retains every terminal as a single net.
+      // so its connectivity map retains every terminal as a single net. An
+      // explicit display label belongs to the first branch in that ordered
+      // path; duplicating it on every expanded edge would repeat the text.
       for (let i = 0; i < connected.length - 1; i++) {
         const a = connected[i]
         const b = connected[i + 1]
@@ -589,6 +606,8 @@ export function createSchematicTraceSolverInputProblem(
           netId: userNetId,
           netLabelWidth,
           connKey: st.subcircuit_connectivity_map_key,
+          explicitInlineNetLabelText:
+            i === 0 ? explicitInlineNetLabelText : undefined,
         })
       }
     }
@@ -731,7 +750,12 @@ export function createSchematicTraceSolverInputProblem(
   const inputProblem: InputProblem = {
     chips,
     directConnections: directConnections.map(
-      ({ schematicPortIds, connKey, ...connection }) => ({
+      ({
+        schematicPortIds,
+        connKey,
+        explicitInlineNetLabelText,
+        ...connection
+      }) => ({
         ...connection,
         pinIds: schematicPortIds,
       }),
