@@ -1,4 +1,4 @@
-import { test, expect } from "bun:test"
+import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 test("resistor with silkscreen text component name", () => {
   const { circuit } = getTestFixture()
@@ -65,6 +65,10 @@ test("resistor with silkscreen text component name", () => {
   )
 
   circuit.render()
+  const silkscreenTexts = circuit.db.pcb_silkscreen_text.list()
+
+  expect(silkscreenTexts).toHaveLength(7)
+  expect(silkscreenTexts.every((text) => text.font_size === 1)).toBeTrue()
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
   expect(circuit.db.pcb_missing_footprint_error.list()).toHaveLength(0)
 })

@@ -34,6 +34,7 @@ import { SmtPad } from "lib/components/primitive-components/SmtPad"
 import { SymbolComponent } from "lib/components/primitive-components/Symbol"
 import type { PrimitiveComponent } from "../components/base-components/PrimitiveComponent"
 import { createPinrowSilkscreenText } from "./createPinrowSilkscreenText"
+import { getFootprinterSilkscreenTextFontSize } from "./getFootprinterSilkscreenTextFontSize"
 
 type SchematicPrimitiveWithStrokeWidth = Extract<
   AnyCircuitElement,
@@ -590,7 +591,8 @@ export const createComponentsFromCircuitJson = (
           pcbY: elm.anchor_position.y,
           pcbRotation: ccwRotation ?? 0,
         })
-        silkscreenText._footprinterFontSize = elm.font_size + 0.2
+        silkscreenText._footprinterFontSize =
+          getFootprinterSilkscreenTextFontSize(elm.font_size)
         components.push(silkscreenText)
       }
     } else if (elm.type === "pcb_trace") {

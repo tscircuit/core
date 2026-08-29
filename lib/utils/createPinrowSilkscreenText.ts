@@ -1,6 +1,7 @@
 import type { PinLabelsProp } from "@tscircuit/props"
-import { SilkscreenText } from "lib/components/primitive-components/SilkscreenText"
 import type { LayerRef, PcbSilkscreenText } from "circuit-json"
+import { SilkscreenText } from "lib/components/primitive-components/SilkscreenText"
+import { getFootprinterSilkscreenTextFontSize } from "./getFootprinterSilkscreenTextFontSize"
 
 export const createPinrowSilkscreenText = ({
   elm,
@@ -32,6 +33,8 @@ export const createPinrowSilkscreenText = ({
     pcbY: elm.anchor_position.y,
     pcbRotation: readableRotation ?? 0,
   })
-  silkscreenText._footprinterFontSize = elm.font_size + 0.2
+  silkscreenText._footprinterFontSize = getFootprinterSilkscreenTextFontSize(
+    elm.font_size,
+  )
   return silkscreenText
 }

@@ -1,4 +1,4 @@
-import { test, expect } from "bun:test"
+import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 const boardSize = { width: "10mm", height: "10mm" }
@@ -24,11 +24,11 @@ test("pinheader pcbOrientation vertical places pins vertically", () => {
         "anchor_alignment": "center",
         "anchor_position": {
           "x": 2.54,
-          "y": 1.5553014349171386e-16,
+          "y": 0.00000000000000015553014349171386,
         },
         "ccw_rotation": -90,
         "font": "tscircuit2024",
-        "font_size": 0.7,
+        "font_size": 1,
         "is_knockout": undefined,
         "knockout_padding": undefined,
         "layer": "top",
