@@ -4,7 +4,7 @@ import {
   computeBoundsFromCellContents,
 } from "calculate-cell-boundaries"
 import { schematicSectionProps } from "@tscircuit/props"
-import type { Bounds } from "@tscircuit/math-utils"
+import { type Bounds, doBoundsOverlap } from "@tscircuit/math-utils"
 import type { SchematicSheet } from "circuit-json"
 
 type SchematicSheetId = SchematicSheet["schematic_sheet_id"]
@@ -128,9 +128,9 @@ export class SchematicSection extends PrimitiveComponent<
 
     if (allSectionsWithBounds.length === 0) return
 
-    const allCells = allSectionsWithBounds.map((s) => s.cell)
-
-    const outer = computeBoundsFromCellContents(allCells)
+    const outer = computeBoundsFromCellContents(
+      allSectionsWithBounds.map((section) => section.cell),
+    )
 
     // Internal dividing lines: use raw (unpadded) bounds so adjacent sections
     // with small gaps don't overlap and prevent divider generation
@@ -163,24 +163,38 @@ export class SchematicSection extends PrimitiveComponent<
       (l) => Math.abs(l.start.x - l.end.x) < TOL,
     )
 
-    for (const {
-      displayName,
-      sectionTitleFontSize,
-      rawBounds,
-    } of allSectionsWithBounds) {
+    for (const sectionWithBounds of allSectionsWithBounds) {
+      const { displayName, sectionTitleFontSize, rawBounds, cell } =
+        sectionWithBounds
       if (!displayName) continue
+
+      const overlapsAnotherSection = allSectionsWithBounds.some(
+        (section) =>
+          section !== sectionWithBounds &&
+          doBoundsOverlap(section.rawBounds, rawBounds),
+      )
 
       const dividersAbove = hDividers
         .map((l) => l.start.y)
         .filter((y) => y > rawBounds.maxY)
-      const topBoundary =
-        dividersAbove.length > 0 ? Math.min(...dividersAbove) : outer.maxY
+      let topBoundary = outer.maxY
+      if (overlapsAnotherSection) {
+        topBoundary = cell.maxY
+      }
+      if (dividersAbove.length > 0) {
+        topBoundary = Math.min(...dividersAbove)
+      }
 
       const dividersToLeft = vDividers
         .map((l) => l.start.x)
         .filter((x) => x < rawBounds.minX)
-      const leftBoundary =
-        dividersToLeft.length > 0 ? Math.max(...dividersToLeft) : outer.minX
+      let leftBoundary = outer.minX
+      if (overlapsAnotherSection) {
+        leftBoundary = cell.minX
+      }
+      if (dividersToLeft.length > 0) {
+        leftBoundary = Math.max(...dividersToLeft)
+      }
 
       db.schematic_text.insert({
         anchor: "top_left",

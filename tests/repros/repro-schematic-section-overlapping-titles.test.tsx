@@ -42,5 +42,14 @@ test("schematic section titles overlap when anchored bounds intersect", async ()
 
   await circuit.renderUntilSettled()
 
+  const [horizontalSectionTitlePosition, verticalSectionTitlePosition] =
+    circuit.db.schematic_text
+      .list()
+      .map((sectionTitle) => sectionTitle.position)
+
+  expect(horizontalSectionTitlePosition!.x).toBeCloseTo(-2.6)
+  expect(horizontalSectionTitlePosition!.y).toBeCloseTo(0.625)
+  expect(verticalSectionTitlePosition!.x).toBeCloseTo(-0.6)
+  expect(verticalSectionTitlePosition!.y).toBeCloseTo(2.625)
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
