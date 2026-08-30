@@ -943,9 +943,9 @@ export const renderAm62lLpddr4Fanout = async ({
       minTraceToPadEdgeClearance="0.05mm"
       minViaEdgeToPadEdgeClearance="0.08128mm"
       minViaHoleEdgeToViaHoleEdgeClearance="0.1016mm"
-      minViaHoleDiameter="0.1mm"
+      minViaHoleDiameter="0.15mm"
       minViaPadDiameter="0.24mm"
-      pcbStyle={{ viaHoleDiameter: "0.1mm", viaPadDiameter: "0.24mm" }}
+      pcbStyle={{ viaHoleDiameter: "0.15mm", viaPadDiameter: "0.24mm" }}
       allowBlindAndBuriedVias={false}
       isViaInPadAllowed={false}
       autorouter="default"
@@ -1112,6 +1112,8 @@ export const renderAm62lLpddr4Fanout = async ({
   expect(circuit.db.pcb_trace_error.list()).toEqual([])
   expect(circuit.db.pcb_via_trace_clearance_error.list()).toEqual([])
   const pcbBoard = circuit.db.pcb_board.list()[0]!
+  expect(pcbBoard.min_via_hole_diameter).toBeCloseTo(0.15)
+  expect(pcbBoard.min_via_pad_diameter).toBeCloseTo(0.24)
   if (includePowerPlaneFanout) {
     expect(circuit.db.pcb_pad_trace_clearance_error.list()).toEqual([])
     expect(circuit.db.pcb_via_clearance_error.list()).toEqual([])
@@ -1935,8 +1937,13 @@ export const renderAm62lLpddr4Fanout = async ({
   }
   expect(new Set(ddrConnectivityKeys).size).toBe(signalConnections.length)
 
+  const allFanoutVias = circuit.db.pcb_via.list()
+  for (const via of allFanoutVias) {
+    expect(via.hole_diameter).toBeCloseTo(0.15)
+    expect(via.outer_diameter).toBeCloseTo(0.24)
+  }
+
   if (includePowerPlaneFanout) {
-    const allFanoutVias = circuit.db.pcb_via.list()
     expect(allFanoutVias).toHaveLength(
       PLANE_DROPS.length + signalConnections.length * 2,
     )
