@@ -19,6 +19,7 @@ type DdrBusName =
   | "DDR_DQS0"
   | "DDR_DQS1"
   | "DDR_RESET"
+  | "DDR_DMI0"
 
 interface DdrConnection {
   busName: DdrBusName
@@ -184,6 +185,17 @@ const DDR_RESET_CONNECTION = {
   traceName: "RESET_n",
 } as const satisfies DdrConnection
 
+const DDR_DMI0_CONNECTION = {
+  busName: "DDR_DMI0",
+  memoryBall: "C3",
+  memoryPinNumber: 23,
+  memorySignal: "DMI0",
+  socBall: "F2",
+  socPinNumber: 92,
+  socSignal: "DDR0_DM0",
+  traceName: "DMI0",
+} as const satisfies DdrConnection
+
 const DDR_SIGNAL_CONNECTIONS = [
   ...DDR_CONNECTIONS,
   ...DDR_ADDR_CTRL_CONNECTIONS,
@@ -191,6 +203,7 @@ const DDR_SIGNAL_CONNECTIONS = [
   ...DDR_DQS0_CONNECTIONS,
   ...DDR_DQS1_CONNECTIONS,
   DDR_RESET_CONNECTION,
+  DDR_DMI0_CONNECTION,
 ] as const
 
 // The real 373-ball FCCSP footprint is a 0.5 mm grid with depopulated rows.
@@ -329,6 +342,7 @@ const AM62L_PIN_LABELS = {
       ...DDR_DQS0_CONNECTIONS,
       ...DDR_DQS1_CONNECTIONS,
       DDR_RESET_CONNECTION,
+      DDR_DMI0_CONNECTION,
     ].map(({ socBall, socPinNumber, socSignal }) => [
       `pin${socPinNumber}`,
       [socBall, socSignal],
@@ -473,6 +487,7 @@ const LPDDR4_PIN_LABELS = {
       ...DDR_DQS0_CONNECTIONS,
       ...DDR_DQS1_CONNECTIONS,
       DDR_RESET_CONNECTION,
+      DDR_DMI0_CONNECTION,
     ].map(({ memoryBall, memoryPinNumber, memorySignal }) => [
       `pin${memoryPinNumber}`,
       [memoryBall, memorySignal],
@@ -642,6 +657,7 @@ const dqs1TraceNames: [string, string] = [
   DDR_DQS1_CONNECTIONS[1]!.traceName,
 ]
 const resetTraceNames = [DDR_RESET_CONNECTION.traceName] as const
+const dmi0TraceNames = [DDR_DMI0_CONNECTION.traceName] as const
 const BYTE0_MAX_FANOUT_SKEW = 8
 const BYTE1_MAX_FANOUT_SKEW = 14.5
 const ADDR_CTRL_MAX_FANOUT_SKEW = 15
@@ -695,6 +711,12 @@ const FANOUT_BUSES = [
     name: "DDR_RESET",
     connections: resetTraceNames,
     preferredLayers: ["inner6"],
+    maxLengthSkew: undefined,
+  },
+  {
+    name: "DDR_DMI0",
+    connections: dmi0TraceNames,
+    preferredLayers: ["inner5"],
     maxLengthSkew: undefined,
   },
 ] as const
@@ -867,7 +889,7 @@ export const renderAm62lLpddr4Fanout = async ({
   expect(LPDDR4_VDDQ_BALLS).toHaveLength(20)
   expect(LPDDR4_VDD2_BALLS).toHaveLength(24)
   expect(LPDDR4_VDD1_BALLS).toHaveLength(8)
-  expect(signalConnections).toHaveLength(includePowerPlaneFanout ? 31 : 16)
+  expect(signalConnections).toHaveLength(includePowerPlaneFanout ? 32 : 16)
   expect(
     signalConnections.filter(({ traceName }) => traceName === "RESET_n"),
   ).toEqual(includePowerPlaneFanout ? [DDR_RESET_CONNECTION] : [])
@@ -877,6 +899,9 @@ export const renderAm62lLpddr4Fanout = async ({
   expect(
     signalConnections.filter(({ busName }) => busName === "DDR_DQS1"),
   ).toEqual(includePowerPlaneFanout ? [...DDR_DQS1_CONNECTIONS] : [])
+  expect(
+    signalConnections.filter(({ busName }) => busName === "DDR_DMI0"),
+  ).toEqual(includePowerPlaneFanout ? [DDR_DMI0_CONNECTION] : [])
 
   circuit.add(
     <board
@@ -934,6 +959,7 @@ export const renderAm62lLpddr4Fanout = async ({
                 DDR_DQS0: "rightside_top" as const,
                 DDR_DQS1: "rightside_center" as const,
                 DDR_RESET: "rightside_center" as const,
+                DDR_DMI0: "rightside_top" as const,
               }
             : {}),
         }}
@@ -967,6 +993,7 @@ export const renderAm62lLpddr4Fanout = async ({
                 DDR_DQS0: "leftside_top" as const,
                 DDR_DQS1: "leftside_center" as const,
                 DDR_RESET: "leftside_top" as const,
+                DDR_DMI0: "leftside_top" as const,
               }
             : {}),
         }}
@@ -1035,7 +1062,7 @@ export const renderAm62lLpddr4Fanout = async ({
         fontSize="0.7mm"
         text={
           includePowerPlaneFanout
-            ? "AM62L32 to LPDDR4: BYTE0 top/inner4, BYTE1 inner5/bottom, ADDR_CTRL/RESET inner6, CLOCK/DQS0/DQS1 inner5; GND inner1, VDD_LPDDR4 inner2, SOC_DVDD1V8 inner3"
+            ? "AM62L32 to LPDDR4: BYTE0 top/inner4, BYTE1 inner5/bottom, ADDR_CTRL/RESET inner6, CLOCK/DQS0/DQS1/DMI0 inner5; GND inner1, VDD_LPDDR4 inner2, SOC_DVDD1V8 inner3"
             : "AM62L32 to LPDDR4: full BYTE0 DQ0-DQ7 top/inner1, full BYTE1 DQ8-DQ15 inner2/bottom"
         }
       />
@@ -1180,6 +1207,21 @@ export const renderAm62lLpddr4Fanout = async ({
         throw new Error("Missing RESET_n fanout phase connection")
       }
       expect(resetBus?.connectionNames).toEqual([resetPhaseConnection.name])
+      const dmi0Bus = boundaryBuses.find((bus) => bus.busId === "DDR_DMI0")
+      expect(dmi0Bus?.connectionNames).toHaveLength(1)
+      const dmi0SourceTrace = circuit.db.source_trace.getWhere({
+        name: DDR_DMI0_CONNECTION.traceName,
+      })
+      if (!dmi0SourceTrace) throw new Error("Missing DMI0 source trace")
+      const dmi0PhaseConnection = fanoutInput.connections.find(
+        (connection) =>
+          connection.source_trace_id === dmi0SourceTrace.source_trace_id,
+      )
+      expect(dmi0PhaseConnection).toBeDefined()
+      if (!dmi0PhaseConnection) {
+        throw new Error("Missing DMI0 fanout phase connection")
+      }
+      expect(dmi0Bus?.connectionNames).toEqual([dmi0PhaseConnection.name])
       expect(fanoutInput.differentialPairs).toEqual([
         {
           connectionNames: [clockConnectionNames[0]!, clockConnectionNames[1]!],
@@ -1354,6 +1396,28 @@ export const renderAm62lLpddr4Fanout = async ({
     expect(resetExitPoint.y).toBeGreaterThan(socFanoutInput.bounds.minY)
     expect(resetExitPoint.y).toBeLessThan(socFanoutInput.bounds.maxY)
 
+    const dmi0Bus = socFanoutInput.buses?.find(
+      (bus) => bus.busId === "DDR_DMI0",
+    )
+    expect(dmi0Bus?.connectionNames).toHaveLength(1)
+    const dmi0ConnectionName = dmi0Bus?.connectionNames[0]
+    if (!dmi0ConnectionName) {
+      throw new Error("Missing SoC DDR_DMI0 fanout connection")
+    }
+    const dmi0Trace = socFanoutPhase.endSimpleRouteJson?.traces?.find(
+      (trace) => trace.connection_name === dmi0ConnectionName,
+    )
+    const dmi0ExitPoint = dmi0Trace?.route.findLast(
+      (routePoint) => routePoint.route_type === "wire",
+    )
+    if (!dmi0ExitPoint) {
+      throw new Error("Missing SoC DDR_DMI0 fanout exit point")
+    }
+    expect(dmi0ExitPoint.x).toBeCloseTo(socFanoutInput.bounds.maxX)
+    expect(dmi0ExitPoint.layer).toBe("inner5")
+    expect(dmi0ExitPoint.y).toBeGreaterThan(socFanoutCenterY)
+    expect(dmi0ExitPoint.y).toBeLessThan(socFanoutInput.bounds.maxY)
+
     const dramFanoutPhase = autoroutingPhaseIoStack[1]!
     const dramFanoutInput = dramFanoutPhase.startSimpleRouteJson!
     const dramResetBus = dramFanoutInput.buses?.find(
@@ -1379,6 +1443,28 @@ export const renderAm62lLpddr4Fanout = async ({
     expect(dramResetExitPoint.layer).toBe("inner6")
     expect(dramResetExitPoint.y).toBeGreaterThan(dramFanoutCenterY)
     expect(dramResetExitPoint.y).toBeLessThan(dramFanoutInput.bounds.maxY)
+
+    const dramDmi0Bus = dramFanoutInput.buses?.find(
+      (bus) => bus.busId === "DDR_DMI0",
+    )
+    expect(dramDmi0Bus?.connectionNames).toHaveLength(1)
+    const dramDmi0ConnectionName = dramDmi0Bus?.connectionNames[0]
+    if (!dramDmi0ConnectionName) {
+      throw new Error("Missing DRAM DDR_DMI0 fanout connection")
+    }
+    const dramDmi0Trace = dramFanoutPhase.endSimpleRouteJson?.traces?.find(
+      (trace) => trace.connection_name === dramDmi0ConnectionName,
+    )
+    const dramDmi0ExitPoint = dramDmi0Trace?.route.findLast(
+      (routePoint) => routePoint.route_type === "wire",
+    )
+    if (!dramDmi0ExitPoint) {
+      throw new Error("Missing DRAM DDR_DMI0 fanout exit point")
+    }
+    expect(dramDmi0ExitPoint.x).toBeCloseTo(dramFanoutInput.bounds.minX)
+    expect(dramDmi0ExitPoint.layer).toBe("inner5")
+    expect(dramDmi0ExitPoint.y).toBeGreaterThan(dramFanoutCenterY)
+    expect(dramDmi0ExitPoint.y).toBeLessThan(dramFanoutInput.bounds.maxY)
 
     const dramDqs0Bus = dramFanoutInput.buses?.find(
       (bus) => bus.busId === "DDR_DQS0",
