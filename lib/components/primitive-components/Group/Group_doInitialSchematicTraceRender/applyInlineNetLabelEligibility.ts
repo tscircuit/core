@@ -57,8 +57,9 @@ const markConnectionEligibleForInlineNetLabel = (
  * A direct connection qualifies when it is a genuine point-to-point signal,
  * or when the user explicitly labels a direct trace leg on a branched net:
  *
- * - the whole net is exactly these two ports, or the branched net includes a
- *   true port-to-port trace with an explicit `name`/`schDisplayLabel`,
+ * - the whole net is exactly these two ports, or the branched net includes
+ *   exactly one true port-to-port trace with an explicit
+ *   `name`/`schDisplayLabel`,
  * - the net is not power or ground (those render as rail symbols), and
  * - the net has a name the user chose - a `schDisplayLabel`/`name` on the trace
  *   or a named net - rather than one derived from the ports it happens to hit.
@@ -83,7 +84,7 @@ export const applyInlineNetLabelEligibility = ({
   netConnections,
   connKeyToSchematicPortIds,
   connKeyToSourceNet,
-  connKeysWithExplicitLabeledDirectTraces,
+  explicitLabeledDirectTraceCountByConnKey,
   connKeysWithExplicitPortNetTraces,
   schematicPortIdsWithExplicitNetLabels,
   schematicPortIdsWithInlineNetLabels,
@@ -94,7 +95,7 @@ export const applyInlineNetLabelEligibility = ({
   netConnections: EligibleNetConnection[]
   connKeyToSchematicPortIds: Map<string, SchematicPortId[]>
   connKeyToSourceNet: Map<string, SourceNet>
-  connKeysWithExplicitLabeledDirectTraces: Set<string>
+  explicitLabeledDirectTraceCountByConnKey: Map<string, number>
   connKeysWithExplicitPortNetTraces: Set<string>
   schematicPortIdsWithExplicitNetLabels: Set<SchematicPortId>
   schematicPortIdsWithInlineNetLabels: Set<SchematicPortId>
@@ -113,7 +114,7 @@ export const applyInlineNetLabelEligibility = ({
     const isPointToPoint = portsOnNet?.length === 2
     const hasExplicitlyLabeledDirectTrace =
       (portsOnNet?.length ?? 0) > 2 &&
-      connKeysWithExplicitLabeledDirectTraces.has(connKey)
+      explicitLabeledDirectTraceCountByConnKey.get(connKey) === 1
     if (!isPointToPoint && !hasExplicitlyLabeledDirectTrace) continue
 
     const sourceNet = connKeyToSourceNet.get(connKey)

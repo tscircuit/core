@@ -390,30 +390,35 @@ export function createSchematicTraceSolverInputProblem(
     }
     return false
   })
-  const connKeysWithExplicitLabeledDirectTraces = new Set(
-    group
-      .getDescendants()
-      .filter((component): component is Trace => component instanceof Trace)
-      .flatMap((trace) => {
-        if (
-          !trace.source_trace_id ||
-          !(
-            trace._parsedProps.schDisplayLabel ||
-            trace._parsedProps.displayName ||
-            trace._parsedProps.name
-          )
-        ) {
-          return []
-        }
-        const sourceTrace = db.source_trace.get(trace.source_trace_id)
-        return sourceTrace &&
-          sourceTrace.connected_source_port_ids.length >= 2 &&
-          sourceTrace.connected_source_net_ids.length === 0 &&
-          sourceTrace.subcircuit_connectivity_map_key
-          ? [sourceTrace.subcircuit_connectivity_map_key]
-          : []
-      }),
-  )
+  const explicitLabeledDirectTraceCountByConnKey = new Map<string, number>()
+  for (const trace of group
+    .getDescendants()
+    .filter((component): component is Trace => component instanceof Trace)) {
+    if (
+      !trace.source_trace_id ||
+      !(
+        trace._parsedProps.schDisplayLabel ||
+        trace._parsedProps.displayName ||
+        trace._parsedProps.name
+      )
+    ) {
+      continue
+    }
+    const sourceTrace = db.source_trace.get(trace.source_trace_id)
+    const connKey = sourceTrace?.subcircuit_connectivity_map_key
+    if (
+      !sourceTrace ||
+      sourceTrace.connected_source_port_ids.length < 2 ||
+      sourceTrace.connected_source_net_ids.length !== 0 ||
+      !connKey
+    ) {
+      continue
+    }
+    explicitLabeledDirectTraceCountByConnKey.set(
+      connKey,
+      (explicitLabeledDirectTraceCountByConnKey.get(connKey) ?? 0) + 1,
+    )
+  }
 
   // A port-to-net trace owned by another subcircuit may target another
   // schematic representation of the same source port (for example, a
@@ -977,7 +982,7 @@ export function createSchematicTraceSolverInputProblem(
     netConnections,
     connKeyToSchematicPortIds,
     connKeyToSourceNet,
-    connKeysWithExplicitLabeledDirectTraces,
+    explicitLabeledDirectTraceCountByConnKey,
     connKeysWithExplicitPortNetTraces,
     schematicPortIdsWithExplicitNetLabels,
     schematicPortIdsWithInlineNetLabels,
