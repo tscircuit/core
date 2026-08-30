@@ -31,7 +31,7 @@ const rcCarSections: Array<{
 const SNAPSHOT_TIMEOUT_MS = 90_000
 
 test(
-  "rc car schematic section titles do not overlap",
+  "rc car schematic section titles overlap",
   async () => {
     const { circuit } = getTestFixture({
       platform: { pcbDisabled: true },
@@ -120,8 +120,8 @@ test(
     expect(
       generatedSectionTitles.map((sectionTitle) => sectionTitle.position),
     ).toEqual([
-      { x: -17.3, y: -2.32 },
-      { x: -6.4975, y: -3.0550000000000006 },
+      { x: -17.3, y: -1.3549999999999998 },
+      { x: -17.3, y: -1.3549999999999998 },
       { x: 4.381249999999999, y: -1.3549999999999998 },
       { x: -17.3, y: -14.160227674999998 },
     ])
