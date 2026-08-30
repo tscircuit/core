@@ -19,10 +19,6 @@ import { Port } from "../../Port"
 import { Group } from "../Group"
 import { applyInlineNetLabelEligibility } from "./applyInlineNetLabelEligibility"
 import { createCanonicalSchematicNetLabelTextResolver } from "./createCanonicalSchematicNetLabelTextResolver"
-import type {
-  CrossScopeSourceTraceIdBySchematicPortIdAndNetId,
-  SourceTraceId,
-} from "./cross-scope-trace-metadata"
 import { getNetNameFromPorts } from "./getNetNameFromPorts"
 import { getPortForSchematicSymbolPort } from "./getPortForSchematicSymbolPort"
 import type { AxisDirection } from "./getSide"
@@ -75,7 +71,10 @@ export type SolverInputContext = {
   userNetIdToConnKey: Map<string, string>
 
   /** Exact source trace for each cross-scope port-only solver label. */
-  crossScopeSourceTraceIdBySchematicPortIdAndNetId: CrossScopeSourceTraceIdBySchematicPortIdAndNetId
+  crossScopeSourceTraceIdBySchematicPortIdAndNetId: Map<
+    SchematicPortId,
+    Map<NetId, SourceTrace["source_trace_id"]>
+  >
 
   /**
    * Port-only solver label anchors to the source trace represented at that
@@ -83,7 +82,7 @@ export type SolverInputContext = {
    */
   sourceTraceIdByPortOnlyLabelSchematicPortId: Map<
     SchematicPortId,
-    SourceTraceId
+    SourceTrace["source_trace_id"]
   >
 
   /**
@@ -105,7 +104,7 @@ export type SolverInputContext = {
    * Solver pin pair (sorted schematic port ids joined by "::") to the
    * source_trace_id it was derived from.
    */
-  sourceTraceIdByPinPairKey: Map<string, SourceTraceId>
+  sourceTraceIdByPinPairKey: Map<string, SourceTrace["source_trace_id"]>
 }
 
 export function createSchematicTraceSolverInputProblem(
@@ -477,8 +476,10 @@ export function createSchematicTraceSolverInputProblem(
     isPowerOrGroundConnection?: boolean
   }> = []
   const connectedPairKeys = new Set<string>()
-  const crossScopeSourceTraceIdBySchematicPortIdAndNetId: CrossScopeSourceTraceIdBySchematicPortIdAndNetId =
-    new Map()
+  const crossScopeSourceTraceIdBySchematicPortIdAndNetId = new Map<
+    SchematicPortId,
+    Map<NetId, SourceTrace["source_trace_id"]>
+  >()
   const crossSectionNetConnectionByKey = new Map<
     NetId,
     (typeof boundaryTraceNetConnections)[number]
@@ -491,12 +492,12 @@ export function createSchematicTraceSolverInputProblem(
   }: {
     schematicPortId: SchematicPortId
     netId: NetId
-    sourceTraceId: SourceTraceId
+    sourceTraceId: SourceTrace["source_trace_id"]
     replaceExisting?: boolean
   }) => {
     const sourceTraceIdByNetId =
       crossScopeSourceTraceIdBySchematicPortIdAndNetId.get(schematicPortId) ??
-      new Map<NetId, SourceTraceId>()
+      new Map<NetId, SourceTrace["source_trace_id"]>()
     if (sourceTraceIdByNetId.has(netId) && !replaceExisting) return false
 
     sourceTraceIdByNetId.set(netId, sourceTraceId)
@@ -517,7 +518,7 @@ export function createSchematicTraceSolverInputProblem(
     sourceConnectivityNetId: NetId
     schematicPortId: SchematicPortId
     text: string
-    sourceTraceId: SourceTraceId
+    sourceTraceId: SourceTrace["source_trace_id"]
     connKey?: SubcircuitConnectivityMapKey
     preferInScopeTraceMetadata?: boolean
   }) => {
@@ -563,13 +564,16 @@ export function createSchematicTraceSolverInputProblem(
   }
   const sourceTraceIdsByPortOnlyLabelSchematicPortId = new Map<
     SchematicPortId,
-    Set<SourceTraceId>
+    Set<SourceTrace["source_trace_id"]>
   >()
   /**
    * Solver pin pair (sorted, "::"-joined) to the source trace it came from, so
    * a placement the solver hands back can be traced to its source_trace.
    */
-  const sourceTraceIdByPinPairKey = new Map<string, SourceTraceId>()
+  const sourceTraceIdByPinPairKey = new Map<
+    string,
+    SourceTrace["source_trace_id"]
+  >()
   const connKeysWithExplicitPortNetTraces = new Set<string>()
   for (const sourceTrace of tracesInScope) {
     if (
@@ -755,7 +759,7 @@ export function createSchematicTraceSolverInputProblem(
       for (const schematicPortId of connected) {
         const sourceTraceIds =
           sourceTraceIdsByPortOnlyLabelSchematicPortId.get(schematicPortId) ??
-          new Set<SourceTraceId>()
+          new Set<SourceTrace["source_trace_id"]>()
         sourceTraceIds.add(st.source_trace_id)
         sourceTraceIdsByPortOnlyLabelSchematicPortId.set(
           schematicPortId,

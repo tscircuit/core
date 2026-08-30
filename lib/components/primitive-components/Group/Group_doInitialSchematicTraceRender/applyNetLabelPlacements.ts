@@ -1,15 +1,14 @@
 import { type Bounds, doBoundsOverlap } from "@tscircuit/math-utils"
-import { SchematicTracePipelineSolver } from "@tscircuit/schematic-trace-solver"
-import type { SchematicNetLabel, SourceNet } from "circuit-json"
+import {
+  type NetId,
+  SchematicTracePipelineSolver,
+} from "@tscircuit/schematic-trace-solver"
+import type { SchematicNetLabel, SourceNet, SourceTrace } from "circuit-json"
 import Debug from "debug"
 import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
 import type { NetLabel } from "../../NetLabel"
 import { Group } from "../Group"
 import { createCanonicalSchematicNetLabelTextResolver } from "./createCanonicalSchematicNetLabelTextResolver"
-import type {
-  CrossScopeSourceTraceIdBySchematicPortIdAndNetId,
-  SourceTraceId,
-} from "./cross-scope-trace-metadata"
 import { getNetLabelTextBounds } from "./getNetLabelTextBounds"
 import type { AxisDirection } from "./getSide"
 import { oppositeSide } from "./oppositeSide"
@@ -62,10 +61,13 @@ export function applyNetLabelPlacements(args: {
   group: Group<any>
   solver: SchematicTracePipelineSolver
   userNetIdToConnKey: Map<string, string>
-  crossScopeSourceTraceIdBySchematicPortIdAndNetId: CrossScopeSourceTraceIdBySchematicPortIdAndNetId
+  crossScopeSourceTraceIdBySchematicPortIdAndNetId: Map<
+    SchematicPortId,
+    Map<NetId, SourceTrace["source_trace_id"]>
+  >
   sourceTraceIdByPortOnlyLabelSchematicPortId: Map<
     SchematicPortId,
-    SourceTraceId
+    SourceTrace["source_trace_id"]
   >
   connKeyToSourceNet: Map<string, SourceNet>
   connKeysWithExplicitPortNetTraces: Set<string>
