@@ -4,7 +4,7 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 const distance = (a: { x: number; y: number }, b: { x: number; y: number }) =>
   Math.hypot(a.x - b.x, a.y - b.y)
 
-test("repro: bottom passives miss a rotated fixed target", async () => {
+test("pcbPack places bottom passives against a rotated fixed target", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -82,8 +82,8 @@ test("repro: bottom passives miss a rotated fixed target", async () => {
         pcbX={-3.5}
         pcbY={2.6}
         fontSize={0.38}
-        color="#f59e0b"
-        text="CURRENT BUG: BLUE R/C MISS TARGET"
+        color="#22c55e"
+        text="FIXED: BLUE R/C FOLLOW TARGET"
       />
       <pcbnotetext
         pcbX={0}
@@ -128,7 +128,7 @@ test("repro: bottom passives miss a rotated fixed target", async () => {
   expect(uRotated.center.x).toBeCloseTo(3.9, 6)
   expect(uRotated.center.y).toBeCloseTo(-2, 6)
   expect(uRotated.rotation).toBe(90)
-  expect(totalConnectionDistance).toBeGreaterThan(20)
+  expect(totalConnectionDistance).toBeLessThan(4)
   expect(circuit.db.pcb_packing_error.list()).toHaveLength(0)
   expect(circuit).toMatchPcbSnapshot(import.meta.path, {
     shouldDrawRatsNest: true,
