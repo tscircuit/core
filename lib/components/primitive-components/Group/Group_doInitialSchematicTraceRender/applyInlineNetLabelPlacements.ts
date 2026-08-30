@@ -1,8 +1,12 @@
-import type { SchematicTracePipelineSolver } from "@tscircuit/schematic-trace-solver"
+import type {
+  NetId,
+  SchematicTracePipelineSolver,
+} from "@tscircuit/schematic-trace-solver"
+import type { SourceTrace } from "circuit-json"
 import Debug from "debug"
 import { Group } from "../Group"
 import { createCanonicalSchematicNetLabelTextResolver } from "./createCanonicalSchematicNetLabelTextResolver"
-import { asSchematicPortId } from "./port-id-types"
+import { type SchematicPortId, asSchematicPortId } from "./port-id-types"
 
 const debug = Debug("Group_doInitialSchematicTraceRender")
 
@@ -31,9 +35,19 @@ export function applyInlineNetLabelPlacements(args: {
   group: Group<any>
   solver: SchematicTracePipelineSolver
   userNetIdToConnKey: Map<string, string>
-  sourceTraceIdByPinPairKey: Map<string, string>
+  sourceTraceIdByPinPairKey: Map<string, SourceTrace["source_trace_id"]>
+  crossScopeSourceTraceIdBySchematicPortIdAndNetId: Map<
+    SchematicPortId,
+    Map<NetId, SourceTrace["source_trace_id"]>
+  >
 }) {
-  const { group, solver, userNetIdToConnKey, sourceTraceIdByPinPairKey } = args
+  const {
+    group,
+    solver,
+    userNetIdToConnKey,
+    sourceTraceIdByPinPairKey,
+    crossScopeSourceTraceIdBySchematicPortIdAndNetId,
+  } = args
   const { db } = group.root!
 
   const inlineNetLabelPlacements =
@@ -50,14 +64,29 @@ export function applyInlineNetLabelPlacements(args: {
     const placementUserNetId = globalConnMap
       .getIdsConnectedToNet(placement.globalConnNetId)
       .find((id: string) => userNetIdToConnKey.has(id))
-    const connKey = placementUserNetId
-      ? userNetIdToConnKey.get(placementUserNetId)
-      : undefined
 
-    const text = connKey
-      ? resolveCanonicalNetLabelText({ subcircuitConnectivityMapKey: connKey })
-          .name
-      : (placement.netId ?? placement.globalConnNetId)
+    const crossScopeSourceTraceId =
+      schematicPortIds.length === 1
+        ? crossScopeSourceTraceIdBySchematicPortIdAndNetId
+            .get(schematicPortIds[0]!)
+            ?.get(placement.netId ?? placement.globalConnNetId)
+        : undefined
+    const connKey =
+      (crossScopeSourceTraceId
+        ? db.source_trace.get(crossScopeSourceTraceId)
+            ?.subcircuit_connectivity_map_key
+        : undefined) ??
+      (placementUserNetId
+        ? userNetIdToConnKey.get(placementUserNetId)
+        : undefined)
+
+    const text =
+      placement.netLabelText ??
+      (connKey
+        ? resolveCanonicalNetLabelText({
+            subcircuitConnectivityMapKey: connKey,
+          }).name
+        : (placement.netId ?? placement.globalConnNetId))
     if (!text) {
       debug(
         `skipping inline net label for "${placement.netId}" REASON:no resolvable text`,
@@ -65,9 +94,9 @@ export function applyInlineNetLabelPlacements(args: {
       continue
     }
 
-    let sourceTraceId = sourceTraceIdByPinPairKey.get(
-      [...schematicPortIds].sort().join("::"),
-    )
+    let sourceTraceId =
+      crossScopeSourceTraceId ??
+      sourceTraceIdByPinPairKey.get([...schematicPortIds].sort().join("::"))
     if (!sourceTraceId && connKey) {
       const sourcePortIds = schematicPortIds.flatMap((schematicPortId) => {
         const sourcePortId =
