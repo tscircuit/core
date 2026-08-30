@@ -1261,54 +1261,33 @@
       "allowInlineNetLabel": true,
       "inlineNetLabelHeight": 0.12,
       "inlineNetLabelWidth": 1.12,
-      "pinIds": [
-        "schematic_port_0",
-        "schematic_port_2"
-      ]
+      "pinIds": ["schematic_port_0", "schematic_port_2"]
     },
     {
       "netId": "BUCK_VIN_BYPASS",
-      "pinIds": [
-        "schematic_port_10",
-        "schematic_port_16"
-      ]
+      "pinIds": ["schematic_port_10", "schematic_port_16"]
     },
     {
       "netId": "BUCK_ENABLE",
-      "pinIds": [
-        "schematic_port_9",
-        "schematic_port_16"
-      ]
+      "pinIds": ["schematic_port_9", "schematic_port_16"]
     },
     {
       "netId": "BUCK_INPUT_RETURN",
       "netLabelWidth": 0.48,
-      "pinIds": [
-        "schematic_port_11",
-        "schematic_port_17"
-      ]
+      "pinIds": ["schematic_port_11", "schematic_port_17"]
     },
     {
       "netId": "BUCK_SWITCH",
-      "pinIds": [
-        "schematic_port_12",
-        "schematic_port_14"
-      ]
+      "pinIds": ["schematic_port_12", "schematic_port_14"]
     },
     {
       "netId": "BUCK_OUTPUT",
-      "pinIds": [
-        "schematic_port_15",
-        "schematic_port_20"
-      ]
+      "pinIds": ["schematic_port_15", "schematic_port_20"]
     },
     {
       "netId": "BUCK_FEEDBACK",
       "netLabelWidth": 0.6,
-      "pinIds": [
-        "schematic_port_8",
-        "schematic_port_20"
-      ]
+      "pinIds": ["schematic_port_8", "schematic_port_20"]
     },
     {
       "netId": "BUCK_BOOTSTRAP",
@@ -1316,39 +1295,24 @@
       "allowInlineNetLabel": true,
       "inlineNetLabelHeight": 0.12,
       "inlineNetLabelWidth": 1.2,
-      "pinIds": [
-        "schematic_port_13",
-        "schematic_port_18"
-      ]
+      "pinIds": ["schematic_port_13", "schematic_port_18"]
     },
     {
       "netId": "BUCK_BOOTSTRAP_RETURN",
-      "pinIds": [
-        "schematic_port_19",
-        "schematic_port_12"
-      ]
+      "pinIds": ["schematic_port_19", "schematic_port_12"]
     },
     {
       "netId": "BUCK_OUTPUT_CAPS",
-      "pinIds": [
-        "schematic_port_20",
-        "schematic_port_22"
-      ]
+      "pinIds": ["schematic_port_20", "schematic_port_22"]
     },
     {
       "netId": "GPIO2_LOCAL",
-      "pinIds": [
-        "schematic_port_40",
-        "schematic_port_59"
-      ]
+      "pinIds": ["schematic_port_40", "schematic_port_59"]
     },
     {
       "netId": "GPIO2_BREAKOUT",
       "netLabelWidth": 1.44,
-      "pinIds": [
-        "schematic_port_59",
-        "schematic_port_121"
-      ]
+      "pinIds": ["schematic_port_59", "schematic_port_121"]
     },
     {
       "netId": "MOTOR_VINT_BYPASS",
@@ -1356,10 +1320,7 @@
       "allowInlineNetLabel": true,
       "inlineNetLabelHeight": 0.12,
       "inlineNetLabelWidth": 1.44,
-      "pinIds": [
-        "schematic_port_79",
-        "schematic_port_87"
-      ]
+      "pinIds": ["schematic_port_79", "schematic_port_87"]
     },
     {
       "netId": "MOTOR_CHARGE_PUMP",
@@ -1367,10 +1328,7 @@
       "allowInlineNetLabel": true,
       "inlineNetLabelHeight": 0.12,
       "inlineNetLabelWidth": 1.44,
-      "pinIds": [
-        "schematic_port_76",
-        "schematic_port_89"
-      ]
+      "pinIds": ["schematic_port_76", "schematic_port_89"]
     },
     {
       "netId": "ADC_BREAKOUT",
@@ -1379,10 +1337,7 @@
       "allowInlineNetLabel": true,
       "inlineNetLabelHeight": 0.12,
       "inlineNetLabelWidth": 1.04,
-      "pinIds": [
-        "schematic_port_113",
-        "schematic_port_25"
-      ]
+      "pinIds": ["schematic_port_113", "schematic_port_25"]
     },
     {
       "netId": "GPIO16_BREAKOUT",
@@ -1391,10 +1346,7 @@
       "allowInlineNetLabel": true,
       "inlineNetLabelHeight": 0.12,
       "inlineNetLabelWidth": 1.28,
-      "pinIds": [
-        "schematic_port_114",
-        "schematic_port_27"
-      ]
+      "pinIds": ["schematic_port_114", "schematic_port_27"]
     },
     {
       "netId": "UART_RX_BREAKOUT",
@@ -1403,10 +1355,7 @@
       "allowInlineNetLabel": true,
       "inlineNetLabelHeight": 0.12,
       "inlineNetLabelWidth": 1.36,
-      "pinIds": [
-        "schematic_port_124",
-        "schematic_port_44"
-      ]
+      "pinIds": ["schematic_port_124", "schematic_port_44"]
     },
     {
       "netId": "UART_TX_BREAKOUT",
@@ -1415,10 +1364,7 @@
       "allowInlineNetLabel": true,
       "inlineNetLabelHeight": 0.12,
       "inlineNetLabelWidth": 1.36,
-      "pinIds": [
-        "schematic_port_123",
-        "schematic_port_45"
-      ]
+      "pinIds": ["schematic_port_123", "schematic_port_45"]
     }
   ],
   "netConnections": [
@@ -1577,11 +1523,7 @@
       "allowInlineNetLabel": true,
       "inlineNetLabelHeight": 0.12,
       "inlineNetLabelWidth": 0.56,
-      "pinIds": [
-        "schematic_port_39",
-        "schematic_port_60",
-        "schematic_port_122"
-      ]
+      "pinIds": ["schematic_port_39", "schematic_port_60", "schematic_port_122"]
     },
     {
       "netId": "GPIO0",
@@ -1636,10 +1578,7 @@
       "allowInlineNetLabel": true,
       "inlineNetLabelHeight": 0.12,
       "inlineNetLabelWidth": 0.96,
-      "pinIds": [
-        "schematic_port_66",
-        "schematic_port_92"
-      ]
+      "pinIds": ["schematic_port_66", "schematic_port_92"]
     },
     {
       "netId": "MOTOR_A1",
@@ -1831,71 +1770,23 @@
     }
   ],
   "availableNetLabelOrientations": {
-    "GND": [
-      "y-"
-    ],
-    "VM": [
-      "y+"
-    ],
-    "V3V3": [
-      "y+"
-    ],
-    "ESP_EN": [
-      "x-",
-      "x+"
-    ],
-    "ESP_RST": [
-      "x-",
-      "x+"
-    ],
-    "GPIO0": [
-      "x-",
-      "x+"
-    ],
-    "GPIO15": [
-      "x-",
-      "x+"
-    ],
-    "MOTOR_SLEEP": [
-      "x-",
-      "x+"
-    ],
-    "GPIO13": [
-      "x-",
-      "x+"
-    ],
-    "GPIO5": [
-      "x-",
-      "x+"
-    ],
-    "GPIO4": [
-      "x-",
-      "x+"
-    ],
-    "GPIO14": [
-      "x-",
-      "x+"
-    ],
-    "GPIO12": [
-      "x-",
-      "x+"
-    ],
-    "MOTOR_A1": [
-      "x-",
-      "x+"
-    ],
-    "MOTOR_A2": [
-      "x-",
-      "x+"
-    ],
-    "MOTOR_B1": [
-      "x-",
-      "x+"
-    ],
-    "MOTOR_B2": [
-      "x-",
-      "x+"
-    ]
+    "GND": ["y-"],
+    "VM": ["y+"],
+    "V3V3": ["y+"],
+    "ESP_EN": ["x-", "x+"],
+    "ESP_RST": ["x-", "x+"],
+    "GPIO0": ["x-", "x+"],
+    "GPIO15": ["x-", "x+"],
+    "MOTOR_SLEEP": ["x-", "x+"],
+    "GPIO13": ["x-", "x+"],
+    "GPIO5": ["x-", "x+"],
+    "GPIO4": ["x-", "x+"],
+    "GPIO14": ["x-", "x+"],
+    "GPIO12": ["x-", "x+"],
+    "MOTOR_A1": ["x-", "x+"],
+    "MOTOR_A2": ["x-", "x+"],
+    "MOTOR_B1": ["x-", "x+"],
+    "MOTOR_B2": ["x-", "x+"]
   },
   "maxMspPairDistance": 2.4,
   "_hideRatsNet": false
