@@ -677,6 +677,29 @@ export abstract class PrimitiveComponent<
     }
   }
 
+  /**
+   * Bounds in the primitive's footprint-local PCB frame before parent
+   * transforms are applied. This is a right-handed frame with +X right, +Y
+   * toward the top of the board, +Z above the board, and all values in mm.
+   *
+   * Most primitives are centered on their local origin. Path-like primitives
+   * can override this when their authored coordinates are not centered.
+   */
+  _getPcbLocalBoundsBeforeLayout(): {
+    left: number
+    right: number
+    top: number
+    bottom: number
+  } {
+    const { width, height } = this.getPcbSize()
+    return {
+      left: -width / 2,
+      right: width / 2,
+      top: height / 2,
+      bottom: -height / 2,
+    }
+  }
+
   protected _getPcbComponentLayer(): LayerRef | undefined {
     return this._parsedProps.layer
   }

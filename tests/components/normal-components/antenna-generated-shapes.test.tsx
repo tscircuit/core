@@ -1,0 +1,95 @@
+import { expect, test } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
+
+test("antennaShape generates common 2.4 GHz PCB antenna geometries", async () => {
+  const { circuit } = getTestFixture()
+
+  circuit.add(
+    <board width="125mm" height="58mm">
+      <antenna
+        name="ANT1"
+        antennaShape="2.4ghz_quarter_wave_monopole"
+        pcbX={-55}
+        pcbY={15}
+      />
+      <pcbnotetext
+        text="2.4 GHz quarter-wave monopole"
+        pcbX={-39}
+        pcbY={11}
+        fontSize="0.8mm"
+      />
+
+      <antenna
+        name="ANT2"
+        antennaShape="2.4ghz_meandered_monopole"
+        frequencyBand="5ghz"
+        pcbX={-15}
+        pcbY={14}
+      />
+      <pcbnotetext
+        text="2.4 GHz meandered monopole"
+        pcbX={-7.5}
+        pcbY={11}
+        fontSize="0.8mm"
+      />
+
+      <antenna
+        name="ANT3"
+        antennaShape="2.4ghz_inverted_f"
+        pcbX={22}
+        pcbY={12}
+      />
+      <pcbnotetext
+        text="2.4 GHz inverted-F (feed + ground)"
+        pcbX={31}
+        pcbY={9}
+        fontSize="0.8mm"
+      />
+
+      <antenna
+        name="ANT4"
+        antennaShape="2.4ghz_meandered_inverted_f"
+        pcbX={-48}
+        pcbY={-18}
+      />
+      <pcbnotetext
+        text="2.4 GHz meandered inverted-F"
+        pcbX={-41}
+        pcbY={-22}
+        fontSize="0.8mm"
+      />
+
+      <antenna
+        name="ANT5"
+        antennaShape="2.4ghz_folded_dipole"
+        pcbX={10}
+        pcbY={-20}
+      />
+      <pcbnotetext
+        text="2.4 GHz folded dipole (feed + feed2)"
+        pcbX={10.5}
+        pcbY={-24}
+        fontSize="0.8mm"
+      />
+    </board>,
+  )
+
+  await circuit.renderUntilSettled()
+
+  expect(circuit.db.pcb_trace.list()).toHaveLength(5)
+  expect(circuit.db.pcb_via.list()).toHaveLength(2)
+  expect(circuit.db.pcb_smtpad.list()).toHaveLength(8)
+  expect(circuit.db.source_port.list()).toHaveLength(8)
+  expect(circuit.db.pcb_missing_footprint_error.list()).toHaveLength(0)
+
+  const quarterWaveSourceComponent = circuit.db.source_component.getWhere({
+    name: "ANT1",
+  })!
+  const quarterWavePcbComponent = circuit.db.pcb_component.getWhere({
+    source_component_id: quarterWaveSourceComponent.source_component_id,
+  })!
+  expect(quarterWavePcbComponent.width).toBeCloseTo(31.7)
+  expect(quarterWavePcbComponent.center.x).toBeCloseTo(-39.55)
+
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
+})
