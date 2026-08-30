@@ -177,8 +177,6 @@ test("assembly.screen follows top and bottom connector transforms", async () => 
       <assembly.screen
         name="SCREEN"
         connectsTo=".B1 .J1"
-        width="16mm"
-        height="9mm"
         cadModel="flexscreen_w16mm_h9mm_flex7mm_lateraloffset3mm_sitsflat"
       />
     </assembly.device>,

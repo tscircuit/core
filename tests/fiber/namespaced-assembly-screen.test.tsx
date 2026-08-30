@@ -10,8 +10,7 @@ test("creates a namespaced assembly screen", () => {
     <assembly.screen
       name="SCREEN"
       connectsTo=".B1 .J1"
-      width="2.3in"
-      height="1.8in"
+      cadModel="flexscreen_w58.42mm_h45.72mm"
     />,
   )
 

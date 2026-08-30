@@ -9,6 +9,11 @@ const formatMillimetersForModelprinter = (millimeters: number): string =>
 
 const getDefaultFlexScreenModel = (component: AssemblyScreen): string => {
   const { width, height } = component._parsedProps
+  if (width === undefined || height === undefined) {
+    throw new Error(
+      `assembly.screen "${component.name}" requires both width and height when cadModel is omitted`,
+    )
+  }
   return `flexscreen_w${formatMillimetersForModelprinter(width)}mm_h${formatMillimetersForModelprinter(height)}mm`
 }
 
