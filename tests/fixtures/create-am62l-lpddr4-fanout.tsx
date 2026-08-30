@@ -2571,6 +2571,20 @@ export const renderAm62lLpddr4Fanout = async ({
     expect(ddrRouteEndpointLayers).not.toContain(LPDDR4_VDD1_PLANE_LAYER)
   }
   await expect(circuit).toMatchPcbSnapshot(snapshotPath, {
+    // circuit-to-svg gives copper pours a 0.5 fill opacity. Applying 0.2 alpha
+    // to the plane-layer colors makes each pour effectively 0.1 opacity while
+    // leaving the signal-layer copper fully opaque and easy to inspect.
+    ...(includePowerPlaneFanout
+      ? {
+          colorOverrides: {
+            copper: {
+              inner1: "rgba(255, 140, 0, 0.2)",
+              inner2: "rgba(255, 215, 0, 0.2)",
+              inner3: "rgba(50, 205, 50, 0.2)",
+            },
+          },
+        }
+      : {}),
     diffThresholdPercent: 0.05,
   })
 }
