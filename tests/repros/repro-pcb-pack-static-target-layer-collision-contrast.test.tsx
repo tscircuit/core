@@ -4,7 +4,7 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 const distance = (a: { x: number; y: number }, b: { x: number; y: number }) =>
   Math.hypot(a.x - b.x, a.y - b.y)
 
-test("repro: cross-layer passive stays outside a fixed target", async () => {
+test("pcbPack clears a fixed target on the same side and overlaps it across layers", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -66,8 +66,8 @@ test("repro: cross-layer passive stays outside a fixed target", async () => {
         pcbX={0}
         pcbY={-4.35}
         fontSize={0.38}
-        color="#f59e0b"
-        text="CURRENT BUG: BLUE C_BOTTOM STAYS OUTSIDE"
+        color="#22c55e"
+        text="FIXED: BLUE C_BOTTOM SITS INSIDE"
       />
       <pcbnotetext
         pcbX={0}
@@ -87,16 +87,32 @@ test("repro: cross-layer passive stays outside a fixed target", async () => {
       source_component_id: sourceComponent.source_component_id,
     })!
   }
+  const getPcbPort = (componentName: string, portName: string) => {
+    const sourceComponent = circuit.db.source_component.getWhere({
+      name: componentName,
+    })!
+    const sourcePort = circuit.db.source_port.getWhere({
+      source_component_id: sourceComponent.source_component_id,
+      name: portName,
+    })!
+    return circuit.db.pcb_port.getWhere({
+      source_port_id: sourcePort.source_port_id,
+    })!
+  }
   const u1 = getComponent("U1")
   const topResistor = getComponent("R_TOP")
   const bottomCapacitor = getComponent("C_BOTTOM")
   const topCenterDistance = distance(u1.center, topResistor.center)
   const bottomCenterDistance = distance(u1.center, bottomCapacitor.center)
+  const bottomConnectionDistance =
+    distance(getPcbPort("U1", "pin1"), getPcbPort("C_BOTTOM", "pin1")) +
+    distance(getPcbPort("U1", "pin2"), getPcbPort("C_BOTTOM", "pin2"))
 
   expect(u1.center.x).toBeCloseTo(3, 6)
   expect(u1.center.y).toBeCloseTo(1, 6)
   expect(topCenterDistance).toBeGreaterThan(2.7)
-  expect(bottomCenterDistance).toBeGreaterThan(3)
+  expect(bottomCenterDistance).toBeLessThan(1.5)
+  expect(bottomConnectionDistance).toBeLessThan(2.6)
   expect(circuit.db.pcb_packing_error.list()).toHaveLength(0)
   expect(circuit).toMatchPcbSnapshot(import.meta.path, {
     shouldDrawRatsNest: true,

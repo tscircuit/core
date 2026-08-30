@@ -4,7 +4,7 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 const distance = (a: { x: number; y: number }, b: { x: number; y: number }) =>
   Math.hypot(a.x - b.x, a.y - b.y)
 
-test("repro: bottom-side passives miss an off-center fixed QFN", async () => {
+test("pcbPack fans bottom-side passives beneath an off-center fixed QFN", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -65,8 +65,8 @@ test("repro: bottom-side passives miss an off-center fixed QFN", async () => {
         pcbX={-4}
         pcbY={-5.7}
         fontSize={0.38}
-        color="#f59e0b"
-        text="CURRENT BUG: BLUE C1-C4 MISS U1"
+        color="#22c55e"
+        text="FIXED: BLUE C1-C4 FAN IN UNDER U1"
       />
       <pcbnotetext
         pcbX={4}
@@ -112,7 +112,7 @@ test("repro: bottom-side passives miss an off-center fixed QFN", async () => {
 
   expect(u1.center.x).toBeCloseTo(4, 6)
   expect(u1.center.y).toBeCloseTo(1.5, 6)
-  expect(totalConnectionDistance).toBeGreaterThan(45)
+  expect(totalConnectionDistance).toBeLessThan(9)
   expect(circuit.db.pcb_packing_error.list()).toHaveLength(0)
   expect(circuit).toMatchPcbSnapshot(import.meta.path, {
     shouldDrawRatsNest: true,

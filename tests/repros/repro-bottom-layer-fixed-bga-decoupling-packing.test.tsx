@@ -4,7 +4,7 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 const distance = (a: { x: number; y: number }, b: { x: number; y: number }) =>
   Math.hypot(a.x - b.x, a.y - b.y)
 
-test("repro: bottom-layer decoupling misses a fixed BGA target", async () => {
+test("pcbPack places bottom-layer decoupling under a fixed BGA", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -53,8 +53,8 @@ test("repro: bottom-layer decoupling misses a fixed BGA target", async () => {
         pcbX={-3.2}
         pcbY={-5.25}
         fontSize={0.34}
-        color="#f59e0b"
-        text="CURRENT BUG: BLUE CAPS MISS U1"
+        color="#22c55e"
+        text="FIXED: BLUE CAPS PACK UNDER U1"
       />
       <pcbnotetext
         pcbY={-6.45}
@@ -93,7 +93,7 @@ test("repro: bottom-layer decoupling misses a fixed BGA target", async () => {
   expect(u1.center.x).toBeCloseTo(2, 6)
   expect(u1.center.y).toBeCloseTo(1, 6)
   expect(u1.layer).toBe("top")
-  expect(totalConnectionDistance).toBeGreaterThan(20)
+  expect(totalConnectionDistance).toBeLessThan(2)
   expect(circuit.db.pcb_packing_error.list()).toHaveLength(0)
   expect(circuit).toMatchPcbSnapshot(import.meta.path, {
     shouldDrawRatsNest: true,
