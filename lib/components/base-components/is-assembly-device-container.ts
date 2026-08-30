@@ -1,8 +1,8 @@
 /**
- * An assembly device container is a product-level wrapper (today only `<assembly.device>`)
- * that may sit above a `<board>` without being an electrical group or
- * subcircuit. Components that would otherwise assume "my parent is a
- * subcircuit" use this to opt out.
+ * An assembly-device element is a product-level `<assembly.device>` wrapper or
+ * a semantic subtype such as `<assembly.screen>`. It is not an electrical group
+ * or subcircuit. Components that would otherwise assume "my parent is a
+ * subcircuit" use this marker to opt out.
  */
 export interface AssemblyDeviceContainer {
   isAssemblyDeviceContainer: true

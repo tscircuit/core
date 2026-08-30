@@ -54,7 +54,7 @@
     "@tscircuit/math-utils": "^0.0.36",
     "@tscircuit/miniflex": "^0.0.4",
     "@tscircuit/ngspice-spice-engine": "^0.0.20",
-    "@tscircuit/props": "^0.0.644",
+    "@tscircuit/props": "^0.0.645",
     "@tscircuit/schematic-match-adapt": "^0.0.18",
     "@tscircuit/schematic-trace-solver": "^0.0.173",
     "@tscircuit/solver-utils": "^0.0.16",
@@ -72,7 +72,7 @@
     "circuit-json": "^0.0.479",
     "circuit-json-to-bpc": "^0.0.13",
     "circuit-json-to-connectivity-map": "^0.0.30",
-    "circuit-json-to-gltf": "^0.0.118",
+    "circuit-json-to-gltf": "^0.0.122",
     "circuit-json-to-spice": "^0.0.45",
     "circuit-to-svg": "^0.0.410",
     "concurrently": "^9.1.2",
@@ -132,7 +132,7 @@
   },
   "overrides": {
     "@tscircuit/circuit-json-util": "^0.0.106",
-    "@tscircuit/props": "^0.0.644",
+    "@tscircuit/props": "^0.0.645",
     "circuit-json": "^0.0.479"
   }
 }

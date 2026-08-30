@@ -1271,6 +1271,29 @@ export class NormalComponent<
   }
 
   /**
+   * The connector insertion axis as a continuous unit direction in Circuit
+   * JSON's board-world XYZ frame (+Z above the board). This is a direction, not
+   * a position, so it has no units or translation. It receives the same
+   * rotation and layer flip as the footprint's pads.
+   */
+  _getPcbComponentInsertionAxisDirection(
+    componentLayer: LayerRef,
+    rotationDegrees: number = this.getGlobalTransformRotation(),
+  ): { x: number; y: number; z: number } | undefined {
+    const footprintMetadata = this._getFootprintMetadataForPcbComponent()
+    if (!footprintMetadata?.insertionDirection) return undefined
+
+    return transformFootprintInsertionDirectionVector({
+      insertionDirection: footprintMetadata.insertionDirection,
+      rotationDegrees,
+      isFlipped: isFootprintFlipped({
+        componentLayer,
+        originalLayer: footprintMetadata.originalLayer,
+      }),
+    })
+  }
+
+  /**
    * The enclosure aperture's outward axis as a continuous unit direction in
    * board XYZ (+Z above the board). It is a direction, not a point, and receives
    * the same rotation and layer transform as the footprint's pads.
