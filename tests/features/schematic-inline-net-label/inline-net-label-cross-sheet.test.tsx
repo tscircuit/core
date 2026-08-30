@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import type { InputProblem } from "@tscircuit/schematic-trace-solver"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("named traces crossing schematic sheets use inline label stubs", async () => {
+test("named traces crossing schematic sheets keep anchored labels", async () => {
   const { circuit } = getTestFixture()
   const solverInputProblems: InputProblem[] = []
 
@@ -43,29 +43,34 @@ test("named traces crossing schematic sheets use inline label stubs", async () =
   expect(
     crossSheetConnections.every(
       (connection) =>
-        connection.pinIds.length === 1 && connection.allowInlineNetLabel,
+        connection.pinIds.length === 1 && !connection.allowInlineNetLabel,
     ),
   ).toBe(true)
 
   const sourceTrace = circuit.db.source_trace.getWhere({
     name: "CROSS_SHEET_SIGNAL",
   })!
-  const inlineLabels = circuit.db.schematic_text
+  expect(
+    circuit.db.schematic_text
+      .list()
+      .filter(
+        (text) =>
+          text.text === "CROSS_SHEET_SIGNAL" &&
+          text.source_trace_id === sourceTrace.source_trace_id,
+      ),
+  ).toHaveLength(0)
+
+  const anchoredLabels = circuit.db.schematic_net_label
     .list()
     .filter(
-      (text) =>
-        text.text === "CROSS_SHEET_SIGNAL" &&
-        text.source_trace_id === sourceTrace.source_trace_id,
+      (label) =>
+        label.text === "CROSS_SHEET_SIGNAL" &&
+        label.source_trace_id === sourceTrace.source_trace_id,
     )
-  expect(inlineLabels).toHaveLength(2)
+  expect(anchoredLabels).toHaveLength(2)
   expect(
-    new Set(inlineLabels.map((text) => text.schematic_sheet_id)).size,
+    new Set(anchoredLabels.map((label) => label.schematic_sheet_id)).size,
   ).toBe(2)
-  expect(
-    circuit.db.schematic_net_label
-      .list()
-      .filter((label) => label.text === "CROSS_SHEET_SIGNAL"),
-  ).toHaveLength(0)
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 }, 20_000)

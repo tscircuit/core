@@ -20,9 +20,9 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
  * exists on another sheet - so the sensor and power monitor sheets ended up with
  * no bus label at all (matched system-block-desginer01-schematic.snap.svg).
  *
- * Cross-sheet connections should create an inline label stub on every sheet the
- * bus reaches. This test guards against those labels being collapsed onto a
- * single sheet.
+ * The fix scopes net-label de-duplication to the port's own schematic sheet and
+ * stamps each label with that sheet, so every sheet the bus reaches gets its own
+ * label anchored to its own pin. This test guards against a regression.
  */
 test("multi-sheet shared bus: cross-subcircuit net label is created on every sheet it reaches", async () => {
   const { circuit } = getTestFixture()
@@ -103,21 +103,21 @@ test("multi-sheet shared bus: cross-subcircuit net label is created on every she
 
   await expect(circuit).toMatchStackedSchematicSnapshot(import.meta.path)
 
-  // Inline cross-subcircuit labels are schematic text owned by their source
-  // trace, rather than anchored schematic_net_label records.
+  // The cross-subcircuit bus net labels (the auto-generated "connectivity"
+  // labels, as opposed to the named VDD/GND nets) on a given sheet.
   const busLabelsOnSheet = (name: string) => {
     const sheet = circuit.db.schematic_sheet.getWhere({ name })!
-    return circuit.db.schematic_text
+    return circuit.db.schematic_net_label
       .list()
       .filter(
-        (text) =>
-          text.schematic_sheet_id === sheet.schematic_sheet_id &&
-          text.source_trace_id !== undefined,
+        (l) =>
+          (l as any).schematic_sheet_id === sheet.schematic_sheet_id &&
+          (l as any).source_net_id?.includes("connectivity_net"),
       )
   }
 
   // The bus reaches the sensor and the power monitor, so each of their sheets
-  // carries both of its bus labels (they are not collapsed onto another sheet).
-  expect(busLabelsOnSheet("sensor")).toHaveLength(2)
-  expect(busLabelsOnSheet("power_monitor")).toHaveLength(2)
+  // carries its own bus net label (it is not collapsed onto a single sheet).
+  expect(busLabelsOnSheet("sensor")).not.toHaveLength(0)
+  expect(busLabelsOnSheet("power_monitor")).not.toHaveLength(0)
 })

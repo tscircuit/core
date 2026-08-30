@@ -443,17 +443,17 @@ test("repro170: complete RP2040 U1 schematic connections", async () => {
   await circuit.renderUntilSettled()
 
   // Cross-section traces are represented by one inline-label connection at
-  // each visible endpoint. Each connection keeps its source trace's label and
-  // text width instead of borrowing the shared QSPI_SS connectivity label.
+  // each visible endpoint. Every endpoint uses the canonical QSPI_SS label for
+  // the shared electrical net instead of competing source-trace aliases.
   const qspiCrossSectionConnections =
     schematicTraceInputProblem?.netConnections.filter(({ netId }) =>
       ["QSPI_SS", "BOOT_SW", "BOOT_R"].includes(netId),
     ) ?? []
-  expect(qspiCrossSectionConnections).toHaveLength(6)
+  expect(qspiCrossSectionConnections).toHaveLength(1)
   expect(
     qspiCrossSectionConnections.every(
       ({ pinIds, allowInlineNetLabel }) =>
-        pinIds.length === 1 && allowInlineNetLabel,
+        pinIds.length === 4 && allowInlineNetLabel,
     ),
   ).toBe(true)
   expect(
@@ -462,14 +462,7 @@ test("repro170: complete RP2040 U1 schematic connections", async () => {
       .sort(([firstNetId], [secondNetId]) =>
         firstNetId.localeCompare(secondNetId),
       ),
-  ).toEqual([
-    ["BOOT_R", 0.84],
-    ["BOOT_R", 0.84],
-    ["BOOT_SW", 0.96],
-    ["BOOT_SW", 0.96],
-    ["QSPI_SS", 0.96],
-    ["QSPI_SS", 0.96],
-  ])
+  ).toEqual([["QSPI_SS", 0.96]])
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })

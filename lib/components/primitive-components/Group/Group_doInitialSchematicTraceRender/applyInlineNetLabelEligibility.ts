@@ -95,7 +95,6 @@ export const applyInlineNetLabelEligibility = ({
   }) => { name: string; wasAssignedDisplayLabel: boolean }
 }) => {
   for (const directConnection of directConnections) {
-    if (directConnection.allowInlineNetLabel) continue
     const { connKey } = directConnection
     if (!connKey) continue
 

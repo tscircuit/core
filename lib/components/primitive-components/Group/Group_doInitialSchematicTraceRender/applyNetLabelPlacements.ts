@@ -1,5 +1,8 @@
 import { type Bounds, doBoundsOverlap } from "@tscircuit/math-utils"
-import { SchematicTracePipelineSolver } from "@tscircuit/schematic-trace-solver"
+import {
+  type NetId,
+  SchematicTracePipelineSolver,
+} from "@tscircuit/schematic-trace-solver"
 import type { SchematicNetLabel, SourceNet, SourceTrace } from "circuit-json"
 import Debug from "debug"
 import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
@@ -61,7 +64,7 @@ export function applyNetLabelPlacements(args: {
   userNetIdToConnKey: Map<string, string>
   crossScopeTraceLabelBySchematicPortIdAndNetId: Map<
     SchematicPortId,
-    Map<string, { text: string; sourceTraceId: SourceTraceId }>
+    Map<NetId, { text: string; sourceTraceId: SourceTraceId }>
   >
   sourceTraceIdByPortOnlyLabelSchematicPortId: Map<
     SchematicPortId,

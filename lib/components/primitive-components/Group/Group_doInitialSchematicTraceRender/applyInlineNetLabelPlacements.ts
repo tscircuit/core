@@ -1,4 +1,7 @@
-import type { SchematicTracePipelineSolver } from "@tscircuit/schematic-trace-solver"
+import type {
+  NetId,
+  SchematicTracePipelineSolver,
+} from "@tscircuit/schematic-trace-solver"
 import type { SourceTrace } from "circuit-json"
 import Debug from "debug"
 import { Group } from "../Group"
@@ -36,7 +39,7 @@ export function applyInlineNetLabelPlacements(args: {
   sourceTraceIdByPinPairKey: Map<string, SourceTraceId>
   crossScopeTraceLabelBySchematicPortIdAndNetId: Map<
     SchematicPortId,
-    Map<string, { text: string; sourceTraceId: SourceTraceId }>
+    Map<NetId, { text: string; sourceTraceId: SourceTraceId }>
   >
 }) {
   const {
