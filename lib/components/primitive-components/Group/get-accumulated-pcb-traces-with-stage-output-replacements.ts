@@ -11,14 +11,20 @@ export function getAccumulatedPcbTracesWithStageOutputReplacements({
   accumulatedPcbTraces: SimplifiedPcbTrace[]
   stageOutputPcbTraces: SimplifiedPcbTrace[]
 }): SimplifiedPcbTrace[] {
+  const uniqueStageOutputPcbTracesById = new Map(
+    stageOutputPcbTraces.map((trace) => [trace.pcb_trace_id, trace]),
+  )
+  const uniqueStageOutputPcbTraces = [
+    ...uniqueStageOutputPcbTracesById.values(),
+  ]
   const stageOutputPcbTraceIds = new Set(
-    stageOutputPcbTraces.map((trace) => trace.pcb_trace_id),
+    uniqueStageOutputPcbTraces.map((trace) => trace.pcb_trace_id),
   )
 
   return [
     ...accumulatedPcbTraces.filter(
       (trace) => !stageOutputPcbTraceIds.has(trace.pcb_trace_id),
     ),
-    ...stageOutputPcbTraces,
+    ...uniqueStageOutputPcbTraces,
   ]
 }
