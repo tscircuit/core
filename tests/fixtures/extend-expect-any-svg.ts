@@ -103,6 +103,7 @@ declare module "bun:test" {
     toMatchSvgSnapshot(
       testPath: string,
       svgName?: string,
+      options?: { diffThresholdPercent?: number },
     ): Promise<MatcherResult>
   }
 }
