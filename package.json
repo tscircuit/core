@@ -25,7 +25,7 @@
     "pkg-pr-new-release": "bunx pkg-pr-new publish --comment=off --peerDeps",
     "smoke-test:dist": "bun run scripts/smoke-tests/test-dist-simple-circuit.tsx",
     "build:benchmarking": "bun build --experimental-html ./benchmarking/website/index.html --outdir ./benchmarking-dist",
-    "build:benchmarking:watch": "chokidar \"./{benchmarking,lib}/**/*.{ts,tsx}\" -c 'bun build --experimental-html ./benchmarking/website/index.html --outdir ./benchmarking-dist'",
+    "build:benchmarking:watch": "chokidar \"./{benchmarking,lib}/**/*.{ts,tsx}\" -c 'bun build --experimental-html ./benchmarking-dist'",
     "start:benchmarking": "concurrently \"bun run build:benchmarking:watch\" \"live-server ./benchmarking-dist\"",
     "generate-test-plan": "bun run scripts/generate-test-plan.ts"
   },
@@ -61,7 +61,7 @@
     "@tscircuit/soup-util": "^0.0.41",
     "@tscircuit/winding-breakout-point-solver": "github:tscircuit/winding-breakout-point-solver#202dbe9eb0088633b6fa094120dba6f2f41f8803",
     "@types/bun": "^1.2.16",
-    "@types/debug": "^4.3.6",
+    "@types/debug": "^4.1.12",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@types/react-reconciler": "^0.28.9",
