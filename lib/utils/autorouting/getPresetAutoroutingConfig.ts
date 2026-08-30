@@ -114,6 +114,8 @@ export function getPresetAutoroutingConfig(
         autorouterVersion: "beta_pipeline9",
       }
     case "single-layer-fanout": {
+      // Canonicalize the preset-owned fields without discarding explicit
+      // overrides such as algorithmFn.
       const {
         preset: _preset,
         local: _local,
@@ -128,6 +130,8 @@ export function getPresetAutoroutingConfig(
       }
     }
     case "fanout": {
+      // Canonicalize the preset-owned fields without discarding explicit
+      // overrides such as algorithmFn.
       const {
         preset: _preset,
         local: _local,
