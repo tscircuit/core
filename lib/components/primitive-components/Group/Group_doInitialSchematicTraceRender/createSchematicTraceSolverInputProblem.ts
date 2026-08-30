@@ -683,6 +683,24 @@ export function createSchematicTraceSolverInputProblem(
       const sourcePortId = schPortIdToSourcePortId.get(schematicPortId)
       if (sourcePortId) {
         const connKey = st.subcircuit_connectivity_map_key
+        const sourcePortConnKey =
+          db.source_port.get(sourcePortId)?.subcircuit_connectivity_map_key
+        const sourceNetInCurrentSubcircuit = db.source_net
+          .list()
+          .find(
+            (sourceNet) =>
+              sourceNet.subcircuit_id === group.subcircuit_id &&
+              sourcePortConnectivityMap.areIdsConnected(
+                sourceNet.source_net_id,
+                sourcePortId,
+              ),
+          )
+        const sourceNetForLabel =
+          connKeyToSourceNet.get(connKey) ??
+          (sourcePortConnKey
+            ? connKeyToSourceNet.get(sourcePortConnKey)
+            : undefined) ??
+          sourceNetInCurrentSubcircuit
         const connectedSourcePortIdsForKey = Array.from(schematicPortIdsInScope)
           .map((portId) => schPortIdToSourcePortId.get(portId))
           .filter((sourcePortId): sourcePortId is SourcePortId => {
@@ -699,7 +717,7 @@ export function createSchematicTraceSolverInputProblem(
           sourcePortIdsInSchematicScope,
           schematicSheetId: opts.schematicSheetId,
           connKey,
-          sourceNet: connKeyToSourceNet.get(connKey),
+          sourceNet: sourceNetForLabel,
         })
         if (text) {
           const sourceConnectivityNetId = getSourceConnectivityNetId(st)
