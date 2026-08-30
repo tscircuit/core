@@ -107,7 +107,7 @@ export const getLocalAutoroutingStages = (
     },
   ]
 
-  if (strategy.followUpAutorouter && !autorouterConfig.algorithmFn) {
+  if (strategy.followUpAutorouter) {
     const followUpAutorouterConfig = getPresetAutoroutingConfig(
       strategy.followUpAutorouter,
       platformConfig,
