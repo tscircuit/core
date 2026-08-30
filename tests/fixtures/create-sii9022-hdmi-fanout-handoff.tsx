@@ -15,6 +15,7 @@ const sii9022PinLabels = {
 } as const
 
 const tpd12s016PinLabels = {
+  pin10: ["HPD_B_NEG"],
   pin15: ["CLK_NEG"],
   pin16: ["CLK_POS"],
   pin17: ["D0_NEG"],
@@ -34,6 +35,7 @@ const hdmiPinLabels = {
   pin9: ["D0_NEG"],
   pin10: ["CLK_POS"],
   pin12: ["CLK_NEG"],
+  pin19: ["HPD"],
 } as const
 
 const qfnPadPitch = 0.499872
@@ -42,7 +44,7 @@ const qfnPadEdge = 4.907534
 const pinNumberRange = (first: number, last: number) =>
   Array.from({ length: last - first + 1 }, (_, offset) => first + offset)
 
-const Sii9022Acnu = (props: ChipProps<typeof sii9022PinLabels>) => (
+export const Sii9022Acnu = (props: ChipProps<typeof sii9022PinLabels>) => (
   <chip
     pinLabels={sii9022PinLabels}
     manufacturerPartNumber="SII9022ACNU"
@@ -110,7 +112,7 @@ const Sii9022Acnu = (props: ChipProps<typeof sii9022PinLabels>) => (
 const tssopPadPitch = 0.649986
 const tssopPadInset = 3.574796
 
-const Tpd12s016Pwr = (props: ChipProps<typeof tpd12s016PinLabels>) => (
+export const Tpd12s016Pwr = (props: ChipProps<typeof tpd12s016PinLabels>) => (
   <chip
     pinLabels={tpd12s016PinLabels}
     manufacturerPartNumber="TPD12S016PWR"
@@ -145,7 +147,7 @@ const Tpd12s016Pwr = (props: ChipProps<typeof tpd12s016PinLabels>) => (
   />
 )
 
-const Hdmi001s = (props: ConnectorProps) => (
+export const Hdmi001s = (props: ConnectorProps) => (
   <connector
     pinLabels={hdmiPinLabels}
     pinCount={19}
@@ -210,7 +212,7 @@ const Hdmi001s = (props: ConnectorProps) => (
   />
 )
 
-const tmdsConnections = [
+export const tmdsConnections = [
   ["TMDS_D2_P", "TX2_POS", "D2_POS", "pin1", "TMDS_PAIR_0"],
   ["TMDS_D2_N", "TX2_NEG", "D2_NEG", "pin3", "TMDS_PAIR_0"],
   ["TMDS_D1_P", "TX1_POS", "D1_POS", "pin4", "TMDS_PAIR_1"],
