@@ -25,7 +25,6 @@ test("explicitly labeled leg of a branched net gets an inline label", async () =
       />
 
       <trace
-        name="RESET_3V3"
         schDisplayLabel="3.3RESET"
         from=".TP_LEFT > .pin1"
         to=".TP_RIGHT > .pin1"
@@ -44,11 +43,7 @@ test("explicitly labeled leg of a branched net gets an inline label", async () =
   expect(inlineLabels[0]!.source_trace_id).toBeTruthy()
   expect(inlineLabels[0]!.rotation).toBe(0)
 
-  expect(
-    circuit.db.schematic_net_label
-      .list()
-      .filter((label) => label.text === "3.3RESET"),
-  ).toHaveLength(0)
+  expect(circuit.db.schematic_net_label.list()).toHaveLength(0)
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
