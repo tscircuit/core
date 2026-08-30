@@ -296,6 +296,105 @@ const AM62L_PIN_NUMBER_BY_BALL = new Map(
 )
 
 const AM62L_VDDS_DDR_BALLS = ["L8", "M7", "M8", "N8", "P8"] as const
+const AM62L_DDR_HIGH_SPEED_CAPACITANCE = "1uF"
+const AM62L_DDR_MAX_DECOUPLING_DISTANCE = 3.81
+
+// SPRAD06C requires five high-speed VDDS_DDR capacitors totaling at least
+// 1.4 uF, with at least three under the processor and every capacitor within
+// 150 mil (3.81 mm) of a power/ground ball. The TMDS62LEVM reference design
+// uses five high-priority 1 uF parts plus three medium-priority 0.1 uF parts
+// under the BGA. Its separate 22 uF bulk capacitor is at the PMIC output and
+// is intentionally outside this processor-fanout fixture.
+const AM62L_DDR_DECOUPLING_CAPACITORS = [
+  {
+    capacitance: AM62L_DDR_HIGH_SPEED_CAPACITANCE,
+    name: "C_SOC_DDR_HS_L8",
+    priority: "high",
+    targetBall: "L8",
+    pcbX: -0.625,
+    pcbY: 0.625,
+    pcbRotation: 180,
+    vddViaOffset: { x: -0.829, y: 0.311 },
+    groundViaOffset: { x: -0.33, y: 0.45 },
+  },
+  {
+    capacitance: AM62L_DDR_HIGH_SPEED_CAPACITANCE,
+    name: "C_SOC_DDR_HS_M7",
+    priority: "high",
+    targetBall: "M7",
+    pcbX: -3.125,
+    pcbY: -1.75,
+    pcbRotation: 180,
+    vddViaOffset: { x: 0.239, y: -0.338 },
+    groundViaOffset: { x: -0.421, y: -0.338 },
+  },
+  {
+    capacitance: AM62L_DDR_HIGH_SPEED_CAPACITANCE,
+    name: "C_SOC_DDR_HS_M8",
+    priority: "high",
+    targetBall: "M8",
+    pcbX: -1,
+    pcbY: -0.125,
+    pcbRotation: 180,
+    vddViaOffset: { x: 0.78, y: 0 },
+    groundViaOffset: { x: -0.78, y: 0 },
+  },
+  {
+    capacitance: AM62L_DDR_HIGH_SPEED_CAPACITANCE,
+    name: "C_SOC_DDR_HS_N8",
+    priority: "high",
+    targetBall: "N8",
+    pcbX: -0.75,
+    pcbY: -1.125,
+    pcbRotation: 180,
+    vddViaOffset: { x: 0.239, y: 0.338 },
+    groundViaOffset: { x: -0.421, y: -0.338 },
+  },
+  {
+    capacitance: AM62L_DDR_HIGH_SPEED_CAPACITANCE,
+    name: "C_SOC_DDR_HS_P8",
+    priority: "high",
+    targetBall: "P8",
+    pcbX: -1.75,
+    pcbY: -2.25,
+    pcbRotation: 90,
+    vddViaOffset: { x: 0.446, y: -0.435 },
+    groundViaOffset: { x: -0.98, y: 0 },
+  },
+  {
+    capacitance: "0.1uF",
+    name: "C_SOC_DDR_MED1",
+    priority: "medium",
+    targetBall: "P8",
+    pcbX: -0.625,
+    pcbY: -2,
+    pcbRotation: 180,
+    vddViaOffset: { x: 0.765, y: 0.116 },
+    groundViaOffset: { x: -0.555, y: -0.39 },
+  },
+  {
+    capacitance: "0.1uF",
+    name: "C_SOC_DDR_MED2",
+    priority: "medium",
+    targetBall: "P8",
+    pcbX: -0.75,
+    pcbY: -3.125,
+    pcbRotation: 90,
+    vddViaOffset: { x: 0.33, y: -0.45 },
+    groundViaOffset: { x: -0.105, y: 0.39 },
+  },
+  {
+    capacitance: "0.1uF",
+    name: "C_SOC_DDR_MED3",
+    priority: "medium",
+    targetBall: "P8",
+    pcbX: 0.75,
+    pcbY: -1.25,
+    pcbRotation: 180,
+    vddViaOffset: { x: 0.239, y: -0.338 },
+    groundViaOffset: { x: -0.239, y: 0.338 },
+  },
+] as const
 const parseBallList = (ballNames: string): readonly string[] =>
   ballNames.trim().split(/\s+/)
 
@@ -379,6 +478,18 @@ const AM62L_PIN_LABELS = {
   pin276: ["V5", "DDR0_DQ13"],
   pin284: ["W1", "DDR0_DQ15"],
 } as const
+
+const AM62L_DDR_PIN_ATTRIBUTES = Object.fromEntries(
+  AM62L_VDDS_DDR_BALLS.map((ballName) => [
+    ballName,
+    {
+      requiresPower: true,
+      shouldHaveDecouplingCapacitor: true,
+      recommendedDecouplingCapacitorCapacitance:
+        AM62L_DDR_HIGH_SPEED_CAPACITANCE,
+    },
+  ]),
+) as NonNullable<ChipProps<typeof AM62L_PIN_LABELS>["pinAttributes"]>
 
 const Am62l32 = (props: ChipProps<typeof AM62L_PIN_LABELS>) => (
   <chip
@@ -573,6 +684,8 @@ const LPDDR4_POWER_PLANE_LAYER = "inner2"
 const LPDDR4_VDD1_PLANE_LAYER = "inner3"
 const LPDDR4_POWER_NET = "VDD_LPDDR4"
 const LPDDR4_VDD1_NET = "SOC_DVDD1V8"
+const SOC_PCB_X = -9.5
+const SOC_PCB_Y = 0
 const POWER_FANOUT_SIGNAL_LAYERS = [
   "top",
   "inner4",
@@ -600,6 +713,7 @@ const createPlaneDrops = (
     ballName,
     componentName,
     fanoutPhaseIndex,
+    fromLayer: "top" as const,
     layer,
     netName,
     pinNumber,
@@ -648,6 +762,53 @@ const DRAM_PLANE_DROPS = [
     LPDDR4_VDD1_ASSIGNMENTS,
   ),
 ]
+const SOC_DDR_DECOUPLING_PLANE_DROPS = AM62L_DDR_DECOUPLING_CAPACITORS.flatMap(
+  (capacitor) => {
+    const { groundViaOffset, name, vddViaOffset } = capacitor
+    return [
+      {
+        ballName: "pin1",
+        componentName: name,
+        fanoutPhaseIndex: 0 as const,
+        fromLayer: "bottom" as const,
+        layer: "inner2" as const,
+        netName: LPDDR4_POWER_NET,
+        pinNumber: 1,
+        pinSignal: "pos",
+        pcbPath: [
+          {
+            ...vddViaOffset,
+            via: true as const,
+            fromLayer: "bottom" as const,
+            toLayer: "inner2" as const,
+          },
+        ],
+        pcbPathRelativeTo: `.${name} > .pin1`,
+        traceName: `${name}_VDD_DROP`,
+      },
+      {
+        ballName: "pin2",
+        componentName: name,
+        fanoutPhaseIndex: 0 as const,
+        fromLayer: "bottom" as const,
+        layer: "inner1" as const,
+        netName: "GND" as const,
+        pinNumber: 2,
+        pinSignal: "neg",
+        pcbPath: [
+          {
+            ...groundViaOffset,
+            via: true as const,
+            fromLayer: "bottom" as const,
+            toLayer: "inner1" as const,
+          },
+        ],
+        pcbPathRelativeTo: `.${name} > .pin2`,
+        traceName: `${name}_GND_DROP`,
+      },
+    ]
+  },
+)
 const PLANE_DROPS = [...SOC_PLANE_DROPS, ...DRAM_PLANE_DROPS]
 
 const byte0TraceNames = DDR_CONNECTIONS.filter(
@@ -871,11 +1032,12 @@ export const renderAm62lLpddr4Fanout = async ({
   includePowerPlaneFanout?: boolean
   snapshotPath: string
 }) => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture({
+    // The generic placement check is not layer-aware and treats intentional
+    // bottom-side decouplers under the top-side BGA as component overlaps.
+    platform: { placementDrcChecksDisabled: includePowerPlaneFanout },
+  })
   const autoroutingPhaseIoStack = createAutoroutingPhaseIoStack(circuit)
-  const fanoutAutorouter = fanoutAlgorithmFn
-    ? { preset: "fanout" as const, algorithmFn: fanoutAlgorithmFn }
-    : "fanout"
   const signalLayers = includePowerPlaneFanout
     ? POWER_FANOUT_SIGNAL_LAYERS
     : SIGNAL_ONLY_LAYERS
@@ -900,8 +1062,141 @@ export const renderAm62lLpddr4Fanout = async ({
         : (["inner2", "bottom"] as const),
   }))
   const socPlaneDrops = includePowerPlaneFanout ? SOC_PLANE_DROPS : []
+  const decouplingPlaneDrops = includePowerPlaneFanout
+    ? SOC_DDR_DECOUPLING_PLANE_DROPS
+    : []
   const dramPlaneDrops = includePowerPlaneFanout ? DRAM_PLANE_DROPS : []
   const planeDrops = includePowerPlaneFanout ? PLANE_DROPS : []
+  const allPlaneDrops = includePowerPlaneFanout
+    ? [...PLANE_DROPS, ...SOC_DDR_DECOUPLING_PLANE_DROPS]
+    : []
+  const socBusFanoutDirections = {
+    DDR_BYTE0: "rightside_top",
+    DDR_BYTE1: "rightside_bottom",
+    ...(includePowerPlaneFanout
+      ? {
+          DDR_ADDR_CTRL: "rightside_center" as const,
+          DDR_CLOCK: "rightside_top" as const,
+          DDR_DQS0: "rightside_top" as const,
+          DDR_DQS1: "rightside_center" as const,
+          DDR_RESET: "rightside_center" as const,
+          DDR_DMI0: "rightside_top" as const,
+          DDR_DMI1: "rightside_bottom" as const,
+        }
+      : {}),
+  } as const
+  const dramBusFanoutDirections = {
+    DDR_BYTE0: "leftside_center",
+    DDR_BYTE1: "leftside_center",
+    ...(includePowerPlaneFanout
+      ? {
+          DDR_ADDR_CTRL: "leftside_center" as const,
+          DDR_CLOCK: "leftside_top" as const,
+          DDR_DQS0: "leftside_top" as const,
+          DDR_DQS1: "leftside_center" as const,
+          DDR_RESET: "leftside_top" as const,
+          DDR_DMI0: "leftside_top" as const,
+          DDR_DMI1: "leftside_center" as const,
+        }
+      : {}),
+  } as const
+  const fanoutAutorouter = fanoutAlgorithmFn
+    ? { preset: "fanout" as const, algorithmFn: fanoutAlgorithmFn }
+    : "fanout"
+
+  const routeGlobalConnections = async (
+    simpleRouteJson: SimpleRouteJson,
+  ): Promise<SimplifiedPcbTrace[]> => {
+    const decouplingDropBySourceTraceId = new Map(
+      SOC_DDR_DECOUPLING_PLANE_DROPS.flatMap((drop) => {
+        const sourceTrace = circuit.db.source_trace.getWhere({
+          name: drop.traceName,
+        })
+        return sourceTrace ? [[sourceTrace.source_trace_id, drop] as const] : []
+      }),
+    )
+
+    return simpleRouteJson.connections.map((connection, connectionIndex) => {
+      const connectionName = connection.source_trace_id ?? connection.name
+      const drop = decouplingDropBySourceTraceId.get(connectionName)
+      if (!drop) {
+        return {
+          type: "pcb_trace",
+          pcb_trace_id: `straight_global_trace_${connectionIndex}`,
+          connection_name: connectionName,
+          route: connection.pointsToConnect.map((point) => ({
+            route_type: "wire" as const,
+            x: point.x,
+            y: point.y,
+            width:
+              connection.nominalTraceWidth ?? simpleRouteJson.minTraceWidth,
+            layer: point.layer,
+          })),
+        }
+      }
+
+      const capacitor = AM62L_DDR_DECOUPLING_CAPACITORS.find(
+        ({ name }) => name === drop.componentName,
+      )!
+      const componentCenter = {
+        x: SOC_PCB_X + capacitor.pcbX,
+        y: SOC_PCB_Y + capacitor.pcbY,
+      }
+      const angle = (capacitor.pcbRotation * Math.PI) / 180
+      const cos = Math.cos(angle)
+      const sin = Math.sin(angle)
+      const toGlobalPoint = ({ x, y }: { x: number; y: number }) => ({
+        x: componentCenter.x + x * cos - y * sin,
+        y: componentCenter.y + x * sin + y * cos,
+      })
+      const componentPortSelector = `${capacitor.name}.${drop.ballName}`
+      const startPoint =
+        connection.pointsToConnect.find(
+          ({ port_selector: portSelector }) =>
+            portSelector === componentPortSelector,
+        ) ?? connection.pointsToConnect[0]!
+      const width =
+        connection.nominalTraceWidth ?? simpleRouteJson.minTraceWidth
+      let currentLayer: string = drop.fromLayer
+
+      return {
+        type: "pcb_trace" as const,
+        pcb_trace_id: `decoupling_global_trace_${connectionIndex}`,
+        connection_name: connectionName,
+        route: [
+          {
+            route_type: "wire" as const,
+            x: startPoint.x,
+            y: startPoint.y,
+            width,
+            layer: currentLayer,
+          },
+          ...drop.pcbPath.map((pathPoint) => {
+            const point = toGlobalPoint(pathPoint)
+            if ("via" in pathPoint && pathPoint.via) {
+              const fromLayer = pathPoint.fromLayer ?? currentLayer
+              const toLayer = pathPoint.toLayer ?? currentLayer
+              currentLayer = toLayer
+              return {
+                route_type: "via" as const,
+                ...point,
+                from_layer: fromLayer,
+                to_layer: toLayer,
+                via_diameter: 0.24,
+                via_hole_diameter: 0.15,
+              }
+            }
+            return {
+              route_type: "wire" as const,
+              ...point,
+              width,
+              layer: currentLayer,
+            }
+          }),
+        ],
+      }
+    })
+  }
 
   expect(AM62L_PAD_POSITIONS).toHaveLength(373)
   expect(AM62L_VSS_BALLS).toHaveLength(97)
@@ -952,7 +1247,11 @@ export const renderAm62lLpddr4Fanout = async ({
     >
       <autoroutingphase
         autorouter={{
-          algorithmFn: createBasicAutorouter(routeConnectionsDirectly),
+          algorithmFn: createBasicAutorouter(
+            includePowerPlaneFanout
+              ? routeGlobalConnections
+              : routeConnectionsDirectly,
+          ),
         }}
       />
       {includePowerPlaneFanout && (
@@ -970,32 +1269,25 @@ export const renderAm62lLpddr4Fanout = async ({
       )}
       <breakout
         name="SOC_FANOUT"
-        pcbX={-9.5}
+        pcbX={SOC_PCB_X}
+        pcbY={SOC_PCB_Y}
         padding={includePowerPlaneFanout ? "3mm" : "2mm"}
         autorouter={fanoutAutorouter}
         fanoutRoutingLayers={[...signalLayers]}
-        busFanoutDirections={{
-          DDR_BYTE0: "rightside_top",
-          DDR_BYTE1: "rightside_bottom",
-          ...(includePowerPlaneFanout
-            ? {
-                DDR_ADDR_CTRL: "rightside_center" as const,
-                DDR_CLOCK: "rightside_top" as const,
-                DDR_DQS0: "rightside_top" as const,
-                DDR_DQS1: "rightside_center" as const,
-                DDR_RESET: "rightside_center" as const,
-                DDR_DMI0: "rightside_top" as const,
-                DDR_DMI1: "rightside_bottom" as const,
-              }
-            : {}),
-        }}
+        busFanoutDirections={socBusFanoutDirections}
       >
-        <Am62l32 name="U1" noSchematicRepresentation />
+        <Am62l32
+          name="U1"
+          noSchematicRepresentation
+          pinAttributes={
+            includePowerPlaneFanout ? AM62L_DDR_PIN_ATTRIBUTES : undefined
+          }
+        />
         {socPlaneDrops.map((drop) => (
           <Fragment key={drop.traceName}>
             <trace
               name={drop.traceName}
-              from={`.U1 > .${drop.ballName}`}
+              from={`.${drop.componentName} > .${drop.ballName}`}
               to={`net.${drop.netName}`}
             />
           </Fragment>
@@ -1009,21 +1301,7 @@ export const renderAm62lLpddr4Fanout = async ({
         padding={includePowerPlaneFanout ? "3mm" : "2.5mm"}
         autorouter={fanoutAutorouter}
         fanoutRoutingLayers={[...signalLayers]}
-        busFanoutDirections={{
-          DDR_BYTE0: "leftside_center",
-          DDR_BYTE1: "leftside_center",
-          ...(includePowerPlaneFanout
-            ? {
-                DDR_ADDR_CTRL: "leftside_center" as const,
-                DDR_CLOCK: "leftside_top" as const,
-                DDR_DQS0: "leftside_top" as const,
-                DDR_DQS1: "leftside_center" as const,
-                DDR_RESET: "leftside_top" as const,
-                DDR_DMI0: "leftside_top" as const,
-                DDR_DMI1: "leftside_center" as const,
-              }
-            : {}),
-        }}
+        busFanoutDirections={dramBusFanoutDirections}
       >
         <Mt53e1g16d1zw name="U2" pcbRotation={90} noSchematicRepresentation />
         {dramPlaneDrops.map((drop) => (
@@ -1036,6 +1314,30 @@ export const renderAm62lLpddr4Fanout = async ({
           </Fragment>
         ))}
       </breakout>
+
+      {includePowerPlaneFanout &&
+        AM62L_DDR_DECOUPLING_CAPACITORS.map((capacitor) => (
+          <capacitor
+            key={capacitor.name}
+            name={capacitor.name}
+            capacitance={capacitor.capacitance}
+            footprint="cap0201_nosilkscreen"
+            layer="bottom"
+            maxDecouplingTraceLength={`${AM62L_DDR_MAX_DECOUPLING_DISTANCE}mm`}
+            pcbX={SOC_PCB_X + capacitor.pcbX}
+            pcbY={SOC_PCB_Y + capacitor.pcbY}
+            pcbRotation={capacitor.pcbRotation}
+          />
+        ))}
+      {decouplingPlaneDrops.map((drop) => (
+        <Fragment key={drop.traceName}>
+          <trace
+            name={drop.traceName}
+            from={`.${drop.componentName} > .${drop.ballName}`}
+            to={`net.${drop.netName}`}
+          />
+        </Fragment>
+      ))}
 
       {fanoutBuses.map(
         ({ name, connections, preferredLayers, maxLengthSkew }) => (
@@ -1089,7 +1391,7 @@ export const renderAm62lLpddr4Fanout = async ({
         fontSize="0.7mm"
         text={
           includePowerPlaneFanout
-            ? "AM62L32 to LPDDR4: BYTE0 top/inner4, BYTE1 inner5/bottom, ADDR_CTRL/RESET inner6, CLOCK/DQS0/DQS1/DMI0/DMI1 inner5; GND inner1, VDD_LPDDR4 inner2, SOC_DVDD1V8 inner3"
+            ? "AM62L32 to LPDDR4: BYTE0 top/inner4, BYTE1 inner5/bottom, ADDR_CTRL/RESET inner6, CLOCK/DQS0/DQS1/DMI0/DMI1 inner5; VDDS_DDR bottom decoupling 5x1uF + 3x0.1uF; GND inner1, VDD_LPDDR4 inner2, SOC_DVDD1V8 inner3"
             : "AM62L32 to LPDDR4: full BYTE0 DQ0-DQ7 top/inner1, full BYTE1 DQ8-DQ15 inner2/bottom"
         }
       />
@@ -1099,7 +1401,7 @@ export const renderAm62lLpddr4Fanout = async ({
         fontSize="0.6mm"
         text={
           includePowerPlaneFanout
-            ? `${fanoutSolverLabel}; fanout skew: BYTE0 <= ${BYTE0_MAX_FANOUT_SKEW} mm, BYTE1 <= ${BYTE1_MAX_FANOUT_SKEW} mm, ADDR_CTRL <= ${ADDR_CTRL_MAX_FANOUT_SKEW} mm, CLOCK <= ${CLOCK_MAX_FANOUT_SKEW} mm, DQS0 <= ${DQS0_MAX_FANOUT_SKEW} mm, DQS1 <= ${DQS1_MAX_FANOUT_SKEW} mm; ${PLANE_DROPS.length + signalConnections.length * 2} dogbone vias span all 8 layers`
+            ? `${fanoutSolverLabel}; fanout skew: BYTE0 <= ${BYTE0_MAX_FANOUT_SKEW} mm, BYTE1 <= ${BYTE1_MAX_FANOUT_SKEW} mm, ADDR_CTRL <= ${ADDR_CTRL_MAX_FANOUT_SKEW} mm, CLOCK <= ${CLOCK_MAX_FANOUT_SKEW} mm, DQS0 <= ${DQS0_MAX_FANOUT_SKEW} mm, DQS1 <= ${DQS1_MAX_FANOUT_SKEW} mm; ${allPlaneDrops.length + signalConnections.length * 2} dogbone vias span all 8 layers`
             : `${fanoutSolverLabel}; BYTE0 fanout skew <= ${BYTE0_MAX_FANOUT_SKEW} mm`
         }
       />
@@ -1120,10 +1422,156 @@ export const renderAm62lLpddr4Fanout = async ({
     expect(pcbBoard.allow_blind_and_buried_vias).toBe(false)
     expect(pcbBoard.is_via_in_pad_allowed).toBe(false)
     expect(pcbBoard.min_via_edge_to_pad_edge_clearance).toBeCloseTo(0.08128)
+
+    const socSourceComponent = circuit.db.source_component.getWhere({
+      name: "U1",
+    })!
+    const socPcbComponent = circuit.db.pcb_component.getWhere({
+      source_component_id: socSourceComponent.source_component_id,
+    })!
+    expect(
+      new Set(
+        AM62L_DDR_DECOUPLING_CAPACITORS.filter(
+          ({ priority }) => priority === "high",
+        ).map(({ targetBall }) => targetBall),
+      ).size,
+    ).toBe(AM62L_VDDS_DDR_BALLS.length)
+    expect(AM62L_DDR_DECOUPLING_CAPACITORS).toHaveLength(8)
+    expect(
+      AM62L_DDR_DECOUPLING_CAPACITORS.filter(
+        ({ priority }) => priority === "high",
+      ),
+    ).toHaveLength(5)
+    expect(
+      AM62L_DDR_DECOUPLING_CAPACITORS.filter(
+        ({ priority }) => priority === "medium",
+      ),
+    ).toHaveLength(3)
+
+    const getCapCourtyardSize = (pcbRotation: number) =>
+      Math.abs(pcbRotation % 180) === 90
+        ? { width: 0.7, height: 1.4 }
+        : { width: 1.4, height: 0.7 }
+    for (const [
+      index,
+      capacitor,
+    ] of AM62L_DDR_DECOUPLING_CAPACITORS.entries()) {
+      const courtyard = getCapCourtyardSize(capacitor.pcbRotation)
+      expect(
+        Math.abs(capacitor.pcbX) + courtyard.width / 2,
+      ).toBeLessThanOrEqual(5.95)
+      expect(
+        Math.abs(capacitor.pcbY) + courtyard.height / 2,
+      ).toBeLessThanOrEqual(5.95)
+      for (const other of AM62L_DDR_DECOUPLING_CAPACITORS.slice(index + 1)) {
+        const otherCourtyard = getCapCourtyardSize(other.pcbRotation)
+        const horizontalGap =
+          Math.abs(capacitor.pcbX - other.pcbX) -
+          (courtyard.width + otherCourtyard.width) / 2
+        const verticalGap =
+          Math.abs(capacitor.pcbY - other.pcbY) -
+          (courtyard.height + otherCourtyard.height) / 2
+        expect(Math.max(horizontalGap, verticalGap)).toBeGreaterThanOrEqual(
+          0.05 - 1e-6,
+        )
+      }
+    }
+
+    for (const capacitor of AM62L_DDR_DECOUPLING_CAPACITORS) {
+      const sourceComponent = circuit.db.source_component.getWhere({
+        name: capacitor.name,
+      })!
+      expect(sourceComponent.ftype).toBe("simple_capacitor")
+      if (sourceComponent.ftype !== "simple_capacitor") {
+        throw new Error(`Expected ${capacitor.name} to be a capacitor`)
+      }
+      expect(sourceComponent.capacitance).toBeCloseTo(
+        capacitor.capacitance === AM62L_DDR_HIGH_SPEED_CAPACITANCE
+          ? 1e-6
+          : 0.1e-6,
+      )
+      expect(sourceComponent.max_decoupling_trace_length).toBeCloseTo(
+        AM62L_DDR_MAX_DECOUPLING_DISTANCE,
+      )
+
+      const pcbComponent = circuit.db.pcb_component.getWhere({
+        source_component_id: sourceComponent.source_component_id,
+      })!
+      expect(pcbComponent.layer).toBe("bottom")
+      expect(pcbComponent.center.x).toBeCloseTo(
+        socPcbComponent.center.x + capacitor.pcbX,
+      )
+      expect(pcbComponent.center.y).toBeCloseTo(
+        socPcbComponent.center.y + capacitor.pcbY,
+      )
+      const capacitorPads = circuit.db.pcb_smtpad
+        .list()
+        .filter((pad) => pad.pcb_component_id === pcbComponent.pcb_component_id)
+      expect(capacitorPads).toHaveLength(2)
+      expect(capacitorPads.every((pad) => pad.layer === "bottom")).toBe(true)
+
+      const targetPort = circuit.db.source_port
+        .list()
+        .find(
+          (port) =>
+            port.source_component_id ===
+              socSourceComponent.source_component_id &&
+            port.port_hints?.includes(capacitor.targetBall),
+        )
+      expect(targetPort).toBeDefined()
+      if (!targetPort) {
+        throw new Error(`Missing VDDS_DDR ball ${capacitor.targetBall}`)
+      }
+      expect(targetPort.requires_power).toBe(true)
+      expect(targetPort.should_have_decoupling_capacitor).toBe(true)
+      expect(targetPort.recommended_decoupling_capacitor_capacitance).toBe(
+        AM62L_DDR_HIGH_SPEED_CAPACITANCE,
+      )
+      const targetPcbPort = circuit.db.pcb_port.getWhere({
+        source_port_id: targetPort.source_port_id,
+      })!
+      const targetPad = circuit.db.pcb_smtpad.getWhere({
+        pcb_port_id: targetPcbPort.pcb_port_id,
+      })!
+      expect(targetPad.shape).toBe("circle")
+      if (targetPad.shape !== "circle") {
+        throw new Error(`Expected ${capacitor.targetBall} to be circular`)
+      }
+      expect(
+        Math.hypot(
+          pcbComponent.center.x - targetPad.x,
+          pcbComponent.center.y - targetPad.y,
+        ),
+      ).toBeLessThanOrEqual(AM62L_DDR_MAX_DECOUPLING_DISTANCE)
+
+      const capacitorPortIds = new Set(
+        circuit.db.source_port
+          .list()
+          .filter(
+            (port) =>
+              port.source_component_id === sourceComponent.source_component_id,
+          )
+          .map((port) => port.source_port_id),
+      )
+      const capacitorSourceTraces = circuit.db.source_trace
+        .list()
+        .filter((trace) =>
+          trace.connected_source_port_ids.some((portId) =>
+            capacitorPortIds.has(portId),
+          ),
+        )
+      expect(capacitorSourceTraces).toHaveLength(2)
+      expect(
+        capacitorSourceTraces.every(
+          (trace) => trace.max_length === AM62L_DDR_MAX_DECOUPLING_DISTANCE,
+        ),
+      ).toBe(true)
+    }
   }
   const minViaEdgeToPadEdgeClearance =
     pcbBoard.min_via_edge_to_pad_edge_clearance!
   expect(SOC_PLANE_DROPS).toHaveLength(102)
+  expect(SOC_DDR_DECOUPLING_PLANE_DROPS).toHaveLength(16)
   expect(DRAM_PLANE_DROPS).toHaveLength(110)
   expect(autoroutingPhaseIoStack).toHaveLength(3)
   expect(
@@ -1133,7 +1581,7 @@ export const renderAm62lLpddr4Fanout = async ({
   ).toEqual([
     signalConnections.length + socPlaneDrops.length,
     signalConnections.length + dramPlaneDrops.length,
-    signalConnections.length,
+    signalConnections.length + decouplingPlaneDrops.length,
   ])
   for (const [fanoutPhaseIndex, fanoutPhase] of autoroutingPhaseIoStack
     .slice(0, 2)
@@ -1618,7 +2066,20 @@ export const renderAm62lLpddr4Fanout = async ({
     signalConnections.length * 2 + planeDrops.length,
   )
   const globalPhaseInput = autoroutingPhaseIoStack[2]!.startSimpleRouteJson!
-  expect(getStraightLineWindingConflicts(globalPhaseInput)).toEqual([])
+  const signalGlobalConnections = globalPhaseInput.connections.filter(
+    (connection) => connection.pointsToConnect.length === 2,
+  )
+  const decouplingGlobalConnections = globalPhaseInput.connections.filter(
+    (connection) => connection.pointsToConnect.length === 1,
+  )
+  expect(signalGlobalConnections).toHaveLength(signalConnections.length)
+  expect(decouplingGlobalConnections).toHaveLength(decouplingPlaneDrops.length)
+  expect(
+    getStraightLineWindingConflicts({
+      ...globalPhaseInput,
+      connections: signalGlobalConnections,
+    }),
+  ).toEqual([])
   if (includePowerPlaneFanout) {
     const clockGlobalConnectionNames = clockTraceNames.map((traceName) => {
       const sourceTrace = circuit.db.source_trace.getWhere({ name: traceName })
@@ -1708,7 +2169,7 @@ export const renderAm62lLpddr4Fanout = async ({
 
   if (includePowerPlaneFanout) {
     const copperPours = circuit.db.pcb_copper_pour.list()
-    for (const planeDrop of PLANE_DROPS) {
+    for (const planeDrop of allPlaneDrops) {
       const sourceComponent = circuit.db.source_component.getWhere({
         name: planeDrop.componentName,
       })!
@@ -1757,15 +2218,33 @@ export const renderAm62lLpddr4Fanout = async ({
             pcbTrace.source_trace_id === sourceTrace.source_trace_id,
         )
       expect(matchingPcbTraces).toHaveLength(1)
-      expect(getPlanarRouteLength(matchingPcbTraces[0]!.route)).toBeGreaterThan(
-        0,
-      )
       const routeVias = matchingPcbTraces[0]!.route.filter(
         (routePoint) => routePoint.route_type === "via",
       )
       expect(routeVias).toHaveLength(1)
+      if (planeDrop.fromLayer === "top") {
+        expect(
+          getPlanarRouteLength(matchingPcbTraces[0]!.route),
+        ).toBeGreaterThan(0)
+      } else {
+        const padWire = matchingPcbTraces[0]!.route.find(
+          (routePoint) => routePoint.route_type === "wire",
+        )
+        expect(padWire).toBeDefined()
+        if (!padWire) {
+          throw new Error(`Missing pad wire for ${planeDrop.traceName}`)
+        }
+        const padToViaLength = Math.hypot(
+          routeVias[0]!.x - padWire.x,
+          routeVias[0]!.y - padWire.y,
+        )
+        expect(padToViaLength).toBeGreaterThan(0)
+        expect(padToViaLength).toBeLessThanOrEqual(
+          AM62L_DDR_MAX_DECOUPLING_DISTANCE,
+        )
+      }
       expect(routeVias[0]).toMatchObject({
-        from_layer: "top",
+        from_layer: planeDrop.fromLayer,
         to_layer: planeDrop.layer,
       })
       const pcbTraceIds = new Set(
@@ -1780,7 +2259,7 @@ export const renderAm62lLpddr4Fanout = async ({
       expect(matchingVias).toHaveLength(1)
       const matchingVia = matchingVias[0]!
       expect(matchingVia.layers).toEqual(getViaBoardLayers(8))
-      expect(matchingVia.from_layer).toBe("top")
+      expect(matchingVia.from_layer).toBe(planeDrop.fromLayer)
       expect(matchingVias[0]?.to_layer).toBe(planeDrop.layer)
       expect(matchingVia.subcircuit_connectivity_map_key).toBe(
         expectedNet.subcircuit_connectivity_map_key,
@@ -1793,19 +2272,24 @@ export const renderAm62lLpddr4Fanout = async ({
         .filter((pad) => pad.pcb_port_id === pcbPort.pcb_port_id)
       expect(sourcePads).toHaveLength(1)
       const sourcePad = sourcePads[0]!
-      expect(sourcePad.shape).toBe("circle")
-      if (sourcePad.shape !== "circle") {
-        throw new Error(
-          `Expected a circular BGA pad for ${planeDrop.traceName}`,
+      expect(sourcePad.layer).toBe(planeDrop.fromLayer)
+      if (planeDrop.fromLayer === "top") {
+        expect(sourcePad.shape).toBe("circle")
+        if (sourcePad.shape !== "circle") {
+          throw new Error(
+            `Expected a circular BGA pad for ${planeDrop.traceName}`,
+          )
+        }
+        const viaToSourcePadEdgeClearance =
+          Math.hypot(matchingVia.x - sourcePad.x, matchingVia.y - sourcePad.y) -
+          matchingVia.outer_diameter / 2 -
+          sourcePad.radius
+        expect(viaToSourcePadEdgeClearance).toBeGreaterThanOrEqual(
+          minViaEdgeToPadEdgeClearance - 1e-6,
         )
+      } else {
+        expect(sourcePad.shape).toBe("rect")
       }
-      const viaToSourcePadEdgeClearance =
-        Math.hypot(matchingVia.x - sourcePad.x, matchingVia.y - sourcePad.y) -
-        matchingVia.outer_diameter / 2 -
-        sourcePad.radius
-      expect(viaToSourcePadEdgeClearance).toBeGreaterThanOrEqual(
-        minViaEdgeToPadEdgeClearance - 1e-6,
-      )
       const matchingPour = copperPours.find(
         (pour) =>
           pour.layer === planeDrop.layer &&
@@ -1815,8 +2299,13 @@ export const renderAm62lLpddr4Fanout = async ({
     }
 
     const planeNetNames = ["GND", LPDDR4_POWER_NET, LPDDR4_VDD1_NET] as const
+    const planeConnectedComponentNames = [
+      "U1",
+      "U2",
+      ...AM62L_DDR_DECOUPLING_CAPACITORS.map(({ name }) => name),
+    ]
     const sourceComponentById = new Map(
-      ["U1", "U2"].map((componentName) => {
+      planeConnectedComponentNames.map((componentName) => {
         const component = circuit.db.source_component.getWhere({
           name: componentName,
         })!
@@ -1853,15 +2342,17 @@ export const renderAm62lLpddr4Fanout = async ({
           ),
         ),
     ).toEqual(
-      PLANE_DROPS.map((drop) => ({
-        componentName: drop.componentName,
-        netName: drop.netName,
-        pinNumber: drop.pinNumber,
-      })).toSorted((first, second) =>
-        `${first.componentName}:${first.pinNumber}`.localeCompare(
-          `${second.componentName}:${second.pinNumber}`,
+      allPlaneDrops
+        .map((drop) => ({
+          componentName: drop.componentName,
+          netName: drop.netName,
+          pinNumber: drop.pinNumber,
+        }))
+        .toSorted((first, second) =>
+          `${first.componentName}:${first.pinNumber}`.localeCompare(
+            `${second.componentName}:${second.pinNumber}`,
+          ),
         ),
-      ),
     )
   }
 
@@ -1945,7 +2436,7 @@ export const renderAm62lLpddr4Fanout = async ({
 
   if (includePowerPlaneFanout) {
     expect(allFanoutVias).toHaveLength(
-      PLANE_DROPS.length + signalConnections.length * 2,
+      allPlaneDrops.length + signalConnections.length * 2,
     )
     expect(
       new Set(
@@ -1958,8 +2449,26 @@ export const renderAm62lLpddr4Fanout = async ({
     const circularPads = circuit.db.pcb_smtpad
       .list()
       .filter((pad) => pad.shape === "circle")
+    const padConnectivityKeyByPcbPortId = new Map(
+      circuit.db.pcb_port
+        .list()
+        .map((pcbPort) => [
+          pcbPort.pcb_port_id,
+          circuit.db.source_port.get(pcbPort.source_port_id)
+            ?.subcircuit_connectivity_map_key,
+        ]),
+    )
     const illegalViaPadClearances = allFanoutVias.flatMap((via) =>
       circularPads.flatMap((pad) => {
+        const padConnectivityKey = pad.pcb_port_id
+          ? padConnectivityKeyByPcbPortId.get(pad.pcb_port_id)
+          : undefined
+        if (
+          via.subcircuit_connectivity_map_key !== undefined &&
+          via.subcircuit_connectivity_map_key === padConnectivityKey
+        ) {
+          return []
+        }
         const edgeClearance =
           Math.hypot(via.x - pad.x, via.y - pad.y) -
           via.outer_diameter / 2 -
