@@ -107,8 +107,6 @@ export const getLocalAutoroutingStages = (
     },
   ]
 
-  // A supplied algorithm replaces the preset pipeline; the built-in fanout
-  // strategy alone needs its default autorouter follow-up.
   if (strategy.followUpAutorouter && !autorouterConfig.algorithmFn) {
     const followUpAutorouterConfig = getPresetAutoroutingConfig(
       strategy.followUpAutorouter,
