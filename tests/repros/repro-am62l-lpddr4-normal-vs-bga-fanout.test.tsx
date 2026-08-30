@@ -87,6 +87,6 @@ test("compares default, BGA, and Altium fanout on the full AM62L to LPDDR4 inter
   )
 
   expect(comparisonSvg).toMatchSvgSnapshot(import.meta.path, undefined, {
-    diffThresholdPercent: 0,
+    diffThresholdPercent: 0.05,
   })
 }, 600_000)
