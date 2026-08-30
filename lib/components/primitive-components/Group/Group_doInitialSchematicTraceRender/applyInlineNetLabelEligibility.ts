@@ -14,12 +14,16 @@ type EligibleDirectConnection = {
 }
 
 type EligibleNetConnection = {
+  netId: string
+  netLabelText?: string
   schematicPortIds: SchematicPortId[]
   anchoredNetLabelWidth?: number
   allowInlineNetLabel?: boolean
   inlineNetLabelWidth?: number
   inlineNetLabelHeight?: number
   connKey?: string
+  isSameSheetCrossSectionConnection?: boolean
+  isPowerOrGroundConnection?: boolean
 }
 
 type InlineNetLabelEligibleConnection = {
@@ -29,7 +33,7 @@ type InlineNetLabelEligibleConnection = {
   inlineNetLabelHeight?: number
 }
 
-export const markConnectionEligibleForInlineNetLabel = (
+const markConnectionEligibleForInlineNetLabel = (
   connection: InlineNetLabelEligibleConnection,
   name: string,
 ) => {
@@ -65,6 +69,10 @@ export const markConnectionEligibleForInlineNetLabel = (
  * explicit `<netlabel>` element are excluded so their user-selected
  * anchored-label semantics remain intact, unless that label opts in with
  * `inline`.
+ *
+ * A signal crossing schematic sections on the same sheet is also eligible so
+ * its separated endpoints can be visually tied together. It still follows the
+ * same explicit-label and power/ground rules as every other connection.
  *
  * The solver still has the last word: it falls back to an anchored label when
  * no collision-free inline placement exists.
@@ -114,6 +122,7 @@ export const applyInlineNetLabelEligibility = ({
 
   for (const netConnection of netConnections) {
     const { schematicPortIds } = netConnection
+    const { isSameSheetCrossSectionConnection } = netConnection
     const hasInlineNetLabel = schematicPortIds.some((schematicPortId) =>
       schematicPortIdsWithInlineNetLabels.has(schematicPortId),
     )
@@ -129,7 +138,12 @@ export const applyInlineNetLabelEligibility = ({
             otherSchematicPortId,
           ]),
         )
-    if (!hasInlineNetLabel && !isSinglePort && !hasPortsOnDifferentComponents) {
+    if (
+      !hasInlineNetLabel &&
+      !isSameSheetCrossSectionConnection &&
+      !isSinglePort &&
+      !hasPortsOnDifferentComponents
+    ) {
       continue
     }
     if (
@@ -140,17 +154,34 @@ export const applyInlineNetLabelEligibility = ({
     )
       continue
     const { connKey } = netConnection
-    if (!connKey) continue
-    if (!connKeysWithExplicitPortNetTraces.has(connKey)) continue
+    if (!connKey && !isSameSheetCrossSectionConnection) continue
+    if (
+      connKey &&
+      !isSameSheetCrossSectionConnection &&
+      !connKeysWithExplicitPortNetTraces.has(connKey)
+    )
+      continue
 
-    const sourceNet = connKeyToSourceNet.get(connKey)
-    if (!hasInlineNetLabel && (sourceNet?.is_power || sourceNet?.is_ground)) {
+    const sourceNet = connKey ? connKeyToSourceNet.get(connKey) : undefined
+    if (
+      !hasInlineNetLabel &&
+      (netConnection.isPowerOrGroundConnection ||
+        sourceNet?.is_power ||
+        sourceNet?.is_ground)
+    ) {
       continue
     }
 
-    const { name, wasAssignedDisplayLabel } = resolveCanonicalNetLabelText({
-      subcircuitConnectivityMapKey: connKey,
-    })
+    let name = netConnection.netLabelText ?? ""
+    let wasAssignedDisplayLabel = Boolean(name)
+    if (!isSameSheetCrossSectionConnection) {
+      if (!connKey) continue
+      const resolvedLabel = resolveCanonicalNetLabelText({
+        subcircuitConnectivityMapKey: connKey,
+      })
+      name = resolvedLabel.name
+      wasAssignedDisplayLabel = resolvedLabel.wasAssignedDisplayLabel
+    }
     if (!name || (!hasInlineNetLabel && !wasAssignedDisplayLabel)) continue
 
     markConnectionEligibleForInlineNetLabel(netConnection, name)

@@ -1,21 +1,21 @@
 import { type Bounds, doBoundsOverlap } from "@tscircuit/math-utils"
-import {
-  type NetId,
-  SchematicTracePipelineSolver,
-} from "@tscircuit/schematic-trace-solver"
-import type { SchematicNetLabel, SourceNet, SourceTrace } from "circuit-json"
+import { SchematicTracePipelineSolver } from "@tscircuit/schematic-trace-solver"
+import type { SchematicNetLabel, SourceNet } from "circuit-json"
 import Debug from "debug"
 import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
 import type { NetLabel } from "../../NetLabel"
 import { Group } from "../Group"
 import { createCanonicalSchematicNetLabelTextResolver } from "./createCanonicalSchematicNetLabelTextResolver"
+import type {
+  CrossScopeSourceTraceIdBySchematicPortIdAndNetId,
+  SourceTraceId,
+} from "./cross-scope-trace-metadata"
 import { getNetLabelTextBounds } from "./getNetLabelTextBounds"
 import type { AxisDirection } from "./getSide"
 import { oppositeSide } from "./oppositeSide"
 import { type SchematicPortId, asSchematicPortId } from "./port-id-types"
 
 const debug = Debug("Group_doInitialSchematicTraceRender")
-type SourceTraceId = SourceTrace["source_trace_id"]
 
 interface UserDefinedNetLabel {
   schematicNetLabel: SchematicNetLabel
@@ -62,10 +62,7 @@ export function applyNetLabelPlacements(args: {
   group: Group<any>
   solver: SchematicTracePipelineSolver
   userNetIdToConnKey: Map<string, string>
-  crossScopeTraceLabelBySchematicPortIdAndNetId: Map<
-    SchematicPortId,
-    Map<NetId, { text: string; sourceTraceId: SourceTraceId }>
-  >
+  crossScopeSourceTraceIdBySchematicPortIdAndNetId: CrossScopeSourceTraceIdBySchematicPortIdAndNetId
   sourceTraceIdByPortOnlyLabelSchematicPortId: Map<
     SchematicPortId,
     SourceTraceId
@@ -81,7 +78,7 @@ export function applyNetLabelPlacements(args: {
     solver,
     connKeyToSourceNet,
     userNetIdToConnKey,
-    crossScopeTraceLabelBySchematicPortIdAndNetId,
+    crossScopeSourceTraceIdBySchematicPortIdAndNetId,
     sourceTraceIdByPortOnlyLabelSchematicPortId,
     connKeysWithExplicitPortNetTraces,
     schematicPortIdsWithPreExistingNetLabels,
@@ -164,14 +161,14 @@ export function applyNetLabelPlacements(args: {
     // Port-only placements have no solver pair id. A boundary label is owned
     // by its exact crossing source trace; otherwise the input builder supplies
     // an owner only when exactly one in-scope source trace touches that port.
-    const crossScopeTraceLabel =
+    const crossScopeSourceTraceId =
       schPortIds.length === 1
-        ? crossScopeTraceLabelBySchematicPortIdAndNetId
+        ? crossScopeSourceTraceIdBySchematicPortIdAndNetId
             .get(schPortIds[0]!)
             ?.get(placement.netId ?? placement.globalConnNetId)
         : undefined
     const placementSourceTraceId =
-      crossScopeTraceLabel?.sourceTraceId ??
+      crossScopeSourceTraceId ??
       (schPortIds.length === 1
         ? sourceTraceIdByPortOnlyLabelSchematicPortId.get(schPortIds[0]!)
         : undefined)
@@ -192,19 +189,20 @@ export function applyNetLabelPlacements(args: {
     if (placementConnKey) {
       sourceNet = connKeyToSourceNet.get(placementConnKey)
     }
-    const canonicalNetLabel = placementConnKey
-      ? crossScopeTraceLabel
-        ? {
-            name: crossScopeTraceLabel.text,
-            wasAssignedDisplayLabel: false,
-          }
-        : resolveCanonicalNetLabelText({
-            subcircuitConnectivityMapKey: placementConnKey,
-          })
+    const resolvedCanonicalNetLabel = placementConnKey
+      ? resolveCanonicalNetLabelText({
+          subcircuitConnectivityMapKey: placementConnKey,
+        })
       : {
           name: placement.netId ?? placement.globalConnNetId,
           wasAssignedDisplayLabel: false,
         }
+    const canonicalNetLabel = placement.netLabelText
+      ? {
+          name: placement.netLabelText,
+          wasAssignedDisplayLabel: true,
+        }
+      : resolvedCanonicalNetLabel
 
     // Solver labels belong to the same sheet as their connected port.
     let schematicSheetId = group._resolveSchematicSheetId()

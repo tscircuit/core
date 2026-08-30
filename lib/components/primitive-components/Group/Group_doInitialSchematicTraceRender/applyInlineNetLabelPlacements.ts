@@ -1,11 +1,11 @@
-import type {
-  NetId,
-  SchematicTracePipelineSolver,
-} from "@tscircuit/schematic-trace-solver"
-import type { SourceTrace } from "circuit-json"
+import type { SchematicTracePipelineSolver } from "@tscircuit/schematic-trace-solver"
 import Debug from "debug"
 import { Group } from "../Group"
 import { createCanonicalSchematicNetLabelTextResolver } from "./createCanonicalSchematicNetLabelTextResolver"
+import type {
+  CrossScopeSourceTraceIdBySchematicPortIdAndNetId,
+  SourceTraceId,
+} from "./cross-scope-trace-metadata"
 import { type SchematicPortId, asSchematicPortId } from "./port-id-types"
 
 const debug = Debug("Group_doInitialSchematicTraceRender")
@@ -21,7 +21,6 @@ const INLINE_NET_LABEL_COLOR = "rgb(132, 0, 0)"
  * counter-clockwise quarter turn. SVG rotations are clockwise-positive.
  */
 const VERTICAL_INLINE_NET_LABEL_ROTATION = -90
-type SourceTraceId = SourceTrace["source_trace_id"]
 
 /**
  * Emits the solver's inline net labels - net names drawn parallel to the trace
@@ -37,17 +36,14 @@ export function applyInlineNetLabelPlacements(args: {
   solver: SchematicTracePipelineSolver
   userNetIdToConnKey: Map<string, string>
   sourceTraceIdByPinPairKey: Map<string, SourceTraceId>
-  crossScopeTraceLabelBySchematicPortIdAndNetId: Map<
-    SchematicPortId,
-    Map<NetId, { text: string; sourceTraceId: SourceTraceId }>
-  >
+  crossScopeSourceTraceIdBySchematicPortIdAndNetId: CrossScopeSourceTraceIdBySchematicPortIdAndNetId
 }) {
   const {
     group,
     solver,
     userNetIdToConnKey,
     sourceTraceIdByPinPairKey,
-    crossScopeTraceLabelBySchematicPortIdAndNetId,
+    crossScopeSourceTraceIdBySchematicPortIdAndNetId,
   } = args
   const { db } = group.root!
 
@@ -65,24 +61,29 @@ export function applyInlineNetLabelPlacements(args: {
     const placementUserNetId = globalConnMap
       .getIdsConnectedToNet(placement.globalConnNetId)
       .find((id: string) => userNetIdToConnKey.has(id))
-    const connKey = placementUserNetId
-      ? userNetIdToConnKey.get(placementUserNetId)
-      : undefined
 
-    const crossScopeTraceLabel =
+    const crossScopeSourceTraceId =
       schematicPortIds.length === 1
-        ? crossScopeTraceLabelBySchematicPortIdAndNetId
+        ? crossScopeSourceTraceIdBySchematicPortIdAndNetId
             .get(schematicPortIds[0]!)
             ?.get(placement.netId ?? placement.globalConnNetId)
         : undefined
+    const connKey =
+      (crossScopeSourceTraceId
+        ? db.source_trace.get(crossScopeSourceTraceId)
+            ?.subcircuit_connectivity_map_key
+        : undefined) ??
+      (placementUserNetId
+        ? userNetIdToConnKey.get(placementUserNetId)
+        : undefined)
 
-    const text = connKey
-      ? (crossScopeTraceLabel?.text ??
-        resolveCanonicalNetLabelText({ subcircuitConnectivityMapKey: connKey })
-          .name)
-      : (crossScopeTraceLabel?.text ??
-        placement.netId ??
-        placement.globalConnNetId)
+    const text =
+      placement.netLabelText ??
+      (connKey
+        ? resolveCanonicalNetLabelText({
+            subcircuitConnectivityMapKey: connKey,
+          }).name
+        : (placement.netId ?? placement.globalConnNetId))
     if (!text) {
       debug(
         `skipping inline net label for "${placement.netId}" REASON:no resolvable text`,
@@ -91,7 +92,7 @@ export function applyInlineNetLabelPlacements(args: {
     }
 
     let sourceTraceId =
-      crossScopeTraceLabel?.sourceTraceId ??
+      crossScopeSourceTraceId ??
       sourceTraceIdByPinPairKey.get([...schematicPortIds].sort().join("::"))
     if (!sourceTraceId && connKey) {
       const sourcePortIds = schematicPortIds.flatMap((schematicPortId) => {

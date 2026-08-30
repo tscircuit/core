@@ -142,13 +142,13 @@ test("cross-boundary subcircuit traces use trace name instead of selector fallba
   ]) {
     expect(
       inlineEligibleConnections.some(
-        (connection) => connection.netId === traceName,
+        (connection) => connection.netLabelText === traceName,
       ),
     ).toBe(true)
   }
   expect(
     inlineEligibleConnections.some((connection) =>
-      /^(J_LEFT|J_RIGHT|U1)_/.test(connection.netId),
+      /^(J_LEFT|J_RIGHT|U1)_/.test(connection.netLabelText ?? ""),
     ),
   ).toBe(false)
 

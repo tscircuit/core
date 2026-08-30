@@ -124,18 +124,19 @@ test("cross-boundary subcircuit fallback labels are included in solver input", a
   expect(
     inlineEligibleConnections.some(
       (connection) =>
-        connection.netId === "J_RIGHT_GP17" && connection.pinIds.length === 1,
+        connection.netLabelText === "J_RIGHT_GP17" &&
+        connection.pinIds.length === 1,
     ),
   ).toBe(true)
   expect(
     inlineEligibleConnections.some(
       (connection) =>
-        connection.netId === "GP17" && connection.pinIds.length === 1,
+        connection.netLabelText === "GP17" && connection.pinIds.length === 2,
     ),
   ).toBe(true)
   expect(
     inlineEligibleConnections.some(
-      (connection) => connection.netId === "J_LCD_CS",
+      (connection) => connection.netLabelText === "J_LCD_CS",
     ),
   ).toBe(false)
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
