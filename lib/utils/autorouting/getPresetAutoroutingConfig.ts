@@ -113,18 +113,34 @@ export function getPresetAutoroutingConfig(
         groupMode: "subcircuit",
         autorouterVersion: "beta_pipeline9",
       }
-    case "single-layer-fanout":
+    case "single-layer-fanout": {
+      const {
+        preset: _preset,
+        local: _local,
+        groupMode: _groupMode,
+        ...rest
+      } = providedConfig
       return {
         local: true,
         groupMode: "subcircuit",
+        ...rest,
         preset: "single_layer_fanout",
       }
-    case "fanout":
+    }
+    case "fanout": {
+      const {
+        preset: _preset,
+        local: _local,
+        groupMode: _groupMode,
+        ...rest
+      } = providedConfig
       return {
         local: true,
         groupMode: "subcircuit",
+        ...rest,
         preset: "fanout",
       }
+    }
     case "auto-cloud": {
       const {
         preset: _preset,
