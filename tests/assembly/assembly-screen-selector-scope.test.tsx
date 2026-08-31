@@ -1,23 +1,25 @@
 import { expect, test } from "bun:test"
 import { assembly } from "lib"
+import {
+  ER_OLED096_1_3W_CONNECTOR_FOOTPRINT,
+  ER_OLED096_1_3W_CONTACT_COUNT,
+  ER_OLED096_1_3W_FLEXSCREEN_MODEL,
+  ER_OLED096_1_3W_SCREEN_HEIGHT,
+  ER_OLED096_1_3W_SCREEN_WIDTH,
+} from "tests/assembly/fixtures/er-oled096-1-3w"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 const Connector = () => (
   <connector
     name="J1"
-    cadModel={null}
-    pinLabels={{ pin1: ["VCC"] }}
-    footprint={
-      <footprint insertionDirection="from_top">
-        <smtpad shape="rect" portHints={["pin1"]} width="1mm" height="2mm" />
-      </footprint>
-    }
+    pinCount={ER_OLED096_1_3W_CONTACT_COUNT}
+    footprint={ER_OLED096_1_3W_CONNECTOR_FOOTPRINT}
   />
 )
 
 test("assembly.screen selectors are isolated to the nearest assembly.device", async () => {
   const { circuit } = getTestFixture()
-  const cadModel = "flexscreen_w12mm_h8mm_flex6mm_sitsflat"
+  const cadModel = ER_OLED096_1_3W_FLEXSCREEN_MODEL
 
   circuit.add(
     <group>
@@ -34,8 +36,8 @@ test("assembly.screen selectors are isolated to the nearest assembly.device", as
         <assembly.screen
           name="SCREEN_LEFT"
           connectsTo=".B1 .J1"
-          width="12mm"
-          height="8mm"
+          width={ER_OLED096_1_3W_SCREEN_WIDTH}
+          height={ER_OLED096_1_3W_SCREEN_HEIGHT}
           cadModel={cadModel}
         />
       </assembly.device>
@@ -46,8 +48,8 @@ test("assembly.screen selectors are isolated to the nearest assembly.device", as
         <assembly.screen
           name="SCREEN_RIGHT"
           connectsTo=".B1 .J1"
-          width="12mm"
-          height="8mm"
+          width={ER_OLED096_1_3W_SCREEN_WIDTH}
+          height={ER_OLED096_1_3W_SCREEN_HEIGHT}
           cadModel={cadModel}
         />
       </assembly.device>

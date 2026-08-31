@@ -3,6 +3,7 @@ import { AssemblyScreen } from "lib/components"
 import { isAssemblyDeviceContainer } from "lib/components/base-components/is-assembly-device-container"
 import { createInstanceFromReactElement } from "lib/fiber/create-instance-from-react-element"
 import { assembly } from "lib/namespaced-elements"
+import { ER_OLED096_1_3W_FLEXSCREEN_MODEL } from "tests/assembly/fixtures/er-oled096-1-3w"
 import "lib/register-catalogue"
 
 test("creates a namespaced assembly screen", () => {
@@ -10,7 +11,7 @@ test("creates a namespaced assembly screen", () => {
     <assembly.screen
       name="SCREEN"
       connectsTo=".B1 .J1"
-      cadModel="flexscreen_w58.42mm_h45.72mm"
+      cadModel={ER_OLED096_1_3W_FLEXSCREEN_MODEL}
     />,
   )
 

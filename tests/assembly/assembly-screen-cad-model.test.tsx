@@ -1,5 +1,11 @@
 import { expect, test } from "bun:test"
 import { assembly } from "lib"
+import {
+  ER_OLED096_1_3W_CONNECTOR_FOOTPRINT,
+  ER_OLED096_1_3W_CONTACT_COUNT,
+  ER_OLED096_1_3W_SCREEN_HEIGHT,
+  ER_OLED096_1_3W_SCREEN_WIDTH,
+} from "tests/assembly/fixtures/er-oled096-1-3w"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("assembly.screen emits a connector-anchored modelprinter FlexScreen", async () => {
@@ -19,34 +25,15 @@ test("assembly.screen emits a connector-anchored modelprinter FlexScreen", async
             name="J1"
             pcbX="0mm"
             pcbY="-13mm"
-            pcbRotation={30}
-            cadModel={null}
-            pinLabels={{ pin1: ["VCC"], pin2: ["GND"] }}
-            footprint={
-              <footprint insertionDirection="from_top">
-                <smtpad
-                  shape="rect"
-                  portHints={["pin1"]}
-                  pcbX="-1mm"
-                  width="1mm"
-                  height="3mm"
-                />
-                <smtpad
-                  shape="rect"
-                  portHints={["pin2"]}
-                  pcbX="1mm"
-                  width="1mm"
-                  height="3mm"
-                />
-              </footprint>
-            }
+            pinCount={ER_OLED096_1_3W_CONTACT_COUNT}
+            footprint={ER_OLED096_1_3W_CONNECTOR_FOOTPRINT}
           />
         </board>
         <assembly.screen
           name="SCREEN"
           connectsTo=".B1 .J1"
-          width="2.3in"
-          height="1.8in"
+          width={ER_OLED096_1_3W_SCREEN_WIDTH}
+          height={ER_OLED096_1_3W_SCREEN_HEIGHT}
         />
       </assembly.device>
     </assembly.device>,
@@ -79,13 +66,27 @@ test("assembly.screen emits a connector-anchored modelprinter FlexScreen", async
       (cadComponent) =>
         cadComponent.source_component_id === sourceScreen?.source_component_id,
     )
+  const connectorCadComponent = circuit.db.cad_component
+    .list()
+    .find(
+      (cadComponent) =>
+        cadComponent.source_component_id ===
+        sourceConnector?.source_component_id,
+    )
 
   expect(sourceScreen?.ftype).toBe("simple_chip")
+  expect(sourceConnector).toMatchObject({
+    ftype: "simple_connector",
+    pin_count: ER_OLED096_1_3W_CONTACT_COUNT,
+  })
+  expect(connectorCadComponent?.footprinter_string).toBe(
+    ER_OLED096_1_3W_CONNECTOR_FOOTPRINT,
+  )
   expect(connectorPcbComponent?.cable_insertion_center).toBeDefined()
   expect(screenPcbComponent).toMatchObject({
     center: connectorPcbComponent?.cable_insertion_center,
     layer: "top",
-    rotation: 30,
+    rotation: 0,
     width: 0,
     height: 0,
     obstructs_within_bounds: false,
@@ -98,8 +99,8 @@ test("assembly.screen emits a connector-anchored modelprinter FlexScreen", async
       ...connectorPcbComponent?.cable_insertion_center,
       z: 0.8,
     },
-    rotation: { x: 0, y: 0, z: 30 },
-    footprinter_string: "flexscreen_w58.42mm_h45.72mm",
+    rotation: { x: 0, y: 0, z: 0 },
+    footprinter_string: "flexscreen_w26.7mm_h19.26mm",
     model_origin_position: { x: 0, y: 0, z: 0 },
     subcircuit_id: connectorPcbComponent?.subcircuit_id,
   })

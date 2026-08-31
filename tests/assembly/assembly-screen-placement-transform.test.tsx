@@ -1,13 +1,21 @@
 import { expect, test } from "bun:test"
 import { normalizeDegrees } from "@tscircuit/math-utils"
 import { assembly } from "lib"
+import {
+  ER_OLED096_1_3W_CONNECTOR_FOOTPRINT,
+  ER_OLED096_1_3W_CONTACT_COUNT,
+  ER_OLED096_1_3W_FLEXSCREEN_MODEL,
+  ER_OLED096_1_3W_SCREEN_HEIGHT,
+  ER_OLED096_1_3W_SCREEN_WIDTH,
+  createErOled096ConnectorFootprint,
+} from "tests/assembly/fixtures/er-oled096-1-3w"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("assembly.screen follows top and bottom connector transforms", async () => {
   for (const layer of ["top", "bottom"] as const) {
     for (const rotation of [0, 45, 90, 180, 270]) {
       const { circuit } = getTestFixture()
-      const cadModel = "flexscreen_w12mm_h8mm_flex6mm_sitsflat"
+      const cadModel = ER_OLED096_1_3W_FLEXSCREEN_MODEL
 
       circuit.add(
         <assembly.device name={`watch-${layer}-${rotation}`}>
@@ -23,32 +31,15 @@ test("assembly.screen follows top and bottom connector transforms", async () => 
               layer={layer}
               pcbRotation={rotation}
               cadModel={null}
-              pinLabels={{ pin1: ["VCC"], pin2: ["GND"] }}
-              footprint={
-                <footprint insertionDirection="from_right">
-                  <smtpad
-                    shape="rect"
-                    portHints={["pin1"]}
-                    pcbX="1mm"
-                    width="1mm"
-                    height="3mm"
-                  />
-                  <smtpad
-                    shape="rect"
-                    portHints={["pin2"]}
-                    pcbX="-1mm"
-                    width="1mm"
-                    height="3mm"
-                  />
-                </footprint>
-              }
+              pinCount={ER_OLED096_1_3W_CONTACT_COUNT}
+              footprint={createErOled096ConnectorFootprint("from_top")}
             />
           </board>
           <assembly.screen
             name="SCREEN"
             connectsTo=".B1 .J1"
-            width="12mm"
-            height="8mm"
+            width={ER_OLED096_1_3W_SCREEN_WIDTH}
+            height={ER_OLED096_1_3W_SCREEN_HEIGHT}
             cadModel={cadModel}
           />
         </assembly.device>,
@@ -80,27 +71,52 @@ test("assembly.screen follows top and bottom connector transforms", async () => 
             cadComponent.source_component_id ===
             sourceScreen?.source_component_id,
         )
-      const pin1Pad = circuit.db.pcb_smtpad
-        .list()
-        .find(
-          (pad) =>
-            pad.pcb_component_id === connectorPcbComponent?.pcb_component_id &&
-            pad.port_hints?.includes("pin1"),
+      const cableInsertionCenter = connectorPcbComponent?.cable_insertion_center
+      if (!cableInsertionCenter || !connectorPcbComponent) {
+        throw new Error(
+          "Expected the FPC cable insertion center to be inferred",
         )
-      if (!pin1Pad || !("x" in pin1Pad)) {
-        throw new Error("Expected pin1 to render as a centered SMT pad")
       }
-      const padAxis = {
-        x: pin1Pad.x - (connectorPcbComponent?.center.x ?? 0),
-        y: pin1Pad.y - (connectorPcbComponent?.center.y ?? 0),
+      const connectorPads = circuit.db.pcb_smtpad
+        .list()
+        .filter(
+          (pad): pad is typeof pad & { x: number; y: number } =>
+            pad.pcb_component_id === connectorPcbComponent.pcb_component_id &&
+            "x" in pad,
+        )
+      const getPadNumber = (pad: (typeof connectorPads)[number]) =>
+        Number(pad.port_hints?.find((hint) => /^\d+$/.test(hint)))
+      const contactPads = connectorPads.filter(
+        (pad) => getPadNumber(pad) <= ER_OLED096_1_3W_CONTACT_COUNT,
+      )
+      const mountingPads = connectorPads.filter(
+        (pad) => getPadNumber(pad) > ER_OLED096_1_3W_CONTACT_COUNT,
+      )
+      const getPadCenter = (pads: typeof connectorPads) => ({
+        x: pads.reduce((sum, pad) => sum + pad.x, 0) / pads.length,
+        y: pads.reduce((sum, pad) => sum + pad.y, 0) / pads.length,
+      })
+      const contactCenter = getPadCenter(contactPads)
+      const mountingCenter = getPadCenter(mountingPads)
+      const fpcInsertionAxis = {
+        x: mountingCenter.x - contactCenter.x,
+        y: mountingCenter.y - contactCenter.y,
       }
-      const padAxisLength = Math.hypot(padAxis.x, padAxis.y)
-      const normalizedPadAxis = {
-        x: padAxis.x / padAxisLength,
-        y: padAxis.y / padAxisLength,
+      const fpcInsertionAxisLength = Math.hypot(
+        fpcInsertionAxis.x,
+        fpcInsertionAxis.y,
+      )
+      const normalizedFpcInsertionAxis = {
+        x: fpcInsertionAxis.x / fpcInsertionAxisLength,
+        y: fpcInsertionAxis.y / fpcInsertionAxisLength,
       }
       const expectedScreenRotation = normalizeDegrees(
-        (Math.atan2(-normalizedPadAxis.x, normalizedPadAxis.y) * 180) / Math.PI,
+        (Math.atan2(
+          -normalizedFpcInsertionAxis.x,
+          normalizedFpcInsertionAxis.y,
+        ) *
+          180) /
+          Math.PI,
       )
       const effectiveCadBoardRotation =
         layer === "bottom"
@@ -111,14 +127,14 @@ test("assembly.screen follows top and bottom connector transforms", async () => 
         y: Math.cos((effectiveCadBoardRotation * Math.PI) / 180),
       }
 
-      expect(screenPcbComponent?.center).toEqual(
-        connectorPcbComponent?.cable_insertion_center,
-      )
-      expect(padAxisLength).toBeGreaterThan(0)
+      expect(contactPads).toHaveLength(ER_OLED096_1_3W_CONTACT_COUNT)
+      expect(mountingPads).toHaveLength(2)
+      expect(screenPcbComponent?.center).toEqual(cableInsertionCenter)
+      expect(fpcInsertionAxisLength).toBeGreaterThan(0)
       expect(screenPcbComponent?.rotation).toBeCloseTo(expectedScreenRotation)
       expect(screenPcbComponent?.layer).toBe(layer)
-      expect(emittedFlexAxis.x).toBeCloseTo(normalizedPadAxis.x)
-      expect(emittedFlexAxis.y).toBeCloseTo(normalizedPadAxis.y)
+      expect(emittedFlexAxis.x).toBeCloseTo(normalizedFpcInsertionAxis.x)
+      expect(emittedFlexAxis.y).toBeCloseTo(normalizedFpcInsertionAxis.y)
       expect(screenCadComponent).toMatchObject({
         position: {
           ...connectorPcbComponent?.cable_insertion_center,
@@ -152,32 +168,14 @@ test("assembly.screen follows top and bottom connector transforms", async () => 
           name="J1"
           layer="bottom"
           pcbRotation={90}
-          cadModel={null}
-          pinLabels={{ pin1: ["VCC"], pin2: ["GND"] }}
-          footprint={
-            <footprint insertionDirection="from_right">
-              <smtpad
-                shape="rect"
-                portHints={["pin1"]}
-                pcbX="1mm"
-                width="1mm"
-                height="3mm"
-              />
-              <smtpad
-                shape="rect"
-                portHints={["pin2"]}
-                pcbX="-1mm"
-                width="1mm"
-                height="3mm"
-              />
-            </footprint>
-          }
+          pinCount={ER_OLED096_1_3W_CONTACT_COUNT}
+          footprint={ER_OLED096_1_3W_CONNECTOR_FOOTPRINT}
         />
       </board>
       <assembly.screen
         name="SCREEN"
         connectsTo=".B1 .J1"
-        cadModel="flexscreen_w16mm_h9mm_flex7mm_lateraloffset3mm_sitsflat"
+        cadModel={ER_OLED096_1_3W_FLEXSCREEN_MODEL}
       />
     </assembly.device>,
   )
