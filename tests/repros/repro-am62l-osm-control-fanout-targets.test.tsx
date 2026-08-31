@@ -98,6 +98,6 @@ test("AM62L OSM control fanout with switches and HDMI reset", async () => {
 
   await circuit.renderUntilSettled()
 
-  expect(circuit.db.pcb_autorouting_error.list()).toHaveLength(1)
+  expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
