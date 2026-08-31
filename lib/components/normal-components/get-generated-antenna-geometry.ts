@@ -9,11 +9,87 @@ export interface GeneratedAntennaGeometry {
   traceWidth: number
   route: AntennaGeometryPoint[]
   feedPoint: AntennaGeometryPoint
+  feedKeepoutOpeningDirection: "left" | "bottom"
   secondaryPort?: {
     point: AntennaGeometryPoint
     role: "ground" | "feed2"
   }
   groundViaPoint?: AntennaGeometryPoint
+}
+
+export interface GeneratedAntennaKeepout {
+  center: AntennaGeometryPoint
+  width: number
+  height: number
+}
+
+const GENERATED_ANTENNA_KEEPOUT_CLEARANCE_MM = 1
+const GENERATED_ANTENNA_FEED_OPENING_CLEARANCE_MM = 1
+
+/**
+ * Returns a copper-free envelope around a generated antenna's complete trace.
+ * The envelope is split around a narrow feed corridor so the autorouter can
+ * reach the feed while unrelated copper and components stay away from the
+ * radiator and the outside edge of its copper.
+ */
+export const getGeneratedAntennaKeepouts = (
+  geometry: GeneratedAntennaGeometry,
+): GeneratedAntennaKeepout[] => {
+  const xCoordinates = geometry.route.map((point) => point.x)
+  const yCoordinates = geometry.route.map((point) => point.y)
+  const edgeClearance =
+    geometry.traceWidth / 2 + GENERATED_ANTENNA_KEEPOUT_CLEARANCE_MM
+  const left = Math.min(...xCoordinates) - edgeClearance
+  const right = Math.max(...xCoordinates) + edgeClearance
+  const bottom = Math.min(...yCoordinates) - edgeClearance
+  const top = Math.max(...yCoordinates) + edgeClearance
+
+  const feedOpeningPoints = [
+    geometry.feedPoint,
+    ...(geometry.secondaryPort ? [geometry.secondaryPort.point] : []),
+  ]
+  const openingLeft =
+    Math.min(...feedOpeningPoints.map((point) => point.x)) -
+    GENERATED_ANTENNA_FEED_OPENING_CLEARANCE_MM
+  const openingRight =
+    Math.max(...feedOpeningPoints.map((point) => point.x)) +
+    GENERATED_ANTENNA_FEED_OPENING_CLEARANCE_MM
+  const openingBottom =
+    Math.min(...feedOpeningPoints.map((point) => point.y)) -
+    GENERATED_ANTENNA_FEED_OPENING_CLEARANCE_MM
+  const openingTop =
+    Math.max(...feedOpeningPoints.map((point) => point.y)) +
+    GENERATED_ANTENNA_FEED_OPENING_CLEARANCE_MM
+
+  const rects: GeneratedAntennaKeepout[] = []
+  const addRect = (
+    rectLeft: number,
+    rectRight: number,
+    rectBottom: number,
+    rectTop: number,
+  ) => {
+    if (rectRight <= rectLeft || rectTop <= rectBottom) return
+    rects.push({
+      center: {
+        x: (rectLeft + rectRight) / 2,
+        y: (rectBottom + rectTop) / 2,
+      },
+      width: rectRight - rectLeft,
+      height: rectTop - rectBottom,
+    })
+  }
+
+  if (geometry.feedKeepoutOpeningDirection === "left") {
+    addRect(left, right, openingTop, top)
+    addRect(left, right, bottom, openingBottom)
+    addRect(openingRight, right, openingBottom, openingTop)
+  } else {
+    addRect(left, openingLeft, bottom, openingTop)
+    addRect(openingRight, right, bottom, openingTop)
+    addRect(left, right, openingTop, top)
+  }
+
+  return rects
 }
 
 /**
@@ -37,6 +113,7 @@ export const getGeneratedAntennaGeometry = (
       return {
         traceWidth: 0.6,
         feedPoint: { x: 0, y: 0 },
+        feedKeepoutOpeningDirection: "left",
         route: [
           { x: 0, y: 0 },
           { x: 31, y: 0 },
@@ -47,6 +124,7 @@ export const getGeneratedAntennaGeometry = (
       return {
         traceWidth: 0.5,
         feedPoint: { x: 0, y: 0 },
+        feedKeepoutOpeningDirection: "bottom",
         route: [
           { x: 0, y: 0 },
           { x: 0, y: 6 },
@@ -66,6 +144,7 @@ export const getGeneratedAntennaGeometry = (
       return {
         traceWidth: 0.8,
         feedPoint: { x: 0, y: 0 },
+        feedKeepoutOpeningDirection: "bottom",
         secondaryPort: { point: { x: -4, y: 0 }, role: "ground" },
         groundViaPoint: { x: -4, y: 0 },
         route: [
@@ -84,6 +163,7 @@ export const getGeneratedAntennaGeometry = (
       return {
         traceWidth: 0.5,
         feedPoint: { x: 0, y: 0 },
+        feedKeepoutOpeningDirection: "bottom",
         secondaryPort: { point: { x: -1.7, y: 0 }, role: "ground" },
         groundViaPoint: { x: -1.7, y: 0 },
         route: [
@@ -109,6 +189,7 @@ export const getGeneratedAntennaGeometry = (
       return {
         traceWidth: 0.9,
         feedPoint: { x: 0, y: 0 },
+        feedKeepoutOpeningDirection: "bottom",
         secondaryPort: { point: { x: 1.2, y: 0 }, role: "feed2" },
         route: [
           { x: 0, y: 0 },

@@ -1,12 +1,16 @@
 import { antennaProps } from "@tscircuit/props"
 import { NormalComponent } from "lib/components/base-components/NormalComponent"
 import { Footprint } from "lib/components/primitive-components/Footprint"
+import { Keepout } from "lib/components/primitive-components/Keepout"
 import { PcbTrace } from "lib/components/primitive-components/PcbTrace"
-import { PcbVia } from "lib/components/primitive-components/PcbVia"
+import { PlatedHole } from "lib/components/primitive-components/PlatedHole"
 import { SmtPad } from "lib/components/primitive-components/SmtPad"
 import { Trace } from "lib/components/primitive-components/Trace/Trace"
 import { FTYPE } from "lib/utils/constants"
-import { getGeneratedAntennaGeometry } from "./get-generated-antenna-geometry"
+import {
+  getGeneratedAntennaGeometry,
+  getGeneratedAntennaKeepouts,
+} from "./get-generated-antenna-geometry"
 
 export class Antenna extends NormalComponent<
   typeof antennaProps,
@@ -84,6 +88,24 @@ export class Antenna extends NormalComponent<
     }
 
     if (geometry) {
+      const keepouts = getGeneratedAntennaKeepouts(geometry)
+
+      for (const keepout of keepouts) {
+        generatedFootprint.add(
+          new Keepout({
+            shape: "rect",
+            pcbX: keepout.center.x,
+            pcbY: keepout.center.y,
+            width: keepout.width,
+            height: keepout.height,
+            layers: [
+              ...(this.root?._getBoard()?.allLayers ?? ["top", "bottom"]),
+            ],
+            excludeRefs: [this.getSubcircuitSelector()],
+          }),
+        )
+      }
+
       generatedFootprint.add(
         new PcbTrace({
           route: geometry.route.map((point) => ({
@@ -95,7 +117,7 @@ export class Antenna extends NormalComponent<
         }),
       )
 
-      if (geometry.secondaryPort && !hasFootprint) {
+      if (geometry.secondaryPort && !geometry.groundViaPoint && !hasFootprint) {
         generatedFootprint.add(
           new SmtPad({
             shape: "rect",
@@ -112,13 +134,14 @@ export class Antenna extends NormalComponent<
 
       if (geometry.groundViaPoint) {
         generatedFootprint.add(
-          new PcbVia({
+          new PlatedHole({
+            shape: "circle",
             pcbX: geometry.groundViaPoint.x,
             pcbY: geometry.groundViaPoint.y,
             holeDiameter: 0.3,
             outerDiameter: 0.7,
-            isTented: true,
-            netIsAssignable: true,
+            portHints: ["pin2"],
+            coveredWithSolderMask: true,
           }),
         )
       }

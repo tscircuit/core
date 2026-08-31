@@ -77,8 +77,10 @@ test("antennaShape generates common 2.4 GHz PCB antenna geometries", async () =>
   await circuit.renderUntilSettled()
 
   expect(circuit.db.pcb_trace.list()).toHaveLength(5)
-  expect(circuit.db.pcb_via.list()).toHaveLength(2)
-  expect(circuit.db.pcb_smtpad.list()).toHaveLength(8)
+  expect(circuit.db.pcb_keepout.list()).toHaveLength(15)
+  expect(circuit.db.pcb_via.list()).toHaveLength(0)
+  expect(circuit.db.pcb_plated_hole.list()).toHaveLength(2)
+  expect(circuit.db.pcb_smtpad.list()).toHaveLength(6)
   expect(circuit.db.source_port.list()).toHaveLength(8)
   expect(circuit.db.pcb_missing_footprint_error.list()).toHaveLength(0)
 
@@ -103,8 +105,25 @@ test("antennaShape generates common 2.4 GHz PCB antenna geometries", async () =>
   const quarterWavePcbComponent = circuit.db.pcb_component.getWhere({
     source_component_id: quarterWaveSourceComponent.source_component_id,
   })!
-  expect(quarterWavePcbComponent.width).toBeCloseTo(31.7)
-  expect(quarterWavePcbComponent.center.x).toBeCloseTo(-39.55)
+  expect(quarterWavePcbComponent.width).toBeCloseTo(33.6)
+  expect(quarterWavePcbComponent.center.x).toBeCloseTo(-39.5)
+
+  const quarterWaveKeepouts = circuit.db.pcb_keepout
+    .list()
+    .filter((keepout) =>
+      keepout.excluded_pcb_component_ids?.includes(
+        quarterWavePcbComponent.pcb_component_id,
+      ),
+    )
+  expect(quarterWaveKeepouts).toHaveLength(3)
+  expect(quarterWaveKeepouts).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        shape: "rect",
+        layers: ["top", "bottom"],
+      }),
+    ]),
+  )
 
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
