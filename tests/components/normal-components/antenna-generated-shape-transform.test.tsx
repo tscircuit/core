@@ -44,5 +44,12 @@ test("generated antenna geometry follows rotation and bottom-layer transforms", 
     .find((pad) => pad.port_hints?.includes("pin1"))
   expect(feedPad).toMatchObject({ x: 6, y: 8, layer: "bottom" })
 
+  const keepouts = circuit.db.pcb_keepout.list()
+  expect(keepouts).toHaveLength(3)
+  expect(keepouts.every((keepout) => keepout.layers.includes("top"))).toBeTrue()
+  expect(
+    keepouts.every((keepout) => keepout.layers.includes("bottom")),
+  ).toBeTrue()
+
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
