@@ -7,9 +7,6 @@ test("repro: SPI display GND label overlaps the adjacent P3V3 connection", async
 
   circuit.add(
     <board routingDisabled>
-      <net name="GND" isGroundNet />
-      <net name="P3V3" isPowerNet />
-
       <chip
         name="SPI1_DISPLAY"
         manufacturerPartNumber="SM06B-SRSS-TB(LF)(SN)"
