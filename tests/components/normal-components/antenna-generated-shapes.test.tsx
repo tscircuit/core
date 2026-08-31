@@ -82,6 +82,21 @@ test("antennaShape generates common 2.4 GHz PCB antenna geometries", async () =>
   expect(circuit.db.source_port.list()).toHaveLength(8)
   expect(circuit.db.pcb_missing_footprint_error.list()).toHaveLength(0)
 
+  const foldedDipoleSourceComponent = circuit.db.source_component.getWhere({
+    name: "ANT5",
+  })!
+  const foldedDipoleFeed1 = circuit.db.source_port.getWhere({
+    source_component_id: foldedDipoleSourceComponent.source_component_id,
+    pin_number: 1,
+  })!
+  const foldedDipoleFeed2 = circuit.db.source_port.getWhere({
+    source_component_id: foldedDipoleSourceComponent.source_component_id,
+    pin_number: 2,
+  })!
+  expect(foldedDipoleFeed1.port_hints).toContain("feed")
+  expect(foldedDipoleFeed1.port_hints).toContain("feed1")
+  expect(foldedDipoleFeed2.port_hints).toContain("feed2")
+
   const quarterWaveSourceComponent = circuit.db.source_component.getWhere({
     name: "ANT1",
   })!
