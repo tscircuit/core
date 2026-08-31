@@ -3,8 +3,7 @@ import { assembly } from "lib"
 import {
   ER_OLED096_1_3W_CONNECTOR_FOOTPRINT,
   ER_OLED096_1_3W_CONTACT_COUNT,
-  ER_OLED096_1_3W_SCREEN_HEIGHT,
-  ER_OLED096_1_3W_SCREEN_WIDTH,
+  ER_OLED096_1_3W_FLEXSCREEN_MODEL,
 } from "tests/assembly/fixtures/er-oled096-1-3w"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
@@ -32,8 +31,7 @@ test("assembly.screen emits a connector-anchored modelprinter FlexScreen", async
         <assembly.screen
           name="SCREEN"
           connectsTo=".B1 .J1"
-          width={ER_OLED096_1_3W_SCREEN_WIDTH}
-          height={ER_OLED096_1_3W_SCREEN_HEIGHT}
+          cadModel={ER_OLED096_1_3W_FLEXSCREEN_MODEL}
         />
       </assembly.device>
     </assembly.device>,
@@ -100,7 +98,7 @@ test("assembly.screen emits a connector-anchored modelprinter FlexScreen", async
       z: 0.8,
     },
     rotation: { x: 0, y: 0, z: 0 },
-    footprinter_string: "flexscreen_w26.7mm_h19.26mm",
+    footprinter_string: ER_OLED096_1_3W_FLEXSCREEN_MODEL,
     model_origin_position: { x: 0, y: 0, z: 0 },
     subcircuit_id: connectorPcbComponent?.subcircuit_id,
   })
@@ -115,9 +113,9 @@ test("assembly.screen emits a connector-anchored modelprinter FlexScreen", async
   ).toBe(false)
 
   await expect(circuit).toMatchSimple3dSnapshot(import.meta.path, {
-    camPos: [65, 55, 80],
+    camPos: [45, 38, 55],
     poppygl: {
-      lookAt: [0, 8, 0],
+      lookAt: [0, 0, 0],
       backgroundColor: [1, 1, 1],
       grid: false,
     },
