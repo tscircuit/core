@@ -1888,12 +1888,10 @@ export type FanoutAlgorithmFn = (
 
 export const renderAm62lLpddr4Fanout = async ({
   fanoutAlgorithmFn,
-  fanoutSolverLabel,
   includePowerPlaneFanout = false,
   snapshotPath,
 }: {
   fanoutAlgorithmFn?: FanoutAlgorithmFn
-  fanoutSolverLabel: string
   includePowerPlaneFanout?: boolean
   snapshotPath: string
 }) => {
@@ -2125,8 +2123,8 @@ export const renderAm62lLpddr4Fanout = async ({
           ? "AM62L_LPDDR4_PROGRESSIVE_FANOUT"
           : "AM62L_LPDDR4_TWO_BUS_FANOUT"
       }
-      width="42mm"
-      height="26mm"
+      width="40mm"
+      height="20mm"
       layers={includePowerPlaneFanout ? 8 : 4}
       defaultTraceWidth="0.08128mm"
       minTraceWidth="0.08128mm"
@@ -2291,27 +2289,6 @@ export const renderAm62lLpddr4Fanout = async ({
           />
         </Fragment>
       ))}
-
-      <pcbnotetext
-        pcbX={0}
-        pcbY={11.2}
-        fontSize="0.7mm"
-        text={
-          includePowerPlaneFanout
-            ? "AM62L32 to LPDDR4: 68 fitted processor decouplers modeled from TMDS62LEVM; local placement: 54 under/near the BGA + 14 at the perimeter; BYTE0 top/inner4, BYTE1 inner5/bottom, ADDR_CTRL/RESET inner6, CLOCK/DQS0/DQS1/DMI0/DMI1 inner5; GND inner1, VDD_LPDDR4 inner2, SOC_DVDD1V8 inner3"
-            : "AM62L32 to LPDDR4: full BYTE0 DQ0-DQ7 top/inner1, full BYTE1 DQ8-DQ15 inner2/bottom"
-        }
-      />
-      <pcbnotetext
-        pcbX={0}
-        pcbY={10.1}
-        fontSize="0.6mm"
-        text={
-          includePowerPlaneFanout
-            ? `${fanoutSolverLabel}; fanout skew: BYTE0 <= ${BYTE0_MAX_FANOUT_SKEW} mm, BYTE1 <= ${BYTE1_MAX_FANOUT_SKEW} mm, ADDR_CTRL <= ${ADDR_CTRL_MAX_FANOUT_SKEW} mm, CLOCK <= ${CLOCK_MAX_FANOUT_SKEW} mm, DQS0 <= ${DQS0_MAX_FANOUT_SKEW} mm, DQS1 <= ${DQS1_MAX_FANOUT_SKEW} mm; ${routedPlaneDrops.length + signalConnections.length * 2 + AM62L_DIRECT_DECOUPLING_CAPACITORS.length * 2} vias span all 8 layers`
-            : `${fanoutSolverLabel}; BYTE0 fanout skew <= ${BYTE0_MAX_FANOUT_SKEW} mm`
-        }
-      />
     </board>,
   )
 
@@ -2430,10 +2407,14 @@ export const renderAm62lLpddr4Fanout = async ({
     await circuit.renderUntilSettled()
   }
 
+  expect(circuit.db.pcb_note_text.list()).toEqual([])
   expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
+  expect(circuit.db.pcb_component_outside_board_error.list()).toEqual([])
   expect(circuit.db.pcb_trace_error.list()).toEqual([])
   expect(circuit.db.pcb_via_trace_clearance_error.list()).toEqual([])
   const pcbBoard = circuit.db.pcb_board.list()[0]!
+  expect(pcbBoard.width).toBeCloseTo(40)
+  expect(pcbBoard.height).toBeCloseTo(20)
   expect(pcbBoard.min_via_hole_diameter).toBeCloseTo(0.15)
   expect(pcbBoard.min_via_pad_diameter).toBeCloseTo(0.24)
   if (includePowerPlaneFanout) {
