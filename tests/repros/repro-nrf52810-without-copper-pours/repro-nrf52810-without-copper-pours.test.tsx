@@ -39,6 +39,15 @@ test(
           implicitPourSourceNetIds.has(via.source_net_id),
       )
     expect(stitchedVias.length).toBeGreaterThan(0)
+    const pcbBoard = circuit.db.pcb_board.list()[0]
+    if (!pcbBoard) throw new Error("Expected the nRF52810 PCB board")
+    expect(
+      stitchedVias.every(
+        (via) =>
+          via.hole_diameter === pcbBoard.min_via_hole_diameter &&
+          via.outer_diameter === pcbBoard.min_via_pad_diameter,
+      ),
+    ).toBe(true)
 
     const rfKeepout = circuit.db.pcb_keepout
       .list()

@@ -1,4 +1,5 @@
 import { ViaStitchSolver } from "@tscircuit/via-stitch-solver"
+import { getViaDiameterDefaults } from "lib/utils/pcbStyle/getViaDiameterDefaults"
 import type { Net } from "../Net"
 import type { CopperPour } from "./CopperPour"
 
@@ -23,9 +24,19 @@ const renderViaStitchingForCopperPours = (copperPour: CopperPour) => {
   if (sourceNetIds.length === 0) return
 
   const { db } = subcircuit.root
+  const pcbStyle = copperPour.getInheritedMergedProperty("pcbStyle")
+  const { holeDiameter, padDiameter } = getViaDiameterDefaults(pcbStyle)
+  const boardComponent = copperPour._getBoard()
+  const pcbBoard = boardComponent?.pcb_board_id
+    ? db.pcb_board.get(boardComponent.pcb_board_id)
+    : undefined
   const solverInput = {
     circuitJson: db.toArray(),
-    options: { sourceNetIds: [...new Set(sourceNetIds)] },
+    options: {
+      sourceNetIds: [...new Set(sourceNetIds)],
+      viaHoleDiameter: pcbBoard?.min_via_hole_diameter ?? holeDiameter,
+      viaOuterDiameter: pcbBoard?.min_via_pad_diameter ?? padDiameter,
+    },
   }
   const solver = new ViaStitchSolver(solverInput)
 
