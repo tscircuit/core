@@ -16,6 +16,9 @@ export * from "./sel"
 export * from "./utils/autorouting/SimpleRouteJson"
 export * from "./utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 export * from "./utils/autorouting/unrouteCircuitJson"
+export * from "./utils/autorouting/postprocess-orthogonal-trace-bundle"
+export * from "./utils/autorouting/get-octilinear-orbit-fanout-tail"
+export * from "./utils/autorouting/get-orbit-aware-bus-fanout-directions"
 
 export type { LocalCacheEngine } from "./local-cache-engine"
 

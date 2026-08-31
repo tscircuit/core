@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1110" height="560" viewBox="0 0 1110 560">
+  <rect width="900" height="560" fill="#05070a"/>
+  <text x="18" y="20" fill="#fff" font-family="monospace" font-size="16">Orbit-aware octilinear bus fanout exits</text>
+  <g>
+  <rect x="18" y="28" width="196" height="238" rx="8" fill="#0b1018" stroke="#334155"/>
+  <text x="30" y="52" fill="#e2e8f0" font-family="monospace" font-size="14">orbit -135°</text>
+  <line x1="110" y1="140" x2="37.592265606497534" y2="212.4077343935025" stroke="#475569" stroke-dasharray="4 4"/>
+  <rect x="78" y="108" width="64" height="64" rx="5" fill="#111827" stroke="#f59e0b" stroke-width="2"/>
+  <polyline points="142,140 116.4,165.6" fill="none" stroke="#22d3ee" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="37.592265606497534" cy="212.4077343935025" r="5" fill="#fb7185"/>
+</g>
+  <g>
+  <rect x="233" y="28" width="196" height="238" rx="8" fill="#0b1018" stroke="#334155"/>
+  <text x="245" y="52" fill="#e2e8f0" font-family="monospace" font-size="14">orbit -45°</text>
+  <line x1="325" y1="140" x2="397.4077343935025" y2="212.40773439350247" stroke="#475569" stroke-dasharray="4 4"/>
+  <rect x="293" y="108" width="64" height="64" rx="5" fill="#111827" stroke="#f59e0b" stroke-width="2"/>
+  <polyline points="357,140 382.6,165.6" fill="none" stroke="#22d3ee" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="397.4077343935025" cy="212.40773439350247" r="5" fill="#fb7185"/>
+</g>
+  <g>
+  <rect x="448" y="28" width="196" height="238" rx="8" fill="#0b1018" stroke="#334155"/>
+  <text x="460" y="52" fill="#e2e8f0" font-family="monospace" font-size="14">orbit 0°</text>
+  <line x1="540" y1="140" x2="642.4" y2="140" stroke="#475569" stroke-dasharray="4 4"/>
+  <rect x="508" y="108" width="64" height="64" rx="5" fill="#111827" stroke="#f59e0b" stroke-width="2"/>
+  <polyline points="572,140 597.6,140" fill="none" stroke="#22d3ee" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="642.4" cy="140" r="5" fill="#fb7185"/>
+</g>
+  <g>
+  <rect x="663" y="28" width="196" height="238" rx="8" fill="#0b1018" stroke="#334155"/>
+  <text x="675" y="52" fill="#e2e8f0" font-family="monospace" font-size="14">orbit 15°</text>
+  <line x1="755" y1="140" x2="853.9108046120006" y2="113.49692978150188" stroke="#475569" stroke-dasharray="4 4"/>
+  <rect x="723" y="108" width="64" height="64" rx="5" fill="#111827" stroke="#f59e0b" stroke-width="2"/>
+  <polyline points="787,140 805.7405006737632,140 812.6,133.14050067376326" fill="none" stroke="#22d3ee" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="853.9108046120006" cy="113.49692978150188" r="5" fill="#fb7185"/>
+</g>
+  <g>
+  <rect x="878" y="28" width="196" height="238" rx="8" fill="#0b1018" stroke="#334155"/>
+  <text x="890" y="52" fill="#e2e8f0" font-family="monospace" font-size="14">orbit 30°</text>
+  <line x1="970" y1="140" x2="1058.6810013475265" y2="88.80000000000001" stroke="#475569" stroke-dasharray="4 4"/>
+  <rect x="938" y="108" width="64" height="64" rx="5" fill="#111827" stroke="#f59e0b" stroke-width="2"/>
+  <polyline points="1002,140 1012.8198331087456,140 1027.6,125.21983310874558" fill="none" stroke="#22d3ee" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="1058.6810013475265" cy="88.80000000000001" r="5" fill="#fb7185"/>
+</g>
+  <g>
+  <rect x="18" y="293" width="196" height="238" rx="8" fill="#0b1018" stroke="#334155"/>
+  <text x="30" y="317" fill="#e2e8f0" font-family="monospace" font-size="14">orbit 45°</text>
+  <line x1="110" y1="405" x2="182.4077343935025" y2="332.59226560649756" stroke="#475569" stroke-dasharray="4 4"/>
+  <rect x="78" y="373" width="64" height="64" rx="5" fill="#111827" stroke="#f59e0b" stroke-width="2"/>
+  <polyline points="142,405 167.6,379.4" fill="none" stroke="#22d3ee" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="182.4077343935025" cy="332.59226560649756" r="5" fill="#fb7185"/>
+</g>
+  <g>
+  <rect x="233" y="293" width="196" height="238" rx="8" fill="#0b1018" stroke="#334155"/>
+  <text x="245" y="317" fill="#e2e8f0" font-family="monospace" font-size="14">orbit 60°</text>
+  <line x1="325" y1="405" x2="376.20000000000005" y2="316.3189986524735" stroke="#475569" stroke-dasharray="4 4"/>
+  <rect x="293" y="373" width="64" height="64" rx="5" fill="#111827" stroke="#f59e0b" stroke-width="2"/>
+  <polyline points="325,373 325,362.18016689125443 339.78016689125445,347.4" fill="none" stroke="#22d3ee" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="376.20000000000005" cy="316.3189986524735" r="5" fill="#fb7185"/>
+</g>
+  <g>
+  <rect x="448" y="293" width="196" height="238" rx="8" fill="#0b1018" stroke="#334155"/>
+  <text x="460" y="317" fill="#e2e8f0" font-family="monospace" font-size="14">orbit 75°</text>
+  <line x1="540" y1="405" x2="566.5030702184981" y2="306.0891953879994" stroke="#475569" stroke-dasharray="4 4"/>
+  <rect x="508" y="373" width="64" height="64" rx="5" fill="#111827" stroke="#f59e0b" stroke-width="2"/>
+  <polyline points="540,373 540,354.2594993262367 546.8594993262367,347.4" fill="none" stroke="#22d3ee" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="566.5030702184981" cy="306.0891953879994" r="5" fill="#fb7185"/>
+</g>
+  <g>
+  <rect x="663" y="293" width="196" height="238" rx="8" fill="#0b1018" stroke="#334155"/>
+  <text x="675" y="317" fill="#e2e8f0" font-family="monospace" font-size="14">orbit 90°</text>
+  <line x1="755" y1="405" x2="755" y2="302.6" stroke="#475569" stroke-dasharray="4 4"/>
+  <rect x="723" y="373" width="64" height="64" rx="5" fill="#111827" stroke="#f59e0b" stroke-width="2"/>
+  <polyline points="755,373 755,347.4" fill="none" stroke="#22d3ee" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="755" cy="302.6" r="5" fill="#fb7185"/>
+</g>
+</svg>

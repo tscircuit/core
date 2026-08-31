@@ -1,13 +1,19 @@
 import { expect } from "bun:test"
-import type { ChipProps } from "@tscircuit/props"
+import type {
+  BusFanoutDirection,
+  ChipProps,
+  ImplicitBreakoutPointSolverFn,
+} from "@tscircuit/props"
 import { orderedRenderPhases } from "lib/components/base-components/Renderable"
 import type { Board } from "lib/components/normal-components/Board"
+import type { SolverStartedEvent } from "lib/events"
 import { createInstanceFromReactElement } from "lib/fiber/create-instance-from-react-element"
 import type { GenericLocalAutorouter } from "lib/utils/autorouting/GenericLocalAutorouter"
 import type {
   SimpleRouteJson,
   SimplifiedPcbTrace,
 } from "lib/utils/autorouting/SimpleRouteJson"
+import { getOrbitAwareBusFanoutDirections } from "lib/utils/autorouting/get-orbit-aware-bus-fanout-directions"
 import { getViaBoardLayers } from "lib/utils/getViaSpanLayers"
 import { Fragment } from "react"
 import { createAutoroutingPhaseIoStack } from "tests/fixtures/create-autorouting-phase-io-stack"
@@ -1886,13 +1892,38 @@ export type FanoutAlgorithmFn = (
   simpleRouteJson: SimpleRouteJson,
 ) => Promise<GenericLocalAutorouter>
 
+export interface Am62lLpddr4FanoutLayout {
+  boardWidth?: string
+  boardHeight?: string
+  socPcbX?: number
+  socPcbY?: number
+  socFanoutPadding?: string
+  dramPcbX?: number
+  dramPcbY?: number
+  dramFanoutPadding?: string
+}
+
 export const renderAm62lLpddr4Fanout = async ({
   fanoutAlgorithmFn,
+  globalAlgorithmFn,
+  implicitBreakoutPointSolverFn,
   includePowerPlaneFanout = false,
+  layout = {},
+  maxSignalConnectionsPerBus,
+  orientBusFanoutDirectionsTowardOtherComponent = false,
+  onSolverStarted,
+  skipDetailedValidation = false,
   snapshotPath,
 }: {
   fanoutAlgorithmFn?: FanoutAlgorithmFn
+  globalAlgorithmFn?: FanoutAlgorithmFn
+  implicitBreakoutPointSolverFn?: ImplicitBreakoutPointSolverFn
   includePowerPlaneFanout?: boolean
+  layout?: Am62lLpddr4FanoutLayout
+  maxSignalConnectionsPerBus?: number
+  orientBusFanoutDirectionsTowardOtherComponent?: boolean
+  onSolverStarted?: (event: SolverStartedEvent) => void
+  skipDetailedValidation?: boolean
   snapshotPath: string
 }) => {
   const { circuit } = getTestFixture({
@@ -1900,30 +1931,71 @@ export const renderAm62lLpddr4Fanout = async ({
     // bottom-side decouplers under the top-side BGA as component overlaps.
     platform: { placementDrcChecksDisabled: includePowerPlaneFanout },
   })
+  if (onSolverStarted) circuit.on("solver:started", onSolverStarted)
   const autoroutingPhaseIoStack = createAutoroutingPhaseIoStack(circuit)
+  if (orientBusFanoutDirectionsTowardOtherComponent && fanoutAlgorithmFn) {
+    throw new Error(
+      "fanoutAlgorithmFn bypasses busFanoutDirections; orbit-aware fanout must use the built-in fanout solver",
+    )
+  }
+  if (
+    maxSignalConnectionsPerBus !== undefined &&
+    (!Number.isInteger(maxSignalConnectionsPerBus) ||
+      maxSignalConnectionsPerBus < 1)
+  ) {
+    throw new Error("maxSignalConnectionsPerBus must be a positive integer")
+  }
+  const fanoutAutorouter =
+    fanoutAlgorithmFn || implicitBreakoutPointSolverFn
+      ? {
+          preset: "fanout" as const,
+          ...(fanoutAlgorithmFn ? { algorithmFn: fanoutAlgorithmFn } : {}),
+          ...(implicitBreakoutPointSolverFn
+            ? { implicitBreakoutPointSolverFn }
+            : {}),
+        }
+      : "fanout"
   const signalLayers = includePowerPlaneFanout
     ? POWER_FANOUT_SIGNAL_LAYERS
     : SIGNAL_ONLY_LAYERS
-  const signalConnections = includePowerPlaneFanout
+  const allSignalConnections = includePowerPlaneFanout
     ? DDR_SIGNAL_CONNECTIONS
     : DDR_CONNECTIONS
+  const signalConnections =
+    maxSignalConnectionsPerBus === undefined
+      ? allSignalConnections
+      : allSignalConnections.filter(
+          (connection, connectionIndex, connections) =>
+            connections
+              .slice(0, connectionIndex + 1)
+              .filter(({ busName }) => busName === connection.busName).length <=
+            maxSignalConnectionsPerBus,
+        )
+  const selectedSignalTraceNames = new Set(
+    signalConnections.map(({ traceName }) => traceName),
+  )
   const fanoutBuses = FANOUT_BUSES.filter(
     (bus) =>
       includePowerPlaneFanout ||
       bus.name === "DDR_BYTE0" ||
       bus.name === "DDR_BYTE1",
-  ).map((bus) => ({
-    ...bus,
-    maxLengthSkew:
-      includePowerPlaneFanout || bus.name === "DDR_BYTE0"
-        ? bus.maxLengthSkew
-        : undefined,
-    preferredLayers: includePowerPlaneFanout
-      ? bus.preferredLayers
-      : bus.name === "DDR_BYTE0"
-        ? (["top", "inner1"] as const)
-        : (["inner2", "bottom"] as const),
-  }))
+  )
+    .map((bus) => ({
+      ...bus,
+      connections: bus.connections.filter((traceName) =>
+        selectedSignalTraceNames.has(traceName),
+      ),
+      maxLengthSkew:
+        includePowerPlaneFanout || bus.name === "DDR_BYTE0"
+          ? bus.maxLengthSkew
+          : undefined,
+      preferredLayers: includePowerPlaneFanout
+        ? bus.preferredLayers
+        : bus.name === "DDR_BYTE0"
+          ? (["top", "inner1"] as const)
+          : (["inner2", "bottom"] as const),
+    }))
+    .filter((bus) => bus.connections.length > 0)
   const socPlaneDrops = includePowerPlaneFanout ? SOC_PLANE_DROPS : []
   const decouplingPlaneDrops = includePowerPlaneFanout
     ? SOC_DDR_DECOUPLING_PLANE_DROPS
@@ -1946,7 +2018,15 @@ export const renderAm62lLpddr4Fanout = async ({
   const renderedAllDecouplingCapacitors: Array<
     (typeof AM62L_ALL_DECOUPLING_CAPACITORS)[number]
   > = [...AM62L_ALL_DECOUPLING_CAPACITORS]
-  const socBusFanoutDirections = {
+  const socPosition = {
+    x: layout.socPcbX ?? SOC_PCB_X,
+    y: layout.socPcbY ?? SOC_PCB_Y,
+  }
+  const dramPosition = {
+    x: layout.dramPcbX ?? 9.616917,
+    y: layout.dramPcbY ?? (includePowerPlaneFanout ? 1.81916 : -0.050917),
+  }
+  const baseSocBusFanoutDirections: Record<string, BusFanoutDirection> = {
     DDR_BYTE0: "rightside_top",
     DDR_BYTE1: "rightside_bottom",
     ...(includePowerPlaneFanout
@@ -1961,7 +2041,7 @@ export const renderAm62lLpddr4Fanout = async ({
         }
       : {}),
   } as const
-  const dramBusFanoutDirections = {
+  const baseDramBusFanoutDirections: Record<string, BusFanoutDirection> = {
     DDR_BYTE0: "leftside_center",
     DDR_BYTE1: "leftside_center",
     ...(includePowerPlaneFanout
@@ -1976,10 +2056,6 @@ export const renderAm62lLpddr4Fanout = async ({
         }
       : {}),
   } as const
-  const fanoutAutorouter = fanoutAlgorithmFn
-    ? { preset: "fanout" as const, algorithmFn: fanoutAlgorithmFn }
-    : "fanout"
-
   const routeGlobalConnections = async (
     simpleRouteJson: SimpleRouteJson,
   ): Promise<SimplifiedPcbTrace[]> => {
@@ -2090,6 +2166,20 @@ export const renderAm62lLpddr4Fanout = async ({
       },
     )
   }
+  const socBusFanoutDirections = orientBusFanoutDirectionsTowardOtherComponent
+    ? getOrbitAwareBusFanoutDirections({
+        baseDirections: baseSocBusFanoutDirections,
+        sourceComponentCenter: socPosition,
+        targetComponentCenter: dramPosition,
+      })
+    : baseSocBusFanoutDirections
+  const dramBusFanoutDirections = orientBusFanoutDirectionsTowardOtherComponent
+    ? getOrbitAwareBusFanoutDirections({
+        baseDirections: baseDramBusFanoutDirections,
+        sourceComponentCenter: dramPosition,
+        targetComponentCenter: socPosition,
+      })
+    : baseDramBusFanoutDirections
 
   expect(AM62L_PAD_POSITIONS).toHaveLength(373)
   expect(AM62L_VSS_BALLS).toHaveLength(97)
@@ -2099,7 +2189,9 @@ export const renderAm62lLpddr4Fanout = async ({
   expect(LPDDR4_VDDQ_BALLS).toHaveLength(20)
   expect(LPDDR4_VDD2_BALLS).toHaveLength(24)
   expect(LPDDR4_VDD1_BALLS).toHaveLength(8)
-  expect(signalConnections).toHaveLength(includePowerPlaneFanout ? 33 : 16)
+  if (maxSignalConnectionsPerBus === undefined) {
+    expect(signalConnections).toHaveLength(includePowerPlaneFanout ? 33 : 16)
+  }
   expect(
     signalConnections.filter(({ traceName }) => traceName === "RESET_n"),
   ).toEqual(includePowerPlaneFanout ? [DDR_RESET_CONNECTION] : [])
@@ -2123,8 +2215,8 @@ export const renderAm62lLpddr4Fanout = async ({
           ? "AM62L_LPDDR4_PROGRESSIVE_FANOUT"
           : "AM62L_LPDDR4_TWO_BUS_FANOUT"
       }
-      width="40mm"
-      height="20mm"
+      width={layout.boardWidth ?? "40mm"}
+      height={layout.boardHeight ?? "20mm"}
       layers={includePowerPlaneFanout ? 8 : 4}
       defaultTraceWidth="0.08128mm"
       minTraceWidth="0.08128mm"
@@ -2146,11 +2238,13 @@ export const renderAm62lLpddr4Fanout = async ({
         ))}
       <autoroutingphase
         autorouter={{
-          algorithmFn: createBasicAutorouter(
-            includePowerPlaneFanout
-              ? routeGlobalConnections
-              : routeConnectionsDirectly,
-          ),
+          algorithmFn:
+            globalAlgorithmFn ??
+            createBasicAutorouter(
+              includePowerPlaneFanout
+                ? routeGlobalConnections
+                : routeConnectionsDirectly,
+            ),
         }}
       />
       {includePowerPlaneFanout && (
@@ -2168,9 +2262,11 @@ export const renderAm62lLpddr4Fanout = async ({
       )}
       <breakout
         name="SOC_FANOUT"
-        pcbX={SOC_PCB_X}
-        pcbY={SOC_PCB_Y}
-        padding={includePowerPlaneFanout ? "3mm" : "2mm"}
+        pcbX={socPosition.x}
+        pcbY={socPosition.y}
+        padding={
+          layout.socFanoutPadding ?? (includePowerPlaneFanout ? "3mm" : "2mm")
+        }
         autorouter={fanoutAutorouter}
         fanoutRoutingLayers={[...signalLayers]}
         busFanoutDirections={socBusFanoutDirections}
@@ -2195,9 +2291,12 @@ export const renderAm62lLpddr4Fanout = async ({
 
       <breakout
         name="DRAM_FANOUT"
-        pcbX={9.616917}
-        pcbY={includePowerPlaneFanout ? 1.81916 : -0.050917}
-        padding={includePowerPlaneFanout ? "3mm" : "2.5mm"}
+        pcbX={dramPosition.x}
+        pcbY={dramPosition.y}
+        padding={
+          layout.dramFanoutPadding ??
+          (includePowerPlaneFanout ? "3mm" : "2.5mm")
+        }
         autorouter={fanoutAutorouter}
         fanoutRoutingLayers={[...signalLayers]}
         busFanoutDirections={dramBusFanoutDirections}
@@ -2406,6 +2505,8 @@ export const renderAm62lLpddr4Fanout = async ({
     boardWithRenderLifecycle._markDirty("PcbDesignRuleChecks")
     await circuit.renderUntilSettled()
   }
+
+  if (skipDetailedValidation) return circuit
 
   expect(circuit.db.pcb_note_text.list()).toEqual([])
   expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
@@ -3926,4 +4027,5 @@ export const renderAm62lLpddr4Fanout = async ({
       : {}),
     diffThresholdPercent: 0.05,
   })
+  return circuit
 }

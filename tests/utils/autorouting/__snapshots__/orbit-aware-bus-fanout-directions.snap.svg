@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="300" viewBox="0 0 900 300">
+  <rect width="900" height="300" fill="#05070a"/>
+  <text x="18" y="22" fill="#fff" font-family="monospace" font-size="16">Bus fanout edges follow the orbit quadrant</text>
+  <g>
+  <rect x="18" y="34" width="196" height="238" rx="8" fill="#0b1018" stroke="#334155"/>
+  <text x="30" y="58" fill="#e2e8f0" font-family="monospace" font-size="14">orbit 0°</text>
+  <line x1="116" y1="152" x2="202.8" y2="152" stroke="#64748b" stroke-dasharray="4 4"/>
+  <rect x="88" y="124" width="56" height="56" rx="5" fill="#111827" stroke="#f8fafc" stroke-width="2"/>
+  <path data-bus-id="BYTE0" d="M 116 152 L 144 135.2" fill="none" stroke="#22d3ee" stroke-width="5" stroke-linecap="round"/>
+  <path data-bus-id="CONTROL" d="M 116 152 L 144 152" fill="none" stroke="#f59e0b" stroke-width="5" stroke-linecap="round"/>
+  <path data-bus-id="BYTE1" d="M 116 152 L 144 168.8" fill="none" stroke="#a78bfa" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="202.8" cy="152" r="5" fill="#fb7185"/>
+</g>
+  <g>
+  <rect x="233" y="34" width="196" height="238" rx="8" fill="#0b1018" stroke="#334155"/>
+  <text x="245" y="58" fill="#e2e8f0" font-family="monospace" font-size="14">orbit 90°</text>
+  <line x1="331" y1="152" x2="331" y2="65.2" stroke="#64748b" stroke-dasharray="4 4"/>
+  <rect x="303" y="124" width="56" height="56" rx="5" fill="#111827" stroke="#f8fafc" stroke-width="2"/>
+  <path data-bus-id="BYTE0" d="M 331 152 L 314.2 124" fill="none" stroke="#22d3ee" stroke-width="5" stroke-linecap="round"/>
+  <path data-bus-id="CONTROL" d="M 331 152 L 331 124" fill="none" stroke="#f59e0b" stroke-width="5" stroke-linecap="round"/>
+  <path data-bus-id="BYTE1" d="M 331 152 L 347.8 124" fill="none" stroke="#a78bfa" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="331" cy="65.2" r="5" fill="#fb7185"/>
+</g>
+  <g>
+  <rect x="448" y="34" width="196" height="238" rx="8" fill="#0b1018" stroke="#334155"/>
+  <text x="460" y="58" fill="#e2e8f0" font-family="monospace" font-size="14">orbit 180°</text>
+  <line x1="546" y1="152" x2="459.2" y2="152" stroke="#64748b" stroke-dasharray="4 4"/>
+  <rect x="518" y="124" width="56" height="56" rx="5" fill="#111827" stroke="#f8fafc" stroke-width="2"/>
+  <path data-bus-id="BYTE0" d="M 546 152 L 518 168.8" fill="none" stroke="#22d3ee" stroke-width="5" stroke-linecap="round"/>
+  <path data-bus-id="CONTROL" d="M 546 152 L 518 152" fill="none" stroke="#f59e0b" stroke-width="5" stroke-linecap="round"/>
+  <path data-bus-id="BYTE1" d="M 546 152 L 518 135.2" fill="none" stroke="#a78bfa" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="459.2" cy="152" r="5" fill="#fb7185"/>
+</g>
+  <g>
+  <rect x="663" y="34" width="196" height="238" rx="8" fill="#0b1018" stroke="#334155"/>
+  <text x="675" y="58" fill="#e2e8f0" font-family="monospace" font-size="14">orbit 270°</text>
+  <line x1="761" y1="152" x2="761" y2="238.8" stroke="#64748b" stroke-dasharray="4 4"/>
+  <rect x="733" y="124" width="56" height="56" rx="5" fill="#111827" stroke="#f8fafc" stroke-width="2"/>
+  <path data-bus-id="BYTE0" d="M 761 152 L 777.8 180" fill="none" stroke="#22d3ee" stroke-width="5" stroke-linecap="round"/>
+  <path data-bus-id="CONTROL" d="M 761 152 L 761 180" fill="none" stroke="#f59e0b" stroke-width="5" stroke-linecap="round"/>
+  <path data-bus-id="BYTE1" d="M 761 152 L 744.2 180" fill="none" stroke="#a78bfa" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="761" cy="238.8" r="5" fill="#fb7185"/>
+</g>
+</svg>
