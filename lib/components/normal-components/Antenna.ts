@@ -10,7 +10,7 @@ import { getGeneratedAntennaGeometry } from "./get-generated-antenna-geometry"
 
 export class Antenna extends NormalComponent<
   typeof antennaProps,
-  "pin1" | "feed" | "pin2" | "ground" | "gnd" | "feed2"
+  "pin1" | "feed" | "feed1" | "pin2" | "ground" | "gnd" | "feed2"
 > {
   get config() {
     return {
@@ -39,7 +39,7 @@ export class Antenna extends NormalComponent<
     super.initPorts({
       pinCount: secondaryPortRole ? 2 : 1,
       additionalAliases: {
-        pin1: ["feed"],
+        pin1: secondaryPortRole === "feed2" ? ["feed", "feed1"] : ["feed"],
         ...(secondaryPortRole === "ground"
           ? { pin2: ["ground", "gnd"] }
           : secondaryPortRole === "feed2"
