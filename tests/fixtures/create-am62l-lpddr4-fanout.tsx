@@ -819,11 +819,13 @@ export type FanoutAlgorithmFn = (
 export const renderAm62lLpddr4Fanout = async ({
   fanoutAlgorithmFn,
   fanoutSolverLabel,
+  includeBottomDecouplingCapacitors = false,
   includePowerPlaneFanout = false,
   snapshotPath,
 }: {
   fanoutAlgorithmFn?: FanoutAlgorithmFn
   fanoutSolverLabel: string
+  includeBottomDecouplingCapacitors?: boolean
   includePowerPlaneFanout?: boolean
   snapshotPath: string
 }) => {
@@ -881,9 +883,11 @@ export const renderAm62lLpddr4Fanout = async ({
   circuit.add(
     <board
       name={
-        includePowerPlaneFanout
-          ? "AM62L_LPDDR4_PROGRESSIVE_FANOUT"
-          : "AM62L_LPDDR4_TWO_BUS_FANOUT"
+        includeBottomDecouplingCapacitors
+          ? "AM62L_LPDDR4_DECOUPLING_PACKING"
+          : includePowerPlaneFanout
+            ? "AM62L_LPDDR4_PROGRESSIVE_FANOUT"
+            : "AM62L_LPDDR4_TWO_BUS_FANOUT"
       }
       width="42mm"
       height="26mm"
@@ -922,6 +926,8 @@ export const renderAm62lLpddr4Fanout = async ({
         name="SOC_FANOUT"
         pcbX={-9.5}
         padding={includePowerPlaneFanout ? "3mm" : "2mm"}
+        pcbPack={includeBottomDecouplingCapacitors}
+        pcbGap="0.2mm"
         autorouter={fanoutAutorouter}
         fanoutRoutingLayers={[...signalLayers]}
         busFanoutDirections={{
@@ -939,6 +945,34 @@ export const renderAm62lLpddr4Fanout = async ({
         }}
       >
         <Am62l32 name="U1" noSchematicRepresentation />
+        {includeBottomDecouplingCapacitors && (
+          <Fragment>
+            <capacitor
+              name="C1"
+              capacitance="100nF"
+              footprint="0402"
+              layer="bottom"
+            />
+            <capacitor
+              name="C2"
+              capacitance="100nF"
+              footprint="0402"
+              layer="bottom"
+            />
+            <capacitor
+              name="C3"
+              capacitance="100nF"
+              footprint="0402"
+              layer="bottom"
+            />
+            <trace from=".U1 > .L8" to=".C1 > .pin1" />
+            <trace from=".U1 > .L9" to=".C1 > .pin2" />
+            <trace from=".U1 > .M7" to=".C2 > .pin1" />
+            <trace from=".U1 > .N7" to=".C2 > .pin2" />
+            <trace from=".U1 > .P8" to=".C3 > .pin1" />
+            <trace from=".U1 > .P9" to=".C3 > .pin2" />
+          </Fragment>
+        )}
         {socPlaneDrops.map((drop) => (
           <Fragment key={drop.traceName}>
             <trace
@@ -955,6 +989,8 @@ export const renderAm62lLpddr4Fanout = async ({
         pcbX={9.616917}
         pcbY={includePowerPlaneFanout ? 1.81916 : -0.050917}
         padding={includePowerPlaneFanout ? "3mm" : "2.5mm"}
+        pcbPack={includeBottomDecouplingCapacitors}
+        pcbGap="0.2mm"
         autorouter={fanoutAutorouter}
         fanoutRoutingLayers={[...signalLayers]}
         busFanoutDirections={{
@@ -972,6 +1008,50 @@ export const renderAm62lLpddr4Fanout = async ({
         }}
       >
         <Mt53e1g16d1zw name="U2" pcbRotation={90} noSchematicRepresentation />
+        {includeBottomDecouplingCapacitors && (
+          <Fragment>
+            <capacitor
+              name="C4"
+              capacitance="100nF"
+              footprint="0402"
+              layer="bottom"
+            />
+            <capacitor
+              name="C5"
+              capacitance="100nF"
+              footprint="0402"
+              layer="bottom"
+            />
+            <capacitor
+              name="C6"
+              capacitance="100nF"
+              footprint="0402"
+              layer="bottom"
+            />
+            <capacitor
+              name="C7"
+              capacitance="100nF"
+              footprint="0402"
+              layer="bottom"
+            />
+            <capacitor
+              name="C8"
+              capacitance="100nF"
+              footprint="0402"
+              layer="bottom"
+            />
+            <trace from=".U2 > .B3" to=".C4 > .pin1" />
+            <trace from=".U2 > .A3" to=".C4 > .pin2" />
+            <trace from=".U2 > .F3" to=".C5 > .pin1" />
+            <trace from=".U2 > .G3" to=".C5 > .pin2" />
+            <trace from=".U2 > .U3" to=".C6 > .pin1" />
+            <trace from=".U2 > .T3" to=".C6 > .pin2" />
+            <trace from=".U2 > .AA3" to=".C7 > .pin1" />
+            <trace from=".U2 > .AB3" to=".C7 > .pin2" />
+            <trace from=".U2 > .F1" to=".C8 > .pin1" />
+            <trace from=".U2 > .G1" to=".C8 > .pin2" />
+          </Fragment>
+        )}
         {dramPlaneDrops.map((drop) => (
           <Fragment key={drop.traceName}>
             <trace
@@ -1053,6 +1133,34 @@ export const renderAm62lLpddr4Fanout = async ({
   )
 
   await circuit.renderUntilSettled()
+
+  if (includeBottomDecouplingCapacitors) {
+    const autoroutingErrors = circuit.db.pcb_autorouting_error.list()
+    expect(autoroutingErrors).toHaveLength(1)
+    expect(autoroutingErrors[0]?.message).toContain(
+      "Autorouting was skipped because the 1mm maximum length",
+    )
+    expect(circuit.db.pcb_packing_error.list()).toEqual([])
+    const decouplingCapacitors = circuit.db.source_component
+      .list()
+      .filter(({ name }) => /^C[1-8]$/.test(name))
+      .map((sourceComponent) =>
+        circuit.db.pcb_component.getWhere({
+          source_component_id: sourceComponent.source_component_id,
+        }),
+      )
+    expect(decouplingCapacitors).toHaveLength(8)
+    expect(
+      decouplingCapacitors.every(
+        (pcbComponent) => pcbComponent?.layer === "bottom",
+      ),
+    ).toBe(true)
+    await expect(circuit).toMatchPcbSnapshot(snapshotPath, {
+      diffThresholdPercent: 0.05,
+      shouldDrawRatsNest: true,
+    })
+    return
+  }
 
   expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
   expect(circuit.db.pcb_trace_error.list()).toEqual([])
