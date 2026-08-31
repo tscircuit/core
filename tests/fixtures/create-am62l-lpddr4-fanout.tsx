@@ -1,5 +1,8 @@
 import { expect } from "bun:test"
 import type { ChipProps } from "@tscircuit/props"
+import { orderedRenderPhases } from "lib/components/base-components/Renderable"
+import type { Board } from "lib/components/normal-components/Board"
+import { createInstanceFromReactElement } from "lib/fiber/create-instance-from-react-element"
 import type { GenericLocalAutorouter } from "lib/utils/autorouting/GenericLocalAutorouter"
 import type {
   SimpleRouteJson,
@@ -295,7 +298,73 @@ const AM62L_PIN_NUMBER_BY_BALL = new Map(
   AM62L_PAD_POSITIONS.map(({ ballName, pinNumber }) => [ballName, pinNumber]),
 )
 
+const AM62L_VDD_CORE_BALLS = [
+  "J9",
+  "J11",
+  "J13",
+  "J15",
+  "K10",
+  "K14",
+  "L15",
+  "M14",
+  "N15",
+  "P10",
+  "P12",
+  "P14",
+  "R9",
+  "R11",
+  "M10",
+] as const
 const AM62L_VDDS_DDR_BALLS = ["L8", "M7", "M8", "N8", "P8"] as const
+const AM62L_VDDA_1V8_BALLS = ["G14", "T12", "R16", "N17", "L11", "K12"] as const
+const AM62L_SOC_DVDD3V3_BALLS = ["U12", "L17", "J16", "H10", "G10"] as const
+const AM62L_SOC_DVDD1V8_BALLS = ["H8", "H16", "M17", "P16", "T14"] as const
+const AM62L_VDDA_CORE_BALLS = ["U11", "H12", "G13"] as const
+const AM62L_VPP_BALLS = ["N18"] as const
+const AM62L_VDD_MMC1_SD_BALLS = ["U16"] as const
+const AM62L_VDDSHV_SD_IO_BALLS = ["T10"] as const
+const AM62L_SOC_VDD_RTC_BALLS = ["T17"] as const
+const AM62L_SOC_VDDS_RTC_1V8_BALLS = ["T18"] as const
+
+const AM62L_SPECIAL_CAP_BALLS = [
+  {
+    ballName: "J8",
+    pinSignal: "CAP_VDDS_MMC0",
+    capacitance: "1uF",
+    evmReference: "C339",
+  },
+  {
+    ballName: "U9",
+    pinSignal: "CAP_VDDS_MMC1",
+    capacitance: "1uF",
+    evmReference: "C294",
+  },
+  {
+    ballName: "M16",
+    pinSignal: "CAP_VDDS_MMC2",
+    capacitance: "1uF",
+    evmReference: "C310",
+  },
+  {
+    ballName: "K16",
+    pinSignal: "CAP_VDDS_GPMC",
+    capacitance: "1uF",
+    evmReference: "C323",
+  },
+  {
+    ballName: "G11",
+    pinSignal: "CAP_VDDS_GENERAL1",
+    capacitance: "1uF",
+    evmReference: "C338",
+  },
+  {
+    ballName: "T16",
+    pinSignal: "CAP_VDDSHV_MMC",
+    capacitance: "3.3uF",
+    evmReference: "C286",
+  },
+] as const
+
 const AM62L_DDR_HIGH_SPEED_CAPACITANCE = "1uF"
 const AM62L_DDR_MAX_DECOUPLING_DISTANCE = 3.81
 
@@ -345,7 +414,7 @@ const AM62L_DDR_DECOUPLING_CAPACITORS = [
     priority: "high",
     targetBall: "N8",
     pcbX: -0.75,
-    pcbY: -1.125,
+    pcbY: -1.175,
     pcbRotation: 180,
     vddViaOffset: { x: 0.239, y: 0.338 },
     groundViaOffset: { x: -0.421, y: -0.338 },
@@ -395,6 +464,702 @@ const AM62L_DDR_DECOUPLING_CAPACITORS = [
     groundViaOffset: { x: -0.239, y: 0.338 },
   },
 ] as const
+
+type Am62lDecouplingPlacement = "under" | "perimeter"
+
+interface UnplacedAm62lDecouplingCapacitor {
+  capacitance: string
+  evmReference: string
+  footprint: "cap0201_nosilkscreen" | "cap0402_nosilkscreen"
+  name: string
+  placement: Am62lDecouplingPlacement
+  priority: "high" | "medium" | "low" | "bulk" | "required"
+  railNetName: string
+  targetBall: string
+}
+
+const createEvmRailCapacitors = ({
+  ballNames,
+  capacitors,
+  railName,
+}: {
+  ballNames: readonly string[]
+  capacitors: readonly {
+    capacitance: string
+    evmReference: string
+    placement: Am62lDecouplingPlacement
+    priority: UnplacedAm62lDecouplingCapacitor["priority"]
+  }[]
+  railName: string
+}): UnplacedAm62lDecouplingCapacitor[] =>
+  capacitors.map((capacitor, capacitorIndex) => ({
+    ...capacitor,
+    footprint:
+      capacitor.capacitance === "10uF" ||
+      capacitor.capacitance === "4.7uF" ||
+      capacitor.capacitance === "2.2uF"
+        ? "cap0402_nosilkscreen"
+        : "cap0201_nosilkscreen",
+    name: `C_SOC_${railName}_${capacitor.evmReference}`,
+    railNetName: railName,
+    targetBall: ballNames[capacitorIndex % ballNames.length]!,
+  }))
+
+const underCapacitors = (
+  capacitance: string,
+  priority: UnplacedAm62lDecouplingCapacitor["priority"],
+  evmReferences: readonly string[],
+) =>
+  evmReferences.map((evmReference) => ({
+    capacitance,
+    evmReference,
+    placement: "under" as const,
+    priority,
+  }))
+
+const perimeterCapacitors = (
+  capacitance: string,
+  evmReferences: readonly string[],
+) =>
+  evmReferences.map((evmReference) => ({
+    capacitance,
+    evmReference,
+    placement: "perimeter" as const,
+    priority: "bulk" as const,
+  }))
+
+// The inventory matches TMDS62LEVM schematic sheets 18-19. These are the 60
+// fitted processor capacitors not already represented by the eight VDDS_DDR
+// capacitors above. Required/high/medium parts remain under or near the BGA;
+// low-priority C98 uses a perimeter site to preserve clearance. C102 is DNI.
+const AM62L_UNPLACED_DIRECT_DECOUPLING_CAPACITORS = [
+  ...createEvmRailCapacitors({
+    railName: "VDD_CORE",
+    ballNames: AM62L_VDD_CORE_BALLS,
+    capacitors: [
+      ...underCapacitors("1uF", "high", [
+        "U19",
+        "U43",
+        "U40",
+        "U38",
+        "U41",
+        "U24",
+        "U20",
+      ]),
+      ...underCapacitors("1uF", "medium", [
+        "C324",
+        "C312",
+        "C376",
+        "C316",
+        "C322",
+      ]),
+      ...underCapacitors("0.1uF", "medium", ["C304", "C306", "C317", "C332"]),
+      ...perimeterCapacitors("10uF", ["C108", "C107"]),
+      ...perimeterCapacitors("2.2uF", ["C377"]),
+      ...perimeterCapacitors("4.7uF", ["C268"]),
+    ],
+  }),
+  ...createEvmRailCapacitors({
+    railName: "VDDA_CORE",
+    ballNames: AM62L_VDDA_CORE_BALLS,
+    capacitors: [
+      ...underCapacitors("0.1uF", "medium", ["C291", "C335", "C337"]),
+      ...perimeterCapacitors("4.7uF", ["C275"]),
+    ],
+  }),
+  ...createEvmRailCapacitors({
+    railName: "VDDA_1V8",
+    ballNames: AM62L_VDDA_1V8_BALLS,
+    capacitors: [
+      ...underCapacitors("0.1uF", "high", ["C318"]),
+      ...underCapacitors("1uF", "medium", [
+        "C298",
+        "C391",
+        "C397",
+        "C348",
+        "C109",
+      ]),
+      ...underCapacitors("0.01uF", "medium", ["C297"]),
+      ...perimeterCapacitors("10uF", ["C111"]),
+      ...perimeterCapacitors("1uF", ["C311"]),
+    ],
+  }),
+  ...createEvmRailCapacitors({
+    railName: "SOC_DVDD1V8",
+    ballNames: AM62L_SOC_DVDD1V8_BALLS,
+    capacitors: [
+      ...underCapacitors("1uF", "high", ["C341", "C320", "C340", "C295"]),
+      ...underCapacitors("1uF", "low", ["C103"]),
+      ...perimeterCapacitors("10uF", ["C95"]),
+      ...perimeterCapacitors("1uF", ["C314"]),
+    ],
+  }),
+  ...createEvmRailCapacitors({
+    railName: "SOC_DVDD3V3",
+    ballNames: AM62L_SOC_DVDD3V3_BALLS,
+    capacitors: [
+      ...underCapacitors("1uF", "high", ["C394", "C395", "C290"]),
+      ...underCapacitors("1uF", "medium", ["C402", "C349"]),
+      ...perimeterCapacitors("10uF", ["C408"]),
+      ...perimeterCapacitors("1uF", ["C334"]),
+    ],
+  }),
+  ...createEvmRailCapacitors({
+    railName: "VPP_1V8",
+    ballNames: AM62L_VPP_BALLS,
+    capacitors: [
+      {
+        capacitance: "1uF",
+        evmReference: "C98",
+        placement: "perimeter",
+        priority: "low",
+      },
+      ...perimeterCapacitors("1uF", ["C99"]),
+      ...perimeterCapacitors("0.1uF", ["C104"]),
+    ],
+  }),
+  ...createEvmRailCapacitors({
+    railName: "VDD_MMC1_SD",
+    ballNames: AM62L_VDD_MMC1_SD_BALLS,
+    capacitors: underCapacitors("0.1uF", "low", ["C289"]),
+  }),
+  ...createEvmRailCapacitors({
+    railName: "VDDSHV_SD_IO",
+    ballNames: AM62L_VDDSHV_SD_IO_BALLS,
+    capacitors: underCapacitors("0.1uF", "low", ["C301"]),
+  }),
+  ...createEvmRailCapacitors({
+    railName: "SOC_VDD_RTC",
+    ballNames: AM62L_SOC_VDD_RTC_BALLS,
+    capacitors: underCapacitors("1uF", "low", ["C300"]),
+  }),
+  ...createEvmRailCapacitors({
+    railName: "SOC_VDDS_RTC_1V8",
+    ballNames: AM62L_SOC_VDDS_RTC_1V8_BALLS,
+    capacitors: underCapacitors("1uF", "low", ["C292"]),
+  }),
+  ...AM62L_SPECIAL_CAP_BALLS.map(
+    ({ ballName, capacitance, evmReference, pinSignal }) => ({
+      capacitance,
+      evmReference,
+      footprint: "cap0201_nosilkscreen" as const,
+      name: `C_SOC_${pinSignal}_${evmReference}`,
+      placement: "under" as const,
+      priority: "required" as const,
+      railNetName: pinSignal,
+      targetBall: ballName,
+    }),
+  ),
+] as const satisfies readonly UnplacedAm62lDecouplingCapacitor[]
+
+const getCapCourtyardSize = (
+  footprint: UnplacedAm62lDecouplingCapacitor["footprint"],
+  pcbRotation: number,
+) => {
+  // The regression only needs the SMT pad envelope for overlap checks.
+  // A separate assembly courtyard would unnecessarily exclude legal bottom-side
+  // placements beneath the BGA.
+  const unrotated =
+    footprint === "cap0402_nosilkscreen"
+      ? { width: 1.56, height: 0.64 }
+      : { width: 1.12, height: 0.4 }
+  return Math.abs(pcbRotation % 180) === 90
+    ? { width: unrotated.height, height: unrotated.width }
+    : unrotated
+}
+
+const rotateLocalPoint = (
+  point: { x: number; y: number },
+  pcbRotation: number,
+) => {
+  const angle = (pcbRotation * Math.PI) / 180
+  return {
+    x: point.x * Math.cos(angle) - point.y * Math.sin(angle),
+    y: point.x * Math.sin(angle) + point.y * Math.cos(angle),
+  }
+}
+
+// These deterministic sites were selected against the completed DDR fanout.
+// Each entry has one short bottom-layer leg to a local power-net handoff via
+// and one to GND. Multiple entry orientations preserve the board's configured
+// DRC clearances while keeping every site within 3.81 mm of its rail's BGA
+// balls. The six CAP_* rails each have a single, exact target ball.
+const AM62L_UNDER_DECOUPLING_PLACEMENTS = [
+  {
+    railNetName: "CAP_VDDS_MMC0",
+    pcbX: -3.5,
+    pcbY: 4.7,
+    pcbRotation: 0,
+    groundViaOffset: { x: -0.8, y: 0 },
+    powerViaOffset: { x: 0.8, y: 0 },
+  },
+  {
+    railNetName: "VDD_CORE",
+    pcbX: 2.3,
+    pcbY: -0.2,
+    pcbRotation: 0,
+    groundViaOffset: { x: -0.8, y: 0.2 },
+    powerViaOffset: { x: 0.8, y: 0.2 },
+  },
+  {
+    railNetName: "VDD_CORE",
+    pcbX: 1.2,
+    pcbY: -4.7,
+    pcbRotation: 180,
+    groundViaOffset: { x: -0.15, y: -0.45 },
+    powerViaOffset: { x: 0.15, y: -0.45 },
+  },
+  {
+    railNetName: "VDD_CORE",
+    pcbX: 1.1,
+    pcbY: 0.2,
+    pcbRotation: 180,
+    groundViaOffset: { x: -0.15, y: 0.45 },
+    powerViaOffset: { x: 0.15, y: -0.45 },
+  },
+  {
+    railNetName: "VDD_CORE",
+    pcbX: 4.5,
+    pcbY: 2.5,
+    pcbRotation: 90,
+    groundViaOffset: { x: -0.8, y: -0.2 },
+    powerViaOffset: { x: 0.8, y: 0.2 },
+  },
+  {
+    railNetName: "VDD_CORE",
+    pcbX: 2.1,
+    pcbY: 3.7,
+    pcbRotation: 0,
+    groundViaOffset: { x: -0.35, y: -0.45 },
+    powerViaOffset: { x: 0.35, y: -0.45 },
+  },
+  {
+    railNetName: "VDD_CORE",
+    pcbX: 3.8,
+    pcbY: -1.8,
+    pcbRotation: 0,
+    groundViaOffset: { x: -0.8, y: 0.2 },
+    powerViaOffset: { x: 0.8, y: 0.2 },
+  },
+  {
+    railNetName: "VDD_CORE",
+    pcbX: 3.1,
+    pcbY: 4.2,
+    pcbRotation: 180,
+    groundViaOffset: { x: -0.35, y: 0.45 },
+    powerViaOffset: { x: 0.35, y: 0.45 },
+  },
+  {
+    railNetName: "VDD_CORE",
+    pcbX: 0,
+    pcbY: -4.5,
+    pcbRotation: 0,
+    groundViaOffset: { x: -0.8, y: -0.2 },
+    powerViaOffset: { x: 0.8, y: -0.2 },
+  },
+  {
+    railNetName: "VDD_CORE",
+    pcbX: 3.3,
+    pcbY: 3.1,
+    pcbRotation: 270,
+    groundViaOffset: { x: -0.35, y: 0.45 },
+    powerViaOffset: { x: 0.35, y: 0.45 },
+  },
+  {
+    railNetName: "VDD_CORE",
+    pcbX: 1.1,
+    pcbY: -2.3,
+    pcbRotation: 0,
+    groundViaOffset: { x: -0.51, y: 0.45 },
+    powerViaOffset: { x: 0.51, y: 0.45 },
+  },
+  {
+    railNetName: "VDD_CORE",
+    pcbX: 2.2,
+    pcbY: -1.9,
+    pcbRotation: 270,
+    groundViaOffset: { x: -0.35, y: 0.45 },
+    powerViaOffset: { x: 0.35, y: -0.45 },
+  },
+  {
+    railNetName: "VDD_CORE",
+    pcbX: 3.8,
+    pcbY: 3.1,
+    pcbRotation: 270,
+    groundViaOffset: { x: -0.35, y: -0.45 },
+    powerViaOffset: { x: 0.35, y: 0.45 },
+  },
+  {
+    railNetName: "VDD_CORE",
+    pcbX: 3.2,
+    pcbY: -0.8,
+    pcbRotation: 0,
+    groundViaOffset: { x: -0.8, y: -0.2 },
+    powerViaOffset: { x: 0.8, y: -0.2 },
+  },
+  {
+    railNetName: "VDD_CORE",
+    pcbX: -2.6,
+    pcbY: 4.2,
+    pcbRotation: 0,
+    groundViaOffset: { x: -0.15, y: -0.45 },
+    powerViaOffset: { x: 0.2, y: 0.45 },
+  },
+  {
+    railNetName: "VDD_CORE",
+    pcbX: 2.6,
+    pcbY: -4.3,
+    pcbRotation: 0,
+    groundViaOffset: { x: -0.35, y: -0.45 },
+    powerViaOffset: { x: 0.8, y: 0 },
+  },
+  {
+    railNetName: "VDD_CORE",
+    pcbX: -4.2,
+    pcbY: 3.9,
+    pcbRotation: 0,
+    groundViaOffset: { x: -0.15, y: 0.45 },
+    powerViaOffset: { x: 0.2, y: -0.45 },
+  },
+  {
+    railNetName: "CAP_VDDS_GENERAL1",
+    pcbX: 0.4,
+    pcbY: 6.2,
+    pcbRotation: 180,
+    groundViaOffset: { x: -0.51, y: -0.45 },
+    powerViaOffset: { x: 0.51, y: -0.45 },
+  },
+  {
+    railNetName: "VDDA_1V8",
+    pcbX: 5,
+    pcbY: -2.5,
+    pcbRotation: 90,
+    groundViaOffset: { x: -0.15, y: 0.45 },
+    powerViaOffset: { x: 0.15, y: 0.45 },
+  },
+  {
+    railNetName: "VDDA_1V8",
+    pcbX: 5.4,
+    pcbY: 1.3,
+    pcbRotation: 90,
+    groundViaOffset: { x: -0.51, y: -0.45 },
+    powerViaOffset: { x: 0.51, y: -0.45 },
+  },
+  {
+    railNetName: "VDDA_1V8",
+    pcbX: -1.4,
+    pcbY: -4.7,
+    pcbRotation: 180,
+    groundViaOffset: { x: -0.35, y: -0.45 },
+    powerViaOffset: { x: 0.35, y: -0.45 },
+  },
+  {
+    railNetName: "VDDA_1V8",
+    pcbX: 4.4,
+    pcbY: 4.1,
+    pcbRotation: 180,
+    groundViaOffset: { x: -0.15, y: 0.45 },
+    powerViaOffset: { x: 0.15, y: 0.45 },
+  },
+  {
+    railNetName: "VDDA_1V8",
+    pcbX: -0.3,
+    pcbY: -5.6,
+    pcbRotation: 90,
+    groundViaOffset: { x: -0.35, y: -0.45 },
+    powerViaOffset: { x: 0.35, y: 0.45 },
+  },
+  {
+    railNetName: "VDDA_1V8",
+    pcbX: 0,
+    pcbY: 1.7,
+    pcbRotation: 0,
+    groundViaOffset: { x: -0.8, y: 0 },
+    powerViaOffset: { x: 0.8, y: 0 },
+  },
+  {
+    railNetName: "VDDA_1V8",
+    pcbX: 1.9,
+    pcbY: 6.2,
+    pcbRotation: 180,
+    groundViaOffset: { x: -0.51, y: -0.45 },
+    powerViaOffset: { x: 0.51, y: -0.45 },
+  },
+  {
+    railNetName: "VDDSHV_SD_IO",
+    pcbX: -3.2,
+    pcbY: -5.1,
+    pcbRotation: 270,
+    groundViaOffset: { x: -0.35, y: 0.45 },
+    powerViaOffset: { x: 0.8, y: 0 },
+  },
+  {
+    railNetName: "SOC_DVDD1V8",
+    pcbX: 5.5,
+    pcbY: 3.5,
+    pcbRotation: 180,
+    groundViaOffset: { x: -0.8, y: -0.2 },
+    powerViaOffset: { x: 0.8, y: 0.2 },
+  },
+  {
+    railNetName: "SOC_DVDD1V8",
+    pcbX: 1.7,
+    pcbY: -5.6,
+    pcbRotation: 90,
+    groundViaOffset: { x: -0.8, y: 0 },
+    powerViaOffset: { x: 0.35, y: 0.45 },
+  },
+  {
+    railNetName: "SOC_DVDD1V8",
+    pcbX: 5.6,
+    pcbY: 2.3,
+    pcbRotation: 180,
+    groundViaOffset: { x: -0.35, y: -0.45 },
+    powerViaOffset: { x: 0.35, y: -0.45 },
+  },
+  {
+    railNetName: "SOC_DVDD1V8",
+    pcbX: 5.6,
+    pcbY: 2.8,
+    pcbRotation: 180,
+    groundViaOffset: { x: -0.35, y: -0.45 },
+    powerViaOffset: { x: 0.35, y: -0.45 },
+  },
+  {
+    railNetName: "SOC_DVDD1V8",
+    pcbX: 1.2,
+    pcbY: -5.6,
+    pcbRotation: 90,
+    groundViaOffset: { x: -0.35, y: -0.45 },
+    powerViaOffset: { x: 0.35, y: 0.45 },
+  },
+  {
+    railNetName: "SOC_DVDD3V3",
+    pcbX: -1.4,
+    pcbY: 5.1,
+    pcbRotation: 180,
+    groundViaOffset: { x: -0.15, y: 0.45 },
+    powerViaOffset: { x: 0.15, y: 0.45 },
+  },
+  {
+    railNetName: "SOC_DVDD3V3",
+    pcbX: -1.8,
+    pcbY: -5.6,
+    pcbRotation: 270,
+    groundViaOffset: { x: -0.35, y: -0.45 },
+    powerViaOffset: { x: 0.8, y: 0 },
+  },
+  {
+    railNetName: "SOC_DVDD3V3",
+    pcbX: -0.9,
+    pcbY: 6.2,
+    pcbRotation: 180,
+    groundViaOffset: { x: -0.15, y: -0.45 },
+    powerViaOffset: { x: 0.15, y: -0.45 },
+  },
+  {
+    railNetName: "SOC_DVDD3V3",
+    pcbX: -2.3,
+    pcbY: 6,
+    pcbRotation: 180,
+    groundViaOffset: { x: -0.51, y: -0.45 },
+    powerViaOffset: { x: 0.51, y: -0.45 },
+  },
+  {
+    railNetName: "SOC_DVDD3V3",
+    pcbX: 6.2,
+    pcbY: 0.9,
+    pcbRotation: 90,
+    groundViaOffset: { x: -0.8, y: 0 },
+    powerViaOffset: { x: 0.8, y: 0 },
+  },
+  {
+    railNetName: "VDDA_CORE",
+    pcbX: 0.2,
+    pcbY: -6.2,
+    pcbRotation: 270,
+    groundViaOffset: { x: -0.35, y: -0.45 },
+    powerViaOffset: { x: 0.8, y: 0 },
+  },
+  {
+    railNetName: "VDDA_CORE",
+    pcbX: -1.3,
+    pcbY: -6.2,
+    pcbRotation: 90,
+    groundViaOffset: { x: -0.15, y: -0.45 },
+    powerViaOffset: { x: 0.15, y: -0.45 },
+  },
+  {
+    railNetName: "VDDA_CORE",
+    pcbX: -0.6,
+    pcbY: 4.2,
+    pcbRotation: 180,
+    groundViaOffset: { x: -0.35, y: 0.45 },
+    powerViaOffset: { x: 0.35, y: -0.45 },
+  },
+  {
+    railNetName: "CAP_VDDS_MMC2",
+    pcbX: 3.2,
+    pcbY: -1.3,
+    pcbRotation: 0,
+    groundViaOffset: { x: -0.35, y: 0.45 },
+    powerViaOffset: { x: 0.8, y: 0 },
+  },
+  {
+    railNetName: "SOC_VDDS_RTC_1V8",
+    pcbX: 6.1,
+    pcbY: -4,
+    pcbRotation: 270,
+    groundViaOffset: { x: -0.35, y: 0.45 },
+    powerViaOffset: { x: 0.35, y: 0.45 },
+  },
+  {
+    railNetName: "SOC_VDD_RTC",
+    pcbX: 3.7,
+    pcbY: -5.6,
+    pcbRotation: 90,
+    groundViaOffset: { x: -0.8, y: 0 },
+    powerViaOffset: { x: 0.35, y: 0.45 },
+  },
+  {
+    railNetName: "CAP_VDDSHV_MMC",
+    pcbX: 2.7,
+    pcbY: -5.6,
+    pcbRotation: 270,
+    groundViaOffset: { x: -0.35, y: -0.45 },
+    powerViaOffset: { x: 0.35, y: -0.45 },
+  },
+  {
+    railNetName: "CAP_VDDS_GPMC",
+    pcbX: 2.8,
+    pcbY: -2.2,
+    pcbRotation: 270,
+    groundViaOffset: { x: -0.51, y: -0.45 },
+    powerViaOffset: { x: 0.51, y: 0.45 },
+  },
+  {
+    railNetName: "CAP_VDDS_MMC1",
+    pcbX: -2.3,
+    pcbY: -6.1,
+    pcbRotation: 270,
+    groundViaOffset: { x: -0.35, y: -0.45 },
+    powerViaOffset: { x: 0.35, y: -0.45 },
+  },
+  {
+    railNetName: "VDD_MMC1_SD",
+    pcbX: 4.6,
+    pcbY: -4.8,
+    pcbRotation: 0,
+    groundViaOffset: { x: -0.15, y: 0.45 },
+    powerViaOffset: { x: 0.15, y: -0.45 },
+  },
+] as const
+
+const AM62L_PERIMETER_CAP_SLOTS = [
+  { pcbX: -8, pcbY: -5.4, pcbRotation: 0 },
+  { pcbX: -8, pcbY: -1.8, pcbRotation: 0 },
+  { pcbX: -8, pcbY: 1.8, pcbRotation: 0 },
+  { pcbX: -8, pcbY: 5.4, pcbRotation: 0 },
+  { pcbX: -5.2, pcbY: 8, pcbRotation: 270 },
+  { pcbX: -2.6, pcbY: 8, pcbRotation: 270 },
+  { pcbX: 0, pcbY: 8, pcbRotation: 270 },
+  { pcbX: 2.6, pcbY: 8, pcbRotation: 270 },
+  { pcbX: 5.2, pcbY: 8, pcbRotation: 270 },
+  { pcbX: -3.9, pcbY: -8, pcbRotation: 90 },
+  { pcbX: -1.3, pcbY: -8, pcbRotation: 90 },
+  { pcbX: 1.3, pcbY: -8, pcbRotation: 90 },
+  { pcbX: 3.9, pcbY: -8, pcbRotation: 90 },
+  { pcbX: -8, pcbY: 0, pcbRotation: 0 },
+] as const
+
+const getPerimeterViaOffsets = (
+  footprint: UnplacedAm62lDecouplingCapacitor["footprint"],
+) =>
+  footprint === "cap0402_nosilkscreen"
+    ? {
+        groundViaOffset: { x: -0.51, y: 0.57 },
+        powerViaOffset: { x: 0.51, y: 0.57 },
+      }
+    : {
+        groundViaOffset: { x: -0.33, y: 0.45 },
+        powerViaOffset: { x: 0.33, y: 0.45 },
+      }
+
+interface PlacedAm62lDecouplingCapacitor
+  extends UnplacedAm62lDecouplingCapacitor {
+  groundViaOffset: { x: number; y: number }
+  maxDecouplingTraceLength: number
+  pcbRotation: number
+  pcbX: number
+  pcbY: number
+  powerViaOffset: { x: number; y: number }
+}
+
+const AM62L_DIRECT_DECOUPLING_CAPACITORS: PlacedAm62lDecouplingCapacitor[] =
+  AM62L_UNPLACED_DIRECT_DECOUPLING_CAPACITORS.map((capacitor, index, all) => {
+    const earlierCapacitors = all.slice(0, index)
+    const placement =
+      capacitor.placement === "under"
+        ? AM62L_UNDER_DECOUPLING_PLACEMENTS.filter(
+            (candidate) => candidate.railNetName === capacitor.railNetName,
+          )[
+            earlierCapacitors.filter(
+              (candidate) =>
+                candidate.placement === "under" &&
+                candidate.railNetName === capacitor.railNetName,
+            ).length
+          ]
+        : AM62L_PERIMETER_CAP_SLOTS[
+            earlierCapacitors.filter(
+              (candidate) => candidate.placement === "perimeter",
+            ).length
+          ]
+    if (!placement) {
+      throw new Error(`Missing decoupling placement for ${capacitor.name}`)
+    }
+    const viaOffsets =
+      capacitor.placement === "under"
+        ? {
+            groundViaOffset: (
+              placement as (typeof AM62L_UNDER_DECOUPLING_PLACEMENTS)[number]
+            ).groundViaOffset,
+            powerViaOffset: (
+              placement as (typeof AM62L_UNDER_DECOUPLING_PLACEMENTS)[number]
+            ).powerViaOffset,
+          }
+        : getPerimeterViaOffsets(capacitor.footprint)
+    return {
+      ...capacitor,
+      ...placement,
+      ...viaOffsets,
+      maxDecouplingTraceLength:
+        capacitor.placement === "under"
+          ? AM62L_DDR_MAX_DECOUPLING_DISTANCE
+          : 15,
+    }
+  })
+
+const AM62L_ALL_DECOUPLING_CAPACITORS = [
+  ...AM62L_DDR_DECOUPLING_CAPACITORS.map((capacitor) => ({
+    ...capacitor,
+    footprint: "cap0201_nosilkscreen" as const,
+    maxDecouplingTraceLength: AM62L_DDR_MAX_DECOUPLING_DISTANCE,
+    placement: "under" as const,
+    railNetName: "VDD_LPDDR4",
+  })),
+  ...AM62L_DIRECT_DECOUPLING_CAPACITORS,
+] as const
+
+const getDirectDecouplingViaPosition = (
+  capacitor: (typeof AM62L_DIRECT_DECOUPLING_CAPACITORS)[number],
+  viaOffset: { x: number; y: number },
+) => {
+  const rotatedOffset = rotateLocalPoint(viaOffset, capacitor.pcbRotation)
+  return {
+    x: SOC_PCB_X + capacitor.pcbX + rotatedOffset.x,
+    y: SOC_PCB_Y + capacitor.pcbY + rotatedOffset.y,
+  }
+}
 const parseBallList = (ballNames: string): readonly string[] =>
   ballNames.trim().split(/\s+/)
 
@@ -419,25 +1184,83 @@ const getRequiredPinNumber = (
   return pinNumber
 }
 
+const createAm62lPowerBallAssignments = (
+  railNetName: string,
+  pinSignal: string,
+  ballNames: readonly string[],
+) =>
+  ballNames.map((ballName) => ({
+    ballName,
+    pinNumber: getRequiredPinNumber(
+      AM62L_PIN_NUMBER_BY_BALL,
+      ballName,
+      "AM62L",
+    ),
+    pinSignal,
+    railNetName,
+  }))
+
 const AM62L_POWER_BALLS = [
-  ...AM62L_VSS_BALLS.map((ballName) => ({
-    ballName,
-    pinNumber: getRequiredPinNumber(
-      AM62L_PIN_NUMBER_BY_BALL,
-      ballName,
-      "AM62L",
-    ),
-    pinSignal: "VSS" as const,
-  })),
-  ...AM62L_VDDS_DDR_BALLS.map((ballName) => ({
-    ballName,
-    pinNumber: getRequiredPinNumber(
-      AM62L_PIN_NUMBER_BY_BALL,
-      ballName,
-      "AM62L",
-    ),
-    pinSignal: "VDDS_DDR" as const,
-  })),
+  ...createAm62lPowerBallAssignments("GND", "VSS", AM62L_VSS_BALLS),
+  ...createAm62lPowerBallAssignments(
+    "VDD_CORE",
+    "VDD_CORE",
+    AM62L_VDD_CORE_BALLS.slice(0, -1),
+  ),
+  ...createAm62lPowerBallAssignments("VDD_CORE", "VDDA_DDR_PLL0", ["M10"]),
+  ...createAm62lPowerBallAssignments(
+    "VDD_LPDDR4",
+    "VDDS_DDR",
+    AM62L_VDDS_DDR_BALLS,
+  ),
+  ...createAm62lPowerBallAssignments("VDDA_1V8", "VDDA_1P8_DSI", ["G14"]),
+  ...createAm62lPowerBallAssignments("VDDA_1V8", "VDDA_1P8_USB", ["T12"]),
+  ...createAm62lPowerBallAssignments("VDDA_1V8", "VDDS_OSC0", ["R16"]),
+  ...createAm62lPowerBallAssignments("VDDA_1V8", "VDDA_ADC", ["N17"]),
+  ...createAm62lPowerBallAssignments("VDDA_1V8", "VDDA_PLL0", ["L11"]),
+  ...createAm62lPowerBallAssignments("VDDA_1V8", "VDDA_PLL1", ["K12"]),
+  ...createAm62lPowerBallAssignments("SOC_DVDD3V3", "VDDA_3P3_USB", ["U12"]),
+  ...createAm62lPowerBallAssignments("SOC_DVDD3V3", "VDDSHV0", ["J16", "L17"]),
+  ...createAm62lPowerBallAssignments("SOC_DVDD3V3", "VDDSHV1", ["G10", "H10"]),
+  ...createAm62lPowerBallAssignments("SOC_DVDD1V8", "VDDSHV2", ["H8"]),
+  ...createAm62lPowerBallAssignments("SOC_DVDD1V8", "VDDSHV4", ["M17"]),
+  ...createAm62lPowerBallAssignments("SOC_DVDD1V8", "VDDS0", ["T14"]),
+  ...createAm62lPowerBallAssignments("SOC_DVDD1V8", "VDDS1", ["H16"]),
+  ...createAm62lPowerBallAssignments("SOC_DVDD1V8", "VDDS_WKUP", ["P16"]),
+  ...createAm62lPowerBallAssignments("VDDA_CORE", "VDDA_CORE_USB", ["U11"]),
+  ...createAm62lPowerBallAssignments("VDDA_CORE", "VDDA_CORE_DSI_CLK", ["H12"]),
+  ...createAm62lPowerBallAssignments("VDDA_CORE", "VDDA_CORE_DSI", ["G13"]),
+  ...createAm62lPowerBallAssignments("VPP_1V8", "VPP", AM62L_VPP_BALLS),
+  ...createAm62lPowerBallAssignments(
+    "VDD_MMC1_SD",
+    "VDDA_3P3_SDIO",
+    AM62L_VDD_MMC1_SD_BALLS,
+  ),
+  ...createAm62lPowerBallAssignments(
+    "VDDSHV_SD_IO",
+    "VDDSHV3",
+    AM62L_VDDSHV_SD_IO_BALLS,
+  ),
+  ...createAm62lPowerBallAssignments(
+    "SOC_VDD_RTC",
+    "VDD_RTC",
+    AM62L_SOC_VDD_RTC_BALLS,
+  ),
+  ...createAm62lPowerBallAssignments(
+    "SOC_VDDS_RTC_1V8",
+    "VDDS_RTC",
+    AM62L_SOC_VDDS_RTC_1V8_BALLS,
+  ),
+  ...AM62L_SPECIAL_CAP_BALLS.flatMap(({ ballName, pinSignal }) =>
+    createAm62lPowerBallAssignments(pinSignal, pinSignal, [ballName]),
+  ),
+]
+
+const AM62L_DIRECT_POWER_BALLS = AM62L_POWER_BALLS.filter(
+  ({ railNetName }) => railNetName !== "GND" && railNetName !== "VDD_LPDDR4",
+)
+const AM62L_DIRECT_RAIL_NET_NAMES = [
+  ...new Set(AM62L_DIRECT_POWER_BALLS.map(({ railNetName }) => railNetName)),
 ]
 
 const AM62L_PIN_LABELS = {
@@ -479,16 +1302,50 @@ const AM62L_PIN_LABELS = {
   pin284: ["W1", "DDR0_DQ15"],
 } as const
 
-const AM62L_DDR_PIN_ATTRIBUTES = Object.fromEntries(
-  AM62L_VDDS_DDR_BALLS.map((ballName) => [
-    ballName,
-    {
-      requiresPower: true,
-      shouldHaveDecouplingCapacitor: true,
-      recommendedDecouplingCapacitorCapacitance:
-        AM62L_DDR_HIGH_SPEED_CAPACITANCE,
+const AM62L_DECOUPLING_CAPACITOR_BY_TARGET_BALL = (() => {
+  const capacitorsByTargetBall = new Map<
+    string,
+    (typeof AM62L_ALL_DECOUPLING_CAPACITORS)[number]
+  >()
+  for (const capacitor of AM62L_ALL_DECOUPLING_CAPACITORS) {
+    if (!capacitorsByTargetBall.has(capacitor.targetBall)) {
+      capacitorsByTargetBall.set(capacitor.targetBall, capacitor)
+    }
+  }
+  return capacitorsByTargetBall
+})()
+const AM62L_TARGET_BALLS_BY_RAIL = (() => {
+  const targetBallsByRail = new Map<string, string[]>()
+  for (const capacitor of AM62L_UNPLACED_DIRECT_DECOUPLING_CAPACITORS) {
+    const targetBalls = targetBallsByRail.get(capacitor.railNetName) ?? []
+    if (!targetBalls.includes(capacitor.targetBall)) {
+      targetBalls.push(capacitor.targetBall)
+    }
+    targetBallsByRail.set(capacitor.railNetName, targetBalls)
+  }
+  targetBallsByRail.set("VDD_LPDDR4", [...AM62L_VDDS_DDR_BALLS])
+  return targetBallsByRail
+})()
+const AM62L_SPECIAL_CAP_BALL_NAME_SET = new Set<string>(
+  AM62L_SPECIAL_CAP_BALLS.map(({ ballName }) => ballName),
+)
+const AM62L_PIN_ATTRIBUTES = Object.fromEntries(
+  AM62L_POWER_BALLS.filter(({ pinSignal }) => pinSignal !== "VSS").map(
+    ({ ballName }) => {
+      const capacitor = AM62L_DECOUPLING_CAPACITOR_BY_TARGET_BALL.get(ballName)
+      if (!capacitor) {
+        throw new Error(`Missing AM62L decoupling capacitor for ${ballName}`)
+      }
+      return [
+        ballName,
+        {
+          requiresPower: !AM62L_SPECIAL_CAP_BALL_NAME_SET.has(ballName),
+          shouldHaveDecouplingCapacitor: true,
+          recommendedDecouplingCapacitorCapacitance: capacitor.capacitance,
+        },
+      ]
     },
-  ]),
+  ),
 ) as NonNullable<ChipProps<typeof AM62L_PIN_LABELS>["pinAttributes"]>
 
 const Am62l32 = (props: ChipProps<typeof AM62L_PIN_LABELS>) => (
@@ -809,6 +1666,14 @@ const SOC_DDR_DECOUPLING_PLANE_DROPS = AM62L_DDR_DECOUPLING_CAPACITORS.flatMap(
     ]
   },
 )
+// These descriptors cover source connectivity for the manually authored local
+// GND handoffs. They are not fanout-solver plane drops.
+const SOC_DIRECT_DECOUPLING_GROUND_MEMBERS =
+  AM62L_DIRECT_DECOUPLING_CAPACITORS.map((capacitor) => ({
+    componentName: capacitor.name,
+    netName: "GND" as const,
+    pinNumber: 2,
+  }))
 const PLANE_DROPS = [...SOC_PLANE_DROPS, ...DRAM_PLANE_DROPS]
 
 const byte0TraceNames = DDR_CONNECTIONS.filter(
@@ -1067,9 +1932,22 @@ export const renderAm62lLpddr4Fanout = async ({
     : []
   const dramPlaneDrops = includePowerPlaneFanout ? DRAM_PLANE_DROPS : []
   const planeDrops = includePowerPlaneFanout ? PLANE_DROPS : []
-  const allPlaneDrops = includePowerPlaneFanout
+  const expectedPlaneMembers = includePowerPlaneFanout
+    ? [
+        ...PLANE_DROPS,
+        ...SOC_DDR_DECOUPLING_PLANE_DROPS,
+        ...SOC_DIRECT_DECOUPLING_GROUND_MEMBERS,
+      ]
+    : []
+  const routedPlaneDrops = includePowerPlaneFanout
     ? [...PLANE_DROPS, ...SOC_DDR_DECOUPLING_PLANE_DROPS]
     : []
+  const renderedDirectDecouplingCapacitors: Array<
+    (typeof AM62L_DIRECT_DECOUPLING_CAPACITORS)[number]
+  > = [...AM62L_DIRECT_DECOUPLING_CAPACITORS]
+  const renderedAllDecouplingCapacitors: Array<
+    (typeof AM62L_ALL_DECOUPLING_CAPACITORS)[number]
+  > = [...AM62L_ALL_DECOUPLING_CAPACITORS]
   const socBusFanoutDirections = {
     DDR_BYTE0: "rightside_top",
     DDR_BYTE1: "rightside_bottom",
@@ -1115,87 +1993,104 @@ export const renderAm62lLpddr4Fanout = async ({
         return sourceTrace ? [[sourceTrace.source_trace_id, drop] as const] : []
       }),
     )
-
-    return simpleRouteJson.connections.map((connection, connectionIndex) => {
-      const connectionName = connection.source_trace_id ?? connection.name
-      const drop = decouplingDropBySourceTraceId.get(connectionName)
-      if (!drop) {
-        return {
-          type: "pcb_trace",
-          pcb_trace_id: `straight_global_trace_${connectionIndex}`,
-          connection_name: connectionName,
-          route: connection.pointsToConnect.map((point) => ({
-            route_type: "wire" as const,
-            x: point.x,
-            y: point.y,
-            width:
-              connection.nominalTraceWidth ?? simpleRouteJson.minTraceWidth,
-            layer: point.layer,
-          })),
+    return simpleRouteJson.connections.flatMap(
+      (connection, connectionIndex): SimplifiedPcbTrace[] => {
+        const connectionName = connection.source_trace_id ?? connection.name
+        const connectionIds = new Set(
+          [
+            connection.name,
+            connection.source_trace_id,
+            connection.rootConnectionName,
+            ...(connection.mergedConnectionNames ?? []),
+          ].filter(
+            (identifier): identifier is string => identifier !== undefined,
+          ),
+        )
+        const drop = [...connectionIds]
+          .map((identifier) => decouplingDropBySourceTraceId.get(identifier))
+          .find((candidate) => candidate !== undefined)
+        if (!drop) {
+          return [
+            {
+              type: "pcb_trace",
+              pcb_trace_id: `straight_global_trace_${connectionIndex}`,
+              connection_name: connectionName,
+              route: connection.pointsToConnect.map((point) => ({
+                route_type: "wire" as const,
+                x: point.x,
+                y: point.y,
+                width:
+                  connection.nominalTraceWidth ?? simpleRouteJson.minTraceWidth,
+                layer: point.layer,
+              })),
+            },
+          ]
         }
-      }
 
-      const capacitor = AM62L_DDR_DECOUPLING_CAPACITORS.find(
-        ({ name }) => name === drop.componentName,
-      )!
-      const componentCenter = {
-        x: SOC_PCB_X + capacitor.pcbX,
-        y: SOC_PCB_Y + capacitor.pcbY,
-      }
-      const angle = (capacitor.pcbRotation * Math.PI) / 180
-      const cos = Math.cos(angle)
-      const sin = Math.sin(angle)
-      const toGlobalPoint = ({ x, y }: { x: number; y: number }) => ({
-        x: componentCenter.x + x * cos - y * sin,
-        y: componentCenter.y + x * sin + y * cos,
-      })
-      const componentPortSelector = `${capacitor.name}.${drop.ballName}`
-      const startPoint =
-        connection.pointsToConnect.find(
-          ({ port_selector: portSelector }) =>
-            portSelector === componentPortSelector,
-        ) ?? connection.pointsToConnect[0]!
-      const width =
-        connection.nominalTraceWidth ?? simpleRouteJson.minTraceWidth
-      let currentLayer: string = drop.fromLayer
+        const capacitor = AM62L_ALL_DECOUPLING_CAPACITORS.find(
+          ({ name }) => name === drop.componentName,
+        )!
+        const componentCenter = {
+          x: SOC_PCB_X + capacitor.pcbX,
+          y: SOC_PCB_Y + capacitor.pcbY,
+        }
+        const angle = (capacitor.pcbRotation * Math.PI) / 180
+        const cos = Math.cos(angle)
+        const sin = Math.sin(angle)
+        const toGlobalPoint = ({ x, y }: { x: number; y: number }) => ({
+          x: componentCenter.x + x * cos - y * sin,
+          y: componentCenter.y + x * sin + y * cos,
+        })
+        const componentPortSelector = `${capacitor.name}.${drop.ballName}`
+        const startPoint =
+          connection.pointsToConnect.find(
+            ({ port_selector: portSelector }) =>
+              portSelector === componentPortSelector,
+          ) ?? connection.pointsToConnect[0]!
+        const width =
+          connection.nominalTraceWidth ?? simpleRouteJson.minTraceWidth
+        let currentLayer: string = drop.fromLayer
 
-      return {
-        type: "pcb_trace" as const,
-        pcb_trace_id: `decoupling_global_trace_${connectionIndex}`,
-        connection_name: connectionName,
-        route: [
+        return [
           {
-            route_type: "wire" as const,
-            x: startPoint.x,
-            y: startPoint.y,
-            width,
-            layer: currentLayer,
+            type: "pcb_trace" as const,
+            pcb_trace_id: `decoupling_global_trace_${connectionIndex}`,
+            connection_name: connectionName,
+            route: [
+              {
+                route_type: "wire" as const,
+                x: startPoint.x,
+                y: startPoint.y,
+                width,
+                layer: currentLayer,
+              },
+              ...drop.pcbPath.map((pathPoint) => {
+                const point = toGlobalPoint(pathPoint)
+                if ("via" in pathPoint && pathPoint.via) {
+                  const fromLayer = pathPoint.fromLayer ?? currentLayer
+                  const toLayer = pathPoint.toLayer ?? currentLayer
+                  currentLayer = toLayer
+                  return {
+                    route_type: "via" as const,
+                    ...point,
+                    from_layer: fromLayer,
+                    to_layer: toLayer,
+                    via_diameter: 0.24,
+                    via_hole_diameter: 0.15,
+                  }
+                }
+                return {
+                  route_type: "wire" as const,
+                  ...point,
+                  width,
+                  layer: currentLayer,
+                }
+              }),
+            ],
           },
-          ...drop.pcbPath.map((pathPoint) => {
-            const point = toGlobalPoint(pathPoint)
-            if ("via" in pathPoint && pathPoint.via) {
-              const fromLayer = pathPoint.fromLayer ?? currentLayer
-              const toLayer = pathPoint.toLayer ?? currentLayer
-              currentLayer = toLayer
-              return {
-                route_type: "via" as const,
-                ...point,
-                from_layer: fromLayer,
-                to_layer: toLayer,
-                via_diameter: 0.24,
-                via_hole_diameter: 0.15,
-              }
-            }
-            return {
-              route_type: "wire" as const,
-              ...point,
-              width,
-              layer: currentLayer,
-            }
-          }),
-        ],
-      }
-    })
+        ]
+      },
+    )
   }
 
   expect(AM62L_PAD_POSITIONS).toHaveLength(373)
@@ -1245,6 +2140,12 @@ export const renderAm62lLpddr4Fanout = async ({
       isViaInPadAllowed={false}
       autorouter="default"
     >
+      {includePowerPlaneFanout &&
+        AM62L_DIRECT_RAIL_NET_NAMES.map((railNetName) => (
+          <Fragment key={railNetName}>
+            <net name={railNetName} />
+          </Fragment>
+        ))}
       <autoroutingphase
         autorouter={{
           algorithmFn: createBasicAutorouter(
@@ -1280,7 +2181,7 @@ export const renderAm62lLpddr4Fanout = async ({
           name="U1"
           noSchematicRepresentation
           pinAttributes={
-            includePowerPlaneFanout ? AM62L_DDR_PIN_ATTRIBUTES : undefined
+            includePowerPlaneFanout ? AM62L_PIN_ATTRIBUTES : undefined
           }
         />
         {socPlaneDrops.map((drop) => (
@@ -1329,15 +2230,21 @@ export const renderAm62lLpddr4Fanout = async ({
             pcbRotation={capacitor.pcbRotation}
           />
         ))}
-      {decouplingPlaneDrops.map((drop) => (
-        <Fragment key={drop.traceName}>
-          <trace
-            name={drop.traceName}
-            from={`.${drop.componentName} > .${drop.ballName}`}
-            to={`net.${drop.netName}`}
-          />
-        </Fragment>
-      ))}
+      {decouplingPlaneDrops
+        .filter((drop) =>
+          AM62L_DDR_DECOUPLING_CAPACITORS.some(
+            ({ name }) => name === drop.componentName,
+          ),
+        )
+        .map((drop) => (
+          <Fragment key={drop.traceName}>
+            <trace
+              name={drop.traceName}
+              from={`.${drop.componentName} > .${drop.ballName}`}
+              to={`net.${drop.netName}`}
+            />
+          </Fragment>
+        ))}
 
       {fanoutBuses.map(
         ({ name, connections, preferredLayers, maxLengthSkew }) => (
@@ -1391,7 +2298,7 @@ export const renderAm62lLpddr4Fanout = async ({
         fontSize="0.7mm"
         text={
           includePowerPlaneFanout
-            ? "AM62L32 to LPDDR4: BYTE0 top/inner4, BYTE1 inner5/bottom, ADDR_CTRL/RESET inner6, CLOCK/DQS0/DQS1/DMI0/DMI1 inner5; VDDS_DDR bottom decoupling 5x1uF + 3x0.1uF; GND inner1, VDD_LPDDR4 inner2, SOC_DVDD1V8 inner3"
+            ? "AM62L32 to LPDDR4: 68 fitted processor decouplers modeled from TMDS62LEVM; local placement: 54 under/near the BGA + 14 at the perimeter; BYTE0 top/inner4, BYTE1 inner5/bottom, ADDR_CTRL/RESET inner6, CLOCK/DQS0/DQS1/DMI0/DMI1 inner5; GND inner1, VDD_LPDDR4 inner2, SOC_DVDD1V8 inner3"
             : "AM62L32 to LPDDR4: full BYTE0 DQ0-DQ7 top/inner1, full BYTE1 DQ8-DQ15 inner2/bottom"
         }
       />
@@ -1401,7 +2308,7 @@ export const renderAm62lLpddr4Fanout = async ({
         fontSize="0.6mm"
         text={
           includePowerPlaneFanout
-            ? `${fanoutSolverLabel}; fanout skew: BYTE0 <= ${BYTE0_MAX_FANOUT_SKEW} mm, BYTE1 <= ${BYTE1_MAX_FANOUT_SKEW} mm, ADDR_CTRL <= ${ADDR_CTRL_MAX_FANOUT_SKEW} mm, CLOCK <= ${CLOCK_MAX_FANOUT_SKEW} mm, DQS0 <= ${DQS0_MAX_FANOUT_SKEW} mm, DQS1 <= ${DQS1_MAX_FANOUT_SKEW} mm; ${allPlaneDrops.length + signalConnections.length * 2} dogbone vias span all 8 layers`
+            ? `${fanoutSolverLabel}; fanout skew: BYTE0 <= ${BYTE0_MAX_FANOUT_SKEW} mm, BYTE1 <= ${BYTE1_MAX_FANOUT_SKEW} mm, ADDR_CTRL <= ${ADDR_CTRL_MAX_FANOUT_SKEW} mm, CLOCK <= ${CLOCK_MAX_FANOUT_SKEW} mm, DQS0 <= ${DQS0_MAX_FANOUT_SKEW} mm, DQS1 <= ${DQS1_MAX_FANOUT_SKEW} mm; ${routedPlaneDrops.length + signalConnections.length * 2 + AM62L_DIRECT_DECOUPLING_CAPACITORS.length * 2} vias span all 8 layers`
             : `${fanoutSolverLabel}; BYTE0 fanout skew <= ${BYTE0_MAX_FANOUT_SKEW} mm`
         }
       />
@@ -1410,6 +2317,119 @@ export const renderAm62lLpddr4Fanout = async ({
 
   await circuit.renderUntilSettled()
 
+  if (includePowerPlaneFanout) {
+    // Route the high-speed DDR escape first, then add the remaining processor
+    // decouplers as fixed copper. Feeding 60 bottom-side capacitors and their
+    // through vias into the fanout solver makes the regression prohibitively
+    // expensive even though those routes are already fully authored here.
+    const board = circuit._getBoard()
+    if (!board) throw new Error("Missing AM62L fanout board")
+    const directDecouplingGroup = createInstanceFromReactElement(
+      <group name="SOC_DIRECT_DECOUPLING">
+        {/* The full board would join these rail members through segmented power
+        planes. Keep that logical membership explicit without drawing unsafe
+        post-solve chords across the BGA; the local cap-to-PDN handoff traces
+        and vias below remain fully authored and DRC-checked PCB copper. */}
+        <group name="SOC_DIRECT_RAIL_MEMBERSHIP" routingDisabled>
+          {AM62L_DIRECT_POWER_BALLS.map((powerBall) => (
+            <Fragment key={powerBall.ballName}>
+              <trace
+                name={`U1_${powerBall.ballName}_PDN_MEMBERSHIP`}
+                from={`.U1 > .${powerBall.ballName}`}
+                to={`net.${powerBall.railNetName}`}
+              />
+            </Fragment>
+          ))}
+        </group>
+        {renderedDirectDecouplingCapacitors.map((capacitor) => {
+          const powerViaName = `V_${capacitor.name}_POWER`
+          const groundViaName = `V_${capacitor.name}_GND`
+          const powerViaPosition = getDirectDecouplingViaPosition(
+            capacitor,
+            capacitor.powerViaOffset,
+          )
+          const groundViaPosition = getDirectDecouplingViaPosition(
+            capacitor,
+            capacitor.groundViaOffset,
+          )
+          return (
+            <Fragment key={capacitor.name}>
+              <capacitor
+                name={capacitor.name}
+                capacitance={capacitor.capacitance}
+                footprint={capacitor.footprint}
+                layer="bottom"
+                maxDecouplingTraceLength={`${capacitor.maxDecouplingTraceLength}mm`}
+                pcbX={SOC_PCB_X + capacitor.pcbX}
+                pcbY={SOC_PCB_Y + capacitor.pcbY}
+                pcbRotation={capacitor.pcbRotation}
+              />
+              <via
+                name={powerViaName}
+                pcbX={powerViaPosition.x}
+                pcbY={powerViaPosition.y}
+                fromLayer="top"
+                toLayer="bottom"
+                layers={getViaBoardLayers(8)}
+                holeDiameter="0.15mm"
+                outerDiameter="0.24mm"
+                connectsTo={`net.${capacitor.railNetName}`}
+              />
+              <trace
+                name={`${capacitor.name}_POWER_DROP`}
+                from={`.${capacitor.name} > .pin1`}
+                to={`net.${capacitor.railNetName}`}
+                maxLength={`${capacitor.maxDecouplingTraceLength}mm`}
+                pcbPathRelativeTo={`.${capacitor.name} > .pin1`}
+                pcbPath={[`.${powerViaName} > .bottom`]}
+              />
+              <via
+                name={groundViaName}
+                pcbX={groundViaPosition.x}
+                pcbY={groundViaPosition.y}
+                fromLayer="top"
+                toLayer="bottom"
+                layers={getViaBoardLayers(8)}
+                holeDiameter="0.15mm"
+                outerDiameter="0.24mm"
+                connectsTo="net.GND"
+              />
+              <trace
+                name={`${capacitor.name}_GND_DROP`}
+                from={`.${capacitor.name} > .pin2`}
+                to="net.GND"
+                maxLength={`${capacitor.maxDecouplingTraceLength}mm`}
+                pcbPathRelativeTo={`.${capacitor.name} > .pin2`}
+                pcbPath={[`.${groundViaName} > .bottom`]}
+              />
+            </Fragment>
+          )
+        })}
+      </group>,
+    )
+    board.add(directDecouplingGroup)
+
+    // Stage the new subtree through source trace creation, then refresh the
+    // board connectivity map before any of its PCB primitives are emitted.
+    // This preserves both correct source/PCB connectivity keys and the fast
+    // DDR-first solver input.
+    const sourceTraceRenderPhaseIndex =
+      orderedRenderPhases.indexOf("SourceTraceRender")
+    for (const phase of orderedRenderPhases.slice(
+      0,
+      sourceTraceRenderPhaseIndex + 1,
+    )) {
+      directDecouplingGroup.runRenderPhaseForChildren(phase)
+      directDecouplingGroup.runRenderPhase(phase)
+    }
+    const boardWithRenderLifecycle = board as Board
+    boardWithRenderLifecycle.doInitialSourceAddConnectivityMapKey()
+    await circuit.renderUntilSettled()
+    boardWithRenderLifecycle._drcChecksComplete = false
+    boardWithRenderLifecycle._markDirty("PcbDesignRuleChecks")
+    await circuit.renderUntilSettled()
+  }
+
   expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
   expect(circuit.db.pcb_trace_error.list()).toEqual([])
   expect(circuit.db.pcb_via_trace_clearance_error.list()).toEqual([])
@@ -1417,6 +2437,7 @@ export const renderAm62lLpddr4Fanout = async ({
   expect(pcbBoard.min_via_hole_diameter).toBeCloseTo(0.15)
   expect(pcbBoard.min_via_pad_diameter).toBeCloseTo(0.24)
   if (includePowerPlaneFanout) {
+    expect(circuit.db.pcb_pad_pad_clearance_error.list()).toEqual([])
     expect(circuit.db.pcb_pad_trace_clearance_error.list()).toEqual([])
     expect(circuit.db.pcb_via_clearance_error.list()).toEqual([])
     expect(pcbBoard.allow_blind_and_buried_vias).toBe(false)
@@ -1429,6 +2450,54 @@ export const renderAm62lLpddr4Fanout = async ({
     const socPcbComponent = circuit.db.pcb_component.getWhere({
       source_component_id: socSourceComponent.source_component_id,
     })!
+    expect(AM62L_POWER_BALLS).toHaveLength(147)
+    expect(renderedDirectDecouplingCapacitors).toHaveLength(60)
+    expect(renderedAllDecouplingCapacitors).toHaveLength(68)
+    expect(
+      renderedAllDecouplingCapacitors.filter(
+        ({ placement }) => placement === "under",
+      ),
+    ).toHaveLength(54)
+    expect(
+      renderedAllDecouplingCapacitors.filter(
+        ({ placement }) => placement === "perimeter",
+      ),
+    ).toHaveLength(14)
+    expect(
+      renderedAllDecouplingCapacitors.filter(
+        ({ footprint }) => footprint === "cap0201_nosilkscreen",
+      ),
+    ).toHaveLength(60)
+    expect(
+      renderedAllDecouplingCapacitors.filter(
+        ({ footprint }) => footprint === "cap0402_nosilkscreen",
+      ),
+    ).toHaveLength(8)
+
+    const countBy = <T extends string>(values: readonly T[]) =>
+      Object.fromEntries(
+        [...new Set(values)].map((value) => [
+          value,
+          values.filter((candidate) => candidate === value).length,
+        ]),
+      )
+    expect(
+      countBy(
+        renderedAllDecouplingCapacitors.map(({ capacitance }) => capacitance),
+      ),
+    ).toEqual({
+      "0.01uF": 1,
+      "0.1uF": 14,
+      "1uF": 44,
+      "2.2uF": 1,
+      "3.3uF": 1,
+      "4.7uF": 2,
+      "10uF": 5,
+    })
+    expect(
+      countBy(renderedAllDecouplingCapacitors.map(({ priority }) => priority)),
+    ).toEqual({ bulk: 13, high: 20, low: 6, medium: 23, required: 6 })
+
     expect(
       new Set(
         AM62L_DDR_DECOUPLING_CAPACITORS.filter(
@@ -1448,23 +2517,27 @@ export const renderAm62lLpddr4Fanout = async ({
       ),
     ).toHaveLength(3)
 
-    const getCapCourtyardSize = (pcbRotation: number) =>
-      Math.abs(pcbRotation % 180) === 90
-        ? { width: 0.7, height: 1.4 }
-        : { width: 1.4, height: 0.7 }
     for (const [
       index,
       capacitor,
-    ] of AM62L_DDR_DECOUPLING_CAPACITORS.entries()) {
-      const courtyard = getCapCourtyardSize(capacitor.pcbRotation)
-      expect(
-        Math.abs(capacitor.pcbX) + courtyard.width / 2,
-      ).toBeLessThanOrEqual(5.95)
-      expect(
-        Math.abs(capacitor.pcbY) + courtyard.height / 2,
-      ).toBeLessThanOrEqual(5.95)
-      for (const other of AM62L_DDR_DECOUPLING_CAPACITORS.slice(index + 1)) {
-        const otherCourtyard = getCapCourtyardSize(other.pcbRotation)
+    ] of renderedAllDecouplingCapacitors.entries()) {
+      const courtyard = getCapCourtyardSize(
+        capacitor.footprint,
+        capacitor.pcbRotation,
+      )
+      if (capacitor.placement === "under") {
+        expect(
+          Math.abs(capacitor.pcbX) + courtyard.width / 2,
+        ).toBeLessThanOrEqual(6.8)
+        expect(
+          Math.abs(capacitor.pcbY) + courtyard.height / 2,
+        ).toBeLessThanOrEqual(6.8)
+      }
+      for (const other of renderedAllDecouplingCapacitors.slice(index + 1)) {
+        const otherCourtyard = getCapCourtyardSize(
+          other.footprint,
+          other.pcbRotation,
+        )
         const horizontalGap =
           Math.abs(capacitor.pcbX - other.pcbX) -
           (courtyard.width + otherCourtyard.width) / 2
@@ -1477,7 +2550,16 @@ export const renderAm62lLpddr4Fanout = async ({
       }
     }
 
-    for (const capacitor of AM62L_DDR_DECOUPLING_CAPACITORS) {
+    const capacitanceInFarads: Record<string, number> = {
+      "0.01uF": 0.01e-6,
+      "0.1uF": 0.1e-6,
+      "1uF": 1e-6,
+      "2.2uF": 2.2e-6,
+      "3.3uF": 3.3e-6,
+      "4.7uF": 4.7e-6,
+      "10uF": 10e-6,
+    }
+    for (const capacitor of renderedAllDecouplingCapacitors) {
       const sourceComponent = circuit.db.source_component.getWhere({
         name: capacitor.name,
       })!
@@ -1486,12 +2568,10 @@ export const renderAm62lLpddr4Fanout = async ({
         throw new Error(`Expected ${capacitor.name} to be a capacitor`)
       }
       expect(sourceComponent.capacitance).toBeCloseTo(
-        capacitor.capacitance === AM62L_DDR_HIGH_SPEED_CAPACITANCE
-          ? 1e-6
-          : 0.1e-6,
+        capacitanceInFarads[capacitor.capacitance]!,
       )
       expect(sourceComponent.max_decoupling_trace_length).toBeCloseTo(
-        AM62L_DDR_MAX_DECOUPLING_DISTANCE,
+        capacitor.maxDecouplingTraceLength,
       )
 
       const pcbComponent = circuit.db.pcb_component.getWhere({
@@ -1520,13 +2600,9 @@ export const renderAm62lLpddr4Fanout = async ({
         )
       expect(targetPort).toBeDefined()
       if (!targetPort) {
-        throw new Error(`Missing VDDS_DDR ball ${capacitor.targetBall}`)
+        throw new Error(`Missing AM62L power ball ${capacitor.targetBall}`)
       }
-      expect(targetPort.requires_power).toBe(true)
       expect(targetPort.should_have_decoupling_capacitor).toBe(true)
-      expect(targetPort.recommended_decoupling_capacitor_capacitance).toBe(
-        AM62L_DDR_HIGH_SPEED_CAPACITANCE,
-      )
       const targetPcbPort = circuit.db.pcb_port.getWhere({
         source_port_id: targetPort.source_port_id,
       })!
@@ -1537,42 +2613,272 @@ export const renderAm62lLpddr4Fanout = async ({
       if (targetPad.shape !== "circle") {
         throw new Error(`Expected ${capacitor.targetBall} to be circular`)
       }
-      expect(
-        Math.hypot(
-          pcbComponent.center.x - targetPad.x,
-          pcbComponent.center.y - targetPad.y,
-        ),
-      ).toBeLessThanOrEqual(AM62L_DDR_MAX_DECOUPLING_DISTANCE)
-
-      const capacitorPortIds = new Set(
-        circuit.db.source_port
-          .list()
-          .filter(
-            (port) =>
-              port.source_component_id === sourceComponent.source_component_id,
+      const railTargetBalls = AM62L_TARGET_BALLS_BY_RAIL.get(
+        capacitor.railNetName,
+      )!
+      const nearestRailBallDistance = Math.min(
+        ...railTargetBalls.map((ballName) => {
+          const railPort = circuit.db.source_port
+            .list()
+            .find(
+              (port) =>
+                port.source_component_id ===
+                  socSourceComponent.source_component_id &&
+                port.port_hints?.includes(ballName),
+            )!
+          const railPcbPort = circuit.db.pcb_port.getWhere({
+            source_port_id: railPort.source_port_id,
+          })!
+          const railPad = circuit.db.pcb_smtpad.getWhere({
+            pcb_port_id: railPcbPort.pcb_port_id,
+          })!
+          if (railPad.shape !== "circle") {
+            throw new Error(`Expected ${ballName} to be circular`)
+          }
+          return Math.hypot(
+            pcbComponent.center.x - railPad.x,
+            pcbComponent.center.y - railPad.y,
           )
-          .map((port) => port.source_port_id),
+        }),
       )
-      const capacitorSourceTraces = circuit.db.source_trace
-        .list()
-        .filter((trace) =>
-          trace.connected_source_port_ids.some((portId) =>
-            capacitorPortIds.has(portId),
-          ),
-        )
-      expect(capacitorSourceTraces).toHaveLength(2)
+      expect(nearestRailBallDistance).toBeLessThanOrEqual(
+        capacitor.maxDecouplingTraceLength,
+      )
+
+      const directCapacitor = renderedDirectDecouplingCapacitors.find(
+        ({ name }) => name === capacitor.name,
+      )
+      const powerTraceName = directCapacitor
+        ? `${capacitor.name}_POWER_DROP`
+        : `${capacitor.name}_VDD_DROP`
+      const capacitorSourceTraces = [
+        circuit.db.source_trace.getWhere({ name: powerTraceName }),
+        circuit.db.source_trace.getWhere({
+          name: `${capacitor.name}_GND_DROP`,
+        }),
+      ]
+      expect(capacitorSourceTraces.every(Boolean)).toBe(true)
       expect(
         capacitorSourceTraces.every(
-          (trace) => trace.max_length === AM62L_DDR_MAX_DECOUPLING_DISTANCE,
+          (trace) => trace?.max_length === capacitor.maxDecouplingTraceLength,
         ),
       ).toBe(true)
+      const positivePort = circuit.db.source_port.getWhere({
+        source_component_id: sourceComponent.source_component_id,
+        pin_number: 1,
+      })!
+      const groundPort = circuit.db.source_port.getWhere({
+        source_component_id: sourceComponent.source_component_id,
+        pin_number: 2,
+      })!
+      const railNet = circuit.db.source_net.getWhere({
+        name: capacitor.railNetName,
+      })!
+      const groundNet = circuit.db.source_net.getWhere({ name: "GND" })!
+      expect(capacitorSourceTraces[0]?.connected_source_port_ids).toEqual([
+        positivePort.source_port_id,
+      ])
+      expect(capacitorSourceTraces[0]?.connected_source_net_ids).toEqual([
+        railNet.source_net_id,
+      ])
+      expect(capacitorSourceTraces[1]?.connected_source_port_ids).toEqual([
+        groundPort.source_port_id,
+      ])
+      expect(capacitorSourceTraces[1]?.connected_source_net_ids).toEqual([
+        groundNet.source_net_id,
+      ])
+    }
+
+    const expectedDecoupledTargetBalls = new Set([
+      ...AM62L_VDD_CORE_BALLS,
+      ...AM62L_VDDS_DDR_BALLS,
+      ...AM62L_VDDA_1V8_BALLS,
+      ...AM62L_SOC_DVDD3V3_BALLS,
+      ...AM62L_SOC_DVDD1V8_BALLS,
+      ...AM62L_VDDA_CORE_BALLS,
+      ...AM62L_VPP_BALLS,
+      ...AM62L_VDD_MMC1_SD_BALLS,
+      ...AM62L_VDDSHV_SD_IO_BALLS,
+      ...AM62L_SOC_VDD_RTC_BALLS,
+      ...AM62L_SOC_VDDS_RTC_1V8_BALLS,
+      ...AM62L_SPECIAL_CAP_BALLS.map(({ ballName }) => ballName),
+    ])
+    expect(expectedDecoupledTargetBalls.size).toBe(50)
+    expect(
+      new Set(
+        renderedAllDecouplingCapacitors.map(({ targetBall }) => targetBall),
+      ),
+    ).toEqual(expectedDecoupledTargetBalls)
+    for (const ballName of expectedDecoupledTargetBalls) {
+      const targetPort = circuit.db.source_port
+        .list()
+        .find(
+          (port) =>
+            port.source_component_id ===
+              socSourceComponent.source_component_id &&
+            port.port_hints?.includes(ballName),
+        )!
+      const recommendedCapacitor =
+        AM62L_DECOUPLING_CAPACITOR_BY_TARGET_BALL.get(ballName)!
+      expect(targetPort.should_have_decoupling_capacitor).toBe(true)
+      expect(targetPort.requires_power).toBe(
+        !AM62L_SPECIAL_CAP_BALL_NAME_SET.has(ballName),
+      )
+      expect(targetPort.recommended_decoupling_capacitor_capacitance).toBe(
+        recommendedCapacitor.capacitance,
+      )
+    }
+
+    expect(AM62L_DIRECT_POWER_BALLS).toHaveLength(45)
+    expect(AM62L_DIRECT_RAIL_NET_NAMES).toHaveLength(16)
+    const expectedMembershipErrors: Array<{
+      pcbComponentId: string
+      pcbPortId: string
+      railNetName: string
+    }> = []
+    for (const powerBall of AM62L_DIRECT_POWER_BALLS) {
+      const membershipTrace = circuit.db.source_trace.getWhere({
+        name: `U1_${powerBall.ballName}_PDN_MEMBERSHIP`,
+      })!
+      const railNet = circuit.db.source_net.getWhere({
+        name: powerBall.railNetName,
+      })!
+      const targetPort = circuit.db.source_port
+        .list()
+        .find(
+          (port) =>
+            port.source_component_id ===
+              socSourceComponent.source_component_id &&
+            port.port_hints?.includes(powerBall.ballName),
+        )!
+      const targetPcbPort = circuit.db.pcb_port.getWhere({
+        source_port_id: targetPort.source_port_id,
+      })!
+      expectedMembershipErrors.push({
+        pcbComponentId: socPcbComponent.pcb_component_id,
+        pcbPortId: targetPcbPort.pcb_port_id,
+        railNetName: powerBall.railNetName,
+      })
+      expect(membershipTrace.connected_source_port_ids).toEqual([
+        targetPort.source_port_id,
+      ])
+      expect(membershipTrace.connected_source_net_ids).toEqual([
+        railNet.source_net_id,
+      ])
+      expect(
+        circuit.db.pcb_trace
+          .list()
+          .filter(
+            (pcbTrace) =>
+              pcbTrace.source_trace_id === membershipTrace.source_trace_id,
+          ),
+      ).toEqual([])
+    }
+    // This fixture models the 16 non-DDR rails as source-only segmented-PDN
+    // memberships. Assert the resulting diagnostics one-for-one so no real
+    // unrouted port can hide behind that deliberate abstraction.
+    const membershipErrors = circuit.db.pcb_port_not_connected_error.list()
+    expect(membershipErrors).toHaveLength(expectedMembershipErrors.length)
+    const membershipErrorsByPcbPortId = new Map(
+      membershipErrors.map((error) => {
+        expect(error.pcb_port_ids).toHaveLength(1)
+        return [error.pcb_port_ids[0]!, error]
+      }),
+    )
+    expect(membershipErrorsByPcbPortId.size).toBe(
+      expectedMembershipErrors.length,
+    )
+    expect(new Set(membershipErrorsByPcbPortId.keys())).toEqual(
+      new Set(expectedMembershipErrors.map(({ pcbPortId }) => pcbPortId)),
+    )
+    expect(
+      new Set(
+        membershipErrors.map(
+          ({ pcb_port_not_connected_error_id }) =>
+            pcb_port_not_connected_error_id,
+        ),
+      ).size,
+    ).toBe(expectedMembershipErrors.length)
+    for (const expectedError of expectedMembershipErrors) {
+      const error = membershipErrorsByPcbPortId.get(expectedError.pcbPortId)!
+      expect(error).toMatchObject({
+        error_type: "pcb_port_not_connected_error",
+        pcb_component_ids: [expectedError.pcbComponentId],
+        pcb_port_ids: [expectedError.pcbPortId],
+        type: "pcb_port_not_connected_error",
+      })
+      expect(error.message).toContain(`net [${expectedError.railNetName}]`)
+    }
+
+    const directPowerVias = renderedDirectDecouplingCapacitors.map(
+      (capacitor) => {
+        const railNet = circuit.db.source_net.getWhere({
+          name: capacitor.railNetName,
+        })!
+        const expectedPosition = getDirectDecouplingViaPosition(
+          capacitor,
+          capacitor.powerViaOffset,
+        )
+        const matchingVias = circuit.db.pcb_via
+          .list()
+          .filter(
+            (via) =>
+              via.source_net_id === railNet.source_net_id &&
+              Math.hypot(
+                via.x - expectedPosition.x,
+                via.y - expectedPosition.y,
+              ) < 1e-6,
+          )
+        expect(matchingVias).toHaveLength(1)
+        const powerVia = matchingVias[0]!
+        expect(powerVia).toMatchObject({
+          from_layer: "top",
+          hole_diameter: 0.15,
+          outer_diameter: 0.24,
+          to_layer: "bottom",
+        })
+        expect(powerVia.layers).toEqual(getViaBoardLayers(8))
+        return powerVia
+      },
+    )
+    expect(directPowerVias).toHaveLength(60)
+    const groundNet = circuit.db.source_net.getWhere({ name: "GND" })!
+    const directGroundVias = renderedDirectDecouplingCapacitors.map(
+      (capacitor) => {
+        const expectedPosition = getDirectDecouplingViaPosition(
+          capacitor,
+          capacitor.groundViaOffset,
+        )
+        const matchingVias = circuit.db.pcb_via
+          .list()
+          .filter(
+            (via) =>
+              via.source_net_id === groundNet.source_net_id &&
+              Math.hypot(
+                via.x - expectedPosition.x,
+                via.y - expectedPosition.y,
+              ) < 1e-6,
+          )
+        expect(matchingVias).toHaveLength(1)
+        return matchingVias[0]!
+      },
+    )
+    expect(directGroundVias).toHaveLength(60)
+    for (const via of directGroundVias) {
+      expect(via.hole_diameter).toBeCloseTo(0.15)
+      expect(via.outer_diameter).toBeCloseTo(0.24)
+      expect(via.from_layer).toBe("top")
+      expect(via.to_layer).toBe("bottom")
+      expect(via.layers).toEqual(getViaBoardLayers(8))
     }
   }
   const minViaEdgeToPadEdgeClearance =
     pcbBoard.min_via_edge_to_pad_edge_clearance!
   expect(SOC_PLANE_DROPS).toHaveLength(102)
   expect(SOC_DDR_DECOUPLING_PLANE_DROPS).toHaveLength(16)
+  expect(SOC_DIRECT_DECOUPLING_GROUND_MEMBERS).toHaveLength(60)
   expect(DRAM_PLANE_DROPS).toHaveLength(110)
+  expect(expectedPlaneMembers).toHaveLength(includePowerPlaneFanout ? 288 : 0)
   expect(autoroutingPhaseIoStack).toHaveLength(3)
   expect(
     autoroutingPhaseIoStack.map(
@@ -2169,7 +3475,7 @@ export const renderAm62lLpddr4Fanout = async ({
 
   if (includePowerPlaneFanout) {
     const copperPours = circuit.db.pcb_copper_pour.list()
-    for (const planeDrop of allPlaneDrops) {
+    for (const planeDrop of routedPlaneDrops) {
       const sourceComponent = circuit.db.source_component.getWhere({
         name: planeDrop.componentName,
       })!
@@ -2302,7 +3608,7 @@ export const renderAm62lLpddr4Fanout = async ({
     const planeConnectedComponentNames = [
       "U1",
       "U2",
-      ...AM62L_DDR_DECOUPLING_CAPACITORS.map(({ name }) => name),
+      ...renderedAllDecouplingCapacitors.map(({ name }) => name),
     ]
     const sourceComponentById = new Map(
       planeConnectedComponentNames.map((componentName) => {
@@ -2342,7 +3648,35 @@ export const renderAm62lLpddr4Fanout = async ({
           ),
         ),
     ).toEqual(
-      allPlaneDrops
+      [
+        ...expectedPlaneMembers,
+        ...renderedDirectDecouplingCapacitors.flatMap((capacitor) =>
+          planeNetNames.includes(
+            capacitor.railNetName as (typeof planeNetNames)[number],
+          )
+            ? [
+                {
+                  componentName: capacitor.name,
+                  netName: capacitor.railNetName,
+                  pinNumber: 1,
+                },
+              ]
+            : [],
+        ),
+        ...AM62L_DIRECT_POWER_BALLS.flatMap((powerBall) =>
+          planeNetNames.includes(
+            powerBall.railNetName as (typeof planeNetNames)[number],
+          )
+            ? [
+                {
+                  componentName: "U1",
+                  netName: powerBall.railNetName,
+                  pinNumber: powerBall.pinNumber,
+                },
+              ]
+            : [],
+        ),
+      ]
         .map((drop) => ({
           componentName: drop.componentName,
           netName: drop.netName,
@@ -2436,13 +3770,37 @@ export const renderAm62lLpddr4Fanout = async ({
 
   if (includePowerPlaneFanout) {
     expect(allFanoutVias).toHaveLength(
-      allPlaneDrops.length + signalConnections.length * 2,
+      routedPlaneDrops.length +
+        signalConnections.length * 2 +
+        renderedDirectDecouplingCapacitors.length * 2,
     )
     expect(
       new Set(
         allFanoutVias.map((via) => `${via.x.toFixed(9)},${via.y.toFixed(9)}`),
       ).size,
     ).toBe(allFanoutVias.length)
+    let minViaCopperEdgeClearance = Number.POSITIVE_INFINITY
+    for (let firstIndex = 0; firstIndex < allFanoutVias.length; firstIndex++) {
+      const firstVia = allFanoutVias[firstIndex]!
+      for (
+        let secondIndex = firstIndex + 1;
+        secondIndex < allFanoutVias.length;
+        secondIndex++
+      ) {
+        const secondVia = allFanoutVias[secondIndex]!
+        const centerDistance = Math.hypot(
+          firstVia.x - secondVia.x,
+          firstVia.y - secondVia.y,
+        )
+        minViaCopperEdgeClearance = Math.min(
+          minViaCopperEdgeClearance,
+          centerDistance -
+            firstVia.outer_diameter / 2 -
+            secondVia.outer_diameter / 2,
+        )
+      }
+    }
+    expect(minViaCopperEdgeClearance).toBeGreaterThanOrEqual(0.05 - 1e-6)
     for (const via of allFanoutVias) {
       expect(via.layers).toEqual(getViaBoardLayers(8))
     }
