@@ -16,6 +16,7 @@ import { FanoutSolver } from "@tscircuit/fanout-solver"
 import { ImplicitCopperPourPipelineSolver } from "@tscircuit/implicit-copper-pour-solver/lib/index"
 import { LayoutPipelineSolver } from "@tscircuit/matchpack"
 import { SchematicTracePipelineSolver } from "@tscircuit/schematic-trace-solver"
+import { ViaStitchSolver } from "@tscircuit/via-stitch-solver"
 import { PackSolver2 } from "calculate-packing"
 
 export const SOLVERS = {
@@ -36,6 +37,7 @@ export const SOLVERS = {
   FanoutSolver,
   ImplicitCopperPourPipelineSolver,
   SchematicTracePipelineSolver,
+  ViaStitchSolver,
 }
 
 export type SolverName = keyof typeof SOLVERS

@@ -6,10 +6,14 @@ import Nrf52810Circuit from "./nrf52810-circuit"
 // Reproduces https://tscircuit.com/seveibar/nrf52810#files without explicit
 // <copperpour> elements so the implicit copper pour phase owns their creation.
 test(
-  "nRF52810 tracker routes with implicit copper pours",
+  "nRF52810 tracker routes with implicit copper pours and via stitching",
   async () => {
     const { circuit } = getTestFixture({
       platform: { placementDrcChecksDisabled: true },
+    })
+    let viaStitchSolverRunCount = 0
+    circuit.on("solver:started", ({ solverName }) => {
+      if (solverName === "ViaStitchSolver") viaStitchSolverRunCount++
     })
 
     circuit.add(<Nrf52810Circuit />)
@@ -20,6 +24,21 @@ test(
     const implicitPours = circuit.db.pcb_copper_pour.list()
     expect(implicitPours.length).toBeGreaterThan(0)
     expect(implicitPours.every((pour) => pour.shape === "brep")).toBe(true)
+    expect(viaStitchSolverRunCount).toBe(1)
+    const implicitPourSourceNetIds = new Set(
+      implicitPours.flatMap((pour) =>
+        pour.source_net_id ? [pour.source_net_id] : [],
+      ),
+    )
+    const stitchedVias = circuit.db.pcb_via
+      .list()
+      .filter(
+        (via) =>
+          via.is_tented === true &&
+          via.source_net_id !== undefined &&
+          implicitPourSourceNetIds.has(via.source_net_id),
+      )
+    expect(stitchedVias.length).toBeGreaterThan(0)
 
     const rfKeepout = circuit.db.pcb_keepout
       .list()
