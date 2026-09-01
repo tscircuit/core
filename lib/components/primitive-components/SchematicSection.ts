@@ -4,10 +4,12 @@ import {
   calculateCellBoundaries,
   computeBoundsFromCellContents,
 } from "calculate-cell-boundaries"
-import type { SchematicSheet } from "circuit-json"
+import type { SchematicComponent, SchematicSheet } from "circuit-json"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
+import { getSchematicNetLabelBoundsForSection } from "./get-schematic-net-label-bounds-for-section"
 
 type SchematicSheetId = SchematicSheet["schematic_sheet_id"]
+type SchematicComponentId = SchematicComponent["schematic_component_id"]
 
 export class SchematicSection extends PrimitiveComponent<
   typeof schematicSectionProps
@@ -36,6 +38,7 @@ export class SchematicSection extends PrimitiveComponent<
     if (members.length === 0) return null
 
     const positions: Bounds[] = []
+    const memberSchematicComponentIds = new Set<SchematicComponentId>()
 
     for (const member of members) {
       const schematicComponentId = (member as any).schematic_component_id
@@ -43,6 +46,8 @@ export class SchematicSection extends PrimitiveComponent<
       const schComp = db.schematic_component.get(schematicComponentId)
       if (!schComp) continue
       if (schComp.schematic_sheet_id !== schematicSheetId) continue
+
+      memberSchematicComponentIds.add(schematicComponentId)
 
       const hw = schComp.size.width / 2
       const hh = schComp.size.height / 2
@@ -53,6 +58,14 @@ export class SchematicSection extends PrimitiveComponent<
         maxY: schComp.center.y + hh,
       })
     }
+
+    positions.push(
+      ...getSchematicNetLabelBoundsForSection({
+        db,
+        schematicSheetId,
+        memberSchematicComponentIds,
+      }),
+    )
 
     if (positions.length === 0) return null
     return computeBoundsFromCellContents(positions)
