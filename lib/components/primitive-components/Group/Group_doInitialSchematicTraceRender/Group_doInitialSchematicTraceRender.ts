@@ -32,7 +32,7 @@ const renderSchematicTracesForSheet = ({
     schematicPortIdsWithExternallyRoutedRepresentations,
     schPortIdToSourcePortId,
     userNetIdToConnKey,
-    crossSubcircuitTraceLabelBySchematicPortId,
+    crossScopeSourceTraceIdBySchematicPortIdAndNetId,
     sourceTraceIdByPortOnlyLabelSchematicPortId,
     connKeysWithExplicitPortNetTraces,
     netLabelsInScope,
@@ -103,7 +103,7 @@ const renderSchematicTracesForSheet = ({
     solver,
     connKeyToSourceNet,
     userNetIdToConnKey,
-    crossSubcircuitTraceLabelBySchematicPortId,
+    crossScopeSourceTraceIdBySchematicPortIdAndNetId,
     sourceTraceIdByPortOnlyLabelSchematicPortId,
     connKeysWithExplicitPortNetTraces,
     schematicPortIdsWithPreExistingNetLabels,
@@ -117,6 +117,7 @@ const renderSchematicTracesForSheet = ({
     solver,
     userNetIdToConnKey,
     sourceTraceIdByPinPairKey,
+    crossScopeSourceTraceIdBySchematicPortIdAndNetId,
   })
 
   insertNetLabelsForPortsMissingTrace({

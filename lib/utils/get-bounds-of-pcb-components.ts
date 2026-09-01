@@ -22,12 +22,12 @@ export function getBoundsOfPcbComponents(components: PrimitiveComponent[]) {
         child.componentName.startsWith(prefix),
       )
     ) {
-      const { width, height } = child.getPcbSize()
+      const localBounds = child._getPcbLocalBoundsBeforeLayout()
       const footprintLocalCorners = [
-        { x: -width / 2, y: -height / 2 },
-        { x: width / 2, y: -height / 2 },
-        { x: width / 2, y: height / 2 },
-        { x: -width / 2, y: height / 2 },
+        { x: localBounds.left, y: localBounds.bottom },
+        { x: localBounds.right, y: localBounds.bottom },
+        { x: localBounds.right, y: localBounds.top },
+        { x: localBounds.left, y: localBounds.top },
       ]
 
       // Points enter in the primitive's footprint-local frame and leave in the

@@ -1,11 +1,11 @@
-import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
+import { type Bounds, doBoundsOverlap } from "@tscircuit/math-utils"
+import { schematicSectionProps } from "@tscircuit/props"
 import {
   calculateCellBoundaries,
   computeBoundsFromCellContents,
 } from "calculate-cell-boundaries"
-import { schematicSectionProps } from "@tscircuit/props"
-import type { Bounds } from "@tscircuit/math-utils"
 import type { SchematicSheet } from "circuit-json"
+import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
 type SchematicSheetId = SchematicSheet["schematic_sheet_id"]
 
@@ -163,12 +163,16 @@ export class SchematicSection extends PrimitiveComponent<
       (l) => Math.abs(l.start.x - l.end.x) < TOL,
     )
 
-    for (const {
-      displayName,
-      sectionTitleFontSize,
-      rawBounds,
-    } of allSectionsWithBounds) {
+    for (const sectionWithBounds of allSectionsWithBounds) {
+      const { displayName, sectionTitleFontSize, rawBounds, cell } =
+        sectionWithBounds
       if (!displayName) continue
+
+      const overlapsAnotherSection = allSectionsWithBounds.some(
+        (section) =>
+          section !== sectionWithBounds &&
+          doBoundsOverlap(section.rawBounds, rawBounds),
+      )
 
       const dividersAbove = hDividers
         .map((l) => l.start.y)
@@ -179,8 +183,13 @@ export class SchematicSection extends PrimitiveComponent<
       const dividersToLeft = vDividers
         .map((l) => l.start.x)
         .filter((x) => x < rawBounds.minX)
-      const leftBoundary =
-        dividersToLeft.length > 0 ? Math.max(...dividersToLeft) : outer.minX
+      let leftBoundary = outer.minX
+      if (overlapsAnotherSection) {
+        leftBoundary = cell.minX
+      }
+      if (dividersToLeft.length > 0) {
+        leftBoundary = Math.max(...dividersToLeft)
+      }
 
       db.schematic_text.insert({
         anchor: "top_left",
