@@ -1614,11 +1614,11 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             })
           }
         }
+        // Follow-up solvers include preloaded input traces in their output, so
+        // appending simpleRouteJson.traces here would duplicate fixed geometry.
         let stageOutputTraces = traces
         if (transformedSimpleRouteJson?.traces) {
           stageOutputTraces = transformedSimpleRouteJson.traces
-        } else if (usesPreviousStageOutput) {
-          stageOutputTraces = [...(simpleRouteJson.traces ?? []), ...traces]
         }
         const outputSimpleRouteJson = {
           ...(transformedSimpleRouteJson ?? simpleRouteJson),
