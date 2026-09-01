@@ -815,9 +815,11 @@ export function createSchematicTraceSolverInputProblem(
               }).toFixed(2),
             )
           : undefined
-      const explicitInlineNetLabelText = traceComponentBySourceTraceId.get(
-        st.source_trace_id,
-      )?._parsedProps.schDisplayLabel
+      const explicitInlineNetLabelText =
+        connected.length > 2
+          ? traceComponentBySourceTraceId.get(st.source_trace_id)?._parsedProps
+              .schDisplayLabel
+          : undefined
       const crossSectionNetLabelText = renderedNetLabelText
 
       // The schematic solver accepts two-terminal direct connections. Expand
