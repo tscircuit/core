@@ -110,12 +110,12 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
       solverName = "AutoroutingPipelineSolver4"
     } else if (autorouterVersion === "beta_pipeline5") {
       solverName = "AutoroutingPipelineSolver5"
+    } else if (autorouterVersion === "beta_pipeline7") {
+      solverName = "AutoroutingPipelineSolver7_MultiGraph"
     } else if (
-      autorouterVersion === "beta_pipeline7" ||
+      autorouterVersion === "beta_pipeline9" ||
       autorouterVersion === "latest"
     ) {
-      solverName = "AutoroutingPipelineSolver7_MultiGraph"
-    } else if (autorouterVersion === "beta_pipeline9") {
       solverName = "AutoroutingPipelineSolver9_PreloadedTraceGraph"
     } else if (useLaserPrefabSolver) {
       solverName = "AutoroutingPipelineSolver8"
@@ -124,7 +124,7 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
     } else if (useAssignableSolver) {
       solverName = "AssignableAutoroutingPipeline2"
     } else {
-      solverName = "AutoroutingPipelineSolver7_MultiGraph"
+      solverName = "AutoroutingPipelineSolver9_PreloadedTraceGraph"
     }
     const SolverClass = SOLVERS[solverName]
     const solverCacheProvider =

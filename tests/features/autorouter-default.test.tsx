@@ -3,6 +3,11 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test('autorouter="default" uses the default local autorouter', async () => {
   const { circuit } = getTestFixture()
+  let solverStartedName: string | undefined
+
+  circuit.on("solver:started", (event) => {
+    solverStartedName = event.solverName
+  })
 
   circuit.add(
     <board width="12mm" height="8mm" autorouter="default">
@@ -20,6 +25,9 @@ test('autorouter="default" uses the default local autorouter', async () => {
 
   await circuit.renderUntilSettled()
 
+  expect(solverStartedName).toBe(
+    "AutoroutingPipelineSolver9_PreloadedTraceGraph",
+  )
   expect(circuit.db.pcb_trace.list()).toHaveLength(1)
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
