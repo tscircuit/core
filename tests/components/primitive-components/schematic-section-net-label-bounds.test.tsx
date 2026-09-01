@@ -6,7 +6,7 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 const AXIS_ALIGNMENT_TOLERANCE = 0.001
 
-test("schematic section dividers do not cross net labels", async () => {
+test("schematic section cells grow by connected net label dimensions", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -42,7 +42,7 @@ test("schematic section dividers do not cross net labels", async () => {
       <netlabel
         net="UART_RX_BREAKOUT"
         connectsTo=".R3 > .pin1"
-        schX={4.5}
+        schX={-0.5}
         schY={-3}
         anchorSide="left"
       />
@@ -78,7 +78,24 @@ test("schematic section dividers do not cross net labels", async () => {
     "bottom",
     undefined,
   )
-  expect(sectionBounds?.maxX).toBeGreaterThanOrEqual(bounds.maxX)
+  const r3SourceComponent = circuit.db.source_component
+    .list()
+    .find((component) => component.name === "R3")
+  const r3SchematicComponent = circuit.db.schematic_component
+    .list()
+    .find(
+      (component) =>
+        component.source_component_id ===
+        r3SourceComponent?.source_component_id,
+    )
+  expect(r3SchematicComponent).toBeDefined()
+  if (!r3SchematicComponent) {
+    throw new Error("expected R3 schematic component")
+  }
+  const componentMaxX =
+    r3SchematicComponent.center.x + r3SchematicComponent.size.width / 2
+  const netLabelWidth = bounds.maxX - bounds.minX
+  expect(sectionBounds?.maxX).toBeCloseTo(componentMaxX + netLabelWidth)
 
   const dividerCrossesLabel = circuit.db.schematic_line.list().some((line) => {
     const isHorizontal = Math.abs(line.y1 - line.y2) < AXIS_ALIGNMENT_TOLERANCE
