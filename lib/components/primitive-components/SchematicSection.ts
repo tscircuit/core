@@ -41,7 +41,7 @@ export class SchematicSection extends PrimitiveComponent<
     const memberSchematicComponentIds = new Set<SchematicComponentId>()
 
     for (const member of members) {
-      const schematicComponentId = (member as any).schematic_component_id
+      const schematicComponentId = member.schematic_component_id
       if (!schematicComponentId) continue
       const schComp = db.schematic_component.get(schematicComponentId)
       if (!schComp) continue
