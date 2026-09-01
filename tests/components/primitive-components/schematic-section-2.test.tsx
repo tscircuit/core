@@ -138,5 +138,14 @@ test("SchematicSection groups a real 555 LED flasher into four regions", () => {
 
   circuit.render()
 
+  const sectionTitlePositions = circuit.db.schematic_text
+    .list()
+    .filter((text) =>
+      ["Power", "555 Timer", "Timing Network", "Output"].includes(text.text),
+    )
+    .map((text) => `${text.position.x},${text.position.y}`)
+  expect(sectionTitlePositions).toHaveLength(4)
+  expect(new Set(sectionTitlePositions).size).toBe(4)
+
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })

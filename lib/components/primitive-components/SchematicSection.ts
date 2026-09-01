@@ -4,10 +4,39 @@ import {
   calculateCellBoundaries,
   computeBoundsFromCellContents,
 } from "calculate-cell-boundaries"
-import type { SchematicSheet } from "circuit-json"
+import type { SchematicComponent, SchematicSheet } from "circuit-json"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
+import { getSchematicNetLabelBoundsForSection } from "./get-schematic-net-label-bounds-for-section"
 
 type SchematicSheetId = SchematicSheet["schematic_sheet_id"]
+type SchematicComponentId = SchematicComponent["schematic_component_id"]
+type SectionBounds = Bounds & {
+  labelPadding: {
+    left: number
+    right: number
+    top: number
+    bottom: number
+  }
+}
+const SCHEMATIC_SECTION_PADDING = 0.5
+const SCHEMATIC_SECTION_CELL_MARGIN = 1
+
+const getSectionCellMargin = (labelPadding: number) => {
+  if (labelPadding > 0) return SCHEMATIC_SECTION_PADDING
+  return SCHEMATIC_SECTION_CELL_MARGIN
+}
+
+const getSectionCellBounds = (sectionBounds: SectionBounds): Bounds => ({
+  minX:
+    sectionBounds.minX - getSectionCellMargin(sectionBounds.labelPadding.left),
+  maxX:
+    sectionBounds.maxX + getSectionCellMargin(sectionBounds.labelPadding.right),
+  minY:
+    sectionBounds.minY -
+    getSectionCellMargin(sectionBounds.labelPadding.bottom),
+  maxY:
+    sectionBounds.maxY + getSectionCellMargin(sectionBounds.labelPadding.top),
+})
 
 export class SchematicSection extends PrimitiveComponent<
   typeof schematicSectionProps
@@ -26,7 +55,7 @@ export class SchematicSection extends PrimitiveComponent<
     board: PrimitiveComponent,
     sectionName: string | null,
     schematicSheetId: SchematicSheetId | undefined,
-  ): Bounds | null {
+  ): SectionBounds | null {
     const { db } = this.root!
 
     const members = board
@@ -36,13 +65,16 @@ export class SchematicSection extends PrimitiveComponent<
     if (members.length === 0) return null
 
     const positions: Bounds[] = []
+    const memberSchematicComponentIds = new Set<SchematicComponentId>()
 
     for (const member of members) {
-      const schematicComponentId = (member as any).schematic_component_id
+      const schematicComponentId = member.schematic_component_id
       if (!schematicComponentId) continue
       const schComp = db.schematic_component.get(schematicComponentId)
       if (!schComp) continue
       if (schComp.schematic_sheet_id !== schematicSheetId) continue
+
+      memberSchematicComponentIds.add(schematicComponentId)
 
       const hw = schComp.size.width / 2
       const hh = schComp.size.height / 2
@@ -55,7 +87,45 @@ export class SchematicSection extends PrimitiveComponent<
     }
 
     if (positions.length === 0) return null
-    return computeBoundsFromCellContents(positions)
+    const componentBounds = computeBoundsFromCellContents(positions)
+    const netLabelBounds = getSchematicNetLabelBoundsForSection({
+      db,
+      schematicSheetId,
+      memberSchematicComponentIds,
+    })
+    let leftPadding = 0
+    let rightPadding = 0
+    let topPadding = 0
+    let bottomPadding = 0
+    for (const bounds of netLabelBounds) {
+      const width = bounds.maxX - bounds.minX
+      const height = bounds.maxY - bounds.minY
+      if (bounds.minX < componentBounds.minX) {
+        leftPadding = Math.max(leftPadding, width)
+      }
+      if (bounds.maxX > componentBounds.maxX) {
+        rightPadding = Math.max(rightPadding, width)
+      }
+      if (bounds.maxY > componentBounds.maxY) {
+        topPadding = Math.max(topPadding, height)
+      }
+      if (bounds.minY < componentBounds.minY) {
+        bottomPadding = Math.max(bottomPadding, height)
+      }
+    }
+
+    return {
+      minX: componentBounds.minX - leftPadding,
+      maxX: componentBounds.maxX + rightPadding,
+      minY: componentBounds.minY - bottomPadding,
+      maxY: componentBounds.maxY + topPadding,
+      labelPadding: {
+        left: leftPadding,
+        right: rightPadding,
+        top: topPadding,
+        bottom: bottomPadding,
+      },
+    }
   }
 
   doInitialSchematicSectionRender(): void {
@@ -79,7 +149,6 @@ export class SchematicSection extends PrimitiveComponent<
     if (allSections[0] !== this) return
 
     const { db } = this.root!
-    const PADDING = 0.5
     const LABEL_PADDING = 0.2
     const STROKE_WIDTH = 0.02
     const TOL = 0.001
@@ -97,10 +166,10 @@ export class SchematicSection extends PrimitiveComponent<
           sectionTitleFontSize: section._parsedProps.sectionTitleFontSize,
           rawBounds: bounds,
           cell: {
-            minX: bounds.minX - PADDING,
-            maxX: bounds.maxX + PADDING,
-            minY: bounds.minY - PADDING,
-            maxY: bounds.maxY + PADDING,
+            minX: bounds.minX - SCHEMATIC_SECTION_PADDING,
+            maxX: bounds.maxX + SCHEMATIC_SECTION_PADDING,
+            minY: bounds.minY - SCHEMATIC_SECTION_PADDING,
+            maxY: bounds.maxY + SCHEMATIC_SECTION_PADDING,
           },
         }
       })
@@ -119,10 +188,10 @@ export class SchematicSection extends PrimitiveComponent<
         sectionTitleFontSize: undefined,
         rawBounds: unsectionedBounds,
         cell: {
-          minX: unsectionedBounds.minX - PADDING,
-          maxX: unsectionedBounds.maxX + PADDING,
-          minY: unsectionedBounds.minY - PADDING,
-          maxY: unsectionedBounds.maxY + PADDING,
+          minX: unsectionedBounds.minX - SCHEMATIC_SECTION_PADDING,
+          maxX: unsectionedBounds.maxX + SCHEMATIC_SECTION_PADDING,
+          minY: unsectionedBounds.minY - SCHEMATIC_SECTION_PADDING,
+          maxY: unsectionedBounds.maxY + SCHEMATIC_SECTION_PADDING,
         },
       })
 
@@ -134,14 +203,10 @@ export class SchematicSection extends PrimitiveComponent<
 
     // Internal dividing lines: use raw (unpadded) bounds so adjacent sections
     // with small gaps don't overlap and prevent divider generation
-    const CELL_MARGIN = 1
     const dividers = calculateCellBoundaries(
-      allSectionsWithBounds.map((s) => ({
-        minX: s.rawBounds.minX - CELL_MARGIN,
-        maxX: s.rawBounds.maxX + CELL_MARGIN,
-        minY: s.rawBounds.minY - CELL_MARGIN,
-        maxY: s.rawBounds.maxY + CELL_MARGIN,
-      })),
+      allSectionsWithBounds.map((section) =>
+        getSectionCellBounds(section.rawBounds),
+      ),
     )
     for (const line of dividers) {
       db.schematic_line.insert({
