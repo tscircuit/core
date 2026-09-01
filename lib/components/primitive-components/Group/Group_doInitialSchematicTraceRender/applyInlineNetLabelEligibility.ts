@@ -57,9 +57,8 @@ const markConnectionEligibleForInlineNetLabel = (
  *
  * A direct connection qualifies when it is a genuine point-to-point signal:
  *
- * - the whole net is exactly these two ports, or a multi-port source trace
- *   explicitly supplies `schDisplayLabel` to identify the branch that owns the
- *   text,
+ * - the whole net is exactly these two ports, or the source trace explicitly
+ *   supplies `schDisplayLabel` to identify the branch that owns the text,
  * - the net is not power or ground (those render as rail symbols), and
  * - the net has a name the user chose - a `schDisplayLabel`/`name` on the trace
  *   or a named net - rather than one derived from the ports it happens to hit.
