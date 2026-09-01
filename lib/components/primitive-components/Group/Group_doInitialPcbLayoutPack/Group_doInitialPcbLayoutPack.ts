@@ -1,4 +1,6 @@
 import {
+  type InputComponent,
+  type InputObstacle,
   type PackInput,
   type PackOutput,
   PackSolver2,
@@ -17,6 +19,50 @@ import { getPackInputsByPcbLayer } from "./getPackInputsByPcbLayer"
 
 const DEFAULT_MIN_GAP = "1mm"
 const debug = Debug("Group_doInitialPcbLayoutPack")
+
+const getCollisionObstacleForStaticComponent = (
+  component: InputComponent,
+): InputObstacle | undefined => {
+  if (component.courtyard && component.center) {
+    return {
+      obstacleId: component.componentId,
+      absoluteCenter: {
+        x: component.center.x + component.courtyard.offsetFromCenter.x,
+        y: component.center.y + component.courtyard.offsetFromCenter.y,
+      },
+      width: component.courtyard.width,
+      height: component.courtyard.height,
+    }
+  }
+
+  if (component.pads.length === 0) return undefined
+
+  let minX = Infinity
+  let minY = Infinity
+  let maxX = -Infinity
+  let maxY = -Infinity
+  for (const pad of component.pads) {
+    const absoluteCenter =
+      pad.absoluteCenter ??
+      (component.center
+        ? {
+            x: component.center.x + pad.offset.x,
+            y: component.center.y + pad.offset.y,
+          }
+        : pad.offset)
+    minX = Math.min(minX, absoluteCenter.x - pad.size.x / 2)
+    minY = Math.min(minY, absoluteCenter.y - pad.size.y / 2)
+    maxX = Math.max(maxX, absoluteCenter.x + pad.size.x / 2)
+    maxY = Math.max(maxY, absoluteCenter.y + pad.size.y / 2)
+  }
+
+  return {
+    obstacleId: component.componentId,
+    absoluteCenter: { x: (minX + maxX) / 2, y: (minY + maxY) / 2 },
+    width: maxX - minX,
+    height: maxY - minY,
+  }
+}
 
 export const Group_doInitialPcbLayoutPack = (group: Group) => {
   const { db } = group.root!
@@ -197,8 +243,78 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
       const componentIdsForLayer = new Set(
         layerPackInput.components.map((component) => component.componentId),
       )
-      const networkReferenceComponents = packOutput.components.map(
-        (component) => ({
+      // Authored static components historically acted as obstacles on their own
+      // layer. Preserve that behavior so existing explicitly positioned layouts
+      // do not change, while the original pad-bearing components remain
+      // available as opposite-layer network references below.
+      const staticLayerObstacles = layerPackInput.components.flatMap(
+        (component) => {
+          if (!component.isStatic) return []
+          const obstacle = getCollisionObstacleForStaticComponent(component)
+          return obstacle ? [obstacle] : []
+        },
+      )
+      // Aggregate packed groups can contain global geometry (for example shaft
+      // holes) that is not represented by their pad-derived PCB layer. Moving
+      // those groups toward an opposite-layer reference can detach them from
+      // that authored geometry. Limit cross-layer references to layer-pure,
+      // directly represented PCB components for now.
+      const canUseCrossLayerNetworkReferences = layerPackInput.components.every(
+        (component) =>
+          Boolean(db.pcb_component.get(component.componentId)) &&
+          !clusterMap[component.componentId],
+      )
+      const crossLayerStaticComponents = packInput.components.filter(
+        (component) =>
+          component.isStatic &&
+          !componentIdsForLayer.has(component.componentId),
+      )
+      const fallbackCrossLayerObstacles = canUseCrossLayerNetworkReferences
+        ? []
+        : crossLayerStaticComponents.flatMap((component) => {
+            const obstacle = getCollisionObstacleForStaticComponent(component)
+            return obstacle ? [obstacle] : []
+          })
+      const collisionOnlyPadIds = new Set(
+        [
+          ...layerPackInput.components.filter(
+            (component) => component.isStatic,
+          ),
+          ...(canUseCrossLayerNetworkReferences
+            ? []
+            : crossLayerStaticComponents),
+        ].flatMap((component) => component.pads.map((pad) => pad.padId)),
+      )
+      // Include both components packed on earlier layers and authored static
+      // components on later layers. This keeps cross-layer network attraction
+      // independent of the top-first solve order.
+      // Keep the historical epsilon for solver-produced references to avoid
+      // perturbing existing layouts. Authored static references use a small but
+      // representable size so they do not collapse at nonzero coordinates.
+      const networkReferenceSources = new Map<
+        string,
+        { component: InputComponent; courtyardSize: number }
+      >([
+        ...packOutput.components.map(
+          (component) =>
+            [
+              component.componentId,
+              { component, courtyardSize: Number.EPSILON },
+            ] as const,
+        ),
+        ...(canUseCrossLayerNetworkReferences
+          ? crossLayerStaticComponents.map(
+              (component) =>
+                [
+                  component.componentId,
+                  { component, courtyardSize: 1e-6 },
+                ] as const,
+            )
+          : []),
+      ])
+      const networkReferenceComponents = Array.from(
+        networkReferenceSources.values(),
+        ({ component, courtyardSize }) => ({
           ...component,
           componentId: `network_reference_${component.componentId}`,
           isStatic: true,
@@ -206,16 +322,27 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
           // reducing their collision geometry to a point at the component center.
           courtyard: {
             offsetFromCenter: { x: 0, y: 0 },
-            width: Number.EPSILON,
-            height: Number.EPSILON,
+            width: courtyardSize,
+            height: courtyardSize,
           },
         }),
       )
       const solverInput = {
         ...layerPackInput,
+        weightedConnections: layerPackInput.weightedConnections?.filter(
+          (connection) =>
+            connection.padIds.every((padId) => !collisionOnlyPadIds.has(padId)),
+        ),
+        obstacles: [
+          ...(layerPackInput.obstacles ?? []),
+          ...staticLayerObstacles,
+          ...fallbackCrossLayerObstacles,
+        ],
         components: [
           ...networkReferenceComponents,
-          ...layerPackInput.components,
+          ...layerPackInput.components.filter(
+            (component) => !component.isStatic,
+          ),
         ],
       }
       const solver = new PackSolver2(solverInput)

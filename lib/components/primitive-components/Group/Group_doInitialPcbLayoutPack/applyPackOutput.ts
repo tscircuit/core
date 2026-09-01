@@ -1,13 +1,13 @@
-import type { Group } from "../Group"
-import { translate, rotate, compose } from "transformation-matrix"
 import {
+  type CircuitJsonUtilObjects,
   findBoundsAndCenter,
   transformPCBElements,
-  type CircuitJsonUtilObjects,
 } from "@tscircuit/circuit-json-util"
-import type { PackOutput } from "calculate-packing"
-import type { ClusterInfo } from "./applyComponentConstraintClusters"
 import { normalizeDegrees } from "@tscircuit/math-utils"
+import type { PackOutput } from "calculate-packing"
+import { compose, rotate, translate } from "transformation-matrix"
+import type { Group } from "../Group"
+import type { ClusterInfo } from "./applyComponentConstraintClusters"
 
 const updateCadRotation = ({
   db,
@@ -63,6 +63,10 @@ export const applyPackOutput = (
   const { db } = group.root!
 
   for (const packedComponent of packOutput.components) {
+    // Static components participate in collision and network scoring, but their
+    // authored position must remain untouched by the packing output.
+    if (packedComponent.isStatic) continue
+
     const { center, componentId, ccwRotationOffset, ccwRotationDegrees } =
       packedComponent
 

@@ -131,6 +131,11 @@ test("fanout breakout routes signals and plane drops before global routing", asy
     expect(Object.keys(dataBus?.connectionExitTargets ?? {}).sort()).toEqual(
       [...(dataBus?.connectionNames ?? [])].sort(),
     )
+    expect(
+      Object.values(dataBus?.connectionExitTargets ?? {}).every(
+        (target) => target.layer !== undefined,
+      ),
+    ).toBe(true)
   }
   for (const connection of autoroutingPhaseIoStack[2]!.startSimpleRouteJson!
     .connections) {
