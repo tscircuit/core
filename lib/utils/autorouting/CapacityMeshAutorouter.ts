@@ -87,7 +87,6 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
   private cycleCount = 0
   private stepDelay: number
   private timeoutId?: number
-  private usesPipeline9Output = false
 
   constructor(input: SimpleRouteJson, options: AutorouterOptions = {}) {
     this.input = input
@@ -133,8 +132,6 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
     } else {
       solverName = "AutoroutingPipelineSolver7_MultiGraph"
     }
-    this.usesPipeline9Output =
-      solverName === "AutoroutingPipelineSolver9_PreloadedTraceGraph"
     const SolverClass = SOLVERS[solverName]
     const solverCacheProvider =
       getCapacityAutorouterCacheProvider(platformConfig)
@@ -188,17 +185,6 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
     this.solver.step()
   }
 
-  private getOutputPcbTraces(): SimplifiedPcbTrace[] {
-    if (this.usesPipeline9Output) {
-      return this.solver.getOutputSimplifiedPcbTraces() as SimplifiedPcbTrace[]
-    }
-
-    return (
-      (this.solver.getOutputSimpleRouteJson().traces as SimplifiedPcbTrace[]) ??
-      []
-    )
-  }
-
   /**
    * Execute the next routing step and schedule the following one if needed
    */
@@ -216,7 +202,8 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
         } else {
           this.emitEvent({
             type: "complete",
-            traces: this.getOutputPcbTraces(),
+            traces:
+              this.solver.getOutputSimplifiedPcbTraces() as SimplifiedPcbTrace[],
           })
         }
         this.isRouting = false
@@ -353,7 +340,7 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
       throw new AutorouterError(this.solver.error || "Routing failed")
     }
 
-    return this.getOutputPcbTraces()
+    return this.solver.getOutputSimplifiedPcbTraces() as SimplifiedPcbTrace[]
   }
 
   /**

@@ -5,64 +5,51 @@ import type {
   SimplifiedPcbTrace,
 } from "lib/utils/autorouting/SimpleRouteJson"
 
-test("Pipeline 9 returns each preloaded trace once", async () => {
+test("Pipeline 9 local autorouter does not duplicate preloaded traces", () => {
   const preloadedTrace: SimplifiedPcbTrace = {
     type: "pcb_trace",
     pcb_trace_id: "preloaded-trace",
     connection_name: "PRELOADED",
     route: [
-      { route_type: "wire", x: 0, y: 0, width: 0.2, layer: "top" },
-      { route_type: "wire", x: 1, y: 0, width: 0.2, layer: "top" },
+      { route_type: "wire", x: -10, y: -4, width: 0.2, layer: "top" },
+      { route_type: "wire", x: 10, y: -4, width: 0.2, layer: "top" },
     ],
   }
-  const routedTrace: SimplifiedPcbTrace = {
-    type: "pcb_trace",
-    pcb_trace_id: "routed-trace",
-    connection_name: "ROUTED",
-    route: [
-      { route_type: "wire", x: 0, y: 1, width: 0.2, layer: "top" },
-      { route_type: "wire", x: 1, y: 1, width: 0.2, layer: "top" },
-    ],
-  }
-  const srj: SimpleRouteJson = {
+  const simpleRouteJson: SimpleRouteJson = {
     layerCount: 2,
     minTraceWidth: 0.2,
     obstacles: [],
-    connections: [],
-    bounds: { minX: -1, maxX: 2, minY: -1, maxY: 2 },
+    connections: [
+      {
+        name: "PRELOADED",
+        pointsToConnect: [
+          { x: -10, y: -4, layer: "top" },
+          { x: 10, y: -4, layer: "top" },
+        ],
+      },
+      {
+        name: "ROUTED",
+        pointsToConnect: [
+          { x: -10, y: 4, layer: "top" },
+          { x: 10, y: 4, layer: "top" },
+        ],
+      },
+    ],
+    bounds: { minX: -15, maxX: 15, minY: -10, maxY: 10 },
     traces: [preloadedTrace],
   }
-  const solvedPipeline = {
-    solved: true,
-    failed: false,
-    error: null,
-    solve() {},
-    getOutputSimpleRouteJson: () => ({
-      ...srj,
-      traces: [preloadedTrace, preloadedTrace, routedTrace],
-    }),
-    getOutputSimplifiedPcbTraces: () => [preloadedTrace, routedTrace],
-  }
+  const autorouter = new TscircuitAutorouter(simpleRouteJson, {
+    autorouterVersion: "beta_pipeline9",
+  })
 
-  const synchronousAutorouter = new TscircuitAutorouter(srj)
-  Reflect.set(synchronousAutorouter, "solver", solvedPipeline)
-  Reflect.set(synchronousAutorouter, "usesPipeline9Output", true)
-  expect(
-    synchronousAutorouter.solveSync().map((trace) => trace.pcb_trace_id),
-  ).toEqual(["preloaded-trace", "routed-trace"])
+  const outputPcbTraces = autorouter.solveSync()
 
-  const asynchronousAutorouter = new TscircuitAutorouter(srj)
-  Reflect.set(asynchronousAutorouter, "solver", solvedPipeline)
-  Reflect.set(asynchronousAutorouter, "usesPipeline9Output", true)
-  const asynchronousTraces = await new Promise<SimplifiedPcbTrace[]>(
-    (resolve, reject) => {
-      asynchronousAutorouter.on("complete", (event) => resolve(event.traces))
-      asynchronousAutorouter.on("error", (event) => reject(event.error))
-      asynchronousAutorouter.start()
-    },
-  )
-  expect(asynchronousTraces.map((trace) => trace.pcb_trace_id)).toEqual([
-    "preloaded-trace",
-    "routed-trace",
+  expect(outputPcbTraces).toHaveLength(2)
+  expect(outputPcbTraces.map((trace) => trace.connection_name).sort()).toEqual([
+    "PRELOADED",
+    "ROUTED",
   ])
+  expect(new Set(outputPcbTraces.map((trace) => trace.pcb_trace_id)).size).toBe(
+    outputPcbTraces.length,
+  )
 })

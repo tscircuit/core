@@ -1658,13 +1658,13 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
               stageOutputPcbTraces: traces,
             })
         }
-        let eventOutputTraces = stageOutputTraces
+        let eventOutputPcbTraces = stageOutputTraces
         if (
           !transformedSimpleRouteJson &&
           !usesPreviousStageOutput &&
           routingPhasePlan.routingPhaseIndex !== null
         ) {
-          eventOutputTraces =
+          eventOutputPcbTraces =
             getAccumulatedPcbTracesWithStageOutputReplacements({
               accumulatedPcbTraces: simpleRouteJson.traces ?? [],
               stageOutputPcbTraces: traces,
@@ -1672,7 +1672,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         }
         const outputSimpleRouteJson = {
           ...(transformedSimpleRouteJson ?? simpleRouteJson),
-          traces: eventOutputTraces,
+          traces: eventOutputPcbTraces,
         }
         previousStageOutputSimpleRouteJson = transformedSimpleRouteJson
           ? outputSimpleRouteJson
