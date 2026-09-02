@@ -853,7 +853,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
     if (serverMode === "solve-endpoint") {
       const solveBody =
-        this.props.autorouter?.inputFormat === "simplified"
+        autorouterConfig.inputFormat === "simplified"
           ? {
               input_simple_route_json: simpleRouteJson,
               subcircuit_id: this.subcircuit_id!,
