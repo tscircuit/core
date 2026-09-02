@@ -799,17 +799,25 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const debug = Debug("tscircuit:core:_hasTracesToRoute")
     const routingPhasePlans = this._getRoutingPhasePlans()
     let traceCount = 0
-    let hasReroutePhaseWithRegion = false
+    let hasReroutePhaseWithExistingTraceInput = false
     for (const routingPhasePlan of routingPhasePlans) {
       traceCount += routingPhasePlan.traces.length
-      hasReroutePhaseWithRegion ||= Boolean(
-        routingPhasePlan.reroute && routingPhasePlan.region,
+      const phaseAutorouterConfig = routingPhasePlan.autorouter
+        ? getPresetAutoroutingConfig(
+            routingPhasePlan.autorouter,
+            this.root?.platform,
+          )
+        : undefined
+      hasReroutePhaseWithExistingTraceInput ||= Boolean(
+        routingPhasePlan.reroute &&
+          (routingPhasePlan.region ||
+            phaseAutorouterConfig?.preset === "simplify"),
       )
     }
     debug(`[${this.getString()}] has ${traceCount} traces to route`)
     if (traceCount > 0) return true
 
-    if (hasReroutePhaseWithRegion) {
+    if (hasReroutePhaseWithExistingTraceInput) {
       const existingTraceCount = getExistingPcbTracesForReroute(this).length
       debug(
         `[${this.getString()}] has ${existingTraceCount} existing pcb traces available for reroute`,
@@ -1301,15 +1309,24 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       }
       let simpleRouteJson =
         previousStageOutputSimpleRouteJson ?? baseSimpleRouteJson
+      const isTraceSimplificationPhase = Boolean(
+        routingPhasePlan.reroute && phaseAutorouterConfig.preset === "simplify",
+      )
       const isRegionReroutePhase = Boolean(
-        routingPhasePlan.reroute && routingPhasePlan.region,
+        routingPhasePlan.reroute &&
+          routingPhasePlan.region &&
+          !isTraceSimplificationPhase,
       )
       const isConnectionReroutePhase = Boolean(
         routingPhasePlan.reroute &&
+          !isTraceSimplificationPhase &&
           !routingPhasePlan.region &&
           routingPhasePlan.traces.length > 0,
       )
-      const isReroutePhase = isRegionReroutePhase || isConnectionReroutePhase
+      const isReroutePhase =
+        isRegionReroutePhase ||
+        isConnectionReroutePhase ||
+        isTraceSimplificationPhase
       const rerouteOriginalSrj = isRegionReroutePhase
         ? {
             ...baseSimpleRouteJson,
@@ -1317,7 +1334,19 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           }
         : null
 
-      if (
+      if (!usesPreviousStageOutput && isTraceSimplificationPhase) {
+        const phaseInput = Group_filterSimpleRouteJsonForPhase(
+          baseSimpleRouteJson,
+          routingPhasePlan,
+        )
+        simpleRouteJson = {
+          ...phaseInput,
+          traces: getAccumulatedPcbTracesWithStageOutputReplacements({
+            accumulatedPcbTraces: existingRerouteSeedTraces,
+            stageOutputPcbTraces: outputTraces,
+          }),
+        }
+      } else if (
         !usesPreviousStageOutput &&
         isRegionReroutePhase &&
         rerouteOriginalSrj
@@ -1386,9 +1415,14 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       )
       simpleRouteJson.allowViaInPad = phaseAutorouterConfig.allowViaInPad
 
+      const simplificationHasNoTraceInput = Boolean(
+        isTraceSimplificationPhase && simpleRouteJson.traces?.length === 0,
+      )
       if (
         (hasPhasedAutorouting || isReroutePhase) &&
-        simpleRouteJson.connections.length === 0
+        ((simpleRouteJson.connections.length === 0 &&
+          !isTraceSimplificationPhase) ||
+          simplificationHasNoTraceInput)
       ) {
         if (phaseStageIndex === 0) {
           emitRoutingPhaseDebugObject(routingPhasePlan, simpleRouteJson.bounds)
@@ -1704,6 +1738,11 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             }),
           )
         } else {
+          if (isTraceSimplificationPhase) {
+            for (const existingTrace of existingRerouteSeedTraces) {
+              pcbTraceIdsToDelete.add(existingTrace.pcb_trace_id)
+            }
+          }
           outputTraces.splice(
             0,
             outputTraces.length,
