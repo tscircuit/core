@@ -137,7 +137,7 @@ test('autorouter="fanout" escapes an inner BGA bus before board routing', async 
     4,
   )
   const allowedFanoutLayers = new Set(["inner2", "bottom"])
-  expect(autoroutingPhaseIoStack[1]?.endSimpleRouteJson?.traces).toHaveLength(8)
+  expect(autoroutingPhaseIoStack[1]?.endSimpleRouteJson?.traces).toHaveLength(4)
 
   const u1SourceComponent = circuit.db.source_component.getWhere({
     name: "U1",

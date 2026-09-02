@@ -38,6 +38,8 @@ const TestTrace = ({ busIndex }: { busIndex: number }) => (
   />
 )
 
+const busIndexes = [0, 1, 2, 3] as const
+
 test('autorouter="single_layer_fanout" keeps a complete bus on top', async () => {
   const { circuit } = getTestFixture()
   const autoroutingPhaseIoStack = createAutoroutingPhaseIoStack(circuit)
@@ -75,10 +77,10 @@ test('autorouter="single_layer_fanout" keeps a complete bus on top', async () =>
         footprint={<footprint>{sourcePads}</footprint>}
       />
       <bus name="DATA" connections={["D0", "D1", "D2", "D3"]} />
-      {Array.from({ length: 4 }, (_, busIndex) => (
+      {busIndexes.map((busIndex) => (
         <TestResistor key={busIndex} busIndex={busIndex} />
       ))}
-      {Array.from({ length: 4 }, (_, busIndex) => (
+      {busIndexes.map((busIndex) => (
         <TestTrace key={busIndex} busIndex={busIndex} />
       ))}
       <pcbnotetext
@@ -110,7 +112,7 @@ test('autorouter="single_layer_fanout" keeps a complete bus on top', async () =>
   expect(autoroutingPhaseIoStack[1]?.startSimpleRouteJson?.traces).toHaveLength(
     4,
   )
-  expect(autoroutingPhaseIoStack[1]?.endSimpleRouteJson?.traces).toHaveLength(8)
+  expect(autoroutingPhaseIoStack[1]?.endSimpleRouteJson?.traces).toHaveLength(4)
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
   await expect(autoroutingPhaseIoStack).toMatchAutoroutingPhaseIoStackSnapshot(
     import.meta.path,

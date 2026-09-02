@@ -94,7 +94,7 @@ test("breakout defaults to fanout for a 6x6 BGA surrounded by four 0603 decoupli
   expect(breakoutPhases[0]?.startSimpleRouteJson?.traces ?? []).toHaveLength(0)
   expect(breakoutPhases[0]?.endSimpleRouteJson?.traces).toHaveLength(8)
   expect(breakoutPhases[1]?.startSimpleRouteJson?.traces).toHaveLength(8)
-  expect(breakoutPhases[1]?.endSimpleRouteJson?.traces).toHaveLength(16)
+  expect(breakoutPhases[1]?.endSimpleRouteJson?.traces).toHaveLength(8)
 
   const u1SourceComponent = circuit.db.source_component.getWhere({
     name: "U1",

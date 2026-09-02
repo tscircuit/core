@@ -1651,8 +1651,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         let stageOutputTraces = traces
         if (transformedSimpleRouteJson?.traces) {
           stageOutputTraces = transformedSimpleRouteJson.traces
-        } else if (usesPreviousStageOutput) {
-          stageOutputTraces = [...(simpleRouteJson.traces ?? []), ...traces]
         }
         const outputSimpleRouteJson = {
           ...(transformedSimpleRouteJson ?? simpleRouteJson),
