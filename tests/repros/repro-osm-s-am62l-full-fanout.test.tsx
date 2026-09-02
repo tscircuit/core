@@ -8,8 +8,9 @@ test("OSM-S AM62L signal, ground, and power fanout", async () => {
   circuit.add(createAm62lOsmFullFanout())
   await circuit.renderUntilSettled()
 
-  expect(circuit.db.pcb_autorouting_error.list()[0]?.message).toContain(
-    "only 95 of 96 connections could escape",
-  )
+  expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
+  expect(circuit.db.pcb_trace.list()).toHaveLength(96)
+  expect(circuit.db.pcb_pad_trace_clearance_error.list()).toEqual([])
+  expect(circuit.db.pcb_via_clearance_error.list()).toEqual([])
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
-})
+}, 30_000)
