@@ -9,6 +9,7 @@ import {
   AutoroutingPipelineSolver7_MultiGraph,
   AutoroutingPipelineSolver8,
   AutoroutingPipelineSolver9_PreloadedTraceGraph,
+  AutoroutingPipelineSolver10_BgaFanout,
   AutoroutingPipelineSolver11_Simplification,
 } from "@tscircuit/capacity-autorouter"
 import { CopperPourPipelineSolver } from "@tscircuit/copper-pour-solver"
@@ -32,6 +33,7 @@ export const SOLVERS = {
   AutoroutingPipelineSolver7_MultiGraph,
   AutoroutingPipelineSolver8,
   AutoroutingPipelineSolver9_PreloadedTraceGraph,
+  AutoroutingPipelineSolver10_BgaFanout,
   AutoroutingPipelineSolver11_Simplification,
   CopperPourPipelineSolver,
   CreateFdmEnclosureSolver,

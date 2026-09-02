@@ -9,6 +9,7 @@ import {
   AutoroutingPipelineSolver7_MultiGraph,
   AutoroutingPipelineSolver8,
   AutoroutingPipelineSolver9_PreloadedTraceGraph,
+  AutoroutingPipelineSolver10_BgaFanout,
   AutoroutingPipelineSolver11_Simplification,
   type CacheProvider,
 } from "@tscircuit/capacity-autorouter"
@@ -74,6 +75,7 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
     | AutoroutingPipelineSolver7_MultiGraph
     | AutoroutingPipelineSolver8
     | AutoroutingPipelineSolver9_PreloadedTraceGraph
+    | AutoroutingPipelineSolver10_BgaFanout
     | AutoroutingPipelineSolver11_Simplification
   private eventHandlers: {
     complete: Array<(ev: AutorouterCompleteEvent) => void>
@@ -123,6 +125,8 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
       solverName = "AutoroutingPipelineSolver7_MultiGraph"
     } else if (autorouterVersion === "beta_pipeline9") {
       solverName = "AutoroutingPipelineSolver9_PreloadedTraceGraph"
+    } else if (autorouterVersion === "beta_pipeline10") {
+      solverName = "AutoroutingPipelineSolver10_BgaFanout"
     } else if (useLaserPrefabSolver) {
       solverName = "AutoroutingPipelineSolver8"
     } else if (useAutoJumperSolver) {

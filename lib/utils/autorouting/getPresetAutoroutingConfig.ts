@@ -113,6 +113,12 @@ export function getPresetAutoroutingConfig(
         groupMode: "subcircuit",
         autorouterVersion: "beta_pipeline9",
       }
+    case "beta-pipeline10":
+      return {
+        local: true,
+        groupMode: "subcircuit",
+        autorouterVersion: "beta_pipeline10",
+      }
     case "single-layer-fanout":
       return {
         local: true,
