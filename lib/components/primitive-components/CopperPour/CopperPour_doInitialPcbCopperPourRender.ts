@@ -74,6 +74,7 @@ const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
         board_edge_outline: copperPour._isImplicitCopperPour
           ? resolvedPcbBoardOutline
           : undefined,
+        remove_disconnected_islands: copperPour._isImplicitCopperPour,
         cutout_margin: props.cutoutMargin ?? clearance,
         ...(props.useThermalReliefs
           ? {
