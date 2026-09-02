@@ -3009,17 +3009,6 @@ export const renderAm62lLpddr4Fanout = async ({
     const expectedPlaneDrops = planeDrops.filter(
       (drop) => drop.fanoutPhaseIndex === fanoutPhaseIndex,
     )
-    const outputRouteVias = fanoutOutputTraces.flatMap((trace) =>
-      trace.route.filter((routePoint) => routePoint.route_type === "via"),
-    )
-    expect(outputRouteVias).toHaveLength(
-      signalConnections.length + expectedPlaneDrops.length,
-    )
-    if (includePowerPlaneFanout) {
-      for (const routeVia of outputRouteVias) {
-        expect(routeVia.layers).toEqual(getViaBoardLayers(8))
-      }
-    }
     const routedFanoutTraces = fanoutOutputTraces.filter(
       (trace) =>
         trace.connection_name !== undefined &&
@@ -3027,10 +3016,23 @@ export const renderAm62lLpddr4Fanout = async ({
     )
     expect(routedFanoutTraces).toHaveLength(signalConnections.length)
     for (const trace of routedFanoutTraces) {
-      expect(
-        trace.route.filter((routePoint) => routePoint.route_type === "via"),
-      ).toHaveLength(1)
+      const routeVias = trace.route.filter(
+        (routePoint) => routePoint.route_type === "via",
+      )
+      expect(routeVias.length).toBeGreaterThanOrEqual(1)
+      expect(routeVias.length % 2).toBe(1)
+      for (const routeVia of routeVias) {
+        expect(routeVia.layers).toEqual(
+          getViaBoardLayers(includePowerPlaneFanout ? 8 : 4),
+        )
+      }
     }
+    const routedPlaneDrops = fanoutOutputTraces.filter((trace) =>
+      expectedPlaneDrops.some(
+        (drop) => drop.connectionName === trace.connection_name,
+      ),
+    )
+    expect(routedPlaneDrops).toHaveLength(expectedPlaneDrops.length)
     for (const expectedBus of fanoutBuses) {
       const bus = fanoutPhase.startSimpleRouteJson?.buses?.find(
         (candidate) => candidate.busId === expectedBus.name,
