@@ -823,7 +823,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   async _runEffectMakeHttpAutoroutingRequest() {
     const { db } = this.root!
     const debug = Debug("tscircuit:core:_runEffectMakeHttpAutoroutingRequest")
-    const props = this._parsedProps as SubcircuitGroupProps
 
     const autorouterConfig = this._getAutorouterConfig()
 
@@ -840,7 +839,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       return fetch(url, options)
     }
 
-    // Only include source and pcb elements
+    // Only include source and pcb elements. Copper pours are not present as
+    // pcb_copper_pour yet (that phase runs after routing), so unbroken-plane
+    // intent is sent as Simple Route JSON built from the source component tree.
     const pcbAndSourceCircuitJson = this.root!.db.toArray().filter(
       (element) => {
         return (
@@ -848,50 +849,26 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         )
       },
     )
+    const simpleRouteJson = this._getSimpleRouteJsonForRemoteAutorouting()
 
     if (serverMode === "solve-endpoint") {
-      // Legacy solve endpoint mode
-      if (this.props.autorouter?.inputFormat === "simplified") {
-        const preferredTraceWidth =
-          props.defaultTraceWidth ?? props.nominalTraceWidth
-        const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
-          db,
-          minTraceWidth: Number(props.minTraceWidth ?? 0.15),
-          nominalTraceWidth:
-            preferredTraceWidth != null
-              ? Number(preferredTraceWidth)
-              : undefined,
-          subcircuit_id: this.subcircuit_id,
-          subcircuitComponent: this,
-        })
-        simpleRouteJson.allowViaInPad = autorouterConfig.allowViaInPad
-
-        const { autorouting_result } = await fetchWithDebug(
-          `${serverUrl}/autorouting/solve`,
-          {
-            method: "POST",
-            body: JSON.stringify({
+      const solveBody =
+        this.props.autorouter?.inputFormat === "simplified"
+          ? {
               input_simple_route_json: simpleRouteJson,
               subcircuit_id: this.subcircuit_id!,
-            }),
-            headers: {
-              "Content-Type": "application/json",
-            },
-          },
-        ).then((r) => r.json())
-        this._asyncAutoroutingResult = autorouting_result
-        this._markDirty("PcbTraceRender")
-        return
-      }
+            }
+          : {
+              input_circuit_json: pcbAndSourceCircuitJson,
+              input_simple_route_json: simpleRouteJson,
+              subcircuit_id: this.subcircuit_id!,
+            }
 
       const { autorouting_result } = await fetchWithDebug(
         `${serverUrl}/autorouting/solve`,
         {
           method: "POST",
-          body: JSON.stringify({
-            input_circuit_json: pcbAndSourceCircuitJson,
-            subcircuit_id: this.subcircuit_id!,
-          }),
+          body: JSON.stringify(solveBody),
           headers: {
             "Content-Type": "application/json",
           },
@@ -908,6 +885,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         method: "POST",
         body: JSON.stringify({
           input_circuit_json: pcbAndSourceCircuitJson,
+          input_simple_route_json: simpleRouteJson,
           provider: "freerouting",
           autostart: true,
           display_name: this.root?.name,
@@ -2487,6 +2465,24 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       minY: minY - padding,
       maxY: maxY + padding,
     }
+  }
+
+  _getSimpleRouteJsonForRemoteAutorouting(): SimpleRouteJson {
+    const { db } = this.root!
+    const props = this._parsedProps as SubcircuitGroupProps
+    const autorouterConfig = this._getAutorouterConfig()
+    const preferredTraceWidth =
+      props.defaultTraceWidth ?? props.nominalTraceWidth
+    const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
+      db,
+      minTraceWidth: Number(props.minTraceWidth ?? 0.15),
+      nominalTraceWidth:
+        preferredTraceWidth != null ? Number(preferredTraceWidth) : undefined,
+      subcircuit_id: this.subcircuit_id,
+      subcircuitComponent: this,
+    })
+    simpleRouteJson.allowViaInPad = autorouterConfig.allowViaInPad
+    return simpleRouteJson
   }
 
   _getAutorouterConfig(): AutorouterConfig {
