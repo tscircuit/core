@@ -9,6 +9,7 @@ import {
   AutoroutingPipelineSolver7_MultiGraph,
   AutoroutingPipelineSolver8,
   AutoroutingPipelineSolver9_PreloadedTraceGraph,
+  AutoroutingPipelineSolver11_Simplification,
   type CacheProvider,
 } from "@tscircuit/capacity-autorouter"
 import type { PlatformConfig } from "@tscircuit/props"
@@ -45,6 +46,7 @@ export interface AutorouterOptions {
   useAssignableSolver?: boolean
   useAutoJumperSolver?: boolean
   useLaserPrefabSolver?: boolean
+  useTraceSimplificationSolver?: boolean
   autorouterVersion?: AutorouterVersion
   effort?: number
   platformConfig?: Pick<PlatformConfig, "localCacheEngine">
@@ -72,6 +74,7 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
     | AutoroutingPipelineSolver7_MultiGraph
     | AutoroutingPipelineSolver8
     | AutoroutingPipelineSolver9_PreloadedTraceGraph
+    | AutoroutingPipelineSolver11_Simplification
   private eventHandlers: {
     complete: Array<(ev: AutorouterCompleteEvent) => void>
     error: Array<(ev: AutorouterErrorEvent) => void>
@@ -96,6 +99,7 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
       useAutoJumperSolver = false,
       autorouterVersion,
       useLaserPrefabSolver = false,
+      useTraceSimplificationSolver = false,
       effort,
       platformConfig,
       onSolverStarted,
@@ -103,7 +107,9 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
 
     // Initialize the solver with input and optional configuration
     let solverName: keyof typeof SOLVERS
-    if (autorouterVersion === "beta_pipeline1") {
+    if (useTraceSimplificationSolver) {
+      solverName = "AutoroutingPipelineSolver11_Simplification"
+    } else if (autorouterVersion === "beta_pipeline1") {
       solverName = "AutoroutingPipeline1_OriginalUnravel"
     } else if (autorouterVersion === "beta_pipeline3") {
       solverName = "AutoroutingPipelineSolver3_HgPortPointPathing"
@@ -245,7 +251,11 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
         steps: this.cycleCount,
         iterationsPerSecond,
         progress,
-        phase: this.solver.getCurrentPhase(),
+        phase:
+          "getCurrentPhase" in this.solver
+            ? this.solver.getCurrentPhase()
+            : (this.solver.activeSubSolver?.getSolverName() ??
+              this.solver.getSolverName()),
         debugGraphics,
       })
 
