@@ -1618,11 +1618,27 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         if (transformedSimpleRouteJson?.traces) {
           stageOutputTraces = transformedSimpleRouteJson.traces
         } else if (usesPreviousStageOutput) {
-          stageOutputTraces = [...(simpleRouteJson.traces ?? []), ...traces]
+          stageOutputTraces =
+            getAccumulatedPcbTracesWithStageOutputReplacements({
+              accumulatedPcbTraces: simpleRouteJson.traces ?? [],
+              stageOutputPcbTraces: traces,
+            })
+        }
+        let eventOutputTraces = stageOutputTraces
+        if (
+          !transformedSimpleRouteJson &&
+          !usesPreviousStageOutput &&
+          routingPhasePlan.routingPhaseIndex !== null
+        ) {
+          eventOutputTraces =
+            getAccumulatedPcbTracesWithStageOutputReplacements({
+              accumulatedPcbTraces: simpleRouteJson.traces ?? [],
+              stageOutputPcbTraces: traces,
+            })
         }
         const outputSimpleRouteJson = {
           ...(transformedSimpleRouteJson ?? simpleRouteJson),
-          traces: stageOutputTraces,
+          traces: eventOutputTraces,
         }
         previousStageOutputSimpleRouteJson = transformedSimpleRouteJson
           ? outputSimpleRouteJson
