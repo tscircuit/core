@@ -3055,12 +3055,26 @@ export const renderAm62lLpddr4Fanout = async ({
         )
       }
     }
+    const expectedPlaneConnectionNames = new Set(
+      expectedPlaneDrops.map((drop) => {
+        const sourceTrace = circuit.db.source_trace.getWhere({
+          name: drop.traceName,
+        })
+        if (!sourceTrace) {
+          throw new Error(`Missing source trace ${drop.traceName}`)
+        }
+        return sourceTrace.source_trace_id
+      }),
+    )
     const routedPlaneDrops = fanoutOutputTraces.filter((trace) =>
-      expectedPlaneDrops.some(
-        (drop) => drop.connectionName === trace.connection_name,
-      ),
+      expectedPlaneConnectionNames.has(trace.connection_name ?? ""),
     )
     expect(routedPlaneDrops).toHaveLength(expectedPlaneDrops.length)
+    for (const trace of routedPlaneDrops) {
+      expect(
+        trace.route.filter((routePoint) => routePoint.route_type === "via"),
+      ).toHaveLength(1)
+    }
     for (const expectedBus of fanoutBuses) {
       const bus = fanoutPhase.startSimpleRouteJson?.buses?.find(
         (candidate) => candidate.busId === expectedBus.name,
