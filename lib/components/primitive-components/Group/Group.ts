@@ -1645,6 +1645,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             db.pcb_breakout_point.update(breakoutPoint.pcb_breakout_point_id, {
               x: synchronizedPoint.fanoutExitPoint.x,
               y: synchronizedPoint.fanoutExitPoint.y,
+              layer: synchronizedPoint.fanoutExitPoint.layer as LayerRef,
             })
           }
         }
