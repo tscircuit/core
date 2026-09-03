@@ -84,6 +84,10 @@ test("breakout routes sot23 regulator power rail parts without breakoutpoints", 
   expect(breakoutPcbGroup).toBeDefined()
   expect(circuit.db.pcb_breakout_point.list().length).toBe(3)
   expect(circuit.db.pcb_trace.list().length).toBeGreaterThanOrEqual(7)
+  expect(circuit.db.pcb_via.list().length).toBeLessThanOrEqual(8)
+  expect(
+    Math.max(...circuit.db.pcb_trace.list().map((trace) => trace.route.length)),
+  ).toBeLessThanOrEqual(20)
   expect(
     circuit.db.pcb_trace.list().every((trace) => trace.source_trace_id),
   ).toBe(true)
