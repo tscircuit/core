@@ -56,9 +56,45 @@ if (osmPadNames.length !== 332) {
 }
 
 const osmSignalAliases: Record<string, string> = {
+  Y8: "VCC_IN_5V_1",
+  Y9: "VCC_IN_5V_2",
+  Y10: "VCC_IN_5V_3",
+  Y11: "VCC_IN_5V_4",
+  Y17: "VCC_IN_5V_5",
+  U18: "VCC_OUT_IO_1V8",
   U17: "RESET_IN_N",
   T17: "FORCE_RECOVERY_N",
   Y14: "RESET_OUT_N",
+  D22: "CONSOLE_RX",
+  D23: "CONSOLE_TX",
+  AA15: "I2C_A_SCL",
+  AA16: "I2C_A_SDA",
+  AB13: "USB_A_D_N",
+  AC14: "USB_A_D_P",
+  AB14: "USB_A_ID",
+  AB16: "USB_A_VBUS",
+  Y7: "RGB_R0",
+  AA6: "RGB_R1",
+  Y6: "RGB_R2",
+  AA5: "RGB_R3",
+  Y5: "RGB_R4",
+  Y4: "RGB_R5",
+  W4: "RGB_G0",
+  V3: "RGB_G1",
+  V4: "RGB_G2",
+  U3: "RGB_G3",
+  T3: "RGB_G4",
+  T4: "RGB_G5",
+  R4: "RGB_B0",
+  R3: "RGB_B1",
+  P3: "RGB_B2",
+  N3: "RGB_B3",
+  N4: "RGB_B4",
+  M3: "RGB_B5",
+  M4: "RGB_PIXELCLK",
+  L3: "RGB_VSYNC",
+  K3: "RGB_HSYNC",
+  J4: "RGB_DE",
 }
 
 const osmPinLabels = Object.fromEntries(
@@ -161,6 +197,31 @@ export const HxTactileSwitch = (props: ChipProps<typeof switchPinLabels>) => (
 )
 
 const sii9022PinLabels = {
+  pin1: ["CSCL"],
+  pin2: ["CSDA"],
+  pin3: ["IOVCC1"],
+  pin4: ["D23"],
+  pin6: ["D22"],
+  pin7: ["D21"],
+  pin8: ["D20"],
+  pin9: ["D19"],
+  pin10: ["D18"],
+  pin14: ["D15"],
+  pin15: ["D14"],
+  pin16: ["D13"],
+  pin17: ["D12"],
+  pin18: ["D11"],
+  pin19: ["D10"],
+  pin22: ["IDCK"],
+  pin24: ["D7"],
+  pin25: ["D6"],
+  pin27: ["D5"],
+  pin28: ["D4"],
+  pin29: ["D3"],
+  pin30: ["D2"],
+  pin33: ["DE"],
+  pin34: ["HSYNC"],
+  pin35: ["VSYNC"],
   pin51: ["RESET"],
 } as const
 
@@ -170,7 +231,7 @@ const qfnPadEdge = 4.907534
 const pinNumberRange = (first: number, last: number) =>
   Array.from({ length: last - first + 1 }, (_, offset) => first + offset)
 
-export const Sii9022AcnuReset = (props: ChipProps<typeof sii9022PinLabels>) => (
+export const Sii9022Acnu = (props: ChipProps<typeof sii9022PinLabels>) => (
   <chip
     pinLabels={sii9022PinLabels}
     manufacturerPartNumber="SII9022ACNU"
@@ -235,6 +296,81 @@ export const Sii9022AcnuReset = (props: ChipProps<typeof sii9022PinLabels>) => (
         />
         <silkscreenrect pcbX={0} pcbY={0} width="10.15mm" height="10.15mm" />
         <courtyardrect pcbX={0} pcbY={0} width="10.99mm" height="11.35mm" />
+      </footprint>
+    }
+    {...props}
+  />
+)
+
+const usbCDataPinLabels = {
+  pin1: ["USB_DN"],
+  pin2: ["USB_DP"],
+} as const
+
+export const UsbCDataPort = (props: ChipProps<typeof usbCDataPinLabels>) => (
+  <chip
+    pinLabels={usbCDataPinLabels}
+    footprint={
+      <footprint>
+        <smtpad
+          portHints={["pin1"]}
+          pcbX="-0.5mm"
+          pcbY={0}
+          width="0.3mm"
+          height="1.2mm"
+          shape="rect"
+        />
+        <smtpad
+          portHints={["pin2"]}
+          pcbX="0.5mm"
+          pcbY={0}
+          width="0.3mm"
+          height="1.2mm"
+          shape="rect"
+        />
+        <silkscreenrect pcbX={0} pcbY={0} width="9mm" height="7mm" />
+        <silkscreentext text="USB-C" pcbX={0} pcbY="4.2mm" fontSize="1mm" />
+        <courtyardrect pcbX={0} pcbY={0} width="10mm" height="8mm" />
+      </footprint>
+    }
+    {...props}
+  />
+)
+
+// Compatibility alias for the older reset-only repro fixture.
+export const Sii9022AcnuReset = Sii9022Acnu
+
+const consoleHeaderPinLabels = {
+  pin1: ["UART_RX"],
+  pin2: ["UART_TX"],
+} as const
+
+export const ConsoleHeader = (
+  props: ChipProps<typeof consoleHeaderPinLabels>,
+) => (
+  <chip
+    pinLabels={consoleHeaderPinLabels}
+    manufacturerPartNumber="TSW-102-07-G-S"
+    footprint={
+      <footprint>
+        <platedhole
+          portHints={["pin1"]}
+          pcbX="-1.27mm"
+          pcbY={0}
+          shape="circle"
+          holeDiameter="1mm"
+          outerDiameter="1.7mm"
+        />
+        <platedhole
+          portHints={["pin2"]}
+          pcbX="1.27mm"
+          pcbY={0}
+          shape="circle"
+          holeDiameter="1mm"
+          outerDiameter="1.7mm"
+        />
+        <silkscreenrect pcbX={0} pcbY={0} width="5.4mm" height="2.6mm" />
+        <silkscreentext text="UART" pcbX={0} pcbY="2.2mm" fontSize="0.8mm" />
       </footprint>
     }
     {...props}
