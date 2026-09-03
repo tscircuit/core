@@ -63,6 +63,10 @@ export class SolderJumper<
     return Array.from({ length: pinCount }, (_, index) => index + 1)
   }
 
+  _getImpliedFootprintString(): string {
+    return `solderjumper${this._parsedProps.pinCount ?? 2}`
+  }
+
   resolveFootprint() {
     const footprint = super.resolveFootprint()
     if (typeof footprint !== "string") return footprint
