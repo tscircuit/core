@@ -10,12 +10,7 @@ test("cutout in footprint records its pcb component owner", () => {
         name="U1"
         footprint={
           <footprint>
-            <cutout
-              shape="circle"
-              radius="1mm"
-              pcbX="2mm"
-              pcbY="0mm"
-            />
+            <cutout shape="circle" radius="1mm" pcbX="2mm" pcbY="0mm" />
             <smtpad
               portHints={["1"]}
               shape="rect"
