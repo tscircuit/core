@@ -1,10 +1,13 @@
 import { expect, test } from "bun:test"
+import type { SolverStartedEvent } from "lib/events"
 import { createAutoroutingPhaseIoStack } from "tests/fixtures/create-autorouting-phase-io-stack"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("breakout routes qfp16 controller pins to header and passives with auto breakout points", async () => {
   const { circuit } = getTestFixture()
   const autoroutingPhaseIoStack = createAutoroutingPhaseIoStack(circuit)
+  const solverStartedEvents: SolverStartedEvent[] = []
+  circuit.on("solver:started", (event) => solverStartedEvents.push(event))
 
   circuit.add(
     <board width="20mm" height="16mm" autorouterVersion="latest">
@@ -69,6 +72,9 @@ test("breakout routes qfp16 controller pins to header and passives with auto bre
 
   await circuit.renderUntilSettled()
 
+  expect(solverStartedEvents.at(-1)?.solverName).toBe(
+    "AutoroutingPipelineSolver9_PreloadedTraceGraph",
+  )
   const sourcePortsById = new Map(
     circuit.db.source_port
       .list()

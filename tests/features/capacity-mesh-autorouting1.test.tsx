@@ -48,7 +48,7 @@ test("board with local group autorouter (capacity mesh)", async () => {
   const traces = circuit.selectAll("trace")
   expect(traces.length).toBeGreaterThan(0)
   expect(solverStartedEvent?.solverName).toBe(
-    "AutoroutingPipelineSolver7_MultiGraph",
+    "AutoroutingPipelineSolver9_PreloadedTraceGraph",
   )
   expect(solverStartedEvent?.solverConstructorArgs).toEqual([
     solverStartedEvent?.solverParams,
