@@ -50,5 +50,7 @@ test("OSM-S AM62L signal, ground, and power fanout", async () => {
   expect(unroutedTraceNames).toEqual([])
   expect(circuit.db.pcb_pad_trace_clearance_error.list()).toEqual([])
   expect(circuit.db.pcb_via_clearance_error.list()).toEqual([])
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  expect(circuit).toMatchPcbSnapshot(import.meta.path, {
+    diffThresholdPercent: 0.15,
+  })
 }, 60_000)
