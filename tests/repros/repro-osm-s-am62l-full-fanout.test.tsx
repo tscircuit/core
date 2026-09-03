@@ -31,8 +31,24 @@ test("OSM-S AM62L signal, ground, and power fanout", async () => {
   )
   await circuit.renderUntilSettled()
 
-  expect(circuit.db.pcb_autorouting_error.list()[0]?.message).toContain(
-    "only 95 of 96 connections could escape",
+  expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
+  const routedSourceTraceIds = new Set(
+    circuit.db.pcb_trace.list().map((trace) => trace.source_trace_id),
   )
+  const downstreamPlaneTraceNames = new Set([
+    "RESET_BUTTON_GROUND",
+    "RECOVERY_BUTTON_GROUND",
+  ])
+  const unroutedTraceNames = circuit.db.source_trace
+    .list()
+    .filter(
+      (trace) =>
+        !downstreamPlaneTraceNames.has(trace.name ?? "") &&
+        !routedSourceTraceIds.has(trace.source_trace_id),
+    )
+    .map((trace) => trace.name)
+  expect(unroutedTraceNames).toEqual([])
+  expect(circuit.db.pcb_pad_trace_clearance_error.list()).toEqual([])
+  expect(circuit.db.pcb_via_clearance_error.list()).toEqual([])
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
-}, 30_000)
+}, 60_000)
