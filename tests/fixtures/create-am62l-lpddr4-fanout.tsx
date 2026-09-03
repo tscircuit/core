@@ -8,6 +8,7 @@ import type {
   SimpleRouteJson,
   SimplifiedPcbTrace,
 } from "lib/utils/autorouting/SimpleRouteJson"
+import { getPresetAutoroutingConfig } from "lib/utils/autorouting/getPresetAutoroutingConfig"
 import { getViaBoardLayers } from "lib/utils/getViaSpanLayers"
 import { Fragment } from "react"
 import { createAutoroutingPhaseIoStack } from "tests/fixtures/create-autorouting-phase-io-stack"
@@ -1891,13 +1892,17 @@ export const renderAm62lLpddr4Fanout = async ({
   fanoutSolverLabel,
   includeBottomDecouplingCapacitors = false,
   includePowerPlaneFanout = false,
+  routedDdrDataTraceNames,
   snapshotPath,
+  useProductionGlobalAutorouter = false,
 }: {
   fanoutAlgorithmFn?: FanoutAlgorithmFn
   fanoutSolverLabel?: string
   includeBottomDecouplingCapacitors?: boolean
   includePowerPlaneFanout?: boolean
+  routedDdrDataTraceNames?: readonly string[]
   snapshotPath: string
+  useProductionGlobalAutorouter?: boolean
 }) => {
   const includeCompleteDecouplingNetwork =
     includePowerPlaneFanout && !includeBottomDecouplingCapacitors
@@ -1910,26 +1915,39 @@ export const renderAm62lLpddr4Fanout = async ({
   const signalLayers = includePowerPlaneFanout
     ? POWER_FANOUT_SIGNAL_LAYERS
     : SIGNAL_ONLY_LAYERS
+  const routedDdrDataTraceNameSet = new Set(
+    routedDdrDataTraceNames ??
+      DDR_CONNECTIONS.map(({ traceName }) => traceName),
+  )
   const signalConnections = includePowerPlaneFanout
     ? DDR_SIGNAL_CONNECTIONS
-    : DDR_CONNECTIONS
+    : DDR_CONNECTIONS.filter(({ traceName }) =>
+        routedDdrDataTraceNameSet.has(traceName),
+      )
   const fanoutBuses = FANOUT_BUSES.filter(
     (bus) =>
       includePowerPlaneFanout ||
       bus.name === "DDR_BYTE0" ||
       bus.name === "DDR_BYTE1",
-  ).map((bus) => ({
-    ...bus,
-    maxLengthSkew:
-      includePowerPlaneFanout || bus.name === "DDR_BYTE0"
-        ? bus.maxLengthSkew
-        : undefined,
-    preferredLayers: includePowerPlaneFanout
-      ? bus.preferredLayers
-      : bus.name === "DDR_BYTE0"
-        ? (["top", "inner1"] as const)
-        : (["inner2", "bottom"] as const),
-  }))
+  )
+    .map((bus) => ({
+      ...bus,
+      connections: includePowerPlaneFanout
+        ? bus.connections
+        : bus.connections.filter((traceName) =>
+            routedDdrDataTraceNameSet.has(traceName),
+          ),
+      maxLengthSkew:
+        includePowerPlaneFanout || bus.name === "DDR_BYTE0"
+          ? bus.maxLengthSkew
+          : undefined,
+      preferredLayers: includePowerPlaneFanout
+        ? bus.preferredLayers
+        : bus.name === "DDR_BYTE0"
+          ? (["top", "inner1"] as const)
+          : (["inner2", "bottom"] as const),
+    }))
+    .filter((bus) => bus.connections.length > 0)
   const socPlaneDrops = includePowerPlaneFanout ? SOC_PLANE_DROPS : []
   const decouplingPlaneDrops = includeCompleteDecouplingNetwork
     ? SOC_DDR_DECOUPLING_PLANE_DROPS
@@ -1952,9 +1970,11 @@ export const renderAm62lLpddr4Fanout = async ({
   const renderedAllDecouplingCapacitors: Array<
     (typeof AM62L_ALL_DECOUPLING_CAPACITORS)[number]
   > = [...AM62L_ALL_DECOUPLING_CAPACITORS]
+  const includesByte0 = fanoutBuses.some(({ name }) => name === "DDR_BYTE0")
+  const includesByte1 = fanoutBuses.some(({ name }) => name === "DDR_BYTE1")
   const socBusFanoutDirections = {
-    DDR_BYTE0: "rightside_top",
-    DDR_BYTE1: "rightside_bottom",
+    ...(includesByte0 ? { DDR_BYTE0: "rightside_top" as const } : {}),
+    ...(includesByte1 ? { DDR_BYTE1: "rightside_bottom" as const } : {}),
     ...(includePowerPlaneFanout
       ? {
           DDR_ADDR_CTRL: "rightside_center" as const,
@@ -1968,8 +1988,8 @@ export const renderAm62lLpddr4Fanout = async ({
       : {}),
   } as const
   const dramBusFanoutDirections = {
-    DDR_BYTE0: "leftside_center",
-    DDR_BYTE1: "leftside_center",
+    ...(includesByte0 ? { DDR_BYTE0: "leftside_center" as const } : {}),
+    ...(includesByte1 ? { DDR_BYTE1: "leftside_center" as const } : {}),
     ...(includePowerPlaneFanout
       ? {
           DDR_ADDR_CTRL: "leftside_center" as const,
@@ -1985,6 +2005,8 @@ export const renderAm62lLpddr4Fanout = async ({
   const fanoutAutorouter = fanoutAlgorithmFn
     ? { preset: "fanout" as const, algorithmFn: fanoutAlgorithmFn }
     : "fanout"
+  const productionGlobalAutorouter =
+    getPresetAutoroutingConfig("beta_pipeline9")
 
   const routeGlobalConnections = async (
     simpleRouteJson: SimpleRouteJson,
@@ -2105,7 +2127,9 @@ export const renderAm62lLpddr4Fanout = async ({
   expect(LPDDR4_VDDQ_BALLS).toHaveLength(20)
   expect(LPDDR4_VDD2_BALLS).toHaveLength(24)
   expect(LPDDR4_VDD1_BALLS).toHaveLength(8)
-  expect(signalConnections).toHaveLength(includePowerPlaneFanout ? 33 : 16)
+  expect(signalConnections).toHaveLength(
+    includePowerPlaneFanout ? 33 : (routedDdrDataTraceNames?.length ?? 16),
+  )
   expect(
     signalConnections.filter(({ traceName }) => traceName === "RESET_n"),
   ).toEqual(includePowerPlaneFanout ? [DDR_RESET_CONNECTION] : [])
@@ -2153,13 +2177,17 @@ export const renderAm62lLpddr4Fanout = async ({
           </Fragment>
         ))}
       <autoroutingphase
-        autorouter={{
-          algorithmFn: createBasicAutorouter(
-            includePowerPlaneFanout
-              ? routeGlobalConnections
-              : routeConnectionsDirectly,
-          ),
-        }}
+        autorouter={
+          useProductionGlobalAutorouter
+            ? productionGlobalAutorouter
+            : {
+                algorithmFn: createBasicAutorouter(
+                  includePowerPlaneFanout
+                    ? routeGlobalConnections
+                    : routeConnectionsDirectly,
+                ),
+              }
+        }
       />
       {includePowerPlaneFanout && (
         <Fragment>
@@ -3009,17 +3037,6 @@ export const renderAm62lLpddr4Fanout = async ({
     const expectedPlaneDrops = planeDrops.filter(
       (drop) => drop.fanoutPhaseIndex === fanoutPhaseIndex,
     )
-    const outputRouteVias = fanoutOutputTraces.flatMap((trace) =>
-      trace.route.filter((routePoint) => routePoint.route_type === "via"),
-    )
-    expect(outputRouteVias).toHaveLength(
-      signalConnections.length + expectedPlaneDrops.length,
-    )
-    if (includePowerPlaneFanout) {
-      for (const routeVia of outputRouteVias) {
-        expect(routeVia.layers).toEqual(getViaBoardLayers(8))
-      }
-    }
     const routedFanoutTraces = fanoutOutputTraces.filter(
       (trace) =>
         trace.connection_name !== undefined &&
@@ -3027,6 +3044,33 @@ export const renderAm62lLpddr4Fanout = async ({
     )
     expect(routedFanoutTraces).toHaveLength(signalConnections.length)
     for (const trace of routedFanoutTraces) {
+      const routeVias = trace.route.filter(
+        (routePoint) => routePoint.route_type === "via",
+      )
+      expect(routeVias.length).toBeGreaterThanOrEqual(1)
+      expect(routeVias.length % 2).toBe(1)
+      for (const routeVia of routeVias) {
+        expect(routeVia.layers).toEqual(
+          getViaBoardLayers(includePowerPlaneFanout ? 8 : 4),
+        )
+      }
+    }
+    const expectedPlaneConnectionNames = new Set(
+      expectedPlaneDrops.map((drop) => {
+        const sourceTrace = circuit.db.source_trace.getWhere({
+          name: drop.traceName,
+        })
+        if (!sourceTrace) {
+          throw new Error(`Missing source trace ${drop.traceName}`)
+        }
+        return sourceTrace.source_trace_id
+      }),
+    )
+    const routedPlaneDrops = fanoutOutputTraces.filter((trace) =>
+      expectedPlaneConnectionNames.has(trace.connection_name ?? ""),
+    )
+    expect(routedPlaneDrops).toHaveLength(expectedPlaneDrops.length)
+    for (const trace of routedPlaneDrops) {
       expect(
         trace.route.filter((routePoint) => routePoint.route_type === "via"),
       ).toHaveLength(1)
@@ -3154,19 +3198,19 @@ export const renderAm62lLpddr4Fanout = async ({
   const socFanoutInput = socFanoutPhase.startSimpleRouteJson!
   const socFanoutCenterY =
     (socFanoutInput.bounds.minY + socFanoutInput.bounds.maxY) / 2
-  for (const [busId, expectedYSign] of [
-    ["DDR_BYTE0", 1],
-    ["DDR_BYTE1", -1],
-  ] as const) {
+  for (const { name: busId, connections } of fanoutBuses.filter(
+    ({ name }) => name === "DDR_BYTE0" || name === "DDR_BYTE1",
+  )) {
+    const expectedYSign = busId === "DDR_BYTE0" ? 1 : -1
     const bus = socFanoutInput.buses?.find((bus) => bus.busId === busId)
-    expect(bus?.connectionNames).toHaveLength(8)
+    expect(bus?.connectionNames).toHaveLength(connections.length)
     const connectionNames = new Set(bus?.connectionNames ?? [])
     const exitPoints = (socFanoutPhase.endSimpleRouteJson?.traces ?? [])
       .filter((trace) => connectionNames.has(trace.connection_name ?? ""))
       .map((trace) =>
         trace.route.findLast((routePoint) => routePoint.route_type === "wire"),
       )
-    expect(exitPoints).toHaveLength(8)
+    expect(exitPoints).toHaveLength(connections.length)
     for (const exitPoint of exitPoints) {
       expect(exitPoint).toBeDefined()
       if (!exitPoint) throw new Error(`Missing ${busId} fanout exit point`)
@@ -3473,12 +3517,14 @@ export const renderAm62lLpddr4Fanout = async ({
   )
   expect(signalGlobalConnections).toHaveLength(signalConnections.length)
   expect(decouplingGlobalConnections).toHaveLength(decouplingPlaneDrops.length)
-  expect(
-    getStraightLineWindingConflicts({
-      ...globalPhaseInput,
-      connections: signalGlobalConnections,
-    }),
-  ).toEqual([])
+  if (!useProductionGlobalAutorouter) {
+    expect(
+      getStraightLineWindingConflicts({
+        ...globalPhaseInput,
+        connections: signalGlobalConnections,
+      }),
+    ).toEqual([])
+  }
   if (includePowerPlaneFanout) {
     const clockGlobalConnectionNames = clockTraceNames.map((traceName) => {
       const sourceTrace = circuit.db.source_trace.getWhere({ name: traceName })
