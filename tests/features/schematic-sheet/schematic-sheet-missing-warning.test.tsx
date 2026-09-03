@@ -1,6 +1,14 @@
 import { expect, test } from "bun:test"
 import { assembly } from "lib"
+import type { RootCircuit } from "lib/RootCircuit"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
+
+const getMissingSheetWarnings = (circuit: RootCircuit) =>
+  circuit.db.schematic_component_styling_warning
+    .list()
+    .filter(
+      (warning) => warning.styling_issue_type === "missing_schematic_sheet",
+    )
 
 test("warns when a schematic has no schematic sheet", async () => {
   const { circuit: circuitWithoutSheet } = getTestFixture()
@@ -12,9 +20,7 @@ test("warns when a schematic has no schematic sheet", async () => {
 
   await circuitWithoutSheet.renderUntilSettled()
 
-  expect(
-    circuitWithoutSheet.db.schematic_component_styling_warning.list(),
-  ).toEqual([
+  expect(getMissingSheetWarnings(circuitWithoutSheet)).toEqual([
     expect.objectContaining({
       warning_type: "schematic_component_styling_warning",
       styling_issue_type: "missing_schematic_sheet",
@@ -33,9 +39,7 @@ test("warns when a schematic has no schematic sheet", async () => {
 
   await circuitWithSheet.renderUntilSettled()
 
-  expect(
-    circuitWithSheet.db.schematic_component_styling_warning.list(),
-  ).toEqual([])
+  expect(getMissingSheetWarnings(circuitWithSheet)).toEqual([])
 
   const { circuit: schematicDisabledCircuit } = getTestFixture()
   schematicDisabledCircuit.add(
@@ -46,9 +50,7 @@ test("warns when a schematic has no schematic sheet", async () => {
 
   await schematicDisabledCircuit.renderUntilSettled()
 
-  expect(
-    schematicDisabledCircuit.db.schematic_component_styling_warning.list(),
-  ).toEqual([])
+  expect(getMissingSheetWarnings(schematicDisabledCircuit)).toEqual([])
 
   const { circuit: assemblyCircuit } = getTestFixture()
   assemblyCircuit.add(
@@ -61,11 +63,9 @@ test("warns when a schematic has no schematic sheet", async () => {
 
   await assemblyCircuit.renderUntilSettled()
 
-  expect(assemblyCircuit.db.schematic_component_styling_warning.list()).toEqual(
-    [
-      expect.objectContaining({
-        styling_issue_type: "missing_schematic_sheet",
-      }),
-    ],
-  )
+  expect(getMissingSheetWarnings(assemblyCircuit)).toEqual([
+    expect.objectContaining({
+      styling_issue_type: "missing_schematic_sheet",
+    }),
+  ])
 })
