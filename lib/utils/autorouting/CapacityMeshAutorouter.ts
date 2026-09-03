@@ -203,8 +203,7 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
           this.emitEvent({
             type: "complete",
             traces:
-              (this.solver.getOutputSimpleRouteJson()
-                .traces as SimplifiedPcbTrace[]) || [],
+              this.solver.getOutputSimplifiedPcbTraces() as SimplifiedPcbTrace[],
           })
         }
         this.isRouting = false
@@ -341,10 +340,7 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
       throw new AutorouterError(this.solver.error || "Routing failed")
     }
 
-    return (
-      (this.solver.getOutputSimpleRouteJson().traces as SimplifiedPcbTrace[]) ||
-      []
-    )
+    return this.solver.getOutputSimplifiedPcbTraces() as SimplifiedPcbTrace[]
   }
 
   /**
