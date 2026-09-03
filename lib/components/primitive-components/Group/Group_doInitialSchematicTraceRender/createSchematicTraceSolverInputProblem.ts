@@ -13,7 +13,10 @@ import type { SchematicComponent, SourceNet, SourceTrace } from "circuit-json"
 import { getSourcePortConnectivityMapFromCircuitJson } from "circuit-json-to-connectivity-map"
 import { getSchematicNetLabelTextWidth } from "lib/utils/schematic/computeSchematicNetLabelCenter"
 import { convertFacingDirectionToElbowDirection } from "lib/utils/schematic/convertFacingDirectionToElbowDirection"
-import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
+import {
+  getSchematicComponentTextObstacleBounds,
+  getSchematicComponentWithTextBounds,
+} from "lib/utils/schematic/getSchematicComponentWithTextBounds"
 import type { NetLabel } from "../../NetLabel"
 import { Port } from "../../Port"
 import { Group } from "../Group"
@@ -277,19 +280,42 @@ export function createSchematicTraceSolverInputProblem(
       schematicComponent.schematic_component_id,
     )
 
-    const layoutBounds =
-      getSchematicComponentWithTextBounds({ db, schematicComponent }) ??
-      getBoundFromCenteredRect({
-        center: schematicComponent.center,
-        width: schematicComponent.size.width,
-        height: schematicComponent.size.height,
+    const sourceComponent = schematicComponent.source_component_id
+      ? db.source_component.get(schematicComponent.source_component_id)
+      : undefined
+    const hasFourPinCrystalSymbol =
+      sourceComponent?.ftype === "simple_crystal" && schematicPorts.length === 4
+
+    const symbolBounds = getBoundFromCenteredRect({
+      center: schematicComponent.center,
+      width: schematicComponent.size.width,
+      height: schematicComponent.size.height,
+    })
+    let solverChipBounds = symbolBounds
+    if (!hasFourPinCrystalSymbol) {
+      solverChipBounds =
+        getSchematicComponentWithTextBounds({ db, schematicComponent }) ??
+        symbolBounds
+    } else {
+      const symbolTextBounds = getSchematicComponentTextObstacleBounds({
+        db,
+        schematicComponent,
       })
+      textBoxes.push(
+        ...symbolTextBounds.map((bounds) => ({
+          chipId,
+          center: getBoundsCenter(bounds),
+          width: bounds.maxX - bounds.minX,
+          height: bounds.maxY - bounds.minY,
+        })),
+      )
+    }
 
     chips.push({
       chipId,
-      center: getBoundsCenter(layoutBounds),
-      width: layoutBounds.maxX - layoutBounds.minX,
-      height: layoutBounds.maxY - layoutBounds.minY,
+      center: getBoundsCenter(solverChipBounds),
+      width: solverChipBounds.maxX - solverChipBounds.minX,
+      height: solverChipBounds.maxY - solverChipBounds.minY,
       pins,
       sectionId,
     })
