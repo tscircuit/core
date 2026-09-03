@@ -63,6 +63,25 @@ export class SolderJumper<
     return Array.from({ length: pinCount }, (_, index) => index + 1)
   }
 
+  _getImpliedFootprintString(): string {
+    const props = this._parsedProps ?? this.props
+    const pinLabelCount = Array.isArray(props.pinLabels)
+      ? props.pinLabels.length
+      : props.pinLabels
+        ? Object.keys(props.pinLabels).length
+        : 0
+    const bridgedPinNumbers = (props.bridgedPins ?? [])
+      .flat()
+      .map((pinName: string) => this._getPinNumberFromBridgedPinsProp(pinName))
+      .filter((pinNumber): pinNumber is number => pinNumber !== null)
+    const maxBridgedPinNumber = Math.max(0, ...bridgedPinNumbers)
+    const inferredPinCount = Math.max(pinLabelCount, maxBridgedPinNumber)
+    const pinCount =
+      props.pinCount ?? (inferredPinCount === 3 ? inferredPinCount : 2)
+
+    return `solderjumper${pinCount}`
+  }
+
   resolveFootprint() {
     const footprint = super.resolveFootprint()
     if (typeof footprint !== "string") return footprint
