@@ -98,6 +98,9 @@ test("compacted fanout exits stay connected to traces joined through nets", asyn
   await circuit.renderUntilSettled()
 
   expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
+  expect(circuit.db.pcb_via.list().length).toBeLessThanOrEqual(6)
+  expect(circuit.db.pcb_trace_error.list()).toEqual([])
+  expect(circuit.db.pcb_via_trace_clearance_error.list()).toEqual([])
   const breakoutPoints = circuit.db.pcb_breakout_point.list()
   expect(breakoutPoints).toHaveLength(3)
   for (const breakoutPoint of breakoutPoints) {
