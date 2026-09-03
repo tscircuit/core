@@ -55,6 +55,24 @@ const removeCompletedFanoutConnections = (
   }
 }
 
+const connectFanoutTracesToBreakoutPoints = (
+  simpleRouteJson: SimpleRouteJson,
+  breakoutPointIdByConnectionName: ReadonlyMap<string, string>,
+): SimpleRouteJson => ({
+  ...simpleRouteJson,
+  traces: simpleRouteJson.traces?.map((trace) => {
+    const breakoutPointId = breakoutPointIdByConnectionName.get(
+      trace.connection_name ?? "",
+    )
+    if (!breakoutPointId) return trace
+
+    return {
+      ...trace,
+      connectsTo: [...new Set([...(trace.connectsTo ?? []), breakoutPointId])],
+    }
+  }),
+})
+
 export interface SynchronizedBreakoutPoint {
   sourceTraceId: string
   routingPcbGroupId: string
@@ -100,6 +118,7 @@ export function Group_syncFanoutExitsWithGlobalConnections({
       })),
     }))
   const synchronizedBreakoutPoints: SynchronizedBreakoutPoint[] = []
+  const breakoutPointIdByConnectionName = new Map<string, string>()
 
   for (const inputConnection of fanoutInputSimpleRouteJson.connections) {
     if (
@@ -172,6 +191,12 @@ export function Group_syncFanoutExitsWithGlobalConnections({
     }
     globalConnection.pointsToConnect[previousGlobalPointIndex] =
       synchronizedGlobalPoint
+    if (previousPoint.pointId) {
+      breakoutPointIdByConnectionName.set(
+        inputConnection.name,
+        previousPoint.pointId,
+      )
+    }
     synchronizedBreakoutPoints.push({
       sourceTraceId: inputConnection.source_trace_id,
       routingPcbGroupId,
@@ -200,7 +225,10 @@ export function Group_syncFanoutExitsWithGlobalConnections({
   )
   return {
     downstreamSimpleRouteJson: removeCompletedFanoutConnections(
-      fanoutOutputSimpleRouteJson,
+      connectFanoutTracesToBreakoutPoints(
+        fanoutOutputSimpleRouteJson,
+        breakoutPointIdByConnectionName,
+      ),
       routingPcbGroupId,
     ),
     baseSimpleRouteJson: {
