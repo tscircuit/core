@@ -56,7 +56,7 @@
     "@tscircuit/ngspice-spice-engine": "^0.0.20",
     "@tscircuit/props": "^0.0.646",
     "@tscircuit/schematic-match-adapt": "^0.0.18",
-    "@tscircuit/schematic-trace-solver": "^0.0.178",
+    "@tscircuit/schematic-trace-solver": "^0.0.183",
     "@tscircuit/solver-utils": "^0.0.16",
     "@tscircuit/soup-util": "^0.0.41",
     "@tscircuit/winding-breakout-point-solver": "github:tscircuit/winding-breakout-point-solver#202dbe9eb0088633b6fa094120dba6f2f41f8803",
