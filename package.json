@@ -1,5 +1,6 @@
 {
   "name": "@tscircuit/core",
+  "trustedDependencies": ["calculate-cell-boundaries"],
   "type": "module",
   "version": "0.0.1835",
   "types": "dist/index.d.ts",
@@ -119,7 +120,7 @@
   "dependencies": {
     "@flatten-js/core": "^1.6.2",
     "@lume/kiwi": "^0.4.3",
-    "calculate-cell-boundaries": "^0.0.19",
+    "calculate-cell-boundaries": "github:tscircuit/calculate-cell-boundaries#59f27d0c90f455862ecabd82addfb6bcaca16ad4",
     "calculate-packing": "^0.0.89",
     "css-select": "5.1.0",
     "format-si-unit": "^0.0.12",
