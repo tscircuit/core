@@ -22,7 +22,31 @@ export type RootCircuitEventName =
   | "renderComplete"
   | "debug:logOutput"
 
-export interface AutoroutingStartEvent {
+export type AutoroutingCacheStatus = "disabled" | "hit" | "miss"
+
+export type AutoroutingCacheDisabledReason =
+  | "custom_algorithm"
+  | "strategy_not_cacheable"
+  | "no_cache_engine"
+
+export interface AutoroutingExecutionMetadata {
+  routingPhaseIndex?: number | null
+  phaseOrdinal?: number
+  phaseCount?: number
+  connectionCount?: number
+  obstacleCount?: number
+  previousTraceCount?: number
+  isReroutePhase?: boolean
+  autorouterName?: string
+  autorouterVersion?: string
+  solverName?: string
+  effort?: number
+  cacheStatus?: AutoroutingCacheStatus
+  cacheKey?: string
+  cacheDisabledReason?: AutoroutingCacheDisabledReason
+}
+
+export interface AutoroutingStartEvent extends AutoroutingExecutionMetadata {
   type: "autorouting:start"
   subcircuit_id: string
   componentDisplayName: string
@@ -32,7 +56,7 @@ export interface AutoroutingStartEvent {
   simpleRouteJson: SimpleRouteJson
 }
 
-export interface AutoroutingErrorEvent {
+export interface AutoroutingErrorEvent extends AutoroutingExecutionMetadata {
   type: "autorouting:error"
   subcircuit_id: string
   componentDisplayName: string
@@ -44,7 +68,7 @@ export interface AutoroutingErrorEvent {
   debugGraphics?: any
 }
 
-export interface AutoroutingProgressEvent {
+export interface AutoroutingProgressEvent extends AutoroutingExecutionMetadata {
   type: "autorouting:progress"
   subcircuit_id: string
   componentDisplayName: string
@@ -56,7 +80,7 @@ export interface AutoroutingProgressEvent {
   debugGraphics?: any
 }
 
-export interface AutoroutingEndEvent {
+export interface AutoroutingEndEvent extends AutoroutingExecutionMetadata {
   type: "autorouting:end"
   subcircuit_id: string
   componentDisplayName: string

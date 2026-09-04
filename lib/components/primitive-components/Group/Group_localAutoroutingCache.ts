@@ -1,4 +1,5 @@
 import type { LocalCacheEngine } from "lib/local-cache-engine"
+import type { AutorouterOptions } from "lib/utils/autorouting/CapacityMeshAutorouter"
 import type {
   SimpleRouteJson,
   SimplifiedPcbTrace,
@@ -14,13 +15,28 @@ const getFnv1aHash = (value: string): number => {
   return hash >>> 0
 }
 
-const getSrjHash = (simpleRouteJson: SimpleRouteJson): string => {
-  const serializedSrj = JSON.stringify(simpleRouteJson)
-  const hash1 = getFnv1aHash(serializedSrj)
-  const hash2 = getFnv1aHash(`${serializedSrj}${hash1}`)
+const getJsonHash = (value: object): string => {
+  const serializedValue = JSON.stringify(value)
+  const hash1 = getFnv1aHash(serializedValue)
+  const hash2 = getFnv1aHash(`${serializedValue}${hash1}`)
   return `${hash1.toString(16).padStart(8, "0")}${hash2
     .toString(16)
     .padStart(8, "0")}`
+}
+
+export type LocalAutoroutingCacheSolverOptions = Pick<
+  AutorouterOptions,
+  | "capacityDepth"
+  | "targetMinCapacity"
+  | "useAssignableSolver"
+  | "useAutoJumperSolver"
+  | "useLaserPrefabSolver"
+  | "useTraceSimplificationSolver"
+  | "autorouterVersion"
+  | "effort"
+> & {
+  autorouterName: string
+  solverName?: string
 }
 
 type CachedAutoroutingPhaseResult = SimpleRouteJson & {
@@ -29,7 +45,9 @@ type CachedAutoroutingPhaseResult = SimpleRouteJson & {
 
 export const getLocalAutoroutingCacheKey = (
   simpleRouteJson: SimpleRouteJson,
-): string => `routes:core@${pkgJson.version}:srj:${getSrjHash(simpleRouteJson)}`
+  solverOptions: LocalAutoroutingCacheSolverOptions,
+): string =>
+  `routes:core@${pkgJson.version}:solver:${getJsonHash(solverOptions)}:srj:${getJsonHash(simpleRouteJson)}`
 
 export const getCachedLocalAutoroutingPhaseResult = async ({
   cacheEngine,
