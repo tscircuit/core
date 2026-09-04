@@ -58,6 +58,15 @@ test("four-pin pushbutton connects to itself without internal pin metadata", () 
           pushbuttonSourceComponent.source_component_id,
         ),
       ),
-  ).toHaveLength(0)
+  ).toMatchObject([
+    {
+      message:
+        "Pushbutton SW1 has both schematic contacts connected to the same net. Check its internallyConnectedPins and footprint pin mapping.",
+      source_port_ids: pushbuttonSchematicPorts.map(
+        (schematicPort) => schematicPort.source_port_id,
+      ),
+      is_fatal: true,
+    },
+  ])
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })

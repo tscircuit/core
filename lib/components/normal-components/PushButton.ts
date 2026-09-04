@@ -1,13 +1,13 @@
 import { pushButtonProps } from "@tscircuit/props"
 import type { SourceSimplePushButton } from "circuit-json"
 import {
-  FTYPE,
   type BaseSymbolName,
+  FTYPE,
   type PassivePorts,
 } from "lib/utils/constants"
+import { symbols } from "schematic-symbols"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { Port } from "../primitive-components/Port"
-import { symbols } from "schematic-symbols"
 
 export class PushButton extends NormalComponent<
   typeof pushButtonProps,
@@ -88,5 +88,36 @@ export class PushButton extends NormalComponent<
       display_name: props.displayName,
     } as SourceSimplePushButton)
     this.source_component_id = source_component.source_component_id
+  }
+
+  override doInitialSourceDesignRuleChecks(): void {
+    super.doInitialSourceDesignRuleChecks()
+
+    const schematicContactPorts = (this.selectAll("port") as Port[]).filter(
+      (port) => port.schematicSymbolPortDef,
+    )
+    if (schematicContactPorts.length !== 2) return
+
+    const sourcePorts = schematicContactPorts.map((port) =>
+      this.root!.db.source_port.get(port.source_port_id!),
+    )
+    const [firstContact, secondContact] = sourcePorts
+    if (!firstContact?.subcircuit_connectivity_map_key) return
+    if (
+      firstContact.subcircuit_connectivity_map_key !==
+      secondContact?.subcircuit_connectivity_map_key
+    ) {
+      return
+    }
+
+    this.root!.db.source_component_misconfigured_error.insert({
+      error_type: "source_component_misconfigured_error",
+      message: `Pushbutton ${this.name} has both schematic contacts connected to the same net. Check its internallyConnectedPins and footprint pin mapping.`,
+      source_component_ids: [this.source_component_id!],
+      source_port_ids: sourcePorts.map(
+        (sourcePort) => sourcePort!.source_port_id,
+      ),
+      is_fatal: true,
+    })
   }
 }
