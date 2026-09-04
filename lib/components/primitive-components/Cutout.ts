@@ -31,7 +31,7 @@ export class Cutout extends PrimitiveComponent<typeof cutoutProps> {
     // Get parent rotation like SmtPad does
     const container = this.getPrimitiveContainer()
     const pcb_component_id =
-      this.parent?.pcb_component_id ?? container?.pcb_component_id
+      this.parent?.pcb_component_id ?? container?.pcb_component_id ?? undefined
     const parentRotation = container?._parsedProps.pcbRotation ?? 0
 
     let inserted_pcb_cutout:
