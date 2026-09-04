@@ -1,11 +1,12 @@
 import { expect, test } from "bun:test"
+import type { BoardProps } from "@tscircuit/props"
 import type { LocalCacheEngine } from "lib/local-cache-engine"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import pkgJson from "../../package.json"
 import { createBasicAutorouter } from "../fixtures/createBasicAutorouter"
 import { getTestFixture } from "../fixtures/get-test-fixture"
 
-test("built-in local autorouting caches each phase and custom algorithms bypass the cache", async () => {
+test("built-in local autorouting caches by solver options and custom algorithms bypass the cache", async () => {
   const cache = new Map<string, string>()
   const getKeys: string[] = []
   const setKeys: string[] = []
@@ -53,7 +54,13 @@ test("built-in local autorouting caches each phase and custom algorithms bypass 
     },
   )
 
-  const renderCircuit = async (algorithmFn?: typeof customAlgorithmFn) => {
+  const renderCircuit = async ({
+    algorithmFn,
+    autorouterEffortLevel,
+  }: {
+    algorithmFn?: typeof customAlgorithmFn
+    autorouterEffortLevel?: BoardProps["autorouterEffortLevel"]
+  } = {}) => {
     const { circuit } = getTestFixture({ platform: { localCacheEngine } })
     let autoroutingProgressCount = 0
     circuit.on("autorouting:progress", () => {
@@ -64,6 +71,7 @@ test("built-in local autorouting caches each phase and custom algorithms bypass 
         width="20mm"
         height="20mm"
         autorouter={algorithmFn ? { algorithmFn } : undefined}
+        autorouterEffortLevel={autorouterEffortLevel}
       >
         <resistor
           name="R1"
@@ -101,7 +109,7 @@ test("built-in local autorouting caches each phase and custom algorithms bypass 
     return { circuit, autoroutingProgressCount }
   }
 
-  const firstRender = await renderCircuit()
+  const firstRender = await renderCircuit({ autorouterEffortLevel: "1x" })
   expect(firstRender.autoroutingProgressCount).toBeGreaterThan(0)
   const firstCircuit = firstRender.circuit
   expect(firstCircuit.db.pcb_trace.list()).toHaveLength(2)
@@ -109,11 +117,13 @@ test("built-in local autorouting caches each phase and custom algorithms bypass 
   expect(new Set(setKeys).size).toBe(2)
   for (const key of setKeys) {
     expect(key).toMatch(
-      new RegExp(`^routes:core@${pkgJson.version}:srj:[a-f0-9]{16}$`),
+      new RegExp(
+        `^routes:core@${pkgJson.version}:solver:[a-f0-9]{16}:srj:[a-f0-9]{16}$`,
+      ),
     )
   }
 
-  const secondRender = await renderCircuit()
+  const secondRender = await renderCircuit({ autorouterEffortLevel: "1x" })
   expect(secondRender.autoroutingProgressCount).toBe(0)
   const secondCircuit = secondRender.circuit
   expect(secondCircuit.db.pcb_trace.list()).toEqual(
@@ -122,9 +132,17 @@ test("built-in local autorouting caches each phase and custom algorithms bypass 
   expect(getKeys.slice(-2)).toEqual(setKeys)
   expect(setKeys).toHaveLength(2)
 
+  const higherEffortRender = await renderCircuit({
+    autorouterEffortLevel: "10x",
+  })
+  expect(higherEffortRender.autoroutingProgressCount).toBeGreaterThan(0)
+  expect(higherEffortRender.circuit.db.pcb_trace.list()).toHaveLength(2)
+  expect(setKeys).toHaveLength(4)
+  expect(new Set(setKeys).size).toBe(4)
+
   const getCountBeforeCustomAutorouting = getKeys.length
   const setCountBeforeCustomAutorouting = setKeys.length
-  const customRender = await renderCircuit(customAlgorithmFn)
+  const customRender = await renderCircuit({ algorithmFn: customAlgorithmFn })
   expect(customSolverCallCount).toBe(2)
   expect(customRender.circuit.db.pcb_trace.list()).toHaveLength(2)
   expect(getKeys).toHaveLength(getCountBeforeCustomAutorouting)
