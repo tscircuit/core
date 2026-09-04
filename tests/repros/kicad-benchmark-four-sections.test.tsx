@@ -17,7 +17,7 @@ test("kicad benchmark renders four schematic sections", async () => {
       element.type === "schematic_text" && element.text === "BOOT / STATUS",
   )
 
-  expect(sectionDividers).toHaveLength(0)
+  expect(sectionDividers).toHaveLength(3)
   expect(sectionTitles).toHaveLength(1)
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
