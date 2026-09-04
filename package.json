@@ -35,7 +35,7 @@
     "@tsci/tscircuit.ti": "github:tscircuit/ti#57e314be4b2b06bc546d4def7453e619604d1157",
     "@tscircuit/alphabet": "0.0.25",
     "@tscircuit/bga-fanout-solver": "github:tscircuit/bga-fanout-solver#247c835cb8d69b65e53891dcf869731079415b39",
-    "@tscircuit/capacity-autorouter": "^0.0.866",
+    "@tscircuit/capacity-autorouter": "^0.0.869",
     "@tscircuit/checks": "^0.0.181",
     "@tscircuit/circuit-json-util": "^0.0.106",
     "@tscircuit/common": "^0.0.20",
