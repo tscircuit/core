@@ -78,6 +78,7 @@ import { PrimitiveComponent } from "../PrimitiveComponent"
 import type { INormalComponent } from "./INormalComponent"
 import { NormalComponent__getMinimumFlexContainerSize } from "./NormalComponent__getMinimumFlexContainerSize"
 import { NormalComponent__repositionOnPcb } from "./NormalComponent__repositionOnPcb"
+import { NormalComponent_addInternalConnectionFabricationNotes } from "./NormalComponent_addInternalConnectionFabricationNotes"
 import {
   NormalComponent_doInitialCheckRefDesConvention,
   getDefaultExpectedRefDesPrefixesForFtype,
@@ -1026,6 +1027,8 @@ export class NormalComponent<
     if (this.root?.pcbDisabled) return
     if (!this.pcb_component_id) return
     const { db } = this.root!
+
+    NormalComponent_addInternalConnectionFabricationNotes(this)
 
     const bounds = getBoundsOfPcbComponents(this.children)
 
