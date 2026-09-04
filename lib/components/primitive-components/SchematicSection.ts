@@ -9,24 +9,6 @@ import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
 type SchematicSheetId = SchematicSheet["schematic_sheet_id"]
 
-const boundsFormSingleOverlapCluster = (bounds: Bounds[]) => {
-  const firstBounds = bounds[0]
-  if (!firstBounds) return false
-
-  const connectedBounds = [firstBounds]
-  const remainingBounds = bounds.slice(1)
-  while (remainingBounds.length > 0) {
-    const nextIndex = remainingBounds.findIndex((candidate) =>
-      connectedBounds.some((connected) =>
-        doBoundsOverlap(connected, candidate),
-      ),
-    )
-    if (nextIndex < 0) return false
-    connectedBounds.push(...remainingBounds.splice(nextIndex, 1))
-  }
-  return true
-}
-
 export class SchematicSection extends PrimitiveComponent<
   typeof schematicSectionProps
 > {
@@ -150,20 +132,10 @@ export class SchematicSection extends PrimitiveComponent<
 
     const outer = computeBoundsFromCellContents(allCells)
 
-    const CELL_MARGIN = 1
-    const expandedSectionBounds = allSectionsWithBounds.map((s) => ({
-      minX: s.rawBounds.minX - CELL_MARGIN,
-      maxX: s.rawBounds.maxX + CELL_MARGIN,
-      minY: s.rawBounds.minY - CELL_MARGIN,
-      maxY: s.rawBounds.maxY + CELL_MARGIN,
-    }))
-    let dividerCells = expandedSectionBounds
-    // Equal margins do not move midpoints. If they connect every section,
-    // they only erase the section topology, so use the actual bounds.
-    if (boundsFormSingleOverlapCluster(expandedSectionBounds)) {
-      dividerCells = allSectionsWithBounds.map((s) => s.rawBounds)
-    }
-    const dividers = calculateCellBoundaries(dividerCells)
+    const dividers = calculateCellBoundaries(
+      allSectionsWithBounds.map((s) => s.rawBounds),
+      { cellMargin: 1 },
+    )
     for (const line of dividers) {
       db.schematic_line.insert({
         x1: line.start.x,
