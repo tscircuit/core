@@ -30,9 +30,11 @@ it("should render a jumper with pinrow4 footprint", async () => {
     </board>,
   )
 
-  circuit.render()
+  await circuit.renderUntilSettled()
   const errors = checkEachPcbTraceNonOverlapping(circuit.getCircuitJson())
   expect(errors).toHaveLength(0)
+  expect(circuit.db.pcb_trace.list()).toHaveLength(5)
+  expect(circuit.db.pcb_via.list().length).toBeLessThanOrEqual(2)
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
