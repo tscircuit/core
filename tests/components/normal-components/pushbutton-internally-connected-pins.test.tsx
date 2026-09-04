@@ -46,21 +46,23 @@ test("pushbutton internally connected pins are marked on the PCB", async () => {
     }),
   ).toHaveLength(2)
 
-  const schematicAndPcbSvg = stackSvgsHorizontally(
-    [
-      convertCircuitJsonToSchematicSvg(circuitJson, {
-        grid: { cellSize: 1, labelCells: true },
-      }),
-      convertCircuitJsonToPcbSvg(circuitJson),
-    ],
-    {
-      gap: 24,
-      normalizeSize: false,
-      rootAttributes: {
-        "data-testid": "pushbutton-internally-connected-schematic-pcb",
-      },
+  const schematicSvg = convertCircuitJsonToSchematicSvg(circuitJson, {
+    grid: { cellSize: 1, labelCells: true },
+    // stack-svgs combines both SVG contents under one root, so the schematic's
+    // .boundary rule also matches the PCB background without this override.
+    css: '[data-type="pcb_background"] { fill: #000; }',
+  })
+  const pcbSvg = convertCircuitJsonToPcbSvg(circuitJson, {
+    backgroundColor: "#000",
+  })
+
+  const schematicAndPcbSvg = stackSvgsHorizontally([schematicSvg, pcbSvg], {
+    gap: 24,
+    normalizeSize: false,
+    rootAttributes: {
+      "data-testid": "pushbutton-internally-connected-schematic-pcb",
     },
-  )
+  })
 
   expect(schematicAndPcbSvg).toMatchSvgSnapshot(
     import.meta.path,
