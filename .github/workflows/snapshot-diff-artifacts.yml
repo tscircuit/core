@@ -42,10 +42,12 @@ jobs:
 
       - name: Run tests for selected pattern and update snapshots
         if: ${{ inputs.test_pattern != '' }}
+        continue-on-error: true
         run: BUN_UPDATE_SNAPSHOTS=1 bun test ${{ inputs.test_pattern }} --timeout 120000
 
       - name: Run full test plan and update snapshots
         if: ${{ inputs.test_pattern == '' }}
+        continue-on-error: true
         run: |
           for node in 1 2 3 4; do
             if [ ! -f ".github/test-plans/node${node}-testplan.txt" ]; then
