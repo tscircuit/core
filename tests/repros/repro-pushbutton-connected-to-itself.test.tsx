@@ -50,5 +50,10 @@ test("four-pin pushbutton connects to itself without internal pin metadata", () 
 
   expect(pushbuttonSchematicPorts).toHaveLength(2)
   expect(renderedContactConnectivityKeys).toHaveLength(1)
+  expect(
+    circuit.db.source_component_misconfigured_error.list({
+      source_component_ids: [pushbuttonSourceComponent.source_component_id],
+    }),
+  ).toHaveLength(0)
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
