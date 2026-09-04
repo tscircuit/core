@@ -64,6 +64,7 @@ export const NormalComponent_addInternalConnectionFabricationNotes = (
 ): void => {
   const root = component.root
   if (!root || root.pcbDisabled || !component.pcb_component_id) return
+  if (component.componentName === "SolderJumper") return
   if (hasFabricationNotes(component)) return
 
   const { db } = root
