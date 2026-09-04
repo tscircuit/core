@@ -67,16 +67,19 @@ test("keepout excludeRefs serializes selected PCB component IDs without weakenin
   const keepout = circuit.db.pcb_keepout.list()[0] as
     | PCBKeepoutWithExclusions
     | undefined
+  if (keepout?.shape !== "rect") {
+    throw new Error("Expected a rectangular keepout")
+  }
 
   const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
     db: circuit.db,
-    subcircuit_id: keepout!.subcircuit_id,
+    subcircuit_id: keepout.subcircuit_id,
     subcircuitComponent: board,
   })
   const keepoutObstacle = simpleRouteJson.obstacles.find(
     (obstacle) =>
-      obstacle.center.x === keepout!.center.x &&
-      obstacle.center.y === keepout!.center.y &&
+      obstacle.center.x === keepout.center.x &&
+      obstacle.center.y === keepout.center.y &&
       obstacle.width === 8 &&
       obstacle.height === 6,
   )
