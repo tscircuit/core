@@ -1493,6 +1493,34 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         ;(global as any).debugGraphics?.push(graphicsObject)
       }
 
+      const autorouterVersion =
+        phaseAutorouterConfig.autorouterVersion ?? this.props.autorouterVersion
+      const effortLevel = this.props.autorouterEffortLevel
+      const effort = effortLevel
+        ? Number.parseInt(effortLevel.replace("x", ""), 10)
+        : undefined
+      const commonAutorouterOptions: AutorouterOptions = {
+        capacityDepth: phaseAutorouterConfig.capacityDepth,
+        targetMinCapacity: phaseAutorouterConfig.targetMinCapacity,
+        platformConfig: this.root?.platform,
+        useAssignableSolver: phaseIsLaserPrefabPreset || isSingleLayerBoard,
+        useAutoJumperSolver: phaseIsAutoJumperPreset,
+        useLaserPrefabSolver: phaseIsLaserPrefabPreset,
+        autorouterVersion,
+        effort,
+      }
+      const localAutoroutingCacheSolverOptions = {
+        capacityDepth: commonAutorouterOptions.capacityDepth,
+        targetMinCapacity: commonAutorouterOptions.targetMinCapacity,
+        useAssignableSolver: commonAutorouterOptions.useAssignableSolver,
+        useAutoJumperSolver: commonAutorouterOptions.useAutoJumperSolver,
+        useLaserPrefabSolver: commonAutorouterOptions.useLaserPrefabSolver,
+        useTraceSimplificationSolver:
+          phaseAutorouterConfig.preset === "simplify",
+        autorouterVersion: commonAutorouterOptions.autorouterVersion,
+        effort: commonAutorouterOptions.effort,
+      }
+
       this.root?.emit("autorouting:start", {
         subcircuit_id: this.subcircuit_id,
         componentDisplayName: this.getString(),
@@ -1511,7 +1539,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           ? undefined
           : this.root?.platform?.localCacheEngine
       const cacheKey = cacheEngine
-        ? getLocalAutoroutingCacheKey(simpleRouteJson)
+        ? getLocalAutoroutingCacheKey(
+            simpleRouteJson,
+            localAutoroutingCacheSolverOptions,
+          )
         : undefined
       const cachedResult = cacheKey
         ? await getCachedLocalAutoroutingPhaseResult({ cacheEngine, cacheKey })
@@ -1528,24 +1559,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             autorouter =
               await phaseAutorouterConfig.algorithmFn(simpleRouteJson)
           } else {
-            const autorouterVersion =
-              phaseAutorouterConfig.autorouterVersion ??
-              this.props.autorouterVersion
-            const effortLevel = this.props.autorouterEffortLevel
-            const effort = effortLevel
-              ? Number.parseInt(effortLevel.replace("x", ""), 10)
-              : undefined
-            const commonAutorouterOptions: AutorouterOptions = {
-              capacityDepth: phaseAutorouterConfig.capacityDepth,
-              targetMinCapacity: phaseAutorouterConfig.targetMinCapacity,
-              platformConfig: this.root?.platform,
-              useAssignableSolver:
-                phaseIsLaserPrefabPreset || isSingleLayerBoard,
-              useAutoJumperSolver: phaseIsAutoJumperPreset,
-              useLaserPrefabSolver: phaseIsLaserPrefabPreset,
-              autorouterVersion,
-              effort,
-            }
             autorouter = localAutorouterStrategy.create({
               simpleRouteJson,
               commonAutorouterOptions,
