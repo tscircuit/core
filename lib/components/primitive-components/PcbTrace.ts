@@ -1,7 +1,7 @@
-import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
-import { z } from "zod"
-import { pcb_trace_route_point, type PcbTraceRoutePoint } from "circuit-json"
+import { type PcbTraceRoutePoint, pcb_trace_route_point } from "circuit-json"
 import { applyToPoint } from "transformation-matrix"
+import { z } from "zod"
+import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
 export const pcbTraceProps = z.object({
   route: z.array(pcb_trace_route_point),
@@ -76,15 +76,33 @@ export class PcbTrace extends PrimitiveComponent<typeof pcbTraceProps> {
   }
 
   getPcbSize(): { width: number; height: number } {
+    const bounds = this._getPcbLocalBoundsBeforeLayout()
+    return {
+      width: bounds.right - bounds.left,
+      height: bounds.top - bounds.bottom,
+    }
+  }
+
+  /**
+   * The route points are authored in the containing footprint's right-handed
+   * local PCB frame: +X right, +Y toward the top of the board, +Z above the
+   * board, with coordinates and widths in mm.
+   */
+  _getPcbLocalBoundsBeforeLayout(): {
+    left: number
+    right: number
+    top: number
+    bottom: number
+  } {
     const { _parsedProps: props } = this
     if (!props.route || props.route.length === 0) {
-      return { width: 0, height: 0 }
+      return { left: 0, right: 0, top: 0, bottom: 0 }
     }
 
-    let minX = Infinity,
-      maxX = -Infinity,
-      minY = Infinity,
-      maxY = -Infinity
+    let minX = Infinity
+    let maxX = -Infinity
+    let minY = Infinity
+    let maxY = -Infinity
 
     for (const point of props.route) {
       if (point.route_type === "through_pad") {
@@ -134,12 +152,14 @@ export class PcbTrace extends PrimitiveComponent<typeof pcbTraceProps> {
       minY === Infinity ||
       maxY === -Infinity
     ) {
-      return { width: 0, height: 0 }
+      return { left: 0, right: 0, top: 0, bottom: 0 }
     }
 
     return {
-      width: maxX - minX,
-      height: maxY - minY,
+      left: minX,
+      right: maxX,
+      top: maxY,
+      bottom: minY,
     }
   }
 }

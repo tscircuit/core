@@ -1,6 +1,6 @@
-import { AM62L32 } from "@tsci/tscircuit.ti-am62l/lib/chips/AM62L32.circuit"
-import { AM62L32BOGHAANBR } from "@tsci/tscircuit.ti-am62l/lib/chips/AM62L32BOGHAANBR.circuit"
-import { Children, cloneElement, Fragment, isValidElement } from "react"
+import type { CanonicalBusFanoutDirection } from "@tscircuit/props"
+import { Fragment } from "react"
+import { Am62l32, SOC_GROUND_PINS } from "./am62l32"
 import {
   DDR_ADDR_CTRL_TRACE_NAMES,
   DDR_BYTE0_TRACE_NAMES,
@@ -8,26 +8,12 @@ import {
   DDR_CONNECTIONS,
   DDR_SOC_PHYSICAL_PINS,
 } from "./ddr-connections"
-import { MT53E1G16D1ZW, ballMap } from "./mt53e1g16d1zw"
 import {
   createCapacityChannelAutorouter,
   createExistingCopperConnectivityAutorouter,
   createFixedTargetBgaFanoutAutorouter,
 } from "./local-autorouters"
-
-const AM62L_PAD_DIAMETER_MM = 0.254
-const AM62L_PAD_RADIUS_MM = AM62L_PAD_DIAMETER_MM / 2
-const AM62L_DEFAULT_CHIP = AM62L32BOGHAANBR({} as any)
-
-export const SOC_GROUND_PINS = Object.entries(
-  AM62L_DEFAULT_CHIP.props.pinLabels,
-)
-  .filter(([, labels]) =>
-    (Array.isArray(labels) ? labels : [labels]).some((label) =>
-      String(label).startsWith("VSS"),
-    ),
-  )
-  .map(([selector]) => Number(selector.replace("pin", "")))
+import { MT53E1G16D1ZW, ballMap } from "./mt53e1g16d1zw"
 
 export const MEMORY_GROUND_PINS = ballMap
   .map(({ ball, signal }, index) => ({
@@ -36,21 +22,6 @@ export const MEMORY_GROUND_PINS = ballMap
     pin: index + 1,
   }))
   .filter(({ signal }) => signal === "VSS")
-
-const createAm62lEscapeFootprint = () => {
-  const defaultFootprint = AM62L_DEFAULT_CHIP.props.footprint
-  return cloneElement(
-    defaultFootprint,
-    {},
-    Children.map(defaultFootprint.props.children, (child) =>
-      isValidElement(child) && child.type === "smtpad"
-        ? cloneElement(child, { radius: `${AM62L_PAD_RADIUS_MM}mm` } as any)
-        : child,
-    ),
-  )
-}
-
-const AM62L_ESCAPE_FOOTPRINT = createAm62lEscapeFootprint()
 
 const usedSocPins = new Set<number>([
   ...DDR_SOC_PHYSICAL_PINS,
@@ -135,15 +106,82 @@ const POUR_MARGIN = "0.08128mm"
 
 export type Am62lLpddr4FanoutSolver = "normal" | "bga"
 
+export interface PcbPoint {
+  x: number
+  y: number
+}
+
+export interface PcbSize {
+  width: number
+  height: number
+}
+
+type FanoutSide = "top" | "right" | "bottom" | "left"
+
+const FANOUT_DIRECTIONS_BY_SIDE: Record<
+  FanoutSide,
+  Record<
+    "DDR_BYTE1" | "DDR_ADDR_CTRL" | "DDR_BYTE0",
+    CanonicalBusFanoutDirection
+  >
+> = {
+  top: {
+    DDR_BYTE1: "topside_left",
+    DDR_ADDR_CTRL: "topside_center",
+    DDR_BYTE0: "topside_right",
+  },
+  right: {
+    DDR_BYTE1: "rightside_top",
+    DDR_ADDR_CTRL: "rightside_center",
+    DDR_BYTE0: "rightside_bottom",
+  },
+  bottom: {
+    DDR_BYTE1: "bottomside_right",
+    DDR_ADDR_CTRL: "bottomside_center",
+    DDR_BYTE0: "bottomside_left",
+  },
+  left: {
+    DDR_BYTE1: "leftside_top",
+    DDR_ADDR_CTRL: "leftside_center",
+    DDR_BYTE0: "leftside_bottom",
+  },
+}
+
+const getFacingFanoutSides = (
+  sourcePosition: PcbPoint,
+  targetPosition: PcbPoint,
+): { sourceSide: FanoutSide; targetSide: FanoutSide } => {
+  const deltaX = targetPosition.x - sourcePosition.x
+  const deltaY = targetPosition.y - sourcePosition.y
+
+  if (Math.abs(deltaX) >= Math.abs(deltaY)) {
+    return deltaX >= 0
+      ? { sourceSide: "right", targetSide: "left" }
+      : { sourceSide: "left", targetSide: "right" }
+  }
+
+  return deltaY >= 0
+    ? { sourceSide: "top", targetSide: "bottom" }
+    : { sourceSide: "bottom", targetSide: "top" }
+}
+
 export const Am62lLpddr4FullBgaBoard = ({
   fanoutSolver = "bga",
+  socPosition = SOC_POSITION,
+  ramPosition = RAM_POSITION,
+  boardSize = BOARD_SIZE,
+  autorouterEffortLevel = "10x",
 }: {
   fanoutSolver?: Am62lLpddr4FanoutSolver
+  socPosition?: PcbPoint
+  ramPosition?: PcbPoint
+  boardSize?: PcbSize
+  autorouterEffortLevel?: "1x" | "2x" | "5x" | "10x" | "100x"
 }) => (
   <board
     name="AM62L_LPDDR4_BGA_FANOUT_COPPER_POUR"
-    width={`${BOARD_SIZE.width}mm`}
-    height={`${BOARD_SIZE.height}mm`}
+    width={`${boardSize.width}mm`}
+    height={`${boardSize.height}mm`}
     layers={8}
     defaultTraceWidth="0.08128mm"
     minTraceWidth="0.08128mm"
@@ -155,7 +193,7 @@ export const Am62lLpddr4FullBgaBoard = ({
     minViaHoleDiameter="0.2032mm"
     minViaPadDiameter="0.4572mm"
     pcbStyle={{ viaHoleDiameter: "0.2032mm", viaPadDiameter: "0.4572mm" }}
-    autorouterEffortLevel="10x"
+    autorouterEffortLevel={autorouterEffortLevel}
   >
     <net name="GND" routingPhaseIndex={PLANE_CONNECTED_NET_PHASE} />
     <autoroutingphase
@@ -195,8 +233,8 @@ export const Am62lLpddr4FullBgaBoard = ({
 
     <breakout
       name="SOC_BREAKOUT"
-      pcbX={SOC_POSITION.x}
-      pcbY={SOC_POSITION.y}
+      pcbX={socPosition.x}
+      pcbY={socPosition.y}
       padding="5mm"
       paddingRight="18.5mm"
       autorouter={
@@ -204,16 +242,14 @@ export const Am62lLpddr4FullBgaBoard = ({
       }
       fanoutRoutingLayers={[...SIGNAL_LAYERS]}
       fanoutPourNetMap={{ inner1: "GND" }}
-      busFanoutDirections={{
-        DDR_BYTE1: "rightside_top",
-        DDR_ADDR_CTRL: "rightside_center",
-        DDR_BYTE0: "rightside_bottom",
-      }}
+      busFanoutDirections={
+        FANOUT_DIRECTIONS_BY_SIDE[
+          getFacingFanoutSides(socPosition, ramPosition).sourceSide
+        ]
+      }
     >
-      <AM62L32
+      <Am62l32
         name="U1"
-        footprintVariant="fccsp_373_anb"
-        footprint={AM62L_ESCAPE_FOOTPRINT}
         pcbX={0}
         pcbY={0}
         pcbRotation={180}
@@ -227,8 +263,8 @@ export const Am62lLpddr4FullBgaBoard = ({
 
     <breakout
       name="RAM_BREAKOUT"
-      pcbX={RAM_POSITION.x}
-      pcbY={RAM_POSITION.y}
+      pcbX={ramPosition.x}
+      pcbY={ramPosition.y}
       padding="5mm"
       paddingLeft="6.2mm"
       autorouter={
@@ -236,11 +272,11 @@ export const Am62lLpddr4FullBgaBoard = ({
       }
       fanoutRoutingLayers={[...SIGNAL_LAYERS]}
       fanoutPourNetMap={{ inner1: "GND" }}
-      busFanoutDirections={{
-        DDR_BYTE1: "leftside_top",
-        DDR_ADDR_CTRL: "leftside_center",
-        DDR_BYTE0: "leftside_bottom",
-      }}
+      busFanoutDirections={
+        FANOUT_DIRECTIONS_BY_SIDE[
+          getFacingFanoutSides(socPosition, ramPosition).targetSide
+        ]
+      }
     >
       <MT53E1G16D1ZW
         name="U2"

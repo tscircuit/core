@@ -8,6 +8,7 @@ test("antenna renders a placed footprint and WiFi pcbPath", async () => {
     <board width="32mm" height="16mm" minTraceWidth="0.4mm">
       <antenna
         name="ANT1"
+        antennaShape="2.4ghz_inverted_f"
         pcbX={-12}
         pcbY={-1}
         footprint={
@@ -53,6 +54,8 @@ test("antenna renders a placed footprint and WiFi pcbPath", async () => {
   })
   const antennaPcbTrace = circuit.db.pcb_trace.list()[0]
 
+  expect(circuit.db.source_port.list()).toHaveLength(1)
+  expect(circuit.db.pcb_trace.list()).toHaveLength(1)
   expect(antennaPcbComponent?.center).toEqual({ x: -12, y: -1 })
   expect(antennaPcbTrace.route[0]).toMatchObject({ x: -12, y: -1 })
   expect(antennaPcbTrace.route.at(-1)).toMatchObject({ x: 0, y: -2 })

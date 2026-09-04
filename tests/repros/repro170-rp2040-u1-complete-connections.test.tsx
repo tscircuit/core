@@ -442,22 +442,39 @@ test("repro170: complete RP2040 U1 schematic connections", async () => {
 
   await circuit.renderUntilSettled()
 
-  // These IDs identify direct connections on the same QSPI_SS net, so each
-  // connection must use the width of the canonical rendered QSPI_SS label.
+  // Cross-section traces are represented by one inline-label connection at
+  // each visible endpoint. Every endpoint uses the canonical QSPI_SS label for
+  // the shared electrical net instead of competing source-trace aliases.
+  const qspiCrossSectionConnections =
+    schematicTraceInputProblem?.netConnections.filter(
+      ({ netLabelText }) => netLabelText === "QSPI_SS",
+    ) ?? []
+  expect(qspiCrossSectionConnections).toHaveLength(1)
   expect(
-    schematicTraceInputProblem?.directConnections
-      .filter(({ netId }) =>
-        ["QSPI_SS", "BOOT_SW", "BOOT_R"].includes(netId ?? ""),
-      )
-      .map(({ netId, netLabelWidth }) => ({
-        directConnectionNetId: netId,
-        canonicalNetLabelWidth: netLabelWidth,
-      })),
-  ).toEqual([
-    { directConnectionNetId: "QSPI_SS", canonicalNetLabelWidth: 0.96 },
-    { directConnectionNetId: "BOOT_SW", canonicalNetLabelWidth: 0.96 },
-    { directConnectionNetId: "BOOT_R", canonicalNetLabelWidth: 0.96 },
-  ])
+    qspiCrossSectionConnections.every(
+      ({ pinIds, allowInlineNetLabel }) =>
+        pinIds.length === 4 && allowInlineNetLabel,
+    ),
+  ).toBe(true)
+  expect(
+    qspiCrossSectionConnections.map(
+      ({ netLabelText, netLabelWidth }) =>
+        [netLabelText, netLabelWidth] as const,
+    ),
+  ).toEqual([["QSPI_SS", 0.96]])
+  expect(qspiCrossSectionConnections[0]?.netId).not.toBe("QSPI_SS")
+
+  const powerOrGroundConnections =
+    schematicTraceInputProblem?.netConnections.filter(
+      ({ isGround, netId, netLabelText }) =>
+        isGround || ["GND", "V3V3", "V1V1"].includes(netLabelText ?? netId),
+    ) ?? []
+  expect(powerOrGroundConnections.length).toBeGreaterThan(0)
+  expect(
+    powerOrGroundConnections.every(
+      ({ allowInlineNetLabel }) => !allowInlineNetLabel,
+    ),
+  ).toBe(true)
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })

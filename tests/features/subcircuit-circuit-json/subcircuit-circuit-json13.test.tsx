@@ -1,4 +1,4 @@
-import { test, expect } from "bun:test"
+import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("repro: subcircuit-circuit-json13 incorrect net labels", async () => {
@@ -24,6 +24,12 @@ test("repro: subcircuit-circuit-json13 incorrect net labels", async () => {
   )
 
   await circuit.renderUntilSettled()
+
+  const schematicNetLabelTexts = circuit.db.schematic_net_label
+    .list()
+    .map((label) => label.text)
+  expect(schematicNetLabelTexts).toContain("R1_pin1")
+  expect(schematicNetLabelTexts).toContain("R2_pin1")
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
   expect(circuit).toMatchPcbSnapshot(import.meta.path)

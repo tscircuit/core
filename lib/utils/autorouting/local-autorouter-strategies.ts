@@ -43,18 +43,26 @@ export interface LocalAutoroutingStage {
   usesPreviousStageOutput: boolean
 }
 
-const defaultLocalAutorouterStrategy: LocalAutorouterStrategy = {
+const createTscircuitAutorouterStrategy = (
+  strategyOptions: Pick<AutorouterOptions, "useTraceSimplificationSolver">,
+): LocalAutorouterStrategy => ({
   cacheable: true,
   create: ({ simpleRouteJson, commonAutorouterOptions, onSolverStarted }) =>
     new TscircuitAutorouter(simpleRouteJson, {
       ...commonAutorouterOptions,
+      ...strategyOptions,
       onSolverStarted: (details) =>
         onSolverStarted?.({
           ...details,
           solverConstructorArgs: [details.solverParams],
         }),
     }),
-}
+})
+
+const defaultLocalAutorouterStrategy = createTscircuitAutorouterStrategy({})
+const simplificationLocalAutorouterStrategy = createTscircuitAutorouterStrategy(
+  { useTraceSimplificationSolver: true },
+)
 
 const createFanoutAutorouterStrategy = (
   mode: FanoutAutorouterMode,
@@ -87,6 +95,7 @@ const localAutorouterStrategies = new Map<string, LocalAutorouterStrategy>([
     createFanoutAutorouterStrategy("single_layer_fanout"),
   ],
   ["fanout", createFanoutAutorouterStrategy("fanout")],
+  ["simplify", simplificationLocalAutorouterStrategy],
 ])
 
 export const getLocalAutorouterStrategy = (

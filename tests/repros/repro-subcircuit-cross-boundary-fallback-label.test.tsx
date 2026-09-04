@@ -115,27 +115,29 @@ test("cross-boundary subcircuit fallback labels are included in solver input", a
 
   await circuit.renderUntilSettled()
 
-  const netLabelTexts = circuit.db.schematic_net_label
-    .list()
-    .map((label) => label.text)
-  expect(netLabelTexts).toContain("J_RIGHT_GP17")
-  expect(netLabelTexts).not.toContain("J_LCD_CS")
-  const internalGp17Trace = circuit.db.source_trace.getWhere({ name: "GP17" })!
-  const internalGp17Label = circuit.db.schematic_net_label
-    .list()
-    .find(
-      (label) =>
-        label.text === "GP17" &&
-        label.source_trace_id === internalGp17Trace.source_trace_id,
-    )
-  expect(internalGp17Label).toBeDefined()
-  expect(
-    solverInputProblems.some((inputProblem) =>
-      inputProblem.netConnections.some(
-        (connection) =>
-          connection.netId === "J_RIGHT_GP17" && connection.pinIds.length === 1,
+  const inlineEligibleConnections = solverInputProblems.flatMap(
+    (inputProblem) =>
+      inputProblem.netConnections.filter(
+        (connection) => connection.allowInlineNetLabel,
       ),
+  )
+  expect(
+    inlineEligibleConnections.some(
+      (connection) =>
+        connection.netLabelText === "J_RIGHT_GP17" &&
+        connection.pinIds.length === 1,
     ),
   ).toBe(true)
+  expect(
+    inlineEligibleConnections.some(
+      (connection) =>
+        connection.netLabelText === "GP17" && connection.pinIds.length === 2,
+    ),
+  ).toBe(true)
+  expect(
+    inlineEligibleConnections.some(
+      (connection) => connection.netLabelText === "J_LCD_CS",
+    ),
+  ).toBe(false)
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })

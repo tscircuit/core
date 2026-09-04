@@ -9,10 +9,6 @@ import type {
 
 type SourcePortId = NonNullable<SourcePort["source_port_id"]>
 type SubcircuitId = NonNullable<SourceTrace["subcircuit_id"]>
-type SubcircuitConnectivityMapKey = NonNullable<
-  SourceTrace["subcircuit_connectivity_map_key"]
->
-
 type GetBusesParams = {
   srjConnections: SimpleRouteConnection[]
   buses: Bus[]
@@ -25,7 +21,7 @@ export type FanoutPourNetMap = Readonly<
   Record<string, string | readonly string[]>
 >
 
-const getBusSourceTraceSubcircuitConnectivityMapKeyOrThrow = ({
+const getBusSourceTraceIdOrThrow = ({
   bus,
   busSourceTraces,
   traceNameOrPortSelector,
@@ -33,7 +29,7 @@ const getBusSourceTraceSubcircuitConnectivityMapKeyOrThrow = ({
   bus: Bus
   busSourceTraces: SourceTrace[]
   traceNameOrPortSelector: string
-}): SubcircuitConnectivityMapKey => {
+}): SourceTrace["source_trace_id"] => {
   const sourceTracesWithMatchingName = busSourceTraces.filter(
     (sourceTrace) => sourceTrace.name === traceNameOrPortSelector,
   )
@@ -63,39 +59,22 @@ const getBusSourceTraceSubcircuitConnectivityMapKeyOrThrow = ({
   }
 
   const sourceTrace = matchingSourceTraces[0]
-  if (!sourceTrace?.subcircuit_connectivity_map_key) {
-    throw new Error(
-      `Source trace for "${traceNameOrPortSelector}" does not have a subcircuit connectivity map key in bus "${bus.name}"`,
-    )
-  }
-
-  return sourceTrace.subcircuit_connectivity_map_key
+  return sourceTrace.source_trace_id
 }
 
 const getBusSrjConnectionNamesOrThrow = ({
   srjConnections,
   bus,
-  busSourceTraces,
-  traceSubcircuitConnectivityMapKey,
+  sourceTraceId,
   traceNameOrPortSelector,
 }: {
   srjConnections: SimpleRouteConnection[]
   bus: Bus
-  busSourceTraces: SourceTrace[]
-  traceSubcircuitConnectivityMapKey: SubcircuitConnectivityMapKey
+  sourceTraceId: SourceTrace["source_trace_id"]
   traceNameOrPortSelector: string
 }): SrjConnectionName[] => {
-  const sourceTraceIds = busSourceTraces
-    .filter(
-      (sourceTrace) =>
-        sourceTrace.subcircuit_connectivity_map_key ===
-        traceSubcircuitConnectivityMapKey,
-    )
-    .map((sourceTrace) => sourceTrace.source_trace_id)
   const matchingSrjConnections = srjConnections.filter(
-    (srjConnection) =>
-      srjConnection.source_trace_id &&
-      sourceTraceIds.includes(srjConnection.source_trace_id),
+    (srjConnection) => srjConnection.source_trace_id === sourceTraceId,
   )
 
   if (matchingSrjConnections.length === 0) {
@@ -185,17 +164,15 @@ export const getBusesForSimpleRouteJson = ({
     )
     const connectionNames = bus._parsedProps.connections.flatMap(
       (traceNameOrPortSelector) => {
-        const traceSubcircuitConnectivityMapKey =
-          getBusSourceTraceSubcircuitConnectivityMapKeyOrThrow({
-            bus,
-            busSourceTraces,
-            traceNameOrPortSelector,
-          })
+        const sourceTraceId = getBusSourceTraceIdOrThrow({
+          bus,
+          busSourceTraces,
+          traceNameOrPortSelector,
+        })
         return getBusSrjConnectionNamesOrThrow({
           srjConnections,
           bus,
-          busSourceTraces,
-          traceSubcircuitConnectivityMapKey,
+          sourceTraceId,
           traceNameOrPortSelector,
         })
       },
