@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test"
-import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
+import { createAutoroutingPhaseIoStack } from "tests/fixtures/create-autorouting-phase-io-stack"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 // A passive USB signal interconnect with two standard 2.54 mm headers.
@@ -56,18 +56,15 @@ function UsbHeaderBoard() {
 
 test("USB header pair wired through named nets", async () => {
   const { circuit } = getTestFixture()
+  const phases = createAutoroutingPhaseIoStack(circuit)
   circuit.add(<UsbHeaderBoard />)
   await circuit.renderUntilSettled()
-  const board = circuit.firstChild
-  if (!board) throw new Error("Expected USB header board")
-  expect(() =>
-    getSimpleRouteJsonFromCircuitJson({
-      db: circuit.db,
-      subcircuitComponent: board,
-    }),
-  ).toThrow(
-    'Could not find an SRJ connection for trace name or port selector ".J1 > .pin3"',
-  )
-  expect(circuit.db.pcb_trace.list()).toHaveLength(0)
+  expect(phases).toHaveLength(2)
+  expect(phases[0]?.startSimpleRouteJson?.differentialPairs).toHaveLength(1)
+  expect(phases[0]?.endSimpleRouteJson?.traces).toHaveLength(2)
+  expect(circuit.db.pcb_trace.list()).toHaveLength(4)
+  expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
+  expect(circuit.db.pcb_trace_error.list()).toEqual([])
+  expect(circuit.db.pcb_port_not_connected_error.list()).toEqual([])
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 }, 30_000)
