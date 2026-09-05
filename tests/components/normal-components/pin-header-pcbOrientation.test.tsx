@@ -15,16 +15,25 @@ test("pinheader pcbOrientation vertical places pins vertically", () => {
   circuit.render()
 
   const circuitJson = circuit.getCircuitJson()
-  const pcb_silkscreen_text = circuitJson.filter(
-    (c) => c.type === "pcb_silkscreen_text",
-  )
+  const pcb_silkscreen_text = circuitJson
+    .filter((c) => c.type === "pcb_silkscreen_text")
+    .map((c: any) => ({
+      ...c,
+      anchor_position: {
+        x: c.anchor_position?.x,
+        y:
+          Math.abs(c.anchor_position?.y ?? 0) < 1e-12
+            ? 0
+            : c.anchor_position?.y,
+      },
+    }))
   expect(pcb_silkscreen_text).toMatchInlineSnapshot(`
     [
       {
         "anchor_alignment": "center",
         "anchor_position": {
           "x": 2.54,
-          "y": 1.5553014349171386e-16,
+          "y": 0,
         },
         "ccw_rotation": -90,
         "font": "tscircuit2024",

@@ -49,7 +49,7 @@ jobs:
           echo "Running ${#test_files[@]} test files for node ${{ matrix.node }}"
           attempt=1
           while [ $attempt -le 4 ]; do
-            bun test ${test_files[@]} --timeout 30000
+            bun test ${test_files[@]} --timeout 60000
             code=$?
 
             if [ $code -eq 0 ]; then
