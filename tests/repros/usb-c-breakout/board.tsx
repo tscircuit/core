@@ -34,7 +34,7 @@ export default function UsbBreakoutBoard() {
         pinCount={4}
         footprint="pinrow4"
         pcbY={-8}
-        pinLabels={["VBUS", "D-", "D+", "GND"]}
+        pinLabels={["VBUS", "DM", "DP", "GND"]}
       />
       <resistor
         name="R1"

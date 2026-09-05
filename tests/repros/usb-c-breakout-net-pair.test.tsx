@@ -8,6 +8,8 @@ test("USB-C breakout pair wired through named nets", async () => {
   const { circuit } = getTestFixture()
   circuit.add(<UsbBreakoutBoard />)
   await circuit.renderUntilSettled()
+  expect(circuit.db.source_failed_to_create_component_error.list()).toEqual([])
+  expect(circuit.db.source_trace_not_connected_error.list()).toEqual([])
   const board = circuit.firstChild
   if (!board) throw new Error("Expected USB-C breakout board")
   expect(() =>
