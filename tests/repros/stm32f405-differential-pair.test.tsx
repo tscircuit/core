@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { cloneElement } from "react"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import Controller from "./stm32f405-differential-pair/index.circuit"
@@ -10,8 +11,6 @@ test("STM32F405 USB differential pair resolves named nets", async () => {
   const board = circuit.firstChild
   if (!board) throw new Error("Expected the STM32F405 board")
 
-  // Routing-input conversion does not change the board placement.
-  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
   const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
     db: circuit.db,
     subcircuitComponent: board,
@@ -35,4 +34,24 @@ test("STM32F405 USB differential pair resolves named nets", async () => {
     expect(connection.pointsToConnect).toHaveLength(2)
     expect(connection.source_trace_ids).toHaveLength(2)
   }
-})
+
+  const { circuit: routedCircuit } = getTestFixture()
+  const routedBoard = Controller({})
+  routedCircuit.add(
+    cloneElement(
+      routedBoard,
+      {},
+      routedBoard.props.children,
+      <pcbnotetext
+        text="Routing stopped: power fanout escaped 69/70 connections; USB phase not reached"
+        pcbY={-21}
+        fontSize={0.7}
+      />,
+    ),
+  )
+  await routedCircuit.renderUntilSettled()
+  expect(routedCircuit.db.pcb_autorouting_error.list()[0]?.message).toContain(
+    "only 69 of 70 connections could escape",
+  )
+  await expect(routedCircuit).toMatchPcbSnapshot(import.meta.path)
+}, 120_000)
