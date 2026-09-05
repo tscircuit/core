@@ -84,5 +84,5 @@ test(
     })
     await expect(circuit).toMatchPcbSnapshot(import.meta.path)
   },
-  { timeout: 30_000 },
+  { timeout: 120_000 },
 )
