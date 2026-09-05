@@ -2,7 +2,7 @@ import type {
   SimpleRouteJson as AutorouterSimpleRouteJson,
   SimplifiedPcbTrace as AutorouterSimplifiedPcbTrace,
 } from "@tscircuit/capacity-autorouter"
-import type { PcbGroup, SourceTrace } from "circuit-json"
+import type { PcbGroup } from "circuit-json"
 import type { CircuitJsonMetadata, Obstacle } from "../obstacles/types"
 
 export type { CircuitJsonMetadata, Obstacle } from "../obstacles/types"
@@ -83,8 +83,6 @@ export type SimpleRouteConnection = {
   name: SrjConnectionName
   routingPcbGroupId?: PcbGroupId
   source_trace_id?: string
-  /** Source traces combined into a net-based routing connection. */
-  source_trace_ids?: SourceTrace["source_trace_id"][]
   rootConnectionName?: string
   mergedConnectionNames?: string[]
   isOffBoard?: boolean

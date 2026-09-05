@@ -709,9 +709,6 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       name:
         net.source_net_id ??
         sharedConnMap.getNetConnectedToId(net.source_net_id),
-      source_trace_ids: connectedSourceTraces.map(
-        (sourceTrace) => sourceTrace.source_trace_id,
-      ),
       nominalTraceWidth: nominalTraceWidthFromConnectedTraces,
       width: nominalTraceWidthFromConnectedTraces,
       pointsToConnect,
