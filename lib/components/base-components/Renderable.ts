@@ -48,6 +48,7 @@ export const orderedRenderPhases = [
   "SchematicTraceRender",
   "SchematicSheetRender",
   "SchematicReplaceNetLabelsWithSymbols",
+  "SchematicNetLabelSuperscripts",
   "PanelBoardLayout",
   "ValidatePcbCoordinates",
   "PcbComponentRender",
@@ -106,6 +107,12 @@ const asyncPhaseDependencies: Partial<Record<RenderPhase, RenderPhase[]>> = {
   SchematicReplaceNetLabelsWithSymbols: [
     "PcbFootprintStringRender",
     "FetchPartFootprint",
+  ],
+  SchematicNetLabelSuperscripts: [
+    "RenderIsolatedSubcircuits",
+    "PcbFootprintStringRender",
+    "FetchPartFootprint",
+    "SchematicTraceRender",
   ],
   PcbFootprintLayout: ["PcbFootprintStringRender", "FetchPartFootprint"],
   PcbComponentSizeCalculation: [

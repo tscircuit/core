@@ -32,12 +32,12 @@ test("connected same-name nets share one superscript and lose it when all networ
   expect(suffixForNet(nets[2]!.source_net_id)).toBe("2")
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 
-  // Recompute after source connectivity changes, as when a cached subcircuit
-  // with its own suffixes is inflated into a connected parent circuit.
+  // A direct database edit must dirty the phase that consumes the new data.
   circuit.db.source_trace.insert({
     connected_source_net_ids: nets.map((net) => net.source_net_id),
     connected_source_port_ids: [],
   })
+  circuit.firstChild!._markDirty("SchematicNetLabelSuperscripts")
   circuit.render()
   expect(
     circuit.db.schematic_net_label

@@ -11,7 +11,8 @@ type SourceNetworkId = Exclude<
 
 /**
  * Disambiguate names using source electrical connectivity across all subcircuits.
- * Run after rendering settles, including after cached subcircuits are inflated.
+ * Called by the top-level group during SchematicNetLabelSuperscripts, after
+ * schematic labels exist throughout the circuit.
  * Suffixes are derived display metadata; source names and connectivity stay intact.
  */
 export function assignSchematicNetLabelSuperscripts(

@@ -21,7 +21,22 @@ test("disconnected same-name nets get stable superscripts on regular and inline 
       ))}
     </board>,
   )
+  let suffixesAtPhaseEnd: Array<string | undefined> = []
+  circuit.on("renderable:renderLifecycle:anyEvent", (event) => {
+    if (
+      event.type ===
+        "renderable:renderLifecycle:SchematicNetLabelSuperscripts:end" &&
+      event.renderId === circuit.firstChild!._renderId
+    ) {
+      suffixesAtPhaseEnd = circuit.db.schematic_net_label
+        .list()
+        .filter((label) => label.text === "GND")
+        .map((label) => label.display_superscript)
+    }
+  })
   await circuit.renderUntilSettled()
+  expect(new Set(suffixesAtPhaseEnd)).toEqual(new Set(["1", "2"]))
+
   const groundLabels = circuit.db.schematic_net_label
     .list()
     .filter((label) => label.text === "GND")

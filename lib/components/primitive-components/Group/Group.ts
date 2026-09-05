@@ -1,3 +1,4 @@
+import { assignSchematicNetLabelSuperscripts } from "lib/utils/schematic/assign-schematic-net-label-superscripts"
 import {
   type SimpleRouteJson as AutorouterSimpleRouteJson,
   type RerouteRectRegion,
@@ -2724,6 +2725,18 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     }
 
     Group_doInitialStandaloneSubcircuitPcbDesignRuleChecks(this)
+  }
+
+  doInitialSchematicNetLabelSuperscripts() {
+    if (this.root?.schematicDisabled) return
+    // Number networks once for the whole circuit, after every group's labels
+    // exist, rather than independently numbering sibling subcircuits.
+    if (this.getTopLevelRenderable() !== this) return
+    assignSchematicNetLabelSuperscripts(this.root!.db)
+  }
+
+  updateSchematicNetLabelSuperscripts() {
+    this.doInitialSchematicNetLabelSuperscripts()
   }
 
   doInitialSchematicReplaceNetLabelsWithSymbols() {
