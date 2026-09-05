@@ -1893,7 +1893,9 @@ export const renderAm62lLpddr4Fanout = async ({
   includeBottomDecouplingCapacitors = false,
   includePowerPlaneFanout = false,
   routedDdrDataTraceNames,
+  snapshotDiffThresholdPercent = 0.05,
   snapshotPath,
+  usePublicPipeline9Preset = false,
   useProductionGlobalAutorouter = false,
 }: {
   fanoutAlgorithmFn?: FanoutAlgorithmFn
@@ -1901,7 +1903,9 @@ export const renderAm62lLpddr4Fanout = async ({
   includeBottomDecouplingCapacitors?: boolean
   includePowerPlaneFanout?: boolean
   routedDdrDataTraceNames?: readonly string[]
+  snapshotDiffThresholdPercent?: number
   snapshotPath: string
+  usePublicPipeline9Preset?: boolean
   useProductionGlobalAutorouter?: boolean
 }) => {
   const includeCompleteDecouplingNetwork =
@@ -2005,8 +2009,9 @@ export const renderAm62lLpddr4Fanout = async ({
   const fanoutAutorouter = fanoutAlgorithmFn
     ? { preset: "fanout" as const, algorithmFn: fanoutAlgorithmFn }
     : "fanout"
-  const productionGlobalAutorouter =
-    getPresetAutoroutingConfig("beta_pipeline9")
+  const productionGlobalAutorouter = usePublicPipeline9Preset
+    ? ("beta_pipeline9" as const)
+    : getPresetAutoroutingConfig("beta_pipeline9")
 
   const routeGlobalConnections = async (
     simpleRouteJson: SimpleRouteJson,
@@ -4066,6 +4071,6 @@ export const renderAm62lLpddr4Fanout = async ({
           },
         }
       : {}),
-    diffThresholdPercent: 0.05,
+    diffThresholdPercent: snapshotDiffThresholdPercent,
   })
 }
