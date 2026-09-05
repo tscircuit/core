@@ -75,7 +75,23 @@ it("should keep local nets isolated between adjacent subcircuits", async () => {
     </board>,
   )
 
-  circuit.render()
+  await circuit.renderUntilSettled()
+
+  const labels = [
+    ...circuit.db.schematic_net_label.list(),
+    ...circuit.db.schematic_text.list(),
+  ]
+  expect(
+    labels
+      .filter((label) => label.text === "INTERNAL")
+      .map((label) => label.display_superscript)
+      .sort(),
+  ).toEqual(["1", "2"])
+  expect(
+    labels
+      .filter((label) => label.text === "EXTERNAL" || label.text === "GND")
+      .every((label) => label.display_superscript === undefined),
+  ).toBe(true)
 
   expect(circuit.getCircuitJson()).toMatchSchematicSnapshot(
     import.meta.dir + "-two-chips",
