@@ -52,9 +52,8 @@ export function assignSchematicNetLabelSuperscripts(
     if (!networks.includes(network)) networks.push(network)
     networksByName.set(name, networks)
   }
-  for (const net of db.source_net.list()) {
-    addName(net.name, connMap.getNetConnectedToId(net.source_net_id))
-  }
+  // Only names displayed on multiple networks need disambiguation.
+  // Unused source-net declarations must not create a visible conflict.
   for (const { label, network } of labelsWithNetworks) {
     addName(label.text, network)
   }
