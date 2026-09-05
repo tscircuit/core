@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="tscircuit-schematic" width="1200" height="600" style="background-color: rgb(245, 241, 237)" data-real-to-screen-transform="matrix(188.0877742947,0,0,-188.0877742947,165.6614420063,112.8526645768)"><style>
+              .boundary { fill: rgb(245, 241, 237); }
+              .schematic-boundary { fill: none; stroke: #fff; }
+              .component { fill: none; stroke: rgb(132, 0, 0); }
+              .chip { fill: rgb(255, 255, 194); stroke: rgb(132, 0, 0); }
+              .component-pin { fill: none; stroke: rgb(132, 0, 0); }
+              .text { font-family: sans-serif; fill: rgb(0, 150, 0); }
+              .pin-number { fill: rgb(169, 0, 0); }
+              .port-label { fill: rgb(0, 100, 100); }
+              .component-name { fill: rgb(0, 100, 100); }
+              
+            </style><rect class="boundary" x="0" y="0" width="1200" height="600"/><path class="net-label sch-net-label" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="label_a" d="
+    M 165.6614420063,112.8526645768
+    L 175.81818181821382,94.04388714733
+    L 281.98746081509546,94.04388714733
+    L 281.98746081509546,131.66144200627
+    L 175.81818181821382,131.66144200627
+    Z
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="3.761755485894px"/><text class="net-label-text sch-net-label-text" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="label_a" x="182.589341692823" y="112.8526645768" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="33.855799373046004px" transform="">GND<tspan class="sch-net-label-superscript" font-size="22.006269592479903px" dx="2.70846394984368" dy="-8.463949843261501">1</tspan></text><path class="net-label sch-net-label" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="label_b" d="
+    M 541.8369905957001,112.8526645768
+    L 551.9937304076138,94.04388714733
+    L 658.1630094044956,94.04388714733
+    L 658.1630094044956,131.66144200627
+    L 551.9937304076138,131.66144200627
+    Z
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="3.761755485894px"/><text class="net-label-text sch-net-label-text" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="label_b" x="558.7648902822231" y="112.8526645768" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="33.855799373046004px" transform="">GND<tspan class="sch-net-label-superscript" font-size="22.006269592479903px" dx="2.70846394984368" dy="-8.463949843261501">1</tspan></text><path class="net-label sch-net-label" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="label_c" d="
+    M 918.0125391851001,112.8526645768
+    L 928.1692789970139,94.04388714733
+    L 1034.3385579938956,94.04388714733
+    L 1034.3385579938956,131.66144200627
+    L 928.1692789970139,131.66144200627
+    Z
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="3.761755485894px"/><text class="net-label-text sch-net-label-text" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="label_c" x="934.9404388716231" y="112.8526645768" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="33.855799373046004px" transform="">GND<tspan class="sch-net-label-superscript" font-size="22.006269592479903px" dx="2.70846394984368" dy="-8.463949843261501">2</tspan></text><text class="sch-text" x="165.6614420063" y="300.9404388715" fill="black" text-anchor="start" dominant-baseline="middle" font-family="sans-serif" font-size="33.855799373046004px" transform="rotate(0, 165.6614420063, 300.9404388715)">GND<tspan class="sch-net-label-superscript" font-size="22.006269592479903px" dx="2.70846394984368" dy="-8.463949843261501">1</tspan></text><text class="sch-text" x="541.8369905957001" y="300.9404388715" fill="black" text-anchor="start" dominant-baseline="middle" font-family="sans-serif" font-size="33.855799373046004px" transform="rotate(0, 541.8369905957001, 300.9404388715)">GND<tspan class="sch-net-label-superscript" font-size="22.006269592479903px" dx="2.70846394984368" dy="-8.463949843261501">1</tspan></text><text class="sch-text" x="918.0125391851001" y="300.9404388715" fill="black" text-anchor="start" dominant-baseline="middle" font-family="sans-serif" font-size="33.855799373046004px" transform="rotate(0, 918.0125391851001, 300.9404388715)">GND<tspan class="sch-net-label-superscript" font-size="22.006269592479903px" dx="2.70846394984368" dy="-8.463949843261501">2</tspan></text><text class="sch-text" x="165.6614420063" y="489.02821316620003" fill="black" text-anchor="start" dominant-baseline="middle" font-family="sans-serif" font-size="33.855799373046004px" transform="rotate(0, 165.6614420063, 489.02821316620003)">GND<tspan class="sch-net-label-superscript" font-size="22.006269592479903px" dx="2.70846394984368" dy="-8.463949843261501">note</tspan></text></svg>

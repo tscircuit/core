@@ -14,6 +14,8 @@ import type { RootCircuitEventName } from "./events"
 import { createInstanceFromReactElement } from "./fiber/create-instance-from-react-element"
 import { isAssemblyDeviceContainer } from "./components/base-components/is-assembly-device-container"
 
+import { assignSchematicNetLabelSuperscripts } from "./utils/schematic/assign-schematic-net-label-superscripts"
+
 export class IsolatedCircuit {
   firstChild: PrimitiveComponent | null = null
   children: PrimitiveComponent[]
@@ -209,6 +211,9 @@ export class IsolatedCircuit {
     firstChild.runRenderCycle()
     this._hasUnrenderedUpdatesFromAsyncEffects = false
     this._hasRenderedAtleastOnce = true
+    if (!this.schematicDisabled && !this._hasIncompleteAsyncEffects()) {
+      assignSchematicNetLabelSuperscripts(db)
+    }
   }
 
   async renderUntilSettled(): Promise<void> {
