@@ -125,7 +125,7 @@ test("built-in local autorouting caches by solver options and custom algorithms 
     phaseCount: 2,
     connectionCount: 1,
     autorouterName: "tscircuit",
-    solverName: "AutoroutingPipelineSolver7_MultiGraph",
+    solverName: "AutoroutingPipelineSolver9_PreloadedTraceGraph",
     effort: 1,
     cacheStatus: "miss",
   })
@@ -142,7 +142,7 @@ test("built-in local autorouting caches by solver options and custom algorithms 
   const secondRender = await renderCircuit({ autorouterEffortLevel: "1x" })
   expect(secondRender.autoroutingProgressCount).toBe(0)
   expect(secondRender.autoroutingStarts[0]).toMatchObject({
-    solverName: "AutoroutingPipelineSolver7_MultiGraph",
+    solverName: "AutoroutingPipelineSolver9_PreloadedTraceGraph",
     effort: 1,
     cacheStatus: "hit",
     cacheKey: setKeys[0],
