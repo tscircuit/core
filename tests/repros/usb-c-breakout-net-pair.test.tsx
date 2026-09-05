@@ -17,5 +17,10 @@ test("USB-C breakout pair wired through named nets", async () => {
   expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
   expect(circuit.db.pcb_trace_error.list()).toEqual([])
   expect(circuit.db.pcb_port_not_connected_error.list()).toEqual([])
+  await expect(phases).toMatchAutoroutingPhaseIoStackSnapshot(
+    import.meta.path,
+    "usb-c-breakout-routing-phases",
+    circuit,
+  )
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 }, 30_000)
