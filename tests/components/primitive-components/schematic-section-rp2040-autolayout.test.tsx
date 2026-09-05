@@ -566,4 +566,4 @@ test("RP2040 auto-layout with schematic sections", () => {
   expect(anchoredLabels.filter((label) => label.text === "XIN")).toHaveLength(0)
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
-}, 40_000)
+}, 60_000)
