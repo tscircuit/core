@@ -132,16 +132,9 @@ export class SchematicSection extends PrimitiveComponent<
 
     const outer = computeBoundsFromCellContents(allCells)
 
-    // Internal dividing lines: use raw (unpadded) bounds so adjacent sections
-    // with small gaps don't overlap and prevent divider generation
-    const CELL_MARGIN = 1
     const dividers = calculateCellBoundaries(
-      allSectionsWithBounds.map((s) => ({
-        minX: s.rawBounds.minX - CELL_MARGIN,
-        maxX: s.rawBounds.maxX + CELL_MARGIN,
-        minY: s.rawBounds.minY - CELL_MARGIN,
-        maxY: s.rawBounds.maxY + CELL_MARGIN,
-      })),
+      allSectionsWithBounds.map((s) => s.rawBounds),
+      { cellMargin: 1 },
     )
     for (const line of dividers) {
       db.schematic_line.insert({
