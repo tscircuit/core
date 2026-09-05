@@ -25,7 +25,7 @@ test("disconnected same-name nets get stable superscripts on regular and inline 
   circuit.on("renderable:renderLifecycle:anyEvent", (event) => {
     if (
       event.type ===
-        "renderable:renderLifecycle:SchematicNetLabelSuperscripts:end" &&
+        "renderable:renderLifecycle:SchematicLabelNetsWithConflictingNames:end" &&
       event.renderId === circuit.firstChild!._renderId
     ) {
       suffixesAtPhaseEnd = circuit.db.schematic_net_label

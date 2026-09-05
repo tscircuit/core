@@ -2727,7 +2727,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     Group_doInitialStandaloneSubcircuitPcbDesignRuleChecks(this)
   }
 
-  doInitialSchematicNetLabelSuperscripts() {
+  doInitialSchematicLabelNetsWithConflictingNames() {
     if (this.root?.schematicDisabled) return
     // Number networks once for the whole circuit, after every group's labels
     // exist, rather than independently numbering sibling subcircuits.
@@ -2735,8 +2735,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     assignSchematicNetLabelSuperscripts(this.root!.db)
   }
 
-  updateSchematicNetLabelSuperscripts() {
-    this.doInitialSchematicNetLabelSuperscripts()
+  updateSchematicLabelNetsWithConflictingNames() {
+    this.doInitialSchematicLabelNetsWithConflictingNames()
   }
 
   doInitialSchematicReplaceNetLabelsWithSymbols() {

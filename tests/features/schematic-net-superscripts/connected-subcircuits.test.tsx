@@ -37,7 +37,7 @@ test("connected same-name nets share one superscript and lose it when all networ
     connected_source_net_ids: nets.map((net) => net.source_net_id),
     connected_source_port_ids: [],
   })
-  circuit.firstChild!._markDirty("SchematicNetLabelSuperscripts")
+  circuit.firstChild!._markDirty("SchematicLabelNetsWithConflictingNames")
   circuit.render()
   expect(
     circuit.db.schematic_net_label

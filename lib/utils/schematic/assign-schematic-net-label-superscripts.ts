@@ -11,7 +11,7 @@ type SourceNetworkId = Exclude<
 
 /**
  * Disambiguate names using source electrical connectivity across all subcircuits.
- * Called by the top-level group during SchematicNetLabelSuperscripts, after
+ * Called by the top-level group during SchematicLabelNetsWithConflictingNames, after
  * schematic labels exist throughout the circuit.
  * Suffixes are derived display metadata; source names and connectivity stay intact.
  */

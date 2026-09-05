@@ -17,10 +17,10 @@ test("superscript phase waits for descendant label work and supports dirty updat
   class SuperscriptRoot extends Renderable {
     initialCalls = 0
     updateCalls = 0
-    doInitialSchematicNetLabelSuperscripts() {
+    doInitialSchematicLabelNetsWithConflictingNames() {
       this.initialCalls++
     }
-    updateSchematicNetLabelSuperscripts() {
+    updateSchematicLabelNetsWithConflictingNames() {
       this.updateCalls++
     }
   }
@@ -30,9 +30,9 @@ test("superscript phase waits for descendant label work and supports dirty updat
   child.parent = root
   root.runRenderCycle()
   expect(root.initialCalls).toBe(0)
-  expect(root.renderPhaseStates.SchematicNetLabelSuperscripts.initialized).toBe(
-    false,
-  )
+  expect(
+    root.renderPhaseStates.SchematicLabelNetsWithConflictingNames.initialized,
+  ).toBe(false)
   finishTraceRender()
   await traceRenderFinished
   await Promise.resolve()
@@ -41,12 +41,14 @@ test("superscript phase waits for descendant label work and supports dirty updat
   root.runRenderCycle()
   expect(root.updateCalls).toBe(0)
   child._markDirty("SourceTraceRender")
-  expect(root.renderPhaseStates.SchematicNetLabelSuperscripts.dirty).toBe(true)
+  expect(
+    root.renderPhaseStates.SchematicLabelNetsWithConflictingNames.dirty,
+  ).toBe(true)
   root.runRenderCycle()
   expect(root.initialCalls).toBe(1)
   expect(root.updateCalls).toBe(1)
   expect(
-    orderedRenderPhases.indexOf("SchematicNetLabelSuperscripts"),
+    orderedRenderPhases.indexOf("SchematicLabelNetsWithConflictingNames"),
   ).toBeGreaterThan(
     orderedRenderPhases.indexOf("SchematicReplaceNetLabelsWithSymbols"),
   )

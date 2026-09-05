@@ -48,7 +48,7 @@ export const orderedRenderPhases = [
   "SchematicTraceRender",
   "SchematicSheetRender",
   "SchematicReplaceNetLabelsWithSymbols",
-  "SchematicNetLabelSuperscripts",
+  "SchematicLabelNetsWithConflictingNames",
   "PanelBoardLayout",
   "ValidatePcbCoordinates",
   "PcbComponentRender",
@@ -108,7 +108,7 @@ const asyncPhaseDependencies: Partial<Record<RenderPhase, RenderPhase[]>> = {
     "PcbFootprintStringRender",
     "FetchPartFootprint",
   ],
-  SchematicNetLabelSuperscripts: [
+  SchematicLabelNetsWithConflictingNames: [
     "RenderIsolatedSubcircuits",
     "PcbFootprintStringRender",
     "FetchPartFootprint",
