@@ -137,8 +137,13 @@ const getDifferentialPairSrjConnectionNamesByCohortOrThrow = ({
   const matchingSrjConnections: SimpleRouteConnection[] = []
   for (const srjConnection of srjConnections) {
     if (
-      srjConnection.source_trace_id &&
-      differentialPairSourceTraceIds.includes(srjConnection.source_trace_id)
+      (srjConnection.source_trace_id &&
+        differentialPairSourceTraceIds.includes(
+          srjConnection.source_trace_id,
+        )) ||
+      srjConnection.source_trace_ids?.some((sourceTraceId) =>
+        differentialPairSourceTraceIds.includes(sourceTraceId),
+      )
     ) {
       matchingSrjConnections.push(srjConnection)
     }

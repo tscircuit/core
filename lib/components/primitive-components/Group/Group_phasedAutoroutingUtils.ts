@@ -21,6 +21,8 @@ export function connectionIsInRoutingPhase(
   for (const trace of phasePlan.traces) {
     if (!trace.source_trace_id) continue
     if (connection.source_trace_id === trace.source_trace_id) return true
+    if (connection.source_trace_ids?.includes(trace.source_trace_id))
+      return true
     if (connection.name === trace.source_trace_id) return true
     if (connection.rootConnectionName === trace.source_trace_id) return true
     if (connection.mergedConnectionNames?.includes(trace.source_trace_id)) {
