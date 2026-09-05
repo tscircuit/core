@@ -4,6 +4,20 @@ import { MultilayerIjump } from "@tscircuit/infgrid-ijump-astar"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 
+const resolveSimpleRouteJsonFromRequestBody = (
+  body: any,
+): SimpleRouteJson | undefined => {
+  if (body.input_simple_route_json) {
+    return body.input_simple_route_json as SimpleRouteJson
+  }
+  if (body.input_circuit_json) {
+    return getSimpleRouteJsonFromCircuitJson({
+      circuitJson: body.input_circuit_json,
+    }).simpleRouteJson
+  }
+  return undefined
+}
+
 export const getTestAutoroutingServer = ({
   requireDisplayName = false,
   requireServerCacheEnabled = false,
@@ -17,6 +31,8 @@ export const getTestAutoroutingServer = ({
 } = {}) => {
   let currentJobId = 0
   const jobResults = new Map<string, any>()
+  const capturedSolveBodies: any[] = []
+  const capturedJobCreateBodies: any[] = []
 
   const server = serve({
     port: 0,
@@ -31,15 +47,8 @@ export const getTestAutoroutingServer = ({
       // Legacy solve endpoint
       if (endpoint === "/autorouting/solve") {
         const body = await req.json()
-        let simpleRouteJson: SimpleRouteJson | undefined
-
-        if (body.input_simple_route_json) {
-          simpleRouteJson = body.input_simple_route_json as SimpleRouteJson
-        } else if (body.input_circuit_json) {
-          simpleRouteJson = getSimpleRouteJsonFromCircuitJson({
-            circuitJson: body.input_circuit_json,
-          }).simpleRouteJson
-        }
+        capturedSolveBodies.push(body)
+        const simpleRouteJson = resolveSimpleRouteJsonFromRequestBody(body)
 
         if (!simpleRouteJson) {
           return new Response(
@@ -83,6 +92,7 @@ export const getTestAutoroutingServer = ({
       // New job-based endpoints
       if (endpoint === "/autorouting/jobs/create") {
         const body = await req.json()
+        capturedJobCreateBodies.push(body)
         const jobId = `job_${currentJobId++}`
 
         if (requireDisplayName && !body.display_name) {
@@ -103,9 +113,7 @@ export const getTestAutoroutingServer = ({
           )
         }
 
-        const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
-          circuitJson: body.input_circuit_json,
-        })
+        const simpleRouteJson = resolveSimpleRouteJsonFromRequestBody(body)
 
         const autorouter = new MultilayerIjump({
           input: simpleRouteJson as any,
@@ -214,5 +222,7 @@ export const getTestAutoroutingServer = ({
   return {
     autoroutingServerUrl: `http://localhost:${server.port}/`,
     close: () => server.stop(),
+    capturedSolveBodies,
+    capturedJobCreateBodies,
   }
 }
