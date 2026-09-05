@@ -113,6 +113,23 @@ function getSymbolTextBounds({
   return textBounds
 }
 
+export function getSchematicComponentTextObstacleBounds({
+  db,
+  schematicComponent,
+}: {
+  db: CircuitJsonUtilObjects
+  schematicComponent: SchematicComponent
+}): Bounds[] {
+  const sourceComponent = schematicComponent.source_component_id
+    ? db.source_component.get(schematicComponent.source_component_id)
+    : undefined
+  if (!sourceComponent || !TEXT_BOX_ENABLED_FTYPES.has(sourceComponent.ftype)) {
+    return []
+  }
+
+  return getSymbolTextBounds({ schematicComponent, sourceComponent })
+}
+
 function getSymbolBoxBounds(schematicComponent: SchematicComponent): Bounds {
   return getBoundFromCenteredRect({
     center: schematicComponent.center,
@@ -132,16 +149,9 @@ function getSchematicComponentTextInclusiveBounds(
 ): Bounds | null {
   if (!schematicComponent.center || !schematicComponent.size) return null
 
-  const sourceComponent = schematicComponent.source_component_id
-    ? db.source_component.get(schematicComponent.source_component_id)
-    : undefined
-  if (!sourceComponent || !TEXT_BOX_ENABLED_FTYPES.has(sourceComponent.ftype)) {
-    return null
-  }
-
-  const textBounds = getSymbolTextBounds({
+  const textBounds = getSchematicComponentTextObstacleBounds({
+    db,
     schematicComponent,
-    sourceComponent,
   })
   if (textBounds.length === 0) return null
 
