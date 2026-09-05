@@ -1,25 +1,21 @@
 import { expect, test } from "bun:test"
-import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
+import { createAutoroutingPhaseIoStack } from "tests/fixtures/create-autorouting-phase-io-stack"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 import UsbBreakoutBoard from "./usb-c-breakout/board"
 
 test("USB-C breakout pair wired through named nets", async () => {
   const { circuit } = getTestFixture()
+  const phases = createAutoroutingPhaseIoStack(circuit)
   circuit.add(<UsbBreakoutBoard />)
   await circuit.renderUntilSettled()
   expect(circuit.db.source_failed_to_create_component_error.list()).toEqual([])
   expect(circuit.db.source_trace_not_connected_error.list()).toEqual([])
-  const board = circuit.firstChild
-  if (!board) throw new Error("Expected USB-C breakout board")
-  expect(() =>
-    getSimpleRouteJsonFromCircuitJson({
-      db: circuit.db,
-      subcircuitComponent: board,
-    }),
-  ).toThrow(
-    'Could not find an SRJ connection for trace name or port selector ".R3 > .pin1"',
-  )
-  expect(circuit.db.pcb_trace.list()).toHaveLength(0)
+  expect(phases).toHaveLength(2)
+  expect(phases[0]?.startSimpleRouteJson?.differentialPairs).toHaveLength(1)
+  expect(phases[0]?.endSimpleRouteJson?.traces).toHaveLength(2)
+  expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
+  expect(circuit.db.pcb_trace_error.list()).toEqual([])
+  expect(circuit.db.pcb_port_not_connected_error.list()).toEqual([])
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 }, 30_000)
