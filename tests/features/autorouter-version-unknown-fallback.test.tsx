@@ -30,7 +30,9 @@ test("unknown autorouterVersion warns and uses the latest pipeline", async () =>
     expect(consoleWarn).toHaveBeenCalledWith(
       'Unknown autorouterVersion "v4", falling back to "latest".',
     )
-    expect(solverStartedName).toBe("AutoroutingPipelineSolver7_MultiGraph")
+    expect(solverStartedName).toBe(
+      "AutoroutingPipelineSolver9_PreloadedTraceGraph",
+    )
   } finally {
     consoleWarn.mockRestore()
   }

@@ -94,19 +94,19 @@ export const getAutorouterSolverName = ({
   if (autorouterVersion === "beta_pipeline5") {
     return "AutoroutingPipelineSolver5"
   }
-  if (
-    autorouterVersion === "beta_pipeline7" ||
-    autorouterVersion === "latest"
-  ) {
+  if (autorouterVersion === "beta_pipeline7") {
     return "AutoroutingPipelineSolver7_MultiGraph"
   }
-  if (autorouterVersion === "beta_pipeline9") {
+  if (
+    autorouterVersion === "beta_pipeline9" ||
+    autorouterVersion === "latest"
+  ) {
     return "AutoroutingPipelineSolver9_PreloadedTraceGraph"
   }
   if (useLaserPrefabSolver) return "AutoroutingPipelineSolver8"
   if (useAutoJumperSolver) return "AssignableAutoroutingPipeline3"
   if (useAssignableSolver) return "AssignableAutoroutingPipeline2"
-  return "AutoroutingPipelineSolver7_MultiGraph"
+  return "AutoroutingPipelineSolver9_PreloadedTraceGraph"
 }
 
 function getCapacityAutorouterCacheProvider(
