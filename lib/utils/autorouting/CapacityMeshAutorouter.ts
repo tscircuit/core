@@ -71,6 +71,7 @@ export const getAutorouterSolverName = ({
   autorouterVersion,
   useLaserPrefabSolver = false,
   useTraceSimplificationSolver = false,
+  hasPreloadedTraces = false,
 }: Pick<
   AutorouterOptions,
   | "useAssignableSolver"
@@ -78,7 +79,7 @@ export const getAutorouterSolverName = ({
   | "autorouterVersion"
   | "useLaserPrefabSolver"
   | "useTraceSimplificationSolver"
->): AutorouterSolverName => {
+> & { hasPreloadedTraces?: boolean }): AutorouterSolverName => {
   if (useTraceSimplificationSolver) {
     return "AutoroutingPipelineSolver11_Simplification"
   }
@@ -106,6 +107,9 @@ export const getAutorouterSolverName = ({
   if (useLaserPrefabSolver) return "AutoroutingPipelineSolver8"
   if (useAutoJumperSolver) return "AssignableAutoroutingPipeline3"
   if (useAssignableSolver) return "AssignableAutoroutingPipeline2"
+  if (hasPreloadedTraces) {
+    return "AutoroutingPipelineSolver9_PreloadedTraceGraph"
+  }
   return "AutoroutingPipelineSolver7_MultiGraph"
 }
 
@@ -167,6 +171,7 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
       autorouterVersion,
       useLaserPrefabSolver,
       useTraceSimplificationSolver,
+      hasPreloadedTraces: Boolean(input.traces && input.traces.length > 0),
     })
     const SolverClass = SOLVERS[solverName]
     const solverCacheProvider =
