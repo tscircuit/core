@@ -1,6 +1,9 @@
-import type { SourcePort, SourceTrace } from "circuit-json"
+import type { SourceTrace } from "circuit-json"
 import type { DifferentialPair } from "lib/components/primitive-components/DifferentialPair"
-import type { Port } from "lib/components/primitive-components/Port/Port"
+import {
+  getSourceTracesForRoutingConnectionSelector,
+  getSrjConnectionsForSourceTraces,
+} from "./resolve-routing-connection"
 import type {
   PcbGroupId,
   SimpleRouteConnection,
@@ -8,13 +11,7 @@ import type {
   SrjConnectionName,
 } from "./SimpleRouteJson"
 
-type SourceTraceId = SourceTrace["source_trace_id"]
-type SourceNetId = NonNullable<SourceTrace["connected_source_net_ids"]>[number]
-type SourcePortId = NonNullable<SourcePort["source_port_id"]>
 type SubcircuitId = NonNullable<SourceTrace["subcircuit_id"]>
-type SubcircuitConnectivityMapKey = NonNullable<
-  SourceTrace["subcircuit_connectivity_map_key"]
->
 
 type GetDifferentialPairsParams = {
   srjConnections: SimpleRouteConnection[]
@@ -23,7 +20,7 @@ type GetDifferentialPairsParams = {
   subcircuitId?: SubcircuitId | null
 }
 
-type GetDifferentialPairTraceSubcircuitConnectivityMapKeyOrThrowParams = {
+type GetDifferentialPairSourceTraceOrThrowParams = {
   differentialPair: DifferentialPair
   differentialPairSourceTraces: SourceTrace[]
   traceNameOrPortSelector: string
@@ -33,7 +30,7 @@ type GetDifferentialPairSrjConnectionNamesByCohortOrThrowParams = {
   srjConnections: SimpleRouteConnection[]
   differentialPairName: string
   differentialPairSourceTraces: SourceTrace[]
-  traceSubcircuitConnectivityMapKey: SubcircuitConnectivityMapKey
+  sourceTrace: SourceTrace
   traceNameOrPortSelector: string
 }
 
@@ -44,47 +41,16 @@ type GetDifferentialPairSrjConnectionNamesByCohortOrThrowParams = {
  */
 type DifferentialPairSrjConnectionCohort = PcbGroupId | undefined
 
-const getDifferentialPairSourceTracesByTraceName = (
-  differentialPairSourceTraces: SourceTrace[],
-  traceName: string,
-): SourceTrace[] =>
-  differentialPairSourceTraces.filter(
-    (sourceTrace) => sourceTrace.name === traceName,
-  )
-
-const getDifferentialPairSourceTracesByPortId = (
-  differentialPairSourceTraces: SourceTrace[],
-  sourcePortId: SourcePortId,
-): SourceTrace[] =>
-  differentialPairSourceTraces.filter((sourceTrace) =>
-    sourceTrace.connected_source_port_ids.includes(sourcePortId),
-  )
-
-const getDifferentialPairTraceSubcircuitConnectivityMapKeyOrThrow = ({
+const getDifferentialPairSourceTraceOrThrow = ({
   differentialPair,
   differentialPairSourceTraces,
   traceNameOrPortSelector,
-}: GetDifferentialPairTraceSubcircuitConnectivityMapKeyOrThrowParams): SubcircuitConnectivityMapKey => {
-  const differentialPairSubcircuit = differentialPair.getSubcircuit()
-  const sourceTracesWithMatchingName =
-    getDifferentialPairSourceTracesByTraceName(
-      differentialPairSourceTraces,
-      traceNameOrPortSelector,
-    )
-  const selectedPort =
-    sourceTracesWithMatchingName.length === 0
-      ? differentialPairSubcircuit.selectOne<Port>(traceNameOrPortSelector, {
-          type: "port",
-        })
-      : null
-  const selectedSourcePortId: SourcePortId | undefined =
-    selectedPort?.source_port_id ?? undefined
-  const matchingSourceTraces = selectedSourcePortId
-    ? getDifferentialPairSourceTracesByPortId(
-        differentialPairSourceTraces,
-        selectedSourcePortId,
-      )
-    : sourceTracesWithMatchingName
+}: GetDifferentialPairSourceTraceOrThrowParams): SourceTrace => {
+  const matchingSourceTraces = getSourceTracesForRoutingConnectionSelector({
+    subcircuit: differentialPair.getSubcircuit(),
+    sourceTraces: differentialPairSourceTraces,
+    traceNameOrPortSelector,
+  })
 
   if (matchingSourceTraces.length === 0) {
     throw new Error(
@@ -112,43 +78,24 @@ const getDifferentialPairTraceSubcircuitConnectivityMapKeyOrThrow = ({
     )
   }
 
-  return subcircuitConnectivityMapKey
+  return sourceTrace
 }
 
 const getDifferentialPairSrjConnectionNamesByCohortOrThrow = ({
   srjConnections,
   differentialPairName,
   differentialPairSourceTraces,
-  traceSubcircuitConnectivityMapKey,
+  sourceTrace,
   traceNameOrPortSelector,
 }: GetDifferentialPairSrjConnectionNamesByCohortOrThrowParams): Map<
   DifferentialPairSrjConnectionCohort,
   SrjConnectionName
 > => {
-  const differentialPairSourceTraceIds: SourceTraceId[] = []
-  const differentialPairSourceNetIds = new Set<SourceNetId>()
-  for (const sourceTrace of differentialPairSourceTraces) {
-    if (
-      sourceTrace.subcircuit_connectivity_map_key ===
-      traceSubcircuitConnectivityMapKey
-    ) {
-      differentialPairSourceTraceIds.push(sourceTrace.source_trace_id)
-      for (const sourceNetId of sourceTrace.connected_source_net_ids ?? []) {
-        differentialPairSourceNetIds.add(sourceNetId)
-      }
-    }
-  }
-
-  const matchingSrjConnections: SimpleRouteConnection[] = []
-  for (const srjConnection of srjConnections) {
-    if (
-      differentialPairSourceNetIds.has(srjConnection.name) ||
-      (srjConnection.source_trace_id &&
-        differentialPairSourceTraceIds.includes(srjConnection.source_trace_id))
-    ) {
-      matchingSrjConnections.push(srjConnection)
-    }
-  }
+  const matchingSrjConnections = getSrjConnectionsForSourceTraces({
+    selectedSourceTraces: [sourceTrace],
+    sourceTraces: differentialPairSourceTraces,
+    srjConnections,
+  })
 
   if (matchingSrjConnections.length === 0) {
     throw new Error(
@@ -168,7 +115,7 @@ const getDifferentialPairSrjConnectionNamesByCohortOrThrow = ({
           ? "the global routing cohort"
           : `routing PCB group "${cohort}"`
       throw new Error(
-        `Subcircuit connectivity map key "${traceSubcircuitConnectivityMapKey}" matches multiple SRJ connections in ${cohortLabel} for differential pair "${differentialPairName}"`,
+        `Subcircuit connectivity map key "${sourceTrace.subcircuit_connectivity_map_key}" matches multiple SRJ connections in ${cohortLabel} for differential pair "${differentialPairName}"`,
       )
     }
     connectionNamesByCohort.set(cohort, srjConnection.name)
@@ -207,25 +154,23 @@ export const getDifferentialPairsForSimpleRouteJson = ({
       differentialPair._parsedProps.positiveConnection
     const negativeTraceNameOrPortSelector =
       differentialPair._parsedProps.negativeConnection
-    const positiveSubcircuitConnectivityMapKey =
-      getDifferentialPairTraceSubcircuitConnectivityMapKeyOrThrow({
-        differentialPair,
-        differentialPairSourceTraces,
-        traceNameOrPortSelector: positiveTraceNameOrPortSelector,
-      })
-    const negativeSubcircuitConnectivityMapKey =
-      getDifferentialPairTraceSubcircuitConnectivityMapKeyOrThrow({
-        differentialPair,
-        differentialPairSourceTraces,
-        traceNameOrPortSelector: negativeTraceNameOrPortSelector,
-      })
+    const positiveSourceTrace = getDifferentialPairSourceTraceOrThrow({
+      differentialPair,
+      differentialPairSourceTraces,
+      traceNameOrPortSelector: positiveTraceNameOrPortSelector,
+    })
+    const negativeSourceTrace = getDifferentialPairSourceTraceOrThrow({
+      differentialPair,
+      differentialPairSourceTraces,
+      traceNameOrPortSelector: negativeTraceNameOrPortSelector,
+    })
 
     const positiveSrjConnectionNamesByCohort =
       getDifferentialPairSrjConnectionNamesByCohortOrThrow({
         srjConnections,
         differentialPairName: differentialPair.name,
         differentialPairSourceTraces,
-        traceSubcircuitConnectivityMapKey: positiveSubcircuitConnectivityMapKey,
+        sourceTrace: positiveSourceTrace,
         traceNameOrPortSelector: positiveTraceNameOrPortSelector,
       })
     const negativeSrjConnectionNamesByCohort =
@@ -233,7 +178,7 @@ export const getDifferentialPairsForSimpleRouteJson = ({
         srjConnections,
         differentialPairName: differentialPair.name,
         differentialPairSourceTraces,
-        traceSubcircuitConnectivityMapKey: negativeSubcircuitConnectivityMapKey,
+        sourceTrace: negativeSourceTrace,
         traceNameOrPortSelector: negativeTraceNameOrPortSelector,
       })
 
