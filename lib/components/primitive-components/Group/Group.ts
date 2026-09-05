@@ -95,6 +95,7 @@ import { Group_doInitialSourceAddConnectivityMapKey } from "./Group_doInitialSou
 import { Group_doInitialStandaloneSubcircuitPcbDesignRuleChecks } from "./Group_doInitialStandaloneSubcircuitPcbDesignRuleChecks"
 import { Group_getFanoutPourNetMap } from "./Group_getFanoutPourNetMap"
 import { Group_getRoutingPhasePlans } from "./Group_getRoutingPhasePlans"
+import { Group_runRoutingPhaseDrc } from "./Group_runRoutingPhaseDrc"
 import {
   cacheLocalAutoroutingPhaseResult,
   getCachedLocalAutoroutingPhaseResult,
@@ -1740,21 +1741,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           })
         }
 
-        this.root?.emit("autorouting:end", {
-          type: "autorouting:end",
-          subcircuit_id: this.subcircuit_id,
-          componentDisplayName: this.getString(),
-          ...(routingPhasePlan.phaseName !== undefined
-            ? {
-                phaseName: routingPhasePlan.phaseName,
-                phaseStageIndex,
-                phaseStageCount,
-              }
-            : {}),
-          ...autoroutingMetadata,
-          simpleRouteJson: outputSimpleRouteJson,
-        })
-
         // Create source_traces for interconnect ports that were connected via
         // off-board paths during routing. This allows DRC to understand that
         // these ports are intentionally connected.
@@ -1820,6 +1806,37 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             }),
           )
         }
+        const drcErrors = await Group_runRoutingPhaseDrc(
+          this,
+          {
+            output_pcb_traces: outputTraces as (PcbTrace | PcbVia)[],
+            output_jumpers: outputJumpers,
+            pcb_trace_ids_to_be_replaced: [...pcbTraceIdsToDelete],
+          },
+          {
+            subcircuit_id: this.subcircuit_id!,
+            routing_phase_index: routingStageIndex,
+            name: routingPhasePlan.phaseName,
+            stage_index: phaseStageIndex,
+          },
+          routingPhasePlan.drcTolerances,
+        )
+
+        this.root?.emit("autorouting:end", {
+          type: "autorouting:end",
+          subcircuit_id: this.subcircuit_id,
+          componentDisplayName: this.getString(),
+          ...(routingPhasePlan.phaseName !== undefined
+            ? {
+                phaseName: routingPhasePlan.phaseName,
+                phaseStageIndex,
+                phaseStageCount,
+              }
+            : {}),
+          ...autoroutingMetadata,
+          simpleRouteJson: outputSimpleRouteJson,
+          drcErrors,
+        })
       } catch (error) {
         const { db } = this.root!
         // Record the error
@@ -2053,12 +2070,13 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     }
   }
 
-  _updatePcbTraceRenderFromPcbTraces() {
+  _updatePcbTraceRenderFromPcbTraces(
+    result = this._asyncAutoroutingResult!,
+    db = this.root!.db,
+  ) {
     const { output_pcb_traces, output_jumpers, pcb_trace_ids_to_be_replaced } =
-      this._asyncAutoroutingResult!
+      result
     if (!output_pcb_traces) return
-
-    const { db } = this.root!
 
     // Delete any previously created traces
     // TODO
@@ -2084,6 +2102,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
     deleteExistingPcbTracesReplacedBy({
       group: this,
+      db,
       outputPcbTraces: output_pcb_traces,
       pcbTraceIdsToReplace: pcb_trace_ids_to_be_replaced,
     })

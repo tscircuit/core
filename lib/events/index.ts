@@ -1,3 +1,4 @@
+import type { RoutingCheckResult } from "@tscircuit/checks"
 import type { RenderPhase } from "lib/components/base-components/Renderable"
 import type { SOLVERS } from "lib/solvers"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
@@ -81,6 +82,10 @@ export interface AutoroutingProgressEvent extends AutoroutingExecutionMetadata {
 }
 
 export interface AutoroutingEndEvent extends AutoroutingExecutionMetadata {
+  /** Geometry DRCs observed after this stage. Omitted when routing DRC is disabled.
+   * Historical diagnostics are not inserted into the final board Circuit JSON.
+   */
+  drcErrors?: RoutingCheckResult[]
   type: "autorouting:end"
   subcircuit_id: string
   componentDisplayName: string
