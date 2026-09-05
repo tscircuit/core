@@ -128,14 +128,13 @@ function traceHasEndpointMatchingConnectionSelector(
   trace: Trace,
   connectionSelectorEndpointKey: string,
 ): boolean {
-  return [
-    ...trace.getTracePortPathSelectors(),
-    ...trace.getTracePathNetSelectors(),
-  ].some(
-    (selector) =>
-      convertPortSelectorToEndpointKey(selector) ===
-      connectionSelectorEndpointKey,
-  )
+  return trace
+    .getTracePortPathSelectors()
+    .some(
+      (selector) =>
+        convertPortSelectorToEndpointKey(selector) ===
+        connectionSelectorEndpointKey,
+    )
 }
 
 function getAutoroutersByPhaseIndex(
@@ -308,19 +307,6 @@ export function Group_getRoutingPhasePlans(
         convertPortSelectorToEndpointKey,
       )
       plan.connectionSelectors = connectionSelectors
-      for (const selector of connectionSelectors) {
-        const net = group.selectOne<Net>(selector, { type: "net" })
-        if (!net || breakoutByNet.has(net)) continue
-        if (!phaseProps.reroute) {
-          for (const existingPlan of plansByPhaseIndex.values()) {
-            if (existingPlan === plan) continue
-            existingPlan.nets = existingPlan.nets.filter(
-              (existingNet) => existingNet !== net,
-            )
-          }
-        }
-        if (!plan.nets.includes(net)) plan.nets.push(net)
-      }
 
       for (const trace of traces) {
         if (breakoutByTrace.has(trace)) continue
