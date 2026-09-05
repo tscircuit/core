@@ -120,7 +120,40 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
           },
           result.footprintCircuitJson,
         )
-        component.addAll(fpComponents)
+        // Wrap in a Footprint with src so pcbSx selectors can match and so
+        // getPortsFromFootprint can read port hints from the loaded children,
+        // resolving duplicated-numbered physical pads into primary +
+        // internally-connected ports (see tscircuit/tscircuit#4444).
+        const fpWrapper = new Footprint({ src: footprintUrl })
+        const componentsOutsideFootprint: typeof fpComponents = []
+        for (const c of fpComponents) {
+          if (shouldAddOutsideFootprintWrapper(c)) {
+            componentsOutsideFootprint.push(c)
+          } else {
+            fpWrapper.add(c)
+          }
+        }
+        component.add(fpWrapper)
+        component.addAll(componentsOutsideFootprint)
+        // Ensure existing Ports re-run PcbPortRender now that pads exist,
+        // mirroring the library-footprint load path. Without this, ports
+        // rendered before the async load finished keep zero PCB matches and
+        // never emit their pcb_port (see tscircuit/tscircuit#4444).
+        for (const child of component.children) {
+          if (child.componentName === "Port") {
+            child._markDirty?.("PcbPortRender")
+          }
+        }
+        // Ports/traces may have been recreated above. Re-run trace resolution
+        // and design rule checks so source_traces point at the live port ids
+        // and missing-trace warnings reflect final connectivity instead of an
+        // intermediate pre-load state (tscircuit/tscircuit#4442).
+        const subcircuit = component.getSubcircuit()
+        for (const trace of (subcircuit?.selectAll("trace") ??
+          []) as PrimitiveComponent[]) {
+          trace._markDirty?.("SourceTraceRender")
+        }
+        component._markDirty("SourceDesignRuleChecks")
         component._markDirty("ResolveFootprintPinLabels")
         component._markDirty("InitializePortsFromChildren")
       } catch (err) {
