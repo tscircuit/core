@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("does not warn for a two-terminal conductor split through a source net", (): void => {
@@ -30,4 +31,20 @@ test("does not warn for a two-terminal conductor split through a source net", ()
           warning.property_name === "negativeConnection",
       ),
   ).toEqual([])
+
+  const board = circuit.firstChild
+  if (!board) throw new Error("Expected a board")
+  const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
+    db: circuit.db,
+    subcircuitComponent: board,
+  })
+  expect(simpleRouteJson.differentialPairs).toEqual([
+    {
+      connectionNames: [
+        circuit.db.source_net.getWhere({ name: "DP" })!.source_net_id,
+        circuit.db.source_trace.getWhere({ name: "DM" })!.source_trace_id,
+      ],
+      lengthTolerance: 0.1,
+    },
+  ])
 })
