@@ -1,3 +1,4 @@
+import { getSchematicElementBounds } from "@tscircuit/circuit-json-util"
 import { type Bounds, doBoundsOverlap } from "@tscircuit/math-utils"
 import { schematicSectionProps } from "@tscircuit/props"
 import {
@@ -112,7 +113,7 @@ export class SchematicSection extends PrimitiveComponent<
       null,
       schematicSheetId,
     )
-    const allSectionsWithBounds = [...namedSectionsWithBounds]
+    let allSectionsWithBounds = [...namedSectionsWithBounds]
     if (unsectionedBounds)
       allSectionsWithBounds.push({
         displayName: undefined,
@@ -128,12 +129,61 @@ export class SchematicSection extends PrimitiveComponent<
 
     if (allSectionsWithBounds.length === 0) return
 
-    const allCells = allSectionsWithBounds.map((s) => s.cell)
+    const initialDividers = calculateCellBoundaries(
+      allSectionsWithBounds.map((section) => section.rawBounds),
+      { cellMargin: 1 },
+    )
+    const dividerBounds = initialDividers.map((line) => ({
+      minX: Math.min(line.start.x, line.end.x),
+      maxX: Math.max(line.start.x, line.end.x),
+      minY: Math.min(line.start.y, line.end.y),
+      maxY: Math.max(line.start.y, line.end.y),
+    }))
+    const crossingLabels = db.schematic_net_label
+      .list()
+      .filter((label) => label.schematic_sheet_id === schematicSheetId)
+      .flatMap((label) => {
+        if (!label.anchor_position) return []
+        const bounds = getSchematicElementBounds(label)
+        if (!bounds) return []
+        const crossesDivider = dividerBounds.some((divider) =>
+          doBoundsOverlap(bounds, divider),
+        )
+        if (!crossesDivider) return []
+        return [{ anchor: label.anchor_position, bounds }]
+      })
+    allSectionsWithBounds = allSectionsWithBounds.map((section) => {
+      const netLabelBounds = crossingLabels
+        .filter(
+          ({ anchor }) =>
+            anchor.x >= section.rawBounds.minX &&
+            anchor.x <= section.rawBounds.maxX &&
+            anchor.y >= section.rawBounds.minY &&
+            anchor.y <= section.rawBounds.maxY,
+        )
+        .map((label) => label.bounds)
+      if (netLabelBounds.length === 0) return section
 
+      const rawBounds = computeBoundsFromCellContents([
+        section.rawBounds,
+        ...netLabelBounds,
+      ])
+      return {
+        ...section,
+        rawBounds,
+        cell: {
+          minX: rawBounds.minX - PADDING,
+          maxX: rawBounds.maxX + PADDING,
+          minY: rawBounds.minY - PADDING,
+          maxY: rawBounds.maxY + PADDING,
+        },
+      }
+    })
+
+    const allCells = allSectionsWithBounds.map((section) => section.cell)
     const outer = computeBoundsFromCellContents(allCells)
-
     const dividers = calculateCellBoundaries(
-      allSectionsWithBounds.map((s) => s.rawBounds),
+      allSectionsWithBounds.map((section) => section.rawBounds),
       { cellMargin: 1 },
     )
     for (const line of dividers) {
