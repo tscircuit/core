@@ -1,4 +1,3 @@
-import { AudioAmplifier3W_PAM8403, PowerBoost_MT3608 } from "@tscircuit/common"
 import { LCDWiki_2_8_SPI_ILI9341_MSP2807 } from "./LCDWiki_2_8_SPI_ILI9341_MSP2807"
 import { KH_6X6X15H_SMT_FS_D } from "./imports/KH_6X6X15H_SMT_FS_D"
 import { SK_12E12_G5 } from "../../imports/SK_12E12_G5"
@@ -8,7 +7,6 @@ import {
 } from "./Microcontroller_RP2350.circuit"
 import { AP2112K_3_3TRG1 } from "../../imports/AP2112K_3_3TRG1"
 import { SS34 } from "../../imports/SS34"
-import { AudioAmplifier_EdgeLayout } from "./AudioAmplifier_EdgeLayout.circuit"
 import { AudioAmplifier_GlobalLayout } from "./AudioAmplifier_GlobalLayout.circuit"
 import { PowerBoost_GlobalLayout } from "./PowerBoost_GlobalLayout.circuit"
 import { RP2350CompactLayout } from "./published-rp2350-v0.0.11/pico-layout.circuit"
@@ -44,7 +42,6 @@ export default ({
   usbResistorEscape = false,
   segmentedSupplyPours = false,
   mcuHeaders = true,
-  allGlobal = false,
   innerButtonContacts = false,
   layers = 2,
   copperIslands = true,
@@ -400,25 +397,14 @@ export default ({
       />
     )}
 
-    {allGlobal ? (
-      <PowerBoost_GlobalLayout
-        name="POWER"
-        placements={powerPlacements}
-        pcbX={(edgeConnectors ? -34 : -32) + powerOffsetX}
-        pcbY={-53 + powerOffsetY}
-        schX={-29}
-        schY={15}
-      />
-    ) : (
-      <PowerBoost_MT3608
-        name="POWER"
-        exposedNets={["BAT_POS", "BAT_SWITCHED", "VBUS", "VSYS", "GND"]}
-        pcbX={(edgeConnectors ? -34 : -32) + powerOffsetX}
-        pcbY={-53 + powerOffsetY}
-        schX={-29}
-        schY={15}
-      />
-    )}
+    <PowerBoost_GlobalLayout
+      name="POWER"
+      placements={powerPlacements}
+      pcbX={(edgeConnectors ? -34 : -32) + powerOffsetX}
+      pcbY={-53 + powerOffsetY}
+      schX={-29}
+      schY={15}
+    />
 
     <trace
       name="USB_VBUS_TO_POWER"
@@ -561,40 +547,16 @@ export default ({
       to="net.GND"
     />
 
-    {edgeConnectors ? (
-      allGlobal ? (
-        <AudioAmplifier_GlobalLayout
-          name="AUDIO"
-          vrefPlacement={audioVrefPlacement}
-          placements={audioPlacements}
-          pcbX={14 + audioOffsetX}
-          pcbY={13}
-          pcbRotation={0}
-          schX={25}
-          schY={12}
-        />
-      ) : (
-        <AudioAmplifier_EdgeLayout
-          name="AUDIO"
-          exposedNets={["AUDIO_PWM", "V3V3", "VSYS", "GND"]}
-          pcbX={14 + audioOffsetX}
-          pcbY={13}
-          pcbRotation={0}
-          schX={25}
-          schY={12}
-        />
-      )
-    ) : (
-      <AudioAmplifier3W_PAM8403
-        name="AUDIO"
-        exposedNets={["AUDIO_PWM", "V3V3", "VSYS", "GND"]}
-        pcbX={29 + audioOffsetX}
-        pcbY={-30}
-        pcbRotation={90}
-        schX={25}
-        schY={12}
-      />
-    )}
+    <AudioAmplifier_GlobalLayout
+      name="AUDIO"
+      vrefPlacement={audioVrefPlacement}
+      placements={audioPlacements}
+      pcbX={14 + audioOffsetX}
+      pcbY={13}
+      pcbRotation={0}
+      schX={25}
+      schY={12}
+    />
     <trace
       name="AUDIO_SIGNAL"
       from={
