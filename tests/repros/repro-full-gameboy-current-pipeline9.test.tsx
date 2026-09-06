@@ -60,13 +60,15 @@ describe.skipIf(process.env.RUN_FULL_GBA_REPRO !== "1")(
       )
 
       const { circuit } = getTestFixture({
-        platform: { schematicDisabled: true },
+        platform: {
+          placementDrcChecksDisabled: true,
+          schematicDisabled: true,
+        },
       })
       const autoroutingPhases = createAutoroutingPhaseIoStack(circuit)
 
       circuit.add(
         <board
-          circuitJson={unroutedCircuitJson}
           autorouter="beta-pipeline9"
           autorouterEffortLevel="5x"
           layers={4}
@@ -82,7 +84,9 @@ describe.skipIf(process.env.RUN_FULL_GBA_REPRO !== "1")(
           minBoardEdgeClearance="0.2mm"
           minViaHoleDiameter="0.2mm"
           minViaPadDiameter="0.45mm"
-        />,
+        >
+          <subcircuit name="GBA" circuitJson={unroutedCircuitJson} />
+        </board>,
       )
 
       await circuit.renderUntilSettled()
