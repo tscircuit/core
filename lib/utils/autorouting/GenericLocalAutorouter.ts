@@ -1,3 +1,4 @@
+import type { PcbAutorouterWarning } from "circuit-json"
 import type { GraphicsObject } from "graphics-debug"
 import type { SimpleRouteJson, SimplifiedPcbTrace } from "./SimpleRouteJson"
 
@@ -9,6 +10,18 @@ export type AutorouterCompleteEvent = {
 export type AutorouterErrorEvent = {
   type: "error"
   error: Error
+}
+
+/**
+ * A recoverable routing problem; completion may still return partial traces.
+ * `center` is a point in board/circuit world coordinates, in mm, with +X right
+ * and +Y up (right-handed XY plane). It is not component-local geometry.
+ */
+export type AutorouterWarningEvent = Pick<
+  PcbAutorouterWarning,
+  "message" | "connection_name" | "pcb_port_ids" | "center"
+> & {
+  type: "warning"
 }
 
 export type AutorouterProgressEvent = {
@@ -23,6 +36,7 @@ export type AutorouterProgressEvent = {
 export type AutorouterEvent =
   | AutorouterCompleteEvent
   | AutorouterErrorEvent
+  | AutorouterWarningEvent
   | AutorouterProgressEvent
 
 export interface GenericLocalAutorouter {
@@ -34,6 +48,7 @@ export interface GenericLocalAutorouter {
 
   on(event: "complete", callback: (ev: AutorouterCompleteEvent) => void): void
   on(event: "error", callback: (ev: AutorouterErrorEvent) => void): void
+  on(event: "warning", callback: (ev: AutorouterWarningEvent) => void): void
   on(event: "progress", callback: (ev: AutorouterProgressEvent) => void): void
 
   solveSync(): SimplifiedPcbTrace[]
