@@ -13,6 +13,12 @@ const fixtureUrl = new URL(
   import.meta.url,
 )
 
+const chipInflatedSourceComponentTypes = new Set([
+  "simple_crystal",
+  "simple_pin_header",
+  "simple_test_point",
+])
+
 const isRoutingError = (element: AnyCircuitElement): boolean =>
   element.type === "pcb_autorouting_error" ||
   (element.type.endsWith("_error") &&
@@ -32,13 +38,13 @@ describe.skipIf(process.env.RUN_FULL_GBA_REPRO !== "1")(
       const unroutedCircuitJson = structuredClone(
         fullGameboyCircuitJson,
       ) as CircuitJson
-      // Circuit JSON inflation does not have a simple_crystal inflator yet.
-      // The chip inflator preserves X1's captured pads, ports, placement, and
+      // Circuit JSON inflation does not yet implement these source types. The
+      // chip inflator preserves their captured pads, ports, placement, and
       // internal pin connectivity, which are the only inputs used by routing.
       for (const element of unroutedCircuitJson) {
         if (
           element.type === "source_component" &&
-          element.ftype === "simple_crystal"
+          chipInflatedSourceComponentTypes.has(element.ftype)
         ) {
           Object.assign(element, { ftype: "simple_chip" })
         }
