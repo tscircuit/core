@@ -72,6 +72,16 @@ export function getPresetAutoroutingConfig(
   const providedConfig =
     typeof autorouterConfig === "object" ? autorouterConfig : {}
 
+  // A native preset selects the routing implementation and mode. Preserve
+  // every other option supplied through the component's autorouter prop.
+  const {
+    preset: _preset,
+    local: _local,
+    groupMode: _groupMode,
+    algorithmFn: _algorithmFn,
+    ...nativePresetOptions
+  } = providedConfig
+
   const normalizedPreset =
     typeof preset === "string" ? preset.replace(/_/g, "-") : preset
 
@@ -82,6 +92,7 @@ export function getPresetAutoroutingConfig(
 
   if (platformAutorouter) {
     return {
+      ...nativePresetOptions,
       local: true,
       groupMode: "subcircuit",
       algorithmFn: async (simpleRouteJson) =>
@@ -94,39 +105,46 @@ export function getPresetAutoroutingConfig(
     case "auto":
     case "auto-local":
       return {
+        ...nativePresetOptions,
         local: true,
         groupMode: "subcircuit",
       }
     case "sequential-trace":
       return {
+        ...nativePresetOptions,
         local: true,
         groupMode: "sequential-trace",
       }
     case "subcircuit":
       return {
+        ...nativePresetOptions,
         local: true,
         groupMode: "subcircuit",
       }
     case "beta-pipeline9":
       return {
+        ...nativePresetOptions,
         local: true,
         groupMode: "subcircuit",
         autorouterVersion: "beta_pipeline9",
       }
     case "single-layer-fanout":
       return {
+        ...nativePresetOptions,
         local: true,
         groupMode: "subcircuit",
         preset: "single_layer_fanout",
       }
     case "fanout":
       return {
+        ...nativePresetOptions,
         local: true,
         groupMode: "subcircuit",
         preset: "fanout",
       }
     case "simplify":
       return {
+        ...nativePresetOptions,
         local: true,
         groupMode: "subcircuit",
         preset: "simplify",
@@ -175,6 +193,7 @@ export function getPresetAutoroutingConfig(
     }
     default:
       return {
+        ...nativePresetOptions,
         local: true,
         groupMode: "subcircuit",
       }
