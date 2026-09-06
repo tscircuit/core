@@ -32,10 +32,22 @@ describe.skipIf(process.env.RUN_FULL_GBA_REPRO !== "1")(
       const unroutedCircuitJson = structuredClone(
         fullGameboyCircuitJson,
       ) as CircuitJson
+      // Circuit JSON inflation does not have a simple_crystal inflator yet.
+      // The chip inflator preserves X1's captured pads, ports, placement, and
+      // internal pin connectivity, which are the only inputs used by routing.
+      for (const element of unroutedCircuitJson) {
+        if (
+          element.type === "source_component" &&
+          element.ftype === "simple_crystal"
+        ) {
+          Object.assign(element, { ftype: "simple_chip" })
+        }
+      }
       const importedBoard = unroutedCircuitJson.find(
         (element): element is PcbBoard => element.type === "pcb_board",
       )
-      if (!importedBoard) throw new Error("GBA fixture is missing its PCB board")
+      if (!importedBoard)
+        throw new Error("GBA fixture is missing its PCB board")
 
       await expect(unroutedCircuitJson).toMatchPcbSnapshot(
         `${import.meta.path}-unrouted`,
@@ -71,21 +83,26 @@ describe.skipIf(process.env.RUN_FULL_GBA_REPRO !== "1")(
 
       expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
       expect(autoroutingPhases).toHaveLength(1)
-      expect(autoroutingPhases[0]?.startSimpleRouteJson.connections).toHaveLength(
-        145,
-      )
+      expect(
+        autoroutingPhases[0]?.startSimpleRouteJson.connections,
+      ).toHaveLength(145)
       expect(autoroutingPhases[0]?.startSimpleRouteJson.obstacles).toHaveLength(
         411,
       )
       expect(autoroutingPhases[0]?.startSimpleRouteJson.layerCount).toBe(4)
-      expect(autoroutingPhases[0]?.startSimpleRouteJson.traces ?? []).toEqual([])
+      expect(autoroutingPhases[0]?.startSimpleRouteJson.traces ?? []).toEqual(
+        [],
+      )
 
       await expect(circuit).toMatchPcbSnapshot(`${import.meta.path}-routed`)
       routingErrors = circuit.getCircuitJson().filter(isRoutingError)
     })
 
-    test.failing("the fully routed board should have no routing DRC errors", () => {
-      expect(routingErrors).toEqual([])
-    })
+    test.failing(
+      "the fully routed board should have no routing DRC errors",
+      () => {
+        expect(routingErrors).toEqual([])
+      },
+    )
   },
 )
