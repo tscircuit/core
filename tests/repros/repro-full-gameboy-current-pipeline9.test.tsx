@@ -41,16 +41,14 @@ describe.skipIf(process.env.RUN_FULL_GBA_REPRO !== "1")(
 
       expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
       expect(autoroutingPhases).toHaveLength(1)
-      expect(
-        autoroutingPhases[0]?.startSimpleRouteJson.connections,
-      ).toHaveLength(145)
-      expect(autoroutingPhases[0]?.startSimpleRouteJson.obstacles).toHaveLength(
-        411,
-      )
-      expect(autoroutingPhases[0]?.startSimpleRouteJson.layerCount).toBe(4)
-      expect(autoroutingPhases[0]?.startSimpleRouteJson.traces ?? []).toEqual(
-        [],
-      )
+      const routingPhase = autoroutingPhases[0]
+      if (!routingPhase?.startSimpleRouteJson) {
+        throw new Error("Expected a captured autorouting phase input")
+      }
+      expect(routingPhase.startSimpleRouteJson.connections).toHaveLength(145)
+      expect(routingPhase.startSimpleRouteJson.obstacles).toHaveLength(411)
+      expect(routingPhase.startSimpleRouteJson.layerCount).toBe(4)
+      expect(routingPhase.startSimpleRouteJson.traces ?? []).toEqual([])
 
       await expect(circuit).toMatchPcbSnapshot(`${import.meta.path}-routed`)
       routingErrors = circuit.getCircuitJson().filter(isRoutingError)
