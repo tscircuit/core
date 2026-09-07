@@ -88,31 +88,212 @@ test("repro182: Trellis Core C9-C15 decoupling capacitors snake traces", async (
       />
 
       {/* Top row decoupling capacitors */}
-      <capacitor name="C9" capacitance="2.2uF" schX={-12} schY={8} schOrientation="vertical" decouplingFor=".U3 > .LDO_IN" decouplingTo="net.GND" />
-      <capacitor name="C10" capacitance="10uF" schX={-10} schY={8} schOrientation="vertical" connections={{ pin1: "net.P3V3", pin2: "net.GND" }} />
-      <capacitor name="C11" capacitance="100nF" schX={-8} schY={8} schOrientation="vertical" decouplingFor=".U3 > .VCC_IO" decouplingTo="net.GND" />
-      <capacitor name="C12" capacitance="100nF" schX={-6} schY={8} schOrientation="vertical" decouplingFor=".U3 > .VCC_PE" decouplingTo="net.GND" />
-      <capacitor name="C13" capacitance="100nF" schX={-4} schY={8} schOrientation="vertical" decouplingFor=".U3 > .VCC_PG" decouplingTo="net.GND" />
-      <capacitor name="C14" capacitance="100nF" schX={-2} schY={8} schOrientation="vertical" decouplingFor=".U3 > .VCC_PD" decouplingTo="net.GND" />
-      <capacitor name="C15" capacitance="100nF" schX={0} schY={8} schOrientation="vertical" decouplingFor=".U3 > .VCC_TVOUT" decouplingTo="net.GND" />
-      <capacitor name="C16" capacitance="2.2uF" schX={2} schY={8} schOrientation="vertical" decouplingFor=".U3 > .LDOA_OUT" decouplingTo="net.GND" />
-      <capacitor name="C17" capacitance="100nF" schX={4} schY={8} schOrientation="vertical" decouplingFor=".U3 > .VCC_RTC" decouplingTo="net.GND" />
-      <capacitor name="C18" capacitance="100nF" schX={6} schY={8} schOrientation="vertical" decouplingFor=".U3 > .VCC_PLL" decouplingTo="net.GND" />
-      <capacitor name="C19" capacitance="100nF" schX={8} schY={8} schOrientation="vertical" decouplingFor=".U3 > .VCC_TVIN" decouplingTo="net.GND" />
-      <capacitor name="C20" capacitance="100nF" schX={10} schY={8} schOrientation="vertical" decouplingFor=".U3 > .VCC_LVDS" decouplingTo="net.GND" />
-      <capacitor name="C21" capacitance="100nF" schX={12} schY={8} schOrientation="vertical" decouplingFor=".U3 > .VDD18_DRAM" decouplingTo="net.GND" />
+      <capacitor
+        name="C9"
+        capacitance="2.2uF"
+        schX={-12}
+        schY={8}
+        schOrientation="vertical"
+        decouplingFor=".U3 > .LDO_IN"
+        decouplingTo="net.GND"
+      />
+      <capacitor
+        name="C10"
+        capacitance="10uF"
+        schX={-10}
+        schY={8}
+        schOrientation="vertical"
+        connections={{ pin1: "net.P3V3", pin2: "net.GND" }}
+      />
+      <capacitor
+        name="C11"
+        capacitance="100nF"
+        schX={-8}
+        schY={8}
+        schOrientation="vertical"
+        decouplingFor=".U3 > .VCC_IO"
+        decouplingTo="net.GND"
+      />
+      <capacitor
+        name="C12"
+        capacitance="100nF"
+        schX={-6}
+        schY={8}
+        schOrientation="vertical"
+        decouplingFor=".U3 > .VCC_PE"
+        decouplingTo="net.GND"
+      />
+      <capacitor
+        name="C13"
+        capacitance="100nF"
+        schX={-4}
+        schY={8}
+        schOrientation="vertical"
+        decouplingFor=".U3 > .VCC_PG"
+        decouplingTo="net.GND"
+      />
+      <capacitor
+        name="C14"
+        capacitance="100nF"
+        schX={-2}
+        schY={8}
+        schOrientation="vertical"
+        decouplingFor=".U3 > .VCC_PD"
+        decouplingTo="net.GND"
+      />
+      <capacitor
+        name="C15"
+        capacitance="100nF"
+        schX={0}
+        schY={8}
+        schOrientation="vertical"
+        decouplingFor=".U3 > .VCC_TVOUT"
+        decouplingTo="net.GND"
+      />
+      <capacitor
+        name="C16"
+        capacitance="2.2uF"
+        schX={2}
+        schY={8}
+        schOrientation="vertical"
+        decouplingFor=".U3 > .LDOA_OUT"
+        decouplingTo="net.GND"
+      />
+      <capacitor
+        name="C17"
+        capacitance="100nF"
+        schX={4}
+        schY={8}
+        schOrientation="vertical"
+        decouplingFor=".U3 > .VCC_RTC"
+        decouplingTo="net.GND"
+      />
+      <capacitor
+        name="C18"
+        capacitance="100nF"
+        schX={6}
+        schY={8}
+        schOrientation="vertical"
+        decouplingFor=".U3 > .VCC_PLL"
+        decouplingTo="net.GND"
+      />
+      <capacitor
+        name="C19"
+        capacitance="100nF"
+        schX={8}
+        schY={8}
+        schOrientation="vertical"
+        decouplingFor=".U3 > .VCC_TVIN"
+        decouplingTo="net.GND"
+      />
+      <capacitor
+        name="C20"
+        capacitance="100nF"
+        schX={10}
+        schY={8}
+        schOrientation="vertical"
+        decouplingFor=".U3 > .VCC_LVDS"
+        decouplingTo="net.GND"
+      />
+      <capacitor
+        name="C21"
+        capacitance="100nF"
+        schX={12}
+        schY={8}
+        schOrientation="vertical"
+        decouplingFor=".U3 > .VDD18_DRAM"
+        decouplingTo="net.GND"
+      />
 
       {/* Bottom row decoupling capacitors */}
-      <capacitor name="C22" capacitance="10uF" schX={-12} schY={-8} schOrientation="vertical" connections={{ pin1: "net.P0V9", pin2: "net.GND" }} />
-      <capacitor name="C23" capacitance="100nF" schX={-10} schY={-8} schOrientation="vertical" decouplingFor=".U3 > .VDD_SYS0" decouplingTo="net.GND" />
-      <capacitor name="C24" capacitance="100nF" schX={-8} schY={-8} schOrientation="vertical" decouplingFor=".U3 > .VDD_SYS1" decouplingTo="net.GND" />
-      <capacitor name="C25" capacitance="100nF" schX={-6} schY={-8} schOrientation="vertical" decouplingFor=".U3 > .VDD_SYS2" decouplingTo="net.GND" />
-      <capacitor name="C26" capacitance="100nF" schX={-4} schY={-8} schOrientation="vertical" decouplingFor=".U3 > .VDD_CORE0" decouplingTo="net.GND" />
-      <capacitor name="C27" capacitance="100nF" schX={-2} schY={-8} schOrientation="vertical" decouplingFor=".U3 > .VDD_CORE1" decouplingTo="net.GND" />
-      <capacitor name="C28" capacitance="100nF" schX={5} schY={-8} schOrientation="vertical" decouplingFor=".U3 > .LDOB_OUT" decouplingTo="net.GND" />
-      <capacitor name="C29" capacitance="10uF" schX={7} schY={-8} schOrientation="vertical" connections={{ pin1: "net.P1V5", pin2: "net.GND" }} />
-      <capacitor name="C30" capacitance="100nF" schX={9} schY={-8} schOrientation="vertical" decouplingFor=".U3 > .VCC_DRAM1" decouplingTo="net.GND" />
-      <capacitor name="C31" capacitance="100nF" schX={11} schY={-8} schOrientation="vertical" decouplingFor=".U3 > .VCC_DRAM0" decouplingTo="net.GND" />
+      <capacitor
+        name="C22"
+        capacitance="10uF"
+        schX={-12}
+        schY={-8}
+        schOrientation="vertical"
+        connections={{ pin1: "net.P0V9", pin2: "net.GND" }}
+      />
+      <capacitor
+        name="C23"
+        capacitance="100nF"
+        schX={-10}
+        schY={-8}
+        schOrientation="vertical"
+        decouplingFor=".U3 > .VDD_SYS0"
+        decouplingTo="net.GND"
+      />
+      <capacitor
+        name="C24"
+        capacitance="100nF"
+        schX={-8}
+        schY={-8}
+        schOrientation="vertical"
+        decouplingFor=".U3 > .VDD_SYS1"
+        decouplingTo="net.GND"
+      />
+      <capacitor
+        name="C25"
+        capacitance="100nF"
+        schX={-6}
+        schY={-8}
+        schOrientation="vertical"
+        decouplingFor=".U3 > .VDD_SYS2"
+        decouplingTo="net.GND"
+      />
+      <capacitor
+        name="C26"
+        capacitance="100nF"
+        schX={-4}
+        schY={-8}
+        schOrientation="vertical"
+        decouplingFor=".U3 > .VDD_CORE0"
+        decouplingTo="net.GND"
+      />
+      <capacitor
+        name="C27"
+        capacitance="100nF"
+        schX={-2}
+        schY={-8}
+        schOrientation="vertical"
+        decouplingFor=".U3 > .VDD_CORE1"
+        decouplingTo="net.GND"
+      />
+      <capacitor
+        name="C28"
+        capacitance="100nF"
+        schX={5}
+        schY={-8}
+        schOrientation="vertical"
+        decouplingFor=".U3 > .LDOB_OUT"
+        decouplingTo="net.GND"
+      />
+      <capacitor
+        name="C29"
+        capacitance="10uF"
+        schX={7}
+        schY={-8}
+        schOrientation="vertical"
+        connections={{ pin1: "net.P1V5", pin2: "net.GND" }}
+      />
+      <capacitor
+        name="C30"
+        capacitance="100nF"
+        schX={9}
+        schY={-8}
+        schOrientation="vertical"
+        decouplingFor=".U3 > .VCC_DRAM1"
+        decouplingTo="net.GND"
+      />
+      <capacitor
+        name="C31"
+        capacitance="100nF"
+        schX={11}
+        schY={-8}
+        schOrientation="vertical"
+        decouplingFor=".U3 > .VCC_DRAM0"
+        decouplingTo="net.GND"
+      />
     </board>,
   )
 
@@ -139,8 +320,8 @@ test("repro182: Trellis Core C9-C15 decoupling capacitors snake traces", async (
 
   // Traces between adjacent parallel decoupling capacitors:
   expect(hasTraceBetween(-12, -10, 8.3)).toBe(true) // C9.1 - C10.1 (top)
-  expect(hasTraceBetween(-8, -6, 8.3)).toBe(true)   // C11.1 - C12.1 (top)
-  expect(hasTraceBetween(-2, 0, 8.3)).toBe(true)    // C14.1 - C15.1 (top)
+  expect(hasTraceBetween(-8, -6, 8.3)).toBe(true) // C11.1 - C12.1 (top)
+  expect(hasTraceBetween(-2, 0, 8.3)).toBe(true) // C14.1 - C15.1 (top)
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
