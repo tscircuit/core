@@ -113,7 +113,9 @@ test("fanout hands a shared capacitor supply endpoint to both global branches", 
 
   await circuit.renderUntilSettled()
   expect(solverNames).toContain("FanoutSolver")
-  expect(solverNames).toContain("AutoroutingPipelineSolver9_PreloadedTraceGraph")
+  expect(solverNames).toContain(
+    "AutoroutingPipelineSolver9_PreloadedTraceGraph",
+  )
   expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
 
   const capacitor = circuit.db.source_component.getWhere({ name: "C1" })!
