@@ -26,7 +26,9 @@ connections when `allowSameNetMerges` is false and 11/11 when it is true. The
 full saved input similarly completes 191/193 plane connections without merging
 and 193/193 with merging under otherwise identical current wrapper options. The
 core regression compares complete trace output to a direct replay, verifies the
-plane handoff and physical through-via stack, and keeps the no-merge control.
+plane handoff and physical through-via stack. The no-merge result is historical
+evidence, not a required failure in the regression test: future solvers may
+improve their isolated routing.
 The JSX regression reconstructs these pads through the public core API so phase
 conversion and filtering are also exercised. A separate mixed signal/plane
 regression ensures this default does not enable merging for boundary buses.

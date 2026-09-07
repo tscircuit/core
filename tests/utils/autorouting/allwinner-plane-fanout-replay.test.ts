@@ -38,16 +38,6 @@ test("Allwinner USB UART plane fanout matches a direct replay of the core constr
   expect(traces).toHaveLength(input.connections.length)
   expect(autorouter.getOutputSimpleRouteJson()?.connections).toEqual([])
 
-  // This control makes the regression sensitive to the integration policy,
-  // rather than only comparing two equally incomplete routing attempts.
-  const isolatedSolver = new FanoutSolver(structuredClone(solverInput), {
-    ...solverOptions,
-    allowSameNetMerges: false,
-  })
-  isolatedSolver.solve()
-  expect(isolatedSolver.failed).toBe(true)
-  expect(isolatedSolver.stats.routedConnections).toBe("10/11")
-
   for (const bus of input.buses!) {
     const trace = traces.find(
       (trace) => trace.connection_name === bus.connectionNames[0],
