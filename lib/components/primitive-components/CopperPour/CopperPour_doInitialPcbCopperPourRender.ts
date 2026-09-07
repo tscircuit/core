@@ -105,6 +105,7 @@ const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
   ] of resolvedCopperPours.entries()) {
     const { _parsedProps: props } = copperPour
     const coveredWithSolderMask = props.coveredWithSolderMask ?? false
+    const solverRegion = inputProblem.regionsForPour[regionIndex]!
 
     for (const brepShape of brep_shapes_by_region[regionIndex] ?? []) {
       const insertedPour = db.pcb_copper_pour.insert({
@@ -114,6 +115,13 @@ const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
         source_net_id: sourceNetId,
         subcircuit_id: subcircuit.subcircuit_id ?? undefined,
         covered_with_solder_mask: coveredWithSolderMask,
+        clearance: solverRegion.pourMargin,
+        pad_margin: solverRegion.padMargin,
+        trace_margin: solverRegion.traceMargin,
+        board_edge_margin: solverRegion.board_edge_margin,
+        cutout_margin: solverRegion.cutout_margin,
+        use_thermal_reliefs: solverRegion.use_thermal_reliefs ?? false,
+        thermal_relief_spoke_width: solverRegion.thermal_relief_spoke_width,
       })
 
       markTraceSegmentsInsideCopperPour({

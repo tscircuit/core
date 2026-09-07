@@ -39,5 +39,8 @@ test("repro151: one copperpour split by a trace creates multiple records", async
   await circuit.renderUntilSettled()
 
   expect(circuit.db.pcb_copper_pour.list()).toHaveLength(2)
+  expect(
+    circuit.db.pcb_copper_pour.list().map((pour) => pour.clearance),
+  ).toEqual([0.3, 0.3])
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
