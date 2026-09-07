@@ -30,7 +30,9 @@ export class Fuse extends NormalComponent<typeof fuseProps, PassivePorts> {
 
     const voltage = parseAndConvertSiUnit(rawVoltage, "V").value
 
-    return `${formatSiUnit(current)}A / ${formatSiUnit(voltage)}V`
+    const currentDisplay = `${formatSiUnit(current)}A`
+    if (voltage == null) return currentDisplay
+    return `${currentDisplay} / ${formatSiUnit(voltage)}V`
   }
 
   doInitialSourceRender() {
@@ -46,7 +48,9 @@ export class Fuse extends NormalComponent<typeof fuseProps, PassivePorts> {
 
     if (props.schShowRatings !== false) {
       display_current_rating = `${formatSiUnit(currentRating)}A`
-      display_voltage_rating = `${formatSiUnit(voltageRating)}V`
+      if (voltageRating != null) {
+        display_voltage_rating = `${formatSiUnit(voltageRating)}V`
+      }
     }
 
     const source_component = db.source_component.insert({
