@@ -55,7 +55,10 @@ import {
 } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
 import { getNumericSchPinStyle } from "lib/utils/schematic/getNumericSchPinStyle"
 import { getPinNumberFromPinLabelsKey } from "lib/utils/schematic/getPinNumberFromPinLabelsKey"
-import { getPinsFromPortArrangement } from "lib/utils/schematic/getSizeOfSidesFromPortArrangement"
+import {
+  getPinsFromPortArrangement,
+  getSizeOfSidesFromPortArrangement,
+} from "lib/utils/schematic/getSizeOfSidesFromPortArrangement"
 import { isCircuitJsonSymbol } from "lib/utils/schematic/isCircuitJsonSymbol"
 import { normalizeSchematicSymbolCircuitJson } from "lib/utils/schematic/normalizeSchematicSymbolCircuitJson"
 import { parsePinNumberFromLabelsOrThrow } from "lib/utils/schematic/parsePinNumberFromLabelsOrThrow"
@@ -320,22 +323,54 @@ export class NormalComponent<
     // Handle schPortArrangement
     const schPortArrangement = this._getSchematicPortArrangement()
     if (schPortArrangement && !pinLabels) {
-      for (const side in schPortArrangement) {
-        const pins = (schPortArrangement as any)[side].pins
-        if (Array.isArray(pins)) {
-          for (const pinNumberOrLabel of pins) {
-            const pinNumber = parsePinNumberFromLabelsOrThrow(
-              pinNumberOrLabel,
-              pinLabels,
-            )
+      if (isExplicitPinMappingArrangement(schPortArrangement)) {
+        for (const side of [
+          "leftSide",
+          "rightSide",
+          "topSide",
+          "bottomSide",
+        ] as const) {
+          const pins = (schPortArrangement as any)[side]?.pins
+          if (Array.isArray(pins)) {
+            for (const pinNumberOrLabel of pins) {
+              const pinNumber = parsePinNumberFromLabelsOrThrow(
+                pinNumberOrLabel,
+                pinLabels,
+              )
 
-            if (hasExistingOrQueuedPortWithPinNumber(pinNumber)) continue
+              if (hasExistingOrQueuedPortWithPinNumber(pinNumber)) continue
+
+              portsToCreate.push(
+                new Port(
+                  {
+                    pinNumber,
+                    aliases: opts.additionalAliases?.[`pin${pinNumber}`] ?? [],
+                  },
+                  {
+                    originDescription: `schPortArrangement:${side}`,
+                  },
+                ),
+              )
+            }
+          }
+        }
+      } else {
+        // Numeric arrangements create sequential pins across the four sides.
+        const sideCounts = getSizeOfSidesFromPortArrangement(schPortArrangement)
+        const sides = ["left", "right", "top", "bottom"] as const
+        let pinNum = 1
+        for (const side of sides) {
+          const size = sideCounts[`${side}Size`]
+          for (let i = 0; i < size; i++) {
+            const nextPinNumber = pinNum++
+            if (hasExistingOrQueuedPortWithPinNumber(nextPinNumber)) continue
 
             portsToCreate.push(
               new Port(
                 {
-                  pinNumber,
-                  aliases: opts.additionalAliases?.[`pin${pinNumber}`] ?? [],
+                  pinNumber: nextPinNumber,
+                  aliases:
+                    opts.additionalAliases?.[`pin${nextPinNumber}`] ?? [],
                 },
                 {
                   originDescription: `schPortArrangement:${side}`,
@@ -343,29 +378,6 @@ export class NormalComponent<
               ),
             )
           }
-        }
-      }
-      // Takes care of the case where the user only specifies the size of the
-      // sides, and not the pins
-      const sides = ["left", "right", "top", "bottom"]
-      let pinNum = 1
-      for (const side of sides) {
-        const size = (schPortArrangement as any)[`${side}Size`]
-        for (let i = 0; i < size; i++) {
-          const nextPinNumber = pinNum++
-          if (hasExistingOrQueuedPortWithPinNumber(nextPinNumber)) continue
-
-          portsToCreate.push(
-            new Port(
-              {
-                pinNumber: nextPinNumber,
-                aliases: opts.additionalAliases?.[`pin${nextPinNumber}`] ?? [],
-              },
-              {
-                originDescription: `schPortArrangement:${side}`,
-              },
-            ),
-          )
         }
       }
     }
@@ -514,6 +526,7 @@ export class NormalComponent<
         )
 
       if (
+        !isExplicitPinMappingArrangement(schPortArrangement) &&
         [
           "leftSize",
           "rightSize",
@@ -1650,16 +1663,9 @@ export class NormalComponent<
     const isExplicitPinMapping =
       isExplicitPinMappingArrangement(schPortArrangement)
     if (!isExplicitPinMapping) {
-      return (
-        (schPortArrangement.leftSize ?? schPortArrangement.leftPinCount ?? 0) +
-        (schPortArrangement.rightSize ??
-          schPortArrangement.rightPinCount ??
-          0) +
-        (schPortArrangement.topSize ?? schPortArrangement.topPinCount ?? 0) +
-        (schPortArrangement.bottomSize ??
-          schPortArrangement.bottomPinCount ??
-          0)
-      )
+      const { leftSize, rightSize, topSize, bottomSize } =
+        getSizeOfSidesFromPortArrangement(schPortArrangement)
+      return leftSize + rightSize + topSize + bottomSize
     }
 
     const pins = getPinsFromPortArrangement(schPortArrangement)
