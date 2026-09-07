@@ -580,7 +580,11 @@ export class FanoutAutorouter implements GenericLocalAutorouter {
         steps: fanoutSolver.iterations,
         progress: fanoutSolver.solved ? 1 : fanoutSolver.progress,
         phase: this.options.mode,
-        debugGraphics: fanoutSolver.visualize(),
+        // Full visualizations rebuild the routing geometry and are expensive
+        // on dense boards. Use the solver's streaming preview between steps.
+        debugGraphics: fanoutSolver.solved
+          ? fanoutSolver.visualize()
+          : fanoutSolver.preview(),
       })
       // Progress handlers may stop or restart this router.
       if (!this.isRouting || this.runId !== runId) return

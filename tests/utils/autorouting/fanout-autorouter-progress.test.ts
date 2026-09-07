@@ -1,9 +1,11 @@
-import { expect, test } from "bun:test"
+import { expect, spyOn, test } from "bun:test"
 import type { AutorouterProgressEvent } from "lib/utils/autorouting/GenericLocalAutorouter"
 import { createSteppableFanoutAutorouter } from "tests/fixtures/create-steppable-fanout-autorouter"
 
 test("fanout yields to timers and reports intermediate progress before completion", async () => {
   const { autorouter, solver } = createSteppableFanoutAutorouter()
+  const visualize = spyOn(solver, "visualize")
+  const preview = spyOn(solver, "preview")
   const progress: AutorouterProgressEvent[] = []
   let timerRan = false
   autorouter.on("progress", (event) => {
@@ -27,4 +29,6 @@ test("fanout yields to timers and reports intermediate progress before completio
     progress: 1,
   })
   expect(autorouter.getOutputSimpleRouteJson()).toEqual(autorouter.input)
+  expect(preview).toHaveBeenCalled()
+  expect(visualize).toHaveBeenCalledTimes(1)
 })

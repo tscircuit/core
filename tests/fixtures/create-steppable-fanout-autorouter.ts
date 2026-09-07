@@ -28,6 +28,7 @@ export const createSteppableFanoutAutorouter = (stepsToSolve = 2501) => {
       throw new Error("The asynchronous wrapper must use step()")
     },
     visualize: () => ({ points: [] }),
+    preview: () => ({ points: [] }),
     getOutput: () => ({ simpleRouteJson: input, fanoutTraces: [] }),
   }
   spyOn(
