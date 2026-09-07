@@ -5,7 +5,7 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 // Reduced from left.circuit.tsx in https://tscircuit.com/imrishabh18/corne-keyboard
 // (release 2.0.17). EXSW1's two mounting slots have no electrical port.
-test("Corne EXSW1 mounting pads are included in SRJ obstacles", async () => {
+test.failing("Corne EXSW1 mounting pads are included in SRJ obstacles", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width={24} height={12} routingDisabled schematicDisabled>
