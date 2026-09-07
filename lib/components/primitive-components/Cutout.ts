@@ -30,6 +30,8 @@ export class Cutout extends PrimitiveComponent<typeof cutoutProps> {
 
     // Get parent rotation like SmtPad does
     const container = this.getPrimitiveContainer()
+    const pcb_component_id =
+      this.parent?.pcb_component_id ?? container?.pcb_component_id ?? undefined
     const parentRotation = container?._parsedProps.pcbRotation ?? 0
 
     let inserted_pcb_cutout:
@@ -54,6 +56,7 @@ export class Cutout extends PrimitiveComponent<typeof cutoutProps> {
         height: isRotated90 ? props.width : props.height,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id,
+        pcb_component_id,
       }
       inserted_pcb_cutout = db.pcb_cutout.insert(rectData)
     } else if (props.shape === "circle") {
@@ -64,6 +67,7 @@ export class Cutout extends PrimitiveComponent<typeof cutoutProps> {
         radius: props.radius,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id,
+        pcb_component_id,
       }
       inserted_pcb_cutout = db.pcb_cutout.insert(circleData)
     } else if (props.shape === "polygon") {
@@ -76,6 +80,7 @@ export class Cutout extends PrimitiveComponent<typeof cutoutProps> {
         points: transformedPoints,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id,
+        pcb_component_id,
       }
       inserted_pcb_cutout = db.pcb_cutout.insert(polygonData)
     }

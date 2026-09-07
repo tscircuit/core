@@ -1,4 +1,4 @@
-import { it, expect } from "bun:test"
+import { expect, it } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 it("connects all pins when bridged is true", async () => {
@@ -18,6 +18,16 @@ it("connects all pins when bridged is true", async () => {
   expect(
     internallyConnectedPins[0].map((p: any) => p.props.name).sort(),
   ).toEqual(["pin1", "pin2", "pin3"].sort())
+  expect(
+    circuit.db.pcb_fabrication_note_path.list({
+      pcb_component_id: sj1.pcb_component_id,
+    }),
+  ).toHaveLength(0)
+  expect(
+    circuit.db.pcb_fabrication_note_text.list({
+      pcb_component_id: sj1.pcb_component_id,
+    }),
+  ).toHaveLength(0)
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })

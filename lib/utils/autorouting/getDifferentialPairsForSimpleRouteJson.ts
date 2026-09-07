@@ -9,6 +9,7 @@ import type {
 } from "./SimpleRouteJson"
 
 type SourceTraceId = SourceTrace["source_trace_id"]
+type SourceNetId = NonNullable<SourceTrace["connected_source_net_ids"]>[number]
 type SourcePortId = NonNullable<SourcePort["source_port_id"]>
 type SubcircuitId = NonNullable<SourceTrace["subcircuit_id"]>
 type SubcircuitConnectivityMapKey = NonNullable<
@@ -125,20 +126,25 @@ const getDifferentialPairSrjConnectionNamesByCohortOrThrow = ({
   SrjConnectionName
 > => {
   const differentialPairSourceTraceIds: SourceTraceId[] = []
+  const differentialPairSourceNetIds = new Set<SourceNetId>()
   for (const sourceTrace of differentialPairSourceTraces) {
     if (
       sourceTrace.subcircuit_connectivity_map_key ===
       traceSubcircuitConnectivityMapKey
     ) {
       differentialPairSourceTraceIds.push(sourceTrace.source_trace_id)
+      for (const sourceNetId of sourceTrace.connected_source_net_ids ?? []) {
+        differentialPairSourceNetIds.add(sourceNetId)
+      }
     }
   }
 
   const matchingSrjConnections: SimpleRouteConnection[] = []
   for (const srjConnection of srjConnections) {
     if (
-      srjConnection.source_trace_id &&
-      differentialPairSourceTraceIds.includes(srjConnection.source_trace_id)
+      differentialPairSourceNetIds.has(srjConnection.name) ||
+      (srjConnection.source_trace_id &&
+        differentialPairSourceTraceIds.includes(srjConnection.source_trace_id))
     ) {
       matchingSrjConnections.push(srjConnection)
     }

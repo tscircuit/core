@@ -1,8 +1,13 @@
 import { expect, test } from "bun:test"
+import type { SolverStartedEvent } from "lib/events"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test('autorouter="default" uses the default local autorouter', async () => {
   const { circuit } = getTestFixture()
+  let solverStartedEvent: SolverStartedEvent | undefined
+  circuit.on("solver:started", (event) => {
+    solverStartedEvent = event
+  })
 
   circuit.add(
     <board width="12mm" height="8mm" autorouter="default">
@@ -20,6 +25,9 @@ test('autorouter="default" uses the default local autorouter', async () => {
 
   await circuit.renderUntilSettled()
 
+  expect(solverStartedEvent?.solverName).toBe(
+    "AutoroutingPipelineSolver9_PreloadedTraceGraph",
+  )
   expect(circuit.db.pcb_trace.list()).toHaveLength(1)
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

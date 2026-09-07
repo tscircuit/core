@@ -45,6 +45,9 @@ test("CapacityMeshAutorouter uses stepAsync when available", async () => {
         traces: [{ type: "pcb_trace", route: [] }],
       }
     },
+    getOutputSimplifiedPcbTraces() {
+      return [{ type: "pcb_trace", route: [] }]
+    },
     getCurrentPhase() {
       return "fake_phase"
     },

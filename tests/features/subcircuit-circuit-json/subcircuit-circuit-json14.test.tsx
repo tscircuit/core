@@ -70,6 +70,25 @@ test("subcircuit-circuit-json14 - subcircuit name prop being passed to the chip 
   const pcbTrace = circuit.db.pcb_trace.list()
   expect(pcbTrace).toHaveLength(2)
 
+  // Only the exposed I2C nets are joined; local supply nets stay separate.
+  const labels = circuit.db.schematic_net_label.list()
+  for (const name of ["GND", "VCC"]) {
+    expect(
+      new Set(
+        labels
+          .filter((label) => label.text === name)
+          .map((label) => label.display_superscript),
+      ),
+    ).toEqual(new Set(["1", "2"]))
+  }
+  expect(
+    labels
+      .filter(
+        (label) => label.text.includes("SDA") || label.text.includes("SCL"),
+      )
+      .every((label) => label.display_superscript === undefined),
+  ).toBe(true)
+
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })

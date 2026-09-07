@@ -1,30 +1,71 @@
-import { test, expect } from "bun:test"
+import { expect, test } from "bun:test"
+import {
+  convertCircuitJsonToPcbSvg,
+  convertCircuitJsonToSchematicSvg,
+} from "circuit-to-svg"
+import { stackSvgsHorizontally } from "stack-svgs"
+import "tests/fixtures/extend-expect-any-svg"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
-import { grid } from "@tscircuit/math-utils"
 
-test("pushbutton internally connected pins", () => {
+test("pushbutton internally connected pins are marked on the PCB", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board>
+    <board width="9mm" height="11mm">
       <schematictext
-        text="Both pins should be drawn on left, overlapping"
+        text="PUSHBUTTON INTERNALLY CONNECTED: 1-4 AND 2-3"
         fontSize={0.2}
         schY={2}
       />
+      <pcbnotetext
+        text="SW1: PINS 1-4 AND 2-3 INTERNALLY CONNECTED"
+        fontSize={0.18}
+        pcbY={5}
+      />
       <pushbutton
         name="SW1"
-        internallyConnectedPins={[["pin1", "pin2"]]}
+        internallyConnectedPins={[
+          ["pin1", "pin4"],
+          ["pin2", "pin3"],
+        ]}
         connections={{
-          pin1: "net.PIN1",
-          pin2: "net.PIN2",
+          pin1: "net.LEFT",
+          pin2: "net.RIGHT",
         }}
         footprint="pushbutton_id1.3mm_od2mm"
       />
     </board>,
   )
 
-  const circuitJson = circuit.getCircuitJson()
+  await circuit.renderUntilSettled()
 
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+  const circuitJson = circuit.getCircuitJson()
+  expect(
+    circuit.db.pcb_fabrication_note_text.list({
+      text: "MARKED INTERNALLY CONNECTED",
+    }),
+  ).toHaveLength(2)
+
+  const schematicSvg = convertCircuitJsonToSchematicSvg(circuitJson, {
+    grid: { cellSize: 1, labelCells: true },
+    // stack-svgs combines both SVG contents under one root, so the schematic's
+    // .boundary rule also matches the PCB background without this override.
+    css: '[data-type="pcb_background"] { fill: #000; }',
+  })
+  const pcbSvg = convertCircuitJsonToPcbSvg(circuitJson, {
+    backgroundColor: "#000",
+  })
+
+  const schematicAndPcbSvg = stackSvgsHorizontally([schematicSvg, pcbSvg], {
+    gap: 24,
+    normalizeSize: false,
+    rootAttributes: {
+      "data-testid": "pushbutton-internally-connected-schematic-pcb",
+    },
+  })
+
+  expect(schematicAndPcbSvg).toMatchSvgSnapshot(
+    import.meta.path,
+    "pushbutton-internally-connected-schematic-pcb",
+  )
 })

@@ -3,12 +3,12 @@ import type {
   SimpleRouteDifferentialPair,
   SimpleRouteJson,
 } from "lib/utils/autorouting/SimpleRouteJson"
-import { srjPointsReferToSameEndpoint } from "lib/utils/autorouting/compare-srj-points"
 import { expandSrjBoundsToIncludeConnectionPoints } from "lib/utils/autorouting/expand-srj-bounds-to-include-connection-points"
 import type {
   RoutingPhaseDrcTolerances,
   RoutingPhasePlan,
 } from "./GroupRoutingPhasePlan"
+import { getPairedBreakoutExitTarget } from "./getPairedBreakoutExitTarget"
 
 export function connectionIsInRoutingPhase(
   connection: SimpleRouteConnection,
@@ -44,40 +44,6 @@ export function Group_hasPhasedAutorouting(
     if (plan.routingPhaseIndex !== null) return true
   }
   return false
-}
-
-const getPairedExitTarget = (
-  simpleRouteJson: SimpleRouteJson,
-  connection: SimpleRouteConnection,
-): { x: number; y: number; layer: string } | undefined => {
-  if (!connection.routingPcbGroupId || !connection.source_trace_id) {
-    return undefined
-  }
-  const globalConnection = simpleRouteJson.connections.find(
-    (candidate) =>
-      candidate.routingPcbGroupId !== connection.routingPcbGroupId &&
-      candidate.source_trace_id === connection.source_trace_id &&
-      candidate.pointsToConnect.some((globalPoint) =>
-        connection.pointsToConnect.some((localPoint) =>
-          srjPointsReferToSameEndpoint(globalPoint, localPoint),
-        ),
-      ),
-  )
-  if (!globalConnection) return undefined
-
-  const pairedPoints = globalConnection.pointsToConnect.filter(
-    (globalPoint) =>
-      !connection.pointsToConnect.some((localPoint) =>
-        srjPointsReferToSameEndpoint(globalPoint, localPoint),
-      ),
-  )
-  return pairedPoints.length === 1
-    ? {
-        x: pairedPoints[0]!.x,
-        y: pairedPoints[0]!.y,
-        layer: pairedPoints[0]!.layer,
-      }
-    : undefined
 }
 
 export function Group_filterSimpleRouteJsonForPhase(
@@ -125,7 +91,10 @@ export function Group_filterSimpleRouteJsonForPhase(
         connectionNames.flatMap((connectionName) => {
           const connection = connectionByName.get(connectionName)
           if (!connection) return []
-          const pairedTarget = getPairedExitTarget(simpleRouteJson, connection)
+          const pairedTarget = getPairedBreakoutExitTarget(
+            simpleRouteJson,
+            connection,
+          )
           return pairedTarget ? [[connectionName, pairedTarget]] : []
         }),
       )

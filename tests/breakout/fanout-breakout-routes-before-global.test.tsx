@@ -96,7 +96,8 @@ test("fanout breakout routes signals and plane drops before global routing", asy
   expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
   expect(
     solverStartedEvents.some(
-      (event) => event.solverName === "AutoroutingPipelineSolver7_MultiGraph",
+      (event) =>
+        event.solverName === "AutoroutingPipelineSolver9_PreloadedTraceGraph",
     ),
   ).toBe(true)
   const fanoutSolverEvents = solverStartedEvents.filter(
@@ -131,6 +132,11 @@ test("fanout breakout routes signals and plane drops before global routing", asy
     expect(Object.keys(dataBus?.connectionExitTargets ?? {}).sort()).toEqual(
       [...(dataBus?.connectionNames ?? [])].sort(),
     )
+    expect(
+      Object.values(dataBus?.connectionExitTargets ?? {}).every(
+        (target) => target.layer !== undefined,
+      ),
+    ).toBe(true)
   }
   for (const connection of autoroutingPhaseIoStack[2]!.startSimpleRouteJson!
     .connections) {

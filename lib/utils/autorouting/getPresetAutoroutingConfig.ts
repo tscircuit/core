@@ -125,6 +125,12 @@ export function getPresetAutoroutingConfig(
         groupMode: "subcircuit",
         preset: "fanout",
       }
+    case "simplify":
+      return {
+        local: true,
+        groupMode: "subcircuit",
+        preset: "simplify",
+      }
     case "auto-cloud": {
       const {
         preset: _preset,
