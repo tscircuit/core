@@ -32,6 +32,8 @@ export const SchematicSymbol_doInitialSchematicComponentRender = (
   schematicSymbol.schematic_component_id =
     schematicComponent.schematic_component_id
 
+  const rotation = schematicSymbol.getSchematicRotation()
+
   for (const symbolPort of symbol.ports) {
     const port = schematicSymbol.getPortForSymbolPort(symbolPort)
     if (!port?.source_port_id) {
@@ -39,9 +41,22 @@ export const SchematicSymbol_doInitialSchematicComponentRender = (
         `Missing source port for schematic symbol port "${symbolPort.labels.join("/")}" on ${schematicSymbol.getString()}`,
       )
     }
-    const portCenter = {
-      x: center.x + symbolPort.x - symbol.center.x,
-      y: center.y + symbolPort.y - symbol.center.y,
+    let portCenter = {
+      x: symbolPort.x - symbol.center.x,
+      y: symbolPort.y - symbol.center.y,
+    }
+    if (rotation) {
+      const angleRad = (rotation * Math.PI) / 180
+      const cos = Math.cos(angleRad)
+      const sin = Math.sin(angleRad)
+      portCenter = {
+        x: portCenter.x * cos - portCenter.y * sin,
+        y: portCenter.x * sin + portCenter.y * cos,
+      }
+    }
+    portCenter = {
+      x: center.x + portCenter.x,
+      y: center.y + portCenter.y,
     }
 
     const schematicPort = db.schematic_port.insert({
