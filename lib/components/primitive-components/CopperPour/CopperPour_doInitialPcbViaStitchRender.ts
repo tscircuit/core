@@ -62,7 +62,8 @@ const renderViaStitchingForCopperPours = (copperPour: CopperPour) => {
 export function CopperPour_doInitialPcbViaStitchRender(
   copperPour: CopperPour,
 ): void {
-  if (copperPour.root?.pcbDisabled) return
+  if (copperPour.root?.pcbDisabled || !copperPour.root?._featurePcbViaStitching)
+    return
 
   copperPour._queueAsyncEffect("PcbViaStitchRender", async () => {
     renderViaStitchingForCopperPours(copperPour)

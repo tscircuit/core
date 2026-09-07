@@ -7,14 +7,10 @@ import Nrf52810Circuit from "./nrf52810-circuit"
 // <copperpour> elements so the implicit copper pour phase owns their creation.
 // TODO: Re-enable after fixing Pipeline9's via/pad-clearance regressions.
 test.skip(
-  "nRF52810 tracker routes with implicit copper pours and via stitching",
+  "nRF52810 tracker routes with implicit copper pours",
   async () => {
     const { circuit } = getTestFixture({
       platform: { placementDrcChecksDisabled: true },
-    })
-    let viaStitchSolverRunCount = 0
-    circuit.on("solver:started", ({ solverName }) => {
-      if (solverName === "ViaStitchSolver") viaStitchSolverRunCount++
     })
 
     circuit.add(<Nrf52810Circuit />)
@@ -25,30 +21,6 @@ test.skip(
     const implicitPours = circuit.db.pcb_copper_pour.list()
     expect(implicitPours.length).toBeGreaterThan(0)
     expect(implicitPours.every((pour) => pour.shape === "brep")).toBe(true)
-    expect(viaStitchSolverRunCount).toBe(1)
-    const implicitPourSourceNetIds = new Set(
-      implicitPours.flatMap((pour) =>
-        pour.source_net_id ? [pour.source_net_id] : [],
-      ),
-    )
-    const stitchedVias = circuit.db.pcb_via
-      .list()
-      .filter(
-        (via) =>
-          via.is_tented === true &&
-          via.source_net_id !== undefined &&
-          implicitPourSourceNetIds.has(via.source_net_id),
-      )
-    expect(stitchedVias.length).toBeGreaterThan(0)
-    const pcbBoard = circuit.db.pcb_board.list()[0]
-    if (!pcbBoard) throw new Error("Expected the nRF52810 PCB board")
-    expect(
-      stitchedVias.every(
-        (via) =>
-          via.hole_diameter === pcbBoard.min_via_hole_diameter &&
-          via.outer_diameter === pcbBoard.min_via_pad_diameter,
-      ),
-    ).toBe(true)
 
     const rfKeepout = circuit.db.pcb_keepout
       .list()
