@@ -13,6 +13,7 @@ import { Group } from "./components/primitive-components/Group"
 import type { RootCircuitEventName } from "./events"
 import { createInstanceFromReactElement } from "./fiber/create-instance-from-react-element"
 import { isAssemblyDeviceContainer } from "./components/base-components/is-assembly-device-container"
+import { abortableDelay } from "./utils/abortable-delay"
 
 export class IsolatedCircuit {
   firstChild: PrimitiveComponent | null = null
@@ -78,6 +79,12 @@ export class IsolatedCircuit {
   projectUrl?: string
 
   _hasRenderedAtleastOnce = false
+  private readonly _renderAbortController = new AbortController()
+
+  /** Captured by routing effects, including effects started with render(). */
+  get _renderAbortSignal(): AbortSignal {
+    return this._renderAbortController.signal
+  }
   private _asyncEffectIdsByPhase = new Map<RenderPhase, Set<string>>()
   private _asyncEffectPhaseById = new Map<string, RenderPhase>()
   private _hasUnrenderedUpdatesFromAsyncEffects = false
@@ -202,6 +209,7 @@ export class IsolatedCircuit {
   }
 
   render() {
+    this._renderAbortSignal.throwIfAborted()
     if (!this.firstChild) {
       this._guessRootComponent()
     }
@@ -213,7 +221,29 @@ export class IsolatedCircuit {
     this._hasRenderedAtleastOnce = true
   }
 
-  async renderUntilSettled(): Promise<void> {
+  /**
+   * Stop rendering and cancel active autorouting. A canceled circuit cannot be
+   * resumed; create a new Circuit to start another render.
+   */
+  cancelRendering(reason?: unknown): void {
+    this._renderAbortController.abort(reason)
+  }
+
+  async renderUntilSettled({
+    signal,
+  }: { signal?: AbortSignal } = {}): Promise<void> {
+    const onAbort = () => this.cancelRendering(signal?.reason)
+    if (signal?.aborted) onAbort()
+    signal?.addEventListener("abort", onAbort, { once: true })
+    try {
+      await this._renderUntilSettled()
+    } finally {
+      signal?.removeEventListener("abort", onAbort)
+    }
+  }
+
+  private async _renderUntilSettled(): Promise<void> {
+    this._renderAbortSignal.throwIfAborted()
     const existing = this.db.source_project_metadata.list()?.[0]
     if (!existing) {
       this.db.source_project_metadata.insert({
@@ -225,10 +255,11 @@ export class IsolatedCircuit {
     this.render()
 
     while (!this.isDoneRendering()) {
-      await new Promise((resolve) => setTimeout(resolve, 100))
+      await abortableDelay(100, this._renderAbortSignal)
       this.render()
     }
 
+    this._renderAbortSignal.throwIfAborted()
     this.emit("renderComplete")
   }
 

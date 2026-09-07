@@ -28,6 +28,38 @@ circuit.add(
 circuit.getCircuitJson()
 ```
 
+## Routing progress and cancellation
+
+`renderUntilSettled()` waits for asynchronous routing and emits routing progress
+on the circuit, including routing inside isolated subcircuits:
+
+```tsx
+const controller = new AbortController()
+circuit.on("autorouting:progress", (event) => {
+  console.log(event.phase, event.progress)
+})
+
+const rendering = circuit.renderUntilSettled({ signal: controller.signal })
+// For example, a Cancel button can call:
+// controller.abort(new Error("Canceled by user"))
+await rendering
+```
+
+For isolated routing, `isolatedSubcircuitPath` identifies the render context from
+outermost to innermost subcircuit. Combine it with `subcircuit_id` when tracking
+concurrent phases; the IDs inside each isolated circuit remain local to its JSON.
+
+Aborting rejects the render with `signal.reason`, stops the active local router,
+and prevents later routing phases from starting. Remote requests and polling are
+aborted locally; cancellation does not delete an already submitted server job.
+Local cancellation is cooperative: a synchronous solver step must return before
+the event loop can process cancellation.
+
+For a manual loop using `circuit.render()`, call
+`circuit.cancelRendering(reason)` to stop routing. Cancellation is terminal for
+that circuit; create a new `Circuit` to restart. The optional signal is detached
+after a completed render, so aborting it later does not cancel that circuit.
+
 ## Non-React Usage
 
 ```tsx

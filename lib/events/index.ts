@@ -30,6 +30,8 @@ export type AutoroutingCacheDisabledReason =
   | "no_cache_engine"
 
 export interface AutoroutingExecutionMetadata {
+  /** Render IDs from outermost to innermost isolated subcircuit. */
+  isolatedSubcircuitPath?: string[]
   routingPhaseIndex?: number | null
   phaseOrdinal?: number
   phaseCount?: number
@@ -110,6 +112,7 @@ export interface PackingErrorEvent {
 }
 
 export interface SolverStartedEvent {
+  isolatedSubcircuitPath?: AutoroutingExecutionMetadata["isolatedSubcircuitPath"]
   type: "solver:started"
   solverName: keyof typeof SOLVERS
   solverParams: any
@@ -119,6 +122,7 @@ export interface SolverStartedEvent {
 }
 
 export interface SolverEndedEvent {
+  isolatedSubcircuitPath?: AutoroutingExecutionMetadata["isolatedSubcircuitPath"]
   type: "solver:ended"
   solverName: keyof typeof SOLVERS
   componentName: string

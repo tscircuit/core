@@ -315,9 +315,12 @@ export abstract class Renderable implements IRenderable {
         }
       })
       .catch((error) => {
-        console.error(
-          `Async effect error in ${asyncEffect.phase} "${effectName}":\n${error.stack}`,
-        )
+        const signal = this._getRootCircuit()?._renderAbortSignal
+        if (!signal?.aborted || error !== signal.reason) {
+          console.error(
+            `Async effect error in ${asyncEffect.phase} "${effectName}":\n${error.stack}`,
+          )
+        }
         asyncEffect.complete = true
 
         // HACK: emit to the root circuit component that an async effect has completed
@@ -328,7 +331,7 @@ export abstract class Renderable implements IRenderable {
             effectName,
             componentDisplayName: this.getString(),
             phase: asyncEffect.phase,
-            error: error.toString(),
+            error: String(error),
           })
         }
       })
