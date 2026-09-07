@@ -32,18 +32,22 @@ export const getBoardCenterFromAnchor = ({
       cy = ay + height / 2
       break
     case "top":
+    case "top_center":
       cx = ax
       cy = ay - height / 2
       break
     case "bottom":
+    case "bottom_center":
       cx = ax
       cy = ay + height / 2
       break
     case "left":
+    case "center_left":
       cx = ax + width / 2
       cy = ay
       break
     case "right":
+    case "center_right":
       cx = ax - width / 2
       cy = ay
       break
