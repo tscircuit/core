@@ -80,6 +80,10 @@ export interface SynchronizedBreakoutPoint {
   fanoutExitPoint: SimpleRoutePoint
 }
 
+/**
+ * Synchronizes downstream references to relocated fanout boundary endpoints.
+ * Positions are board-world points in mm (+X right, +Y top), not directions.
+ */
 export function Group_syncFanoutExitsWithGlobalConnections({
   fanoutInputSimpleRouteJson,
   fanoutOutputSimpleRouteJson,
@@ -130,7 +134,7 @@ export function Group_syncFanoutExitsWithGlobalConnections({
     const outputConnection = outputConnectionByName.get(inputConnection.name)
     if (!outputConnection) continue
 
-    const globalConnection = baseConnections.find((connection) => {
+    const globalConnections = baseConnections.filter((connection) => {
       if (connection.routingPcbGroupId === routingPcbGroupId) return false
 
       const sharesSourceTrace =
@@ -148,17 +152,18 @@ export function Group_syncFanoutExitsWithGlobalConnections({
         ),
       )
     })
-    if (!globalConnection) continue
-
-    const previousGlobalPointIndex = globalConnection.pointsToConnect.findIndex(
-      (globalPoint) =>
+    // Capture every reference to this physical boundary endpoint before changing
+    // coordinates. Electrical-net membership alone never selects an endpoint.
+    const globalPointMatches = globalConnections.flatMap((globalConnection) =>
+      globalConnection.pointsToConnect.flatMap((previousPoint, pointIndex) =>
         inputConnection.pointsToConnect.some((inputPoint) =>
-          srjPointsReferToSameEndpoint(globalPoint, inputPoint),
-        ),
+          srjPointsReferToSameEndpoint(previousPoint, inputPoint),
+        )
+          ? [{ globalConnection, pointIndex, previousPoint }]
+          : [],
+      ),
     )
-    if (previousGlobalPointIndex < 0) continue
-    const previousPoint =
-      globalConnection.pointsToConnect[previousGlobalPointIndex]
+    if (globalPointMatches.length === 0) continue
 
     const changedPointIndex = outputConnection.pointsToConnect.findIndex(
       (outputPoint, pointIndex) => {
@@ -172,37 +177,42 @@ export function Group_syncFanoutExitsWithGlobalConnections({
     if (changedPointIndex < 0) continue
     const fanoutExitPoint = outputConnection.pointsToConnect[changedPointIndex]
 
-    const {
-      layers: _previousLayers,
-      terminalVia: _previousTerminalVia,
-      ...previousPointWithoutLayerOverrides
-    } = previousPoint
-    const synchronizedGlobalPoint: SimpleRoutePoint = {
-      ...previousPointWithoutLayerOverrides,
-      x: fanoutExitPoint.x,
-      y: fanoutExitPoint.y,
-      layer: fanoutExitPoint.layer,
-      ...(fanoutExitPoint.layers
-        ? { layers: [...fanoutExitPoint.layers] }
-        : {}),
-      ...(fanoutExitPoint.terminalVia
-        ? { terminalVia: { ...fanoutExitPoint.terminalVia } }
-        : {}),
-    }
-    globalConnection.pointsToConnect[previousGlobalPointIndex] =
-      synchronizedGlobalPoint
-    if (previousPoint.pointId) {
-      breakoutPointIdByConnectionName.set(
-        inputConnection.name,
-        previousPoint.pointId,
-      )
-    }
-    synchronizedBreakoutPoints.push({
-      sourceTraceId: inputConnection.source_trace_id,
-      routingPcbGroupId,
+    for (const {
+      globalConnection,
+      pointIndex,
       previousPoint,
-      fanoutExitPoint,
-    })
+    } of globalPointMatches) {
+      const {
+        layers: _previousLayers,
+        terminalVia: _previousTerminalVia,
+        ...previousPointWithoutLayerOverrides
+      } = previousPoint
+      const synchronizedGlobalPoint: SimpleRoutePoint = {
+        ...previousPointWithoutLayerOverrides,
+        x: fanoutExitPoint.x,
+        y: fanoutExitPoint.y,
+        layer: fanoutExitPoint.layer,
+        ...(fanoutExitPoint.layers
+          ? { layers: [...fanoutExitPoint.layers] }
+          : {}),
+        ...(fanoutExitPoint.terminalVia
+          ? { terminalVia: { ...fanoutExitPoint.terminalVia } }
+          : {}),
+      }
+      globalConnection.pointsToConnect[pointIndex] = synchronizedGlobalPoint
+      if (previousPoint.pointId) {
+        breakoutPointIdByConnectionName.set(
+          inputConnection.name,
+          previousPoint.pointId,
+        )
+      }
+      synchronizedBreakoutPoints.push({
+        sourceTraceId: inputConnection.source_trace_id,
+        routingPcbGroupId,
+        previousPoint,
+        fanoutExitPoint,
+      })
+    }
   }
 
   // FanoutAutorouter replaces the completed source footprint's individual pad

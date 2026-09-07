@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { runAllPlacementChecks, runAllRoutingChecks } from "@tscircuit/checks"
 import type { SolverStartedEvent } from "lib/events"
 import { createAutoroutingPhaseIoStack } from "tests/fixtures/create-autorouting-phase-io-stack"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
@@ -170,9 +171,20 @@ test("fanout hands a shared capacitor supply endpoint to both global branches", 
       (point) => point.pointId === breakoutPoint.pcb_breakout_point_id,
     )!
     expect(inputEndpoint).toMatchObject(movedEndpoint)
-    // Known defect: only the first branch follows the native fanout exit.
-    // The stacked fix replaces this stale-endpoint expectation with continuity.
-    expect(loadEndpoint).toEqual(initialBreakoutPoint)
+    expect(loadEndpoint).toMatchObject(movedEndpoint)
+
+    const tracesAtBreakout = circuit.db.pcb_trace
+      .list()
+      .filter((trace) =>
+        trace.route.some(
+          (point) =>
+            point.route_type === "wire" &&
+            point.layer === breakoutPoint.layer &&
+            Math.abs(point.x - breakoutPoint.x) < 1e-6 &&
+            Math.abs(point.y - breakoutPoint.y) < 1e-6,
+        ),
+      )
+    expect(tracesAtBreakout.length).toBeGreaterThanOrEqual(2)
 
     // The external component pads must never move with the shared junction.
     for (const connection of [inputConnection, loadConnection]) {
@@ -189,6 +201,11 @@ test("fanout hands a shared capacitor supply endpoint to both global branches", 
     }
   }
 
-  expect(circuit.db.pcb_trace_error.list()).toHaveLength(3)
+  const circuitJson = circuit.getCircuitJson()
+  expect(
+    circuitJson.filter((element) => element.type.endsWith("_error")),
+  ).toEqual([])
+  expect(await runAllRoutingChecks(circuitJson)).toEqual([])
+  expect(await runAllPlacementChecks(circuitJson)).toEqual([])
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 }, 30_000)
