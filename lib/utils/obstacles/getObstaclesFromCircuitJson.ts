@@ -407,6 +407,38 @@ export const getObstaclesFromCircuitJson = (
           height: element.outer_diameter,
           connectedTo: withNetId([element.pcb_plated_hole_id]),
         })
+      } else if (
+        element.shape === "pill_hole_with_rect_pad" ||
+        element.shape === "rotated_pill_hole_with_rect_pad"
+      ) {
+        // Circuit JSON pad centers are board-world points in mm (+X right,
+        // +Y up, right-handed). Rotation is CCW about the pad center; the
+        // drill's offset and rotation do not change the copper pad bounds.
+        const rotatedRect: RotatedRect = {
+          center: { x: element.x, y: element.y },
+          width: element.rect_pad_width,
+          height: element.rect_pad_height,
+          rotation:
+            element.shape === "rotated_pill_hole_with_rect_pad"
+              ? element.rect_ccw_rotation
+              : 0,
+        }
+        const axisAlignedRect = getAxisAlignedRectFromRotatedRect(rotatedRect)
+        const rect = axisAlignedRect ?? rotatedRect
+
+        obstacles.push({
+          circuitJsonMetadata: pcbPlatedHoleCircuitJsonMetadata,
+          componentId: pcbComponentId,
+          type: "rect",
+          layers: everyLayer,
+          center: rect.center,
+          width: rect.width,
+          height: rect.height,
+          ccwRotationDegrees: axisAlignedRect
+            ? undefined
+            : rotatedRect.rotation,
+          connectedTo: withNetId([element.pcb_plated_hole_id]),
+        })
       } else if (element.shape === "circular_hole_with_rect_pad") {
         obstacles.push({
           circuitJsonMetadata: pcbPlatedHoleCircuitJsonMetadata,
