@@ -7,6 +7,11 @@ export const Board_doInitialPcbCopperPourCleanup = (board: Board) => {
   const circuitJson = db
     .subtree({ subcircuit_id: board.subcircuit_id })
     .toArray()
+  // Failed or skipped autorouting leaves intended copper connections missing.
+  // Preserve the pours until routing succeeds so cleanup cannot mistake those
+  // incomplete connections for electrically isolated islands.
+  // Autorouting error records lack subtree IDs, so read them from the root DB.
+  if (db.pcb_autorouting_error.list().length > 0) return
   if (!circuitJson.some((element) => element.type === "pcb_copper_pour")) return
   const { floatingPourIds, floatingViaIds } = findFloatingCopper(
     circuitJson,
