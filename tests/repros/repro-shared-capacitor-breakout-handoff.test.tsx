@@ -97,13 +97,13 @@ test("fanout hands a shared capacitor supply endpoint to both global branches", 
         routingPhaseIndex={3}
       />
       <pcbnotetext
-        text="J1 VCC -> C1 -> R1 LOAD: SHARED FANOUT EXIT"
+        text="EXPECTED: BOTH BRANCHES MEET EACH C1 FANOUT EXIT"
         pcbY={5}
         fontSize="0.45mm"
         anchorAlignment="center"
       />
       <pcbnotetext
-        text="C1 = 100nF DECOUPLING; R1 = 10k LOAD"
+        text="C1 100nF AND R1 10k ACROSS J1 VCC / GND"
         pcbY={4.2}
         fontSize="0.4mm"
         anchorAlignment="center"
