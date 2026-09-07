@@ -8,6 +8,7 @@ export default defineConfig({
     "@tscircuit/fanout-solver",
     "@tscircuit/implicit-copper-pour-solver",
     "@tscircuit/jlcpcb-manufacturing-specs",
+    "@tscircuit/via-stitch-solver",
     "@tscircuit/winding-breakout-point-solver",
   ],
 })

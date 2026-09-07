@@ -70,6 +70,7 @@ export const orderedRenderPhases = [
   "PcbRouteNetIslands",
   "PcbImplicitCopperPourRender",
   "PcbCopperPourRender",
+  "PcbViaStitchRender",
   "PcbDesignRuleChecks",
   "SilkscreenOverlapAdjustment",
   "CadModelRender",
@@ -138,6 +139,15 @@ const asyncPhaseDependencies: Partial<Record<RenderPhase, RenderPhase[]>> = {
     "PcbTraceRender",
     "PcbRouteNetIslands",
   ],
+  PcbViaStitchRender: [
+    "PcbFootprintStringRender",
+    "FetchPartFootprint",
+    "PcbPlacementDesignRuleChecks",
+    "PcbTraceRender",
+    "PcbRouteNetIslands",
+    "PcbImplicitCopperPourRender",
+    "PcbCopperPourRender",
+  ],
   PcbPlacementDesignRuleChecks: [
     "PcbFootprintStringRender",
     "FetchPartFootprint",
@@ -155,6 +165,7 @@ const asyncPhaseDependencies: Partial<Record<RenderPhase, RenderPhase[]>> = {
     "PcbTraceRender",
     "PcbImplicitCopperPourRender",
     "PcbCopperPourRender",
+    "PcbViaStitchRender",
   ],
   SilkscreenOverlapAdjustment: [
     "PcbFootprintStringRender",
