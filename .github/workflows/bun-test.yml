@@ -28,7 +28,7 @@ jobs:
       - name: Install dependencies
         run: |
           bun install
-          bun pm ls --all > dependency-tree.txt
+          bun -e 'for (const path of new Bun.Glob("node_modules/**/package.json").scanSync()) { const pkg = await Bun.file(path).json(); console.log(path, pkg.version) }' > dependency-tree.txt
 
       - name: Generate test plans
         env:
