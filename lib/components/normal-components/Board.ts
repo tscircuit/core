@@ -573,8 +573,23 @@ export class Board
       ...(props.solderMaskColor !== undefined && {
         solder_mask_color: props.solderMaskColor,
       }),
+      ...(props.topSolderMaskColor !== undefined && {
+        top_solder_mask_color: props.topSolderMaskColor,
+      }),
+      ...(props.bottomSolderMaskColor !== undefined && {
+        bottom_solder_mask_color: props.bottomSolderMaskColor,
+      }),
       ...(props.silkscreenColor !== undefined && {
         silkscreen_color: props.silkscreenColor,
+      }),
+      ...(props.topSilkscreenColor !== undefined && {
+        top_silkscreen_color: props.topSilkscreenColor,
+      }),
+      ...(props.bottomSilkscreenColor !== undefined && {
+        bottom_silkscreen_color: props.bottomSilkscreenColor,
+      }),
+      ...(props.doubleSidedAssembly !== undefined && {
+        double_sided_assembly: props.doubleSidedAssembly,
       }),
 
       min_trace_width:
