@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import type { InputProblem } from "@tscircuit/copper-pour-solver"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("repro: copper pour omits pill holes with rectangular pads", async () => {
+test("repro: copper pour clears pill holes with rectangular pads", async () => {
   const { circuit } = getTestFixture()
   let solverInput: InputProblem | undefined
   circuit.on("solver:started", (event) => {
@@ -74,7 +74,7 @@ test("repro: copper pour omits pill holes with rectangular pads", async () => {
         fontSize={0.5}
       />
       <pcbnotetext
-        text="Bug: both pill pads are missing from pour obstacles"
+        text="Both pill pads must appear as pour obstacles"
         pcbY={-4.5}
         fontSize={0.5}
       />
@@ -91,26 +91,36 @@ test("repro: copper pour omits pill holes with rectangular pads", async () => {
     "rotated_pill_hole_with_rect_pad",
   ])
 
-  // Record the bug: both pill shapes exist in Circuit JSON, but only the
-  // circular-hole control reaches the solver. A fix must update these expectations.
-  expect(solverInput?.pads.map((pad) => pad.padId)).toEqual([
-    holes[0]!.pcb_plated_hole_id,
-  ])
+  // All three plated pads must reach the solver, including both pill variants.
+  expect(solverInput?.pads.map((pad) => pad.padId)).toEqual(
+    holes.map((hole) => hole.pcb_plated_hole_id),
+  )
 
   const pours = circuit.db.pcb_copper_pour.list()
   expect(pours).toHaveLength(1)
   const [pour] = pours
   if (pour?.shape !== "brep") throw new Error("Expected a BRep copper pour")
   const voids = pour.brep_shape.inner_rings
-  expect(voids).toHaveLength(1)
+  expect(voids).toHaveLength(3)
 
   // Emitted points are in board/circuit world space, mm, +X right, +Y up.
-  // The only void surrounds the control's 3 x 2 mm pad with 0.5 mm clearance.
-  const vertices = voids[0]!.vertices
-  expect({
-    minX: Math.min(...vertices.map((point) => point.x)),
-    maxX: Math.max(...vertices.map((point) => point.x)),
-    minY: Math.min(...vertices.map((point) => point.y)),
-    maxY: Math.max(...vertices.map((point) => point.y)),
-  }).toEqual({ minX: -9, maxX: -5, minY: -1.5, maxY: 1.5 })
+  // Each 3 x 2 mm pad receives 0.5 mm clearance on all sides. The rotated
+  // pad's clearance rectangle is 4 x 3 mm, rotated 45 degrees with mitered corners.
+  const voidBounds = voids
+    .map(({ vertices }) => ({
+      minX: Math.min(...vertices.map((point) => point.x)),
+      maxX: Math.max(...vertices.map((point) => point.x)),
+      minY: Math.min(...vertices.map((point) => point.y)),
+      maxY: Math.max(...vertices.map((point) => point.y)),
+    }))
+    .sort((a, b) => a.minX - b.minX)
+  expect(voidBounds.slice(0, 2)).toEqual([
+    { minX: -9, maxX: -5, minY: -1.5, maxY: 1.5 },
+    { minX: -2, maxX: 2, minY: -1.5, maxY: 1.5 },
+  ])
+  const rotatedHalfExtent = 3.5 / Math.SQRT2
+  expect(voidBounds[2]!.minX).toBeCloseTo(7 - rotatedHalfExtent, 5)
+  expect(voidBounds[2]!.maxX).toBeCloseTo(7 + rotatedHalfExtent, 5)
+  expect(voidBounds[2]!.minY).toBeCloseTo(-rotatedHalfExtent, 5)
+  expect(voidBounds[2]!.maxY).toBeCloseTo(rotatedHalfExtent, 5)
 })
