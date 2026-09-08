@@ -17,9 +17,15 @@ test("retain section connectivity through an external chip pin", async () => {
     <board routingDisabled>
       <schematicsection name="controller" />
       <schematicsection name="controls" />
-      <chip name="U1" schSectionName="controller" pinLabels={{ pin1: "RUN" }} />
+      <chip
+        name="U1"
+        schSectionName="controller"
+        pinLabels={{ pin1: "RUN", pin2: "LED" }}
+      />
       <resistor name="R1" resistance="10k" schSectionName="controls" />
       <resistor name="R2" resistance="1k" schSectionName="controls" />
+      <resistor name="R3" resistance="330" schSectionName="controls" />
+      <trace from=".R3 > .pin1" to=".U1 > .pin2" />
       <trace from=".R1 > .pin1" to=".U1 > .pin1" />
       <trace from=".R2 > .pin1" to=".U1 > .pin1" />
       <trace from=".R1 > .pin2" to="net.VCC" />
@@ -39,5 +45,13 @@ test("retain section connectivity through an external chip pin", async () => {
   expect(sharedNets).toHaveLength(1)
   expect(controls.netMap[sharedNets[0]!]!.isGround).toBe(false)
   expect(controls.netMap[sharedNets[0]!]!.isPositiveVoltageSource).toBe(false)
+  const externalSignalNets = Object.keys(controls.netMap).filter(
+    (netId) => controls.netConnMap[`R3.1-${netId}`],
+  )
+  expect(externalSignalNets).toHaveLength(1)
+  expect(controls.netMap[externalSignalNets[0]!]!.isGround).toBe(false)
+  expect(controls.netMap[externalSignalNets[0]!]!.isPositiveVoltageSource).toBe(
+    false,
+  )
   await expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
