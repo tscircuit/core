@@ -9,12 +9,7 @@ test("negative schematic dimensions emit source_invalid_component_property_error
       <chip name="U1" footprint="soic8" schWidth={-4} schHeight={3} />
       <schematicbox width={-2} height={2} schX={6} schY={0} />
       <schematicrect width={-3} height={1} schX={10} schY={0} />
-      <schematiccircle
-        center={{ x: 0, y: 0 }}
-        radius={-1}
-        schX={14}
-        schY={0}
-      />
+      <schematiccircle center={{ x: 14, y: 0 }} radius={-1} />
     </board>,
   )
 
