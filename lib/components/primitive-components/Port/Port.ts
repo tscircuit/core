@@ -507,7 +507,28 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
     const pcbMatches = matchedComponents.filter((c) => c.isPcbPrimitive)
 
-    if (pcbMatches.length === 0) return
+    if (pcbMatches.length === 0) {
+      const parentHasPcbPrimitives = Boolean(
+        parentNormalComponent
+          ?.getDescendants()
+          .some((child) => child.isPcbPrimitive),
+      )
+      if (parentHasPcbPrimitives) {
+        const portName = this.props.name ?? "unknown"
+        const aliases = this.getNameAndAliases().filter(
+          (alias) => alias !== portName,
+        )
+        const aliasMsg =
+          aliases.length > 0 ? ` (aliases: ${aliases.join(", ")})` : ""
+        db.source_invalid_component_property_error.insert({
+          source_component_id: parentNormalComponent?.source_component_id || "",
+          property_name: "pinLabels",
+          message: `Port "${portName}"${aliasMsg} on ${parentNormalComponent?.getDisplayName() ?? "component"} does not match any pad in the footprint.`,
+          error_type: "source_invalid_component_property_error",
+        })
+      }
+      return
+    }
 
     let matchCenter: { x: number; y: number } | null = null
 
