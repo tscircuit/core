@@ -54,15 +54,16 @@ test("plated hole with polygon pad retains component rotation", () => {
   ])
 })
 
-test("plated hole with polygon pad retains footprint rotation", () => {
+test("plated hole with polygon pad retains component rotation at 45 degrees", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
     <board width="20mm" height="20mm">
       <chip
         name="U2"
+        pcbRotation={45}
         footprint={
-          <footprint pcbRotation={45}>
+          <footprint>
             <platedhole
               portHints={["pin1"]}
               shape="hole_with_polygon_pad"
