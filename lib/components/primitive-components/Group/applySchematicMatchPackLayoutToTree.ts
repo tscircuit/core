@@ -774,12 +774,23 @@ function convertTreeToMatchPackInputProblem(
       }
     }
 
-    // Preserve connectivity through ports outside this layout section.
-    const hasIndirectConnections = pins.some((pin1) =>
-      pins.some(
-        (pin2) => pin1 !== pin2 && !problem.pinStrongConnMap[`${pin1}-${pin2}`],
-      ),
+    // A path of local direct connections already represents the shared net.
+    const reachablePins = new Set(pins.slice(0, 1))
+    for (const pin1 of reachablePins) {
+      for (const pin2 of pins) {
+        if (
+          problem.pinStrongConnMap[`${pin1}-${pin2}`] ||
+          problem.pinStrongConnMap[`${pin2}-${pin1}`]
+        ) {
+          reachablePins.add(pin2)
+        }
+      }
+    }
+    const connectedChips = Object.values(problem.chipMap).filter((chip) =>
+      chip.pins.some((pinId) => pins.includes(pinId)),
     )
+    const hasIndirectConnections =
+      connectedChips.length > 1 && reachablePins.size < new Set(pins).size
     if (
       hasNetConnections ||
       hasIndirectConnections ||
