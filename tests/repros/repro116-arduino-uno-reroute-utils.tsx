@@ -250,6 +250,7 @@ export async function expectArduinoUnoRerouteRegion({
     beforeRerouteCircuit,
     phaseInputs,
   } = await renderArduinoUnoRerouteRegion({ label, rerouteRegion })
+  fs.writeFileSync(`${importMetaPath}.actual.json`, JSON.stringify(phaseInputs))
 
   const originalRouteSignaturesBySourceTraceId = new Map<string, string[]>()
   const originalTraceWidthBySourceTraceId = new Map<string, number>()
