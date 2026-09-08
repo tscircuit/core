@@ -54,26 +54,33 @@ test("plated hole with polygon pad retains component rotation", () => {
   ])
 })
 
-test("plated hole with polygon pad direct pcbRotation", () => {
+test("plated hole with polygon pad retains footprint rotation", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
     <board width="20mm" height="20mm">
-      <platedhole
-        shape="hole_with_polygon_pad"
-        holeShape="circle"
-        holeDiameter={1}
-        holeOffsetX={0}
-        holeOffsetY={0}
-        pcbX={2}
-        pcbY={1}
-        pcbRotation={45}
-        padOutline={[
-          { x: -1, y: -1 },
-          { x: 1, y: -1 },
-          { x: 1, y: 1 },
-          { x: -1, y: 1 },
-        ]}
+      <chip
+        name="U2"
+        footprint={
+          <footprint pcbRotation={45}>
+            <platedhole
+              portHints={["pin1"]}
+              shape="hole_with_polygon_pad"
+              holeShape="circle"
+              holeDiameter={1}
+              holeOffsetX={0}
+              holeOffsetY={0}
+              pcbX={0}
+              pcbY={0}
+              padOutline={[
+                { x: -1, y: -1 },
+                { x: 1, y: -1 },
+                { x: 1, y: 1 },
+                { x: -1, y: 1 },
+              ]}
+            />
+          </footprint>
+        }
       />
     </board>,
   )
@@ -86,8 +93,8 @@ test("plated hole with polygon pad direct pcbRotation", () => {
   const hole = platedHoles[0] as PcbHoleWithPolygonPad
   expect(hole.shape).toBe("hole_with_polygon_pad")
   expect(hole.ccw_rotation).toBe(45)
-  expect(hole.x).toBe(2)
-  expect(hole.y).toBe(1)
+  expect(hole.x).toBeCloseTo(0, 5)
+  expect(hole.y).toBeCloseTo(0, 5)
 })
 
 test("createComponentsFromCircuitJson preserves ccw_rotation on hole_with_polygon_pad", () => {
