@@ -33,7 +33,7 @@ test("a component with no footprint does not error for unmapped ports", async ()
 
   await circuit.renderUntilSettled()
 
-  expect(circuit.db.source_invalid_component_property_error.list()).toHaveLength(
-    0,
-  )
+  expect(
+    circuit.db.source_invalid_component_property_error.list(),
+  ).toHaveLength(0)
 })

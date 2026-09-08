@@ -511,7 +511,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       const parentHasPcbPrimitives = Boolean(
         parentNormalComponent
           ?.getDescendants()
-          .some((child) => child.isPcbPrimitive),
+          .some((child: PrimitiveComponent) => child.isPcbPrimitive),
       )
       if (parentHasPcbPrimitives) {
         const portName = this.props.name ?? "unknown"
