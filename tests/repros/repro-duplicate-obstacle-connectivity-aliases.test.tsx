@@ -42,6 +42,9 @@ test("repro duplicate obstacle connectivity aliases on shared power nets", async
   for (const obstacle of groundObstacles) {
     expect(obstacle.connectedTo).not.toContain(supply.source_net_id)
   }
+  for (const obstacle of simpleRouteJson.obstacles) {
+    expect(obstacle.connectedTo.length).toBe(new Set(obstacle.connectedTo).size)
+  }
   expect(
     simpleRouteJson.obstacles.map((obstacle) => ({
       entries: obstacle.connectedTo.length,
@@ -49,23 +52,23 @@ test("repro duplicate obstacle connectivity aliases on shared power nets", async
     })),
   ).toEqual([
     {
-      entries: 11,
+      entries: 10,
+      uniqueEntries: 10,
+    },
+    {
+      entries: 10,
+      uniqueEntries: 10,
+    },
+    {
+      entries: 10,
+      uniqueEntries: 10,
+    },
+    {
+      entries: 10,
       uniqueEntries: 10,
     },
     {
       entries: 11,
-      uniqueEntries: 10,
-    },
-    {
-      entries: 11,
-      uniqueEntries: 10,
-    },
-    {
-      entries: 11,
-      uniqueEntries: 10,
-    },
-    {
-      entries: 12,
       uniqueEntries: 11,
     },
   ])
