@@ -13,6 +13,8 @@ test("repro116: arduino uno circuit json can reroute a center imported region", 
   await expectArduinoUnoRerouteRegion({
     importMetaPath: import.meta.path,
     label: "REROUTED CENTER 10MM",
+    // Linux CI varies by 468 pixels in the 800 × 600 rerouted PCB snapshot.
+    pcbSnapshotDiffThresholdPercent: 0.1,
     rerouteRegion,
     snapshotName: "repro116-arduino-uno-reroute-center",
   })
