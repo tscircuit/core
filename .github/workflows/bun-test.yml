@@ -77,4 +77,6 @@ jobs:
           path: |
             tests/**/__snapshots__/*.diff.png
             tests/**/__snapshots__/*.snap.png
+            tests/**/__snapshots__/*.actual.svg
+            tests/**/__snapshots__/*.actual.json
           if-no-files-found: ignore

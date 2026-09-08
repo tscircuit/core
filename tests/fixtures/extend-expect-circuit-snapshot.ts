@@ -103,6 +103,11 @@ async function saveSvgSnapshotOfCircuitJson({
   }
 
   const diffPath = filePath.replace(/\.snap\.(svg|png)$/, ".diff.png")
+  fs.writeFileSync(diffPath.replace(".diff.png", ".actual.svg"), content)
+  fs.writeFileSync(
+    diffPath.replace(".diff.png", ".actual.json"),
+    JSON.stringify(soup),
+  )
   await createImageDiff({
     reference: existingSnapshot,
     current: currentBuffer,
