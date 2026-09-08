@@ -11,7 +11,7 @@ import {
   AutoroutingPipelineSolver9_PreloadedTraceGraph,
   AutoroutingPipelineSolver11_Simplification,
 } from "@tscircuit/capacity-autorouter"
-import { CopperPourPipelineSolver } from "@tscircuit/copper-pour-solver/lib"
+import { CopperPourPipelineSolver } from "@tscircuit/copper-pour-solver"
 import { CreateFdmEnclosureSolver } from "@tscircuit/create-fdm-enclosure"
 import { FanoutSolver } from "@tscircuit/fanout-solver"
 import { ImplicitCopperPourPipelineSolver } from "@tscircuit/implicit-copper-pour-solver/lib/index"
