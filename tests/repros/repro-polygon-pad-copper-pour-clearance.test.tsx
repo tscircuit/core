@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("repro: polygon signal pad receives zero copper-pour clearance", async () => {
+test("polygon and rectangular signal pads receive the configured copper-pour clearance", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -75,7 +75,7 @@ test("repro: polygon signal pad receives zero copper-pour clearance", async () =
   const polygonPad = pads.find((pad) => pad.shape === "polygon")!
   const [rectVoid, polygonVoid] = voidBounds
 
-  // Record the bug, not the desired behavior: only the polygon's gap is zero.
+  // Both representations must receive the configured 0.5 mm gap on every side.
   expect({
     rectClearance: [
       rectPad.x - rectPad.width / 2 - rectVoid!.minX,
@@ -95,6 +95,6 @@ test("repro: polygon signal pad receives zero copper-pour clearance", async () =
     ],
   }).toEqual({
     rectClearance: [0.5, 0.5, 0.5, 0.5],
-    polygonClearance: [0, 0, 0, 0],
+    polygonClearance: [0.5, 0.5, 0.5, 0.5],
   })
 })
