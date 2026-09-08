@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test"
 import type { PcbCopperPourBRep } from "circuit-json"
+import { Board } from "lib/components/normal-components/Board"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 // Remove .failing and update the PCB snapshot when board selection is fixed.
@@ -51,22 +52,23 @@ test.failing(
     expect(pcbBoards).toHaveLength(2)
     expect(copperPours).toHaveLength(2)
 
-    for (const pcbBoard of pcbBoards) {
-      const sourceBoard = circuit.db.source_board.get(
-        pcbBoard.source_board_id!,
-      )!
-      const sourceGroup = circuit.db.source_group.get(
-        sourceBoard.source_group_id,
-      )!
+    const boards = circuit
+      .firstChild!.getDescendants()
+      .filter((descendant): descendant is Board => descendant instanceof Board)
+    expect(boards).toHaveLength(2)
+    for (const board of boards) {
+      const pcbBoard = circuit.db.pcb_board.get(board.pcb_board_id!)!
       const boardPours = copperPours.filter(
         (pour): pour is PcbCopperPourBRep =>
-          pour.shape === "brep" &&
-          pour.subcircuit_id === sourceGroup.subcircuit_id,
+          pour.shape === "brep" && pour.subcircuit_id === board.subcircuit_id,
       )
       expect(boardPours).toHaveLength(1)
 
       // These are emitted positions in circuit world space (mm, +X right,
       // +Y up), so panel translation is included in both board and pour bounds.
+      // Both rectangular boards explicitly specify width and height above.
+      const width = pcbBoard.width!
+      const height = pcbBoard.height!
       const vertices = boardPours[0]!.brep_shape.outer_ring.vertices
       expect({
         minX: Math.min(...vertices.map((vertex) => vertex.x)),
@@ -74,10 +76,10 @@ test.failing(
         minY: Math.min(...vertices.map((vertex) => vertex.y)),
         maxY: Math.max(...vertices.map((vertex) => vertex.y)),
       }).toEqual({
-        minX: pcbBoard.center.x - pcbBoard.width / 2 + 1,
-        maxX: pcbBoard.center.x + pcbBoard.width / 2 - 1,
-        minY: pcbBoard.center.y - pcbBoard.height / 2 + 1,
-        maxY: pcbBoard.center.y + pcbBoard.height / 2 - 1,
+        minX: pcbBoard.center.x - width / 2 + 1,
+        maxX: pcbBoard.center.x + width / 2 - 1,
+        minY: pcbBoard.center.y - height / 2 + 1,
+        maxY: pcbBoard.center.y + height / 2 - 1,
       })
     }
   },
