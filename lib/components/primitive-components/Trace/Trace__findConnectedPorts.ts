@@ -121,6 +121,24 @@ export function Trace__findConnectedPorts(trace: Trace):
     return { allPortsFound: false }
   }
 
+  const resolvedPorts = portsWithSelectors
+    .map(({ port }) => port)
+    .filter((port): port is Port => port != null)
+  // Port→net traces resolve to a single port and must stay valid. Only flag
+  // when two or more selectors collapse onto the same port.
+  if (resolvedPorts.length >= 2 && new Set(resolvedPorts).size === 1) {
+    const subcircuit = trace.getSubcircuit()
+    const sourceGroup = subcircuit.getGroup()
+    throw new TraceConnectionError({
+      error_type: "source_trace_not_connected_error",
+      message: `${trace.getString()} connects a port to itself; both ends resolve to the same port. Did you mean to connect two different pins?`,
+      subcircuit_id: subcircuit.subcircuit_id ?? undefined,
+      source_group_id: sourceGroup?.source_group_id ?? undefined,
+      source_trace_id: trace.source_trace_id ?? undefined,
+      selectors_not_found: portSelectors,
+    })
+  }
+
   return {
     allPortsFound: true,
     portsWithSelectors,
