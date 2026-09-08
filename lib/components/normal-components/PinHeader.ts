@@ -112,7 +112,7 @@ export class PinHeader extends NormalComponent<typeof pinHeaderProps> {
       "right"
     const schPinArrangement = this._parsedProps.schPinArrangement
 
-    const pins = Array.from({ length: pinCount }, (_, i) => `pin${i + 1}`)
+    const pins = Array.from({ length: pinCount }, (_, i) => i + 1)
 
     if (facingDirection === "left") {
       return {
