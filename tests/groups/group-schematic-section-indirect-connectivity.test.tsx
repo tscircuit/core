@@ -5,12 +5,9 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 test("retain section connectivity through an external chip pin", async () => {
   const { circuit } = getTestFixture({ platform: { pcbDisabled: true } })
   const inputs: InputProblem[] = []
-  circuit.enableDebug("Group_doInitialSchematicLayoutMatchpack")
-  circuit.on("debug:logOutput", (event) => {
-    if (event.name?.startsWith("matchpack-input-problem-")) {
-      if (typeof event.content === "string")
-        inputs.push(JSON.parse(event.content))
-      else inputs.push(event.content)
+  circuit.on("solver:started", (event) => {
+    if (event.solverName === "LayoutPipelineSolver") {
+      inputs.push(event.solverParams)
     }
   })
   circuit.add(
