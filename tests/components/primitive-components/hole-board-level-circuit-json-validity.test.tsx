@@ -40,17 +40,6 @@ test("board-level holes produce valid circuit json", async () => {
 
   for (const hole of holes) {
     const result = any_circuit_element.safeParse(hole)
-    expect({
-      type: hole.type,
-      shape: hole.shape ?? hole.hole_shape,
-      pcb_component_id: hole.pcb_component_id,
-      valid: result.success,
-      issues: result.success ? undefined : result.error.issues.slice(0, 3),
-    }).toEqual({
-      type: hole.type,
-      shape: hole.shape ?? hole.hole_shape,
-      pcb_component_id: hole.pcb_component_id,
-      valid: true,
-    })
+    expect(result.success).toBe(true)
   }
 })
