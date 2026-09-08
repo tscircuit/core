@@ -24,6 +24,16 @@ export class PushButton extends NormalComponent<
   }
 
   get defaultInternallyConnectedPinNames(): string[][] {
+    // 4-pin tactile footprints internally short pin1–pin2 and pin3–pin4.
+    // Skip the pairing until those ports exist so 2-pin schematic-only
+    // pushbuttons do not invent missing pins.
+    const ports = this.selectAll("port")
+    if (ports.length >= 4) {
+      return [
+        ["pin1", "pin2"],
+        ["pin3", "pin4"],
+      ]
+    }
     return []
   }
 
