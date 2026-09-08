@@ -62,3 +62,28 @@ test("getAllDimensionsForSchematicBox 3 (4 sided with margins)", () => {
     "schematicbox3",
   )
 })
+
+test("array pinLabels size the box like the displayed string, not the alias list", () => {
+  const pinCount = 56
+  const arrayPinLabels: Record<string, readonly string[]> = {}
+  const stringPinLabels: Record<string, string> = {}
+  for (let pinNumber = 1; pinNumber <= pinCount; pinNumber++) {
+    const label = pinNumber <= pinCount / 2 ? "IOVDD6" : "GPIO26_ADC0"
+    arrayPinLabels[`pin${pinNumber}`] = [label]
+    stringPinLabels[`pin${pinNumber}`] = label
+  }
+
+  const arraySize = getAllDimensionsForSchematicBox({
+    schPinSpacing: 0.2,
+    pinCount,
+    pinLabels: arrayPinLabels,
+  }).getSize()
+  const stringSize = getAllDimensionsForSchematicBox({
+    schPinSpacing: 0.2,
+    pinCount,
+    pinLabels: stringPinLabels,
+  }).getSize()
+
+  expect(arraySize.width).toBe(stringSize.width)
+  expect(arraySize.width).toBeGreaterThan(2)
+})
