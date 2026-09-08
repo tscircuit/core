@@ -1,17 +1,17 @@
-import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { platedHoleProps } from "@tscircuit/props"
 import { distance } from "circuit-json"
-import type { Port } from "./Port"
 import type {
   LayerRef,
   PCBPlatedHoleInput,
-  PcbPlatedHoleOval,
   PcbHoleCircularWithRectPad,
   PcbHolePillWithRectPad,
   PcbHoleRotatedPillWithRectPad,
   PcbHoleWithPolygonPad,
+  PcbPlatedHoleOval,
 } from "circuit-json"
 import { decomposeTSR } from "transformation-matrix"
+import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
+import type { Port } from "./Port"
 import { selectPortForPcbPrimitive } from "./Port/selectPortForPcbPrimitive"
 
 export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
@@ -363,6 +363,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         port_hints: this.getNameAndAliases(),
         x: position.x,
         y: position.y,
+        ccw_rotation: finalRotationDegrees,
         layers: platedHoleLayers,
         soldermask_margin: soldermaskMargin,
         is_covered_with_solder_mask: isCoveredWithSolderMask,
