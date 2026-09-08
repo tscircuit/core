@@ -2207,10 +2207,20 @@ export class NormalComponent<
       for (const [pinName, target] of Object.entries(props.connections)) {
         const targets = Array.isArray(target) ? target : [target]
         for (const targetPath of targets) {
+          const selector = String(targetPath).trim()
+          if (!selector) {
+            this.root?.db.source_invalid_component_property_error.insert({
+              source_component_id: this.source_component_id || "",
+              property_name: "connections",
+              message: `Empty connections target for ${this.getDisplayName()} pin "${pinName}".`,
+              error_type: "source_invalid_component_property_error",
+            })
+            continue
+          }
           this.add(
             new Trace({
               from: `.${this.name} > .${pinName}`,
-              to: String(targetPath),
+              to: selector,
             }),
           )
         }
