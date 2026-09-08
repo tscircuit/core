@@ -20,6 +20,7 @@ import type {
   AutorouterErrorEvent,
   AutorouterEvent,
   AutorouterProgressEvent,
+  AutorouterWarningEvent,
   GenericLocalAutorouter,
 } from "./GenericLocalAutorouter"
 import { getCacheProviderForLocalCacheEngine } from "./LocalCacheEngineCacheProvider"
@@ -135,10 +136,12 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
     complete: Array<(ev: AutorouterCompleteEvent) => void>
     error: Array<(ev: AutorouterErrorEvent) => void>
     progress: Array<(ev: AutorouterProgressEvent) => void>
+    warning: Array<(ev: AutorouterWarningEvent) => void>
   } = {
     complete: [],
     error: [],
     progress: [],
+    warning: [],
   }
   private cycleCount = 0
   private stepDelay: number
@@ -326,9 +329,10 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
    */
   on(event: "complete", callback: (ev: AutorouterCompleteEvent) => void): void
   on(event: "error", callback: (ev: AutorouterErrorEvent) => void): void
+  on(event: "warning", callback: (ev: AutorouterWarningEvent) => void): void
   on(event: "progress", callback: (ev: AutorouterProgressEvent) => void): void
   on(
-    event: "complete" | "error" | "progress",
+    event: "complete" | "error" | "progress" | "warning",
     callback: (ev: any) => void,
   ): void {
     if (event === "complete") {
@@ -339,6 +343,8 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
       this.eventHandlers.error.push(
         callback as (ev: AutorouterErrorEvent) => void,
       )
+    } else if (event === "warning") {
+      this.eventHandlers.warning.push(callback)
     } else if (event === "progress") {
       this.eventHandlers.progress.push(
         callback as (ev: AutorouterProgressEvent) => void,
@@ -358,6 +364,8 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
       for (const handler of this.eventHandlers.error) {
         handler(event as AutorouterErrorEvent)
       }
+    } else if (event.type === "warning") {
+      for (const handler of this.eventHandlers.warning) handler(event)
     } else if (event.type === "progress") {
       for (const handler of this.eventHandlers.progress) {
         handler(event as AutorouterProgressEvent)

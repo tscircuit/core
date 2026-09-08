@@ -1,5 +1,6 @@
 import type { RenderPhase } from "lib/components/base-components/Renderable"
 import type { SOLVERS } from "lib/solvers"
+import type { AutorouterWarningEvent } from "lib/utils/autorouting/GenericLocalAutorouter"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 
 export type RootCircuitEventName =
@@ -13,6 +14,7 @@ export type RootCircuitEventName =
   | "autorouting:start"
   | "autorouting:end"
   | "autorouting:error"
+  | "autorouting:warning"
   | "autorouting:progress"
   | "packing:start"
   | "packing:end"
@@ -66,6 +68,16 @@ export interface AutoroutingErrorEvent extends AutoroutingExecutionMetadata {
   error?: { message: string; stack?: string }
   simpleRouteJson?: SimpleRouteJson
   debugGraphics?: any
+}
+
+export interface AutoroutingWarningEvent extends AutoroutingExecutionMetadata {
+  type: "autorouting:warning"
+  subcircuit_id: string
+  componentDisplayName: string
+  phaseName?: string
+  phaseStageIndex?: number
+  phaseStageCount?: number
+  warning: AutorouterWarningEvent
 }
 
 export interface AutoroutingProgressEvent extends AutoroutingExecutionMetadata {

@@ -1585,6 +1585,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         simpleRouteJson,
       })
       let autorouter: GenericLocalAutorouter | undefined
+      let hasAutoroutingWarnings = false
 
       try {
         let traces: SimplifiedPcbTrace[]
@@ -1638,6 +1639,32 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
               })
             },
           )
+
+          activeAutorouter.on("warning", (event) => {
+            hasAutoroutingWarnings = true
+            db.pcb_autorouter_warning.insert({
+              warning_type: "pcb_autorouter_warning",
+              message: event.message,
+              connection_name: event.connection_name,
+              pcb_port_ids: event.pcb_port_ids,
+              center: event.center,
+              subcircuit_id: this.subcircuit_id!,
+            })
+            this.root?.emit("autorouting:warning", {
+              type: "autorouting:warning",
+              subcircuit_id: this.subcircuit_id,
+              componentDisplayName: this.getString(),
+              ...(routingPhasePlan.phaseName !== undefined
+                ? {
+                    phaseName: routingPhasePlan.phaseName,
+                    phaseStageIndex,
+                    phaseStageCount,
+                  }
+                : {}),
+              ...autoroutingMetadata,
+              warning: event,
+            })
+          })
 
           activeAutorouter.on("progress", (event) => {
             this.root?.emit("autorouting:progress", {
@@ -1730,7 +1757,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           ? outputSimpleRouteJson
           : undefined
 
-        if (!cachedResult && cacheKey) {
+        // The trace cache does not retain warnings. Re-run these phases so a
+        // cache hit cannot silently drop a recoverable routing diagnostic.
+        if (!cachedResult && cacheKey && !hasAutoroutingWarnings) {
           await cacheLocalAutoroutingPhaseResult({
             cacheEngine,
             cacheKey,

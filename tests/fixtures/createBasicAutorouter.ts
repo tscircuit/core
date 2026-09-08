@@ -2,6 +2,7 @@ import type {
   AutorouterCompleteEvent,
   AutorouterErrorEvent,
   AutorouterProgressEvent,
+  AutorouterWarningEvent,
   GenericLocalAutorouter,
 } from "../../lib/utils/autorouting/GenericLocalAutorouter"
 import type {
@@ -17,6 +18,7 @@ import type {
  */
 export function createBasicAutorouter(
   routeGeneratorFn: (input: SimpleRouteJson) => Promise<SimplifiedPcbTrace[]>,
+  warningGeneratorFn?: (input: SimpleRouteJson) => AutorouterWarningEvent[],
 ) {
   return async (
     simpleRouteJson: SimpleRouteJson,
@@ -26,6 +28,7 @@ export function createBasicAutorouter(
       complete: [] as Array<(ev: AutorouterCompleteEvent) => void>,
       error: [] as Array<(ev: AutorouterErrorEvent) => void>,
       progress: [] as Array<(ev: AutorouterProgressEvent) => void>,
+      warning: [] as Array<(ev: AutorouterWarningEvent) => void>,
     }
 
     // Create the autorouter instance
@@ -40,6 +43,10 @@ export function createBasicAutorouter(
         // Generate traces using the provided function
         try {
           const traces = await routeGeneratorFn(this.input)
+
+          for (const warning of warningGeneratorFn?.(this.input) ?? []) {
+            for (const handler of eventHandlers.warning) handler(warning)
+          }
 
           // Emit a progress event
           for (const handler of eventHandlers.progress) {
@@ -77,7 +84,10 @@ export function createBasicAutorouter(
         this.isRouting = false
       },
 
-      on(event: "complete" | "error" | "progress", callback: any): void {
+      on(
+        event: "complete" | "error" | "progress" | "warning",
+        callback: any,
+      ): void {
         if (event === "complete") {
           eventHandlers.complete.push(
             callback as (ev: AutorouterCompleteEvent) => void,
@@ -86,6 +96,8 @@ export function createBasicAutorouter(
           eventHandlers.error.push(
             callback as (ev: AutorouterErrorEvent) => void,
           )
+        } else if (event === "warning") {
+          eventHandlers.warning.push(callback)
         } else if (event === "progress") {
           eventHandlers.progress.push(
             callback as (ev: AutorouterProgressEvent) => void,

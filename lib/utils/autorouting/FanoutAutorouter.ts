@@ -19,6 +19,7 @@ import type {
   AutorouterErrorEvent,
   AutorouterEvent,
   AutorouterProgressEvent,
+  AutorouterWarningEvent,
   GenericLocalAutorouter,
 } from "./GenericLocalAutorouter"
 import type {
@@ -377,10 +378,12 @@ export class FanoutAutorouter implements GenericLocalAutorouter {
     complete: Array<(event: AutorouterCompleteEvent) => void>
     error: Array<(event: AutorouterErrorEvent) => void>
     progress: Array<(event: AutorouterProgressEvent) => void>
+    warning: Array<(event: AutorouterWarningEvent) => void>
   } = {
     complete: [],
     error: [],
     progress: [],
+    warning: [],
   }
 
   constructor(
@@ -607,12 +610,13 @@ export class FanoutAutorouter implements GenericLocalAutorouter {
     callback: (event: AutorouterCompleteEvent) => void,
   ): void
   on(event: "error", callback: (event: AutorouterErrorEvent) => void): void
+  on(event: "warning", callback: (event: AutorouterWarningEvent) => void): void
   on(
     event: "progress",
     callback: (event: AutorouterProgressEvent) => void,
   ): void
   on(
-    event: "complete" | "error" | "progress",
+    event: "complete" | "error" | "progress" | "warning",
     callback: (event: any) => void,
   ): void {
     if (event === "complete") {
@@ -623,6 +627,8 @@ export class FanoutAutorouter implements GenericLocalAutorouter {
       this.eventHandlers.error.push(
         callback as (event: AutorouterErrorEvent) => void,
       )
+    } else if (event === "warning") {
+      this.eventHandlers.warning.push(callback)
     } else {
       this.eventHandlers.progress.push(
         callback as (event: AutorouterProgressEvent) => void,
@@ -635,6 +641,8 @@ export class FanoutAutorouter implements GenericLocalAutorouter {
       for (const handler of this.eventHandlers.complete) handler(event)
     } else if (event.type === "error") {
       for (const handler of this.eventHandlers.error) handler(event)
+    } else if (event.type === "warning") {
+      for (const handler of this.eventHandlers.warning) handler(event)
     } else {
       for (const handler of this.eventHandlers.progress) handler(event)
     }
