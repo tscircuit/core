@@ -829,10 +829,32 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     return false
   }
 
+  /**
+   * Build Simple Route JSON while the source component tree is still available.
+   * Remote raw-Circuit-JSON payloads are assembled during PcbTraceRender, before
+   * PcbCopperPourRender, so unbroken-pour intent only exists on the component.
+   */
+  _buildRemoteAutoroutingSimpleRouteJson(
+    autorouterConfig: AutorouterConfig,
+  ): SimpleRouteJson {
+    const props = this._parsedProps as SubcircuitGroupProps
+    const preferredTraceWidth =
+      props.defaultTraceWidth ?? props.nominalTraceWidth
+    const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
+      db: this.root!.db,
+      minTraceWidth: Number(props.minTraceWidth ?? 0.15),
+      nominalTraceWidth:
+        preferredTraceWidth != null ? Number(preferredTraceWidth) : undefined,
+      subcircuit_id: this.subcircuit_id,
+      subcircuitComponent: this,
+    })
+    simpleRouteJson.allowViaInPad = autorouterConfig.allowViaInPad
+    return simpleRouteJson
+  }
+
   async _runEffectMakeHttpAutoroutingRequest() {
     const { db } = this.root!
     const debug = Debug("tscircuit:core:_runEffectMakeHttpAutoroutingRequest")
-    const props = this._parsedProps as SubcircuitGroupProps
 
     const autorouterConfig = this._getAutorouterConfig()
 
@@ -858,49 +880,26 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       },
     )
 
-    if (serverMode === "solve-endpoint") {
-      // Legacy solve endpoint mode
-      if (this.props.autorouter?.inputFormat === "simplified") {
-        const preferredTraceWidth =
-          props.defaultTraceWidth ?? props.nominalTraceWidth
-        const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
-          db,
-          minTraceWidth: Number(props.minTraceWidth ?? 0.15),
-          nominalTraceWidth:
-            preferredTraceWidth != null
-              ? Number(preferredTraceWidth)
-              : undefined,
-          subcircuit_id: this.subcircuit_id,
-          subcircuitComponent: this,
-        })
-        simpleRouteJson.allowViaInPad = autorouterConfig.allowViaInPad
+    const simpleRouteJson =
+      this._buildRemoteAutoroutingSimpleRouteJson(autorouterConfig)
 
-        const { autorouting_result } = await fetchWithDebug(
-          `${serverUrl}/autorouting/solve`,
-          {
-            method: "POST",
-            body: JSON.stringify({
-              input_simple_route_json: simpleRouteJson,
-              subcircuit_id: this.subcircuit_id!,
-            }),
-            headers: {
-              "Content-Type": "application/json",
-            },
-          },
-        ).then((r) => r.json())
-        this._asyncAutoroutingResult = autorouting_result
-        this._markDirty("PcbTraceRender")
-        return
+    if (serverMode === "solve-endpoint") {
+      // Legacy solve endpoint mode. Always send SRJ built from the live
+      // component tree so unbroken copper-pour obstacles survive. Keep sending
+      // Circuit JSON for servers that still consume the raw-CJ path.
+      const solveBody: Record<string, unknown> = {
+        input_simple_route_json: simpleRouteJson,
+        subcircuit_id: this.subcircuit_id!,
+      }
+      if (this.props.autorouter?.inputFormat !== "simplified") {
+        solveBody.input_circuit_json = pcbAndSourceCircuitJson
       }
 
       const { autorouting_result } = await fetchWithDebug(
         `${serverUrl}/autorouting/solve`,
         {
           method: "POST",
-          body: JSON.stringify({
-            input_circuit_json: pcbAndSourceCircuitJson,
-            subcircuit_id: this.subcircuit_id!,
-          }),
+          body: JSON.stringify(solveBody),
           headers: {
             "Content-Type": "application/json",
           },
@@ -917,6 +916,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         method: "POST",
         body: JSON.stringify({
           input_circuit_json: pcbAndSourceCircuitJson,
+          input_simple_route_json: simpleRouteJson,
           provider: "freerouting",
           autostart: true,
           display_name: this.root?.name,
