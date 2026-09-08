@@ -588,8 +588,8 @@ export class Board
       ...(props.bottomSilkscreenColor !== undefined && {
         bottom_silkscreen_color: props.bottomSilkscreenColor,
       }),
-      ...(props.doubleSidedAssembly !== undefined && {
-        double_sided_assembly: props.doubleSidedAssembly,
+      ...(props.doubleSidedAssembly === true && {
+        double_sided_assembly: true,
       }),
 
       min_trace_width:
