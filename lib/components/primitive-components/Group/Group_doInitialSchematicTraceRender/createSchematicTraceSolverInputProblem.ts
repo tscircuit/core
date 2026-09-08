@@ -16,7 +16,6 @@ import { getSchematicNetLabelTextWidth } from "lib/utils/schematic/computeSchema
 import { convertFacingDirectionToElbowDirection } from "lib/utils/schematic/convertFacingDirectionToElbowDirection"
 import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
 import type { NetLabel } from "../../NetLabel"
-import { Port } from "../../Port"
 import { Group } from "../Group"
 import { applyInlineNetLabelEligibility } from "./applyInlineNetLabelEligibility"
 import { createCanonicalSchematicNetLabelTextResolver } from "./createCanonicalSchematicNetLabelTextResolver"
