@@ -774,7 +774,13 @@ function convertTreeToMatchPackInputProblem(
       }
     }
 
-    if (hasNetConnections) {
+    // Preserve connectivity through ports outside this layout section.
+    const hasIndirectConnections = pins.some((pin1) =>
+      pins.some(
+        (pin2) => pin1 !== pin2 && !problem.pinStrongConnMap[`${pin1}-${pin2}`],
+      ),
+    )
+    if (hasNetConnections || hasIndirectConnections) {
       const source_net = db.source_net.getWhere({
         subcircuit_connectivity_map_key: connectivityKey,
       })
