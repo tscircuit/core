@@ -4,17 +4,19 @@ import {
   type PcbTraceRoutePoint,
   type PcbVia,
 } from "circuit-json"
-import { getTraceLength } from "./trace-utils/compute-trace-length"
+import { jlcMinTolerances } from "@tscircuit/jlcpcb-manufacturing-specs"
+import { TraceConnectionError } from "lib/errors"
+import { getHighlightColorForRoutedTrace } from "lib/utils/get-highlight-color-for-routed-trace"
+import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
+import type { ManualPcbPathPoint } from "lib/utils/pcbTraceRouteToPcbPath"
+import { applyToPoint, identity } from "transformation-matrix"
+import { getViaDiameterDefaults } from "../../../utils/pcbStyle/getViaDiameterDefaults"
+import { clipTraceEndAtPad } from "../../../utils/trace-clipping/clipTraceEndAtPad"
+import type { Net } from "../Net"
 import type { Port } from "../Port"
 import type { Trace } from "./Trace"
-import { applyToPoint, identity } from "transformation-matrix"
-import { clipTraceEndAtPad } from "../../../utils/trace-clipping/clipTraceEndAtPad"
-import { getViaDiameterDefaults } from "../../../utils/pcbStyle/getViaDiameterDefaults"
-import type { ManualPcbPathPoint } from "lib/utils/pcbTraceRouteToPcbPath"
-import { TraceConnectionError } from "lib/errors"
 import { getPcbSelectorErrorForTracePort } from "./getPcbSelectorErrorForTracePort"
-import { jlcMinTolerances } from "@tscircuit/jlcpcb-manufacturing-specs"
-import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
+import { getTraceLength } from "./trace-utils/compute-trace-length"
 
 const findInflatedPcbViaForPoint = (
   vias: PcbVia[] | undefined,
@@ -49,6 +51,14 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
   const { db } = trace.root!
   const { _parsedProps: props } = trace
   const subcircuit = trace.getSubcircuit()
+  const highlightColor = getHighlightColorForRoutedTrace({
+    db,
+    nets: (subcircuit?.selectAll<Net>("net") ??
+      trace.root?.selectAll("net") ??
+      []) as Net[],
+    traces: [trace],
+    sourceTraceId: trace.source_trace_id,
+  })
 
   const hasPcbPath = props.pcbPath !== undefined
   const wantsStraightLine = Boolean(props.pcbStraightLine)
@@ -172,6 +182,7 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
         source_trace_id: trace.source_trace_id!,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: trace.getGroup()?.pcb_group_id ?? undefined,
+        ...(highlightColor ? { highlight_color: highlightColor } : {}),
       })
       const pcbStyle = trace.getInheritedMergedProperty("pcbStyle")
       const { holeDiameter, padDiameter } = getViaDiameterDefaults(pcbStyle)
@@ -305,6 +316,7 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       pcb_group_id: trace.getGroup()?.pcb_group_id ?? undefined,
       trace_length: traceLength,
+      ...(highlightColor ? { highlight_color: highlightColor } : {}),
     })
     trace._portsRoutedOnPcb = ports
     trace.pcb_trace_id = pcb_trace.pcb_trace_id
@@ -443,6 +455,7 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
     subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
     pcb_group_id: trace.getGroup()?.pcb_group_id ?? undefined,
     trace_length: traceLength,
+    ...(highlightColor ? { highlight_color: highlightColor } : {}),
   })
   const subcircuitConnectivityMapKey =
     trace.subcircuit_connectivity_map_key ??

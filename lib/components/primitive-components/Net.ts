@@ -1,14 +1,14 @@
+import { autoroute } from "@tscircuit/infgrid-ijump-astar"
 import { netProps } from "@tscircuit/props"
-import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
-import type { Port } from "./Port"
-import type { Trace } from "./Trace/Trace"
-import { pairs } from "lib/utils/pairs"
+import type { AnyCircuitElement, SourceTrace } from "circuit-json"
 import {
   GROUND_NET_REGEX,
   POWER_NET_REGEX,
 } from "lib/utils/gnd-power-net-regex"
-import type { AnyCircuitElement, SourceTrace } from "circuit-json"
-import { autoroute } from "@tscircuit/infgrid-ijump-astar"
+import { pairs } from "lib/utils/pairs"
+import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
+import type { Port } from "./Port"
+import type { Trace } from "./Trace/Trace"
 
 export class Net extends PrimitiveComponent<typeof netProps> {
   source_net_id?: string
@@ -221,7 +221,12 @@ export class Net extends PrimitiveComponent<typeof netProps> {
         return
       }
 
-      db.pcb_trace.insert(trace as any)
+      db.pcb_trace.insert({
+        ...(trace as any),
+        ...(this._parsedProps.highlightColor
+          ? { highlight_color: this._parsedProps.highlightColor }
+          : {}),
+      })
     }
   }
 
