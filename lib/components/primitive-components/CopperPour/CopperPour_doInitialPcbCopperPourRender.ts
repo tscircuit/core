@@ -2,7 +2,7 @@ import {
   CopperPourPipelineSolver,
   convertCircuitJsonToInputProblem,
   initializeManifoldGeometry,
-} from "@tscircuit/copper-pour-solver"
+} from "@tscircuit/copper-pour-solver/lib"
 import type { ISubcircuit } from "../Group/Subcircuit/ISubcircuit"
 import type { Net } from "../Net"
 import type { CopperPour } from "./CopperPour"

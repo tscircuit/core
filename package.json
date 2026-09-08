@@ -39,7 +39,7 @@
     "@tscircuit/checks": "^0.0.184",
     "@tscircuit/circuit-json-util": "^0.0.106",
     "@tscircuit/common": "^0.0.20",
-    "@tscircuit/copper-pour-solver": "^0.0.52",
+    "@tscircuit/copper-pour-solver": "github:tscircuit/copper-pour-solver#df7d2a1ada6714950aee389ed07a9e522000b4f4",
     "@tscircuit/create-fdm-enclosure": "0.0.4",
     "@tscircuit/fanout-solver": "0.0.66",
     "@tscircuit/footprinter": "^0.0.426",

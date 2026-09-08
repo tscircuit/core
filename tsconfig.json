@@ -11,6 +11,8 @@
     "baseUrl": ".",
 
     "paths": {
+      // The Git-pinned copper-pour solver uses this exact alias in type imports.
+      "lib/types": ["node_modules/@tscircuit/copper-pour-solver/lib/types.ts"],
       "lib/*": ["lib/*"]
     },
 
