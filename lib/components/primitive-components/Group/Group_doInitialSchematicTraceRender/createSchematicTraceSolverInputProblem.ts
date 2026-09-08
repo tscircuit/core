@@ -811,6 +811,22 @@ export function createSchematicTraceSolverInputProblem(
       for (let i = 0; i < connected.length - 1; i++) {
         const a = connected[i]
         const b = connected[i + 1]
+        const portA = componentPortBySchematicPortId.get(a)
+        const portB = componentPortBySchematicPortId.get(b)
+        // Internally connected physical pins can share one symbol terminal.
+        // Their source trace remains electrically meaningful, but routing it
+        // would produce a zero-length wire and incorrectly suppress the
+        // terminal's net label as though it already had a displayed connection.
+        if (
+          portA &&
+          portB &&
+          db.schematic_port.get(a)?.schematic_sheet_id ===
+            db.schematic_port.get(b)?.schematic_sheet_id &&
+          getPortForSchematicSymbolPort(portA) ===
+            getPortForSchematicSymbolPort(portB)
+        ) {
+          continue
+        }
         const pairKey = [a, b].sort().join("::")
         if (connectedPairKeys.has(pairKey)) continue
         connectedPairKeys.add(pairKey)
