@@ -1,5 +1,6 @@
 import { expect } from "bun:test"
 import fs from "node:fs"
+import { gzipSync } from "node:zlib"
 import type { CircuitJson, PcbTraceRoutePoint } from "circuit-json"
 import { convertCircuitJsonToPcbSvg } from "circuit-to-svg"
 import { KicadToCircuitJsonConverter } from "kicad-to-circuit-json"
@@ -347,5 +348,14 @@ export async function expectArduinoUnoRerouteRegion({
     importMetaPath,
     snapshotName,
   })
+  console.log(
+    "ARDUINO_SNAPSHOT",
+    importMetaPath,
+    gzipSync(
+      convertCircuitJsonToPcbSvg(afterRerouteCircuit.getCircuitJson(), {
+        showDebugObjects: true,
+      }),
+    ).toString("base64"),
+  )
   expect(afterRerouteCircuit).toMatchPcbSnapshot(importMetaPath)
 }
