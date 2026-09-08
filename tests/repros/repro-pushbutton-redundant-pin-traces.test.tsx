@@ -1,8 +1,15 @@
 import { expect, test } from "bun:test"
+import type { InputProblem } from "@tscircuit/schematic-trace-solver"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("redundant pin-to-pin traces do not hide a pushbutton's ground connection", () => {
   const { circuit } = getTestFixture()
+  let solverInput: InputProblem | undefined
+  circuit.on("solver:started", (event) => {
+    if (event.solverName === "SchematicTracePipelineSolver") {
+      solverInput = event.solverParams as InputProblem
+    }
+  })
   circuit.add(
     <board>
       <schematictext
@@ -28,12 +35,37 @@ test("redundant pin-to-pin traces do not hide a pushbutton's ground connection",
   circuit.render()
 
   expect(circuit.db.source_trace.list()).toHaveLength(4)
+  expect(solverInput!.chips[0].pins).toHaveLength(2)
+  expect(solverInput!.directConnections).toHaveLength(0)
+  expect(circuit.db.schematic_port.list()).toHaveLength(4)
+  expect(
+    circuit.db.schematic_port.list().every((port) => port.is_connected),
+  ).toBe(true)
   expect(
     circuit.db.schematic_net_label
       .list()
       .map((label) => label.text)
       .sort(),
-  ).toEqual(["BOOT", "GND"])
+  ).toEqual(["GND"])
+  expect(
+    circuit.db.schematic_text
+      .list()
+      .filter((text) => text.source_trace_id)
+      .map((text) => text.text),
+  ).toEqual(["BOOT"])
+  const schematicPorts = circuit.db.schematic_port.list()
+  expect(schematicPorts[0].center).toEqual(schematicPorts[1].center)
+  expect(schematicPorts[2].center).toEqual(schematicPorts[3].center)
+  expect(schematicPorts[0].center).not.toEqual(schematicPorts[2].center)
+  expect(schematicPorts.map((port) => port.facing_direction)).toEqual([
+    "left",
+    "left",
+    "right",
+    "right",
+  ])
+  expect(circuit.db.schematic_component.list()[0].symbol_name).toBe(
+    "push_button_normally_open_momentary_right",
+  )
   // Each displayed terminal must have a visible wire, not just a zero-length
   // connection between two physical pads occupying that terminal.
   for (const pinNumber of [1, 3]) {
