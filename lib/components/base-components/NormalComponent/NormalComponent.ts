@@ -132,6 +132,19 @@ export type PortMap<T extends string> = {
  * }
  */
 
+/**
+ * circuit-JSON field name -> the prop the user wrote, where the two differ by
+ * more than snake_case/camelCase.
+ */
+const NAN_CHECKED_SOURCE_FIELD_TO_PROP: Record<string, string> = {
+  current_rating_amps: "currentRating",
+  voltage_rating_volts: "voltageRating",
+  max_voltage_rating: "maxVoltageRating",
+  max_current_rating: "maxCurrentRating",
+  load_capacitance: "loadCapacitance",
+  max_resistance: "maxResistance",
+}
+
 export class NormalComponent<
     ZodProps extends z.ZodType = any,
     PortNames extends string = never,
@@ -727,12 +740,41 @@ export class NormalComponent<
   }
 
   /**
+   * Reports props that parsed into `NaN`.
+   *
+   * Unit-bearing props (`resistance`, `capacitance`, ...) are declared as a
+   * zod transform that accepts a string, so a typo like `resistance="abc"`
+   * passes validation and becomes `NaN`. Nothing downstream checked for that,
+   * so it silently reached circuit JSON and rendered as "NaNpΩ".
+   */
+  _reportNaNSourceValues(): void {
+    if (!this.source_component_id) return
+    const { db } = this.root!
+    const sourceComponent = db.source_component.get(this.source_component_id)
+    if (!sourceComponent) return
+
+    for (const [key, value] of Object.entries(sourceComponent)) {
+      if (typeof value !== "number" || !Number.isNaN(value)) continue
+      const propName =
+        NAN_CHECKED_SOURCE_FIELD_TO_PROP[key] ??
+        key.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase())
+      const rawValue = (this.props as Record<string, unknown>)?.[propName]
+      this._reportInvalidComponentPropertyError(
+        propName,
+        `Invalid ${propName} value for ${this.componentName} "${this.name}": ${JSON.stringify(rawValue)} could not be parsed as a number.`,
+      )
+    }
+  }
+
+  /**
    * After ports have their source_port_id assigned, create
    * source_component_internal_connection records so that the connectivity
    * map (and therefore DRC) knows which pins are internally connected.
    */
   doInitialSourceParentAttachment(): void {
     const { db } = this.root!
+
+    this._reportNaNSourceValues()
 
     const internallyConnectedSourcePortIds = this._getInternallyConnectedPins()
       .map((ports) =>
