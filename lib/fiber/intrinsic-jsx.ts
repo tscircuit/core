@@ -38,6 +38,7 @@ export interface TscircuitElements {
   schematicrow: Props.SchematicRowProps
   schematiccell: Props.SchematicCellProps
   smtpad: Props.SmtPadProps
+  solderpaste: Props.SolderPasteProps
   platedhole: Props.PlatedHoleProps
   keepout: Props.PcbKeepoutProps
   hole: Props.HoleProps
