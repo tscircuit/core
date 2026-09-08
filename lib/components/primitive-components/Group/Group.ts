@@ -33,6 +33,7 @@ import { AutorouterError } from "lib/errors/AutorouterError"
 import type { AutorouterOptions } from "lib/utils/autorouting/CapacityMeshAutorouter"
 import { FanoutAutorouter } from "lib/utils/autorouting/FanoutAutorouter"
 import type { GenericLocalAutorouter } from "lib/utils/autorouting/GenericLocalAutorouter"
+import { abortableDelay } from "lib/utils/abortable-delay"
 import type {
   SimpleRouteBounds,
   SimpleRouteJson,
@@ -831,6 +832,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   async _runEffectMakeHttpAutoroutingRequest() {
     const { db } = this.root!
+    const signal = this.root!._renderAbortSignal
+    signal.throwIfAborted()
     const debug = Debug("tscircuit:core:_runEffectMakeHttpAutoroutingRequest")
     const props = this._parsedProps as SubcircuitGroupProps
 
@@ -846,7 +849,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         // @ts-ignore
         options.headers["Tscircuit-Core-Version"] = this.root?.getCoreVersion()!
       }
-      return fetch(url, options)
+      return fetch(url, { ...options, signal })
     }
 
     // Only include source and pcb elements
@@ -888,6 +891,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             },
           },
         ).then((r) => r.json())
+        signal.throwIfAborted()
         this._asyncAutoroutingResult = autorouting_result
         this._markDirty("PcbTraceRender")
         return
@@ -906,6 +910,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           },
         },
       ).then((r) => r.json())
+      signal.throwIfAborted()
       this._asyncAutoroutingResult = autorouting_result
       this._markDirty("PcbTraceRender")
       return
@@ -931,6 +936,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
     // Poll until job is complete
     while (true) {
+      signal.throwIfAborted()
       const { autorouting_job: job } = (await fetchWithDebug(
         `${serverUrl}/autorouting/jobs/get`,
         {
@@ -954,6 +960,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           finished_at?: string
         }
       }
+      signal.throwIfAborted()
       if (job.is_finished) {
         const { autorouting_job_output } = await fetchWithDebug(
           `${serverUrl}/autorouting/jobs/get_output`,
@@ -966,6 +973,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           },
         ).then((r) => r.json())
 
+        signal.throwIfAborted()
         this._asyncAutoroutingResult = {
           output_pcb_traces: autorouting_job_output.output_pcb_traces,
         }
@@ -986,7 +994,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       }
 
       // Wait before polling again
-      await new Promise((resolve) => setTimeout(resolve, 100))
+      await abortableDelay(100, signal)
     }
   }
 
@@ -995,6 +1003,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
    */
   async _runLocalAutorouting() {
     const { db } = this.root!
+    const signal = this.root!._renderAbortSignal
+    signal.throwIfAborted()
     const props = this._parsedProps as SubcircuitGroupProps
     const debug = Debug("tscircuit:core:_runLocalAutorouting")
     debug(`[${this.getString()}] starting local autorouting`)
@@ -1300,6 +1310,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         phaseStageCount,
       },
     ] of routingStages.entries()) {
+      signal.throwIfAborted()
       if (!usesPreviousStageOutput) {
         previousStageOutputSimpleRouteJson = undefined
       }
@@ -1546,6 +1557,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       const cachedResult = cacheKey
         ? await getCachedLocalAutoroutingPhaseResult({ cacheEngine, cacheKey })
         : null
+      signal.throwIfAborted()
       const cacheDisabledReason = phaseAutorouterConfig.algorithmFn
         ? "custom_algorithm"
         : !localAutorouterStrategy.cacheable
@@ -1585,8 +1597,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         simpleRouteJson,
       })
       let autorouter: GenericLocalAutorouter | undefined
+      let removeAbortListener: (() => void) | undefined
 
       try {
+        signal.throwIfAborted()
         let traces: SimplifiedPcbTrace[]
         if (cachedResult) {
           debug(`[${this.getString()}] using cached local autorouting result`)
@@ -1622,15 +1636,25 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           if (!autorouter) {
             throw new Error("Failed to create local autorouter")
           }
+          signal.throwIfAborted()
           const activeAutorouter = autorouter
           const routingPromise = new Promise<SimplifiedPcbTrace[]>(
             (resolve, reject) => {
+              const onAbort = () => {
+                activeAutorouter.stop()
+                reject(signal.reason)
+              }
+              signal.addEventListener("abort", onAbort, { once: true })
+              removeAbortListener = () =>
+                signal.removeEventListener("abort", onAbort)
               activeAutorouter.on("complete", (event) => {
+                if (signal.aborted) return
                 debug(`[${this.getString()}] local autorouting complete`)
                 resolve(event.traces)
               })
 
               activeAutorouter.on("error", (event) => {
+                if (signal.aborted) return
                 debug(
                   `[${this.getString()}] local autorouting error: ${event.error.message}`,
                 )
@@ -1640,6 +1664,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           )
 
           activeAutorouter.on("progress", (event) => {
+            if (signal.aborted) return
             this.root?.emit("autorouting:progress", {
               subcircuit_id: this.subcircuit_id,
               componentDisplayName: this.getString(),
@@ -1659,6 +1684,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           activeAutorouter.start()
           traces = await routingPromise
         }
+        signal.throwIfAborted()
 
         let transformedSimpleRouteJson =
           autorouter?.getOutputSimpleRouteJson?.()
@@ -1740,6 +1766,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             },
           })
         }
+        signal.throwIfAborted()
 
         this.root?.emit("autorouting:end", {
           type: "autorouting:end",
@@ -1755,6 +1782,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           ...autoroutingMetadata,
           simpleRouteJson: outputSimpleRouteJson,
         })
+        signal.throwIfAborted()
 
         // Create source_traces for interconnect ports that were connected via
         // off-board paths during routing. This allows DRC to understand that
@@ -1822,6 +1850,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           )
         }
       } catch (error) {
+        if (signal.aborted) throw signal.reason
         const { db } = this.root!
         // Record the error
         db.pcb_autorouting_error.insert({
@@ -1850,11 +1879,13 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
         throw error
       } finally {
+        removeAbortListener?.()
         // Ensure the autorouter is stopped
         autorouter?.stop()
       }
     }
 
+    signal.throwIfAborted()
     // Store the result
     this._asyncAutoroutingResult = {
       output_pcb_traces: outputTraces as any,

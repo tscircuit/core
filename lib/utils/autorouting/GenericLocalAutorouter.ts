@@ -29,7 +29,13 @@ export interface GenericLocalAutorouter {
   input: SimpleRouteJson
   isRouting: boolean
 
+  /** Start cooperative routing, yielding between work slices for progress and cancellation. */
   start(): void
+  /**
+   * Cancel the current run and release scheduled work. After stop returns, the
+   * canceled run must not emit progress, complete, or error events. A synchronous
+   * solver step already in progress can only be stopped when that step returns.
+   */
   stop(): void
 
   on(event: "complete", callback: (ev: AutorouterCompleteEvent) => void): void

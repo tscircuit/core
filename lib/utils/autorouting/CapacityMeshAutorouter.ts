@@ -140,9 +140,11 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
     error: [],
     progress: [],
   }
-  private cycleCount = 0
+  private stepCount = 0
+  private runId = 0
+  private cycleInProgress = false
   private stepDelay: number
-  private timeoutId?: number
+  private timeoutId?: ReturnType<typeof setTimeout>
 
   constructor(input: SimpleRouteJson, options: AutorouterOptions = {}) {
     this.input = input
@@ -203,10 +205,19 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
     if (this.isRouting) return
 
     this.isRouting = true
-    this.cycleCount = 0
+    this.stepCount = 0
+    this.runId++
 
-    // Start the routing process with steps
-    void this.runCycleAndQueueNextCycle()
+    // A restarted run must wait for an outstanding asynchronous step to settle.
+    if (!this.cycleInProgress) this.queueNextCycle(0)
+  }
+
+  private queueNextCycle(delay: number): void {
+    const runId = this.runId
+    this.timeoutId = setTimeout(() => {
+      this.timeoutId = undefined
+      void this.runCycleAndQueueNextCycle(runId)
+    }, delay)
   }
 
   private async stepSolver(): Promise<void> {
@@ -224,54 +235,59 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
   /**
    * Execute the next routing step and schedule the following one if needed
    */
-  private async runCycleAndQueueNextCycle(): Promise<void> {
-    if (!this.isRouting) return
+  private async runCycleAndQueueNextCycle(runId: number): Promise<void> {
+    if (!this.isRouting || runId !== this.runId) return
 
+    this.cycleInProgress = true
     try {
       // If already solved or failed, complete the routing
       if (this.solver.solved || this.solver.failed) {
-        if (this.solver.failed) {
-          this.emitEvent({
-            type: "error",
-            error: new AutorouterError(this.solver.error || "Routing failed"),
-          })
-        } else {
-          this.emitEvent({
-            type: "complete",
-            traces:
-              this.solver.getOutputSimplifiedPcbTraces() as SimplifiedPcbTrace[],
-          })
-        }
+        const event: AutorouterCompleteEvent | AutorouterErrorEvent = this
+          .solver.failed
+          ? {
+              type: "error",
+              error: new AutorouterError(this.solver.error || "Routing failed"),
+            }
+          : {
+              type: "complete",
+              traces:
+                this.solver.getOutputSimplifiedPcbTraces() as SimplifiedPcbTrace[],
+            }
         this.isRouting = false
+        this.emitEvent(event)
         return
       }
 
-      // Execute one step of the solver
-      // Execute for 10ms to allow the solver to make progress
+      // Yield between 250 ms slices. An individual step cannot be interrupted.
       const startTime = Date.now()
       const startIterations = this.solver.iterations
       while (
         Date.now() - startTime < 250 &&
+        this.isRouting &&
+        runId === this.runId &&
         !this.solver.failed &&
         !this.solver.solved
       ) {
         await this.stepSolver()
+        if (!this.isRouting || runId !== this.runId) return
+        this.stepCount++
       }
+      if (!this.isRouting || runId !== this.runId) return
+
       const iterationsPerSecond =
         ((this.solver.iterations - startIterations) /
-          (Date.now() - startTime)) *
+          Math.max(1, Date.now() - startTime)) *
         1000
-      this.cycleCount++
 
       // Get visualization data if available
       const debugGraphics = this.solver?.preview() || undefined
 
       // Report progress
-      const progress = this.solver.progress
+      const progress = this.solver.solved ? 1 : this.solver.progress
 
       this.emitEvent({
         type: "progress",
-        steps: this.cycleCount,
+        steps: this.stepCount,
         iterationsPerSecond,
         progress,
         phase:
@@ -281,22 +297,11 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
               this.solver.getSolverName()),
         debugGraphics,
       })
-
-      // Schedule the next step
-      if (this.stepDelay > 0) {
-        this.timeoutId = setTimeout(
-          () => void this.runCycleAndQueueNextCycle(),
-          this.stepDelay,
-        ) as unknown as number
-      } else {
-        // Use setImmediate or setTimeout with 0 to prevent blocking the event loop
-        this.timeoutId = setTimeout(
-          () => void this.runCycleAndQueueNextCycle(),
-          0,
-        ) as unknown as number
-      }
     } catch (error) {
+      if (runId !== this.runId) return
+
       // Handle any errors during the step
+      this.isRouting = false
       this.emitEvent({
         type: "error",
         error:
@@ -304,7 +309,10 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
             ? new AutorouterError(error.message)
             : new AutorouterError(String(error)),
       })
-      this.isRouting = false
+    } finally {
+      this.cycleInProgress = false
+      // Progress and terminal listeners may stop or restart routing.
+      if (this.isRouting) this.queueNextCycle(this.stepDelay)
     }
   }
 
@@ -312,9 +320,8 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
    * Stop the routing process if it's in progress
    */
   stop(): void {
-    if (!this.isRouting) return
-
     this.isRouting = false
+    this.runId++
     if (this.timeoutId !== undefined) {
       clearTimeout(this.timeoutId)
       this.timeoutId = undefined

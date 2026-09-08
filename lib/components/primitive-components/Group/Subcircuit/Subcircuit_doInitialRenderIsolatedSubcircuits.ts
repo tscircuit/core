@@ -1,5 +1,6 @@
 import type { AnyCircuitElement } from "circuit-json"
 import { IsolatedCircuit } from "lib/IsolatedCircuit"
+import type { AutoroutingExecutionMetadata } from "lib/events"
 import type { ISubcircuit } from "./ISubcircuit"
 
 /**
@@ -48,8 +49,10 @@ export function Subcircuit_doInitialRenderIsolatedSubcircuits(
   subcircuit._normalComponentNameMap = null
 
   const parentRoot = subcircuit.root!
+  const signal = parentRoot._renderAbortSignal
 
   subcircuit._queueAsyncEffect("render-isolated-subcircuit", async () => {
+    signal.throwIfAborted()
     // Check cache again (might have been populated while waiting to execute)
     const cachedResult = cachedSubcircuits?.get(propHash)
     if (cachedResult) {
@@ -62,19 +65,24 @@ export function Subcircuit_doInitialRenderIsolatedSubcircuits(
     const pendingRenderPromise = pendingSubcircuitRenders?.get(propHash)
     if (pendingRenderPromise) {
       // Another subcircuit is already rendering - wait for it
-      subcircuit._isolatedCircuitJson = await pendingRenderPromise
+      const circuitJson = await pendingRenderPromise
+      signal.throwIfAborted()
+      subcircuit._isolatedCircuitJson = circuitJson
       return
     }
 
     // We're the first - create promise and register it
     let resolveRender!: (json: AnyCircuitElement[]) => void
-    let rejectRender!: (error: Error) => void
+    let rejectRender!: (error: unknown) => void
     const renderPromise = new Promise<AnyCircuitElement[]>(
       (resolve, reject) => {
         resolveRender = resolve
         rejectRender = reject
       },
     )
+    // The owning effect awaits the render below; the shared promise may have
+    // no duplicate subscribers when cancellation rejects it.
+    void renderPromise.catch(() => {})
     pendingSubcircuitRenders?.set(propHash, renderPromise)
 
     try {
@@ -88,12 +96,40 @@ export function Subcircuit_doInitialRenderIsolatedSubcircuits(
         pendingSubcircuitRenders,
       })
 
+      const forwardedListeners = [
+        "autorouting:start",
+        "autorouting:progress",
+        "autorouting:end",
+        "autorouting:error",
+        "solver:started",
+        "solver:ended",
+      ] as const
+      const removeForwardedListeners = forwardedListeners.map((eventName) => {
+        const listener = (event: AutoroutingExecutionMetadata) => {
+          if (signal.aborted) return
+          parentRoot.emit(eventName, {
+            ...event,
+            isolatedSubcircuitPath: [
+              subcircuit._renderId,
+              ...(event.isolatedSubcircuitPath ?? []),
+            ],
+          })
+        }
+        isolatedCircuit.on(eventName, listener)
+        return () => isolatedCircuit.removeListener(eventName, listener)
+      })
+
       for (const child of childrenToRender) {
         isolatedCircuit.add(child)
       }
 
       // Render until all async effects complete (including nested isolated subcircuits)
-      await isolatedCircuit.renderUntilSettled()
+      try {
+        await isolatedCircuit.renderUntilSettled({ signal })
+      } finally {
+        for (const removeListener of removeForwardedListeners) removeListener()
+      }
+      signal.throwIfAborted()
 
       const circuitJson = isolatedCircuit.getCircuitJson()
 
@@ -106,7 +142,7 @@ export function Subcircuit_doInitialRenderIsolatedSubcircuits(
       resolveRender(circuitJson)
     } catch (error) {
       // Reject so waiting subcircuits don't hang forever
-      rejectRender(error instanceof Error ? error : new Error(String(error)))
+      rejectRender(error)
       throw error
     } finally {
       // Clean up the pending render entry

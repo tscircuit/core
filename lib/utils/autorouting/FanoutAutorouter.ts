@@ -373,6 +373,7 @@ export class FanoutAutorouter implements GenericLocalAutorouter {
   isRouting = false
   private outputSimpleRouteJson?: SimpleRouteJson
   private startTimeoutId?: number
+  private runId = 0
   private eventHandlers: {
     complete: Array<(event: AutorouterCompleteEvent) => void>
     error: Array<(event: AutorouterErrorEvent) => void>
@@ -502,11 +503,7 @@ export class FanoutAutorouter implements GenericLocalAutorouter {
     )
   }
 
-  private solveFanout(): {
-    downstreamSimpleRouteJson: SimpleRouteJson
-    fanoutTraces: SimplifiedPcbTrace[]
-    debugGraphics: AutorouterProgressEvent["debugGraphics"]
-  } {
+  private createFanoutSolver(): FanoutSolver {
     const fanoutSolverOptions = this.getFanoutSolverOptions()
     const fanoutSolver = new FanoutSolver(
       this.input as unknown as ConstructorParameters<typeof FanoutSolver>[0],
@@ -523,7 +520,13 @@ export class FanoutAutorouter implements GenericLocalAutorouter {
       solverParams: solverConstructorArgs[0],
       solverConstructorArgs,
     })
-    fanoutSolver.solve()
+    return fanoutSolver
+  }
+
+  private getFanoutResult(fanoutSolver: FanoutSolver): {
+    downstreamSimpleRouteJson: SimpleRouteJson
+    fanoutTraces: SimplifiedPcbTrace[]
+  } {
     if (fanoutSolver.failed) {
       throw new Error(
         getFanoutSpaceErrorMessage({
@@ -532,8 +535,7 @@ export class FanoutAutorouter implements GenericLocalAutorouter {
           componentIds: new Set(
             fanoutSolver.preparedBuses.map((bus) => bus.componentId),
           ),
-          sharedBoundary:
-            this.options.fanoutBounds ?? fanoutSolverOptions.sharedBoundary,
+          sharedBoundary: this.options.fanoutBounds,
           componentNamesById: this.options.componentNamesById,
         }),
       )
@@ -550,30 +552,56 @@ export class FanoutAutorouter implements GenericLocalAutorouter {
         ),
       }),
       fanoutTraces,
-      debugGraphics: fanoutSolver.visualize(),
     }
   }
 
-  private startFanout(): void {
+  private runFanoutCycle(fanoutSolver: FanoutSolver, runId: number): void {
+    if (!this.isRouting || this.runId !== runId) return
     try {
-      const { downstreamSimpleRouteJson, fanoutTraces, debugGraphics } =
-        this.solveFanout()
-      if (!this.isRouting) return
-      this.outputSimpleRouteJson = downstreamSimpleRouteJson
-
+      const cycleStart = performance.now()
+      let cycleSteps = 0
+      // Yield between slices so timers, UI updates and cancellation can run.
+      // A synchronous solver step itself cannot be interrupted.
+      while (
+        !fanoutSolver.solved &&
+        !fanoutSolver.failed &&
+        this.isRouting &&
+        this.runId === runId &&
+        cycleSteps < 1000 &&
+        performance.now() - cycleStart < 250
+      ) {
+        fanoutSolver.step()
+        cycleSteps++
+      }
+      if (!this.isRouting || this.runId !== runId) return
+      if (fanoutSolver.failed) this.getFanoutResult(fanoutSolver)
       this.emitEvent({
         type: "progress",
-        steps: 1,
-        progress: 1,
+        steps: fanoutSolver.iterations,
+        progress: fanoutSolver.solved ? 1 : fanoutSolver.progress,
         phase: this.options.mode,
-        debugGraphics,
+        // Full visualizations rebuild the routing geometry and are expensive
+        // on dense boards. Use the solver's streaming preview between steps.
+        debugGraphics: fanoutSolver.solved
+          ? fanoutSolver.visualize()
+          : fanoutSolver.preview(),
       })
-      this.isRouting = false
-      this.emitEvent({
-        type: "complete",
-        traces: fanoutTraces,
-      })
+      // Progress handlers may stop or restart this router.
+      if (!this.isRouting || this.runId !== runId) return
+      if (fanoutSolver.solved) {
+        const { downstreamSimpleRouteJson, fanoutTraces } =
+          this.getFanoutResult(fanoutSolver)
+        this.outputSimpleRouteJson = downstreamSimpleRouteJson
+        this.isRouting = false
+        this.emitEvent({ type: "complete", traces: fanoutTraces })
+      } else {
+        this.startTimeoutId = setTimeout(() => {
+          this.startTimeoutId = undefined
+          this.runFanoutCycle(fanoutSolver, runId)
+        }, 0) as unknown as number
+      }
     } catch (caughtError) {
+      if (!this.isRouting || this.runId !== runId) return
       this.isRouting = false
       this.emitEvent({
         type: "error",
@@ -588,13 +616,28 @@ export class FanoutAutorouter implements GenericLocalAutorouter {
   start(): void {
     if (this.isRouting) return
     this.isRouting = true
+    this.outputSimpleRouteJson = undefined
+    const runId = ++this.runId
     this.startTimeoutId = setTimeout(() => {
       this.startTimeoutId = undefined
-      this.startFanout()
+      try {
+        this.runFanoutCycle(this.createFanoutSolver(), runId)
+      } catch (caughtError) {
+        if (!this.isRouting || this.runId !== runId) return
+        this.isRouting = false
+        this.emitEvent({
+          type: "error",
+          error:
+            caughtError instanceof Error
+              ? caughtError
+              : new Error(String(caughtError)),
+        })
+      }
     }, 0) as unknown as number
   }
 
   stop(): void {
+    this.runId++
     if (this.startTimeoutId !== undefined) {
       clearTimeout(this.startTimeoutId)
       this.startTimeoutId = undefined
@@ -641,7 +684,10 @@ export class FanoutAutorouter implements GenericLocalAutorouter {
   }
 
   solveSync(): SimplifiedPcbTrace[] {
-    const { downstreamSimpleRouteJson, fanoutTraces } = this.solveFanout()
+    const fanoutSolver = this.createFanoutSolver()
+    fanoutSolver.solve()
+    const { downstreamSimpleRouteJson, fanoutTraces } =
+      this.getFanoutResult(fanoutSolver)
     this.outputSimpleRouteJson = downstreamSimpleRouteJson
     return fanoutTraces
   }
