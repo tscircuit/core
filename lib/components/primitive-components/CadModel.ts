@@ -7,6 +7,7 @@ import { distance } from "circuit-json"
 import { decomposeTSR } from "transformation-matrix"
 import { getFileExtension } from "../base-components/NormalComponent/utils/getFileExtension"
 import { constructAssetUrl } from "lib/utils/constructAssetUrl"
+import { normalizeDegrees } from "@tscircuit/math-utils"
 
 const rotation = z.union([z.number(), z.string()])
 const rotation3 = z.object({ x: rotation, y: rotation, z: rotation })
@@ -120,16 +121,18 @@ export class CadModel extends PrimitiveComponent<typeof cadmodelProps> {
       rotation: {
         x: Number(rotationOffset.x),
         y: (layer === "top" ? 0 : 180) + Number(rotationOffset.y),
-        z:
+        z: normalizeDegrees(
           layer === "bottom"
-            ? -(accumulatedRotation + Number(rotationOffset.z)) + 180
+            ? -(accumulatedRotation + Number(rotationOffset.z))
             : accumulatedRotation + Number(rotationOffset.z),
+        ),
       },
       pcb_component_id: parent.pcb_component_id,
       model_board_normal_direction: props.modelBoardNormalDirection,
       model_origin_alignment: "center_of_component_on_board_surface",
       anchor_alignment: "center_of_component_on_board_surface",
       model_origin_position: props.modelOriginPosition,
+      size: props.size ? point3.parse(props.size) : undefined,
       source_component_id: parent.source_component_id,
       model_unit_to_mm_scale_factor:
         typeof props.modelUnitToMmScale === "number"
