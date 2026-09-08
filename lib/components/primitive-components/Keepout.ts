@@ -1,6 +1,7 @@
 import { pcbKeepoutProps } from "@tscircuit/props"
 import type { PCBKeepout } from "circuit-json"
 import type { PcbComponentId } from "lib/utils/circuit-json/circuit-json-id-types"
+import { getBoardAvailableLayers } from "lib/utils/getViaSpanLayers"
 import { decomposeTSR } from "transformation-matrix"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import type { RenderPhaseFn } from "../base-components/Renderable"
@@ -45,7 +46,11 @@ export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
       layers = [props.layer]
     }
     if (!layers) {
-      layers = ["top"]
+      // A keepout without an explicit layer guards every copper layer of the
+      // board, the same way KiCad rule areas do. Defaulting to the top layer
+      // left every other layer routable, so the autorouter would happily route
+      // through the keepout on the bottom of a two-layer board.
+      layers = getBoardAvailableLayers(subcircuit._getSubcircuitLayerCount())
     }
     const excludedPcbComponentIds = this.getExcludedPcbComponentIds()
     const pcbKeepoutExclusionProps =
