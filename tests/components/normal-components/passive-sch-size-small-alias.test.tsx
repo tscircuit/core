@@ -6,7 +6,13 @@ test("documented schSize small selects the sm compact resistor and capacitor sym
 
   circuit.add(
     <board width="20mm" height="10mm">
-      <resistor name="R_SMALL" resistance="1k" schSize="small" schX={0} schY={3} />
+      <resistor
+        name="R_SMALL"
+        resistance="1k"
+        schSize="small"
+        schX={0}
+        schY={3}
+      />
       <capacitor
         name="C_SMALL"
         capacitance="1uF"
@@ -20,8 +26,6 @@ test("documented schSize small selects the sm compact resistor and capacitor sym
   circuit.render()
 
   expect(
-    circuit.db.schematic_component
-      .list()
-      .map(({ symbol_name }) => symbol_name),
+    circuit.db.schematic_component.list().map(({ symbol_name }) => symbol_name),
   ).toEqual(["boxresistor_sm_right", "capacitor_sm_right"])
 })
