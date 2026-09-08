@@ -44,6 +44,22 @@ test("4-pin pushbutton emits documented default internal connections (#3115)", a
   ).toBe(true)
 })
 
+test("2-pin schematic-only pushbutton does not invent pin3/pin4 internals", async () => {
+  const { circuit } = getTestFixture()
+
+  circuit.add(
+    <board width="20mm" height="20mm">
+      <pushbutton name="SW1" schX={0} schY={0} />
+    </board>,
+  )
+
+  await circuit.renderUntilSettled()
+
+  const sw1 = circuit.selectOne("pushbutton.SW1") as any
+  expect(sw1.internallyConnectedPinNames).toEqual([])
+  expect(circuit.db.source_component_internal_connection.list()).toHaveLength(0)
+})
+
 test("explicit internallyConnectedPins still overrides the pushbutton default", async () => {
   const { circuit } = getTestFixture()
 
