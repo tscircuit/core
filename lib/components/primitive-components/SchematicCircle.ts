@@ -25,6 +25,7 @@ export class SchematicCircle extends PrimitiveComponent<
     if (this.getCollapsedSchematicBoxAncestor()) return
     const { db } = this.root!
     const { _parsedProps: props } = this
+    this.reportNonPositiveSchematicDimension("radius", props.radius)
 
     const globalPos = this._getGlobalSchematicPositionBeforeLayout()
 
