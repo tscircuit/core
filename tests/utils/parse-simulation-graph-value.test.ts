@@ -9,7 +9,9 @@ test("parses scientific notation in string graph settings", () => {
 })
 
 test("scientific notation matches the numeric prop form", () => {
-  expect(parseSimulationGraphValue("1e-3V")).toBe(parseSimulationGraphValue(1e-3))
+  expect(parseSimulationGraphValue("1e-3V")).toBe(
+    parseSimulationGraphValue(1e-3),
+  )
 })
 
 test("existing SI prefix and plain number parsing is unchanged", () => {
