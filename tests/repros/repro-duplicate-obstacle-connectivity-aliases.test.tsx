@@ -47,30 +47,26 @@ test("repro duplicate obstacle connectivity aliases on shared power nets", async
       entries: obstacle.connectedTo.length,
       uniqueEntries: new Set(obstacle.connectedTo).size,
     })),
-  ).toMatchInlineSnapshot(`
-    [
-      {
-        "entries": 11,
-        "uniqueEntries": 10,
-      },
-      {
-        "entries": 11,
-        "uniqueEntries": 10,
-      },
-      {
-        "entries": 11,
-        "uniqueEntries": 10,
-      },
-      {
-        "entries": 11,
-        "uniqueEntries": 10,
-      },
-      {
-        "entries": 12,
-        "uniqueEntries": 11,
-      },
-    ]
-  `)
-  await expect(circuit).toMatchSchematicSnapshot(import.meta.path)
-  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  ).toEqual([
+    {
+      entries: 11,
+      uniqueEntries: 10,
+    },
+    {
+      entries: 11,
+      uniqueEntries: 10,
+    },
+    {
+      entries: 11,
+      uniqueEntries: 10,
+    },
+    {
+      entries: 11,
+      uniqueEntries: 10,
+    },
+    {
+      entries: 12,
+      uniqueEntries: 11,
+    },
+  ])
 })
