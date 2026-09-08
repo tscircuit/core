@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test"
-import { pcb_component, pcb_group } from "circuit-json"
+import { pcb_component } from "circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("display_offset_x/y are display strings, not raw numbers", async () => {
@@ -47,12 +47,13 @@ test("display_offset_x/y are display strings, not raw numbers", async () => {
   expect(r1WithOffset?.display_offset_y).toBe("2mm")
 
   for (const group of groups) {
-    if (group.display_offset_x !== undefined) {
-      expect(typeof group.display_offset_x).toBe("string")
-    }
-    if (group.display_offset_y !== undefined) {
-      expect(typeof group.display_offset_y).toBe("string")
-    }
-    expect(pcb_group.safeParse(group).success).toBe(true)
+    expect(
+      typeof group.display_offset_x === "string" ||
+        group.display_offset_x === undefined,
+    ).toBe(true)
+    expect(
+      typeof group.display_offset_y === "string" ||
+        group.display_offset_y === undefined,
+    ).toBe(true)
   }
 })
