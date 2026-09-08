@@ -30,10 +30,13 @@ export class Capacitor extends NormalComponent<
   _adjustSilkscreenTextAutomatically = true
   get config() {
     const baseSymbolName = this.props.symbolName ?? "capacitor"
+    const schSize = this.props.schSize
     const compactSize =
-      this.props.schSize === "sm" || this.props.schSize === "xs"
-        ? this.props.schSize
-        : undefined
+      schSize === "xs" || schSize === "sm"
+        ? schSize
+        : schSize === "small"
+          ? "sm"
+          : undefined
     const compactSymbolName =
       compactSize && baseSymbolName === "capacitor"
         ? (`capacitor_${compactSize}` as BaseSymbolName)
