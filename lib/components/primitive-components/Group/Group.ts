@@ -57,6 +57,7 @@ import { getLocalAutoroutingStages } from "lib/utils/autorouting/local-autoroute
 import { shouldSkipAutoroutingBecauseOfPlacementErrors } from "lib/utils/autorouting/should-skip-autorouting-because-of-placement-errors"
 import { shouldSkipAutoroutingBecauseOfTraceLengthViolations } from "lib/utils/autorouting/should-skip-autorouting-because-of-trace-length-violations"
 import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
+import { getHighlightColorForRoutedTrace } from "lib/utils/get-highlight-color-for-routed-trace"
 import { getAutoroutedViaLayers } from "lib/utils/getViaSpanLayers"
 import {
   GROUND_NET_REGEX,
@@ -69,6 +70,7 @@ import { reversePcbTraceRoute } from "lib/utils/reverse-pcb-trace-route"
 import { getPinsFromPortArrangement } from "lib/utils/schematic/getSizeOfSidesFromPortArrangement"
 import { z } from "zod"
 import { NormalComponent } from "../../base-components/NormalComponent/NormalComponent"
+import type { Net } from "../Net"
 import { Port } from "../Port/Port"
 import { Trace } from "../Trace/Trace"
 import { TraceHint } from "../TraceHint"
@@ -2025,7 +2027,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     // TODO
 
     // Apply each routed trace to the corresponding circuit trace
-    // const circuitTraces = this.selectAll("trace") as Trace[]
+    const netsForHighlightColor = (this.root?.selectAll("net") ??
+      this.selectAll<Net>("net")) as Net[]
+    const tracesForHighlightColor = (this.root?.selectAll("trace") ??
+      this.selectAll<Trace>("trace")) as Trace[]
     for (const routedTrace of routedTraces) {
       const cjRoute = routedTrace.route.map((point) => {
         if (point.route_type !== "through_obstacle") return point
@@ -2040,16 +2045,28 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           circuitJsonMetadata: point.circuitJsonMetadata,
         }
       })
-      // const circuitTrace = circuitTraces.find(
-      //   (t) => t.source_trace_id === routedTrace.,
-      // )
+      const routeSourceTraceId = getSourceTraceIdForRoutedTrace({
+        db,
+        trace: {
+          ...routedTrace,
+          route: cjRoute,
+        } as any,
+        subcircuit_id: this.subcircuit_id,
+      })
+      const highlightColor = getHighlightColorForRoutedTrace({
+        db,
+        nets: netsForHighlightColor,
+        traces: tracesForHighlightColor,
+        sourceTraceId: routeSourceTraceId,
+      })
 
       // Create the PCB trace with the routed path
       // TODO use upsert to make sure we're not re-creating traces
       const pcb_trace = db.pcb_trace.insert({
         subcircuit_id: this.subcircuit_id!,
         route: getCircuitJsonPcbTraceRoute(cjRoute as any),
-        // source_trace_id: circuitTrace.source_trace_id!,
+        source_trace_id: routeSourceTraceId,
+        ...(highlightColor ? { highlight_color: highlightColor } : {}),
       })
       claimSrjAssignablePcbViasTraversedByRoute({
         db,
@@ -2115,6 +2132,11 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     // multiple logical traces contain that shared route point.
     const materializedPcbVias = db.pcb_via.list()
 
+    const netsForHighlightColor = (this.root?.selectAll("net") ??
+      this.selectAll<Net>("net")) as Net[]
+    const tracesForHighlightColor = (this.root?.selectAll("trace") ??
+      this.selectAll<Trace>("trace")) as Trace[]
+
     for (const pcb_trace of output_pcb_traces) {
       // vias can be included
       if (pcb_trace.type !== "pcb_trace") continue
@@ -2174,10 +2196,17 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             },
             subcircuit_id: this.subcircuit_id,
           })
+          const highlightColor = getHighlightColorForRoutedTrace({
+            db,
+            nets: netsForHighlightColor,
+            traces: tracesForHighlightColor,
+            sourceTraceId,
+          })
           const insertedPcbTrace = db.pcb_trace.insert({
             ...pcb_trace,
             source_trace_id: sourceTraceId,
             route: circuitJsonSegment,
+            ...(highlightColor ? { highlight_color: highlightColor } : {}),
           })
           claimSrjAssignablePcbViasTraversedByRoute({
             db,

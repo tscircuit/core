@@ -12,6 +12,7 @@ import {
 import { mergeRoutes } from "lib/utils/autorouting/mergeRoutes"
 import { shouldSkipAutoroutingBecauseOfPlacementErrors } from "lib/utils/autorouting/should-skip-autorouting-because-of-placement-errors"
 import { shouldSkipAutoroutingBecauseOfTraceLengthViolations } from "lib/utils/autorouting/should-skip-autorouting-because-of-trace-length-violations"
+import { getHighlightColorForRoutedTrace } from "lib/utils/get-highlight-color-for-routed-trace"
 import { getClosest } from "lib/utils/getClosest"
 import {
   getAutoroutedViaLayers,
@@ -23,6 +24,7 @@ import { getRoutePointPosition } from "lib/utils/pcb-trace-route-point-utils"
 import { getViaDiameterDefaults } from "lib/utils/pcbStyle/getViaDiameterDefaults"
 import { reversePcbTraceRoute } from "lib/utils/reverse-pcb-trace-route"
 import { tryNow } from "lib/utils/try-now"
+import type { Net } from "../Net"
 import type { Port } from "../Port"
 import type { TraceHint } from "../TraceHint"
 import type { Trace } from "./Trace"
@@ -99,11 +101,20 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
   if (cachedRoute) {
     if (subcircuit._isLegacyAutorouterDisabled()) return
 
+    const highlightColor = getHighlightColorForRoutedTrace({
+      db,
+      nets: (subcircuit?.selectAll<Net>("net") ??
+        trace.root?.selectAll("net") ??
+        []) as Net[],
+      traces: [trace],
+      sourceTraceId: trace.source_trace_id,
+    })
     const pcb_trace = db.pcb_trace.insert({
       route: cachedRoute.flatMap((trace) => trace.route),
       source_trace_id: trace.source_trace_id!,
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       pcb_group_id: trace.getGroup()?.pcb_group_id ?? undefined,
+      ...(highlightColor ? { highlight_color: highlightColor } : {}),
     })
     trace.pcb_trace_id = pcb_trace.pcb_trace_id
     return
@@ -508,6 +519,14 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
   const traceLength = getTraceLength(mergedRoute)
   const pcbStyle = trace.getInheritedMergedProperty("pcbStyle")
   const { holeDiameter, padDiameter } = getViaDiameterDefaults(pcbStyle)
+  const highlightColor = getHighlightColorForRoutedTrace({
+    db,
+    nets: (subcircuit?.selectAll<Net>("net") ??
+      trace.root?.selectAll("net") ??
+      []) as Net[],
+    traces: [trace],
+    sourceTraceId: trace.source_trace_id,
+  })
   const pcb_trace = db.pcb_trace.insert({
     route: getCircuitJsonPcbTraceRoute(
       mergedRoute as PcbTraceRoutePointWithSrjMetadata[],
@@ -515,6 +534,7 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
     source_trace_id: trace.source_trace_id!,
     subcircuit_id: trace.getSubcircuit()?.subcircuit_id!,
     trace_length: traceLength,
+    ...(highlightColor ? { highlight_color: highlightColor } : {}),
   })
   const subcircuitConnectivityMapKey =
     trace.subcircuit_connectivity_map_key ??
