@@ -384,8 +384,8 @@ const AM62L_DDR_DECOUPLING_CAPACITORS = [
     pcbX: -0.625,
     pcbY: 0.625,
     pcbRotation: 180,
-    vddViaOffset: { x: -0.829, y: 0.311 },
-    groundViaOffset: { x: -0.33, y: 0.45 },
+    vddViaOffset: { x: -1.35, y: 0.85 },
+    groundViaOffset: { x: -0.4, y: -1.1 },
   },
   {
     capacitance: AM62L_DDR_HIGH_SPEED_CAPACITANCE,
@@ -395,8 +395,8 @@ const AM62L_DDR_DECOUPLING_CAPACITORS = [
     pcbX: -3.125,
     pcbY: -1.75,
     pcbRotation: 180,
-    vddViaOffset: { x: 0.239, y: -0.338 },
-    groundViaOffset: { x: -0.421, y: -0.338 },
+    vddViaOffset: { x: 1.55, y: -0.5 },
+    groundViaOffset: { x: 1.3, y: 0.8 },
   },
   {
     capacitance: AM62L_DDR_HIGH_SPEED_CAPACITANCE,
@@ -406,8 +406,8 @@ const AM62L_DDR_DECOUPLING_CAPACITORS = [
     pcbX: -1,
     pcbY: -0.125,
     pcbRotation: 180,
-    vddViaOffset: { x: 0.78, y: 0 },
-    groundViaOffset: { x: -0.78, y: 0 },
+    vddViaOffset: { x: 0.8, y: 0.1 },
+    groundViaOffset: { x: -0.8, y: 0.1 },
   },
   {
     capacitance: AM62L_DDR_HIGH_SPEED_CAPACITANCE,
@@ -417,8 +417,8 @@ const AM62L_DDR_DECOUPLING_CAPACITORS = [
     pcbX: -0.75,
     pcbY: -1.175,
     pcbRotation: 180,
-    vddViaOffset: { x: 0.239, y: 0.338 },
-    groundViaOffset: { x: -0.421, y: -0.338 },
+    vddViaOffset: { x: -1.1, y: 0.85 },
+    groundViaOffset: { x: -0.4, y: -0.4 },
   },
   {
     capacitance: AM62L_DDR_HIGH_SPEED_CAPACITANCE,
@@ -428,8 +428,8 @@ const AM62L_DDR_DECOUPLING_CAPACITORS = [
     pcbX: -1.75,
     pcbY: -2.25,
     pcbRotation: 90,
-    vddViaOffset: { x: 0.446, y: -0.435 },
-    groundViaOffset: { x: -0.98, y: 0 },
+    vddViaOffset: { x: 0.5, y: 0 },
+    groundViaOffset: { x: -1, y: 0 },
   },
   {
     capacitance: "0.1uF",
@@ -439,8 +439,8 @@ const AM62L_DDR_DECOUPLING_CAPACITORS = [
     pcbX: -0.625,
     pcbY: -2,
     pcbRotation: 180,
-    vddViaOffset: { x: 0.765, y: 0.116 },
-    groundViaOffset: { x: -0.555, y: -0.39 },
+    vddViaOffset: { x: -1.3, y: 0.2 },
+    groundViaOffset: { x: -1.2, y: -0.25 },
   },
   {
     capacitance: "0.1uF",
@@ -450,8 +450,8 @@ const AM62L_DDR_DECOUPLING_CAPACITORS = [
     pcbX: -0.75,
     pcbY: -3.125,
     pcbRotation: 90,
-    vddViaOffset: { x: 0.33, y: -0.45 },
-    groundViaOffset: { x: -0.105, y: 0.39 },
+    vddViaOffset: { x: 0.35, y: -0.5 },
+    groundViaOffset: { x: -0.1, y: 0.4 },
   },
   {
     capacitance: "0.1uF",
@@ -461,8 +461,8 @@ const AM62L_DDR_DECOUPLING_CAPACITORS = [
     pcbX: 0.75,
     pcbY: -1.25,
     pcbRotation: 180,
-    vddViaOffset: { x: 0.239, y: -0.338 },
-    groundViaOffset: { x: -0.239, y: 0.338 },
+    vddViaOffset: { x: 0, y: -0.5 },
+    groundViaOffset: { x: -0.85, y: 1.4 },
   },
 ] as const
 
@@ -1096,6 +1096,229 @@ interface PlacedAm62lDecouplingCapacitor
   powerViaOffset: { x: number; y: number }
 }
 
+type Am62lDecouplingRoutingOverride = Partial<
+  Pick<
+    PlacedAm62lDecouplingCapacitor,
+    "groundViaOffset" | "pcbRotation" | "pcbX" | "pcbY" | "powerViaOffset"
+  >
+>
+
+// @tscircuit/fanout-solver 0.0.60+ produces valid, more compact AM62L
+// fanout paths that occupy some of the original decoupling copper positions.
+// Keep these positions named so the staged decoupling layout remains stable
+// and auditable independently of the rail/order-based default placement table.
+const AM62L_DIRECT_DECOUPLING_ROUTING_OVERRIDES: Partial<
+  Record<string, Am62lDecouplingRoutingOverride>
+> = {
+  C_SOC_VDD_CORE_U19: {
+    groundViaOffset: { x: -0.51, y: 0.45 },
+    pcbX: 1.9,
+    pcbY: 4.2,
+    powerViaOffset: { x: 0.51, y: 0.45 },
+  },
+  C_SOC_VDD_CORE_U43: {
+    groundViaOffset: { x: -0.15, y: -0.45 },
+    pcbX: 4.6,
+    pcbY: -1.7,
+    powerViaOffset: { x: 0.15, y: -0.45 },
+  },
+  C_SOC_VDD_CORE_U40: {
+    groundViaOffset: { x: -0.55, y: 0.95 },
+    pcbX: -2.1,
+    pcbY: 4.2,
+    powerViaOffset: { x: 0.3, y: -0.45 },
+  },
+  C_SOC_VDD_CORE_U38: {
+    groundViaOffset: { x: -0.75, y: -0.25 },
+    pcbX: 4.5,
+    pcbY: 2.5,
+    powerViaOffset: { x: 0.75, y: 0.25 },
+  },
+  C_SOC_VDD_CORE_U24: {
+    groundViaOffset: { x: -0.35, y: -0.45 },
+    pcbX: 0.4,
+    pcbY: 3.2,
+    powerViaOffset: { x: 0.35, y: -0.45 },
+  },
+  C_SOC_VDD_CORE_C324: {
+    groundViaOffset: { x: -0.75, y: -0.05 },
+    pcbX: 0,
+    pcbY: -4.2,
+    powerViaOffset: { x: 0.75, y: -0.05 },
+  },
+  C_SOC_VDD_CORE_C312: {
+    groundViaOffset: { x: -0.45, y: 0.35 },
+    pcbX: 2.9,
+    pcbY: 2.8,
+    powerViaOffset: { x: 0.55, y: 0.35 },
+  },
+  C_SOC_VDD_CORE_C376: {
+    groundViaOffset: { x: -0.35, y: -0.45 },
+    pcbX: 3.7,
+    pcbY: -0.8,
+    powerViaOffset: { x: 0.35, y: -0.45 },
+  },
+  C_SOC_VDD_CORE_C316: {
+    groundViaOffset: { x: -0.35, y: -0.1 },
+    pcbX: 1.6,
+    pcbY: -3.3,
+    pcbRotation: 0,
+    powerViaOffset: { x: 0.8, y: 0 },
+  },
+  C_SOC_VDD_CORE_C322: {
+    groundViaOffset: { x: -0.65, y: 0.45 },
+    pcbX: 3.8,
+    pcbY: 3.1,
+    powerViaOffset: { x: -0.15, y: 0.95 },
+  },
+  C_SOC_VDD_CORE_C304: {
+    groundViaOffset: { x: -0.15, y: 0.45 },
+    pcbX: 1.6,
+    pcbY: 1.8,
+    powerViaOffset: { x: 0.15, y: 0.45 },
+  },
+  C_SOC_VDD_CORE_C306: {
+    groundViaOffset: { x: -0.35, y: -0.45 },
+    pcbX: -0.9,
+    pcbY: 2.2,
+    powerViaOffset: { x: 0.35, y: -0.45 },
+  },
+  C_SOC_VDD_CORE_C317: {
+    groundViaOffset: { x: -0.8, y: 0 },
+    pcbX: 2,
+    pcbY: -4.1,
+    powerViaOffset: { x: 0.35, y: 0.45 },
+  },
+  C_SOC_VDD_CORE_C332: {
+    groundViaOffset: { x: -0.4, y: 0.7 },
+    pcbX: -4.2,
+    pcbY: 3.9,
+    powerViaOffset: { x: 0.2, y: -0.45 },
+  },
+  C_SOC_VDD_CORE_C377: {
+    groundViaOffset: { x: -0.51, y: 0.57 },
+    pcbX: -8.3,
+    pcbY: 1.8,
+    powerViaOffset: { x: 0.51, y: 0.57 },
+  },
+  C_SOC_VDDA_1V8_C318: {
+    groundViaOffset: { x: -0.65, y: -0.95 },
+    pcbX: 5.4,
+    pcbY: -2.3,
+    pcbRotation: 0,
+    powerViaOffset: { x: 0.75, y: -0.05 },
+  },
+  C_SOC_VDDA_1V8_C298: {
+    groundViaOffset: { x: -0.71, y: -0.4 },
+    pcbX: 5.5,
+    pcbY: 1,
+    powerViaOffset: { x: 0.71, y: -0.9 },
+  },
+  C_SOC_VDDA_1V8_C391: {
+    groundViaOffset: { x: -0.15, y: 0.45 },
+    pcbX: -2.6,
+    pcbY: -4.2,
+    pcbRotation: 0,
+    powerViaOffset: { x: 0.2, y: -0.45 },
+  },
+  C_SOC_VDDA_1V8_C397: {
+    groundViaOffset: { x: -0.15, y: 0.45 },
+    pcbX: 3.5,
+    pcbY: 5.1,
+    powerViaOffset: { x: 0.15, y: 0.45 },
+  },
+  C_SOC_VDDA_1V8_C348: {
+    groundViaOffset: { x: -1.05, y: -0.05 },
+    pcbX: -0.3,
+    pcbY: -5.3,
+    pcbRotation: 180,
+    powerViaOffset: { x: 0.45, y: -0.05 },
+  },
+  C_SOC_VDDA_1V8_C109: {
+    groundViaOffset: { x: -0.35, y: -0.45 },
+    pcbX: 0.6,
+    pcbY: 4.2,
+    powerViaOffset: { x: 0.35, y: 0.45 },
+  },
+  C_SOC_SOC_DVDD1V8_C341: {
+    groundViaOffset: { x: -0.35, y: 0.45 },
+    pcbX: 4.9,
+    pcbY: 4.2,
+    powerViaOffset: { x: 0.35, y: -0.45 },
+  },
+  C_SOC_SOC_DVDD1V8_C295: {
+    groundViaOffset: { x: -0.85, y: 0.55 },
+    pcbX: 5.6,
+    pcbY: 3.2,
+    pcbRotation: 0,
+    powerViaOffset: { x: 0.35, y: 0.55 },
+  },
+  C_SOC_SOC_DVDD1V8_C103: {
+    groundViaOffset: { x: -0.35, y: 0.45 },
+    pcbX: 5,
+    pcbY: -2.8,
+    pcbRotation: 0,
+    powerViaOffset: { x: 0.8, y: 0 },
+  },
+  C_SOC_SOC_DVDD3V3_C349: {
+    groundViaOffset: { x: -0.51, y: -0.45 },
+    pcbX: 6.3,
+    pcbY: 0.3,
+    powerViaOffset: { x: 0.51, y: -0.45 },
+  },
+  C_SOC_VDD_MMC1_SD_C289: {
+    groundViaOffset: { x: -0.15, y: 0.45 },
+    pcbX: 2.9,
+    pcbY: -6.2,
+    powerViaOffset: { x: 0.15, y: -0.45 },
+  },
+  C_SOC_SOC_VDD_RTC_C300: {
+    groundViaOffset: { x: -1.3, y: -0.7 },
+    pcbX: 3.5,
+    pcbY: -5.6,
+    pcbRotation: 0,
+    powerViaOffset: { x: 0.25, y: 0.35 },
+  },
+  C_SOC_SOC_VDDS_RTC_1V8_C292: {
+    groundViaOffset: { x: -0.35, y: 0.45 },
+    pcbX: 6.1,
+    pcbY: -3.6,
+    powerViaOffset: { x: 0.35, y: 0.45 },
+  },
+  C_SOC_CAP_VDDS_MMC2_C310: {
+    groundViaOffset: { x: -0.51, y: 0.45 },
+    pcbX: 3.2,
+    pcbY: -1.7,
+    powerViaOffset: { x: 0.51, y: 0.45 },
+  },
+  C_SOC_CAP_VDDS_GPMC_C323: {
+    groundViaOffset: { x: -0.35, y: -0.45 },
+    pcbX: 1.9,
+    pcbY: -1.6,
+    powerViaOffset: { x: 0.4, y: -0.4 },
+  },
+  C_SOC_CAP_VDDSHV_MMC_C286: {
+    groundViaOffset: { x: -0.3, y: -0.1 },
+    pcbX: 3.2,
+    pcbY: -3.6,
+    powerViaOffset: { x: 0.35, y: 0.45 },
+  },
+  C_SOC_SOC_DVDD1V8_C320: {
+    groundViaOffset: { x: -0.35, y: -0.45 },
+    pcbX: 1.7,
+    pcbY: -5.6,
+    pcbRotation: 0,
+    powerViaOffset: { x: 0.35, y: -0.45 },
+  },
+  C_SOC_SOC_DVDD1V8_C340: {
+    groundViaOffset: { x: -0.45, y: -0.35 },
+    pcbX: 5.6,
+    pcbY: 2.3,
+    pcbRotation: 270,
+    powerViaOffset: { x: 0.55, y: 0.35 },
+  },
+}
+
 const AM62L_DIRECT_DECOUPLING_CAPACITORS: PlacedAm62lDecouplingCapacitor[] =
   AM62L_UNPLACED_DIRECT_DECOUPLING_CAPACITORS.map((capacitor, index, all) => {
     const earlierCapacitors = all.slice(0, index)
@@ -1137,6 +1360,7 @@ const AM62L_DIRECT_DECOUPLING_CAPACITORS: PlacedAm62lDecouplingCapacitor[] =
         capacitor.placement === "under"
           ? AM62L_DDR_MAX_DECOUPLING_DISTANCE
           : 15,
+      ...AM62L_DIRECT_DECOUPLING_ROUTING_OVERRIDES[capacitor.name],
     }
   })
 
