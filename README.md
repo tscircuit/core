@@ -57,3 +57,17 @@ circuit.getCircuitJson() // [{ type: "board", ...}, { type: "resistor", ...}, ..
 
 - [How does core work?](./docs/DEVELOPMENT.md#overview-of-how-core-works)
 - [How to do benchmarking or debug performance](./docs/DEVELOPMENT.md#debugging-performance)
+
+### DRC results after local autorouting stages
+
+```ts
+circuit.on("autorouting:end", (event) => {
+  for (const error of event.drcErrors ?? []) {
+    console.log(error.autorouting_phase, error.message)
+  }
+})
+```
+
+Each local stage, including cached stages, runs the intermediate routing check subset against an isolated snapshot of the accumulated board. Snapshots use the same trace, jumper, via, and reroute conversion as the final render and honor phase DRC tolerances. Each diagnostic identifies the subcircuit, execution-stage index, optional phase name, and stage index within the phase. It identifies where the violation was observed, including violations that predate that stage.
+
+Results remain on the event so a subsequent reroute can fix a violation without leaving stale errors in the final Circuit JSON. The final board still runs its full DRC suite. `drcErrors` is omitted when `platform.drcChecksDisabled` or `platform.routingDrcChecksDisabled` disables checks; otherwise an empty array means no intermediate violations. Remote autorouting events do not currently include these diagnostics.

@@ -28,14 +28,15 @@ function addPossibleReplacementSourceTraceId(
  */
 export function deleteExistingPcbTracesReplacedBy({
   group,
+  db = group.root?.db,
   outputPcbTraces,
   pcbTraceIdsToReplace = [],
 }: {
+  db?: import("@tscircuit/circuit-json-util").CircuitJsonUtilObjects
   group: Group<any>
   outputPcbTraces: Array<SimplifiedPcbTrace | PcbTrace | PcbVia>
   pcbTraceIdsToReplace?: string[]
 }) {
-  const db = group.root?.db
   if (!db) return
 
   const replacementPcbTraceIds = new Set<string>(pcbTraceIdsToReplace)
