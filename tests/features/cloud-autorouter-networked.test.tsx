@@ -39,8 +39,9 @@ test("platform cloud autorouting renders a board through versioned networked nod
     })
   }) as typeof fetch
   try {
-    const platform = { useCloudAutorouter: true, localCacheEngine: undefined }
-    const { circuit } = getTestFixture({ platform })
+    const { circuit } = getTestFixture({
+      platform: { useCloudAutorouter: true },
+    })
     const solvers: string[] = []
     circuit.on("solver:started", (event) => solvers.push(event.solverName))
     circuit.add(

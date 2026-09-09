@@ -50,10 +50,10 @@ export interface AutorouterOptions {
   useTraceSimplificationSolver?: boolean
   autorouterVersion?: AutorouterVersion
   effort?: number
-  // Structural compatibility until the props release containing useCloudAutorouter.
-  platformConfig?: Pick<PlatformConfig, "localCacheEngine"> & {
-    useCloudAutorouter?: boolean
-  }
+  platformConfig?: Pick<
+    PlatformConfig,
+    "localCacheEngine" | "useCloudAutorouter"
+  >
   onSolverStarted?: (details: SolverStartedDetails) => void
 }
 
