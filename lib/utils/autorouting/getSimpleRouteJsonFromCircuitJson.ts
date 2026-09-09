@@ -564,6 +564,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
           "",
         source_trace_id: trace.source_trace_id,
         nominalTraceWidth: trace.min_trace_thickness,
+        minTraceWidth: trace.min_trace_thickness,
         width: trace.min_trace_thickness,
         // Simple Route JSON connections are multi-terminal, so retain every
         // source trace endpoint in the autorouter input.
@@ -712,6 +713,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         net.source_net_id ??
         sharedConnMap.getNetConnectedToId(net.source_net_id),
       nominalTraceWidth: nominalTraceWidthFromConnectedTraces,
+      minTraceWidth: nominalTraceWidthFromConnectedTraces,
       width: nominalTraceWidthFromConnectedTraces,
       pointsToConnect,
     }

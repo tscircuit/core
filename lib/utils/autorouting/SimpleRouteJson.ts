@@ -88,6 +88,8 @@ export type SimpleRouteConnection = {
   isOffBoard?: boolean
   netConnectionName?: string
   nominalTraceWidth?: number
+  /** Required minimum copper width, including terminal tapers, in millimeters. */
+  minTraceWidth?: number
   /** @deprecated Use `nominalTraceWidth` instead. */
   width?: number
   pointsToConnect: SimpleRoutePoint[]
