@@ -30,10 +30,11 @@ test("design rule check detects overlapping plated holes", async () => {
   const platedHoles = circuitJson.filter((el) => el.type === "pcb_plated_hole")
   expect(platedHoles.length).toBe(16)
 
-  // Check for footprint overlap errors
-  const overlapErrors = circuitJson.filter(
-    (el) => el.type === "pcb_footprint_overlap_error",
-  )
+  // Check hole-to-hole overlaps. The checker also reports hole-to-courtyard
+  // overlaps, which are separate from the fourteen hole pairs tested here.
+  const overlapErrors = circuitJson
+    .filter((el) => el.type === "pcb_footprint_overlap_error")
+    .filter((el) => el.pcb_plated_hole_ids?.length === 2)
 
   expect(overlapErrors.length).toBe(14)
   expect(overlapErrors[0]).toHaveProperty("message")
