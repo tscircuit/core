@@ -66,24 +66,33 @@ export function getSavedFanoutTraces(
         }
       })
       const first = route[0]!
+      const firstLayer =
+        first.route_type === "wire" ? first.layer : first.from_layer
       const portPosition = port._getGlobalPcbPositionAfterLayout()
       if (
         Math.hypot(first.x - portPosition.x, first.y - portPosition.y) > 1e-4 ||
-        first.route_type !== "wire" ||
-        !port.getAvailablePcbLayers().includes(first.layer)
+        !port.getAvailablePcbLayers().includes(firstLayer)
       ) {
         throw new Error(
           `Saved fanout path "${path.connection}" must start at its PCB port on an available layer`,
         )
       }
+      if (first.route_type === "via" && !input.allowViaInPad) {
+        throw new Error(
+          `Saved fanout path "${path.connection}" starts with a via at a pad; enable allowViaInPad`,
+        )
+      }
       const last = route.at(-1)!
-      const endpoints = [first, last]
+      const lastLayer = last.route_type === "wire" ? last.layer : last.to_layer
+      const endpoints = [
+        { ...first, layer: firstLayer },
+        { ...last, layer: lastLayer },
+      ]
       if (
         connection.pointsToConnect.some(
           (point) =>
             !endpoints.some(
               (endpoint) =>
-                endpoint.route_type === "wire" &&
                 Math.hypot(point.x - endpoint.x, point.y - endpoint.y) < 1e-4 &&
                 (point.layers ?? [point.layer]).includes(endpoint.layer),
             ),
@@ -92,11 +101,60 @@ export function getSavedFanoutTraces(
         throw new Error(
           `Saved fanout path "${path.connection}" does not cover its connection endpoints`,
         )
+      // Explicit wire contacts keep Circuit JSON connectivity checks aware of
+      // the pad/exit layer without changing the saved copper or via position.
+      const width =
+        route.find((point) => point.route_type === "wire")?.width ??
+        input.minTraceWidth
+      if (first.route_type === "via") {
+        route.splice(1, 0, {
+          route_type: "wire",
+          x: first.x,
+          y: first.y,
+          layer: first.to_layer,
+          width,
+        })
+        route.unshift({
+          route_type: "wire",
+          x: first.x,
+          y: first.y,
+          layer: first.from_layer,
+          width,
+        })
+      }
+      if (last.route_type === "via") {
+        route.splice(route.length - 1, 0, {
+          route_type: "wire",
+          x: last.x,
+          y: last.y,
+          layer: last.from_layer,
+          width,
+        })
+        route.push({
+          route_type: "wire",
+          x: last.x,
+          y: last.y,
+          layer: last.to_layer,
+          width,
+        })
+      }
+      if (last.route_type === "via") {
+        // A coincident wire pair represents the contact on the exit layer for
+        // consumers that build connectivity from wire segments.
+        route.push({
+          route_type: "wire",
+          x: last.x,
+          y: last.y,
+          layer: last.to_layer,
+          width,
+        })
+      }
       coveredConnections.add(connection)
       return {
         type: "pcb_trace" as const,
         pcb_trace_id: `saved_fanout_${breakout.pcb_group_id}_${pathIndex}`,
         connection_name: connection.name,
+        source_trace_id: connection.source_trace_id,
         connectsTo: [
           connection.source_trace_id,
           ...connection.pointsToConnect.map((point) => point.pointId),

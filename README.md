@@ -53,11 +53,6 @@ board.add(trace)
 circuit.getCircuitJson() // [{ type: "board", ...}, { type: "resistor", ...}, ...]
 ```
 
-## Saved fanout routes
-
-Use `<fanout pcbTracePaths={savedPaths}>` to reuse pre-generated wire and via routes.
-See [Reusing saved fanout trace paths](./docs/saved-fanout-trace-paths.md) for the format and placement rules.
-
 ## Development
 
 - [How does core work?](./docs/DEVELOPMENT.md#overview-of-how-core-works)

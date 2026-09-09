@@ -430,7 +430,14 @@ export function Group_getRoutingPhasePlans(
     if (breakout._parsedProps.pcbTracePaths !== undefined) {
       breakoutPlans.push({
         ...breakoutPlan,
-        autorouter: "default",
+        autorouter: {
+          local: true,
+          groupMode: "subcircuit",
+          allowViaInPad:
+            (typeof breakoutProps.autorouter === "object"
+              ? breakoutProps.autorouter.allowViaInPad
+              : undefined) ?? group._getAutorouterConfig().allowViaInPad,
+        },
         getPrecomputedTraces: (input) => getSavedFanoutTraces(breakout, input),
       })
       continue

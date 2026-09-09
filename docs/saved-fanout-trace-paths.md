@@ -25,7 +25,7 @@ const savedPaths: FanoutTracePath[] = [
 </fanout>
 ```
 
-The first wire point is the selected PCB port. The last wire point creates an
+The first point is the selected PCB port. The last point creates an
 explicit fanout exit automatically; do not also add a fanoutpoint for that port.
 Board traces still declare connectivity normally, e.g.
 `<trace from="U1.1" to="J1.1" />`. Global routing starts at the saved exit.
@@ -49,8 +49,10 @@ layers and can specify `via_diameter` and `via_hole_diameter` in millimeters:
   "via_diameter": 0.6, "via_hole_diameter": 0.3 }
 ```
 
-Surround a via with wire points on the corresponding layers, and finish on a
-wire point. Only wire/via routes are supported. `fanoutTracePath.parse(value)`
+Routes may start or end with a via. A leading via starts on `from_layer` and
+requires `autorouter={{ allowViaInPad: true }}` on the board; a trailing via
+ends on `to_layer`. Layer transitions must remain continuous. Only wire/via
+routes are supported. `fanoutTracePath.parse(value)`
 is exported for validating stored data before rendering.
 
 `pcbTracePaths` replaces automatic routing for that fanout, so it must cover

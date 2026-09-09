@@ -45,6 +45,24 @@ test("saved fanout paths reject invalid layers, anchors, and incomplete coverage
       "unavailable on this board",
     ],
     [[], "must cover every fanout connection"],
+    [
+      [
+        {
+          connection: "U1.1",
+          route: [
+            {
+              route_type: "via",
+              x: 0,
+              y: 0,
+              from_layer: "top",
+              to_layer: "bottom",
+            },
+            { ...wire, x: 3, layer: "bottom" },
+          ],
+        },
+      ],
+      "enable allowViaInPad",
+    ],
   ] as [FanoutTracePath[], string][]) {
     const { circuit } = getTestFixture()
     circuit.add(
