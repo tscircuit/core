@@ -59,6 +59,7 @@ const isUserDefinedNetLabelRedundantWithPlacement = (
 
 export function applyNetLabelPlacements(args: {
   group: Group<any>
+  routedSchematicPortIdBySchematicPortId: Map<SchematicPortId, SchematicPortId>
   solver: SchematicTracePipelineSolver
   userNetIdToConnKey: Map<string, string>
   crossScopeSourceTraceIdBySchematicPortIdAndNetId: Map<
@@ -77,6 +78,7 @@ export function applyNetLabelPlacements(args: {
 }) {
   const {
     group,
+    routedSchematicPortIdBySchematicPortId,
     solver,
     connKeyToSourceNet,
     userNetIdToConnKey,
@@ -148,7 +150,8 @@ export function applyNetLabelPlacements(args: {
         schematicPortIds: label
           ._getConnectedPorts()
           .map((port) => port.schematic_port_id)
-          .filter((id): id is SchematicPortId => Boolean(id)),
+          .filter((id): id is SchematicPortId => Boolean(id))
+          .map((id) => routedSchematicPortIdBySchematicPortId.get(id) ?? id),
         shouldUseSchematicTraceSolver:
           label._parsedProps.schX === undefined &&
           label._parsedProps.schY === undefined,

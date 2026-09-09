@@ -27,6 +27,7 @@ const renderSchematicTracesForSheet = ({
 }) => {
   const {
     inputProblem,
+    routedSchematicPortIdBySchematicPortId,
     connKeyToSourceNet,
     schematicPortIdsInScope,
     schematicPortIdsWithExternallyRoutedRepresentations,
@@ -45,7 +46,10 @@ const renderSchematicTracesForSheet = ({
   if (inputProblem.chips.length === 0) return
 
   const schematicPortIdsWithPreExistingNetLabels =
-    getSchematicPortIdsWithAssignedNetLabels(netLabelsInScope)
+    getSchematicPortIdsWithAssignedNetLabels(
+      netLabelsInScope,
+      routedSchematicPortIdBySchematicPortId,
+    )
 
   const hasRouteableSchematicConnections =
     inputProblem.directConnections.length > 0 ||
@@ -100,6 +104,7 @@ const renderSchematicTracesForSheet = ({
   // Apply net labels (from solver placements and net-only ports)
   applyNetLabelPlacements({
     group,
+    routedSchematicPortIdBySchematicPortId,
     solver,
     connKeyToSourceNet,
     userNetIdToConnKey,
@@ -119,6 +124,18 @@ const renderSchematicTracesForSheet = ({
     sourceTraceIdByPinPairKey,
     crossScopeSourceTraceIdBySchematicPortIdAndNetId,
   })
+
+  // Physical aliases of a displayed terminal share its routing state. Inline
+  // stubs are applied after ordinary traces, so reconcile only after both.
+  const { db } = group.root!
+  for (const [
+    schematicPortId,
+    routedSchematicPortId,
+  ] of routedSchematicPortIdBySchematicPortId) {
+    if (db.schematic_port.get(routedSchematicPortId)?.is_connected) {
+      db.schematic_port.update(schematicPortId, { is_connected: true })
+    }
+  }
 
   insertNetLabelsForPortsMissingTrace({
     group,
