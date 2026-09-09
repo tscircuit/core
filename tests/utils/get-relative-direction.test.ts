@@ -30,4 +30,19 @@ describe("getRelativeDirection", () => {
     expect(getRelativeDirection({ x: 2, y: -4 }, { x: 3, y: 1 })).toBe("up")
     expect(getRelativeDirection({ x: 8, y: 6 }, { x: 9, y: 1 })).toBe("down")
   })
+
+  test("resolves sub-millimeter fractional coordinate vectors", () => {
+    expect(
+      getRelativeDirection({ x: 0.1, y: 0.1 }, { x: 0.35, y: 0.15 }),
+    ).toBe("right")
+    expect(
+      getRelativeDirection({ x: 0.35, y: 0.15 }, { x: 0.1, y: 0.15 }),
+    ).toBe("left")
+    expect(
+      getRelativeDirection({ x: 1.05, y: 0.05 }, { x: 1.06, y: 0.25 }),
+    ).toBe("up")
+    expect(
+      getRelativeDirection({ x: 1.06, y: 0.25 }, { x: 1.07, y: 0.05 }),
+    ).toBe("down")
+  })
 })
