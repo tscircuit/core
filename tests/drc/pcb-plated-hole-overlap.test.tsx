@@ -1,4 +1,4 @@
-import { test, expect } from "bun:test"
+import { expect, test } from "bun:test"
 import { getTestFixture } from "../fixtures/get-test-fixture"
 
 /**
@@ -35,7 +35,18 @@ test("design rule check detects overlapping plated holes", async () => {
     (el) => el.type === "pcb_footprint_overlap_error",
   )
 
-  expect(overlapErrors.length).toBe(14)
+  const platedHoleToPlatedHoleErrors = overlapErrors.filter(
+    (error) => error.pcb_plated_hole_ids?.length === 2,
+  )
+  const platedHoleToCourtyardErrors = overlapErrors.filter(
+    (error) =>
+      error.pcb_plated_hole_ids?.length === 1 &&
+      error.message.includes("pcb_courtyard_"),
+  )
+
+  expect(platedHoleToPlatedHoleErrors.length).toBe(14)
+  expect(platedHoleToCourtyardErrors.length).toBe(16)
+  expect(overlapErrors.length).toBe(30)
   expect(overlapErrors[0]).toHaveProperty("message")
   expect(overlapErrors[0].message).toContain("overlap")
 
