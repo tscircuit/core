@@ -31,5 +31,4 @@ test("simple route json connection nominalTraceWidth matches trace thickness", a
 
   expect(simpleRouteJson.connections).toHaveLength(1)
   expect(simpleRouteJson.connections[0].nominalTraceWidth).toBe(0.5)
-  expect(simpleRouteJson.connections[0].minTraceWidth).toBe(0.5)
 })
