@@ -30,4 +30,19 @@ describe("getRelativeDirection", () => {
     expect(getRelativeDirection({ x: 2, y: -4 }, { x: 3, y: 1 })).toBe("up")
     expect(getRelativeDirection({ x: 8, y: 6 }, { x: 9, y: 1 })).toBe("down")
   })
+
+  test("works with large magnitude displacements across negative quadrants", () => {
+    expect(
+      getRelativeDirection({ x: -1000, y: -1000 }, { x: 5000, y: -900 }),
+    ).toBe("right")
+    expect(
+      getRelativeDirection({ x: 5000, y: -900 }, { x: -1000, y: -900 }),
+    ).toBe("left")
+    expect(
+      getRelativeDirection({ x: 100, y: -2000 }, { x: 150, y: 3000 }),
+    ).toBe("up")
+    expect(
+      getRelativeDirection({ x: 150, y: 3000 }, { x: 200, y: -2000 }),
+    ).toBe("down")
+  })
 })
