@@ -32,7 +32,8 @@ Board traces still declare connectivity normally, e.g.
 The saved bends and widths remain fixed, and subsequent routing treats them as
 existing copper obstacles.
 
-Coordinates are **fanout-local points in millimeters**: +X right, +Y up,
+Coordinates are **fanout-local points**: numeric distances are millimeters,
+and unit strings such as `"0.2mm"` are normalized by `@tscircuit/props`. +X right, +Y up,
 right-handed with +Z above the board. Core applies the fanout's translation,
 rotation, and layout movement. Layer names identify physical board layers;
 use `bottom` explicitly for bottom-layer copper. Routes must start at the

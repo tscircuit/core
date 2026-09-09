@@ -1,5 +1,4 @@
 import type * as Props from "@tscircuit/props"
-import type { BreakoutPropsWithTracePaths } from "../components/primitive-components/Breakout/fanout-trace-paths"
 
 export interface TscircuitElements {
   antenna: Props.AntennaProps
@@ -52,9 +51,9 @@ export interface TscircuitElements {
   trace: Props.TraceProps
   bus: Props.BusProps
   differentialpair: Props.DifferentialPairProps
-  breakout: BreakoutPropsWithTracePaths
+  breakout: Props.BreakoutProps
   breakoutpoint: Props.BreakoutPointProps
-  fanout: BreakoutPropsWithTracePaths
+  fanout: Props.BreakoutProps
   fanoutpoint: Props.BreakoutPointProps
   autoroutingphase: Props.AutoroutingPhaseProps
   custom: any

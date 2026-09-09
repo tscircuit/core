@@ -1,4 +1,4 @@
-import { breakoutPropsWithTracePaths } from "./fanout-trace-paths"
+import { breakoutProps } from "@tscircuit/props"
 import { SavedFanoutPoint } from "./SavedFanoutPoint"
 import { AutoplacedBreakoutPoint } from "../AutoplacedBreakoutPoint"
 import { BreakoutPoint } from "../BreakoutPoint"
@@ -13,7 +13,7 @@ import {
   solveImplicitBreakoutPoints,
 } from "./solve-implicit-breakout-points"
 
-export class Breakout extends Group<typeof breakoutPropsWithTracePaths> {
+export class Breakout extends Group<typeof breakoutProps> {
   override get isRoutingDirective() {
     return true
   }
@@ -21,7 +21,7 @@ export class Breakout extends Group<typeof breakoutPropsWithTracePaths> {
   get config() {
     return {
       ...super.config,
-      zodProps: breakoutPropsWithTracePaths,
+      zodProps: breakoutProps,
     }
   }
 

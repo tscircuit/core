@@ -36,8 +36,4 @@ export { kicadFootprintStrings } from "@tscircuit/props"
 import "./register-catalogue"
 import "./fiber/react-jsx-compat"
 
-export {
-  fanoutTracePath,
-  type FanoutTracePath,
-  type BreakoutPropsWithTracePaths,
-} from "./components/primitive-components/Breakout/fanout-trace-paths"
+export { fanoutTracePath, type FanoutTracePath } from "@tscircuit/props"
