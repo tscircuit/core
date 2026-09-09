@@ -6,6 +6,7 @@ import type {
 } from "@tscircuit/props"
 import type { z } from "zod"
 import type { AutoroutingPhase } from "../AutoroutingPhase"
+import { getSavedFanoutTraces } from "../Breakout/get-saved-fanout-traces"
 import type { Breakout } from "../Breakout/Breakout"
 import { BreakoutPoint } from "../BreakoutPoint"
 import type { Bus } from "../Bus"
@@ -424,6 +425,15 @@ export function Group_getRoutingPhasePlans(
       fanoutPourNetMap: breakoutProps.fanoutPourNetMap,
       nets: nets.filter((net) => breakoutByNet.get(net) === breakout),
       traces: breakoutTraces,
+    }
+
+    if (breakout._parsedProps.pcbTracePaths !== undefined) {
+      breakoutPlans.push({
+        ...breakoutPlan,
+        autorouter: "default",
+        getPrecomputedTraces: (input) => getSavedFanoutTraces(breakout, input),
+      })
+      continue
     }
 
     if (!shouldUseDefaultAutorouterForBreakoutPoints) {
