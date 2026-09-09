@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("only labels LEDs with unambiguous polarity and distinguishes unconnected pins", async () => {
+test("only draws symbols for LEDs with unambiguous polarity", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width={42} height={10} routingDisabled>
@@ -47,11 +47,7 @@ test("only labels LEDs with unambiguous polarity and distinguishes unconnected p
       .list()
       .map((note) => note.text)
       .sort(),
-  ).toEqual([
-    "A (+) -> unconnected",
-    "K (-) -> unconnected",
-    "custom footprint",
-  ])
+  ).toEqual(["custom footprint"])
   expect(circuit.db.pcb_fabrication_note_path.list()).toHaveLength(4)
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

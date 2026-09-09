@@ -1,15 +1,8 @@
-import type {
-  PcbFabricationNotePath,
-  PcbFabricationNoteText,
-  SourcePort,
-} from "circuit-json"
+import type { PcbFabricationNotePath, SourcePort } from "circuit-json"
 import { applyToPoint, compose, rotate, translate } from "transformation-matrix"
 import type { Led } from "./Led"
 
-const generatedNotes = new WeakMap<
-  Led,
-  { texts: PcbFabricationNoteText[]; paths: PcbFabricationNotePath[] }
->()
+const generatedNotes = new WeakMap<Led, PcbFabricationNotePath[]>()
 
 const getPolarity = (port: SourcePort) => {
   const hints = [port.name, ...(port.port_hints ?? [])].map((hint) =>
@@ -25,47 +18,18 @@ const getPolarity = (port: SourcePort) => {
   return anode ? "anode" : "cathode"
 }
 
-const getConnectionLabel = (led: Led, port: SourcePort): string => {
-  const { db } = led.root!
-  const key = port.subcircuit_connectivity_map_key
-  if (!key) return "unconnected"
-  const netNames = db.source_net
-    .list()
-    .filter((net) => net.subcircuit_connectivity_map_key === key)
-    .map((net) => net.name)
-  const labels = netNames.length
-    ? netNames
-    : db.source_port
-        .list()
-        .filter(
-          (other) =>
-            other.subcircuit_connectivity_map_key === key &&
-            other.source_component_id !== port.source_component_id,
-        )
-        .flatMap((other) => {
-          if (!other.source_component_id) return []
-          const component = db.source_component.get(other.source_component_id)
-          return component ? [`${component.name}.${other.name}`] : []
-        })
-  const uniqueLabels = [...new Set(labels)].sort()
-  return uniqueLabels.length ? uniqueLabels.join(", ") : "unnamed net"
-}
-
 /**
- * Adds fabrication-only polarity annotations using emitted PCB port positions.
+ * Adds a fabrication-only diode symbol using emitted PCB port positions.
  * Positions are points in right-handed board/world coordinates (mm), +X right,
  * +Y up, +Z above the PCB. The diode axis is the direction from A to K, derived
  * after footprint rotation and layer mirroring; no second layer flip is applied.
  */
-export const Led_addPolarityFabricationNotes = (led: Led): void => {
+export const Led_addPolarityFabricationSymbol = (led: Led): void => {
   const root = led.root
   if (!root) return
   const { db } = root
   const previous = generatedNotes.get(led)
-  for (const text of previous?.texts ?? []) {
-    db.pcb_fabrication_note_text.delete(text.pcb_fabrication_note_text_id)
-  }
-  for (const path of previous?.paths ?? []) {
+  for (const path of previous ?? []) {
     db.pcb_fabrication_note_path.delete(path.pcb_fabrication_note_path_id)
   }
   generatedNotes.delete(led)
@@ -98,38 +62,8 @@ export const Led_addPolarityFabricationNotes = (led: Led): void => {
     subcircuit_id: led.getSubcircuit()?.subcircuit_id ?? undefined,
     layer: pcb.layer,
   }
-  const notes: {
-    texts: PcbFabricationNoteText[]
-    paths: PcbFabricationNotePath[]
-  } = { texts: [], paths: [] }
+  const notes: PcbFabricationNotePath[] = []
   generatedNotes.set(led, notes)
-  const fontSize = 0.45
-  let textAngle = (angle * 180) / Math.PI
-  if (textAngle > 90) textAngle -= 180
-  if (textAngle < -90) textAngle += 180
-  for (const [port, role, direction] of [
-    [anode, "A (+)", -1],
-    [cathode, "K (-)", 1],
-  ] as const) {
-    const text = `${role} -> ${getConnectionLabel(led, port)}`
-    // Keep connection labels beyond their pads instead of across the symbol.
-    const textHalfWidth = (text.length * fontSize * 0.6) / 2
-    notes.texts.push(
-      db.pcb_fabrication_note_text.insert({
-        ...common,
-        pcb_group_id: led.getGroup()?.pcb_group_id ?? undefined,
-        text,
-        font: "tscircuit2024",
-        font_size: fontSize,
-        ccw_rotation: (textAngle + 360) % 360,
-        anchor_alignment: "center",
-        anchor_position: point(
-          direction * (distance / 2 + 0.8 + textHalfWidth),
-          0,
-        ),
-      }),
-    )
-  }
 
   const halfLength = Math.min(distance * 0.2, 0.4)
   const halfHeight = halfLength * 0.75
@@ -145,7 +79,7 @@ export const Led_addPolarityFabricationNotes = (led: Led): void => {
     [point(halfLength, 0), point(distance / 2, 0)],
   ]
   for (const route of routes) {
-    notes.paths.push(
+    notes.push(
       db.pcb_fabrication_note_path.insert({
         ...common,
         route,

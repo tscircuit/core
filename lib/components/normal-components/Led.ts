@@ -7,7 +7,7 @@ import type {
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { isFootprinterString } from "../base-components/NormalComponent/utils/isFootprinterString"
 import type { Port } from "../primitive-components/Port"
-import { Led_addPolarityFabricationNotes } from "./Led_addPolarityFabricationNotes"
+import { Led_addPolarityFabricationSymbol } from "./Led_addPolarityFabricationSymbol"
 
 export class Led extends NormalComponent<
   typeof ledProps,
@@ -88,7 +88,7 @@ export class Led extends NormalComponent<
 
   doInitialPcbComponentSizeCalculation(): void {
     super.doInitialPcbComponentSizeCalculation()
-    Led_addPolarityFabricationNotes(this)
+    Led_addPolarityFabricationSymbol(this)
   }
 
   get anode(): Port {

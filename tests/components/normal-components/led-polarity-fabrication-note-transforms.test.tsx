@@ -51,11 +51,8 @@ test("LED fabrication symbols follow actual pads at every rotation on both layer
       pcb_component_id: pcb.pcb_component_id,
     })
     expect(paths).toHaveLength(4)
-    expect(notes.map((n) => n.text).sort()).toEqual([
-      "A (+) -> VLED",
-      "K (-) -> GND",
-    ])
-    expect([...paths, ...notes].every((n) => n.layer === layer)).toBe(true)
+    expect(notes).toHaveLength(0)
+    expect(paths.every((n) => n.layer === layer)).toBe(true)
     // Compare to emitted ports, not a restatement of core's mirror/rotation.
     expect(paths[0]!.route[0]!.x).toBeCloseTo(a.x)
     expect(paths[0]!.route[0]!.y).toBeCloseTo(a.y)
@@ -67,14 +64,6 @@ test("LED fabrication symbols follow actual pads at every rotation on both layer
     expect(Math.hypot(bx - k.x, by - k.y)).toBeLessThan(
       Math.hypot(bx - a.x, by - a.y),
     )
-    for (const note of notes) {
-      const port = note.text.startsWith("A (+)") ? a : k
-      const other = port === a ? k : a
-      const outward =
-        (note.anchor_position.x - port.x) * (port.x - other.x) +
-        (note.anchor_position.y - port.y) * (port.y - other.y)
-      expect(outward).toBeGreaterThan(0)
-    }
   }
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
