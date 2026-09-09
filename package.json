@@ -37,7 +37,7 @@
     "@tscircuit/bga-fanout-solver": "github:tscircuit/bga-fanout-solver#247c835cb8d69b65e53891dcf869731079415b39",
     "@tscircuit/capacity-autorouter": "^0.0.892",
     "@tscircuit/checks": "^0.0.186",
-    "@tscircuit/circuit-json-util": "^0.0.106",
+    "@tscircuit/circuit-json-util": "^0.0.113",
     "@tscircuit/common": "^0.0.20",
     "@tscircuit/copper-pour-solver": "^0.0.54",
     "@tscircuit/create-fdm-enclosure": "0.0.4",
@@ -132,7 +132,7 @@
     "zod": "^3.25.67"
   },
   "overrides": {
-    "@tscircuit/circuit-json-util": "^0.0.106",
+    "@tscircuit/circuit-json-util": "^0.0.113",
     "@tscircuit/props": "^0.0.646",
     "circuit-json": "^0.0.484"
   }
