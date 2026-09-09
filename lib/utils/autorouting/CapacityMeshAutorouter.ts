@@ -9,6 +9,7 @@ import {
   AutoroutingPipelineSolver7_MultiGraph,
   AutoroutingPipelineSolver8,
   AutoroutingPipelineSolver9_PreloadedTraceGraph,
+  AutoroutingPipelineSolver9_Networked,
   AutoroutingPipelineSolver11_Simplification,
   type CacheProvider,
 } from "@tscircuit/capacity-autorouter"
@@ -49,7 +50,10 @@ export interface AutorouterOptions {
   useTraceSimplificationSolver?: boolean
   autorouterVersion?: AutorouterVersion
   effort?: number
-  platformConfig?: Pick<PlatformConfig, "localCacheEngine">
+  // Structural compatibility until the props release containing useCloudAutorouter.
+  platformConfig?: Pick<PlatformConfig, "localCacheEngine"> & {
+    useCloudAutorouter?: boolean
+  }
   onSolverStarted?: (details: SolverStartedDetails) => void
 }
 
@@ -61,6 +65,7 @@ export type AutorouterSolverName =
   | "AutoroutingPipelineSolver5"
   | "AutoroutingPipelineSolver7_MultiGraph"
   | "AutoroutingPipelineSolver9_PreloadedTraceGraph"
+  | "AutoroutingPipelineSolver9_Networked"
   | "AutoroutingPipelineSolver8"
   | "AssignableAutoroutingPipeline3"
   | "AssignableAutoroutingPipeline2"
@@ -71,6 +76,8 @@ export const getAutorouterSolverName = ({
   autorouterVersion,
   useLaserPrefabSolver = false,
   useTraceSimplificationSolver = false,
+  platformConfig,
+  effort,
 }: Pick<
   AutorouterOptions,
   | "useAssignableSolver"
@@ -78,7 +85,14 @@ export const getAutorouterSolverName = ({
   | "autorouterVersion"
   | "useLaserPrefabSolver"
   | "useTraceSimplificationSolver"
+  | "platformConfig"
+  | "effort"
 >): AutorouterSolverName => {
+  const pipeline9SolverName =
+    platformConfig?.useCloudAutorouter && (effort === undefined || effort === 1)
+      ? "AutoroutingPipelineSolver9_Networked"
+      : "AutoroutingPipelineSolver9_PreloadedTraceGraph"
+
   if (useTraceSimplificationSolver) {
     return "AutoroutingPipelineSolver11_Simplification"
   }
@@ -101,12 +115,12 @@ export const getAutorouterSolverName = ({
     autorouterVersion === "beta_pipeline9" ||
     autorouterVersion === "latest"
   ) {
-    return "AutoroutingPipelineSolver9_PreloadedTraceGraph"
+    return pipeline9SolverName
   }
   if (useLaserPrefabSolver) return "AutoroutingPipelineSolver8"
   if (useAutoJumperSolver) return "AssignableAutoroutingPipeline3"
   if (useAssignableSolver) return "AssignableAutoroutingPipeline2"
-  return "AutoroutingPipelineSolver9_PreloadedTraceGraph"
+  return pipeline9SolverName
 }
 
 function getCapacityAutorouterCacheProvider(
@@ -167,17 +181,25 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
       autorouterVersion,
       useLaserPrefabSolver,
       useTraceSimplificationSolver,
+      platformConfig,
+      effort,
     })
-    const SolverClass = SOLVERS[solverName]
     const solverCacheProvider =
       getCapacityAutorouterCacheProvider(platformConfig)
 
-    this.solver = new SolverClass(input as any, {
+    const solverOptions = {
       capacityDepth,
       targetMinCapacity,
       cacheProvider: solverCacheProvider,
       effort,
-    })
+    }
+    this.solver =
+      solverName === "AutoroutingPipelineSolver9_Networked"
+        ? new AutoroutingPipelineSolver9_Networked(input as any, {
+            ...solverOptions,
+            effort: 1,
+          })
+        : new SOLVERS[solverName](input as any, solverOptions)
 
     onSolverStarted?.({
       solverName,
