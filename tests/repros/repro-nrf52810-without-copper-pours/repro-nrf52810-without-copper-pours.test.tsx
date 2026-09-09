@@ -21,6 +21,19 @@ test.skip(
     const implicitPours = circuit.db.pcb_copper_pour.list()
     expect(implicitPours.length).toBeGreaterThan(0)
     expect(implicitPours.every((pour) => pour.shape === "brep")).toBe(true)
+    // The triangular GND remnant beneath U1 has no terminal connection.
+    // Check its physical location rather than an insertion-order-dependent ID.
+    const floatingIslandCenter = point(3.7, -0.3)
+    expect(
+      implicitPours.some((pour) => {
+        if (pour.layer !== "top" || pour.shape !== "brep") return false
+        return new Polygon(
+          [pour.brep_shape.outer_ring, ...pour.brep_shape.inner_rings].map(
+            (ring) => ring.vertices.map((vertex) => point(vertex.x, vertex.y)),
+          ),
+        ).contains(floatingIslandCenter)
+      }),
+    ).toBe(false)
 
     const rfKeepout = circuit.db.pcb_keepout
       .list()

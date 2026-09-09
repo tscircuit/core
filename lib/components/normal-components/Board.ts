@@ -9,7 +9,12 @@ import {
 import { jlcMinTolerances } from "@tscircuit/jlcpcb-manufacturing-specs"
 import { getBoundsFromPoints } from "@tscircuit/math-utils"
 import { boardProps } from "@tscircuit/props"
-import type { AnyCircuitElement, LayerRef, PcbBoard } from "circuit-json"
+import type {
+  AnyCircuitElement,
+  LayerRef,
+  PcbBoard,
+  PcbVia,
+} from "circuit-json"
 import { getBoardAvailableLayers } from "lib/utils/getViaSpanLayers"
 import { type Matrix, compose, translate } from "transformation-matrix"
 import type { z } from "zod"
@@ -26,6 +31,7 @@ import { Subcircuit_doInitialRenderIsolatedSubcircuits } from "../primitive-comp
 import { Subcircuit_getSubcircuitPropHash } from "../primitive-components/Group/Subcircuit_getSubcircuitPropHash"
 import type { BoardI } from "./BoardI"
 import { Board_doInitialPcbImplicitCopperPourRender } from "./Board_doInitialPcbImplicitCopperPourRender"
+import { Board_doInitialPcbCopperPourCleanup } from "./Board_doInitialPcbCopperPourCleanup"
 import { Board_doInitialPcbPlacementDesignRuleChecks } from "./Board_doInitialPcbPlacementDesignRuleChecks"
 import { BoardCastellatedHole } from "./board-castellated-hole"
 
@@ -625,6 +631,12 @@ export class Board
 
   doInitialPcbImplicitCopperPourRender() {
     Board_doInitialPcbImplicitCopperPourRender(this)
+  }
+
+  _generatedStitchingViaIds = new Set<PcbVia["pcb_via_id"]>()
+
+  doInitialPcbCopperPourCleanup() {
+    Board_doInitialPcbCopperPourCleanup(this)
   }
 
   updatePcbDesignRuleChecks() {
