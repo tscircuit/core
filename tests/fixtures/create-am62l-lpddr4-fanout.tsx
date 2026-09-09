@@ -1887,11 +1887,113 @@ export type FanoutAlgorithmFn = (
   simpleRouteJson: SimpleRouteJson,
 ) => Promise<GenericLocalAutorouter>
 
+function getAm62lDirectDecouplingNetwork({
+  connectTraceEndpointsToVias,
+  directDecouplingCapacitors,
+}: {
+  connectTraceEndpointsToVias: boolean
+  directDecouplingCapacitors: readonly (typeof AM62L_DIRECT_DECOUPLING_CAPACITORS)[number][]
+}) {
+  return (
+    <group name="SOC_DIRECT_DECOUPLING">
+      {/* The full board would join these rail members through segmented power
+      planes. Keep that logical membership explicit without drawing unsafe
+      chords across the BGA; the local cap-to-PDN handoff traces and vias below
+      remain fully authored and DRC-checked PCB copper. */}
+      <group name="SOC_DIRECT_RAIL_MEMBERSHIP" routingDisabled>
+        {AM62L_DIRECT_POWER_BALLS.map((powerBall) => (
+          <Fragment key={powerBall.ballName}>
+            <trace
+              name={`U1_${powerBall.ballName}_PDN_MEMBERSHIP`}
+              from={`.U1 > .${powerBall.ballName}`}
+              to={`net.${powerBall.railNetName}`}
+            />
+          </Fragment>
+        ))}
+      </group>
+      {directDecouplingCapacitors.map((capacitor) => {
+        const powerViaName = `V_${capacitor.name}_POWER`
+        const groundViaName = `V_${capacitor.name}_GND`
+        const powerViaPosition = getDirectDecouplingViaPosition(
+          capacitor,
+          capacitor.powerViaOffset,
+        )
+        const groundViaPosition = getDirectDecouplingViaPosition(
+          capacitor,
+          capacitor.groundViaOffset,
+        )
+        return (
+          <Fragment key={capacitor.name}>
+            <capacitor
+              name={capacitor.name}
+              capacitance={capacitor.capacitance}
+              footprint={capacitor.footprint}
+              layer="bottom"
+              maxDecouplingTraceLength={`${capacitor.maxDecouplingTraceLength}mm`}
+              pcbX={SOC_PCB_X + capacitor.pcbX}
+              pcbY={SOC_PCB_Y + capacitor.pcbY}
+              pcbRotation={capacitor.pcbRotation}
+            />
+            <via
+              name={powerViaName}
+              pcbX={powerViaPosition.x}
+              pcbY={powerViaPosition.y}
+              fromLayer="top"
+              toLayer="bottom"
+              layers={getViaBoardLayers(8)}
+              holeDiameter="0.15mm"
+              outerDiameter="0.24mm"
+              connectsTo={`net.${capacitor.railNetName}`}
+            />
+            <trace
+              name={`${capacitor.name}_POWER_DROP`}
+              from={`.${capacitor.name} > .pin1`}
+              to={
+                connectTraceEndpointsToVias
+                  ? `.${powerViaName} > .bottom`
+                  : `net.${capacitor.railNetName}`
+              }
+              maxLength={`${capacitor.maxDecouplingTraceLength}mm`}
+              pcbPathRelativeTo={`.${capacitor.name} > .pin1`}
+              pcbPath={[`.${powerViaName} > .bottom`]}
+            />
+            <via
+              name={groundViaName}
+              pcbX={groundViaPosition.x}
+              pcbY={groundViaPosition.y}
+              fromLayer="top"
+              toLayer="bottom"
+              layers={getViaBoardLayers(8)}
+              holeDiameter="0.15mm"
+              outerDiameter="0.24mm"
+              connectsTo="net.GND"
+            />
+            <trace
+              name={`${capacitor.name}_GND_DROP`}
+              from={`.${capacitor.name} > .pin2`}
+              to={
+                connectTraceEndpointsToVias
+                  ? `.${groundViaName} > .bottom`
+                  : "net.GND"
+              }
+              maxLength={`${capacitor.maxDecouplingTraceLength}mm`}
+              pcbPathRelativeTo={`.${capacitor.name} > .pin2`}
+              pcbPath={[`.${groundViaName} > .bottom`]}
+            />
+          </Fragment>
+        )
+      })}
+    </group>
+  )
+}
+
 export const renderAm62lLpddr4Fanout = async ({
   fanoutAlgorithmFn,
   fanoutSolverLabel,
   includeBottomDecouplingCapacitors = false,
+  includeDirectDecouplingNetworkInInitialRender = false,
   includePowerPlaneFanout = false,
+  expectDuplicateDecouplingTraceFailure = false,
   routedDdrDataTraceNames,
   snapshotPath,
   useProductionGlobalAutorouter = false,
@@ -1899,7 +2001,9 @@ export const renderAm62lLpddr4Fanout = async ({
   fanoutAlgorithmFn?: FanoutAlgorithmFn
   fanoutSolverLabel?: string
   includeBottomDecouplingCapacitors?: boolean
+  includeDirectDecouplingNetworkInInitialRender?: boolean
   includePowerPlaneFanout?: boolean
+  expectDuplicateDecouplingTraceFailure?: boolean
   routedDdrDataTraceNames?: readonly string[]
   snapshotPath: string
   useProductionGlobalAutorouter?: boolean
@@ -2401,6 +2505,21 @@ export const renderAm62lLpddr4Fanout = async ({
           />
         </Fragment>
       ))}
+      {includeCompleteDecouplingNetwork &&
+        includeDirectDecouplingNetworkInInitialRender &&
+        getAm62lDirectDecouplingNetwork({
+          connectTraceEndpointsToVias: true,
+          directDecouplingCapacitors: renderedDirectDecouplingCapacitors,
+        })}
+      {fanoutSolverLabel && includeDirectDecouplingNetworkInInitialRender && (
+        <pcbnotetext
+          text={fanoutSolverLabel}
+          pcbX={0}
+          pcbY={-9.25}
+          fontSize={0.7}
+          anchorAlignment="center"
+        />
+      )}
     </board>,
   )
 
@@ -2434,7 +2553,74 @@ export const renderAm62lLpddr4Fanout = async ({
     return
   }
 
-  if (includeCompleteDecouplingNetwork) {
+  if (expectDuplicateDecouplingTraceFailure) {
+    expect(includeDirectDecouplingNetworkInInitialRender).toBe(true)
+    const socFanoutInput = autoroutingPhaseIoStack[0]?.startSimpleRouteJson
+    expect(socFanoutInput).toBeDefined()
+    if (!socFanoutInput) throw new Error("Missing AM62L fanout input")
+    const directDecouplingViaObstacles = socFanoutInput.obstacles.filter(
+      (obstacle) =>
+        obstacle.circuitJsonMetadata?.pcb_via_id !== undefined &&
+        obstacle.layers.length === 8 &&
+        Math.abs(obstacle.width - 0.24) < 1e-6 &&
+        Math.abs(obstacle.height - 0.24) < 1e-6,
+    )
+    expect(directDecouplingViaObstacles).toHaveLength(120)
+    const underBgaDirectDecouplingViaPositions =
+      renderedDirectDecouplingCapacitors
+        .filter(({ placement }) => placement === "under")
+        .flatMap((capacitor) => [
+          getDirectDecouplingViaPosition(capacitor, capacitor.powerViaOffset),
+          getDirectDecouplingViaPosition(capacitor, capacitor.groundViaOffset),
+        ])
+    expect(underBgaDirectDecouplingViaPositions).toHaveLength(92)
+    for (const viaPosition of underBgaDirectDecouplingViaPositions) {
+      expect(
+        directDecouplingViaObstacles.some(
+          (obstacle) =>
+            Math.hypot(
+              obstacle.center.x - viaPosition.x,
+              obstacle.center.y - viaPosition.y,
+            ) < 1e-6,
+        ),
+      ).toBe(true)
+    }
+    expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
+    const globalPhaseInput = autoroutingPhaseIoStack[2]?.startSimpleRouteJson
+    expect(globalPhaseInput).toBeDefined()
+    if (!globalPhaseInput) throw new Error("Missing global routing input")
+    const globalPhaseInputTraces = globalPhaseInput.traces ?? []
+    expect(globalPhaseInputTraces).toHaveLength(638)
+    expect(
+      new Set(globalPhaseInputTraces.map((trace) => trace.pcb_trace_id)).size,
+    ).toBe(398)
+    const pcbTraceErrors = circuit.db.pcb_trace_error.list()
+    expect(pcbTraceErrors.length).toBeGreaterThan(0)
+    expect(
+      pcbTraceErrors.some(({ message }) => message.includes("C_SOC_")),
+    ).toBe(true)
+    expect(
+      circuit.db.pcb_via_trace_clearance_error.list().length,
+    ).toBeGreaterThan(0)
+    await expect(circuit).toMatchPcbSnapshot(snapshotPath, {
+      colorOverrides: {
+        copper: {
+          inner1: "rgba(255, 140, 0, 0.2)",
+          inner2: "rgba(255, 215, 0, 0.2)",
+          inner3: "rgba(50, 205, 50, 0.2)",
+        },
+      },
+      diffThresholdPercent: 0.05,
+      shouldDrawErrors: false,
+      shouldDrawRatsNest: true,
+    })
+    return
+  }
+
+  if (
+    includeCompleteDecouplingNetwork &&
+    !includeDirectDecouplingNetworkInInitialRender
+  ) {
     // Route the high-speed DDR escape first, then add the remaining processor
     // decouplers as fixed copper. Feeding 60 bottom-side capacitors and their
     // through vias into the fanout solver makes the regression prohibitively
@@ -2442,87 +2628,10 @@ export const renderAm62lLpddr4Fanout = async ({
     const board = circuit._getBoard()
     if (!board) throw new Error("Missing AM62L fanout board")
     const directDecouplingGroup = createInstanceFromReactElement(
-      <group name="SOC_DIRECT_DECOUPLING">
-        {/* The full board would join these rail members through segmented power
-        planes. Keep that logical membership explicit without drawing unsafe
-        post-solve chords across the BGA; the local cap-to-PDN handoff traces
-        and vias below remain fully authored and DRC-checked PCB copper. */}
-        <group name="SOC_DIRECT_RAIL_MEMBERSHIP" routingDisabled>
-          {AM62L_DIRECT_POWER_BALLS.map((powerBall) => (
-            <Fragment key={powerBall.ballName}>
-              <trace
-                name={`U1_${powerBall.ballName}_PDN_MEMBERSHIP`}
-                from={`.U1 > .${powerBall.ballName}`}
-                to={`net.${powerBall.railNetName}`}
-              />
-            </Fragment>
-          ))}
-        </group>
-        {renderedDirectDecouplingCapacitors.map((capacitor) => {
-          const powerViaName = `V_${capacitor.name}_POWER`
-          const groundViaName = `V_${capacitor.name}_GND`
-          const powerViaPosition = getDirectDecouplingViaPosition(
-            capacitor,
-            capacitor.powerViaOffset,
-          )
-          const groundViaPosition = getDirectDecouplingViaPosition(
-            capacitor,
-            capacitor.groundViaOffset,
-          )
-          return (
-            <Fragment key={capacitor.name}>
-              <capacitor
-                name={capacitor.name}
-                capacitance={capacitor.capacitance}
-                footprint={capacitor.footprint}
-                layer="bottom"
-                maxDecouplingTraceLength={`${capacitor.maxDecouplingTraceLength}mm`}
-                pcbX={SOC_PCB_X + capacitor.pcbX}
-                pcbY={SOC_PCB_Y + capacitor.pcbY}
-                pcbRotation={capacitor.pcbRotation}
-              />
-              <via
-                name={powerViaName}
-                pcbX={powerViaPosition.x}
-                pcbY={powerViaPosition.y}
-                fromLayer="top"
-                toLayer="bottom"
-                layers={getViaBoardLayers(8)}
-                holeDiameter="0.15mm"
-                outerDiameter="0.24mm"
-                connectsTo={`net.${capacitor.railNetName}`}
-              />
-              <trace
-                name={`${capacitor.name}_POWER_DROP`}
-                from={`.${capacitor.name} > .pin1`}
-                to={`net.${capacitor.railNetName}`}
-                maxLength={`${capacitor.maxDecouplingTraceLength}mm`}
-                pcbPathRelativeTo={`.${capacitor.name} > .pin1`}
-                pcbPath={[`.${powerViaName} > .bottom`]}
-              />
-              <via
-                name={groundViaName}
-                pcbX={groundViaPosition.x}
-                pcbY={groundViaPosition.y}
-                fromLayer="top"
-                toLayer="bottom"
-                layers={getViaBoardLayers(8)}
-                holeDiameter="0.15mm"
-                outerDiameter="0.24mm"
-                connectsTo="net.GND"
-              />
-              <trace
-                name={`${capacitor.name}_GND_DROP`}
-                from={`.${capacitor.name} > .pin2`}
-                to="net.GND"
-                maxLength={`${capacitor.maxDecouplingTraceLength}mm`}
-                pcbPathRelativeTo={`.${capacitor.name} > .pin2`}
-                pcbPath={[`.${groundViaName} > .bottom`]}
-              />
-            </Fragment>
-          )
-        })}
-      </group>,
+      getAm62lDirectDecouplingNetwork({
+        connectTraceEndpointsToVias: false,
+        directDecouplingCapacitors: renderedDirectDecouplingCapacitors,
+      }),
     )
     board.add(directDecouplingGroup)
 
