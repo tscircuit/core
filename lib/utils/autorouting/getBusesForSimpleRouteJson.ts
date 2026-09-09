@@ -1,13 +1,15 @@
-import type { SourceNet, SourcePort, SourceTrace } from "circuit-json"
+import type { SourceNet, SourceTrace } from "circuit-json"
 import type { Bus } from "lib/components/primitive-components/Bus"
-import type { Port } from "lib/components/primitive-components/Port/Port"
+import {
+  getSourceTracesForRoutingConnectionSelector,
+  getSrjConnectionsForSourceTraces,
+} from "./resolve-routing-connection"
 import type {
   SimpleRouteBus,
   SimpleRouteConnection,
   SrjConnectionName,
 } from "./SimpleRouteJson"
 
-type SourcePortId = NonNullable<SourcePort["source_port_id"]>
 type SubcircuitId = NonNullable<SourceTrace["subcircuit_id"]>
 type GetBusesParams = {
   srjConnections: SimpleRouteConnection[]
@@ -21,7 +23,7 @@ export type FanoutPourNetMap = Readonly<
   Record<string, string | readonly string[]>
 >
 
-const getBusSourceTraceIdOrThrow = ({
+const getBusSourceTraceOrThrow = ({
   bus,
   busSourceTraces,
   traceNameOrPortSelector,
@@ -29,23 +31,12 @@ const getBusSourceTraceIdOrThrow = ({
   bus: Bus
   busSourceTraces: SourceTrace[]
   traceNameOrPortSelector: string
-}): SourceTrace["source_trace_id"] => {
-  const sourceTracesWithMatchingName = busSourceTraces.filter(
-    (sourceTrace) => sourceTrace.name === traceNameOrPortSelector,
-  )
-  const selectedPort =
-    sourceTracesWithMatchingName.length === 0
-      ? bus.getSubcircuit().selectOne<Port>(traceNameOrPortSelector, {
-          type: "port",
-        })
-      : null
-  const selectedSourcePortId: SourcePortId | undefined =
-    selectedPort?.source_port_id ?? undefined
-  const matchingSourceTraces = selectedSourcePortId
-    ? busSourceTraces.filter((sourceTrace) =>
-        sourceTrace.connected_source_port_ids.includes(selectedSourcePortId),
-      )
-    : sourceTracesWithMatchingName
+}): SourceTrace => {
+  const matchingSourceTraces = getSourceTracesForRoutingConnectionSelector({
+    subcircuit: bus.getSubcircuit(),
+    sourceTraces: busSourceTraces,
+    traceNameOrPortSelector,
+  })
 
   if (matchingSourceTraces.length === 0) {
     throw new Error(
@@ -59,23 +50,27 @@ const getBusSourceTraceIdOrThrow = ({
   }
 
   const sourceTrace = matchingSourceTraces[0]
-  return sourceTrace.source_trace_id
+  return sourceTrace
 }
 
 const getBusSrjConnectionNamesOrThrow = ({
   srjConnections,
   bus,
-  sourceTraceId,
+  sourceTrace,
+  busSourceTraces,
   traceNameOrPortSelector,
 }: {
   srjConnections: SimpleRouteConnection[]
   bus: Bus
-  sourceTraceId: SourceTrace["source_trace_id"]
+  sourceTrace: SourceTrace
+  busSourceTraces: SourceTrace[]
   traceNameOrPortSelector: string
 }): SrjConnectionName[] => {
-  const matchingSrjConnections = srjConnections.filter(
-    (srjConnection) => srjConnection.source_trace_id === sourceTraceId,
-  )
+  const matchingSrjConnections = getSrjConnectionsForSourceTraces({
+    selectedSourceTraces: [sourceTrace],
+    sourceTraces: busSourceTraces,
+    srjConnections,
+  })
 
   if (matchingSrjConnections.length === 0) {
     throw new Error(
@@ -164,7 +159,7 @@ export const getBusesForSimpleRouteJson = ({
     )
     const connectionNames = bus._parsedProps.connections.flatMap(
       (traceNameOrPortSelector) => {
-        const sourceTraceId = getBusSourceTraceIdOrThrow({
+        const sourceTrace = getBusSourceTraceOrThrow({
           bus,
           busSourceTraces,
           traceNameOrPortSelector,
@@ -172,7 +167,8 @@ export const getBusesForSimpleRouteJson = ({
         return getBusSrjConnectionNamesOrThrow({
           srjConnections,
           bus,
-          sourceTraceId,
+          sourceTrace,
+          busSourceTraces,
           traceNameOrPortSelector,
         })
       },
