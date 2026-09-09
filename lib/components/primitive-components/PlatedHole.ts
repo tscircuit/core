@@ -368,6 +368,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         is_covered_with_solder_mask: isCoveredWithSolderMask,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
+        ccw_rotation: finalRotationDegrees,
       } as PcbHoleWithPolygonPad)
       this.pcb_plated_hole_id = pcb_plated_hole.pcb_plated_hole_id
     }
