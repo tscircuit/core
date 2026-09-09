@@ -35,14 +35,7 @@ test("design rule check detects overlapping plated holes", async () => {
     .filter((el) => el.type === "pcb_footprint_overlap_error")
     .filter((el) => el.pcb_plated_hole_ids?.length === 2)
 
-  // The checks package also reports each hole inside the other chip's
-  // courtyard; keep the original hole-to-hole assertion specific.
-  expect(
-    overlapErrors.filter((error) => error.pcb_plated_hole_ids?.length === 2),
-  ).toHaveLength(14)
-  expect(
-    overlapErrors.filter((error) => error.pcb_plated_hole_ids?.length === 1),
-  ).toHaveLength(16)
+  expect(overlapErrors).toHaveLength(14)
   expect(overlapErrors[0]).toHaveProperty("message")
   expect(overlapErrors[0].message).toContain("overlap")
 
