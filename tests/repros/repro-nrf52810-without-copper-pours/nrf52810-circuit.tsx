@@ -79,6 +79,9 @@ export default () => (
     doubleSidedAssembly
     isViaInPadAllowed={false}
     automaticPoursEnabled
+    // Keep the copper-pour repro on its original routing pipeline until
+    // Pipeline9's via-to-pad clearance regression is fixed.
+    autorouterVersion="beta_pipeline7"
     schLayout={{ layoutMode: "relative" }}
     autorouter={{
       preset: "auto_local",
