@@ -1,13 +1,13 @@
 import { inductorProps } from "@tscircuit/props"
+import type { SourceSimpleInductor } from "circuit-json"
+import { formatSiUnit, parseAndConvertSiUnit } from "format-si-unit"
 import {
-  FTYPE,
   type BaseSymbolName,
+  FTYPE,
   type PassivePorts,
 } from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { Port } from "../primitive-components/Port"
-import { formatSiUnit, parseAndConvertSiUnit } from "format-si-unit"
-import type { SourceSimpleInductor } from "circuit-json"
 
 export class Inductor extends NormalComponent<
   typeof inductorProps,
@@ -44,7 +44,7 @@ export class Inductor extends NormalComponent<
     const source_component = db.source_component.insert({
       name: this.name,
       ftype: FTYPE.simple_inductor,
-      inductance: this.props.inductance,
+      inductance: props.inductance,
       max_current_rating:
         props.maxCurrentRating === undefined
           ? undefined
