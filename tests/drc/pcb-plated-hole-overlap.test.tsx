@@ -35,7 +35,19 @@ test("design rule check detects overlapping plated holes", async () => {
     (el) => el.type === "pcb_footprint_overlap_error",
   )
 
-  expect(overlapErrors.length).toBe(14)
+  // Each package's holes also enter the other package's courtyard. Keep the
+  // original hole-pair coverage separate from those additional DRC findings.
+  const platedHolePairErrors = overlapErrors.filter(
+    (error) => error.pcb_plated_hole_ids?.length === 2,
+  )
+  const platedHoleCourtyardErrors = overlapErrors.filter(
+    (error) =>
+      error.pcb_plated_hole_ids?.length === 1 &&
+      error.message.includes("pcb_courtyard_"),
+  )
+  expect(platedHolePairErrors).toHaveLength(14)
+  expect(platedHoleCourtyardErrors).toHaveLength(16)
+  expect(overlapErrors).toHaveLength(30)
   expect(overlapErrors[0]).toHaveProperty("message")
   expect(overlapErrors[0].message).toContain("overlap")
 
