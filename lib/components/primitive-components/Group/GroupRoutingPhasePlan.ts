@@ -1,6 +1,8 @@
 import type { AutorouterProp, AutoroutingPhaseProps } from "@tscircuit/props"
 import type {
   PcbGroupId,
+  SimpleRouteJson,
+  SimplifiedPcbTrace,
   SimpleRouteBounds,
 } from "lib/utils/autorouting/SimpleRouteJson"
 import type { Net } from "../Net"
@@ -19,6 +21,7 @@ export interface RoutingPhaseDrcTolerances {
 }
 
 export interface RoutingPhasePlan {
+  getPrecomputedTraces?: (input: SimpleRouteJson) => SimplifiedPcbTrace[]
   routingPhaseIndex: number | null
   phaseName?: AutoroutingPhaseProps["name"]
   routingPcbGroupId?: PcbGroupId
