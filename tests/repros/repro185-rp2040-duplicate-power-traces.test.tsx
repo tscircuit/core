@@ -61,9 +61,6 @@ const pinLabels = {
   pin57: ["GND", "thermalpad"],
 } as const
 
-// Reduced from the RP2040 block in @tscircuit/common@0.0.65 used by:
-// https://tscircuit.com/mohan-bee/rp2040-robot-controller#schematic
-// Release: d7c1d11d-a044-40ed-9e25-1cdbcc87a097
 // Keep the original pin order/spacing and replace off-chip signals with nets.
 // Repro: redundant parallel V3V3 routes beside IOVDD2 / VREG_IN.
 test("repro185: RP2040 duplicate power traces", async () => {
