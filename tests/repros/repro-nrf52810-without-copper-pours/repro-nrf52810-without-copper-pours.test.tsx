@@ -104,11 +104,18 @@ test(
       "-bottom.test.tsx",
     )
 
-    await expect(circuit).toMatchPcbSnapshot(topSnapshotPath, { layer: "top" })
+    // CI can differ by 0.15% at thin copper-pour seams. Keep a small raster
+    // tolerance while the geometry and clearance assertions above stay exact.
+    const snapshotOptions = { diffThresholdPercent: 0.2 }
+    await expect(circuit).toMatchPcbSnapshot(topSnapshotPath, {
+      ...snapshotOptions,
+      layer: "top",
+    })
     await expect(circuit).toMatchPcbSnapshot(bottomSnapshotPath, {
+      ...snapshotOptions,
       layer: "bottom",
     })
-    await expect(circuit).toMatchPcbSnapshot(import.meta.path)
+    await expect(circuit).toMatchPcbSnapshot(import.meta.path, snapshotOptions)
   },
   { timeout: 120_000 },
 )
