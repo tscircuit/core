@@ -9,7 +9,7 @@ export default function Lm386AudioAmplifier() {
       <net name="GND" isGroundNet />
 
       <schematictext
-        text="REPRO181: auto-layout overlaps C_GAIN with R_ZOBEL and C_BYPASS with C_OUT"
+        text="REPRO181: auto-layout separates C_GAIN from R_ZOBEL and C_BYPASS from C_OUT"
         schX={0}
         schY={4.5}
         fontSize={0.25}
@@ -90,7 +90,7 @@ export default function Lm386AudioAmplifier() {
   )
 }
 
-test("repro181: LM386 audio amplifier auto-layout produces overlapping components", async () => {
+test("repro181: LM386 audio amplifier auto-layout separates previously overlapping components", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(<Lm386AudioAmplifier />)
@@ -119,7 +119,7 @@ test("repro181: LM386 audio amplifier auto-layout produces overlapping component
     return bounds
   }
 
-  // Confirm that auto-layout placed C_GAIN overlapping R_ZOBEL
+  // Confirm that auto-layout separates C_GAIN from R_ZOBEL
   const cGainBounds = getRenderedBounds("C_GAIN")
   const rZobelBounds = getRenderedBounds("R_ZOBEL")
   const cGainRZobelOverlap =
@@ -127,9 +127,9 @@ test("repro181: LM386 audio amplifier auto-layout produces overlapping component
     cGainBounds.maxX > rZobelBounds.minX &&
     cGainBounds.minY < rZobelBounds.maxY &&
     cGainBounds.maxY > rZobelBounds.minY
-  expect(cGainRZobelOverlap).toBe(true)
+  expect(cGainRZobelOverlap).toBe(false)
 
-  // Confirm that auto-layout placed C_BYPASS overlapping C_OUT
+  // Confirm that auto-layout separates C_BYPASS from C_OUT
   const cBypassBounds = getRenderedBounds("C_BYPASS")
   const cOutBounds = getRenderedBounds("C_OUT")
   const cBypassCOutOverlap =
@@ -137,7 +137,7 @@ test("repro181: LM386 audio amplifier auto-layout produces overlapping component
     cBypassBounds.maxX > cOutBounds.minX &&
     cBypassBounds.minY < cOutBounds.maxY &&
     cBypassBounds.maxY > cOutBounds.minY
-  expect(cBypassCOutOverlap).toBe(true)
+  expect(cBypassCOutOverlap).toBe(false)
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })

@@ -50,12 +50,12 @@ test("design rule check detects overlapping PCB component pads", async () => {
   const smtPads = circuitJson.filter((el) => el.type === "pcb_smtpad")
   expect(smtPads.length).toBe(8)
 
-  // Check for footprint overlap errors (2 pads overlap between the two resistors)
+  // The two pad overlaps are one component placement conflict.
   const overlapErrors = circuitJson.filter(
     (el) => el.type === "pcb_footprint_overlap_error",
   )
 
-  expect(overlapErrors.length).toBe(2)
+  expect(overlapErrors).toHaveLength(1)
   expect(overlapErrors[0]).toHaveProperty("message")
   expect(overlapErrors[0].message).toContain("overlap")
   expect(overlapErrors[0]).toHaveProperty("pcb_smtpad_ids")
