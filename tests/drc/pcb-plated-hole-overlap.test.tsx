@@ -1,4 +1,5 @@
 import { test, expect } from "bun:test"
+import type { PcbComponentOverlapError } from "@tscircuit/checks"
 import { getTestFixture } from "../fixtures/get-test-fixture"
 
 /**
@@ -30,25 +31,31 @@ test("design rule check detects overlapping plated holes", async () => {
   const platedHoles = circuitJson.filter((el) => el.type === "pcb_plated_hole")
   expect(platedHoles.length).toBe(16)
 
-  // Count hole-to-hole overlaps only; courtyard overlaps share this error type.
-  const overlapErrors = circuitJson
-    .filter((el) => el.type === "pcb_footprint_overlap_error")
-    .filter((el) => el.pcb_plated_hole_ids?.length === 2)
-
-  expect(overlapErrors).toHaveLength(14)
-  expect(overlapErrors[0]).toHaveProperty("message")
-  expect(overlapErrors[0].message).toContain("overlap")
-
-  // Verify error contains plated hole IDs
-  expect(overlapErrors[0]).toHaveProperty("pcb_plated_hole_ids")
-
-  // Keep the visual regression focused on the same hole pairs as the assertions.
-  const filteredJson = circuitJson.filter(
-    (el) =>
-      el.type !== "pcb_footprint_overlap_error" ||
-      el.pcb_plated_hole_ids?.length === 2,
+  const overlapErrors = circuitJson.filter(
+    (el) => el.type === "pcb_footprint_overlap_error",
   )
-  expect(filteredJson).toMatchPcbSnapshot(import.meta.path, {
+  expect(overlapErrors).toHaveLength(1)
+  const overlap = overlapErrors[0] as PcbComponentOverlapError
+  expect(overlap.message).toContain("U1 overlaps U2")
+  expect(overlap.message).toContain("Move the components apart")
+  expect(overlap.pcb_plated_hole_ids).toHaveLength(16)
+  expect(overlap.related_errors).toHaveLength(45)
+  expect(
+    overlap.related_errors?.filter(
+      (error) =>
+        error.type === "pcb_footprint_overlap_error" &&
+        error.pcb_plated_hole_ids?.length === 2,
+    ),
+  ).toHaveLength(14)
+  expect(
+    circuitJson.filter((el) => el.type === "pcb_pad_pad_clearance_error"),
+  ).toHaveLength(0)
+  expect(
+    circuitJson.filter((el) => el.type === "pcb_courtyard_overlap_error"),
+  ).toHaveLength(0)
+
+  // Render all diagnostics: no filtering away the original regression.
+  expect(circuitJson).toMatchPcbSnapshot(import.meta.path, {
     shouldDrawErrors: true,
   })
 })
