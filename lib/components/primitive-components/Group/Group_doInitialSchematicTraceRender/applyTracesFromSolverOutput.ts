@@ -14,7 +14,6 @@ import { Port } from "../../Port"
 import { Group } from "../Group"
 import { computeCrossings } from "./compute-crossings"
 import { computeJunctions } from "./compute-junctions"
-import { getPortForSchematicSymbolPort } from "./getPortForSchematicSymbolPort"
 import { type SchematicPortId, asSchematicPortId } from "./port-id-types"
 import { removeOverlappingSameNetCrossingSegments } from "./remove-overlapping-same-net-crossing-segments"
 
@@ -125,26 +124,6 @@ export function applyTracesFromSolverOutput(args: {
     schematicPortIdsWithPreExistingNetLabels,
   } = args
   const { db } = group.root!
-
-  const schematicPortIdsByRoutedSchematicPortId = new Map<
-    SchematicPortId,
-    SchematicPortId[]
-  >()
-  for (const port of group.selectAll<Port>("port")) {
-    const routedSchematicPortIdValue =
-      getPortForSchematicSymbolPort(port).schematic_port_id
-    const schematicPortIdValue = port.schematic_port_id
-    if (!routedSchematicPortIdValue || !schematicPortIdValue) continue
-    const routedSchematicPortId = asSchematicPortId(routedSchematicPortIdValue)
-    const schematicPortId = asSchematicPortId(schematicPortIdValue)
-    const schematicPortIds =
-      schematicPortIdsByRoutedSchematicPortId.get(routedSchematicPortId) ?? []
-    schematicPortIds.push(schematicPortId)
-    schematicPortIdsByRoutedSchematicPortId.set(
-      routedSchematicPortId,
-      schematicPortIds,
-    )
-  }
 
   const customSymbolPortIds = new Set(
     group
@@ -278,13 +257,6 @@ export function applyTracesFromSolverOutput(args: {
           db.schematic_port.update(routedSchematicPortId, {
             is_connected: true,
           })
-          for (const schematicPortId of schematicPortIdsByRoutedSchematicPortId.get(
-            routedSchematicPortId,
-          ) ?? []) {
-            db.schematic_port.update(schematicPortId, {
-              is_connected: true,
-            })
-          }
         }
 
         subcircuit_connectivity_map_key = userNetIdToConnKey.get(

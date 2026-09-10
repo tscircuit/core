@@ -143,7 +143,7 @@ export default function TrafficLightController() {
   )
 }
 
-test("adjacent LED output branches overlap schematic annotations", async () => {
+test("adjacent LED output branches follow chip pin order", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(<TrafficLightController />)

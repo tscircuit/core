@@ -1,5 +1,6 @@
 import {
   dedupePcbDrcErrors,
+  consolidatePcbOverlapErrors,
   runAllNetlistChecks,
   runAllPinSpecificationChecks,
   runAllPlacementChecks,
@@ -9,7 +10,12 @@ import {
 import { jlcMinTolerances } from "@tscircuit/jlcpcb-manufacturing-specs"
 import { getBoundsFromPoints } from "@tscircuit/math-utils"
 import { boardProps } from "@tscircuit/props"
-import type { AnyCircuitElement, LayerRef, PcbBoard } from "circuit-json"
+import type {
+  AnyCircuitElement,
+  LayerRef,
+  PcbBoard,
+  PcbVia,
+} from "circuit-json"
 import { getBoardAvailableLayers } from "lib/utils/getViaSpanLayers"
 import { type Matrix, compose, translate } from "transformation-matrix"
 import type { z } from "zod"
@@ -26,6 +32,7 @@ import { Subcircuit_doInitialRenderIsolatedSubcircuits } from "../primitive-comp
 import { Subcircuit_getSubcircuitPropHash } from "../primitive-components/Group/Subcircuit_getSubcircuitPropHash"
 import type { BoardI } from "./BoardI"
 import { Board_doInitialPcbImplicitCopperPourRender } from "./Board_doInitialPcbImplicitCopperPourRender"
+import { Board_doInitialPcbCopperPourCleanup } from "./Board_doInitialPcbCopperPourCleanup"
 import { Board_doInitialPcbPlacementDesignRuleChecks } from "./Board_doInitialPcbPlacementDesignRuleChecks"
 import { BoardCastellatedHole } from "./board-castellated-hole"
 
@@ -627,6 +634,12 @@ export class Board
     Board_doInitialPcbImplicitCopperPourRender(this)
   }
 
+  _generatedStitchingViaIds = new Set<PcbVia["pcb_via_id"]>()
+
+  doInitialPcbCopperPourCleanup() {
+    Board_doInitialPcbCopperPourCleanup(this)
+  }
+
   updatePcbDesignRuleChecks() {
     const { db } = this.root!
 
@@ -703,20 +716,23 @@ export class Board
       if (shouldRunPlacementChecks) {
         const existingPlacementDiagnostics = db.toArray()
         checksToRun.push(
-          runAllPlacementChecks(circuitJson).then((results) =>
-            results
-              .filter(
+          runAllPlacementChecks(circuitJson, {
+            consolidateOverlaps: false,
+          }).then((results) =>
+            consolidatePcbOverlapErrors(
+              circuitJson,
+              results.filter(
                 (result) => !this._isExpectedCastellatedHoleDrcError(result),
-              )
-              .filter(
-                (result) =>
-                  !existingPlacementDiagnostics.some(
-                    (existing) =>
-                      existing.type === result.type &&
-                      "message" in existing &&
-                      existing.message === result.message,
-                  ),
               ),
+            ).filter(
+              (result) =>
+                !existingPlacementDiagnostics.some(
+                  (existing) =>
+                    existing.type === result.type &&
+                    "message" in existing &&
+                    existing.message === result.message,
+                ),
+            ),
           ) as Promise<AnyCircuitElement[]>,
         )
       }
@@ -748,7 +764,12 @@ export class Board
       }
 
       const checkResults = await Promise.all(checksToRun)
-      db.insertAll(dedupePcbDrcErrors(checkResults.flat()))
+      db.insertAll(
+        consolidatePcbOverlapErrors(
+          circuitJson,
+          dedupePcbDrcErrors(checkResults.flat()),
+        ),
+      )
     }
 
     const subcircuit = db.subtree({ subcircuit_id: this.subcircuit_id })
