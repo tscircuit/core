@@ -22,6 +22,13 @@ describe("getRelativeDirection", () => {
     expect(getRelativeDirection({ x: 0, y: 0 }, { x: 0, y: 0 })).toBe("right")
   })
 
+  test("handles dominant delta determination with 1-unit margin", () => {
+    expect(getRelativeDirection({ x: 0, y: 0 }, { x: 101, y: 100 })).toBe("right")
+    expect(getRelativeDirection({ x: 0, y: 0 }, { x: -101, y: 100 })).toBe("left")
+    expect(getRelativeDirection({ x: 0, y: 0 }, { x: 100, y: 101 })).toBe("up")
+    expect(getRelativeDirection({ x: 0, y: 0 }, { x: 100, y: -101 })).toBe("down")
+  })
+
   test("works with arbitrary coordinates", () => {
     expect(getRelativeDirection({ x: 10, y: 10 }, { x: 15, y: 11 })).toBe(
       "right",
