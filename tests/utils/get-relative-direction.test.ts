@@ -30,4 +30,11 @@ describe("getRelativeDirection", () => {
     expect(getRelativeDirection({ x: 2, y: -4 }, { x: 3, y: 1 })).toBe("up")
     expect(getRelativeDirection({ x: 8, y: 6 }, { x: 9, y: 1 })).toBe("down")
   })
+
+  test("resolves exactly 45-degree diagonal angles using vertical tie-break rule", () => {
+    expect(getRelativeDirection({ x: 0, y: 0 }, { x: 5, y: 5 })).toBe("up")
+    expect(getRelativeDirection({ x: 0, y: 0 }, { x: -5, y: 5 })).toBe("up")
+    expect(getRelativeDirection({ x: 0, y: 0 }, { x: 5, y: -5 })).toBe("down")
+    expect(getRelativeDirection({ x: 0, y: 0 }, { x: -5, y: -5 })).toBe("down")
+  })
 })
