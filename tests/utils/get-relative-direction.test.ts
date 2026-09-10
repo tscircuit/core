@@ -30,4 +30,11 @@ describe("getRelativeDirection", () => {
     expect(getRelativeDirection({ x: 2, y: -4 }, { x: 3, y: 1 })).toBe("up")
     expect(getRelativeDirection({ x: 8, y: 6 }, { x: 9, y: 1 })).toBe("down")
   })
+
+  test("handles pure single-axis zero-lateral collinear displacements", () => {
+    expect(getRelativeDirection({ x: 0, y: 5 }, { x: 12, y: 5 })).toBe("right")
+    expect(getRelativeDirection({ x: 12, y: 5 }, { x: 0, y: 5 })).toBe("left")
+    expect(getRelativeDirection({ x: 7, y: -3 }, { x: 7, y: 9 })).toBe("up")
+    expect(getRelativeDirection({ x: 7, y: 9 }, { x: 7, y: -3 })).toBe("down")
+  })
 })
