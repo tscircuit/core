@@ -159,7 +159,7 @@ test("repro185: RP2040 duplicate power traces", async () => {
     )
     .map(({ from }) => Number((from.x - iovdd2Port.center.x).toFixed(3)))
     .sort((a, b) => a - b)
-  expect(parallelRouteOffsets).toEqual([0.16, 0.2])
+  expect(parallelRouteOffsets).toEqual([0.16])
 
   await expect(circuit).toMatchSchematicSnapshot(import.meta.path, {
     width: 900,
