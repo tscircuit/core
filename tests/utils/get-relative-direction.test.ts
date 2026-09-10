@@ -22,6 +22,13 @@ describe("getRelativeDirection", () => {
     expect(getRelativeDirection({ x: 0, y: 0 }, { x: 0, y: 0 })).toBe("right")
   })
 
+  test("handles high-magnitude directional displacements", () => {
+    expect(getRelativeDirection({ x: 0, y: 0 }, { x: 1000, y: 2 })).toBe("right")
+    expect(getRelativeDirection({ x: 0, y: 0 }, { x: -1000, y: 2 })).toBe("left")
+    expect(getRelativeDirection({ x: 0, y: 0 }, { x: 2, y: 1000 })).toBe("up")
+    expect(getRelativeDirection({ x: 0, y: 0 }, { x: 2, y: -1000 })).toBe("down")
+  })
+
   test("works with arbitrary coordinates", () => {
     expect(getRelativeDirection({ x: 10, y: 10 }, { x: 15, y: 11 })).toBe(
       "right",
