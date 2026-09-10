@@ -22,6 +22,13 @@ describe("getRelativeDirection", () => {
     expect(getRelativeDirection({ x: 0, y: 0 }, { x: 0, y: 0 })).toBe("right")
   })
 
+  test("handles microscopic floating point delta precision", () => {
+    expect(getRelativeDirection({ x: 1.00001, y: 2.00001 }, { x: 1.00009, y: 2.00002 })).toBe("right")
+    expect(getRelativeDirection({ x: 1.00009, y: 2.00002 }, { x: 1.00001, y: 2.00001 })).toBe("left")
+    expect(getRelativeDirection({ x: 1.00001, y: 2.00001 }, { x: 1.00002, y: 2.00009 })).toBe("up")
+    expect(getRelativeDirection({ x: 1.00002, y: 2.00009 }, { x: 1.00001, y: 2.00001 })).toBe("down")
+  })
+
   test("works with arbitrary coordinates", () => {
     expect(getRelativeDirection({ x: 10, y: 10 }, { x: 15, y: 11 })).toBe(
       "right",
