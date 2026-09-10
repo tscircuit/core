@@ -22,6 +22,13 @@ describe("getRelativeDirection", () => {
     expect(getRelativeDirection({ x: 0, y: 0 }, { x: 0, y: 0 })).toBe("right")
   })
 
+  test("handles massive coordinate delta asymmetry", () => {
+    expect(getRelativeDirection({ x: 0, y: 0 }, { x: 50000, y: 10 })).toBe("right")
+    expect(getRelativeDirection({ x: 0, y: 0 }, { x: -50000, y: 10 })).toBe("left")
+    expect(getRelativeDirection({ x: 0, y: 0 }, { x: 10, y: 50000 })).toBe("up")
+    expect(getRelativeDirection({ x: 0, y: 0 }, { x: 10, y: -50000 })).toBe("down")
+  })
+
   test("works with arbitrary coordinates", () => {
     expect(getRelativeDirection({ x: 10, y: 10 }, { x: 15, y: 11 })).toBe(
       "right",
