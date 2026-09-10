@@ -3,6 +3,7 @@ import { type SchematicPortId, asSchematicPortId } from "./port-id-types"
 
 export const getSchematicPortIdsWithAssignedNetLabels = (
   netLabels: NetLabel[],
+  routedSchematicPortIdBySchematicPortId: Map<SchematicPortId, SchematicPortId>,
 ): Set<SchematicPortId> => {
   const schematicPortIdsWithNetLabels = new Set<SchematicPortId>()
 
@@ -15,7 +16,9 @@ export const getSchematicPortIdsWithAssignedNetLabels = (
     for (const port of netLabelPorts) {
       if (!port.schematic_port_id) continue
       schematicPortIdsWithNetLabels.add(
-        asSchematicPortId(port.schematic_port_id),
+        routedSchematicPortIdBySchematicPortId.get(
+          asSchematicPortId(port.schematic_port_id),
+        ) ?? asSchematicPortId(port.schematic_port_id),
       )
     }
   }
