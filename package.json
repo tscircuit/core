@@ -1,7 +1,7 @@
 {
   "name": "@tscircuit/core",
   "type": "module",
-  "version": "0.0.1876",
+  "version": "0.0.1888",
   "types": "dist/index.d.ts",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -35,13 +35,13 @@
     "@tsci/tscircuit.ti": "github:tscircuit/ti#57e314be4b2b06bc546d4def7453e619604d1157",
     "@tscircuit/alphabet": "0.0.25",
     "@tscircuit/bga-fanout-solver": "github:tscircuit/bga-fanout-solver#247c835cb8d69b65e53891dcf869731079415b39",
-    "@tscircuit/capacity-autorouter": "^0.0.892",
-    "@tscircuit/checks": "^0.0.185",
-    "@tscircuit/circuit-json-util": "^0.0.106",
+    "@tscircuit/capacity-autorouter": "^0.0.899",
+    "@tscircuit/checks": "^0.0.189",
+    "@tscircuit/circuit-json-util": "^0.0.113",
     "@tscircuit/common": "^0.0.20",
     "@tscircuit/copper-pour-solver": "^0.0.54",
     "@tscircuit/create-fdm-enclosure": "0.0.4",
-    "@tscircuit/fanout-solver": "0.0.66",
+    "@tscircuit/fanout-solver": "0.0.71",
     "@tscircuit/footprinter": "^0.0.426",
     "@tscircuit/image-utils": "^0.0.8",
     "@tscircuit/implicit-copper-pour-solver": "github:tscircuit/implicit-copper-pour-solver#a5cbbda0cd65fd4707c5c1af25779837c25aba92",
@@ -54,7 +54,7 @@
     "@tscircuit/math-utils": "^0.0.36",
     "@tscircuit/miniflex": "^0.0.4",
     "@tscircuit/ngspice-spice-engine": "^0.0.20",
-    "@tscircuit/props": "^0.0.646",
+    "@tscircuit/props": "^0.0.649",
     "@tscircuit/schematic-match-adapt": "^0.0.18",
     "@tscircuit/schematic-trace-solver": "^0.0.191",
     "@tscircuit/solver-utils": "^0.0.16",
@@ -132,8 +132,8 @@
     "zod": "^3.25.67"
   },
   "overrides": {
-    "@tscircuit/circuit-json-util": "^0.0.106",
-    "@tscircuit/props": "^0.0.646",
+    "@tscircuit/circuit-json-util": "^0.0.113",
+    "@tscircuit/props": "^0.0.649",
     "circuit-json": "^0.0.484"
   }
 }

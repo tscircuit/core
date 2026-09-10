@@ -1,4 +1,5 @@
 import { breakoutProps } from "@tscircuit/props"
+import { SavedFanoutPoint } from "./SavedFanoutPoint"
 import { AutoplacedBreakoutPoint } from "../AutoplacedBreakoutPoint"
 import { BreakoutPoint } from "../BreakoutPoint"
 import { Group } from "../Group/Group"
@@ -31,6 +32,32 @@ export class Breakout extends Group<typeof breakoutProps> {
    * after PcbLayout.
    */
   doInitialCreateAutoplacedBreakoutPoints(): void {
+    for (const path of this._parsedProps.pcbTracePaths ?? []) {
+      const exit = path.route.at(-1)!
+      const point = new SavedFanoutPoint({
+        connection: path.connection,
+        pcbX: exit.x,
+        pcbY: exit.y,
+      })
+      point.exitLayer = exit.route_type === "wire" ? exit.layer : exit.to_layer
+      this.add(point)
+      point._matchConnection()
+      if (
+        !point.matchedPort ||
+        !this.selectAll("port").includes(point.matchedPort)
+      ) {
+        throw new Error(
+          `Fanout trace path "${path.connection}" must select a port inside the fanout`,
+        )
+      }
+      const duplicate = this.children.some((child) => {
+        if (!(child instanceof BreakoutPoint) || child === point) return false
+        child._matchConnection()
+        return child.matchedPort === point.matchedPort
+      })
+      if (duplicate)
+        throw new Error(`Duplicate fanout exit for "${path.connection}"`)
+    }
     const portsInBreakout = this.selectAll("port") as Port[]
     const breakoutPortSet = new Set(portsInBreakout)
 

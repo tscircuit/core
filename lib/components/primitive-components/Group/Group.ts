@@ -1,3 +1,4 @@
+import { withFixedFanoutTraces } from "lib/utils/autorouting/with-fixed-fanout-traces"
 import { assignSchematicNetLabelSuperscripts } from "lib/utils/schematic/assign-schematic-net-label-superscripts"
 import {
   type SimpleRouteJson as AutorouterSimpleRouteJson,
@@ -1287,6 +1288,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       })
     }
 
+    const fixedFanoutTraceIds = new Set<SimplifiedPcbTrace["pcb_trace_id"]>()
     let previousStageOutputSimpleRouteJson: SimpleRouteJson | undefined
 
     for (const [
@@ -1413,6 +1415,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           traces: [...(phaseInput.traces ?? []), ...outputTraces],
         }
       }
+      simpleRouteJson = withFixedFanoutTraces(
+        simpleRouteJson,
+        fixedFanoutTraceIds,
+      )
       simpleRouteJson = Group_applyDrcTolerancesToSimpleRouteJson(
         simpleRouteJson,
         routingPhasePlan.drcTolerances,
@@ -1513,12 +1519,16 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         autorouterVersion,
         effort,
       }
-      const autorouterName = phaseAutorouterConfig.algorithmFn
-        ? "custom"
-        : localAutorouterStrategy.name
-      const solverName = phaseAutorouterConfig.algorithmFn
-        ? undefined
-        : localAutorouterStrategy.getSolverName(commonAutorouterOptions)
+      const autorouterName = routingPhasePlan.getPrecomputedTraces
+        ? "precomputed"
+        : phaseAutorouterConfig.algorithmFn
+          ? "custom"
+          : localAutorouterStrategy.name
+      const solverName =
+        routingPhasePlan.getPrecomputedTraces ||
+        phaseAutorouterConfig.algorithmFn
+          ? undefined
+          : localAutorouterStrategy.getSolverName(commonAutorouterOptions)
       const localAutoroutingCacheSolverOptions = {
         autorouterName,
         solverName,
@@ -1534,7 +1544,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       }
 
       const cacheEngine =
-        phaseAutorouterConfig.algorithmFn || !localAutorouterStrategy.cacheable
+        routingPhasePlan.getPrecomputedTraces ||
+        phaseAutorouterConfig.algorithmFn ||
+        !localAutorouterStrategy.cacheable
           ? undefined
           : this.root?.platform?.localCacheEngine
       const cacheKey = cacheEngine
@@ -1546,13 +1558,15 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       const cachedResult = cacheKey
         ? await getCachedLocalAutoroutingPhaseResult({ cacheEngine, cacheKey })
         : null
-      const cacheDisabledReason = phaseAutorouterConfig.algorithmFn
-        ? "custom_algorithm"
-        : !localAutorouterStrategy.cacheable
-          ? "strategy_not_cacheable"
-          : !cacheEngine
-            ? "no_cache_engine"
-            : undefined
+      const cacheDisabledReason = routingPhasePlan.getPrecomputedTraces
+        ? "precomputed"
+        : phaseAutorouterConfig.algorithmFn
+          ? "custom_algorithm"
+          : !localAutorouterStrategy.cacheable
+            ? "strategy_not_cacheable"
+            : !cacheEngine
+              ? "no_cache_engine"
+              : undefined
       const autoroutingMetadata = {
         routingPhaseIndex: routingStageIndex,
         phaseOrdinal: routingStageIndex + 1,
@@ -1588,7 +1602,11 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
       try {
         let traces: SimplifiedPcbTrace[]
-        if (cachedResult) {
+        if (routingPhasePlan.getPrecomputedTraces) {
+          traces = routingPhasePlan.getPrecomputedTraces(simpleRouteJson)
+          for (const trace of traces)
+            fixedFanoutTraceIds.add(trace.pcb_trace_id)
+        } else if (cachedResult) {
           debug(`[${this.getString()}] using cached local autorouting result`)
           traces = cachedResult.traces
         } else {

@@ -1,4 +1,7 @@
-import { runAllPlacementChecks } from "@tscircuit/checks"
+import {
+  consolidatePcbOverlapErrors,
+  runAllPlacementChecks,
+} from "@tscircuit/checks"
 import type { AnyCircuitElement } from "circuit-json"
 import type { Renderable } from "../base-components/Renderable"
 import type { Board } from "./Board"
@@ -43,9 +46,13 @@ export const Board_doInitialPcbPlacementDesignRuleChecks = (board: Board) => {
     try {
       const placementCheckResults = await runAllPlacementChecks(
         subcircuitCircuitJson,
+        { consolidateOverlaps: false },
       )
-      const relevantPlacementCheckResults = placementCheckResults.filter(
-        (result) => !board._isExpectedCastellatedHoleDrcError(result),
+      const relevantPlacementCheckResults = consolidatePcbOverlapErrors(
+        subcircuitCircuitJson,
+        placementCheckResults.filter(
+          (result) => !board._isExpectedCastellatedHoleDrcError(result),
+        ),
       )
       const newPlacementDiagnostics = relevantPlacementCheckResults.filter(
         (result) =>
