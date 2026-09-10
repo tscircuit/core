@@ -22,6 +22,13 @@ describe("getRelativeDirection", () => {
     expect(getRelativeDirection({ x: 0, y: 0 }, { x: 0, y: 0 })).toBe("right")
   })
 
+  test("handles massive positive 7-figure coordinate offsets", () => {
+    expect(getRelativeDirection({ x: 1000000, y: 1000000 }, { x: 2000000, y: 1000000 })).toBe("right")
+    expect(getRelativeDirection({ x: 2000000, y: 1000000 }, { x: 1000000, y: 1000000 })).toBe("left")
+    expect(getRelativeDirection({ x: 1000000, y: 1000000 }, { x: 1000000, y: 2000000 })).toBe("up")
+    expect(getRelativeDirection({ x: 1000000, y: 2000000 }, { x: 1000000, y: 1000000 })).toBe("down")
+  })
+
   test("works with arbitrary coordinates", () => {
     expect(getRelativeDirection({ x: 10, y: 10 }, { x: 15, y: 11 })).toBe(
       "right",
