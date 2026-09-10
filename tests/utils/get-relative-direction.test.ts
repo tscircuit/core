@@ -22,6 +22,13 @@ describe("getRelativeDirection", () => {
     expect(getRelativeDirection({ x: 0, y: 0 }, { x: 0, y: 0 })).toBe("right")
   })
 
+  test("handles mixed positive and negative orthogonal axes", () => {
+    expect(getRelativeDirection({ x: 50, y: -50 }, { x: 100, y: -50 })).toBe("right")
+    expect(getRelativeDirection({ x: 50, y: -50 }, { x: 0, y: -50 })).toBe("left")
+    expect(getRelativeDirection({ x: 50, y: -50 }, { x: 50, y: 0 })).toBe("up")
+    expect(getRelativeDirection({ x: 50, y: -50 }, { x: 50, y: -100 })).toBe("down")
+  })
+
   test("works with arbitrary coordinates", () => {
     expect(getRelativeDirection({ x: 10, y: 10 }, { x: 15, y: 11 })).toBe(
       "right",
