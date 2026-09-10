@@ -1474,9 +1474,16 @@ export class NormalComponent<
     let { footprint } = this.props
     if (
       typeof footprint === "string" &&
-      parseLibraryFootprintRef(footprint) &&
-      this.children.some((c) => c.componentName === "Footprint")
+      this.children.some((c) => c.componentName === "Footprint") &&
+      (parseLibraryFootprintRef(footprint) ||
+        isHttpUrl(footprint) ||
+        isBlobUrl(footprint) ||
+        isStaticAssetPath(footprint))
     ) {
+      // Library refs and url-loaded footprints both materialize as a
+      // Footprint child once their content is available. Reading port hints
+      // from that child lets duplicated-numbered physical pads (e.g. battery
+      // holders) resolve into primary + internally-connected ports.
       footprint = this.children.find((c) => c.componentName === "Footprint")
     } else if (!footprint || isValidElement(footprint)) {
       footprint = this.children.find((c) => c.componentName === "Footprint")
@@ -2219,6 +2226,12 @@ export class NormalComponent<
   }
 
   doInitialSourceDesignRuleChecks(): void {
+    NormalComponent_doInitialSourceDesignRuleChecks(this)
+  }
+
+  updateSourceDesignRuleChecks(): void {
+    // Re-running clears stale missing-trace warnings recorded against
+    // intermediate connectivity states (see tscircuit/tscircuit#4442).
     NormalComponent_doInitialSourceDesignRuleChecks(this)
   }
 
