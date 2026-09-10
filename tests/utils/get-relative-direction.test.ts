@@ -22,6 +22,13 @@ describe("getRelativeDirection", () => {
     expect(getRelativeDirection({ x: 0, y: 0 }, { x: 0, y: 0 })).toBe("right")
   })
 
+  test("handles fractional sub-pixel floating coordinate deltas", () => {
+    expect(getRelativeDirection({ x: 0.1, y: 0.1 }, { x: 0.8, y: 0.15 })).toBe("right")
+    expect(getRelativeDirection({ x: 0.8, y: 0.15 }, { x: 0.1, y: 0.1 })).toBe("left")
+    expect(getRelativeDirection({ x: 0.1, y: 0.1 }, { x: 0.15, y: 0.9 })).toBe("up")
+    expect(getRelativeDirection({ x: 0.15, y: 0.9 }, { x: 0.1, y: 0.1 })).toBe("down")
+  })
+
   test("works with arbitrary coordinates", () => {
     expect(getRelativeDirection({ x: 10, y: 10 }, { x: 15, y: 11 })).toBe(
       "right",
