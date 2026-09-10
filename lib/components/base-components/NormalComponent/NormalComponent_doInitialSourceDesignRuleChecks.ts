@@ -17,6 +17,17 @@ export const NormalComponent_doInitialSourceDesignRuleChecks = (
     }
   }
 
+  // This check can re-run after earlier passes (e.g. when an async footprint
+  // load recreates ports/traces mid-render). Clear our previous warnings so
+  // stale entries don't survive a state change (see tscircuit/tscircuit#4442).
+  for (const warning of db.source_pin_missing_trace_warning.list()) {
+    if (warning.source_component_id === component.source_component_id) {
+      db.source_pin_missing_trace_warning.delete(
+        warning.source_pin_missing_trace_warning_id,
+      )
+    }
+  }
+
   const internalGroups = component._getInternallyConnectedPins()
   for (const group of internalGroups) {
     if (
