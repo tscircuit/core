@@ -5,6 +5,7 @@ import {
   computeBoundsFromCellContents,
 } from "calculate-cell-boundaries"
 import type { SchematicSheet } from "circuit-json"
+import { getSchematicTextBounds } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
 type SchematicSheetId = SchematicSheet["schematic_sheet_id"]
@@ -52,6 +53,19 @@ export class SchematicSection extends PrimitiveComponent<
         minY: schComp.center.y - hh,
         maxY: schComp.center.y + hh,
       })
+      // Chip and schematic-box reference/value labels extend outside the body.
+      for (const text of db.schematic_text.list({
+        schematic_component_id: schematicComponentId,
+      })) {
+        positions.push(
+          getSchematicTextBounds({
+            text: text.text,
+            position: text.position,
+            anchor: text.anchor,
+            fontSize: text.font_size,
+          }),
+        )
+      }
     }
 
     if (positions.length === 0) return null
@@ -184,14 +198,19 @@ export class SchematicSection extends PrimitiveComponent<
         leftBoundary = Math.max(...dividersToLeft)
       }
 
+      const fontSize = sectionTitleFontSize ?? 0.18
       db.schematic_text.insert({
         anchor: "top_left",
         text: displayName,
-        font_size: sectionTitleFontSize ?? 0.18,
+        font_size: fontSize,
         color: "#000000",
         position: {
           x: leftBoundary + LABEL_PADDING,
-          y: topBoundary - LABEL_PADDING,
+          // A top-left anchor extends downwards by the title's font size.
+          y: Math.max(
+            topBoundary - LABEL_PADDING,
+            rawBounds.maxY + LABEL_PADDING + fontSize,
+          ),
         },
         rotation: 0,
         schematic_sheet_id: schematicSheetId,

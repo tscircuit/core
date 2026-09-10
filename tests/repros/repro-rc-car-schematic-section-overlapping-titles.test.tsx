@@ -120,10 +120,10 @@ test(
     expect(
       generatedSectionTitles.map((sectionTitle) => sectionTitle.position),
     ).toEqual([
-      { x: -17.3, y: -1.3549999999999998 },
-      { x: -6.4975, y: -1.3549999999999998 },
-      { x: 4.381249999999999, y: -1.3549999999999998 },
-      { x: -17.3, y: -14.160227674999998 },
+      { x: -17.3, y: -1.1349999999999998 },
+      { x: -6.4975, y: -1.1349999999999998 },
+      { x: 5.787499999999999, y: -1.055 },
+      { x: -17.3, y: -14.160227675 },
     ])
 
     await expect(fixedRcCarCircuitJson).toMatchSchematicSnapshot(

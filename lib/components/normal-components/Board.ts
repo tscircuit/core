@@ -1,5 +1,6 @@
 import {
   dedupePcbDrcErrors,
+  consolidatePcbOverlapErrors,
   runAllNetlistChecks,
   runAllPinSpecificationChecks,
   runAllPlacementChecks,
@@ -715,20 +716,23 @@ export class Board
       if (shouldRunPlacementChecks) {
         const existingPlacementDiagnostics = db.toArray()
         checksToRun.push(
-          runAllPlacementChecks(circuitJson).then((results) =>
-            results
-              .filter(
+          runAllPlacementChecks(circuitJson, {
+            consolidateOverlaps: false,
+          }).then((results) =>
+            consolidatePcbOverlapErrors(
+              circuitJson,
+              results.filter(
                 (result) => !this._isExpectedCastellatedHoleDrcError(result),
-              )
-              .filter(
-                (result) =>
-                  !existingPlacementDiagnostics.some(
-                    (existing) =>
-                      existing.type === result.type &&
-                      "message" in existing &&
-                      existing.message === result.message,
-                  ),
               ),
+            ).filter(
+              (result) =>
+                !existingPlacementDiagnostics.some(
+                  (existing) =>
+                    existing.type === result.type &&
+                    "message" in existing &&
+                    existing.message === result.message,
+                ),
+            ),
           ) as Promise<AnyCircuitElement[]>,
         )
       }
@@ -760,7 +764,12 @@ export class Board
       }
 
       const checkResults = await Promise.all(checksToRun)
-      db.insertAll(dedupePcbDrcErrors(checkResults.flat()))
+      db.insertAll(
+        consolidatePcbOverlapErrors(
+          circuitJson,
+          dedupePcbDrcErrors(checkResults.flat()),
+        ),
+      )
     }
 
     const subcircuit = db.subtree({ subcircuit_id: this.subcircuit_id })
