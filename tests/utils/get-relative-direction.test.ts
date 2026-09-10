@@ -22,6 +22,13 @@ describe("getRelativeDirection", () => {
     expect(getRelativeDirection({ x: 0, y: 0 }, { x: 0, y: 0 })).toBe("right")
   })
 
+  test("handles negative quadrant shifts and offsets", () => {
+    expect(getRelativeDirection({ x: -20, y: -20 }, { x: -10, y: -20 })).toBe("right")
+    expect(getRelativeDirection({ x: -10, y: -20 }, { x: -20, y: -20 })).toBe("left")
+    expect(getRelativeDirection({ x: -20, y: -20 }, { x: -20, y: -10 })).toBe("up")
+    expect(getRelativeDirection({ x: -20, y: -10 }, { x: -20, y: -20 })).toBe("down")
+  })
+
   test("works with arbitrary coordinates", () => {
     expect(getRelativeDirection({ x: 10, y: 10 }, { x: 15, y: 11 })).toBe(
       "right",
