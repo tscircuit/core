@@ -1422,22 +1422,24 @@ export abstract class PrimitiveComponent<
 
   getString(): string {
     const { lowercaseComponentName: cname, _parsedProps: props, parent } = this
+    const id =
+      this.root?.getCircuitRelativeRenderId(this._renderId) ?? this._renderId
     if (props?.pinNumber !== undefined && parent?.props?.name && props?.name) {
-      return `<${cname}#${this._renderId}(pin:${props.pinNumber} .${parent?.props.name}>.${props.name}) />`
+      return `<${cname}#${id}(pin:${props.pinNumber} .${parent?.props.name}>.${props.name}) />`
     }
     if (parent?.props?.name && props?.name) {
-      return `<${cname}#${this._renderId}(.${parent?.props.name}>.${props?.name}) />`
+      return `<${cname}#${id}(.${parent?.props.name}>.${props?.name}) />`
     }
     if (props?.from && props?.to) {
-      return `<${cname}#${this._renderId}(from:${props.from} to:${props?.to}) />`
+      return `<${cname}#${id}(from:${props.from} to:${props?.to}) />`
     }
     if (props?.name) {
-      return `<${cname}#${this._renderId} name=".${props?.name}" />`
+      return `<${cname}#${id} name=".${props?.name}" />`
     }
     if (props?.portHints) {
-      return `<${cname}#${this._renderId}(${props.portHints.map((ph: string) => `.${ph}`).join(", ")}) />`
+      return `<${cname}#${id}(${props.portHints.map((ph: string) => `.${ph}`).join(", ")}) />`
     }
-    return `<${cname}#${this._renderId} />`
+    return `<${cname}#${id} />`
   }
 
   getDisplayName(): string {

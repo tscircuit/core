@@ -20,6 +20,12 @@ export class IsolatedCircuit {
   db: CircuitJsonUtilObjects
   root: IsolatedCircuit | null = null
   isRootCircuit = false
+  /**
+   * Lowest PrimitiveComponent `_renderId` in this circuit. Cached so
+   * `getString()` can emit ids relative to the tree instead of the
+   * process-global construction counter (core#2848).
+   */
+  _renderIdOrigin?: number
 
   /**
    * Optional cache for isolated subcircuit circuit JSON, keyed by prop hash.
@@ -159,6 +165,30 @@ export class IsolatedCircuit {
     }
 
     return findBoard(this.children) as (PrimitiveComponent & BoardI) | undefined
+  }
+
+  /**
+   * `_renderId` is a process-global counter and must stay unique for css-select
+   * identity. User-facing strings should not leak that counter, so this offsets
+   * it against the lowest id in the circuit.
+   */
+  getCircuitRelativeRenderId(renderId: string): string {
+    if (this._renderIdOrigin === undefined) {
+      let lowest = Number.POSITIVE_INFINITY
+      const visit = (node: PrimitiveComponent) => {
+        const value = Number(node._renderId)
+        if (Number.isFinite(value)) lowest = Math.min(lowest, value)
+        for (const child of node.children) {
+          visit(child as PrimitiveComponent)
+        }
+      }
+      for (const child of this.children) visit(child)
+      this._renderIdOrigin = Number.isFinite(lowest) ? lowest : 0
+    }
+
+    const relative = Number(renderId) - this._renderIdOrigin
+    if (!Number.isFinite(relative) || relative < 0) return renderId
+    return `${relative}`
   }
 
   _guessRootComponent() {
