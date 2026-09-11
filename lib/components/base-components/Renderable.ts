@@ -116,7 +116,11 @@ const asyncPhaseDependencies: Partial<Record<RenderPhase, RenderPhase[]>> = {
     "FetchPartFootprint",
     "SchematicTraceRender",
   ],
+  // Allocate pad and silkscreen IDs in tree order, not footprint response order.
+  PcbPrimitiveRender: ["PcbFootprintStringRender", "FetchPartFootprint"],
   PcbFootprintLayout: ["PcbFootprintStringRender", "FetchPartFootprint"],
+  PcbPortRender: ["PcbFootprintStringRender", "FetchPartFootprint"],
+  PcbPortAttachment: ["PcbFootprintStringRender", "FetchPartFootprint"],
   PcbComponentSizeCalculation: [
     "PcbFootprintStringRender",
     "FetchPartFootprint",
