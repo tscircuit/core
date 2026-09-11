@@ -41,7 +41,10 @@ const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
   if (resolvedCopperPours.length === 0) return
 
   const circuitJson = db.toArray()
-  const pcbBoard = circuitJson.find((element) => element.type === "pcb_board")
+  const boardComponent = subcircuit._getBoard()
+  const pcbBoard = boardComponent?.pcb_board_id
+    ? db.pcb_board.get(boardComponent.pcb_board_id)
+    : undefined
   let resolvedPcbBoardOutline = pcbBoard?.outline?.length
     ? pcbBoard.outline
     : undefined

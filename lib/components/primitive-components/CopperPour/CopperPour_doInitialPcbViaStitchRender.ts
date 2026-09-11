@@ -55,7 +55,8 @@ const renderViaStitchingForCopperPours = (copperPour: CopperPour) => {
 
   for (const pcbVia of solver.getOutput().pcbVias) {
     const { pcb_via_id: _solverViaId, ...pcbViaInput } = pcbVia
-    db.pcb_via.insert(pcbViaInput)
+    const insertedVia = db.pcb_via.insert(pcbViaInput)
+    boardComponent?._generatedStitchingViaIds?.add(insertedVia.pcb_via_id)
   }
 }
 

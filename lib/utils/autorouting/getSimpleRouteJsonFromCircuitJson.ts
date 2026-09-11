@@ -294,7 +294,9 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     const additionalIds = obstacle.connectedTo.flatMap((id) =>
       sharedConnMap.getIdsConnectedToNet(id),
     )
-    obstacle.connectedTo.push(...additionalIds)
+    obstacle.connectedTo = [
+      ...new Set([...obstacle.connectedTo, ...additionalIds]),
+    ]
   }
 
   // Build mapping from source_port_id to internal connection ID for interconnects

@@ -112,7 +112,7 @@ test("reports diode pin 1 polarity mismatches and reuses the orientation cache",
     [...cache.keys()].filter((key) =>
       key.startsWith("part-orientation-analysis:"),
     ),
-  ).toEqual(["part-orientation-analysis:v2:jlcpcb:C8598"])
+  ).toEqual(["part-orientation-analysis:v3:jlcpcb:C8598"])
 })
 
 test("accepts diode and LED pin 1 mappings that match the supplier", async () => {

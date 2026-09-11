@@ -9,6 +9,7 @@ import {
 import { symbols } from "schematic-symbols"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { Trace } from "../primitive-components/Trace/Trace"
+import { Capacitor_addPolarityFabricationSymbols } from "./Capacitor_addPolarityFabricationSymbols"
 import { Capacitor_getAutomaticMaxDecouplingTraceLength } from "./Capacitor_getAutomaticMaxDecouplingTraceLength"
 
 const CAPACITOR_CHIP_FOOTPRINTS = new Set([
@@ -125,6 +126,11 @@ export class Capacitor extends NormalComponent<
       )
     }
     this._createTracesFromConnectionsProp()
+  }
+
+  doInitialPcbComponentSizeCalculation(): void {
+    super.doInitialPcbComponentSizeCalculation()
+    Capacitor_addPolarityFabricationSymbols(this)
   }
 
   doInitialSourceRender() {
