@@ -26,3 +26,6 @@ jobs:
 
       - name: Run smoke test script
         run: bun run smoke-test:dist
+
+      - name: Run CJS require smoke test
+        run: bun run smoke-test:cjs-require
