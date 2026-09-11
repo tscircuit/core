@@ -239,6 +239,18 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
             `Footprint resolver returned no circuit elements for "${footprint}".`,
           )
         }
+        const hasPcbGeometry = circuitJson.some(
+          (element) =>
+            element.type === "pcb_smtpad" ||
+            element.type === "pcb_plated_hole" ||
+            element.type === "pcb_hole" ||
+            element.type === "pcb_via",
+        )
+        if (!hasPcbGeometry) {
+          throw new Error(
+            `Footprint resolver returned no PCB geometry (pads or holes) for "${footprint}".`,
+          )
+        }
         const fpComponents = createComponentsFromCircuitJson(
           {
             componentName: component.name,
