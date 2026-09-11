@@ -1987,6 +1987,41 @@ function getAm62lDirectDecouplingNetwork({
   )
 }
 
+/**
+ * Routes only the two-endpoint SRJ connections in the deterministic fixture.
+ *
+ * Connection points and emitted route points are positions in the right-handed
+ * board-world frame, measured in millimeters (+X right, +Y top, +Z above the
+ * board). PCB layers locate the points on the Z axis. These are points rather
+ * than direction vectors, and no coordinate transform is applied.
+ */
+async function routeAm62lFixtureSrjConnections(
+  fixtureSrj: SimpleRouteJson,
+): Promise<SimplifiedPcbTrace[]> {
+  return fixtureSrj.connections.flatMap(
+    (srjConnection, srjConnectionIndex): SimplifiedPcbTrace[] => {
+      // Plane-terminated PDN branches already end at their authored fanout or
+      // decoupling via. This fixture's straight router is only valid for true
+      // point-to-point signal connections.
+      if (srjConnection.pointsToConnect.length !== 2) return []
+      return [
+        {
+          type: "pcb_trace",
+          pcb_trace_id: `straight_global_trace_${srjConnectionIndex}`,
+          connection_name: srjConnection.source_trace_id ?? srjConnection.name,
+          route: srjConnection.pointsToConnect.map((srjPoint) => ({
+            route_type: "wire" as const,
+            x: srjPoint.x,
+            y: srjPoint.y,
+            width: srjConnection.nominalTraceWidth ?? fixtureSrj.minTraceWidth,
+            layer: srjPoint.layer,
+          })),
+        },
+      ]
+    },
+  )
+}
+
 export const renderAm62lLpddr4Fanout = async ({
   fanoutAlgorithmFn,
   fanoutSolverLabel,
@@ -2112,117 +2147,6 @@ export const renderAm62lLpddr4Fanout = async ({
   const productionGlobalAutorouter =
     getPresetAutoroutingConfig("beta_pipeline9")
 
-  const routeGlobalConnections = async (
-    simpleRouteJson: SimpleRouteJson,
-  ): Promise<SimplifiedPcbTrace[]> => {
-    const decouplingDropBySourceTraceId = new Map(
-      SOC_DDR_DECOUPLING_PLANE_DROPS.flatMap((drop) => {
-        const sourceTrace = circuit.db.source_trace.getWhere({
-          name: drop.traceName,
-        })
-        return sourceTrace ? [[sourceTrace.source_trace_id, drop] as const] : []
-      }),
-    )
-    return simpleRouteJson.connections.flatMap(
-      (connection, connectionIndex): SimplifiedPcbTrace[] => {
-        const connectionName = connection.source_trace_id ?? connection.name
-        const connectionIds = new Set(
-          [
-            connection.name,
-            connection.source_trace_id,
-            connection.rootConnectionName,
-            ...(connection.mergedConnectionNames ?? []),
-          ].filter(
-            (identifier): identifier is string => identifier !== undefined,
-          ),
-        )
-        const drop = [...connectionIds]
-          .map((identifier) => decouplingDropBySourceTraceId.get(identifier))
-          .find((candidate) => candidate !== undefined)
-        if (!drop) {
-          return [
-            {
-              type: "pcb_trace",
-              pcb_trace_id: `straight_global_trace_${connectionIndex}`,
-              connection_name: connectionName,
-              route: connection.pointsToConnect.map((point) => ({
-                route_type: "wire" as const,
-                x: point.x,
-                y: point.y,
-                width:
-                  connection.nominalTraceWidth ?? simpleRouteJson.minTraceWidth,
-                layer: point.layer,
-              })),
-            },
-          ]
-        }
-
-        const capacitor = AM62L_ALL_DECOUPLING_CAPACITORS.find(
-          ({ name }) => name === drop.componentName,
-        )!
-        const componentCenter = {
-          x: SOC_PCB_X + capacitor.pcbX,
-          y: SOC_PCB_Y + capacitor.pcbY,
-        }
-        const angle = (capacitor.pcbRotation * Math.PI) / 180
-        const cos = Math.cos(angle)
-        const sin = Math.sin(angle)
-        const toGlobalPoint = ({ x, y }: { x: number; y: number }) => ({
-          x: componentCenter.x + x * cos - y * sin,
-          y: componentCenter.y + x * sin + y * cos,
-        })
-        const componentPortSelector = `${capacitor.name}.${drop.ballName}`
-        const startPoint =
-          connection.pointsToConnect.find(
-            ({ port_selector: portSelector }) =>
-              portSelector === componentPortSelector,
-          ) ?? connection.pointsToConnect[0]!
-        const width =
-          connection.nominalTraceWidth ?? simpleRouteJson.minTraceWidth
-        let currentLayer: string = drop.fromLayer
-
-        return [
-          {
-            type: "pcb_trace" as const,
-            pcb_trace_id: `decoupling_global_trace_${connectionIndex}`,
-            connection_name: connectionName,
-            route: [
-              {
-                route_type: "wire" as const,
-                x: startPoint.x,
-                y: startPoint.y,
-                width,
-                layer: currentLayer,
-              },
-              ...drop.pcbPath.map((pathPoint) => {
-                const point = toGlobalPoint(pathPoint)
-                if ("via" in pathPoint && pathPoint.via) {
-                  const fromLayer = pathPoint.fromLayer ?? currentLayer
-                  const toLayer = pathPoint.toLayer ?? currentLayer
-                  currentLayer = toLayer
-                  return {
-                    route_type: "via" as const,
-                    ...point,
-                    from_layer: fromLayer,
-                    to_layer: toLayer,
-                    via_diameter: 0.24,
-                    via_hole_diameter: 0.15,
-                  }
-                }
-                return {
-                  route_type: "wire" as const,
-                  ...point,
-                  width,
-                  layer: currentLayer,
-                }
-              }),
-            ],
-          },
-        ]
-      },
-    )
-  }
-
   expect(AM62L_PAD_POSITIONS).toHaveLength(373)
   expect(AM62L_VSS_BALLS).toHaveLength(97)
   expect(AM62L_VDDS_DDR_BALLS).toHaveLength(5)
@@ -2287,7 +2211,7 @@ export const renderAm62lLpddr4Fanout = async ({
             : {
                 algorithmFn: createBasicAutorouter(
                   includePowerPlaneFanout
-                    ? routeGlobalConnections
+                    ? routeAm62lFixtureSrjConnections
                     : routeConnectionsDirectly,
                 ),
               }
@@ -2456,6 +2380,8 @@ export const renderAm62lLpddr4Fanout = async ({
               name={drop.traceName}
               from={`.${drop.componentName} > .${drop.ballName}`}
               to={`net.${drop.netName}`}
+              pcbPathRelativeTo={drop.pcbPathRelativeTo}
+              pcbPath={[...drop.pcbPath]}
             />
           </Fragment>
         ))}
@@ -2656,7 +2582,13 @@ export const renderAm62lLpddr4Fanout = async ({
     await circuit.renderUntilSettled()
   }
 
-  expect(circuit.db.pcb_note_text.list()).toEqual([])
+  const pcbNoteTexts = circuit.db.pcb_note_text.list()
+  if (fanoutSolverLabel && includeDirectDecouplingNetworkInInitialRender) {
+    expect(pcbNoteTexts).toHaveLength(1)
+    expect(pcbNoteTexts[0]?.text).toBe(fanoutSolverLabel)
+  } else {
+    expect(pcbNoteTexts).toEqual([])
+  }
   expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
   expect(circuit.db.pcb_component_outside_board_error.list()).toEqual([])
   expect(circuit.db.pcb_trace_error.list()).toEqual([])
@@ -2905,14 +2837,49 @@ export const renderAm62lLpddr4Fanout = async ({
         name: capacitor.railNetName,
       })!
       const groundNet = circuit.db.source_net.getWhere({ name: "GND" })!
-      expect(capacitorSourceTraces[0]?.connected_source_port_ids).toEqual([
-        positivePort.source_port_id,
-      ])
+      for (const [capacitorSourceTrace, capacitorSourcePort] of [
+        [capacitorSourceTraces[0], positivePort],
+        [capacitorSourceTraces[1], groundPort],
+      ] as const) {
+        expect(capacitorSourceTrace).toBeDefined()
+        if (!capacitorSourceTrace) {
+          throw new Error(`Missing source trace for ${capacitor.name}`)
+        }
+        const expectedConnectedSourcePortIds = [
+          capacitorSourcePort.source_port_id,
+        ]
+        if (directCapacitor && includeDirectDecouplingNetworkInInitialRender) {
+          const viaSourcePortIds =
+            capacitorSourceTrace.connected_source_port_ids.filter(
+              (sourcePortId) =>
+                sourcePortId !== capacitorSourcePort.source_port_id,
+            )
+          expect(viaSourcePortIds).toHaveLength(1)
+          const viaSourcePort = circuit.db.source_port.get(viaSourcePortIds[0]!)
+          expect(viaSourcePort?.name).toBe("bottom")
+          const viaSourceComponentId = viaSourcePort?.source_component_id
+          expect(viaSourceComponentId).toBeDefined()
+          if (!viaSourceComponentId) {
+            throw new Error(
+              `Missing via source component for ${capacitor.name}`,
+            )
+          }
+          expect(
+            circuit.db.source_manually_placed_via
+              .list()
+              .map(
+                ({ source_manually_placed_via_id }) =>
+                  source_manually_placed_via_id,
+              ),
+          ).toContain(viaSourceComponentId)
+          expectedConnectedSourcePortIds.push(viaSourcePort.source_port_id)
+        }
+        expect(
+          capacitorSourceTrace.connected_source_port_ids.toSorted(),
+        ).toEqual(expectedConnectedSourcePortIds.toSorted())
+      }
       expect(capacitorSourceTraces[0]?.connected_source_net_ids).toEqual([
         railNet.source_net_id,
-      ])
-      expect(capacitorSourceTraces[1]?.connected_source_port_ids).toEqual([
-        groundPort.source_port_id,
       ])
       expect(capacitorSourceTraces[1]?.connected_source_net_ids).toEqual([
         groundNet.source_net_id,
@@ -3111,13 +3078,12 @@ export const renderAm62lLpddr4Fanout = async ({
   expect(expectedPlaneMembers).toHaveLength(includePowerPlaneFanout ? 288 : 0)
   expect(autoroutingPhaseIoStack).toHaveLength(3)
   expect(
-    autoroutingPhaseIoStack.map(
-      (phaseIo) => phaseIo.startSimpleRouteJson?.connections.length,
-    ),
+    autoroutingPhaseIoStack
+      .slice(0, 2)
+      .map((phaseIo) => phaseIo.startSimpleRouteJson?.connections.length),
   ).toEqual([
     signalConnections.length + socPlaneDrops.length,
     signalConnections.length + dramPlaneDrops.length,
-    signalConnections.length + decouplingPlaneDrops.length,
   ])
   for (const [fanoutPhaseIndex, fanoutPhase] of autoroutingPhaseIoStack
     .slice(0, 2)
@@ -3598,18 +3564,43 @@ export const renderAm62lLpddr4Fanout = async ({
       Math.min(...dramDqs0ExitPoints.map((exitPoint) => exitPoint!.y)),
     )
   }
-  expect(autoroutingPhaseIoStack[2]?.startSimpleRouteJson?.traces).toHaveLength(
-    signalConnections.length * 2 + planeDrops.length,
-  )
   const globalPhaseInput = autoroutingPhaseIoStack[2]!.startSimpleRouteJson!
+  const globalPhaseInputTraces = globalPhaseInput.traces ?? []
+  const authoredDecouplingTraceCount =
+    decouplingPlaneDrops.length +
+    (includeDirectDecouplingNetworkInInitialRender
+      ? renderedDirectDecouplingCapacitors.length * 2
+      : 0)
+  expect(globalPhaseInputTraces).toHaveLength(
+    signalConnections.length * 2 +
+      planeDrops.length +
+      authoredDecouplingTraceCount,
+  )
+  expect(
+    new Set(globalPhaseInputTraces.map((trace) => trace.pcb_trace_id)).size,
+  ).toBe(globalPhaseInputTraces.length)
   const signalGlobalConnections = globalPhaseInput.connections.filter(
     (connection) => connection.pointsToConnect.length === 2,
   )
-  const decouplingGlobalConnections = globalPhaseInput.connections.filter(
+  const directPdnMembershipConnections = globalPhaseInput.connections.filter(
     (connection) => connection.pointsToConnect.length === 1,
   )
+  const pdnNetConnections = globalPhaseInput.connections.filter(
+    (connection) => connection.pointsToConnect.length > 2,
+  )
   expect(signalGlobalConnections).toHaveLength(signalConnections.length)
-  expect(decouplingGlobalConnections).toHaveLength(decouplingPlaneDrops.length)
+  expect(
+    signalGlobalConnections.length +
+      directPdnMembershipConnections.length +
+      pdnNetConnections.length,
+  ).toBe(globalPhaseInput.connections.length)
+  for (const connection of directPdnMembershipConnections) {
+    const sourceTrace = circuit.db.source_trace.get(connection.name)
+    expect(sourceTrace?.name).toEndWith("_PDN_MEMBERSHIP")
+  }
+  for (const connection of pdnNetConnections) {
+    expect(circuit.db.source_net.get(connection.name)).toBeDefined()
+  }
   if (!useProductionGlobalAutorouter) {
     expect(
       getStraightLineWindingConflicts({
@@ -3785,14 +3776,14 @@ export const renderAm62lLpddr4Fanout = async ({
         from_layer: planeDrop.fromLayer,
         to_layer: planeDrop.layer,
       })
-      const pcbTraceIds = new Set(
-        matchingPcbTraces.map((pcbTrace) => pcbTrace.pcb_trace_id),
-      )
+      const routeVia = routeVias[0]!
       const matchingVias = circuit.db.pcb_via
         .list()
         .filter(
           (via) =>
-            via.pcb_trace_id !== undefined && pcbTraceIds.has(via.pcb_trace_id),
+            via.subcircuit_connectivity_map_key ===
+              expectedNet.subcircuit_connectivity_map_key &&
+            Math.hypot(via.x - routeVia.x, via.y - routeVia.y) < 1e-6,
         )
       expect(matchingVias).toHaveLength(1)
       const matchingVia = matchingVias[0]!
@@ -4001,16 +3992,73 @@ export const renderAm62lLpddr4Fanout = async ({
   }
 
   if (includePowerPlaneFanout) {
+    // Every value below is a point position in the right-handed board-world
+    // frame, measured in millimeters (+X right, +Y top, +Z above the board).
+    // The descriptor-local offsets are transformed into that frame; none of
+    // these values are direction vectors.
+    const pcbViaPositionMatchToleranceMm = 1e-6
+    const routedPcbViaBoardPositions = circuit.db.pcb_trace
+      .list()
+      .flatMap((pcbTrace) =>
+        pcbTrace.route.flatMap((routePoint) =>
+          routePoint.route_type === "via"
+            ? [{ x: routePoint.x, y: routePoint.y }]
+            : [],
+        ),
+      )
+    const directDecouplingPcbViaBoardPositions =
+      renderedDirectDecouplingCapacitors.flatMap((capacitor) =>
+        [capacitor.powerViaOffset, capacitor.groundViaOffset].map(
+          (capacitorViaOffset) =>
+            getDirectDecouplingViaPosition(capacitor, capacitorViaOffset),
+        ),
+      )
+    const expectedPcbViaBoardPositions = [
+      ...routedPcbViaBoardPositions,
+      ...directDecouplingPcbViaBoardPositions,
+    ]
+    const uniqueExpectedPcbViaBoardPositions =
+      expectedPcbViaBoardPositions.filter(
+        (
+          expectedPcbViaBoardPosition,
+          expectedPcbViaBoardPositionIndex,
+          allExpectedPcbViaBoardPositions,
+        ) =>
+          allExpectedPcbViaBoardPositions.findIndex(
+            (otherExpectedPcbViaBoardPosition) =>
+              Math.hypot(
+                otherExpectedPcbViaBoardPosition.x -
+                  expectedPcbViaBoardPosition.x,
+                otherExpectedPcbViaBoardPosition.y -
+                  expectedPcbViaBoardPosition.y,
+              ) <= pcbViaPositionMatchToleranceMm,
+          ) === expectedPcbViaBoardPositionIndex,
+      )
     expect(allFanoutVias).toHaveLength(
-      routedPlaneDrops.length +
-        signalConnections.length * 2 +
-        renderedDirectDecouplingCapacitors.length * 2,
+      uniqueExpectedPcbViaBoardPositions.length,
     )
-    expect(
-      new Set(
-        allFanoutVias.map((via) => `${via.x.toFixed(9)},${via.y.toFixed(9)}`),
-      ).size,
-    ).toBe(allFanoutVias.length)
+    for (const materializedPcbVia of allFanoutVias) {
+      expect(
+        uniqueExpectedPcbViaBoardPositions.filter(
+          (expectedPcbViaBoardPosition) =>
+            Math.hypot(
+              materializedPcbVia.x - expectedPcbViaBoardPosition.x,
+              materializedPcbVia.y - expectedPcbViaBoardPosition.y,
+            ) <= pcbViaPositionMatchToleranceMm,
+        ),
+      ).toHaveLength(1)
+    }
+    for (const expectedPcbViaBoardPosition of uniqueExpectedPcbViaBoardPositions) {
+      expect(
+        allFanoutVias.filter(
+          (materializedPcbVia) =>
+            Math.hypot(
+              materializedPcbVia.x - expectedPcbViaBoardPosition.x,
+              materializedPcbVia.y - expectedPcbViaBoardPosition.y,
+            ) <= pcbViaPositionMatchToleranceMm,
+        ),
+      ).toHaveLength(1)
+    }
     let minViaCopperEdgeClearance = Number.POSITIVE_INFINITY
     for (let firstIndex = 0; firstIndex < allFanoutVias.length; firstIndex++) {
       const firstVia = allFanoutVias[firstIndex]!
