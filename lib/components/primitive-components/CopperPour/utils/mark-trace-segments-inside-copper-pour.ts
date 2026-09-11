@@ -84,35 +84,49 @@ export const markTraceSegmentsInsideCopperPour = ({
       continue
     }
 
-    let routeChanged = false
-    const nextRoute = trace.route.map((routePoint) => ({ ...routePoint }))
+    const coveredSegments = trace.route
+      .slice(1)
+      .map((toRoutePoint, segmentIndex) => {
+        const fromRoutePoint = trace.route[segmentIndex]!
+        if (
+          !isWireRoutePoint(fromRoutePoint) ||
+          !isWireRoutePoint(toRoutePoint)
+        )
+          return false
+        if (
+          fromRoutePoint.layer !== copperPour.layer ||
+          toRoutePoint.layer !== copperPour.layer
+        )
+          return false
 
-    for (let i = 0; i < nextRoute.length - 1; i++) {
-      const fromRoutePoint = nextRoute[i]
-      const toRoutePoint = nextRoute[i + 1]
-      if (!fromRoutePoint || !toRoutePoint) continue
-      if (!isWireRoutePoint(fromRoutePoint) || !isWireRoutePoint(toRoutePoint))
-        continue
-      if (
-        fromRoutePoint.layer !== copperPour.layer ||
-        toRoutePoint.layer !== copperPour.layer
-      )
-        continue
-
-      if (
-        isSegmentFullyInsideCopperPour(
-          { x: fromRoutePoint.x, y: fromRoutePoint.y },
-          { x: toRoutePoint.x, y: toRoutePoint.y },
+        return isSegmentFullyInsideCopperPour(
+          fromRoutePoint,
+          toRoutePoint,
           pourPolygon,
         )
-      ) {
-        fromRoutePoint.is_inside_copper_pour = true
-        fromRoutePoint.copper_pour_id = copperPour.pcb_copper_pour_id
-        toRoutePoint.is_inside_copper_pour = true
-        toRoutePoint.copper_pour_id = copperPour.pcb_copper_pour_id
-        routeChanged = true
+      })
+    if (!coveredSegments.some(Boolean)) continue
+
+    let routeChanged = false
+    const nextRoute = trace.route.map((routePoint, routePointIndex) => {
+      if (!isWireRoutePoint(routePoint)) return routePoint
+      // SVG consumers hide a segment when both endpoints are tagged. A shared
+      // point must therefore have coverage on every adjacent segment; otherwise
+      // covered neighbors could incorrectly hide an uncovered middle segment.
+      const previousSegmentIsCovered =
+        routePointIndex === 0 || coveredSegments[routePointIndex - 1]
+      const nextSegmentIsCovered =
+        routePointIndex === trace.route.length - 1 ||
+        coveredSegments[routePointIndex]
+      if (!previousSegmentIsCovered || !nextSegmentIsCovered) return routePoint
+
+      routeChanged = true
+      return {
+        ...routePoint,
+        is_inside_copper_pour: true,
+        copper_pour_id: copperPour.pcb_copper_pour_id,
       }
-    }
+    })
 
     if (routeChanged) {
       db.pcb_trace.update(trace.pcb_trace_id, { route: nextRoute })

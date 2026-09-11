@@ -45,33 +45,53 @@ test("trace coverage rejects narrow holes and ignores repeated ring vertices", a
     },
   ])
   const traceExpectations = [
-    { name: "crosses_hole", y: 0, covered: false },
-    { name: "covered", y: 1, covered: true },
-    { name: "outside", y: 3, covered: false },
-  ].map(({ name, y, covered }) => {
+    // Only the middle segment crosses the hole. Tagging both endpoints of
+    // each covered neighbor must not make the middle segment look covered.
+    {
+      label: "Gap crossing: visible",
+      y: 0,
+      xs: [0.1, 0.8, 1.7, 9.9],
+      expectedTags: [true, false, false, true],
+    },
+    {
+      label: "Covered: hidden",
+      y: 1,
+      xs: [0.1, 9.9],
+      expectedTags: [true, true],
+    },
+    {
+      label: "Outside: visible",
+      y: 3,
+      xs: [0.1, 9.9],
+      expectedTags: [false, false],
+    },
+  ].map(({ label, y, xs, expectedTags }) => {
     const trace = db.pcb_trace.insert({
       source_trace_id: "gnd_trace",
-      route: [
-        { route_type: "wire", x: 0.1, y, layer: "top", width: 0.1 },
-        { route_type: "wire", x: 9.9, y, layer: "top", width: 0.1 },
-      ],
+      route: xs.map((x) => ({
+        route_type: "wire",
+        x,
+        y,
+        layer: "top",
+        width: 0.1,
+      })),
     })
     db.pcb_note_text.insert({
-      text: name === "covered" ? "Covered: tagged" : `${name}: untagged`,
+      text: label,
       anchor_position: { x: 5, y: y + 0.25 },
       anchor_alignment: "center",
       font: "tscircuit2024",
       font_size: 0.2,
       layer: "top",
     })
-    return { traceId: trace.pcb_trace_id, covered }
+    return { traceId: trace.pcb_trace_id, expectedTags }
   })
 
   markTraceSegmentsInsideCopperPour({ db, copperPour })
-  for (const { traceId, covered } of traceExpectations) {
+  for (const { traceId, expectedTags } of traceExpectations) {
     const trace = db.pcb_trace.get(traceId)!
-    for (const routePoint of trace.route) {
-      if (covered) {
+    for (const [routePointIndex, routePoint] of trace.route.entries()) {
+      if (expectedTags[routePointIndex]) {
         expect(routePoint).toHaveProperty("is_inside_copper_pour", true)
         expect(routePoint).toHaveProperty("copper_pour_id", "pour_with_hole")
       } else {
