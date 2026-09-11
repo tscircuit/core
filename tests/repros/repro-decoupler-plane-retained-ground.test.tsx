@@ -56,11 +56,15 @@ test("decoupler plane fanout joins retained ground copper", async () => {
   )
   await circuit.renderUntilSettled()
 
-  // Reproduce the failure without making the repro-only PR fail CI.
-  // The fix changes this to require no errors and regenerates this same SVG.
-  expect(circuit.db.pcb_autorouting_error.list()).toHaveLength(1)
-  expect(circuit.db.pcb_autorouting_error.list()[0]?.message).toContain(
-    "only 0 of 2 connections could escape",
-  )
+  expect(
+    circuit
+      .getCircuitJson()
+      .filter((element) => element.type.endsWith("_error")),
+  ).toEqual([])
+  expect(circuit.db.pcb_trace.list()).toHaveLength(4)
+  expect(circuit.db.pcb_via.list()).toHaveLength(3)
+  for (const via of circuit.db.pcb_via.list()) {
+    expect(via.layers).toEqual(["top", "inner1", "inner2", "bottom"])
+  }
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
