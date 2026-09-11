@@ -179,7 +179,6 @@ export const Am62lLpddr4FullBgaBoard = ({
   autorouterEffortLevel?: "1x" | "2x" | "5x" | "10x" | "100x"
 }) => (
   <board
-    enableViaStitching
     name="AM62L_LPDDR4_BGA_FANOUT_COPPER_POUR"
     width={`${boardSize.width}mm`}
     height={`${boardSize.height}mm`}
