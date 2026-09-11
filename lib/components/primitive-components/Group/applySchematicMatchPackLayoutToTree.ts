@@ -774,7 +774,28 @@ function convertTreeToMatchPackInputProblem(
       }
     }
 
-    if (hasNetConnections) {
+    // A path of local direct connections already represents the shared net.
+    const reachablePins = new Set(pins.slice(0, 1))
+    for (const pin1 of reachablePins) {
+      for (const pin2 of pins) {
+        if (
+          problem.pinStrongConnMap[`${pin1}-${pin2}`] ||
+          problem.pinStrongConnMap[`${pin2}-${pin1}`]
+        ) {
+          reachablePins.add(pin2)
+        }
+      }
+    }
+    const connectedChips = Object.values(problem.chipMap).filter((chip) =>
+      chip.pins.some((pinId) => pins.includes(pinId)),
+    )
+    const hasIndirectConnections =
+      connectedChips.length > 1 && reachablePins.size < new Set(pins).size
+    if (
+      hasNetConnections ||
+      hasIndirectConnections ||
+      (pins.length === 1 && hasDirectConnections)
+    ) {
       const source_net = db.source_net.getWhere({
         subcircuit_connectivity_map_key: connectivityKey,
       })
