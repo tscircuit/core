@@ -25,7 +25,8 @@ const TEXT_BOX_ENABLED_FTYPES = new Set([
   "simple_test_point",
 ])
 
-function getTextBounds({
+/** Bounds in schematic world coordinates (mm, +X right, +Y up) of horizontal text at a point. */
+export function getSchematicTextBounds({
   text,
   position,
   anchor,
@@ -99,7 +100,7 @@ function getSymbolTextBounds({
     if (!value) continue
 
     textBounds.push(
-      getTextBounds({
+      getSchematicTextBounds({
         text: value,
         position: {
           x: primitive.x - symbol.center.x + schematicComponent.center.x,

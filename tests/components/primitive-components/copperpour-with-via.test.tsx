@@ -35,6 +35,10 @@ test("copper pour surrounds centered via on the same net", async () => {
     { enableViaStitching: true, globallyDisabled: true },
   ]) {
     const { circuit: stitchingCircuit } = getTestFixture()
+    let stitchingSolverRuns = 0
+    stitchingCircuit.on("solver:started", ({ solverName }) => {
+      if (solverName === "ViaStitchSolver") stitchingSolverRuns++
+    })
     if (globallyDisabled) stitchingCircuit._featurePcbViaStitching = false
     stitchingCircuit.add(
       <board
@@ -49,6 +53,9 @@ test("copper pour surrounds centered via on the same net", async () => {
       </board>,
     )
     await stitchingCircuit.renderUntilSettled()
+    expect(stitchingSolverRuns).toBe(
+      enableViaStitching && !globallyDisabled ? 1 : 0,
+    )
     stitchingCounts.push(stitchingCircuit.db.pcb_via.list().length)
   }
   const [omitted, disabled, dense, sparse, globallyDisabled] = stitchingCounts
