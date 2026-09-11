@@ -13,5 +13,8 @@ test("repro112: double-row pinheader renders pcb and 3d snapshots", async () => 
   await circuit.renderUntilSettled()
 
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
-  expect(circuit).toMatchSimple3dSnapshot(import.meta.path)
+  await expect(circuit).toMatchSimple3dSnapshot(import.meta.path, {
+    // Frame the full pin height now that the header sits above the board.
+    camPos: [16, 32, 24],
+  })
 })
