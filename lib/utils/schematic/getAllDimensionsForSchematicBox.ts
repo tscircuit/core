@@ -388,8 +388,9 @@ export const getAllDimensionsForSchematicBox = (
 
     const labelWidth = params.pinLabels
       ? Math.max(
-          ...Object.values(params.pinLabels).map(
-            (label) => label.length * ESTIMATED_PIN_LABEL_CHARACTER_WIDTH,
+          0,
+          ...Object.values(params.pinLabels).map((label) =>
+            getEstimatedPinLabelWidth(label),
           ),
         )
       : 0
@@ -445,7 +446,7 @@ export const getAllDimensionsForSchematicBox = (
       const label =
         params.pinLabels![`pin${pinNumber}`] ??
         params.pinLabels![`${pinNumber}`]
-      return label ? label.length * CHAR_WIDTH : 0
+      return getDisplayedPinLabel(label).length * CHAR_WIDTH
     }
 
     const leftLabels = orderedTruePorts
