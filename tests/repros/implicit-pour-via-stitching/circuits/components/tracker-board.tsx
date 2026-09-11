@@ -27,6 +27,7 @@ export default function TrackerBoard({
       layers={2}
       schematicDisabled
       automaticPoursEnabled
+      enableViaStitching
       autorouterVersion="beta_pipeline9"
       autorouter={{ preset: "auto_local", traceClearance: 0.15 }}
     >

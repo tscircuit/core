@@ -3,8 +3,8 @@
 These four TSX circuits come from the examples in
 [implicit-copper-pour-solver PR #13](https://github.com/tscircuit/implicit-copper-pour-solver/pull/13).
 They retain their board sizes, placements and connectivity, with automatic pours
-and Pipeline9 enabled here. Via stitching uses core's default; the tests do not
-opt in or insert manual stitching vias.
+and Pipeline9 enabled here. Each board opts in with `enableViaStitching` and
+uses the solver's default pitch; the tests do not insert manual stitching vias.
 
 - **compact-beacon**: 28 × 28 mm, centered MCU, LED, reset and SWD.
 - **led-controller**: 48 × 24 mm, left MCU and six LED/resistor channels.
