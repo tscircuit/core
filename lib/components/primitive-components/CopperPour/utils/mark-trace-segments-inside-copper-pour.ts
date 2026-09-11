@@ -1,96 +1,22 @@
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
+import { Point, Segment, type Polygon } from "@flatten-js/core"
 import type {
   PcbCopperPour,
-  PcbCopperPourBRep,
-  PcbCopperPourRect,
   PcbTrace,
+  Point as CircuitPoint,
   SourceTrace,
 } from "circuit-json"
+import { getPourPolygon } from "lib/utils/copper-pour-connectivity/copper-geometry"
 
 const EPSILON = 1e-9
-
-type Point = { x: number; y: number }
+// Match findFloatingCopper so clipping edges below Flatten's mm tolerance
+// remain distinguishable during geometric predicates.
+const GEOMETRY_SCALE = 1e6
 
 const isWireRoutePoint = (
   routePoint: PcbTrace["route"][number],
 ): routePoint is Extract<PcbTrace["route"][number], { route_type: "wire" }> =>
   routePoint.route_type === "wire"
-
-const isPointOnSegment = (p: Point, a: Point, b: Point): boolean => {
-  const cross = (p.y - a.y) * (b.x - a.x) - (p.x - a.x) * (b.y - a.y)
-  if (Math.abs(cross) > EPSILON) return false
-
-  const dot = (p.x - a.x) * (b.x - a.x) + (p.y - a.y) * (b.y - a.y)
-  if (dot < -EPSILON) return false
-
-  const squaredLength = (b.x - a.x) ** 2 + (b.y - a.y) ** 2
-  if (dot - squaredLength > EPSILON) return false
-
-  return true
-}
-
-const isPointInRing = (point: Point, ring: Point[]): boolean => {
-  if (ring.length < 3) return false
-
-  let inside = false
-  let previous = ring[ring.length - 1]!
-  for (const current of ring) {
-    if (isPointOnSegment(point, previous, current)) return true
-
-    const intersects =
-      current.y > point.y !== previous.y > point.y &&
-      point.x <
-        ((previous.x - current.x) * (point.y - current.y)) /
-          (previous.y - current.y) +
-          current.x
-
-    if (intersects) inside = !inside
-    previous = current
-  }
-  return inside
-}
-
-const isPointInRectPour = (p: Point, pour: PcbCopperPourRect): boolean => {
-  const { center, width, height } = pour
-  const rotationRad = ((pour.rotation ?? 0) * Math.PI) / 180
-  const cosR = Math.cos(-rotationRad)
-  const sinR = Math.sin(-rotationRad)
-
-  const dx = p.x - center.x
-  const dy = p.y - center.y
-  const localX = dx * cosR - dy * sinR
-  const localY = dx * sinR + dy * cosR
-
-  return (
-    Math.abs(localX) <= width / 2 + EPSILON &&
-    Math.abs(localY) <= height / 2 + EPSILON
-  )
-}
-
-const isPointInBrepPour = (p: Point, pour: PcbCopperPourBRep): boolean => {
-  const outerRing = pour.brep_shape.outer_ring.vertices.map((v) => ({
-    x: v.x,
-    y: v.y,
-  }))
-  if (!isPointInRing(p, outerRing)) return false
-
-  for (const innerRing of pour.brep_shape.inner_rings) {
-    const points = innerRing.vertices.map((v) => ({ x: v.x, y: v.y }))
-    if (isPointInRing(p, points)) return false
-  }
-
-  return true
-}
-
-const isPointInCopperPour = (point: Point, pour: PcbCopperPour): boolean => {
-  if (pour.shape === "rect") {
-    return isPointInRectPour(point, pour)
-  }
-  if (pour.shape === "brep") {
-    return isPointInBrepPour(point, pour)
-  }
-  return false
-}
 
 const isTraceConnectedToSourceNet = (
   trace: PcbTrace,
@@ -106,24 +32,23 @@ const isTraceConnectedToSourceNet = (
   return sourceTrace.connected_source_net_ids.includes(sourceNetId)
 }
 
+/** Segment endpoints are board-world points in mm (+X right, +Y up,
+ * right-handed). The pour polygon uses the same frame scaled by GEOMETRY_SCALE.
+ */
 const isSegmentFullyInsideCopperPour = (
-  start: Point,
-  end: Point,
-  pour: PcbCopperPour,
+  start: CircuitPoint,
+  end: CircuitPoint,
+  pourPolygon: Polygon,
 ): boolean => {
   const dx = end.x - start.x
   const dy = end.y - start.y
   const length = Math.hypot(dx, dy)
   if (length <= EPSILON) return false
 
-  const samples = [0, 0.25, 0.5, 0.75, 1]
-  return samples.every((t) =>
-    isPointInCopperPour(
-      {
-        x: start.x + dx * t,
-        y: start.y + dy * t,
-      },
-      pour,
+  return pourPolygon.contains(
+    new Segment(
+      new Point(start.x * GEOMETRY_SCALE, start.y * GEOMETRY_SCALE),
+      new Point(end.x * GEOMETRY_SCALE, end.y * GEOMETRY_SCALE),
     ),
   )
 }
@@ -136,6 +61,11 @@ export const markTraceSegmentsInsideCopperPour = ({
   copperPour: PcbCopperPour
 }): void => {
   if (!copperPour.source_net_id) return
+
+  const pourPolygon = getPourPolygon(copperPour).scale(
+    GEOMETRY_SCALE,
+    GEOMETRY_SCALE,
+  )
 
   const sourceTraceById = new Map(
     db.source_trace
@@ -154,35 +84,49 @@ export const markTraceSegmentsInsideCopperPour = ({
       continue
     }
 
-    let routeChanged = false
-    const nextRoute = trace.route.map((routePoint) => ({ ...routePoint }))
-
-    for (let i = 0; i < nextRoute.length - 1; i++) {
-      const fromRoutePoint = nextRoute[i]
-      const toRoutePoint = nextRoute[i + 1]
-      if (!fromRoutePoint || !toRoutePoint) continue
-      if (!isWireRoutePoint(fromRoutePoint) || !isWireRoutePoint(toRoutePoint))
-        continue
-      if (
-        fromRoutePoint.layer !== copperPour.layer ||
-        toRoutePoint.layer !== copperPour.layer
-      )
-        continue
-
-      if (
-        isSegmentFullyInsideCopperPour(
-          { x: fromRoutePoint.x, y: fromRoutePoint.y },
-          { x: toRoutePoint.x, y: toRoutePoint.y },
-          copperPour,
+    const coveredSegments = trace.route
+      .slice(1)
+      .map((toRoutePoint, segmentIndex) => {
+        const fromRoutePoint = trace.route[segmentIndex]!
+        if (
+          !isWireRoutePoint(fromRoutePoint) ||
+          !isWireRoutePoint(toRoutePoint)
         )
-      ) {
-        fromRoutePoint.is_inside_copper_pour = true
-        fromRoutePoint.copper_pour_id = copperPour.pcb_copper_pour_id
-        toRoutePoint.is_inside_copper_pour = true
-        toRoutePoint.copper_pour_id = copperPour.pcb_copper_pour_id
-        routeChanged = true
+          return false
+        if (
+          fromRoutePoint.layer !== copperPour.layer ||
+          toRoutePoint.layer !== copperPour.layer
+        )
+          return false
+
+        return isSegmentFullyInsideCopperPour(
+          fromRoutePoint,
+          toRoutePoint,
+          pourPolygon,
+        )
+      })
+    if (!coveredSegments.some(Boolean)) continue
+
+    let routeChanged = false
+    const nextRoute = trace.route.map((routePoint, routePointIndex) => {
+      if (!isWireRoutePoint(routePoint)) return routePoint
+      // SVG consumers hide a segment when both endpoints are tagged. A shared
+      // point must therefore have coverage on every adjacent segment; otherwise
+      // covered neighbors could incorrectly hide an uncovered middle segment.
+      const previousSegmentIsCovered =
+        routePointIndex === 0 || coveredSegments[routePointIndex - 1]
+      const nextSegmentIsCovered =
+        routePointIndex === trace.route.length - 1 ||
+        coveredSegments[routePointIndex]
+      if (!previousSegmentIsCovered || !nextSegmentIsCovered) return routePoint
+
+      routeChanged = true
+      return {
+        ...routePoint,
+        is_inside_copper_pour: true,
+        copper_pour_id: copperPour.pcb_copper_pour_id,
       }
-    }
+    })
 
     if (routeChanged) {
       db.pcb_trace.update(trace.pcb_trace_id, { route: nextRoute })
