@@ -1,4 +1,5 @@
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent/PrimitiveComponent"
+import { safeToString } from "lib/utils/safe-to-string"
 import { z } from "zod"
 
 class ErrorPlaceholderComponent extends PrimitiveComponent {
@@ -17,11 +18,19 @@ class ErrorPlaceholderComponent extends PrimitiveComponent {
       }
       return 0
     }
+    // `props` is unvalidated here, so a value like `name` can be an object with
+    // no primitive conversion. Coerce it before it reaches any label or error
+    // message, but keep undefined/null untouched so empty names stay empty.
+    const safeName =
+      props.name === undefined || props.name === null
+        ? props.name
+        : safeToString(props.name)
     this._parsedProps = {
       ...props,
+      name: safeName,
       error,
       type: props.type || "unknown",
-      component_name: props.name,
+      component_name: safeName,
       error_type: "source_failed_to_create_component_error",
       message: error instanceof Error ? error.message : String(error),
       pcbX: resolveCoordinate(props.pcbX, "pcbX"),
