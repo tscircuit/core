@@ -5,12 +5,15 @@ import type {
   BreakoutProps,
 } from "@tscircuit/props"
 import type { z } from "zod"
+import { getSavedAutoroutingPhaseTraces } from "./get-saved-autorouting-phase-traces"
+import { getPresetAutoroutingConfig } from "lib/utils/autorouting/getPresetAutoroutingConfig"
 import type { AutoroutingPhase } from "../AutoroutingPhase"
 import { getSavedFanoutTraces } from "../Breakout/get-saved-fanout-traces"
 import type { Breakout } from "../Breakout/Breakout"
 import { BreakoutPoint } from "../BreakoutPoint"
 import type { Bus } from "../Bus"
 import type { Net } from "../Net"
+import type { Port } from "../Port"
 import type { Trace } from "../Trace/Trace"
 import type { Group } from "./Group"
 import type {
@@ -119,6 +122,12 @@ function convertPortSelectorToEndpointKey(selector: string): string {
 function getConnectionSelectorsFromAutoroutingPhaseProps(
   phaseProps: AutoroutingPhaseProps,
 ): string[] {
+  if (
+    phaseProps.connection === undefined &&
+    phaseProps.connections === undefined
+  ) {
+    return phaseProps.pcbTracePaths?.map((path) => path.connection) ?? []
+  }
   return [
     ...(phaseProps.connection ? [phaseProps.connection] : []),
     ...(phaseProps.connections ?? []),
@@ -129,13 +138,25 @@ function traceHasEndpointMatchingConnectionSelector(
   trace: Trace,
   connectionSelectorEndpointKey: string,
 ): boolean {
-  return trace
-    .getTracePortPathSelectors()
-    .some(
-      (selector) =>
-        convertPortSelectorToEndpointKey(selector) ===
-        connectionSelectorEndpointKey,
-    )
+  if (
+    trace
+      .getTracePortPathSelectors()
+      .some(
+        (selector) =>
+          convertPortSelectorToEndpointKey(selector) ===
+          connectionSelectorEndpointKey,
+      )
+  )
+    return true
+  // A saved path may use a pin label while the trace uses its pin number.
+  // Resolve both to the port identity before deciding phase membership.
+  const port = trace
+    .getSubcircuit()
+    .selectOne(connectionSelectorEndpointKey, { type: "port" }) as Port | null
+  return (
+    port !== null &&
+    (trace._findConnectedPorts().ports?.includes(port) ?? false)
+  )
 }
 
 function getAutoroutersByPhaseIndex(
@@ -330,7 +351,7 @@ export function Group_getRoutingPhasePlans(
       }
     }
 
-    if (phaseProps.reroute) {
+    if (phaseProps.reroute || phaseProps.pcbTracePaths !== undefined) {
       getOrCreateRoutingPhasePlan(plansByPhaseIndex, phaseIndex)
     }
   }
@@ -362,6 +383,23 @@ export function Group_getRoutingPhasePlans(
     plan.drcTolerances = phaseProps
       ? getDrcTolerancesFromAutoroutingPhaseProps(phaseProps)
       : undefined
+  }
+
+  for (const phase of group.selectAll(
+    "autoroutingphase",
+  ) as AutoroutingPhase[]) {
+    if (phase._parsedProps.pcbTracePaths === undefined) continue
+    const plan = plansByPhaseIndex.get(phase._parsedProps.phaseIndex ?? null)
+    if (!plan) continue
+    const config =
+      plan.autorouter !== undefined
+        ? getPresetAutoroutingConfig(plan.autorouter, group.root?.platform)
+        : group._getAutorouterConfig()
+    const isFanout = ["fanout", "single_layer_fanout"].includes(
+      config.preset ?? "",
+    )
+    plan.getPrecomputedRoutingResult = (input) =>
+      getSavedAutoroutingPhaseTraces(phase, input, isFanout)
   }
 
   const breakoutPlans: RoutingPhasePlan[] = []
@@ -438,7 +476,9 @@ export function Group_getRoutingPhasePlans(
               ? breakoutProps.autorouter.allowViaInPad
               : undefined) ?? group._getAutorouterConfig().allowViaInPad,
         },
-        getPrecomputedTraces: (input) => getSavedFanoutTraces(breakout, input),
+        getPrecomputedRoutingResult: (input) => ({
+          traces: getSavedFanoutTraces(breakout, input),
+        }),
       })
       continue
     }
