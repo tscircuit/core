@@ -483,7 +483,8 @@ export class Board
     if (boardAnchorPosition) {
       center = getBoardCenterFromAnchor({
         boardAnchorPosition,
-        boardAnchorAlignment: boardAnchorAlignment ?? "center",
+        boardAnchorAlignment:
+          props.anchorAlignment ?? boardAnchorAlignment ?? "center",
         width: computedWidth,
         height: computedHeight,
       })
