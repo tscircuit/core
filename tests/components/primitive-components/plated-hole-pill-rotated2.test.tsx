@@ -33,7 +33,7 @@ test("PlatedHole pill shape", () => {
       ],
       "outer_height": 4,
       "outer_width": 2,
-      "pcb_component_id": null,
+      "pcb_component_id": undefined,
       "pcb_group_id": undefined,
       "pcb_plated_hole_id": "pcb_plated_hole_0",
       "pcb_port_id": undefined,
