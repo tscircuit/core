@@ -107,7 +107,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   minBoardEdgeClearance?: number
   minViaHoleDiameter?: number
   minViaPadDiameter?: number
-  subcircuitComponent?: Pick<ISubcircuit, "selectAll"> & {
+  subcircuitComponent?: Pick<ISubcircuit, "selectAll" | "getDescendants"> & {
     pcb_group_id?: PcbGroupId | null
   }
   /**
@@ -590,12 +590,13 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   // eligible through an explicit current-scope net reference or exposed-net
   // contract.
   const sourceNetIds = new Set(source_nets.map((net) => net.source_net_id))
-  const currentSubcircuitSourceTraces = db.source_trace
-    .list()
-    .filter((trace) => !subcircuit_id || trace.subcircuit_id === subcircuit_id)
+  // Subcircuit creates exposed-net bridge traces with this explicit marker.
+  // A trace display name is user-facing and must not determine routing scope.
+  // selectAll("trace") does not descend into nested subcircuits, so walk
+  // descendants to also find bridge traces created at deeper levels.
   const exposedBridgeSourceTraceIds = new Set(
-    (subcircuitComponent?.selectAll("trace") ?? []).flatMap((trace) => {
-      const candidate = trace as {
+    (subcircuitComponent?.getDescendants() ?? []).flatMap((node) => {
+      const candidate = node as {
         source_trace_id?: string | null
         _exposesSubcircuitConnection?: boolean
       }
@@ -604,16 +605,34 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         : []
     }),
   )
+  const exposedBridgeSourceTraces = db.source_trace
+    .list()
+    .filter((trace) => exposedBridgeSourceTraceIds.has(trace.source_trace_id))
   const exposedDescendantSourceNetIds = new Set<string>()
-  for (const trace of currentSubcircuitSourceTraces) {
-    // Subcircuit creates exposed-net bridge traces with this explicit marker.
-    // A trace display name is user-facing and must not determine routing scope.
-    if (!exposedBridgeSourceTraceIds.has(trace.source_trace_id)) {
-      continue
-    }
+  const exposedNetIdsToVisit: string[] = []
+  for (const trace of exposedBridgeSourceTraces) {
+    if (subcircuit_id && trace.subcircuit_id !== subcircuit_id) continue
     for (const sourceNetId of trace.connected_source_net_ids ?? []) {
       if (!sourceNetIds.has(sourceNetId)) {
         exposedDescendantSourceNetIds.add(sourceNetId)
+        exposedNetIdsToVisit.push(sourceNetId)
+      }
+    }
+  }
+  // A net exposed into the current scope may itself be the parent side of a
+  // deeper bridge. Follow the chain so two nested exposedNets levels stay
+  // reachable from the board (tscircuit/tscircuit#4162).
+  while (exposedNetIdsToVisit.length > 0) {
+    const exposedNetId = exposedNetIdsToVisit.pop()!
+    for (const trace of exposedBridgeSourceTraces) {
+      if (!(trace.connected_source_net_ids ?? []).includes(exposedNetId)) {
+        continue
+      }
+      for (const sourceNetId of trace.connected_source_net_ids ?? []) {
+        if (sourceNetIds.has(sourceNetId)) continue
+        if (exposedDescendantSourceNetIds.has(sourceNetId)) continue
+        exposedDescendantSourceNetIds.add(sourceNetId)
+        exposedNetIdsToVisit.push(sourceNetId)
       }
     }
   }
