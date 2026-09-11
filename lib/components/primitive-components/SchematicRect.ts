@@ -25,6 +25,8 @@ export class SchematicRect extends PrimitiveComponent<
     if (this.getCollapsedSchematicBoxAncestor()) return
     const { db } = this.root!
     const { _parsedProps: props } = this
+    this.reportNonPositiveSchematicDimension("width", props.width)
+    this.reportNonPositiveSchematicDimension("height", props.height)
 
     const globalPos = this._getGlobalSchematicPositionBeforeLayout()
 

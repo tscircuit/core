@@ -25,6 +25,8 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
     const { db } = this.root!
     const { _parsedProps: props } = this
     if (props.chipRef) return
+    this.reportNonPositiveSchematicDimension("width", props.width)
+    this.reportNonPositiveSchematicDimension("height", props.height)
 
     const basePadding = 0.6
     const generalPadding = typeof props.padding === "number" ? props.padding : 0

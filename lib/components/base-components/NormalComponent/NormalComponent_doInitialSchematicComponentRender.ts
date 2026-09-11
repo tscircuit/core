@@ -46,6 +46,9 @@ export function NormalComponent_doInitialSchematicComponentRender(
   const { schematicSymbolName } = component.config
   const { _parsedProps: props } = component
 
+  component.reportNonPositiveSchematicDimension("schWidth", props.schWidth)
+  component.reportNonPositiveSchematicDimension("schHeight", props.schHeight)
+
   const hasSymbolChild = component.children.some(
     (c) => c.componentName === "Symbol",
   )

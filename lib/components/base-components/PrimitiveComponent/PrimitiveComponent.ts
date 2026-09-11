@@ -196,6 +196,17 @@ export abstract class PrimitiveComponent<
     })
     this._reportedInvalidPcbCalcWarnings.add(propertyName)
   }
+
+  reportNonPositiveSchematicDimension(
+    propertyName: string,
+    value: unknown,
+  ): void {
+    if (typeof value !== "number" || value > 0 || Number.isNaN(value)) return
+    this._reportInvalidComponentPropertyError(
+      propertyName,
+      `Invalid ${propertyName} for ${this.lowercaseComponentName}: ${value}, which must be greater than zero.`,
+    )
+  }
   fallbackUnassignedName?: string
 
   constructor(props: z.input<ZodProps>) {
