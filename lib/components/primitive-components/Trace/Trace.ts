@@ -23,6 +23,7 @@ import { mergeRoutes } from "lib/utils/autorouting/mergeRoutes"
 import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
 import { getClosest } from "lib/utils/getClosest"
 import { isRouteOutsideBoard } from "lib/utils/is-route-outside-board"
+import { normalizeNetSelector } from "lib/utils/normalize-net-selector"
 import { getObstaclesFromCircuitJson } from "lib/utils/obstacles/getObstaclesFromCircuitJson"
 import { pairs } from "lib/utils/pairs"
 import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
@@ -152,13 +153,14 @@ export class Trace
   }
 
   _resolveNet(selector: string): Net | null {
-    const direct = this.getSubcircuit().selectOne(selector, {
+    const normalizedSelector = normalizeNetSelector(selector)
+    const direct = this.getSubcircuit().selectOne(normalizedSelector, {
       type: "net",
     }) as Net | null
     if (direct) return direct
 
     // Fallback: search all descendants for a net with the same name
-    const match = selector.match(/^net\.(.+)$/)
+    const match = normalizedSelector.match(/^net\.(.+)$/)
     const netName = match ? match[1] : null
     if (!netName) return null
 
@@ -178,7 +180,7 @@ export class Trace
     )
   }
 
-  _findConnectedNets(): {
+  _findConnectedNets(opts: { allowUnresolvedNets?: boolean } = {}): {
     nets: Net[]
     netsWithSelectors: Array<{ selector: string; net: Net }>
   } {
@@ -191,6 +193,12 @@ export class Trace
 
     const undefinedNets = netsWithSelectors.filter((n) => !n.net)
     if (undefinedNets.length > 0) {
+      // A read-only query (e.g. a ground/power probe) treats an unresolvable
+      // net as "not connected" instead of aborting the whole render.
+      if (opts.allowUnresolvedNets) {
+        const resolved = netsWithSelectors.filter((n) => n.net)
+        return { netsWithSelectors: resolved, nets: resolved.map((n) => n.net) }
+      }
       this.renderError(
         `Could not find net for selector "${undefinedNets[0].selector}" inside ${this}`,
       )
