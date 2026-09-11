@@ -84,22 +84,22 @@ test("pcb edge positioning props support calc expressions and are visible in pcb
   expect(top).toBeDefined()
   expect(bottom).toBeDefined()
 
-  expect(left?.display_offset_x).toBeCloseTo(
+  expect(Number.parseFloat(String(left?.display_offset_x))).toBeCloseTo(
     boardMinX + 2 + (left?.width ?? 0) / 2,
   )
-  expect(right?.display_offset_x).toBeCloseTo(
+  expect(Number.parseFloat(String(right?.display_offset_x))).toBeCloseTo(
     boardMaxX - 2 - (right?.width ?? 0) / 2,
   )
-  expect(leftPlus2?.display_offset_x).toBeCloseTo(
-    Number(left?.display_offset_x ?? 0) +
+  expect(Number.parseFloat(String(leftPlus2?.display_offset_x))).toBeCloseTo(
+    Number.parseFloat(String(left?.display_offset_x ?? 0)) +
       (left?.width ?? 0) / 2 +
       2 +
       (leftPlus2?.width ?? 0) / 2,
   )
-  expect(top?.display_offset_y).toBeCloseTo(
+  expect(Number.parseFloat(String(top?.display_offset_y))).toBeCloseTo(
     boardMaxY - 2 - (top?.height ?? 0) / 2,
   )
-  expect(bottom?.display_offset_y).toBeCloseTo(
+  expect(Number.parseFloat(String(bottom?.display_offset_y))).toBeCloseTo(
     boardMinY + 2 + (bottom?.height ?? 0) / 2,
   )
 
