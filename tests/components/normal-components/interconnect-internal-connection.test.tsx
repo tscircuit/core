@@ -22,4 +22,9 @@ test("interconnect with standard footprint should create source_component_intern
     source_component_id: expect.any(String),
     source_port_ids: expect.any(Array),
   })
+
+  const sourceComponent = circuit.db.source_component.getWhere({ name: "IC1" })
+  expect(sourceComponent?.internally_connected_source_port_ids).toEqual([
+    internalConnections[0].source_port_ids,
+  ])
 })
