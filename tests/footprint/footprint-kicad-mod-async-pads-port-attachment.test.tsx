@@ -52,7 +52,7 @@ it("assigns pcb_port_id to pads from an async-loaded .kicad_mod footprint (issue
   const r1 = circuit.selectOne("resistor.R1")
   const r1PcbComponentId = r1?.pcb_component_id
   const r1Pads = circuitJson.filter(
-    (e: any) =>
+    (e): e is Extract<typeof e, { type: "pcb_smtpad" }> =>
       e.type === "pcb_smtpad" && e.pcb_component_id === r1PcbComponentId,
   )
 
