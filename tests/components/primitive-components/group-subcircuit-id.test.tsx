@@ -34,7 +34,7 @@ test("Subcircuit group should have subcircuit_id", async () => {
   expect(circuit.db.pcb_group.list()).toMatchInlineSnapshot(`
 [
   {
-    "anchor_alignment": null,
+    "anchor_alignment": undefined,
     "anchor_position": {
       "x": 0,
       "y": 0,
