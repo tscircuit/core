@@ -74,7 +74,8 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
           is_covered_with_solder_mask: isCoveredWithSolderMask,
           subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
           pcb_group_id: subcircuit?.getGroup()?.pcb_group_id ?? undefined,
-        } as PcbHoleRotatedPill)
+          name: props.name,
+        } as unknown as PcbHoleRotatedPill)
         this.pcb_hole_id = inserted_hole.pcb_hole_id!
       } else {
         const inserted_hole = db.pcb_hole.insert({
@@ -89,7 +90,8 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
           is_covered_with_solder_mask: isCoveredWithSolderMask,
           subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
           pcb_group_id: subcircuit?.getGroup()?.pcb_group_id ?? undefined,
-        } as PcbHolePill)
+          name: props.name,
+        } as unknown as PcbHolePill)
         this.pcb_hole_id = inserted_hole.pcb_hole_id!
       }
     } else if (props.shape === "oval") {
@@ -105,7 +107,8 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
         is_covered_with_solder_mask: isCoveredWithSolderMask,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: subcircuit?.getGroup()?.pcb_group_id ?? undefined,
-      } as PCBHole)
+        name: props.name,
+      } as unknown as PCBHole)
       this.pcb_hole_id = inserted_hole.pcb_hole_id!
     } else if (props.shape === "rect") {
       // Rect shape
@@ -121,7 +124,8 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
         is_covered_with_solder_mask: isCoveredWithSolderMask,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: subcircuit?.getGroup()?.pcb_group_id ?? undefined,
-      } as PcbHoleRect)
+        name: props.name,
+      } as unknown as PcbHoleRect)
       this.pcb_hole_id = inserted_hole.pcb_hole_id!
     } else {
       // Circle shape (default)
@@ -136,7 +140,8 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
         is_covered_with_solder_mask: isCoveredWithSolderMask,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: subcircuit?.getGroup()?.pcb_group_id ?? undefined,
-      } as PcbHoleCircle)
+        name: props.name,
+      } as unknown as PcbHoleCircle)
       this.pcb_hole_id = inserted_hole.pcb_hole_id!
     }
   }
