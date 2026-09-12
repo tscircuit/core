@@ -37,5 +37,9 @@ test("simple route json points include semantic port selectors", async () => {
 
   const typedPoint: SimpleRoutePoint = points[0]!
   expect(typedPoint.port_selector).toBeDefined()
-  expect(points.every((point) => typeof point.layer === "string" && !("layers" in point))).toBe(true)
+  expect(
+    points.every(
+      (point) => typeof point.layer === "string" && !("layers" in point),
+    ),
+  ).toBe(true)
 })

@@ -235,7 +235,10 @@ const inferPlaneBusDirection = (
   bus: SimpleRouteBus,
 ): FanoutDirection | undefined => {
   const connectionNames = new Set(bus.connectionNames)
-  const sourcePointsByComponentId = new Map<string, SingleLayerConnectionPoint[]>()
+  const sourcePointsByComponentId = new Map<
+    string,
+    SingleLayerConnectionPoint[]
+  >()
   for (const connection of input.connections) {
     if (!connectionNames.has(connection.name)) continue
     for (const point of connection.pointsToConnect) {
