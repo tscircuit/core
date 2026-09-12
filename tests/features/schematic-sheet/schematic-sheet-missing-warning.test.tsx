@@ -13,19 +13,24 @@ test("warns when a schematic has no schematic sheet", async () => {
   await circuitWithoutSheet.renderUntilSettled()
 
   const circuitWithoutSheetMissingSchematicSheetWarnings =
-    circuitWithoutSheet.db.schematic_component_styling_warning
-      .list()
-      .filter(
-        ({ styling_issue_type }) =>
-          styling_issue_type === "missing_schematic_sheet",
-      )
+    circuitWithoutSheet.db.schematic_missing_sheet_warning.list()
   expect(circuitWithoutSheetMissingSchematicSheetWarnings).toEqual([
     expect.objectContaining({
-      warning_type: "schematic_component_styling_warning",
-      styling_issue_type: "missing_schematic_sheet",
+      warning_type: "schematic_missing_sheet_warning",
+      type: "schematic_missing_sheet_warning",
       message: expect.stringContaining("No <schematicsheet> was found"),
     }),
   ])
+
+  const warning = circuitWithoutSheetMissingSchematicSheetWarnings[0]!
+  expect(warning).not.toHaveProperty("schematic_component_id")
+  expect(warning).not.toHaveProperty("source_component_id")
+  expect(warning).not.toHaveProperty("subcircuit_id")
+  expect(
+    circuitWithoutSheet.db.schematic_component_styling_warning.list(),
+  ).not.toContainEqual(
+    expect.objectContaining({ styling_issue_type: "missing_schematic_sheet" }),
+  )
 
   const { circuit: circuitWithSheet } = getTestFixture()
   circuitWithSheet.add(
@@ -39,12 +44,7 @@ test("warns when a schematic has no schematic sheet", async () => {
   await circuitWithSheet.renderUntilSettled()
 
   const circuitWithSheetMissingSchematicSheetWarnings =
-    circuitWithSheet.db.schematic_component_styling_warning
-      .list()
-      .filter(
-        ({ styling_issue_type }) =>
-          styling_issue_type === "missing_schematic_sheet",
-      )
+    circuitWithSheet.db.schematic_missing_sheet_warning.list()
   expect(circuitWithSheetMissingSchematicSheetWarnings).toEqual([])
 
   const { circuit: schematicDisabledCircuit } = getTestFixture()
@@ -57,12 +57,7 @@ test("warns when a schematic has no schematic sheet", async () => {
   await schematicDisabledCircuit.renderUntilSettled()
 
   const schematicDisabledCircuitMissingSchematicSheetWarnings =
-    schematicDisabledCircuit.db.schematic_component_styling_warning
-      .list()
-      .filter(
-        ({ styling_issue_type }) =>
-          styling_issue_type === "missing_schematic_sheet",
-      )
+    schematicDisabledCircuit.db.schematic_missing_sheet_warning.list()
   expect(schematicDisabledCircuitMissingSchematicSheetWarnings).toEqual([])
 
   const { circuit: assemblyCircuit } = getTestFixture()
@@ -77,15 +72,10 @@ test("warns when a schematic has no schematic sheet", async () => {
   await assemblyCircuit.renderUntilSettled()
 
   const assemblyCircuitMissingSchematicSheetWarnings =
-    assemblyCircuit.db.schematic_component_styling_warning
-      .list()
-      .filter(
-        ({ styling_issue_type }) =>
-          styling_issue_type === "missing_schematic_sheet",
-      )
+    assemblyCircuit.db.schematic_missing_sheet_warning.list()
   expect(assemblyCircuitMissingSchematicSheetWarnings).toEqual([
     expect.objectContaining({
-      styling_issue_type: "missing_schematic_sheet",
+      type: "schematic_missing_sheet_warning",
     }),
   ])
 })
