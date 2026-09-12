@@ -92,8 +92,17 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
     if (props.schX === undefined && props.schY === undefined) {
       const connectedPorts = this._getConnectedPorts()
       if (connectedPorts.length > 0) {
-        const portPos =
-          connectedPorts[0]._getGlobalSchematicPositionBeforeLayout()
+        // For ports whose schematic position comes from a schematicsymbol
+        // projection (schematicSymbolPortDef), the pre-layout position is not
+        // available until the symbol's schematic ports have been created. Use
+        // the rendered schematic_port center when available, and fall back to
+        // the pre-layout position otherwise (e.g. plain schematic boxes).
+        let portPos = this._tryGetPortSchematicPosition(
+          connectedPorts[0],
+        )
+        if (!portPos) {
+          portPos = connectedPorts[0]._getGlobalSchematicPositionBeforeLayout()
+        }
         const parentCenter = applyToPoint(
           this.parent?.computeSchematicGlobalTransform?.() ?? identity(),
           { x: 0, y: 0 },
@@ -103,6 +112,36 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
     }
 
     return super.computeSchematicPropsTransform()
+  }
+
+  /**
+   * Best-effort schematic position of a port: prefer the already-rendered
+   * schematic_port row (set during SchematicComponentRender), then the
+   * schematic box / schematicsymbol pre-layout position. Returns null when
+   * the port has no position computable yet.
+   */
+  _tryGetPortSchematicPosition(port: Port): { x: number; y: number } | null {
+    if (port.schematic_port_id) {
+      const schematicPort = this.root?.db.schematic_port.get(
+        port.schematic_port_id,
+      )
+      if (schematicPort?.center) return schematicPort.center
+    }
+
+    if (port.schematicSymbolPortDef) {
+      const symbol = port.schematicSymbolPortDef
+      const parentNormalComponent = port.getParentNormalComponent()
+      if (parentNormalComponent) {
+        try {
+          const transform = parentNormalComponent.computeSchematicGlobalTransform()
+          return applyToPoint(transform, symbol) as { x: number; y: number }
+        } catch {
+          return null
+        }
+      }
+    }
+
+    return null
   }
 
   doInitialSchematicPrimitiveRender(): void {
@@ -198,7 +237,25 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
     if (this.getCollapsedSchematicBoxAncestor()) return
     if (this._parsedProps.inline) return
     const { schX, schY } = this._parsedProps
-    if (schX === undefined && schY === undefined) return
+    if (schX === undefined && schY === undefined) {
+      // Coordinate-free netlabels still represent a connection: mark the
+      // connected schematic port(s) as connected so the projection identity
+      // is preserved even without an explicit anchor (issue #3505).
+      const connectsTo = this._resolveConnectsTo()
+      if (connectsTo) {
+        const { db } = this.root!
+        for (const connection of connectsTo) {
+          const port = this.getSubcircuit().selectOne(connection, {
+            type: "port",
+          }) as Port | null
+          if (!port?.schematic_port_id) continue
+          db.schematic_port.update(port.schematic_port_id, {
+            is_connected: true,
+          })
+        }
+      }
+      return
+    }
 
     const { db } = this.root!
     const connectsTo = this._resolveConnectsTo()
@@ -228,6 +285,13 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
         type: "port",
       }) as Port | null
       if (!port || !port.schematic_port_id) continue
+
+      // This netlabel visually represents the connection, so mark this
+      // projection's schematic port connected even when a trace already
+      // exists for the shared source port (e.g. two schematicsymbol
+      // projections of the same dual op-amp power pin: both must show as
+      // connected, not just the first one).
+      db.schematic_port.update(port.schematic_port_id, { is_connected: true })
 
       // If a schematic trace for this connection already exists, skip
       let existingTraceForThisConnection = false
