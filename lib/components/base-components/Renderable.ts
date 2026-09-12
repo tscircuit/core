@@ -209,6 +209,7 @@ const asyncPhaseDependencies: Partial<Record<RenderPhase, RenderPhase[]>> = {
   ],
   ValidatePcbCoordinates: ["PcbFootprintStringRender", "FetchPartFootprint"],
   SourceTraceRender: ["PcbFootprintStringRender", "FetchPartFootprint"],
+  SourceDesignRuleChecks: ["PcbFootprintStringRender", "FetchPartFootprint"],
 }
 
 export type RenderPhaseFn<K extends RenderPhase = RenderPhase> =
