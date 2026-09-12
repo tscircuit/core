@@ -1,4 +1,9 @@
-import type { LayerRef, PcbTraceRoutePoint, PcbVia } from "circuit-json"
+import {
+  pcb_via,
+  type LayerRef,
+  type PcbTraceRoutePoint,
+  type PcbVia,
+} from "circuit-json"
 import { getTraceLength } from "./trace-utils/compute-trace-length"
 import type { Port } from "../Port"
 import type { Trace } from "./Trace"
@@ -121,7 +126,7 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
     jlcMinTolerances.min_trace_width!
 
   if (inflatedPcbTraces.length > 0) {
-    const { maybeFlipLayer } = trace._getPcbPrimitiveFlippedHelpers()
+    const { isFlipped, maybeFlipLayer } = trace._getPcbPrimitiveFlippedHelpers()
     const transform = trace._computePcbGlobalTransformBeforeLayout()
     const insertedRoutes: PcbTraceRoutePoint[][] = []
     const subcircuitConnectivityMapKey =
@@ -174,10 +179,13 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
         const point = transformedRoute[index]
         if (point.route_type === "via") {
           const originalPoint = inflatedPcbTrace.route[index]
-          const inflatedPcbVia = findInflatedPcbViaForPoint(
+          const originalPcbVia = findInflatedPcbViaForPoint(
             trace._inflatedPcbVias,
             originalPoint,
           )
+          const inflatedPcbVia = originalPcbVia
+            ? pcb_via.parse(originalPcbVia)
+            : undefined
           const routePointViaDiameter = getViaDiameterFromRoutePoint(point)
           const fromLayer = maybeFlipLayer(
             (inflatedPcbVia?.from_layer ?? point.from_layer) as LayerRef,
@@ -216,7 +224,13 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
               subcircuitConnectivityMapKey,
             net_is_assignable: inflatedPcbVia?.net_is_assignable,
             net_assigned: inflatedPcbVia?.net_assigned,
-            is_tented: inflatedPcbVia?.is_tented,
+            // Use the same footprint flip as the route and via layers above.
+            tented_on_top: isFlipped
+              ? inflatedPcbVia?.tented_on_bottom
+              : inflatedPcbVia?.tented_on_top,
+            tented_on_bottom: isFlipped
+              ? inflatedPcbVia?.tented_on_top
+              : inflatedPcbVia?.tented_on_bottom,
           })
         }
       }
