@@ -1,5 +1,3 @@
-import { withFixedFanoutTraces } from "lib/utils/autorouting/with-fixed-fanout-traces"
-import { assignSchematicNetLabelSuperscripts } from "lib/utils/schematic/assign-schematic-net-label-superscripts"
 import {
   type SimpleRouteJson as AutorouterSimpleRouteJson,
   type RerouteRectRegion,
@@ -27,6 +25,8 @@ import {
 } from "circuit-json"
 import Debug from "debug"
 import type { GraphicsObject } from "graphics-debug"
+import { withFixedFanoutTraces } from "lib/utils/autorouting/with-fixed-fanout-traces"
+import { assignSchematicNetLabelSuperscripts } from "lib/utils/schematic/assign-schematic-net-label-superscripts"
 
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import { isAssemblyDeviceContainer } from "lib/components/base-components/is-assembly-device-container"
@@ -39,6 +39,7 @@ import type {
   SimpleRouteJson,
   SimplifiedPcbTrace,
 } from "lib/utils/autorouting/SimpleRouteJson"
+import { pcbViasSharePhysicalHole } from "lib/utils/autorouting/compare-pcb-vias"
 import { createSourceTracesFromOffboardConnections } from "lib/utils/autorouting/createSourceTracesFromOffboardConnections"
 import {
   type PcbTraceRoutePointWithSrjMetadata,
@@ -1412,7 +1413,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         // copper pours need phase-local group bounds.
         simpleRouteJson = {
           ...phaseInput,
-          traces: [...(phaseInput.traces ?? []), ...outputTraces],
+          traces: getAccumulatedPcbTracesWithStageOutputReplacements({
+            accumulatedPcbTraces: phaseInput.traces ?? [],
+            stageOutputPcbTraces: outputTraces,
+          }),
         }
       }
       simpleRouteJson = withFixedFanoutTraces(
@@ -2107,6 +2111,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       pcbTraceIdsToReplace: pcb_trace_ids_to_be_replaced,
     })
 
+    // Preserve one Circuit JSON via per physical same-net transition even when
+    // multiple logical traces contain that shared route point.
+    const materializedPcbVias = db.pcb_via.list()
+
     for (const pcb_trace of output_pcb_traces) {
       // vias can be included
       if (pcb_trace.type !== "pcb_trace") continue
@@ -2223,7 +2231,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             }
             const fromLayer = point.from_layer as LayerRef
             const toLayer = point.to_layer as LayerRef
-            db.pcb_via.insert({
+            const pcbVia = {
               pcb_trace_id: pcb_trace.pcb_trace_id,
               x: point.x,
               y: point.y,
@@ -2248,7 +2256,15 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
               subcircuit_id: this.subcircuit_id!,
               pcb_group_id: this.pcb_group_id ?? undefined,
               subcircuit_connectivity_map_key: subcircuitConnectivityMapKey,
-            })
+            }
+            if (
+              materializedPcbVias.some((materializedPcbVia) =>
+                pcbViasSharePhysicalHole(materializedPcbVia, pcbVia),
+              )
+            ) {
+              continue
+            }
+            materializedPcbVias.push(db.pcb_via.insert(pcbVia))
           }
         }
       }

@@ -121,6 +121,12 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
           result.footprintCircuitJson,
         )
         component.addAll(fpComponents)
+        // Existing ports may have rendered before the async pads arrived.
+        for (const child of component.children) {
+          if (child.componentName === "Port") {
+            child._markDirty("PcbPortRender")
+          }
+        }
         component._markDirty("ResolveFootprintPinLabels")
         component._markDirty("InitializePortsFromChildren")
       } catch (err) {
