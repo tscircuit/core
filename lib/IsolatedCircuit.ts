@@ -58,8 +58,8 @@ export class IsolatedCircuit {
   pcbRoutingDisabled = false
 
   _featureMspSchematicTraceRouting = true
-  /** Experimental automatic via stitching; opt in before rendering. */
-  _featurePcbViaStitching = false
+  /** Allows board-level via stitching; set to false to disable globally. */
+  _featurePcbViaStitching = true
 
   /**
    * The IsolatedCircuit name is usually set by the platform, it's not required but
