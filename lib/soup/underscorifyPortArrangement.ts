@@ -1,5 +1,6 @@
 import type { SchematicComponentInput } from "circuit-json"
 import type { PortArrangement } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
+import { getSizeOfSidesFromPortArrangement } from "lib/utils/schematic/getSizeOfSidesFromPortArrangement"
 
 export const underscorifyPortArrangement = (
   portArrangement?: PortArrangement | undefined,
@@ -23,27 +24,19 @@ export const underscorifyPortArrangement = (
     "leftPinCount" in portArrangement ||
     "rightPinCount" in portArrangement ||
     "topPinCount" in portArrangement ||
-    "bottomPinCount" in portArrangement
-  ) {
-    return {
-      left_size: portArrangement.leftPinCount!,
-      right_size: portArrangement.rightPinCount!,
-      top_size: portArrangement.topPinCount,
-      bottom_size: portArrangement.bottomPinCount,
-    }
-  }
-
-  if (
+    "bottomPinCount" in portArrangement ||
     "leftSize" in portArrangement ||
     "rightSize" in portArrangement ||
     "topSize" in portArrangement ||
     "bottomSize" in portArrangement
   ) {
+    const { leftSize, rightSize, topSize, bottomSize } =
+      getSizeOfSidesFromPortArrangement(portArrangement)
     return {
-      left_size: portArrangement.leftSize!,
-      right_size: portArrangement.rightSize!,
-      top_size: portArrangement.topSize,
-      bottom_size: portArrangement.bottomSize,
+      left_size: leftSize,
+      right_size: rightSize,
+      top_size: topSize,
+      bottom_size: bottomSize,
     }
   }
 
