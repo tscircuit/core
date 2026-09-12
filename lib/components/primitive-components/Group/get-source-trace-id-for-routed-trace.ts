@@ -7,6 +7,7 @@ import type {
   SourceTrace,
 } from "circuit-json"
 import { ConnectivityMap } from "circuit-json-to-connectivity-map"
+import { applyToPoint, rotateDEG } from "transformation-matrix"
 import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
 
 type RoutedTrace = (PcbTrace | SimplifiedPcbTrace) & {
@@ -56,9 +57,14 @@ function isPointInSmtPad({
   traceWidth?: number
 }) {
   if (pad.shape === "rect" || pad.shape === "rotated_rect") {
+    // Convert the board-space endpoint into the pad's unrotated local frame.
+    const localPoint = applyToPoint(
+      rotateDEG(pad.shape === "rotated_rect" ? -pad.ccw_rotation : 0),
+      { x: point.x - pad.x, y: point.y - pad.y },
+    )
     return (
-      Math.abs(point.x - pad.x) <= (pad as any).width / 2 + traceWidth / 2 &&
-      Math.abs(point.y - pad.y) <= (pad as any).height / 2 + traceWidth / 2
+      Math.abs(localPoint.x) <= pad.width / 2 + traceWidth / 2 &&
+      Math.abs(localPoint.y) <= pad.height / 2 + traceWidth / 2
     )
   }
 
