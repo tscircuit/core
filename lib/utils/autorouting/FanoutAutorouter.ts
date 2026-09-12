@@ -358,6 +358,7 @@ const createDownstreamSimpleRouteJson = ({
   }
   return {
     ...fanoutSimpleRouteJson,
+    boundsArePhysicalBoardEdges: false,
     obstacles: [
       ...fanoutSimpleRouteJson.obstacles.filter(
         (obstacle) =>

@@ -165,6 +165,13 @@ export type SimpleRouteJson = Omit<
   minPlatedHoleDrillEdgeToDrillEdgeClearance?: number
   minPadEdgeToPadEdgeClearance?: number
   minBoardEdgeClearance?: number
+  /**
+   * Whether `bounds` describe physical board edges for DRC purposes.
+   * Routing regions such as fanout boxes set this to false because their
+   * bounds constrain the route search without representing manufactured edges.
+   * Defaults to true for backwards compatibility.
+   */
+  boundsArePhysicalBoardEdges?: boolean
   obstacles: Obstacle[]
   connections: SimpleRouteConnection[]
   bounds: SimpleRouteBounds
