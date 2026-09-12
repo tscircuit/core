@@ -2502,7 +2502,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
     if (pcbLayoutMode === "grid") {
       this._doInitialPcbLayoutGrid()
-    } else if (pcbLayoutMode === "pack") {
+    } else if (pcbLayoutMode === "pack" || pcbLayoutMode === "match-adapt") {
+      // Use the default packer until PCB match-adapt is implemented.
       this._doInitialPcbLayoutPack()
     } else if (pcbLayoutMode === "flex") {
       this._doInitialPcbLayoutFlex()
