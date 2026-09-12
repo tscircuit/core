@@ -22,7 +22,8 @@ test("createComponentsFromCircuitJson handles pcb_via elements", () => {
         layers: ["top", "inner1"],
         net_is_assignable: true,
         net_assigned: true,
-        is_tented: true,
+        tented_on_top: true,
+        tented_on_bottom: false,
       },
     ] as AnyCircuitElement[],
   )
@@ -41,5 +42,6 @@ test("createComponentsFromCircuitJson handles pcb_via elements", () => {
   expect(via!._parsedProps.layers).toEqual(["top", "inner1"])
   expect(via!._parsedProps.netIsAssignable).toBe(true)
   expect("netAssigned" in via!._parsedProps).toBe(false)
-  expect(via!._parsedProps.isTented).toBe(true)
+  expect(via!._parsedProps.tentedOnTop).toBe(true)
+  expect(via!._parsedProps.tentedOnBottom).toBe(false)
 })

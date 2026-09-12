@@ -1,7 +1,7 @@
 {
   "name": "@tscircuit/core",
   "type": "module",
-  "version": "0.0.1898",
+  "version": "0.0.1901",
   "types": "dist/index.d.ts",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -41,7 +41,7 @@
     "@tscircuit/common": "^0.0.20",
     "@tscircuit/copper-pour-solver": "^0.0.54",
     "@tscircuit/create-fdm-enclosure": "0.0.4",
-    "@tscircuit/fanout-solver": "0.0.75",
+    "@tscircuit/fanout-solver": "0.0.76",
     "@tscircuit/footprinter": "^0.0.426",
     "@tscircuit/image-utils": "^0.0.8",
     "@tscircuit/implicit-copper-pour-solver": "github:tscircuit/implicit-copper-pour-solver#a5cbbda0cd65fd4707c5c1af25779837c25aba92",
@@ -54,9 +54,9 @@
     "@tscircuit/math-utils": "^0.0.36",
     "@tscircuit/miniflex": "^0.0.4",
     "@tscircuit/ngspice-spice-engine": "^0.0.20",
-    "@tscircuit/props": "^0.0.651",
+    "@tscircuit/props": "^0.0.653",
     "@tscircuit/schematic-match-adapt": "^0.0.18",
-    "@tscircuit/schematic-trace-solver": "^0.0.191",
+    "@tscircuit/schematic-trace-solver": "^0.0.196",
     "@tscircuit/solver-utils": "^0.0.16",
     "@tscircuit/soup-util": "^0.0.41",
     "@tscircuit/via-stitch-solver": "github:tscircuit/via-stitch-solver#75653b6440e75584b052f03595afd34283ae7558",
@@ -70,7 +70,7 @@
     "bun-match-svg": "0.0.12",
     "calculate-elbow": "^0.0.12",
     "chokidar-cli": "^3.0.0",
-    "circuit-json": "^0.0.484",
+    "circuit-json": "^0.0.487",
     "circuit-json-to-bpc": "^0.0.13",
     "circuit-json-to-connectivity-map": "^0.0.30",
     "circuit-json-to-gltf": "^0.0.124",
@@ -133,7 +133,7 @@
   },
   "overrides": {
     "@tscircuit/circuit-json-util": "^0.0.113",
-    "@tscircuit/props": "^0.0.651",
-    "circuit-json": "^0.0.484"
+    "@tscircuit/props": "^0.0.653",
+    "circuit-json": "^0.0.487"
   }
 }
