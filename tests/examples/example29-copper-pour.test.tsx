@@ -84,6 +84,9 @@ test("multiple copper pours on different layers", async () => {
 
   await circuit.renderUntilSettled()
 
+  for (const pour of circuit.db.pcb_copper_pour.list()) {
+    expect(pour.pad_margin).toBe(pour.layer === "top" ? 0.4 : 0.2)
+  }
   expect(circuit).toMatchPcbSnapshot(import.meta.path + "-multiple-layers")
 })
 
