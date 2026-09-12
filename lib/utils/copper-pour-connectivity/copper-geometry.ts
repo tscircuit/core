@@ -9,10 +9,10 @@ import {
   Segment,
 } from "@flatten-js/core"
 import type {
+  Point as CircuitPoint,
   PcbCopperPour,
   PcbPlatedHole,
   PcbSmtPad,
-  Point as CircuitPoint,
   Ring,
 } from "circuit-json"
 import { compose, rotate, translate } from "transformation-matrix"
@@ -184,7 +184,10 @@ export const getPlatedHolePolygon = (
       ),
     )
   }
-  const center = { x: pad.x + pad.hole_offset_x, y: pad.y + pad.hole_offset_y }
+  const center = {
+    x: pad.x + (pad.hole_offset_x ?? 0),
+    y: pad.y + (pad.hole_offset_y ?? 0),
+  }
   const outer =
     pad.shape === "hole_with_polygon_pad"
       ? placePolygon(
