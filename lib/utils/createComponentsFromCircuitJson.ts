@@ -1,6 +1,10 @@
 import { getUnitVectorFromDirection } from "@tscircuit/math-utils"
 import type { PinLabelsProp } from "@tscircuit/props"
-import type { AnyCircuitElement, SchematicComponent } from "circuit-json"
+import {
+  pcb_via,
+  type AnyCircuitElement,
+  type SchematicComponent,
+} from "circuit-json"
 import { CopperText } from "lib/components/primitive-components/CopperText"
 import { CourtyardCircle } from "lib/components/primitive-components/CourtyardCircle"
 import { CourtyardOutline } from "lib/components/primitive-components/CourtyardOutline"
@@ -600,6 +604,7 @@ export const createComponentsFromCircuitJson = (
         }),
       )
     } else if (elm.type === "pcb_via") {
+      const via = pcb_via.parse(elm)
       const layers = elm.layers ?? []
       const pcbVia = new PcbVia({
         pcbX: elm.x,
@@ -610,7 +615,8 @@ export const createComponentsFromCircuitJson = (
         toLayer: elm.to_layer ?? layers[layers.length - 1],
         layers,
         netIsAssignable: elm.net_is_assignable,
-        isTented: elm.is_tented,
+        tentedOnTop: via.tented_on_top,
+        tentedOnBottom: via.tented_on_bottom,
       })
       pcbVia._importedPcbTraceId = elm.pcb_trace_id
       components.push(pcbVia)

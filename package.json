@@ -70,7 +70,7 @@
     "bun-match-svg": "0.0.12",
     "calculate-elbow": "^0.0.12",
     "chokidar-cli": "^3.0.0",
-    "circuit-json": "^0.0.484",
+    "circuit-json": "^0.0.487",
     "circuit-json-to-bpc": "^0.0.13",
     "circuit-json-to-connectivity-map": "^0.0.30",
     "circuit-json-to-gltf": "^0.0.124",
@@ -110,7 +110,7 @@
     "circuit-json-to-bpc": "*",
     "bpc-graph": "*",
     "@tscircuit/matchpack": "*",
-    "circuit-json": "*",
+    "circuit-json": "^0.0.487",
     "circuit-json-to-connectivity-map": "*",
     "circuit-json-to-spice": "*",
     "schematic-symbols": "*",
@@ -134,6 +134,6 @@
   "overrides": {
     "@tscircuit/circuit-json-util": "^0.0.113",
     "@tscircuit/props": "^0.0.649",
-    "circuit-json": "^0.0.484"
+    "circuit-json": "^0.0.487"
   }
 }

@@ -11,7 +11,10 @@ import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 export const pcbViaProps = viaProps
   .extend({
     layers: z.array(layer_ref).optional(),
+    /** @deprecated Use tentedOnTop and tentedOnBottom instead. */
     isTented: z.boolean().optional(),
+    tentedOnTop: z.boolean().optional(),
+    tentedOnBottom: z.boolean().optional(),
   })
   .partial({
     fromLayer: true,
@@ -20,7 +23,10 @@ export const pcbViaProps = viaProps
 
 export interface PcbViaProps extends Partial<ViaProps> {
   layers?: LayerRef[]
+  /** @deprecated Use tentedOnTop and tentedOnBottom instead. */
   isTented?: boolean
+  tentedOnTop?: boolean
+  tentedOnBottom?: boolean
 }
 
 export class PcbVia extends PrimitiveComponent<typeof pcbViaProps> {
@@ -94,11 +100,17 @@ export class PcbVia extends PrimitiveComponent<typeof pcbViaProps> {
   doInitialPcbPrimitiveRender(): void {
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
-    const { holeDiameter, outerDiameter, netIsAssignable, isTented } =
-      this._parsedProps
+    const {
+      holeDiameter,
+      outerDiameter,
+      netIsAssignable,
+      isTented,
+      tentedOnTop,
+      tentedOnBottom,
+    } = this._parsedProps
     const subcircuit = this.getSubcircuit()
     const position = this._getGlobalPcbPositionBeforeLayout()
-    const { maybeFlipLayer } = this._getPcbPrimitiveFlippedHelpers()
+    const { isFlipped, maybeFlipLayer } = this._getPcbPrimitiveFlippedHelpers()
     const layers = this._getLayers().map((layer) =>
       maybeFlipLayer(layer),
     ) as LayerRef[]
@@ -121,7 +133,9 @@ export class PcbVia extends PrimitiveComponent<typeof pcbViaProps> {
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
       net_is_assignable: netIsAssignable,
-      is_tented: isTented,
+      // Use the same footprint flip as the via layers above.
+      tented_on_top: (isFlipped ? tentedOnBottom : tentedOnTop) ?? isTented,
+      tented_on_bottom: (isFlipped ? tentedOnTop : tentedOnBottom) ?? isTented,
     } as Omit<CircuitJsonPcbVia, "type" | "pcb_via_id">)
 
     this.pcb_via_id = pcbVia.pcb_via_id
