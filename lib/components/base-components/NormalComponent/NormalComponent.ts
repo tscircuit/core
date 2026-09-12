@@ -68,7 +68,6 @@ import {
 import { type SchSymbol, symbols } from "schematic-symbols"
 import { decomposeTSR } from "transformation-matrix"
 import { ZodType, z } from "zod"
-import { InvalidProps } from "../../../errors/InvalidProps"
 import { CadAssembly } from "../../primitive-components/CadAssembly"
 import { CadModel } from "../../primitive-components/CadModel"
 import { Footprint } from "../../primitive-components/Footprint"
@@ -210,19 +209,27 @@ export class NormalComponent<
     super(filteredProps)
 
     if (filteredProps.pinLabels && !Array.isArray(filteredProps.pinLabels)) {
-      const invalidPinKey = Object.keys(filteredProps.pinLabels).find(
+      const pinKeys = Object.keys(filteredProps.pinLabels)
+      const hasNonNumericKey = pinKeys.some(
         (pinKey) => getPinNumberFromPinLabelsKey(pinKey) === null,
       )
-
-      if (invalidPinKey) {
-        throw new InvalidProps(this.lowercaseComponentName, this.props, {
-          _errors: [],
-          pinLabels: {
-            _errors: [
-              `Invalid pinLabels key "${invalidPinKey}". Expected "pin\${number}" (e.g. pin1, pin2).`,
-            ],
-          },
-        } as any)
+      // Footprint pad names (e.g. "pinA1") resolve against the footprint pads.
+      // Only report a key as invalid once we have pads to check it against, so a
+      // missing or not-yet-built footprint does not flag a resolvable key.
+      const footprintPadPinNumberMap = hasNonNumericKey
+        ? this._getFootprintPadPinNumberMap()
+        : null
+      if (footprintPadPinNumberMap && footprintPadPinNumberMap.size > 0) {
+        for (const pinKey of pinKeys) {
+          if (
+            getPinNumberFromPinLabelsKey(pinKey, footprintPadPinNumberMap) ===
+            null
+          ) {
+            invalidPinLabelsMessages.push(
+              `Invalid pinLabels key "${pinKey}". Expected a pin number (e.g. "pin1") or a footprint pad name (e.g. "pinA1").`,
+            )
+          }
+        }
       }
     }
 
@@ -371,13 +378,22 @@ export class NormalComponent<
     }
 
     if (pinLabels) {
+      // Footprint pad names (e.g. "pinA1") resolve against the footprint pads.
+      // Numeric keys need no map, so only build one when a non-numeric key exists.
+      const footprintPadPinNumberMap = Object.keys(pinLabels).some(
+        (pinKey) => getPinNumberFromPinLabelsKey(pinKey) === null,
+      )
+        ? this._getFootprintPadPinNumberMap()
+        : null
       for (const [pinKey, label] of Object.entries(pinLabels)) {
-        const pinNumber = getPinNumberFromPinLabelsKey(pinKey)
-        if (pinNumber === null) {
-          throw new Error(
-            `Invalid pinLabels key "${pinKey}". Expected "pin\${number}" (e.g. pin1, pin2).`,
-          )
-        }
+        const pinNumber = getPinNumberFromPinLabelsKey(
+          pinKey,
+          footprintPadPinNumberMap,
+        )
+        // Skip keys that name neither a pin number nor a footprint pad. The key
+        // is reported as an ignored property so the rest of the board still
+        // renders instead of the whole component failing to build.
+        if (pinNumber === null) continue
         let existingPort =
           existingChildPorts.find(
             (p) => p._parsedProps.pinNumber === pinNumber,
@@ -1431,6 +1447,33 @@ export class NormalComponent<
     }
 
     super.add(component)
+  }
+
+  /**
+   * Builds a lookup from footprint pad name (and pin alias) to pin number so a
+   * pinLabels key can name a footprint pad directly, e.g. `pinA1` for a BGA pad.
+   * Returns an empty map when the footprint is missing or not yet built.
+   */
+  _getFootprintPadPinNumberMap(): Map<string, number> {
+    const padPinNumberMap = new Map<string, number>()
+    let footprintPorts: Port[]
+    try {
+      footprintPorts = this.getPortsFromFootprint({
+        allowImplicitPinNumbers: true,
+      })
+    } catch {
+      return padPinNumberMap
+    }
+    for (const port of footprintPorts) {
+      const pinNumber = port._parsedProps.pinNumber
+      if (pinNumber === undefined) continue
+      for (const alias of port.getNameAndAliases()) {
+        const padName = alias.toLowerCase()
+        if (!padPinNumberMap.has(padName))
+          padPinNumberMap.set(padName, pinNumber)
+      }
+    }
+    return padPinNumberMap
   }
 
   getPortsFromFootprint(opts?: {
