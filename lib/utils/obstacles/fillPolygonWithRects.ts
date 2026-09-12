@@ -30,8 +30,13 @@ export function fillPolygonWithRects(
   const minY = Math.min(...yCoords)
   const maxY = Math.max(...yCoords)
 
-  for (let y = minY; y < maxY; y += rectHeight) {
-    const scanlineY = y + rectHeight / 2
+  // A polygon shorter than one band would put its only scanline above maxY and
+  // produce no rects at all, so cap the band to the polygon's vertical extent.
+  const bandHeight = Math.min(rectHeight, maxY - minY)
+  if (bandHeight <= 0) return []
+
+  for (let y = minY; y < maxY; y += bandHeight) {
+    const scanlineY = y + bandHeight / 2
     const intersections: number[] = []
 
     for (let i = 0; i < polygon.length; i++) {
@@ -64,7 +69,7 @@ export function fillPolygonWithRects(
               y: scanlineY,
             },
             width,
-            height: rectHeight,
+            height: bandHeight,
           })
         }
       }
