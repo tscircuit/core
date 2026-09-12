@@ -64,11 +64,13 @@ export type SimplifiedPcbTrace = Omit<
 /** A connection identifier in Simple Route JSON. */
 export type SrjConnectionName = string
 
-export type SimpleRoutePoint = {
+/** Core emits fixed-layer routing terminals, not multilayer connection points. */
+export type SingleLayerConnectionPoint = {
   x: number
   y: number
   layer: string
-  layers?: string[]
+  /** Reject mixed layer/layers objects even when assigned through a variable. */
+  layers?: never
   pointId?: string
   pcb_port_id?: string
   /** Stable semantic selector for the source port, e.g. `U1.USB_DM`. */
@@ -78,6 +80,9 @@ export type SimpleRoutePoint = {
     viaDiameter?: number
   }
 }
+
+/** Backward-compatible name for core's single-layer routing terminals. */
+export type SimpleRoutePoint = SingleLayerConnectionPoint
 
 export type SimpleRouteConnection = {
   name: SrjConnectionName
@@ -90,7 +95,7 @@ export type SimpleRouteConnection = {
   nominalTraceWidth?: number
   /** @deprecated Use `nominalTraceWidth` instead. */
   width?: number
-  pointsToConnect: SimpleRoutePoint[]
+  pointsToConnect: SingleLayerConnectionPoint[]
   /** @deprecated DO NOT USE **/
   externallyConnectedPointIds?: string[][]
 }

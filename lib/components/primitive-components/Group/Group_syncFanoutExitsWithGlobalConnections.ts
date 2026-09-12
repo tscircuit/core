@@ -2,7 +2,7 @@ import type {
   SimpleRouteConnection,
   SimpleRouteDifferentialPair,
   SimpleRouteJson,
-  SimpleRoutePoint,
+  SingleLayerConnectionPoint,
 } from "lib/utils/autorouting/SimpleRouteJson"
 import {
   srjPointsHaveSameBoardPositionAndLayer,
@@ -76,8 +76,8 @@ const connectFanoutTracesToBreakoutPoints = (
 export interface SynchronizedBreakoutPoint {
   sourceTraceId: string
   routingPcbGroupId: string
-  previousPoint: SimpleRoutePoint
-  fanoutExitPoint: SimpleRoutePoint
+  previousPoint: SingleLayerConnectionPoint
+  fanoutExitPoint: SingleLayerConnectionPoint
 }
 
 /**
@@ -183,18 +183,14 @@ export function Group_syncFanoutExitsWithGlobalConnections({
       previousPoint,
     } of globalPointMatches) {
       const {
-        layers: _previousLayers,
         terminalVia: _previousTerminalVia,
         ...previousPointWithoutLayerOverrides
       } = previousPoint
-      const synchronizedGlobalPoint: SimpleRoutePoint = {
+      const synchronizedGlobalPoint: SingleLayerConnectionPoint = {
         ...previousPointWithoutLayerOverrides,
         x: fanoutExitPoint.x,
         y: fanoutExitPoint.y,
         layer: fanoutExitPoint.layer,
-        ...(fanoutExitPoint.layers
-          ? { layers: [...fanoutExitPoint.layers] }
-          : {}),
         ...(fanoutExitPoint.terminalVia
           ? { terminalVia: { ...fanoutExitPoint.terminalVia } }
           : {}),

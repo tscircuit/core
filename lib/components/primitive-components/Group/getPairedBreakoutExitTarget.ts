@@ -1,14 +1,14 @@
 import type {
   SimpleRouteConnection,
   SimpleRouteJson,
-  SimpleRoutePoint,
+  SingleLayerConnectionPoint,
 } from "lib/utils/autorouting/SimpleRouteJson"
 import { srjPointsReferToSameEndpoint } from "lib/utils/autorouting/compare-srj-points"
 
 const getPairedGlobalPoint = (
   simpleRouteJson: SimpleRouteJson,
   connection: SimpleRouteConnection,
-): SimpleRoutePoint | undefined => {
+): SingleLayerConnectionPoint | undefined => {
   const globalConnection = simpleRouteJson.connections.find(
     (candidate) =>
       candidate.routingPcbGroupId !== connection.routingPcbGroupId &&

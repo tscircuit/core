@@ -71,6 +71,11 @@ test("autoroutingphase continues saved fanout escapes from their exit layer", as
       expect.objectContaining({ x: 8, y: 1 }),
     ]),
   )
+  expect(
+    phaseInputs[1]!.connections.every((connection) =>
+      connection.pointsToConnect.every((point) => !("layers" in point)),
+    ),
+  ).toBe(true)
   expect(phaseInputs[1]!.traces ?? []).toHaveLength(0)
   const saved = circuit.db.pcb_trace
     .list()

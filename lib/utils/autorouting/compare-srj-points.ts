@@ -1,4 +1,4 @@
-import type { SimpleRoutePoint } from "./SimpleRouteJson"
+import type { SingleLayerConnectionPoint } from "./SimpleRouteJson"
 
 const SRJ_POINT_POSITION_TOLERANCE_MM = 1e-6
 
@@ -9,8 +9,8 @@ const SRJ_POINT_POSITION_TOLERANCE_MM = 1e-6
  * with coordinates in millimeters. Position and layer are intentionally ignored.
  */
 export const srjPointsHaveSamePointId = (
-  first: SimpleRoutePoint,
-  second: SimpleRoutePoint,
+  first: SingleLayerConnectionPoint,
+  second: SingleLayerConnectionPoint,
 ): boolean =>
   first.pointId !== undefined &&
   second.pointId !== undefined &&
@@ -23,8 +23,8 @@ export const srjPointsHaveSamePointId = (
  * with coordinates in millimeters. They are positions, not direction vectors.
  */
 export const srjPointsHaveSameBoardPositionAndLayer = (
-  first: SimpleRoutePoint,
-  second: SimpleRoutePoint,
+  first: SingleLayerConnectionPoint,
+  second: SingleLayerConnectionPoint,
 ): boolean =>
   Math.abs(first.x - second.x) <= SRJ_POINT_POSITION_TOLERANCE_MM &&
   Math.abs(first.y - second.y) <= SRJ_POINT_POSITION_TOLERANCE_MM &&
@@ -38,8 +38,8 @@ export const srjPointsHaveSameBoardPositionAndLayer = (
  * identity is authoritative; otherwise position and PCB layer must match.
  */
 export const srjPointsReferToSameEndpoint = (
-  first: SimpleRoutePoint,
-  second: SimpleRoutePoint,
+  first: SingleLayerConnectionPoint,
+  second: SingleLayerConnectionPoint,
 ): boolean =>
   first.pointId !== undefined && second.pointId !== undefined
     ? srjPointsHaveSamePointId(first, second)

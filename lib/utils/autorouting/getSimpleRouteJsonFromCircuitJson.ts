@@ -22,7 +22,7 @@ import type {
   SimpleRouteConnection,
   SimpleRouteDifferentialPair,
   SimpleRouteJson,
-  SimpleRoutePoint,
+  SingleLayerConnectionPoint,
 } from "./SimpleRouteJson"
 import { expandSrjBoundsToIncludeConnectionPoints } from "./expand-srj-bounds-to-include-connection-points"
 import { getDescendantSubcircuitIds } from "./getAncestorSubcircuitIds"
@@ -450,7 +450,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
 
   const getPcbPortRoutePoint = (
     pcbPort: PcbPort,
-  ): SimpleRoutePoint & { pointId: string } => {
+  ): SingleLayerConnectionPoint & { pointId: string } => {
     const layer = pcbPort.layers?.[0] ?? "top"
     const breakoutPoint = sourcePortIdToBreakoutPoint.get(
       pcbPort.source_port_id,

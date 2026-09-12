@@ -94,7 +94,7 @@ export function getSavedFanoutTraces(
             !endpoints.some(
               (endpoint) =>
                 Math.hypot(point.x - endpoint.x, point.y - endpoint.y) < 1e-4 &&
-                (point.layers ?? [point.layer]).includes(endpoint.layer),
+                point.layer === endpoint.layer,
             ),
         )
       )
