@@ -18,8 +18,11 @@ export const parseSimulationGraphValue = (
   if (typeof value === "number") return value
 
   const trimmed = value.trim()
+  // The exponent is part of the numeric value, so it must be consumed before
+  // the SI prefix. It requires at least one digit so unit strings that merely
+  // start with "e" (e.g. "1eV") keep falling through to the prefix group.
   const match = trimmed.match(
-    /^([+-]?(?:\d+(?:\.\d*)?|\.\d+))\s*([pnumµkKMG]?)/,
+    /^([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?)\s*([pnumµkKMG]?)/,
   )
   if (!match) return undefined
 
