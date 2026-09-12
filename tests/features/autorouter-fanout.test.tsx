@@ -134,8 +134,7 @@ test('autorouter="fanout" escapes an inner BGA bus before board routing', async 
   ])
   expect(autoroutingPhaseIoStack[0]?.endSimpleRouteJson?.traces).toHaveLength(4)
   expect(
-    autoroutingPhaseIoStack[0]?.endSimpleRouteJson
-      ?.boundsArePhysicalBoardEdges,
+    autoroutingPhaseIoStack[0]?.endSimpleRouteJson?.boundsArePhysicalBoardEdges,
   ).toBe(false)
   expect(autoroutingPhaseIoStack[1]?.startSimpleRouteJson?.traces).toHaveLength(
     4,
