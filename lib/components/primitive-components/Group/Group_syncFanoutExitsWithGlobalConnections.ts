@@ -183,7 +183,6 @@ export function Group_syncFanoutExitsWithGlobalConnections({
       previousPoint,
     } of globalPointMatches) {
       const {
-        layers: _previousLayers,
         terminalVia: _previousTerminalVia,
         ...previousPointWithoutLayerOverrides
       } = previousPoint
@@ -192,9 +191,6 @@ export function Group_syncFanoutExitsWithGlobalConnections({
         x: fanoutExitPoint.x,
         y: fanoutExitPoint.y,
         layer: fanoutExitPoint.layer,
-        ...(fanoutExitPoint.layers
-          ? { layers: [...fanoutExitPoint.layers] }
-          : {}),
         ...(fanoutExitPoint.terminalVia
           ? { terminalVia: { ...fanoutExitPoint.terminalVia } }
           : {}),
