@@ -8,6 +8,7 @@ test("simple route json only includes unbroken copper pours as copper-pour obsta
 
   circuit.add(
     <board width="20mm" height="10mm" layers={4}>
+      <copperpour layer="top" connectsTo="net.GND" unbroken />
       <copperpour layer="inner1" connectsTo="net.GND" unbroken />
       <copperpour layer="inner2" connectsTo="net.VCC" />
       <chip
@@ -49,6 +50,7 @@ test("simple route json only includes unbroken copper pours as copper-pour obsta
   }
 
   expect(copperPourObstacles.length).toBeGreaterThan(0)
+  expect(obstacleLayers.has("top")).toBe(false)
   expect(obstacleLayers.has("inner1")).toBe(true)
   expect(obstacleLayers.has("inner2")).toBe(false)
   expect(gndNet.source_net_id).toBeDefined()
