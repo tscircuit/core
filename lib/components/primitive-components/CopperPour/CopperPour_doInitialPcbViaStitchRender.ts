@@ -36,7 +36,7 @@ const renderViaStitchingForCopperPours = (copperPour: CopperPour) => {
       sourceNetIds: [...new Set(sourceNetIds)],
       viaHoleDiameter: pcbBoard?.min_via_hole_diameter ?? holeDiameter,
       viaOuterDiameter: pcbBoard?.min_via_pad_diameter ?? padDiameter,
-      viaPitch: boardComponent?._parsedProps.viaStitchPitch,
+      viaStitchPitch: boardComponent?._parsedProps.viaStitchPitch,
     },
   }
   const solver = new ViaStitchSolver(solverInput)
