@@ -20,8 +20,15 @@ export interface RoutingPhaseDrcTolerances {
   minViaPadDiameter?: number
 }
 
+export interface PrecomputedRoutingResult {
+  traces: SimplifiedPcbTrace[]
+  outputSimpleRouteJson?: SimpleRouteJson
+}
+
 export interface RoutingPhasePlan {
-  getPrecomputedTraces?: (input: SimpleRouteJson) => SimplifiedPcbTrace[]
+  getPrecomputedRoutingResult?: (
+    input: SimpleRouteJson,
+  ) => PrecomputedRoutingResult
   routingPhaseIndex: number | null
   phaseName?: AutoroutingPhaseProps["name"]
   routingPcbGroupId?: PcbGroupId

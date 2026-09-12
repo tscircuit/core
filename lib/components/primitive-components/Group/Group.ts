@@ -1050,13 +1050,22 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       })
     }
     const routingStages = routingPhasePlans.flatMap((routingPhasePlan) => {
-      const phaseAutorouterConfig: NormalizedAutorouterConfig =
+      const resolvedPhaseAutorouterConfig: NormalizedAutorouterConfig =
         routingPhasePlan.autorouter
           ? getPresetAutoroutingConfig(
               routingPhasePlan.autorouter,
               this.root?.platform,
             )
           : autorouterConfig
+      const phaseAutorouterConfig = routingPhasePlan.getPrecomputedRoutingResult
+        ? {
+            ...resolvedPhaseAutorouterConfig,
+            allowViaInPad:
+              (typeof routingPhasePlan.autorouter === "object"
+                ? routingPhasePlan.autorouter.allowViaInPad
+                : undefined) ?? autorouterConfig.allowViaInPad,
+          }
+        : resolvedPhaseAutorouterConfig
       const stages = getLocalAutoroutingStages(
         phaseAutorouterConfig,
         this.root?.platform,
@@ -1429,13 +1438,18 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       )
       simpleRouteJson.allowViaInPad = phaseAutorouterConfig.allowViaInPad
 
+      const getPrecomputedRoutingResult = usesPreviousStageOutput
+        ? undefined
+        : routingPhasePlan.getPrecomputedRoutingResult
+
       const simplificationHasNoTraceInput = Boolean(
         isTraceSimplificationPhase && simpleRouteJson.traces?.length === 0,
       )
       if (
-        (hasPhasedAutorouting || isReroutePhase) &&
+        (hasPhasedAutorouting || isReroutePhase || usesPreviousStageOutput) &&
         ((simpleRouteJson.connections.length === 0 &&
-          !isTraceSimplificationPhase) ||
+          !isTraceSimplificationPhase &&
+          !getPrecomputedRoutingResult) ||
           simplificationHasNoTraceInput)
       ) {
         if (phaseStageIndex === 0) {
@@ -1470,7 +1484,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       const fanoutMode = phaseAutorouterConfig.preset
       if (
         (fanoutMode === "fanout" || fanoutMode === "single_layer_fanout") &&
-        !routingPhasePlan.fanoutRegionPcbGroupId
+        !routingPhasePlan.fanoutRegionPcbGroupId &&
+        !getPrecomputedRoutingResult
       ) {
         routingPhasePlan.fanoutBounds = FanoutAutorouter.resolveFanoutBounds(
           simpleRouteJson,
@@ -1523,14 +1538,13 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         autorouterVersion,
         effort,
       }
-      const autorouterName = routingPhasePlan.getPrecomputedTraces
+      const autorouterName = getPrecomputedRoutingResult
         ? "precomputed"
         : phaseAutorouterConfig.algorithmFn
           ? "custom"
           : localAutorouterStrategy.name
       const solverName =
-        routingPhasePlan.getPrecomputedTraces ||
-        phaseAutorouterConfig.algorithmFn
+        getPrecomputedRoutingResult || phaseAutorouterConfig.algorithmFn
           ? undefined
           : localAutorouterStrategy.getSolverName(commonAutorouterOptions)
       const localAutoroutingCacheSolverOptions = {
@@ -1548,7 +1562,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       }
 
       const cacheEngine =
-        routingPhasePlan.getPrecomputedTraces ||
+        getPrecomputedRoutingResult ||
         phaseAutorouterConfig.algorithmFn ||
         !localAutorouterStrategy.cacheable
           ? undefined
@@ -1562,7 +1576,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       const cachedResult = cacheKey
         ? await getCachedLocalAutoroutingPhaseResult({ cacheEngine, cacheKey })
         : null
-      const cacheDisabledReason = routingPhasePlan.getPrecomputedTraces
+      const cacheDisabledReason = getPrecomputedRoutingResult
         ? "precomputed"
         : phaseAutorouterConfig.algorithmFn
           ? "custom_algorithm"
@@ -1606,8 +1620,11 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
       try {
         let traces: SimplifiedPcbTrace[]
-        if (routingPhasePlan.getPrecomputedTraces) {
-          traces = routingPhasePlan.getPrecomputedTraces(simpleRouteJson)
+        let precomputedOutputSimpleRouteJson: SimpleRouteJson | undefined
+        if (getPrecomputedRoutingResult) {
+          const result = getPrecomputedRoutingResult(simpleRouteJson)
+          traces = result.traces
+          precomputedOutputSimpleRouteJson = result.outputSimpleRouteJson
           for (const trace of traces)
             fixedFanoutTraceIds.add(trace.pcb_trace_id)
         } else if (cachedResult) {
@@ -1683,6 +1700,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         }
 
         let transformedSimpleRouteJson =
+          precomputedOutputSimpleRouteJson ??
           autorouter?.getOutputSimpleRouteJson?.()
         if (
           transformedSimpleRouteJson &&
