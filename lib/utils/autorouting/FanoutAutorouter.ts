@@ -25,7 +25,7 @@ import type {
   SimpleRouteBounds,
   SimpleRouteBus,
   SimpleRouteJson,
-  SimpleRoutePoint,
+  SingleLayerConnectionPoint,
   SimplifiedPcbTrace,
 } from "./SimpleRouteJson"
 import { getFanoutSharedBoundary } from "./get-fanout-shared-boundary"
@@ -210,7 +210,7 @@ const getLocalFanoutDirection = (
 
 const getSourceComponentIdForPoint = (
   input: SimpleRouteJson,
-  point: SimpleRoutePoint,
+  point: SingleLayerConnectionPoint,
 ): string | undefined => {
   const matchingObstacle = input.obstacles.find(
     (obstacle) =>
@@ -235,7 +235,7 @@ const inferPlaneBusDirection = (
   bus: SimpleRouteBus,
 ): FanoutDirection | undefined => {
   const connectionNames = new Set(bus.connectionNames)
-  const sourcePointsByComponentId = new Map<string, SimpleRoutePoint[]>()
+  const sourcePointsByComponentId = new Map<string, SingleLayerConnectionPoint[]>()
   for (const connection of input.connections) {
     if (!connectionNames.has(connection.name)) continue
     for (const point of connection.pointsToConnect) {

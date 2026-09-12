@@ -3,7 +3,7 @@ import { getViaBoardLayers } from "lib/utils/getViaSpanLayers"
 import type {
   SimpleRouteConnection,
   SimpleRouteJson,
-  SimpleRoutePoint,
+  SingleLayerConnectionPoint,
   SimplifiedPcbTrace,
 } from "lib/utils/autorouting/SimpleRouteJson"
 import type { AutoroutingPhase } from "../AutoroutingPhase"
@@ -11,7 +11,7 @@ import type { Port } from "../Port"
 import type { PrecomputedRoutingResult } from "./GroupRoutingPhasePlan"
 
 const touchesEndpoint = (
-  point: SimpleRoutePoint,
+  point: SingleLayerConnectionPoint,
   endpoint: { x: number; y: number; layer: string },
 ) =>
   Math.hypot(point.x - endpoint.x, point.y - endpoint.y) < 1e-4 &&
@@ -147,7 +147,6 @@ export function getSavedAutoroutingPhaseTraces(
         x: last.x,
         y: last.y,
         layer: lastLayer,
-        layers: [lastLayer],
         pointId: `${pcbTraceId}_exit`,
       }
     }
