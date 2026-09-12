@@ -439,6 +439,11 @@ export class FanoutAutorouter implements GenericLocalAutorouter {
   }
 
   private getFanoutSolverOptions(): FanoutSolverOptions {
+    const planeConnectionNames = new Set(
+      this.input.buses?.flatMap((bus) =>
+        bus.termination?.type === "plane" ? bus.connectionNames : [],
+      ),
+    )
     const commonOptions: FanoutSolverOptions = {
       buses: getFanoutSolverBuses(
         this.input.buses,
@@ -446,6 +451,16 @@ export class FanoutAutorouter implements GenericLocalAutorouter {
       ),
       borderDistribution: "even",
       compactBusTracks: true,
+      // Power/ground drops may share copper on the same electrical net. Keep
+      // boundary and mixed fanouts isolated, including unlisted connections,
+      // because their independent escape and length constraints still apply.
+      allowSameNetMerges:
+        this.input.connections.length > 0 &&
+        this.input.buses?.every((bus) => bus.termination?.type === "plane") ===
+          true &&
+        this.input.connections.every((connection) =>
+          planeConnectionNames.has(connection.name),
+        ),
       busDirections: this.getPlaneBusDirections(),
       busExitPreferences: this.getLegacyBusExitPreferences(),
       escapeLayers: this.options.fanoutRoutingLayers,
