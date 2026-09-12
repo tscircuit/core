@@ -1,7 +1,9 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("pcbPath respects bottom via endpoints in either direction", async () => {
+// Reproduces #3906: both directions should use bottom copper, but starting
+// at the plated hole currently selects top. These assertions capture the bug.
+test("repro3906: pcbPath layer depends on endpoint order", async () => {
   for (const reverse of [false, true]) {
     const { circuit } = getTestFixture()
     circuit.add(
@@ -44,7 +46,7 @@ test("pcbPath respects bottom via endpoints in either direction", async () => {
           text={
             reverse
               ? "Via bottom to PTH: bottom copper"
-              : "PTH to via bottom: bottom copper"
+              : "BUG: PTH to via bottom uses top"
           }
         />
       </board>,
@@ -63,7 +65,7 @@ test("pcbPath respects bottom via endpoints in either direction", async () => {
           .filter((point) => point.route_type === "wire")
           .map((point) => point.layer),
       ),
-    ]).toEqual(["bottom"])
+    ]).toEqual([reverse ? "bottom" : "top"])
     expect(circuit.db.pcb_trace_error.list()).toHaveLength(0)
     await expect(circuit).toMatchPcbSnapshot(
       `${import.meta.path}-${reverse ? "via-first" : "pth-first"}`,

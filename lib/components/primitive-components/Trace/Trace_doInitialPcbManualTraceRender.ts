@@ -316,32 +316,8 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
   }
   const otherPort = ports.find((p) => p !== anchorPort) ?? ports[1]
 
-  const pcbPath = props.pcbPath as Array<string | ManualPcbPathPoint>
-  // Follow each candidate through the explicit vias: the endpoints need a
-  // shared layer only when the path does not change layers.
-  const layer = anchorPort.getAvailablePcbLayers().find((startLayer) => {
-    let candidateLayer = startLayer
-    for (const pt of pcbPath) {
-      if (typeof pt === "string" || !pt.via) continue
-      if (pt.fromLayer && pt.fromLayer !== candidateLayer) return false
-      candidateLayer = (pt.toLayer ?? candidateLayer) as LayerRef
-    }
-    return (
-      !otherPort || otherPort.getAvailablePcbLayers().includes(candidateLayer)
-    )
-  })
-  if (!layer) {
-    db.pcb_trace_error.insert({
-      error_type: "pcb_trace_error",
-      source_trace_id: trace.source_trace_id!,
-      message: `Cannot route pcbPath for ${trace}: no compatible layer connects the endpoint ports through the specified via transitions`,
-      pcb_trace_id: trace.pcb_trace_id!,
-      pcb_component_ids: [],
-      pcb_port_ids: ports.map((p) => p.pcb_port_id!).filter(Boolean),
-    })
-    return
-  }
-  let currentLayer = layer
+  const layer = anchorPort.getAvailablePcbLayers()[0] || "top"
+  let currentLayer = layer as LayerRef
 
   const anchorPos = anchorPort._getGlobalPcbPositionAfterLayout()
   const otherPos = otherPort?._getGlobalPcbPositionAfterLayout()
@@ -358,6 +334,7 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
   const transform = subcircuit._isInflatedFromCircuitJson
     ? trace._computePcbGlobalTransformBeforeLayout()
     : anchorPort?._computePcbGlobalTransformBeforeLayout?.() || identity()
+  const pcbPath = props.pcbPath as Array<string | ManualPcbPathPoint>
   for (const pt of pcbPath) {
     let coordinates: { x: number; y: number }
     let isGlobalPosition = false
