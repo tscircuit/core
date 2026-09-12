@@ -116,6 +116,10 @@ export function Group_filterSimpleRouteJsonForPhase(
   return {
     ...simpleRouteJson,
     bounds,
+    boundsArePhysicalBoardEdges:
+      phasePlan.routingBounds === undefined
+        ? simpleRouteJson.boundsArePhysicalBoardEdges
+        : false,
     connections,
     differentialPairs:
       differentialPairs.length > 0 ? differentialPairs : undefined,

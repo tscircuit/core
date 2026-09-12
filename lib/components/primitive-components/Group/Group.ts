@@ -1325,6 +1325,12 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       }
       let simpleRouteJson =
         previousStageOutputSimpleRouteJson ?? baseSimpleRouteJson
+      if (usesPreviousStageOutput) {
+        simpleRouteJson = {
+          ...simpleRouteJson,
+          boundsArePhysicalBoardEdges: false,
+        }
+      }
       const isTraceSimplificationPhase = Boolean(
         routingPhasePlan.reroute && phaseAutorouterConfig.preset === "simplify",
       )
