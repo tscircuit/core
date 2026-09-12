@@ -91,7 +91,6 @@ test(
     expect(clearanceMessages).toEqual([
       "Via pcb_via and pad pcb_port[.BT1 > .VBAT_N] are too close (clearance: 0mm, minimum: 0.1mm)",
       "Via pcb_via and pad pcb_port[.C1 > .pin1] are too close (clearance: 0.083mm, minimum: 0.1mm)",
-      "Via pcb_via and pad pcb_port[.C1 > .pin1] are too close (clearance: 0.083mm, minimum: 0.1mm)",
       "Via pcb_via and pad pcb_port[.L2 > .pin2] are too close (clearance: 0.085mm, minimum: 0.1mm)",
     ])
 
