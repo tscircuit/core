@@ -301,6 +301,16 @@ export class Port extends PrimitiveComponent<typeof portProps> {
    */
   registerMatch(component: PrimitiveComponent) {
     this.matchedComponents.push(component)
+    // If this port already rendered without any matched pcb primitives
+    // (e.g. the primitives were added later by an async footprint load),
+    // mark PcbPortRender dirty so updatePcbPortRender retries now that a
+    // match exists.
+    if (
+      component.isPcbPrimitive &&
+      this.renderPhaseStates.PcbPortRender?.initialized
+    ) {
+      this._markDirty("PcbPortRender")
+    }
   }
   getNameAndAliases() {
     const { _parsedProps: props } = this
