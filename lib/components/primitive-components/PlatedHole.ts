@@ -352,6 +352,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         hole_width: props.holeWidth,
         hole_height: props.holeHeight,
         pad_outline: padOutline,
+        ccw_rotation: finalRotationDegrees,
         hole_offset_x:
           typeof props.holeOffsetX === "number"
             ? props.holeOffsetX
