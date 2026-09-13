@@ -1,7 +1,7 @@
 import { ViaStitchSolver } from "@tscircuit/via-stitch-solver"
 import { pcb_via } from "circuit-json"
 import { getViaDiameterDefaults } from "lib/utils/pcbStyle/getViaDiameterDefaults"
-import { resolveViaTenting } from "lib/utils/resolve-via-tenting"
+import { getViaTenting } from "lib/utils/getViaTenting"
 import type { Net } from "../Net"
 import type { CopperPour } from "./CopperPour"
 
@@ -55,9 +55,11 @@ const renderViaStitchingForCopperPours = (copperPour: CopperPour) => {
     throw new Error(solver.error ?? "Via stitching solver failed")
   }
 
+  const boardTenting = getViaTenting(
+    boardComponent?._parsedProps.defaultViaTenting,
+  )
   for (const pcbVia of solver.getOutput().pcbVias) {
     const { pcb_via_id: _solverViaId, ...pcbViaInput } = pcb_via.parse(pcbVia)
-    const boardTenting = resolveViaTenting(copperPour)
     const insertedVia = db.pcb_via.insert({
       ...pcbViaInput,
       tented_on_top: boardTenting.tented_on_top ?? pcbViaInput.tented_on_top,

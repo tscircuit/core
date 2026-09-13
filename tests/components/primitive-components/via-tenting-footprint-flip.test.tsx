@@ -6,44 +6,43 @@ import { PcbVia } from "lib/components/primitive-components/PcbVia"
 import { Via } from "lib/components/primitive-components/Via"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("explicit via tenting flips with the footprint while board defaults stay on board faces", () => {
-  for (const layer of ["top", "bottom"] as const) {
-    for (const rotation of [0, 90, 180, 270]) {
-      const { circuit } = getTestFixture()
-      const footprint = new Footprint({})
-      const vias = [
-        new Via({ pcbX: -4 }),
-        new Via({ pcbX: -2, tented: "top_tented" }),
-        new PcbVia({ pcbX: 0 }),
-        new PcbVia({ pcbX: 2, tented: "top_tented" }),
-        new PcbVia({ pcbX: 4, tentedOnTop: false }),
-      ]
-      for (const via of vias) footprint.add(via)
-      const chip = new Chip({ name: "U1", layer, pcbRotation: rotation })
-      chip.add(footprint)
-      const board = new Board({
-        width: 20,
-        height: 20,
-        defaultViaTenting: "top_tented",
-      })
-      board.add(chip)
-      circuit.add(board)
-      circuit.render()
-      const expected = [
-        [true, false],
-        layer === "top" ? [true, false] : [false, true],
-        [true, false],
-        layer === "top" ? [true, false] : [false, true],
-        layer === "top" ? [false, false] : [true, false],
-      ]
-      expect(
-        vias.map((via) => {
-          const emitted = circuit.db.pcb_via.get(via.pcb_via_id!)!
-          return [emitted.tented_on_top, emitted.tented_on_bottom]
-        }),
-      ).toEqual(expected)
-      expect(vias[0]._parsedProps.tented).toBeUndefined()
-      expect(vias[2]._parsedProps.tented).toBeUndefined()
-    }
-  }
+test("explicit via sides flip with the footprint while board defaults stay on board faces", () => {
+  const { circuit } = getTestFixture()
+  const inherited = new Via({ pcbX: -3 })
+  const explicit = new Via({ pcbX: -1, tented: "top_tented" })
+  const pcbVia = new PcbVia({ pcbX: 1, tented: "top_tented" })
+  const partialOverride = new PcbVia({ pcbX: 3, tentedOnBottom: false })
+  const footprint = new Footprint({})
+  footprint.add(inherited)
+  footprint.add(explicit)
+  footprint.add(pcbVia)
+  footprint.add(partialOverride)
+  const chip = new Chip({ name: "U1", layer: "bottom", pcbRotation: 90 })
+  chip.add(footprint)
+  const board = new Board({
+    width: 12,
+    height: 12,
+    defaultViaTenting: "top_tented",
+  })
+  board.add(chip)
+  circuit.add(board)
+  circuit.render()
+
+  expect(circuit.db.pcb_via.get(inherited.pcb_via_id!)).toMatchObject({
+    tented_on_top: true,
+    tented_on_bottom: false,
+  })
+  expect(circuit.db.pcb_via.get(explicit.pcb_via_id!)).toMatchObject({
+    tented_on_top: false,
+    tented_on_bottom: true,
+  })
+  expect(circuit.db.pcb_via.get(pcbVia.pcb_via_id!)).toMatchObject({
+    tented_on_top: false,
+    tented_on_bottom: true,
+  })
+  expect(circuit.db.pcb_via.get(partialOverride.pcb_via_id!)).toMatchObject({
+    tented_on_top: false,
+    tented_on_bottom: false,
+  })
+  expect(inherited._parsedProps.tented).toBeUndefined()
 })

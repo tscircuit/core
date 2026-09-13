@@ -3,7 +3,7 @@ import type { LayerRef, PcbVia } from "circuit-json"
 import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
 import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
 import { getViaDiameterDefaultsWithOverrides } from "lib/utils/pcbStyle/getViaDiameterDefaults"
-import { resolveViaTenting } from "lib/utils/resolve-via-tenting"
+import { getViaTenting } from "lib/utils/getViaTenting"
 import { z } from "zod"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { Net } from "./Net"
@@ -265,6 +265,10 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
     const subcircuit = this.getSubcircuit()
     const connectedNetOrTrace = this._getConnectedNetOrTrace()
     const { isFlipped } = this._getPcbPrimitiveFlippedHelpers()
+    const viaTenting = getViaTenting(this._parsedProps.tented)
+    const boardTenting = getViaTenting(
+      this._getBoard()?._parsedProps.defaultViaTenting,
+    )
     const sourceTraceId =
       this.source_trace_id ??
       (connectedNetOrTrace instanceof Net
@@ -287,7 +291,13 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
         this.subcircuit_connectivity_map_key ?? undefined,
       pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
       net_is_assignable: this._parsedProps.netIsAssignable ?? undefined,
-      ...resolveViaTenting(this, this._parsedProps, isFlipped),
+      // Explicit sides follow the footprint flip; board defaults name board faces.
+      tented_on_top:
+        (isFlipped ? viaTenting.tented_on_bottom : viaTenting.tented_on_top) ??
+        boardTenting.tented_on_top,
+      tented_on_bottom:
+        (isFlipped ? viaTenting.tented_on_top : viaTenting.tented_on_bottom) ??
+        boardTenting.tented_on_bottom,
       ...(sourceTraceId ? { source_trace_id: sourceTraceId } : {}),
       ...(sourceNetId ? { source_net_id: sourceNetId } : {}),
     } as Omit<PcbVia & { net_is_assignable?: boolean }, "type" | "pcb_via_id">)

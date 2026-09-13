@@ -15,7 +15,7 @@ import { TraceConnectionError } from "lib/errors"
 import { getPcbSelectorErrorForTracePort } from "./getPcbSelectorErrorForTracePort"
 import { jlcMinTolerances } from "@tscircuit/jlcpcb-manufacturing-specs"
 import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
-import { resolveViaTenting } from "lib/utils/resolve-via-tenting"
+import { getViaTenting } from "lib/utils/getViaTenting"
 
 const findInflatedPcbViaForPoint = (
   vias: PcbVia[] | undefined,
@@ -49,6 +49,9 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
   if (trace.root?.pcbDisabled) return
   const { db } = trace.root!
   const { _parsedProps: props } = trace
+  const boardTenting = getViaTenting(
+    trace._getBoard()?._parsedProps.defaultViaTenting,
+  )
   const subcircuit = trace.getSubcircuit()
 
   const hasPcbPath = props.pcbPath !== undefined
@@ -225,14 +228,16 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
               subcircuitConnectivityMapKey,
             net_is_assignable: inflatedPcbVia?.net_is_assignable,
             net_assigned: inflatedPcbVia?.net_assigned,
-            ...resolveViaTenting(
-              trace,
-              {
-                tentedOnTop: inflatedPcbVia?.tented_on_top,
-                tentedOnBottom: inflatedPcbVia?.tented_on_bottom,
-              },
-              isFlipped,
-            ),
+            // Use the same footprint flip as the route and via layers above.
+            tented_on_top:
+              (isFlipped
+                ? inflatedPcbVia?.tented_on_bottom
+                : inflatedPcbVia?.tented_on_top) ?? boardTenting.tented_on_top,
+            tented_on_bottom:
+              (isFlipped
+                ? inflatedPcbVia?.tented_on_top
+                : inflatedPcbVia?.tented_on_bottom) ??
+              boardTenting.tented_on_bottom,
           })
         }
       }
@@ -471,7 +476,7 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: trace.getGroup()?.pcb_group_id ?? undefined,
         subcircuit_connectivity_map_key: subcircuitConnectivityMapKey,
-        ...resolveViaTenting(trace),
+        ...boardTenting,
       })
     }
   }

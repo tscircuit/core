@@ -21,7 +21,7 @@ import { getObstaclesFromCircuitJson } from "lib/utils/obstacles/getObstaclesFro
 import { pairs } from "lib/utils/pairs"
 import { getRoutePointPosition } from "lib/utils/pcb-trace-route-point-utils"
 import { getViaDiameterDefaults } from "lib/utils/pcbStyle/getViaDiameterDefaults"
-import { resolveViaTenting } from "lib/utils/resolve-via-tenting"
+import { getViaTenting } from "lib/utils/getViaTenting"
 import { reversePcbTraceRoute } from "lib/utils/reverse-pcb-trace-route"
 import { tryNow } from "lib/utils/try-now"
 import type { Port } from "../Port"
@@ -548,7 +548,7 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: trace.getGroup()?.pcb_group_id ?? undefined,
         subcircuit_connectivity_map_key: subcircuitConnectivityMapKey,
-        ...resolveViaTenting(trace),
+        ...getViaTenting(trace._getBoard()?._parsedProps.defaultViaTenting),
       })
     }
   }
