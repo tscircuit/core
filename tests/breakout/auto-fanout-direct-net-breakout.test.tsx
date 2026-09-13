@@ -22,12 +22,7 @@ test("auto fanout creates exits for component ports connected directly to a shar
     >
       <copperpour layer="inner1" connectsTo="net.GND" />
       <net name="SHARED" />
-      <fanout
-        name="U1_FANOUT"
-        autorouter="auto"
-        padding="1.2mm"
-        pcbX={-3}
-      >
+      <fanout name="U1_FANOUT" autorouter="auto" padding="1.2mm" pcbX={-3}>
         <chip
           name="U1"
           noSchematicRepresentation
@@ -136,8 +131,7 @@ test("auto fanout creates exits for component ports connected directly to a shar
   expect(
     planeFanoutInput?.buses?.some(
       (bus) =>
-        bus.termination?.type === "plane" &&
-        bus.termination.layer === "inner1",
+        bus.termination?.type === "plane" && bus.termination.layer === "inner1",
     ),
   ).toBeTrue()
   expect(

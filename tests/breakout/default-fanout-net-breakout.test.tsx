@@ -92,20 +92,8 @@ test("default fanout creates shared-signal exits and keeps plane nets local", as
         <trace name="U1_GND" from=".U1 > .GND" to="net.GND" />
       </fanout>
 
-      <resistor
-        name="R1"
-        resistance="50"
-        footprint="0402"
-        pcbX={6}
-        pcbY={2}
-      />
-      <resistor
-        name="R2"
-        resistance="50"
-        footprint="0402"
-        pcbX={6}
-        pcbY={-2}
-      />
+      <resistor name="R1" resistance="50" footprint="0402" pcbX={6} pcbY={2} />
+      <resistor name="R2" resistance="50" footprint="0402" pcbX={6} pcbY={-2} />
       <trace name="R1_GND" from="R1.pin2" to="net.GND" />
       <trace name="R2_GND" from="R2.pin2" to="net.GND" />
       <trace name="R1_SHARED" from="R1.pin1" to="net.SHARED" />

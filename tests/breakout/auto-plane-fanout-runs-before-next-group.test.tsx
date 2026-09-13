@@ -17,9 +17,27 @@ test("auto plane fanout runs before its component group's signal phase", async (
           connections={{ GND: "net.GND" }}
           footprint={
             <footprint>
-              <smtpad portHints={["pin1"]} pcbX={-1} width={0.5} height={0.5} shape="rect" />
-              <smtpad portHints={["pin2"]} pcbX={1} width={0.5} height={0.5} shape="rect" />
-              <smtpad portHints={["pin3"]} pcbY={-1} width={0.5} height={0.5} shape="rect" />
+              <smtpad
+                portHints={["pin1"]}
+                pcbX={-1}
+                width={0.5}
+                height={0.5}
+                shape="rect"
+              />
+              <smtpad
+                portHints={["pin2"]}
+                pcbX={1}
+                width={0.5}
+                height={0.5}
+                shape="rect"
+              />
+              <smtpad
+                portHints={["pin3"]}
+                pcbY={-1}
+                width={0.5}
+                height={0.5}
+                shape="rect"
+              />
             </footprint>
           }
         />
@@ -33,9 +51,27 @@ test("auto plane fanout runs before its component group's signal phase", async (
           connections={{ GND: "net.GND" }}
           footprint={
             <footprint>
-              <smtpad portHints={["pin1"]} pcbX={-1} width={0.5} height={0.5} shape="rect" />
-              <smtpad portHints={["pin2"]} pcbX={1} width={0.5} height={0.5} shape="rect" />
-              <smtpad portHints={["pin3"]} pcbY={-1} width={0.5} height={0.5} shape="rect" />
+              <smtpad
+                portHints={["pin1"]}
+                pcbX={-1}
+                width={0.5}
+                height={0.5}
+                shape="rect"
+              />
+              <smtpad
+                portHints={["pin2"]}
+                pcbX={1}
+                width={0.5}
+                height={0.5}
+                shape="rect"
+              />
+              <smtpad
+                portHints={["pin3"]}
+                pcbY={-1}
+                width={0.5}
+                height={0.5}
+                shape="rect"
+              />
             </footprint>
           }
         />
@@ -46,11 +82,15 @@ test("auto plane fanout runs before its component group's signal phase", async (
 
   await circuit.renderUntilSettled()
 
-  const firstSignal = circuit.db.source_trace.getWhere({ name: "FIRST_SIGNAL" })!
-  const secondSignal = circuit.db.source_trace.getWhere({ name: "SECOND_SIGNAL" })!
-  const firstGround = circuit.db.source_trace.list().find(
-    (trace) => trace.display_name === ".U1 > .GND to net.GND",
-  )!
+  const firstSignal = circuit.db.source_trace.getWhere({
+    name: "FIRST_SIGNAL",
+  })!
+  const secondSignal = circuit.db.source_trace.getWhere({
+    name: "SECOND_SIGNAL",
+  })!
+  const firstGround = circuit.db.source_trace
+    .list()
+    .find((trace) => trace.display_name === ".U1 > .GND to net.GND")!
   const phaseInputs = phases.map((phase) => phase.startSimpleRouteJson)
   const getSignalPhaseIndex = (sourceTraceId: string) =>
     phaseInputs.findIndex((input) =>
@@ -69,6 +109,8 @@ test("auto plane fanout runs before its component group's signal phase", async (
     getSignalPhaseIndex(secondSignal.source_trace_id),
   )
   expect(
-    circuit.getCircuitJson().filter((element) => element.type.endsWith("_error")),
+    circuit
+      .getCircuitJson()
+      .filter((element) => element.type.endsWith("_error")),
   ).toEqual([])
 })

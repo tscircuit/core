@@ -272,9 +272,8 @@ export function getSourceTraceIdForRoutedTrace({
     // infer a SourceTrace, but their SRJ connection name still identifies the
     // net. Attribute only this fallback case to the SourceNet; port-terminated
     // fragments still need their exact SourceTrace attribution below.
-    const connectionName = (
-      trace as RoutedTrace & { connection_name?: string }
-    ).connection_name
+    const connectionName = (trace as RoutedTrace & { connection_name?: string })
+      .connection_name
     if (connectionName) {
       const sourceNet = db.source_net
         .list()

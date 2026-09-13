@@ -98,8 +98,9 @@ const getSingleRegionConnectionEdges = (
       if (visitedConnectionIds.has(pendingConnectionId)) continue
       visitedConnectionIds.add(pendingConnectionId)
       groupedConnectionIds.push(pendingConnectionId)
-      for (const relatedConnectionId of
-        relatedConnectionIds.get(pendingConnectionId) ?? []) {
+      for (const relatedConnectionId of relatedConnectionIds.get(
+        pendingConnectionId,
+      ) ?? []) {
         if (!visitedConnectionIds.has(relatedConnectionId)) {
           pendingConnectionIds.push(relatedConnectionId)
         }

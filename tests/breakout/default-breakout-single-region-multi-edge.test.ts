@@ -6,10 +6,22 @@ test("single-region breakouts place connections on the nearest boundary edges", 
   const output = defaultImplicitBreakoutPointSolverFn({
     regions: [{ regionId: "fanout", bounds, edge: "bottom" }],
     connections: [
-      { connectionId: "bottom", endpoints: [{ regionId: "fanout", position: { x: 0, y: -4 } }] },
-      { connectionId: "right", endpoints: [{ regionId: "fanout", position: { x: 4, y: 0 } }] },
-      { connectionId: "top", endpoints: [{ regionId: "fanout", position: { x: 0, y: 4 } }] },
-      { connectionId: "left", endpoints: [{ regionId: "fanout", position: { x: -4, y: 0 } }] },
+      {
+        connectionId: "bottom",
+        endpoints: [{ regionId: "fanout", position: { x: 0, y: -4 } }],
+      },
+      {
+        connectionId: "right",
+        endpoints: [{ regionId: "fanout", position: { x: 4, y: 0 } }],
+      },
+      {
+        connectionId: "top",
+        endpoints: [{ regionId: "fanout", position: { x: 0, y: 4 } }],
+      },
+      {
+        connectionId: "left",
+        endpoints: [{ regionId: "fanout", position: { x: -4, y: 0 } }],
+      },
     ],
     buses: [],
     boundaryPointSpacing: 0.5,
