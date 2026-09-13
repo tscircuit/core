@@ -784,7 +784,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     {
       sourceNetId: string
       routingPcbGroupId: PcbGroupId
-      points: SimpleRoutePoint[]
+      points: SingleLayerConnectionPoint[]
     }
   >()
 

@@ -63,7 +63,7 @@ function addImplicitPlaneFanoutPlans(
     if (
       preset === "fanout" ||
       preset === "single_layer_fanout" ||
-      plan.getPrecomputedTraces
+      plan.getPrecomputedRoutingResult
     ) {
       orderedPlans.push(plan)
       continue
