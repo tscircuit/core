@@ -130,7 +130,7 @@
     "svg-path-commander": "^2.1.11",
     "transformation-matrix": "^2.16.1",
     "zod": "^3.25.67",
-    "@tscircuit/preflight-routing-check-solver": "github:tscircuit/preflight-routing-check-solver#f3a4bf3801c29cbaac85f1b5d307e5db91cf170c"
+    "@tscircuit/preflight-routing-check-solver": "github:tscircuit/preflight-routing-check-solver#7591e61af4ba9060b67380fe6cbbeb1ba87ecdc8"
   },
   "overrides": {
     "@tscircuit/circuit-json-util": "^0.0.113",
