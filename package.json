@@ -35,7 +35,7 @@
     "@tsci/tscircuit.ti": "github:tscircuit/ti#57e314be4b2b06bc546d4def7453e619604d1157",
     "@tscircuit/alphabet": "0.0.25",
     "@tscircuit/bga-fanout-solver": "github:tscircuit/bga-fanout-solver#247c835cb8d69b65e53891dcf869731079415b39",
-    "@tscircuit/capacity-autorouter": "^0.0.900",
+    "@tscircuit/capacity-autorouter": "^0.0.905",
     "@tscircuit/checks": "^0.0.189",
     "@tscircuit/circuit-json-util": "^0.0.113",
     "@tscircuit/common": "^0.0.20",
@@ -54,7 +54,7 @@
     "@tscircuit/math-utils": "^0.0.36",
     "@tscircuit/miniflex": "^0.0.4",
     "@tscircuit/ngspice-spice-engine": "^0.0.20",
-    "@tscircuit/props": "^0.0.657",
+    "@tscircuit/props": "^0.0.658",
     "@tscircuit/schematic-match-adapt": "^0.0.18",
     "@tscircuit/schematic-trace-solver": "^0.0.196",
     "@tscircuit/solver-utils": "^0.0.16",
@@ -70,7 +70,7 @@
     "bun-match-svg": "0.0.12",
     "calculate-elbow": "^0.0.12",
     "chokidar-cli": "^3.0.0",
-    "circuit-json": "^0.0.489",
+    "circuit-json": "^0.0.490",
     "circuit-json-to-bpc": "^0.0.13",
     "circuit-json-to-connectivity-map": "^0.0.30",
     "circuit-json-to-gltf": "^0.0.125",
@@ -129,11 +129,12 @@
     "react-reconciler": "^0.32.0",
     "svg-path-commander": "^2.1.11",
     "transformation-matrix": "^2.16.1",
-    "zod": "^3.25.67"
+    "zod": "^3.25.67",
+    "@tscircuit/preflight-routing-check-solver": "github:tscircuit/preflight-routing-check-solver#e8e92c0de64bafbe008fe186021a131aeeda7214"
   },
   "overrides": {
     "@tscircuit/circuit-json-util": "^0.0.113",
-    "@tscircuit/props": "^0.0.657",
-    "circuit-json": "^0.0.489"
+    "@tscircuit/props": "^0.0.658",
+    "circuit-json": "^0.0.490"
   }
 }

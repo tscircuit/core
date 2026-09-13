@@ -1,3 +1,4 @@
+import type { PreflightRoutingOutput } from "@tscircuit/preflight-routing-check-solver"
 import type { RenderPhase } from "lib/components/base-components/Renderable"
 import type { SOLVERS } from "lib/solvers"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
@@ -14,6 +15,7 @@ export type RootCircuitEventName =
   | "autorouting:end"
   | "autorouting:error"
   | "autorouting:progress"
+  | "autorouting:preflight"
   | "packing:start"
   | "packing:end"
   | "packing:error"
@@ -132,4 +134,15 @@ export interface DebugLogOutputEvent {
   type: "debug:logOutput"
   name: string
   content: any
+}
+
+export interface AutoroutingPreflightEvent {
+  type: "autorouting:preflight"
+  subcircuit_id: string | null
+  componentDisplayName: string
+  routingPhaseIndex?: number
+  phaseName?: string
+  status: "completed" | "budget_exhausted" | "failed"
+  result?: PreflightRoutingOutput
+  elapsedMs: number
 }

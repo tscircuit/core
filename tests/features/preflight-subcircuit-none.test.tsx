@@ -1,0 +1,45 @@
+import { expect, test } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { createBasicAutorouter } from "tests/fixtures/createBasicAutorouter"
+
+test("subcircuit none overrides conservative inherited through an unspecified group", async () => {
+  const { circuit } = getTestFixture()
+  let calls = 0
+  circuit.add(
+    <board
+      width={12}
+      height={10}
+      preflightRoutingCheckPolicy="conservative"
+      autorouter={{
+        local: true,
+        algorithmFn: createBasicAutorouter(async () => {
+          calls++
+          return []
+        }),
+      }}
+    >
+      <group preflightRoutingCheckPolicy={undefined}>
+        <group subcircuit name="child" preflightRoutingCheckPolicy="none">
+          <resistor name="R1" resistance="1k" footprint="0402" pcbX={-3} />
+          <resistor name="R2" resistance="1k" footprint="0402" pcbX={3} />
+          <keepout
+            shape="rect"
+            width={2}
+            height={10}
+            layers={["top", "bottom"]}
+          />
+          <trace from=".R1 > .pin1" to=".R2 > .pin1" />
+        </group>
+      </group>
+      <pcbnotetext
+        pcbY={-4}
+        text="CHILD NONE OVERRIDES CONSERVATIVE"
+        fontSize={0.4}
+      />
+    </board>,
+  )
+  await circuit.renderUntilSettled()
+  expect(calls).toBe(1)
+  expect(circuit.db.pcb_preflight_routing_error.list()).toHaveLength(0)
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+})
