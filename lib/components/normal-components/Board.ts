@@ -723,7 +723,6 @@ export class Board
               circuitJson,
               fabricatorPreset,
               pcbBoardId: this.pcb_board_id,
-              subcircuitId: this.subcircuit_id ?? undefined,
             }),
           ),
         )

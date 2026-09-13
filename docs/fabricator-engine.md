@@ -26,7 +26,7 @@ Providers implement `FabricatorEngine` from `@tscircuit/props`:
 
 ```ts
 const engine: FabricatorEngine = {
-  runDrcChecks({ circuitJson, fabricatorPreset, pcbBoardId, subcircuitId }) {
+  runDrcChecks({ circuitJson, fabricatorPreset, pcbBoardId }) {
     // Inspect this board's subtree and return Circuit JSON diagnostic records.
     return []
   },

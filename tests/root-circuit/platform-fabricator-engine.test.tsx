@@ -18,7 +18,6 @@ test("platform fabricator engine receives final vias and inserts async diagnosti
               type: "pcb_fabricator_extra_charge_warning",
               fabricator_preset: params.fabricatorPreset,
               pcb_board_id: params.pcbBoardId,
-              subcircuit_id: params.subcircuitId,
               pcb_via_ids: vias.map((via) => via.pcb_via_id),
               message: "Fabricator plugin diagnostic",
             }),
