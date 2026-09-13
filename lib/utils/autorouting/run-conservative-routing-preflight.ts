@@ -1,4 +1,4 @@
-import { PreflightRoutingSolver } from "@tscircuit/preflight-routing-solver"
+import { PreflightRoutingSolver } from "@tscircuit/preflight-routing-check-solver"
 import type { SimpleRouteJson as AutorouterSimpleRouteJson } from "@tscircuit/capacity-autorouter"
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import type { SimpleRouteJson } from "./SimpleRouteJson"

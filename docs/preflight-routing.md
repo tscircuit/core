@@ -13,7 +13,7 @@
 
 - `none` bypasses these placement/length/preflight gates. Existing DRC errors remain visible.
 - `basic` blocks known placement errors, failed placement checks, and impossible straight-line maximum trace lengths. Local length checks use the current phase's source traces.
-- `conservative` also runs `@tscircuit/preflight-routing-solver` on the local phase's actual Simple Route JSON. Remote grouped routing checks its SRJ before sending a request.
+- `conservative` also runs `@tscircuit/preflight-routing-check-solver` on the local phase's actual Simple Route JSON. Remote grouped routing checks its SRJ before sending a request.
 
 Local phase checks run before cache lookup or router startup. A blocked phase emits `pcb_preflight_routing_error` and stops subsequent phases while preserving copper from completed phases. Unchanged successful phases retain their routing cache keys. Preflight results are recomputed, not cached.
 

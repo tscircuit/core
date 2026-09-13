@@ -5,7 +5,7 @@ export default defineConfig({
   format: ["esm"],
   dts: true,
   noExternal: [
-    "@tscircuit/preflight-routing-solver",
+    "@tscircuit/preflight-routing-check-solver",
     "@tscircuit/fanout-solver",
     "@tscircuit/implicit-copper-pour-solver",
     "@tscircuit/jlcpcb-manufacturing-specs",

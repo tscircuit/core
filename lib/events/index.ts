@@ -1,4 +1,4 @@
-import type { PreflightRoutingOutput } from "@tscircuit/preflight-routing-solver"
+import type { PreflightRoutingOutput } from "@tscircuit/preflight-routing-check-solver"
 import type { RenderPhase } from "lib/components/base-components/Renderable"
 import type { SOLVERS } from "lib/solvers"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
