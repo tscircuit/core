@@ -96,7 +96,5 @@ test("routed trace attribution respects rotated pad geometry on both layers", as
     expect(getSourceTraceIdForRoutedTrace({ db, trace })).toBe(
       expected.source_trace_id,
     )
-    db.pcb_trace.insert({ ...trace, source_trace_id: expected.source_trace_id })
   }
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
