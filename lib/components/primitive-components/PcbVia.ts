@@ -5,6 +5,7 @@ import {
   layer_ref,
 } from "circuit-json"
 import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
+import { getViaTenting } from "lib/utils/getViaTenting"
 import { z } from "zod"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
@@ -104,10 +105,18 @@ export class PcbVia extends PrimitiveComponent<typeof pcbViaProps> {
       holeDiameter,
       outerDiameter,
       netIsAssignable,
+      tented,
       isTented,
       tentedOnTop,
       tentedOnBottom,
     } = this._parsedProps
+    const viaTenting = getViaTenting(tented)
+    const boardTenting = getViaTenting(
+      this._getBoard()?._parsedProps.defaultViaTenting,
+    )
+    const topTenting = tentedOnTop ?? viaTenting.tented_on_top ?? isTented
+    const bottomTenting =
+      tentedOnBottom ?? viaTenting.tented_on_bottom ?? isTented
     const subcircuit = this.getSubcircuit()
     const position = this._getGlobalPcbPositionBeforeLayout()
     const { isFlipped, maybeFlipLayer } = this._getPcbPrimitiveFlippedHelpers()
@@ -133,9 +142,12 @@ export class PcbVia extends PrimitiveComponent<typeof pcbViaProps> {
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
       net_is_assignable: netIsAssignable,
-      // Use the same footprint flip as the via layers above.
-      tented_on_top: (isFlipped ? tentedOnBottom : tentedOnTop) ?? isTented,
-      tented_on_bottom: (isFlipped ? tentedOnTop : tentedOnBottom) ?? isTented,
+      // Use the same footprint flip as the via layers above, then board defaults.
+      tented_on_top:
+        (isFlipped ? bottomTenting : topTenting) ?? boardTenting.tented_on_top,
+      tented_on_bottom:
+        (isFlipped ? topTenting : bottomTenting) ??
+        boardTenting.tented_on_bottom,
     } as Omit<CircuitJsonPcbVia, "type" | "pcb_via_id">)
 
     this.pcb_via_id = pcbVia.pcb_via_id
