@@ -3,7 +3,7 @@ import { defineConfig } from "tsup"
 export default defineConfig({
   entry: ["index.ts"],
   format: ["esm"],
-  dts: { resolve: ["@tscircuit/preflight-routing-solver"] },
+  dts: true,
   noExternal: [
     "@tscircuit/preflight-routing-solver",
     "@tscircuit/fanout-solver",
