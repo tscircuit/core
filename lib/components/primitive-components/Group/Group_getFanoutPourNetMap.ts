@@ -37,8 +37,11 @@ export const Group_getFanoutPourNetMap = (
   group: Group<any>,
   routingPhasePlans: RoutingPhasePlan[],
 ): FanoutPourNetMap | undefined => {
-  const explicitMaps = routingPhasePlans
-    .map((plan) => plan.fanoutPourNetMap)
+  const explicitMaps = [
+    (group._parsedProps as { fanoutPourNetMap?: FanoutPourNetMap })
+      .fanoutPourNetMap,
+    ...routingPhasePlans.map((plan) => plan.fanoutPourNetMap),
+  ]
     .filter((map): map is FanoutPourNetMap => map !== undefined)
 
   const netsByLayer = new Map<string, Set<string>>()

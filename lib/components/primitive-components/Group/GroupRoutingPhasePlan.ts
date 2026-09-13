@@ -32,6 +32,8 @@ export interface RoutingPhasePlan {
   routingPhaseIndex: number | null
   phaseName?: AutoroutingPhaseProps["name"]
   routingPcbGroupId?: PcbGroupId
+  /** Physical PCB ports owned by routingPcbGroupId. */
+  routingPcbPortIds?: Set<string>
   /** Stable physical breakout region owning this fanout phase. */
   fanoutRegionPcbGroupId?: PcbGroupId
   routingBounds?: SimpleRouteBounds

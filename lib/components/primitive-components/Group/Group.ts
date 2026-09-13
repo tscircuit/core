@@ -628,13 +628,16 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const existingPcbGroup = db.pcb_group.get(this.pcb_group_id)
 
     // Fixed dimensions remain centered on the authored group position. An
-    // auto-sized subcircuit or packed group follows its actual content bounds.
+    // auto-sized subcircuit, routing directive, or packed group follows its
+    // actual content bounds.
     const existingCenter = existingPcbGroup?.center ?? {
       x: centerX,
       y: centerY,
     }
     const shouldUsePcbContentCenter =
-      this.isSubcircuit || pcbContentBounds !== undefined
+      this.isSubcircuit ||
+      this.isRoutingDirective ||
+      pcbContentBounds !== undefined
     let center = hasExplicitPositioning
       ? shouldUsePcbContentCenter
         ? {
@@ -1080,6 +1083,19 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const hasFanoutStage = routingStages.some(({ autorouterConfig }) =>
       ["fanout", "single_layer_fanout"].includes(autorouterConfig.preset ?? ""),
     )
+    const planeTerminationSourceTraceIds = new Set(
+      routingStages
+        .filter(({ autorouterConfig }) =>
+          ["fanout", "single_layer_fanout"].includes(
+            autorouterConfig.preset ?? "",
+          ),
+        )
+        .flatMap(({ routingPhasePlan }) =>
+          routingPhasePlan.traces.flatMap((trace) =>
+            trace.source_trace_id ? [trace.source_trace_id] : [],
+          ),
+        ),
+    )
     const fanoutPourNetMap = hasFanoutStage
       ? Group_getFanoutPourNetMap(this, routingPhasePlans)
       : undefined
@@ -1091,6 +1107,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         subcircuit_id: this.subcircuit_id,
         subcircuitComponent: this,
         fanoutPourNetMap,
+        planeTerminationSourceTraceIds,
       })
 
     const emitFanoutBoundsConflictWarning = (
@@ -1411,7 +1428,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             subcircuit_id: this.subcircuit_id,
             subcircuitComponent: this,
             routingPcbGroupId: activeCustomBreakoutRoutingGroupId,
+            // An automatic breakout can have an implicit fanout pre-stage for
+            // source-only plane connections before Pipeline 9 routes signals.
             fanoutPourNetMap,
+            planeTerminationSourceTraceIds,
           }).simpleRouteJson
           const activeGroupCopperPourObstacles =
             activeGroupSimpleRouteJson.obstacles.filter(

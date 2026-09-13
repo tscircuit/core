@@ -3,11 +3,13 @@ import { SavedFanoutPoint } from "./SavedFanoutPoint"
 import { AutoplacedBreakoutPoint } from "../AutoplacedBreakoutPoint"
 import { BreakoutPoint } from "../BreakoutPoint"
 import { Group } from "../Group/Group"
+import type { Net } from "../Net"
 import type { Port } from "../Port"
 import type { Trace } from "../Trace/Trace"
 import { defaultImplicitBreakoutPointSolverFn } from "./default-implicit-breakout-point-solver"
 import { Breakout_doInitialPcbPlacementDesignRuleChecks } from "./Breakout_doInitialPcbPlacementDesignRuleChecks"
 import { reportWindingBreakoutInfeasibleError } from "./report-winding-breakout-infeasible-error"
+import { Group_getFanoutPourNetMap } from "../Group/Group_getFanoutPourNetMap"
 import {
   type ImplicitBreakoutPointPlacement,
   solveImplicitBreakoutPoints,
@@ -78,17 +80,60 @@ export class Breakout extends Group<typeof breakoutProps> {
     // create traces below components (for example, below a resistor), so
     // checking only direct board children misses valid boundary crossings.
     const allTraces = this.getSubcircuit().selectAll("trace") as Trace[]
+    const portsByTrace = new Map<Trace, Port[]>()
+    const netsByTrace = new Map<Trace, Net[]>()
+    const outsidePortsByNet = new Map<Net, Set<Port>>()
+    for (const trace of allTraces) {
+      const result = trace._findConnectedPorts()
+      if (!result.allPortsFound || !result.ports) continue
+      portsByTrace.set(trace, result.ports)
+      const nets = trace._findConnectedNets().nets
+      netsByTrace.set(trace, nets)
+      for (const net of nets) {
+        const outsidePorts = outsidePortsByNet.get(net) ?? new Set<Port>()
+        for (const port of result.ports) {
+          if (!breakoutPortSet.has(port)) outsidePorts.add(port)
+        }
+        outsidePortsByNet.set(net, outsidePorts)
+      }
+    }
+    const autorouterPreset =
+      typeof this._parsedProps.autorouter === "object"
+        ? this._parsedProps.autorouter.preset
+        : this._parsedProps.autorouter
+    const createsDedicatedFanout =
+      autorouterPreset === undefined ||
+      autorouterPreset === "auto" ||
+      autorouterPreset === "fanout" ||
+      autorouterPreset === "single_layer_fanout"
+    const planeNetNames = new Set(
+      Object.values(Group_getFanoutPourNetMap(this, []) ?? {}).flatMap(
+        (netOrNets) =>
+          (Array.isArray(netOrNets) ? netOrNets : [netOrNets]).map((net) =>
+            net.replace(/^net\./, ""),
+          ),
+      ),
+    )
 
     const autoPlacedPorts = new Set<Port>()
 
     for (const trace of allTraces) {
-      const result = trace._findConnectedPorts()
-      if (!result.allPortsFound || !result.ports) continue
+      const ports = portsByTrace.get(trace)
+      if (!ports) continue
+      const hasOutsidePortOnConnectedNet =
+        createsDedicatedFanout &&
+        (netsByTrace.get(trace) ?? []).some(
+          (net) =>
+            !planeNetNames.has(net.name) &&
+            (outsidePortsByNet.get(net)?.size ?? 0) > 0,
+        )
 
-      for (const port of result.ports) {
+      for (const port of ports) {
         // Port is inside breakout and trace crosses boundary
         const isInside = breakoutPortSet.has(port)
-        const hasOutsidePort = result.ports.some((p) => !breakoutPortSet.has(p))
+        const hasOutsidePort =
+          ports.some((candidatePort) => !breakoutPortSet.has(candidatePort)) ||
+          hasOutsidePortOnConnectedNet
         if (!isInside || !hasOutsidePort) continue
 
         // Skip if already covered by a manual or auto breakout point

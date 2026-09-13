@@ -86,3 +86,38 @@ test("routed trace endpoints over a large opposite-layer pad are attributed to t
 
   expect(attributedSourceTraceId).toBe(signalSourceTrace!.source_trace_id)
 })
+
+test("breakout-only routed fragments are attributed from their source-net connection name", async () => {
+  const { circuit } = getTestFixture()
+
+  circuit.add(
+    <board width="20mm" height="20mm" routingDisabled>
+      <chip name="U1" footprint="soic8" />
+      <trace from="U1.pin1" to="net.GND" />
+    </board>,
+  )
+
+  await circuit.renderUntilSettled()
+  const db = circuit.db
+  const groundNet = db.source_net
+    .list()
+    .find((sourceNet) => sourceNet.name === "GND")
+  expect(groundNet).toBeDefined()
+
+  const routedTrace = {
+    type: "pcb_trace" as const,
+    pcb_trace_id: "breakout_only_routed_trace",
+    connection_name: `breakout-net:pcb_group_0:${groundNet!.source_net_id}`,
+    route: [
+      { route_type: "wire" as const, x: -1, y: 0, width: 0.15, layer: "top" },
+      { route_type: "wire" as const, x: 1, y: 0, width: 0.15, layer: "top" },
+    ],
+  }
+
+  const attributedSourceTraceId = getSourceTraceIdForRoutedTrace({
+    db,
+    trace: routedTrace as any,
+  })
+
+  expect(attributedSourceTraceId).toBe(groundNet!.source_net_id)
+})

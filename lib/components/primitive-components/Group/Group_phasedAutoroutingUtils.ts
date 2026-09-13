@@ -17,6 +17,21 @@ export function connectionIsInRoutingPhase(
   if (connection.routingPcbGroupId) {
     return connection.routingPcbGroupId === phasePlan.routingPcbGroupId
   }
+  const usesDedicatedFanoutAutorouter =
+    phasePlan.autorouter === "fanout" ||
+    phasePlan.autorouter === "single_layer_fanout"
+  if (phasePlan.routingPcbGroupId && usesDedicatedFanoutAutorouter) {
+    const routingPcbPortIds = phasePlan.routingPcbPortIds
+    return (
+      routingPcbPortIds !== undefined &&
+      connection.pointsToConnect.length > 0 &&
+      connection.pointsToConnect.every(
+        (point) =>
+          point.pcb_port_id !== undefined &&
+          routingPcbPortIds.has(point.pcb_port_id),
+      )
+    )
+  }
 
   for (const trace of phasePlan.traces) {
     if (!trace.source_trace_id) continue
@@ -39,6 +54,7 @@ export function connectionIsInRoutingPhase(
 export function Group_hasPhasedAutorouting(
   routingPhasePlans: RoutingPhasePlan[],
 ): boolean {
+  if (routingPhasePlans.length > 1) return true
   for (const plan of routingPhasePlans) {
     if (plan.routingPcbGroupId) return true
     if (plan.routingPhaseIndex !== null) return true

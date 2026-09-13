@@ -16,6 +16,7 @@ import type { Net } from "../Net"
 import type { Port } from "../Port"
 import type { Trace } from "../Trace/Trace"
 import type { Group } from "./Group"
+import { Group_getFanoutPourNetMap } from "./Group_getFanoutPourNetMap"
 import type {
   RoutingPhaseDrcTolerances,
   RoutingPhasePlan,
@@ -43,6 +44,88 @@ function compareRoutingPhasePlans(
     getPhaseSortValue(a.routingPhaseIndex) -
     getPhaseSortValue(b.routingPhaseIndex)
   )
+}
+
+function getAutorouterPreset(autorouter: AutorouterProp | undefined) {
+  return typeof autorouter === "object" ? autorouter.preset : autorouter
+}
+
+function addImplicitPlaneFanoutPlans(
+  group: Group<z.ZodType>,
+  routingPhasePlans: RoutingPhasePlan[],
+): RoutingPhasePlan[] {
+  const inferredPourNetMap = Group_getFanoutPourNetMap(group, routingPhasePlans)
+  if (!inferredPourNetMap) return routingPhasePlans
+
+  const orderedPlans: RoutingPhasePlan[] = []
+  for (const plan of routingPhasePlans) {
+    const preset = getAutorouterPreset(plan.autorouter)
+    if (
+      preset === "fanout" ||
+      preset === "single_layer_fanout" ||
+      plan.getPrecomputedTraces
+    ) {
+      orderedPlans.push(plan)
+      continue
+    }
+
+    const pourNetMap = plan.fanoutPourNetMap ?? inferredPourNetMap
+    const planeNetNames = new Set(
+      Object.values(pourNetMap).flatMap((netOrNets) =>
+        (Array.isArray(netOrNets) ? netOrNets : [netOrNets]).map((net) =>
+          net.replace(/^net\./, ""),
+        ),
+      ),
+    )
+    const planeTraces = plan.traces.filter((trace) => {
+      if (trace.pcb_trace_id) return false
+      if (
+        typeof (trace as Trace & { _findConnectedPorts?: unknown })
+          ._findConnectedPorts !== "function" ||
+        typeof (trace as Trace & { _findConnectedNets?: unknown })
+          ._findConnectedNets !== "function"
+      ) {
+        return false
+      }
+      const connectedPorts = trace._findConnectedPorts()
+      return (
+        connectedPorts.allPortsFound &&
+        connectedPorts.ports?.length === 1 &&
+        trace
+          ._findConnectedNets()
+          .nets.some((net) => planeNetNames.has(net.name))
+      )
+    })
+    if (planeTraces.length === 0) {
+      orderedPlans.push(plan)
+      continue
+    }
+
+    const planeTraceSet = new Set(planeTraces)
+    const signalPlan = {
+      ...plan,
+      traces: plan.traces.filter((trace) => !planeTraceSet.has(trace)),
+    }
+    const planePlan: RoutingPhasePlan = {
+      ...plan,
+      // Select plane connections by source trace. A routing-group match would
+      // also select the group's signal and breakout-net connections.
+      routingPcbGroupId: undefined,
+      autorouter: "fanout",
+      fanoutPourNetMap: pourNetMap,
+      nets: [],
+      traces: planeTraces,
+    }
+
+    orderedPlans.push(planePlan)
+    if (signalPlan.traces.length > 0 || signalPlan.nets.length > 0) {
+      orderedPlans.push(signalPlan)
+    }
+  }
+
+  // Reserve local plane dogbones before the owning signal phase can fence a
+  // plane pad with routes that span the fanout boundary.
+  return orderedPlans
 }
 
 function getOrCreateRoutingPhasePlan(
@@ -447,6 +530,12 @@ export function Group_getRoutingPhasePlans(
     const breakoutPlan: RoutingPhasePlan = {
       routingPhaseIndex: null,
       routingPcbGroupId: breakout.pcb_group_id ?? undefined,
+      routingPcbPortIds: new Set(
+        breakout.root?.db.pcb_port
+          .list()
+          .filter((port) => port.pcb_group_id === breakout.pcb_group_id)
+          .map((port) => port.pcb_port_id) ?? [],
+      ),
       fanoutRegionPcbGroupId: breakout.pcb_group_id ?? undefined,
       routingBounds,
       fanoutBounds: hasExplicitGeometry
@@ -538,7 +627,7 @@ export function Group_getRoutingPhasePlans(
     plans[0]?.routingPhaseIndex === null
   ) {
     const reroutePlan = plans[0]
-    return [
+    return addImplicitPlaneFanoutPlans(group, [
       ...breakoutPlans,
       {
         routingPhaseIndex: null,
@@ -546,8 +635,8 @@ export function Group_getRoutingPhasePlans(
         traces: [...reroutePlan.traces],
       },
       reroutePlan,
-    ]
+    ])
   }
 
-  return [...breakoutPlans, ...plans]
+  return addImplicitPlaneFanoutPlans(group, [...breakoutPlans, ...plans])
 }
