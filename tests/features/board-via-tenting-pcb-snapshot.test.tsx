@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("PCB snapshot labels board tenting inheritance and per-via overrides", async () => {
+test("PCB soldermask snapshots show board tenting inheritance and per-via overrides", async () => {
   const { circuit } = getTestFixture()
   const cases = [
     {
@@ -62,11 +62,6 @@ test("PCB snapshot labels board tenting inheritance and per-via overrides", asyn
         outerDiameter={2.4}
       />
       <pcbnotetext text="Unaffected" pcbX={25} pcbY={-2} fontSize={0.65} />
-      <pcbnotetext
-        text="Copper view | T/B: emitted tenting flags (1=covered, 0=exposed)"
-        pcbY={-5.5}
-        fontSize={0.65}
-      />
     </board>,
   )
   await circuit.renderUntilSettled()
@@ -90,9 +85,35 @@ test("PCB snapshot labels board tenting inheritance and per-via overrides", asyn
   expect(platedHole).not.toHaveProperty("tented_on_top")
   expect(platedHole).not.toHaveProperty("tented_on_bottom")
 
+  const viewLabel = circuit.db.pcb_note_text.insert({
+    text: "TOP soldermask | T/B: emitted tenting flags (1=covered, 0=exposed)",
+    anchor_position: { x: 0, y: -5.5 },
+    anchor_alignment: "center",
+    layer: "top",
+    font: "tscircuit2024",
+    font_size: 0.65,
+  })
+
   await expect(circuit.getCircuitJson()).toMatchPcbSnapshot(import.meta.path, {
     width: 1400,
     height: 400,
     showPcbNotes: true,
+    showSolderMask: true,
+    layer: "top",
   })
+
+  circuit.db.pcb_note_text.update(viewLabel.pcb_note_text_id, {
+    text: "BOTTOM soldermask | T/B: emitted tenting flags (1=covered, 0=exposed)",
+    layer: "bottom",
+  })
+  await expect(circuit.getCircuitJson()).toMatchPcbSnapshot(
+    import.meta.path.replace(".test.tsx", "-bottom.test.tsx"),
+    {
+      width: 1400,
+      height: 400,
+      showPcbNotes: true,
+      showSolderMask: true,
+      layer: "bottom",
+    },
+  )
 })
