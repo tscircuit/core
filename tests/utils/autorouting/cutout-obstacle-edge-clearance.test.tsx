@@ -21,12 +21,13 @@ test("cutout obstacles are inflated by the copper-to-edge clearance", async () =
 
   await circuit.renderUntilSettled()
 
-  const board = circuit.firstChild as {
-    selectAll(selector: string): unknown[]
+  const subcircuitComponent = circuit.firstChild
+  if (!subcircuitComponent) {
+    throw new Error("Expected the circuit to contain a board")
   }
   const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
     db: circuit.db,
-    subcircuitComponent: board,
+    subcircuitComponent,
   })
 
   const cutoutObstacle = simpleRouteJson.obstacles.find(
