@@ -1,3 +1,6 @@
+import type { PreflightRoutingCheckPolicy } from "@tscircuit/props"
+import { resolvePreflightRoutingCheckPolicy } from "./resolve-preflight-routing-check-policy"
+import { insertPcbPreflightRoutingError } from "./insert-pcb-preflight-routing-error"
 import type { PcbPort, SourcePort, SourceTrace } from "circuit-json"
 import { ConnectivityMap } from "circuit-json-to-connectivity-map"
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
@@ -177,15 +180,49 @@ export const getStraightLineTraceLengthViolations = ({
 export const shouldSkipAutoroutingBecauseOfTraceLengthViolations = ({
   component,
   subcircuit,
+  policy,
+  deferBlocking = false,
+  routingPhaseIndex,
+  phaseName,
+  sourceTraceIds,
 }: {
   component: PrimitiveComponent
   subcircuit: { subcircuit_id: string | null }
+  policy?: PreflightRoutingCheckPolicy
+  deferBlocking?: boolean
+  routingPhaseIndex?: number
+  phaseName?: string
+  sourceTraceIds?: SourceTrace["source_trace_id"][]
 }): boolean => {
+  const resolvedPolicy = resolvePreflightRoutingCheckPolicy(component, policy)
+  if (resolvedPolicy === "none" || deferBlocking) return false
   const violations = getStraightLineTraceLengthViolations({
     component,
     subcircuit,
-  })
+  }).filter(
+    (violation) =>
+      sourceTraceIds === undefined ||
+      sourceTraceIds.includes(violation.sourceTraceId),
+  )
   if (violations.length === 0) return false
+
+  if (resolvedPolicy !== undefined) {
+    for (const violation of violations) {
+      insertPcbPreflightRoutingError(component, {
+        error_code: "trace_length_exceeded",
+        subcircuit_id: subcircuit.subcircuit_id ?? undefined,
+        routing_phase_index: routingPhaseIndex,
+        phase_name: phaseName,
+        source_trace_ids: [violation.sourceTraceId],
+        message: `Routing preflight blocked ${violation.traceDisplayName ?? violation.sourceTraceId}: endpoints are ${violation.straightLineDistance.toFixed(2)}mm apart but maxLength is ${violation.maximumTraceLength}mm.`,
+        measurements: {
+          straight_line_distance_mm: violation.straightLineDistance,
+          maximum_trace_length_mm: violation.maximumTraceLength,
+        },
+      })
+    }
+    return true
+  }
 
   const { db } = component.root!
   const pcbErrorId = `pcb_autorouting_skipped_trace_length_violations_${subcircuit.subcircuit_id}`

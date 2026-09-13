@@ -1,3 +1,5 @@
+import { resolvePreflightRoutingCheckPolicy } from "lib/utils/autorouting/resolve-preflight-routing-check-policy"
+import { runConservativeRoutingPreflight } from "lib/utils/autorouting/run-conservative-routing-preflight"
 import {
   type SimpleRouteJson as AutorouterSimpleRouteJson,
   type RerouteRectRegion,
@@ -838,6 +840,29 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
     const autorouterConfig = this._getAutorouterConfig()
 
+    if (resolvePreflightRoutingCheckPolicy(this) === "conservative") {
+      const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
+        db,
+        minTraceWidth: Number(props.minTraceWidth ?? 0.15),
+        subcircuit_id: this.subcircuit_id,
+        subcircuitComponent: this,
+      })
+      simpleRouteJson.allowViaInPad = autorouterConfig.allowViaInPad
+      simpleRouteJson.allowJumpers =
+        this._isAutoJumperAutorouter(autorouterConfig)
+      if (
+        await runConservativeRoutingPreflight({
+          component: this,
+          simpleRouteJson,
+          subcircuitId: this.subcircuit_id,
+        })
+      ) {
+        this._asyncAutoroutingResult = { output_pcb_traces: [] }
+        this._markDirty("PcbTraceRender")
+        return
+      }
+    }
+
     // Remote autorouting
     const serverUrl = autorouterConfig.serverUrl!
     const serverMode = autorouterConfig.serverMode!
@@ -1522,6 +1547,48 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         ;(global as any).debugGraphics?.push(graphicsObject)
       }
 
+      const preflightPolicy = resolvePreflightRoutingCheckPolicy(
+        this,
+        routingPhasePlan.preflightRoutingCheckPolicy,
+      )
+      if (
+        preflightPolicy !== undefined &&
+        simpleRouteJson.connections.length === 0 &&
+        !getPrecomputedRoutingResult &&
+        !usesPreviousStageOutput
+      )
+        continue
+      const preflightPhase = {
+        component: this,
+        subcircuit: this,
+        policy: preflightPolicy,
+        routingPhaseIndex: routingPhasePlan.routingPhaseIndex ?? undefined,
+        phaseName: routingPhasePlan.phaseName,
+      }
+      const phaseSourceTraceIds = routingPhasePlan.traces.flatMap((trace) =>
+        trace.source_trace_id ? [trace.source_trace_id] : [],
+      )
+      if (
+        shouldSkipAutoroutingBecauseOfPlacementErrors(preflightPhase) ||
+        shouldSkipAutoroutingBecauseOfTraceLengthViolations({
+          ...preflightPhase,
+          sourceTraceIds:
+            preflightPolicy === undefined ? undefined : phaseSourceTraceIds,
+        })
+      )
+        break
+      if (
+        preflightPolicy === "conservative" &&
+        (await runConservativeRoutingPreflight({
+          component: this,
+          simpleRouteJson,
+          subcircuitId: this.subcircuit_id,
+          routingPhaseIndex: routingPhasePlan.routingPhaseIndex ?? undefined,
+          phaseName: routingPhasePlan.phaseName,
+        }))
+      )
+        break
+
       const autorouterVersion =
         phaseAutorouterConfig.autorouterVersion ?? this.props.autorouterVersion
       const effortLevel = this.props.autorouterEffortLevel
@@ -1948,11 +2015,13 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       shouldSkipAutoroutingBecauseOfPlacementErrors({
         component: this,
         subcircuit: this,
+        deferBlocking: this._getAutorouterConfig().local,
       })
     const shouldSkipBecauseOfTraceLengthViolations =
       shouldSkipAutoroutingBecauseOfTraceLengthViolations({
         component: this,
         subcircuit: this,
+        deferBlocking: this._getAutorouterConfig().local,
       })
     if (
       shouldSkipBecauseOfPlacementErrors ||
@@ -1991,11 +2060,13 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           shouldSkipAutoroutingBecauseOfPlacementErrors({
             component: this,
             subcircuit: this,
+            deferBlocking: this._getAutorouterConfig().local,
           })
         const shouldSkipBecauseOfTraceLengthViolations =
           shouldSkipAutoroutingBecauseOfTraceLengthViolations({
             component: this,
             subcircuit: this,
+            deferBlocking: this._getAutorouterConfig().local,
           })
         if (
           shouldSkipBecauseOfPlacementErrors ||

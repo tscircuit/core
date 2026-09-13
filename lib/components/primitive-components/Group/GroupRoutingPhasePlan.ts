@@ -31,6 +31,7 @@ export interface RoutingPhasePlan {
   ) => PrecomputedRoutingResult
   routingPhaseIndex: number | null
   phaseName?: AutoroutingPhaseProps["name"]
+  preflightRoutingCheckPolicy?: AutoroutingPhaseProps["preflightRoutingCheckPolicy"]
   routingPcbGroupId?: PcbGroupId
   /** Stable physical breakout region owning this fanout phase. */
   fanoutRegionPcbGroupId?: PcbGroupId

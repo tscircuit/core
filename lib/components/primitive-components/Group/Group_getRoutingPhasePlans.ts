@@ -1,3 +1,4 @@
+import { resolvePreflightRoutingCheckPolicy } from "lib/utils/autorouting/resolve-preflight-routing-check-policy"
 import { getBoundsFromPoints } from "@tscircuit/math-utils"
 import type {
   AutorouterProp,
@@ -380,6 +381,7 @@ export function Group_getRoutingPhasePlans(
     )
     plan.fanoutPourNetMap =
       phaseProps?.fanoutPourNetMap ?? groupFanoutProps.fanoutPourNetMap
+    plan.preflightRoutingCheckPolicy = phaseProps?.preflightRoutingCheckPolicy
     plan.drcTolerances = phaseProps
       ? getDrcTolerancesFromAutoroutingPhaseProps(phaseProps)
       : undefined
@@ -455,6 +457,7 @@ export function Group_getRoutingPhasePlans(
           ? undefined
           : routingBounds,
       autorouter: breakoutProps.autorouter ?? "fanout",
+      preflightRoutingCheckPolicy: resolvePreflightRoutingCheckPolicy(breakout),
       busFanoutDirections: breakoutProps.busFanoutDirections,
       fanoutBoundaryPadding: breakoutProps.fanoutBoundaryPadding,
       fanoutRoutingLayers: breakoutProps.fanoutRoutingLayers?.map((layer) =>

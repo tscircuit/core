@@ -1,13 +1,26 @@
+import type { PreflightRoutingCheckPolicy } from "@tscircuit/props"
+import { resolvePreflightRoutingCheckPolicy } from "./resolve-preflight-routing-check-policy"
+import { insertPcbPreflightRoutingError } from "./insert-pcb-preflight-routing-error"
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 
 export const shouldSkipAutoroutingBecauseOfPlacementErrors = ({
   component,
   subcircuit,
+  policy,
+  deferBlocking = false,
+  routingPhaseIndex,
+  phaseName,
 }: {
   component: PrimitiveComponent
   subcircuit: { subcircuit_id: string | null }
+  policy?: PreflightRoutingCheckPolicy
+  deferBlocking?: boolean
+  routingPhaseIndex?: number
+  phaseName?: string
 }): boolean => {
   component._pcbTraceRenderWaitingForPlacementChecks = false
+  const resolvedPolicy = resolvePreflightRoutingCheckPolicy(component, policy)
+  if (resolvedPolicy === "none") return false
   let ancestor: PrimitiveComponent | null = component
   let placementErrorCount = 0
   let placementCheckError: string | null = null
@@ -41,7 +54,24 @@ export const shouldSkipAutoroutingBecauseOfPlacementErrors = ({
     component._pcbTraceRenderWaitingForPlacementChecks = true
     return true
   }
+  if (deferBlocking) return false
   if (placementErrorCount === 0 && !placementCheckError) return false
+
+  if (resolvedPolicy !== undefined) {
+    insertPcbPreflightRoutingError(component, {
+      error_code: placementCheckError
+        ? "placement_check_failed"
+        : "placement_errors",
+      subcircuit_id: subcircuit.subcircuit_id ?? undefined,
+      routing_phase_index: routingPhaseIndex,
+      phase_name: phaseName,
+      message: placementCheckError
+        ? `Routing preflight could not complete placement checks: ${placementCheckError}`
+        : `Routing preflight blocked this phase because ${placementErrorCount} PCB placement errors were found. Fix placement or set preflightRoutingCheckPolicy="none" to attempt routing anyway.`,
+      measurements: { placement_error_count: placementErrorCount },
+    })
+    return true
+  }
 
   const { db } = component.root!
   const pcbErrorId = `pcb_autorouting_skipped_placement_errors_${subcircuit.subcircuit_id}`

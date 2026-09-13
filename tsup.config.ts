@@ -3,8 +3,9 @@ import { defineConfig } from "tsup"
 export default defineConfig({
   entry: ["index.ts"],
   format: ["esm"],
-  dts: true,
+  dts: { resolve: ["@tscircuit/preflight-routing-solver"] },
   noExternal: [
+    "@tscircuit/preflight-routing-solver",
     "@tscircuit/fanout-solver",
     "@tscircuit/implicit-copper-pour-solver",
     "@tscircuit/jlcpcb-manufacturing-specs",
