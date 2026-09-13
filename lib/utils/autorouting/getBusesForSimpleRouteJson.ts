@@ -191,6 +191,12 @@ export const getBusesForSimpleRouteJson = ({
       ...(bus._parsedProps.maxLengthSkew !== undefined
         ? { maxLengthSkew: bus._parsedProps.maxLengthSkew }
         : {}),
+      ...(bus._parsedProps.targetImpedance !== undefined
+        ? { targetImpedance: bus._parsedProps.targetImpedance }
+        : {}),
+      ...(bus._parsedProps.pcbImpedanceProfile !== undefined
+        ? { impedanceProfile: bus._parsedProps.pcbImpedanceProfile }
+        : {}),
       ...(bus._parsedProps.pcbTraceWidth !== undefined
         ? { traceWidth: bus._parsedProps.pcbTraceWidth }
         : {}),

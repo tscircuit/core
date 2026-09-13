@@ -1,3 +1,4 @@
+import { BusLanesAutorouter } from "./BusLanesAutorouter"
 import type {
   AutorouterProp,
   AutoroutingPhaseProps,
@@ -108,6 +109,22 @@ const localAutorouterStrategies = new Map<string, LocalAutorouterStrategy>([
     createFanoutAutorouterStrategy("single_layer_fanout"),
   ],
   ["fanout", createFanoutAutorouterStrategy("fanout")],
+  [
+    "bus_lanes",
+    {
+      name: "bus_lanes",
+      cacheable: false,
+      getSolverName: () => "BusLanesSolver",
+      create: ({ simpleRouteJson, onSolverStarted }) => {
+        onSolverStarted?.({
+          solverName: "BusLanesSolver",
+          solverParams: simpleRouteJson,
+          solverConstructorArgs: [simpleRouteJson],
+        })
+        return new BusLanesAutorouter(simpleRouteJson)
+      },
+    },
+  ],
   ["simplify", simplificationLocalAutorouterStrategy],
 ])
 

@@ -131,6 +131,12 @@ export type SimpleRouteBus = {
     Record<SrjConnectionName, { x: number; y: number; layer?: string }>
   >
   maxLengthSkew?: number
+  /** Single-ended impedance target in ohms; requires a layer-specific profile. */
+  targetImpedance?: number
+  impedanceProfile?: {
+    layer: string
+    points: Array<{ traceWidth: number; impedance: number }>
+  }
   traceWidth?: number
   allowedLayers?: string[]
   /** Highest-priority fanout layer for this bus. */
