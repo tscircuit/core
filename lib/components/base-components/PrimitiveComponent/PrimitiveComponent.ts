@@ -18,6 +18,7 @@ import {
 import { getSubcircuitPcbCalcVariables } from "lib/utils/getSubcircuitPcbCalcVariables"
 import { isFootprintFlipped } from "lib/utils/pcb/transform-footprint-insertion-direction"
 import { getResolvedPcbSx } from "lib/utils/pcbSx/get-resolved-pcb-sx"
+import { safeToString } from "lib/utils/safe-to-string"
 import type {
   SchematicBoxComponentDimensions,
   SchematicBoxDimensions,
@@ -1422,20 +1423,21 @@ export abstract class PrimitiveComponent<
 
   getString(): string {
     const { lowercaseComponentName: cname, _parsedProps: props, parent } = this
+    const s = safeToString
     if (props?.pinNumber !== undefined && parent?.props?.name && props?.name) {
-      return `<${cname}#${this._renderId}(pin:${props.pinNumber} .${parent?.props.name}>.${props.name}) />`
+      return `<${cname}#${this._renderId}(pin:${s(props.pinNumber)} .${s(parent?.props.name)}>.${s(props.name)}) />`
     }
     if (parent?.props?.name && props?.name) {
-      return `<${cname}#${this._renderId}(.${parent?.props.name}>.${props?.name}) />`
+      return `<${cname}#${this._renderId}(.${s(parent?.props.name)}>.${s(props?.name)}) />`
     }
     if (props?.from && props?.to) {
-      return `<${cname}#${this._renderId}(from:${props.from} to:${props?.to}) />`
+      return `<${cname}#${this._renderId}(from:${s(props.from)} to:${s(props?.to)}) />`
     }
     if (props?.name) {
-      return `<${cname}#${this._renderId} name=".${props?.name}" />`
+      return `<${cname}#${this._renderId} name=".${s(props?.name)}" />`
     }
     if (props?.portHints) {
-      return `<${cname}#${this._renderId}(${props.portHints.map((ph: string) => `.${ph}`).join(", ")}) />`
+      return `<${cname}#${this._renderId}(${props.portHints.map((ph: string) => `.${s(ph)}`).join(", ")}) />`
     }
     return `<${cname}#${this._renderId} />`
   }
