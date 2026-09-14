@@ -80,6 +80,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   circuitJson,
   subcircuit_id,
   minTraceWidth,
+  defaultObstacleMargin,
   minTraceToPadEdgeClearance,
   minViaEdgeToPadEdgeClearance,
   minViaHoleEdgeToViaHoleEdgeClearance,
@@ -98,6 +99,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   circuitJson?: AnyCircuitElement[]
   subcircuit_id?: string | null
   minTraceWidth?: number
+  defaultObstacleMargin?: number
   nominalTraceWidth?: number
   minTraceToPadEdgeClearance?: number
   minViaEdgeToPadEdgeClearance?: number
@@ -916,6 +918,9 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       minViaPadDiameter: resolvedMinViaPadDiameter,
       min_via_hole_diameter: resolvedMinViaHoleDiameter,
       min_via_pad_diameter: resolvedMinViaPadDiameter,
+      defaultObstacleMargin:
+        defaultObstacleMargin ??
+        pcbGroup?.autorouter_configuration?.trace_clearance,
       minTraceToPadEdgeClearance: resolvedMinTraceToPadEdgeClearance,
       minViaEdgeToPadEdgeClearance: resolvedMinViaEdgeToPadEdgeClearance,
       minViaHoleEdgeToViaHoleEdgeClearance:

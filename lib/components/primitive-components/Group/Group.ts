@@ -866,6 +866,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         const preferredTraceWidth =
           props.defaultTraceWidth ?? props.nominalTraceWidth
         const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
+          defaultObstacleMargin: distance
+            .optional()
+            .parse(autorouterConfig.traceClearance),
           db,
           minTraceWidth: Number(props.minTraceWidth ?? 0.15),
           nominalTraceWidth:
@@ -1085,6 +1088,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       : undefined
     let { simpleRouteJson: baseSimpleRouteJson } =
       getSimpleRouteJsonFromCircuitJson({
+        defaultObstacleMargin: distance
+          .optional()
+          .parse(autorouterConfig.traceClearance),
         db,
         minTraceWidth,
         nominalTraceWidth,
