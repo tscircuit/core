@@ -130,7 +130,7 @@
     "svg-path-commander": "^2.1.11",
     "transformation-matrix": "^2.16.1",
     "zod": "^3.25.67",
-    "@tscircuit/bus-lanes-solver": "github:tscircuit/bus-lanes-solver#1f4ecd4"
+    "@tscircuit/bus-lanes-solver": "github:tscircuit/bus-lanes-solver#5221165"
   },
   "overrides": {
     "@tscircuit/circuit-json-util": "^0.0.113",
