@@ -65,6 +65,7 @@ export const NormalComponent_addInternalConnectionFabricationNotes = (
   const root = component.root
   if (!root || root.pcbDisabled || !component.pcb_component_id) return
   if (component.componentName === "SolderJumper") return
+  if (component._getPrimaryPinCount() >= 6) return
   if (hasFabricationNotes(component)) return
 
   const { db } = root
