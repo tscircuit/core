@@ -23,6 +23,7 @@ test("group fanout props configure its default routing plan", () => {
       },
     },
     selectAll: (selector: string) => (selector === "trace" ? [trace] : []),
+    getInheritedProperty: () => undefined,
   } as unknown as Group<z.ZodType>
 
   const plans = Group_getRoutingPhasePlans(group)
