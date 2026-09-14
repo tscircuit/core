@@ -1462,7 +1462,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           pcb_error_id: `pcb_autorouting_error_remaining_routes_${this.subcircuit_id}`,
           subcircuit_id: this.subcircuit_id ?? undefined,
           error_type: "pcb_autorouting_error",
-          message: `Remaining routes left unrouted (over 50 traces remaining and routingPreflightCheckPolicy="${preflightRoutingCheckPolicy}"). Set <board routeRemaining={true} /> or create <autoroutingphase /> elements for specific connections in the order you'd like to route them. The autorouter may hang unless you create autorouting phases incrementally.`,
+          message: `Remaining routes left unrouted (over 50 traces remaining and preflightRoutingCheckPolicy="${preflightRoutingCheckPolicy}"). Set <board routeRemaining={true} /> or create <autoroutingphase /> elements for specific connections in the order you'd like to route them. The autorouter may hang unless you create autorouting phases incrementally.`,
         })
         continue
       }

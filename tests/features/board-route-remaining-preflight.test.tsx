@@ -120,7 +120,7 @@ test("remaining routing preflight limits implicit phases to 50 connections", asy
     expect(routingErrors).toHaveLength(scenario.routingError ? 1 : 0)
     if (scenario.routingError) {
       expect(routingErrors[0].message).toBe(
-        `Remaining routes left unrouted (over 50 traces remaining and routingPreflightCheckPolicy="${scenario.policy}"). Set <board routeRemaining={true} /> or create <autoroutingphase /> elements for specific connections in the order you'd like to route them. The autorouter may hang unless you create autorouting phases incrementally.`,
+        `Remaining routes left unrouted (over 50 traces remaining and preflightRoutingCheckPolicy="${scenario.policy}"). Set <board routeRemaining={true} /> or create <autoroutingphase /> elements for specific connections in the order you'd like to route them. The autorouter may hang unless you create autorouting phases incrementally.`,
       )
     }
     if (scenario === scenarios[0]) {
