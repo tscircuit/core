@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
-test("bus_lanes phase forwards impedance and emits fixed-layer traces", async () => {
+test("bus_lanes phase matches selected bus lengths and emits fixed-layer traces", async () => {
   const { circuit } = getTestFixture()
   const inputs: any[] = []
   circuit.on("autorouting:start", (event: any) =>
@@ -12,6 +12,7 @@ test("bus_lanes phase forwards impedance and emits fixed-layer traces", async ()
         name="BUS_LANES"
         phaseIndex={0}
         autorouter="bus_lanes"
+        connections={["A0.pin2", "A1.pin2"]}
       />
       <resistor
         name="A0"
@@ -22,22 +23,14 @@ test("bus_lanes phase forwards impedance and emits fixed-layer traces", async ()
       />
       <resistor name="B0" resistance="1k" footprint="0402" pcbX={4} pcbY={-2} />
       <resistor name="A1" resistance="1k" footprint="0402" pcbX={-4} pcbY={2} />
-      <resistor name="B1" resistance="1k" footprint="0402" pcbX={4} pcbY={2} />
+      <resistor name="B1" resistance="1k" footprint="0402" pcbX={3} pcbY={2} />
       <trace name="DATA0" from=".A0 > .pin2" to=".B0 > .pin1" />
       <trace name="DATA1" from=".A1 > .pin2" to=".B1 > .pin1" />
       <bus
         name="DATA"
         connections={["DATA0", "DATA1"]}
-        routingPhaseIndex={0}
         maxLengthSkew="0.05mm"
-        targetImpedance="50ohm"
-        pcbImpedanceProfile={{
-          layer: "top",
-          points: [
-            { traceWidth: "0.1mm", impedance: "60ohm" },
-            { traceWidth: "0.2mm", impedance: "40ohm" },
-          ],
-        }}
+        pcbTraceWidth="0.15mm"
       />
     </board>,
   )
@@ -47,13 +40,20 @@ test("bus_lanes phase forwards impedance and emits fixed-layer traces", async ()
   expect(
     inputs.some((input) =>
       input.buses?.some(
-        (bus: any) =>
-          bus.targetImpedance === 50 &&
-          bus.impedanceProfile?.points[0].traceWidth === 0.1,
+        (bus: any) => bus.maxLengthSkew === 0.05 && bus.traceWidth === 0.15,
       ),
     ),
   ).toBe(true)
   expect(traces).toHaveLength(2)
+  const lengths = traces.map((trace) =>
+    trace.route.slice(1).reduce((length, point, i) => {
+      const previous = trace.route[i]
+      if (point.route_type !== "wire" || previous.route_type !== "wire")
+        throw new Error("Bus lanes must contain only wire segments")
+      return length + Math.hypot(point.x - previous.x, point.y - previous.y)
+    }, 0),
+  )
+  expect(Math.max(...lengths) - Math.min(...lengths)).toBeLessThanOrEqual(0.05)
   expect(
     traces
       .flatMap((t) => t.route)

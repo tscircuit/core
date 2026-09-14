@@ -54,7 +54,7 @@
     "@tscircuit/math-utils": "^0.0.36",
     "@tscircuit/miniflex": "^0.0.4",
     "@tscircuit/ngspice-spice-engine": "^0.0.20",
-    "@tscircuit/props": "^0.0.657",
+    "@tscircuit/props": "^0.0.660",
     "@tscircuit/schematic-match-adapt": "^0.0.18",
     "@tscircuit/schematic-trace-solver": "^0.0.196",
     "@tscircuit/solver-utils": "^0.0.16",
@@ -130,11 +130,11 @@
     "svg-path-commander": "^2.1.11",
     "transformation-matrix": "^2.16.1",
     "zod": "^3.25.67",
-    "@tscircuit/bus-lanes-solver": "github:tscircuit/bus-lanes-solver#5221165"
+    "@tscircuit/bus-lanes-solver": "github:tscircuit/bus-lanes-solver#7c4f43c8355a05f10ae5c257b1d2470f8dca9185"
   },
   "overrides": {
     "@tscircuit/circuit-json-util": "^0.0.113",
-    "@tscircuit/props": "^0.0.657",
+    "@tscircuit/props": "^0.0.660",
     "circuit-json": "^0.0.489"
   }
 }
