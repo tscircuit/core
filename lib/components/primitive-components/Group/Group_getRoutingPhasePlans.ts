@@ -284,6 +284,16 @@ export function Group_getRoutingPhasePlans(
   const autoroutersByPhaseIndex = getAutoroutersByPhaseIndex(group)
   const phasePropsByPhaseIndex = getAutoroutingPhasePropsByPhaseIndex(group)
   const groupFanoutProps = group._parsedProps as GroupFanoutProps
+  const routeRemaining = group.getInheritedProperty("routeRemaining") !== false
+  const defaultPhaseProps = phasePropsByPhaseIndex.get(null)
+  // Keep source connectivity for DRC; only omit the implicit routing targets.
+  // An explicit, untargeted phase still requests routing all connections.
+  const includeUnassignedConnections =
+    routeRemaining ||
+    (defaultPhaseProps !== undefined &&
+      !defaultPhaseProps.reroute &&
+      getConnectionSelectorsFromAutoroutingPhaseProps(defaultPhaseProps)
+        .length === 0)
   const hasDirectRoutingTargets = traces.length > 0 || nets.length > 0
   const hasReroutePhase = Array.from(phasePropsByPhaseIndex.values()).some(
     (phaseProps) => phaseProps.reroute,
@@ -306,6 +316,7 @@ export function Group_getRoutingPhasePlans(
   for (const net of nets) {
     if (breakoutByNet.has(net)) continue
     const routingPhaseIndex = getNetRoutingPhaseIndex(net)
+    if (routingPhaseIndex === null && !includeUnassignedConnections) continue
     getOrCreateRoutingPhasePlan(plansByPhaseIndex, routingPhaseIndex).nets.push(
       net,
     )
@@ -314,6 +325,7 @@ export function Group_getRoutingPhasePlans(
   for (const trace of traces) {
     if (breakoutByTrace.has(trace)) continue
     const routingPhaseIndex = getTraceRoutingPhaseIndex(trace, buses)
+    if (routingPhaseIndex === null && !includeUnassignedConnections) continue
     getOrCreateRoutingPhasePlan(
       plansByPhaseIndex,
       routingPhaseIndex,
@@ -529,8 +541,8 @@ export function Group_getRoutingPhasePlans(
     }
   }
 
-  const defaultPhaseProps = phasePropsByPhaseIndex.get(null)
   if (
+    routeRemaining &&
     hasDirectRoutingTargets &&
     phasePropsByPhaseIndex.size === 1 &&
     defaultPhaseProps?.reroute &&
