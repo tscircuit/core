@@ -32,6 +32,24 @@ test("bus_lanes phase matches selected bus lengths and emits fixed-layer traces"
         maxLengthSkew="0.05mm"
         pcbTraceWidth="0.15mm"
       />
+      <pcbnotetext
+        pcbX={0}
+        pcbY={-3.2}
+        fontSize={0.32}
+        text="bus_lanes selects A0.pin2 and A1.pin2; all copper is top."
+      />
+      <pcbnotetext
+        pcbX={0}
+        pcbY={-3.85}
+        fontSize={0.32}
+        text="A1-B1 span is 1mm shorter: the meander adds the missing length."
+      />
+      <pcbnotetext
+        pcbX={0}
+        pcbY={-4.5}
+        fontSize={0.32}
+        text="Both routes: 0.15mm width, <=0.05mm skew, zero vias."
+      />
     </board>,
   )
   await circuit.renderUntilSettled()

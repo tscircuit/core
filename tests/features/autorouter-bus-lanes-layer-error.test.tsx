@@ -19,6 +19,24 @@ test("bus_lanes does not fall back to a multilayer router", async () => {
         to=".BOTTOM > .pin1"
         routingPhaseIndex={0}
       />
+      <pcbnotetext
+        pcbX={0}
+        pcbY={-2.8}
+        fontSize={0.32}
+        text="DATA connects TOP.pin2 (top) to BOTTOM.pin1 (bottom)."
+      />
+      <pcbnotetext
+        pcbX={0}
+        pcbY={-3.45}
+        fontSize={0.32}
+        text="bus_lanes rejects endpoints without a common fixed layer."
+      />
+      <pcbnotetext
+        pcbX={0}
+        pcbY={-4.1}
+        fontSize={0.32}
+        text="Expected routing error: no traces, vias, or router fallback."
+      />
     </board>,
   )
   await circuit.renderUntilSettled()

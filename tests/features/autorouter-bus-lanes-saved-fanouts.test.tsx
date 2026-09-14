@@ -56,6 +56,24 @@ test("bus_lanes receives exact fixed fanout traces instead of rasterized obstacl
         to=".B > .pin1"
         routingPhaseIndex={0}
       />
+      <pcbnotetext
+        pcbX={0}
+        pcbY={-2.8}
+        fontSize={0.32}
+        text="Saved top fanouts: A at x=-4 to -2; B at x=4 to 2mm."
+      />
+      <pcbnotetext
+        pcbX={0}
+        pcbY={-3.45}
+        fontSize={0.32}
+        text="bus_lanes adds only the bridge between x=-2 and 2mm."
+      />
+      <pcbnotetext
+        pcbX={0}
+        pcbY={-4.1}
+        fontSize={0.32}
+        text="Two exact saved paths + one new path = continuous copper."
+      />
     </board>,
   )
   await circuit.renderUntilSettled()

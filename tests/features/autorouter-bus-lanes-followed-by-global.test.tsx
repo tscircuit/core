@@ -20,6 +20,24 @@ test("global routing preserves the completed selected bus phase", async () => {
       <resistor name="D" resistance="1k" footprint="0402" pcbX={4} pcbY={2} />
       <trace name="DDR_DATA" from=".A > .pin2" to=".B > .pin1" />
       <trace name="GPIO" from=".C > .pin2" to=".D > .pin1" />
+      <pcbnotetext
+        pcbX={0}
+        pcbY={-4}
+        fontSize={0.32}
+        text="Phase 0: bus_lanes routes only A.pin2 to B.pin1 (DDR)."
+      />
+      <pcbnotetext
+        pcbX={0}
+        pcbY={-4.65}
+        fontSize={0.32}
+        text="Phase 1: the global router routes C.pin2 to D.pin1 (GPIO)."
+      />
+      <pcbnotetext
+        pcbX={0}
+        pcbY={-5.3}
+        fontSize={0.32}
+        text="The completed A-B route stays fixed and unchanged."
+      />
     </board>,
   )
   await circuit.renderUntilSettled()
