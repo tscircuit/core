@@ -1,8 +1,22 @@
 import { expect, test } from "bun:test"
+import { convertCircuitJsonToPcbSvg } from "circuit-to-svg"
+import { stackSvgsHorizontally, stackSvgsVertically } from "stack-svgs"
 import { createBasicAutorouter } from "tests/fixtures/createBasicAutorouter"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("routeRemaining skips implicit routing while retaining explicit phases and unrouted DRC", async () => {
+  const panels: string[] = []
+  const descriptions: Record<string, string> = {
+    disabled: "false: only the selected numbered phase runs",
+    enabled: "true: the remaining connection is routed too",
+    default: "omitted: preserves automatic remaining routing",
+    no_phases: "false + no phases: both connections stay unrouted",
+    unnumbered: "false + explicit untargeted phase: routes both",
+    nested: "false: inherited by a nested subcircuit",
+    targeted: "false + unnumbered phase: only selected pins route",
+    trace_phase: "false: an explicit trace phase index still routes",
+    breakout: "false: the explicit breakout still routes",
+  }
   for (const scenario of [
     { name: "disabled", routeRemaining: false, phase: "numbered", routed: 1 },
     { name: "enabled", routeRemaining: true, phase: "numbered", routed: 2 },
@@ -120,8 +134,62 @@ test("routeRemaining skips implicit routing while retaining explicit phases and 
       expect(errors[0].message).toContain("R3.pin2")
       expect(errors[0].message).toContain("R4.pin1")
     }
-    await expect(circuit).toMatchPcbSnapshot(
-      `${import.meta.path}-${scenario.name}`,
+    const errorMessages = circuit
+      .getCircuitJson()
+      .filter(
+        (element) => element.type.endsWith("_error") && "message" in element,
+      )
+      .map((element) => (element as { message: string }).message)
+    const escapeXml = (text: string) =>
+      text
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+    const errorLines = errorMessages.flatMap(
+      (message) => message.match(/.{1,88}(?:\s|$)|.{1,88}/g) ?? [],
+    )
+    const diagnostics = `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="140" viewBox="0 0 800 140">
+      <rect width="800" height="140" fill="#172131" />
+      <text x="20" y="27" fill="${errorMessages.length ? "#ff9999" : "#86efac"}" font-family="Arial, sans-serif" font-size="19" font-weight="bold">${errorMessages.length ? `${errorMessages.length} DRC diagnostics` : "No DRC errors"}</text>
+      ${errorLines.map((line, index) => `<text x="20" y="${52 + index * 20}" fill="#ffb4b4" font-family="Arial, sans-serif" font-size="17">${escapeXml(line.trim())}</text>`).join("")}
+    </svg>`
+    const status = `${circuit.db.pcb_trace.list().length} routed connection(s) | ${errors.length} unconnected-port DRC error(s)`
+    const label = `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="100" viewBox="0 0 800 100">
+      <rect width="800" height="100" fill="#172131" />
+      <text x="20" y="30" fill="white" font-family="Arial, sans-serif" font-size="23" font-weight="bold">${descriptions[scenario.name]}</text>
+      <text x="20" y="59" fill="${errors.length ? "#ff9999" : "#86efac"}" font-family="Arial, sans-serif" font-size="19">${status}</text>
+      <text x="20" y="85" fill="#cbd5e1" font-family="Arial, sans-serif" font-size="16">Red copper: routed. White lines: connectivity. Actual DRC messages below.</text>
+    </svg>`
+    panels.push(
+      stackSvgsVertically(
+        [
+          label,
+          convertCircuitJsonToPcbSvg(circuit.getCircuitJson(), {
+            width: 800,
+            height: 480,
+            shouldDrawErrors: true,
+            showErrorsInTextOverlay: false,
+            shouldDrawRatsNest: true,
+            showPinNumbers: true,
+          }),
+          diagnostics,
+        ],
+        { gap: 0, normalizeSize: false },
+      ),
     )
   }
+  const rows = []
+  for (let index = 0; index < panels.length; index += 3) {
+    rows.push(
+      stackSvgsHorizontally(panels.slice(index, index + 3), {
+        gap: 16,
+        normalizeSize: false,
+      }),
+    )
+  }
+  await expect(
+    stackSvgsVertically(rows, { gap: 16, normalizeSize: false }),
+  ).toMatchSvgSnapshot(import.meta.path, "board-route-remaining-grid", {
+    diffThresholdPercent: 0,
+  })
 })
