@@ -64,6 +64,7 @@ test("emits resolved DDR bus and differential-pair constraints", (): void => {
       name: "DDR_BYTE_LANE_0",
       connectionNames: sourceTraceIds,
       maxLengthSkew: 0.25,
+      targetImpedance: 50,
       traceWidth: 0.12,
       allowedLayers: ["top", "inner1"],
     },
