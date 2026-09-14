@@ -1011,7 +1011,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     )
 
     const routingPhasePlans = this._getRoutingPhasePlans()
-    const hasPhasedAutorouting = Group_hasPhasedAutorouting(routingPhasePlans)
+    const hasPhasedAutorouting =
+      this.getInheritedProperty("routeRemaining") === false ||
+      Group_hasPhasedAutorouting(routingPhasePlans)
     const shouldEmitRoutingPhaseDebugObjects = routingPhasePlans.length > 1
     const routingPhaseDisplayIndexes = new Map(
       routingPhasePlans.map((plan, index) => [plan, index]),
