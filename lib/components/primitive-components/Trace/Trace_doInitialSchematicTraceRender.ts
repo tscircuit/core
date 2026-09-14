@@ -1,4 +1,4 @@
-import { MultilayerIjump } from "@tscircuit/infgrid-ijump-astar"
+import { MultilayerIjump } from "lib/utils/autorouting/vendor/infgrid-ijump-astar/index"
 import { type Point, doesLineIntersectLine } from "@tscircuit/math-utils"
 import { calculateElbow } from "calculate-elbow"
 import { type SchematicNetLabel, type SchematicTrace } from "circuit-json"
