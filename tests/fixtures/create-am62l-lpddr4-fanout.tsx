@@ -3580,8 +3580,9 @@ export const renderAm62lLpddr4Fanout = async ({
     new Set(globalPhaseInputTraces.map((trace) => trace.pcb_trace_id)).size,
   ).toBe(globalPhaseInputTraces.length)
   const signalSourceTraceIds = new Set(
-    signalConnections.map(({ traceName }) =>
-      circuit.db.source_trace.getWhere({ name: traceName })!.source_trace_id,
+    signalConnections.map(
+      ({ traceName }) =>
+        circuit.db.source_trace.getWhere({ name: traceName })!.source_trace_id,
     ),
   )
   const signalGlobalConnections = globalPhaseInput.connections.filter(
@@ -3615,9 +3616,8 @@ export const renderAm62lLpddr4Fanout = async ({
     expect(circuit.db.source_net.get(connection.name)).toBeDefined()
   }
   expect(
-    globalPhaseInput.buses?.some(
-      (bus) => bus.termination?.type === "plane",
-    ) ?? false,
+    globalPhaseInput.buses?.some((bus) => bus.termination?.type === "plane") ??
+      false,
   ).toBeFalse()
   if (!useProductionGlobalAutorouter) {
     expect(

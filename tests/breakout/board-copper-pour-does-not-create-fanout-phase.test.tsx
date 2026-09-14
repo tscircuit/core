@@ -9,12 +9,7 @@ test("board plane drops stay in the board phase when a fanout exists", async () 
   circuit.add(
     <board width="18mm" height="8mm" layers={4} autorouter="default">
       <copperpour layer="inner1" connectsTo="net.GND" />
-      <fanout
-        name="U1_FANOUT"
-        pcbX={-3}
-        padding="1mm"
-        autorouter="auto"
-      >
+      <fanout name="U1_FANOUT" pcbX={-3} padding="1mm" autorouter="auto">
         <chip
           name="U1"
           noSchematicRepresentation
