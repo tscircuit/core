@@ -1,3 +1,4 @@
+import { BusLanesSolver } from "@tscircuit/bus-lanes-solver"
 import {
   AssignableAutoroutingPipeline2,
   AssignableAutoroutingPipeline3,
@@ -22,6 +23,7 @@ import { ViaStitchSolver } from "@tscircuit/via-stitch-solver"
 import { PackSolver2 } from "calculate-packing"
 
 export const SOLVERS = {
+  BusLanesSolver,
   PackSolver2,
   LayoutPipelineSolver,
   AutoroutingPipelineSolver,

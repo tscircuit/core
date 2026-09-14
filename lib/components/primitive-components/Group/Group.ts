@@ -1432,10 +1432,15 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           }),
         }
       }
-      simpleRouteJson = withFixedFanoutTraces(
-        simpleRouteJson,
-        fixedFanoutTraceIds,
-      )
+      // bus_lanes preserves prior traces verbatim and checks their exact copper
+      // geometry. Rasterizing diagonal fanout traces can bury a legal exit in
+      // an enlarged rectangular obstacle before the lane search even starts.
+      if (phaseAutorouterConfig.preset !== "bus_lanes") {
+        simpleRouteJson = withFixedFanoutTraces(
+          simpleRouteJson,
+          fixedFanoutTraceIds,
+        )
+      }
       simpleRouteJson = Group_applyDrcTolerancesToSimpleRouteJson(
         simpleRouteJson,
         routingPhasePlan.drcTolerances,
