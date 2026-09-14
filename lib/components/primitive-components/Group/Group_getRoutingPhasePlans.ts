@@ -61,6 +61,7 @@ function addImplicitPlaneFanoutPlans(
   for (const plan of routingPhasePlans) {
     const preset = getAutorouterPreset(plan.autorouter)
     if (
+      plan.fanoutRegionPcbGroupId === undefined ||
       preset === "fanout" ||
       preset === "single_layer_fanout" ||
       plan.getPrecomputedRoutingResult

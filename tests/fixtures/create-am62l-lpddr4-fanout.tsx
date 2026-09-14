@@ -3579,14 +3579,27 @@ export const renderAm62lLpddr4Fanout = async ({
   expect(
     new Set(globalPhaseInputTraces.map((trace) => trace.pcb_trace_id)).size,
   ).toBe(globalPhaseInputTraces.length)
+  const signalSourceTraceIds = new Set(
+    signalConnections.map(({ traceName }) =>
+      circuit.db.source_trace.getWhere({ name: traceName })!.source_trace_id,
+    ),
+  )
   const signalGlobalConnections = globalPhaseInput.connections.filter(
-    (connection) => connection.pointsToConnect.length === 2,
+    (connection) =>
+      connection.source_trace_id !== undefined &&
+      signalSourceTraceIds.has(connection.source_trace_id),
   )
   const directPdnMembershipConnections = globalPhaseInput.connections.filter(
-    (connection) => connection.pointsToConnect.length === 1,
+    (connection) =>
+      !signalGlobalConnections.includes(connection) &&
+      circuit.db.source_trace
+        .get(connection.name)
+        ?.name?.endsWith("_PDN_MEMBERSHIP") === true,
   )
   const pdnNetConnections = globalPhaseInput.connections.filter(
-    (connection) => connection.pointsToConnect.length > 2,
+    (connection) =>
+      !signalGlobalConnections.includes(connection) &&
+      circuit.db.source_net.get(connection.name) !== undefined,
   )
   expect(signalGlobalConnections).toHaveLength(signalConnections.length)
   expect(
@@ -3601,6 +3614,11 @@ export const renderAm62lLpddr4Fanout = async ({
   for (const connection of pdnNetConnections) {
     expect(circuit.db.source_net.get(connection.name)).toBeDefined()
   }
+  expect(
+    globalPhaseInput.buses?.some(
+      (bus) => bus.termination?.type === "plane",
+    ) ?? false,
+  ).toBeFalse()
   if (!useProductionGlobalAutorouter) {
     expect(
       getStraightLineWindingConflicts({

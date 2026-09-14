@@ -347,8 +347,8 @@ test("Gameboy-like board routes through a dense MCU breakout without headers", a
 
   expect(autoroutingPhaseIoStack).toHaveLength(2)
   const [breakoutPhase, parentPhase] = autoroutingPhaseIoStack
-  expect(breakoutPhase?.startSimpleRouteJson?.connections).toHaveLength(23)
-  expect(breakoutPhase?.endSimpleRouteJson?.traces?.length).toBeGreaterThan(23)
+  expect(breakoutPhase?.startSimpleRouteJson?.connections).toHaveLength(20)
+  expect(breakoutPhase?.endSimpleRouteJson?.traces).toHaveLength(20)
   expect(parentPhase?.startSimpleRouteJson?.connections).toHaveLength(10)
   expect(parentPhase?.startSimpleRouteJson?.traces?.length).toBe(
     breakoutPhase?.endSimpleRouteJson?.traces?.length,
