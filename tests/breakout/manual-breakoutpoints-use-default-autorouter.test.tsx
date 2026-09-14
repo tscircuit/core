@@ -117,7 +117,7 @@ test("breakout owns nested nets and shares stable boundary point identities with
   expect(breakoutPointId).toBeDefined()
 
   const [breakoutPhase, parentPhase] = autoroutingPhaseIoStack
-  expect(breakoutPhase?.startSimpleRouteJson?.connections).toHaveLength(2)
+  expect(breakoutPhase?.startSimpleRouteJson?.connections).toHaveLength(1)
   expect(parentPhase?.startSimpleRouteJson?.connections).toHaveLength(1)
   expect(
     breakoutPhase?.startSimpleRouteJson?.connections.some((connection) =>

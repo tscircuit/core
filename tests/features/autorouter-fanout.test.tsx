@@ -133,9 +133,16 @@ test('autorouter="fanout" escapes an inner BGA bus before board routing', async 
     },
   ])
   expect(autoroutingPhaseIoStack[0]?.endSimpleRouteJson?.traces).toHaveLength(4)
+  expect(
+    autoroutingPhaseIoStack[0]?.endSimpleRouteJson?.boundsArePhysicalBoardEdges,
+  ).toBe(false)
   expect(autoroutingPhaseIoStack[1]?.startSimpleRouteJson?.traces).toHaveLength(
     4,
   )
+  expect(
+    autoroutingPhaseIoStack[1]?.startSimpleRouteJson
+      ?.boundsArePhysicalBoardEdges,
+  ).toBe(false)
   const allowedFanoutLayers = new Set(["inner2", "bottom"])
   expect(autoroutingPhaseIoStack[1]?.endSimpleRouteJson?.traces).toHaveLength(8)
 

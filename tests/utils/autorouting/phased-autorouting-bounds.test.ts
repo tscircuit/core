@@ -62,6 +62,7 @@ test("phased autorouting expands substituted bounds around phase connection poin
     minY: -1,
     maxY: 1.5,
   })
+  expect(phaseInput.boundsArePhysicalBoardEdges).toBe(false)
   expect(phaseInput.connections.map((connection) => connection.name)).toEqual([
     "source_trace_display_data",
   ])

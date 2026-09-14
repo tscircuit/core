@@ -264,7 +264,28 @@ export function getSourceTraceIdForRoutedTrace({
 
   const sourcePortIds = getSourcePortIdsFromRoutedTrace(db, trace)
   if (sourcePortIds.length === 0) {
-    return getSourceIdsFromConnectedPcbTraces(db, trace)[0]
+    const connectedSourceId = getSourceIdsFromConnectedPcbTraces(db, trace)[0]
+    if (connectedSourceId) return connectedSourceId
+
+    // Net connections can produce route fragments whose endpoints are both
+    // breakout points. Those fragments have no source ports from which to
+    // infer a SourceTrace, but their SRJ connection name still identifies the
+    // net. Attribute only this fallback case to the SourceNet; port-terminated
+    // fragments still need their exact SourceTrace attribution below.
+    const connectionName = (trace as RoutedTrace & { connection_name?: string })
+      .connection_name
+    if (connectionName) {
+      const sourceNet = db.source_net
+        .list()
+        .find(
+          ({ source_net_id }) =>
+            connectionName === source_net_id ||
+            connectionName.endsWith(`:${source_net_id}`),
+        )
+      if (sourceNet) return sourceNet.source_net_id
+    }
+
+    return undefined
   }
 
   const sourceTraces = db.source_trace.list()

@@ -92,6 +92,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   subcircuitComponent,
   routingPcbGroupId,
   fanoutPourNetMap,
+  planeTerminationSourceTraceIds,
   ignoreExistingTopLevelPcbRouteState = false,
 }: {
   db?: CircuitJsonUtilObjects
@@ -120,6 +121,8 @@ export const getSimpleRouteJsonFromCircuitJson = ({
    * are mapped here become internal plane-terminated buses in SRJ.
    */
   fanoutPourNetMap?: FanoutPourNetMap
+  /** Limits fanout plane termination to traces owned by fanout phases. */
+  planeTerminationSourceTraceIds?: ReadonlySet<string>
   /**
    * Excludes existing root-level PCB route state from a fresh routing problem.
    * Routed child-subcircuit traces and vias remain fixed routing geometry.
@@ -201,6 +204,14 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     (activeRoutingPcbGroupId
       ? breakoutPoint.pcb_group_id === activeRoutingPcbGroupId
       : !subcircuitIsBoard)
+  const transparentRoutingGroupIds = new Set(
+    breakoutPoints
+      .map((breakoutPoint) => breakoutPoint.pcb_group_id)
+      .filter(
+        (pcbGroupId): pcbGroupId is PcbGroupId =>
+          pcbGroupId !== undefined && pcbGroupId !== activeRoutingPcbGroupId,
+      ),
+  )
 
   // SRJ uses two separate fields for routing state:
   // - connections: copper the current autorouter still needs to create.
@@ -494,6 +505,21 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     sourceTraces,
     subcircuitId: subcircuit_id,
   })
+  if (planeTerminationSourceTraceIds) {
+    for (const sourceTraceId of planeTerminatedSourceTraceLayers.keys()) {
+      if (!planeTerminationSourceTraceIds.has(sourceTraceId)) {
+        planeTerminatedSourceTraceLayers.delete(sourceTraceId)
+      }
+    }
+  }
+  // A boundary exit makes the trace part of the parent routing problem. It
+  // must not also terminate at a local fanout plane, or the exit is omitted
+  // from the parent net and the physical pad is left disconnected.
+  for (const breakoutPoint of breakoutPoints) {
+    if (breakoutPoint.source_trace_id) {
+      planeTerminatedSourceTraceLayers.delete(breakoutPoint.source_trace_id)
+    }
+  }
   const directTraceConnections = sourceTraces
     .filter(
       (trace) =>
@@ -701,6 +727,18 @@ export const getSimpleRouteJsonFromCircuitJson = ({
 
       for (const p of pcb_ports) {
         const routePoint = getPcbPortRoutePoint(p)
+        // Child fanout copper is preloaded into the parent routing phase. A
+        // pad without its own breakout point can be an internal branch of that
+        // copper, so exposing it to the parent lets the router start a new
+        // board-level route from inside the fanout. Parent routing enters the
+        // child only through its boundary points.
+        if (
+          p.pcb_group_id &&
+          transparentRoutingGroupIds.has(p.pcb_group_id) &&
+          routePoint.pointId === p.pcb_port_id
+        ) {
+          continue
+        }
         if (addedPointIds.has(routePoint.pointId)) continue
         addedPointIds.add(routePoint.pointId)
         pointsToConnect.push(routePoint)
@@ -724,6 +762,31 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   }
 
   const connectionsFromBreakoutPoints: SimpleRouteConnection[] = []
+  const autoRoutingPcbGroupIds = new Set(
+    (subcircuitComponent?.selectAll("group") ?? []).flatMap((group) => {
+      const candidate = group as {
+        isRoutingDirective?: boolean
+        pcb_group_id?: PcbGroupId | null
+        _parsedProps?: { autorouter?: string | { preset?: string } }
+      }
+      const autorouter = candidate._parsedProps?.autorouter
+      const preset =
+        typeof autorouter === "object" ? autorouter.preset : autorouter
+      return candidate.isRoutingDirective &&
+        candidate.pcb_group_id &&
+        preset === "auto"
+        ? [candidate.pcb_group_id]
+        : []
+    }),
+  )
+  const breakoutNetPointsByRoutingGroup = new Map<
+    string,
+    {
+      sourceNetId: string
+      routingPcbGroupId: PcbGroupId
+      points: SingleLayerConnectionPoint[]
+    }
+  >()
 
   for (const bp of breakoutPoints) {
     const bpSourcePortId = (bp as any).source_port_id as string | undefined
@@ -754,6 +817,23 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       const isInActiveRoutingGroup = breakoutPointIsInActiveRoutingGroup(bp)
       const isInTransparentChildRoutingGroup =
         !isInActiveRoutingGroup && bp.subcircuit_id === subcircuit_id
+
+      if (
+        isInTransparentChildRoutingGroup &&
+        bp.source_net_id &&
+        autoRoutingPcbGroupIds.has(bp.pcb_group_id)
+      ) {
+        const key = `${bp.pcb_group_id}:${bp.source_net_id}`
+        const localNet = breakoutNetPointsByRoutingGroup.get(key) ?? {
+          sourceNetId: bp.source_net_id,
+          routingPcbGroupId: bp.pcb_group_id,
+          points: [],
+        }
+        if (!localNet.points.some((point) => point.pointId === pt.pointId)) {
+          localNet.points.push(pt)
+        }
+        breakoutNetPointsByRoutingGroup.set(key, localNet)
+      }
 
       // A subcircuit routes its own [port → breakout point] connection.
       // A transparent breakout adds the same connection to its board-level
@@ -795,6 +875,22 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         })
       }
     }
+  }
+
+  // Multiple exits for one net in the same transparent fanout must become one
+  // local copper island before parent routing begins. Otherwise the parent is
+  // asked to connect exits around the outside of their own fanout region.
+  for (const {
+    sourceNetId,
+    routingPcbGroupId,
+    points,
+  } of breakoutNetPointsByRoutingGroup.values()) {
+    if (points.length < 2) continue
+    connectionsFromBreakoutPoints.push({
+      name: `breakout-net:${routingPcbGroupId}:${sourceNetId}`,
+      routingPcbGroupId,
+      pointsToConnect: points,
+    })
   }
 
   // Plane-terminated one-point traces are emitted by directTraceConnections.
