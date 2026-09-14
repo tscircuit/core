@@ -1302,6 +1302,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
     const fixedFanoutTraceIds = new Set<SimplifiedPcbTrace["pcb_trace_id"]>()
     let previousStageOutputSimpleRouteJson: SimpleRouteJson | undefined
+    const skippedRemainingPhases = new Set<RoutingPhasePlan>()
 
     for (const [
       routingStageIndex,
@@ -1314,6 +1315,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         phaseStageCount,
       },
     ] of routingStages.entries()) {
+      if (skippedRemainingPhases.has(routingPhasePlan)) continue
       if (!usesPreviousStageOutput) {
         previousStageOutputSimpleRouteJson = undefined
       }
@@ -1443,6 +1445,28 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       const getPrecomputedRoutingResult = usesPreviousStageOutput
         ? undefined
         : routingPhasePlan.getPrecomputedRoutingResult
+
+      const preflightRoutingCheckPolicy = this.getInheritedProperty(
+        "preflightRoutingCheckPolicy",
+      )
+      if (
+        routingPhasePlan.isImplicitRemainingPhase &&
+        phaseStageIndex === 0 &&
+        this.getInheritedProperty("routeRemaining") === undefined &&
+        (preflightRoutingCheckPolicy === "basic" ||
+          preflightRoutingCheckPolicy === "conservative") &&
+        simpleRouteJson.connections.length > 50
+      ) {
+        skippedRemainingPhases.add(routingPhasePlan)
+        db.source_property_ignored_warning.insert({
+          source_component_id: this.source_component_id ?? "",
+          property_name: "routeRemaining",
+          subcircuit_id: this.subcircuit_id ?? undefined,
+          error_type: "source_property_ignored_warning",
+          message: `Remaining routes left unrouted (over 50 traces remaining and routingPreflightCheckPolicy="${preflightRoutingCheckPolicy}"). Set <board routeRemaining={true} /> or create <autoroutingphase /> elements for specific connections in the order you'd like to route them. The autorouter may hang unless you create autorouting phases incrementally.`,
+        })
+        continue
+      }
 
       const simplificationHasNoTraceInput = Boolean(
         isTraceSimplificationPhase && simpleRouteJson.traces?.length === 0,
