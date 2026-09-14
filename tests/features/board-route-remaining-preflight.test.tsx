@@ -13,19 +13,25 @@ test("remaining routing preflight limits implicit phases to 50 connections", asy
     untargeted?: boolean
     nested?: boolean
     routed: number
-    warning?: boolean
+    routingError?: boolean
   }[] = [
-    { policy: "basic", count: 51, routed: 0, warning: true },
-    { policy: "conservative", count: 51, routed: 0, warning: true },
+    { policy: "basic", count: 51, routed: 0, routingError: true },
+    { policy: "conservative", count: 51, routed: 0, routingError: true },
     { policy: "basic", count: 50, routed: 50 },
     { policy: "none", count: 51, routed: 51 },
     { count: 51, routed: 51 },
     { policy: "basic", count: 51, routeRemaining: true, routed: 51 },
     { policy: "basic", count: 51, routeRemaining: false, routed: 0 },
-    { policy: "basic", count: 52, explicitCount: 1, routed: 1, warning: true },
+    {
+      policy: "basic",
+      count: 52,
+      explicitCount: 1,
+      routed: 1,
+      routingError: true,
+    },
     { policy: "basic", count: 52, explicitCount: 2, routed: 52 },
     { policy: "basic", count: 51, untargeted: true, routed: 51 },
-    { policy: "basic", count: 51, nested: true, routed: 0, warning: true },
+    { policy: "basic", count: 51, nested: true, routed: 0, routingError: true },
   ]
   for (const scenario of scenarios) {
     const { circuit } = getTestFixture()
@@ -110,12 +116,10 @@ test("remaining routing preflight limits implicit phases to 50 connections", asy
     expect(circuit.db.pcb_port_not_connected_error.list()).toHaveLength(
       scenario.count - scenario.routed,
     )
-    const warnings = circuit.db.source_property_ignored_warning
-      .list()
-      .filter((warning) => warning.property_name === "routeRemaining")
-    expect(warnings).toHaveLength(scenario.warning ? 1 : 0)
-    if (scenario.warning) {
-      expect(warnings[0].message).toBe(
+    const routingErrors = circuit.db.pcb_autorouting_error.list()
+    expect(routingErrors).toHaveLength(scenario.routingError ? 1 : 0)
+    if (scenario.routingError) {
+      expect(routingErrors[0].message).toBe(
         `Remaining routes left unrouted (over 50 traces remaining and routingPreflightCheckPolicy="${scenario.policy}"). Set <board routeRemaining={true} /> or create <autoroutingphase /> elements for specific connections in the order you'd like to route them. The autorouter may hang unless you create autorouting phases incrementally.`,
       )
     }
