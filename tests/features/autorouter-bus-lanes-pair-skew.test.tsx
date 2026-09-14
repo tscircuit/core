@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
-test("bus_lanes phase matches selected bus lengths and emits fixed-layer traces", async () => {
+test("bus_lanes honors differential pair maxLengthSkew through SRJ lengthTolerance", async () => {
   const { circuit } = getTestFixture()
   const inputs: any[] = []
   circuit.on("autorouting:start", (event: any) =>
@@ -26,11 +26,11 @@ test("bus_lanes phase matches selected bus lengths and emits fixed-layer traces"
       <resistor name="B1" resistance="1k" footprint="0402" pcbX={3} pcbY={2} />
       <trace name="DATA0" from=".A0 > .pin2" to=".B0 > .pin1" />
       <trace name="DATA1" from=".A1 > .pin2" to=".B1 > .pin1" />
-      <bus
-        name="DATA"
-        connections={["DATA0", "DATA1"]}
+      <differentialpair
+        name="DATA_PAIR"
+        positiveConnection="DATA0"
+        negativeConnection="DATA1"
         maxLengthSkew="0.5mm"
-        pcbTraceWidth="0.15mm"
       />
       <pcbnotetext
         pcbX={0}
@@ -48,7 +48,7 @@ test("bus_lanes phase matches selected bus lengths and emits fixed-layer traces"
         pcbX={0}
         pcbY={-4.5}
         fontSize={0.32}
-        text="Both routes: 0.15mm width, 0.5mm skew, zero vias."
+        text="Pair maxLengthSkew maps to SRJ lengthTolerance: 0.5mm, zero vias."
       />
     </board>,
   )
@@ -57,8 +57,8 @@ test("bus_lanes phase matches selected bus lengths and emits fixed-layer traces"
     traces = json.filter((e) => e.type === "pcb_trace")
   expect(
     inputs.some((input) =>
-      input.buses?.some(
-        (bus: any) => bus.maxLengthSkew === 0.5 && bus.traceWidth === 0.15,
+      input.differentialPairs?.some(
+        (pair: any) => pair.lengthTolerance === 0.5,
       ),
     ),
   ).toBe(true)
@@ -75,12 +75,7 @@ test("bus_lanes phase matches selected bus lengths and emits fixed-layer traces"
   expect(
     traces
       .flatMap((t) => t.route)
-      .every(
-        (p) =>
-          p.route_type === "wire" &&
-          p.layer === "top" &&
-          Math.abs(p.width - 0.15) < 1e-7,
-      ),
+      .every((p) => p.route_type === "wire" && p.layer === "top"),
   ).toBe(true)
   expect(json.filter((e) => e.type === "pcb_via")).toHaveLength(0)
   expect(json.filter((e) => e.type === "pcb_autorouting_error")).toHaveLength(0)
