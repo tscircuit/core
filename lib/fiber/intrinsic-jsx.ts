@@ -39,7 +39,7 @@ export interface TscircuitElements {
   schematiccell: Props.SchematicCellProps
   smtpad: Props.SmtPadProps
   platedhole: Props.PlatedHoleProps
-  keepout: Props.PcbKeepoutProps
+  keepout: Props.KeepoutProps
   hole: Props.HoleProps
   port: Props.PortProps
   group: Props.GroupProps
