@@ -26,6 +26,8 @@ export interface PrecomputedRoutingResult {
 }
 
 export interface RoutingPhasePlan {
+  /** Automatically routes connections not assigned to an explicit phase. */
+  isImplicitRemainingPhase?: boolean
   getPrecomputedRoutingResult?: (
     input: SimpleRouteJson,
   ) => PrecomputedRoutingResult

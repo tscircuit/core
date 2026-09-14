@@ -374,6 +374,8 @@ export function Group_getRoutingPhasePlans(
   for (const plan of plans) {
     plan.autorouter = autoroutersByPhaseIndex.get(plan.routingPhaseIndex)
     const phaseProps = phasePropsByPhaseIndex.get(plan.routingPhaseIndex)
+    plan.isImplicitRemainingPhase =
+      plan.routingPhaseIndex === null && phaseProps === undefined
     plan.phaseName = phaseProps?.name
     plan.reroute = phaseProps?.reroute
     plan.region = phaseProps?.region
@@ -554,6 +556,7 @@ export function Group_getRoutingPhasePlans(
       ...breakoutPlans,
       {
         routingPhaseIndex: null,
+        isImplicitRemainingPhase: true,
         nets: [...reroutePlan.nets],
         traces: [...reroutePlan.traces],
       },
