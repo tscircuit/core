@@ -87,6 +87,55 @@ test("each source_port is consumed by at most one canonical label", () => {
   expect((getSourcePortByPin(rewritten, 2) as any)?.port_hints).toContain("DM2")
 })
 
+test("shell pads sharing a pin number get distinct SHELL labels", () => {
+  // Two plated holes claim pin 13 and two claim pin 14. Each hole must end up
+  // with its own SHELL label on its own pin so no label lands on two pads.
+  const makePlatedHole = (
+    id: string,
+    pinHint: string,
+    x: number,
+  ): AnyCircuitElement =>
+    ({
+      type: "pcb_plated_hole",
+      shape: "circle",
+      pcb_plated_hole_id: id,
+      x,
+      y: 0,
+      hole_diameter: 0.7,
+      outer_diameter: 1.1,
+      layers: ["top", "bottom"],
+      port_hints: [pinHint],
+    }) as any
+
+  const circuitJson: AnyCircuitElement[] = [
+    makeSourcePort(13, ["EH1"]),
+    makeSourcePort(14, ["EH2"]),
+    makePlatedHole("ph_a", "pin13", -4),
+    makePlatedHole("ph_b", "pin13", -4),
+    makePlatedHole("ph_c", "pin14", 4),
+    makePlatedHole("ph_d", "pin14", 4),
+  ]
+
+  const rewritten = convertCircuitJsonToUsbCStandardCircuitJson(circuitJson)
+
+  const holeHints = rewritten
+    .filter((elm: any) => elm.type === "pcb_plated_hole")
+    .map((elm: any) => elm.port_hints as string[])
+
+  const shellLabels = holeHints.map(
+    (hints) => hints.find((h) => /^SHELL\d+$/.test(h))!,
+  )
+  expect(shellLabels).toHaveLength(4)
+  expect(new Set(shellLabels).size).toBe(4)
+
+  // Each hole keeps exactly one pin-number hint, and all four are distinct so
+  // every hole becomes its own port.
+  const pinHints = holeHints.map(
+    (hints) => hints.find((h) => /^pin\d+$/.test(h))!,
+  )
+  expect(new Set(pinHints).size).toBe(4)
+})
+
 test("canonical labels with no matching source_port are omitted", () => {
   const circuitJson: AnyCircuitElement[] = [
     makeSourcePort(1, ["CC1"]),
