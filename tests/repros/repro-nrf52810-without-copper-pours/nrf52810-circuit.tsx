@@ -79,6 +79,8 @@ export default () => (
     doubleSidedAssembly
     isViaInPadAllowed={false}
     automaticPoursEnabled
+    enableViaStitching
+    autorouterVersion="beta_pipeline9"
     schLayout={{ layoutMode: "relative" }}
     autorouter={{
       preset: "auto_local",
