@@ -1,11 +1,14 @@
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import { Net } from "lib/components/primitive-components/Net"
+import { normalizeNetSelector } from "lib/utils/normalize-net-selector"
 
 export const createNetsFromProps = (
   component: PrimitiveComponent,
   props: (string | undefined | null)[],
 ) => {
-  for (const prop of props) {
+  for (const rawProp of props) {
+    const prop =
+      typeof rawProp === "string" ? normalizeNetSelector(rawProp) : rawProp
     if (typeof prop === "string" && prop.startsWith("net.")) {
       if (/net\.[^\s>]*\./.test(prop)) {
         throw new Error(

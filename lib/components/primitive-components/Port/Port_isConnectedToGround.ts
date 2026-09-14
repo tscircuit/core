@@ -33,7 +33,9 @@ export function Port_isConnectedToGround(port: Port): boolean {
       if (portIsGround(connectedPort)) return true
     }
 
-    for (const connectedNet of connectedTrace._findConnectedNets().nets) {
+    for (const connectedNet of connectedTrace._findConnectedNets({
+      allowUnresolvedNets: true,
+    }).nets) {
       if (connectedNet && netIsGround(connectedNet)) return true
     }
   }
