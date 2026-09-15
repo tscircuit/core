@@ -49,20 +49,20 @@ test("pcb plated hole with polygon pad inherits component rotation (#3647)", asy
 
   const polygonPadHole = platedHoles.find(
     (h: any) => h.shape === "hole_with_polygon_pad",
-  )
+  ) as any
   const rectPadHole = platedHoles.find(
     (h: any) => h.shape === "circular_hole_with_rect_pad",
-  )
+  ) as any
 
   expect(polygonPadHole).toBeDefined()
   expect(rectPadHole).toBeDefined()
 
   // Rect pad receives 90 degree rotation
-  expect(rectPadHole.rect_ccw_rotation).toBe(90)
+  expect(rectPadHole?.rect_ccw_rotation).toBe(90)
 
   // Polygon pad must also emit ccw_rotation: 90
-  expect(polygonPadHole.ccw_rotation).toBe(90)
-  expect(polygonPadHole.pad_outline).toEqual([
+  expect(polygonPadHole?.ccw_rotation).toBe(90)
+  expect(polygonPadHole?.pad_outline).toEqual([
     { x: -2, y: -0.5 },
     { x: 2, y: -0.5 },
     { x: 2, y: 0.5 },
@@ -70,13 +70,14 @@ test("pcb plated hole with polygon pad inherits component rotation (#3647)", asy
   ])
 })
 
-test("pcb plated hole with polygon pad direct pcbRotation", async () => {
+test("pcb plated hole with polygon pad 45 degree rotation", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
     <board width={20} height={20}>
       <chip
         name="U2"
+        pcbRotation={45}
         layer="top"
         footprint={
           <footprint>
@@ -89,7 +90,6 @@ test("pcb plated hole with polygon pad direct pcbRotation", async () => {
               holeDiameter={1}
               holeOffsetX={0}
               holeOffsetY={0}
-              pcbRotation={45}
               padOutline={[
                 { x: -1, y: -1 },
                 { x: 1, y: -1 },
@@ -105,12 +105,12 @@ test("pcb plated hole with polygon pad direct pcbRotation", async () => {
 
   await circuit.render()
 
-  const circuitJson = circuit.getCircuitJson()
+  const circuitJson = circuit.getCircuitJson() as any[]
   const polygonPadHole = circuitJson.find(
     (item: any) =>
       item.type === "pcb_plated_hole" && item.shape === "hole_with_polygon_pad",
-  )
+  ) as any
 
   expect(polygonPadHole).toBeDefined()
-  expect(polygonPadHole.ccw_rotation).toBe(45)
+  expect(polygonPadHole?.ccw_rotation).toBe(45)
 })
