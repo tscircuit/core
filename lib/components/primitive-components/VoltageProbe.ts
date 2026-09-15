@@ -73,7 +73,10 @@ export class VoltageProbe extends PrimitiveComponent<typeof voltageProbeProps> {
 
     const connectedId = port?.source_port_id ?? net?.source_net_id
     if (!connectedId) {
-      this.renderError("Could not identify connected source for VoltageProbe")
+      // Skip only this probe instead of aborting the whole render.
+      console.warn(
+        `${this.getString()} could not identify a connected source for target "${targetSelector}"; skipping its simulation output.`,
+      )
       return
     }
 
