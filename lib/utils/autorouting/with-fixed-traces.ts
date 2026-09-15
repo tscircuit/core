@@ -8,11 +8,11 @@ import { getViaBoardLayers } from "../getViaSpanLayers"
 type PcbTraceId = SimplifiedPcbTrace["pcb_trace_id"]
 
 /**
- * Represent saved copper as obstacles so subsequent solvers cannot simplify
+ * Represent manual and saved copper as obstacles so subsequent solvers cannot simplify
  * it. All positions are board-world points in mm (+X right, +Y up, +Z above,
  * right-handed). Rectangles enclose each segment, including its end caps.
  */
-export function withFixedFanoutTraces(
+export function withFixedTraces(
   input: SimpleRouteJson,
   fixedTraceIds: ReadonlySet<PcbTraceId>,
 ): SimpleRouteJson {
