@@ -21,11 +21,7 @@
     "source_port_id": "source_port_0",
     "name": "pin1",
     "pin_number": 1,
-    "port_hints": [
-      "pin1",
-      "pos",
-      "1"
-    ],
+    "port_hints": ["pin1", "pos", "1"],
     "source_component_id": "source_component_0",
     "subcircuit_id": "subcircuit_source_group_0"
   },
@@ -34,11 +30,7 @@
     "source_port_id": "source_port_1",
     "name": "pin2",
     "pin_number": 2,
-    "port_hints": [
-      "pin2",
-      "neg",
-      "2"
-    ],
+    "port_hints": ["pin2", "neg", "2"],
     "source_component_id": "source_component_0",
     "subcircuit_id": "subcircuit_source_group_0"
   },
@@ -49,9 +41,7 @@
     "name": "SUPPLIER_REFERENCE",
     "manufacturer_part_number": "CL05C220JB5NNNC",
     "supplier_part_numbers": {
-      "jlcpcb": [
-        "C70464"
-      ]
+      "jlcpcb": ["C70464"]
     },
     "capacitance": 2.2e-11,
     "display_capacitance": "22pF",
@@ -70,9 +60,7 @@
     "source_component_id": "source_component_0",
     "refdes": "SUPPLIER_REFERENCE",
     "source_component_ftype": "simple_capacitor",
-    "expected_prefixes": [
-      "C"
-    ],
+    "expected_prefixes": ["C"],
     "actual_prefix": "SUPPLIER",
     "source_refdes_convention_warning_id": "source_refdes_convention_warning_0"
   },
@@ -205,9 +193,7 @@
     "shape": "rect",
     "width": 0.499999,
     "height": 0.540004,
-    "port_hints": [
-      "pin2"
-    ],
+    "port_hints": ["pin2"],
     "is_covered_with_solder_mask": false,
     "x": 0.420116,
     "y": 0,
@@ -235,9 +221,7 @@
     "shape": "rect",
     "width": 0.499999,
     "height": 0.540004,
-    "port_hints": [
-      "pin1"
-    ],
+    "port_hints": ["pin1"],
     "is_covered_with_solder_mask": false,
     "x": -0.420116,
     "y": 0,
@@ -501,9 +485,7 @@
     "type": "pcb_port",
     "pcb_port_id": "pcb_port_0",
     "pcb_component_id": "pcb_component_0",
-    "layers": [
-      "top"
-    ],
+    "layers": ["top"],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -0.420116,
     "y": 0,
@@ -513,9 +495,7 @@
     "type": "pcb_port",
     "pcb_port_id": "pcb_port_1",
     "pcb_component_id": "pcb_component_0",
-    "layers": [
-      "top"
-    ],
+    "layers": ["top"],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 0.420116,
     "y": 0,

@@ -21,13 +21,7 @@
     "source_port_id": "source_port_0",
     "name": "pin1",
     "pin_number": 1,
-    "port_hints": [
-      "pin1",
-      "anode",
-      "pos",
-      "left",
-      "1"
-    ],
+    "port_hints": ["pin1", "anode", "pos", "left", "1"],
     "source_component_id": "source_component_0",
     "subcircuit_id": "subcircuit_source_group_0"
   },
@@ -36,13 +30,7 @@
     "source_port_id": "source_port_1",
     "name": "pin2",
     "pin_number": 2,
-    "port_hints": [
-      "pin2",
-      "cathode",
-      "neg",
-      "right",
-      "2"
-    ],
+    "port_hints": ["pin2", "cathode", "neg", "right", "2"],
     "source_component_id": "source_component_0",
     "subcircuit_id": "subcircuit_source_group_0"
   },
@@ -53,9 +41,7 @@
     "name": "SUPPLIER_REFERENCE",
     "manufacturer_part_number": "RT0603BRD0731K6L",
     "supplier_part_numbers": {
-      "jlcpcb": [
-        "C705766"
-      ]
+      "jlcpcb": ["C705766"]
     },
     "resistance": 31600,
     "display_resistance": "31.6kΩ",
@@ -74,9 +60,7 @@
     "source_component_id": "source_component_0",
     "refdes": "SUPPLIER_REFERENCE",
     "source_component_ftype": "simple_resistor",
-    "expected_prefixes": [
-      "R"
-    ],
+    "expected_prefixes": ["R"],
     "actual_prefix": "SUPPLIER",
     "source_refdes_convention_warning_id": "source_refdes_convention_warning_0"
   },
@@ -209,9 +193,7 @@
     "shape": "rect",
     "width": 0.8064754,
     "height": 0.8640064,
-    "port_hints": [
-      "pin2"
-    ],
+    "port_hints": ["pin2"],
     "is_covered_with_solder_mask": false,
     "x": 0.753364,
     "y": 0,
@@ -239,9 +221,7 @@
     "shape": "rect",
     "width": 0.8064754,
     "height": 0.8640064,
-    "port_hints": [
-      "pin1"
-    ],
+    "port_hints": ["pin1"],
     "is_covered_with_solder_mask": false,
     "x": -0.753364,
     "y": 0,
@@ -361,9 +341,7 @@
     "type": "pcb_port",
     "pcb_port_id": "pcb_port_0",
     "pcb_component_id": "pcb_component_0",
-    "layers": [
-      "top"
-    ],
+    "layers": ["top"],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -0.753364,
     "y": 0,
@@ -373,9 +351,7 @@
     "type": "pcb_port",
     "pcb_port_id": "pcb_port_1",
     "pcb_component_id": "pcb_component_0",
-    "layers": [
-      "top"
-    ],
+    "layers": ["top"],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 0.753364,
     "y": 0,

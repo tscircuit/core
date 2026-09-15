@@ -21,12 +21,7 @@
     "source_port_id": "source_port_0",
     "name": "RESET_N",
     "pin_number": 1,
-    "port_hints": [
-      "RESET_N",
-      "RESET",
-      "pin1",
-      "1"
-    ],
+    "port_hints": ["RESET_N", "RESET", "pin1", "1"],
     "source_component_id": "source_component_0",
     "subcircuit_id": "subcircuit_source_group_0",
     "needs_external_pullup": true,
@@ -38,11 +33,7 @@
     "source_port_id": "source_port_1",
     "name": "GND",
     "pin_number": 2,
-    "port_hints": [
-      "GND",
-      "pin2",
-      "2"
-    ],
+    "port_hints": ["GND", "pin2", "2"],
     "source_component_id": "source_component_0",
     "subcircuit_id": "subcircuit_source_group_0",
     "requires_ground": true
@@ -52,12 +43,7 @@
     "source_port_id": "source_port_2",
     "name": "MR_N",
     "pin_number": 3,
-    "port_hints": [
-      "MR_N",
-      "MR",
-      "pin3",
-      "3"
-    ],
+    "port_hints": ["MR_N", "MR", "pin3", "3"],
     "source_component_id": "source_component_0",
     "subcircuit_id": "subcircuit_source_group_0"
   },
@@ -66,11 +52,7 @@
     "source_port_id": "source_port_3",
     "name": "CT",
     "pin_number": 4,
-    "port_hints": [
-      "CT",
-      "pin4",
-      "4"
-    ],
+    "port_hints": ["CT", "pin4", "4"],
     "source_component_id": "source_component_0",
     "subcircuit_id": "subcircuit_source_group_0"
   },
@@ -79,11 +61,7 @@
     "source_port_id": "source_port_4",
     "name": "SENSE",
     "pin_number": 5,
-    "port_hints": [
-      "SENSE",
-      "pin5",
-      "5"
-    ],
+    "port_hints": ["SENSE", "pin5", "5"],
     "source_component_id": "source_component_0",
     "subcircuit_id": "subcircuit_source_group_0"
   },
@@ -92,11 +70,7 @@
     "source_port_id": "source_port_5",
     "name": "VDD",
     "pin_number": 6,
-    "port_hints": [
-      "VDD",
-      "pin6",
-      "6"
-    ],
+    "port_hints": ["VDD", "pin6", "6"],
     "source_component_id": "source_component_0",
     "subcircuit_id": "subcircuit_source_group_0",
     "requires_power": true
@@ -108,9 +82,7 @@
     "name": "SUPPLIER_REFERENCE",
     "manufacturer_part_number": "TPS3808G01DBVR",
     "supplier_part_numbers": {
-      "jlcpcb": [
-        "C19653"
-      ]
+      "jlcpcb": ["C19653"]
     },
     "source_group_id": "source_group_0"
   },
@@ -126,10 +98,7 @@
     "source_component_id": "source_component_0",
     "refdes": "SUPPLIER_REFERENCE",
     "source_component_ftype": "simple_chip",
-    "expected_prefixes": [
-      "U",
-      "IC"
-    ],
+    "expected_prefixes": ["U", "IC"],
     "actual_prefix": "SUPPLIER",
     "source_refdes_convention_warning_id": "source_refdes_convention_warning_0"
   },
@@ -370,9 +339,7 @@
     "shape": "rect",
     "width": 1.0999978,
     "height": 0.5999988,
-    "port_hints": [
-      "pin3"
-    ],
+    "port_hints": ["pin3"],
     "is_covered_with_solder_mask": false,
     "x": 1.35001,
     "y": 0.94996,
@@ -400,9 +367,7 @@
     "shape": "rect",
     "width": 1.0999978,
     "height": 0.5999988,
-    "port_hints": [
-      "pin2"
-    ],
+    "port_hints": ["pin2"],
     "is_covered_with_solder_mask": false,
     "x": 1.35001,
     "y": 0,
@@ -430,9 +395,7 @@
     "shape": "rect",
     "width": 1.0999978,
     "height": 0.5999988,
-    "port_hints": [
-      "pin1"
-    ],
+    "port_hints": ["pin1"],
     "is_covered_with_solder_mask": false,
     "x": 1.35001,
     "y": -0.94996,
@@ -460,9 +423,7 @@
     "shape": "rect",
     "width": 1.0999978,
     "height": 0.5999988,
-    "port_hints": [
-      "pin6"
-    ],
+    "port_hints": ["pin6"],
     "is_covered_with_solder_mask": false,
     "x": -1.35001,
     "y": -0.94996,
@@ -490,9 +451,7 @@
     "shape": "rect",
     "width": 1.0999978,
     "height": 0.5999988,
-    "port_hints": [
-      "pin5"
-    ],
+    "port_hints": ["pin5"],
     "is_covered_with_solder_mask": false,
     "x": -1.35001,
     "y": 0,
@@ -520,9 +479,7 @@
     "shape": "rect",
     "width": 1.0999978,
     "height": 0.5999988,
-    "port_hints": [
-      "pin4"
-    ],
+    "port_hints": ["pin4"],
     "is_covered_with_solder_mask": false,
     "x": -1.35001,
     "y": 0.94996,
@@ -639,9 +596,7 @@
     "type": "pcb_port",
     "pcb_port_id": "pcb_port_0",
     "pcb_component_id": "pcb_component_0",
-    "layers": [
-      "top"
-    ],
+    "layers": ["top"],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 1.35001,
     "y": -0.94996,
@@ -651,9 +606,7 @@
     "type": "pcb_port",
     "pcb_port_id": "pcb_port_1",
     "pcb_component_id": "pcb_component_0",
-    "layers": [
-      "top"
-    ],
+    "layers": ["top"],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 1.35001,
     "y": 0,
@@ -663,9 +616,7 @@
     "type": "pcb_port",
     "pcb_port_id": "pcb_port_2",
     "pcb_component_id": "pcb_component_0",
-    "layers": [
-      "top"
-    ],
+    "layers": ["top"],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 1.35001,
     "y": 0.94996,
@@ -675,9 +626,7 @@
     "type": "pcb_port",
     "pcb_port_id": "pcb_port_3",
     "pcb_component_id": "pcb_component_0",
-    "layers": [
-      "top"
-    ],
+    "layers": ["top"],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -1.35001,
     "y": 0.94996,
@@ -687,9 +636,7 @@
     "type": "pcb_port",
     "pcb_port_id": "pcb_port_4",
     "pcb_component_id": "pcb_component_0",
-    "layers": [
-      "top"
-    ],
+    "layers": ["top"],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -1.35001,
     "y": 0,
@@ -699,9 +646,7 @@
     "type": "pcb_port",
     "pcb_port_id": "pcb_port_5",
     "pcb_component_id": "pcb_component_0",
-    "layers": [
-      "top"
-    ],
+    "layers": ["top"],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -1.35001,
     "y": -0.94996,

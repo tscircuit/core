@@ -11,13 +11,7 @@
     "source_port_id": "source_port_0",
     "name": "pin1",
     "pin_number": 1,
-    "port_hints": [
-      "pin1",
-      "anode",
-      "pos",
-      "left",
-      "1"
-    ],
+    "port_hints": ["pin1", "anode", "pos", "left", "1"],
     "source_component_id": "source_component_0",
     "subcircuit_id": "subcircuit_source_group_0"
   },
@@ -26,13 +20,7 @@
     "source_port_id": "source_port_1",
     "name": "pin2",
     "pin_number": 2,
-    "port_hints": [
-      "pin2",
-      "cathode",
-      "neg",
-      "right",
-      "2"
-    ],
+    "port_hints": ["pin2", "cathode", "neg", "right", "2"],
     "source_component_id": "source_component_0",
     "subcircuit_id": "subcircuit_source_group_0"
   },
@@ -44,9 +32,7 @@
     "inductance": "1.5uH",
     "display_inductance": "1.5µH",
     "supplier_part_numbers": {
-      "jlcpcb": [
-        "C3033018"
-      ]
+      "jlcpcb": ["C3033018"]
     },
     "manufacturer_part_number": "XFL4020-152MEC",
     "are_pins_interchangeable": true,
@@ -59,10 +45,7 @@
     "source_component_id": "source_component_0",
     "refdes": "unnamed_inductor1",
     "source_component_ftype": "simple_inductor",
-    "expected_prefixes": [
-      "L",
-      "FB"
-    ],
+    "expected_prefixes": ["L", "FB"],
     "actual_prefix": "UNNAMED",
     "source_refdes_convention_warning_id": "source_refdes_convention_warning_0"
   },
@@ -203,9 +186,7 @@
     "shape": "rect",
     "width": 0.999998,
     "height": 3.7999924,
-    "port_hints": [
-      "pin2"
-    ],
+    "port_hints": ["pin2"],
     "is_covered_with_solder_mask": false,
     "x": 1.199896,
     "y": 0,
@@ -235,9 +216,7 @@
     "shape": "rect",
     "width": 0.999998,
     "height": 3.7999924,
-    "port_hints": [
-      "pin1"
-    ],
+    "port_hints": ["pin1"],
     "is_covered_with_solder_mask": false,
     "x": -1.199896,
     "y": 0,
@@ -363,9 +342,7 @@
     "type": "pcb_port",
     "pcb_port_id": "pcb_port_0",
     "pcb_component_id": "pcb_component_0",
-    "layers": [
-      "top"
-    ],
+    "layers": ["top"],
     "subcircuit_id": "subcircuit_source_group_0",
     "pcb_group_id": "pcb_group_0",
     "x": -1.199896,
@@ -376,9 +353,7 @@
     "type": "pcb_port",
     "pcb_port_id": "pcb_port_1",
     "pcb_component_id": "pcb_component_0",
-    "layers": [
-      "top"
-    ],
+    "layers": ["top"],
     "subcircuit_id": "subcircuit_source_group_0",
     "pcb_group_id": "pcb_group_0",
     "x": 1.199896,
