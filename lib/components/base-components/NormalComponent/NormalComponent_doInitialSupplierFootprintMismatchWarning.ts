@@ -11,6 +11,7 @@ import {
   supplier_footprint_mismatch_warning,
 } from "circuit-json"
 import type { NormalComponent } from "./NormalComponent"
+import { fetchSupplierPartCircuitJson } from "./fetch-supplier-part-circuit-json"
 import type { Bounds } from "@tscircuit/math-utils"
 
 const SUPPLIER_FOOTPRINT_IOU_WARNING_THRESHOLD = 0.8
@@ -133,15 +134,16 @@ export function NormalComponent_doInitialSupplierFootprintMismatchWarning(
 
   component._queueAsyncEffect("check-supplier-footprint-mismatch", async () => {
     const { db } = component.root!
-    const fetchPartCircuitJson = partsEngine.fetchPartCircuitJson!
 
     for (const supplierPartCandidate of supplierPartCandidates) {
       const { supplierName, supplierPartNumber } = supplierPartCandidate
       try {
-        const supplierCircuitJson =
-          (await Promise.resolve(
-            fetchPartCircuitJson({ supplierPartNumber }),
-          )) ?? null
+        const supplierCircuitJson = await fetchSupplierPartCircuitJson(
+          component,
+          partsEngine,
+          supplierName,
+          supplierPartNumber,
+        )
         if (!supplierCircuitJson?.length) continue
 
         const supplierBounds = getCopperBounds(supplierCircuitJson)
