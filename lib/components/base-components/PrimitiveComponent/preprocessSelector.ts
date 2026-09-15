@@ -24,11 +24,11 @@ export const preprocessSelector = (
   if (/net\.[^\s>]*[+-]/.test(selector)) {
     throw new Error(buildPlusMinusNetErrorMessage(selector, component))
   }
-  if (/net\.[0-9]/.test(selector)) {
+  if (/net\.[0-9][0-9_]*(?=[\s>]|$)/.test(selector)) {
     const match = selector.match(/net\.([^ >]+)/)
     const netName = match ? match[1] : ""
     throw new Error(
-      `Net name "${netName}" cannot start with a number, try using a prefix like "VBUS1"`,
+      `Net name "${netName}" cannot be purely numeric, add a letter, e.g. "VBUS1"`,
     )
   }
   return selector
