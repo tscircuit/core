@@ -491,8 +491,15 @@ export const getObstaclesFromCircuitJson = (
           element.pad_outline &&
           element.pad_outline.length > 0
         ) {
-          const xs = element.pad_outline.map((p) => element.x + p.x)
-          const ys = element.pad_outline.map((p) => element.y + p.y)
+          const rotRad = (((element as any).ccw_rotation ?? 0) * Math.PI) / 180
+          const cos = Math.cos(rotRad)
+          const sin = Math.sin(rotRad)
+          const xs = element.pad_outline.map(
+            (p) => element.x + (p.x * cos - p.y * sin),
+          )
+          const ys = element.pad_outline.map(
+            (p) => element.y + (p.x * sin + p.y * cos),
+          )
           const minX = Math.min(...xs)
           const maxX = Math.max(...xs)
           const minY = Math.min(...ys)
