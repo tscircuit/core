@@ -1315,7 +1315,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         )
         .map((trace) => trace.source_trace_id),
     )
-    const fixedTraceIds = new Set(
+    const manualPcbTraceIds = new Set(
       db.pcb_trace
         .list()
         .filter(
@@ -1325,6 +1325,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         )
         .map((trace) => trace.pcb_trace_id),
     )
+    const fixedTraceIds = new Set(manualPcbTraceIds)
     let previousStageOutputSimpleRouteJson: SimpleRouteJson | undefined
     const skippedRemainingPhases = new Set<RoutingPhasePlan>()
 
@@ -1460,7 +1461,24 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       // geometry. Rasterizing diagonal fanout traces can bury a legal exit in
       // an enlarged rectangular obstacle before the lane search even starts.
       if (phaseAutorouterConfig.preset !== "bus_lanes") {
-        simpleRouteJson = withFixedTraces(simpleRouteJson, fixedTraceIds)
+        // FanoutSolver preserves supplied trace routes and checks their exact
+        // copper geometry (build-output.ts / get-routed-trace-copper.ts).
+        // Keep manual copper in that representation: rectangular approximations
+        // can change fanout via placement even though the path itself is fixed.
+        const preservesManualTraceGeometry =
+          !phaseAutorouterConfig.algorithmFn &&
+          (phaseAutorouterConfig.preset === "fanout" ||
+            phaseAutorouterConfig.preset === "single_layer_fanout")
+        simpleRouteJson = withFixedTraces(
+          simpleRouteJson,
+          preservesManualTraceGeometry
+            ? new Set(
+                [...fixedTraceIds].filter(
+                  (pcbTraceId) => !manualPcbTraceIds.has(pcbTraceId),
+                ),
+              )
+            : fixedTraceIds,
+        )
       }
       simpleRouteJson = Group_applyDrcTolerancesToSimpleRouteJson(
         simpleRouteJson,
