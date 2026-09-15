@@ -628,13 +628,16 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const existingPcbGroup = db.pcb_group.get(this.pcb_group_id)
 
     // Fixed dimensions remain centered on the authored group position. An
-    // auto-sized subcircuit or packed group follows its actual content bounds.
+    // auto-sized subcircuit, routing directive, or packed group follows its
+    // actual content bounds.
     const existingCenter = existingPcbGroup?.center ?? {
       x: centerX,
       y: centerY,
     }
     const shouldUsePcbContentCenter =
-      this.isSubcircuit || pcbContentBounds !== undefined
+      this.isSubcircuit ||
+      this.isRoutingDirective ||
+      pcbContentBounds !== undefined
     let center = hasExplicitPositioning
       ? shouldUsePcbContentCenter
         ? {
