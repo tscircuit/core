@@ -80,7 +80,7 @@ const createTestBoard = () => (
   </board>
 )
 
-test("part orientation analysis enriches pcb components and uses the platform cache", async () => {
+test("part orientation analysis defaults on and uses the platform cache", async () => {
   const cache = new Map<string, string>()
   const orientationCacheWrites: string[] = []
   const localCacheEngine: LocalCacheEngine = {
@@ -103,7 +103,6 @@ test("part orientation analysis enriches pcb components and uses the platform ca
   const platform = {
     partsEngine,
     localCacheEngine,
-    enablePartOrientationAnalysis: true,
   }
 
   const firstFixture = getTestFixture({ platform })

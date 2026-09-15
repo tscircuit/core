@@ -283,7 +283,9 @@ const analyzeSupplierPartOrientation = async ({
 export const NormalComponent_doInitialPartOrientationAnalysis = (
   component: NormalComponent<any, any>,
 ) => {
-  if (!component.root?.platform?.enablePartOrientationAnalysis) return
+  // Persist assembly orientation during ordinary renders, not only when a
+  // fabrication exporter explicitly requests it. Platforms can still opt out.
+  if (component.root?.platform?.enablePartOrientationAnalysis === false) return
   if (component.root.pcbDisabled || component.props.doNotPlace) return
   if (!component.pcb_component_id) return
 
