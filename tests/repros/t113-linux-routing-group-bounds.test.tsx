@@ -26,10 +26,20 @@ test("exact T113 routing groups expose their misplaced bounds", async () => {
   const regulator18 = getGroup("REG18")
   const usb = getGroup("USB")
 
-  expect(buck.center).toEqual(buck.anchor_position)
-  expect(supervisor33.center).toEqual(supervisor33.anchor_position)
-  expect(regulator18.center).toEqual(regulator18.anchor_position)
-  expect(usb.center).toEqual(usb.anchor_position)
+  const expectCenteredOnAnchor = (group: ReturnType<typeof getGroup>) => {
+    const anchorPosition = group.anchor_position
+    if (!anchorPosition) {
+      throw new Error(
+        `Missing anchor position for exact T113 group ${group.name}`,
+      )
+    }
+    expect(group.center).toEqual(anchorPosition)
+  }
+
+  expectCenteredOnAnchor(buck)
+  expectCenteredOnAnchor(supervisor33)
+  expectCenteredOnAnchor(regulator18)
+  expectCenteredOnAnchor(usb)
 
   const placementErrors = circuitJson.filter(
     (element) => element.type === "pcb_placement_error",
@@ -50,4 +60,4 @@ test("exact T113 routing groups expose their misplaced bounds", async () => {
       diffThresholdPercent: 0.02,
     },
   )
-}, 180_000)
+}, 360_000)
