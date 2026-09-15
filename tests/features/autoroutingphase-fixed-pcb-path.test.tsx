@@ -22,9 +22,29 @@ test.each([
     circuit.add(
       <board width={20} height={18}>
         <pcbnotetext
-          pcbY={6}
+          pcbY={7}
           fontSize={0.6}
-          text="Fixed manual bends + via; automatic routes below"
+          text="pcbPath bends and via must stay unchanged"
+        />
+        <pcbnotetext
+          pcbY={5.9}
+          fontSize={0.45}
+          text={
+            nested
+              ? "Upper route: hand-authored inside a child subcircuit"
+              : "Upper route: hand-authored, with a top-to-bottom via"
+          }
+        />
+        <pcbnotetext
+          pcbY={4.8}
+          fontSize={0.45}
+          text={
+            simplify
+              ? "Lower routes: autorouted, then simplified"
+              : phased
+                ? "Lower routes: autorouted in two successive phases"
+                : "Lower routes: autorouted in one pass"
+          }
         />
         <group name="manual" subcircuit={nested}>
           <chip
