@@ -1303,11 +1303,14 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     // Manual paths are already rendered in board-world coordinates. Protect
     // their copper just like precomputed phase paths, including child traces
     // whose PCB ids may have changed when their subcircuit finished routing.
+    // Imported Circuit JSON synthesizes pcbPath props for existing routes;
+    // those are not hand-authored paths and must remain available for rerouting.
     const manualSourceTraceIds = new Set(
       this.getDescendants()
         .filter(
           (child): child is Trace =>
             child instanceof Trace &&
+            !child.getSubcircuit()._isInflatedFromCircuitJson &&
             Boolean(child._parsedProps.pcbPath?.length),
         )
         .map((trace) => trace.source_trace_id),

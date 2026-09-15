@@ -80,19 +80,8 @@ test(
         error.message.includes(".U1 > port.pin13, .U1 > port.pin48"),
     )
     expect(hasGndVbatContact).toBe(false)
-    // Track Pipeline9's known trace-via clearance failures without allowing
-    // additional violations. Normalize generated via IDs, which are not stable.
-    const clearanceMessages = circuit.db.pcb_pad_pad_clearance_error
-      .list()
-      .map((error) =>
-        error.message.replace(/pcb_via\[#pcb_via_\d+\]/g, "pcb_via"),
-      )
-      .sort()
-    expect(clearanceMessages).toEqual([
-      "Via pcb_via and pad pcb_port[.BT1 > .VBAT_N] are too close (clearance: 0mm, minimum: 0.1mm)",
-      "Via pcb_via and pad pcb_port[.C1 > .pin1] are too close (clearance: 0.083mm, minimum: 0.1mm)",
-      "Via pcb_via and pad pcb_port[.L2 > .pin2] are too close (clearance: 0.085mm, minimum: 0.1mm)",
-    ])
+    // Fixed manual RF paths no longer acquire trace-via clearance violations.
+    expect(circuit.db.pcb_pad_pad_clearance_error.list()).toEqual([])
 
     const topSnapshotPath = import.meta.path.replace(
       /\.test\.tsx$/,
