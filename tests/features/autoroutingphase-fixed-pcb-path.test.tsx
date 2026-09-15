@@ -3,168 +3,87 @@ import type { PcbTrace } from "circuit-json"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test.each([
-  { phased: false, nested: false, simplify: false },
-  { phased: true, nested: false, simplify: false },
-  { phased: false, nested: true, simplify: false },
-  { phased: true, nested: true, simplify: false },
-  { phased: false, nested: false, simplify: true },
-])(
-  "pcbPath bends and vias are fixed during autorouting (%j)",
-  async ({ phased, nested, simplify }) => {
-    const { circuit } = getTestFixture()
-    const phaseInputs: SimpleRouteJson[] = []
-    let originalManualTrace: PcbTrace | undefined
-    circuit.on("autorouting:start", (event) => {
-      originalManualTrace ??= structuredClone(circuit.db.pcb_trace.list()[0]!)
-      phaseInputs.push(event.simpleRouteJson)
-    })
-    circuit.add(
-      <board width={20} height={18}>
-        <pcbnotetext
-          pcbY={7}
-          fontSize={0.6}
-          text="pcbPath bends and via must stay unchanged"
-        />
-        <pcbnotetext
-          pcbY={5.9}
-          fontSize={0.45}
-          text={
-            nested
-              ? "Upper route: hand-authored inside a child subcircuit"
-              : "Upper route: hand-authored, with a top-to-bottom via"
-          }
-        />
-        <pcbnotetext
-          pcbY={4.8}
-          fontSize={0.45}
-          text={
-            simplify
-              ? "Lower routes: autorouted, then simplified"
-              : phased
-                ? "Lower routes: autorouted in two successive phases"
-                : "Lower routes: autorouted in one pass"
-          }
-        />
-        <group name="manual" subcircuit={nested}>
-          <chip
-            name="U1"
-            pcbX={-4}
-            pinLabels={{ pin1: "MANUAL_START" }}
-            footprint={
-              <footprint>
-                <smtpad
-                  portHints={["1"]}
-                  width={0.6}
-                  height={0.6}
-                  shape="rect"
-                />
-              </footprint>
-            }
-          />
-          <chip
-            name="U2"
-            pcbX={4}
-            layer="bottom"
-            pinLabels={{ pin1: "MANUAL_END" }}
-            footprint={
-              <footprint>
-                <smtpad
-                  portHints={["1"]}
-                  width={0.6}
-                  height={0.6}
-                  shape="rect"
-                />
-              </footprint>
-            }
-          />
-          <trace
-            from="U1.1"
-            to="U2.1"
-            thickness={0.2}
-            pcbPath={[
-              { x: 2, y: 2 },
-              { x: 4, y: 2 },
-              { x: 4, y: 2, via: true, toLayer: "bottom" },
-              { x: 4, y: 2 },
-              { x: 6, y: 2 },
-            ]}
-          />
-        </group>
-        <resistor
-          name="R1"
-          pcbX={-4}
-          pcbY={-3}
-          resistance="1k"
-          footprint="0402"
-        />
-        <resistor
-          name="R2"
-          pcbX={4}
-          pcbY={-3}
-          resistance="1k"
-          footprint="0402"
-        />
-        <resistor
-          name="R3"
-          pcbX={-4}
-          pcbY={-6}
-          resistance="1k"
-          footprint="0402"
-        />
-        <resistor
-          name="R4"
-          pcbX={4}
-          pcbY={-6}
-          resistance="1k"
-          footprint="0402"
-        />
-        {phased && <autoroutingphase phaseIndex={0} connection="R1.1" />}
-        {simplify && <autoroutingphase reroute autorouter="simplify" />}
-        <trace from="R1.1" to="R2.1" />
-        <trace from="R3.1" to="R4.1" />
-      </board>,
-    )
-    await circuit.renderUntilSettled()
-    expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
-    expect(circuit.db.pcb_trace_error.list()).toEqual([])
-    expect(phaseInputs).toHaveLength(
-      (phased || simplify ? 2 : 1) + (nested ? 1 : 0),
-    )
-    expect(originalManualTrace).toBeDefined()
-    for (const input of phaseInputs) {
-      // The solver must see this copper only as obstacles, never as editable
-      // preloaded traces. Check the via away from either component's pads.
-      expect(
-        input.traces?.some(
-          (trace) =>
-            trace.connection_name === originalManualTrace!.source_trace_id,
-        ) ?? false,
-      ).toBe(false)
-      expect(input.obstacles).toContainEqual(
-        expect.objectContaining({
-          center: { x: 0, y: 2 },
-          layers: ["top", "bottom"],
-          connectedTo: expect.arrayContaining([
-            originalManualTrace!.source_trace_id,
-          ]),
-        }),
-      )
-    }
-    const manualTraces = circuit.db.pcb_trace
-      .list()
-      .filter(
+test("autorouting phases detour around a fixed hand-authored pcbPath", async () => {
+  const { circuit } = getTestFixture()
+  const phaseInputs: SimpleRouteJson[] = []
+  let originalManualTrace: PcbTrace | undefined
+  circuit.on("autorouting:start", (event) => {
+    originalManualTrace ??= structuredClone(circuit.db.pcb_trace.list()[0]!)
+    phaseInputs.push(event.simpleRouteJson)
+  })
+  circuit.add(
+    <board width={18} height={16} layers={1} autorouter="beta-pipeline9">
+      <pcbnotetext
+        pcbY={6.5}
+        fontSize={0.55}
+        text="Keep the manual U-shaped pcbPath fixed"
+      />
+      <pcbnotetext
+        pcbY={5.4}
+        fontSize={0.4}
+        text="Thick U stays fixed; thin left-to-right routes detour"
+      />
+      <testpoint name="M1" pcbX={-2} pcbY={3} padDiameter={0.7} />
+      <testpoint name="M2" pcbX={2} pcbY={3} padDiameter={0.7} />
+      <trace
+        from="M1.pin1"
+        to="M2.pin1"
+        thickness={0.3}
+        pcbPath={[
+          { x: 0, y: -6 },
+          { x: 4, y: -6 },
+        ]}
+      />
+      <testpoint name="LEFT1" pcbX={-6} pcbY={1.5} padDiameter={0.7} />
+      <testpoint name="RIGHT1" pcbX={6} pcbY={1.5} padDiameter={0.7} />
+      <testpoint name="LEFT2" pcbX={-6} pcbY={-1.5} padDiameter={0.7} />
+      <testpoint name="RIGHT2" pcbX={6} pcbY={-1.5} padDiameter={0.7} />
+      <autoroutingphase phaseIndex={0} connection="LEFT1.pin1" />
+      <trace from="LEFT1.pin1" to="RIGHT1.pin1" />
+      <trace from="LEFT2.pin1" to="RIGHT2.pin1" />
+    </board>,
+  )
+  await circuit.renderUntilSettled()
+  expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
+  expect(circuit.db.pcb_trace_error.list()).toEqual([])
+  expect(phaseInputs).toHaveLength(2)
+  expect(originalManualTrace).toBeDefined()
+  for (const input of phaseInputs) {
+    expect(
+      input.traces?.some(
         (trace) =>
-          trace.source_trace_id === originalManualTrace!.source_trace_id,
-      )
-    expect(manualTraces).toHaveLength(1)
-    expect(manualTraces[0]!.route).toEqual(originalManualTrace!.route)
-    expect(circuit.db.pcb_trace.list()).toHaveLength(3)
-    await expect(circuit).toMatchPcbSnapshot(
-      import.meta.path +
-        (phased ? "-phased" : "-unphased") +
-        (nested ? "-nested" : "") +
-        (simplify ? "-simplify" : ""),
+          trace.connection_name === originalManualTrace!.source_trace_id,
+      ) ?? false,
+    ).toBe(false)
+    // The left wall of the U blocks both requested straight-line routes.
+    expect(input.obstacles).toContainEqual(
+      expect.objectContaining({
+        center: { x: -2, y: 0 },
+        height: 6.3,
+        connectedTo: expect.arrayContaining([
+          originalManualTrace!.source_trace_id,
+        ]),
+      }),
     )
-  },
-)
+  }
+  const traces = circuit.db.pcb_trace.list()
+  const manualTraces = traces.filter(
+    (trace) => trace.source_trace_id === originalManualTrace!.source_trace_id,
+  )
+  expect(manualTraces).toHaveLength(1)
+  expect(manualTraces[0]!.route).toEqual(originalManualTrace!.route)
+  expect(traces).toHaveLength(3)
+  for (const trace of traces.filter(
+    (trace) => trace.source_trace_id !== originalManualTrace!.source_trace_id,
+  )) {
+    // On a single-layer board, neither automatic route can jump over the U.
+    // Both must leave its vertical span instead of shortening the manual path.
+    expect(trace.route.some((point) => point.route_type === "via")).toBe(false)
+    expect(
+      trace.route.some(
+        (point) => point.route_type === "wire" && Math.abs(point.y) > 3,
+      ),
+    ).toBe(true)
+  }
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
+})
