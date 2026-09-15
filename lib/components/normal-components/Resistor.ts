@@ -50,6 +50,12 @@ export class Resistor extends NormalComponent<
     return `${formatSiUnit(this._parsedProps.resistance)}Ω`
   }
 
+  _getDisplayTolerance(): string | undefined {
+    const { tolerance } = this._parsedProps
+    if (tolerance === undefined) return undefined
+    return `${parseFloat((tolerance * 100).toPrecision(12))}%`
+  }
+
   doInitialCreateNetsFromProps() {
     this._createNetsFromProps([
       this.props.pullupFor,
@@ -103,6 +109,7 @@ export class Resistor extends NormalComponent<
 
       resistance: props.resistance,
       display_resistance: this._getSchematicSymbolDisplayValue(),
+      display_tolerance: this._getDisplayTolerance(),
       are_pins_interchangeable: true,
       display_name: props.displayName,
     } as SourceSimpleResistorInput)
