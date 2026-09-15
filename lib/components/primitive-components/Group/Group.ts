@@ -25,7 +25,7 @@ import {
 } from "circuit-json"
 import Debug from "debug"
 import type { GraphicsObject } from "graphics-debug"
-import { withFixedFanoutTraces } from "lib/utils/autorouting/with-fixed-fanout-traces"
+import { withFixedTraces } from "lib/utils/autorouting/with-fixed-traces"
 import { assignSchematicNetLabelSuperscripts } from "lib/utils/schematic/assign-schematic-net-label-superscripts"
 
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
@@ -1300,7 +1300,32 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       })
     }
 
-    const fixedFanoutTraceIds = new Set<SimplifiedPcbTrace["pcb_trace_id"]>()
+    // Manual paths are already rendered in board-world coordinates. Protect
+    // their copper just like precomputed phase paths, including child traces
+    // whose PCB ids may have changed when their subcircuit finished routing.
+    // Imported Circuit JSON synthesizes pcbPath props for existing routes;
+    // those are not hand-authored paths and must remain available for rerouting.
+    const manualSourceTraceIds = new Set(
+      this.getDescendants()
+        .filter(
+          (child): child is Trace =>
+            child instanceof Trace &&
+            !child.getSubcircuit()._isInflatedFromCircuitJson &&
+            Boolean(child._parsedProps.pcbPath?.length),
+        )
+        .map((trace) => trace.source_trace_id),
+    )
+    const manualPcbTraceIds = new Set(
+      db.pcb_trace
+        .list()
+        .filter(
+          (trace) =>
+            trace.source_trace_id &&
+            manualSourceTraceIds.has(trace.source_trace_id),
+        )
+        .map((trace) => trace.pcb_trace_id),
+    )
+    const fixedTraceIds = new Set(manualPcbTraceIds)
     let previousStageOutputSimpleRouteJson: SimpleRouteJson | undefined
     const skippedRemainingPhases = new Set<RoutingPhasePlan>()
 
@@ -1436,9 +1461,23 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       // geometry. Rasterizing diagonal fanout traces can bury a legal exit in
       // an enlarged rectangular obstacle before the lane search even starts.
       if (phaseAutorouterConfig.preset !== "bus_lanes") {
-        simpleRouteJson = withFixedFanoutTraces(
+        // FanoutSolver preserves supplied trace routes and checks their exact
+        // copper geometry (build-output.ts / get-routed-trace-copper.ts).
+        // Keep manual copper in that representation: rectangular approximations
+        // can change fanout via placement even though the path itself is fixed.
+        const preservesManualTraceGeometry =
+          !phaseAutorouterConfig.algorithmFn &&
+          (phaseAutorouterConfig.preset === "fanout" ||
+            phaseAutorouterConfig.preset === "single_layer_fanout")
+        simpleRouteJson = withFixedTraces(
           simpleRouteJson,
-          fixedFanoutTraceIds,
+          preservesManualTraceGeometry
+            ? new Set(
+                [...fixedTraceIds].filter(
+                  (pcbTraceId) => !manualPcbTraceIds.has(pcbTraceId),
+                ),
+              )
+            : fixedTraceIds,
         )
       }
       simpleRouteJson = Group_applyDrcTolerancesToSimpleRouteJson(
@@ -1655,8 +1694,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           const result = getPrecomputedRoutingResult(simpleRouteJson)
           traces = result.traces
           precomputedOutputSimpleRouteJson = result.outputSimpleRouteJson
-          for (const trace of traces)
-            fixedFanoutTraceIds.add(trace.pcb_trace_id)
+          for (const trace of traces) fixedTraceIds.add(trace.pcb_trace_id)
         } else if (cachedResult) {
           debug(`[${this.getString()}] using cached local autorouting result`)
           traces = cachedResult.traces
@@ -1879,6 +1917,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         } else {
           if (isTraceSimplificationPhase) {
             for (const existingTrace of existingRerouteSeedTraces) {
+              // Fixed copper was excluded from the simplifier's input traces,
+              // so it has no replacement in the solver output.
+              if (fixedTraceIds.has(existingTrace.pcb_trace_id)) continue
               pcbTraceIdsToDelete.add(existingTrace.pcb_trace_id)
             }
           }
