@@ -1,4 +1,4 @@
-import { MultilayerIjump } from "@tscircuit/infgrid-ijump-astar"
+import { MultilayerIjump } from "lib/utils/autorouting/vendor/infgrid-ijump-astar/index"
 import { traceProps } from "@tscircuit/props"
 import {
   type LayerRef,

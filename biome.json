@@ -13,7 +13,8 @@
       "dist",
       "package.json",
       "benchmarking-dist",
-      "references"
+      "references",
+      "lib/utils/autorouting/vendor"
     ]
   },
   "javascript": {
