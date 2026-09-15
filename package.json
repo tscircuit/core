@@ -73,7 +73,7 @@
     "chokidar-cli": "^3.0.0",
     "circuit-json": "^0.0.489",
     "circuit-json-to-bpc": "^0.0.13",
-    "circuit-json-to-connectivity-map": "github:tscircuit/circuit-json-to-connectivity-map#2792467619405861d8f6c0b71d2c8e7ed721bc39",
+    "circuit-json-to-connectivity-map": "github:tscircuit/circuit-json-to-connectivity-map#b17b50f5794b992dfcfa120d07cca7344fbb8052",
     "circuit-json-to-gltf": "^0.0.128",
     "circuit-json-to-spice": "^0.0.45",
     "circuit-to-svg": "^0.0.422",
