@@ -26,5 +26,13 @@ test("schematicbox chipRef displays the chip manufacturer part number", async ()
 
   await circuit.renderUntilSettled()
 
+  expect(
+    circuit.db.schematic_component_styling_warning
+      .list()
+      .filter(
+        (warning) =>
+          warning.styling_issue_type === "missing_reference_designator_text",
+      ),
+  ).toEqual([])
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
