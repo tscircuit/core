@@ -21,7 +21,7 @@ test("<inductor /> component", async () => {
 
   expect(circuit.db.source_component.getWhere({ name: "U1" })).toMatchObject({
     ftype: "simple_inductor",
-    inductance: "10",
+    inductance: 10,
     max_current_rating: 2,
   })
 
