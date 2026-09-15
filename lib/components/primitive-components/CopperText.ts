@@ -47,7 +47,7 @@ export class CopperText extends PrimitiveComponent<typeof copperTextProps> {
     const text = props.text ?? ""
     const textWidth = text.length * fontSize
     const textHeight = fontSize
-    return { width: textWidth * fontSize, height: textHeight * fontSize }
+    return { width: textWidth, height: textHeight }
   }
 
   _moveCircuitJsonElements({
