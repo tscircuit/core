@@ -1,4 +1,4 @@
-import { fp } from "@tscircuit/footprinter"
+import { fp, getFootprintNames } from "@tscircuit/footprinter"
 import { normalizeDegrees } from "@tscircuit/math-utils"
 import type {
   CadModelGlb,
@@ -38,6 +38,7 @@ import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
 import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromCircuitJson"
 import { filterPinLabels } from "lib/utils/filterPinLabels"
 import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
+import { getClosestFootprintName } from "lib/utils/get-closest-footprint-name"
 import {
   getPinNumberFromLabels,
   getPortFromHints,
@@ -1557,11 +1558,17 @@ export class NormalComponent<
     const resolvedJlcpcbPartNumber = isLikelyJlcpcbPartNumber
       ? `C${footprint.replace(/^c/i, "")}`
       : null
+    const closestFootprintName =
+      !isLikelyMissingLibraryPrefix && !resolvedJlcpcbPartNumber
+        ? getClosestFootprintName(footprint, getFootprintNames())
+        : null
     const helpfulHint = isLikelyMissingLibraryPrefix
       ? ` If this is a KiCad footprint, use "kicad:${footprint}".`
       : resolvedJlcpcbPartNumber
         ? ` If this is a JLCPCB part number, use "jlcpcb:${resolvedJlcpcbPartNumber}".`
-        : ""
+        : closestFootprintName
+          ? ` Did you mean "${closestFootprintName}"?`
+          : ""
     const message = `Invalid footprint prop on ${this.getDisplayName()}: "${footprint}".${helpfulHint} Parser details: ${rawErrorMessage}`
     if (!this._invalidFootprintPropMessages.includes(message)) {
       this._invalidFootprintPropMessages.push(message)
