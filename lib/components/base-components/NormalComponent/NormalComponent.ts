@@ -132,6 +132,9 @@ export type PortMap<T extends string> = {
  * }
  */
 
+const isEmptyConnectionTarget = (target: unknown): boolean =>
+  target === undefined || target === null || String(target).trim() === ""
+
 export class NormalComponent<
     ZodProps extends z.ZodType = any,
     PortNames extends string = never,
@@ -1608,6 +1611,7 @@ export class NormalComponent<
       for (const [pinName, target] of Object.entries(props.connections)) {
         const targets = Array.isArray(target) ? target : [target]
         for (const targetPath of targets) {
+          if (isEmptyConnectionTarget(targetPath)) continue
           propsWithConnections.push(String(targetPath))
         }
       }
@@ -2207,6 +2211,10 @@ export class NormalComponent<
       for (const [pinName, target] of Object.entries(props.connections)) {
         const targets = Array.isArray(target) ? target : [target]
         for (const targetPath of targets) {
+          // An empty target isn't a selector. Skipping it here keeps the rest
+          // of the board rendering; the misconfiguration is reported once the
+          // source component exists, in SourceComponentPropertyValidation.
+          if (isEmptyConnectionTarget(targetPath)) continue
           this.add(
             new Trace({
               from: `.${this.name} > .${pinName}`,
@@ -2224,6 +2232,23 @@ export class NormalComponent<
 
   doInitialSourceComponentPropertyValidation(): void {
     this._insertInvalidFootprintPropErrors()
+    this._insertEmptyConnectionTargetErrors()
+  }
+
+  private _insertEmptyConnectionTargetErrors(): void {
+    const { _parsedProps: props } = this
+    if (!props.connections) return
+    for (const [pinName, target] of Object.entries(props.connections)) {
+      const targets = Array.isArray(target) ? target : [target]
+      if (!targets.some(isEmptyConnectionTarget)) continue
+      this.root!.db.source_component_misconfigured_error.insert({
+        error_type: "source_component_misconfigured_error",
+        message: `${this.getString()} has an empty connections target for pin "${pinName}". Provide a selector such as ".R1 > .pin1" or "net.VCC", or remove the entry.`,
+        source_component_ids: this.source_component_id
+          ? [this.source_component_id]
+          : [],
+      })
+    }
   }
 
   doInitialValidatePcbCoordinates(): void {
