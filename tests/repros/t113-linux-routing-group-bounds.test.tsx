@@ -60,15 +60,28 @@ test("exact T113 routing groups follow their padded content bounds", async () =>
     regions: windingBreakoutInput.regions.map((region) => {
       const group = liveGroupById.get(region.regionId)
       if (!group) throw new Error(`Missing live group ${region.regionId}`)
+      const { width, height } = group
+      if (width === undefined || height === undefined) {
+        throw new Error(`Missing bounds size for live group ${region.regionId}`)
+      }
+      const edge = region.edge
+      if (
+        edge !== "left" &&
+        edge !== "right" &&
+        edge !== "top" &&
+        edge !== "bottom"
+      ) {
+        throw new Error(`Invalid breakout edge ${edge}`)
+      }
       return {
         id: region.regionId,
         bounds: {
-          minX: group.center.x - group.width / 2,
-          maxX: group.center.x + group.width / 2,
-          minY: group.center.y - group.height / 2,
-          maxY: group.center.y + group.height / 2,
+          minX: group.center.x - width / 2,
+          maxX: group.center.x + width / 2,
+          minY: group.center.y - height / 2,
+          maxY: group.center.y + height / 2,
         },
-        edge: region.edge,
+        edge,
       }
     }),
     connections: windingBreakoutInput.connections.map((connection) => ({
