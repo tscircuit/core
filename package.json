@@ -37,8 +37,8 @@
     "@tscircuit/bga-fanout-solver": "github:tscircuit/bga-fanout-solver#247c835cb8d69b65e53891dcf869731079415b39",
     "@tscircuit/bus-lanes-solver": "github:tscircuit/bus-lanes-solver#0bc8d071241b18a3e7465a878881abe4998f6384",
     "@tscircuit/capacity-autorouter": "^0.0.900",
-    "@tscircuit/checks": "^0.0.194",
-    "@tscircuit/circuit-json-util": "^0.0.113",
+    "@tscircuit/checks": "^0.0.195",
+    "@tscircuit/circuit-json-util": "^0.0.114",
     "@tscircuit/common": "^0.0.20",
     "@tscircuit/copper-pour-solver": "^0.0.54",
     "@tscircuit/create-fdm-enclosure": "0.0.4",
@@ -133,7 +133,7 @@
     "zod": "^3.25.67"
   },
   "overrides": {
-    "@tscircuit/circuit-json-util": "^0.0.113",
+    "@tscircuit/circuit-json-util": "^0.0.114",
     "@tscircuit/props": "^0.0.660",
     "circuit-json": "^0.0.489"
   }

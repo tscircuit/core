@@ -19,7 +19,7 @@ import {
   getSmtPadPolygon,
   getTraceSegmentPolygon,
   getViaPolygon,
-} from "./copper-geometry"
+} from "@tscircuit/circuit-json-util"
 
 type CopperNetId = NonNullable<
   ReturnType<ConnectivityMap["getNetConnectedToId"]>
