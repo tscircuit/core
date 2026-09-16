@@ -58,8 +58,10 @@ resistors connected by a real trace inside a subcircuit.
 
 - With routing enabled, the built-in local router starts, reads/writes its
   cache, and emits copper. This proves the fixture actually demands routing.
-- With platform routing disabled, router starts and cache reads/writes are
-  all zero, despite a cache implementation that throws when accessed.
+- With platform routing disabled, `autorouting:start` events and cache
+  reads/writes are all zero, despite a cache implementation that throws when
+  accessed. These observations are local to each circuit and do not mock the
+  router implementation.
 - Two PCB components, four PCB ports and one logical source trace remain;
   no generated PCB trace is emitted. The snapshot shows the ratsnest.
 - The child has `routingDisabled={false}`, verifying that the root-wide
