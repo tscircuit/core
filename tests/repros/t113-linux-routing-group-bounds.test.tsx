@@ -7,7 +7,7 @@ import T113LinuxBoard from "../fixtures/t113-linux-exact/index.circuit"
 test("exact T113 routing groups expose their misplaced bounds", async () => {
   const circuit = new Circuit({ platform: { useCloudAutorouter: false } })
   circuit.add(React.createElement(T113LinuxBoard))
-  await circuit.renderUntilSettled()
+  circuit.render()
 
   const circuitJson = circuit.getCircuitJson()
   const groups = circuitJson.filter((element) => element.type === "pcb_group")
@@ -60,4 +60,4 @@ test("exact T113 routing groups expose their misplaced bounds", async () => {
       diffThresholdPercent: 0.02,
     },
   )
-}, 360_000)
+}, 60_000)
