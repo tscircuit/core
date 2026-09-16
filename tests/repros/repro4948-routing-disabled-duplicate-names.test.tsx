@@ -1,15 +1,14 @@
-import { beforeAll, expect, test } from "bun:test"
+import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-// Keep rendering, snapshots and the routing-enabled control outside test.failing
-// so an unrelated setup failure cannot count as reproducing the known bug.
-const diagnosticCounts: { mode: string; duplicateNameErrors: number }[] = []
+test("routingDisabled preserves duplicate component name diagnostics", async () => {
+  const diagnosticCounts = []
 
-beforeAll(async () => {
   for (const mode of [
     "routing_enabled",
     "platform_disabled",
     "board_disabled",
+    "legacy_disabled",
   ]) {
     const { circuit } = getTestFixture({
       platform: { routingDisabled: mode === "platform_disabled" },
@@ -21,6 +20,7 @@ beforeAll(async () => {
         width="24mm"
         height="10mm"
         routingDisabled={mode === "board_disabled"}
+        autorouter={mode === "legacy_disabled" ? "sequential-trace" : undefined}
       >
         <resistor
           name="R1"
@@ -64,21 +64,10 @@ beforeAll(async () => {
     }
   }
 
-  expect(diagnosticCounts[0]).toEqual({
-    mode: "routing_enabled",
-    duplicateNameErrors: 1,
-  })
+  expect(diagnosticCounts).toEqual([
+    { mode: "routing_enabled", duplicateNameErrors: 1 },
+    { mode: "platform_disabled", duplicateNameErrors: 1 },
+    { mode: "board_disabled", duplicateNameErrors: 1 },
+    { mode: "legacy_disabled", duplicateNameErrors: 1 },
+  ])
 })
-
-// A placement preview must retain diagnostics that do not depend on routing.
-// Remove .failing when fixing the bug; current main reports [1, 0, 0].
-test.failing(
-  "routingDisabled preserves duplicate component name diagnostics",
-  () => {
-    expect(diagnosticCounts).toEqual([
-      { mode: "routing_enabled", duplicateNameErrors: 1 },
-      { mode: "platform_disabled", duplicateNameErrors: 1 },
-      { mode: "board_disabled", duplicateNameErrors: 1 },
-    ])
-  },
-)
