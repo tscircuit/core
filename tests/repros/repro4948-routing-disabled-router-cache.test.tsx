@@ -1,7 +1,6 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-// https://github.com/tscircuit/tscircuit/issues/4948
 test("placement preview skips the local router and unavailable routing cache", async () => {
   for (const routingDisabled of [false, true]) {
     let autoroutingStartCount = 0

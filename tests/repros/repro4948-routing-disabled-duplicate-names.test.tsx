@@ -1,7 +1,6 @@
 import { beforeAll, expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-// https://github.com/tscircuit/tscircuit/issues/4948
 // Keep rendering, snapshots and the routing-enabled control outside test.failing
 // so an unrelated setup failure cannot count as reproducing the known bug.
 const diagnosticCounts: { mode: string; duplicateNameErrors: number }[] = []
