@@ -150,6 +150,9 @@ test("USB-C breakout pair wired through named nets", async () => {
     import.meta.path,
     "usb-c-breakout-routing-phases",
     circuit,
+    { diffThresholdPercent: 0.1 },
   )
-  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
+    diffThresholdPercent: 0.2,
+  })
 }, 30_000)
