@@ -63,6 +63,7 @@ test("board simple route json preserves child trace physical connectivity", () =
         "source_port_board",
       ],
       connected_source_net_ids: ["source_net_shared"],
+      min_trace_thickness: 0.4,
     } as any,
     {
       type: "pcb_trace",
@@ -101,6 +102,7 @@ test("board simple route json preserves child trace physical connectivity", () =
     "opaque-child-b",
     "opaque-board-port",
   ])
+  expect(netConnection?.minTraceWidth).toBe(0.4)
   expect(simpleRouteJson.traces).toEqual([
     expect.objectContaining({
       pcb_trace_id: "pcb_trace_child_routed",

@@ -142,6 +142,10 @@ function applyMinTraceWidthToConnections(
       connection.nominalTraceWidth ?? minTraceWidth,
       minTraceWidth,
     ),
+    minTraceWidth: Math.max(
+      connection.minTraceWidth ?? minTraceWidth,
+      minTraceWidth,
+    ),
     width: Math.max(connection.width ?? minTraceWidth, minTraceWidth),
   }))
 }
