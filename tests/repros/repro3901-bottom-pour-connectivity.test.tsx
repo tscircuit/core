@@ -8,7 +8,7 @@ import { Fragment } from "react"
 import { createBasicAutorouter } from "tests/fixtures/createBasicAutorouter"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("repro3901: plated contacts joined by a bottom pour get false disconnections", async () => {
+test("repro3901: plated contacts joined by a bottom pour need no tracks", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -68,7 +68,7 @@ test("repro3901: plated contacts joined by a bottom pour get false disconnection
       />
       <pcbnotetext text="Both pads touch one fill" pcbY={-2.5} fontSize={0.4} />
       <pcbnotetext
-        text="BUG #3901: both reported disconnected"
+        text="Both GND contacts are connected"
         pcbY={-3.3}
         fontSize={0.35}
       />
@@ -102,18 +102,9 @@ test("repro3901: plated contacts joined by a bottom pour get false disconnection
     ).toBe(true)
   }
 
-  // Current buggy baseline from https://github.com/tscircuit/core/issues/3901.
-  // A fix should change this to [] while preserving the geometry assertions.
-  // The issue's separate via-courtyard diagnostic is outside this test's scope.
-  expect(
-    circuit.db.pcb_port_not_connected_error
-      .list()
-      .map((error) => error.message)
-      .sort(),
-  ).toEqual([
-    "Port [J1.GND] is not connected to net [GND] by a PCB trace.",
-    "Port [J2.GND] is not connected to net [GND] by a PCB trace.",
-  ])
+  // Same-net copper connects these plated contacts without conventional tracks.
+  // The separate via-courtyard diagnostic is outside this regression's scope.
+  expect(circuit.db.pcb_port_not_connected_error.list()).toEqual([])
 
   await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
     layer: "bottom",
