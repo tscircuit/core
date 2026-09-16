@@ -3,7 +3,7 @@ import {
   copperPolygonsTouch,
   getPlatedHolePolygon,
   getPourPolygon,
-} from "lib/utils/copper-pour-connectivity/copper-geometry"
+} from "@tscircuit/circuit-json-util"
 import { Fragment } from "react"
 import { createBasicAutorouter } from "tests/fixtures/createBasicAutorouter"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
