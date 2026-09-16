@@ -15,8 +15,15 @@ From the core repository root, install dependencies with `bun install`, then:
 bun test tests/repros/repro4948-routing-disabled
 ```
 
-Expected result on the audited main: **1 pass, 1 fail**. The diagnostic test
-asserts the desired behavior and intentionally remains red until core is fixed.
+Expected result on the audited main: **2 pass, 0 fail**. The diagnostic assertion
+is marked with Bun's `test.failing`: it still executes and asserts the desired
+behavior, but its known failure does not make the test command fail. When the
+bug is fixed, Bun reports an unexpected pass; remove `.failing` with the fix.
+
+Rendering, snapshot verification and the routing-enabled control run in
+`beforeAll`, outside the expected-failure callback, so setup or control failures
+still fail the suite. Temporarily change `test.failing` to `test` to see the
+original diagnostic assertion failure directly.
 
 ## Confirmed bug: preview hides duplicate-name diagnostics
 
@@ -68,7 +75,8 @@ are outside this focused reproduction.
 bun test tests/repros/repro4948-routing-disabled tests/components/normal-components/board-routing-disabled.test.tsx
 ```
 
-Result: **2 pass, 1 fail**, 16 assertions. The only failure is the missing
-duplicate-name diagnostic in both preview modes. The existing board-level
-routing-disabled test passes. Biome checks pass for both new test files.
+Result: **3 pass, 0 fail**, including the expected-failure diagnostic test.
+The missing duplicate-name diagnostic in both preview modes remains unfixed.
+The existing board-level routing-disabled test passes. Biome checks pass for
+both new test files.
 Both PCB snapshots were rendered to PNG and visually inspected.

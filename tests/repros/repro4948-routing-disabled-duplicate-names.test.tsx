@@ -1,11 +1,12 @@
-import { expect, test } from "bun:test"
+import { beforeAll, expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 // https://github.com/tscircuit/tscircuit/issues/4948
-// A placement preview must retain diagnostics that do not depend on routing.
-test("routingDisabled preserves duplicate component name diagnostics", async () => {
-  const diagnosticCounts = []
+// Keep rendering, snapshots and the routing-enabled control outside test.failing
+// so an unrelated setup failure cannot count as reproducing the known bug.
+const diagnosticCounts: { mode: string; duplicateNameErrors: number }[] = []
 
+beforeAll(async () => {
   for (const mode of [
     "routing_enabled",
     "platform_disabled",
@@ -64,11 +65,21 @@ test("routingDisabled preserves duplicate component name diagnostics", async () 
     }
   }
 
-  // The enabled control proves the same invalid source can be diagnosed.
-  // Current main reports [1, 0, 0]: both preview switches hide the error.
-  expect(diagnosticCounts).toEqual([
-    { mode: "routing_enabled", duplicateNameErrors: 1 },
-    { mode: "platform_disabled", duplicateNameErrors: 1 },
-    { mode: "board_disabled", duplicateNameErrors: 1 },
-  ])
+  expect(diagnosticCounts[0]).toEqual({
+    mode: "routing_enabled",
+    duplicateNameErrors: 1,
+  })
 })
+
+// A placement preview must retain diagnostics that do not depend on routing.
+// Remove .failing when fixing the bug; current main reports [1, 0, 0].
+test.failing(
+  "routingDisabled preserves duplicate component name diagnostics",
+  () => {
+    expect(diagnosticCounts).toEqual([
+      { mode: "routing_enabled", duplicateNameErrors: 1 },
+      { mode: "platform_disabled", duplicateNameErrors: 1 },
+      { mode: "board_disabled", duplicateNameErrors: 1 },
+    ])
+  },
+)
