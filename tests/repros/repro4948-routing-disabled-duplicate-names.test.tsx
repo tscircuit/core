@@ -60,7 +60,9 @@ test("routingDisabled preserves duplicate component name diagnostics", async () 
     })
 
     if (mode === "platform_disabled") {
-      await expect(circuit).toMatchPcbSnapshot(import.meta.path)
+      await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
+        showErrorsInTextOverlay: true,
+      })
     }
   }
 
