@@ -11,7 +11,7 @@ test("repro3982: SCHEMATIC_COMPONENT_OUTLINE_COLOR is portable SVG rgb format an
   circuit.add(
     <board width="20mm" height="20mm">
       <schematicline x1={0} y1={0} x2={5} y2={5} />
-      <schematicrect center={{ x: 2, y: 2 }} width={4} height={4} />
+      <schematicrect schX={2} schY={2} width={4} height={4} />
       <schematiccircle center={{ x: -2, y: -2 }} radius={2} />
       <resistor name="R1" resistance="1k" footprint="0402" schX={0} schY={0} />
     </board>,
