@@ -1,14 +1,15 @@
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import type { InputComponent, PackInput } from "calculate-packing"
+import type { LayerRef } from "circuit-json"
 
-const normalizeLayer = (layer: string | undefined) =>
-  (layer ?? "top").toLowerCase()
+const normalizeLayer = (layer: string | undefined): LayerRef =>
+  (layer ?? "top").toLowerCase() as LayerRef
 
-const getComponentLayer = (
+export const getPackComponentPcbLayer = (
   component: InputComponent,
   db: CircuitJsonUtilObjects,
-): string | undefined => {
-  const layers = new Set<string>()
+): LayerRef | undefined => {
+  const layers = new Set<LayerRef>()
   const directPcbComponent = db.pcb_component.get(component.componentId)
 
   if (directPcbComponent) {
@@ -42,10 +43,10 @@ export const getPackInputsByPcbLayer = (
   packInput: PackInput,
   db: CircuitJsonUtilObjects,
 ): PackInput[] => {
-  const componentsByLayer = new Map<string, InputComponent[]>()
+  const componentsByLayer = new Map<LayerRef, InputComponent[]>()
 
   for (const component of packInput.components) {
-    const layer = getComponentLayer(component, db)
+    const layer = getPackComponentPcbLayer(component, db)
     if (!layer) return [packInput]
 
     const components = componentsByLayer.get(layer) ?? []
