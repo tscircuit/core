@@ -73,26 +73,18 @@ test("inner-layer routes retain the distinct nets of their through-via endpoints
   )
   await circuit.renderUntilSettled()
 
-  await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
-    layer: "inner1",
-  })
-
   const { db } = circuit
   const sourceTraces = ["GND", "SIGNAL"].map(
     (name) => db.source_trace.list().find((trace) => trace.name === name)!,
   )
   const pcbTraces = db.pcb_trace.list()
-  expect(pcbTraces).toHaveLength(2)
-  // Geometry cannot identify these endpoints: the logical via ports are on top.
-  for (const sourceTrace of sourceTraces) {
+  const routeAttributions = sourceTraces.map((sourceTrace) => {
     const viaPorts = sourceTrace.connected_source_port_ids.map(
       (sourcePortId) =>
         db.pcb_port
           .list()
           .find((port) => port.source_port_id === sourcePortId)!,
     )
-    expect(viaPorts.every((port) => port.layers.includes("top"))).toBe(true)
-    expect(viaPorts.every((port) => !port.layers.includes("inner1"))).toBe(true)
     const pcbTrace = pcbTraces.find((trace) =>
       trace.route.some(
         (point) =>
@@ -101,6 +93,36 @@ test("inner-layer routes retain the distinct nets of their through-via endpoints
           point.y === viaPorts[0].y,
       ),
     )!
+    return { sourceTrace, viaPorts, pcbTrace }
+  })
+
+  // Draw the attribution actually emitted by core. The copper geometry is
+  // unchanged by this bug, so static net labels alone cannot expose it.
+  const annotatedCircuitJson = circuit.getCircuitJson().map((element) => {
+    if (element.type !== "pcb_note_text") return element
+    const attribution = routeAttributions.find(
+      ({ sourceTrace }) =>
+        element.text === `${sourceTrace.name}: inner1 via-to-via route`,
+    )
+    if (!attribution) return element
+    const { sourceTrace, pcbTrace } = attribution
+    const assignedSourceTrace = pcbTrace.source_trace_id
+      ? db.source_trace.get(pcbTrace.source_trace_id)
+      : undefined
+    return {
+      ...element,
+      text: `Expected ${sourceTrace.name}; actual ${assignedSourceTrace?.name ?? "UNASSIGNED"}`,
+    }
+  })
+  await expect(annotatedCircuitJson).toMatchPcbSnapshot(import.meta.path, {
+    layer: "inner1",
+  })
+
+  expect(pcbTraces).toHaveLength(2)
+  // Geometry cannot identify these endpoints: the logical via ports are on top.
+  for (const { sourceTrace, viaPorts, pcbTrace } of routeAttributions) {
+    expect(viaPorts.every((port) => port.layers.includes("top"))).toBe(true)
+    expect(viaPorts.every((port) => !port.layers.includes("inner1"))).toBe(true)
     expect(pcbTrace.source_trace_id).toBe(sourceTrace.source_trace_id)
   }
   expect(sourceTraces[0].subcircuit_connectivity_map_key).not.toBe(
