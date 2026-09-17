@@ -9,9 +9,10 @@ import type {
 import { ConnectivityMap } from "circuit-json-to-connectivity-map"
 import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
 
-type RoutedTrace = (PcbTrace | SimplifiedPcbTrace) & {
-  source_trace_id?: string
-}
+type RoutedTrace = (PcbTrace | SimplifiedPcbTrace) &
+  Pick<SimplifiedPcbTrace, "connectsTo"> & {
+    source_trace_id?: string
+  }
 
 type RoutePointWithPortIds = {
   route_type: string
@@ -224,6 +225,15 @@ function getSourcePortIdsFromRoutedTrace(
       const sourcePortId = db.pcb_port.get(pcbPortId)?.source_port_id
       if (sourcePortId) sourcePortIds.add(sourcePortId)
     }
+  }
+
+  if (sourcePortIds.size > 0) return [...sourcePortIds]
+
+  // Through-vias can terminate inner-layer routes even when their logical
+  // ports are on top. Preserve the router's explicit endpoint identities.
+  for (const pcbPortId of trace.connectsTo ?? []) {
+    const sourcePortId = db.pcb_port.get(pcbPortId)?.source_port_id
+    if (sourcePortId) sourcePortIds.add(sourcePortId)
   }
 
   if (sourcePortIds.size > 0) return [...sourcePortIds]
