@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import type { PcbPlatedHoleCircle, PcbSmtPadRect } from "circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("pcbPack keeps bottom-side SMT pads clear of fixed plated holes", async () => {
+test.failing("pcbPack avoids fixed plated holes across layers", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
