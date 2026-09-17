@@ -1,0 +1,66 @@
+{
+  "regions": [
+    {
+      "regionId": "pcb_group_3",
+      "bounds": {
+        "minX": 16.0897023,
+        "maxX": 38.5102977,
+        "minY": -23.7320032,
+        "maxY": -4.8679968
+      },
+      "edge": "top"
+    },
+    {
+      "regionId": "pcb_group_4",
+      "bounds": {
+        "minX": 39.107119749999995,
+        "maxX": 50.892880250000005,
+        "minY": 3.25569755,
+        "maxY": 16.74430245
+      },
+      "edge": "bottom"
+    }
+  ],
+  "connections": [
+    {
+      "connectionId": "source_trace_194",
+      "endpoints": [
+        {
+          "regionId": "pcb_group_3",
+          "position": {
+            "x": 28.850035000000002,
+            "y": -13.899823000000001
+          }
+        },
+        {
+          "regionId": "pcb_group_4",
+          "position": {
+            "x": 41.14999,
+            "y": 12.55004
+          }
+        }
+      ]
+    },
+    {
+      "connectionId": "source_trace_195",
+      "endpoints": [
+        {
+          "regionId": "pcb_group_3",
+          "position": {
+            "x": 28.850035000000002,
+            "y": -14.299873
+          }
+        },
+        {
+          "regionId": "pcb_group_4",
+          "position": {
+            "x": 41.14999,
+            "y": 14.44996
+          }
+        }
+      ]
+    }
+  ],
+  "buses": [],
+  "boundaryPointSpacing": 0.8500000000000001
+}
