@@ -29,6 +29,58 @@ test("manual vias reference their own layer ports and aliases", async () => {
   await circuit.renderUntilSettled()
   const vias = circuit.db.pcb_via.list()
   expect(vias).toHaveLength(2)
+  expect(vias).toMatchInlineSnapshot(`
+    [
+      {
+        "from_layer": "bottom",
+        "hole_diameter": 0.2,
+        "layers": [
+          "top",
+          "bottom",
+        ],
+        "net_is_assignable": undefined,
+        "outer_diameter": 0.3,
+        "pcb_group_id": undefined,
+        "pcb_port_ids": [
+          "pcb_port_0",
+          "pcb_port_1",
+          "pcb_port_2",
+        ],
+        "pcb_via_id": "pcb_via_0",
+        "source_net_id": "source_net_0",
+        "subcircuit_connectivity_map_key": "unnamedsubcircuitsubcircuit_source_group_0_connectivity_net0",
+        "subcircuit_id": "subcircuit_source_group_0",
+        "to_layer": "top",
+        "type": "pcb_via",
+        "x": -2,
+        "y": 1,
+      },
+      {
+        "from_layer": "bottom",
+        "hole_diameter": 0.2,
+        "layers": [
+          "top",
+          "bottom",
+        ],
+        "net_is_assignable": undefined,
+        "outer_diameter": 0.3,
+        "pcb_group_id": undefined,
+        "pcb_port_ids": [
+          "pcb_port_3",
+          "pcb_port_4",
+          "pcb_port_5",
+        ],
+        "pcb_via_id": "pcb_via_1",
+        "source_net_id": "source_net_0",
+        "subcircuit_connectivity_map_key": "unnamedsubcircuitsubcircuit_source_group_0_connectivity_net0",
+        "subcircuit_id": "subcircuit_source_group_0",
+        "to_layer": "top",
+        "type": "pcb_via",
+        "x": 2,
+        "y": 1,
+      },
+    ]
+  `)
   const portGroups = vias.map((via) => {
     expect(via.pcb_port_ids).toHaveLength(3)
     expect(pcb_via.parse(via).pcb_port_ids).toEqual(via.pcb_port_ids)
