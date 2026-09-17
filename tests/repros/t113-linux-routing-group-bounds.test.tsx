@@ -7,7 +7,7 @@ import { Circuit } from "../../lib"
 import T113LinuxBoard from "../fixtures/t113-linux-exact/index.circuit"
 import windingBreakoutInput from "../fixtures/t113-linux-exact/winding-breakout-input.json"
 
-test("exact T113 routing groups expose their misplaced bounds", async () => {
+test("exact T113 routing groups follow their padded content bounds", async () => {
   const circuit = new Circuit({ platform: { useCloudAutorouter: false } })
   circuit.add(React.createElement(T113LinuxBoard))
   circuit.render()
@@ -29,35 +29,29 @@ test("exact T113 routing groups expose their misplaced bounds", async () => {
   const regulator18 = getGroup("REG18")
   const usb = getGroup("USB")
 
-  const expectCenteredOnAnchor = (group: ReturnType<typeof getGroup>) => {
-    const anchorPosition = group.anchor_position
-    if (!anchorPosition) {
-      throw new Error(
-        `Missing anchor position for exact T113 group ${group.name}`,
-      )
-    }
-    expect(group.center).toEqual(anchorPosition)
+  expect(buck.center.x).toBeCloseTo(29.353696, 6)
+  expect(buck.center.y).toBeCloseTo(-17.3, 6)
+  expect(supervisor33.center.x).toBeCloseTo(44.97723525, 6)
+  expect(supervisor33.center.y).toBeCloseTo(11.11229925, 6)
+  const regulator18AnchorPosition = regulator18.anchor_position
+  if (!regulator18AnchorPosition) {
+    throw new Error("Missing anchor position for exact T113 group REG18")
   }
-
-  expectCenteredOnAnchor(buck)
-  expectCenteredOnAnchor(supervisor33)
-  expectCenteredOnAnchor(regulator18)
-  expectCenteredOnAnchor(usb)
+  expect(regulator18.center).toEqual(regulator18AnchorPosition)
+  expect(usb.center.x).toBeCloseTo(-17.2489698, 6)
+  expect(usb.center.y).toBeCloseTo(-26.72952175, 6)
 
   const placementErrors = circuitJson.filter(
     (element) => element.type === "pcb_placement_error",
   )
-  expect(placementErrors).toHaveLength(1)
-  expect(placementErrors[0]?.message).toContain(
-    'Fanout boundaries "REG18" and "USB" overlap',
-  )
+  expect(placementErrors).toHaveLength(0)
 
   const windingAutoroutingErrors = circuitJson.filter(
     (element) =>
       element.type === "pcb_autorouting_error" &&
       element.message.includes("Winding fanout failed"),
   )
-  expect(windingAutoroutingErrors).toHaveLength(2)
+  expect(windingAutoroutingErrors).toHaveLength(0)
 
   const liveGroupById = new Map(
     groups.map((group) => [group.pcb_group_id, group]),
@@ -66,15 +60,28 @@ test("exact T113 routing groups expose their misplaced bounds", async () => {
     regions: windingBreakoutInput.regions.map((region) => {
       const group = liveGroupById.get(region.regionId)
       if (!group) throw new Error(`Missing live group ${region.regionId}`)
+      const { width, height } = group
+      if (width === undefined || height === undefined) {
+        throw new Error(`Missing bounds size for live group ${region.regionId}`)
+      }
+      const edge = region.edge
+      if (
+        edge !== "left" &&
+        edge !== "right" &&
+        edge !== "top" &&
+        edge !== "bottom"
+      ) {
+        throw new Error(`Invalid breakout edge ${edge}`)
+      }
       return {
         id: region.regionId,
         bounds: {
-          minX: group.center.x - group.width / 2,
-          maxX: group.center.x + group.width / 2,
-          minY: group.center.y - group.height / 2,
-          maxY: group.center.y + group.height / 2,
+          minX: group.center.x - width / 2,
+          maxX: group.center.x + width / 2,
+          minY: group.center.y - height / 2,
+          maxY: group.center.y + height / 2,
         },
-        edge: region.edge,
+        edge,
       }
     }),
     connections: windingBreakoutInput.connections.map((connection) => ({
@@ -85,10 +92,9 @@ test("exact T113 routing groups expose their misplaced bounds", async () => {
     boundaryPointSpacing: windingBreakoutInput.boundaryPointSpacing,
   })
 
-  expect(() => windingSolver.solve()).toThrow(
-    "declared breakout edges need 0.85mm but expose only -0.60mm",
-  )
-  expect(windingSolver.solved).toBe(false)
+  expect(() => windingSolver.solve()).not.toThrow()
+  expect(windingSolver.solved).toBe(true)
+  expect(windingSolver.getOutput().breakoutPoints).toHaveLength(4)
 
   await expect(
     convertCircuitJsonToPcbSvg(circuitJson, {
