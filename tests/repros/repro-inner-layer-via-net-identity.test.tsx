@@ -44,6 +44,16 @@ test("inner-layer routes retain the distinct nets of their through-via endpoints
         algorithmFn: createBasicAutorouter(routeViaConnectionsOnInnerLayer),
       }}
     >
+      <pcbnotetext
+        text="Top-layer via ports connected by inner1 traces"
+        pcbY={5}
+        fontSize={0.36}
+      />
+      <pcbnotetext
+        text="Each route should retain its source net"
+        pcbY={4.3}
+        fontSize={0.3}
+      />
       {["GND", "SIGNAL"].map((net, row) => (
         <Fragment key={net}>
           <net name={net} />

@@ -229,8 +229,7 @@ function getSourcePortIdsFromRoutedTrace(
 
   if (sourcePortIds.size > 0) return [...sourcePortIds]
 
-  // Through-vias can terminate inner-layer routes even when their logical
-  // ports are on top. Preserve the router's explicit endpoint identities.
+  // Geometry cannot match inner-layer endpoints to via ports registered on top.
   for (const pcbPortId of trace.connectsTo ?? []) {
     const sourcePortId = db.pcb_port.get(pcbPortId)?.source_port_id
     if (sourcePortId) sourcePortIds.add(sourcePortId)
