@@ -111,7 +111,7 @@
     "circuit-json-to-bpc": "*",
     "bpc-graph": "*",
     "@tscircuit/matchpack": "*",
-    "circuit-json": "^0.0.492",
+    "circuit-json": "*",
     "circuit-json-to-connectivity-map": "*",
     "circuit-json-to-spice": "*",
     "schematic-symbols": "*",
