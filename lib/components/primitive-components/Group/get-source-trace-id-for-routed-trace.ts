@@ -9,10 +9,10 @@ import type {
 import { ConnectivityMap } from "circuit-json-to-connectivity-map"
 import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
 
-type RoutedTrace = (PcbTrace | SimplifiedPcbTrace) &
-  Pick<SimplifiedPcbTrace, "connectsTo"> & {
-    source_trace_id?: string
-  }
+type RoutedTrace = (PcbTrace | SimplifiedPcbTrace) & {
+  source_trace_id?: string
+  connectsTo?: string[]
+}
 
 type RoutePointWithPortIds = {
   route_type: string

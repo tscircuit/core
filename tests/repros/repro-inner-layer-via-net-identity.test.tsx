@@ -33,7 +33,7 @@ async function routeViaConnectionsOnInnerLayer(
     }))
 }
 
-test("inner-layer routes currently lose the nets of their through-via endpoints", async () => {
+test("inner-layer routes retain the distinct nets of their through-via endpoints", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board
@@ -120,11 +120,10 @@ test("inner-layer routes currently lose the nets of their through-via endpoints"
 
   expect(pcbTraces).toHaveLength(2)
   // Geometry cannot identify these endpoints: the logical via ports are on top.
-  for (const { viaPorts, pcbTrace } of routeAttributions) {
+  for (const { sourceTrace, viaPorts, pcbTrace } of routeAttributions) {
     expect(viaPorts.every((port) => port.layers.includes("top"))).toBe(true)
     expect(viaPorts.every((port) => !port.layers.includes("inner1"))).toBe(true)
-    // Characterize the bug here; the stacked fix must assert the correct ID.
-    expect(pcbTrace.source_trace_id).toBeUndefined()
+    expect(pcbTrace.source_trace_id).toBe(sourceTrace.source_trace_id)
   }
   expect(sourceTraces[0].subcircuit_connectivity_map_key).not.toBe(
     sourceTraces[1].subcircuit_connectivity_map_key,
