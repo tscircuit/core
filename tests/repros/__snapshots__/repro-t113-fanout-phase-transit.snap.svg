@@ -1,0 +1,112 @@
+<svg width="1416" height="630" viewBox="0 0 1416 630" xmlns="http://www.w3.org/2000/svg">
+  <g transform="translate(0, 0) scale(1, 1) translate(0, 0)">
+    <g transform="translate(0, 0) scale(1, 1) translate(0, 0)">
+    <rect width="700" height="70" fill="#f4f4f4" />
+  <text x="350" y="26" fill="#111" font-family="Arial, sans-serif"
+    font-size="18" font-weight="700" text-anchor="middle">BEFORE · GLOBAL TAIL CLAIMED BY FANOUT</text>
+  <text x="350" y="51" fill="#4b5563" font-family="Arial, sans-serif"
+    font-size="14" text-anchor="middle">RED local fanout + BLUE global tail are sent to one solver</text>
+  </g>
+  <g transform="translate(0, 70) scale(1, 1) translate(0, 0)">
+    <rect width="100%" height="100%" fill="#fff"/><g><polyline data-points="5,20.1 2.246428571428571,17.450100000000003" data-type="line" data-label="local fanout connection" points="470,83.19999999999993 337.8285714285714,210.39519999999993" fill="none" stroke="#dc2626" stroke-width="5.76"/></g><g><polyline data-points="2.246428571428571,17.450100000000003 -0.04998490909090858,12.070015499999998" data-type="line" data-label="global transit tail (wrong phase)" points="337.8285714285714,210.39519999999993 227.6007243636364,468.63925600000005" fill="none" stroke="#0891b2" stroke-width="5.76"/></g><g><rect data-type="rect" data-label="" data-x="2.5" data-y="16" x="182" y="40" width="336" height="480" fill="rgba(255,255,255,0)" stroke="rgba(0,0,0,0)" stroke-width="0.020833333333333332"/></g><g><rect data-type="rect" data-label="LT8912B" data-x="4.7" data-y="20.1" x="426.80000000000007" y="59.19999999999993" width="57.599999999999966" height="48" fill="#f3f4f6" stroke="#4b5563" stroke-width="0.020833333333333332"/></g><g><circle data-type="point" data-label="HDMI pad" data-x="5" data-y="20.1" cx="470" cy="83.19999999999993" r="3" fill="#dc2626"/></g><g><circle data-type="point" data-label="fanout boundary" data-x="2.246428571428571" data-y="17.450100000000003" cx="337.8285714285714" cy="210.39519999999993" r="3" fill="#dc2626"/></g><g><circle data-type="point" data-label="global boundary" data-x="-0.04998490909090858" data-y="12.070015499999998" cx="227.6007243636364" cy="468.63925600000005" r="3" fill="#0891b2"/></g><g id="crosshair__stack1" style="display: none"><line id="crosshair-h__stack1" y1="0" y2="560" stroke="#666" stroke-width="0.5"/><line id="crosshair-v__stack1" x1="0" x2="700" stroke="#666" stroke-width="0.5"/><text id="coordinates__stack1" font-family="monospace" font-size="12" fill="#666"></text></g><script><![CDATA[
+              document.currentScript.parentElement.addEventListener('mousemove', (e) => {
+                const svg = e.currentTarget;
+                const rect = svg.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                const crosshair = svg.getElementById('crosshair');
+                const h = svg.getElementById('crosshair-h');
+                const v = svg.getElementById('crosshair-v');
+                const coords = svg.getElementById('coordinates');
+
+                crosshair.style.display = 'block';
+                h.setAttribute('x1', '0');
+                h.setAttribute('x2', '700');
+                h.setAttribute('y1', y);
+                h.setAttribute('y2', y);
+                v.setAttribute('x1', x);
+                v.setAttribute('x2', x);
+                v.setAttribute('y1', '0');
+                v.setAttribute('y2', '560');
+
+                // Calculate real coordinates using inverse transformation
+                const matrix = {"a":48,"c":0,"e":230,"b":0,"d":-48,"f":1048};
+                // Manually invert and apply the affine transform
+                // Since we only use translate and scale, we can directly compute:
+                // x' = (x - tx) / sx
+                // y' = (y - ty) / sy
+                const sx = matrix.a;
+                const sy = matrix.d;
+                const tx = matrix.e;
+                const ty = matrix.f;
+                const realPoint = {
+                  x: (x - tx) / sx,
+                  y: (y - ty) / sy // Flip y back since we used negative scale
+                }
+
+                coords.textContent = `(${realPoint.x.toFixed(2)}, ${realPoint.y.toFixed(2)})`;
+                coords.setAttribute('x', (x + 5).toString());
+                coords.setAttribute('y', (y - 5).toString());
+              });
+              document.currentScript.parentElement.addEventListener('mouseleave', () => {
+                document.currentScript.parentElement.getElementById('crosshair').style.display = 'none';
+              });
+            ]]></script>
+  </g>
+  </g>
+  <g transform="translate(716, 0) scale(1, 1) translate(0, 0)">
+    <g transform="translate(0, 0) scale(1, 1) translate(0, 0)">
+    <rect width="700" height="70" fill="#f4f4f4" />
+  <text x="350" y="26" fill="#111" font-family="Arial, sans-serif"
+    font-size="18" font-weight="700" text-anchor="middle">AFTER · ONLY LOCAL PAD-TO-BOUNDARY ROUTE</text>
+  <text x="350" y="51" fill="#4b5563" font-family="Arial, sans-serif"
+    font-size="14" text-anchor="middle">RED local fanout only; the BLUE global tail runs in its own phase</text>
+  </g>
+  <g transform="translate(0, 70) scale(1, 1) translate(0, 0)">
+    <rect width="100%" height="100%" fill="#fff"/><g><polyline data-points="5,20.1 2.246428571428571,17.450100000000003" data-type="line" data-label="local fanout connection" points="470,83.19999999999993 337.8285714285714,210.39519999999993" fill="none" stroke="#dc2626" stroke-width="5.76"/></g><g><rect data-type="rect" data-label="" data-x="2.5" data-y="16" x="182" y="40" width="336" height="480" fill="rgba(255,255,255,0)" stroke="rgba(0,0,0,0)" stroke-width="0.020833333333333332"/></g><g><rect data-type="rect" data-label="LT8912B" data-x="4.7" data-y="20.1" x="426.80000000000007" y="59.19999999999993" width="57.599999999999966" height="48" fill="#f3f4f6" stroke="#4b5563" stroke-width="0.020833333333333332"/></g><g><circle data-type="point" data-label="HDMI pad" data-x="5" data-y="20.1" cx="470" cy="83.19999999999993" r="3" fill="#dc2626"/></g><g><circle data-type="point" data-label="fanout boundary" data-x="2.246428571428571" data-y="17.450100000000003" cx="337.8285714285714" cy="210.39519999999993" r="3" fill="#dc2626"/></g><g id="crosshair__stack1__stack1" style="display: none"><line id="crosshair-h__stack1__stack1" y1="0" y2="560" stroke="#666" stroke-width="0.5"/><line id="crosshair-v__stack1__stack1" x1="0" x2="700" stroke="#666" stroke-width="0.5"/><text id="coordinates__stack1__stack1" font-family="monospace" font-size="12" fill="#666"></text></g><script><![CDATA[
+              document.currentScript.parentElement.addEventListener('mousemove', (e) => {
+                const svg = e.currentTarget;
+                const rect = svg.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                const crosshair = svg.getElementById('crosshair');
+                const h = svg.getElementById('crosshair-h');
+                const v = svg.getElementById('crosshair-v');
+                const coords = svg.getElementById('coordinates');
+
+                crosshair.style.display = 'block';
+                h.setAttribute('x1', '0');
+                h.setAttribute('x2', '700');
+                h.setAttribute('y1', y);
+                h.setAttribute('y2', y);
+                v.setAttribute('x1', x);
+                v.setAttribute('x2', x);
+                v.setAttribute('y1', '0');
+                v.setAttribute('y2', '560');
+
+                // Calculate real coordinates using inverse transformation
+                const matrix = {"a":48,"c":0,"e":230,"b":0,"d":-48,"f":1048};
+                // Manually invert and apply the affine transform
+                // Since we only use translate and scale, we can directly compute:
+                // x' = (x - tx) / sx
+                // y' = (y - ty) / sy
+                const sx = matrix.a;
+                const sy = matrix.d;
+                const tx = matrix.e;
+                const ty = matrix.f;
+                const realPoint = {
+                  x: (x - tx) / sx,
+                  y: (y - ty) / sy // Flip y back since we used negative scale
+                }
+
+                coords.textContent = `(${realPoint.x.toFixed(2)}, ${realPoint.y.toFixed(2)})`;
+                coords.setAttribute('x', (x + 5).toString());
+                coords.setAttribute('y', (y - 5).toString());
+              });
+              document.currentScript.parentElement.addEventListener('mouseleave', () => {
+                document.currentScript.parentElement.getElementById('crosshair').style.display = 'none';
+              });
+            ]]></script>
+  </g>
+  </g>
+</svg>

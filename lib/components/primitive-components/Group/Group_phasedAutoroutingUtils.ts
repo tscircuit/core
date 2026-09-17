@@ -51,7 +51,25 @@ export function Group_filterSimpleRouteJsonForPhase(
   phasePlan: RoutingPhasePlan,
 ): SimpleRouteJson {
   const connections: SimpleRouteConnection[] = []
+  const sourceTraceIdsOwnedByRoutingGroup = new Set(
+    phasePlan.routingPcbGroupId
+      ? simpleRouteJson.connections.flatMap((connection) =>
+          connection.routingPcbGroupId === phasePlan.routingPcbGroupId &&
+          connection.source_trace_id
+            ? [connection.source_trace_id]
+            : [],
+        )
+      : [],
+  )
   for (const connection of simpleRouteJson.connections) {
+    if (
+      phasePlan.routingPcbGroupId &&
+      !connection.routingPcbGroupId &&
+      connection.source_trace_id &&
+      sourceTraceIdsOwnedByRoutingGroup.has(connection.source_trace_id)
+    ) {
+      continue
+    }
     if (connectionIsInRoutingPhase(connection, phasePlan)) {
       connections.push(connection)
     }
