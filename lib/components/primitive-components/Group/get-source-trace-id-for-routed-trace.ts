@@ -11,6 +11,7 @@ import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
 
 type RoutedTrace = (PcbTrace | SimplifiedPcbTrace) & {
   source_trace_id?: string
+  connection_name?: string
 }
 
 type RoutePointWithPortIds = {
@@ -260,6 +261,14 @@ export function getSourceTraceIdForRoutedTrace({
       db.source_net.get(trace.source_trace_id))
   ) {
     return trace.source_trace_id
+  }
+
+  if (
+    trace.connection_name &&
+    (db.source_trace.get(trace.connection_name) ??
+      db.source_net.get(trace.connection_name))
+  ) {
+    return trace.connection_name
   }
 
   const sourcePortIds = getSourcePortIdsFromRoutedTrace(db, trace)
