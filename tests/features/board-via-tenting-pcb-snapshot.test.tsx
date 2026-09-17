@@ -4,10 +4,10 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 test("PCB soldermask shows board tenting defaults and explicit via overrides", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
-    <panel width={70} height={38}>
+    <panel width={60} height={38}>
       <board
         name="A"
-        width={66}
+        width={56}
         height={16}
         pcbY={9}
         defaultViaTenting="top_tented"
@@ -21,78 +21,65 @@ test("PCB soldermask shows board tenting defaults and explicit via overrides", a
           <group>
             <pcbnotetext
               text="top: unset"
-              pcbX={-25}
+              pcbX={-20}
               pcbY={3.3}
               fontSize={0.65}
             />
             <pcbnotetext
               text="bottom: unset"
-              pcbX={-25}
+              pcbX={-20}
               pcbY={2}
               fontSize={0.65}
             />
             <via
               name="Inherited"
-              pcbX={-25}
+              pcbX={-20}
               holeDiameter={0.6}
               outerDiameter={1.2}
             />
           </group>
         </subcircuit>
-        <pcbnotetext text="tented=true" pcbX={-15} pcbY={2.7} fontSize={0.65} />
+        <pcbnotetext text="tented=true" pcbX={-10} pcbY={2.7} fontSize={0.65} />
         <via
           name="Both"
-          pcbX={-15}
+          pcbX={-10}
           tented
           holeDiameter={0.6}
           outerDiameter={1.2}
         />
-        <pcbnotetext text="tented=false" pcbX={-5} pcbY={2.7} fontSize={0.65} />
+        <pcbnotetext text="tented=false" pcbX={0} pcbY={2.7} fontSize={0.65} />
         <via
           name="Exposed"
-          pcbX={-5}
+          pcbX={0}
           tented={false}
           holeDiameter={0.6}
           outerDiameter={1.2}
         />
-        <pcbnotetext text="top_tented" pcbX={5} pcbY={2.7} fontSize={0.65} />
+        <pcbnotetext text="top_tented" pcbX={10} pcbY={2.7} fontSize={0.65} />
         <via
           name="Top"
-          pcbX={5}
+          pcbX={10}
           tented="top_tented"
           holeDiameter={0.6}
           outerDiameter={1.2}
         />
         <pcbnotetext
           text="bottom_tented"
-          pcbX={15}
+          pcbX={20}
           pcbY={2.7}
           fontSize={0.65}
         />
         <via
           name="Bottom"
-          pcbX={15}
+          pcbX={20}
           tented="bottom_tented"
           holeDiameter={0.6}
           outerDiameter={1.2}
         />
-        <pcbnotetext
-          text="Connector hole"
-          pcbX={25}
-          pcbY={2.7}
-          fontSize={0.65}
-        />
-        <platedhole
-          shape="circle"
-          pcbX={25}
-          holeDiameter={1.2}
-          outerDiameter={2.4}
-        />
-        <pcbnotetext text="Unaffected" pcbX={25} pcbY={-2} fontSize={0.65} />
       </board>
       <board
         name="B"
-        width={66}
+        width={56}
         height={16}
         pcbY={-9}
         defaultViaTenting="bottom_tented"

@@ -139,6 +139,7 @@ export class PcbVia extends PrimitiveComponent<typeof pcbViaProps> {
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
       net_is_assignable: netIsAssignable,
+      // Use the same footprint flip as the via layers above.
       tented_on_top: isFlipped ? bottomTenting : topTenting,
       tented_on_bottom: isFlipped ? topTenting : bottomTenting,
     } as Omit<CircuitJsonPcbVia, "type" | "pcb_via_id">)
