@@ -31,7 +31,7 @@ export class PcbTrace extends PrimitiveComponent<typeof pcbTraceProps> {
     const subcircuit = this.getSubcircuit()
 
     // Apply parent transformation to each point in the route
-    const { maybeFlipLayer } = this._getPcbPrimitiveFlippedHelpers()
+    const { isFlipped, maybeFlipLayer } = this._getPcbPrimitiveFlippedHelpers()
     const parentTransform = this._computePcbGlobalTransformBeforeLayout()
 
     const transformedRoute = props.route.map((point) => {
@@ -53,6 +53,12 @@ export class PcbTrace extends PrimitiveComponent<typeof pcbTraceProps> {
           ...transformedPoint,
           from_layer: maybeFlipLayer(point.from_layer),
           to_layer: maybeFlipLayer(point.to_layer),
+          tented_on_top: isFlipped
+            ? point.tented_on_bottom
+            : point.tented_on_top,
+          tented_on_bottom: isFlipped
+            ? point.tented_on_top
+            : point.tented_on_bottom,
         } as PcbTraceRoutePoint
       }
 

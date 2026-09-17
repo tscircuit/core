@@ -17,6 +17,7 @@ import type {
   PcbVia,
 } from "circuit-json"
 import { getBoardAvailableLayers } from "lib/utils/getViaSpanLayers"
+import { getViaTenting } from "lib/utils/getViaTenting"
 import { type Matrix, compose, translate } from "transformation-matrix"
 import type { z } from "zod"
 import { getDescendantSubcircuitIds } from "../../utils/autorouting/getAncestorSubcircuitIds"
@@ -459,6 +460,7 @@ export class Board
     const pcbBoardFromCircuitJson = circuitJsonElements?.find(
       (elm) => elm.type === "pcb_board",
     )
+    const viaTenting = getViaTenting(props.defaultViaTenting)
     const rawProps = this.props
     const resolvedIsViaInPadAllowed =
       rawProps.isViaInPadAllowed ??
@@ -559,7 +561,14 @@ export class Board
           : jlcMinTolerances.min_via_pad_diameter)
     const pcb_board = db.pcb_board.insert({
       source_board_id: this.source_board_id,
+      subcircuit_id: this.subcircuit_id ?? undefined,
       center,
+      default_via_tented_on_top:
+        viaTenting.tented_on_top ??
+        pcbBoardFromCircuitJson?.default_via_tented_on_top,
+      default_via_tented_on_bottom:
+        viaTenting.tented_on_bottom ??
+        pcbBoardFromCircuitJson?.default_via_tented_on_bottom,
 
       thickness: this.boardThickness,
       num_layers: this.allLayers.length,

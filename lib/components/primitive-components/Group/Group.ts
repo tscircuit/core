@@ -64,7 +64,6 @@ import {
 } from "lib/utils/gnd-power-net-regex"
 import { getRoutePointPosition } from "lib/utils/pcb-trace-route-point-utils"
 import { getViaDiameterDefaults } from "lib/utils/pcbStyle/getViaDiameterDefaults"
-import { getViaTenting } from "lib/utils/getViaTenting"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/public-exports"
 import { reversePcbTraceRoute } from "lib/utils/reverse-pcb-trace-route"
 import { getPinsFromPortArrangement } from "lib/utils/schematic/getSizeOfSidesFromPortArrangement"
@@ -2346,9 +2345,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
               subcircuit_id: this.subcircuit_id!,
               pcb_group_id: this.pcb_group_id ?? undefined,
               subcircuit_connectivity_map_key: subcircuitConnectivityMapKey,
-              ...getViaTenting(
-                this._getBoard()?._parsedProps.defaultViaTenting,
-              ),
             }
             if (
               materializedPcbVias.some((materializedPcbVia) =>

@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import type { CircuitJson, PcbTrace, PcbVia } from "circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("subcircuit circuitJson inflation preserves pcb_via properties for routed trace vias", async () => {
+test("subcircuit circuitJson inflation preserves route-via dimensions and explicit tenting overrides", async () => {
   const { circuit: sourceCircuit } = getTestFixture()
 
   sourceCircuit.add(
@@ -52,13 +52,30 @@ test("subcircuit circuitJson inflation preserves pcb_via properties for routed t
   expect(sourcePcbTrace).toBeDefined()
   for (const routePoint of sourcePcbTrace!.route) {
     if (routePoint.route_type !== "via") continue
-    ;(routePoint as any).hole_diameter = sourceVia.hole_diameter
-    ;(routePoint as any).outer_diameter = sourceVia.outer_diameter
+    routePoint.hole_diameter = sourceVia.hole_diameter
+    routePoint.outer_diameter = sourceVia.outer_diameter
+    routePoint.tented_on_top = true
+    routePoint.tented_on_bottom = false
   }
 
   const { circuit: targetCircuit } = getTestFixture()
   targetCircuit.add(
-    <board width="20mm" height="20mm">
+    <board width="20mm" height="20mm" defaultViaTenting="bottom_tented">
+      <pcbnotetext
+        text="Route via: top: true, bottom: false"
+        pcbY={7}
+        fontSize={0.65}
+      />
+      <pcbnotetext
+        text="Board: top: false, bottom: true"
+        pcbY={5}
+        fontSize={0.65}
+      />
+      <pcbnotetext
+        text="Bottom view: explicit false stays exposed"
+        pcbY={-7}
+        fontSize={0.6}
+      />
       <subcircuit
         name="Inflated"
         circuitJson={circuitJsonWithRouteViaDiameters}
@@ -79,4 +96,10 @@ test("subcircuit circuitJson inflation preserves pcb_via properties for routed t
   expect(targetVias[0].from_layer).toBe("top")
   expect(targetVias[0].to_layer).toBe("bottom")
   expect(targetVias[0].pcb_trace_id).toBeDefined()
+  expect(targetVias[0].tented_on_top).toBe(true)
+  expect(targetVias[0].tented_on_bottom).toBe(false)
+  await expect(targetCircuit).toMatchPcbSnapshot(import.meta.path, {
+    layer: "bottom",
+    showSolderMask: true,
+  })
 })

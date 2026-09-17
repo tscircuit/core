@@ -111,9 +111,6 @@ export class PcbVia extends PrimitiveComponent<typeof pcbViaProps> {
       tentedOnBottom,
     } = this._parsedProps
     const viaTenting = getViaTenting(tented)
-    const boardTenting = getViaTenting(
-      this._getBoard()?._parsedProps.defaultViaTenting,
-    )
     const topTenting = tentedOnTop ?? viaTenting.tented_on_top ?? isTented
     const bottomTenting =
       tentedOnBottom ?? viaTenting.tented_on_bottom ?? isTented
@@ -142,12 +139,8 @@ export class PcbVia extends PrimitiveComponent<typeof pcbViaProps> {
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
       net_is_assignable: netIsAssignable,
-      // Use the same footprint flip as the via layers above, then board defaults.
-      tented_on_top:
-        (isFlipped ? bottomTenting : topTenting) ?? boardTenting.tented_on_top,
-      tented_on_bottom:
-        (isFlipped ? topTenting : bottomTenting) ??
-        boardTenting.tented_on_bottom,
+      tented_on_top: isFlipped ? bottomTenting : topTenting,
+      tented_on_bottom: isFlipped ? topTenting : bottomTenting,
     } as Omit<CircuitJsonPcbVia, "type" | "pcb_via_id">)
 
     this.pcb_via_id = pcbVia.pcb_via_id

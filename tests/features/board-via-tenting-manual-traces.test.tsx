@@ -25,13 +25,21 @@ test("manual trace vias inherit the board tenting through nested subcircuits", a
   )
   await circuit.renderUntilSettled()
 
-  expect(circuit.db.pcb_via.list()).toMatchObject([
-    {
-      tented_on_top: false,
-      tented_on_bottom: true,
-      pcb_trace_id: expect.any(String),
-    },
-  ])
+  expect(circuit.db.pcb_board.list()[0]).toMatchObject({
+    default_via_tented_on_top: false,
+    default_via_tented_on_bottom: true,
+  })
+  expect(circuit.db.pcb_via.list()).toHaveLength(1)
+  const via = circuit.db.pcb_via.list()[0]
+  expect(via.pcb_trace_id).toBe(circuit.db.pcb_trace.list()[0].pcb_trace_id)
+  expect(via.tented_on_top).toBeUndefined()
+  expect(via.tented_on_bottom).toBeUndefined()
+  const routeVia = circuit.db.pcb_trace
+    .list()[0]
+    .route.find((point) => point.route_type === "via")
+  expect(routeVia).toBeDefined()
+  expect(routeVia!.tented_on_top).toBeUndefined()
+  expect(routeVia!.tented_on_bottom).toBeUndefined()
   await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
     showSolderMask: true,
     layer: "bottom",

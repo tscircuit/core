@@ -23,12 +23,17 @@ test("autorouted vias inherit board tenting while manual overrides stay exposed"
   )
   await circuit.renderUntilSettled()
 
+  expect(circuit.db.pcb_board.list()[0]).toMatchObject({
+    default_via_tented_on_top: false,
+    default_via_tented_on_bottom: true,
+  })
   const vias = circuit.db.pcb_via.list()
   const routedVias = vias.filter((via) => via.pcb_trace_id)
   expect(routedVias.length).toBeGreaterThan(0)
   expect(
     routedVias.every(
-      (via) => via.tented_on_top === false && via.tented_on_bottom === true,
+      (via) =>
+        via.tented_on_top === undefined && via.tented_on_bottom === undefined,
     ),
   ).toBe(true)
   expect(vias.find((via) => !via.pcb_trace_id)).toMatchObject({
