@@ -48,17 +48,18 @@ test("inner-layer routes retain the distinct nets of their through-via endpoints
         <Fragment key={net}>
           <net name={net} />
           {["A", "B"].map((end, column) => (
-            <via
-              key={end}
-              name={`${net}_${end}`}
-              pcbX={column * 4 - 2}
-              pcbY={row * 4 - 2}
-              fromLayer="top"
-              toLayer="bottom"
-              outerDiameter={0.6}
-              holeDiameter={0.3}
-              connectsTo={`net.${net}`}
-            />
+            <Fragment key={end}>
+              <via
+                name={`${net}_${end}`}
+                pcbX={column * 4 - 2}
+                pcbY={row * 4 - 2}
+                fromLayer="top"
+                toLayer="bottom"
+                outerDiameter={0.6}
+                holeDiameter={0.3}
+                connectsTo={`net.${net}`}
+              />
+            </Fragment>
           ))}
           <trace name={net} from={`.${net}_A > .top`} to={`.${net}_B > .top`} />
           <pcbnotetext
