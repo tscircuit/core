@@ -1,9 +1,9 @@
-import React from "react"
-import { test, expect } from "bun:test"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
-import { getTestAutoroutingServer } from "tests/fixtures/get-test-autorouting-server"
+import { expect, test } from "bun:test"
 import { su } from "@tscircuit/circuit-json-util"
 import { getRoutePointPositions } from "lib/utils/pcb-trace-route-point-utils"
+import React from "react"
+import { getTestAutoroutingServer } from "tests/fixtures/get-test-autorouting-server"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("autorouter uses breakout point", async () => {
   const { circuit } = getTestFixture()
@@ -48,10 +48,10 @@ test("autorouter uses breakout point", async () => {
   const traceErrors = circuit.db.pcb_trace_error.list()
   const clearanceErrors = circuit.db.pcb_pad_trace_clearance_error.list()
 
-  expect(traceErrors).toHaveLength(2)
+  expect(traceErrors).toHaveLength(1)
   expect(
     traceErrors.filter((error) => error.message.includes("overlaps with")),
-  ).toHaveLength(1)
+  ).toHaveLength(0)
   expect(
     traceErrors.filter((error) =>
       error.message.includes("disconnected endpoint"),
