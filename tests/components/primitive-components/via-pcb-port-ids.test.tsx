@@ -3,7 +3,7 @@ import type { Port } from "lib/components/primitive-components/Port"
 import { pcb_via } from "circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("manual vias reference their own layer ports and aliases", async () => {
+test("manual vias reference only their own layer ports", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width={10} height={8} routingDisabled>
@@ -15,7 +15,7 @@ test("manual vias reference their own layer ports and aliases", async () => {
       <pcbnotetext
         pcbX={0}
         pcbY={-1}
-        text="Each via owns top, bottom, pin1 ports"
+        text="Each via owns only top and bottom ports"
         fontSize={0.35}
       />
       <pcbnotetext
@@ -44,7 +44,6 @@ test("manual vias reference their own layer ports and aliases", async () => {
         "pcb_port_ids": [
           "pcb_port_0",
           "pcb_port_1",
-          "pcb_port_2",
         ],
         "pcb_via_id": "pcb_via_0",
         "source_net_id": "source_net_0",
@@ -66,9 +65,8 @@ test("manual vias reference their own layer ports and aliases", async () => {
         "outer_diameter": 0.3,
         "pcb_group_id": undefined,
         "pcb_port_ids": [
+          "pcb_port_2",
           "pcb_port_3",
-          "pcb_port_4",
-          "pcb_port_5",
         ],
         "pcb_via_id": "pcb_via_1",
         "source_net_id": "source_net_0",
@@ -82,7 +80,7 @@ test("manual vias reference their own layer ports and aliases", async () => {
     ]
   `)
   const portGroups = vias.map((via) => {
-    expect(via.pcb_port_ids).toHaveLength(3)
+    expect(via.pcb_port_ids).toHaveLength(2)
     expect(pcb_via.parse(via).pcb_port_ids).toEqual(via.pcb_port_ids)
     const ports = via.pcb_port_ids!.map((id) => circuit.db.pcb_port.get(id)!)
     const sourcePorts = ports.map(
@@ -90,7 +88,6 @@ test("manual vias reference their own layer ports and aliases", async () => {
     )
     expect(sourcePorts.map((port) => port.name).sort()).toEqual([
       "bottom",
-      "pin1",
       "top",
     ])
     expect(
@@ -101,7 +98,8 @@ test("manual vias reference their own layer ports and aliases", async () => {
     }
     return via.pcb_port_ids!
   })
-  expect(new Set(portGroups.flat()).size).toBe(6)
+  expect(new Set(portGroups.flat()).size).toBe(4)
+  expect(circuit.selectOne(".V1 > .pin1")).toBeNull()
   const topPort = circuit.selectOne(".V1 > .top") as Port
   expect(portGroups[0]).toContain(topPort.pcb_port_id!)
   const trace = circuit.db.pcb_trace.list()[0]

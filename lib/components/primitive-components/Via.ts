@@ -100,9 +100,6 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
       port.registerMatch(this)
       this.add(port)
     }
-    const port = new Port({ name: "pin1" })
-    port.registerMatch(this)
-    this.add(port)
   }
 
   /**
@@ -255,7 +252,7 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
   doInitialPcbPortAttachment(): void {
     if (this.root?.pcbDisabled) return
     // The via is emitted before its child ports, so attach their IDs only
-    // after PcbPortRender has created the layer ports and pin1 alias.
+    // after PcbPortRender has created the layer ports.
     this.root!.db.pcb_via.update(this.pcb_via_id!, {
       pcb_port_ids: this.children.flatMap((child) =>
         child instanceof Port && child.pcb_port_id ? [child.pcb_port_id] : [],
