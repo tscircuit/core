@@ -93,6 +93,8 @@ export type SimpleRouteConnection = {
   isOffBoard?: boolean
   netConnectionName?: string
   nominalTraceWidth?: number
+  /** Required route width, except for short tapers into narrower terminal pads. */
+  minTraceWidth?: number
   /** @deprecated Use `nominalTraceWidth` instead. */
   width?: number
   pointsToConnect: SingleLayerConnectionPoint[]
