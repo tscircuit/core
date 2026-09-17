@@ -88,6 +88,10 @@ test("fanout routes soic8 sensor support parts to an i2c header without fanoutpo
     import.meta.path,
     "fanout-soic8-sensor-to-i2c-header-autorouting-srj",
     circuit,
+    // Linux and macOS routing coordinates differ by ~0.002 mm, shifting the
+    // dashed bottom-layer trace pixels by 0.10%. Keep this tolerance local;
+    // the PCB snapshot and routing/DRC assertions still use their usual checks.
+    { diffThresholdPercent: 0.15 },
   )
 
   const drcErrors = circuit.db.pcb_trace_error.list()

@@ -679,10 +679,18 @@ export class Board
       !routingDisabled &&
       !routingDrcChecksDisabled
 
+    const fabricatorEngine = this.root?.platform?.fabricatorEngine
+    const fabricatorPreset = this._parsedProps.fabricatorPreset
+    const shouldRunFabricatorChecks =
+      !drcChecksDisabled &&
+      !pcbDisabled &&
+      !!fabricatorEngine &&
+      !!fabricatorPreset
+
     // If async trace routing is still in progress anywhere in this board subtree,
     // wait so routing DRC sees final routed traces and doesn't mark DRC complete early.
     if (
-      shouldRunRoutingChecks &&
+      (shouldRunRoutingChecks || shouldRunFabricatorChecks) &&
       this._hasIncompleteAsyncEffectsInSubtreeForPhase("PcbTraceRender")
     )
       return
@@ -691,7 +699,7 @@ export class Board
     // traces that actually need routing. Otherwise placement/netlist DRC can run.
     const hasTracesToRoute = this._hasTracesToRoute()
     if (
-      shouldRunRoutingChecks &&
+      (shouldRunRoutingChecks || shouldRunFabricatorChecks) &&
       hasTracesToRoute &&
       !this._areChildSubcircuitsRouted()
     )
@@ -702,6 +710,23 @@ export class Board
 
     const runDrcChecks = async (circuitJson: AnyCircuitElement[]) => {
       const checksToRun: Promise<AnyCircuitElement[]>[] = []
+
+      if (
+        shouldRunFabricatorChecks &&
+        fabricatorEngine &&
+        fabricatorPreset &&
+        this.pcb_board_id
+      ) {
+        checksToRun.push(
+          Promise.resolve(
+            fabricatorEngine.runDrcChecks({
+              circuitJson,
+              fabricatorPreset,
+              pcbBoardId: this.pcb_board_id,
+            }),
+          ),
+        )
+      }
 
       if (shouldRunRoutingChecks) {
         checksToRun.push(
