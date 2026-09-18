@@ -13,6 +13,7 @@ type GetBusesParams = {
   buses: Bus[]
   sourceTraces: SourceTrace[]
   subcircuitId?: SubcircuitId | null
+  preservedSourceTraceIds?: ReadonlySet<SourceTrace["source_trace_id"]>
   planeTerminatedSourceTraceLayers?: ReadonlyMap<string, string>
 }
 
@@ -111,6 +112,7 @@ export const getBusesForSimpleRouteJson = ({
   sourceTraces,
   subcircuitId,
   planeTerminatedSourceTraceLayers,
+  preservedSourceTraceIds,
 }: GetBusesParams): SimpleRouteBus[] | undefined => {
   const declaredSrjBuses: SimpleRouteBus[] = []
   for (const bus of buses) {
@@ -127,6 +129,9 @@ export const getBusesForSimpleRouteJson = ({
           busSourceTraces,
           traceNameOrPortSelector,
         })
+        // Fixed copper has no pending SRJ connection; source_bus still keeps
+        // every member so routing DRC checks the complete bus.
+        if (preservedSourceTraceIds?.has(sourceTraceId)) return []
         return getBusSrjConnectionNamesOrThrow({
           srjConnections,
           bus,
@@ -141,6 +146,8 @@ export const getBusesForSimpleRouteJson = ({
         `Bus "${bus.name}" resolves multiple entries to one trace`,
       )
     }
+
+    if (connectionNames.length === 0) continue
 
     declaredSrjBuses.push({
       busId: bus.name,
