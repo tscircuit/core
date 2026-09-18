@@ -1,0 +1,648 @@
+[
+  {
+    "pin": 1,
+    "name": "PG6",
+    "tsxName": "PG6"
+  },
+  {
+    "pin": 2,
+    "name": "PG7",
+    "tsxName": "PG7"
+  },
+  {
+    "pin": 3,
+    "name": "PG8",
+    "tsxName": "PG8"
+  },
+  {
+    "pin": 4,
+    "name": "PG9",
+    "tsxName": "PG9"
+  },
+  {
+    "pin": 5,
+    "name": "PG10",
+    "tsxName": "PG10"
+  },
+  {
+    "pin": 6,
+    "name": "PG11",
+    "tsxName": "PG11"
+  },
+  {
+    "pin": 7,
+    "name": "PF0",
+    "tsxName": "PF0"
+  },
+  {
+    "pin": 8,
+    "name": "PF1",
+    "tsxName": "PF1"
+  },
+  {
+    "pin": 9,
+    "name": "PF2",
+    "tsxName": "PF2"
+  },
+  {
+    "pin": 10,
+    "name": "PF3",
+    "tsxName": "PF3"
+  },
+  {
+    "pin": 11,
+    "name": "PF4",
+    "tsxName": "PF4"
+  },
+  {
+    "pin": 12,
+    "name": "PF5",
+    "tsxName": "PF5"
+  },
+  {
+    "pin": 13,
+    "name": "PF6",
+    "tsxName": "PF6"
+  },
+  {
+    "pin": 14,
+    "name": "PC7",
+    "tsxName": "PC7"
+  },
+  {
+    "pin": 15,
+    "name": "PC6",
+    "tsxName": "PC6"
+  },
+  {
+    "pin": 16,
+    "name": "PC5",
+    "tsxName": "PC5"
+  },
+  {
+    "pin": 17,
+    "name": "PC4",
+    "tsxName": "PC4"
+  },
+  {
+    "pin": 18,
+    "name": "PC3",
+    "tsxName": "PC3"
+  },
+  {
+    "pin": 19,
+    "name": "PC2",
+    "tsxName": "PC2"
+  },
+  {
+    "pin": 20,
+    "name": "VCC-PLL",
+    "tsxName": "VCC_PLL"
+  },
+  {
+    "pin": 21,
+    "name": "REFCLK-OUT",
+    "tsxName": "REFCLK_OUT"
+  },
+  {
+    "pin": 22,
+    "name": "DXOUT",
+    "tsxName": "DXOUT"
+  },
+  {
+    "pin": 23,
+    "name": "DXIN",
+    "tsxName": "DXIN"
+  },
+  {
+    "pin": 24,
+    "name": "X32KOUT",
+    "tsxName": "X32KOUT"
+  },
+  {
+    "pin": 25,
+    "name": "X32KIN",
+    "tsxName": "X32KIN"
+  },
+  {
+    "pin": 26,
+    "name": "VCC-RTC",
+    "tsxName": "VCC_RTC"
+  },
+  {
+    "pin": 27,
+    "name": "RESET",
+    "tsxName": "RESET"
+  },
+  {
+    "pin": 28,
+    "name": "LDOA-OUT",
+    "tsxName": "LDOA_OUT"
+  },
+  {
+    "pin": 29,
+    "name": "LDO-IN",
+    "tsxName": "LDO_IN"
+  },
+  {
+    "pin": 30,
+    "name": "LDOB-OUT",
+    "tsxName": "LDOB_OUT"
+  },
+  {
+    "pin": 31,
+    "name": "PE13",
+    "tsxName": "PE13"
+  },
+  {
+    "pin": 32,
+    "name": "PE12",
+    "tsxName": "PE12"
+  },
+  {
+    "pin": 33,
+    "name": "PE3",
+    "tsxName": "PE3"
+  },
+  {
+    "pin": 34,
+    "name": "VCC-PE",
+    "tsxName": "VCC_PE"
+  },
+  {
+    "pin": 35,
+    "name": "PE2",
+    "tsxName": "PE2"
+  },
+  {
+    "pin": 36,
+    "name": "PE11",
+    "tsxName": "PE11"
+  },
+  {
+    "pin": 37,
+    "name": "PE10",
+    "tsxName": "PE10"
+  },
+  {
+    "pin": 38,
+    "name": "PE9",
+    "tsxName": "PE9"
+  },
+  {
+    "pin": 39,
+    "name": "PE8",
+    "tsxName": "PE8"
+  },
+  {
+    "pin": 40,
+    "name": "PE7",
+    "tsxName": "PE7"
+  },
+  {
+    "pin": 41,
+    "name": "PE6",
+    "tsxName": "PE6"
+  },
+  {
+    "pin": 42,
+    "name": "PE5",
+    "tsxName": "PE5"
+  },
+  {
+    "pin": 43,
+    "name": "PE4",
+    "tsxName": "PE4"
+  },
+  {
+    "pin": 44,
+    "name": "PE0",
+    "tsxName": "PE0"
+  },
+  {
+    "pin": 45,
+    "name": "PE1",
+    "tsxName": "PE1"
+  },
+  {
+    "pin": 46,
+    "name": "VDD-SYS0",
+    "tsxName": "VDD_SYS0"
+  },
+  {
+    "pin": 47,
+    "name": "DZQ",
+    "tsxName": "DZQ"
+  },
+  {
+    "pin": 48,
+    "name": "VCC-DRAM0",
+    "tsxName": "VCC_DRAM0"
+  },
+  {
+    "pin": 49,
+    "name": "VCC-DRAM1",
+    "tsxName": "VCC_DRAM1"
+  },
+  {
+    "pin": 50,
+    "name": "VDD18-DRAM",
+    "tsxName": "VDD18_DRAM"
+  },
+  {
+    "pin": 51,
+    "name": "VDD-SYS1",
+    "tsxName": "VDD_SYS1"
+  },
+  {
+    "pin": 52,
+    "name": "PD22",
+    "tsxName": "PD22"
+  },
+  {
+    "pin": 53,
+    "name": "PD21",
+    "tsxName": "PD21"
+  },
+  {
+    "pin": 54,
+    "name": "PD20",
+    "tsxName": "PD20"
+  },
+  {
+    "pin": 55,
+    "name": "PD0",
+    "tsxName": "PD0"
+  },
+  {
+    "pin": 56,
+    "name": "PD1",
+    "tsxName": "PD1"
+  },
+  {
+    "pin": 57,
+    "name": "PD2",
+    "tsxName": "PD2"
+  },
+  {
+    "pin": 58,
+    "name": "PD3",
+    "tsxName": "PD3"
+  },
+  {
+    "pin": 59,
+    "name": "PD4",
+    "tsxName": "PD4"
+  },
+  {
+    "pin": 60,
+    "name": "PD5",
+    "tsxName": "PD5"
+  },
+  {
+    "pin": 61,
+    "name": "PD6",
+    "tsxName": "PD6"
+  },
+  {
+    "pin": 62,
+    "name": "PD7",
+    "tsxName": "PD7"
+  },
+  {
+    "pin": 63,
+    "name": "PD8",
+    "tsxName": "PD8"
+  },
+  {
+    "pin": 64,
+    "name": "PD9",
+    "tsxName": "PD9"
+  },
+  {
+    "pin": 65,
+    "name": "VCC-LVDS",
+    "tsxName": "VCC_LVDS"
+  },
+  {
+    "pin": 66,
+    "name": "VCC-PD",
+    "tsxName": "VCC_PD"
+  },
+  {
+    "pin": 67,
+    "name": "PD10",
+    "tsxName": "PD10"
+  },
+  {
+    "pin": 68,
+    "name": "PD11",
+    "tsxName": "PD11"
+  },
+  {
+    "pin": 69,
+    "name": "PD13",
+    "tsxName": "PD13"
+  },
+  {
+    "pin": 70,
+    "name": "PD12",
+    "tsxName": "PD12"
+  },
+  {
+    "pin": 71,
+    "name": "PD14",
+    "tsxName": "PD14"
+  },
+  {
+    "pin": 72,
+    "name": "PD15",
+    "tsxName": "PD15"
+  },
+  {
+    "pin": 73,
+    "name": "PD16",
+    "tsxName": "PD16"
+  },
+  {
+    "pin": 74,
+    "name": "PD17",
+    "tsxName": "PD17"
+  },
+  {
+    "pin": 75,
+    "name": "PD18",
+    "tsxName": "PD18"
+  },
+  {
+    "pin": 76,
+    "name": "PD19",
+    "tsxName": "PD19"
+  },
+  {
+    "pin": 77,
+    "name": "VCC-TVOUT",
+    "tsxName": "VCC_TVOUT"
+  },
+  {
+    "pin": 78,
+    "name": "TVOUT0",
+    "tsxName": "TVOUT0"
+  },
+  {
+    "pin": 79,
+    "name": "PB7",
+    "tsxName": "PB7"
+  },
+  {
+    "pin": 80,
+    "name": "PB6",
+    "tsxName": "PB6"
+  },
+  {
+    "pin": 81,
+    "name": "VDD-SYS2",
+    "tsxName": "VDD_SYS2"
+  },
+  {
+    "pin": 82,
+    "name": "PB5",
+    "tsxName": "PB5"
+  },
+  {
+    "pin": 83,
+    "name": "VCC-IO",
+    "tsxName": "VCC_IO"
+  },
+  {
+    "pin": 84,
+    "name": "PB4",
+    "tsxName": "PB4"
+  },
+  {
+    "pin": 85,
+    "name": "PB3",
+    "tsxName": "PB3"
+  },
+  {
+    "pin": 86,
+    "name": "PB2",
+    "tsxName": "PB2"
+  },
+  {
+    "pin": 87,
+    "name": "MICIN3P",
+    "tsxName": "MICIN3P"
+  },
+  {
+    "pin": 88,
+    "name": "MICIN3N",
+    "tsxName": "MICIN3N"
+  },
+  {
+    "pin": 89,
+    "name": "AVCC",
+    "tsxName": "AVCC"
+  },
+  {
+    "pin": 90,
+    "name": "VRA2",
+    "tsxName": "VRA2"
+  },
+  {
+    "pin": 91,
+    "name": "AGND",
+    "tsxName": "AGND"
+  },
+  {
+    "pin": 92,
+    "name": "VRA1",
+    "tsxName": "VRA1"
+  },
+  {
+    "pin": 93,
+    "name": "FMINR",
+    "tsxName": "FMINR"
+  },
+  {
+    "pin": 94,
+    "name": "FMINL",
+    "tsxName": "FMINL"
+  },
+  {
+    "pin": 95,
+    "name": "LINEINR",
+    "tsxName": "LINEINR"
+  },
+  {
+    "pin": 96,
+    "name": "LINEINL",
+    "tsxName": "LINEINL"
+  },
+  {
+    "pin": 97,
+    "name": "HPVCC",
+    "tsxName": "HPVCC"
+  },
+  {
+    "pin": 98,
+    "name": "HPOUTR",
+    "tsxName": "HPOUTR"
+  },
+  {
+    "pin": 99,
+    "name": "HPOUTL",
+    "tsxName": "HPOUTL"
+  },
+  {
+    "pin": 100,
+    "name": "HPOUTFB",
+    "tsxName": "HPOUTFB"
+  },
+  {
+    "pin": 101,
+    "name": "GPADC0",
+    "tsxName": "GPADC0"
+  },
+  {
+    "pin": 102,
+    "name": "TP-X1",
+    "tsxName": "TP_X1"
+  },
+  {
+    "pin": 103,
+    "name": "TP-X2",
+    "tsxName": "TP_X2"
+  },
+  {
+    "pin": 104,
+    "name": "TP-Y1",
+    "tsxName": "TP_Y1"
+  },
+  {
+    "pin": 105,
+    "name": "TP-Y2",
+    "tsxName": "TP_Y2"
+  },
+  {
+    "pin": 106,
+    "name": "NC0",
+    "tsxName": "NC0"
+  },
+  {
+    "pin": 107,
+    "name": "VCC-TVIN",
+    "tsxName": "VCC_TVIN"
+  },
+  {
+    "pin": 108,
+    "name": "TVIN0",
+    "tsxName": "TVIN0"
+  },
+  {
+    "pin": 109,
+    "name": "TVIN1",
+    "tsxName": "TVIN1"
+  },
+  {
+    "pin": 110,
+    "name": "TVIN-VRP",
+    "tsxName": "TVIN_VRP"
+  },
+  {
+    "pin": 111,
+    "name": "TVIN-VRN",
+    "tsxName": "TVIN_VRN"
+  },
+  {
+    "pin": 112,
+    "name": "USB1-DP",
+    "tsxName": "USB1_DP"
+  },
+  {
+    "pin": 113,
+    "name": "USB1-DM",
+    "tsxName": "USB1_DM"
+  },
+  {
+    "pin": 114,
+    "name": "USB0-DM",
+    "tsxName": "USB0_DM"
+  },
+  {
+    "pin": 115,
+    "name": "USB0-DP",
+    "tsxName": "USB0_DP"
+  },
+  {
+    "pin": 116,
+    "name": "VDD-CORE0",
+    "tsxName": "VDD_CORE0"
+  },
+  {
+    "pin": 117,
+    "name": "VDD-CORE1",
+    "tsxName": "VDD_CORE1"
+  },
+  {
+    "pin": 118,
+    "name": "PG1",
+    "tsxName": "PG1"
+  },
+  {
+    "pin": 119,
+    "name": "PG2",
+    "tsxName": "PG2"
+  },
+  {
+    "pin": 120,
+    "name": "PG0",
+    "tsxName": "PG0"
+  },
+  {
+    "pin": 121,
+    "name": "PG3",
+    "tsxName": "PG3"
+  },
+  {
+    "pin": 122,
+    "name": "PG5",
+    "tsxName": "PG5"
+  },
+  {
+    "pin": 123,
+    "name": "PG4",
+    "tsxName": "PG4"
+  },
+  {
+    "pin": 124,
+    "name": "PG12",
+    "tsxName": "PG12"
+  },
+  {
+    "pin": 125,
+    "name": "PG13",
+    "tsxName": "PG13"
+  },
+  {
+    "pin": 126,
+    "name": "PG14",
+    "tsxName": "PG14"
+  },
+  {
+    "pin": 127,
+    "name": "PG15",
+    "tsxName": "PG15"
+  },
+  {
+    "pin": 128,
+    "name": "VCC-PG",
+    "tsxName": "VCC_PG"
+  },
+  {
+    "pin": 129,
+    "name": "EPAD",
+    "tsxName": "GND",
+    "note": "Exposed ground pad; MangoPi MQ Dual T113 symbol maps EPAD to pin 129."
+  }
+]

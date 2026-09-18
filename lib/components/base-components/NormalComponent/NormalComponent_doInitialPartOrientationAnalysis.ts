@@ -283,7 +283,8 @@ const analyzeSupplierPartOrientation = async ({
 export const NormalComponent_doInitialPartOrientationAnalysis = (
   component: NormalComponent<any, any>,
 ) => {
-  if (!component.root?.platform?.enablePartOrientationAnalysis) return
+  if (!component.root) return
+  if (component.root.platform?.enablePartOrientationAnalysis === false) return
   if (component.root.pcbDisabled || component.props.doNotPlace) return
   if (!component.pcb_component_id) return
 
@@ -297,6 +298,7 @@ export const NormalComponent_doInitialPartOrientationAnalysis = (
       pcb_component_id: component.pcb_component_id,
     }),
   ] as AnyCircuitElement[]
+  if (pcbElements.length === 0) return
   const localPin1Location =
     getExplicitPcbPin1Location(component.resolveFootprint()) ??
     analyzePcbPin1Location(

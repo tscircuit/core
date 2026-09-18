@@ -8,14 +8,18 @@ import {
   convertPackOutputToPackInput,
   getGraphicsFromPackOutput,
 } from "calculate-packing"
-import { type PcbComponent, length } from "circuit-json"
+import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
+import { type LayerRef, type PcbComponent, length } from "circuit-json"
 import Debug from "debug"
 import type { NormalComponent } from "lib/components/base-components/NormalComponent"
 import { solvePackSolverWithTimeout } from "lib/utils/packing/solvePackSolverWithTimeout"
 import type { Group } from "../Group"
 import { applyComponentConstraintClusters } from "./applyComponentConstraintClusters"
 import { applyPackOutput } from "./applyPackOutput"
-import { getPackInputsByPcbLayer } from "./getPackInputsByPcbLayer"
+import {
+  getPackComponentPcbLayer,
+  getPackInputsByPcbLayer,
+} from "./getPackInputsByPcbLayer"
 
 const DEFAULT_MIN_GAP = "1mm"
 const debug = Debug("Group_doInitialPcbLayoutPack")
@@ -63,6 +67,44 @@ const getCollisionObstacleForStaticComponent = (
     height: maxY - minY,
   }
 }
+
+// Opposite-side component bodies may overlap, but plated holes and vias occupy
+// every copper layer listed on the primitive and must remain collision geometry.
+const getCrossLayerPadObstacles = ({
+  components,
+  targetLayer,
+  db,
+}: {
+  components: InputComponent[]
+  targetLayer: LayerRef
+  db: CircuitJsonUtilObjects
+}): InputObstacle[] =>
+  components.flatMap((component) =>
+    component.pads.flatMap((pad) => {
+      const platedHole = db.pcb_plated_hole.get(pad.padId)
+      const via = db.pcb_via.get(pad.padId)
+      const layers = platedHole?.layers ?? via?.layers
+      if (!layers?.includes(targetLayer)) return []
+
+      const absoluteCenter =
+        pad.absoluteCenter ??
+        (component.center
+          ? {
+              x: component.center.x + pad.offset.x,
+              y: component.center.y + pad.offset.y,
+            }
+          : pad.offset)
+
+      return [
+        {
+          obstacleId: `cross_layer_${targetLayer}_${pad.padId}`,
+          absoluteCenter,
+          width: pad.size.x,
+          height: pad.size.y,
+        },
+      ]
+    }),
+  )
 
 export const Group_doInitialPcbLayoutPack = (group: Group) => {
   const { db } = group.root!
@@ -240,6 +282,10 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
 
   try {
     for (const layerPackInput of packInputs) {
+      const targetLayer = getPackComponentPcbLayer(
+        layerPackInput.components[0]!,
+        db,
+      )
       const componentIdsForLayer = new Set(
         layerPackInput.components.map((component) => component.componentId),
       )
@@ -327,6 +373,16 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
           },
         }),
       )
+      const crossLayerPadObstacles = targetLayer
+        ? getCrossLayerPadObstacles({
+            components: Array.from(
+              networkReferenceSources.values(),
+              ({ component }) => component,
+            ),
+            targetLayer,
+            db,
+          })
+        : []
       const solverInput = {
         ...layerPackInput,
         weightedConnections: layerPackInput.weightedConnections?.filter(
@@ -337,6 +393,7 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
           ...(layerPackInput.obstacles ?? []),
           ...staticLayerObstacles,
           ...fallbackCrossLayerObstacles,
+          ...crossLayerPadObstacles,
         ],
         components: [
           ...networkReferenceComponents,
