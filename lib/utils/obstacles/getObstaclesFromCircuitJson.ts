@@ -1,5 +1,6 @@
 import type { AnyCircuitElement, PcbBoard } from "circuit-json"
 import type { ConnectivityMap } from "circuit-json-to-connectivity-map"
+import type { PcbKeepoutWithWarningOnly } from "lib/utils/circuit-json/pcb-keepout-with-warning-only"
 import { getViaBoardLayers } from "lib/utils/getViaSpanLayers"
 import { fillCircleWithRects } from "./fillCircleWithRects"
 import { fillPolygonWithRects } from "./fillPolygonWithRects"
@@ -226,6 +227,7 @@ export const getObstaclesFromCircuitJson = (
         }
       }
     } else if (element.type === "pcb_keepout") {
+      if ((element as PcbKeepoutWithWarningOnly).warning_only) continue
       if (element.shape === "circle") {
         obstacles.push({
           componentId: pcbComponentId,
