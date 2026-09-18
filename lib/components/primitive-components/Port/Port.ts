@@ -522,7 +522,9 @@ export class Port extends PrimitiveComponent<typeof portProps> {
         // throwing, so the rest of the circuit can still render.
         const portName = this.props.name!
         const componentName =
-          this.getParentNormalComponent()?.props.name ?? "unknown"
+          this.getParentNormalComponent()?.props.name ??
+          this.parent?.getString() ??
+          "unknown"
         const altAliases = this.getNameAndAliases().filter(
           (h) => h !== portName,
         )
