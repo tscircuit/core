@@ -1,6 +1,6 @@
-import { test, expect } from "bun:test"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { expect, test } from "bun:test"
 import { getRoutePointPositions } from "lib/utils/pcb-trace-route-point-utils"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("fanout routes a chip pin through a fanoutpoint", async () => {
   const { circuit } = getTestFixture()
@@ -73,10 +73,10 @@ test("fanout routes a chip pin through a fanoutpoint", async () => {
   const traceErrors = circuit.db.pcb_trace_error.list()
   const clearanceErrors = circuit.db.pcb_pad_trace_clearance_error.list()
 
-  expect(traceErrors).toHaveLength(2)
+  expect(traceErrors).toHaveLength(1)
   expect(
     traceErrors.filter((error) => error.message.includes("overlaps with")),
-  ).toHaveLength(1)
+  ).toHaveLength(0)
   expect(
     traceErrors.filter((error) =>
       error.message.includes("disconnected endpoint"),

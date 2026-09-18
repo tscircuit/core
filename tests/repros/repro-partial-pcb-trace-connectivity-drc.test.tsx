@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("repro: a routed fanout trace is reported as overlapping its own partial trace", async () => {
+test("a routed fanout trace does not overlap its own partial trace", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -33,7 +33,7 @@ test("repro: a routed fanout trace is reported as overlapping its own partial tr
     .list()
     .filter((error) => error.message.includes("overlaps with"))
 
-  expect(falseOverlapErrors).toHaveLength(1)
+  expect(falseOverlapErrors).toHaveLength(0)
   await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
     shouldDrawErrors: true,
     showErrorsInTextOverlay: true,
