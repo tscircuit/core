@@ -19,10 +19,10 @@ export const createNetsFromProps = (
           `Try using underscores instead, e.g. VCC_P`
         throw new Error(message)
       }
-      if (/net\.[0-9]/.test(prop)) {
+      if (/net\.[0-9][0-9_]*(?=[\s>]|$)/.test(prop)) {
         const netName = prop.split("net.")[1]
         throw new Error(
-          `Net name "${netName}" cannot start with a number, try using a prefix like "VBUS1"`,
+          `Net name "${netName}" cannot be purely numeric, add a letter, e.g. "VBUS1"`,
         )
       }
       const subcircuit = component.getSubcircuit()
