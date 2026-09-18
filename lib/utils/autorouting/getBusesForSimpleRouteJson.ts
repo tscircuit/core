@@ -34,6 +34,15 @@ const getBusSrjConnectionNamesOrThrow = ({
   traceNameOrPortSelector: string
   busSourceTraces: SourceTrace[]
 }): SrjConnectionName[] => {
+  // Branches can share an electrical net but still be distinct bus members.
+  // Resolve their own routing connections before falling back to net routing.
+  const directSrjConnections = srjConnections.filter(
+    (srjConnection) => srjConnection.source_trace_id === sourceTraceId,
+  )
+  if (directSrjConnections.length > 0) {
+    return directSrjConnections.map((srjConnection) => srjConnection.name)
+  }
+
   const sourceTrace = busSourceTraces.find(
     (trace) => trace.source_trace_id === sourceTraceId,
   )!
@@ -49,12 +58,8 @@ const getBusSrjConnectionNamesOrThrow = ({
       (trace) => trace.connected_source_net_ids ?? [],
     ),
   )
-  const matchingSrjConnections = srjConnections.filter(
-    (srjConnection) =>
-      connectedSourceNetIds.has(srjConnection.name) ||
-      connectedSourceTraces.some(
-        (trace) => trace.source_trace_id === srjConnection.source_trace_id,
-      ),
+  const matchingSrjConnections = srjConnections.filter((srjConnection) =>
+    connectedSourceNetIds.has(srjConnection.name),
   )
 
   if (matchingSrjConnections.length === 0) {
