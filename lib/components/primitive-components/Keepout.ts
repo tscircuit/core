@@ -1,11 +1,11 @@
-import { pcbKeepoutProps } from "@tscircuit/props"
+import { keepoutProps } from "@tscircuit/props"
 import type { PCBKeepout } from "circuit-json"
 import type { PcbComponentId } from "lib/utils/circuit-json/circuit-json-id-types"
 import { decomposeTSR } from "transformation-matrix"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import type { RenderPhaseFn } from "../base-components/Renderable"
 
-export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
+export class Keepout extends PrimitiveComponent<typeof keepoutProps> {
   pcb_keepout_id: string | null = null
 
   isPcbPrimitive = true
@@ -13,7 +13,7 @@ export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
   get config() {
     return {
       componentName: "Keepout",
-      zodProps: pcbKeepoutProps,
+      zodProps: keepoutProps,
     }
   }
 
@@ -48,7 +48,7 @@ export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
       layers = ["top"]
     }
     const excludedPcbComponentIds = this.getExcludedPcbComponentIds()
-    const pcbKeepoutExclusionProps =
+    const keepoutExclusionProps =
       excludedPcbComponentIds.length > 0
         ? { excluded_pcb_component_ids: excludedPcbComponentIds }
         : {}
@@ -58,7 +58,7 @@ export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
       pcb_keepout = db.pcb_keepout.insert({
         layers,
         shape: "circle",
-        ...pcbKeepoutExclusionProps,
+        ...keepoutExclusionProps,
         // @ts-ignore: no idea why this is triggering
         radius: props.radius,
         center: {
@@ -72,7 +72,7 @@ export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
       pcb_keepout = db.pcb_keepout.insert({
         layers,
         shape: "rect",
-        ...pcbKeepoutExclusionProps,
+        ...keepoutExclusionProps,
         ...(isRotated90
           ? { width: props.height, height: props.width }
           : { width: props.width, height: props.height }),
