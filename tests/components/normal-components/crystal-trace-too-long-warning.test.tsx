@@ -41,7 +41,7 @@ test("traces on a crystal net inherit their maximum length and skip impossible a
   expect(sourceTraces.map((trace) => trace.max_length)).toEqual([10, 10, 10])
 
   expect(circuit.db.pcb_trace.list()).toHaveLength(0)
-  expect(circuit.db.pcb_trace_too_long_warning.list()).toHaveLength(0)
+  expect(circuit.db.pcb_trace_too_long_error.list()).toHaveLength(0)
 
   const autoroutingErrors = circuit.db.pcb_autorouting_error.list()
   expect(autoroutingErrors).toHaveLength(1)

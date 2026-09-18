@@ -840,6 +840,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     sourceTraces: db.source_trace.list(),
     subcircuitId: subcircuit_id,
     planeTerminatedSourceTraceLayers,
+    preservedSourceTraceIds: sourceTraceIdsAlreadyPreservedAsSrjTraces,
   })
 
   if (subcircuit_id) {
