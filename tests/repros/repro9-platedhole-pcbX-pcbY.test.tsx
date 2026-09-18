@@ -50,6 +50,7 @@ test("board with resistor being passed schX and pcbX in mm", () => {
         "metadata": undefined,
         "obstructs_within_bounds": true,
         "pcb_component_id": "pcb_component_0",
+        "pin1_location": "topside_left",
         "rotation": 0,
         "source_component_id": "source_component_0",
         "subcircuit_id": "subcircuit_source_group_0",

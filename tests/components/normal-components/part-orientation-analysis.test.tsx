@@ -80,7 +80,7 @@ const createTestBoard = () => (
   </board>
 )
 
-test("part orientation analysis enriches pcb components and uses the platform cache", async () => {
+test("part orientation analysis defaults on, uses the platform cache, and supports opt-out", async () => {
   const cache = new Map<string, string>()
   const orientationCacheWrites: string[] = []
   const localCacheEngine: LocalCacheEngine = {
@@ -103,7 +103,6 @@ test("part orientation analysis enriches pcb components and uses the platform ca
   const platform = {
     partsEngine,
     localCacheEngine,
-    enablePartOrientationAnalysis: true,
   }
 
   const firstFixture = getTestFixture({ platform })
@@ -130,4 +129,15 @@ test("part orientation analysis enriches pcb components and uses the platform ca
     pcbway: "topside_left",
   })
   expect(orientationCacheWrites).toHaveLength(2)
+
+  const disabledFixture = getTestFixture({
+    platform: { ...platform, enablePartOrientationAnalysis: false },
+  })
+  disabledFixture.circuit.add(createTestBoard())
+  await disabledFixture.circuit.renderUntilSettled()
+
+  const disabledPcbComponent =
+    disabledFixture.circuit.db.pcb_component.list()[0]!
+  expect(disabledPcbComponent.pin1_location).toBeUndefined()
+  expect(disabledPcbComponent.supplier_pin1_location_map).toBeUndefined()
 })
