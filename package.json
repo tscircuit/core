@@ -124,6 +124,7 @@
     "calculate-cell-boundaries": "^0.0.21",
     "calculate-packing": "^0.0.89",
     "css-select": "5.1.0",
+    "fast-png": "^8.0.0",
     "format-si-unit": "^0.0.12",
     "nanoid": "^5.0.7",
     "performance-now": "^2.1.0",

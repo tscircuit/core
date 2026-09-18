@@ -2,13 +2,12 @@ import { silkscreenGraphicProps } from "@tscircuit/props"
 import {
   PNG_MIMETYPE,
   SVG_MIMETYPE,
-  ensureClockwise,
   getSvgBRepShapes,
   getTransformedSvgPathRoutes,
   loadImageSource,
 } from "@tscircuit/image-utils"
 import type { PcbSilkscreenGraphic } from "circuit-json"
-import { applyToPoint } from "transformation-matrix"
+import { getPngSilkscreenShapes } from "lib/utils/pcb/get-png-silkscreen-shapes"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
 export class SilkscreenGraphic extends PrimitiveComponent<
@@ -58,15 +57,24 @@ export class SilkscreenGraphic extends PrimitiveComponent<
         url: sourceImage.dataUrl,
         mimetype: sourceImage.mimetype,
       }
-      const brepShapes =
-        sourceImage.mimetype === SVG_MIMETYPE
-          ? getSvgBRepShapes({
-              svg: sourceImage.text,
-              width: props.width,
-              height: props.height,
-              transform: this._computePcbGlobalTransformBeforeLayout(),
-            })
-          : [this.getPlacementBoxBRepShape()]
+      const imageTransform = this._computePcbGlobalTransformBeforeLayout()
+      let brepShapes: PcbSilkscreenGraphic["brep_shape"][]
+      if (sourceImage.mimetype === SVG_MIMETYPE) {
+        brepShapes = getSvgBRepShapes({
+          svg: sourceImage.text,
+          width: props.width,
+          height: props.height,
+          transform: imageTransform,
+        })
+      } else {
+        const pngResponse = await fetch(sourceImage.dataUrl)
+        brepShapes = getPngSilkscreenShapes({
+          pngBytes: new Uint8Array(await pngResponse.arrayBuffer()),
+          width: props.width,
+          height: props.height,
+          transform: imageTransform,
+        })
+      }
 
       const pcbComponentId =
         this.parent?.pcb_component_id ??
@@ -74,8 +82,7 @@ export class SilkscreenGraphic extends PrimitiveComponent<
         ""
 
       for (const brepShape of brepShapes) {
-        const graphic = (db as any).insert({
-          type: "pcb_silkscreen_graphic",
+        const graphic = db.pcb_silkscreen_graphic.insert({
           pcb_component_id: pcbComponentId,
           pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
           subcircuit_id: this.getSubcircuit()?.subcircuit_id ?? undefined,
@@ -83,10 +90,7 @@ export class SilkscreenGraphic extends PrimitiveComponent<
           shape: "brep",
           brep_shape: brepShape,
           image_asset: imageAsset,
-        } satisfies Omit<
-          PcbSilkscreenGraphic,
-          "pcb_silkscreen_graphic_id"
-        >) as PcbSilkscreenGraphic
+        })
 
         this.pcb_silkscreen_graphic_ids.push(graphic.pcb_silkscreen_graphic_id)
       }
@@ -134,27 +138,6 @@ export class SilkscreenGraphic extends PrimitiveComponent<
     return { width: props.width, height: props.height }
   }
 
-  getPlacementBoxBRepShape(): PcbSilkscreenGraphic["brep_shape"] {
-    const { _parsedProps: props } = this
-    const halfWidth = props.width / 2
-    const halfHeight = props.height / 2
-    const transform = this._computePcbGlobalTransformBeforeLayout()
-
-    return {
-      outer_ring: {
-        vertices: ensureClockwise([
-          { x: -halfWidth, y: halfHeight },
-          { x: halfWidth, y: halfHeight },
-          { x: halfWidth, y: -halfHeight },
-          { x: -halfWidth, y: -halfHeight },
-        ]).map((point: { x: number; y: number }) =>
-          applyToPoint(transform, point),
-        ),
-      },
-      inner_rings: [],
-    }
-  }
-
   _moveCircuitJsonElements({
     deltaX,
     deltaY,
@@ -169,9 +152,7 @@ export class SilkscreenGraphic extends PrimitiveComponent<
     })
 
     for (const graphicId of this.pcb_silkscreen_graphic_ids) {
-      const graphic = (db as any).pcb_silkscreen_graphic.get(
-        graphicId,
-      ) as PcbSilkscreenGraphic | null
+      const graphic = db.pcb_silkscreen_graphic.get(graphicId)
 
       if (!graphic) continue
       db.pcb_silkscreen_graphic.update(graphicId, {
