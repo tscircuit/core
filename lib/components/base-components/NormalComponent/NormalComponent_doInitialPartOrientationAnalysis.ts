@@ -348,10 +348,6 @@ export const NormalComponent_doInitialPartOrientationAnalysis = (
             partsEngine,
             supplierPartCandidate,
           })
-        if (supplierPin1Location) {
-          supplierPin1LocationMap[supplierPartCandidate.supplierName] =
-            supplierPin1Location
-        }
         if (
           localPin1Polarity &&
           pin1Polarity &&
@@ -367,6 +363,11 @@ export const NormalComponent_doInitialPartOrientationAnalysis = (
               : undefined,
           })
           component.root!.db.source_component_misconfigured_error.insert(error)
+          continue
+        }
+        if (supplierPin1Location) {
+          supplierPin1LocationMap[supplierPartCandidate.supplierName] =
+            supplierPin1Location
         }
       } catch {}
     }
