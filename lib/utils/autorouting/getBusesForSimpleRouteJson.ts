@@ -26,14 +26,35 @@ const getBusSrjConnectionNamesOrThrow = ({
   bus,
   sourceTraceId,
   traceNameOrPortSelector,
+  busSourceTraces,
 }: {
   srjConnections: SimpleRouteConnection[]
   bus: Bus
   sourceTraceId: SourceTrace["source_trace_id"]
   traceNameOrPortSelector: string
+  busSourceTraces: SourceTrace[]
 }): SrjConnectionName[] => {
+  const sourceTrace = busSourceTraces.find(
+    (trace) => trace.source_trace_id === sourceTraceId,
+  )!
+  const connectedSourceTraces = busSourceTraces.filter(
+    (trace) =>
+      trace.source_trace_id === sourceTraceId ||
+      (sourceTrace.subcircuit_connectivity_map_key !== undefined &&
+        trace.subcircuit_connectivity_map_key ===
+          sourceTrace.subcircuit_connectivity_map_key),
+  )
+  const connectedSourceNetIds = new Set(
+    connectedSourceTraces.flatMap(
+      (trace) => trace.connected_source_net_ids ?? [],
+    ),
+  )
   const matchingSrjConnections = srjConnections.filter(
-    (srjConnection) => srjConnection.source_trace_id === sourceTraceId,
+    (srjConnection) =>
+      connectedSourceNetIds.has(srjConnection.name) ||
+      connectedSourceTraces.some(
+        (trace) => trace.source_trace_id === srjConnection.source_trace_id,
+      ),
   )
 
   if (matchingSrjConnections.length === 0) {
@@ -137,6 +158,7 @@ export const getBusesForSimpleRouteJson = ({
           bus,
           sourceTraceId,
           traceNameOrPortSelector,
+          busSourceTraces,
         })
       },
     )
