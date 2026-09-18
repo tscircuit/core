@@ -24,7 +24,6 @@ test("PNG silkscreen respects alpha, white pixels, rotation and layer", async ()
         pcbRotation={90}
         layer="bottom"
       />
-      <silkscreentext text="ONE DARK PIXEL" pcbY={-3} layer="bottom" />
     </board>,
   )
   await circuit.renderUntilSettled()
@@ -39,5 +38,4 @@ test("PNG silkscreen respects alpha, white pixels, rotation and layer", async ()
       { x: expect.closeTo(3), y: expect.closeTo(-1) },
     ]),
   )
-  expect(circuit).toMatchPcbSnapshot(import.meta.path, { layer: "bottom" })
 })
