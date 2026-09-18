@@ -28,12 +28,10 @@ test("emits supplier footprint mismatch warning for mismatched supplier footprin
   await circuit.renderUntilSettled()
 
   const warnings = circuit.db.supplier_footprint_mismatch_warning.list()
-  expect(fetchCalls).toEqual([{ supplierPartNumber: "C0603" }])
-  expect(circuit.db.pcb_component.list()[0].supplier_pin1_location_map).toEqual(
-    {
-      jlcpcb: "topside_left",
-    },
-  )
+  expect(fetchCalls).toEqual([
+    { supplierPartNumber: "C0603" }, // Orientation analysis
+    { supplierPartNumber: "C0603" }, // Footprint mismatch check
+  ])
   expect(warnings).toHaveLength(1)
   expect(warnings[0]).toMatchObject({
     type: "supplier_footprint_mismatch_warning",

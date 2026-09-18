@@ -15,7 +15,6 @@ import {
 } from "circuit-json"
 import { isFootprintFlipped } from "lib/utils/pcb/transform-footprint-insertion-direction"
 import type { NormalComponent } from "./NormalComponent"
-import { fetchSupplierPartCircuitJson } from "./fetch-supplier-part-circuit-json"
 
 type SupplierPartCandidate = {
   supplierName: SupplierName
@@ -251,11 +250,11 @@ const analyzeSupplierPartOrientation = async ({
   if (existingAnalysis) return existingAnalysis
 
   const analysis = (async () => {
-    const supplierCircuitJson = await fetchSupplierPartCircuitJson(
-      component,
-      partsEngine,
-      supplierPartCandidate.supplierName,
-      supplierPartCandidate.supplierPartNumber,
+    const supplierCircuitJson = await Promise.resolve(
+      partsEngine.fetchPartCircuitJson!({
+        supplierPartNumber: supplierPartCandidate.supplierPartNumber,
+        platformFetch: component.root?.platform?.platformFetch,
+      }),
     )
     if (!supplierCircuitJson?.length) {
       return { pin1Location: null, pin1Polarity: null }
@@ -285,9 +284,7 @@ export const NormalComponent_doInitialPartOrientationAnalysis = (
   component: NormalComponent<any, any>,
 ) => {
   if (!component.root) return
-  // Persist assembly orientation during ordinary renders, not only when a
-  // fabrication exporter explicitly requests it. Platforms can still opt out.
-  if (component.root?.platform?.enablePartOrientationAnalysis === false) return
+  if (component.root.platform?.enablePartOrientationAnalysis === false) return
   if (component.root.pcbDisabled || component.props.doNotPlace) return
   if (!component.pcb_component_id) return
 
