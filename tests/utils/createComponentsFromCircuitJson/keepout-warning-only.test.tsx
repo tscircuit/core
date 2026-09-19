@@ -4,7 +4,7 @@ import type { PCBKeepout } from "circuit-json"
 import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromCircuitJson"
 import { getObstaclesFromCircuitJson } from "lib/utils/obstacles/getObstaclesFromCircuitJson"
 
-test("imported keepouts preserve advisory behavior and layers for both shapes", () => {
+test("imported keepouts preserve advisory behavior, permissions, and layers for both shapes", () => {
   const keepouts: PCBKeepout[] = [true, false, undefined].flatMap(
     (warning_only, i) => [
       {
@@ -16,6 +16,8 @@ test("imported keepouts preserve advisory behavior and layers for both shapes", 
         height: 3,
         layers: ["bottom"],
         warning_only,
+        allow_traces: warning_only,
+        allow_placements: warning_only,
       },
       {
         type: "pcb_keepout",
@@ -25,6 +27,8 @@ test("imported keepouts preserve advisory behavior and layers for both shapes", 
         radius: 1,
         layers: ["top", "bottom"],
         warning_only,
+        allow_traces: warning_only,
+        allow_placements: warning_only,
       },
     ],
   )
@@ -37,6 +41,8 @@ test("imported keepouts preserve advisory behavior and layers for both shapes", 
     expect(component).toBeInstanceOf(Keepout)
     const props = (component as Keepout)._parsedProps
     expect(props.warningOnly).toBe(keepouts[i].warning_only)
+    expect(props.allowTraces).toBe(keepouts[i].allow_traces)
+    expect(props.allowPlacements).toBe(keepouts[i].allow_placements)
     expect(keepouts[i].layers).toEqual(props.layers!)
   }
   expect(getObstaclesFromCircuitJson(keepouts)).toHaveLength(4)
