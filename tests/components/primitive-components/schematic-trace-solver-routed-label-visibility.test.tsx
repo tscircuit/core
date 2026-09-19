@@ -21,7 +21,7 @@ test("fully routed connection label visibility follows assigned display labels",
   )
   expect(
     inputProblem.directConnections.map(
-      (connection) => connection.labelFullyRoutedConnection,
+      (connection) => connection.showLabelOnFullyRoutedConnection,
     ),
   ).toEqual([false, true])
   expect(circuit.db.schematic_trace.list()).toHaveLength(2)

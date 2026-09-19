@@ -466,7 +466,7 @@ export function createSchematicTraceSolverInputProblem(
     schematicPortIds: [SchematicPortId, SchematicPortId]
     netId?: string
     netLabelWidth?: number
-    labelFullyRoutedConnection?: boolean
+    showLabelOnFullyRoutedConnection?: boolean
     allowInlineNetLabel?: boolean
     inlineNetLabelWidth?: number
     inlineNetLabelHeight?: number
@@ -874,7 +874,8 @@ export function createSchematicTraceSolverInputProblem(
           schematicPortIds: [a, b],
           netId: userNetId,
           netLabelWidth,
-          labelFullyRoutedConnection: canonicalNetLabel.wasAssignedDisplayLabel,
+          showLabelOnFullyRoutedConnection:
+            canonicalNetLabel.wasAssignedDisplayLabel,
           connKey: st.subcircuit_connectivity_map_key,
         })
       }
