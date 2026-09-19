@@ -466,6 +466,7 @@ export function createSchematicTraceSolverInputProblem(
     schematicPortIds: [SchematicPortId, SchematicPortId]
     netId?: string
     netLabelWidth?: number
+    showLabelOnFullyRoutedConnection?: boolean
     allowInlineNetLabel?: boolean
     inlineNetLabelWidth?: number
     inlineNetLabelHeight?: number
@@ -799,11 +800,13 @@ export function createSchematicTraceSolverInputProblem(
           componentPortBySchematicPortId.get(schematicPortId),
         )
         .filter((port): port is Port => Boolean(port))
-      const renderedNetLabelText = st.subcircuit_connectivity_map_key
-        ? resolveCanonicalNetLabelText({
-            subcircuitConnectivityMapKey: st.subcircuit_connectivity_map_key,
-          }).name
-        : getNetNameFromPorts(portsForConnection).name || traceLabel
+      let canonicalNetLabel = getNetNameFromPorts(portsForConnection)
+      if (st.subcircuit_connectivity_map_key) {
+        canonicalNetLabel = resolveCanonicalNetLabelText({
+          subcircuitConnectivityMapKey: st.subcircuit_connectivity_map_key,
+        })
+      }
+      const renderedNetLabelText = canonicalNetLabel.name || traceLabel
       const shouldRenderNetLabels = connected.slice(1).some((b, index) => {
         const a = connected[index]
         const portA = db.schematic_port.get(a)
@@ -871,6 +874,8 @@ export function createSchematicTraceSolverInputProblem(
           schematicPortIds: [a, b],
           netId: userNetId,
           netLabelWidth,
+          showLabelOnFullyRoutedConnection:
+            canonicalNetLabel.wasAssignedDisplayLabel,
           connKey: st.subcircuit_connectivity_map_key,
         })
       }
