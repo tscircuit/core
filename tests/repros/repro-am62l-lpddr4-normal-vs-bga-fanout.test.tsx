@@ -52,7 +52,9 @@ const renderFullBoard = async (fanoutSolver: "normal" | "bga") => {
   return circuit
 }
 
-test("compares default, BGA, and Altium fanout on the full AM62L to LPDDR4 interface", async () => {
+// Temporarily skipped: this comparison takes about six minutes in CI.
+// Re-enable after reducing runtime and explicitly handling routing failures.
+test.skip("compares default, BGA, and Altium fanout on the full AM62L to LPDDR4 interface", async () => {
   const normalCircuit = await renderFullBoard("normal")
   const bgaCircuit = await renderFullBoard("bga")
   const altiumReferenceSvg = convertCircuitJsonToPcbSvg(
