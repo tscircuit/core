@@ -59,6 +59,9 @@ export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
         layers,
         shape: "circle",
         ...pcbKeepoutExclusionProps,
+        ...(props.warningOnly !== undefined
+          ? { warning_only: props.warningOnly }
+          : {}),
         // @ts-ignore: no idea why this is triggering
         radius: props.radius,
         center: {
@@ -73,6 +76,9 @@ export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
         layers,
         shape: "rect",
         ...pcbKeepoutExclusionProps,
+        ...(props.warningOnly !== undefined
+          ? { warning_only: props.warningOnly }
+          : {}),
         ...(isRotated90
           ? { width: props.height, height: props.width }
           : { width: props.width, height: props.height }),

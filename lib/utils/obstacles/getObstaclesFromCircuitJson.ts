@@ -226,6 +226,7 @@ export const getObstaclesFromCircuitJson = (
         }
       }
     } else if (element.type === "pcb_keepout") {
+      if (element.warning_only) continue
       if (element.shape === "circle") {
         obstacles.push({
           componentId: pcbComponentId,

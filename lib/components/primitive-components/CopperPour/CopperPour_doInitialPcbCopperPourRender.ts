@@ -61,6 +61,7 @@ const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
       { x: center.x - width / 2, y: center.y + height / 2 },
     ]
   }
+  // warningOnly affects routing and DRC severity; pours still avoid every keepout.
   const inputProblem = convertCircuitJsonToInputProblem(
     circuitJson,
     resolvedCopperPours.map(({ copperPour, sourceNetId }) => {

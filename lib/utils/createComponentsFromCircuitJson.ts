@@ -2,6 +2,7 @@ import { getUnitVectorFromDirection } from "@tscircuit/math-utils"
 import type { PinLabelsProp } from "@tscircuit/props"
 import {
   pcb_via,
+  layer_ref,
   type AnyCircuitElement,
   type SchematicComponent,
 } from "circuit-json"
@@ -463,6 +464,8 @@ export const createComponentsFromCircuitJson = (
     } else if (elm.type === "pcb_keepout" && elm.shape === "circle") {
       components.push(
         new Keepout({
+          warningOnly: elm.warning_only,
+          layers: elm.layers.map((layer) => layer_ref.parse(layer)),
           pcbX: elm.center.x,
           pcbY: elm.center.y,
           shape: "circle",
@@ -472,6 +475,8 @@ export const createComponentsFromCircuitJson = (
     } else if (elm.type === "pcb_keepout" && elm.shape === "rect") {
       components.push(
         new Keepout({
+          warningOnly: elm.warning_only,
+          layers: elm.layers.map((layer) => layer_ref.parse(layer)),
           pcbX: elm.center.x,
           pcbY: elm.center.y,
           shape: "rect",
