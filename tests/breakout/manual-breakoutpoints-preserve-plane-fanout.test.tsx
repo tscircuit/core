@@ -85,6 +85,20 @@ test("manual breakout points preserve fanout for automatic plane drops", async (
       (phaseIo) => phaseIo.startSimpleRouteJson?.connections.length,
     ),
   ).toEqual([1, 1, 1])
-  expect(circuit.db.pcb_via.list()).toHaveLength(2)
+  // Signal routes can change layers too; count the two GND plane drops.
+  const groundNet = circuit.db.source_net.getWhere({ name: "GND" })!
+  const groundVias = circuit.db.pcb_via.list().filter((via) => {
+    const trace = via.pcb_trace_id
+      ? circuit.db.pcb_trace.get(via.pcb_trace_id)
+      : undefined
+    const sourceTrace = trace?.source_trace_id
+      ? circuit.db.source_trace.get(trace.source_trace_id)
+      : undefined
+    return sourceTrace?.connected_source_net_ids?.includes(
+      groundNet.source_net_id,
+    )
+  })
+  expect(groundVias).toHaveLength(2)
+  expect(groundVias.map((via) => via.to_layer)).toEqual(["inner1", "inner1"])
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

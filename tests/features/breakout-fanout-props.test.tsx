@@ -155,12 +155,28 @@ test("breakout fanout props escape buses and plane nets without a phase", async 
     },
   ])
 
+  const planeNetIds = sourceNets
+    .filter((net) => net.name === "GND" || net.name === "VCC")
+    .map((net) => net.source_net_id)
   const planeVias = circuit.db.pcb_via
     .list()
     .filter(
-      (via): via is typeof via & { to_layer: string; pcb_trace_id: string } =>
-        (via.to_layer === "inner1" || via.to_layer === "inner2") &&
-        via.pcb_trace_id !== undefined,
+      (via): via is typeof via & { to_layer: string; pcb_trace_id: string } => {
+        if (
+          (via.to_layer !== "inner1" && via.to_layer !== "inner2") ||
+          via.pcb_trace_id === undefined
+        ) {
+          return false
+        }
+        // Signal vias may also traverse plane layers; select the power nets.
+        const trace = circuit.db.pcb_trace.get(via.pcb_trace_id)
+        const sourceTrace = trace?.source_trace_id
+          ? circuit.db.source_trace.get(trace.source_trace_id)
+          : undefined
+        return planeNetIds.some((sourceNetId) =>
+          sourceTrace?.connected_source_net_ids?.includes(sourceNetId),
+        )
+      },
     )
   expect(planeVias.map((via) => via.to_layer).sort()).toEqual([
     "inner1",
