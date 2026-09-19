@@ -517,9 +517,10 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
     if (pcbMatches.length > 1) {
       if (!areAllPcbPrimitivesOverlapping(pcbMatches)) {
-        // This port hint is ambiguous - multiple non-overlapping pads share the
-        // same name. Skip creating a pcb_port and record a warning instead of
-        // throwing, so the rest of the circuit can still render.
+        // When multiple non-overlapping pads share the same port hint (e.g. multi-pad
+        // battery holders, shield pins, or dual-pad contacts), record the advisory
+        // warning but do not drop the pcb_port. Anchor the pcb_port at the primary pad
+        // so traces can route and connectivity is preserved (tscircuit/tscircuit#4444).
         const portName = this.props.name!
         const componentName =
           this.getParentNormalComponent()?.props.name ?? "unknown"
@@ -537,10 +538,10 @@ export class Port extends PrimitiveComponent<typeof portProps> {
           source_component_id:
             this.getParentNormalComponent()?.source_component_id ?? undefined,
         })
-        return
+        matchCenter = pcbMatches[0]._getPcbCircuitJsonBounds().center
+      } else {
+        matchCenter = getCenterOfPcbPrimitives(pcbMatches)
       }
-
-      matchCenter = getCenterOfPcbPrimitives(pcbMatches)
     }
 
     if (matchCenter) {
