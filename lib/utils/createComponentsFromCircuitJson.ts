@@ -482,6 +482,7 @@ export const createComponentsFromCircuitJson = (
     } else if (elm.type === "pcb_hole" && elm.hole_shape === "circle") {
       components.push(
         new Hole({
+          name: (elm as any).name,
           pcbX: elm.x,
           pcbY: elm.y,
           diameter: elm.hole_diameter,
@@ -490,6 +491,7 @@ export const createComponentsFromCircuitJson = (
     } else if (elm.type === "pcb_hole" && elm.hole_shape === "rect") {
       components.push(
         new Hole({
+          name: (elm as any).name,
           pcbX: elm.x,
           pcbY: elm.y,
           shape: "rect",
@@ -500,6 +502,7 @@ export const createComponentsFromCircuitJson = (
     } else if (elm.type === "pcb_hole" && elm.hole_shape === "pill") {
       components.push(
         new Hole({
+          name: (elm as any).name,
           pcbX: elm.x,
           pcbY: elm.y,
           shape: "pill",
@@ -510,6 +513,7 @@ export const createComponentsFromCircuitJson = (
     } else if (elm.type === "pcb_hole" && elm.hole_shape === "oval") {
       components.push(
         new Hole({
+          name: (elm as any).name,
           pcbX: elm.x,
           pcbY: elm.y,
           shape: "oval",
@@ -520,6 +524,7 @@ export const createComponentsFromCircuitJson = (
     } else if (elm.type === "pcb_hole" && elm.hole_shape === "rotated_pill") {
       components.push(
         new Hole({
+          name: (elm as any).name,
           pcbX: elm.x,
           pcbY: elm.y,
           shape: "pill",
