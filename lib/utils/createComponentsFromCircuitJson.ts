@@ -6,7 +6,6 @@ import {
   type AnyCircuitElement,
   type SchematicComponent,
 } from "circuit-json"
-import type { PcbKeepoutWithWarningOnly } from "lib/utils/circuit-json/pcb-keepout-with-warning-only"
 import { CopperText } from "lib/components/primitive-components/CopperText"
 import { CourtyardCircle } from "lib/components/primitive-components/CourtyardCircle"
 import { CourtyardOutline } from "lib/components/primitive-components/CourtyardOutline"
@@ -465,7 +464,7 @@ export const createComponentsFromCircuitJson = (
     } else if (elm.type === "pcb_keepout" && elm.shape === "circle") {
       components.push(
         new Keepout({
-          warningOnly: (elm as PcbKeepoutWithWarningOnly).warning_only,
+          warningOnly: elm.warning_only,
           layers: elm.layers.map((layer) => layer_ref.parse(layer)),
           pcbX: elm.center.x,
           pcbY: elm.center.y,
@@ -476,7 +475,7 @@ export const createComponentsFromCircuitJson = (
     } else if (elm.type === "pcb_keepout" && elm.shape === "rect") {
       components.push(
         new Keepout({
-          warningOnly: (elm as PcbKeepoutWithWarningOnly).warning_only,
+          warningOnly: elm.warning_only,
           layers: elm.layers.map((layer) => layer_ref.parse(layer)),
           pcbX: elm.center.x,
           pcbY: elm.center.y,

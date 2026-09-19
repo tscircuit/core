@@ -62,7 +62,9 @@ const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
     ]
   }
   const inputProblem = convertCircuitJsonToInputProblem(
-    circuitJson,
+    circuitJson.filter(
+      (element) => element.type !== "pcb_keepout" || !element.warning_only,
+    ),
     resolvedCopperPours.map(({ copperPour, sourceNetId }) => {
       const { _parsedProps: props } = copperPour
       const clearance = props.clearance ?? 0.2

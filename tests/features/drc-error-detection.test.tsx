@@ -108,7 +108,9 @@ test("design rule check detects crossing traces", async () => {
   const circuitJson = circuit.getCircuitJson()
 
   // Run the DRC check function directly
-  const drcErrors = checkEachPcbTraceNonOverlapping(circuitJson)
+  const drcErrors = checkEachPcbTraceNonOverlapping(circuitJson).filter(
+    (diagnostic) => diagnostic.type === "pcb_trace_error",
+  )
 
   // Insert the DRC errors into the database for visualization
   for (const error of drcErrors) {
