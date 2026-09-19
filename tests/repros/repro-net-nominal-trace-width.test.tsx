@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("reproduces ignored net nominal trace width", async () => {
+test("routes a net at its nominal trace width", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board
@@ -29,7 +29,7 @@ test("reproduces ignored net nominal trace width", async () => {
   const sourceNet = circuit.db.source_net
     .list()
     .find((net) => net.name === "VCC")!
-  expect(sourceNet.trace_width).toBeUndefined()
+  expect(sourceNet.trace_width).toBe(0.4)
   const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
     circuitJson: circuit
       .getCircuitJson()
@@ -38,7 +38,7 @@ test("reproduces ignored net nominal trace width", async () => {
   const connection = simpleRouteJson.connections.find(
     (connection) => connection.name === sourceNet.source_net_id,
   )!
-  expect(connection.nominalTraceWidth).toBe(0.2)
+  expect(connection.nominalTraceWidth).toBe(0.4)
   const sourceTraceIds = circuit.db.source_trace
     .list()
     .filter((trace) =>
@@ -51,7 +51,7 @@ test("reproduces ignored net nominal trace width", async () => {
   expect(netTraces.length).toBeGreaterThan(0)
   for (const trace of netTraces) {
     for (const point of trace.route) {
-      if (point.route_type === "wire") expect(point.width).toBe(0.2)
+      if (point.route_type === "wire") expect(point.width).toBe(0.4)
     }
   }
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
