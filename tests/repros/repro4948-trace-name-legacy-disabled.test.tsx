@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("repro: a disabled legacy autorouter skips disconnected trace-name validation", async () => {
+test("a disabled legacy autorouter preserves disconnected trace-name validation", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -74,7 +74,12 @@ test("repro: a disabled legacy autorouter skips disconnected trace-name validati
   expect(sourceTraces[0]!.subcircuit_connectivity_map_key).not.toBe(
     sourceTraces[1]!.subcircuit_connectivity_map_key,
   )
-  expect(circuit.db.pcb_trace_error.list()).toEqual([])
+  expect(circuit.db.pcb_trace_error.list()).toMatchObject([
+    {
+      message:
+        'Trace "signal" in subcircuit "main" shares a name with another trace, but the traces are not mutually connected. Same-named traces must have the same subcircuit connectivity map key.',
+    },
+  ])
 
   await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
     width: 1600,

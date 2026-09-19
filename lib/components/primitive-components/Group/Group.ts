@@ -2786,12 +2786,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   doInitialPcbDesignRuleChecks() {
     if (this.root?.pcbDisabled) return
-    if (this._isLegacyAutorouterDisabled()) return
-    if (
-      this.root?.pcbRoutingDisabled ||
-      this.getInheritedProperty("routingDisabled")
-    )
-      return
     const { db } = this.root!
 
     if (this.isSubcircuit) {
@@ -2850,6 +2844,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       }
     }
 
+    if (this._isLegacyAutorouterDisabled()) return
     Group_doInitialStandaloneSubcircuitPcbDesignRuleChecks(this)
   }
 
