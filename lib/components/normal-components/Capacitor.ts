@@ -1,5 +1,5 @@
-import { capacitorProps } from "@tscircuit/props"
-import type { SourceSimpleCapacitorInput } from "circuit-json"
+import { capacitorProps as baseCapacitorProps } from "@tscircuit/props"
+import { type SourceSimpleCapacitorInput, resistance } from "circuit-json"
 import { formatSiUnit } from "format-si-unit"
 import {
   type BaseSymbolName,
@@ -7,10 +7,35 @@ import {
   type PolarizedPassivePorts,
 } from "lib/utils/constants"
 import { symbols } from "schematic-symbols"
+import { z } from "zod"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { Trace } from "../primitive-components/Trace/Trace"
 import { Capacitor_addPolarityFabricationSymbols } from "./Capacitor_addPolarityFabricationSymbols"
 import { Capacitor_getAutomaticMaxDecouplingTraceLength } from "./Capacitor_getAutomaticMaxDecouplingTraceLength"
+
+export const capacitorProps = baseCapacitorProps.extend({
+  tolerance: z
+    .union([z.string(), z.number()])
+    .transform((val) => {
+      if (typeof val === "string") {
+        const cleaned = val.replace(/^[±\+\/-]+/, "").trim()
+        if (cleaned.endsWith("%")) {
+          return parseFloat(cleaned.slice(0, -1)) / 100
+        }
+        return parseFloat(cleaned)
+      }
+      return val
+    })
+    .pipe(
+      z
+        .number()
+        .min(0, "Tolerance must be non-negative")
+        .max(1, "Tolerance cannot be greater than 100%"),
+    )
+    .optional(),
+  temperatureCoefficient: z.string().optional(),
+  equivalentSeriesResistance: resistance.optional(),
+})
 
 const CAPACITOR_CHIP_FOOTPRINTS = new Set([
   "01005",
@@ -75,7 +100,7 @@ export class Capacitor extends NormalComponent<
 
     if (
       this._parsedProps.capacitance !== undefined &&
-      !isNaN(this._parsedProps.capacitance)
+      !Number.isNaN(this._parsedProps.capacitance)
     ) {
       capacitanceDisplay =
         typeof inputCapacitance === "string"
