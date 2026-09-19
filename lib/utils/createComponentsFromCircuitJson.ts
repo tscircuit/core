@@ -465,6 +465,8 @@ export const createComponentsFromCircuitJson = (
       components.push(
         new Keepout({
           warningOnly: elm.warning_only,
+          allowTraces: elm.allow_traces,
+          allowPlacements: elm.allow_placements,
           layers: elm.layers.map((layer) => layer_ref.parse(layer)),
           pcbX: elm.center.x,
           pcbY: elm.center.y,
@@ -476,6 +478,8 @@ export const createComponentsFromCircuitJson = (
       components.push(
         new Keepout({
           warningOnly: elm.warning_only,
+          allowTraces: elm.allow_traces,
+          allowPlacements: elm.allow_placements,
           layers: elm.layers.map((layer) => layer_ref.parse(layer)),
           pcbX: elm.center.x,
           pcbY: elm.center.y,

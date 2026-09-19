@@ -59,6 +59,12 @@ export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
         layers,
         shape: "circle",
         ...pcbKeepoutExclusionProps,
+        ...(props.allowTraces !== undefined
+          ? { allow_traces: props.allowTraces }
+          : {}),
+        ...(props.allowPlacements !== undefined
+          ? { allow_placements: props.allowPlacements }
+          : {}),
         ...(props.warningOnly !== undefined
           ? { warning_only: props.warningOnly }
           : {}),
@@ -76,6 +82,12 @@ export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
         layers,
         shape: "rect",
         ...pcbKeepoutExclusionProps,
+        ...(props.allowTraces !== undefined
+          ? { allow_traces: props.allowTraces }
+          : {}),
+        ...(props.allowPlacements !== undefined
+          ? { allow_placements: props.allowPlacements }
+          : {}),
         ...(props.warningOnly !== undefined
           ? { warning_only: props.warningOnly }
           : {}),
