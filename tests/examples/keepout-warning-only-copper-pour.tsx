@@ -4,7 +4,7 @@ export default function KeepoutWarningOnlyCopperPourExample() {
   return (
     <board width={56} height={32} routingDisabled schematicDisabled>
       <pcbnotetext
-        text="COPPER POUR: warningOnly"
+        text="COPPER POURS AVOID ALL KEEPOUTS"
         pcbY={14}
         fontSize={1}
         color="white"
@@ -39,7 +39,7 @@ export default function KeepoutWarningOnlyCopperPourExample() {
             ]}
           />
           <pcbnotetext
-            text={x < 0 ? "COPPER FILLS THE KEEPOUT" : "KEEPOUT CUTS A HOLE"}
+            text="COPPER STILL AVOIDS THE KEEPOUT"
             pcbX={x}
             pcbY={-8}
             fontSize={0.85}

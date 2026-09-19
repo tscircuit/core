@@ -61,10 +61,9 @@ const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
       { x: center.x - width / 2, y: center.y + height / 2 },
     ]
   }
+  // warningOnly affects routing and DRC severity; pours still avoid every keepout.
   const inputProblem = convertCircuitJsonToInputProblem(
-    circuitJson.filter(
-      (element) => element.type !== "pcb_keepout" || !element.warning_only,
-    ),
+    circuitJson,
     resolvedCopperPours.map(({ copperPour, sourceNetId }) => {
       const { _parsedProps: props } = copperPour
       const clearance = props.clearance ?? 0.2
