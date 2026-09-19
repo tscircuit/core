@@ -11,6 +11,7 @@ import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
 
 type RoutedTrace = (PcbTrace | SimplifiedPcbTrace) & {
   source_trace_id?: string
+  connectsTo?: string[]
 }
 
 type RoutePointWithPortIds = {
@@ -224,6 +225,14 @@ function getSourcePortIdsFromRoutedTrace(
       const sourcePortId = db.pcb_port.get(pcbPortId)?.source_port_id
       if (sourcePortId) sourcePortIds.add(sourcePortId)
     }
+  }
+
+  if (sourcePortIds.size > 0) return [...sourcePortIds]
+
+  // Geometry cannot match inner-layer endpoints to via ports registered on top.
+  for (const pcbPortId of trace.connectsTo ?? []) {
+    const sourcePortId = db.pcb_port.get(pcbPortId)?.source_port_id
+    if (sourcePortId) sourcePortIds.add(sourcePortId)
   }
 
   if (sourcePortIds.size > 0) return [...sourcePortIds]
