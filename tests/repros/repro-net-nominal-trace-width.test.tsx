@@ -39,9 +39,15 @@ test("reproduces ignored net nominal trace width", async () => {
     (connection) => connection.name === sourceNet.source_net_id,
   )!
   expect(connection.nominalTraceWidth).toBe(0.2)
+  const sourceTraceIds = circuit.db.source_trace
+    .list()
+    .filter((trace) =>
+      trace.connected_source_net_ids?.includes(sourceNet.source_net_id),
+    )
+    .map((trace) => trace.source_trace_id)
   const netTraces = circuit.db.pcb_trace
     .list()
-    .filter((trace) => trace.connection_name === sourceNet.source_net_id)
+    .filter((trace) => sourceTraceIds.includes(trace.source_trace_id!))
   expect(netTraces.length).toBeGreaterThan(0)
   for (const trace of netTraces) {
     for (const point of trace.route) {
