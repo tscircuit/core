@@ -57,7 +57,7 @@
     "@tscircuit/ngspice-spice-engine": "^0.0.20",
     "@tscircuit/props": "^0.0.661",
     "@tscircuit/schematic-match-adapt": "^0.0.18",
-    "@tscircuit/schematic-trace-solver": "^0.0.199",
+    "@tscircuit/schematic-trace-solver": "^0.0.200",
     "@tscircuit/solver-utils": "^0.0.16",
     "@tscircuit/soup-util": "^0.0.41",
     "@tscircuit/via-stitch-solver": "github:tscircuit/via-stitch-solver#64f2ac7781b795bdc0d74ba411988e60767fa653",

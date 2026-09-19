@@ -340,7 +340,7 @@ test("repro188: acoustic tuner creates near-parallel VREF traces", async () => {
     }),
   )
 
-  expect(hasNearParallelOverlap).toBe(true)
+  expect(hasNearParallelOverlap).toBe(false)
   await expect(circuit).toMatchSchematicSnapshot(import.meta.path, {
     width: 1800,
     height: 1000,
