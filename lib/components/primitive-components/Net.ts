@@ -38,6 +38,7 @@ export class Net extends PrimitiveComponent<typeof netProps> {
       member_source_group_ids: [],
       is_ground: isGround,
       is_power: isPositiveVoltageSource,
+      trace_width: props.nominalTraceWidth,
       // @ts-ignore
       is_positive_voltage_source: isPositiveVoltageSource,
     })

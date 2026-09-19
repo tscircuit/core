@@ -669,13 +669,14 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     }
     handledNetConnectivityKeys.add(netConnectivityKey)
 
-    const connectedSourceNetIds = source_nets
-      .filter(
-        (sourceNet) =>
-          getSourceConnectivityKey(sourceNet.source_net_id) ===
-          netConnectivityKey,
-      )
-      .map((sourceNet) => sourceNet.source_net_id)
+    const connectedSourceNets = source_nets.filter(
+      (sourceNet) =>
+        getSourceConnectivityKey(sourceNet.source_net_id) ===
+        netConnectivityKey,
+    )
+    const connectedSourceNetIds = connectedSourceNets.map(
+      (sourceNet) => sourceNet.source_net_id,
+    )
     const connectedSourceTraces = sourceTracesEligibleForNetConnections.filter(
       (st) =>
         [st.source_trace_id, ...(st.connected_source_net_ids ?? [])].some(
@@ -683,11 +684,18 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         ),
     )
 
-    let nominalTraceWidthFromConnectedTraces: number | undefined
+    let nominalTraceWidthForConnection: number | undefined
+    for (const sourceNet of connectedSourceNets) {
+      if (sourceNet.trace_width === undefined) continue
+      nominalTraceWidthForConnection = Math.max(
+        nominalTraceWidthForConnection ?? 0,
+        sourceNet.trace_width,
+      )
+    }
     for (const sourceTrace of connectedSourceTraces) {
       if (sourceTrace.min_trace_thickness === undefined) continue
-      nominalTraceWidthFromConnectedTraces = Math.max(
-        nominalTraceWidthFromConnectedTraces ?? 0,
+      nominalTraceWidthForConnection = Math.max(
+        nominalTraceWidthForConnection ?? 0,
         sourceTrace.min_trace_thickness,
       )
     }
@@ -711,8 +719,8 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       name:
         net.source_net_id ??
         sharedConnMap.getNetConnectedToId(net.source_net_id),
-      nominalTraceWidth: nominalTraceWidthFromConnectedTraces,
-      width: nominalTraceWidthFromConnectedTraces,
+      nominalTraceWidth: nominalTraceWidthForConnection,
+      width: nominalTraceWidthForConnection,
       pointsToConnect,
     }
     if (pointsToConnect.length === 0) continue
