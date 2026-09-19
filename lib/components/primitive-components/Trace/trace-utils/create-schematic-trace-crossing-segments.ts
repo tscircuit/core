@@ -72,6 +72,14 @@ export const createSchematicTraceCrossingSegments = ({
 
         const crossingPoint = { x: intersectX, y: intersectY }
 
+        // A contact at the start needs no crossing, but must not hide later ones.
+        if (
+          crossingPoint.x === edge.from.x &&
+          crossingPoint.y === edge.from.y
+        ) {
+          continue
+        }
+
         otherEdgesIntersections.push({
           otherEdge,
           crossingPoint: crossingPoint,
@@ -97,11 +105,6 @@ export const createSchematicTraceCrossingSegments = ({
     const crossingPoint = closestIntersection.crossingPoint
     const crossingSegmentLength = 0.075 // mm
 
-    if (crossingPoint.x === edge.from.x && crossingPoint.y === edge.from.y) {
-      // On top of each other, the unit vector would be undefined, no crossing
-      // necessary
-      continue
-    }
     const crossingUnitVec = getUnitVectorFromPointAToB(edge.from, crossingPoint)
 
     // Calculate points slightly before and after crossing
