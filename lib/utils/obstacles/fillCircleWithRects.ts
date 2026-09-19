@@ -21,11 +21,14 @@ export function fillCircleWithRects(
   const { center, radius } = circle
   const { rectHeight = 0.1 } = options
   const rects: Rect[] = []
+  if (radius <= 0) return rects
 
-  const numSlices = Math.ceil((radius * 2) / rectHeight)
+  // Keep the first scanline inside circles shorter than a sampling band.
+  const effectiveRectHeight = Math.min(rectHeight, radius * 2)
+  const numSlices = Math.ceil((radius * 2) / effectiveRectHeight)
 
   for (let i = 0; i < numSlices; i++) {
-    const y = center.y - radius + (i + 0.5) * rectHeight
+    const y = center.y - radius + (i + 0.5) * effectiveRectHeight
     const dy = y - center.y
 
     // Using circle equation x^2 + y^2 = r^2 to find width at this y
@@ -38,7 +41,7 @@ export function fillCircleWithRects(
           y: y,
         },
         width: halfWidth * 2,
-        height: rectHeight,
+        height: effectiveRectHeight,
       })
     }
   }
