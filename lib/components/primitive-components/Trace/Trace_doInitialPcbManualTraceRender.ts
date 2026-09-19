@@ -154,6 +154,12 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
             ...transformedPoint,
             from_layer: maybeFlipLayer(point.from_layer),
             to_layer: maybeFlipLayer(point.to_layer),
+            tented_on_top: isFlipped
+              ? point.tented_on_bottom
+              : point.tented_on_top,
+            tented_on_bottom: isFlipped
+              ? point.tented_on_top
+              : point.tented_on_bottom,
           } as PcbTraceRoutePoint
         }
 
@@ -225,12 +231,14 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
             net_is_assignable: inflatedPcbVia?.net_is_assignable,
             net_assigned: inflatedPcbVia?.net_assigned,
             // Use the same footprint flip as the route and via layers above.
-            tented_on_top: isFlipped
-              ? inflatedPcbVia?.tented_on_bottom
-              : inflatedPcbVia?.tented_on_top,
-            tented_on_bottom: isFlipped
-              ? inflatedPcbVia?.tented_on_top
-              : inflatedPcbVia?.tented_on_bottom,
+            tented_on_top:
+              (isFlipped
+                ? inflatedPcbVia?.tented_on_bottom
+                : inflatedPcbVia?.tented_on_top) ?? point.tented_on_top,
+            tented_on_bottom:
+              (isFlipped
+                ? inflatedPcbVia?.tented_on_top
+                : inflatedPcbVia?.tented_on_bottom) ?? point.tented_on_bottom,
           })
         }
       }
