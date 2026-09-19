@@ -65,6 +65,16 @@ test("registers a differential pair using a trace name and port selector", async
     subcircuitComponent: boardSubcircuit,
   })
 
+  expect(circuit.db.source_bus.list()).toEqual([
+    expect.objectContaining({
+      name: "USB",
+      source_trace_ids: [
+        positiveTrace.source_trace_id,
+        negativeTrace.source_trace_id,
+      ],
+      max_length_skew: 0.05,
+    }),
+  ])
   expect(simpleRouteJson.differentialPairs).toEqual([
     {
       connectionNames: [

@@ -61,6 +61,16 @@ it("registers a differential pair using port selectors", async (): Promise<void>
     subcircuitComponent: boardSubcircuit,
   }).simpleRouteJson
 
+  expect(circuit.db.source_bus.list()).toEqual([
+    expect.objectContaining({
+      name: "USB",
+      source_trace_ids: [
+        positiveTrace.source_trace_id,
+        negativeTrace.source_trace_id,
+      ],
+      max_length_skew: 0.1,
+    }),
+  ])
   expect(simpleRouteJson.differentialPairs).toEqual([
     {
       connectionNames: [

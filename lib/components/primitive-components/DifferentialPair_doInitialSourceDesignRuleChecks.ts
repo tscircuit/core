@@ -1,4 +1,4 @@
-import type { SourcePort } from "circuit-json"
+import type { SourcePort, SourceTrace } from "circuit-json"
 import type { DifferentialPair } from "./DifferentialPair"
 import type { Port } from "./Port/Port"
 
@@ -6,6 +6,7 @@ type ConnectionPolarity = "positive" | "negative"
 type SourceComponentId = NonNullable<SourcePort["source_component_id"]>
 
 type ResolvedPointToPointConnection = {
+  sourceTraceIds: SourceTrace["source_trace_id"][]
   sourcePorts: SourcePort[]
   sourceTraceName?: string
 }
@@ -55,6 +56,11 @@ const resolvePointToPointConnection = (
         sourcePort.subcircuit_connectivity_map_key === connectivityMapKey,
     )
   return {
+    sourceTraceIds: subcircuitSourceTraces
+      .filter(
+        (trace) => trace.subcircuit_connectivity_map_key === connectivityMapKey,
+      )
+      .map((trace) => trace.source_trace_id),
     sourcePorts,
     sourceTraceName:
       matchingSourceTraces.length > 0 ? connectionSelector : undefined,
@@ -119,6 +125,8 @@ export const DifferentialPair_doInitialSourceDesignRuleChecks = (
     })
   }
 
+  const memberTraceIds: SourceTrace["source_trace_id"][] = []
+  let resolvedPolarityCount = 0
   for (const connectionPolarity of ["positive", "negative"] as const) {
     let connectionSelector = differentialPair._parsedProps.negativeConnection
     if (connectionPolarity === "positive") {
@@ -130,6 +138,8 @@ export const DifferentialPair_doInitialSourceDesignRuleChecks = (
       connectionSelector,
     )
     if (!resolvedConnection) continue
+    resolvedPolarityCount++
+    memberTraceIds.push(...resolvedConnection.sourceTraceIds)
 
     const terminalSourcePorts = resolvedConnection.sourcePorts
     if (terminalSourcePorts.length === 2) continue
@@ -160,6 +170,17 @@ export const DifferentialPair_doInitialSourceDesignRuleChecks = (
         sourceTraceName: resolvedConnection.sourceTraceName,
         terminalPinSelectors,
       }),
+      subcircuit_id:
+        differentialPair.getSubcircuit().subcircuit_id ?? undefined,
+    })
+  }
+  // Export resolved membership for Circuit JSON consumers such as net inspection.
+  // Both polarities must resolve; existing validation still handles invalid selectors.
+  if (resolvedPolarityCount === 2 && memberTraceIds.length > 0) {
+    db.source_bus.insert({
+      name: differentialPair.name,
+      source_trace_ids: [...new Set(memberTraceIds)],
+      max_length_skew: differentialPair._parsedProps.maxLengthSkew,
       subcircuit_id:
         differentialPair.getSubcircuit().subcircuit_id ?? undefined,
     })

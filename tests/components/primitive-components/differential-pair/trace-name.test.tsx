@@ -63,6 +63,16 @@ it("registers a differential pair routing constraint", async (): Promise<void> =
   if (!negativeTrace) {
     throw new Error("Expected the USB_N source trace")
   }
+  expect(circuit.db.source_bus.list()).toEqual([
+    expect.objectContaining({
+      name: "USB",
+      source_trace_ids: [
+        positiveTrace.source_trace_id,
+        negativeTrace.source_trace_id,
+      ],
+      max_length_skew: 0.05,
+    }),
+  ])
   expect(simpleRouteJson.differentialPairs).toEqual([
     {
       connectionNames: [
