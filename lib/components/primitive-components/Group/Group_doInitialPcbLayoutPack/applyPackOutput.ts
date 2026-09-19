@@ -43,6 +43,39 @@ const updateCadRotation = ({
   cadComponent.rotation = nextRotation
 }
 
+export const updatePlatedHoleRotationsAfterTransform = ({
+  db,
+  elements,
+  rotationDegrees,
+}: {
+  db: CircuitJsonUtilObjects
+  elements: any[]
+  rotationDegrees: number
+}) => {
+  if (rotationDegrees === 0) return
+
+  for (const element of elements) {
+    if (element.type !== "pcb_plated_hole") continue
+
+    const rotationUpdate: Record<string, number> = {}
+    for (const field of [
+      "ccw_rotation",
+      "hole_ccw_rotation",
+      "rect_ccw_rotation",
+    ] as const) {
+      if (typeof element[field] === "number") {
+        rotationUpdate[field] = normalizeDegrees(
+          element[field] + rotationDegrees,
+        )
+      }
+    }
+
+    if (Object.keys(rotationUpdate).length > 0) {
+      db.pcb_plated_hole.update(element.pcb_plated_hole_id, rotationUpdate)
+    }
+  }
+}
+
 const isDescendantGroup = (
   db: any,
   groupId: string,
@@ -100,6 +133,11 @@ export const applyPackOutput = (
               "pcb_component_id" in elm && elm.pcb_component_id === memberId,
           )
         transformPCBElements(related as any, transformMatrix)
+        updatePlatedHoleRotationsAfterTransform({
+          db,
+          elements: related,
+          rotationDegrees,
+        })
         updateCadRotation({
           db,
           pcbComponentId: memberId,
@@ -143,6 +181,11 @@ export const applyPackOutput = (
             "pcb_component_id" in elm && elm.pcb_component_id === componentId,
         )
       transformPCBElements(related as any, transformMatrix)
+      updatePlatedHoleRotationsAfterTransform({
+        db,
+        elements: related,
+        rotationDegrees,
+      })
       updateCadRotation({
         db,
         pcbComponentId: componentId,
@@ -223,6 +266,11 @@ export const applyPackOutput = (
     }
 
     transformPCBElements(relatedElements as any, transformMatrix)
+    updatePlatedHoleRotationsAfterTransform({
+      db,
+      elements: relatedElements,
+      rotationDegrees,
+    })
     db.pcb_group.update(pcbGroup.pcb_group_id, { center })
   }
 
