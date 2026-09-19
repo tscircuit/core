@@ -623,7 +623,8 @@ export abstract class PrimitiveComponent<
     if (
       !text.includes("{NAME}") &&
       !text.includes("{REF}") &&
-      !text.includes("{REFERENCE}")
+      !text.includes("{REFERENCE}") &&
+      !text.includes("{REFDES}")
     ) {
       return text
     }
@@ -637,6 +638,7 @@ export abstract class PrimitiveComponent<
       .replace(/\{NAME\}/g, refdes)
       .replace(/\{REF\}/g, refdes)
       .replace(/\{REFERENCE\}/g, refdes)
+      .replace(/\{REFDES\}/g, refdes)
   }
 
   /**
