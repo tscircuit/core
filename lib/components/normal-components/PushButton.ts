@@ -1,13 +1,13 @@
 import { pushButtonProps } from "@tscircuit/props"
 import type { SourceSimplePushButton } from "circuit-json"
 import {
-  FTYPE,
   type BaseSymbolName,
+  FTYPE,
   type PassivePorts,
 } from "lib/utils/constants"
+import { symbols } from "schematic-symbols"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { Port } from "../primitive-components/Port"
-import { symbols } from "schematic-symbols"
 
 export class PushButton extends NormalComponent<
   typeof pushButtonProps,
@@ -24,6 +24,19 @@ export class PushButton extends NormalComponent<
   }
 
   get defaultInternallyConnectedPinNames(): string[][] {
+    // 4-pin tactile footprints internally short pin1–pin2 and pin3–pin4.
+    // Require those four named ports so 2-pin schematic buttons and KiCad
+    // footprints that only repeat pin1/pin2 (duplicate physical pads) keep
+    // inferred internals instead of inventing missing pin3/pin4 names.
+    const ports = this.selectAll("port") as Port[]
+    const has = (name: string) =>
+      ports.some((port) => port.isMatchingNameOrAlias(name))
+    if (has("pin1") && has("pin2") && has("pin3") && has("pin4")) {
+      return [
+        ["pin1", "pin2"],
+        ["pin3", "pin4"],
+      ]
+    }
     return []
   }
 
