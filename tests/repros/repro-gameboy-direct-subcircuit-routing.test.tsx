@@ -18,7 +18,7 @@ test("Gameboy-like board routes through a dense MCU breakout without headers", a
       minViaHoleDiameter="0.2mm"
       minViaPadDiameter="0.45mm"
     >
-      <subcircuit name="MCU" autorouter="auto">
+      <subcircuit name="MCU" autorouter="auto" autorouterEffortLevel="2x">
         <breakout
           name="U1_BREAKOUT"
           autorouter="auto"
