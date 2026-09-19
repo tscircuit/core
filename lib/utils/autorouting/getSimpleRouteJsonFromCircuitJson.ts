@@ -508,7 +508,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         .map((sourcePortId) =>
           db.pcb_port.getWhere({ source_port_id: sourcePortId }),
         )
-        .filter((pcbPort): pcbPort is PcbPort => pcbPort !== null)
+        .filter((pcbPort): pcbPort is PcbPort => Boolean(pcbPort))
 
       const isPlaneTerminatedSourceTrace = planeTerminatedSourceTraceLayers.has(
         trace.source_trace_id,
