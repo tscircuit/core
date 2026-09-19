@@ -58,7 +58,7 @@ const createSupplierDiodeCircuitJson = (
   ] as AnyCircuitElement[]
 }
 
-test("reports diode pin 1 polarity mismatches and reuses the orientation cache", async () => {
+test("rejects diode and LED supplier frames with mismatched polarity, including cached frames", async () => {
   const cache = new Map<string, string>()
   let orientationCacheWrites = 0
   const localCacheEngine: LocalCacheEngine = {
@@ -71,8 +71,13 @@ test("reports diode pin 1 polarity mismatches and reuses the orientation cache",
     },
   }
   const partsEngine: PartsEngine = {
-    findPart: () => ({ jlcpcb: ["C8598"] }),
-    fetchPartCircuitJson: () => createSupplierDiodeCircuitJson("cathode"),
+    findPart: () => ({ jlcpcb: ["C8598"], pcbway: ["matching-diode"] }),
+    fetchPartCircuitJson: ({ supplierPartNumber }) => {
+      if (supplierPartNumber === "C8598") {
+        return createSupplierDiodeCircuitJson("cathode")
+      }
+      return createSupplierDiodeCircuitJson("anode")
+    },
   }
   const platform = {
     partsEngine,
@@ -85,6 +90,7 @@ test("reports diode pin 1 polarity mismatches and reuses the orientation cache",
     circuit.add(
       <board width="20mm" height="20mm">
         <diode name="D1" footprint="0603" />
+        <led name="LED1" footprint="0805" pcbX={4} />
       </board>,
     )
 
@@ -94,7 +100,7 @@ test("reports diode pin 1 polarity mismatches and reuses the orientation cache",
     const pin1SourcePort = circuit.db.source_port
       .list()
       .find((port) => port.pin_number === 1)!
-    expect(errors).toHaveLength(1)
+    expect(errors).toHaveLength(2)
     expect(errors[0]).toMatchObject({
       error_type: "source_component_misconfigured_error",
       source_component_ids: [
@@ -105,14 +111,22 @@ test("reports diode pin 1 polarity mismatches and reuses the orientation cache",
     expect(errors[0]!.message).toContain("jlcpcb:C8598")
     expect(errors[0]!.message).toContain("pin 1 to the anode")
     expect(errors[0]!.message).toContain("pin 1 to the cathode")
+    for (const pcbComponent of circuit.db.pcb_component.list()) {
+      expect(pcbComponent.pin1_location).toBeDefined()
+      expect(pcbComponent.supplier_pin1_location_map?.jlcpcb).toBeUndefined()
+      expect(pcbComponent.supplier_pin1_location_map?.pcbway).toBeDefined()
+    }
   }
 
-  expect(orientationCacheWrites).toBe(1)
+  expect(orientationCacheWrites).toBe(2)
   expect(
     [...cache.keys()].filter((key) =>
       key.startsWith("part-orientation-analysis:"),
     ),
-  ).toEqual(["part-orientation-analysis:v3:jlcpcb:C8598"])
+  ).toEqual([
+    "part-orientation-analysis:v3:jlcpcb:C8598",
+    "part-orientation-analysis:v3:pcbway:matching-diode",
+  ])
 })
 
 test("accepts diode and LED pin 1 mappings that match the supplier", async () => {
@@ -138,6 +152,9 @@ test("accepts diode and LED pin 1 mappings that match the supplier", async () =>
   await circuit.renderUntilSettled()
 
   expect(circuit.db.source_component_misconfigured_error.list()).toEqual([])
+  for (const pcbComponent of circuit.db.pcb_component.list()) {
+    expect(pcbComponent.supplier_pin1_location_map?.jlcpcb).toBeDefined()
+  }
 })
 
 test("does not guess when supplier pin 1 polarity is unknown", async () => {
@@ -158,4 +175,7 @@ test("does not guess when supplier pin 1 polarity is unknown", async () => {
   await circuit.renderUntilSettled()
 
   expect(circuit.db.source_component_misconfigured_error.list()).toEqual([])
+  expect(
+    circuit.db.pcb_component.list()[0]!.supplier_pin1_location_map?.jlcpcb,
+  ).toBeDefined()
 })
