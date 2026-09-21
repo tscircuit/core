@@ -10,6 +10,8 @@ extendCatalogue(Components)
 extendCatalogue({
   "assembly.device": Components.AssemblyDevice,
   "assembly.screen": Components.AssemblyScreen,
+  "assembly.subassembly": Components.AssemblySubassembly,
+  "assembly.cadassembly": Components.AssemblySubassembly,
   Bug: Components.Chip,
   "enclosure.cutoutaperture": Components.EnclosureCutoutAperture,
   "enclosure.fdm.box": Components.EnclosureFdmBox,

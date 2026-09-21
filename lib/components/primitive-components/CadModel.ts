@@ -1,18 +1,25 @@
+import { normalizeDegrees } from "@tscircuit/math-utils"
 import { cadmodelProps, point3 } from "@tscircuit/props"
-import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import type { CadModelProps } from "@tscircuit/props"
-import { z } from "zod"
 import type { CadComponent } from "circuit-json"
 import { distance } from "circuit-json"
-import { decomposeTSR } from "transformation-matrix"
-import { getFileExtension } from "../base-components/NormalComponent/utils/getFileExtension"
 import { constructAssetUrl } from "lib/utils/constructAssetUrl"
-import { normalizeDegrees } from "@tscircuit/math-utils"
+import { decomposeTSR } from "transformation-matrix"
+import { z } from "zod"
+import { getFileExtension } from "../base-components/NormalComponent/utils/getFileExtension"
+import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
+import { CadModel_renderInAssembly } from "./CadModel_renderInAssembly"
+import { findParentAssembly } from "./resolve-assembly-placement"
 
 const rotation = z.union([z.number(), z.string()])
 const rotation3 = z.object({ x: rotation, y: rotation, z: rotation })
 
 export class CadModel extends PrimitiveComponent<typeof cadmodelProps> {
+  override doInitialAssignNameToUnnamedComponents(): void {
+    if (findParentAssembly(this)) return
+    super.doInitialAssignNameToUnnamedComponents()
+  }
+
   get config() {
     return {
       componentName: "CadModel",
@@ -21,6 +28,7 @@ export class CadModel extends PrimitiveComponent<typeof cadmodelProps> {
   }
 
   doInitialCadModelRender(): void {
+    if (CadModel_renderInAssembly(this)) return
     const parent = this._findParentWithPcbComponent()
     if (!parent) return
     if (!parent.pcb_component_id) return
