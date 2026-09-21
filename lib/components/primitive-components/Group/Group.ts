@@ -111,7 +111,10 @@ import {
 } from "./Group_phasedAutoroutingUtils"
 import { Group_syncFanoutExitsWithGlobalConnections } from "./Group_syncFanoutExitsWithGlobalConnections"
 import type { ISubcircuit } from "./Subcircuit/ISubcircuit"
-import { addPortIdsToTracesAtJumperPads } from "./add-port-ids-to-traces-at-jumper-pads"
+import {
+  addPortIdsToTracesAtJumperPads,
+  getJumperPadInfos,
+} from "./add-port-ids-to-traces-at-jumper-pads"
 import { claimSrjAssignablePcbViasTraversedByRoute } from "./claim-srj-assignable-pcb-vias-traversed-by-route"
 import { findFanoutPhaseSeparationConflict } from "./find-fanout-phase-separation-conflict"
 import { getAccumulatedPcbTracesWithStageOutputReplacements } from "./get-accumulated-pcb-traces-with-stage-output-replacements"
@@ -2206,6 +2209,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     // Preserve one Circuit JSON via per physical same-net transition even when
     // multiple logical traces contain that shared route point.
     const materializedPcbVias = db.pcb_via.list()
+    // Jumpers have been inserted above; pad geometry is fixed for this batch.
+    const jumperPadInfos = getJumperPadInfos(db)
 
     for (const pcb_trace of output_pcb_traces) {
       // vias can be included
@@ -2250,7 +2255,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       }
 
       // Add port IDs to trace segments at jumper pad locations
-      const processedSegments = addPortIdsToTracesAtJumperPads(segments, db)
+      const processedSegments = addPortIdsToTracesAtJumperPads(
+        segments,
+        jumperPadInfos,
+      )
 
       // Insert each segment as a separate trace
       for (const segment of processedSegments) {
