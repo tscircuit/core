@@ -19,22 +19,30 @@ test("polarized symbol terminals honor package labels at every rotation", async 
             name: `D_${row}_${rotation}`,
             pinLabels: labels,
             footprint: "0402",
-            schX: col * 4,
-            schY: -row * 3,
+            schX: col * 6,
+            schY: -row * 3.5,
             pcbX: col * 4,
             pcbY: -row * 3,
             schRotation: rotation,
             pcbRotation: rotation,
             layer: col % 2 === 0 ? ("top" as const) : ("bottom" as const),
-            schDisplayValue: `${kind}: ${Object.entries(labels)
-              .map(([pin, label]) => `${pin}=${label}`)
-              .join(" ")}`,
           }
-          return kind === "led" || kind === "laser" ? (
-            <led key={props.name} {...props} laser={kind === "laser"} />
-          ) : (
-            <diode key={props.name} {...props} />
-          )
+          return [
+            kind === "led" || kind === "laser" ? (
+              <led key={props.name} {...props} laser={kind === "laser"} />
+            ) : (
+              <diode key={props.name} {...props} />
+            ),
+            <schematictext
+              key={`${props.name}_caption`}
+              text={`${kind}, ${rotation} deg: ${Object.entries(labels)
+                .map(([pin, label]) => `${pin}=${label}`)
+                .join(", ")}`}
+              schX={props.schX}
+              schY={props.schY - 1.4}
+              fontSize={0.18}
+            />,
+          ]
         }),
       )}
     </board>,
@@ -63,7 +71,35 @@ test("polarized symbol terminals honor package labels at every rotation", async 
           ? schematicCathode.center.x - schematicAnode.center.x
           : schematicCathode.center.y - schematicAnode.center.y
       expect(Math.sign(delta)).toBe(rotation < 180 ? 1 : -1)
-      for (const port of [anode, cathode]) {
+      for (const [port, schematicPort, polarity] of [
+        [anode, schematicAnode, "pos (anode)"],
+        [cathode, schematicCathode, "neg (cathode)"],
+      ] as const) {
+        // Label the emitted physical port positions so a swapped mapping is
+        // visible in the snapshot rather than hard-coding the expected sides.
+        const isHorizontal = rotation % 180 === 0
+        const outwardSign = Math.sign(
+          isHorizontal
+            ? schematicPort.center.x -
+                (schematicAnode.center.x + schematicCathode.center.x) / 2
+            : schematicPort.center.y -
+                (schematicAnode.center.y + schematicCathode.center.y) / 2,
+        )
+        circuit.firstChild!.add(
+          <schematictext
+            text={`pin${port.pin_number}: ${polarity}`}
+            schX={
+              schematicPort.center.x + (isHorizontal ? outwardSign * 0.15 : 0)
+            }
+            schY={
+              schematicPort.center.y + (isHorizontal ? 0 : outwardSign * 0.3)
+            }
+            anchor={
+              isHorizontal ? (outwardSign < 0 ? "right" : "left") : "center"
+            }
+            fontSize={0.18}
+          />,
+        )
         const pcbPort = circuit.db.pcb_port
           .list()
           .find((p) => p.source_port_id === port.source_port_id)!
@@ -74,5 +110,9 @@ test("polarized symbol terminals honor package labels at every rotation", async 
       }
     }
   }
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+  await circuit.renderUntilSettled()
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path, {
+    width: 1800,
+    height: 1600,
+  })
 })
