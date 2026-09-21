@@ -43,10 +43,6 @@ export class Led extends NormalComponent<
 
     super.initPorts({
       pinCount: 2,
-      schematicPinAliases: {
-        pin1: ["anode", "pos"],
-        pin2: ["cathode", "neg"],
-      },
       ignoreSymbolPorts: !hasPinLabels && !shouldAddDefaultAliases,
       additionalAliases: {
         pin1: shouldAddDefaultAliases ? ["anode", "pos", "left"] : [],

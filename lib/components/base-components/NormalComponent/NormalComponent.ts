@@ -291,7 +291,6 @@ export class NormalComponent<
       additionalAliases?: Record<`pin${number}`, string[]>
       pinCount?: number
       ignoreSymbolPorts?: boolean
-      schematicPinAliases?: Record<`pin${number}`, string[]>
     } = {},
   ) {
     // React symbol ports are added during ReactSubtreesRender. Wait for them so
@@ -419,7 +418,10 @@ export class NormalComponent<
       const sym = symbols[this._getSchematicSymbolNameOrThrow()]
       if (!sym) return
 
-      if (opts.schematicPinAliases && pinLabels) {
+      const hasSymbolPortAliases = sym.ports.some((port) =>
+        port.labels.some((label) => !/^(?:pin)?\d+$/.test(label)),
+      )
+      if (hasSymbolPortAliases && pinLabels) {
         for (
           let pinNumber = 1;
           pinNumber <= (opts.pinCount ?? 0);
@@ -439,10 +441,9 @@ export class NormalComponent<
       ]
       const symbolPortMatches = new Map<SchSymbol["ports"][number], Port>()
       for (const symPort of sym.ports) {
-        const symbolPinNumber = getPinNumberFromLabels(symPort.labels)
-        if (symbolPinNumber === null) continue
-        const aliases =
-          opts.schematicPinAliases?.[`pin${symbolPinNumber}`] ?? []
+        const aliases = symPort.labels.filter(
+          (label) => !/^(?:pin)?\d+$/.test(label),
+        )
         const matches = availablePorts.filter((port) =>
           port.getNameAndAliases().some((alias) => aliases.includes(alias)),
         )
@@ -461,7 +462,7 @@ export class NormalComponent<
           unmatchedPorts.find(
             (port) => port._parsedProps.pinNumber === Number(pinNumber),
           ) ??
-          (opts.schematicPinAliases &&
+          (hasSymbolPortAliases &&
           sym.ports.length - symbolPortMatches.size === 1 &&
           unmatchedPorts.length === 1
             ? unmatchedPorts[0]
