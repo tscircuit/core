@@ -51,9 +51,13 @@ export const resolveAssemblyPlacement = (
     )
   }
   const nextPath = [...path, component]
-  const target = component._parsedProps.connectsTo
-    ? getAssemblyTarget(component, component._parsedProps.connectsTo)
-    : findParentAssembly(component)
+  const target =
+    component.componentName === "AssemblyScreen"
+      ? getAssemblyTarget(
+          component,
+          (component as AssemblyScreen)._parsedProps.connectsTo,
+        )
+      : findParentAssembly(component)
   if (!target)
     return { position: { x: 0, y: 0, z: 0 }, pcbRotation: 0, layer: "top" }
   if (isPositionedAssembly(target))

@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import { assembly } from "lib"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("assembly selectors stay device-scoped and explicit targets override nesting", () => {
+test("screen selectors stay device-scoped inside subassembly containers", () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <group>
@@ -32,8 +32,8 @@ test("assembly selectors stay device-scoped and explicit targets override nestin
               cadModel={null}
             />
           </board>
-          <assembly.subassembly name="outer" connectsTo=".J1">
-            <assembly.cadassembly
+          <assembly.subassembly name="outer">
+            <assembly.screen
               name={`inner-${side}`}
               connectsTo=".J2"
               cadModel="soic8"

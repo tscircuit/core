@@ -9,8 +9,17 @@ import {
   updateAssemblyPcbPlacement,
 } from "./resolve-assembly-placement"
 
+// Keep the runtime surface aligned with the narrowed API while props 0.0.663
+// (which still includes connectsTo) remains a supported dependency.
+const subassemblyProps = assemblySubassemblyProps.pick({
+  name: true,
+  displayName: true,
+  cadModel: true,
+  children: true,
+})
+
 export class AssemblySubassembly
-  extends PrimitiveComponent<typeof assemblySubassemblyProps>
+  extends PrimitiveComponent<typeof subassemblyProps>
   implements AssemblyDeviceContainer
 {
   isAssemblyDeviceContainer = true as const
@@ -18,7 +27,7 @@ export class AssemblySubassembly
   get config() {
     return {
       componentName: "AssemblySubassembly",
-      zodProps: assemblySubassemblyProps,
+      zodProps: subassemblyProps,
     }
   }
 
@@ -45,7 +54,7 @@ export class AssemblySubassembly
     if (!root || root.pcbDisabled || !this.source_component_id) return
 
     // Compatibility owner for the existing Circuit JSON schema. Final position,
-    // layer, and rotation are synchronized to connectsTo during CadModelRender,
+    // layer, and rotation inherit the container during CadModelRender,
     // after component packing and cable-insertion inference have completed.
     const pcbComponent = root.db.pcb_component.insert({
       center: { x: 0, y: 0 },

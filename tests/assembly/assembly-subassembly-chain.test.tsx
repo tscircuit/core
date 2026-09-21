@@ -6,7 +6,7 @@ import {
   ER_OLED096_1_3W_FLEXSCREEN_MODEL,
 } from "./fixtures/er-oled096-1-3w"
 
-test("assembly aliases and screens resolve forward attachment chains", async () => {
+test("screens can reference nested subassembly containers declared later", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <assembly.device name="device">
@@ -15,8 +15,9 @@ test("assembly aliases and screens resolve forward attachment chains", async () 
         connectsTo=".module"
         cadModel={ER_OLED096_1_3W_FLEXSCREEN_MODEL}
       />
-      <assembly.subassembly name="module" connectsTo=".adapter" />
-      <assembly.cadassembly name="adapter" connectsTo=".B1 .J1" />
+      <assembly.subassembly name="module">
+        <assembly.cadassembly name="adapter" />
+      </assembly.subassembly>
       <board name="B1" width={44} height={36} routingDisabled>
         <connector
           name="J1"
@@ -26,7 +27,7 @@ test("assembly aliases and screens resolve forward attachment chains", async () 
           footprint={ER_OLED096_1_3W_CONNECTOR_FOOTPRINT}
         />
       </board>
-      <assembly.subassembly name="screen-follower" connectsTo=".SCREEN" />
+      <assembly.subassembly name="sibling" />
     </assembly.device>,
   )
   await circuit.renderUntilSettled()
@@ -39,11 +40,10 @@ test("assembly aliases and screens resolve forward attachment chains", async () 
       .find((p) => p.source_component_id === source.source_component_id)!
   }
   const connector = pcbFor("J1")
-  for (const name of ["SCREEN", "module", "adapter", "screen-follower"]) {
+  for (const name of ["SCREEN", "module", "adapter", "sibling"]) {
     expect(pcbFor(name)).toMatchObject({
-      center: connector.cable_insertion_center,
+      center: { x: 0, y: 0 },
       layer: connector.layer,
-      subcircuit_id: connector.subcircuit_id,
       do_not_place: true,
       obstructs_within_bounds: false,
     })
