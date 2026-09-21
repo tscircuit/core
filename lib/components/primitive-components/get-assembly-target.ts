@@ -3,14 +3,18 @@ import type { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { cssSelectPrimitiveComponentAdapter } from "../base-components/PrimitiveComponent/cssSelectPrimitiveComponentAdapter"
 import { preprocessSelector } from "../base-components/PrimitiveComponent/preprocessSelector"
 
-export const getAssemblyScreenTarget = (
+export const getAssemblyTarget = (
   component: PrimitiveComponent,
   connectsTo: string,
 ): PrimitiveComponent => {
+  const tag =
+    component.componentName === "AssemblyScreen"
+      ? "assembly.screen"
+      : "assembly.subassembly"
   const rootComponent = component.root?.firstChild
   if (!rootComponent) {
     throw new Error(
-      `Could not resolve assembly.screen "${component.name}" because the circuit has no root component`,
+      `Could not resolve ${tag} "${component.name}" because the circuit has no root component`,
     )
   }
 
@@ -36,14 +40,18 @@ export const getAssemblyScreenTarget = (
 
   if (matches.length !== 1) {
     throw new Error(
-      `assembly.screen "${component.name}" connectsTo selector "${connectsTo}" matched ${matches.length} components; expected exactly one`,
+      `${tag} "${component.name}" connectsTo selector "${connectsTo}" matched ${matches.length} components; expected exactly one`,
     )
   }
 
   const target = matches[0]!
-  if (!target.pcb_component_id) {
+  if (
+    !target.pcb_component_id &&
+    target.componentName !== "AssemblyScreen" &&
+    target.componentName !== "AssemblySubassembly"
+  ) {
     throw new Error(
-      `assembly.screen "${component.name}" connectsTo selector "${connectsTo}" matched ${target.getString()}, but it has no PCB component`,
+      `${tag} "${component.name}" connectsTo selector "${connectsTo}" matched ${target.getString()}, but it has no PCB component`,
     )
   }
 

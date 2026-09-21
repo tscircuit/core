@@ -29,27 +29,6 @@ export class AssemblyScreen
     this.source_component_id = sourceComponent.source_component_id
   }
 
-  doInitialPcbComponentRender(): void {
-    const root = this.root
-    if (!root || root.pcbDisabled || !this.source_component_id) return
-
-    // Compatibility owner for the existing Circuit JSON schema. Final position,
-    // layer, and rotation are synchronized to connectsTo during CadModelRender,
-    // after component packing and cable-insertion inference have completed.
-    const pcbComponent = root.db.pcb_component.insert({
-      center: { x: 0, y: 0 },
-      width: 0,
-      height: 0,
-      layer: "top",
-      rotation: 0,
-      source_component_id: this.source_component_id,
-      obstructs_within_bounds: false,
-      do_not_place: true,
-      is_allowed_to_be_off_board: true,
-    })
-    this.pcb_component_id = pcbComponent.pcb_component_id
-  }
-
   doInitialCadModelRender(): void {
     AssemblyScreen_doInitialCadModelRender(this)
   }

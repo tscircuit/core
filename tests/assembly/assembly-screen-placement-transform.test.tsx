@@ -129,10 +129,12 @@ test("assembly.screen follows top and bottom connector transforms", async () => 
 
       expect(contactPads).toHaveLength(ER_OLED096_1_3W_CONTACT_COUNT)
       expect(mountingPads).toHaveLength(2)
-      expect(screenPcbComponent?.center).toEqual(cableInsertionCenter)
+      expect(screenPcbComponent).toBeUndefined()
       expect(fpcInsertionAxisLength).toBeGreaterThan(0)
-      expect(screenPcbComponent?.rotation).toBeCloseTo(expectedScreenRotation)
-      expect(screenPcbComponent?.layer).toBe(layer)
+      expect(normalizeDegrees(effectiveCadBoardRotation)).toBeCloseTo(
+        expectedScreenRotation,
+      )
+      expect(screenCadComponent?.layer).toBe(layer)
       expect(emittedFlexAxis.x).toBeCloseTo(normalizedFpcInsertionAxis.x)
       expect(emittedFlexAxis.y).toBeCloseTo(normalizedFpcInsertionAxis.y)
       expect(screenCadComponent).toMatchObject({
