@@ -291,6 +291,7 @@ export class NormalComponent<
       additionalAliases?: Record<`pin${number}`, string[]>
       pinCount?: number
       ignoreSymbolPorts?: boolean
+      schematicPinAliases?: Record<`pin${number}`, string[]>
     } = {},
   ) {
     // React symbol ports are added during ReactSubtreesRender. Wait for them so
@@ -418,19 +419,56 @@ export class NormalComponent<
       const sym = symbols[this._getSchematicSymbolNameOrThrow()]
       if (!sym) return
 
+      if (opts.schematicPinAliases && pinLabels) {
+        for (
+          let pinNumber = 1;
+          pinNumber <= (opts.pinCount ?? 0);
+          pinNumber++
+        ) {
+          if (!hasExistingOrQueuedPortWithPinNumber(pinNumber)) {
+            portsToCreate.push(new Port({ pinNumber }))
+          }
+        }
+      }
+
+      // Symbol terminal numbers describe the drawing, not necessarily the
+      // physical package. Resolve semantic aliases before falling back to numbers.
+      const availablePorts = [
+        ...this._getAllPortsFromChildren(),
+        ...portsToCreate,
+      ]
+      const symbolPortMatches = new Map<SchSymbol["ports"][number], Port>()
+      for (const symPort of sym.ports) {
+        const symbolPinNumber = getPinNumberFromLabels(symPort.labels)
+        if (symbolPinNumber === null) continue
+        const aliases =
+          opts.schematicPinAliases?.[`pin${symbolPinNumber}`] ?? []
+        const matches = availablePorts.filter((port) =>
+          port.getNameAndAliases().some((alias) => aliases.includes(alias)),
+        )
+        if (matches.length === 1) symbolPortMatches.set(symPort, matches[0]!)
+      }
+
       for (const symPort of sym.ports) {
         const pinNumber = getPinNumberFromLabels(symPort.labels)
         if (!pinNumber) continue
 
+        const unmatchedPorts = availablePorts.filter(
+          (port) => ![...symbolPortMatches.values()].includes(port),
+        )
         const existingPort =
-          this._getAllPortsFromChildren().find(
-            (p) => p._parsedProps.pinNumber === Number(pinNumber),
+          symbolPortMatches.get(symPort) ??
+          unmatchedPorts.find(
+            (port) => port._parsedProps.pinNumber === Number(pinNumber),
           ) ??
-          portsToCreate.find(
-            (p) => p._parsedProps.pinNumber === Number(pinNumber),
-          )
+          (opts.schematicPinAliases &&
+          sym.ports.length - symbolPortMatches.size === 1 &&
+          unmatchedPorts.length === 1
+            ? unmatchedPorts[0]
+            : undefined)
 
         if (existingPort) {
+          symbolPortMatches.set(symPort, existingPort)
           existingPort.schematicSymbolPortDef = symPort
         } else {
           const port = getPortFromHints(
