@@ -1,4 +1,6 @@
 import { expect, test } from "bun:test"
+import { Board } from "lib/components/normal-components/Board"
+import { Fragment } from "react"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("polarized symbol terminals honor package labels at every rotation", async () => {
@@ -27,27 +29,29 @@ test("polarized symbol terminals honor package labels at every rotation", async 
             pcbRotation: rotation,
             layer: col % 2 === 0 ? ("top" as const) : ("bottom" as const),
           }
-          return [
-            kind === "led" || kind === "laser" ? (
-              <led key={props.name} {...props} laser={kind === "laser"} />
-            ) : (
-              <diode key={props.name} {...props} />
-            ),
-            <schematictext
-              key={`${props.name}_caption`}
-              text={`${kind}, ${rotation} deg: ${Object.entries(labels)
-                .map(([pin, label]) => `${pin}=${label}`)
-                .join(", ")}`}
-              schX={props.schX}
-              schY={props.schY - 1.4}
-              fontSize={0.18}
-            />,
-          ]
+          return (
+            <Fragment key={props.name}>
+              {kind === "led" || kind === "laser" ? (
+                <led {...props} laser={kind === "laser"} />
+              ) : (
+                <diode {...props} />
+              )}
+              <schematictext
+                text={`${kind}, ${rotation} deg: ${Object.entries(labels)
+                  .map(([pin, label]) => `${pin}=${label}`)
+                  .join(", ")}`}
+                schX={props.schX}
+                schY={props.schY - 1.4}
+                fontSize={0.18}
+              />
+            </Fragment>
+          )
         }),
       )}
     </board>,
   )
   await circuit.renderUntilSettled()
+  const board = circuit.firstChild as Board
   for (const [row, { anodePin }] of cases.entries()) {
     for (const rotation of [0, 90, 180, 270]) {
       const component = circuit.db.source_component
@@ -85,7 +89,7 @@ test("polarized symbol terminals honor package labels at every rotation", async 
             : schematicPort.center.y -
                 (schematicAnode.center.y + schematicCathode.center.y) / 2,
         )
-        circuit.firstChild!.add(
+        board.add(
           <schematictext
             text={`pin${port.pin_number}: ${polarity}`}
             schX={
