@@ -69,6 +69,11 @@ test("pill holes with rectangular pads retain their ports when rotated", async (
       <PillPlug name="P_REF" pcbX={-8} />
       <PillPlug name="P_ROT" pcbX={8} pcbRotation={90} />
 
+      <net name="N1" />
+      <net name="N2" />
+      <net name="N3" />
+      <net name="N4" />
+
       <trace from="P_REF.pin1" to="net.N1" />
       <trace from="P_ROT.pin1" to="net.N1" />
       <trace from="P_REF.pin2" to="net.N2" />
