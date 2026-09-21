@@ -15,18 +15,27 @@ interface JumperPadInfo {
  * Get all jumper pad positions and bounds from the database.
  * These are pads belonging to autoplaced jumper components.
  */
-function getJumperPadInfos(db: CircuitJsonUtilObjects): JumperPadInfo[] {
+export function getJumperPadInfos(db: CircuitJsonUtilObjects): JumperPadInfo[] {
   const padInfos: JumperPadInfo[] = []
-  const pcbSmtpads = db.pcb_smtpad.list()
+  const jumperSourceComponentIds = new Set(
+    db.source_component
+      .list()
+      .filter((component) => component.name?.startsWith("__autoplaced_jumper"))
+      .map((component) => component.source_component_id),
+  )
+  if (jumperSourceComponentIds.size === 0) return padInfos
 
-  const jumperSmtpads = pcbSmtpads.filter((pad) => {
-    const component = db.pcb_component.get(pad.pcb_component_id!)
-    if (!component) return false
-    const sourceComponent = db.source_component.get(
-      component.source_component_id!,
-    )
-    return sourceComponent?.name?.startsWith("__autoplaced_jumper")
-  })
+  const jumperPcbComponentIds = new Set(
+    db.pcb_component
+      .list()
+      .filter((component) =>
+        jumperSourceComponentIds.has(component.source_component_id!),
+      )
+      .map((component) => component.pcb_component_id),
+  )
+  const jumperSmtpads = db.pcb_smtpad
+    .list()
+    .filter((pad) => jumperPcbComponentIds.has(pad.pcb_component_id!))
 
   for (const smtpad of jumperSmtpads) {
     // Skip polygon shapes which don't have x/y
@@ -149,14 +158,13 @@ function splitRouteAtJumperPads(
  * 2. Intermediate points that pass through jumper pad bounds (splits the trace)
  *
  * @param segments - Array of trace route segments to process
- * @param db - Database for looking up jumper pad information
+ * @param padInfos - Board-coordinate jumper pad bounds, collected once per routing batch
  * @returns Processed segments with port IDs added and splits performed
  */
 export function addPortIdsToTracesAtJumperPads(
   segments: Array<PcbTrace["route"]>,
-  db: CircuitJsonUtilObjects,
+  padInfos: JumperPadInfo[],
 ): Array<PcbTrace["route"]> {
-  const padInfos = getJumperPadInfos(db)
   if (padInfos.length === 0) return segments
 
   const result: Array<PcbTrace["route"]> = []
