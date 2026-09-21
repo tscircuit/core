@@ -1,7 +1,9 @@
-import { cju, cjuIndexed } from "@tscircuit/circuit-json-util"
+import * as circuitJsonUtil from "@tscircuit/circuit-json-util"
 
 export function createCircuitJsonDatabase() {
-  const indexed = cjuIndexed([], {
+  if (typeof circuitJsonUtil.cjuIndexed !== "function")
+    return circuitJsonUtil.cju([])
+  const indexed = circuitJsonUtil.cjuIndexed([], {
     indexConfig: { byId: true, byType: true },
   })
   // circuit-json-util <=0.0.114 declares these methods in its types but its
@@ -12,7 +14,7 @@ export function createCircuitJsonDatabase() {
     typeof indexed.insertAll !== "function" ||
     typeof indexed.subtree !== "function"
   ) {
-    return cju([])
+    return circuitJsonUtil.cju([])
   }
   return indexed
 }
