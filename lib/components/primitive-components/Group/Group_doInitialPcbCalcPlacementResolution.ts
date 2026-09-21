@@ -33,6 +33,9 @@ export function Group_doInitialPcbCalcPlacementResolution(
     group.getNormalComponentNameMap?.() ?? new Map()
 
   const allNormalComponents = collectNormalComponentsInSubcircuit(group)
+  // Absolute placements cannot reference these variables. Building them visits every
+  // component and pad, so do it only when at least one placement needs resolution.
+  if (!allNormalComponents.some(shouldResolvePlacementInCalcPhase)) return
   const namedComponentVars: Record<string, number> = {}
 
   for (const component of allNormalComponents) {

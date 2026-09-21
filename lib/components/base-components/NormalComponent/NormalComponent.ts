@@ -1232,6 +1232,13 @@ export class NormalComponent<
     return (decomposedTransform.rotation.angle * 180) / Math.PI
   }
 
+  private _footprintChildCache?: {
+    children: PrimitiveComponent[]
+    childrenVersion: number
+    childCount: number
+    footprintChild: PrimitiveComponent | undefined
+  }
+
   private _getFootprintMetadataForPcbComponent():
     | {
         insertionDirection?: FootprintInsertionDirection
@@ -1239,9 +1246,24 @@ export class NormalComponent<
         originalLayer?: LayerRef
       }
     | undefined {
-    const footprintChild = this.children.find(
-      (c) => c.componentName === "Footprint",
-    )
+    // Cache the child, not its metadata: live footprint properties still take effect.
+    // Most boards have no footprint; avoid scanning every placed part for every pad.
+    if (
+      !this._footprintChildCache ||
+      this._footprintChildCache.children !== this.children ||
+      this._footprintChildCache.childrenVersion !== this._childrenVersion ||
+      this._footprintChildCache.childCount !== this.children.length
+    ) {
+      this._footprintChildCache = {
+        children: this.children,
+        childrenVersion: this._childrenVersion,
+        childCount: this.children.length,
+        footprintChild: this.children.find(
+          (c) => c.componentName === "Footprint",
+        ),
+      }
+    }
+    const { footprintChild } = this._footprintChildCache
 
     if (footprintChild) {
       return {

@@ -1,5 +1,5 @@
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
-import { su } from "@tscircuit/circuit-json-util"
+import { createCircuitJsonDatabase } from "./utils/circuit-json/create-circuit-json-database"
 import type { PlatformConfig } from "@tscircuit/props"
 import type { AnyCircuitElement } from "circuit-json"
 import Debug from "debug"
@@ -104,7 +104,7 @@ export class IsolatedCircuit {
     pendingSubcircuitRenders?: Map<string, Promise<AnyCircuitElement[]>>
   } = {}) {
     this.children = []
-    this.db = su([])
+    this.db = createCircuitJsonDatabase()
     this.platform = platform
     this.projectUrl = projectUrl
     this.pcbDisabled = platform?.pcbDisabled ?? false
@@ -343,6 +343,10 @@ export class IsolatedCircuit {
     for (const listener of this._eventListeners[event]) {
       listener(...args)
     }
+  }
+
+  hasEventListener(event: RootCircuitEventName): boolean {
+    return (this._eventListeners[event]?.length ?? 0) > 0
   }
 
   on(event: RootCircuitEventName, listener: (...args: any[]) => void) {
