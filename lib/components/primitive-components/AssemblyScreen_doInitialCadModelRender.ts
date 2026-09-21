@@ -1,9 +1,6 @@
 import type { AssemblyScreen } from "./AssemblyScreen"
 import { renderAssemblyCadModel } from "./render-assembly-cad-model"
-import {
-  resolveAssemblyPlacement,
-  updateAssemblyPcbPlacement,
-} from "./resolve-assembly-placement"
+import { resolveAssemblyPlacement } from "./resolve-assembly-placement"
 
 const formatMillimetersForModelprinter = (millimeters: number): string =>
   Number(millimeters.toFixed(6)).toString()
@@ -24,11 +21,10 @@ export const AssemblyScreen_doInitialCadModelRender = (
   if (
     !component.root ||
     component.root.pcbDisabled ||
-    !component.pcb_component_id
+    !component.source_component_id
   )
     return
   const placement = resolveAssemblyPlacement(component)
-  updateAssemblyPcbPlacement(component, placement)
   component.cad_component_id = renderAssemblyCadModel(
     component,
     component._parsedProps.cadModel ?? getDefaultFlexScreenModel(component),

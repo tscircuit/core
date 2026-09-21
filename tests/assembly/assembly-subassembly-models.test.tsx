@@ -52,6 +52,8 @@ test("standalone assemblies accept CAD formats, null, and nested model-less cont
       (c) => c.position.x === 0 && c.position.y === 0 && c.position.z === 0,
     ),
   ).toBe(true)
+  expect(circuit.db.pcb_component.list()).toHaveLength(0)
+  expect(cad.every((c) => c.pcb_component_id === undefined)).toBe(true)
   expect(circuit.db.pcb_smtpad.list()).toHaveLength(0)
   expect(circuit.db.schematic_component.list()).toHaveLength(0)
 })

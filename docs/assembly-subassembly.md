@@ -30,6 +30,6 @@ cyclic screen attachments produce errors.
 `cadModel` supports modelprinter strings, URL objects, JSCAD, and JSX subtrees.
 Models can coexist with CAD children; absent/null models emit no geometry.
 CAD-child `pcbX`/`pcbY`/`pcbZ` and model offsets are local millimetres in the
-assembly frame. These containers emit no pads or schematic symbols. Zero-size,
-non-obstructing, do-not-place PCB owners support current Circuit JSON CAD records.
+assembly frame. These containers emit CAD records with source identities and no
+PCB component references. They emit no PCB components, pads, or schematic symbols.
 The unnamespaced `<cadassembly>` remains compatible inside component CAD models.

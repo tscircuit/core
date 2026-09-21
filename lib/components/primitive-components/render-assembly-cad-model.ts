@@ -79,7 +79,7 @@ export const renderAssemblyCadModel = (
         (bottom ? -1 : 1) * (placement.pcbRotation + rotationOffset.z),
       ),
     },
-    pcb_component_id: owner.pcb_component_id!,
+    layer: placement.layer,
     source_component_id: owner.source_component_id!,
     subcircuit_id: placement.subcircuit_id,
     model_origin_position: base.modelOriginPosition ?? { x: 0, y: 0, z: 0 },

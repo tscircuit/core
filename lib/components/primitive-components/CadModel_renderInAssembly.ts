@@ -10,7 +10,6 @@ import { renderAssemblyCadModel } from "./render-assembly-cad-model"
 import {
   findParentAssembly,
   resolveAssemblyPlacement,
-  updateAssemblyPcbPlacement,
 } from "./resolve-assembly-placement"
 
 /** CAD children use assembly-local offsets (mm, right-handed +Z outward).
@@ -19,9 +18,8 @@ import {
 export const CadModel_renderInAssembly = (component: CadModel): boolean => {
   const owner = findParentAssembly(component)
   if (!owner) return false
-  if (component.root?.pcbDisabled || !owner.pcb_component_id) return true
+  if (component.root?.pcbDisabled || !owner.source_component_id) return true
   const placement = resolveAssemblyPlacement(owner)
-  updateAssemblyPcbPlacement(owner, placement)
   const props: CadModelProps | null =
     typeof component._parsedProps === "string"
       ? { modelUrl: component._parsedProps }

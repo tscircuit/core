@@ -39,14 +39,10 @@ test("screens can reference nested subassembly containers declared later", async
       .list()
       .find((p) => p.source_component_id === source.source_component_id)!
   }
-  const connector = pcbFor("J1")
+  expect(pcbFor("J1")).toBeDefined()
+  expect(circuit.db.pcb_component.list()).toHaveLength(1)
   for (const name of ["SCREEN", "module", "adapter", "sibling"]) {
-    expect(pcbFor(name)).toMatchObject({
-      center: { x: 0, y: 0 },
-      layer: connector.layer,
-      do_not_place: true,
-      obstructs_within_bounds: false,
-    })
+    expect(pcbFor(name)).toBeUndefined()
   }
   expect(
     circuit.db.cad_component

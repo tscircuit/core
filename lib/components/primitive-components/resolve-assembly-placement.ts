@@ -114,15 +114,3 @@ export const resolveAssemblyPlacement = (
     subcircuit_id: targetPcbComponent.subcircuit_id,
   }
 }
-
-export const updateAssemblyPcbPlacement = (
-  component: Assembly,
-  placement: AssemblyPlacement,
-): void => {
-  component.root!.db.pcb_component.update(component.pcb_component_id!, {
-    center: { x: placement.position.x, y: placement.position.y },
-    layer: placement.layer,
-    rotation: placement.pcbRotation,
-    subcircuit_id: placement.subcircuit_id,
-  })
-}

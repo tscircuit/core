@@ -81,17 +81,8 @@ test("assembly.screen emits a connector-anchored modelprinter FlexScreen", async
     ER_OLED096_1_3W_CONNECTOR_FOOTPRINT,
   )
   expect(connectorPcbComponent?.cable_insertion_center).toBeDefined()
-  expect(screenPcbComponent).toMatchObject({
-    center: connectorPcbComponent?.cable_insertion_center,
-    layer: "top",
-    rotation: 0,
-    width: 0,
-    height: 0,
-    obstructs_within_bounds: false,
-    do_not_place: true,
-    is_allowed_to_be_off_board: true,
-    subcircuit_id: connectorPcbComponent?.subcircuit_id,
-  })
+  expect(screenPcbComponent).toBeUndefined()
+  expect(screenCadComponent?.pcb_component_id).toBeUndefined()
   expect(screenCadComponent).toMatchObject({
     position: {
       ...connectorPcbComponent?.cable_insertion_center,

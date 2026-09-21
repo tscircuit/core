@@ -45,7 +45,11 @@ export const getAssemblyTarget = (
   }
 
   const target = matches[0]!
-  if (!target.pcb_component_id) {
+  if (
+    !target.pcb_component_id &&
+    target.componentName !== "AssemblyScreen" &&
+    target.componentName !== "AssemblySubassembly"
+  ) {
     throw new Error(
       `${tag} "${component.name}" connectsTo selector "${connectsTo}" matched ${target.getString()}, but it has no PCB component`,
     )
