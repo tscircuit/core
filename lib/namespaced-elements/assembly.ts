@@ -13,7 +13,7 @@ export interface AssemblyDeviceJsxProps extends AssemblyDevicePropsInput {
 export interface AssemblyScreenJsxProps extends AssemblyScreenPropsInput {}
 
 export interface AssemblySubassemblyJsxProps
-  extends Omit<AssemblySubassemblyPropsInput, "connectsTo"> {}
+  extends AssemblySubassemblyPropsInput {}
 export type AssemblyCadAssemblyJsxProps = AssemblySubassemblyJsxProps
 
 export const assembly = {

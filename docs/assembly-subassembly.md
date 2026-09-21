@@ -19,8 +19,8 @@ export default () => (
 Subassemblies do not have `connectsTo`; use nesting for containment. They inherit
 the enclosing assembly frame, with an unanchored outer container at the world
 origin. Individual CAD offsets affect that model rather than moving the container.
-The core runtime strips a stale `connectsTo` field, and TSX types reject it, even
-when used with the initial props 0.0.663 release.
+The updated props schema strips a stale `connectsTo` field at runtime,
+and TSX types reject it.
 
 `assembly.screen` retains `connectsTo`. Its selector can target a PCB connector,
 a screen, or a named assembly container, regardless of declaration order. Selector

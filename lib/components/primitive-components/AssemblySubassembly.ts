@@ -9,17 +9,8 @@ import {
   updateAssemblyPcbPlacement,
 } from "./resolve-assembly-placement"
 
-// Keep the runtime surface aligned with the narrowed API while props 0.0.663
-// (which still includes connectsTo) remains a supported dependency.
-const subassemblyProps = assemblySubassemblyProps.pick({
-  name: true,
-  displayName: true,
-  cadModel: true,
-  children: true,
-})
-
 export class AssemblySubassembly
-  extends PrimitiveComponent<typeof subassemblyProps>
+  extends PrimitiveComponent<typeof assemblySubassemblyProps>
   implements AssemblyDeviceContainer
 {
   isAssemblyDeviceContainer = true as const
@@ -27,7 +18,7 @@ export class AssemblySubassembly
   get config() {
     return {
       componentName: "AssemblySubassembly",
-      zodProps: subassemblyProps,
+      zodProps: assemblySubassemblyProps,
     }
   }
 
