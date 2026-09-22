@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { Fragment } from "react"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
-import { pcb_bend, pcb_stiffener } from "circuit-json"
+import { pcb_bend, pcb_board, pcb_stiffener } from "circuit-json"
 
 const radius = 6
 const pitch = 22
@@ -103,6 +103,7 @@ test("TSX flex board stacks three discs with four bends and bonded stiffeners", 
   await circuit.renderUntilSettled()
   const board = circuit.db.pcb_board.list()[0]
   expect(board).toMatchObject({ material: "flex" })
+  expect(pcb_board.parse(board).material).toBe("flex")
   expect(circuit.db.pcb_bend.list()).toHaveLength(4)
   expect(circuit.db.pcb_stiffener.list()).toHaveLength(3)
   for (const bend of circuit.db.pcb_bend.list()) {
