@@ -1,3 +1,8 @@
+import {
+  selectNetByLiteralSelector,
+  type NetSelector,
+} from "./select-net-by-literal-selector"
+import type { Net } from "lib/components/primitive-components/Net"
 import type { PcbSx } from "@tscircuit/props"
 import type { AnySourceComponent, LayerRef } from "circuit-json"
 import { type Options, selectAll, selectOne } from "css-select"
@@ -1274,6 +1279,16 @@ export abstract class PrimitiveComponent<
       schematicPrimitive?: boolean
     },
   ): T | null {
+    // Share the same scoped net index across creation, traces, vias and pours.
+    // Handle type constraints before the untyped selector-result cache.
+    if (/^net\.[A-Za-z_][A-Za-z0-9_]*$/.test(selectorRaw)) {
+      if (options?.port || (options?.type && options.type !== "net"))
+        return null
+      return selectNetByLiteralSelector(
+        this.selectAll<Net>("net"),
+        selectorRaw as NetSelector,
+      ) as T | null
+    }
     if (this._cachedSelectOneQueries.has(selectorRaw)) {
       return this._cachedSelectOneQueries.get(selectorRaw) as T | null
     }
