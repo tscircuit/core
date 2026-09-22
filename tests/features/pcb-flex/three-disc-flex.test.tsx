@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test"
 import { Fragment } from "react"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { createPcbWithFourViewSnapshot } from "tests/fixtures/create-pcb-with-four-view-snapshot"
 import { pcb_bend, pcb_board, pcb_stiffener } from "circuit-json"
 
 const radius = 6
@@ -114,30 +115,14 @@ test("TSX flex board stacks three discs with four bends and bonded stiffeners", 
     expect(pcb_stiffener.safeParse(stiffener).success).toBe(true)
   }
   const flatJson = JSON.stringify(circuit.getCircuitJson())
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
-
-  // Exported glTF uses +Y up, mm. Explicit views show both U-folds and all layers.
-  const views = [
-    { name: "isometric", camPos: [22, 22, 28], up: "y+" },
-    { name: "side_z_pos", camPos: [0, 6, 38], up: "y+" },
-    { name: "end_x_pos", camPos: [38, 6, 0], up: "y+" },
-    { name: "top_y_pos", camPos: [0, 44, 0], up: "z-" },
-  ] as const
-  for (const view of views) {
-    await expect(circuit).toMatch3dSnapshot(import.meta.path, {
-      snapshotSuffix: view.name,
-      gltf: { foldPcbs: true, boardTextureResolution: 1024 },
-      poppygl: {
-        width: 600,
-        height: 500,
-        camPos: [...view.camPos],
-        up: view.up,
-        lookAt: [0, 6, 0],
-        fov: 35,
-        backgroundColor: "#f2f3f5",
-        grid: undefined,
-      },
-    })
-  }
+  const snapshot = await createPcbWithFourViewSnapshot(
+    circuit.getCircuitJson(),
+    {
+      gltf: { foldPcbs: true },
+      lookAt: [0, 6, 0],
+      distance: 38,
+    },
+  )
+  await expect(snapshot).toMatchSvgSnapshot(import.meta.path)
   expect(JSON.stringify(circuit.getCircuitJson())).toBe(flatJson)
 })
