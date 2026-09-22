@@ -57,6 +57,10 @@ export function Trace__findConnectedPorts(trace: Trace):
         parentSelector = match?.[1]?.trim() ?? ""
         portToken = match?.[2] ?? selector
       }
+      // The parent selector can end with a dangling child combinator
+      // (".U1 > .NOPE" -> ".U1 >"), which resolves to an arbitrary
+      // descendant instead of the component — strip it.
+      parentSelector = parentSelector.replace(/[ >]+$/, "")
       let targetComponent = parentSelector
         ? trace.getSubcircuit().selectOne(parentSelector)
         : null
