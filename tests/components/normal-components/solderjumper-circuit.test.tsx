@@ -1,6 +1,5 @@
 import { checkEachPcbTraceNonOverlapping } from "@tscircuit/checks"
 import { it, expect } from "bun:test"
-import { getFullConnectivityMapFromCircuitJson } from "circuit-json-to-connectivity-map"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 it("should render a jumper with pinrow4 footprint", async () => {
@@ -34,7 +33,9 @@ it("should render a jumper with pinrow4 footprint", async () => {
   const errors = checkEachPcbTraceNonOverlapping(circuit.getCircuitJson())
   expect(errors).toHaveLength(0)
   expect(circuit.db.pcb_trace.list()).toHaveLength(5)
-  expect(circuit.db.pcb_via.list().length).toBeLessThanOrEqual(2)
+  // Exact bridge copper changes the route chosen for the crossing resistor
+  // connections; each may now need one bottom-layer detour (two vias).
+  expect(circuit.db.pcb_via.list().length).toBeLessThanOrEqual(4)
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

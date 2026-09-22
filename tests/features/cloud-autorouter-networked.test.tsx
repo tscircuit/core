@@ -3,6 +3,7 @@ import {
   AUTOROUTER_VERSION,
   solvePipeline9NetworkedHighDensityNode,
 } from "@tscircuit/capacity-autorouter"
+import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import { getTestFixture } from "../fixtures/get-test-fixture"
 
 test("platform cloud autorouting renders a board through versioned networked node requests", async () => {
@@ -42,6 +43,10 @@ test("platform cloud autorouting renders a board through versioned networked nod
     const { circuit } = getTestFixture({
       platform: { useCloudAutorouter: true },
     })
+    let input: SimpleRouteJson | undefined
+    circuit.on("autorouting:start", (event) => {
+      input = event.simpleRouteJson
+    })
     const solvers: string[] = []
     circuit.on("solver:started", (event) => solvers.push(event.solverName))
     circuit.add(
@@ -49,6 +54,14 @@ test("platform cloud autorouting renders a board through versioned networked nod
         <resistor name="R1" resistance="1k" footprint="0402" pcbX={-5} />
         <resistor name="R2" resistance="1k" footprint="0402" pcbX={5} />
         <trace from=".R1 > .pin2" to=".R2 > .pin1" />
+        <testpoint name="M1" pcbX={-4} pcbY={-4} />
+        <testpoint name="M2" pcbX={4} pcbY={-4} />
+        <trace
+          name="MANUAL"
+          from="M1.pin1"
+          to="M2.pin1"
+          pcbPath={[{ x: 2, y: -2 }]}
+        />
         <pcbnotetext
           text="Cloud Pipeline9 with exact autorouter version"
           pcbY={-8}
@@ -58,6 +71,19 @@ test("platform cloud autorouting renders a board through versioned networked nod
     await circuit.renderUntilSettled()
     expect(solvers).toContain("AutoroutingPipelineSolver9_Networked")
     expect(solveCount).toBeGreaterThan(0)
+    const manualSourceTraceId = circuit.db.source_trace
+      .list()
+      .find((trace) => trace.name === "MANUAL")!.source_trace_id
+    expect(
+      input!.traces?.some(
+        (trace) => trace.connection_name === manualSourceTraceId,
+      ),
+    ).toBe(true)
+    expect(
+      input!.obstacles.some(
+        (obstacle) => obstacle.connectedTo[0] === manualSourceTraceId,
+      ),
+    ).toBe(false)
     expect(circuit.db.pcb_autorouting_error.list()).toHaveLength(0)
     expect(circuit.db.pcb_trace.list().length).toBeGreaterThan(0)
     expect(circuit).toMatchPcbSnapshot(import.meta.path)

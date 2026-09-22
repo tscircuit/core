@@ -3,10 +3,9 @@ import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import "tests/fixtures/extend-expect-autorouting-phases-snapshot"
 
-// Diagnostic reproduction of b8507e92-405d-4189-9e67-9e1e751e8ccd.
-// This pins the current BUG, not the desired contract. After a fix, assert that
-// MANUAL stays in input.traces and these six rectangles are absent instead.
-test("default Pipeline9 rasterizes a manual path matching the MCU report", async () => {
+// Reduced from source_trace_107 in autorouting report
+// b8507e92-405d-4189-9e67-9e1e751e8ccd.
+test("default Pipeline9 receives the exact manual path from the MCU report", async () => {
   const { circuit } = getTestFixture()
   const inputs: SimpleRouteJson[] = []
   const solverNames: string[] = []
@@ -53,7 +52,7 @@ test("default Pipeline9 rasterizes a manual path matching the MCU report", async
       <pcbnotetext
         pcbY={-3}
         fontSize={0.35}
-        text="Default Pipeline9: manual diagonal becomes 6 rectangles"
+        text="Default Pipeline9: exact manual diagonal, no trace rectangles"
       />
     </board>,
   )
@@ -68,26 +67,15 @@ test("default Pipeline9 rasterizes a manual path matching the MCU report", async
   const rectangles = input.obstacles.filter(
     (obstacle) => obstacle.connectedTo[0] === manual.source_trace_id,
   )
-  expect(rectangles).toHaveLength(6)
-  expect(
-    input.traces?.some(
-      (trace) => trace.connection_name === manual.source_trace_id,
-    ),
-  ).toBe(false)
-  // Exactly the source_trace_107 geometry in the downloaded report: a 2.6875mm
-  // horizontal segment, then a 0.75mm diagonal divided into five 0.4mm boxes.
-  expect(rectangles[0]).toMatchObject({
-    center: { x: -2.09375, y: -0.75 },
-    width: 2.9375,
-    height: 0.25,
-    layers: ["top"],
-  })
-  for (const [index, rectangle] of rectangles.slice(1).entries()) {
-    expect(rectangle.width).toBeCloseTo(0.4, 10)
-    expect(rectangle.height).toBeCloseTo(0.4, 10)
-    expect(rectangle.center.x).toBeCloseTo(-0.675 + index * 0.15, 10)
-    expect(rectangle.center.y).toBeCloseTo(-0.675 + index * 0.15, 10)
-  }
+  expect(rectangles).toEqual([])
+  const manualInputTrace = input.traces?.find(
+    (trace) => trace.connection_name === manual.source_trace_id,
+  )
+  expect(manualInputTrace?.route).toEqual([
+    { route_type: "wire", x: -3.4375, y: -0.75, width: 0.25, layer: "top" },
+    { route_type: "wire", x: -0.75, y: -0.75, width: 0.25, layer: "top" },
+    { route_type: "wire", x: 0, y: 0, width: 0.25, layer: "top" },
+  ])
   expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
   await expect([

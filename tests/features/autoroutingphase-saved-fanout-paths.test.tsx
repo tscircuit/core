@@ -5,7 +5,7 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("autoroutingphase continues saved fanout escapes from their exit layer", async () => {
   const { circuit } = getTestFixture()
-  const paths: FanoutTracePath[] = [
+  const paths = [
     {
       connection: "U1.1",
       route: [
@@ -22,11 +22,11 @@ test("autoroutingphase continues saved fanout escapes from their exit layer", as
         },
       ],
     },
-  ]
+  ] satisfies FanoutTracePath[]
   const phaseInputs: SimpleRouteJson[] = []
   const autorouters: string[] = []
   circuit.on("autorouting:start", (event) => {
-    phaseInputs.push(event.simpleRouteJson)
+    phaseInputs.push(structuredClone(event.simpleRouteJson))
     autorouters.push(event.autorouterName!)
   })
   circuit.add(
@@ -57,6 +57,12 @@ test("autoroutingphase continues saved fanout escapes from their exit layer", as
           </footprint>
         }
       />
+      <solderjumper
+        name="JP1"
+        footprint="solderjumper2_bridged12"
+        pcbX={-5}
+        pcbY={-4}
+      />
       <autoroutingphase autorouter="fanout" pcbTracePaths={paths} />
       <trace from="U1.1" to="U2.1" />
     </board>,
@@ -76,7 +82,29 @@ test("autoroutingphase continues saved fanout escapes from their exit layer", as
       connection.pointsToConnect.every((point) => !("layers" in point)),
     ),
   ).toBe(true)
-  expect(phaseInputs[1]!.traces ?? []).toHaveLength(0)
+  expect(phaseInputs[1]!.traces).toHaveLength(2)
+  const bridge = circuit.db.pcb_trace
+    .list()
+    .find((trace) => !trace.source_trace_id)!
+  const bridgeInput = phaseInputs[1]!.traces!.find(
+    (trace) => trace.pcb_trace_id === bridge.pcb_trace_id,
+  )!
+  expect(bridgeInput.route[0]!.route_type).toBe("through_obstacle")
+  expect(
+    phaseInputs[1]!.obstacles.some(
+      (obstacle) => obstacle.connectedTo[0] === bridge.pcb_trace_id,
+    ),
+  ).toBe(false)
+  const savedInput = phaseInputs[1]!.traces!.find((trace) =>
+    trace.pcb_trace_id.startsWith("saved_phase_"),
+  )!
+  expect(savedInput.route.slice(0, 2)).toEqual(paths[0]!.route.slice(0, 2))
+  expect(savedInput.route).toContainEqual(paths[0]!.route[2]!)
+  expect(
+    phaseInputs[1]!.obstacles.some(
+      (obstacle) => obstacle.connectedTo[0] === savedInput.connection_name,
+    ),
+  ).toBe(false)
   const saved = circuit.db.pcb_trace
     .list()
     .find((trace) => trace.pcb_trace_id.startsWith("saved_phase_"))!
