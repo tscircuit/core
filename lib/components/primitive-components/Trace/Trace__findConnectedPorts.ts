@@ -50,7 +50,9 @@ export function Trace__findConnectedPorts(trace: Trace):
       let portToken: string
       const dotIndex = selector.lastIndexOf(".")
       if (dotIndex !== -1 && dotIndex > selector.lastIndexOf(" ")) {
-        parentSelector = selector.slice(0, dotIndex)
+        // Strip a trailing child combinator so ".G1 > .pin1" resolves ".G1"
+        // rather than the group's first child.
+        parentSelector = selector.slice(0, dotIndex).replace(/[ >]+$/, "")
         portToken = selector.slice(dotIndex + 1)
       } else {
         const match = selector.match(/^(.*[ >])?([^ >]+)$/)
@@ -95,7 +97,23 @@ export function Trace__findConnectedPorts(trace: Trace):
       const labelList = Array.from(new Set(portNames)).join(", ")
       let detail: string
       if (ports.length === 0) {
-        detail = "It has no ports"
+        if (targetComponent.isGroup) {
+          // Groups are containers — they never have pins of their own, so
+          // "It has no ports" reads like the group is broken. Name the
+          // components inside it and show a working selector instead.
+          const namedChildren = targetComponent.children
+            .map((c) => c.props.name as string | undefined)
+            .filter((n): n is string => Boolean(n))
+          if (namedChildren.length === 0) {
+            detail =
+              "It is a group, which has no pins of its own, and it contains no named components"
+          } else {
+            const list = namedChildren.map((n) => `.${n}`).join(", ")
+            detail = `It is a group, which has no pins of its own. Select a component inside it, e.g. ".${namedChildren[0]} > .pin1". It contains [${list}]`
+          }
+        } else {
+          detail = "It has no ports"
+        }
       } else if (!hasCustomLabels) {
         detail = `It has ${ports.length} pins and no pinLabels (consider adding pinLabels)`
       } else {

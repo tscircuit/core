@@ -20,5 +20,7 @@ test("repro100 trace selector with pcbPath inserts error instead of throwing", a
 
   expect(errors.length).toBeGreaterThan(0)
   expect(errors[0].message).toContain('selector "J1.pin1"')
-  expect(errors[0].message).toContain("It has no ports")
+  expect(errors[0].message).toContain(
+    "It is a group, which has no pins of its own, and it contains no named components",
+  )
 })
