@@ -1,5 +1,4 @@
 import { expect, test } from "bun:test"
-import { Fragment } from "react"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { createPcbWithFourViewSnapshot } from "tests/fixtures/create-pcb-with-four-view-snapshot"
 import { pcb_bend, pcb_board, pcb_stiffener } from "circuit-json"
@@ -18,17 +17,6 @@ const arc = (cx: number, from: number, to: number) => {
 
 // Circuit JSON: right-handed, +Z above the board, millimeters. Two opposite
 // U-folds (four quarter turns) stack the three discs 6 mm apart.
-const copperRoutes = [-0.55, 0, 0.55].map((y) => [
-  {
-    route_type: "wire" as const,
-    x: -25,
-    y,
-    width: 0.18,
-    layer: "top" as const,
-  },
-  { route_type: "wire" as const, x: 25, y, width: 0.18, layer: "top" as const },
-])
-
 const bendSpacing = 6 + Math.PI / 2 - 2
 const a = (pitch - bendSpacing) / 2
 const b = (pitch + bendSpacing) / 2
@@ -44,7 +32,7 @@ test("TSX flex board stacks three discs with four bends and bonded stiffeners", 
       pcbX={22}
       solderMaskColor="#cc9b32"
       schematicDisabled
-      routingDisabled
+      autorouter="auto_local"
       outline={[
         ...arc(0, alpha, 2 * Math.PI - alpha),
         ...arc(pitch, Math.PI + alpha, 2 * Math.PI - alpha),
@@ -79,26 +67,73 @@ test("TSX flex board stacks three discs with four bends and bonded stiffeners", 
               y: 5.5 * Math.sin((j * Math.PI) / 24),
             }))}
           />
-          <resistor
-            name={`R${i + 1}`}
-            resistance="1k"
-            footprint="0402"
-            pcbX={1}
-            pcbY={1}
-          />
           <silkscreentext
             text={`${i + 1}`}
-            pcbY={-3}
+            pcbY={-4.5}
             fontSize={1.4}
             anchorAlignment="center"
           />
         </group>
       ))}
-      {copperRoutes.map((route, i) => (
-        <Fragment key={i}>
-          <pcbtrace route={route} />
-        </Fragment>
-      ))}
+      <net name="VCC" />
+      <net name="GND" />
+      {/* Solderable power contacts on the first disc. */}
+      <chip
+        name="J1"
+        pcbX={-pitch}
+        pcbY={0}
+        pinLabels={{ pin1: "VCC", pin2: "GND" }}
+        footprint={
+          <footprint>
+            <smtpad
+              portHints={["pin1"]}
+              pcbX={-1.5}
+              width={1.5}
+              height={2}
+              shape="rect"
+            />
+            <smtpad
+              portHints={["pin2"]}
+              pcbX={1.5}
+              width={1.5}
+              height={2}
+              shape="rect"
+            />
+          </footprint>
+        }
+        connections={{ VCC: "net.VCC", GND: "net.GND" }}
+      />
+      <silkscreentext
+        text="VCC  GND"
+        pcbX={-pitch}
+        pcbY={2}
+        fontSize={0.7}
+        anchorAlignment="center"
+      />
+      <chip
+        name="U1"
+        footprint="soic8"
+        pcbX={0}
+        pcbY={0}
+        pinLabels={{ pin1: "OUT", pin4: "GND", pin8: "VCC" }}
+        connections={{ VCC: "net.VCC", GND: "net.GND", OUT: ".R1 > .pin1" }}
+      />
+      <resistor
+        name="R1"
+        footprint="0402"
+        resistance="330"
+        pcbX={0}
+        pcbY={3.8}
+        connections={{ pin2: ".LED1 > .anode" }}
+      />
+      <led
+        name="LED1"
+        footprint="0603"
+        color="red"
+        pcbX={pitch}
+        pcbY={0}
+        connections={{ cathode: "net.GND" }}
+      />
     </board>,
   )
   await circuit.renderUntilSettled()
@@ -114,6 +149,22 @@ test("TSX flex board stacks three discs with four bends and bonded stiffeners", 
   for (const stiffener of circuit.db.pcb_stiffener.list()) {
     expect(pcb_stiffener.safeParse(stiffener).success).toBe(true)
   }
+  // Both flex links carry at least two routed connections, inside the neck.
+  for (const linkX of [pitch / 2, (3 * pitch) / 2]) {
+    const crossings = circuit.db.pcb_trace.list().filter((trace) =>
+      trace.route.some((start, i) => {
+        const end = trace.route[i + 1]
+        if (start.route_type !== "wire" || end?.route_type !== "wire")
+          return false
+        if ((start.x - linkX) * (end.x - linkX) >= 0) return false
+        const t = (linkX - start.x) / (end.x - start.x)
+        const y = start.y + t * (end.y - start.y)
+        return Math.abs(y) + start.width / 2 <= neckHalfWidth
+      }),
+    )
+    expect(crossings.length).toBeGreaterThanOrEqual(2)
+  }
+  expect(circuit.db.pcb_trace_error.list()).toEqual([])
   const flatJson = JSON.stringify(circuit.getCircuitJson())
   const snapshot = await createPcbWithFourViewSnapshot(
     circuit.getCircuitJson(),
@@ -125,4 +176,4 @@ test("TSX flex board stacks three discs with four bends and bonded stiffeners", 
   )
   await expect(snapshot).toMatchSvgSnapshot(import.meta.path)
   expect(JSON.stringify(circuit.getCircuitJson())).toBe(flatJson)
-})
+}, 60_000)
