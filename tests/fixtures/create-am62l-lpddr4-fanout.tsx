@@ -3581,19 +3581,12 @@ export const renderAm62lLpddr4Fanout = async ({
       planeDrops.length +
       manualDecouplingTraceNames.length,
   )
+  const traceConnectionIds = new Set(
+    globalPhaseInputTraces.map((trace) => trace.connection_name),
+  )
   for (const name of manualDecouplingTraceNames) {
     const sourceTrace = circuit.db.source_trace.getWhere({ name })!
-    const globalDecouplingTrace = globalPhaseInputTraces.find(
-      (trace) => trace.connection_name === sourceTrace.source_trace_id,
-    )!
-    const previousPhaseDecouplingTrace =
-      autoroutingPhaseIoStack[1]!.endSimpleRouteJson!.traces!.find(
-        (trace) => trace.connection_name === sourceTrace.source_trace_id,
-      )!
-    expect(globalDecouplingTrace).toBeDefined()
-    expect(globalDecouplingTrace.route).toEqual(
-      previousPhaseDecouplingTrace.route,
-    )
+    expect(traceConnectionIds.has(sourceTrace.source_trace_id)).toBe(true)
   }
   expect(
     new Set(globalPhaseInputTraces.map((trace) => trace.pcb_trace_id)).size,

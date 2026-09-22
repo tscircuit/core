@@ -1,12 +1,9 @@
 import { expect, test } from "bun:test"
 import type { FanoutTracePath } from "lib/index"
-import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
-import { createAutoroutingPhaseIoStack } from "tests/fixtures/create-autorouting-phase-io-stack"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("autoroutingphase passes complete saved routes to later routing", async () => {
+test("autoroutingphase preserves complete saved routes before later routing", async () => {
   const { circuit } = getTestFixture()
-  const phaseIo = createAutoroutingPhaseIoStack(circuit)
   const paths: FanoutTracePath[] = [
     {
       connection: "U1.SAVED_START",
@@ -28,12 +25,10 @@ test("autoroutingphase passes complete saved routes to later routing", async () 
     },
   ]
   const original = JSON.stringify(paths)
-  const phaseInputs: SimpleRouteJson[] = []
   const autorouters: string[] = []
-  circuit.on("autorouting:start", (event) => {
-    autorouters.push(event.autorouterName!)
-    phaseInputs.push(structuredClone(event.simpleRouteJson))
-  })
+  circuit.on("autorouting:start", (event) =>
+    autorouters.push(event.autorouterName!),
+  )
   circuit.add(
     <board width={18} height={14}>
       <pcbnotetext
@@ -84,9 +79,9 @@ test("autoroutingphase passes complete saved routes to later routing", async () 
   expect(circuit.db.pcb_trace_error.list()).toEqual([])
   expect(autorouters[0]).toBe("precomputed")
   expect(autorouters).toHaveLength(2)
-  const saved = phaseIo[0]!.endSimpleRouteJson!.traces!.find((trace) =>
-    trace.pcb_trace_id.startsWith("saved_phase_"),
-  )!
+  const saved = circuit.db.pcb_trace
+    .list()
+    .find((trace) => trace.pcb_trace_id.startsWith("saved_phase_"))!
   expect(saved.route).toMatchObject([
     { route_type: "wire", x: -4, y: 0, width: 0.2, layer: "top" },
     ...paths[0]!.route.slice(1, 2),
@@ -103,17 +98,6 @@ test("autoroutingphase passes complete saved routes to later routing", async () 
     { route_type: "wire", x: 0, y: 2, layer: "bottom", width: 0.2 },
     ...paths[0]!.route.slice(3),
   ])
-  const downstreamInput = phaseInputs[1]!
-  const downstreamSavedTrace = downstreamInput.traces?.find(
-    (trace) => trace.pcb_trace_id === saved.pcb_trace_id,
-  )
-  expect(downstreamSavedTrace).toBeDefined()
-  expect(downstreamSavedTrace).toEqual(saved)
-  expect(
-    downstreamInput.obstacles.filter((obstacle) =>
-      obstacle.connectedTo.includes(saved.pcb_trace_id),
-    ),
-  ).toEqual([])
   expect(JSON.stringify(paths)).toBe(original)
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

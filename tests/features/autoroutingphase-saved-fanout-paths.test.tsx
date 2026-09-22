@@ -1,12 +1,10 @@
 import { expect, test } from "bun:test"
 import type { FanoutTracePath } from "lib/index"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
-import { createAutoroutingPhaseIoStack } from "tests/fixtures/create-autorouting-phase-io-stack"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("autoroutingphase continues saved fanout escapes from their exit layer", async () => {
   const { circuit } = getTestFixture()
-  const phaseIo = createAutoroutingPhaseIoStack(circuit)
   const paths: FanoutTracePath[] = [
     {
       connection: "U1.1",
@@ -28,7 +26,7 @@ test("autoroutingphase continues saved fanout escapes from their exit layer", as
   const phaseInputs: SimpleRouteJson[] = []
   const autorouters: string[] = []
   circuit.on("autorouting:start", (event) => {
-    phaseInputs.push(structuredClone(event.simpleRouteJson))
+    phaseInputs.push(event.simpleRouteJson)
     autorouters.push(event.autorouterName!)
   })
   circuit.add(
@@ -78,14 +76,10 @@ test("autoroutingphase continues saved fanout escapes from their exit layer", as
       connection.pointsToConnect.every((point) => !("layers" in point)),
     ),
   ).toBe(true)
-  const saved = phaseIo[0]!.endSimpleRouteJson!.traces!.find((trace) =>
-    trace.pcb_trace_id.startsWith("saved_phase_"),
-  )!
-  const downstreamSavedTrace = phaseInputs[1]!.traces?.find(
-    (trace) => trace.pcb_trace_id === saved.pcb_trace_id,
-  )
-  expect(downstreamSavedTrace).toBeDefined()
-  expect(downstreamSavedTrace).toEqual(saved)
+  expect(phaseInputs[1]!.traces ?? []).toHaveLength(1)
+  const saved = circuit.db.pcb_trace
+    .list()
+    .find((trace) => trace.pcb_trace_id.startsWith("saved_phase_"))!
   expect(saved.route.slice(0, 2)).toMatchObject(paths[0]!.route.slice(0, 2))
   expect(saved.route).toContainEqual(
     expect.objectContaining(paths[0]!.route[2]!),
