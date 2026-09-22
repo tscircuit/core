@@ -79,6 +79,7 @@ export abstract class PrimitiveComponent<
   ZodProps extends ZodType = any,
 > extends Renderable {
   parent: PrimitiveComponent | null = null
+  protected _childrenVersion = 0
   children: PrimitiveComponent[]
   childrenPendingRemoval: PrimitiveComponent[]
 
@@ -1060,6 +1061,7 @@ export abstract class PrimitiveComponent<
     component.onAddToParent(this)
     component.parent = this
     this.children.push(component)
+    this._childrenVersion++
     this._clearSelectorCachesUpTree()
   }
 
@@ -1071,6 +1073,7 @@ export abstract class PrimitiveComponent<
 
   remove(component: PrimitiveComponent) {
     this.children = this.children.filter((c) => c !== component)
+    this._childrenVersion++
     this.childrenPendingRemoval.push(component)
     component.shouldBeRemoved = true
     this._clearSelectorCachesUpTree()
@@ -1252,7 +1255,10 @@ export abstract class PrimitiveComponent<
     const subcircuit = selectOne(firstpart, this, {
       adapter: cssSelectPrimitiveComponentAdapterOnlySubcircuits,
     }) as ISubcircuit | null
-    if (!subcircuit) return []
+    if (!subcircuit) {
+      this._cachedSelectAllQueries.set(selectorRaw, result)
+      return result
+    }
     const result2 = subcircuit.selectAll(rest.join(" ")) as T[]
     this._cachedSelectAllQueries.set(selectorRaw, result2)
     return result2

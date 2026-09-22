@@ -350,22 +350,31 @@ export abstract class Renderable implements IRenderable {
     phase: RenderPhase,
     startOrEnd: "start" | "end",
   ) {
-    debug(`${phase}:${startOrEnd} ${this.getString()}`)
     const granular_event_type =
       `renderable:renderLifecycle:${phase}:${startOrEnd}` as RootCircuitEventName
+    const root = this._getRootCircuit()
+    // Older/custom root implementations without listener inspection still receive events.
+    const hasListeners =
+      root &&
+      (!root.hasEventListener ||
+        root.hasEventListener(granular_event_type) ||
+        root.hasEventListener("renderable:renderLifecycle:anyEvent"))
+    if (!debug.enabled && !hasListeners) return
+
+    const componentDisplayName = this.getString()
+    if (debug.enabled) debug(`${phase}:${startOrEnd} ${componentDisplayName}`)
+    if (!hasListeners) return
+
     const eventPayload = {
       renderId: this._renderId,
-      componentDisplayName: this.getString(),
+      componentDisplayName,
       type: granular_event_type,
     }
-    const root = this._getRootCircuit()
-    if (root) {
-      root.emit(granular_event_type, eventPayload)
-      root.emit("renderable:renderLifecycle:anyEvent", {
-        ...eventPayload,
-        type: granular_event_type,
-      })
-    }
+    root.emit(granular_event_type, eventPayload)
+    root.emit("renderable:renderLifecycle:anyEvent", {
+      ...eventPayload,
+      type: granular_event_type,
+    })
   }
   getString() {
     return this.constructor.name
