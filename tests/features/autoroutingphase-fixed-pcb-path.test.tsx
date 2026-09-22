@@ -3,7 +3,7 @@ import type { PcbTrace } from "circuit-json"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("autorouting phases detour around a fixed hand-authored pcbPath", async () => {
+test("autorouting phases detour around a preloaded hand-authored pcbPath", async () => {
   const { circuit } = getTestFixture()
   const phaseInputs: SimpleRouteJson[] = []
   let originalManualTrace: PcbTrace | undefined
@@ -16,12 +16,12 @@ test("autorouting phases detour around a fixed hand-authored pcbPath", async () 
       <pcbnotetext
         pcbY={6.5}
         fontSize={0.55}
-        text="Keep the manual U-shaped pcbPath fixed"
+        text="Preload the manual U-shaped pcbPath in Pipeline9"
       />
       <pcbnotetext
         pcbY={5.4}
         fontSize={0.4}
-        text="Thick U stays fixed; thin left-to-right routes detour"
+        text="Thin left-to-right routes detour around preloaded copper"
       />
       <testpoint name="M1" pcbX={-2} pcbY={3} padDiameter={0.7} />
       <testpoint name="M2" pcbX={2} pcbY={3} padDiameter={0.7} />
@@ -53,25 +53,39 @@ test("autorouting phases detour around a fixed hand-authored pcbPath", async () 
       input.traces?.some(
         (trace) =>
           trace.connection_name === originalManualTrace!.source_trace_id,
-      ) ?? false,
+      ),
+    ).toBe(true)
+    expect(
+      input.obstacles.some(
+        (obstacle) =>
+          obstacle.connectedTo[0] === originalManualTrace!.source_trace_id,
+      ),
     ).toBe(false)
-    // The left wall of the U blocks both requested straight-line routes.
-    expect(input.obstacles).toContainEqual(
-      expect.objectContaining({
-        center: { x: -2, y: 0 },
-        height: 6.3,
-        connectedTo: expect.arrayContaining([
-          originalManualTrace!.source_trace_id,
-        ]),
-      }),
-    )
   }
+  // Preserve the exact authored input; Pipeline9 owns any subsequent repair
+  // of preloaded routes and checks new copper against the resulting geometry.
+  expect(phaseInputs[0]!.traces![0]!.route).toEqual(
+    originalManualTrace!.route
+      .filter((point) => point.route_type === "wire")
+      .map((point) => {
+        const { start_pcb_port_id, end_pcb_port_id, ...wirePoint } = point
+        return wirePoint
+      }),
+  )
   const traces = circuit.db.pcb_trace.list()
   const manualTraces = traces.filter(
     (trace) => trace.source_trace_id === originalManualTrace!.source_trace_id,
   )
   expect(manualTraces).toHaveLength(1)
-  expect(manualTraces[0]!.route).toEqual(originalManualTrace!.route)
+  expect(manualTraces[0]!.route[0]).toEqual(originalManualTrace!.route[0])
+  expect(manualTraces[0]!.route.at(-1)).toEqual(
+    originalManualTrace!.route.at(-1),
+  )
+  expect(
+    manualTraces[0]!.route.some(
+      (point) => point.route_type === "wire" && point.y < -2.9,
+    ),
+  ).toBe(true)
   expect(traces).toHaveLength(3)
   for (const trace of traces.filter(
     (trace) => trace.source_trace_id !== originalManualTrace!.source_trace_id,

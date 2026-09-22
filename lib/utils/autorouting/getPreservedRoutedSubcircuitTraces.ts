@@ -85,9 +85,8 @@ const getSimpleRouteForPreservedTrace = (
  * Converts PCB traces that already exist when autorouting starts into SRJ
  * `traces`. This includes manual copper rendered in an earlier render phase
  * and routed child-subcircuit copper.
- * Footprint copper without a source trace is already represented as obstacles
- * by getSimpleRouteJsonFromCircuitJson. It must not also become a preloaded
- * route that the autorouter can reshape or validate against its own keepout.
+ * Pipeline9 can receive footprint copper as immutable through-obstacle
+ * segments. Legacy callers keep that copper in the obstacle representation.
  *
  * `connectsTo` is physical routing state, not electrical-net metadata. It must
  * contain only the PCB points joined by this exact copper trace so the parent
@@ -97,15 +96,22 @@ const getSimpleRouteForPreservedTrace = (
 export const getPreservedRoutedSubcircuitTraces = ({
   scopedDb,
   relevantSubcircuitIds,
+  preserveFootprintTraces = false,
 }: {
   scopedDb: CircuitJsonUtilObjects
   relevantSubcircuitIds: Set<string> | null
+  preserveFootprintTraces?: boolean
 }): SimplifiedPcbTrace[] =>
   scopedDb.pcb_trace
     .list()
     .filter((trace) => {
       if (!trace.subcircuit_id) return false
-      if (trace.pcb_component_id && !trace.source_trace_id) return false
+      if (
+        !preserveFootprintTraces &&
+        trace.pcb_component_id &&
+        !trace.source_trace_id
+      )
+        return false
       return (
         relevantSubcircuitIds === null ||
         relevantSubcircuitIds.has(trace.subcircuit_id)
@@ -120,7 +126,36 @@ export const getPreservedRoutedSubcircuitTraces = ({
         source_trace_id: trace.source_trace_id,
         connection_name: connectionName,
         connectsTo: getPhysicalConnectionIdsForPreservedTrace(preservedTrace),
-        route: getSimpleRouteForPreservedTrace(preservedTrace),
+        route:
+          preserveFootprintTraces && !trace.source_trace_id
+            ? getFootprintTraceRoute(preservedTrace)
+            : getSimpleRouteForPreservedTrace(preservedTrace),
       }
     })
     .filter((trace) => trace.route.length >= 2)
+
+/**
+ * Footprint copper consists of immutable physical segments, not editable
+ * routing. Points remain in board-world mm (+X right, +Y up; right-handed).
+ */
+const getFootprintTraceRoute = (
+  trace: PreservedTrace,
+): SimplifiedPcbTrace["route"] => {
+  const route = getSimpleRouteForPreservedTrace(trace)
+  return route.flatMap((point, index): SimplifiedPcbTrace["route"] => {
+    const next = route[index + 1]
+    if (point.route_type !== "wire") return [point]
+    if (!next || next.route_type !== "wire" || point.layer !== next.layer)
+      return [point]
+    return [
+      {
+        route_type: "through_obstacle",
+        start: { x: point.x, y: point.y },
+        end: { x: next.x, y: next.y },
+        from_layer: point.layer,
+        to_layer: next.layer,
+        width: point.width,
+      },
+    ]
+  })
+}

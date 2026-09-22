@@ -93,6 +93,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   routingPcbGroupId,
   fanoutPourNetMap,
   ignoreExistingTopLevelPcbRouteState = false,
+  preserveFootprintTraces = false,
 }: {
   db?: CircuitJsonUtilObjects
   circuitJson?: AnyCircuitElement[]
@@ -125,6 +126,8 @@ export const getSimpleRouteJsonFromCircuitJson = ({
    * Routed child-subcircuit traces and vias remain fixed routing geometry.
    */
   ignoreExistingTopLevelPcbRouteState?: boolean
+  /** Keep footprint copper as exact, immutable SRJ segments for Pipeline9. */
+  preserveFootprintTraces?: boolean
 }): { simpleRouteJson: SimpleRouteJson; connMap: ConnectivityMap } => {
   if (!db && circuitJson) {
     db = su(circuitJson)
@@ -216,6 +219,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   const preservedRoutedSubcircuitTraces = getPreservedRoutedSubcircuitTraces({
     scopedDb: db,
     relevantSubcircuitIds,
+    preserveFootprintTraces,
   })
   const preservedSrjTraceByPcbTraceId = new Map(
     preservedRoutedSubcircuitTraces.map((trace) => [trace.pcb_trace_id, trace]),
@@ -261,7 +265,14 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       ...db.pcb_plated_hole.list(),
       ...db.pcb_hole.list(),
       // Footprint copper primitives such as solder-jumper bridges are fixed.
-      ...db.pcb_trace.list().filter((trace) => !trace.source_trace_id),
+      ...db.pcb_trace
+        .list()
+        .filter(
+          (trace) =>
+            !trace.source_trace_id &&
+            (!preserveFootprintTraces ||
+              !preservedSrjTraceByPcbTraceId.has(trace.pcb_trace_id)),
+        ),
       ...db.pcb_via
         .list()
         .filter(
