@@ -128,6 +128,7 @@ import {
 } from "./region-replacement"
 import { splitPcbTracesOnJumperSegments } from "./split-pcb-traces-on-jumper-segments"
 import { computeCenterFromAnchorPosition } from "./utils/computeCenterFromAnchorPosition"
+import { getNetHighlightColor } from "lib/utils/get-net-highlight-color"
 
 const getDistanceToPoint = (
   routePoint: PcbTrace["route"][number],
@@ -2278,6 +2279,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             ...pcb_trace,
             source_trace_id: sourceTraceId,
             route: circuitJsonSegment,
+            highlight_color:
+              pcb_trace.highlight_color ??
+              getNetHighlightColor(this, sourceTraceId),
           })
           claimSrjAssignablePcbViasTraversedByRoute({
             db,
