@@ -38,7 +38,7 @@
     "@tscircuit/bus-lanes-solver": "github:tscircuit/bus-lanes-solver#0bc8d071241b18a3e7465a878881abe4998f6384",
     "@tscircuit/capacity-autorouter": "^0.0.919",
     "@tscircuit/checks": "^0.0.208",
-    "@tscircuit/circuit-json-util": "^0.0.115",
+    "@tscircuit/circuit-json-util": "^0.0.116",
     "@tscircuit/common": "^0.0.20",
     "@tscircuit/copper-pour-solver": "^0.0.56",
     "@tscircuit/create-fdm-enclosure": "0.0.4",
@@ -74,9 +74,9 @@
     "circuit-json": "^0.0.497",
     "circuit-json-to-bpc": "^0.0.13",
     "circuit-json-to-connectivity-map": "^0.0.30",
-    "circuit-json-to-gltf": "^0.0.128",
+    "circuit-json-to-gltf": "^0.0.132",
     "circuit-json-to-spice": "^0.0.45",
-    "circuit-to-svg": "^0.0.424",
+    "circuit-to-svg": "^0.0.430",
     "concurrently": "^9.1.2",
     "connectivity-map": "^1.0.0",
     "debug": "^4.3.6",
@@ -133,7 +133,7 @@
     "zod": "^3.25.67"
   },
   "overrides": {
-    "@tscircuit/circuit-json-util": "^0.0.115",
+    "@tscircuit/circuit-json-util": "^0.0.116",
     "@tscircuit/props": "^0.0.665",
     "circuit-json": "^0.0.497"
   }
