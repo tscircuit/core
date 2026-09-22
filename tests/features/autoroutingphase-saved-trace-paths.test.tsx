@@ -1,3 +1,4 @@
+import { getPcbTraceRouteGeometry } from "tests/fixtures/get-pcb-trace-route-geometry"
 import { expect, test } from "bun:test"
 import type { FanoutTracePath } from "lib/index"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
@@ -105,7 +106,10 @@ test("autoroutingphase preserves complete saved routes before later routing", as
   const downstreamSavedTrace = downstreamInput.traces?.find(
     (trace) => trace.pcb_trace_id === saved.pcb_trace_id,
   )
-  expect(saved.route).toMatchObject(downstreamSavedTrace!.route)
+  expect(downstreamSavedTrace).toBeDefined()
+  expect(getPcbTraceRouteGeometry(downstreamSavedTrace!)).toEqual(
+    getPcbTraceRouteGeometry(saved),
+  )
   expect(
     downstreamInput.obstacles.filter((obstacle) =>
       obstacle.connectedTo.includes(saved.pcb_trace_id),

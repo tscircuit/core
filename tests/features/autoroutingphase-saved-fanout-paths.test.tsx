@@ -1,3 +1,4 @@
+import { getPcbTraceRouteGeometry } from "tests/fixtures/get-pcb-trace-route-geometry"
 import { expect, test } from "bun:test"
 import type { FanoutTracePath } from "lib/index"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
@@ -82,7 +83,10 @@ test("autoroutingphase continues saved fanout escapes from their exit layer", as
   const downstreamSavedTrace = phaseInputs[1]!.traces?.find(
     (trace) => trace.pcb_trace_id === saved.pcb_trace_id,
   )
-  expect(saved.route).toMatchObject(downstreamSavedTrace!.route)
+  expect(downstreamSavedTrace).toBeDefined()
+  expect(getPcbTraceRouteGeometry(downstreamSavedTrace!)).toEqual(
+    getPcbTraceRouteGeometry(saved),
+  )
   expect(saved.route.slice(0, 2)).toMatchObject(paths[0]!.route.slice(0, 2))
   expect(saved.route).toContainEqual(
     expect.objectContaining(paths[0]!.route[2]!),

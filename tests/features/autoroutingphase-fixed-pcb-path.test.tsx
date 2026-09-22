@@ -1,3 +1,4 @@
+import { getPcbTraceRouteGeometry } from "tests/fixtures/get-pcb-trace-route-geometry"
 import { expect, test } from "bun:test"
 import type { PcbTrace } from "circuit-json"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
@@ -52,7 +53,10 @@ test("autorouting phases detour around a fixed hand-authored pcbPath", async () 
     const manualTrace = input.traces?.find(
       (trace) => trace.connection_name === originalManualTrace!.source_trace_id,
     )
-    expect(originalManualTrace!.route).toMatchObject(manualTrace!.route)
+    expect(manualTrace).toBeDefined()
+    expect(getPcbTraceRouteGeometry(manualTrace!)).toEqual(
+      getPcbTraceRouteGeometry(originalManualTrace!),
+    )
     // Fixed copper must reach every phase as exact routes, never rectangles.
     expect(
       input.obstacles.filter(

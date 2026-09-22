@@ -1,6 +1,7 @@
 import type { LocalCacheEngine } from "lib/local-cache-engine"
 import type { AutorouterOptions } from "lib/utils/autorouting/CapacityMeshAutorouter"
 import type {
+  PcbTraceId,
   SimpleRouteJson,
   SimplifiedPcbTrace,
 } from "lib/utils/autorouting/SimpleRouteJson"
@@ -35,6 +36,7 @@ export type LocalAutoroutingCacheSolverOptions = Pick<
   | "autorouterVersion"
   | "effort"
 > & {
+  fixedPcbTraceIds?: PcbTraceId[]
   autorouterName: string
   solverName?: string
 }

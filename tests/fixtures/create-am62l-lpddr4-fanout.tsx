@@ -1,3 +1,4 @@
+import { getPcbTraceRouteGeometry } from "tests/fixtures/get-pcb-trace-route-geometry"
 import { expect } from "bun:test"
 import type { ChipProps } from "@tscircuit/props"
 import { orderedRenderPhases } from "lib/components/base-components/Renderable"
@@ -3589,7 +3590,10 @@ export const renderAm62lLpddr4Fanout = async ({
     const pcbDecouplingTrace = circuit.db.pcb_trace.getWhere({
       source_trace_id: sourceTrace.source_trace_id,
     })!
-    expect(pcbDecouplingTrace.route).toMatchObject(globalDecouplingTrace.route)
+    expect(globalDecouplingTrace).toBeDefined()
+    expect(getPcbTraceRouteGeometry(globalDecouplingTrace)).toEqual(
+      getPcbTraceRouteGeometry(pcbDecouplingTrace),
+    )
   }
   expect(
     new Set(globalPhaseInputTraces.map((trace) => trace.pcb_trace_id)).size,
