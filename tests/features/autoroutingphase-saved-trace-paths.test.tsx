@@ -1,11 +1,12 @@
-import { getPcbTraceRouteGeometry } from "tests/fixtures/get-pcb-trace-route-geometry"
 import { expect, test } from "bun:test"
 import type { FanoutTracePath } from "lib/index"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
+import { createAutoroutingPhaseIoStack } from "tests/fixtures/create-autorouting-phase-io-stack"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("autoroutingphase preserves complete saved routes before later routing", async () => {
+test("autoroutingphase passes complete saved routes to later routing", async () => {
   const { circuit } = getTestFixture()
+  const phaseIo = createAutoroutingPhaseIoStack(circuit)
   const paths: FanoutTracePath[] = [
     {
       connection: "U1.SAVED_START",
@@ -31,7 +32,7 @@ test("autoroutingphase preserves complete saved routes before later routing", as
   const autorouters: string[] = []
   circuit.on("autorouting:start", (event) => {
     autorouters.push(event.autorouterName!)
-    phaseInputs.push(event.simpleRouteJson)
+    phaseInputs.push(structuredClone(event.simpleRouteJson))
   })
   circuit.add(
     <board width={18} height={14}>
@@ -83,9 +84,9 @@ test("autoroutingphase preserves complete saved routes before later routing", as
   expect(circuit.db.pcb_trace_error.list()).toEqual([])
   expect(autorouters[0]).toBe("precomputed")
   expect(autorouters).toHaveLength(2)
-  const saved = circuit.db.pcb_trace
-    .list()
-    .find((trace) => trace.pcb_trace_id.startsWith("saved_phase_"))!
+  const saved = phaseIo[0]!.endSimpleRouteJson!.traces!.find((trace) =>
+    trace.pcb_trace_id.startsWith("saved_phase_"),
+  )!
   expect(saved.route).toMatchObject([
     { route_type: "wire", x: -4, y: 0, width: 0.2, layer: "top" },
     ...paths[0]!.route.slice(1, 2),
@@ -107,9 +108,7 @@ test("autoroutingphase preserves complete saved routes before later routing", as
     (trace) => trace.pcb_trace_id === saved.pcb_trace_id,
   )
   expect(downstreamSavedTrace).toBeDefined()
-  expect(getPcbTraceRouteGeometry(downstreamSavedTrace!)).toEqual(
-    getPcbTraceRouteGeometry(saved),
-  )
+  expect(downstreamSavedTrace).toEqual(saved)
   expect(
     downstreamInput.obstacles.filter((obstacle) =>
       obstacle.connectedTo.includes(saved.pcb_trace_id),

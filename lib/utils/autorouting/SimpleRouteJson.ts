@@ -7,8 +7,6 @@ import type { CircuitJsonMetadata, Obstacle } from "../obstacles/types"
 
 export type { CircuitJsonMetadata, Obstacle } from "../obstacles/types"
 
-export type PcbTraceId = AutorouterSimplifiedPcbTrace["pcb_trace_id"]
-
 export type PcbGroupId = PcbGroup["pcb_group_id"]
 export type SimpleRouteBounds = {
   minX: number

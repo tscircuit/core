@@ -24,12 +24,7 @@ import type {
   GenericLocalAutorouter,
 } from "./GenericLocalAutorouter"
 import { getCacheProviderForLocalCacheEngine } from "./LocalCacheEngineCacheProvider"
-import { preserveFixedSimplificationTraces } from "./preserve-fixed-simplification-traces"
-import type {
-  PcbTraceId,
-  SimpleRouteJson,
-  SimplifiedPcbTrace,
-} from "./SimpleRouteJson"
+import type { SimpleRouteJson, SimplifiedPcbTrace } from "./SimpleRouteJson"
 import type { AutorouterVersion } from "./autorouter-version"
 
 export interface SolverStartedDetails {
@@ -46,7 +41,6 @@ export interface SolverStartedDetails {
 }
 
 export interface AutorouterOptions {
-  fixedPcbTraceIds?: ReadonlySet<PcbTraceId>
   capacityDepth?: number
   targetMinCapacity?: number
   stepDelay?: number
@@ -206,13 +200,6 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
             effort: 1,
           })
         : new SOLVERS[solverName](input as any, solverOptions)
-
-    if (this.solver instanceof AutoroutingPipelineSolver11_Simplification) {
-      preserveFixedSimplificationTraces(
-        this.solver,
-        options.fixedPcbTraceIds ?? new Set(),
-      )
-    }
 
     onSolverStarted?.({
       solverName,

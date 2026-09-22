@@ -1,4 +1,3 @@
-import { getPcbTraceRouteGeometry } from "tests/fixtures/get-pcb-trace-route-geometry"
 import { expect } from "bun:test"
 import type { ChipProps } from "@tscircuit/props"
 import { orderedRenderPhases } from "lib/components/base-components/Renderable"
@@ -3567,7 +3566,7 @@ export const renderAm62lLpddr4Fanout = async ({
   }
   const globalPhaseInput = autoroutingPhaseIoStack[2]!.startSimpleRouteJson!
   const globalPhaseInputTraces = globalPhaseInput.traces ?? []
-  const fixedDecouplingTraceNames = [
+  const manualDecouplingTraceNames = [
     ...decouplingPlaneDrops.map((drop) => drop.traceName),
     ...(includeDirectDecouplingNetworkInInitialRender
       ? renderedDirectDecouplingCapacitors.flatMap((capacitor) => [
@@ -3576,23 +3575,24 @@ export const renderAm62lLpddr4Fanout = async ({
         ])
       : []),
   ]
-  // Preserve hand-authored decoupling copper as exact traces between phases.
+  // Carry the prior phase output forward as exact traces, including manual copper.
   expect(globalPhaseInputTraces).toHaveLength(
     signalConnections.length * 2 +
       planeDrops.length +
-      fixedDecouplingTraceNames.length,
+      manualDecouplingTraceNames.length,
   )
-  for (const name of fixedDecouplingTraceNames) {
+  for (const name of manualDecouplingTraceNames) {
     const sourceTrace = circuit.db.source_trace.getWhere({ name })!
     const globalDecouplingTrace = globalPhaseInputTraces.find(
       (trace) => trace.connection_name === sourceTrace.source_trace_id,
     )!
-    const pcbDecouplingTrace = circuit.db.pcb_trace.getWhere({
-      source_trace_id: sourceTrace.source_trace_id,
-    })!
+    const previousPhaseDecouplingTrace =
+      autoroutingPhaseIoStack[1]!.endSimpleRouteJson!.traces!.find(
+        (trace) => trace.connection_name === sourceTrace.source_trace_id,
+      )!
     expect(globalDecouplingTrace).toBeDefined()
-    expect(getPcbTraceRouteGeometry(globalDecouplingTrace)).toEqual(
-      getPcbTraceRouteGeometry(pcbDecouplingTrace),
+    expect(globalDecouplingTrace.route).toEqual(
+      previousPhaseDecouplingTrace.route,
     )
   }
   expect(
