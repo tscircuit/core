@@ -4,6 +4,7 @@ import type { Board } from "./Board"
 export const Board_doInitialPcbCopperPourCleanup = (board: Board) => {
   if (!board.root || board.root.pcbDisabled) return
   const { db } = board.root
+  if (db.pcb_copper_pour.list().length === 0) return
   const circuitJson = db
     .subtree({ subcircuit_id: board.subcircuit_id })
     .toArray()

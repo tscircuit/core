@@ -18,6 +18,7 @@ const circuit: RootCircuit = new Circuit({
   },
 })
 const phases: Record<string, number> = {}
+const phaseVisits: Record<string, number> = {}
 let activePhase: string | undefined
 let phaseStarted = 0
 const finishPhase = () => {
@@ -28,6 +29,7 @@ const finishPhase = () => {
 // Board-level events avoid millions of per-component lifecycle callbacks.
 circuit.on("board:renderPhaseStarted", ({ phase }) => {
   finishPhase()
+  phaseVisits[phase] = (phaseVisits[phase] ?? 0) + 1
   activePhase = phase
   phaseStarted = performance.now()
 })
@@ -42,6 +44,11 @@ await circuit.renderUntilSettled()
 finishPhase()
 const renderMs = performance.now() - started
 const json = circuit.getCircuitJson()
+const normalizedJson = json.map((record) => {
+  if (record.type !== "source_project_metadata") return record
+  const { software_used_string, ...rest } = record
+  return rest
+})
 const counts: Record<string, number> = {}
 for (const record of json) counts[record.type] = (counts[record.type] ?? 0) + 1
 console.log(
@@ -53,7 +60,11 @@ console.log(
       records: json.length,
       counts,
       phases,
+      phaseVisits,
       sha256: createHash("sha256").update(JSON.stringify(json)).digest("hex"),
+      normalizedSha256: createHash("sha256")
+        .update(JSON.stringify(normalizedJson))
+        .digest("hex"),
     },
     null,
     2,

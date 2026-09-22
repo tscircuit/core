@@ -1,3 +1,4 @@
+import { getConstructionPropsSchema } from "./get-construction-props-schema"
 import {
   selectNetByLiteralSelector,
   type NetSelector,
@@ -210,12 +211,7 @@ export abstract class PrimitiveComponent<
     this.childrenPendingRemoval = []
     this.props = props ?? {}
     this.externallyAddedAliases = []
-    const zodProps =
-      "partial" in this.config.zodProps
-        ? (this.config.zodProps as z.ZodObject<any, any, any>).partial({
-            name: true,
-          })
-        : this.config.zodProps
+    const zodProps = getConstructionPropsSchema(this.config.zodProps)
     const parsePropsResult = zodProps.safeParse(props ?? {})
     if (parsePropsResult.success) {
       this._parsedProps = parsePropsResult.data as z.infer<ZodProps>
