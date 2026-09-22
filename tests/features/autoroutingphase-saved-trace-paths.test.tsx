@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test"
 import type { FanoutTracePath } from "lib/index"
+import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("autoroutingphase preserves complete saved routes before later routing", async () => {
@@ -25,10 +26,12 @@ test("autoroutingphase preserves complete saved routes before later routing", as
     },
   ]
   const original = JSON.stringify(paths)
+  const phaseInputs: SimpleRouteJson[] = []
   const autorouters: string[] = []
-  circuit.on("autorouting:start", (event) =>
-    autorouters.push(event.autorouterName!),
-  )
+  circuit.on("autorouting:start", (event) => {
+    autorouters.push(event.autorouterName!)
+    phaseInputs.push(event.simpleRouteJson)
+  })
   circuit.add(
     <board width={18} height={14}>
       <pcbnotetext
@@ -98,6 +101,16 @@ test("autoroutingphase preserves complete saved routes before later routing", as
     { route_type: "wire", x: 0, y: 2, layer: "bottom", width: 0.2 },
     ...paths[0]!.route.slice(3),
   ])
+  const downstreamInput = phaseInputs[1]!
+  const downstreamSavedTrace = downstreamInput.traces?.find(
+    (trace) => trace.pcb_trace_id === saved.pcb_trace_id,
+  )
+  expect(saved.route).toMatchObject(downstreamSavedTrace!.route)
+  expect(
+    downstreamInput.obstacles.filter((obstacle) =>
+      obstacle.connectedTo.includes(saved.pcb_trace_id),
+    ),
+  ).toEqual([])
   expect(JSON.stringify(paths)).toBe(original)
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
