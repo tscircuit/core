@@ -37,7 +37,7 @@ test("group schematic box ports", () => {
   const r1SchematicComponent = circuit.db.schematic_component.getWhere({
     source_component_id: r1SourceComponent?.source_component_id,
   })
-  expect(r1SchematicComponent).toBeUndefined()
+  expect(r1SchematicComponent).toBeNull()
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })

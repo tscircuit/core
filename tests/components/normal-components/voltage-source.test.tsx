@@ -86,12 +86,12 @@ test("<voltagesource /> sine and square wave", async () => {
   const pcbComponent1 = circuit.db.pcb_component.getWhere({
     source_component_id: sourceComponent1.source_component_id,
   })
-  expect(pcbComponent1).toBeUndefined()
+  expect(pcbComponent1).toBeNull()
 
   const pcbComponent2 = circuit.db.pcb_component.getWhere({
     source_component_id: sourceComponent2.source_component_id,
   })
-  expect(pcbComponent2).toBeUndefined()
+  expect(pcbComponent2).toBeNull()
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
