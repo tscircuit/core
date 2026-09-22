@@ -4018,7 +4018,7 @@
     ],
     "is_filled": true,
     "is_dashed": false,
-    "fill_color": "rgba(132, 0, 0)",
+    "fill_color": "rgb(132, 0, 0)",
     "stroke_width": 0.02,
     "subcircuit_id": "subcircuit_source_group_0"
   },
@@ -4111,7 +4111,7 @@
     ],
     "is_filled": true,
     "is_dashed": false,
-    "fill_color": "rgba(132, 0, 0)",
+    "fill_color": "rgb(132, 0, 0)",
     "stroke_width": 0.02,
     "subcircuit_id": "subcircuit_source_group_0"
   },
@@ -4143,7 +4143,7 @@
     ],
     "is_filled": true,
     "is_dashed": false,
-    "fill_color": "rgba(132, 0, 0)",
+    "fill_color": "rgb(132, 0, 0)",
     "stroke_width": 0.02,
     "subcircuit_id": "subcircuit_source_group_0"
   },
@@ -4157,9 +4157,9 @@
     },
     "radius": 0.06071428571428573,
     "stroke_width": 0.02,
-    "color": "rgba(132, 0, 0)",
+    "color": "rgb(132, 0, 0)",
     "is_filled": true,
-    "fill_color": "rgba(132, 0, 0)",
+    "fill_color": "rgb(132, 0, 0)",
     "is_dashed": false,
     "subcircuit_id": "subcircuit_source_group_0"
   },
@@ -4173,9 +4173,9 @@
     },
     "radius": 0.034693877551020415,
     "stroke_width": 0.02,
-    "color": "rgba(132, 0, 0)",
+    "color": "rgb(132, 0, 0)",
     "is_filled": true,
-    "fill_color": "rgba(132, 0, 0)",
+    "fill_color": "rgb(132, 0, 0)",
     "is_dashed": false,
     "subcircuit_id": "subcircuit_source_group_0"
   },
