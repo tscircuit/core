@@ -110,3 +110,5 @@ export { AnalogAcSweepSimulation } from "./primitive-components/AnalogAcSweepSim
 export { AnalogSweepParameter } from "./primitive-components/AnalogSweepParameter"
 export { VoltageProbe } from "./primitive-components/VoltageProbe"
 export { SpiceModel } from "./primitive-components/SpiceModel"
+export { PcbBend } from "./primitive-components/PcbBend"
+export { PcbStiffener } from "./primitive-components/PcbStiffener"
