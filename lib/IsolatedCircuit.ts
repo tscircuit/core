@@ -1,3 +1,4 @@
+import { transformCircuitJsonCadComponents } from "@tscircuit/flex-utils"
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import { createCircuitJsonDatabase } from "./utils/circuit-json/create-circuit-json-database"
 import type { PlatformConfig } from "@tscircuit/props"
@@ -256,9 +257,14 @@ export class IsolatedCircuit {
     return Array.from(this._runningAsyncEffectsById.values())
   }
 
-  getCircuitJson(): AnyCircuitElement[] {
+  /** Optionally export assembled CAD poses. The database and all PCB records
+   * stay flat, so routing and later renders are independent of presentation. */
+  getCircuitJson(options?: { foldPcbs?: boolean }): AnyCircuitElement[] {
     if (!this._hasRenderedAtleastOnce) this.render()
-    return this.db.toArray()
+    const json = this.db.toArray()
+    return options?.foldPcbs === undefined
+      ? json
+      : transformCircuitJsonCadComponents(json, { foldPcbs: options.foldPcbs })
   }
 
   toJson(): AnyCircuitElement[] {
