@@ -81,6 +81,8 @@ export default () => (
     automaticPoursEnabled
     enableViaStitching
     autorouterVersion="beta_pipeline9"
+    // Routing around exact preloaded RF copper needs a larger search budget.
+    autorouterEffortLevel="2x"
     schLayout={{ layoutMode: "relative" }}
     autorouter={{
       preset: "auto_local",

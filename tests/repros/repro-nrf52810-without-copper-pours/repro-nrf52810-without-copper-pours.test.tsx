@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test"
 import { BooleanOperations, Box, point, Polygon } from "@flatten-js/core"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { getFullConnectivityMapFromCircuitJson } from "circuit-json-to-connectivity-map"
 import Nrf52810Circuit from "./nrf52810-circuit"
 
 // Reproduces https://tscircuit.com/seveibar/nrf52810#files without explicit
@@ -20,19 +21,59 @@ test(
     const implicitPours = circuit.db.pcb_copper_pour.list()
     expect(implicitPours.length).toBeGreaterThan(0)
     expect(implicitPours.every((pour) => pour.shape === "brep")).toBe(true)
-    // The triangular GND remnant beneath U1 has no terminal connection.
-    // Check its physical location rather than an insertion-order-dependent ID.
-    const floatingIslandCenter = point(3.7, -0.3)
-    expect(
-      implicitPours.some((pour) => {
-        if (pour.layer !== "top" || pour.shape !== "brep") return false
-        return new Polygon(
-          [pour.brep_shape.outer_ring, ...pour.brep_shape.inner_rings].map(
-            (ring) => ring.vertices.map((vertex) => point(vertex.x, vertex.y)),
+    // The old triangular island beneath U1 may become part of connected
+    // ground copper when routing changes. Follow touching pour polygons and
+    // require a physical connection to a same-net via, rather than forbidding
+    // all copper at this location.
+    const connMap = getFullConnectivityMapFromCircuitJson(
+      circuit.getCircuitJson(),
+    )
+    const topPourPolygons = implicitPours.flatMap((pour) => {
+      if (pour.layer !== "top" || pour.shape !== "brep") return []
+      return [
+        {
+          pour,
+          polygon: new Polygon(
+            [pour.brep_shape.outer_ring, ...pour.brep_shape.inner_rings].map(
+              (ring) =>
+                ring.vertices.map((vertex) => point(vertex.x, vertex.y)),
+            ),
           ),
-        ).contains(floatingIslandCenter)
-      }),
-    ).toBe(false)
+        },
+      ]
+    })
+    for (const candidate of topPourPolygons.filter(({ polygon }) =>
+      polygon.contains(point(3.7, -0.3)),
+    )) {
+      const connectedPours = new Set([candidate])
+      for (const current of connectedPours) {
+        for (const other of topPourPolygons) {
+          if (
+            other.pour.source_net_id === candidate.pour.source_net_id &&
+            current.polygon.distanceTo(other.polygon)[0] < 1e-6
+          )
+            connectedPours.add(other)
+        }
+      }
+      expect(
+        circuit.db.pcb_via
+          .list()
+          .some(
+            (via) =>
+              via.layers.includes("top") &&
+              connMap.areIdsConnected(
+                via.pcb_via_id,
+                candidate.pour.source_net_id,
+              ) &&
+              [...connectedPours].some(
+                ({ polygon }) =>
+                  polygon.contains(point(via.x, via.y)) ||
+                  polygon.distanceTo(point(via.x, via.y))[0] <=
+                    via.outer_diameter / 2,
+              ),
+          ),
+      ).toBe(true)
+    }
 
     const rfKeepout = circuit.db.pcb_keepout
       .list()

@@ -1,5 +1,5 @@
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
-import type { LayerRef, PcbTrace } from "circuit-json"
+import type { LayerRef, PcbTrace, PcbPort } from "circuit-json"
 import type { SimplifiedPcbTrace } from "./SimpleRouteJson"
 
 type PreservedTrace = PcbTrace & {
@@ -21,7 +21,10 @@ const getLayerName = (layer: LayerRef | { name: string }): string =>
 const getPreservedTraceConnectionName = (trace: PreservedTrace) =>
   trace.source_trace_id ?? trace.connection_name ?? trace.pcb_trace_id
 
-const getPhysicalConnectionIdsForPreservedTrace = (trace: PreservedTrace) => {
+const getPhysicalConnectionIdsForPreservedTrace = (
+  trace: PreservedTrace,
+  pcbPorts: PcbPort[],
+) => {
   const physicallyConnectedIds = new Set(trace.connectsTo ?? [])
   for (const routePoint of trace.route) {
     if (routePoint.route_type !== "wire") continue
@@ -33,6 +36,25 @@ const getPhysicalConnectionIdsForPreservedTrace = (trace: PreservedTrace) => {
     }
   }
 
+  // Generated footprint copper can omit endpoint IDs (for example, an
+  // antenna feed at an interior vertex). Recover only coincident contacts
+  // on this component and layer, not every port on its electrical net.
+  if (trace.pcb_component_id && !trace.source_trace_id) {
+    for (const port of pcbPorts) {
+      if (port.pcb_component_id !== trace.pcb_component_id) continue
+      if (
+        trace.route.some(
+          (point) =>
+            point.route_type === "wire" &&
+            port.layers.includes(point.layer) &&
+            Math.abs(point.x - port.x) < 1e-6 &&
+            Math.abs(point.y - port.y) < 1e-6,
+        )
+      ) {
+        physicallyConnectedIds.add(port.pcb_port_id)
+      }
+    }
+  }
   return Array.from(physicallyConnectedIds)
 }
 
@@ -125,7 +147,10 @@ export const getPreservedRoutedSubcircuitTraces = ({
         pcb_trace_id: trace.pcb_trace_id,
         source_trace_id: trace.source_trace_id,
         connection_name: connectionName,
-        connectsTo: getPhysicalConnectionIdsForPreservedTrace(preservedTrace),
+        connectsTo: getPhysicalConnectionIdsForPreservedTrace(
+          preservedTrace,
+          scopedDb.pcb_port.list(),
+        ),
         route:
           preserveFootprintTraces && !trace.source_trace_id
             ? getFootprintTraceRoute(preservedTrace)

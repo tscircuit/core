@@ -1,14 +1,22 @@
 import { expect, test } from "bun:test"
 import type { PcbTrace } from "circuit-json"
+import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("generated antenna keepout spans every copper layer without blocking its feed", async () => {
   const { circuit } = getTestFixture()
   let antennaCopperBeforeRouting: PcbTrace | undefined
-  circuit.on("autorouting:start", () => {
+  let preservedAntennaConnections: string[] | undefined
+  circuit.on("autorouting:start", ({ simpleRouteJson }) => {
     antennaCopperBeforeRouting = structuredClone(
       circuit.db.pcb_trace.list().find((trace) => trace.pcb_component_id),
     )
+    preservedAntennaConnections = (
+      simpleRouteJson as SimpleRouteJson
+    ).traces?.find(
+      (trace) =>
+        trace.pcb_trace_id === antennaCopperBeforeRouting?.pcb_trace_id,
+    )?.connectsTo
   })
 
   circuit.add(
@@ -32,6 +40,14 @@ test("generated antenna keepout spans every copper layer without blocking its fe
   const antennaPcbComponent = circuit.db.pcb_component.getWhere({
     source_component_id: antennaSourceComponent.source_component_id,
   })!
+  const antennaPorts = circuit.db.pcb_port
+    .list()
+    .filter(
+      (port) => port.pcb_component_id === antennaPcbComponent.pcb_component_id,
+    )
+  expect(preservedAntennaConnections?.toSorted()).toEqual(
+    antennaPorts.map((port) => port.pcb_port_id).toSorted(),
+  )
   const keepouts = circuit.db.pcb_keepout.list()
   expect(keepouts).toHaveLength(3)
   expect(
