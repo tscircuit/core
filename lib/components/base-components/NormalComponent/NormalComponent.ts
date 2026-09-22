@@ -898,6 +898,20 @@ export class NormalComponent<
     const { _parsedProps: props } = this
     this.schematicBoxDimensions = dimensions
 
+    for (const [propertyName, value] of [
+      ["schWidth", props.schWidth],
+      ["schHeight", props.schHeight],
+    ] as const) {
+      if (typeof value === "number" && value <= 0) {
+        db.source_invalid_component_property_error.insert({
+          source_component_id: this.source_component_id || "",
+          property_name: propertyName,
+          message: `Invalid ${propertyName} for ${this.getString()}: ${value}, which must be greater than zero.`,
+          error_type: "source_invalid_component_property_error",
+        })
+      }
+    }
+
     const primaryPortLabels: Record<string, string> = {}
     if (Array.isArray(props.pinLabels)) {
       props.pinLabels.forEach((label: string, index: number) => {
