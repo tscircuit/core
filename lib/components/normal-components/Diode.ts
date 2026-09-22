@@ -21,15 +21,26 @@ export class Diode extends NormalComponent<
       photodiode: "photodiode",
     }
 
-    const variantSymbol = this.props.schottky
-      ? "schottky"
-      : this.props.avalanche
-        ? "avalanche"
-        : this.props.zener
-          ? "zener"
-          : this.props.photo
-            ? "photodiode"
-            : null
+    // NOTE: config is read before _parsedProps is populated, so the
+    // normalized `variant` -> boolean mapping isn't available here. Check
+    // both the raw `variant` enum and the boolean spellings.
+    const props = this.props as {
+      variant?: string
+      schottky?: boolean
+      avalanche?: boolean
+      zener?: boolean
+      photo?: boolean
+    }
+    const variantSymbol =
+      props.schottky || props.variant === "schottky"
+        ? "schottky"
+        : props.avalanche || props.variant === "avalanche"
+          ? "avalanche"
+          : props.zener || props.variant === "zener"
+            ? "zener"
+            : props.photo || props.variant === "photo"
+              ? "photodiode"
+              : null
 
     return {
       schematicSymbolName: variantSymbol
