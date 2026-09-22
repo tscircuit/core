@@ -45,11 +45,13 @@ test(
     for (const candidate of topPourPolygons.filter(({ polygon }) =>
       polygon.contains(point(3.7, -0.3)),
     )) {
+      const sourceNetId = candidate.pour.source_net_id
+      if (!sourceNetId) throw new Error("Expected an implicit pour net")
       const connectedPours = new Set([candidate])
       for (const current of connectedPours) {
         for (const other of topPourPolygons) {
           if (
-            other.pour.source_net_id === candidate.pour.source_net_id &&
+            other.pour.source_net_id === sourceNetId &&
             current.polygon.distanceTo(other.polygon)[0] < 1e-6
           )
             connectedPours.add(other)
@@ -61,10 +63,7 @@ test(
           .some(
             (via) =>
               via.layers.includes("top") &&
-              connMap.areIdsConnected(
-                via.pcb_via_id,
-                candidate.pour.source_net_id,
-              ) &&
+              connMap.areIdsConnected(via.pcb_via_id, sourceNetId) &&
               [...connectedPours].some(
                 ({ polygon }) =>
                   polygon.contains(point(via.x, via.y)) ||
