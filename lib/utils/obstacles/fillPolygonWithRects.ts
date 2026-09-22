@@ -30,8 +30,14 @@ export function fillPolygonWithRects(
   const minY = Math.min(...yCoords)
   const maxY = Math.max(...yCoords)
 
-  for (let y = minY; y < maxY; y += rectHeight) {
-    const scanlineY = y + rectHeight / 2
+  // Cap the sampling band to the polygon's vertical extent so shapes
+  // shorter than the requested band still produce a rect whose first
+  // scanline lands inside the shape.
+  const effectiveRectHeight = Math.min(rectHeight, maxY - minY)
+  if (effectiveRectHeight <= 0) return rects
+
+  for (let y = minY; y < maxY; y += effectiveRectHeight) {
+    const scanlineY = y + effectiveRectHeight / 2
     const intersections: number[] = []
 
     for (let i = 0; i < polygon.length; i++) {
@@ -64,7 +70,7 @@ export function fillPolygonWithRects(
               y: scanlineY,
             },
             width,
-            height: rectHeight,
+            height: effectiveRectHeight,
           })
         }
       }
