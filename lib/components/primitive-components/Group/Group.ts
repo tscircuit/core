@@ -1075,7 +1075,13 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           }
         : resolvedPhaseAutorouterConfig
       const stages = getLocalAutoroutingStages(
-        phaseAutorouterConfig,
+        routingPhasePlan.algorithmFn
+          ? {
+              ...phaseAutorouterConfig,
+              // The phase callback overrides inherited or preset callbacks.
+              algorithmFn: routingPhasePlan.algorithmFn,
+            }
+          : phaseAutorouterConfig,
         this.root?.platform,
       )
       return stages.map((stage, phaseStageIndex) => ({
