@@ -40,6 +40,7 @@ export interface RoutingPhasePlan {
   /** The single breakout/fanout boundary; breakout points may expand it. */
   fanoutBounds?: SimpleRouteBounds
   autorouter?: AutorouterProp
+  algorithmFn?: AutoroutingPhaseProps["algorithmFn"]
   reroute?: boolean
   region?: AutoroutingPhaseProps["region"]
   connectionSelectors?: string[]
