@@ -33,7 +33,7 @@ test("group schematic box", () => {
         "schematic_group_id": "schematic_group_0",
         "show_as_schematic_box": true,
         "source_group_id": "source_group_0",
-        "subcircuit_id": null,
+        "subcircuit_id": undefined,
         "type": "schematic_group",
         "width": 0.4,
       },
