@@ -290,7 +290,7 @@ export class Trace
       db.source_trace_not_connected_error.insert({
         error_type: "source_trace_not_connected_error",
         message: `${this.getString()} connects the same port on both ends ("${ports[0]!.selector}"). A trace must connect two different ports.`,
-        subcircuit_id: this.getSubcircuit()?.subcircuit_id,
+        subcircuit_id: this.getSubcircuit()?.subcircuit_id ?? undefined,
         selectors_not_found: [],
       })
       return
