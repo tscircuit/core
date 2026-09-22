@@ -1,0 +1,64 @@
+{
+  "core": {
+    "pre-4090": {
+      "renderMs": [16127.421167000002, 16739.57725, 11807.710666],
+      "medianRenderMs": 16127.421167000002,
+      "medianCreateNetsMs": 8814.062042,
+      "medianSourceTraceMs": 101.60445800000161,
+      "records": 32558,
+      "sha256": "0b4ec5c610241f48bbcf9cfef01a02c737fc98fe9f59c8953e03f3b40fce510d"
+    },
+    "released": {
+      "renderMs": [13295.534709000001, 13962.105625, 14233.107542],
+      "medianRenderMs": 13962.105625,
+      "medianCreateNetsMs": 63.008458000000246,
+      "medianSourceTraceMs": 7590.406792000002,
+      "records": 32558,
+      "sha256": "0b4ec5c610241f48bbcf9cfef01a02c737fc98fe9f59c8953e03f3b40fce510d"
+    },
+    "candidate": {
+      "renderMs": [6922.407209, 7304.589583000001, 6517.723],
+      "medianRenderMs": 6922.407209,
+      "medianCreateNetsMs": 72.20812500000011,
+      "medianSourceTraceMs": 180.16749999999956,
+      "records": 32558,
+      "sha256": "0b4ec5c610241f48bbcf9cfef01a02c737fc98fe9f59c8953e03f3b40fce510d"
+    }
+  },
+  "am62a": {
+    "released": {
+      "evaluationMs": [28376.290875, 29318.851041, 23804.917957999998],
+      "medianEvaluationMs": 28376.290875,
+      "medianCoreRenderMs": 25765.130625,
+      "records": 66347,
+      "sha256IgnoringVersionMetadata": "9a4b83e0822273db772454fbd26e0702b3fb85dbdef7e56706f3cefa6ec6cabb"
+    },
+    "candidate": {
+      "evaluationMs": [12017.210833, 13625.28275, 11980.924709],
+      "medianEvaluationMs": 12017.210833,
+      "medianCoreRenderMs": 9966.986792,
+      "records": 66347,
+      "sha256IgnoringVersionMetadata": "9a4b83e0822273db772454fbd26e0702b3fb85dbdef7e56706f3cefa6ec6cabb"
+    }
+  },
+  "environment": {
+    "coreBase": "2beb76f (0.0.1964)",
+    "coreBenchmarkRuntime": "Bun 1.3.2 on macOS arm64",
+    "am62aRuntime": "Node 26.4.0",
+    "samplesPerDeclaredVariant": 3,
+    "processes": "fresh, sequential, no result cache",
+    "pre4090Control": "same released bundle with createNetsFromProps restored to selectOne"
+  },
+  "implicitSanityCheck": {
+    "released": {
+      "renderMs": 14885.605917,
+      "records": 32558,
+      "sha256": "0b4ec5c610241f48bbcf9cfef01a02c737fc98fe9f59c8953e03f3b40fce510d"
+    },
+    "candidate": {
+      "renderMs": 12097.207375,
+      "records": 32558,
+      "sha256": "0b4ec5c610241f48bbcf9cfef01a02c737fc98fe9f59c8953e03f3b40fce510d"
+    }
+  }
+}
