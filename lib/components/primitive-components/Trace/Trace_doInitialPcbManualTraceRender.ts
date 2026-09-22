@@ -338,7 +338,13 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
   }
   const otherPort = ports.find((p) => p !== anchorPort) ?? ports[1]
 
-  const layer = anchorPort.getAvailablePcbLayers()[0] || "top"
+  // The manual path must run on a layer both endpoints can reach, otherwise a
+  // PTH-to-via-bottom path would silently emit on top copper.
+  const anchorLayers = anchorPort.getAvailablePcbLayers()
+  const otherLayers = otherPort?.getAvailablePcbLayers() ?? []
+  const layer =
+    (anchorLayers.find((l) => otherLayers.includes(l)) ?? anchorLayers[0]) ||
+    "top"
   let currentLayer = layer as LayerRef
 
   const anchorPos = anchorPort._getGlobalPcbPositionAfterLayout()
