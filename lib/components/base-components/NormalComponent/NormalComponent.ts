@@ -38,6 +38,7 @@ import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
 import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromCircuitJson"
 import { filterPinLabels } from "lib/utils/filterPinLabels"
 import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
+import { formatDisplayOffset } from "lib/utils/format-display-offset"
 import {
   getPinNumberFromLabels,
   getPortFromHints,
@@ -2454,8 +2455,8 @@ export class NormalComponent<
       position_mode: "relative_to_group_anchor",
       positioned_relative_to_pcb_group_id: positionedRelativeToGroupId,
       positioned_relative_to_pcb_board_id: positionedRelativeToBoardId,
-      display_offset_x: resolvedPcbX as any,
-      display_offset_y: resolvedPcbY as any,
+      display_offset_x: formatDisplayOffset(resolvedPcbX),
+      display_offset_y: formatDisplayOffset(resolvedPcbY),
     })
   }
 
