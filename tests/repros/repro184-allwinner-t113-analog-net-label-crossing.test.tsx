@@ -195,16 +195,15 @@ test("repro184: Allwinner T113 analog net-label crossing", async () => {
       ),
     )!
 
-  // Measured from the published circuit: horizontal offsets in schematic mm
-  // (+X right, +Y up), relative to pin92. VRA1 first crosses the GND stem,
-  // then the LDOA1V8 trunk. Pin numbers and rail order must survive reduction.
-  // Update this assertion and snapshot when the routing issue is fixed.
+  // Horizontal offsets in schematic mm (+X right, +Y up), relative to pin92.
+  // The updated routing keeps the GND-stem crossing but removes the former
+  // LDOA1V8 crossing at -0.821 mm.
   const crossingOffsets = vra1Trace.edges
     .filter((edge) => edge.is_crossing)
     .map((edge) =>
       Number(((edge.from.x + edge.to.x) / 2 - vra1Port.center.x).toFixed(3)),
     )
-  expect(crossingOffsets).toEqual([-0.441, -0.821])
+  expect(crossingOffsets).toEqual([-0.441])
 
   await expect(circuit).toMatchSchematicSnapshot(import.meta.path, {
     width: 700,
