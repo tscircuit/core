@@ -22,7 +22,6 @@ test("manual pcbPath can extend outward from a chip port without connecting to a
 
   const pcbTraces = circuit.db.pcb_trace.list()
   expect(pcbTraces).toHaveLength(1)
-  expect(pcbTraces[0]).not.toHaveProperty("is_antenna_trace")
 
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

@@ -106,7 +106,7 @@ export class Antenna extends NormalComponent<
         )
       }
 
-      const antennaPcbTrace = new PcbTrace({
+      const antennaTrace = new PcbTrace({
         route: geometry.route.map((point) => ({
           route_type: "wire" as const,
           ...point,
@@ -114,8 +114,8 @@ export class Antenna extends NormalComponent<
           layer: "top" as const,
         })),
       })
-      antennaPcbTrace.isAntennaTrace = true
-      generatedFootprint.add(antennaPcbTrace)
+      antennaTrace.isAntennaTrace = true
+      generatedFootprint.add(antennaTrace)
 
       if (geometry.secondaryPort && !geometry.groundViaPoint && !hasFootprint) {
         generatedFootprint.add(
