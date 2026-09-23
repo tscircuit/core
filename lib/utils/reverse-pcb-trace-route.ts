@@ -1,3 +1,4 @@
+import { assertSupportedPcbTraceRoutePoint } from "lib/utils/assert-supported-pcb-trace-route-point"
 import type { PcbTrace } from "circuit-json"
 
 /**
@@ -15,6 +16,7 @@ export const reversePcbTraceRoute = (
     .slice()
     .reverse()
     .map((point) => {
+      assertSupportedPcbTraceRoutePoint(point)
       if (point.route_type !== "through_pad") return { ...point }
 
       return {

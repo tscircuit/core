@@ -1,3 +1,4 @@
+import { assertSupportedPcbTraceRoutePoint } from "lib/utils/assert-supported-pcb-trace-route-point"
 import type { Polygon } from "@flatten-js/core"
 import type {
   AnyCircuitElement,
@@ -44,6 +45,7 @@ const getRouteEndpoint = (
   routePoint: PcbTraceRoutePoint,
   side: "start" | "end",
 ) => {
+  assertSupportedPcbTraceRoutePoint(routePoint)
   if (routePoint.route_type === "wire")
     return { point: routePoint, layer: routePoint.layer }
   if (routePoint.route_type === "via")
@@ -152,6 +154,7 @@ export const findFloatingCopper = (
       if (!netId || !pouredNets.has(netId)) continue
       for (let i = 0; i < element.route.length; i++) {
         const routePoint = element.route[i]!
+        assertSupportedPcbTraceRoutePoint(routePoint)
         if (routePoint.route_type === "via") {
           const actualVia = vias.find(
             (via) =>
@@ -185,6 +188,7 @@ export const findFloatingCopper = (
         }
         const next = element.route[i + 1]
         if (!next) continue
+        assertSupportedPcbTraceRoutePoint(next)
         const start = getRouteEndpoint(routePoint, "end")
         const end = getRouteEndpoint(next, "start")
         if (start.layer !== end.layer) continue
