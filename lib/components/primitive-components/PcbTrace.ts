@@ -15,6 +15,8 @@ export type PcbTraceProps = z.infer<typeof pcbTraceProps>
 
 export class PcbTrace extends PrimitiveComponent<typeof pcbTraceProps> {
   pcb_trace_id: string | null = null
+  // Marks radiating copper created by Antenna, never its feed connection.
+  isAntennaTrace = false
   isPcbPrimitive = true
 
   get config() {
@@ -77,6 +79,7 @@ export class PcbTrace extends PrimitiveComponent<typeof pcbTraceProps> {
       pcb_component_id: container.pcb_component_id!,
       source_trace_id: props.source_trace_id,
       route: transformedRoute,
+      is_antenna_trace: this.isAntennaTrace,
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
     })
