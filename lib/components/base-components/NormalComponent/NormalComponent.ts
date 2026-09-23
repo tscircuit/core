@@ -1,4 +1,4 @@
-import { insertBoardCadComponent } from "lib/utils/cad/insert-board-cad-component"
+import { resolveBoardCadPose } from "lib/utils/cad/resolve-board-cad-pose"
 import { fp } from "@tscircuit/footprinter"
 import { normalizeDegrees } from "@tscircuit/math-utils"
 import type {
@@ -1996,20 +1996,22 @@ export class NormalComponent<
     const isBottomLayer = computedLayer === "bottom"
 
     if (!cadModel && !footprintIsFootprinterString) {
-      const cad_component = insertBoardCadComponent(db, {
-        position: {
-          x: bounds.center.x,
-          y: bounds.center.y,
-          z:
-            computedLayer === "bottom"
-              ? -boardThickness / 2
-              : boardThickness / 2,
-        },
-        rotation: {
-          x: 0,
-          y: isBottomLayer ? 180 : 0,
-          z: normalizeDegrees(isBottomLayer ? -totalRotation : totalRotation),
-        },
+      const cad_component = db.cad_component.insert({
+        ...resolveBoardCadPose(this, {
+          position: {
+            x: bounds.center.x,
+            y: bounds.center.y,
+            z:
+              computedLayer === "bottom"
+                ? -boardThickness / 2
+                : boardThickness / 2,
+          },
+          rotation: {
+            x: 0,
+            y: isBottomLayer ? 180 : 0,
+            z: normalizeDegrees(isBottomLayer ? -totalRotation : totalRotation),
+          },
+        }),
         pcb_component_id: this.pcb_component_id,
         source_component_id: this.source_component_id!,
         model_origin_alignment: "center_of_component_on_board_surface",
@@ -2028,25 +2030,27 @@ export class NormalComponent<
       footprinterStringForCadComponent = footprintString
     }
 
-    const cad_model = insertBoardCadComponent(db, {
+    const cad_model = db.cad_component.insert({
       // TODO z maybe depends on layer
-      position: {
-        x: bounds.center.x + positionOffset.x,
-        y: bounds.center.y + positionOffset.y,
-        z:
-          (computedLayer === "bottom"
-            ? -boardThickness / 2
-            : boardThickness / 2) +
-          (computedLayer === "bottom"
-            ? -zOffsetFromSurface
-            : zOffsetFromSurface) +
-          positionOffset.z,
-      },
-      rotation: {
-        x: rotationOffset.x,
-        y: rotationOffset.y + (isBottomLayer ? 180 : 0),
-        z: normalizeDegrees(isBottomLayer ? -cadRotationZ : cadRotationZ),
-      },
+      ...resolveBoardCadPose(this, {
+        position: {
+          x: bounds.center.x + positionOffset.x,
+          y: bounds.center.y + positionOffset.y,
+          z:
+            (computedLayer === "bottom"
+              ? -boardThickness / 2
+              : boardThickness / 2) +
+            (computedLayer === "bottom"
+              ? -zOffsetFromSurface
+              : zOffsetFromSurface) +
+            positionOffset.z,
+        },
+        rotation: {
+          x: rotationOffset.x,
+          y: rotationOffset.y + (isBottomLayer ? 180 : 0),
+          z: normalizeDegrees(isBottomLayer ? -cadRotationZ : cadRotationZ),
+        },
+      }),
       pcb_component_id: this.pcb_component_id!,
       source_component_id: this.source_component_id!,
       model_stl_url:

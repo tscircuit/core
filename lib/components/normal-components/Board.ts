@@ -1,3 +1,4 @@
+import { createPcbFold, type PcbFold } from "@tscircuit/flex-utils"
 import {
   dedupePcbDrcErrors,
   consolidatePcbOverlapErrors,
@@ -111,6 +112,7 @@ export class Board
   extends Group<typeof boardProps>
   implements BoardI, SubcircuitI
 {
+  pcbFold: PcbFold | undefined
   pcb_board_id: string | null = null
   source_board_id: string | null = null
   _drcChecksComplete = false
@@ -129,6 +131,16 @@ export class Board
       this.add(castellatedHole)
       if (castellatedHole.trace) this.add(castellatedHole.trace)
     }
+  }
+
+  doInitialPcbFlexRender(): void {
+    if (!this.pcb_board_id) return
+    const bends = this.root!.db.pcb_bend.list().filter(
+      (bend) => bend.pcb_board_id === this.pcb_board_id,
+    )
+    this.pcbFold = bends.length
+      ? createPcbFold(bends, this.boardThickness)
+      : undefined
   }
 
   get isSubcircuit() {

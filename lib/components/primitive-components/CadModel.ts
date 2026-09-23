@@ -1,4 +1,4 @@
-import { insertBoardCadComponent } from "lib/utils/cad/insert-board-cad-component"
+import { resolveBoardCadPose } from "lib/utils/cad/resolve-board-cad-pose"
 import { normalizeDegrees } from "@tscircuit/math-utils"
 import { cadmodelProps, point3 } from "@tscircuit/props"
 import type { CadModelProps } from "@tscircuit/props"
@@ -118,24 +118,26 @@ export class CadModel extends PrimitiveComponent<typeof cadmodelProps> {
       if (transformed) urlProps.model_step_url = transformed
     }
 
-    const cad = insertBoardCadComponent(db, {
-      position: {
-        x: bounds.center.x + Number(positionOffset.x),
-        y: bounds.center.y + Number(positionOffset.y),
-        z:
-          (layer === "bottom" ? -boardThickness / 2 : boardThickness / 2) +
-          (layer === "bottom" ? -zOffsetFromSurface : zOffsetFromSurface) +
-          Number(positionOffset.z),
-      },
-      rotation: {
-        x: Number(rotationOffset.x),
-        y: (layer === "top" ? 0 : 180) + Number(rotationOffset.y),
-        z: normalizeDegrees(
-          layer === "bottom"
-            ? -(accumulatedRotation + Number(rotationOffset.z))
-            : accumulatedRotation + Number(rotationOffset.z),
-        ),
-      },
+    const cad = db.cad_component.insert({
+      ...resolveBoardCadPose(parent, {
+        position: {
+          x: bounds.center.x + Number(positionOffset.x),
+          y: bounds.center.y + Number(positionOffset.y),
+          z:
+            (layer === "bottom" ? -boardThickness / 2 : boardThickness / 2) +
+            (layer === "bottom" ? -zOffsetFromSurface : zOffsetFromSurface) +
+            Number(positionOffset.z),
+        },
+        rotation: {
+          x: Number(rotationOffset.x),
+          y: (layer === "top" ? 0 : 180) + Number(rotationOffset.y),
+          z: normalizeDegrees(
+            layer === "bottom"
+              ? -(accumulatedRotation + Number(rotationOffset.z))
+              : accumulatedRotation + Number(rotationOffset.z),
+          ),
+        },
+      }),
       pcb_component_id: parent.pcb_component_id,
       model_board_normal_direction: props.modelBoardNormalDirection,
       model_origin_alignment: "center_of_component_on_board_surface",
