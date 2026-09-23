@@ -77,6 +77,9 @@ test("antennaShape generates common 2.4 GHz PCB antenna geometries", async () =>
   await circuit.renderUntilSettled()
 
   expect(circuit.db.pcb_trace.list()).toHaveLength(5)
+  for (const antennaTrace of circuit.db.pcb_trace.list()) {
+    expect(antennaTrace).toHaveProperty("is_antenna_trace", true)
+  }
   expect(circuit.db.pcb_keepout.list()).toHaveLength(15)
   expect(circuit.db.pcb_via.list()).toHaveLength(0)
   expect(circuit.db.pcb_plated_hole.list()).toHaveLength(2)

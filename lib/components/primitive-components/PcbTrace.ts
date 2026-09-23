@@ -14,7 +14,7 @@ export type PcbTraceProps = z.infer<typeof pcbTraceProps>
 
 export class PcbTrace extends PrimitiveComponent<typeof pcbTraceProps> {
   pcb_trace_id: string | null = null
-  // Only antenna radiating copper may intentionally have open ends.
+  // Marks radiating copper created by Antenna, never its feed connection.
   isAntennaTrace = false
   isPcbPrimitive = true
 
