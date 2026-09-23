@@ -42,6 +42,7 @@ test.failing(
     await circuit.renderUntilSettled()
 
     expect(circuit).toMatchPcbSnapshot(import.meta.path, {
+      shouldDrawErrors: true,
       shouldDrawRatsNest: true,
       showCourtyards: true,
     })
@@ -67,6 +68,13 @@ test.failing(
           pad.height / 2 + rotatedOuterHeight / 2,
     )
 
-    expect(hasCopperOverlap).toBe(false)
+    expect({
+      hasCopperOverlap,
+      footprintOverlapErrorCount:
+        circuit.db.pcb_footprint_overlap_error.list().length,
+    }).toEqual({
+      hasCopperOverlap: false,
+      footprintOverlapErrorCount: 0,
+    })
   },
 )
