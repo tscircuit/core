@@ -1,3 +1,4 @@
+import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import {
   type InputComponent,
   type InputObstacle,
@@ -8,11 +9,16 @@ import {
   convertPackOutputToPackInput,
   getGraphicsFromPackOutput,
 } from "calculate-packing"
-import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
-import { type LayerRef, type PcbComponent, length } from "circuit-json"
+import {
+  type LayerRef,
+  type PcbComponent,
+  type PcbPlatedHole,
+  length,
+} from "circuit-json"
 import Debug from "debug"
 import type { NormalComponent } from "lib/components/base-components/NormalComponent"
 import { solvePackSolverWithTimeout } from "lib/utils/packing/solvePackSolverWithTimeout"
+import { applyToPoint, rotateDEG } from "transformation-matrix"
 import type { Group } from "../Group"
 import { applyComponentConstraintClusters } from "./applyComponentConstraintClusters"
 import { applyPackOutput } from "./applyPackOutput"
@@ -68,6 +74,37 @@ const getCollisionObstacleForStaticComponent = (
   }
 }
 
+const getCrossLayerPadObstacleSize = (
+  pad: InputComponent["pads"][number],
+  platedHole: PcbPlatedHole | undefined,
+): { width: number; height: number } => {
+  if (
+    !platedHole ||
+    (platedHole.shape !== "oval" && platedHole.shape !== "pill")
+  ) {
+    return { width: pad.size.x, height: pad.size.y }
+  }
+
+  // Corners enter in the plated-hole-local frame and leave in a board-aligned
+  // frame centered on the same point. Axes are +X right and +Y top, in mm.
+  const rotation = rotateDEG(platedHole.ccw_rotation)
+  const halfWidth = platedHole.outer_width / 2
+  const halfHeight = platedHole.outer_height / 2
+  const rotatedCorners = [
+    { x: -halfWidth, y: -halfHeight },
+    { x: halfWidth, y: -halfHeight },
+    { x: halfWidth, y: halfHeight },
+    { x: -halfWidth, y: halfHeight },
+  ].map((corner) => applyToPoint(rotation, corner))
+  const cornerXs = rotatedCorners.map((corner) => corner.x)
+  const cornerYs = rotatedCorners.map((corner) => corner.y)
+
+  return {
+    width: Math.max(...cornerXs) - Math.min(...cornerXs),
+    height: Math.max(...cornerYs) - Math.min(...cornerYs),
+  }
+}
+
 // Opposite-side component bodies may overlap, but plated holes and vias occupy
 // every copper layer listed on the primitive and must remain collision geometry.
 const getCrossLayerPadObstacles = ({
@@ -86,6 +123,8 @@ const getCrossLayerPadObstacles = ({
       const layers = platedHole?.layers ?? via?.layers
       if (!layers?.includes(targetLayer)) return []
 
+      const obstacleSize = getCrossLayerPadObstacleSize(pad, platedHole)
+
       const absoluteCenter =
         pad.absoluteCenter ??
         (component.center
@@ -99,8 +138,8 @@ const getCrossLayerPadObstacles = ({
         {
           obstacleId: `cross_layer_${targetLayer}_${pad.padId}`,
           absoluteCenter,
-          width: pad.size.x,
-          height: pad.size.y,
+          width: obstacleSize.width,
+          height: obstacleSize.height,
         },
       ]
     }),
