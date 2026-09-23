@@ -1,0 +1,188 @@
+{
+  "baseline": "4356989 (merged #4093; equivalent built df20908 tree)",
+  "method": "Three alternating fresh processes per variant; no CPU profiler or per-component lifecycle listener in timed samples.",
+  "am62a": {
+    "runtime": "Node 26.4.0, eval 0.0.1442",
+    "sourceRevision": "cf6e541",
+    "sourceSha256": "819e43f75c5ee0d8d6843acf743f944727d811717934c26199b5d0dd3a36f793",
+    "counts": {
+      "source_project_metadata": 1,
+      "source_group": 1,
+      "source_port": 12368,
+      "source_component": 1482,
+      "source_manually_placed_via": 3392,
+      "source_net": 1054,
+      "source_board": 1,
+      "source_refdes_convention_warning": 235,
+      "source_trace": 5137,
+      "pcb_component": 4874,
+      "pcb_board": 1,
+      "pcb_smtpad": 5445,
+      "pcb_solder_paste": 5568,
+      "pcb_silkscreen_path": 4252,
+      "pcb_plated_hole": 139,
+      "pcb_hole": 18,
+      "pcb_trace": 5009,
+      "pcb_via": 3392,
+      "pcb_port": 12368,
+      "cad_component": 1482
+    },
+    "samples": [
+      {
+        "variant": "baseline",
+        "elapsedMs": 5568.07775,
+        "timings": {
+          "readSourceMs": 47.37216699999999,
+          "executeMs": 971.726625,
+          "renderMs": 4548.858125,
+          "jsonMs": 0.06145800000012969
+        },
+        "sha256": "ab07dad4dab9537a53d5ccaed1b804d4e9a9401812a6efafdae4885b92072b54",
+        "maxRssKiB": 1055952
+      },
+      {
+        "variant": "candidate",
+        "elapsedMs": 4221.36675,
+        "timings": {
+          "readSourceMs": 49.43262500000003,
+          "executeMs": 977.2905830000001,
+          "renderMs": 3194.53025,
+          "jsonMs": 0.0634170000002996
+        },
+        "sha256": "ab07dad4dab9537a53d5ccaed1b804d4e9a9401812a6efafdae4885b92072b54",
+        "maxRssKiB": 812832
+      },
+      {
+        "variant": "baseline",
+        "elapsedMs": 5699.612416999999,
+        "timings": {
+          "readSourceMs": 48.79758399999997,
+          "executeMs": 970.740958,
+          "renderMs": 4679.943708000001,
+          "jsonMs": 0.07212499999968713
+        },
+        "sha256": "ab07dad4dab9537a53d5ccaed1b804d4e9a9401812a6efafdae4885b92072b54",
+        "maxRssKiB": 1046816
+      },
+      {
+        "variant": "candidate",
+        "elapsedMs": 4130.355542,
+        "timings": {
+          "readSourceMs": 47.91062499999998,
+          "executeMs": 893.992667,
+          "renderMs": 3188.308542,
+          "jsonMs": 0.08525000000008731
+        },
+        "sha256": "ab07dad4dab9537a53d5ccaed1b804d4e9a9401812a6efafdae4885b92072b54",
+        "maxRssKiB": 813296
+      },
+      {
+        "variant": "baseline",
+        "elapsedMs": 5588.268792,
+        "timings": {
+          "readSourceMs": 47.332584000000054,
+          "executeMs": 976.3729999999999,
+          "renderMs": 4564.424916,
+          "jsonMs": 0.08150000000023283
+        },
+        "sha256": "ab07dad4dab9537a53d5ccaed1b804d4e9a9401812a6efafdae4885b92072b54",
+        "maxRssKiB": 1057392
+      },
+      {
+        "variant": "candidate",
+        "elapsedMs": 4241.553709,
+        "timings": {
+          "readSourceMs": 48.539083000000005,
+          "executeMs": 903.9406670000001,
+          "renderMs": 3288.9470410000004,
+          "jsonMs": 0.07612499999959255
+        },
+        "sha256": "ab07dad4dab9537a53d5ccaed1b804d4e9a9401812a6efafdae4885b92072b54",
+        "maxRssKiB": 805040
+      }
+    ]
+  },
+  "coreFixture": {
+    "runtime": "Bun 1.3.2",
+    "counts": {
+      "source_project_metadata": 1,
+      "source_group": 1,
+      "source_port": 6000,
+      "source_component": 1500,
+      "source_manually_placed_via": 1500,
+      "source_net": 1054,
+      "source_board": 1,
+      "source_trace": 3000,
+      "pcb_component": 3000,
+      "pcb_board": 1,
+      "pcb_smtpad": 3000,
+      "pcb_solder_paste": 3000,
+      "pcb_via": 1500,
+      "pcb_trace": 1500,
+      "pcb_port": 6000,
+      "cad_component": 1500
+    },
+    "samples": [
+      {
+        "variant": "baseline",
+        "renderMs": 2706.17425,
+        "rssAfterRenderBytes": 1414348800,
+        "records": 32558,
+        "sha256": "9c9bec60c736367038f3b34d648da2d842b2c33879b4f6fb0bb205462e462acc",
+        "normalizedSha256": "ff16cd9075a8539bb3a2d3ace5cdd288c74a81d160ac198c7307ff74ac345141",
+        "phaseVisitCount": 69
+      },
+      {
+        "variant": "candidate",
+        "renderMs": 1740.299334,
+        "rssAfterRenderBytes": 860749824,
+        "records": 32558,
+        "sha256": "9c9bec60c736367038f3b34d648da2d842b2c33879b4f6fb0bb205462e462acc",
+        "normalizedSha256": "ff16cd9075a8539bb3a2d3ace5cdd288c74a81d160ac198c7307ff74ac345141",
+        "phaseVisitCount": 69
+      },
+      {
+        "variant": "baseline",
+        "renderMs": 2699.635709,
+        "rssAfterRenderBytes": 1414987776,
+        "records": 32558,
+        "sha256": "9c9bec60c736367038f3b34d648da2d842b2c33879b4f6fb0bb205462e462acc",
+        "normalizedSha256": "ff16cd9075a8539bb3a2d3ace5cdd288c74a81d160ac198c7307ff74ac345141",
+        "phaseVisitCount": 69
+      },
+      {
+        "variant": "candidate",
+        "renderMs": 1752.6351659999998,
+        "rssAfterRenderBytes": 861995008,
+        "records": 32558,
+        "sha256": "9c9bec60c736367038f3b34d648da2d842b2c33879b4f6fb0bb205462e462acc",
+        "normalizedSha256": "ff16cd9075a8539bb3a2d3ace5cdd288c74a81d160ac198c7307ff74ac345141",
+        "phaseVisitCount": 69
+      },
+      {
+        "variant": "baseline",
+        "renderMs": 2726.134416,
+        "rssAfterRenderBytes": 1401192448,
+        "records": 32558,
+        "sha256": "9c9bec60c736367038f3b34d648da2d842b2c33879b4f6fb0bb205462e462acc",
+        "normalizedSha256": "ff16cd9075a8539bb3a2d3ace5cdd288c74a81d160ac198c7307ff74ac345141",
+        "phaseVisitCount": 69
+      },
+      {
+        "variant": "candidate",
+        "renderMs": 1780.1167079999998,
+        "rssAfterRenderBytes": 854228992,
+        "records": 32558,
+        "sha256": "9c9bec60c736367038f3b34d648da2d842b2c33879b4f6fb0bb205462e462acc",
+        "normalizedSha256": "ff16cd9075a8539bb3a2d3ace5cdd288c74a81d160ac198c7307ff74ac345141",
+        "phaseVisitCount": 69
+      }
+    ]
+  },
+  "diagnostic": {
+    "renderables": 39779,
+    "phases": 69,
+    "phaseSlots": 2744751,
+    "materializedPhaseStateMaps": 0
+  }
+}
