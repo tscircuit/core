@@ -5,7 +5,8 @@ import Nrf52810Circuit from "./nrf52810-circuit"
 
 // Reproduces https://tscircuit.com/seveibar/nrf52810#files without explicit
 // <copperpour> elements so the implicit copper pour phase owns their creation.
-test(
+// Implicit copper pours are disabled; retain coverage for a future re-enable.
+test.skip(
   "nRF52810 tracker routes with implicit copper pours",
   async () => {
     const { circuit } = getTestFixture({

@@ -62,13 +62,13 @@ export const orderedRenderPhases = [
   "PcbLayout",
   "PcbBoardAutoSize",
   "PanelLayout",
+  "PcbFlexRender",
   "PcbAutoplaceBreakoutPoints",
   "PcbTraceHintRender",
   "PcbManualTraceRender",
   "PcbPlacementDesignRuleChecks",
   "PcbTraceRender",
   "PcbRouteNetIslands",
-  "PcbImplicitCopperPourRender",
   "PcbCopperPourRender",
   "PcbViaStitchRender",
   "PcbCopperPourCleanup",
@@ -131,14 +131,6 @@ const asyncPhaseDependencies: Partial<Record<RenderPhase, RenderPhase[]>> = {
     "PcbPlacementDesignRuleChecks",
     "PcbTraceRender",
     "PcbRouteNetIslands",
-    "PcbImplicitCopperPourRender",
-  ],
-  PcbImplicitCopperPourRender: [
-    "PcbFootprintStringRender",
-    "FetchPartFootprint",
-    "PcbPlacementDesignRuleChecks",
-    "PcbTraceRender",
-    "PcbRouteNetIslands",
   ],
   PcbViaStitchRender: [
     "PcbFootprintStringRender",
@@ -146,7 +138,6 @@ const asyncPhaseDependencies: Partial<Record<RenderPhase, RenderPhase[]>> = {
     "PcbPlacementDesignRuleChecks",
     "PcbTraceRender",
     "PcbRouteNetIslands",
-    "PcbImplicitCopperPourRender",
     "PcbCopperPourRender",
   ],
   PcbPlacementDesignRuleChecks: [
@@ -159,7 +150,6 @@ const asyncPhaseDependencies: Partial<Record<RenderPhase, RenderPhase[]>> = {
     "PcbPlacementDesignRuleChecks",
     "PcbTraceRender",
     "PcbRouteNetIslands",
-    "PcbImplicitCopperPourRender",
     "PcbCopperPourRender",
     "PcbViaStitchRender",
   ],
@@ -174,7 +164,6 @@ const asyncPhaseDependencies: Partial<Record<RenderPhase, RenderPhase[]>> = {
     "FetchPartFootprint",
     "PcbPlacementDesignRuleChecks",
     "PcbTraceRender",
-    "PcbImplicitCopperPourRender",
     "PcbCopperPourRender",
     "PcbViaStitchRender",
     "PcbCopperPourCleanup",
@@ -248,7 +237,24 @@ export type IRenderable = RenderPhaseFunctions & {
 let globalRenderCounter = 0
 let globalAsyncEffectCounter = 0
 export abstract class Renderable implements IRenderable {
-  renderPhaseStates: RenderPhaseStates
+  private _phaseStatesByName?: RenderPhaseStates
+  private readonly _phaseStatesByIndex: RenderPhaseStates[RenderPhase][]
+
+  // Build the named map once, sharing the state objects used by the render loop.
+  // Once exposed, use the map so callers can also replace individual entries.
+  get renderPhaseStates(): RenderPhaseStates {
+    return (this._phaseStatesByName ??= Object.fromEntries(
+      orderedRenderPhases.map((phase, index) => [
+        phase,
+        this._phaseStatesByIndex[index],
+      ]),
+    ) as RenderPhaseStates)
+  }
+
+  set renderPhaseStates(states: RenderPhaseStates) {
+    this._phaseStatesByName = states
+  }
+
   shouldBeRemoved = false
   children: IRenderable[]
 
@@ -268,21 +274,23 @@ export abstract class Renderable implements IRenderable {
   constructor(props: any) {
     this._renderId = `${globalRenderCounter++}`
     this.children = []
-    this.renderPhaseStates = {} as RenderPhaseStates
-    for (const phase of orderedRenderPhases) {
-      this.renderPhaseStates[phase] = {
+    this._phaseStatesByIndex = Array.from(
+      { length: orderedRenderPhases.length },
+      () => ({
         initialized: false,
         dirty: false,
-      }
-    }
+      }),
+    )
   }
 
   _markDirty(phase: RenderPhase) {
-    this.renderPhaseStates[phase].dirty = true
-    // Mark all subsequent phases as dirty
+    // Mark this and all subsequent phases as dirty.
     const phaseIndex = renderPhaseIndexMap.get(phase)!
-    for (let i = phaseIndex + 1; i < orderedRenderPhases.length; i++) {
-      this.renderPhaseStates[orderedRenderPhases[i]].dirty = true
+    for (let i = phaseIndex; i < orderedRenderPhases.length; i++) {
+      const state =
+        this._phaseStatesByName?.[orderedRenderPhases[i]] ??
+        this._phaseStatesByIndex[i]
+      state.dirty = true
     }
 
     if (this.parent?._markDirty) {
@@ -350,9 +358,10 @@ export abstract class Renderable implements IRenderable {
     phase: RenderPhase,
     startOrEnd: "start" | "end",
   ) {
+    const root = this._getRootCircuit()
+    if (root?._hasRenderLifecycleListeners === false && !debug.enabled) return
     const granular_event_type =
       `renderable:renderLifecycle:${phase}:${startOrEnd}` as RootCircuitEventName
-    const root = this._getRootCircuit()
     // Older/custom root implementations without listener inspection still receive events.
     const hasListeners =
       root &&
@@ -452,9 +461,10 @@ export abstract class Renderable implements IRenderable {
    */
   runRenderPhase(phase: RenderPhase) {
     this._currentRenderPhase = phase
-    const phaseState = this.renderPhaseStates[phase]
-    const isInitialized = phaseState.initialized
-    const isDirty = phaseState.dirty
+    const phaseIndex = renderPhaseIndexMap.get(phase)!
+    const phaseState =
+      this._phaseStatesByName?.[phase] ?? this._phaseStatesByIndex[phaseIndex]
+    const { initialized: isInitialized, dirty: isDirty } = phaseState
 
     // Skip if component is being removed and not initialized
     if (!isInitialized && this.shouldBeRemoved) return
@@ -469,12 +479,12 @@ export abstract class Renderable implements IRenderable {
     }
 
     // Check for incomplete async effects from previous phases
-    const prevPhaseIndex = renderPhaseIndexMap.get(phase)! - 1
-    if (prevPhaseIndex >= 0) {
+    const prevPhaseIndex = phaseIndex - 1
+    if (this._asyncEffects.length > 0 && prevPhaseIndex >= 0) {
       const prevPhase = orderedRenderPhases[prevPhaseIndex]
-      const hasIncompleteEffects = this._asyncEffects
-        .filter((e) => e.phase === prevPhase)
-        .some((e) => !e.complete)
+      const hasIncompleteEffects = this._asyncEffects.some(
+        (e) => e.phase === prevPhase && !e.complete,
+      )
       if (hasIncompleteEffects) return
     }
 
@@ -514,10 +524,10 @@ export abstract class Renderable implements IRenderable {
       // Only skip if the component has doInitialRenderIsolatedSubcircuits method
       // to actually handle the isolated rendering.
       if (
+        phase === "RenderIsolatedSubcircuits" &&
         "_isIsolatedSubcircuit" in this &&
         this._isIsolatedSubcircuit &&
-        "doInitialRenderIsolatedSubcircuits" in this &&
-        phase === "RenderIsolatedSubcircuits"
+        "doInitialRenderIsolatedSubcircuits" in this
       ) {
         continue
       }

@@ -1,3 +1,4 @@
+import { createPcbFold, type PcbFold } from "@tscircuit/flex-utils"
 import {
   dedupePcbDrcErrors,
   consolidatePcbOverlapErrors,
@@ -32,7 +33,6 @@ import type { SubcircuitI } from "../primitive-components/Group/Subcircuit/Subci
 import { Subcircuit_doInitialRenderIsolatedSubcircuits } from "../primitive-components/Group/Subcircuit/Subcircuit_doInitialRenderIsolatedSubcircuits"
 import { Subcircuit_getSubcircuitPropHash } from "../primitive-components/Group/Subcircuit_getSubcircuitPropHash"
 import type { BoardI } from "./BoardI"
-import { Board_doInitialPcbImplicitCopperPourRender } from "./Board_doInitialPcbImplicitCopperPourRender"
 import { Board_doInitialPcbCopperPourCleanup } from "./Board_doInitialPcbCopperPourCleanup"
 import { Board_doInitialPcbPlacementDesignRuleChecks } from "./Board_doInitialPcbPlacementDesignRuleChecks"
 import { BoardCastellatedHole } from "./board-castellated-hole"
@@ -111,6 +111,7 @@ export class Board
   extends Group<typeof boardProps>
   implements BoardI, SubcircuitI
 {
+  pcbFold: PcbFold | undefined
   pcb_board_id: string | null = null
   source_board_id: string | null = null
   _drcChecksComplete = false
@@ -129,6 +130,16 @@ export class Board
       this.add(castellatedHole)
       if (castellatedHole.trace) this.add(castellatedHole.trace)
     }
+  }
+
+  doInitialPcbFlexRender(): void {
+    if (!this.pcb_board_id) return
+    const bends = this.root!.db.pcb_bend.list().filter(
+      (bend) => bend.pcb_board_id === this.pcb_board_id,
+    )
+    this.pcbFold = bends.length
+      ? createPcbFold(bends, this.boardThickness)
+      : undefined
   }
 
   get isSubcircuit() {
@@ -639,10 +650,6 @@ export class Board
     Board_doInitialPcbPlacementDesignRuleChecks(this)
   }
 
-  doInitialPcbImplicitCopperPourRender() {
-    Board_doInitialPcbImplicitCopperPourRender(this)
-  }
-
   _generatedStitchingViaIds = new Set<PcbVia["pcb_via_id"]>()
 
   doInitialPcbCopperPourCleanup() {
@@ -661,6 +668,13 @@ export class Board
     const drcChecksDisabled =
       this.root?.platform?.drcChecksDisabled ??
       this.getInheritedProperty("drcChecksDisabled")
+
+    // Disabled DRC needs neither a database snapshot nor an async effect. An
+    // empty async effect would force another traversal of every render phase.
+    if (drcChecksDisabled) {
+      this._drcChecksComplete = true
+      return
+    }
 
     const netlistDrcChecksDisabled =
       this.root?.platform?.netlistDrcChecksDisabled ??

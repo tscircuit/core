@@ -1,4 +1,5 @@
 import type * as Props from "@tscircuit/props"
+import type { Attributes } from "react"
 
 export interface TscircuitElements {
   antenna: Props.AntennaProps
@@ -74,6 +75,8 @@ export interface TscircuitElements {
   courtyardrect: Props.CourtyardRectProps
   pcbtrace: Props.PcbTraceProps
   fabricationnoterect: Props.FabricationNoteRectProps
+  pcbbend: Props.PcbBendProps & Attributes
+  pcbstiffener: Props.PcbStiffenerProps & Attributes
   pcbnoteline: Props.PcbNoteLineProps
   pcbnoterect: Props.PcbNoteRectProps
   pcbnotetext: Props.PcbNoteTextProps

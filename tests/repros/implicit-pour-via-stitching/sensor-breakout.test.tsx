@@ -3,7 +3,8 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import SensorBreakout from "./circuits/sensor-breakout"
 import { expectStitchedPourSnapshots } from "./expect-stitched-pour-snapshots"
 
-test(
+// Implicit copper pours are disabled; retain coverage for a future re-enable.
+test.skip(
   "sensor-breakout stitches vias through implicit power pours",
   async () => {
     const { circuit } = getTestFixture()
