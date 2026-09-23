@@ -1,4 +1,5 @@
-import { resolveBoardCadComponentPlacement } from "lib/utils/cad/resolve-board-cad-component-placement"
+import { getBoardFoldContext } from "lib/utils/cad/get-board-fold-context"
+import { transformCadComponentPlacement } from "@tscircuit/flex-utils"
 import { normalizeDegrees } from "@tscircuit/math-utils"
 import { cadmodelProps, point3 } from "@tscircuit/props"
 import type { CadModelProps } from "@tscircuit/props"
@@ -118,26 +119,34 @@ export class CadModel extends PrimitiveComponent<typeof cadmodelProps> {
       if (transformed) urlProps.model_step_url = transformed
     }
 
-    const cad = db.cad_component.insert({
-      ...resolveBoardCadComponentPlacement(parent, {
-        position: {
-          x: bounds.center.x + Number(positionOffset.x),
-          y: bounds.center.y + Number(positionOffset.y),
-          z:
-            (layer === "bottom" ? -boardThickness / 2 : boardThickness / 2) +
-            (layer === "bottom" ? -zOffsetFromSurface : zOffsetFromSurface) +
-            Number(positionOffset.z),
-        },
-        rotation: {
-          x: Number(rotationOffset.x),
-          y: (layer === "top" ? 0 : 180) + Number(rotationOffset.y),
-          z: normalizeDegrees(
-            layer === "bottom"
-              ? -(accumulatedRotation + Number(rotationOffset.z))
-              : accumulatedRotation + Number(rotationOffset.z),
-          ),
-        },
-      }),
+    let cadComponentPlacement = {
+      position: {
+        x: bounds.center.x + Number(positionOffset.x),
+        y: bounds.center.y + Number(positionOffset.y),
+        z:
+          (layer === "bottom" ? -boardThickness / 2 : boardThickness / 2) +
+          (layer === "bottom" ? -zOffsetFromSurface : zOffsetFromSurface) +
+          Number(positionOffset.z),
+      },
+      rotation: {
+        x: Number(rotationOffset.x),
+        y: (layer === "top" ? 0 : 180) + Number(rotationOffset.y),
+        z: normalizeDegrees(
+          layer === "bottom"
+            ? -(accumulatedRotation + Number(rotationOffset.z))
+            : accumulatedRotation + Number(rotationOffset.z),
+        ),
+      },
+    }
+    const boardFoldContext = getBoardFoldContext(parent)
+    if (boardFoldContext) {
+      cadComponentPlacement = transformCadComponentPlacement(
+        { cadComponentPlacement, foldPcbs: true },
+        boardFoldContext,
+      )
+    }
+    const cadComponent = db.cad_component.insert({
+      ...cadComponentPlacement,
       pcb_component_id: parent.pcb_component_id,
       model_board_normal_direction: props.modelBoardNormalDirection,
       model_origin_alignment: "center_of_component_on_board_surface",
@@ -155,7 +164,7 @@ export class CadModel extends PrimitiveComponent<typeof cadmodelProps> {
       ...urlProps,
     } as CadComponent)
 
-    this.cad_component_id = cad.cad_component_id
+    this.cad_component_id = cadComponent.cad_component_id
   }
 
   private _findParentWithPcbComponent(): any {
