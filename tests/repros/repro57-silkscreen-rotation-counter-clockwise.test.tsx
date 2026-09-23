@@ -69,7 +69,7 @@ test("rotate silkscreen text ccw", async () => {
         "anchor_alignment": "center",
         "anchor_position": {
           "x": -2.54,
-          "y": 0.00000000000000015553014349171386,
+          "y": 1.5553014349171386e-16,
         },
         "ccw_rotation": 90,
         "font": "tscircuit2024",
