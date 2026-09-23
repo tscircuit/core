@@ -20,7 +20,7 @@ test("generated antenna keepout spans every copper layer without blocking its fe
         pcbX={0}
         pcbY={0}
       />
-      <trace from=".RF > .pin1" to=".ANT1 > .feed" />
+      <trace name="antenna_feed" from=".RF > .pin1" to=".ANT1 > .feed" />
     </board>,
   )
 
@@ -54,19 +54,19 @@ test("generated antenna keepout spans every copper layer without blocking its fe
   expect(circuit.db.pcb_autorouting_error.list()).toHaveLength(0)
   expect(circuit.db.pcb_trace.list()).toHaveLength(2)
   expect(antennaCopperBeforeRouting).toHaveProperty("is_antenna_trace", true)
-  const feedTrace = circuit.db.pcb_trace
-    .list()
-    .find((trace) => !trace.pcb_component_id)
-  expect(feedTrace).toBeDefined()
-  expect(feedTrace).not.toHaveProperty("is_antenna_trace")
-  expect(
-    circuit.db.pcb_trace
-      .list()
-      .find(
-        (trace) =>
-          trace.pcb_component_id === antennaPcbComponent.pcb_component_id,
-      )?.route,
-  ).toEqual(
+  const feedSourceTrace = circuit.db.source_trace.getWhere({
+    name: "antenna_feed",
+  })!
+  const feedPcbTrace = circuit.db.pcb_trace.getWhere({
+    source_trace_id: feedSourceTrace.source_trace_id,
+  })
+  expect(feedPcbTrace).toBeDefined()
+  expect(feedPcbTrace).not.toHaveProperty("is_antenna_trace")
+  const antennaPcbTrace = circuit.db.pcb_trace.getWhere({
+    pcb_component_id: antennaPcbComponent.pcb_component_id,
+  })!
+  expect(antennaPcbTrace).toHaveProperty("is_antenna_trace", true)
+  expect(antennaPcbTrace.route).toEqual(
     antennaCopperBeforeRouting!.route.map((point) =>
       expect.objectContaining(point),
     ),

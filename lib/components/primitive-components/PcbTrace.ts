@@ -34,22 +34,22 @@ export class PcbTrace extends PrimitiveComponent<typeof pcbTraceProps> {
 
     // Apply parent transformation to each point in the route
     const { isFlipped, maybeFlipLayer } = this._getPcbPrimitiveFlippedHelpers()
-    const parentTransform = this._computePcbGlobalTransformBeforeLayout()
+    const localToBoardTransform = this._computePcbGlobalTransformBeforeLayout()
 
-    const transformedRoute = props.route.map((point) => {
+    const transformedRoute = props.route.map((point): PcbTraceRoutePoint => {
       if (point.route_type === "wire") {
         const { x, y, ...restOfPoint } = point
-        const transformedPoint = applyToPoint(parentTransform, { x, y })
+        const transformedPoint = applyToPoint(localToBoardTransform, { x, y })
         return {
           ...restOfPoint,
           ...transformedPoint,
           layer: maybeFlipLayer(point.layer),
-        } as PcbTraceRoutePoint
+        }
       }
 
       if (point.route_type === "via") {
         const { x, y, ...restOfPoint } = point
-        const transformedPoint = applyToPoint(parentTransform, { x, y })
+        const transformedPoint = applyToPoint(localToBoardTransform, { x, y })
         return {
           ...restOfPoint,
           ...transformedPoint,
@@ -61,16 +61,16 @@ export class PcbTrace extends PrimitiveComponent<typeof pcbTraceProps> {
           tented_on_bottom: isFlipped
             ? point.tented_on_top
             : point.tented_on_bottom,
-        } as PcbTraceRoutePoint
+        }
       }
 
       return {
         ...point,
-        start: applyToPoint(parentTransform, point.start),
-        end: applyToPoint(parentTransform, point.end),
+        start: applyToPoint(localToBoardTransform, point.start),
+        end: applyToPoint(localToBoardTransform, point.end),
         start_layer: maybeFlipLayer(point.start_layer),
         end_layer: maybeFlipLayer(point.end_layer),
-      } as PcbTraceRoutePoint
+      }
     })
 
     const pcb_trace = db.pcb_trace.insert({
