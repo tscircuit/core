@@ -73,11 +73,16 @@ export class PcbTrace extends PrimitiveComponent<typeof pcbTraceProps> {
       } as PcbTraceRoutePoint
     })
 
+    const antennaTraceProperties: { is_antenna_trace?: boolean } = {}
+    if (this.isAntennaTrace) {
+      antennaTraceProperties.is_antenna_trace = true
+    }
+
     const pcb_trace = db.pcb_trace.insert({
       pcb_component_id: container.pcb_component_id!,
       source_trace_id: props.source_trace_id,
       route: transformedRoute,
-      ...(this.isAntennaTrace && { is_antenna_trace: true }),
+      ...antennaTraceProperties,
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
     })

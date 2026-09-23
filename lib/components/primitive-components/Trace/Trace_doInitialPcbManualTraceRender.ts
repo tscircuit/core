@@ -445,9 +445,14 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
   }
 
   const traceLength = getTraceLength(route)
+  const antennaTraceProperties: { is_antenna_trace?: boolean } = {}
+  if (trace.isAntennaTrace) {
+    antennaTraceProperties.is_antenna_trace = true
+  }
+
   const pcb_trace = db.pcb_trace.insert({
     route,
-    ...(trace.isAntennaTrace && { is_antenna_trace: true }),
+    ...antennaTraceProperties,
     source_trace_id: trace.source_trace_id!,
     subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
     pcb_group_id: trace.getGroup()?.pcb_group_id ?? undefined,
