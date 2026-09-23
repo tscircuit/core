@@ -1,3 +1,4 @@
+import { assertSupportedPcbTraceRoutePoint } from "lib/utils/assert-supported-pcb-trace-route-point"
 import {
   pcb_via,
   type LayerRef,
@@ -136,6 +137,7 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
 
     for (const inflatedPcbTrace of inflatedPcbTraces) {
       const transformedRoute = inflatedPcbTrace.route.map((point) => {
+        assertSupportedPcbTraceRoutePoint(point)
         if (point.route_type === "wire") {
           const { x, y, ...restOfPoint } = point
           const transformedPoint = applyToPoint(transform, { x, y })

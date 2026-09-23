@@ -1,3 +1,4 @@
+import { assertSupportedPcbTraceRoutePoint } from "lib/utils/assert-supported-pcb-trace-route-point"
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import type { LayerRef, PcbTrace } from "circuit-json"
 import type { SimplifiedPcbTrace } from "./SimpleRouteJson"
@@ -40,6 +41,7 @@ const getSimpleRouteForPreservedTrace = (
   trace: PreservedTrace,
 ): SimplifiedPcbTrace["route"] =>
   trace.route.map((routePoint) => {
+    assertSupportedPcbTraceRoutePoint(routePoint)
     if (routePoint.route_type === "wire") {
       return {
         route_type: "wire",
