@@ -5,7 +5,8 @@
     "simple": "Original object state with allocation-free async checks, phase-first isolated guard, and unobserved lifecycle hint",
     "state": "Compact state with original per-phase lifecycle, async-check, and traversal work",
     "both": "Original #4094 implementation at 829f968",
-    "clean": "Centralized render-state writes"
+    "clean": "Centralized render-state writes",
+    "boolean": "Two ordinary boolean arrays with explicit initialized/dirty setters"
   },
   "outputSha256": "ab07dad4dab9537a53d5ccaed1b804d4e9a9401812a6efafdae4885b92072b54",
   "records": 66219,
@@ -387,6 +388,107 @@
         "jsonMs": 0.08299999999962893
       },
       "maxRssKiB": 753280
+    }
+  ],
+  "booleanArrayComparison": [
+    {
+      "variant": "baseline",
+      "elapsedMs": 5764.537,
+      "timings": {
+        "readSourceMs": 51.64650000000006,
+        "executeMs": 967.622875,
+        "renderMs": 4745.145667,
+        "jsonMs": 0.07012500000018917
+      },
+      "maxRssKiB": 1055680
+    },
+    {
+      "variant": "clean",
+      "elapsedMs": 4542.288916,
+      "timings": {
+        "readSourceMs": 52.74558300000001,
+        "executeMs": 941.3518329999999,
+        "renderMs": 3548.0540419999998,
+        "jsonMs": 0.07987500000035652
+      },
+      "maxRssKiB": 776528
+    },
+    {
+      "variant": "boolean",
+      "elapsedMs": 4889.408583,
+      "timings": {
+        "readSourceMs": 50.839833,
+        "executeMs": 968.388584,
+        "renderMs": 3870.0661250000003,
+        "jsonMs": 0.05833299999994779
+      },
+      "maxRssKiB": 771504
+    },
+    {
+      "variant": "clean",
+      "elapsedMs": 4463.777458,
+      "timings": {
+        "readSourceMs": 46.12954100000002,
+        "executeMs": 943.605417,
+        "renderMs": 3473.936167,
+        "jsonMs": 0.05695800000012241
+      },
+      "maxRssKiB": 800928
+    },
+    {
+      "variant": "boolean",
+      "elapsedMs": 4567.388041,
+      "timings": {
+        "readSourceMs": 50.35949999999997,
+        "executeMs": 929.4555,
+        "renderMs": 3587.4552090000007,
+        "jsonMs": 0.06395799999972951
+      },
+      "maxRssKiB": 769824
+    },
+    {
+      "variant": "baseline",
+      "elapsedMs": 6146.693792,
+      "timings": {
+        "readSourceMs": 46.974582999999996,
+        "executeMs": 1007.404708,
+        "renderMs": 5092.191375,
+        "jsonMs": 0.0704169999999067
+      },
+      "maxRssKiB": 1089424
+    },
+    {
+      "variant": "boolean",
+      "elapsedMs": 4698.757084000001,
+      "timings": {
+        "readSourceMs": 47.93324999999999,
+        "executeMs": 958.3032499999999,
+        "renderMs": 3692.4068750000006,
+        "jsonMs": 0.060458999999355
+      },
+      "maxRssKiB": 822176
+    },
+    {
+      "variant": "baseline",
+      "elapsedMs": 5669.92775,
+      "timings": {
+        "readSourceMs": 48.70224999999999,
+        "executeMs": 1023.8524579999998,
+        "renderMs": 4597.238167,
+        "jsonMs": 0.0810830000000351
+      },
+      "maxRssKiB": 1030432
+    },
+    {
+      "variant": "clean",
+      "elapsedMs": 4473.006292,
+      "timings": {
+        "readSourceMs": 48.47079100000002,
+        "executeMs": 919.7285,
+        "renderMs": 3504.668584,
+        "jsonMs": 0.07716600000003382
+      },
+      "maxRssKiB": 801568
     }
   ]
 }

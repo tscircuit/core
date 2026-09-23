@@ -39,7 +39,7 @@ host.
 
 ## Keeping the implementation readable
 
-All renderer writes to the compact flags/public state view now pass through one
+At `cb7f2b4`, renderer writes to the compact flags/public state view passed through one
 private helper. The render loop no longer repeats the compatibility bookkeeping
 five times. The helper keeps an existing observed state reference when a handler
 replaces its public entry, while also supporting first-time inspection inside a
@@ -62,3 +62,30 @@ Only the software-version label is normalized. See
 figures and the shared record inventory. Peak RSS uses Node's `maxRSS` in KiB;
 render timers exclude process/module startup, serialization, transfer and viewer
 rendering as in the original benchmark.
+
+## Final implementation: explicit boolean arrays
+
+The final code uses `_initializedPhases: boolean[]` and `_dirtyPhases: boolean[]`,
+with `_setPhaseInitialized` and `_setPhaseDirty` methods. There are no packed flags,
+bitwise operations, or generic flag/value setters. It still avoids eagerly
+allocating an object for each component/phase pair. The public mutable object map
+is created on first access and remains authoritative for subsequent reads.
+
+A fresh comparison uses the same frozen input, dependencies, patches and timing
+method above. Three samples per variant run in rotating order:
+
+| Variant | Evaluation median | Peak RSS median |
+| --- | ---: | ---: |
+| Merged #4093 baseline | 5.765 s | 1,031 MiB |
+| Previous packed-state implementation (`cb7f2b4`) | 4.473 s | 782 MiB |
+| Final boolean arrays | 4.699 s | 753 MiB |
+
+The simpler implementation is **18.5% faster than baseline**, and takes **0.226 s
+(5.1%) longer** than the packed version in this batch. Peak RSS is a whole-process
+measurement affected by GC, not the size of the arrays themselves. This small
+sample does not establish a memory advantage over packed storage.
+
+All nine outputs match the same normalized hash and 66,219 records above, with no
+errors or pours. Raw ordered samples are under `booleanArrayComparison` in the
+results JSON. These measurements cover eval plus core rendering, not the browser
+viewer. The 2-second target remains unmet.

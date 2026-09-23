@@ -3,6 +3,10 @@
 Baseline: merged #4093 (`4356989`), including the shared selector and empty-DRC
 fixes. This measures the next incremental change, not the older slow releases.
 
+This report records the initial packed-state implementation at `829f968`. The
+current implementation uses two ordinary boolean arrays; see the final comparison
+in [render-state-ablation.md](./render-state-ablation.md).
+
 ## Changes
 
 Each Renderable previously allocated a mutable `{initialized, dirty}` object for
@@ -10,7 +14,7 @@ every phase at construction. The frozen AM62A design has 39,779 live renderables
 and 69 phases: **2,744,751 state objects**, plus their containing maps. None of
 those maps were inspected during the unobserved diagnostic render.
 
-The renderer now uses one byte per phase until a caller reads `renderPhaseStates`.
+The initial implementation used one byte per phase until a caller reads `renderPhaseStates`.
 On inspection it materializes a stable mutable object map, and subsequent phase
 updates honor that map. Callers can still inspect state during a handler, modify
 state directly, mark later phases dirty, remove components, and inspect render
