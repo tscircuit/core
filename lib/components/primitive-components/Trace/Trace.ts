@@ -70,6 +70,8 @@ export class Trace
 {
   source_trace_id: string | null = null
   pcb_trace_id: string | null = null
+  // Only antenna radiating copper may intentionally have open ends.
+  isAntennaTrace = false
   schematic_trace_id: string | null = null
   _inflatedPcbTraces?: PcbTrace[]
   _inflatedPcbVias?: PcbVia[]

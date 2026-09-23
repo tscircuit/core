@@ -57,6 +57,7 @@ test("antenna renders a placed footprint and WiFi pcbPath", async () => {
   expect(circuit.db.source_port.list()).toHaveLength(1)
   expect(circuit.db.pcb_trace.list()).toHaveLength(1)
   expect(antennaPcbComponent?.center).toEqual({ x: -12, y: -1 })
+  expect(antennaPcbTrace).toHaveProperty("is_antenna_trace", true)
   expect(antennaPcbTrace.route[0]).toMatchObject({ x: -12, y: -1 })
   expect(antennaPcbTrace.route.at(-1)).toMatchObject({ x: 0, y: -2 })
 
