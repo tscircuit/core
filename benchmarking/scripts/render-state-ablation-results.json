@@ -1,0 +1,392 @@
+{
+  "method": "Fresh sequential Node processes, fixed AM62A source, default modules with pours off; variant order rotates between rounds. No timing samples use a CPU profiler or result cache.",
+  "variants": {
+    "baseline": "Merged #4093",
+    "simple": "Original object state with allocation-free async checks, phase-first isolated guard, and unobserved lifecycle hint",
+    "state": "Compact state with original per-phase lifecycle, async-check, and traversal work",
+    "both": "Original #4094 implementation at 829f968",
+    "clean": "Centralized render-state writes"
+  },
+  "outputSha256": "ab07dad4dab9537a53d5ccaed1b804d4e9a9401812a6efafdae4885b92072b54",
+  "records": 66219,
+  "counts": {
+    "source_project_metadata": 1,
+    "source_group": 1,
+    "source_port": 12368,
+    "source_component": 1482,
+    "source_manually_placed_via": 3392,
+    "source_net": 1054,
+    "source_board": 1,
+    "source_refdes_convention_warning": 235,
+    "source_trace": 5137,
+    "pcb_component": 4874,
+    "pcb_board": 1,
+    "pcb_smtpad": 5445,
+    "pcb_solder_paste": 5568,
+    "pcb_silkscreen_path": 4252,
+    "pcb_plated_hole": 139,
+    "pcb_hole": 18,
+    "pcb_trace": 5009,
+    "pcb_via": 3392,
+    "pcb_port": 12368,
+    "cad_component": 1482
+  },
+  "ablation": [
+    {
+      "variant": "baseline",
+      "elapsedMs": 5868.18575,
+      "timings": {
+        "readSourceMs": 72.22541600000005,
+        "executeMs": 968.89525,
+        "renderMs": 4826.784084000001,
+        "jsonMs": 0.217874999999367
+      },
+      "maxRssKiB": 977760
+    },
+    {
+      "variant": "simple",
+      "elapsedMs": 6018.314375,
+      "timings": {
+        "readSourceMs": 47.914874999999995,
+        "executeMs": 1095.57075,
+        "renderMs": 4874.69825,
+        "jsonMs": 0.07904099999996106
+      },
+      "maxRssKiB": 1144096
+    },
+    {
+      "variant": "state",
+      "elapsedMs": 6357.830416,
+      "timings": {
+        "readSourceMs": 65.89662499999997,
+        "executeMs": 1316.386542,
+        "renderMs": 4975.3535,
+        "jsonMs": 0.1147080000000642
+      },
+      "maxRssKiB": 804896
+    },
+    {
+      "variant": "both",
+      "elapsedMs": 4958.119584,
+      "timings": {
+        "readSourceMs": 74.28120799999999,
+        "executeMs": 1022.180083,
+        "renderMs": 3861.5093749999996,
+        "jsonMs": 0.08250000000043656
+      },
+      "maxRssKiB": 813056
+    },
+    {
+      "variant": "simple",
+      "elapsedMs": 5321.977208,
+      "timings": {
+        "readSourceMs": 59.568667000000005,
+        "executeMs": 978.938916,
+        "renderMs": 4283.35425,
+        "jsonMs": 0.06220900000062102
+      },
+      "maxRssKiB": 990080
+    },
+    {
+      "variant": "state",
+      "elapsedMs": 4417.590999999999,
+      "timings": {
+        "readSourceMs": 48.67008299999998,
+        "executeMs": 830.6727079999998,
+        "renderMs": 3538.1434590000003,
+        "jsonMs": 0.055416000000150234
+      },
+      "maxRssKiB": 847152
+    },
+    {
+      "variant": "both",
+      "elapsedMs": 3916.882958,
+      "timings": {
+        "readSourceMs": 45.257041999999956,
+        "executeMs": 814.665416,
+        "renderMs": 3056.8621249999997,
+        "jsonMs": 0.04920899999979156
+      },
+      "maxRssKiB": 765248
+    },
+    {
+      "variant": "baseline",
+      "elapsedMs": 5764.260167,
+      "timings": {
+        "readSourceMs": 45.886416999999994,
+        "executeMs": 907.6101659999999,
+        "renderMs": 4810.623459,
+        "jsonMs": 0.09050000000024738
+      },
+      "maxRssKiB": 1030016
+    },
+    {
+      "variant": "state",
+      "elapsedMs": 4661.169625,
+      "timings": {
+        "readSourceMs": 49.822834,
+        "executeMs": 913.0265829999998,
+        "renderMs": 3698.1892500000004,
+        "jsonMs": 0.07454200000029232
+      },
+      "maxRssKiB": 806272
+    },
+    {
+      "variant": "both",
+      "elapsedMs": 4326.6957919999995,
+      "timings": {
+        "readSourceMs": 48.57429199999996,
+        "executeMs": 896.758416,
+        "renderMs": 3381.221834,
+        "jsonMs": 0.08129099999950995
+      },
+      "maxRssKiB": 816160
+    },
+    {
+      "variant": "baseline",
+      "elapsedMs": 5709.9755829999995,
+      "timings": {
+        "readSourceMs": 50.64495899999997,
+        "executeMs": 1008.2380410000001,
+        "renderMs": 4650.970209,
+        "jsonMs": 0.0597909999996773
+      },
+      "maxRssKiB": 1042992
+    },
+    {
+      "variant": "simple",
+      "elapsedMs": 5313.934625,
+      "timings": {
+        "readSourceMs": 47.331916999999976,
+        "executeMs": 990.8790000000001,
+        "renderMs": 4275.570292,
+        "jsonMs": 0.09758299999975861
+      },
+      "maxRssKiB": 1061552
+    },
+    {
+      "variant": "both",
+      "elapsedMs": 4667.674125,
+      "timings": {
+        "readSourceMs": 54.40575000000001,
+        "executeMs": 994.292875,
+        "renderMs": 3618.811834,
+        "jsonMs": 0.09804100000019389
+      },
+      "maxRssKiB": 779952
+    },
+    {
+      "variant": "baseline",
+      "elapsedMs": 5916.801709,
+      "timings": {
+        "readSourceMs": 52.63179100000002,
+        "executeMs": 1035.142584,
+        "renderMs": 4828.883208,
+        "jsonMs": 0.08541700000023411
+      },
+      "maxRssKiB": 1057088
+    },
+    {
+      "variant": "simple",
+      "elapsedMs": 5649.679542,
+      "timings": {
+        "readSourceMs": 52.29008299999998,
+        "executeMs": 1037.315667,
+        "renderMs": 4559.928875,
+        "jsonMs": 0.08629199999995762
+      },
+      "maxRssKiB": 976080
+    },
+    {
+      "variant": "state",
+      "elapsedMs": 4951.018083000001,
+      "timings": {
+        "readSourceMs": 51.49070800000004,
+        "executeMs": 954.8466249999999,
+        "renderMs": 3944.5233750000007,
+        "jsonMs": 0.09224999999969441
+      },
+      "maxRssKiB": 847200
+    },
+    {
+      "variant": "baseline",
+      "elapsedMs": 5948.383708,
+      "timings": {
+        "readSourceMs": 52.67787499999997,
+        "executeMs": 1060.588417,
+        "renderMs": 4834.97425,
+        "jsonMs": 0.0809159999998883
+      },
+      "maxRssKiB": 1054864
+    },
+    {
+      "variant": "simple",
+      "elapsedMs": 5716.424459,
+      "timings": {
+        "readSourceMs": 53.19987500000002,
+        "executeMs": 1074.7475,
+        "renderMs": 4588.291166,
+        "jsonMs": 0.09362500000042928
+      },
+      "maxRssKiB": 1143584
+    },
+    {
+      "variant": "state",
+      "elapsedMs": 4979.362709,
+      "timings": {
+        "readSourceMs": 52.640625,
+        "executeMs": 999.6989589999998,
+        "renderMs": 3926.8809160000005,
+        "jsonMs": 0.08279199999924458
+      },
+      "maxRssKiB": 806848
+    },
+    {
+      "variant": "both",
+      "elapsedMs": 4384.179042,
+      "timings": {
+        "readSourceMs": 49.09812499999998,
+        "executeMs": 891.6022079999999,
+        "renderMs": 3443.3439590000003,
+        "jsonMs": 0.07816600000023755
+      },
+      "maxRssKiB": 775488
+    }
+  ],
+  "cleanupComparison": [
+    {
+      "variant": "both",
+      "elapsedMs": 4522.820041,
+      "timings": {
+        "readSourceMs": 67.12324999999998,
+        "executeMs": 980.1247089999999,
+        "renderMs": 3475.4282500000004,
+        "jsonMs": 0.08374999999978172
+      },
+      "maxRssKiB": 813264
+    },
+    {
+      "variant": "clean",
+      "elapsedMs": 4677.408875,
+      "timings": {
+        "readSourceMs": 53.23312499999997,
+        "executeMs": 975.6126250000001,
+        "renderMs": 3648.394583,
+        "jsonMs": 0.1010839999999007
+      },
+      "maxRssKiB": 831136
+    },
+    {
+      "variant": "clean",
+      "elapsedMs": 4641.765416,
+      "timings": {
+        "readSourceMs": 54.314332999999976,
+        "executeMs": 995.408375,
+        "renderMs": 3591.896167,
+        "jsonMs": 0.08120799999960582
+      },
+      "maxRssKiB": 786080
+    },
+    {
+      "variant": "both",
+      "elapsedMs": 4577.594666000001,
+      "timings": {
+        "readSourceMs": 52.473333000000025,
+        "executeMs": 994.15525,
+        "renderMs": 3530.813709,
+        "jsonMs": 0.08737500000006548
+      },
+      "maxRssKiB": 801840
+    },
+    {
+      "variant": "both",
+      "elapsedMs": 4621.0594169999995,
+      "timings": {
+        "readSourceMs": 52.312333000000024,
+        "executeMs": 963.2580419999999,
+        "renderMs": 3605.338125,
+        "jsonMs": 0.09166699999968841
+      },
+      "maxRssKiB": 785072
+    },
+    {
+      "variant": "clean",
+      "elapsedMs": 4921.873458,
+      "timings": {
+        "readSourceMs": 54.263791000000026,
+        "executeMs": 1167.112334,
+        "renderMs": 3700.3291660000004,
+        "jsonMs": 0.09954199999992852
+      },
+      "maxRssKiB": 796272
+    }
+  ],
+  "finalComparison": [
+    {
+      "variant": "baseline",
+      "elapsedMs": 5158.230292,
+      "timings": {
+        "readSourceMs": 47.05233399999997,
+        "executeMs": 901.264458,
+        "renderMs": 4209.822375000001,
+        "jsonMs": 0.042374999999992724
+      },
+      "maxRssKiB": 1057536
+    },
+    {
+      "variant": "clean",
+      "elapsedMs": 3754.057334,
+      "timings": {
+        "readSourceMs": 45.92062500000003,
+        "executeMs": 806.0479999999999,
+        "renderMs": 2902.0015000000003,
+        "jsonMs": 0.0412079999996422
+      },
+      "maxRssKiB": 799984
+    },
+    {
+      "variant": "clean",
+      "elapsedMs": 3723.6896659999998,
+      "timings": {
+        "readSourceMs": 45.81324999999998,
+        "executeMs": 792.80625,
+        "renderMs": 2884.978666,
+        "jsonMs": 0.042374999999992724
+      },
+      "maxRssKiB": 805552
+    },
+    {
+      "variant": "baseline",
+      "elapsedMs": 5145.085583,
+      "timings": {
+        "readSourceMs": 46.06604199999998,
+        "executeMs": 895.543833,
+        "renderMs": 4203.383042,
+        "jsonMs": 0.04570799999964947
+      },
+      "maxRssKiB": 1056256
+    },
+    {
+      "variant": "baseline",
+      "elapsedMs": 5296.571667,
+      "timings": {
+        "readSourceMs": 45.364417,
+        "executeMs": 911.5026660000001,
+        "renderMs": 4339.6080839999995,
+        "jsonMs": 0.04995800000051531
+      },
+      "maxRssKiB": 1167024
+    },
+    {
+      "variant": "clean",
+      "elapsedMs": 4385.38925,
+      "timings": {
+        "readSourceMs": 47.41570899999999,
+        "executeMs": 851.268333,
+        "renderMs": 3486.570458,
+        "jsonMs": 0.08299999999962893
+      },
+      "maxRssKiB": 753280
+    }
+  ]
+}

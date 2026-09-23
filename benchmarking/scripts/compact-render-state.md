@@ -43,7 +43,11 @@ rendering. The core fixture includes construction and full settling, excluding
 module loading and serialization. Core benchmark reproduction uses `CORE_BUNDLE`
 as documented in `net-resolution-benchmark.md`.
 
-## Results
+## Initial results (829f968)
+
+For the isolated contribution of each change and the cleaned implementation, see
+[render-state-ablation.md](render-state-ablation.md). These original samples are
+retained for comparison; absolute timings vary between measurement batches.
 
 | Workload / metric | Merged baseline | Candidate |
 | --- | ---: | ---: |
