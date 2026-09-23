@@ -1,4 +1,4 @@
-import { resolveBoardCadPose } from "lib/utils/cad/resolve-board-cad-pose"
+import { resolveBoardCadComponentPlacement } from "lib/utils/cad/resolve-board-cad-component-placement"
 import { fp } from "@tscircuit/footprinter"
 import { normalizeDegrees } from "@tscircuit/math-utils"
 import type {
@@ -1997,7 +1997,7 @@ export class NormalComponent<
 
     if (!cadModel && !footprintIsFootprinterString) {
       const cad_component = db.cad_component.insert({
-        ...resolveBoardCadPose(this, {
+        ...resolveBoardCadComponentPlacement(this, {
           position: {
             x: bounds.center.x,
             y: bounds.center.y,
@@ -2032,7 +2032,7 @@ export class NormalComponent<
 
     const cad_model = db.cad_component.insert({
       // TODO z maybe depends on layer
-      ...resolveBoardCadPose(this, {
+      ...resolveBoardCadComponentPlacement(this, {
         position: {
           x: bounds.center.x + positionOffset.x,
           y: bounds.center.y + positionOffset.y,

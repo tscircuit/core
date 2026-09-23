@@ -1,4 +1,4 @@
-import { resolveBoardCadPose } from "lib/utils/cad/resolve-board-cad-pose"
+import { resolveBoardCadComponentPlacement } from "lib/utils/cad/resolve-board-cad-component-placement"
 import { normalizeDegrees } from "@tscircuit/math-utils"
 import { cadmodelProps, point3 } from "@tscircuit/props"
 import type { CadModelProps } from "@tscircuit/props"
@@ -119,7 +119,7 @@ export class CadModel extends PrimitiveComponent<typeof cadmodelProps> {
     }
 
     const cad = db.cad_component.insert({
-      ...resolveBoardCadPose(parent, {
+      ...resolveBoardCadComponentPlacement(parent, {
         position: {
           x: bounds.center.x + Number(positionOffset.x),
           y: bounds.center.y + Number(positionOffset.y),
