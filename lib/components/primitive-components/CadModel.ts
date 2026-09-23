@@ -1,3 +1,4 @@
+import { insertBoardCadComponent } from "lib/utils/cad/insert-board-cad-component"
 import { normalizeDegrees } from "@tscircuit/math-utils"
 import { cadmodelProps, point3 } from "@tscircuit/props"
 import type { CadModelProps } from "@tscircuit/props"
@@ -117,7 +118,7 @@ export class CadModel extends PrimitiveComponent<typeof cadmodelProps> {
       if (transformed) urlProps.model_step_url = transformed
     }
 
-    const cad = db.cad_component.insert({
+    const cad = insertBoardCadComponent(db, {
       position: {
         x: bounds.center.x + Number(positionOffset.x),
         y: bounds.center.y + Number(positionOffset.y),

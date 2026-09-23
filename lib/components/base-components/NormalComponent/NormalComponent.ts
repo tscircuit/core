@@ -1,3 +1,4 @@
+import { insertBoardCadComponent } from "lib/utils/cad/insert-board-cad-component"
 import { fp } from "@tscircuit/footprinter"
 import { normalizeDegrees } from "@tscircuit/math-utils"
 import type {
@@ -1995,7 +1996,7 @@ export class NormalComponent<
     const isBottomLayer = computedLayer === "bottom"
 
     if (!cadModel && !footprintIsFootprinterString) {
-      const cad_component = db.cad_component.insert({
+      const cad_component = insertBoardCadComponent(db, {
         position: {
           x: bounds.center.x,
           y: bounds.center.y,
@@ -2027,7 +2028,7 @@ export class NormalComponent<
       footprinterStringForCadComponent = footprintString
     }
 
-    const cad_model = db.cad_component.insert({
+    const cad_model = insertBoardCadComponent(db, {
       // TODO z maybe depends on layer
       position: {
         x: bounds.center.x + positionOffset.x,

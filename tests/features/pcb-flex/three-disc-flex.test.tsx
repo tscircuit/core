@@ -165,7 +165,7 @@ test("TSX flex board stacks three discs with four bends and bonded stiffeners", 
     expect(crossings.length).toBeGreaterThanOrEqual(2)
   }
   expect(circuit.db.pcb_trace_error.list()).toEqual([])
-  const flatJson = JSON.stringify(circuit.getCircuitJson())
+  const renderedJson = JSON.stringify(circuit.getCircuitJson())
   const snapshot = await createPcbWithFourViewSnapshot(
     circuit.getCircuitJson(),
     {
@@ -175,5 +175,5 @@ test("TSX flex board stacks three discs with four bends and bonded stiffeners", 
     },
   )
   await expect(snapshot).toMatchSvgSnapshot(import.meta.path)
-  expect(JSON.stringify(circuit.getCircuitJson())).toBe(flatJson)
+  expect(JSON.stringify(circuit.getCircuitJson())).toBe(renderedJson)
 }, 60_000)
