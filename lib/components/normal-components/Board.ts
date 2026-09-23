@@ -32,7 +32,6 @@ import type { SubcircuitI } from "../primitive-components/Group/Subcircuit/Subci
 import { Subcircuit_doInitialRenderIsolatedSubcircuits } from "../primitive-components/Group/Subcircuit/Subcircuit_doInitialRenderIsolatedSubcircuits"
 import { Subcircuit_getSubcircuitPropHash } from "../primitive-components/Group/Subcircuit_getSubcircuitPropHash"
 import type { BoardI } from "./BoardI"
-import { Board_doInitialPcbImplicitCopperPourRender } from "./Board_doInitialPcbImplicitCopperPourRender"
 import { Board_doInitialPcbCopperPourCleanup } from "./Board_doInitialPcbCopperPourCleanup"
 import { Board_doInitialPcbPlacementDesignRuleChecks } from "./Board_doInitialPcbPlacementDesignRuleChecks"
 import { BoardCastellatedHole } from "./board-castellated-hole"
@@ -637,10 +636,6 @@ export class Board
 
   doInitialPcbPlacementDesignRuleChecks() {
     Board_doInitialPcbPlacementDesignRuleChecks(this)
-  }
-
-  doInitialPcbImplicitCopperPourRender() {
-    Board_doInitialPcbImplicitCopperPourRender(this)
   }
 
   _generatedStitchingViaIds = new Set<PcbVia["pcb_via_id"]>()
