@@ -43,6 +43,7 @@ circuit.add(
 await circuit.renderUntilSettled()
 finishPhase()
 const renderMs = performance.now() - started
+const rssAfterRenderBytes = process.memoryUsage().rss
 const json = circuit.getCircuitJson()
 const normalizedJson = json.map((record) => {
   if (record.type !== "source_project_metadata") return record
@@ -57,6 +58,7 @@ console.log(
       componentCount,
       declaredNets,
       renderMs,
+      rssAfterRenderBytes,
       records: json.length,
       counts,
       phases,

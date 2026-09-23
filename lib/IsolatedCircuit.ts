@@ -328,6 +328,8 @@ export class IsolatedCircuit {
     return this.firstChild?.selectOne(selector, opts) ?? null
   }
 
+  _hasRenderLifecycleListeners = false
+
   _eventListeners: Record<
     RootCircuitEventName,
     Array<(...args: any[]) => void>
@@ -354,6 +356,9 @@ export class IsolatedCircuit {
       this._eventListeners[event] = []
     }
     this._eventListeners[event]!.push(listener)
+    if (event.startsWith("renderable:renderLifecycle:")) {
+      this._hasRenderLifecycleListeners = true
+    }
   }
 
   removeListener(
@@ -364,6 +369,15 @@ export class IsolatedCircuit {
     this._eventListeners[event] = this._eventListeners[event]!.filter(
       (l) => l !== listener,
     )
+    if (event.startsWith("renderable:renderLifecycle:")) {
+      this._hasRenderLifecycleListeners = Object.entries(
+        this._eventListeners,
+      ).some(
+        ([eventName, listeners]) =>
+          eventName.startsWith("renderable:renderLifecycle:") &&
+          listeners.length > 0,
+      )
+    }
   }
 
   enableDebug(debug: string | null | false) {
