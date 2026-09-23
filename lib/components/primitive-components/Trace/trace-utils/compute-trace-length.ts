@@ -1,5 +1,5 @@
 import type { PcbTrace } from "circuit-json"
-import { getRoutePointPosition } from "lib/utils/pcb-trace-route-point-utils"
+import { getRoutePointPositions } from "lib/utils/pcb-trace-route-point-utils"
 
 /**
  * Computes the total length of a PCB trace by summing the lengths of all wire segments
@@ -8,25 +8,17 @@ import { getRoutePointPosition } from "lib/utils/pcb-trace-route-point-utils"
  * @returns Length in millimeters
  */
 export function getTraceLength(route: PcbTrace["route"]): number {
-  let totalLength = 0
+  const routePositions = route.flatMap(getRoutePointPositions)
+  let totalLength =
+    route.filter(({ route_type }) => route_type === "via").length * 1.6
 
-  for (let i = 0; i < route.length; i++) {
-    const point = route[i]
-
-    if (point.route_type === "wire") {
-      // For wire segments, compute straight-line distance
-      const nextPoint = route[i + 1]
-      if (nextPoint) {
-        const nextPosition = getRoutePointPosition(nextPoint)
-        const position = getRoutePointPosition(point)
-        const dx = nextPosition.x - position.x
-        const dy = nextPosition.y - position.y
-        totalLength += Math.sqrt(dx * dx + dy * dy)
-      }
-    } else if (point.route_type === "via") {
-      // Add via length (board thickness) - using 1.6mm as typical PCB thickness
-      totalLength += 1.6
-    }
+  for (let i = 1; i < routePositions.length; i++) {
+    const previousPosition = routePositions[i - 1]
+    const position = routePositions[i]
+    totalLength += Math.hypot(
+      position.x - previousPosition.x,
+      position.y - previousPosition.y,
+    )
   }
 
   return totalLength
