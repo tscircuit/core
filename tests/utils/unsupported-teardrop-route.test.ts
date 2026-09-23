@@ -17,7 +17,7 @@ test("unsupported teardrop copper fails explicitly instead of producing invalid 
     end: { x: 3, y: 4 },
     start_width: 0.6,
     end_width: 0.2,
-    width_interpolation_mode: "smoothstep",
+    width_interpolation_mode: "quadratic",
     layer: "top",
   }
   const db = su([])
