@@ -46,6 +46,13 @@ const getSimpleRouteForPreservedTrace = (
         x: routePoint.x,
         y: routePoint.y,
         width: routePoint.width,
+        ...(routePoint.width_interpolation_mode
+          ? {
+              start_width: routePoint.start_width,
+              end_width: routePoint.end_width,
+              width_interpolation_mode: routePoint.width_interpolation_mode,
+            }
+          : {}),
         layer: getLayerName(routePoint.layer),
       }
     }
