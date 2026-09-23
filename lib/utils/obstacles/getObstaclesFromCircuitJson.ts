@@ -1,3 +1,4 @@
+import { assertSupportedPcbTraceRoutePoint } from "lib/utils/assert-supported-pcb-trace-route-point"
 import type { AnyCircuitElement, PcbBoard } from "circuit-json"
 import type { ConnectivityMap } from "circuit-json-to-connectivity-map"
 import { getViaBoardLayers } from "lib/utils/getViaSpanLayers"
@@ -519,6 +520,7 @@ export const getObstaclesFromCircuitJson = (
     } else if (element.type === "pcb_trace") {
       const traceObstacles = getObstaclesFromRoute(
         element.route.flatMap((rp) => {
+          assertSupportedPcbTraceRoutePoint(rp)
           if (rp.route_type === "through_pad") {
             return [
               {

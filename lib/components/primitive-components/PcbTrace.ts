@@ -1,3 +1,4 @@
+import { assertSupportedPcbTraceRoutePoint } from "lib/utils/assert-supported-pcb-trace-route-point"
 import { type PcbTraceRoutePoint, pcb_trace_route_point } from "circuit-json"
 import { applyToPoint } from "transformation-matrix"
 import { z } from "zod"
@@ -37,6 +38,7 @@ export class PcbTrace extends PrimitiveComponent<typeof pcbTraceProps> {
     const parentTransform = this._computePcbGlobalTransformBeforeLayout()
 
     const transformedRoute = props.route.map((point) => {
+      assertSupportedPcbTraceRoutePoint(point)
       if (point.route_type === "wire") {
         const { x, y, ...restOfPoint } = point
         const transformedPoint = applyToPoint(parentTransform, { x, y })
@@ -114,6 +116,7 @@ export class PcbTrace extends PrimitiveComponent<typeof pcbTraceProps> {
     let maxY = -Infinity
 
     for (const point of props.route) {
+      assertSupportedPcbTraceRoutePoint(point)
       if (point.route_type === "through_pad") {
         minX = Math.min(minX, point.start.x, point.end.x)
         maxX = Math.max(maxX, point.start.x, point.end.x)
