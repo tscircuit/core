@@ -4,7 +4,8 @@ Baseline: merged #4093 (`4356989`), including the shared selector and empty-DRC
 fixes. This measures the next incremental change, not the older slow releases.
 
 This report records the initial packed-state implementation at `829f968`. The
-current implementation uses two ordinary boolean arrays; see the final comparison
+current implementation shares ordinary state objects between an indexed array and
+a lazily created named map; see the final comparison
 in [render-state-ablation.md](./render-state-ablation.md).
 
 ## Changes

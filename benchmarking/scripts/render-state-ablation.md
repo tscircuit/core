@@ -63,9 +63,9 @@ figures and the shared record inventory. Peak RSS uses Node's `maxRSS` in KiB;
 render timers exclude process/module startup, serialization, transfer and viewer
 rendering as in the original benchmark.
 
-## Final implementation: explicit boolean arrays
+## Intermediate implementation: explicit boolean arrays
 
-The final code uses `_initializedPhases: boolean[]` and `_dirtyPhases: boolean[]`,
+At `b3d5a36`, the code uses `_initializedPhases: boolean[]` and `_dirtyPhases: boolean[]`,
 with `_setPhaseInitialized` and `_setPhaseDirty` methods. There are no packed flags,
 bitwise operations, or generic flag/value setters. It still avoids eagerly
 allocating an object for each component/phase pair. The public mutable object map
@@ -78,7 +78,7 @@ method above. Three samples per variant run in rotating order:
 | --- | ---: | ---: |
 | Merged #4093 baseline | 5.765 s | 1,031 MiB |
 | Previous packed-state implementation (`cb7f2b4`) | 4.473 s | 782 MiB |
-| Final boolean arrays | 4.699 s | 753 MiB |
+| Boolean arrays | 4.699 s | 753 MiB |
 
 The simpler implementation is **18.5% faster than baseline**, and takes **0.226 s
 (5.1%) longer** than the packed version in this batch. Peak RSS is a whole-process
@@ -89,3 +89,36 @@ All nine outputs match the same normalized hash and 66,219 records above, with n
 errors or pours. Raw ordered samples are under `booleanArrayComparison` in the
 results JSON. These measurements cover eval plus core rendering, not the browser
 viewer. The 2-second target remains unmet.
+
+## Final implementation: shared state objects
+
+Store ordinary `{ initialized, dirty }` objects in `_phaseStatesByIndex`. The
+renderer updates these objects directly. On first public access, build
+`_phaseStatesByName` with references to the **same objects**, then keep returning
+that map. There is no state reconstruction, boolean-array synchronization or
+setter helper. Once exposed, read from the named map to honor callers replacing
+entries or the whole map. This also preserves object identity when first access
+and entry replacement both occur inside a render handler; a regression test
+covers that case.
+
+This restores the per-phase objects while avoiding eager construction of each
+component's named map and its temporary entries. The original packed-storage
+ablation above must not be interpreted as measuring this final representation.
+
+Three fresh processes per variant, rotating order, on the same frozen AM62A input:
+
+| Variant | Evaluation median | Peak RSS median |
+| --- | ---: | ---: |
+| Merged #4093 baseline | 5.896 s | 1,032 MiB |
+| Previous boolean arrays (`b3d5a36`) | 4.898 s | 801 MiB |
+| Shared state objects | 4.970 s | 884 MiB |
+
+The final code is **15.7% faster than baseline** in this batch and **0.072 s
+(1.5%) slower** than boolean arrays. Peak process memory is about 83 MiB higher
+than boolean arrays, while remaining below baseline. This is a three-sample
+comparison, not evidence of a universal speedup. Shared-object samples range
+from 4.961 to 5.611 seconds. No samples were discarded.
+
+All nine outputs match the same normalized hash and 66,219 records above, with no
+errors or pours. Raw samples are under `sharedObjectComparison` in the results
+JSON. The same timing boundaries apply; the 2-second target remains unmet.

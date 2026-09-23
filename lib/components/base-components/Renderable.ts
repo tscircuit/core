@@ -249,29 +249,22 @@ export type IRenderable = RenderPhaseFunctions & {
 let globalRenderCounter = 0
 let globalAsyncEffectCounter = 0
 export abstract class Renderable implements IRenderable {
-  private _renderPhaseStates?: RenderPhaseStates
-  private _initializedPhases: boolean[]
-  private _dirtyPhases: boolean[]
+  private _phaseStatesByName?: RenderPhaseStates
+  private readonly _phaseStatesByIndex: RenderPhaseStates[RenderPhase][]
 
-  // Store each boolean in an array instead of allocating an object per phase.
-  // Create the existing mutable object view only when a caller requests it.
+  // Build the named map once, sharing the state objects used by the render loop.
+  // Once exposed, use the map so callers can also replace individual entries.
   get renderPhaseStates(): RenderPhaseStates {
-    if (!this._renderPhaseStates) {
-      this._renderPhaseStates = Object.fromEntries(
-        orderedRenderPhases.map((phase, index) => [
-          phase,
-          {
-            initialized: this._initializedPhases[index],
-            dirty: this._dirtyPhases[index],
-          },
-        ]),
-      ) as RenderPhaseStates
-    }
-    return this._renderPhaseStates
+    return (this._phaseStatesByName ??= Object.fromEntries(
+      orderedRenderPhases.map((phase, index) => [
+        phase,
+        this._phaseStatesByIndex[index],
+      ]),
+    ) as RenderPhaseStates)
   }
 
   set renderPhaseStates(states: RenderPhaseStates) {
-    this._renderPhaseStates = states
+    this._phaseStatesByName = states
   }
 
   shouldBeRemoved = false
@@ -293,37 +286,23 @@ export abstract class Renderable implements IRenderable {
   constructor(props: any) {
     this._renderId = `${globalRenderCounter++}`
     this.children = []
-    this._initializedPhases = Array(orderedRenderPhases.length).fill(false)
-    this._dirtyPhases = Array(orderedRenderPhases.length).fill(false)
-  }
-
-  private _setPhaseInitialized(
-    phaseIndex: number,
-    initialized: boolean,
-    phaseState?: RenderPhaseStates[RenderPhase],
-  ) {
-    this._initializedPhases[phaseIndex] = initialized
-    const state =
-      phaseState ?? this._renderPhaseStates?.[orderedRenderPhases[phaseIndex]]
-    if (state) state.initialized = initialized
-  }
-
-  private _setPhaseDirty(
-    phaseIndex: number,
-    dirty: boolean,
-    phaseState?: RenderPhaseStates[RenderPhase],
-  ) {
-    this._dirtyPhases[phaseIndex] = dirty
-    const state =
-      phaseState ?? this._renderPhaseStates?.[orderedRenderPhases[phaseIndex]]
-    if (state) state.dirty = dirty
+    this._phaseStatesByIndex = Array.from(
+      { length: orderedRenderPhases.length },
+      () => ({
+        initialized: false,
+        dirty: false,
+      }),
+    )
   }
 
   _markDirty(phase: RenderPhase) {
     // Mark this and all subsequent phases as dirty.
     const phaseIndex = renderPhaseIndexMap.get(phase)!
     for (let i = phaseIndex; i < orderedRenderPhases.length; i++) {
-      this._setPhaseDirty(i, true)
+      const state =
+        this._phaseStatesByName?.[orderedRenderPhases[i]] ??
+        this._phaseStatesByIndex[i]
+      state.dirty = true
     }
 
     if (this.parent?._markDirty) {
@@ -495,13 +474,9 @@ export abstract class Renderable implements IRenderable {
   runRenderPhase(phase: RenderPhase) {
     this._currentRenderPhase = phase
     const phaseIndex = renderPhaseIndexMap.get(phase)!
-    const phaseState = this._renderPhaseStates?.[phase]
-    const isInitialized = phaseState
-      ? phaseState.initialized
-      : this._initializedPhases[phaseIndex]
-    const isDirty = phaseState
-      ? phaseState.dirty
-      : this._dirtyPhases[phaseIndex]
+    const phaseState =
+      this._phaseStatesByName?.[phase] ?? this._phaseStatesByIndex[phaseIndex]
+    const { initialized: isInitialized, dirty: isDirty } = phaseState
 
     // Skip if component is being removed and not initialized
     if (!isInitialized && this.shouldBeRemoved) return
@@ -509,8 +484,8 @@ export abstract class Renderable implements IRenderable {
     if (this.shouldBeRemoved && isInitialized) {
       this._emitRenderLifecycleEvent(phase, "start")
       ;(this as any)?.[`remove${phase}`]?.()
-      this._setPhaseInitialized(phaseIndex, false, phaseState)
-      this._setPhaseDirty(phaseIndex, false, phaseState)
+      phaseState.initialized = false
+      phaseState.dirty = false
       this._emitRenderLifecycleEvent(phase, "end")
       return
     }
@@ -541,15 +516,15 @@ export abstract class Renderable implements IRenderable {
     if (isInitialized) {
       if (isDirty) {
         ;(this as any)?.[`update${phase}`]?.()
-        this._setPhaseDirty(phaseIndex, false, phaseState)
+        phaseState.dirty = false
       }
       this._emitRenderLifecycleEvent(phase, "end")
       return
     }
     // Initial render
-    this._setPhaseDirty(phaseIndex, false, phaseState)
+    phaseState.dirty = false
     ;(this as any)?.[`doInitial${phase}`]?.()
-    this._setPhaseInitialized(phaseIndex, true, phaseState)
+    phaseState.initialized = true
     this._emitRenderLifecycleEvent(phase, "end")
   }
 
