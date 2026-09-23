@@ -1,6 +1,7 @@
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { holeProps } from "@tscircuit/props"
 import { distance } from "circuit-json"
+import { z } from "zod"
 import type {
   PCBHole,
   PcbHolePill,
@@ -16,7 +17,20 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
   get config() {
     return {
       componentName: "Hole",
-      zodProps: holeProps,
+      // <platedhole> and <via> name this prop holeDiameter — accept it as an
+      // alias of diameter so the sibling spelling is not silently stripped.
+      zodProps: z.preprocess((rawProps) => {
+        const props = rawProps as Record<string, unknown> | null | undefined
+        if (
+          props &&
+          typeof props === "object" &&
+          props.diameter == null &&
+          props.holeDiameter != null
+        ) {
+          return { ...props, diameter: props.holeDiameter }
+        }
+        return rawProps
+      }, holeProps),
     }
   }
 
@@ -48,6 +62,21 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
+    const holeSize = this.getPcbSize()
+    if (
+      !Number.isFinite(holeSize.width) ||
+      !Number.isFinite(holeSize.height) ||
+      holeSize.width <= 0 ||
+      holeSize.height <= 0
+    ) {
+      const requirement =
+        props.shape && props.shape !== "circle"
+          ? `"width" and "height" for a "${props.shape}" hole`
+          : '"diameter" (or "radius") for a circle hole'
+      this.renderError(
+        `Hole${props.name ? ` "${props.name}"` : ""} requires ${requirement}; check for a missing or mistyped size prop.`,
+      )
+    }
     const subcircuit = this.getSubcircuit()
     const position = this._getGlobalPcbPositionBeforeLayout()
     const soldermaskMargin = props.solderMaskMargin
