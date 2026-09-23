@@ -3,7 +3,8 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import AnalogInput from "./circuits/analog-input"
 import { expectStitchedPourSnapshots } from "./expect-stitched-pour-snapshots"
 
-test(
+// Implicit copper pours are disabled; retain coverage for a future re-enable.
+test.skip(
   "analog-input stitches vias through implicit power pours",
   async () => {
     const { circuit } = getTestFixture()
