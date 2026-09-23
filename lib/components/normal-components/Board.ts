@@ -662,6 +662,13 @@ export class Board
       this.root?.platform?.drcChecksDisabled ??
       this.getInheritedProperty("drcChecksDisabled")
 
+    // Disabled DRC needs neither a database snapshot nor an async effect. An
+    // empty async effect would force another traversal of every render phase.
+    if (drcChecksDisabled) {
+      this._drcChecksComplete = true
+      return
+    }
+
     const netlistDrcChecksDisabled =
       this.root?.platform?.netlistDrcChecksDisabled ??
       this.getInheritedProperty("netlistDrcChecksDisabled")
