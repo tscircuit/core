@@ -3,8 +3,9 @@ import { defineConfig } from "tsup"
 export default defineConfig({
   entry: ["index.ts"],
   format: ["esm"],
-  dts: true,
+  dts: { resolve: ["@tscircuit/flex-utils"] },
   noExternal: [
+    "@tscircuit/flex-utils",
     "@tscircuit/bus-lanes-solver",
     "@tscircuit/fanout-solver",
     "@tscircuit/implicit-copper-pour-solver",
