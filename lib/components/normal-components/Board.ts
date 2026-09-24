@@ -19,6 +19,7 @@ import type {
 } from "circuit-json"
 import { getBoardAvailableLayers } from "lib/utils/getViaSpanLayers"
 import { getViaTenting } from "lib/utils/getViaTenting"
+import { getSchematicPlacementWarnings } from "lib/utils/schematic/get-schematic-placement-warnings"
 import { type Matrix, compose, translate } from "transformation-matrix"
 import type { z } from "zod"
 import { getDescendantSubcircuitIds } from "../../utils/autorouting/getAncestorSubcircuitIds"
@@ -801,7 +802,10 @@ export class Board
 
       if (shouldRunSchematicChecks) {
         checksToRun.push(
-          runAllSchematicChecks(circuitJson) as Promise<AnyCircuitElement[]>,
+          runAllSchematicChecks(circuitJson).then((warnings) => [
+            ...warnings,
+            ...getSchematicPlacementWarnings(circuitJson),
+          ]),
         )
       }
 
