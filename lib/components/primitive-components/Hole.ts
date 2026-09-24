@@ -1,6 +1,7 @@
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { holeProps } from "@tscircuit/props"
 import { distance } from "circuit-json"
+import { applyToPoint } from "transformation-matrix"
 import type {
   PCBHole,
   PcbHolePill,
@@ -58,9 +59,22 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
 
     this.emitSolderMaskMarginWarning(isCoveredWithSolderMask, soldermaskMargin)
 
+    // Include parent footprint/group rotation, not just this hole's pcbRotation
+    const globalTransform = this._computePcbGlobalTransformBeforeLayout()
+    const origin = applyToPoint(globalTransform, { x: 0, y: 0 })
+    const xAxis = applyToPoint(globalTransform, { x: 1, y: 0 })
+    const rotationDegrees =
+      (Math.atan2(xAxis.y - origin.y, xAxis.x - origin.x) * 180) / Math.PI
+    const rotationTolerance = 0.01
+    let normalizedRotation = ((rotationDegrees % 360) + 360) % 360
+    if (Math.abs(normalizedRotation - 360) < rotationTolerance) {
+      normalizedRotation = 0
+    }
+    const isRotated90Degrees =
+      Math.abs((normalizedRotation % 180) - 90) < rotationTolerance
+
     if (props.shape === "pill") {
-      // Check if rotation is specified to determine pill type
-      if (props.pcbRotation && props.pcbRotation !== 0) {
+      if (normalizedRotation > rotationTolerance) {
         const inserted_hole = db.pcb_hole.insert({
           pcb_component_id,
           type: "pcb_hole",
@@ -69,7 +83,7 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
           hole_height: props.height,
           x: position.x,
           y: position.y,
-          ccw_rotation: props.pcbRotation,
+          ccw_rotation: normalizedRotation,
           soldermask_margin: soldermaskMargin,
           is_covered_with_solder_mask: isCoveredWithSolderMask,
           subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
@@ -97,8 +111,8 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
         pcb_component_id,
         type: "pcb_hole",
         hole_shape: "oval",
-        hole_width: props.width,
-        hole_height: props.height,
+        hole_width: isRotated90Degrees ? props.height : props.width,
+        hole_height: isRotated90Degrees ? props.width : props.height,
         x: position.x,
         y: position.y,
         soldermask_margin: soldermaskMargin,
@@ -113,8 +127,8 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
         pcb_component_id,
         type: "pcb_hole",
         hole_shape: "rect",
-        hole_width: props.width,
-        hole_height: props.height,
+        hole_width: isRotated90Degrees ? props.height : props.width,
+        hole_height: isRotated90Degrees ? props.width : props.height,
         x: position.x,
         y: position.y,
         soldermask_margin: soldermaskMargin,

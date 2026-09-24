@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test.failing("non-circular holes rotate with their rotated footprint", () => {
+test("non-circular holes rotate with their rotated footprint", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -32,7 +32,7 @@ test.failing("non-circular holes rotate with their rotated footprint", () => {
       />
       <pcbnotetext
         pcbY={-7}
-        text="3x1mm pill/rect/oval holes stay horizontal (bug)"
+        text="3x1mm pill/rect/oval holes follow the footprint rotation"
         fontSize="0.4mm"
       />
     </board>,
