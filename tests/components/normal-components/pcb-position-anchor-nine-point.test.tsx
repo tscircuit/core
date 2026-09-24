@@ -19,9 +19,9 @@ test("pcbPositionAnchor with NinePointAnchor", () => {
 
   circuit.render()
 
-  const resistor = circuit.selectOne(".R1")
-  const bounds = resistor!._getPcbCircuitJsonBounds().bounds
+  const pcbComponent = circuit.db.pcb_component.list()[0]
 
-  expect(bounds.left).toBeCloseTo(10)
-  expect(bounds.top).toBeCloseTo(20)
+  // PCB is Y-up, so the top edge is the max Y of the component
+  expect(pcbComponent.center.x - pcbComponent.width / 2).toBeCloseTo(10)
+  expect(pcbComponent.center.y + pcbComponent.height / 2).toBeCloseTo(20)
 })

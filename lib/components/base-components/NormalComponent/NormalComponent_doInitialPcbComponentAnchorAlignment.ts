@@ -38,11 +38,12 @@ export function NormalComponent_doInitialPcbComponentAnchorAlignment(
   ])
 
   if (ninePointAnchors.has(pcbPositionAnchor)) {
+    // PCB uses a Y-up coordinate system: top is the higher Y value
     const b = {
       left: bounds.minX,
       right: bounds.maxX,
-      top: bounds.minY,
-      bottom: bounds.maxY,
+      top: bounds.maxY,
+      bottom: bounds.minY,
     }
     switch (pcbPositionAnchor) {
       case "center":
