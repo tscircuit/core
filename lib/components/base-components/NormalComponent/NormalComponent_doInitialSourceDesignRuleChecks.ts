@@ -4,6 +4,11 @@ import type { Port } from "../../primitive-components/Port"
 export const NormalComponent_doInitialSourceDesignRuleChecks = (
   component: NormalComponent,
 ): void => {
+  const drcChecksDisabled =
+    component.root?.platform?.drcChecksDisabled ??
+    component.getInheritedProperty("drcChecksDisabled")
+  if (drcChecksDisabled) return
+
   const { db } = component.root!
   if (!component.source_component_id) return
 
