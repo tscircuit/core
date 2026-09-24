@@ -288,6 +288,16 @@ export class Trace
 
     if (!allPortsFound) return
 
+    if (new Set(ports.map((p) => p.port)).size < ports.length) {
+      db.source_trace_not_connected_error.insert({
+        error_type: "source_trace_not_connected_error",
+        message: `${this.getString()} connects the same port on both ends ("${ports[0]!.selector}"). A trace must connect two different ports.`,
+        subcircuit_id: this.getSubcircuit()?.subcircuit_id ?? undefined,
+        selectors_not_found: [],
+      })
+      return
+    }
+
     this._traceConnectionHash = this._computeTraceConnectionHash()
 
     const existingTraces = db.source_trace.list()
