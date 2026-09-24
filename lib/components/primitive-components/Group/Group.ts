@@ -1337,7 +1337,23 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         )
         .map((trace) => trace.pcb_trace_id),
     )
-    const fixedTraceIds = new Set(manualPcbTraceIds)
+    const preservedDescendantPcbTraceIds = new Set(
+      (baseSimpleRouteJson.traces ?? [])
+        .filter((trace) => {
+          const pcbTrace = db.pcb_trace.get(trace.pcb_trace_id)
+          return (
+            pcbTrace?.subcircuit_id != null &&
+            pcbTrace.subcircuit_id !== this.subcircuit_id
+          )
+        })
+        .map((trace) => trace.pcb_trace_id),
+    )
+    // Descendant copper is already routed. Keep it fixed while the parent
+    // routes so a different net cannot cross it.
+    const fixedTraceIds = new Set([
+      ...manualPcbTraceIds,
+      ...preservedDescendantPcbTraceIds,
+    ])
     let previousStageOutputSimpleRouteJson: SimpleRouteJson | undefined
     const skippedRemainingPhases = new Set<RoutingPhasePlan>()
 
