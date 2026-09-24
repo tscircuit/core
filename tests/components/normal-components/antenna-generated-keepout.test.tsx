@@ -53,7 +53,12 @@ test("generated antenna keepout spans every copper layer without blocking its fe
   expect(circuit.db.pcb_placement_error.list()).toHaveLength(0)
   expect(circuit.db.pcb_autorouting_error.list()).toHaveLength(0)
   expect(circuit.db.pcb_trace.list()).toHaveLength(2)
-  expect(antennaCopperBeforeRouting).toBeDefined()
+  expect(antennaCopperBeforeRouting).toHaveProperty("is_antenna_trace", true)
+  const feedTrace = circuit.db.pcb_trace
+    .list()
+    .find((trace) => !trace.pcb_component_id)
+  expect(feedTrace).toBeDefined()
+  expect(feedTrace).not.toHaveProperty("is_antenna_trace")
   expect(
     circuit.db.pcb_trace
       .list()
