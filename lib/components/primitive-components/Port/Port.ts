@@ -507,7 +507,28 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
     const pcbMatches = matchedComponents.filter((c) => c.isPcbPrimitive)
 
-    if (pcbMatches.length === 0) return
+    if (pcbMatches.length === 0) {
+      // A port that matches no PCB primitive is only a misconfiguration when
+      // the parent component does render pads — e.g. pinLabels naming a pin
+      // the footprint lacks. Components with no footprint at all
+      // (solderjumper, jumpers without pads) legitimately have zero matches.
+      const parentHasPcbPrimitives =
+        parentWithPcbComponentId.children.some(
+          (c: PrimitiveComponent) => c.isPcbPrimitive,
+        ) ||
+        (parentNormalComponent?.children ?? []).some(
+          (c: PrimitiveComponent) => c.isPcbPrimitive,
+        )
+      if (parentHasPcbPrimitives) {
+        db.source_invalid_component_property_error.insert({
+          source_component_id: parentNormalComponent?.source_component_id ?? "",
+          property_name: "pinLabels",
+          message: `Port "${this.getString()}" on ${parentNormalComponent?.getDisplayName() ?? "component"} does not match any PCB primitive in its footprint`,
+          error_type: "source_invalid_component_property_error",
+        })
+      }
+      return
+    }
 
     let matchCenter: { x: number; y: number } | null = null
 
