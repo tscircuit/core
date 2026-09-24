@@ -46,6 +46,7 @@ test("SchematicLine Test", () => {
     x2: 10,
     y1: 0,
     y2: 10,
+    color: "rgb(132, 0, 0)",
   })
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
