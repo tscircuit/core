@@ -28,6 +28,7 @@ import type { TraceHint } from "../TraceHint"
 import type { Trace } from "./Trace"
 import { getPcbSelectorErrorForTracePort } from "./getPcbSelectorErrorForTracePort"
 import { getTraceLength } from "./trace-utils/compute-trace-length"
+import { getNetHighlightColor } from "lib/utils/get-net-highlight-color"
 
 type PcbRouteObjective =
   | RouteHintPoint
@@ -104,6 +105,7 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
       source_trace_id: trace.source_trace_id!,
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       pcb_group_id: trace.getGroup()?.pcb_group_id ?? undefined,
+      highlight_color: getNetHighlightColor(trace, trace.source_trace_id),
     })
     trace.pcb_trace_id = pcb_trace.pcb_trace_id
     return
@@ -515,6 +517,7 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
     source_trace_id: trace.source_trace_id!,
     subcircuit_id: trace.getSubcircuit()?.subcircuit_id!,
     trace_length: traceLength,
+    highlight_color: getNetHighlightColor(trace, trace.source_trace_id),
   })
   const subcircuitConnectivityMapKey =
     trace.subcircuit_connectivity_map_key ??

@@ -222,7 +222,10 @@ export class Net extends PrimitiveComponent<typeof netProps> {
         return
       }
 
-      db.pcb_trace.insert(trace as any)
+      db.pcb_trace.insert({
+        ...(trace as any),
+        highlight_color: this._parsedProps.highlightColor,
+      })
     }
   }
 

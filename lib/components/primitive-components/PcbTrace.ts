@@ -2,6 +2,7 @@ import { type PcbTraceRoutePoint, pcb_trace_route_point } from "circuit-json"
 import { applyToPoint } from "transformation-matrix"
 import { z } from "zod"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
+import { getNetHighlightColor } from "lib/utils/get-net-highlight-color"
 
 export const pcbTraceProps = z.object({
   route: z.array(pcb_trace_route_point),
@@ -80,6 +81,7 @@ export class PcbTrace extends PrimitiveComponent<typeof pcbTraceProps> {
       is_antenna_trace: this.isAntennaTrace,
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
+      highlight_color: getNetHighlightColor(this, props.source_trace_id),
     })
     this.pcb_trace_id = pcb_trace.pcb_trace_id
   }
