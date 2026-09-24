@@ -76,7 +76,7 @@ test("autoroutingphase continues saved fanout escapes from their exit layer", as
       connection.pointsToConnect.every((point) => !("layers" in point)),
     ),
   ).toBe(true)
-  expect(phaseInputs[1]!.traces ?? []).toHaveLength(0)
+  expect(phaseInputs[1]!.traces ?? []).toHaveLength(1)
   const saved = circuit.db.pcb_trace
     .list()
     .find((trace) => trace.pcb_trace_id.startsWith("saved_phase_"))!
