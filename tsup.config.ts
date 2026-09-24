@@ -5,7 +5,6 @@ export default defineConfig({
   format: ["esm"],
   dts: { resolve: ["@tscircuit/flex-utils"] },
   noExternal: [
-    "@tscircuit/circuit-json-schematic-placement-analysis",
     "@tscircuit/flex-utils",
     "@tscircuit/bus-lanes-solver",
     "@tscircuit/fanout-solver",
