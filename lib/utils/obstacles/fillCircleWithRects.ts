@@ -22,10 +22,15 @@ export function fillCircleWithRects(
   const { rectHeight = 0.1 } = options
   const rects: Rect[] = []
 
-  const numSlices = Math.ceil((radius * 2) / rectHeight)
+  // Cap the sampling band to the diameter so circles smaller than the
+  // requested band still produce a rect whose midpoint is inside the shape.
+  const effectiveRectHeight = Math.min(rectHeight, radius * 2)
+  if (effectiveRectHeight <= 0) return rects
+
+  const numSlices = Math.ceil((radius * 2) / effectiveRectHeight)
 
   for (let i = 0; i < numSlices; i++) {
-    const y = center.y - radius + (i + 0.5) * rectHeight
+    const y = center.y - radius + (i + 0.5) * effectiveRectHeight
     const dy = y - center.y
 
     // Using circle equation x^2 + y^2 = r^2 to find width at this y
@@ -38,7 +43,7 @@ export function fillCircleWithRects(
           y: y,
         },
         width: halfWidth * 2,
-        height: rectHeight,
+        height: effectiveRectHeight,
       })
     }
   }
