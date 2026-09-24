@@ -2,7 +2,7 @@ import type {
   SimpleRouteJson as AutorouterSimpleRouteJson,
   SimplifiedPcbTrace as AutorouterSimplifiedPcbTrace,
 } from "@tscircuit/capacity-autorouter"
-import type { PcbGroup } from "circuit-json"
+import type { PcbGroup, PcbTraceRoutePointWire } from "circuit-json"
 import type { CircuitJsonMetadata, Obstacle } from "../obstacles/types"
 
 export type { CircuitJsonMetadata, Obstacle } from "../obstacles/types"
@@ -24,13 +24,16 @@ export type SimplifiedPcbTrace = Omit<
   connection_name?: string
   connectsTo?: string[]
   route: Array<
-    | {
+    | ({
         route_type: "wire"
         x: number
         y: number
         width: number
         layer: string
-      }
+      } & Pick<
+        PcbTraceRoutePointWire,
+        "start_width" | "end_width" | "width_interpolation_mode"
+      >)
     | {
         route_type: "via"
         x: number

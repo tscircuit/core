@@ -1,6 +1,8 @@
+import { getTaperedWireObstacles } from "lib/utils/tapered-wire-geometry"
+import { getRoutePointPosition } from "lib/utils/pcb-trace-route-point-utils"
 import type { AnyCircuitElement, PcbBoard } from "circuit-json"
 import type { ConnectivityMap } from "circuit-json-to-connectivity-map"
-import { getViaBoardLayers } from "lib/utils/getViaSpanLayers"
+import { getViaBoardLayers, getViaSpanLayers } from "lib/utils/getViaSpanLayers"
 import { fillCircleWithRects } from "./fillCircleWithRects"
 import { fillPolygonWithRects } from "./fillPolygonWithRects"
 import { type RotatedRect } from "./generateApproximatingRects"
@@ -517,6 +519,72 @@ export const getObstaclesFromCircuitJson = (
         }
       }
     } else if (element.type === "pcb_trace") {
+      if (
+        element.route.some(
+          (p) => p.route_type === "wire" && p.width_interpolation_mode,
+        )
+      ) {
+        for (let i = 0; i < element.route.length; i++) {
+          const start = element.route[i]!
+          const end = element.route[i + 1]!
+          const connectedTo = withNetId([
+            element.source_trace_id ?? element.pcb_trace_id,
+          ])
+          if (start.route_type === "via") {
+            const diameter = start.outer_diameter ?? 0.5
+            obstacles.push({
+              type: "rect",
+              componentId: pcbComponentId,
+              connectedTo,
+              layers: getViaSpanLayers({
+                fromLayer: start.from_layer,
+                toLayer: start.to_layer,
+                layerCount: board?.num_layers ?? 4,
+              }),
+              center: { x: start.x, y: start.y },
+              width: diameter,
+              height: diameter,
+            })
+            continue
+          }
+          if (start.route_type === "through_pad") {
+            const throughPadObstacles = getTaperedWireObstacles(
+              {
+                route_type: "wire",
+                x: start.start.x,
+                y: start.start.y,
+                width: start.width,
+                layer: start.start_layer,
+              },
+              start.end,
+              connectedTo,
+            )
+            obstacles.push(
+              ...throughPadObstacles.map((obstacle) => ({
+                ...obstacle,
+                componentId: pcbComponentId,
+                layers: [start.start_layer, start.end_layer],
+              })),
+            )
+            continue
+          }
+          if (!end) continue
+          // The router accepts rectangles. Enclose the full tapered copper,
+          // not just its centerline or starting width. Keep net ownership.
+          const segmentObstacles = getTaperedWireObstacles(
+            start,
+            getRoutePointPosition(end),
+            withNetId([element.source_trace_id ?? element.pcb_trace_id]),
+          )
+          obstacles.push(
+            ...segmentObstacles.map((obstacle) => ({
+              ...obstacle,
+              componentId: pcbComponentId,
+            })),
+          )
+        }
+        continue
+      }
       const traceObstacles = getObstaclesFromRoute(
         element.route.flatMap((rp) => {
           if (rp.route_type === "through_pad") {

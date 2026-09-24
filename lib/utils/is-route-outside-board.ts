@@ -1,3 +1,5 @@
+import { getTaperedWireGeometry } from "./tapered-wire-geometry"
+import { getRoutePointPosition } from "./pcb-trace-route-point-utils"
 import { point } from "@flatten-js/core"
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import type { PcbTraceRoutePoint } from "circuit-json"
@@ -21,7 +23,18 @@ export const isRouteOutsideBoard = ({
 
   // Check if any route point is outside the board
   return !mergedRoute
-    .flatMap(getRoutePointPositions)
+    .flatMap((routePoint, index) => {
+      const next = mergedRoute[index + 1]
+      if (
+        routePoint.route_type === "wire" &&
+        routePoint.width_interpolation_mode &&
+        next
+      ) {
+        return getTaperedWireGeometry(routePoint, getRoutePointPosition(next))
+          .outline
+      }
+      return getRoutePointPositions(routePoint)
+    })
     .every((routePointPosition) =>
       boardOutlinePolygon.contains(
         point(routePointPosition.x, routePointPosition.y),

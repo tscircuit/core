@@ -20,6 +20,7 @@
   },
   "scripts": {
     "build": "tsup-node",
+    "prepare": "bun scripts/dependencies/build-circuit-json-preview.mjs",
     "format": "biome format . --write",
     "measure-bundle": "howfat -r table .",
     "pkg-pr-new-release": "bunx pkg-pr-new publish --comment=off --peerDeps",
@@ -40,7 +41,7 @@
     "@tscircuit/checks": "^0.0.211",
     "@tscircuit/circuit-json-util": "^0.0.116",
     "@tscircuit/common": "^0.0.20",
-    "@tscircuit/copper-pour-solver": "^0.0.57",
+    "@tscircuit/copper-pour-solver": "https://pkg.pr.new/@tscircuit/copper-pour-solver@0d3a2d6",
     "@tscircuit/create-fdm-enclosure": "0.0.4",
     "@tscircuit/fanout-solver": "0.0.78",
     "@tscircuit/flex-utils": "https://jscdn.tscircuit.com/@tscircuit/flex-utils/0.0.5.tgz",
@@ -72,7 +73,7 @@
     "bun-match-svg": "0.0.12",
     "calculate-elbow": "^0.0.12",
     "chokidar-cli": "^3.0.0",
-    "circuit-json": "^0.0.500",
+    "circuit-json": "github:tscircuit/circuit-json#4e2de69f36cd6bef1d5d3147ccb919016153b0c9",
     "circuit-json-to-bpc": "^0.0.13",
     "circuit-json-to-connectivity-map": "^0.0.30",
     "circuit-json-to-gltf": "^0.0.133",
@@ -136,6 +137,6 @@
   "overrides": {
     "@tscircuit/circuit-json-util": "^0.0.116",
     "@tscircuit/props": "^0.0.666",
-    "circuit-json": "^0.0.500"
+    "circuit-json": "github:tscircuit/circuit-json#4e2de69f36cd6bef1d5d3147ccb919016153b0c9"
   }
 }

@@ -1,10 +1,12 @@
-import { type PcbTraceRoutePoint, pcb_trace_route_point } from "circuit-json"
+import { getTaperedWireGeometry } from "lib/utils/tapered-wire-geometry"
+import { getRoutePointPosition } from "lib/utils/pcb-trace-route-point-utils"
+import { type PcbTraceRoutePoint, pcb_trace } from "circuit-json"
 import { applyToPoint } from "transformation-matrix"
 import { z } from "zod"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
 export const pcbTraceProps = z.object({
-  route: z.array(pcb_trace_route_point),
+  route: pcb_trace.shape.route,
   // If this primitive PcbTrace needs to be associated with a source_trace_id
   // it can be added as a prop here. For footprints, it's often not needed.
   source_trace_id: z.string().optional(),
@@ -110,7 +112,7 @@ export class PcbTrace extends PrimitiveComponent<typeof pcbTraceProps> {
     let minY = Infinity
     let maxY = -Infinity
 
-    for (const point of props.route) {
+    for (const [index, point] of props.route.entries()) {
       if (point.route_type === "through_pad") {
         minX = Math.min(minX, point.start.x, point.end.x)
         maxX = Math.max(maxX, point.start.x, point.end.x)
@@ -123,7 +125,20 @@ export class PcbTrace extends PrimitiveComponent<typeof pcbTraceProps> {
         maxY = Math.max(maxY, point.y)
       }
 
-      if (point.route_type === "wire") {
+      if (
+        point.route_type === "wire" &&
+        point.width_interpolation_mode &&
+        props.route[index + 1]
+      ) {
+        const bounds = getTaperedWireGeometry(
+          point,
+          getRoutePointPosition(props.route[index + 1]!),
+        ).bounds
+        minX = Math.min(minX, bounds.left)
+        maxX = Math.max(maxX, bounds.right)
+        minY = Math.min(minY, bounds.bottom)
+        maxY = Math.max(maxY, bounds.top)
+      } else if (point.route_type === "wire") {
         minX = Math.min(minX, point.x - point.width / 2)
         maxX = Math.max(maxX, point.x + point.width / 2)
         minY = Math.min(minY, point.y - point.width / 2)

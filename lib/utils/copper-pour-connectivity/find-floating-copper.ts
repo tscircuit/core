@@ -1,3 +1,4 @@
+import { getTaperedWireGeometry } from "lib/utils/tapered-wire-geometry"
 import type { Polygon } from "@flatten-js/core"
 import type {
   AnyCircuitElement,
@@ -201,12 +202,16 @@ export const findFloatingCopper = (
             ? next.width
             : startWidth
         add({
-          polygon: getTraceSegmentPolygon(
-            start.point,
-            end.point,
-            startWidth,
-            endWidth,
-          ),
+          polygon:
+            routePoint.route_type === "wire" &&
+            routePoint.width_interpolation_mode
+              ? getTaperedWireGeometry(routePoint, end.point).polygon
+              : getTraceSegmentPolygon(
+                  start.point,
+                  end.point,
+                  startWidth,
+                  endWidth,
+                ),
           layers: [start.layer],
           netId,
           isTerminal: false,
