@@ -155,12 +155,6 @@ export const applyInlineNetLabelEligibility = ({
       continue
     const { connKey } = netConnection
     if (!connKey && !isSameSheetCrossSectionConnection) continue
-    if (
-      connKey &&
-      !isSameSheetCrossSectionConnection &&
-      !connKeysWithExplicitPortNetTraces.has(connKey)
-    )
-      continue
 
     const sourceNet = connKey ? connKeyToSourceNet.get(connKey) : undefined
     if (
@@ -183,6 +177,26 @@ export const applyInlineNetLabelEligibility = ({
       wasAssignedDisplayLabel = resolvedLabel.wasAssignedDisplayLabel
     }
     if (!name || (!hasInlineNetLabel && !wasAssignedDisplayLabel)) continue
+
+    if (
+      connKey &&
+      !isSameSheetCrossSectionConnection &&
+      !connKeysWithExplicitPortNetTraces.has(connKey)
+    ) {
+      // Original gate: only nets with explicit port-to-net traces qualify
+      // for an inline label. Relaxation: a branched net (3+ ports) with no
+      // named source_net whose name came from an explicit display label on a
+      // real trace is eligible too - that is exactly the case fed as a net
+      // connection by createSchematicTraceSolverInputProblem, and the user
+      // named the wire so the label belongs on it rather than on anchored
+      // net-label endpoints. Two-port named nets already get their inline
+      // label through directConnections, and unnamed nets stay gated.
+      const isDisplayLabeledBranchedNet =
+        !sourceNet &&
+        wasAssignedDisplayLabel &&
+        (connKeyToSchematicPortIds.get(connKey)?.length ?? 0) >= 3
+      if (!isDisplayLabeledBranchedNet) continue
+    }
 
     markConnectionEligibleForInlineNetLabel(netConnection, name)
   }

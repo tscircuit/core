@@ -11,11 +11,11 @@ import {
 } from "@tscircuit/schematic-trace-solver"
 import type { SchematicComponent, SourceNet, SourceTrace } from "circuit-json"
 import { getSourcePortConnectivityMapFromCircuitJson } from "circuit-json-to-connectivity-map"
+import { Port } from "../../Port"
 import { getSchematicNetLabelTextWidth } from "lib/utils/schematic/computeSchematicNetLabelCenter"
 import { convertFacingDirectionToElbowDirection } from "lib/utils/schematic/convertFacingDirectionToElbowDirection"
 import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
 import type { NetLabel } from "../../NetLabel"
-import { Port } from "../../Port"
 import { Group } from "../Group"
 import { applyInlineNetLabelEligibility } from "./applyInlineNetLabelEligibility"
 import { createCanonicalSchematicNetLabelTextResolver } from "./createCanonicalSchematicNetLabelTextResolver"
@@ -917,6 +917,54 @@ export function createSchematicTraceSolverInputProblem(
 
   for (const [connKey, schematicPortIds] of connKeyToSchematicPortIds) {
     const sourceNet = connKeyToSourceNet.get(connKey)
+    if (!sourceNet && schematicPortIds.length >= 3) {
+      // A branched wire (3+ ports) with no named source_net still deserves
+      // its display label drawn inline when the user named the trace - feed
+      // it to the solver as a net connection so the multi-pin inline-label
+      // conversion can replace anchored net-label endpoints. Two-port
+      // display-labeled nets already get their inline label through
+      // directConnections, and unnamed nets keep their existing routing.
+      const { name, wasAssignedDisplayLabel } = resolveCanonicalNetLabelText({
+        subcircuitConnectivityMapKey: connKey,
+      })
+      // Cross-section inline connections for the same net already carry a
+      // netConnection - adding another would double the label.
+      const alreadyFedAsNetConnection = netConnections.some(
+        (connection) => connection.connKey === connKey,
+      )
+      if (name && wasAssignedDisplayLabel && !alreadyFedAsNetConnection) {
+        // Traces on the same electrical net can carry conflicting display
+        // labels (each trace named differently). Those stay separate direct
+        // connections so every label still renders, exactly like before.
+        // This check walks the component tree, so it stays behind the cheap
+        // guards above.
+        const netPorts = group
+          .selectAll<Port>("port")
+          .filter((port) => port._getSubcircuitConnectivityKey() === connKey)
+        const distinctDisplayLabels = new Set(
+          [
+            ...new Set(
+              netPorts.flatMap((port) => port._getDirectlyConnectedTraces()),
+            ),
+          ]
+            .map(
+              (trace) =>
+                (trace._parsedProps.schDisplayLabel ??
+                  trace._parsedProps.displayName ??
+                  trace._parsedProps.name) as string | undefined,
+            )
+            .filter((label): label is string => Boolean(label)),
+        )
+        if (distinctDisplayLabels.size !== 1) continue
+        netConnections.push({
+          netId: String(connKey),
+          netLabelText: name,
+          schematicPortIds,
+          connKey,
+        })
+      }
+      continue
+    }
     if (sourceNet && schematicPortIds.length >= 1) {
       const userNetId = String(
         sourceNet.name || sourceNet.source_net_id || connKey,
