@@ -43,7 +43,7 @@ test("error when component has no ports", () => {
 
   expect(errors.length).toBe(1)
   expect((errors[0] as any).message).toBe(
-    'Could not find port for selector "G1.1". Component "G1" found, but does not have pin "1". It has no ports',
+    'Could not find port for selector "G1.1". Component "G1" found, but does not have pin "1". It is a group, which has no pins of its own, and it contains no named components',
   )
 })
 
