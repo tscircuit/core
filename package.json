@@ -38,6 +38,7 @@
     "@tscircuit/bus-lanes-solver": "github:tscircuit/bus-lanes-solver#0bc8d071241b18a3e7465a878881abe4998f6384",
     "@tscircuit/capacity-autorouter": "^0.0.919",
     "@tscircuit/checks": "^0.0.210",
+    "@tscircuit/circuit-json-schematic-placement-analysis": "https://codeload.github.com/tscircuit/circuit-json-schematic-placement-analysis/tar.gz/ffbaa1cc3b72f7a1538d3afccefbb70dc9038d75",
     "@tscircuit/circuit-json-util": "^0.0.116",
     "@tscircuit/common": "^0.0.20",
     "@tscircuit/copper-pour-solver": "^0.0.57",
@@ -122,7 +123,6 @@
   "dependencies": {
     "@flatten-js/core": "^1.6.2",
     "@lume/kiwi": "^0.4.3",
-    "@tscircuit/circuit-json-schematic-placement-analysis": "https://codeload.github.com/tscircuit/circuit-json-schematic-placement-analysis/tar.gz/ffbaa1cc3b72f7a1538d3afccefbb70dc9038d75",
     "calculate-cell-boundaries": "^0.0.21",
     "calculate-packing": "^0.0.89",
     "css-select": "5.1.0",
