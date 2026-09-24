@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test.failing(
+test(
   "schOrientation neg_bottom places the negative pin at the bottom",
   () => {
     const { circuit } = getTestFixture()
