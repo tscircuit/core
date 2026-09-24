@@ -95,6 +95,19 @@ test("repro: imported two-pin symbols generate asymmetric solver bounds", async 
 
   circuit.add(
     <board width="8mm" height="8mm">
+      <connector
+        name="J1"
+        pinCount={2}
+        pinLabels={{ pin1: "LINE", pin2: "NEUTRAL" }}
+        schPinArrangement={{
+          leftSide: { pins: ["LINE"], direction: "top-to-bottom" },
+          rightSide: { pins: ["NEUTRAL"], direction: "top-to-bottom" },
+        }}
+        schWidth={1.3}
+        schHeight={0.4}
+        schX={-3}
+        schY={1.5}
+      />
       <chip
         name="F1"
         pinLabels={twoPinLabels}
@@ -109,7 +122,9 @@ test("repro: imported two-pin symbols generate asymmetric solver bounds", async 
         schX={0}
         schY={-1.5}
       />
+      <trace from="J1.LINE" to="F1.pin1" />
       <trace from="F1.pin2" to="RV1.pin1" />
+      <netlabel net="NEUTRAL" connection="RV1.pin2" anchorSide="left" />
     </board>,
   )
 
