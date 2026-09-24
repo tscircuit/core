@@ -26,6 +26,7 @@ test("generated antenna geometry follows rotation and bottom-layer transforms", 
   await circuit.renderUntilSettled()
 
   const generatedTrace = circuit.db.pcb_trace.list()[0]
+  expect(generatedTrace).toHaveProperty("is_antenna_trace", true)
   expect(generatedTrace.route[0]).toMatchObject({
     x: 6,
     y: 9.7,
