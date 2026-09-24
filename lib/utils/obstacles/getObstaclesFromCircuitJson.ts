@@ -385,6 +385,9 @@ export const getObstaclesFromCircuitJson = (
         })
       }
     } else if (element.type === "pcb_plated_hole") {
+      const platedHoleLayers = element.layers?.length
+        ? element.layers
+        : everyLayer
       const pcbPlatedHoleCircuitJsonMetadata: CircuitJsonMetadata = {
         pcb_plated_hole_id: element.pcb_plated_hole_id,
         pcb_port_id: element.pcb_port_id,
@@ -399,7 +402,7 @@ export const getObstaclesFromCircuitJson = (
           componentId: pcbComponentId,
           // @ts-ignore
           type: "oval",
-          layers: everyLayer,
+          layers: platedHoleLayers,
           center: {
             x: element.x,
             y: element.y,
@@ -431,7 +434,7 @@ export const getObstaclesFromCircuitJson = (
           circuitJsonMetadata: pcbPlatedHoleCircuitJsonMetadata,
           componentId: pcbComponentId,
           type: "rect",
-          layers: everyLayer,
+          layers: platedHoleLayers,
           center: rect.center,
           width: rect.width,
           height: rect.height,
@@ -446,7 +449,7 @@ export const getObstaclesFromCircuitJson = (
           componentId: pcbComponentId,
           // @ts-ignore
           type: "rect",
-          layers: everyLayer,
+          layers: platedHoleLayers,
           center: {
             x: element.x,
             y: element.y,
@@ -461,7 +464,7 @@ export const getObstaclesFromCircuitJson = (
           componentId: pcbComponentId,
           // @ts-ignore
           type: "oval",
-          layers: everyLayer,
+          layers: platedHoleLayers,
           center: {
             x: element.x,
             y: element.y,
@@ -475,7 +478,7 @@ export const getObstaclesFromCircuitJson = (
           circuitJsonMetadata: pcbPlatedHoleCircuitJsonMetadata,
           componentId: pcbComponentId,
           type: "rect",
-          layers: everyLayer,
+          layers: platedHoleLayers,
           center: {
             x: element.x,
             y: element.y,
@@ -505,7 +508,7 @@ export const getObstaclesFromCircuitJson = (
             componentId: pcbComponentId,
             // @ts-ignore
             type: "rect",
-            layers: everyLayer,
+            layers: platedHoleLayers,
             center: {
               x: centerX,
               y: centerY,
