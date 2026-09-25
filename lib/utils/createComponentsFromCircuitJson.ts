@@ -281,7 +281,7 @@ export const createComponentsFromCircuitJson = (
           height: elm.height,
           width: elm.width,
           portHints: resolvedPortHints,
-          rectBorderRadius: elm.rect_border_radius,
+          cornerRadius: elm.corner_radius ?? elm.rect_border_radius,
         }),
       )
     } else if (elm.type === "pcb_smtpad" && elm.shape === "circle") {
@@ -332,7 +332,7 @@ export const createComponentsFromCircuitJson = (
           height: elm.height,
           width: elm.width,
           ccwRotation: elm.ccw_rotation,
-          cornerRadius: elm.corner_radius,
+          cornerRadius: elm.corner_radius ?? elm.rect_border_radius,
           portHints: resolvedPortHints,
         }),
       )
