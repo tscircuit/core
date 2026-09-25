@@ -13,7 +13,7 @@ export interface RoutingPhaseDrcTolerances {
   minViaHoleEdgeToViaHoleEdgeClearance?: number
   minPlatedHoleDrillEdgeToDrillEdgeClearance?: number
   minTraceToPadEdgeClearance?: number
-  minTraceToHoleClearance?: number
+  minTraceToHoleEdgeClearance?: number
   minPadEdgeToPadEdgeClearance?: number
   minBoardEdgeClearance?: number
   minViaEdgeToPadEdgeClearance?: number
