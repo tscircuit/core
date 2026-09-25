@@ -1,9 +1,10 @@
 import { expect, test } from "bun:test"
 import { type AnyCircuitElement, pcb_board } from "circuit-json"
+import { Group_applyDrcTolerancesToSimpleRouteJson } from "lib/components/primitive-components/Group/Group_phasedAutoroutingUtils"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("board hole edge clearance survives Circuit JSON round trips and SRJ overrides", async () => {
+test("board hole edge clearance persists into SRJ with NPTH geometry and phase overrides", async () => {
   for (const clearance of [undefined, 0, 0.2]) {
     const { circuit } = getTestFixture()
     circuit.add(
@@ -29,6 +30,29 @@ test("board hole edge clearance survives Circuit JSON round trips and SRJ overri
     const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
       circuitJson: exported,
     })
+    expect(simpleRouteJson.minTraceToHoleEdgeClearance).toBe(clearance)
+    const hole = circuit.db.pcb_hole.list()[0]!
+    expect(
+      simpleRouteJson.obstacles.find((obstacle) => obstacle.isHole),
+    ).toMatchObject({
+      obstacleId: hole.pcb_hole_id,
+      shape: "circle",
+      width: 2,
+      height: 2,
+      connectedTo: [],
+      layers: ["top", "bottom"],
+    })
+    for (const phaseClearance of [0, 0.5]) {
+      const phaseInput = Group_applyDrcTolerancesToSimpleRouteJson(
+        simpleRouteJson,
+        {
+          minTraceToHoleEdgeClearance: phaseClearance,
+          minTraceToPadEdgeClearance: phaseClearance,
+        },
+      )
+      expect(phaseInput.minTraceToHoleEdgeClearance).toBe(phaseClearance)
+      expect(phaseInput.minTraceToPadEdgeClearance).toBe(phaseClearance)
+    }
     expect(simpleRouteJson.minTraceToHoleEdgeClearance).toBe(clearance)
     const overridden = getSimpleRouteJsonFromCircuitJson({
       circuitJson: exported,
