@@ -280,14 +280,27 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     ),
     sharedConnMap,
   )
-  obstacles.push(
-    ...getUnbrokenCopperPourObstacles({
-      connMap: sharedConnMap,
-      subcircuitComponent,
-      board,
-      group: pcbGroup,
-    }),
-  )
+  // Unbroken copper pours come in two routing roles, split by layer:
+  //
+  // - OUTER-layer pours (top/bottom) are conforming fills: filled AFTER routing
+  //   and flowing around traces. They are not copper at routing time, so they
+  //   must not be hard obstacles (a 2-layer board with a full GND pour would
+  //   otherwise be unroutable). The pour provides the net's connectivity, so
+  //   those nets are also skipped as routing connections below.
+  //
+  // - INNER-layer pours are solid planes reached by escape vias. They stay
+  //   obstacles (escape-via targets) and their nets still route.
+  const unbrokenCopperPourObstacles = getUnbrokenCopperPourObstacles({
+    connMap: sharedConnMap,
+    subcircuitComponent,
+    board,
+    group: pcbGroup,
+  })
+  const isOuterPour = (o: { layers?: string[] }) =>
+    (o.layers ?? []).some((l) => l === "top" || l === "bottom")
+  const outerCopperPourObstacles =
+    unbrokenCopperPourObstacles.filter(isOuterPour)
+  obstacles.push(...unbrokenCopperPourObstacles.filter((o) => !isOuterPour(o)))
 
   // Add every equivalent ID from the shared connectivity map to each obstacle.
   for (const obstacle of obstacles) {
@@ -659,8 +672,20 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     )
   const getSourceConnectivityKey = (id?: string | null) =>
     id ? (sharedConnMap.getNetConnectedToId(id) ?? id) : null
+  const pouredNetConnectivityKeys = new Set<string>(
+    outerCopperPourObstacles
+      .flatMap((o) => o.connectedTo)
+      .map((id) => (id ? (sharedConnMap.getNetConnectedToId(id) ?? id) : null))
+      .filter((k): k is string => k != null),
+  )
   for (const net of source_nets) {
     const netConnectivityKey = getSourceConnectivityKey(net.source_net_id)
+    if (
+      netConnectivityKey &&
+      pouredNetConnectivityKeys.has(netConnectivityKey)
+    ) {
+      continue
+    }
     if (
       !netConnectivityKey ||
       handledNetConnectivityKeys.has(netConnectivityKey)
