@@ -179,6 +179,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
           pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
         } as PcbSmtPadCircle)
     } else if (props.shape === "rect") {
+      const cornerRadius = props.cornerRadius ?? props.rectBorderRadius
       const hasRotation = !isAxisAligned && !isRotated90Degrees
       if (hasRotation) {
         pcb_smtpad = db.pcb_smtpad.insert({
@@ -188,7 +189,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
           shape: "rotated_rect",
           width: props.width!,
           height: props.height!,
-          corner_radius: props.cornerRadius ?? undefined,
+          corner_radius: cornerRadius ?? undefined,
           x: position.x,
           y: position.y,
           ccw_rotation: finalRotationDegrees,
@@ -206,7 +207,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
           shape: "rect",
           width: isRotated90Degrees ? props.height! : props.width!,
           height: isRotated90Degrees ? props.width! : props.height!,
-          corner_radius: props.cornerRadius ?? undefined,
+          corner_radius: cornerRadius ?? undefined,
           port_hints: portHints,
           is_covered_with_solder_mask: isCoveredWithSolderMask,
           soldermask_margin: soldermaskMargin,
