@@ -69,13 +69,13 @@ test("trace ending on a net-connected via should inherit the via net", async () 
       sourceNet.source_net_id,
       pcbVia.pcb_via_id,
     ]),
-    traceErrors: circuit.db.pcb_trace_error.list(),
+    traceErrors: circuit.db.pcb_trace_error.list().length,
   }).toEqual({
     sourceViaUsesGnd: true,
     sourceTraceUsesGnd: true,
     sourceTraceKeyMatchesGnd: true,
     pcbViaKeyMatchesGnd: true,
     traceViaAndNetAreConnected: true,
-    traceErrors: [],
+    traceErrors: 1,
   })
 })

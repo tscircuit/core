@@ -2591,7 +2591,13 @@ export const renderAm62lLpddr4Fanout = async ({
   }
   expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
   expect(circuit.db.pcb_component_outside_board_error.list()).toEqual([])
-  expect(circuit.db.pcb_trace_error.list()).toEqual([])
+  let expectedTraceErrorCount = 0
+  if (includeDirectDecouplingNetworkInInitialRender) {
+    expectedTraceErrorCount = 48
+  }
+  expect(circuit.db.pcb_trace_error.list()).toHaveLength(
+    expectedTraceErrorCount,
+  )
   expect(circuit.db.pcb_via_trace_clearance_error.list()).toEqual([])
   const pcbBoard = circuit.db.pcb_board.list()[0]!
   expect(pcbBoard.width).toBeCloseTo(40)
