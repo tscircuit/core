@@ -3,36 +3,43 @@ import type { CircuitJson } from "circuit-json"
 import { convertCircuitJsonToPcbSvg } from "circuit-to-svg"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
+function countPcbElements(circuitJson: CircuitJson) {
+  return {
+    components: circuitJson.filter(
+      (element) => element.type === "pcb_component",
+    ).length,
+    traces: circuitJson.filter((element) => element.type === "pcb_trace")
+      .length,
+    errors: circuitJson.filter((element) => element.type.includes("error"))
+      .length,
+  }
+}
+
 test.failing(
   "group subcircuit imports two resistors and their routed trace",
   async () => {
-    const { circuit: source } = getTestFixture()
-    source.add(
+    const { circuit: sourceCircuit } = getTestFixture()
+    sourceCircuit.add(
       <board width={20} height={10} schematicDisabled>
         <resistor name="R1" resistance="1k" footprint="0402" pcbX={-3} />
         <resistor name="R2" resistance="1k" footprint="0402" pcbX={3} />
         <trace from=".R1 > .pin2" to=".R2 > .pin1" pcbStraightLine />
       </board>,
     )
-    await source.renderUntilSettled()
-    const input = source.getCircuitJson()
-    const counts = (json: CircuitJson) => ({
-      components: json.filter((e) => e.type === "pcb_component").length,
-      traces: json.filter((e) => e.type === "pcb_trace").length,
-      errors: json.filter((e) => e.type.includes("error")).length,
-    })
+    await sourceCircuit.renderUntilSettled()
+    const input = sourceCircuit.getCircuitJson()
     const expected = { components: 2, traces: 1, errors: 0 }
-    expect(counts(input)).toEqual(expected)
+    expect(countPcbElements(input)).toEqual(expected)
 
-    const { circuit } = getTestFixture()
-    circuit.add(
+    const { circuit: importedCircuit } = getTestFixture()
+    importedCircuit.add(
       <board width={20} height={10} schematicDisabled>
         <group subcircuit circuitJson={input} />
       </board>,
     )
-    await circuit.renderUntilSettled()
-    const output = circuit.getCircuitJson()
-    const actual = counts(output)
+    await importedCircuit.renderUntilSettled()
+    const output = importedCircuit.getCircuitJson()
+    const actual = countPcbElements(output)
     const passed =
       actual.components === expected.components &&
       actual.traces === expected.traces &&
