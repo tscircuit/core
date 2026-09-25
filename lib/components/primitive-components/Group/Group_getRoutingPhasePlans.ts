@@ -205,6 +205,7 @@ function getDrcTolerancesFromAutoroutingPhaseProps(
     minViaHoleEdgeToViaHoleEdgeClearance,
     minPlatedHoleDrillEdgeToDrillEdgeClearance,
     minTraceToPadEdgeClearance,
+    minTraceToHoleClearance,
     minPadEdgeToPadEdgeClearance,
     minBoardEdgeClearance,
     minViaEdgeToPadEdgeClearance,
@@ -217,6 +218,7 @@ function getDrcTolerancesFromAutoroutingPhaseProps(
     minViaHoleEdgeToViaHoleEdgeClearance === undefined &&
     minPlatedHoleDrillEdgeToDrillEdgeClearance === undefined &&
     minTraceToPadEdgeClearance === undefined &&
+    minTraceToHoleClearance === undefined &&
     minPadEdgeToPadEdgeClearance === undefined &&
     minBoardEdgeClearance === undefined &&
     minViaEdgeToPadEdgeClearance === undefined &&
@@ -235,6 +237,7 @@ function getDrcTolerancesFromAutoroutingPhaseProps(
       minPlatedHoleDrillEdgeToDrillEdgeClearance,
     ),
     minTraceToPadEdgeClearance: toParsedDistance(minTraceToPadEdgeClearance),
+    minTraceToHoleClearance: toParsedDistance(minTraceToHoleClearance),
     minPadEdgeToPadEdgeClearance: toParsedDistance(
       minPadEdgeToPadEdgeClearance,
     ),

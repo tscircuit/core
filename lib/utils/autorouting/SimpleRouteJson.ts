@@ -165,6 +165,7 @@ export type SimpleRouteJson = Omit<
   min_via_pad_diameter?: number
   defaultObstacleMargin?: number
   minTraceToPadEdgeClearance?: number
+  minTraceToHoleClearance?: number
   minViaEdgeToPadEdgeClearance?: number
   minViaHoleEdgeToViaHoleEdgeClearance?: number
   minPlatedHoleDrillEdgeToDrillEdgeClearance?: number

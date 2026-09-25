@@ -872,6 +872,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         const preferredTraceWidth =
           props.defaultTraceWidth ?? props.nominalTraceWidth
         const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
+          minTraceToHoleClearance: this.getInheritedProperty("minTraceToHoleClearance"),
           db,
           minTraceWidth: Number(props.minTraceWidth ?? 0.15),
           nominalTraceWidth:
@@ -1099,6 +1100,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       : undefined
     let { simpleRouteJson: baseSimpleRouteJson } =
       getSimpleRouteJsonFromCircuitJson({
+        minTraceToHoleClearance: this.getInheritedProperty("minTraceToHoleClearance"),
         db,
         minTraceWidth,
         nominalTraceWidth,
@@ -1440,6 +1442,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           routingPhasePlan.routingPcbGroupId
         if (activeCustomBreakoutRoutingGroupId) {
           const activeGroupSimpleRouteJson = getSimpleRouteJsonFromCircuitJson({
+            minTraceToHoleClearance: this.getInheritedProperty("minTraceToHoleClearance"),
             db,
             minTraceWidth,
             nominalTraceWidth,

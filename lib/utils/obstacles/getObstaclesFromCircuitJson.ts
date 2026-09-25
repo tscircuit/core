@@ -310,8 +310,9 @@ export const getObstaclesFromCircuitJson = (
       if (element.hole_shape === "oval") {
         obstacles.push({
           componentId: pcbComponentId,
-          // @ts-ignore
-          type: "oval",
+          obstacleId: element.pcb_hole_id,
+          isHole: true,
+          type: "rect",
           layers: everyLayer,
           center: {
             x: element.x,
@@ -327,6 +328,8 @@ export const getObstaclesFromCircuitJson = (
       ) {
         obstacles.push({
           componentId: pcbComponentId,
+          obstacleId: element.pcb_hole_id,
+          isHole: true,
           type: "rect",
           layers: everyLayer,
           center: {
@@ -343,6 +346,8 @@ export const getObstaclesFromCircuitJson = (
       } else if (element.hole_shape === "rect") {
         obstacles.push({
           componentId: pcbComponentId,
+          obstacleId: element.pcb_hole_id,
+          isHole: true,
           type: "rect",
           layers: everyLayer,
           center: {
@@ -356,6 +361,8 @@ export const getObstaclesFromCircuitJson = (
       } else if (element.hole_shape === "square") {
         obstacles.push({
           componentId: pcbComponentId,
+          obstacleId: element.pcb_hole_id,
+          isHole: true,
           type: "rect",
           layers: everyLayer,
           center: {
@@ -373,7 +380,10 @@ export const getObstaclesFromCircuitJson = (
       ) {
         obstacles.push({
           componentId: pcbComponentId,
+          obstacleId: element.pcb_hole_id,
+          isHole: true,
           type: "rect",
+          shape: "circle",
           layers: everyLayer,
           center: {
             x: element.x,
