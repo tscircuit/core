@@ -52,8 +52,8 @@ test("group subcircuit imports two resistors and their routed trace", async () =
 <g font-family="sans-serif" fill="#eef4fc">
 <text x="28" y="38" font-size="24" font-weight="bold">Repro: import two resistors and their routed trace</text>
 <text x="28" y="76" font-size="20">Input: core-generated JSON via &lt;group subcircuit circuitJson={input} /&gt;</text>
-<text x="28" y="113" font-size="20">Expected: ${expected.components} components / ${expected.traces} trace / ${expected.errors} errors</text>
-<text x="28" y="150" font-size="20">Observed: ${actual.components} components / ${actual.traces} traces / ${actual.errors} errors</text>
+<text x="28" y="113" font-size="20">Expected: ${expected.components} component${expected.components === 1 ? "" : "s"} / ${expected.traces} trace${expected.traces === 1 ? "" : "s"} / ${expected.errors} error${expected.errors === 1 ? "" : "s"}</text>
+<text x="28" y="150" font-size="20">Observed: ${actual.components} component${actual.components === 1 ? "" : "s"} / ${actual.traces} trace${actual.traces === 1 ? "" : "s"} / ${actual.errors} error${actual.errors === 1 ? "" : "s"}</text>
 <text x="28" y="194" font-size="24" font-weight="bold" fill="${passed ? "#60dfab" : "#ff8585"}">${passed ? "PASS: imported components and trace preserved" : "FAIL: imported components and trace missing"}</text>
 </g>${pcb}</svg>`,
   )
