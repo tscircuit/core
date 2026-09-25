@@ -2591,7 +2591,26 @@ export const renderAm62lLpddr4Fanout = async ({
   }
   expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
   expect(circuit.db.pcb_component_outside_board_error.list()).toEqual([])
-  expect(circuit.db.pcb_trace_error.list()).toEqual([])
+  const pcbTraceErrors = circuit.db.pcb_trace_error.list()
+  if (includeDirectDecouplingNetworkInInitialRender) {
+    // Only the DDR rails and GND have planes in this fixture. These other
+    // power drops end on vias without an onward copper connection.
+    expect(pcbTraceErrors).toHaveLength(48)
+    for (const error of pcbTraceErrors) {
+      const sourceTrace = circuit.db.source_trace.get(error.source_trace_id)
+      const capacitor = renderedDirectDecouplingCapacitors.find(
+        (capacitor) => sourceTrace?.name === `${capacitor.name}_POWER_DROP`,
+      )
+      expect(capacitor).toBeDefined()
+      if (!capacitor) throw new Error("Expected a direct decoupling power drop")
+      expect(error.message).toContain("has dangling endpoint")
+      expect(error.center).toEqual(
+        getDirectDecouplingViaPosition(capacitor, capacitor.powerViaOffset),
+      )
+    }
+  } else {
+    expect(pcbTraceErrors).toEqual([])
+  }
   expect(circuit.db.pcb_via_trace_clearance_error.list()).toEqual([])
   const pcbBoard = circuit.db.pcb_board.list()[0]!
   expect(pcbBoard.width).toBeCloseTo(40)
