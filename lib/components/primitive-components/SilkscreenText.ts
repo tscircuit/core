@@ -179,7 +179,7 @@ export class SilkscreenText extends PrimitiveComponent<
     const text = this._resolveText()
     const textWidth = text.length * fontSize
     const textHeight = fontSize
-    return { width: textWidth * fontSize, height: textHeight * fontSize }
+    return { width: textWidth, height: textHeight }
   }
 
   _moveCircuitJsonElements({
