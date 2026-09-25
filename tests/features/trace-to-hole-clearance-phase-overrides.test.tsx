@@ -6,10 +6,10 @@ import type {
 import { createBasicAutorouter } from "tests/fixtures/createBasicAutorouter"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("nested groups inherit board hole clearance and routing phases can override it including zero", async () => {
+test("hole and pad clearance share board inheritance and routing-phase override behavior", async () => {
   for (const settings of [
     { group: undefined, phase: undefined, expected: 0.2 },
-    { group: 0.3, phase: undefined, expected: 0.3 },
+    { group: 0.3, phase: undefined, expected: 0.2 },
     { group: 0.3, phase: "0.5mm", expected: 0.5 },
     { group: 0.3, phase: 0, expected: 0 },
   ]) {
@@ -37,6 +37,7 @@ test("nested groups inherit board hole clearance and routing phases can override
         width={20}
         height={12}
         minTraceToHoleEdgeClearance="0.2mm"
+        minTraceToPadEdgeClearance="0.2mm"
         autorouter={{ local: true, algorithmFn }}
       >
         <group
@@ -44,7 +45,10 @@ test("nested groups inherit board hole clearance and routing phases can override
           subcircuit
           {...(settings.group === undefined
             ? {}
-            : { minTraceToHoleEdgeClearance: settings.group })}
+            : {
+                minTraceToHoleEdgeClearance: settings.group,
+                minTraceToPadEdgeClearance: settings.group,
+              })}
         >
           <resistor name="R1" resistance="1k" footprint="0402" pcbX={-4} />
           <resistor name="R2" resistance="1k" footprint="0402" pcbX={4} />
@@ -53,7 +57,10 @@ test("nested groups inherit board hole clearance and routing phases can override
             phaseIndex={0}
             {...(settings.phase === undefined
               ? {}
-              : { minTraceToHoleEdgeClearance: settings.phase })}
+              : {
+                  minTraceToHoleEdgeClearance: settings.phase,
+                  minTraceToPadEdgeClearance: settings.phase,
+                })}
           />
         </group>
       </board>,
@@ -62,7 +69,9 @@ test("nested groups inherit board hole clearance and routing phases can override
     expect(inputs.length).toBeGreaterThan(0)
     expect(
       inputs.every(
-        (srj) => srj.minTraceToHoleEdgeClearance === settings.expected,
+        (srj) =>
+          srj.minTraceToHoleEdgeClearance === settings.expected &&
+          srj.minTraceToPadEdgeClearance === settings.expected,
       ),
     ).toBe(true)
   }
