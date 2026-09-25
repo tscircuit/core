@@ -1091,9 +1091,7 @@ export class NormalComponent<
     this.doInitialPcbComponentSizeCalculation()
   }
 
-  /**
-   * Calculate and update the size of a custom schematic symbol based on its children
-   */
+  /** Calculate a custom schematic symbol's body bounds from its graphics. */
   doInitialSchematicComponentSizeCalculation(): void {
     if (this.root?.schematicDisabled) return
     if (!this.schematic_component_id) return
@@ -1106,7 +1104,7 @@ export class NormalComponent<
     // Only update size for custom symbols (not predefined symbols)
     if (!schematic_component) return
 
-    // Get all schematic primitives from this component's subtree (recursively)
+    // Text labels are separate from the symbol body and must not shift its bounds.
     const schematicElements: any[] = []
     const collectSchematicPrimitives = (children: any[]) => {
       for (const child of children) {
@@ -1139,13 +1137,6 @@ export class NormalComponent<
         ) {
           const arc = db.schematic_arc.get((child as any).schematic_arc_id)
           if (arc) schematicElements.push(arc)
-        }
-        if (
-          child.isSchematicPrimitive &&
-          child.componentName === "SchematicText"
-        ) {
-          const text = db.schematic_text.get((child as any).schematic_text_id)
-          if (text) schematicElements.push(text)
         }
         if (
           child.isSchematicPrimitive &&

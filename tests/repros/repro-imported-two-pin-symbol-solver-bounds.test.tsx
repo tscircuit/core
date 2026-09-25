@@ -89,7 +89,7 @@ const varistorSymbol = (
   </symbol>
 )
 
-test("repro: imported two-pin symbols generate asymmetric solver bounds", async () => {
+test("imported two-pin symbols use body bounds for solver obstacles", async () => {
   const { circuit } = getTestFixture()
   circuit.pcbDisabled = true
 
@@ -158,12 +158,12 @@ test("repro: imported two-pin symbols generate asymmetric solver bounds", async 
   expect(solverBounds).toMatchInlineSnapshot(`
     [
       {
-        "maxX": 0.19999999999999996,
-        "minX": -0.54,
+        "maxX": 0.2,
+        "minX": -0.2,
         "name": "F1",
         "pins": [
           {
-            "isInsideBounds": true,
+            "isInsideBounds": false,
             "x": -0.4,
           },
           {
@@ -173,12 +173,12 @@ test("repro: imported two-pin symbols generate asymmetric solver bounds", async 
         ],
       },
       {
-        "maxX": 0.19999999999999996,
-        "minX": -0.5900000000000001,
+        "maxX": 0.2,
+        "minX": -0.2,
         "name": "RV1",
         "pins": [
           {
-            "isInsideBounds": true,
+            "isInsideBounds": false,
             "x": -0.4,
           },
           {

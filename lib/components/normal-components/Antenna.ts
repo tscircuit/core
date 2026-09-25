@@ -106,16 +106,16 @@ export class Antenna extends NormalComponent<
         )
       }
 
-      generatedFootprint.add(
-        new PcbTrace({
-          route: geometry.route.map((point) => ({
-            route_type: "wire" as const,
-            ...point,
-            width: geometry.traceWidth,
-            layer: "top" as const,
-          })),
-        }),
-      )
+      const antennaTrace = new PcbTrace({
+        route: geometry.route.map((point) => ({
+          route_type: "wire" as const,
+          ...point,
+          width: geometry.traceWidth,
+          layer: "top" as const,
+        })),
+      })
+      antennaTrace.isAntennaTrace = true
+      generatedFootprint.add(antennaTrace)
 
       if (geometry.secondaryPort && !geometry.groundViaPoint && !hasFootprint) {
         generatedFootprint.add(
@@ -156,12 +156,12 @@ export class Antenna extends NormalComponent<
     const { pcbPath } = this._parsedProps
     if (!pcbPath) return
 
-    this.add(
-      new Trace({
-        name: `${this.name}_pcb_path`,
-        path: [`${this.getSubcircuitSelector()} > port.pin1`],
-        pcbPath,
-      }),
-    )
+    const antennaTrace = new Trace({
+      name: `${this.name}_pcb_path`,
+      path: [`${this.getSubcircuitSelector()} > port.pin1`],
+      pcbPath,
+    })
+    antennaTrace.isAntennaTrace = true
+    this.add(antennaTrace)
   }
 }

@@ -48,7 +48,7 @@ test("autorouter uses breakout point", async () => {
   const traceErrors = circuit.db.pcb_trace_error.list()
   const clearanceErrors = circuit.db.pcb_pad_trace_clearance_error.list()
 
-  expect(traceErrors).toHaveLength(2)
+  expect(traceErrors).toHaveLength(3)
   expect(
     traceErrors.filter((error) => error.message.includes("overlaps with")),
   ).toHaveLength(1)

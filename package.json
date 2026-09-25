@@ -1,7 +1,7 @@
 {
   "name": "@tscircuit/core",
   "type": "module",
-  "version": "0.0.1976",
+  "version": "0.0.1989",
   "types": "dist/index.d.ts",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -37,7 +37,7 @@
     "@tscircuit/bga-fanout-solver": "github:tscircuit/bga-fanout-solver#247c835cb8d69b65e53891dcf869731079415b39",
     "@tscircuit/bus-lanes-solver": "github:tscircuit/bus-lanes-solver#0bc8d071241b18a3e7465a878881abe4998f6384",
     "@tscircuit/capacity-autorouter": "^0.0.919",
-    "@tscircuit/checks": "^0.0.212",
+    "@tscircuit/checks": "^0.0.217",
     "@tscircuit/circuit-json-util": "^0.0.116",
     "@tscircuit/common": "^0.0.20",
     "@tscircuit/copper-pour-solver": "^0.0.57",
@@ -58,7 +58,7 @@
     "@tscircuit/ngspice-spice-engine": "^0.0.20",
     "@tscircuit/props": "^0.0.666",
     "@tscircuit/schematic-match-adapt": "^0.0.18",
-    "@tscircuit/schematic-trace-solver": "^0.0.209",
+    "@tscircuit/schematic-trace-solver": "^0.0.210",
     "@tscircuit/solver-utils": "^0.0.16",
     "@tscircuit/soup-util": "^0.0.41",
     "@tscircuit/via-stitch-solver": "github:tscircuit/via-stitch-solver#64f2ac7781b795bdc0d74ba411988e60767fa653",
@@ -72,7 +72,7 @@
     "bun-match-svg": "0.0.12",
     "calculate-elbow": "^0.0.12",
     "chokidar-cli": "^3.0.0",
-    "circuit-json": "^0.0.500",
+    "circuit-json": "^0.0.504",
     "circuit-json-to-bpc": "^0.0.13",
     "circuit-json-to-connectivity-map": "^0.0.30",
     "circuit-json-to-gltf": "^0.0.133",
@@ -122,8 +122,8 @@
   "dependencies": {
     "@flatten-js/core": "^1.6.2",
     "@lume/kiwi": "^0.4.3",
-    "calculate-cell-boundaries": "^0.0.21",
-    "calculate-packing": "^0.0.89",
+    "calculate-cell-boundaries": "^0.0.23",
+    "calculate-packing": "^0.0.90",
     "css-select": "5.1.0",
     "format-si-unit": "^0.0.12",
     "nanoid": "^5.0.7",
@@ -136,6 +136,6 @@
   "overrides": {
     "@tscircuit/circuit-json-util": "^0.0.116",
     "@tscircuit/props": "^0.0.666",
-    "circuit-json": "^0.0.500"
+    "circuit-json": "^0.0.504"
   }
 }

@@ -10,16 +10,11 @@ const getRoutePointPosition = (routePoint: PcbTraceRoutePoint) => ({
   y: "y" in routePoint ? routePoint.y : routePoint.start.y,
 })
 
-test.failing("trace length includes the segment after a via", async () => {
+test("trace length includes the segment after a via", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board
-      width="12mm"
-      height="10mm"
-      thickness={`${BOARD_THICKNESS}mm`}
-      routingDisabled
-    >
+    <board width="12mm" height="10mm" thickness={`${BOARD_THICKNESS}mm`}>
       <resistor
         name="R1"
         resistance="10k"
@@ -54,7 +49,7 @@ test.failing("trace length includes the segment after a via", async () => {
 
       <pcbnotetext
         pcbY={4}
-        text="BUG: VIA TRACE LENGTH IS UNDERCOUNTED"
+        text="VIA TRACE LENGTH INCLUDES BOTH SEGMENTS"
         fontSize="0.45mm"
       />
       <pcbnotetext
@@ -64,7 +59,7 @@ test.failing("trace length includes the segment after a via", async () => {
       />
       <pcbnotetext
         pcbY={2.5}
-        text="5 mm LIMIT SHOULD PRODUCE A DRC ERROR"
+        text="5 mm LIMIT PRODUCES A DRC ERROR"
         fontSize="0.38mm"
       />
       <pcbnotetext pcbY={0} text="VIA" fontSize="0.35mm" />
