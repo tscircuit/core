@@ -5,7 +5,12 @@ import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimp
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("board hole edge clearance persists into SRJ with NPTH geometry and phase overrides", async () => {
-  for (const clearance of [undefined, 0, 0.2]) {
+  for (const [clearance, expected] of [
+    [undefined, 0.2],
+    [0, 0],
+    [0.2, 0.2],
+    [0.4, 0.4],
+  ] as const) {
     const { circuit } = getTestFixture()
     circuit.add(
       <board width={12} height={10} minTraceToHoleEdgeClearance={clearance}>
@@ -26,11 +31,11 @@ test("board hole edge clearance persists into SRJ with NPTH geometry and phase o
     )
     const board = pcb_board.parse(exported[boardIndex])
     exported[boardIndex] = board
-    expect(board.min_trace_to_hole_edge_clearance).toBe(clearance)
+    expect(board.min_trace_to_hole_edge_clearance).toBe(expected)
     const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
       circuitJson: exported,
     })
-    expect(simpleRouteJson.minTraceToHoleEdgeClearance).toBe(clearance)
+    expect(simpleRouteJson.minTraceToHoleEdgeClearance).toBe(expected)
     const hole = circuit.db.pcb_hole.list()[0]!
     expect(
       simpleRouteJson.obstacles.find((obstacle) => obstacle.isHole),
@@ -53,7 +58,7 @@ test("board hole edge clearance persists into SRJ with NPTH geometry and phase o
       expect(phaseInput.minTraceToHoleEdgeClearance).toBe(phaseClearance)
       expect(phaseInput.minTraceToPadEdgeClearance).toBe(phaseClearance)
     }
-    expect(simpleRouteJson.minTraceToHoleEdgeClearance).toBe(clearance)
+    expect(simpleRouteJson.minTraceToHoleEdgeClearance).toBe(expected)
     const overridden = getSimpleRouteJsonFromCircuitJson({
       circuitJson: exported,
       minTraceToHoleEdgeClearance: 0,

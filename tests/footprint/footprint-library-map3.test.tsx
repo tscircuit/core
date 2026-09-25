@@ -49,7 +49,7 @@ test("footprint library map 3", async () => {
         "min_board_edge_clearance": 0.2,
         "min_pad_edge_to_pad_edge_clearance": 0.1,
         "min_plated_hole_drill_edge_to_drill_edge_clearance": 0.15,
-        "min_trace_to_hole_edge_clearance": undefined,
+        "min_trace_to_hole_edge_clearance": 0.2,
         "min_trace_to_pad_edge_clearance": 0.1,
         "min_trace_width": 0.1,
         "min_via_edge_to_pad_edge_clearance": undefined,

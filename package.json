@@ -49,7 +49,7 @@
     "@tscircuit/implicit-copper-pour-solver": "github:tscircuit/implicit-copper-pour-solver#a5cbbda0cd65fd4707c5c1af25779837c25aba92",
     "@tscircuit/infer-cable-insertion-point": "^0.0.4",
     "@tscircuit/infgrid-ijump-astar": "^0.0.35",
-    "@tscircuit/jlcpcb-manufacturing-specs": "git+https://github.com/tscircuit/jlcpcb-manufacturing-specs#e08af159db01a37db007e33f0a7268d0e4a279a5",
+    "@tscircuit/jlcpcb-manufacturing-specs": "git+https://github.com/tscircuit/jlcpcb-manufacturing-specs#23260504fceffff2d64bf11720f74e974d1d9321",
     "@tscircuit/krt-wasm": "^0.1.1",
     "@tscircuit/log-soup": "^1.0.2",
     "@tscircuit/matchpack": "^0.0.97",
