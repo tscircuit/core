@@ -1,3 +1,4 @@
+import { inflateCircuitJson } from "../../../utils/circuit-json/inflate-circuit-json"
 import {
   type SimpleRouteJson as AutorouterSimpleRouteJson,
   type RerouteRectRegion,
@@ -233,6 +234,25 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   _isInflatedFromCircuitJson = false
 
   _isolatedCircuitJson: AnyCircuitElement[] | null = null
+
+  // Both <group subcircuit> and <subcircuit> accept precompiled Circuit JSON.
+  doInitialInflateSubcircuitCircuitJson() {
+    if (!this.isSubcircuit) return
+
+    const isolatedJson = this._isolatedCircuitJson
+    if (isolatedJson) {
+      this._isInflatedFromCircuitJson = true
+      this._isolatedCircuitJson = null
+      inflateCircuitJson(this, isolatedJson, [])
+      return
+    }
+
+    const { circuitJson, children } = this._parsedProps
+    if (circuitJson) {
+      this._isInflatedFromCircuitJson = true
+    }
+    inflateCircuitJson(this, circuitJson, children)
+  }
 
   get _isIsolatedSubcircuit(): boolean {
     return Boolean(this.getInheritedProperty("_subcircuitCachingEnabled"))

@@ -1,6 +1,7 @@
 import type { BoardProps } from "@tscircuit/props"
 import type { PcbBoard } from "circuit-json"
-import { Board } from "lib/components/normal-components/Board"
+import type { Board } from "lib/components/normal-components/Board"
+import { catalogue } from "lib/fiber/catalogue"
 import type { InflatorContext } from "../InflatorFn"
 
 export function inflatePcbBoard(
@@ -45,8 +46,9 @@ export function inflatePcbBoard(
     boardProps.allowBlindAndBuriedVias = pcbBoard.allow_blind_and_buried_vias
   }
 
-  // Create the Board instance
-  const board = new Board(boardProps)
+  // Resolve at render time: Group imports this inflator, while Board extends Group.
+  const BoardConstructor = catalogue.board as typeof Board
+  const board = new BoardConstructor(boardProps)
 
   // Set the pcb_board_id so it can be referenced
   board.pcb_board_id = pcbBoard.pcb_board_id
