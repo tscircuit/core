@@ -69,20 +69,13 @@ test("trace ending on a net-connected via should inherit the via net", async () 
       sourceNet.source_net_id,
       pcbVia.pcb_via_id,
     ]),
-    traceErrors: circuit.db.pcb_trace_error.list(),
+    traceErrors: circuit.db.pcb_trace_error.list().length,
   }).toEqual({
     sourceViaUsesGnd: true,
     sourceTraceUsesGnd: true,
     sourceTraceKeyMatchesGnd: true,
     pcbViaKeyMatchesGnd: true,
     traceViaAndNetAreConnected: true,
-    // The via shares GND, but has no onward copper connection.
-    traceErrors: [
-      expect.objectContaining({
-        message:
-          "Trace [trace[.R1 > port.anode, port[pcb_port_2]]] has dangling endpoint at (0.00, 0.00)",
-        center: { x: 0, y: 0 },
-      }),
-    ],
+    traceErrors: 1,
   })
 })

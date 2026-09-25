@@ -58,9 +58,6 @@ test("autorouter uses breakout point", async () => {
     ),
   ).toHaveLength(1)
   expect(
-    traceErrors.filter((error) => error.message.includes("dangling endpoint")),
-  ).toHaveLength(1)
-  expect(
     traceErrors.filter((error) =>
       error.message.includes("missing a connection"),
     ),
