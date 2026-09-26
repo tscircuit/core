@@ -41,10 +41,17 @@ export class Inductor extends NormalComponent<
   doInitialSourceRender() {
     const { db } = this.root!
     const { _parsedProps: props } = this
+    const parsedInductance = parseAndConvertSiUnit(this.props.inductance, "H")
+    if (Number.isNaN(parsedInductance.value)) {
+      throw new Error(
+        `Invalid inductance "${this.props.inductance}" for inductor "${this.name}". ` +
+          `Expected a value like "1uH", "10nH" or "0.001H".`,
+      )
+    }
     const source_component = db.source_component.insert({
       name: this.name,
       ftype: FTYPE.simple_inductor,
-      inductance: this.props.inductance,
+      inductance: parsedInductance.value,
       max_current_rating:
         props.maxCurrentRating === undefined
           ? undefined
