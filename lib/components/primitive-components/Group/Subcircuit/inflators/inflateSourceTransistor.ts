@@ -5,8 +5,12 @@ import type {
 } from "circuit-json"
 import { Transistor } from "lib/components/normal-components/Transistor"
 import type { InflatorContext } from "../InflatorFn"
-import { inflateFootprintComponent } from "./inflateFootprintComponent"
 import { getInflatedPcbPlacement } from "./getInflatedPcbPlacement"
+import {
+  getInflatedSchematicComponent,
+  getInflatedSchematicProps,
+} from "./getInflatedSchematicComponent"
+import { inflateFootprintComponent } from "./inflateFootprintComponent"
 
 export function inflateSourceTransistor(
   sourceElm: SourceSimpleTransistor,
@@ -27,8 +31,16 @@ export function inflateSourceTransistor(
     sourceGroupId: sourceElm.source_group_id,
     inflatorContext,
   })
+  const schematicProps = getInflatedSchematicProps(
+    getInflatedSchematicComponent(
+      sourceElm.source_component_id,
+      inflatorContext,
+    ),
+    inflatorContext,
+  )
 
   const transistor = new Transistor({
+    ...schematicProps,
     name: sourceElm.name,
     type: sourceElm.transistor_type,
     layer: pcbElm?.layer,

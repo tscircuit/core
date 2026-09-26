@@ -2,6 +2,10 @@ import type { PcbComponent, SourceSimpleTestPoint } from "circuit-json"
 import { TestPoint } from "lib/components/normal-components/TestPoint"
 import type { InflatorContext } from "../InflatorFn"
 import { getInflatedPcbPlacement } from "./getInflatedPcbPlacement"
+import {
+  getInflatedSchematicComponent,
+  getInflatedSchematicProps,
+} from "./getInflatedSchematicComponent"
 import { inflateFootprintComponent } from "./inflateFootprintComponent"
 
 export function inflateSourceTestPoint(
@@ -17,8 +21,16 @@ export function inflateSourceTestPoint(
     sourceGroupId: sourceTestPoint.source_group_id,
     inflatorContext,
   })
+  const schematicProps = getInflatedSchematicProps(
+    getInflatedSchematicComponent(
+      sourceTestPoint.source_component_id,
+      inflatorContext,
+    ),
+    inflatorContext,
+  )
 
   const testPoint = new TestPoint({
+    ...schematicProps,
     name: sourceTestPoint.name,
     displayName: sourceTestPoint.display_name,
     manufacturerPartNumber: sourceTestPoint.manufacturer_part_number,

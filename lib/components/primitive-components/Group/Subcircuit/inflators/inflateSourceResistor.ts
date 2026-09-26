@@ -5,8 +5,12 @@ import type {
 } from "circuit-json"
 import { Resistor } from "lib/components/normal-components/Resistor"
 import type { InflatorContext } from "../InflatorFn"
-import { inflateFootprintComponent } from "./inflateFootprintComponent"
 import { getInflatedPcbPlacement } from "./getInflatedPcbPlacement"
+import {
+  getInflatedSchematicComponent,
+  getInflatedSchematicProps,
+} from "./getInflatedSchematicComponent"
+import { inflateFootprintComponent } from "./inflateFootprintComponent"
 
 export function inflateSourceResistor(
   sourceElm: SourceSimpleResistor,
@@ -27,8 +31,16 @@ export function inflateSourceResistor(
     sourceGroupId: sourceElm.source_group_id,
     inflatorContext,
   })
+  const schematicProps = getInflatedSchematicProps(
+    getInflatedSchematicComponent(
+      sourceElm.source_component_id,
+      inflatorContext,
+    ),
+    inflatorContext,
+  )
 
   const resistor = new Resistor({
+    ...schematicProps,
     name: sourceElm.name,
     resistance: sourceElm.resistance,
     layer: pcbElm?.layer,

@@ -7,6 +7,10 @@ import type {
 import { PinHeader } from "lib/components/normal-components/PinHeader"
 import type { InflatorContext } from "../InflatorFn"
 import { getInflatedPcbPlacement } from "./getInflatedPcbPlacement"
+import {
+  getInflatedSchematicComponent,
+  getInflatedSchematicProps,
+} from "./getInflatedSchematicComponent"
 import { inflateFootprintComponent } from "./inflateFootprintComponent"
 
 export function inflateSourcePinHeader(
@@ -17,9 +21,10 @@ export function inflateSourcePinHeader(
   const pcbComponent = injectionDb.pcb_component.getWhere({
     source_component_id: sourcePinHeader.source_component_id,
   }) as PcbComponent | null
-  const schematicComponent = injectionDb.schematic_component.getWhere({
-    source_component_id: sourcePinHeader.source_component_id,
-  }) as SchematicComponent | null
+  const schematicComponent = getInflatedSchematicComponent(
+    sourcePinHeader.source_component_id,
+    inflatorContext,
+  )
   const sourcePorts = injectionDb.source_port
     .list()
     .filter(
@@ -39,6 +44,7 @@ export function inflateSourcePinHeader(
   })
 
   const pinHeader = new PinHeader({
+    ...getInflatedSchematicProps(schematicComponent, inflatorContext),
     name: sourcePinHeader.name,
     displayName: sourcePinHeader.display_name,
     manufacturerPartNumber: sourcePinHeader.manufacturer_part_number,
@@ -49,8 +55,6 @@ export function inflateSourcePinHeader(
     schWidth: schematicComponent?.size?.width,
     schHeight: schematicComponent?.size?.height,
     schPinSpacing: schematicComponent?.pin_spacing,
-    schX: schematicComponent?.center?.x,
-    schY: schematicComponent?.center?.y,
     layer: pcbComponent?.layer,
     pcbX,
     pcbY,

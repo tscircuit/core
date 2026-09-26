@@ -4,7 +4,10 @@ import type {
   PcbTraceRoutePoint,
   SourceTrace,
 } from "circuit-json"
-import { Trace } from "lib/components/primitive-components/Trace/Trace"
+import {
+  type InflatedPcbPortSelectorEntry,
+  Trace,
+} from "lib/components/primitive-components/Trace/Trace"
 import {
   type ManualPcbPathPoint,
   pcbTraceRouteToPcbPath,
@@ -43,6 +46,10 @@ export function inflateSourceTrace(
   const { injectionDb, subcircuit } = inflatorContext
 
   const connectedSelectors: string[] = []
+  const sourcePortSelectorEntries: Array<{
+    sourcePortId: string
+    selector: string
+  }> = []
 
   // Get selectors for connected ports
   for (const sourcePortId of sourceTrace.connected_source_port_ids) {
@@ -75,6 +82,7 @@ export function inflateSourceTrace(
 
     if (selector) {
       connectedSelectors.push(selector)
+      sourcePortSelectorEntries.push({ sourcePortId, selector })
     }
   }
 
@@ -111,11 +119,13 @@ export function inflateSourceTrace(
   }
 
   const traceProps: {
+    name: string
     path: string[]
     pcbPath?: ManualPcbPathPoint[]
     pcbStraightLine?: boolean
     thickness?: number
   } = {
+    name: sourceTrace.name ?? sourceTrace.source_trace_id,
     path: connectedSelectors,
   }
 
@@ -146,6 +156,19 @@ export function inflateSourceTrace(
           pcbTraces.some((trace) => via.pcb_trace_id === trace.pcb_trace_id),
         )
     : undefined
+  const selectorBySourcePortId = new Map(
+    sourcePortSelectorEntries.map((entry) => [
+      entry.sourcePortId,
+      entry.selector,
+    ]),
+  )
+  trace._inflatedPcbPortSelectorEntries = injectionDb.pcb_port
+    .list()
+    .flatMap((pcbPort): InflatedPcbPortSelectorEntry[] => {
+      const selector = selectorBySourcePortId.get(pcbPort.source_port_id)
+      if (!selector) return []
+      return [{ originalPcbPortId: pcbPort.pcb_port_id, selector }]
+    })
 
   subcircuit.add(trace)
 }

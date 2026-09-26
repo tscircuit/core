@@ -5,8 +5,12 @@ import type {
 } from "circuit-json"
 import { Capacitor } from "lib/components/normal-components/Capacitor"
 import type { InflatorContext } from "../InflatorFn"
-import { inflateFootprintComponent } from "./inflateFootprintComponent"
 import { getInflatedPcbPlacement } from "./getInflatedPcbPlacement"
+import {
+  getInflatedSchematicComponent,
+  getInflatedSchematicProps,
+} from "./getInflatedSchematicComponent"
+import { inflateFootprintComponent } from "./inflateFootprintComponent"
 
 export function inflateSourceCapacitor(
   sourceElm: SourceSimpleCapacitor,
@@ -27,8 +31,16 @@ export function inflateSourceCapacitor(
     sourceGroupId: sourceElm.source_group_id,
     inflatorContext,
   })
+  const schematicProps = getInflatedSchematicProps(
+    getInflatedSchematicComponent(
+      sourceElm.source_component_id,
+      inflatorContext,
+    ),
+    inflatorContext,
+  )
 
   const capacitor = new Capacitor({
+    ...schematicProps,
     name: sourceElm.name,
     capacitance: sourceElm.capacitance,
     layer: pcbElm?.layer,

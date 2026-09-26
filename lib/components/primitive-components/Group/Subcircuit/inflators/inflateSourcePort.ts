@@ -1,6 +1,6 @@
 import type { PcbPort, SourcePort } from "circuit-json"
-import type { InflatorContext } from "../InflatorFn"
 import { Port } from "lib/components/primitive-components/Port/Port"
+import type { InflatorContext } from "../InflatorFn"
 
 export function inflateSourcePort(
   sourcePort: SourcePort,

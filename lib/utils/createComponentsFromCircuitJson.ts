@@ -1,10 +1,10 @@
 import { getUnitVectorFromDirection } from "@tscircuit/math-utils"
 import type { PinLabelsProp } from "@tscircuit/props"
 import {
-  pcb_via,
-  layer_ref,
   type AnyCircuitElement,
   type SchematicComponent,
+  layer_ref,
+  pcb_via,
 } from "circuit-json"
 import { CopperText } from "lib/components/primitive-components/CopperText"
 import { CourtyardCircle } from "lib/components/primitive-components/CourtyardCircle"
@@ -118,12 +118,14 @@ export const createComponentsFromCircuitJson = (
     footprinterString,
     pinLabels,
     pcbPinLabels,
+    preservePcbPrimitiveProperties,
   }: {
     componentName: string
     componentRotation: string
     footprinterString?: string
     pinLabels?: PinLabelsProp
     pcbPinLabels?: PinLabelsProp
+    preservePcbPrimitiveProperties?: boolean
   },
   circuitJson: AnyCircuitElement[],
 ): PrimitiveComponent[] => {
@@ -602,8 +604,12 @@ export const createComponentsFromCircuitJson = (
           pcbX: Number.isNaN(elm.anchor_position.x) ? 0 : elm.anchor_position.x,
           pcbY: elm.anchor_position.y,
           pcbRotation: ccwRotation ?? 0,
+          layer: elm.layer,
+          fontSize: preservePcbPrimitiveProperties ? elm.font_size : undefined,
         })
-        silkscreenText._footprinterFontSize = elm.font_size + 0.2
+        if (!preservePcbPrimitiveProperties) {
+          silkscreenText._footprinterFontSize = elm.font_size + 0.2
+        }
         components.push(silkscreenText)
       }
     } else if (elm.type === "pcb_trace") {

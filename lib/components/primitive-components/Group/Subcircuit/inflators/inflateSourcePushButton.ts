@@ -5,8 +5,12 @@ import type {
 } from "circuit-json"
 import { PushButton } from "lib/components/normal-components/PushButton"
 import type { InflatorContext } from "../InflatorFn"
-import { inflateFootprintComponent } from "./inflateFootprintComponent"
 import { getInflatedPcbPlacement } from "./getInflatedPcbPlacement"
+import {
+  getInflatedSchematicComponent,
+  getInflatedSchematicProps,
+} from "./getInflatedSchematicComponent"
+import { inflateFootprintComponent } from "./inflateFootprintComponent"
 
 export function inflateSourcePushButton(
   sourceElm: SourceSimplePushButton,
@@ -27,8 +31,16 @@ export function inflateSourcePushButton(
     sourceGroupId: sourceElm.source_group_id,
     inflatorContext,
   })
+  const schematicProps = getInflatedSchematicProps(
+    getInflatedSchematicComponent(
+      sourceElm.source_component_id,
+      inflatorContext,
+    ),
+    inflatorContext,
+  )
 
   const pushButton = new PushButton({
+    ...schematicProps,
     name: sourceElm.name,
     layer: pcbElm?.layer,
     pcbX,

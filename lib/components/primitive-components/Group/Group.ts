@@ -2800,6 +2800,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   doInitialPcbDesignRuleChecks() {
     if (this.root?.pcbDisabled) return
+    if (this._isInflatedFromCircuitJson) return
     if (this._isLegacyAutorouterDisabled()) return
     if (
       this.root?.pcbRoutingDisabled ||

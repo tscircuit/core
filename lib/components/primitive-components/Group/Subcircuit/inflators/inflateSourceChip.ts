@@ -7,8 +7,12 @@ import type {
 } from "circuit-json"
 import { Chip } from "lib/components/normal-components/Chip"
 import type { InflatorContext } from "../InflatorFn"
-import { inflateFootprintComponent } from "./inflateFootprintComponent"
 import { getInflatedPcbPlacement } from "./getInflatedPcbPlacement"
+import {
+  getInflatedSchematicComponent,
+  getInflatedSchematicProps,
+} from "./getInflatedSchematicComponent"
+import { inflateFootprintComponent } from "./inflateFootprintComponent"
 
 const mapInternallyConnectedSourcePortIdsToPinLabels = (
   sourcePortIds: string[][] | undefined,
@@ -40,6 +44,24 @@ const mapInternallyConnectedSourcePortIdsToPinLabels = (
   return mapped.length > 0 ? mapped : undefined
 }
 
+const getInflatedChipPinLabels = (
+  sourceComponentId: string,
+  inflatorContext: InflatorContext,
+): Record<string, string> | undefined => {
+  const pinLabels = Object.fromEntries(
+    inflatorContext.injectionDb.source_port
+      .list()
+      .filter(
+        (sourcePort) =>
+          sourcePort.source_component_id === sourceComponentId &&
+          typeof sourcePort.pin_number === "number",
+      )
+      .map((sourcePort) => [`pin${sourcePort.pin_number}`, sourcePort.name]),
+  )
+
+  return Object.keys(pinLabels).length > 0 ? pinLabels : undefined
+}
+
 export const inflateSourceChip = (
   sourceElm: SourceSimpleChip,
   inflatorContext: InflatorContext,
@@ -50,9 +72,10 @@ export const inflateSourceChip = (
     source_component_id: sourceElm.source_component_id,
   }) as PcbComponent | null
 
-  const schematicElm = injectionDb.schematic_component.getWhere({
-    source_component_id: sourceElm.source_component_id,
-  }) as SchematicComponent | null
+  const schematicElm = getInflatedSchematicComponent(
+    sourceElm.source_component_id,
+    inflatorContext,
+  )
 
   const cadElm = injectionDb.cad_component.getWhere({
     source_component_id: sourceElm.source_component_id,
@@ -63,6 +86,14 @@ export const inflateSourceChip = (
       sourceElm.internally_connected_source_port_ids,
       inflatorContext,
     )
+  const pinLabels = getInflatedChipPinLabels(
+    sourceElm.source_component_id,
+    inflatorContext,
+  )
+  const schematicProps = getInflatedSchematicProps(
+    schematicElm,
+    inflatorContext,
+  )
 
   const footprinterString = cadElm?.footprinter_string ?? null
   const { pcbX, pcbY } = getInflatedPcbPlacement({
@@ -72,20 +103,19 @@ export const inflateSourceChip = (
   })
 
   const chip = new Chip({
+    ...schematicProps,
     name: sourceElm.name,
     manufacturerPartNumber: sourceElm.manufacturer_part_number,
     supplierPartNumbers: sourceElm.supplier_part_numbers ?? undefined,
-    pinLabels: schematicElm?.port_labels ?? undefined,
+    pinLabels,
     schWidth: schematicElm?.size?.width,
     schHeight: schematicElm?.size?.height,
     schPinSpacing: schematicElm?.pin_spacing,
-    schX: schematicElm?.center?.x,
-    schY: schematicElm?.center?.y,
     layer: pcbElm?.layer,
     pcbX,
     pcbY,
     pcbRotation: pcbElm?.rotation,
-    doNotPlace: pcbElm?.do_not_place,
+    doNotPlace: pcbElm?.do_not_place ?? true,
     obstructsWithinBounds: pcbElm?.obstructs_within_bounds,
     internallyConnectedPins,
   })

@@ -1,8 +1,12 @@
 import type { CadComponent, PcbComponent, SourceSimpleLed } from "circuit-json"
 import { Led } from "lib/components/normal-components/Led"
 import type { InflatorContext } from "../InflatorFn"
-import { inflateFootprintComponent } from "./inflateFootprintComponent"
 import { getInflatedPcbPlacement } from "./getInflatedPcbPlacement"
+import {
+  getInflatedSchematicComponent,
+  getInflatedSchematicProps,
+} from "./getInflatedSchematicComponent"
+import { inflateFootprintComponent } from "./inflateFootprintComponent"
 
 export function inflateSourceLed(
   sourceElm: SourceSimpleLed,
@@ -23,8 +27,16 @@ export function inflateSourceLed(
     sourceGroupId: sourceElm.source_group_id,
     inflatorContext,
   })
+  const schematicProps = getInflatedSchematicProps(
+    getInflatedSchematicComponent(
+      sourceElm.source_component_id,
+      inflatorContext,
+    ),
+    inflatorContext,
+  )
 
   const led = new Led({
+    ...schematicProps,
     name: sourceElm.name,
     color: sourceElm.color,
     wavelength: sourceElm.wavelength ?? (sourceElm as any).wave_length,

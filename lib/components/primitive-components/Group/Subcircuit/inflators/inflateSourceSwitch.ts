@@ -1,8 +1,12 @@
 import type { PcbComponent, SourcePort, SourceSimpleSwitch } from "circuit-json"
 import { Switch } from "lib/components/normal-components/Switch"
 import type { InflatorContext } from "../InflatorFn"
-import { inflateFootprintComponent } from "./inflateFootprintComponent"
 import { getInflatedPcbPlacement } from "./getInflatedPcbPlacement"
+import {
+  getInflatedSchematicComponent,
+  getInflatedSchematicProps,
+} from "./getInflatedSchematicComponent"
+import { inflateFootprintComponent } from "./inflateFootprintComponent"
 
 type SwitchType = "spst" | "spdt" | "dpst" | "dpdt"
 
@@ -68,7 +72,15 @@ export function inflateSourceSwitch(
   })
 
   const importedSwitchProps = getImportedSwitchProps(sourceElm, inflatorContext)
+  const schematicProps = getInflatedSchematicProps(
+    getInflatedSchematicComponent(
+      sourceElm.source_component_id,
+      inflatorContext,
+    ),
+    inflatorContext,
+  )
   const switchComponent = new Switch({
+    ...schematicProps,
     name: sourceElm.name,
     displayName: sourceElm.display_name,
     ...importedSwitchProps,

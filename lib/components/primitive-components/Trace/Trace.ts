@@ -38,6 +38,11 @@ import type { NetLabel } from "../NetLabel"
 import type { Port } from "../Port"
 import type { TraceHint } from "../TraceHint"
 import { Via } from "../Via"
+
+export interface InflatedPcbPortSelectorEntry {
+  originalPcbPortId: string
+  selector: string
+}
 import type { TraceI } from "./TraceI"
 import { Trace__doInitialSchematicTraceRenderWithDisplayLabel } from "./Trace__doInitialSchematicTraceRenderWithDisplayLabel"
 import { Trace__findConnectedPorts } from "./Trace__findConnectedPorts"
@@ -75,6 +80,7 @@ export class Trace
   schematic_trace_id: string | null = null
   _inflatedPcbTraces?: PcbTrace[]
   _inflatedPcbVias?: PcbVia[]
+  _inflatedPcbPortSelectorEntries?: InflatedPcbPortSelectorEntry[]
   _portsRoutedOnPcb: Port[]
   subcircuit_connectivity_map_key: string | null = null
   _exposesSubcircuitConnection = false

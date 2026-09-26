@@ -5,6 +5,43 @@ import type { PrimitiveComponent } from "lib/components/base-components/Primitiv
 import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromCircuitJson"
 import { compose, inverse, rotate, translate } from "transformation-matrix"
 
+const normalizeDegrees = (degrees: number): number =>
+  ((degrees % 360) + 360) % 360
+
+const makePrimitiveRotationsComponentRelative = (
+  elements: ReturnType<CircuitJsonUtilObjects["toArray"]>,
+  componentRotation: number,
+) => {
+  const toRelativeRotation = (rotation: number | undefined): number =>
+    normalizeDegrees((rotation ?? 0) - componentRotation)
+
+  for (const element of elements) {
+    if (
+      element.type === "pcb_smtpad" &&
+      (element.shape === "rotated_rect" || element.shape === "rotated_pill")
+    ) {
+      element.ccw_rotation = toRelativeRotation(element.ccw_rotation)
+    } else if (
+      element.type === "pcb_silkscreen_text" ||
+      element.type === "pcb_fabrication_note_text" ||
+      element.type === "pcb_copper_text"
+    ) {
+      element.ccw_rotation = toRelativeRotation(element.ccw_rotation)
+    } else if (
+      element.type === "pcb_hole" &&
+      element.hole_shape === "rotated_pill"
+    ) {
+      element.ccw_rotation = toRelativeRotation(element.ccw_rotation)
+    } else if (
+      element.type === "pcb_plated_hole" &&
+      element.shape === "rotated_pill_hole_with_rect_pad"
+    ) {
+      element.hole_ccw_rotation = toRelativeRotation(element.hole_ccw_rotation)
+      element.rect_ccw_rotation = toRelativeRotation(element.rect_ccw_rotation)
+    }
+  }
+}
+
 /**
  * Extracts PCB primitive components (pads, holes, silkscreen, etc.) from circuit JSON
  * and returns them as an array of component instances.
@@ -53,11 +90,16 @@ export const extractPcbPrimitivesFromCircuitJson = ({
     clonedRelativeElements,
     absoluteToComponentRelativeTransform,
   )
+  makePrimitiveRotationsComponentRelative(
+    clonedRelativeElements,
+    componentRotation,
+  )
 
   const components = createComponentsFromCircuitJson(
     {
       componentName,
       componentRotation: "0deg",
+      preservePcbPrimitiveProperties: true,
     },
     clonedRelativeElements,
   )

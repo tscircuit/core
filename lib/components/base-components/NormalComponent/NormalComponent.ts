@@ -1,4 +1,3 @@
-import { getBoardFoldContext } from "lib/utils/cad/get-board-fold-context"
 import { transformCadComponentPlacement } from "@tscircuit/flex-utils"
 import { fp } from "@tscircuit/footprinter"
 import { normalizeDegrees } from "@tscircuit/math-utils"
@@ -36,6 +35,7 @@ import {
 import { underscorifyPinStyles } from "lib/soup/underscorifyPinStyles"
 import { underscorifyPortArrangement } from "lib/soup/underscorifyPortArrangement"
 import { getBoundsForSchematic } from "lib/utils/autorouting/getBoundsForSchematic"
+import { getBoardFoldContext } from "lib/utils/cad/get-board-fold-context"
 import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
 import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromCircuitJson"
 import { filterPinLabels } from "lib/utils/filterPinLabels"
@@ -1029,7 +1029,12 @@ export class NormalComponent<
       (c) => c.componentName === "Footprint",
     )
 
-    if (!footprint && !hasFootprintChild && !this.isGroup) {
+    if (
+      !props.doNotPlace &&
+      !footprint &&
+      !hasFootprintChild &&
+      !this.isGroup
+    ) {
       const footprint_error = db.pcb_missing_footprint_error.insert({
         message: `No footprint specified for component: ${this.getString()}`,
         source_component_id: `${this.source_component_id}`,

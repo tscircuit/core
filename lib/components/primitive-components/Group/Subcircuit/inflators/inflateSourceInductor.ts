@@ -5,8 +5,12 @@ import type {
 } from "circuit-json"
 import { Inductor } from "lib/components/normal-components/Inductor"
 import type { InflatorContext } from "../InflatorFn"
-import { inflateFootprintComponent } from "./inflateFootprintComponent"
 import { getInflatedPcbPlacement } from "./getInflatedPcbPlacement"
+import {
+  getInflatedSchematicComponent,
+  getInflatedSchematicProps,
+} from "./getInflatedSchematicComponent"
+import { inflateFootprintComponent } from "./inflateFootprintComponent"
 
 export function inflateSourceInductor(
   sourceElm: SourceSimpleInductor,
@@ -27,8 +31,16 @@ export function inflateSourceInductor(
     sourceGroupId: sourceElm.source_group_id,
     inflatorContext,
   })
+  const schematicProps = getInflatedSchematicProps(
+    getInflatedSchematicComponent(
+      sourceElm.source_component_id,
+      inflatorContext,
+    ),
+    inflatorContext,
+  )
 
   const inductor = new Inductor({
+    ...schematicProps,
     name: sourceElm.name,
     inductance: (sourceElm as any).inductance,
     layer: pcbElm?.layer,

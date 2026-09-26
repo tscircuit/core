@@ -1,13 +1,13 @@
-import { createPcbFold, type PcbFold } from "@tscircuit/flex-utils"
 import {
-  dedupePcbDrcErrors,
   consolidatePcbOverlapErrors,
+  dedupePcbDrcErrors,
   runAllNetlistChecks,
   runAllPinSpecificationChecks,
   runAllPlacementChecks,
   runAllRoutingChecks,
   runAllSchematicChecks,
 } from "@tscircuit/checks"
+import { type PcbFold, createPcbFold } from "@tscircuit/flex-utils"
 import { jlcMinTolerances } from "@tscircuit/jlcpcb-manufacturing-specs"
 import { getBoundsFromPoints } from "@tscircuit/math-utils"
 import { boardProps } from "@tscircuit/props"
@@ -158,18 +158,38 @@ export class Board
   }
 
   get boardThickness() {
-    return this._parsedProps.thickness ?? 1.4
+    return (
+      this._parsedProps.thickness ??
+      this._getPcbBoardFromCircuitJson()?.thickness ??
+      1.4
+    )
   }
 
   /**
    * Get all available layers for the board
    */
   get allLayers(): ReadonlyArray<LayerRef> {
-    return getBoardAvailableLayers(this._parsedProps.layers ?? 2)
+    return getBoardAvailableLayers(
+      this.props.layers ??
+        this._getPcbBoardFromCircuitJson()?.num_layers ??
+        this._parsedProps.layers ??
+        2,
+    )
   }
 
   _getSubcircuitLayerCount(): number {
-    return this._parsedProps.layers ?? 2
+    return (
+      this.props.layers ??
+      this._getPcbBoardFromCircuitJson()?.num_layers ??
+      this._parsedProps.layers ??
+      2
+    )
+  }
+
+  _getPcbBoardFromCircuitJson(): PcbBoard | undefined {
+    return this._parsedProps.circuitJson?.find(
+      (element): element is PcbBoard => element.type === "pcb_board",
+    )
   }
 
   override _computePcbGlobalTransformBeforeLayout(): Matrix {
@@ -467,10 +487,7 @@ export class Board
     const { db } = this.root!
     const { _parsedProps: props } = this
 
-    const circuitJsonElements = props.circuitJson
-    const pcbBoardFromCircuitJson = circuitJsonElements?.find(
-      (elm) => elm.type === "pcb_board",
-    )
+    const pcbBoardFromCircuitJson = this._getPcbBoardFromCircuitJson()
     const viaTenting = getViaTenting(props.defaultViaTenting)
     const rawProps = this.props
     const resolvedIsViaInPadAllowed =
@@ -486,7 +503,7 @@ export class Board
     let computedHeight = props.height ?? pcbBoardFromCircuitJson?.height ?? 0
     // Use global position to properly handle boards inside panels
     const globalPos = this._getGlobalPcbPositionBeforeLayout()
-    let center = {
+    let center = pcbBoardFromCircuitJson?.center ?? {
       x: globalPos.x + (props.outlineOffsetX ?? 0),
       y: globalPos.y + (props.outlineOffsetY ?? 0),
     }
@@ -503,9 +520,10 @@ export class Board
     }
 
     // Compute width and height from outline if not provided
-    if (props.outline) {
-      const xValues = props.outline.map((point) => point.x)
-      const yValues = props.outline.map((point) => point.y)
+    const configuredOutline = props.outline ?? pcbBoardFromCircuitJson?.outline
+    if (configuredOutline) {
+      const xValues = configuredOutline.map((point) => point.x)
+      const yValues = configuredOutline.map((point) => point.y)
 
       const minX = Math.min(...xValues)
       const maxX = Math.max(...xValues)
@@ -516,7 +534,7 @@ export class Board
       computedHeight = maxY - minY
     }
 
-    let outline = props.outline
+    let outline = configuredOutline
     if (
       !outline &&
       props.borderRadius != null &&
@@ -561,7 +579,9 @@ export class Board
         ? styledViaDimensions.holeDiameter
         : undefined)
     const resolvedMinViaHoleDiameter =
-      configuredViaHoleDiameter ?? jlcMinTolerances.min_via_hole_diameter
+      configuredViaHoleDiameter ??
+      pcbBoardFromCircuitJson?.min_via_hole_diameter ??
+      jlcMinTolerances.min_via_hole_diameter
     const resolvedMinViaPadDiameter =
       subcircuitProps.minViaPadDiameter ??
       (pcbStyle?.viaPadDiameter !== undefined
@@ -569,7 +589,8 @@ export class Board
         : configuredViaHoleDiameter !== undefined
           ? configuredViaHoleDiameter +
             DEFAULT_VIA_PAD_DIAMETER_OVER_HOLE_DIAMETER_MM
-          : jlcMinTolerances.min_via_pad_diameter)
+          : (pcbBoardFromCircuitJson?.min_via_pad_diameter ??
+            jlcMinTolerances.min_via_pad_diameter))
     const pcb_board = db.pcb_board.insert({
       source_board_id: this.source_board_id,
       subcircuit_id: this.subcircuit_id ?? undefined,
@@ -590,41 +611,56 @@ export class Board
         x: point.x + (props.outlineOffsetX ?? 0) + outlineTranslation.x,
         y: point.y + (props.outlineOffsetY ?? 0) + outlineTranslation.y,
       })),
-      material: props.material,
+      material:
+        rawProps.material ??
+        pcbBoardFromCircuitJson?.material ??
+        props.material,
       ...(resolvedIsViaInPadAllowed !== undefined && {
         is_via_in_pad_allowed: resolvedIsViaInPadAllowed,
       }),
       ...(resolvedAllowBlindAndBuriedVias !== undefined && {
         allow_blind_and_buried_vias: resolvedAllowBlindAndBuriedVias,
       }),
-      ...(props.solderMaskColor !== undefined && {
-        solder_mask_color: props.solderMaskColor,
+      ...((props.solderMaskColor ??
+        pcbBoardFromCircuitJson?.solder_mask_color) !== undefined && {
+        solder_mask_color:
+          props.solderMaskColor ?? pcbBoardFromCircuitJson?.solder_mask_color,
       }),
-      ...(props.silkscreenColor !== undefined && {
-        silkscreen_color: props.silkscreenColor,
+      ...((props.silkscreenColor ??
+        pcbBoardFromCircuitJson?.silkscreen_color) !== undefined && {
+        silkscreen_color:
+          props.silkscreenColor ?? pcbBoardFromCircuitJson?.silkscreen_color,
       }),
 
       min_trace_width:
-        subcircuitProps.minTraceWidth ?? jlcMinTolerances.min_trace_width,
+        subcircuitProps.minTraceWidth ??
+        pcbBoardFromCircuitJson?.min_trace_width ??
+        jlcMinTolerances.min_trace_width,
       min_via_hole_diameter: resolvedMinViaHoleDiameter,
       min_via_pad_diameter: resolvedMinViaPadDiameter,
       min_via_hole_edge_to_via_hole_edge_clearance:
         subcircuitProps.minViaHoleEdgeToViaHoleEdgeClearance ??
+        pcbBoardFromCircuitJson?.min_via_hole_edge_to_via_hole_edge_clearance ??
         jlcMinTolerances.min_via_hole_edge_to_via_hole_edge_clearance,
       min_via_edge_to_pad_edge_clearance:
         subcircuitProps.minViaEdgeToPadEdgeClearance ??
+        pcbBoardFromCircuitJson?.min_via_edge_to_pad_edge_clearance ??
         jlcMinTolerances.min_via_edge_to_pad_edge_clearance,
       min_trace_to_pad_edge_clearance:
         subcircuitProps.minTraceToPadEdgeClearance ??
+        pcbBoardFromCircuitJson?.min_trace_to_pad_edge_clearance ??
         jlcMinTolerances.min_trace_to_pad_edge_clearance,
       min_pad_edge_to_pad_edge_clearance:
         subcircuitProps.minPadEdgeToPadEdgeClearance ??
+        pcbBoardFromCircuitJson?.min_pad_edge_to_pad_edge_clearance ??
         jlcMinTolerances.min_pad_edge_to_pad_edge_clearance,
       min_plated_hole_drill_edge_to_drill_edge_clearance:
         subcircuitProps.minPlatedHoleDrillEdgeToDrillEdgeClearance ??
+        pcbBoardFromCircuitJson?.min_plated_hole_drill_edge_to_drill_edge_clearance ??
         jlcMinTolerances.min_plated_hole_drill_edge_to_drill_edge_clearance,
       min_board_edge_clearance:
         subcircuitProps.minBoardEdgeClearance ??
+        pcbBoardFromCircuitJson?.min_board_edge_clearance ??
         jlcMinTolerances.min_board_edge_clearance,
     } as Omit<PcbBoard, "type" | "pcb_board_id">)
 
@@ -642,6 +678,7 @@ export class Board
   }
 
   doInitialPcbDesignRuleChecks() {
+    if (this._isInflatedFromCircuitJson) return
     super.doInitialPcbDesignRuleChecks()
     this.updatePcbDesignRuleChecks()
   }

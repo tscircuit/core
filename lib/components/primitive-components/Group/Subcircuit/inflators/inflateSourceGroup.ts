@@ -1,7 +1,7 @@
-import type { PcbGroup, SourceGroup } from "circuit-json"
-import type { InflatorContext } from "../InflatorFn"
-import { Group } from "lib/components/primitive-components/Group/Group"
 import type { GroupProps, SubcircuitGroupProps } from "@tscircuit/props"
+import type { PcbGroup, SourceGroup } from "circuit-json"
+import { Group } from "lib/components/primitive-components/Group/Group"
+import type { InflatorContext } from "../InflatorFn"
 
 export function inflateSourceGroup(
   sourceGroup: SourceGroup,

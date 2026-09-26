@@ -1,8 +1,12 @@
 import type { PcbComponent, SourcePort, SourceSimpleDiode } from "circuit-json"
 import { Diode } from "lib/components/normal-components/Diode"
 import type { InflatorContext } from "../InflatorFn"
-import { inflateFootprintComponent } from "./inflateFootprintComponent"
 import { getInflatedPcbPlacement } from "./getInflatedPcbPlacement"
+import {
+  getInflatedSchematicComponent,
+  getInflatedSchematicProps,
+} from "./getInflatedSchematicComponent"
+import { inflateFootprintComponent } from "./inflateFootprintComponent"
 
 const getLabels = (sourcePort: SourcePort | undefined) =>
   Array.from(
@@ -57,8 +61,16 @@ export function inflateSourceDiode(
     sourceElm,
     inflatorContext,
   )
+  const schematicProps = getInflatedSchematicProps(
+    getInflatedSchematicComponent(
+      sourceElm.source_component_id,
+      inflatorContext,
+    ),
+    inflatorContext,
+  )
 
   const diodeProps = {
+    ...schematicProps,
     name: sourceElm.name,
     manufacturerPartNumber: sourceElm.manufacturer_part_number,
     supplierPartNumbers: sourceElm.supplier_part_numbers ?? undefined,

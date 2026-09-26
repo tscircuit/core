@@ -9,6 +9,10 @@ import type {
 import { Connector } from "lib/components/normal-components/Connector"
 import type { InflatorContext } from "../InflatorFn"
 import { getInflatedPcbPlacement } from "./getInflatedPcbPlacement"
+import {
+  getInflatedSchematicComponent,
+  getInflatedSchematicProps,
+} from "./getInflatedSchematicComponent"
 import { inflateFootprintComponent } from "./inflateFootprintComponent"
 
 const getImportedSchPortArrangement = (
@@ -95,9 +99,10 @@ export function inflateSourceConnector(
   const pcbElm = injectionDb.pcb_component.getWhere({
     source_component_id: sourceElm.source_component_id,
   }) as PcbComponent | null
-  const schematicElm = injectionDb.schematic_component.getWhere({
-    source_component_id: sourceElm.source_component_id,
-  }) as SchematicComponent | null
+  const schematicElm = getInflatedSchematicComponent(
+    sourceElm.source_component_id,
+    inflatorContext,
+  )
   const cadElm = injectionDb.cad_component.getWhere({
     source_component_id: sourceElm.source_component_id,
   }) as CadComponent | null
@@ -109,6 +114,7 @@ export function inflateSourceConnector(
   })
 
   const connectorProps: ConnectorProps = {
+    ...getInflatedSchematicProps(schematicElm, inflatorContext),
     name: sourceElm.name,
     standard: sourceElm.standard,
     manufacturerPartNumber: sourceElm.manufacturer_part_number,
@@ -121,8 +127,6 @@ export function inflateSourceConnector(
     schWidth: schematicElm?.size?.width,
     schHeight: schematicElm?.size?.height,
     schPinSpacing: schematicElm?.pin_spacing,
-    schX: schematicElm?.center?.x,
-    schY: schematicElm?.center?.y,
     layer: pcbElm?.layer,
     pcbX,
     pcbY,

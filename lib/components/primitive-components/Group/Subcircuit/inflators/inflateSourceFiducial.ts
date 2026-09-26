@@ -3,8 +3,8 @@ import type { PcbComponent, SourceSimpleFiducial } from "circuit-json"
 import { NormalComponent } from "lib/components/base-components/NormalComponent/NormalComponent"
 import type { Ftype } from "lib/utils/constants"
 import type { InflatorContext } from "../InflatorFn"
-import { inflateFootprintComponent } from "./inflateFootprintComponent"
 import { getInflatedPcbPlacement } from "./getInflatedPcbPlacement"
+import { inflateFootprintComponent } from "./inflateFootprintComponent"
 
 class InflatedFiducial extends NormalComponent<typeof fiducialProps> {
   get config() {

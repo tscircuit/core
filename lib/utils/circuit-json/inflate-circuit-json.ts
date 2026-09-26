@@ -7,6 +7,7 @@ import type {
 } from "../../components/primitive-components/Group/Subcircuit/InflatorFn"
 import type { SubcircuitI } from "../../components/primitive-components/Group/Subcircuit/SubcircuitI"
 import { inflatePcbBoard } from "../../components/primitive-components/Group/Subcircuit/inflators/inflatePcbBoard"
+import { inflateSchematicSheets } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSchematicSheets"
 import { inflateSourceCapacitor } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceCapacitor"
 import { inflateSourceChip } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceChip"
 import { inflateSourceConnector } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceConnector"
@@ -16,6 +17,7 @@ import { inflateSourceGroup } from "../../components/primitive-components/Group/
 import { inflateSourceInductor } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceInductor"
 import { inflateSourceLed } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceLed"
 import { inflateSourceMosfet } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceMosfet"
+import { inflateSourceNet } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceNet"
 import { inflateSourcePinHeader } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourcePinHeader"
 import { inflateSourcePort } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourcePort"
 import { inflateSourcePushButton } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourcePushButton"
@@ -25,6 +27,7 @@ import { inflateSourceTestPoint } from "../../components/primitive-components/Gr
 import { inflateSourceTrace } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceTrace"
 import { inflateSourceTransistor } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceTransistor"
 import { inflateStandalonePcbPrimitives } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateStandalonePcbPrimitives"
+import { isSchematicProxySourceComponent } from "../../components/primitive-components/Group/Subcircuit/inflators/isSchematicProxySourceComponent"
 
 export const inflateCircuitJson = (
   target: SubcircuitI & Group<any>,
@@ -45,6 +48,8 @@ export const inflateCircuitJson = (
     subcircuit: target,
     groupsMap,
   }
+
+  inflateSchematicSheets(inflationCtx)
 
   // Inflate source_groups in dependency order (parents before children)
   // Using explicit dependency tracking to detect cycles
@@ -80,8 +85,21 @@ export const inflateCircuitJson = (
     inflatePcbBoard(pcbBoard, inflationCtx)
   }
 
+  const sourceNets = injectionDb.source_net.list()
+  for (const sourceNet of sourceNets) {
+    inflateSourceNet(sourceNet, inflationCtx)
+  }
+
   const sourceComponents = injectionDb.source_component.list()
   for (const sourceComponent of sourceComponents) {
+    if (
+      isSchematicProxySourceComponent(
+        sourceComponent.source_component_id,
+        inflationCtx,
+      )
+    ) {
+      continue
+    }
     switch (sourceComponent.ftype) {
       case "simple_resistor":
         inflateSourceResistor(sourceComponent, inflationCtx)

@@ -1,5 +1,6 @@
 import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromCircuitJson"
 import type { InflatorContext } from "../InflatorFn"
+import { InflatedPcbCopperPour } from "./InflatedPcbCopperPour"
 
 /**
  * Inflates standalone PCB primitives (silkscreen, fab notes, pcb notes, etc.)
@@ -8,7 +9,14 @@ import type { InflatorContext } from "../InflatorFn"
 export function inflateStandalonePcbPrimitives(
   inflatorContext: InflatorContext,
 ) {
-  const { injectionDb, subcircuit, groupsMap } = inflatorContext
+  const { injectionDb, subcircuit } = inflatorContext
+
+  for (const copperPour of injectionDb.pcb_copper_pour.list()) {
+    const sourceNetName = copperPour.source_net_id
+      ? injectionDb.source_net.get(copperPour.source_net_id)?.name
+      : undefined
+    subcircuit.add(new InflatedPcbCopperPour(copperPour, sourceNetName))
+  }
 
   // Get all elements that are standalone primitives
   const standalonePrimitiveTypes = [
@@ -69,6 +77,7 @@ export function inflateStandalonePcbPrimitives(
     {
       componentName: "",
       componentRotation: "0deg",
+      preservePcbPrimitiveProperties: true,
     },
     standalonePrimitives,
   )

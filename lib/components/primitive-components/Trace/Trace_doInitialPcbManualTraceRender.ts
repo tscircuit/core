@@ -1,20 +1,20 @@
+import { jlcMinTolerances } from "@tscircuit/jlcpcb-manufacturing-specs"
 import {
-  pcb_via,
   type LayerRef,
   type PcbTraceRoutePoint,
   type PcbVia,
+  pcb_via,
 } from "circuit-json"
-import { getTraceLength } from "./trace-utils/compute-trace-length"
-import type { Port } from "../Port"
-import type { Trace } from "./Trace"
-import { applyToPoint, identity } from "transformation-matrix"
-import { clipTraceEndAtPad } from "../../../utils/trace-clipping/clipTraceEndAtPad"
-import { getViaDiameterDefaults } from "../../../utils/pcbStyle/getViaDiameterDefaults"
-import type { ManualPcbPathPoint } from "lib/utils/pcbTraceRouteToPcbPath"
 import { TraceConnectionError } from "lib/errors"
-import { getPcbSelectorErrorForTracePort } from "./getPcbSelectorErrorForTracePort"
-import { jlcMinTolerances } from "@tscircuit/jlcpcb-manufacturing-specs"
 import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
+import type { ManualPcbPathPoint } from "lib/utils/pcbTraceRouteToPcbPath"
+import { applyToPoint, identity } from "transformation-matrix"
+import { getViaDiameterDefaults } from "../../../utils/pcbStyle/getViaDiameterDefaults"
+import { clipTraceEndAtPad } from "../../../utils/trace-clipping/clipTraceEndAtPad"
+import type { Port } from "../Port"
+import type { InflatedPcbPortSelectorEntry, Trace } from "./Trace"
+import { getPcbSelectorErrorForTracePort } from "./getPcbSelectorErrorForTracePort"
+import { getTraceLength } from "./trace-utils/compute-trace-length"
 
 const findInflatedPcbViaForPoint = (
   vias: PcbVia[] | undefined,
@@ -42,6 +42,28 @@ const getViaDiameterFromRoutePoint = (point: PcbTraceRoutePoint) => {
     holeDiameter: viaPoint.hole_diameter ?? viaPoint.via_hole_diameter,
     outerDiameter: viaPoint.outer_diameter ?? viaPoint.via_diameter,
   }
+}
+
+const getRemappedPcbPortId = ({
+  originalPcbPortId,
+  inflatedPcbPortSelectorEntries,
+  portsWithSelectors,
+}: {
+  originalPcbPortId: string | undefined
+  inflatedPcbPortSelectorEntries:
+    | readonly InflatedPcbPortSelectorEntry[]
+    | undefined
+  portsWithSelectors: ReadonlyArray<{ selector: string; port: Port }>
+}): string | undefined => {
+  if (!originalPcbPortId) return undefined
+  const selector = inflatedPcbPortSelectorEntries?.find(
+    (entry) => entry.originalPcbPortId === originalPcbPortId,
+  )?.selector
+  if (!selector) return undefined
+  return (
+    portsWithSelectors.find((entry) => entry.selector === selector)?.port
+      .pcb_port_id ?? undefined
+  )
 }
 
 export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
@@ -80,44 +102,42 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
 
   if (!allPortsFound) return
 
-  const pcbSelectorError = portsWithSelectors
-    .map(({ selector, port }) =>
-      getPcbSelectorErrorForTracePort(selector, port),
-    )
-    .find(Boolean)
-  if (pcbSelectorError) {
-    db.pcb_trace_error.insert({
-      error_type: "pcb_trace_error",
-      source_trace_id: trace.source_trace_id!,
-      message: pcbSelectorError,
-      pcb_trace_id: trace.pcb_trace_id!,
-      pcb_component_ids: [],
-      pcb_port_ids: ports.map((p) => p.pcb_port_id!).filter(Boolean),
-    })
-    return
-  }
-
-  const portsWithoutMatchedPcbPrimitive: Port[] = []
-  for (const port of ports) {
-    if (!port._hasMatchedPcbPrimitive()) {
-      portsWithoutMatchedPcbPrimitive.push(port)
+  if (inflatedPcbTraces.length === 0) {
+    const pcbSelectorError = portsWithSelectors
+      .map(({ selector, port }) =>
+        getPcbSelectorErrorForTracePort(selector, port),
+      )
+      .find(Boolean)
+    if (pcbSelectorError) {
+      db.pcb_trace_error.insert({
+        error_type: "pcb_trace_error",
+        source_trace_id: trace.source_trace_id!,
+        message: pcbSelectorError,
+        pcb_trace_id: trace.pcb_trace_id!,
+        pcb_component_ids: [],
+        pcb_port_ids: ports.map((p) => p.pcb_port_id!).filter(Boolean),
+      })
+      return
     }
-  }
 
-  if (portsWithoutMatchedPcbPrimitive.length > 0) {
-    db.pcb_trace_error.insert({
-      error_type: "pcb_trace_error",
-      source_trace_id: trace.source_trace_id!,
-      message: `Some ports did not have a matching PCB primitive (e.g. a pad or plated hole), this can happen if a footprint is missing. As a result, ${trace} wasn't routed. Missing ports: ${portsWithoutMatchedPcbPrimitive
-        .map((p) => p.getString())
-        .join(", ")}`,
-      pcb_trace_id: trace.pcb_trace_id!,
-      pcb_component_ids: [],
-      pcb_port_ids: portsWithoutMatchedPcbPrimitive
-        .map((p) => p.pcb_port_id!)
-        .filter(Boolean),
-    })
-    return
+    const portsWithoutMatchedPcbPrimitive = ports.filter(
+      (port) => !port._hasMatchedPcbPrimitive(),
+    )
+    if (portsWithoutMatchedPcbPrimitive.length > 0) {
+      db.pcb_trace_error.insert({
+        error_type: "pcb_trace_error",
+        source_trace_id: trace.source_trace_id!,
+        message: `Some ports did not have a matching PCB primitive (e.g. a pad or plated hole), this can happen if a footprint is missing. As a result, ${trace} wasn't routed. Missing ports: ${portsWithoutMatchedPcbPrimitive
+          .map((port) => port.getString())
+          .join(", ")}`,
+        pcb_trace_id: trace.pcb_trace_id!,
+        pcb_component_ids: [],
+        pcb_port_ids: portsWithoutMatchedPcbPrimitive
+          .map((port) => port.pcb_port_id!)
+          .filter(Boolean),
+      })
+      return
+    }
   }
 
   const width =
@@ -137,12 +157,30 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
     for (const inflatedPcbTrace of inflatedPcbTraces) {
       const transformedRoute = inflatedPcbTrace.route.map((point) => {
         if (point.route_type === "wire") {
-          const { x, y, ...restOfPoint } = point
+          const {
+            x,
+            y,
+            start_pcb_port_id: originalStartPcbPortId,
+            end_pcb_port_id: originalEndPcbPortId,
+            ...restOfPoint
+          } = point
           const transformedPoint = applyToPoint(transform, { x, y })
           return {
             ...restOfPoint,
             ...transformedPoint,
             layer: maybeFlipLayer(point.layer),
+            start_pcb_port_id: getRemappedPcbPortId({
+              originalPcbPortId: originalStartPcbPortId,
+              inflatedPcbPortSelectorEntries:
+                trace._inflatedPcbPortSelectorEntries,
+              portsWithSelectors,
+            }),
+            end_pcb_port_id: getRemappedPcbPortId({
+              originalPcbPortId: originalEndPcbPortId,
+              inflatedPcbPortSelectorEntries:
+                trace._inflatedPcbPortSelectorEntries,
+              portsWithSelectors,
+            }),
           } as PcbTraceRoutePoint
         }
 
@@ -248,9 +286,6 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
       insertedRoutes.push(pcb_trace.route)
     }
 
-    for (const route of insertedRoutes) {
-      trace._insertErrorIfTraceIsOutsideBoard(route, ports)
-    }
     trace._portsRoutedOnPcb = ports
     return
   }
