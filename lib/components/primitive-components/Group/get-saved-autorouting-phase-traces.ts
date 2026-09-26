@@ -1,3 +1,7 @@
+import {
+  resolveSavedTraceRouteWidths,
+  getSavedTraceViaContactWidths,
+} from "lib/utils/autorouting/resolve-saved-trace-route-widths"
 import { applyToPoint, compose, translate } from "transformation-matrix"
 import { getViaBoardLayers } from "lib/utils/getViaSpanLayers"
 import type {
@@ -90,7 +94,7 @@ export function getSavedAutoroutingPhaseTraces(
       ),
       transformBeforeLayout,
     )
-    const route = path.route.map((point) => ({
+    const route = resolveSavedTraceRouteWidths(path.route).map((point) => ({
       ...point,
       ...applyToPoint(transform, point),
     }))
@@ -152,37 +156,43 @@ export function getSavedAutoroutingPhaseTraces(
     }
     // Explicit wire contacts expose via connectivity to Circuit JSON consumers
     // without moving any saved copper. Interior vias need contacts too.
-    const width =
-      route.find((point) => point.route_type === "wire")?.width ??
-      input.minTraceWidth
-    const routeWithViaContacts = route.flatMap((point): typeof route =>
-      point.route_type === "via"
-        ? [
-            {
-              route_type: "wire",
-              x: point.x,
-              y: point.y,
-              layer: point.from_layer,
-              width,
-            },
-            point,
-            {
-              route_type: "wire",
-              x: point.x,
-              y: point.y,
-              layer: point.to_layer,
-              width,
-            },
-          ]
-        : [point],
-    )
+    const routeWithViaContacts = route.flatMap((point, index): typeof route => {
+      if (point.route_type !== "via") return [point]
+      const { fromWidth, toWidth } = getSavedTraceViaContactWidths(
+        route,
+        index,
+        input.minTraceWidth,
+      )
+      return [
+        {
+          route_type: "wire",
+          x: point.x,
+          y: point.y,
+          layer: point.from_layer,
+          width: fromWidth,
+        },
+        point,
+        {
+          route_type: "wire",
+          x: point.x,
+          y: point.y,
+          layer: point.to_layer,
+          width: toWidth,
+        },
+      ]
+    })
     if (last.route_type === "via") {
+      const { toWidth } = getSavedTraceViaContactWidths(
+        route,
+        route.length - 1,
+        input.minTraceWidth,
+      )
       routeWithViaContacts.push({
         route_type: "wire",
         x: last.x,
         y: last.y,
         layer: last.to_layer,
-        width,
+        width: toWidth,
       })
     }
     coveredConnections.add(connection)

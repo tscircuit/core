@@ -1,3 +1,7 @@
+import {
+  resolveSavedTraceRouteWidths,
+  getSavedTraceViaContactWidths,
+} from "lib/utils/autorouting/resolve-saved-trace-route-widths"
 import { getViaBoardLayers } from "lib/utils/getViaSpanLayers"
 import { applyToPoint, compose, translate } from "transformation-matrix"
 import type {
@@ -57,7 +61,7 @@ export function getSavedFanoutTraces(
         translate(-localExit.x, -localExit.y),
       )
       const originalExit = applyToPoint(transform, localExit)
-      const route = path.route.map((point) => {
+      const route = resolveSavedTraceRouteWidths(path.route).map((point) => {
         const position = applyToPoint(transform, point)
         return {
           ...point,
@@ -103,23 +107,30 @@ export function getSavedFanoutTraces(
         )
       // Explicit wire contacts keep Circuit JSON connectivity checks aware of
       // the pad/exit layer without changing the saved copper or via position.
-      const width =
-        route.find((point) => point.route_type === "wire")?.width ??
-        input.minTraceWidth
+      const startContactWidths = getSavedTraceViaContactWidths(
+        route,
+        0,
+        input.minTraceWidth,
+      )
+      const endContactWidths = getSavedTraceViaContactWidths(
+        route,
+        route.length - 1,
+        input.minTraceWidth,
+      )
       if (first.route_type === "via") {
         route.splice(1, 0, {
           route_type: "wire",
           x: first.x,
           y: first.y,
           layer: first.to_layer,
-          width,
+          width: startContactWidths.toWidth,
         })
         route.unshift({
           route_type: "wire",
           x: first.x,
           y: first.y,
           layer: first.from_layer,
-          width,
+          width: startContactWidths.fromWidth,
         })
       }
       if (last.route_type === "via") {
@@ -128,14 +139,14 @@ export function getSavedFanoutTraces(
           x: last.x,
           y: last.y,
           layer: last.from_layer,
-          width,
+          width: endContactWidths.fromWidth,
         })
         route.push({
           route_type: "wire",
           x: last.x,
           y: last.y,
           layer: last.to_layer,
-          width,
+          width: endContactWidths.toWidth,
         })
       }
       if (last.route_type === "via") {
@@ -146,7 +157,7 @@ export function getSavedFanoutTraces(
           x: last.x,
           y: last.y,
           layer: last.to_layer,
-          width,
+          width: endContactWidths.toWidth,
         })
       }
       coveredConnections.add(connection)
