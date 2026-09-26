@@ -1667,7 +1667,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
               ? "no_cache_engine"
               : undefined
       const autoroutingMetadata = {
-        routingPhaseIndex: routingStageIndex,
+        routingPhaseIndex: routingPhasePlan.routingPhaseIndex,
+        _actualRoutingPhaseOrderIndex: routingStageIndex,
         phaseOrdinal: routingStageIndex + 1,
         phaseCount: routingStages.length,
         connectionCount: simpleRouteJson.connections.length,

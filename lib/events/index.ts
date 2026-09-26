@@ -30,7 +30,10 @@ export type AutoroutingCacheDisabledReason =
   | "no_cache_engine"
 
 export interface AutoroutingExecutionMetadata {
+  /** Declared routing phase index; null identifies the default/unassigned phase. */
   routingPhaseIndex?: number | null
+  /** Zero-based execution order after expanding phases into routing stages. */
+  _actualRoutingPhaseOrderIndex?: number
   phaseOrdinal?: number
   phaseCount?: number
   connectionCount?: number
