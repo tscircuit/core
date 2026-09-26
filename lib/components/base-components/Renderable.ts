@@ -69,6 +69,7 @@ export const orderedRenderPhases = [
   "PcbPlacementDesignRuleChecks",
   "PcbTraceRender",
   "PcbRouteNetIslands",
+  "PcbTraceTeardropRender",
   "PcbCopperPourRender",
   "PcbViaStitchRender",
   "PcbCopperPourCleanup",
@@ -125,12 +126,14 @@ const asyncPhaseDependencies: Partial<Record<RenderPhase, RenderPhase[]>> = {
   PcbBoardAutoSize: ["PcbFootprintStringRender", "FetchPartFootprint"],
   PcbTraceHintRender: ["PcbFootprintStringRender", "FetchPartFootprint"],
   PcbManualTraceRender: ["PcbFootprintStringRender", "FetchPartFootprint"],
+  PcbTraceTeardropRender: ["PcbTraceRender", "PcbRouteNetIslands"],
   PcbCopperPourRender: [
     "PcbFootprintStringRender",
     "FetchPartFootprint",
     "PcbPlacementDesignRuleChecks",
     "PcbTraceRender",
     "PcbRouteNetIslands",
+    "PcbTraceTeardropRender",
   ],
   PcbViaStitchRender: [
     "PcbFootprintStringRender",
