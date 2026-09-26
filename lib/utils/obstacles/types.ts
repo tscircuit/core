@@ -13,7 +13,7 @@ export type Obstacle = {
   /** True when this obstacle replaces one completed fanout source footprint. */
   isFanoutSourceKeepout?: boolean
   /** Non-plated hole geometry, with no electrical connections. */
-  isHole?: boolean
+  isNonPlatedHole?: boolean
   /** Circuit JSON provenance carried through SRJ but forbidden for routing. */
   circuitJsonMetadata?: CircuitJsonMetadata
   shape?: "circle"

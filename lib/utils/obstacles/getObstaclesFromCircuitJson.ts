@@ -311,7 +311,7 @@ export const getObstaclesFromCircuitJson = (
         obstacles.push({
           componentId: pcbComponentId,
           obstacleId: element.pcb_hole_id,
-          isHole: true,
+          isNonPlatedHole: true,
           type: "rect",
           layers: everyLayer,
           center: {
@@ -329,7 +329,7 @@ export const getObstaclesFromCircuitJson = (
         obstacles.push({
           componentId: pcbComponentId,
           obstacleId: element.pcb_hole_id,
-          isHole: true,
+          isNonPlatedHole: true,
           type: "rect",
           layers: everyLayer,
           center: {
@@ -347,7 +347,7 @@ export const getObstaclesFromCircuitJson = (
         obstacles.push({
           componentId: pcbComponentId,
           obstacleId: element.pcb_hole_id,
-          isHole: true,
+          isNonPlatedHole: true,
           type: "rect",
           layers: everyLayer,
           center: {
@@ -362,7 +362,7 @@ export const getObstaclesFromCircuitJson = (
         obstacles.push({
           componentId: pcbComponentId,
           obstacleId: element.pcb_hole_id,
-          isHole: true,
+          isNonPlatedHole: true,
           type: "rect",
           layers: everyLayer,
           center: {
@@ -381,7 +381,7 @@ export const getObstaclesFromCircuitJson = (
         obstacles.push({
           componentId: pcbComponentId,
           obstacleId: element.pcb_hole_id,
-          isHole: true,
+          isNonPlatedHole: true,
           type: "rect",
           shape: "circle",
           layers: everyLayer,

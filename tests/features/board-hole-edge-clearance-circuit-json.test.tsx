@@ -38,7 +38,7 @@ test("board hole edge clearance persists into SRJ with NPTH geometry and phase o
     expect(simpleRouteJson.minTraceToHoleEdgeClearance).toBe(expected)
     const hole = circuit.db.pcb_hole.list()[0]!
     expect(
-      simpleRouteJson.obstacles.find((obstacle) => obstacle.isHole),
+      simpleRouteJson.obstacles.find((obstacle) => obstacle.isNonPlatedHole),
     ).toMatchObject({
       obstacleId: hole.pcb_hole_id,
       shape: "circle",
