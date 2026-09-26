@@ -1,3 +1,4 @@
+import { getTaperClearanceEnvelope } from "lib/utils/get-taper-clearance-envelope"
 import {
   CopperPourPipelineSolver,
   convertCircuitJsonToInputProblem,
@@ -40,7 +41,7 @@ const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
 
   if (resolvedCopperPours.length === 0) return
 
-  const circuitJson = db.toArray()
+  const circuitJson = getTaperClearanceEnvelope(db.toArray())
   const boardComponent = subcircuit._getBoard()
   const pcbBoard = boardComponent?.pcb_board_id
     ? db.pcb_board.get(boardComponent.pcb_board_id)

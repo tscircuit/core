@@ -1,3 +1,4 @@
+import { getTaperClearanceEnvelope } from "lib/utils/get-taper-clearance-envelope"
 import { dedupePcbDrcErrors, runAllRoutingChecks } from "@tscircuit/checks"
 import type { AnyCircuitElement } from "circuit-json"
 import type { Group } from "./Group"
@@ -49,7 +50,7 @@ export const Group_doInitialStandaloneSubcircuitPcbDesignRuleChecks = (
     async () => {
       try {
         const results = (await runAllRoutingChecks(
-          subcircuitCircuitJson,
+          getTaperClearanceEnvelope(subcircuitCircuitJson),
         )) as AnyCircuitElement[]
         db.insertAll(dedupePcbDrcErrors(results))
         group._standaloneSubcircuitDrcChecksComplete = true
