@@ -1,3 +1,4 @@
+import { TeardropNoteArrow } from "tests/fixtures/teardrop-note-arrow"
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import type { Trace } from "lib/components/primitive-components/Trace/Trace"
@@ -8,27 +9,29 @@ test("post-routing phase adds teardrops on both sides of a via with endpoints di
   circuit.add(
     <board
       width={20}
-      height={12}
+      height={14}
       pcbStyle={{ viaPadDiameter: 0.7, viaHoleDiameter: 0.3 }}
     >
-      <resistor name="R1" resistance="1k" footprint="0603" pcbX={-3} pcbY={1} />
+      <resistor
+        name="R1"
+        resistance="1k"
+        footprint="0603"
+        pcbX={-3}
+        pcbY={2.15}
+      />
       <resistor
         name="R2"
         resistance="1k"
         footprint="0603"
         pcbX={3}
-        pcbY={-1}
+        pcbY={-2.15}
         layer="bottom"
       />
       <trace
         from="R1.2"
         to="R2.2"
         thickness={0.15}
-        pcbPath={[
-          { x: 2, y: 0 },
-          { x: 3, y: -1, via: true, toLayer: "bottom" },
-          { x: 4, y: -2 },
-        ]}
+        pcbPath={[{ x: 3, y: -2.15, via: true, toLayer: "bottom" }]}
       />
       <chip name="J1" footprint="pinrow2" pcbX={-8} pcbRotation={90} />
       <chip
@@ -43,7 +46,7 @@ test("post-routing phase adds teardrops on both sides of a via with endpoints di
         capacitance="100nF"
         footprint="0603"
         pcbX={3}
-        pcbY={-3}
+        pcbY={-4}
         layer="bottom"
       />
       <trace from="J1.1" to="R1.1" thickness={0.2} pcbPath={[]} />
@@ -58,8 +61,12 @@ test("post-routing phase adds teardrops on both sides of a via with endpoints di
           { x: -5.85, y: -2 },
         ]}
       />
+      <pcbnotetext pcbX={-1.1} pcbY={3.9} text="Top teardrop" fontSize={0.3} />
+      <TeardropNoteArrow from={{ x: -1.1, y: 3.5 }} to={{ x: -0.38, y: 0.5 }} />
+      <pcbnotetext pcbX={2} pcbY={2.2} text="Bottom teardrop" fontSize={0.3} />
+      <TeardropNoteArrow from={{ x: 2, y: 1.8 }} to={{ x: 0.5, y: -0.38 }} />
       <pcbnotetext
-        pcbY={5}
+        pcbY={6}
         text="Signal layer change: via only, pads disabled"
         fontSize={0.35}
       />
@@ -75,8 +82,8 @@ test("post-routing phase adds teardrops on both sides of a via with endpoints di
     route: [
       first,
       ...[
-        { x: 2.15, y: -4.5 },
-        { x: 6.5, y: -4.5 },
+        { x: 2.15, y: -5.5 },
+        { x: 6.5, y: -5.5 },
         { x: 8, y: -3 },
       ].map((point) => ({
         ...point,

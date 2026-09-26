@@ -1,3 +1,4 @@
+import { TeardropNoteArrow } from "tests/fixtures/teardrop-note-arrow"
 import { expect, test } from "bun:test"
 import { resolveSavedTraceRouteWidths } from "lib/utils/autorouting/resolve-saved-trace-route-widths"
 import { reversePcbTraceRoute } from "lib/utils/reverse-pcb-trace-route"
@@ -23,6 +24,30 @@ test("saved point widths render matching tapers in either route direction", asyn
           pcbPath={[]}
         />,
       ])}
+      {[2, -2].map((y) => (
+        <>
+          <TeardropNoteArrow
+            from={{ x: -1.8, y: y + 1.15 }}
+            to={{ x: -2.9, y: y + 0.15 }}
+          />
+          <TeardropNoteArrow
+            from={{ x: 1.1, y: y + 1.15 }}
+            to={{ x: 2.35, y: y + 0.25 }}
+          />
+          <pcbnotetext
+            pcbX={-1.8}
+            pcbY={y + 1.4}
+            text="Quadratic"
+            fontSize={0.25}
+          />
+          <pcbnotetext
+            pcbX={1.1}
+            pcbY={y + 1.4}
+            text="Linear"
+            fontSize={0.25}
+          />
+        </>
+      ))}
       <pcbnotetext
         pcbY={4.5}
         text="Header to 0603: quadratic escape / linear entry"

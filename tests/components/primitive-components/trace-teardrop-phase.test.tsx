@@ -1,3 +1,4 @@
+import { TeardropNoteArrow } from "tests/fixtures/teardrop-note-arrow"
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import type { Trace } from "lib/components/primitive-components/Trace/Trace"
@@ -30,8 +31,8 @@ test("teardrop phase honors logical endpoints, preserves its baseline, and is id
         to="C1.1"
         thickness={0.2}
         pcbPath={[
-          { x: 2, y: 0 },
-          { x: 4, y: -2 },
+          { x: 3, y: 0 },
+          { x: 5, y: -2 },
         ]}
       />
       <trace from="J1.1" to="R1.1" thickness={0.2} pcbPath={[]} />
@@ -54,6 +55,11 @@ test("teardrop phase honors logical endpoints, preserves its baseline, and is id
         ]}
       />
       <trace from="C1.2" to="J2.2" thickness={0.3} pcbPath={[]} />
+      <pcbnotetext pcbX={-0.3} pcbY={2.4} text="R1 teardrop" fontSize={0.3} />
+      <TeardropNoteArrow
+        from={{ x: -0.8, y: 2.1 }}
+        to={{ x: -1.65, y: 1.12 }}
+      />
       <pcbnotetext
         pcbY={5}
         text="RC input filter: R1 end only (reversed route)"
