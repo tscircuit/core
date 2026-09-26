@@ -192,7 +192,6 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         shape: "rotated_pill_hole_with_rect_pad",
         type: "pcb_plated_hole",
         port_hints: this.getNameAndAliases(),
-        pcb_plated_hole_id: this.pcb_plated_hole_id,
         x: position.x,
         y: position.y,
         layers: platedHoleLayers,
@@ -208,7 +207,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         rect_pad_height: props.outerHeight,
         hole_offset_x: props.holeOffsetX,
         hole_offset_y: props.holeOffsetY,
-      } as PcbHoleRotatedPillWithRectPad)
+      } as Omit<PcbHoleRotatedPillWithRectPad, "type" | "pcb_plated_hole_id">)
 
       this.pcb_plated_hole_id = pcb_plated_hole.pcb_plated_hole_id
 
