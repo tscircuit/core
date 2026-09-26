@@ -1,4 +1,9 @@
-import { applyToPoint, compose, translate } from "transformation-matrix"
+import { applyToPoint } from "transformation-matrix"
+import { fanoutTracePath } from "@tscircuit/props"
+import type { z } from "zod"
+import type { IGroup } from "./IGroup"
+import type { ISubcircuit } from "./Subcircuit/ISubcircuit"
+import { getSavedPcbTracePathTransform } from "./get-saved-pcb-trace-path-transform"
 import { getViaBoardLayers } from "lib/utils/getViaSpanLayers"
 import type {
   SimpleRouteConnection,
@@ -33,8 +38,32 @@ export function getSavedAutoroutingPhaseTraces(
   input: SimpleRouteJson,
   isFanout: boolean,
 ): PrecomputedRoutingResult {
-  const group = phase.getGroup()!
-  const transformBeforeLayout = group._computePcbGlobalTransformBeforeLayout()
+  return getSavedAutoroutingPhaseTracesFromPaths({
+    group: phase.getGroup()!,
+    subcircuit: phase.getSubcircuit(),
+    paths: phase._parsedProps.pcbTracePaths ?? [],
+    phaseIndex: phase._parsedProps.phaseIndex,
+    input,
+    isFanout,
+  })
+}
+
+/** Replay/validate paths in the group's local PCB frame; see the public wrapper above. */
+export function getSavedAutoroutingPhaseTracesFromPaths({
+  group,
+  subcircuit,
+  paths,
+  phaseIndex,
+  input,
+  isFanout,
+}: {
+  group: Pick<IGroup, "pcb_group_id" | "_computePcbGlobalTransformBeforeLayout">
+  subcircuit: Pick<ISubcircuit, "selectOne" | "selectAll">
+  paths: z.output<typeof fanoutTracePath>[]
+  phaseIndex?: number | null
+  input: SimpleRouteJson
+  isFanout: boolean
+}): PrecomputedRoutingResult {
   const boardLayers = getViaBoardLayers(input.layerCount)
   const remainingPointsByConnection = new Map(
     input.connections.map((connection) => [
@@ -46,12 +75,10 @@ export function getSavedAutoroutingPhaseTraces(
   const savedPorts = new Set<Port>()
   const traces: SimplifiedPcbTrace[] = []
 
-  for (const [pathIndex, path] of (
-    phase._parsedProps.pcbTracePaths ?? []
-  ).entries()) {
-    const port = phase
-      .getSubcircuit()
-      .selectOne(path.connection, { type: "port" }) as Port | null
+  for (const [pathIndex, path] of paths.entries()) {
+    const port = subcircuit.selectOne(path.connection, {
+      type: "port",
+    }) as Port | null
     if (!port)
       throw new Error(
         `Saved phase path "${path.connection}" must select a PCB port`,
@@ -78,18 +105,7 @@ export function getSavedAutoroutingPhaseTraces(
       throw new Error(
         `Saved phase path "${path.connection}" starts at an endpoint already joined by another path`,
       )
-    // Port._getGlobalPcbPositionBeforeLayout uses its matched PCB primitive's
-    // transform. Compare that independent anchor with the emitted port, rather
-    // than pcb_group.center (which is a bounding-box center, not the origin).
-    const portBeforeLayout = port._getGlobalPcbPositionBeforeLayout()
-    const portAfterLayout = port._getGlobalPcbPositionAfterLayout()
-    const transform = compose(
-      translate(
-        portAfterLayout.x - portBeforeLayout.x,
-        portAfterLayout.y - portBeforeLayout.y,
-      ),
-      transformBeforeLayout,
-    )
+    const transform = getSavedPcbTracePathTransform(group, port)
     const route = path.route.map((point) => ({
       ...point,
       ...applyToPoint(transform, point),
@@ -134,7 +150,7 @@ export function getSavedAutoroutingPhaseTraces(
         `Saved phase path "${path.connection}" has a via at a pad; enable allowViaInPad`,
       )
     }
-    const pcbTraceId = `saved_phase_${group.pcb_group_id}_${phase._parsedProps.phaseIndex ?? "default"}_${pathIndex}`
+    const pcbTraceId = `saved_phase_${group.pcb_group_id}_${phaseIndex ?? "default"}_${pathIndex}`
     if (endIndex < 0 && !isFanout) {
       throw new Error(
         `Saved phase path "${path.connection}" must end at another connection endpoint; use autorouter="fanout" for saved escapes`,

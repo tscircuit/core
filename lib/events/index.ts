@@ -1,3 +1,4 @@
+import type { FanoutTracePath } from "@tscircuit/props"
 import type { RenderPhase } from "lib/components/base-components/Renderable"
 import type { SOLVERS } from "lib/solvers"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
@@ -81,6 +82,15 @@ export interface AutoroutingProgressEvent extends AutoroutingExecutionMetadata {
 }
 
 export interface AutoroutingEndEvent extends AutoroutingExecutionMetadata {
+  /**
+   * Replayable copper for this stage only, in its enclosing group's local PCB
+   * frame (mm, +X right, +Y up, +Z above; right-handed points). Physical layers
+   * are unchanged. Pass to pcbTracePaths with the same phase options/placement.
+   * Omitted when the saved-path API cannot represent the result; never partial.
+   */
+  pcbTracePaths?: FanoutTracePath[]
+  /** Why this stage could not be represented by pcbTracePaths. */
+  pcbTracePathsUnavailableReason?: string
   type: "autorouting:end"
   subcircuit_id: string
   componentDisplayName: string
