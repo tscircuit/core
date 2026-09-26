@@ -158,6 +158,9 @@ export function Group_applyDrcTolerancesToSimpleRouteJson(
     drcTolerances.minViaHoleDiameter ?? simpleRouteJson.minViaHoleDiameter
   const minViaPadDiameter =
     drcTolerances.minViaPadDiameter ?? simpleRouteJson.minViaPadDiameter
+  const minTraceToHoleEdgeClearance =
+    drcTolerances.minTraceToHoleEdgeClearance ??
+    simpleRouteJson.minTraceToHoleEdgeClearance
   const minTraceToPadEdgeClearance =
     drcTolerances.minTraceToPadEdgeClearance ??
     simpleRouteJson.minTraceToPadEdgeClearance
@@ -189,6 +192,7 @@ export function Group_applyDrcTolerancesToSimpleRouteJson(
     min_via_hole_diameter: minViaHoleDiameter,
     min_via_pad_diameter: minViaPadDiameter,
     minTraceToPadEdgeClearance,
+    minTraceToHoleEdgeClearance,
     minViaEdgeToPadEdgeClearance,
     minViaHoleEdgeToViaHoleEdgeClearance,
     minPlatedHoleDrillEdgeToDrillEdgeClearance,

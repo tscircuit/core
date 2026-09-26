@@ -49,14 +49,14 @@
     "@tscircuit/implicit-copper-pour-solver": "github:tscircuit/implicit-copper-pour-solver#a5cbbda0cd65fd4707c5c1af25779837c25aba92",
     "@tscircuit/infer-cable-insertion-point": "^0.0.4",
     "@tscircuit/infgrid-ijump-astar": "^0.0.35",
-    "@tscircuit/jlcpcb-manufacturing-specs": "git+https://github.com/tscircuit/jlcpcb-manufacturing-specs#e08af159db01a37db007e33f0a7268d0e4a279a5",
+    "@tscircuit/jlcpcb-manufacturing-specs": "git+https://github.com/tscircuit/jlcpcb-manufacturing-specs#23260504fceffff2d64bf11720f74e974d1d9321",
     "@tscircuit/krt-wasm": "^0.1.1",
     "@tscircuit/log-soup": "^1.0.2",
     "@tscircuit/matchpack": "^0.0.97",
     "@tscircuit/math-utils": "^0.0.36",
     "@tscircuit/miniflex": "^0.0.4",
     "@tscircuit/ngspice-spice-engine": "^0.0.20",
-    "@tscircuit/props": "^0.0.666",
+    "@tscircuit/props": "^0.0.667",
     "@tscircuit/schematic-match-adapt": "^0.0.18",
     "@tscircuit/schematic-trace-solver": "^0.0.210",
     "@tscircuit/solver-utils": "^0.0.16",
@@ -72,7 +72,7 @@
     "bun-match-svg": "0.0.12",
     "calculate-elbow": "^0.0.12",
     "chokidar-cli": "^3.0.0",
-    "circuit-json": "^0.0.504",
+    "circuit-json": "^0.0.506",
     "circuit-json-to-bpc": "^0.0.13",
     "circuit-json-to-connectivity-map": "^0.0.30",
     "circuit-json-to-gltf": "^0.0.133",
@@ -135,7 +135,7 @@
   },
   "overrides": {
     "@tscircuit/circuit-json-util": "^0.0.116",
-    "@tscircuit/props": "^0.0.666",
-    "circuit-json": "^0.0.504"
+    "@tscircuit/props": "^0.0.667",
+    "circuit-json": "^0.0.506"
   }
 }

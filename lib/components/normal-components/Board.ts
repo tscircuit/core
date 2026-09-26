@@ -614,6 +614,9 @@ export class Board
       min_via_edge_to_pad_edge_clearance:
         subcircuitProps.minViaEdgeToPadEdgeClearance ??
         jlcMinTolerances.min_via_edge_to_pad_edge_clearance,
+      min_trace_to_hole_edge_clearance:
+        subcircuitProps.minTraceToHoleEdgeClearance ??
+        jlcMinTolerances.min_trace_to_hole_edge_clearance,
       min_trace_to_pad_edge_clearance:
         subcircuitProps.minTraceToPadEdgeClearance ??
         jlcMinTolerances.min_trace_to_pad_edge_clearance,
