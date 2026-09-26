@@ -1,3 +1,4 @@
+import { getAutoroutingPhasePcbTracePaths } from "./get-autorouting-phase-pcb-trace-paths"
 import {
   type SimpleRouteJson as AutorouterSimpleRouteJson,
   type RerouteRectRegion,
@@ -1861,7 +1862,17 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           })
         }
 
+        const savedPhasePaths = getAutoroutingPhasePcbTracePaths({
+          group: routingPhasePlan.autoroutingPhase?.getGroup() ?? this,
+          subcircuit: this,
+          input: simpleRouteJson,
+          traces,
+          isFanout: ["fanout", "single_layer_fanout"].includes(
+            phaseAutorouterConfig.preset ?? "",
+          ),
+        })
         this.root?.emit("autorouting:end", {
+          ...savedPhasePaths,
           type: "autorouting:end",
           subcircuit_id: this.subcircuit_id,
           componentDisplayName: this.getString(),

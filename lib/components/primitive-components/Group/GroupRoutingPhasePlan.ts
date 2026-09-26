@@ -5,6 +5,7 @@ import type {
   SimplifiedPcbTrace,
   SimpleRouteBounds,
 } from "lib/utils/autorouting/SimpleRouteJson"
+import type { AutoroutingPhase } from "../AutoroutingPhase"
 import type { Net } from "../Net"
 import type { Trace } from "../Trace/Trace"
 
@@ -26,6 +27,7 @@ export interface PrecomputedRoutingResult {
 }
 
 export interface RoutingPhasePlan {
+  autoroutingPhase?: AutoroutingPhase
   /** Automatically routes connections not assigned to an explicit phase. */
   isImplicitRemainingPhase?: boolean
   getPrecomputedRoutingResult?: (
