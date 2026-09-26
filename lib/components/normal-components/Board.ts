@@ -1,4 +1,3 @@
-import { getTaperClearanceEnvelope } from "lib/utils/get-taper-clearance-envelope"
 import { createPcbFold, type PcbFold } from "@tscircuit/flex-utils"
 import {
   dedupePcbDrcErrors,
@@ -732,8 +731,7 @@ export class Board
     // Only run once after all configured checks are complete.
     if (this._drcChecksComplete || this._drcChecksInProgress) return
 
-    const runDrcChecks = async (inputCircuitJson: AnyCircuitElement[]) => {
-      const circuitJson = getTaperClearanceEnvelope(inputCircuitJson)
+    const runDrcChecks = async (circuitJson: AnyCircuitElement[]) => {
       const checksToRun: Promise<AnyCircuitElement[]>[] = []
 
       if (
