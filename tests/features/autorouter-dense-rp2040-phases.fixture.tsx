@@ -1,3 +1,4 @@
+import type { FanoutTracePath } from "@tscircuit/props"
 import type { AutorouterVersion } from "lib/utils/autorouting/autorouter-version"
 import { createAutoroutingPhaseIoStack } from "tests/fixtures/create-autorouting-phase-io-stack"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
@@ -166,6 +167,7 @@ export const DENSE_RP2040_PHASE_COUNT = rp2040Connections.length
 const createDenseRp2040Circuit = (
   autorouterVersion: AutorouterVersion,
   routingMode: "phased" | "unphased",
+  pcbTracePaths?: FanoutTracePath[],
 ) => {
   const { circuit } = getTestFixture()
   const autoroutingPhaseIoStack = createAutoroutingPhaseIoStack(circuit)
@@ -189,6 +191,7 @@ const createDenseRp2040Circuit = (
       minViaHoleDiameter="0.2mm"
       minViaPadDiameter="0.5mm"
     >
+      {pcbTracePaths && <autoroutingphase pcbTracePaths={pcbTracePaths} />}
       {routingMode === "phased" &&
         rp2040Connections.map(({ pinNumber }, phaseIndex) => (
           <AutoroutingPhase
@@ -279,4 +282,5 @@ export const createDenseRp2040PhasedCircuit = (
 
 export const createDenseRp2040UnphasedCircuit = (
   autorouterVersion: AutorouterVersion,
-) => createDenseRp2040Circuit(autorouterVersion, "unphased")
+  pcbTracePaths?: FanoutTracePath[],
+) => createDenseRp2040Circuit(autorouterVersion, "unphased", pcbTracePaths)
