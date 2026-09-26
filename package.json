@@ -20,6 +20,7 @@
   },
   "scripts": {
     "build": "tsup-node",
+    "prepare": "bun run build",
     "format": "biome format . --write",
     "measure-bundle": "howfat -r table .",
     "pkg-pr-new-release": "bunx pkg-pr-new publish --comment=off --peerDeps",
