@@ -7,42 +7,94 @@ import { reversePcbTraceRoute } from "lib/utils/reverse-pcb-trace-route"
 test("teardrop phase honors logical endpoints, preserves its baseline, and is idempotent", async () => {
   const { circuit } = getTestFixture({ platform: { drcChecksDisabled: true } })
   circuit.add(
-    <board width={10} height={5}>
-      <chip
-        name="U1"
+    <board width={20} height={12}>
+      <resistor
+        name="R1"
+        resistance="100"
+        footprint="0603"
         pcbX={-3}
-        pinLabels={{ pin1: "FROM" }}
-        footprint={
-          <footprint>
-            <smtpad portHints={["1"]} shape="rect" width={1} height={1} />
-          </footprint>
-        }
+        pcbY={1}
       />
-      <chip
-        name="U2"
+      <capacitor
+        name="C1"
+        capacitance="10nF"
+        footprint="0603"
         pcbX={3}
-        pinLabels={{ pin1: "TO" }}
-        footprint={
-          <footprint>
-            <smtpad portHints={["1"]} shape="circle" radius={0.5} />
-          </footprint>
-        }
+        pcbY={-1}
       />
+      <chip name="J1" footprint="pinrow2" pcbX={-8} pcbY={0} pcbRotation={90} />
+      <chip name="J2" footprint="pinrow2" pcbX={8} pcbY={0} pcbRotation={90} />
       <trace
         name="signal"
-        from="U1.1"
-        to="U2.1"
+        from="R1.2"
+        to="C1.1"
         thickness={0.2}
-        pcbPath={[{ x: 0, y: 0 }]}
+        pcbPath={[
+          { x: 2, y: 0 },
+          { x: 4, y: -2 },
+        ]}
       />
+      <trace from="J1.1" to="R1.1" thickness={0.2} pcbPath={[]} />
+      <trace
+        from="C1.1"
+        to="J2.1"
+        thickness={0.2}
+        pcbPath={[
+          { x: 0, y: 2 },
+          { x: 2, y: 4 },
+        ]}
+      />
+      <trace
+        from="J1.2"
+        to="C1.2"
+        thickness={0.3}
+        pcbPath={[
+          { x: 0, y: -4 },
+          { x: 10, y: -4 },
+        ]}
+      />
+      <trace from="C1.2" to="J2.2" thickness={0.3} pcbPath={[]} />
       <pcbnotetext
-        pcbY={1.5}
-        text="FROM only; stored route reversed"
-        fontSize={0.4}
+        pcbY={5}
+        text="RC input filter: R1 end only (reversed route)"
+        fontSize={0.35}
       />
     </board>,
   )
   await circuit.renderUntilSettled()
+  // Supporting RC-filter routes in board-world mm (+X right, +Y up).
+  const waypoints = [
+    [],
+    [{ x: -5.73, y: 1 }],
+    [
+      { x: 2.15, y: -2.5 },
+      { x: 6.77, y: -2.5 },
+    ],
+    [
+      { x: -6.27, y: 3 },
+      { x: 4.5, y: 3 },
+      { x: 4.5, y: -0.35 },
+    ],
+    [{ x: 6.12, y: 1.27 }],
+  ]
+  for (const [index, pcbTrace] of circuit.db.pcb_trace.list().entries()) {
+    if (!index) continue
+    const first = pcbTrace.route[0]
+    const last = pcbTrace.route.at(-1)!
+    if (first.route_type !== "wire") throw new Error("Expected wire")
+    circuit.db.pcb_trace.update(pcbTrace.pcb_trace_id, {
+      route: [
+        first,
+        ...waypoints[index].map((point) => ({
+          ...point,
+          route_type: "wire" as const,
+          width: first.width,
+          layer: first.layer,
+        })),
+        last,
+      ],
+    })
+  }
   const trace = circuit.selectOne("trace") as Trace
   const pcbTrace = circuit.db.pcb_trace.list()[0]
   const original = reversePcbTraceRoute(pcbTrace.route)
@@ -67,7 +119,10 @@ test("teardrop phase honors logical endpoints, preserves its baseline, and is id
     (p) => p.route_type === "wire" && p.width_interpolation_mode,
   )
   expect(tapers).toHaveLength(1)
-  expect(tapers[0]).toMatchObject({ start_width: 0.2, end_width: 0.8 })
+  expect(tapers[0]).toMatchObject({ start_width: 0.2 })
+  expect(tapers[0].route_type === "wire" && tapers[0].end_width).toBeCloseTo(
+    0.64,
+  )
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
   Trace_doInitialPcbTraceTeardropRender(context)
   expect(circuit.db.pcb_trace.get(pcbTrace.pcb_trace_id)!.route).toEqual(route)

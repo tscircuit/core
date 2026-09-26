@@ -6,29 +6,87 @@ import { Trace_doInitialPcbTraceTeardropRender } from "lib/components/primitive-
 test("post-routing phase adds teardrops on both sides of a via with endpoints disabled", async () => {
   const { circuit } = getTestFixture({ platform: { drcChecksDisabled: true } })
   circuit.add(
-    <board width={12} height={8}>
-      <resistor name="R1" resistance="1k" footprint="0603" pcbX={-3} />
+    <board
+      width={20}
+      height={12}
+      pcbStyle={{ viaPadDiameter: 0.7, viaHoleDiameter: 0.3 }}
+    >
+      <resistor name="R1" resistance="1k" footprint="0603" pcbX={-3} pcbY={1} />
       <resistor
         name="R2"
         resistance="1k"
         footprint="0603"
         pcbX={3}
+        pcbY={-1}
         layer="bottom"
       />
       <trace
         from="R1.2"
-        to="R2.1"
+        to="R2.2"
         thickness={0.15}
-        pcbPath={[{ x: 0, y: 1, via: true, toLayer: "bottom" }]}
+        pcbPath={[
+          { x: 2, y: 0 },
+          { x: 3, y: -1, via: true, toLayer: "bottom" },
+          { x: 4, y: -2 },
+        ]}
+      />
+      <chip name="J1" footprint="pinrow2" pcbX={-8} pcbRotation={90} />
+      <chip
+        name="J2"
+        footprint="pinrow2"
+        pcbX={8}
+        pcbRotation={90}
+        layer="bottom"
+      />
+      <capacitor
+        name="C1"
+        capacitance="100nF"
+        footprint="0603"
+        pcbX={3}
+        pcbY={-3}
+        layer="bottom"
+      />
+      <trace from="J1.1" to="R1.1" thickness={0.2} pcbPath={[]} />
+      <trace from="R2.1" to="J2.1" thickness={0.2} pcbPath={[]} />
+      <trace from="R2.1" to="C1.1" thickness={0.2} pcbPath={[]} />
+      <trace
+        from="C1.2"
+        to="J2.2"
+        thickness={0.3}
+        pcbPath={[
+          { x: 0, y: -2 },
+          { x: -5.85, y: -2 },
+        ]}
       />
       <pcbnotetext
-        pcbY={3}
-        text="Via teardrops on both layers; pads disabled"
-        fontSize={0.4}
+        pcbY={5}
+        text="Signal layer change: via only, pads disabled"
+        fontSize={0.35}
       />
     </board>,
   )
   await circuit.renderUntilSettled()
+  // Keep the bottom-layer ground return clear of the signal pads, using
+  // board-world mm (+X right, +Y up) rather than mirrored footprint offsets.
+  const ground = circuit.db.pcb_trace.list().at(-1)!
+  const first = ground.route[0]
+  if (first.route_type !== "wire") throw new Error("Expected wire")
+  circuit.db.pcb_trace.update(ground.pcb_trace_id, {
+    route: [
+      first,
+      ...[
+        { x: 2.15, y: -4.5 },
+        { x: 6.5, y: -4.5 },
+        { x: 8, y: -3 },
+      ].map((point) => ({
+        ...point,
+        route_type: "wire" as const,
+        layer: first.layer,
+        width: first.width,
+      })),
+      ground.route.at(-1)!,
+    ],
+  })
   const trace = circuit.selectOne("trace") as Trace
   Trace_doInitialPcbTraceTeardropRender({
     root: trace.root,
