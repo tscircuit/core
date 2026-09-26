@@ -41,6 +41,18 @@ export class Inductor extends NormalComponent<
   doInitialSourceRender() {
     const { db } = this.root!
     const { _parsedProps: props } = this
+
+    if (
+      props.inductance === null ||
+      props.inductance === undefined ||
+      !Number.isFinite(props.inductance)
+    ) {
+      this.renderError(
+        `Invalid inductance "${this.props.inductance}" for inductor "${this.name}". Expected a finite value (e.g. "10uH").`,
+      )
+      return
+    }
+
     const source_component = db.source_component.insert({
       name: this.name,
       ftype: FTYPE.simple_inductor,
