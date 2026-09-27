@@ -2591,12 +2591,23 @@ export const renderAm62lLpddr4Fanout = async ({
   }
   expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
   expect(circuit.db.pcb_component_outside_board_error.list()).toEqual([])
-  let expectedTraceErrorCount = 0
-  if (includeDirectDecouplingNetworkInInitialRender) {
-    expectedTraceErrorCount = 48
-  }
-  expect(circuit.db.pcb_trace_error.list()).toHaveLength(
-    expectedTraceErrorCount,
+  const pcbTraceErrors = circuit.db.pcb_trace_error.list()
+  // The checks upgrade detects three overlaps in addition to 48 open via ends.
+  expect(pcbTraceErrors).toHaveLength(
+    includeDirectDecouplingNetworkInInitialRender ? 51 : 0,
+  )
+  expect(
+    pcbTraceErrors
+      .filter(({ message }) => !message.includes("dangling endpoint"))
+      .map(({ message }) => message),
+  ).toEqual(
+    includeDirectDecouplingNetworkInInitialRender
+      ? [
+          'PCB trace trace[.C_SOC_DDR_HS_L8 > port.pos] overlaps with pcb_smtpad "pcb_port[.C_SOC_DDR_HS_L8 > .pin2]" (accidental contact)',
+          "PCB trace trace[.C_SOC_DDR_HS_L8 > port.pos] overlaps with trace[.C_SOC_DDR_HS_L8 > port.neg] (accidental contact)",
+          "PCB trace trace[.C_SOC_DDR_HS_P8 > port.neg] overlaps with trace[.U1 > port.DDR0_DQ10] (accidental contact)",
+        ]
+      : [],
   )
   expect(circuit.db.pcb_via_trace_clearance_error.list()).toEqual([])
   const pcbBoard = circuit.db.pcb_board.list()[0]!

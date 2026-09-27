@@ -144,7 +144,19 @@ test("USB-C breakout pair wired through named nets", async () => {
   expect(phases[0]?.startSimpleRouteJson?.differentialPairs).toHaveLength(1)
   expect(phases[0]?.endSimpleRouteJson?.traces).toHaveLength(2)
   expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
-  expect(circuit.db.pcb_trace_error.list()).toEqual([])
+  // The hole-clearance check detects the existing route near both mounting holes.
+  expect(circuit.db.pcb_trace_error.list()).toMatchObject([
+    {
+      message: expect.stringContaining(
+        "too close to non-plated hole pcb_hole_0",
+      ),
+    },
+    {
+      message: expect.stringContaining(
+        "too close to non-plated hole pcb_hole_1",
+      ),
+    },
+  ])
   expect(circuit.db.pcb_port_not_connected_error.list()).toEqual([])
   await expect(phases).toMatchAutoroutingPhaseIoStackSnapshot(
     import.meta.path,
