@@ -1,7 +1,7 @@
-import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { schematicTextProps } from "@tscircuit/props"
 import { normalizeTextForCircuitJson } from "lib/utils/normalizeTextForCircuitJson"
 import { applyToPoint } from "transformation-matrix"
+import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
 export class SchematicText extends PrimitiveComponent<
   typeof schematicTextProps
@@ -26,10 +26,13 @@ export class SchematicText extends PrimitiveComponent<
     const globalPos = this._getGlobalSchematicPositionBeforeLayout()
 
     const schematic_symbol_id = this._getSymbolAncestor()?.schematic_symbol_id
+    const schematic_component_id =
+      this.getPrimitiveContainer()?.parent?.schematic_component_id ?? undefined
 
     const text = this._resolveText()
 
     const schematic_text = db.schematic_text.insert({
+      schematic_component_id,
       schematic_symbol_id,
       anchor: props.anchor ?? "center",
       text: normalizeTextForCircuitJson(text),
