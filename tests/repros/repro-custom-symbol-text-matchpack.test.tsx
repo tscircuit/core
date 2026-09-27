@@ -18,7 +18,7 @@ test("imported Watchy antenna labels follow MatchPack placement", async () => {
           symbol={watchyAntennaSymbol as AnyCircuitElement[]}
           pinLabels={{ pin1: ["pin1", "1"], pin2: ["pin2", "2"] }}
         />
-        <trace from="R1.pin2" to="AE1.pin1" />
+        <trace from="AE1.pin2" to="R1.pin1" />
       </schematicsheet>
     </board>,
   )
