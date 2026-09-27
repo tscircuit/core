@@ -33,5 +33,6 @@ test("Circuit JSON inflation preserves a testpoint rendered from TSX", async () 
     footprint_variant: "pad",
     pad_shape: "rect",
   })
+  expect(circuit.db.pcb_smtpad.list()).toHaveLength(1)
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

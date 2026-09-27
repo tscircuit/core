@@ -32,5 +32,6 @@ test("Circuit JSON inflation preserves a pin header rendered from TSX", async ()
     pin_count: 4,
     gender: "female",
   })
+  expect(circuit.db.pcb_plated_hole.list()).toHaveLength(4)
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
