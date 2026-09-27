@@ -579,9 +579,7 @@ export class Board
         ? styledViaDimensions.holeDiameter
         : undefined)
     const resolvedMinViaHoleDiameter =
-      configuredViaHoleDiameter ??
-      pcbBoardFromCircuitJson?.min_via_hole_diameter ??
-      jlcMinTolerances.min_via_hole_diameter
+      configuredViaHoleDiameter ?? jlcMinTolerances.min_via_hole_diameter
     const resolvedMinViaPadDiameter =
       subcircuitProps.minViaPadDiameter ??
       (pcbStyle?.viaPadDiameter !== undefined
@@ -589,8 +587,7 @@ export class Board
         : configuredViaHoleDiameter !== undefined
           ? configuredViaHoleDiameter +
             DEFAULT_VIA_PAD_DIAMETER_OVER_HOLE_DIAMETER_MM
-          : (pcbBoardFromCircuitJson?.min_via_pad_diameter ??
-            jlcMinTolerances.min_via_pad_diameter))
+          : jlcMinTolerances.min_via_pad_diameter)
     const pcb_board = db.pcb_board.insert({
       source_board_id: this.source_board_id,
       subcircuit_id: this.subcircuit_id ?? undefined,
@@ -633,34 +630,26 @@ export class Board
       }),
 
       min_trace_width:
-        subcircuitProps.minTraceWidth ??
-        pcbBoardFromCircuitJson?.min_trace_width ??
-        jlcMinTolerances.min_trace_width,
+        subcircuitProps.minTraceWidth ?? jlcMinTolerances.min_trace_width,
       min_via_hole_diameter: resolvedMinViaHoleDiameter,
       min_via_pad_diameter: resolvedMinViaPadDiameter,
       min_via_hole_edge_to_via_hole_edge_clearance:
         subcircuitProps.minViaHoleEdgeToViaHoleEdgeClearance ??
-        pcbBoardFromCircuitJson?.min_via_hole_edge_to_via_hole_edge_clearance ??
         jlcMinTolerances.min_via_hole_edge_to_via_hole_edge_clearance,
       min_via_edge_to_pad_edge_clearance:
         subcircuitProps.minViaEdgeToPadEdgeClearance ??
-        pcbBoardFromCircuitJson?.min_via_edge_to_pad_edge_clearance ??
         jlcMinTolerances.min_via_edge_to_pad_edge_clearance,
       min_trace_to_pad_edge_clearance:
         subcircuitProps.minTraceToPadEdgeClearance ??
-        pcbBoardFromCircuitJson?.min_trace_to_pad_edge_clearance ??
         jlcMinTolerances.min_trace_to_pad_edge_clearance,
       min_pad_edge_to_pad_edge_clearance:
         subcircuitProps.minPadEdgeToPadEdgeClearance ??
-        pcbBoardFromCircuitJson?.min_pad_edge_to_pad_edge_clearance ??
         jlcMinTolerances.min_pad_edge_to_pad_edge_clearance,
       min_plated_hole_drill_edge_to_drill_edge_clearance:
         subcircuitProps.minPlatedHoleDrillEdgeToDrillEdgeClearance ??
-        pcbBoardFromCircuitJson?.min_plated_hole_drill_edge_to_drill_edge_clearance ??
         jlcMinTolerances.min_plated_hole_drill_edge_to_drill_edge_clearance,
       min_board_edge_clearance:
         subcircuitProps.minBoardEdgeClearance ??
-        pcbBoardFromCircuitJson?.min_board_edge_clearance ??
         jlcMinTolerances.min_board_edge_clearance,
     } as Omit<PcbBoard, "type" | "pcb_board_id">)
 
