@@ -48,10 +48,16 @@ test("custom symbol labels follow their chips in automatic schematic layout", as
       source_component_id: sourceComponent.source_component_id,
     })!
     const symbolText = circuit.db.schematic_text.getWhere({ text: label })!
+    const referenceText = circuit.db.schematic_text.list().find(
+      (text) => text.text === name && text.schematic_symbol_id,
+    )!
 
     expect(symbolText.schematic_component_id).toBe(
       schematicComponent.schematic_component_id,
     )
     expect(symbolText.position).toEqual(schematicComponent.center)
+    expect(referenceText.schematic_component_id).toBe(
+      schematicComponent.schematic_component_id,
+    )
   }
 })
