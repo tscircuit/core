@@ -1,0 +1,284 @@
+[
+  {
+    "type": "schematic_symbol",
+    "schematic_symbol_id": "schematic_symbol_0",
+    "name": "Device:Antenna_Chip"
+  },
+  {
+    "type": "source_component",
+    "source_component_id": "source_component_0",
+    "name": "Device:Antenna_Chip",
+    "manufacturer_part_number": "SWRA117D Antenna",
+    "ftype": "simple_chip"
+  },
+  {
+    "type": "source_port",
+    "source_port_id": "source_port_0",
+    "source_component_id": "source_component_0",
+    "name": "pin1",
+    "pin_number": 1
+  },
+  {
+    "type": "source_port",
+    "source_port_id": "source_port_1",
+    "source_component_id": "source_component_0",
+    "name": "pin2",
+    "pin_number": 2
+  },
+  {
+    "type": "schematic_component",
+    "schematic_component_id": "schematic_component_0",
+    "source_component_id": "source_component_0",
+    "schematic_symbol_id": "schematic_symbol_0",
+    "center": {
+      "x": 0,
+      "y": 0
+    },
+    "size": {
+      "width": 0,
+      "height": 0
+    },
+    "is_box_with_pins": true,
+    "symbol_display_value": "SWRA117D Antenna"
+  },
+  {
+    "type": "schematic_port",
+    "schematic_port_id": "schematic_port_0",
+    "schematic_component_id": "schematic_component_0",
+    "source_port_id": "source_port_0",
+    "center": {
+      "x": -0.2,
+      "y": -0.20000000000000012
+    },
+    "facing_direction": "right",
+    "pin_number": 1,
+    "side_of_component": "bottom",
+    "distance_from_component_edge": 0.20000000000000012
+  },
+  {
+    "type": "schematic_port",
+    "schematic_port_id": "schematic_port_1",
+    "schematic_component_id": "schematic_component_0",
+    "source_port_id": "source_port_1",
+    "center": {
+      "x": 0.2,
+      "y": -0.20000000000000012
+    },
+    "facing_direction": "right",
+    "pin_number": 2,
+    "side_of_component": "bottom",
+    "distance_from_component_edge": 0.20000000000000012
+  },
+  {
+    "type": "schematic_line",
+    "schematic_line_id": "schematic_line_0",
+    "schematic_component_id": "schematic_component_0",
+    "schematic_symbol_id": "schematic_symbol_0",
+    "x1": -0.2,
+    "y1": 0,
+    "x2": -0.2,
+    "y2": -0.05000000000000003,
+    "stroke_width": 0.02000000000000001,
+    "color": "rgb(132, 0, 0)",
+    "is_dashed": false
+  },
+  {
+    "type": "schematic_line",
+    "schematic_line_id": "schematic_line_1",
+    "schematic_component_id": "schematic_component_0",
+    "schematic_symbol_id": "schematic_symbol_0",
+    "x1": -0.2,
+    "y1": 0,
+    "x2": -0.1,
+    "y2": 0,
+    "stroke_width": 0.02000000000000001,
+    "color": "rgb(132, 0, 0)",
+    "is_dashed": false
+  },
+  {
+    "type": "schematic_line",
+    "schematic_line_id": "schematic_line_2",
+    "schematic_component_id": "schematic_component_0",
+    "schematic_symbol_id": "schematic_symbol_0",
+    "x1": 0.1,
+    "y1": 0,
+    "x2": 0.2,
+    "y2": 0,
+    "stroke_width": 0.02000000000000001,
+    "color": "rgb(132, 0, 0)",
+    "is_dashed": false
+  },
+  {
+    "type": "schematic_line",
+    "schematic_line_id": "schematic_line_3",
+    "schematic_component_id": "schematic_component_0",
+    "schematic_symbol_id": "schematic_symbol_0",
+    "x1": 0.1,
+    "y1": 0.10000000000000006,
+    "x2": 0.1,
+    "y2": -0.10000000000000006,
+    "stroke_width": 0.02000000000000001,
+    "color": "rgb(132, 0, 0)",
+    "is_dashed": false
+  },
+  {
+    "type": "schematic_line",
+    "schematic_line_id": "schematic_line_4",
+    "schematic_component_id": "schematic_component_0",
+    "schematic_symbol_id": "schematic_symbol_0",
+    "x1": 0.2,
+    "y1": -0.05000000000000003,
+    "x2": 0.2,
+    "y2": 0,
+    "stroke_width": 0.026484210526315805,
+    "color": "rgb(132, 0, 0)",
+    "is_dashed": false
+  },
+  {
+    "type": "schematic_line",
+    "schematic_line_id": "schematic_line_5",
+    "schematic_component_id": "schematic_component_0",
+    "schematic_symbol_id": "schematic_symbol_0",
+    "x1": 0.2,
+    "y1": 0.5500000000000004,
+    "x2": 0.2,
+    "y2": -0.1500000000000001,
+    "stroke_width": 0.02000000000000001,
+    "color": "rgb(132, 0, 0)",
+    "is_dashed": false
+  },
+  {
+    "type": "schematic_line",
+    "schematic_line_id": "schematic_line_6",
+    "schematic_component_id": "schematic_component_0",
+    "schematic_symbol_id": "schematic_symbol_0",
+    "x1": -0.1,
+    "y1": 0.10000000000000006,
+    "x2": -0.1,
+    "y2": -0.10000000000000006,
+    "stroke_width": 0.02000000000000001,
+    "color": "rgb(132, 0, 0)",
+    "is_dashed": false
+  },
+  {
+    "type": "schematic_line",
+    "schematic_line_id": "schematic_line_7",
+    "schematic_component_id": "schematic_component_0",
+    "schematic_symbol_id": "schematic_symbol_0",
+    "x1": -0.1,
+    "y1": -0.10000000000000006,
+    "x2": -0.1,
+    "y2": 0,
+    "stroke_width": 0.02000000000000001,
+    "color": "rgb(132, 0, 0)",
+    "is_dashed": false
+  },
+  {
+    "type": "schematic_line",
+    "schematic_line_id": "schematic_line_8",
+    "schematic_component_id": "schematic_component_0",
+    "schematic_symbol_id": "schematic_symbol_0",
+    "x1": 0.3000000000000004,
+    "y1": 0.5500000000000004,
+    "x2": 0.2,
+    "y2": 0.1500000000000001,
+    "stroke_width": 0.02000000000000001,
+    "color": "rgb(132, 0, 0)",
+    "is_dashed": false
+  },
+  {
+    "type": "schematic_line",
+    "schematic_line_id": "schematic_line_9",
+    "schematic_component_id": "schematic_component_0",
+    "schematic_symbol_id": "schematic_symbol_0",
+    "x1": 0.2,
+    "y1": 0.1500000000000001,
+    "x2": 0.1,
+    "y2": 0.5500000000000004,
+    "stroke_width": 0.02000000000000001,
+    "color": "rgb(132, 0, 0)",
+    "is_dashed": false
+  },
+  {
+    "type": "schematic_line",
+    "schematic_line_id": "schematic_line_10",
+    "schematic_component_id": "schematic_component_0",
+    "schematic_symbol_id": "schematic_symbol_0",
+    "x1": -0.05000000000000019,
+    "y1": 0.10000000000000006,
+    "x2": 0.05000000000000019,
+    "y2": 0.10000000000000006,
+    "stroke_width": 0.02000000000000001,
+    "color": "rgb(132, 0, 0)",
+    "is_dashed": false
+  },
+  {
+    "type": "schematic_line",
+    "schematic_line_id": "schematic_line_11",
+    "schematic_component_id": "schematic_component_0",
+    "schematic_symbol_id": "schematic_symbol_0",
+    "x1": 0.05000000000000019,
+    "y1": 0.10000000000000006,
+    "x2": 0.05000000000000019,
+    "y2": -0.10000000000000006,
+    "stroke_width": 0.02000000000000001,
+    "color": "rgb(132, 0, 0)",
+    "is_dashed": false
+  },
+  {
+    "type": "schematic_line",
+    "schematic_line_id": "schematic_line_12",
+    "schematic_component_id": "schematic_component_0",
+    "schematic_symbol_id": "schematic_symbol_0",
+    "x1": 0.05000000000000019,
+    "y1": -0.10000000000000006,
+    "x2": -0.05000000000000019,
+    "y2": -0.10000000000000006,
+    "stroke_width": 0.02000000000000001,
+    "color": "rgb(132, 0, 0)",
+    "is_dashed": false
+  },
+  {
+    "type": "schematic_line",
+    "schematic_line_id": "schematic_line_13",
+    "schematic_component_id": "schematic_component_0",
+    "schematic_symbol_id": "schematic_symbol_0",
+    "x1": -0.05000000000000019,
+    "y1": -0.10000000000000006,
+    "x2": -0.05000000000000019,
+    "y2": 0.10000000000000006,
+    "stroke_width": 0.02000000000000001,
+    "color": "rgb(132, 0, 0)",
+    "is_dashed": false
+  },
+  {
+    "type": "schematic_text",
+    "schematic_text_id": "schematic_text_0",
+    "schematic_component_id": "schematic_component_0",
+    "schematic_symbol_id": "schematic_symbol_0",
+    "text": "{REF}",
+    "font_size": 0.10000000000000006,
+    "position": {
+      "x": 0,
+      "y": 0.40000000000000024
+    },
+    "rotation": 0,
+    "anchor": "right",
+    "color": "rgb(132, 0, 0)"
+  },
+  {
+    "type": "schematic_text",
+    "schematic_text_id": "schematic_text_1",
+    "schematic_component_id": "schematic_component_0",
+    "schematic_symbol_id": "schematic_symbol_0",
+    "text": "SWRA117D Antenna",
+    "font_size": 0.10000000000000006,
+    "position": {
+      "x": 0,
+      "y": 0.25000000000000017
+    },
+    "rotation": 0,
+    "anchor": "right",
+    "color": "rgb(132, 0, 0)"
+  }
+]
