@@ -13,7 +13,7 @@ test("Circuit JSON inflation preserves a pin header rendered from TSX", async ()
         pcbX={1}
         pcbY={-0.5}
       />
-      <pcbnotetext text="TSX PIN HEADER" pcbY={2.5} fontSize={0.7} />
+      <pcbnotetext text="TSX PIN HEADER" pcbY={-3} fontSize={0.7} />
     </board>,
   )
 
@@ -34,4 +34,5 @@ test("Circuit JSON inflation preserves a pin header rendered from TSX", async ()
   })
   expect(circuit.db.pcb_plated_hole.list()).toHaveLength(4)
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
