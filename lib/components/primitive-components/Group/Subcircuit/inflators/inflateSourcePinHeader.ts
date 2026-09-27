@@ -1,4 +1,4 @@
-import type { PinHeaderProps } from "@tscircuit/props"
+import type { PinHeaderProps, SchematicPortArrangement } from "@tscircuit/props"
 import type {
   PcbComponent,
   SchematicComponent,
@@ -6,8 +6,13 @@ import type {
 } from "circuit-json"
 import { PinHeader } from "lib/components/normal-components/PinHeader"
 import type { InflatorContext } from "../InflatorFn"
+import { getImportedSchPortArrangement } from "./getImportedSchPortArrangement"
 import { getInflatedPcbPlacement } from "./getInflatedPcbPlacement"
 import { inflateFootprintComponent } from "./inflateFootprintComponent"
+
+type SchematicComponentWithRotation = SchematicComponent & {
+  rotation?: number
+}
 
 class InflatedPinHeader extends PinHeader {
   _getImpliedFootprintString(): string | null {
@@ -36,6 +41,16 @@ const getInflatedPinLabels = (
   return Object.keys(pinLabels).length > 0 ? pinLabels : undefined
 }
 
+const getImportedFacingDirection = (
+  arrangement: SchematicPortArrangement | undefined,
+): PinHeaderProps["schFacingDirection"] => {
+  if (arrangement?.leftSide) return "left"
+  if (arrangement?.rightSide) return "right"
+  if (arrangement?.topSide) return "up"
+  if (arrangement?.bottomSide) return "down"
+  return undefined
+}
+
 export function inflateSourcePinHeader(
   sourcePinHeader: SourceSimplePinHeader,
   inflatorContext: InflatorContext,
@@ -46,12 +61,13 @@ export function inflateSourcePinHeader(
   }) as PcbComponent | null
   const schematicComponent = injectionDb.schematic_component.getWhere({
     source_component_id: sourcePinHeader.source_component_id,
-  }) as SchematicComponent | null
+  }) as SchematicComponentWithRotation | null
   const { pcbX, pcbY } = getInflatedPcbPlacement({
     pcbComponent,
     sourceGroupId: sourcePinHeader.source_group_id,
     inflatorContext,
   })
+  const schPinArrangement = getImportedSchPortArrangement(schematicComponent)
   const pinHeaderProps: PinHeaderProps = {
     name: sourcePinHeader.name,
     displayName: sourcePinHeader.display_name,
@@ -60,6 +76,9 @@ export function inflateSourcePinHeader(
     pinCount: sourcePinHeader.pin_count,
     gender: sourcePinHeader.gender,
     pinLabels: getInflatedPinLabels(sourcePinHeader, inflatorContext),
+    schFacingDirection: getImportedFacingDirection(schPinArrangement),
+    schPinArrangement,
+    schRotation: schematicComponent?.rotation,
     schWidth: schematicComponent?.size.width,
     schHeight: schematicComponent?.size.height,
     schPinSpacing: schematicComponent?.pin_spacing,

@@ -42,6 +42,7 @@ export function inflateSourceTestPoint(
     holeDiameter: sourceTestPoint.hole_diameter,
     width: sourceTestPoint.width,
     height: sourceTestPoint.height,
+    symbolName: schematicComponent?.symbol_name,
     schX: schematicComponent?.center.x,
     schY: schematicComponent?.center.y,
     layer: pcbComponent?.layer,
