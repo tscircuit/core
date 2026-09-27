@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("rectPad plated holes share a null ID and move J1's port to J2", async () => {
+test("rectPad plated holes keep distinct IDs and ports on their own pads", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width={24} height={16} routingDisabled>
@@ -44,6 +44,18 @@ test("rectPad plated holes share a null ID and move J1's port to J2", async () =
     </board>,
   )
   await circuit.renderUntilSettled()
+
+  const holes = circuit.db.pcb_plated_hole.list()
+  expect(holes).toHaveLength(2)
+  expect(new Set(holes.map((hole) => hole.pcb_plated_hole_id)).size).toBe(2)
+  for (const hole of holes) {
+    expect(hole.pcb_plated_hole_id).toEqual(expect.any(String))
+    expect(circuit.db.pcb_port.get(hole.pcb_port_id!)).toMatchObject({
+      pcb_component_id: hole.pcb_component_id,
+      x: hole.x,
+      y: hole.y,
+    })
+  }
 
   await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
     shouldDrawRatsNest: true,
