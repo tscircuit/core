@@ -1,8 +1,7 @@
 import { expect, test } from "bun:test"
-import { getFullConnectivityMapFromCircuitJson } from "circuit-json-to-connectivity-map"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("repro: autorouted bottom GND trace has connected endpoints but no source trace ID", async () => {
+test("repro: autorouted bottom trace joins GND via ports without a source trace ID", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width={6} height={5} layers={4} autorouterVersion="beta_pipeline7">
@@ -79,16 +78,27 @@ test("repro: autorouted bottom GND trace has connected endpoints but no source t
   expect(bottomTraces[0].source_trace_id).toBeUndefined()
 
   const ground = circuit.db.source_net.list().find((net) => net.name === "GND")!
-  const connectivityMap = getFullConnectivityMapFromCircuitJson(
-    circuit.getCircuitJson(),
+  const vias = circuit.db.pcb_via.list()
+  expect(vias).toHaveLength(2)
+  const wirePoints = bottomTraces[0].route.filter(
+    (point) => point.route_type === "wire",
   )
-  expect(
-    connectivityMap.areAllIdsConnected([
-      ground.source_net_id,
-      bottomTraces[0].pcb_trace_id,
-      ...circuit.db.pcb_via.list().map((via) => via.pcb_via_id),
-    ]),
-  ).toBe(true)
+  const endpointPortIds = [
+    wirePoints[0].start_pcb_port_id,
+    wirePoints.at(-1)!.end_pcb_port_id,
+  ]
+  expect(new Set(endpointPortIds).size).toBe(2)
+  for (const endpointPortId of endpointPortIds) {
+    expect(circuit.db.pcb_port.get(endpointPortId!)).toMatchObject({
+      layers: ["bottom"],
+    })
+    expect(
+      vias.find((via) => via.pcb_port_ids?.includes(endpointPortId!)),
+    ).toMatchObject({
+      source_net_id: ground.source_net_id,
+      layers: ["top", "inner1", "inner2", "bottom"],
+    })
+  }
 
   await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
     layer: "bottom",
