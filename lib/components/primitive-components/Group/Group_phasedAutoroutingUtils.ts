@@ -116,18 +116,6 @@ export function Group_filterSimpleRouteJsonForPhase(
   return {
     ...simpleRouteJson,
     bounds,
-    // Phase bounds limit routing, but their edges are not physical board edges.
-    // Preserve the original rectangular outline before narrowing those bounds.
-    outline:
-      simpleRouteJson.outline ??
-      (phasePlan.routingBounds
-        ? [
-            { x: simpleRouteJson.bounds.minX, y: simpleRouteJson.bounds.minY },
-            { x: simpleRouteJson.bounds.maxX, y: simpleRouteJson.bounds.minY },
-            { x: simpleRouteJson.bounds.maxX, y: simpleRouteJson.bounds.maxY },
-            { x: simpleRouteJson.bounds.minX, y: simpleRouteJson.bounds.maxY },
-          ]
-        : undefined),
     connections,
     differentialPairs:
       differentialPairs.length > 0 ? differentialPairs : undefined,

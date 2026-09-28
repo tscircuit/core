@@ -3,6 +3,7 @@ import { Group_filterSimpleRouteJsonForPhase } from "lib/components/primitive-co
 import type { RoutingPhasePlan } from "lib/components/primitive-components/Group/GroupRoutingPhasePlan"
 import { Trace } from "lib/components/primitive-components/Trace/Trace"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
+import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 
 test("phased autorouting expands substituted bounds around phase connection points", () => {
   const phaseTrace = new Trace({
@@ -20,6 +21,19 @@ test("phased autorouting expands substituted bounds around phase connection poin
   unrelatedTrace.source_trace_id = "source_trace_unrelated"
 
   const simpleRouteJson: SimpleRouteJson = {
+    ...getSimpleRouteJsonFromCircuitJson({
+      circuitJson: [
+        {
+          type: "pcb_board",
+          pcb_board_id: "pcb_board_0",
+          center: { x: 0, y: 0 },
+          width: 20,
+          height: 20,
+          num_layers: 2,
+          thickness: 1.6,
+        },
+      ],
+    }).simpleRouteJson,
     layerCount: 2,
     minTraceWidth: 0.1,
     obstacles: [],
@@ -71,7 +85,7 @@ test("phased autorouting expands substituted bounds around phase connection poin
     { x: 10, y: 10 },
     { x: -10, y: 10 },
   ])
-  expect(simpleRouteJson.outline).toBeUndefined()
+  expect(simpleRouteJson.outline).toEqual(phaseInput.outline)
 
   const outline = [
     { x: -10, y: -10 },
@@ -89,5 +103,5 @@ test("phased autorouting expands substituted bounds around phase connection poin
       ...phasePlan,
       routingBounds: undefined,
     }).outline,
-  ).toBeUndefined()
+  ).toEqual(simpleRouteJson.outline)
 })
