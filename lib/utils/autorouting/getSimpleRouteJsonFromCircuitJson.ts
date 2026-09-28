@@ -296,14 +296,41 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     }),
   )
 
-  // Add every equivalent ID from the shared connectivity map to each obstacle.
-  for (const obstacle of obstacles) {
-    const additionalIds = obstacle.connectedTo.flatMap((id) =>
-      sharedConnMap.getIdsConnectedToNet(id),
-    )
-    obstacle.connectedTo = [
-      ...new Set([...obstacle.connectedTo, ...additionalIds]),
-    ]
+  // Preserve traceable connectivity IDs on obstacles. A fresh top-level
+  // routing problem deliberately excludes imported route state, so only its
+  // semantic net/trace identities are relevant there; copying every physical
+  // trace, via, and sibling pad ID makes SRJ grow quadratically with net size.
+  if (ignoreExistingTopLevelPcbRouteState) {
+    const semanticIdsByConnectivityKey = new Map<string, string[]>()
+    for (const semanticId of [
+      ...db.source_net.list().map((net) => net.source_net_id),
+      ...db.source_trace.list().map((trace) => trace.source_trace_id),
+    ]) {
+      const connectivityKey =
+        sharedConnMap.getNetConnectedToId(semanticId) ?? semanticId
+      const semanticIds =
+        semanticIdsByConnectivityKey.get(connectivityKey) ?? []
+      semanticIds.push(semanticId)
+      semanticIdsByConnectivityKey.set(connectivityKey, semanticIds)
+    }
+    for (const obstacle of obstacles) {
+      const semanticIds = obstacle.connectedTo.flatMap((id) => {
+        const connectivityKey = sharedConnMap.getNetConnectedToId(id) ?? id
+        return semanticIdsByConnectivityKey.get(connectivityKey) ?? []
+      })
+      obstacle.connectedTo = [
+        ...new Set([...obstacle.connectedTo, ...semanticIds]),
+      ]
+    }
+  } else {
+    for (const obstacle of obstacles) {
+      const additionalIds = obstacle.connectedTo.flatMap((id) =>
+        sharedConnMap.getIdsConnectedToNet(id),
+      )
+      obstacle.connectedTo = [
+        ...new Set([...obstacle.connectedTo, ...additionalIds]),
+      ]
+    }
   }
 
   // Build mapping from source_port_id to internal connection ID for interconnects
@@ -505,6 +532,11 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     .filter(
       (trace) =>
         !sourceTraceIdsAlreadyPreservedAsSrjTraces.has(trace.source_trace_id),
+    )
+    .filter(
+      (trace) =>
+        (trace.connected_source_net_ids?.length ?? 0) === 0 ||
+        planeTerminatedSourceTraceLayers.has(trace.source_trace_id),
     )
     .filter(
       (trace) =>

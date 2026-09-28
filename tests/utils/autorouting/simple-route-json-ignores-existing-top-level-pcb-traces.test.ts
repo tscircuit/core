@@ -56,6 +56,24 @@ test("simple route json ignores existing top-level pcb traces as routing state",
       y: 0,
       layers: ["top"],
     } as any,
+    ...[
+      ["a", -2],
+      ["b", 0],
+      ["c", 2],
+    ].map(
+      ([suffix, x]) =>
+        ({
+          type: "pcb_smtpad",
+          pcb_smtpad_id: `pcb_smtpad_${suffix}`,
+          pcb_port_id: `pcb_port_${suffix}`,
+          shape: "rect",
+          x,
+          y: 0,
+          width: 1,
+          height: 1,
+          layer: "top",
+        }) as any,
+    ),
     {
       type: "source_trace",
       source_trace_id: "source_trace_ab",
@@ -95,12 +113,14 @@ test("simple route json ignores existing top-level pcb traces as routing state",
 
   const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
     circuitJson,
+    ignoreExistingTopLevelPcbRouteState: true,
   })
 
   const netConnection = simpleRouteJson.connections.find(
     (connection) => connection.name === "source_net_0",
   )
 
+  expect(simpleRouteJson.connections).toHaveLength(1)
   expect(netConnection).toBeDefined()
   expect(netConnection!.pointsToConnect.map((p) => p.pointId)).toEqual([
     "pcb_port_a",
@@ -109,6 +129,27 @@ test("simple route json ignores existing top-level pcb traces as routing state",
   ])
   expect(netConnection!.externallyConnectedPointIds).toBeUndefined()
   expect(simpleRouteJson.traces).toBeUndefined()
+  expect(
+    simpleRouteJson.obstacles.find((obstacle) =>
+      obstacle.connectedTo.includes("pcb_smtpad_a"),
+    )?.connectedTo,
+  ).toEqual([
+    "pcb_smtpad_a",
+    expect.stringMatching(/^connectivity_net/u),
+    "source_net_0",
+    "source_trace_ab",
+    "source_trace_bc",
+  ])
+  expect(
+    simpleRouteJson.obstacles.every((obstacle) =>
+      obstacle.connectedTo.every(
+        (id) =>
+          !id.startsWith("pcb_trace_") &&
+          !id.startsWith("pcb_via_") &&
+          !id.startsWith("source_port_"),
+      ),
+    ),
+  ).toBe(true)
 })
 
 test("simple route json keeps existing pcb traces as routing state inside subcircuits", () => {
