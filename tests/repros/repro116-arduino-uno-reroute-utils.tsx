@@ -1,6 +1,10 @@
 import { expect } from "bun:test"
 import fs from "node:fs"
-import type { CircuitJson, PcbTraceRoutePoint } from "circuit-json"
+import type {
+  CircuitJson,
+  PcbHoleCircle,
+  PcbTraceRoutePoint,
+} from "circuit-json"
 import { convertCircuitJsonToPcbSvg } from "circuit-to-svg"
 import { KicadToCircuitJsonConverter } from "kicad-to-circuit-json"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
@@ -55,6 +59,42 @@ const loadArduinoUnoCircuitJson = () => {
   )
   converter.runUntilFinished()
   return converter.getOutput() as CircuitJson
+}
+
+export const expectArduinoUnoHolesPreserved = (
+  originalCircuitJson: CircuitJson,
+  inflatedCircuitJson: CircuitJson,
+) => {
+  const originalHoles = originalCircuitJson.filter(
+    (elm): elm is PcbHoleCircle =>
+      elm.type === "pcb_hole" && elm.hole_shape === "circle",
+  )
+  const inflatedHoles = inflatedCircuitJson.filter(
+    (elm) => elm.type === "pcb_hole",
+  )
+  expect(originalHoles).toHaveLength(6)
+  expect(originalHoles.filter((hole) => !hole.pcb_component_id)).toHaveLength(4)
+  expect(inflatedHoles).toHaveLength(6)
+  expect(inflatedHoles).toEqual(
+    expect.arrayContaining(
+      originalHoles.map((hole) =>
+        expect.objectContaining({
+          x: hole.x,
+          y: hole.y,
+          hole_shape: hole.hole_shape,
+          hole_diameter: hole.hole_diameter,
+          pcb_component_id: hole.pcb_component_id
+            ? expect.any(String)
+            : undefined,
+        }),
+      ),
+    ),
+  )
+  const inflatedPlatedHoles = inflatedCircuitJson.filter(
+    (elm) => elm.type === "pcb_plated_hole",
+  )
+  expect(inflatedPlatedHoles).toHaveLength(85)
+  expect(inflatedPlatedHoles.every((hole) => hole.pcb_component_id)).toBe(true)
 }
 
 const getRerouteRegionCenter = (rerouteRegion: RectRerouteRegion) => ({
@@ -219,8 +259,16 @@ export async function renderArduinoUnoRerouteRegion({
 
   if (includeBeforeRerouteCircuit) {
     await beforeRerouteCircuit.renderUntilSettled()
+    expectArduinoUnoHolesPreserved(
+      arduinoUnoCircuitJson,
+      beforeRerouteCircuit.getCircuitJson(),
+    )
   }
   await afterRerouteCircuit.renderUntilSettled()
+  expectArduinoUnoHolesPreserved(
+    arduinoUnoCircuitJson,
+    afterRerouteCircuit.getCircuitJson(),
+  )
 
   return {
     afterRerouteCircuit,

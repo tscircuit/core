@@ -54,7 +54,8 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
     const isCoveredWithSolderMask = props.coveredWithSolderMask ?? false
     const pcb_component_id =
       this.parent?.pcb_component_id ??
-      this.getPrimitiveContainer()?.pcb_component_id
+      this.getPrimitiveContainer()?.pcb_component_id ??
+      undefined
 
     this.emitSolderMaskMarginWarning(isCoveredWithSolderMask, soldermaskMargin)
 

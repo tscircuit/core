@@ -55,6 +55,10 @@ export function inflateStandalonePcbPrimitives(
       // below requires the key to be present and would drop every cutout.
       return true
     }
+    if (elm.type === "pcb_hole" || elm.type === "pcb_plated_hole") {
+      // Hole owners are optional; JSON serialization omits an undefined owner.
+      return elm.pcb_component_id === null || elm.pcb_component_id === undefined
+    }
     // Check for null or undefined pcb_component_id
     return (
       "pcb_component_id" in elm &&
