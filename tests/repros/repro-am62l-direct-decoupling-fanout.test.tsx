@@ -10,6 +10,45 @@ test("routes the AM62L and LPDDR4 with the real decoupling network present", asy
     snapshotPath: import.meta.path,
   })
   expect(
+    circuit.db.pcb_via_clearance_error.list().map(({ message }) => message),
+  ).toMatchInlineSnapshot(`
+    [
+      "Vias pcb_via[#pcb_via_2] and pcb_via[#pcb_via_3] from different nets are too close together (gap: 0.060mm)",
+      "Vias pcb_via[#pcb_via_24] and pcb_via[#pcb_via_112] from different nets are too close together (gap: 0.060mm)",
+      "Vias pcb_via[#pcb_via_26] and pcb_via[#pcb_via_108] from different nets are too close together (gap: 0.064mm)",
+      "Vias pcb_via[#pcb_via_42] and pcb_via[#pcb_via_43] from different nets are too close together (gap: 0.060mm)",
+      "Vias pcb_via[#pcb_via_44] and pcb_via[#pcb_via_81] from different nets are too close together (gap: 0.060mm)",
+      "Vias pcb_via[#pcb_via_48] and pcb_via[#pcb_via_49] from different nets are too close together (gap: 0.060mm)",
+      "Vias pcb_via[#pcb_via_54] and pcb_via[#pcb_via_55] from different nets are too close together (gap: 0.060mm)",
+      "Vias pcb_via[#pcb_via_80] and pcb_via[#pcb_via_81] from different nets are too close together (gap: 0.060mm)",
+      "Vias pcb_via[#pcb_via_84] and pcb_via[#pcb_via_85] from different nets are too close together (gap: 0.060mm)",
+      "Vias pcb_via[#pcb_via_266] and pcb_via[#pcb_via_322] from different nets are too close together (gap: 0.085mm)",
+      "Vias pcb_via[#pcb_via_269] and pcb_via[#pcb_via_303] from different nets are too close together (gap: 0.085mm)",
+      "Vias pcb_via[#pcb_via_271] and pcb_via[#pcb_via_296] from different nets are too close together (gap: 0.085mm)",
+      "Vias pcb_via[#pcb_via_272] and pcb_via[#pcb_via_295] from different nets are too close together (gap: 0.085mm)",
+      "Vias pcb_via[#pcb_via_272] and pcb_via[#pcb_via_296] from different nets are too close together (gap: 0.085mm)",
+      "Vias pcb_via[#pcb_via_273] and pcb_via[#pcb_via_320] from different nets are too close together (gap: 0.085mm)",
+      "Vias pcb_via[#pcb_via_274] and pcb_via[#pcb_via_299] from different nets are too close together (gap: 0.085mm)",
+      "Vias pcb_via[#pcb_via_274] and pcb_via[#pcb_via_320] from different nets are too close together (gap: 0.085mm)",
+      "Vias pcb_via[#pcb_via_275] and pcb_via[#pcb_via_315] from different nets are too close together (gap: 0.085mm)",
+      "Vias pcb_via[#pcb_via_276] and pcb_via[#pcb_via_315] from different nets are too close together (gap: 0.085mm)",
+      "Vias pcb_via[#pcb_via_276] and pcb_via[#pcb_via_335] from different nets are too close together (gap: 0.085mm)",
+      "Vias pcb_via[#pcb_via_278] and pcb_via[#pcb_via_316] from different nets are too close together (gap: 0.085mm)",
+      "Vias pcb_via[#pcb_via_280] and pcb_via[#pcb_via_339] from different nets are too close together (gap: 0.085mm)",
+      "Vias pcb_via[#pcb_via_281] and pcb_via[#pcb_via_332] from different nets are too close together (gap: 0.085mm)",
+      "Vias pcb_via[#pcb_via_284] and pcb_via[#pcb_via_305] from different nets are too close together (gap: 0.085mm)",
+      "Vias pcb_via[#pcb_via_287] and pcb_via[#pcb_via_346] from different nets are too close together (gap: 0.085mm)",
+      "Vias pcb_via[#pcb_via_289] and pcb_via[#pcb_via_326] from different nets are too close together (gap: 0.085mm)",
+      "Vias pcb_via[#pcb_via_292] and pcb_via[#pcb_via_328] from different nets are too close together (gap: 0.085mm)",
+      "Vias pcb_via[#pcb_via_294] and pcb_via[#pcb_via_319] from different nets are too close together (gap: 0.085mm)",
+      "Vias pcb_via[#pcb_via_295] and pcb_via[#pcb_via_298] from different nets are too close together (gap: 0.085mm)",
+      "Vias pcb_via[#pcb_via_297] and pcb_via[#pcb_via_365] from different nets are too close together (gap: 0.085mm)",
+      "Vias pcb_via[#pcb_via_297] and pcb_via[#pcb_via_385] from different nets are too close together (gap: 0.085mm)",
+      "Vias pcb_via[#pcb_via_304] and pcb_via[#pcb_via_406] from different nets are too close together (gap: 0.085mm)",
+      "Vias pcb_via[#pcb_via_307] and pcb_via[#pcb_via_406] from different nets are too close together (gap: 0.085mm)",
+    ]
+  `)
+  expect(
     circuit.db.pcb_trace_error
       .list()
       .filter(({ message }) => !message.includes("dangling endpoint"))
