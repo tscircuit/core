@@ -1267,7 +1267,7 @@ export class NormalComponent<
       }
     }
 
-    const footprint = this.props.footprint
+    const footprint = this.resolveFootprint()
 
     if (isValidElement(footprint)) {
       const footprintProps = footprint.props as {
@@ -1294,6 +1294,16 @@ export class NormalComponent<
           footprint._parsedProps?.originalLayer ??
           footprint.props?.originalLayer,
       }
+    }
+
+    // These footprinter families describe straight headers unless rightangle
+    // is requested. Pad geometry alone cannot distinguish their insertion axis.
+    if (
+      typeof footprint === "string" &&
+      /^(pinrow|headermodule|smdpinheader)(?=\d|_|$)/.test(footprint)
+    ) {
+      const params = fp.string(footprint).params()
+      if (!params.rightangle) return { insertionDirection: "from_above" }
     }
 
     return undefined
