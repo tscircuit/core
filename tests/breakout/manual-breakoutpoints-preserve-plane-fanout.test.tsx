@@ -100,5 +100,11 @@ test("manual breakout points preserve fanout for automatic plane drops", async (
   })
   expect(groundVias).toHaveLength(2)
   expect(groundVias.map((via) => via.to_layer)).toEqual(["inner1", "inner1"])
+  expect(circuit.db.pcb_debug_object.list().map(({ label }) => label)).toEqual([
+    "autorouting phase breakout",
+    "autorouting phase fanout",
+    "autorouting phase 0",
+    "autorouting phase default",
+  ])
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
