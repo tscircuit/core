@@ -82,6 +82,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   subcircuit_id,
   minTraceWidth,
   minTraceToPadEdgeClearance,
+  minTraceToHoleEdgeClearance,
   minViaEdgeToPadEdgeClearance,
   minViaHoleEdgeToViaHoleEdgeClearance,
   minPlatedHoleDrillEdgeToDrillEdgeClearance,
@@ -101,6 +102,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   minTraceWidth?: number
   nominalTraceWidth?: number
   minTraceToPadEdgeClearance?: number
+  minTraceToHoleEdgeClearance?: number
   minViaEdgeToPadEdgeClearance?: number
   minViaHoleEdgeToViaHoleEdgeClearance?: number
   minPlatedHoleDrillEdgeToDrillEdgeClearance?: number
@@ -894,6 +896,8 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     minViaHoleDiameter ?? board?.min_via_hole_diameter
   const resolvedMinViaPadDiameter =
     minViaPadDiameter ?? board?.min_via_pad_diameter
+  const resolvedMinTraceToHoleEdgeClearance =
+    minTraceToHoleEdgeClearance ?? board?.min_trace_to_hole_edge_clearance
   const resolvedMinTraceToPadEdgeClearance =
     minTraceToPadEdgeClearance ?? board?.min_trace_to_pad_edge_clearance
   const resolvedMinViaEdgeToPadEdgeClearance =
@@ -932,6 +936,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       min_via_hole_diameter: resolvedMinViaHoleDiameter,
       min_via_pad_diameter: resolvedMinViaPadDiameter,
       minTraceToPadEdgeClearance: resolvedMinTraceToPadEdgeClearance,
+      minTraceToHoleEdgeClearance: resolvedMinTraceToHoleEdgeClearance,
       minViaEdgeToPadEdgeClearance: resolvedMinViaEdgeToPadEdgeClearance,
       minViaHoleEdgeToViaHoleEdgeClearance:
         resolvedMinViaHoleEdgeToViaHoleEdgeClearance,
