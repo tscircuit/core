@@ -80,6 +80,10 @@ test("fanout routes soic8 sensor support parts to an i2c header without fanoutpo
     source_group_id: fanoutSourceGroup!.source_group_id,
   })
 
+  expect(circuit.db.pcb_debug_object.list().map(({ label }) => label)).toEqual([
+    "autorouting phase fanout",
+    "autorouting phase default",
+  ])
   expect(fanoutPcbGroup).toBeDefined()
   expect(circuit.db.pcb_breakout_point.list().length).toBe(4)
   expect(circuit.db.pcb_trace.list().length).toBeGreaterThanOrEqual(6)

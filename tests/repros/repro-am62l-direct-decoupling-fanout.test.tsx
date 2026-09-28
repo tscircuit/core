@@ -9,6 +9,7 @@ test("routes the AM62L and LPDDR4 with the real decoupling network present", asy
     includePowerPlaneFanout: true,
     snapshotPath: import.meta.path,
   })
+  // Checks 0.0.223 additionally detects the existing different-net via gaps.
   expect(
     circuit.db.pcb_via_clearance_error.list().map(({ message }) => message),
   ).toMatchInlineSnapshot(`

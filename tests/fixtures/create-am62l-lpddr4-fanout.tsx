@@ -2604,7 +2604,7 @@ export const renderAm62lLpddr4Fanout = async ({
   if (includePowerPlaneFanout) {
     expect(circuit.db.pcb_pad_pad_clearance_error.list()).toEqual([])
     expect(circuit.db.pcb_pad_trace_clearance_error.list()).toEqual([])
-    // The direct-decoupling repro snapshots its known via copper-spacing errors.
+    // The direct-decoupling repro asserts its known via-clearance violations.
     if (!includeDirectDecouplingNetworkInInitialRender) {
       expect(circuit.db.pcb_via_clearance_error.list()).toEqual([])
     }
