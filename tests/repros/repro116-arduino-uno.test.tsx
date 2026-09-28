@@ -3,6 +3,7 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { KicadToCircuitJsonConverter } from "kicad-to-circuit-json"
 import fs from "node:fs"
 import type { CircuitJson, PcbTraceRoutePoint, PcbVia } from "circuit-json"
+import { expectArduinoUnoHolesPreserved } from "./repro116-arduino-uno-reroute-utils"
 
 type ViaRoutePointWithDiameters = Extract<
   PcbTraceRoutePoint,
@@ -68,6 +69,11 @@ test("repro116: arduino uno trace and via inflation", async () => {
   )
 
   await circuit.renderUntilSettled()
+
+  expectArduinoUnoHolesPreserved(
+    arduinoUnoCircuitJson,
+    circuit.getCircuitJson(),
+  )
 
   const pcbTraces = circuit.db.pcb_trace.list()
   expect(pcbTraces.length).toBeGreaterThan(1)
