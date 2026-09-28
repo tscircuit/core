@@ -2604,7 +2604,10 @@ export const renderAm62lLpddr4Fanout = async ({
   if (includePowerPlaneFanout) {
     expect(circuit.db.pcb_pad_pad_clearance_error.list()).toEqual([])
     expect(circuit.db.pcb_pad_trace_clearance_error.list()).toEqual([])
-    expect(circuit.db.pcb_via_clearance_error.list()).toEqual([])
+    // The direct-decoupling repro asserts its known via-clearance violations.
+    if (!includeDirectDecouplingNetworkInInitialRender) {
+      expect(circuit.db.pcb_via_clearance_error.list()).toEqual([])
+    }
     expect(pcbBoard.allow_blind_and_buried_vias).toBe(false)
     expect(pcbBoard.is_via_in_pad_allowed).toBe(false)
     expect(pcbBoard.min_via_edge_to_pad_edge_clearance).toBeCloseTo(0.08128)

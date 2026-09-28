@@ -92,5 +92,9 @@ test("simplify autorouting phase cleans existing traces with Pipeline 11", async
     ),
   ).toBe(true)
   expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
+  expect(circuit.db.pcb_debug_object.list().map(({ label }) => label)).toEqual([
+    "autorouting phase default",
+    "autorouting phase simplify",
+  ])
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
