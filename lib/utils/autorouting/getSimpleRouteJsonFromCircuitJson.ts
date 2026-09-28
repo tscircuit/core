@@ -25,6 +25,7 @@ import type {
   SingleLayerConnectionPoint,
 } from "./SimpleRouteJson"
 import { expandSrjBoundsToIncludeConnectionPoints } from "./expand-srj-bounds-to-include-connection-points"
+import { getSrjOutlineForRoutingBounds } from "./get-srj-outline-for-routing-bounds"
 import { getDescendantSubcircuitIds } from "./getAncestorSubcircuitIds"
 import {
   type FanoutPourNetMap,
@@ -367,6 +368,16 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     ])
     .concat(board?.outline ?? [])
 
+  const boardBounds =
+    board && !board.outline
+      ? {
+          minX: board.center.x - board.width! / 2,
+          maxX: board.center.x + board.width! / 2,
+          minY: board.center.y - board.height! / 2,
+          maxY: board.center.y + board.height! / 2,
+        }
+      : undefined
+
   let bounds: { minX: number; maxX: number; minY: number; maxY: number }
 
   // For non-board subcircuits (e.g. breakout regions), the pcb_group
@@ -385,13 +396,8 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       minY: pcbGroup!.center.y - pcbGroup!.height! / 2,
       maxY: pcbGroup!.center.y + pcbGroup!.height! / 2,
     }
-  } else if (board && !board.outline) {
-    bounds = {
-      minX: board.center.x - board.width! / 2,
-      maxX: board.center.x + board.width! / 2,
-      minY: board.center.y - board.height! / 2,
-      maxY: board.center.y + board.height! / 2,
-    }
+  } else if (boardBounds) {
+    bounds = boardBounds
   } else {
     bounds = {
       minX: Math.min(...allPoints.map((p) => p.x)) - 1,
@@ -934,7 +940,13 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       minPadEdgeToPadEdgeClearance: resolvedMinPadEdgeToPadEdgeClearance,
       minBoardEdgeClearance: resolvedMinBoardEdgeClearance,
       nominalTraceWidth,
-      outline: board?.outline?.map((point) => ({ ...point })),
+      outline: getSrjOutlineForRoutingBounds(
+        {
+          bounds: boardBounds ?? bounds,
+          outline: board?.outline?.map((point) => ({ ...point })),
+        },
+        bounds,
+      ),
     },
     connMap: sharedConnMap,
   }

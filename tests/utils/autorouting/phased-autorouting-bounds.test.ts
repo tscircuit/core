@@ -65,4 +65,29 @@ test("phased autorouting expands substituted bounds around phase connection poin
   expect(phaseInput.connections.map((connection) => connection.name)).toEqual([
     "source_trace_display_data",
   ])
+  expect(phaseInput.outline).toEqual([
+    { x: -10, y: -10 },
+    { x: 10, y: -10 },
+    { x: 10, y: 10 },
+    { x: -10, y: 10 },
+  ])
+  expect(simpleRouteJson.outline).toBeUndefined()
+
+  const outline = [
+    { x: -10, y: -10 },
+    { x: 10, y: -10 },
+    { x: 0, y: 10 },
+  ]
+  expect(
+    Group_filterSimpleRouteJsonForPhase(
+      { ...simpleRouteJson, outline },
+      phasePlan,
+    ).outline,
+  ).toEqual(outline)
+  expect(
+    Group_filterSimpleRouteJsonForPhase(simpleRouteJson, {
+      ...phasePlan,
+      routingBounds: undefined,
+    }).outline,
+  ).toEqual(simpleRouteJson.outline)
 })

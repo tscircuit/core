@@ -3,6 +3,7 @@ import type {
   SimpleRouteDifferentialPair,
   SimpleRouteJson,
 } from "lib/utils/autorouting/SimpleRouteJson"
+import { getSrjOutlineForRoutingBounds } from "lib/utils/autorouting/get-srj-outline-for-routing-bounds"
 import { expandSrjBoundsToIncludeConnectionPoints } from "lib/utils/autorouting/expand-srj-bounds-to-include-connection-points"
 import type {
   RoutingPhaseDrcTolerances,
@@ -116,6 +117,7 @@ export function Group_filterSimpleRouteJsonForPhase(
   return {
     ...simpleRouteJson,
     bounds,
+    outline: getSrjOutlineForRoutingBounds(simpleRouteJson, bounds),
     connections,
     differentialPairs:
       differentialPairs.length > 0 ? differentialPairs : undefined,
