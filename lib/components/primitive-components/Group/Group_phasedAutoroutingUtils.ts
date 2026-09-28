@@ -1,3 +1,5 @@
+import type { PcbBoard } from "circuit-json"
+import { getPcbBoardOutlinePolygon } from "lib/utils/get-pcb-board-outline-polygon"
 import type {
   SimpleRouteConnection,
   SimpleRouteDifferentialPair,
@@ -49,6 +51,7 @@ export function Group_hasPhasedAutorouting(
 export function Group_filterSimpleRouteJsonForPhase(
   simpleRouteJson: SimpleRouteJson,
   phasePlan: RoutingPhasePlan,
+  pcbBoard?: PcbBoard | null,
 ): SimpleRouteJson {
   const connections: SimpleRouteConnection[] = []
   for (const connection of simpleRouteJson.connections) {
@@ -116,6 +119,16 @@ export function Group_filterSimpleRouteJsonForPhase(
   return {
     ...simpleRouteJson,
     bounds,
+    // A phase boundary is not a physical board edge. Keep the owning board
+    // outline in board coordinates (mm), even when routing bounds are cropped.
+    outline:
+      simpleRouteJson.outline ??
+      (phasePlan.routingBounds && pcbBoard
+        ? getPcbBoardOutlinePolygon(pcbBoard).vertices.map(({ x, y }) => ({
+            x,
+            y,
+          }))
+        : undefined),
     connections,
     differentialPairs:
       differentialPairs.length > 0 ? differentialPairs : undefined,

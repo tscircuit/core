@@ -15,7 +15,6 @@ import {
 import { Bus } from "lib/components/primitive-components/Bus"
 import { DifferentialPair } from "lib/components/primitive-components/DifferentialPair"
 import type { ISubcircuit } from "lib/components/primitive-components/Group/Subcircuit/ISubcircuit"
-import { getPcbBoardOutlinePolygon } from "lib/utils/get-pcb-board-outline-polygon"
 import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
 import { getObstaclesFromCircuitJson } from "../obstacles/getObstaclesFromCircuitJson"
 import type {
@@ -935,12 +934,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       minPadEdgeToPadEdgeClearance: resolvedMinPadEdgeToPadEdgeClearance,
       minBoardEdgeClearance: resolvedMinBoardEdgeClearance,
       nominalTraceWidth,
-      outline: board
-        ? getPcbBoardOutlinePolygon(board).vertices.map(({ x, y }) => ({
-            x,
-            y,
-          }))
-        : undefined,
+      outline: board?.outline?.map((point) => ({ ...point })),
     },
     connMap: sharedConnMap,
   }
