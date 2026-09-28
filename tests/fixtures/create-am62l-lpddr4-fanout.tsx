@@ -2476,7 +2476,7 @@ export const renderAm62lLpddr4Fanout = async ({
       diffThresholdPercent: 0.05,
       shouldDrawRatsNest: true,
     })
-    return
+    return circuit
   }
 
   if (expectDuplicateDecouplingTraceFailure) {
@@ -2540,7 +2540,7 @@ export const renderAm62lLpddr4Fanout = async ({
       shouldDrawErrors: false,
       shouldDrawRatsNest: true,
     })
-    return
+    return circuit
   }
 
   if (
@@ -2591,12 +2591,9 @@ export const renderAm62lLpddr4Fanout = async ({
   }
   expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
   expect(circuit.db.pcb_component_outside_board_error.list()).toEqual([])
-  let expectedTraceErrorCount = 0
-  if (includeDirectDecouplingNetworkInInitialRender) {
-    expectedTraceErrorCount = 48
-  }
+  // The checks upgrade detects three overlaps in addition to 48 open via ends.
   expect(circuit.db.pcb_trace_error.list()).toHaveLength(
-    expectedTraceErrorCount,
+    includeDirectDecouplingNetworkInInitialRender ? 51 : 0,
   )
   expect(circuit.db.pcb_via_trace_clearance_error.list()).toEqual([])
   const pcbBoard = circuit.db.pcb_board.list()[0]!
@@ -4242,4 +4239,5 @@ export const renderAm62lLpddr4Fanout = async ({
       : {}),
     diffThresholdPercent: 0.05,
   })
+  return circuit
 }

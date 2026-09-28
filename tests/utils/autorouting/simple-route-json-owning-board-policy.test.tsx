@@ -38,6 +38,22 @@ test("nested routing uses its owning board via policy", async () => {
     subcircuit_id: targetGroup.subcircuit_id,
   })
 
+  const owningBoard = circuit.db.pcb_board
+    .list()
+    .find((board) => board.num_layers === 8)!
+  const { x, y } = owningBoard.center
+  const halfWidth = owningBoard.width! / 2
+  const halfHeight = owningBoard.height! / 2
+  expect(simpleRouteJson.outline).toEqual([
+    { x: x - halfWidth, y: y - halfHeight },
+    { x: x + halfWidth, y: y - halfHeight },
+    { x: x + halfWidth, y: y + halfHeight },
+    { x: x - halfWidth, y: y + halfHeight },
+  ])
+  expect(
+    simpleRouteJson.bounds.maxX - simpleRouteJson.bounds.minX,
+  ).toBeLessThan(owningBoard.width!)
+
   expect(simpleRouteJson.layerCount).toBe(8)
   expect(simpleRouteJson.allowBlindAndBuriedVias).toBe(true)
 })

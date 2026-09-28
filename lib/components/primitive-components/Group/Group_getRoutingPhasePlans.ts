@@ -403,9 +403,10 @@ export function Group_getRoutingPhasePlans(
   for (const phase of group.selectAll(
     "autoroutingphase",
   ) as AutoroutingPhase[]) {
-    if (phase._parsedProps.pcbTracePaths === undefined) continue
     const plan = plansByPhaseIndex.get(phase._parsedProps.phaseIndex ?? null)
     if (!plan) continue
+    plan.autoroutingPhase = phase
+    if (phase._parsedProps.pcbTracePaths === undefined) continue
     const config =
       plan.autorouter !== undefined
         ? getPresetAutoroutingConfig(plan.autorouter, group.root?.platform)
