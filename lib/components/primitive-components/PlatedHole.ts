@@ -264,6 +264,8 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         rect_pad_width: props.rectPadWidth,
         rect_pad_height: props.rectPadHeight,
         shape: "circular_hole_with_rect_pad" as const,
+        hole_shape: "circle",
+        pad_shape: "rect",
         port_hints: this.getNameAndAliases(),
         x: position.x,
         y: position.y,
