@@ -157,6 +157,15 @@ test("autorouting rejects endpoints outside each panel board", async () => {
   // bounds to include it must not expand the physical board. Only the four
   // explicit pcbPath traces remain; the four autorouted paths are rejected.
   expect(circuit.db.pcb_autorouting_error.list()).toHaveLength(4)
-  expect(circuit.db.pcb_trace.list()).toHaveLength(4)
+  const manualTraces = circuit.db.pcb_trace.list()
+  expect(manualTraces).toHaveLength(4)
+  for (const trace of manualTraces) {
+    expect(circuit.db.pcb_trace_error.list()).toContainEqual(
+      expect.objectContaining({
+        pcb_trace_id: trace.pcb_trace_id,
+        message: expect.stringContaining("outside the board boundaries"),
+      }),
+    )
+  }
   expect(circuit.getCircuitJson()).toMatchPcbSnapshot(import.meta.path)
 })
