@@ -1021,15 +1021,14 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       this.getInheritedProperty("routeRemaining") === false ||
       Group_hasPhasedAutorouting(routingPhasePlans)
     const shouldEmitRoutingPhaseDebugObjects = routingPhasePlans.length > 1
-    const routingPhaseDisplayIndexes = new Map(
-      routingPhasePlans.map((plan, index) => [plan, index]),
-    )
     if (shouldEmitRoutingPhaseDebugObjects) {
       for (const debugObject of db.pcb_debug_object.list()) {
         if (
           debugObject.subcircuit_id === this.subcircuit_id &&
           (debugObject.label?.startsWith("Autorouting phase: ") ||
-            /^autorouting phase \d+(?: |$)/.test(debugObject.label ?? ""))
+            /^autorouting phase (?:-?\d+(?:\.\d+)?|default)(?: |$)/.test(
+              debugObject.label ?? "",
+            ))
         ) {
           db.pcb_debug_object.delete(debugObject.pcb_debug_object_id)
         }
@@ -1040,8 +1039,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       bounds: SimpleRouteBounds,
     ) => {
       if (!shouldEmitRoutingPhaseDebugObjects) return
-      const phaseIndex = routingPhaseDisplayIndexes.get(routingPhasePlan)
-      if (phaseIndex === undefined) return
+      const phaseIndex = routingPhasePlan.routingPhaseIndex ?? "default"
       const phaseName = routingPhasePlan.phaseName?.trim()
       db.pcb_debug_object.insert({
         shape: "rect",

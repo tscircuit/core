@@ -76,6 +76,11 @@ test("events distinguish sparse declared phase indices from actual routing order
     ).toEqual([0, 1, 2])
     expect(phaseEvents.map((event) => event.phaseOrdinal)).toEqual([1, 2, 3])
   }
+  expect(circuit.db.pcb_debug_object.list().map(({ label }) => label)).toEqual([
+    "autorouting phase 7",
+    "autorouting phase 19",
+    "autorouting phase default",
+  ])
   expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
