@@ -1097,8 +1097,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const fanoutPourNetMap = hasFanoutStage
       ? Group_getFanoutPourNetMap(this, routingPhasePlans)
       : undefined
-    const pcbBoardId = this._getBoard()?.pcb_board_id
-    const pcbBoard = pcbBoardId ? db.pcb_board.get(pcbBoardId) : undefined
     let { simpleRouteJson: baseSimpleRouteJson } =
       getSimpleRouteJsonFromCircuitJson({
         db,
@@ -1167,7 +1165,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       let phaseSimpleRouteJson = Group_filterSimpleRouteJsonForPhase(
         baseSimpleRouteJson,
         routingPhasePlan,
-        pcbBoard,
       )
       if (phaseSimpleRouteJson.connections.length === 0) continue
       phaseSimpleRouteJson = Group_applyDrcTolerancesToSimpleRouteJson(
@@ -1398,7 +1395,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         const phaseInput = Group_filterSimpleRouteJsonForPhase(
           baseSimpleRouteJson,
           routingPhasePlan,
-          pcbBoard,
         )
         simpleRouteJson = {
           ...phaseInput,
@@ -1423,7 +1419,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         const phaseInput = Group_filterSimpleRouteJsonForPhase(
           baseSimpleRouteJson,
           routingPhasePlan,
-          pcbBoard,
         )
         // Preserve routed geometry as SRJ traces. The autorouter owns
         // converting traces to obstacles and approximating diagonal segments.
@@ -1440,7 +1435,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         const phaseInput = Group_filterSimpleRouteJsonForPhase(
           baseSimpleRouteJson,
           routingPhasePlan,
-          pcbBoard,
         )
         const activeCustomBreakoutRoutingGroupId =
           routingPhasePlan.routingPcbGroupId
