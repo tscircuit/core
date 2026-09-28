@@ -23,9 +23,9 @@ const getConnectivityMapKey = (
  * circuit-world geometry (millimetres, +X right, +Y top).
  *
  * Existing-route problems need every equivalent physical ID so preserved
- * copper remains touchable. Fresh-route problems deliberately discard that
- * physical route state and generated connectivity-map keys, retaining only
- * each obstacle's own Circuit JSON ID plus source net/trace identities.
+ * copper remains touchable. Fresh-route problems retain each obstacle's own
+ * Circuit JSON identity and add only equivalent source net/trace identities.
+ * Generated connectivity-map keys never enter either input path.
  */
 export const getSrjObstaclesWithCircuitJsonConnectivity = ({
   connectivityMap,
@@ -43,7 +43,15 @@ export const getSrjObstaclesWithCircuitJsonConnectivity = ({
   if (routeState === "preserved_route") {
     return obstacles.map((obstacle) => {
       const equivalentCircuitJsonIds = obstacle.connectedTo.flatMap(
-        (circuitJsonId) => connectivityMap.getIdsConnectedToNet(circuitJsonId),
+        (circuitJsonId) => {
+          const connectivityMapKey =
+            connectivityMap.getNetConnectedToId(circuitJsonId)
+          if (!connectivityMapKey) return []
+          return [
+            connectivityMapKey,
+            ...connectivityMap.getIdsConnectedToNet(connectivityMapKey),
+          ]
+        },
       )
       return {
         ...obstacle,
@@ -77,11 +85,6 @@ export const getSrjObstaclesWithCircuitJsonConnectivity = ({
   }
 
   return obstacles.map((obstacle) => {
-    const circuitJsonIdsWithoutGeneratedConnectivityKeys =
-      obstacle.connectedTo.filter(
-        (circuitJsonId) =>
-          !Object.hasOwn(connectivityMap.netMap, circuitJsonId),
-      )
     const semanticIds = obstacle.connectedTo.flatMap((circuitJsonId) => {
       const connectivityMapKey = getConnectivityMapKey(
         connectivityMap,
@@ -91,12 +94,7 @@ export const getSrjObstaclesWithCircuitJsonConnectivity = ({
     })
     return {
       ...obstacle,
-      connectedTo: [
-        ...new Set([
-          ...circuitJsonIdsWithoutGeneratedConnectivityKeys,
-          ...semanticIds,
-        ]),
-      ],
+      connectedTo: [...new Set([...obstacle.connectedTo, ...semanticIds])],
     }
   })
 }

@@ -289,11 +289,9 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         !subcircuit_id ||
         relevantSubcircuitIds?.has(e.subcircuit_id!),
     ),
-    sharedConnMap,
   )
   obstaclesBeforeConnectivityExpansion.push(
     ...getUnbrokenCopperPourObstacles({
-      connMap: sharedConnMap,
       subcircuitComponent,
       board,
       group: pcbGroup,
