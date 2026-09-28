@@ -58,6 +58,10 @@ test("manual breakout points use the default autorouter before global routing", 
       (phaseIo) => phaseIo.startSimpleRouteJson?.connections.length,
     ),
   ).toEqual([2, 2])
+  expect(circuit.db.pcb_debug_object.list().map(({ label }) => label)).toEqual([
+    "autorouting phase breakout",
+    "autorouting phase 0",
+  ])
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
 

@@ -1021,14 +1021,13 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       this.getInheritedProperty("routeRemaining") === false ||
       Group_hasPhasedAutorouting(routingPhasePlans)
     const shouldEmitRoutingPhaseDebugObjects = routingPhasePlans.length > 1
+    const routingPhaseDebugLabels = new Map<RoutingPhasePlan, string>()
     if (shouldEmitRoutingPhaseDebugObjects) {
       for (const debugObject of db.pcb_debug_object.list()) {
         if (
           debugObject.subcircuit_id === this.subcircuit_id &&
           (debugObject.label?.startsWith("Autorouting phase: ") ||
-            /^autorouting phase (?:-?\d+(?:\.\d+)?|default)(?: |$)/.test(
-              debugObject.label ?? "",
-            ))
+            debugObject.label?.startsWith("autorouting phase "))
         ) {
           db.pcb_debug_object.delete(debugObject.pcb_debug_object_id)
         }
@@ -1039,7 +1038,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       bounds: SimpleRouteBounds,
     ) => {
       if (!shouldEmitRoutingPhaseDebugObjects) return
-      const phaseIndex = routingPhasePlan.routingPhaseIndex ?? "default"
+      const phaseLabel = routingPhaseDebugLabels.get(routingPhasePlan)!
       const phaseName = routingPhasePlan.phaseName?.trim()
       db.pcb_debug_object.insert({
         shape: "rect",
@@ -1051,7 +1050,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           width: bounds.maxX - bounds.minX,
           height: bounds.maxY - bounds.minY,
         },
-        label: `autorouting phase ${phaseIndex}${phaseName ? ` ${phaseName}` : ""}`,
+        label: `autorouting phase ${phaseLabel}${phaseName ? ` ${phaseName}` : ""}`,
         subcircuit_id: this.subcircuit_id ?? undefined,
       })
     }
@@ -1063,6 +1062,23 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
               this.root?.platform,
             )
           : autorouterConfig
+      const preset = resolvedPhaseAutorouterConfig.preset
+      const implicitPhaseLabel = routingPhasePlan.reroute
+        ? preset === "simplify"
+          ? "simplify"
+          : "reroute"
+        : routingPhasePlan.fanoutRegionPcbGroupId
+          ? routingPhasePlan.autorouter === "default" &&
+            !routingPhasePlan.getPrecomputedRoutingResult
+            ? "breakout"
+            : "fanout"
+          : preset && preset !== "default"
+            ? preset.replaceAll("_", " ")
+            : "default"
+      routingPhaseDebugLabels.set(
+        routingPhasePlan,
+        routingPhasePlan.routingPhaseIndex?.toString() ?? implicitPhaseLabel,
+      )
       const phaseAutorouterConfig = routingPhasePlan.getPrecomputedRoutingResult
         ? {
             ...resolvedPhaseAutorouterConfig,
@@ -1089,6 +1105,26 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         phaseStageCount: stages.length,
       }))
     })
+    // Distinguish multiple implicit fanout/breakout regions without inventing
+    // user phase indices. A single implicit phase needs only its purpose.
+    const implicitPhaseLabelCounts = new Map<string, number>()
+    for (const plan of routingPhasePlans) {
+      if (plan.routingPhaseIndex !== null) continue
+      const label = routingPhaseDebugLabels.get(plan)!
+      implicitPhaseLabelCounts.set(
+        label,
+        (implicitPhaseLabelCounts.get(label) ?? 0) + 1,
+      )
+    }
+    const implicitPhaseLabelOrdinals = new Map<string, number>()
+    for (const plan of routingPhasePlans) {
+      if (plan.routingPhaseIndex !== null) continue
+      const label = routingPhaseDebugLabels.get(plan)!
+      if (implicitPhaseLabelCounts.get(label)! <= 1) continue
+      const ordinal = (implicitPhaseLabelOrdinals.get(label) ?? 0) + 1
+      implicitPhaseLabelOrdinals.set(label, ordinal)
+      routingPhaseDebugLabels.set(plan, `${label} ${ordinal}`)
+    }
     const hasFanoutStage = routingStages.some(({ autorouterConfig }) =>
       ["fanout", "single_layer_fanout"].includes(autorouterConfig.preset ?? ""),
     )

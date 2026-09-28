@@ -79,8 +79,8 @@ test("uses a custom implicit breakout point solver when provided", async () => {
   expect(
     circuit.db.pcb_debug_object.list().map((debugObject) => debugObject.label),
   ).toEqual([
-    "autorouting phase default",
-    "autorouting phase default",
+    "autorouting phase fanout 1",
+    "autorouting phase fanout 2",
     "autorouting phase default",
   ])
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)

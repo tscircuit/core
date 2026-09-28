@@ -84,5 +84,9 @@ test("autoroutingphase can reroute a region with a squiggly route", async () => 
 
   await circuit.renderUntilSettled()
 
+  expect(circuit.db.pcb_debug_object.list().map(({ label }) => label)).toEqual([
+    "autorouting phase default",
+    "autorouting phase reroute",
+  ])
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
