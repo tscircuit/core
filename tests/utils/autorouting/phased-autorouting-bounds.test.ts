@@ -31,6 +31,7 @@ test("phased autorouting expands substituted bounds around phase connection poin
           height: 20,
           num_layers: 2,
           thickness: 1.6,
+          material: "fr4",
         },
       ],
     }).simpleRouteJson,
