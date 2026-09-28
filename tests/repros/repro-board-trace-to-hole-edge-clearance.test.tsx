@@ -3,6 +3,7 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("board requests 0.2mm trace-to-hole edge clearance", async () => {
   const { circuit } = getTestFixture()
+  const holeClearanceProps = { minTraceToHoleEdgeClearance: 0.2 }
   circuit.add(
     <board
       width={10}
@@ -10,7 +11,7 @@ test("board requests 0.2mm trace-to-hole edge clearance", async () => {
       minTraceWidth={0.1}
       defaultTraceWidth={0.1}
       minTraceToPadEdgeClearance={0.1}
-      minTraceToHoleEdgeClearance={0.2}
+      {...holeClearanceProps}
       autorouter={{ local: true, groupMode: "subcircuit" }}
       autorouterVersion="beta_pipeline9"
     >
