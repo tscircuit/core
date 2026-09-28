@@ -36,20 +36,20 @@ test("PMP23653 fresh SRJ obstacles keep semantic connectivity only", () => {
     0,
   )
 
-  expect(maxConnectedToCount).toBe(48)
-  expect(totalConnectedToCount).toBe(822)
-  expect(foreignPhysicalIdCount).toBeGreaterThan(0)
+  expect(maxConnectedToCount).toBe(4)
+  expect(totalConnectedToCount).toBe(72)
+  expect(foreignPhysicalIdCount).toBe(0)
 
   const svg = createTiSrjReproSvg({
     circuitJson: fullCircuitJson,
     designName: "PMP23653",
-    title: "FRESH SRJ COPIES THE WHOLE NET INTO EVERY OBSTACLE",
-    status: "fail",
-    statusText: "FAIL · physical route IDs expand obstacle connectivity",
+    title: "FRESH SRJ KEEPS SEMANTIC OBSTACLE CONNECTIVITY",
+    status: "pass",
+    statusText: "PASS · physical route IDs stay out of fresh SRJ",
     details: [
       `actual board: ${simpleRouteJson.obstacles.length} plated-hole obstacles · 29 imported vias`,
-      `largest connectedTo list: ${maxConnectedToCount} IDs (expected 4 semantic/own IDs)`,
-      `all obstacle references: ${totalConnectedToCount} IDs · includes foreign physical IDs`,
+      `largest connectedTo list: ${maxConnectedToCount} IDs (own + connectivity key + net + trace)`,
+      `all obstacle references: ${totalConnectedToCount} IDs · no foreign physical IDs`,
     ],
   })
 

@@ -1,7 +1,7 @@
 <svg width="800" height="866" viewBox="0 0 800 866" xmlns="http://www.w3.org/2000/svg" data-testid="ti-pmp23653-srj-repro">
   <g transform="translate(0, 0) scale(1, 1) translate(0, 0)">
     <rect width="800" height="78" fill="#111827" />
-  <text x="28" y="31" fill="#f9fafb" font-family="Arial, sans-serif" font-size="22" font-weight="700">FRESH SRJ COPIES THE WHOLE NET INTO EVERY OBSTACLE</text>
+  <text x="28" y="31" fill="#f9fafb" font-family="Arial, sans-serif" font-size="22" font-weight="700">FRESH SRJ KEEPS SEMANTIC OBSTACLE CONNECTIVITY</text>
   <text x="28" y="57" fill="#93c5fd" font-family="Arial, sans-serif" font-size="14" font-weight="700">REAL TI PMP23653 CIRCUIT JSON</text>
   </g>
   <g transform="translate(0, 78)">
@@ -9,11 +9,11 @@
   </g>
   <g transform="translate(0, 678) scale(1, 1) translate(0, 0)">
     <rect width="800" height="188" fill="#f8fafc" />
-    <rect x="24" y="20" width="752" height="54" rx="10" fill="#fee2e2" stroke="#b91c1c" stroke-width="2" />
-    <circle cx="51" cy="47" r="10" fill="#b91c1c" />
-    <text x="76" y="54" fill="#b91c1c" font-family="Arial, sans-serif" font-size="18" font-weight="700">FAIL · physical route IDs expand obstacle connectivity</text>
+    <rect x="24" y="20" width="752" height="54" rx="10" fill="#dcfce7" stroke="#15803d" stroke-width="2" />
+    <circle cx="51" cy="47" r="10" fill="#15803d" />
+    <text x="76" y="54" fill="#15803d" font-family="Arial, sans-serif" font-size="18" font-weight="700">PASS · physical route IDs stay out of fresh SRJ</text>
     <text x="36" y="104" fill="#374151" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="14">actual board: 18 plated-hole obstacles · 29 imported vias</text>
-<text x="36" y="134" fill="#374151" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="14">largest connectedTo list: 48 IDs (expected 4 semantic/own IDs)</text>
-<text x="36" y="164" fill="#374151" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="14">all obstacle references: 822 IDs · includes foreign physical IDs</text>
+<text x="36" y="134" fill="#374151" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="14">largest connectedTo list: 4 IDs (own + connectivity key + net + trace)</text>
+<text x="36" y="164" fill="#374151" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="14">all obstacle references: 72 IDs · no foreign physical IDs</text>
   </g>
 </svg>

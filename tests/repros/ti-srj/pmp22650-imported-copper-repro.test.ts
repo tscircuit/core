@@ -6,33 +6,28 @@ import { createTiSrjReproSvg } from "./create-ti-srj-repro-svg"
 
 test("PMP22650 fresh SRJ ignores imported top-level drawing copper", () => {
   const circuitJson = pmp22650ArcCropJson as AnyCircuitElement[]
-  let extractionError: Error | undefined
-
-  try {
-    getSimpleRouteJsonFromCircuitJson({
-      circuitJson,
-      ignoreExistingTopLevelPcbRouteState: true,
-    })
-  } catch (error) {
-    extractionError = error instanceof Error ? error : new Error(String(error))
-  }
-
-  expect(extractionError?.message).toContain(
-    "Conflicting trace: pcb_trace_altium_arc_4291",
+  const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
+    circuitJson,
+    ignoreExistingTopLevelPcbRouteState: true,
+  })
+  const obstacleConnectionIds = simpleRouteJson.obstacles.flatMap(
+    (obstacle) => obstacle.connectedTo,
   )
+
+  expect(obstacleConnectionIds).not.toContain("pcb_trace_altium_arc_4291")
 
   const svg = createTiSrjReproSvg({
     circuitJson,
     designName: "PMP22650",
-    title: "FRESH SRJ CRASHES ON IMPORTED DRAWING ARC",
+    title: "FRESH SRJ EXCLUDES IMPORTED DRAWING COPPER",
     viewport: { minX: 205, minY: 42, maxX: 213, maxY: 52 },
     xRayElementIds: ["pcb_trace_altium_arc_4291"],
-    status: "fail",
-    statusText: "FAIL · imported non-routing copper entered SRJ obstacles",
+    status: "pass",
+    statusText: "PASS · imported non-routing copper is excluded",
     details: [
       "actual element: pcb_trace_altium_arc_4291",
       "actual geometry: 49-point Altium circle approximation on top copper",
-      "extractor result: rejects the arc's diagonal segments before routing",
+      `extractor result: ${simpleRouteJson.obstacles.length} valid footprint obstacles · no crash`,
     ],
   })
 

@@ -13,20 +13,20 @@ test("PMP23653 emits one SRJ connection per native Altium net", () => {
   const netConnectionCount =
     simpleRouteJson.connections.length - directTraceConnectionCount
 
-  expect(simpleRouteJson.connections).toHaveLength(4)
-  expect(directTraceConnectionCount).toBe(2)
+  expect(simpleRouteJson.connections).toHaveLength(2)
+  expect(directTraceConnectionCount).toBe(0)
   expect(netConnectionCount).toBe(2)
 
   const svg = createTiSrjReproSvg({
     circuitJson,
     designName: "PMP23653",
-    title: "TWO NATIVE NETS BECOME FOUR SRJ CONNECTIONS",
-    status: "fail",
-    statusText: "FAIL · every native net is emitted twice",
+    title: "TWO NATIVE NETS BECOME TWO SRJ CONNECTIONS",
+    status: "pass",
+    statusText: "PASS · one SRJ connection per native net",
     details: [
       "real board topology: 2 source nets · 2 source traces · 18 terminals",
       `SRJ output: ${simpleRouteJson.connections.length} connections (${directTraceConnectionCount} trace + ${netConnectionCount} net)`,
-      "duplicate endpoint groups: primary winding + secondary winding",
+      "endpoint groups: primary winding + secondary winding · no duplicates",
     ],
   })
 

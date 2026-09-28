@@ -33,6 +33,7 @@ import {
 } from "./getBusesForSimpleRouteJson"
 import { getDifferentialPairsForSimpleRouteJson } from "./getDifferentialPairsForSimpleRouteJson"
 import { getPreservedRoutedSubcircuitTraces } from "./getPreservedRoutedSubcircuitTraces"
+import { getSrjObstaclesWithCircuitJsonConnectivity } from "./get-srj-obstacles-with-circuit-json-connectivity"
 import { getUnbrokenCopperPourObstacles } from "./getUnbrokenCopperPourObstacles"
 
 const getOwningPcbBoardForSubcircuit = (
@@ -250,7 +251,18 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     })
   }
 
-  const obstacles = getObstaclesFromCircuitJson(
+  const fixedPcbTraceObstacles = db.pcb_trace.list().filter((trace) => {
+    if (trace.source_trace_id) return false
+    if (!ignoreExistingTopLevelPcbRouteState) return true
+
+    // In a fresh root-routing problem, only source-less copper authored by a
+    // footprint remains fixed. Imported top-level route state is discarded,
+    // while source-less child-subcircuit routes are preserved separately by
+    // getPreservedRoutedSubcircuitTraces.
+    return Boolean(trace.pcb_component_id)
+  })
+
+  const obstaclesBeforeConnectivityExpansion = getObstaclesFromCircuitJson(
     [
       ...(board ? [board] : []),
       ...db.source_component.list(),
@@ -260,8 +272,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       ...db.pcb_smtpad.list(),
       ...db.pcb_plated_hole.list(),
       ...db.pcb_hole.list(),
-      // Footprint copper primitives such as solder-jumper bridges are fixed.
-      ...db.pcb_trace.list().filter((trace) => !trace.source_trace_id),
+      ...fixedPcbTraceObstacles,
       ...db.pcb_via
         .list()
         .filter(
@@ -280,7 +291,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     ),
     sharedConnMap,
   )
-  obstacles.push(
+  obstaclesBeforeConnectivityExpansion.push(
     ...getUnbrokenCopperPourObstacles({
       connMap: sharedConnMap,
       subcircuitComponent,
@@ -289,15 +300,15 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     }),
   )
 
-  // Add every equivalent ID from the shared connectivity map to each obstacle.
-  for (const obstacle of obstacles) {
-    const additionalIds = obstacle.connectedTo.flatMap((id) =>
-      sharedConnMap.getIdsConnectedToNet(id),
-    )
-    obstacle.connectedTo = [
-      ...new Set([...obstacle.connectedTo, ...additionalIds]),
-    ]
-  }
+  const obstacles = getSrjObstaclesWithCircuitJsonConnectivity({
+    connectivityMap: sharedConnMap,
+    obstacles: obstaclesBeforeConnectivityExpansion,
+    routeState: ignoreExistingTopLevelPcbRouteState
+      ? "fresh_route"
+      : "preserved_route",
+    sourceNets: db.source_net.list(),
+    sourceTraces: db.source_trace.list(),
+  })
 
   // Build mapping from source_port_id to internal connection ID for interconnects
   const internalConnections = db.source_component_internal_connection.list()
@@ -499,6 +510,16 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       (trace) =>
         !sourceTraceIdsAlreadyPreservedAsSrjTraces.has(trace.source_trace_id),
     )
+    .filter((trace) => {
+      // A source trace that names a source net contributes its ports to the
+      // single net connection built below. Emitting a direct connection as
+      // well duplicates the same endpoint group. Plane terminations remain
+      // direct because they intentionally end at one physical port.
+      return (
+        (trace.connected_source_net_ids?.length ?? 0) === 0 ||
+        planeTerminatedSourceTraceLayers.has(trace.source_trace_id)
+      )
+    })
     .filter(
       (trace) =>
         !subcircuit_id || (trace as any).subcircuit_id === subcircuit_id,
