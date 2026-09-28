@@ -50,4 +50,3 @@ try {
 } finally {
   await rm(buildDirectory, { force: true, recursive: true })
 }
-
