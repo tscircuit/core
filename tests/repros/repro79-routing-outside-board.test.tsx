@@ -108,7 +108,7 @@ function ExternalResistor({
   )
 }
 
-test("repro kicad footprints in panel", async () => {
+test("autorouting rejects endpoints outside each panel board", async () => {
   const { url: footprintServerUrl } = getTestFootprintServer(
     external0402Footprint,
   )
@@ -153,5 +153,10 @@ test("repro kicad footprints in panel", async () => {
 
   await circuit.renderUntilSettled()
 
+  // R1 is at (8, 8), outside its 10 x 4 mm board. Expanding the routing
+  // bounds to include it must not expand the physical board. Only the four
+  // explicit pcbPath traces remain; the four autorouted paths are rejected.
+  expect(circuit.db.pcb_autorouting_error.list()).toHaveLength(4)
+  expect(circuit.db.pcb_trace.list()).toHaveLength(4)
   expect(circuit.getCircuitJson()).toMatchPcbSnapshot(import.meta.path)
 })
