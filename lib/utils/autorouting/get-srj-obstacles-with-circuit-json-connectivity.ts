@@ -24,7 +24,8 @@ const getConnectivityMapKey = (
  *
  * Existing-route problems need every equivalent physical ID so preserved
  * copper remains touchable. Fresh-route problems deliberately discard that
- * physical route state and retain only source net/trace identities.
+ * physical route state and generated connectivity-map keys, retaining only
+ * each obstacle's own Circuit JSON ID plus source net/trace identities.
  */
 export const getSrjObstaclesWithCircuitJsonConnectivity = ({
   connectivityMap,
@@ -76,6 +77,11 @@ export const getSrjObstaclesWithCircuitJsonConnectivity = ({
   }
 
   return obstacles.map((obstacle) => {
+    const circuitJsonIdsWithoutGeneratedConnectivityKeys =
+      obstacle.connectedTo.filter(
+        (circuitJsonId) =>
+          !Object.hasOwn(connectivityMap.netMap, circuitJsonId),
+      )
     const semanticIds = obstacle.connectedTo.flatMap((circuitJsonId) => {
       const connectivityMapKey = getConnectivityMapKey(
         connectivityMap,
@@ -85,7 +91,12 @@ export const getSrjObstaclesWithCircuitJsonConnectivity = ({
     })
     return {
       ...obstacle,
-      connectedTo: [...new Set([...obstacle.connectedTo, ...semanticIds])],
+      connectedTo: [
+        ...new Set([
+          ...circuitJsonIdsWithoutGeneratedConnectivityKeys,
+          ...semanticIds,
+        ]),
+      ],
     }
   })
 }

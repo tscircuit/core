@@ -13,7 +13,7 @@
     <circle cx="51" cy="47" r="10" fill="#15803d" />
     <text x="76" y="54" fill="#15803d" font-family="Arial, sans-serif" font-size="18" font-weight="700">PASS · physical route IDs stay out of fresh SRJ</text>
     <text x="36" y="104" fill="#374151" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="14">actual board: 18 plated-hole obstacles · 29 imported vias</text>
-<text x="36" y="134" fill="#374151" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="14">largest connectedTo list: 4 IDs (own + connectivity key + net + trace)</text>
-<text x="36" y="164" fill="#374151" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="14">all obstacle references: 72 IDs · no foreign physical IDs</text>
+<text x="36" y="134" fill="#374151" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="14">largest connectedTo list: 3 IDs (own + net + trace)</text>
+<text x="36" y="164" fill="#374151" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="14">all obstacle references: 54 IDs · no foreign physical IDs</text>
   </g>
 </svg>
