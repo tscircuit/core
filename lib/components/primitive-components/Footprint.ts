@@ -150,7 +150,7 @@ export class Footprint extends PrimitiveComponent<typeof footprintProps> {
           // topElmCenterY - topElmHeight/2 - bottomElmCenterY - bottomElmHeight/2 = ydist
           const expr = new kiwi.Expression(
             topVar,
-            topBounds.height / 2,
+            -topBounds.height / 2,
             [-1, bottomVar],
             -bottomBounds.height / 2,
           )
