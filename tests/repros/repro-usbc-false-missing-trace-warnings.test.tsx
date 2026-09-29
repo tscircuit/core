@@ -1,15 +1,14 @@
 import { expect, test } from "bun:test"
 import type { PartsEngine } from "@tscircuit/props"
-import type { AnyCircuitElement } from "circuit-json"
-import usbCC165948CircuitJson from "tests/fixtures/assets/usb-c-C165948.circuit.json"
+import { fp } from "@tscircuit/footprinter"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("repro: USB-C resolution leaves missing-trace warnings on connected pins", async () => {
   const { circuit } = getTestFixture()
+  // Only asynchronous loading matters here, so use a two-pin mock footprint.
   const partsEngine: PartsEngine = {
     findPart: async () => ({ jlcpcb: ["C165948"] }),
-    fetchPartCircuitJson: async () =>
-      usbCC165948CircuitJson as AnyCircuitElement[],
+    fetchPartCircuitJson: async () => fp.string("pinrow2").circuitJson(),
   }
 
   circuit.add(
@@ -18,7 +17,7 @@ test("repro: USB-C resolution leaves missing-trace warnings on connected pins", 
       <connector name="J1" standard="usb_c" pcbX={12} schX={6} />
       <chip
         name="U1"
-        footprint="soic8"
+        footprint="pinrow2"
         pcbX={-10}
         schX={-4}
         pinLabels={{ pin1: "GND" }}

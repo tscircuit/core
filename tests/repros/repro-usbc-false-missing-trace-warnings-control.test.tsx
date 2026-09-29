@@ -9,7 +9,7 @@ test("connected pins have no missing-trace warnings without a USB-C connector", 
       <net name="GND" isGroundNet />
       <chip
         name="U1"
-        footprint="soic8"
+        footprint="pinrow2"
         pcbX={-10}
         schX={-4}
         pinLabels={{ pin1: "GND" }}
