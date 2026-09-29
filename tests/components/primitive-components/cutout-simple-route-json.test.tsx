@@ -30,13 +30,14 @@ test("cutout is treated as an obstacle in simple route json", async () => {
     db: circuit.db,
   })
 
-  // The cutout is centered at (0,0) with width 3mm and height 8mm
+  // The cutout is centered at (0,0). Physical size is 3x8 mm; the obstacle is
+  // inflated by copper-to-edge clearance (0.3 mm per side).
   const hasCutoutObstacle = simpleRouteJson.obstacles.some((o) => {
     return (
       Math.abs(o.center.x) < 1e-6 &&
       Math.abs(o.center.y) < 1e-6 &&
-      Math.abs(o.width - 3) < 1e-6 &&
-      Math.abs(o.height - 8) < 1e-6
+      Math.abs(o.width - 3.6) < 1e-6 &&
+      Math.abs(o.height - 8.6) < 1e-6
     )
   })
 
