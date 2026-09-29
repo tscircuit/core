@@ -625,5 +625,17 @@ test("RP2040", () => {
 
   circuit.render()
 
+  const protectionDiode = circuit.db.source_component
+    .list()
+    .find((component) => component.name === "DPROT")!
+  expect(
+    circuit.db.schematic_component
+      .list()
+      .find(
+        (component) =>
+          component.source_component_id === protectionDiode.source_component_id,
+      )?.symbol_name,
+  ).toBe("schottky_diode_right")
+
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 }, 40_000)
