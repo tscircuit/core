@@ -1,11 +1,13 @@
 import type { PcbKeepoutOutline } from "circuit-json"
 import type { PcbComponentId } from "lib/utils/circuit-json/circuit-json-id-types"
+import { fillCircleWithRects } from "./fillCircleWithRects"
 import { generateApproximatingRects } from "./generateApproximatingRects"
 import type { Obstacle } from "./types"
 
 /**
- * Converts each stroked keepout segment to the axis-aligned rectangles used by
- * the existing rotated-rectangle approximation utility.
+ * Approximates a rounded stroked keepout path with axis-aligned rectangles.
+ * Segment bodies use the existing rotated-rectangle approximation, while
+ * vertices use the existing circle-fill approximation for round joins/caps.
  */
 export const getObstaclesFromPcbKeepoutOutline = (
   keepout: PcbKeepoutOutline,
@@ -40,6 +42,30 @@ export const getObstaclesFromPcbKeepoutOutline = (
     for (const [approximationIndex, rect] of approximatingRects.entries()) {
       obstacles.push({
         obstacleId: `${keepout.pcb_keepout_id}_segment_${segmentIndex}_rect_${approximationIndex}`,
+        componentId,
+        type: "rect",
+        layers: keepout.layers,
+        ...rect,
+        connectedTo: [],
+      })
+    }
+  }
+
+  const isClosed =
+    outline.length > 1 &&
+    outline[0].x === outline.at(-1)?.x &&
+    outline[0].y === outline.at(-1)?.y
+  const joinPoints = isClosed ? outline.slice(0, -1) : outline
+
+  for (const [joinIndex, point] of joinPoints.entries()) {
+    const approximatingRects = fillCircleWithRects(
+      { center: point, radius: stroke_width / 2 },
+      { rectHeight: stroke_width / 4 },
+    )
+
+    for (const [approximationIndex, rect] of approximatingRects.entries()) {
+      obstacles.push({
+        obstacleId: `${keepout.pcb_keepout_id}_join_${joinIndex}_rect_${approximationIndex}`,
         componentId,
         type: "rect",
         layers: keepout.layers,

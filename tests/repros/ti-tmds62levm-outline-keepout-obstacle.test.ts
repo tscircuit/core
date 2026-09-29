@@ -43,6 +43,12 @@ test("TMDS62LEVM outline keepout becomes SRJ obstacles", async () => {
   const keepoutObstacles = simpleRouteJson.obstacles.filter((obstacle) =>
     obstacle.obstacleId?.startsWith(keepout.pcb_keepout_id),
   )
+  const segmentObstacles = keepoutObstacles.filter((obstacle) =>
+    obstacle.obstacleId?.includes("_segment_"),
+  )
+  const joinObstacles = keepoutObstacles.filter((obstacle) =>
+    obstacle.obstacleId?.includes("_join_"),
+  )
   const keepoutSnapshotHighlight: PcbNotePath = {
     type: "pcb_note_path",
     pcb_note_path_id: "pcb_note_path_tmds62levm_keepout_highlight",
@@ -82,13 +88,10 @@ test("TMDS62LEVM outline keepout becomes SRJ obstacles", async () => {
         fill: "rgba(59, 130, 246, 0.3)",
         stroke: "#2563eb",
       })),
-      ...keepoutObstacles.map((obstacle, index) => ({
+      ...keepoutObstacles.map((obstacle) => ({
         ...obstacle,
-        fill:
-          index % 2 === 0
-            ? "rgba(239, 68, 68, 0.45)"
-            : "rgba(249, 115, 22, 0.45)",
-        stroke: index % 2 === 0 ? "#dc2626" : "#ea580c",
+        fill: "#dc2626",
+        stroke: "none",
       })),
     ],
   })
@@ -115,7 +118,8 @@ test("TMDS62LEVM outline keepout becomes SRJ obstacles", async () => {
   const keepoutOuterDiameter =
     Math.max(...keepoutXs) - Math.min(...keepoutXs) + keepout.stroke_width
   expect(keepoutOuterDiameter).toBeGreaterThan(enclosedPad.radius * 2)
-  expect(keepoutObstacles).toHaveLength((keepout.outline.length - 1) * 2)
+  expect(segmentObstacles).toHaveLength((keepout.outline.length - 1) * 2)
+  expect(joinObstacles).toHaveLength((keepout.outline.length - 1) * 4)
   expect(keepoutObstacles[0]?.obstacleId).toBe(
     `${keepout.pcb_keepout_id}_segment_0_rect_0`,
   )
