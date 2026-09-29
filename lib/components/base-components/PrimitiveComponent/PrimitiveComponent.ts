@@ -1437,24 +1437,42 @@ export abstract class PrimitiveComponent<
     }
   }
 
+  private _getDisplayId(): string {
+    if (!this.root) return this._renderId
+
+    // Tree positions are deterministic across circuits, unlike process-wide
+    // runtime IDs. Recompute after reparenting; geometry changes keep this path.
+    const path: number[] = []
+    let component: PrimitiveComponent = this
+    while (component.parent) {
+      const siblingIndex = component.parent.children.indexOf(component)
+      // Removed components retain their parent until their removal phases run.
+      if (siblingIndex === -1) return this._renderId
+      path.push(siblingIndex)
+      component = component.parent
+    }
+    return path.reverse().join(".")
+  }
+
   getString(): string {
     const { lowercaseComponentName: cname, _parsedProps: props, parent } = this
+    const displayId = this._getDisplayId()
     if (props?.pinNumber !== undefined && parent?.props?.name && props?.name) {
-      return `<${cname}#${this._renderId}(pin:${props.pinNumber} .${parent?.props.name}>.${props.name}) />`
+      return `<${cname}#${displayId}(pin:${props.pinNumber} .${parent?.props.name}>.${props.name}) />`
     }
     if (parent?.props?.name && props?.name) {
-      return `<${cname}#${this._renderId}(.${parent?.props.name}>.${props?.name}) />`
+      return `<${cname}#${displayId}(.${parent?.props.name}>.${props?.name}) />`
     }
     if (props?.from && props?.to) {
-      return `<${cname}#${this._renderId}(from:${props.from} to:${props?.to}) />`
+      return `<${cname}#${displayId}(from:${props.from} to:${props?.to}) />`
     }
     if (props?.name) {
-      return `<${cname}#${this._renderId} name=".${props?.name}" />`
+      return `<${cname}#${displayId} name=".${props?.name}" />`
     }
     if (props?.portHints) {
-      return `<${cname}#${this._renderId}(${props.portHints.map((ph: string) => `.${ph}`).join(", ")}) />`
+      return `<${cname}#${displayId}(${props.portHints.map((ph: string) => `.${ph}`).join(", ")}) />`
     }
-    return `<${cname}#${this._renderId} />`
+    return `<${cname}#${displayId} />`
   }
 
   getDisplayName(): string {
