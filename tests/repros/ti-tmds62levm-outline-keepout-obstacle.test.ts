@@ -3,12 +3,13 @@ import type {
   AnyCircuitElement,
   PcbKeepoutOutline,
   PcbNotePath,
+  PcbSmtPadCircle,
 } from "circuit-json"
 import { convertCircuitJsonToPcbSvg } from "circuit-to-svg"
 import { getSvgFromGraphicsObject } from "graphics-debug"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 import { stackSvgsHorizontally, stackSvgsVertically } from "stack-svgs"
-import pmp22650ArcCrop from "./assets/ti-pmp22650-imported-outline-keepout.circuit.json"
+import tmds62levmKeepoutCrop from "./assets/ti-tmds62levm-imported-outline-keepout.circuit.json"
 
 const labelSvg = (
   label: string,
@@ -23,30 +24,32 @@ const labelPanel = (label: string, svg: string) =>
     normalizeSize: false,
   })
 
-test.failing("PMP22650 outline keepout becomes SRJ obstacles", async () => {
-  const circuitJson = pmp22650ArcCrop as AnyCircuitElement[]
+test.failing("TMDS62LEVM outline keepout becomes SRJ obstacles", async () => {
+  const circuitJson = tmds62levmKeepoutCrop as AnyCircuitElement[]
   const keepout = circuitJson.find(
     (element): element is PcbKeepoutOutline =>
       element.type === "pcb_keepout" && element.shape === "outline",
   )
-  if (!keepout) throw new Error("Missing PMP22650 outline keepout fixture")
+  if (!keepout) throw new Error("Missing TMDS62LEVM outline keepout fixture")
+  const enclosedPad = circuitJson.find(
+    (element): element is PcbSmtPadCircle =>
+      element.type === "pcb_smtpad" &&
+      element.pcb_smtpad_id === "pcb_smtpad_altium_120627" &&
+      element.shape === "circle",
+  )
+  if (!enclosedPad) throw new Error("Missing enclosed TMDS62LEVM pad")
 
   const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({ circuitJson })
   const keepoutObstacles = simpleRouteJson.obstacles.filter((obstacle) =>
     obstacle.obstacleId?.startsWith(keepout.pcb_keepout_id),
   )
-  const sourceReference = {
-    points: keepout.outline,
-    strokeColor: "rgba(100, 100, 100, 0.45)",
-    strokeWidth: keepout.stroke_width,
-  }
   const keepoutSnapshotHighlight: PcbNotePath = {
     type: "pcb_note_path",
-    pcb_note_path_id: "pcb_note_path_pmp22650_keepout_highlight",
-    route: keepout.outline,
+    pcb_note_path_id: "pcb_note_path_tmds62levm_keepout_highlight",
+    route: [...keepout.outline, keepout.outline[1]!],
     layer: "top",
     stroke_width: keepout.stroke_width,
-    color: "#ff6b6b",
+    color: "rgba(255, 107, 107, 0.45)",
   }
   const sourceSvg = convertCircuitJsonToPcbSvg(
     [
@@ -58,10 +61,10 @@ test.failing("PMP22650 outline keepout becomes SRJ obstacles", async () => {
       height: 640,
       layer: "top",
       viewport: {
-        minX: 204,
-        minY: 41,
-        maxX: 212,
-        maxY: 52,
+        minX: 3.5,
+        minY: 118,
+        maxX: 12.5,
+        maxY: 127.5,
       },
     },
   )
@@ -71,8 +74,8 @@ test.failing("PMP22650 outline keepout becomes SRJ obstacles", async () => {
       !obstacle.obstacleId?.startsWith(keepout.pcb_keepout_id),
   )
   const srjSvg = getSvgFromGraphicsObject({
-    title: "PMP22650 routing obstacles",
-    lines: [sourceReference],
+    title: "TMDS62LEVM SRJ rect obstacles (no source overlay)",
+    lines: [],
     rects: [
       ...otherTopLayerObstacles.map((obstacle) => ({
         ...obstacle,
@@ -89,13 +92,15 @@ test.failing("PMP22650 outline keepout becomes SRJ obstacles", async () => {
   await expect(
     stackSvgsHorizontally(
       [
-        labelPanel("Real PMP22650 Altium board crop", sourceSvg),
-        labelPanel("Simple Route JSON routing inputs", srjSvg),
+        labelPanel("Real TMDS62LEVM Altium board crop", sourceSvg),
+        labelPanel("Simple Route JSON rect obstacles only", srjSvg),
       ],
       {
         gap: 16,
         normalizeSize: false,
-        rootAttributes: { "data-testid": "pmp22650-keepout-srj-comparison" },
+        rootAttributes: {
+          "data-testid": "tmds62levm-keepout-srj-comparison",
+        },
       },
     ),
   ).toMatchSvgSnapshot(import.meta.path, undefined, {
@@ -103,6 +108,10 @@ test.failing("PMP22650 outline keepout becomes SRJ obstacles", async () => {
   })
 
   expect(keepout.outline).toHaveLength(49)
+  const keepoutXs = keepout.outline.map((point) => point.x)
+  const keepoutOuterDiameter =
+    Math.max(...keepoutXs) - Math.min(...keepoutXs) + keepout.stroke_width
+  expect(keepoutOuterDiameter).toBeGreaterThan(enclosedPad.radius * 2)
   expect(keepoutObstacles).toHaveLength(48)
   expect(
     keepoutObstacles.every(
