@@ -82,10 +82,13 @@ test("TMDS62LEVM outline keepout becomes SRJ obstacles", async () => {
         fill: "rgba(59, 130, 246, 0.3)",
         stroke: "#2563eb",
       })),
-      ...keepoutObstacles.map((obstacle) => ({
+      ...keepoutObstacles.map((obstacle, index) => ({
         ...obstacle,
-        fill: "rgba(239, 68, 68, 0.65)",
-        stroke: "#dc2626",
+        fill:
+          index % 2 === 0
+            ? "rgba(239, 68, 68, 0.45)"
+            : "rgba(249, 115, 22, 0.45)",
+        stroke: index % 2 === 0 ? "#dc2626" : "#ea580c",
       })),
     ],
   })
