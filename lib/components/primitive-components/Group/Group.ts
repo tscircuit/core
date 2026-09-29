@@ -48,6 +48,7 @@ import {
 } from "lib/utils/autorouting/get-circuit-json-pcb-trace-route"
 import { getFanoutBoundaryPointSpacing } from "lib/utils/autorouting/get-fanout-boundary-point-spacing"
 import { getPcbComponentNamesById } from "lib/utils/autorouting/get-pcb-component-names-by-id"
+import { insertTraceWidthError } from "lib/utils/autorouting/insert-trace-width-error"
 import {
   type LegacyAutorouterPreset,
   type NormalizedAutorouterConfig,
@@ -2331,6 +2332,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             source_trace_id: sourceTraceId,
             route: circuitJsonSegment,
           })
+          insertTraceWidthError(insertedPcbTrace, db)
           claimSrjAssignablePcbViasTraversedByRoute({
             db,
             pcbTrace: insertedPcbTrace,
