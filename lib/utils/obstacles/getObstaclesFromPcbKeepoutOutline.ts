@@ -1,4 +1,5 @@
 import type { PcbKeepoutOutline } from "circuit-json"
+import type { PcbComponentId } from "lib/utils/circuit-json/circuit-json-id-types"
 import type { Obstacle } from "./types"
 
 /**
@@ -9,10 +10,10 @@ import type { Obstacle } from "./types"
  */
 export const getObstaclesFromPcbKeepoutOutline = (
   keepout: PcbKeepoutOutline,
-  componentId?: string,
+  componentId?: PcbComponentId,
 ): Obstacle[] => {
-  const { outline, stroke_width: strokeWidth } = keepout
-  if (!Number.isFinite(strokeWidth) || strokeWidth <= 0) return []
+  const { outline, stroke_width } = keepout
+  if (!Number.isFinite(stroke_width) || stroke_width <= 0) return []
 
   const obstacles: Obstacle[] = []
   for (
@@ -38,8 +39,8 @@ export const getObstaclesFromPcbKeepoutOutline = (
       },
       // Extend each segment by one stroke width so adjacent SRJ rectangles
       // overlap at angled joins instead of leaving routing gaps.
-      width: segmentLength + strokeWidth,
-      height: strokeWidth,
+      width: segmentLength + stroke_width,
+      height: stroke_width,
       ccwRotationDegrees: (Math.atan2(deltaY, deltaX) * 180) / Math.PI,
       connectedTo: [],
     })
