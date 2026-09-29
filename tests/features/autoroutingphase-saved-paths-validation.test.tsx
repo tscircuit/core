@@ -40,6 +40,37 @@ test("saved phase paths reject invalid ports, layers, anchors, and coverage", as
         {
           ...path,
           route: [
+            { ...wire, layer: "bottom" },
+            { ...wire, x: 4, layer: "bottom" },
+          ],
+        },
+      ],
+      "must start at its PCB port",
+    ],
+    [
+      [
+        {
+          ...path,
+          route: [
+            wire,
+            {
+              route_type: "via",
+              x: 2,
+              y: 0,
+              from_layer: "top",
+              to_layer: "bottom",
+            },
+            { ...wire, x: 4, layer: "bottom" },
+          ],
+        },
+      ],
+      "must end at another connection endpoint",
+    ],
+    [
+      [
+        {
+          ...path,
+          route: [
             { ...wire, layer: "inner1" },
             { ...wire, x: 4, layer: "inner1" },
           ],

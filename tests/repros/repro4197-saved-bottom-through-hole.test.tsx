@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("repro4197: saved bottom route between plated pins is rejected", async () => {
+test("repro4197: saved bottom route connects plated pins without vias", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width={14} height={10} routeRemaining={false}>
@@ -30,15 +30,18 @@ test("repro4197: saved bottom route between plated pins is rejected", async () =
   )
   await circuit.renderUntilSettled()
 
-  // Capture the current failure for #4197; the stacked fix replaces these
-  // expectations with the preserved bottom route and no connectivity errors.
-  expect(circuit.db.pcb_autorouting_error.list()).toMatchObject([
+  expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
+  expect(circuit.db.pcb_port_not_connected_error.list()).toEqual([])
+  expect(circuit.db.pcb_trace_missing_error.list()).toEqual([])
+  expect(circuit.db.pcb_trace_error.list()).toEqual([])
+  expect(circuit.db.pcb_trace.list()).toMatchObject([
     {
-      message:
-        'Saved phase path "J1.pin1" must start at its PCB port on an available layer',
+      route: [
+        { route_type: "wire", x: -4, y: 0, width: 0.25, layer: "bottom" },
+        { route_type: "wire", x: 4, y: 0, width: 0.25, layer: "bottom" },
+      ],
     },
   ])
-  expect(circuit.db.pcb_trace.list()).toHaveLength(0)
   expect(circuit.db.pcb_via.list()).toHaveLength(0)
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
