@@ -24,7 +24,7 @@ const labelPanel = (label: string, svg: string) =>
     normalizeSize: false,
   })
 
-test.failing("TMDS62LEVM outline keepout becomes SRJ obstacles", async () => {
+test("TMDS62LEVM outline keepout becomes SRJ obstacles", async () => {
   const circuitJson = tmds62levmKeepoutCrop as AnyCircuitElement[]
   const keepout = circuitJson.find(
     (element): element is PcbKeepoutOutline =>
@@ -113,6 +113,9 @@ test.failing("TMDS62LEVM outline keepout becomes SRJ obstacles", async () => {
     Math.max(...keepoutXs) - Math.min(...keepoutXs) + keepout.stroke_width
   expect(keepoutOuterDiameter).toBeGreaterThan(enclosedPad.radius * 2)
   expect(keepoutObstacles).toHaveLength(48)
+  expect(keepoutObstacles[0]?.obstacleId).toBe(
+    `${keepout.pcb_keepout_id}_segment_0`,
+  )
   expect(
     keepoutObstacles.every(
       (obstacle) =>
