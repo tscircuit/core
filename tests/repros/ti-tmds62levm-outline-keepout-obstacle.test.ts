@@ -115,15 +115,19 @@ test("TMDS62LEVM outline keepout becomes SRJ obstacles", async () => {
   const keepoutOuterDiameter =
     Math.max(...keepoutXs) - Math.min(...keepoutXs) + keepout.stroke_width
   expect(keepoutOuterDiameter).toBeGreaterThan(enclosedPad.radius * 2)
-  expect(keepoutObstacles).toHaveLength(48)
+  expect(keepoutObstacles).toHaveLength((keepout.outline.length - 1) * 2)
   expect(keepoutObstacles[0]?.obstacleId).toBe(
-    `${keepout.pcb_keepout_id}_segment_0`,
+    `${keepout.pcb_keepout_id}_segment_0_rect_0`,
   )
   expect(
     keepoutObstacles.every(
       (obstacle) =>
         obstacle.type === "rect" &&
-        obstacle.height === keepout.stroke_width &&
+        Number.isFinite(obstacle.width) &&
+        obstacle.width > 0 &&
+        Number.isFinite(obstacle.height) &&
+        obstacle.height > 0 &&
+        obstacle.ccwRotationDegrees === undefined &&
         obstacle.layers.length === 1 &&
         obstacle.layers[0] === "top" &&
         obstacle.connectedTo.length === 0,

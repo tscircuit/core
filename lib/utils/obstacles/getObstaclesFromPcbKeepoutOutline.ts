@@ -1,12 +1,11 @@
 import type { PcbKeepoutOutline } from "circuit-json"
 import type { PcbComponentId } from "lib/utils/circuit-json/circuit-json-id-types"
+import { generateApproximatingRects } from "./generateApproximatingRects"
 import type { Obstacle } from "./types"
 
 /**
- * Converts a stroked Circuit JSON keepout path into Simple Route JSON
- * obstacles. Input and output geometry use PCB world coordinates in mm, with
- * +x right, +y up, and counterclockwise-positive rotations. Outline entries
- * and obstacle centers are points, so no coordinate-frame transform is needed.
+ * Converts each stroked keepout segment to the axis-aligned rectangles used by
+ * the existing rotated-rectangle approximation utility.
  */
 export const getObstaclesFromPcbKeepoutOutline = (
   keepout: PcbKeepoutOutline,
@@ -28,22 +27,26 @@ export const getObstaclesFromPcbKeepoutOutline = (
     const segmentLength = Math.hypot(deltaX, deltaY)
     if (!Number.isFinite(segmentLength) || segmentLength === 0) continue
 
-    obstacles.push({
-      obstacleId: `${keepout.pcb_keepout_id}_segment_${segmentIndex}`,
-      componentId,
-      type: "rect",
-      layers: keepout.layers,
+    const approximatingRects = generateApproximatingRects({
       center: {
         x: (start.x + end.x) / 2,
         y: (start.y + end.y) / 2,
       },
-      // Extend each segment by one stroke width so adjacent SRJ rectangles
-      // overlap at angled joins instead of leaving routing gaps.
-      width: segmentLength + stroke_width,
+      width: segmentLength,
       height: stroke_width,
-      ccwRotationDegrees: (Math.atan2(deltaY, deltaX) * 180) / Math.PI,
-      connectedTo: [],
+      rotation: (Math.atan2(deltaY, deltaX) * 180) / Math.PI,
     })
+
+    for (const [approximationIndex, rect] of approximatingRects.entries()) {
+      obstacles.push({
+        obstacleId: `${keepout.pcb_keepout_id}_segment_${segmentIndex}_rect_${approximationIndex}`,
+        componentId,
+        type: "rect",
+        layers: keepout.layers,
+        ...rect,
+        connectedTo: [],
+      })
+    }
   }
 
   return obstacles
