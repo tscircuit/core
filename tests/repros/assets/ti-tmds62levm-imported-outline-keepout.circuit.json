@@ -295,9 +295,7 @@
       }
     ],
     "stroke_width": 1.17780054,
-    "layers": [
-      "top"
-    ],
+    "layers": ["top"],
     "description": "Altium arc keepout"
   },
   {
@@ -311,9 +309,7 @@
     "width": 2.413,
     "height": 1.8034,
     "pcb_port_id": "pcb_port_altium_119450",
-    "port_hints": [
-      "1"
-    ],
+    "port_hints": ["1"],
     "pcb_component_id": "pcb_component_altium_1492"
   },
   {
@@ -326,9 +322,7 @@
     "shape": "circle",
     "radius": 0.50000027,
     "pcb_port_id": "pcb_port_altium_120627",
-    "port_hints": [
-      "1"
-    ],
+    "port_hints": ["1"],
     "pcb_component_id": "pcb_component_altium_0"
   },
   {
@@ -342,9 +336,7 @@
     "width": 0.508,
     "height": 0.508,
     "pcb_port_id": "pcb_port_altium_121460",
-    "port_hints": [
-      "2"
-    ],
+    "port_hints": ["2"],
     "pcb_component_id": "pcb_component_altium_1262"
   },
   {
@@ -358,9 +350,7 @@
     "width": 0.508,
     "height": 0.508,
     "pcb_port_id": "pcb_port_altium_121461",
-    "port_hints": [
-      "1"
-    ],
+    "port_hints": ["1"],
     "pcb_component_id": "pcb_component_altium_1262"
   },
   {
@@ -372,10 +362,7 @@
     "y": 125.603,
     "outer_diameter": 0.4572,
     "hole_diameter": 0.2032,
-    "layers": [
-      "top",
-      "bottom"
-    ],
+    "layers": ["top", "bottom"],
     "is_tented": true
   },
   {
@@ -387,10 +374,7 @@
     "y": 125.42519999999999,
     "outer_diameter": 0.4572,
     "hole_diameter": 0.2032,
-    "layers": [
-      "top",
-      "bottom"
-    ],
+    "layers": ["top", "bottom"],
     "is_tented": true
   },
   {
@@ -402,10 +386,7 @@
     "y": 126.03459934,
     "outer_diameter": 0.4572,
     "hole_diameter": 0.2032,
-    "layers": [
-      "top",
-      "bottom"
-    ],
+    "layers": ["top", "bottom"],
     "is_tented": true
   },
   {
@@ -417,10 +398,7 @@
     "y": 121.21803036,
     "outer_diameter": 0.508,
     "hole_diameter": 0.254,
-    "layers": [
-      "top",
-      "bottom"
-    ],
+    "layers": ["top", "bottom"],
     "is_tented": true
   },
   {
@@ -432,10 +410,7 @@
     "y": 126.0094,
     "outer_diameter": 0.4572,
     "hole_diameter": 0.2032,
-    "layers": [
-      "top",
-      "bottom"
-    ],
+    "layers": ["top", "bottom"],
     "is_tented": true
   },
   {
@@ -447,10 +422,7 @@
     "y": 123.93807826,
     "outer_diameter": 0.4572,
     "hole_diameter": 0.2032,
-    "layers": [
-      "top",
-      "bottom"
-    ],
+    "layers": ["top", "bottom"],
     "is_tented": true
   },
   {
@@ -462,10 +434,7 @@
     "y": 125.04628026,
     "outer_diameter": 0.4572,
     "hole_diameter": 0.2032,
-    "layers": [
-      "top",
-      "bottom"
-    ],
+    "layers": ["top", "bottom"],
     "is_tented": true
   },
   {
@@ -477,10 +446,7 @@
     "y": 123.37826226,
     "outer_diameter": 0.4572,
     "hole_diameter": 0.2032,
-    "layers": [
-      "top",
-      "bottom"
-    ],
+    "layers": ["top", "bottom"],
     "is_tented": true
   }
 ]
