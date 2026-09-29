@@ -5,6 +5,7 @@ import { fillCircleWithRects } from "./fillCircleWithRects"
 import { fillPolygonWithRects } from "./fillPolygonWithRects"
 import { type RotatedRect } from "./generateApproximatingRects"
 import { getAxisAlignedRectFromPolygon } from "./getAxisAlignedRectFromPolygon"
+import { getObstaclesFromPcbKeepoutOutline } from "./getObstaclesFromPcbKeepoutOutline"
 import { getObstaclesFromRoute } from "./getObstaclesFromRoute"
 import type { CircuitJsonMetadata, Obstacle } from "./types"
 
@@ -254,6 +255,10 @@ export const getObstaclesFromCircuitJson = (
           height: element.height,
           connectedTo: [],
         })
+      } else if (element.shape === "outline") {
+        obstacles.push(
+          ...getObstaclesFromPcbKeepoutOutline(element, pcbComponentId),
+        )
       }
     } else if (element.type === "pcb_cutout") {
       if (element.shape === "rect") {

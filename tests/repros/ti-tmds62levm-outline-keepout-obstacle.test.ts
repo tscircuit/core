@@ -24,7 +24,7 @@ const labelPanel = (label: string, svg: string) =>
     normalizeSize: false,
   })
 
-test.failing("TMDS62LEVM outline keepout becomes SRJ obstacles", async () => {
+test("TMDS62LEVM outline keepout becomes SRJ obstacles", async () => {
   const circuitJson = tmds62levmKeepoutCrop as AnyCircuitElement[]
   const keepout = circuitJson.find(
     (element): element is PcbKeepoutOutline =>
@@ -42,6 +42,12 @@ test.failing("TMDS62LEVM outline keepout becomes SRJ obstacles", async () => {
   const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({ circuitJson })
   const keepoutObstacles = simpleRouteJson.obstacles.filter((obstacle) =>
     obstacle.obstacleId?.startsWith(keepout.pcb_keepout_id),
+  )
+  const segmentObstacles = keepoutObstacles.filter((obstacle) =>
+    obstacle.obstacleId?.includes("_segment_"),
+  )
+  const joinObstacles = keepoutObstacles.filter((obstacle) =>
+    obstacle.obstacleId?.includes("_join_"),
   )
   const keepoutSnapshotHighlight: PcbNotePath = {
     type: "pcb_note_path",
@@ -84,8 +90,8 @@ test.failing("TMDS62LEVM outline keepout becomes SRJ obstacles", async () => {
       })),
       ...keepoutObstacles.map((obstacle) => ({
         ...obstacle,
-        fill: "rgba(239, 68, 68, 0.65)",
-        stroke: "#dc2626",
+        fill: "#dc2626",
+        stroke: "none",
       })),
     ],
   })
@@ -112,12 +118,20 @@ test.failing("TMDS62LEVM outline keepout becomes SRJ obstacles", async () => {
   const keepoutOuterDiameter =
     Math.max(...keepoutXs) - Math.min(...keepoutXs) + keepout.stroke_width
   expect(keepoutOuterDiameter).toBeGreaterThan(enclosedPad.radius * 2)
-  expect(keepoutObstacles).toHaveLength(48)
+  expect(segmentObstacles).toHaveLength((keepout.outline.length - 1) * 2)
+  expect(joinObstacles).toHaveLength((keepout.outline.length - 1) * 4)
+  expect(keepoutObstacles[0]?.obstacleId).toBe(
+    `${keepout.pcb_keepout_id}_segment_0_rect_0`,
+  )
   expect(
     keepoutObstacles.every(
       (obstacle) =>
         obstacle.type === "rect" &&
-        obstacle.height === keepout.stroke_width &&
+        Number.isFinite(obstacle.width) &&
+        obstacle.width > 0 &&
+        Number.isFinite(obstacle.height) &&
+        obstacle.height > 0 &&
+        obstacle.ccwRotationDegrees === undefined &&
         obstacle.layers.length === 1 &&
         obstacle.layers[0] === "top" &&
         obstacle.connectedTo.length === 0,
