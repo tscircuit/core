@@ -1,3 +1,4 @@
+import { symbols } from "schematic-symbols"
 import { ledProps } from "@tscircuit/props"
 import type {
   BaseSymbolName,
@@ -20,10 +21,22 @@ export class Led extends NormalComponent<
 
     const variantSymbol = this.props.laser ? "laser" : null
 
+    const baseSymbolName = variantSymbol
+      ? symbolMap[variantSymbol]
+      : (this.props.symbolName ?? "led")
+    const compactSize =
+      this.props.schSize === "sm" || this.props.schSize === "xs"
+        ? this.props.schSize
+        : undefined
+    const compactSymbolName =
+      compactSize && baseSymbolName === "led" ? `led_${compactSize}` : undefined
+    const schematicSymbolName =
+      compactSymbolName && `${compactSymbolName}_right` in symbols
+        ? compactSymbolName
+        : baseSymbolName
+
     return {
-      schematicSymbolName: variantSymbol
-        ? symbolMap[variantSymbol]
-        : (this.props.symbolName ?? ("led" as BaseSymbolName)),
+      schematicSymbolName,
       componentName: "Led",
       zodProps: ledProps,
       sourceFtype: "simple_led" as Ftype,
