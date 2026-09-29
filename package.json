@@ -101,7 +101,7 @@
   },
   "peerDependencies": {
     "@tscircuit/capacity-autorouter": "*",
-    "@tscircuit/checks": ">=0.0.226",
+    "@tscircuit/checks": "*",
     "@tscircuit/circuit-json-util": "*",
     "@tscircuit/create-fdm-enclosure": "*",
     "@tscircuit/footprinter": "*",
