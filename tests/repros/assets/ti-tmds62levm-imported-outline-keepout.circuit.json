@@ -1,0 +1,452 @@
+[
+  {
+    "type": "pcb_board",
+    "pcb_board_id": "pcb_board_altium",
+    "center": {
+      "x": 68.00130671999999,
+      "y": 66.34479999999999
+    },
+    "width": 136.02877544,
+    "height": 142.875762,
+    "shape": "polygon",
+    "outline": [
+      {
+        "x": 0,
+        "y": -5.093081
+      },
+      {
+        "x": 136.00261344,
+        "y": -5.093081
+      },
+      {
+        "x": 136.01569443999998,
+        "y": -5.08
+      },
+      {
+        "x": 136.01569443999998,
+        "y": 137.7696
+      },
+      {
+        "x": 136.00261344,
+        "y": 137.782681
+      },
+      {
+        "x": 0,
+        "y": 137.782681
+      },
+      {
+        "x": -0.013081,
+        "y": 137.7696
+      },
+      {
+        "x": 0,
+        "y": -5.093081
+      }
+    ],
+    "thickness": 1.6,
+    "num_layers": 6,
+    "material": "fr4"
+  },
+  {
+    "type": "pcb_component",
+    "pcb_component_id": "pcb_component_altium_0",
+    "source_component_id": "source_component_altium_0",
+    "center": {
+      "x": 7.88299668,
+      "y": 122.93599999999999
+    },
+    "width": 3.4383992699999997,
+    "height": 7.873878080000007,
+    "layer": "top",
+    "rotation": 90,
+    "position_mode": "none",
+    "obstructs_within_bounds": false
+  },
+  {
+    "type": "pcb_component",
+    "pcb_component_id": "pcb_component_altium_1262",
+    "source_component_id": "source_component_altium_1262",
+    "center": {
+      "x": 8.693531,
+      "y": 120.79803120000001
+    },
+    "width": 3.3143875800000004,
+    "height": 3.491517019999998,
+    "layer": "top",
+    "rotation": 90,
+    "position_mode": "none",
+    "obstructs_within_bounds": false
+  },
+  {
+    "type": "pcb_component",
+    "pcb_component_id": "pcb_component_altium_1492",
+    "source_component_id": "source_component_altium_1492",
+    "center": {
+      "x": 12.322301999999999,
+      "y": 119.47377425999998
+    },
+    "width": 3.9623999999999997,
+    "height": 7.094425740000005,
+    "layer": "top",
+    "rotation": 270,
+    "position_mode": "none",
+    "obstructs_within_bounds": false
+  },
+  {
+    "type": "pcb_keepout",
+    "pcb_keepout_id": "pcb_keepout_altium_arc_76972",
+    "shape": "outline",
+    "outline": [
+      {
+        "x": 8.382995679999999,
+        "y": 122.93599999999999
+      },
+      {
+        "x": 8.378718119242043,
+        "y": 123.00126296558383
+      },
+      {
+        "x": 8.365958627218708,
+        "y": 123.0654092637322
+      },
+      {
+        "x": 8.34493552237611,
+        "y": 123.12734133349909
+      },
+      {
+        "x": 8.316008515866814,
+        "y": 123.1859995
+      },
+      {
+        "x": 8.279672556792278,
+        "y": 123.24038010574291
+      },
+      {
+        "x": 8.236549363486493,
+        "y": 123.28955268348648
+      },
+      {
+        "x": 8.18737678574293,
+        "y": 123.33267587679228
+      },
+      {
+        "x": 8.13299618,
+        "y": 123.36901183586681
+      },
+      {
+        "x": 8.074338013499112,
+        "y": 123.3979388423761
+      },
+      {
+        "x": 8.012405943732215,
+        "y": 123.4189619472187
+      },
+      {
+        "x": 7.948259645583834,
+        "y": 123.43172143924204
+      },
+      {
+        "x": 7.88299668,
+        "y": 123.43599900000001
+      },
+      {
+        "x": 7.817733714416166,
+        "y": 123.43172143924204
+      },
+      {
+        "x": 7.753587416267784,
+        "y": 123.4189619472187
+      },
+      {
+        "x": 7.691655346500887,
+        "y": 123.3979388423761
+      },
+      {
+        "x": 7.63299718,
+        "y": 123.36901183586681
+      },
+      {
+        "x": 7.578616574257068,
+        "y": 123.33267587679228
+      },
+      {
+        "x": 7.529443996513507,
+        "y": 123.28955268348648
+      },
+      {
+        "x": 7.486320803207722,
+        "y": 123.24038010574291
+      },
+      {
+        "x": 7.449984844133184,
+        "y": 123.1859995
+      },
+      {
+        "x": 7.421057837623889,
+        "y": 123.12734133349912
+      },
+      {
+        "x": 7.400034732781291,
+        "y": 123.0654092637322
+      },
+      {
+        "x": 7.3872752407579565,
+        "y": 123.00126296558383
+      },
+      {
+        "x": 7.382997679999999,
+        "y": 122.93599999999999
+      },
+      {
+        "x": 7.387275240757955,
+        "y": 122.87073703441615
+      },
+      {
+        "x": 7.400034732781291,
+        "y": 122.8065907362678
+      },
+      {
+        "x": 7.421057837623889,
+        "y": 122.7446586665009
+      },
+      {
+        "x": 7.449984844133184,
+        "y": 122.6860005
+      },
+      {
+        "x": 7.486320803207722,
+        "y": 122.63161989425707
+      },
+      {
+        "x": 7.529443996513507,
+        "y": 122.58244731651351
+      },
+      {
+        "x": 7.578616574257068,
+        "y": 122.5393241232077
+      },
+      {
+        "x": 7.6329971799999985,
+        "y": 122.50298816413317
+      },
+      {
+        "x": 7.691655346500887,
+        "y": 122.4740611576239
+      },
+      {
+        "x": 7.753587416267784,
+        "y": 122.45303805278128
+      },
+      {
+        "x": 7.817733714416166,
+        "y": 122.44027856075795
+      },
+      {
+        "x": 7.88299668,
+        "y": 122.43600099999999
+      },
+      {
+        "x": 7.948259645583834,
+        "y": 122.44027856075795
+      },
+      {
+        "x": 8.012405943732215,
+        "y": 122.45303805278128
+      },
+      {
+        "x": 8.074338013499112,
+        "y": 122.4740611576239
+      },
+      {
+        "x": 8.13299618,
+        "y": 122.50298816413317
+      },
+      {
+        "x": 8.18737678574293,
+        "y": 122.5393241232077
+      },
+      {
+        "x": 8.236549363486493,
+        "y": 122.58244731651351
+      },
+      {
+        "x": 8.279672556792276,
+        "y": 122.63161989425707
+      },
+      {
+        "x": 8.316008515866814,
+        "y": 122.6860005
+      },
+      {
+        "x": 8.34493552237611,
+        "y": 122.7446586665009
+      },
+      {
+        "x": 8.365958627218708,
+        "y": 122.8065907362678
+      },
+      {
+        "x": 8.378718119242043,
+        "y": 122.87073703441615
+      },
+      {
+        "x": 8.382995679999999,
+        "y": 122.93599999999999
+      }
+    ],
+    "stroke_width": 1.17780054,
+    "layers": ["top"],
+    "description": "Altium arc keepout"
+  },
+  {
+    "type": "pcb_smtpad",
+    "pcb_smtpad_id": "pcb_smtpad_altium_119450",
+    "x": 12.322301999999999,
+    "y": 121.37369426,
+    "layer": "top",
+    "soldermask_margin": 0.0508,
+    "shape": "rect",
+    "width": 2.413,
+    "height": 1.8034,
+    "pcb_port_id": "pcb_port_altium_119450",
+    "port_hints": ["1"],
+    "pcb_component_id": "pcb_component_altium_1492"
+  },
+  {
+    "type": "pcb_smtpad",
+    "pcb_smtpad_id": "pcb_smtpad_altium_120627",
+    "x": 7.88299668,
+    "y": 122.93599999999999,
+    "layer": "top",
+    "soldermask_margin": 0.49999899999999997,
+    "shape": "circle",
+    "radius": 0.50000027,
+    "pcb_port_id": "pcb_port_altium_120627",
+    "port_hints": ["1"],
+    "pcb_component_id": "pcb_component_altium_0"
+  },
+  {
+    "type": "pcb_smtpad",
+    "pcb_smtpad_id": "pcb_smtpad_altium_121460",
+    "x": 8.693531,
+    "y": 121.21803036,
+    "layer": "top",
+    "soldermask_margin": 0.0508,
+    "shape": "rect",
+    "width": 0.508,
+    "height": 0.508,
+    "pcb_port_id": "pcb_port_altium_121460",
+    "port_hints": ["2"],
+    "pcb_component_id": "pcb_component_altium_1262"
+  },
+  {
+    "type": "pcb_smtpad",
+    "pcb_smtpad_id": "pcb_smtpad_altium_121461",
+    "x": 8.693531,
+    "y": 120.37803204,
+    "layer": "top",
+    "soldermask_margin": 0.0508,
+    "shape": "rect",
+    "width": 0.508,
+    "height": 0.508,
+    "pcb_port_id": "pcb_port_altium_121461",
+    "port_hints": ["1"],
+    "pcb_component_id": "pcb_component_altium_1262"
+  },
+  {
+    "type": "pcb_via",
+    "pcb_via_id": "pcb_via_altium_421779",
+    "source_net_id": "source_net_altium_pcb_593",
+    "source_trace_id": "source_trace_altium_pcb_593",
+    "x": 5.09820672,
+    "y": 125.603,
+    "outer_diameter": 0.4572,
+    "hole_diameter": 0.2032,
+    "layers": ["top", "bottom"],
+    "is_tented": true
+  },
+  {
+    "type": "pcb_via",
+    "pcb_via_id": "pcb_via_altium_422220",
+    "source_net_id": "source_net_altium_pcb_847",
+    "source_trace_id": "source_trace_altium_pcb_847",
+    "x": 6.800006719999999,
+    "y": 125.42519999999999,
+    "outer_diameter": 0.4572,
+    "hole_diameter": 0.2032,
+    "layers": ["top", "bottom"],
+    "is_tented": true
+  },
+  {
+    "type": "pcb_via",
+    "pcb_via_id": "pcb_via_altium_422866",
+    "source_net_id": "source_net_altium_pcb_593",
+    "source_trace_id": "source_trace_altium_pcb_593",
+    "x": 8.90840738,
+    "y": 126.03459934,
+    "outer_diameter": 0.4572,
+    "hole_diameter": 0.2032,
+    "layers": ["top", "bottom"],
+    "is_tented": true
+  },
+  {
+    "type": "pcb_via",
+    "pcb_via_id": "pcb_via_altium_423032",
+    "source_net_id": "source_net_altium_pcb_616",
+    "source_trace_id": "source_trace_altium_pcb_616",
+    "x": 9.62859136,
+    "y": 121.21803036,
+    "outer_diameter": 0.508,
+    "hole_diameter": 0.254,
+    "layers": ["top", "bottom"],
+    "is_tented": true
+  },
+  {
+    "type": "pcb_via",
+    "pcb_via_id": "pcb_via_altium_423164",
+    "source_net_id": "source_net_altium_pcb_848",
+    "source_trace_id": "source_trace_altium_pcb_848",
+    "x": 10.15280672,
+    "y": 126.0094,
+    "outer_diameter": 0.4572,
+    "hole_diameter": 0.2032,
+    "layers": ["top", "bottom"],
+    "is_tented": true
+  },
+  {
+    "type": "pcb_via",
+    "pcb_via_id": "pcb_via_altium_423324",
+    "source_net_id": "source_net_altium_pcb_892",
+    "source_trace_id": "source_trace_altium_pcb_892",
+    "x": 10.64985678,
+    "y": 123.93807826,
+    "outer_diameter": 0.4572,
+    "hole_diameter": 0.2032,
+    "layers": ["top", "bottom"],
+    "is_tented": true
+  },
+  {
+    "type": "pcb_via",
+    "pcb_via_id": "pcb_via_altium_423555",
+    "source_net_id": "source_net_altium_pcb_618",
+    "source_trace_id": "source_trace_altium_pcb_618",
+    "x": 11.443716,
+    "y": 125.04628026,
+    "outer_diameter": 0.4572,
+    "hole_diameter": 0.2032,
+    "layers": ["top", "bottom"],
+    "is_tented": true
+  },
+  {
+    "type": "pcb_via",
+    "pcb_via_id": "pcb_via_altium_423632",
+    "source_net_id": "source_net_altium_pcb_893",
+    "source_trace_id": "source_trace_altium_pcb_893",
+    "x": 11.836654,
+    "y": 123.37826226,
+    "outer_diameter": 0.4572,
+    "hole_diameter": 0.2032,
+    "layers": ["top", "bottom"],
+    "is_tented": true
+  }
+]
