@@ -27,20 +27,20 @@ test("legacy autorouters are disabled unless the platform allows them", async ()
     await circuit.renderUntilSettled()
 
     expect(circuit.db.pcb_trace.list()).toHaveLength(0)
-    expect(circuit.db.source_property_ignored_warning.list()).toEqual([
+    expect(circuit.db.source_invalid_component_property_error.list()).toEqual([
       expect.objectContaining({
         property_name: "autorouter",
         message: expect.stringContaining("<autoroutingphase />"),
       }),
     ])
     expect(
-      circuit.db.source_property_ignored_warning.list()[0]?.message,
+      circuit.db.source_invalid_component_property_error.list()[0]?.message,
     ).toContain(autorouter.replace(/-/g, "_"))
     expect(
-      circuit.db.source_property_ignored_warning.list()[0]?.message,
+      circuit.db.source_invalid_component_property_error.list()[0]?.message,
     ).toContain("default autorouter")
     expect(
-      circuit.db.source_property_ignored_warning.list()[0]?.message,
+      circuit.db.source_invalid_component_property_error.list()[0]?.message,
     ).toContain("<fanout />")
   }
 
@@ -58,7 +58,8 @@ test("legacy autorouters are disabled unless the platform allows them", async ()
 
   expect(phasedLegacyCircuit.db.pcb_trace.list()).toHaveLength(0)
   expect(
-    phasedLegacyCircuit.db.source_property_ignored_warning.list()[0]?.message,
+    phasedLegacyCircuit.db.source_invalid_component_property_error.list()[0]
+      ?.message,
   ).toContain("auto_cloud")
 
   const { circuit: legacyCircuit } = getTestFixture({
@@ -71,7 +72,7 @@ test("legacy autorouters are disabled unless the platform allows them", async ()
   await legacyCircuit.renderUntilSettled()
 
   expect(legacyCircuit.db.pcb_trace.list()).toHaveLength(1)
-  expect(legacyCircuit.db.source_property_ignored_warning.list()).toHaveLength(
-    0,
-  )
+  expect(
+    legacyCircuit.db.source_invalid_component_property_error.list(),
+  ).toHaveLength(0)
 })
