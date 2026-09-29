@@ -51,7 +51,7 @@ export function getAutoroutingPhasePcbTracePaths({
   isFanout,
 }: {
   group: Pick<IGroup, "pcb_group_id" | "_computePcbGlobalTransformBeforeLayout">
-  subcircuit: Pick<ISubcircuit, "selectOne" | "selectAll">
+  subcircuit: Pick<ISubcircuit, "selectOne" | "selectAll" | "root">
   input: SimpleRouteJson
   traces: SimplifiedPcbTrace[]
   isFanout: boolean
