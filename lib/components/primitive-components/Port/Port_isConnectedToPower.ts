@@ -1,8 +1,8 @@
 import type { Port } from "./Port"
 
-// A leading V alone also matches reference and bias pins such as VREG and VCM.
-// Only infer a supply input from recognizable supply pin names; pinAttributes
-// remain authoritative for other names.
+// POWER_NET_REGEX classifies power nets, including output rails. Here we need
+// supply-input pins that should have nearby decoupling, not reference, bias,
+// or output pins such as VREG, VCM, and VOUT. pinAttributes remain authoritative.
 const DECOUPLING_POWER_PIN_REGEX =
   /(?:^|_)(?:[ADP]?V(?:CC|DD|IN|BAT|BUS|SYS|CORE|IO)[A-Z0-9_]*|V\d+(?:_\d+)?|\d+V\d*)(?:$|_)/i
 
