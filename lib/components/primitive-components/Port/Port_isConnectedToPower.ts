@@ -1,5 +1,10 @@
-import { POWER_NET_REGEX } from "lib/utils/gnd-power-net-regex"
 import type { Port } from "./Port"
+
+// A leading V alone also matches reference and bias pins such as VREG and VCM.
+// Only infer a supply input from recognizable supply pin names; pinAttributes
+// remain authoritative for other names.
+const DECOUPLING_POWER_PIN_REGEX =
+  /(?:^|_)(?:[ADP]?V(?:CC|DD|IN|BAT|BUS|SYS|CORE|IO)[A-Z0-9_]*|V\d+(?:_\d+)?|\d+V\d*)(?:$|_)/i
 
 function portShouldHaveDecouplingCapacitor(port: Port): boolean {
   if (port.getParentNormalComponent()?.config.componentName !== "Chip") {
@@ -30,7 +35,7 @@ function portShouldHaveDecouplingCapacitor(port: Port): boolean {
   if (providesPower === true) return false
 
   for (const portName of port.getNameAndAliases()) {
-    if (POWER_NET_REGEX.test(portName)) return true
+    if (DECOUPLING_POWER_PIN_REGEX.test(portName)) return true
   }
   return false
 }
