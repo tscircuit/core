@@ -432,14 +432,17 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     // Get pin attributes from parent component and apply them to this port
     const pinAttributes = this._getMatchingPinAttributes()
     const portAttributesFromParent: SourcePinAttributes = {}
+    let packagePin: string | undefined
 
     for (const attributes of pinAttributes) {
       applyPinAttributesToSourcePort(portAttributesFromParent, attributes)
+      packagePin = attributes.packagePin ?? packagePin
     }
 
     const source_port = db.source_port.insert({
       name: props.name!,
       pin_number: props.pinNumber,
+      package_pin: packagePin,
       port_hints,
       source_component_id: source_component_id!,
       subcircuit_id: this.getSubcircuit()?.subcircuit_id!,

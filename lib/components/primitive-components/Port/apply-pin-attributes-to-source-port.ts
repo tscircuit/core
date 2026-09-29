@@ -79,6 +79,9 @@ export const applyPinAttributesToSourcePort = (
   sourcePortProps: SourcePinAttributes,
   attributes: PinAttributeMap,
 ): void => {
+  if (attributes.activeFunction !== undefined) {
+    sourcePortProps.active_function = attributes.activeFunction
+  }
   for (const capability of attributes.capabilities ?? []) {
     setSupportedCapability(sourcePortProps, capability)
   }
