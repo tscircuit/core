@@ -101,9 +101,16 @@ test("repro kicad footprints in panel", async () => {
   await circuit.renderUntilSettled()
   const circuitJson = circuit.getCircuitJson()
 
-  const errors = circuitJson.filter((element) => element.type.includes("error"))
+  const errors = circuitJson.filter((element) => "error_type" in element)
 
-  expect(errors.length).toBe(0)
+  expect(errors).toHaveLength(numBoardsX * numBoardsY)
+  for (const error of errors) {
+    expect(error).toMatchObject({
+      type: "pcb_trace_error",
+      message:
+        "Routed trace width 0.54 mm is below the requested minimum of 0.8 mm.",
+    })
+  }
 
   expect(circuit.getCircuitJson()).toMatchPcbSnapshot(import.meta.path)
 })

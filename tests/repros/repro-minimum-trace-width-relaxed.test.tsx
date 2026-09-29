@@ -3,7 +3,7 @@ import { categorizeErrorOrWarning } from "@tscircuit/circuit-json-util"
 import { createAutoroutingPhaseIoStack } from "tests/fixtures/create-autorouting-phase-io-stack"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("repro: an explicit minimum trace width is silently reduced alongside an obstacle", async () => {
+test("report an explicit minimum trace width reduced alongside an obstacle", async () => {
   const { circuit } = getTestFixture()
   const phases = createAutoroutingPhaseIoStack(circuit)
   const requestedMinimumWidth = 0.3
@@ -103,9 +103,17 @@ test("repro: an explicit minimum trace width is silently reduced alongside an ob
   }
   // About 17 mm is narrowed, far beyond the two 1 mm endpoint pads.
   expect(lengthBelowRequestedMinimum).toBeCloseTo(17.0539, 3)
-  expect(
-    circuit.getCircuitJson().filter((element) => "error_type" in element),
-  ).toEqual([])
+  const errors = circuit
+    .getCircuitJson()
+    .filter((element) => "error_type" in element)
+  expect(errors).toHaveLength(1)
+  expect(errors[0]).toMatchObject({
+    type: "pcb_trace_error",
+    pcb_trace_id: pcbTrace.pcb_trace_id,
+    source_trace_id: sourceTrace.source_trace_id,
+    message:
+      "Routed trace width 0.25 mm is below the requested minimum of 0.3 mm.",
+  })
   expect(
     circuit
       .getCircuitJson()

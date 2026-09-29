@@ -20,6 +20,7 @@ test("simple route json connection nominalTraceWidth matches trace thickness", a
   const pcbTrace = circuit.db.pcb_trace.list()[0]
   const pcbTraceWirePoint = pcbTrace?.route.find((p) => p.route_type === "wire")
   expect(pcbTraceWirePoint?.width).toBe(0.5)
+  expect(circuit.db.pcb_trace_error.list()).toEqual([])
 
   const circuitJsonWithoutPcbTraces = circuit
     .getCircuitJson()
