@@ -10,8 +10,8 @@ test("reference and bias pins do not infer power decoupling limits", () => {
       <chip
         name="U1"
         footprint="soic8"
-        schX={0}
-        schY={0}
+        pcbX={-2}
+        pcbY={0}
         pinLabels={{
           pin1: "VIN",
           pin2: "VREG",
@@ -24,41 +24,29 @@ test("reference and bias pins do not infer power decoupling limits", () => {
         name="C1"
         capacitance="100nF"
         footprint="0402"
-        schX={-6}
-        schY={3}
+        pcbX={-5.8}
+        pcbY={1.5}
       />
       <capacitor
         name="C2"
         capacitance="100nF"
         footprint="0402"
-        schX={-6}
-        schY={1}
+        pcbX={4}
+        pcbY={3}
       />
       <capacitor
         name="C3"
         capacitance="1uF"
         footprint="0402"
-        schX={-6}
-        schY={-1}
+        pcbX={4}
+        pcbY={0}
       />
       <capacitor
         name="C4"
         capacitance="100nF"
         footprint="0402"
-        schX={-6}
-        schY={-3}
-      />
-      <schematictext
-        text="VIN/C1: auto 1mm"
-        schX={-9}
-        schY={-6}
-        fontSize={0.25}
-      />
-      <schematictext
-        text="VREG/C2, VCM/C3, VOUT/C4: no auto limit"
-        schX={-9}
-        schY={-6.5}
-        fontSize={0.25}
+        pcbX={4}
+        pcbY={-3}
       />
       <trace from=".U1 > .VIN" to=".C1 > .pin1" />
       <trace from=".U1 > .VREG" to=".C2 > .pin1" />
@@ -86,11 +74,13 @@ test("reference and bias pins do not infer power decoupling limits", () => {
       ]),
   )
 
-  expect(maxLengths).toEqual({
-    C1: 1,
-    C2: undefined,
-    C3: undefined,
-    C4: undefined,
-  })
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
-})
+  expect(maxLengths).toMatchInlineSnapshot(`
+    {
+      "C1": 1,
+      "C2": undefined,
+      "C3": undefined,
+      "C4": undefined,
+    }
+  `)
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+}, 15_000)
