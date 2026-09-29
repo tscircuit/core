@@ -1,7 +1,7 @@
 {
   "name": "@tscircuit/core",
   "type": "module",
-  "version": "0.0.2011",
+  "version": "0.0.2013",
   "types": "dist/index.d.ts",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -92,7 +92,7 @@
     "poppygl": "^0.0.29",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "schematic-symbols": "^0.0.247",
+    "schematic-symbols": "^0.0.248",
     "spicets": "^0.0.4",
     "spicey": "^0.0.14",
     "stack-svgs": "^0.0.1",

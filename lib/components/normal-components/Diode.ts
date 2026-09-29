@@ -1,3 +1,4 @@
+import { symbols } from "schematic-symbols"
 import { diodeProps } from "@tscircuit/props"
 import type { SourceSimpleDiodeInput } from "circuit-json"
 import {
@@ -21,20 +22,41 @@ export class Diode extends NormalComponent<
       photodiode: "photodiode",
     }
 
-    const variantSymbol = this.props.schottky
+    const variant = this.props.schottky
       ? "schottky"
       : this.props.avalanche
         ? "avalanche"
         : this.props.zener
           ? "zener"
           : this.props.photo
-            ? "photodiode"
-            : null
+            ? "photo"
+            : this.props.standard
+              ? "standard"
+              : this.props.variant
+    const variantSymbol = variant === "photo" ? "photodiode" : variant
+
+    const baseSymbolName =
+      (variantSymbol && symbolMap[variantSymbol]) ||
+      this.props.symbolName ||
+      "diode"
+    const compactSize =
+      this.props.schSize === "sm" || this.props.schSize === "xs"
+        ? this.props.schSize
+        : undefined
+    const compactSymbolName =
+      compactSize &&
+      (baseSymbolName === "diode" ||
+        baseSymbolName === "avalanche_diode" ||
+        baseSymbolName === "zener_diode")
+        ? `${baseSymbolName}_${compactSize}`
+        : undefined
+    const schematicSymbolName =
+      compactSymbolName && `${compactSymbolName}_right` in symbols
+        ? compactSymbolName
+        : baseSymbolName
 
     return {
-      schematicSymbolName: variantSymbol
-        ? symbolMap[variantSymbol]
-        : (this.props.symbolName ?? ("diode" as BaseSymbolName)),
+      schematicSymbolName,
       componentName: "Diode",
       zodProps: diodeProps,
       sourceFtype: "simple_diode" as Ftype,
