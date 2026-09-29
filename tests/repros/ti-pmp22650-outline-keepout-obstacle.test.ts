@@ -1,5 +1,9 @@
 import { expect, test } from "bun:test"
-import type { AnyCircuitElement, PcbKeepoutOutline } from "circuit-json"
+import type {
+  AnyCircuitElement,
+  PcbKeepoutOutline,
+  PcbNotePath,
+} from "circuit-json"
 import { convertCircuitJsonToPcbSvg } from "circuit-to-svg"
 import { getSvgFromGraphicsObject } from "graphics-debug"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
@@ -36,17 +40,31 @@ test.failing("PMP22650 outline keepout becomes SRJ obstacles", async () => {
     strokeColor: "rgba(100, 100, 100, 0.45)",
     strokeWidth: keepout.stroke_width,
   }
-  const sourceSvg = convertCircuitJsonToPcbSvg(circuitJson, {
-    width: 800,
-    height: 640,
+  const keepoutSnapshotHighlight: PcbNotePath = {
+    type: "pcb_note_path",
+    pcb_note_path_id: "pcb_note_path_pmp22650_keepout_highlight",
+    route: keepout.outline,
     layer: "top",
-    viewport: {
-      minX: 204,
-      minY: 41,
-      maxX: 212,
-      maxY: 52,
+    stroke_width: keepout.stroke_width,
+    color: "#ff6b6b",
+  }
+  const sourceSvg = convertCircuitJsonToPcbSvg(
+    [
+      ...circuitJson.filter((element) => element !== keepout),
+      keepoutSnapshotHighlight,
+    ],
+    {
+      width: 800,
+      height: 640,
+      layer: "top",
+      viewport: {
+        minX: 204,
+        minY: 41,
+        maxX: 212,
+        maxY: 52,
+      },
     },
-  })
+  )
   const otherTopLayerObstacles = simpleRouteJson.obstacles.filter(
     (obstacle) =>
       obstacle.layers.includes("top") &&
