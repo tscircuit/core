@@ -18,13 +18,24 @@ import type {
 import type { AutoroutingPhase } from "../AutoroutingPhase"
 import type { Port } from "../Port"
 import type { PrecomputedRoutingResult } from "./GroupRoutingPhasePlan"
+import type { RootCircuit } from "lib/RootCircuit"
 
 const touchesEndpoint = (
-  point: SingleLayerConnectionPoint,
-  endpoint: { x: number; y: number; layer: string },
+  {
+    point,
+    endpoint,
+  }: {
+    point: SingleLayerConnectionPoint
+    endpoint: { x: number; y: number; layer: string }
+  },
+  db: RootCircuit["db"],
 ) =>
   Math.hypot(point.x - endpoint.x, point.y - endpoint.y) < 1e-4 &&
-  point.layer === endpoint.layer
+  (point.pcb_port_id
+    ? db.pcb_port
+        .get(point.pcb_port_id)!
+        .layers.some((layer) => layer === endpoint.layer)
+    : point.layer === endpoint.layer)
 
 /**
  * Saved points are local to the phase's enclosing PCB group, in mm (+X right,
@@ -131,10 +142,13 @@ export function getSavedAutoroutingPhaseTracesFromPaths({
       first.route_type === "wire" ? first.layer : first.from_layer
     const lastLayer = last.route_type === "wire" ? last.layer : last.to_layer
     if (
-      !touchesEndpoint(remainingPoints[startIndex]!, {
-        ...first,
-        layer: firstLayer,
-      })
+      !touchesEndpoint(
+        {
+          point: remainingPoints[startIndex]!,
+          endpoint: { ...first, layer: firstLayer },
+        },
+        port.root!.db,
+      )
     ) {
       throw new Error(
         `Saved phase path "${path.connection}" must start at its PCB port on an available layer`,
@@ -143,7 +157,10 @@ export function getSavedAutoroutingPhaseTracesFromPaths({
     const endIndex = remainingPoints.findIndex(
       (point, index) =>
         index !== startIndex &&
-        touchesEndpoint(point, { ...last, layer: lastLayer }),
+        touchesEndpoint(
+          { point, endpoint: { ...last, layer: lastLayer } },
+          port.root!.db,
+        ),
     )
     if (
       !input.allowViaInPad &&
