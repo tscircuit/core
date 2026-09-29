@@ -42,6 +42,7 @@ import type { TraceI } from "./TraceI"
 import { Trace__doInitialSchematicTraceRenderWithDisplayLabel } from "./Trace__doInitialSchematicTraceRenderWithDisplayLabel"
 import { Trace__findConnectedPorts } from "./Trace__findConnectedPorts"
 import { Trace_doInitialPcbManualTraceRender } from "./Trace_doInitialPcbManualTraceRender"
+import { Trace_doInitialPcbTraceTeardropRender } from "./Trace_doInitialPcbTraceTeardropRender"
 import { Trace_doInitialPcbTraceRender } from "./Trace_doInitialPcbTraceRender"
 import { Trace_doInitialSchematicTraceRender } from "./Trace_doInitialSchematicTraceRender"
 import { getMaxLengthFromConnectedComponents } from "./trace-utils/get-max-length-from-connected-components"
@@ -366,6 +367,14 @@ export class Trace
 
   doInitialPcbManualTraceRender(): void {
     Trace_doInitialPcbManualTraceRender(this)
+  }
+
+  doInitialPcbTraceTeardropRender(): void {
+    Trace_doInitialPcbTraceTeardropRender(this)
+  }
+
+  updatePcbTraceTeardropRender(): void {
+    Trace_doInitialPcbTraceTeardropRender(this)
   }
 
   doInitialPcbTraceRender(): void {
