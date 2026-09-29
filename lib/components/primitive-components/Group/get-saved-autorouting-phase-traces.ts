@@ -22,9 +22,11 @@ import type { PrecomputedRoutingResult } from "./GroupRoutingPhasePlan"
 const touchesEndpoint = (
   point: SingleLayerConnectionPoint,
   endpoint: { x: number; y: number; layer: string },
+  portLayers?: readonly string[],
 ) =>
   Math.hypot(point.x - endpoint.x, point.y - endpoint.y) < 1e-4 &&
-  point.layer === endpoint.layer
+  (point.layer === endpoint.layer ||
+    (portLayers?.includes(endpoint.layer) ?? false))
 
 /**
  * Saved points are local to the phase's enclosing PCB group, in mm (+X right,
@@ -62,7 +64,7 @@ export function getSavedAutoroutingPhaseTracesFromPaths({
   isFanout,
 }: {
   group: Pick<IGroup, "pcb_group_id" | "_computePcbGlobalTransformBeforeLayout">
-  subcircuit: Pick<ISubcircuit, "selectOne" | "selectAll">
+  subcircuit: Pick<ISubcircuit, "selectOne" | "selectAll" | "root">
   paths: z.output<typeof fanoutTracePath>[]
   phaseIndex?: number | null
   input: SimpleRouteJson
@@ -78,6 +80,21 @@ export function getSavedAutoroutingPhaseTracesFromPaths({
   const coveredConnections = new Set<SimpleRouteConnection>()
   const savedPorts = new Set<Port>()
   const traces: SimplifiedPcbTrace[] = []
+
+  // A connection point's declared layer is just one of the conductive layers
+  // for plated through-hole ports, so validate saved endpoints against the
+  // actual pcb_port's layers when one is attached.
+  const portLayersCache = new Map<string, string[] | undefined>()
+  const getPortLayers = (pcbPortId: string | undefined) => {
+    if (!pcbPortId) return undefined
+    if (!portLayersCache.has(pcbPortId)) {
+      portLayersCache.set(
+        pcbPortId,
+        subcircuit.root?.db.pcb_port.get(pcbPortId)?.layers,
+      )
+    }
+    return portLayersCache.get(pcbPortId)
+  }
 
   for (const [pathIndex, path] of paths.entries()) {
     const port = subcircuit.selectOne(path.connection, {
@@ -131,10 +148,14 @@ export function getSavedAutoroutingPhaseTracesFromPaths({
       first.route_type === "wire" ? first.layer : first.from_layer
     const lastLayer = last.route_type === "wire" ? last.layer : last.to_layer
     if (
-      !touchesEndpoint(remainingPoints[startIndex]!, {
-        ...first,
-        layer: firstLayer,
-      })
+      !touchesEndpoint(
+        remainingPoints[startIndex]!,
+        {
+          ...first,
+          layer: firstLayer,
+        },
+        getPortLayers(remainingPoints[startIndex]!.pcb_port_id),
+      )
     ) {
       throw new Error(
         `Saved phase path "${path.connection}" must start at its PCB port on an available layer`,
@@ -143,7 +164,11 @@ export function getSavedAutoroutingPhaseTracesFromPaths({
     const endIndex = remainingPoints.findIndex(
       (point, index) =>
         index !== startIndex &&
-        touchesEndpoint(point, { ...last, layer: lastLayer }),
+        touchesEndpoint(
+          point,
+          { ...last, layer: lastLayer },
+          getPortLayers(point.pcb_port_id),
+        ),
     )
     if (
       !input.allowViaInPad &&
