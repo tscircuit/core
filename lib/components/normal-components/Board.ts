@@ -736,81 +736,117 @@ export class Board
 
     const runDrcChecks = async (circuitJson: AnyCircuitElement[]) => {
       const checksToRun: Promise<AnyCircuitElement[]>[] = []
+      // Defer invocation so synchronous throws and promise rejections follow the
+      // same path. A failed group must not discard diagnostics from other groups.
+      const queueCheck = (
+        checkName: string,
+        check: () => AnyCircuitElement[] | Promise<AnyCircuitElement[]>,
+      ) => {
+        checksToRun.push(
+          Promise.resolve()
+            .then(check)
+            .catch((error: unknown) => {
+              const cause =
+                error instanceof Error ? error.message : String(error)
+              db.drc_check_error.insert({
+                error_type: "drc_check_error",
+                check_name: checkName,
+                cause,
+                message: `DRC could not complete (${checkName}): ${cause}`,
+                is_fatal: true,
+                pcb_board_id: this.pcb_board_id ?? undefined,
+                subcircuit_id: this.subcircuit_id ?? undefined,
+              })
+              return []
+            }),
+        )
+      }
 
+      const pcbBoardId = this.pcb_board_id
       if (
         shouldRunFabricatorChecks &&
         fabricatorEngine &&
         fabricatorPreset &&
-        this.pcb_board_id
+        pcbBoardId
       ) {
-        checksToRun.push(
-          Promise.resolve(
-            fabricatorEngine.runDrcChecks({
-              circuitJson,
-              fabricatorPreset,
-              pcbBoardId: this.pcb_board_id,
-            }),
-          ),
+        queueCheck("fabricator", () =>
+          fabricatorEngine.runDrcChecks({
+            circuitJson,
+            fabricatorPreset,
+            pcbBoardId,
+          }),
         )
       }
 
       if (shouldRunRoutingChecks) {
-        checksToRun.push(
-          runAllRoutingChecks(circuitJson).then((results) =>
-            results.filter(
-              (result) => !this._isExpectedCastellatedHoleDrcError(result),
-            ),
-          ) as Promise<AnyCircuitElement[]>,
+        queueCheck(
+          "routing",
+          () =>
+            runAllRoutingChecks(circuitJson).then((results) =>
+              results.filter(
+                (result) => !this._isExpectedCastellatedHoleDrcError(result),
+              ),
+            ) as Promise<AnyCircuitElement[]>,
         )
       }
 
       if (shouldRunPlacementChecks) {
         const existingPlacementDiagnostics = db.toArray()
-        checksToRun.push(
-          runAllPlacementChecks(circuitJson, {
-            consolidateOverlaps: false,
-          }).then((results) =>
-            consolidatePcbOverlapErrors(
-              circuitJson,
-              results.filter(
-                (result) => !this._isExpectedCastellatedHoleDrcError(result),
-              ),
-            ).filter(
-              (result) =>
-                !existingPlacementDiagnostics.some(
-                  (existing) =>
-                    existing.type === result.type &&
-                    "message" in existing &&
-                    existing.message === result.message,
+        queueCheck(
+          "placement",
+          () =>
+            runAllPlacementChecks(circuitJson, {
+              consolidateOverlaps: false,
+            }).then((results) =>
+              consolidatePcbOverlapErrors(
+                circuitJson,
+                results.filter(
+                  (result) => !this._isExpectedCastellatedHoleDrcError(result),
                 ),
-            ),
-          ) as Promise<AnyCircuitElement[]>,
+              ).filter(
+                (result) =>
+                  !existingPlacementDiagnostics.some(
+                    (existing) =>
+                      existing.type === result.type &&
+                      "message" in existing &&
+                      existing.message === result.message,
+                  ),
+              ),
+            ) as Promise<AnyCircuitElement[]>,
         )
       }
 
       if (shouldRunNetlistChecks) {
-        checksToRun.push(
-          runAllNetlistChecks(circuitJson) as Promise<AnyCircuitElement[]>,
+        queueCheck(
+          "netlist",
+          () =>
+            runAllNetlistChecks(circuitJson) as Promise<AnyCircuitElement[]>,
         )
       }
 
       if (shouldRunPinSpecificationChecks) {
-        checksToRun.push(
-          runAllPinSpecificationChecks(circuitJson) as Promise<
-            AnyCircuitElement[]
-          >,
+        queueCheck(
+          "pin_specification",
+          () =>
+            runAllPinSpecificationChecks(circuitJson) as Promise<
+              AnyCircuitElement[]
+            >,
         )
       }
 
       if (shouldRunSchematicChecks) {
-        checksToRun.push(
-          runAllSchematicChecks(circuitJson) as Promise<AnyCircuitElement[]>,
+        queueCheck(
+          "schematic",
+          () =>
+            runAllSchematicChecks(circuitJson) as Promise<AnyCircuitElement[]>,
         )
       }
 
       if (!drcChecksDisabled) {
         for (const drcCheck of this.selectAll<DrcCheck>("drccheck")) {
-          checksToRun.push(drcCheck.runCustomDrcCheck(circuitJson))
+          queueCheck(drcCheck.getString(), () =>
+            drcCheck.runCustomDrcCheck(circuitJson),
+          )
         }
       }
 
