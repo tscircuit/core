@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test"
 import type { AnyCircuitElement, PcbKeepoutOutline } from "circuit-json"
+import { convertCircuitJsonToPcbSvg } from "circuit-to-svg"
 import { getSvgFromGraphicsObject } from "graphics-debug"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 import { stackSvgsHorizontally, stackSvgsVertically } from "stack-svgs"
@@ -35,24 +36,43 @@ test.failing("PMP22650 outline keepout becomes SRJ obstacles", async () => {
     strokeColor: "rgba(100, 100, 100, 0.45)",
     strokeWidth: keepout.stroke_width,
   }
-  const sourceSvg = getSvgFromGraphicsObject({
-    title: "PMP22650 Circuit JSON outline keepout",
-    lines: [{ ...sourceReference, strokeColor: "#8b5cf6" }],
+  const sourceSvg = convertCircuitJsonToPcbSvg(circuitJson, {
+    width: 800,
+    height: 640,
+    layer: "top",
+    viewport: {
+      minX: 204,
+      minY: 41,
+      maxX: 212,
+      maxY: 52,
+    },
   })
+  const otherTopLayerObstacles = simpleRouteJson.obstacles.filter(
+    (obstacle) =>
+      obstacle.layers.includes("top") &&
+      !obstacle.obstacleId?.startsWith(keepout.pcb_keepout_id),
+  )
   const srjSvg = getSvgFromGraphicsObject({
-    title: "PMP22650 Simple Route JSON obstacles",
+    title: "PMP22650 routing obstacles",
     lines: [sourceReference],
-    rects: keepoutObstacles.map((obstacle) => ({
-      ...obstacle,
-      fill: "rgba(239, 68, 68, 0.65)",
-      stroke: "#dc2626",
-    })),
+    rects: [
+      ...otherTopLayerObstacles.map((obstacle) => ({
+        ...obstacle,
+        fill: "rgba(59, 130, 246, 0.3)",
+        stroke: "#2563eb",
+      })),
+      ...keepoutObstacles.map((obstacle) => ({
+        ...obstacle,
+        fill: "rgba(239, 68, 68, 0.65)",
+        stroke: "#dc2626",
+      })),
+    ],
   })
   await expect(
     stackSvgsHorizontally(
       [
-        labelPanel("Circuit JSON keepout", sourceSvg),
-        labelPanel("Simple Route JSON obstacles", srjSvg),
+        labelPanel("Real PMP22650 Altium board crop", sourceSvg),
+        labelPanel("Simple Route JSON routing inputs", srjSvg),
       ],
       {
         gap: 16,
@@ -60,7 +80,9 @@ test.failing("PMP22650 outline keepout becomes SRJ obstacles", async () => {
         rootAttributes: { "data-testid": "pmp22650-keepout-srj-comparison" },
       },
     ),
-  ).toMatchSvgSnapshot(import.meta.path)
+  ).toMatchSvgSnapshot(import.meta.path, undefined, {
+    diffThresholdPercent: 0,
+  })
 
   expect(keepout.outline).toHaveLength(49)
   expect(keepoutObstacles).toHaveLength(48)
