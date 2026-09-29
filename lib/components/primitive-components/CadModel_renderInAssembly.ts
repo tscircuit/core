@@ -1,10 +1,5 @@
-import {
-  type CadModelProp,
-  type CadModelProps,
-  cadModelBase,
-  point3,
-} from "@tscircuit/props"
-import { getFileExtension } from "../base-components/NormalComponent/utils/getFileExtension"
+import { type CadModelProps, cadModelBase, point3 } from "@tscircuit/props"
+import { resolveAssemblyModelUrl } from "./resolve-assembly-model-url"
 import type { CadModel } from "./CadModel"
 import { renderAssemblyCadModel } from "./render-assembly-cad-model"
 import {
@@ -36,30 +31,7 @@ export const CadModel_renderInAssembly = (component: CadModel): boolean => {
         z: props.pcbZ ?? 0,
       }),
   })
-  const modelUrl = props.modelUrl.replace(/#ext=\w+$/, "")
-  let model: CadModelProp
-  switch (getFileExtension(props.modelUrl)) {
-    case "obj":
-      model = { ...base, objUrl: modelUrl }
-      break
-    case "gltf":
-      model = { ...base, gltfUrl: modelUrl }
-      break
-    case "glb":
-      model = { ...base, glbUrl: modelUrl }
-      break
-    case "step":
-    case "stp":
-      model = { ...base, stepUrl: modelUrl }
-      break
-    case "wrl":
-    case "vrml":
-      model = { ...base, wrlUrl: modelUrl }
-      break
-    default:
-      model = { ...base, stlUrl: modelUrl }
-      break
-  }
+  const model = { ...base, ...resolveAssemblyModelUrl(props.modelUrl) }
   component.cad_component_id = renderAssemblyCadModel(owner, model, placement)
   return true
 }
