@@ -12,6 +12,7 @@ export function measureRoutingQuality(traces: PcbTrace[]) {
     let planarLength = 0
     let ordinaryTurns = 0
     let shortJogs = 0
+    let acuteCorners = 0
     const runs: Point[][] = []
     for (let i = 0; i < trace.route.length; i++) {
       const p = trace.route[i]
@@ -40,6 +41,8 @@ export function measureRoutingQuality(traces: PcbTrace[]) {
           angleDifference(headings[i - 1], headings[i]) > 0.2
         )
           turns.add(i)
+      for (let i = 1; i < headings.length; i++)
+        if (angleDifference(headings[i - 1], headings[i]) > 90.2) acuteCorners++
       ordinaryTurns += turns.size
       for (let i = 1; i < points.length; i++)
         if (
@@ -59,6 +62,7 @@ export function measureRoutingQuality(traces: PcbTrace[]) {
       detourRatio: planarLength / distance(start, end),
       ordinaryTurns,
       shortJogs,
+      acuteCorners,
     }
   })
 }

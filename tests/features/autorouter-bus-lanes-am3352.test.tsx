@@ -29,8 +29,21 @@ test("bus_lanes routes AM3352 DDR3 from original pads without a custom algorithm
       ).size,
     ).toBe(1)
   }
-  expect(json.filter((e) => e.type === "source_bus")).toHaveLength(2)
+  // Differential pairs also export source_bus membership in Circuit JSON.
+  expect(
+    json
+      .filter((e) => e.type === "source_bus")
+      .map((e) => e.name)
+      .sort(),
+  ).toEqual([
+    "DDR_BYTE0",
+    "DDR_BYTE1",
+    "DDR_CK_PAIR",
+    "DDR_DQS_PAIR0",
+    "DDR_DQS_PAIR1",
+  ])
   const scores = measureRoutingQuality(traces)
+  expect(scores.reduce((n, s) => n + s.acuteCorners, 0)).toBe(0)
   // Rounded ceilings from the reviewed reference: 1696.53 mm, 2.536 maximum
   // detour, 1.723 mean, 888 ordinary turns and 451 short jogs. No saved routes.
   expect(scores.reduce((n, s) => n + s.planarLength, 0)).toBeLessThanOrEqual(
@@ -49,7 +62,7 @@ test("bus_lanes routes AM3352 DDR3 from original pads without a custom algorithm
       (id) => scores.find((s) => s.sourceTraceId === id)!.planarLength,
     )
     expect(Math.max(...lengths) - Math.min(...lengths)).toBeLessThanOrEqual(
-      0.635 + 1e-8,
+      bus.max_length_skew! + 1e-8,
     )
   }
   const namedTrace = (name: string) => {
@@ -72,5 +85,17 @@ test("bus_lanes routes AM3352 DDR3 from original pads without a custom algorithm
     expect(gaps.min).toBeGreaterThanOrEqual(0.0999)
     expect(gaps.max).toBeLessThanOrEqual(0.155)
   }
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
-}, 180_000)
+  // Signal layers are explicit: the top layer contains only local dogbones.
+  // Write snapshots only after every connectivity, DRC, and quality gate passes.
+  for (const layer of ["inner1", "inner2", "bottom"] as const)
+    await expect(circuit).toMatchPcbSnapshot(
+      import.meta.path.replace(".test.tsx", `-${layer}.test.tsx`),
+      {
+        layer,
+        hiddenLayerOpacity: 0.08,
+        width: 900,
+        height: 1400,
+        viewport: { minX: -10, maxX: 10, minY: -35, maxY: -2 },
+      },
+    )
+}, 900_000)
