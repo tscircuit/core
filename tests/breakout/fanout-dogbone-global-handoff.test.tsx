@@ -86,5 +86,30 @@ test("global routing continues from a local dogbone via", async () => {
         ),
       ).length,
   ).toBeGreaterThan(1)
+  // The local phase outlines U1, while the remaining route uses the board.
+  const fanoutOutline = circuit.db.pcb_debug_object
+    .list()
+    .find((object) => object.label === "autorouting phase fanout")!
+  const defaultOutline = circuit.db.pcb_debug_object
+    .list()
+    .find((object) => object.label === "autorouting phase default")!
+  expect(fanoutOutline.shape).toBe("rect")
+  expect(defaultOutline.shape).toBe("rect")
+  if (fanoutOutline.shape !== "rect" || defaultOutline.shape !== "rect") {
+    throw new Error("Expected routing phase rectangles")
+  }
+  for (const pad of circuit.db.pcb_smtpad
+    .list()
+    .filter((pad) => pad.shape === "circle")) {
+    expect(Math.abs(pad.x - fanoutOutline.center.x)).toBeLessThanOrEqual(
+      fanoutOutline.size.width / 2,
+    )
+    expect(Math.abs(pad.y - fanoutOutline.center.y)).toBeLessThanOrEqual(
+      fanoutOutline.size.height / 2,
+    )
+  }
+  expect(fanoutOutline.center.x + fanoutOutline.size.width / 2).toBeLessThan(4)
+  expect(fanoutOutline.size.width).toBeLessThan(defaultOutline.size.width)
+  expect(defaultOutline.size).toEqual({ width: 16, height: 12 })
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
