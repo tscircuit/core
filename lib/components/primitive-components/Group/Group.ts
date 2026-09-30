@@ -1754,6 +1754,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             autorouter = localAutorouterStrategy.create({
               simpleRouteJson,
               commonAutorouterOptions,
+              busLanesFanout: phaseAutorouterConfig.busLanesFanout,
               busFanoutDirections: routingPhasePlan.busFanoutDirections,
               fanoutBounds: routingPhasePlan.fanoutBounds,
               fanoutRoutingLayers: routingPhasePlan.fanoutRoutingLayers,

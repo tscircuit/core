@@ -4,7 +4,11 @@ test("bus_lanes does not fall back to a multilayer router", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width={14} height={10} doubleSidedAssembly>
-      <autoroutingphase name="NO_VIAS" phaseIndex={0} autorouter="bus_lanes" />
+      <autoroutingphase
+        name="NO_VIAS"
+        phaseIndex={0}
+        autorouter={{ preset: "bus_lanes", busLanesFanout: "none" }}
+      />
       <resistor name="TOP" resistance="1k" footprint="0402" pcbX={-4} />
       <resistor
         name="BOTTOM"

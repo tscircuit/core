@@ -1,6 +1,7 @@
 import {
-  BusLanesSolver,
+  BusLanesPipelineSolver,
   type SimpleRouteJson as BusLanesInput,
+  type BusLanesPipelineOptions,
 } from "@tscircuit/bus-lanes-solver"
 import type {
   GenericLocalAutorouter,
@@ -14,15 +15,21 @@ import type { SimpleRouteJson, SimplifiedPcbTrace } from "./SimpleRouteJson"
  * solve emits an error; it never falls back to a router that can insert vias. */
 export class BusLanesAutorouter implements GenericLocalAutorouter {
   isRouting = false
-  private solver: BusLanesSolver
+  private solver: BusLanesPipelineSolver
   private timer?: ReturnType<typeof setTimeout>
   private listeners: Array<{
     event: AutorouterEvent["type"]
     callback: (event: AutorouterEvent) => void
   }> = []
-  constructor(public input: SimpleRouteJson) {
+  constructor(
+    public input: SimpleRouteJson,
+    options: BusLanesPipelineOptions = {},
+  ) {
     // The solver validates unsupported SRJ route primitives at its input boundary.
-    this.solver = new BusLanesSolver(input as unknown as BusLanesInput)
+    this.solver = new BusLanesPipelineSolver(
+      input as unknown as BusLanesInput,
+      options,
+    )
   }
   on(
     event: "complete",

@@ -120,7 +120,12 @@ export function getPresetAutoroutingConfig(
         preset: "single_layer_fanout",
       }
     case "bus-lanes":
-      return { local: true, groupMode: "subcircuit", preset: "bus_lanes" }
+      return {
+        ...providedConfig,
+        local: true,
+        groupMode: "subcircuit",
+        preset: "bus_lanes",
+      }
     case "fanout":
       return {
         local: true,
