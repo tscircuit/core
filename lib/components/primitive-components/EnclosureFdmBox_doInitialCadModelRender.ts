@@ -122,4 +122,28 @@ export const EnclosureFdmBox_doInitialCadModelRender = (
   // PrimitiveComponent exposes one compatibility id; keep the first generated
   // part there while the database remains the source of truth for both records.
   component.cad_component_id = cadComponents[0]?.cad_component_id ?? null
+  const resolvedApertures =
+    solver.resolveFdmEnclosureProblemSolver?.getOutput().apertures ?? []
+  const apertureOwners = props.disableCutouts
+    ? []
+    : board
+        .getDescendants()
+        .filter(
+          (descendant): descendant is EnclosureCutoutAperture =>
+            descendant instanceof EnclosureCutoutAperture,
+        )
+  component.assemblyEnclosureGeometry = {
+    cadComponentIds: cadComponents.map((cad) => cad.cad_component_id),
+    apertures: apertureOwners.map((aperture, index) => {
+      // Same owner traversal as getFdmEnclosureSolverInput. The resolved face
+      // comes from the solver, including an oblique ray choosing another wall.
+      let owner = aperture.parent
+      while (owner && owner !== board && !owner.pcb_component_id)
+        owner = owner.parent
+      const face = resolvedApertures[index]?.face
+      if (!owner?.pcb_component_id || !face)
+        throw new Error("Could not resolve enclosure aperture owner/face")
+      return { pcbComponentId: owner.pcb_component_id, face }
+    }),
+  }
 }
