@@ -33,15 +33,11 @@ test("renderUntilSettled waits for assembly CAD loading and collision results", 
     await requested
     expect(settled).toBe(false)
     expect(circuit.isDoneRendering()).toBe(false)
-    expect(
-      circuit.db.cad_enclosure_aperture_intersection_warning.list(),
-    ).toHaveLength(0)
+    expect(circuit.db.cad_collision_error.list()).toHaveLength(0)
     release()
     await render
     expect(circuit.db.source_runtime_error.list()).toHaveLength(0)
-    expect(
-      circuit.db.cad_enclosure_aperture_intersection_warning.list(),
-    ).toHaveLength(1)
+    expect(circuit.db.cad_collision_error.list()).toHaveLength(1)
   } finally {
     release()
     server.stop(true)

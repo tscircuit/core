@@ -50,10 +50,8 @@ export function EnclosureFdmBox_doInitialAssemblyDesignRuleChecks(
       // The database assigns canonical IDs on insertion. Retain those IDs so
       // an update/removal deletes the actual previously emitted records.
       enclosure._assemblyDrcDiagnostics = diagnostics.map((diagnostic) =>
-        diagnostic.type === "cad_enclosure_aperture_intersection_warning"
-          ? root.db.cad_enclosure_aperture_intersection_warning.insert(
-              diagnostic,
-            )
+        diagnostic.type === "cad_collision_error"
+          ? root.db.cad_collision_error.insert(diagnostic)
           : root.db.source_runtime_error.insert(diagnostic),
       )
     } catch (error) {

@@ -13,9 +13,7 @@ test("a failed model fetch produces an explicit incomplete assembly check", asyn
       <EnclosureApertureDrcFixture objUrl={`${server.url}missing.obj`} />,
     )
     await circuit.renderUntilSettled()
-    expect(
-      circuit.db.cad_enclosure_aperture_intersection_warning.list(),
-    ).toHaveLength(0)
+    expect(circuit.db.cad_collision_error.list()).toHaveLength(0)
     expect(circuit.db.source_runtime_error.list()).toHaveLength(1)
     expect(circuit.db.source_runtime_error.list()[0]).toMatchObject({
       phase_name: "AssemblyDesignRuleChecks",

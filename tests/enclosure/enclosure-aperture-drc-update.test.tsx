@@ -7,10 +7,9 @@ test("a new assembly DRC pass replaces stale diagnostics", async () => {
   const { circuit } = getTestFixture()
   circuit.add(<EnclosureApertureDrcFixture />)
   await circuit.renderUntilSettled()
-  const warning =
-    circuit.db.cad_enclosure_aperture_intersection_warning.list()[0]!
-  expect(warning).toBeDefined()
-  const part = circuit.db.cad_component.get(warning.cad_component_id)!
+  const collisionError = circuit.db.cad_collision_error.list()[0]!
+  expect(collisionError).toBeDefined()
+  const part = circuit.db.cad_component.get(collisionError.cad_component_id)!
   circuit.db.cad_component.update(part.cad_component_id, {
     position: { x: 100, y: 0, z: 0 },
   })
@@ -23,7 +22,5 @@ test("a new assembly DRC pass replaces stale diagnostics", async () => {
   enclosure._markDirty("AssemblyDesignRuleChecks")
   circuit.render()
   await circuit.renderUntilSettled()
-  expect(
-    circuit.db.cad_enclosure_aperture_intersection_warning.list(),
-  ).toHaveLength(0)
+  expect(circuit.db.cad_collision_error.list()).toHaveLength(0)
 })

@@ -1,9 +1,6 @@
 import { enclosureFdmBoxProps } from "@tscircuit/props"
 import type { AssemblyEnclosureGeometry } from "@tscircuit/checks"
-import type {
-  CadEnclosureApertureIntersectionWarning,
-  SourceRuntimeError,
-} from "circuit-json"
+import type { CadCollisionError, SourceRuntimeError } from "circuit-json"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { EnclosureFdmBox_doInitialCadModelRender } from "./EnclosureFdmBox_doInitialCadModelRender"
 import { getReferencedEnclosureBoard } from "./get-referenced-enclosure-board"
@@ -15,10 +12,7 @@ export class EnclosureFdmBox extends PrimitiveComponent<
   /** Explicit solver-owned enclosure/aperture associations; no name inference. */
   assemblyEnclosureGeometry?: AssemblyEnclosureGeometry
   _assemblyDrcRun = 0
-  _assemblyDrcDiagnostics: (
-    | CadEnclosureApertureIntersectionWarning
-    | SourceRuntimeError
-  )[] = []
+  _assemblyDrcDiagnostics: (CadCollisionError | SourceRuntimeError)[] = []
   get config() {
     return {
       componentName: "EnclosureFdmBox",
@@ -85,9 +79,9 @@ export class EnclosureFdmBox extends PrimitiveComponent<
   removeAssemblyDesignRuleChecks(): void {
     this._assemblyDrcRun++
     for (const diagnostic of this._assemblyDrcDiagnostics) {
-      if (diagnostic.type === "cad_enclosure_aperture_intersection_warning") {
-        this.root?.db.cad_enclosure_aperture_intersection_warning.delete(
-          diagnostic.cad_enclosure_aperture_intersection_warning_id,
+      if (diagnostic.type === "cad_collision_error") {
+        this.root?.db.cad_collision_error.delete(
+          diagnostic.cad_collision_error_id,
         )
       } else {
         this.root?.db.source_runtime_error.delete(
