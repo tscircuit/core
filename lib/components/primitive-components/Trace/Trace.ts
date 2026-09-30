@@ -292,13 +292,15 @@ export class Trace
     this._traceConnectionHash = this._computeTraceConnectionHash()
 
     const existingTraces = db.source_trace.list()
-    const existingTrace = existingTraces.find(
-      (t) =>
-        t.subcircuit_connectivity_map_key ===
-          this.subcircuit_connectivity_map_key &&
-        [...t.connected_source_port_ids].sort().join(",") ===
-          this._traceConnectionHash,
-    )
+    const existingTrace = props.sourceTraceId
+      ? undefined
+      : existingTraces.find(
+          (t) =>
+            t.subcircuit_connectivity_map_key ===
+              this.subcircuit_connectivity_map_key &&
+            [...t.connected_source_port_ids].sort().join(",") ===
+              this._traceConnectionHash,
+        )
     if (existingTrace) {
       this.source_trace_id = existingTrace.source_trace_id
       return
@@ -310,6 +312,7 @@ export class Trace
     }
     const displayName = getTraceDisplayName({ ports: ports, nets: nets })
     const trace = db.source_trace.insert({
+      source_trace_id: props.sourceTraceId,
       connected_source_port_ids: ports.map((p) => p.port.source_port_id!),
       connected_source_net_ids: nets.map((n) => n.source_net_id!),
       subcircuit_id: this.getSubcircuit()?.subcircuit_id!,
