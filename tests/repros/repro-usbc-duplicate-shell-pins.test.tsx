@@ -1,9 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-// Enable this diagnostic test on the unfixed branch to regenerate the failure snapshots.
-// It stays skipped so the stacked fix can share the same repro files.
-test.skip("repro: grounded USB-C shell has no routed PCB connection", async () => {
+test("USB-C shell routes to the ground header", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width="30mm" height="18mm" autorouter="auto-local">
@@ -79,7 +77,7 @@ test.skip("repro: grounded USB-C shell has no routed PCB connection", async () =
   )
   await circuit.renderUntilSettled()
   const ambiguities = circuit.db.source_ambiguous_port_reference.list()
-  expect(ambiguities).toHaveLength(2)
+  expect(ambiguities).toHaveLength(0)
   const ground = circuit.db.source_net.getWhere({ name: "GND" })!
   const groundTraces = circuit.db.source_trace
     .list()
@@ -95,8 +93,9 @@ test.skip("repro: grounded USB-C shell has no routed PCB connection", async () =
     pcb_component_id: usbPcb.pcb_component_id,
   })
   expect(shellHoles).toHaveLength(4)
-  expect(shellHoles.filter((hole) => hole.pcb_port_id)).toHaveLength(0)
-  expect(circuit.db.pcb_trace.list()).toHaveLength(0)
+  expect(shellHoles.filter((hole) => hole.pcb_port_id)).toHaveLength(4)
+  expect(circuit.db.pcb_trace.list()).toHaveLength(2)
+  expect(circuit.db.pcb_autorouting_error.list()).toHaveLength(0)
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 }, 30000)
