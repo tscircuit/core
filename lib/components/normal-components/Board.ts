@@ -1,13 +1,4 @@
 import { createPcbFold, type PcbFold } from "@tscircuit/flex-utils"
-import {
-  dedupePcbDrcErrors,
-  consolidatePcbOverlapErrors,
-  runAllNetlistChecks,
-  runAllPinSpecificationChecks,
-  runAllPlacementChecks,
-  runAllRoutingChecks,
-  runAllSchematicChecks,
-} from "@tscircuit/checks"
 import { jlcMinTolerances } from "@tscircuit/jlcpcb-manufacturing-specs"
 import { getBoundsFromPoints } from "@tscircuit/math-utils"
 import { boardProps } from "@tscircuit/props"
@@ -27,11 +18,11 @@ import { inflateCircuitJson } from "../../utils/circuit-json/inflate-circuit-jso
 import { getViaDiameterDefaults } from "../../utils/pcbStyle/getViaDiameterDefaults"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import type { RenderPhase } from "../base-components/Renderable"
-import { DrcCheck } from "../primitive-components/DrcCheck"
 import { Group } from "../primitive-components/Group/Group"
 import type { SubcircuitI } from "../primitive-components/Group/Subcircuit/SubcircuitI"
 import { Subcircuit_doInitialRenderIsolatedSubcircuits } from "../primitive-components/Group/Subcircuit/Subcircuit_doInitialRenderIsolatedSubcircuits"
 import { Subcircuit_getSubcircuitPropHash } from "../primitive-components/Group/Subcircuit_getSubcircuitPropHash"
+import { Board_updatePcbDesignRuleChecks } from "./Board_updatePcbDesignRuleChecks"
 import type { BoardI } from "./BoardI"
 import { Board_doInitialPcbCopperPourCleanup } from "./Board_doInitialPcbCopperPourCleanup"
 import { Board_doInitialPcbPlacementDesignRuleChecks } from "./Board_doInitialPcbPlacementDesignRuleChecks"
@@ -660,213 +651,7 @@ export class Board
   }
 
   updatePcbDesignRuleChecks() {
-    const { db } = this.root!
-
-    const routingDisabled =
-      this.root?.pcbRoutingDisabled ||
-      this.getInheritedProperty("routingDisabled")
-    const pcbDisabled = this.root?.pcbDisabled
-    const schematicDisabled = this.root?.schematicDisabled
-
-    const drcChecksDisabled =
-      this.root?.platform?.drcChecksDisabled ??
-      this.getInheritedProperty("drcChecksDisabled")
-
-    // Disabled DRC needs neither a database snapshot nor an async effect. An
-    // empty async effect would force another traversal of every render phase.
-    if (drcChecksDisabled) {
-      this._drcChecksComplete = true
-      return
-    }
-
-    const netlistDrcChecksDisabled =
-      this.root?.platform?.netlistDrcChecksDisabled ??
-      this.getInheritedProperty("netlistDrcChecksDisabled")
-    const pinSpecificationDrcChecksDisabled = this.getInheritedProperty(
-      "pinSpecificationDrcChecksDisabled",
-    )
-    const placementDrcChecksDisabled =
-      this.root?.platform?.placementDrcChecksDisabled ??
-      this.getInheritedProperty("placementDrcChecksDisabled")
-    const routingDrcChecksDisabled =
-      this.root?.platform?.routingDrcChecksDisabled ??
-      this.getInheritedProperty("routingDrcChecksDisabled")
-
-    const shouldRunNetlistChecks =
-      !drcChecksDisabled && !netlistDrcChecksDisabled
-    const shouldRunPinSpecificationChecks =
-      !drcChecksDisabled && !pinSpecificationDrcChecksDisabled
-    const shouldRunSchematicChecks = !drcChecksDisabled && !schematicDisabled
-    const shouldRunPlacementChecks =
-      !drcChecksDisabled && !pcbDisabled && !placementDrcChecksDisabled
-    const shouldRunRoutingChecks =
-      !drcChecksDisabled &&
-      !pcbDisabled &&
-      !routingDisabled &&
-      !routingDrcChecksDisabled
-
-    const fabricatorEngine = this.root?.platform?.fabricatorEngine
-    const fabricatorPreset = this._parsedProps.fabricatorPreset
-    const shouldRunFabricatorChecks =
-      !drcChecksDisabled &&
-      !pcbDisabled &&
-      !!fabricatorEngine &&
-      !!fabricatorPreset
-
-    // If async trace routing is still in progress anywhere in this board subtree,
-    // wait so routing DRC sees final routed traces and doesn't mark DRC complete early.
-    if (
-      (shouldRunRoutingChecks || shouldRunFabricatorChecks) &&
-      this._hasIncompleteAsyncEffectsInSubtreeForPhase("PcbTraceRender")
-    )
-      return
-
-    // Routing checks should only wait for child subcircuits when there are
-    // traces that actually need routing. Otherwise placement/netlist DRC can run.
-    const hasTracesToRoute = this._hasTracesToRoute()
-    if (
-      (shouldRunRoutingChecks || shouldRunFabricatorChecks) &&
-      hasTracesToRoute &&
-      !this._areChildSubcircuitsRouted()
-    )
-      return
-
-    // Only run once after all configured checks are complete.
-    if (this._drcChecksComplete || this._drcChecksInProgress) return
-
-    const runDrcChecks = async (circuitJson: AnyCircuitElement[]) => {
-      const checksToRun: Promise<AnyCircuitElement[]>[] = []
-      // Defer invocation so synchronous throws and promise rejections follow the
-      // same path. A failed group must not discard diagnostics from other groups.
-      const queueCheck = (
-        checkName: string,
-        check: () => AnyCircuitElement[] | Promise<AnyCircuitElement[]>,
-      ) => {
-        checksToRun.push(
-          Promise.resolve()
-            .then(check)
-            .catch((error: unknown) => {
-              const cause =
-                error instanceof Error ? error.message : String(error)
-              db.source_runtime_error.insert({
-                error_type: "source_runtime_error",
-                phase_name: "PcbDesignRuleChecks",
-                message: `DRC could not complete (${checkName}): ${cause}`,
-              })
-              return []
-            }),
-        )
-      }
-
-      const pcbBoardId = this.pcb_board_id
-      if (
-        shouldRunFabricatorChecks &&
-        fabricatorEngine &&
-        fabricatorPreset &&
-        pcbBoardId
-      ) {
-        queueCheck("fabricator", () =>
-          fabricatorEngine.runDrcChecks({
-            circuitJson,
-            fabricatorPreset,
-            pcbBoardId,
-          }),
-        )
-      }
-
-      if (shouldRunRoutingChecks) {
-        queueCheck(
-          "routing",
-          () =>
-            runAllRoutingChecks(circuitJson).then((results) =>
-              results.filter(
-                (result) => !this._isExpectedCastellatedHoleDrcError(result),
-              ),
-            ) as Promise<AnyCircuitElement[]>,
-        )
-      }
-
-      if (shouldRunPlacementChecks) {
-        const existingPlacementDiagnostics = db.toArray()
-        queueCheck(
-          "placement",
-          () =>
-            runAllPlacementChecks(circuitJson, {
-              consolidateOverlaps: false,
-            }).then((results) =>
-              consolidatePcbOverlapErrors(
-                circuitJson,
-                results.filter(
-                  (result) => !this._isExpectedCastellatedHoleDrcError(result),
-                ),
-              ).filter(
-                (result) =>
-                  !existingPlacementDiagnostics.some(
-                    (existing) =>
-                      existing.type === result.type &&
-                      "message" in existing &&
-                      existing.message === result.message,
-                  ),
-              ),
-            ) as Promise<AnyCircuitElement[]>,
-        )
-      }
-
-      if (shouldRunNetlistChecks) {
-        queueCheck(
-          "netlist",
-          () =>
-            runAllNetlistChecks(circuitJson) as Promise<AnyCircuitElement[]>,
-        )
-      }
-
-      if (shouldRunPinSpecificationChecks) {
-        queueCheck(
-          "pin_specification",
-          () =>
-            runAllPinSpecificationChecks(circuitJson) as Promise<
-              AnyCircuitElement[]
-            >,
-        )
-      }
-
-      if (shouldRunSchematicChecks) {
-        queueCheck(
-          "schematic",
-          () =>
-            runAllSchematicChecks(circuitJson) as Promise<AnyCircuitElement[]>,
-        )
-      }
-
-      if (!drcChecksDisabled) {
-        for (const drcCheck of this.selectAll<DrcCheck>("drccheck")) {
-          queueCheck(drcCheck.getString(), () =>
-            drcCheck.runCustomDrcCheck(circuitJson),
-          )
-        }
-      }
-
-      const checkResults = await Promise.all(checksToRun)
-      db.insertAll(
-        consolidatePcbOverlapErrors(
-          circuitJson,
-          dedupePcbDrcErrors(checkResults.flat()),
-        ),
-      )
-    }
-
-    const subcircuit = db.subtree({ subcircuit_id: this.subcircuit_id })
-    const subcircuitCircuitJson = subcircuit.toArray()
-
-    this._drcChecksInProgress = true
-    this._queueAsyncEffect("board:drc-checks", async () => {
-      try {
-        await runDrcChecks(subcircuitCircuitJson)
-        this._drcChecksComplete = true
-      } finally {
-        this._drcChecksInProgress = false
-      }
-    })
+    Board_updatePcbDesignRuleChecks(this)
   }
 
   override runRenderPhaseForChildren(phase: RenderPhase): void {
