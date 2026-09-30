@@ -11,7 +11,7 @@ export function readTestTimes(log: string): Record<string, number> {
     const line = rawLine.replace(/\x1b\[[0-9;]*m/g, "")
     const job = line.includes("\t") ? line.split("\t")[0] : "local"
     const heading = line.match(
-      /(?:^|\s|##\[group\])(tests\/.*\.test\.tsx?):\s*$/,
+      /(?:^|\s|##\[group\]|::group::)(tests\/.*\.test\.tsx?):\s*$/,
     )
     if (heading) {
       currentFileByJob.set(job, heading[1])

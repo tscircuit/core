@@ -16,6 +16,9 @@ test("timing logs aggregate multiple cases and keep interleaved CI jobs separate
         "✓ local [1.25ms]",
         "✓ local second [2.75ms]",
         "Ran 2 tests across 1 file. [100.00ms]",
+        "::group::tests/captured.test.ts:",
+        "(pass) captured CI output [99.50ms]",
+        "::endgroup::",
       ].join("\n"),
     ),
   ).toEqual({
@@ -23,5 +26,6 @@ test("timing logs aggregate multiple cases and keep interleaved CI jobs separate
     "tests/two.test.tsx": 30000,
     "tests/skipped.test.ts": 0,
     "tests/local.test.ts": 4,
+    "tests/captured.test.ts": 99.5,
   })
 })
