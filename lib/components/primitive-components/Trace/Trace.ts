@@ -312,7 +312,7 @@ export class Trace
     }
     const displayName = getTraceDisplayName({ ports: ports, nets: nets })
     const trace = db.source_trace.insert({
-      source_trace_id: props.sourceTraceId,
+      ...(props.sourceTraceId ? { source_trace_id: props.sourceTraceId } : {}),
       connected_source_port_ids: ports.map((p) => p.port.source_port_id!),
       connected_source_net_ids: nets.map((n) => n.source_net_id!),
       subcircuit_id: this.getSubcircuit()?.subcircuit_id!,
