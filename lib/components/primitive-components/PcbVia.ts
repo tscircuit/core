@@ -1,34 +1,10 @@
-import { type ViaProps, viaProps } from "@tscircuit/props"
-import {
-  type PcbVia as CircuitJsonPcbVia,
-  type LayerRef,
-  layer_ref,
-} from "circuit-json"
+import { pcbViaProps } from "@tscircuit/props"
+import { type PcbVia as CircuitJsonPcbVia, type LayerRef } from "circuit-json"
 import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
 import { getViaTenting } from "lib/utils/getViaTenting"
-import { z } from "zod"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
-export const pcbViaProps = viaProps
-  .extend({
-    layers: z.array(layer_ref).optional(),
-    /** @deprecated Use tentedOnTop and tentedOnBottom instead. */
-    isTented: z.boolean().optional(),
-    tentedOnTop: z.boolean().optional(),
-    tentedOnBottom: z.boolean().optional(),
-  })
-  .partial({
-    fromLayer: true,
-    toLayer: true,
-  })
-
-export interface PcbViaProps extends Partial<ViaProps> {
-  layers?: LayerRef[]
-  /** @deprecated Use tentedOnTop and tentedOnBottom instead. */
-  isTented?: boolean
-  tentedOnTop?: boolean
-  tentedOnBottom?: boolean
-}
+export { pcbViaProps, type PcbViaProps } from "@tscircuit/props"
 
 export class PcbVia extends PrimitiveComponent<typeof pcbViaProps> {
   pcb_via_id: string | null = null
