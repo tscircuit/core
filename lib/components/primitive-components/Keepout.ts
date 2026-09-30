@@ -1,9 +1,8 @@
 import { pcbKeepoutProps } from "@tscircuit/props"
-import type { PCBKeepout } from "circuit-json"
 import type { PcbComponentId } from "lib/utils/circuit-json/circuit-json-id-types"
-import { decomposeTSR } from "transformation-matrix"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import type { RenderPhaseFn } from "../base-components/Renderable"
+import { Keepout_doInitialPcbPrimitiveRender } from "./Keepout_doInitialPcbPrimitiveRender"
 
 export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
   pcb_keepout_id: string | null = null
@@ -30,82 +29,7 @@ export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
   }
 
   doInitialPcbPrimitiveRender(): void {
-    if (this.root?.pcbDisabled) return
-    const subcircuit = this.getSubcircuit()
-    const { db } = this.root!
-    const { _parsedProps: props } = this
-    const position = this._getGlobalPcbPositionBeforeLayout()
-    const decomposedMat = decomposeTSR(
-      this._computePcbGlobalTransformBeforeLayout(),
-    )
-    const isRotated90 =
-      Math.abs(decomposedMat.rotation.angle * (180 / Math.PI) - 90) % 180 < 0.01
-    let layers = props.layers
-    if (!layers && props.layer) {
-      layers = [props.layer]
-    }
-    if (!layers) {
-      layers = ["top"]
-    }
-    const excludedPcbComponentIds = this.getExcludedPcbComponentIds()
-    const pcbKeepoutExclusionProps =
-      excludedPcbComponentIds.length > 0
-        ? { excluded_pcb_component_ids: excludedPcbComponentIds }
-        : {}
-
-    let pcb_keepout: PCBKeepout | null = null
-    if (props.shape === "circle") {
-      pcb_keepout = db.pcb_keepout.insert({
-        layers,
-        shape: "circle",
-        ...pcbKeepoutExclusionProps,
-        ...(props.allowTraces !== undefined
-          ? { allow_traces: props.allowTraces }
-          : {}),
-        ...(props.allowPlacements !== undefined
-          ? { allow_placements: props.allowPlacements }
-          : {}),
-        ...(props.warningOnly !== undefined
-          ? { warning_only: props.warningOnly }
-          : {}),
-        // @ts-ignore: no idea why this is triggering
-        radius: props.radius,
-        center: {
-          x: position.x,
-          y: position.y,
-        },
-        subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
-        pcb_group_id: subcircuit?.getGroup()?.pcb_group_id ?? undefined,
-      })
-    } else if (props.shape === "rect") {
-      pcb_keepout = db.pcb_keepout.insert({
-        layers,
-        shape: "rect",
-        ...pcbKeepoutExclusionProps,
-        ...(props.allowTraces !== undefined
-          ? { allow_traces: props.allowTraces }
-          : {}),
-        ...(props.allowPlacements !== undefined
-          ? { allow_placements: props.allowPlacements }
-          : {}),
-        ...(props.warningOnly !== undefined
-          ? { warning_only: props.warningOnly }
-          : {}),
-        ...(isRotated90
-          ? { width: props.height, height: props.width }
-          : { width: props.width, height: props.height }),
-        // @ts-ignore: no idea why this is triggering
-        center: {
-          x: position.x,
-          y: position.y,
-        },
-        subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
-        pcb_group_id: subcircuit?.getGroup()?.pcb_group_id ?? undefined,
-      })
-    }
-    if (pcb_keepout) {
-      this.pcb_keepout_id = pcb_keepout.pcb_keepout_id
-    }
+    Keepout_doInitialPcbPrimitiveRender(this)
   }
 
   getPcbSize(): { width: number; height: number } {
@@ -116,6 +40,17 @@ export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
     if (props.shape === "rect") {
       return { width: props.width, height: props.height }
     }
-    return { width: 0, height: 0 }
+    const xCoordinates = props.outline.map((point) => point.x)
+    const yCoordinates = props.outline.map((point) => point.y)
+    return {
+      width:
+        Math.max(...xCoordinates) -
+        Math.min(...xCoordinates) +
+        props.strokeWidth,
+      height:
+        Math.max(...yCoordinates) -
+        Math.min(...yCoordinates) +
+        props.strokeWidth,
+    }
   }
 }
