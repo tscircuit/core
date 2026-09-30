@@ -11,11 +11,14 @@ test("assembly DRC reports a collision for an aperture above the component body"
   expect(collisionErrors[0]).toMatchObject({
     type: "cad_collision_error",
     error_type: "cad_collision_error",
-    face: "y_pos",
     threshold_area_mm2: 2,
   })
   expect(collisionErrors[0]!.intersection_area_mm2).toBeGreaterThan(2)
-  expect(collisionErrors[0]!.enclosure_cad_component_ids).toHaveLength(2)
+  expect(collisionErrors[0]!.cad_component_ids).toHaveLength(3)
+  expect(collisionErrors[0]!.pcb_component_ids).toHaveLength(2)
+  expect(collisionErrors[0]!.source_component_ids).toHaveLength(2)
+  expect(collisionErrors[0]).not.toHaveProperty("face")
+  expect(collisionErrors[0]).not.toHaveProperty("enclosure_cad_component_ids")
   expect(circuit.db.source_runtime_error.list()).toHaveLength(0)
   // Settling again must not reload models or duplicate the collision error.
   await circuit.renderUntilSettled()

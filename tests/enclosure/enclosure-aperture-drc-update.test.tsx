@@ -9,7 +9,9 @@ test("a new assembly DRC pass replaces stale diagnostics", async () => {
   await circuit.renderUntilSettled()
   const collisionError = circuit.db.cad_collision_error.list()[0]!
   expect(collisionError).toBeDefined()
-  const part = circuit.db.cad_component.get(collisionError.cad_component_id)!
+  const part = circuit.db.cad_component.get(
+    collisionError.cad_component_ids[0]!,
+  )!
   circuit.db.cad_component.update(part.cad_component_id, {
     position: { x: 100, y: 0, z: 0 },
   })
