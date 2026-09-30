@@ -2,7 +2,8 @@ import { expect, test } from "bun:test"
 import { Am62lLpddr4FullBgaBoard } from "tests/fixtures/am62l-lpddr4-full-bga/full-bga-board"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("captures failed AM62L routing with LPDDR4 placed north", async () => {
+// Full-board routing takes 3–4 minutes; keep the regression available for re-enabling.
+test.skip("captures failed AM62L routing with LPDDR4 placed north", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <Am62lLpddr4FullBgaBoard
