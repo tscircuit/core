@@ -284,7 +284,7 @@ export class NormalComponent<
    * }
    *
    * By default, we'll pull the ports from the first place we find them:
-   * 1. `config.schematicSymbolName`
+   * 1. `symbolName` or `config.schematicSymbolName`
    * 2. `props.footprint`
    *
    */
@@ -304,7 +304,6 @@ export class NormalComponent<
     if (hasPendingReactSymbol) return
 
     this._inferredInternallyConnectedPinNames = []
-    const { config } = this
     const portsToCreate: Port[] = []
     const pinLabels = this._resolvePinLabels()
     const propsPinLabels = this._parsedProps.pinLabels
@@ -416,8 +415,9 @@ export class NormalComponent<
       }
     }
 
-    if (config.schematicSymbolName && !opts.ignoreSymbolPorts) {
-      const sym = symbols[this._getSchematicSymbolNameOrThrow()]
+    const schematicSymbolName = this._getSchematicSymbolName()
+    if (schematicSymbolName && !opts.ignoreSymbolPorts) {
+      const sym = symbols[schematicSymbolName]
       if (!sym) return
 
       const hasSymbolPortAliases = sym.ports.some((port) =>
@@ -819,8 +819,8 @@ export class NormalComponent<
 
   /**
    * Render the schematic component for this NormalComponent using the
-   * config.schematicSymbolName if it exists, or create a generic box if
-   * no symbol is defined.
+   * the symbolName prop or config.schematicSymbolName if either exists, or
+   * create a generic box if no symbol is defined.
    *
    * You can override this method to do more complicated things.
    */
@@ -1672,9 +1672,9 @@ export class NormalComponent<
 
   getPortsFromSchematicSymbol(): Port[] {
     if (this.root?.schematicDisabled) return []
-    const { config } = this
-    if (!config.schematicSymbolName) return []
-    const symbol: SchSymbol = (symbols as any)[config.schematicSymbolName]
+    const schematicSymbolName = this._getSchematicSymbolName()
+    if (!schematicSymbolName) return []
+    const symbol = symbols[schematicSymbolName] as SchSymbol | undefined
     if (!symbol) return []
     const newPorts: Port[] = []
     for (const symbolPort of symbol.ports) {

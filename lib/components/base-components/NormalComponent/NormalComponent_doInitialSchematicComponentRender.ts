@@ -43,7 +43,7 @@ export function NormalComponent_doInitialSchematicComponentRender(
     })
   }
 
-  const { schematicSymbolName } = component.config
+  const schematicSymbolName = component._getSchematicSymbolName()
   const { _parsedProps: props } = component
 
   const hasSymbolChild = component.children.some(
