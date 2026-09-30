@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="560" viewBox="0 0 1000 560">
+    <defs><clipPath id="zoom"><rect x="50" y="300" width="400" height="190" rx="8"/></clipPath></defs>
+    <rect width="1000" height="560" fill="#f8fafc"/>
+    <g font-family="Arial, sans-serif" fill="#172b40">
+      <text x="40" y="46" font-size="25" font-weight="bold">Existing copper is wider than its routing obstacle</text>
+      <text x="40" y="77" font-size="16">One top-layer trace · 10 mm centerline · 0.5 mm copper width · no clearance added</text>
+      <rect x="40" y="101" width="18" height="14" fill="#e5a34b"/>
+      <text x="68" y="114" font-size="15">Actual copper (round end caps)</text>
+      <rect x="360" y="101" width="18" height="14" fill="#167d9a"/>
+      <text x="388" y="114" font-size="15">Obstacle returned by core</text>
+
+    <line x1="100" y1="185"
+      x2="900" y2="185"
+      stroke="#e5a34b" stroke-width="40" stroke-linecap="round"/>
+    <rect
+      x="100"
+      y="181"
+      width="800" height="8"
+      fill="#167d9a"/>
+      <text x="100" y="236" font-size="16">Returned obstacle: 10 × 0.1 mm</text>
+      <text x="530" y="236" font-size="16">Copper bounds: 10.5 × 0.5 mm</text>
+      <text x="50" y="284" font-size="18" font-weight="bold">Left endpoint · enlarged 5×</text>
+      <rect x="50" y="300" width="400" height="190" rx="8" fill="#edf1f5"/>
+      <g clip-path="url(#zoom)">
+    <line x1="180" y1="395"
+      x2="4180" y2="395"
+      stroke="#e5a34b" stroke-width="200" stroke-linecap="round"/>
+    <rect
+      x="180"
+      y="375"
+      width="4000" height="40"
+      fill="#167d9a"/></g>
+      <line x1="180" y1="310" x2="180" y2="480" stroke="#172b40" stroke-dasharray="4 4"/>
+      <text x="65" y="516" font-size="14">Dashed line: centerline endpoint (x = 0 mm)</text>
+      <text x="500" y="331" font-size="19" font-weight="bold">What the snapshot exposes</text>
+      <text x="500" y="370" font-size="16">1. Copper above and below the blue strip is omitted.</text>
+      <text x="500" y="405" font-size="16">2. The round end cap extends beyond the obstacle.</text>
+      <text x="500" y="455" font-size="16">Orange-only regions contain copper, but this</text>
+      <text x="500" y="479" font-size="16">conversion does not mark them as occupied.</text>
+    </g>
+  </svg>
