@@ -748,8 +748,9 @@ export class Board
             .catch((error: unknown) => {
               const cause =
                 error instanceof Error ? error.message : String(error)
-              db.drc_check_error.insert({
-                error_type: "drc_check_error",
+              db.source_runtime_error.insert({
+                error_type: "source_runtime_error",
+                phase: "PcbDesignRuleChecks",
                 check_name: checkName,
                 cause,
                 message: `DRC could not complete (${checkName}): ${cause}`,

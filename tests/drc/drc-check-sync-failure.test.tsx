@@ -32,7 +32,7 @@ test("a synchronously throwing check group does not prevent later groups from ru
     </board>,
   )
   await circuit.renderUntilSettled()
-  expect(circuit.db.drc_check_error.list()).toMatchObject([
+  expect(circuit.db.source_runtime_error.list()).toMatchObject([
     {
       check_name: "fabricator",
       cause: "Fabricator checker crashed before returning a promise",

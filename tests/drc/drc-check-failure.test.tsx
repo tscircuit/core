@@ -40,7 +40,9 @@ test("failed DRC checks are serialized without losing the circuit or successful 
     .map((element) =>
       any_circuit_element.parse(JSON.parse(JSON.stringify(element))),
     )
-  const failures = json.filter((element) => element.type === "drc_check_error")
+  const failures = json.filter(
+    (element) => element.type === "source_runtime_error",
+  )
   expect(failures).toHaveLength(2)
   expect(failures).toEqual(
     expect.arrayContaining([
@@ -70,6 +72,6 @@ test("failed DRC checks are serialized without losing the circuit or successful 
   ).toBe(true)
   expect(circuit.db.pcb_component.list()).toHaveLength(1)
   await circuit.renderUntilSettled()
-  expect(circuit.db.drc_check_error.list()).toHaveLength(2)
+  expect(circuit.db.source_runtime_error.list()).toHaveLength(2)
   expect(completedChecks).toBe(1)
 })
