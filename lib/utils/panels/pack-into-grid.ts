@@ -1,6 +1,6 @@
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import { distance } from "circuit-json"
-import type { Board } from "lib/components/normal-components/Board"
+import type { Board } from "lib/components/normal-components/Board/Board"
 import type { Subpanel } from "lib/components/normal-components/Subpanel"
 import { getBoardDimensionsFromProps } from "./get-board-dimensions-from-props"
 

@@ -1,6 +1,6 @@
 import { expect, spyOn, test } from "bun:test"
 import { RootCircuit } from "lib/RootCircuit"
-import type { Board } from "lib/components/normal-components/Board"
+import type { Board } from "lib/components/normal-components/Board/Board"
 
 test("copper cleanup without pours avoids constructing a database subtree", () => {
   const circuit = new RootCircuit({ platform: { drcChecksDisabled: true } })

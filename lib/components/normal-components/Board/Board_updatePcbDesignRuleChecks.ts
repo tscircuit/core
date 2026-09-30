@@ -8,7 +8,7 @@ import {
   runAllSchematicChecks,
 } from "@tscircuit/checks"
 import type { AnyCircuitElement } from "circuit-json"
-import type { DrcCheck } from "../primitive-components/DrcCheck"
+import type { DrcCheck } from "../../primitive-components/DrcCheck"
 import type { Board } from "./Board"
 
 export const Board_updatePcbDesignRuleChecks = (board: Board) => {

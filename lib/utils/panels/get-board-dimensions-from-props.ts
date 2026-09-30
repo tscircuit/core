@@ -1,6 +1,6 @@
 import { getBoundsFromPoints } from "@tscircuit/math-utils"
 import { distance, type AnyCircuitElement } from "circuit-json"
-import type { Board } from "lib/components/normal-components/Board"
+import type { Board } from "lib/components/normal-components/Board/Board"
 
 export const getBoardDimensionsFromProps = (
   board: Board,

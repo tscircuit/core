@@ -4,7 +4,7 @@ import type {
 } from "@tscircuit/create-fdm-enclosure"
 import type { ParsedEnclosureCutoutApertureProps } from "@tscircuit/props"
 import type { CadComponent, PcbBoard, PcbComponent } from "circuit-json"
-import type { Board } from "../../normal-components/Board"
+import type { Board } from "../../normal-components/Board/Board"
 import type { EnclosureCutoutAperture } from "./EnclosureCutoutAperture"
 import { getComponentBody } from "./get-component-body"
 import { getNearestBoardWall } from "./get-nearest-board-wall"

@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test"
-import { Board } from "lib/components/normal-components/Board"
+import { Board } from "lib/components/normal-components/Board/Board"
 import { Fragment } from "react"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 

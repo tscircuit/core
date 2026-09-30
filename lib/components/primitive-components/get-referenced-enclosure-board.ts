@@ -1,7 +1,7 @@
 import { selectOne } from "css-select"
 import type { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { cssSelectPrimitiveComponentAdapter } from "../base-components/PrimitiveComponent/cssSelectPrimitiveComponentAdapter"
-import { Board } from "../normal-components/Board"
+import { Board } from "../normal-components/Board/Board"
 
 export const getReferencedEnclosureBoard = (
   component: PrimitiveComponent,

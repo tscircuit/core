@@ -1,8 +1,8 @@
 import { mountedboardProps } from "@tscircuit/props"
 import { Subcircuit } from "../primitive-components/Group/Subcircuit/Subcircuit"
-import type { BoardI } from "./BoardI"
+import type { BoardI } from "./Board/BoardI"
 import type { PcbBoard } from "circuit-json"
-import { Board } from "./Board"
+import { Board } from "./Board/Board"
 
 export class MountedBoard extends Subcircuit implements BoardI {
   pcb_board_id: string | null = null

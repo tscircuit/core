@@ -11,7 +11,7 @@ import {
 import { packIntoGrid } from "../../utils/panels/pack-into-grid"
 import type { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { Group } from "../primitive-components/Group/Group"
-import { Board } from "./Board"
+import { Board } from "./Board/Board"
 
 /**
  * Subpanel is a nested panel that can be placed inside a Panel.

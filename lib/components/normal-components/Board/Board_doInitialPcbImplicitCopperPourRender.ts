@@ -1,6 +1,6 @@
 import { ImplicitCopperPourPipelineSolver } from "@tscircuit/implicit-copper-pour-solver/lib/index"
-import { CopperPour } from "../primitive-components/CopperPour"
-import type { Net } from "../primitive-components/Net"
+import { CopperPour } from "../../primitive-components/CopperPour"
+import type { Net } from "../../primitive-components/Net"
 import type { Board } from "./Board"
 
 export const Board_doInitialPcbImplicitCopperPourRender = (board: Board) => {

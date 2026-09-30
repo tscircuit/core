@@ -4,9 +4,9 @@ import {
   type PcbPlatedHoleCircle,
   distance,
 } from "circuit-json"
-import { PlatedHole } from "../primitive-components/PlatedHole"
-import { Port } from "../primitive-components/Port"
-import { Trace } from "../primitive-components/Trace/Trace"
+import { PlatedHole } from "../../primitive-components/PlatedHole"
+import { Port } from "../../primitive-components/Port"
+import { Trace } from "../../primitive-components/Trace/Trace"
 import type { Board } from "./Board"
 
 const CASTELLATED_HOLE_ENDPOINT_TOLERANCE_MM = 1e-6

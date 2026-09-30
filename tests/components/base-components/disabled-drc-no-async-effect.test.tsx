@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test"
 import { RootCircuit } from "lib/RootCircuit"
-import type { Board } from "lib/components/normal-components/Board"
+import type { Board } from "lib/components/normal-components/Board/Board"
 
 test("disabled DRC does not schedule an empty async effect or repeat render phases", async () => {
   const circuit = new RootCircuit({
