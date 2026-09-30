@@ -34,9 +34,9 @@ test("a synchronously throwing check group does not prevent later groups from ru
   await circuit.renderUntilSettled()
   expect(circuit.db.source_runtime_error.list()).toMatchObject([
     {
-      check_name: "fabricator",
-      cause: "Fabricator checker crashed before returning a promise",
-      is_fatal: true,
+      phase_name: "PcbDesignRuleChecks",
+      message:
+        "DRC could not complete (fabricator): Fabricator checker crashed before returning a promise",
     },
   ])
   expect(circuit.db.source_component_misconfigured_error.list()).toEqual(

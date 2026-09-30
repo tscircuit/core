@@ -750,13 +750,8 @@ export class Board
                 error instanceof Error ? error.message : String(error)
               db.source_runtime_error.insert({
                 error_type: "source_runtime_error",
-                phase: "PcbDesignRuleChecks",
-                check_name: checkName,
-                cause,
+                phase_name: "PcbDesignRuleChecks",
                 message: `DRC could not complete (${checkName}): ${cause}`,
-                is_fatal: true,
-                pcb_board_id: this.pcb_board_id ?? undefined,
-                subcircuit_id: this.subcircuit_id ?? undefined,
               })
               return []
             }),

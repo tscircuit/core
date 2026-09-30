@@ -47,21 +47,15 @@ test("failed DRC checks are serialized without losing the circuit or successful 
   expect(failures).toEqual(
     expect.arrayContaining([
       expect.objectContaining({
-        cause: "geometry failure",
-        check_name: expect.stringContaining("sync-failure"),
-        is_fatal: true,
+        message: expect.stringMatching(/sync-failure.*geometry failure/),
       }),
       expect.objectContaining({
-        cause: "non-Error rejection",
-        check_name: expect.stringContaining("async-failure"),
-        is_fatal: true,
+        message: expect.stringMatching(/async-failure.*non-Error rejection/),
       }),
     ]),
   )
-  const board = circuit.db.pcb_board.list()[0]!
   for (const failure of failures) {
-    expect(failure.pcb_board_id).toBe(board.pcb_board_id)
-    expect(failure.subcircuit_id).toBe(board.subcircuit_id)
+    expect(failure.phase_name).toBe("PcbDesignRuleChecks")
     expect(failure.message).toContain("DRC could not complete")
   }
   expect(
