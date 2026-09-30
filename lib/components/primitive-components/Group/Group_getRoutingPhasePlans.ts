@@ -8,7 +8,7 @@ import type { z } from "zod"
 import { getSavedAutoroutingPhaseTraces } from "./get-saved-autorouting-phase-traces"
 import { getPresetAutoroutingConfig } from "lib/utils/autorouting/getPresetAutoroutingConfig"
 import type { AutoroutingPhase } from "../AutoroutingPhase"
-import { getDogboneFanoutTraces } from "../Breakout/get-dogbone-fanout-traces"
+import { applyDogboneFanoutTraces } from "../Breakout/apply-dogbone-fanout-traces"
 import { getSavedFanoutTraces } from "../Breakout/get-saved-fanout-traces"
 import type { Breakout } from "../Breakout/Breakout"
 import { BreakoutPoint } from "../BreakoutPoint"
@@ -490,9 +490,9 @@ export function Group_getRoutingPhasePlans(
         ...breakoutPlan,
         routingBounds: undefined,
         fanoutBounds: undefined,
-        getPrecomputedRoutingResult: (input) => ({
-          traces: getDogboneFanoutTraces(breakout, input),
-        }),
+        dogboneInput: breakout.dogboneInput,
+        onRoutingComplete: (traces) =>
+          applyDogboneFanoutTraces(breakout, traces),
       })
       continue
     }

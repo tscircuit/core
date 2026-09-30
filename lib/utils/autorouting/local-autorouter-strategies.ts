@@ -1,3 +1,6 @@
+import { DogboneAutorouter } from "./DogboneAutorouter"
+import type { DogboneFanoutSolverInput } from "./DogboneFanoutSolver"
+import type { SolverEndedEvent } from "lib/events"
 import { BusLanesAutorouter } from "./BusLanesAutorouter"
 import type {
   AutorouterProp,
@@ -19,6 +22,10 @@ import {
 } from "./getPresetAutoroutingConfig"
 
 export interface LocalAutorouterStrategyContext {
+  dogboneInput?: DogboneFanoutSolverInput
+  onSolverEnded?: (
+    event: Omit<SolverEndedEvent, "type" | "componentName">,
+  ) => void
   simpleRouteJson: SimpleRouteJson
   commonAutorouterOptions: AutorouterOptions
   busFanoutDirections?: AutoroutingPhaseProps["busFanoutDirections"]
@@ -115,9 +122,19 @@ const localAutorouterStrategies = new Map<string, LocalAutorouterStrategy>([
       name: "dogbone",
       cacheable: false,
       getSolverName: () => "DogboneFanoutSolver",
-      create: () => {
-        throw new Error(
-          'Use autorouter="dogbone" on a <fanout> containing the source component',
+      create: ({
+        simpleRouteJson,
+        dogboneInput,
+        onSolverStarted,
+        onSolverEnded,
+      }) => {
+        if (!dogboneInput)
+          throw new Error(
+            'Use autorouter="dogbone" on a <fanout> containing the source component',
+          )
+        return new DogboneAutorouter(
+          { ...dogboneInput, input: simpleRouteJson },
+          { onSolverStarted, onSolverEnded },
         )
       },
     },

@@ -1,3 +1,4 @@
+import type { DogboneFanoutSolverInput } from "lib/utils/autorouting/DogboneFanoutSolver"
 import type { AutorouterProp, AutoroutingPhaseProps } from "@tscircuit/props"
 import type {
   PcbGroupId,
@@ -28,6 +29,8 @@ export interface PrecomputedRoutingResult {
 }
 
 export interface RoutingPhasePlan {
+  dogboneInput?: DogboneFanoutSolverInput
+  onRoutingComplete?: (traces: SimplifiedPcbTrace[]) => void
   autoroutingPhase?: AutoroutingPhase
   /** Automatically routes connections not assigned to an explicit phase. */
   isImplicitRemainingPhase?: boolean

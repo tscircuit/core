@@ -1,19 +1,20 @@
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
-import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
-import { DogboneFanoutSolver } from "lib/utils/autorouting/DogboneFanoutSolver"
+import { getViaBoardLayers } from "lib/utils/getViaSpanLayers"
+import type { DogboneFanoutSolverInput } from "lib/utils/autorouting/DogboneFanoutSolver"
 import { AutoplacedBreakoutPoint } from "../AutoplacedBreakoutPoint"
 import type { Breakout } from "./Breakout"
 
-/** Solve local pad-to-via escapes in right-handed board-world mm (+X right,
+/** Prepare connectivity for local pad-to-via escapes in right-handed board-world mm (+X right,
  * +Y up, +Z above). All coordinates are points. Uses emitted pad geometry, so
  * footprint rotation/reflection is already applied by core's layout transforms.
- * Handoff points are committed only after the complete assignment is valid. */
-export function solveDogboneFanout(breakout: Breakout): SimplifiedPcbTrace[] {
+ * Provisional handoffs stay at source pads until the routing phase solves. */
+export function prepareDogboneFanout(
+  breakout: Breakout,
+): DogboneFanoutSolverInput {
   const points = breakout.children.filter(
     (child): child is AutoplacedBreakoutPoint =>
       child instanceof AutoplacedBreakoutPoint,
   )
-  if (!points.length) return []
   const { db } = breakout.root!
   const scope = breakout.getSubcircuit()
   const traceWidth = Number(
@@ -44,7 +45,21 @@ export function solveDogboneFanout(breakout: Breakout): SimplifiedPcbTrace[] {
     subcircuitComponent: scope,
     minTraceWidth: traceWidth,
   })
-  const solver = new DogboneFanoutSolver({
+  // Provisional handoffs establish phase connectivity; no sites are solved here.
+  const layers = getViaBoardLayers(input.layerCount)
+  for (const point of points) {
+    const port = db.pcb_port.get(point.matchedPort!.pcb_port_id!)!
+    const layer =
+      (breakout._parsedProps.fanoutRoutingLayers ?? layers).find(
+        (layer) => !port.layers.includes(layer),
+      ) ?? port.layers[0]!
+    point._applySolvedBreakoutPoint({
+      sourceTraceId: point.matchedSourceTraceId!,
+      layer,
+      position: port,
+    })
+  }
+  return {
     input,
     sources: points.map((point) => ({
       port: db.pcb_port.get(point.matchedPort!.pcb_port_id!)!,
@@ -58,48 +73,5 @@ export function solveDogboneFanout(breakout: Breakout): SimplifiedPcbTrace[] {
     viaClearance,
     boardEdgeClearance,
     holeClearance,
-  })
-  const root = breakout.root!
-  const componentName = breakout.getString()
-  root.emit("solver:started", {
-    type: "solver:started",
-    solverName: "DogboneFanoutSolver",
-    solverParams: solver.params,
-    solverConstructorArgs: solver.getConstructorParams(),
-    componentName,
-  })
-  while (!solver.solved && !solver.failed) {
-    solver.step()
-    root.emit("autorouting:progress", {
-      type: "autorouting:progress",
-      solverName: "DogboneFanoutSolver",
-      subcircuit_id: scope.subcircuit_id!,
-      componentDisplayName: componentName,
-      phaseName: `dogbone:${solver.phase}`,
-      progress: solver.progress,
-      debugGraphics: solver.visualize(),
-    })
   }
-  root.emit("solver:ended", {
-    type: "solver:ended",
-    solverName: "DogboneFanoutSolver",
-    componentName,
-    solved: solver.solved,
-    failed: solver.failed,
-    iterations: solver.iterations,
-    error: solver.error,
-  })
-  if (solver.failed) throw new Error(solver.error ?? "Dogbone fanout failed")
-  const traces = solver.getOutput()
-  for (const [index, point] of points.entries()) {
-    const exit = traces[index]!.route.at(-1)!
-    if (exit.route_type !== "wire")
-      throw new Error("Dogbone handoff must be a wire endpoint")
-    point._applySolvedBreakoutPoint({
-      sourceTraceId: point.matchedSourceTraceId!,
-      layer: exit.layer,
-      position: exit,
-    })
-  }
-  return traces
 }

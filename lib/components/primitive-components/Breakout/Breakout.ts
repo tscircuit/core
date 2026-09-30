@@ -8,15 +8,15 @@ import type { Trace } from "../Trace/Trace"
 import { defaultImplicitBreakoutPointSolverFn } from "./default-implicit-breakout-point-solver"
 import { Breakout_doInitialPcbPlacementDesignRuleChecks } from "./Breakout_doInitialPcbPlacementDesignRuleChecks"
 import { reportWindingBreakoutInfeasibleError } from "./report-winding-breakout-infeasible-error"
-import { solveDogboneFanout } from "./solve-dogbone-fanout"
-import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
+import { prepareDogboneFanout } from "./prepare-dogbone-fanout"
+import type { DogboneFanoutSolverInput } from "lib/utils/autorouting/DogboneFanoutSolver"
 import {
   type ImplicitBreakoutPointPlacement,
   solveImplicitBreakoutPoints,
 } from "./solve-implicit-breakout-points"
 
 export class Breakout extends Group<typeof breakoutProps> {
-  dogboneTraces: SimplifiedPcbTrace[] | undefined
+  dogboneInput: DogboneFanoutSolverInput | undefined
 
   get isDogboneFanout() {
     const autorouter = this._parsedProps.autorouter
@@ -121,7 +121,7 @@ export class Breakout extends Group<typeof breakoutProps> {
     if (this.root?.pcbDisabled) return
 
     if (this.isDogboneFanout && this._parsedProps.pcbTracePaths === undefined) {
-      this.dogboneTraces = solveDogboneFanout(this)
+      this.dogboneInput = prepareDogboneFanout(this)
       return
     }
 

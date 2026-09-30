@@ -4,6 +4,7 @@ import type {
   SolverEndedEvent,
   SolverStartedEvent,
 } from "lib/events"
+import { DogboneAutorouter } from "lib/utils/autorouting/DogboneAutorouter"
 import { SOLVERS } from "lib/solvers"
 import type { DogboneFanoutSolverInput } from "lib/utils/autorouting/DogboneFanoutSolver"
 import { AM3352 } from "tests/fixtures/am3352-dogbone"
@@ -15,8 +16,16 @@ test("dogbone solver events can replay and step the AM3352 solve", async () => {
   const ended: SolverEndedEvent[] = []
   const progress: AutoroutingProgressEvent[] = []
   const lifecycle: string[] = []
+  let eventLoopYielded = false
+  circuit.on("autorouting:start", (event) => {
+    if (event.solverName === "DogboneFanoutSolver")
+      lifecycle.push("routing_started")
+  })
   circuit.on("solver:started", (event) => {
     if (event.solverName !== "DogboneFanoutSolver") return
+    setTimeout(() => {
+      eventLoopYielded = true
+    }, 0)
     started.push(event)
     lifecycle.push("started")
   })
@@ -26,11 +35,8 @@ test("dogbone solver events can replay and step the AM3352 solve", async () => {
     lifecycle.push("ended")
   })
   circuit.on("autorouting:progress", (event) => {
-    if (
-      event.solverName !== "DogboneFanoutSolver" ||
-      !event.phaseName?.startsWith("dogbone:")
-    )
-      return
+    if (event.solverName !== "DogboneFanoutSolver") return
+    expect(eventLoopYielded).toBe(true)
     progress.push(event)
     lifecycle.push("progress")
   })
@@ -57,7 +63,7 @@ test("dogbone solver events can replay and step the AM3352 solve", async () => {
   await circuit.renderUntilSettled()
   expect(started).toHaveLength(1)
   expect(ended).toHaveLength(1)
-  expect(lifecycle[0]).toBe("started")
+  expect(lifecycle.slice(0, 2)).toEqual(["routing_started", "started"])
   expect(lifecycle.at(-1)).toBe("ended")
   expect(ended[0]).toMatchObject({ solved: true, failed: false, error: null })
   expect(progress.length).toBeGreaterThan(2)
@@ -82,18 +88,28 @@ test("dogbone solver events can replay and step the AM3352 solve", async () => {
       .find((candidate) => candidate.pcb_trace_id === trace.pcb_trace_id)!
     expect(emitted).toBeDefined()
     expect(
-      emitted.route.map((point) =>
-        point.route_type === "through_pad"
-          ? point
-          : { x: point.x, y: point.y, route_type: point.route_type },
+      emitted.route.flatMap((point) =>
+        point.route_type === "wire" || point.route_type === "via"
+          ? [{ x: point.x, y: point.y, route_type: point.route_type }]
+          : [],
       ),
     ).toEqual(
-      trace.route.map((point) =>
-        point.route_type === "through_pad"
-          ? point
-          : { x: point.x, y: point.y, route_type: point.route_type },
+      trace.route.flatMap((point) =>
+        point.route_type === "wire" || point.route_type === "via"
+          ? [{ x: point.x, y: point.y, route_type: point.route_type }]
+          : [],
       ),
     )
   }
+  const cancelled = new DogboneAutorouter(args[0])
+  const cancelledEvents: string[] = []
+  cancelled.on("complete", () => cancelledEvents.push("complete"))
+  cancelled.on("progress", () => cancelledEvents.push("progress"))
+  cancelled.on("error", () => cancelledEvents.push("error"))
+  cancelled.start()
+  cancelled.stop()
+  await new Promise((resolve) => setTimeout(resolve, 10))
+  expect(cancelledEvents).toEqual([])
+  expect(cancelled.isRouting).toBe(false)
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

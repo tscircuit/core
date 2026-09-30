@@ -31,13 +31,15 @@ not automatically connected. Supply nets keep their individual identities.
 layer distinct from the source pad's layer; without the property, it uses board
 stack order. Vias are through vias spanning the physical board stack. Board
 trace, pad, via and drill clearance rules constrain site assignment. If no
-complete legal assignment is found, rendering throws before publishing local
-handoffs. This preset currently requires a two-dimensional SMT pad grid; it is
+complete legal assignment is found, the routing phase emits an autorouting error
+without publishing solved handoffs. This preset currently requires a two-dimensional SMT pad grid; it is
 not a general perimeter escape router or a plane-connection solver.
 
-The handoffs are available to subsequent routing phases at the actual via
-locations. Set `routeRemaining={false}` on the board to inspect only the local
-escapes. `pcbTracePaths`, when supplied, retains precedence over the preset.
+Layout creates provisional handoffs at the source pads without running a solver.
+The dogbone routing phase runs through `GenericLocalAutorouter` in scheduled
+batches, then updates handoffs and downstream connections to the actual via
+locations before the next phase starts. Set `routeRemaining={false}` on the board
+to inspect only the local escapes. `pcbTracePaths`, when supplied, retains precedence over the preset.
 The preset is implemented for `<fanout>`; using it as a standalone board or
 `<autoroutingphase>` router is rejected.
 
@@ -57,5 +59,5 @@ a live circuit. It supports `step()`, `solve()`, `getOutput()`,
 Steps advance a component site assignment or an individual escape trace;
 the underlying pad-site matcher's bounded search is atomic within an assignment
 step. Debug graphics show obstacles, assigned vias and pad-to-via segments,
-including the last state when assignment fails. Core publishes handoffs only
-after the solver succeeds.
+including the last state when assignment fails. Core commits solved handoffs only
+after the solver succeeds. The adapter yields between batches and supports cancellation through `stop()`.
