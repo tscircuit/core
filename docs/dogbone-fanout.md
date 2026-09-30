@@ -16,7 +16,8 @@ vias without routing to the fanout boundary:
 </board>
 ```
 
-Core uses the public pad-site matcher from `@tscircuit/fanout-solver`. It chooses
+Core runs the registered `DogboneFanoutSolver` (`BaseSolver`), which uses the
+public pad-site matcher from `@tscircuit/fanout-solver`. It chooses
 local interstitial sites on a two-dimensional pad grid and emits straight or
 45-degree escapes. Pad geometry is taken after component placement, including
 rotation and bottom-side reflection. Grid coordinates are merged at micrometer
@@ -44,3 +45,17 @@ See `tests/breakout/fanout-am3352-dogbones.test.tsx` and its labeled PCB snapsho
 for all 324 AM3352 pads, including the power and ground pads. The fixture contains
 only package geometry and connections; it does not call a solver or supply saved
 routing paths.
+
+## Solver debugging
+
+Core emits `solver:started` with JSON-serializable `solverConstructorArgs`,
+`autorouting:progress` with the current phase and debug graphics, and
+`solver:ended` with solved/failed status, iterations and the error message.
+`SOLVERS.DogboneFanoutSolver` reconstructs the solver from those arguments without
+a live circuit. It supports `step()`, `solve()`, `getOutput()`,
+`getConstructorParams()` and `visualize()` through the standard solver interface.
+Steps advance a component site assignment or an individual escape trace;
+the underlying pad-site matcher's bounded search is atomic within an assignment
+step. Debug graphics show obstacles, assigned vias and pad-to-via segments,
+including the last state when assignment fails. Core publishes handoffs only
+after the solver succeeds.

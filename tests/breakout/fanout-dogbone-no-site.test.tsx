@@ -1,8 +1,19 @@
+import type { SolverEndedEvent, SolverStartedEvent } from "lib/events"
+import { SOLVERS } from "lib/solvers"
+import type { DogboneFanoutSolverInput } from "lib/utils/autorouting/DogboneFanoutSolver"
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("dogbone failure does not publish partial handoffs", async () => {
   const { circuit } = getTestFixture()
+  const started: SolverStartedEvent[] = []
+  const ended: SolverEndedEvent[] = []
+  circuit.on("solver:started", (event) => {
+    if (event.solverName === "DogboneFanoutSolver") started.push(event)
+  })
+  circuit.on("solver:ended", (event) => {
+    if (event.solverName === "DogboneFanoutSolver") ended.push(event)
+  })
   circuit.add(
     <board
       width={16}
@@ -65,6 +76,21 @@ test("dogbone failure does not publish partial handoffs", async () => {
     </board>,
   )
   await expect(circuit.renderUntilSettled()).rejects.toThrow(
+    "No complete local dogbone assignment",
+  )
+  expect(ended).toHaveLength(1)
+  expect(ended[0]).toMatchObject({
+    solved: false,
+    failed: true,
+  })
+  const args: [DogboneFanoutSolverInput] = JSON.parse(
+    JSON.stringify(started[0]!.solverConstructorArgs),
+  )
+  const replay = new SOLVERS.DogboneFanoutSolver(...args)
+  replay.solve()
+  expect(replay.failed).toBe(true)
+  expect(replay.error).toBe(ended[0]!.error)
+  expect(() => replay.getOutput()).toThrow(
     "No complete local dogbone assignment",
   )
   expect(circuit.db.pcb_trace.list()).toEqual([])

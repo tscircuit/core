@@ -114,7 +114,7 @@ const localAutorouterStrategies = new Map<string, LocalAutorouterStrategy>([
     {
       name: "dogbone",
       cacheable: false,
-      getSolverName: () => "FanoutSolver",
+      getSolverName: () => "DogboneFanoutSolver",
       create: () => {
         throw new Error(
           'Use autorouter="dogbone" on a <fanout> containing the source component',
