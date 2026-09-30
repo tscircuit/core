@@ -1629,7 +1629,7 @@ export class NormalComponent<
             originDescription: "direct PCB primitive",
             component: child,
           })),
-        primaryPortOpts,
+        { ...primaryPortOpts, allowImplicitPinNumbers: false },
       )
     }
     return []
