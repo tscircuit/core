@@ -1,34 +1,63 @@
 import { expect, test } from "bun:test"
-import { any_circuit_element } from "circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
-import usbCircuitJson from "tests/fixtures/assets/usb-c-C2765186-duplicate-shell-pins.circuit.json"
 
 // Enable this diagnostic test on the unfixed branch to regenerate the failure snapshots.
 // It stays skipped so the stacked fix can share the same repro files.
 test.skip("repro: grounded USB-C shell has no routed PCB connection", async () => {
   const { circuit } = getTestFixture()
-  const partCircuitJson = usbCircuitJson.map((element) =>
-    any_circuit_element.parse(element),
-  )
   circuit.add(
-    <board
-      width="30mm"
-      height="18mm"
-      autorouter="auto-local"
-      partsEngine={{
-        findPart: async () => ({ jlcpcb: ["C2765186"] }),
-        fetchPartCircuitJson: async () => partCircuitJson,
-      }}
-    >
+    <board width="30mm" height="18mm" autorouter="auto-local">
       <connector
         name="J1"
         standard="usb_c"
         pcbX={-5}
         schX={0}
         schY={1}
-        supplierPartNumbers={{ jlcpcb: ["C2765186"] }}
-        connections={{ SHELL1: "net.GND", SHELL2: "net.GND" }}
-      />
+        schHeight={2}
+        connections={{ SHELL1: ".J2 > .pin1", SHELL2: ".J2 > .pin1" }}
+      >
+        <platedhole
+          shape="pill"
+          portHints={["pin13", "SHELL1"]}
+          pcbX={-4.3}
+          pcbY={1.6}
+          outerWidth={1.2}
+          outerHeight={1.9}
+          holeWidth={0.6}
+          holeHeight={1.4}
+        />
+        <platedhole
+          shape="pill"
+          portHints={["pin14", "SHELL2"]}
+          pcbX={4.3}
+          pcbY={1.6}
+          outerWidth={1.2}
+          outerHeight={1.9}
+          holeWidth={0.6}
+          holeHeight={1.4}
+        />
+        <platedhole
+          shape="pill"
+          portHints={["pin13", "SHELL1"]}
+          pcbX={-4.3}
+          pcbY={-2.6}
+          outerWidth={1.2}
+          outerHeight={1.9}
+          holeWidth={0.6}
+          holeHeight={1.4}
+        />
+        <platedhole
+          shape="pill"
+          portHints={["pin14", "SHELL2"]}
+          pcbX={4.3}
+          pcbY={-2.6}
+          outerWidth={1.2}
+          outerHeight={1.9}
+          holeWidth={0.6}
+          holeHeight={1.4}
+        />
+        <silkscreenrect pcbY={-0.5} width={8.6} height={6} />
+      </connector>
       <pinheader
         name="J2"
         pinCount={1}
@@ -57,7 +86,7 @@ test.skip("repro: grounded USB-C shell has no routed PCB connection", async () =
     .filter((trace) =>
       trace.connected_source_net_ids.includes(ground.source_net_id),
     )
-  expect(groundTraces).toHaveLength(3)
+  expect(groundTraces).toHaveLength(1)
   const usbSource = circuit.db.source_component.getWhere({ name: "J1" })!
   const usbPcb = circuit.db.pcb_component.getWhere({
     source_component_id: usbSource.source_component_id,
