@@ -114,6 +114,14 @@ export function createSchematicTraceSolverInputProblem(
   opts: { schematicSheetId?: string; netLabels?: NetLabel[] } = {},
 ): SolverInputContext {
   const { db } = group.root!
+  const sourceTraceIdsWithoutSchematicRepresentation = new Set(
+    group
+      .selectAll<Trace>("trace")
+      .filter((trace) => trace._parsedProps.noSchematicRepresentation)
+      .flatMap((trace) =>
+        trace.source_trace_id ? [trace.source_trace_id] : [],
+      ),
+  )
   const routedSchematicPortIdBySchematicPortId =
     createRoutedSchematicPortIdMap(group)
   const resolveRoutedSchematicPortId = (schematicPortId: SchematicPortId) =>
@@ -121,7 +129,15 @@ export function createSchematicTraceSolverInputProblem(
     schematicPortId
 
   const sourcePortConnectivityMap = getSourcePortConnectivityMapFromCircuitJson(
-    db.toArray(),
+    db
+      .toArray()
+      .filter(
+        (element) =>
+          element.type !== "source_trace" ||
+          !sourceTraceIdsWithoutSchematicRepresentation.has(
+            element.source_trace_id,
+          ),
+      ),
   )
   // Subcircuit connectivity keys are local to their owning subcircuit, so the
   // same electrical net can have different keys on opposite sides of a
@@ -393,15 +409,6 @@ export function createSchematicTraceSolverInputProblem(
   for (const cg of childGroups) {
     if (cg.subcircuit_id) allowedSubcircuitIds.add(cg.subcircuit_id)
   }
-
-  const sourceTraceIdsWithoutSchematicRepresentation = new Set(
-    group
-      .selectAll<Trace>("trace")
-      .filter((trace) => trace._parsedProps.noSchematicRepresentation)
-      .flatMap((trace) =>
-        trace.source_trace_id ? [trace.source_trace_id] : [],
-      ),
-  )
 
   // Find all traces that are either in this subcircuit or connected to ports
   // within this subcircuit. This is necessary for traces that cross subcircuit
