@@ -40,7 +40,8 @@ jobs:
             exit 1
           fi
 
-          mapfile -t test_files < .github/test-plans/node${{ matrix.node }}-testplan.txt
+          # The dense AM3352 regression runs in its own architecture-pinned job.
+          mapfile -t test_files < <(sed '\|^tests/features/autorouter-bus-lanes-am3352.test.tsx$|d' .github/test-plans/node${{ matrix.node }}-testplan.txt)
           if [ ${#test_files[@]} -eq 0 ]; then
             echo "ERROR: No test files in plan for node ${{ matrix.node }}"
             exit 1
@@ -77,4 +78,26 @@ jobs:
           path: |
             tests/**/__snapshots__/*.diff.png
             tests/**/__snapshots__/*.snap.png
+          if-no-files-found: ignore
+
+  am3352-routing:
+    # Keep the strict routing snapshots on ARM, matching update-snapshots.yml.
+    # Last-bit libm differences can select different, valid control routes on
+    # x86. This long solve also needs its own budget outside the ordinary shards.
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.0
+      - run: bun install --frozen-lockfile
+      - name: Route all AM3352 signals and verify DRC, quality, and snapshots
+        run: bun test tests/features/autorouter-bus-lanes-am3352.test.tsx
+      - name: Upload routed snapshot differences on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: am3352-routed-snapshot-diffs
+          path: tests/features/__snapshots__/autorouter-bus-lanes-am3352-*.diff.png
           if-no-files-found: ignore
