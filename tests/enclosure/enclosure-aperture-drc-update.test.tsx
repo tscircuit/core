@@ -3,7 +3,7 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { EnclosureApertureDrcFixture } from "tests/fixtures/enclosure-aperture-drc-fixture"
 import { EnclosureFdmBox } from "lib/components/primitive-components/EnclosureFdmBox"
 
-test("a new assembly DRC pass replaces stale diagnostics", async () => {
+test("assembly DRC updates and removal clean up diagnostics and enclosure associations", async () => {
   const { circuit } = getTestFixture()
   circuit.add(<EnclosureApertureDrcFixture />)
   await circuit.renderUntilSettled()
@@ -24,5 +24,15 @@ test("a new assembly DRC pass replaces stale diagnostics", async () => {
   enclosure._markDirty("AssemblyDesignRuleChecks")
   circuit.render()
   await circuit.renderUntilSettled()
+  expect(circuit.db.cad_collision_error.list()).toHaveLength(0)
+  const metadata = circuit.db.cad_enclosure.get(enclosure.cad_enclosure_id!)!
+  expect(metadata.cad_component_ids).toHaveLength(2)
+  enclosure.parent!.remove(enclosure)
+  // Run removal phases for the detached component.
+  enclosure.runRenderCycle()
+  await circuit.renderUntilSettled()
+  expect(circuit.db.cad_enclosure.list()).toHaveLength(0)
+  for (const cadComponentId of metadata.cad_component_ids)
+    expect(circuit.db.cad_component.get(cadComponentId)).toBeFalsy()
   expect(circuit.db.cad_collision_error.list()).toHaveLength(0)
 })

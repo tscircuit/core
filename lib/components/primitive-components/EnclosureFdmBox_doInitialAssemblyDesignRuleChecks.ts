@@ -12,8 +12,10 @@ export function EnclosureFdmBox_doInitialAssemblyDesignRuleChecks(
 ): void {
   enclosure.removeAssemblyDesignRuleChecks()
   const root = enclosure.root
-  const geometry = enclosure.assemblyEnclosureGeometry
-  if (!root || root.pcbDisabled || !geometry?.apertures.length) return
+  const metadata = enclosure.cad_enclosure_id
+    ? root?.db.cad_enclosure.get(enclosure.cad_enclosure_id)
+    : undefined
+  if (!root || root.pcbDisabled || !metadata?.apertures.length) return
   let ancestor = enclosure.parent
   while (ancestor && !isAssemblyDeviceContainer(ancestor))
     ancestor = ancestor.parent
@@ -27,22 +29,20 @@ export function EnclosureFdmBox_doInitialAssemblyDesignRuleChecks(
     board.getInheritedProperty("drcChecksDisabled")
   )
     return
-  const circuitJson = root.db.toArray()
+  const circuitJson = root.db
+    .toArray()
+    .filter(
+      (element) =>
+        element.type !== "cad_enclosure" ||
+        element.cad_enclosure_id === enclosure.cad_enclosure_id,
+    )
   const run = enclosure._assemblyDrcRun
   enclosure._queueAsyncEffect("enclosure:aperture-drc", async () => {
     try {
-      const { loadCadComponentMesh } = await import("circuit-json-to-gltf")
       const diagnostics = await runAllAssemblyChecks(circuitJson, {
-        assemblyGeometry: {
-          enclosures: [geometry],
-          getCadComponentMesh: (cadComponent) =>
-            loadCadComponentMesh(cadComponent, {
-              pcbComponent: cadComponent.pcb_component_id
-                ? (root.db.pcb_component.get(cadComponent.pcb_component_id) ??
-                  undefined)
-                : undefined,
-              projectBaseUrl: root.projectUrl,
-            }),
+        platformConfig: {
+          localCacheEngine: root.platform?.localCacheEngine,
+          projectBaseUrl: root.projectUrl ?? root.platform?.projectBaseUrl,
         },
       })
       // An edit/removal while a model fetch was pending invalidates this pass.

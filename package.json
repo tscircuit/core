@@ -118,8 +118,7 @@
     "circuit-json-to-spice": "*",
     "schematic-symbols": "*",
     "spicets": "*",
-    "typescript": "^5.0.0",
-    "circuit-json-to-gltf": "*"
+    "typescript": "^5.0.0"
   },
   "dependencies": {
     "@flatten-js/core": "^1.6.2",

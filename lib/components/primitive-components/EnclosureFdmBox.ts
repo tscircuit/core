@@ -1,5 +1,4 @@
 import { enclosureFdmBoxProps } from "@tscircuit/props"
-import type { AssemblyEnclosureGeometry } from "@tscircuit/checks"
 import type { CadCollisionError, SourceRuntimeError } from "circuit-json"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { EnclosureFdmBox_doInitialCadModelRender } from "./EnclosureFdmBox_doInitialCadModelRender"
@@ -9,8 +8,7 @@ import { EnclosureFdmBox_doInitialAssemblyDesignRuleChecks } from "./EnclosureFd
 export class EnclosureFdmBox extends PrimitiveComponent<
   typeof enclosureFdmBoxProps
 > {
-  /** Explicit solver-owned enclosure/aperture associations; no name inference. */
-  assemblyEnclosureGeometry?: AssemblyEnclosureGeometry
+  cad_enclosure_id?: string
   _assemblyDrcRun = 0
   _assemblyDrcDiagnostics: (CadCollisionError | SourceRuntimeError)[] = []
   get config() {
@@ -66,6 +64,19 @@ export class EnclosureFdmBox extends PrimitiveComponent<
 
   doInitialCadModelRender(): void {
     EnclosureFdmBox_doInitialCadModelRender(this)
+  }
+
+  removeCadModelRender(): void {
+    const db = this.root?.db
+    if (!db) return
+    const enclosure = this.cad_enclosure_id
+      ? db.cad_enclosure.get(this.cad_enclosure_id)
+      : undefined
+    for (const cadComponentId of enclosure?.cad_component_ids ?? [])
+      db.cad_component.delete(cadComponentId)
+    if (this.cad_enclosure_id) db.cad_enclosure.delete(this.cad_enclosure_id)
+    this.cad_enclosure_id = undefined
+    this.cad_component_id = null
   }
 
   doInitialAssemblyDesignRuleChecks(): void {

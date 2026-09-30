@@ -1,3 +1,4 @@
+import { isAssemblyDeviceContainer } from "../base-components/is-assembly-device-container"
 import {
   type CreateFdmEnclosureInput,
   CreateFdmEnclosureSolver,
@@ -7,11 +8,8 @@ import { EnclosureCutoutAperture } from "./EnclosureCutoutAperture"
 import type { EnclosureFdmBox } from "./EnclosureFdmBox"
 import { getReferencedEnclosureBoard } from "./get-referenced-enclosure-board"
 
-/**
- * Consume the staged solver while preserving Core's published Circuit JSON
- * representation. The complete assembled plan remains one synthetic
- * `cad_component.model_jscad`; typed per-part records arrive in the later schema
- * migration without blocking the geometry/authoring rollout.
+/** Generate separate finished base/lid solids and persist the enclosure's
+ * assembly membership and resolved aperture owners for standalone JSON checks.
  */
 export const EnclosureFdmBox_doInitialCadModelRender = (
   component: EnclosureFdmBox,
@@ -98,12 +96,8 @@ export const EnclosureFdmBox_doInitialCadModelRender = (
       output.dimensions.standoffHeight,
   }
 
-  // Existing Circuit JSON already permits several cad_component records to
-  // share one PCB owner (the same relationship a cadassembly uses). Emit the
-  // solver's base and lid plans separately now, while both still share the
-  // synthetic enclosure source/PCB compatibility owner. The later typed schema
-  // adds durable base/lid role names; this stage gives renderers two meshes but
-  // intentionally does not infer a role from IDs or names.
+  // Both finished solids share the enclosure's source/PCB owner. Explicit
+  // cad_enclosure associations let checks discover them without name heuristics.
   const cadComponents = output.parts.map((part) =>
     db.cad_component.insert({
       position,
@@ -132,8 +126,15 @@ export const EnclosureFdmBox_doInitialCadModelRender = (
           (descendant): descendant is EnclosureCutoutAperture =>
             descendant instanceof EnclosureCutoutAperture,
         )
-  component.assemblyEnclosureGeometry = {
-    cadComponentIds: cadComponents.map((cad) => cad.cad_component_id),
+  let ancestor = component.parent
+  while (ancestor && !isAssemblyDeviceContainer(ancestor))
+    ancestor = ancestor.parent
+  if (component.cad_enclosure_id)
+    db.cad_enclosure.delete(component.cad_enclosure_id)
+  component.cad_enclosure_id = db.cad_enclosure.insert({
+    source_component_id: component.source_component_id,
+    is_in_assembly: Boolean(ancestor),
+    cad_component_ids: cadComponents.map((cad) => cad.cad_component_id),
     apertures: apertureOwners.map((aperture, index) => {
       // Same owner traversal as getFdmEnclosureSolverInput. The resolved face
       // comes from the solver, including an oblique ray choosing another wall.
@@ -143,7 +144,7 @@ export const EnclosureFdmBox_doInitialCadModelRender = (
       const face = resolvedApertures[index]?.face
       if (!owner?.pcb_component_id || !face)
         throw new Error("Could not resolve enclosure aperture owner/face")
-      return { pcbComponentId: owner.pcb_component_id, face }
+      return { pcb_component_id: owner.pcb_component_id, face }
     }),
-  }
+  }).cad_enclosure_id
 }
