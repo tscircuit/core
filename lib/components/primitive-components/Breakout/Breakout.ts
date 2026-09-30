@@ -14,6 +14,13 @@ import {
 } from "./solve-implicit-breakout-points"
 
 export class Breakout extends Group<typeof breakoutProps> {
+  get isDogboneFanout() {
+    const autorouter = this._parsedProps.autorouter
+    return (
+      (typeof autorouter === "string" ? autorouter : autorouter?.preset) ===
+      "dogbone"
+    )
+  }
   override get isRoutingDirective() {
     return true
   }
@@ -89,7 +96,7 @@ export class Breakout extends Group<typeof breakoutProps> {
         // Port is inside breakout and trace crosses boundary
         const isInside = breakoutPortSet.has(port)
         const hasOutsidePort = result.ports.some((p) => !breakoutPortSet.has(p))
-        if (!isInside || !hasOutsidePort) continue
+        if (!isInside || (!hasOutsidePort && !this.isDogboneFanout)) continue
 
         // Skip if already covered by a manual or auto breakout point
         if (manuallyMappedPorts.has(port)) continue
@@ -108,6 +115,23 @@ export class Breakout extends Group<typeof breakoutProps> {
 
   doInitialPcbAutoplaceBreakoutPoints(): void {
     if (this.root?.pcbDisabled) return
+
+    if (this.isDogboneFanout && this._parsedProps.pcbTracePaths === undefined) {
+      // Local fanout has no boundary destination. Seed connectivity at each pad;
+      // the routing phase moves these provisional handoffs to solved vias.
+      for (const point of this.children) {
+        if (!(point instanceof AutoplacedBreakoutPoint)) continue
+        const port = this.root!.db.pcb_port.get(
+          point.matchedPort!.pcb_port_id!,
+        )!
+        point._applySolvedBreakoutPoint({
+          sourceTraceId: point.matchedSourceTraceId!,
+          layer: port.layers[0]!,
+          position: port,
+        })
+      }
+      return
+    }
 
     const ownAutorouter = this.props.autorouter
     const inheritedAutorouter =

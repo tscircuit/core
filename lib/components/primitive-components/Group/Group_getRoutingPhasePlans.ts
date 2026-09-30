@@ -484,6 +484,17 @@ export function Group_getRoutingPhasePlans(
       traces: breakoutTraces,
     }
 
+    if (breakout.isDogboneFanout && breakoutProps.pcbTracePaths === undefined) {
+      breakoutPlans.push({
+        ...breakoutPlan,
+        // Keep the local fanout outline while allowing dogbone sites outside
+        // the pad bounding box to use the full board routing bounds.
+        routingBounds: undefined,
+        fanoutBounds: routingBounds,
+      })
+      continue
+    }
+
     if (breakout._parsedProps.pcbTracePaths !== undefined) {
       breakoutPlans.push({
         ...breakoutPlan,

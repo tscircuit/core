@@ -121,6 +121,8 @@ export function getPresetAutoroutingConfig(
       }
     case "bus-lanes":
       return { local: true, groupMode: "subcircuit", preset: "bus_lanes" }
+    case "dogbone":
+      return { local: true, groupMode: "subcircuit", preset: "dogbone" }
     case "fanout":
       return {
         local: true,

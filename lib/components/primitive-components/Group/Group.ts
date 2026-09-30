@@ -1127,7 +1127,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       routingPhaseDebugLabels.set(plan, `${label} ${ordinal}`)
     }
     const hasFanoutStage = routingStages.some(({ autorouterConfig }) =>
-      ["fanout", "single_layer_fanout"].includes(autorouterConfig.preset ?? ""),
+      ["fanout", "single_layer_fanout", "dogbone"].includes(
+        autorouterConfig.preset ?? "",
+      ),
     )
     const fanoutPourNetMap = hasFanoutStage
       ? Group_getFanoutPourNetMap(this, routingPhasePlans)
@@ -1753,6 +1755,12 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           } else {
             autorouter = localAutorouterStrategy.create({
               simpleRouteJson,
+              onSolverEnded: (event) =>
+                this.root?.emit("solver:ended", {
+                  ...event,
+                  type: "solver:ended",
+                  componentName: this.getString(),
+                }),
               commonAutorouterOptions,
               busFanoutDirections: routingPhasePlan.busFanoutDirections,
               fanoutBounds: routingPhasePlan.fanoutBounds,
@@ -1821,7 +1829,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         if (
           transformedSimpleRouteJson &&
           !usesPreviousStageOutput &&
-          ["fanout", "single_layer_fanout"].includes(
+          ["fanout", "single_layer_fanout", "dogbone"].includes(
             phaseAutorouterConfig.preset ?? "",
           ) &&
           routingPhasePlan.routingPcbGroupId
@@ -1853,8 +1861,14 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             db.pcb_breakout_point.update(breakoutPoint.pcb_breakout_point_id, {
               x: synchronizedPoint.fanoutExitPoint.x,
               y: synchronizedPoint.fanoutExitPoint.y,
+              layer: synchronizedPoint.fanoutExitPoint.layer as LayerRef,
             })
           }
+        }
+        // A transformed routing problem hands completed copper to the next
+        // stage; preserve it instead of treating it as a rerouting seed.
+        if (localAutorouterStrategy.preserveOutputTraces) {
+          for (const trace of traces) fixedTraceIds.add(trace.pcb_trace_id)
         }
         let stageOutputTraces = traces
         if (transformedSimpleRouteJson?.traces) {
@@ -1902,7 +1916,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           subcircuit: this,
           input: simpleRouteJson,
           traces,
-          isFanout: ["fanout", "single_layer_fanout"].includes(
+          isFanout: ["fanout", "single_layer_fanout", "dogbone"].includes(
             phaseAutorouterConfig.preset ?? "",
           ),
         })
