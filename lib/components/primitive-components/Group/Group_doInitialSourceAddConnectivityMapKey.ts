@@ -10,11 +10,14 @@ export function Group_doInitialSourceAddConnectivityMapKey(group: Group<any>) {
   // Find all traces that belong to this subcircuit, generate a connectivity
   // map, and add source_trace.subcircuit_connectivity_map_key
   const traces = group.selectAll("trace") as TraceI[]
+  const tracesWithSchematicRepresentation = traces.filter(
+    (trace) => !trace._parsedProps.noSchematicRepresentation,
+  )
   const vias = group.selectAll("via") as Via[]
   const nets = group.selectAll("net") as any[]
   const connMap = new ConnectivityMap({})
   connMap.addConnections(
-    traces
+    tracesWithSchematicRepresentation
       .map((t) => {
         const source_trace = db.source_trace.get(
           t.source_trace_id!,
