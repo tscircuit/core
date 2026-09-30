@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test"
 import type { PcbCopperPourBRep } from "circuit-json"
-import { Board } from "lib/components/normal-components/Board"
+import { Board } from "lib/components/normal-components/Board/Board"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("panel copper pours should use their owning board outline", async () => {

@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test"
-import { Board } from "lib/components/normal-components/Board"
+import { Board } from "lib/components/normal-components/Board/Board"
 import { Chip } from "lib/components/normal-components/Chip"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 

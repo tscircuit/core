@@ -1,6 +1,6 @@
 import type { BoardProps } from "@tscircuit/props"
 import type { PcbBoard } from "circuit-json"
-import { Board } from "lib/components/normal-components/Board"
+import { Board } from "lib/components/normal-components/Board/Board"
 import type { InflatorContext } from "../InflatorFn"
 
 export function inflatePcbBoard(

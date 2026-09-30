@@ -3,7 +3,7 @@ import {
   runAllPlacementChecks,
 } from "@tscircuit/checks"
 import type { AnyCircuitElement } from "circuit-json"
-import type { Renderable } from "../base-components/Renderable"
+import type { Renderable } from "../../base-components/Renderable"
 import type { Board } from "./Board"
 
 const resetPcbTraceRenderInSubtree = (renderable: Renderable) => {
