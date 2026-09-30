@@ -34,6 +34,7 @@ jobs:
         run: bun run scripts/generate-test-plan.ts
 
       - name: Run tests for node ${{ matrix.node }}
+        shell: bash
         run: |
           if [ ! -f ".github/test-plans/node${{ matrix.node }}-testplan.txt" ]; then
             echo "ERROR: No test plan found for node ${{ matrix.node }}"
@@ -49,8 +50,12 @@ jobs:
           echo "Running ${#test_files[@]} test files for node ${{ matrix.node }}"
           attempt=1
           while [ $attempt -le 4 ]; do
-            bun test ${test_files[@]} --timeout 30000
-            code=$?
+            # Each retry keeps its log so crashes do not erase the evidence.
+            if bun test "${test_files[@]}" --timeout 30000 2>&1 | tee ".github/test-plans/node${{ matrix.node }}-attempt${attempt}.log"; then
+              code=0
+            else
+              code=$?
+            fi
 
             if [ $code -eq 0 ]; then
               break
@@ -68,7 +73,24 @@ jobs:
             attempt=$((attempt + 1))
             echo "Segfault (139) or illegal instruction (132) detected, retrying ($attempt/4)..."
           done
-      
+
+      - name: Report test timings
+        if: always()
+        run: |
+          shopt -s nullglob
+          logs=(.github/test-plans/node${{ matrix.node }}-attempt*.log)
+          if [ ${#logs[@]} -gt 0 ]; then
+            bun run scripts/report-test-times.ts "${logs[@]}"
+          fi
+
+      - name: Upload test timing logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-timings-node${{ matrix.node }}
+          path: .github/test-plans/node${{ matrix.node }}-attempt*.log
+          if-no-files-found: ignore
+
       - name: Upload 3D Snapshot Artifacts on Failure
         if: failure()
         uses: actions/upload-artifact@v4
