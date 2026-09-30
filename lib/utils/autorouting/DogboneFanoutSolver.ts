@@ -4,7 +4,7 @@ import {
   type PreparedBus,
   type DogboneViaSiteGeometryRules,
 } from "@tscircuit/fanout-solver"
-import type { PcbPort, SourceTrace } from "circuit-json"
+import { layer_ref, type PcbPort, type SourceTrace } from "circuit-json"
 import type { GraphicsObject } from "graphics-debug"
 import type { SimpleRouteJson, SimplifiedPcbTrace } from "./SimpleRouteJson"
 import { getViaBoardLayers } from "../getViaSpanLayers"
@@ -13,19 +13,11 @@ import { getViaBoardLayers } from "../getViaSpanLayers"
  * right-handed. Pad placement/rotation/reflection has already been applied. */
 export interface DogboneFanoutSolverInput {
   input: SimpleRouteJson
-  sources: { port: PcbPort; sourceTraceId: SourceTrace["source_trace_id"] }[]
-  fanoutRoutingLayers?: PcbPort["layers"]
-  traceWidth: number
-  clearance: number
-  viaDiameter: number
-  holeDiameter: number
-  viaClearance: number
-  boardEdgeClearance: number
-  holeClearance: number
+  fanoutRoutingLayers?: string[]
 }
 
 export interface DogboneFanoutTrace extends SimplifiedPcbTrace {
-  source_trace_id: SourceTrace["source_trace_id"]
+  source_trace_id?: SourceTrace["source_trace_id"]
 }
 
 /** Local dogbone assignment, replayable without a Circuit or component tree.
@@ -33,13 +25,20 @@ export interface DogboneFanoutTrace extends SimplifiedPcbTrace {
 export class DogboneFanoutSolver extends BaseSolver {
   phase: "preparing" | "assigning_sites" | "creating_traces" | "complete" =
     "preparing"
+  private sources: {
+    port: Pick<
+      PcbPort,
+      "pcb_port_id" | "pcb_component_id" | "x" | "y" | "layers"
+    >
+    sourceTraceId?: SourceTrace["source_trace_id"]
+  }[] = []
   private sites = new Map<number, { x: number; y: number }>()
   private traces: DogboneFanoutTrace[] = []
   private steps: Generator<void>
 
   constructor(public readonly params: DogboneFanoutSolverInput) {
     super()
-    this.MAX_ITERATIONS = params.sources.length * 2 + 10
+    this.MAX_ITERATIONS = params.input.connections.length * 2 + 10
     this.steps = this.solveSteps()
   }
 
@@ -77,33 +76,68 @@ export class DogboneFanoutSolver extends BaseSolver {
       })),
       circles: [...this.sites.values()].map((center) => ({
         center,
-        radius: this.params.viaDiameter / 2,
+        radius:
+          (this.params.input.minViaPadDiameter ??
+            this.params.input.minViaDiameter ??
+            0.6) / 2,
         fill: "orange",
       })),
       lines: [...this.sites].map(([index, via]) => ({
-        points: [this.params.sources[index]!.port, via],
+        points: [this.sources[index]!.port, via],
         strokeColor: "orange",
-        strokeWidth: this.params.traceWidth,
+        strokeWidth: this.params.input.minTraceWidth,
       })),
     }
   }
 
   private *solveSteps(): Generator<void> {
-    const {
-      input,
-      sources,
-      fanoutRoutingLayers,
-      traceWidth,
-      clearance,
-      viaDiameter,
-      holeDiameter,
-      viaClearance,
-      boardEdgeClearance,
-      holeClearance,
-    } = this.params
+    const { input, fanoutRoutingLayers } = this.params
+    const traceWidth = input.minTraceWidth
+    const clearance = input.minTraceToPadEdgeClearance ?? 0.1
+    const viaDiameter = input.minViaPadDiameter ?? input.minViaDiameter ?? 0.6
+    const holeDiameter = input.minViaHoleDiameter ?? 0.3
+    const viaClearance = input.minViaEdgeToPadEdgeClearance ?? clearance
+    const boardEdgeClearance = input.minBoardEdgeClearance ?? clearance
+    const holeClearance =
+      input.minViaHoleEdgeToViaHoleEdgeClearance ?? clearance
+    this.sources = input.connections.map((connection) => {
+      const point = connection.pointsToConnect.find(
+        (point) =>
+          point.pcb_port_id &&
+          input.obstacles.some(
+            (pad) =>
+              pad.componentId &&
+              Math.hypot(pad.center.x - point.x, pad.center.y - point.y) < 1e-6,
+          ),
+      )
+      if (!point?.pcb_port_id)
+        throw new Error(
+          `Dogbone connection ${connection.name} has no source pad`,
+        )
+      const pad = input.obstacles.find(
+        (pad) =>
+          pad.componentId &&
+          Math.hypot(pad.center.x - point.x, pad.center.y - point.y) < 1e-6,
+      )!
+      return {
+        port: {
+          pcb_port_id: point.pcb_port_id,
+          pcb_component_id: pad.componentId!,
+          x: point.x,
+          y: point.y,
+          layers: [layer_ref.parse(point.layer)],
+        },
+        sourceTraceId: connection.source_trace_id,
+      }
+    })
+    const sources = this.sources
     const layers = getViaBoardLayers(input.layerCount)
     const allowedLayers = fanoutRoutingLayers ?? layers
-    if (allowedLayers.some((layer) => !layers.includes(layer)))
+    if (
+      allowedLayers.some(
+        (layer) => !layers.some((boardLayer) => boardLayer === layer),
+      )
+    )
       throw new Error("Dogbone fanout targets an unavailable board layer")
     const buses: PreparedBus[] = []
     const targets = sources.map(({ port, sourceTraceId }, connectionIndex) => {

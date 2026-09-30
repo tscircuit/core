@@ -1755,7 +1755,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           } else {
             autorouter = localAutorouterStrategy.create({
               simpleRouteJson,
-              dogboneInput: routingPhasePlan.dogboneInput,
               onSolverEnded: (event) =>
                 this.root?.emit("solver:ended", {
                   ...event,
@@ -1862,10 +1861,15 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             db.pcb_breakout_point.update(breakoutPoint.pcb_breakout_point_id, {
               x: synchronizedPoint.fanoutExitPoint.x,
               y: synchronizedPoint.fanoutExitPoint.y,
+              layer: synchronizedPoint.fanoutExitPoint.layer as LayerRef,
             })
           }
         }
-        routingPhasePlan.onRoutingComplete?.(traces)
+        // A transformed routing problem hands completed copper to the next
+        // stage; preserve it instead of treating it as a rerouting seed.
+        if (localAutorouterStrategy.preserveOutputTraces) {
+          for (const trace of traces) fixedTraceIds.add(trace.pcb_trace_id)
+        }
         let stageOutputTraces = traces
         if (transformedSimpleRouteJson?.traces) {
           stageOutputTraces = transformedSimpleRouteJson.traces

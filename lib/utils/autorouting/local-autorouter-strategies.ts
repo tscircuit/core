@@ -1,5 +1,4 @@
 import { DogboneAutorouter } from "./DogboneAutorouter"
-import type { DogboneFanoutSolverInput } from "./DogboneFanoutSolver"
 import type { SolverEndedEvent } from "lib/events"
 import { BusLanesAutorouter } from "./BusLanesAutorouter"
 import type {
@@ -22,7 +21,6 @@ import {
 } from "./getPresetAutoroutingConfig"
 
 export interface LocalAutorouterStrategyContext {
-  dogboneInput?: DogboneFanoutSolverInput
   onSolverEnded?: (
     event: Omit<SolverEndedEvent, "type" | "componentName">,
   ) => void
@@ -41,6 +39,8 @@ export interface LocalAutorouterStrategyContext {
 }
 
 export interface LocalAutorouterStrategy {
+  /** Keep completed copper fixed in subsequent routing stages. */
+  preserveOutputTraces?: boolean
   name: string
   cacheable: boolean
   followUpAutorouter?: AutorouterProp
@@ -120,20 +120,18 @@ const localAutorouterStrategies = new Map<string, LocalAutorouterStrategy>([
     "dogbone",
     {
       name: "dogbone",
+      preserveOutputTraces: true,
+      followUpAutorouter: "default",
       cacheable: false,
       getSolverName: () => "DogboneFanoutSolver",
       create: ({
         simpleRouteJson,
-        dogboneInput,
+        fanoutRoutingLayers,
         onSolverStarted,
         onSolverEnded,
       }) => {
-        if (!dogboneInput)
-          throw new Error(
-            'Use autorouter="dogbone" on a <fanout> containing the source component',
-          )
         return new DogboneAutorouter(
-          { ...dogboneInput, input: simpleRouteJson },
+          { input: simpleRouteJson, fanoutRoutingLayers },
           { onSolverStarted, onSolverEnded },
         )
       },

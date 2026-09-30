@@ -59,9 +59,11 @@ export class DogboneAutorouter implements GenericLocalAutorouter {
         connectsTo: [
           ...new Set([
             ...(trace.connectsTo ?? []),
-            ...connection.pointsToConnect.flatMap((point) =>
-              point.pointId ? [point.pointId] : [],
-            ),
+            ...(connection.routingPcbGroupId
+              ? connection.pointsToConnect.flatMap((point) =>
+                  !point.pcb_port_id && point.pointId ? [point.pointId] : [],
+                )
+              : [`${trace.pcb_trace_id}_exit`]),
           ]),
         ],
       }
@@ -82,11 +84,26 @@ export class DogboneAutorouter implements GenericLocalAutorouter {
           throw new Error("Dogbone fanout lost its exit")
         return {
           ...connection,
-          pointsToConnect: connection.pointsToConnect.map((point) =>
-            point.pcb_port_id && trace.connectsTo?.includes(point.pcb_port_id)
-              ? point
-              : { ...point, x: exit.x, y: exit.y, layer: exit.layer },
-          ),
+          pointsToConnect: connection.pointsToConnect.map((point) => {
+            const isHandoff = !point.pcb_port_id
+            const relocate = connection.routingPcbGroupId
+              ? isHandoff
+              : Boolean(
+                  point.pcb_port_id &&
+                    trace.connectsTo?.includes(point.pcb_port_id),
+                )
+            if (!relocate) return point
+            if (connection.routingPcbGroupId)
+              return { ...point, x: exit.x, y: exit.y, layer: exit.layer }
+            const { pcb_port_id: _port, ...handoff } = point
+            return {
+              ...handoff,
+              pointId: `${trace.pcb_trace_id}_exit`,
+              x: exit.x,
+              y: exit.y,
+              layer: exit.layer,
+            }
+          }),
         }
       }),
     }

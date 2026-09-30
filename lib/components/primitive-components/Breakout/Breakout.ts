@@ -8,16 +8,12 @@ import type { Trace } from "../Trace/Trace"
 import { defaultImplicitBreakoutPointSolverFn } from "./default-implicit-breakout-point-solver"
 import { Breakout_doInitialPcbPlacementDesignRuleChecks } from "./Breakout_doInitialPcbPlacementDesignRuleChecks"
 import { reportWindingBreakoutInfeasibleError } from "./report-winding-breakout-infeasible-error"
-import { prepareDogboneFanout } from "./prepare-dogbone-fanout"
-import type { DogboneFanoutSolverInput } from "lib/utils/autorouting/DogboneFanoutSolver"
 import {
   type ImplicitBreakoutPointPlacement,
   solveImplicitBreakoutPoints,
 } from "./solve-implicit-breakout-points"
 
 export class Breakout extends Group<typeof breakoutProps> {
-  dogboneInput: DogboneFanoutSolverInput | undefined
-
   get isDogboneFanout() {
     const autorouter = this._parsedProps.autorouter
     return (
@@ -121,7 +117,19 @@ export class Breakout extends Group<typeof breakoutProps> {
     if (this.root?.pcbDisabled) return
 
     if (this.isDogboneFanout && this._parsedProps.pcbTracePaths === undefined) {
-      this.dogboneInput = prepareDogboneFanout(this)
+      // Local fanout has no boundary destination. Seed connectivity at each pad;
+      // the routing phase moves these provisional handoffs to solved vias.
+      for (const point of this.children) {
+        if (!(point instanceof AutoplacedBreakoutPoint)) continue
+        const port = this.root!.db.pcb_port.get(
+          point.matchedPort!.pcb_port_id!,
+        )!
+        point._applySolvedBreakoutPoint({
+          sourceTraceId: point.matchedSourceTraceId!,
+          layer: port.layers[0]!,
+          position: port,
+        })
+      }
       return
     }
 

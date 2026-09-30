@@ -35,13 +35,16 @@ complete legal assignment is found, the routing phase emits an autorouting error
 without publishing solved handoffs. This preset currently requires a two-dimensional SMT pad grid; it is
 not a general perimeter escape router or a plane-connection solver.
 
-Layout creates provisional handoffs at the source pads without running a solver.
+The fanout wrapper creates provisional handoffs at source pads for phase selection.
 The dogbone routing phase runs through `GenericLocalAutorouter` in scheduled
 batches, then updates handoffs and downstream connections to the actual via
 locations before the next phase starts. Set `routeRemaining={false}` on the board
 to inspect only the local escapes. `pcbTracePaths`, when supplied, retains precedence over the preset.
-The preset is implemented for `<fanout>`; using it as a standalone board or
-`<autoroutingphase>` router is rejected.
+The same preset is available as `<autoroutingphase autorouter="dogbone" />`.
+It consumes the phase SRJ, escapes each selected connection's source pad, and
+passes the updated SRJ to the standard follow-up router. Sources, obstacles and
+DRC rules come from the current phase input; no component-tree input or custom
+completion callback is attached to the phase plan.
 
 See `tests/breakout/fanout-am3352-dogbones.test.tsx` and its labeled PCB snapshot
 for all 324 AM3352 pads, including the power and ground pads. The fixture contains
