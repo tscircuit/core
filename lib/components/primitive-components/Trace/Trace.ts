@@ -421,6 +421,7 @@ export class Trace
   }
 
   doInitialSchematicTraceRender(): void {
+    if (this._parsedProps.noSchematicRepresentation) return
     Trace_doInitialSchematicTraceRender(this)
   }
 }

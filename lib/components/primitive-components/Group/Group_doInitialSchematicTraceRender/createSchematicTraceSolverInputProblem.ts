@@ -16,6 +16,7 @@ import { convertFacingDirectionToElbowDirection } from "lib/utils/schematic/conv
 import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
 import type { NetLabel } from "../../NetLabel"
 import { Port } from "../../Port"
+import type { Trace } from "../../Trace/Trace"
 import { Group } from "../Group"
 import { applyInlineNetLabelEligibility } from "./applyInlineNetLabelEligibility"
 import { createCanonicalSchematicNetLabelTextResolver } from "./createCanonicalSchematicNetLabelTextResolver"
@@ -393,10 +394,22 @@ export function createSchematicTraceSolverInputProblem(
     if (cg.subcircuit_id) allowedSubcircuitIds.add(cg.subcircuit_id)
   }
 
+  const sourceTraceIdsWithoutSchematicRepresentation = new Set(
+    group
+      .selectAll<Trace>("trace")
+      .filter((trace) => trace._parsedProps.noSchematicRepresentation)
+      .flatMap((trace) =>
+        trace.source_trace_id ? [trace.source_trace_id] : [],
+      ),
+  )
+
   // Find all traces that are either in this subcircuit or connected to ports
   // within this subcircuit. This is necessary for traces that cross subcircuit
   // boundaries.
   const tracesInScope = db.source_trace.list().filter((st) => {
+    if (sourceTraceIdsWithoutSchematicRepresentation.has(st.source_trace_id)) {
+      return false
+    }
     if (st.subcircuit_id === group.subcircuit_id) return true
     for (const source_port_id of st.connected_source_port_ids) {
       if (sourcePortIdToSchPortId.has(asSourcePortId(source_port_id))) {
