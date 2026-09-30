@@ -36,20 +36,25 @@ export class SilkscreenText extends PrimitiveComponent<
     // Calculate rotation for silkscreen text
     let rotation = 0
 
-    // If the component has an explicit rotation, use that
-    if (props.pcbRotation !== undefined && props.pcbRotation !== 0) {
-      rotation = props.pcbRotation
+    // A unit-bearing zero is explicitly board-absolute. Numeric zero remains
+    // the legacy sentinel used by generated footprints to inherit rotation.
+    const explicitRotation = props.pcbRotation
+    const hasExplicitRotation =
+      explicitRotation !== undefined &&
+      (explicitRotation !== 0 || typeof this.props.pcbRotation === "string")
+    if (hasExplicitRotation) {
+      rotation = explicitRotation
     } else {
       // Otherwise, check for parent group rotations
       const globalTransform = this._computePcbGlobalTransformBeforeLayout()
       const decomposedTransform = decomposeTSR(globalTransform)
       rotation = (decomposedTransform.rotation.angle * 180) / Math.PI
     }
+
     // When text is on bottom layer, adjust rotation to keep text readable
     if (isFlipped) {
       rotation = (rotation + 180) % 360
     }
-
     const uniqueLayers = new Set(props.layers)
     if (props.layer) uniqueLayers.add(props.layer)
 
