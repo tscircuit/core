@@ -1,4 +1,6 @@
 import { expect, test } from "bun:test"
+import { PcbNoteRect } from "lib/components/primitive-components/PcbNoteRect"
+import { PcbNoteText } from "lib/components/primitive-components/PcbNoteText"
 import { getObstaclesFromCircuitJson } from "lib/utils/obstacles/getObstaclesFromCircuitJson"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { PrintedCoilSensor } from "./fixtures/wide-trace-obstacle/printed-coil-sensor"
@@ -17,23 +19,23 @@ test("printed sensing coil copper extends beyond its routing obstacles", async (
   // PCB notes use this same frame; no transform is needed.
   for (const obstacle of obstacles) {
     board.add(
-      <pcbnoterect
-        pcbX={obstacle.center.x}
-        pcbY={obstacle.center.y}
-        width={obstacle.width}
-        height={obstacle.height}
-        strokeWidth={0.025}
-        color="#00ff88"
-      />,
+      new PcbNoteRect({
+        pcbX: obstacle.center.x,
+        pcbY: obstacle.center.y,
+        width: obstacle.width,
+        height: obstacle.height,
+        strokeWidth: 0.025,
+        color: "#00ff88",
+      }),
     )
   }
   board.add(
-    <pcbnotetext
-      pcbY={-8}
-      fontSize={0.55}
-      color="#00ff88"
-      text={`Green: generated obstacles, ${obstacles[0].width} mm wide`}
-    />,
+    new PcbNoteText({
+      pcbY: -8,
+      fontSize: 0.55,
+      color: "#00ff88",
+      text: `Green: generated obstacles, ${obstacles[0].width} mm wide`,
+    }),
   )
   await circuit.renderUntilSettled()
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
