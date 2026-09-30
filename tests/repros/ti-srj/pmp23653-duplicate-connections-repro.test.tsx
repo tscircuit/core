@@ -8,7 +8,7 @@ const getPinSelectors = (componentName: string) =>
     (_, pinIndex) => `.${componentName} > .pin${pinIndex + 1}`,
   )
 
-test("PMP23653 TSX topology emits each net twice to the autorouter", async () => {
+test("PMP23653 TSX topology emits one autorouter connection per net", async () => {
   const { circuit } = getTestFixture({
     platform: { schematicDisabled: true },
   })
@@ -67,16 +67,16 @@ test("PMP23653 TSX topology emits each net twice to the autorouter", async () =>
         color="#93c5fd"
       />
       <pcbnotetext
-        text="DEFAULT AUTOROUTER: 4 INPUT JOBS -> 16 ROUTED SEGMENTS"
+        text="DEFAULT AUTOROUTER: 2 INPUT JOBS -> 16 ROUTED SEGMENTS"
         pcbY={-9.5}
         fontSize={0.64}
-        color="#ef4444"
+        color="#22c55e"
       />
       <pcbnotetext
-        text="BUG: SOLVER MERGES 2 DUPLICATES; PCB VIEW HIDES BAD INPUT"
+        text="FIXED: SAME ROUTE, EACH ELECTRICAL NET SUBMITTED ONCE"
         pcbY={-11.2}
         fontSize={0.64}
-        color="#ef4444"
+        color="#22c55e"
       />
     </board>,
   )
@@ -87,14 +87,19 @@ test("PMP23653 TSX topology emits each net twice to the autorouter", async () =>
   const autorouterOutput = autoroutingPhaseIoStack[0]?.endSimpleRouteJson
 
   expect(circuit.db.source_net.list()).toHaveLength(2)
-  expect(autorouterInput?.connections).toHaveLength(4)
+  expect(autorouterInput?.connections).toHaveLength(2)
   expect(
     autorouterInput?.connections.reduce(
       (endpointCount, connection) =>
         endpointCount + connection.pointsToConnect.length,
       0,
     ),
-  ).toBe(36)
+  ).toBe(18)
+  expect(new Set(autorouterInput?.connections.map(({ name }) => name))).toEqual(
+    new Set(
+      circuit.db.source_net.list().map((sourceNet) => sourceNet.source_net_id),
+    ),
+  )
   expect(autorouterOutput?.traces).toHaveLength(16)
   await expect(autoroutingPhaseIoStack).toMatchAutoroutingPhaseIoStackSnapshot(
     import.meta.path,
