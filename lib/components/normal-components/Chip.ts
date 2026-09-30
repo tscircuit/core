@@ -81,6 +81,10 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
     this.source_component_id = source_component.source_component_id!
   }
 
+  _getSchematicSymbolDisplayValue(): string | undefined {
+    return this._parsedProps.schDisplayValue
+  }
+
   doInitialPcbComponentRender() {
     if (this.root?.pcbDisabled) return
     const { db } = this.root!

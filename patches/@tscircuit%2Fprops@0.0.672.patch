@@ -1,0 +1,171 @@
+diff --git a/dist/index.d.ts b/dist/index.d.ts
+index 6e7829d9cd9f379bf3b6b99297f0cc631470a587..14c73d4b6000f539a1964ab961749714fe6990f5 100644
+--- a/dist/index.d.ts
++++ b/dist/index.d.ts
+@@ -46788,6 +46788,8 @@ interface ChipPropsSU<PinLabel extends SchematicPinLabel = SchematicPinLabel> ex
+     schPinSpacing?: Distance;
+     schWidth?: Distance;
+     schHeight?: Distance;
++    /** Text rendered in the symbol's value placeholder, such as a part value. */
++    schDisplayValue?: string;
+     noSchematicRepresentation?: boolean;
+     /**
+      * Whether to show the components from `internalCircuit` in the schematic.
+@@ -51052,6 +51054,7 @@ declare const chipProps: z.ZodObject<{
+     schPinSpacing: z.ZodOptional<z.ZodEffects<z.ZodUnion<[z.ZodString, z.ZodNumber]>, number, string | number>>;
+     schWidth: z.ZodOptional<z.ZodEffects<z.ZodUnion<[z.ZodString, z.ZodNumber]>, number, string | number>>;
+     schHeight: z.ZodOptional<z.ZodEffects<z.ZodUnion<[z.ZodString, z.ZodNumber]>, number, string | number>>;
++    schDisplayValue: z.ZodOptional<z.ZodString>;
+     noSchematicRepresentation: z.ZodOptional<z.ZodBoolean>;
+     schShowInternalCircuit: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
+     noConnect: z.ZodOptional<z.ZodUnion<[z.ZodReadonly<z.ZodArray<z.ZodString, "many">>, z.ZodArray<z.ZodString, "many">]>>;
+@@ -51806,6 +51809,7 @@ declare const chipProps: z.ZodObject<{
+         manufacturerPartNumber?: string | undefined;
+         supplierPartNumber?: Partial<Record<"jlcpcb" | "macrofab" | "pcbway" | "digikey" | "mouser" | "lcsc", string[]>> | undefined;
+     }[] | undefined;
++    schDisplayValue?: string | undefined;
+     noSchematicRepresentation?: boolean | undefined;
+     noConnect?: readonly string[] | string[] | undefined;
+     spiceModel?: SpiceModelElement | undefined;
+@@ -52559,6 +52563,7 @@ declare const chipProps: z.ZodObject<{
+         manufacturerPartNumber?: string | undefined;
+         supplierPartNumber?: Partial<Record<"jlcpcb" | "macrofab" | "pcbway" | "digikey" | "mouser" | "lcsc", string[]>> | undefined;
+     }[] | undefined;
++    schDisplayValue?: string | undefined;
+     noSchematicRepresentation?: boolean | undefined;
+     schShowInternalCircuit?: boolean | undefined;
+     noConnect?: readonly string[] | string[] | undefined;
+@@ -56768,6 +56773,7 @@ declare const bugProps: z.ZodObject<{
+     schPinSpacing: z.ZodOptional<z.ZodEffects<z.ZodUnion<[z.ZodString, z.ZodNumber]>, number, string | number>>;
+     schWidth: z.ZodOptional<z.ZodEffects<z.ZodUnion<[z.ZodString, z.ZodNumber]>, number, string | number>>;
+     schHeight: z.ZodOptional<z.ZodEffects<z.ZodUnion<[z.ZodString, z.ZodNumber]>, number, string | number>>;
++    schDisplayValue: z.ZodOptional<z.ZodString>;
+     noSchematicRepresentation: z.ZodOptional<z.ZodBoolean>;
+     schShowInternalCircuit: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
+     noConnect: z.ZodOptional<z.ZodUnion<[z.ZodReadonly<z.ZodArray<z.ZodString, "many">>, z.ZodArray<z.ZodString, "many">]>>;
+@@ -57522,6 +57528,7 @@ declare const bugProps: z.ZodObject<{
+         manufacturerPartNumber?: string | undefined;
+         supplierPartNumber?: Partial<Record<"jlcpcb" | "macrofab" | "pcbway" | "digikey" | "mouser" | "lcsc", string[]>> | undefined;
+     }[] | undefined;
++    schDisplayValue?: string | undefined;
+     noSchematicRepresentation?: boolean | undefined;
+     noConnect?: readonly string[] | string[] | undefined;
+     spiceModel?: SpiceModelElement | undefined;
+@@ -58275,6 +58282,7 @@ declare const bugProps: z.ZodObject<{
+         manufacturerPartNumber?: string | undefined;
+         supplierPartNumber?: Partial<Record<"jlcpcb" | "macrofab" | "pcbway" | "digikey" | "mouser" | "lcsc", string[]>> | undefined;
+     }[] | undefined;
++    schDisplayValue?: string | undefined;
+     noSchematicRepresentation?: boolean | undefined;
+     schShowInternalCircuit?: boolean | undefined;
+     noConnect?: readonly string[] | string[] | undefined;
+@@ -62483,6 +62491,7 @@ declare const pinoutProps: z.ZodObject<{
+     schPinSpacing: z.ZodOptional<z.ZodEffects<z.ZodUnion<[z.ZodString, z.ZodNumber]>, number, string | number>>;
+     schWidth: z.ZodOptional<z.ZodEffects<z.ZodUnion<[z.ZodString, z.ZodNumber]>, number, string | number>>;
+     schHeight: z.ZodOptional<z.ZodEffects<z.ZodUnion<[z.ZodString, z.ZodNumber]>, number, string | number>>;
++    schDisplayValue: z.ZodOptional<z.ZodString>;
+     noSchematicRepresentation: z.ZodOptional<z.ZodBoolean>;
+     schShowInternalCircuit: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
+     noConnect: z.ZodOptional<z.ZodUnion<[z.ZodReadonly<z.ZodArray<z.ZodString, "many">>, z.ZodArray<z.ZodString, "many">]>>;
+@@ -63237,6 +63246,7 @@ declare const pinoutProps: z.ZodObject<{
+         manufacturerPartNumber?: string | undefined;
+         supplierPartNumber?: Partial<Record<"jlcpcb" | "macrofab" | "pcbway" | "digikey" | "mouser" | "lcsc", string[]>> | undefined;
+     }[] | undefined;
++    schDisplayValue?: string | undefined;
+     noSchematicRepresentation?: boolean | undefined;
+     noConnect?: readonly string[] | string[] | undefined;
+     spiceModel?: SpiceModelElement | undefined;
+@@ -63990,6 +64000,7 @@ declare const pinoutProps: z.ZodObject<{
+         manufacturerPartNumber?: string | undefined;
+         supplierPartNumber?: Partial<Record<"jlcpcb" | "macrofab" | "pcbway" | "digikey" | "mouser" | "lcsc", string[]>> | undefined;
+     }[] | undefined;
++    schDisplayValue?: string | undefined;
+     noSchematicRepresentation?: boolean | undefined;
+     schShowInternalCircuit?: boolean | undefined;
+     noConnect?: readonly string[] | string[] | undefined;
+@@ -79622,6 +79633,7 @@ declare const connectorProps: z.ZodObject<{
+     schPinSpacing: z.ZodOptional<z.ZodEffects<z.ZodUnion<[z.ZodString, z.ZodNumber]>, number, string | number>>;
+     schWidth: z.ZodOptional<z.ZodEffects<z.ZodUnion<[z.ZodString, z.ZodNumber]>, number, string | number>>;
+     schHeight: z.ZodOptional<z.ZodEffects<z.ZodUnion<[z.ZodString, z.ZodNumber]>, number, string | number>>;
++    schDisplayValue: z.ZodOptional<z.ZodString>;
+     noSchematicRepresentation: z.ZodOptional<z.ZodBoolean>;
+     schShowInternalCircuit: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
+     noConnect: z.ZodOptional<z.ZodUnion<[z.ZodReadonly<z.ZodArray<z.ZodString, "many">>, z.ZodArray<z.ZodString, "many">]>>;
+@@ -80379,6 +80391,7 @@ declare const connectorProps: z.ZodObject<{
+         manufacturerPartNumber?: string | undefined;
+         supplierPartNumber?: Partial<Record<"jlcpcb" | "macrofab" | "pcbway" | "digikey" | "mouser" | "lcsc", string[]>> | undefined;
+     }[] | undefined;
++    schDisplayValue?: string | undefined;
+     noSchematicRepresentation?: boolean | undefined;
+     noConnect?: readonly string[] | string[] | undefined;
+     spiceModel?: SpiceModelElement | undefined;
+@@ -81134,6 +81147,7 @@ declare const connectorProps: z.ZodObject<{
+         manufacturerPartNumber?: string | undefined;
+         supplierPartNumber?: Partial<Record<"jlcpcb" | "macrofab" | "pcbway" | "digikey" | "mouser" | "lcsc", string[]>> | undefined;
+     }[] | undefined;
++    schDisplayValue?: string | undefined;
+     noSchematicRepresentation?: boolean | undefined;
+     schShowInternalCircuit?: boolean | undefined;
+     noConnect?: readonly string[] | string[] | undefined;
+@@ -157602,6 +157616,7 @@ declare const pushButtonProps: z.ZodObject<{
+     schPinSpacing: z.ZodOptional<z.ZodEffects<z.ZodUnion<[z.ZodString, z.ZodNumber]>, number, string | number>>;
+     schWidth: z.ZodOptional<z.ZodEffects<z.ZodUnion<[z.ZodString, z.ZodNumber]>, number, string | number>>;
+     schHeight: z.ZodOptional<z.ZodEffects<z.ZodUnion<[z.ZodString, z.ZodNumber]>, number, string | number>>;
++    schDisplayValue: z.ZodOptional<z.ZodString>;
+     noSchematicRepresentation: z.ZodOptional<z.ZodBoolean>;
+     schShowInternalCircuit: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
+     noConnect: z.ZodOptional<z.ZodUnion<[z.ZodReadonly<z.ZodArray<z.ZodString, "many">>, z.ZodArray<z.ZodString, "many">]>>;
+@@ -158356,6 +158371,7 @@ declare const pushButtonProps: z.ZodObject<{
+         manufacturerPartNumber?: string | undefined;
+         supplierPartNumber?: Partial<Record<"jlcpcb" | "macrofab" | "pcbway" | "digikey" | "mouser" | "lcsc", string[]>> | undefined;
+     }[] | undefined;
++    schDisplayValue?: string | undefined;
+     noSchematicRepresentation?: boolean | undefined;
+     noConnect?: readonly string[] | string[] | undefined;
+     spiceModel?: SpiceModelElement | undefined;
+@@ -159109,6 +159125,7 @@ declare const pushButtonProps: z.ZodObject<{
+         manufacturerPartNumber?: string | undefined;
+         supplierPartNumber?: Partial<Record<"jlcpcb" | "macrofab" | "pcbway" | "digikey" | "mouser" | "lcsc", string[]>> | undefined;
+     }[] | undefined;
++    schDisplayValue?: string | undefined;
+     noSchematicRepresentation?: boolean | undefined;
+     schShowInternalCircuit?: boolean | undefined;
+     noConnect?: readonly string[] | string[] | undefined;
+@@ -195614,11 +195631,11 @@ declare const ledProps: z.ZodObject<{
+         pin2?: string | readonly string[] | string[] | undefined;
+         pin1?: string | readonly string[] | string[] | undefined;
+     } | undefined;
++    schDisplayValue?: string | undefined;
+     schOrientation?: "vertical" | "horizontal" | "pos_top" | "pos_bottom" | "pos_left" | "pos_right" | "neg_top" | "neg_bottom" | "neg_left" | "neg_right" | undefined;
+     schSize?: number | "default" | "xs" | "sm" | "md" | undefined;
+     color?: string | undefined;
+     wavelength?: string | undefined;
+-    schDisplayValue?: string | undefined;
+     laser?: boolean | undefined;
+ }, {
+     name: string;
+@@ -196296,11 +196313,11 @@ declare const ledProps: z.ZodObject<{
+     schSheetName?: string | undefined;
+     connections?: Partial<Record<"left" | "right" | "pin1" | "pin2" | "anode" | "pos" | "cathode" | "neg", string | readonly string[] | string[]>> | undefined;
+     pinLabels?: Partial<Record<"left" | "right" | "pin1" | "pin2" | "anode" | "pos" | "cathode" | "neg", string | readonly string[] | string[]>> | Partial<Record<"1" | "2", string | readonly string[] | string[]>> | undefined;
++    schDisplayValue?: string | undefined;
+     schOrientation?: "vertical" | "horizontal" | "pos_top" | "pos_bottom" | "pos_left" | "pos_right" | "neg_top" | "neg_bottom" | "neg_left" | "neg_right" | undefined;
+     schSize?: string | number | undefined;
+     color?: string | undefined;
+     wavelength?: string | undefined;
+-    schDisplayValue?: string | undefined;
+     laser?: boolean | undefined;
+ }>;
+ declare const ledPins: readonly ["pin1", "left", "anode", "pos", "pin2", "right", "cathode", "neg"];
+diff --git a/dist/index.js b/dist/index.js
+index 39715463f9f083ad669b7652c41c394334872a7f..9dcdf2cfb1167f9ab64389f28dc8a0a4ddb36395 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -17089,6 +17089,7 @@ var chipProps = commonComponentProps.extend({
+   schPinSpacing: distance12.optional(),
+   schWidth: distance12.optional(),
+   schHeight: distance12.optional(),
++  schDisplayValue: z54.string().optional(),
+   noSchematicRepresentation: z54.boolean().optional(),
+   schShowInternalCircuit: z54.boolean().optional().default(false),
+   noConnect: noConnectProp.optional(),
