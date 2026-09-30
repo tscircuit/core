@@ -1,7 +1,5 @@
 {
-  "source": [
-    "https://github.com/tscircuit/core/actions/runs/36667217060"
-  ],
+  "source": ["https://github.com/tscircuit/core/actions/runs/36667217060"],
   "durationMsByFile": {
     "tests/assembly/assembly-model-url-disabled.test.tsx": 1,
     "tests/assembly/assembly-model-url-formats.test.tsx": 2,
