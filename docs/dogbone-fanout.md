@@ -1,0 +1,67 @@
+# Local dogbone fanout
+
+Use the `dogbone` preset on a `<fanout>` to escape connected SMT pads to nearby
+vias without routing to the fanout boundary:
+
+```tsx
+<board
+  layers={4}
+  minTraceWidth={0.1}
+  minViaPadDiameter={0.3}
+  minViaHoleDiameter={0.15}
+>
+  <fanout autorouter="dogbone" fanoutRoutingLayers={["inner1"]}>
+    <AM3352 />
+  </fanout>
+</board>
+```
+
+Core registers `DogboneFanoutSolver` from the standalone
+[`@tscircuit/dogbone-solver`](https://github.com/tscircuit/dogbone-solver) package.
+The package owns the algorithm, async SRJ adapter and debugger. It chooses
+local interstitial sites on a two-dimensional pad grid and emits straight or
+45-degree escapes. Pad geometry is taken after component placement, including
+rotation and bottom-side reflection. Grid coordinates are merged at micrometer
+precision to avoid floating-point rotation noise.
+
+The phase includes connected pads whose nets have no external endpoint, such as
+power and ground connections declared by the component. Unconnected pads are
+not automatically connected. Supply nets keep their individual identities.
+
+`fanoutRoutingLayers` restricts the handoff layers. Core selects the first listed
+layer distinct from the source pad's layer; without the property, it uses board
+stack order. Vias are through vias spanning the physical board stack. Board
+trace, pad, via and drill clearance rules constrain site assignment. If no
+complete legal assignment is found, the routing phase emits an autorouting error
+without publishing solved handoffs. This preset currently requires a two-dimensional SMT pad grid; it is
+not a general perimeter escape router or a plane-connection solver.
+
+The fanout wrapper creates provisional handoffs at source pads for phase selection.
+The dogbone routing phase runs through `GenericLocalAutorouter` in scheduled
+batches, then updates handoffs and downstream connections to the actual via
+locations before the next phase starts. Set `routeRemaining={false}` on the board
+to inspect only the local escapes. `pcbTracePaths`, when supplied, retains precedence over the preset.
+The same preset is available as `<autoroutingphase autorouter="dogbone" />`.
+It consumes the phase SRJ, escapes each selected connection's source pad, and
+passes the updated SRJ to the standard follow-up router. Sources, obstacles and
+DRC rules come from the current phase input; no component-tree input or custom
+completion callback is attached to the phase plan.
+
+See `tests/breakout/fanout-am3352-dogbones.test.tsx` and its labeled PCB snapshot
+for all 324 AM3352 pads, including the power and ground pads. The fixture contains
+only package geometry and connections; it does not call a solver or supply saved
+routing paths.
+
+## Solver debugging
+
+Core emits `solver:started` with JSON-serializable `solverConstructorArgs`,
+`autorouting:progress` with the current phase and debug graphics, and
+`solver:ended` with solved/failed status, iterations and the error message.
+`SOLVERS.DogboneFanoutSolver` reconstructs the solver from those arguments without
+a live circuit. It supports `step()`, `solve()`, `getOutput()`,
+`getConstructorParams()` and `visualize()` through the standard solver interface.
+Steps advance a component site assignment or an individual escape trace;
+the underlying pad-site matcher's bounded search is atomic within an assignment
+step. Debug graphics show obstacles, assigned vias and pad-to-via segments,
+including the last state when assignment fails. Core commits solved handoffs only
+after the solver succeeds. The adapter yields between batches and supports cancellation through `stop()`.

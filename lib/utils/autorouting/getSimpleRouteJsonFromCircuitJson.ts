@@ -5,6 +5,7 @@ import type {
   LayerRef,
   PcbBoard,
   PcbPort,
+  PcbTraceHint,
   PcbVia,
   SourcePort,
 } from "circuit-json"
@@ -35,6 +36,32 @@ import {
 import { getDifferentialPairsForSimpleRouteJson } from "./getDifferentialPairsForSimpleRouteJson"
 import { getPreservedRoutedSubcircuitTraces } from "./getPreservedRoutedSubcircuitTraces"
 import { getUnbrokenCopperPourObstacles } from "./getUnbrokenCopperPourObstacles"
+
+/**
+ * Converts PCB trace-hint route points to SRJ connection points. Both inputs
+ * use circuit-world millimeters in a right-handed frame (+X right, +Y up,
+ * +Z toward the top layer); the values are points and no transform is applied.
+ */
+const getSrjConnectionPointsFromPcbTraceHints = (
+  connectedPcbPorts: readonly PcbPort[],
+  pcbTraceHints: readonly PcbTraceHint[],
+) => {
+  const connectedPcbPortById = new Map(
+    connectedPcbPorts.map((pcbPort) => [pcbPort.pcb_port_id, pcbPort]),
+  )
+
+  return pcbTraceHints.flatMap((pcbTraceHint) => {
+    const pcbPort = connectedPcbPortById.get(pcbTraceHint.pcb_port_id)
+    if (!pcbPort) return []
+
+    const layer = pcbPort.layers?.[0] ?? "top"
+    return pcbTraceHint.route.map((routePoint) => ({
+      x: routePoint.x,
+      y: routePoint.y,
+      layer,
+    }))
+  })
+}
 
 const getOwningPcbBoardForSubcircuit = (
   db: CircuitJsonUtilObjects,
@@ -511,6 +538,13 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       (trace) =>
         !subcircuit_id || (trace as any).subcircuit_id === subcircuit_id,
     )
+    // Net-attached traces contribute their terminals to connectionsFromNets.
+    // Netless traces and plane terminations require their own SRJ connection.
+    .filter(
+      (sourceTrace) =>
+        sourceTrace.connected_source_net_ids.length === 0 ||
+        planeTerminatedSourceTraceLayers.has(sourceTrace.source_trace_id),
+    )
     .map((trace) => {
       const connectedPcbPorts = trace.connected_source_port_ids
         .map((sourcePortId) =>
@@ -528,7 +562,6 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         return null
       }
 
-      // TODO handle trace.connected_source_net_ids
       for (const connectedPort of connectedPcbPorts) {
         if (connectedPort.x === undefined || connectedPort.y === undefined) {
           console.error(
@@ -538,27 +571,8 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         }
       }
 
-      const connectedPcbPortIds = new Set(
-        connectedPcbPorts.map((port) => port.pcb_port_id),
-      )
-      // Collect all traceHints that apply to any connected port
-      const matchingHints = traceHints.filter((hint) =>
-        connectedPcbPortIds.has(hint.pcb_port_id),
-      )
-
-      const hintPoints: { x: number; y: number; layer: string }[] = []
-
-      for (const hint of matchingHints) {
-        const port = db.pcb_port.get(hint.pcb_port_id)
-        const layer = port?.layers?.[0] ?? "top"
-        for (const pt of hint.route) {
-          hintPoints.push({
-            x: pt.x,
-            y: pt.y,
-            layer,
-          })
-        }
-      }
+      const srjTraceHintConnectionPoints =
+        getSrjConnectionPointsFromPcbTraceHints(connectedPcbPorts, traceHints)
 
       const connectedPortRoutePoints = connectedPcbPorts.map((port) =>
         getPcbPortRoutePoint(port),
@@ -577,7 +591,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         // source trace endpoint in the autorouter input.
         pointsToConnect: [
           firstConnectedPortRoutePoint,
-          ...hintPoints,
+          ...srjTraceHintConnectionPoints,
           ...remainingPortRoutePoints,
         ],
       } as SimpleRouteConnection
@@ -710,6 +724,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
 
     const pointsToConnect: SimpleRouteConnection["pointsToConnect"] = []
     const addedPointIds = new Set<string>()
+    const connectedPcbPorts: PcbPort[] = []
     for (const st of connectedSourceTraces) {
       const pcb_ports = db.pcb_port
         .list()
@@ -719,9 +734,13 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         const routePoint = getPcbPortRoutePoint(p)
         if (addedPointIds.has(routePoint.pointId)) continue
         addedPointIds.add(routePoint.pointId)
+        connectedPcbPorts.push(p)
         pointsToConnect.push(routePoint)
       }
     }
+    pointsToConnect.push(
+      ...getSrjConnectionPointsFromPcbTraceHints(connectedPcbPorts, traceHints),
+    )
 
     const connection: SimpleRouteConnection = {
       name:

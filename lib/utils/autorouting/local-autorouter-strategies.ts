@@ -1,3 +1,5 @@
+import { DogboneAutorouter } from "@tscircuit/dogbone-solver"
+import type { SolverEndedEvent } from "lib/events"
 import { BusLanesAutorouter } from "./BusLanesAutorouter"
 import type {
   AutorouterProp,
@@ -19,6 +21,9 @@ import {
 } from "./getPresetAutoroutingConfig"
 
 export interface LocalAutorouterStrategyContext {
+  onSolverEnded?: (
+    event: Omit<SolverEndedEvent, "type" | "componentName">,
+  ) => void
   simpleRouteJson: SimpleRouteJson
   busLanesFanout?: "auto" | "none"
   commonAutorouterOptions: AutorouterOptions
@@ -35,6 +40,8 @@ export interface LocalAutorouterStrategyContext {
 }
 
 export interface LocalAutorouterStrategy {
+  /** Keep completed copper fixed in subsequent routing stages. */
+  preserveOutputTraces?: boolean
   name: string
   cacheable: boolean
   followUpAutorouter?: AutorouterProp
@@ -110,6 +117,27 @@ const localAutorouterStrategies = new Map<string, LocalAutorouterStrategy>([
     createFanoutAutorouterStrategy("single_layer_fanout"),
   ],
   ["fanout", createFanoutAutorouterStrategy("fanout")],
+  [
+    "dogbone",
+    {
+      name: "dogbone",
+      preserveOutputTraces: true,
+      followUpAutorouter: "default",
+      cacheable: false,
+      getSolverName: () => "DogboneFanoutSolver",
+      create: ({
+        simpleRouteJson,
+        fanoutRoutingLayers,
+        onSolverStarted,
+        onSolverEnded,
+      }) => {
+        return new DogboneAutorouter(
+          { input: simpleRouteJson, fanoutRoutingLayers },
+          { onSolverStarted, onSolverEnded },
+        )
+      },
+    },
+  ],
   [
     "bus_lanes",
     {

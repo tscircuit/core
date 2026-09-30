@@ -163,7 +163,6 @@ export function Group_syncFanoutExitsWithGlobalConnections({
           : [],
       ),
     )
-    if (globalPointMatches.length === 0) continue
 
     const changedPointIndex = outputConnection.pointsToConnect.findIndex(
       (outputPoint, pointIndex) => {
@@ -176,6 +175,14 @@ export function Group_syncFanoutExitsWithGlobalConnections({
     )
     if (changedPointIndex < 0) continue
     const fanoutExitPoint = outputConnection.pointsToConnect[changedPointIndex]
+    if (globalPointMatches.length === 0) {
+      synchronizedBreakoutPoints.push({
+        sourceTraceId: inputConnection.source_trace_id,
+        routingPcbGroupId,
+        previousPoint: inputConnection.pointsToConnect[changedPointIndex]!,
+        fanoutExitPoint,
+      })
+    }
 
     for (const {
       globalConnection,

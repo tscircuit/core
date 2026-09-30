@@ -231,8 +231,7 @@ export const getObstaclesFromCircuitJson = (
       if (element.shape === "circle") {
         obstacles.push({
           componentId: pcbComponentId,
-          // @ts-ignore
-          type: "oval",
+          type: "rect",
           layers: element.layers,
           center: {
             x: element.center.x,
@@ -424,20 +423,22 @@ export const getObstaclesFromCircuitJson = (
           connectedTo: withNetId([element.pcb_plated_hole_id]),
         })
       } else if (
+        element.shape === "circular_hole_with_rect_pad" ||
         element.shape === "pill_hole_with_rect_pad" ||
         element.shape === "rotated_pill_hole_with_rect_pad"
       ) {
         // Circuit JSON pad centers are board-world points in mm (+X right,
         // +Y up, right-handed). Rotation is CCW about the pad center; the
         // drill's offset and rotation do not change the copper pad bounds.
+        const rect_ccw_rotation =
+          element.shape === "pill_hole_with_rect_pad"
+            ? 0
+            : (element.rect_ccw_rotation ?? 0)
         const rotatedRect: RotatedRect = {
           center: { x: element.x, y: element.y },
           width: element.rect_pad_width,
           height: element.rect_pad_height,
-          rotation:
-            element.shape === "rotated_pill_hole_with_rect_pad"
-              ? element.rect_ccw_rotation
-              : 0,
+          rotation: rect_ccw_rotation,
         }
         const axisAlignedRect = getAxisAlignedRectFromRotatedRect(rotatedRect)
         const rect = axisAlignedRect ?? rotatedRect
@@ -453,21 +454,6 @@ export const getObstaclesFromCircuitJson = (
           ccwRotationDegrees: axisAlignedRect
             ? undefined
             : rotatedRect.rotation,
-          connectedTo: withNetId([element.pcb_plated_hole_id]),
-        })
-      } else if (element.shape === "circular_hole_with_rect_pad") {
-        obstacles.push({
-          circuitJsonMetadata: pcbPlatedHoleCircuitJsonMetadata,
-          componentId: pcbComponentId,
-          // @ts-ignore
-          type: "rect",
-          layers: everyLayer,
-          center: {
-            x: element.x,
-            y: element.y,
-          },
-          width: element.rect_pad_width,
-          height: element.rect_pad_height,
           connectedTo: withNetId([element.pcb_plated_hole_id]),
         })
       } else if (element.shape === "oval") {

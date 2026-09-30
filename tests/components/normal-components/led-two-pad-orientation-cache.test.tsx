@@ -63,6 +63,6 @@ test("recomputes cached unknown LED orientation and reuses the new frame", async
     if (render === 0) expect(circuit).toMatchPcbSnapshot(import.meta.path)
   }
   expect(
-    JSON.parse(cache.get("part-orientation-analysis:v3:jlcpcb:C123")!),
+    JSON.parse(cache.get("part-orientation-analysis:v4:jlcpcb:C123")!),
   ).toMatchObject({ pin1_location: "bottomside_right" })
 })

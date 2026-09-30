@@ -1620,16 +1620,19 @@ export class NormalComponent<
     }
 
     // Explore children for possible smtpads etc.
-    const newPorts: Port[] = []
     if (!footprint) {
-      for (const child of this.children) {
-        if (child.props.portHints && child.isPcbPrimitive) {
-          const port = getPortFromHints(child.props.portHints)
-          if (port) newPorts.push(port)
-        }
-      }
+      return getPrimaryPortsFromPortHintGroups(
+        this.children
+          .filter((child) => child.props.portHints && child.isPcbPrimitive)
+          .map((child) => ({
+            hints: child.props.portHints,
+            originDescription: "direct PCB primitive",
+            component: child,
+          })),
+        { ...primaryPortOpts, allowImplicitPinNumbers: false },
+      )
     }
-    return newPorts
+    return []
   }
 
   private _queueInvalidFootprintPropMessage(
