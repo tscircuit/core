@@ -56,12 +56,13 @@ usual dimension-derived model. Width and height remain an optional paired input
 and do not scale imported geometry. Model-less device behavior is unchanged.
 Use a subassembly's `cadModel` or CAD children for advanced model options.
 
-## Modelprinter and footprinter strings
+## Model strings and URLs
 
 All assembly elements also accept `model`, for example:
 
 ```tsx
 <assembly.device name="demo" model="soic8" />
+<assembly.device name="housing" model="https://example.com/housing.glb" />
 <assembly.screen
   name="display"
   connectsTo=".B1 .J1"
@@ -69,7 +70,9 @@ All assembly elements also accept `model`, for example:
 />
 ```
 
-`model` is a trimmed, non-empty modelprinter/footprinter string. Core emits
+`model` accepts a trimmed, non-empty HTTP(S) URL or modelprinter/footprinter
+string. URLs use the same file extension detection and `#ext` hints as `modelUrl`,
+including signed query strings. For modelprinter/footprinter strings, core emits
 `https://modelcdn.tscircuit.com/jscad_models/<URL-encoded-model>.glb` as the CAD
 model URL; model geometry is fetched by the viewer. It does not generate a PCB
 footprint, pads, or connections. Choose only one of `model`, `modelUrl`, or
