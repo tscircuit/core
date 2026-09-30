@@ -73,6 +73,121 @@ standalone strict `BusLanesSolver` retain its via-free input/output contract.
 
 ## Algorithm boundaries
 
+### Standalone `<fanout autorouter="dogbone" />`
+
+Ship the local escape primitive as a separately usable preset before composing
+it into `bus_lanes`. This is a proposed API, not an existing preset:
+
+```tsx
+<fanout autorouter="dogbone" fanoutRoutingLayers={["inner1"]}>
+  <MyBga name="U1" />
+</fanout>
+```
+
+The fanout owns the connected ports of its children. Each selected surface pad
+gets a short, legal pad-to-adjacent-via dogbone; its downstream handoff is the via
+on the chosen routing layer. There is no run to a shared boundary. Subsequent
+board routing or an explicit `bus_lanes` phase connects those handoffs to their
+destinations. The dogbone operation itself never completes the interconnect.
+Wrapping both packages in separate dogbone fanouts must work without relying on
+their order in JSX.
+
+Use the existing `fanoutRoutingLayers` and bus layer restrictions/preferences.
+Resolve one legal handoff layer per bus, preserving differential-pair layer
+compatibility. Without a specified layer, choose a legal non-source layer using
+the same deterministic layer resolver as the integrated pipeline; do not guess
+which layers are power planes. A single-layer board or conflicting layer masks
+fails with a clear diagnostic rather than pretending to make a layer transition.
+Explicit dogbone mode requests local via escapes even for outward-facing BGA
+pads; unlike boundary fanout, it does not prefer a long via-free surface escape.
+An existing compatible via or through-hole terminal needs no duplicate via.
+Unconnected pads remain obstacles and do not receive unused dogbones.
+
+This stage validates local copper and reports all selected ports escaped. It
+must not report full net connectivity or final bus/pair skew until interconnect
+routing has run. Preserve original bus/pair membership and user constraints for
+downstream routing. Local dogbones can consume the uncoupled-length budget, so
+reserve and report that contribution; do not locally length-match prefixes to
+an arbitrary target. In automatic `bus_lanes` mode, the same primitive is invoked
+only where a transition is needed.
+
+#### Core changes needed for the standalone mode
+
+`<fanout>` uses the existing `Breakout` machinery. Changing its preset string
+alone is insufficient:
+
+- Add `dogbone` to the preset types and validation in props, core normalization,
+  the local strategy registry, and solver debugger registration. Unknown strings
+  currently do not provide this behavior. Reuse the existing fanout layer and
+  routing-tolerance props; no custom `algorithmFn` or new repository is necessary.
+- In `Breakout.doInitialCreateAutoplacedBreakoutPoints`, create local handoff
+  identities for dogbone mode, without invoking the boundary point placement
+  solver in `doInitialPcbAutoplaceBreakoutPoints`. Preserve existing manual and
+  saved local via handoffs where they are compatible; explicitly diagnose
+  conflicting boundary-only directives instead of quietly applying them.
+- Update SRJ connection splitting in `getSimpleRouteJsonFromCircuitJson.ts` and
+  phase planning in `Group_getRoutingPhasePlans.ts`. A local handoff initially
+  identifies its original pad; after escape, replace its position/layer with the
+  chosen via. Preserve original port identity separately from handoff identity,
+  including multiple same-net ports and multiple packages. Do not select which
+  endpoint moves using net membership alone.
+- Extend or extract the endpoint synchronization from
+  `Group_syncFanoutExitsWithGlobalConnections.ts` to support local via handoffs.
+  Update both ends of a connection when separate dogbone phases own them. Retain
+  the remaining interconnect after retiring only the completed pad-to-handoff
+  subconnection. A phase rerun must reuse/rebuild its owned escapes without
+  treating those same escapes as foreign obstacles.
+- Skip `resolveFanoutBounds`, shared-boundary capacity/distribution, padding and
+  boundary separation rules for dogbone mode. Keep physical board outline and
+  clearance checks. Group bounds may organize placement or selection but never
+  determine how far dogbones travel. Reject explicitly supplied boundary-only
+  routing controls in dogbone mode with an actionable message.
+- Retain exact package-pad obstacles in downstream SRJ. The existing
+  `FanoutAutorouter.createDownstreamSimpleRouteJson` replaces a fully escaped
+  package with a rectangular keepout; that would bury local vias inside the
+  package and block the intended later routing. Add exact dogbone copper and
+  barrel geometry without that boundary-fanout transformation or conservative
+  trace rasterization.
+- The dogbone strategy has no automatic global-router follow-up of its own.
+  Let the board's remaining phase or the user's next explicit phase route the
+  outstanding connections, without routing them twice. Preserve cancellation,
+  stepping, diagnostics, and atomic phase commit.
+
+#### Solver reuse and tests
+
+`matchComponentDogboneViaSites` already generates adjacent half-pitch and corner
+sites, checks pad clearance, accepts fixed reservations and blocking copper,
+and performs bounded matching. Extract/reuse it through a public local-dogbone
+solver API. Normalize source ports independently of boundary destinations;
+`prepareFanoutBuses` currently selects one source endpoint per connection and
+prepares shared-boundary buses, which is not the complete standalone contract.
+Dogbone assignments need endpoint-specific identity so both packages can be
+escaped on the same original connection.
+
+Audit rather than assume the matcher provides all required guarantees: its
+current straight/45-degree filter applies to plane candidates, and it matches
+components in sequence. Signal dogbones also require that angle filter, physical
+board/outline bounds, correct widths and via drill rules, and collision checks
+across packages and against every previously reserved escape. Do not enable
+same-net merging using the ideal-plane exemption. Produce a signal handoff with
+retained connectivity, not `FanoutBusTermination`'s plane result that removes
+the connection from downstream SRJ.
+
+Add labeled visual fixtures showing local vias well inside a deliberately large
+fanout rectangle, with no copper reaching that rectangle. Test dense inner pads,
+bottom-side/rotated BGA geometry, disconnected pads, existing via reuse, two
+packages on one connection, multiple same-net ports, and crowded dogbones with
+no legal assignment. Test identical dogbone geometry when boundary padding or
+wrapper size is omitted; conflicting explicit boundary controls are errors.
+Include a dogbone-only local-clearance fixture and completed fixtures followed
+by `bus_lanes` and by ordinary board routing. Verify emitted copper, full barrel
+DRC, original endpoint connectivity, fixed traces, no duplicate vias on reruns,
+and no partial escapes committed on failure.
+
+The first implementation slice therefore includes the public solver primitive,
+props preset and core local-handoff integration. It can ship independently of
+the coupled routing, smoothing, and length-tuning work below.
+
 Add a proposed `BusLanesPipelineSolver` in **bus-lanes-solver**, composing a local
 escape primitive from **fanout-solver** with the existing strict lane solver.
 Core remains the adapter and phase coordinator. Keep geometric search out of
@@ -186,7 +301,7 @@ The prototype's moved RAM position is part of that fixture's input placement.
 
 | Order | Repository | Deliverable and merge gate |
 | --- | --- | --- |
-| 1 | fanout-solver | Local signal-dogbone primitive, provenance and exact physical via geometry; tests for both endpoints, fixed handoffs, crowded sites and barrel collisions. Publish an additive release. |
+| 1 | fanout-solver, props, core | Local signal-dogbone primitive, provenance and exact physical via geometry; expose `<fanout autorouter="dogbone" />` with local handoff integration as described above. Test both endpoints, fixed handoffs, crowded sites, downstream routing and barrel collisions. Publish dependencies before the core integration merges. |
 | 2 | bus-lanes-solver | Pipeline composition, legal layer selection and fixed-copper accumulation; strict standalone solver unchanged. Tests for zero unnecessary vias, bounded failure and total path accounting. |
 | 3 | bus-lanes-solver, checks/schema owners if needed | Coupled routing, explicit gap/uncoupled semantics, curved tuning and constraint-preserving turn cleanup. Benchmark and visually inspect the AM3352 fixture and existing four DDR samples. Publish a release usable by core. |
 | 4 | props | Proposed `busLanesFanout` configuration with validation and documentation; publish before core consumes it. This work can proceed alongside solver work. |
