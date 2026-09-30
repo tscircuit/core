@@ -55,3 +55,28 @@ A screen URL model inherits the connector attachment frame and replaces the
 usual dimension-derived model. Width and height remain an optional paired input
 and do not scale imported geometry. Model-less device behavior is unchanged.
 Use a subassembly's `cadModel` or CAD children for advanced model options.
+
+## Model strings and URLs
+
+All assembly elements also accept `model`, for example:
+
+```tsx
+<assembly.device name="demo" model="soic8" />
+<assembly.device name="housing" model="https://example.com/housing.glb" />
+<assembly.screen
+  name="display"
+  connectsTo=".B1 .J1"
+  model="flexscreen_w26.7mm_h19.26mm_sitsflat"
+/>
+```
+
+`model` accepts a trimmed, non-empty HTTP(S) URL or modelprinter/footprinter
+string. URLs use the same file extension detection and `#ext` hints as `modelUrl`,
+including signed query strings. For modelprinter/footprinter strings, core emits
+`https://modelcdn.tscircuit.com/jscad_models/<URL-encoded-model>.glb` as the CAD
+model URL; model geometry is fetched by the viewer. It does not generate a PCB
+footprint, pads, or connections. Choose only one of `model`, `modelUrl`, or
+`cadModel` where supported. Existing `cadModel` strings retain their behavior.
+Screen dimensions are optional with `model`; supplied dimensions must still be
+paired and positive, and do not resize an explicit model. Device and subassembly
+models retain their current assembly frame; screens retain connector placement.

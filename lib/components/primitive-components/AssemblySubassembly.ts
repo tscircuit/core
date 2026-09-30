@@ -5,7 +5,7 @@ import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import type { AssemblyDeviceContainer } from "../base-components/is-assembly-device-container"
 import { renderAssemblyCadModel } from "./render-assembly-cad-model"
 import { resolveAssemblyPlacement } from "./resolve-assembly-placement"
-import { resolveAssemblyModelUrl } from "./resolve-assembly-model-url"
+import { resolveAssemblyModel } from "./resolve-assembly-model"
 
 export class AssemblySubassembly
   extends PrimitiveComponent<typeof assemblySubassemblyProps>
@@ -42,9 +42,7 @@ export class AssemblySubassembly
     if (!this.root || this.root.pcbDisabled || !this.source_component_id) return
     const placement = resolveAssemblyPlacement(this)
     const model =
-      this._parsedProps.modelUrl !== undefined
-        ? resolveAssemblyModelUrl(this._parsedProps.modelUrl)
-        : this._parsedProps.cadModel
+      resolveAssemblyModel(this._parsedProps) ?? this._parsedProps.cadModel
     if (model && !(typeof model === "object" && "type" in model)) {
       this.cad_component_id = renderAssemblyCadModel(this, model, placement)
     }
