@@ -1,7 +1,7 @@
 import type { AssemblyScreen } from "./AssemblyScreen"
 import { renderAssemblyCadModel } from "./render-assembly-cad-model"
 import { resolveAssemblyPlacement } from "./resolve-assembly-placement"
-import { resolveAssemblyModelUrl } from "./resolve-assembly-model-url"
+import { resolveAssemblyModel } from "./resolve-assembly-model"
 
 const formatMillimetersForModelprinter = (millimeters: number): string =>
   Number(millimeters.toFixed(6)).toString()
@@ -28,10 +28,9 @@ export const AssemblyScreen_doInitialCadModelRender = (
   const placement = resolveAssemblyPlacement(component)
   component.cad_component_id = renderAssemblyCadModel(
     component,
-    component._parsedProps.modelUrl !== undefined
-      ? resolveAssemblyModelUrl(component._parsedProps.modelUrl)
-      : (component._parsedProps.cadModel ??
-          getDefaultFlexScreenModel(component)),
+    resolveAssemblyModel(component._parsedProps) ??
+      component._parsedProps.cadModel ??
+      getDefaultFlexScreenModel(component),
     placement,
   )
 }

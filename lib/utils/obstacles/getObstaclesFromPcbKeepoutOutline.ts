@@ -2,6 +2,7 @@ import type { PcbKeepoutOutline } from "circuit-json"
 import type { PcbComponentId } from "lib/utils/circuit-json/circuit-json-id-types"
 import { fillCircleWithRects } from "./fillCircleWithRects"
 import { generateApproximatingRects } from "./generateApproximatingRects"
+import { getCircumscribedRectFromCircularPcbKeepoutOutline } from "./getCircumscribedRectFromCircularPcbKeepoutOutline"
 import type { Obstacle } from "./types"
 
 /**
@@ -15,6 +16,21 @@ export const getObstaclesFromPcbKeepoutOutline = (
 ): Obstacle[] => {
   const { outline, stroke_width } = keepout
   if (!Number.isFinite(stroke_width) || stroke_width <= 0) return []
+
+  const circularKeepoutRect =
+    getCircumscribedRectFromCircularPcbKeepoutOutline(keepout)
+  if (circularKeepoutRect) {
+    return [
+      {
+        obstacleId: keepout.pcb_keepout_id,
+        componentId,
+        type: "rect",
+        layers: keepout.layers,
+        ...circularKeepoutRect,
+        connectedTo: [],
+      },
+    ]
+  }
 
   const obstacles: Obstacle[] = []
   for (

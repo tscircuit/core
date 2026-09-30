@@ -28,9 +28,9 @@ type SupplierPartOrientationAnalysis = {
   pin1Polarity: Pin1Polarity | null
 }
 
-// v3 invalidates the null two-pad frames cached before circuit-json-util 0.0.113.
+// v4 invalidates null straight-row frames cached before circuit-json-util 0.0.117.
 type SupplierPartOrientationCacheKey =
-  `part-orientation-analysis:v3:${SupplierName}:${string}`
+  `part-orientation-analysis:v4:${SupplierName}:${string}`
 
 type CachedSupplierPartOrientationAnalysis = {
   pin1_location: PcbPin1Location | null
@@ -182,7 +182,7 @@ const getSupplierPartOrientationCacheKey = ({
   supplierName,
   supplierPartNumber,
 }: SupplierPartCandidate): SupplierPartOrientationCacheKey =>
-  `part-orientation-analysis:v3:${supplierName}:${supplierPartNumber}`
+  `part-orientation-analysis:v4:${supplierName}:${supplierPartNumber}`
 
 const readCachedSupplierPartOrientationAnalysis = async ({
   cacheKey,
