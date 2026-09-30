@@ -23,13 +23,7 @@ test("footprint layout edgeToEdge yDist offset", () => {
               height="4mm"
               portHints={["pin2"]}
             />
-            <constraint
-              pcb
-              edgeToEdge
-              yDist="1mm"
-              top=".pin1"
-              bottom=".pin2"
-            />
+            <constraint pcb edgeToEdge yDist="1mm" top=".pin1" bottom=".pin2" />
             <constraint sameX for={[".pin1", ".pin2"]} />
           </footprint>
         }
