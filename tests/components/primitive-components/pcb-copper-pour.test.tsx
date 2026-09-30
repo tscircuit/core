@@ -56,7 +56,7 @@ test("pcbcopperpour inserts precomputed copper geometry", async () => {
             />
             <pcbcopperpour
               shape="polygon"
-              layer="top"
+              layer="inner1"
               sourceNetId="source_net_polygon"
               points={[
                 { x: -2, y: 1 },
@@ -112,7 +112,7 @@ test("pcbcopperpour inserts precomputed copper geometry", async () => {
   expect(pcbCopperPours.map((pcbCopperPour) => pcbCopperPour.layer)).toEqual([
     "top",
     "bottom",
-    "bottom",
+    "inner1",
     "bottom",
   ])
   expect(

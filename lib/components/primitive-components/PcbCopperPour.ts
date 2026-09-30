@@ -71,7 +71,10 @@ export class PcbCopperPour extends PrimitiveComponent<
     const { isFlipped, maybeFlipLayer } = this._getPcbPrimitiveFlippedHelpers()
     const commonFields = {
       covered_with_solder_mask: props.coveredWithSolderMask,
-      layer: maybeFlipLayer(props.layer),
+      layer:
+        props.layer === "top" || props.layer === "bottom"
+          ? maybeFlipLayer(props.layer)
+          : props.layer,
       pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
       source_net_id: props.sourceNetId,
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
