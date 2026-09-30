@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import { createAutoroutingPhaseIoStack } from "tests/fixtures/create-autorouting-phase-io-stack"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("net-connected traces assigned to a phase are routed by the remaining phase", async () => {
+test("net-connected traces are routed in their assigned phase", async () => {
   const { circuit } = getTestFixture({
     platform: { schematicDisabled: true },
   })
@@ -18,23 +18,11 @@ test("net-connected traces assigned to a phase are routed by the remaining phase
       <testpoint name="TP2" pcbX={5} pcbY={0} />
       <net name="SIGNAL" />
       <autoroutingphase phaseIndex={0} name="route-signal" />
-      <trace
-        from=".TP1 > .pin1"
-        to="net.SIGNAL"
-        routingPhaseIndex={0}
-      />
-      <trace
-        from=".TP2 > .pin1"
-        to="net.SIGNAL"
-        routingPhaseIndex={0}
-      />
+      <trace from=".TP1 > .pin1" to="net.SIGNAL" routingPhaseIndex={0} />
+      <trace from=".TP2 > .pin1" to="net.SIGNAL" routingPhaseIndex={0} />
+      <pcbnotetext text="BOTH TRACES REQUEST PHASE 0" pcbY={4} fontSize={0.8} />
       <pcbnotetext
-        text="BUG REPRO: BOTH TRACES REQUEST PHASE 0"
-        pcbY={4}
-        fontSize={0.8}
-      />
-      <pcbnotetext
-        text="PHASE 0 GETS NO CONNECTION; NET ROUTES IN REMAINING PHASE"
+        text="PHASE 0 ROUTES THE NET CONNECTION"
         pcbY={2.5}
         fontSize={0.65}
         color="#ef4444"
@@ -48,9 +36,9 @@ test("net-connected traces assigned to a phase are routed by the remaining phase
   const sourceNet = circuit.db.source_net.getWhere({ name: "SIGNAL" })
   expect(sourceNet).toBeDefined()
   expect(autoroutingPhaseIoStack).toHaveLength(1)
-  expect(autoroutingPhaseNames).toEqual([undefined])
   expect(routedPhase?.connections).toHaveLength(1)
   expect(routedPhase?.connections[0]?.name).toBe(sourceNet?.source_net_id)
+  expect(autoroutingPhaseNames).toEqual(["route-signal"])
   expect(circuit.db.pcb_trace.list()).not.toHaveLength(0)
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
