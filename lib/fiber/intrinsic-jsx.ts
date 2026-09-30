@@ -74,6 +74,7 @@ export interface TscircuitElements {
   courtyardoutline: Props.CourtyardOutlineProps
   courtyardrect: Props.CourtyardRectProps
   pcbtrace: Props.PcbTraceProps
+  pcbcopperpour: Props.PcbCopperPourProps
   fabricationnoterect: Props.FabricationNoteRectProps
   pcbbend: Props.PcbBendProps & Attributes
   pcbstiffener: Props.PcbStiffenerProps & Attributes
