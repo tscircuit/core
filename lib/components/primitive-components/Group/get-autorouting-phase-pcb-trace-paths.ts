@@ -98,7 +98,11 @@ export function getAutoroutingPhasePcbTracePaths({
       let exported = false
       for (const routeIndex of remainingRoutes) {
         for (const reverse of [false, true]) {
-          const candidates = endpoints[routeIndex]![reverse ? 1 : 0]!
+          // Provisional fanout exits can coincide with a source pad. Only
+          // physical ports can anchor a saved path; exits are not extra ports.
+          const candidates = endpoints[routeIndex]![reverse ? 1 : 0]!.filter(
+            (terminal) => terminal.pcb_port_id,
+          )
           if (candidates.length !== 1) continue
           const terminal = candidates[0]!
           if (!terminal.pcb_port_id || degreeByTerminal.get(terminal) !== 1)
