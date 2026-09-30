@@ -8,12 +8,23 @@ import type { Trace } from "../Trace/Trace"
 import { defaultImplicitBreakoutPointSolverFn } from "./default-implicit-breakout-point-solver"
 import { Breakout_doInitialPcbPlacementDesignRuleChecks } from "./Breakout_doInitialPcbPlacementDesignRuleChecks"
 import { reportWindingBreakoutInfeasibleError } from "./report-winding-breakout-infeasible-error"
+import { solveDogboneFanout } from "./solve-dogbone-fanout"
+import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
 import {
   type ImplicitBreakoutPointPlacement,
   solveImplicitBreakoutPoints,
 } from "./solve-implicit-breakout-points"
 
 export class Breakout extends Group<typeof breakoutProps> {
+  dogboneTraces: SimplifiedPcbTrace[] | undefined
+
+  get isDogboneFanout() {
+    const autorouter = this._parsedProps.autorouter
+    return (
+      (typeof autorouter === "string" ? autorouter : autorouter?.preset) ===
+      "dogbone"
+    )
+  }
   override get isRoutingDirective() {
     return true
   }
@@ -89,7 +100,7 @@ export class Breakout extends Group<typeof breakoutProps> {
         // Port is inside breakout and trace crosses boundary
         const isInside = breakoutPortSet.has(port)
         const hasOutsidePort = result.ports.some((p) => !breakoutPortSet.has(p))
-        if (!isInside || !hasOutsidePort) continue
+        if (!isInside || (!hasOutsidePort && !this.isDogboneFanout)) continue
 
         // Skip if already covered by a manual or auto breakout point
         if (manuallyMappedPorts.has(port)) continue
@@ -108,6 +119,11 @@ export class Breakout extends Group<typeof breakoutProps> {
 
   doInitialPcbAutoplaceBreakoutPoints(): void {
     if (this.root?.pcbDisabled) return
+
+    if (this.isDogboneFanout && this._parsedProps.pcbTracePaths === undefined) {
+      this.dogboneTraces = solveDogboneFanout(this)
+      return
+    }
 
     const ownAutorouter = this.props.autorouter
     const inheritedAutorouter =
