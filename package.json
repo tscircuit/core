@@ -35,7 +35,7 @@
     "@tsci/tscircuit.ti": "github:tscircuit/ti#57e314be4b2b06bc546d4def7453e619604d1157",
     "@tscircuit/alphabet": "0.0.25",
     "@tscircuit/bga-fanout-solver": "github:tscircuit/bga-fanout-solver#247c835cb8d69b65e53891dcf869731079415b39",
-    "@tscircuit/bus-lanes-solver": "github:tscircuit/bus-lanes-solver#0bc8d071241b18a3e7465a878881abe4998f6384",
+    "@tscircuit/bus-lanes-solver": "github:tscircuit/bus-lanes-solver#de425372f6413e024010d24b64341d64c83a6a12",
     "@tscircuit/capacity-autorouter": "^0.0.941",
     "@tscircuit/checks": "^0.0.228",
     "@tscircuit/circuit-json-util": "^0.0.116",
@@ -56,7 +56,7 @@
     "@tscircuit/math-utils": "^0.0.36",
     "@tscircuit/miniflex": "^0.0.4",
     "@tscircuit/ngspice-spice-engine": "^0.0.20",
-    "@tscircuit/props": "^0.0.670",
+    "@tscircuit/props": "https://pkg.pr.new/tscircuit/props/@tscircuit/props@e91f718",
     "@tscircuit/schematic-match-adapt": "^0.0.18",
     "@tscircuit/schematic-trace-solver": "^0.0.212",
     "@tscircuit/solver-utils": "^0.0.16",
@@ -135,7 +135,7 @@
   },
   "overrides": {
     "@tscircuit/circuit-json-util": "^0.0.116",
-    "@tscircuit/props": "^0.0.670",
+    "@tscircuit/props": "https://pkg.pr.new/tscircuit/props/@tscircuit/props@e91f718",
     "circuit-json": "^0.0.507"
   }
 }
