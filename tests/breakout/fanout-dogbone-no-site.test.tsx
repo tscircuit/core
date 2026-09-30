@@ -1,6 +1,6 @@
 import type { SolverEndedEvent, SolverStartedEvent } from "lib/events"
 import { SOLVERS } from "lib/solvers"
-import type { DogboneFanoutSolverInput } from "lib/utils/autorouting/DogboneFanoutSolver"
+import type { DogboneFanoutSolverInput } from "@tscircuit/dogbone-solver"
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 

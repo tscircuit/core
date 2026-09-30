@@ -16,8 +16,9 @@ vias without routing to the fanout boundary:
 </board>
 ```
 
-Core runs the registered `DogboneFanoutSolver` (`BaseSolver`), which uses the
-public pad-site matcher from `@tscircuit/fanout-solver`. It chooses
+Core registers `DogboneFanoutSolver` from the standalone
+[`@tscircuit/dogbone-solver`](https://github.com/tscircuit/dogbone-solver) package.
+The package owns the algorithm, async SRJ adapter and debugger. It chooses
 local interstitial sites on a two-dimensional pad grid and emits straight or
 45-degree escapes. Pad geometry is taken after component placement, including
 rotation and bottom-side reflection. Grid coordinates are merged at micrometer

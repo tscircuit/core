@@ -5,7 +5,7 @@ Uses the AM3352 ZCZ ball map and 18 × 18, 0.8 mm-pitch footprint from
 whose map was transcribed from TI SPRS717L, pages 15–17. Pads are 0.4 mm circles.
 
 The test uses `<fanout autorouter="dogbone"><AM3352 /></fanout>`.
-Core invokes the public pad-site matcher from fanout-solver 0.0.79 and creates
+Core invokes the published `@tscircuit/dogbone-solver` autorouter to create
 local pad-to-via traces and handoffs. No custom routing function or saved paths
 are supplied by the test.
 

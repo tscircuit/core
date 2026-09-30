@@ -1,4 +1,4 @@
-import { DogboneAutorouter } from "./DogboneAutorouter"
+import { DogboneAutorouter } from "@tscircuit/dogbone-solver"
 import type { SolverEndedEvent } from "lib/events"
 import { BusLanesAutorouter } from "./BusLanesAutorouter"
 import type {

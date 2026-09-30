@@ -4,9 +4,9 @@ import type {
   SolverEndedEvent,
   SolverStartedEvent,
 } from "lib/events"
-import { DogboneAutorouter } from "lib/utils/autorouting/DogboneAutorouter"
+import { DogboneAutorouter } from "@tscircuit/dogbone-solver"
 import { SOLVERS } from "lib/solvers"
-import type { DogboneFanoutSolverInput } from "lib/utils/autorouting/DogboneFanoutSolver"
+import type { DogboneFanoutSolverInput } from "@tscircuit/dogbone-solver"
 import { AM3352 } from "tests/fixtures/am3352-dogbone"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
@@ -74,7 +74,7 @@ test("dogbone solver events can replay and step the AM3352 solve", async () => {
     JSON.stringify(started[0]!.solverConstructorArgs),
   )
   const replay = new SOLVERS.DogboneFanoutSolver(...args)
-  expect(replay.visualize().rects!.length).toBeGreaterThanOrEqual(324)
+  expect(replay.visualize().circles!.length).toBeGreaterThanOrEqual(324)
   replay.step()
   expect(replay.solved).toBe(false)
   expect(replay.phase).toBe("assigning_sites")

@@ -22,7 +22,7 @@ import { SchematicTracePipelineSolver } from "@tscircuit/schematic-trace-solver"
 import { ViaStitchSolver } from "@tscircuit/via-stitch-solver"
 import { PackSolver2 } from "calculate-packing"
 
-import { DogboneFanoutSolver } from "./utils/autorouting/DogboneFanoutSolver"
+import { DogboneFanoutSolver } from "@tscircuit/dogbone-solver"
 
 export const SOLVERS = {
   DogboneFanoutSolver,
