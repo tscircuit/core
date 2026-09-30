@@ -1,13 +1,6 @@
 import { pcbCopperPourProps, type PcbCopperPourProps } from "@tscircuit/props"
 import type { Ring } from "circuit-json"
-import {
-  applyToPoint,
-  compose,
-  decomposeTSR,
-  type Matrix,
-  rotateDEG,
-  translate,
-} from "transformation-matrix"
+import { applyToPoint, decomposeTSR, type Matrix } from "transformation-matrix"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
 const transformBrepRing = ({
@@ -74,7 +67,7 @@ export class PcbCopperPour extends PrimitiveComponent<
     const { db } = this.root!
     const props = this._parsedProps
     const subcircuit = this.getSubcircuit()
-    const parentTransform = this._computePcbGlobalTransformBeforeLayout()
+    const primitiveTransform = this._computePcbGlobalTransformBeforeLayout()
     const { isFlipped, maybeFlipLayer } = this._getPcbPrimitiveFlippedHelpers()
     const commonFields = {
       covered_with_solder_mask: props.coveredWithSolderMask,
@@ -89,7 +82,7 @@ export class PcbCopperPour extends PrimitiveComponent<
         ...commonFields,
         shape: "polygon",
         points: props.points.map((point) =>
-          applyToPoint(parentTransform, point),
+          applyToPoint(primitiveTransform, point),
         ),
       })
       return
@@ -102,11 +95,15 @@ export class PcbCopperPour extends PrimitiveComponent<
         brep_shape: {
           outer_ring: transformBrepRing({
             isFlipped,
-            parentTransform,
+            parentTransform: primitiveTransform,
             ring: props.brepShape.outer_ring,
           }),
           inner_rings: props.brepShape.inner_rings.map((ring) =>
-            transformBrepRing({ isFlipped, parentTransform, ring }),
+            transformBrepRing({
+              isFlipped,
+              parentTransform: primitiveTransform,
+              ring,
+            }),
           ),
         },
       })
@@ -114,11 +111,6 @@ export class PcbCopperPour extends PrimitiveComponent<
     }
 
     if (isFlipped) {
-      const rectToBoardTransform = compose(
-        parentTransform,
-        translate(props.pcbX, props.pcbY),
-        rotateDEG(props.pcbRotation ?? 0),
-      )
       const halfWidth = props.width / 2
       const halfHeight = props.height / 2
 
@@ -130,23 +122,20 @@ export class PcbCopperPour extends PrimitiveComponent<
           { x: halfWidth, y: -halfHeight },
           { x: halfWidth, y: halfHeight },
           { x: -halfWidth, y: halfHeight },
-        ].map((point) => applyToPoint(rectToBoardTransform, point)),
+        ].map((point) => applyToPoint(primitiveTransform, point)),
       })
       return
     }
 
-    const parentRotationDegrees =
-      (decomposeTSR(parentTransform).rotation.angle * 180) / Math.PI
+    const globalRotationDegrees =
+      (decomposeTSR(primitiveTransform).rotation.angle * 180) / Math.PI
     db.pcb_copper_pour.insert({
       ...commonFields,
       shape: "rect",
-      center: applyToPoint(parentTransform, {
-        x: props.pcbX,
-        y: props.pcbY,
-      }),
+      center: applyToPoint(primitiveTransform, { x: 0, y: 0 }),
       width: props.width,
       height: props.height,
-      rotation: (props.pcbRotation ?? 0) + parentRotationDegrees,
+      rotation: globalRotationDegrees,
     })
   }
 }

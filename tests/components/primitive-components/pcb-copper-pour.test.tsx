@@ -14,6 +14,27 @@ test("pcbcopperpour inserts precomputed copper geometry", async () => {
         fontSize={0.7}
       />
       <chip
+        name="TOP_RECT"
+        pcbX={-7}
+        pcbY={-4}
+        pcbRotation="20deg"
+        noSchematicRepresentation
+        footprint={
+          <footprint>
+            <pcbcopperpour
+              shape="rect"
+              layer="top"
+              sourceNetId="source_net_top_rect"
+              pcbX={1}
+              pcbY={0}
+              width={3}
+              height={2}
+              pcbRotation="10deg"
+            />
+          </footprint>
+        }
+      />
+      <chip
         name="COPPER"
         layer="bottom"
         pcbX={0}
@@ -81,18 +102,27 @@ test("pcbcopperpour inserts precomputed copper geometry", async () => {
     .filter(
       (element): element is PcbCopperPour => element.type === "pcb_copper_pour",
     )
-  expect(pcbCopperPours).toHaveLength(3)
+  expect(pcbCopperPours).toHaveLength(4)
   expect(pcbCopperPours.map((pcbCopperPour) => pcbCopperPour.shape)).toEqual([
+    "rect",
     "polygon",
     "polygon",
     "brep",
   ])
-  expect(
-    pcbCopperPours.every((pcbCopperPour) => pcbCopperPour.layer === "bottom"),
-  ).toBeTrue()
+  expect(pcbCopperPours.map((pcbCopperPour) => pcbCopperPour.layer)).toEqual([
+    "top",
+    "bottom",
+    "bottom",
+    "bottom",
+  ])
   expect(
     pcbCopperPours.map((pcbCopperPour) => pcbCopperPour.source_net_id),
-  ).toEqual(["source_net_rect", "source_net_polygon", "source_net_brep"])
+  ).toEqual([
+    "source_net_top_rect",
+    "source_net_rect",
+    "source_net_polygon",
+    "source_net_brep",
+  ])
 
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
