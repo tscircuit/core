@@ -1912,7 +1912,13 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         }
 
         const savedPhasePaths = getAutoroutingPhasePcbTracePaths({
-          group: routingPhasePlan.autoroutingPhase?.getGroup() ?? this,
+          group:
+            (this.selectAll("group") as Group[]).find(
+              (group) =>
+                group.pcb_group_id === routingPhasePlan.fanoutRegionPcbGroupId,
+            ) ??
+            routingPhasePlan.autoroutingPhase?.getGroup() ??
+            this,
           subcircuit: this,
           input: simpleRouteJson,
           traces,
