@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("repro: crystal branch trace overlaps the XOUT_R net label", async () => {
+test("repro: crystal branch junction is offset from the branch", async () => {
   const { circuit } = getTestFixture()
   circuit.pcbDisabled = true
 
@@ -12,7 +12,7 @@ test("repro: crystal branch trace overlaps the XOUT_R net label", async () => {
       <schematicsection name="clock" />
 
       <schematictext
-        text="REPRO: trace must not overlap XOUT_R"
+        text="REPRO: junction must align with the XOUT_R branch"
         schX={0.8}
         schY={1.5}
         fontSize={0.2}
