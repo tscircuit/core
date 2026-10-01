@@ -243,7 +243,11 @@ export abstract class PrimitiveComponent<
         })
         const oldProps = primitive.props
         yield* coreSync(
-          () => primitive.cancelPendingEffects(),
+          () =>
+            primitive.cancelPendingEffects({
+              reason: "props_changed",
+              onlyOwner: true,
+            }),
           "cancel_component_jobs_on_props_change",
         )
         // Preserve the existing partial-update semantics and callback order.
@@ -1052,7 +1056,7 @@ export abstract class PrimitiveComponent<
           return
         yield* coreSync(() => {
           if (component.parent !== parent) {
-            component.cancelPendingEffects()
+            component.cancelPendingEffects({ reason: "reparented" })
           }
         }, "cancel_component_jobs_on_reparent")
         yield* coreSync(
@@ -1102,7 +1106,7 @@ export abstract class PrimitiveComponent<
           component.shouldBeRemoved = true
         }, "detach_component")
         yield* coreSync(() => {
-          component.cancelPendingEffects()
+          component.cancelPendingEffects({ reason: "removed" })
           component.root?.experimentalFootprintLoader?.cancelSubtree(component)
         }, "cancel_removed_component_jobs")
         yield* coreSync(

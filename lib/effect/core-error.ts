@@ -1,4 +1,5 @@
 import * as Cause from "effect/Cause"
+import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Exit from "effect/Exit"
 import { PreventSchedulerYield } from "effect/References"
@@ -61,9 +62,15 @@ export function originalCoreError(cause: Cause.Cause<unknown>) {
 
 /** Public synchronous compatibility boundary, preserving thrown value identity. */
 export function runCoreSync<A, E>(program: Effect.Effect<A, E>) {
-  const exit = Effect.runSyncExit(
-    Effect.provideService(program, PreventSchedulerYield, true),
+  return coreExitValue(
+    Effect.runSyncExit(
+      Effect.provideService(program, PreventSchedulerYield, true),
+    ),
   )
+}
+
+/** Shared sync exit adapter; stop accidental async continuations before throw. */
+export function coreExitValue<A, E>(exit: Exit.Exit<A, E>): A {
   if (Exit.isSuccess(exit)) return exit.value
   const failure = originalCoreError(exit.cause)
   // Effect 4 runSyncExit leaves an accidentally asynchronous fiber running.
@@ -96,7 +103,11 @@ export function runCorePromise<A, E>(
       reject(options.signal.reason)
       return
     }
-    Effect.runCallback(program, {
+    // A real render can exhaust Effect's operation budget. Keep the no-yield
+    // reference in this fiber's initial context through its terminal exit;
+    // restoring a temporary reference before exit adds an observable microtask.
+    // Pinned by revision/settlement-promise-microtask-order.test.tsx.
+    Effect.runCallbackWith(Context.make(PreventSchedulerYield, true))(program, {
       signal: options.signal,
       onExit: (exit) => {
         if (Exit.isSuccess(exit)) resolve(exit.value)

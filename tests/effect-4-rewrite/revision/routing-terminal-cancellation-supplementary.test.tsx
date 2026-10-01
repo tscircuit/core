@@ -21,7 +21,7 @@ test("supplementary: terminal routing cancellation clears its guard without dirt
     })
     router.onStart = signalStarted
     circuit.add(
-      <board width={20} height={10} partsEngineDisabled>
+      <board width={20} height={10}>
         <group
           name="routing_scope"
           subcircuit

@@ -12,6 +12,7 @@ import {
   type DesignRuleCheckGroup,
 } from "lib/effect/design-rule-checks"
 import type { CoreJobContext } from "lib/effect/core-services"
+import { catchJobFailure } from "lib/effect/job-failure"
 import type { DrcCheck } from "../../primitive-components/DrcCheck"
 import type { Board } from "./Board"
 
@@ -204,11 +205,12 @@ export const Board_updatePcbDesignRuleChecks = (board: Board) => {
               Effect.map((diagnostics) =>
                 isCheckerCurrent() ? diagnostics : [],
               ),
-              Effect.catch((error) =>
-                isCheckerCurrent()
-                  ? Effect.fail(error)
-                  : Effect.succeed([] as AnyCircuitElement[]),
-              ),
+              (program) =>
+                catchJobFailure(program, (_error, cause) =>
+                  isCheckerCurrent()
+                    ? Effect.failCause(cause)
+                    : Effect.succeed([] as AnyCircuitElement[]),
+                ),
             ),
           })
         }
@@ -244,23 +246,27 @@ export const Board_updatePcbDesignRuleChecks = (board: Board) => {
   const subcircuitCircuitJson = subcircuit.toArray()
 
   board._drcChecksInProgress = true
-  board._queueEffect("board:drc-checks", (job) =>
-    Effect.gen(function* () {
-      yield* runDrcChecks(subcircuitCircuitJson, job)
-      yield* coreSync(
-        () =>
-          job.commit(() => {
-            board._drcChecksComplete = true
+  board._queueEffect(
+    "board:drc-checks",
+    (job) =>
+      Effect.gen(function* () {
+        yield* runDrcChecks(subcircuitCircuitJson, job)
+        yield* coreSync(
+          () =>
+            job.commit(() => {
+              board._drcChecksComplete = true
+            }),
+          "drc:complete",
+        )
+      }).pipe(
+        Effect.provideService(DesignRuleChecks, defaultDesignRuleChecks),
+        Effect.ensuring(
+          Effect.sync(() => {
+            board._drcChecksInProgress = false
           }),
-        "drc:complete",
-      )
-    }).pipe(
-      Effect.provideService(DesignRuleChecks, defaultDesignRuleChecks),
-      Effect.ensuring(
-        Effect.sync(() => {
-          board._drcChecksInProgress = false
-        }),
+        ),
       ),
-    ),
+    // Baseline checks finish against the captured snapshot on props updates.
+    { propsChange: "finish" },
   )
 }

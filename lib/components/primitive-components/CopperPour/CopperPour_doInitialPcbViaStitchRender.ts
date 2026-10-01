@@ -94,7 +94,10 @@ export function CopperPour_doInitialPcbViaStitchRender(
     return
   if (!copperPour._getBoard()?._parsedProps.enableViaStitching) return
 
-  copperPour._queueEffect("PcbViaStitchRender", (job) =>
-    renderViaStitchingForCopperPours(copperPour, job),
+  copperPour._queueEffect(
+    "PcbViaStitchRender",
+    (job) => renderViaStitchingForCopperPours(copperPour, job),
+    // Initial-only work retains the baseline's finish-on-props-change behavior.
+    { propsChange: "finish" },
   )
 }

@@ -8,12 +8,10 @@ import {
   type CoreError,
 } from "lib/effect/core-error"
 import type { CoreJobContext } from "lib/effect/core-services"
+import { validateComponentPinLabelKeysEffect } from "lib/effect/component-model-props"
+import { prefersNativeMethod } from "lib/effect/override-dispatch"
+import { catchJobFailure } from "lib/effect/job-failure"
 import { NormalComponent_getSupplierPartNumbersEffect } from "./NormalComponent_getSupplierPartNumbersEffect"
-import {
-  NormalComponent_restartInterruptedLoad,
-  NormalComponent_withInterruptedLoadRestart,
-} from "./NormalComponent_restartInterruptedLoad"
-import type { Renderable } from "../Renderable"
 import { getBoardFoldContext } from "lib/utils/cad/get-board-fold-context"
 import { transformCadComponentPlacement } from "@tscircuit/flex-utils"
 import { fp } from "@tscircuit/footprinter"
@@ -86,7 +84,6 @@ import {
 import { type SchSymbol, symbols } from "schematic-symbols"
 import { decomposeTSR } from "transformation-matrix"
 import { ZodType, z } from "zod"
-import { InvalidProps } from "../../../errors/InvalidProps"
 import { CadAssembly } from "../../primitive-components/CadAssembly"
 import { CadModel } from "../../primitive-components/CadModel"
 import { Footprint } from "../../primitive-components/Footprint"
@@ -230,25 +227,11 @@ export class NormalComponent<
     runCoreSync(
       atomicCoreEffect(
         Effect.gen({ self: this }, function* () {
-          yield* coreSync(() => {
-            if (
-              !filteredProps.pinLabels ||
-              Array.isArray(filteredProps.pinLabels)
-            )
-              return
-            const invalidPinKey = Object.keys(filteredProps.pinLabels).find(
-              (pinKey) => getPinNumberFromPinLabelsKey(pinKey) === null,
-            )
-            if (invalidPinKey)
-              throw new InvalidProps(this.lowercaseComponentName, this.props, {
-                _errors: [],
-                pinLabels: {
-                  _errors: [
-                    `Invalid pinLabels key "${invalidPinKey}". Expected "pin\${number}" (e.g. pin1, pin2).`,
-                  ],
-                },
-              } as any)
-          }, "validate_normal_pin_labels")
+          yield* validateComponentPinLabelKeysEffect({
+            pinLabels: filteredProps.pinLabels,
+            componentName: this.lowercaseComponentName,
+            originalProps: this.props,
+          })
           this._invalidPinLabelMessages = invalidPinLabelsMessages
           yield* coreSync(
             () => this._addChildrenFromStringFootprint(),
@@ -1541,22 +1524,24 @@ export class NormalComponent<
     const addPrimitive = (child: PrimitiveComponent) => super.addEffect(child)
     return atomicCoreEffect(
       Effect.gen({ self: this }, function* () {
-        const component: PrimitiveComponent = isReactElement(componentOrElm)
-          ? yield* (
-              this._renderReactSubtree ===
-              NormalComponent.prototype._renderReactSubtree
-                ? this._renderReactSubtreeEffect(componentOrElm)
-                : coreSync(
-                    () => this._renderReactSubtree(componentOrElm),
-                    "external_react_subtree_adapter",
-                  )
-            ).pipe(
-              Effect.map((subtree) => {
-                this.reactSubtrees.push(subtree)
-                return subtree.component
-              }),
-            )
-          : componentOrElm
+        let component: PrimitiveComponent
+        if (isReactElement(componentOrElm)) {
+          const subtree = yield* prefersNativeMethod(
+            this,
+            "_renderReactSubtree",
+            "_renderReactSubtreeEffect",
+            { legacyFacade: NormalComponent.prototype._renderReactSubtree },
+          )
+            ? this._renderReactSubtreeEffect(componentOrElm)
+            : coreSync(
+                () => this._renderReactSubtree(componentOrElm),
+                "external_react_subtree_adapter",
+              )
+          this.reactSubtrees.push(subtree)
+          component = subtree.component
+        } else {
+          component = componentOrElm
+        }
         const skip = yield* coreSync(() => {
           if (component.componentName !== "Port") return false
           if (this._hasExistingPortExactly(component as Port)) return true
@@ -1569,44 +1554,6 @@ export class NormalComponent<
           return false
         }, "deduplicate_normal_port")
         if (!skip) yield* addPrimitive(component)
-      }),
-    )
-  }
-
-  _queueEffect(
-    effectName: string,
-    buildOrOwnership: Parameters<Renderable["_queueEffect"]>[1],
-  ) {
-    const ownership =
-      typeof buildOrOwnership === "function"
-        ? { owner: this, build: buildOrOwnership }
-        : buildOrOwnership
-    super._queueEffect(effectName, {
-      owner: ownership.owner,
-      build: (job) =>
-        NormalComponent_withInterruptedLoadRestart(
-          this,
-          effectName,
-          job,
-          Effect.suspend(() => ownership.build(job)),
-        ),
-    })
-  }
-
-  setPropsEffect(
-    props: Partial<z.input<ZodProps>>,
-  ): Effect.Effect<void, CoreError> {
-    const updatePrimitive = () => super.setPropsEffect(props)
-    return atomicCoreEffect(
-      Effect.gen({ self: this }, function* () {
-        const pendingNames = yield* coreSync(
-          () => new Set(this.getPendingAsyncEffectNames()),
-        )
-        yield* updatePrimitive()
-        yield* coreSync(() => {
-          for (const effectName of pendingNames)
-            NormalComponent_restartInterruptedLoad(this, effectName)
-        }, "restart_interrupted_component_loads")
       }),
     )
   }
@@ -2244,8 +2191,12 @@ export class NormalComponent<
     job?: CoreJobContext
   }): Effect.Effect<SupplierPartNumbers, CoreError> {
     if (
-      this._getSupplierPartNumbers !==
-      NormalComponent.prototype._getSupplierPartNumbers
+      !prefersNativeMethod(
+        this,
+        "_getSupplierPartNumbers",
+        "_getSupplierPartNumbersEffect",
+        { legacyFacade: NormalComponent.prototype._getSupplierPartNumbers },
+      )
     ) {
       // External subclass callbacks retain their synchronous/Promise facade.
       return corePromise(
@@ -2269,7 +2220,12 @@ export class NormalComponent<
     })
   }
 
-  /** Protected legacy adapter for subclasses; core jobs use the native program. */
+  /**
+   * Legacy `super` calls enter the shared native implementation directly.
+   * Calling this._getSupplierPartNumbersEffect here would dispatch back into a
+   * legacy override and recurse. Native overrides retain their virtual entry
+   * before that adapter, as pinned by revision/override-loading-matrix.
+   */
   protected _getSupplierPartNumbers(
     partsEngine: any,
     sourceComponent: any,
@@ -2303,47 +2259,56 @@ export class NormalComponent<
     const footprint = this.props.footprint ?? this._getImpliedFootprintString()
     const footprinterString =
       typeof footprint === "string" ? footprint : undefined
-    this._queueEffect("get-supplier-part-numbers", (job) =>
-      this._getSupplierPartNumbersEffect({
-        partsEngine,
-        sourceComponent: source_component,
-        footprinterString,
-        job,
-      }).pipe(
-        Effect.flatMap((supplierPartNumbers) =>
-          coreSync(
-            () =>
-              job.commit(() => {
-                this._asyncSupplierPartNumbers = supplierPartNumbers
-                this._markDirty("PartsEngineRender")
-              }),
-            "commit_supplier_parts",
+    this._queueEffect(
+      "get-supplier-part-numbers",
+      (job) =>
+        catchJobFailure(
+          this._getSupplierPartNumbersEffect({
+            partsEngine,
+            sourceComponent: source_component,
+            footprinterString,
+            job,
+          }).pipe(
+            Effect.flatMap((supplierPartNumbers) =>
+              coreSync(
+                () =>
+                  job.commit(() => {
+                    this._asyncSupplierPartNumbers = supplierPartNumbers
+                    this._markDirty("PartsEngineRender")
+                  }),
+                "commit_supplier_parts",
+              ),
+            ),
           ),
-        ),
-        Effect.catch((failure) =>
-          coreSync(
-            () =>
-              job.commit(() => {
-                const error = failure.cause
-                this._asyncSupplierPartNumbers = {}
-                const warning = source_part_not_found_warning.parse({
-                  type: "source_part_not_found_warning",
-                  message: `Failed to fetch supplier part numbers for ${this.getString()}: ${error instanceof Error ? error.message : String(error)}`,
-                  source_component_id: this.source_component_id ?? undefined,
-                  subcircuit_id:
-                    this.getSubcircuit()?.subcircuit_id ?? undefined,
-                  manufacturer_part_number:
-                    source_component.manufacturer_part_number ?? undefined,
-                  part_name: source_component.name ?? undefined,
-                })
-                db.source_part_not_found_warning.insert(warning)
-                this._markDirty("PartsEngineRender")
-              }),
-            "commit_supplier_part_warning",
-          ),
-        ),
-        Effect.asVoid,
-      ),
+          (error) =>
+            coreSync(
+              () =>
+                job.commit(() => {
+                  this._asyncSupplierPartNumbers = {}
+                  const warning = source_part_not_found_warning.parse({
+                    type: "source_part_not_found_warning",
+                    message: `Failed to fetch supplier part numbers for ${this.getString()}: ${error instanceof Error ? error.message : String(error)}`,
+                    source_component_id: this.source_component_id ?? undefined,
+                    subcircuit_id:
+                      this.getSubcircuit()?.subcircuit_id ?? undefined,
+                    manufacturer_part_number:
+                      source_component.manufacturer_part_number ?? undefined,
+                    part_name: source_component.name ?? undefined,
+                  })
+                  db.source_part_not_found_warning.insert(warning)
+                  this._markDirty("PartsEngineRender")
+                }),
+              "commit_supplier_part_warning",
+            ),
+        ).pipe(Effect.asVoid),
+      {
+        propsChange: "cancel",
+        onCancel: (reason) => {
+          this._asyncSupplierPartNumbers = undefined
+          if (reason !== "disposed" && reason !== "removed")
+            this._markDirty("PartsEngineRender")
+        },
+      },
     )
   }
 

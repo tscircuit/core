@@ -6,9 +6,26 @@ import type * as Scope from "effect/Scope"
 import type { Renderable } from "../components/base-components/Renderable"
 import { corePromise, type CoreError } from "./core-error"
 
+export type CoreJobCancellationReason =
+  | "disposed"
+  | "removed"
+  | "reparented"
+  | "props_changed"
+  | "superseded"
+
+/** Declared at a queue site; terminal cleanup is separate from render re-arm. */
+export interface CoreJobCancellationPolicy {
+  /** Default cancellation preserves the existing native extension contract. */
+  readonly propsChange?: "cancel" | "finish"
+  /** Runs synchronously after abort. Terminal reasons must not schedule work. */
+  readonly onCancel?: (reason: CoreJobCancellationReason) => void
+}
+
 export interface CoreJobContext {
   readonly owner: Renderable
   readonly signal: AbortSignal
+  /** Internal reason; the external signal retains its native AbortError. */
+  readonly cancellationReason?: CoreJobCancellationReason
   isCurrent(): boolean
   /** Execute a synchronous mutation only while this component job is current. */
   commit<A>(write: () => A): A | undefined

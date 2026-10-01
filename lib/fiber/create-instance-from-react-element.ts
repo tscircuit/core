@@ -33,17 +33,22 @@ export function prepare<T extends Renderable>(
   object: T,
   state?: Partial<LocalState>,
 ): Instance {
-  return runCoreSync(prepareInstanceEffect(object, state))
+  return prepareReactHostInstance(object, state)
+}
+
+/** Plain React host annotation; model attachment remains in the host callbacks. */
+function prepareReactHostInstance<T extends Instance>(
+  instance: T,
+  state?: Partial<LocalState>,
+) {
+  return Object.assign(instance, { __tsci: { ...state } })
 }
 
 export function prepareInstanceEffect<T extends Instance>(
   instance: T,
   state?: Partial<LocalState>,
 ) {
-  return coreSync(
-    () => Object.assign(instance, { __tsci: { ...state } }),
-    "prepare_react_host_instance",
-  )
+  return coreSync(() => prepareReactHostInstance(instance, state))
 }
 
 /** React's synchronous host callback runs this native construction program. */
@@ -67,12 +72,10 @@ export function createCatalogueInstanceEffect(
       )
     }, "lookup_react_component_constructor")
     return yield* Effect.catch(
-      Effect.flatMap(
-        coreSync(
-          () => new target(props) as PrimitiveComponent,
-          "construct_react_component",
-        ),
-        (instance) => prepareInstanceEffect(instance, {}),
+      coreSync(
+        () =>
+          prepareReactHostInstance(new target(props) as PrimitiveComponent, {}),
+        "construct_react_component",
       ),
       (failure) =>
         coreSync(
@@ -249,18 +252,14 @@ export const createInstanceFromReactElementEffect = (
       // React 19's runtime methods are newer than the supported peer declarations.
       // @ts-expect-error React reconciler runtime compatibility boundary
       reconciler.updateContainerSync(reactElm, container, null, () => {})
-    }, "reconcile_react_element")
-    yield* coreSync(() => {
       // @ts-expect-error React reconciler runtime compatibility boundary
       reconciler.flushSyncWork()
-    }, "flush_react_component_tree")
-    yield* coreSync(() => {
+    }, "reconcile_react_element")
+    return yield* coreSync(() => {
       if (containerErrors.length > 0) throw containerErrors[0]
-    }, "check_react_container_errors")
-    return yield* coreSync(
-      () =>
+      return (
         (reconciler.getPublicRootInstance(container) as NormalComponent) ||
-        rootContainer.children[0],
-      "select_react_root_instance",
-    )
+        rootContainer.children[0]
+      )
+    }, "select_react_root_instance")
   })

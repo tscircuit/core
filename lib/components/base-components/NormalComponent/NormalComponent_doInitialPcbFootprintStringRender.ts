@@ -18,6 +18,8 @@ import { resolveStaticFileImport } from "lib/utils/resolveStaticFileImport"
 import { isValidElement as isReactElement } from "react"
 import * as Effect from "effect/Effect"
 import { corePromise, coreSync } from "lib/effect/core-error"
+import type { CoreJobCancellationPolicy } from "lib/effect/core-services"
+import { catchJobFailure } from "lib/effect/job-failure"
 import { loadCircuitJsonFootprint } from "lib/effect/loading"
 import { NormalComponent } from "./NormalComponent"
 import { getFileExtension } from "./utils/getFileExtension"
@@ -126,6 +128,14 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
 ) {
   const footprint = component.resolveFootprint()
   if (!footprint) return
+  const footprintLoadPolicy: CoreJobCancellationPolicy = {
+    propsChange: "cancel",
+    onCancel(reason) {
+      component._hasStartedFootprintUrlLoad = false
+      if (reason !== "disposed" && reason !== "removed")
+        component._markDirty("PcbFootprintStringRender")
+    },
+  }
   const { pcbRotation, pcbPinLabels } = component.props
   const pinLabels = component._resolvePinLabels()
   const importFootprint = (
@@ -156,51 +166,58 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
   ) {
     if (component._hasStartedFootprintUrlLoad) return
     component._hasStartedFootprintUrlLoad = true
-    component._queueEffect("load-footprint-from-platform-file-parser", (job) =>
-      Effect.gen(function* () {
-        const footprintUrl =
-          isHttpUrl(footprint) || isBlobUrl(footprint)
-            ? footprint
-            : // Resolver/parser contracts have no signal; Effect interrupts the wait
-              // and job.commit prevents their noncooperative results from attaching.
-              yield* corePromise(
-                () =>
-                  resolveStaticFileImport(footprint, component.root?.platform),
-                "resolve_footprint_asset",
+    component._queueEffect(
+      "load-footprint-from-platform-file-parser",
+      (job) =>
+        Effect.gen(function* () {
+          const footprintUrl =
+            isHttpUrl(footprint) || isBlobUrl(footprint)
+              ? footprint
+              : // Resolver/parser contracts have no signal; Effect interrupts the wait
+                // and job.commit prevents their noncooperative results from attaching.
+                yield* corePromise(
+                  () =>
+                    resolveStaticFileImport(
+                      footprint,
+                      component.root?.platform,
+                    ),
+                  "resolve_footprint_asset",
+                )
+          yield* catchJobFailure(
+            Effect.gen(function* () {
+              const result = yield* corePromise(
+                () => footprintParser.loadFromUrl(footprintUrl),
+                "parse_footprint",
               )
-        yield* Effect.gen(function* () {
-          const result = yield* corePromise(
-            () => footprintParser.loadFromUrl(footprintUrl),
-            "parse_footprint",
+              const footprintChildren = yield* coreSync(
+                () =>
+                  importFootprint(footprintUrl, result.footprintCircuitJson),
+                "create_footprint_children",
+              )
+              yield* coreSync(
+                () =>
+                  job.commit(() =>
+                    commitFootprintChildren(component, {
+                      footprintChildren,
+                      dirtyExistingPorts: true,
+                    }),
+                  ),
+                "commit_footprint",
+              )
+            }),
+            (original, cause) =>
+              coreSync(() =>
+                job.commit(() =>
+                  recordFootprintLoadError(component, {
+                    footprint: footprintUrl,
+                    cause: original,
+                    external: false,
+                  }),
+                ),
+              ).pipe(Effect.andThen(Effect.failCause(cause))),
           )
-          const footprintChildren = yield* coreSync(
-            () => importFootprint(footprintUrl, result.footprintCircuitJson),
-            "create_footprint_children",
-          )
-          yield* coreSync(
-            () =>
-              job.commit(() =>
-                commitFootprintChildren(component, {
-                  footprintChildren,
-                  dirtyExistingPorts: true,
-                }),
-              ),
-            "commit_footprint",
-          )
-        }).pipe(
-          Effect.catch((error) =>
-            coreSync(() =>
-              job.commit(() =>
-                recordFootprintLoadError(component, {
-                  footprint: footprintUrl,
-                  cause: error.cause,
-                  external: false,
-                }),
-              ),
-            ).pipe(Effect.andThen(Effect.fail(error))),
-          ),
-        )
-      }),
+        }),
+      footprintLoadPolicy,
     )
     return
   }
@@ -209,53 +226,57 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
     if (component._hasStartedFootprintUrlLoad) return
     component._hasStartedFootprintUrlLoad = true
     const footprintLoader = component.root?.experimentalFootprintLoader
-    component._queueEffect("load-footprint-url", (job) => {
-      const request = {
-        url: footprint,
-        isCurrent: () =>
-          job.isCurrent() && component.resolveFootprint() === footprint,
-        decode: async (response: Response) =>
-          importFootprint(footprint, await response.json()),
-        commit: (footprintChildren: PrimitiveComponent[]) => {
-          job.commit(() =>
-            commitFootprintChildren(component, { footprintChildren }),
-          )
-        },
-        onError: (cause: unknown) => {
-          job.commit(() =>
-            recordFootprintLoadError(component, { footprint, cause }),
-          )
-        },
-      }
-      if (footprintLoader)
-        return footprintLoader.loadInScope(component, { request, job })
-      return Effect.gen(function* () {
-        const circuitJson = yield* loadCircuitJsonFootprint(footprint)
-        const footprintChildren = yield* coreSync(
-          () => importFootprint(footprint, circuitJson),
-          "create_footprint_children",
-        )
-        yield* coreSync(
-          () =>
-            job.commit(() => {
-              if (component.resolveFootprint() === footprint)
-                commitFootprintChildren(component, { footprintChildren })
-            }),
-          "commit_footprint",
-        )
-      }).pipe(
-        Effect.catch((error) =>
-          coreSync(() =>
+    component._queueEffect(
+      "load-footprint-url",
+      (job) => {
+        const request = {
+          url: footprint,
+          isCurrent: () =>
+            job.isCurrent() && component.resolveFootprint() === footprint,
+          decode: async (response: Response) =>
+            importFootprint(footprint, await response.json()),
+          commit: (footprintChildren: PrimitiveComponent[]) => {
             job.commit(() =>
-              recordFootprintLoadError(component, {
-                footprint,
-                cause: error.cause,
-              }),
-            ),
-          ).pipe(Effect.andThen(Effect.fail(error))),
-        ),
-      )
-    })
+              commitFootprintChildren(component, { footprintChildren }),
+            )
+          },
+          onError: (cause: unknown) => {
+            job.commit(() =>
+              recordFootprintLoadError(component, { footprint, cause }),
+            )
+          },
+        }
+        if (footprintLoader)
+          return footprintLoader.loadInScope(component, { request, job })
+        return catchJobFailure(
+          Effect.gen(function* () {
+            const circuitJson = yield* loadCircuitJsonFootprint(footprint)
+            const footprintChildren = yield* coreSync(
+              () => importFootprint(footprint, circuitJson),
+              "create_footprint_children",
+            )
+            yield* coreSync(
+              () =>
+                job.commit(() => {
+                  if (component.resolveFootprint() === footprint)
+                    commitFootprintChildren(component, { footprintChildren })
+                }),
+              "commit_footprint",
+            )
+          }),
+          (original, cause) =>
+            coreSync(() =>
+              job.commit(() =>
+                recordFootprintLoadError(component, {
+                  footprint,
+                  cause: original,
+                }),
+              ),
+            ).pipe(Effect.andThen(Effect.failCause(cause))),
+        )
+      },
+      footprintLoadPolicy,
+    )
     return
   }
   if (typeof footprint === "string" && isBlobUrl(footprint)) return
@@ -264,75 +285,83 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
     const libRef = parseLibraryFootprintRef(footprint)
     if (!libRef || component._hasStartedFootprintUrlLoad) return
     component._hasStartedFootprintUrlLoad = true
-    component._queueEffect("load-lib-footprint", (job) =>
-      Effect.gen(function* () {
-        const libraryEntry =
-          component.root?.platform?.footprintLibraryMap?.[libRef.footprintLib]
-        const resolver =
-          typeof libraryEntry === "function"
-            ? (libraryEntry as FootprintLibraryResolver)
-            : getSupplierPartCircuitJsonResolver(component, {
-                footprintLibrary: libRef.footprintLib,
-                footprintName: libRef.footprintName,
-              })
-        const result = yield* corePromise(() => {
-          if (!resolver)
-            throw new Error(
-              `No footprint resolver is configured for library "${libRef.footprintLib}".`,
-            )
-          // Library callbacks have no cancellation parameter in PlatformConfig.
-          return resolver(libRef.footprintName)
-        }, "resolve_library_footprint")
-        const circuitJson = Array.isArray(result)
-          ? result
-          : result.footprintCircuitJson
-        if (!Array.isArray(circuitJson) || circuitJson.length === 0) {
-          return yield* coreSync(() => {
-            throw new Error(
-              `Footprint resolver returned no circuit elements for "${footprint}".`,
-            )
+    // Match the baseline recorder's scope: registry selection precedes the job.
+    const libraryEntry =
+      component.root?.platform?.footprintLibraryMap?.[libRef.footprintLib]
+    const resolver =
+      typeof libraryEntry === "function"
+        ? (libraryEntry as FootprintLibraryResolver)
+        : getSupplierPartCircuitJsonResolver(component, {
+            footprintLibrary: libRef.footprintLib,
+            footprintName: libRef.footprintName,
           })
-        }
-        const footprintChildren = yield* coreSync(
-          () => importFootprint(footprint, circuitJson),
-          "create_footprint_children",
-        )
-        const cadModel =
-          (!Array.isArray(result) && result.cadModel) ||
-          extractCadModelFromCircuitJson(circuitJson)
-        yield* coreSync(
-          () =>
-            job.commit(() => {
-              const footprintWrapper = new Footprint({ src: footprint })
-              const childrenOutsideFootprint: PrimitiveComponent[] = []
-              for (const child of footprintChildren) {
-                if (shouldAddOutsideFootprintWrapper(child))
-                  childrenOutsideFootprint.push(child)
-                else footprintWrapper.add(child)
-              }
-              component._asyncFootprintCadModel = cadModel
-              commitFootprintChildren(component, {
-                footprintChildren: [
-                  footprintWrapper,
-                  ...childrenOutsideFootprint,
-                ],
-                dirtyExistingPorts: true,
+    component._queueEffect(
+      "load-lib-footprint",
+      (job) =>
+        catchJobFailure(
+          Effect.gen(function* () {
+            const result = yield* corePromise(() => {
+              if (!resolver)
+                throw new Error(
+                  `No footprint resolver is configured for library "${libRef.footprintLib}".`,
+                )
+              // Library callbacks have no cancellation parameter in PlatformConfig.
+              return resolver(libRef.footprintName)
+            }, "resolve_library_footprint")
+            const circuitJson = Array.isArray(result)
+              ? result
+              : Array.isArray(result.footprintCircuitJson)
+                ? result.footprintCircuitJson
+                : null
+            if (!circuitJson || circuitJson.length === 0) {
+              return yield* coreSync(() => {
+                throw new Error(
+                  `Footprint resolver returned no circuit elements for "${footprint}".`,
+                )
               })
-            }),
-          "commit_library_footprint",
-        )
-      }).pipe(
-        Effect.catch((error) =>
-          coreSync(() =>
-            job.commit(() =>
-              recordFootprintLoadError(component, {
-                footprint,
-                cause: error.cause,
-              }),
-            ),
-          ).pipe(Effect.andThen(Effect.fail(error))),
+            }
+            const footprintChildren = yield* coreSync(
+              () => importFootprint(footprint, circuitJson),
+              "create_footprint_children",
+            )
+            yield* coreSync(
+              () =>
+                job.commit(() => {
+                  const footprintWrapper = new Footprint({ src: footprint })
+                  const childrenOutsideFootprint: PrimitiveComponent[] = []
+                  for (const child of footprintChildren) {
+                    if (shouldAddOutsideFootprintWrapper(child))
+                      childrenOutsideFootprint.push(child)
+                    else footprintWrapper.add(child)
+                  }
+                  // These access/attachment orders are observable through platform
+                  // getters and component overrides; retain the baseline order.
+                  component.add(footprintWrapper)
+                  component.addAll(childrenOutsideFootprint)
+                  component._asyncFootprintCadModel =
+                    (!Array.isArray(result) && result.cadModel) ||
+                    extractCadModelFromCircuitJson(circuitJson)
+                  for (const child of component.children) {
+                    if (child.componentName === "Port")
+                      child._markDirty("PcbPortRender")
+                  }
+                  component._markDirty("ResolveFootprintPinLabels")
+                  component._markDirty("InitializePortsFromChildren")
+                }),
+              "commit_library_footprint",
+            )
+          }),
+          (original, cause) =>
+            coreSync(() =>
+              job.commit(() =>
+                recordFootprintLoadError(component, {
+                  footprint,
+                  cause: original,
+                }),
+              ),
+            ).pipe(Effect.andThen(Effect.failCause(cause))),
         ),
-      ),
+      footprintLoadPolicy,
     )
     return
   }

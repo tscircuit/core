@@ -3,8 +3,7 @@ import { jlcMinTolerances } from "@tscircuit/jlcpcb-manufacturing-specs"
 import { getBoundsFromPoints } from "@tscircuit/math-utils"
 import { boardProps } from "@tscircuit/props"
 import * as Effect from "effect/Effect"
-import { coreSync, runCoreSync } from "lib/effect/core-error"
-import { atomicRenderEffect } from "lib/effect/render-phase-programs"
+import { atomicCoreEffect, coreSync, runCoreSync } from "lib/effect/core-error"
 import type {
   AnyCircuitElement,
   LayerRef,
@@ -664,7 +663,7 @@ export class Board
   override runRenderPhaseForChildrenEffect(phase: RenderPhase) {
     const board = this
     const children = super.runRenderPhaseForChildrenEffect(phase)
-    return atomicRenderEffect(
+    return atomicCoreEffect(
       Effect.gen(function* () {
         yield* coreSync(() => {
           board.root?.emit("board:renderPhaseStarted", {

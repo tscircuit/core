@@ -41,7 +41,6 @@ test("local routing observers return before the public end event and render sett
     <board
       width={20}
       height={10}
-      partsEngineDisabled
       autorouter={{
         local: true,
         groupMode: "subcircuit",

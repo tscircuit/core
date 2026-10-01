@@ -1,7 +1,11 @@
-import * as Cause from "effect/Cause"
 import * as Effect from "effect/Effect"
-import { corePromise, coreSync, originalCoreError } from "lib/effect/core-error"
-import { coreFetch, type CoreJobContext } from "lib/effect/core-services"
+import { corePromise, coreSync } from "lib/effect/core-error"
+import {
+  coreFetch,
+  type CoreJobCancellationReason,
+  type CoreJobContext,
+} from "lib/effect/core-services"
+import { catchJobFailure } from "lib/effect/job-failure"
 import {
   acquireLocalAutorouter,
   runLocalAutorouter,
@@ -853,6 +857,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     return this.root.effectRuntime.queue({
       owner: this,
       build: (job) => this._runHttpAutoroutingEffect(job),
+      policy: { propsChange: "cancel" },
     })
   }
 
@@ -1045,6 +1050,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     return this.root.effectRuntime.queue({
       owner: this,
       build: (job) => this._runLocalAutoroutingEffect(job),
+      policy: { propsChange: "cancel" },
     })
   }
 
@@ -2091,12 +2097,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
               }),
             )
           }
-        }).pipe(
-          Effect.scoped,
-          Effect.catchCause((cause) => {
-            if (Cause.hasInterrupts(cause) || !job.isCurrent())
-              return Effect.failCause(cause)
-            const error = originalCoreError(cause)
+        }).pipe(Effect.scoped, (program) =>
+          catchJobFailure(program, (error, cause) => {
+            if (!job.isCurrent()) return Effect.failCause(cause)
             const { db } = this.root!
             // Record the error
             job.commit(() =>
@@ -2151,40 +2154,44 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const generation = ++this._autoroutingJobGeneration
     const resultAtStart = this._asyncAutoroutingResult
     const local = this._getAutorouterConfig().local
+    const releasePendingRouting = (reason?: CoreJobCancellationReason) => {
+      // An old finalizer cannot clear a newer generation's start guard.
+      // Keep a completed result (and any earlier result/cache) intact.
+      if (
+        generation !== this._autoroutingJobGeneration ||
+        this._asyncAutoroutingResult !== resultAtStart
+      )
+        return
+      this._hasStartedAsyncAutorouting = false
+      // Removal/disposal release the pending guard without scheduling work on
+      // the terminal owner. Non-terminal cancellation can route a new generation.
+      if (
+        reason === "removed" ||
+        reason === "disposed" ||
+        this.shouldBeRemoved ||
+        this.root?.effectRuntime.isDisposed
+      )
+        return
+      this._markDirty("PcbTraceRender")
+    }
     this._queueEffect(
       local ? "autorouting" : "make-http-autorouting-request",
       (job) =>
-        Effect.acquireUseRelease(
-          coreSync(() => {
-            const releasePendingRouting = () => {
-              // An old finalizer cannot clear a newer generation's start guard.
-              // Keep a completed result (and any earlier result/cache) intact.
-              if (
-                generation !== this._autoroutingJobGeneration ||
-                this._asyncAutoroutingResult !== resultAtStart
-              )
-                return
-              this._hasStartedAsyncAutorouting = false
-              this._markDirty("PcbTraceRender")
-            }
-            if (job.signal.aborted) releasePendingRouting()
-            else
-              job.signal.addEventListener("abort", releasePendingRouting, {
-                once: true,
-              })
-            return releasePendingRouting
-          }, "own_routing_generation"),
-          () =>
-            local
-              ? this._runLocalAutoroutingEffect(job)
-              : this._runHttpAutoroutingEffect(job),
-          (releasePendingRouting) =>
+        (local
+          ? this._runLocalAutoroutingEffect(job)
+          : this._runHttpAutoroutingEffect(job)
+        ).pipe(
+          Effect.ensuring(
             Effect.sync(() => {
-              job.signal.removeEventListener("abort", releasePendingRouting)
               if (job.signal.aborted || !job.isCurrent())
-                releasePendingRouting()
+                releasePendingRouting(job.cancellationReason)
             }),
+          ),
         ),
+      {
+        propsChange: "cancel",
+        onCancel: releasePendingRouting,
+      },
     )
   }
 

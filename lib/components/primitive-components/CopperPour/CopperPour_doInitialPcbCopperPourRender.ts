@@ -184,28 +184,33 @@ export function CopperPour_doInitialPcbCopperPourRender(
 ): void {
   if (copperPour.root?.pcbDisabled) return
 
-  copperPour._queueEffect("PcbCopperPourRender", () =>
-    Effect.gen(function* () {
-      const subcircuit = copperPour.getSubcircuit()
-      let pendingRender = pendingCopperPourRenders.get(subcircuit)
-      if (!pendingRender) {
-        const root = subcircuit.root
-        if (!root) return
-        // The subcircuit owns the batch. Removing one pour cancels its waiter,
-        // while the surviving pours still receive their guarded output.
-        pendingRender = root.effectRuntime.queue({
-          owner: subcircuit,
-          build: (job) => renderAllCopperPoursForSubcircuit(subcircuit, job),
-        })
-        pendingCopperPourRenders.set(subcircuit, pendingRender)
-        const clearPendingRender = () => {
-          if (pendingCopperPourRenders.get(subcircuit) === pendingRender) {
-            pendingCopperPourRenders.delete(subcircuit)
+  copperPour._queueEffect(
+    "PcbCopperPourRender",
+    () =>
+      Effect.gen(function* () {
+        const subcircuit = copperPour.getSubcircuit()
+        let pendingRender = pendingCopperPourRenders.get(subcircuit)
+        if (!pendingRender) {
+          const root = subcircuit.root
+          if (!root) return
+          // The subcircuit owns the batch. Removing one pour cancels its waiter,
+          // while the surviving pours still receive their guarded output.
+          pendingRender = root.effectRuntime.queue({
+            owner: subcircuit,
+            build: (job) => renderAllCopperPoursForSubcircuit(subcircuit, job),
+            policy: { propsChange: "finish" },
+          })
+          pendingCopperPourRenders.set(subcircuit, pendingRender)
+          const clearPendingRender = () => {
+            if (pendingCopperPourRenders.get(subcircuit) === pendingRender) {
+              pendingCopperPourRenders.delete(subcircuit)
+            }
           }
+          pendingRender.then(clearPendingRender, clearPendingRender)
         }
-        pendingRender.then(clearPendingRender, clearPendingRender)
-      }
-      yield* corePromise(() => pendingRender!, "await_copper_pour_batch")
-    }),
+        yield* corePromise(() => pendingRender!, "await_copper_pour_batch")
+      }),
+    // A props update does not cancel baseline pour work or its shared waiter.
+    { propsChange: "finish" },
   )
 }

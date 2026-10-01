@@ -1,5 +1,6 @@
 import type { FootprintLibraryResult } from "@tscircuit/props"
 import { expect, test } from "bun:test"
+import baseline from "./footprint-library-baseline-observations.json"
 import {
   createLoadingRevisionCircuit,
   disposeLoadingRevisionCircuit,
@@ -14,7 +15,7 @@ test("H5 malformed library results retain the baseline structured footprint diag
     { scenario: "undefined", value: undefined },
     { scenario: "empty_object", value: {} },
     { scenario: "string", value: "malformed" },
-  ]) {
+  ] as const) {
     const result = loadingRevisionDeferred<FootprintLibraryResult>()
     const terminalErrors: string[] = []
     let calls = 0
@@ -64,6 +65,17 @@ test("H5 malformed library results retain the baseline structured footprint diag
     expect(observation.calls).toBe(1)
     expect(observation.diagnostics).toHaveLength(1)
     const diagnostic = observation.diagnostics[0]!
+    const expected = baseline.scenarios[observation.scenario]
+    expect(
+      JSON.parse(
+        JSON.stringify({
+          ...diagnostic,
+          external_footprint_load_error_id: "<generated>",
+          message: diagnostic.message.replace(/#\d+(?= name=)/g, "#component"),
+        }),
+      ),
+    ).toEqual(expected.diagnostic)
+    expect(observation.terminalErrors).toEqual(expected.terminalErrors)
     expect(diagnostic.footprinter_string).toBe("kicad:malformed")
     expect(
       observation.json.some(

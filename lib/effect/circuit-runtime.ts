@@ -6,13 +6,15 @@ import * as ManagedRuntime from "effect/ManagedRuntime"
 import * as Scope from "effect/Scope"
 import { PreventSchedulerYield } from "effect/References"
 import type { Renderable } from "../components/base-components/Renderable"
-import { originalCoreError } from "./core-error"
+import { coreExitValue, originalCoreError } from "./core-error"
 import {
   CircuitEnvironment,
   CoreJobScope,
   type CircuitEnvironmentShape,
   type CoreJobContext,
   type CoreJobServices,
+  type CoreJobCancellationPolicy,
+  type CoreJobCancellationReason,
 } from "./core-services"
 
 export class CircuitDisposedError extends Error {
@@ -26,6 +28,8 @@ interface OwnedJob {
   readonly controller: AbortController
   readonly completion: Promise<void>
   readonly ancestry: readonly Renderable[]
+  readonly policy?: CoreJobCancellationPolicy
+  cancel(reason: CoreJobCancellationReason): void
 }
 
 /** One managed service layer and interruptible job scopes per circuit. */
@@ -92,10 +96,7 @@ export class CircuitRuntime {
     const exit = this.managed.runSyncExit(
       Effect.provideService(program, PreventSchedulerYield, true),
     )
-    if (Exit.isSuccess(exit)) return exit.value
-    const failure = originalCoreError(exit.cause)
-    if (Cause.isAsyncFiberError(failure)) failure.fiber.interruptUnsafe()
-    throw failure
+    return coreExitValue(exit)
   }
 
   queue(request: {
@@ -103,10 +104,12 @@ export class CircuitRuntime {
     build: (
       job: CoreJobContext,
     ) => Effect.Effect<void, unknown, CoreJobServices>
+    policy?: CoreJobCancellationPolicy
   }): Promise<void> {
     if (this.disposed) return Promise.resolve()
     const { owner } = request
     const controller = new AbortController()
+    let cancellationReason: CoreJobCancellationReason | undefined
     const ancestry: Renderable[] = []
     for (
       let ancestor: Renderable | null = owner;
@@ -117,6 +120,9 @@ export class CircuitRuntime {
     const context: CoreJobContext = {
       owner,
       signal: controller.signal,
+      get cancellationReason() {
+        return cancellationReason
+      },
       isCurrent: () => {
         if (this.disposed || controller.signal.aborted) return false
         let ancestorIndex = 0
@@ -141,7 +147,28 @@ export class CircuitRuntime {
       resolve = resolveJob
       reject = rejectJob
     })
-    const ownedJob: OwnedJob = { controller, completion, ancestry }
+    const ownedJob: OwnedJob = {
+      controller,
+      completion,
+      ancestry,
+      policy: request.policy,
+      cancel(reason) {
+        if (controller.signal.aborted) {
+          // Delayed cleanup must see terminal ownership even if an earlier
+          // props/generation cancellation already interrupted this job.
+          if (
+            reason === "disposed" ||
+            (reason === "removed" && cancellationReason !== "disposed")
+          )
+            cancellationReason = reason
+          return
+        }
+        cancellationReason = reason
+        // Keep AbortSignal.reason compatible with normal fetch cancellation.
+        controller.abort()
+        request.policy?.onCancel?.(reason)
+      },
+    }
     const ownerJobs = this.jobsByOwner.get(owner) ?? new Set<OwnedJob>()
     ownerJobs.add(ownedJob)
     this.jobsByOwner.set(owner, ownerJobs)
@@ -163,15 +190,34 @@ export class CircuitRuntime {
     return completion
   }
 
-  cancelSubtree(component: Renderable) {
+  cancelSubtree(
+    component: Renderable,
+    options: {
+      reason?: CoreJobCancellationReason
+      onlyOwner?: boolean
+    } = {},
+  ) {
+    const reason = options.reason ?? "superseded"
+    const failures: unknown[] = []
     for (const [owner, jobs] of this.jobsByOwner) {
+      if (options.onlyOwner && owner !== component) continue
       let ancestor: Renderable | null = owner
       while (ancestor && ancestor !== component) ancestor = ancestor.parent
-      for (const job of jobs) {
-        if (ancestor === component || job.ancestry.includes(component))
-          job.controller.abort()
+      for (const job of Array.from(jobs)) {
+        if (ancestor !== component && !job.ancestry.includes(component))
+          continue
+        if (reason === "props_changed" && job.policy?.propsChange === "finish")
+          continue
+        try {
+          job.cancel(reason)
+        } catch (failure) {
+          failures.push(failure)
+        }
       }
     }
+    if (failures.length === 1) throw failures[0]
+    if (failures.length > 1)
+      throw new AggregateError(failures, "Circuit job cancellation failed")
   }
 
   /** Register root-owned resources; completed consumer leases may unregister. */
@@ -195,7 +241,13 @@ export class CircuitRuntime {
     const jobs = Array.from(this.jobsByOwner.values()).flatMap((ownerJobs) =>
       Array.from(ownerJobs),
     )
-    for (const job of jobs) job.controller.abort()
+    for (const job of jobs) {
+      try {
+        job.cancel("disposed")
+      } catch (failure) {
+        this.cleanupFailures.push(failure)
+      }
+    }
     void (async () => {
       const outcomes = await Promise.allSettled(
         jobs.map((job) => job.completion),

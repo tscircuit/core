@@ -1,15 +1,7 @@
 import * as Effect from "effect/Effect"
 import type { PrimitiveComponent } from "../components/base-components/PrimitiveComponent"
-import { coreSync } from "./core-error"
-
-function findMethodOwner(target: object, method: "add" | "addEffect") {
-  let prototype: object | null = target
-  while (prototype) {
-    if (Object.prototype.hasOwnProperty.call(prototype, method))
-      return prototype
-    prototype = Object.getPrototypeOf(prototype)
-  }
-}
+import { coreSync, type CoreError } from "./core-error"
+import { prefersNativeMethod } from "./override-dispatch"
 
 /** A sync-only extension override keeps precedence over an inherited hook. */
 export function dispatchComponentAdditionEffect<Child, Error>(request: {
@@ -18,26 +10,17 @@ export function dispatchComponentAdditionEffect<Child, Error>(request: {
     addEffect?(child: Child): Effect.Effect<void, Error>
   }
   child: Child
-}) {
-  return Effect.gen(function* () {
-    const useNativeHook = yield* coreSync(() => {
-      if (!request.parent.addEffect) return false
-      const syncOwner = findMethodOwner(request.parent, "add")
-      const effectOwner = findMethodOwner(request.parent, "addEffect")
-      return (
-        syncOwner === effectOwner ||
-        !syncOwner ||
-        !effectOwner ||
-        !Object.prototype.isPrototypeOf.call(effectOwner, syncOwner)
-      )
-    }, "resolve_component_attachment_hook")
+}): Effect.Effect<void, Error | CoreError> {
+  return Effect.suspend((): Effect.Effect<void, Error | CoreError> => {
+    const useNativeHook =
+      request.parent.addEffect &&
+      prefersNativeMethod(request.parent, "add", "addEffect")
     if (useNativeHook && request.parent.addEffect) {
-      yield* request.parent.addEffect(request.child)
-    } else {
-      yield* coreSync(() => {
-        request.parent.add(request.child)
-      }, "append_external_component_child")
+      return request.parent.addEffect(request.child)
     }
+    return coreSync(() => {
+      request.parent.add(request.child)
+    }, "append_external_component_child")
   })
 }
 

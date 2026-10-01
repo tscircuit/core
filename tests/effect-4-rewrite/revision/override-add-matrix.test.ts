@@ -10,7 +10,9 @@ import { z } from "zod"
 const schema = z.object({ name: z.string().optional() })
 class AddBase extends PrimitiveComponent<typeof schema> {
   readonly calls: string[] = []
-  get config() { return { componentName: "RevisionOverrideContainer", zodProps: schema } }
+  get config() {
+    return { componentName: "RevisionOverrideContainer", zodProps: schema }
+  }
 }
 class SyncAdd extends AddBase {
   override add(child: PrimitiveComponent) {
@@ -20,7 +22,12 @@ class SyncAdd extends AddBase {
 }
 class NativeAdd extends AddBase {
   override addEffect(child: PrimitiveComponent) {
-    return Effect.andThen(Effect.sync(() => { this.calls.push("native") }), super.addEffect(child))
+    return Effect.andThen(
+      Effect.sync(() => {
+        this.calls.push("native")
+      }),
+      super.addEffect(child),
+    )
   }
 }
 class BothAdd extends AddBase {
@@ -29,7 +36,12 @@ class BothAdd extends AddBase {
     super.add(child)
   }
   override addEffect(child: PrimitiveComponent) {
-    return Effect.andThen(Effect.sync(() => { this.calls.push("native") }), super.addEffect(child))
+    return Effect.andThen(
+      Effect.sync(() => {
+        this.calls.push("native")
+      }),
+      super.addEffect(child),
+    )
   }
 }
 class SyncNearAdd extends NativeAdd {
@@ -40,7 +52,12 @@ class SyncNearAdd extends NativeAdd {
 }
 class NativeNearAdd extends SyncAdd {
   override addEffect(child: PrimitiveComponent) {
-    return Effect.andThen(Effect.sync(() => { this.calls.push("native") }), super.addEffect(child))
+    return Effect.andThen(
+      Effect.sync(() => {
+        this.calls.push("native")
+      }),
+      super.addEffect(child),
+    )
   }
 }
 
@@ -59,14 +76,24 @@ test("addAll and JSX host attachment retain nearest-definition precedence and su
     const program = parent.addAllEffect([child])
     expect(parent.children).toHaveLength(0)
     runCoreSync(program)
-    expect({ name: fixture.name, calls: parent.calls }).toEqual({ name: fixture.name, calls: fixture.calls })
+    expect({ name: fixture.name, calls: parent.calls }).toEqual({
+      name: fixture.name,
+      calls: fixture.calls,
+    })
     expect(parent.children).toEqual([child])
     expect(child.parent).toBe(parent)
 
-    extendCatalogue({ RevisionOverrideParent: fixture.Parent, RevisionOverrideChild: AddBase })
-    const jsxParent = createInstanceFromReactElement(createElement(
-      "revisionoverrideparent", {}, createElement("revisionoverridechild", { name: "child" }),
-    ))
+    extendCatalogue({
+      RevisionOverrideParent: fixture.Parent,
+      RevisionOverrideChild: AddBase,
+    })
+    const jsxParent = createInstanceFromReactElement(
+      createElement(
+        "revisionoverrideparent",
+        {},
+        createElement("revisionoverridechild", { name: "child" }),
+      ),
+    )
     expect(jsxParent).toBeInstanceOf(fixture.Parent)
     expect(jsxParent.children).toHaveLength(1)
     expect(Reflect.get(jsxParent, "calls")).toEqual(fixture.calls)
@@ -77,22 +104,35 @@ test("addAll and JSX host attachment retain nearest-definition precedence and su
     AddBase.prototype.add.call(ownSync, child)
   }
   const ownNative = new SyncAdd({})
-  ownNative.addEffect = (child) => Effect.andThen(
-    Effect.sync(() => { ownNative.calls.push("native") }),
-    AddBase.prototype.addEffect.call(ownNative, child),
-  )
-  for (const [parent, calls] of [[ownSync, ["sync", "native"]], [ownNative, ["native"]]] as const) {
+  ownNative.addEffect = (child) =>
+    Effect.andThen(
+      Effect.sync(() => {
+        ownNative.calls.push("native")
+      }),
+      AddBase.prototype.addEffect.call(ownNative, child),
+    )
+  for (const [parent, calls] of [
+    [ownSync, ["sync", "native"]],
+    [ownNative, ["native"]],
+  ] as const) {
     const child = new AddBase({})
     runCoreSync(parent.addAllEffect([child]))
-    expect(parent.calls).toEqual(calls)
+    expect(parent.calls).toEqual([...calls])
     expect(parent.children).toEqual([child])
   }
   const original = Object.freeze({ failure: "public sync add" })
   const throwing = new AddBase({})
   let calls = 0
-  throwing.add = () => { calls++; throw original }
+  throwing.add = () => {
+    calls++
+    throw original
+  }
   let thrown: unknown
-  try { runCoreSync(throwing.addAllEffect([new AddBase({})])) } catch (error) { thrown = error }
+  try {
+    runCoreSync(throwing.addAllEffect([new AddBase({})]))
+  } catch (error) {
+    thrown = error
+  }
   expect(thrown).toBe(original)
   expect(calls).toBe(1)
   expect(throwing.children).toHaveLength(0)

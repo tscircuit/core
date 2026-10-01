@@ -11,6 +11,10 @@ import { CircuitRuntime } from "lib/effect/circuit-runtime"
 import { corePromise, coreSync, runCoreSync } from "lib/effect/core-error"
 import type { CoreError } from "lib/effect/core-error"
 import type { CoreJobContext, CoreJobServices } from "lib/effect/core-services"
+import type {
+  CoreJobCancellationPolicy,
+  CoreJobCancellationReason,
+} from "lib/effect/core-services"
 import {
   type RenderPhase,
   orderedRenderPhases,
@@ -23,6 +27,7 @@ import {
   renderPhaseEffect,
 } from "lib/effect/render-phase-programs"
 import type { RootCircuitEventName } from "lib/events"
+import { prefersNativeMethod } from "lib/effect/override-dispatch"
 
 const debug = Debug("tscircuit:renderable")
 
@@ -110,6 +115,7 @@ export abstract class Renderable implements IRenderable {
 
   private _asyncEffects: AsyncEffect[] = []
   private _standaloneEffectRuntime?: CircuitRuntime
+  private readonly _renderPhasesPendingRevival = new Set<RenderPhase>()
 
   parent: Renderable | null = null
 
@@ -154,7 +160,12 @@ export abstract class Renderable implements IRenderable {
   }
 
   /** Cancel subtree jobs in existing circuit and standalone ownership scopes. */
-  cancelPendingEffects(): void {
+  cancelPendingEffects(
+    options: {
+      reason?: CoreJobCancellationReason
+      onlyOwner?: boolean
+    } = {},
+  ): void {
     const runtimes = new Set<CircuitRuntime>()
     const circuitRuntime = this._getRootCircuit()?.effectRuntime
     if (circuitRuntime) runtimes.add(circuitRuntime)
@@ -180,7 +191,17 @@ export abstract class Renderable implements IRenderable {
         if (child instanceof Renderable) pending.push(child)
       }
     }
-    for (const runtime of runtimes) runtime.cancelSubtree(this)
+    const failures: unknown[] = []
+    for (const runtime of runtimes) {
+      try {
+        runtime.cancelSubtree(this, options)
+      } catch (failure) {
+        failures.push(failure)
+      }
+    }
+    if (failures.length === 1) throw failures[0]
+    if (failures.length > 1)
+      throw new AggregateError(failures, "Component job cancellation failed")
   }
 
   _queueEffect(
@@ -191,13 +212,31 @@ export abstract class Renderable implements IRenderable {
           readonly owner: Renderable
           readonly build: RenderJobBuilder
         },
+    policy?: CoreJobCancellationPolicy,
   ) {
     const asyncEffectId = `${this._renderId}:${globalAsyncEffectCounter++}`
     const ownership =
       typeof buildOrOwnership === "function"
         ? { owner: this, build: buildOrOwnership }
         : buildOrOwnership
-    const promise = this._getEffectRuntime().queue(ownership)
+    const registrationPhase = this._currentRenderPhase
+    const onCancel = policy?.onCancel
+    const cancellationPolicy = onCancel
+      ? {
+          ...policy,
+          onCancel: (reason: CoreJobCancellationReason) => {
+            // Keep terminal cancellation free of phase writes. An explicitly
+            // revived component may later resume this interrupted phase.
+            if (reason === "removed" && registrationPhase !== null)
+              this._renderPhasesPendingRevival.add(registrationPhase)
+            onCancel.call(policy, reason)
+          },
+        }
+      : policy
+    const promise = this._getEffectRuntime().queue({
+      ...ownership,
+      policy: cancellationPolicy,
+    })
     this._registerAsyncEffect({ asyncEffectId, effectName, promise })
   }
 
@@ -343,8 +382,14 @@ export abstract class Renderable implements IRenderable {
       for (const child of renderable.children) {
         if (
           child instanceof Renderable &&
-          child._hasIncompleteAsyncEffects ===
-            Renderable.prototype._hasIncompleteAsyncEffects
+          prefersNativeMethod(
+            child,
+            "_hasIncompleteAsyncEffects",
+            "_hasIncompleteAsyncEffectsEffect",
+            {
+              legacyFacade: Renderable.prototype._hasIncompleteAsyncEffects,
+            },
+          )
         ) {
           if (yield* child._hasIncompleteAsyncEffectsEffect()) return true
         } else if (
@@ -387,8 +432,16 @@ export abstract class Renderable implements IRenderable {
       for (const child of renderable.children) {
         if (
           child instanceof Renderable &&
-          child._hasIncompleteAsyncEffectsInSubtreeForPhase ===
-            Renderable.prototype._hasIncompleteAsyncEffectsInSubtreeForPhase
+          prefersNativeMethod(
+            child,
+            "_hasIncompleteAsyncEffectsInSubtreeForPhase",
+            "_hasIncompleteAsyncEffectsInSubtreeForPhaseEffect",
+            {
+              legacyFacade:
+                Renderable.prototype
+                  ._hasIncompleteAsyncEffectsInSubtreeForPhase,
+            },
+          )
         ) {
           if (
             yield* child._hasIncompleteAsyncEffectsInSubtreeForPhaseEffect(
@@ -461,7 +514,21 @@ export abstract class Renderable implements IRenderable {
     return renderPhaseEffect({
       renderable: this,
       phase,
-      getState: () => this._getPhaseState(phase),
+      getState: () => {
+        if (this._renderPhasesPendingRevival.has(phase)) {
+          let ancestor: Renderable | null = this
+          while (ancestor && !ancestor.shouldBeRemoved)
+            ancestor = ancestor.parent
+          if (!ancestor && !this._getRootCircuit()?.effectRuntime?.isDisposed) {
+            this._renderPhasesPendingRevival.delete(phase)
+            // A completed removal already makes the next render initialize.
+            // Immediate detach/re-add instead retains an initialized phase.
+            if (this._getPhaseState(phase).initialized) this._markDirty(phase)
+          }
+        }
+        // A custom dirty hook may have replaced the public state entry or map.
+        return this._getPhaseState(phase)
+      },
       hasPreviousPhaseJobs: () => {
         const previousPhaseIndex = renderPhaseIndexMap.get(phase)! - 1
         if (previousPhaseIndex < 0) return false
@@ -470,7 +537,7 @@ export abstract class Renderable implements IRenderable {
           (pendingEffect) => pendingEffect.phase === previousPhase,
         )
       },
-      cancelRemovedJobs: () => this.cancelPendingEffects(),
+      cancelRemovedJobs: () => this.cancelPendingEffects({ reason: "removed" }),
       emitLifecycle: (startOrEnd) =>
         this._emitRenderLifecycleEvent(phase, startOrEnd),
     })

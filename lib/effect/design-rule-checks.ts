@@ -9,6 +9,7 @@ import type { AnyCircuitElement } from "circuit-json"
 import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import { corePromise, coreSync, type CoreError } from "./core-error"
+import { catchJobFailure } from "./job-failure"
 
 export const defaultDesignRuleChecks = {
   runAllNetlistChecks,
@@ -59,10 +60,10 @@ export function runDesignRuleCheckGroups({
             () => Promise.resolve().then(group.check),
             `drc:${group.name}`,
           )
-      ).pipe(
-        Effect.catch((error: CoreError) =>
+      ).pipe((program) =>
+        catchJobFailure(program, (error) =>
           coreSync(() => {
-            onFailure(group, error.cause)
+            onFailure(group, error)
             return [] as AnyCircuitElement[]
           }, "drc:failure-diagnostic"),
         ),

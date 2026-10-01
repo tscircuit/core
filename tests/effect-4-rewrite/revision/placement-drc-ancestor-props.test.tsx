@@ -42,9 +42,10 @@ async function renderPlacementConvergence(changeBoard: boolean) {
     ? await import("lib/effect/design-rule-checks")
     : undefined
   const adapterSpy = adapter
-    ? spyOn(adapter.defaultDesignRuleChecks, "runAllPlacementChecks").mockImplementation(
-        check,
-      )
+    ? spyOn(
+        adapter.defaultDesignRuleChecks,
+        "runAllPlacementChecks",
+      ).mockImplementation(check)
     : undefined
   const circuit = new Circuit({
     platform: {
@@ -52,6 +53,7 @@ async function renderPlacementConvergence(changeBoard: boolean) {
       schematicDisabled: true,
       routingDrcChecksDisabled: true,
       netlistDrcChecksDisabled: true,
+      pinSpecificationDrcChecksDisabled: true,
     },
   })
   let settling: Promise<void> | undefined
@@ -61,7 +63,6 @@ async function renderPlacementConvergence(changeBoard: boolean) {
         width={changeBoard ? 10 : 12}
         height={8}
         autorouter="sequential-trace"
-        pinSpecificationDrcChecksDisabled
       >
         <resistor name="R1" resistance="1k" footprint="0402" pcbX={-2} />
         <resistor name="R2" resistance="1k" footprint="0402" pcbX={2} />
@@ -77,14 +78,16 @@ async function renderPlacementConvergence(changeBoard: boolean) {
     }
     placement.resolve([controlledWarning])
     await settling
-    const output = circuit.getCircuitJson().filter(
-      (element) =>
-        element.type === "pcb_trace" ||
-        element.type === "pcb_autorouting_error" ||
-        element.type === "source_runtime_error" ||
-        (element.type === "pcb_component_missing_courtyard_warning" &&
-          element.message === controlledWarning.message),
-    )
+    const output = circuit
+      .getCircuitJson()
+      .filter(
+        (element) =>
+          element.type === "pcb_trace" ||
+          element.type === "pcb_autorouting_error" ||
+          element.type === "source_runtime_error" ||
+          (element.type === "pcb_component_missing_courtyard_warning" &&
+            element.message === controlledWarning.message),
+      )
     return { output, checkCalls }
   } finally {
     placement.resolve([controlledWarning])

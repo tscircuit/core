@@ -2,6 +2,7 @@ import { consolidatePcbOverlapErrors } from "@tscircuit/checks"
 import type { AnyCircuitElement } from "circuit-json"
 import * as Effect from "effect/Effect"
 import { corePromise, coreSync } from "lib/effect/core-error"
+import { catchJobFailure } from "lib/effect/job-failure"
 import {
   DesignRuleChecks,
   defaultDesignRuleChecks,
@@ -45,63 +46,71 @@ export const Board_doInitialPcbPlacementDesignRuleChecks = (board: Board) => {
   const existingPlacementDiagnostics = db.toArray()
 
   board._pcbPlacementDrcChecksPending = true
-  board._queueEffect("board:pre-route-placement-checks", (job) =>
-    Effect.gen(function* () {
-      const { runAllPlacementChecks } = yield* DesignRuleChecks
-      const placementCheckResults = yield* corePromise(
-        () =>
-          runAllPlacementChecks(subcircuitCircuitJson, {
-            consolidateOverlaps: false,
-          }),
-        "drc:placement",
-      )
-      const relevantPlacementCheckResults = consolidatePcbOverlapErrors(
-        subcircuitCircuitJson,
-        placementCheckResults.filter(
-          (result) => !board._isExpectedCastellatedHoleDrcError(result),
-        ),
-      )
-      const newPlacementDiagnostics = relevantPlacementCheckResults.filter(
-        (result) =>
-          !existingPlacementDiagnostics.some(
-            (existing) =>
-              existing.type === result.type &&
-              "message" in existing &&
-              existing.message === result.message,
+  board._queueEffect(
+    "board:pre-route-placement-checks",
+    (job) =>
+      Effect.gen(function* () {
+        const { runAllPlacementChecks } = yield* DesignRuleChecks
+        const placementCheckResults = yield* corePromise(
+          () =>
+            runAllPlacementChecks(subcircuitCircuitJson, {
+              consolidateOverlaps: false,
+            }),
+          "drc:placement",
+        )
+        const relevantPlacementCheckResults = consolidatePcbOverlapErrors(
+          subcircuitCircuitJson,
+          placementCheckResults.filter(
+            (result) => !board._isExpectedCastellatedHoleDrcError(result),
           ),
-      )
+        )
+        const newPlacementDiagnostics = relevantPlacementCheckResults.filter(
+          (result) =>
+            !existingPlacementDiagnostics.some(
+              (existing) =>
+                existing.type === result.type &&
+                "message" in existing &&
+                existing.message === result.message,
+            ),
+        )
 
-      yield* coreSync(
-        () =>
-          job.commit(() => {
-            db.insertAll(newPlacementDiagnostics as AnyCircuitElement[])
-            board._pcbPlacementDrcErrorCount =
-              relevantPlacementCheckResults.filter((result) =>
-                result.type.endsWith("_error"),
-              ).length
-          }),
-        "drc:commit-placement",
-      )
-    }).pipe(
-      Effect.provideService(DesignRuleChecks, defaultDesignRuleChecks),
-      Effect.catch((error) =>
-        coreSync(
+        yield* coreSync(
           () =>
             job.commit(() => {
-              const cause = error.cause
-              board._pcbPlacementDrcCheckError =
-                cause instanceof Error ? cause.message : String(cause)
+              db.insertAll(newPlacementDiagnostics as AnyCircuitElement[])
+              board._pcbPlacementDrcErrorCount =
+                relevantPlacementCheckResults.filter((result) =>
+                  result.type.endsWith("_error"),
+                ).length
             }),
-          "drc:placement-failure",
+          "drc:commit-placement",
+        )
+      }).pipe(
+        Effect.provideService(DesignRuleChecks, defaultDesignRuleChecks),
+        (program) =>
+          catchJobFailure(program, (cause) =>
+            coreSync(
+              () =>
+                job.commit(() => {
+                  board._pcbPlacementDrcCheckError =
+                    cause instanceof Error ? cause.message : String(cause)
+                }),
+              "drc:placement-failure",
+            ),
+          ),
+        Effect.ensuring(
+          Effect.sync(() => {
+            board._pcbPlacementDrcChecksPending = false
+            if (
+              job.cancellationReason !== "disposed" &&
+              job.cancellationReason !== "removed"
+            ) {
+              resetPcbTraceRenderInSubtree(board)
+            }
+          }),
         ),
+        Effect.asVoid,
       ),
-      Effect.ensuring(
-        Effect.sync(() => {
-          board._pcbPlacementDrcChecksPending = false
-          job.commit(() => resetPcbTraceRenderInSubtree(board))
-        }),
-      ),
-      Effect.asVoid,
-    ),
+    { propsChange: "finish" },
   )
 }

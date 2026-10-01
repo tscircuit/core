@@ -1,4 +1,4 @@
-import * as Effect from "effect/Effect"
+import { coreSync } from "lib/effect/core-error"
 // See CATALOGUE.md for information about the catalogue pattern
 // The catalogue is a registry of all the component constructors, it has a
 // bunch of purposes but importantly it reduces circular dependencies.
@@ -14,26 +14,19 @@ export interface Catalogue {
 }
 
 export const catalogue: Catalogue = {}
+
+/** Registry boundary: preserve case-sensitive keys and their lowercase JSX aliases. */
 export const extendCatalogue = (objects: object): void => {
-  runCoreSync(extendCatalogueEffect(objects))
+  const lowercaseConstructors = Object.fromEntries(
+    Object.entries(objects).map(([name, constructor]) => [
+      name.toLowerCase(),
+      constructor,
+    ]),
+  )
+  Object.assign(catalogue, objects)
+  Object.assign(catalogue, lowercaseConstructors)
 }
 
-/** Preserve case-sensitive keys and their lowercase JSX aliases. */
+/** Compatibility adapter for callers already composing catalogue registration. */
 export const extendCatalogueEffect = (objects: object) =>
-  Effect.gen(function* () {
-    const lowercaseConstructors = yield* coreSync(
-      () =>
-        Object.fromEntries(
-          Object.entries(objects).map(([name, constructor]) => [
-            name.toLowerCase(),
-            constructor,
-          ]),
-        ),
-      "catalogue_lowercase_aliases",
-    )
-    yield* coreSync(() => {
-      Object.assign(catalogue, objects)
-      Object.assign(catalogue, lowercaseConstructors)
-    }, "register_component_constructors")
-  })
-import { coreSync, runCoreSync } from "lib/effect/core-error"
+  coreSync(() => extendCatalogue(objects))

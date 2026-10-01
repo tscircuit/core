@@ -50,28 +50,32 @@ export const Group_doInitialStandaloneSubcircuitPcbDesignRuleChecks = (
     .toArray()
 
   group._standaloneSubcircuitDrcChecksInProgress = true
-  group._queueEffect("standalone-subcircuit:routing-drc-checks", (job) =>
-    Effect.gen(function* () {
-      const { runAllRoutingChecks } = yield* DesignRuleChecks
-      const results = (yield* corePromise(
-        () => runAllRoutingChecks(subcircuitCircuitJson),
-        "drc:standalone-routing",
-      )) as AnyCircuitElement[]
-      yield* coreSync(
-        () =>
-          job.commit(() => {
-            db.insertAll(dedupePcbDrcErrors(results))
-            group._standaloneSubcircuitDrcChecksComplete = true
+  group._queueEffect(
+    "standalone-subcircuit:routing-drc-checks",
+    (job) =>
+      Effect.gen(function* () {
+        const { runAllRoutingChecks } = yield* DesignRuleChecks
+        const results = (yield* corePromise(
+          () => runAllRoutingChecks(subcircuitCircuitJson),
+          "drc:standalone-routing",
+        )) as AnyCircuitElement[]
+        yield* coreSync(
+          () =>
+            job.commit(() => {
+              db.insertAll(dedupePcbDrcErrors(results))
+              group._standaloneSubcircuitDrcChecksComplete = true
+            }),
+          "drc:commit-standalone-routing",
+        )
+      }).pipe(
+        Effect.provideService(DesignRuleChecks, defaultDesignRuleChecks),
+        Effect.ensuring(
+          Effect.sync(() => {
+            group._standaloneSubcircuitDrcChecksInProgress = false
           }),
-        "drc:commit-standalone-routing",
-      )
-    }).pipe(
-      Effect.provideService(DesignRuleChecks, defaultDesignRuleChecks),
-      Effect.ensuring(
-        Effect.sync(() => {
-          group._standaloneSubcircuitDrcChecksInProgress = false
-        }),
+        ),
       ),
-    ),
+    // Preserve the baseline's captured routing-check snapshot across updates.
+    { propsChange: "finish" },
   )
 }

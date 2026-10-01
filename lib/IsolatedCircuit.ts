@@ -3,7 +3,6 @@ import type { PlatformConfig } from "@tscircuit/props"
 import type { AnyCircuitElement } from "circuit-json"
 import Debug from "debug"
 import * as Effect from "effect/Effect"
-import { PreventSchedulerYield } from "effect/References"
 import { type ReactElement, isValidElement } from "react"
 import { type Matrix, identity } from "transformation-matrix"
 import pkgJson from "../package.json"
@@ -25,6 +24,7 @@ import { CircuitRuntime } from "./effect/circuit-runtime"
 import {
   corePromise,
   coreSync,
+  atomicCoreEffect,
   runCorePromise,
   runCoreSync,
 } from "./effect/core-error"
@@ -32,6 +32,7 @@ import {
   CircuitEnvironment,
   type CircuitEnvironmentShape,
 } from "./effect/core-services"
+import { prefersNativeMethod } from "./effect/override-dispatch"
 import {
   EffectFootprintLoader,
   type EffectFootprintLoadingOptions,
@@ -278,36 +279,37 @@ export class IsolatedCircuit {
   }
 
   renderEffect() {
-    return Effect.provideService(
-      Effect.uninterruptible(
-        Effect.gen({ self: this }, function* () {
-          const firstChild = yield* coreSync(() => {
-            this.effectRuntime.assertOpen()
-            if (!this.firstChild) this._guessRootComponent()
-            if (!this.firstChild)
-              throw new Error("IsolatedCircuit has no root component")
-            // Public component parents historically also accept circuit roots.
-            this.firstChild.parent = this as any
-            return this.firstChild
-          }, "prepare_render")
-          if (
-            firstChild.runRenderCycle === Renderable.prototype.runRenderCycle
-          ) {
-            yield* firstChild.runRenderCycleEffect()
-          } else {
-            yield* coreSync(
-              () => firstChild.runRenderCycle(),
-              "custom_render_cycle",
-            )
-          }
-          yield* coreSync(() => {
-            this._hasUnrenderedUpdatesFromAsyncEffects = false
-            this._hasRenderedAtleastOnce = true
-          }, "complete_render_cycle")
-        }),
-      ),
-      PreventSchedulerYield,
-      true,
+    return atomicCoreEffect(
+      Effect.gen({ self: this }, function* () {
+        const firstChild = yield* coreSync(() => {
+          this.effectRuntime.assertOpen()
+          if (!this.firstChild) this._guessRootComponent()
+          if (!this.firstChild)
+            throw new Error("IsolatedCircuit has no root component")
+          // Public component parents historically also accept circuit roots.
+          this.firstChild.parent = this as any
+          return this.firstChild
+        }, "prepare_render")
+        if (
+          prefersNativeMethod(
+            firstChild,
+            "runRenderCycle",
+            "runRenderCycleEffect",
+            {
+              legacyFacade: Renderable.prototype.runRenderCycle,
+            },
+          )
+        ) {
+          yield* firstChild.runRenderCycleEffect()
+        } else {
+          yield* coreSync(
+            () => firstChild.runRenderCycle(),
+            "custom_render_cycle",
+          )
+        }
+        this._hasUnrenderedUpdatesFromAsyncEffects = false
+        this._hasRenderedAtleastOnce = true
+      }),
     )
   }
 
@@ -322,7 +324,6 @@ export class IsolatedCircuit {
   renderUntilSettledEffect() {
     return settleRenderEffect({
       circuit: this,
-      prepareRender: () => {},
       prepareRenderEffect: () =>
         Effect.provideService(
           useCircuitDatabase((db) => {
@@ -339,7 +340,9 @@ export class IsolatedCircuit {
           this._effectEnvironment(),
         ),
       renderEffect: () =>
-        this.render === IsolatedCircuit.prototype.render
+        prefersNativeMethod(this, "render", "renderEffect", {
+          legacyFacade: IsolatedCircuit.prototype.render,
+        })
           ? this.renderEffect()
           : coreSync(() => this.render(), "custom_render"),
       hasUnrenderedUpdates: () => this._hasUnrenderedUpdatesFromAsyncEffects,
@@ -391,7 +394,9 @@ export class IsolatedCircuit {
   getCircuitJsonEffect() {
     return Effect.gen({ self: this }, function* () {
       if (!this._hasRenderedAtleastOnce) {
-        yield* this.render === IsolatedCircuit.prototype.render
+        yield* prefersNativeMethod(this, "render", "renderEffect", {
+          legacyFacade: IsolatedCircuit.prototype.render,
+        })
           ? this.renderEffect()
           : coreSync(() => this.render(), "custom_render")
       }
@@ -422,19 +427,21 @@ export class IsolatedCircuit {
         "load_svg_renderer",
       )
 
-      if (options.view === "pcb") {
-        return yield* coreSync(
-          () => circuitToSvg.convertCircuitJsonToPcbSvg(this.getCircuitJson()),
-          "render_pcb_svg",
+      if (options.view === "pcb" || options.view === "schematic") {
+        const circuitJson = yield* prefersNativeMethod(
+          this,
+          "getCircuitJson",
+          "getCircuitJsonEffect",
+          { legacyFacade: IsolatedCircuit.prototype.getCircuitJson },
         )
-      }
-      if (options.view === "schematic") {
+          ? this.getCircuitJsonEffect()
+          : coreSync(() => this.getCircuitJson(), "custom_circuit_json")
         return yield* coreSync(
           () =>
-            circuitToSvg.convertCircuitJsonToSchematicSvg(
-              this.getCircuitJson(),
-            ),
-          "render_schematic_svg",
+            options.view === "pcb"
+              ? circuitToSvg.convertCircuitJsonToPcbSvg(circuitJson)
+              : circuitToSvg.convertCircuitJsonToSchematicSvg(circuitJson),
+          options.view === "pcb" ? "render_pcb_svg" : "render_schematic_svg",
         )
       }
       return yield* coreSync(() => {

@@ -1,9 +1,7 @@
-import * as Cause from "effect/Cause"
 import * as Effect from "effect/Effect"
-import * as Exit from "effect/Exit"
 import { PreventSchedulerYield } from "effect/References"
 import type { IsolatedCircuit } from "../../IsolatedCircuit"
-import { coreErrorBrand, originalCoreError } from "../../effect/core-error"
+import { coreErrorBrand } from "../../effect/core-error"
 
 export interface RenderUntilSettledOptions {
   /**
@@ -18,12 +16,15 @@ type RenderSettlement<E = never> = {
     IsolatedCircuit,
     "render" | "isDoneRendering" | "on" | "removeListener" | "emit"
   >
-  prepareRender: () => void
-  prepareRenderEffect?: () => Effect.Effect<unknown, E>
-  renderEffect?: () => Effect.Effect<unknown, E>
   hasUnrenderedUpdates: () => boolean
   shouldRenderAfterWait: () => boolean
-}
+} & (
+  | {
+      prepareRenderEffect: () => Effect.Effect<unknown, E>
+      renderEffect: () => Effect.Effect<unknown, E>
+    }
+  | { prepareRender: () => void }
+)
 
 /** Internal typed failure; the Promise boundary rethrows the original cause. */
 export class RenderSettlementError extends Error {
@@ -42,6 +43,14 @@ function tryRenderSettlement<A>(step: () => A) {
   })
 }
 
+/**
+ * Preserve the legacy await boundary after all asyncEffect:end observers.
+ * Pinned by revision/settlement-end-observer-order.test.tsx.
+ */
+function resumeAfterAsyncEffectEndObservers(resume: () => void) {
+  queueMicrotask(resume)
+}
+
 function waitForRenderProgress(settlement: RenderSettlement<unknown>) {
   return Effect.callback<void>((resume) => {
     // callback's returned cleanup runs on interruption. Normal completion must
@@ -49,9 +58,7 @@ function waitForRenderProgress(settlement: RenderSettlement<unknown>) {
     const onProgress = () => {
       clearTimeout(timer)
       settlement.circuit.removeListener("asyncEffect:end", onProgress)
-      // The legacy Promise's await resumes after all end-event observers.
-      // Effect callback resumes synchronously, so preserve that microtask edge.
-      queueMicrotask(() => resume(Effect.void))
+      resumeAfterAsyncEffectEndObservers(() => resume(Effect.void))
     }
     const timer = setTimeout(onProgress, 100)
     settlement.circuit.on("asyncEffect:end", onProgress)
@@ -71,10 +78,19 @@ export function renderUntilSettledEffect<E = never>(
 ) {
   return Effect.provideService(
     Effect.gen(function* () {
-      yield* settlement.prepareRenderEffect?.() ??
-        tryRenderSettlement(settlement.prepareRender)
-      yield* settlement.renderEffect?.() ??
-        tryRenderSettlement(() => settlement.circuit.render())
+      // Direct utility consumers retain their synchronous input shape. Adapt
+      // that boundary once; the circuit method supplies only native factories.
+      const programs =
+        "prepareRenderEffect" in settlement
+          ? settlement
+          : {
+              prepareRenderEffect: () =>
+                tryRenderSettlement(settlement.prepareRender),
+              renderEffect: () =>
+                tryRenderSettlement(() => settlement.circuit.render()),
+            }
+      yield* programs.prepareRenderEffect()
+      yield* programs.renderEffect()
 
       while (
         !(yield* tryRenderSettlement(() =>
@@ -84,8 +100,7 @@ export function renderUntilSettledEffect<E = never>(
         yield* waitForRenderProgress(settlement)
         // Keep idle polls from traversing the component tree.
         if (settlement.shouldRenderAfterWait()) {
-          yield* settlement.renderEffect?.() ??
-            tryRenderSettlement(() => settlement.circuit.render())
+          yield* programs.renderEffect()
         }
       }
 
@@ -96,34 +111,4 @@ export function renderUntilSettledEffect<E = never>(
     PreventSchedulerYield,
     true,
   )
-}
-
-export function runRenderUntilSettled<E = never>(
-  settlement: RenderSettlement<E>,
-  options: RenderUntilSettledOptions,
-): Promise<void> {
-  // Resolve the Promise directly from Exit to retain the original settlement
-  // timing and thrown object, without an extra async function continuation.
-  return new Promise<void>((resolve, reject) => {
-    // Run options attach interruption after synchronous startup. Check first.
-    if (options.signal?.aborted) {
-      reject(options.signal.reason)
-      return
-    }
-    Effect.runCallback(renderUntilSettledEffect(settlement), {
-      signal: options.signal,
-      onExit: (exit) => {
-        if (Exit.isSuccess(exit)) {
-          resolve()
-        } else if (
-          Cause.hasInterruptsOnly(exit.cause) &&
-          options.signal?.aborted
-        ) {
-          reject(options.signal.reason)
-        } else {
-          reject(originalCoreError(exit.cause))
-        }
-      },
-    })
-  })
 }

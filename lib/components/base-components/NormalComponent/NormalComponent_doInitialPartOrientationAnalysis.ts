@@ -4,6 +4,7 @@ import * as Effect from "effect/Effect"
 import * as Exit from "effect/Exit"
 import { corePromise, coreSync, type CoreError } from "lib/effect/core-error"
 import type { CoreJobContext } from "lib/effect/core-services"
+import { catchJobFailure } from "lib/effect/job-failure"
 import { readLocalCacheEffect } from "lib/local-cache-engine"
 import { analyzePcbPin1Location } from "@tscircuit/circuit-json-util"
 import type {
@@ -284,6 +285,8 @@ const analyzeSupplierPartOrientation = (
       // A live subscriber takes over if the producer's component was removed.
       // Its cancellation never interrupts the producer or other subscribers.
       return yield* Deferred.await(existing).pipe(
+        // Only a typed producer-lease failure selects takeover; interrupts and
+        // defects remain their original causes until the outer candidate policy.
         Effect.catch((error) =>
           error instanceof OrientationProducerCancelled
             ? analyzeSupplierPartOrientation(request)
@@ -319,21 +322,24 @@ const analyzeSupplierPartOrientation = (
       )
       const cacheEngine = component.root?.platform?.localCacheEngine
       if (cacheEngine) {
-        yield* corePromise(
-          () =>
-            Promise.resolve(
-              job.commit(() =>
-                cacheEngine.setItem(
-                  cacheKey,
-                  JSON.stringify({
-                    pin1_location: analysis.pin1Location,
-                    pin1_polarity: analysis.pin1Polarity,
-                  } satisfies CachedSupplierPartOrientationAnalysis),
+        yield* catchJobFailure(
+          corePromise(
+            () =>
+              Promise.resolve(
+                job.commit(() =>
+                  cacheEngine.setItem(
+                    cacheKey,
+                    JSON.stringify({
+                      pin1_location: analysis.pin1Location,
+                      pin1_polarity: analysis.pin1Polarity,
+                    } satisfies CachedSupplierPartOrientationAnalysis),
+                  ),
                 ),
               ),
-            ),
-          "cache_supplier_orientation",
-        ).pipe(Effect.catch(() => Effect.void))
+            "cache_supplier_orientation",
+          ),
+          () => Effect.void,
+        )
       }
       return analysis
     }).pipe(
@@ -412,54 +418,68 @@ export const NormalComponent_doInitialPartOrientationAnalysis = (
   if (component._hasStartedPartOrientationAnalysis) return
   component._hasStartedPartOrientationAnalysis = true
 
-  component._queueEffect("analyze-part-orientation", (job) =>
-    Effect.gen(function* () {
-      const supplierPin1LocationMap: SupplierPin1LocationMap = {}
-      for (const supplierPartCandidate of supplierPartCandidates) {
-        yield* Effect.gen(function* () {
-          const { pin1Location: supplierPin1Location, pin1Polarity } =
-            yield* analyzeSupplierPartOrientation({
-              component,
-              partsEngine,
-              supplierPartCandidate,
-              job,
-            })
-          if (supplierPin1Location)
-            supplierPin1LocationMap[supplierPartCandidate.supplierName] =
-              supplierPin1Location
-          if (
-            localPin1Polarity &&
-            pin1Polarity &&
-            localPin1Polarity !== pin1Polarity
-          ) {
-            yield* coreSync(
-              () =>
-                job.commit(() => {
-                  const error = source_component_misconfigured_error.parse({
-                    type: "source_component_misconfigured_error",
-                    error_type: "source_component_misconfigured_error",
-                    message: `${component.getString()} maps pin 1 to the ${localPin1Polarity}, but supplier part ${supplierPartCandidate.supplierName}:${supplierPartCandidate.supplierPartNumber} maps pin 1 to the ${pin1Polarity}. Update pinLabels or use a supplier part with matching diode polarity.`,
-                    source_component_ids: [component.source_component_id!],
-                    source_port_ids: localPin1SourcePort?.source_port_id
-                      ? [localPin1SourcePort.source_port_id]
-                      : undefined,
-                  })
-                  db.source_component_misconfigured_error.insert(error)
-                }),
-              "commit_supplier_polarity_error",
-            )
-          }
-        }).pipe(Effect.catch(() => Effect.void))
-      }
-      yield* coreSync(
-        () =>
-          job.commit(() => {
-            component._asyncSupplierPin1LocationMap = supplierPin1LocationMap
-            component._markDirty("PartOrientationAnalysis")
-          }),
-        "commit_supplier_orientation",
-      )
-    }),
+  component._queueEffect(
+    "analyze-part-orientation",
+    (job) =>
+      Effect.gen(function* () {
+        const supplierPin1LocationMap: SupplierPin1LocationMap = {}
+        for (const supplierPartCandidate of supplierPartCandidates) {
+          yield* catchJobFailure(
+            Effect.gen(function* () {
+              const { pin1Location: supplierPin1Location, pin1Polarity } =
+                yield* analyzeSupplierPartOrientation({
+                  component,
+                  partsEngine,
+                  supplierPartCandidate,
+                  job,
+                })
+              if (supplierPin1Location)
+                supplierPin1LocationMap[supplierPartCandidate.supplierName] =
+                  supplierPin1Location
+              if (
+                localPin1Polarity &&
+                pin1Polarity &&
+                localPin1Polarity !== pin1Polarity
+              ) {
+                yield* coreSync(
+                  () =>
+                    job.commit(() => {
+                      const error = source_component_misconfigured_error.parse({
+                        type: "source_component_misconfigured_error",
+                        error_type: "source_component_misconfigured_error",
+                        message: `${component.getString()} maps pin 1 to the ${localPin1Polarity}, but supplier part ${supplierPartCandidate.supplierName}:${supplierPartCandidate.supplierPartNumber} maps pin 1 to the ${pin1Polarity}. Update pinLabels or use a supplier part with matching diode polarity.`,
+                        source_component_ids: [component.source_component_id!],
+                        source_port_ids: localPin1SourcePort?.source_port_id
+                          ? [localPin1SourcePort.source_port_id]
+                          : undefined,
+                      })
+                      db.source_component_misconfigured_error.insert(error)
+                    }),
+                  "commit_supplier_polarity_error",
+                )
+              }
+            }),
+            () => Effect.void,
+          )
+        }
+        yield* coreSync(
+          () =>
+            job.commit(() => {
+              component._asyncSupplierPin1LocationMap = supplierPin1LocationMap
+              component._markDirty("PartOrientationAnalysis")
+            }),
+          "commit_supplier_orientation",
+        )
+      }),
+    {
+      propsChange: "cancel",
+      onCancel: (reason) => {
+        component._hasStartedPartOrientationAnalysis = false
+        component._asyncSupplierPin1LocationMap = undefined
+        if (reason !== "disposed" && reason !== "removed")
+          component._markDirty("PartOrientationAnalysis")
+      },
+    },
   )
 }
 

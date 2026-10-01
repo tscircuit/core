@@ -18,11 +18,17 @@ test("H8 disposal completes with an unresolved Normal load and rejects late grap
   let fetchCalls = 0
   let lateHeaderReads = 0
   let closedBodies = 0
-  const fetchSpy = spyOn(globalThis, "fetch").mockImplementation((() => {
-    fetchCalls++
-    graphicStarted.resolve()
-    return graphicResponse.promise
-  }) as typeof fetch)
+  const controlledFetch: typeof fetch = Object.assign(
+    () => {
+      fetchCalls++
+      graphicStarted.resolve()
+      return graphicResponse.promise
+    },
+    { preconnect: fetch.preconnect },
+  )
+  const fetchSpy = spyOn(globalThis, "fetch").mockImplementation(
+    controlledFetch,
+  )
   process.on("unhandledRejection", onUnhandled)
   const circuit = createLoadingRevisionCircuit({
     footprintLibraryMap: {

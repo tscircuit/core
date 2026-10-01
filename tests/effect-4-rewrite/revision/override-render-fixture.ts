@@ -69,7 +69,9 @@ export class NativeRenderOverride extends RenderOverrideBase {
       super._hasIncompleteAsyncEffectsEffect(),
     )
   }
-  override _hasIncompleteAsyncEffectsInSubtreeForPhaseEffect(phase: RenderPhase) {
+  override _hasIncompleteAsyncEffectsInSubtreeForPhaseEffect(
+    phase: RenderPhase,
+  ) {
     return Effect.andThen(
       Effect.sync(() => this.record("incomplete_phase", "native")),
       super._hasIncompleteAsyncEffectsInSubtreeForPhaseEffect(phase),
@@ -84,9 +86,9 @@ class BothRenderOverrides extends NativeRenderOverride {
     super.runRenderPhase(phase)
   }
   override runRenderPhaseEffect(phase: RenderPhase) {
-    return RenderOverrideBase.prototype.runRenderPhaseEffect.call(this, phase).pipe(
-      Effect.tap(() => Effect.sync(() => this.record("phase", "native"))),
-    )
+    return RenderOverrideBase.prototype.runRenderPhaseEffect
+      .call(this, phase)
+      .pipe(Effect.tap(() => Effect.sync(() => this.record("phase", "native"))))
   }
   override runRenderPhaseForChildren(phase: RenderPhase) {
     this.record("children", "sync")
@@ -95,7 +97,10 @@ class BothRenderOverrides extends NativeRenderOverride {
   override runRenderPhaseForChildrenEffect(phase: RenderPhase) {
     return Effect.andThen(
       Effect.sync(() => this.record("children", "native")),
-      RenderOverrideBase.prototype.runRenderPhaseForChildrenEffect.call(this, phase),
+      RenderOverrideBase.prototype.runRenderPhaseForChildrenEffect.call(
+        this,
+        phase,
+      ),
     )
   }
   override _markDirty(phase: RenderPhase) {
@@ -122,10 +127,15 @@ class BothRenderOverrides extends NativeRenderOverride {
     this.record("incomplete_phase", "sync")
     return super._hasIncompleteAsyncEffectsInSubtreeForPhase(phase)
   }
-  override _hasIncompleteAsyncEffectsInSubtreeForPhaseEffect(phase: RenderPhase) {
+  override _hasIncompleteAsyncEffectsInSubtreeForPhaseEffect(
+    phase: RenderPhase,
+  ) {
     return Effect.andThen(
       Effect.sync(() => this.record("incomplete_phase", "native")),
-      RenderOverrideBase.prototype._hasIncompleteAsyncEffectsInSubtreeForPhaseEffect.call(this, phase),
+      RenderOverrideBase.prototype._hasIncompleteAsyncEffectsInSubtreeForPhaseEffect.call(
+        this,
+        phase,
+      ),
     )
   }
 }
@@ -178,7 +188,9 @@ class NativeNearSyncRenderOverride extends SyncRenderOverride {
       super._hasIncompleteAsyncEffectsEffect(),
     )
   }
-  override _hasIncompleteAsyncEffectsInSubtreeForPhaseEffect(phase: RenderPhase) {
+  override _hasIncompleteAsyncEffectsInSubtreeForPhaseEffect(
+    phase: RenderPhase,
+  ) {
     return Effect.andThen(
       Effect.sync(() => this.record("incomplete_phase", "native")),
       super._hasIncompleteAsyncEffectsInSubtreeForPhaseEffect(phase),
@@ -188,25 +200,31 @@ class NativeNearSyncRenderOverride extends SyncRenderOverride {
 
 function withOwnSyncMethods() {
   return Object.assign(new NativeRenderOverride(), {
-    runRenderPhase(phase: RenderPhase) {
+    runRenderPhase(this: RenderOverrideBase, phase: RenderPhase) {
       this.record("phase", "sync")
       RenderOverrideBase.prototype.runRenderPhase.call(this, phase)
     },
-    runRenderPhaseForChildren(phase: RenderPhase) {
+    runRenderPhaseForChildren(this: RenderOverrideBase, phase: RenderPhase) {
       this.record("children", "sync")
       RenderOverrideBase.prototype.runRenderPhaseForChildren.call(this, phase)
     },
-    _markDirty(phase: RenderPhase) {
+    _markDirty(this: RenderOverrideBase, phase: RenderPhase) {
       this.record("dirty", "sync")
       RenderOverrideBase.prototype._markDirty.call(this, phase)
     },
-    _hasIncompleteAsyncEffects() {
+    _hasIncompleteAsyncEffects(this: RenderOverrideBase) {
       this.record("incomplete", "sync")
       return RenderOverrideBase.prototype._hasIncompleteAsyncEffects.call(this)
     },
-    _hasIncompleteAsyncEffectsInSubtreeForPhase(phase: RenderPhase) {
+    _hasIncompleteAsyncEffectsInSubtreeForPhase(
+      this: RenderOverrideBase,
+      phase: RenderPhase,
+    ) {
       this.record("incomplete_phase", "sync")
-      return RenderOverrideBase.prototype._hasIncompleteAsyncEffectsInSubtreeForPhase.call(this, phase)
+      return RenderOverrideBase.prototype._hasIncompleteAsyncEffectsInSubtreeForPhase.call(
+        this,
+        phase,
+      )
     },
   })
 }
@@ -223,7 +241,10 @@ function withOwnNativeMethods() {
     runRenderPhaseForChildrenEffect(phase: RenderPhase) {
       return Effect.andThen(
         Effect.sync(() => actor.record("children", "native")),
-        RenderOverrideBase.prototype.runRenderPhaseForChildrenEffect.call(actor, phase),
+        RenderOverrideBase.prototype.runRenderPhaseForChildrenEffect.call(
+          actor,
+          phase,
+        ),
       )
     },
     _markDirtyEffect(phase: RenderPhase) {
@@ -235,27 +256,72 @@ function withOwnNativeMethods() {
     _hasIncompleteAsyncEffectsEffect() {
       return Effect.andThen(
         Effect.sync(() => actor.record("incomplete", "native")),
-        RenderOverrideBase.prototype._hasIncompleteAsyncEffectsEffect.call(actor),
+        RenderOverrideBase.prototype._hasIncompleteAsyncEffectsEffect.call(
+          actor,
+        ),
       )
     },
     _hasIncompleteAsyncEffectsInSubtreeForPhaseEffect(phase: RenderPhase) {
       return Effect.andThen(
         Effect.sync(() => actor.record("incomplete_phase", "native")),
-        RenderOverrideBase.prototype._hasIncompleteAsyncEffectsInSubtreeForPhaseEffect.call(actor, phase),
+        RenderOverrideBase.prototype._hasIncompleteAsyncEffectsInSubtreeForPhaseEffect.call(
+          actor,
+          phase,
+        ),
       )
     },
   })
 }
 
 export const renderOverrideCases = [
-  { name: "base", create: () => new RenderOverrideBase(), nearest: [], identity: [] },
-  { name: "sync", create: () => new SyncRenderOverride(), nearest: ["sync"], identity: ["sync"] },
-  { name: "native", create: () => new NativeRenderOverride(), nearest: ["native"], identity: ["native"] },
-  { name: "same_owner", create: () => new BothRenderOverrides(), nearest: ["native"], identity: ["sync", "native"] },
-  { name: "sync_near", create: () => new SyncNearNativeRenderOverride(), nearest: ["sync", "native"], identity: ["sync", "native"] },
-  { name: "native_near", create: () => new NativeNearSyncRenderOverride(), nearest: ["native"], identity: ["sync", "native"] },
-  { name: "own_sync", create: withOwnSyncMethods, nearest: ["sync", "native"], identity: ["sync", "native"] },
-  { name: "own_native", create: withOwnNativeMethods, nearest: ["native"], identity: ["sync", "native"] },
+  {
+    name: "base",
+    create: () => new RenderOverrideBase(),
+    nearest: [],
+    identity: [],
+  },
+  {
+    name: "sync",
+    create: () => new SyncRenderOverride(),
+    nearest: ["sync"],
+    identity: ["sync"],
+  },
+  {
+    name: "native",
+    create: () => new NativeRenderOverride(),
+    nearest: ["native"],
+    identity: ["native"],
+  },
+  {
+    name: "same_owner",
+    create: () => new BothRenderOverrides(),
+    nearest: ["native"],
+    identity: ["sync", "native"],
+  },
+  {
+    name: "sync_near",
+    create: () => new SyncNearNativeRenderOverride(),
+    nearest: ["sync", "native"],
+    identity: ["sync", "native"],
+  },
+  {
+    name: "native_near",
+    create: () => new NativeNearSyncRenderOverride(),
+    nearest: ["native"],
+    identity: ["sync", "native"],
+  },
+  {
+    name: "own_sync",
+    create: withOwnSyncMethods,
+    nearest: ["sync", "native"],
+    identity: ["sync", "native"],
+  },
+  {
+    name: "own_native",
+    create: withOwnNativeMethods,
+    nearest: ["native"],
+    identity: ["sync", "native"],
+  },
 ] as const
 
 export function attachRenderOverride(parent: Renderable, child: Renderable) {

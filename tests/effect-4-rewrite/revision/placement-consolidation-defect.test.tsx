@@ -9,7 +9,9 @@ import {
 test("H6 external-checks double: a consolidation defect reaches the placement failure diagnostic", async () => {
   const cause = new Error("controlled overlap consolidation defect")
   const placement =
-    convergenceDeferred<Awaited<ReturnType<typeof checks.runAllPlacementChecks>>>()
+    convergenceDeferred<
+      Awaited<ReturnType<typeof checks.runAllPlacementChecks>>
+    >()
   const requested = convergenceDeferred<void>()
   const originalConsolidation = checks.consolidatePcbOverlapErrors
   let consolidationCalls = 0
@@ -37,9 +39,10 @@ test("H6 external-checks double: a consolidation defect reaches the placement fa
     ? await import("lib/effect/design-rule-checks")
     : undefined
   const adapterSpy = adapter
-    ? spyOn(adapter.defaultDesignRuleChecks, "runAllPlacementChecks").mockImplementation(
-        check,
-      )
+    ? spyOn(
+        adapter.defaultDesignRuleChecks,
+        "runAllPlacementChecks",
+      ).mockImplementation(check)
     : undefined
   const circuit = new Circuit({
     platform: {
@@ -47,17 +50,13 @@ test("H6 external-checks double: a consolidation defect reaches the placement fa
       schematicDisabled: true,
       routingDrcChecksDisabled: true,
       netlistDrcChecksDisabled: true,
+      pinSpecificationDrcChecksDisabled: true,
     },
   })
   let settling: Promise<void> | undefined
   try {
     circuit.add(
-      <board
-        width={12}
-        height={8}
-        autorouter="sequential-trace"
-        pinSpecificationDrcChecksDisabled
-      >
+      <board width={12} height={8} autorouter="sequential-trace">
         <resistor name="R1" resistance="1k" footprint="0402" pcbX={-2} />
         <resistor name="R2" resistance="1k" footprint="0402" pcbX={2} />
         <trace from=".R1 > .pin1" to=".R2 > .pin1" />

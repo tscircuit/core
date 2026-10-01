@@ -7,6 +7,7 @@ import type {
 import Debug from "debug"
 import * as Effect from "effect/Effect"
 import { coreSync } from "lib/effect/core-error"
+import { catchJobFailure } from "lib/effect/job-failure"
 import {
   simulateSpiceEffect,
   SpiceSimulationEngine,
@@ -311,191 +312,199 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
       `Queueing simulation for spice engine: ${engineName} (id: ${effectId})`,
     )
 
-    group._queueEffect(effectId, {
-      owner: analogSimulation,
-      build: (job) =>
-        Effect.gen(function* () {
-          // Add simulation results to the database
-          const insertedVoltageGraphs: InsertedSimulationGraph[] = []
-          const insertedCurrentGraphs: InsertedSimulationGraph[] = []
+    group._queueEffect(
+      effectId,
+      {
+        owner: analogSimulation,
+        build: (job) =>
+          Effect.gen(function* () {
+            // Add simulation results to the database
+            const insertedVoltageGraphs: InsertedSimulationGraph[] = []
+            const insertedCurrentGraphs: InsertedSimulationGraph[] = []
 
-          for (const simulationRun of simulationRuns) {
-            debug(`Running simulation with engine: ${engineName}`)
-            const simulationResult = yield* simulateSpiceEffect(
-              simulationRun.spiceString,
-            )
+            for (const simulationRun of simulationRuns) {
+              debug(`Running simulation with engine: ${engineName}`)
+              const simulationResult = yield* simulateSpiceEffect(
+                simulationRun.spiceString,
+              )
 
-            debug(
-              `Simulation completed, received ${simulationResult.simulationResultCircuitJson.length} elements`,
-            )
+              debug(
+                `Simulation completed, received ${simulationResult.simulationResultCircuitJson.length} elements`,
+              )
+
+              yield* coreSync(
+                () =>
+                  job.commit(() => {
+                    for (const simulationResultCircuitElement of simulationResult.simulationResultCircuitJson) {
+                      if (
+                        !isCircuitElementInput(simulationResultCircuitElement)
+                      ) {
+                        debug("Skipping invalid simulation result element")
+                        continue
+                      }
+
+                      const simulationResultWithSweepCoordinate =
+                        attachSweepCoordinateToSimulationResult({
+                          simulationResult: simulationResultCircuitElement,
+                          simulationParameterSweepCoordinate:
+                            simulationRun.simulationParameterSweepCoordinate,
+                        })
+
+                      if (isVoltageGraph(simulationResultWithSweepCoordinate)) {
+                        simulationResultWithSweepCoordinate.simulation_experiment_id =
+                          simulationExperiment.simulation_experiment_id
+
+                        const probeMatch =
+                          simulationResultWithSweepCoordinate.name
+                            ? voltageProbeByGraphName.get(
+                                simulationResultWithSweepCoordinate.name,
+                              )
+                            : undefined
+                        if (probeMatch) {
+                          simulationResultWithSweepCoordinate.color =
+                            probeMatch.color ?? undefined
+                          simulationResultWithSweepCoordinate.source_probe_id =
+                            probeMatch.simulation_voltage_probe_id ?? undefined
+                        }
+                      } else if (
+                        isSimulationVoltageResult(
+                          simulationResultWithSweepCoordinate,
+                        )
+                      ) {
+                        simulationResultWithSweepCoordinate.simulation_experiment_id =
+                          simulationExperiment.simulation_experiment_id
+                        const probeMatch =
+                          voltageProbeById.get(
+                            simulationResultWithSweepCoordinate.simulation_voltage_probe_id,
+                          ) ??
+                          (simulationResultWithSweepCoordinate.name
+                            ? voltageProbeByGraphName.get(
+                                simulationResultWithSweepCoordinate.name,
+                              )
+                            : undefined)
+                        if (probeMatch?.simulation_voltage_probe_id) {
+                          simulationResultWithSweepCoordinate.color =
+                            probeMatch.color ?? undefined
+                          simulationResultWithSweepCoordinate.simulation_voltage_probe_id =
+                            probeMatch.simulation_voltage_probe_id
+                        }
+                      }
+
+                      if (isCurrentGraph(simulationResultWithSweepCoordinate)) {
+                        simulationResultWithSweepCoordinate.simulation_experiment_id =
+                          simulationExperiment.simulation_experiment_id
+
+                        const probeMatch =
+                          (simulationResultWithSweepCoordinate.source_probe_id
+                            ? currentProbeById.get(
+                                simulationResultWithSweepCoordinate.source_probe_id,
+                              )
+                            : undefined) ??
+                          (simulationResultWithSweepCoordinate.name
+                            ? currentProbeByName.get(
+                                simulationResultWithSweepCoordinate.name,
+                              )
+                            : undefined)
+                        if (probeMatch) {
+                          simulationResultWithSweepCoordinate.color =
+                            probeMatch.color
+                          simulationResultWithSweepCoordinate.source_probe_id =
+                            probeMatch.simulation_current_probe_id
+                        }
+                      } else if (
+                        isSimulationCurrentResult(
+                          simulationResultWithSweepCoordinate,
+                        )
+                      ) {
+                        simulationResultWithSweepCoordinate.simulation_experiment_id =
+                          simulationExperiment.simulation_experiment_id
+                        const probeMatch =
+                          currentProbeById.get(
+                            simulationResultWithSweepCoordinate.simulation_current_probe_id,
+                          ) ??
+                          (simulationResultWithSweepCoordinate.name
+                            ? currentProbeByName.get(
+                                simulationResultWithSweepCoordinate.name,
+                              )
+                            : undefined)
+                        if (probeMatch) {
+                          simulationResultWithSweepCoordinate.color =
+                            probeMatch.color
+                          simulationResultWithSweepCoordinate.simulation_current_probe_id =
+                            probeMatch.simulation_current_probe_id
+                        }
+                      }
+
+                      const insertedSimulationResult = root.db.insert(
+                        simulationResultWithSweepCoordinate,
+                      )
+                      if (isVoltageGraph(insertedSimulationResult)) {
+                        insertedVoltageGraphs.push({
+                          type: "voltage",
+                          graph: insertedSimulationResult,
+                        })
+                      }
+                      if (isCurrentGraph(insertedSimulationResult)) {
+                        insertedCurrentGraphs.push({
+                          type: "current",
+                          graph: insertedSimulationResult,
+                        })
+                      }
+                      debug(
+                        `Inserted ${simulationResultWithSweepCoordinate.type} into database`,
+                      )
+                    }
+                  }),
+                "simulation:commit-run",
+              )
+            }
 
             yield* coreSync(
               () =>
                 job.commit(() => {
-                  for (const simulationResultCircuitElement of simulationResult.simulationResultCircuitJson) {
-                    if (
-                      !isCircuitElementInput(simulationResultCircuitElement)
-                    ) {
-                      debug("Skipping invalid simulation result element")
-                      continue
-                    }
-
-                    const simulationResultWithSweepCoordinate =
-                      attachSweepCoordinateToSimulationResult({
-                        simulationResult: simulationResultCircuitElement,
-                        simulationParameterSweepCoordinate:
-                          simulationRun.simulationParameterSweepCoordinate,
-                      })
-
-                    if (isVoltageGraph(simulationResultWithSweepCoordinate)) {
-                      simulationResultWithSweepCoordinate.simulation_experiment_id =
-                        simulationExperiment.simulation_experiment_id
-
-                      const probeMatch =
-                        simulationResultWithSweepCoordinate.name
-                          ? voltageProbeByGraphName.get(
-                              simulationResultWithSweepCoordinate.name,
-                            )
-                          : undefined
-                      if (probeMatch) {
-                        simulationResultWithSweepCoordinate.color =
-                          probeMatch.color ?? undefined
-                        simulationResultWithSweepCoordinate.source_probe_id =
-                          probeMatch.simulation_voltage_probe_id ?? undefined
-                      }
-                    } else if (
-                      isSimulationVoltageResult(
-                        simulationResultWithSweepCoordinate,
-                      )
-                    ) {
-                      simulationResultWithSweepCoordinate.simulation_experiment_id =
-                        simulationExperiment.simulation_experiment_id
-                      const probeMatch =
-                        voltageProbeById.get(
-                          simulationResultWithSweepCoordinate.simulation_voltage_probe_id,
-                        ) ??
-                        (simulationResultWithSweepCoordinate.name
-                          ? voltageProbeByGraphName.get(
-                              simulationResultWithSweepCoordinate.name,
-                            )
-                          : undefined)
-                      if (probeMatch?.simulation_voltage_probe_id) {
-                        simulationResultWithSweepCoordinate.color =
-                          probeMatch.color ?? undefined
-                        simulationResultWithSweepCoordinate.simulation_voltage_probe_id =
-                          probeMatch.simulation_voltage_probe_id
-                      }
-                    }
-
-                    if (isCurrentGraph(simulationResultWithSweepCoordinate)) {
-                      simulationResultWithSweepCoordinate.simulation_experiment_id =
-                        simulationExperiment.simulation_experiment_id
-
-                      const probeMatch =
-                        (simulationResultWithSweepCoordinate.source_probe_id
-                          ? currentProbeById.get(
-                              simulationResultWithSweepCoordinate.source_probe_id,
-                            )
-                          : undefined) ??
-                        (simulationResultWithSweepCoordinate.name
-                          ? currentProbeByName.get(
-                              simulationResultWithSweepCoordinate.name,
-                            )
-                          : undefined)
-                      if (probeMatch) {
-                        simulationResultWithSweepCoordinate.color =
-                          probeMatch.color
-                        simulationResultWithSweepCoordinate.source_probe_id =
-                          probeMatch.simulation_current_probe_id
-                      }
-                    } else if (
-                      isSimulationCurrentResult(
-                        simulationResultWithSweepCoordinate,
-                      )
-                    ) {
-                      simulationResultWithSweepCoordinate.simulation_experiment_id =
-                        simulationExperiment.simulation_experiment_id
-                      const probeMatch =
-                        currentProbeById.get(
-                          simulationResultWithSweepCoordinate.simulation_current_probe_id,
-                        ) ??
-                        (simulationResultWithSweepCoordinate.name
-                          ? currentProbeByName.get(
-                              simulationResultWithSweepCoordinate.name,
-                            )
-                          : undefined)
-                      if (probeMatch) {
-                        simulationResultWithSweepCoordinate.color =
-                          probeMatch.color
-                        simulationResultWithSweepCoordinate.simulation_current_probe_id =
-                          probeMatch.simulation_current_probe_id
-                      }
-                    }
-
-                    const insertedSimulationResult = root.db.insert(
-                      simulationResultWithSweepCoordinate,
-                    )
-                    if (isVoltageGraph(insertedSimulationResult)) {
-                      insertedVoltageGraphs.push({
-                        type: "voltage",
-                        graph: insertedSimulationResult,
-                      })
-                    }
-                    if (isCurrentGraph(insertedSimulationResult)) {
-                      insertedCurrentGraphs.push({
-                        type: "current",
-                        graph: insertedSimulationResult,
-                      })
-                    }
-                    debug(
-                      `Inserted ${simulationResultWithSweepCoordinate.type} into database`,
-                    )
+                  if (analogSimulation.usesIndependentGraphAxes()) {
+                    insertIndependentAxisScopeTraces({
+                      db: root.db,
+                      graphs: [
+                        ...insertedVoltageGraphs,
+                        ...insertedCurrentGraphs,
+                      ],
+                      graphDisplayOverridesByProbeId,
+                    })
                   }
+
+                  // Mark the component as dirty to trigger re-render if needed
+                  group._markDirty("SimulationSpiceEngineRender")
                 }),
-              "simulation:commit-run",
+              "simulation:complete",
             )
-          }
-
-          yield* coreSync(
-            () =>
-              job.commit(() => {
-                if (analogSimulation.usesIndependentGraphAxes()) {
-                  insertIndependentAxisScopeTraces({
-                    db: root.db,
-                    graphs: [
-                      ...insertedVoltageGraphs,
-                      ...insertedCurrentGraphs,
-                    ],
-                    graphDisplayOverridesByProbeId,
-                  })
-                }
-
-                // Mark the component as dirty to trigger re-render if needed
-                group._markDirty("SimulationSpiceEngineRender")
-              }),
-            "simulation:complete",
-          )
-        }).pipe(
-          Effect.provideService(SpiceSimulationEngine, spiceEngine),
-          Effect.catch((error) =>
-            coreSync(
-              () =>
-                job.commit(() => {
-                  const cause = error.cause
-                  debug(`Simulation failed for engine ${engineName}: ${cause}`)
-                  root.db.simulation_unknown_experiment_error.insert({
-                    simulation_experiment_id: simulationExperimentId,
-                    error_type: "simulation_unknown_experiment_error",
-                    message:
-                      cause instanceof Error ? cause.message : String(cause),
-                  })
-                  // Preserve per-engine recovery: another simulation can still complete.
-                }),
-              "simulation:failure-diagnostic",
-            ),
+          }).pipe(
+            Effect.provideService(SpiceSimulationEngine, spiceEngine),
+            (program) =>
+              catchJobFailure(program, (cause) =>
+                coreSync(
+                  () =>
+                    job.commit(() => {
+                      debug(
+                        `Simulation failed for engine ${engineName}: ${cause}`,
+                      )
+                      root.db.simulation_unknown_experiment_error.insert({
+                        simulation_experiment_id: simulationExperimentId,
+                        error_type: "simulation_unknown_experiment_error",
+                        message:
+                          cause instanceof Error
+                            ? cause.message
+                            : String(cause),
+                      })
+                      // Preserve per-engine recovery: another simulation can still complete.
+                    }),
+                  "simulation:failure-diagnostic",
+                ),
+              ),
+            Effect.asVoid,
           ),
-          Effect.asVoid,
-        ),
-    })
+      },
+      { propsChange: "finish" },
+    )
   }
 }

@@ -2,6 +2,7 @@ import type { PartsEngine, SupplierPartNumbers } from "@tscircuit/props"
 import * as Effect from "effect/Effect"
 import { corePromise, coreSync } from "lib/effect/core-error"
 import type { CoreJobContext } from "lib/effect/core-services"
+import { catchJobFailure } from "lib/effect/job-failure"
 import { readLocalCacheEffect } from "lib/local-cache-engine"
 import type { NormalComponent } from "./NormalComponent"
 
@@ -78,23 +79,26 @@ export function NormalComponent_getSupplierPartNumbersEffect(
     if (cacheEngine) {
       // Cache callbacks are noncooperative. Guard their start; no abandoned load
       // starts a cache write. An already-started write can finish after abort.
-      yield* corePromise(
-        () =>
-          Promise.resolve(
-            query.job
-              ? query.job.commit(() =>
-                  cacheEngine.setItem(
+      yield* catchJobFailure(
+        corePromise(
+          () =>
+            Promise.resolve(
+              query.job
+                ? query.job.commit(() =>
+                    cacheEngine.setItem(
+                      query.cacheKey,
+                      JSON.stringify(supplierPartNumbers),
+                    ),
+                  )
+                : cacheEngine.setItem(
                     query.cacheKey,
                     JSON.stringify(supplierPartNumbers),
                   ),
-                )
-              : cacheEngine.setItem(
-                  query.cacheKey,
-                  JSON.stringify(supplierPartNumbers),
-                ),
-          ),
-        "cache_supplier_parts",
-      ).pipe(Effect.catch(() => Effect.void))
+            ),
+          "cache_supplier_parts",
+        ),
+        () => Effect.void,
+      )
     }
     return supplierPartNumbers
   })

@@ -74,7 +74,11 @@ export const getCachedLocalAutoroutingPhaseResultEffect = (
       if (!parsedResult || !Array.isArray(parsedResult.traces)) return null
       return parsedResult as CachedAutoroutingPhaseResult
     }, "parse_local_autorouting_cache")
-  }).pipe(Effect.catch(() => Effect.succeed(null)))
+  }).pipe(
+    // Typed cache/read/parse failures are optional-cache misses, as in the
+    // baseline try/catch. This is not a recorder; defects/interruptions propagate.
+    Effect.catch(() => Effect.succeed(null)),
+  )
 
 /** Existing Promise exports remain supported at the external boundary. */
 export const getCachedLocalAutoroutingPhaseResult = (
@@ -99,7 +103,11 @@ export const cacheLocalAutoroutingPhaseResultEffect = (
         request.job ? request.job.commit(writeCache) : writeCache(),
       )
     }, "write_local_autorouting_cache")
-  }).pipe(Effect.catch(() => Effect.void))
+  }).pipe(
+    // Preserve baseline best-effort writes by ignoring typed boundary failures.
+    // This is not a recorder; defects/interruptions still propagate.
+    Effect.catch(() => Effect.void),
+  )
 
 export const cacheLocalAutoroutingPhaseResult = (
   request: WriteAutoroutingCacheRequest,

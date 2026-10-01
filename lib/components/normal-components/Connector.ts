@@ -1,5 +1,6 @@
 import * as Effect from "effect/Effect"
 import { corePromise, coreSync } from "lib/effect/core-error"
+import { catchJobFailure } from "lib/effect/job-failure"
 import {
   type ConnectorProps,
   type ConnectorStandard,
@@ -439,67 +440,79 @@ export class Connector<
       pin_count: props.pinCount,
     }
 
-    this._queueEffect("load-standard-connector-circuit-json", (job) =>
-      Effect.gen({ self: this }, function* () {
-        const supplierPartNumbers = yield* this._getSupplierPartNumbersEffect({
-          partsEngine,
-          sourceComponent: sourceComponentForQuery,
-          footprinterString: `standard:${standard}`,
-          job,
-        })
-        yield* coreSync(
-          () =>
-            job.commit(() => {
-              if (this.source_component_id)
-                this.root!.db.source_component.update(
-                  this.source_component_id,
-                  { supplier_part_numbers: supplierPartNumbers },
-                )
-            }),
-          "commit_connector_supplier_parts",
-        )
-        const circuitJson =
-          yield* this._fetchStandardConnectorCircuitJsonEffect({
-            fetchPartCircuitJson,
-            supplierPartNumbers,
-            manufacturerPartNumber:
-              sourceComponentForQuery.manufacturer_part_number,
-          })
-        yield* coreSync(
-          () =>
-            job.commit(() => {
-              if (!circuitJson) {
-                this._handleStandardConnectorCircuitJsonFailure(
-                  standard,
-                  "part circuit JSON was not found",
-                )
-                return
-              }
-              this._addConnectorFootprintFromCircuitJson(standard, circuitJson)
-            }),
-          "commit_connector_footprint",
-        )
-      }).pipe(
-        Effect.catch((failure) =>
-          coreSync(
-            () =>
-              job.commit(() => {
-                if (this.source_component_id)
-                  this.root!.db.source_component.update(
-                    this.source_component_id,
-                    { supplier_part_numbers: {} },
+    this._queueEffect(
+      "load-standard-connector-circuit-json",
+      (job) =>
+        catchJobFailure(
+          Effect.gen({ self: this }, function* () {
+            const supplierPartNumbers =
+              yield* this._getSupplierPartNumbersEffect({
+                partsEngine,
+                sourceComponent: sourceComponentForQuery,
+                footprinterString: `standard:${standard}`,
+                job,
+              })
+            yield* coreSync(
+              () =>
+                job.commit(() => {
+                  if (this.source_component_id)
+                    this.root!.db.source_component.update(
+                      this.source_component_id,
+                      { supplier_part_numbers: supplierPartNumbers },
+                    )
+                }),
+              "commit_connector_supplier_parts",
+            )
+            const circuitJson =
+              yield* this._fetchStandardConnectorCircuitJsonEffect({
+                fetchPartCircuitJson,
+                supplierPartNumbers,
+                manufacturerPartNumber:
+                  sourceComponentForQuery.manufacturer_part_number,
+              })
+            yield* coreSync(
+              () =>
+                job.commit(() => {
+                  if (!circuitJson) {
+                    this._handleStandardConnectorCircuitJsonFailure(
+                      standard,
+                      "part circuit JSON was not found",
+                    )
+                    return
+                  }
+                  this._addConnectorFootprintFromCircuitJson(
+                    standard,
+                    circuitJson,
                   )
-                const error = failure.cause
-                this._handleStandardConnectorCircuitJsonFailure(
-                  standard,
-                  error instanceof Error ? error.message : String(error),
-                )
-              }),
-            "commit_connector_warning",
-          ),
-        ),
-        Effect.asVoid,
-      ),
+                }),
+              "commit_connector_footprint",
+            )
+          }),
+          (error) =>
+            coreSync(
+              () =>
+                job.commit(() => {
+                  if (this.source_component_id)
+                    this.root!.db.source_component.update(
+                      this.source_component_id,
+                      { supplier_part_numbers: {} },
+                    )
+                  this._handleStandardConnectorCircuitJsonFailure(
+                    standard,
+                    error instanceof Error ? error.message : String(error),
+                  )
+                }),
+              "commit_connector_warning",
+            ),
+        ).pipe(Effect.asVoid),
+      {
+        propsChange: "cancel",
+        onCancel: (reason) => {
+          this._hasStartedFootprintUrlLoad = false
+          if (reason !== "disposed" && reason !== "removed")
+            this._markDirty("FetchPartFootprint")
+        },
+      },
     )
   }
 
