@@ -125,9 +125,13 @@ function commitFootprintChildren(
 
 export function NormalComponent_doInitialPcbFootprintStringRender(
   component: NormalComponent<any, any>,
+  mode: "initial" | "update" = "initial",
 ) {
   const footprint = component.resolveFootprint()
   if (!footprint) return
+  // Updating resumes cancellable string loads. Array and instance inflation
+  // belongs to initialization; repeating it duplicates existing children.
+  if (mode === "update" && typeof footprint !== "string") return
   const footprintLoadPolicy: CoreJobCancellationPolicy = {
     propsChange: "cancel",
     onCancel(reason) {

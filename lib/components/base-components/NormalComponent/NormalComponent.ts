@@ -9,7 +9,7 @@ import {
 } from "lib/effect/core-error"
 import type { CoreJobContext } from "lib/effect/core-services"
 import { validateComponentPinLabelKeysEffect } from "lib/effect/component-model-props"
-import { prefersNativeMethod } from "lib/effect/override-dispatch"
+import { usesDefaultSyncMethod } from "lib/effect/override-dispatch"
 import { catchJobFailure } from "lib/effect/job-failure"
 import { NormalComponent_getSupplierPartNumbersEffect } from "./NormalComponent_getSupplierPartNumbersEffect"
 import { getBoardFoldContext } from "lib/utils/cad/get-board-fold-context"
@@ -1463,7 +1463,7 @@ export class NormalComponent<
   }
 
   updatePcbFootprintStringRender(): void {
-    this.doInitialPcbFootprintStringRender()
+    NormalComponent_doInitialPcbFootprintStringRender(this, "update")
   }
 
   /**
@@ -1526,11 +1526,10 @@ export class NormalComponent<
       Effect.gen({ self: this }, function* () {
         let component: PrimitiveComponent
         if (isReactElement(componentOrElm)) {
-          const subtree = yield* prefersNativeMethod(
+          const subtree = yield* usesDefaultSyncMethod(
             this,
             "_renderReactSubtree",
-            "_renderReactSubtreeEffect",
-            { legacyFacade: NormalComponent.prototype._renderReactSubtree },
+            NormalComponent.prototype._renderReactSubtree,
           )
             ? this._renderReactSubtreeEffect(componentOrElm)
             : coreSync(
@@ -2191,11 +2190,10 @@ export class NormalComponent<
     job?: CoreJobContext
   }): Effect.Effect<SupplierPartNumbers, CoreError> {
     if (
-      !prefersNativeMethod(
+      !usesDefaultSyncMethod(
         this,
         "_getSupplierPartNumbers",
-        "_getSupplierPartNumbersEffect",
-        { legacyFacade: NormalComponent.prototype._getSupplierPartNumbers },
+        NormalComponent.prototype._getSupplierPartNumbers,
       )
     ) {
       // External subclass callbacks retain their synchronous/Promise facade.
@@ -2259,16 +2257,50 @@ export class NormalComponent<
     const footprint = this.props.footprint ?? this._getImpliedFootprintString()
     const footprinterString =
       typeof footprint === "string" ? footprint : undefined
+    let legacySupplierPromise: Promise<SupplierPartNumbers> | undefined
+    if (
+      this._getSupplierPartNumbersEffect ===
+      NormalComponent.prototype._getSupplierPartNumbersEffect
+    ) {
+      const legacySupplierMethod = this._getSupplierPartNumbers
+      if (
+        legacySupplierMethod !==
+        NormalComponent.prototype._getSupplierPartNumbers
+      ) {
+        // The old phase calls a changed legacy method before registering work.
+        // Its dynamic JavaScript plain-result branch is synchronous, while a
+        // returned Promise is reused by the owned job without another call.
+        const legacyResult = legacySupplierMethod.call(
+          this,
+          partsEngine,
+          source_component,
+          footprinterString,
+        )
+        if (!(legacyResult instanceof Promise)) {
+          db.source_component.update(this.source_component_id!, {
+            supplier_part_numbers: legacyResult,
+          })
+          return
+        }
+        legacySupplierPromise = legacyResult
+      }
+    }
     this._queueEffect(
       "get-supplier-part-numbers",
       (job) =>
         catchJobFailure(
-          this._getSupplierPartNumbersEffect({
-            partsEngine,
-            sourceComponent: source_component,
-            footprinterString,
-            job,
-          }).pipe(
+          (legacySupplierPromise
+            ? corePromise(
+                () => legacySupplierPromise!,
+                "external_supplier_parts_adapter",
+              )
+            : this._getSupplierPartNumbersEffect({
+                partsEngine,
+                sourceComponent: source_component,
+                footprinterString,
+                job,
+              })
+          ).pipe(
             Effect.flatMap((supplierPartNumbers) =>
               coreSync(
                 () =>

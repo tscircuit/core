@@ -32,7 +32,7 @@ import {
   CircuitEnvironment,
   type CircuitEnvironmentShape,
 } from "./effect/core-services"
-import { prefersNativeMethod } from "./effect/override-dispatch"
+import { usesDefaultSyncMethod } from "./effect/override-dispatch"
 import {
   EffectFootprintLoader,
   type EffectFootprintLoadingOptions,
@@ -291,13 +291,10 @@ export class IsolatedCircuit {
           return this.firstChild
         }, "prepare_render")
         if (
-          prefersNativeMethod(
+          usesDefaultSyncMethod(
             firstChild,
             "runRenderCycle",
-            "runRenderCycleEffect",
-            {
-              legacyFacade: Renderable.prototype.runRenderCycle,
-            },
+            Renderable.prototype.runRenderCycle,
           )
         ) {
           yield* firstChild.runRenderCycleEffect()
@@ -340,9 +337,7 @@ export class IsolatedCircuit {
           this._effectEnvironment(),
         ),
       renderEffect: () =>
-        prefersNativeMethod(this, "render", "renderEffect", {
-          legacyFacade: IsolatedCircuit.prototype.render,
-        })
+        usesDefaultSyncMethod(this, "render", IsolatedCircuit.prototype.render)
           ? this.renderEffect()
           : coreSync(() => this.render(), "custom_render"),
       hasUnrenderedUpdates: () => this._hasUnrenderedUpdatesFromAsyncEffects,
@@ -394,9 +389,11 @@ export class IsolatedCircuit {
   getCircuitJsonEffect() {
     return Effect.gen({ self: this }, function* () {
       if (!this._hasRenderedAtleastOnce) {
-        yield* prefersNativeMethod(this, "render", "renderEffect", {
-          legacyFacade: IsolatedCircuit.prototype.render,
-        })
+        yield* usesDefaultSyncMethod(
+          this,
+          "render",
+          IsolatedCircuit.prototype.render,
+        )
           ? this.renderEffect()
           : coreSync(() => this.render(), "custom_render")
       }
@@ -428,11 +425,10 @@ export class IsolatedCircuit {
       )
 
       if (options.view === "pcb" || options.view === "schematic") {
-        const circuitJson = yield* prefersNativeMethod(
+        const circuitJson = yield* usesDefaultSyncMethod(
           this,
           "getCircuitJson",
-          "getCircuitJsonEffect",
-          { legacyFacade: IsolatedCircuit.prototype.getCircuitJson },
+          IsolatedCircuit.prototype.getCircuitJson,
         )
           ? this.getCircuitJsonEffect()
           : coreSync(() => this.getCircuitJson(), "custom_circuit_json")

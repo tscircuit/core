@@ -1,15 +1,7 @@
-type OverrideDispatchOptions = {
-  readonly legacyFacade?: (...args: never[]) => unknown
-}
-
 /**
  * Choose an extension hook at an orchestration call site. The nearest own
  * definition wins; when an owner defines both methods, the Effect hook wins.
  * Inspect definitions without reading method getters during this decision.
- *
- * Some existing adapters instead give every changed synchronous method
- * precedence. Passing their base `legacyFacade` preserves that exception,
- * including its single read of the resolved synchronous method.
  *
  * A synchronous facade calls its canonical Effect method directly. It must not
  * dispatch back to itself: a legacy override calling `super` would recurse.
@@ -19,11 +11,7 @@ export function prefersNativeMethod(
   target: object,
   syncName: string,
   effectName: string,
-  options: OverrideDispatchOptions = {},
 ): boolean {
-  if (options.legacyFacade !== undefined) {
-    return Reflect.get(target, syncName) === options.legacyFacade
-  }
   for (
     let methodOwner: object | null = target;
     methodOwner;
@@ -33,4 +21,13 @@ export function prefersNativeMethod(
     if (Object.hasOwn(methodOwner, syncName)) return false
   }
   return false
+}
+
+/** Adapters with legacy precedence read the resolved synchronous hook once. */
+export function usesDefaultSyncMethod(
+  target: object,
+  syncName: string,
+  legacyFacade: (...args: never[]) => unknown,
+): boolean {
+  return Reflect.get(target, syncName) === legacyFacade
 }

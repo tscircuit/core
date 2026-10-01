@@ -17,6 +17,7 @@ import {
 export interface RenderPhaseContext {
   readonly renderable: Renderable
   readonly phase: RenderPhase
+  resumeInterruptedPhase?(): void
   getState(): RenderPhaseStates[RenderPhase]
   hasPreviousPhaseJobs(): boolean
   cancelRemovedJobs(): void
@@ -77,6 +78,8 @@ function prepareRenderPhase(
 ): RenderPhasePlan | undefined {
   const { renderable, phase } = context
   renderable._currentRenderPhase = phase
+  context.resumeInterruptedPhase?.()
+  // Revival's dirty override may replace the public state entry or map.
   const state = context.getState()
   const { initialized, dirty } = state
   if (renderable.shouldBeRemoved) {

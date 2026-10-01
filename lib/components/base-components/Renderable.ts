@@ -27,7 +27,7 @@ import {
   renderPhaseEffect,
 } from "lib/effect/render-phase-programs"
 import type { RootCircuitEventName } from "lib/events"
-import { prefersNativeMethod } from "lib/effect/override-dispatch"
+import { usesDefaultSyncMethod } from "lib/effect/override-dispatch"
 
 const debug = Debug("tscircuit:renderable")
 
@@ -150,6 +150,20 @@ export abstract class Renderable implements IRenderable {
     )
   }
 
+  /** Removal defers restart until an explicit revival has active ownership. */
+  private _resumeInterruptedPhase(phase: RenderPhase) {
+    if (!this._renderPhasesPendingRevival.has(phase)) return
+    let ancestor: Renderable | null = this
+    while (ancestor && !ancestor.shouldBeRemoved) ancestor = ancestor.parent
+    if (ancestor) return
+    if (this._getRootCircuit()?.effectRuntime?.isDisposed) return
+
+    this._renderPhasesPendingRevival.delete(phase)
+    // A completed removal already makes the next render initialize.
+    // Immediate detach/re-add instead retains an initialized phase.
+    if (this._getPhaseState(phase).initialized) this._markDirty(phase)
+  }
+
   private _getEffectRuntime() {
     const circuitRuntime = this._getRootCircuit()?.effectRuntime
     if (circuitRuntime) return circuitRuntime
@@ -251,6 +265,8 @@ export abstract class Renderable implements IRenderable {
     const originalPromise = effect()
     const promise = this._getEffectRuntime().queue({
       owner: this,
+      // Legacy callbacks capture their inputs and cannot be restarted safely.
+      policy: { propsChange: "finish" },
       build: () => corePromise(() => originalPromise, effectName),
     })
     this._registerAsyncEffect({
@@ -382,13 +398,10 @@ export abstract class Renderable implements IRenderable {
       for (const child of renderable.children) {
         if (
           child instanceof Renderable &&
-          prefersNativeMethod(
+          usesDefaultSyncMethod(
             child,
             "_hasIncompleteAsyncEffects",
-            "_hasIncompleteAsyncEffectsEffect",
-            {
-              legacyFacade: Renderable.prototype._hasIncompleteAsyncEffects,
-            },
+            Renderable.prototype._hasIncompleteAsyncEffects,
           )
         ) {
           if (yield* child._hasIncompleteAsyncEffectsEffect()) return true
@@ -432,15 +445,10 @@ export abstract class Renderable implements IRenderable {
       for (const child of renderable.children) {
         if (
           child instanceof Renderable &&
-          prefersNativeMethod(
+          usesDefaultSyncMethod(
             child,
             "_hasIncompleteAsyncEffectsInSubtreeForPhase",
-            "_hasIncompleteAsyncEffectsInSubtreeForPhaseEffect",
-            {
-              legacyFacade:
-                Renderable.prototype
-                  ._hasIncompleteAsyncEffectsInSubtreeForPhase,
-            },
+            Renderable.prototype._hasIncompleteAsyncEffectsInSubtreeForPhase,
           )
         ) {
           if (
@@ -514,21 +522,8 @@ export abstract class Renderable implements IRenderable {
     return renderPhaseEffect({
       renderable: this,
       phase,
-      getState: () => {
-        if (this._renderPhasesPendingRevival.has(phase)) {
-          let ancestor: Renderable | null = this
-          while (ancestor && !ancestor.shouldBeRemoved)
-            ancestor = ancestor.parent
-          if (!ancestor && !this._getRootCircuit()?.effectRuntime?.isDisposed) {
-            this._renderPhasesPendingRevival.delete(phase)
-            // A completed removal already makes the next render initialize.
-            // Immediate detach/re-add instead retains an initialized phase.
-            if (this._getPhaseState(phase).initialized) this._markDirty(phase)
-          }
-        }
-        // A custom dirty hook may have replaced the public state entry or map.
-        return this._getPhaseState(phase)
-      },
+      resumeInterruptedPhase: () => this._resumeInterruptedPhase(phase),
+      getState: () => this._getPhaseState(phase),
       hasPreviousPhaseJobs: () => {
         const previousPhaseIndex = renderPhaseIndexMap.get(phase)! - 1
         if (previousPhaseIndex < 0) return false

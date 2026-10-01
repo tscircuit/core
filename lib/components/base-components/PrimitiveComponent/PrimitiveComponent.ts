@@ -242,14 +242,6 @@ export abstract class PrimitiveComponent<
           props: { ...primitive.props, ...props },
         })
         const oldProps = primitive.props
-        yield* coreSync(
-          () =>
-            primitive.cancelPendingEffects({
-              reason: "props_changed",
-              onlyOwner: true,
-            }),
-          "cancel_component_jobs_on_props_change",
-        )
         // Preserve the existing partial-update semantics and callback order.
         yield* coreSync(() => {
           primitive.props = newProps
@@ -258,6 +250,21 @@ export abstract class PrimitiveComponent<
           schema: primitive.config.zodProps,
           props,
         })
+        // A rejected partial parse still replaces raw props, as before, but
+        // cannot cancel work or notify observers for an unsuccessful update.
+        yield* coreSync(() => {
+          try {
+            primitive.cancelPendingEffects({
+              reason: "props_changed",
+              onlyOwner: true,
+            })
+          } catch (error) {
+            // A failed native cancellation policy retains the previous raw
+            // props and error identity; canceled jobs still drain normally.
+            primitive.props = oldProps
+            throw error
+          }
+        }, "cancel_component_jobs_on_props_change")
         yield* coreSync(() => {
           primitive._parsedProps = parsedProps
           primitive.onPropsChange({

@@ -157,19 +157,23 @@ export function loadImageSourceEffect(imageUrl: string, options?: RequestInit) {
                 `Failed to fetch image "${imageUrl}": ${response.status} ${response.statusText}`,
               )
           }, "validate_image_response")
-          const responseMimetype = response.headers
-            .get("content-type")
-            ?.split(";")[0]
-          const lowerPath = imageUrl.toLowerCase()
-          const pathMimetype = lowerPath.endsWith(".svg")
-            ? SVG_MIMETYPE
-            : lowerPath.endsWith(".png")
-              ? PNG_MIMETYPE
-              : "application/octet-stream"
-          const mimetype =
-            responseMimetype && responseMimetype !== "application/octet-stream"
+          const mimetype = yield* coreSync(() => {
+            // image-utils rejects metadata exceptions from its async loader.
+            // Keep them in the load failure channel used by SVG fallbacks.
+            const responseMimetype = response.headers
+              .get("content-type")
+              ?.split(";")[0]
+            const lowerPath = imageUrl.toLowerCase()
+            const pathMimetype = lowerPath.endsWith(".svg")
+              ? SVG_MIMETYPE
+              : lowerPath.endsWith(".png")
+                ? PNG_MIMETYPE
+                : "application/octet-stream"
+            return responseMimetype &&
+              responseMimetype !== "application/octet-stream"
               ? responseMimetype
               : pathMimetype
+          }, "resolve_image_mimetype")
           const text =
             mimetype === SVG_MIMETYPE
               ? yield* readResponseText(response, job)
