@@ -6,21 +6,33 @@ can write the array directly to JSON. Core generates it for every completed
 local routing stage, including cache hits and precomputed routing, without a
 flag or a listener-specific branch.
 
-Each path selects a PCB port. Route points are in the phase's enclosing group
+Each complete non-fanout entry identifies its Simple Route JSON connection by name.
+Fanout entries select a PCB port. Route points are in the phase's enclosing group
 frame, in millimeters (+X right, +Y up, +Z above; right-handed); translation
 applies to points. Physical copper layers are unchanged. Export and import use
-one shared placement transform, including the selected port's layout displacement.
-Keep the phase's routing options, selectors, and component placement on replay.
+one shared placement transform, including the owning connection's first PCB
+port as a placement anchor. Keep the phase's routing options, connection names,
+and component placement on replay.
+
+For a complete non-fanout route with junctions, each entry preserves one solver
+trace segment. Several entries can name the same connection; a segment may join
+two internal junctions without touching any PCB port.
+The importer checks that the segments form one connected copper network for
+each connection and reach every routing terminal. It replays each segment once,
+without adding overlapping copper. Connections that share a PCB port, including
+duplicate source traces, may be satisfied by the same copper. Plated ports can
+join traces across their listed board layers. Port-to-port path arrays remain
+supported.
 
 The array contains this stage's copper, not all previously routed traces.
-Fanout-stage exports contain escapes and require the same fanout configuration;
+Fanout-stage exports remain port-anchored escapes and require the same fanout configuration;
 the follow-up autorouter still routes the remaining connection and may choose
 different geometry for that unsaved copper. A follow-up path anchored only at
 an escape junction cannot itself select a PCB port and may be unrepresentable.
 
 If a complete stage cannot be represented by the saved-path API, `pcbTracePaths`
 is omitted and `pcbTracePathsUnavailableReason` explains why. Examples include
-jumpers, through-obstacle segments, non-port junctions, ambiguous selectors,
+jumpers, through-obstacle segments, disconnected trace networks, ambiguous selectors,
 and incomplete connection coverage. Export validates with the same importer
 used by saved phases; it never emits a partial successful array or turns an
 otherwise successful routing run into a routing error. A successfully represented
@@ -50,20 +62,20 @@ Reproduce with:
 BENCHMARK_PCB_TRACE_PATHS=1 bun test tests/benchmarks/autorouting-phase-pcb-trace-paths.test.tsx
 ```
 
-Measured on Apple M3 Pro, macOS arm64, Bun 1.3.2. Each conversion includes
-selector resolution, inverse transforms, schema parsing, and importer validation.
+Measured on Intel Core i5-12500H, Linux x64, Bun 1.3.3. Each conversion includes
+connection lookup, inverse transforms, schema parsing, and importer validation.
 After 10 warmups, 100 iterations measure conversion and compact JSON serialization
 separately. Serialization is a consumer cost, not performed by core's exporter.
 
 | Fixture | Points | Conversion median / p95 | JSON median / p95 | JSON bytes |
 | --- | ---: | ---: | ---: | ---: |
-| 1 routed connection | 9 | 0.049 / 0.108 ms | 0.0011 / 0.0028 ms | 832 |
-| Dense RP2040, 18 connections | 475 | 1.281 / 1.802 ms | 0.0665 / 0.0841 ms | 46,753 |
-| Synthetic 64-connection scaling case | 128 | 0.808 / 0.936 ms | 0.0268 / 0.0341 ms | 13,594 |
+| 1 routed connection | 10 | 0.416 / 0.764 ms | 0.007 / 0.017 ms | 926 |
+| Dense RP2040, 18 connections | 472 | 25.982 / 37.984 ms | 0.798 / 1.090 ms | 46,483 |
+| Synthetic 64-connection scaling case | 128 | 7.760 / 10.925 ms | 0.165 / 0.232 ms | 13,530 |
 
-The dense routing stage took approximately 3,744 ms including export; the median
-conversion cost is about 0.034% of that duration. The one-connection phase took
-97 ms. The 64-connection case deliberately uses a simple custom router and
+The dense routing stage took approximately 28,858 ms including export; the median
+conversion cost is about 0.090% of that duration. The one-connection phase took
+620 ms. The 64-connection case deliberately uses a simple custom router and
 skips schematic rendering to isolate exporter scaling; its routing time is not
 a representative autorouter baseline.
 

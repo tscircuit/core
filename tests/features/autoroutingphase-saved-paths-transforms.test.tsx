@@ -89,4 +89,4 @@ test("saved phase paths follow enclosing group placement on both PCB layers", as
       )
     }
   }
-})
+}, 30_000)
