@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("repro: net connectsTo silently leaves pins disconnected", async () => {
+test("net connectsTo joins the selected pins", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -17,7 +17,7 @@ test("repro: net connectsTo silently leaves pins disconnected", async () => {
       <net name="SIGNAL" connectsTo={[".R1 > .pin1", ".R2 > .pin1"]} />
 
       <pcbnotetext
-        text="BUG: net connectsTo is ignored"
+        text="net connectsTo joins the selected pins"
         pcbY={11}
         fontSize={1}
       />
@@ -40,15 +40,19 @@ test("repro: net connectsTo silently leaves pins disconnected", async () => {
         fontSize={0.75}
       />
       <pcbnotetext
-        text="Actual: no connection is generated"
+        text="Actual: both pins are connected on SIGNAL"
         pcbY={-10}
         fontSize={0.85}
-        color="#ff6b6b"
+        color="#6bff8b"
       />
     </board>,
   )
 
   await circuit.renderUntilSettled()
+
+  expect(circuit.db.source_trace.list()).toHaveLength(2)
+
+  await expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 
   await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
     width: 1100,
