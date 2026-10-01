@@ -90,11 +90,11 @@ jobs:
           git config user.name "tscircuitbot"
           git config user.email "tscircuitbot@users.noreply.github.com"
 
-          if [ -z "$(git status --porcelain -- tests/**/__snapshots__)" ]; then
+          if [ -z "$(git status --porcelain -- ':(glob)tests/**/__snapshots__/**')" ]; then
             echo "No snapshot changes to commit"
             exit 0
           fi
 
-          git add -A tests/**/__snapshots__
+          git add -A ':(glob)tests/**/__snapshots__/**'
           git commit -m "test: update snapshots from CI"
           git push origin HEAD:${{ inputs.branch }}
