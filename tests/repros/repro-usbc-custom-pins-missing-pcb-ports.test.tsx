@@ -3,7 +3,7 @@ import { any_circuit_element } from "circuit-json"
 import usbCFootprint from "tests/fixtures/assets/usb-c-C165948.circuit.json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("repro: USB-C custom schematic pins lose PCB connections", async () => {
+test("USB-C custom schematic pins retain PCB connections", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -47,7 +47,7 @@ test("repro: USB-C custom schematic pins lose PCB connections", async () => {
       />
       <pcbnotetext
         text={`Expected: USB-C -> R1 -> USB-C ground
-Bug: schematic wires exist, PCB traces are missing`}
+Both schematic wires and PCB traces are connected`}
         pcbY={-7}
         fontSize={0.6}
       />
@@ -55,6 +55,9 @@ Bug: schematic wires exist, PCB traces are missing`}
   )
 
   await circuit.renderUntilSettled()
+
+  expect(circuit.db.pcb_port.list()).toHaveLength(18)
+  expect(circuit.db.pcb_trace.list()).toHaveLength(2)
 
   await expect(circuit).toMatchSchematicSnapshot(import.meta.path)
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
