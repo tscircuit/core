@@ -375,7 +375,9 @@ call/twin counts are informational evidence, not targets for deleting adapters.
 Removal of a timing boundary requires a deterministic test of that exact order
 at the official baseline, the initial published draft and the candidate without
 the boundary. General full-suite success alone does not establish equivalence.
-Final repeated ordering evidence is pending for this revision.
+At `914fb1663`, the 37 new characterization cases passed 20 executions each
+(740 passes, zero failures), including the scheduling and revival witnesses.
+Full-corpus and downstream integration evidence remain separate gates.
 
 Deliberate ownership differences remain caller-local settlement abortion,
 terminal/idempotent disposal, native publication guards, legacy owned-wait
@@ -404,14 +406,21 @@ completed all 1,659 test files in Linux/Bun 1.4.0 CI: 1,865 passing cases,
 raw logs, every assigned file, skip identities and the tested merge tree against
 that exact published tree. Those results certify the reference, not this revision.
 
-The revision adds 32 characterization cases for public output, extension
-precedence, failure diagnostics, cleanup, explicit revival and scheduling.
+The earlier `18d521f11` revision added 32 characterization cases.
+`914fb1663` adds five further public compatibility cases, for 37 total, covering
+legacy callback settlement, plain supplier timing, failed partial props, dirty
+footprint identity and remote image-header fallback. These complement public
+output, extension precedence, failure, cleanup, revival and scheduling coverage.
 Matched controls on official `a61451654ff1f8bb0249f135dca482a84bedb802`
 reproduced compatibility regressions before their fixes. Diagnostic doubles for
 placement consolidation are explicit test controls; the exact private IoU
-throw is unproven. All 185 migration/characterization cases passed a focused
-working-tree run. Final commit checking, repeated ordering, built declaration
-controls and full-corpus execution remain separate certification gates.
+throw is unproven. At `914fb1663`, all 190 migration/characterization cases
+passed at the exact commit, as did typecheck, ESM/declaration build and dist
+smoke. Fresh declaration controls retained identical baseline/candidate
+diagnostics across TypeScript 5.0.4, 5.4.5 and 5.9.3 with browser/Bun ambient
+types. Fresh differential checks passed eight complete-output/event parity
+fixtures plus the declared removal difference. Full-corpus execution remains
+a separate certification gate; focused success cannot certify it.
 Existing published tests, snapshots, skips, dependencies and public exports
 must pass the preservation guard at the final revision.
 
