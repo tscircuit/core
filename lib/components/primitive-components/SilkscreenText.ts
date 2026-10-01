@@ -152,6 +152,9 @@ export class SilkscreenText extends PrimitiveComponent<
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
         is_knockout: props.isKnockout,
+        ...(props.mirrored === undefined
+          ? {}
+          : { is_mirrored: props.mirrored }),
         knockout_padding: knockoutPadding,
       })
       this.pcb_silkscreen_text_ids.push(

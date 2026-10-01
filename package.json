@@ -138,5 +138,8 @@
     "@tscircuit/circuit-json-util": "^0.0.117",
     "@tscircuit/props": "^0.0.676",
     "circuit-json": "^0.0.507"
+  },
+  "patchedDependencies": {
+    "@tscircuit/props@0.0.672": "patches/@tscircuit%2Fprops@0.0.672.patch"
   }
 }

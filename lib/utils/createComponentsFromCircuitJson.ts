@@ -586,6 +586,7 @@ export const createComponentsFromCircuitJson = (
         )
       } else {
         const silkscreenText = new SilkscreenText({
+          mirrored: elm.is_mirrored,
           anchorAlignment: elm.anchor_alignment || "center",
           // Footprinter-generated reference text is a placeholder that should
           // resolve to the component name. A literal from the explicit
