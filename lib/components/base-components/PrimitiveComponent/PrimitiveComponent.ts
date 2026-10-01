@@ -1063,7 +1063,12 @@ export abstract class PrimitiveComponent<
           return
         yield* coreSync(() => {
           if (component.parent !== parent) {
-            component.cancelPendingEffects({ reason: "reparented" })
+            const previousRoot = component.root
+            component.cancelPendingEffects({
+              reason: "reparented",
+              sameCircuitReparent:
+                previousRoot !== null && previousRoot === parent.root,
+            })
           }
         }, "cancel_component_jobs_on_reparent")
         yield* coreSync(

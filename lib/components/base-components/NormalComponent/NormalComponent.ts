@@ -26,6 +26,7 @@ import type {
   CadModelStl,
   CadModelWrl,
   FootprintInsertionDirection,
+  PartsEngine,
   SchematicPortArrangement,
   SpiceModelElement,
   SupplierPartNumbers,
@@ -129,6 +130,11 @@ export type PortMap<T extends string> = {
   [K in T]: Port
 }
 
+type SupplierLookupPlan =
+  | { kind: "plain"; value: SupplierPartNumbers }
+  | { kind: "legacy_promise"; promise: Promise<SupplierPartNumbers> }
+  | { kind: "native" }
+
 /**
  * A NormalComponent is the base class for most components that a user will
  * interact with. It has the ability to set a footprint and discover ports.
@@ -171,6 +177,7 @@ export class NormalComponent<
   }
 
   _asyncSupplierPartNumbers?: SupplierPartNumbers
+  private _pendingSupplierLookup?: object
   _asyncFootprintCadModel?: CadModelProp
   _isCadModelChild?: boolean
   _inferredInternallyConnectedPinNames: string[][] = []
@@ -2242,6 +2249,36 @@ export class NormalComponent<
     )
   }
 
+  private _planSupplierLookup(
+    partsEngine: PartsEngine,
+    sourceComponent: Parameters<PartsEngine["findPart"]>[0]["sourceComponent"],
+    footprinterString: string | undefined,
+  ): SupplierLookupPlan {
+    if (
+      this._getSupplierPartNumbersEffect !==
+      NormalComponent.prototype._getSupplierPartNumbersEffect
+    )
+      return { kind: "native" }
+
+    const legacySupplierMethod = this._getSupplierPartNumbers
+    if (
+      legacySupplierMethod === NormalComponent.prototype._getSupplierPartNumbers
+    )
+      return { kind: "native" }
+
+    // Changed legacy hooks run before queue registration. The exact historical
+    // Promise test retains synchronous JavaScript plain-result extensions.
+    const result = legacySupplierMethod.call(
+      this,
+      partsEngine,
+      sourceComponent,
+      footprinterString,
+    )
+    return result instanceof Promise
+      ? { kind: "legacy_promise", promise: result }
+      : { kind: "plain", value: result }
+  }
+
   doInitialPartsEngineRender(): void {
     if (this.props.doNotPlace) return
     if (this.getInheritedProperty("bomDisabled")) return
@@ -2253,95 +2290,102 @@ export class NormalComponent<
     const source_component = db.source_component.get(this.source_component_id!)
     if (!source_component) return
     if (source_component.supplier_part_numbers) return
+    if (this._pendingSupplierLookup) return
 
-    const footprint = this.props.footprint ?? this._getImpliedFootprintString()
-    const footprinterString =
-      typeof footprint === "string" ? footprint : undefined
-    let legacySupplierPromise: Promise<SupplierPartNumbers> | undefined
-    if (
-      this._getSupplierPartNumbersEffect ===
-      NormalComponent.prototype._getSupplierPartNumbersEffect
-    ) {
-      const legacySupplierMethod = this._getSupplierPartNumbers
-      if (
-        legacySupplierMethod !==
-        NormalComponent.prototype._getSupplierPartNumbers
-      ) {
-        // The old phase calls a changed legacy method before registering work.
-        // Its dynamic JavaScript plain-result branch is synchronous, while a
-        // returned Promise is reused by the owned job without another call.
-        const legacyResult = legacySupplierMethod.call(
-          this,
-          partsEngine,
-          source_component,
-          footprinterString,
-        )
-        if (!(legacyResult instanceof Promise)) {
-          db.source_component.update(this.source_component_id!, {
-            supplier_part_numbers: legacyResult,
-          })
-          return
-        }
-        legacySupplierPromise = legacyResult
-      }
+    const lookup = {}
+    this._pendingSupplierLookup = lookup
+    const releaseLookup = () => {
+      if (this._pendingSupplierLookup === lookup)
+        this._pendingSupplierLookup = undefined
     }
-    this._queueEffect(
-      "get-supplier-part-numbers",
-      (job) =>
-        catchJobFailure(
-          (legacySupplierPromise
-            ? corePromise(
-                () => legacySupplierPromise!,
-                "external_supplier_parts_adapter",
-              )
-            : this._getSupplierPartNumbersEffect({
-                partsEngine,
-                sourceComponent: source_component,
-                footprinterString,
-                job,
-              })
-          ).pipe(
-            Effect.flatMap((supplierPartNumbers) =>
-              coreSync(
-                () =>
-                  job.commit(() => {
-                    this._asyncSupplierPartNumbers = supplierPartNumbers
-                    this._markDirty("PartsEngineRender")
-                  }),
-                "commit_supplier_parts",
-              ),
-            ),
-          ),
-          (error) =>
-            coreSync(
-              () =>
-                job.commit(() => {
-                  this._asyncSupplierPartNumbers = {}
-                  const warning = source_part_not_found_warning.parse({
-                    type: "source_part_not_found_warning",
-                    message: `Failed to fetch supplier part numbers for ${this.getString()}: ${error instanceof Error ? error.message : String(error)}`,
-                    source_component_id: this.source_component_id ?? undefined,
-                    subcircuit_id:
-                      this.getSubcircuit()?.subcircuit_id ?? undefined,
-                    manufacturer_part_number:
-                      source_component.manufacturer_part_number ?? undefined,
-                    part_name: source_component.name ?? undefined,
+    try {
+      const footprint =
+        this.props.footprint ?? this._getImpliedFootprintString()
+      const footprinterString =
+        typeof footprint === "string" ? footprint : undefined
+      const plan = this._planSupplierLookup(
+        partsEngine,
+        source_component,
+        footprinterString,
+      )
+      if (plan.kind === "plain") {
+        db.source_component.update(this.source_component_id!, {
+          supplier_part_numbers: plan.value,
+        })
+        releaseLookup()
+        return
+      }
+
+      this._queueEffect(
+        "get-supplier-part-numbers",
+        (job) =>
+          Effect.suspend(() =>
+            catchJobFailure(
+              (plan.kind === "legacy_promise"
+                ? corePromise(
+                    () => plan.promise,
+                    "external_supplier_parts_adapter",
+                  )
+                : this._getSupplierPartNumbersEffect({
+                    partsEngine,
+                    sourceComponent: source_component,
+                    footprinterString,
+                    job,
                   })
-                  db.source_part_not_found_warning.insert(warning)
-                  this._markDirty("PartsEngineRender")
-                }),
-              "commit_supplier_part_warning",
+              ).pipe(
+                Effect.flatMap((supplierPartNumbers) =>
+                  coreSync(
+                    () =>
+                      job.commit(() => {
+                        this._asyncSupplierPartNumbers = supplierPartNumbers
+                        this._markDirty("PartsEngineRender")
+                      }),
+                    "commit_supplier_parts",
+                  ),
+                ),
+              ),
+              (error) =>
+                coreSync(
+                  () =>
+                    job.commit(() => {
+                      this._asyncSupplierPartNumbers = {}
+                      const warning = source_part_not_found_warning.parse({
+                        type: "source_part_not_found_warning",
+                        message: `Failed to fetch supplier part numbers for ${this.getString()}: ${error instanceof Error ? error.message : String(error)}`,
+                        source_component_id:
+                          this.source_component_id ?? undefined,
+                        subcircuit_id:
+                          this.getSubcircuit()?.subcircuit_id ?? undefined,
+                        manufacturer_part_number:
+                          source_component.manufacturer_part_number ??
+                          undefined,
+                        part_name: source_component.name ?? undefined,
+                      })
+                      db.source_part_not_found_warning.insert(warning)
+                      this._markDirty("PartsEngineRender")
+                    }),
+                  "commit_supplier_part_warning",
+                ),
             ),
-        ).pipe(Effect.asVoid),
-      {
-        propsChange: "cancel",
-        onCancel: (reason) => {
-          this._asyncSupplierPartNumbers = undefined
-          if (reason !== "disposed" && reason !== "removed")
-            this._markDirty("PartsEngineRender")
+          ).pipe(Effect.asVoid, Effect.ensuring(Effect.sync(releaseLookup))),
+        {
+          propsChange: "cancel",
+          onCancel: (reason) => {
+            // Release before rearming: canceled records can remain pending
+            // while a valid immediate props update starts a new generation.
+            releaseLookup()
+            this._asyncSupplierPartNumbers = undefined
+            if (reason !== "disposed" && reason !== "removed")
+              this._markDirty("PartsEngineRender")
+          },
         },
-      },
-    )
+      )
+    } catch (error) {
+      // Legacy sync throws and registration failures keep their original
+      // scope and identity, while allowing a later valid retry.
+      releaseLookup()
+      throw error
+    }
   }
 
   updatePartsEngineRender(): void {

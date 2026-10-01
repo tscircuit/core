@@ -195,6 +195,7 @@ export class CircuitRuntime {
     options: {
       reason?: CoreJobCancellationReason
       onlyOwner?: boolean
+      sameCircuitReparent?: boolean
     } = {},
   ) {
     const reason = options.reason ?? "superseded"
@@ -207,6 +208,12 @@ export class CircuitRuntime {
         if (ancestor !== component && !job.ancestry.includes(component))
           continue
         if (reason === "props_changed" && job.policy?.propsChange === "finish")
+          continue
+        if (
+          reason === "reparented" &&
+          options.sameCircuitReparent &&
+          job.policy?.reparentWithinCircuit === "finish"
+        )
           continue
         try {
           job.cancel(reason)

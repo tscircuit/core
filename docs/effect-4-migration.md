@@ -40,7 +40,7 @@ flowchart TD
 ```
 
 Each queued job captures owner ancestry and receives a `CoreJobScope`.
-Removal, reparenting and disposal interrupt owned work. Valid props replacement
+Removal, reparenting and disposal interrupt native owned work. Valid props replacement
 targets the component's own jobs and applies each site's cancel/finish policy;
 it does not cancel descendant jobs. Native publications through `job.commit`
 are suppressed when their owner is stale, even when a borrowed callback ignores
@@ -79,7 +79,7 @@ New `*Effect` methods provide native composition. `dispose()` and
   Existing component value APIs remain callable but cannot restart disposed jobs.
 - Native jobs guard publication after removal, cancelled replacement or
   reparenting. The legacy `_queueAsyncEffect` callback remains uncontrolled:
-  removal, reparenting or disposal can finish its owned wait and emit
+  removal, cross-circuit reparenting or disposal can finish its owned wait and emit
   `asyncEffect:end` before the original callback ends. That callback can still
   mutate the component or database afterwards. This is an experimental
   cancellation difference, not a stale-write guarantee for legacy extensions.
@@ -93,7 +93,14 @@ New `*Effect` methods provide native composition. `dispose()` and
 Adding a removed component does not automatically clear `shouldBeRemoved`.
 Borrowed callbacks without an abort/close contract may continue underlying IO;
 native jobs guard their eventual publication. Legacy callbacks control their
-own writes and retain finish-on-own-props-update behavior. Extensions that
+own writes and retain finish-on-own-props-update behavior. Moving a legacy
+callback within the same attached circuit also retains its original wait and
+completion ordering. Cross-circuit moves still cancel the old owned wait: its
+registration events and scope belong to the original circuit, and safely
+transferring those records requires a separate design. This exception preserves
+the wait through reparenting; it does not transfer captured ancestry. Removing
+the former ancestor can still cancel the owned wait, as can removing the
+current owner or disposing the circuit. Extensions that
 create uninterruptible asynchronous programs own their lifetime explicitly.
 The historical opt-in footprint prototype remains distinct from production
 loading and retains its custom-decoder/cleanup diagnostic limits.
@@ -108,7 +115,11 @@ extension hooks retain their ordinary implementations.
 
 `CoreJobCancellationPolicy` is optional on the existing `_queueEffect` call
 shape. Production sites declare `propsChange: "cancel"` or `"finish"` next to
-their submission. `CircuitRuntime` records `props_changed`, `reparented`,
+their submission. Omitting the policy preserves the initial native extension
+contract: cancel on replacement/reparenting without automatically releasing
+an extension's own guard or making its phase dirty. An extension that needs
+restart behavior must supply `onCancel`; captured-input work may explicitly
+choose `propsChange: "finish"`. `CircuitRuntime` records `props_changed`, `reparented`,
 `removed`, `disposed` or `superseded` internally, while the signal handed to
 external transports retains the platform's default `AbortError` reason.
 Cancellation aborts first and invokes `onCancel` synchronously, so a policy
@@ -153,8 +164,8 @@ ancestry/open-runtime phase preparation consumes that hint through the explicit
 an initialized phase becomes dirty, while an uninitialized phase takes its
 normal initial path. Disposal records no hint. This does not dirty a terminal
 component, automatically clear its removal flag, or change completed
-remove/readd behavior. Implementation and final revival certification remain
-part of the pending revision gate.
+remove/readd behavior. The revival characterization has passed repeatedly;
+final full-corpus certification remains a separate gate.
 
 The following table covers every named production `_queueEffect` site and the
 three direct production runtime submissions. The `Renderable` queue methods
@@ -164,7 +175,11 @@ supersession. A signal-less callback can continue underlying IO after its owned
 wait has ended; native publication uses the ownership guard. The external
 legacy adapter is separate: `_queueAsyncEffect` invokes the original callback
 once, eagerly, and preserves its ordinary completion ordering and
-finish-on-own-props-update policy. Terminal cancellation can settle the owned
+finish-on-own-props-update policy. An explicit same-circuit reparent policy
+preserves that wait only when the attachment boundary confirms the same
+non-null circuit identity before changing the parent. Native jobs still cancel
+by default, and standalone/cross-circuit moves retain cancellation. Terminal
+cancellation can settle the owned
 record before that callback completes, without suppressing callback writes.
 
 | Site and logical owner | Props policy and captured work | Owned lifetime and cancellation response |
@@ -172,7 +187,7 @@ record before that callback completes, without suppressing callback writes.
 | `load-footprint-from-platform-file-parser` — NormalComponent, `NormalComponent_doInitialPcbFootprintStringRender` | Cancel; footprint reference, parser, pin labels and import rotation | Static resolver/parser have no abort or disposer contract. Abandon their waits; suppress late attachment; clear the pending footprint guard and dirty `PcbFootprintStringRender` only for non-terminal cancellation. |
 | `load-footprint-url` — NormalComponent, same function | Cancel; URL and footprint import inputs | Loading owns fetch, unused response body and reader. Abort/close them, suppress changed-URL publication, and apply the same footprint guard policy. The opt-in experimental loader remains a separate adapter. |
 | `load-lib-footprint` — NormalComponent, same function | Cancel; library reference, selected resolver and import inputs | Library callbacks have no signal contract. Abandon the wait and suppress stale child/CAD-model attachment; apply the footprint guard policy. |
-| `get-supplier-part-numbers` — NormalComponent, `doInitialPartsEngineRender` | Cancel; source query, footprint string and engine | Borrowed cache/parts callbacks are interruptible waits, not owned engines. Guard cache/result publication; clear the pending result and dirty `PartsEngineRender` only for non-terminal cancellation. A changed legacy supplier method's plain result publishes synchronously before queue registration; a returned Promise is called once and reused by the job. |
+| `get-supplier-part-numbers` — NormalComponent, `doInitialPartsEngineRender` | Cancel; source query, footprint string and engine | Borrowed cache/parts callbacks are interruptible waits, not owned engines. Guard cache/result publication; retain one lookup per pending generation even when an extension dirties the phase. Release only that generation on cancellation/exit; clear the pending result and dirty `PartsEngineRender` only for non-terminal cancellation. A changed legacy supplier method's plain result publishes synchronously before queue registration; a returned Promise is called once and reused by the job. |
 | `analyze-part-orientation` — NormalComponent, `NormalComponent_doInitialPartOrientationAnalysis` | Cancel; supplier candidates, local pin polarity and source identity | Shared Deferred entries release on every producer exit. Cancelling a subscriber leaves the producer alive; a surviving subscriber can take over a cancelled producer. Guard cache/map/diagnostic writes; clear pending analysis and dirty its phase only for non-terminal cancellation. |
 | `check-supplier-footprint-mismatch` — NormalComponent, `NormalComponent_doInitialSupplierFootprintMismatchWarning` | Cancel; candidates and local copper bounds | Borrowed parts callback has no abort contract. Guard the warning, release the start guard and dirty `SupplierFootprintMismatchWarning` only for non-terminal cancellation. |
 | `load-standard-connector-circuit-json` — Connector, `doInitialFetchPartFootprint` | Cancel; standard and supplier query | Borrowed parts/cache callbacks; guarded supplier and footprint attachment. Release the footprint guard and dirty `FetchPartFootprint` only for non-terminal cancellation. |

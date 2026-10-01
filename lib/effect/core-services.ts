@@ -15,8 +15,10 @@ export type CoreJobCancellationReason =
 
 /** Declared at a queue site; terminal cleanup is separate from render re-arm. */
 export interface CoreJobCancellationPolicy {
-  /** Default cancellation preserves the existing native extension contract. */
+  /** Omitted policy cancels. Extensions must explicitly release/re-arm guards. */
   readonly propsChange?: "cancel" | "finish"
+  /** Finish only when the attachment boundary confirms the same circuit scope. */
+  readonly reparentWithinCircuit?: "cancel" | "finish"
   /** Runs synchronously after abort. Terminal reasons must not schedule work. */
   readonly onCancel?: (reason: CoreJobCancellationReason) => void
 }

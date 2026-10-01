@@ -178,6 +178,7 @@ export abstract class Renderable implements IRenderable {
     options: {
       reason?: CoreJobCancellationReason
       onlyOwner?: boolean
+      sameCircuitReparent?: boolean
     } = {},
   ): void {
     const runtimes = new Set<CircuitRuntime>()
@@ -266,7 +267,7 @@ export abstract class Renderable implements IRenderable {
     const promise = this._getEffectRuntime().queue({
       owner: this,
       // Legacy callbacks capture their inputs and cannot be restarted safely.
-      policy: { propsChange: "finish" },
+      policy: { propsChange: "finish", reparentWithinCircuit: "finish" },
       build: () => corePromise(() => originalPromise, effectName),
     })
     this._registerAsyncEffect({
