@@ -1,5 +1,5 @@
 import { expect } from "bun:test"
-import type { ChipProps } from "@tscircuit/props"
+import type { ChipProps, ImplicitBreakoutPointSolverFn } from "@tscircuit/props"
 import { orderedRenderPhases } from "lib/components/base-components/Renderable"
 import type { Board } from "lib/components/normal-components/Board/Board"
 import { createInstanceFromReactElement } from "lib/fiber/create-instance-from-react-element"
@@ -1777,7 +1777,7 @@ type PlanarRoute = readonly {
   layer?: string
 }[]
 
-const getPlanarRouteLength = (route: PlanarRoute): number => {
+export const getPlanarRouteLength = (route: PlanarRoute): number => {
   let previousWire: { x: number; y: number; layer: string } | undefined
   let length = 0
   for (const routePoint of route) {
@@ -2025,6 +2025,7 @@ async function routeAm62lFixtureSrjConnections(
 export const renderAm62lLpddr4Fanout = async ({
   fanoutAlgorithmFn,
   fanoutSolverLabel,
+  implicitBreakoutPointSolverFn,
   signalOnlyBoardLayerCount = 4,
   includeBottomDecouplingCapacitors = false,
   includeDirectDecouplingNetworkInInitialRender = false,
@@ -2036,6 +2037,7 @@ export const renderAm62lLpddr4Fanout = async ({
 }: {
   fanoutAlgorithmFn?: FanoutAlgorithmFn
   fanoutSolverLabel?: string
+  implicitBreakoutPointSolverFn?: ImplicitBreakoutPointSolverFn
   signalOnlyBoardLayerCount?: 4 | 8
   includeBottomDecouplingCapacitors?: boolean
   includeDirectDecouplingNetworkInInitialRender?: boolean
@@ -2149,9 +2151,14 @@ export const renderAm62lLpddr4Fanout = async ({
         }
       : {}),
   } as const
-  const fanoutAutorouter = fanoutAlgorithmFn
-    ? { preset: "fanout" as const, algorithmFn: fanoutAlgorithmFn }
-    : "fanout"
+  const fanoutAutorouter =
+    fanoutAlgorithmFn || implicitBreakoutPointSolverFn
+      ? {
+          preset: "fanout" as const,
+          algorithmFn: fanoutAlgorithmFn,
+          implicitBreakoutPointSolverFn,
+        }
+      : "fanout"
   const productionGlobalAutorouter =
     getPresetAutoroutingConfig("beta_pipeline9")
 
