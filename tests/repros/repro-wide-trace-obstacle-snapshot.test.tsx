@@ -1,167 +1,103 @@
+import { checkEachPcbTraceNonOverlapping } from "@tscircuit/checks"
 import { expect, test } from "bun:test"
-import { getObstaclesFromCircuitJson } from "lib/utils/obstacles/getObstaclesFromCircuitJson"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-// Reduced from the metal-touch panel's printed inductive sensor.
-// Footprint-local points in mm, +X right, +Y up (right-handed PCB frame).
-const coilRoute = [
-  { x: -5, y: -6 },
-  { x: -5, y: -5 },
-  { x: 5, y: -5 },
-  { x: 5, y: 5 },
-  { x: -5, y: 5 },
-  { x: -5, y: -4 },
-  { x: 4, y: -4 },
-  { x: 4, y: 4 },
-  { x: -4, y: 4 },
-  { x: -4, y: -3 },
-  { x: 3, y: -3 },
-  { x: 3, y: 3 },
-  { x: -3, y: 3 },
-  { x: -3, y: -2 },
-]
-
-test("printed coil obstacles cover copper width and end caps", async () => {
+test("autorouting avoids the full width of a printed copper link", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
-    <board width={26} height={20} layers={2} autorouter="auto_local">
-      <inductor
-        name="L1"
-        inductance="1uH"
+    <board width={16} height={10} autorouter="auto_local">
+      <resistor
+        name="R1"
+        resistance="1k"
+        footprint="0402"
+        pcbX={-5}
+        pcbY={0.4}
+      />
+      <resistor
+        name="R2"
+        resistance="1k"
+        footprint="0402"
+        pcbX={5}
+        pcbY={0.4}
+      />
+      {/* A printed zero-ohm link: footprint-local points in mm,
+          +X right, +Y up, right-handed. No assembly part is needed. */}
+      <resistor
+        name="R3"
+        resistance="0"
         doNotPlace
-        pcbX={2}
         footprint={
           <footprint>
-            <platedhole
+            <smtpad
               portHints={["pin1"]}
-              pcbX={-5}
-              pcbY={-6}
-              holeDiameter={0.3}
-              outerDiameter={0.8}
-              shape="circle"
+              pcbX={-2}
+              width={1}
+              height={1}
+              shape="rect"
             />
-            <platedhole
+            <smtpad
               portHints={["pin2"]}
-              pcbX={-3}
-              pcbY={-2}
-              holeDiameter={0.3}
-              outerDiameter={0.8}
-              shape="circle"
+              pcbX={2}
+              width={1}
+              height={1}
+              shape="rect"
             />
             <pcbtrace
-              route={coilRoute.map((point) => ({
-                ...point,
-                route_type: "wire" as const,
-                width: 0.5,
-                layer: "top" as const,
-              }))}
+              route={[
+                { route_type: "wire", x: -2, y: 0, width: 2, layer: "top" },
+                { route_type: "wire", x: 2, y: 0, width: 2, layer: "top" },
+              ]}
             />
           </footprint>
         }
       />
-      <capacitor
-        name="C1"
-        capacitance="1nF"
-        footprint="0603"
-        layer="bottom"
-        pcbX={-7}
-        pcbY={1}
-      />
-      <pinheader name="J1" pinCount={2} pitch="2.54mm" pcbX={-7} pcbY={-4} />
-      <trace from="L1.pin1" to="C1.pin1" />
-      <trace from="L1.pin2" to="C1.pin2" />
-      <trace from="J1.pin1" to="C1.pin1" />
-      <trace from="J1.pin2" to="C1.pin2" />
+      <trace from="R1.pin2" to="R2.pin1" />
       <fabricationnotetext
-        text="FIXED: router obstacle covers the full copper"
-        pcbY={8}
-        fontSize={0.55}
-        color="#ffffff"
-      />
-      <fabricationnotetext
-        text="Red = real copper   /   Green = generated obstacle"
-        pcbY={7}
+        text="R1-R2 must not touch the printed R3 copper link"
+        pcbY={3.8}
         fontSize={0.45}
         color="#ffffff"
       />
-      {/* Board-world mm, +X right, +Y up. These notes overlay the
-            upper 10 mm coil segment; emitted geometry is checked below. */}
-      <fabricationnoterect
-        pcbX={2}
-        pcbY={5}
-        width={10.5}
-        height={0.5}
-        strokeWidth={0.03}
-        hasStroke
-        color="#00ff88"
-      />
-      <fabricationnotedimension
-        from={{ x: 9.5, y: 4.75 }}
-        to={{ x: 9.5, y: 5.25 }}
-        text="0.5 mm copper"
+      <fabricationnotetext
+        text="All copper is on TOP; R3 is a separate connection"
+        pcbY={2.9}
         fontSize={0.4}
-        arrowSize={0.15}
         color="#ffffff"
       />
-      <fabricationnotepath
-        route={[
-          { x: 7, y: 4.75 },
-          { x: 9.8, y: 4.75 },
-        ]}
-        strokeWidth={0.025}
-        color="#ffffff"
-      />
-      <fabricationnotepath
-        route={[
-          { x: 7, y: 5.25 },
-          { x: 9.8, y: 5.25 },
-        ]}
-        strokeWidth={0.025}
-        color="#ffffff"
-      />
+      {/* Board-world points in mm, +X right, +Y up. */}
       <fabricationnotedimension
-        from={{ x: -3.25, y: 5.6 }}
-        to={{ x: 7.25, y: 5.6 }}
+        from={{ x: 0, y: -1 }}
+        to={{ x: 0, y: 1 }}
         offset={0}
-        text="10.5 mm obstacle (green)"
+        text="2 mm"
         fontSize={0.4}
-        arrowSize={0.25}
-        color="#00ff88"
-      />
-      <fabricationnotetext
-        text="ACTUAL obstacle: 10.5 x 0.5 mm"
-        pcbY={-7}
-        fontSize={0.55}
-        color="#00ff88"
-      />
-      <fabricationnotetext
-        text="REQUIRED coverage: 10.5 x 0.5 mm (including caps)"
-        pcbY={-8}
-        fontSize={0.45}
+        arrowSize={0.2}
         color="#ffffff"
       />
       <fabricationnotetext
-        text="Full wire width and both round caps are protected"
-        pcbY={-9}
-        fontSize={0.45}
-        color="#ffbb55"
+        text="R3: 2 mm-wide printed copper (not a mounted resistor)"
+        pcbY={-2.5}
+        fontSize={0.4}
+        color="#ffffff"
+      />
+      <fabricationnotetext
+        text="Expected: a visible gap between R1-R2 and R3"
+        pcbY={-3.5}
+        fontSize={0.4}
+        color="#ffffff"
       />
     </board>,
   )
   await circuit.renderUntilSettled()
 
-  const coil = circuit.selectOne(".L1")!
-  const coilTrace = circuit.db.pcb_trace
-    .list()
-    .find((trace) => trace.pcb_component_id === coil.pcb_component_id)!
-  const obstacles = getObstaclesFromCircuitJson([coilTrace])
-  // Verify the fabrication outline against the emitted obstacle geometry.
-  expect(coilTrace.route[3]).toMatchObject({ width: 0.5 })
-  expect(obstacles[3]).toMatchObject({
-    center: { x: 2, y: 5 },
-    width: 10.5,
-    height: 0.5,
-  })
-  // Keep this a normal test: a render/snapshot failure must fail the repro.
+  // Capture the actual routing before checking it, so the broken version
+  // produces a useful snapshot too. No drawn obstacle substitutes for copper.
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
+  expect(circuit.db.pcb_trace.list()).toHaveLength(2)
+  expect(
+    checkEachPcbTraceNonOverlapping(circuit.getCircuitJson(), {
+      minClearance: 0,
+    }),
+  ).toEqual([])
 })
