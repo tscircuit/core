@@ -20,6 +20,7 @@ import { PcbNoteLine } from "lib/components/primitive-components/PcbNoteLine"
 import { PcbNotePath } from "lib/components/primitive-components/PcbNotePath"
 import { PcbNoteRect } from "lib/components/primitive-components/PcbNoteRect"
 import { PcbNoteText } from "lib/components/primitive-components/PcbNoteText"
+import { PcbSoldermaskOpening } from "lib/components/primitive-components/PcbSoldermaskOpening"
 import { PcbTrace } from "lib/components/primitive-components/PcbTrace"
 import { PcbVia } from "lib/components/primitive-components/PcbVia"
 import { PlatedHole } from "lib/components/primitive-components/PlatedHole"
@@ -271,7 +272,32 @@ export const createComponentsFromCircuitJson = (
           )
         : undefined
 
-    if (elm.type === "pcb_smtpad" && elm.shape === "rect") {
+    if (elm.type === "pcb_soldermask_opening") {
+      components.push(
+        new PcbSoldermaskOpening(
+          elm.shape === "polygon"
+            ? { shape: "polygon", layer: elm.layer, points: elm.points }
+            : elm.shape === "circle"
+              ? {
+                  shape: "circle",
+                  layer: elm.layer,
+                  pcbX: elm.x,
+                  pcbY: elm.y,
+                  radius: elm.radius,
+                }
+              : {
+                  shape: "rect",
+                  layer: elm.layer,
+                  pcbX: elm.x,
+                  pcbY: elm.y,
+                  width: elm.width,
+                  height: elm.height,
+                  pcbRotation:
+                    elm.shape === "rotated_rect" ? elm.ccw_rotation : 0,
+                },
+        ),
+      )
+    } else if (elm.type === "pcb_smtpad" && elm.shape === "rect") {
       components.push(
         new SmtPad({
           pcbX: elm.x,
