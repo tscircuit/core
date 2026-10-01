@@ -78,7 +78,7 @@
     "circuit-json-to-connectivity-map": "^0.0.33",
     "circuit-json-to-gltf": "^0.0.137",
     "circuit-json-to-spice": "^0.0.45",
-    "circuit-to-svg": "^0.0.433",
+    "circuit-to-svg": "^0.0.436",
     "concurrently": "^9.1.2",
     "connectivity-map": "^1.0.1",
     "debug": "^4.3.6",
@@ -138,5 +138,8 @@
     "@tscircuit/circuit-json-util": "^0.0.117",
     "@tscircuit/props": "^0.0.676",
     "circuit-json": "^0.0.507"
+  },
+  "patchedDependencies": {
+    "@tscircuit/props@0.0.672": "patches/@tscircuit%2Fprops@0.0.672.patch"
   }
 }

@@ -1,0 +1,395 @@
+diff --git a/dist/index.d.ts b/dist/index.d.ts
+index 6e7829d9cd9f379bf3b6b99297f0cc631470a587..62110c3a35fcdb0174c9ef456ca02864e0433449 100644
+--- a/dist/index.d.ts
++++ b/dist/index.d.ts
+@@ -210226,10 +210226,12 @@ declare const pcbKeepoutProps: z.ZodUnion<[z.ZodObject<Omit<{
+     allowTraces: z.ZodOptional<z.ZodBoolean>;
+     /** Allow components and their pads/plated holes without keepout diagnostics. False or omitted retains enforcement; copper pours remain excluded. */
+     allowPlacements: z.ZodOptional<z.ZodBoolean>;
++    description: z.ZodOptional<z.ZodString>;
+     excludeRefs: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
+ }, "strip", z.ZodTypeAny, {
+     shape: "circle";
+     radius: number;
++    description?: string | undefined;
+     layer?: "top" | "bottom" | "inner1" | "inner2" | "inner3" | "inner4" | "inner5" | "inner6" | "inner7" | "inner8" | undefined;
+     layers?: ("top" | "bottom" | "inner1" | "inner2" | "inner3" | "inner4" | "inner5" | "inner6" | "inner7" | "inner8")[] | undefined;
+     pcbX?: string | number | undefined;
+@@ -210269,6 +210271,7 @@ declare const pcbKeepoutProps: z.ZodUnion<[z.ZodObject<Omit<{
+ }, {
+     shape: "circle";
+     radius: string | number;
++    description?: string | undefined;
+     layer?: "top" | "bottom" | "inner1" | "inner2" | "inner3" | "inner4" | "inner5" | "inner6" | "inner7" | "inner8" | {
+         name: "top" | "bottom" | "inner1" | "inner2" | "inner3" | "inner4" | "inner5" | "inner6" | "inner7" | "inner8";
+     } | undefined;
+@@ -210393,11 +210396,13 @@ declare const pcbKeepoutProps: z.ZodUnion<[z.ZodObject<Omit<{
+     allowTraces: z.ZodOptional<z.ZodBoolean>;
+     /** Allow components and their pads/plated holes without keepout diagnostics. False or omitted retains enforcement; copper pours remain excluded. */
+     allowPlacements: z.ZodOptional<z.ZodBoolean>;
++    description: z.ZodOptional<z.ZodString>;
+     excludeRefs: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
+ }, "strip", z.ZodTypeAny, {
+     shape: "rect";
+     width: number;
+     height: number;
++    description?: string | undefined;
+     layer?: "top" | "bottom" | "inner1" | "inner2" | "inner3" | "inner4" | "inner5" | "inner6" | "inner7" | "inner8" | undefined;
+     layers?: ("top" | "bottom" | "inner1" | "inner2" | "inner3" | "inner4" | "inner5" | "inner6" | "inner7" | "inner8")[] | undefined;
+     pcbX?: string | number | undefined;
+@@ -210439,6 +210444,196 @@ declare const pcbKeepoutProps: z.ZodUnion<[z.ZodObject<Omit<{
+     shape: "rect";
+     width: string | number;
+     height: string | number;
++    description?: string | undefined;
++    layer?: "top" | "bottom" | "inner1" | "inner2" | "inner3" | "inner4" | "inner5" | "inner6" | "inner7" | "inner8" | {
++        name: "top" | "bottom" | "inner1" | "inner2" | "inner3" | "inner4" | "inner5" | "inner6" | "inner7" | "inner8";
++    } | undefined;
++    layers?: ("top" | "bottom" | "inner1" | "inner2" | "inner3" | "inner4" | "inner5" | "inner6" | "inner7" | "inner8" | {
++        name: "top" | "bottom" | "inner1" | "inner2" | "inner3" | "inner4" | "inner5" | "inner6" | "inner7" | "inner8";
++    })[] | undefined;
++    pcbX?: string | number | undefined;
++    pcbY?: string | number | undefined;
++    pcbLeftEdgeX?: string | number | undefined;
++    pcbRightEdgeX?: string | number | undefined;
++    pcbTopEdgeY?: string | number | undefined;
++    pcbBottomEdgeY?: string | number | undefined;
++    pcbOffsetX?: string | number | undefined;
++    pcbOffsetY?: string | number | undefined;
++    pcbRotation?: string | number | undefined;
++    pcbPositionAnchor?: string | undefined;
++    pcbPositionMode?: "relative_to_group_anchor" | "auto" | "relative_to_board_anchor" | "relative_to_component_anchor" | undefined;
++    shouldBeOnEdgeOfBoard?: boolean | undefined;
++    pcbMarginTop?: string | number | undefined;
++    pcbMarginRight?: string | number | undefined;
++    pcbMarginBottom?: string | number | undefined;
++    pcbMarginLeft?: string | number | undefined;
++    pcbMarginX?: string | number | undefined;
++    pcbMarginY?: string | number | undefined;
++    pcbStyle?: {
++        silkscreenFontSize?: string | number | undefined;
++        viaPadDiameter?: string | number | undefined;
++        viaHoleDiameter?: string | number | undefined;
++        silkscreenTextPosition?: "centered" | "outside" | "none" | {
++            offsetX: number;
++            offsetY: number;
++        } | undefined;
++        silkscreenTextVisibility?: "hidden" | "visible" | "inherit" | undefined;
++    } | undefined;
++    pcbSx?: PcbSx | undefined;
++    pcbRelative?: boolean | undefined;
++    relative?: boolean | undefined;
++    warningOnly?: boolean | undefined;
++    allowTraces?: boolean | undefined;
++    allowPlacements?: boolean | undefined;
++    excludeRefs?: string[] | undefined;
++}>, z.ZodObject<{
++    pcbX: z.ZodOptional<z.ZodUnion<[z.ZodString, z.ZodEffects<z.ZodUnion<[z.ZodString, z.ZodNumber]>, number, string | number>]>>;
++    pcbY: z.ZodOptional<z.ZodUnion<[z.ZodString, z.ZodEffects<z.ZodUnion<[z.ZodString, z.ZodNumber]>, number, string | number>]>>;
++    pcbLeftEdgeX: z.ZodOptional<z.ZodUnion<[z.ZodString, z.ZodEffects<z.ZodUnion<[z.ZodString, z.ZodNumber]>, number, string | number>]>>;
++    pcbRightEdgeX: z.ZodOptional<z.ZodUnion<[z.ZodString, z.ZodEffects<z.ZodUnion<[z.ZodString, z.ZodNumber]>, number, string | number>]>>;
++    pcbTopEdgeY: z.ZodOptional<z.ZodUnion<[z.ZodString, z.ZodEffects<z.ZodUnion<[z.ZodString, z.ZodNumber]>, number, string | number>]>>;
++    pcbBottomEdgeY: z.ZodOptional<z.ZodUnion<[z.ZodString, z.ZodEffects<z.ZodUnion<[z.ZodString, z.ZodNumber]>, number, string | number>]>>;
++    pcbOffsetX: z.ZodOptional<z.ZodEffects<z.ZodUnion<[z.ZodString, z.ZodNumber]>, number, string | number>>;
++    pcbOffsetY: z.ZodOptional<z.ZodEffects<z.ZodUnion<[z.ZodString, z.ZodNumber]>, number, string | number>>;
++    pcbRotation: z.ZodOptional<z.ZodEffects<z.ZodUnion<[z.ZodString, z.ZodNumber]>, number, string | number>>;
++    pcbPositionAnchor: z.ZodOptional<z.ZodString>;
++    pcbPositionMode: z.ZodOptional<z.ZodEnum<["relative_to_group_anchor", "auto", "relative_to_board_anchor", "relative_to_component_anchor"]>>;
++    shouldBeOnEdgeOfBoard: z.ZodOptional<z.ZodBoolean>;
++    layer: z.ZodOptional<z.ZodEffects<z.ZodUnion<[z.ZodEnum<["top", "bottom", "inner1", "inner2", "inner3", "inner4", "inner5", "inner6", "inner7", "inner8"]>, z.ZodObject<{
++        name: z.ZodEnum<["top", "bottom", "inner1", "inner2", "inner3", "inner4", "inner5", "inner6", "inner7", "inner8"]>;
++    }, "strip", z.ZodTypeAny, {
++        name: "top" | "bottom" | "inner1" | "inner2" | "inner3" | "inner4" | "inner5" | "inner6" | "inner7" | "inner8";
++    }, {
++        name: "top" | "bottom" | "inner1" | "inner2" | "inner3" | "inner4" | "inner5" | "inner6" | "inner7" | "inner8";
++    }>]>, "top" | "bottom" | "inner1" | "inner2" | "inner3" | "inner4" | "inner5" | "inner6" | "inner7" | "inner8", "top" | "bottom" | "inner1" | "inner2" | "inner3" | "inner4" | "inner5" | "inner6" | "inner7" | "inner8" | {
++        name: "top" | "bottom" | "inner1" | "inner2" | "inner3" | "inner4" | "inner5" | "inner6" | "inner7" | "inner8";
++    }>>;
++    pcbMarginTop: z.ZodOptional<z.ZodEffects<z.ZodUnion<[z.ZodString, z.ZodNumber]>, number, string | number>>;
++    pcbMarginRight: z.ZodOptional<z.ZodEffects<z.ZodUnion<[z.ZodString, z.ZodNumber]>, number, string | number>>;
++    pcbMarginBottom: z.ZodOptional<z.ZodEffects<z.ZodUnion<[z.ZodString, z.ZodNumber]>, number, string | number>>;
++    pcbMarginLeft: z.ZodOptional<z.ZodEffects<z.ZodUnion<[z.ZodString, z.ZodNumber]>, number, string | number>>;
++    pcbMarginX: z.ZodOptional<z.ZodEffects<z.ZodUnion<[z.ZodString, z.ZodNumber]>, number, string | number>>;
++    pcbMarginY: z.ZodOptional<z.ZodEffects<z.ZodUnion<[z.ZodString, z.ZodNumber]>, number, string | number>>;
++    pcbStyle: z.ZodOptional<z.ZodObject<{
++        silkscreenFontSize: z.ZodOptional<z.ZodEffects<z.ZodUnion<[z.ZodString, z.ZodNumber]>, number, string | number>>;
++        viaPadDiameter: z.ZodOptional<z.ZodEffects<z.ZodUnion<[z.ZodString, z.ZodNumber]>, number, string | number>>;
++        viaHoleDiameter: z.ZodOptional<z.ZodEffects<z.ZodUnion<[z.ZodString, z.ZodNumber]>, number, string | number>>;
++        silkscreenTextPosition: z.ZodOptional<z.ZodUnion<[z.ZodEnum<["centered", "outside", "none"]>, z.ZodObject<{
++            offsetX: z.ZodNumber;
++            offsetY: z.ZodNumber;
++        }, "strip", z.ZodTypeAny, {
++            offsetX: number;
++            offsetY: number;
++        }, {
++            offsetX: number;
++            offsetY: number;
++        }>]>>;
++        silkscreenTextVisibility: z.ZodOptional<z.ZodEnum<["hidden", "visible", "inherit"]>>;
++    }, "strip", z.ZodTypeAny, {
++        silkscreenFontSize?: number | undefined;
++        viaPadDiameter?: number | undefined;
++        viaHoleDiameter?: number | undefined;
++        silkscreenTextPosition?: "centered" | "outside" | "none" | {
++            offsetX: number;
++            offsetY: number;
++        } | undefined;
++        silkscreenTextVisibility?: "hidden" | "visible" | "inherit" | undefined;
++    }, {
++        silkscreenFontSize?: string | number | undefined;
++        viaPadDiameter?: string | number | undefined;
++        viaHoleDiameter?: string | number | undefined;
++        silkscreenTextPosition?: "centered" | "outside" | "none" | {
++            offsetX: number;
++            offsetY: number;
++        } | undefined;
++        silkscreenTextVisibility?: "hidden" | "visible" | "inherit" | undefined;
++    }>>;
++    pcbSx: z.ZodOptional<z.ZodType<PcbSx, z.ZodTypeDef, PcbSx>>;
++    pcbRelative: z.ZodOptional<z.ZodBoolean>;
++    relative: z.ZodOptional<z.ZodBoolean>;
++} & {
++    shape: z.ZodLiteral<"outline">;
++    outline: z.ZodArray<z.ZodObject<{
++        x: z.ZodEffects<z.ZodUnion<[z.ZodString, z.ZodNumber]>, number, string | number>;
++        y: z.ZodEffects<z.ZodUnion<[z.ZodString, z.ZodNumber]>, number, string | number>;
++    }, "strip", z.ZodTypeAny, {
++        x: number;
++        y: number;
++    }, {
++        x: string | number;
++        y: string | number;
++    }>, "many">;
++    strokeWidth: z.ZodEffects<z.ZodUnion<[z.ZodString, z.ZodNumber]>, number, string | number>;
++    layers: z.ZodOptional<z.ZodArray<z.ZodEffects<z.ZodUnion<[z.ZodEnum<["top", "bottom", "inner1", "inner2", "inner3", "inner4", "inner5", "inner6", "inner7", "inner8"]>, z.ZodObject<{
++        name: z.ZodEnum<["top", "bottom", "inner1", "inner2", "inner3", "inner4", "inner5", "inner6", "inner7", "inner8"]>;
++    }, "strip", z.ZodTypeAny, {
++        name: "top" | "bottom" | "inner1" | "inner2" | "inner3" | "inner4" | "inner5" | "inner6" | "inner7" | "inner8";
++    }, {
++        name: "top" | "bottom" | "inner1" | "inner2" | "inner3" | "inner4" | "inner5" | "inner6" | "inner7" | "inner8";
++    }>]>, "top" | "bottom" | "inner1" | "inner2" | "inner3" | "inner4" | "inner5" | "inner6" | "inner7" | "inner8", "top" | "bottom" | "inner1" | "inner2" | "inner3" | "inner4" | "inner5" | "inner6" | "inner7" | "inner8" | {
++        name: "top" | "bottom" | "inner1" | "inner2" | "inner3" | "inner4" | "inner5" | "inner6" | "inner7" | "inner8";
++    }>, "many">>;
++    /** Report keepout violations as warnings when true. Omit for normal enforcement. */
++    warningOnly: z.ZodOptional<z.ZodBoolean>;
++    /** Allow trace crossings without keepout diagnostics. False or omitted retains enforcement; copper pours remain excluded. */
++    allowTraces: z.ZodOptional<z.ZodBoolean>;
++    /** Allow components and their pads/plated holes without keepout diagnostics. False or omitted retains enforcement; copper pours remain excluded. */
++    allowPlacements: z.ZodOptional<z.ZodBoolean>;
++    description: z.ZodOptional<z.ZodString>;
++    excludeRefs: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
++}, "strip", z.ZodTypeAny, {
++    shape: "outline";
++    strokeWidth: number;
++    outline: {
++        x: number;
++        y: number;
++    }[];
++    description?: string | undefined;
++    layer?: "top" | "bottom" | "inner1" | "inner2" | "inner3" | "inner4" | "inner5" | "inner6" | "inner7" | "inner8" | undefined;
++    layers?: ("top" | "bottom" | "inner1" | "inner2" | "inner3" | "inner4" | "inner5" | "inner6" | "inner7" | "inner8")[] | undefined;
++    pcbX?: string | number | undefined;
++    pcbY?: string | number | undefined;
++    pcbLeftEdgeX?: string | number | undefined;
++    pcbRightEdgeX?: string | number | undefined;
++    pcbTopEdgeY?: string | number | undefined;
++    pcbBottomEdgeY?: string | number | undefined;
++    pcbOffsetX?: number | undefined;
++    pcbOffsetY?: number | undefined;
++    pcbRotation?: number | undefined;
++    pcbPositionAnchor?: string | undefined;
++    pcbPositionMode?: "relative_to_group_anchor" | "auto" | "relative_to_board_anchor" | "relative_to_component_anchor" | undefined;
++    shouldBeOnEdgeOfBoard?: boolean | undefined;
++    pcbMarginTop?: number | undefined;
++    pcbMarginRight?: number | undefined;
++    pcbMarginBottom?: number | undefined;
++    pcbMarginLeft?: number | undefined;
++    pcbMarginX?: number | undefined;
++    pcbMarginY?: number | undefined;
++    pcbStyle?: {
++        silkscreenFontSize?: number | undefined;
++        viaPadDiameter?: number | undefined;
++        viaHoleDiameter?: number | undefined;
++        silkscreenTextPosition?: "centered" | "outside" | "none" | {
++            offsetX: number;
++            offsetY: number;
++        } | undefined;
++        silkscreenTextVisibility?: "hidden" | "visible" | "inherit" | undefined;
++    } | undefined;
++    pcbSx?: PcbSx | undefined;
++    pcbRelative?: boolean | undefined;
++    relative?: boolean | undefined;
++    warningOnly?: boolean | undefined;
++    allowTraces?: boolean | undefined;
++    allowPlacements?: boolean | undefined;
++    excludeRefs?: string[] | undefined;
++}, {
++    shape: "outline";
++    strokeWidth: string | number;
++    outline: {
++        x: string | number;
++        y: string | number;
++    }[];
++    description?: string | undefined;
+     layer?: "top" | "bottom" | "inner1" | "inner2" | "inner3" | "inner4" | "inner5" | "inner6" | "inner7" | "inner8" | {
+         name: "top" | "bottom" | "inner1" | "inner2" | "inner3" | "inner4" | "inner5" | "inner6" | "inner7" | "inner8";
+     } | undefined;
+diff --git a/dist/index.js b/dist/index.js
+index 39715463f9f083ad669b7652c41c394334872a7f..95948dc80f0a960cc010ed4eae9090c01880208b 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -16957,10 +16957,10 @@ var fanoutTracePath = z50.object({
+   route: z50.array(routePoint).min(2).superRefine((route, ctx) => {
+     const first = route[0];
+     let layer = first?.route_type === "via" ? first.from_layer : first?.layer;
+-    for (const [index, point8] of route.entries()) {
+-      if (point8.route_type === "wire" && point8.width_interpolation_mode) {
++    for (const [index, point9] of route.entries()) {
++      if (point9.route_type === "wire" && point9.width_interpolation_mode) {
+         const next = route[index + 1];
+-        if (next?.route_type !== "wire" || next.layer !== point8.layer || next.x === point8.x && next.y === point8.y) {
++        if (next?.route_type !== "wire" || next.layer !== point9.layer || next.x === point9.x && next.y === point9.y) {
+           ctx.addIssue({
+             code: "custom",
+             path: [index, "width_interpolation_mode"],
+@@ -16968,13 +16968,13 @@ var fanoutTracePath = z50.object({
+           });
+         }
+       }
+-      if ((point8.route_type === "wire" ? point8.layer : point8.from_layer) !== layer) {
++      if ((point9.route_type === "wire" ? point9.layer : point9.from_layer) !== layer) {
+         ctx.addIssue({
+           code: "custom",
+           message: "A fanout trace path must use vias for layer changes"
+         });
+       }
+-      if (point8.route_type === "via") layer = point8.to_layer;
++      if (point9.route_type === "via") layer = point9.to_layer;
+     }
+   })
+ });
+@@ -18704,7 +18704,7 @@ var breakoutPointProps = pcbLayoutProps.omit({ pcbRotation: true, layer: true })
+ expectTypesMatch(true);
+ 
+ // lib/components/pcb-keepout.ts
+-import { distance as distance28, layer_ref as layer_ref10 } from "circuit-json";
++import { distance as distance28, layer_ref as layer_ref10, point as point5 } from "circuit-json";
+ import { z as z113 } from "zod";
+ var pcbKeepoutProps = z113.union([
+   pcbLayoutProps.omit({ pcbRotation: true }).extend({
+@@ -18717,6 +18717,7 @@ var pcbKeepoutProps = z113.union([
+     allowTraces: z113.boolean().optional(),
+     /** Allow components and their pads/plated holes without keepout diagnostics. False or omitted retains enforcement; copper pours remain excluded. */
+     allowPlacements: z113.boolean().optional(),
++    description: z113.string().optional(),
+     excludeRefs: z113.array(z113.string()).optional().describe(
+       'Component selectors excluded from the keepout, such as ".ANT1"'
+     )
+@@ -18732,6 +18733,23 @@ var pcbKeepoutProps = z113.union([
+     allowTraces: z113.boolean().optional(),
+     /** Allow components and their pads/plated holes without keepout diagnostics. False or omitted retains enforcement; copper pours remain excluded. */
+     allowPlacements: z113.boolean().optional(),
++    description: z113.string().optional(),
++    excludeRefs: z113.array(z113.string()).optional().describe(
++      'Component selectors excluded from the keepout, such as ".ANT1"'
++    )
++  }),
++  pcbLayoutProps.extend({
++    shape: z113.literal("outline"),
++    outline: z113.array(point5).min(2),
++    strokeWidth: distance28,
++    layers: z113.array(layer_ref10).optional(),
++    /** Report keepout violations as warnings when true. Omit for normal enforcement. */
++    warningOnly: z113.boolean().optional(),
++    /** Allow trace crossings without keepout diagnostics. False or omitted retains enforcement; copper pours remain excluded. */
++    allowTraces: z113.boolean().optional(),
++    /** Allow components and their pads/plated holes without keepout diagnostics. False or omitted retains enforcement; copper pours remain excluded. */
++    allowPlacements: z113.boolean().optional(),
++    description: z113.string().optional(),
+     excludeRefs: z113.array(z113.string()).optional().describe(
+       'Component selectors excluded from the keepout, such as ".ANT1"'
+     )
+@@ -18943,10 +18961,10 @@ var ammeterPins = ammeterPinLabels;
+ expectTypesMatch(true);
+ 
+ // lib/components/schematic-arc.ts
+-import { distance as distance32, point as point5, rotation as rotation8 } from "circuit-json";
++import { distance as distance32, point as point6, rotation as rotation8 } from "circuit-json";
+ import { z as z125 } from "zod";
+ var schematicArcProps = z125.object({
+-  center: point5,
++  center: point6,
+   radius: distance32,
+   startAngleDegrees: rotation8,
+   endAngleDegrees: rotation8,
+@@ -19027,10 +19045,10 @@ expectTypesMatch(
+ );
+ 
+ // lib/components/schematic-circle.ts
+-import { distance as distance34, point as point6 } from "circuit-json";
++import { distance as distance34, point as point7 } from "circuit-json";
+ import { z as z129 } from "zod";
+ var schematicCircleProps = z129.object({
+-  center: point6,
++  center: point7,
+   radius: distance34,
+   strokeWidth: distance34.optional(),
+   color: z129.string().optional(),
+@@ -19102,10 +19120,10 @@ var schematicTextProps = z133.object({
+ expectTypesMatch(true);
+ 
+ // lib/components/schematic-path.ts
+-import { distance as distance38, point as point7 } from "circuit-json";
++import { distance as distance38, point as point8 } from "circuit-json";
+ import { z as z134 } from "zod";
+ var schematicPathProps = z134.object({
+-  points: z134.array(point7).optional(),
++  points: z134.array(point8).optional(),
+   svgPath: z134.string().optional(),
+   strokeWidth: distance38.optional(),
+   strokeColor: z134.string().optional(),
+diff --git a/lib/components/pcb-keepout.ts b/lib/components/pcb-keepout.ts
+index 1d17daeca50a5990c8c7579f923132a35e134203..a88b1560f2081050cea44393427f34b27a64f7c1 100644
+--- a/lib/components/pcb-keepout.ts
++++ b/lib/components/pcb-keepout.ts
+@@ -1,4 +1,4 @@
+-import { distance, layer_ref } from "circuit-json"
++import { distance, layer_ref, point } from "circuit-json"
+ import { pcbLayoutProps } from "lib/common/layout"
+ import { z } from "zod"
+ 
+@@ -13,6 +13,7 @@ export const pcbKeepoutProps = z.union([
+     allowTraces: z.boolean().optional(),
+     /** Allow components and their pads/plated holes without keepout diagnostics. False or omitted retains enforcement; copper pours remain excluded. */
+     allowPlacements: z.boolean().optional(),
++    description: z.string().optional(),
+     excludeRefs: z
+       .array(z.string())
+       .optional()
+@@ -31,6 +32,26 @@ export const pcbKeepoutProps = z.union([
+     allowTraces: z.boolean().optional(),
+     /** Allow components and their pads/plated holes without keepout diagnostics. False or omitted retains enforcement; copper pours remain excluded. */
+     allowPlacements: z.boolean().optional(),
++    description: z.string().optional(),
++    excludeRefs: z
++      .array(z.string())
++      .optional()
++      .describe(
++        'Component selectors excluded from the keepout, such as ".ANT1"',
++      ),
++  }),
++  pcbLayoutProps.extend({
++    shape: z.literal("outline"),
++    outline: z.array(point).min(2),
++    strokeWidth: distance,
++    layers: z.array(layer_ref).optional(),
++    /** Report keepout violations as warnings when true. Omit for normal enforcement. */
++    warningOnly: z.boolean().optional(),
++    /** Allow trace crossings without keepout diagnostics. False or omitted retains enforcement; copper pours remain excluded. */
++    allowTraces: z.boolean().optional(),
++    /** Allow components and their pads/plated holes without keepout diagnostics. False or omitted retains enforcement; copper pours remain excluded. */
++    allowPlacements: z.boolean().optional(),
++    description: z.string().optional(),
+     excludeRefs: z
+       .array(z.string())
+       .optional()
