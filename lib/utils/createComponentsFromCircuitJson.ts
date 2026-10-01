@@ -634,6 +634,7 @@ export const createComponentsFromCircuitJson = (
         new SilkscreenRect({
           pcbX: elm.center.x,
           pcbY: elm.center.y,
+          pcbRotation: elm.ccw_rotation,
           width: elm.width,
           height: elm.height,
           layer: elm.layer,
