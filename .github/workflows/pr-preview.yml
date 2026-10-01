@@ -11,10 +11,6 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.3.14
-      # Verify the pending solver optimization in the SVG service before release.
-      # Keep the production dependency on jscdn; remove this override after #8 ships.
-      - run: |
-          bun -e 'const p = await Bun.file("package.json").json(); p.devDependencies["@tscircuit/bus-lanes-solver"] = "https://pkg.pr.new/tscircuit/bus-lanes-solver/@tscircuit/bus-lanes-solver@ea50c54"; await Bun.write("package.json", JSON.stringify(p, null, 2))'
-          bun install
+      - run: bun install
       - run: bun run build
       - run: bunx pkg-pr-new@0.0.37 publish --comment=off
