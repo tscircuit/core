@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import type { AutorouterProp } from "@tscircuit/props"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("single_layer_bus and single_layer_buses route identically to bus_lanes on boards and phases", async () => {
+test("single_layer_routing routes identically to bus_lanes on boards and phases", async () => {
   const renderBus = async (
     autorouter: AutorouterProp,
     scope: "board" | "phase",
@@ -64,7 +64,7 @@ test("single_layer_bus and single_layer_buses route identically to bus_lanes on 
           pcbX={0}
           pcbY={-3.4}
           fontSize={0.28}
-          text="single_layer_bus / single_layer_buses = bus_lanes"
+          text="single_layer_routing = bus_lanes"
         />
         <pcbnotetext
           pcbX={0}
@@ -90,7 +90,7 @@ test("single_layer_bus and single_layer_buses route identically to bus_lanes on 
 
   for (const scope of ["board", "phase"] as const) {
     const canonical = await renderBus("bus_lanes", scope)
-    for (const alias of ["single_layer_bus", "single_layer_buses"] as const) {
+    for (const alias of ["single_layer_routing"] as const) {
       for (const autorouter of [alias, { preset: alias }]) {
         const result = await renderBus(autorouter, scope)
         expect(result.routes).toEqual(canonical.routes)

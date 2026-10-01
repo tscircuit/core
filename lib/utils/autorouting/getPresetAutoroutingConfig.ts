@@ -119,8 +119,7 @@ export function getPresetAutoroutingConfig(
         groupMode: "subcircuit",
         preset: "single_layer_fanout",
       }
-    case "single-layer-bus":
-    case "single-layer-buses":
+    case "single-layer-routing":
     case "bus-lanes":
       return {
         ...providedConfig,

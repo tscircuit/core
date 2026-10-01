@@ -5,7 +5,7 @@ import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import { getPresetAutoroutingConfig } from "lib/utils/autorouting/getPresetAutoroutingConfig"
 import { getLocalAutoroutingStages } from "lib/utils/autorouting/local-autorouter-strategies"
 
-test("single-layer bus aliases resolve to the bus_lanes strategy without mutating config", () => {
+test("single_layer_routing resolves to the bus_lanes strategy without mutating config", () => {
   const simpleRouteJson: SimpleRouteJson = {
     layerCount: 2,
     minTraceWidth: 0.15,
@@ -14,7 +14,7 @@ test("single-layer bus aliases resolve to the bus_lanes strategy without mutatin
     bounds: { minX: -1, maxX: 1, minY: -1, maxY: 1 },
   }
 
-  for (const preset of ["single_layer_bus", "single_layer_buses"] as const) {
+  for (const preset of ["single_layer_routing"] as const) {
     const config = Object.freeze({
       preset,
       traceClearance: 0.2,
