@@ -21,7 +21,7 @@ const coilRoute = [
   { x: -3, y: -2 },
 ]
 
-test("printed coil obstacles omit copper width and end caps", async () => {
+test("printed coil obstacles cover copper width and end caps", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width={26} height={20} layers={2} autorouter="auto_local">
@@ -73,7 +73,7 @@ test("printed coil obstacles omit copper width and end caps", async () => {
       <trace from="J1.pin1" to="C1.pin1" />
       <trace from="J1.pin2" to="C1.pin2" />
       <fabricationnotetext
-        text="BUG: router obstacle does not cover the copper"
+        text="FIXED: router obstacle covers the full copper"
         pcbY={8}
         fontSize={0.55}
         color="#ffffff"
@@ -89,9 +89,10 @@ test("printed coil obstacles omit copper width and end caps", async () => {
       <fabricationnoterect
         pcbX={2}
         pcbY={5}
-        width={10}
-        height={0.1}
-        isFilled
+        width={10.5}
+        height={0.5}
+        strokeWidth={0.03}
+        hasStroke
         color="#00ff88"
       />
       <fabricationnotedimension
@@ -119,16 +120,16 @@ test("printed coil obstacles omit copper width and end caps", async () => {
         color="#ffffff"
       />
       <fabricationnotedimension
-        from={{ x: -3, y: 5 }}
-        to={{ x: 7, y: 5 }}
+        from={{ x: -3.25, y: 5.6 }}
+        to={{ x: 7.25, y: 5.6 }}
         offset={1}
-        text="10 mm obstacle (green)"
+        text="10.5 mm obstacle (green)"
         fontSize={0.4}
         arrowSize={0.25}
         color="#00ff88"
       />
       <fabricationnotetext
-        text="ACTUAL obstacle: 10 x 0.1 mm"
+        text="ACTUAL obstacle: 10.5 x 0.5 mm"
         pcbY={-7}
         fontSize={0.55}
         color="#00ff88"
@@ -140,7 +141,7 @@ test("printed coil obstacles omit copper width and end caps", async () => {
         color="#ffffff"
       />
       <fabricationnotetext
-        text="0.2 mm copper per side is invisible to the router!"
+        text="Full wire width and both round caps are protected"
         pcbY={-9}
         fontSize={0.45}
         color="#ffbb55"
@@ -154,13 +155,12 @@ test("printed coil obstacles omit copper width and end caps", async () => {
     .list()
     .find((trace) => trace.pcb_component_id === coil.pcb_component_id)!
   const obstacles = getObstaclesFromCircuitJson([coilTrace])
-  // Pin the defect shown by the fabrication notes to the actual output.
-  // Change these assertions and notes when full copper coverage is fixed.
+  // Verify the fabrication outline against the emitted obstacle geometry.
   expect(coilTrace.route[3]).toMatchObject({ width: 0.5 })
   expect(obstacles[3]).toMatchObject({
     center: { x: 2, y: 5 },
-    width: 10,
-    height: 0.1,
+    width: 10.5,
+    height: 0.5,
   })
   // Keep this a normal test: a render/snapshot failure must fail the repro.
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)

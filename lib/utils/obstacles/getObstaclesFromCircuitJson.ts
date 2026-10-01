@@ -540,6 +540,7 @@ export const getObstaclesFromCircuitJson = (
               x: rp.x,
               y: rp.y,
               layer: rp.route_type === "wire" ? rp.layer : rp.from_layer,
+              width: rp.route_type === "wire" ? rp.width : undefined,
             },
           ]
         }),
