@@ -61,6 +61,18 @@ export class FabricationNoteDimension extends PrimitiveComponent<
       props.text ??
       this._formatDistanceText({ from, to, units: props.units ?? "mm" })
 
+    // Endpoints are board-space points in mm (+X right, +Y up). An explicit
+    // direction is footprint-local and unitless: rotate/reflect it with the same
+    // PCB transform, but remove translation because it is not a position.
+    const dx = to.x - from.x
+    const dy = to.y - from.y
+    const distance = Math.hypot(dx, dy)
+    const offsetDirection = props.offsetDirection
+      ? applyToPoint({ ...transform, e: 0, f: 0 }, props.offsetDirection)
+      : props.offset !== undefined && distance > 0
+        ? { x: -dy / distance, y: dx / distance }
+        : undefined
+
     const fabrication_note_dimension = db.pcb_fabrication_note_dimension.insert(
       {
         pcb_component_id,
@@ -71,6 +83,8 @@ export class FabricationNoteDimension extends PrimitiveComponent<
         to,
         text,
         offset: props.offset,
+        offset_distance: props.offset,
+        offset_direction: offsetDirection,
         font: props.font ?? "tscircuit2024",
         font_size: props.fontSize ?? 1,
         color: props.color,

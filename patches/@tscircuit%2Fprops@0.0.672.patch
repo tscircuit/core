@@ -1,0 +1,69 @@
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -18624,6 +18624,7 @@
+   to: dimensionTarget,
+   text: z108.string().optional(),
+   offset: distance24.optional(),
++  offsetDirection: z108.object({ x: z108.number().finite(), y: z108.number().finite() }).optional(),
+   font: z108.enum(["tscircuit2024"]).optional(),
+   fontSize: length6.optional(),
+   color: z108.string().optional(),
+--- a/dist/index.d.ts
++++ b/dist/index.d.ts
+@@ -202807,7 +202807,17 @@
+     from: string | Point;
+     to: string | Point;
+     text?: string;
++    /** Offset distance in mm, or a unit-bearing string. Defaults to no offset. */
+     offset?: string | number;
++    /**
++     * Unitless direction in footprint-local coordinates (+X right, +Y up).
++     * Preserved as supplied; omitted uses the perpendicular to from -> to.
++     * The direction rotates/mirrors with the footprint, without translation.
++     */
++    offsetDirection?: {
++        x: number;
++        y: number;
++    };
+     font?: "tscircuit2024";
+     fontSize?: string | number;
+     color?: string;
+@@ -202905,6 +202915,16 @@
+     }>]>;
+     text: z.ZodOptional<z.ZodString>;
+     offset: z.ZodOptional<z.ZodEffects<z.ZodUnion<[z.ZodString, z.ZodNumber]>, number, string | number>>;
++    offsetDirection: z.ZodOptional<z.ZodObject<{
++        x: z.ZodNumber;
++        y: z.ZodNumber;
++    }, "strip", z.ZodTypeAny, {
++        x: number;
++        y: number;
++    }, {
++        x: number;
++        y: number;
++    }>>;
+     font: z.ZodOptional<z.ZodEnum<["tscircuit2024"]>>;
+     fontSize: z.ZodOptional<z.ZodEffects<z.ZodUnion<[z.ZodString, z.ZodNumber]>, number, string | number>>;
+     color: z.ZodOptional<z.ZodString>;
+@@ -202951,6 +202971,10 @@
+     centerToCenter?: true | undefined;
+     color?: string | undefined;
+     text?: string | undefined;
++    offsetDirection?: {
++        x: number;
++        y: number;
++    } | undefined;
+     arrowSize?: number | undefined;
+     units?: "in" | "mm" | undefined;
+     outerEdgeToEdge?: true | undefined;
+@@ -202995,6 +203019,10 @@
+     centerToCenter?: true | undefined;
+     color?: string | undefined;
+     text?: string | undefined;
++    offsetDirection?: {
++        x: number;
++        y: number;
++    } | undefined;
+     arrowSize?: string | number | undefined;
+     units?: "in" | "mm" | undefined;
+     outerEdgeToEdge?: true | undefined;
