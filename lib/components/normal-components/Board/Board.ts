@@ -123,13 +123,23 @@ export class Board
     }
   }
 
+  /** Create the fold in the right-handed board-local frame, in mm:
+   * +X right, +Y top, +Z above. Circuit-world outline points pick up the
+   * translation below; bend endpoints are already board-local points.
+   */
   doInitialPcbFlexRender(): void {
     if (!this.pcb_board_id) return
     const bends = this.root!.db.pcb_bend.list().filter(
       (bend) => bend.pcb_board_id === this.pcb_board_id,
     )
+    const pcbBoard = this.root!.db.pcb_board.get(this.pcb_board_id)!
     this.pcbFold = bends.length
-      ? createPcbFold(bends, this.boardThickness)
+      ? createPcbFold(bends, this.boardThickness, {
+          outline: pcbBoard.outline?.map((point) => ({
+            x: point.x - pcbBoard.center.x,
+            y: point.y - pcbBoard.center.y,
+          })),
+        })
       : undefined
   }
 
