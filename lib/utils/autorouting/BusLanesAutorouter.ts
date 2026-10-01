@@ -1,3 +1,7 @@
+import * as Cause from "effect/Cause"
+import * as Effect from "effect/Effect"
+import * as Exit from "effect/Exit"
+import { coreSync, originalCoreError } from "lib/effect/core-error"
 import {
   BusLanesPipelineSolver,
   type SimpleRouteJson as BusLanesInput,
@@ -15,7 +19,8 @@ import type { SimpleRouteJson, SimplifiedPcbTrace } from "./SimpleRouteJson"
 export class BusLanesAutorouter implements GenericLocalAutorouter {
   isRouting = false
   private solver: BusLanesPipelineSolver
-  private cancelScheduledTick?: () => void
+  private interruptRouting?: () => void
+  private routingGeneration = 0
   private listeners: Array<{
     event: AutorouterEvent["type"]
     callback: (event: AutorouterEvent) => void
@@ -45,6 +50,17 @@ export class BusLanesAutorouter implements GenericLocalAutorouter {
       callback: callback as (event: AutorouterEvent) => void,
     })
   }
+  removeListener(
+    event: AutorouterEvent["type"],
+    callback:
+      | ((event: AutorouterCompleteEvent) => void)
+      | ((event: AutorouterErrorEvent) => void)
+      | ((event: AutorouterProgressEvent) => void),
+  ): void {
+    this.listeners = this.listeners.filter(
+      (listener) => listener.event !== event || listener.callback !== callback,
+    )
+  }
   private emit(event: AutorouterEvent) {
     for (const listener of this.listeners)
       if (listener.event === event.type) listener.callback(event)
@@ -52,60 +68,71 @@ export class BusLanesAutorouter implements GenericLocalAutorouter {
   start() {
     if (this.isRouting) return
     this.isRouting = true
-    const tick = () => {
-      if (!this.isRouting) return
-      try {
-        for (
-          let i = 0;
-          i < 200 && !this.solver.solved && !this.solver.failed;
-          i++
-        )
-          this.solver.step()
-        if (this.solver.failed) {
-          this.isRouting = false
+    const generation = ++this.routingGeneration
+    const interrupt = Effect.runCallback(this.runRoutingEffect(), {
+      onExit: (exit) => {
+        if (generation !== this.routingGeneration) return
+        this.isRouting = false
+        this.interruptRouting = undefined
+        if (Exit.isFailure(exit) && !Cause.hasInterrupts(exit.cause)) {
+          const error = originalCoreError(exit.cause)
           this.emit({
             type: "error",
-            error: new Error(this.solver.error ?? "Bus lanes routing failed"),
+            error: error instanceof Error ? error : new Error(String(error)),
           })
-          return
         }
+      },
+    })
+    if (this.isRouting) this.interruptRouting = interrupt
+  }
+
+  private runRoutingEffect() {
+    return Effect.gen({ self: this }, function* () {
+      yield* Effect.sleep(0)
+      while (this.isRouting) {
+        yield* coreSync(() => {
+          for (
+            let iteration = 0;
+            iteration < 200 && !this.solver.solved && !this.solver.failed;
+            iteration++
+          )
+            this.solver.step()
+        }, "step_bus_lanes_router")
+        if (!this.isRouting) return
+        if (this.solver.failed)
+          return yield* Effect.fail(
+            new Error(this.solver.error ?? "Bus lanes routing failed"),
+          )
         if (this.solver.solved) {
-          this.isRouting = false
-          this.emit({ type: "complete", traces: this.solver.traces })
+          yield* coreSync(() => {
+            this.isRouting = false
+            this.emit({ type: "complete", traces: this.solver.traces })
+          }, "complete_bus_lanes_routing")
           return
         }
-        this.emit({
-          type: "progress",
-          steps: this.solver.iterations,
-          progress: this.solver.progress,
-          phase: this.solver.phase,
-          debugGraphics: this.solver.visualize(),
-        })
-        this.scheduleTick(tick)
-      } catch (error) {
-        this.isRouting = false
-        this.emit({
-          type: "error",
-          error: error instanceof Error ? error : new Error(String(error)),
-        })
+        yield* coreSync(
+          () =>
+            this.emit({
+              type: "progress",
+              steps: this.solver.iterations,
+              progress: this.solver.progress,
+              phase: this.solver.phase,
+              debugGraphics: this.solver.visualize(),
+            }),
+          "bus_lanes_routing_progress",
+        )
+        if (!this.isRouting) return
+        yield* Effect.sleep(0)
       }
-    }
-    this.scheduleTick(tick)
+    })
   }
-  private scheduleTick(tick: () => void) {
-    // Node/Bun can yield to I/O without imposing the timer's minimum delay.
-    // Browsers retain their normal task scheduling and cancellation behavior.
-    if (typeof globalThis.setImmediate === "function") {
-      const timer = globalThis.setImmediate(tick)
-      this.cancelScheduledTick = () => globalThis.clearImmediate(timer)
-    } else {
-      const timer = setTimeout(tick, 0)
-      this.cancelScheduledTick = () => clearTimeout(timer)
-    }
-  }
+
   stop() {
     this.isRouting = false
-    this.cancelScheduledTick?.()
+    this.routingGeneration++
+    const interrupt = this.interruptRouting
+    this.interruptRouting = undefined
+    interrupt?.()
   }
   solveSync(): SimplifiedPcbTrace[] {
     this.solver.solve()

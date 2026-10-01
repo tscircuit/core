@@ -1,5 +1,11 @@
-import { dedupePcbDrcErrors, runAllRoutingChecks } from "@tscircuit/checks"
+import { dedupePcbDrcErrors } from "@tscircuit/checks"
 import type { AnyCircuitElement } from "circuit-json"
+import * as Effect from "effect/Effect"
+import { corePromise, coreSync } from "lib/effect/core-error"
+import {
+  DesignRuleChecks,
+  defaultDesignRuleChecks,
+} from "lib/effect/design-rule-checks"
 import type { Group } from "./Group"
 
 export const Group_doInitialStandaloneSubcircuitPcbDesignRuleChecks = (
@@ -44,18 +50,32 @@ export const Group_doInitialStandaloneSubcircuitPcbDesignRuleChecks = (
     .toArray()
 
   group._standaloneSubcircuitDrcChecksInProgress = true
-  group._queueAsyncEffect(
+  group._queueEffect(
     "standalone-subcircuit:routing-drc-checks",
-    async () => {
-      try {
-        const results = (await runAllRoutingChecks(
-          subcircuitCircuitJson,
+    (job) =>
+      Effect.gen(function* () {
+        const { runAllRoutingChecks } = yield* DesignRuleChecks
+        const results = (yield* corePromise(
+          () => runAllRoutingChecks(subcircuitCircuitJson),
+          "drc:standalone-routing",
         )) as AnyCircuitElement[]
-        db.insertAll(dedupePcbDrcErrors(results))
-        group._standaloneSubcircuitDrcChecksComplete = true
-      } finally {
-        group._standaloneSubcircuitDrcChecksInProgress = false
-      }
-    },
+        yield* coreSync(
+          () =>
+            job.commit(() => {
+              db.insertAll(dedupePcbDrcErrors(results))
+              group._standaloneSubcircuitDrcChecksComplete = true
+            }),
+          "drc:commit-standalone-routing",
+        )
+      }).pipe(
+        Effect.provideService(DesignRuleChecks, defaultDesignRuleChecks),
+        Effect.ensuring(
+          Effect.sync(() => {
+            group._standaloneSubcircuitDrcChecksInProgress = false
+          }),
+        ),
+      ),
+    // Preserve the baseline's captured routing-check snapshot across updates.
+    { propsChange: "finish" },
   )
 }

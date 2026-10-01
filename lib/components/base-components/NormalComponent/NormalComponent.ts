@@ -1,3 +1,17 @@
+import * as Effect from "effect/Effect"
+import {
+  atomicCoreEffect,
+  corePromise,
+  coreSync,
+  runCorePromise,
+  runCoreSync,
+  type CoreError,
+} from "lib/effect/core-error"
+import type { CoreJobContext } from "lib/effect/core-services"
+import { validateComponentPinLabelKeysEffect } from "lib/effect/component-model-props"
+import { usesDefaultSyncMethod } from "lib/effect/override-dispatch"
+import { catchJobFailure } from "lib/effect/job-failure"
+import { NormalComponent_getSupplierPartNumbersEffect } from "./NormalComponent_getSupplierPartNumbersEffect"
 import { getBoardFoldContext } from "lib/utils/cad/get-board-fold-context"
 import { transformCadComponentPlacement } from "@tscircuit/flex-utils"
 import { fp } from "@tscircuit/footprinter"
@@ -12,6 +26,7 @@ import type {
   CadModelStl,
   CadModelWrl,
   FootprintInsertionDirection,
+  PartsEngine,
   SchematicPortArrangement,
   SpiceModelElement,
   SupplierPartNumbers,
@@ -31,7 +46,7 @@ import Debug from "debug"
 import { Trace } from "lib/components/primitive-components/Trace/Trace"
 import {
   type ReactSubtree,
-  createInstanceFromReactElement,
+  createInstanceFromReactElementEffect,
 } from "lib/fiber/create-instance-from-react-element"
 import { underscorifyPinStyles } from "lib/soup/underscorifyPinStyles"
 import { underscorifyPortArrangement } from "lib/soup/underscorifyPortArrangement"
@@ -70,7 +85,6 @@ import {
 import { type SchSymbol, symbols } from "schematic-symbols"
 import { decomposeTSR } from "transformation-matrix"
 import { ZodType, z } from "zod"
-import { InvalidProps } from "../../../errors/InvalidProps"
 import { CadAssembly } from "../../primitive-components/CadAssembly"
 import { CadModel } from "../../primitive-components/CadModel"
 import { Footprint } from "../../primitive-components/Footprint"
@@ -116,6 +130,11 @@ export type PortMap<T extends string> = {
   [K in T]: Port
 }
 
+type SupplierLookupPlan =
+  | { kind: "plain"; value: SupplierPartNumbers }
+  | { kind: "legacy_promise"; promise: Promise<SupplierPartNumbers> }
+  | { kind: "native" }
+
 /**
  * A NormalComponent is the base class for most components that a user will
  * interact with. It has the ability to set a footprint and discover ports.
@@ -158,6 +177,7 @@ export class NormalComponent<
   }
 
   _asyncSupplierPartNumbers?: SupplierPartNumbers
+  private _pendingSupplierLookup?: object
   _asyncFootprintCadModel?: CadModelProp
   _isCadModelChild?: boolean
   _inferredInternallyConnectedPinNames: string[][] = []
@@ -211,27 +231,27 @@ export class NormalComponent<
 
     super(filteredProps)
 
-    if (filteredProps.pinLabels && !Array.isArray(filteredProps.pinLabels)) {
-      const invalidPinKey = Object.keys(filteredProps.pinLabels).find(
-        (pinKey) => getPinNumberFromPinLabelsKey(pinKey) === null,
-      )
-
-      if (invalidPinKey) {
-        throw new InvalidProps(this.lowercaseComponentName, this.props, {
-          _errors: [],
-          pinLabels: {
-            _errors: [
-              `Invalid pinLabels key "${invalidPinKey}". Expected "pin\${number}" (e.g. pin1, pin2).`,
-            ],
-          },
-        } as any)
-      }
-    }
-
-    this._invalidPinLabelMessages = invalidPinLabelsMessages
-    this._addChildrenFromStringFootprint()
-    this._addChildrenFromCircuitJsonSymbol()
-    this.initPorts()
+    runCoreSync(
+      atomicCoreEffect(
+        Effect.gen({ self: this }, function* () {
+          yield* validateComponentPinLabelKeysEffect({
+            pinLabels: filteredProps.pinLabels,
+            componentName: this.lowercaseComponentName,
+            originalProps: this.props,
+          })
+          this._invalidPinLabelMessages = invalidPinLabelsMessages
+          yield* coreSync(
+            () => this._addChildrenFromStringFootprint(),
+            "initialize_footprint_children",
+          )
+          yield* coreSync(
+            () => this._addChildrenFromCircuitJsonSymbol(),
+            "initialize_symbol_children",
+          )
+          yield* coreSync(() => this.initPorts(), "initialize_normal_ports")
+        }),
+      ),
+    )
   }
 
   doInitialSourceNameDuplicateComponentRemoval(): void {
@@ -1204,11 +1224,13 @@ export class NormalComponent<
   }
 
   _renderReactSubtree(element: ReactElement): ReactSubtree {
-    const component = createInstanceFromReactElement(element)
-    return {
-      element,
-      component,
-    }
+    return runCoreSync(this._renderReactSubtreeEffect(element))
+  }
+
+  _renderReactSubtreeEffect(element: ReactElement) {
+    return createInstanceFromReactElementEffect(element).pipe(
+      Effect.map((component) => ({ element, component })),
+    )
   }
 
   doInitialInitializePortsFromChildren(): void {
@@ -1444,9 +1466,11 @@ export class NormalComponent<
   }
 
   doInitialPcbFootprintStringRender(): void {
-    NormalComponent_doInitialPcbFootprintStringRender(this, (name, effect) =>
-      this._queueAsyncEffect(name, effect),
-    )
+    NormalComponent_doInitialPcbFootprintStringRender(this)
+  }
+
+  updatePcbFootprintStringRender(): void {
+    NormalComponent_doInitialPcbFootprintStringRender(this, "update")
   }
 
   /**
@@ -1498,26 +1522,46 @@ export class NormalComponent<
   }
 
   add(componentOrElm: PrimitiveComponent | ReactElement) {
-    let component: PrimitiveComponent
-    if (isReactElement(componentOrElm)) {
-      const subtree = this._renderReactSubtree(componentOrElm)
-      this.reactSubtrees.push(subtree)
-      component = subtree.component
-    } else {
-      component = componentOrElm as PrimitiveComponent
-    }
+    return runCoreSync(this.addEffect(componentOrElm))
+  }
 
-    if (component.componentName === "Port") {
-      if (this._hasExistingPortExactly(component as Port)) return
-      if (this._hasMatchingPort(component as Port)) {
-        debug(
-          `Skipping port ${component} because a matching port already exists`,
-        )
-        return
-      }
-    }
-
-    super.add(component)
+  addEffect(
+    componentOrElm: PrimitiveComponent | ReactElement,
+  ): Effect.Effect<void, CoreError> {
+    const addPrimitive = (child: PrimitiveComponent) => super.addEffect(child)
+    return atomicCoreEffect(
+      Effect.gen({ self: this }, function* () {
+        let component: PrimitiveComponent
+        if (isReactElement(componentOrElm)) {
+          const subtree = yield* usesDefaultSyncMethod(
+            this,
+            "_renderReactSubtree",
+            NormalComponent.prototype._renderReactSubtree,
+          )
+            ? this._renderReactSubtreeEffect(componentOrElm)
+            : coreSync(
+                () => this._renderReactSubtree(componentOrElm),
+                "external_react_subtree_adapter",
+              )
+          this.reactSubtrees.push(subtree)
+          component = subtree.component
+        } else {
+          component = componentOrElm
+        }
+        const skip = yield* coreSync(() => {
+          if (component.componentName !== "Port") return false
+          if (this._hasExistingPortExactly(component as Port)) return true
+          if (this._hasMatchingPort(component as Port)) {
+            debug(
+              `Skipping port ${component} because a matching port already exists`,
+            )
+            return true
+          }
+          return false
+        }, "deduplicate_normal_port")
+        if (!skip) yield* addPrimitive(component)
+      }),
+    )
   }
 
   getPortsFromFootprint(opts?: {
@@ -2146,71 +2190,93 @@ export class NormalComponent<
     })
   }
 
-  protected async _getSupplierPartNumbers(
-    partsEngine: any,
-    source_component: any,
-    footprinterString: string | undefined,
-  ) {
-    if (this.props.doNotPlace) return {}
-    const cacheEngine = this.root?.platform?.localCacheEngine
-    const cacheKey = this._getPartsEngineCacheKey(
-      source_component,
-      footprinterString,
-    )
-    if (cacheEngine) {
-      const cached = await cacheEngine.getItem(cacheKey)
-      if (cached) {
-        try {
-          return JSON.parse(cached)
-        } catch {}
-      }
+  protected _getSupplierPartNumbersEffect(query: {
+    partsEngine: any
+    sourceComponent: any
+    footprinterString?: string
+    job?: CoreJobContext
+  }): Effect.Effect<SupplierPartNumbers, CoreError> {
+    if (
+      !usesDefaultSyncMethod(
+        this,
+        "_getSupplierPartNumbers",
+        NormalComponent.prototype._getSupplierPartNumbers,
+      )
+    ) {
+      // External subclass callbacks retain their synchronous/Promise facade.
+      return corePromise(
+        () =>
+          Promise.resolve(
+            this._getSupplierPartNumbers(
+              query.partsEngine,
+              query.sourceComponent,
+              query.footprinterString,
+            ),
+          ),
+        "external_supplier_parts_adapter",
+      )
     }
-    const result = await Promise.resolve(
-      partsEngine.findPart({
-        sourceComponent: source_component,
+    return NormalComponent_getSupplierPartNumbersEffect(this, {
+      ...query,
+      cacheKey: this._getPartsEngineCacheKey(
+        query.sourceComponent,
+        query.footprinterString,
+      ),
+    })
+  }
+
+  /**
+   * Legacy `super` calls enter the shared native implementation directly.
+   * Calling this._getSupplierPartNumbersEffect here would dispatch back into a
+   * legacy override and recurse. Native overrides retain their virtual entry
+   * before that adapter, as pinned by revision/override-loading-matrix.
+   */
+  protected _getSupplierPartNumbers(
+    partsEngine: any,
+    sourceComponent: any,
+    footprinterString: string | undefined,
+  ): Promise<SupplierPartNumbers> {
+    return runCorePromise(
+      NormalComponent_getSupplierPartNumbersEffect(this, {
+        partsEngine,
+        sourceComponent,
         footprinterString,
+        cacheKey: this._getPartsEngineCacheKey(
+          sourceComponent,
+          footprinterString,
+        ),
       }),
     )
+  }
 
-    // Validate the result format
-    if (typeof result === "string") {
-      // Check if it's an HTML error page or "Not found"
-      if (result.includes("<!DOCTYPE") || result.includes("<html")) {
-        throw new Error(
-          `Failed to fetch supplier part numbers: Received HTML response instead of JSON. Response starts with: ${result.substring(0, 100)}`,
-        )
-      }
-      if (result === "Not found") {
-        throw new Error(
-          `Part not found for ${this.getString()}${footprinterString ? ` with footprint "${footprinterString}"` : ""}`,
-        )
-      }
-      throw new Error(
-        `Invalid supplier part numbers format: Expected object but got string: "${result}"`,
-      )
-    }
+  private _planSupplierLookup(
+    partsEngine: PartsEngine,
+    sourceComponent: Parameters<PartsEngine["findPart"]>[0]["sourceComponent"],
+    footprinterString: string | undefined,
+  ): SupplierLookupPlan {
+    if (
+      this._getSupplierPartNumbersEffect !==
+      NormalComponent.prototype._getSupplierPartNumbersEffect
+    )
+      return { kind: "native" }
 
-    // Validate that result is an object (not array, null, etc.)
-    if (!result || Array.isArray(result) || typeof result !== "object") {
-      const actualType =
-        result === null
-          ? "null"
-          : Array.isArray(result)
-            ? "array"
-            : typeof result
-      throw new Error(
-        `Invalid supplier part numbers format: Expected object but got ${actualType}`,
-      )
-    }
+    const legacySupplierMethod = this._getSupplierPartNumbers
+    if (
+      legacySupplierMethod === NormalComponent.prototype._getSupplierPartNumbers
+    )
+      return { kind: "native" }
 
-    const supplierPartNumbers = result
-
-    if (cacheEngine) {
-      try {
-        await cacheEngine.setItem(cacheKey, JSON.stringify(supplierPartNumbers))
-      } catch {}
-    }
-    return supplierPartNumbers
+    // Changed legacy hooks run before queue registration. The exact historical
+    // Promise test retains synchronous JavaScript plain-result extensions.
+    const result = legacySupplierMethod.call(
+      this,
+      partsEngine,
+      sourceComponent,
+      footprinterString,
+    )
+    return result instanceof Promise
+      ? { kind: "legacy_promise", promise: result }
+      : { kind: "plain", value: result }
   }
 
   doInitialPartsEngineRender(): void {
@@ -2224,44 +2290,102 @@ export class NormalComponent<
     const source_component = db.source_component.get(this.source_component_id!)
     if (!source_component) return
     if (source_component.supplier_part_numbers) return
+    if (this._pendingSupplierLookup) return
 
-    const footprint = this.props.footprint ?? this._getImpliedFootprintString()
-    const footprinterString =
-      typeof footprint === "string" ? footprint : undefined
-    const supplierPartNumbersMaybePromise = this._getSupplierPartNumbers(
-      partsEngine,
-      source_component,
-      footprinterString,
-    )
-
-    if (!(supplierPartNumbersMaybePromise instanceof Promise)) {
-      db.source_component.update(this.source_component_id!, {
-        supplier_part_numbers: supplierPartNumbersMaybePromise,
-      })
-      return
+    const lookup = {}
+    this._pendingSupplierLookup = lookup
+    const releaseLookup = () => {
+      if (this._pendingSupplierLookup === lookup)
+        this._pendingSupplierLookup = undefined
     }
+    try {
+      const footprint =
+        this.props.footprint ?? this._getImpliedFootprintString()
+      const footprinterString =
+        typeof footprint === "string" ? footprint : undefined
+      const plan = this._planSupplierLookup(
+        partsEngine,
+        source_component,
+        footprinterString,
+      )
+      if (plan.kind === "plain") {
+        db.source_component.update(this.source_component_id!, {
+          supplier_part_numbers: plan.value,
+        })
+        releaseLookup()
+        return
+      }
 
-    this._queueAsyncEffect("get-supplier-part-numbers", async () => {
-      await supplierPartNumbersMaybePromise
-        .then((supplierPartNumbers) => {
-          this._asyncSupplierPartNumbers = supplierPartNumbers
-          this._markDirty("PartsEngineRender")
-        })
-        .catch((error: Error) => {
-          this._asyncSupplierPartNumbers = {}
-          const warning = source_part_not_found_warning.parse({
-            type: "source_part_not_found_warning",
-            message: `Failed to fetch supplier part numbers for ${this.getString()}: ${error.message}`,
-            source_component_id: this.source_component_id ?? undefined,
-            subcircuit_id: this.getSubcircuit()?.subcircuit_id ?? undefined,
-            manufacturer_part_number:
-              source_component.manufacturer_part_number ?? undefined,
-            part_name: source_component.name ?? undefined,
-          })
-          db.source_part_not_found_warning.insert(warning)
-          this._markDirty("PartsEngineRender")
-        })
-    })
+      this._queueEffect(
+        "get-supplier-part-numbers",
+        (job) =>
+          Effect.suspend(() =>
+            catchJobFailure(
+              (plan.kind === "legacy_promise"
+                ? corePromise(
+                    () => plan.promise,
+                    "external_supplier_parts_adapter",
+                  )
+                : this._getSupplierPartNumbersEffect({
+                    partsEngine,
+                    sourceComponent: source_component,
+                    footprinterString,
+                    job,
+                  })
+              ).pipe(
+                Effect.flatMap((supplierPartNumbers) =>
+                  coreSync(
+                    () =>
+                      job.commit(() => {
+                        this._asyncSupplierPartNumbers = supplierPartNumbers
+                        this._markDirty("PartsEngineRender")
+                      }),
+                    "commit_supplier_parts",
+                  ),
+                ),
+              ),
+              (error) =>
+                coreSync(
+                  () =>
+                    job.commit(() => {
+                      this._asyncSupplierPartNumbers = {}
+                      const warning = source_part_not_found_warning.parse({
+                        type: "source_part_not_found_warning",
+                        message: `Failed to fetch supplier part numbers for ${this.getString()}: ${error instanceof Error ? error.message : String(error)}`,
+                        source_component_id:
+                          this.source_component_id ?? undefined,
+                        subcircuit_id:
+                          this.getSubcircuit()?.subcircuit_id ?? undefined,
+                        manufacturer_part_number:
+                          source_component.manufacturer_part_number ??
+                          undefined,
+                        part_name: source_component.name ?? undefined,
+                      })
+                      db.source_part_not_found_warning.insert(warning)
+                      this._markDirty("PartsEngineRender")
+                    }),
+                  "commit_supplier_part_warning",
+                ),
+            ),
+          ).pipe(Effect.asVoid, Effect.ensuring(Effect.sync(releaseLookup))),
+        {
+          propsChange: "cancel",
+          onCancel: (reason) => {
+            // Release before rearming: canceled records can remain pending
+            // while a valid immediate props update starts a new generation.
+            releaseLookup()
+            this._asyncSupplierPartNumbers = undefined
+            if (reason !== "disposed" && reason !== "removed")
+              this._markDirty("PartsEngineRender")
+          },
+        },
+      )
+    } catch (error) {
+      // Legacy sync throws and registration failures keep their original
+      // scope and identity, while allowing a later valid retry.
+      releaseLookup()
+      throw error
+    }
   }
 
   updatePartsEngineRender(): void {
@@ -2280,6 +2404,7 @@ export class NormalComponent<
       })
       return
     }
+    this.doInitialPartsEngineRender()
   }
 
   doInitialPartOrientationAnalysis(): void {
@@ -2287,6 +2412,10 @@ export class NormalComponent<
   }
 
   updatePartOrientationAnalysis(): void {
+    if (!this._hasStartedPartOrientationAnalysis) {
+      this.doInitialPartOrientationAnalysis()
+      return
+    }
     NormalComponent_updatePartOrientationAnalysis(this)
   }
 

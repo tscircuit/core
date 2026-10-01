@@ -1,3 +1,6 @@
+import * as Effect from "effect/Effect"
+import { corePromise, coreSync } from "lib/effect/core-error"
+import { catchJobFailure } from "lib/effect/job-failure"
 import { getBoundsOfPcbElements } from "@tscircuit/circuit-json-util"
 import {
   type PartsEngine,
@@ -131,60 +134,97 @@ export function NormalComponent_doInitialSupplierFootprintMismatchWarning(
 
   component._hasStartedSupplierFootprintMismatchWarningCheck = true
 
-  component._queueAsyncEffect("check-supplier-footprint-mismatch", async () => {
-    const { db } = component.root!
-    const fetchPartCircuitJson = partsEngine.fetchPartCircuitJson!
-
-    for (const supplierPartCandidate of supplierPartCandidates) {
-      const { supplierName, supplierPartNumber } = supplierPartCandidate
-      try {
-        const supplierCircuitJson =
-          (await Promise.resolve(
-            fetchPartCircuitJson({ supplierPartNumber }),
-          )) ?? null
-        if (!supplierCircuitJson?.length) continue
-
-        const supplierBounds = getCopperBounds(supplierCircuitJson)
-        if (!supplierBounds) continue
-
-        const footprintCopperIou = getBestBoundsIou(localBounds, supplierBounds)
-        if (footprintCopperIou >= SUPPLIER_FOOTPRINT_IOU_WARNING_THRESHOLD) {
-          return
+  component._queueEffect(
+    "check-supplier-footprint-mismatch",
+    (job) =>
+      Effect.gen(function* () {
+        const fetchPartCircuitJson = partsEngine.fetchPartCircuitJson!
+        for (const {
+          supplierName,
+          supplierPartNumber,
+        } of supplierPartCandidates) {
+          const finished = yield* catchJobFailure(
+            Effect.gen(function* () {
+              const supplierCircuitJson = yield* corePromise(
+                () =>
+                  Promise.resolve(
+                    // External PartsEngine callback cannot be forcibly aborted.
+                    fetchPartCircuitJson({ supplierPartNumber }),
+                  ),
+                "fetch_supplier_footprint",
+              )
+              if (!supplierCircuitJson?.length) return false
+              const supplierBounds = yield* coreSync(
+                () => getCopperBounds(supplierCircuitJson),
+                "supplier_footprint_bounds",
+              )
+              if (!supplierBounds) return false
+              const footprintCopperIou = getBestBoundsIou(
+                localBounds,
+                supplierBounds,
+              )
+              if (
+                footprintCopperIou >= SUPPLIER_FOOTPRINT_IOU_WARNING_THRESHOLD
+              )
+                return true
+              yield* coreSync(
+                () =>
+                  job.commit(() => {
+                    const footprintLabel =
+                      typeof component.props.footprint === "string"
+                        ? `"${component.props.footprint}"`
+                        : "the provided footprint"
+                    const roundedIou = Number(footprintCopperIou.toFixed(4))
+                    db.supplier_footprint_mismatch_warning.insert(
+                      supplier_footprint_mismatch_warning.parse({
+                        type: "supplier_footprint_mismatch_warning",
+                        message: `${component.getString()} footprint ${footprintLabel} does not match supplier footprint ${supplierName}:${supplierPartNumber} (copper IoU ${roundedIou}).`,
+                        source_component_id: component.source_component_id!,
+                        pcb_component_id: component.pcb_component_id,
+                        pcb_group_id:
+                          component.getGroup()?.pcb_group_id ?? undefined,
+                        subcircuit_id:
+                          component.getSubcircuit()?.subcircuit_id ?? undefined,
+                        supplier_name: supplierName,
+                        supplier_part_number: supplierPartNumber,
+                        footprint_copper_intersection_over_union: roundedIou,
+                      }),
+                    )
+                  }),
+                "commit_supplier_mismatch_warning",
+              )
+              return true
+            }),
+            (error) =>
+              coreSync(
+                () =>
+                  job.commit(() => {
+                    db.source_part_not_found_warning.insert(
+                      source_part_not_found_warning.parse({
+                        type: "source_part_not_found_warning",
+                        message: `Failed to fetch supplier footprint for ${component.getString()} (${supplierName}:${supplierPartNumber}): ${error instanceof Error ? error.message : String(error)}`,
+                        source_component_id:
+                          component.source_component_id ?? undefined,
+                        subcircuit_id:
+                          component.getSubcircuit()?.subcircuit_id ?? undefined,
+                        supplier_name: supplierName,
+                        supplier_part_number: supplierPartNumber,
+                      }),
+                    )
+                  }),
+                "commit_supplier_fetch_warning",
+              ).pipe(Effect.as(true)),
+          )
+          if (finished) return
         }
-
-        const footprintLabel =
-          typeof component.props.footprint === "string"
-            ? `"${component.props.footprint}"`
-            : "the provided footprint"
-        const roundedIou = Number(footprintCopperIou.toFixed(4))
-        const warning = supplier_footprint_mismatch_warning.parse({
-          type: "supplier_footprint_mismatch_warning",
-          message: `${component.getString()} footprint ${footprintLabel} does not match supplier footprint ${supplierName}:${supplierPartNumber} (copper IoU ${roundedIou}).`,
-          source_component_id: component.source_component_id!,
-          pcb_component_id: component.pcb_component_id,
-          pcb_group_id: component.getGroup()?.pcb_group_id ?? undefined,
-          subcircuit_id: component.getSubcircuit()?.subcircuit_id ?? undefined,
-          supplier_name: supplierName,
-          supplier_part_number: supplierPartNumber,
-          footprint_copper_intersection_over_union: roundedIou,
-        })
-
-        db.supplier_footprint_mismatch_warning.insert(warning)
-        return
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : String(error)
-        const warning = source_part_not_found_warning.parse({
-          type: "source_part_not_found_warning",
-          message: `Failed to fetch supplier footprint for ${component.getString()} (${supplierName}:${supplierPartNumber}): ${errorMessage}`,
-          source_component_id: component.source_component_id ?? undefined,
-          subcircuit_id: component.getSubcircuit()?.subcircuit_id ?? undefined,
-          supplier_name: supplierName,
-          supplier_part_number: supplierPartNumber,
-        })
-        db.source_part_not_found_warning.insert(warning)
-        return
-      }
-    }
-  })
+      }),
+    {
+      propsChange: "cancel",
+      onCancel: (reason) => {
+        component._hasStartedSupplierFootprintMismatchWarningCheck = false
+        if (reason !== "disposed" && reason !== "removed")
+          component._markDirty("SupplierFootprintMismatchWarning")
+      },
+    },
+  )
 }

@@ -1,3 +1,7 @@
+import * as Effect from "effect/Effect"
+import { corePromise, coreSync, runCorePromise } from "lib/effect/core-error"
+import type { CoreJobContext } from "lib/effect/core-services"
+import { readLocalCacheEffect } from "lib/local-cache-engine"
 import type { LocalCacheEngine } from "lib/local-cache-engine"
 import type { AutorouterOptions } from "lib/utils/autorouting/CapacityMeshAutorouter"
 import type {
@@ -49,40 +53,63 @@ export const getLocalAutoroutingCacheKey = (
 ): string =>
   `routes:core@${pkgJson.version}:solver:${getJsonHash(solverOptions)}:srj:${getJsonHash(simpleRouteJson)}`
 
-export const getCachedLocalAutoroutingPhaseResult = async ({
-  cacheEngine,
-  cacheKey,
-}: {
+interface ReadAutoroutingCacheRequest {
   cacheEngine: LocalCacheEngine | undefined
   cacheKey: string
-}): Promise<CachedAutoroutingPhaseResult | null> => {
-  if (!cacheEngine) return null
-
-  try {
-    const cachedResult = await cacheEngine.getItem(cacheKey)
-    if (!cachedResult) return null
-
-    const parsedResult = JSON.parse(cachedResult)
-    if (!parsedResult || !Array.isArray(parsedResult.traces)) return null
-
-    return parsedResult as CachedAutoroutingPhaseResult
-  } catch {
-    return null
-  }
 }
 
-export const cacheLocalAutoroutingPhaseResult = async ({
-  cacheEngine,
-  cacheKey,
-  result,
-}: {
-  cacheEngine: LocalCacheEngine | undefined
-  cacheKey: string
+interface WriteAutoroutingCacheRequest extends ReadAutoroutingCacheRequest {
   result: CachedAutoroutingPhaseResult
-}): Promise<void> => {
-  if (!cacheEngine) return
-
-  try {
-    await cacheEngine.setItem(cacheKey, JSON.stringify(result))
-  } catch {}
+  job?: CoreJobContext
 }
+
+export const getCachedLocalAutoroutingPhaseResultEffect = (
+  request: ReadAutoroutingCacheRequest,
+) =>
+  Effect.gen(function* () {
+    const cachedResult = yield* readLocalCacheEffect(request)
+    if (!cachedResult) return null
+    return yield* coreSync(() => {
+      const parsedResult = JSON.parse(cachedResult)
+      if (!parsedResult || !Array.isArray(parsedResult.traces)) return null
+      return parsedResult as CachedAutoroutingPhaseResult
+    }, "parse_local_autorouting_cache")
+  }).pipe(
+    // Typed cache/read/parse failures are optional-cache misses, as in the
+    // baseline try/catch. This is not a recorder; defects/interruptions propagate.
+    Effect.catch(() => Effect.succeed(null)),
+  )
+
+/** Existing Promise exports remain supported at the external boundary. */
+export const getCachedLocalAutoroutingPhaseResult = (
+  request: ReadAutoroutingCacheRequest,
+): Promise<CachedAutoroutingPhaseResult | null> =>
+  runCorePromise(getCachedLocalAutoroutingPhaseResultEffect(request))
+
+export const cacheLocalAutoroutingPhaseResultEffect = (
+  request: WriteAutoroutingCacheRequest,
+) =>
+  Effect.gen(function* () {
+    if (!request.cacheEngine || (request.job && !request.job.isCurrent()))
+      return
+    const serializedResult = yield* coreSync(
+      () => JSON.stringify(request.result),
+      "serialize_local_autorouting_cache",
+    )
+    yield* corePromise(() => {
+      const writeCache = () =>
+        request.cacheEngine!.setItem(request.cacheKey, serializedResult)
+      return Promise.resolve(
+        request.job ? request.job.commit(writeCache) : writeCache(),
+      )
+    }, "write_local_autorouting_cache")
+  }).pipe(
+    // Preserve baseline best-effort writes by ignoring typed boundary failures.
+    // This is not a recorder; defects/interruptions still propagate.
+    Effect.catch(() => Effect.void),
+  )
+
+export const cacheLocalAutoroutingPhaseResult = (
+  request: WriteAutoroutingCacheRequest,
+): Promise<void> =>
+  runCorePromise(cacheLocalAutoroutingPhaseResultEffect(request))

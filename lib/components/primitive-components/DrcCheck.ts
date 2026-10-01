@@ -18,6 +18,8 @@ import type {
   SourceSimpleResistor,
 } from "circuit-json"
 import { any_circuit_element } from "circuit-json"
+import * as Effect from "effect/Effect"
+import { corePromise, coreSync, runCorePromise } from "lib/effect/core-error"
 import type { z } from "zod"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { Net } from "./Net"
@@ -130,24 +132,38 @@ export class DrcCheck extends PrimitiveComponent<typeof drcCheckProps> {
     super(props)
   }
 
-  async runCustomDrcCheck(
+  runCustomDrcCheck(
     circuitJson: AnyCircuitElement[],
   ): Promise<AnyCircuitElement[]> {
-    const result = await this._parsedProps.checkFn(
-      this.createCustomDrcCheckContext(circuitJson),
-    )
-    let diagnostics: CustomDrcCheckInput[] = []
-    if (Array.isArray(result)) {
-      diagnostics = result
-    } else if (result) {
-      diagnostics = [result]
-    }
+    return runCorePromise(this.runCustomDrcCheckEffect(circuitJson))
+  }
 
-    return diagnostics
-      .map((diagnostic, index) =>
-        this.createCircuitJsonDiagnostic(diagnostic, index),
-      )
-      .filter((diagnostic): diagnostic is AnyCircuitElement => !!diagnostic)
+  /** Native check program; checkFn stays an unchanged external value/Promise API. */
+  runCustomDrcCheckEffect(circuitJson: AnyCircuitElement[]) {
+    return corePromise(
+      () =>
+        Promise.resolve(
+          this._parsedProps.checkFn(
+            this.createCustomDrcCheckContext(circuitJson),
+          ),
+        ),
+      "drc:custom-check",
+    ).pipe(
+      Effect.flatMap((result) =>
+        coreSync(() => {
+          let diagnostics: CustomDrcCheckInput[] = []
+          if (Array.isArray(result)) diagnostics = result
+          else if (result) diagnostics = [result]
+          return diagnostics
+            .map((diagnostic, index) =>
+              this.createCircuitJsonDiagnostic(diagnostic, index),
+            )
+            .filter(
+              (diagnostic): diagnostic is AnyCircuitElement => !!diagnostic,
+            )
+        }, "drc:custom-diagnostics"),
+      ),
+    )
   }
 
   private createCustomDrcCheckContext(

@@ -1,4 +1,13 @@
-import { getConstructionPropsSchema } from "./get-construction-props-schema"
+import * as Effect from "effect/Effect"
+import { atomicCoreEffect, coreSync, runCoreSync } from "lib/effect/core-error"
+import {
+  parseComponentPropUpdate,
+  validateComponentProps,
+} from "lib/effect/component-model-props"
+import {
+  dispatchComponentAdditionEffect,
+  validateChildAttachment,
+} from "lib/effect/component-model-tree"
 import {
   selectNetByLiteralSelector,
   type NetSelector,
@@ -15,7 +24,6 @@ import type { BoardI } from "lib/components/normal-components/Board/BoardI"
 import type { IGroup } from "lib/components/primitive-components/Group/IGroup"
 import type { ISubcircuit } from "lib/components/primitive-components/Group/Subcircuit/ISubcircuit"
 import type { ISymbol } from "lib/components/primitive-components/Symbol/ISymbol"
-import { InvalidProps } from "lib/errors/InvalidProps"
 import type { Ftype } from "lib/utils/constants"
 import {
   evaluateCalcString,
@@ -211,33 +219,66 @@ export abstract class PrimitiveComponent<
     this.childrenPendingRemoval = []
     this.props = props ?? {}
     this.externallyAddedAliases = []
-    const zodProps = getConstructionPropsSchema(this.config.zodProps)
-    const parsePropsResult = zodProps.safeParse(props ?? {})
-    if (parsePropsResult.success) {
-      this._parsedProps = parsePropsResult.data as z.infer<ZodProps>
-    } else {
-      throw new InvalidProps(
-        this.lowercaseComponentName,
-        this.props,
-        parsePropsResult.error.format(),
-      )
-    }
+    this._parsedProps = runCoreSync(
+      validateComponentProps({
+        schema: this.config.zodProps,
+        props: this.props,
+        componentName: this.lowercaseComponentName,
+        construction: true,
+      }),
+    ) as z.infer<ZodProps>
   }
 
   setProps(props: Partial<z.input<ZodProps>>) {
-    const newProps = this.config.zodProps.parse({
-      ...this.props,
-      ...props,
-    }) as z.infer<ZodProps>
-    const oldProps = this.props
-    this.props = newProps
-    this._parsedProps = this.config.zodProps.parse(props) as z.infer<ZodProps>
-    this.onPropsChange({
-      oldProps,
-      newProps,
-      changedProps: Object.keys(props),
-    })
-    this.parent?.onChildChanged?.(this)
+    return runCoreSync(this.setPropsEffect(props))
+  }
+
+  setPropsEffect(props: Partial<z.input<ZodProps>>) {
+    const primitive = this
+    return atomicCoreEffect(
+      Effect.gen(function* () {
+        const newProps = yield* parseComponentPropUpdate({
+          schema: primitive.config.zodProps,
+          props: { ...primitive.props, ...props },
+        })
+        const oldProps = primitive.props
+        // Preserve the existing partial-update semantics and callback order.
+        yield* coreSync(() => {
+          primitive.props = newProps
+        }, "replace_component_props")
+        const parsedProps = yield* parseComponentPropUpdate({
+          schema: primitive.config.zodProps,
+          props,
+        })
+        // A rejected partial parse still replaces raw props, as before, but
+        // cannot cancel work or notify observers for an unsuccessful update.
+        yield* coreSync(() => {
+          try {
+            primitive.cancelPendingEffects({
+              reason: "props_changed",
+              onlyOwner: true,
+            })
+          } catch (error) {
+            // A failed native cancellation policy retains the previous raw
+            // props and error identity; canceled jobs still drain normally.
+            primitive.props = oldProps
+            throw error
+          }
+        }, "cancel_component_jobs_on_props_change")
+        yield* coreSync(() => {
+          primitive._parsedProps = parsedProps
+          primitive.onPropsChange({
+            oldProps,
+            newProps,
+            changedProps: Object.keys(props),
+          })
+        }, "notify_component_props_change")
+        yield* coreSync(
+          () => primitive.parent?.onChildChanged?.(primitive),
+          "notify_parent_child_change",
+        )
+      }),
+    )
   }
 
   _getPcbRotationBeforeLayout(): number | null {
@@ -1011,73 +1052,81 @@ export abstract class PrimitiveComponent<
   }
 
   add(component: PrimitiveComponent) {
-    // The react reconciler will try to add text nodes as children, but
-    // we don't have a text component, so we just ignore them. The text is
-    // passed as a prop to the parent component anyway.
-    const textContent = (component as any).__text
-    if (typeof textContent === "string") {
-      // Components that support text children already receive the text via
-      // their props. Simply ignore the generated text node.
-      if (this.canHaveTextChildren || textContent.trim() === "") {
-        return
-      }
-      // Otherwise this is likely accidental text in the JSX tree.
-      const parentName = (this._parsedProps as any)?.name
-      const parentDescriptor = parentName
-        ? `<${this.componentName} name="${parentName}">`
-        : `<${this.componentName}>`
+    return runCoreSync(this.addEffect(component))
+  }
 
-      // A very common mistake is interpolating a numeric value that evaluated
-      // to NaN together with a unit suffix, e.g. `${someNaN}p` renders the bare
-      // text "NaNp". Surface a more actionable hint in that case.
-      const isNaNValuedText = /^NaN/.test(textContent.trim())
-      const nanHint = isNaNValuedText
-        ? ` This looks like a numeric expression that evaluated to NaN (e.g. \`\${value}${textContent
-            .trim()
-            .replace(
-              /^NaN/,
-              "",
-            )}\` where \`value\` is NaN) — check the computation that produces this value.`
-        : ""
-
-      throw new Error(
-        `Invalid JSX Element: ${parentDescriptor} received stray text "${textContent}" as a child, but it cannot hold text children. Remove the text or wrap it in an appropriate component.${nanHint}`,
-      )
-    }
-    if (Object.keys(component).length === 0) {
-      // Ignore empty objects produced by the reconciler in edge cases
-      return
-    }
-
-    if (component.lowercaseComponentName === "panel") {
-      throw new Error("<panel> must be a root-level element")
-    }
-    if (!component.onAddToParent) {
-      throw new Error(
-        `Invalid JSX Element: Expected a React component but received "${JSON.stringify(
-          component,
-        )}"`,
-      )
-    }
-    component.onAddToParent(this)
-    component.parent = this
-    this.children.push(component)
-    this._childrenVersion++
-    this._clearSelectorCachesUpTree()
+  addEffect(component: PrimitiveComponent) {
+    const parent = this
+    return atomicCoreEffect(
+      Effect.gen(function* () {
+        if (!(yield* validateChildAttachment({ parent, child: component })))
+          return
+        yield* coreSync(() => {
+          if (component.parent !== parent) {
+            const previousRoot = component.root
+            component.cancelPendingEffects({
+              reason: "reparented",
+              sameCircuitReparent:
+                previousRoot !== null && previousRoot === parent.root,
+            })
+          }
+        }, "cancel_component_jobs_on_reparent")
+        yield* coreSync(
+          () => component.onAddToParent(parent),
+          "notify_component_attachment",
+        )
+        yield* coreSync(() => {
+          component.parent = parent
+          parent.children.push(component)
+          parent._childrenVersion++
+          parent._clearSelectorCachesUpTree()
+        }, "attach_component")
+      }),
+    )
   }
 
   addAll(components: PrimitiveComponent[]) {
-    for (const component of components) {
-      this.add(component)
-    }
+    return runCoreSync(this.addAllEffect(components))
+  }
+
+  addAllEffect(components: PrimitiveComponent[]) {
+    return atomicCoreEffect(
+      Effect.forEach(
+        components,
+        (child) => dispatchComponentAdditionEffect({ parent: this, child }),
+        {
+          discard: true,
+        },
+      ),
+    )
   }
 
   remove(component: PrimitiveComponent) {
-    this.children = this.children.filter((c) => c !== component)
-    this._childrenVersion++
-    this.childrenPendingRemoval.push(component)
-    component.shouldBeRemoved = true
-    this._clearSelectorCachesUpTree()
+    return runCoreSync(this.removeEffect(component))
+  }
+
+  removeEffect(component: PrimitiveComponent) {
+    const parent = this
+    return atomicCoreEffect(
+      Effect.gen(function* () {
+        yield* coreSync(() => {
+          parent.children = parent.children.filter(
+            (child) => child !== component,
+          )
+          parent._childrenVersion++
+          parent.childrenPendingRemoval.push(component)
+          component.shouldBeRemoved = true
+        }, "detach_component")
+        yield* coreSync(() => {
+          component.cancelPendingEffects({ reason: "removed" })
+          component.root?.experimentalFootprintLoader?.cancelSubtree(component)
+        }, "cancel_removed_component_jobs")
+        yield* coreSync(
+          () => parent._clearSelectorCachesUpTree(),
+          "invalidate_component_selectors",
+        )
+      }),
+    )
   }
 
   private _clearSelectorCachesUpTree(): void {
@@ -1415,26 +1464,31 @@ export abstract class PrimitiveComponent<
   // by the Renderable class, however, the Renderable class currently doesn't
   // have access to the database or cleanup
   renderError(message: Parameters<typeof Renderable.prototype.renderError>[0]) {
-    if (typeof message === "string") {
-      return super.renderError(message)
-    }
-    // TODO this needs to be cleaned up at some point!
-    switch (message.type) {
-      case "pcb_placement_error":
-        this.root?.db.pcb_placement_error.insert(message as any)
-        break
-      case "pcb_via_clearance_error":
-        this.root?.db.pcb_via_clearance_error.insert(message as any)
-        break
-      case "pcb_trace_error":
-        this.root?.db.pcb_trace_error.insert(message as any)
-        break
-      case "pcb_manual_edit_conflict_warning":
-        this.root?.db.pcb_manual_edit_conflict_warning.insert(message as any)
-        break
-      default:
-        this.root?.db.pcb_placement_error.insert(message as any) // fallback
-    }
+    return runCoreSync(this.renderErrorEffect(message))
+  }
+
+  override renderErrorEffect(
+    message: Parameters<typeof Renderable.prototype.renderError>[0],
+  ) {
+    if (typeof message === "string") return super.renderErrorEffect(message)
+    return coreSync(() => {
+      switch (message.type) {
+        case "pcb_placement_error":
+          this.root?.db.pcb_placement_error.insert(message as any)
+          break
+        case "pcb_via_clearance_error":
+          this.root?.db.pcb_via_clearance_error.insert(message as any)
+          break
+        case "pcb_trace_error":
+          this.root?.db.pcb_trace_error.insert(message as any)
+          break
+        case "pcb_manual_edit_conflict_warning":
+          this.root?.db.pcb_manual_edit_conflict_warning.insert(message as any)
+          break
+        default:
+          this.root?.db.pcb_placement_error.insert(message as any) // fallback
+      }
+    }, "record_component_error")
   }
 
   getString(): string {

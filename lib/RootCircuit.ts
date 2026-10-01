@@ -1,6 +1,12 @@
 import type { PlatformConfig } from "@tscircuit/props"
 import type { AnyCircuitElement } from "circuit-json"
 import { IsolatedCircuit } from "./IsolatedCircuit"
+import type { EffectFootprintLoadingOptions } from "./utils/footprint/effect-footprint-loader"
+
+export type {
+  EffectFootprintLoadingOptions,
+  FootprintFetch,
+} from "./utils/footprint/effect-footprint-loader"
 
 export class RootCircuit extends IsolatedCircuit {
   override isRootCircuit = true
@@ -8,10 +14,16 @@ export class RootCircuit extends IsolatedCircuit {
   constructor({
     platform,
     projectUrl,
-  }: { platform?: PlatformConfig; projectUrl?: string } = {}) {
+    experimentalFootprintLoading,
+  }: {
+    platform?: PlatformConfig
+    projectUrl?: string
+    experimentalFootprintLoading?: EffectFootprintLoadingOptions
+  } = {}) {
     super({
       platform,
       projectUrl,
+      experimentalFootprintLoading,
       cachedSubcircuits: new Map<string, AnyCircuitElement[]>(),
       pendingSubcircuitRenders: new Map<string, Promise<AnyCircuitElement[]>>(),
     })

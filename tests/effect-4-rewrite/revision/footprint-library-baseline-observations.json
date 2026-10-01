@@ -1,0 +1,67 @@
+{
+  "baseline": "a61451654ff1f8bb0249f135dca482a84bedb802",
+  "runtime": "bun 1.4.0 (34cbb9a40)",
+  "source": "baseline-loading/raw.log",
+  "scenarios": {
+    "null": {
+      "diagnostic": {
+        "type": "external_footprint_load_error",
+        "external_footprint_load_error_id": "<generated>",
+        "error_type": "external_footprint_load_error",
+        "message": "<resistor#component name=\".R1\" /> failed to load external footprint \"kicad:malformed\": null is not an object (evaluating 'result.footprintCircuitJson')",
+        "pcb_component_id": "pcb_component_0",
+        "source_component_id": "source_component_0",
+        "subcircuit_id": "subcircuit_source_group_0",
+        "footprinter_string": "kicad:malformed"
+      },
+      "terminalErrors": [
+        "TypeError: null is not an object (evaluating 'result.footprintCircuitJson')"
+      ]
+    },
+    "undefined": {
+      "diagnostic": {
+        "type": "external_footprint_load_error",
+        "external_footprint_load_error_id": "<generated>",
+        "error_type": "external_footprint_load_error",
+        "message": "<resistor#component name=\".R1\" /> failed to load external footprint \"kicad:malformed\": undefined is not an object (evaluating 'result.footprintCircuitJson')",
+        "pcb_component_id": "pcb_component_0",
+        "source_component_id": "source_component_0",
+        "subcircuit_id": "subcircuit_source_group_0",
+        "footprinter_string": "kicad:malformed"
+      },
+      "terminalErrors": [
+        "TypeError: undefined is not an object (evaluating 'result.footprintCircuitJson')"
+      ]
+    },
+    "empty_object": {
+      "diagnostic": {
+        "type": "external_footprint_load_error",
+        "external_footprint_load_error_id": "<generated>",
+        "error_type": "external_footprint_load_error",
+        "message": "<resistor#component name=\".R1\" /> failed to load external footprint \"kicad:malformed\": Footprint resolver returned no circuit elements for \"kicad:malformed\".",
+        "pcb_component_id": "pcb_component_0",
+        "source_component_id": "source_component_0",
+        "subcircuit_id": "subcircuit_source_group_0",
+        "footprinter_string": "kicad:malformed"
+      },
+      "terminalErrors": [
+        "Error: Footprint resolver returned no circuit elements for \"kicad:malformed\"."
+      ]
+    },
+    "string": {
+      "diagnostic": {
+        "type": "external_footprint_load_error",
+        "external_footprint_load_error_id": "<generated>",
+        "error_type": "external_footprint_load_error",
+        "message": "<resistor#component name=\".R1\" /> failed to load external footprint \"kicad:malformed\": Footprint resolver returned no circuit elements for \"kicad:malformed\".",
+        "pcb_component_id": "pcb_component_0",
+        "source_component_id": "source_component_0",
+        "subcircuit_id": "subcircuit_source_group_0",
+        "footprinter_string": "kicad:malformed"
+      },
+      "terminalErrors": [
+        "Error: Footprint resolver returned no circuit elements for \"kicad:malformed\"."
+      ]
+    }
+  }
+}

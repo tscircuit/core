@@ -1,3 +1,6 @@
+import * as Effect from "effect/Effect"
+import { corePromise, coreSync } from "lib/effect/core-error"
+import { catchJobFailure } from "lib/effect/job-failure"
 import {
   type ConnectorProps,
   type ConnectorStandard,
@@ -167,37 +170,47 @@ export class Connector<
     return partNumbers
   }
 
-  private async _tryFetchPartCircuitJson(
-    fetchPartCircuitJson: NonNullable<PartsEngine["fetchPartCircuitJson"]>,
-    params: { supplierPartNumber?: string; manufacturerPartNumber?: string },
-  ): Promise<AnyCircuitElement[] | null> {
-    const maybeCircuitJson =
-      (await Promise.resolve(fetchPartCircuitJson(params))) ?? null
-    if (Array.isArray(maybeCircuitJson) && maybeCircuitJson.length > 0) {
-      return maybeCircuitJson
-    }
-    return null
+  private _tryFetchPartCircuitJsonEffect(query: {
+    fetchPartCircuitJson: NonNullable<PartsEngine["fetchPartCircuitJson"]>
+    params: { supplierPartNumber?: string; manufacturerPartNumber?: string }
+  }) {
+    return corePromise(
+      () =>
+        Promise.resolve(
+          query.fetchPartCircuitJson({
+            ...query.params,
+          }),
+        ),
+      "fetch_connector_part",
+    ).pipe(
+      Effect.map((circuitJson) =>
+        Array.isArray(circuitJson) && circuitJson.length > 0
+          ? circuitJson
+          : null,
+      ),
+    )
   }
 
-  private async _fetchStandardConnectorCircuitJson(
-    fetchPartCircuitJson: NonNullable<PartsEngine["fetchPartCircuitJson"]>,
-    supplierPartNumbers: Record<string, string[] | undefined> | undefined,
-    manufacturerPartNumber?: string,
-  ): Promise<AnyCircuitElement[] | null> {
-    for (const supplierPartNumber of this._getSupplierPartNumbersToTry(
-      supplierPartNumbers,
-    )) {
-      const circuitJson = await this._tryFetchPartCircuitJson(
-        fetchPartCircuitJson,
-        { supplierPartNumber },
-      )
-      if (circuitJson) return circuitJson
-    }
-
-    if (!manufacturerPartNumber) return null
-
-    return this._tryFetchPartCircuitJson(fetchPartCircuitJson, {
-      manufacturerPartNumber,
+  private _fetchStandardConnectorCircuitJsonEffect(query: {
+    fetchPartCircuitJson: NonNullable<PartsEngine["fetchPartCircuitJson"]>
+    supplierPartNumbers: Record<string, string[] | undefined> | undefined
+    manufacturerPartNumber?: string
+  }) {
+    return Effect.gen({ self: this }, function* () {
+      for (const supplierPartNumber of this._getSupplierPartNumbersToTry(
+        query.supplierPartNumbers,
+      )) {
+        const circuitJson = yield* this._tryFetchPartCircuitJsonEffect({
+          ...query,
+          params: { supplierPartNumber },
+        })
+        if (circuitJson) return circuitJson
+      }
+      if (!query.manufacturerPartNumber) return null
+      return yield* this._tryFetchPartCircuitJsonEffect({
+        ...query,
+        params: { manufacturerPartNumber: query.manufacturerPartNumber },
+      })
     })
   }
 
@@ -427,44 +440,80 @@ export class Connector<
       pin_count: props.pinCount,
     }
 
-    this._queueAsyncEffect("load-standard-connector-circuit-json", async () => {
-      const { db } = this.root!
-      try {
-        const supplierPartNumbers = await this._getSupplierPartNumbers(
-          partsEngine,
-          sourceComponentForQuery,
-          `standard:${standard}`,
-        )
-
-        if (this.source_component_id) {
-          db.source_component.update(this.source_component_id, {
-            supplier_part_numbers: supplierPartNumbers,
-          })
-        }
-
-        const circuitJson = await this._fetchStandardConnectorCircuitJson(
-          fetchPartCircuitJson,
-          supplierPartNumbers,
-          sourceComponentForQuery.manufacturer_part_number,
-        )
-        if (!circuitJson) {
-          this._handleStandardConnectorCircuitJsonFailure(
-            standard,
-            "part circuit JSON was not found",
-          )
-          return
-        }
-
-        this._addConnectorFootprintFromCircuitJson(standard, circuitJson)
-      } catch (error: any) {
-        if (this.source_component_id) {
-          db.source_component.update(this.source_component_id, {
-            supplier_part_numbers: {},
-          })
-        }
-        this._handleStandardConnectorCircuitJsonFailure(standard, error.message)
-      }
-    })
+    this._queueEffect(
+      "load-standard-connector-circuit-json",
+      (job) =>
+        catchJobFailure(
+          Effect.gen({ self: this }, function* () {
+            const supplierPartNumbers =
+              yield* this._getSupplierPartNumbersEffect({
+                partsEngine,
+                sourceComponent: sourceComponentForQuery,
+                footprinterString: `standard:${standard}`,
+                job,
+              })
+            yield* coreSync(
+              () =>
+                job.commit(() => {
+                  if (this.source_component_id)
+                    this.root!.db.source_component.update(
+                      this.source_component_id,
+                      { supplier_part_numbers: supplierPartNumbers },
+                    )
+                }),
+              "commit_connector_supplier_parts",
+            )
+            const circuitJson =
+              yield* this._fetchStandardConnectorCircuitJsonEffect({
+                fetchPartCircuitJson,
+                supplierPartNumbers,
+                manufacturerPartNumber:
+                  sourceComponentForQuery.manufacturer_part_number,
+              })
+            yield* coreSync(
+              () =>
+                job.commit(() => {
+                  if (!circuitJson) {
+                    this._handleStandardConnectorCircuitJsonFailure(
+                      standard,
+                      "part circuit JSON was not found",
+                    )
+                    return
+                  }
+                  this._addConnectorFootprintFromCircuitJson(
+                    standard,
+                    circuitJson,
+                  )
+                }),
+              "commit_connector_footprint",
+            )
+          }),
+          (error) =>
+            coreSync(
+              () =>
+                job.commit(() => {
+                  if (this.source_component_id)
+                    this.root!.db.source_component.update(
+                      this.source_component_id,
+                      { supplier_part_numbers: {} },
+                    )
+                  this._handleStandardConnectorCircuitJsonFailure(
+                    standard,
+                    error instanceof Error ? error.message : String(error),
+                  )
+                }),
+              "commit_connector_warning",
+            ),
+        ).pipe(Effect.asVoid),
+      {
+        propsChange: "cancel",
+        onCancel: (reason) => {
+          this._hasStartedFootprintUrlLoad = false
+          if (reason !== "disposed" && reason !== "removed")
+            this._markDirty("FetchPartFootprint")
+        },
+      },
+    )
   }
 
   doInitialPartsEngineRender(): void {
@@ -472,6 +521,10 @@ export class Connector<
     // during FetchPartFootprint via findPart + fetchPartCircuitJson
     if (this._isUsingStandardPartsEngineCircuitJsonFlow()) return
     super.doInitialPartsEngineRender()
+  }
+
+  updateFetchPartFootprint(): void {
+    this.doInitialFetchPartFootprint()
   }
 
   updatePartsEngineRender(): void {

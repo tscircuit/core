@@ -1,3 +1,9 @@
+import * as Effect from "effect/Effect"
+import { coreSync, runCorePromise } from "lib/effect/core-error"
+import {
+  readLocalCacheEffect,
+  writeLocalCacheEffect,
+} from "lib/local-cache-engine"
 import type { CacheProvider } from "@tscircuit/capacity-autorouter"
 import type { LocalCacheEngine } from "@tscircuit/props"
 
@@ -57,18 +63,29 @@ export class LocalCacheEngineCacheProvider implements CacheProvider {
     }
   }
 
-  async getCachedSolution(cacheKey: string): Promise<any> {
-    this.knownCacheKeys.add(cacheKey)
+  getCachedSolution(cacheKey: string): Promise<any> {
+    return runCorePromise(this.getCachedSolutionEffect(cacheKey))
+  }
 
-    try {
-      const cachedItem = await this.localCacheEngine.getItem(
-        this.getLocalCacheEngineKey(cacheKey),
+  getCachedSolutionEffect(cacheKey: string) {
+    return Effect.gen({ self: this }, function* () {
+      this.knownCacheKeys.add(cacheKey)
+      const cachedItem = yield* readLocalCacheEffect({
+        cacheEngine: this.localCacheEngine,
+        cacheKey: this.getLocalCacheEngineKey(cacheKey),
+      })
+      return yield* coreSync(
+        () => this.parseCachedItem(cacheKey, cachedItem),
+        "parse_autorouter_cache",
       )
-      return this.parseCachedItem(cacheKey, cachedItem)
-    } catch {
-      this.recordCacheMiss(cacheKey)
-      return undefined
-    }
+    }).pipe(
+      Effect.catch(() =>
+        Effect.sync(() => {
+          this.recordCacheMiss(cacheKey)
+          return undefined
+        }),
+      ),
+    )
   }
 
   setCachedSolutionSync(cacheKey: string, cachedSolution: any): void {
@@ -89,20 +106,26 @@ export class LocalCacheEngineCacheProvider implements CacheProvider {
     } catch {}
   }
 
-  async setCachedSolution(
-    cacheKey: string,
-    cachedSolution: any,
-  ): Promise<void> {
-    this.knownCacheKeys.add(cacheKey)
+  setCachedSolution(cacheKey: string, cachedSolution: any): Promise<void> {
+    return runCorePromise(
+      this.setCachedSolutionEffect(cacheKey, cachedSolution),
+    )
+  }
 
-    try {
-      const serializedSolution = JSON.stringify(cachedSolution)
-      if (serializedSolution === undefined) return
-      await this.localCacheEngine.setItem(
-        this.getLocalCacheEngineKey(cacheKey),
-        serializedSolution,
+  setCachedSolutionEffect(cacheKey: string, cachedSolution: any) {
+    return Effect.gen({ self: this }, function* () {
+      this.knownCacheKeys.add(cacheKey)
+      const serializedSolution = yield* coreSync(
+        () => JSON.stringify(cachedSolution),
+        "serialize_autorouter_cache",
       )
-    } catch {}
+      if (serializedSolution === undefined) return
+      yield* writeLocalCacheEffect({
+        cacheEngine: this.localCacheEngine,
+        cacheKey: this.getLocalCacheEngineKey(cacheKey),
+        value: serializedSolution,
+      })
+    }).pipe(Effect.catch(() => Effect.void))
   }
 
   getAllCacheKeys(): string[] {

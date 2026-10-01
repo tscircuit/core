@@ -1,18 +1,46 @@
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
-import { createCircuitJsonDatabase } from "./utils/circuit-json/create-circuit-json-database"
 import type { PlatformConfig } from "@tscircuit/props"
 import type { AnyCircuitElement } from "circuit-json"
 import Debug from "debug"
+import * as Effect from "effect/Effect"
 import { type ReactElement, isValidElement } from "react"
 import { type Matrix, identity } from "transformation-matrix"
 import pkgJson from "../package.json"
 import type { PrimitiveComponent } from "./components/base-components/PrimitiveComponent"
-import type { RenderPhase } from "./components/base-components/Renderable"
+import {
+  Renderable,
+  type RenderPhase,
+} from "./components/base-components/Renderable"
+import { isAssemblyDeviceContainer } from "./components/base-components/is-assembly-device-container"
 import type { BoardI } from "./components/normal-components/Board/BoardI"
 import { Group } from "./components/primitive-components/Group"
 import type { RootCircuitEventName } from "./events"
 import { createInstanceFromReactElement } from "./fiber/create-instance-from-react-element"
-import { isAssemblyDeviceContainer } from "./components/base-components/is-assembly-device-container"
+import {
+  createCircuitDatabaseEffect,
+  useCircuitDatabase,
+} from "./effect/circuit-database"
+import { CircuitRuntime } from "./effect/circuit-runtime"
+import {
+  corePromise,
+  coreSync,
+  atomicCoreEffect,
+  runCorePromise,
+  runCoreSync,
+} from "./effect/core-error"
+import {
+  CircuitEnvironment,
+  type CircuitEnvironmentShape,
+} from "./effect/core-services"
+import { usesDefaultSyncMethod } from "./effect/override-dispatch"
+import {
+  EffectFootprintLoader,
+  type EffectFootprintLoadingOptions,
+} from "./utils/footprint/effect-footprint-loader"
+import {
+  type RenderUntilSettledOptions,
+  renderUntilSettledEffect as settleRenderEffect,
+} from "./utils/render/render-until-settled"
 
 export class IsolatedCircuit {
   firstChild: PrimitiveComponent | null = null
@@ -20,6 +48,10 @@ export class IsolatedCircuit {
   db: CircuitJsonUtilObjects
   root: IsolatedCircuit | null = null
   isRootCircuit = false
+
+  /** Opt-in raw HTTP footprint scope; dispose this scope to cancel its jobs. */
+  readonly experimentalFootprintLoader?: EffectFootprintLoader
+  readonly effectRuntime: CircuitRuntime
 
   /**
    * Optional cache for isolated subcircuit circuit JSON, keyed by prop hash.
@@ -97,14 +129,16 @@ export class IsolatedCircuit {
     projectUrl,
     cachedSubcircuits,
     pendingSubcircuitRenders,
+    experimentalFootprintLoading,
   }: {
     platform?: PlatformConfig
     projectUrl?: string
     cachedSubcircuits?: Map<string, AnyCircuitElement[]>
     pendingSubcircuitRenders?: Map<string, Promise<AnyCircuitElement[]>>
+    experimentalFootprintLoading?: EffectFootprintLoadingOptions
   } = {}) {
     this.children = []
-    this.db = createCircuitJsonDatabase()
+    this.db = runCoreSync(createCircuitDatabaseEffect())
     this.platform = platform
     this.projectUrl = projectUrl
     this.pcbDisabled = platform?.pcbDisabled ?? false
@@ -112,30 +146,69 @@ export class IsolatedCircuit {
     this.cachedSubcircuits = cachedSubcircuits
     this.pendingSubcircuitRenders = pendingSubcircuitRenders
     this.root = this
+    this.effectRuntime = new CircuitRuntime(() => this._effectEnvironment())
+    this.effectRuntime.addFinalizer(() => {
+      for (const event of Object.keys(
+        this._eventListeners,
+      ) as RootCircuitEventName[]) {
+        this._eventListeners[event] = []
+      }
+      this._hasRenderLifecycleListeners = false
+    })
+    if (experimentalFootprintLoading) {
+      this.experimentalFootprintLoader = new EffectFootprintLoader(
+        experimentalFootprintLoading,
+      )
+      this.effectRuntime.addFinalizer(() =>
+        this.experimentalFootprintLoader?.dispose(),
+      )
+    }
+  }
+
+  private _effectEnvironment(): CircuitEnvironmentShape {
+    return {
+      db: this.db,
+      platform: this.platform,
+      fetch: (url, options) => fetch(url, options),
+    }
   }
 
   add(componentOrElm: PrimitiveComponent | ReactElement) {
-    let component: PrimitiveComponent
-    if (isValidElement(componentOrElm)) {
-      // TODO store subtree
-      component = createInstanceFromReactElement(componentOrElm)
-    } else {
-      component = componentOrElm as PrimitiveComponent
-    }
-    this.children.push(component)
+    runCoreSync(this.addEffect(componentOrElm))
+  }
+
+  addEffect(componentOrElm: PrimitiveComponent | ReactElement) {
+    return coreSync(() => {
+      this.effectRuntime.assertOpen()
+      let component: PrimitiveComponent
+      if (isValidElement(componentOrElm)) {
+        // TODO store subtree
+        component = createInstanceFromReactElement(componentOrElm)
+      } else {
+        component = componentOrElm as PrimitiveComponent
+      }
+      this.children.push(component)
+    }, "add_circuit_child")
   }
 
   setPlatform(platform: Partial<PlatformConfig>) {
-    this.platform = {
-      ...this.platform,
-      ...platform,
-    }
-    if (platform.pcbDisabled !== undefined) {
-      this.pcbDisabled = platform.pcbDisabled
-    }
-    if (platform.routingDisabled !== undefined) {
-      this.pcbRoutingDisabled = platform.routingDisabled
-    }
+    runCoreSync(this.setPlatformEffect(platform))
+  }
+
+  setPlatformEffect(platform: Partial<PlatformConfig>) {
+    return coreSync(() => {
+      this.effectRuntime.assertOpen()
+      this.platform = {
+        ...this.platform,
+        ...platform,
+      }
+      if (platform.pcbDisabled !== undefined) {
+        this.pcbDisabled = platform.pcbDisabled
+      }
+      if (platform.routingDisabled !== undefined) {
+        this.pcbRoutingDisabled = platform.routingDisabled
+      }
+    }, "set_platform")
   }
 
   /**
@@ -202,49 +275,87 @@ export class IsolatedCircuit {
   }
 
   render() {
-    if (!this.firstChild) {
-      this._guessRootComponent()
-    }
-    const { firstChild, db } = this
-    if (!firstChild) throw new Error("IsolatedCircuit has no root component")
-    firstChild.parent = this as any
-    firstChild.runRenderCycle()
-    this._hasUnrenderedUpdatesFromAsyncEffects = false
-    this._hasRenderedAtleastOnce = true
+    runCoreSync(this.renderEffect())
   }
 
-  async renderUntilSettled(): Promise<void> {
-    const existing = this.db.source_project_metadata.list()?.[0]
-    if (!existing) {
-      this.db.source_project_metadata.insert({
-        software_used_string: `@tscircuit/core@${this.getCoreVersion()}`,
-        ...(this.projectUrl ? { project_url: this.projectUrl } : {}),
-      })
-    }
-
-    this.render()
-
-    while (!this.isDoneRendering()) {
-      await new Promise<void>((resolve) => {
-        const resume = () => {
-          clearTimeout(timer)
-          this.removeListener("asyncEffect:end", resume)
-          resolve()
+  renderEffect() {
+    return atomicCoreEffect(
+      Effect.gen({ self: this }, function* () {
+        const firstChild = yield* coreSync(() => {
+          this.effectRuntime.assertOpen()
+          if (!this.firstChild) this._guessRootComponent()
+          if (!this.firstChild)
+            throw new Error("IsolatedCircuit has no root component")
+          // Public component parents historically also accept circuit roots.
+          this.firstChild.parent = this as any
+          return this.firstChild
+        }, "prepare_render")
+        if (
+          usesDefaultSyncMethod(
+            firstChild,
+            "runRenderCycle",
+            Renderable.prototype.runRenderCycle,
+          )
+        ) {
+          yield* firstChild.runRenderCycleEffect()
+        } else {
+          yield* coreSync(
+            () => firstChild.runRenderCycle(),
+            "custom_render_cycle",
+          )
         }
-        const timer = setTimeout(resume, 100)
-        this.on("asyncEffect:end", resume)
-        if (this._hasUnrenderedUpdatesFromAsyncEffects) resume()
-      })
-      // A running effect blocks its dependent phases. Revisit the tree when
-      // an effect completes, rather than traversing every component on idle polls.
-      if (
-        this._hasUnrenderedUpdatesFromAsyncEffects ||
-        this._asyncEffectPhaseById.size === 0
-      )
-        this.render()
-    }
+        this._hasUnrenderedUpdatesFromAsyncEffects = false
+        this._hasRenderedAtleastOnce = true
+      }),
+    )
+  }
 
-    this.emit("renderComplete")
+  /**
+   * Render through pending async updates. Experimental signal support cancels
+   * this caller's wait only; component jobs continue and may commit later.
+   */
+  renderUntilSettled(options: RenderUntilSettledOptions = {}): Promise<void> {
+    return runCorePromise(this.renderUntilSettledEffect(), options)
+  }
+
+  renderUntilSettledEffect() {
+    return settleRenderEffect({
+      circuit: this,
+      prepareRenderEffect: () =>
+        Effect.provideService(
+          useCircuitDatabase((db) => {
+            this.effectRuntime.assertOpen()
+            const existing = db.source_project_metadata.list()?.[0]
+            if (!existing) {
+              db.source_project_metadata.insert({
+                software_used_string: `@tscircuit/core@${this.getCoreVersion()}`,
+                ...(this.projectUrl ? { project_url: this.projectUrl } : {}),
+              })
+            }
+          }),
+          CircuitEnvironment,
+          this._effectEnvironment(),
+        ),
+      renderEffect: () =>
+        usesDefaultSyncMethod(this, "render", IsolatedCircuit.prototype.render)
+          ? this.renderEffect()
+          : coreSync(() => this.render(), "custom_render"),
+      hasUnrenderedUpdates: () => this._hasUnrenderedUpdatesFromAsyncEffects,
+      shouldRenderAfterWait: () =>
+        this._hasUnrenderedUpdatesFromAsyncEffects ||
+        this._asyncEffectPhaseById.size === 0,
+    })
+  }
+
+  /** Interrupt owned jobs and release circuit resources exactly once. */
+  dispose(): Promise<void> {
+    return this.effectRuntime.dispose()
+  }
+
+  disposeEffect() {
+    return Effect.uninterruptible(
+      corePromise(() => this.dispose(), "dispose_circuit"),
+    )
   }
 
   isDoneRendering(): boolean {
@@ -272,33 +383,67 @@ export class IsolatedCircuit {
   }
 
   getCircuitJson(): AnyCircuitElement[] {
-    if (!this._hasRenderedAtleastOnce) this.render()
-    return this.db.toArray()
+    return runCoreSync(this.getCircuitJsonEffect())
+  }
+
+  getCircuitJsonEffect() {
+    return Effect.gen({ self: this }, function* () {
+      if (!this._hasRenderedAtleastOnce) {
+        yield* usesDefaultSyncMethod(
+          this,
+          "render",
+          IsolatedCircuit.prototype.render,
+        )
+          ? this.renderEffect()
+          : coreSync(() => this.render(), "custom_render")
+      }
+      return yield* coreSync(() => this.db.toArray(), "read_circuit_json")
+    })
   }
 
   toJson(): AnyCircuitElement[] {
     return this.getCircuitJson()
   }
 
-  async getSvg(options: {
+  getSvg(options: {
     view: "pcb" | "schematic"
     layer?: string
   }): Promise<string> {
-    const circuitToSvg = await import("circuit-to-svg").catch((e) => {
-      throw new Error(
-        `To use circuit.getSvg, you must install the "circuit-to-svg" package.\n\n"${e.message}"`,
-      )
-    })
+    return runCorePromise(this.getSvgEffect(options))
+  }
 
-    if (options.view === "pcb") {
-      return circuitToSvg.convertCircuitJsonToPcbSvg(this.getCircuitJson())
-    }
-    if (options.view === "schematic") {
-      return circuitToSvg.convertCircuitJsonToSchematicSvg(
-        this.getCircuitJson(),
+  getSvgEffect(options: { view: "pcb" | "schematic"; layer?: string }) {
+    return Effect.gen({ self: this }, function* () {
+      const circuitToSvg = yield* corePromise(
+        () =>
+          import("circuit-to-svg").catch((e) => {
+            throw new Error(
+              `To use circuit.getSvg, you must install the "circuit-to-svg" package.\n\n"${e.message}"`,
+            )
+          }),
+        "load_svg_renderer",
       )
-    }
-    throw new Error(`Invalid view: ${options.view}`)
+
+      if (options.view === "pcb" || options.view === "schematic") {
+        const circuitJson = yield* usesDefaultSyncMethod(
+          this,
+          "getCircuitJson",
+          IsolatedCircuit.prototype.getCircuitJson,
+        )
+          ? this.getCircuitJsonEffect()
+          : coreSync(() => this.getCircuitJson(), "custom_circuit_json")
+        return yield* coreSync(
+          () =>
+            options.view === "pcb"
+              ? circuitToSvg.convertCircuitJsonToPcbSvg(circuitJson)
+              : circuitToSvg.convertCircuitJsonToSchematicSvg(circuitJson),
+          options.view === "pcb" ? "render_pcb_svg" : "render_schematic_svg",
+        )
+      }
+      return yield* coreSync(() => {
+        throw new Error(`Invalid view: ${options.view}`)
+      }, "invalid_svg_view")
+    })
   }
 
   getCoreVersion(): string {
@@ -332,15 +477,27 @@ export class IsolatedCircuit {
   }
 
   selectAll(selector: string): PrimitiveComponent[] {
-    this._guessRootComponent()
-    return this.firstChild?.selectAll(selector) ?? []
+    return runCoreSync(this.selectAllEffect(selector))
+  }
+
+  selectAllEffect(selector: string) {
+    return coreSync(() => {
+      this._guessRootComponent()
+      return this.firstChild?.selectAll(selector) ?? []
+    }, "select_circuit_components")
   }
   selectOne(
     selector: string,
     opts?: { type?: "component" | "port" },
   ): PrimitiveComponent | null {
-    this._guessRootComponent()
-    return this.firstChild?.selectOne(selector, opts) ?? null
+    return runCoreSync(this.selectOneEffect(selector, opts))
+  }
+
+  selectOneEffect(selector: string, opts?: { type?: "component" | "port" }) {
+    return coreSync(() => {
+      this._guessRootComponent()
+      return this.firstChild?.selectOne(selector, opts) ?? null
+    }, "select_circuit_component")
   }
 
   _hasRenderLifecycleListeners = false

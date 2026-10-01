@@ -1,3 +1,11 @@
+import * as Cause from "effect/Cause"
+import * as Deferred from "effect/Deferred"
+import * as Effect from "effect/Effect"
+import * as Exit from "effect/Exit"
+import { corePromise, coreSync, type CoreError } from "lib/effect/core-error"
+import type { CoreJobContext } from "lib/effect/core-services"
+import { catchJobFailure } from "lib/effect/job-failure"
+import { readLocalCacheEffect } from "lib/local-cache-engine"
 import { analyzePcbPin1Location } from "@tscircuit/circuit-json-util"
 import type {
   PartsEngine,
@@ -37,9 +45,17 @@ type CachedSupplierPartOrientationAnalysis = {
   pin1_polarity: Pin1Polarity | null
 }
 
+class OrientationProducerCancelled extends Error {}
+
 const pendingSupplierPartOrientationAnalyses = new WeakMap<
   PartsEngine,
-  Map<SupplierPartOrientationCacheKey, Promise<SupplierPartOrientationAnalysis>>
+  Map<
+    SupplierPartOrientationCacheKey,
+    Deferred.Deferred<
+      SupplierPartOrientationAnalysis,
+      CoreError | OrientationProducerCancelled
+    >
+  >
 >()
 
 const getPendingSupplierPartOrientationAnalyses = (
@@ -50,7 +66,10 @@ const getPendingSupplierPartOrientationAnalyses = (
 
   const pendingAnalyses = new Map<
     SupplierPartOrientationCacheKey,
-    Promise<SupplierPartOrientationAnalysis>
+    Deferred.Deferred<
+      SupplierPartOrientationAnalysis,
+      CoreError | OrientationProducerCancelled
+    >
   >()
   pendingSupplierPartOrientationAnalyses.set(partsEngine, pendingAnalyses)
   return pendingAnalyses
@@ -184,101 +203,160 @@ const getSupplierPartOrientationCacheKey = ({
 }: SupplierPartCandidate): SupplierPartOrientationCacheKey =>
   `part-orientation-analysis:v4:${supplierName}:${supplierPartNumber}`
 
-const readCachedSupplierPartOrientationAnalysis = async ({
+const readCachedSupplierPartOrientationAnalysis = ({
   cacheKey,
   component,
 }: {
   cacheKey: SupplierPartOrientationCacheKey
   component: NormalComponent<any, any>
-}): Promise<
-  | { cacheHit: true; analysis: SupplierPartOrientationAnalysis }
-  | { cacheHit: false }
-> => {
-  const cachedValue =
-    await component.root?.platform?.localCacheEngine?.getItem(cacheKey)
-  if (!cachedValue) return { cacheHit: false }
+}) =>
+  Effect.gen(function* () {
+    const cacheEngine = component.root?.platform?.localCacheEngine
+    // The original async helper awaited optional getItem even without an engine.
+    const cachedValue = yield* cacheEngine
+      ? readLocalCacheEffect({ cacheKey, cacheEngine })
+      : corePromise(
+          () => Promise.resolve(null),
+          "read_optional_orientation_cache",
+        )
+    if (!cachedValue) return { cacheHit: false as const }
+    return yield* coreSync(() => {
+      try {
+        const cached = JSON.parse(
+          cachedValue,
+        ) as CachedSupplierPartOrientationAnalysis
+        const pin1LocationResult = pcb_pin1_location.safeParse(
+          cached.pin1_location,
+        )
+        const pin1Location =
+          cached.pin1_location === null
+            ? null
+            : pin1LocationResult.success
+              ? pin1LocationResult.data
+              : undefined
+        const pin1Polarity =
+          cached.pin1_polarity === null ||
+          cached.pin1_polarity === "anode" ||
+          cached.pin1_polarity === "cathode"
+            ? cached.pin1_polarity
+            : undefined
+        if (pin1Location === undefined || pin1Polarity === undefined)
+          return { cacheHit: false as const }
+        return {
+          cacheHit: true as const,
+          analysis: { pin1Location, pin1Polarity },
+        }
+      } catch {
+        return { cacheHit: false as const }
+      }
+    }, "decode_orientation_cache")
+  })
 
-  try {
-    const cached = JSON.parse(
-      cachedValue,
-    ) as CachedSupplierPartOrientationAnalysis
-    const pin1LocationResult = pcb_pin1_location.safeParse(cached.pin1_location)
-    const pin1Location =
-      cached.pin1_location === null
-        ? null
-        : pin1LocationResult.success
-          ? pin1LocationResult.data
-          : undefined
-    const pin1Polarity =
-      cached.pin1_polarity === null ||
-      cached.pin1_polarity === "anode" ||
-      cached.pin1_polarity === "cathode"
-        ? cached.pin1_polarity
-        : undefined
-
-    if (pin1Location === undefined || pin1Polarity === undefined) {
-      return { cacheHit: false }
-    }
-
-    return {
-      cacheHit: true,
-      analysis: { pin1Location, pin1Polarity },
-    }
-  } catch {
-    return { cacheHit: false }
-  }
-}
-
-const analyzeSupplierPartOrientation = async ({
-  component,
-  partsEngine,
-  supplierPartCandidate,
-}: {
+type SupplierOrientationRequest = {
   component: NormalComponent<any, any>
   partsEngine: PartsEngine
   supplierPartCandidate: SupplierPartCandidate
-}): Promise<SupplierPartOrientationAnalysis> => {
-  const cacheKey = getSupplierPartOrientationCacheKey(supplierPartCandidate)
-  const cached = await readCachedSupplierPartOrientationAnalysis({
-    cacheKey,
-    component,
-  })
-  if (cached.cacheHit) return cached.analysis
-
-  const pendingAnalyses = getPendingSupplierPartOrientationAnalyses(partsEngine)
-  const existingAnalysis = pendingAnalyses.get(cacheKey)
-  if (existingAnalysis) return existingAnalysis
-
-  const analysis = (async () => {
-    const supplierCircuitJson = await Promise.resolve(
-      partsEngine.fetchPartCircuitJson!({
-        supplierPartNumber: supplierPartCandidate.supplierPartNumber,
-        platformFetch: component.root?.platform?.platformFetch,
-      }),
-    )
-    if (!supplierCircuitJson?.length) {
-      return { pin1Location: null, pin1Polarity: null }
-    }
-
-    const pin1Location = analyzePcbPin1Location(supplierCircuitJson)
-    const pin1Polarity = getPin1Polarity(getPin1SourcePort(supplierCircuitJson))
-    try {
-      await component.root?.platform?.localCacheEngine?.setItem(
-        cacheKey,
-        JSON.stringify({
-          pin1_location: pin1Location,
-          pin1_polarity: pin1Polarity,
-        } satisfies CachedSupplierPartOrientationAnalysis),
-      )
-    } catch {}
-    return { pin1Location, pin1Polarity }
-  })().finally(() => {
-    pendingAnalyses.delete(cacheKey)
-  })
-
-  pendingAnalyses.set(cacheKey, analysis)
-  return analysis
+  job: CoreJobContext
 }
+
+const analyzeSupplierPartOrientation = (
+  request: SupplierOrientationRequest,
+): Effect.Effect<
+  SupplierPartOrientationAnalysis,
+  CoreError | OrientationProducerCancelled
+> =>
+  Effect.gen(function* () {
+    const { component, partsEngine, supplierPartCandidate, job } = request
+    const cacheKey = getSupplierPartOrientationCacheKey(supplierPartCandidate)
+    const cached = yield* readCachedSupplierPartOrientationAnalysis({
+      cacheKey,
+      component,
+    })
+    // Preserve the caller's await of the formerly async cache helper too.
+    yield* corePromise(
+      () => Promise.resolve(),
+      "await_orientation_cache_result",
+    )
+    if (cached.cacheHit) return cached.analysis
+    const pendingAnalyses =
+      getPendingSupplierPartOrientationAnalyses(partsEngine)
+    const existing = pendingAnalyses.get(cacheKey)
+    if (existing) {
+      // A live subscriber takes over if the producer's component was removed.
+      // Its cancellation never interrupts the producer or other subscribers.
+      return yield* Deferred.await(existing).pipe(
+        // Only a typed producer-lease failure selects takeover; interrupts and
+        // defects remain their original causes until the outer candidate policy.
+        Effect.catch((error) =>
+          error instanceof OrientationProducerCancelled
+            ? analyzeSupplierPartOrientation(request)
+            : Effect.fail(error),
+        ),
+      )
+    }
+    const pending = yield* Deferred.make<
+      SupplierPartOrientationAnalysis,
+      CoreError | OrientationProducerCancelled
+    >()
+    pendingAnalyses.set(cacheKey, pending)
+    return yield* Effect.gen(function* () {
+      const supplierCircuitJson = yield* corePromise(
+        () =>
+          Promise.resolve(
+            partsEngine.fetchPartCircuitJson!({
+              supplierPartNumber: supplierPartCandidate.supplierPartNumber,
+              // This callback retains the original platform function identity.
+              platformFetch: component.root?.platform?.platformFetch,
+            }),
+          ),
+        "fetch_orientation_footprint",
+      )
+      if (!supplierCircuitJson?.length)
+        return { pin1Location: null, pin1Polarity: null }
+      const analysis = yield* coreSync(
+        () => ({
+          pin1Location: analyzePcbPin1Location(supplierCircuitJson),
+          pin1Polarity: getPin1Polarity(getPin1SourcePort(supplierCircuitJson)),
+        }),
+        "analyze_supplier_orientation",
+      )
+      const cacheEngine = component.root?.platform?.localCacheEngine
+      if (cacheEngine) {
+        yield* catchJobFailure(
+          corePromise(
+            () =>
+              Promise.resolve(
+                job.commit(() =>
+                  cacheEngine.setItem(
+                    cacheKey,
+                    JSON.stringify({
+                      pin1_location: analysis.pin1Location,
+                      pin1_polarity: analysis.pin1Polarity,
+                    } satisfies CachedSupplierPartOrientationAnalysis),
+                  ),
+                ),
+              ),
+            "cache_supplier_orientation",
+          ),
+          () => Effect.void,
+        )
+      }
+      return analysis
+    }).pipe(
+      Effect.onExit((exit) =>
+        Effect.gen(function* () {
+          if (pendingAnalyses.get(cacheKey) === pending)
+            pendingAnalyses.delete(cacheKey)
+          yield* Deferred.done(
+            pending,
+            Exit.isFailure(exit) && Cause.hasInterrupts(exit.cause)
+              ? Exit.fail(new OrientationProducerCancelled())
+              : exit,
+          )
+        }),
+      ),
+    )
+  })
 
 export const NormalComponent_doInitialPartOrientationAnalysis = (
   component: NormalComponent<any, any>,
@@ -340,42 +418,69 @@ export const NormalComponent_doInitialPartOrientationAnalysis = (
   if (component._hasStartedPartOrientationAnalysis) return
   component._hasStartedPartOrientationAnalysis = true
 
-  component._queueAsyncEffect("analyze-part-orientation", async () => {
-    const supplierPin1LocationMap: SupplierPin1LocationMap = {}
-    for (const supplierPartCandidate of supplierPartCandidates) {
-      try {
-        const { pin1Location: supplierPin1Location, pin1Polarity } =
-          await analyzeSupplierPartOrientation({
-            component,
-            partsEngine,
-            supplierPartCandidate,
-          })
-        if (supplierPin1Location) {
-          supplierPin1LocationMap[supplierPartCandidate.supplierName] =
-            supplierPin1Location
+  component._queueEffect(
+    "analyze-part-orientation",
+    (job) =>
+      Effect.gen(function* () {
+        const supplierPin1LocationMap: SupplierPin1LocationMap = {}
+        for (const supplierPartCandidate of supplierPartCandidates) {
+          yield* catchJobFailure(
+            Effect.gen(function* () {
+              const { pin1Location: supplierPin1Location, pin1Polarity } =
+                yield* analyzeSupplierPartOrientation({
+                  component,
+                  partsEngine,
+                  supplierPartCandidate,
+                  job,
+                })
+              if (supplierPin1Location)
+                supplierPin1LocationMap[supplierPartCandidate.supplierName] =
+                  supplierPin1Location
+              if (
+                localPin1Polarity &&
+                pin1Polarity &&
+                localPin1Polarity !== pin1Polarity
+              ) {
+                yield* coreSync(
+                  () =>
+                    job.commit(() => {
+                      const error = source_component_misconfigured_error.parse({
+                        type: "source_component_misconfigured_error",
+                        error_type: "source_component_misconfigured_error",
+                        message: `${component.getString()} maps pin 1 to the ${localPin1Polarity}, but supplier part ${supplierPartCandidate.supplierName}:${supplierPartCandidate.supplierPartNumber} maps pin 1 to the ${pin1Polarity}. Update pinLabels or use a supplier part with matching diode polarity.`,
+                        source_component_ids: [component.source_component_id!],
+                        source_port_ids: localPin1SourcePort?.source_port_id
+                          ? [localPin1SourcePort.source_port_id]
+                          : undefined,
+                      })
+                      db.source_component_misconfigured_error.insert(error)
+                    }),
+                  "commit_supplier_polarity_error",
+                )
+              }
+            }),
+            () => Effect.void,
+          )
         }
-        if (
-          localPin1Polarity &&
-          pin1Polarity &&
-          localPin1Polarity !== pin1Polarity
-        ) {
-          const error = source_component_misconfigured_error.parse({
-            type: "source_component_misconfigured_error",
-            error_type: "source_component_misconfigured_error",
-            message: `${component.getString()} maps pin 1 to the ${localPin1Polarity}, but supplier part ${supplierPartCandidate.supplierName}:${supplierPartCandidate.supplierPartNumber} maps pin 1 to the ${pin1Polarity}. Update pinLabels or use a supplier part with matching diode polarity.`,
-            source_component_ids: [component.source_component_id!],
-            source_port_ids: localPin1SourcePort?.source_port_id
-              ? [localPin1SourcePort.source_port_id]
-              : undefined,
-          })
-          component.root!.db.source_component_misconfigured_error.insert(error)
-        }
-      } catch {}
-    }
-
-    component._asyncSupplierPin1LocationMap = supplierPin1LocationMap
-    component._markDirty("PartOrientationAnalysis")
-  })
+        yield* coreSync(
+          () =>
+            job.commit(() => {
+              component._asyncSupplierPin1LocationMap = supplierPin1LocationMap
+              component._markDirty("PartOrientationAnalysis")
+            }),
+          "commit_supplier_orientation",
+        )
+      }),
+    {
+      propsChange: "cancel",
+      onCancel: (reason) => {
+        component._hasStartedPartOrientationAnalysis = false
+        component._asyncSupplierPin1LocationMap = undefined
+        if (reason !== "disposed" && reason !== "removed")
+          component._markDirty("PartOrientationAnalysis")
+      },
+    },
+  )
 }
 
 export const NormalComponent_updatePartOrientationAnalysis = (
