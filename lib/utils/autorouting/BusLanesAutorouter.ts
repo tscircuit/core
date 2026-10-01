@@ -16,7 +16,7 @@ import type { SimpleRouteJson, SimplifiedPcbTrace } from "./SimpleRouteJson"
 export class BusLanesAutorouter implements GenericLocalAutorouter {
   isRouting = false
   private solver: BusLanesPipelineSolver
-  private timer?: ReturnType<typeof setTimeout>
+  private cancelScheduledTick?: () => void
   private listeners: Array<{
     event: AutorouterEvent["type"]
     callback: (event: AutorouterEvent) => void
@@ -88,7 +88,7 @@ export class BusLanesAutorouter implements GenericLocalAutorouter {
           phase: this.solver.phase,
           debugGraphics: this.solver.visualize(),
         })
-        this.timer = setTimeout(tick, 0)
+        this.scheduleTick(tick)
       } catch (error) {
         this.isRouting = false
         this.emit({
@@ -97,11 +97,22 @@ export class BusLanesAutorouter implements GenericLocalAutorouter {
         })
       }
     }
-    this.timer = setTimeout(tick, 0)
+    this.scheduleTick(tick)
+  }
+  private scheduleTick(tick: () => void) {
+    // Node/Bun can yield to I/O without imposing the timer's minimum delay.
+    // Browsers retain their normal task scheduling and cancellation behavior.
+    if (typeof globalThis.setImmediate === "function") {
+      const timer = globalThis.setImmediate(tick)
+      this.cancelScheduledTick = () => globalThis.clearImmediate(timer)
+    } else {
+      const timer = setTimeout(tick, 0)
+      this.cancelScheduledTick = () => clearTimeout(timer)
+    }
   }
   stop() {
     this.isRouting = false
-    if (this.timer) clearTimeout(this.timer)
+    this.cancelScheduledTick?.()
   }
   solveSync(): SimplifiedPcbTrace[] {
     this.solver.solve()
