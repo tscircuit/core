@@ -499,7 +499,9 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       ? this.parent
       : parentNormalComponent
 
-    if (!parentWithPcbComponentId?.pcb_component_id) {
+    const isViaPort = this.parent?.componentName === "Via"
+
+    if (!parentWithPcbComponentId?.pcb_component_id && !isViaPort) {
       throw new Error(
         `${this.getString()} has no parent pcb component, cannot render pcb_port (parent: ${this.parent?.getString()}, parentNormalComponent: ${parentNormalComponent?.getString()})`,
       )
@@ -548,7 +550,9 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       const isBoardPinout = this._shouldIncludeInBoardPinout()
 
       const pcb_port = db.pcb_port.insert({
-        pcb_component_id: parentWithPcbComponentId.pcb_component_id!,
+        ...(parentWithPcbComponentId?.pcb_component_id
+          ? { pcb_component_id: parentWithPcbComponentId.pcb_component_id }
+          : {}),
         layers: this.getAvailablePcbLayers(),
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
