@@ -44,19 +44,21 @@ test("bus_lanes routes AM3352 DDR3 from original pads without a custom algorithm
   ])
   const scores = measureRoutingQuality(traces)
   expect(scores.reduce((n, s) => n + s.acuteCorners, 0)).toBe(0)
-  // Rounded ceilings from the reviewed reference: 1696.53 mm, 2.536 maximum
-  // detour, 1.723 mean, 888 ordinary turns and 451 short jogs. No saved routes.
+  // Guard the improved compact routing while allowing numerical roundoff.
+  // These ceilings also accept the preceding 1549.71 mm / 540-turn result.
   expect(scores.reduce((n, s) => n + s.planarLength, 0)).toBeLessThanOrEqual(
-    1700,
+    1550,
   )
-  expect(Math.max(...scores.map((s) => s.detourRatio))).toBeLessThanOrEqual(2.6)
+  expect(Math.max(...scores.map((s) => s.detourRatio))).toBeLessThanOrEqual(
+    2.05,
+  )
   expect(
     scores.reduce((n, s) => n + s.detourRatio, 0) / scores.length,
-  ).toBeLessThanOrEqual(1.75)
+  ).toBeLessThanOrEqual(1.55)
   expect(scores.reduce((n, s) => n + s.ordinaryTurns, 0)).toBeLessThanOrEqual(
-    900,
+    540,
   )
-  expect(scores.reduce((n, s) => n + s.shortJogs, 0)).toBeLessThanOrEqual(460)
+  expect(scores.reduce((n, s) => n + s.shortJogs, 0)).toBeLessThanOrEqual(145)
   for (const bus of json.filter((e) => e.type === "source_bus")) {
     const lengths = bus.source_trace_ids.map(
       (id) => scores.find((s) => s.sourceTraceId === id)!.planarLength,
