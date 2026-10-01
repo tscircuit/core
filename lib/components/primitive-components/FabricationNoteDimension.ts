@@ -1,6 +1,7 @@
 import { fabricationNoteDimensionProps } from "@tscircuit/props"
 import type { Point } from "circuit-json"
 import { applyToPoint, type Matrix } from "transformation-matrix"
+import { resolvePcbDimensionOffsetDirection } from "lib/utils/pcb/resolve-pcb-dimension-offset-direction"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
 export class FabricationNoteDimension extends PrimitiveComponent<
@@ -61,17 +62,13 @@ export class FabricationNoteDimension extends PrimitiveComponent<
       props.text ??
       this._formatDistanceText({ from, to, units: props.units ?? "mm" })
 
-    // Endpoints are board-space points in mm (+X right, +Y up). An explicit
-    // direction is footprint-local and unitless: rotate/reflect it with the same
-    // PCB transform, but remove translation because it is not a position.
-    const dx = to.x - from.x
-    const dy = to.y - from.y
-    const distance = Math.hypot(dx, dy)
-    const offsetDirection = props.offsetDirection
-      ? applyToPoint({ ...transform, e: 0, f: 0 }, props.offsetDirection)
-      : props.offset !== undefined && distance > 0
-        ? { x: -dy / distance, y: dx / distance }
-        : undefined
+    const offsetDirection = resolvePcbDimensionOffsetDirection({
+      from,
+      offset: props.offset,
+      offsetDirection: props.offsetDirection,
+      to,
+      transform,
+    })
 
     const fabrication_note_dimension = db.pcb_fabrication_note_dimension.insert(
       {

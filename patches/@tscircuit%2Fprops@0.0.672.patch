@@ -1,16 +1,11 @@
---- a/dist/index.js
-+++ b/dist/index.js
-@@ -18624,6 +18624,7 @@
-   to: dimensionTarget,
-   text: z108.string().optional(),
-   offset: distance24.optional(),
-+  offsetDirection: z108.object({ x: z108.number().finite(), y: z108.number().finite() }).optional(),
-   font: z108.enum(["tscircuit2024"]).optional(),
-   fontSize: length6.optional(),
-   color: z108.string().optional(),
+diff --git a/node_modules/@tscircuit/props/.bun-tag-7b98354b44d3c46f b/.bun-tag-7b98354b44d3c46f
+new file mode 100644
+index 0000000000000000000000000000000000000000..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+diff --git a/dist/index.d.ts b/dist/index.d.ts
+index 6e7829d9cd9f379bf3b6b99297f0cc631470a587..1a86792be9a7dc6844b5e0b4a60472091c39e52c 100644
 --- a/dist/index.d.ts
 +++ b/dist/index.d.ts
-@@ -202807,7 +202807,17 @@
+@@ -202807,7 +202807,17 @@ interface FabricationNoteDimensionProps extends Omit<PcbLayoutProps, "pcbLeftEdg
      from: string | Point;
      to: string | Point;
      text?: string;
@@ -28,7 +23,7 @@
      font?: "tscircuit2024";
      fontSize?: string | number;
      color?: string;
-@@ -202905,6 +202915,16 @@
+@@ -202905,6 +202915,16 @@ declare const fabricationNoteDimensionProps: z.ZodObject<Omit<{
      }>]>;
      text: z.ZodOptional<z.ZodString>;
      offset: z.ZodOptional<z.ZodEffects<z.ZodUnion<[z.ZodString, z.ZodNumber]>, number, string | number>>;
@@ -45,7 +40,7 @@
      font: z.ZodOptional<z.ZodEnum<["tscircuit2024"]>>;
      fontSize: z.ZodOptional<z.ZodEffects<z.ZodUnion<[z.ZodString, z.ZodNumber]>, number, string | number>>;
      color: z.ZodOptional<z.ZodString>;
-@@ -202951,6 +202971,10 @@
+@@ -202951,6 +202971,10 @@ declare const fabricationNoteDimensionProps: z.ZodObject<Omit<{
      centerToCenter?: true | undefined;
      color?: string | undefined;
      text?: string | undefined;
@@ -56,7 +51,7 @@
      arrowSize?: number | undefined;
      units?: "in" | "mm" | undefined;
      outerEdgeToEdge?: true | undefined;
-@@ -202995,6 +203019,10 @@
+@@ -202995,6 +203019,10 @@ declare const fabricationNoteDimensionProps: z.ZodObject<Omit<{
      centerToCenter?: true | undefined;
      color?: string | undefined;
      text?: string | undefined;
@@ -67,3 +62,80 @@
      arrowSize?: string | number | undefined;
      units?: "in" | "mm" | undefined;
      outerEdgeToEdge?: true | undefined;
+@@ -241208,7 +241236,17 @@ interface PcbNoteDimensionProps extends Omit<PcbLayoutProps, "pcbLeftEdgeX" | "p
+     from: string | Point;
+     to: string | Point;
+     text?: string;
++    /** Offset distance in mm, or a unit-bearing string. Defaults to no offset. */
+     offset?: string | number;
++    /**
++     * Unitless direction in footprint-local coordinates (+X right, +Y up).
++     * Preserved as supplied; omitted uses the perpendicular to from -> to.
++     * The direction rotates/mirrors with the footprint, without translation.
++     */
++    offsetDirection?: {
++        x: number;
++        y: number;
++    };
+     font?: "tscircuit2024";
+     fontSize?: string | number;
+     color?: string;
+@@ -241306,6 +241344,16 @@ declare const pcbNoteDimensionProps: z.ZodObject<Omit<{
+     }>]>;
+     text: z.ZodOptional<z.ZodString>;
+     offset: z.ZodOptional<z.ZodEffects<z.ZodUnion<[z.ZodString, z.ZodNumber]>, number, string | number>>;
++    offsetDirection: z.ZodOptional<z.ZodObject<{
++        x: z.ZodNumber;
++        y: z.ZodNumber;
++    }, "strip", z.ZodTypeAny, {
++        x: number;
++        y: number;
++    }, {
++        x: number;
++        y: number;
++    }>>;
+     font: z.ZodOptional<z.ZodEnum<["tscircuit2024"]>>;
+     fontSize: z.ZodOptional<z.ZodEffects<z.ZodUnion<[z.ZodString, z.ZodNumber]>, number, string | number>>;
+     color: z.ZodOptional<z.ZodString>;
+@@ -241352,6 +241400,10 @@ declare const pcbNoteDimensionProps: z.ZodObject<Omit<{
+     centerToCenter?: true | undefined;
+     color?: string | undefined;
+     text?: string | undefined;
++    offsetDirection?: {
++        x: number;
++        y: number;
++    } | undefined;
+     arrowSize?: number | undefined;
+     units?: "in" | "mm" | undefined;
+     outerEdgeToEdge?: true | undefined;
+@@ -241396,6 +241448,10 @@ declare const pcbNoteDimensionProps: z.ZodObject<Omit<{
+     centerToCenter?: true | undefined;
+     color?: string | undefined;
+     text?: string | undefined;
++    offsetDirection?: {
++        x: number;
++        y: number;
++    } | undefined;
+     arrowSize?: string | number | undefined;
+     units?: "in" | "mm" | undefined;
+     outerEdgeToEdge?: true | undefined;
+diff --git a/dist/index.js b/dist/index.js
+index 39715463f9f083ad669b7652c41c394334872a7f..026084059957a57ea4d16dc66560e5365bc430ac 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -18624,6 +18624,7 @@ var fabricationNoteDimensionProps = pcbLayoutProps.omit({
+   to: dimensionTarget,
+   text: z108.string().optional(),
+   offset: distance24.optional(),
++  offsetDirection: z108.object({ x: z108.number().finite(), y: z108.number().finite() }).optional(),
+   font: z108.enum(["tscircuit2024"]).optional(),
+   fontSize: length6.optional(),
+   color: z108.string().optional(),
+@@ -19442,6 +19443,7 @@ var pcbNoteDimensionProps = pcbLayoutProps.omit({
+   to: dimensionTarget2,
+   text: z153.string().optional(),
+   offset: distance51.optional(),
++  offsetDirection: z153.object({ x: z153.number().finite(), y: z153.number().finite() }).optional(),
+   font: z153.enum(["tscircuit2024"]).optional(),
+   fontSize: length13.optional(),
+   color: z153.string().optional(),
