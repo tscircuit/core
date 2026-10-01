@@ -1,7 +1,7 @@
 {
   "name": "@tscircuit/core",
   "type": "module",
-  "version": "0.0.2032",
+  "version": "0.0.2033",
   "types": "dist/index.d.ts",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -36,7 +36,7 @@
     "@tscircuit/alphabet": "0.0.25",
     "@tscircuit/bga-fanout-solver": "github:tscircuit/bga-fanout-solver#247c835cb8d69b65e53891dcf869731079415b39",
     "@tscircuit/bus-lanes-solver": "https://jscdn.tscircuit.com/@tscircuit/bus-lanes-solver/0.0.5.tgz",
-    "@tscircuit/capacity-autorouter": "^0.0.941",
+    "@tscircuit/capacity-autorouter": "^0.0.951",
     "@tscircuit/checks": "^0.0.231",
     "@tscircuit/circuit-json-util": "^0.0.117",
     "@tscircuit/common": "^0.0.20",
