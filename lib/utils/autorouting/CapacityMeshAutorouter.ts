@@ -1,3 +1,7 @@
+import * as Cause from "effect/Cause"
+import * as Effect from "effect/Effect"
+import * as Exit from "effect/Exit"
+import { corePromise, coreSync, originalCoreError } from "lib/effect/core-error"
 import {
   AssignableAutoroutingPipeline2,
   AssignableAutoroutingPipeline3,
@@ -156,7 +160,8 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
   }
   private cycleCount = 0
   private stepDelay: number
-  private timeoutId?: number
+  private interruptRouting?: () => void
+  private routingGeneration = 0
 
   constructor(input: SimpleRouteJson, options: AutorouterOptions = {}) {
     this.input = input
@@ -223,124 +228,113 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
    */
   start(): void {
     if (this.isRouting) return
-
     this.isRouting = true
     this.cycleCount = 0
-
-    // Start the routing process with steps
-    void this.runCycleAndQueueNextCycle()
+    const generation = ++this.routingGeneration
+    const interrupt = Effect.runCallback(this.runRoutingEffect(), {
+      onExit: (exit) => {
+        if (generation !== this.routingGeneration) return
+        this.interruptRouting = undefined
+        if (Exit.isFailure(exit) && !Cause.hasInterrupts(exit.cause)) {
+          const error = originalCoreError(exit.cause)
+          try {
+            this.emitEvent({
+              type: "error",
+              error:
+                error instanceof AutorouterError
+                  ? error
+                  : new AutorouterError(
+                      error instanceof Error ? error.message : String(error),
+                    ),
+            })
+          } finally {
+            if (generation === this.routingGeneration) this.isRouting = false
+          }
+        } else this.isRouting = false
+      },
+    })
+    if (this.isRouting) this.interruptRouting = interrupt
   }
 
-  private async stepSolver(): Promise<void> {
-    if (
-      "stepAsync" in this.solver &&
-      typeof this.solver.stepAsync === "function"
-    ) {
-      await this.solver.stepAsync()
-      return
-    }
-
-    this.solver.step()
-  }
-
-  /**
-   * Execute the next routing step and schedule the following one if needed
-   */
-  private async runCycleAndQueueNextCycle(): Promise<void> {
-    if (!this.isRouting) return
-
-    try {
-      // If already solved or failed, complete the routing
-      if (this.solver.solved || this.solver.failed) {
+  /** External solver calls are adapters; native scheduling and sleeps belong
+   * to this interruptible fiber. In-flight noncancellable solver steps can
+   * finish, but cannot publish progress or schedule another cycle after stop. */
+  private runRoutingEffect() {
+    return Effect.gen({ self: this }, function* () {
+      while (this.isRouting) {
         if (this.solver.failed) {
-          this.emitEvent({
-            type: "error",
-            error: new AutorouterError(this.solver.error || "Routing failed"),
-          })
-        } else {
-          this.emitEvent({
-            type: "complete",
-            traces:
-              this.solver.getOutputSimplifiedPcbTraces() as SimplifiedPcbTrace[],
-          })
+          return yield* Effect.fail(
+            new AutorouterError(this.solver.error || "Routing failed"),
+          )
         }
-        this.isRouting = false
-        return
+        if (this.solver.solved) {
+          yield* coreSync(
+            () =>
+              this.emitEvent({
+                type: "complete",
+                traces:
+                  this.solver.getOutputSimplifiedPcbTraces() as SimplifiedPcbTrace[],
+              }),
+            "complete_capacity_routing",
+          )
+          return
+        }
+        const startTime = Date.now()
+        const startIterations = this.solver.iterations
+        while (
+          this.isRouting &&
+          Date.now() - startTime < 250 &&
+          !this.solver.failed &&
+          !this.solver.solved
+        ) {
+          const activeSolver = this.solver
+          if (
+            "stepAsync" in activeSolver &&
+            typeof activeSolver.stepAsync === "function"
+          ) {
+            const stepAsync = activeSolver.stepAsync
+            yield* corePromise(
+              () => stepAsync.call(activeSolver),
+              "step_capacity_router",
+            )
+          } else {
+            yield* coreSync(() => activeSolver.step(), "step_capacity_router")
+          }
+        }
+        if (!this.isRouting) return
+        const iterationsPerSecond =
+          ((this.solver.iterations - startIterations) /
+            (Date.now() - startTime)) *
+          1000
+        this.cycleCount++
+        yield* coreSync(
+          () =>
+            this.emitEvent({
+              type: "progress",
+              steps: this.cycleCount,
+              iterationsPerSecond,
+              progress: this.solver.progress,
+              phase:
+                "getCurrentPhase" in this.solver
+                  ? this.solver.getCurrentPhase()
+                  : (this.solver.activeSubSolver?.getSolverName() ??
+                    this.solver.getSolverName()),
+              debugGraphics: this.solver.preview() || undefined,
+            }),
+          "capacity_routing_progress",
+        )
+        if (!this.isRouting) return
+        yield* Effect.sleep(this.stepDelay)
       }
-
-      // Execute one step of the solver
-      // Execute for 10ms to allow the solver to make progress
-      const startTime = Date.now()
-      const startIterations = this.solver.iterations
-      while (
-        Date.now() - startTime < 250 &&
-        !this.solver.failed &&
-        !this.solver.solved
-      ) {
-        await this.stepSolver()
-      }
-      const iterationsPerSecond =
-        ((this.solver.iterations - startIterations) /
-          (Date.now() - startTime)) *
-        1000
-      this.cycleCount++
-
-      // Get visualization data if available
-      const debugGraphics = this.solver?.preview() || undefined
-
-      // Report progress
-      const progress = this.solver.progress
-
-      this.emitEvent({
-        type: "progress",
-        steps: this.cycleCount,
-        iterationsPerSecond,
-        progress,
-        phase:
-          "getCurrentPhase" in this.solver
-            ? this.solver.getCurrentPhase()
-            : (this.solver.activeSubSolver?.getSolverName() ??
-              this.solver.getSolverName()),
-        debugGraphics,
-      })
-
-      // Schedule the next step
-      if (this.stepDelay > 0) {
-        this.timeoutId = setTimeout(
-          () => void this.runCycleAndQueueNextCycle(),
-          this.stepDelay,
-        ) as unknown as number
-      } else {
-        // Use setImmediate or setTimeout with 0 to prevent blocking the event loop
-        this.timeoutId = setTimeout(
-          () => void this.runCycleAndQueueNextCycle(),
-          0,
-        ) as unknown as number
-      }
-    } catch (error) {
-      // Handle any errors during the step
-      this.emitEvent({
-        type: "error",
-        error:
-          error instanceof Error
-            ? new AutorouterError(error.message)
-            : new AutorouterError(String(error)),
-      })
-      this.isRouting = false
-    }
+    })
   }
 
-  /**
-   * Stop the routing process if it's in progress
-   */
   stop(): void {
-    if (!this.isRouting) return
-
     this.isRouting = false
-    if (this.timeoutId !== undefined) {
-      clearTimeout(this.timeoutId)
-      this.timeoutId = undefined
-    }
+    this.routingGeneration++
+    const interrupt = this.interruptRouting
+    this.interruptRouting = undefined
+    interrupt?.()
   }
 
   /**
@@ -371,6 +365,28 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
   /**
    * Emit an event to all registered handlers
    */
+  removeListener(
+    event: AutorouterEvent["type"],
+    callback:
+      | ((event: AutorouterCompleteEvent) => void)
+      | ((event: AutorouterErrorEvent) => void)
+      | ((event: AutorouterProgressEvent) => void),
+  ): void {
+    if (event === "complete") {
+      this.eventHandlers.complete = this.eventHandlers.complete.filter(
+        (handler) => handler !== callback,
+      )
+    } else if (event === "error") {
+      this.eventHandlers.error = this.eventHandlers.error.filter(
+        (handler) => handler !== callback,
+      )
+    } else {
+      this.eventHandlers.progress = this.eventHandlers.progress.filter(
+        (handler) => handler !== callback,
+      )
+    }
+  }
+
   private emitEvent(event: AutorouterEvent): void {
     if (event.type === "complete") {
       for (const handler of this.eventHandlers.complete) {

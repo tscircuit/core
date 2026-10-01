@@ -1,3 +1,11 @@
+import * as Cause from "effect/Cause"
+import * as Effect from "effect/Effect"
+import { corePromise, coreSync, originalCoreError } from "lib/effect/core-error"
+import { coreFetch, type CoreJobContext } from "lib/effect/core-services"
+import {
+  acquireLocalAutorouter,
+  runLocalAutorouter,
+} from "lib/effect/routing-local-router"
 import { getAutoroutingPhasePcbTracePaths } from "./get-autorouting-phase-pcb-trace-paths"
 import {
   type SimpleRouteJson as AutorouterSimpleRouteJson,
@@ -100,8 +108,8 @@ import { Group_doInitialStandaloneSubcircuitPcbDesignRuleChecks } from "./Group_
 import { Group_getFanoutPourNetMap } from "./Group_getFanoutPourNetMap"
 import { Group_getRoutingPhasePlans } from "./Group_getRoutingPhasePlans"
 import {
-  cacheLocalAutoroutingPhaseResult,
-  getCachedLocalAutoroutingPhaseResult,
+  cacheLocalAutoroutingPhaseResultEffect,
+  getCachedLocalAutoroutingPhaseResultEffect,
   getLocalAutoroutingCacheKey,
 } from "./Group_localAutoroutingCache"
 import {
@@ -220,6 +228,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   subcircuit_id: string | null = null
 
   _hasStartedAsyncAutorouting = false
+  private _autoroutingJobGeneration = 0
 
   _pcbPlacementDrcErrorCount: number | null = null
 
@@ -838,134 +847,133 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     return false
   }
 
-  async _runEffectMakeHttpAutoroutingRequest() {
-    const { db } = this.root!
-    const debug = Debug("tscircuit:core:_runEffectMakeHttpAutoroutingRequest")
-    const props = this._parsedProps as SubcircuitGroupProps
+  /** Promise facade retained for callers outside the Effect scheduler. */
+  _runEffectMakeHttpAutoroutingRequest(): Promise<void> {
+    if (!this.root) return Promise.resolve()
+    return this.root.effectRuntime.queue({
+      owner: this,
+      build: (job) => this._runHttpAutoroutingEffect(job),
+    })
+  }
 
-    const autorouterConfig = this._getAutorouterConfig()
+  _runHttpAutoroutingEffect(job: CoreJobContext) {
+    return Effect.gen({ self: this }, function* () {
+      if (!job.isCurrent()) return
+      const { db } = this.root!
+      const debug = Debug("tscircuit:core:_runEffectMakeHttpAutoroutingRequest")
+      const props = this._parsedProps as SubcircuitGroupProps
 
-    // Remote autorouting
-    const serverUrl = autorouterConfig.serverUrl!
-    const serverMode = autorouterConfig.serverMode!
+      const autorouterConfig = this._getAutorouterConfig()
 
-    const fetchWithDebug = (url: string, options: RequestInit) => {
-      debug("fetching", url)
-      if (options.headers) {
-        // @ts-ignore
-        options.headers["Tscircuit-Core-Version"] = this.root?.getCoreVersion()!
+      // Remote autorouting
+      const serverUrl = autorouterConfig.serverUrl!
+      const serverMode = autorouterConfig.serverMode!
+
+      const fetchWithDebug = (url: string, options: RequestInit) => {
+        debug("fetching", url)
+        if (options.headers) {
+          // @ts-ignore
+          options.headers["Tscircuit-Core-Version"] =
+            this.root?.getCoreVersion()!
+        }
+        return Effect.gen(function* () {
+          const response = yield* coreFetch(url, options)
+          return yield* corePromise(
+            () => response.json(),
+            "autorouter_response",
+          )
+        }).pipe(Effect.scoped)
       }
-      return fetch(url, options)
-    }
 
-    // Only include source and pcb elements
-    const pcbAndSourceCircuitJson = this.root!.db.toArray().filter(
-      (element) => {
-        return (
-          element.type.startsWith("source_") || element.type.startsWith("pcb_")
-        )
-      },
-    )
+      // Only include source and pcb elements
+      const pcbAndSourceCircuitJson = this.root!.db.toArray().filter(
+        (element) => {
+          return (
+            element.type.startsWith("source_") ||
+            element.type.startsWith("pcb_")
+          )
+        },
+      )
 
-    if (serverMode === "solve-endpoint") {
-      // Legacy solve endpoint mode
-      if (this.props.autorouter?.inputFormat === "simplified") {
-        const preferredTraceWidth =
-          props.defaultTraceWidth ?? props.nominalTraceWidth
-        const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
-          db,
-          minTraceWidth: Number(props.minTraceWidth ?? 0.15),
-          nominalTraceWidth:
-            preferredTraceWidth != null
-              ? Number(preferredTraceWidth)
-              : undefined,
-          subcircuit_id: this.subcircuit_id,
-          subcircuitComponent: this,
-        })
-        simpleRouteJson.allowViaInPad = autorouterConfig.allowViaInPad
+      if (serverMode === "solve-endpoint") {
+        // Legacy solve endpoint mode
+        if (this.props.autorouter?.inputFormat === "simplified") {
+          const preferredTraceWidth =
+            props.defaultTraceWidth ?? props.nominalTraceWidth
+          const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
+            db,
+            minTraceWidth: Number(props.minTraceWidth ?? 0.15),
+            nominalTraceWidth:
+              preferredTraceWidth != null
+                ? Number(preferredTraceWidth)
+                : undefined,
+            subcircuit_id: this.subcircuit_id,
+            subcircuitComponent: this,
+          })
+          simpleRouteJson.allowViaInPad = autorouterConfig.allowViaInPad
 
-        const { autorouting_result } = await fetchWithDebug(
+          const { autorouting_result } = yield* fetchWithDebug(
+            `${serverUrl}/autorouting/solve`,
+            {
+              method: "POST",
+              body: JSON.stringify({
+                input_simple_route_json: simpleRouteJson,
+                subcircuit_id: this.subcircuit_id!,
+              }),
+              headers: {
+                "Content-Type": "application/json",
+              },
+            },
+          )
+          job.commit(() => {
+            this._asyncAutoroutingResult = autorouting_result
+            this._markDirty("PcbTraceRender")
+          })
+          return
+        }
+
+        const { autorouting_result } = yield* fetchWithDebug(
           `${serverUrl}/autorouting/solve`,
           {
             method: "POST",
             body: JSON.stringify({
-              input_simple_route_json: simpleRouteJson,
+              input_circuit_json: pcbAndSourceCircuitJson,
               subcircuit_id: this.subcircuit_id!,
             }),
             headers: {
               "Content-Type": "application/json",
             },
           },
-        ).then((r) => r.json())
-        this._asyncAutoroutingResult = autorouting_result
-        this._markDirty("PcbTraceRender")
+        )
+        job.commit(() => {
+          this._asyncAutoroutingResult = autorouting_result
+          this._markDirty("PcbTraceRender")
+        })
         return
       }
 
-      const { autorouting_result } = await fetchWithDebug(
-        `${serverUrl}/autorouting/solve`,
+      const { autorouting_job } = yield* fetchWithDebug(
+        `${serverUrl}/autorouting/jobs/create`,
         {
           method: "POST",
           body: JSON.stringify({
             input_circuit_json: pcbAndSourceCircuitJson,
-            subcircuit_id: this.subcircuit_id!,
+            provider: "freerouting",
+            autostart: true,
+            display_name: this.root?.name,
+            subcircuit_id: this.subcircuit_id,
+            server_cache_enabled: autorouterConfig.serverCacheEnabled,
           }),
           headers: {
             "Content-Type": "application/json",
           },
         },
-      ).then((r) => r.json())
-      this._asyncAutoroutingResult = autorouting_result
-      this._markDirty("PcbTraceRender")
-      return
-    }
+      )
 
-    const { autorouting_job } = await fetchWithDebug(
-      `${serverUrl}/autorouting/jobs/create`,
-      {
-        method: "POST",
-        body: JSON.stringify({
-          input_circuit_json: pcbAndSourceCircuitJson,
-          provider: "freerouting",
-          autostart: true,
-          display_name: this.root?.name,
-          subcircuit_id: this.subcircuit_id,
-          server_cache_enabled: autorouterConfig.serverCacheEnabled,
-        }),
-        headers: {
-          "Content-Type": "application/json",
-        },
-      },
-    ).then((r) => r.json())
-
-    // Poll until job is complete
-    while (true) {
-      const { autorouting_job: job } = (await fetchWithDebug(
-        `${serverUrl}/autorouting/jobs/get`,
-        {
-          method: "POST",
-          body: JSON.stringify({
-            autorouting_job_id: autorouting_job.autorouting_job_id,
-          }),
-          headers: { "Content-Type": "application/json" },
-        },
-      ).then((r) => r.json())) as {
-        autorouting_job: {
-          autorouting_job_id: string
-          is_running: boolean
-          is_started: boolean
-          is_finished: boolean
-          has_error: boolean
-          error: { message: string } | null
-          autorouting_provider: "freerouting" | "tscircuit"
-          created_at: string
-          started_at?: string
-          finished_at?: string
-        }
-      }
-      if (job.is_finished) {
-        const { autorouting_job_output } = await fetchWithDebug(
-          `${serverUrl}/autorouting/jobs/get_output`,
+      // Poll until job is complete
+      while (job.isCurrent()) {
+        const { autorouting_job: remoteJob } = (yield* fetchWithDebug(
+          `${serverUrl}/autorouting/jobs/get`,
           {
             method: "POST",
             body: JSON.stringify({
@@ -973,837 +981,1032 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             }),
             headers: { "Content-Type": "application/json" },
           },
-        ).then((r) => r.json())
-
-        this._asyncAutoroutingResult = {
-          output_pcb_traces: autorouting_job_output.output_pcb_traces,
+        )) as {
+          autorouting_job: {
+            autorouting_job_id: string
+            is_running: boolean
+            is_started: boolean
+            is_finished: boolean
+            has_error: boolean
+            error: { message: string } | null
+            autorouting_provider: "freerouting" | "tscircuit"
+            created_at: string
+            started_at?: string
+            finished_at?: string
+          }
         }
-        this._markDirty("PcbTraceRender")
-        break
-      }
+        if (remoteJob.is_finished) {
+          const { autorouting_job_output } = yield* fetchWithDebug(
+            `${serverUrl}/autorouting/jobs/get_output`,
+            {
+              method: "POST",
+              body: JSON.stringify({
+                autorouting_job_id: autorouting_job.autorouting_job_id,
+              }),
+              headers: { "Content-Type": "application/json" },
+            },
+          )
 
-      if (job.has_error) {
-        const err = new AutorouterError(
-          `Autorouting job failed: ${JSON.stringify(job.error)}`,
-        )
-        db.pcb_autorouting_error.insert({
-          pcb_error_id: autorouting_job.autorouting_job_id,
-          error_type: "pcb_autorouting_error",
-          message: err.message,
-        })
-        throw err
-      }
+          job.commit(() => {
+            this._asyncAutoroutingResult = {
+              output_pcb_traces: autorouting_job_output.output_pcb_traces,
+            }
+            this._markDirty("PcbTraceRender")
+          })
+          break
+        }
 
-      // Wait before polling again
-      await new Promise((resolve) => setTimeout(resolve, 100))
-    }
+        if (remoteJob.has_error) {
+          const err = new AutorouterError(
+            `Autorouting job failed: ${JSON.stringify(remoteJob.error)}`,
+          )
+          job.commit(() =>
+            db.pcb_autorouting_error.insert({
+              pcb_error_id: autorouting_job.autorouting_job_id,
+              error_type: "pcb_autorouting_error",
+              message: err.message,
+            }),
+          )
+          throw err
+        }
+
+        // Wait before polling again
+        yield* Effect.sleep(100)
+      }
+    })
   }
 
   /**
    * Run local autorouting using the CapacityMeshAutorouter
    */
-  async _runLocalAutorouting() {
-    const { db } = this.root!
-    const props = this._parsedProps as SubcircuitGroupProps
-    const debug = Debug("tscircuit:core:_runLocalAutorouting")
-    debug(`[${this.getString()}] starting local autorouting`)
-    const autorouterConfig = this._getAutorouterConfig()
-    const isLaserPrefabPreset = this._isLaserPrefabAutorouter(autorouterConfig)
-    const isAutoJumperPreset = this._isAutoJumperAutorouter(autorouterConfig)
-    const isSingleLayerBoard = this._getSubcircuitLayerCount() === 1
+  /** Promise facade retained for callers outside the Effect scheduler. */
+  _runLocalAutorouting(): Promise<void> {
+    if (!this.root) return Promise.resolve()
+    return this.root.effectRuntime.queue({
+      owner: this,
+      build: (job) => this._runLocalAutoroutingEffect(job),
+    })
+  }
 
-    const minTraceWidth = Number(props.minTraceWidth ?? 0.15)
-    const nominalTraceWidth = Number(
-      props.defaultTraceWidth ?? props.nominalTraceWidth ?? minTraceWidth,
-    )
+  _runLocalAutoroutingEffect(job: CoreJobContext) {
+    return Effect.gen({ self: this }, function* () {
+      if (!job.isCurrent()) return
+      const { db } = this.root!
+      const props = this._parsedProps as SubcircuitGroupProps
+      const debug = Debug("tscircuit:core:_runLocalAutorouting")
+      debug(`[${this.getString()}] starting local autorouting`)
+      const autorouterConfig = this._getAutorouterConfig()
+      const isLaserPrefabPreset =
+        this._isLaserPrefabAutorouter(autorouterConfig)
+      const isAutoJumperPreset = this._isAutoJumperAutorouter(autorouterConfig)
+      const isSingleLayerBoard = this._getSubcircuitLayerCount() === 1
 
-    const routingPhasePlans = this._getRoutingPhasePlans()
-    const hasPhasedAutorouting =
-      this.getInheritedProperty("routeRemaining") === false ||
-      Group_hasPhasedAutorouting(routingPhasePlans)
-    const shouldEmitRoutingPhaseDebugObjects = routingPhasePlans.length > 1
-    const routingPhaseDebugLabels = new Map<RoutingPhasePlan, string>()
-    if (shouldEmitRoutingPhaseDebugObjects) {
-      for (const debugObject of db.pcb_debug_object.list()) {
-        if (
-          debugObject.subcircuit_id === this.subcircuit_id &&
-          (debugObject.label?.startsWith("Autorouting phase: ") ||
-            debugObject.label?.startsWith("autorouting phase "))
-        ) {
-          db.pcb_debug_object.delete(debugObject.pcb_debug_object_id)
+      const minTraceWidth = Number(props.minTraceWidth ?? 0.15)
+      const nominalTraceWidth = Number(
+        props.defaultTraceWidth ?? props.nominalTraceWidth ?? minTraceWidth,
+      )
+
+      const routingPhasePlans = this._getRoutingPhasePlans()
+      const hasPhasedAutorouting =
+        this.getInheritedProperty("routeRemaining") === false ||
+        Group_hasPhasedAutorouting(routingPhasePlans)
+      const shouldEmitRoutingPhaseDebugObjects = routingPhasePlans.length > 1
+      const routingPhaseDebugLabels = new Map<RoutingPhasePlan, string>()
+      if (shouldEmitRoutingPhaseDebugObjects) {
+        for (const debugObject of db.pcb_debug_object.list()) {
+          if (
+            debugObject.subcircuit_id === this.subcircuit_id &&
+            (debugObject.label?.startsWith("Autorouting phase: ") ||
+              debugObject.label?.startsWith("autorouting phase "))
+          ) {
+            job.commit(() =>
+              db.pcb_debug_object.delete(debugObject.pcb_debug_object_id),
+            )
+          }
         }
       }
-    }
-    const emitRoutingPhaseDebugObject = (
-      routingPhasePlan: RoutingPhasePlan,
-      bounds: SimpleRouteBounds,
-    ) => {
-      if (!shouldEmitRoutingPhaseDebugObjects) return
-      const phaseLabel = routingPhaseDebugLabels.get(routingPhasePlan)!
-      const phaseName = routingPhasePlan.phaseName?.trim()
-      db.pcb_debug_object.insert({
-        shape: "rect",
-        center: {
-          x: (bounds.minX + bounds.maxX) / 2,
-          y: (bounds.minY + bounds.maxY) / 2,
-        },
-        size: {
-          width: bounds.maxX - bounds.minX,
-          height: bounds.maxY - bounds.minY,
-        },
-        label: `autorouting phase ${phaseLabel}${phaseName ? ` ${phaseName}` : ""}`,
-        subcircuit_id: this.subcircuit_id ?? undefined,
-      })
-    }
-    const routingStages = routingPhasePlans.flatMap((routingPhasePlan) => {
-      const resolvedPhaseAutorouterConfig: NormalizedAutorouterConfig =
-        routingPhasePlan.autorouter
-          ? getPresetAutoroutingConfig(
-              routingPhasePlan.autorouter,
-              this.root?.platform,
-            )
-          : autorouterConfig
-      const preset = resolvedPhaseAutorouterConfig.preset
-      const implicitPhaseLabel = routingPhasePlan.reroute
-        ? preset === "simplify"
-          ? "simplify"
-          : "reroute"
-        : routingPhasePlan.fanoutRegionPcbGroupId
-          ? routingPhasePlan.autorouter === "default" &&
-            !routingPhasePlan.getPrecomputedRoutingResult
-            ? "breakout"
-            : "fanout"
-          : preset && preset !== "default"
-            ? preset.replaceAll("_", " ")
-            : "default"
-      routingPhaseDebugLabels.set(
-        routingPhasePlan,
-        routingPhasePlan.routingPhaseIndex?.toString() ?? implicitPhaseLabel,
-      )
-      const phaseAutorouterConfig = routingPhasePlan.getPrecomputedRoutingResult
-        ? {
-            ...resolvedPhaseAutorouterConfig,
-            allowViaInPad:
-              (typeof routingPhasePlan.autorouter === "object"
-                ? routingPhasePlan.autorouter.allowViaInPad
-                : undefined) ?? autorouterConfig.allowViaInPad,
-          }
-        : resolvedPhaseAutorouterConfig
-      const stages = getLocalAutoroutingStages(
-        routingPhasePlan.algorithmFn
-          ? {
-              ...phaseAutorouterConfig,
-              // The phase callback overrides inherited or preset callbacks.
-              algorithmFn: routingPhasePlan.algorithmFn,
-            }
-          : phaseAutorouterConfig,
-        this.root?.platform,
-      )
-      return stages.map((stage, phaseStageIndex) => ({
-        ...stage,
-        routingPhasePlan,
-        phaseStageIndex,
-        phaseStageCount: stages.length,
-      }))
-    })
-    // Distinguish multiple implicit fanout/breakout regions without inventing
-    // user phase indices. A single implicit phase needs only its purpose.
-    const implicitPhaseLabelCounts = new Map<string, number>()
-    for (const plan of routingPhasePlans) {
-      if (plan.routingPhaseIndex !== null) continue
-      const label = routingPhaseDebugLabels.get(plan)!
-      implicitPhaseLabelCounts.set(
-        label,
-        (implicitPhaseLabelCounts.get(label) ?? 0) + 1,
-      )
-    }
-    const implicitPhaseLabelOrdinals = new Map<string, number>()
-    for (const plan of routingPhasePlans) {
-      if (plan.routingPhaseIndex !== null) continue
-      const label = routingPhaseDebugLabels.get(plan)!
-      if (implicitPhaseLabelCounts.get(label)! <= 1) continue
-      const ordinal = (implicitPhaseLabelOrdinals.get(label) ?? 0) + 1
-      implicitPhaseLabelOrdinals.set(label, ordinal)
-      routingPhaseDebugLabels.set(plan, `${label} ${ordinal}`)
-    }
-    const hasFanoutStage = routingStages.some(({ autorouterConfig }) =>
-      ["fanout", "single_layer_fanout", "dogbone"].includes(
-        autorouterConfig.preset ?? "",
-      ),
-    )
-    const fanoutPourNetMap = hasFanoutStage
-      ? Group_getFanoutPourNetMap(this, routingPhasePlans)
-      : undefined
-    let { simpleRouteJson: baseSimpleRouteJson } =
-      getSimpleRouteJsonFromCircuitJson({
-        db,
-        minTraceWidth,
-        nominalTraceWidth,
-        subcircuit_id: this.subcircuit_id,
-        subcircuitComponent: this,
-        fanoutPourNetMap,
-      })
-
-    const emitFanoutBoundsConflictWarning = (
-      routingPhasePlan: RoutingPhasePlan,
-    ) => {
-      const fanoutRegionPcbGroupId = routingPhasePlan.fanoutRegionPcbGroupId
-      if (!fanoutRegionPcbGroupId) return
-      const pcbGroup = db.pcb_group.get(fanoutRegionPcbGroupId)
-      const sourceComponentId = db.pcb_component
-        .list()
-        .find(
-          (component) => component.pcb_group_id === fanoutRegionPcbGroupId,
-        )?.source_component_id
-      if (!sourceComponentId) return
-      const message = `${pcbGroup?.name ?? "Breakout"} defines conflicting fanout bounds with explicit breakout geometry and fanoutBoundaryPadding. Explicit breakout geometry takes precedence, so fanoutBoundaryPadding is ignored.`
-      const warningAlreadyExists = db.source_property_ignored_warning
-        .list()
-        .some(
-          (warning) =>
-            warning.source_component_id === sourceComponentId &&
-            warning.property_name === "fanoutBoundaryPadding" &&
-            warning.message === message,
-        )
-      if (warningAlreadyExists) return
-      db.source_property_ignored_warning.insert({
-        source_component_id: sourceComponentId,
-        property_name: "fanoutBoundaryPadding",
-        message,
-        error_type: "source_property_ignored_warning",
-        subcircuit_id: pcbGroup?.subcircuit_id,
-      })
-    }
-
-    const fanoutConfigByPhasePlan = new Map<
-      RoutingPhasePlan,
-      NormalizedAutorouterConfig
-    >()
-    for (const routingStage of routingStages) {
-      const fanoutMode = routingStage.autorouterConfig.preset
-      if (
-        (fanoutMode === "fanout" || fanoutMode === "single_layer_fanout") &&
-        !fanoutConfigByPhasePlan.has(routingStage.routingPhasePlan)
-      ) {
-        fanoutConfigByPhasePlan.set(
-          routingStage.routingPhasePlan,
-          routingStage.autorouterConfig,
+      const emitRoutingPhaseDebugObject = (
+        routingPhasePlan: RoutingPhasePlan,
+        bounds: SimpleRouteBounds,
+      ) => {
+        if (!shouldEmitRoutingPhaseDebugObjects) return
+        const phaseLabel = routingPhaseDebugLabels.get(routingPhasePlan)!
+        const phaseName = routingPhasePlan.phaseName?.trim()
+        job.commit(() =>
+          db.pcb_debug_object.insert({
+            shape: "rect",
+            center: {
+              x: (bounds.minX + bounds.maxX) / 2,
+              y: (bounds.minY + bounds.maxY) / 2,
+            },
+            size: {
+              width: bounds.maxX - bounds.minX,
+              height: bounds.maxY - bounds.minY,
+            },
+            label: `autorouting phase ${phaseLabel}${phaseName ? ` ${phaseName}` : ""}`,
+            subcircuit_id: this.subcircuit_id ?? undefined,
+          }),
         )
       }
-    }
-
-    const fanoutPhaseRegions = []
-    for (const [
-      routingPhasePlan,
-      phaseAutorouterConfig,
-    ] of fanoutConfigByPhasePlan) {
-      const fanoutRegionPcbGroupId = routingPhasePlan.fanoutRegionPcbGroupId
-      if (!fanoutRegionPcbGroupId) continue
-      let phaseSimpleRouteJson = Group_filterSimpleRouteJsonForPhase(
-        baseSimpleRouteJson,
-        routingPhasePlan,
-      )
-      if (phaseSimpleRouteJson.connections.length === 0) continue
-      phaseSimpleRouteJson = Group_applyDrcTolerancesToSimpleRouteJson(
-        phaseSimpleRouteJson,
-        routingPhasePlan.drcTolerances,
-      )
-      const breakoutPoints = db.pcb_breakout_point
-        .list()
-        .filter((point) => point.pcb_group_id === fanoutRegionPcbGroupId)
-        .map((point) => ({ x: point.x, y: point.y }))
-      const fanoutMode = phaseAutorouterConfig.preset as
-        | "fanout"
-        | "single_layer_fanout"
-      const fanoutBounds = FanoutAutorouter.resolveFanoutBounds(
-        phaseSimpleRouteJson,
-        {
-          mode: fanoutMode,
-          busFanoutDirections: routingPhasePlan.busFanoutDirections,
-          fanoutBounds: routingPhasePlan.fanoutBounds,
-          fanoutBoundaryPadding: routingPhasePlan.fanoutBoundaryPadding,
-          fanoutRoutingLayers: routingPhasePlan.fanoutRoutingLayers,
-          allowBlindAndBuriedVias: phaseSimpleRouteJson.allowBlindAndBuriedVias,
-          breakoutPoints,
-          onFanoutBoundsConflict: () =>
-            emitFanoutBoundsConflictWarning(routingPhasePlan),
-        },
-      )
-      routingPhasePlan.fanoutBounds = fanoutBounds
-      if (!fanoutBounds) continue
-
-      const pcbGroup = db.pcb_group.get(fanoutRegionPcbGroupId)
-
-      const maximumTraceWidth = Math.max(
-        phaseSimpleRouteJson.minTraceWidth,
-        ...phaseSimpleRouteJson.connections.map(
-          (connection) =>
-            connection.nominalTraceWidth ??
-            connection.width ??
-            phaseSimpleRouteJson.minTraceWidth,
+      const routingStages = routingPhasePlans.flatMap((routingPhasePlan) => {
+        const resolvedPhaseAutorouterConfig: NormalizedAutorouterConfig =
+          routingPhasePlan.autorouter
+            ? getPresetAutoroutingConfig(
+                routingPhasePlan.autorouter,
+                this.root?.platform,
+              )
+            : autorouterConfig
+        const preset = resolvedPhaseAutorouterConfig.preset
+        const implicitPhaseLabel = routingPhasePlan.reroute
+          ? preset === "simplify"
+            ? "simplify"
+            : "reroute"
+          : routingPhasePlan.fanoutRegionPcbGroupId
+            ? routingPhasePlan.autorouter === "default" &&
+              !routingPhasePlan.getPrecomputedRoutingResult
+              ? "breakout"
+              : "fanout"
+            : preset && preset !== "default"
+              ? preset.replaceAll("_", " ")
+              : "default"
+        routingPhaseDebugLabels.set(
+          routingPhasePlan,
+          routingPhasePlan.routingPhaseIndex?.toString() ?? implicitPhaseLabel,
+        )
+        const phaseAutorouterConfig =
+          routingPhasePlan.getPrecomputedRoutingResult
+            ? {
+                ...resolvedPhaseAutorouterConfig,
+                allowViaInPad:
+                  (typeof routingPhasePlan.autorouter === "object"
+                    ? routingPhasePlan.autorouter.allowViaInPad
+                    : undefined) ?? autorouterConfig.allowViaInPad,
+              }
+            : resolvedPhaseAutorouterConfig
+        const stages = getLocalAutoroutingStages(
+          routingPhasePlan.algorithmFn
+            ? {
+                ...phaseAutorouterConfig,
+                // The phase callback overrides inherited or preset callbacks.
+                algorithmFn: routingPhasePlan.algorithmFn,
+              }
+            : phaseAutorouterConfig,
+          this.root?.platform,
+        )
+        return stages.map((stage, phaseStageIndex) => ({
+          ...stage,
+          routingPhasePlan,
+          phaseStageIndex,
+          phaseStageCount: stages.length,
+        }))
+      })
+      // Distinguish multiple implicit fanout/breakout regions without inventing
+      // user phase indices. A single implicit phase needs only its purpose.
+      const implicitPhaseLabelCounts = new Map<string, number>()
+      for (const plan of routingPhasePlans) {
+        if (plan.routingPhaseIndex !== null) continue
+        const label = routingPhaseDebugLabels.get(plan)!
+        implicitPhaseLabelCounts.set(
+          label,
+          (implicitPhaseLabelCounts.get(label) ?? 0) + 1,
+        )
+      }
+      const implicitPhaseLabelOrdinals = new Map<string, number>()
+      for (const plan of routingPhasePlans) {
+        if (plan.routingPhaseIndex !== null) continue
+        const label = routingPhaseDebugLabels.get(plan)!
+        if (implicitPhaseLabelCounts.get(label)! <= 1) continue
+        const ordinal = (implicitPhaseLabelOrdinals.get(label) ?? 0) + 1
+        implicitPhaseLabelOrdinals.set(label, ordinal)
+        routingPhaseDebugLabels.set(plan, `${label} ${ordinal}`)
+      }
+      const hasFanoutStage = routingStages.some(({ autorouterConfig }) =>
+        ["fanout", "single_layer_fanout", "dogbone"].includes(
+          autorouterConfig.preset ?? "",
         ),
       )
-      const viaPadDiameter =
-        phaseSimpleRouteJson.minViaPadDiameter ??
-        phaseSimpleRouteJson.min_via_pad_diameter ??
-        phaseSimpleRouteJson.minViaDiameter
-      const traceToPadClearance =
-        phaseSimpleRouteJson.minTraceToPadEdgeClearance ??
-        phaseSimpleRouteJson.defaultObstacleMargin ??
-        maximumTraceWidth
-      fanoutPhaseRegions.push({
-        regionId: fanoutRegionPcbGroupId,
-        name:
-          pcbGroup?.name ??
-          routingPhasePlan.phaseName ??
-          fanoutRegionPcbGroupId,
-        bounds: fanoutBounds,
-        boundaryKeepaway:
-          getFanoutBoundaryPointSpacing({
-            traceWidth: maximumTraceWidth,
-            traceToPadClearance,
-            viaPadDiameter,
-          }) / 2,
-      })
-    }
-
-    const fanoutSeparationConflict =
-      findFanoutPhaseSeparationConflict(fanoutPhaseRegions)
-    if (fanoutSeparationConflict) {
-      const { firstRegion, secondRegion, availableGap, requiredGap } =
-        fanoutSeparationConflict
-      const separationDescription =
-        availableGap < 0
-          ? `overlap by ${Math.abs(availableGap).toFixed(3)}mm`
-          : `are only ${availableGap.toFixed(3)}mm apart`
-      const message = `Fanout regions "${firstRegion.name}" and "${secondRegion.name}" ${separationDescription}, but at least ${requiredGap.toFixed(3)}mm of separation is required for a via-safe routing channel. Move the components farther apart or reduce their facing fanout padding.`
-      db.pcb_autorouting_error.insert({
-        pcb_error_id: `pcb_autorouter_error_subcircuit_${this.subcircuit_id}`,
-        error_type: "pcb_autorouting_error",
-        message,
-      })
-      this.root?.emit("autorouting:error", {
-        subcircuit_id: this.subcircuit_id,
-        componentDisplayName: this.getString(),
-        error: { message },
-        simpleRouteJson: baseSimpleRouteJson,
-      })
-      throw new Error(message)
-    }
-
-    for (const { regionId, bounds } of fanoutPhaseRegions) {
-      db.pcb_group.update(regionId, {
-        center: {
-          x: (bounds.minX + bounds.maxX) / 2,
-          y: (bounds.minY + bounds.maxY) / 2,
-        },
-        width: bounds.maxX - bounds.minX,
-        height: bounds.maxY - bounds.minY,
-      })
-    }
-
-    const outputTraces: SimplifiedPcbTrace[] = []
-    const outputJumpers: Array<{
-      jumper_footprint: string
-      center: { x: number; y: number }
-      orientation: string
-      pads: Array<{
-        center: { x: number; y: number }
-        width: number
-        height: number
-        layer: string
-      }>
-    }> = []
-    const pcbTraceIdsToDelete = new Set<string>()
-    const existingRerouteSeedTraces =
-      getExistingSimplifiedPcbTracesForReroute(this)
-
-    const traceMatchesRoutingPhase = (
-      trace: SimplifiedPcbTrace,
-      routingPhasePlan: RoutingPhasePlan,
-    ): boolean => {
-      const connectionName = trace.connection_name ?? trace.pcb_trace_id
-      const sourceTraceIds = new Set([
-        connectionName,
-        trace.pcb_trace_id,
-        ...getSourceTraceIdsFromRerouteName(connectionName),
-        ...getSourceTraceIdsFromRerouteName(trace.pcb_trace_id),
-      ])
-
-      return baseSimpleRouteJson.connections.some((connection) => {
-        if (!connectionIsInRoutingPhase(connection, routingPhasePlan)) {
-          return false
-        }
-        return (
-          sourceTraceIds.has(connection.name) ||
-          (connection.source_trace_id
-            ? sourceTraceIds.has(connection.source_trace_id)
-            : false) ||
-          (connection.rootConnectionName
-            ? sourceTraceIds.has(connection.rootConnectionName)
-            : false) ||
-          connection.mergedConnectionNames?.some((name) =>
-            sourceTraceIds.has(name),
-          )
-        )
-      })
-    }
-
-    // Manual paths are already rendered in board-world coordinates. Protect
-    // their copper just like precomputed phase paths, including child traces
-    // whose PCB ids may have changed when their subcircuit finished routing.
-    // Imported Circuit JSON synthesizes pcbPath props for existing routes;
-    // those are not hand-authored paths and must remain available for rerouting.
-    const manualSourceTraceIds = new Set(
-      this.getDescendants()
-        .filter(
-          (child): child is Trace =>
-            child instanceof Trace &&
-            !child.getSubcircuit()._isInflatedFromCircuitJson &&
-            Boolean(child._parsedProps.pcbPath?.length),
-        )
-        .map((trace) => trace.source_trace_id),
-    )
-    const manualPcbTraceIds = new Set(
-      db.pcb_trace
-        .list()
-        .filter(
-          (trace) =>
-            trace.source_trace_id &&
-            manualSourceTraceIds.has(trace.source_trace_id),
-        )
-        .map((trace) => trace.pcb_trace_id),
-    )
-    const fixedTraceIds = new Set(manualPcbTraceIds)
-    let previousStageOutputSimpleRouteJson: SimpleRouteJson | undefined
-    const skippedRemainingPhases = new Set<RoutingPhasePlan>()
-
-    for (const [
-      routingStageIndex,
-      {
-        routingPhasePlan,
-        autorouterConfig: phaseAutorouterConfig,
-        strategy: localAutorouterStrategy,
-        usesPreviousStageOutput,
-        phaseStageIndex,
-        phaseStageCount,
-      },
-    ] of routingStages.entries()) {
-      if (skippedRemainingPhases.has(routingPhasePlan)) continue
-      if (!usesPreviousStageOutput) {
-        previousStageOutputSimpleRouteJson = undefined
-      }
-      if (
-        usesPreviousStageOutput &&
-        previousStageOutputSimpleRouteJson === undefined
-      ) {
-        throw new Error(
-          "Autorouting follow-up stage is missing the preceding stage output",
-        )
-      }
-      let simpleRouteJson =
-        previousStageOutputSimpleRouteJson ?? baseSimpleRouteJson
-      const isTraceSimplificationPhase = Boolean(
-        routingPhasePlan.reroute && phaseAutorouterConfig.preset === "simplify",
-      )
-      const isRegionReroutePhase = Boolean(
-        routingPhasePlan.reroute &&
-          routingPhasePlan.region &&
-          !isTraceSimplificationPhase,
-      )
-      const isConnectionReroutePhase = Boolean(
-        routingPhasePlan.reroute &&
-          !isTraceSimplificationPhase &&
-          !routingPhasePlan.region &&
-          routingPhasePlan.traces.length > 0,
-      )
-      const isReroutePhase =
-        isRegionReroutePhase ||
-        isConnectionReroutePhase ||
-        isTraceSimplificationPhase
-      const rerouteOriginalSrj = isRegionReroutePhase
-        ? {
-            ...baseSimpleRouteJson,
-            traces: [...existingRerouteSeedTraces, ...outputTraces],
-          }
-        : null
-
-      if (!usesPreviousStageOutput && isTraceSimplificationPhase) {
-        const phaseInput = Group_filterSimpleRouteJsonForPhase(
-          baseSimpleRouteJson,
-          routingPhasePlan,
-        )
-        simpleRouteJson = {
-          ...phaseInput,
-          traces: getAccumulatedPcbTracesWithStageOutputReplacements({
-            accumulatedPcbTraces: existingRerouteSeedTraces,
-            stageOutputPcbTraces: outputTraces,
-          }),
-        }
-      } else if (
-        !usesPreviousStageOutput &&
-        isRegionReroutePhase &&
-        rerouteOriginalSrj
-      ) {
-        simpleRouteJson = getRerouteSimpleRouteJson(
-          rerouteOriginalSrj as AutorouterSimpleRouteJson,
-          {
-            shape: "rect",
-            ...routingPhasePlan.region,
-          } as RerouteRectRegion,
-        ) as SimpleRouteJson
-      } else if (!usesPreviousStageOutput && isConnectionReroutePhase) {
-        const phaseInput = Group_filterSimpleRouteJsonForPhase(
-          baseSimpleRouteJson,
-          routingPhasePlan,
-        )
-        // Preserve routed geometry as SRJ traces. The autorouter owns
-        // converting traces to obstacles and approximating diagonal segments.
-        simpleRouteJson = {
-          ...phaseInput,
-          traces: [
-            ...(phaseInput.traces ?? []),
-            ...outputTraces.filter(
-              (trace) => !traceMatchesRoutingPhase(trace, routingPhasePlan),
-            ),
-          ],
-        }
-      } else if (!usesPreviousStageOutput && hasPhasedAutorouting) {
-        const phaseInput = Group_filterSimpleRouteJsonForPhase(
-          baseSimpleRouteJson,
-          routingPhasePlan,
-        )
-        const activeCustomBreakoutRoutingGroupId =
-          routingPhasePlan.routingPcbGroupId
-        if (activeCustomBreakoutRoutingGroupId) {
-          const activeGroupSimpleRouteJson = getSimpleRouteJsonFromCircuitJson({
-            db,
-            minTraceWidth,
-            nominalTraceWidth,
-            subcircuit_id: this.subcircuit_id,
-            subcircuitComponent: this,
-            routingPcbGroupId: activeCustomBreakoutRoutingGroupId,
-            fanoutPourNetMap,
-          }).simpleRouteJson
-          const activeGroupCopperPourObstacles =
-            activeGroupSimpleRouteJson.obstacles.filter(
-              (obstacle) => obstacle.isCopperPour,
-            )
-          const nonCopperPourObstacles = phaseInput.obstacles.filter(
-            (obstacle) => !obstacle.isCopperPour,
-          )
-          phaseInput.obstacles = nonCopperPourObstacles.concat(
-            activeGroupCopperPourObstacles,
-          )
-        }
-        // Preserve every fixed obstacle and prior routed trace. Only outline-less
-        // copper pours need phase-local group bounds.
-        simpleRouteJson = {
-          ...phaseInput,
-          traces: getAccumulatedPcbTracesWithStageOutputReplacements({
-            accumulatedPcbTraces: phaseInput.traces ?? [],
-            stageOutputPcbTraces: outputTraces,
-          }),
-        }
-      }
-      // bus_lanes preserves prior traces verbatim and checks their exact copper
-      // geometry. Rasterizing diagonal fanout traces can bury a legal exit in
-      // an enlarged rectangular obstacle before the lane search even starts.
-      if (phaseAutorouterConfig.preset !== "bus_lanes") {
-        // FanoutSolver preserves supplied trace routes and checks their exact
-        // copper geometry (build-output.ts / get-routed-trace-copper.ts).
-        // Keep manual copper in that representation: rectangular approximations
-        // can change fanout via placement even though the path itself is fixed.
-        const preservesManualTraceGeometry =
-          !phaseAutorouterConfig.algorithmFn &&
-          (phaseAutorouterConfig.preset === "fanout" ||
-            phaseAutorouterConfig.preset === "single_layer_fanout")
-        simpleRouteJson = withFixedTraces(
-          simpleRouteJson,
-          preservesManualTraceGeometry
-            ? new Set(
-                [...fixedTraceIds].filter(
-                  (pcbTraceId) => !manualPcbTraceIds.has(pcbTraceId),
-                ),
-              )
-            : fixedTraceIds,
-        )
-      }
-      simpleRouteJson = Group_applyDrcTolerancesToSimpleRouteJson(
-        simpleRouteJson,
-        routingPhasePlan.drcTolerances,
-      )
-      simpleRouteJson.allowViaInPad = phaseAutorouterConfig.allowViaInPad
-
-      const getPrecomputedRoutingResult = usesPreviousStageOutput
-        ? undefined
-        : routingPhasePlan.getPrecomputedRoutingResult
-
-      const preflightRoutingCheckPolicy = this.getInheritedProperty(
-        "preflightRoutingCheckPolicy",
-      )
-      if (
-        routingPhasePlan.isImplicitRemainingPhase &&
-        phaseStageIndex === 0 &&
-        this.getInheritedProperty("routeRemaining") === undefined &&
-        (preflightRoutingCheckPolicy === "basic" ||
-          preflightRoutingCheckPolicy === "conservative") &&
-        simpleRouteJson.connections.length > 50
-      ) {
-        skippedRemainingPhases.add(routingPhasePlan)
-        db.pcb_autorouting_error.insert({
-          pcb_error_id: `pcb_autorouting_error_remaining_routes_${this.subcircuit_id}`,
-          subcircuit_id: this.subcircuit_id ?? undefined,
-          error_type: "pcb_autorouting_error",
-          message: `Remaining routes left unrouted (over 50 traces remaining and preflightRoutingCheckPolicy="${preflightRoutingCheckPolicy}"). Set <board routeRemaining={true} /> or create <autoroutingphase /> elements for specific connections in the order you'd like to route them. The autorouter may hang unless you create autorouting phases incrementally.`,
+      const fanoutPourNetMap = hasFanoutStage
+        ? Group_getFanoutPourNetMap(this, routingPhasePlans)
+        : undefined
+      let { simpleRouteJson: baseSimpleRouteJson } =
+        getSimpleRouteJsonFromCircuitJson({
+          db,
+          minTraceWidth,
+          nominalTraceWidth,
+          subcircuit_id: this.subcircuit_id,
+          subcircuitComponent: this,
+          fanoutPourNetMap,
         })
-        continue
+
+      const emitFanoutBoundsConflictWarning = (
+        routingPhasePlan: RoutingPhasePlan,
+      ) => {
+        const fanoutRegionPcbGroupId = routingPhasePlan.fanoutRegionPcbGroupId
+        if (!fanoutRegionPcbGroupId) return
+        const pcbGroup = db.pcb_group.get(fanoutRegionPcbGroupId)
+        const sourceComponentId = db.pcb_component
+          .list()
+          .find(
+            (component) => component.pcb_group_id === fanoutRegionPcbGroupId,
+          )?.source_component_id
+        if (!sourceComponentId) return
+        const message = `${pcbGroup?.name ?? "Breakout"} defines conflicting fanout bounds with explicit breakout geometry and fanoutBoundaryPadding. Explicit breakout geometry takes precedence, so fanoutBoundaryPadding is ignored.`
+        const warningAlreadyExists = db.source_property_ignored_warning
+          .list()
+          .some(
+            (warning) =>
+              warning.source_component_id === sourceComponentId &&
+              warning.property_name === "fanoutBoundaryPadding" &&
+              warning.message === message,
+          )
+        if (warningAlreadyExists) return
+        job.commit(() =>
+          db.source_property_ignored_warning.insert({
+            source_component_id: sourceComponentId,
+            property_name: "fanoutBoundaryPadding",
+            message,
+            error_type: "source_property_ignored_warning",
+            subcircuit_id: pcbGroup?.subcircuit_id,
+          }),
+        )
       }
 
-      const simplificationHasNoTraceInput = Boolean(
-        isTraceSimplificationPhase && simpleRouteJson.traces?.length === 0,
-      )
-      if (
-        (hasPhasedAutorouting || isReroutePhase || usesPreviousStageOutput) &&
-        ((simpleRouteJson.connections.length === 0 &&
-          !isTraceSimplificationPhase &&
-          !getPrecomputedRoutingResult) ||
-          simplificationHasNoTraceInput)
-      ) {
-        if (phaseStageIndex === 0) {
-          emitRoutingPhaseDebugObject(routingPhasePlan, simpleRouteJson.bounds)
+      const fanoutConfigByPhasePlan = new Map<
+        RoutingPhasePlan,
+        NormalizedAutorouterConfig
+      >()
+      for (const routingStage of routingStages) {
+        const fanoutMode = routingStage.autorouterConfig.preset
+        if (
+          (fanoutMode === "fanout" || fanoutMode === "single_layer_fanout") &&
+          !fanoutConfigByPhasePlan.has(routingStage.routingPhasePlan)
+        ) {
+          fanoutConfigByPhasePlan.set(
+            routingStage.routingPhasePlan,
+            routingStage.autorouterConfig,
+          )
         }
-        // Keep an empty multi-stage phase as an empty no-op for its follow-up
-        // stages. Otherwise the next stage incorrectly reports that the
-        // preceding stage output is missing even though there was no routing
-        // work to perform.
-        previousStageOutputSimpleRouteJson = simpleRouteJson
-        continue
       }
 
-      // Enable jumpers for auto_jumper preset
-      const phaseIsAutoJumperPreset =
-        routingPhasePlan.autorouter !== undefined
-          ? this._isAutoJumperAutorouter(phaseAutorouterConfig)
-          : isAutoJumperPreset
-      const phaseIsLaserPrefabPreset =
-        routingPhasePlan.autorouter !== undefined
-          ? this._isLaserPrefabAutorouter(phaseAutorouterConfig)
-          : isLaserPrefabPreset
-
-      if (phaseIsAutoJumperPreset) {
-        simpleRouteJson.allowJumpers = true
-        if (phaseAutorouterConfig.availableJumperTypes) {
-          simpleRouteJson.availableJumperTypes =
-            phaseAutorouterConfig.availableJumperTypes
-        }
-      }
-
-      const fanoutMode = phaseAutorouterConfig.preset
-      if (
-        (fanoutMode === "fanout" || fanoutMode === "single_layer_fanout") &&
-        !routingPhasePlan.fanoutRegionPcbGroupId &&
-        !getPrecomputedRoutingResult
-      ) {
-        routingPhasePlan.fanoutBounds = FanoutAutorouter.resolveFanoutBounds(
-          simpleRouteJson,
+      const fanoutPhaseRegions = []
+      for (const [
+        routingPhasePlan,
+        phaseAutorouterConfig,
+      ] of fanoutConfigByPhasePlan) {
+        const fanoutRegionPcbGroupId = routingPhasePlan.fanoutRegionPcbGroupId
+        if (!fanoutRegionPcbGroupId) continue
+        let phaseSimpleRouteJson = Group_filterSimpleRouteJsonForPhase(
+          baseSimpleRouteJson,
+          routingPhasePlan,
+        )
+        if (phaseSimpleRouteJson.connections.length === 0) continue
+        phaseSimpleRouteJson = Group_applyDrcTolerancesToSimpleRouteJson(
+          phaseSimpleRouteJson,
+          routingPhasePlan.drcTolerances,
+        )
+        const breakoutPoints = db.pcb_breakout_point
+          .list()
+          .filter((point) => point.pcb_group_id === fanoutRegionPcbGroupId)
+          .map((point) => ({ x: point.x, y: point.y }))
+        const fanoutMode = phaseAutorouterConfig.preset as
+          | "fanout"
+          | "single_layer_fanout"
+        const fanoutBounds = FanoutAutorouter.resolveFanoutBounds(
+          phaseSimpleRouteJson,
           {
             mode: fanoutMode,
             busFanoutDirections: routingPhasePlan.busFanoutDirections,
             fanoutBounds: routingPhasePlan.fanoutBounds,
             fanoutBoundaryPadding: routingPhasePlan.fanoutBoundaryPadding,
             fanoutRoutingLayers: routingPhasePlan.fanoutRoutingLayers,
-            allowBlindAndBuriedVias: simpleRouteJson.allowBlindAndBuriedVias,
+            allowBlindAndBuriedVias:
+              phaseSimpleRouteJson.allowBlindAndBuriedVias,
+            breakoutPoints,
+            onFanoutBoundsConflict: () =>
+              emitFanoutBoundsConflictWarning(routingPhasePlan),
           },
         )
-      }
+        routingPhasePlan.fanoutBounds = fanoutBounds
+        if (!fanoutBounds) continue
 
-      if (phaseStageIndex === 0) {
-        emitRoutingPhaseDebugObject(
-          routingPhasePlan,
-          routingPhasePlan.fanoutBounds ?? simpleRouteJson.bounds,
+        const pcbGroup = db.pcb_group.get(fanoutRegionPcbGroupId)
+
+        const maximumTraceWidth = Math.max(
+          phaseSimpleRouteJson.minTraceWidth,
+          ...phaseSimpleRouteJson.connections.map(
+            (connection) =>
+              connection.nominalTraceWidth ??
+              connection.width ??
+              phaseSimpleRouteJson.minTraceWidth,
+          ),
         )
-      }
-
-      if (debug.enabled) {
-        ;(global as any).debugOutputArray?.push({
-          name: `simpleroutejson-${this.props.name}.json`,
-          obj: simpleRouteJson,
+        const viaPadDiameter =
+          phaseSimpleRouteJson.minViaPadDiameter ??
+          phaseSimpleRouteJson.min_via_pad_diameter ??
+          phaseSimpleRouteJson.minViaDiameter
+        const traceToPadClearance =
+          phaseSimpleRouteJson.minTraceToPadEdgeClearance ??
+          phaseSimpleRouteJson.defaultObstacleMargin ??
+          maximumTraceWidth
+        fanoutPhaseRegions.push({
+          regionId: fanoutRegionPcbGroupId,
+          name:
+            pcbGroup?.name ??
+            routingPhasePlan.phaseName ??
+            fanoutRegionPcbGroupId,
+          bounds: fanoutBounds,
+          boundaryKeepaway:
+            getFanoutBoundaryPointSpacing({
+              traceWidth: maximumTraceWidth,
+              traceToPadClearance,
+              viaPadDiameter,
+            }) / 2,
         })
       }
 
-      if (debug.enabled) {
-        const graphicsObject = convertSrjToGraphicsObject(
-          simpleRouteJson as any,
-        ) as GraphicsObject
-        graphicsObject.title = `autorouting-${this.props.name}`
-        ;(global as any).debugGraphics?.push(graphicsObject)
+      const fanoutSeparationConflict =
+        findFanoutPhaseSeparationConflict(fanoutPhaseRegions)
+      if (fanoutSeparationConflict) {
+        const { firstRegion, secondRegion, availableGap, requiredGap } =
+          fanoutSeparationConflict
+        const separationDescription =
+          availableGap < 0
+            ? `overlap by ${Math.abs(availableGap).toFixed(3)}mm`
+            : `are only ${availableGap.toFixed(3)}mm apart`
+        const message = `Fanout regions "${firstRegion.name}" and "${secondRegion.name}" ${separationDescription}, but at least ${requiredGap.toFixed(3)}mm of separation is required for a via-safe routing channel. Move the components farther apart or reduce their facing fanout padding.`
+        job.commit(() =>
+          db.pcb_autorouting_error.insert({
+            pcb_error_id: `pcb_autorouter_error_subcircuit_${this.subcircuit_id}`,
+            error_type: "pcb_autorouting_error",
+            message,
+          }),
+        )
+        job.commit(() =>
+          this.root?.emit("autorouting:error", {
+            subcircuit_id: this.subcircuit_id,
+            componentDisplayName: this.getString(),
+            error: { message },
+            simpleRouteJson: baseSimpleRouteJson,
+          }),
+        )
+        throw new Error(message)
       }
 
-      const autorouterVersion =
-        phaseAutorouterConfig.autorouterVersion ?? this.props.autorouterVersion
-      const effortLevel = this.props.autorouterEffortLevel
-      const effort = effortLevel
-        ? Number.parseInt(effortLevel.replace("x", ""), 10)
-        : undefined
-      const commonAutorouterOptions: AutorouterOptions = {
-        capacityDepth: phaseAutorouterConfig.capacityDepth,
-        targetMinCapacity: phaseAutorouterConfig.targetMinCapacity,
-        platformConfig: this.root?.platform,
-        useAssignableSolver: phaseIsLaserPrefabPreset || isSingleLayerBoard,
-        useAutoJumperSolver: phaseIsAutoJumperPreset,
-        useLaserPrefabSolver: phaseIsLaserPrefabPreset,
-        autorouterVersion,
-        effort,
-      }
-      const autorouterName = getPrecomputedRoutingResult
-        ? "precomputed"
-        : phaseAutorouterConfig.algorithmFn
-          ? "custom"
-          : localAutorouterStrategy.name
-      const solverName =
-        getPrecomputedRoutingResult || phaseAutorouterConfig.algorithmFn
-          ? undefined
-          : localAutorouterStrategy.getSolverName(commonAutorouterOptions)
-      const localAutoroutingCacheSolverOptions = {
-        autorouterName,
-        solverName,
-        capacityDepth: commonAutorouterOptions.capacityDepth,
-        targetMinCapacity: commonAutorouterOptions.targetMinCapacity,
-        useAssignableSolver: commonAutorouterOptions.useAssignableSolver,
-        useAutoJumperSolver: commonAutorouterOptions.useAutoJumperSolver,
-        useLaserPrefabSolver: commonAutorouterOptions.useLaserPrefabSolver,
-        useTraceSimplificationSolver:
-          phaseAutorouterConfig.preset === "simplify",
-        autorouterVersion: commonAutorouterOptions.autorouterVersion,
-        effort: commonAutorouterOptions.effort,
+      for (const { regionId, bounds } of fanoutPhaseRegions) {
+        job.commit(() =>
+          db.pcb_group.update(regionId, {
+            center: {
+              x: (bounds.minX + bounds.maxX) / 2,
+              y: (bounds.minY + bounds.maxY) / 2,
+            },
+            width: bounds.maxX - bounds.minX,
+            height: bounds.maxY - bounds.minY,
+          }),
+        )
       }
 
-      const cacheEngine =
-        getPrecomputedRoutingResult ||
-        phaseAutorouterConfig.algorithmFn ||
-        !localAutorouterStrategy.cacheable
-          ? undefined
-          : this.root?.platform?.localCacheEngine
-      const cacheKey = cacheEngine
-        ? getLocalAutoroutingCacheKey(
-            simpleRouteJson,
-            localAutoroutingCacheSolverOptions,
+      const outputTraces: SimplifiedPcbTrace[] = []
+      const outputJumpers: Array<{
+        jumper_footprint: string
+        center: { x: number; y: number }
+        orientation: string
+        pads: Array<{
+          center: { x: number; y: number }
+          width: number
+          height: number
+          layer: string
+        }>
+      }> = []
+      const pcbTraceIdsToDelete = new Set<string>()
+      const existingRerouteSeedTraces =
+        getExistingSimplifiedPcbTracesForReroute(this)
+
+      const traceMatchesRoutingPhase = (
+        trace: SimplifiedPcbTrace,
+        routingPhasePlan: RoutingPhasePlan,
+      ): boolean => {
+        const connectionName = trace.connection_name ?? trace.pcb_trace_id
+        const sourceTraceIds = new Set([
+          connectionName,
+          trace.pcb_trace_id,
+          ...getSourceTraceIdsFromRerouteName(connectionName),
+          ...getSourceTraceIdsFromRerouteName(trace.pcb_trace_id),
+        ])
+
+        return baseSimpleRouteJson.connections.some((connection) => {
+          if (!connectionIsInRoutingPhase(connection, routingPhasePlan)) {
+            return false
+          }
+          return (
+            sourceTraceIds.has(connection.name) ||
+            (connection.source_trace_id
+              ? sourceTraceIds.has(connection.source_trace_id)
+              : false) ||
+            (connection.rootConnectionName
+              ? sourceTraceIds.has(connection.rootConnectionName)
+              : false) ||
+            connection.mergedConnectionNames?.some((name) =>
+              sourceTraceIds.has(name),
+            )
           )
-        : undefined
-      const cachedResult = cacheKey
-        ? await getCachedLocalAutoroutingPhaseResult({ cacheEngine, cacheKey })
-        : null
-      const cacheDisabledReason = getPrecomputedRoutingResult
-        ? "precomputed"
-        : phaseAutorouterConfig.algorithmFn
-          ? "custom_algorithm"
-          : !localAutorouterStrategy.cacheable
-            ? "strategy_not_cacheable"
-            : !cacheEngine
-              ? "no_cache_engine"
-              : undefined
-      const autoroutingMetadata = {
-        routingPhaseIndex: routingPhasePlan.routingPhaseIndex,
-        _actualRoutingPhaseOrderIndex: routingStageIndex,
-        phaseOrdinal: routingStageIndex + 1,
-        phaseCount: routingStages.length,
-        connectionCount: simpleRouteJson.connections.length,
-        obstacleCount: simpleRouteJson.obstacles.length,
-        previousTraceCount: simpleRouteJson.traces?.length ?? 0,
-        isReroutePhase,
-        autorouterName,
-        autorouterVersion,
-        solverName,
-        effort,
-        cacheStatus: cacheEngine ? (cachedResult ? "hit" : "miss") : "disabled",
-        cacheKey,
-        cacheDisabledReason,
-      } as const
+        })
+      }
 
-      this.root?.emit("autorouting:start", {
-        type: "autorouting:start",
-        subcircuit_id: this.subcircuit_id,
-        componentDisplayName: this.getString(),
-        ...(routingPhasePlan.phaseName !== undefined
+      // Manual paths are already rendered in board-world coordinates. Protect
+      // their copper just like precomputed phase paths, including child traces
+      // whose PCB ids may have changed when their subcircuit finished routing.
+      // Imported Circuit JSON synthesizes pcbPath props for existing routes;
+      // those are not hand-authored paths and must remain available for rerouting.
+      const manualSourceTraceIds = new Set(
+        this.getDescendants()
+          .filter(
+            (child): child is Trace =>
+              child instanceof Trace &&
+              !child.getSubcircuit()._isInflatedFromCircuitJson &&
+              Boolean(child._parsedProps.pcbPath?.length),
+          )
+          .map((trace) => trace.source_trace_id),
+      )
+      const manualPcbTraceIds = new Set(
+        db.pcb_trace
+          .list()
+          .filter(
+            (trace) =>
+              trace.source_trace_id &&
+              manualSourceTraceIds.has(trace.source_trace_id),
+          )
+          .map((trace) => trace.pcb_trace_id),
+      )
+      const fixedTraceIds = new Set(manualPcbTraceIds)
+      let previousStageOutputSimpleRouteJson: SimpleRouteJson | undefined
+      const skippedRemainingPhases = new Set<RoutingPhasePlan>()
+
+      for (const [
+        routingStageIndex,
+        {
+          routingPhasePlan,
+          autorouterConfig: phaseAutorouterConfig,
+          strategy: localAutorouterStrategy,
+          usesPreviousStageOutput,
+          phaseStageIndex,
+          phaseStageCount,
+        },
+      ] of routingStages.entries()) {
+        if (skippedRemainingPhases.has(routingPhasePlan)) continue
+        if (!usesPreviousStageOutput) {
+          previousStageOutputSimpleRouteJson = undefined
+        }
+        if (
+          usesPreviousStageOutput &&
+          previousStageOutputSimpleRouteJson === undefined
+        ) {
+          throw new Error(
+            "Autorouting follow-up stage is missing the preceding stage output",
+          )
+        }
+        let simpleRouteJson =
+          previousStageOutputSimpleRouteJson ?? baseSimpleRouteJson
+        const isTraceSimplificationPhase = Boolean(
+          routingPhasePlan.reroute &&
+            phaseAutorouterConfig.preset === "simplify",
+        )
+        const isRegionReroutePhase = Boolean(
+          routingPhasePlan.reroute &&
+            routingPhasePlan.region &&
+            !isTraceSimplificationPhase,
+        )
+        const isConnectionReroutePhase = Boolean(
+          routingPhasePlan.reroute &&
+            !isTraceSimplificationPhase &&
+            !routingPhasePlan.region &&
+            routingPhasePlan.traces.length > 0,
+        )
+        const isReroutePhase =
+          isRegionReroutePhase ||
+          isConnectionReroutePhase ||
+          isTraceSimplificationPhase
+        const rerouteOriginalSrj = isRegionReroutePhase
           ? {
-              phaseName: routingPhasePlan.phaseName,
-              phaseStageIndex,
-              phaseStageCount,
+              ...baseSimpleRouteJson,
+              traces: [...existingRerouteSeedTraces, ...outputTraces],
             }
-          : {}),
-        ...autoroutingMetadata,
-        simpleRouteJson,
-      })
-      let autorouter: GenericLocalAutorouter | undefined
+          : null
 
-      try {
-        let traces: SimplifiedPcbTrace[]
-        let precomputedOutputSimpleRouteJson: SimpleRouteJson | undefined
-        if (getPrecomputedRoutingResult) {
-          const result = getPrecomputedRoutingResult(simpleRouteJson)
-          traces = result.traces
-          precomputedOutputSimpleRouteJson = result.outputSimpleRouteJson
-          for (const trace of traces) fixedTraceIds.add(trace.pcb_trace_id)
-        } else if (cachedResult) {
-          debug(`[${this.getString()}] using cached local autorouting result`)
-          traces = cachedResult.traces
-        } else {
-          if (phaseAutorouterConfig.algorithmFn) {
-            autorouter =
-              await phaseAutorouterConfig.algorithmFn(simpleRouteJson)
-          } else {
-            autorouter = localAutorouterStrategy.create({
-              simpleRouteJson,
-              onSolverEnded: (event) =>
-                this.root?.emit("solver:ended", {
-                  ...event,
-                  type: "solver:ended",
-                  componentName: this.getString(),
-                }),
-              commonAutorouterOptions,
+        if (!usesPreviousStageOutput && isTraceSimplificationPhase) {
+          const phaseInput = Group_filterSimpleRouteJsonForPhase(
+            baseSimpleRouteJson,
+            routingPhasePlan,
+          )
+          simpleRouteJson = {
+            ...phaseInput,
+            traces: getAccumulatedPcbTracesWithStageOutputReplacements({
+              accumulatedPcbTraces: existingRerouteSeedTraces,
+              stageOutputPcbTraces: outputTraces,
+            }),
+          }
+        } else if (
+          !usesPreviousStageOutput &&
+          isRegionReroutePhase &&
+          rerouteOriginalSrj
+        ) {
+          simpleRouteJson = getRerouteSimpleRouteJson(
+            rerouteOriginalSrj as AutorouterSimpleRouteJson,
+            {
+              shape: "rect",
+              ...routingPhasePlan.region,
+            } as RerouteRectRegion,
+          ) as SimpleRouteJson
+        } else if (!usesPreviousStageOutput && isConnectionReroutePhase) {
+          const phaseInput = Group_filterSimpleRouteJsonForPhase(
+            baseSimpleRouteJson,
+            routingPhasePlan,
+          )
+          // Preserve routed geometry as SRJ traces. The autorouter owns
+          // converting traces to obstacles and approximating diagonal segments.
+          simpleRouteJson = {
+            ...phaseInput,
+            traces: [
+              ...(phaseInput.traces ?? []),
+              ...outputTraces.filter(
+                (trace) => !traceMatchesRoutingPhase(trace, routingPhasePlan),
+              ),
+            ],
+          }
+        } else if (!usesPreviousStageOutput && hasPhasedAutorouting) {
+          const phaseInput = Group_filterSimpleRouteJsonForPhase(
+            baseSimpleRouteJson,
+            routingPhasePlan,
+          )
+          const activeCustomBreakoutRoutingGroupId =
+            routingPhasePlan.routingPcbGroupId
+          if (activeCustomBreakoutRoutingGroupId) {
+            const activeGroupSimpleRouteJson =
+              getSimpleRouteJsonFromCircuitJson({
+                db,
+                minTraceWidth,
+                nominalTraceWidth,
+                subcircuit_id: this.subcircuit_id,
+                subcircuitComponent: this,
+                routingPcbGroupId: activeCustomBreakoutRoutingGroupId,
+                fanoutPourNetMap,
+              }).simpleRouteJson
+            const activeGroupCopperPourObstacles =
+              activeGroupSimpleRouteJson.obstacles.filter(
+                (obstacle) => obstacle.isCopperPour,
+              )
+            const nonCopperPourObstacles = phaseInput.obstacles.filter(
+              (obstacle) => !obstacle.isCopperPour,
+            )
+            phaseInput.obstacles = nonCopperPourObstacles.concat(
+              activeGroupCopperPourObstacles,
+            )
+          }
+          // Preserve every fixed obstacle and prior routed trace. Only outline-less
+          // copper pours need phase-local group bounds.
+          simpleRouteJson = {
+            ...phaseInput,
+            traces: getAccumulatedPcbTracesWithStageOutputReplacements({
+              accumulatedPcbTraces: phaseInput.traces ?? [],
+              stageOutputPcbTraces: outputTraces,
+            }),
+          }
+        }
+        // bus_lanes preserves prior traces verbatim and checks their exact copper
+        // geometry. Rasterizing diagonal fanout traces can bury a legal exit in
+        // an enlarged rectangular obstacle before the lane search even starts.
+        if (phaseAutorouterConfig.preset !== "bus_lanes") {
+          // FanoutSolver preserves supplied trace routes and checks their exact
+          // copper geometry (build-output.ts / get-routed-trace-copper.ts).
+          // Keep manual copper in that representation: rectangular approximations
+          // can change fanout via placement even though the path itself is fixed.
+          const preservesManualTraceGeometry =
+            !phaseAutorouterConfig.algorithmFn &&
+            (phaseAutorouterConfig.preset === "fanout" ||
+              phaseAutorouterConfig.preset === "single_layer_fanout")
+          simpleRouteJson = withFixedTraces(
+            simpleRouteJson,
+            preservesManualTraceGeometry
+              ? new Set(
+                  [...fixedTraceIds].filter(
+                    (pcbTraceId) => !manualPcbTraceIds.has(pcbTraceId),
+                  ),
+                )
+              : fixedTraceIds,
+          )
+        }
+        simpleRouteJson = Group_applyDrcTolerancesToSimpleRouteJson(
+          simpleRouteJson,
+          routingPhasePlan.drcTolerances,
+        )
+        simpleRouteJson.allowViaInPad = phaseAutorouterConfig.allowViaInPad
+
+        const getPrecomputedRoutingResult = usesPreviousStageOutput
+          ? undefined
+          : routingPhasePlan.getPrecomputedRoutingResult
+
+        const preflightRoutingCheckPolicy = this.getInheritedProperty(
+          "preflightRoutingCheckPolicy",
+        )
+        if (
+          routingPhasePlan.isImplicitRemainingPhase &&
+          phaseStageIndex === 0 &&
+          this.getInheritedProperty("routeRemaining") === undefined &&
+          (preflightRoutingCheckPolicy === "basic" ||
+            preflightRoutingCheckPolicy === "conservative") &&
+          simpleRouteJson.connections.length > 50
+        ) {
+          skippedRemainingPhases.add(routingPhasePlan)
+          job.commit(() =>
+            db.pcb_autorouting_error.insert({
+              pcb_error_id: `pcb_autorouting_error_remaining_routes_${this.subcircuit_id}`,
+              subcircuit_id: this.subcircuit_id ?? undefined,
+              error_type: "pcb_autorouting_error",
+              message: `Remaining routes left unrouted (over 50 traces remaining and preflightRoutingCheckPolicy="${preflightRoutingCheckPolicy}"). Set <board routeRemaining={true} /> or create <autoroutingphase /> elements for specific connections in the order you'd like to route them. The autorouter may hang unless you create autorouting phases incrementally.`,
+            }),
+          )
+          continue
+        }
+
+        const simplificationHasNoTraceInput = Boolean(
+          isTraceSimplificationPhase && simpleRouteJson.traces?.length === 0,
+        )
+        if (
+          (hasPhasedAutorouting || isReroutePhase || usesPreviousStageOutput) &&
+          ((simpleRouteJson.connections.length === 0 &&
+            !isTraceSimplificationPhase &&
+            !getPrecomputedRoutingResult) ||
+            simplificationHasNoTraceInput)
+        ) {
+          if (phaseStageIndex === 0) {
+            emitRoutingPhaseDebugObject(
+              routingPhasePlan,
+              simpleRouteJson.bounds,
+            )
+          }
+          // Keep an empty multi-stage phase as an empty no-op for its follow-up
+          // stages. Otherwise the next stage incorrectly reports that the
+          // preceding stage output is missing even though there was no routing
+          // work to perform.
+          previousStageOutputSimpleRouteJson = simpleRouteJson
+          continue
+        }
+
+        // Enable jumpers for auto_jumper preset
+        const phaseIsAutoJumperPreset =
+          routingPhasePlan.autorouter !== undefined
+            ? this._isAutoJumperAutorouter(phaseAutorouterConfig)
+            : isAutoJumperPreset
+        const phaseIsLaserPrefabPreset =
+          routingPhasePlan.autorouter !== undefined
+            ? this._isLaserPrefabAutorouter(phaseAutorouterConfig)
+            : isLaserPrefabPreset
+
+        if (phaseIsAutoJumperPreset) {
+          simpleRouteJson.allowJumpers = true
+          if (phaseAutorouterConfig.availableJumperTypes) {
+            simpleRouteJson.availableJumperTypes =
+              phaseAutorouterConfig.availableJumperTypes
+          }
+        }
+
+        const fanoutMode = phaseAutorouterConfig.preset
+        if (
+          (fanoutMode === "fanout" || fanoutMode === "single_layer_fanout") &&
+          !routingPhasePlan.fanoutRegionPcbGroupId &&
+          !getPrecomputedRoutingResult
+        ) {
+          routingPhasePlan.fanoutBounds = FanoutAutorouter.resolveFanoutBounds(
+            simpleRouteJson,
+            {
+              mode: fanoutMode,
               busFanoutDirections: routingPhasePlan.busFanoutDirections,
               fanoutBounds: routingPhasePlan.fanoutBounds,
+              fanoutBoundaryPadding: routingPhasePlan.fanoutBoundaryPadding,
               fanoutRoutingLayers: routingPhasePlan.fanoutRoutingLayers,
               allowBlindAndBuriedVias: simpleRouteJson.allowBlindAndBuriedVias,
-              componentNamesById: getPcbComponentNamesById(db),
-              onSolverStarted: ({
-                solverName,
-                solverParams,
-                solverConstructorArgs,
-              }) =>
-                this.root?.emit("solver:started", {
-                  type: "solver:started",
-                  solverName,
-                  solverParams,
-                  solverConstructorArgs,
-                  componentName: this.getString(),
-                }),
+            },
+          )
+        }
+
+        if (phaseStageIndex === 0) {
+          emitRoutingPhaseDebugObject(
+            routingPhasePlan,
+            routingPhasePlan.fanoutBounds ?? simpleRouteJson.bounds,
+          )
+        }
+
+        if (debug.enabled) {
+          ;(global as any).debugOutputArray?.push({
+            name: `simpleroutejson-${this.props.name}.json`,
+            obj: simpleRouteJson,
+          })
+        }
+
+        if (debug.enabled) {
+          const graphicsObject = convertSrjToGraphicsObject(
+            simpleRouteJson as any,
+          ) as GraphicsObject
+          graphicsObject.title = `autorouting-${this.props.name}`
+          ;(global as any).debugGraphics?.push(graphicsObject)
+        }
+
+        const autorouterVersion =
+          phaseAutorouterConfig.autorouterVersion ??
+          this.props.autorouterVersion
+        const effortLevel = this.props.autorouterEffortLevel
+        const effort = effortLevel
+          ? Number.parseInt(effortLevel.replace("x", ""), 10)
+          : undefined
+        const commonAutorouterOptions: AutorouterOptions = {
+          capacityDepth: phaseAutorouterConfig.capacityDepth,
+          targetMinCapacity: phaseAutorouterConfig.targetMinCapacity,
+          platformConfig: this.root?.platform,
+          useAssignableSolver: phaseIsLaserPrefabPreset || isSingleLayerBoard,
+          useAutoJumperSolver: phaseIsAutoJumperPreset,
+          useLaserPrefabSolver: phaseIsLaserPrefabPreset,
+          autorouterVersion,
+          effort,
+        }
+        const autorouterName = getPrecomputedRoutingResult
+          ? "precomputed"
+          : phaseAutorouterConfig.algorithmFn
+            ? "custom"
+            : localAutorouterStrategy.name
+        const solverName =
+          getPrecomputedRoutingResult || phaseAutorouterConfig.algorithmFn
+            ? undefined
+            : localAutorouterStrategy.getSolverName(commonAutorouterOptions)
+        const localAutoroutingCacheSolverOptions = {
+          autorouterName,
+          solverName,
+          capacityDepth: commonAutorouterOptions.capacityDepth,
+          targetMinCapacity: commonAutorouterOptions.targetMinCapacity,
+          useAssignableSolver: commonAutorouterOptions.useAssignableSolver,
+          useAutoJumperSolver: commonAutorouterOptions.useAutoJumperSolver,
+          useLaserPrefabSolver: commonAutorouterOptions.useLaserPrefabSolver,
+          useTraceSimplificationSolver:
+            phaseAutorouterConfig.preset === "simplify",
+          autorouterVersion: commonAutorouterOptions.autorouterVersion,
+          effort: commonAutorouterOptions.effort,
+        }
+
+        const cacheEngine =
+          getPrecomputedRoutingResult ||
+          phaseAutorouterConfig.algorithmFn ||
+          !localAutorouterStrategy.cacheable
+            ? undefined
+            : this.root?.platform?.localCacheEngine
+        const cacheKey = cacheEngine
+          ? getLocalAutoroutingCacheKey(
+              simpleRouteJson,
+              localAutoroutingCacheSolverOptions,
+            )
+          : undefined
+        const cachedResult = cacheKey
+          ? yield* getCachedLocalAutoroutingPhaseResultEffect({
+              cacheEngine,
+              cacheKey,
+            })
+          : null
+        const cacheDisabledReason = getPrecomputedRoutingResult
+          ? "precomputed"
+          : phaseAutorouterConfig.algorithmFn
+            ? "custom_algorithm"
+            : !localAutorouterStrategy.cacheable
+              ? "strategy_not_cacheable"
+              : !cacheEngine
+                ? "no_cache_engine"
+                : undefined
+        const autoroutingMetadata = {
+          routingPhaseIndex: routingPhasePlan.routingPhaseIndex,
+          _actualRoutingPhaseOrderIndex: routingStageIndex,
+          phaseOrdinal: routingStageIndex + 1,
+          phaseCount: routingStages.length,
+          connectionCount: simpleRouteJson.connections.length,
+          obstacleCount: simpleRouteJson.obstacles.length,
+          previousTraceCount: simpleRouteJson.traces?.length ?? 0,
+          isReroutePhase,
+          autorouterName,
+          autorouterVersion,
+          solverName,
+          effort,
+          cacheStatus: cacheEngine
+            ? cachedResult
+              ? "hit"
+              : "miss"
+            : "disabled",
+          cacheKey,
+          cacheDisabledReason,
+        } as const
+
+        job.commit(() =>
+          this.root?.emit("autorouting:start", {
+            type: "autorouting:start",
+            subcircuit_id: this.subcircuit_id,
+            componentDisplayName: this.getString(),
+            ...(routingPhasePlan.phaseName !== undefined
+              ? {
+                  phaseName: routingPhasePlan.phaseName,
+                  phaseStageIndex,
+                  phaseStageCount,
+                }
+              : {}),
+            ...autoroutingMetadata,
+            simpleRouteJson,
+          }),
+        )
+        let autorouter: GenericLocalAutorouter | undefined
+        yield* Effect.gen({ self: this }, function* () {
+          let traces: SimplifiedPcbTrace[]
+          let precomputedOutputSimpleRouteJson: SimpleRouteJson | undefined
+          if (getPrecomputedRoutingResult) {
+            const result = getPrecomputedRoutingResult(simpleRouteJson)
+            traces = result.traces
+            precomputedOutputSimpleRouteJson = result.outputSimpleRouteJson
+            for (const trace of traces) fixedTraceIds.add(trace.pcb_trace_id)
+          } else if (cachedResult) {
+            debug(`[${this.getString()}] using cached local autorouting result`)
+            traces = cachedResult.traces
+          } else {
+            autorouter = yield* acquireLocalAutorouter({
+              job,
+              create: () => {
+                if (phaseAutorouterConfig.algorithmFn)
+                  return phaseAutorouterConfig.algorithmFn(simpleRouteJson)
+                return localAutorouterStrategy.create({
+                  simpleRouteJson,
+                  onSolverEnded: (event) =>
+                    job.commit(() =>
+                      this.root?.emit("solver:ended", {
+                        ...event,
+                        type: "solver:ended",
+                        componentName: this.getString(),
+                      }),
+                    ),
+                  commonAutorouterOptions,
+                  busFanoutDirections: routingPhasePlan.busFanoutDirections,
+                  fanoutBounds: routingPhasePlan.fanoutBounds,
+                  fanoutRoutingLayers: routingPhasePlan.fanoutRoutingLayers,
+                  allowBlindAndBuriedVias:
+                    simpleRouteJson.allowBlindAndBuriedVias,
+                  componentNamesById: getPcbComponentNamesById(db),
+                  onSolverStarted: ({
+                    solverName,
+                    solverParams,
+                    solverConstructorArgs,
+                  }) =>
+                    job.commit(() =>
+                      this.root?.emit("solver:started", {
+                        type: "solver:started",
+                        solverName,
+                        solverParams,
+                        solverConstructorArgs,
+                        componentName: this.getString(),
+                      }),
+                    ),
+                })
+              },
+            })
+
+            if (!autorouter) {
+              throw new Error("Failed to create local autorouter")
+            }
+            traces = yield* runLocalAutorouter(autorouter, {
+              job,
+              stopOnRelease: false,
+              onProgress: (event) => {
+                job.commit(() =>
+                  this.root?.emit("autorouting:progress", {
+                    subcircuit_id: this.subcircuit_id,
+                    componentDisplayName: this.getString(),
+                    ...(routingPhasePlan.phaseName !== undefined
+                      ? {
+                          phaseName: routingPhasePlan.phaseName,
+                          phaseStageIndex,
+                          phaseStageCount,
+                        }
+                      : {}),
+                    ...autoroutingMetadata,
+                    ...event,
+                    type: "autorouting:progress",
+                  }),
+                )
+              },
             })
           }
 
-          if (!autorouter) {
-            throw new Error("Failed to create local autorouter")
-          }
-          const activeAutorouter = autorouter
-          const routingPromise = new Promise<SimplifiedPcbTrace[]>(
-            (resolve, reject) => {
-              activeAutorouter.on("complete", (event) => {
-                debug(`[${this.getString()}] local autorouting complete`)
-                resolve(event.traces)
+          let transformedSimpleRouteJson =
+            precomputedOutputSimpleRouteJson ??
+            autorouter?.getOutputSimpleRouteJson?.()
+          if (
+            transformedSimpleRouteJson &&
+            !usesPreviousStageOutput &&
+            ["fanout", "single_layer_fanout", "dogbone"].includes(
+              phaseAutorouterConfig.preset ?? "",
+            ) &&
+            routingPhasePlan.routingPcbGroupId
+          ) {
+            const synchronizedFanout =
+              Group_syncFanoutExitsWithGlobalConnections({
+                fanoutInputSimpleRouteJson: simpleRouteJson,
+                fanoutOutputSimpleRouteJson: transformedSimpleRouteJson,
+                baseSimpleRouteJson,
+                routingPhasePlan,
               })
+            baseSimpleRouteJson = synchronizedFanout.baseSimpleRouteJson
+            transformedSimpleRouteJson =
+              synchronizedFanout.downstreamSimpleRouteJson
 
-              activeAutorouter.on("error", (event) => {
-                debug(
-                  `[${this.getString()}] local autorouting error: ${event.error.message}`,
+            for (const synchronizedPoint of synchronizedFanout.synchronizedBreakoutPoints) {
+              const breakoutPoint = db.pcb_breakout_point
+                .list()
+                .find(
+                  (point) =>
+                    point.pcb_group_id ===
+                      synchronizedPoint.routingPcbGroupId &&
+                    point.source_trace_id === synchronizedPoint.sourceTraceId &&
+                    Math.abs(point.x - synchronizedPoint.previousPoint.x) <=
+                      1e-6 &&
+                    Math.abs(point.y - synchronizedPoint.previousPoint.y) <=
+                      1e-6,
                 )
-                reject(event.error)
+              if (!breakoutPoint) continue
+              job.commit(() =>
+                db.pcb_breakout_point.update(
+                  breakoutPoint.pcb_breakout_point_id,
+                  {
+                    x: synchronizedPoint.fanoutExitPoint.x,
+                    y: synchronizedPoint.fanoutExitPoint.y,
+                    layer: synchronizedPoint.fanoutExitPoint.layer as LayerRef,
+                  },
+                ),
+              )
+            }
+          }
+          // A transformed routing problem hands completed copper to the next
+          // stage; preserve it instead of treating it as a rerouting seed.
+          if (localAutorouterStrategy.preserveOutputTraces) {
+            for (const trace of traces) fixedTraceIds.add(trace.pcb_trace_id)
+          }
+          let stageOutputTraces = traces
+          if (transformedSimpleRouteJson?.traces) {
+            stageOutputTraces = transformedSimpleRouteJson.traces
+          } else if (usesPreviousStageOutput) {
+            stageOutputTraces =
+              getAccumulatedPcbTracesWithStageOutputReplacements({
+                accumulatedPcbTraces: simpleRouteJson.traces ?? [],
+                stageOutputPcbTraces: traces,
               })
-            },
-          )
+          }
+          let eventOutputPcbTraces = stageOutputTraces
+          if (
+            !transformedSimpleRouteJson &&
+            !usesPreviousStageOutput &&
+            routingPhasePlan.routingPhaseIndex !== null
+          ) {
+            eventOutputPcbTraces =
+              getAccumulatedPcbTracesWithStageOutputReplacements({
+                accumulatedPcbTraces: simpleRouteJson.traces ?? [],
+                stageOutputPcbTraces: traces,
+              })
+          }
+          const outputSimpleRouteJson = {
+            ...(transformedSimpleRouteJson ?? simpleRouteJson),
+            traces: eventOutputPcbTraces,
+          }
+          previousStageOutputSimpleRouteJson = transformedSimpleRouteJson
+            ? outputSimpleRouteJson
+            : undefined
 
-          activeAutorouter.on("progress", (event) => {
-            this.root?.emit("autorouting:progress", {
+          if (!cachedResult && cacheKey) {
+            yield* cacheLocalAutoroutingPhaseResultEffect({
+              cacheEngine,
+              cacheKey,
+              job,
+              result: { ...simpleRouteJson, traces },
+            })
+          }
+
+          const savedPhasePaths = getAutoroutingPhasePcbTracePaths({
+            group:
+              (this.selectAll("group") as Group[]).find(
+                (group) =>
+                  group.pcb_group_id ===
+                  routingPhasePlan.fanoutRegionPcbGroupId,
+              ) ??
+              routingPhasePlan.autoroutingPhase?.getGroup() ??
+              this,
+            subcircuit: this,
+            input: simpleRouteJson,
+            traces,
+            isFanout: ["fanout", "single_layer_fanout", "dogbone"].includes(
+              phaseAutorouterConfig.preset ?? "",
+            ),
+          })
+          job.commit(() =>
+            this.root?.emit("autorouting:end", {
+              ...savedPhasePaths,
+              type: "autorouting:end",
               subcircuit_id: this.subcircuit_id,
               componentDisplayName: this.getString(),
               ...(routingPhasePlan.phaseName !== undefined
@@ -1814,259 +2017,175 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
                   }
                 : {}),
               ...autoroutingMetadata,
-              ...event,
-              type: "autorouting:progress",
-            })
-          })
-
-          activeAutorouter.start()
-          traces = await routingPromise
-        }
-
-        let transformedSimpleRouteJson =
-          precomputedOutputSimpleRouteJson ??
-          autorouter?.getOutputSimpleRouteJson?.()
-        if (
-          transformedSimpleRouteJson &&
-          !usesPreviousStageOutput &&
-          ["fanout", "single_layer_fanout", "dogbone"].includes(
-            phaseAutorouterConfig.preset ?? "",
-          ) &&
-          routingPhasePlan.routingPcbGroupId
-        ) {
-          const synchronizedFanout = Group_syncFanoutExitsWithGlobalConnections(
-            {
-              fanoutInputSimpleRouteJson: simpleRouteJson,
-              fanoutOutputSimpleRouteJson: transformedSimpleRouteJson,
-              baseSimpleRouteJson,
-              routingPhasePlan,
-            },
-          )
-          baseSimpleRouteJson = synchronizedFanout.baseSimpleRouteJson
-          transformedSimpleRouteJson =
-            synchronizedFanout.downstreamSimpleRouteJson
-
-          for (const synchronizedPoint of synchronizedFanout.synchronizedBreakoutPoints) {
-            const breakoutPoint = db.pcb_breakout_point
-              .list()
-              .find(
-                (point) =>
-                  point.pcb_group_id === synchronizedPoint.routingPcbGroupId &&
-                  point.source_trace_id === synchronizedPoint.sourceTraceId &&
-                  Math.abs(point.x - synchronizedPoint.previousPoint.x) <=
-                    1e-6 &&
-                  Math.abs(point.y - synchronizedPoint.previousPoint.y) <= 1e-6,
-              )
-            if (!breakoutPoint) continue
-            db.pcb_breakout_point.update(breakoutPoint.pcb_breakout_point_id, {
-              x: synchronizedPoint.fanoutExitPoint.x,
-              y: synchronizedPoint.fanoutExitPoint.y,
-              layer: synchronizedPoint.fanoutExitPoint.layer as LayerRef,
-            })
-          }
-        }
-        // A transformed routing problem hands completed copper to the next
-        // stage; preserve it instead of treating it as a rerouting seed.
-        if (localAutorouterStrategy.preserveOutputTraces) {
-          for (const trace of traces) fixedTraceIds.add(trace.pcb_trace_id)
-        }
-        let stageOutputTraces = traces
-        if (transformedSimpleRouteJson?.traces) {
-          stageOutputTraces = transformedSimpleRouteJson.traces
-        } else if (usesPreviousStageOutput) {
-          stageOutputTraces =
-            getAccumulatedPcbTracesWithStageOutputReplacements({
-              accumulatedPcbTraces: simpleRouteJson.traces ?? [],
-              stageOutputPcbTraces: traces,
-            })
-        }
-        let eventOutputPcbTraces = stageOutputTraces
-        if (
-          !transformedSimpleRouteJson &&
-          !usesPreviousStageOutput &&
-          routingPhasePlan.routingPhaseIndex !== null
-        ) {
-          eventOutputPcbTraces =
-            getAccumulatedPcbTracesWithStageOutputReplacements({
-              accumulatedPcbTraces: simpleRouteJson.traces ?? [],
-              stageOutputPcbTraces: traces,
-            })
-        }
-        const outputSimpleRouteJson = {
-          ...(transformedSimpleRouteJson ?? simpleRouteJson),
-          traces: eventOutputPcbTraces,
-        }
-        previousStageOutputSimpleRouteJson = transformedSimpleRouteJson
-          ? outputSimpleRouteJson
-          : undefined
-
-        if (!cachedResult && cacheKey) {
-          await cacheLocalAutoroutingPhaseResult({
-            cacheEngine,
-            cacheKey,
-            result: {
-              ...simpleRouteJson,
-              traces,
-            },
-          })
-        }
-
-        const savedPhasePaths = getAutoroutingPhasePcbTracePaths({
-          group:
-            (this.selectAll("group") as Group[]).find(
-              (group) =>
-                group.pcb_group_id === routingPhasePlan.fanoutRegionPcbGroupId,
-            ) ??
-            routingPhasePlan.autoroutingPhase?.getGroup() ??
-            this,
-          subcircuit: this,
-          input: simpleRouteJson,
-          traces,
-          isFanout: ["fanout", "single_layer_fanout", "dogbone"].includes(
-            phaseAutorouterConfig.preset ?? "",
-          ),
-        })
-        this.root?.emit("autorouting:end", {
-          ...savedPhasePaths,
-          type: "autorouting:end",
-          subcircuit_id: this.subcircuit_id,
-          componentDisplayName: this.getString(),
-          ...(routingPhasePlan.phaseName !== undefined
-            ? {
-                phaseName: routingPhasePlan.phaseName,
-                phaseStageIndex,
-                phaseStageCount,
-              }
-            : {}),
-          ...autoroutingMetadata,
-          simpleRouteJson: outputSimpleRouteJson,
-        })
-
-        // Create source_traces for interconnect ports that were connected via
-        // off-board paths during routing. This allows DRC to understand that
-        // these ports are intentionally connected.
-        if (autorouter?.getConnectedOffboardObstacles) {
-          const connectedOffboardObstacles =
-            autorouter.getConnectedOffboardObstacles()
-          createSourceTracesFromOffboardConnections({
-            db,
-            connectedOffboardObstacles,
-            simpleRouteJson,
-            subcircuit_id: this.subcircuit_id,
-          })
-        }
-
-        // Get jumper output from solver
-        const solver = (autorouter as any)?.solver
-        if (solver?.getOutputJumpers) {
-          outputJumpers.push(...(solver.getOutputJumpers() || []))
-        }
-
-        if (isRegionReroutePhase && rerouteOriginalSrj) {
-          for (const trace of rerouteOriginalSrj.traces ?? []) {
-            if (trace.type === "pcb_trace") {
-              pcbTraceIdsToDelete.add(trace.pcb_trace_id)
-            }
-          }
-          const reconnectedSrj = reconnectReroutedSimpleRouteJsonRegion(
-            rerouteOriginalSrj as AutorouterSimpleRouteJson,
-            {
-              ...simpleRouteJson,
-              traces: [...(simpleRouteJson.traces ?? []), ...traces],
-            } as AutorouterSimpleRouteJson,
-          ) as SimpleRouteJson
-          outputTraces.splice(
-            0,
-            outputTraces.length,
-            ...(reconnectedSrj.traces ?? []),
-          )
-        } else if (isConnectionReroutePhase) {
-          const retainedPcbTraces = outputTraces.filter(
-            (trace) => !traceMatchesRoutingPhase(trace, routingPhasePlan),
-          )
-          outputTraces.splice(
-            0,
-            outputTraces.length,
-            ...getAccumulatedPcbTracesWithStageOutputReplacements({
-              accumulatedPcbTraces: retainedPcbTraces,
-              stageOutputPcbTraces: stageOutputTraces,
+              simpleRouteJson: outputSimpleRouteJson,
             }),
           )
-        } else {
-          if (isTraceSimplificationPhase) {
-            for (const existingTrace of existingRerouteSeedTraces) {
-              // Fixed copper was excluded from the simplifier's input traces,
-              // so it has no replacement in the solver output.
-              if (fixedTraceIds.has(existingTrace.pcb_trace_id)) continue
-              pcbTraceIdsToDelete.add(existingTrace.pcb_trace_id)
-            }
+
+          // Create source_traces for interconnect ports that were connected via
+          // off-board paths during routing. This allows DRC to understand that
+          // these ports are intentionally connected.
+          if (autorouter?.getConnectedOffboardObstacles) {
+            const connectedOffboardObstacles =
+              autorouter.getConnectedOffboardObstacles()
+            job.commit(() =>
+              createSourceTracesFromOffboardConnections({
+                db,
+                connectedOffboardObstacles,
+                simpleRouteJson,
+                subcircuit_id: this.subcircuit_id,
+              }),
+            )
           }
-          outputTraces.splice(
-            0,
-            outputTraces.length,
-            ...getAccumulatedPcbTracesWithStageOutputReplacements({
-              accumulatedPcbTraces: outputTraces,
-              stageOutputPcbTraces: stageOutputTraces,
-            }),
-          )
-        }
-      } catch (error) {
-        const { db } = this.root!
-        // Record the error
-        db.pcb_autorouting_error.insert({
-          pcb_error_id: `pcb_autorouter_error_subcircuit_${this.subcircuit_id}`,
-          error_type: "pcb_autorouting_error",
-          message: error instanceof Error ? error.message : String(error),
-        })
 
-        this.root?.emit("autorouting:error", {
-          type: "autorouting:error",
-          subcircuit_id: this.subcircuit_id,
-          componentDisplayName: this.getString(),
-          ...(routingPhasePlan.phaseName !== undefined
-            ? {
-                phaseName: routingPhasePlan.phaseName,
-                phaseStageIndex,
-                phaseStageCount,
+          // Get jumper output from solver
+          const solver = (autorouter as any)?.solver
+          if (solver?.getOutputJumpers) {
+            outputJumpers.push(...(solver.getOutputJumpers() || []))
+          }
+
+          if (isRegionReroutePhase && rerouteOriginalSrj) {
+            for (const trace of rerouteOriginalSrj.traces ?? []) {
+              if (trace.type === "pcb_trace") {
+                pcbTraceIdsToDelete.add(trace.pcb_trace_id)
               }
-            : {}),
-          ...autoroutingMetadata,
-          error: {
-            message: error instanceof Error ? error.message : String(error),
-          },
-          simpleRouteJson,
-        })
+            }
+            const reconnectedSrj = reconnectReroutedSimpleRouteJsonRegion(
+              rerouteOriginalSrj as AutorouterSimpleRouteJson,
+              {
+                ...simpleRouteJson,
+                traces: [...(simpleRouteJson.traces ?? []), ...traces],
+              } as AutorouterSimpleRouteJson,
+            ) as SimpleRouteJson
+            outputTraces.splice(
+              0,
+              outputTraces.length,
+              ...(reconnectedSrj.traces ?? []),
+            )
+          } else if (isConnectionReroutePhase) {
+            const retainedPcbTraces = outputTraces.filter(
+              (trace) => !traceMatchesRoutingPhase(trace, routingPhasePlan),
+            )
+            outputTraces.splice(
+              0,
+              outputTraces.length,
+              ...getAccumulatedPcbTracesWithStageOutputReplacements({
+                accumulatedPcbTraces: retainedPcbTraces,
+                stageOutputPcbTraces: stageOutputTraces,
+              }),
+            )
+          } else {
+            if (isTraceSimplificationPhase) {
+              for (const existingTrace of existingRerouteSeedTraces) {
+                // Fixed copper was excluded from the simplifier's input traces,
+                // so it has no replacement in the solver output.
+                if (fixedTraceIds.has(existingTrace.pcb_trace_id)) continue
+                pcbTraceIdsToDelete.add(existingTrace.pcb_trace_id)
+              }
+            }
+            outputTraces.splice(
+              0,
+              outputTraces.length,
+              ...getAccumulatedPcbTracesWithStageOutputReplacements({
+                accumulatedPcbTraces: outputTraces,
+                stageOutputPcbTraces: stageOutputTraces,
+              }),
+            )
+          }
+        }).pipe(
+          Effect.scoped,
+          Effect.catchCause((cause) => {
+            if (Cause.hasInterrupts(cause) || !job.isCurrent())
+              return Effect.failCause(cause)
+            const error = originalCoreError(cause)
+            const { db } = this.root!
+            // Record the error
+            job.commit(() =>
+              db.pcb_autorouting_error.insert({
+                pcb_error_id: `pcb_autorouter_error_subcircuit_${this.subcircuit_id}`,
+                error_type: "pcb_autorouting_error",
+                message: error instanceof Error ? error.message : String(error),
+              }),
+            )
 
-        throw error
-      } finally {
-        // Ensure the autorouter is stopped
-        autorouter?.stop()
+            job.commit(() =>
+              this.root?.emit("autorouting:error", {
+                type: "autorouting:error",
+                subcircuit_id: this.subcircuit_id,
+                componentDisplayName: this.getString(),
+                ...(routingPhasePlan.phaseName !== undefined
+                  ? {
+                      phaseName: routingPhasePlan.phaseName,
+                      phaseStageIndex,
+                      phaseStageCount,
+                    }
+                  : {}),
+                ...autoroutingMetadata,
+                error: {
+                  message:
+                    error instanceof Error ? error.message : String(error),
+                },
+                simpleRouteJson,
+              }),
+            )
+
+            return Effect.failCause(cause)
+          }),
+        )
       }
-    }
 
-    // Store the result
-    this._asyncAutoroutingResult = {
-      output_pcb_traces: outputTraces as any,
-      output_jumpers: outputJumpers,
-      pcb_trace_ids_to_be_replaced: [...pcbTraceIdsToDelete],
-    }
-
-    // Mark the component as needing to re-render the PCB traces
-    this._markDirty("PcbTraceRender")
+      // Store the result
+      job.commit(() => {
+        this._asyncAutoroutingResult = {
+          output_pcb_traces: outputTraces as any,
+          output_jumpers: outputJumpers,
+          pcb_trace_ids_to_be_replaced: [...pcbTraceIdsToDelete],
+        }
+        this._markDirty("PcbTraceRender")
+      })
+    })
   }
 
   _startAsyncAutorouting() {
     if (this._hasStartedAsyncAutorouting) return
     this._hasStartedAsyncAutorouting = true
-    if (this._getAutorouterConfig().local) {
-      this._queueAsyncEffect("autorouting", async () =>
-        this._runLocalAutorouting(),
-      )
-    } else {
-      this._queueAsyncEffect("make-http-autorouting-request", async () =>
-        this._runEffectMakeHttpAutoroutingRequest(),
-      )
-    }
+    const generation = ++this._autoroutingJobGeneration
+    const resultAtStart = this._asyncAutoroutingResult
+    const local = this._getAutorouterConfig().local
+    this._queueEffect(
+      local ? "autorouting" : "make-http-autorouting-request",
+      (job) =>
+        Effect.acquireUseRelease(
+          coreSync(() => {
+            const releasePendingRouting = () => {
+              // An old finalizer cannot clear a newer generation's start guard.
+              // Keep a completed result (and any earlier result/cache) intact.
+              if (
+                generation !== this._autoroutingJobGeneration ||
+                this._asyncAutoroutingResult !== resultAtStart
+              )
+                return
+              this._hasStartedAsyncAutorouting = false
+              this._markDirty("PcbTraceRender")
+            }
+            if (job.signal.aborted) releasePendingRouting()
+            else
+              job.signal.addEventListener("abort", releasePendingRouting, {
+                once: true,
+              })
+            return releasePendingRouting
+          }, "own_routing_generation"),
+          () =>
+            local
+              ? this._runLocalAutoroutingEffect(job)
+              : this._runHttpAutoroutingEffect(job),
+          (releasePendingRouting) =>
+            Effect.sync(() => {
+              job.signal.removeEventListener("abort", releasePendingRouting)
+              if (job.signal.aborted || !job.isCurrent())
+                releasePendingRouting()
+            }),
+        ),
+    )
   }
 
   doInitialPcbTraceRender() {

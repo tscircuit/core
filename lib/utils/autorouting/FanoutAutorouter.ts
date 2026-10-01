@@ -1,3 +1,5 @@
+import * as Effect from "effect/Effect"
+import { coreSync } from "lib/effect/core-error"
 import {
   type FanoutBorderTarget,
   type FanoutDirection,
@@ -375,7 +377,8 @@ const createDownstreamSimpleRouteJson = ({
 export class FanoutAutorouter implements GenericLocalAutorouter {
   isRouting = false
   private outputSimpleRouteJson?: SimpleRouteJson
-  private startTimeoutId?: number
+  private interruptRouting?: () => void
+  private routingGeneration = 0
   private eventHandlers: {
     complete: Array<(event: AutorouterCompleteEvent) => void>
     error: Array<(event: AutorouterErrorEvent) => void>
@@ -571,6 +574,7 @@ export class FanoutAutorouter implements GenericLocalAutorouter {
         phase: this.options.mode,
         debugGraphics,
       })
+      if (!this.isRouting) return
       this.isRouting = false
       this.emitEvent({
         type: "complete",
@@ -591,18 +595,27 @@ export class FanoutAutorouter implements GenericLocalAutorouter {
   start(): void {
     if (this.isRouting) return
     this.isRouting = true
-    this.startTimeoutId = setTimeout(() => {
-      this.startTimeoutId = undefined
-      this.startFanout()
-    }, 0) as unknown as number
+    const generation = ++this.routingGeneration
+    this.interruptRouting = Effect.runCallback(
+      Effect.gen({ self: this }, function* () {
+        yield* Effect.sleep(0)
+        yield* coreSync(() => this.startFanout(), "run_fanout_router")
+      }),
+      {
+        onExit: () => {
+          if (generation === this.routingGeneration)
+            this.interruptRouting = undefined
+        },
+      },
+    )
   }
 
   stop(): void {
-    if (this.startTimeoutId !== undefined) {
-      clearTimeout(this.startTimeoutId)
-      this.startTimeoutId = undefined
-    }
     this.isRouting = false
+    this.routingGeneration++
+    const interrupt = this.interruptRouting
+    this.interruptRouting = undefined
+    interrupt?.()
   }
 
   on(
@@ -629,6 +642,28 @@ export class FanoutAutorouter implements GenericLocalAutorouter {
     } else {
       this.eventHandlers.progress.push(
         callback as (event: AutorouterProgressEvent) => void,
+      )
+    }
+  }
+
+  removeListener(
+    event: AutorouterEvent["type"],
+    callback:
+      | ((event: AutorouterCompleteEvent) => void)
+      | ((event: AutorouterErrorEvent) => void)
+      | ((event: AutorouterProgressEvent) => void),
+  ): void {
+    if (event === "complete") {
+      this.eventHandlers.complete = this.eventHandlers.complete.filter(
+        (handler) => handler !== callback,
+      )
+    } else if (event === "error") {
+      this.eventHandlers.error = this.eventHandlers.error.filter(
+        (handler) => handler !== callback,
+      )
+    } else {
+      this.eventHandlers.progress = this.eventHandlers.progress.filter(
+        (handler) => handler !== callback,
       )
     }
   }

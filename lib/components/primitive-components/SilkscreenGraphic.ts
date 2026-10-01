@@ -5,9 +5,11 @@ import {
   ensureClockwise,
   getSvgBRepShapes,
   getTransformedSvgPathRoutes,
-  loadImageSource,
 } from "@tscircuit/image-utils"
 import type { PcbSilkscreenGraphic } from "circuit-json"
+import * as Effect from "effect/Effect"
+import { coreSync } from "lib/effect/core-error"
+import { loadImageSourceEffect } from "lib/effect/loading"
 import { applyToPoint } from "transformation-matrix"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
@@ -29,75 +31,86 @@ export class SilkscreenGraphic extends PrimitiveComponent<
   doInitialPcbPrimitiveRender(): void {
     if (this.root?.pcbDisabled) return
 
-    this._queueAsyncEffect("SilkscreenGraphicRender", async () => {
-      if (this.root?.pcbDisabled) return
-      const { db } = this.root!
-      const { _parsedProps: props } = this
-      const { maybeFlipLayer } = this._getPcbPrimitiveFlippedHelpers()
-      const layer = maybeFlipLayer(props.layer ?? "top") as "top" | "bottom"
+    this._queueEffect("SilkscreenGraphicRender", (job) =>
+      Effect.gen({ self: this }, function* () {
+        if (this.root?.pcbDisabled) return
+        const { db } = this.root!
+        const { _parsedProps: props } = this
+        const { maybeFlipLayer } = this._getPcbPrimitiveFlippedHelpers()
+        const layer = maybeFlipLayer(props.layer ?? "top") as "top" | "bottom"
 
-      if (layer !== "top" && layer !== "bottom") {
-        throw new Error(
-          `Invalid layer "${layer}" for SilkscreenGraphic. Must be "top" or "bottom".`,
+        if (layer !== "top" && layer !== "bottom") {
+          throw new Error(
+            `Invalid layer "${layer}" for SilkscreenGraphic. Must be "top" or "bottom".`,
+          )
+        }
+
+        const sourceImage = yield* loadImageSourceEffect(props.imageUrl)
+
+        yield* coreSync(
+          () =>
+            job.commit(() => {
+              if (
+                sourceImage.mimetype !== SVG_MIMETYPE &&
+                sourceImage.mimetype !== PNG_MIMETYPE
+              ) {
+                throw new Error(
+                  `Unsupported imageUrl for SilkscreenGraphic: "${props.imageUrl}". Expected an SVG or PNG image.`,
+                )
+              }
+
+              const imageAsset = {
+                project_relative_path: sourceImage.projectRelativePath,
+                url: sourceImage.dataUrl,
+                mimetype: sourceImage.mimetype,
+              }
+              const brepShapes =
+                sourceImage.mimetype === SVG_MIMETYPE
+                  ? getSvgBRepShapes({
+                      svg: sourceImage.text,
+                      width: props.width,
+                      height: props.height,
+                      transform: this._computePcbGlobalTransformBeforeLayout(),
+                    })
+                  : [this.getPlacementBoxBRepShape()]
+
+              const pcbComponentId =
+                this.parent?.pcb_component_id ??
+                this.getPrimitiveContainer()?.pcb_component_id ??
+                ""
+
+              for (const brepShape of brepShapes) {
+                const graphic = (db as any).insert({
+                  type: "pcb_silkscreen_graphic",
+                  pcb_component_id: pcbComponentId,
+                  pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
+                  subcircuit_id:
+                    this.getSubcircuit()?.subcircuit_id ?? undefined,
+                  layer,
+                  shape: "brep",
+                  brep_shape: brepShape,
+                  image_asset: imageAsset,
+                } satisfies Omit<
+                  PcbSilkscreenGraphic,
+                  "pcb_silkscreen_graphic_id"
+                >) as PcbSilkscreenGraphic
+
+                this.pcb_silkscreen_graphic_ids.push(
+                  graphic.pcb_silkscreen_graphic_id,
+                )
+              }
+
+              this.pcb_silkscreen_graphic_id =
+                this.pcb_silkscreen_graphic_ids[0] ?? null
+
+              if (sourceImage.mimetype === SVG_MIMETYPE) {
+                this.insertRenderableSilkscreenPaths(sourceImage.text, layer)
+              }
+            }),
+          "commit_silkscreen_graphic",
         )
-      }
-
-      const sourceImage = await loadImageSource(props.imageUrl)
-
-      if (
-        sourceImage.mimetype !== SVG_MIMETYPE &&
-        sourceImage.mimetype !== PNG_MIMETYPE
-      ) {
-        throw new Error(
-          `Unsupported imageUrl for SilkscreenGraphic: "${props.imageUrl}". Expected an SVG or PNG image.`,
-        )
-      }
-
-      const imageAsset = {
-        project_relative_path: sourceImage.projectRelativePath,
-        url: sourceImage.dataUrl,
-        mimetype: sourceImage.mimetype,
-      }
-      const brepShapes =
-        sourceImage.mimetype === SVG_MIMETYPE
-          ? getSvgBRepShapes({
-              svg: sourceImage.text,
-              width: props.width,
-              height: props.height,
-              transform: this._computePcbGlobalTransformBeforeLayout(),
-            })
-          : [this.getPlacementBoxBRepShape()]
-
-      const pcbComponentId =
-        this.parent?.pcb_component_id ??
-        this.getPrimitiveContainer()?.pcb_component_id ??
-        ""
-
-      for (const brepShape of brepShapes) {
-        const graphic = (db as any).insert({
-          type: "pcb_silkscreen_graphic",
-          pcb_component_id: pcbComponentId,
-          pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
-          subcircuit_id: this.getSubcircuit()?.subcircuit_id ?? undefined,
-          layer,
-          shape: "brep",
-          brep_shape: brepShape,
-          image_asset: imageAsset,
-        } satisfies Omit<
-          PcbSilkscreenGraphic,
-          "pcb_silkscreen_graphic_id"
-        >) as PcbSilkscreenGraphic
-
-        this.pcb_silkscreen_graphic_ids.push(graphic.pcb_silkscreen_graphic_id)
-      }
-
-      this.pcb_silkscreen_graphic_id =
-        this.pcb_silkscreen_graphic_ids[0] ?? null
-
-      if (sourceImage.mimetype === SVG_MIMETYPE) {
-        this.insertRenderableSilkscreenPaths(sourceImage.text, layer)
-      }
-    })
+      }),
+    )
   }
 
   insertRenderableSilkscreenPaths(svg: string, layer: "top" | "bottom"): void {

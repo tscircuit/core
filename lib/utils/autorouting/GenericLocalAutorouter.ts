@@ -36,6 +36,16 @@ export interface GenericLocalAutorouter {
   on(event: "error", callback: (ev: AutorouterErrorEvent) => void): void
   on(event: "progress", callback: (ev: AutorouterProgressEvent) => void): void
 
+  /** Optional for compatibility with external autorouter factories. Core's
+   * built-in adapters implement detachment for their owned job resources. */
+  removeListener?(
+    event: AutorouterEvent["type"],
+    callback:
+      | ((ev: AutorouterCompleteEvent) => void)
+      | ((ev: AutorouterErrorEvent) => void)
+      | ((ev: AutorouterProgressEvent) => void),
+  ): void
+
   solveSync(): SimplifiedPcbTrace[]
 
   /**
