@@ -31,6 +31,7 @@ export const createPinrowSilkscreenText = ({
     pcbX: isNaN(elm.anchor_position.x) ? 0 : elm.anchor_position.x,
     pcbY: elm.anchor_position.y,
     pcbRotation: readableRotation ?? 0,
+    mirrored: elm.is_mirrored,
   })
   silkscreenText._footprinterFontSize = elm.font_size + 0.2
   return silkscreenText

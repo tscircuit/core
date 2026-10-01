@@ -1,0 +1,38 @@
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -19228,6 +19228,8 @@
+   anchorAlignment: ninePointAnchor.default("center"),
+   font: z142.enum(["tscircuit2024"]).optional(),
+   fontSize: length9.optional(),
++  /** Explicit text mirroring, independent of layer. Omitted preserves the renderer default. */
++  mirrored: z142.boolean().optional(),
+   /**
+    * If true, text will knock out underlying silkscreen
+    */
+--- a/dist/index.d.ts
++++ b/dist/index.d.ts
+@@ -239229,6 +239229,8 @@
+     anchorAlignment: z.ZodDefault<z.ZodEnum<["top_left", "top_center", "top_right", "center_left", "center", "center_right", "bottom_left", "bottom_center", "bottom_right"]>>;
+     font: z.ZodOptional<z.ZodEnum<["tscircuit2024"]>>;
+     fontSize: z.ZodOptional<z.ZodEffects<z.ZodUnion<[z.ZodString, z.ZodNumber]>, number, string | number>>;
++    /** Explicit text mirroring, independent of layer. Omitted preserves the renderer default. */
++    mirrored: z.ZodOptional<z.ZodBoolean>;
+     /**
+      * If true, text will knock out underlying silkscreen
+      */
+@@ -239285,6 +239287,7 @@
+     pcbSx?: PcbSx | undefined;
+     pcbRelative?: boolean | undefined;
+     relative?: boolean | undefined;
++    mirrored?: boolean | undefined;
+     isKnockout?: boolean | undefined;
+     knockoutPadding?: number | undefined;
+     knockoutPaddingLeft?: number | undefined;
+@@ -239333,6 +239336,7 @@
+     pcbRelative?: boolean | undefined;
+     relative?: boolean | undefined;
+     anchorAlignment?: "top_left" | "top_center" | "top_right" | "center_left" | "center" | "center_right" | "bottom_left" | "bottom_center" | "bottom_right" | undefined;
++    mirrored?: boolean | undefined;
+     isKnockout?: boolean | undefined;
+     knockoutPadding?: string | number | undefined;
+     knockoutPaddingLeft?: string | number | undefined;
