@@ -774,8 +774,10 @@ export abstract class PrimitiveComponent<
 
   _getSchematicSymbolName(): keyof typeof symbols | undefined {
     const { _parsedProps: props } = this
-    const base_symbol_name = this.config
-      .schematicSymbolName as keyof typeof symbols
+    const baseSymbolName = (props.symbolName ??
+      this.config.schematicSymbolName) as keyof typeof symbols | undefined
+
+    if (!baseSymbolName) return undefined
 
     // derive rotation from schOrientation if provided
     const orientationRotationMap: Record<string, number> = {
@@ -813,25 +815,24 @@ export abstract class PrimitiveComponent<
     }
 
     const hasOrientationOrDirectionSuffix =
-      /_(horz|vert|up|down|left|right)$/.test(base_symbol_name)
-    if (hasOrientationOrDirectionSuffix && base_symbol_name in symbols) {
+      /_(horz|vert|up|down|left|right)$/.test(baseSymbolName)
+    if (hasOrientationOrDirectionSuffix && baseSymbolName in symbols) {
       const rotatedSymbolName = getRotatedSymbolName(
-        base_symbol_name,
+        baseSymbolName,
         normalizedRotation,
       )
       if (rotatedSymbolName && rotatedSymbolName in symbols) {
         return rotatedSymbolName as keyof typeof symbols
       }
-      return base_symbol_name
+      return baseSymbolName
     }
 
-    const symbol_name_horz = `${base_symbol_name}_horz` as keyof typeof symbols
-    const symbol_name_vert = `${base_symbol_name}_vert` as keyof typeof symbols
-    const symbol_name_up = `${base_symbol_name}_up` as keyof typeof symbols
-    const symbol_name_down = `${base_symbol_name}_down` as keyof typeof symbols
-    const symbol_name_left = `${base_symbol_name}_left` as keyof typeof symbols
-    const symbol_name_right =
-      `${base_symbol_name}_right` as keyof typeof symbols
+    const symbol_name_horz = `${baseSymbolName}_horz` as keyof typeof symbols
+    const symbol_name_vert = `${baseSymbolName}_vert` as keyof typeof symbols
+    const symbol_name_up = `${baseSymbolName}_up` as keyof typeof symbols
+    const symbol_name_down = `${baseSymbolName}_down` as keyof typeof symbols
+    const symbol_name_left = `${baseSymbolName}_left` as keyof typeof symbols
+    const symbol_name_right = `${baseSymbolName}_right` as keyof typeof symbols
 
     if (symbol_name_right in symbols && normalizedRotation === 0) {
       return symbol_name_right
@@ -856,7 +857,7 @@ export abstract class PrimitiveComponent<
       if (normalizedRotation === 90) return symbol_name_vert
       if (normalizedRotation === 270) return symbol_name_vert
     }
-    if (base_symbol_name in symbols) return base_symbol_name
+    if (baseSymbolName in symbols) return baseSymbolName
 
     return undefined
   }
@@ -865,7 +866,7 @@ export abstract class PrimitiveComponent<
     const symbol_name = this._getSchematicSymbolName()
     if (!symbol_name) {
       throw new Error(
-        `No schematic symbol found (given: "${this.config.schematicSymbolName}")`,
+        `No schematic symbol found (given: "${this._parsedProps.symbolName ?? this.config.schematicSymbolName}")`,
       )
     }
     return symbol_name
