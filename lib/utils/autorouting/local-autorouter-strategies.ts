@@ -142,10 +142,10 @@ const localAutorouterStrategies = new Map<string, LocalAutorouterStrategy>([
     {
       name: "bus_lanes",
       cacheable: false,
-      getSolverName: () => "BusLanesSolver",
+      getSolverName: () => "BusLanesPipelineSolver",
       create: ({ simpleRouteJson, onSolverStarted }) => {
         onSolverStarted?.({
-          solverName: "BusLanesSolver",
+          solverName: "BusLanesPipelineSolver",
           solverParams: simpleRouteJson,
           solverConstructorArgs: [simpleRouteJson],
         })

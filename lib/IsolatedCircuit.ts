@@ -225,8 +225,23 @@ export class IsolatedCircuit {
     this.render()
 
     while (!this.isDoneRendering()) {
-      await new Promise((resolve) => setTimeout(resolve, 100))
-      this.render()
+      await new Promise<void>((resolve) => {
+        const resume = () => {
+          clearTimeout(timer)
+          this.removeListener("asyncEffect:end", resume)
+          resolve()
+        }
+        const timer = setTimeout(resume, 100)
+        this.on("asyncEffect:end", resume)
+        if (this._hasUnrenderedUpdatesFromAsyncEffects) resume()
+      })
+      // A running effect blocks its dependent phases. Revisit the tree when
+      // an effect completes, rather than traversing every component on idle polls.
+      if (
+        this._hasUnrenderedUpdatesFromAsyncEffects ||
+        this._asyncEffectPhaseById.size === 0
+      )
+        this.render()
     }
 
     this.emit("renderComplete")

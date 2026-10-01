@@ -1,5 +1,5 @@
 import {
-  BusLanesSolver,
+  BusLanesPipelineSolver,
   type SimpleRouteJson as BusLanesInput,
 } from "@tscircuit/bus-lanes-solver"
 import type {
@@ -14,15 +14,15 @@ import type { SimpleRouteJson, SimplifiedPcbTrace } from "./SimpleRouteJson"
  * solve emits an error; it never falls back to a router that can insert vias. */
 export class BusLanesAutorouter implements GenericLocalAutorouter {
   isRouting = false
-  private solver: BusLanesSolver
-  private timer?: ReturnType<typeof setTimeout>
+  private solver: BusLanesPipelineSolver
+  private cancelScheduledTick?: () => void
   private listeners: Array<{
     event: AutorouterEvent["type"]
     callback: (event: AutorouterEvent) => void
   }> = []
   constructor(public input: SimpleRouteJson) {
     // The solver validates unsupported SRJ route primitives at its input boundary.
-    this.solver = new BusLanesSolver(input as unknown as BusLanesInput)
+    this.solver = new BusLanesPipelineSolver(input as unknown as BusLanesInput)
   }
   on(
     event: "complete",
@@ -81,7 +81,7 @@ export class BusLanesAutorouter implements GenericLocalAutorouter {
           phase: this.solver.phase,
           debugGraphics: this.solver.visualize(),
         })
-        this.timer = setTimeout(tick, 0)
+        this.scheduleTick(tick)
       } catch (error) {
         this.isRouting = false
         this.emit({
@@ -90,11 +90,22 @@ export class BusLanesAutorouter implements GenericLocalAutorouter {
         })
       }
     }
-    this.timer = setTimeout(tick, 0)
+    this.scheduleTick(tick)
+  }
+  private scheduleTick(tick: () => void) {
+    // Node/Bun can yield to I/O without imposing the timer's minimum delay.
+    // Browsers retain their normal task scheduling and cancellation behavior.
+    if (typeof globalThis.setImmediate === "function") {
+      const timer = globalThis.setImmediate(tick)
+      this.cancelScheduledTick = () => globalThis.clearImmediate(timer)
+    } else {
+      const timer = setTimeout(tick, 0)
+      this.cancelScheduledTick = () => clearTimeout(timer)
+    }
   }
   stop() {
     this.isRouting = false
-    if (this.timer) clearTimeout(this.timer)
+    this.cancelScheduledTick?.()
   }
   solveSync(): SimplifiedPcbTrace[] {
     this.solver.solve()

@@ -1,41 +1,59 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
-test("bus_lanes does not fall back to a multilayer router", async () => {
+
+test("bus_lanes rejects incompatible existing fanout exits without dogboning them again", async () => {
   const { circuit } = getTestFixture()
+  const inputs: any[] = []
+  circuit.on("autorouting:start", (event: any) =>
+    inputs.push(event.simpleRouteJson),
+  )
   circuit.add(
-    <board width={14} height={10} doubleSidedAssembly>
-      <autoroutingphase name="NO_VIAS" phaseIndex={0} autorouter="bus_lanes" />
-      <resistor name="TOP" resistance="1k" footprint="0402" pcbX={-4} />
-      <resistor
-        name="BOTTOM"
-        resistance="1k"
-        footprint="0402"
-        pcbX={4}
-        layer="bottom"
-      />
+    <board width={16} height={10} doubleSidedAssembly routeRemaining={false}>
+      {(["top", "bottom"] as const).map((layer, i) => {
+        const name = i ? "B" : "A"
+        return (
+          <fanout
+            key={name}
+            name={`${name}_FANOUT`}
+            pcbRelative
+            pcbX={i ? 4 : -4}
+            pcbY={0}
+            pcbTracePaths={[
+              {
+                connection: `${name}.pin1`,
+                route: [
+                  { route_type: "wire", x: 0, y: 0, layer, width: 0.1 },
+                  {
+                    route_type: "wire",
+                    x: i ? -2 : 2,
+                    y: 0,
+                    layer,
+                    width: 0.1,
+                  },
+                ],
+              },
+            ]}
+          >
+            <chip name={name} layer={layer} pinLabels={{ pin1: "DATA" }}>
+              <footprint>
+                <smtpad
+                  shape="circle"
+                  radius={0.2}
+                  pcbX={0}
+                  pcbY={0}
+                  portHints={["pin1"]}
+                />
+              </footprint>
+            </chip>
+          </fanout>
+        )
+      })}
+      <autoroutingphase autorouter="bus_lanes" phaseIndex={0} />
       <trace
         name="DATA"
-        from=".TOP > .pin2"
-        to=".BOTTOM > .pin1"
+        from=".A > .pin1"
+        to=".B > .pin1"
         routingPhaseIndex={0}
-      />
-      <pcbnotetext
-        pcbX={0}
-        pcbY={-2.8}
-        fontSize={0.32}
-        text="DATA connects TOP.pin2 (top) to BOTTOM.pin1 (bottom)."
-      />
-      <pcbnotetext
-        pcbX={0}
-        pcbY={-3.45}
-        fontSize={0.32}
-        text="bus_lanes rejects endpoints without a common fixed layer."
-      />
-      <pcbnotetext
-        pcbX={0}
-        pcbY={-4.1}
-        fontSize={0.32}
-        text="Expected routing error: no traces, vias, or router fallback."
       />
     </board>,
   )
@@ -45,11 +63,15 @@ test("bus_lanes does not fall back to a multilayer router", async () => {
     json.some(
       (e) =>
         e.type === "pcb_autorouting_error" &&
-        e.message.includes("common fixed layer"),
+        e.message.includes("existing fanout handoffs cannot be dogboned again"),
     ),
   ).toBe(true)
+  expect(json.filter((e) => e.type === "pcb_via")).toHaveLength(0)
+  const input = inputs.at(-1)
+  expect(input.traces).toHaveLength(2)
   expect(
-    json.filter((e) => e.type === "pcb_via" || e.type === "pcb_trace"),
-  ).toHaveLength(0)
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+    input.connections[0].pointsToConnect.map((p: any) => p.layer).sort(),
+  ).toEqual(["bottom", "top"])
+  // The failed phase publishes no partial or layer-changing route.
+  expect(json.filter((e) => e.type === "pcb_trace")).toHaveLength(0)
 })

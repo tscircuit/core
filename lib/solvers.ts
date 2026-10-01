@@ -1,4 +1,7 @@
-import { BusLanesSolver } from "@tscircuit/bus-lanes-solver"
+import {
+  BusLanesSolver,
+  BusLanesPipelineSolver,
+} from "@tscircuit/bus-lanes-solver"
 import {
   AssignableAutoroutingPipeline2,
   AssignableAutoroutingPipeline3,
@@ -27,6 +30,7 @@ import { DogboneFanoutSolver } from "@tscircuit/dogbone-solver"
 export const SOLVERS = {
   DogboneFanoutSolver,
   BusLanesSolver,
+  BusLanesPipelineSolver,
   PackSolver2,
   LayoutPipelineSolver,
   AutoroutingPipelineSolver,
