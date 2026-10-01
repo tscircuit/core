@@ -24,5 +24,5 @@ test("autorouter routes around a closed solderjumper bridge", async () => {
 
   expect(circuit.db.pcb_trace_error.list()).toHaveLength(0)
   expect(circuit.db.pcb_autorouting_error.list()).toHaveLength(0)
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
