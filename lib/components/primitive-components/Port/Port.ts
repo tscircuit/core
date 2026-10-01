@@ -12,8 +12,7 @@ import type { Trace } from "../Trace/Trace"
 import type { LayerRef, SchematicPort, SourcePinAttributes } from "circuit-json"
 import { areAllPcbPrimitivesOverlapping } from "./areAllPcbPrimitivesOverlapping"
 import { getCenterOfPcbPrimitives } from "./getCenterOfPcbPrimitives"
-import { type ParsedPinAttributeMap, portProps } from "@tscircuit/props"
-import { validatePinAttributeAliases } from "./validate-pin-attribute-aliases"
+import { type PinAttributeMap, portProps } from "@tscircuit/props"
 import type { INormalComponent } from "lib/components/base-components/NormalComponent/INormalComponent"
 import { TraceConnectionError } from "lib/errors"
 import { applyPinAttributesToSourcePort } from "./apply-pin-attributes-to-source-port"
@@ -317,7 +316,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     ) as string[]
   }
 
-  _getMatchingPinAttributes(): ParsedPinAttributeMap[] {
+  _getMatchingPinAttributes(): PinAttributeMap[] {
     // A port in a custom symbol is parented by <symbol>, while pinAttributes
     // and noConnect belong to the owning chip/connector. Primitive-owned ports
     // (for example, vias) do not have a NormalComponent ancestor, so retain the
@@ -325,11 +324,11 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     const pinAttributeOwner = this.getParentNormalComponent() ?? this.parent
     const parentProps = (pinAttributeOwner as any)?._parsedProps
     const pinAttributes = parentProps?.pinAttributes as
-      | Record<string, ParsedPinAttributeMap>
+      | Record<string, PinAttributeMap>
       | undefined
     const noConnect = parentProps?.noConnect as string[] | undefined
 
-    const matches: ParsedPinAttributeMap[] = []
+    const matches: PinAttributeMap[] = []
     for (const alias of this.getNameAndAliases()) {
       if (pinAttributes) {
         const attributes = pinAttributes[alias]
@@ -432,7 +431,6 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
     // Get pin attributes from parent component and apply them to this port
     const pinAttributes = this._getMatchingPinAttributes()
-    validatePinAttributeAliases({ pinAttributes, portName: this.getString() })
     const portAttributesFromParent: SourcePinAttributes = {}
 
     for (const attributes of pinAttributes) {

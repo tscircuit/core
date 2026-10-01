@@ -1,4 +1,4 @@
-import type { ParsedPinAttributeMap, PinCapability } from "@tscircuit/props"
+import type { PinAttributeMap, PinCapability } from "@tscircuit/props"
 import type { SourcePinAttributes } from "circuit-json"
 
 const setSupportedCapability = (
@@ -77,7 +77,7 @@ const setConfiguredCapability = (
 
 export const applyPinAttributesToSourcePort = (
   sourcePortProps: SourcePinAttributes,
-  attributes: ParsedPinAttributeMap,
+  attributes: PinAttributeMap,
 ): void => {
   const directAttributes = {
     isInput: "is_input",
@@ -91,7 +91,6 @@ export const applyPinAttributesToSourcePort = (
     canUseOpenEmitter: "can_use_open_emitter",
     isUsingOpenEmitter: "is_using_open_emitter",
     isGpio: "is_gpio",
-    doNotConfigure: "do_not_configure",
   } as const
   for (const attribute of Object.keys(
     directAttributes,
@@ -99,13 +98,6 @@ export const applyPinAttributesToSourcePort = (
     const setting = attributes[attribute]
     if (setting !== undefined)
       sourcePortProps[directAttributes[attribute]] = setting
-  }
-  if (attributes.initialOutputState !== undefined)
-    sourcePortProps.initial_output_state = attributes.initialOutputState
-  if (attributes.interruptTrigger !== undefined)
-    sourcePortProps.interrupt_trigger = attributes.interruptTrigger
-  if (attributes.i2cMaxBitRate !== undefined) {
-    sourcePortProps.i2c_max_bit_rate = attributes.i2cMaxBitRate
   }
   if (attributes.highlightColor !== undefined)
     sourcePortProps.highlight_color = attributes.highlightColor
