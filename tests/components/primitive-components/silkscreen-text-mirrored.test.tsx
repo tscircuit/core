@@ -35,6 +35,8 @@ test("silkscreen text preserves explicit mirroring through layer flips", () => {
   expect(texts).toHaveLength(6)
   texts.forEach((text, i) => {
     expect(text.is_mirrored).toBe(mirrors[i % 3])
+    if (mirrors[i % 3] === undefined)
+      expect(text).not.toHaveProperty("is_mirrored")
     expect(text.layer).toBe(i < 3 ? "top" : "bottom")
   })
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
