@@ -60,7 +60,7 @@ test("model accepts HTTP(S) URLs across all assembly elements", () => {
   expect(models.find((m) => m.model_glb_url?.includes("screen"))).toMatchObject(
     {
       position: { x: 4, y: 3, z: -1 },
-      rotation: { x: 0, y: 180, z: 270 },
+      rotation: { x: 0, y: 180, z: 90 },
       layer: "bottom",
     },
   )

@@ -4,11 +4,9 @@ import type { SolverStartedEvent } from "lib/events"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 /**
- * A bottom-layer placement is a full 180-degree rotation about board Y. Core
- * represents that on a CAD model as Y=180 plus a negated Z scalar, but the
- * footprint itself -- pads, silkscreen, and aperture profile -- still has the
- * authored board-Z roll. Taking CAD Z alone made +45 become -45 and turned a
- * rectangular floor opening perpendicular to the switch it served.
+ * A bottom-layer placement is a full 180-degree rotation about board Y after
+ * the authored board-Z roll. The footprint -- pads, silkscreen, CAD model, and
+ * aperture profile -- must therefore retain that +45-degree board rotation.
  */
 test("a bottom-layer floor aperture rolls with its footprint, not CAD Z", async () => {
   const { circuit } = getTestFixture()
@@ -65,7 +63,5 @@ test("a bottom-layer floor aperture rolls with its footprint, not CAD Z", async 
 
   expect(aperture.face).toBe("z_neg")
   expect(aperture.rotation).toBeCloseTo(45)
-  // This is a valid component of the CAD model's full Y=180 transform, but it
-  // is not the standalone 2D roll of the footprint-owned aperture.
-  expect(cadComponent.rotation?.z).toBeCloseTo(315)
+  expect(cadComponent.rotation?.z).toBeCloseTo(45)
 })

@@ -118,10 +118,7 @@ test("assembly.screen follows top and bottom connector transforms", async () => 
           180) /
           Math.PI,
       )
-      const effectiveCadBoardRotation =
-        layer === "bottom"
-          ? -(screenCadComponent?.rotation?.z ?? 0)
-          : (screenCadComponent?.rotation?.z ?? 0)
+      const effectiveCadBoardRotation = screenCadComponent?.rotation?.z ?? 0
       const emittedFlexAxis = {
         x: -Math.sin((effectiveCadBoardRotation * Math.PI) / 180),
         y: Math.cos((effectiveCadBoardRotation * Math.PI) / 180),
@@ -145,11 +142,7 @@ test("assembly.screen follows top and bottom connector transforms", async () => 
         rotation: {
           x: 0,
           y: layer === "bottom" ? 180 : 0,
-          z: normalizeDegrees(
-            layer === "bottom"
-              ? -expectedScreenRotation
-              : expectedScreenRotation,
-          ),
+          z: expectedScreenRotation,
         },
         footprinter_string: cadModel,
       })
