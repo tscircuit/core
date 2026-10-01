@@ -107,9 +107,9 @@ loading and retains its custom-decoder/cleanup diagnostic limits.
 
 ## Revision cancellation and resource policies
 
-These sections describe the revised source and the tests intended to certify it.
-Final commit, repeated characterization, full-suite and review evidence are
-pending; the historical results below do not certify this revision. All 69
+These sections describe the implemented policies. Recorded source validation
+below covers characterization, build, declarations and matched output controls.
+Full-corpus CI and downstream execution remain independent gates. All 69
 phases still use native orchestration. Numerical/domain bodies and synchronous
 extension hooks retain their ordinary implementations.
 
@@ -396,8 +396,8 @@ Full-corpus and downstream integration evidence remain separate gates.
 
 Deliberate ownership differences remain caller-local settlement abortion,
 terminal/idempotent disposal, native publication guards, legacy owned-wait
-completion before an uncontrolled callback finishes after removal/reparenting/
-disposal, hook error-path disposal, and explicit cleanup failure reporting.
+completion before an uncontrolled callback finishes after removal/cross-circuit
+reparenting/disposal, hook error-path disposal, and explicit cleanup failure reporting.
 Legacy callback writes are not suppressed. The revision's props
 policy restores finish-on-update behavior for captured jobs while retaining
 the established restart behavior for loader/routing families. Internal
@@ -406,12 +406,13 @@ and original recorder scopes are compatibility constraints, not proposed
 behavior changes. Existing snapshots, skips, public export signatures and
 characterization tests must remain independently checked at the final commit.
 
-Open limits include final library getter/partial-attachment, legacy callback,
-supplier timing, rejected partial-props, image fallback and revival
-certification while those fixes are under review. Borrowed callback/solver
-contracts still bound physical cancellation; standalone-runtime reclamation and
-sustained heap behavior are unmeasured. No final green, converged-output or
-downstream-runtime claim follows from the policy tables alone.
+The library getter, partial-attachment, supplier timing, rejected partial-props,
+image fallback and revival characterizations have passed at the recorded
+source below. Full-corpus and downstream certification remain separate gates.
+Borrowed callback/solver contracts still bound physical cancellation; legacy
+callbacks remain uncontrolled, and standalone-runtime reclamation and sustained
+heap behavior are unmeasured. The policy tables alone do not establish arbitrary
+final-props convergence or downstream runtime support.
 
 ## Validation and evidence boundaries
 
@@ -436,8 +437,23 @@ diagnostics across TypeScript 5.0.4, 5.4.5 and 5.9.3 with browser/Bun ambient
 types. Fresh differential checks passed eight complete-output/event parity
 fixtures plus the declared removal difference. Full-corpus execution remains
 a separate certification gate; focused success cannot certify it.
-Existing published tests, snapshots, skips, dependencies and public exports
-must pass the preservation guard at the final revision.
+At source commit `dfda5345800c3a3bbfa88bf7598175d5a3c789e4`, five additional
+cases bring the total to 42 new characterization files and 1,701 corpus files.
+They pin pending supplier reuse, immediate replacement while old cleanup waits,
+same-circuit legacy reparent ordering, terminal cleanup after that reparent,
+and the deliberate cross-circuit cancellation boundary. The two historical
+regressions were reproduced against the official baseline before fixing them.
+All 195 focused migration tests pass, and 20 executions of each new case yield
+840 passes with zero failures. TypeScript 5.9.3, ESM/declaration build and dist
+smoke pass. Fresh public consumer checks retain identical ordered diagnostics
+against the baseline in all six TypeScript 5.0.4/5.4.5/5.9.3 browser/Bun pairs;
+the native composition consumer adds no new diagnostics. This does not certify
+the full TypeScript peer range or execute those downstream runtimes. Fresh
+full-JSON/event comparisons retain eight parity fixtures and
+one explicit removal difference. The preservation guard confirms all 1,659
+published tests, 1,224 snapshots, 51 skips, dependencies and 199 exported names
+are unchanged. Complete new-source CI and downstream execution remain required;
+the published-reference full-suite result above is not inherited.
 
 This branch retains official core 0.0.2033, autorouter 0.0.951 and checks
 0.0.231. Ordinary geometry/solver algorithms and synchronous hooks are not
@@ -477,29 +493,29 @@ need integration coverage.
 Readability and clear Effect ownership take priority over microoptimization.
 Measured overhead remains visible and is not an adoption blocker by itself.
 The measurements below compare official
-`a61451654ff1f8bb0249f135dca482a84bedb802` with the exact earlier candidate
-`18d521f11333061a14ad8e89666a68e6c573632f`, using Bun 1.4.0. They describe
-that source only; the subsequent compatibility repairs remain unmeasured.
+`a61451654ff1f8bb0249f135dca482a84bedb802` with source commit
+`dfda5345800c3a3bbfa88bf7598175d5a3c789e4`, using Bun 1.4.0. They include
+the supplier-generation and same-circuit legacy reparent repairs.
 Controlled measurements use nine samples, two untimed warmups, five warm calls
 per instance, serial execution and output/callback parity. Startup, JSX
 construction, checksum and cleanup are excluded from warm render timing.
 
-| Fixture/check | Official baseline | Candidate `18d521f11` | Cost |
+| Fixture/check | Official baseline | Candidate source `dfda53458` | Cost |
 | --- | --- | --- | --- |
-| `rotations_layers`, warm render median | 0.245625 ms | 5.196917 ms | +4.951292 ms, 21.16x |
-| `rotations_layers`, cold total median | 3.889541 ms | 17.506625 ms | +13.617084 ms, 4.50x |
-| `async_library`, warm render median | 0.238084 ms | 2.620167 ms | +2.382083 ms, 11.01x |
-| `async_library`, cold total median | 3.019792 ms | 8.429875 ms | +5.410083 ms, 2.79x |
-| Complete browser bundle, minified | 10,839,994 bytes | 10,925,048 bytes | +85,054 bytes, 0.78% |
-| Complete browser bundle, gzip | 2,779,848 bytes | 2,809,624 bytes | +29,776 bytes, 1.07% |
+| `rotations_layers`, warm render median | 0.218458 ms | 5.254709 ms | +5.036251 ms, 24.05x |
+| `rotations_layers`, cold total median | 4.231207 ms | 18.223459 ms | +13.992252 ms, 4.31x |
+| `async_library`, warm render median | 0.235583 ms | 2.625250 ms | +2.389667 ms, 11.14x |
+| `async_library`, cold total median | 3.599625 ms | 8.523500 ms | +4.923875 ms, 2.37x |
+| Complete browser bundle, minified | 10,839,994 bytes | 10,925,945 bytes | +85,951 bytes, 0.79% |
+| Complete browser bundle, gzip | 2,779,848 bytes | 2,809,873 bytes | +30,025 bytes, 1.08% |
 
 Both runtime fixtures produced identical full Circuit JSON hashes and matching
 library callback observations. Bundle measurements use fresh serial builds of
 the complete root entry, identical browser/minification options and gzip of the
 actual output bytes. These controls do not measure application tree shaking,
 duplicate downstream Effect versions, production throughput or sustained heap
-behavior. Earlier profiles and timings cannot certify the repaired revision;
-final-source performance and compatibility evidence remain separate gates.
+behavior. The raw results remain attributed to that exact source commit;
+documentation-only commits do not create new measurements.
 
 ## Architectural consultation
 
