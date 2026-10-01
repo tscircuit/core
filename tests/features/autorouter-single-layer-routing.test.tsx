@@ -90,11 +90,12 @@ test("single_layer_routing routes identically to bus_lanes on boards and phases"
 
   for (const scope of ["board", "phase"] as const) {
     const canonical = await renderBus("bus_lanes", scope)
-    for (const alias of ["single_layer_routing"] as const) {
-      for (const autorouter of [alias, { preset: alias }]) {
-        const result = await renderBus(autorouter, scope)
-        expect(result.routes).toEqual(canonical.routes)
-      }
+    for (const autorouter of [
+      "single_layer_routing",
+      { preset: "single_layer_routing" },
+    ] as const) {
+      const result = await renderBus(autorouter, scope)
+      expect(result.routes).toEqual(canonical.routes)
     }
     if (scope === "phase") {
       expect(canonical.circuit).toMatchPcbSnapshot(import.meta.path)
