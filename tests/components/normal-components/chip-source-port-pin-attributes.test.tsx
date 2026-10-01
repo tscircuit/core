@@ -41,6 +41,8 @@ test("chip pinAttributes are copied onto source_port records", async () => {
               "uart_tx",
             ],
             activeCapability: "uart_rx",
+            activeFunction: "uart0_rxd",
+            packagePin: "U7",
           },
         }}
       />
@@ -74,4 +76,6 @@ test("chip pinAttributes are copied onto source_port records", async () => {
   expect(getPort("VOUT")?.is_configured_for_spi_miso).toBe(true)
   expect(getPort("VOUT")?.is_configured_for_uart_tx).toBe(true)
   expect(getPort("VOUT")?.is_configured_for_uart_rx).toBe(true)
+  expect(getPort("VOUT")?.active_function).toBe("uart0_rxd")
+  expect(getPort("VOUT")?.package_pin).toBe("U7")
 })
