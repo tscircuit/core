@@ -36,8 +36,24 @@ test("maintains one circuit-wide missing sheet warning as the circuit changes", 
     sheet_index: 0,
   })
   update()
+  expect(db.schematic_missing_sheet_warning.list()[0]?.message).toContain(
+    "Empty schematic sheet(s): Main",
+  )
+  db.schematic_component.update(component.schematic_component_id, {
+    schematic_sheet_id: sheet.schematic_sheet_id,
+  })
+  update()
   expect(db.schematic_missing_sheet_warning.list()).toEqual([])
   db.schematic_sheet.delete(sheet.schematic_sheet_id)
+  update()
+  // Sheet deletion cascades to its assigned components.
+  expect(db.schematic_missing_sheet_warning.list()).toEqual([])
+  db.schematic_component.insert({
+    is_box_with_pins: false,
+    center: { x: 0, y: 0 },
+    size: { width: 1, height: 1 },
+    source_component_id: "source_component_1",
+  })
   update()
   expect(db.schematic_missing_sheet_warning.list()).toHaveLength(1)
 })
