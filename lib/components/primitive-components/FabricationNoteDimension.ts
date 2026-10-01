@@ -1,6 +1,7 @@
 import { fabricationNoteDimensionProps } from "@tscircuit/props"
 import type { Point } from "circuit-json"
 import { applyToPoint, type Matrix } from "transformation-matrix"
+import { resolvePcbDimensionOffsetDirection } from "lib/utils/pcb/resolve-pcb-dimension-offset-direction"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
 export class FabricationNoteDimension extends PrimitiveComponent<
@@ -61,6 +62,14 @@ export class FabricationNoteDimension extends PrimitiveComponent<
       props.text ??
       this._formatDistanceText({ from, to, units: props.units ?? "mm" })
 
+    const offsetDirection = resolvePcbDimensionOffsetDirection({
+      from,
+      offset: props.offset,
+      offsetDirection: props.offsetDirection,
+      to,
+      transform,
+    })
+
     const fabrication_note_dimension = db.pcb_fabrication_note_dimension.insert(
       {
         pcb_component_id,
@@ -71,6 +80,8 @@ export class FabricationNoteDimension extends PrimitiveComponent<
         to,
         text,
         offset: props.offset,
+        offset_distance: props.offset,
+        offset_direction: offsetDirection,
         font: props.font ?? "tscircuit2024",
         font_size: props.fontSize ?? 1,
         color: props.color,
