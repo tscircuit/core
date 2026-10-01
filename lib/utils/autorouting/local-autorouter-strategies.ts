@@ -25,7 +25,6 @@ export interface LocalAutorouterStrategyContext {
     event: Omit<SolverEndedEvent, "type" | "componentName">,
   ) => void
   simpleRouteJson: SimpleRouteJson
-  busLanesFanout?: "auto" | "none"
   commonAutorouterOptions: AutorouterOptions
   busFanoutDirections?: AutoroutingPhaseProps["busFanoutDirections"]
   fanoutBounds?: SimpleRouteBounds
@@ -144,15 +143,13 @@ const localAutorouterStrategies = new Map<string, LocalAutorouterStrategy>([
       name: "bus_lanes",
       cacheable: false,
       getSolverName: () => "BusLanesPipelineSolver",
-      create: ({ simpleRouteJson, busLanesFanout, onSolverStarted }) => {
+      create: ({ simpleRouteJson, onSolverStarted }) => {
         onSolverStarted?.({
           solverName: "BusLanesPipelineSolver",
           solverParams: simpleRouteJson,
-          solverConstructorArgs: [simpleRouteJson, { fanout: busLanesFanout }],
+          solverConstructorArgs: [simpleRouteJson],
         })
-        return new BusLanesAutorouter(simpleRouteJson, {
-          fanout: busLanesFanout,
-        })
+        return new BusLanesAutorouter(simpleRouteJson)
       },
     },
   ],
