@@ -76,6 +76,8 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
       manufacturer_part_number: props.manufacturerPartNumber,
       supplier_part_numbers: props.supplierPartNumbers,
       display_name: props.displayName,
+      firmware_rtos: props.firmwareRtos,
+      firmware_lf_clock_source: props.firmwareLfClockSource,
     })
 
     this.source_component_id = source_component.source_component_id!
