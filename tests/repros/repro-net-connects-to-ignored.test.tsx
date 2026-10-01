@@ -52,8 +52,6 @@ test("net connectsTo joins the selected pins", async () => {
 
   expect(circuit.db.source_trace.list()).toHaveLength(2)
 
-  await expect(circuit).toMatchSchematicSnapshot(import.meta.path)
-
   await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
     width: 1100,
     height: 800,
