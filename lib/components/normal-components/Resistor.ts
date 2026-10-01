@@ -1,11 +1,17 @@
-import { resistorProps } from "@tscircuit/props"
+import { resistorProps as baseResistorProps } from "@tscircuit/props"
 import type { SourceSimpleResistorInput } from "circuit-json"
 import { formatSiUnit } from "format-si-unit"
 import type { Ftype, PassivePorts } from "lib/utils/constants"
 import { symbols } from "schematic-symbols"
+import { z } from "zod"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { Port } from "../primitive-components/Port"
 import { Trace } from "../primitive-components/Trace/Trace"
+
+export const resistorProps = baseResistorProps.extend({
+  powerRating: z.union([z.string(), z.number()]).optional(),
+  temperatureOperatingRange: z.string().optional(),
+})
 
 export class Resistor extends NormalComponent<
   typeof resistorProps,
