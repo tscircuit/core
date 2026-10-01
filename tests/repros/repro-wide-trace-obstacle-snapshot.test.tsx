@@ -122,7 +122,7 @@ test("printed coil obstacles cover copper width and end caps", async () => {
       <fabricationnotedimension
         from={{ x: -3.25, y: 5.6 }}
         to={{ x: 7.25, y: 5.6 }}
-        offset={1}
+        offset={0}
         text="10.5 mm obstacle (green)"
         fontSize={0.4}
         arrowSize={0.25}
