@@ -1,4 +1,4 @@
-import { createPcbFold, type PcbFold } from "@tscircuit/flex-utils"
+import { tryCreatePcbFold, type PcbFold } from "@tscircuit/flex-utils"
 import { jlcMinTolerances } from "@tscircuit/jlcpcb-manufacturing-specs"
 import { getBoundsFromPoints } from "@tscircuit/math-utils"
 import { boardProps } from "@tscircuit/props"
@@ -135,18 +135,19 @@ export class Board
     this.pcbFold = undefined
     if (!bends.length) return
     const pcbBoard = this.root!.db.pcb_board.get(this.pcb_board_id)!
-    try {
-      this.pcbFold = createPcbFold(bends, this.boardThickness, {
-        outline: pcbBoard.outline?.map((point) => ({
-          x: point.x - pcbBoard.center.x,
-          y: point.y - pcbBoard.center.y,
-        })),
-      })
-    } catch (error) {
+    const foldResult = tryCreatePcbFold(bends, this.boardThickness, {
+      outline: pcbBoard.outline?.map((point) => ({
+        x: point.x - pcbBoard.center.x,
+        y: point.y - pcbBoard.center.y,
+      })),
+    })
+    if (foldResult.ok) {
+      this.pcbFold = foldResult.value
+    } else {
       this.root!.db.pcb_placement_error.insert({
         error_type: "pcb_placement_error",
         subcircuit_id: this.subcircuit_id ?? undefined,
-        message: `Unable to fold PCB board ${this.pcb_board_id}; CAD remains flat: ${error instanceof Error ? error.message : String(error)}`,
+        message: `Unable to fold PCB board ${this.pcb_board_id}; CAD remains flat: ${foldResult.issue.message}`,
       })
     }
   }

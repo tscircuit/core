@@ -44,6 +44,20 @@ test("nonparallel bends report an error and preserve flat PCB, CAD and schematic
       />
       <resistor name="R1" resistance="1k" footprint="0402" pcbX={0} pcbY={25} />
       <resistor name="R2" resistance="1k" footprint="0402" pcbX={35} pcbY={0} />
+      <silkscreentext
+        text="R1"
+        pcbX={0}
+        pcbY={27.5}
+        fontSize={1.6}
+        anchorAlignment="center"
+      />
+      <silkscreentext
+        text="R2"
+        pcbX={35}
+        pcbY={2.5}
+        fontSize={1.6}
+        anchorAlignment="center"
+      />
       <pcbnotetext
         text="Unsupported folds keep flat output"
         pcbY={-8}
@@ -73,4 +87,24 @@ test("nonparallel bends report an error and preserve flat PCB, CAD and schematic
   await circuit.renderUntilSettled()
   expect(circuit.getCircuitJson()).toEqual(before)
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  await expect(circuit).toMatch3dSnapshot(import.meta.path, {
+    // Ask the exporter to fold even though core correctly left both CAD flags
+    // unset; the unsupported board fold must retain all flat geometry.
+    gltf: { foldPcbs: true, boardTextureResolution: 1024 },
+    diffTolerance: 0.001,
+    poppygl: {
+      width: 1000,
+      height: 760,
+      // Camera points are right-handed glTF (+Y up, mm), following
+      // getBestCameraPosition's Circuit JSON -> glTF mapping (-X, Z, Y).
+      camPos: [70, 65, -70],
+      lookAt: [-8, 0, 7],
+      up: "y+",
+      fov: 35,
+      backgroundColor: "#f2f3f5",
+      ambient: 0.45,
+      grid: undefined,
+    },
+  })
+  expect(circuit.getCircuitJson()).toEqual(before)
 })
