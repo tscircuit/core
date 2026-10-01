@@ -639,6 +639,14 @@ export const createComponentsFromCircuitJson = (
           layer: elm.layer,
           strokeWidth: elm.stroke_width,
           filled: elm.is_filled,
+          stroke:
+            elm.has_stroke === false
+              ? "none"
+              : elm.is_stroke_dashed
+                ? "dashed"
+                : elm.has_stroke === true || elm.is_stroke_dashed === false
+                  ? "solid"
+                  : undefined,
           cornerRadius: elm.corner_radius,
         }),
       )
