@@ -174,7 +174,9 @@ export const getLocalAutoroutingStages = (
     },
   ]
 
-  if (strategy.followUpAutorouter) {
+  // A custom algorithm returns final traces and may omit a transformed SRJ.
+  // Only the built-in preset supplies the problem for its follow-up stage.
+  if (strategy.followUpAutorouter && !autorouterConfig.algorithmFn) {
     const followUpAutorouterConfig = getPresetAutoroutingConfig(
       strategy.followUpAutorouter,
       platformConfig,
