@@ -1,0 +1,47 @@
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -19277,7 +19277,7 @@
+ // lib/components/silkscreen-rect.ts
+ import { distance as distance45 } from "circuit-json";
+ import { z as z144 } from "zod";
+-var silkscreenRectProps = pcbLayoutProps.omit({ pcbRotation: true }).extend({
++var silkscreenRectProps = pcbLayoutProps.extend({
+   filled: z144.boolean().default(true).optional(),
+   stroke: z144.enum(["dashed", "solid", "none"]).optional(),
+   strokeWidth: distance45.optional(),
+--- a/dist/index.d.ts
++++ b/dist/index.d.ts
+@@ -239651,7 +239651,7 @@
+ }>;
+ type SilkscreenLineProps = z.input<typeof silkscreenLineProps>;
+ 
+-declare const silkscreenRectProps: z.ZodObject<Omit<{
++declare const silkscreenRectProps: z.ZodObject<{
+     pcbX: z.ZodOptional<z.ZodUnion<[z.ZodString, z.ZodEffects<z.ZodUnion<[z.ZodString, z.ZodNumber]>, number, string | number>]>>;
+     pcbY: z.ZodOptional<z.ZodUnion<[z.ZodString, z.ZodEffects<z.ZodUnion<[z.ZodString, z.ZodNumber]>, number, string | number>]>>;
+     pcbLeftEdgeX: z.ZodOptional<z.ZodUnion<[z.ZodString, z.ZodEffects<z.ZodUnion<[z.ZodString, z.ZodNumber]>, number, string | number>]>>;
+@@ -239716,7 +239716,7 @@
+     pcbSx: z.ZodOptional<z.ZodType<PcbSx, z.ZodTypeDef, PcbSx>>;
+     pcbRelative: z.ZodOptional<z.ZodBoolean>;
+     relative: z.ZodOptional<z.ZodBoolean>;
+-}, "pcbRotation"> & {
++} & {
+     filled: z.ZodOptional<z.ZodDefault<z.ZodBoolean>>;
+     stroke: z.ZodOptional<z.ZodEnum<["dashed", "solid", "none"]>>;
+     strokeWidth: z.ZodOptional<z.ZodEffects<z.ZodUnion<[z.ZodString, z.ZodNumber]>, number, string | number>>;
+@@ -239735,6 +239735,7 @@
+     pcbBottomEdgeY?: string | number | undefined;
+     pcbOffsetX?: number | undefined;
+     pcbOffsetY?: number | undefined;
++    pcbRotation?: number | undefined;
+     pcbPositionAnchor?: string | undefined;
+     pcbPositionMode?: "relative_to_group_anchor" | "auto" | "relative_to_board_anchor" | "relative_to_component_anchor" | undefined;
+     shouldBeOnEdgeOfBoard?: boolean | undefined;
+@@ -239775,6 +239776,7 @@
+     pcbBottomEdgeY?: string | number | undefined;
+     pcbOffsetX?: string | number | undefined;
+     pcbOffsetY?: string | number | undefined;
++    pcbRotation?: string | number | undefined;
+     pcbPositionAnchor?: string | undefined;
+     pcbPositionMode?: "relative_to_group_anchor" | "auto" | "relative_to_board_anchor" | "relative_to_component_anchor" | undefined;
+     shouldBeOnEdgeOfBoard?: boolean | undefined;
