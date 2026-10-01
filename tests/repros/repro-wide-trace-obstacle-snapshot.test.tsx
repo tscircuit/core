@@ -1,6 +1,13 @@
 import { checkEachPcbTraceNonOverlapping } from "@tscircuit/checks"
 import { expect, test } from "bun:test"
+import type { PcbTraceRoutePoint } from "circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
+
+// Footprint-local points in mm, +X right, +Y up, right-handed.
+const copperLinkRoute = [
+  { route_type: "wire", x: -2, y: 0, width: 2, layer: "top" },
+  { route_type: "wire", x: 2, y: 0, width: 2, layer: "top" },
+] satisfies PcbTraceRoutePoint[]
 
 test("autorouting avoids the full width of a printed copper link", async () => {
   const { circuit } = getTestFixture()
@@ -42,12 +49,7 @@ test("autorouting avoids the full width of a printed copper link", async () => {
               height={1}
               shape="rect"
             />
-            <pcbtrace
-              route={[
-                { route_type: "wire", x: -2, y: 0, width: 2, layer: "top" },
-                { route_type: "wire", x: 2, y: 0, width: 2, layer: "top" },
-              ]}
-            />
+            <pcbtrace route={copperLinkRoute} />
           </footprint>
         }
       />
