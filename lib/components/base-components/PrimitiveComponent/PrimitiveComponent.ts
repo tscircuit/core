@@ -1213,7 +1213,7 @@ export abstract class PrimitiveComponent<
       }
     }
     for (const [selector, ports] of this._cachedSelectAllQueries.entries()) {
-      if (ports.length === 1) {
+      if (ports.length > 0) {
         this._cachedSelectOneQueries.set(selector, ports[0])
       }
     }
