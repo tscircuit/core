@@ -90,14 +90,7 @@ function getEndpointSourcePortIdsFromGeometry(
   trace: RoutedTrace,
 ) {
   const sourcePortIds = new Set<string>()
-  const route = trace.route as RoutePointWithPortIds[]
-  const endpoints = [route[0], route[route.length - 1]].filter(
-    (point): point is RoutePointWithPortIds & { x: number; y: number } =>
-      Boolean(point) &&
-      point.route_type === "wire" &&
-      point.x !== undefined &&
-      point.y !== undefined,
-  )
+  const endpoints = getWireRouteEndpoints(trace)
 
   for (const endpoint of endpoints) {
     for (const pcbPort of db.pcb_port.list()) {
@@ -184,23 +177,53 @@ function getSourceIdsFromConnectedPcbTraces(
       continue
     }
 
-    const existingRoute = existingTrace.route.filter(
-      (
-        point,
-      ): point is Extract<PcbTrace["route"][number], { route_type: "wire" }> =>
-        point.route_type === "wire",
-    )
+    const existingEndpoints = getWireRouteEndpoints(existingTrace)
+    for (const endpoint of endpoints) {
+      for (const existingEndpoint of existingEndpoints) {
+        if (
+          endpoint.layer &&
+          existingEndpoint.layer &&
+          endpoint.layer !== existingEndpoint.layer
+        ) {
+          continue
+        }
+        if (distance(endpoint, existingEndpoint) <= POINT_EPSILON) {
+          sourceIds.add(existingTrace.source_trace_id)
+        }
+      }
 
-    for (let i = 0; i < existingRoute.length - 1; i++) {
-      const segmentStart = existingRoute[i]
-      const segmentEnd = existingRoute[i + 1]
-      if (!segmentStart || !segmentEnd) continue
-      for (const endpoint of endpoints) {
+      for (
+        let i = 0;
+        i < (existingTrace.route as RoutePointWithPortIds[]).length - 1;
+        i++
+      ) {
+        const segmentStart = (existingTrace.route as RoutePointWithPortIds[])[i]
+        const segmentEnd = (existingTrace.route as RoutePointWithPortIds[])[
+          i + 1
+        ]
+        if (
+          segmentStart.route_type !== "wire" ||
+          segmentEnd.route_type !== "wire" ||
+          segmentStart.x === undefined ||
+          segmentStart.y === undefined ||
+          segmentEnd.x === undefined ||
+          segmentEnd.y === undefined
+        ) {
+          continue
+        }
         if (
           isPointOnWireSegment({
             point: endpoint,
-            segmentStart,
-            segmentEnd,
+            segmentStart: {
+              x: segmentStart.x,
+              y: segmentStart.y,
+              layer: segmentStart.layer,
+            },
+            segmentEnd: {
+              x: segmentEnd.x,
+              y: segmentEnd.y,
+              layer: segmentEnd.layer,
+            },
           })
         ) {
           sourceIds.add(existingTrace.source_trace_id)
@@ -262,6 +285,11 @@ export function getSourceTraceIdForRoutedTrace({
     return trace.source_trace_id
   }
 
+  const embeddedSourceTraceId =
+    "pcb_trace_id" in trace && typeof trace.pcb_trace_id === "string"
+      ? trace.pcb_trace_id.replace(/_\d+$/, "")
+      : undefined
+
   const sourcePortIds = getSourcePortIdsFromRoutedTrace(db, trace)
   if (sourcePortIds.length === 0) {
     return getSourceIdsFromConnectedPcbTraces(db, trace)[0]
@@ -301,6 +329,13 @@ export function getSourceTraceIdForRoutedTrace({
       ? connectedToEndpoint
       : sourceTracesInEndpointNets
   if (candidates.length === 0) return undefined
+
+  if (embeddedSourceTraceId) {
+    const matchingCandidate = candidates.find(
+      (sourceTrace) => sourceTrace.source_trace_id === embeddedSourceTraceId,
+    )
+    if (matchingCandidate) return matchingCandidate.source_trace_id
+  }
 
   return (
     candidates.find(
