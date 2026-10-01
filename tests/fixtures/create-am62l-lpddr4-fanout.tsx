@@ -1,5 +1,5 @@
 import { expect } from "bun:test"
-import type { ChipProps, ImplicitBreakoutPointSolverFn } from "@tscircuit/props"
+import type { ChipProps } from "@tscircuit/props"
 import { orderedRenderPhases } from "lib/components/base-components/Renderable"
 import type { Board } from "lib/components/normal-components/Board/Board"
 import { createInstanceFromReactElement } from "lib/fiber/create-instance-from-react-element"
@@ -1777,7 +1777,7 @@ type PlanarRoute = readonly {
   layer?: string
 }[]
 
-export const getPlanarRouteLength = (route: PlanarRoute): number => {
+const getPlanarRouteLength = (route: PlanarRoute): number => {
   let previousWire: { x: number; y: number; layer: string } | undefined
   let length = 0
   for (const routePoint of route) {
@@ -2025,8 +2025,6 @@ async function routeAm62lFixtureSrjConnections(
 export const renderAm62lLpddr4Fanout = async ({
   fanoutAlgorithmFn,
   fanoutSolverLabel,
-  implicitBreakoutPointSolverFn,
-  signalOnlyBoardLayerCount = 4,
   includeBottomDecouplingCapacitors = false,
   includeDirectDecouplingNetworkInInitialRender = false,
   includePowerPlaneFanout = false,
@@ -2037,8 +2035,6 @@ export const renderAm62lLpddr4Fanout = async ({
 }: {
   fanoutAlgorithmFn?: FanoutAlgorithmFn
   fanoutSolverLabel?: string
-  implicitBreakoutPointSolverFn?: ImplicitBreakoutPointSolverFn
-  signalOnlyBoardLayerCount?: 4 | 8
   includeBottomDecouplingCapacitors?: boolean
   includeDirectDecouplingNetworkInInitialRender?: boolean
   includePowerPlaneFanout?: boolean
@@ -2057,9 +2053,7 @@ export const renderAm62lLpddr4Fanout = async ({
   const autoroutingPhaseIoStack = createAutoroutingPhaseIoStack(circuit)
   const signalLayers = includePowerPlaneFanout
     ? POWER_FANOUT_SIGNAL_LAYERS
-    : signalOnlyBoardLayerCount === 8
-      ? getViaBoardLayers(8).filter((layer) => layer !== "top")
-      : SIGNAL_ONLY_LAYERS
+    : SIGNAL_ONLY_LAYERS
   const routedDdrDataTraceNameSet = new Set(
     routedDdrDataTraceNames ??
       DDR_CONNECTIONS.map(({ traceName }) => traceName),
@@ -2088,13 +2082,9 @@ export const renderAm62lLpddr4Fanout = async ({
           : undefined,
       preferredLayers: includePowerPlaneFanout
         ? bus.preferredLayers
-        : signalOnlyBoardLayerCount === 8
-          ? bus.name === "DDR_BYTE0"
-            ? (["inner1", "inner2", "inner3", "inner4"] as const)
-            : (["inner5", "inner6", "bottom"] as const)
-          : bus.name === "DDR_BYTE0"
-            ? (["top", "inner1"] as const)
-            : (["inner2", "bottom"] as const),
+        : bus.name === "DDR_BYTE0"
+          ? (["top", "inner1"] as const)
+          : (["inner2", "bottom"] as const),
     }))
     .filter((bus) => bus.connections.length > 0)
   const socPlaneDrops = includePowerPlaneFanout ? SOC_PLANE_DROPS : []
@@ -2151,14 +2141,9 @@ export const renderAm62lLpddr4Fanout = async ({
         }
       : {}),
   } as const
-  const fanoutAutorouter =
-    fanoutAlgorithmFn || implicitBreakoutPointSolverFn
-      ? {
-          preset: "fanout" as const,
-          algorithmFn: fanoutAlgorithmFn,
-          implicitBreakoutPointSolverFn,
-        }
-      : "fanout"
+  const fanoutAutorouter = fanoutAlgorithmFn
+    ? { preset: "fanout" as const, algorithmFn: fanoutAlgorithmFn }
+    : "fanout"
   const productionGlobalAutorouter =
     getPresetAutoroutingConfig("beta_pipeline9")
 
@@ -2200,7 +2185,7 @@ export const renderAm62lLpddr4Fanout = async ({
       }
       width="40mm"
       height="20mm"
-      layers={includePowerPlaneFanout ? 8 : signalOnlyBoardLayerCount}
+      layers={includePowerPlaneFanout ? 8 : 4}
       defaultTraceWidth="0.08128mm"
       minTraceWidth="0.08128mm"
       minTraceToPadEdgeClearance="0.05mm"
@@ -3154,19 +3139,6 @@ export const renderAm62lLpddr4Fanout = async ({
       expect(
         trace.route.filter((routePoint) => routePoint.route_type === "via"),
       ).toHaveLength(1)
-      if (fanoutAlgorithmFn) {
-        // A fixed-target callback must reach the SRJ's prescribed exit rather
-        // than redistribute exits using the native solver's bus directions.
-        const target = fanoutInput.connections.find(
-          (connection) => connection.name === trace.connection_name,
-        )!.pointsToConnect[1]!
-        const exit = trace.route.findLast(
-          (routePoint) => routePoint.route_type === "wire",
-        )!
-        expect(exit.x).toBeCloseTo(target.x)
-        expect(exit.y).toBeCloseTo(target.y)
-        expect(exit.layer).toBe(target.layer)
-      }
     }
     for (const expectedBus of fanoutBuses) {
       const bus = fanoutPhase.startSimpleRouteJson?.buses?.find(
@@ -3308,11 +3280,9 @@ export const renderAm62lLpddr4Fanout = async ({
       expect(exitPoint).toBeDefined()
       if (!exitPoint) throw new Error(`Missing ${busId} fanout exit point`)
       expect(exitPoint.x).toBeCloseTo(socFanoutInput.bounds.maxX)
-      if (!fanoutAlgorithmFn) {
-        expect(
-          (exitPoint.y - socFanoutCenterY) * expectedYSign,
-        ).toBeGreaterThan(0)
-      }
+      expect((exitPoint.y - socFanoutCenterY) * expectedYSign).toBeGreaterThan(
+        0,
+      )
       expect(exitPoint.y).toBeGreaterThan(socFanoutInput.bounds.minY)
       expect(exitPoint.y).toBeLessThan(socFanoutInput.bounds.maxY)
     }
@@ -3719,9 +3689,7 @@ export const renderAm62lLpddr4Fanout = async ({
       obstacle.isFanoutSourceKeepout === true &&
       obstacle.componentId !== undefined,
   )
-  // Native fanout replaces individual source pads with a package keepout.
-  // The fixed-target callback leaves the original obstacles intact.
-  expect(sourceKeepouts).toHaveLength(fanoutAlgorithmFn ? 0 : 2)
+  expect(sourceKeepouts).toHaveLength(2)
   const completedSourceComponentIds = new Set(
     sourceKeepouts.flatMap((obstacle) =>
       obstacle.componentId === undefined ? [] : [obstacle.componentId],
