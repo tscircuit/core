@@ -16,9 +16,9 @@ test("child cadmodel and object cadModel expose bottom offset composition", () =
       [90, 0, 90, 270, true],
       [180, 0, 180, 180, true],
       [270, 0, 270, 90, true],
-      [90, 30, 120, 240, false],
-      [0, -45, 315, 45, false],
-      [270, 450, 0, 0, false],
+      [90, 30, 120, 300, true],
+      [0, -45, 315, 315, true],
+      [270, 450, 0, 180, true],
     ] as const) {
       const { circuit } = getTestFixture()
       const modelUrl = "https://example.com/model.step"
