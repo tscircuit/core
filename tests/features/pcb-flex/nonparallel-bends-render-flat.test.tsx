@@ -109,6 +109,9 @@ test("nonparallel bends report an error and preserve flat PCB, CAD and schematic
       fov: 35,
       backgroundColor: "#f2f3f5",
       ambient: 0.45,
+      debugFontSize: 20,
+      debugPointColor: [160, 0, 35],
+      debugLabelColor: [160, 0, 35],
       grid: undefined,
     },
   })
