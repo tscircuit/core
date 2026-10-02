@@ -1,4 +1,5 @@
 import { test, expect } from "bun:test"
+import { pcb_solder_paste } from "circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("create solderpaste from smtpad", async () => {
@@ -47,7 +48,14 @@ test("create solderpaste from smtpad", async () => {
     expect(solder_paste[2].ccw_rotation).toBe(70)
     expect(solder_paste[3].ccw_rotation).toBe(70)
   }
-  if (platedhole[0].shape === "pill" && solder_paste[5].shape === "pill") {
-    expect(platedhole[0].outer_height).toBe(solder_paste[5].height)
+  for (const paste of solder_paste) pcb_solder_paste.parse(paste)
+  expect(platedhole[0].shape).toBe("pill")
+  for (const paste of solder_paste.slice(4)) {
+    expect(paste.shape).toBe("rotated_pill")
+    if (paste.shape !== "rotated_pill") throw new Error("Expected pill paste")
+    expect(paste.height).toBe(0.2)
+    expect(paste.width).toBe(0.5)
+    expect(paste.radius).toBe(0.1)
+    expect(paste.ccw_rotation).toBe(0)
   }
 })
