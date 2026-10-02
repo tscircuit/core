@@ -9,7 +9,7 @@ const copperLinkRoute = [
   { route_type: "wire", x: 2, y: 0, width: 2, layer: "top" },
 ] satisfies PcbTraceRoutePoint[]
 
-test("autorouter shorts through a wide printed copper link", async () => {
+test("autorouting avoids the full width of a printed copper link", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width={16} height={10} autorouter="auto_local">
@@ -55,7 +55,7 @@ test("autorouter shorts through a wide printed copper link", async () => {
       />
       <trace from="R1.pin2" to="R2.pin1" />
       <fabricationnotetext
-        text="BUG: R1-R2 touches the separate R3 copper link"
+        text="R1-R2 must not touch the printed R3 copper link"
         pcbY={3.8}
         fontSize={0.45}
         color="#ffffff"
@@ -83,7 +83,7 @@ test("autorouter shorts through a wide printed copper link", async () => {
         color="#ffffff"
       />
       <fabricationnotetext
-        text="Observed: R1-R2 shorts to R3"
+        text="Expected: a visible gap between R1-R2 and R3"
         pcbY={-3.5}
         fontSize={0.4}
         color="#ffffff"
@@ -92,8 +92,8 @@ test("autorouter shorts through a wide printed copper link", async () => {
   )
   await circuit.renderUntilSettled()
 
-  // The repro snapshot shows the actual short, with no drawn obstacle
-  // substituted for copper. The fix will change this assertion and snapshot.
+  // Capture the actual routing before checking it, so the broken version
+  // produces a useful snapshot too. No drawn obstacle substitutes for copper.
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
   expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
   expect(circuit.db.pcb_trace.list()).toHaveLength(2)
@@ -101,5 +101,5 @@ test("autorouter shorts through a wide printed copper link", async () => {
     checkEachPcbTraceNonOverlapping(circuit.getCircuitJson(), {
       minClearance: 0,
     }),
-  ).toHaveLength(1)
+  ).toEqual([])
 })
