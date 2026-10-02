@@ -259,6 +259,14 @@ export abstract class Renderable implements IRenderable {
     this._phaseStatesByName = states
   }
 
+  /** Check a phase without materializing the public phase-state map. */
+  protected _isRenderPhaseInitialized(phase: RenderPhase): boolean {
+    return (
+      this._phaseStatesByName?.[phase] ??
+      this._phaseStatesByIndex[renderPhaseIndexMap.get(phase)!]
+    ).initialized
+  }
+
   shouldBeRemoved = false
   children: IRenderable[]
 
