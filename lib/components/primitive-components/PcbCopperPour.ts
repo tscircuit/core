@@ -1,7 +1,9 @@
 import { type PcbCopperPourProps, pcbCopperPourProps } from "@tscircuit/props"
 import type { Ring } from "circuit-json"
+import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
 import { type Matrix, applyToPoint, decomposeTSR } from "transformation-matrix"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
+import type { Net } from "./Net"
 
 const transformBrepRing = ({
   isFlipped,
@@ -61,12 +63,25 @@ export class PcbCopperPour extends PrimitiveComponent<
     return { width: 0, height: 0 }
   }
 
+  doInitialCreateNetsFromProps(): void {
+    createNetsFromProps(this, [this._parsedProps.connectsTo])
+  }
+
   doInitialPcbPrimitiveRender(): void {
     if (this.root?.pcbDisabled) return
 
     const { db } = this.root!
     const props = this._parsedProps
     const subcircuit = this.getSubcircuit()
+    const sourceNetId = props.connectsTo
+      ? subcircuit.selectOne<Net>(props.connectsTo)?.source_net_id
+      : props.sourceNetId
+    if (props.connectsTo && !sourceNetId) {
+      this.renderError(
+        `Net "${props.connectsTo}" not found for precomputed copper pour`,
+      )
+      return
+    }
     const primitiveTransform = this._computePcbGlobalTransformBeforeLayout()
     const { isFlipped, maybeFlipLayer } = this._getPcbPrimitiveFlippedHelpers()
     const commonFields = {
@@ -76,7 +91,7 @@ export class PcbCopperPour extends PrimitiveComponent<
           ? maybeFlipLayer(props.layer)
           : props.layer,
       pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
-      source_net_id: props.sourceNetId,
+      source_net_id: sourceNetId,
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
     }
 

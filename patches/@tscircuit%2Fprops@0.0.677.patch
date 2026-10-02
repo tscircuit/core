@@ -1,8 +1,8 @@
 diff --git a/dist/index.d.ts b/dist/index.d.ts
-index 65b1e4f..bf25824 100644
+index 65b1e4f..d1c1c05 100644
 --- a/dist/index.d.ts
 +++ b/dist/index.d.ts
-@@ -203584,6 +203584,240 @@ declare const pcbTraceProps: z.ZodObject<{
+@@ -203584,6 +203584,249 @@ declare const pcbTraceProps: z.ZodObject<{
  }>;
  type PcbTraceProps = z.input<typeof pcbTraceProps>;
  
@@ -18,6 +18,7 @@ index 65b1e4f..bf25824 100644
 +    width: z.ZodEffects<z.ZodUnion<[z.ZodString, z.ZodNumber]>, number, string | number>;
 +    height: z.ZodEffects<z.ZodUnion<[z.ZodString, z.ZodNumber]>, number, string | number>;
 +    pcbRotation: z.ZodOptional<z.ZodEffects<z.ZodUnion<[z.ZodString, z.ZodNumber]>, number, string | number>>;
++    connectsTo: z.ZodOptional<z.ZodString>;
 +    coveredWithSolderMask: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
 +    layer: z.ZodEffects<z.ZodUnion<[z.ZodEnum<["top", "bottom", "inner1", "inner2", "inner3", "inner4", "inner5", "inner6", "inner7", "inner8"]>, z.ZodObject<{
 +        name: z.ZodEnum<["top", "bottom", "inner1", "inner2", "inner3", "inner4", "inner5", "inner6", "inner7", "inner8"]>;
@@ -37,6 +38,7 @@ index 65b1e4f..bf25824 100644
 +    pcbX: number;
 +    pcbY: number;
 +    coveredWithSolderMask: boolean;
++    connectsTo?: string | undefined;
 +    pcbRotation?: number | undefined;
 +    sourceNetId?: string | undefined;
 +}, {
@@ -48,6 +50,7 @@ index 65b1e4f..bf25824 100644
 +    };
 +    pcbX: string | number;
 +    pcbY: string | number;
++    connectsTo?: string | undefined;
 +    pcbRotation?: string | number | undefined;
 +    coveredWithSolderMask?: boolean | undefined;
 +    sourceNetId?: string | undefined;
@@ -63,6 +66,7 @@ index 65b1e4f..bf25824 100644
 +        x: string | number;
 +        y: string | number;
 +    }>, "many">;
++    connectsTo: z.ZodOptional<z.ZodString>;
 +    coveredWithSolderMask: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
 +    layer: z.ZodEffects<z.ZodUnion<[z.ZodEnum<["top", "bottom", "inner1", "inner2", "inner3", "inner4", "inner5", "inner6", "inner7", "inner8"]>, z.ZodObject<{
 +        name: z.ZodEnum<["top", "bottom", "inner1", "inner2", "inner3", "inner4", "inner5", "inner6", "inner7", "inner8"]>;
@@ -82,6 +86,7 @@ index 65b1e4f..bf25824 100644
 +        y: number;
 +    }[];
 +    coveredWithSolderMask: boolean;
++    connectsTo?: string | undefined;
 +    sourceNetId?: string | undefined;
 +}, {
 +    shape: "polygon";
@@ -92,6 +97,7 @@ index 65b1e4f..bf25824 100644
 +        x: string | number;
 +        y: string | number;
 +    }[];
++    connectsTo?: string | undefined;
 +    coveredWithSolderMask?: boolean | undefined;
 +    sourceNetId?: string | undefined;
 +}>, z.ZodObject<{
@@ -182,6 +188,7 @@ index 65b1e4f..bf25824 100644
 +            }[];
 +        }[] | undefined;
 +    }>;
++    connectsTo: z.ZodOptional<z.ZodString>;
 +    coveredWithSolderMask: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
 +    layer: z.ZodEffects<z.ZodUnion<[z.ZodEnum<["top", "bottom", "inner1", "inner2", "inner3", "inner4", "inner5", "inner6", "inner7", "inner8"]>, z.ZodObject<{
 +        name: z.ZodEnum<["top", "bottom", "inner1", "inner2", "inner3", "inner4", "inner5", "inner6", "inner7", "inner8"]>;
@@ -213,6 +220,7 @@ index 65b1e4f..bf25824 100644
 +            }[];
 +        }[];
 +    };
++    connectsTo?: string | undefined;
 +    sourceNetId?: string | undefined;
 +}, {
 +    shape: "brep";
@@ -235,6 +243,7 @@ index 65b1e4f..bf25824 100644
 +            }[];
 +        }[] | undefined;
 +    };
++    connectsTo?: string | undefined;
 +    coveredWithSolderMask?: boolean | undefined;
 +    sourceNetId?: string | undefined;
 +}>]>;
@@ -243,14 +252,14 @@ index 65b1e4f..bf25824 100644
  interface ViaProps extends CommonLayoutProps {
      name?: string;
      fromLayer?: LayerRefInput;
-@@ -242078,4 +242312,4 @@ interface ProjectConfig extends Pick<PlatformConfig, "projectName" | "projectBas
+@@ -242078,4 +242321,4 @@ interface ProjectConfig extends Pick<PlatformConfig, "projectName" | "projectBas
  }
  declare const projectConfig: z.ZodType<ProjectConfig>;
  
 -export { type AmmeterPinLabels, type AmmeterProps, type AnalogAcSweepSimulationProps, type AnalogAnalysisSimulationBaseProps, type AnalogCapacitanceSweepParameterProps, type AnalogCurrentSweepParameterProps, type AnalogDcOperatingPointSimulationProps, type AnalogDcSweepSimulationProps, type AnalogInductanceSweepParameterProps, type AnalogResistanceSweepParameterProps, type AnalogSimulationProps, type AnalogSweepParameterProps, type AnalogTransientSimulationProps, type AnalogVoltageSweepParameterProps, type AntennaFrequencyBand, type AntennaProps, type AntennaShape, type AssemblySubassemblyProps as AssemblyCadAssemblyProps, type AssemblySubassemblyPropsInput as AssemblyCadAssemblyPropsInput, type AssemblyDeviceProps, type AssemblyDevicePropsInput, type AssemblyScreenProps, type AssemblyScreenPropsInput, type AssemblySubassemblyProps, type AssemblySubassemblyPropsInput, type AutocompleteString, type AutorouterConfig, type AutorouterDefinition, type AutorouterInstance, type AutorouterPreset, type AutorouterProp, type AutorouterVersion, type AutoroutingPhaseProps, type BaseGroupProps, type BaseManualEditEvent, type BaseManualEditEventInput, type BasicFootprint, type BatteryPinLabels, type BatteryProps, type BoardColor, type BoardColorPreset, type BoardOutlinePoint, type BoardProps, type Border, type BreakoutPointProps, type BreakoutProps, type BusFanoutDirection, type BusFanoutDirectionLiteral, type BusName, type BusProps, type CadAssemblyProps, type CadAssemblyPropsInput, type CadModelAxisDirection, type CadModelBase, type CadModelFootprinterString, type CadModelGlb, type CadModelGltf, type CadModelJscad, type CadModelObj, type CadModelProp, type CadModelProps, type CadModelPropsInput, type CadModelStep, type CadModelStl, type CadModelWrl, type CanonicalBusFanoutDirection, type CapacitorPinLabels, type CapacitorProps, type ChipConnections, type ChipPinLabels, type ChipProps, type ChipPropsSU, type CircleCutoutProps, type CircleEnclosureCutoutApertureProps, type CircleHoleProps, type CirclePlatedHoleProps, type CircleShapeProps, type CircleSmtPadProps, type CircleSolderPasteProps, type CircuitJson, type CircularHoleWithRectPlatedProps, type CommonComponentProps, type CommonLayoutProps, type CommonShapeProps, type ComponentProps, type ConnectionTarget, type Connections, type ConnectorProps, type ConnectorStandard, type ConstrainedLayoutProps, type ConstraintProps, type CopperPourProps, type CopperPourPropsInput, type CopperTextProps, type CourtyardCircleProps, type CourtyardOutlineProps, type CourtyardPillProps, type CourtyardRectProps, type CrystalPinLabels, type CrystalProps, type CurrentSourcePinLabels, type CurrentSourceProps, type CustomDrcCheckContext, type CustomDrcCheckFn, type CustomDrcCheckInput, type CustomDrcConnectable, type CustomDrcSelect, type CustomDrcSelectAll, type CutoutApertureProps, type CutoutProps, type CutoutPropsInput, type DifferentialPairProps, type DiodePinLabels, type DiodePinLabelsProp, type DiodeProps, type Direction, type DirectionAlongEdge, type DirectionalFanoutBoundaryPadding, type DrcCheckProps, type EditPcbComponentLocationEvent, type EditPcbComponentLocationEventInput, type EditPcbGroupLocationEvent, type EditPcbGroupLocationEventInput, type EditSchematicComponentLocationEvent, type EditSchematicComponentLocationEventInput, type EditSchematicGroupLocationEvent, type EditSchematicGroupLocationEventInput, type EditTraceHintEvent, type EditTraceHintEventInput, type EnclosureCutoutApertureProps, type EnclosureCutoutApertureShape, type EnclosureFdmBoxProps, type EnclosureFdmBoxPropsInput, type FabricationNoteDimensionProps, type FabricationNoteDimensionPropsInput, type FabricationNotePathProps, type FabricationNoteRectProps, type FabricationNoteTextProps, type FabricationNoteTextPropsInput, type FabricatorDrcCheckParams, type FabricatorEngine, type FanoutBoundaryPadding, type FanoutPourNetMap, type FanoutProps, type FanoutTracePath, type FiducialProps, type FootprintFileParserEntry, type FootprintInsertionDirection, type FootprintLibraryResult, type FootprintProp, type FootprintProps, type FootprintPropsInput, type FootprintSoupElements, type FootprinterAutocompleteString, type FootprinterStringExample, type FusePinLabels, type FuseProps, type GroupProps, type HoleProps, type HoleWithPolygonPadPlatedHoleProps, type ImplicitBreakoutBounds, type ImplicitBreakoutBus, type ImplicitBreakoutConnection, type ImplicitBreakoutConnectionEndpoint, type ImplicitBreakoutConnectionOrDifferentialPair, type ImplicitBreakoutDifferentialPair, type ImplicitBreakoutEdge, type ImplicitBreakoutPoint, type ImplicitBreakoutPointSolverFn, type ImplicitBreakoutPointSolverInput, type ImplicitBreakoutPointSolverOutput, type ImplicitBreakoutRegion, type ImplicitBreakoutSolverPoint, type InductorPinLabels, type InductorProps, type InferredChipProps, type InferredConstrainedLayoutProps, type InferredDiodeProps, type InferredFuseProps, type InferredHoleProps, type InferredSchematicArcProps, type InferredSchematicBoxProps, type InferredSchematicCircleProps, type InferredSchematicGraphicProps, type InferredSchematicLineProps, type InferredSchematicPathProps, type InferredSchematicRectProps, type InferredSchematicSectionProps, type InferredSchematicSheetProps, type InferredSchematicSymbolProps, type InferredSchematicTextProps, type InferredSmtPadProps, type InferredSolderPasteProps, type InferredSwitchProps, type InferredTestpointProps, type InferredViaProps, type InterconnectProps, type InternalCircuitElement, type InternalCircuitProps, type JlcpcbAutocompleteStringPath, type JlcpcbKnownPartNumber, type JumperProps, type KicadAt, type KicadAutocompleteStringPath, type KicadEffects, type KicadFont, type KicadFootprintAttributes, type KicadFootprintMetadata, type KicadFootprintModel, type KicadFootprintPad, type KicadFootprintProperties, type KicadPath, type KicadPinElectricalType, type KicadPinGraphicStyle, type KicadPinMetadata, type KicadProperty, type KicadSymbolEffects, type KicadSymbolMetadata, type KicadSymbolPinNames, type KicadSymbolPinNumbers, type KicadSymbolProperties, type KicadSymbolProperty, type LayoutConfig, type LedPinLabels, type LedProps, type LegacyBusFanoutDirection, type LocalCacheEngine, type ManualEditEvent, type ManualEditEventInput, type ManualEditsFile, type ManualEditsFileInput, type ManualPcbPlacement, type ManualPcbPlacementInput, type ManualSchematicPlacement, type ManualSchematicPlacementInput, type ManualTraceHint, type ManualTraceHintInput, type MosfetPinLabels, type MosfetProps, type MountedBoardProps, type NetAliasProps, type NetLabelProps, type NetProps, type NinePointAnchor, type NonSubcircuitGroupProps, type OpAmpPinLabels, type OpAmpProps, type OvalHoleProps, type OvalPlatedHoleProps, type PanelProps, type ParsedEnclosureCutoutApertureProps, type PartsEngine, type PcbBendProps, type PcbBendPropsInput, type PcbKeepoutProps, type PcbLayoutProps, type PcbNoteDimensionProps, type PcbNoteDimensionPropsInput, type PcbNoteLineProps, type PcbNoteLinePropsInput, type PcbNotePathProps, type PcbNotePathPropsInput, type PcbNoteRectProps, type PcbNoteRectPropsInput, type PcbNoteTextProps, type PcbNoteTextPropsInput, type PcbPath, type PcbPathPoint, type PcbPositionMode, type PcbRouteCache, type PcbSameXConstraint, type PcbSameYConstraint, type PcbSoldermaskOpeningProps, type PcbSoldermaskOpeningPropsInput, type PcbStiffenerProps, type PcbStiffenerPropsInput, type PcbStyle, type PcbSx, type PcbSxSelector, type PcbSxValue, type PcbTraceProps, type PcbXDistConstraint, type PcbYDistConstraint, type PillEnclosureCutoutApertureProps, type PillHoleProps, type PillPlatedHoleProps, type PillShapeProps, type PillSmtPadProps, type PillWithRectPadPlatedHoleProps, type PinAttributeMap, type PinCapability, type PinCompatibleVariant, type PinHeaderProps, type PinLabelFromPinLabelMap, type PinLabelsProp, type PinSideDefinition, type PinSideDefinitionInput, type PinVariant, type PinoutProps, type PlatedHoleProps, type PlatformConfig, type PolygonCutoutProps, type PolygonSmtPadProps, type PortHints, type PortProps, type PositionMode, type PotentiometerPinLabels, type PotentiometerPinVariant, type PotentiometerProps, type PowerSourceProps, type PreflightRoutingCheckPolicy, type ProjectConfig, type PushButtonProps, type RectCutoutProps, type RectEnclosureCutoutApertureProps, type RectHoleProps, type RectShapeProps, type RectSmtPadProps, type RectSolderPasteProps, type ResistorPinLabels, type ResistorProps, type ResonatorPinVariant, type ResonatorProps, type RotatedPillSmtPadProps, type RotatedRectSmtPadProps, type RoutingTolerances, type SchStyle, type SchematicArcProps, type SchematicBoxProps, type SchematicCellProps, type SchematicCircleProps, type SchematicGraphicProps, type SchematicLineProps, type SchematicOrientation, type SchematicPathProps, type SchematicPinArrangement, type SchematicPinArrangementWithPinCounts, type SchematicPinArrangementWithSides, type SchematicPinArrangementWithSizes, type SchematicPinLabel, type SchematicPinStyle, type SchematicPortArrangement, type SchematicPortArrangementWithPinCounts, type SchematicPortArrangementWithSides, type SchematicPortArrangementWithSizes, type SchematicRectProps, type SchematicRowProps, type SchematicSectionProps, type SchematicSheetProps, type SchematicSheetSize, type SchematicSymbolProps, type SchematicSymbolSize, type SchematicTableProps, type SchematicTextProps, type SelectionResult, type SelectionResultComponent, type SelectionResultNet, type SelectionResultPort, type Selectors, type SilkscreenCircleProps, type SilkscreenGraphicProps, type SilkscreenLineProps, type SilkscreenPathProps, type SilkscreenRectProps, type SilkscreenTextProps, type SimpleRouteJson, type SmtPadProps, type SolderJumperProps, type SolderPasteProps, type SpiceEngine, type SpiceEngineSimulationResult, type SpiceModelElement, type SpiceModelProps, type SpiceOptions, type StampboardProps, type SubcircuitGroupProps, type SubcircuitGroupPropsWithBool, type SubcircuitProps, type SubpanelProps, type SupplierName, type SupplierPartNumbers, type SupplierProps, type SwitchProps, type SymbolProp, type SymbolProps, type SymbolPropsInput, type TestpointConnections, type TestpointPinLabels, type TestpointProps, type ToolingrailProps, type TraceHintProps, type TraceProps, type TransistorPinLabels, type TransistorProps, type ViaProps, type VoltageProbeProps, type VoltageSourcePinLabels, type VoltageSourceProps, type WaveShape, ammeterPinLabels, ammeterPins, ammeterProps, analogAcSweepSimulationProps, analogAnalysisSimulationBaseProps, analogCapacitanceSweepParameterProps, analogCurrentSweepParameterProps, analogDcOperatingPointSimulationProps, analogDcSweepSimulationProps, analogInductanceSweepParameterProps, analogResistanceSweepParameterProps, analogSimulationProps, analogSweepParameterProps, analogTransientSimulationProps, analogVoltageSweepParameterProps, antennaFrequencyBand, antennaFrequencyBands, antennaProps, antennaShape, antennaShapes, assemblyCadAssemblyProps, assemblyDeviceProps, assemblyProps, assemblyScreenProps, assemblySubassemblyProps, autorouterConfig, autorouterEffortLevel, autorouterPreset, autorouterProp, autoroutingPhaseProps, baseGroupProps, base_manual_edit_event, batteryPins, batteryProps, boardOutlinePoint, boardProps, border, breakoutPointProps, breakoutProps, bugProps, busFanoutDirection, busProps, cadModelAxisDirection, cadModelAxisDirections, cadModelBase, cadModelGlb, cadModelGltf, cadModelJscad, cadModelObj, cadModelProp, cadModelStep, cadModelStl, cadModelWrl, cadassemblyProps, cadmodelProps, canonicalBusFanoutDirection, canonicalBusFanoutDirectionValues, capacitorPinLabels, capacitorPins, capacitorProps, chipProps, circleCutoutProps, circleShapeProps, circleSmtPadProps, circleSolderPasteProps, commonComponentProps, commonLayoutProps, commonShapeProps, componentProps, connectorProps, connectorStandard, constrainedLayoutProps, constraintProps, copperPourProps, copperTextProps, courtyardCircleProps, courtyardOutlineProps, courtyardPillProps, courtyardRectProps, crystalPins, crystalProps, currentSourcePinLabels, currentSourcePins, currentSourceProps, customDrcCheckFn, cutoutApertureBaseProps, cutoutProps, differentialPairProps, diodePinLabelsProp, diodePins, diodeProps, direction, directionAlongEdge, distanceOrMultiplier, drcCheckProps, edit_component_location_event, edit_pcb_component_location_event, edit_pcb_group_location_event, edit_schematic_component_location_event, edit_schematic_group_location_event, edit_trace_hint_event, enclosureCutoutApertureProps, enclosureCutoutApertureShapes, enclosureFdmBoxProps, enclosureProps, explicitPinSideDefinition, fabricationNoteDimensionProps, fabricationNotePathProps, fabricationNoteRectProps, fabricationNoteTextProps, fabricatorEngine, fanoutBoundaryPadding, fanoutProps, fanoutTracePath, fiducialProps, footprintInsertionDirection, footprintProp, footprintProps, footprinterStringExamples, fusePinLabels, fuseProps, groupProps, holeProps, inductorPins, inductorProps, interconnectProps, internalCircuitProps, jumperProps, kicadAt, kicadEffects, kicadFont, kicadFootprintAttributes, kicadFootprintKeys, kicadFootprintMetadata, kicadFootprintModel, kicadFootprintPad, kicadFootprintProperties, kicadFootprintStrings, kicadPinElectricalType, kicadPinGraphicStyle, kicadPinMetadata, kicadProperty, kicadSymbolEffects, kicadSymbolMetadata, kicadSymbolPinNames, kicadSymbolPinNumbers, kicadSymbolProperties, kicadSymbolProperty, layoutConfig, ledPins, ledProps, lrPins, lrPolarPins, manual_edit_event, manual_edits_file, manual_pcb_placement, manual_schematic_placement, manual_trace_hint, mosfetPins, mosfetProps, mountedboardProps, netAliasProps, netLabelProps, netProps, ninePointAnchor, noConnectProp, opampPinLabels, opampPins, opampProps, panelProps, partsEngine, pcbBendProps, pcbKeepoutProps, pcbLayoutProps, pcbNoteDimensionProps, pcbNoteLineProps, pcbNotePathProps, pcbNoteRectProps, pcbNoteTextProps, pcbPath, pcbPathPoint, pcbSameXConstraintProps, pcbSameYConstraintProps, pcbSoldermaskOpeningProps, pcbStiffenerProps, pcbStyle, pcbSx, pcbSxValue, pcbTraceProps, pcbXDistConstraintProps, pcbYDistConstraintProps, pillShapeProps, pillSmtPadProps, pinAttributeMap, pinCapability, pinCompatibleVariant, pinHeaderProps, pinLabelsProp, pinoutProps, platedHoleProps, platformConfig, point3, polygonCutoutProps, polygonSmtPadProps, portHints, portProps, portRef, potentiometerPinLabels, potentiometerProps, powerSourceProps, preflightRoutingCheckPolicy, projectConfig, pushButtonProps, rectCutoutProps, rectShapeProps, rectSmtPadProps, rectSolderPasteProps, resistorPinLabels, resistorPins, resistorProps, resonatorProps, rotatedPillSmtPadProps, rotatedRectSmtPadProps, rotationPoint3, routeHintPointProps, routingTolerances, schStyle, schematicArcProps, schematicBoxProps, schematicCellProps, schematicCircleProps, schematicGraphicProps, schematicLineProps, schematicOrientation, schematicPathProps, schematicPinArrangement, schematicPinLabel, schematicPinStyle, schematicPortArrangement, schematicRectProps, schematicRowProps, schematicSectionProps, schematicSheetProps, schematicSymbolProps, schematicSymbolSize, schematicTableProps, schematicTextProps, silkscreenCircleProps, silkscreenGraphicProps, silkscreenLineProps, silkscreenPathProps, silkscreenRectProps, silkscreenTextProps, smtPadProps, solderPasteProps, solderjumperProps, spicemodelProps, stampboardProps, subcircuitGroupProps, subcircuitGroupPropsWithBool, subcircuitProps, subpanelProps, supplierProps, switchProps, symbolProp, symbolProps, testpointPins, testpointProps, toolingrailProps, traceHintProps, traceProps, transistorPins, transistorPinsLabels, transistorProps, viaProps, voltageProbeProps, voltageSourcePinLabels, voltageSourcePins, voltageSourceProps };
 +export { type AmmeterPinLabels, type AmmeterProps, type AnalogAcSweepSimulationProps, type AnalogAnalysisSimulationBaseProps, type AnalogCapacitanceSweepParameterProps, type AnalogCurrentSweepParameterProps, type AnalogDcOperatingPointSimulationProps, type AnalogDcSweepSimulationProps, type AnalogInductanceSweepParameterProps, type AnalogResistanceSweepParameterProps, type AnalogSimulationProps, type AnalogSweepParameterProps, type AnalogTransientSimulationProps, type AnalogVoltageSweepParameterProps, type AntennaFrequencyBand, type AntennaProps, type AntennaShape, type AssemblySubassemblyProps as AssemblyCadAssemblyProps, type AssemblySubassemblyPropsInput as AssemblyCadAssemblyPropsInput, type AssemblyDeviceProps, type AssemblyDevicePropsInput, type AssemblyScreenProps, type AssemblyScreenPropsInput, type AssemblySubassemblyProps, type AssemblySubassemblyPropsInput, type AutocompleteString, type AutorouterConfig, type AutorouterDefinition, type AutorouterInstance, type AutorouterPreset, type AutorouterProp, type AutorouterVersion, type AutoroutingPhaseProps, type BaseGroupProps, type BaseManualEditEvent, type BaseManualEditEventInput, type BasicFootprint, type BatteryPinLabels, type BatteryProps, type BoardColor, type BoardColorPreset, type BoardOutlinePoint, type BoardProps, type Border, type BreakoutPointProps, type BreakoutProps, type BusFanoutDirection, type BusFanoutDirectionLiteral, type BusName, type BusProps, type CadAssemblyProps, type CadAssemblyPropsInput, type CadModelAxisDirection, type CadModelBase, type CadModelFootprinterString, type CadModelGlb, type CadModelGltf, type CadModelJscad, type CadModelObj, type CadModelProp, type CadModelProps, type CadModelPropsInput, type CadModelStep, type CadModelStl, type CadModelWrl, type CanonicalBusFanoutDirection, type CapacitorPinLabels, type CapacitorProps, type ChipConnections, type ChipPinLabels, type ChipProps, type ChipPropsSU, type CircleCutoutProps, type CircleEnclosureCutoutApertureProps, type CircleHoleProps, type CirclePlatedHoleProps, type CircleShapeProps, type CircleSmtPadProps, type CircleSolderPasteProps, type CircuitJson, type CircularHoleWithRectPlatedProps, type CommonComponentProps, type CommonLayoutProps, type CommonShapeProps, type ComponentProps, type ConnectionTarget, type Connections, type ConnectorProps, type ConnectorStandard, type ConstrainedLayoutProps, type ConstraintProps, type CopperPourProps, type CopperPourPropsInput, type CopperTextProps, type CourtyardCircleProps, type CourtyardOutlineProps, type CourtyardPillProps, type CourtyardRectProps, type CrystalPinLabels, type CrystalProps, type CurrentSourcePinLabels, type CurrentSourceProps, type CustomDrcCheckContext, type CustomDrcCheckFn, type CustomDrcCheckInput, type CustomDrcConnectable, type CustomDrcSelect, type CustomDrcSelectAll, type CutoutApertureProps, type CutoutProps, type CutoutPropsInput, type DifferentialPairProps, type DiodePinLabels, type DiodePinLabelsProp, type DiodeProps, type Direction, type DirectionAlongEdge, type DirectionalFanoutBoundaryPadding, type DrcCheckProps, type EditPcbComponentLocationEvent, type EditPcbComponentLocationEventInput, type EditPcbGroupLocationEvent, type EditPcbGroupLocationEventInput, type EditSchematicComponentLocationEvent, type EditSchematicComponentLocationEventInput, type EditSchematicGroupLocationEvent, type EditSchematicGroupLocationEventInput, type EditTraceHintEvent, type EditTraceHintEventInput, type EnclosureCutoutApertureProps, type EnclosureCutoutApertureShape, type EnclosureFdmBoxProps, type EnclosureFdmBoxPropsInput, type FabricationNoteDimensionProps, type FabricationNoteDimensionPropsInput, type FabricationNotePathProps, type FabricationNoteRectProps, type FabricationNoteTextProps, type FabricationNoteTextPropsInput, type FabricatorDrcCheckParams, type FabricatorEngine, type FanoutBoundaryPadding, type FanoutPourNetMap, type FanoutProps, type FanoutTracePath, type FiducialProps, type FootprintFileParserEntry, type FootprintInsertionDirection, type FootprintLibraryResult, type FootprintProp, type FootprintProps, type FootprintPropsInput, type FootprintSoupElements, type FootprinterAutocompleteString, type FootprinterStringExample, type FusePinLabels, type FuseProps, type GroupProps, type HoleProps, type HoleWithPolygonPadPlatedHoleProps, type ImplicitBreakoutBounds, type ImplicitBreakoutBus, type ImplicitBreakoutConnection, type ImplicitBreakoutConnectionEndpoint, type ImplicitBreakoutConnectionOrDifferentialPair, type ImplicitBreakoutDifferentialPair, type ImplicitBreakoutEdge, type ImplicitBreakoutPoint, type ImplicitBreakoutPointSolverFn, type ImplicitBreakoutPointSolverInput, type ImplicitBreakoutPointSolverOutput, type ImplicitBreakoutRegion, type ImplicitBreakoutSolverPoint, type InductorPinLabels, type InductorProps, type InferredChipProps, type InferredConstrainedLayoutProps, type InferredDiodeProps, type InferredFuseProps, type InferredHoleProps, type InferredSchematicArcProps, type InferredSchematicBoxProps, type InferredSchematicCircleProps, type InferredSchematicGraphicProps, type InferredSchematicLineProps, type InferredSchematicPathProps, type InferredSchematicRectProps, type InferredSchematicSectionProps, type InferredSchematicSheetProps, type InferredSchematicSymbolProps, type InferredSchematicTextProps, type InferredSmtPadProps, type InferredSolderPasteProps, type InferredSwitchProps, type InferredTestpointProps, type InferredViaProps, type InterconnectProps, type InternalCircuitElement, type InternalCircuitProps, type JlcpcbAutocompleteStringPath, type JlcpcbKnownPartNumber, type JumperProps, type KicadAt, type KicadAutocompleteStringPath, type KicadEffects, type KicadFont, type KicadFootprintAttributes, type KicadFootprintMetadata, type KicadFootprintModel, type KicadFootprintPad, type KicadFootprintProperties, type KicadPath, type KicadPinElectricalType, type KicadPinGraphicStyle, type KicadPinMetadata, type KicadProperty, type KicadSymbolEffects, type KicadSymbolMetadata, type KicadSymbolPinNames, type KicadSymbolPinNumbers, type KicadSymbolProperties, type KicadSymbolProperty, type LayoutConfig, type LedPinLabels, type LedProps, type LegacyBusFanoutDirection, type LocalCacheEngine, type ManualEditEvent, type ManualEditEventInput, type ManualEditsFile, type ManualEditsFileInput, type ManualPcbPlacement, type ManualPcbPlacementInput, type ManualSchematicPlacement, type ManualSchematicPlacementInput, type ManualTraceHint, type ManualTraceHintInput, type MosfetPinLabels, type MosfetProps, type MountedBoardProps, type NetAliasProps, type NetLabelProps, type NetProps, type NinePointAnchor, type NonSubcircuitGroupProps, type OpAmpPinLabels, type OpAmpProps, type OvalHoleProps, type OvalPlatedHoleProps, type PanelProps, type ParsedEnclosureCutoutApertureProps, type PartsEngine, type PcbBendProps, type PcbBendPropsInput, type PcbCopperPourProps, type PcbKeepoutProps, type PcbLayoutProps, type PcbNoteDimensionProps, type PcbNoteDimensionPropsInput, type PcbNoteLineProps, type PcbNoteLinePropsInput, type PcbNotePathProps, type PcbNotePathPropsInput, type PcbNoteRectProps, type PcbNoteRectPropsInput, type PcbNoteTextProps, type PcbNoteTextPropsInput, type PcbPath, type PcbPathPoint, type PcbPositionMode, type PcbRouteCache, type PcbSameXConstraint, type PcbSameYConstraint, type PcbSoldermaskOpeningProps, type PcbSoldermaskOpeningPropsInput, type PcbStiffenerProps, type PcbStiffenerPropsInput, type PcbStyle, type PcbSx, type PcbSxSelector, type PcbSxValue, type PcbTraceProps, type PcbXDistConstraint, type PcbYDistConstraint, type PillEnclosureCutoutApertureProps, type PillHoleProps, type PillPlatedHoleProps, type PillShapeProps, type PillSmtPadProps, type PillWithRectPadPlatedHoleProps, type PinAttributeMap, type PinCapability, type PinCompatibleVariant, type PinHeaderProps, type PinLabelFromPinLabelMap, type PinLabelsProp, type PinSideDefinition, type PinSideDefinitionInput, type PinVariant, type PinoutProps, type PlatedHoleProps, type PlatformConfig, type PolygonCutoutProps, type PolygonSmtPadProps, type PortHints, type PortProps, type PositionMode, type PotentiometerPinLabels, type PotentiometerPinVariant, type PotentiometerProps, type PowerSourceProps, type PreflightRoutingCheckPolicy, type ProjectConfig, type PushButtonProps, type RectCutoutProps, type RectEnclosureCutoutApertureProps, type RectHoleProps, type RectShapeProps, type RectSmtPadProps, type RectSolderPasteProps, type ResistorPinLabels, type ResistorProps, type ResonatorPinVariant, type ResonatorProps, type RotatedPillSmtPadProps, type RotatedRectSmtPadProps, type RoutingTolerances, type SchStyle, type SchematicArcProps, type SchematicBoxProps, type SchematicCellProps, type SchematicCircleProps, type SchematicGraphicProps, type SchematicLineProps, type SchematicOrientation, type SchematicPathProps, type SchematicPinArrangement, type SchematicPinArrangementWithPinCounts, type SchematicPinArrangementWithSides, type SchematicPinArrangementWithSizes, type SchematicPinLabel, type SchematicPinStyle, type SchematicPortArrangement, type SchematicPortArrangementWithPinCounts, type SchematicPortArrangementWithSides, type SchematicPortArrangementWithSizes, type SchematicRectProps, type SchematicRowProps, type SchematicSectionProps, type SchematicSheetProps, type SchematicSheetSize, type SchematicSymbolProps, type SchematicSymbolSize, type SchematicTableProps, type SchematicTextProps, type SelectionResult, type SelectionResultComponent, type SelectionResultNet, type SelectionResultPort, type Selectors, type SilkscreenCircleProps, type SilkscreenGraphicProps, type SilkscreenLineProps, type SilkscreenPathProps, type SilkscreenRectProps, type SilkscreenTextProps, type SimpleRouteJson, type SmtPadProps, type SolderJumperProps, type SolderPasteProps, type SpiceEngine, type SpiceEngineSimulationResult, type SpiceModelElement, type SpiceModelProps, type SpiceOptions, type StampboardProps, type SubcircuitGroupProps, type SubcircuitGroupPropsWithBool, type SubcircuitProps, type SubpanelProps, type SupplierName, type SupplierPartNumbers, type SupplierProps, type SwitchProps, type SymbolProp, type SymbolProps, type SymbolPropsInput, type TestpointConnections, type TestpointPinLabels, type TestpointProps, type ToolingrailProps, type TraceHintProps, type TraceProps, type TransistorPinLabels, type TransistorProps, type ViaProps, type VoltageProbeProps, type VoltageSourcePinLabels, type VoltageSourceProps, type WaveShape, ammeterPinLabels, ammeterPins, ammeterProps, analogAcSweepSimulationProps, analogAnalysisSimulationBaseProps, analogCapacitanceSweepParameterProps, analogCurrentSweepParameterProps, analogDcOperatingPointSimulationProps, analogDcSweepSimulationProps, analogInductanceSweepParameterProps, analogResistanceSweepParameterProps, analogSimulationProps, analogSweepParameterProps, analogTransientSimulationProps, analogVoltageSweepParameterProps, antennaFrequencyBand, antennaFrequencyBands, antennaProps, antennaShape, antennaShapes, assemblyCadAssemblyProps, assemblyDeviceProps, assemblyProps, assemblyScreenProps, assemblySubassemblyProps, autorouterConfig, autorouterEffortLevel, autorouterPreset, autorouterProp, autoroutingPhaseProps, baseGroupProps, base_manual_edit_event, batteryPins, batteryProps, boardOutlinePoint, boardProps, border, breakoutPointProps, breakoutProps, bugProps, busFanoutDirection, busProps, cadModelAxisDirection, cadModelAxisDirections, cadModelBase, cadModelGlb, cadModelGltf, cadModelJscad, cadModelObj, cadModelProp, cadModelStep, cadModelStl, cadModelWrl, cadassemblyProps, cadmodelProps, canonicalBusFanoutDirection, canonicalBusFanoutDirectionValues, capacitorPinLabels, capacitorPins, capacitorProps, chipProps, circleCutoutProps, circleShapeProps, circleSmtPadProps, circleSolderPasteProps, commonComponentProps, commonLayoutProps, commonShapeProps, componentProps, connectorProps, connectorStandard, constrainedLayoutProps, constraintProps, copperPourProps, copperTextProps, courtyardCircleProps, courtyardOutlineProps, courtyardPillProps, courtyardRectProps, crystalPins, crystalProps, currentSourcePinLabels, currentSourcePins, currentSourceProps, customDrcCheckFn, cutoutApertureBaseProps, cutoutProps, differentialPairProps, diodePinLabelsProp, diodePins, diodeProps, direction, directionAlongEdge, distanceOrMultiplier, drcCheckProps, edit_component_location_event, edit_pcb_component_location_event, edit_pcb_group_location_event, edit_schematic_component_location_event, edit_schematic_group_location_event, edit_trace_hint_event, enclosureCutoutApertureProps, enclosureCutoutApertureShapes, enclosureFdmBoxProps, enclosureProps, explicitPinSideDefinition, fabricationNoteDimensionProps, fabricationNotePathProps, fabricationNoteRectProps, fabricationNoteTextProps, fabricatorEngine, fanoutBoundaryPadding, fanoutProps, fanoutTracePath, fiducialProps, footprintInsertionDirection, footprintProp, footprintProps, footprinterStringExamples, fusePinLabels, fuseProps, groupProps, holeProps, inductorPins, inductorProps, interconnectProps, internalCircuitProps, jumperProps, kicadAt, kicadEffects, kicadFont, kicadFootprintAttributes, kicadFootprintKeys, kicadFootprintMetadata, kicadFootprintModel, kicadFootprintPad, kicadFootprintProperties, kicadFootprintStrings, kicadPinElectricalType, kicadPinGraphicStyle, kicadPinMetadata, kicadProperty, kicadSymbolEffects, kicadSymbolMetadata, kicadSymbolPinNames, kicadSymbolPinNumbers, kicadSymbolProperties, kicadSymbolProperty, layoutConfig, ledPins, ledProps, lrPins, lrPolarPins, manual_edit_event, manual_edits_file, manual_pcb_placement, manual_schematic_placement, manual_trace_hint, mosfetPins, mosfetProps, mountedboardProps, netAliasProps, netLabelProps, netProps, ninePointAnchor, noConnectProp, opampPinLabels, opampPins, opampProps, panelProps, partsEngine, pcbBendProps, pcbCopperPourProps, pcbKeepoutProps, pcbLayoutProps, pcbNoteDimensionProps, pcbNoteLineProps, pcbNotePathProps, pcbNoteRectProps, pcbNoteTextProps, pcbPath, pcbPathPoint, pcbSameXConstraintProps, pcbSameYConstraintProps, pcbSoldermaskOpeningProps, pcbStiffenerProps, pcbStyle, pcbSx, pcbSxValue, pcbTraceProps, pcbXDistConstraintProps, pcbYDistConstraintProps, pillShapeProps, pillSmtPadProps, pinAttributeMap, pinCapability, pinCompatibleVariant, pinHeaderProps, pinLabelsProp, pinoutProps, platedHoleProps, platformConfig, point3, polygonCutoutProps, polygonSmtPadProps, portHints, portProps, portRef, potentiometerPinLabels, potentiometerProps, powerSourceProps, preflightRoutingCheckPolicy, projectConfig, pushButtonProps, rectCutoutProps, rectShapeProps, rectSmtPadProps, rectSolderPasteProps, resistorPinLabels, resistorPins, resistorProps, resonatorProps, rotatedPillSmtPadProps, rotatedRectSmtPadProps, rotationPoint3, routeHintPointProps, routingTolerances, schStyle, schematicArcProps, schematicBoxProps, schematicCellProps, schematicCircleProps, schematicGraphicProps, schematicLineProps, schematicOrientation, schematicPathProps, schematicPinArrangement, schematicPinLabel, schematicPinStyle, schematicPortArrangement, schematicRectProps, schematicRowProps, schematicSectionProps, schematicSheetProps, schematicSymbolProps, schematicSymbolSize, schematicTableProps, schematicTextProps, silkscreenCircleProps, silkscreenGraphicProps, silkscreenLineProps, silkscreenPathProps, silkscreenRectProps, silkscreenTextProps, smtPadProps, solderPasteProps, solderjumperProps, spicemodelProps, stampboardProps, subcircuitGroupProps, subcircuitGroupPropsWithBool, subcircuitProps, subpanelProps, supplierProps, switchProps, symbolProp, symbolProps, testpointPins, testpointProps, toolingrailProps, traceHintProps, traceProps, transistorPins, transistorPinsLabels, transistorProps, viaProps, voltageProbeProps, voltageSourcePinLabels, voltageSourcePins, voltageSourceProps };
 diff --git a/dist/index.js b/dist/index.js
-index 0709921..0ba73bd 100644
+index 0709921..81fd638 100644
 --- a/dist/index.js
 +++ b/dist/index.js
 @@ -16891,9 +16891,9 @@ var pcbSoldermaskOpeningProps = z47.discriminatedUnion("shape", [
@@ -295,7 +304,7 @@ index 0709921..0ba73bd 100644
      }
    })
  });
-@@ -18696,21 +18696,51 @@ var pcbTraceProps = z110.object({
+@@ -18696,21 +18696,52 @@ var pcbTraceProps = z110.object({
    route: z110.array(route_hint_point4)
  });
  
@@ -305,6 +314,7 @@ index 0709921..0ba73bd 100644
 +import { brep_shape, distance as distance26, layer_ref as layer_ref9, point as point5, rotation as rotation6 } from "circuit-json";
  import { z as z111 } from "zod";
 +var pcbCopperPourCommonProps = {
++  connectsTo: z111.string().optional(),
 +  coveredWithSolderMask: z111.boolean().optional().default(true),
 +  layer: layer_ref9,
 +  sourceNetId: z111.string().optional()
@@ -360,7 +370,7 @@ index 0709921..0ba73bd 100644
        "both_sides",
        "top_and_bottom_tented",
        "top_tented",
-@@ -18728,20 +18758,20 @@ var viaProps = commonLayoutProps.extend({
+@@ -18728,20 +18759,20 @@ var viaProps = commonLayoutProps.extend({
  expectTypesMatch(true);
  
  // lib/components/testpoint.ts
@@ -390,7 +400,7 @@ index 0709921..0ba73bd 100644
  }).refine(
    (props) => props.footprintVariant !== "through_hole" || props.holeDiameter !== void 0,
    { message: "holeDiameter is required for through_hole testpoints" }
-@@ -18749,63 +18779,63 @@ var testpointProps = commonComponentProps.extend({
+@@ -18749,63 +18780,63 @@ var testpointProps = commonComponentProps.extend({
  expectTypesMatch(true);
  
  // lib/components/breakoutpoint.ts
@@ -484,7 +494,7 @@ index 0709921..0ba73bd 100644
  var courtyardOutlineProps = pcbLayoutProps.omit({
    pcbLeftEdgeX: true,
    pcbRightEdgeX: true,
-@@ -18817,37 +18847,37 @@ var courtyardOutlineProps = pcbLayoutProps.omit({
+@@ -18817,37 +18848,37 @@ var courtyardOutlineProps = pcbLayoutProps.omit({
    pcbOffsetY: true,
    pcbRotation: true
  }).extend({
@@ -539,7 +549,7 @@ index 0709921..0ba73bd 100644
      "Reserves the pour region during autorouting so unrelated traces do not split it. Vias may still cross the region using antipads."
    ),
    padMargin: distance.optional(),
-@@ -18855,24 +18885,24 @@ var copperPourProps = z119.object({
+@@ -18855,24 +18886,24 @@ var copperPourProps = z119.object({
    clearance: distance.optional(),
    boardEdgeMargin: distance.optional(),
    cutoutMargin: distance.optional(),
@@ -574,7 +584,7 @@ index 0709921..0ba73bd 100644
    pcbX: pcbCoordinate.optional(),
    pcbY: pcbCoordinate.optional(),
    pcbLeftEdgeX: pcbCoordinate.optional(),
-@@ -18889,7 +18919,7 @@ var cadModelBaseWithUrl = cadModelBase.extend({
+@@ -18889,7 +18920,7 @@ var cadModelBaseWithUrl = cadModelBase.extend({
  });
  var cadModelObject = cadModelBaseWithUrl.merge(pcbPosition);
  expectTypesMatch(true);
@@ -583,7 +593,7 @@ index 0709921..0ba73bd 100644
  
  // lib/components/power-source.ts
  import { voltage as voltage5 } from "circuit-json";
-@@ -18898,10 +18928,10 @@ var powerSourceProps = commonComponentProps.extend({
+@@ -18898,10 +18929,10 @@ var powerSourceProps = commonComponentProps.extend({
  });
  
  // lib/components/voltagesource.ts
@@ -597,7 +607,7 @@ index 0709921..0ba73bd 100644
    if (typeof val === "string") {
      if (val.endsWith("%")) {
        return parseFloat(val.slice(0, -1)) / 100;
-@@ -18910,14 +18940,14 @@ var percentage = z122.union([z122.string(), z122.number()]).transform((val) => {
+@@ -18910,14 +18941,14 @@ var percentage = z122.union([z122.string(), z122.number()]).transform((val) => {
    }
    return val;
  }).pipe(
@@ -615,7 +625,7 @@ index 0709921..0ba73bd 100644
    dutyCycle: percentage.optional(),
    pulseDelay: ms4.optional(),
    riseTime: ms4.optional(),
-@@ -18925,17 +18955,17 @@ var voltageSourceProps = commonComponentProps.extend({
+@@ -18925,17 +18956,17 @@ var voltageSourceProps = commonComponentProps.extend({
    pulseWidth: ms4.optional(),
    period: ms4.optional(),
    acMagnitude: voltage6.optional(),
@@ -637,7 +647,7 @@ index 0709921..0ba73bd 100644
    if (typeof val === "string") {
      if (val.endsWith("%")) {
        return parseFloat(val.slice(0, -1)) / 100;
-@@ -18944,38 +18974,38 @@ var percentage2 = z123.union([z123.string(), z123.number()]).transform((val) =>
+@@ -18944,38 +18975,38 @@ var percentage2 = z123.union([z123.string(), z123.number()]).transform((val) =>
    }
    return val;
  }).pipe(
@@ -690,7 +700,7 @@ index 0709921..0ba73bd 100644
  var ammeterPinLabels = ["pin1", "pin2", "pos", "neg"];
  var hasAmmeterConnectionPair = (connections) => {
    return connections.pos !== void 0 && connections.neg !== void 0 || connections.pin1 !== void 0 && connections.pin2 !== void 0;
-@@ -18985,64 +19015,64 @@ var ammeterProps = commonComponentProps.extend({
+@@ -18985,64 +19016,64 @@ var ammeterProps = commonComponentProps.extend({
      hasAmmeterConnectionPair,
      "Ammeter connections must include either pos/neg or pin1/pin2"
    ),
@@ -796,7 +806,7 @@ index 0709921..0ba73bd 100644
  }).refine(
    (elm) => elm.width !== void 0 && elm.height !== void 0 || Array.isArray(elm.overlay) && elm.overlay.length > 0,
    {
-@@ -19057,83 +19087,83 @@ var schematicBoxProps = z128.object({
+@@ -19057,83 +19088,83 @@ var schematicBoxProps = z128.object({
  expectTypesMatch(true);
  
  // lib/components/schematic-symbol.ts
@@ -929,7 +939,7 @@ index 0709921..0ba73bd 100644
    "center",
    "left",
    "right",
-@@ -19142,107 +19172,107 @@ var fivePointAnchor = z133.enum([
+@@ -19142,107 +19173,107 @@ var fivePointAnchor = z133.enum([
  ]);
  
  // lib/components/schematic-text.ts
@@ -1100,7 +1110,7 @@ index 0709921..0ba73bd 100644
      message: "svgContent cannot be empty"
    }).optional(),
    width: positiveDistance5("width").optional(),
-@@ -19250,7 +19280,7 @@ var schematicGraphicProps = z141.object({
+@@ -19250,7 +19281,7 @@ var schematicGraphicProps = z141.object({
  }).superRefine(({ imageUrl, svgContent }, ctx) => {
    if (imageUrl === void 0 && svgContent === void 0) {
      ctx.addIssue({
@@ -1109,7 +1119,7 @@ index 0709921..0ba73bd 100644
        message: "At least one of imageUrl or svgContent is required"
      });
    }
-@@ -19260,41 +19290,41 @@ expectTypesMatch(
+@@ -19260,41 +19291,41 @@ expectTypesMatch(
  );
  
  // lib/components/copper-text.ts
@@ -1165,7 +1175,7 @@ index 0709921..0ba73bd 100644
  var silkscreenPathProps = pcbLayoutProps.omit({
    pcbLeftEdgeX: true,
    pcbRightEdgeX: true,
-@@ -19306,12 +19336,12 @@ var silkscreenPathProps = pcbLayoutProps.omit({
+@@ -19306,12 +19337,12 @@ var silkscreenPathProps = pcbLayoutProps.omit({
    pcbOffsetY: true,
    pcbRotation: true
  }).extend({
@@ -1180,7 +1190,7 @@ index 0709921..0ba73bd 100644
  var silkscreenLineProps = pcbLayoutProps.omit({
    pcbX: true,
    pcbY: true,
-@@ -19319,33 +19349,33 @@ var silkscreenLineProps = pcbLayoutProps.omit({
+@@ -19319,33 +19350,33 @@ var silkscreenLineProps = pcbLayoutProps.omit({
    pcbOffsetY: true,
    pcbRotation: true
  }).extend({
@@ -1233,7 +1243,7 @@ index 0709921..0ba73bd 100644
  });
  
  // lib/components/silkscreen-graphic.ts
-@@ -19360,71 +19390,71 @@ var silkscreenGraphicProps = pcbLayoutProps.omit({ layer: true, pcbStyle: true,
+@@ -19360,71 +19391,71 @@ var silkscreenGraphicProps = pcbLayoutProps.omit({ layer: true, pcbStyle: true,
  expectTypesMatch(true);
  
  // lib/components/trace-hint.ts
@@ -1346,7 +1356,7 @@ index 0709921..0ba73bd 100644
  });
  expectTypesMatch(true);
  
-@@ -19433,7 +19463,7 @@ import {
+@@ -19433,7 +19464,7 @@ import {
    length as length12,
    route_hint_point as route_hint_point7
  } from "circuit-json";
@@ -1355,7 +1365,7 @@ index 0709921..0ba73bd 100644
  var pcbNotePathProps = pcbLayoutProps.omit({
    pcbLeftEdgeX: true,
    pcbRightEdgeX: true,
-@@ -19445,15 +19475,15 @@ var pcbNotePathProps = pcbLayoutProps.omit({
+@@ -19445,15 +19476,15 @@ var pcbNotePathProps = pcbLayoutProps.omit({
    pcbOffsetY: true,
    pcbRotation: true
  }).extend({
@@ -1375,7 +1385,7 @@ index 0709921..0ba73bd 100644
  var pcbNoteLineProps = pcbLayoutProps.omit({
    pcbLeftEdgeX: true,
    pcbRightEdgeX: true,
-@@ -19465,20 +19495,20 @@ var pcbNoteLineProps = pcbLayoutProps.omit({
+@@ -19465,20 +19496,20 @@ var pcbNoteLineProps = pcbLayoutProps.omit({
    pcbOffsetY: true,
    pcbRotation: true
  }).extend({
@@ -1406,7 +1416,7 @@ index 0709921..0ba73bd 100644
  var pcbNoteDimensionProps = pcbLayoutProps.omit({
    pcbLeftEdgeX: true,
    pcbRightEdgeX: true,
-@@ -19492,114 +19522,114 @@ var pcbNoteDimensionProps = pcbLayoutProps.omit({
+@@ -19492,114 +19523,114 @@ var pcbNoteDimensionProps = pcbLayoutProps.omit({
  }).extend({
    from: dimensionTarget2,
    to: dimensionTarget2,
@@ -1586,7 +1596,7 @@ index 0709921..0ba73bd 100644
      "A function that returns a string URL for static files for the project"
    ).optional(),
    platformFetch: platformFetch.optional()
-@@ -19796,6 +19826,7 @@ export {
+@@ -19796,6 +19827,7 @@ export {
    panelProps,
    partsEngine,
    pcbBendProps,
