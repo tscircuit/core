@@ -1,6 +1,6 @@
-import { pcbCopperPourProps, type PcbCopperPourProps } from "@tscircuit/props"
+import { type PcbCopperPourProps, pcbCopperPourProps } from "@tscircuit/props"
 import type { Ring } from "circuit-json"
-import { applyToPoint, decomposeTSR, type Matrix } from "transformation-matrix"
+import { type Matrix, applyToPoint, decomposeTSR } from "transformation-matrix"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
 const transformBrepRing = ({
