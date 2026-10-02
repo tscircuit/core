@@ -38,7 +38,7 @@
     "@tscircuit/bus-lanes-solver": "https://jscdn.tscircuit.com/@tscircuit/bus-lanes-solver/0.0.6.tgz",
     "@tscircuit/capacity-autorouter": "^0.0.951",
     "@tscircuit/checks": "^0.0.233",
-    "@tscircuit/circuit-json-util": "github:tscircuit/circuit-json-util#cf6f3e5adfd04c85eba7a0030c85fc4ac1f01056",
+    "@tscircuit/circuit-json-util": "^0.0.118",
     "@tscircuit/common": "^0.0.20",
     "@tscircuit/copper-pour-solver": "^0.0.62",
     "@tscircuit/create-fdm-enclosure": "0.0.4",
@@ -135,7 +135,7 @@
     "zod": "^3.25.67"
   },
   "overrides": {
-    "@tscircuit/circuit-json-util": "github:tscircuit/circuit-json-util#cf6f3e5adfd04c85eba7a0030c85fc4ac1f01056",
+    "@tscircuit/circuit-json-util": "^0.0.118",
     "@tscircuit/props": "^0.0.677",
     "circuit-json": "^0.0.510"
   }
