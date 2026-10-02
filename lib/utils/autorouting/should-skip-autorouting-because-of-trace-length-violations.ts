@@ -1,6 +1,9 @@
-import type { PcbPort, SourcePort, SourceTrace } from "circuit-json"
+import type { PcbPort, SourceNet, SourcePort, SourceTrace } from "circuit-json"
 import { ConnectivityMap } from "circuit-json-to-connectivity-map"
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
+import type { CopperPour } from "lib/components/primitive-components/CopperPour"
+import type { ISubcircuit } from "lib/components/primitive-components/Group/Subcircuit/ISubcircuit"
+import type { Net } from "lib/components/primitive-components/Net"
 
 type SourcePortId = SourcePort["source_port_id"]
 type PcbEndpoint = Pick<PcbPort, "pcb_port_id" | "source_port_id" | "x" | "y">
@@ -68,7 +71,7 @@ export const getStraightLineTraceLengthViolations = ({
   subcircuit,
 }: {
   component: PrimitiveComponent
-  subcircuit: { subcircuit_id: string | null }
+  subcircuit: ISubcircuit
 }): StraightLineTraceLengthViolation[] => {
   const { db } = component.root!
   const subcircuitSourceTraces = db.source_trace
@@ -99,6 +102,24 @@ export const getStraightLineTraceLengthViolations = ({
       x: pcbPort.x,
       y: pcbPort.y,
     })
+  }
+  const planeSourceNetIds = new Set<SourceNet["source_net_id"]>()
+  for (const element of db.toArray()) {
+    if (
+      (element.type === "source_pcb_ground_plane" ||
+        element.type === "pcb_ground_plane" ||
+        element.type === "pcb_copper_pour") &&
+      typeof element.source_net_id === "string"
+    ) {
+      planeSourceNetIds.add(element.source_net_id)
+    }
+  }
+  // Copper pours render after PCB traces, so their Circuit JSON does not yet
+  // exist when this pre-routing check runs.
+  for (const copperPour of subcircuit.selectAll<CopperPour>("copperpour")) {
+    if (copperPour.getSubcircuit() !== subcircuit) continue
+    const net = subcircuit.selectOne<Net>(copperPour._parsedProps.connectsTo)
+    if (net?.source_net_id) planeSourceNetIds.add(net.source_net_id)
   }
   const violations: StraightLineTraceLengthViolation[] = []
 
@@ -136,19 +157,12 @@ export const getStraightLineTraceLengthViolations = ({
         .filter((pcbPort): pcbPort is PcbEndpoint => Boolean(pcbPort))
       if (targetPcbEndpoints.length === 0) continue
 
-      const networkHasPlane = db
-        .toArray()
-        .some(
-          (element) =>
-            (element.type === "source_pcb_ground_plane" ||
-              element.type === "pcb_ground_plane" ||
-              element.type === "pcb_copper_pour") &&
-            typeof element.source_net_id === "string" &&
-            sourceConnectivityMap.areIdsConnected(
-              sourceTrace.source_trace_id,
-              element.source_net_id,
-            ),
-        )
+      const networkHasPlane = [...planeSourceNetIds].some((sourceNetId) =>
+        sourceConnectivityMap.areIdsConnected(
+          sourceTrace.source_trace_id,
+          sourceNetId,
+        ),
+      )
       if (networkHasPlane) continue
 
       straightLineDistance = getClosestEndpointDistance(
@@ -179,7 +193,7 @@ export const shouldSkipAutoroutingBecauseOfTraceLengthViolations = ({
   subcircuit,
 }: {
   component: PrimitiveComponent
-  subcircuit: { subcircuit_id: string | null }
+  subcircuit: ISubcircuit
 }): boolean => {
   const violations = getStraightLineTraceLengthViolations({
     component,
