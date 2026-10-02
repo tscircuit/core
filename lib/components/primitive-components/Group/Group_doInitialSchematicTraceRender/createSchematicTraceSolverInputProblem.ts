@@ -234,12 +234,23 @@ export function createSchematicTraceSolverInputProblem(
     SchematicComponentId,
     SectionId
   >()
-  const boardDescendants = group._getBoard()?.getDescendants() ?? []
-  for (const component of boardDescendants) {
+  const customSymbolSchematicComponentIds = new Set<SchematicComponentId>()
+  const schematicDescendants =
+    group._getBoard()?.getDescendants() ?? group.getDescendants()
+  for (const component of schematicDescendants) {
     const schematicComponentId = component.schematic_component_id
     const sectionId = component.getSchematicSectionName()
     if (schematicComponentId && sectionId) {
       sectionIdBySchematicComponentId.set(schematicComponentId, sectionId)
+    }
+    // JSX and Circuit JSON symbols both render through a Symbol child. Its
+    // primitives determine schematic_component.size in schematic world mm
+    // (+X right, +Y up); port points and directions are already transformed.
+    if (
+      schematicComponentId &&
+      component.children.some((child) => child.componentName === "Symbol")
+    ) {
+      customSymbolSchematicComponentIds.add(schematicComponentId)
     }
   }
 
@@ -300,6 +311,9 @@ export function createSchematicTraceSolverInputProblem(
 
     chips.push({
       chipId,
+      ...(customSymbolSchematicComponentIds.has(chipId)
+        ? { boundsMode: "body" as const }
+        : {}),
       center: getBoundsCenter(layoutBounds),
       width: layoutBounds.maxX - layoutBounds.minX,
       height: layoutBounds.maxY - layoutBounds.minY,
