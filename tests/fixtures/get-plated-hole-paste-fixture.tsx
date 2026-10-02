@@ -30,7 +30,15 @@ export const getPlatedHolePasteFixture = () => {
         holeDiameter={0.8}
         pcbY={-3}
       />
-      <smtpad shape="circle" radius={0.75} pcbY={3} />
+      <chip
+        name="U_SMD"
+        pcbY={3}
+        footprint={
+          <footprint>
+            <smtpad shape="circle" radius={0.75} />
+          </footprint>
+        }
+      />
       <pcbnotetext
         text="THT paste: slots at 0 and 90 deg"
         pcbY={5}
