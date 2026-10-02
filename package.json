@@ -78,7 +78,7 @@
     "circuit-json-to-connectivity-map": "^0.0.33",
     "circuit-json-to-gltf": "github:tscircuit/circuit-json-to-gltf#a93ab4ecbee60e51aacf2d693d7ab6888f6a0eac",
     "circuit-json-to-spice": "^0.0.45",
-    "circuit-to-svg": "github:tscircuit/circuit-to-svg#844af16d93e5438f63ade5bc5f1ba0c4025212c5",
+    "circuit-to-svg": "github:tscircuit/circuit-to-svg#2880da23b20a097feab2d8b5fff5d6e4578eba2b",
     "concurrently": "^9.1.2",
     "connectivity-map": "^1.0.1",
     "debug": "^4.3.6",
