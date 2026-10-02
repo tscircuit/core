@@ -5,7 +5,7 @@ import { ICS_43434 } from "tests/fixtures/ics43434-import/C5656610"
 test("reproduces the missing PCB ground port for the ICS-43434 imported polygons", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
-    <board width={12} height={9} autorouter={{ local: true }}>
+    <board width={12} height={9}>
       <ICS_43434 name="MIC1" pcbX={1.25} pcbY={-1.5} schX={-2} />
       <resistor
         name="R1"
