@@ -105,7 +105,7 @@
     "@tscircuit/checks": "*",
     "@tscircuit/circuit-json-util": "*",
     "@tscircuit/create-fdm-enclosure": "*",
-    "@tscircuit/footprinter": "^0.0.430",
+    "@tscircuit/footprinter": "*",
     "@tscircuit/infgrid-ijump-astar": "*",
     "@tscircuit/math-utils": "*",
     "@tscircuit/props": "*",
