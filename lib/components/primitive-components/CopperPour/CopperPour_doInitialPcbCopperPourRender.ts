@@ -122,6 +122,9 @@ const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
         subcircuit_id: subcircuit.subcircuit_id ?? undefined,
         covered_with_solder_mask: coveredWithSolderMask,
       })
+      boardComponent?._generatedCopperPourIds?.add(
+        insertedPour.pcb_copper_pour_id,
+      )
 
       markTraceSegmentsInsideCopperPour({
         db,
