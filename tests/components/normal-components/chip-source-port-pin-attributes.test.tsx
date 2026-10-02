@@ -14,6 +14,8 @@ test("chip pinAttributes are copied onto source_port records", async () => {
           pin2: "GND",
           pin3: "VOUT",
           pin4: "NC",
+          pin5: ["A5", "MODES"],
+          pin6: ["A6", "DISABLED_MODES"],
         }}
         pinAttributes={{
           VCC: { requiresPower: true, mustBeConnected: true },
@@ -41,6 +43,36 @@ test("chip pinAttributes are copied onto source_port records", async () => {
               "uart_tx",
             ],
             activeCapability: "uart_rx",
+          },
+          pin5: {
+            isInput: true,
+            isOutput: true,
+            isBidirectional: true,
+            isPassive: true,
+            canUseTriState: true,
+            isUsingTriState: true,
+            canUseOpenCollector: true,
+            isUsingOpenCollector: true,
+            canUseOpenEmitter: true,
+            isUsingOpenEmitter: true,
+            isGpio: true,
+            highlightColor: "#ff0000",
+          },
+          A6: {
+            isInput: false,
+            isOutput: false,
+            isBidirectional: false,
+            isPassive: false,
+            canUseTriState: false,
+            isUsingTriState: false,
+            canUseOpenCollector: false,
+            isUsingOpenCollector: false,
+            canUseOpenEmitter: false,
+            isUsingOpenEmitter: false,
+            isGpio: false,
+            highlightColor: "",
+            requiresVoltage: "-5V",
+            recommendedDecouplingCapacitorCapacitance: "100nF",
           },
         }}
       />
@@ -74,4 +106,37 @@ test("chip pinAttributes are copied onto source_port records", async () => {
   expect(getPort("VOUT")?.is_configured_for_spi_miso).toBe(true)
   expect(getPort("VOUT")?.is_configured_for_uart_tx).toBe(true)
   expect(getPort("VOUT")?.is_configured_for_uart_rx).toBe(true)
+  expect(getPort("A5")).toMatchObject({
+    is_input: true,
+    is_output: true,
+    is_bidirectional: true,
+    is_passive: true,
+    can_use_tri_state: true,
+    is_using_tri_state: true,
+    can_use_open_collector: true,
+    is_using_open_collector: true,
+    can_use_open_emitter: true,
+    is_using_open_emitter: true,
+    is_gpio: true,
+    highlight_color: "#ff0000",
+  })
+  expect(getPort("A6")).toMatchObject({
+    is_input: false,
+    is_output: false,
+    is_bidirectional: false,
+    is_passive: false,
+    can_use_tri_state: false,
+    is_using_tri_state: false,
+    can_use_open_collector: false,
+    is_using_open_collector: false,
+    can_use_open_emitter: false,
+    is_using_open_emitter: false,
+    is_gpio: false,
+    highlight_color: "",
+    requires_voltage: "-5V",
+    recommended_decoupling_capacitor_capacitance: "100nF",
+  })
+  expect(getPort("NC")?.is_input).toBeUndefined()
+  expect(getPort("NC")?.is_gpio).toBeUndefined()
+  expect(getPort("NC")?.highlight_color).toBeUndefined()
 })

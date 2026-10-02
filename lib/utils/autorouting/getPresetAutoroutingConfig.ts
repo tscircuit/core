@@ -131,6 +131,7 @@ export function getPresetAutoroutingConfig(
       return { local: true, groupMode: "subcircuit", preset: "dogbone" }
     case "fanout":
       return {
+        ...providedConfig,
         local: true,
         groupMode: "subcircuit",
         preset: "fanout",

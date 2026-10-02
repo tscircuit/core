@@ -1,5 +1,4 @@
-import { getBoardFoldContext } from "lib/utils/cad/get-board-fold-context"
-import { transformCadComponentPlacement } from "@tscircuit/flex-utils"
+import { getFoldedCadComponentPlacement } from "lib/utils/cad/get-folded-cad-component-placement"
 import { normalizeDegrees } from "@tscircuit/math-utils"
 import { cadmodelProps, point3 } from "@tscircuit/props"
 import type { CadModelProps } from "@tscircuit/props"
@@ -138,13 +137,10 @@ export class CadModel extends PrimitiveComponent<typeof cadmodelProps> {
         ),
       },
     }
-    const boardFoldContext = getBoardFoldContext(parent)
-    if (boardFoldContext) {
-      cadComponentPlacement = transformCadComponentPlacement(
-        { cadComponentPlacement, foldPcbs: true },
-        boardFoldContext,
-      )
-    }
+    cadComponentPlacement = getFoldedCadComponentPlacement(
+      parent,
+      cadComponentPlacement,
+    )
     const cadComponent = db.cad_component.insert({
       ...cadComponentPlacement,
       pcb_component_id: parent.pcb_component_id,

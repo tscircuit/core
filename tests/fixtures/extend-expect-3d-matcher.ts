@@ -6,12 +6,19 @@ import type { AnyCircuitElement, PcbBoard } from "circuit-json"
 import {
   convertCircuitJsonToGltf,
   getBestCameraPosition,
+  getPoppyglErrorOverlayOptions,
 } from "circuit-json-to-gltf"
 import { RootCircuit } from "lib/RootCircuit"
 import { compareImageBuffers, createImageDiff } from "./compare-image-buffers"
 import {
   type RenderGLTFToPNGFromGLBOptions as PoppyglOptions,
+  buildCamera,
+  createSceneFromGLTF,
+  encodePNG,
+  loadGLTFWithResourcesFromURL,
   renderGLTFToPNGFromGLB,
+  renderSceneFromGLTF,
+  resolveRenderOptions,
 } from "poppygl"
 
 /** [0,1] percentage of the image that is different */
@@ -148,7 +155,43 @@ async function save3dSnapshotOfCircuitJson({
     ? gltfOrGlb
     : Buffer.from(gltfOrGlb as any)
   const resolvedRenderOpts = await resolvePoppyglOptions(soup, options)
-  const png = await renderGLTFToPNGFromGLB(glbBuffer, resolvedRenderOpts)
+  let png: Uint8Array
+  if (options?.gltf?.showErrors === true) {
+    const { gltf, resources } = await loadGLTFWithResourcesFromURL(
+      `data:model/gltf-binary;base64,${glbBuffer.toString("base64")}`,
+    )
+    const scene = createSceneFromGLTF(gltf, resources)
+    const renderOptions = resolveRenderOptions(resolvedRenderOpts)
+    const camera = buildCamera(
+      scene.drawCalls,
+      renderOptions.width * renderOptions.supersampling,
+      renderOptions.height * renderOptions.supersampling,
+      renderOptions.fov,
+      renderOptions.camPos,
+      renderOptions.lookAt,
+      renderOptions.up,
+      renderOptions.cameraRotation,
+    )
+    // The adapter reads the actual GLB's messages and creates layout anchors
+    // in the final glTF frame (+Y up, mm). Released PoppyGL draws the labels.
+    const errorOptions = getPoppyglErrorOverlayOptions(gltf, camera, {
+      width: renderOptions.width,
+      height: renderOptions.height,
+      supersampling: renderOptions.supersampling,
+      debugFontSize: renderOptions.debugFontSize ?? undefined,
+    })
+    const { bitmap } = renderSceneFromGLTF(scene, {
+      ...renderOptions,
+      ...errorOptions,
+      debugPoints: [
+        ...(renderOptions.debugPoints ?? []),
+        ...(errorOptions?.debugPoints ?? []),
+      ],
+    })
+    png = await encodePNG(bitmap)
+  } else {
+    png = await renderGLTFToPNGFromGLB(glbBuffer, resolvedRenderOpts)
+  }
   const content = png
 
   if (!fs.existsSync(snapshotDir)) {
