@@ -1,49 +1,19 @@
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
-import type { SmtPad } from "../SmtPad"
-import { applyToPoint } from "transformation-matrix"
 
-type PcbPrimitiveBounds = {
-  left: number
-  right: number
-  top: number
-  bottom: number
-}
+type PcbPrimitiveBounds = ReturnType<
+  PrimitiveComponent["_getPcbBoundsBeforeLayout"]
+>
 
 /**
- * Returns axis-aligned bounds in board space (mm, +X right, +Y up).
- * Polygon vertices are pad-local points and must include the pad's complete
- * transform, including translation, rotation and the footprint layer flip.
+ * Returns matching bounds in the right-handed board-world PCB frame
+ * (mm, +X right, +Y top, +Z above the board). Each primitive owns its geometry
+ * and the transforms from its local frame into this shared frame.
  */
 export function getPcbPrimitiveBoundsBeforeRender(
   primitive: PrimitiveComponent,
 ): PcbPrimitiveBounds | null {
   try {
-    if (primitive.componentName === "SmtPad") {
-      const { _parsedProps: padProps } = primitive as SmtPad
-      if (padProps.shape === "polygon") {
-        // Use the same transform as SmtPad.doInitialPcbPrimitiveRender: a
-        // polygon's origin is not necessarily the center of its vertices.
-        const padToBoardTransform =
-          primitive._computePcbGlobalTransformBeforeLayout()
-        const boardPoints = padProps.points.map((point) =>
-          applyToPoint(padToBoardTransform, point),
-        )
-        return {
-          left: Math.min(...boardPoints.map((point) => point.x)),
-          right: Math.max(...boardPoints.map((point) => point.x)),
-          top: Math.max(...boardPoints.map((point) => point.y)),
-          bottom: Math.min(...boardPoints.map((point) => point.y)),
-        }
-      }
-    }
-    const center = primitive._getGlobalPcbPositionBeforeLayout()
-    const size = primitive.getPcbSize()
-    return {
-      left: center.x - size.width / 2,
-      right: center.x + size.width / 2,
-      top: center.y + size.height / 2,
-      bottom: center.y - size.height / 2,
-    }
+    return primitive._getPcbBoundsBeforeLayout()
   } catch {
     return null
   }
