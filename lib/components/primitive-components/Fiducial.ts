@@ -1,10 +1,10 @@
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
-import { z } from "zod"
-import { distance, type LayerRef, type PcbSmtPadCircle } from "circuit-json"
+import { distance } from "circuit-json"
 import { fiducialProps } from "@tscircuit/props"
 
 export class Fiducial extends PrimitiveComponent<typeof fiducialProps> {
   pcb_smtpad_id: string | null = null
+  pcb_courtyard_circle_id: string | null = null
   isPcbPrimitive = true
 
   get config() {
@@ -22,6 +22,14 @@ export class Fiducial extends PrimitiveComponent<typeof fiducialProps> {
 
     const position = this._getGlobalPcbPositionBeforeLayout()
     const { maybeFlipLayer } = this._getPcbPrimitiveFlippedHelpers()
+    const layer = maybeFlipLayer(props.layer ?? "top")
+    if (layer !== "top" && layer !== "bottom") {
+      throw new Error(
+        `Invalid layer "${layer}" for Fiducial. Must be "top" or "bottom".`,
+      )
+    }
+    const radius = distance.parse(props.padDiameter) / 2
+    const soldermask_margin = props.soldermaskPullback ?? radius
 
     const pcb_component_id =
       this.parent?.pcb_component_id ??
@@ -29,18 +37,26 @@ export class Fiducial extends PrimitiveComponent<typeof fiducialProps> {
 
     const pcb_smtpad = db.pcb_smtpad.insert({
       pcb_component_id,
-      layer: maybeFlipLayer(props.layer || "top"),
+      layer,
       shape: "circle",
       x: position.x,
       y: position.y,
-      radius: distance.parse(props.padDiameter) / 2,
-      soldermask_margin: props.soldermaskPullback
-        ? distance.parse(props.soldermaskPullback)
-        : distance.parse(props.padDiameter) / 2,
+      radius,
+      soldermask_margin,
       is_covered_with_solder_mask: true,
-    } as Omit<PcbSmtPadCircle, "type" | "pcb_smtpad_id">)
+    })
 
     this.pcb_smtpad_id = pcb_smtpad.pcb_smtpad_id
+
+    const courtyard = db.pcb_courtyard_circle.insert({
+      pcb_component_id,
+      layer,
+      center: position,
+      radius: radius + soldermask_margin,
+      subcircuit_id: this.getSubcircuit()?.subcircuit_id ?? undefined,
+      pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
+    })
+    this.pcb_courtyard_circle_id = courtyard.pcb_courtyard_circle_id
   }
 
   getPcbSize(): { width: number; height: number } {
@@ -56,6 +72,11 @@ export class Fiducial extends PrimitiveComponent<typeof fiducialProps> {
       x: newCenter.x,
       y: newCenter.y,
     })
+    if (this.pcb_courtyard_circle_id) {
+      db.pcb_courtyard_circle.update(this.pcb_courtyard_circle_id, {
+        center: newCenter,
+      })
+    }
   }
 
   _moveCircuitJsonElements({
