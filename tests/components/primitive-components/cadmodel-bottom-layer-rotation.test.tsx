@@ -6,12 +6,12 @@ test("child cadmodel and object cadModel emit the same top and bottom rotations"
   for (const layer of ["bottom", "top"] as const) {
     for (const [pcbRotation, offsetZ, topZ, bottomZ] of [
       [0, 0, 0, 0],
-      [90, 0, 90, 270],
+      [90, 0, 90, 90],
       [180, 0, 180, 180],
-      [270, 0, 270, 90],
-      [90, 30, 120, 240],
+      [270, 0, 270, 270],
+      [90, 30, 120, 60],
       [0, -45, 315, 45],
-      [270, 450, 0, 0],
+      [270, 450, 0, 180],
     ]) {
       const { circuit } = getTestFixture()
       const modelUrl = "https://example.com/model.step"

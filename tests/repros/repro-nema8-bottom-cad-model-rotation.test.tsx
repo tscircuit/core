@@ -274,7 +274,7 @@ const addOrientationWitnessLegend = ({
 // Enable this diagnostic test on the unfixed branch to see the real NEMA8
 // models violate the top-side model-to-pin relationship after a bottom flip.
 // It is skipped here so this repro-only branch remains green for review.
-test.skip("NEMA8 bottom CAD models preserve the top-side model-to-pin alignment", async () => {
+test("NEMA8 bottom CAD models preserve the top-side model-to-pin alignment", async () => {
   const { circuit: topReferenceCircuit } = getTestFixture()
   const { circuit: bottomCircuit } = getTestFixture()
 

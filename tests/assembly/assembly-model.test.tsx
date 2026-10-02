@@ -50,7 +50,7 @@ test("assembly model strings emit modelcdn GLBs and retain assembly placement", 
     model_glb_url:
       "https://modelcdn.tscircuit.com/jscad_models/flexscreen_w26.7mm_h19.26mm.glb",
     position: { x: 4, y: 3, z: -1 },
-    rotation: { x: 0, y: 180, z: 270 },
+    rotation: { x: 0, y: 180, z: 90 },
     layer: "bottom",
   })
   expect(models.find((c) => c.model_stl_url)?.position).toEqual({

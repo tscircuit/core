@@ -1,4 +1,3 @@
-import { getFoldedCadComponentPlacement } from "lib/utils/cad/get-folded-cad-component-placement"
 import { fp } from "@tscircuit/footprinter"
 import { normalizeDegrees } from "@tscircuit/math-utils"
 import type {
@@ -35,6 +34,8 @@ import {
 import { underscorifyPinStyles } from "lib/soup/underscorifyPinStyles"
 import { underscorifyPortArrangement } from "lib/soup/underscorifyPortArrangement"
 import { getBoundsForSchematic } from "lib/utils/autorouting/getBoundsForSchematic"
+import { getCadModelRotation } from "lib/utils/cad/get-cad-model-rotation"
+import { getFoldedCadComponentPlacement } from "lib/utils/cad/get-folded-cad-component-placement"
 import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
 import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromCircuitJson"
 import { filterPinLabels } from "lib/utils/filterPinLabels"
@@ -2009,11 +2010,11 @@ export class NormalComponent<
               ? -boardThickness / 2
               : boardThickness / 2,
         },
-        rotation: {
-          x: 0,
-          y: isBottomLayer ? 180 : 0,
-          z: normalizeDegrees(isBottomLayer ? -totalRotation : totalRotation),
-        },
+        rotation: getCadModelRotation({
+          layer: computedLayer,
+          pcbRotationDegrees: totalRotation,
+          modelRotationOffsetDegrees: { x: 0, y: 0, z: 0 },
+        }),
       }
       cadComponentPlacement = getFoldedCadComponentPlacement(
         this,
@@ -2032,8 +2033,6 @@ export class NormalComponent<
       return
     }
 
-    const rotationWithOffset = totalRotation + (rotationOffset.z ?? 0)
-    const cadRotationZ = normalizeDegrees(rotationWithOffset)
     let footprinterStringForCadComponent: string | undefined
     if (!cadModel && footprintIsFootprinterString) {
       footprinterStringForCadComponent = footprintString
@@ -2052,11 +2051,11 @@ export class NormalComponent<
             : zOffsetFromSurface) +
           positionOffset.z,
       },
-      rotation: {
-        x: rotationOffset.x,
-        y: rotationOffset.y + (isBottomLayer ? 180 : 0),
-        z: normalizeDegrees(isBottomLayer ? -cadRotationZ : cadRotationZ),
-      },
+      rotation: getCadModelRotation({
+        layer: computedLayer,
+        pcbRotationDegrees: totalRotation,
+        modelRotationOffsetDegrees: rotationOffset,
+      }),
     }
     cadComponentPlacement = getFoldedCadComponentPlacement(
       this,

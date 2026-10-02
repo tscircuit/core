@@ -1,7 +1,7 @@
-import { normalizeDegrees } from "@tscircuit/math-utils"
 import { type CadModelProp, cadModelBase, point3 } from "@tscircuit/props"
 import type { CadComponent } from "circuit-json"
 import { rotation } from "circuit-json"
+import { getCadModelRotation } from "lib/utils/cad/get-cad-model-rotation"
 import { constructAssetUrl } from "lib/utils/constructAssetUrl"
 import type { ReactElement } from "react"
 import {
@@ -70,15 +70,11 @@ export const renderAssemblyCadModel = (
         placement.position.z +
         (bottom ? -1 : 1) * (offset.z + (base.zOffsetFromSurface ?? 0)),
     },
-    // Same CAD Euler convention as NormalComponent.doInitialCadModelRender:
-    // bottom flips Y and negates the board-plane Z angle.
-    rotation: {
-      x: rotationOffset.x,
-      y: (bottom ? 180 : 0) + rotationOffset.y,
-      z: normalizeDegrees(
-        (bottom ? -1 : 1) * (placement.pcbRotation + rotationOffset.z),
-      ),
-    },
+    rotation: getCadModelRotation({
+      layer: placement.layer,
+      pcbRotationDegrees: placement.pcbRotation,
+      modelRotationOffsetDegrees: rotationOffset,
+    }),
     layer: placement.layer,
     source_component_id: owner.source_component_id!,
     subcircuit_id: placement.subcircuit_id,
