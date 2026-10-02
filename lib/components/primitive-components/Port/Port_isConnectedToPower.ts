@@ -1,4 +1,4 @@
-import { POWER_NET_REGEX } from "lib/utils/gnd-power-net-regex"
+import { DECOUPLING_POWER_PIN_REGEX } from "lib/utils/gnd-power-net-regex"
 import type { Port } from "./Port"
 
 function portShouldHaveDecouplingCapacitor(port: Port): boolean {
@@ -30,7 +30,7 @@ function portShouldHaveDecouplingCapacitor(port: Port): boolean {
   if (providesPower === true) return false
 
   for (const portName of port.getNameAndAliases()) {
-    if (POWER_NET_REGEX.test(portName)) return true
+    if (DECOUPLING_POWER_PIN_REGEX.test(portName)) return true
   }
   return false
 }
