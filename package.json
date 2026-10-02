@@ -45,7 +45,7 @@
     "@tscircuit/dogbone-solver": "https://jscdn.tscircuit.com/@tscircuit/dogbone-solver/0.0.1.tgz",
     "@tscircuit/fanout-solver": "0.0.78",
     "@tscircuit/flex-utils": "https://jscdn.tscircuit.com/@tscircuit/flex-utils/0.0.8.tgz",
-    "@tscircuit/footprinter": "^0.0.426",
+    "@tscircuit/footprinter": "^0.0.430",
     "@tscircuit/image-utils": "^0.0.8",
     "@tscircuit/implicit-copper-pour-solver": "github:tscircuit/implicit-copper-pour-solver#a5cbbda0cd65fd4707c5c1af25779837c25aba92",
     "@tscircuit/infer-cable-insertion-point": "^0.0.4",
