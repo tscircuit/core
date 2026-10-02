@@ -38,9 +38,14 @@ test("the original left-side bends fold the top arm before carrying the body", a
   // after the body fold; its local +Y points right after both 90-degree folds.
   const topX = rotateVector({ x: 1, y: 0, z: 0 }, topCad.rotation!)
   const topY = rotateVector({ x: 0, y: 1, z: 0 }, topCad.rotation!)
+  const bodyNormal = rotateVector({ x: 0, y: 0, z: 1 }, bodyCad.rotation!)
   for (const coordinate of ["x", "y", "z"] as const) {
     expect(topX[coordinate]).toBeCloseTo({ x: 0, y: 0, z: -1 }[coordinate], 7)
     expect(topY[coordinate]).toBeCloseTo({ x: 1, y: 0, z: 0 }[coordinate], 7)
+    expect(bodyNormal[coordinate]).toBeCloseTo(
+      { x: 1, y: 0, z: 0 }[coordinate],
+      7,
+    )
   }
   expect(topCad.is_on_folded_board).toBe(true)
   expect(bodyCad.is_on_folded_board).toBe(true)
@@ -53,6 +58,19 @@ test("the original left-side bends fold the top arm before carrying the body", a
         flatCad.position[coordinate],
         7,
       )
+    }
+    for (const flatAxis of [
+      { x: 1, y: 0, z: 0 },
+      { x: 0, y: 1, z: 0 },
+    ]) {
+      const restoredAxis = rotateVector(flatAxis, restored[index].rotation!)
+      const originalAxis = rotateVector(flatAxis, flatCad.rotation!)
+      for (const coordinate of ["x", "y", "z"] as const) {
+        expect(restoredAxis[coordinate]).toBeCloseTo(
+          originalAxis[coordinate],
+          7,
+        )
+      }
     }
   }
   const before = folded.getCircuitJson()

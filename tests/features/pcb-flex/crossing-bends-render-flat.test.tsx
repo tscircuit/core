@@ -58,10 +58,16 @@ test("crossing bend regions report an error and preserve flat PCB, CAD and schem
   expect(circuit.db.schematic_component.list()).toHaveLength(2)
   const cad = circuit.db.cad_component.list()
   expect(cad).toHaveLength(2)
-  for (const placement of cad) {
-    expect(placement.position.z).toBeCloseTo(0.06)
+  for (const [index, placement] of cad.entries()) {
+    expect(placement.position).toEqual(
+      [
+        { x: -8, y: 5, z: 0.06 },
+        { x: 8, y: -5, z: 0.06 },
+      ][index],
+    )
     expect(placement.rotation?.x).toBeCloseTo(0)
     expect(placement.rotation?.y).toBeCloseTo(0)
+    expect(placement.rotation?.z).toBeCloseTo(0)
     expect(placement.is_on_folded_board).toBeUndefined()
   }
   const before = circuit.getCircuitJson()

@@ -1,5 +1,8 @@
 import { expect, test } from "bun:test"
-import { transformCircuitJsonCadComponents } from "@tscircuit/flex-utils"
+import {
+  rotateVector,
+  transformCircuitJsonCadComponents,
+} from "@tscircuit/flex-utils"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { TwoArmFlexBoard } from "./two-arm-bends.fixture"
 
@@ -47,6 +50,19 @@ test("independent nonparallel bends fold both arms while the body remains flat",
         flatCad.position[coordinate],
         7,
       )
+    }
+    for (const flatAxis of [
+      { x: 1, y: 0, z: 0 },
+      { x: 0, y: 1, z: 0 },
+    ]) {
+      const restoredAxis = rotateVector(flatAxis, restored[index].rotation!)
+      const originalAxis = rotateVector(flatAxis, flatCad.rotation!)
+      for (const coordinate of ["x", "y", "z"] as const) {
+        expect(restoredAxis[coordinate]).toBeCloseTo(
+          originalAxis[coordinate],
+          7,
+        )
+      }
     }
   }
   const before = folded.getCircuitJson()
