@@ -1,5 +1,4 @@
-import { getBoardFoldContext } from "lib/utils/cad/get-board-fold-context"
-import { transformCadComponentPlacement } from "@tscircuit/flex-utils"
+import { getFoldedCadComponentPlacement } from "lib/utils/cad/get-folded-cad-component-placement"
 import { fp } from "@tscircuit/footprinter"
 import { normalizeDegrees } from "@tscircuit/math-utils"
 import type {
@@ -2016,13 +2015,10 @@ export class NormalComponent<
           z: normalizeDegrees(isBottomLayer ? -totalRotation : totalRotation),
         },
       }
-      const boardFoldContext = getBoardFoldContext(this)
-      if (boardFoldContext) {
-        cadComponentPlacement = transformCadComponentPlacement(
-          { cadComponentPlacement, foldPcbs: true },
-          boardFoldContext,
-        )
-      }
+      cadComponentPlacement = getFoldedCadComponentPlacement(
+        this,
+        cadComponentPlacement,
+      )
       const cadComponent = db.cad_component.insert({
         ...cadComponentPlacement,
         pcb_component_id: this.pcb_component_id,
@@ -2062,13 +2058,10 @@ export class NormalComponent<
         z: normalizeDegrees(isBottomLayer ? -cadRotationZ : cadRotationZ),
       },
     }
-    const boardFoldContext = getBoardFoldContext(this)
-    if (boardFoldContext) {
-      cadComponentPlacement = transformCadComponentPlacement(
-        { cadComponentPlacement, foldPcbs: true },
-        boardFoldContext,
-      )
-    }
+    cadComponentPlacement = getFoldedCadComponentPlacement(
+      this,
+      cadComponentPlacement,
+    )
     const cadComponent = db.cad_component.insert({
       // TODO z maybe depends on layer
       ...cadComponentPlacement,
