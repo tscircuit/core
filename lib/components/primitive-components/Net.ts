@@ -1,7 +1,7 @@
 import { netProps } from "@tscircuit/props"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import type { Port } from "./Port"
-import type { Trace } from "./Trace/Trace"
+import { Trace } from "./Trace/Trace"
 import { pairs } from "lib/utils/pairs"
 import {
   GROUND_NET_REGEX,
@@ -23,6 +23,16 @@ export class Net extends PrimitiveComponent<typeof netProps> {
 
   getPortSelector() {
     return `net.${this.props.name}`
+  }
+
+  doInitialCreateTracesFromProps(): void {
+    let { connectsTo } = this._parsedProps
+    if (!connectsTo) return
+    if (typeof connectsTo === "string") connectsTo = [connectsTo]
+
+    for (const connection of connectsTo) {
+      this.add(new Trace({ from: connection, to: this.getPortSelector() }))
+    }
   }
 
   doInitialSourceRender(): void {

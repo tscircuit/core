@@ -1,0 +1,59 @@
+import { expect, test } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
+
+test("net connectsTo joins the selected pins", async () => {
+  const { circuit } = getTestFixture()
+
+  circuit.add(
+    <board width={38} height={26} schAutoLayoutEnabled>
+      <resistor
+        name="R1"
+        resistance="1k"
+        footprint="0805"
+        pcbX={-5}
+        pcbY={-4}
+      />
+      <resistor name="R2" resistance="1k" footprint="0805" pcbX={5} pcbY={-4} />
+      <net name="SIGNAL" connectsTo={[".R1 > .pin1", ".R2 > .pin1"]} />
+
+      <pcbnotetext
+        text="net connectsTo joins the selected pins"
+        pcbY={11}
+        fontSize={1}
+      />
+      <pcbnotetext
+        text={`<resistor name="R1" resistance="1k"
+  footprint="0805" pcbX={-5} pcbY={-4} />
+<resistor name="R2" resistance="1k"
+  footprint="0805" pcbX={5} pcbY={-4} />
+<net name="SIGNAL"
+  connectsTo={[".R1 > .pin1", ".R2 > .pin1"]} />`}
+        pcbX={-17}
+        pcbY={8}
+        anchorAlignment="top_left"
+        fontSize={0.75}
+        color="#ffd166"
+      />
+      <pcbnotetext
+        text="Expected: R1.pin1 and R2.pin1 joined on SIGNAL"
+        pcbY={-8}
+        fontSize={0.75}
+      />
+      <pcbnotetext
+        text="Actual: both pins are connected on SIGNAL"
+        pcbY={-10}
+        fontSize={0.85}
+        color="#6bff8b"
+      />
+    </board>,
+  )
+
+  await circuit.renderUntilSettled()
+
+  expect(circuit.db.source_trace.list()).toHaveLength(2)
+
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
+    width: 1100,
+    height: 800,
+  })
+})

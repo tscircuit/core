@@ -1,3 +1,5 @@
+import { DogboneAutorouter } from "@tscircuit/dogbone-solver"
+import type { SolverEndedEvent } from "lib/events"
 import { BusLanesAutorouter } from "./BusLanesAutorouter"
 import type {
   AutorouterProp,
@@ -19,6 +21,9 @@ import {
 } from "./getPresetAutoroutingConfig"
 
 export interface LocalAutorouterStrategyContext {
+  onSolverEnded?: (
+    event: Omit<SolverEndedEvent, "type" | "componentName">,
+  ) => void
   simpleRouteJson: SimpleRouteJson
   commonAutorouterOptions: AutorouterOptions
   busFanoutDirections?: AutoroutingPhaseProps["busFanoutDirections"]
@@ -34,6 +39,8 @@ export interface LocalAutorouterStrategyContext {
 }
 
 export interface LocalAutorouterStrategy {
+  /** Keep completed copper fixed in subsequent routing stages. */
+  preserveOutputTraces?: boolean
   name: string
   cacheable: boolean
   followUpAutorouter?: AutorouterProp
@@ -110,14 +117,35 @@ const localAutorouterStrategies = new Map<string, LocalAutorouterStrategy>([
   ],
   ["fanout", createFanoutAutorouterStrategy("fanout")],
   [
+    "dogbone",
+    {
+      name: "dogbone",
+      preserveOutputTraces: true,
+      followUpAutorouter: "default",
+      cacheable: false,
+      getSolverName: () => "DogboneFanoutSolver",
+      create: ({
+        simpleRouteJson,
+        fanoutRoutingLayers,
+        onSolverStarted,
+        onSolverEnded,
+      }) => {
+        return new DogboneAutorouter(
+          { input: simpleRouteJson, fanoutRoutingLayers },
+          { onSolverStarted, onSolverEnded },
+        )
+      },
+    },
+  ],
+  [
     "bus_lanes",
     {
       name: "bus_lanes",
       cacheable: false,
-      getSolverName: () => "BusLanesSolver",
+      getSolverName: () => "BusLanesPipelineSolver",
       create: ({ simpleRouteJson, onSolverStarted }) => {
         onSolverStarted?.({
-          solverName: "BusLanesSolver",
+          solverName: "BusLanesPipelineSolver",
           solverParams: simpleRouteJson,
           solverConstructorArgs: [simpleRouteJson],
         })
@@ -146,7 +174,9 @@ export const getLocalAutoroutingStages = (
     },
   ]
 
-  if (strategy.followUpAutorouter) {
+  // A custom algorithm returns final traces and may omit a transformed SRJ.
+  // Only the built-in preset supplies the problem for its follow-up stage.
+  if (strategy.followUpAutorouter && !autorouterConfig.algorithmFn) {
     const followUpAutorouterConfig = getPresetAutoroutingConfig(
       strategy.followUpAutorouter,
       platformConfig,

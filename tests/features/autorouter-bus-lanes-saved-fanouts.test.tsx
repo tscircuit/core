@@ -87,6 +87,7 @@ test("bus_lanes receives exact fixed fanout traces instead of rasterized obstacl
   ).toEqual([-2, 2])
   const json = circuit.getCircuitJson()
   expect(json.filter((e) => e.type === "pcb_trace")).toHaveLength(3)
+  expect(json.filter((e) => e.type === "pcb_via")).toHaveLength(0)
   expect(json.filter((e) => e.type.includes("error"))).toEqual([])
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
