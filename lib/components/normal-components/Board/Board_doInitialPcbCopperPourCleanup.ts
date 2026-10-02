@@ -5,6 +5,7 @@ export const Board_doInitialPcbCopperPourCleanup = (board: Board) => {
   if (!board.root || board.root.pcbDisabled) return
   const { db } = board.root
   if (db.pcb_copper_pour.list().length === 0) return
+  if (board._generatedCopperPourIds.size === 0) return
   const circuitJson = db
     .subtree({ subcircuit_id: board.subcircuit_id })
     .toArray()
@@ -14,10 +15,11 @@ export const Board_doInitialPcbCopperPourCleanup = (board: Board) => {
   // Autorouting error records lack subtree IDs, so read them from the root DB.
   if (db.pcb_autorouting_error.list().length > 0) return
   if (!circuitJson.some((element) => element.type === "pcb_copper_pour")) return
-  const { floatingPourIds, floatingViaIds } = findFloatingCopper(
+  const { floatingPourIds, floatingViaIds } = findFloatingCopper({
     circuitJson,
-    board._generatedStitchingViaIds,
-  )
+    generatedStitchingViaIds: board._generatedStitchingViaIds,
+    removablePourIds: board._generatedCopperPourIds,
+  })
   for (const pourId of floatingPourIds) db.pcb_copper_pour.delete(pourId)
   for (const viaId of floatingViaIds) {
     // Preserve user-authored vias; only cleanup vias created by stitching.
