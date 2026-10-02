@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("net-only pcbPath aborts rendering before a valid manual trace", async () => {
+test("net-only pcbPath reports an error without aborting a valid manual trace", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -19,7 +19,14 @@ test("net-only pcbPath aborts rendering before a valid manual trace", async () =
     </board>,
   )
 
-  expect(() => circuit.render()).toThrow(TypeError)
-  expect(circuit.db.pcb_trace.list()).toHaveLength(0)
+  await circuit.renderUntilSettled()
+
+  expect(circuit.db.source_trace_not_connected_error.list()).toMatchObject([
+    {
+      source_trace_id: circuit.db.source_trace.list()[0].source_trace_id,
+      message: "pcbPath requires a connected port or pcbPathRelativeTo port",
+    },
+  ])
+  expect(circuit.db.pcb_trace.list()).toHaveLength(1)
   await expect(circuit.db.toArray()).toMatchPcbSnapshot(import.meta.path)
 })
