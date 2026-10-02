@@ -18,6 +18,7 @@ test("core runs published bend-zone DRC for emitted pads, vias, backing and trac
             { route_type: "wire", x: 2, y: -2.5, width: 0.2, layer: "top" },
           ]
     ) satisfies PcbTraceRoutePoint[]
+    // Keep routing checks enabled so the manually emitted pcbtrace receives DRC.
     circuit.add(
       <board
         material="flex"
