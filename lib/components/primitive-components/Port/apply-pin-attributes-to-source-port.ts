@@ -79,6 +79,43 @@ export const applyPinAttributesToSourcePort = (
   sourcePortProps: SourcePinAttributes,
   attributes: PinAttributeMap,
 ): void => {
+  if (attributes.isInput !== undefined) {
+    sourcePortProps.is_input = attributes.isInput
+  }
+  if (attributes.isOutput !== undefined) {
+    sourcePortProps.is_output = attributes.isOutput
+  }
+  if (attributes.isBidirectional !== undefined) {
+    sourcePortProps.is_bidirectional = attributes.isBidirectional
+  }
+  if (attributes.isPassive !== undefined) {
+    sourcePortProps.is_passive = attributes.isPassive
+  }
+  if (attributes.canUseTriState !== undefined) {
+    sourcePortProps.can_use_tri_state = attributes.canUseTriState
+  }
+  if (attributes.isUsingTriState !== undefined) {
+    sourcePortProps.is_using_tri_state = attributes.isUsingTriState
+  }
+  if (attributes.canUseOpenCollector !== undefined) {
+    sourcePortProps.can_use_open_collector = attributes.canUseOpenCollector
+  }
+  if (attributes.isUsingOpenCollector !== undefined) {
+    sourcePortProps.is_using_open_collector = attributes.isUsingOpenCollector
+  }
+  if (attributes.canUseOpenEmitter !== undefined) {
+    sourcePortProps.can_use_open_emitter = attributes.canUseOpenEmitter
+  }
+  if (attributes.isUsingOpenEmitter !== undefined) {
+    sourcePortProps.is_using_open_emitter = attributes.isUsingOpenEmitter
+  }
+  if (attributes.isGpio !== undefined) {
+    sourcePortProps.is_gpio = attributes.isGpio
+  }
+  if (attributes.highlightColor !== undefined) {
+    sourcePortProps.highlight_color = attributes.highlightColor
+  }
+
   for (const capability of attributes.capabilities ?? []) {
     setSupportedCapability(sourcePortProps, capability)
   }
