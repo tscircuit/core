@@ -77,6 +77,7 @@ export interface TscircuitElements {
   fabricationnoterect: Props.FabricationNoteRectProps
   pcbbend: Props.PcbBendProps & Attributes
   pcbstiffener: Props.PcbStiffenerProps & Attributes
+  pcbsoldermaskopening: Props.PcbSoldermaskOpeningProps & Attributes
   pcbnoteline: Props.PcbNoteLineProps
   pcbnoterect: Props.PcbNoteRectProps
   pcbnotetext: Props.PcbNoteTextProps
