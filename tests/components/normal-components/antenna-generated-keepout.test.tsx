@@ -59,6 +59,10 @@ test("generated antenna keepout spans every copper layer without blocking its fe
     .find((trace) => !trace.pcb_component_id)
   expect(feedTrace).toBeDefined()
   expect(feedTrace).not.toHaveProperty("is_antenna_trace")
+  expect(feedTrace?.route).toEqual([
+    expect.objectContaining({ route_type: "wire", x: 0, y: -6 }),
+    expect.objectContaining({ route_type: "wire", x: 0, y: 0 }),
+  ])
   expect(
     circuit.db.pcb_trace
       .list()

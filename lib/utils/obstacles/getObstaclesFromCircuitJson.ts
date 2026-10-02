@@ -518,6 +518,16 @@ export const getObstaclesFromCircuitJson = (
         }
       }
     } else if (element.type === "pcb_trace") {
+      // Antenna copper is fixed, but its segment at the feed/ground port is
+      // electrically connected to the route ending there. Keep the copper
+      // obstacle for other nets while allowing that route to reach its port.
+      const antennaPorts =
+        element.is_antenna_trace &&
+        element.route.every((point) => point.route_type === "wire")
+          ? [...pcbPortById.values()].filter(
+              (port) => port.pcb_component_id === element.pcb_component_id,
+            )
+          : []
       const traceObstacles = getObstaclesFromRoute(
         element.route.flatMap((rp) => {
           if (rp.route_type === "through_pad") {
@@ -547,8 +557,23 @@ export const getObstaclesFromCircuitJson = (
         element.source_trace_id ?? element.pcb_trace_id,
       )
       obstacles.push(
-        ...traceObstacles.map((obstacle) => ({
+        ...traceObstacles.map((obstacle, index) => ({
           ...obstacle,
+          connectedTo: withNetId([
+            ...obstacle.connectedTo,
+            ...antennaPorts.flatMap((port) => {
+              const start = element.route[index]
+              const end = element.route[index + 1]
+              return [start, end].some(
+                (point) =>
+                  point?.route_type === "wire" &&
+                  Math.abs(point.x - port.x) < 0.0001 &&
+                  Math.abs(point.y - port.y) < 0.0001,
+              )
+                ? [port.pcb_port_id, port.source_port_id]
+                : []
+            }),
+          ]),
           componentId: pcbComponentId,
         })),
       )
