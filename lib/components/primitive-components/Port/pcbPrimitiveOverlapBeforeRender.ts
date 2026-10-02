@@ -1,24 +1,19 @@
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 
-type PcbPrimitiveBounds = {
-  left: number
-  right: number
-  top: number
-  bottom: number
-}
+type PcbPrimitiveBounds = ReturnType<
+  PrimitiveComponent["_getPcbBoundsBeforeLayout"]
+>
 
+/**
+ * Returns matching bounds in the right-handed board-world PCB frame
+ * (mm, +X right, +Y top, +Z above the board). Each primitive owns its geometry
+ * and the transforms from its local frame into this shared frame.
+ */
 export function getPcbPrimitiveBoundsBeforeRender(
   primitive: PrimitiveComponent,
 ): PcbPrimitiveBounds | null {
   try {
-    const center = primitive._getGlobalPcbPositionBeforeLayout()
-    const size = primitive.getPcbSize()
-    return {
-      left: center.x - size.width / 2,
-      right: center.x + size.width / 2,
-      top: center.y + size.height / 2,
-      bottom: center.y - size.height / 2,
-    }
+    return primitive._getPcbBoundsBeforeLayout()
   } catch {
     return null
   }
