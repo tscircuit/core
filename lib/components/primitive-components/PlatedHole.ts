@@ -234,10 +234,17 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
       } as PcbPlatedHoleOval)
 
       this.pcb_plated_hole_id = pcb_plated_hole.pcb_plated_hole_id
+      const solderPasteGeometry =
+        props.shape === "pill"
+          ? {
+              shape: "rotated_pill" as const,
+              radius: Math.min(props.outerWidth, props.outerHeight) / 2,
+              ccw_rotation: finalRotationDegrees,
+            }
+          : { shape: "oval" as const }
       db.pcb_solder_paste.insert({
         layer: "top",
-        shape: props.shape,
-        // @ts-ignore: no idea why this is triggering
+        ...solderPasteGeometry,
         width: props.outerWidth,
         height: props.outerHeight,
         x: position.x,
@@ -247,8 +254,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
       })
       db.pcb_solder_paste.insert({
         layer: "bottom",
-        shape: props.shape,
-        // @ts-ignore: no idea why this is triggering
+        ...solderPasteGeometry,
         width: props.outerWidth,
         height: props.outerHeight,
         x: position.x,
