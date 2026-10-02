@@ -192,50 +192,84 @@ const getPortDirection = ({
     y: pcbPort.y - pcbComponent.center.y,
   })
 
-const addPinOneWitnesses = ({
+const addOrientationWitness = ({
+  circuit,
+  layer,
+  pcbComponent,
+  matchingPcbPort,
+  modelDirection,
+}: {
+  circuit: RootCircuit
+  layer: "top" | "bottom"
+  pcbComponent: PcbComponent
+  matchingPcbPort: PcbPort
+  modelDirection: Direction
+}) => {
+  const pinDistanceFromCenter = Math.hypot(
+    matchingPcbPort.x - pcbComponent.center.x,
+    matchingPcbPort.y - pcbComponent.center.y,
+  )
+  const arrowTip = {
+    x: pcbComponent.center.x + modelDirection.x * (pinDistanceFromCenter + 1),
+    y: pcbComponent.center.y + modelDirection.y * (pinDistanceFromCenter + 1),
+  }
+  const arrowBack = {
+    x: -modelDirection.x * 0.35,
+    y: -modelDirection.y * 0.35,
+  }
+  const arrowPerpendicular = {
+    x: -modelDirection.y * 0.18,
+    y: modelDirection.x * 0.18,
+  }
+  const insertPath = (route: Array<{ x: number; y: number }>) =>
+    circuit.db.pcb_silkscreen_path.insert({
+      pcb_component_id: pcbComponent.pcb_component_id,
+      layer,
+      route,
+      stroke_width: 0.15,
+    })
+
+  // The ring comes from the emitted PCB pin. The arrow comes independently
+  // from the emitted CAD rotation and the top-calibrated model direction.
+  // Correct output puts the arrowhead in the ring; the bug points it away.
+  circuit.db.pcb_silkscreen_circle.insert({
+    pcb_component_id: pcbComponent.pcb_component_id,
+    layer,
+    center: { x: matchingPcbPort.x, y: matchingPcbPort.y },
+    radius: 0.7,
+    stroke_width: 0.15,
+  })
+  insertPath([pcbComponent.center, arrowTip])
+  insertPath([
+    {
+      x: arrowTip.x + arrowBack.x + arrowPerpendicular.x,
+      y: arrowTip.y + arrowBack.y + arrowPerpendicular.y,
+    },
+    arrowTip,
+    {
+      x: arrowTip.x + arrowBack.x - arrowPerpendicular.x,
+      y: arrowTip.y + arrowBack.y - arrowPerpendicular.y,
+    },
+  ])
+}
+
+const addOrientationWitnessLegend = ({
   circuit,
   layer,
 }: {
   circuit: RootCircuit
   layer: "top" | "bottom"
-}) => {
-  for (const componentName of ["U_3V3", "D_LOGIC_PD", "D_LOGIC_USB"]) {
-    const { pcbComponent, matchingPcbPort } = getOrientationElements({
-      circuit,
-      componentName,
-      matchingPortName: "pin1",
-    })
-    const pinDirection = getPortDirection({
-      pcbComponent,
-      pcbPort: matchingPcbPort,
-    })
-    const labelPosition = {
-      x: matchingPcbPort.x + pinDirection.x * 1.35,
-      y: matchingPcbPort.y + pinDirection.y * 1.35,
-    }
-
-    // These rings and labels are test-only witnesses placed from the emitted
-    // pin-1 coordinates. They make the model marker vs. footprint pin visible
-    // in the snapshots without supplying any expected CAD rotation.
-    circuit.db.pcb_silkscreen_circle.insert({
-      pcb_component_id: pcbComponent.pcb_component_id,
-      layer,
-      center: { x: matchingPcbPort.x, y: matchingPcbPort.y },
-      radius: 0.7,
-      stroke_width: 0.15,
-    })
-    circuit.db.pcb_silkscreen_text.insert({
-      pcb_component_id: pcbComponent.pcb_component_id,
-      layer,
-      font: "tscircuit2024",
-      font_size: 0.45,
-      text: "PIN 1",
-      ccw_rotation: 180,
-      anchor_alignment: "center",
-      anchor_position: labelPosition,
-    })
-  }
-}
+}) =>
+  circuit.db.pcb_silkscreen_text.insert({
+    pcb_component_id: circuit.db.pcb_component.list()[0]!.pcb_component_id,
+    layer,
+    font: "tscircuit2024",
+    font_size: 0.45,
+    text: "RING = PCB PIN 1    ARROW = MODEL PIN 1",
+    ccw_rotation: 180,
+    anchor_alignment: "center",
+    anchor_position: { x: 0, y: -3.25 },
+  })
 
 // Enable this diagnostic test on the unfixed branch to see the real NEMA8
 // models violate the top-side model-to-pin relationship after a bottom flip.
@@ -251,27 +285,6 @@ test.skip("NEMA8 bottom CAD models preserve the top-side model-to-pin alignment"
     topReferenceCircuit.renderUntilSettled(),
     bottomCircuit.renderUntilSettled(),
   ])
-
-  addPinOneWitnesses({ circuit: topReferenceCircuit, layer: "top" })
-  addPinOneWitnesses({ circuit: bottomCircuit, layer: "bottom" })
-
-  const bottomCamera = getBestCameraPosition(bottomCircuit.getCircuitJson(), {
-    preset: "bottom_up",
-    ortho: true,
-    aspectRatio: 1,
-  })
-
-  await expect(topReferenceCircuit).toMatch3dSnapshot(import.meta.path, {
-    cameraPreset: "top_down_orthographic",
-    snapshotSuffix: "top-reference-pin1-marked",
-  })
-  await expect(bottomCircuit).toMatch3dSnapshot(import.meta.path, {
-    camPos: [...bottomCamera.camPos],
-    poppygl: {
-      lookAt: [...bottomCamera.lookAt],
-      fov: bottomCamera.fov,
-    },
-  })
 
   const componentAlignments = [
     { componentName: "U_3V3", matchingPortName: "pin1" },
@@ -299,6 +312,12 @@ test.skip("NEMA8 bottom CAD models preserve the top-side model-to-pin alignment"
         pcbPort: top.matchingPcbPort,
       }),
     })
+    const topModelDirectionTowardMatchingPin = normalizeDirection(
+      getCadModelDirectionOnBoard({
+        cadComponent: top.cadComponent,
+        modelLocalDirection: modelLocalDirectionTowardMatchingPin,
+      }),
+    )
     const bottomModelDirectionTowardMatchingPin = normalizeDirection(
       getCadModelDirectionOnBoard({
         cadComponent: bottom.cadComponent,
@@ -308,6 +327,20 @@ test.skip("NEMA8 bottom CAD models preserve the top-side model-to-pin alignment"
     const bottomMatchingPinDirection = getPortDirection({
       pcbComponent: bottom.pcbComponent,
       pcbPort: bottom.matchingPcbPort,
+    })
+    addOrientationWitness({
+      circuit: topReferenceCircuit,
+      layer: "top",
+      pcbComponent: top.pcbComponent,
+      matchingPcbPort: top.matchingPcbPort,
+      modelDirection: topModelDirectionTowardMatchingPin,
+    })
+    addOrientationWitness({
+      circuit: bottomCircuit,
+      layer: "bottom",
+      pcbComponent: bottom.pcbComponent,
+      matchingPcbPort: bottom.matchingPcbPort,
+      modelDirection: bottomModelDirectionTowardMatchingPin,
     })
     const alignment = Number(
       (
@@ -331,6 +364,27 @@ test.skip("NEMA8 bottom CAD models preserve the top-side model-to-pin alignment"
       ),
       alignment,
     }
+  })
+
+  addOrientationWitnessLegend({ circuit: topReferenceCircuit, layer: "top" })
+  addOrientationWitnessLegend({ circuit: bottomCircuit, layer: "bottom" })
+
+  const bottomCamera = getBestCameraPosition(bottomCircuit.getCircuitJson(), {
+    preset: "bottom_up",
+    ortho: true,
+    aspectRatio: 1,
+  })
+
+  await expect(topReferenceCircuit).toMatch3dSnapshot(import.meta.path, {
+    cameraPreset: "top_down_orthographic",
+    snapshotSuffix: "top-reference-pin1-marked",
+  })
+  await expect(bottomCircuit).toMatch3dSnapshot(import.meta.path, {
+    camPos: [...bottomCamera.camPos],
+    poppygl: {
+      lookAt: [...bottomCamera.lookAt],
+      fov: bottomCamera.fov,
+    },
   })
 
   expect(componentAlignments).toEqual([
