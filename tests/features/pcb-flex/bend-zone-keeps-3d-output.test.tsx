@@ -77,7 +77,15 @@ test("bend-zone CAD and stiffener stay flat while valid CAD and the board fold",
   expect(flatCad.is_on_folded_board).toBeUndefined()
   expect(foldedCad.is_on_folded_board).toBe(true)
   expect(foldedCad.position.z).toBeGreaterThan(6)
-  const errors = circuit.db.pcb_placement_error.list()
+  const diagnostics = circuit.db.pcb_placement_error.list()
+  expect(
+    diagnostics.filter((error) =>
+      error.message.includes("overlaps PCB bend zone"),
+    ),
+  ).toHaveLength(4)
+  const errors = diagnostics.filter((error) =>
+    error.message.includes("CAD mount intersects PCB bend zone"),
+  )
   expect(errors).toHaveLength(1)
   expect(errors[0].message).toContain("CAD mount intersects PCB bend zone")
   expect(circuit.db.pcb_trace.list()[0].route).toEqual(bendZoneRoute)
