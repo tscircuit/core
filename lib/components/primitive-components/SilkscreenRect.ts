@@ -70,6 +70,10 @@ export class SilkscreenRect extends PrimitiveComponent<
       pcb_group_id: this?.getGroup()?.pcb_group_id ?? undefined,
       stroke_width: props.strokeWidth ?? 0.1,
       is_filled: props.filled ?? false,
+      has_stroke:
+        props.stroke === undefined ? undefined : props.stroke !== "none",
+      is_stroke_dashed:
+        props.stroke === undefined ? undefined : props.stroke === "dashed",
       corner_radius: props.cornerRadius ?? undefined,
     })
 
