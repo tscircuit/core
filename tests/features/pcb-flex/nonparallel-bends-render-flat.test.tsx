@@ -86,11 +86,17 @@ test("nonparallel bends report an error and preserve flat PCB, CAD and schematic
   const before = circuit.getCircuitJson()
   await circuit.renderUntilSettled()
   expect(circuit.getCircuitJson()).toEqual(before)
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
+    showBendLines: true,
+  })
   await expect(circuit).toMatch3dSnapshot(import.meta.path, {
     // Ask the exporter to fold even though core correctly left both CAD flags
     // unset; the unsupported board fold must retain all flat geometry.
-    gltf: { foldPcbs: true, boardTextureResolution: 1024 },
+    gltf: {
+      foldPcbs: true,
+      boardTextureResolution: 1024,
+      showErrors: true,
+    },
     diffTolerance: 0.001,
     poppygl: {
       width: 1000,

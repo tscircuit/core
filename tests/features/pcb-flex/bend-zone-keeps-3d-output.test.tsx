@@ -87,7 +87,7 @@ test("bend-zone CAD and stiffener stay flat while valid CAD and the board fold",
   await expect(circuit).toMatch3dSnapshot(import.meta.path, {
     // The exporter infers folding from valid R3's emitted CAD fold flag, while
     // retaining the invalid R1 mount and bend-zone stiffener at their flat pose.
-    gltf: { boardTextureResolution: 1024 },
+    gltf: { boardTextureResolution: 1024, showErrors: true },
     diffTolerance: 0.001,
     poppygl: {
       width: 1000,
