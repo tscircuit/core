@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test"
-import type { PcbCopperPour } from "circuit-json"
+import type { PcbCopperPour, SourceNet } from "circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("pcbcopperpour inserts precomputed copper geometry", async () => {
@@ -7,6 +7,10 @@ test("pcbcopperpour inserts precomputed copper geometry", async () => {
 
   circuit.add(
     <board width="24mm" height="14mm" layers={4}>
+      <net name="TOP_RECT" />
+      <net name="RECT" />
+      <net name="POLYGON" />
+      <net name="BREP" />
       <pcbnotetext
         pcbX={0}
         pcbY={5.5}
@@ -24,7 +28,7 @@ test("pcbcopperpour inserts precomputed copper geometry", async () => {
             <pcbcopperpour
               shape="rect"
               layer="top"
-              sourceNetId="source_net_top_rect"
+              connectsTo="net.TOP_RECT"
               pcbX={1}
               pcbY={0}
               width={3}
@@ -46,7 +50,7 @@ test("pcbcopperpour inserts precomputed copper geometry", async () => {
             <pcbcopperpour
               shape="rect"
               layer="top"
-              sourceNetId="source_net_rect"
+              connectsTo="net.RECT"
               pcbX={0}
               pcbY={7}
               width={3}
@@ -57,7 +61,7 @@ test("pcbcopperpour inserts precomputed copper geometry", async () => {
             <pcbcopperpour
               shape="polygon"
               layer="inner1"
-              sourceNetId="source_net_polygon"
+              connectsTo="net.POLYGON"
               points={[
                 { x: -2, y: 1 },
                 { x: 0, y: 4 },
@@ -67,7 +71,7 @@ test("pcbcopperpour inserts precomputed copper geometry", async () => {
             <pcbcopperpour
               shape="brep"
               layer="top"
-              sourceNetId="source_net_brep"
+              connectsTo="net.BREP"
               brepShape={{
                 outer_ring: {
                   vertices: [
@@ -97,11 +101,13 @@ test("pcbcopperpour inserts precomputed copper geometry", async () => {
 
   await circuit.renderUntilSettled()
 
-  const pcbCopperPours = circuit
-    .getCircuitJson()
-    .filter(
-      (element): element is PcbCopperPour => element.type === "pcb_copper_pour",
-    )
+  const circuitJson = circuit.getCircuitJson()
+  const pcbCopperPours = circuitJson.filter(
+    (element): element is PcbCopperPour => element.type === "pcb_copper_pour",
+  )
+  const sourceNets = circuitJson.filter(
+    (element): element is SourceNet => element.type === "source_net",
+  )
   expect(pcbCopperPours).toHaveLength(4)
   expect(pcbCopperPours.map((pcbCopperPour) => pcbCopperPour.shape)).toEqual([
     "rect",
@@ -118,10 +124,11 @@ test("pcbcopperpour inserts precomputed copper geometry", async () => {
   expect(
     pcbCopperPours.map((pcbCopperPour) => pcbCopperPour.source_net_id),
   ).toEqual([
-    "source_net_top_rect",
-    "source_net_rect",
-    "source_net_polygon",
-    "source_net_brep",
+    sourceNets.find((sourceNet) => sourceNet.name === "TOP_RECT")
+      ?.source_net_id,
+    sourceNets.find((sourceNet) => sourceNet.name === "RECT")?.source_net_id,
+    sourceNets.find((sourceNet) => sourceNet.name === "POLYGON")?.source_net_id,
+    sourceNets.find((sourceNet) => sourceNet.name === "BREP")?.source_net_id,
   ])
 
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
