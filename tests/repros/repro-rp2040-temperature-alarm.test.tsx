@@ -82,9 +82,12 @@ test("Temperature Alarm connects the actual custom buzzer bottom port", async ()
   const { inputProblem } = createSchematicTraceSolverInputProblem(
     circuit.firstChild as Group,
   )
-  const customChips = inputProblem.chips.filter(
-    (chip) => chip.boundsMode === "body",
-  )
+  const customChips = inputProblem.chips.filter((chip) => {
+    const component = circuit.db.schematic_component.get(chip.chipId)!
+    return ["BZ1", "Q_BUZZER"].includes(
+      circuit.db.source_component.get(component.source_component_id!)!.name,
+    )
+  })
   expect(customChips).toHaveLength(2)
   for (const chip of customChips) {
     const schematicComponent = circuit.db.schematic_component.get(chip.chipId)!

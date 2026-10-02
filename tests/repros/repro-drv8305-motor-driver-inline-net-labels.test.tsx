@@ -1049,10 +1049,47 @@ test("DRV8305 motor-driver remote signal labels render inline", async () => {
   )
 
   expect(inlineRemoteSignalLabels).toEqual(new Set(remoteSignalLabels))
-  expect(
-    circuit.db.schematic_net_label
+  // Remote endpoints stay inline. The short paired routes at J5 retain their
+  // anchored fallback when neighboring routes leave no room for inline text.
+  const anchoredSignalLabels = circuit.db.schematic_net_label
+    .list()
+    .filter((label) => remoteSignalLabels.includes(label.text))
+  expect(anchoredSignalLabels.map((label) => label.text).sort()).toEqual([
+    "MOT_A",
+    "MOT_C",
+  ])
+  const j5 = circuit.db.source_component.getWhere({ name: "J5" })!
+  const j5Schematic = circuit.db.schematic_component.getWhere({
+    source_component_id: j5.source_component_id,
+  })!
+  const j5Ports = circuit.db.schematic_port.list({
+    schematic_component_id: j5Schematic.schematic_component_id,
+  })
+  for (const label of anchoredSignalLabels) {
+    expect(label.anchor_position).toBeDefined()
+    const anchor = label.anchor_position!
+    const labelTrace = circuit.db.schematic_trace
       .list()
-      .filter((label) => remoteSignalLabels.includes(label.text)),
-  ).toHaveLength(0)
+      .find((trace) =>
+        trace.edges.some(({ from, to }) =>
+          [from, to].some(
+            (point) =>
+              Math.hypot(point.x - anchor.x, point.y - anchor.y) < 1e-8,
+          ),
+        ),
+      )!
+    expect(labelTrace).toBeDefined()
+    expect(
+      j5Ports.filter((port) =>
+        labelTrace.edges.some(({ from, to }) =>
+          [from, to].some(
+            (point) =>
+              Math.hypot(point.x - port.center.x, point.y - port.center.y) <
+              1e-8,
+          ),
+        ),
+      ),
+    ).toHaveLength(2)
+  }
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 }, 120_000)

@@ -109,7 +109,6 @@ test("chip symbol accepts imported circuit json without mutating the input", asy
   )
   const solver = new SchematicTracePipelineSolver(inputProblem)
   const inputChip = inputProblem.chips[0]!
-  expect(inputChip.boundsMode).toBe("body")
   const normalizedChip = solver.inputProblem.chips[0]!
   expect(normalizedChip.center).toEqual(inputChip.center)
   expect(normalizedChip.width).toBe(inputChip.width)

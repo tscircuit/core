@@ -74,18 +74,18 @@ export function getSchematicTextBounds({
   }
 }
 
-function getSymbolTextBounds({
+export function getSymbolTextBounds({
   schematicComponent,
   sourceComponent,
 }: {
   schematicComponent: SchematicComponent
   sourceComponent: SourceComponentBase | undefined
-}): Bounds[] {
+}): (Bounds & { text: string })[] {
   if (!schematicComponent.symbol_name) return []
   const symbol = (symbols as any)[schematicComponent.symbol_name]
   if (!symbol?.primitives || !symbol.center) return []
 
-  const textBounds: Bounds[] = []
+  const textBounds: (Bounds & { text: string })[] = []
   for (const primitive of symbol.primitives) {
     if (primitive.type !== "text") continue
 
@@ -99,8 +99,8 @@ function getSymbolTextBounds({
     }
     if (!value) continue
 
-    textBounds.push(
-      getSchematicTextBounds({
+    textBounds.push({
+      ...getSchematicTextBounds({
         text: value,
         position: {
           x: primitive.x - symbol.center.x + schematicComponent.center.x,
@@ -109,7 +109,8 @@ function getSymbolTextBounds({
         anchor: primitive.anchor ?? "center",
         fontSize: SYMBOL_TEXT_FONT_SIZE,
       }),
-    )
+      text: value,
+    })
   }
   return textBounds
 }

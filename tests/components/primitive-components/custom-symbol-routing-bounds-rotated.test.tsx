@@ -57,7 +57,6 @@ test("rotated custom symbols retain body bounds and asymmetric external terminal
   expect(solver.inputProblem.chips).toHaveLength(4)
   for (const chip of solver.inputProblem.chips) {
     const schematicComponent = circuit.db.schematic_component.get(chip.chipId)!
-    expect(chip.boundsMode).toBe("body")
     expect(chip.center).toEqual(schematicComponent.center)
     expect(chip.width).toBeCloseTo(schematicComponent.size.width)
     expect(chip.height).toBeCloseTo(schematicComponent.size.height)
@@ -69,6 +68,10 @@ test("rotated custom symbols retain body bounds and asymmetric external terminal
         .flatMap((chip) => chip.pins)
         .find((rawPin) => rawPin.pinId === pin.pinId)!
       expect(pin._facingDirection).toBe(rawPin._facingDirection)
+      const line = circuit.db.schematic_line
+        .list()
+        .find((line) => line.x1 === port.center.x && line.y1 === port.center.y)!
+      expect(pin.stemEnd).toEqual({ x: line.x2, y: line.y2 })
     }
   }
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)

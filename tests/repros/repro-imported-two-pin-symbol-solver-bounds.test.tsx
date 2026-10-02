@@ -143,7 +143,6 @@ test("imported two-pin symbols use body bounds for solver obstacles", async () =
     const chip = inputProblem.chips.find(
       (chip) => chip.chipId === schematicComponent.schematic_component_id,
     )!
-    expect(chip.boundsMode).toBe("body")
     expect(
       solver.inputProblem.chips.find(
         (normalized) => normalized.chipId === chip.chipId,
