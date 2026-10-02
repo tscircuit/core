@@ -75,7 +75,7 @@ export class PcbCopperPour extends PrimitiveComponent<
     const subcircuit = this.getSubcircuit()
     const sourceNetId = props.connectsTo
       ? subcircuit.selectOne<Net>(props.connectsTo)?.source_net_id
-      : props.sourceNetId
+      : undefined
     if (props.connectsTo && !sourceNetId) {
       this.renderError(
         `Net "${props.connectsTo}" not found for precomputed copper pour`,
