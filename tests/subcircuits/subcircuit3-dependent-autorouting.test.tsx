@@ -51,7 +51,10 @@ test("subcircuit3-dependent-autorouting", async () => {
   circuit.on("asyncEffect:end", (event) => {
     asyncEffectEndEvents.push({
       ...event,
-      componentDisplayName: event.componentDisplayName.replace(/#\d+/, "#"),
+      componentDisplayName: event.componentDisplayName.replace(
+        /#\d+(?:\.\d+)*/,
+        "#",
+      ),
     })
   })
 

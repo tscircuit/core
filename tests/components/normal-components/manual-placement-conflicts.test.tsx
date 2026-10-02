@@ -28,6 +28,6 @@ test("component with both manual placement and prop coordinates emits error", ()
   const error = errors[0]
   expect(error.pcb_component_id).toBeDefined()
   expect(error.message).toMatch(
-    /<resistor#\d+ name="\.R1" \/> has both manual placement and prop coordinates\. pcbX and pcbY will be used\. Remove pcbX\/pcbY or clear the manual placement\./,
+    /<resistor#\d+(?:\.\d+)* name="\.R1" \/> has both manual placement and prop coordinates\. pcbX and pcbY will be used\. Remove pcbX\/pcbY or clear the manual placement\./,
   )
 })
