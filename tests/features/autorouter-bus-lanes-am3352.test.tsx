@@ -1,5 +1,8 @@
 import { expect, test } from "bun:test"
-import type { PcbTraceError, PcbTraceWarning } from "circuit-json"
+import type {
+  PcbBusRoutingConstraintError,
+  PcbBusRoutingConstraintWarning,
+} from "circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import {
   measureRoutingQuality,
@@ -18,24 +21,26 @@ test("bus_lanes routes AM3352 DDR3 from original pads without a custom algorithm
     json.filter(
       (e) =>
         e.type.endsWith("_error") &&
-        !(e.type === "pcb_trace_error" && e.routing_rule),
+        e.type !== "pcb_bus_routing_constraint_error",
     ),
   ).toEqual([])
   const constraintFindings = json.filter(
-    (e): e is PcbTraceError | PcbTraceWarning =>
-      (e.type === "pcb_trace_error" || e.type === "pcb_trace_warning") &&
-      Boolean(e.routing_rule),
+    (e): e is PcbBusRoutingConstraintError | PcbBusRoutingConstraintWarning =>
+      e.type === "pcb_bus_routing_constraint_error" ||
+      e.type === "pcb_bus_routing_constraint_warning",
   )
   expect(
     constraintFindings.some(
-      (e) => e.routing_rule === "max_length" && e.type === "pcb_trace_error",
+      (e) =>
+        e.routing_rule === "max_length" &&
+        e.type === "pcb_bus_routing_constraint_error",
     ),
   ).toBe(true)
   expect(
     constraintFindings.some(
       (e) =>
         e.routing_rule === "physical_impedance" &&
-        e.type === "pcb_trace_warning",
+        e.type === "pcb_bus_routing_constraint_warning",
     ),
   ).toBe(true)
   expect(
