@@ -1,5 +1,12 @@
 import { expect, test } from "bun:test"
+import type { PcbTraceRoutePoint } from "circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
+
+// Footprint-local mm: +X right, +Y up, right-handed.
+const diagonalCopper = [
+  { route_type: "wire", x: -2, y: -2, width: 0.2, layer: "top" },
+  { route_type: "wire", x: 2, y: 0, width: 0.2, layer: "top" },
+] satisfies PcbTraceRoutePoint[]
 
 test("diagonal footprint copper aborts external autorouting", async () => {
   const { circuit } = getTestFixture()
@@ -29,13 +36,7 @@ test("diagonal footprint copper aborts external autorouting", async () => {
               height={0.6}
               shape="rect"
             />
-            {/* Footprint-local mm: +X right, +Y up, right-handed. */}
-            <pcbtrace
-              route={[
-                { route_type: "wire", x: -2, y: -2, width: 0.2, layer: "top" },
-                { route_type: "wire", x: 2, y: 0, width: 0.2, layer: "top" },
-              ]}
-            />
+            <pcbtrace route={diagonalCopper} />
           </footprint>
         }
       />
