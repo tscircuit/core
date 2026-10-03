@@ -37,7 +37,7 @@
     "@tscircuit/bga-fanout-solver": "github:tscircuit/bga-fanout-solver#247c835cb8d69b65e53891dcf869731079415b39",
     "@tscircuit/bus-lanes-solver": "https://jscdn.tscircuit.com/@tscircuit/bus-lanes-solver/0.0.9.tgz",
     "@tscircuit/capacity-autorouter": "^0.0.954",
-    "@tscircuit/checks": "https://pkg.pr.new/@tscircuit/checks@bc06d70",
+    "@tscircuit/checks": "https://pkg.pr.new/@tscircuit/checks@148941b",
     "@tscircuit/circuit-json-util": "^0.0.119",
     "@tscircuit/common": "^0.0.20",
     "@tscircuit/copper-pour-solver": "^0.0.67",
