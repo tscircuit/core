@@ -1,92 +1,79 @@
 import { expect, test } from "bun:test"
 import { assembly } from "lib"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
-import { expectAssemblySnapshot } from "./fixtures/expect-assembly-snapshot"
 import { getRenderedMotorBounds } from "./fixtures/get-rendered-motor-bounds"
 import { withLocalNemaMesh } from "./fixtures/with-local-nema-mesh"
+import { expectAssemblySnapshot } from "./fixtures/expect-assembly-snapshot"
 
-test("named wireside rotations aim the emitted mesh for all shaft directions", async () => {
+test("board edges align to named motor directions with explicit face-relative turns", async () => {
   const panels = []
-  // Renderer scene is (-circuit X, circuit Z, circuit Y), mm. These expected
-  // directions are independent of core's Euler implementation. Wire tips
-  // extend 6 mm past the 42.3 mm body; the shaft remains 24 mm long.
-  for (const [
-    shaft,
-    shaftAxis,
-    shaftSign,
-    zeroAxis,
-    zeroSign,
-    quarterAxis,
-    quarterSign,
-  ] of [
-    ["z+", 1, 1, 0, -1, 2, 1],
-    ["z-", 1, -1, 0, -1, 2, 1],
-    ["x+", 0, -1, 2, 1, 1, 1],
-    ["x-", 0, 1, 2, 1, 1, 1],
-    ["y+", 2, 1, 1, 1, 0, -1],
-    ["y-", 2, -1, 1, 1, 0, -1],
+  for (const orientation of [
+    "top_layer_toward_mount_face",
+    "bottom_layer_toward_mount_face",
   ] as const) {
-    for (const angle of [0, 90, 180, 270]) {
-      const { circuit } = getTestFixture()
-      circuit.add(
-        <assembly.device>
-          <assembly.motor
-            name="MOTOR"
-            standard="nema17"
-            shaftFacingDirection={shaft}
-            motorRotation={`calc(wireside+${angle}deg)`}
-          />
-        </assembly.device>,
-      )
-      await circuit.renderUntilSettled()
-      const json = await withLocalNemaMesh(circuit.getCircuitJson())
-      const bounds = await getRenderedMotorBounds(json)
-      const wireAxis = angle % 180 === 0 ? zeroAxis : quarterAxis
-      const wireSign =
-        (angle % 180 === 0 ? zeroSign : quarterSign) * (angle >= 180 ? -1 : 1)
-      expect(
-        wireSign > 0 ? bounds.max[wireAxis] : -bounds.min[wireAxis],
-      ).toBeCloseTo(27.15, 3)
-      expect(
-        wireSign > 0 ? -bounds.min[wireAxis] : bounds.max[wireAxis],
-      ).toBeCloseTo(21.15, 3)
-      expect(
-        shaftSign > 0 ? bounds.max[shaftAxis] : -bounds.min[shaftAxis],
-      ).toBeCloseTo(24, 3)
-      if ((shaft === "z+" || shaft === "z-") && (angle === 0 || angle === 90)) {
-        panels.push({
-          title: `Shaft ${shaft}; wireside ${angle} degrees`,
-          code: `<assembly.device>\n  <assembly.motor\n    name="MOTOR"\n    standard="nema17"\n    shaftFacingDirection="${shaft}"\n    motorRotation=\n      "calc(wireside+${angle}deg)"\n  />\n</assembly.device>`,
-          annotation: `Wire exit points toward assembly ${angle === 0 ? "+X" : "+Y"}, for either shaft direction.`,
-          circuit: json,
-          renderOptions: {
-            camPos: [-100, 80, 100] as [number, number, number],
-            poppygl: { lookAt: [0, -10, 0] as [number, number, number] },
-          },
-        })
+    for (const [anchor, angle] of [
+      ["rightedge", 0],
+      ["topedge", 90],
+      ["leftedge", 180],
+      ["bottomedge", 270],
+    ] as const) {
+      for (const expression of [
+        "MOTOR.wireside",
+        "calc(MOTOR.wireside+90degcw)",
+        "calc(MOTOR.wireside-90degccw)",
+      ]) {
+        const { circuit } = getTestFixture()
+        circuit.add(
+          <assembly.device>
+            <assembly.motor name="MOTOR" model="nema17_wireangle90deg" />
+            <board
+              width={42}
+              height={42}
+              mountedTo="MOTOR.backface"
+              mountGap={6}
+              mountRotationAnchor={anchor}
+              mountRotation={expression}
+              mountOrientation={orientation}
+              routingDisabled
+            />
+          </assembly.device>,
+        )
+        await circuit.renderUntilSettled()
+        const sign = orientation === "top_layer_toward_mount_face" ? 1 : -1
+        const wireAngle =
+          (angle - (expression === "MOTOR.wireside" ? 0 : sign * 90) + 360) %
+          360
+        const axis = wireAngle % 180 === 0 ? 0 : 2
+        const wireSign = (wireAngle >= 180 ? -1 : 1) * (axis === 0 ? -1 : 1)
+        const json = await withLocalNemaMesh(circuit.getCircuitJson(), 90)
+        const bounds = await getRenderedMotorBounds(json)
+        expect(wireSign > 0 ? bounds.max[axis] : -bounds.min[axis]).toBeCloseTo(
+          27.15,
+          3,
+        )
+        expect(wireSign > 0 ? -bounds.min[axis] : bounds.max[axis]).toBeCloseTo(
+          21.15,
+          3,
+        )
+        if (anchor === "topedge" && expression === "MOTOR.wireside")
+          panels.push({
+            title: `topedge; ${orientation}`,
+            code: `<assembly.device>\n  <assembly.motor name="MOTOR"\n    model="nema17_wireangle90deg" />\n  <board width={42} height={42}\n    mountedTo="MOTOR.backface"\n    mountRotationAnchor="topedge"\n    mountRotation="MOTOR.wireside"\n    mountOrientation="${orientation}"\n  />\n</assembly.device>`,
+            annotation:
+              "The top edge points toward the actual wire exit, including a custom native wire angle.",
+            circuit: json,
+            renderOptions: {
+              camPos: [-100, sign * 80, 100] as [number, number, number],
+              poppygl: {
+                lookAt: [0, sign * 20, 0] as [number, number, number],
+              },
+            },
+          })
       }
     }
   }
-  // Different native wire orientation must give the same requested result.
-  const { circuit } = getTestFixture()
-  circuit.add(
-    <assembly.device>
-      <assembly.motor
-        name="CUSTOM"
-        model="nema17_wireangle90deg"
-        motorRotation="calc(wireside+90deg)"
-      />
-    </assembly.device>,
-  )
-  await circuit.renderUntilSettled()
-  const bounds = await getRenderedMotorBounds(
-    await withLocalNemaMesh(circuit.getCircuitJson(), 90),
-  )
-  expect(bounds.max[2]).toBeCloseTo(27.15, 3)
-  expect(bounds.max[0]).toBeCloseTo(21.15, 3)
   await expectAssemblySnapshot(import.meta.path, {
-    title: "NEMA17 named wire direction / shaft orientation is independent",
-    columns: 2,
+    title: "NEMA17 edge alignment",
     panels,
   })
 }, 60000)

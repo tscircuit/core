@@ -2,6 +2,11 @@ import { normalizeDegrees } from "@tscircuit/math-utils"
 import { mat4, vec3 } from "gl-matrix"
 import type { AssemblyMotor } from "./AssemblyMotor"
 import type { AssemblyPlacement } from "./resolve-assembly-placement"
+import {
+  matchesAssemblyIdentity,
+  resolveMotorMountedBoard,
+} from "./resolve-board-motor-mount"
+import { resolveBoardMountRotationAnchor } from "./resolve-board-mount-rotation-anchor"
 
 const radians = (degrees: number) => (degrees * Math.PI) / 180
 const degrees = (angle: number) => normalizeDegrees((angle * 180) / Math.PI)
@@ -27,19 +32,18 @@ const shaftRotation = (
   }
 }
 
-/** Resolve shaft clocking against spec directions, preserving legacy zero-spin
- * placement. Named references aim into the assembly's shaft plane: XY for ±Z,
- * YZ for ±X, ZX for ±Y. Positive angles advance X->Y, Y->Z, Z->X respectively,
- * independent of shaft sign. A mounted board supplies its emitted local +X axis.
- * Numeric angles are right-handed around motor-local +Z before shaft alignment.
+/** Motor-local -> circuit-world directions, right-handed +Z above.
+ * Board-owned alignment clocks the motor relative to finalized PCB geometry.
+ * Angles are degrees; clockwise is viewed looking at the mounting face.
  */
 export const resolveAssemblyMotorRotation = (
   motor: AssemblyMotor,
   placement: AssemblyPlacement,
 ) => {
   const alignment = shaftRotation(motor._parsedProps.shaftFacingDirection)
-  const input = motor._parsedProps.motorRotation
-  if (input === 0) return alignment
+  const board = resolveMotorMountedBoard(motor)
+  const input = board?._parsedProps.mountRotation
+  if (!board || !input) return alignment
   const bottom = placement.layer === "bottom"
   const sign = bottom ? -1 : 1
   // Paired with 3d-viewer getBaseCadRotation and THREE.Euler(..., "XYZ"):
@@ -52,52 +56,52 @@ export const resolveAssemblyMotorRotation = (
     radians(alignment.y + (bottom ? 180 : 0)),
   )
   mat4.rotateZ(orientation, orientation, radians(sign * placement.pcbRotation))
-  let spin: number
-  if (typeof input === "number") spin = radians(input)
-  else {
-    const expression = input.match(
-      /^(?:calc\(\s*)?(wireside|shaftflat)\s*(?:([+-])\s*([+-]?(?:\d+(?:\.\d*)?|\.\d+))\s*deg)?\s*\)?$/,
-    )!
-    const referenceName = expression[1] as "wireside" | "shaftflat"
-    const reference = motor.motorReferencePoints[referenceName]
-    if (!reference)
-      throw new Error(
-        `assembly.motor "${motor.name}" has no ${referenceName} reference (a round shaft has no shaftflat)`,
-      )
-    const targetAngle = radians(
-      (expression[2] === "-" ? -1 : 1) * Number(expression[3] ?? 0),
+  const expression = input.startsWith("calc(")
+    ? input.match(
+        /^calc\(\s*(.*?)\s*(?:([+-])\s*((?:\d+(?:\.\d*)?|\.\d+))\s*(degcw|degccw))?\s*\)$/,
+      )!
+    : [input, input]
+  const path = expression[1]!
+  const separator = path.lastIndexOf(".")
+  const motorIdentity = path.slice(0, separator)
+  const directionName = path.slice(separator + 1)
+  if (!matchesAssemblyIdentity(motor, motorIdentity))
+    throw new Error(
+      `board "${board.name}" mountRotation "${input}" must reference its mounted motor "${motor.name}"`,
     )
-    const axisName = motor._parsedProps.shaftFacingDirection[0]
-    const zero: vec3 =
-      axisName === "z"
-        ? [
-            Math.cos(radians(placement.pcbRotation)),
-            Math.sin(radians(placement.pcbRotation)),
-            0,
-          ]
-        : axisName === "x"
-          ? [0, 1, 0]
-          : [0, 0, 1]
-    const positiveAxis: vec3 =
-      axisName === "z" ? [0, 0, 1] : axisName === "x" ? [1, 0, 0] : [0, 1, 0]
-    const quarterTurn = vec3.cross(vec3.create(), positiveAxis, zero)
-    const target = vec3.scaleAndAdd(
-      vec3.create(),
-      vec3.scale(vec3.create(), zero, Math.cos(targetAngle)),
-      quarterTurn,
-      Math.sin(targetAngle),
+  const direction = Object.entries(motor.motorReferencePoints).find(
+    ([name]) => name === directionName,
+  )?.[1]
+  if (!direction)
+    throw new Error(
+      `assembly.motor "${motor.name}" has no ${directionName} reference`,
     )
-    const wireDirection = vec3.transformMat4(
-      vec3.create(),
-      [reference.direction.x, reference.direction.y, reference.direction.z],
-      orientation,
+  if (Math.abs(direction.direction.z) > 1e-6)
+    throw new Error(
+      `board "${board.name}" mountRotation "${input}" must reference a direction in the mounting face, e.g. "${motorIdentity}.wireside"`,
     )
-    const shaft = vec3.transformMat4(vec3.create(), [0, 0, 1], orientation)
-    spin = Math.atan2(
-      vec3.dot(shaft, vec3.cross(vec3.create(), wireDirection, target)),
-      vec3.dot(wireDirection, target),
-    )
-  }
+  const clockwiseAngle = radians(
+    (expression[2] === "-" ? -1 : 1) *
+      Number(expression[3] ?? 0) *
+      (expression[4] === "degccw" ? -1 : 1),
+  )
+  const anchor = vec3.normalize(
+    vec3.create(),
+    resolveBoardMountRotationAnchor(board),
+  )
+  const shaft = vec3.transformMat4(vec3.create(), [0, 0, 1], orientation)
+  // Backface normal is -shaft: clockwise looking at it is positive about shaft.
+  const turn = mat4.fromRotation(mat4.create(), -clockwiseAngle, shaft)
+  const target = vec3.transformMat4(vec3.create(), anchor, turn)
+  const motorDirection = vec3.transformMat4(
+    vec3.create(),
+    [direction.direction.x, direction.direction.y, direction.direction.z],
+    orientation,
+  )
+  const spin = Math.atan2(
+    vec3.dot(shaft, vec3.cross(vec3.create(), motorDirection, target)),
+    vec3.dot(motorDirection, target),
+  )
   // Spin about the local shaft before orienting it in the circuit frame.
   mat4.rotateZ(orientation, orientation, spin)
   // Extract intrinsic XYZ, matching THREE.Euler's default order.
