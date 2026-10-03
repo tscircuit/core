@@ -52,7 +52,7 @@ test("runs routing DRC for a standalone subcircuit", async () => {
 
   expect(circuit.db.pcb_trace_error.list()).toHaveLength(1)
   expect(circuit.db.pcb_trace_error.list()[0]?.message).toContain(
-    "overlaps with trace",
+    "overlaps with .R_BOTTOM > .pin2 to .R_TOP > .pin1",
   )
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
