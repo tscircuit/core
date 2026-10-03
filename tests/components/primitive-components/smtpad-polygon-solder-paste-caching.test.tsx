@@ -39,6 +39,16 @@ test("cached polygon pads preserve paste geometry and mask coverage", async () =
                     points={points.map(({ x, y }) => ({ x: x + 4, y }))}
                     coveredWithSolderMask
                   />
+                  <smtpad
+                    shape="polygon"
+                    portHints={["pin3"]}
+                    points={[
+                      { x: -0.2, y: 3 },
+                      { x: 0.2, y: 3 },
+                      { x: 0, y: 3.4 },
+                    ]}
+                    solderPasteMargin={-0.3}
+                  />
                 </footprint>
               }
             />
@@ -46,7 +56,7 @@ test("cached polygon pads preserve paste geometry and mask coverage", async () =
         )),
       )}
       <pcbnotetext
-        text="Cached polygon pads: zero-margin paste and covered contact"
+        text="Cached polygons: zero margin, mask-covered and eroded paste"
         pcbY={13.5}
         fontSize={0.4}
       />
@@ -56,7 +66,7 @@ test("cached polygon pads preserve paste geometry and mask coverage", async () =
   expect(circuit.cachedSubcircuits!.size).toBe(2)
   const pads = circuit.db.pcb_smtpad.list()
   const apertures = circuit.db.pcb_solder_paste.list()
-  expect(pads).toHaveLength(16)
+  expect(pads).toHaveLength(24)
   expect(apertures).toHaveLength(8)
   for (const pad of pads) {
     if (pad.shape !== "polygon") throw new Error("Expected polygon pad")
@@ -65,6 +75,11 @@ test("cached polygon pads preserve paste geometry and mask coverage", async () =
     )
     if (pad.port_hints?.includes("pin2")) {
       expect(pad.is_covered_with_solder_mask).toBe(true)
+      expect(paste).toHaveLength(0)
+      continue
+    }
+    if (pad.port_hints?.includes("pin3")) {
+      expect(pad.is_covered_with_solder_mask).toBe(false)
       expect(paste).toHaveLength(0)
       continue
     }

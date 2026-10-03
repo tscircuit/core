@@ -30,7 +30,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
    * right-handed +Z above). Contour points receive the pad's placement transform.
    * An empty array preserves a footprint that has no paste apertures.
    */
-  _inflatedPcbSolderPaste: PcbSolderPastePolygon[] | undefined
+  _inflatedPcbSolderPaste?: PcbSolderPastePolygon[]
 
   isPcbPrimitive = true
 

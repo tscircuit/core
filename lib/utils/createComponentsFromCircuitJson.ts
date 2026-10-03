@@ -122,6 +122,7 @@ export const createComponentsFromCircuitJson = (
     footprinterString,
     pinLabels,
     pcbPinLabels,
+    preserveSolderPaste,
   }: {
     sourcePortOwner?: NormalComponent
     componentName: string
@@ -129,6 +130,8 @@ export const createComponentsFromCircuitJson = (
     footprinterString?: string
     pinLabels?: PinLabelsProp
     pcbPinLabels?: PinLabelsProp
+    /** Preserve rendered paste, including a footprint with no apertures. */
+    preserveSolderPaste?: boolean
   },
   circuitJson: AnyCircuitElement[],
 ): PrimitiveComponent[] => {
@@ -384,12 +387,15 @@ export const createComponentsFromCircuitJson = (
         coveredWithSolderMask: elm.is_covered_with_solder_mask,
         solderMaskMargin: elm.soldermask_margin,
       })
-      smtpad._inflatedPcbSolderPaste = circuitJson.filter(
+      const polygonPaste = circuitJson.filter(
         (paste): paste is PcbSolderPastePolygon =>
           paste.type === "pcb_solder_paste" &&
           paste.shape === "polygon" &&
           paste.pcb_smtpad_id === elm.pcb_smtpad_id,
       )
+      if (preserveSolderPaste || polygonPaste.length > 0) {
+        smtpad._inflatedPcbSolderPaste = polygonPaste
+      }
       components.push(smtpad)
     } else if (elm.type === "pcb_silkscreen_path") {
       components.push(
