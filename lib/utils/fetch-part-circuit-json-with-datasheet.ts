@@ -1,7 +1,7 @@
 import type { PartsEngine } from "@tscircuit/props"
 import type { NormalComponent } from "lib/components/base-components/NormalComponent"
 
-/** Optional request extension understood by parts-engine 0.0.36 and ignored by older engines. */
+/** Optional request extension understood by parts-engine 0.0.36. */
 export type DatasheetPartCircuitJsonRequest = Parameters<
   NonNullable<PartsEngine["fetchPartCircuitJson"]>
 >[0] & { includeDatasheetInformation?: boolean }
@@ -19,10 +19,13 @@ export const fetchPartCircuitJsonWithDatasheet = async (
   },
   sourcePortOwner: NormalComponent,
 ) => {
-  const request: DatasheetPartCircuitJsonRequest = {
+  const legacyRequest = {
     supplierPartNumber,
     manufacturerPartNumber,
     platformFetch: sourcePortOwner.root?.platform?.platformFetch,
+  }
+  const request: DatasheetPartCircuitJsonRequest = {
+    ...legacyRequest,
     includeDatasheetInformation: true,
   }
   try {
@@ -32,7 +35,17 @@ export const fetchPartCircuitJsonWithDatasheet = async (
       ...request,
       includeDatasheetInformation: false,
     }
-    const circuitJson = await fetchPartCircuitJson(fallbackRequest)
+    let circuitJson: Awaited<ReturnType<typeof fetchPartCircuitJson>>
+    let usedLegacyRequest = false
+    try {
+      circuitJson = await fetchPartCircuitJson(fallbackRequest)
+    } catch {
+      // Strict legacy engines reject the new option even when it is false.
+      // Keep the explicit false attempt first for engines that enable
+      // datasheet enrichment by default in their constructor.
+      circuitJson = await fetchPartCircuitJson(legacyRequest)
+      usedLegacyRequest = true
+    }
     if (!circuitJson?.length) throw error
     const manufacturerPartNumbers = circuitJson.flatMap((element) =>
       element.type === "source_component" && element.manufacturer_part_number
@@ -49,7 +62,12 @@ export const fetchPartCircuitJsonWithDatasheet = async (
       )
     )
       throw error
-    const message = `Datasheet information for ${sourcePortOwner.getString()} could not be fetched: ${error instanceof Error ? error.message : String(error)}. Pin attributes may not be populated.`
+    const reason = usedLegacyRequest
+      ? "the parts engine only accepted a request without the datasheet option"
+      : error instanceof Error
+        ? error.message
+        : String(error)
+    const message = `Datasheet information for ${sourcePortOwner.getDisplayName()} could not be fetched: ${reason}. Pin attributes may not be populated.`
     if (sourcePortOwner.source_component_id && sourcePortOwner.root) {
       sourcePortOwner.root.db.source_property_ignored_warning.insert({
         source_component_id: sourcePortOwner.source_component_id,
