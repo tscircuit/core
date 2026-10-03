@@ -9,6 +9,7 @@ const passiveFtypes = new Set([
 export const NormalComponent_doInitialMissingManufacturerPartNumberWarning = (
   component: NormalComponent,
 ): void => {
+  if (component.props.doNotPlace) return
   const { db } = component.root!
   if (!component.source_component_id) return
   const sourceComponent = db.source_component.get(component.source_component_id)
