@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import type { DatasheetPartCircuitJsonRequest } from "lib/utils/fetch-part-circuit-json-with-datasheet"
 import type { PartsEngine } from "@tscircuit/props"
 import type { AnyCircuitElement } from "circuit-json"
 import external0402Footprint from "tests/fixtures/assets/external-0402-footprint.json"
@@ -11,7 +12,7 @@ test("datasheet timeout preserves the supplier footprint and emits one pin attri
     findPart: async () => ({}),
     fetchPartCircuitJson: async ({
       includeDatasheetInformation,
-    }: { includeDatasheetInformation?: boolean }) => {
+    }: DatasheetPartCircuitJsonRequest) => {
       includeOptions.push(includeDatasheetInformation)
       if (includeDatasheetInformation)
         throw new Error("Datasheet API did not respond within 5 seconds")

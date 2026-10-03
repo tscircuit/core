@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import type { DatasheetPartCircuitJsonRequest } from "lib/utils/fetch-part-circuit-json-with-datasheet"
 import type { PartsEngine } from "@tscircuit/props"
 import { Chip } from "lib/components/normal-components/Chip"
 import { fetchPartCircuitJsonWithDatasheet } from "lib/utils/fetch-part-circuit-json-with-datasheet"
@@ -8,7 +9,7 @@ test("fallback enrichment failures cannot silently substitute a different regula
     PartsEngine["fetchPartCircuitJson"]
   > = async ({
     includeDatasheetInformation,
-  }: { includeDatasheetInformation?: boolean }) => {
+  }: DatasheetPartCircuitJsonRequest) => {
     if (includeDatasheetInformation)
       throw new Error("imported part is AP2112K-1.8TRG1")
     return [

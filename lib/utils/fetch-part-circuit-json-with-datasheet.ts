@@ -1,6 +1,11 @@
 import type { PartsEngine } from "@tscircuit/props"
 import type { NormalComponent } from "lib/components/base-components/NormalComponent"
 
+/** Optional request extension understood by parts-engine 0.0.36 and ignored by older engines. */
+export type DatasheetPartCircuitJsonRequest = Parameters<
+  NonNullable<PartsEngine["fetchPartCircuitJson"]>
+>[0] & { includeDatasheetInformation?: boolean }
+
 /** Optional enrichment must not discard an otherwise available footprint. */
 export const fetchPartCircuitJsonWithDatasheet = async (
   {
@@ -14,7 +19,7 @@ export const fetchPartCircuitJsonWithDatasheet = async (
   },
   sourcePortOwner: NormalComponent,
 ) => {
-  const request = {
+  const request: DatasheetPartCircuitJsonRequest = {
     supplierPartNumber,
     manufacturerPartNumber,
     platformFetch: sourcePortOwner.root?.platform?.platformFetch,
@@ -23,10 +28,11 @@ export const fetchPartCircuitJsonWithDatasheet = async (
   try {
     return await fetchPartCircuitJson(request)
   } catch (error) {
-    const circuitJson = await fetchPartCircuitJson({
+    const fallbackRequest: DatasheetPartCircuitJsonRequest = {
       ...request,
       includeDatasheetInformation: false,
-    })
+    }
+    const circuitJson = await fetchPartCircuitJson(fallbackRequest)
     if (!circuitJson?.length) throw error
     const manufacturerPartNumbers = circuitJson.flatMap((element) =>
       element.type === "source_component" && element.manufacturer_part_number
