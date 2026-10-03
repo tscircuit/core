@@ -11,7 +11,30 @@ test("bus_lanes routes AM3352 DDR3 from original pads without a custom algorithm
   circuit.add(<Board />)
   await circuit.renderUntilSettled()
   const json = circuit.getCircuitJson()
-  expect(json.filter((e) => e.type.endsWith("_error"))).toEqual([])
+  // Native copper/connectivity DRC is distinct from the opt-in TI audit.
+  // Existing routes are fully connected, but not certified DDR hardware.
+  expect(
+    json.filter(
+      (e) => e.type.endsWith("_error") && e.type !== "pcb_ddr_routing_error",
+    ),
+  ).toEqual([])
+  const ddrFindings = json.filter((e) => e.type === "pcb_ddr_routing_error")
+  expect(
+    ddrFindings.some(
+      (e) =>
+        e.rule === "command_clock_nominal_length" && e.status === "violation",
+    ),
+  ).toBe(true)
+  expect(
+    ddrFindings.some(
+      (e) => e.rule === "impedance" && e.status === "unverified",
+    ),
+  ).toBe(true)
+  expect(
+    ddrFindings.some(
+      (e) => e.rule === "route_geometry" || e.rule === "interface_completeness",
+    ),
+  ).toBe(false)
   expect(json.filter((e) => e.type === "source_trace")).toHaveLength(47)
   expect(json.filter((e) => e.type === "pcb_trace")).toHaveLength(47)
   const traces = json.filter((e) => e.type === "pcb_trace")
@@ -36,6 +59,7 @@ test("bus_lanes routes AM3352 DDR3 from original pads without a custom algorithm
       .map((e) => e.name)
       .sort(),
   ).toEqual([
+    "DDR_ADDR_CTRL",
     "DDR_BYTE0",
     "DDR_BYTE1",
     "DDR_CK_PAIR",
@@ -59,7 +83,9 @@ test("bus_lanes routes AM3352 DDR3 from original pads without a custom algorithm
     540,
   )
   expect(scores.reduce((n, s) => n + s.shortJogs, 0)).toBeLessThanOrEqual(145)
-  for (const bus of json.filter((e) => e.type === "source_bus")) {
+  for (const bus of json.filter(
+    (e) => e.type === "source_bus" && e.max_length_skew !== undefined,
+  )) {
     const lengths = bus.source_trace_ids.map(
       (id) => scores.find((s) => s.sourceTraceId === id)!.planarLength,
     )
@@ -88,7 +114,8 @@ test("bus_lanes routes AM3352 DDR3 from original pads without a custom algorithm
     expect(gaps.max).toBeLessThanOrEqual(0.155)
   }
   // Signal layers are explicit: the top layer contains only local dogbones.
-  // Write snapshots only after every connectivity, DRC, and quality gate passes.
+  // Write only fully routed snapshots after native copper/connectivity and
+  // quality gates pass. TI findings above explicitly prevent DDR sign-off.
   for (const layer of ["inner1", "inner2", "bottom"] as const)
     await expect(circuit).toMatchPcbSnapshot(
       import.meta.path.replace(".test.tsx", `-${layer}.test.tsx`),
