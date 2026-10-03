@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("repro: labels outside custom symbol bodies have no component owner", async () => {
+test("labels outside custom symbol bodies belong to their actual component", async () => {
   const { circuit } = getTestFixture()
   circuit.pcbDisabled = true
   const labeledSymbol = (
@@ -36,8 +36,23 @@ test("repro: labels outside custom symbol bodies have no component owner", async
     "U2",
   ])
   for (const referenceText of referenceTexts) {
-    expect(referenceText.schematic_component_id).toBeUndefined()
+    const sourceChip = circuit.db.source_component
+      .list()
+      .find((sourceChip) => sourceChip.name === referenceText.text)!
+    const schematicChip = circuit.db.schematic_component
+      .list()
+      .find(
+        (schematicChip) =>
+          schematicChip.source_component_id === sourceChip.source_component_id,
+      )!
+    expect(referenceText.schematic_component_id).toBe(
+      schematicChip.schematic_component_id,
+    )
   }
+  const boardNote = circuit.db.schematic_text
+    .list()
+    .find((schematicText) => schematicText.text.startsWith("U1/U2"))!
+  expect(boardNote.schematic_component_id).toBeUndefined()
   const missingReferenceWarnings =
     circuit.db.schematic_component_styling_warning
       .list()
@@ -45,6 +60,7 @@ test("repro: labels outside custom symbol bodies have no component owner", async
         (warning) =>
           warning.styling_issue_type === "missing_reference_designator_text",
       )
-  expect(missingReferenceWarnings).toHaveLength(3)
+  expect(missingReferenceWarnings).toHaveLength(1)
+  expect(missingReferenceWarnings[0].message).toStartWith("U3 is missing")
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
