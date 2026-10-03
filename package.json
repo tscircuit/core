@@ -38,7 +38,7 @@
     "@tscircuit/bus-lanes-solver": "https://jscdn.tscircuit.com/@tscircuit/bus-lanes-solver/0.0.15.tgz",
     "@tscircuit/capacity-autorouter": "^0.0.954",
     "@tscircuit/checks": "^0.0.237",
-    "@tscircuit/circuit-json-util": "^0.0.118",
+    "@tscircuit/circuit-json-util": "^0.0.119",
     "@tscircuit/common": "^0.0.20",
     "@tscircuit/copper-pour-solver": "^0.0.67",
     "@tscircuit/create-fdm-enclosure": "0.0.4",
@@ -56,9 +56,9 @@
     "@tscircuit/matchpack": "^0.0.97",
     "@tscircuit/math-utils": "^0.0.36",
     "@tscircuit/miniflex": "^0.0.4",
-    "@tscircuit/modelprinter": "^0.0.5",
+    "@tscircuit/modelprinter": "^0.0.6",
     "@tscircuit/ngspice-spice-engine": "^0.0.20",
-    "@tscircuit/props": "^0.0.682",
+    "@tscircuit/props": "^0.0.684",
     "@tscircuit/schematic-match-adapt": "^0.0.18",
     "@tscircuit/schematic-trace-solver": "https://jscdn.tscircuit.com/@tscircuit/schematic-trace-solver/0.0.224.tgz",
     "@tscircuit/solver-utils": "^0.0.16",
@@ -74,10 +74,10 @@
     "bun-match-svg": "0.0.12",
     "calculate-elbow": "^0.0.12",
     "chokidar-cli": "^3.0.0",
-    "circuit-json": "^0.0.511",
+    "circuit-json": "^0.0.514",
     "circuit-json-to-bpc": "^0.0.13",
     "circuit-json-to-connectivity-map": "^0.0.33",
-    "circuit-json-to-gltf": "^0.0.141",
+    "circuit-json-to-gltf": "^0.0.142",
     "circuit-json-to-spice": "^0.0.45",
     "circuit-to-svg": "^0.0.438",
     "concurrently": "^9.1.2",
@@ -129,6 +129,7 @@
     "calculate-packing": "^0.0.90",
     "css-select": "5.1.0",
     "format-si-unit": "^0.0.12",
+    "gl-matrix": "^3.4.4",
     "nanoid": "^5.0.7",
     "performance-now": "^2.1.0",
     "react-reconciler": "^0.32.0",
@@ -137,8 +138,8 @@
     "zod": "^3.25.67"
   },
   "overrides": {
-    "@tscircuit/circuit-json-util": "^0.0.118",
-    "@tscircuit/props": "^0.0.682",
-    "circuit-json": "^0.0.511"
+    "@tscircuit/circuit-json-util": "^0.0.119",
+    "@tscircuit/props": "^0.0.684",
+    "circuit-json": "^0.0.514"
   }
 }
