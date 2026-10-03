@@ -1,4 +1,5 @@
 import { smtPadProps } from "@tscircuit/props"
+import { getBoundsFromPoints } from "@tscircuit/math-utils"
 import {
   distance,
   type LayerRef,
@@ -70,6 +71,29 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
     throw new Error(
       `getPcbSize for shape "${(props as any).shape}" not implemented for ${this.componentName}`,
     )
+  }
+
+  /**
+   * Polygon vertices are pad-local points in mm (+X right, +Y top). Return
+   * their axis-aligned bounds in the right-handed board-world PCB frame.
+   */
+  _getPcbBoundsBeforeLayout() {
+    const { _parsedProps: props } = this
+    if (props.shape !== "polygon") return super._getPcbBoundsBeforeLayout()
+
+    // Same paired transform as doInitialPcbPrimitiveRender: a polygon's
+    // authored origin need not be the center of its vertices.
+    const padToBoardTransform = this._computePcbGlobalTransformBeforeLayout()
+    const boardPoints = props.points.map((point) =>
+      applyToPoint(padToBoardTransform, point),
+    )
+    const bounds = getBoundsFromPoints(boardPoints)!
+    return {
+      left: bounds.minX,
+      right: bounds.maxX,
+      top: bounds.maxY,
+      bottom: bounds.minY,
+    }
   }
 
   doInitialPortMatching(): void {
