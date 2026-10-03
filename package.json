@@ -38,7 +38,7 @@
     "@tscircuit/bus-lanes-solver": "https://jscdn.tscircuit.com/@tscircuit/bus-lanes-solver/0.0.15.tgz",
     "@tscircuit/capacity-autorouter": "^0.0.954",
     "@tscircuit/checks": "^0.0.236",
-    "@tscircuit/circuit-json-util": "^0.0.118",
+    "@tscircuit/circuit-json-util": "^0.0.119",
     "@tscircuit/common": "^0.0.20",
     "@tscircuit/copper-pour-solver": "^0.0.67",
     "@tscircuit/create-fdm-enclosure": "0.0.4",
@@ -54,6 +54,7 @@
     "@tscircuit/krt-wasm": "^0.1.1",
     "@tscircuit/log-soup": "^1.0.2",
     "@tscircuit/matchpack": "^0.0.97",
+    "@tscircuit/manifold-2d": "^0.0.6",
     "@tscircuit/math-utils": "^0.0.36",
     "@tscircuit/miniflex": "^0.0.4",
     "@tscircuit/modelprinter": "^0.0.5",
@@ -74,12 +75,12 @@
     "bun-match-svg": "0.0.12",
     "calculate-elbow": "^0.0.12",
     "chokidar-cli": "^3.0.0",
-    "circuit-json": "^0.0.511",
+    "circuit-json": "^0.0.513",
     "circuit-json-to-bpc": "^0.0.13",
     "circuit-json-to-connectivity-map": "^0.0.33",
     "circuit-json-to-gltf": "^0.0.141",
     "circuit-json-to-spice": "^0.0.45",
-    "circuit-to-svg": "^0.0.438",
+    "circuit-to-svg": "^0.0.440",
     "concurrently": "^9.1.2",
     "connectivity-map": "^1.0.1",
     "debug": "^4.3.6",
@@ -108,6 +109,7 @@
     "@tscircuit/create-fdm-enclosure": "*",
     "@tscircuit/footprinter": "*",
     "@tscircuit/infgrid-ijump-astar": "*",
+    "@tscircuit/manifold-2d": "*",
     "@tscircuit/math-utils": "*",
     "@tscircuit/modelprinter": "*",
     "@tscircuit/props": "*",
@@ -137,8 +139,8 @@
     "zod": "^3.25.67"
   },
   "overrides": {
-    "@tscircuit/circuit-json-util": "^0.0.118",
+    "@tscircuit/circuit-json-util": "^0.0.119",
     "@tscircuit/props": "^0.0.682",
-    "circuit-json": "^0.0.511"
+    "circuit-json": "^0.0.513"
   }
 }

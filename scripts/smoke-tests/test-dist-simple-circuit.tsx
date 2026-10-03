@@ -1,6 +1,8 @@
 // @ts-ignore
 import { RootCircuit } from "../../dist"
 import React from "react"
+import { strict as assert } from "node:assert"
+import { pcb_solder_paste, type AnyCircuitElement } from "circuit-json"
 
 const circuit = new RootCircuit()
 
@@ -93,6 +95,33 @@ if (!Array.isArray(circuitJson) || circuitJson.length === 0) {
 }
 
 if (checksPassed) {
+  const polygonCircuit = new RootCircuit()
+  polygonCircuit.add(
+    <board width={8} height={8}>
+      <smtpad
+        shape="polygon"
+        layer="bottom"
+        solderPasteMargin={0}
+        portHints={[]}
+        points={[
+          { x: -1, y: -1 },
+          { x: 1, y: -1 },
+          { x: 1, y: 1 },
+          { x: -1, y: 0 },
+        ]}
+      />
+    </board>,
+  )
+  await polygonCircuit.renderUntilSettled()
+  const polygonCircuitJson: AnyCircuitElement[] =
+    polygonCircuit.getCircuitJson()
+  const paste = polygonCircuitJson.filter(
+    (elm) => elm.type === "pcb_solder_paste",
+  )
+  assert.equal(paste.length, 1)
+  assert.equal(paste[0]!.shape, "polygon")
+  assert.equal(paste[0]!.layer, "bottom")
+  pcb_solder_paste.parse(paste[0])
   console.log("\nSmoke test passed: Basic circuit JSON validation successful!")
   process.exit(0)
 } else {
