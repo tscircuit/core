@@ -14,6 +14,7 @@ test("flex geometry uses the final center of an autosized board", async () => {
         bendAngle={0}
         bendRadius={1}
         bendSide="right"
+        tearReliefRadius={0.25}
       />
       <pcbstiffener
         shape="rect"
@@ -38,6 +39,10 @@ test("flex geometry uses the final center of an autosized board", async () => {
   expect(bend.start.y + board.center.y).toBeCloseTo(6)
   expect(bend.end.x + board.center.x).toBeCloseTo(10)
   expect(bend.end.y + board.center.y).toBeCloseTo(10)
+  expect(circuit.db.pcb_cutout.list()).toMatchObject([
+    { shape: "circle", radius: 0.25, center: { x: 10, y: 6 } },
+    { shape: "circle", radius: 0.25, center: { x: 10, y: 10 } },
+  ])
   if (stiffener.shape !== "rect")
     throw new Error("Expected rectangular stiffener")
   expect(stiffener.center.x + board.center.x).toBeCloseTo(12)
