@@ -45,7 +45,7 @@ test("board edges align to named motor directions with explicit face-relative tu
           360
         const axis = wireAngle % 180 === 0 ? 0 : 2
         const wireSign = (wireAngle >= 180 ? -1 : 1) * (axis === 0 ? -1 : 1)
-        const json = await withLocalNemaMesh(circuit.getCircuitJson(), 90)
+        const json = await withLocalNemaMesh(circuit.getCircuitJson())
         const bounds = await getRenderedMotorBounds(json)
         expect(wireSign > 0 ? bounds.max[axis] : -bounds.min[axis]).toBeCloseTo(
           27.15,
