@@ -1,4 +1,4 @@
-import { mosfetProps } from "@tscircuit/props"
+import { mosfetProps, resolveManufacturerPartNumber } from "@tscircuit/props"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import type { BaseSymbolName } from "lib/utils/constants"
 import { getMosfetSchematicSymbolName } from "./get-mosfet-schematic-symbol-name"
@@ -20,7 +20,7 @@ export class Mosfet extends NormalComponent<typeof mosfetProps> {
     const source_component = db.source_component.insert({
       ftype: "simple_mosfet",
       name: this.name,
-      manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
+      manufacturer_part_number: resolveManufacturerPartNumber(props),
       supplier_part_numbers: props.supplierPartNumbers,
       mosfet_mode: props.mosfetMode,
       channel_type: props.channelType,

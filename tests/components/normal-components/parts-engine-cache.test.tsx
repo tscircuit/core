@@ -30,6 +30,9 @@ test("parts engine uses local cache when available", async () => {
   circuit1.add(createBoard(partsEngine))
   await circuit1.renderUntilSettled()
   expect(calls).toBe(1)
+  expect(
+    circuit1.db.source_missing_manufacturer_part_number_warning.list(),
+  ).toHaveLength(0)
 
   const partsEngine2 = {
     findPart: async () => {
@@ -42,4 +45,7 @@ test("parts engine uses local cache when available", async () => {
   await circuit2.renderUntilSettled()
 
   expect(calls).toBe(1)
+  expect(
+    circuit2.db.source_missing_manufacturer_part_number_warning.list(),
+  ).toHaveLength(0)
 })

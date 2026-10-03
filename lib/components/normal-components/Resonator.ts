@@ -1,4 +1,4 @@
-import { resonatorProps } from "@tscircuit/props"
+import { resonatorProps, resolveManufacturerPartNumber } from "@tscircuit/props"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import type { BaseSymbolName } from "lib/utils/constants"
 import { formatSiUnit } from "format-si-unit"
@@ -34,7 +34,7 @@ export class Resonator extends NormalComponent<typeof resonatorProps> {
     const source_component = db.source_component.insert({
       ftype: "simple_resonator",
       name: this.name,
-      manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
+      manufacturer_part_number: resolveManufacturerPartNumber(props),
       frequency: props.frequency,
       load_capacitance: props.loadCapacitance,
       supplier_part_numbers: props.supplierPartNumbers,

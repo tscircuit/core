@@ -1,4 +1,7 @@
-import { voltageSourceProps } from "@tscircuit/props"
+import {
+  voltageSourceProps,
+  resolveManufacturerPartNumber,
+} from "@tscircuit/props"
 import type { SimulationVoltageSource } from "circuit-json"
 import { formatSiUnit } from "format-si-unit"
 import { type BaseSymbolName, type Ftype } from "lib/utils/constants"
@@ -92,7 +95,7 @@ export class VoltageSource extends NormalComponent<
       pulse_width: props.pulseWidth,
       period: props.period,
       supplier_part_numbers: props.supplierPartNumbers,
-      manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
+      manufacturer_part_number: resolveManufacturerPartNumber(props),
       are_pins_interchangeable: true,
       display_name: props.displayName,
     } as any)

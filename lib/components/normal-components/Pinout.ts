@@ -1,4 +1,4 @@
-import { pinoutProps } from "@tscircuit/props"
+import { pinoutProps, resolveManufacturerPartNumber } from "@tscircuit/props"
 import { Chip } from "./Chip"
 import type { z } from "zod"
 
@@ -22,7 +22,7 @@ export class Pinout<PinLabels extends string = never> extends Chip<PinLabels> {
     const source_component = db.source_component.insert({
       ftype: "simple_pinout",
       name: this.name,
-      manufacturer_part_number: props.manufacturerPartNumber,
+      manufacturer_part_number: resolveManufacturerPartNumber(props),
       supplier_part_numbers: props.supplierPartNumbers,
       display_name: props.displayName,
     })

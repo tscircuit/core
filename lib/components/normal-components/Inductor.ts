@@ -1,4 +1,4 @@
-import { inductorProps } from "@tscircuit/props"
+import { inductorProps, resolveManufacturerPartNumber } from "@tscircuit/props"
 import {
   FTYPE,
   type BaseSymbolName,
@@ -51,7 +51,7 @@ export class Inductor extends NormalComponent<
           : parseAndConvertSiUnit(props.maxCurrentRating, "A").value,
       display_inductance: this._getSchematicSymbolDisplayValue(),
       supplier_part_numbers: props.supplierPartNumbers,
-      manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
+      manufacturer_part_number: resolveManufacturerPartNumber(props),
       are_pins_interchangeable: true,
       display_name: props.displayName,
     } as Omit<SourceSimpleInductor, "source_component_id" | "type">)

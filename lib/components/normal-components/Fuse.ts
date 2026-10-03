@@ -1,4 +1,4 @@
-import { fuseProps } from "@tscircuit/props"
+import { fuseProps, resolveManufacturerPartNumber } from "@tscircuit/props"
 import {
   FTYPE,
   type BaseSymbolName,
@@ -52,7 +52,7 @@ export class Fuse extends NormalComponent<typeof fuseProps, PassivePorts> {
     const source_component = db.source_component.insert({
       name: this.name,
       ftype: FTYPE.simple_fuse,
-      manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
+      manufacturer_part_number: resolveManufacturerPartNumber(props),
       supplier_part_numbers: props.supplierPartNumbers,
       ...(currentRating != null ? { current_rating_amps: currentRating } : {}),
       ...(voltageRating != null ? { voltage_rating_volts: voltageRating } : {}),

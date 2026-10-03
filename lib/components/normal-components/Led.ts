@@ -1,5 +1,5 @@
 import { symbols } from "schematic-symbols"
-import { ledProps } from "@tscircuit/props"
+import { ledProps, resolveManufacturerPartNumber } from "@tscircuit/props"
 import type {
   BaseSymbolName,
   Ftype,
@@ -87,7 +87,7 @@ export class Led extends NormalComponent<
       wave_length: props.wavelength,
       color: props.color,
       symbol_display_value: this._getSchematicSymbolDisplayValue(),
-      manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
+      manufacturer_part_number: resolveManufacturerPartNumber(props),
       supplier_part_numbers: props.supplierPartNumbers,
       are_pins_interchangeable: false,
       display_name: props.displayName,

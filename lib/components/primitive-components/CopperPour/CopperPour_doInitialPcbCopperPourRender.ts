@@ -69,6 +69,9 @@ const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
       const clearance = props.clearance ?? 0.2
       return {
         layer: props.layer,
+        crosshatch: props.crosshatch,
+        crosshatchPitch: props.crosshatchPitch,
+        crosshatchWidth: props.crosshatchWidth,
         subcircuit_id: subcircuit.subcircuit_id ?? undefined,
         source_net_id: sourceNetId,
         pad_margin: props.padMargin ?? clearance,

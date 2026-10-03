@@ -1,4 +1,7 @@
-import { transistorProps } from "@tscircuit/props"
+import {
+  transistorProps,
+  resolveManufacturerPartNumber,
+} from "@tscircuit/props"
 import {
   type BaseSymbolName,
   type Ftype,
@@ -84,7 +87,7 @@ export class Transistor extends NormalComponent<
     const source_component = db.source_component.insert({
       ftype: "simple_transistor",
       name: this.name,
-      manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
+      manufacturer_part_number: resolveManufacturerPartNumber(props),
       supplier_part_numbers: props.supplierPartNumbers,
       transistor_type: props.type,
       display_name: props.displayName,
