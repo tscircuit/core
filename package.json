@@ -32,7 +32,7 @@
   "devDependencies": {
     "@biomejs/biome": "^1.8.3",
     "@resvg/resvg-js": "^2.6.2",
-    "@tsci/tscircuit.ti": "github:tscircuit/ti#2c1047f",
+    "@tsci/tscircuit.ti": "github:tscircuit/ti#b5755744de2c02aeeb4bd02cfe932737787007a0",
     "@tscircuit/alphabet": "0.0.25",
     "@tscircuit/bga-fanout-solver": "github:tscircuit/bga-fanout-solver#247c835cb8d69b65e53891dcf869731079415b39",
     "@tscircuit/bus-lanes-solver": "https://jscdn.tscircuit.com/@tscircuit/bus-lanes-solver/0.0.9.tgz",
