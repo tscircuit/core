@@ -232,3 +232,12 @@ Enclosure and board faces avoid the ambiguity entirely by naming the axis:
   functions for derived, normalized, or default values without modifying the
   user input.
 - Do not add a ton of instance methods to classes, especially large classes like NormalComponent
+
+## User-facing diagnostic messages
+
+NEVER use IDs in error, warning, or other user-facing messages. Use only readable
+names (component reference designators, pin names, net names, and named geometry).
+Use an honest label such as "unnamed component" when no name is available; NEVER
+fall back to an ID or append one in parentheses/brackets. Keep IDs in structured
+diagnostic reference fields only. Do not forward raw dependency error messages
+that contain IDs; format their typed reason using readable circuit names.
