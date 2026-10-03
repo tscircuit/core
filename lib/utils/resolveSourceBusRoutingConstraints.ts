@@ -1,5 +1,4 @@
 import type {
-  SourceBus,
   SourceBusRouteLength,
   SourceBusTraceSpacing,
   SourceTrace,
