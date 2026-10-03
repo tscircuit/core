@@ -54,7 +54,7 @@ test("column-major BGA balls retain their pin identity and voltage requirements"
     expect(sourcePort.port_hints).toContain(ball)
     expect(sourcePort.requires_ground).toBe(pin === 1 ? true : undefined)
     expect(sourcePort.requires_power).toBe(pin === 2 ? true : undefined)
-    expect(sourcePort.requires_voltage).toBe(pin === 2 ? "1.8V" : undefined)
+    expect(sourcePort.requires_voltage).toBe(pin === 2 ? 1.8 : undefined)
     const pcbPort = circuit.db.pcb_port
       .list()
       .find((port) => port.source_port_id === sourcePort.source_port_id)!
