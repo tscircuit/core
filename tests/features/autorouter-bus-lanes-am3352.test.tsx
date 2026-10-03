@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import type { PcbTraceError, PcbTraceWarning } from "circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import {
   measureRoutingQuality,
@@ -21,9 +22,9 @@ test("bus_lanes routes AM3352 DDR3 from original pads without a custom algorithm
     ),
   ).toEqual([])
   const constraintFindings = json.filter(
-    (e) =>
+    (e): e is PcbTraceError | PcbTraceWarning =>
       (e.type === "pcb_trace_error" || e.type === "pcb_trace_warning") &&
-      e.routing_rule,
+      Boolean(e.routing_rule),
   )
   expect(
     constraintFindings.some(
