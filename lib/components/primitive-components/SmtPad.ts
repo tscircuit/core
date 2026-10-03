@@ -1,5 +1,6 @@
 import { smtPadProps } from "@tscircuit/props"
 import { getBoundsFromPoints } from "@tscircuit/math-utils"
+import { transformPCBElements } from "@tscircuit/circuit-json-util"
 import {
   distance,
   type LayerRef,
@@ -11,7 +12,7 @@ import {
   type PcbSmtPadPill,
   type PcbSmtPadRotatedPill,
 } from "circuit-json"
-import { applyToPoint, decomposeTSR } from "transformation-matrix"
+import { applyToPoint, decomposeTSR, translate } from "transformation-matrix"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import type { Port } from "./Port"
 import { selectPortForPcbPrimitive } from "./Port/selectPortForPcbPrimitive"
@@ -316,16 +317,13 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
           pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
         } as PcbSmtPadRotatedRect)
     } else if (props.shape === "polygon") {
-      const transformedPoints = props.points.map((point) => {
-        const transformed = applyToPoint(globalTransform, {
-          x: distance.parse(point.x),
-          y: distance.parse(point.y),
-        })
-        return {
-          x: transformed.x,
-          y: transformed.y,
-        }
-      })
+      const localPoints = props.points.map((point) => ({
+        x: distance.parse(point.x),
+        y: distance.parse(point.y),
+      }))
+      const transformedPoints = localPoints.map((point) =>
+        applyToPoint(globalTransform, point),
+      )
 
       pcb_smtpad = db.pcb_smtpad.insert({
         pcb_component_id,
@@ -340,10 +338,6 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
       } as PcbSmtPadPolygon) as PcbSmtPadPolygon
       if (shouldCreateSolderPaste) {
-        const localPoints = props.points.map((point) => ({
-          x: distance.parse(point.x),
-          y: distance.parse(point.y),
-        }))
         const pasteContours = getPolygonSolderPasteContours({
           points: localPoints,
           solderPasteMargin,
@@ -618,29 +612,10 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
     ) {
       this._setPositionFromLayout({ x: pad.x + deltaX, y: pad.y + deltaY })
     } else if (pad.shape === "polygon") {
-      db.pcb_smtpad.update(this.pcb_smtpad_id, {
-        points: pad.points.map((p) => ({
-          x: p.x + deltaX,
-          y: p.y + deltaY,
-        })),
-      })
-
-      for (const paste of db.pcb_solder_paste.list()) {
-        if (
-          paste.pcb_smtpad_id !== this.pcb_smtpad_id ||
-          paste.shape !== "polygon"
-        )
-          continue
-        db.pcb_solder_paste.update(paste.pcb_solder_paste_id, {
-          points: paste.points.map((point) => ({
-            x: point.x + deltaX,
-            y: point.y + deltaY,
-          })),
-          holes: paste.holes?.map((hole) =>
-            hole.map((point) => ({ x: point.x + deltaX, y: point.y + deltaY })),
-          ),
-        })
-      }
+      const solderPaste = db.pcb_solder_paste
+        .list()
+        .filter((paste) => paste.pcb_smtpad_id === this.pcb_smtpad_id)
+      transformPCBElements([pad, ...solderPaste], translate(deltaX, deltaY))
       const newCenter = this._getPcbCircuitJsonBounds().center
       this.matchedPort?._setPositionFromLayout(newCenter)
     }

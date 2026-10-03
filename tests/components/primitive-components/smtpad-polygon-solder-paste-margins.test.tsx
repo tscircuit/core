@@ -40,6 +40,17 @@ test("polygon paste applies margins and omits covered or fully eroded pads", () 
   circuit.render()
   const paste = circuit.db.pcb_solder_paste.list()
   expect(paste).toHaveLength(4)
+  const coveredPad = circuit.db.pcb_smtpad
+    .list()
+    .find((pad) => pad.port_hints?.includes("pin6"))!
+  expect(coveredPad.shape).toBe("polygon")
+  expect(coveredPad.is_covered_with_solder_mask).toBe(true)
+  expect(
+    paste.some(
+      (aperture) => aperture.pcb_smtpad_id === coveredPad.pcb_smtpad_id,
+    ),
+  ).toBe(false)
+
   for (const [index, width] of [2.8, 4, 3.6, 4.4].entries()) {
     const aperture = paste[index]!
     if (aperture.shape !== "polygon") throw new Error("Expected polygon paste")

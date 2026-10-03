@@ -1,3 +1,4 @@
+import { getBoundsFromPoints } from "@tscircuit/math-utils"
 import ClipperLib from "clipper-lib"
 import type { PcbSolderPastePolygon, Point } from "circuit-json"
 import { applyToPoint, compose, scale, translate } from "transformation-matrix"
@@ -31,14 +32,9 @@ export function getPolygonSolderPasteContours({
     )
     offset.Execute(pasteTree, solderPasteMargin * COORDINATE_SCALE)
   } else {
-    const centerX =
-      (Math.min(...points.map((p) => p.x)) +
-        Math.max(...points.map((p) => p.x))) /
-      2
-    const centerY =
-      (Math.min(...points.map((p) => p.y)) +
-        Math.max(...points.map((p) => p.y))) /
-      2
+    const bounds = getBoundsFromPoints(points)!
+    const centerX = (bounds.minX + bounds.maxX) / 2
+    const centerY = (bounds.minY + bounds.maxY) / 2
     const pasteTransform = compose(
       translate(centerX, centerY),
       scale(0.7),
