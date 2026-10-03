@@ -133,7 +133,7 @@ test("chip pinAttributes are copied onto source_port records", async () => {
     is_using_open_emitter: false,
     is_gpio: false,
     highlight_color: "",
-    requires_voltage: "-5V",
+    requires_voltage: -5,
     recommended_decoupling_capacitor_capacitance: "100nF",
   })
   expect(getPort("NC")?.is_input).toBeUndefined()
