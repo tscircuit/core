@@ -1,5 +1,5 @@
 import { symbols } from "schematic-symbols"
-import { diodeProps } from "@tscircuit/props"
+import { diodeProps, resolveManufacturerPartNumber } from "@tscircuit/props"
 import type { SourceSimpleDiodeInput } from "circuit-json"
 import {
   type BaseSymbolName,
@@ -90,7 +90,7 @@ export class Diode extends NormalComponent<
     const source_component = db.source_component.insert({
       ftype: "simple_diode",
       name: this.name,
-      manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
+      manufacturer_part_number: resolveManufacturerPartNumber(props),
       supplier_part_numbers: props.supplierPartNumbers,
       are_pins_interchangeable: false,
       display_name: props.displayName,

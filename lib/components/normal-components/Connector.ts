@@ -5,6 +5,7 @@ import {
   type SchematicPinStyle,
   type SchematicPortArrangement,
   connectorProps,
+  resolveManufacturerPartNumber,
 } from "@tscircuit/props"
 import type { AnyCircuitElement, SourceSimpleConnector } from "circuit-json"
 import { source_part_not_found_warning } from "circuit-json"
@@ -141,10 +142,9 @@ export class Connector<
       message: `Failed to fetch circuit JSON for ${this.getString()} (standard="${standard}"): ${message}`,
       source_component_id: this.source_component_id ?? undefined,
       subcircuit_id: this.getSubcircuit()?.subcircuit_id ?? undefined,
-      manufacturer_part_number:
-        this._getConnectorProps().manufacturerPartNumber ??
-        this._getConnectorProps().mfn ??
-        undefined,
+      manufacturer_part_number: resolveManufacturerPartNumber(
+        this._getConnectorProps(),
+      ),
       part_name: this.name,
     })
     db.source_part_not_found_warning.insert(warning)
@@ -362,7 +362,7 @@ export class Connector<
   doInitialSourceRender(): void {
     const { db } = this.root!
     const props = this._getConnectorProps()
-    const manufacturerPartNumber = props.manufacturerPartNumber ?? props.mfn
+    const manufacturerPartNumber = resolveManufacturerPartNumber(props)
 
     const source_component = db.source_component.insert({
       ftype: "simple_connector",
@@ -375,16 +375,6 @@ export class Connector<
     } as SourceSimpleConnector)
 
     this.source_component_id = source_component.source_component_id!
-
-    if (props.standard && !manufacturerPartNumber) {
-      db.source_missing_manufacturer_part_number_warning.insert({
-        source_component_id: this.source_component_id,
-        standard: props.standard,
-        subcircuit_id: this.getSubcircuit()?.subcircuit_id ?? undefined,
-        warning_type: "source_missing_manufacturer_part_number_warning",
-        message: `${this.getString()} has standard="${props.standard}" but no manufacturerPartNumber (mfn). Add mfn if you do not want the connector part to change in future.`,
-      })
-    }
   }
 
   private _isUsingStandardPartsEngineCircuitJsonFlow() {
@@ -422,7 +412,7 @@ export class Connector<
       type: "source_component",
       ftype: "simple_connector",
       name: this.name,
-      manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
+      manufacturer_part_number: resolveManufacturerPartNumber(props),
       standard,
       pin_count: props.pinCount,
     }

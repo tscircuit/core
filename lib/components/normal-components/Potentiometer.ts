@@ -1,4 +1,7 @@
-import { potentiometerProps } from "@tscircuit/props"
+import {
+  potentiometerProps,
+  resolveManufacturerPartNumber,
+} from "@tscircuit/props"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import type { BaseSymbolName } from "lib/utils/constants"
 import { formatSiUnit } from "format-si-unit"
@@ -37,7 +40,7 @@ export class Potentiometer extends NormalComponent<typeof potentiometerProps> {
     const source_component = db.source_component.insert({
       ftype: "simple_potentiometer",
       name: this.name,
-      manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
+      manufacturer_part_number: resolveManufacturerPartNumber(props),
       supplier_part_numbers: props.supplierPartNumbers,
       max_resistance: props.maxResistance,
       pin_variant: pinVariant,

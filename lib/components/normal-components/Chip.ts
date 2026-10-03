@@ -1,5 +1,5 @@
 import { normalizeDegrees } from "@tscircuit/math-utils"
-import { chipProps } from "@tscircuit/props"
+import { chipProps, resolveManufacturerPartNumber } from "@tscircuit/props"
 import { pcb_component_invalid_layer_error } from "circuit-json"
 import { NormalComponent } from "lib/components/base-components/NormalComponent"
 import { Port } from "lib/components/primitive-components/Port"
@@ -73,7 +73,7 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
     const source_component = db.source_component.insert({
       ftype: "simple_chip",
       name: this.name,
-      manufacturer_part_number: props.manufacturerPartNumber,
+      manufacturer_part_number: resolveManufacturerPartNumber(props),
       supplier_part_numbers: props.supplierPartNumbers,
       display_name: props.displayName,
     })

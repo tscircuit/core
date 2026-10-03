@@ -1,4 +1,8 @@
-import { type OpAmpPinLabels, opampProps } from "@tscircuit/props"
+import {
+  type OpAmpPinLabels,
+  opampProps,
+  resolveManufacturerPartNumber,
+} from "@tscircuit/props"
 import type { SimulationOpAmp, SourceSimpleOpAmp } from "circuit-json"
 import { type BaseSymbolName, type Ftype } from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
@@ -67,7 +71,7 @@ export class OpAmp extends NormalComponent<typeof opampProps, OpAmpPinLabels> {
       ftype: "simple_op_amp",
       name: this.name,
       supplier_part_numbers: props.supplierPartNumbers,
-      manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
+      manufacturer_part_number: resolveManufacturerPartNumber(props),
       display_name: props.displayName,
     } as Omit<SourceSimpleOpAmp, "source_component_id" | "type">)
 

@@ -46,6 +46,9 @@ test("connector with standard='usb_c' fetches circuit json from parts engine", a
   expect(sourceComponent!.supplier_part_numbers).toEqual({
     jlcpcb: ["C165948"],
   })
+  expect(
+    circuit.db.source_missing_manufacturer_part_number_warning.list(),
+  ).toHaveLength(0)
   expect((sourceComponent as any).standard).toBe("usb_c")
 
   const sourcePorts = circuit.db.source_port

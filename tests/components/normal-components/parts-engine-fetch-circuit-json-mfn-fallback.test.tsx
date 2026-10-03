@@ -8,7 +8,7 @@ import usbCC2765186CircuitJson from "tests/fixtures/assets/usb-c-C2765186.circui
  * When findPart returns no supplier part numbers, core falls back to calling
  * fetchPartCircuitJson with the manufacturerPartNumber directly.
  */
-test("connector usb_c falls back to manufacturerPartNumber when findPart returns no supplier parts", async () => {
+test("connector usb_c resolves mpn for manufacturerPartNumber fallback when findPart returns no supplier parts", async () => {
   const { circuit } = getTestFixture()
 
   const mockPartsEngine: PartsEngine = {
@@ -32,11 +32,7 @@ test("connector usb_c falls back to manufacturerPartNumber when findPart returns
 
   circuit.add(
     <board partsEngine={mockPartsEngine} width="20mm" height="20mm">
-      <connector
-        name="USB1"
-        standard="usb_c"
-        manufacturerPartNumber="USB4135-GF-A"
-      />
+      <connector name="USB1" standard="usb_c" mpn="USB4135-GF-A" />
     </board>,
   )
 
@@ -47,6 +43,10 @@ test("connector usb_c falls back to manufacturerPartNumber when findPart returns
     .find((c: any) => c.name === "USB1")
   expect(sourceComponent).toBeTruthy()
   expect((sourceComponent as any).standard).toBe("usb_c")
+  expect(sourceComponent!.manufacturer_part_number).toBe("USB4135-GF-A")
+  expect(
+    circuit.db.source_missing_manufacturer_part_number_warning.list(),
+  ).toHaveLength(0)
 
   const sourcePorts = circuit.db.source_port
     .list()
