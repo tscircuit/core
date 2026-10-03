@@ -62,6 +62,7 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
       // Check if rotation is specified to determine pill type
       if (props.pcbRotation && props.pcbRotation !== 0) {
         const inserted_hole = db.pcb_hole.insert({
+          name: props.name,
           pcb_component_id,
           type: "pcb_hole",
           hole_shape: "rotated_pill",
@@ -74,10 +75,11 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
           is_covered_with_solder_mask: isCoveredWithSolderMask,
           subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
           pcb_group_id: subcircuit?.getGroup()?.pcb_group_id ?? undefined,
-        } as PcbHoleRotatedPill)
+        } as any as PcbHoleRotatedPill)
         this.pcb_hole_id = inserted_hole.pcb_hole_id!
       } else {
         const inserted_hole = db.pcb_hole.insert({
+          name: props.name,
           pcb_component_id,
           type: "pcb_hole",
           hole_shape: "pill",
@@ -89,11 +91,12 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
           is_covered_with_solder_mask: isCoveredWithSolderMask,
           subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
           pcb_group_id: subcircuit?.getGroup()?.pcb_group_id ?? undefined,
-        } as PcbHolePill)
+        } as any as PcbHolePill)
         this.pcb_hole_id = inserted_hole.pcb_hole_id!
       }
     } else if (props.shape === "oval") {
       const inserted_hole = db.pcb_hole.insert({
+        name: props.name,
         pcb_component_id,
         type: "pcb_hole",
         hole_shape: "oval",
@@ -105,11 +108,12 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
         is_covered_with_solder_mask: isCoveredWithSolderMask,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: subcircuit?.getGroup()?.pcb_group_id ?? undefined,
-      } as PCBHole)
+      } as any as PCBHole)
       this.pcb_hole_id = inserted_hole.pcb_hole_id!
     } else if (props.shape === "rect") {
       // Rect shape
       const inserted_hole = db.pcb_hole.insert({
+        name: props.name,
         pcb_component_id,
         type: "pcb_hole",
         hole_shape: "rect",
@@ -121,11 +125,12 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
         is_covered_with_solder_mask: isCoveredWithSolderMask,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: subcircuit?.getGroup()?.pcb_group_id ?? undefined,
-      } as PcbHoleRect)
+      } as any as PcbHoleRect)
       this.pcb_hole_id = inserted_hole.pcb_hole_id!
     } else {
       // Circle shape (default)
       const inserted_hole = db.pcb_hole.insert({
+        name: props.name,
         pcb_component_id,
         type: "pcb_hole",
         hole_shape: "circle",
@@ -136,7 +141,7 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
         is_covered_with_solder_mask: isCoveredWithSolderMask,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: subcircuit?.getGroup()?.pcb_group_id ?? undefined,
-      } as PcbHoleCircle)
+      } as any as PcbHoleCircle)
       this.pcb_hole_id = inserted_hole.pcb_hole_id!
     }
   }
