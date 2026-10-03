@@ -1,4 +1,6 @@
 import { expect, test } from "bun:test"
+import { getBoundsFromPoints } from "@tscircuit/math-utils"
+import { any_circuit_element } from "circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("repro66: polygon pads pcb pack support", async () => {
@@ -97,5 +99,29 @@ test("repro66: polygon pads pcb pack support", async () => {
 
   const circuitJson = circuit.getCircuitJson()
 
-  expect(circuitJson).toMatchPcbSnapshot(import.meta.path)
+  const polygonPads = circuit.db.pcb_smtpad
+    .list()
+    .filter((pad) => pad.shape === "polygon")
+  expect(polygonPads).toHaveLength(4)
+  for (const pad of polygonPads) {
+    const paste = circuit.db.pcb_solder_paste
+      .list()
+      .find((paste) => paste.pcb_smtpad_id === pad.pcb_smtpad_id)!
+    expect(paste.shape).toBe("polygon")
+    if (paste.shape !== "polygon") throw new Error("Expected polygon paste")
+    const copperBounds = getBoundsFromPoints(pad.points)!
+    const pasteBounds = getBoundsFromPoints(paste.points)!
+    expect(pasteBounds.minX).toBeGreaterThanOrEqual(copperBounds.minX)
+    expect(pasteBounds.maxX).toBeLessThanOrEqual(copperBounds.maxX)
+    expect(pasteBounds.minY).toBeGreaterThanOrEqual(copperBounds.minY)
+    expect(pasteBounds.maxY).toBeLessThanOrEqual(copperBounds.maxY)
+    for (const polygon of [pad, paste]) {
+      expect(polygon).not.toHaveProperty("x")
+      expect(polygon).not.toHaveProperty("y")
+      expect(any_circuit_element.safeParse(polygon).success).toBe(true)
+    }
+  }
+  expect(circuitJson).toMatchPcbSnapshot(import.meta.path, {
+    showSolderPaste: true,
+  })
 })
