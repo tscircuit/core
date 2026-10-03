@@ -761,6 +761,10 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       display_pin_label_font_size: displayPinLabelFontSize,
       is_connected: false,
       schematic_sheet_id: this._resolveSchematicSheetId(),
+      // Leave the field absent unless requested, so existing schematics do not
+      // gain an explicit `false` on every port.
+      is_drawn_with_inversion_circle:
+        props.hasInversionCircle === true || undefined,
     }
 
     for (const attributes of this._getMatchingPinAttributes()) {
