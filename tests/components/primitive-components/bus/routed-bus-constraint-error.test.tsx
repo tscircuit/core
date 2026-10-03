@@ -21,12 +21,15 @@ test("routed bus length violations emit specific diagnostics through board DRC",
     source_bus_id: bus.source_bus_id,
     source_trace_ids: [source.source_trace_id],
     routing_rule: "max_length",
-    expected_max: 1,
-    units: "mm",
+    maximum_trace_length: 1,
   })
-  if (!error || error.type !== "pcb_bus_routing_constraint_error")
+  if (
+    !error ||
+    error.type !== "pcb_bus_routing_constraint_error" ||
+    error.routing_rule !== "max_length"
+  )
     throw new Error("Missing specific constraint error")
-  expect(error.actual_value).toBeGreaterThan(1)
+  expect(error.actual_trace_length).toBeGreaterThan(1)
   expect(error.pcb_trace_ids).toEqual(
     json.filter((e) => e.type === "pcb_trace").map((e) => e.pcb_trace_id),
   )

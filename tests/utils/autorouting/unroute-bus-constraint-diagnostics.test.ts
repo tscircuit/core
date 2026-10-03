@@ -23,9 +23,8 @@ test("unrouting clears stale bus constraint findings but retains source intent",
     ...references,
     type: "pcb_bus_routing_constraint_error",
     routing_rule: "max_length",
-    units: "mm",
-    actual_value: 11,
-    expected_max: 10,
+    actual_trace_length: 11,
+    maximum_trace_length: 10,
   })
   const warning = pcb_bus_routing_constraint_warning.parse({
     ...references,
