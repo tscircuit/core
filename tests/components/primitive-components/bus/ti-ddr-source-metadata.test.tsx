@@ -74,7 +74,7 @@ test("TI DDR intent and resolved pair polarity survive TSX rendering without cha
       max_uncoupled_length: 0.5,
     },
   })
-  const bus = circuit.selectOne(".DATA_BYTE", { type: "bus" })!
+  const bus = circuit.selectOne(".DATA_BYTE")!
   if (!(bus instanceof Bus)) throw Error("Missing DATA_BYTE bus")
   expect(
     getBusesForSimpleRouteJson({

@@ -83,9 +83,8 @@ test("bus_lanes routes AM3352 DDR3 from original pads without a custom algorithm
     540,
   )
   expect(scores.reduce((n, s) => n + s.shortJogs, 0)).toBeLessThanOrEqual(145)
-  for (const bus of json.filter(
-    (e) => e.type === "source_bus" && e.max_length_skew !== undefined,
-  )) {
+  for (const bus of json.filter((e) => e.type === "source_bus")) {
+    if (bus.max_length_skew === undefined) continue
     const lengths = bus.source_trace_ids.map(
       (id) => scores.find((s) => s.sourceTraceId === id)!.planarLength,
     )
