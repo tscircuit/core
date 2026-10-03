@@ -171,8 +171,13 @@ export class Connector<
     fetchPartCircuitJson: NonNullable<PartsEngine["fetchPartCircuitJson"]>,
     params: { supplierPartNumber?: string; manufacturerPartNumber?: string },
   ): Promise<AnyCircuitElement[] | null> {
+    const request = {
+      ...params,
+      platformFetch: this.root?.platform?.platformFetch,
+      includeDatasheetInformation: true,
+    }
     const maybeCircuitJson =
-      (await Promise.resolve(fetchPartCircuitJson(params))) ?? null
+      (await Promise.resolve(fetchPartCircuitJson(request))) ?? null
     if (Array.isArray(maybeCircuitJson) && maybeCircuitJson.length > 0) {
       return maybeCircuitJson
     }
@@ -218,6 +223,7 @@ export class Connector<
 
     const fpComponents = createComponentsFromCircuitJson(
       {
+        sourcePortOwner: this,
         componentName: this.name,
         componentRotation: String(props.pcbRotation ?? 0),
         footprinterString: `standard:${standard}`,

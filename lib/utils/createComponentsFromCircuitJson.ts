@@ -38,6 +38,7 @@ import { SilkscreenRect } from "lib/components/primitive-components/SilkscreenRe
 import { SilkscreenText } from "lib/components/primitive-components/SilkscreenText"
 import { SmtPad } from "lib/components/primitive-components/SmtPad"
 import { SymbolComponent } from "lib/components/primitive-components/Symbol"
+import type { NormalComponent } from "lib/components/base-components/NormalComponent"
 import type { PrimitiveComponent } from "../components/base-components/PrimitiveComponent"
 import { createPinrowSilkscreenText } from "./createPinrowSilkscreenText"
 
@@ -114,12 +115,14 @@ const getSchematicSymbolId = (elm: AnyCircuitElement): string | undefined => {
 
 export const createComponentsFromCircuitJson = (
   {
+    sourcePortOwner,
     componentName,
     componentRotation,
     footprinterString,
     pinLabels,
     pcbPinLabels,
   }: {
+    sourcePortOwner?: NormalComponent
     componentName: string
     componentRotation: string
     footprinterString?: string
@@ -128,6 +131,15 @@ export const createComponentsFromCircuitJson = (
   },
   circuitJson: AnyCircuitElement[],
 ): PrimitiveComponent[] => {
+  const importedSourcePorts = circuitJson.filter(
+    (elm) => elm.type === "source_port",
+  )
+  if (sourcePortOwner && importedSourcePorts.length > 0) {
+    sourcePortOwner._importedSourcePorts = importedSourcePorts
+    for (const port of sourcePortOwner._getAllPortsFromChildren()) {
+      port._markDirty("SourceRender")
+    }
+  }
   const components: PrimitiveComponent[] = []
   const schematicSymbolsByImportedId = new Map<string, SymbolComponent>()
   const schematicComponentsByImportedId = new Map<string, SchematicComponent>()

@@ -20,6 +20,7 @@ import {
   type AnyCircuitElement,
   type LayerRef,
   type PcbComponent,
+  type SourcePort,
   distance,
   pcb_component_invalid_layer_error,
   pcb_manual_edit_conflict_warning,
@@ -160,6 +161,8 @@ export class NormalComponent<
 
   _asyncSupplierPartNumbers?: SupplierPartNumbers
   _asyncFootprintCadModel?: CadModelProp
+  /** Electrical attributes from imported ports; user props remain authoritative. */
+  _importedSourcePorts: SourcePort[] = []
   _isCadModelChild?: boolean
   _inferredInternallyConnectedPinNames: string[][] = []
   pcb_missing_footprint_error_id?: string
@@ -652,6 +655,7 @@ export class NormalComponent<
       }
       const fpComponents = createComponentsFromCircuitJson(
         {
+          sourcePortOwner: this,
           componentName: this.name ?? this.componentName,
           componentRotation: pcbRotation,
           footprinterString: footprint,
@@ -685,6 +689,7 @@ export class NormalComponent<
 
     const importedSymbolComponents = createComponentsFromCircuitJson(
       {
+        sourcePortOwner: this,
         componentName: this.name ?? this.componentName,
         componentRotation: String(this.props.schRotation ?? 0),
       },
