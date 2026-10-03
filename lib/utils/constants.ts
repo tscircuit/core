@@ -41,5 +41,5 @@ export type TransistorPorts =
 
 export type { BaseSymbolName }
 
-export const SCHEMATIC_COMPONENT_OUTLINE_COLOR = "rgba(132, 0, 0)"
+export const SCHEMATIC_COMPONENT_OUTLINE_COLOR = "rgb(132, 0, 0)"
 export const SCHEMATIC_COMPONENT_OUTLINE_STROKE_WIDTH = 0.12
