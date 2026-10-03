@@ -58,7 +58,6 @@ export const extractPcbPrimitivesFromCircuitJson = ({
     {
       componentName,
       componentRotation: "0deg",
-      preserveSolderPaste: true,
     },
     clonedRelativeElements,
   )

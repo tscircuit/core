@@ -5,7 +5,6 @@ import {
   layer_ref,
   type AnyCircuitElement,
   type SchematicComponent,
-  type PcbSolderPastePolygon,
 } from "circuit-json"
 import { CopperText } from "lib/components/primitive-components/CopperText"
 import { CourtyardCircle } from "lib/components/primitive-components/CourtyardCircle"
@@ -122,7 +121,6 @@ export const createComponentsFromCircuitJson = (
     footprinterString,
     pinLabels,
     pcbPinLabels,
-    preserveSolderPaste,
   }: {
     sourcePortOwner?: NormalComponent
     componentName: string
@@ -130,8 +128,6 @@ export const createComponentsFromCircuitJson = (
     footprinterString?: string
     pinLabels?: PinLabelsProp
     pcbPinLabels?: PinLabelsProp
-    /** Preserve rendered paste, including a footprint with no apertures. */
-    preserveSolderPaste?: boolean
   },
   circuitJson: AnyCircuitElement[],
 ): PrimitiveComponent[] => {
@@ -379,24 +375,14 @@ export const createComponentsFromCircuitJson = (
         }),
       )
     } else if (elm.type === "pcb_smtpad" && elm.shape === "polygon") {
-      const smtpad = new SmtPad({
-        shape: "polygon",
-        points: elm.points,
-        portHints: resolvedPortHints,
-        layer: elm.layer,
-        coveredWithSolderMask: elm.is_covered_with_solder_mask,
-        solderMaskMargin: elm.soldermask_margin,
-      })
-      const polygonPaste = circuitJson.filter(
-        (paste): paste is PcbSolderPastePolygon =>
-          paste.type === "pcb_solder_paste" &&
-          paste.shape === "polygon" &&
-          paste.pcb_smtpad_id === elm.pcb_smtpad_id,
+      components.push(
+        new SmtPad({
+          shape: "polygon",
+          points: elm.points,
+          portHints: resolvedPortHints,
+          layer: elm.layer,
+        }),
       )
-      if (preserveSolderPaste || polygonPaste.length > 0) {
-        smtpad._inflatedPcbSolderPaste = polygonPaste
-      }
-      components.push(smtpad)
     } else if (elm.type === "pcb_silkscreen_path") {
       components.push(
         new SilkscreenPath({

@@ -38,7 +38,7 @@
     "@tscircuit/bus-lanes-solver": "https://jscdn.tscircuit.com/@tscircuit/bus-lanes-solver/0.0.15.tgz",
     "@tscircuit/capacity-autorouter": "^0.0.954",
     "@tscircuit/checks": "^0.0.236",
-    "@tscircuit/circuit-json-util": "^0.0.119",
+    "@tscircuit/circuit-json-util": "^0.0.118",
     "@tscircuit/common": "^0.0.20",
     "@tscircuit/copper-pour-solver": "^0.0.67",
     "@tscircuit/create-fdm-enclosure": "0.0.4",
@@ -66,7 +66,6 @@
     "@tscircuit/via-stitch-solver": "github:tscircuit/via-stitch-solver#64f2ac7781b795bdc0d74ba411988e60767fa653",
     "@tscircuit/winding-breakout-point-solver": "github:tscircuit/winding-breakout-point-solver#202dbe9eb0088633b6fa094120dba6f2f41f8803",
     "@types/bun": "^1.2.16",
-    "@types/clipper-lib": "^6.4.0",
     "@types/debug": "^4.1.12",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
@@ -75,12 +74,12 @@
     "bun-match-svg": "0.0.12",
     "calculate-elbow": "^0.0.12",
     "chokidar-cli": "^3.0.0",
-    "circuit-json": "^0.0.513",
+    "circuit-json": "^0.0.511",
     "circuit-json-to-bpc": "^0.0.13",
     "circuit-json-to-connectivity-map": "^0.0.33",
     "circuit-json-to-gltf": "^0.0.141",
     "circuit-json-to-spice": "^0.0.45",
-    "circuit-to-svg": "^0.0.440",
+    "circuit-to-svg": "^0.0.438",
     "concurrently": "^9.1.2",
     "connectivity-map": "^1.0.1",
     "debug": "^4.3.6",
@@ -128,7 +127,6 @@
     "@lume/kiwi": "^0.4.3",
     "calculate-cell-boundaries": "^0.0.25",
     "calculate-packing": "^0.0.90",
-    "clipper-lib": "^6.4.2",
     "css-select": "5.1.0",
     "format-si-unit": "^0.0.12",
     "nanoid": "^5.0.7",
@@ -139,8 +137,8 @@
     "zod": "^3.25.67"
   },
   "overrides": {
-    "@tscircuit/circuit-json-util": "^0.0.119",
+    "@tscircuit/circuit-json-util": "^0.0.118",
     "@tscircuit/props": "^0.0.682",
-    "circuit-json": "^0.0.513"
+    "circuit-json": "^0.0.511"
   }
 }
