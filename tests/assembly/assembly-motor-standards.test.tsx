@@ -1,9 +1,11 @@
 import { expect, test } from "bun:test"
 import { assembly } from "lib"
+import { expectAssemblySnapshot } from "./fixtures/expect-assembly-snapshot"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { getRenderedMotorBounds } from "./fixtures/get-rendered-motor-bounds"
 
 test("NEMA standards use modelprinter geometry without electrical footprints", async () => {
+  const panels = []
   for (const [standard, width, length, shaftLength] of [
     ["nema8", 20.3, 33, 15],
     ["nema17", 42.3, 38, 24],
@@ -27,10 +29,24 @@ test("NEMA standards use modelprinter geometry without electrical footprints", a
     expect(bounds.max[0]! - bounds.min[0]!).toBeCloseTo(width, 2)
     expect(bounds.min[1]).toBeCloseTo(-length, 2)
     expect(bounds.max[1]).toBeCloseTo(shaftLength, 2)
-    await expect(circuit).toMatchSimple3dSnapshot(import.meta.path, {
-      snapshotSuffix: standard,
-      camPos: [100, 80, 100],
-      poppygl: { lookAt: [0, -10, 0], grid: false, backgroundColor: [1, 1, 1] },
+    panels.push({
+      title: standard.toUpperCase(),
+      code: `<assembly.device>
+  <assembly.motor
+    name="${standard}"
+    standard="${standard}"
+  />
+</assembly.device>`,
+      annotation: `${width} mm frame / ${length} mm body / ${shaftLength} mm shaft / default direction z+`,
+      circuit,
+      renderOptions: {
+        camPos: [80, 65, 80] as [number, number, number],
+        poppygl: { lookAt: [0, -10, 0] as [number, number, number] },
+      },
     })
   }
+  await expectAssemblySnapshot(import.meta.path, {
+    title: "NEMA standards: NEMA8, NEMA17, NEMA23",
+    panels,
+  })
 })

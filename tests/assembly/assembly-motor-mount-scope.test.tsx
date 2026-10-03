@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test"
 import { assembly } from "lib"
+import { expectAssemblySnapshot } from "./fixtures/expect-assembly-snapshot"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("identical motor names in sibling devices resolve within each device", async () => {
@@ -46,8 +47,47 @@ test("identical motor names in sibling devices resolve within each device", asyn
   expect(
     motors.find((cad) => cad.model_glb_url?.includes("nema23"))?.position,
   ).toEqual({ x: 45, y: 0, z: 60 })
-  await expect(circuit).toMatchSimple3dSnapshot(import.meta.path, {
-    camPos: [190, 160, 190],
-    poppygl: { lookAt: [0, 10, 0], grid: false, backgroundColor: [1, 1, 1] },
+  // The GLB exporter renders one PCB at a time. Give each device its own
+  // annotated panel, using records from the same fully rendered circuit.
+  const panels = circuit.db.pcb_board.list().map((board, index) => {
+    const left = index === 0
+    const standard = left ? "nema8" : "nema23"
+    const x = left ? -45 : 45
+    const boardSize = left ? 24 : 58
+    return {
+      title: left ? "Left device: B1 on NEMA8" : "Right device: B2 on NEMA23",
+      code: `<assembly.device name="${left ? "left" : "right"}">
+  <assembly.motor name="MOTOR"
+    standard="${standard}"
+    shaftFacingDirection="${left ? "z-" : "z+"}" />
+  <board name="${left ? "B1" : "B2"}"
+    pcbX={${x}}
+    width={${boardSize}} height={${boardSize}}
+    thickness={2}
+    mountedTo="MOTOR.backface"
+    mountGap={${left ? 3 : 8}}
+  />
+</assembly.device>`,
+      annotation: left
+        ? "MOTOR resolves inside left / NEMA8 below B1 / 3 mm surface gap"
+        : "MOTOR resolves inside right / NEMA23 above B2 / 8 mm surface gap",
+      circuit: circuit
+        .getCircuitJson()
+        .filter(
+          (el) =>
+            (el.type === "pcb_board" || el.type === "cad_component") &&
+            el.subcircuit_id === board.subcircuit_id,
+        ),
+      renderOptions: {
+        camPos: [-x + 100, left ? 35 : 85, 100] as [number, number, number],
+        poppygl: {
+          lookAt: [-x, left ? -22 : 35, 0] as [number, number, number],
+        },
+      },
+    }
+  })
+  await expectAssemblySnapshot(import.meta.path, {
+    title: "Same motor name, independent assembly devices",
+    panels,
   })
 })

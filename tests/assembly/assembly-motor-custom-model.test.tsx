@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test"
 import { assembly } from "lib"
+import { expectAssemblySnapshot } from "./fixtures/expect-assembly-snapshot"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { getRenderedMotorBounds } from "./fixtures/get-rendered-motor-bounds"
 
@@ -36,8 +37,34 @@ test("custom NEMA body length controls backface placement with zero default gap"
   )
   expect(bounds.min[1]).toBeCloseTo(1, 2)
   expect(bounds.max[1]! - bounds.min[1]!).toBeCloseTo(78, 2)
-  await expect(circuit).toMatchSimple3dSnapshot(import.meta.path, {
-    camPos: [110, 90, 110],
-    poppygl: { lookAt: [0, 35, 0], grid: false, backgroundColor: [1, 1, 1] },
+  await expectAssemblySnapshot(import.meta.path, {
+    title: "Custom NEMA17 model: longer body and shaft",
+    panels: [
+      {
+        title: "Flush rear mount (mountGap defaults to zero)",
+        code: `const model =
+  "nema17_bodylength48mm" +
+  "_shaftlength30mm" +
+  "_flatdepth0.5mm_flatlength18mm"
+
+<assembly.device>
+  <assembly.motor
+    name="CUSTOM" model={model}
+  />
+  <board
+    width={42} height={42}
+    thickness={2}
+    mountedTo="CUSTOM.backface"
+  />
+</assembly.device>`,
+        annotation:
+          "48 mm body / 30 mm D shaft / 2 mm PCB / zero rear-face clearance",
+        circuit,
+        renderOptions: {
+          camPos: [110, 90, 110],
+          poppygl: { lookAt: [0, 35, 0] },
+        },
+      },
+    ],
   })
 })

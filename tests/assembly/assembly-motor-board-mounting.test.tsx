@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test"
 import { assembly } from "lib"
+import { expectAssemblySnapshot } from "./fixtures/expect-assembly-snapshot"
 import type { BoardProps } from "@tscircuit/props"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { getRenderedMotorBounds } from "./fixtures/get-rendered-motor-bounds"
@@ -20,6 +21,7 @@ const MotorController = (props: BoardProps) => (
 )
 
 test("board backface mounts preserve PCB geometry and leave a 6 mm surface gap", async () => {
+  const panels = []
   for (const direction of ["z+", "z-"] as const) {
     const { circuit } = getTestFixture()
     circuit.add(
@@ -65,14 +67,40 @@ test("board backface mounts preserve PCB geometry and leave a 6 mm surface gap",
         .sort((a, b) => a - b),
     ).toEqual([-5.5, -5.5, 25.5, 25.5])
     expect(circuit.db.pcb_component.list()[0]!.center).toEqual({ x: 15, y: -4 })
-    await expect(circuit).toMatchSimple3dSnapshot(import.meta.path, {
-      snapshotSuffix: direction === "z+" ? "above" : "below",
-      camPos: [100, 60, 100],
-      poppygl: {
-        lookAt: [-10, direction === "z+" ? 25 : -25, -7],
-        grid: false,
-        backgroundColor: [1, 1, 1],
+    panels.push({
+      title:
+        direction === "z+"
+          ? "z+: motor above the PCB"
+          : "z-: motor below the PCB",
+      code: `<assembly.device>
+  <MotorController
+    mountedTo="NEMA17.backface"
+    mountGap="6mm"
+    pcbX={10}
+    pcbY={-7}
+  />
+  <assembly.motor
+    name="NEMA17"
+    standard="nema17"
+    shaftFacingDirection="${direction}"
+  />
+</assembly.device>`,
+      annotation: `6 mm rear-face-to-PCB clearance / 1.6 mm PCB / motor origin z=${motor.position.z} mm`,
+      circuit,
+      renderOptions: {
+        camPos: [100, 60, 100] as [number, number, number],
+        poppygl: {
+          lookAt: [-10, direction === "z+" ? 34 : -34, -7] as [
+            number,
+            number,
+            number,
+          ],
+        },
       },
     })
   }
+  await expectAssemblySnapshot(import.meta.path, {
+    title: "NEMA17 backface mounting: 6 mm surface clearance",
+    panels,
+  })
 })

@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test"
 import { assembly } from "lib"
+import { expectAssemblySnapshot } from "./fixtures/expect-assembly-snapshot"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("motor orientation follows the mounted board's non-cardinal PCB rotation", async () => {
@@ -37,8 +38,34 @@ test("motor orientation follows the mounted board's non-cardinal PCB rotation", 
   const boardAngle = (Math.atan2(axis.y, axis.x) * 180) / Math.PI
   expect(motor.rotation!.y).toBe(180)
   expect(motor.rotation!.z).toBeCloseTo((360 - boardAngle) % 360)
-  await expect(circuit).toMatchSimple3dSnapshot(import.meta.path, {
-    camPos: [100, 80, 100],
-    poppygl: { lookAt: [0, -20, 0], grid: false, backgroundColor: [1, 1, 1] },
+  await expectAssemblySnapshot(import.meta.path, {
+    title: "Mounted NEMA17 follows the PCB rotation",
+    panels: [
+      {
+        title: "PCB and motor mounting pattern rotated by 30 degrees",
+        code: `<assembly.device>
+  <assembly.motor
+    name="MOTOR" standard="nema17"
+    shaftFacingDirection="z-"
+  />
+  <board
+    width={42} height={42}
+    pcbRotation={30}
+    mountedTo="MOTOR.backface"
+    mountGap={6}
+  >
+    {/* Four 3.2 mm holes */}
+    {/* at x/y = +/-15.5 mm */}
+  </board>
+</assembly.device>`,
+        annotation:
+          "The motor follows the emitted PCB hole orientation; shaft points below the board.",
+        circuit,
+        renderOptions: {
+          camPos: [100, 80, 100],
+          poppygl: { lookAt: [0, -20, 0] },
+        },
+      },
+    ],
   })
 })
