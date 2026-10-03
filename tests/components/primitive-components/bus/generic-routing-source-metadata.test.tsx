@@ -4,7 +4,7 @@ import "lib/register-catalogue"
 import { getBusesForSimpleRouteJson } from "lib/utils/autorouting/getBusesForSimpleRouteJson"
 import { Bus } from "lib/components/primitive-components/Bus"
 
-test("TI DDR intent and resolved pair polarity survive TSX rendering without changing routing groups", () => {
+test("Generic routing constraints and resolved pair polarity survive TSX rendering without changing routing groups", () => {
   const circuit = new RootCircuit()
   circuit.add(
     <board width={30} height={20} routingDisabled>
@@ -18,14 +18,14 @@ test("TI DDR intent and resolved pair polarity survive TSX rendering without cha
         routingDisabled
         connections={["DATA"]}
         targetImpedance="60ohm"
-        pcbDdrRouting={{
-          profile: "ti_am335x_ddr3",
-          interfaceName: "MEMORY",
-          topology: "one_x16",
-          signalClass: "dq",
-          byteIndex: 0,
-          groundNetName: "GND",
-          powerNetName: "DDR_1V5",
+        pcbRoutingConstraints={{
+          expectedTraceCount: 1,
+          lengthBounds: {
+            referenceBus: "CLOCK",
+            referenceMetric: "longest_manhattan",
+            max: "25mil",
+          },
+          impedanceBounds: { min: "50ohm", max: "75ohm" },
         }}
       />
       <differentialpair
@@ -35,12 +35,7 @@ test("TI DDR intent and resolved pair polarity survive TSX rendering without cha
         targetDifferentialImpedance="120ohm"
         pcbTraceGap="0.12mm"
         maxUncoupledLength="0.5mm"
-        pcbDdrRouting={{
-          profile: "ti_am335x_ddr3",
-          interfaceName: "MEMORY",
-          topology: "one_x16",
-          signalClass: "ck",
-        }}
+        pcbRoutingConstraints={{ expectedTraceCount: 2 }}
       />
     </board>,
   )
@@ -49,20 +44,20 @@ test("TI DDR intent and resolved pair polarity survive TSX rendering without cha
   const data = buses.find((b) => b.name === "DATA_BYTE")!
   expect(data).toMatchObject({
     target_impedance: 60,
-    ddr_routing: {
-      profile: "ti_am335x_ddr3",
-      interface_name: "MEMORY",
-      signal_class: "dq",
-      byte_index: 0,
-      topology: "one_x16",
-      ground_net_name: "GND",
-      power_net_name: "DDR_1V5",
+    routing_constraints: {
+      expected_trace_count: 1,
+      length_bounds: {
+        reference_bus: "CLOCK",
+        reference_metric: "longest_manhattan",
+        max: 0.635,
+      },
+      impedance_bounds: { min: 50, max: 75 },
     },
   })
   const clock = buses.find((b) => b.name === "CLOCK")!
   expect(clock).toMatchObject({
     target_differential_impedance: 120,
-    ddr_routing: { signal_class: "ck" },
+    routing_constraints: { expected_trace_count: 2 },
     differential_pair: {
       positive_source_trace_id: circuit.db.source_trace.getWhere({
         name: "CLOCK_P",

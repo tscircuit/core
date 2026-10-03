@@ -1,4 +1,4 @@
-import { getDdrRoutingConstraints } from "lib/utils/getDdrRoutingConstraints"
+import { getRoutingConstraints } from "lib/utils/getRoutingConstraints"
 import type { SourcePort, SourceTrace } from "circuit-json"
 import type { DifferentialPair } from "./DifferentialPair"
 import type { Port } from "./Port/Port"
@@ -193,8 +193,8 @@ export const DifferentialPair_doInitialSourceDesignRuleChecks = (
       max_length_skew: differentialPair._parsedProps.maxLengthSkew,
       target_differential_impedance:
         differentialPair._parsedProps.targetDifferentialImpedance,
-      ddr_routing: getDdrRoutingConstraints(
-        differentialPair._parsedProps.pcbDdrRouting,
+      routing_constraints: getRoutingConstraints(
+        differentialPair._parsedProps.pcbRoutingConstraints,
       ),
       differential_pair:
         resolvedPair.positive && resolvedPair.negative

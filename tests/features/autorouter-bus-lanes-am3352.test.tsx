@@ -11,30 +11,30 @@ test("bus_lanes routes AM3352 DDR3 from original pads without a custom algorithm
   circuit.add(<Board />)
   await circuit.renderUntilSettled()
   const json = circuit.getCircuitJson()
-  // Native copper/connectivity DRC is distinct from the opt-in TI audit.
+  // Native copper/connectivity DRC is distinct from the explicit routing constraints.
   // Existing routes are fully connected, but not certified DDR hardware.
   expect(
     json.filter(
-      (e) => e.type.endsWith("_error") && e.type !== "pcb_ddr_routing_error",
+      (e) =>
+        e.type.endsWith("_error") && e.type !== "pcb_routing_constraint_error",
     ),
   ).toEqual([])
-  const ddrFindings = json.filter((e) => e.type === "pcb_ddr_routing_error")
+  const constraintFindings = json.filter(
+    (e) => e.type === "pcb_routing_constraint_error",
+  )
   expect(
-    ddrFindings.some(
-      (e) =>
-        e.rule === "command_clock_nominal_length" && e.status === "violation",
+    constraintFindings.some(
+      (e) => e.rule === "length_bounds" && e.status === "violation",
     ),
   ).toBe(true)
   expect(
-    ddrFindings.some(
-      (e) => e.rule === "impedance" && e.status === "unverified",
+    constraintFindings.some(
+      (e) => e.rule === "physical_impedance" && e.status === "unverified",
     ),
   ).toBe(true)
-  expect(
-    ddrFindings.some(
-      (e) => e.rule === "route_geometry" || e.rule === "interface_completeness",
-    ),
-  ).toBe(false)
+  expect(constraintFindings.some((e) => e.rule === "route_geometry")).toBe(
+    false,
+  )
   expect(json.filter((e) => e.type === "source_trace")).toHaveLength(47)
   expect(json.filter((e) => e.type === "pcb_trace")).toHaveLength(47)
   const traces = json.filter((e) => e.type === "pcb_trace")
@@ -63,6 +63,9 @@ test("bus_lanes routes AM3352 DDR3 from original pads without a custom algorithm
     "DDR_BYTE0",
     "DDR_BYTE1",
     "DDR_CK_PAIR",
+    "DDR_COMMAND_CLOCK",
+    "DDR_DATA0",
+    "DDR_DATA1",
     "DDR_DQS_PAIR0",
     "DDR_DQS_PAIR1",
   ])
@@ -114,7 +117,7 @@ test("bus_lanes routes AM3352 DDR3 from original pads without a custom algorithm
   }
   // Signal layers are explicit: the top layer contains only local dogbones.
   // Write only fully routed snapshots after native copper/connectivity and
-  // quality gates pass. TI findings above explicitly prevent DDR sign-off.
+  // quality gates pass. Declared constraint findings above explicitly prevent DDR sign-off.
   for (const layer of ["inner1", "inner2", "bottom"] as const)
     await expect(circuit).toMatchPcbSnapshot(
       import.meta.path.replace(".test.tsx", `-${layer}.test.tsx`),
