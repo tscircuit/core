@@ -1,4 +1,8 @@
-import { switchProps, type SwitchProps } from "@tscircuit/props"
+import {
+  switchProps,
+  type SwitchProps,
+  resolveManufacturerPartNumber,
+} from "@tscircuit/props"
 import type { BaseSymbolName } from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { frequency, ms, type SimulationSwitch } from "circuit-json"
@@ -55,7 +59,7 @@ export class Switch extends NormalComponent<typeof switchProps> {
     const source_component = db.source_component.insert({
       ftype: "simple_switch",
       name: this.name,
-      manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
+      manufacturer_part_number: resolveManufacturerPartNumber(props),
       supplier_part_numbers: props.supplierPartNumbers,
       are_pins_interchangeable: this._getSwitchType() === "spst",
       display_name: props?.displayName,

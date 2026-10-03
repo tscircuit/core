@@ -1,4 +1,4 @@
-import { capacitorProps } from "@tscircuit/props"
+import { capacitorProps, resolveManufacturerPartNumber } from "@tscircuit/props"
 import type { SourceSimpleCapacitorInput } from "circuit-json"
 import { formatSiUnit } from "format-si-unit"
 import {
@@ -139,7 +139,7 @@ export class Capacitor extends NormalComponent<
     const source_component = db.source_component.insert({
       ftype: "simple_capacitor",
       name: this.name,
-      manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
+      manufacturer_part_number: resolveManufacturerPartNumber(props),
       supplier_part_numbers: props.supplierPartNumbers,
       capacitance: props.capacitance,
       max_voltage_rating: props.maxVoltageRating,

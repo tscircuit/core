@@ -1,4 +1,7 @@
-import { interconnectProps } from "@tscircuit/props"
+import {
+  interconnectProps,
+  resolveManufacturerPartNumber,
+} from "@tscircuit/props"
 import type { Ftype } from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import type { Port } from "../primitive-components/Port"
@@ -46,7 +49,7 @@ export class Interconnect extends NormalComponent<typeof interconnectProps> {
     const source_component = db.source_component.insert({
       ftype: "interconnect" as Ftype,
       name: this.name,
-      manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
+      manufacturer_part_number: resolveManufacturerPartNumber(props),
       supplier_part_numbers: props.supplierPartNumbers,
       are_pins_interchangeable: true,
       display_name: props.displayName,

@@ -1,4 +1,4 @@
-import { resistorProps } from "@tscircuit/props"
+import { resistorProps, resolveManufacturerPartNumber } from "@tscircuit/props"
 import type { SourceSimpleResistorInput } from "circuit-json"
 import { formatSiUnit } from "format-si-unit"
 import type { Ftype, PassivePorts } from "lib/utils/constants"
@@ -98,7 +98,7 @@ export class Resistor extends NormalComponent<
     const source_component = db.source_component.insert({
       ftype: "simple_resistor",
       name: this.name,
-      manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
+      manufacturer_part_number: resolveManufacturerPartNumber(props),
       supplier_part_numbers: props.supplierPartNumbers,
 
       resistance: props.resistance,

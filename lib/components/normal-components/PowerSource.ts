@@ -1,4 +1,7 @@
-import { powerSourceProps } from "@tscircuit/props"
+import {
+  powerSourceProps,
+  resolveManufacturerPartNumber,
+} from "@tscircuit/props"
 import {
   type BaseSymbolName,
   type Ftype,
@@ -40,7 +43,7 @@ export class PowerSource extends NormalComponent<
       name: this.name,
       voltage: props.voltage,
       supplier_part_numbers: props.supplierPartNumbers,
-      manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
+      manufacturer_part_number: resolveManufacturerPartNumber(props),
       are_pins_interchangeable: false,
       display_name: props.displayName,
     } as any)

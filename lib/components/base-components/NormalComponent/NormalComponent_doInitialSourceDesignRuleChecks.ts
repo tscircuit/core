@@ -1,3 +1,4 @@
+import { NormalComponent_doInitialMissingManufacturerPartNumberWarning } from "./NormalComponent_doInitialMissingManufacturerPartNumberWarning"
 import type { NormalComponent } from "./NormalComponent"
 import type { Port } from "../../primitive-components/Port"
 
@@ -11,6 +12,8 @@ export const NormalComponent_doInitialSourceDesignRuleChecks = (
 
   const { db } = component.root!
   if (!component.source_component_id) return
+
+  NormalComponent_doInitialMissingManufacturerPartNumberWarning(component)
 
   const ports = component.selectAll("port") as Port[]
   const traces = db.source_trace.list()

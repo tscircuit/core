@@ -1,3 +1,4 @@
+import { resolveManufacturerPartNumber } from "@tscircuit/props"
 import { getFoldedCadComponentPlacement } from "lib/utils/cad/get-folded-cad-component-placement"
 import { fp } from "@tscircuit/footprinter"
 import { normalizeDegrees } from "@tscircuit/math-utils"
@@ -751,7 +752,7 @@ export class NormalComponent<
     const source_component = db.source_component.insert({
       ftype,
       name: this.name,
-      manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
+      manufacturer_part_number: resolveManufacturerPartNumber(props),
       supplier_part_numbers: props.supplierPartNumbers,
       display_name: props.displayName,
     })
@@ -938,7 +939,7 @@ export class NormalComponent<
     const schematic_box_width = dimensions?.getSize().width
     const schematic_box_height = dimensions?.getSize().height
     const manufacturer_part_number_schematic_text = db.schematic_text.insert({
-      text: props.manufacturerPartNumber ?? "",
+      text: resolveManufacturerPartNumber(props) ?? "",
       schematic_component_id: schematic_component.schematic_component_id,
       anchor: "left",
       rotation: 0,

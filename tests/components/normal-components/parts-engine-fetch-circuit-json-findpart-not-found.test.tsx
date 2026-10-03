@@ -42,10 +42,11 @@ test("connector with standard='usb_c' handles findPart returning 'Not found' wit
         el.type === "source_missing_manufacturer_part_number_warning",
     )
   expect(missingMfnWarnings).toHaveLength(1)
+  expect((missingMfnWarnings[0] as any).standard).toBe("usb_c")
   expect((missingMfnWarnings[0] as any).source_component_id).toBe(
     sourceComponent!.source_component_id,
   )
   expect((missingMfnWarnings[0] as any).message).toContain(
-    'has standard="usb_c" but no manufacturerPartNumber (mfn). Add mfn if you do not want the connector part to change in future.',
+    "is missing a manufacturer part number. Specify mpn, manufacturerPartNumber, or mfn.",
   )
 })
