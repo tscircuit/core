@@ -142,6 +142,7 @@ export const getBusesForSimpleRouteJson = ({
 }: GetBusesParams): SimpleRouteBus[] | undefined => {
   const declaredSrjBuses: SimpleRouteBus[] = []
   for (const bus of buses) {
+    if (bus._parsedProps.routingDisabled) continue
     const busSubcircuitId = bus.getSubcircuit().subcircuit_id
     if (subcircuitId && busSubcircuitId !== subcircuitId) continue
 

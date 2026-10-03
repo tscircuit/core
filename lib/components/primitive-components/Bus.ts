@@ -1,3 +1,4 @@
+import { getDdrRoutingConstraints } from "lib/utils/getDdrRoutingConstraints"
 import type { SourceBus } from "circuit-json"
 import { getBusSourceTraceIdOrThrow } from "lib/utils/autorouting/getBusSourceTraceIdOrThrow"
 import { busProps } from "@tscircuit/props"
@@ -44,6 +45,8 @@ export class Bus extends PrimitiveComponent<typeof busProps> {
       name: this._parsedProps.name,
       source_trace_ids,
       max_length_skew: this._parsedProps.maxLengthSkew,
+      target_impedance: this._parsedProps.targetImpedance,
+      ddr_routing: getDdrRoutingConstraints(this._parsedProps.pcbDdrRouting),
       subcircuit_id,
     })
     this.source_bus_id = sourceBus.source_bus_id
