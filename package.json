@@ -57,7 +57,7 @@
     "@tscircuit/math-utils": "^0.0.36",
     "@tscircuit/miniflex": "^0.0.4",
     "@tscircuit/ngspice-spice-engine": "^0.0.20",
-    "@tscircuit/props": "^0.0.677",
+    "@tscircuit/props": "^0.0.680",
     "@tscircuit/schematic-match-adapt": "^0.0.18",
     "@tscircuit/schematic-trace-solver": "https://jscdn.tscircuit.com/@tscircuit/schematic-trace-solver/0.0.223.tgz",
     "@tscircuit/solver-utils": "^0.0.16",
@@ -108,7 +108,7 @@
     "@tscircuit/footprinter": "*",
     "@tscircuit/infgrid-ijump-astar": "*",
     "@tscircuit/math-utils": "*",
-    "@tscircuit/props": "*",
+    "@tscircuit/props": ">=0.0.680",
     "@tscircuit/schematic-match-adapt": "*",
     "circuit-json-to-bpc": "*",
     "bpc-graph": "*",
@@ -136,7 +136,7 @@
   },
   "overrides": {
     "@tscircuit/circuit-json-util": "^0.0.118",
-    "@tscircuit/props": "^0.0.677",
+    "@tscircuit/props": "^0.0.680",
     "circuit-json": "^0.0.510"
   }
 }
