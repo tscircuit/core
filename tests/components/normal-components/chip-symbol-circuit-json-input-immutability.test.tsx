@@ -1,4 +1,7 @@
 import { expect, test } from "bun:test"
+import { SchematicTracePipelineSolver } from "@tscircuit/schematic-trace-solver"
+import type { Group } from "lib/components/primitive-components/Group/Group"
+import { createSchematicTraceSolverInputProblem } from "lib/components/primitive-components/Group/Group_doInitialSchematicTraceRender/createSchematicTraceSolverInputProblem"
 import type { AnyCircuitElement } from "circuit-json"
 import { Port } from "lib/components/primitive-components/Port/Port"
 import { SchematicRect } from "lib/components/primitive-components/SchematicRect"
@@ -100,6 +103,19 @@ test("chip symbol accepts imported circuit json without mutating the input", asy
   await circuit.renderUntilSettled()
 
   const symbolComponents = circuit.selectAll("symbol") as SymbolComponent[]
+
+  const { inputProblem } = createSchematicTraceSolverInputProblem(
+    circuit.firstChild as Group,
+  )
+  const solver = new SchematicTracePipelineSolver(inputProblem)
+  const inputChip = inputProblem.chips[0]!
+  const normalizedChip = solver.inputProblem.chips[0]!
+  expect(normalizedChip.center).toEqual(inputChip.center)
+  expect(normalizedChip.width).toBe(inputChip.width)
+  expect(normalizedChip.height).toBe(inputChip.height)
+  expect(normalizedChip.pins.map((pin) => pin._facingDirection)).toEqual(
+    inputChip.pins.map((pin) => pin._facingDirection),
+  )
 
   expect(symbolCircuitJson).toEqual(originalSymbolCircuitJson)
   expect(circuit.selectAll("port")).toHaveLength(2)
