@@ -23,15 +23,20 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
 
   /**
    * Rotation (ccw degrees, normalized to [0, 360)) of the hole including its
-   * own pcbRotation and the rotation of all its parents
+   * own pcbRotation and the rotation of all its parents. Bottom-side
+   * footprints are mirrored, so the angle is mirrored too, as in SmtPad
    */
   private _getGlobalRotationDegrees(): number {
     const decomposedTransform = decomposeTSR(
       this._computePcbGlobalTransformBeforeLayout(),
     )
     const rotationDegrees = (decomposedTransform.rotation.angle * 180) / Math.PI
-    const normalizedRotationDegrees = ((rotationDegrees % 360) + 360) % 360
-    return Math.abs(normalizedRotationDegrees - 360) < 0.01
+    let normalizedRotationDegrees = ((rotationDegrees % 360) + 360) % 360
+    if (this._getPcbPrimitiveFlippedHelpers().isFlipped) {
+      normalizedRotationDegrees = (360 - normalizedRotationDegrees) % 360
+    }
+    return Math.abs(normalizedRotationDegrees - 360) < 0.01 ||
+      Math.abs(normalizedRotationDegrees) < 0.01
       ? 0
       : normalizedRotationDegrees
   }
