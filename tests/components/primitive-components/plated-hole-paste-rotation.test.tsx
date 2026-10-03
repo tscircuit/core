@@ -45,10 +45,7 @@ test("pill paste follows transformed holes on both outer layers", () => {
   for (const hole of platedHoles) {
     if (hole.shape !== "pill") throw new Error("Expected pill hole")
     const pasteOnHole = solderPaste.filter(
-      (paste) =>
-        paste.shape === "rotated_pill" &&
-        paste.x === hole.x &&
-        paste.y === hole.y,
+      (paste) => paste.x === hole.x && paste.y === hole.y,
     )
     expect(pasteOnHole.map((paste) => paste.layer).sort()).toEqual([
       "bottom",

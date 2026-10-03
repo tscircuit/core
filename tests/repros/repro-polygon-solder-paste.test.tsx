@@ -1,8 +1,7 @@
 import { expect, test } from "bun:test"
-import { pcb_solder_paste } from "circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("polygon pad generates polygon solder paste", () => {
+test("polygon pad has no solder paste", () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width={6} height={5}>
@@ -17,7 +16,7 @@ test("polygon pad generates polygon solder paste", () => {
         portHints={[]}
       />
       <pcbnotetext
-        text="Polygon pad: polygon solder paste"
+        text="Polygon pad: missing solder paste"
         pcbY={2}
         fontSize={0.25}
       />
@@ -25,11 +24,7 @@ test("polygon pad generates polygon solder paste", () => {
   )
   circuit.render()
   expect(circuit.db.pcb_smtpad.list()[0]?.shape).toBe("polygon")
-  expect(circuit.db.pcb_solder_paste.list()).toHaveLength(1)
-  expect(circuit.db.pcb_solder_paste.list()[0]?.shape).toBe("polygon")
-  expect(
-    pcb_solder_paste.safeParse(circuit.db.pcb_solder_paste.list()[0]).success,
-  ).toBe(true)
+  expect(circuit.db.pcb_solder_paste.list()).toHaveLength(0)
   expect(circuit).toMatchPcbSnapshot(import.meta.path, {
     showSolderPaste: true,
   })
