@@ -56,6 +56,17 @@ test("crosshatch reaches the solver and emits mesh holes with connected thermal 
   if (top.shape !== "brep" || bottom.shape !== "brep")
     throw new Error("Expected BRep copper pours")
   expect(top.brep_shape.inner_rings.length).toBeGreaterThan(30)
+  // Partial edge cells reach the 0.25mm rim inside the 0.2mm board clearance.
+  // The old whole-cell-only solver leaves a wider solid band here.
+  expect(
+    top.brep_shape.inner_rings.some((ring) =>
+      ring.vertices.some(
+        ({ x, y }) =>
+          Math.abs(Math.abs(x) - (7 - 0.2 - 0.25)) < 1e-6 ||
+          Math.abs(Math.abs(y) - (4.5 - 0.2 - 0.25)) < 1e-6,
+      ),
+    ),
+  ).toBe(true)
   expect(bottom.brep_shape.inner_rings).toHaveLength(0)
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

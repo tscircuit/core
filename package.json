@@ -40,7 +40,7 @@
     "@tscircuit/checks": "^0.0.234",
     "@tscircuit/circuit-json-util": "^0.0.118",
     "@tscircuit/common": "^0.0.20",
-    "@tscircuit/copper-pour-solver": "^0.0.65",
+    "@tscircuit/copper-pour-solver": "^0.0.66",
     "@tscircuit/create-fdm-enclosure": "0.0.4",
     "@tscircuit/dogbone-solver": "https://jscdn.tscircuit.com/@tscircuit/dogbone-solver/0.0.1.tgz",
     "@tscircuit/fanout-solver": "0.0.78",
