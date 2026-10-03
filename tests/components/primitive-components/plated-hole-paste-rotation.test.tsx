@@ -42,10 +42,12 @@ test("pill paste follows transformed holes on both outer layers", () => {
   const solderPaste = circuit.db.pcb_solder_paste.list()
   expect(platedHoles).toHaveLength(8)
   expect(solderPaste).toHaveLength(16)
+  expect(solderPaste.every((paste) => paste.shape !== "polygon")).toBe(true)
   for (const hole of platedHoles) {
     if (hole.shape !== "pill") throw new Error("Expected pill hole")
     const pasteOnHole = solderPaste.filter(
-      (paste) => paste.x === hole.x && paste.y === hole.y,
+      (paste) =>
+        paste.shape !== "polygon" && paste.x === hole.x && paste.y === hole.y,
     )
     expect(pasteOnHole.map((paste) => paste.layer).sort()).toEqual([
       "bottom",
