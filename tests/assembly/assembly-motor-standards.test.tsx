@@ -6,10 +6,10 @@ import { getRenderedMotorBounds } from "./fixtures/get-rendered-motor-bounds"
 
 test("NEMA standards use modelprinter geometry without electrical footprints", async () => {
   const panels = []
-  for (const [standard, width, length, shaftLength] of [
-    ["nema8", 20.3, 33, 15],
-    ["nema17", 42.3, 38, 24],
-    ["nema23", 56.4, 51, 20.6],
+  for (const [standard, width, length, shaftLength, screwHeadHeight] of [
+    ["nema8", 20.3, 33, 15, 2],
+    ["nema17", 42.3, 38, 24, 3],
+    ["nema23", 56.4, 51, 20.6, 4],
   ] as const) {
     const { circuit } = getTestFixture()
     circuit.add(
@@ -25,9 +25,11 @@ test("NEMA standards use modelprinter geometry without electrical footprints", a
     })
     expect(circuit.db.pcb_component.list()).toHaveLength(0)
     expect(circuit.db.schematic_component.list()).toHaveLength(0)
+    // Measure width on scene Z (circuit Y); wire stubs extend on circuit X.
+    // Rear screw heads are part of the standard model, behind the body.
     const bounds = await getRenderedMotorBounds(circuit.getCircuitJson())
-    expect(bounds.max[0]! - bounds.min[0]!).toBeCloseTo(width, 2)
-    expect(bounds.min[1]).toBeCloseTo(-length, 2)
+    expect(bounds.max[2]! - bounds.min[2]!).toBeCloseTo(width, 2)
+    expect(bounds.min[1]).toBeCloseTo(-length - screwHeadHeight, 2)
     expect(bounds.max[1]).toBeCloseTo(shaftLength, 2)
     panels.push({
       title: standard.toUpperCase(),

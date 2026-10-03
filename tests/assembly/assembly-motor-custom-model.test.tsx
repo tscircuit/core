@@ -7,7 +7,7 @@ import { getRenderedMotorBounds } from "./fixtures/get-rendered-motor-bounds"
 test("custom NEMA body length controls backface placement with zero default gap", async () => {
   const { circuit } = getTestFixture()
   const model =
-    "nema17_bodylength48mm_shaftlength30mm_flatdepth0.5mm_flatlength18mm"
+    "nema17_backfaceholes_bodylength48mm_shaftlength30mm_flatdepth0.5mm_flatlength18mm"
   circuit.add(
     <assembly.device>
       <assembly.motor name="CUSTOM" model={model} />
@@ -43,7 +43,8 @@ test("custom NEMA body length controls backface placement with zero default gap"
       {
         title: "Flush rear mount (mountGap defaults to zero)",
         code: `const model =
-  "nema17_bodylength48mm" +
+  "nema17_backfaceholes" +
+  "_bodylength48mm" +
   "_shaftlength30mm" +
   "_flatdepth0.5mm_flatlength18mm"
 

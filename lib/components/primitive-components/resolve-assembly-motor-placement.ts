@@ -1,3 +1,4 @@
+import { resolveMotorPrintedPartPlacement } from "./resolve-printed-part-mounts"
 import type { Board } from "../normal-components/Board/Board"
 import type { AssemblyMotor } from "./AssemblyMotor"
 import type { AssemblyPlacement } from "./resolve-assembly-placement"
@@ -16,6 +17,8 @@ import {
 export const resolveAssemblyMotorPlacement = (
   motor: AssemblyMotor,
 ): AssemblyPlacement => {
+  const printedPartPlacement = resolveMotorPrintedPartPlacement(motor)
+  if (printedPartPlacement) return printedPartPlacement
   const boards = getComponentsInAssemblyScope(motor)
     .filter((board): board is Board => board.componentName === "Board")
     .filter((board) => resolveBoardMotorMount(board) === motor)

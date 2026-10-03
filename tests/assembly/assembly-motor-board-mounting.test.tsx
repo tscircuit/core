@@ -35,7 +35,7 @@ test("board backface mounts preserve PCB geometry and leave a 6 mm surface gap",
         />
         <assembly.motor
           name="NEMA17"
-          standard="nema17"
+          model="nema17_backfaceholes"
           shaftFacingDirection={direction}
         />
       </assembly.device>,
@@ -81,7 +81,7 @@ test("board backface mounts preserve PCB geometry and leave a 6 mm surface gap",
   />
   <assembly.motor
     name="NEMA17"
-    standard="nema17"
+    model="nema17_backfaceholes"
     shaftFacingDirection="${direction}"
   />
 </assembly.device>`,
