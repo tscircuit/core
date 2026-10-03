@@ -142,32 +142,49 @@ export const getBusesForSimpleRouteJson = ({
 }: GetBusesParams): SimpleRouteBus[] | undefined => {
   const declaredSrjBuses: SimpleRouteBus[] = []
   for (const bus of buses) {
-    if (bus._parsedProps.routingDisabled) continue
     const busSubcircuitId = bus.getSubcircuit().subcircuit_id
     if (subcircuitId && busSubcircuitId !== subcircuitId) continue
 
     const busSourceTraces = sourceTraces.filter(
       (sourceTrace) => sourceTrace.subcircuit_id === busSubcircuitId,
     )
-    const connectionNames = bus._parsedProps.connections.flatMap(
-      (traceNameOrPortSelector) => {
-        const sourceTraceId = getBusSourceTraceIdOrThrow({
+    const resolvedBus =
+      bus.source_bus_id && bus.root!.db.source_bus.get(bus.source_bus_id)
+    const ownTraceIds = bus._parsedProps.connections.map(
+      (traceNameOrPortSelector) =>
+        getBusSourceTraceIdOrThrow({
           bus,
           busSourceTraces,
           traceNameOrPortSelector,
-        })
-        // Fixed copper has no pending SRJ connection; source_bus still keeps
-        // every member so routing DRC checks the complete bus.
-        if (preservedSourceTraceIds?.has(sourceTraceId)) return []
-        return getBusSrjConnectionNamesOrThrow({
-          srjConnections,
-          bus,
-          sourceTraceId,
-          traceNameOrPortSelector,
-          busSourceTraces,
-        })
-      },
+        }),
     )
+    if (new Set(ownTraceIds).size !== ownTraceIds.length) {
+      throw new Error(
+        `Bus "${bus.name}" resolves multiple entries to one trace`,
+      )
+    }
+    const routingTraceIds = [
+      ...new Set([
+        ...ownTraceIds,
+        ...(resolvedBus
+          ? (resolvedBus.length_match_source_trace_ids ?? [])
+          : []),
+      ]),
+    ]
+    const connectionNames = routingTraceIds.flatMap((sourceTraceId) => {
+      // Fixed copper has no pending connection but remains in the source bus.
+      if (preservedSourceTraceIds?.has(sourceTraceId)) return []
+      const traceNameOrPortSelector =
+        busSourceTraces.find((trace) => trace.source_trace_id === sourceTraceId)
+          ?.name ?? "unnamed trace"
+      return getBusSrjConnectionNamesOrThrow({
+        srjConnections,
+        bus,
+        sourceTraceId,
+        traceNameOrPortSelector,
+        busSourceTraces,
+      })
+    })
 
     if (new Set(connectionNames).size !== connectionNames.length) {
       throw new Error(

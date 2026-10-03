@@ -16,25 +16,30 @@ test("bus_lanes routes AM3352 DDR3 from original pads without a custom algorithm
   expect(
     json.filter(
       (e) =>
-        e.type.endsWith("_error") && e.type !== "pcb_routing_constraint_error",
+        e.type.endsWith("_error") &&
+        !(e.type === "pcb_trace_error" && e.routing_rule),
     ),
   ).toEqual([])
   const constraintFindings = json.filter(
-    (e) => e.type === "pcb_routing_constraint_error",
+    (e) =>
+      (e.type === "pcb_trace_error" || e.type === "pcb_trace_warning") &&
+      e.routing_rule,
   )
   expect(
     constraintFindings.some(
-      (e) => e.rule === "length_bounds" && e.status === "violation",
+      (e) => e.routing_rule === "max_length" && e.type === "pcb_trace_error",
     ),
   ).toBe(true)
   expect(
     constraintFindings.some(
-      (e) => e.rule === "physical_impedance" && e.status === "unverified",
+      (e) =>
+        e.routing_rule === "physical_impedance" &&
+        e.type === "pcb_trace_warning",
     ),
   ).toBe(true)
-  expect(constraintFindings.some((e) => e.rule === "route_geometry")).toBe(
-    false,
-  )
+  expect(
+    constraintFindings.some((e) => e.routing_rule === "route_geometry"),
+  ).toBe(false)
   expect(json.filter((e) => e.type === "source_trace")).toHaveLength(47)
   expect(json.filter((e) => e.type === "pcb_trace")).toHaveLength(47)
   const traces = json.filter((e) => e.type === "pcb_trace")
@@ -63,9 +68,6 @@ test("bus_lanes routes AM3352 DDR3 from original pads without a custom algorithm
     "DDR_BYTE0",
     "DDR_BYTE1",
     "DDR_CK_PAIR",
-    "DDR_COMMAND_CLOCK",
-    "DDR_DATA0",
-    "DDR_DATA1",
     "DDR_DQS_PAIR0",
     "DDR_DQS_PAIR1",
   ])
@@ -88,9 +90,12 @@ test("bus_lanes routes AM3352 DDR3 from original pads without a custom algorithm
   expect(scores.reduce((n, s) => n + s.shortJogs, 0)).toBeLessThanOrEqual(145)
   for (const bus of json.filter((e) => e.type === "source_bus")) {
     if (bus.max_length_skew === undefined) continue
-    const lengths = bus.source_trace_ids.map(
-      (id) => scores.find((s) => s.sourceTraceId === id)!.planarLength,
-    )
+    const lengths = [
+      ...new Set([
+        ...bus.source_trace_ids,
+        ...(bus.length_match_source_trace_ids ?? []),
+      ]),
+    ].map((id) => scores.find((s) => s.sourceTraceId === id)!.planarLength)
     expect(Math.max(...lengths) - Math.min(...lengths)).toBeLessThanOrEqual(
       bus.max_length_skew! + 1e-8,
     )

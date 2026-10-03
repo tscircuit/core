@@ -1,4 +1,4 @@
-import { getRoutingConstraints } from "lib/utils/getRoutingConstraints"
+import { resolveSourceBusRoutingConstraints } from "lib/utils/resolveSourceBusRoutingConstraints"
 import type { SourceBus } from "circuit-json"
 import { getBusSourceTraceIdOrThrow } from "lib/utils/autorouting/getBusSourceTraceIdOrThrow"
 import { busProps } from "@tscircuit/props"
@@ -12,6 +12,12 @@ import {
  */
 export class Bus extends PrimitiveComponent<typeof busProps> {
   source_bus_id?: SourceBus["source_bus_id"]
+
+  // SimulationRender follows every component's SourceDesignRuleChecks, where
+  // differential pairs export membership, even when simulation is disabled.
+  doInitialSimulationRender(): void {
+    resolveSourceBusRoutingConstraints(this)
+  }
 
   override get config(): BaseComponentConfig {
     return {
@@ -46,9 +52,6 @@ export class Bus extends PrimitiveComponent<typeof busProps> {
       source_trace_ids,
       max_length_skew: this._parsedProps.maxLengthSkew,
       target_impedance: this._parsedProps.targetImpedance,
-      routing_constraints: getRoutingConstraints(
-        this._parsedProps.pcbRoutingConstraints,
-      ),
       subcircuit_id,
     })
     this.source_bus_id = sourceBus.source_bus_id

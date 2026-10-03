@@ -1,5 +1,4 @@
 import { Fragment } from "react"
-import type { PcbRoutingConstraints } from "@tscircuit/props"
 const data = (byte: number) => [
   ...Array.from({ length: 8 }, (_, bit) => pin(`DDR_D${byte * 8 + bit}`)),
   pin(`DDR_DQM${byte}`),
@@ -8,20 +7,6 @@ const strobes = (byte: number) => [
   pin(`DDR_DQS${byte}`),
   pin(`DDR_DQSn${byte}`),
 ]
-const spacingGroups = [
-  "DDR_DATA0",
-  "DDR_DATA1",
-  "DDR_DQS_PAIR0",
-  "DDR_DQS_PAIR1",
-  "DDR_CK_PAIR",
-  "DDR_ADDR_CTRL",
-]
-const spacing = (name: string): PcbRoutingConstraints["spacing"] =>
-  spacingGroups.map((otherBus) => ({
-    otherBus,
-    centerlineWidthMultiplier: otherBus === name ? 3 : 4,
-    reducedCenterlineWidthMultiplier: 1,
-  }))
 import ballMap from "./am3352-ballmap.json"
 const pin = (signal: string) => {
   const ball = Object.entries(ballMap).find(([, s]) => s === signal)?.[0]
@@ -29,7 +14,7 @@ const pin = (signal: string) => {
   return `.U1 > .${ball}`
 }
 // Values from TI SPRS717L Tables 7-66 through 7-69 belong to this design.
-// Generic check-only buses compose data/strobe and address/clock groups.
+// Natural bus and pair props express data/strobe and address/clock matching.
 // Physical stackup, reference planes, termination and decoupling still need
 // separate validation. RESETn is not an ADDR_CTRL member in Table 7-66.
 export function TimingConstraints() {
@@ -53,26 +38,15 @@ export function TimingConstraints() {
           <bus
             name={`DDR_BYTE${byte}`}
             routingPhaseIndex={1}
-            maxLengthSkew="25mil"
-            pcbRoutingConstraints={{ expectedTraceCount: 11 }}
-            connections={[...data(byte), ...strobes(byte)]}
-          />
-          <bus
-            name={`DDR_DATA${byte}`}
-            routingDisabled
+            preferredLayer={byte === 0 ? "inner1" : "inner2"}
             connections={data(byte)}
+            lengthMatchTo={`.DDR_DQS_PAIR${byte}`}
             maxLengthSkew="25mil"
-            pcbRoutingConstraints={{
-              expectedTraceCount: 9,
-              lengthBounds: {
-                referenceBus: `DDR_BYTE${byte}`,
-                referenceMetric: "longest_manhattan",
-                max: 0,
-              },
-              maxReducedSpacingLength: "1250mil",
-              spacing: spacing(`DDR_DATA${byte}`),
-              impedanceBounds: { min: "50ohm", max: "75ohm" },
-            }}
+            maxLength={{ reference: "longest_manhattan" }}
+            pcbTraceSpacing="3w"
+            pcbSpacingToOtherSignals="4w"
+            targetImpedanceMin="50ohm"
+            targetImpedanceMax="75ohm"
           />
           <differentialpair
             name={`DDR_DQS_PAIR${byte}`}
@@ -80,36 +54,26 @@ export function TimingConstraints() {
             negativeConnection={strobes(byte)[1]!}
             maxLengthSkew="5mil"
             pcbTraceGap={0.12}
-            pcbRoutingConstraints={{
-              expectedTraceCount: 2,
-              maxReducedSpacingLength: "1250mil",
-              spacing: spacing(`DDR_DQS_PAIR${byte}`),
-              impedanceBounds: { min: "100ohm", max: "150ohm" },
-            }}
+            pcbSpacingToOtherSignals="4w"
+            targetDifferentialImpedance="125±25ohm"
           />
         </Fragment>
       ))}
       <bus
-        name="DDR_COMMAND_CLOCK"
-        routingDisabled
-        connections={[...command, ...clock]}
-      />
-      <bus
         name="DDR_ADDR_CTRL"
-        routingDisabled
+        routingPhaseIndex={1}
+        preferredLayer="bottom"
         connections={command}
-        pcbRoutingConstraints={{
-          expectedTraceCount: 22,
-          lengthBounds: {
-            referenceBus: "DDR_COMMAND_CLOCK",
-            referenceMetric: "longest_manhattan",
-            min: "250mil",
-            max: "350mil",
-          },
-          maxReducedSpacingLength: "1250mil",
-          spacing: spacing("DDR_ADDR_CTRL"),
-          impedanceBounds: { min: "50ohm", max: "75ohm" },
+        targetLength={{
+          reference: "longest_manhattan",
+          of: [".DDR_ADDR_CTRL", ".DDR_CK_PAIR"],
+          offset: "300mil",
         }}
+        lengthTolerance="50mil"
+        pcbTraceSpacing="3w"
+        pcbSpacingToOtherSignals="4w"
+        targetImpedanceMin="50ohm"
+        targetImpedanceMax="75ohm"
       />
       <differentialpair
         name="DDR_CK_PAIR"
@@ -117,18 +81,14 @@ export function TimingConstraints() {
         negativeConnection={clock[1]!}
         maxLengthSkew="5mil"
         pcbTraceGap={0.12}
-        pcbRoutingConstraints={{
-          expectedTraceCount: 2,
-          lengthBounds: {
-            referenceBus: "DDR_COMMAND_CLOCK",
-            referenceMetric: "longest_manhattan",
-            min: "250mil",
-            max: "350mil",
-          },
-          maxReducedSpacingLength: "1250mil",
-          spacing: spacing("DDR_CK_PAIR"),
-          impedanceBounds: { min: "100ohm", max: "150ohm" },
+        targetLength={{
+          reference: "longest_manhattan",
+          of: [".DDR_ADDR_CTRL", ".DDR_CK_PAIR"],
+          offset: "300mil",
         }}
+        lengthTolerance="50mil"
+        pcbSpacingToOtherSignals="4w"
+        targetDifferentialImpedance="125±25ohm"
       />
     </>
   )

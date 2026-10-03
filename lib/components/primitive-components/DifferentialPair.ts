@@ -1,3 +1,5 @@
+import type { SourceBus } from "circuit-json"
+import { resolveSourceBusRoutingConstraints } from "lib/utils/resolveSourceBusRoutingConstraints"
 import { differentialPairProps } from "@tscircuit/props"
 import {
   type BaseComponentConfig,
@@ -11,6 +13,12 @@ import { DifferentialPair_doInitialSourceDesignRuleChecks } from "./Differential
 export class DifferentialPair extends PrimitiveComponent<
   typeof differentialPairProps
 > {
+  source_bus_id?: SourceBus["source_bus_id"]
+
+  doInitialSimulationRender(): void {
+    resolveSourceBusRoutingConstraints(this)
+  }
+
   override get config(): BaseComponentConfig {
     return {
       componentName: "DifferentialPair",

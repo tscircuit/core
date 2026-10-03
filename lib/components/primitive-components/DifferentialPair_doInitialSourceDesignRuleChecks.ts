@@ -1,4 +1,3 @@
-import { getRoutingConstraints } from "lib/utils/getRoutingConstraints"
 import type { SourcePort, SourceTrace } from "circuit-json"
 import type { DifferentialPair } from "./DifferentialPair"
 import type { Port } from "./Port/Port"
@@ -187,15 +186,12 @@ export const DifferentialPair_doInitialSourceDesignRuleChecks = (
   // Export resolved membership for Circuit JSON consumers such as net inspection.
   // Both polarities must resolve; existing validation still handles invalid selectors.
   if (resolvedPolarityCount === 2 && memberTraceIds.length > 0) {
-    db.source_bus.insert({
+    const sourceBus = db.source_bus.insert({
       name: differentialPair.name,
       source_trace_ids: [...new Set(memberTraceIds)],
       max_length_skew: differentialPair._parsedProps.maxLengthSkew,
       target_differential_impedance:
         differentialPair._parsedProps.targetDifferentialImpedance,
-      routing_constraints: getRoutingConstraints(
-        differentialPair._parsedProps.pcbRoutingConstraints,
-      ),
       differential_pair:
         resolvedPair.positive && resolvedPair.negative
           ? {
@@ -209,5 +205,6 @@ export const DifferentialPair_doInitialSourceDesignRuleChecks = (
       subcircuit_id:
         differentialPair.getSubcircuit().subcircuit_id ?? undefined,
     })
+    differentialPair.source_bus_id = sourceBus.source_bus_id
   }
 }
