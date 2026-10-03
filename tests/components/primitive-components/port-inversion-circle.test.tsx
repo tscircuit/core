@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("port forwards hasInversionCircle to schematic_port", async () => {
+test("port forwards hasInversionCircle to schematic_port", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -33,26 +33,28 @@ test("port forwards hasInversionCircle to schematic_port", async () => {
 
   circuit.render()
 
-  const schematicPortsByLabel = new Map(
-    circuit.db.schematic_port
-      .list()
-      .map((port) => [port.display_pin_label, port]),
-  )
-
+  // Snapshot the persisted field rather than the rendered schematic: drawing
+  // the bubble is circuit-to-svg's responsibility, and it does not yet render
+  // ports for symbol-based components.
   expect(
-    schematicPortsByLabel.get("BUBBLED")?.is_drawn_with_inversion_circle,
-  ).toBe(true)
-
-  // Ports that did not request a bubble must not be marked as inverted, so
-  // schematics without inversion circles keep their existing serialization.
-  expect(
-    schematicPortsByLabel.get("PLAIN")?.is_drawn_with_inversion_circle,
-  ).toBeUndefined()
-  expect(
-    schematicPortsByLabel.get("EXPLICIT_FALSE")?.is_drawn_with_inversion_circle,
-  ).toBeUndefined()
-
-  expect(await circuit.getSvg({ view: "schematic" })).toMatchSvgSnapshot(
-    import.meta.path,
-  )
+    circuit.db.schematic_port.list().map((port) => ({
+      label: port.display_pin_label,
+      is_drawn_with_inversion_circle: port.is_drawn_with_inversion_circle,
+    })),
+  ).toMatchInlineSnapshot(`
+    [
+      {
+        "is_drawn_with_inversion_circle": true,
+        "label": "BUBBLED",
+      },
+      {
+        "is_drawn_with_inversion_circle": undefined,
+        "label": "PLAIN",
+      },
+      {
+        "is_drawn_with_inversion_circle": undefined,
+        "label": "EXPLICIT_FALSE",
+      },
+    ]
+  `)
 })
