@@ -29,5 +29,9 @@ test("core reports the F1C100S AVCC 1.8 V versus 2.8 V mismatch through its norm
   ).toBe(1.8)
   await circuit.renderUntilSettled()
   expect(circuit.db.source_component_misconfigured_error.list()).toHaveLength(1)
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path, {
+    showErrorsInTextOverlay: true,
+    shouldDrawErrors: true,
+    grid: { cellSize: 1, labelCells: true },
+  })
 })
