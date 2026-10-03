@@ -47,6 +47,6 @@ test("connector with standard='usb_c' handles findPart returning 'Not found' wit
     sourceComponent!.source_component_id,
   )
   expect((missingMfnWarnings[0] as any).message).toContain(
-    "is missing a manufacturer part number. Specify mpn, manufacturerPartNumber, or mfn.",
+    "could not be resolved to a supplier part. Specify mpn, manufacturerPartNumber, or mfn",
   )
 })

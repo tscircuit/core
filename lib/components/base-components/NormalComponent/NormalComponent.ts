@@ -95,6 +95,7 @@ import { NormalComponent_doInitialResolveFootprintPinLabels } from "./NormalComp
 import { NormalComponent_doInitialSchematicComponentRender } from "./NormalComponent_doInitialSchematicComponentRender"
 import { NormalComponent_doInitialSilkscreenOverlapAdjustment } from "./NormalComponent_doInitialSilkscreenOverlapAdjustment"
 import { NormalComponent_doInitialSourceDesignRuleChecks } from "./NormalComponent_doInitialSourceDesignRuleChecks"
+import { NormalComponent_doInitialMissingManufacturerPartNumberWarning } from "./NormalComponent_doInitialMissingManufacturerPartNumberWarning"
 import { NormalComponent_doInitialSupplierFootprintMismatchWarning } from "./NormalComponent_doInitialSupplierFootprintMismatchWarning"
 import { canMergePortDefinitions } from "./utils/canMergePortDefinitions"
 import { getPrimaryPortsFromPortHintGroups } from "./utils/getPrimaryPortsFromPortHintGroups"
@@ -2274,6 +2275,14 @@ export class NormalComponent<
       })
       return
     }
+  }
+
+  doInitialMissingManufacturerPartNumberWarning(): void {
+    NormalComponent_doInitialMissingManufacturerPartNumberWarning(this)
+  }
+
+  updateMissingManufacturerPartNumberWarning(): void {
+    this.doInitialMissingManufacturerPartNumberWarning()
   }
 
   doInitialPartOrientationAnalysis(): void {

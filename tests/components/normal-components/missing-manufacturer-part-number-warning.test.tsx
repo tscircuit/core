@@ -1,10 +1,10 @@
 import { expect, test } from "bun:test"
 import { source_missing_manufacturer_part_number_warning } from "circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
-import { NormalComponent_doInitialSourceDesignRuleChecks } from "lib/components/base-components/NormalComponent/NormalComponent_doInitialSourceDesignRuleChecks"
+import { NormalComponent_doInitialMissingManufacturerPartNumberWarning } from "lib/components/base-components/NormalComponent/NormalComponent_doInitialMissingManufacturerPartNumberWarning"
 import type { NormalComponent } from "lib/components/base-components/NormalComponent/NormalComponent"
 
-test("warns once for non-passive parts without an MPN, including supplier-only parts", () => {
+test("warns once for unresolved parts, accepting MPNs and non-empty supplier numbers", () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board routingDisabled>
@@ -17,6 +17,16 @@ test("warns once for non-passive parts without an MPN, including supplier-only p
           supplierPartNumbers={{ jlcpcb: ["C123"] }}
         />
         <chip name="R2" footprint="soic8" />
+        <chip
+          name="U4"
+          footprint="soic8"
+          supplierPartNumbers={{ jlcpcb: [] }}
+        />
+        <chip
+          name="U5"
+          footprint="soic8"
+          supplierPartNumbers={{ jlcpcb: [" "] }}
+        />
         <diode name="D1" footprint="sod123" />
         <connector
           name="J1"
@@ -32,7 +42,7 @@ test("warns once for non-passive parts without an MPN, including supplier-only p
   circuit.render()
   const warnings =
     circuit.db.source_missing_manufacturer_part_number_warning.list()
-  expect(warnings).toHaveLength(6)
+  expect(warnings).toHaveLength(10)
   const warnedNames = warnings.map((warning) => {
     expect(
       source_missing_manufacturer_part_number_warning.safeParse(warning)
@@ -44,11 +54,30 @@ test("warns once for non-passive parts without an MPN, including supplier-only p
     )
     return circuit.db.source_component.get(warning.source_component_id)?.name
   })
-  expect(warnedNames.sort()).toEqual(["D1", "J1", "R2", "U1", "U2", "U3"])
-  NormalComponent_doInitialSourceDesignRuleChecks(
+  expect(warnedNames.sort()).toEqual([
+    "C1",
+    "D1",
+    "J1",
+    "L1",
+    "R1",
+    "R2",
+    "U1",
+    "U2",
+    "U4",
+    "U5",
+  ])
+  NormalComponent_doInitialMissingManufacturerPartNumberWarning(
     circuit.selectOne(".parts .U1") as NormalComponent,
   )
   expect(
     circuit.db.source_missing_manufacturer_part_number_warning.list(),
-  ).toHaveLength(6)
+  ).toHaveLength(10)
+  const resolvedChip = circuit.selectOne(".parts .U1") as NormalComponent
+  circuit.db.source_component.update(resolvedChip.source_component_id!, {
+    supplier_part_numbers: { jlcpcb: ["C456"] },
+  })
+  resolvedChip.updateMissingManufacturerPartNumberWarning()
+  expect(
+    circuit.db.source_missing_manufacturer_part_number_warning.list(),
+  ).toHaveLength(9)
 })
