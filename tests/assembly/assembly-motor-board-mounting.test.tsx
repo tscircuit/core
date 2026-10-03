@@ -1,3 +1,4 @@
+import { withLocalNemaMesh } from "./fixtures/with-local-nema-mesh"
 import { expect, test } from "bun:test"
 import { assembly } from "lib"
 import { expectAssemblySnapshot } from "./fixtures/expect-assembly-snapshot"
@@ -35,12 +36,13 @@ test("board backface mounts preserve PCB geometry and leave a 6 mm surface gap",
         />
         <assembly.motor
           name="NEMA17"
-          model="nema17_backfaceholes"
+          standard="nema17"
           shaftFacingDirection={direction}
         />
       </assembly.device>,
     )
     await circuit.renderUntilSettled()
+    const json = await withLocalNemaMesh(circuit.getCircuitJson())
     const board = circuit.db.pcb_board.list()[0]!
     expect(board.center).toEqual({ x: 10, y: -7 })
     const motor = circuit.db.cad_component
@@ -48,18 +50,16 @@ test("board backface mounts preserve PCB geometry and leave a 6 mm surface gap",
       .find((cad) => cad.model_glb_url?.includes("nema17"))!
     expect(motor.position.x).toBe(board.center.x)
     expect(motor.position.y).toBe(board.center.y)
-    // Measure the actual rotated GLB rear face, not the placement formula.
+    // Measure rear screw tips: 3 mm heads leave 3 mm within the 6 mm face gap.
     const bounds = await getRenderedMotorBounds(
-      circuit
-        .getCircuitJson()
-        .filter(
-          (el) =>
-            el.type === "cad_component" &&
-            el.cad_component_id === motor.cad_component_id,
-        ),
+      json.filter(
+        (el) =>
+          el.type === "cad_component" &&
+          el.cad_component_id === motor.cad_component_id,
+      ),
     )
-    const rearZ = direction === "z+" ? bounds.min[1]! : bounds.max[1]!
-    expect(Math.abs(rearZ) - board.thickness / 2).toBeCloseTo(6, 2)
+    const rearScrewTipZ = direction === "z+" ? bounds.min[1]! : bounds.max[1]!
+    expect(Math.abs(rearScrewTipZ) - board.thickness / 2).toBeCloseTo(3, 2)
     expect(
       circuit.db.pcb_hole
         .list()
@@ -81,12 +81,12 @@ test("board backface mounts preserve PCB geometry and leave a 6 mm surface gap",
   />
   <assembly.motor
     name="NEMA17"
-    model="nema17_backfaceholes"
+    standard="nema17"
     shaftFacingDirection="${direction}"
   />
 </assembly.device>`,
-      annotation: `6 mm rear-face-to-PCB clearance / 1.6 mm PCB / motor origin z=${motor.position.z} mm`,
-      circuit,
+      annotation: `6 mm face gap / 3 mm screw-tip gap / 1.6 mm PCB / motor origin z=${motor.position.z} mm`,
+      circuit: json,
       renderOptions: {
         camPos: [100, 60, 100] as [number, number, number],
         poppygl: {

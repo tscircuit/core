@@ -1,3 +1,4 @@
+import { withLocalNemaMesh } from "./fixtures/with-local-nema-mesh"
 import { expect, test } from "bun:test"
 import { assembly } from "lib"
 import { expectAssemblySnapshot } from "./fixtures/expect-assembly-snapshot"
@@ -7,7 +8,7 @@ import { getRenderedMotorBounds } from "./fixtures/get-rendered-motor-bounds"
 test("custom NEMA body length controls backface placement with zero default gap", async () => {
   const { circuit } = getTestFixture()
   const model =
-    "nema17_backfaceholes_bodylength48mm_shaftlength30mm_flatdepth0.5mm_flatlength18mm"
+    "nema17_bodylength48mm_shaftlength30mm_flatdepth0.5mm_flatlength18mm_plainbackface"
   circuit.add(
     <assembly.device>
       <assembly.motor name="CUSTOM" model={model} />
@@ -28,12 +29,13 @@ test("custom NEMA body length controls backface placement with zero default gap"
     </assembly.device>,
   )
   await circuit.renderUntilSettled()
+  const json = await withLocalNemaMesh(circuit.getCircuitJson())
   const cad = circuit.db.cad_component.list()[0]!
   expect(cad.model_glb_url).toBe(
     `https://modelcdn.tscircuit.com/jscad_models/${model}.glb`,
   )
   const bounds = await getRenderedMotorBounds(
-    circuit.getCircuitJson().filter((el) => el.type === "cad_component"),
+    json.filter((el) => el.type === "cad_component"),
   )
   expect(bounds.min[1]).toBeCloseTo(1, 2)
   expect(bounds.max[1]! - bounds.min[1]!).toBeCloseTo(78, 2)
@@ -43,10 +45,10 @@ test("custom NEMA body length controls backface placement with zero default gap"
       {
         title: "Flush rear mount (mountGap defaults to zero)",
         code: `const model =
-  "nema17_backfaceholes" +
-  "_bodylength48mm" +
+  "nema17_bodylength48mm" +
   "_shaftlength30mm" +
-  "_flatdepth0.5mm_flatlength18mm"
+  "_flatdepth0.5mm_flatlength18mm" +
+  "_plainbackface"
 
 <assembly.device>
   <assembly.motor
@@ -59,8 +61,8 @@ test("custom NEMA body length controls backface placement with zero default gap"
   />
 </assembly.device>`,
         annotation:
-          "48 mm body / 30 mm D shaft / 2 mm PCB / zero rear-face clearance",
-        circuit,
+          "48 mm body / 30 mm D shaft / 2 mm PCB / plain rear face / zero clearance",
+        circuit: json,
         renderOptions: {
           camPos: [110, 90, 110],
           poppygl: { lookAt: [0, 35, 0] },
