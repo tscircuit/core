@@ -41,7 +41,7 @@ export const resolveAssemblyMotorPlacement = (
       ...pcbBoard.center,
       z:
         sign *
-        (motor.motorModel.bodyLength +
+        (-motor.motorReferencePoints.backface.position.z +
           (board._parsedProps.mountGap ?? 0) +
           pcbBoard.thickness / 2),
     },

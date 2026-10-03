@@ -56,9 +56,9 @@
     "@tscircuit/matchpack": "^0.0.97",
     "@tscircuit/math-utils": "^0.0.36",
     "@tscircuit/miniflex": "^0.0.4",
-    "@tscircuit/modelprinter": "^0.0.5",
+    "@tscircuit/modelprinter": "https://pkg.pr.new/tscircuit/modelprinter/@tscircuit/modelprinter@e124073",
     "@tscircuit/ngspice-spice-engine": "^0.0.20",
-    "@tscircuit/props": "^0.0.682",
+    "@tscircuit/props": "https://pkg.pr.new/tscircuit/props/@tscircuit/props@b033da6",
     "@tscircuit/schematic-match-adapt": "^0.0.18",
     "@tscircuit/schematic-trace-solver": "https://jscdn.tscircuit.com/@tscircuit/schematic-trace-solver/0.0.224.tgz",
     "@tscircuit/solver-utils": "^0.0.16",
@@ -78,7 +78,7 @@
     "circuit-json": "^0.0.513",
     "circuit-json-to-bpc": "^0.0.13",
     "circuit-json-to-connectivity-map": "^0.0.33",
-    "circuit-json-to-gltf": "^0.0.141",
+    "circuit-json-to-gltf": "https://pkg.pr.new/tscircuit/circuit-json-to-gltf/circuit-json-to-gltf@62ab875",
     "circuit-json-to-spice": "^0.0.45",
     "circuit-to-svg": "^0.0.440",
     "concurrently": "^9.1.2",
@@ -131,6 +131,7 @@
     "clipper-lib": "^6.4.2",
     "css-select": "5.1.0",
     "format-si-unit": "^0.0.12",
+    "gl-matrix": "^3.4.4",
     "nanoid": "^5.0.7",
     "performance-now": "^2.1.0",
     "react-reconciler": "^0.32.0",
@@ -140,7 +141,7 @@
   },
   "overrides": {
     "@tscircuit/circuit-json-util": "^0.0.119",
-    "@tscircuit/props": "^0.0.682",
+    "@tscircuit/props": "https://pkg.pr.new/tscircuit/props/@tscircuit/props@b033da6",
     "circuit-json": "^0.0.513"
   }
 }
