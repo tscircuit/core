@@ -4,12 +4,11 @@ import type {
   AutoroutingPhaseProps,
   BreakoutProps,
 } from "@tscircuit/props"
-import type { z } from "zod"
-import { getSavedAutoroutingPhaseTraces } from "./get-saved-autorouting-phase-traces"
 import { getPresetAutoroutingConfig } from "lib/utils/autorouting/getPresetAutoroutingConfig"
+import type { z } from "zod"
 import type { AutoroutingPhase } from "../AutoroutingPhase"
-import { getSavedFanoutTraces } from "../Breakout/get-saved-fanout-traces"
 import type { Breakout } from "../Breakout/Breakout"
+import { getSavedFanoutTraces } from "../Breakout/get-saved-fanout-traces"
 import { BreakoutPoint } from "../BreakoutPoint"
 import type { Bus } from "../Bus"
 import type { Net } from "../Net"
@@ -20,6 +19,7 @@ import type {
   RoutingPhaseDrcTolerances,
   RoutingPhasePlan,
 } from "./GroupRoutingPhasePlan"
+import { getSavedAutoroutingPhaseTraces } from "./get-saved-autorouting-phase-traces"
 
 type GroupFanoutProps = Pick<
   BreakoutProps,
@@ -57,8 +57,15 @@ function getOrCreateRoutingPhasePlan(
   return plan
 }
 
-function getNetRoutingPhaseIndex(net: Net): number | null {
-  return net.props.routingPhaseIndex ?? null
+function getNetRoutingPhaseIndex(
+  net: Net,
+  inferredNetRoutingPhaseIndexes?: ReadonlyMap<Net, number>,
+): number | null {
+  return (
+    net.props.routingPhaseIndex ??
+    inferredNetRoutingPhaseIndexes?.get(net) ??
+    null
+  )
 }
 
 function getTraceRoutingPhaseIndex(
@@ -316,9 +323,33 @@ export function Group_getRoutingPhasePlans(
   )
     return []
 
+  // A source net becomes one autorouter connection even when several traces
+  // reference it. If the net has no phase of its own, route that connection
+  // with the earliest explicitly assigned trace phase instead of leaving the
+  // net in the implicit remaining phase as well.
+  const inferredNetRoutingPhaseIndexes = new Map<Net, number>()
+  for (const trace of traces) {
+    const traceRoutingPhaseIndex = getTraceRoutingPhaseIndex(trace, buses)
+    if (traceRoutingPhaseIndex === null) continue
+
+    for (const net of trace._findConnectedNets().nets) {
+      if (net.props.routingPhaseIndex !== undefined) continue
+      const existingRoutingPhaseIndex = inferredNetRoutingPhaseIndexes.get(net)
+      if (
+        existingRoutingPhaseIndex === undefined ||
+        traceRoutingPhaseIndex < existingRoutingPhaseIndex
+      ) {
+        inferredNetRoutingPhaseIndexes.set(net, traceRoutingPhaseIndex)
+      }
+    }
+  }
+
   for (const net of nets) {
     if (breakoutByNet.has(net)) continue
-    const routingPhaseIndex = getNetRoutingPhaseIndex(net)
+    const routingPhaseIndex = getNetRoutingPhaseIndex(
+      net,
+      inferredNetRoutingPhaseIndexes,
+    )
     if (routingPhaseIndex === null && !includeUnassignedConnections) continue
     getOrCreateRoutingPhasePlan(plansByPhaseIndex, routingPhaseIndex).nets.push(
       net,
