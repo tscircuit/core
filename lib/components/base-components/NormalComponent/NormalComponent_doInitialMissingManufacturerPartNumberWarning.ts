@@ -41,6 +41,6 @@ export const NormalComponent_doInitialMissingManufacturerPartNumberWarning = (
     subcircuit_id: component.getSubcircuit()?.subcircuit_id ?? undefined,
     standard,
     warning_type: "source_missing_manufacturer_part_number_warning",
-    message: `${component.getString()} is missing a manufacturer part number and could not be resolved to a supplier part. Specify mpn, manufacturerPartNumber, or mfn, provide supplierPartNumbers, or configure a parts engine to select a part.`,
+    message: `${component.getString()} is missing a manufacturer part number and could not be resolved to a supplier part. Specify mpn, manufacturerPartNumber, or mfn, provide supplierPartNumbers, or configure a parts engine to select a part. If this part will not be assembled, mark it doNotPlace.`,
   })
 }
