@@ -1,33 +1,18 @@
 import { POWER_NET_REGEX } from "lib/utils/gnd-power-net-regex"
 import type { Port } from "./Port"
+import { resolvePortSourcePinAttributes } from "./resolve-port-source-pin-attributes"
 
 function portShouldHaveDecouplingCapacitor(port: Port): boolean {
   if (port.getParentNormalComponent()?.config.componentName !== "Chip") {
     return false
   }
 
-  let shouldHaveDecouplingCapacitor: boolean | undefined
-  let requiresPower: boolean | undefined
-  let providesPower: boolean | undefined
-
-  for (const pinAttributes of port._getMatchingPinAttributes()) {
-    if (pinAttributes.shouldHaveDecouplingCapacitor !== undefined) {
-      shouldHaveDecouplingCapacitor =
-        pinAttributes.shouldHaveDecouplingCapacitor
-    }
-    if (pinAttributes.requiresPower !== undefined) {
-      requiresPower = pinAttributes.requiresPower
-    }
-    if (pinAttributes.providesPower !== undefined) {
-      providesPower = pinAttributes.providesPower
-    }
+  const attributes = resolvePortSourcePinAttributes(port)
+  if (attributes.should_have_decoupling_capacitor !== undefined) {
+    return attributes.should_have_decoupling_capacitor
   }
-
-  if (shouldHaveDecouplingCapacitor !== undefined) {
-    return shouldHaveDecouplingCapacitor
-  }
-  if (requiresPower !== undefined) return requiresPower
-  if (providesPower === true) return false
+  if (attributes.requires_power !== undefined) return attributes.requires_power
+  if (attributes.provides_power === true) return false
 
   for (const portName of port.getNameAndAliases()) {
     if (POWER_NET_REGEX.test(portName)) return true

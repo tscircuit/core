@@ -9,13 +9,13 @@ import { applyToPoint, compose, translate } from "transformation-matrix"
 import { z } from "zod"
 import { PrimitiveComponent } from "../../base-components/PrimitiveComponent"
 import type { Trace } from "../Trace/Trace"
-import type { LayerRef, SchematicPort, SourcePinAttributes } from "circuit-json"
+import type { LayerRef, SchematicPort } from "circuit-json"
 import { areAllPcbPrimitivesOverlapping } from "./areAllPcbPrimitivesOverlapping"
 import { getCenterOfPcbPrimitives } from "./getCenterOfPcbPrimitives"
 import { type PinAttributeMap, portProps } from "@tscircuit/props"
 import type { INormalComponent } from "lib/components/base-components/NormalComponent/INormalComponent"
 import { TraceConnectionError } from "lib/errors"
-import { applyPinAttributesToSourcePort } from "./apply-pin-attributes-to-source-port"
+import { resolvePortSourcePinAttributes } from "./resolve-port-source-pin-attributes"
 import { Port_doInitialCreateTracesFromProps } from "./Port_doInitialCreateTracesFromProps"
 import { Port_isConnectedToGround } from "./Port_isConnectedToGround"
 import { Port_isConnectedToPower } from "./Port_isConnectedToPower"
@@ -429,13 +429,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     // (children render before parents). It will be updated in SourceParentAttachment phase.
     const source_component_id = parentWithSourceId?.source_component_id ?? null
 
-    // Get pin attributes from parent component and apply them to this port
-    const pinAttributes = this._getMatchingPinAttributes()
-    const portAttributesFromParent: SourcePinAttributes = {}
-
-    for (const attributes of pinAttributes) {
-      applyPinAttributesToSourcePort(portAttributesFromParent, attributes)
-    }
+    const portAttributesFromParent = resolvePortSourcePinAttributes(this)
 
     const source_port = db.source_port.insert({
       name: props.name!,
@@ -447,6 +441,14 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     })
 
     this.source_port_id = source_port.source_port_id
+  }
+
+  updateSourceRender(): void {
+    if (!this.source_port_id || !this.shouldCreateSourcePort) return
+    this.root!.db.source_port.update(
+      this.source_port_id,
+      resolvePortSourcePinAttributes(this),
+    )
   }
 
   doInitialSourceParentAttachment(): void {

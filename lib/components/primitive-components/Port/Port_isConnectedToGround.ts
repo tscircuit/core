@@ -1,16 +1,15 @@
 import type { Net } from "lib/components/primitive-components/Net"
 import { GROUND_NET_REGEX } from "lib/utils/gnd-power-net-regex"
 import type { Port } from "./Port"
+import { resolvePortSourcePinAttributes } from "./resolve-port-source-pin-attributes"
 
 function portIsGround(port: Port): boolean {
-  for (const pinAttributes of port._getMatchingPinAttributes()) {
-    if (
-      pinAttributes.requiresGround === true ||
-      pinAttributes.providesGround === true
-    ) {
-      return true
-    }
-  }
+  const attributes = resolvePortSourcePinAttributes(port)
+  if (
+    attributes.requires_ground === true ||
+    attributes.provides_ground === true
+  )
+    return true
 
   for (const portName of port.getNameAndAliases()) {
     if (GROUND_NET_REGEX.test(portName)) return true
