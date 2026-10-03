@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("port forwards hasInversionCircle to schematic_port", () => {
+test("port forwards hasInversionCircle to schematic_port", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -51,4 +51,8 @@ test("port forwards hasInversionCircle to schematic_port", () => {
   expect(
     schematicPortsByLabel.get("EXPLICIT_FALSE")?.is_drawn_with_inversion_circle,
   ).toBeUndefined()
+
+  expect(await circuit.getSvg({ view: "schematic" })).toMatchSvgSnapshot(
+    import.meta.path,
+  )
 })
