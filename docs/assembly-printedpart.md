@@ -1,9 +1,17 @@
 # Printed parts with named mounting faces
 
-`assembly.printedpart` compiles jscad-fiber JSX to a serializable JSCAD plan.
-Core emits the plan in `cad_component.model_jscad`; viewers/exporters generate
-meshes. Reference rectangles define attachment frames and are removed before
-emission. There is no separate list of mounting-face coordinates.
+`assembly.printedpart` accepts one geometry source: `jscad`, `model`, `modelUrl`,
+or `cadModel`. `model`, `modelUrl`, and `cadModel` use the existing assembly CAD
+formats, including CAD JSX and model transforms. For example:
+
+```tsx
+<assembly.printedpart name="SPACER" modelUrl="./spacer.stl" />
+<assembly.printedpart name="BRACKET" cadModel={{ glbUrl: "./bracket.glb" }} />
+```
+
+The `jscad` prop compiles jscad-fiber JSX to a serializable plan in
+`cad_component.model_jscad`; viewers/exporters generate meshes. Reference rectangles authored with `jscad` define attachment frames and are removed
+before emission. Imported models do not acquire named reference faces automatically. There is no separate list of mounting-face coordinates.
 
 ```tsx
 import { assembly, jscad } from "@tscircuit/core"

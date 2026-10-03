@@ -4,7 +4,10 @@ import type { AssemblyMotor } from "./AssemblyMotor"
 
 import { getComponentsInAssemblyScope } from "./get-assembly-scope-components"
 export { getComponentsInAssemblyScope } from "./get-assembly-scope-components"
-import { boardMountsToPrintedPart, resolvePrintedPartMounts } from "./resolve-printed-part-mounts"
+import {
+  boardMountsToPrintedPart,
+  resolvePrintedPartMounts,
+} from "./resolve-printed-part-mounts"
 
 export const matchesAssemblyIdentity = (
   component: PrimitiveComponent,

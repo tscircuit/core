@@ -1,4 +1,8 @@
-import type { ReactElement } from "react"
+import { isValidElement, type ReactElement } from "react"
+import { createInstanceFromReactElement } from "lib/fiber/create-instance-from-react-element"
+import type { AssemblyDeviceContainer } from "../base-components/is-assembly-device-container"
+import { resolveAssemblyModel } from "./resolve-assembly-model"
+import { resolveAssemblyPlacement } from "./resolve-assembly-placement"
 import { assemblyPrintedPartProps } from "@tscircuit/props"
 import { renderToJscadPlan } from "jscad-fiber/headless"
 import {
@@ -11,9 +15,12 @@ import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { renderAssemblyCadModel } from "./render-assembly-cad-model"
 import { resolvePrintedPartMounts } from "./resolve-printed-part-mounts"
 
-export class AssemblyPrintedPart extends PrimitiveComponent<
-  typeof assemblyPrintedPartProps
-> {
+export class AssemblyPrintedPart
+  extends PrimitiveComponent<typeof assemblyPrintedPartProps>
+  implements AssemblyDeviceContainer
+{
+  isAssemblyDeviceContainer = true as const
+
   private compiledJscadInput?: ReactElement
   private compiledJscad?: {
     geometry: JscadOperation
@@ -31,6 +38,7 @@ export class AssemblyPrintedPart extends PrimitiveComponent<
    * and X axes are directions. Compilation produces operations, never a mesh.
    */
   get printedPartPlan() {
+    if (!this._parsedProps.jscad) return undefined
     if (
       !this.compiledJscad ||
       this.compiledJscadInput !== this._parsedProps.jscad
@@ -48,6 +56,11 @@ export class AssemblyPrintedPart extends PrimitiveComponent<
     return this.compiledJscad
   }
 
+  doInitialReactSubtreesRender(): void {
+    if (isValidElement(this.props.cadModel))
+      this.add(createInstanceFromReactElement(this.props.cadModel))
+  }
+
   doInitialSourceRender(): void {
     this.printedPartPlan
     this.source_component_id = this.root!.db.source_component.insert({
@@ -58,6 +71,25 @@ export class AssemblyPrintedPart extends PrimitiveComponent<
 
   doInitialCadModelRender(): void {
     if (!this.root || this.root.pcbDisabled || !this.source_component_id) return
+    const plan = this.printedPartPlan
+    if (!plan) {
+      let model =
+        resolveAssemblyModel(this._parsedProps) ?? this._parsedProps.cadModel
+      const placement = resolveAssemblyPlacement(this)
+      if (!model || (typeof model === "object" && "type" in model)) return
+      if (typeof model === "object" && "jscad" in model) {
+        const { geometry } = resolveReferencePlanes(
+          model.jscad as JscadOperation,
+        )
+        if (!geometry)
+          throw new Error(
+            `assembly.printedpart "${this.name}" needs solid geometry in addition to references`,
+          )
+        model = { ...model, jscad: geometry }
+      }
+      this.cad_component_id = renderAssemblyCadModel(this, model, placement)
+      return
+    }
     const { transforms, subcircuitId } = resolvePrintedPartMounts(this)
     const transform = transforms.get(this)!
     // Bake only the part's world orientation into the operation tree. Keeping
@@ -78,7 +110,7 @@ export class AssemblyPrintedPart extends PrimitiveComponent<
     this.cad_component_id = renderAssemblyCadModel(
       this,
       {
-        jscad: { type: "rotate", angles, shape: this.printedPartPlan.geometry },
+        jscad: { type: "rotate", angles, shape: plan.geometry },
       },
       {
         position: { x: transform[12], y: transform[13], z: transform[14] },

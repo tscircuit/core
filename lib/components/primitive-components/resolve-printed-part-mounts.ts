@@ -39,7 +39,7 @@ const getFace = (
   faceName: string,
 ): NamedReferencePlane => {
   if (isPrintedPart(part)) {
-    const face = part.printedPartPlan.referencePlanes.find(
+    const face = part.printedPartPlan?.referencePlanes.find(
       (face) => face.name === faceName,
     )
     if (!face)
@@ -235,8 +235,7 @@ export const resolveMotorPrintedPartPlacement = (
   const bottom = motor._parsedProps.shaftFacingDirection === "z-"
   return {
     position: { x: world[12], y: world[13], z: world[14] },
-    pcbRotation:
-      ((bottom ? -1 : 1) * (yawByRoot.get(motor) ?? 0) * 180) / Math.PI,
+    pcbRotation: ((yawByRoot.get(motor) ?? 0) * 180) / Math.PI,
     layer: bottom ? "bottom" : "top",
     subcircuit_id: subcircuitId,
   }
