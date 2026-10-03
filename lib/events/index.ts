@@ -89,7 +89,9 @@ export interface AutoroutingEndEvent extends AutoroutingExecutionMetadata {
    * Replayable copper for this stage only, in its enclosing group's local PCB
    * frame (mm, +X right, +Y up, +Z above; right-handed points). Physical layers
    * are unchanged. Pass to pcbTracePaths with the same phase options/placement.
-   * Omitted when the saved-path API cannot represent the result; never partial.
+   * Complete non-fanout networks identify their routing connection by name and
+   * may use multiple entries with that name to preserve branch segments. Omitted when
+   * the saved-path API cannot represent the result; never partial.
    */
   pcbTracePaths?: FanoutTracePath[]
   /** Why this stage could not be represented by pcbTracePaths. */

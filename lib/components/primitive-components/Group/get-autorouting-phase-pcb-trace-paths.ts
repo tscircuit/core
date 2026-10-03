@@ -1,17 +1,26 @@
 import { fanoutTracePath } from "@tscircuit/props"
-import { applyToPoint, inverse } from "transformation-matrix"
-import type { PcbPort } from "circuit-json"
-import type { z } from "zod"
+import type { LayerRef, PcbPort } from "circuit-json"
 import type {
   SimpleRouteJson,
   SimplifiedPcbTrace,
   SingleLayerConnectionPoint,
 } from "lib/utils/autorouting/SimpleRouteJson"
+import { getLogicalConnectionGroups } from "lib/utils/autorouting/get-logical-connection-groups"
+import { getRouteConnectivity } from "lib/utils/autorouting/get-route-connectivity"
+import {
+  getAutoroutedViaLayers,
+  getViaBoardLayers,
+} from "lib/utils/getViaSpanLayers"
+import { applyToPoint, inverse } from "transformation-matrix"
+import type { z } from "zod"
 import type { Port } from "../Port"
 import type { IGroup } from "./IGroup"
 import type { ISubcircuit } from "./Subcircuit/ISubcircuit"
-import { getSavedPcbTracePathTransform } from "./get-saved-pcb-trace-path-transform"
 import { getSavedAutoroutingPhaseTracesFromPaths } from "./get-saved-autorouting-phase-traces"
+import {
+  getPcbTracePathAnchorPort,
+  getSavedPcbTracePathTransform,
+} from "./get-saved-pcb-trace-path-transform"
 
 export type AutoroutingPhasePcbTracePaths = {
   pcbTracePaths?: z.output<typeof fanoutTracePath>[]
@@ -33,6 +42,146 @@ const touches = (
       ? point.to_layer
       : point.from_layer) === terminal.layer
 
+/** Preserve each solver trace once, keyed by its routing connection name. */
+const getNetworkTracePaths = ({
+  group,
+  input,
+  traces,
+  portsByPcbPortId,
+}: {
+  group: Pick<IGroup, "pcb_group_id" | "_computePcbGlobalTransformBeforeLayout">
+  input: SimpleRouteJson
+  traces: SimplifiedPcbTrace[]
+  portsByPcbPortId: Map<PcbPortId, Port>
+}): z.output<typeof fanoutTracePath>[] => {
+  const boardLayers = getViaBoardLayers(input.layerCount)
+  const isBoardLayer = (layer: string): layer is LayerRef =>
+    boardLayers.some((boardLayer) => boardLayer === layer)
+  const routes = traces.map((trace) => {
+    if (
+      trace.route.length < 2 ||
+      trace.route.some(
+        (point) => point.route_type !== "wire" && point.route_type !== "via",
+      )
+    ) {
+      throw new Error("Only wire/via routes can be saved")
+    }
+    for (const point of trace.route) {
+      if (point.route_type !== "via" || !point.layers) continue
+      const fromLayer = point.from_layer
+      const toLayer = point.to_layer
+      const specifiedLayers = point.layers
+      if (
+        !isBoardLayer(fromLayer) ||
+        !isBoardLayer(toLayer) ||
+        !specifiedLayers.every(isBoardLayer)
+      )
+        throw new Error("Routed via uses a layer unavailable on this board")
+      const physicalLayers = getAutoroutedViaLayers({
+        fromLayer,
+        toLayer,
+        layerCount: input.layerCount,
+        allowBlindAndBuriedVias: input.allowBlindAndBuriedVias,
+        physicalLayers: specifiedLayers,
+      })
+      const replayedLayers = getAutoroutedViaLayers({
+        fromLayer,
+        toLayer,
+        layerCount: input.layerCount,
+        allowBlindAndBuriedVias: input.allowBlindAndBuriedVias,
+      })
+      if (physicalLayers.join(",") !== replayedLayers.join(","))
+        throw new Error("Saved paths cannot preserve this via's layer span")
+    }
+    return trace.route as WireOrVia[]
+  })
+  const connectionByRoute = new Map<
+    number,
+    (typeof input.connections)[number]
+  >()
+  const logicalGroupByConnection = getLogicalConnectionGroups(input.connections)
+  for (const [routeIndex, trace] of traces.entries()) {
+    if (!trace.connection_name) continue
+    const matchingConnections = input.connections.filter(
+      (connection) => connection.name === trace.connection_name,
+    )
+    if (matchingConnections.length !== 1)
+      throw new Error(
+        `Routed trace segment references an unknown or ambiguous connection: ${trace.connection_name}`,
+      )
+    connectionByRoute.set(routeIndex, matchingConnections[0]!)
+  }
+  if (connectionByRoute.size < routes.length) {
+    const connectivity = getRouteConnectivity({
+      routes,
+      layerCount: input.layerCount,
+      allowBlindAndBuriedVias: input.allowBlindAndBuriedVias,
+      contacts: [...portsByPcbPortId.values()].flatMap((port) => {
+        const pcbPort = port.root?.db.pcb_port.get(port.pcb_port_id!)
+        return pcbPort
+          ? [{ x: pcbPort.x, y: pcbPort.y, layers: pcbPort.layers }]
+          : []
+      }),
+    })
+    for (const component of connectivity.components) {
+      const unnamedRoutes = component.filter(
+        (routeIndex) => !connectionByRoute.has(routeIndex),
+      )
+      if (unnamedRoutes.length === 0) continue
+      const namedConnections = new Set(
+        component.flatMap((routeIndex) => {
+          const connection = connectionByRoute.get(routeIndex)
+          return connection ? [connection] : []
+        }),
+      )
+      const matchingConnections = namedConnections.size
+        ? [...namedConnections]
+        : input.connections.filter((connection) =>
+            connection.pointsToConnect.some((terminal) => {
+              const port = terminal.pcb_port_id
+                ? portsByPcbPortId.get(terminal.pcb_port_id)
+                : undefined
+              const layers = terminal.pcb_port_id
+                ? (port?.root?.db.pcb_port.get(terminal.pcb_port_id)
+                    ?.layers ?? [terminal.layer])
+                : [terminal.layer]
+              return component.some((routeIndex) =>
+                connectivity.routeTouchesPoint(routeIndex, terminal, layers),
+              )
+            }),
+          )
+      const matchingGroups = new Set(
+        matchingConnections.map((connection) =>
+          logicalGroupByConnection.get(connection),
+        ),
+      )
+      if (matchingGroups.size !== 1)
+        throw new Error(
+          "Routed trace segments must touch exactly one electrical network",
+        )
+      for (const routeIndex of unnamedRoutes)
+        connectionByRoute.set(routeIndex, matchingConnections[0]!)
+    }
+  }
+
+  return routes.map((route, routeIndex) => {
+    const connection = connectionByRoute.get(routeIndex)
+    const anchor = connection
+      ? getPcbTracePathAnchorPort(connection, portsByPcbPortId)
+      : undefined
+    if (!connection || !anchor)
+      throw new Error("Routed trace segment has no PCB port for its connection")
+    const transform = inverse(getSavedPcbTracePathTransform(group, anchor))
+    return fanoutTracePath.parse({
+      connection: connection.name,
+      route: route.map((point) => ({
+        ...point,
+        ...applyToPoint(transform, point),
+      })),
+    })
+  })
+}
+
 /**
  * Export only this routing stage's copper, using port selectors and the enclosing
  * group's local PCB frame: mm, +X right, +Y up, +Z above, right-handed. These are
@@ -40,7 +189,7 @@ const touches = (
  * SRJ and solver traces are board-world points. Neither is mutated.
  *
  * Every exported array is validated by the saved-path importer. Routes outside
- * that API's port-anchored wire/via model produce an explicit reason, never a
+ * the supported wire/via network model produce an explicit reason, never a
  * partially replayable array. Export failure must not fail successful routing.
  */
 export function getAutoroutingPhasePcbTracePaths({
@@ -62,6 +211,22 @@ export function getAutoroutingPhasePcbTracePaths({
         .filter((port) => port.pcb_port_id)
         .map((port) => [port.pcb_port_id!, port]),
     )
+    if (!isFanout) {
+      const paths = getNetworkTracePaths({
+        group,
+        input,
+        traces,
+        portsByPcbPortId,
+      })
+      getSavedAutoroutingPhaseTracesFromPaths({
+        group,
+        subcircuit,
+        paths,
+        input,
+        isFanout,
+      })
+      return { pcbTracePaths: paths }
+    }
     const terminals = input.connections.flatMap(
       (connection) => connection.pointsToConnect,
     )

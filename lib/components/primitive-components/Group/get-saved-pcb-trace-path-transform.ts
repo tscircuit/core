@@ -1,6 +1,20 @@
+import type { PcbPort } from "circuit-json"
+import type { SimpleRouteConnection } from "lib/utils/autorouting/SimpleRouteJson"
 import { compose, translate } from "transformation-matrix"
 import type { Port } from "../Port"
 import type { IGroup } from "./IGroup"
+
+export function getPcbTracePathAnchorPort(
+  connection: SimpleRouteConnection,
+  portsByPcbPortId: ReadonlyMap<PcbPort["pcb_port_id"], Port>,
+): Port | undefined {
+  for (const terminal of connection.pointsToConnect) {
+    const port = terminal.pcb_port_id
+      ? portsByPcbPortId.get(terminal.pcb_port_id)
+      : undefined
+    if (port) return port
+  }
+}
 
 /**
  * Local enclosing-group PCB points -> board-world points, in mm (+X right,
