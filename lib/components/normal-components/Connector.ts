@@ -194,7 +194,7 @@ export class Connector<
     )) {
       const circuitJson = await this._tryFetchPartCircuitJson(
         fetchPartCircuitJson,
-        { supplierPartNumber },
+        { supplierPartNumber, manufacturerPartNumber },
       )
       if (circuitJson) return circuitJson
     }

@@ -45,7 +45,13 @@ test("supplier imports retain datasheet attributes and explicit user overrides w
   const engine: PartsEngine = {
     findPart: async () => ({}),
     fetchPartCircuitJson: async (request) => {
-      expect(request).toMatchObject({ includeDatasheetInformation: true })
+      expect(request).toMatchObject({
+        includeDatasheetInformation: true,
+        manufacturerPartNumber:
+          request.supplierPartNumber === "C_AVCC"
+            ? "F1C-AVCC"
+            : "USER-OVERRIDE",
+      })
       imports++
       return importedCircuitJson
     },

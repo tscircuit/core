@@ -36,7 +36,7 @@ test("connector usb_c leaves footprint empty when supplier and manufacturer circ
   await circuit.renderUntilSettled()
 
   expect(calls).toEqual([
-    { supplierPartNumber: "C165948", manufacturerPartNumber: undefined },
+    { supplierPartNumber: "C165948", manufacturerPartNumber: "USB4135-GF-A" },
     { supplierPartNumber: undefined, manufacturerPartNumber: "USB4135-GF-A" },
   ])
 

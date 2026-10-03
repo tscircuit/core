@@ -4,6 +4,7 @@ import {
   type SupplierName,
   type SupplierPartNumbers,
   supplierProps,
+  resolveManufacturerPartNumber,
 } from "@tscircuit/props"
 import {
   type AnyCircuitElement,
@@ -60,6 +61,7 @@ const getSupplierPartCircuitJsonResolver = (
   return async (supplierPartNumber) => {
     const request = {
       supplierPartNumber,
+      manufacturerPartNumber: resolveManufacturerPartNumber(component.props),
       platformFetch: component.root?.platform?.platformFetch,
       includeDatasheetInformation: true,
     }
