@@ -43,6 +43,41 @@ const updateCadRotation = ({
   cadComponent.rotation = nextRotation
 }
 
+const updatePcbElementsRotation = (
+  elements: any[],
+  rotationDegrees: number,
+) => {
+  if (!rotationDegrees) return
+
+  for (const elm of elements) {
+    if (elm.type === "pcb_plated_hole" || elm.type === "pcb_hole") {
+      if (
+        "ccw_rotation" in elm ||
+        elm.shape === "pill" ||
+        elm.shape === "oval"
+      ) {
+        const currentRotation =
+          typeof elm.ccw_rotation === "number" ? elm.ccw_rotation : 0
+        elm.ccw_rotation = normalizeDegrees(currentRotation + rotationDegrees)
+      }
+      if ("hole_ccw_rotation" in elm) {
+        const currentRotation =
+          typeof elm.hole_ccw_rotation === "number" ? elm.hole_ccw_rotation : 0
+        elm.hole_ccw_rotation = normalizeDegrees(
+          currentRotation + rotationDegrees,
+        )
+      }
+      if ("rect_ccw_rotation" in elm) {
+        const currentRotation =
+          typeof elm.rect_ccw_rotation === "number" ? elm.rect_ccw_rotation : 0
+        elm.rect_ccw_rotation = normalizeDegrees(
+          currentRotation + rotationDegrees,
+        )
+      }
+    }
+  }
+}
+
 const isDescendantGroup = (
   db: any,
   groupId: string,
@@ -100,6 +135,7 @@ export const applyPackOutput = (
               "pcb_component_id" in elm && elm.pcb_component_id === memberId,
           )
         transformPCBElements(related as any, transformMatrix)
+        updatePcbElementsRotation(related, rotationDegrees)
         updateCadRotation({
           db,
           pcbComponentId: memberId,
@@ -143,6 +179,7 @@ export const applyPackOutput = (
             "pcb_component_id" in elm && elm.pcb_component_id === componentId,
         )
       transformPCBElements(related as any, transformMatrix)
+      updatePcbElementsRotation(related, rotationDegrees)
       updateCadRotation({
         db,
         pcbComponentId: componentId,
@@ -223,6 +260,7 @@ export const applyPackOutput = (
     }
 
     transformPCBElements(relatedElements as any, transformMatrix)
+    updatePcbElementsRotation(relatedElements, rotationDegrees)
     db.pcb_group.update(pcbGroup.pcb_group_id, { center })
   }
 
