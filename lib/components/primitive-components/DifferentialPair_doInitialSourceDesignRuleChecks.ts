@@ -1,3 +1,4 @@
+import { getRoutingConstraints } from "lib/utils/getRoutingConstraints"
 import type { SourcePort, SourceTrace } from "circuit-json"
 import type { DifferentialPair } from "./DifferentialPair"
 import type { Port } from "./Port/Port"
@@ -126,6 +127,9 @@ export const DifferentialPair_doInitialSourceDesignRuleChecks = (
   }
 
   const memberTraceIds: SourceTrace["source_trace_id"][] = []
+  const resolvedPair: Partial<
+    Record<ConnectionPolarity, SourceTrace["source_trace_id"]>
+  > = {}
   let resolvedPolarityCount = 0
   for (const connectionPolarity of ["positive", "negative"] as const) {
     let connectionSelector = differentialPair._parsedProps.negativeConnection
@@ -141,6 +145,12 @@ export const DifferentialPair_doInitialSourceDesignRuleChecks = (
     resolvedPolarityCount++
     memberTraceIds.push(...resolvedConnection.sourceTraceIds)
 
+    if (
+      resolvedConnection.sourceTraceIds.length === 1 &&
+      resolvedConnection.sourcePorts.length === 2
+    ) {
+      resolvedPair[connectionPolarity] = resolvedConnection.sourceTraceIds[0]
+    }
     const terminalSourcePorts = resolvedConnection.sourcePorts
     if (terminalSourcePorts.length === 2) continue
     let warningSourceComponentId = ""
@@ -181,6 +191,21 @@ export const DifferentialPair_doInitialSourceDesignRuleChecks = (
       name: differentialPair.name,
       source_trace_ids: [...new Set(memberTraceIds)],
       max_length_skew: differentialPair._parsedProps.maxLengthSkew,
+      target_differential_impedance:
+        differentialPair._parsedProps.targetDifferentialImpedance,
+      routing_constraints: getRoutingConstraints(
+        differentialPair._parsedProps.pcbRoutingConstraints,
+      ),
+      differential_pair:
+        resolvedPair.positive && resolvedPair.negative
+          ? {
+              positive_source_trace_id: resolvedPair.positive,
+              negative_source_trace_id: resolvedPair.negative,
+              trace_gap: differentialPair._parsedProps.pcbTraceGap,
+              max_uncoupled_length:
+                differentialPair._parsedProps.maxUncoupledLength,
+            }
+          : undefined,
       subcircuit_id:
         differentialPair.getSubcircuit().subcircuit_id ?? undefined,
     })

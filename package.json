@@ -32,18 +32,18 @@
   "devDependencies": {
     "@biomejs/biome": "^1.8.3",
     "@resvg/resvg-js": "^2.6.2",
-    "@tsci/tscircuit.ti": "github:tscircuit/ti#57e314be4b2b06bc546d4def7453e619604d1157",
+    "@tsci/tscircuit.ti": "github:tscircuit/ti#b5755744de2c02aeeb4bd02cfe932737787007a0",
     "@tscircuit/alphabet": "0.0.25",
     "@tscircuit/bga-fanout-solver": "github:tscircuit/bga-fanout-solver#247c835cb8d69b65e53891dcf869731079415b39",
     "@tscircuit/bus-lanes-solver": "https://jscdn.tscircuit.com/@tscircuit/bus-lanes-solver/0.0.9.tgz",
     "@tscircuit/capacity-autorouter": "^0.0.954",
-    "@tscircuit/checks": "^0.0.236",
+    "@tscircuit/checks": "https://pkg.pr.new/@tscircuit/checks@f43efc2",
     "@tscircuit/circuit-json-util": "^0.0.119",
     "@tscircuit/common": "^0.0.20",
     "@tscircuit/copper-pour-solver": "^0.0.67",
     "@tscircuit/create-fdm-enclosure": "0.0.4",
     "@tscircuit/dogbone-solver": "https://jscdn.tscircuit.com/@tscircuit/dogbone-solver/0.0.1.tgz",
-    "@tscircuit/fanout-solver": "0.0.78",
+    "@tscircuit/fanout-solver": "0.0.80",
     "@tscircuit/flex-utils": "https://jscdn.tscircuit.com/@tscircuit/flex-utils/0.0.8.tgz",
     "@tscircuit/footprinter": "^0.0.430",
     "@tscircuit/image-utils": "^0.0.8",
@@ -58,7 +58,7 @@
     "@tscircuit/miniflex": "^0.0.4",
     "@tscircuit/modelprinter": "^0.0.5",
     "@tscircuit/ngspice-spice-engine": "^0.0.20",
-    "@tscircuit/props": "^0.0.682",
+    "@tscircuit/props": "https://pkg.pr.new/@tscircuit/props@2a6ff5a",
     "@tscircuit/schematic-match-adapt": "^0.0.18",
     "@tscircuit/schematic-trace-solver": "https://jscdn.tscircuit.com/@tscircuit/schematic-trace-solver/0.0.224.tgz",
     "@tscircuit/solver-utils": "^0.0.16",
@@ -75,7 +75,7 @@
     "bun-match-svg": "0.0.12",
     "calculate-elbow": "^0.0.12",
     "chokidar-cli": "^3.0.0",
-    "circuit-json": "^0.0.513",
+    "circuit-json": "https://pkg.pr.new/circuit-json@dceb6ac",
     "circuit-json-to-bpc": "^0.0.13",
     "circuit-json-to-connectivity-map": "^0.0.33",
     "circuit-json-to-gltf": "^0.0.141",
@@ -139,8 +139,6 @@
     "zod": "^3.25.67"
   },
   "overrides": {
-    "@tscircuit/circuit-json-util": "^0.0.119",
-    "@tscircuit/props": "^0.0.682",
-    "circuit-json": "^0.0.513"
+    "@tscircuit/circuit-json-util": "^0.0.119"
   }
 }
