@@ -184,7 +184,8 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
     let pcb_smtpad: PcbSmtPad | null = null
     const pcb_component_id =
       this.parent?.pcb_component_id ??
-      this.getPrimitiveContainer()?.pcb_component_id!
+      this.getPrimitiveContainer()?.pcb_component_id ??
+      undefined
     if (props.shape === "circle") {
       pcb_smtpad = db.pcb_smtpad.insert({
         pcb_component_id,
