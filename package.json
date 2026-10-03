@@ -1,7 +1,7 @@
 {
   "name": "@tscircuit/core",
   "type": "module",
-  "version": "0.0.2060",
+  "version": "0.0.2062",
   "types": "dist/index.d.ts",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -91,7 +91,7 @@
     "live-server": "^1.2.2",
     "minicssgrid": "^0.0.9",
     "pkg-pr-new": "^0.0.37",
-    "poppygl": "0.0.29",
+    "poppygl": "0.0.30",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "schematic-symbols": "^0.0.248",
