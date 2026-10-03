@@ -120,13 +120,18 @@ test("core runs published bend-zone DRC for emitted pads, vias, backing and trac
       const pad = circuit.db.pcb_smtpad.list()[0]
       const via = circuit.db.pcb_via.list()[0]
       const backing = circuit.db.pcb_stiffener.list()[0]
-      for (const id of [
-        pad.pcb_smtpad_id,
-        via.pcb_via_id,
-        backing.pcb_stiffener_id,
-      ]) {
-        expect(placement.some((error) => error.message.includes(id))).toBe(true)
+      for (const error of placement) {
+        for (const id of [
+          pad.pcb_smtpad_id,
+          via.pcb_via_id,
+          backing.pcb_stiffener_id,
+        ]) {
+          expect(error.message).not.toContain(id)
+        }
       }
+      expect(placement.some((error) => error.message.includes("BACKING"))).toBe(
+        true,
+      )
       expect(routing[0].pcb_trace_id).toBe(
         circuit.db.pcb_trace.list()[0].pcb_trace_id,
       )

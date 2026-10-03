@@ -1,3 +1,4 @@
+import { getReadablePcbFoldIssueMessage } from "./get-readable-pcb-fold-issue-message"
 import {
   type CadComponentPlacement,
   transformCadComponentPlacement,
@@ -25,9 +26,14 @@ export function getFoldedCadComponentPlacement<T extends CadComponentPlacement>(
     )
   } catch (error) {
     if (!(error instanceof PcbFoldError)) throw error
-    pcbComponentOwner.root!.db.pcb_placement_error.insert({
+    const { db } = pcbComponentOwner.root!
+    const component = db.pcb_component.get(pcbComponentOwner.pcb_component_id!)!
+    const componentName =
+      db.source_component.get(component.source_component_id)?.name ??
+      "unnamed component"
+    db.pcb_placement_error.insert({
       error_type: "pcb_placement_error",
-      message: `Unable to fold CAD for PCB component ${pcbComponentOwner.pcb_component_id}; CAD remains flat: ${error.issue.message}`,
+      message: `Unable to fold CAD for PCB component ${componentName}; CAD remains flat: ${getReadablePcbFoldIssueMessage(error.issue, db.pcb_bend.list())}`,
       subcircuit_id:
         pcbComponentOwner.getSubcircuit()?.subcircuit_id ?? undefined,
     })

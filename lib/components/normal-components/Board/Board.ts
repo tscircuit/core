@@ -1,3 +1,4 @@
+import { getReadablePcbFoldIssueMessage } from "lib/utils/cad/get-readable-pcb-fold-issue-message"
 import { tryCreatePcbFold, type PcbFold } from "@tscircuit/flex-utils"
 import { jlcMinTolerances } from "@tscircuit/jlcpcb-manufacturing-specs"
 import { getBoundsFromPoints } from "@tscircuit/math-utils"
@@ -154,7 +155,7 @@ export class Board
       this.root!.db.pcb_placement_error.insert({
         error_type: "pcb_placement_error",
         subcircuit_id: this.subcircuit_id ?? undefined,
-        message: `Unable to fold PCB board ${this.pcb_board_id}; CAD remains flat: ${foldResult.issue.message}`,
+        message: `Unable to fold PCB board ${this._parsedProps.name ?? "unnamed board"}; CAD remains flat: ${getReadablePcbFoldIssueMessage(foldResult.issue, bends)}`,
       })
     }
   }
