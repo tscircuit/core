@@ -13,6 +13,7 @@ import { convertCircuitJsonToJstStandardCircuitJson } from "lib/utils/connectors
 import { convertCircuitJsonToUsbCStandardCircuitJson } from "lib/utils/connectors/convertCircuitJsonToUsbCStandardCircuitJson"
 import { extractCadModelFromCircuitJson } from "lib/utils/connectors/extractCadModelFromCircuitJson"
 import { STANDARD_USB_C_PIN_LABELS } from "lib/utils/connectors/usb-c-canonical-pin-definitions"
+import { fetchPartCircuitJsonWithDatasheet } from "lib/utils/fetch-part-circuit-json-with-datasheet"
 import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromCircuitJson"
 import { inferCableInsertionCenterForComponent } from "lib/utils/pcb/infer-cable-insertion-center-for-component"
 import {
@@ -171,13 +172,11 @@ export class Connector<
     fetchPartCircuitJson: NonNullable<PartsEngine["fetchPartCircuitJson"]>,
     params: { supplierPartNumber?: string; manufacturerPartNumber?: string },
   ): Promise<AnyCircuitElement[] | null> {
-    const request = {
-      ...params,
-      platformFetch: this.root?.platform?.platformFetch,
-      includeDatasheetInformation: true,
-    }
     const maybeCircuitJson =
-      (await Promise.resolve(fetchPartCircuitJson(request))) ?? null
+      (await fetchPartCircuitJsonWithDatasheet(
+        { fetchPartCircuitJson, ...params },
+        this,
+      )) ?? null
     if (Array.isArray(maybeCircuitJson) && maybeCircuitJson.length > 0) {
       return maybeCircuitJson
     }

@@ -14,6 +14,7 @@ import {
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import { Footprint } from "lib/components/primitive-components/Footprint"
 import { extractCadModelFromCircuitJson } from "lib/utils/connectors/extractCadModelFromCircuitJson"
+import { fetchPartCircuitJsonWithDatasheet } from "lib/utils/fetch-part-circuit-json-with-datasheet"
 import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromCircuitJson"
 import { resolveStaticFileImport } from "lib/utils/resolveStaticFileImport"
 import { isValidElement as isReactElement } from "react"
@@ -59,13 +60,14 @@ const getSupplierPartCircuitJsonResolver = (
   if (!fetchPartCircuitJson) return
 
   return async (supplierPartNumber) => {
-    const request = {
-      supplierPartNumber,
-      manufacturerPartNumber: resolveManufacturerPartNumber(component.props),
-      platformFetch: component.root?.platform?.platformFetch,
-      includeDatasheetInformation: true,
-    }
-    const footprintCircuitJson = await fetchPartCircuitJson(request)
+    const footprintCircuitJson = await fetchPartCircuitJsonWithDatasheet(
+      {
+        fetchPartCircuitJson,
+        supplierPartNumber,
+        manufacturerPartNumber: resolveManufacturerPartNumber(component.props),
+      },
+      component,
+    )
     return { footprintCircuitJson: footprintCircuitJson ?? [] }
   }
 }
