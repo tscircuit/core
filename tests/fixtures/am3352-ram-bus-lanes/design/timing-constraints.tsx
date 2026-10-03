@@ -64,6 +64,9 @@ export function TimingConstraints() {
         routingPhaseIndex={1}
         preferredLayer="bottom"
         connections={command}
+        lengthMatchTo=".DDR_CK_PAIR"
+        // The shared ±50mil window implies at most 100mil group skew.
+        maxLengthSkew="100mil"
         targetLength={{
           reference: "longest_manhattan",
           of: [".DDR_ADDR_CTRL", ".DDR_CK_PAIR"],
