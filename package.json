@@ -40,7 +40,7 @@
     "@tscircuit/checks": "^0.0.234",
     "@tscircuit/circuit-json-util": "^0.0.118",
     "@tscircuit/common": "^0.0.20",
-    "@tscircuit/copper-pour-solver": "^0.0.62",
+    "@tscircuit/copper-pour-solver": "^0.0.65",
     "@tscircuit/create-fdm-enclosure": "0.0.4",
     "@tscircuit/dogbone-solver": "https://jscdn.tscircuit.com/@tscircuit/dogbone-solver/0.0.1.tgz",
     "@tscircuit/fanout-solver": "0.0.78",
@@ -58,7 +58,7 @@
     "@tscircuit/miniflex": "^0.0.4",
     "@tscircuit/modelprinter": "^0.0.5",
     "@tscircuit/ngspice-spice-engine": "^0.0.20",
-    "@tscircuit/props": "^0.0.678",
+    "@tscircuit/props": "^0.0.681",
     "@tscircuit/schematic-match-adapt": "^0.0.18",
     "@tscircuit/schematic-trace-solver": "https://jscdn.tscircuit.com/@tscircuit/schematic-trace-solver/0.0.223.tgz",
     "@tscircuit/solver-utils": "^0.0.16",
@@ -138,7 +138,7 @@
   },
   "overrides": {
     "@tscircuit/circuit-json-util": "^0.0.118",
-    "@tscircuit/props": "^0.0.678",
+    "@tscircuit/props": "^0.0.681",
     "circuit-json": "^0.0.510"
   }
 }
