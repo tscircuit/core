@@ -10,6 +10,7 @@ extendCatalogue(Components)
 extendCatalogue({
   "assembly.device": Components.AssemblyDevice,
   "assembly.motor": Components.AssemblyMotor,
+  "assembly.printedpart": Components.AssemblyPrintedPart,
   "assembly.screen": Components.AssemblyScreen,
   "assembly.subassembly": Components.AssemblySubassembly,
   "assembly.cadassembly": Components.AssemblySubassembly,

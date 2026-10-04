@@ -52,7 +52,7 @@ export class AssemblyMotor extends PrimitiveComponent<
     // jscad-electronics behind modelcdn, never by core or modelprinter.
     this.motorModel
     this.source_component_id = this.root!.db.source_component.insert({
-      ftype: "simple_chip",
+      ftype: "motor",
       name: this.name,
     }).source_component_id
   }

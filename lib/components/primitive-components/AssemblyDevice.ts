@@ -37,7 +37,7 @@ export class AssemblyDevice
     )
       return
     this.source_component_id = this.root.db.source_component.insert({
-      ftype: "simple_chip",
+      ftype: "subassembly",
       name: this.name,
     }).source_component_id
   }

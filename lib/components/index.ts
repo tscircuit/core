@@ -114,3 +114,5 @@ export { SpiceModel } from "./primitive-components/SpiceModel"
 export { PcbBend } from "./primitive-components/PcbBend"
 export { PcbStiffener } from "./primitive-components/PcbStiffener"
 export { PcbSoldermaskOpening } from "./primitive-components/PcbSoldermaskOpening"
+
+export { AssemblyPrintedPart } from "./primitive-components/AssemblyPrintedPart"

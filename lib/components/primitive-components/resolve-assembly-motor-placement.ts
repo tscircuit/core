@@ -1,3 +1,4 @@
+import { resolveMotorPrintedPartPlacement } from "./resolve-printed-part-mounts"
 import type { AssemblyMotor } from "./AssemblyMotor"
 import type { AssemblyPlacement } from "./resolve-assembly-placement"
 import { normalizeDegrees } from "@tscircuit/math-utils"
@@ -12,6 +13,8 @@ import { resolveMotorMountedBoard } from "./resolve-board-motor-mount"
 export const resolveAssemblyMotorPlacement = (
   motor: AssemblyMotor,
 ): AssemblyPlacement => {
+  const printedPartPlacement = resolveMotorPrintedPartPlacement(motor)
+  if (printedPartPlacement) return printedPartPlacement
   const board = resolveMotorMountedBoard(motor)
   const orientation = board?._parsedProps.mountOrientation
   const layer = orientation

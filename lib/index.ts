@@ -37,3 +37,5 @@ import "./register-catalogue"
 import "./fiber/react-jsx-compat"
 
 export { fanoutTracePath, type FanoutTracePath } from "@tscircuit/props"
+
+export { jscad } from "jscad-fiber/headless"

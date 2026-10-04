@@ -2,23 +2,12 @@ import type { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import type { Board } from "../normal-components/Board/Board"
 import type { AssemblyMotor } from "./AssemblyMotor"
 
-const getAssemblyScope = (
-  component: PrimitiveComponent,
-): PrimitiveComponent => {
-  let ancestor = component.parent
-  while (ancestor) {
-    if (ancestor.componentName === "AssemblyDevice") return ancestor
-    ancestor = ancestor.parent
-  }
-  return component.root!.firstChild!
-}
-
-export const getComponentsInAssemblyScope = (component: PrimitiveComponent) => {
-  const scope = getAssemblyScope(component)
-  return [scope, ...scope.getDescendants()].filter(
-    (descendant) => getAssemblyScope(descendant) === scope,
-  )
-}
+import { getComponentsInAssemblyScope } from "./get-assembly-scope-components"
+export { getComponentsInAssemblyScope } from "./get-assembly-scope-components"
+import {
+  boardMountsToPrintedPart,
+  resolvePrintedPartMounts,
+} from "./resolve-printed-part-mounts"
 
 export const matchesAssemblyIdentity = (
   component: PrimitiveComponent,
@@ -36,6 +25,10 @@ export const matchesAssemblyIdentity = (
 export const resolveBoardMotorMount = (
   board: Board,
 ): AssemblyMotor | undefined => {
+  if (boardMountsToPrintedPart(board)) {
+    resolvePrintedPartMounts(board)
+    return
+  }
   const { mountedTo, mountRotation, mountRotationAnchor, mountOrientation } =
     board._parsedProps
   if (!mountedTo) {
