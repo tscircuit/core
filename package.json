@@ -138,7 +138,7 @@
     "transformation-matrix": "^2.16.1",
     "zod": "^3.25.67",
     "jscad-planner": "^0.0.18",
-    "jscad-fiber": "https://pkg.pr.new/jscad-fiber@1999550"
+    "jscad-fiber": "^0.0.88"
   },
   "overrides": {
     "@tscircuit/circuit-json-util": "^0.0.119",
