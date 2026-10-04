@@ -1,3 +1,4 @@
+import { withLocalNemaMesh } from "./fixtures/with-local-nema-mesh"
 import { expect, test } from "bun:test"
 import { assembly } from "lib"
 import { expectAssemblySnapshot } from "./fixtures/expect-assembly-snapshot"
@@ -40,6 +41,7 @@ test("identical motor names in sibling devices resolve within each device", asyn
     </assembly.device>,
   )
   await circuit.renderUntilSettled()
+  const json = await withLocalNemaMesh(circuit.getCircuitJson())
   const motors = circuit.db.cad_component.list()
   expect(
     motors.find((cad) => cad.model_glb_url?.includes("nema8"))?.position,
@@ -71,13 +73,11 @@ test("identical motor names in sibling devices resolve within each device", asyn
       annotation: left
         ? "MOTOR resolves inside left / NEMA8 below B1 / 3 mm surface gap"
         : "MOTOR resolves inside right / NEMA23 above B2 / 8 mm surface gap",
-      circuit: circuit
-        .getCircuitJson()
-        .filter(
-          (el) =>
-            (el.type === "pcb_board" || el.type === "cad_component") &&
-            el.subcircuit_id === board.subcircuit_id,
-        ),
+      circuit: json.filter(
+        (el) =>
+          (el.type === "pcb_board" || el.type === "cad_component") &&
+          el.subcircuit_id === board.subcircuit_id,
+      ),
       renderOptions: {
         camPos: [-x + 100, left ? 35 : 85, 100] as [number, number, number],
         poppygl: {
