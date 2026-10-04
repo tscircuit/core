@@ -1,4 +1,5 @@
 import { mat4, vec3 } from "gl-matrix"
+import { matchesAssemblyIdentity } from "./matches-assembly-identity"
 import type { Matrix4, NamedReferencePlane } from "jscad-planner"
 import type { PcbBoard } from "circuit-json"
 import type { PrimitiveComponent } from "../base-components/PrimitiveComponent"
@@ -48,14 +49,14 @@ const getFace = (
       )
     return face
   }
-  if (faceName !== "backface")
+  if (faceName !== "backface" && faceName !== "frontface")
     throw new Error(
-      `Motor "${part.name}" only provides the backface mounting face`,
+      `Motor "${part.name}" has no mounting face "${faceName}"; use frontface or backface`,
     )
   return {
-    name: "backface",
-    origin: [0, 0, -part.motorModel.bodyLength],
-    normal: [0, 0, -1],
+    name: faceName,
+    origin: [0, 0, faceName === "backface" ? -part.motorModel.bodyLength : 0],
+    normal: [0, 0, faceName === "backface" ? -1 : 1],
     xAxis: [1, 0, 0],
   }
 }
@@ -72,7 +73,9 @@ const findTarget = (
     throw new Error(
       `"${owner.name}" mountedTo must name a part and face, e.g. "SPACER.board"`,
     )
-  const matches = parts.filter((part) => part.name === partName)
+  const matches = parts.filter((part) =>
+    matchesAssemblyIdentity(part, partName),
+  )
   if (matches.length !== 1)
     throw new Error(
       `"${owner.name}" mountedTo "${selector}" matched ${matches.length} assembly parts; expected exactly one in the assembly device`,
@@ -128,7 +131,7 @@ export const resolvePrintedPartMounts = (component: PrimitiveComponent) => {
     if (existing) return existing
     let world = rootOrientation(part)
     let root = part
-    if (isPrintedPart(part) && part._parsedProps.mountedTo) {
+    if (part._parsedProps.mountedTo) {
       const { part: target, face } = findTarget(
         part,
         part._parsedProps.mountedTo,
@@ -152,6 +155,11 @@ export const resolvePrintedPartMounts = (component: PrimitiveComponent) => {
     return world
   }
   for (const part of parts) resolvePart(part)
+  const motorMountRoots = new Set(
+    parts
+      .filter((part) => !isPrintedPart(part) && part._parsedProps.mountedTo)
+      .map((part) => roots.get(part)!),
+  )
   const anchoredRoots = new Set<MountablePart>()
   for (const board of scoped.filter(
     (part): part is Board => part.componentName === "Board",
@@ -170,7 +178,7 @@ export const resolvePrintedPartMounts = (component: PrimitiveComponent) => {
     anchoredRoots.add(root)
     if (
       !isPrintedPart(root) &&
-      !["z+", "z-"].includes(root._parsedProps.shaftFacingDirection)
+      !["z+", "z-"].includes(root._parsedProps.shaftFacingDirection ?? "z+")
     )
       throw new Error(
         `Board "${board.name}" cannot mount to motor "${root.name}" facing ${root._parsedProps.shaftFacingDirection}: rotated PCB boards are not yet supported`,
@@ -187,6 +195,26 @@ export const resolvePrintedPartMounts = (component: PrimitiveComponent) => {
       throw new Error(
         `Board "${board.name}" cannot mount to a tilted reference face; its PCB plane must remain parallel to XY`,
       )
+    if (motorMountRoots.has(root)) {
+      if (
+        board._parsedProps.mountRotation ||
+        board._parsedProps.mountRotationAnchor
+      )
+        throw new Error(
+          `Board "${board.name}" mountRotation and mountRotationAnchor are not supported in a face-mounted motor assembly; set the target reference face's in-plane X direction instead`,
+        )
+      const orientation =
+        worldFace[10] < 0
+          ? "top_layer_toward_mount_face"
+          : "bottom_layer_toward_mount_face"
+      if (
+        board._parsedProps.mountOrientation &&
+        board._parsedProps.mountOrientation !== orientation
+      )
+        throw new Error(
+          `Board "${board.name}" mountOrientation conflicts with its resolved mounting face`,
+        )
+    }
     // Paired with the finalized board-hole transform, not authored pcbRotation.
     const boardTransform = board._computePcbGlobalTransformBeforeLayout()
     const yaw =
@@ -218,7 +246,7 @@ export const resolvePrintedPartMounts = (component: PrimitiveComponent) => {
     )
       subcircuitId = pcbBoard.subcircuit_id
   }
-  return { transforms, roots, yawByRoot, subcircuitId }
+  return { transforms, roots, yawByRoot, subcircuitId, motorMountRoots }
 }
 
 export const resolveMotorPrintedPartPlacement = (
@@ -247,6 +275,7 @@ export const boardMountsToPrintedPart = (board: Board) => {
   const partName = selector.slice(0, selector.lastIndexOf("."))
   return getComponentsInAssemblyScope(board).some(
     (part) =>
-      part.componentName === "AssemblyPrintedPart" && part.name === partName,
+      part.componentName === "AssemblyPrintedPart" &&
+      matchesAssemblyIdentity(part, partName),
   )
 }

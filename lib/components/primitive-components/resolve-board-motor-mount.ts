@@ -1,4 +1,3 @@
-import type { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import type { Board } from "../normal-components/Board/Board"
 import type { AssemblyMotor } from "./AssemblyMotor"
 
@@ -9,18 +8,8 @@ import {
   resolvePrintedPartMounts,
 } from "./resolve-printed-part-mounts"
 
-export const matchesAssemblyIdentity = (
-  component: PrimitiveComponent,
-  path: string,
-) => {
-  const names = path.split(".")
-  let ancestor: PrimitiveComponent | null = component
-  for (const name of names.reverse()) {
-    if (!ancestor || ancestor.name !== name) return false
-    ancestor = ancestor.parent
-  }
-  return true
-}
+import { matchesAssemblyIdentity } from "./matches-assembly-identity"
+export { matchesAssemblyIdentity } from "./matches-assembly-identity"
 
 export const resolveBoardMotorMount = (
   board: Board,
@@ -57,6 +46,10 @@ export const resolveBoardMotorMount = (
     )
   }
   const motor = motors[0]!
+  if (motor._parsedProps.mountedTo) {
+    resolvePrintedPartMounts(board)
+    return
+  }
   const direction = motor._parsedProps.shaftFacingDirection
   if (direction !== "z+" && direction !== "z-") {
     throw new Error(

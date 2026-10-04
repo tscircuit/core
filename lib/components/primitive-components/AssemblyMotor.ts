@@ -8,6 +8,7 @@ import { renderAssemblyCadModel } from "./render-assembly-cad-model"
 import { resolveAssemblyModel } from "./resolve-assembly-model"
 import { resolveAssemblyMotorRotation } from "./resolve-assembly-motor-rotation"
 import { resolveAssemblyMotorPlacement } from "./resolve-assembly-motor-placement"
+import { resolveMotorFaceMount } from "./resolve-motor-face-mount"
 
 export class AssemblyMotor extends PrimitiveComponent<
   typeof assemblyMotorProps
@@ -60,6 +61,15 @@ export class AssemblyMotor extends PrimitiveComponent<
   doInitialCadModelRender(): void {
     if (!this.root || this.root.pcbDisabled || !this.source_component_id) return
     const model = resolveAssemblyModel({ model: this.motorModelString })!
+    const faceMount = resolveMotorFaceMount(this)
+    if (faceMount) {
+      this.cad_component_id = renderAssemblyCadModel(
+        this,
+        { ...model, rotationOffset: faceMount.rotation },
+        { ...faceMount, pcbRotation: 0, layer: "top" },
+      )
+      return
+    }
     const placement = resolveAssemblyMotorPlacement(this)
     this.cad_component_id = renderAssemblyCadModel(
       this,
