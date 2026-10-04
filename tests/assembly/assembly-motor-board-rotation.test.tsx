@@ -1,3 +1,4 @@
+import { withLocalNemaMesh } from "./fixtures/with-local-nema-mesh"
 import { expect, test } from "bun:test"
 import { assembly } from "lib"
 import { expectAssemblySnapshot } from "./fixtures/expect-assembly-snapshot"
@@ -30,6 +31,7 @@ test("motor orientation follows the mounted board's non-cardinal PCB rotation", 
     </assembly.device>,
   )
   await circuit.renderUntilSettled()
+  const json = await withLocalNemaMesh(circuit.getCircuitJson())
   const motor = circuit.db.cad_component.list()[0]!
   // Read the board's actual hole direction. A bottom-side Y flip negates
   // local X, pairing with renderAssemblyCadModel's opposite Z rotation.
@@ -60,7 +62,7 @@ test("motor orientation follows the mounted board's non-cardinal PCB rotation", 
 </assembly.device>`,
         annotation:
           "The motor follows the emitted PCB hole orientation; shaft points below the board.",
-        circuit,
+        circuit: json,
         renderOptions: {
           camPos: [100, 80, 100],
           poppygl: { lookAt: [0, -20, 0] },

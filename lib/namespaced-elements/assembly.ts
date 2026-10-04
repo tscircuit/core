@@ -1,6 +1,7 @@
 import type {
   AssemblyDevicePropsInput,
   AssemblyMotorPropsInput,
+  AssemblyPrintedPartPropsInput,
   AssemblyScreenPropsInput,
   AssemblySubassemblyPropsInput,
 } from "@tscircuit/props"
@@ -15,11 +16,17 @@ export interface AssemblyScreenJsxProps extends AssemblyScreenPropsInput {}
 
 export interface AssemblyMotorJsxProps extends AssemblyMotorPropsInput {}
 
+export interface AssemblyPrintedPartJsxProps
+  extends AssemblyPrintedPartPropsInput {}
+
 export interface AssemblySubassemblyJsxProps
   extends AssemblySubassemblyPropsInput {}
 export type AssemblyCadAssemblyJsxProps = AssemblySubassemblyJsxProps
 
 export const assembly = {
+  printedpart: createNamespacedElement<AssemblyPrintedPartJsxProps>(
+    "assembly.printedpart",
+  ),
   motor: createNamespacedElement<AssemblyMotorJsxProps>("assembly.motor"),
   subassembly: createNamespacedElement<AssemblySubassemblyJsxProps>(
     "assembly.subassembly",

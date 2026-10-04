@@ -2,11 +2,13 @@ import { normalizeDegrees } from "@tscircuit/math-utils"
 import type { CadComponent, PcbComponent } from "circuit-json"
 import { NormalComponent } from "../base-components/NormalComponent"
 import type { PrimitiveComponent } from "../base-components/PrimitiveComponent"
+import type { AssemblyPrintedPart } from "./AssemblyPrintedPart"
+import { resolvePrintedPartMounts } from "./resolve-printed-part-mounts"
 import type { AssemblyScreen } from "./AssemblyScreen"
 import type { AssemblySubassembly } from "./AssemblySubassembly"
 import { getAssemblyTarget } from "./get-assembly-target"
 
-type Assembly = AssemblyScreen | AssemblySubassembly
+type Assembly = AssemblyScreen | AssemblySubassembly | AssemblyPrintedPart
 
 /** Assembly origin in right-handed board-world coordinates: +X right, +Y top,
  * +Z above; position is a point in mm, pcbRotation is degrees around +Z.
@@ -22,6 +24,7 @@ export interface AssemblyPlacement {
 export const isPositionedAssembly = (
   component: PrimitiveComponent,
 ): component is Assembly =>
+  component.componentName === "AssemblyPrintedPart" ||
   component.componentName === "AssemblyScreen" ||
   component.componentName === "AssemblySubassembly"
 
@@ -45,6 +48,17 @@ export const resolveAssemblyPlacement = (
   component: Assembly,
   path: Assembly[] = [],
 ): AssemblyPlacement => {
+  if (component.componentName === "AssemblyPrintedPart") {
+    const part = component as AssemblyPrintedPart
+    const { transforms, subcircuitId } = resolvePrintedPartMounts(part)
+    const transform = transforms.get(part)!
+    return {
+      position: { x: transform[12], y: transform[13], z: transform[14] },
+      pcbRotation: 0,
+      layer: "top",
+      subcircuit_id: subcircuitId,
+    }
+  }
   if (path.includes(component)) {
     throw new Error(
       `Assembly attachment cycle: ${[...path, component].map((item) => item.name).join(" -> ")}`,

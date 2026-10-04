@@ -10,7 +10,7 @@ test("through-hole pill paste validates and follows pad rotation", () => {
     pcb_solder_paste.parse(paste)
   }
   const slotPaste = solderPaste.filter(
-    (paste) => paste.shape === "rotated_pill" && paste.x !== 0,
+    (paste) => paste.shape !== "polygon" && paste.x !== 0,
   )
   expect(slotPaste).toHaveLength(4)
   for (const paste of slotPaste) {
