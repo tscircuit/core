@@ -116,3 +116,5 @@ export { PcbStiffener } from "./primitive-components/PcbStiffener"
 export { PcbSoldermaskOpening } from "./primitive-components/PcbSoldermaskOpening"
 
 export { AssemblyPrintedPart } from "./primitive-components/AssemblyPrintedPart"
+
+export { AssemblyCable } from "./primitive-components/AssemblyCable"

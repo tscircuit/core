@@ -1,4 +1,5 @@
 import type {
+  AssemblyCablePropsInput,
   AssemblyDevicePropsInput,
   AssemblyMotorPropsInput,
   AssemblyPrintedPartPropsInput,
@@ -17,13 +18,18 @@ export interface AssemblyScreenJsxProps extends AssemblyScreenPropsInput {}
 export interface AssemblyMotorJsxProps extends AssemblyMotorPropsInput {}
 
 export interface AssemblyPrintedPartJsxProps
-  extends AssemblyPrintedPartPropsInput {}
+  extends AssemblyPrintedPartPropsInput {
+  children?: ReactNode
+}
 
 export interface AssemblySubassemblyJsxProps
   extends AssemblySubassemblyPropsInput {}
 export type AssemblyCadAssemblyJsxProps = AssemblySubassemblyJsxProps
 
+export interface AssemblyCableJsxProps extends AssemblyCablePropsInput {}
+
 export const assembly = {
+  cable: createNamespacedElement<AssemblyCableJsxProps>("assembly.cable"),
   printedpart: createNamespacedElement<AssemblyPrintedPartJsxProps>(
     "assembly.printedpart",
   ),

@@ -74,10 +74,10 @@
     "bun-match-svg": "0.0.12",
     "calculate-elbow": "^0.0.12",
     "chokidar-cli": "^3.0.0",
-    "circuit-json": "^0.0.515",
+    "circuit-json": "https://pkg.pr.new/circuit-json@69c59d2",
     "circuit-json-to-bpc": "^0.0.13",
     "circuit-json-to-connectivity-map": "^0.0.33",
-    "circuit-json-to-gltf": "^0.0.143",
+    "circuit-json-to-gltf": "https://pkg.pr.new/circuit-json-to-gltf@3e63af6",
     "circuit-json-to-spice": "^0.0.45",
     "circuit-to-svg": "^0.0.440",
     "concurrently": "^9.1.2",
@@ -100,7 +100,8 @@
     "stack-svgs": "^0.0.1",
     "ts-expect": "^1.3.0",
     "tsup": "^8.2.4",
-    "@jscad/modeling": "^2.13.0"
+    "@jscad/modeling": "^2.13.0",
+    "@tscircuit/cableprinter": "github:tscircuit/cableprinter#09b7c80b88117891232074baf415040e970c9b7e"
   },
   "peerDependencies": {
     "@tscircuit/capacity-autorouter": "*",
@@ -121,7 +122,8 @@
     "circuit-json-to-spice": "*",
     "schematic-symbols": "*",
     "spicets": "*",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "@tscircuit/cableprinter": "*"
   },
   "dependencies": {
     "@flatten-js/core": "^1.6.2",
@@ -143,6 +145,7 @@
   "overrides": {
     "@tscircuit/circuit-json-util": "^0.0.119",
     "@tscircuit/props": "^0.0.687",
-    "circuit-json": "^0.0.515"
+    "circuit-json": "https://pkg.pr.new/circuit-json@69c59d2",
+    "@tscircuit/cableprinter": "github:tscircuit/cableprinter#09b7c80b88117891232074baf415040e970c9b7e"
   }
 }

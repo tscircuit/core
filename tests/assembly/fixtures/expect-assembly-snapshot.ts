@@ -1,3 +1,4 @@
+import { alphabetText } from "./alphabet-text"
 import { expect } from "bun:test"
 import { Resvg, type ResvgRenderOptions } from "@resvg/resvg-js"
 import { convertCircuitJsonToGltf } from "circuit-json-to-gltf"
@@ -47,7 +48,7 @@ const resvgOptions: ResvgRenderOptions = {
   },
 }
 
-const svgText = (
+const legacySvgText = (
   text: string,
   x: number,
   y: number,
@@ -65,8 +66,19 @@ export const expectAssemblySnapshot = async (
     title,
     panels,
     columns = 1,
-  }: { title: string; panels: AssemblySnapshotPanel[]; columns?: number },
+    font = "legacy",
+  }: {
+    title: string
+    panels: AssemblySnapshotPanel[]
+    columns?: number
+    font?: "legacy" | "alphabet"
+  },
 ) => {
+  const svgText =
+    font === "alphabet"
+      ? (text: string, x: number, y: number, size = 17, _color?: string) =>
+          alphabetText({ text, x, y, size })
+      : legacySvgText
   const panelWidth = 1000
   const codeWidth = 530
   const gap = 20
@@ -137,7 +149,12 @@ export const expectAssemblySnapshot = async (
     )
   }
   svgParts.push("</svg>")
-  const png = new Resvg(svgParts.join(""), resvgOptions).render().asPng()
+  const png = new Resvg(
+    svgParts.join(""),
+    font === "alphabet" ? { font: { loadSystemFonts: false } } : resvgOptions,
+  )
+    .render()
+    .asPng()
   const snapshotDir = join(dirname(testPath), "__snapshots__")
   const snapshotPath = join(
     snapshotDir,
