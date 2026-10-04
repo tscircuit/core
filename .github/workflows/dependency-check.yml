@@ -33,7 +33,8 @@ jobs:
           #  - bundled_lib: No peer dependencies, no dependencies
           INPUT_PACKAGE_TYPE: internal_lib
 
-          # Geometry helpers require a compatible utility version; permit peer ranges.
-          INPUT_PEER_DEPS_SHOULD_BE_ASTERISK: false
+          # This peer needs geometry exports absent in older utility versions.
+          # dependency-check 0.0.7 ignores its false asterisk option.
+          INPUT_IGNORE_PACKAGES: "@tscircuit/circuit-json-util"
           # INPUT_IGNORE_PACKAGES: "circuit-json,..."
           # INPUT_ADDITIONAL_INTERNAL_PACKAGES: "circuit-json,..."
