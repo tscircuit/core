@@ -62,6 +62,9 @@ test("pcbcopperpour inserts precomputed copper geometry", async () => {
               shape="polygon"
               layer="inner1"
               connectsTo="net.POLYGON"
+              pcbX={1}
+              pcbY={-1}
+              pcbRotation="45deg"
               points={[
                 { x: -2, y: 1 },
                 { x: 0, y: 4 },
@@ -72,6 +75,9 @@ test("pcbcopperpour inserts precomputed copper geometry", async () => {
               shape="brep"
               layer="top"
               connectsTo="net.BREP"
+              pcbX={-1}
+              pcbY={1}
+              pcbRotation="15deg"
               brepShape={{
                 outer_ring: {
                   vertices: [
