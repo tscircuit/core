@@ -262,7 +262,7 @@ test("NEMA8 U_3V3 bottom CAD rotation matches pin 1", async () => {
   })
 
   expect(bottomOrientations).toEqual([
-    { componentName: "U_3V3", cadRotation: { x: 0, y: 180, z: 180 } },
+    { componentName: "U_3V3", cadRotation: { x: 0, y: 180, z: 0 } },
     { componentName: "D_LOGIC_PD", cadRotation: { x: 0, y: 180, z: 270 } },
     {
       componentName: "D_LOGIC_USB",

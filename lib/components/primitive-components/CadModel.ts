@@ -1,5 +1,5 @@
+import { composeCadModelRotation } from "lib/utils/cad/compose-cad-model-rotation"
 import { getFoldedCadComponentPlacement } from "lib/utils/cad/get-folded-cad-component-placement"
-import { normalizeDegrees } from "@tscircuit/math-utils"
 import { cadmodelProps, point3 } from "@tscircuit/props"
 import type { CadModelProps } from "@tscircuit/props"
 import type { CadComponent } from "circuit-json"
@@ -127,15 +127,15 @@ export class CadModel extends PrimitiveComponent<typeof cadmodelProps> {
           (layer === "bottom" ? -zOffsetFromSurface : zOffsetFromSurface) +
           Number(positionOffset.z),
       },
-      rotation: {
-        x: Number(rotationOffset.x),
-        y: (layer === "top" ? 0 : 180) + Number(rotationOffset.y),
-        z: normalizeDegrees(
-          layer === "bottom"
-            ? -(accumulatedRotation + Number(rotationOffset.z))
-            : accumulatedRotation + Number(rotationOffset.z),
-        ),
-      },
+      rotation: composeCadModelRotation({
+        layer,
+        pcbCcwRotationDegrees: accumulatedRotation,
+        modelCcwRotationOffsetDegrees: {
+          x: Number(rotationOffset.x),
+          y: Number(rotationOffset.y),
+          z: Number(rotationOffset.z),
+        },
+      }),
     }
     cadComponentPlacement = getFoldedCadComponentPlacement(
       parent,
