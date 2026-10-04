@@ -19,6 +19,9 @@ test("default behaviour without any paste props stays 0.7", async () => {
   circuit.render()
 
   const pastes = circuit.db.pcb_solder_paste.list()
+  for (const pad of circuit.db.pcb_smtpad.list())
+    expect(pad.pcb_component_id).toBeNull()
+  for (const paste of pastes) expect(paste.pcb_component_id).toBeNull()
   const rectPaste = pastes.find((p) => p.shape === "rect")
   const circlePaste = pastes.find((p) => p.shape === "circle")
   if (rectPaste?.shape === "rect") {

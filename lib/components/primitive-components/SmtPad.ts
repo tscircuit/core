@@ -202,8 +202,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
     let pcb_smtpad: PcbSmtPad | null = null
     const pcb_component_id =
       this.parent?.pcb_component_id ??
-      this.getPrimitiveContainer()?.pcb_component_id ??
-      undefined
+      this.getPrimitiveContainer()?.pcb_component_id!
     if (props.shape === "circle") {
       pcb_smtpad = db.pcb_smtpad.insert({
         pcb_component_id,
@@ -379,7 +378,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
             holes: contour.holes?.map((hole) =>
               hole.map((point) => applyToPoint(globalTransform, point)),
             ),
-            pcb_component_id,
+            pcb_component_id: pcb_component_id ?? undefined,
             pcb_smtpad_id: pcb_smtpad.pcb_smtpad_id,
             subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
             pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
