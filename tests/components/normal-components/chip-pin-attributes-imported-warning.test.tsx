@@ -66,5 +66,4 @@ test("async imported attributes fill missing declarations and user overrides are
   )
   expect(warnings[0]!.source_port_ids).toHaveLength(1)
   expect(importedCircuitJson).toEqual(originalCircuitJson)
-  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

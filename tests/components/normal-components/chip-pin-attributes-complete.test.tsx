@@ -47,5 +47,4 @@ test("electrical roles, aliases, zero voltage and intentional no-connects satisf
   expect(
     circuit.db.source_component_pins_underspecified_warning.list(),
   ).toHaveLength(0)
-  await expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })

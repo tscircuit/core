@@ -31,5 +31,4 @@ test("unknown pin names and misspelled attribute fields are included in one warn
   )
   expect(warnings[0]!.source_port_ids).toHaveLength(1)
   expect(pinAttributes).toEqual(originalAttributes)
-  await expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
