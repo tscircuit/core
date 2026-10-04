@@ -10,6 +10,7 @@ import {
   type PcbSmtPadRotatedRect,
   type PcbSmtPadPill,
   type PcbSmtPadRotatedPill,
+  type PcbSolderPastePolygon,
 } from "circuit-json"
 import { applyToPoint, decomposeTSR } from "transformation-matrix"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
@@ -22,6 +23,12 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
   pcb_smtpad_id: string | null = null
 
   matchedPort: Port | null = null
+
+  /**
+   * Inflated paste points are footprint-local mm (+X right, +Y up, +Z above,
+   * right-handed). An empty array preserves an explicitly absent aperture.
+   */
+  _inflatedPcbSolderPaste?: PcbSolderPastePolygon[]
 
   isPcbPrimitive = true
 
@@ -337,10 +344,13 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
       } as PcbSmtPadPolygon) as PcbSmtPadPolygon
       if (shouldCreateSolderPaste) {
-        for (const contour of getPolygonSolderPasteContours({
-          points: localPoints,
-          solderPasteMargin,
-        })) {
+        const pasteContours =
+          this._inflatedPcbSolderPaste ??
+          getPolygonSolderPasteContours({
+            points: localPoints,
+            solderPasteMargin,
+          })
+        for (const contour of pasteContours) {
           db.pcb_solder_paste.insert({
             shape: "polygon",
             layer: pcb_smtpad.layer,
