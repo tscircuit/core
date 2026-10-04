@@ -1,5 +1,10 @@
 import { pinAttributeMap } from "@tscircuit/props"
+import {
+  checkNoGroundPinDefined,
+  checkNoPowerPinDefined,
+} from "@tscircuit/checks"
 import type { SourcePinAttributes, SourcePort } from "circuit-json"
+import type { Port } from "lib/components/primitive-components/Port"
 import type { Chip } from "./Chip"
 
 const getPinAttributeIssues = (attributes: SourcePinAttributes): string[] => {
@@ -94,7 +99,9 @@ const getPinAttributeIssues = (attributes: SourcePinAttributes): string[] => {
 }
 
 /** Validate resolved electrical metadata without modifying user or imported attributes. */
-export const Chip_doInitialSourcePinAttributeChecks = (chip: Chip<string>) => {
+export const Chip_doInitialSourcePinSpecificationChecks = (
+  chip: Chip<string>,
+) => {
   if (chip.config.componentName !== "Chip") return
   if (!chip.source_component_id) return
   const { db } = chip.root!
@@ -109,15 +116,57 @@ export const Chip_doInitialSourcePinAttributeChecks = (chip: Chip<string>) => {
     chip.root?.platform?.pinSpecificationDrcChecksDisabled ??
     chip.getInheritedProperty("pinSpecificationDrcChecksDisabled")
 
-  const sourcePorts = db.source_port
-    .list()
-    .filter((port) => port.source_component_id === chip.source_component_id)
+  const checksDisabled = drcChecksDisabled || pinSpecificationDrcChecksDisabled
+  const sourcePorts = checksDisabled
+    ? []
+    : chip.selectAll<Port>("port").flatMap((port) => {
+        if (!port.source_port_id) return []
+        const sourcePort = db.source_port.get(port.source_port_id)
+        return sourcePort?.source_component_id === chip.source_component_id
+          ? [sourcePort]
+          : []
+      })
+  const sourceComponent = checksDisabled
+    ? null
+    : db.source_component.get(chip.source_component_id)
+  const chipCircuitJson = sourceComponent
+    ? [sourceComponent, ...sourcePorts]
+    : []
+
+  // Reuse existing power/ground rules on this chip alone. Keep warning identities
+  // stable on updates, and remove diagnostics when resolved or disabled.
+  for (const [warningTable, check] of [
+    [db.source_no_power_pin_defined_warning, checkNoPowerPinDefined],
+    [db.source_no_ground_pin_defined_warning, checkNoGroundPinDefined],
+  ] as const) {
+    const existing = warningTable.getWhere({
+      source_component_id: chip.source_component_id,
+    })
+    const existingId =
+      existing?.type === "source_no_power_pin_defined_warning"
+        ? existing.source_no_power_pin_defined_warning_id
+        : existing?.source_no_ground_pin_defined_warning_id
+    const [warning] = checksDisabled ? [] : check(chipCircuitJson)
+    if (warning) {
+      if (existingId) {
+        warningTable.update(existingId, {
+          message: warning.message,
+          source_port_ids: warning.source_port_ids,
+          subcircuit_id: warning.subcircuit_id,
+        })
+      } else {
+        db.insertAll([warning])
+      }
+    } else if (existingId) {
+      warningTable.delete(existingId)
+    }
+  }
   const issues: {
     pinName: string
     reasons: string[]
     sourcePort?: SourcePort
   }[] = []
-  if (!drcChecksDisabled && !pinSpecificationDrcChecksDisabled) {
+  if (!checksDisabled) {
     for (const sourcePort of sourcePorts) {
       const reasons = getPinAttributeIssues(sourcePort)
       const aliases = new Set([

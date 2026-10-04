@@ -18,6 +18,12 @@ test("chip pin validation respects DRC controls and leaves other component types
     expect(
       circuit.db.source_component_pins_underspecified_warning.list(),
     ).toHaveLength(0)
+    expect(circuit.db.source_no_power_pin_defined_warning.list()).toHaveLength(
+      0,
+    )
+    expect(circuit.db.source_no_ground_pin_defined_warning.list()).toHaveLength(
+      0,
+    )
   }
   const { circuit } = getTestFixture()
   circuit.add(

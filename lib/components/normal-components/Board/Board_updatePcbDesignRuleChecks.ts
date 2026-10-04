@@ -2,14 +2,12 @@ import {
   dedupePcbDrcErrors,
   consolidatePcbOverlapErrors,
   runAllNetlistChecks,
-  runAllPinSpecificationChecks,
   runAllPlacementChecks,
   runAllRoutingChecks,
   runAllSchematicChecks,
 } from "@tscircuit/checks"
 import type { AnyCircuitElement } from "circuit-json"
 import type { DrcCheck } from "../../primitive-components/DrcCheck"
-import type { Chip } from "../Chip"
 import type { Board } from "./Board"
 
 export const Board_updatePcbDesignRuleChecks = (board: Board) => {
@@ -35,9 +33,6 @@ export const Board_updatePcbDesignRuleChecks = (board: Board) => {
   const netlistDrcChecksDisabled =
     board.root?.platform?.netlistDrcChecksDisabled ??
     board.getInheritedProperty("netlistDrcChecksDisabled")
-  const pinSpecificationDrcChecksDisabled = board.getInheritedProperty(
-    "pinSpecificationDrcChecksDisabled",
-  )
   const placementDrcChecksDisabled =
     board.root?.platform?.placementDrcChecksDisabled ??
     board.getInheritedProperty("placementDrcChecksDisabled")
@@ -46,8 +41,6 @@ export const Board_updatePcbDesignRuleChecks = (board: Board) => {
     board.getInheritedProperty("routingDrcChecksDisabled")
 
   const shouldRunNetlistChecks = !drcChecksDisabled && !netlistDrcChecksDisabled
-  const shouldRunPinSpecificationChecks =
-    !drcChecksDisabled && !pinSpecificationDrcChecksDisabled
   const shouldRunSchematicChecks = !drcChecksDisabled && !schematicDisabled
   const shouldRunPlacementChecks =
     !drcChecksDisabled && !pcbDisabled && !placementDrcChecksDisabled
@@ -167,30 +160,6 @@ export const Board_updatePcbDesignRuleChecks = (board: Board) => {
       queueCheck(
         "netlist",
         () => runAllNetlistChecks(circuitJson) as Promise<AnyCircuitElement[]>,
-      )
-    }
-
-    if (shouldRunPinSpecificationChecks) {
-      const checkedChipIds = new Set(
-        board
-          .selectAll<Chip<string>>("chip")
-          .map((chip) => chip.source_component_id),
-      )
-      queueCheck(
-        "pin_specification",
-        () =>
-          runAllPinSpecificationChecks(circuitJson).then((results) =>
-            // Chip source checks already include partial metadata and pin examples.
-            results.filter(
-              (result) =>
-                result.type !==
-                  "source_component_pins_underspecified_warning" ||
-                (!checkedChipIds.has(result.source_component_id) &&
-                  !db.source_component_pins_underspecified_warning.getWhere({
-                    source_component_id: result.source_component_id,
-                  })),
-            ),
-          ) as Promise<AnyCircuitElement[]>,
       )
     }
 

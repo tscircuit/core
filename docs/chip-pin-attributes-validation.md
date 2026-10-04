@@ -7,6 +7,11 @@ of affected pins, up to three examples with reasons, and a count of remaining
 pins. `source_port_ids` references every affected existing pin, even when the
 message omits it.
 
+These checks run in each chip's source-render lifecycle using only its own
+ports; no board is required. The existing missing-power and missing-ground pin
+checks also run there, so the board does not collect or deduplicate chip
+pin-specification diagnostics.
+
 For example, a chip with an empty entry for `DATA` and no entry for `ENABLE`
 produces a warning like:
 

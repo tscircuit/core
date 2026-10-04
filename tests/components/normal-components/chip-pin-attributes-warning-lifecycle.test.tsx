@@ -14,6 +14,8 @@ test("chips without attributes warn once and updates remove resolved warnings", 
   const warnings =
     circuit.db.source_component_pins_underspecified_warning.list()
   expect(warnings).toHaveLength(2)
+  expect(circuit.db.source_no_power_pin_defined_warning.list()).toHaveLength(2)
+  expect(circuit.db.source_no_ground_pin_defined_warning.list()).toHaveLength(2)
   for (const warning of warnings) {
     expect(warning.source_port_ids).toHaveLength(2)
     expect(warning.message).toContain(
@@ -48,4 +50,6 @@ test("chips without attributes warn once and updates remove resolved warnings", 
       source_component_id: chip.source_component_id!,
     }),
   ).toBeNull()
+  expect(circuit.db.source_no_power_pin_defined_warning.list()).toHaveLength(1)
+  expect(circuit.db.source_no_ground_pin_defined_warning.list()).toHaveLength(1)
 })
