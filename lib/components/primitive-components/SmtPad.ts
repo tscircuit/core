@@ -16,6 +16,7 @@ import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import type { Port } from "./Port"
 import { selectPortForPcbPrimitive } from "./Port/selectPortForPcbPrimitive"
 import { getAxisAlignedSizeFromRotatedRect } from "lib/utils/pcb/get-axis-aligned-size-from-rotated-rect"
+import { getPolygonSolderPasteContours } from "lib/utils/pcb/get-polygon-solder-paste-contours"
 
 export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
   pcb_smtpad_id: string | null = null
@@ -315,16 +316,13 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
           pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
         } as PcbSmtPadRotatedRect)
     } else if (props.shape === "polygon") {
-      const transformedPoints = props.points.map((point) => {
-        const transformed = applyToPoint(globalTransform, {
-          x: distance.parse(point.x),
-          y: distance.parse(point.y),
-        })
-        return {
-          x: transformed.x,
-          y: transformed.y,
-        }
-      })
+      const localPoints = props.points.map(({ x, y }) => ({
+        x: distance.parse(x),
+        y: distance.parse(y),
+      }))
+      const transformedPoints = localPoints.map((point) =>
+        applyToPoint(globalTransform, point),
+      )
 
       pcb_smtpad = db.pcb_smtpad.insert({
         pcb_component_id,
@@ -338,6 +336,27 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
       } as PcbSmtPadPolygon) as PcbSmtPadPolygon
+      if (shouldCreateSolderPaste) {
+        for (const contour of getPolygonSolderPasteContours({
+          points: localPoints,
+          solderPasteMargin,
+        })) {
+          db.pcb_solder_paste.insert({
+            shape: "polygon",
+            layer: pcb_smtpad.layer,
+            points: contour.points.map((point) =>
+              applyToPoint(globalTransform, point),
+            ),
+            holes: contour.holes?.map((hole) =>
+              hole.map((point) => applyToPoint(globalTransform, point)),
+            ),
+            pcb_component_id: pcb_component_id ?? undefined,
+            pcb_smtpad_id: pcb_smtpad.pcb_smtpad_id,
+            subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+            pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
+          })
+        }
+      }
     } else if (props.shape === "rotated_pill") {
       const combinedRotationBeforeFlip =
         (transformRotationBeforeFlip + props.ccwRotation + 360) % 360
@@ -588,6 +607,22 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
           y: p.y + deltaY,
         })),
       })
+      for (const paste of db.pcb_solder_paste.list()) {
+        if (
+          paste.pcb_smtpad_id !== this.pcb_smtpad_id ||
+          paste.shape !== "polygon"
+        )
+          continue
+        db.pcb_solder_paste.update(paste.pcb_solder_paste_id, {
+          points: paste.points.map(({ x, y }) => ({
+            x: x + deltaX,
+            y: y + deltaY,
+          })),
+          holes: paste.holes?.map((hole) =>
+            hole.map(({ x, y }) => ({ x: x + deltaX, y: y + deltaY })),
+          ),
+        })
+      }
 
       const newCenter = {
         x: this._getPcbCircuitJsonBounds().center.x + deltaX / 2,
