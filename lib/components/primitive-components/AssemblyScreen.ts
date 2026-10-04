@@ -23,7 +23,7 @@ export class AssemblyScreen
 
   doInitialSourceRender(): void {
     const sourceComponent = this.root!.db.source_component.insert({
-      ftype: "simple_chip",
+      ftype: "subassembly",
       name: this.name,
     })
     this.source_component_id = sourceComponent.source_component_id

@@ -64,7 +64,7 @@ export class AssemblyPrintedPart
   doInitialSourceRender(): void {
     this.printedPartPlan
     this.source_component_id = this.root!.db.source_component.insert({
-      ftype: "simple_chip",
+      ftype: "printedpart",
       name: this.name,
     }).source_component_id
   }
