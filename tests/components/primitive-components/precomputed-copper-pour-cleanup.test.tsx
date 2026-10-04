@@ -7,6 +7,12 @@ test("precomputed copper survives cleanup beside a generated pour", async () => 
 
   circuit.add(
     <board width={30} height={12}>
+      <pcbnotetext
+        pcbX={0}
+        pcbY={4.5}
+        text="ONLY THE PRECOMPUTED POUR SHOULD REMAIN"
+        fontSize={0.7}
+      />
       <net name="VCC" />
       <resistor name="R1" resistance="1k" footprint="0402" pcbX={-10} />
       <trace from="R1.pin1" to="net.VCC" />
@@ -49,4 +55,6 @@ test("precomputed copper survives cleanup beside a generated pour", async () => 
     { x: 9, y: 1 },
     { x: 7, y: 1 },
   ])
+
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

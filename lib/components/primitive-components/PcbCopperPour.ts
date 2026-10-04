@@ -1,44 +1,7 @@
 import { type PcbCopperPourProps, pcbCopperPourProps } from "@tscircuit/props"
-import type { Ring } from "circuit-json"
 import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
-import { type Matrix, applyToPoint, decomposeTSR } from "transformation-matrix"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
-import type { Net } from "./Net"
-
-const transformBrepRing = ({
-  isFlipped,
-  parentTransform,
-  ring,
-}: {
-  isFlipped: boolean
-  parentTransform: Matrix
-  ring: Ring
-}): Ring => {
-  if (!isFlipped) {
-    return {
-      vertices: ring.vertices.map((vertex) => ({
-        ...applyToPoint(parentTransform, vertex),
-        ...(vertex.bulge !== undefined ? { bulge: vertex.bulge } : {}),
-      })),
-    }
-  }
-
-  const vertexCount = ring.vertices.length
-  return {
-    vertices: ring.vertices.toReversed().map((vertex, reversedIndex) => {
-      const sourceVertexIndex = vertexCount - 1 - reversedIndex
-      const precedingSourceVertex =
-        ring.vertices[(sourceVertexIndex - 1 + vertexCount) % vertexCount]
-
-      return {
-        ...applyToPoint(parentTransform, vertex),
-        ...(precedingSourceVertex?.bulge !== undefined
-          ? { bulge: -precedingSourceVertex.bulge }
-          : {}),
-      }
-    }),
-  }
-}
+import { PcbCopperPour_doInitialPcbPrimitiveRender } from "./PcbCopperPour_doInitialPcbPrimitiveRender"
 
 export type { PcbCopperPourProps }
 
@@ -64,96 +27,13 @@ export class PcbCopperPour extends PrimitiveComponent<
   }
 
   doInitialCreateNetsFromProps(): void {
-    createNetsFromProps(this, [this._parsedProps.connectsTo])
+    createNetsFromProps(
+      this,
+      this._parsedProps.connectsTo ? [this._parsedProps.connectsTo] : [],
+    )
   }
 
   doInitialPcbPrimitiveRender(): void {
-    if (this.root?.pcbDisabled) return
-
-    const { db } = this.root!
-    const props = this._parsedProps
-    const subcircuit = this.getSubcircuit()
-    const sourceNetId = props.connectsTo
-      ? subcircuit.selectOne<Net>(props.connectsTo)?.source_net_id
-      : undefined
-    if (props.connectsTo && !sourceNetId) {
-      this.renderError(
-        `Net "${props.connectsTo}" not found for precomputed copper pour`,
-      )
-      return
-    }
-    const primitiveTransform = this._computePcbGlobalTransformBeforeLayout()
-    const { isFlipped, maybeFlipLayer } = this._getPcbPrimitiveFlippedHelpers()
-    const commonFields = {
-      covered_with_solder_mask: props.coveredWithSolderMask,
-      layer:
-        props.layer === "top" || props.layer === "bottom"
-          ? maybeFlipLayer(props.layer)
-          : props.layer,
-      pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
-      source_net_id: sourceNetId,
-      subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
-    }
-
-    if (props.shape === "polygon") {
-      db.pcb_copper_pour.insert({
-        ...commonFields,
-        shape: "polygon",
-        points: props.points.map((point) =>
-          applyToPoint(primitiveTransform, point),
-        ),
-      })
-      return
-    }
-
-    if (props.shape === "brep") {
-      db.pcb_copper_pour.insert({
-        ...commonFields,
-        shape: "brep",
-        brep_shape: {
-          outer_ring: transformBrepRing({
-            isFlipped,
-            parentTransform: primitiveTransform,
-            ring: props.brepShape.outer_ring,
-          }),
-          inner_rings: props.brepShape.inner_rings.map((ring) =>
-            transformBrepRing({
-              isFlipped,
-              parentTransform: primitiveTransform,
-              ring,
-            }),
-          ),
-        },
-      })
-      return
-    }
-
-    if (isFlipped) {
-      const halfWidth = props.width / 2
-      const halfHeight = props.height / 2
-
-      db.pcb_copper_pour.insert({
-        ...commonFields,
-        shape: "polygon",
-        points: [
-          { x: -halfWidth, y: -halfHeight },
-          { x: halfWidth, y: -halfHeight },
-          { x: halfWidth, y: halfHeight },
-          { x: -halfWidth, y: halfHeight },
-        ].map((point) => applyToPoint(primitiveTransform, point)),
-      })
-      return
-    }
-
-    const globalRotationDegrees =
-      (decomposeTSR(primitiveTransform).rotation.angle * 180) / Math.PI
-    db.pcb_copper_pour.insert({
-      ...commonFields,
-      shape: "rect",
-      center: applyToPoint(primitiveTransform, { x: 0, y: 0 }),
-      width: props.width,
-      height: props.height,
-      rotation: globalRotationDegrees,
-    })
+    PcbCopperPour_doInitialPcbPrimitiveRender(this)
   }
 }
