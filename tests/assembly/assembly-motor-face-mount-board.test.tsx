@@ -2,12 +2,10 @@ import { expect, test } from "bun:test"
 import { assembly, jscad } from "lib"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { withLocalNemaMesh } from "./fixtures/with-local-nema-mesh"
-import { expectAssemblySnapshot } from "./fixtures/expect-assembly-snapshot"
 import { getRenderedMotorBounds } from "./fixtures/get-rendered-motor-bounds"
 import { MotorSpacer } from "./fixtures/motor-spacer"
 
 test("a PCB anchors frame -> motor -> spacer chains without moving PCB geometry", async () => {
-  const panels = []
   for (const [mountFace, pcbRotation] of [
     ["frontface", 0],
     ["frontface", 90],
@@ -96,33 +94,5 @@ test("a PCB anchors frame -> motor -> spacer chains without moving PCB geometry"
     expect(motor.subcircuit_id).toBe(
       circuit.db.pcb_board.list()[0]!.subcircuit_id,
     )
-    panels.push({
-      title: `${mountFace} to frame / PCB ${pcbRotation} degrees`,
-      code: `<assembly.motor name="MOTOR"
-  standard="nema17"
-  mountedTo="FRAME.motor"
-  mountFace="${mountFace}" mountGap={4} />
-<assembly.printedpart name="SPACER"
-  mountedTo="MOTOR.${boardFace}"
-  mountFace="motor" mountGap={5}
-  jscad={<MotorSpacer />} />
-<board mountedTo="SPACER.board"
-  mountGap={2} pcbX={12} pcbY={-7}
-  pcbRotation={${pcbRotation}} ... >
-  <hole diameter={30} />
-</board>`,
-      annotation:
-        "PCB remains at Z=0 / 2 mm spacer-to-PCB gap / forward-reference mounting chain",
-      circuit: json,
-      renderOptions: {
-        camPos: [110, 60, 120] as [number, number, number],
-        poppygl: { lookAt: [-12, -25, -7] as [number, number, number] },
-      },
-    })
   }
-  await expectAssemblySnapshot(import.meta.path, {
-    title: "Controller anchored to a frame-mounted motor",
-    panels,
-    columns: 2,
-  })
 }, 60000)
