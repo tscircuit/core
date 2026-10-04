@@ -137,7 +137,7 @@
     "svg-path-commander": "^2.1.11",
     "transformation-matrix": "^2.16.1",
     "zod": "^3.25.67",
-    "jscad-planner": "https://pkg.pr.new/jscad-planner@cf906dd",
+    "jscad-planner": "^0.0.18",
     "jscad-fiber": "https://pkg.pr.new/jscad-fiber@1999550"
   },
   "overrides": {
