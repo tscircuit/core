@@ -9,6 +9,7 @@ import {
 } from "@tscircuit/checks"
 import type { AnyCircuitElement } from "circuit-json"
 import type { DrcCheck } from "../../primitive-components/DrcCheck"
+import type { Chip } from "../Chip"
 import type { Board } from "./Board"
 
 export const Board_updatePcbDesignRuleChecks = (board: Board) => {
@@ -170,12 +171,26 @@ export const Board_updatePcbDesignRuleChecks = (board: Board) => {
     }
 
     if (shouldRunPinSpecificationChecks) {
+      const checkedChipIds = new Set(
+        board
+          .selectAll<Chip<string>>("chip")
+          .map((chip) => chip.source_component_id),
+      )
       queueCheck(
         "pin_specification",
         () =>
-          runAllPinSpecificationChecks(circuitJson) as Promise<
-            AnyCircuitElement[]
-          >,
+          runAllPinSpecificationChecks(circuitJson).then((results) =>
+            // Chip source checks already include partial metadata and pin examples.
+            results.filter(
+              (result) =>
+                result.type !==
+                  "source_component_pins_underspecified_warning" ||
+                (!checkedChipIds.has(result.source_component_id) &&
+                  !db.source_component_pins_underspecified_warning.getWhere({
+                    source_component_id: result.source_component_id,
+                  })),
+            ),
+          ) as Promise<AnyCircuitElement[]>,
       )
     }
 

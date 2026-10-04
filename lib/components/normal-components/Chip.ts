@@ -5,6 +5,7 @@ import { NormalComponent } from "lib/components/base-components/NormalComponent"
 import { Port } from "lib/components/primitive-components/Port"
 import { Trace } from "lib/components/primitive-components/Trace/Trace"
 import { Chip_doInitialPcbPlacementDesignRuleChecks } from "./Chip_doInitialPcbPlacementDesignRuleChecks"
+import { Chip_doInitialSourcePinAttributeChecks } from "./Chip_doInitialSourcePinAttributeChecks"
 
 export class Chip<PinLabels extends string = never> extends NormalComponent<
   typeof chipProps,
@@ -79,6 +80,15 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
     })
 
     this.source_component_id = source_component.source_component_id!
+  }
+
+  override doInitialSourceDesignRuleChecks(): void {
+    super.doInitialSourceDesignRuleChecks()
+    Chip_doInitialSourcePinAttributeChecks(this)
+  }
+
+  updateSourceDesignRuleChecks(): void {
+    Chip_doInitialSourcePinAttributeChecks(this)
   }
 
   doInitialPcbComponentRender() {
