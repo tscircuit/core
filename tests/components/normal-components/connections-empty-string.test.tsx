@@ -18,18 +18,16 @@ test("Empty string in connections records source_component_misconfigured_error a
 
   await circuit.renderUntilSettled()
 
-  const circuitJson = circuit.getCircuitJson()
-  const misconfiguredErrors = circuitJson.filter(
-    (item: any) => item.type === "source_component_misconfigured_error",
-  )
+  const misconfiguredErrors =
+    circuit.db.source_component_misconfigured_error.list()
 
   expect(misconfiguredErrors).toHaveLength(1)
-  expect(misconfiguredErrors[0].message).toContain(
+  expect(misconfiguredErrors[0]?.message).toContain(
     'has an empty connections target for pin "pin1"',
   )
-  expect(misconfiguredErrors[0].source_component_ids.length).toBeGreaterThan(0)
+  expect(misconfiguredErrors[0]?.source_component_ids.length).toBeGreaterThan(0)
 
-  const traces = circuitJson.filter((item: any) => item.type === "source_trace")
+  const traces = circuit.db.source_trace.list()
   expect(traces.length).toBeGreaterThan(0)
 })
 
@@ -50,10 +48,8 @@ test("Array of connections with whitespace and empty targets are properly diagno
 
   await circuit.renderUntilSettled()
 
-  const circuitJson = circuit.getCircuitJson()
-  const misconfiguredErrors = circuitJson.filter(
-    (item: any) => item.type === "source_component_misconfigured_error",
-  )
+  const misconfiguredErrors =
+    circuit.db.source_component_misconfigured_error.list()
 
   expect(misconfiguredErrors).toHaveLength(2)
   for (const err of misconfiguredErrors) {
