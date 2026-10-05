@@ -38,11 +38,22 @@ metadata using the chip's supplier or manufacturer part number. This fetch
 supplies comparison facts only: it does not import the official footprint or
 change the user's declarations, pin labels, or source-port defaults.
 
+Repeated chips share metadata requests by supplier part number, manufacturer
+part number, and fetch implementation within the circuit instance. Pending
+requests, successful results, missing metadata, and failed attempts are retained,
+including the complete legacy fallback sequence. This also shares requests
+between supplier footprint imports and custom-footprint validation. A fallback
+still produces an individual diagnostic for each chip rather than reusing the
+first chip's name. A newly created circuit gets a fresh cache and can retry
+failed parts; failures are not persisted across circuit instances.
+
 Without fetched electrical metadata, the comparison cannot verify accuracy
 against a datasheet. Failed optional metadata fetches do not prevent custom
 footprints rendering. The checks respect `drcChecksDisabled`,
 `pinSpecificationDrcChecksDisabled`, and `partsEngineDisabled` for new fetches.
-Other component types keep their existing checks.
+Resistors, capacitors, inductors, and other non-chip components do not run
+this validation or its additional metadata fetches. Their existing checks and
+footprint/BOM fetching remain unchanged.
 
 For compatibility with existing Circuit JSON consumers, the aggregate uses
 `source_component_pins_underspecified_warning`. The existing all-underspecified,

@@ -9,6 +9,7 @@ import type { Chip } from "./Chip"
 
 /** Fetch comparison facts without importing the supplier's footprint or changing defaults. */
 export const Chip_fetchPinAttributesForValidation = (chip: Chip<string>) => {
+  if (chip.config.componentName !== "Chip") return
   if (chip._hasStartedPinAttributesFetch) return
   if (!Object.keys(chip._parsedProps.pinAttributes ?? {}).length) return
   if (chip.getInheritedProperty("partsEngineDisabled")) return
