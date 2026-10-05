@@ -140,8 +140,8 @@ export function getBoundsForSchematic(db: any[]): {
         w !== undefined &&
         h !== undefined
       ) {
-        // Same world transform as schematic_rect rendering: rotate local corners
-        // about the center, then translate (mm, +X right, +Y up).
+        // circuit-to-svg's createSvgObjectsFromSchematicRect rotates the drawing
+        // about its center. Bound all four corners in schematic world space.
         const transform = compose(translate(cx, cy), rotateDEG(elm.rotation))
         for (const x of [-w / 2, w / 2]) {
           for (const y of [-h / 2, h / 2]) {
