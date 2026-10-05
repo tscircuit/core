@@ -1,104 +1,17 @@
-import { pinAttributeMap } from "@tscircuit/props"
 import {
+  checkAllPinsInComponentAreUnderspecified,
   checkNoGroundPinDefined,
   checkNoPowerPinDefined,
 } from "@tscircuit/checks"
-import type { SourcePinAttributes, SourcePort } from "circuit-json"
+import type { SourcePort } from "circuit-json"
 import type { Port } from "lib/components/primitive-components/Port"
+import { getPinAttributeMismatches } from "lib/components/primitive-components/Port/get-pin-attribute-mismatches"
+import { getImportedSourcePinAttributes } from "lib/components/primitive-components/Port/resolve-port-source-pin-attributes"
+import type { PinAttributeMap } from "@tscircuit/props"
 import type { Chip } from "./Chip"
+import { Chip_fetchPinAttributesForValidation } from "./Chip_fetchPinAttributesForValidation"
 
-const getPinAttributeIssues = (attributes: SourcePinAttributes): string[] => {
-  const issues: string[] = []
-  const hasElectricalRole =
-    attributes.is_input ||
-    attributes.is_output ||
-    attributes.is_bidirectional ||
-    attributes.is_passive ||
-    attributes.is_gpio ||
-    attributes.requires_power ||
-    attributes.provides_power ||
-    attributes.requires_ground ||
-    attributes.provides_ground ||
-    attributes.requires_voltage !== undefined ||
-    attributes.provides_voltage !== undefined ||
-    attributes.do_not_connect ||
-    Object.entries(attributes).some(
-      ([name, value]) =>
-        (name.startsWith("supports_") ||
-          name.startsWith("is_configured_for_")) &&
-        value === true,
-    )
-  if (!hasElectricalRole) {
-    issues.push("missing electrical role in pinAttributes")
-  }
-  if (attributes.do_not_connect && attributes.must_be_connected) {
-    issues.push("doNotConnect conflicts with mustBeConnected")
-  }
-  if (attributes.requires_ground || attributes.provides_ground) {
-    if (
-      (attributes.requires_voltage !== undefined &&
-        attributes.requires_voltage !== 0) ||
-      (attributes.provides_voltage !== undefined &&
-        attributes.provides_voltage !== 0)
-    ) {
-      issues.push("ground pin declares a nonzero voltage")
-    }
-  }
-
-  // An omitted capability is unknown, not explicitly unsupported.
-  const operatingModes = [
-    [
-      "is_using_tri_state",
-      "can_use_tri_state",
-      "isUsingTriState",
-      "canUseTriState",
-    ],
-    [
-      "is_using_open_collector",
-      "can_use_open_collector",
-      "isUsingOpenCollector",
-      "canUseOpenCollector",
-    ],
-    [
-      "is_using_open_emitter",
-      "can_use_open_emitter",
-      "isUsingOpenEmitter",
-      "canUseOpenEmitter",
-    ],
-    [
-      "is_using_open_drain",
-      "can_use_open_drain",
-      "isUsingOpenDrain",
-      "canUseOpenDrain",
-    ],
-    [
-      "is_using_push_pull",
-      "can_use_push_pull",
-      "isUsingPushPull",
-      "canUsePushPull",
-    ],
-    [
-      "is_using_internal_pullup",
-      "can_use_internal_pullup",
-      "isUsingInternalPullup",
-      "canUseInternalPullup",
-    ],
-    [
-      "is_using_internal_pulldown",
-      "can_use_internal_pulldown",
-      "isUsingInternalPulldown",
-      "canUseInternalPulldown",
-    ],
-  ] as const
-  for (const [using, supported, usingProp, supportedProp] of operatingModes) {
-    if (attributes[using] && attributes[supported] === false) {
-      issues.push(`${usingProp} conflicts with ${supportedProp}: false`)
-    }
-  }
-  return issues
-}
-
-/** Validate resolved electrical metadata without modifying user or imported attributes. */
+/** Compare explicit attributes with fetched pin metadata in this chip's source lifecycle. */
 export const Chip_doInitialSourcePinSpecificationChecks = (
   chip: Chip<string>,
 ) => {
@@ -117,6 +30,7 @@ export const Chip_doInitialSourcePinSpecificationChecks = (
     chip.getInheritedProperty("pinSpecificationDrcChecksDisabled")
 
   const checksDisabled = drcChecksDisabled || pinSpecificationDrcChecksDisabled
+  if (!checksDisabled) Chip_fetchPinAttributesForValidation(chip)
   const sourcePorts = checksDisabled
     ? []
     : chip.selectAll<Port>("port").flatMap((port) => {
@@ -133,6 +47,38 @@ export const Chip_doInitialSourcePinSpecificationChecks = (
     ? [sourceComponent, ...sourcePorts]
     : []
 
+  const issues: {
+    pinName: string
+    reasons: string[]
+    sourcePort: SourcePort
+  }[] = []
+  if (!checksDisabled) {
+    for (const port of chip.selectAll<Port>("port")) {
+      const sourcePort = sourcePorts.find(
+        (sourcePort) => sourcePort.source_port_id === port.source_port_id,
+      )
+      if (!sourcePort) continue
+      const declared: PinAttributeMap = {}
+      // Use the same alias precedence as source rendering, excluding synthetic
+      // noConnect attributes: leaving a usable pin unconnected is intentional.
+      for (const alias of port.getNameAndAliases()) {
+        Object.assign(declared, chip._parsedProps.pinAttributes?.[alias])
+      }
+      const imported = getImportedSourcePinAttributes(
+        port,
+        chip._fetchedSourcePortsForPinAttributes.length
+          ? chip._fetchedSourcePortsForPinAttributes
+          : chip._importedSourcePorts,
+      )
+      const reasons = getPinAttributeMismatches(declared, imported)
+      if (reasons.length)
+        issues.push({
+          pinName: sourcePort.name || "unnamed pin",
+          reasons,
+          sourcePort,
+        })
+    }
+  }
   // Reuse existing power/ground rules on this chip alone. Keep warning identities
   // stable on updates, and remove diagnostics when resolved or disabled.
   for (const [warningTable, check] of [
@@ -146,7 +92,8 @@ export const Chip_doInitialSourcePinSpecificationChecks = (
       existing?.type === "source_no_power_pin_defined_warning"
         ? existing.source_no_power_pin_defined_warning_id
         : existing?.source_no_ground_pin_defined_warning_id
-    const [warning] = checksDisabled ? [] : check(chipCircuitJson)
+    const [warning] =
+      checksDisabled || issues.length ? [] : check(chipCircuitJson)
     if (warning) {
       if (existingId) {
         warningTable.update(existingId, {
@@ -161,51 +108,13 @@ export const Chip_doInitialSourcePinSpecificationChecks = (
       warningTable.delete(existingId)
     }
   }
-  const issues: {
-    pinName: string
-    reasons: string[]
-    sourcePort?: SourcePort
-  }[] = []
-  if (!checksDisabled) {
-    for (const sourcePort of sourcePorts) {
-      const reasons = getPinAttributeIssues(sourcePort)
-      const aliases = new Set([
-        sourcePort.name,
-        ...(sourcePort.port_hints ?? []),
-      ])
-      for (const alias of aliases) {
-        const attributes = chip.props.pinAttributes?.[alias]
-        if (!attributes) continue
-        const unknownAttributes = Object.keys(attributes).filter(
-          (attributeName) => !(attributeName in pinAttributeMap.shape),
-        )
-        if (unknownAttributes.length) {
-          reasons.push(
-            `unknown pinAttributes fields: ${unknownAttributes.join(", ")}`,
-          )
-        }
-      }
-      if (reasons.length) {
-        const pinName =
-          sourcePort.name ||
-          (sourcePort.pin_number !== undefined
-            ? `pin${sourcePort.pin_number}`
-            : "unnamed pin")
-        issues.push({ pinName, reasons, sourcePort })
-      }
-    }
-    for (const pinName of Object.keys(chip.props.pinAttributes ?? {})) {
-      if (
-        !sourcePorts.some((port) =>
-          [port.name, ...(port.port_hints ?? [])].includes(pinName),
-        )
-      ) {
-        issues.push({ pinName, reasons: ["does not match a chip pin"] })
-      }
-    }
-  }
+  // Keep the existing all-underspecified warning when no comparison conflicts
+  // exist. Both use the existing aggregate chip-pin diagnostic table.
+  const [underspecifiedWarning] = checksDisabled
+    ? []
+    : checkAllPinsInComponentAreUnderspecified(chipCircuitJson)
 
-  if (!issues.length) {
+  if (!issues.length && !underspecifiedWarning) {
     if (existingWarning) {
       db.source_component_pins_underspecified_warning.delete(
         existingWarning.source_component_pins_underspecified_warning_id,
@@ -221,12 +130,14 @@ export const Chip_doInitialSourcePinSpecificationChecks = (
   const remaining = issues.length > 3 ? `, and ${issues.length - 3} more` : ""
   const warning = {
     source_component_id: chip.source_component_id,
-    source_port_ids: issues.flatMap(({ sourcePort }) =>
-      sourcePort ? [sourcePort.source_port_id] : [],
-    ),
+    source_port_ids: issues.length
+      ? issues.map(({ sourcePort }) => sourcePort.source_port_id)
+      : underspecifiedWarning!.source_port_ids,
     subcircuit_id: chip.getSubcircuit().subcircuit_id ?? undefined,
     warning_type: "source_component_pins_underspecified_warning" as const,
-    message: `Chip ${chip.name || "unnamed chip"} has pinAttributes issues affecting ${issues.length} pin${issues.length === 1 ? "" : "s"}: ${examples}${remaining}. Specify an electrical role for each pin and correct inconsistent attributes.`,
+    message: issues.length
+      ? `Chip ${chip.name || "unnamed chip"} has pinAttributes that conflict with fetched pin metadata on ${issues.length} pin${issues.length === 1 ? "" : "s"}: ${examples}${remaining}. Check the chip configuration against the part datasheet.`
+      : underspecifiedWarning!.message,
   }
   if (existingWarning) {
     db.source_component_pins_underspecified_warning.update(

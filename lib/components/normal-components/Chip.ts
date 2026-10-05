@@ -1,6 +1,9 @@
 import { normalizeDegrees } from "@tscircuit/math-utils"
 import { chipProps, resolveManufacturerPartNumber } from "@tscircuit/props"
-import { pcb_component_invalid_layer_error } from "circuit-json"
+import {
+  pcb_component_invalid_layer_error,
+  type SourcePort,
+} from "circuit-json"
 import { NormalComponent } from "lib/components/base-components/NormalComponent"
 import { Port } from "lib/components/primitive-components/Port"
 import { Trace } from "lib/components/primitive-components/Trace/Trace"
@@ -11,6 +14,10 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
   typeof chipProps,
   PinLabels
 > {
+  /** Fetched facts used only for comparison when the user supplies a custom footprint. */
+  _fetchedSourcePortsForPinAttributes: SourcePort[] = []
+  _hasStartedPinAttributesFetch = false
+
   get config() {
     return {
       componentName: "Chip",

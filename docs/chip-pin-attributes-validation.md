@@ -1,51 +1,51 @@
-# Chip pin attribute warnings
+# Chip pin attributes compared with fetched metadata
 
-Rendering checks each chip's resolved electrical pin attributes. A chip with
-one or more issues receives a single
-`source_component_pins_underspecified_warning`. Its message includes the number
-of affected pins, up to three examples with reasons, and a count of remaining
-pins. `source_port_ids` references every affected existing pin, even when the
-message omits it.
+Each chip compares explicitly declared `pinAttributes` with the original
+fetched part's electrical pin metadata, before user overrides merge into the
+rendered source ports. For example, declaring `requiresVoltage: "1.8V"` for a
+pin whose fetched `requires_voltage` is `3.3` produces a warning even though
+the rendered source port still contains the user's `1.8` override.
 
-These checks run in each chip's source-render lifecycle using only its own
-ports; no board is required. The existing missing-power and missing-ground pin
-checks also run there, so the board does not collect or deduplicate chip
-pin-specification diagnostics.
-
-For example, a chip with an empty entry for `DATA` and no entry for `ENABLE`
-produces a warning like:
+A chip with conflicts gets one aggregate warning with up to three affected
+pin examples, each showing the declared property/value and fetched field/value.
+A count reports any additional affected pins, and `source_port_ids` includes
+all affected pins. Rechecking updates the same warning; correcting declarations
+or disabling checks removes it.
 
 ```text
-Chip U1 has pinAttributes issues affecting 2 pins: DATA (missing electrical role in pinAttributes), ENABLE (missing electrical role in pinAttributes). Specify an electrical role for each pin and correct inconsistent attributes.
+Chip U1 has pinAttributes that conflict with fetched pin metadata on 1 pin: VDD (requiresVoltage: "1.8V", fetched requires_voltage: 3.3). Check the chip configuration against the part datasheet.
 ```
 
-A pin needs a declared electrical role: input, output, bidirectional, passive,
-GPIO, power, ground, voltage, a supported or active protocol capability, or
-`doNotConnect`. Empty objects, all-false role flags, and display-only attributes
-such as `highlightColor` do not describe its electrical role. Zero volts is a
-valid voltage declaration. Optional attributes, such as a voltage on a power
-pin, are not universally required.
+Pin matching reuses source rendering's rules: physical pin numbers take
+precedence, with names and aliases as a fallback. Ambiguous ownership or pin
+matches are not guessed. Comparison normalizes voltage units, so `"3300mV"`
+agrees with fetched `3.3`, and handles explicit `false` and zero values.
 
-The checks also identify:
+Only explicit declarations and known fetched fields can conflict. Omitted
+attributes inherit imported defaults and are not mismatches. An absent
+fetched field is unknown, not `false`. Display properties are not electrical
+facts. A declared `capabilities` list replaces the imported supported set,
+including an empty list. Active capabilities and output modes may differ
+from fetched default configuration; they warn only if the part explicitly
+does not support the selected capability or mode. `noConnect` intentionally
+leaves a usable pin unconnected and is not an electrical mismatch declaration.
 
-- `doNotConnect` together with `mustBeConnected`.
-- A ground pin with a nonzero required or provided voltage.
-- An enabled operating mode whose corresponding capability is explicitly
-  false, such as `isUsingOpenDrain: true` and `canUseOpenDrain: false`.
-- Attribute keys that do not match any chip pin or alias.
-- Unknown attribute field names, such as `isOuput` instead of `isOutput`.
+The check runs in each chip's source lifecycle, after asynchronous imports
+settle, without requiring a board or PCB/schematic rendering. It reuses
+imported pin metadata when available. With a custom footprint (or no footprint)
+and explicit `pinAttributes`, a configured parts engine can fetch datasheet
+metadata using the chip's supplier or manufacturer part number. This fetch
+supplies comparison facts only: it does not import the official footprint or
+change the user's declarations, pin labels, or source-port defaults.
 
-Imported pin attributes supply defaults and explicit user attributes override
-them. Pin names, numeric pin identifiers, and aliases all match the same physical
-pin. `noConnect` satisfies the electrical-role check without a separate
-`pinAttributes` entry. A missing capability is treated as unknown, so enabling
-an operating mode does not require every corresponding `canUse…` flag.
+Without fetched electrical metadata, the comparison cannot verify accuracy
+against a datasheet. Failed optional metadata fetches do not prevent custom
+footprints rendering. The checks respect `drcChecksDisabled`,
+`pinSpecificationDrcChecksDisabled`, and `partsEngineDisabled` for new fetches.
+Other component types keep their existing checks.
 
-The warning is updated rather than duplicated when checks rerun, and removed
-when the issues are resolved. It respects `drcChecksDisabled` and
-`pinSpecificationDrcChecksDisabled`. Other component types keep their existing
-checks. Invalid prop types still follow normal prop-schema validation.
-
-These checks validate the declarations, not their accuracy against the real
-part's datasheet. They cannot discover physical pins absent from the component
-definition or confirm footprint geometry and pin-to-pad mapping.
+For compatibility with existing Circuit JSON consumers, the aggregate uses
+`source_component_pins_underspecified_warning`. The existing all-underspecified,
+missing-power, and missing-ground checks also run within each chip rather than
+on the board. A fetched-metadata conflict replaces those legacy chip-pin
+warnings with the single conflict summary; otherwise their behavior is kept.

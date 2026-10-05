@@ -1,23 +1,33 @@
 import { expect, test } from "bun:test"
 import type { Chip } from "lib/components/normal-components/Chip"
+import { getChipPinMetadataFixture } from "tests/fixtures/get-chip-pin-metadata-fixture"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("each chip checks only its own pins without a board or PCB/schematic rendering", async () => {
+test("chips fetch and compare only their own pins without a board or importing an official footprint", async () => {
+  const { partsEngine } = getChipPinMetadataFixture([
+    { requires_power: true, requires_voltage: 3.3 },
+    { requires_ground: true, requires_voltage: 0 },
+  ])
   const { circuit } = getTestFixture({
     platform: { pcbDisabled: true, schematicDisabled: true },
   })
   circuit.add(
-    <group name="chips" subcircuit>
+    <group name="chips" subcircuit partsEngine={partsEngine}>
       <chip
         name="U1"
-        pinLabels={{ pin1: "EMPTY", pin2: "DATA" }}
-        pinAttributes={{ DATA: { isInput: true } }}
+        manufacturerPartNumber="TEST_CHIP"
+        pinLabels={{ pin1: "VDD", pin2: "GND" }}
+        pinAttributes={{
+          VDD: { requiresPower: true, requiresVoltage: "1.8V" },
+          GND: { requiresGround: true },
+        }}
       />
       <chip
         name="U2"
-        pinLabels={{ pin1: "VCC", pin2: "GND" }}
+        manufacturerPartNumber="TEST_CHIP"
+        pinLabels={{ pin1: "VDD", pin2: "GND" }}
         pinAttributes={{
-          VCC: { requiresPower: true },
+          VDD: { requiresPower: true, requiresVoltage: "3300mV" },
           GND: { requiresGround: true },
         }}
       />
@@ -25,32 +35,27 @@ test("each chip checks only its own pins without a board or PCB/schematic render
   )
   await circuit.renderUntilSettled()
   expect(circuit.selectAll("board")).toHaveLength(0)
-  const incompleteChip = circuit.selectOne(".U1") as Chip<string>
+  const incorrectChip = circuit.selectOne(".U1") as Chip<string>
   const validChip = circuit.selectOne(".U2") as Chip<string>
-  const warnings = [
-    ...circuit.db.source_component_pins_underspecified_warning.list(),
-    ...circuit.db.source_no_power_pin_defined_warning.list(),
-    ...circuit.db.source_no_ground_pin_defined_warning.list(),
-  ]
-  expect(warnings).toHaveLength(3)
-  expect(warnings.map((warning) => warning.source_component_id)).toEqual([
-    incompleteChip.source_component_id!,
-    incompleteChip.source_component_id!,
-    incompleteChip.source_component_id!,
-  ])
-  expect(warnings[0]!.message).toContain("EMPTY (missing electrical role")
-  for (const warning of warnings) {
-    for (const sourcePortId of warning.source_port_ids) {
-      expect(
-        circuit.db.source_port.get(sourcePortId)?.source_component_id,
-      ).toBe(incompleteChip.source_component_id!)
-    }
+  expect(incorrectChip._importedSourcePorts).toHaveLength(0)
+  expect(validChip._importedSourcePorts).toHaveLength(0)
+  const warnings =
+    circuit.db.source_component_pins_underspecified_warning.list()
+  expect(warnings).toHaveLength(1)
+  expect(warnings[0]!.source_component_id).toBe(
+    incorrectChip.source_component_id!,
+  )
+  expect(warnings[0]!.message).toContain(
+    'VDD (requiresVoltage: "1.8V", fetched requires_voltage: 3.3)',
+  )
+  for (const sourcePortId of warnings[0]!.source_port_ids) {
+    expect(circuit.db.source_port.get(sourcePortId)?.source_component_id).toBe(
+      incorrectChip.source_component_id!,
+    )
   }
-  incompleteChip.updateSourceDesignRuleChecks()
+  incorrectChip.updateSourceDesignRuleChecks()
   validChip.updateSourceDesignRuleChecks()
-  expect([
-    ...circuit.db.source_component_pins_underspecified_warning.list(),
-    ...circuit.db.source_no_power_pin_defined_warning.list(),
-    ...circuit.db.source_no_ground_pin_defined_warning.list(),
-  ]).toEqual(warnings)
+  expect(
+    circuit.db.source_component_pins_underspecified_warning.list(),
+  ).toEqual(warnings)
 })

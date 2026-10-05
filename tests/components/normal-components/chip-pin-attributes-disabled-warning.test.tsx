@@ -1,17 +1,27 @@
 import { expect, test } from "bun:test"
 import type { PlatformConfig } from "@tscircuit/props"
+import { getChipPinMetadataFixture } from "tests/fixtures/get-chip-pin-metadata-fixture"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("chip pin validation respects DRC controls and leaves other component types alone", async () => {
+test("comparison warnings respect platform DRC controls and leave connectors alone", async () => {
   const platforms: PlatformConfig[] = [
     { drcChecksDisabled: true },
     { pinSpecificationDrcChecksDisabled: true },
   ]
   for (const platform of platforms) {
+    const { partsEngine } = getChipPinMetadataFixture([
+      { requires_power: true, requires_voltage: 3.3 },
+      { requires_ground: true, requires_voltage: 0 },
+    ])
     const { circuit } = getTestFixture({ platform })
     circuit.add(
-      <board routingDisabled>
-        <chip name="U1" footprint="soic8" />
+      <board partsEngine={partsEngine} routingDisabled>
+        <chip
+          name="U1"
+          footprint="jlcpcb:C_TEST"
+          supplierPartNumbers={{ jlcpcb: ["C_TEST"] }}
+          pinAttributes={{ pin1: { requiresVoltage: "1.8V" } }}
+        />
       </board>,
     )
     await circuit.renderUntilSettled()
@@ -25,11 +35,20 @@ test("chip pin validation respects DRC controls and leaves other component types
       0,
     )
   }
+  const { partsEngine } = getChipPinMetadataFixture([
+    { requires_power: true, requires_voltage: 3.3 },
+    { requires_ground: true, requires_voltage: 0 },
+  ])
   const { circuit } = getTestFixture()
   circuit.add(
-    <board routingDisabled>
+    <board partsEngine={partsEngine} routingDisabled>
       <resistor name="R1" footprint="0402" resistance="1k" />
-      <connector name="J1" footprint="pinrow2" />
+      <connector
+        name="J1"
+        footprint="jlcpcb:C_TEST"
+        supplierPartNumbers={{ jlcpcb: ["C_TEST"] }}
+        pinAttributes={{ pin1: { requiresVoltage: "1.8V" } }}
+      />
     </board>,
   )
   await circuit.renderUntilSettled()

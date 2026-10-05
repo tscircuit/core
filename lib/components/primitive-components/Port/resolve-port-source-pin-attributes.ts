@@ -6,7 +6,7 @@ import {
 import type { Port } from "./Port"
 import { applyPinAttributesToSourcePort } from "./apply-pin-attributes-to-source-port"
 
-const getImportedSourcePinAttributes = (
+export const getImportedSourcePinAttributes = (
   port: Port,
   importedSourcePorts: SourcePort[],
 ): SourcePinAttributes => {
