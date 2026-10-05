@@ -1,6 +1,10 @@
-/**
- * Utility to get schematic bounds for a set of elements
- */
+import {
+  applyToPoint,
+  compose,
+  rotateDEG,
+  translate,
+} from "transformation-matrix"
+
 function normalizeAngle(angle: number): number {
   const normalized = angle % 360
   return normalized < 0 ? normalized + 360 : normalized
@@ -79,6 +83,7 @@ function getArcBounds(
   return { minX, maxX, minY, maxY }
 }
 
+/** Axis-aligned bounds in schematic world mm (+X right, +Y up), including rotations about primitive centers. */
 export function getBoundsForSchematic(db: any[]): {
   minX: number
   maxX: number
@@ -128,6 +133,27 @@ export function getBoundsForSchematic(db: any[]): {
       cy = elm.center?.y
       w = elm.width
       h = elm.height
+      if (
+        elm.rotation &&
+        cx !== undefined &&
+        cy !== undefined &&
+        w !== undefined &&
+        h !== undefined
+      ) {
+        // Same world transform as schematic_rect rendering: rotate local corners
+        // about the center, then translate (mm, +X right, +Y up).
+        const transform = compose(translate(cx, cy), rotateDEG(elm.rotation))
+        for (const x of [-w / 2, w / 2]) {
+          for (const y of [-h / 2, h / 2]) {
+            const point = applyToPoint(transform, { x, y })
+            minX = Math.min(minX, point.x)
+            maxX = Math.max(maxX, point.x)
+            minY = Math.min(minY, point.y)
+            maxY = Math.max(maxY, point.y)
+          }
+        }
+        continue
+      }
     } else if (elm.type === "schematic_circle") {
       cx = elm.center?.x
       cy = elm.center?.y
