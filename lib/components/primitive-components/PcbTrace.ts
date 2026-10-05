@@ -1,19 +1,27 @@
-import { type PcbTraceRoutePoint, pcb_trace_route_point } from "circuit-json"
+import {
+  type PcbTraceRoutePoint,
+  type SourceTrace,
+  pcb_trace_route_point,
+} from "circuit-json"
+import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
 import { applyToPoint } from "transformation-matrix"
 import { z } from "zod"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
+import { PcbTrace_doInitialSourceTraceRender } from "./PcbTrace_doInitialSourceTraceRender"
 
 export const pcbTraceProps = z.object({
   route: z.array(pcb_trace_route_point),
   // If this primitive PcbTrace needs to be associated with a source_trace_id
   // it can be added as a prop here. For footprints, it's often not needed.
   source_trace_id: z.string().optional(),
+  connectsTo: z.string().optional(),
 })
 
 export type PcbTraceProps = z.infer<typeof pcbTraceProps>
 
 export class PcbTrace extends PrimitiveComponent<typeof pcbTraceProps> {
   pcb_trace_id: string | null = null
+  source_trace_id: SourceTrace["source_trace_id"] | null = null
   // Marks radiating copper created by Antenna, never its feed connection.
   isAntennaTrace = false
   isPcbPrimitive = true
@@ -23,6 +31,15 @@ export class PcbTrace extends PrimitiveComponent<typeof pcbTraceProps> {
       componentName: "PcbTrace",
       zodProps: pcbTraceProps,
     }
+  }
+
+  doInitialCreateNetsFromProps(): void {
+    if (!this._parsedProps.connectsTo) return
+    createNetsFromProps(this, [this._parsedProps.connectsTo])
+  }
+
+  doInitialSourceTraceRender(): void {
+    PcbTrace_doInitialSourceTraceRender(this)
   }
 
   doInitialPcbPrimitiveRender(): void {
@@ -75,7 +92,7 @@ export class PcbTrace extends PrimitiveComponent<typeof pcbTraceProps> {
 
     const pcb_trace = db.pcb_trace.insert({
       pcb_component_id: container.pcb_component_id!,
-      source_trace_id: props.source_trace_id,
+      source_trace_id: this.source_trace_id ?? props.source_trace_id,
       route: transformedRoute,
       is_antenna_trace: this.isAntennaTrace,
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,

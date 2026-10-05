@@ -2,11 +2,7 @@ import { expect, test } from "bun:test"
 import type { PcbTraceProps } from "lib/components/primitive-components/PcbTrace"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-type PcbTracePropsWithNetSelector = PcbTraceProps & {
-  connectsTo: string
-}
-
-test("repro: authored PCB trace drops requested net connectivity", async () => {
+test("authored PCB trace preserves requested net connectivity", async () => {
   const { circuit } = getTestFixture()
   const requestedNetName = "GND"
   const authoredPcbTraceProps = {
@@ -27,7 +23,7 @@ test("repro: authored PCB trace drops requested net connectivity", async () => {
         layer: "top",
       },
     ],
-  } satisfies PcbTracePropsWithNetSelector
+  } satisfies PcbTraceProps
 
   circuit.add(
     <board width={18} height={11} autorouter="none">
@@ -102,8 +98,8 @@ test("repro: authored PCB trace drops requested net connectivity", async () => {
     font_size: 0.7,
     color: actualSourceNetName ? "#55ff99" : "#ff5555",
   })
-  expect(pcbTrace.source_trace_id).toBeUndefined()
-  expect(actualSourceNetName).toBeUndefined()
+  expect(pcbTrace.source_trace_id).toBeDefined()
+  expect(actualSourceNetName).toBe(requestedNetName)
   expect(circuit.db.pcb_trace_error.list()).toHaveLength(0)
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
