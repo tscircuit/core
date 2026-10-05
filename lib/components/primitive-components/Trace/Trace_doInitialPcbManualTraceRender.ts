@@ -336,6 +336,15 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
   if (!anchorPort) {
     anchorPort = ports[0]
   }
+  if (!anchorPort) {
+    db.source_trace_not_connected_error.insert({
+      error_type: "source_trace_not_connected_error",
+      source_trace_id: trace.source_trace_id ?? undefined,
+      subcircuit_id: subcircuit.subcircuit_id ?? undefined,
+      message: "pcbPath requires a connected port or pcbPathRelativeTo port",
+    })
+    return
+  }
   const otherPort = ports.find((p) => p !== anchorPort) ?? ports[1]
 
   const layer = anchorPort.getAvailablePcbLayers()[0] || "top"
