@@ -1,8 +1,6 @@
-import { resolveManufacturerPartNumber } from "@tscircuit/props"
-import { composeCadModelRotation } from "lib/utils/cad/compose-cad-model-rotation"
-import { getFoldedCadComponentPlacement } from "lib/utils/cad/get-folded-cad-component-placement"
 import { fp } from "@tscircuit/footprinter"
 import { normalizeDegrees } from "@tscircuit/math-utils"
+import { resolveManufacturerPartNumber } from "@tscircuit/props"
 import type {
   CadModelGlb,
   CadModelGltf,
@@ -38,6 +36,8 @@ import {
 import { underscorifyPinStyles } from "lib/soup/underscorifyPinStyles"
 import { underscorifyPortArrangement } from "lib/soup/underscorifyPortArrangement"
 import { getBoundsForSchematic } from "lib/utils/autorouting/getBoundsForSchematic"
+import { composeCadModelRotation } from "lib/utils/cad/compose-cad-model-rotation"
+import { getFoldedCadComponentPlacement } from "lib/utils/cad/get-folded-cad-component-placement"
 import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
 import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromCircuitJson"
 import { filterPinLabels } from "lib/utils/filterPinLabels"
@@ -87,6 +87,7 @@ import {
   NormalComponent_doInitialCheckRefDesConvention,
   getDefaultExpectedRefDesPrefixesForFtype,
 } from "./NormalComponent_doInitialCheckRefDesConvention"
+import { NormalComponent_doInitialMissingManufacturerPartNumberWarning } from "./NormalComponent_doInitialMissingManufacturerPartNumberWarning"
 import {
   NormalComponent_doInitialPartOrientationAnalysis,
   NormalComponent_updatePartOrientationAnalysis,
@@ -97,7 +98,6 @@ import { NormalComponent_doInitialResolveFootprintPinLabels } from "./NormalComp
 import { NormalComponent_doInitialSchematicComponentRender } from "./NormalComponent_doInitialSchematicComponentRender"
 import { NormalComponent_doInitialSilkscreenOverlapAdjustment } from "./NormalComponent_doInitialSilkscreenOverlapAdjustment"
 import { NormalComponent_doInitialSourceDesignRuleChecks } from "./NormalComponent_doInitialSourceDesignRuleChecks"
-import { NormalComponent_doInitialMissingManufacturerPartNumberWarning } from "./NormalComponent_doInitialMissingManufacturerPartNumberWarning"
 import { NormalComponent_doInitialSupplierFootprintMismatchWarning } from "./NormalComponent_doInitialSupplierFootprintMismatchWarning"
 import { canMergePortDefinitions } from "./utils/canMergePortDefinitions"
 import { getPrimaryPortsFromPortHintGroups } from "./utils/getPrimaryPortsFromPortHintGroups"
@@ -496,37 +496,34 @@ export class NormalComponent<
       this.addAll(portsToCreate)
     }
 
-    if (!this._getSchematicPortArrangement()) {
-      const hasReactSymbol = isValidElement(this.props.symbol)
-      const hasCircuitJsonSymbolProp = isCircuitJsonSymbol(this.props.symbol)
-      if (hasReactSymbol || hasCircuitJsonSymbolProp) {
-      } else {
-        const portsFromFootprint = this.getPortsFromFootprint({
-          ...opts,
-          allowImplicitPinNumbers: !pinLabelsFromProps,
-          collectInferredInternallyConnectedPins: true,
-        })
-        const existingPorts = this._getAllPortsFromChildren()
-        for (const port of portsFromFootprint) {
-          if (!port._isPrimaryPort) {
-            portsToCreate.push(port)
-            continue
-          }
+    const hasReactSymbol = isValidElement(this.props.symbol)
+    const hasCircuitJsonSymbolProp = isCircuitJsonSymbol(this.props.symbol)
+    if (!hasReactSymbol && !hasCircuitJsonSymbolProp) {
+      const portsFromFootprint = this.getPortsFromFootprint({
+        ...opts,
+        allowImplicitPinNumbers: !pinLabelsFromProps,
+        collectInferredInternallyConnectedPins: true,
+      })
+      const existingPorts = this._getAllPortsFromChildren()
+      for (const port of portsFromFootprint) {
+        if (!port._isPrimaryPort) {
+          portsToCreate.push(port)
+          continue
+        }
 
-          const matchingPort =
-            existingPorts.find((p) => canMergePortDefinitions(p, port)) ??
-            portsToCreate.find((p) => canMergePortDefinitions(p, port))
+        const matchingPort =
+          existingPorts.find((p) => canMergePortDefinitions(p, port)) ??
+          portsToCreate.find((p) => canMergePortDefinitions(p, port))
 
-          if (matchingPort) {
-            const mergedAliases = port
-              .getNameAndAliases()
-              .filter(
-                (alias) => !matchingPort.getNameAndAliases().includes(alias),
-              )
-            matchingPort.externallyAddedAliases.push(...mergedAliases)
-          } else {
-            portsToCreate.push(port)
-          }
+        if (matchingPort) {
+          const mergedAliases = port
+            .getNameAndAliases()
+            .filter(
+              (alias) => !matchingPort.getNameAndAliases().includes(alias),
+            )
+          matchingPort.externallyAddedAliases.push(...mergedAliases)
+        } else {
+          portsToCreate.push(port)
         }
       }
     }
