@@ -17,14 +17,15 @@ test("connector with standard='usb_c' fetches circuit json from parts engine", a
       }
       return {}
     },
-    fetchPartCircuitJson: async ({
-      supplierPartNumber,
-    }: {
-      supplierPartNumber?: string
-      manufacturerPartNumber?: string
-    }) => {
+    fetchPartCircuitJson: async (request) => {
+      expect(request).toMatchObject({ includeDatasheetInformation: true })
+      const { supplierPartNumber } = request
       if (supplierPartNumber === "C165948") {
-        return usbCC165948CircuitJson as AnyCircuitElement[]
+        return (usbCC165948CircuitJson as AnyCircuitElement[]).map((element) =>
+          element.type === "source_port"
+            ? { ...element, is_gpio: false, can_use_open_drain: true }
+            : element,
+        )
       }
       return undefined
     },
@@ -46,6 +47,9 @@ test("connector with standard='usb_c' fetches circuit json from parts engine", a
   expect(sourceComponent!.supplier_part_numbers).toEqual({
     jlcpcb: ["C165948"],
   })
+  expect(
+    circuit.db.source_missing_manufacturer_part_number_warning.list(),
+  ).toHaveLength(0)
   expect((sourceComponent as any).standard).toBe("usb_c")
 
   const sourcePorts = circuit.db.source_port
@@ -72,6 +76,10 @@ test("connector with standard='usb_c' fetches circuit json from parts engine", a
   expect(hasHint("DP2")).toBe(true)
   expect(hasHint("SBU1")).toBe(true)
   expect(hasHint("SBU2")).toBe(true)
+
+  for (const port of sourcePorts) {
+    expect(port).toMatchObject({ is_gpio: false, can_use_open_drain: true })
+  }
 
   // Verify footprint pads were added from the fetched circuit JSON
   const pads = circuit.db.pcb_smtpad.list()

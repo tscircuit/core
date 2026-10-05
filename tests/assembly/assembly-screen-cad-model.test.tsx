@@ -72,7 +72,7 @@ test("assembly.screen emits a connector-anchored modelprinter FlexScreen", async
         sourceConnector?.source_component_id,
     )
 
-  expect(sourceScreen?.ftype).toBe("simple_chip")
+  expect(sourceScreen?.ftype).toBe("subassembly")
   expect(sourceConnector).toMatchObject({
     ftype: "simple_connector",
     pin_count: ER_OLED096_1_3W_CONTACT_COUNT,

@@ -49,8 +49,21 @@ test("CAD mounts in a bend zone report errors and keep flat placements", async (
     </board>,
   )
   await circuit.renderUntilSettled()
-  const errors = circuit.db.pcb_placement_error.list()
+  const diagnostics = circuit.db.pcb_placement_error.list()
+  expect(
+    diagnostics.filter((error) =>
+      error.message.includes("overlaps PCB bend zone"),
+    ),
+  ).toHaveLength(5)
+  const errors = diagnostics.filter((error) =>
+    error.message.includes("CAD mount intersects PCB bend zone"),
+  )
   expect(errors).toHaveLength(3)
+  expect(
+    errors.every(
+      (error) => !/\b(?:pcb|source|schematic)_[a-z0-9_]+\b/.test(error.message),
+    ),
+  ).toBe(true)
   const cad = circuit.db.cad_component.list()
   expect(cad).toHaveLength(4)
   for (const pcbComponent of circuit.db.pcb_component.list()) {
@@ -59,7 +72,10 @@ test("CAD mounts in a bend zone report errors and keep flat placements", async (
     )!
     if (Math.abs(pcbComponent.center.x - 30) < 0.1) {
       const error = errors.find((record) =>
-        record.message.includes(pcbComponent.pcb_component_id),
+        record.message.includes(
+          circuit.db.source_component.get(pcbComponent.source_component_id)!
+            .name,
+        ),
       )!
       expect(error.message).toContain("CAD mount intersects PCB bend zone")
       expect(pcb_placement_error.safeParse(error).success).toBe(true)

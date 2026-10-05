@@ -28,6 +28,7 @@ export function inflateStandalonePcbPrimitives(
     "pcb_hole",
     "pcb_plated_hole",
     "pcb_cutout",
+    "pcb_soldermask_opening",
   ]
 
   const standalonePrimitives = injectionDb.toArray().filter((elm) => {
@@ -54,6 +55,9 @@ export function inflateStandalonePcbPrimitives(
       // `pcb_component_id` field at all, so it is always standalone. The check
       // below requires the key to be present and would drop every cutout.
       return true
+    }
+    if (elm.type === "pcb_soldermask_opening") {
+      return elm.pcb_component_id === undefined
     }
     // Check for null or undefined pcb_component_id
     return (

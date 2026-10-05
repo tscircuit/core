@@ -1,3 +1,4 @@
+import { getReadablePcbFoldIssueMessage } from "lib/utils/cad/get-readable-pcb-fold-issue-message"
 import { tryCreatePcbFold, type PcbFold } from "@tscircuit/flex-utils"
 import { jlcMinTolerances } from "@tscircuit/jlcpcb-manufacturing-specs"
 import { getBoundsFromPoints } from "@tscircuit/math-utils"
@@ -19,6 +20,7 @@ import { getViaDiameterDefaults } from "../../../utils/pcbStyle/getViaDiameterDe
 import { NormalComponent } from "../../base-components/NormalComponent/NormalComponent"
 import type { RenderPhase } from "../../base-components/Renderable"
 import { Group } from "../../primitive-components/Group/Group"
+import { resolveBoardMotorMount } from "../../primitive-components/resolve-board-motor-mount"
 import type { SubcircuitI } from "../../primitive-components/Group/Subcircuit/SubcircuitI"
 import { Subcircuit_doInitialRenderIsolatedSubcircuits } from "../../primitive-components/Group/Subcircuit/Subcircuit_doInitialRenderIsolatedSubcircuits"
 import { Subcircuit_getSubcircuitPropHash } from "../../primitive-components/Group/Subcircuit_getSubcircuitPropHash"
@@ -111,6 +113,12 @@ export class Board
   _panelPositionOffset: { x: number; y: number } | null = null
   readonly _castellatedHoles: BoardCastellatedHole[]
 
+  override doInitialCadModelRender(): void {
+    if (this.root?.pcbDisabled) return
+    resolveBoardMotorMount(this)
+    super.doInitialCadModelRender()
+  }
+
   constructor(props: z.input<typeof boardProps>) {
     super(props)
     this._castellatedHoles = BoardCastellatedHole.fromBoardOutline(
@@ -147,7 +155,7 @@ export class Board
       this.root!.db.pcb_placement_error.insert({
         error_type: "pcb_placement_error",
         subcircuit_id: this.subcircuit_id ?? undefined,
-        message: `Unable to fold PCB board ${this.pcb_board_id}; CAD remains flat: ${foldResult.issue.message}`,
+        message: `Unable to fold PCB board ${this._parsedProps.name ?? "unnamed board"}; CAD remains flat: ${getReadablePcbFoldIssueMessage(foldResult.issue, bends)}`,
       })
     }
   }

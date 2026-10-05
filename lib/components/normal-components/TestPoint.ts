@@ -1,4 +1,4 @@
-import { testpointProps } from "@tscircuit/props"
+import { testpointProps, resolveManufacturerPartNumber } from "@tscircuit/props"
 import type { SourceSimpleTestPoint } from "circuit-json"
 import { FTYPE, type BaseSymbolName } from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
@@ -104,7 +104,7 @@ export class TestPoint extends NormalComponent<typeof testpointProps> {
       ftype: FTYPE.simple_test_point,
       name: this.name,
       supplier_part_numbers: props.supplierPartNumbers,
-      manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
+      manufacturer_part_number: resolveManufacturerPartNumber(props),
       footprint_variant: footprintVariant,
       pad_shape: padShape,
       pad_diameter: padDiameter,

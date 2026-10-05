@@ -1,4 +1,7 @@
-import { pushButtonProps } from "@tscircuit/props"
+import {
+  pushButtonProps,
+  resolveManufacturerPartNumber,
+} from "@tscircuit/props"
 import type { SourceSimplePushButton } from "circuit-json"
 import {
   FTYPE,
@@ -63,7 +66,7 @@ export class PushButton extends NormalComponent<
       name: this.name,
       ftype: FTYPE.simple_push_button,
       supplier_part_numbers: props.supplierPartNumbers,
-      manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
+      manufacturer_part_number: resolveManufacturerPartNumber(props),
       are_pins_interchangeable: true,
       display_name: props.displayName,
     } as SourceSimplePushButton)

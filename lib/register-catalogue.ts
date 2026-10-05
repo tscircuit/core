@@ -8,7 +8,10 @@ extendCatalogue(Components)
 
 // Aliases (only when class name is different than the name of the component)
 extendCatalogue({
+  "assembly.cable": Components.AssemblyCable,
   "assembly.device": Components.AssemblyDevice,
+  "assembly.motor": Components.AssemblyMotor,
+  "assembly.printedpart": Components.AssemblyPrintedPart,
   "assembly.screen": Components.AssemblyScreen,
   "assembly.subassembly": Components.AssemblySubassembly,
   "assembly.cadassembly": Components.AssemblySubassembly,

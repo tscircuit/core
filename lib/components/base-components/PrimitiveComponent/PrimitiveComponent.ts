@@ -702,6 +702,25 @@ export abstract class PrimitiveComponent<
     }
   }
 
+  /**
+   * Axis-aligned bounds in the right-handed board-world PCB frame before
+   * layout: +X right, +Y top, +Z above the board, with all distances in mm.
+   * The position is a point and includes parent translation. Primitives
+   * whose geometry is not centered on their origin override this method.
+   */
+  _getPcbBoundsBeforeLayout(): ReturnType<
+    PrimitiveComponent["_getPcbLocalBoundsBeforeLayout"]
+  > {
+    const center = this._getGlobalPcbPositionBeforeLayout()
+    const { width, height } = this.getPcbSize()
+    return {
+      left: center.x - width / 2,
+      right: center.x + width / 2,
+      top: center.y + height / 2,
+      bottom: center.y - height / 2,
+    }
+  }
+
   protected _getPcbComponentLayer(): LayerRef | undefined {
     return this._parsedProps.layer
   }

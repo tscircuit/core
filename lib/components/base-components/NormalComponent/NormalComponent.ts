@@ -1,3 +1,5 @@
+import { resolveManufacturerPartNumber } from "@tscircuit/props"
+import { composeCadModelRotation } from "lib/utils/cad/compose-cad-model-rotation"
 import { getFoldedCadComponentPlacement } from "lib/utils/cad/get-folded-cad-component-placement"
 import { fp } from "@tscircuit/footprinter"
 import { normalizeDegrees } from "@tscircuit/math-utils"
@@ -19,6 +21,7 @@ import {
   type AnyCircuitElement,
   type LayerRef,
   type PcbComponent,
+  type SourcePort,
   distance,
   pcb_component_invalid_layer_error,
   pcb_manual_edit_conflict_warning,
@@ -94,6 +97,7 @@ import { NormalComponent_doInitialResolveFootprintPinLabels } from "./NormalComp
 import { NormalComponent_doInitialSchematicComponentRender } from "./NormalComponent_doInitialSchematicComponentRender"
 import { NormalComponent_doInitialSilkscreenOverlapAdjustment } from "./NormalComponent_doInitialSilkscreenOverlapAdjustment"
 import { NormalComponent_doInitialSourceDesignRuleChecks } from "./NormalComponent_doInitialSourceDesignRuleChecks"
+import { NormalComponent_doInitialMissingManufacturerPartNumberWarning } from "./NormalComponent_doInitialMissingManufacturerPartNumberWarning"
 import { NormalComponent_doInitialSupplierFootprintMismatchWarning } from "./NormalComponent_doInitialSupplierFootprintMismatchWarning"
 import { canMergePortDefinitions } from "./utils/canMergePortDefinitions"
 import { getPrimaryPortsFromPortHintGroups } from "./utils/getPrimaryPortsFromPortHintGroups"
@@ -158,6 +162,8 @@ export class NormalComponent<
 
   _asyncSupplierPartNumbers?: SupplierPartNumbers
   _asyncFootprintCadModel?: CadModelProp
+  /** Electrical attributes from imported ports; user props remain authoritative. */
+  _importedSourcePorts: SourcePort[] = []
   _isCadModelChild?: boolean
   _inferredInternallyConnectedPinNames: string[][] = []
   pcb_missing_footprint_error_id?: string
@@ -650,6 +656,7 @@ export class NormalComponent<
       }
       const fpComponents = createComponentsFromCircuitJson(
         {
+          sourcePortOwner: this,
           componentName: this.name ?? this.componentName,
           componentRotation: pcbRotation,
           footprinterString: footprint,
@@ -683,6 +690,7 @@ export class NormalComponent<
 
     const importedSymbolComponents = createComponentsFromCircuitJson(
       {
+        sourcePortOwner: this,
         componentName: this.name ?? this.componentName,
         componentRotation: String(this.props.schRotation ?? 0),
       },
@@ -751,7 +759,7 @@ export class NormalComponent<
     const source_component = db.source_component.insert({
       ftype,
       name: this.name,
-      manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
+      manufacturer_part_number: resolveManufacturerPartNumber(props),
       supplier_part_numbers: props.supplierPartNumbers,
       display_name: props.displayName,
     })
@@ -938,7 +946,7 @@ export class NormalComponent<
     const schematic_box_width = dimensions?.getSize().width
     const schematic_box_height = dimensions?.getSize().height
     const manufacturer_part_number_schematic_text = db.schematic_text.insert({
-      text: props.manufacturerPartNumber ?? "",
+      text: resolveManufacturerPartNumber(props) ?? "",
       schematic_component_id: schematic_component.schematic_component_id,
       anchor: "left",
       rotation: 0,
@@ -2009,11 +2017,11 @@ export class NormalComponent<
               ? -boardThickness / 2
               : boardThickness / 2,
         },
-        rotation: {
-          x: 0,
-          y: isBottomLayer ? 180 : 0,
-          z: normalizeDegrees(isBottomLayer ? -totalRotation : totalRotation),
-        },
+        rotation: composeCadModelRotation({
+          layer: computedLayer,
+          pcbCcwRotationDegrees: totalRotation,
+          modelCcwRotationOffsetDegrees: { x: 0, y: 0, z: 0 },
+        }),
       }
       cadComponentPlacement = getFoldedCadComponentPlacement(
         this,
@@ -2032,8 +2040,6 @@ export class NormalComponent<
       return
     }
 
-    const rotationWithOffset = totalRotation + (rotationOffset.z ?? 0)
-    const cadRotationZ = normalizeDegrees(rotationWithOffset)
     let footprinterStringForCadComponent: string | undefined
     if (!cadModel && footprintIsFootprinterString) {
       footprinterStringForCadComponent = footprintString
@@ -2052,11 +2058,11 @@ export class NormalComponent<
             : zOffsetFromSurface) +
           positionOffset.z,
       },
-      rotation: {
-        x: rotationOffset.x,
-        y: rotationOffset.y + (isBottomLayer ? 180 : 0),
-        z: normalizeDegrees(isBottomLayer ? -cadRotationZ : cadRotationZ),
-      },
+      rotation: composeCadModelRotation({
+        layer: computedLayer,
+        pcbCcwRotationDegrees: totalRotation,
+        modelCcwRotationOffsetDegrees: rotationOffset,
+      }),
     }
     cadComponentPlacement = getFoldedCadComponentPlacement(
       this,
@@ -2273,6 +2279,14 @@ export class NormalComponent<
       })
       return
     }
+  }
+
+  doInitialMissingManufacturerPartNumberWarning(): void {
+    NormalComponent_doInitialMissingManufacturerPartNumberWarning(this)
+  }
+
+  updateMissingManufacturerPartNumberWarning(): void {
+    this.doInitialMissingManufacturerPartNumberWarning()
   }
 
   doInitialPartOrientationAnalysis(): void {

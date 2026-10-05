@@ -1,0 +1,51 @@
+import { resolveMotorPrintedPartPlacement } from "./resolve-printed-part-mounts"
+import type { AssemblyMotor } from "./AssemblyMotor"
+import type { AssemblyPlacement } from "./resolve-assembly-placement"
+import { normalizeDegrees } from "@tscircuit/math-utils"
+import { resolveMotorMountedBoard } from "./resolve-board-motor-mount"
+
+/** Motor origin point in right-handed circuit world, mm (+X right, +Y top,
+ * +Z above). Boards keep their PCB plane at Z=0. Mounting translates the motor
+ * so its rear face is mountGap from the nearest PCB surface; modelprinter's
+ * rear face is local Z=-bodyLength. Read finalized PCB geometry, independently
+ * of CAD render order, so forward references and board anchors work.
+ */
+export const resolveAssemblyMotorPlacement = (
+  motor: AssemblyMotor,
+): AssemblyPlacement => {
+  const printedPartPlacement = resolveMotorPrintedPartPlacement(motor)
+  if (printedPartPlacement) return printedPartPlacement
+  const board = resolveMotorMountedBoard(motor)
+  const orientation = board?._parsedProps.mountOrientation
+  const layer = orientation
+    ? orientation === "bottom_layer_toward_mount_face"
+      ? "bottom"
+      : "top"
+    : motor._parsedProps.shaftFacingDirection === "z-"
+      ? "bottom"
+      : "top"
+  if (!board) return { position: { x: 0, y: 0, z: 0 }, pcbRotation: 0, layer }
+  const pcbBoard = board.root!.db.pcb_board.get(board.pcb_board_id!)
+  if (!pcbBoard)
+    throw new Error(`Mounted board "${board.name}" has no PCB geometry`)
+  const sign = layer === "bottom" ? -1 : 1
+  // Paired with PrimitiveComponent._computePcbGlobalTransformBeforeLayout,
+  // which places the board's holes. Extract its local +X direction rather
+  // than re-deriving a rotation from authored props or ignoring parent frames.
+  const boardTransform = board._computePcbGlobalTransformBeforeLayout()
+  return {
+    position: {
+      ...pcbBoard.center,
+      z:
+        sign *
+        (-motor.motorReferencePoints.backface.position.z +
+          (board._parsedProps.mountGap ?? 0) +
+          pcbBoard.thickness / 2),
+    },
+    pcbRotation: normalizeDegrees(
+      (Math.atan2(boardTransform.b, boardTransform.a) * 180) / Math.PI,
+    ),
+    layer,
+    subcircuit_id: pcbBoard.subcircuit_id,
+  }
+}

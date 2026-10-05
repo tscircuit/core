@@ -1,4 +1,8 @@
-import { type CrystalPinLabels, crystalProps } from "@tscircuit/props"
+import {
+  type CrystalPinLabels,
+  crystalProps,
+  resolveManufacturerPartNumber,
+} from "@tscircuit/props"
 import type {
   SourcePort,
   SourceSimpleCrystalInput,
@@ -71,7 +75,7 @@ export class Crystal extends NormalComponent<
     const source_component = db.source_component.insert({
       name: this.name,
       ftype: "simple_crystal",
-      manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
+      manufacturer_part_number: resolveManufacturerPartNumber(props),
       supplier_part_numbers: props.supplierPartNumbers,
       frequency: props.frequency,
       load_capacitance: props.loadCapacitance,

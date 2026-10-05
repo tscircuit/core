@@ -1,4 +1,5 @@
 import { smtPadProps } from "@tscircuit/props"
+import { getBoundsFromPoints } from "@tscircuit/math-utils"
 import {
   distance,
   type LayerRef,
@@ -9,17 +10,25 @@ import {
   type PcbSmtPadRotatedRect,
   type PcbSmtPadPill,
   type PcbSmtPadRotatedPill,
+  type PcbSolderPastePolygon,
 } from "circuit-json"
 import { applyToPoint, decomposeTSR } from "transformation-matrix"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import type { Port } from "./Port"
 import { selectPortForPcbPrimitive } from "./Port/selectPortForPcbPrimitive"
 import { getAxisAlignedSizeFromRotatedRect } from "lib/utils/pcb/get-axis-aligned-size-from-rotated-rect"
+import { getPolygonSolderPasteContours } from "lib/utils/pcb/get-polygon-solder-paste-contours"
 
 export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
   pcb_smtpad_id: string | null = null
 
   matchedPort: Port | null = null
+
+  /**
+   * Inflated paste points are footprint-local mm (+X right, +Y up, +Z above,
+   * right-handed). An empty array preserves an explicitly absent aperture.
+   */
+  _inflatedPcbSolderPaste?: PcbSolderPastePolygon[]
 
   isPcbPrimitive = true
 
@@ -70,6 +79,29 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
     throw new Error(
       `getPcbSize for shape "${(props as any).shape}" not implemented for ${this.componentName}`,
     )
+  }
+
+  /**
+   * Polygon vertices are pad-local points in mm (+X right, +Y top). Return
+   * their axis-aligned bounds in the right-handed board-world PCB frame.
+   */
+  _getPcbBoundsBeforeLayout() {
+    const { _parsedProps: props } = this
+    if (props.shape !== "polygon") return super._getPcbBoundsBeforeLayout()
+
+    // Same paired transform as doInitialPcbPrimitiveRender: a polygon's
+    // authored origin need not be the center of its vertices.
+    const padToBoardTransform = this._computePcbGlobalTransformBeforeLayout()
+    const boardPoints = props.points.map((point) =>
+      applyToPoint(padToBoardTransform, point),
+    )
+    const bounds = getBoundsFromPoints(boardPoints)!
+    return {
+      left: bounds.minX,
+      right: bounds.maxX,
+      top: bounds.maxY,
+      bottom: bounds.minY,
+    }
   }
 
   doInitialPortMatching(): void {
@@ -291,16 +323,13 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
           pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
         } as PcbSmtPadRotatedRect)
     } else if (props.shape === "polygon") {
-      const transformedPoints = props.points.map((point) => {
-        const transformed = applyToPoint(globalTransform, {
-          x: distance.parse(point.x),
-          y: distance.parse(point.y),
-        })
-        return {
-          x: transformed.x,
-          y: transformed.y,
-        }
-      })
+      const localPoints = props.points.map(({ x, y }) => ({
+        x: distance.parse(x),
+        y: distance.parse(y),
+      }))
+      const transformedPoints = localPoints.map((point) =>
+        applyToPoint(globalTransform, point),
+      )
 
       pcb_smtpad = db.pcb_smtpad.insert({
         pcb_component_id,
@@ -314,6 +343,30 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
       } as PcbSmtPadPolygon) as PcbSmtPadPolygon
+      if (shouldCreateSolderPaste) {
+        const pasteContours =
+          this._inflatedPcbSolderPaste ??
+          getPolygonSolderPasteContours({
+            points: localPoints,
+            solderPasteMargin,
+          })
+        for (const contour of pasteContours) {
+          db.pcb_solder_paste.insert({
+            shape: "polygon",
+            layer: pcb_smtpad.layer,
+            points: contour.points.map((point) =>
+              applyToPoint(globalTransform, point),
+            ),
+            holes: contour.holes?.map((hole) =>
+              hole.map((point) => applyToPoint(globalTransform, point)),
+            ),
+            pcb_component_id: pcb_component_id ?? undefined,
+            pcb_smtpad_id: pcb_smtpad.pcb_smtpad_id,
+            subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+            pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
+          })
+        }
+      }
     } else if (props.shape === "rotated_pill") {
       const combinedRotationBeforeFlip =
         (transformRotationBeforeFlip + props.ccwRotation + 360) % 360
@@ -564,6 +617,22 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
           y: p.y + deltaY,
         })),
       })
+      for (const paste of db.pcb_solder_paste.list()) {
+        if (
+          paste.pcb_smtpad_id !== this.pcb_smtpad_id ||
+          paste.shape !== "polygon"
+        )
+          continue
+        db.pcb_solder_paste.update(paste.pcb_solder_paste_id, {
+          points: paste.points.map(({ x, y }) => ({
+            x: x + deltaX,
+            y: y + deltaY,
+          })),
+          holes: paste.holes?.map((hole) =>
+            hole.map(({ x, y }) => ({ x: x + deltaX, y: y + deltaY })),
+          ),
+        })
+      }
 
       const newCenter = {
         x: this._getPcbCircuitJsonBounds().center.x + deltaX / 2,

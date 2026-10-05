@@ -1,5 +1,8 @@
 import { NormalComponent } from "lib/components/base-components/NormalComponent"
-import { solderjumperProps } from "@tscircuit/props"
+import {
+  solderjumperProps,
+  resolveManufacturerPartNumber,
+} from "@tscircuit/props"
 import { normalizeDegrees } from "@tscircuit/math-utils"
 import { Port } from "../primitive-components/Port"
 import type { SchematicBoxDimensions } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
@@ -204,7 +207,7 @@ export class SolderJumper<
     const source_component = db.source_component.insert({
       ftype: "simple_chip", // TODO unknown or jumper
       name: this.name,
-      manufacturer_part_number: props.manufacturerPartNumber,
+      manufacturer_part_number: resolveManufacturerPartNumber(props),
       supplier_part_numbers: props.supplierPartNumbers,
       are_pins_interchangeable: true,
       display_name: props.displayName,

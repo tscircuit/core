@@ -50,6 +50,6 @@ test("connector emits accessible orientation warning when facing away from neare
 
   expect(warnings).toHaveLength(1)
   expect(warnings[0].message).toMatchInlineSnapshot(
-    `"component is facing y- but should face y+ so the connector is accessible from the board edge"`,
+    `"J1 is facing y- but should face y+ so the connector is accessible from the board edge"`,
   )
 })

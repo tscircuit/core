@@ -5,6 +5,7 @@ import {
   layer_ref,
   type AnyCircuitElement,
   type SchematicComponent,
+  type PcbSolderPastePolygon,
 } from "circuit-json"
 import { CopperText } from "lib/components/primitive-components/CopperText"
 import { CourtyardCircle } from "lib/components/primitive-components/CourtyardCircle"
@@ -20,6 +21,7 @@ import { PcbNoteLine } from "lib/components/primitive-components/PcbNoteLine"
 import { PcbNotePath } from "lib/components/primitive-components/PcbNotePath"
 import { PcbNoteRect } from "lib/components/primitive-components/PcbNoteRect"
 import { PcbNoteText } from "lib/components/primitive-components/PcbNoteText"
+import { PcbSoldermaskOpening } from "lib/components/primitive-components/PcbSoldermaskOpening"
 import { PcbTrace } from "lib/components/primitive-components/PcbTrace"
 import { PcbVia } from "lib/components/primitive-components/PcbVia"
 import { PlatedHole } from "lib/components/primitive-components/PlatedHole"
@@ -37,6 +39,7 @@ import { SilkscreenRect } from "lib/components/primitive-components/SilkscreenRe
 import { SilkscreenText } from "lib/components/primitive-components/SilkscreenText"
 import { SmtPad } from "lib/components/primitive-components/SmtPad"
 import { SymbolComponent } from "lib/components/primitive-components/Symbol"
+import type { NormalComponent } from "lib/components/base-components/NormalComponent"
 import type { PrimitiveComponent } from "../components/base-components/PrimitiveComponent"
 import { createPinrowSilkscreenText } from "./createPinrowSilkscreenText"
 
@@ -113,20 +116,33 @@ const getSchematicSymbolId = (elm: AnyCircuitElement): string | undefined => {
 
 export const createComponentsFromCircuitJson = (
   {
+    sourcePortOwner,
     componentName,
     componentRotation,
     footprinterString,
     pinLabels,
     pcbPinLabels,
+    preserveSolderPaste = false,
   }: {
+    sourcePortOwner?: NormalComponent
     componentName: string
     componentRotation: string
     footprinterString?: string
     pinLabels?: PinLabelsProp
     pcbPinLabels?: PinLabelsProp
+    preserveSolderPaste?: boolean
   },
   circuitJson: AnyCircuitElement[],
 ): PrimitiveComponent[] => {
+  const importedSourcePorts = circuitJson.filter(
+    (elm) => elm.type === "source_port",
+  )
+  if (sourcePortOwner && importedSourcePorts.length > 0) {
+    sourcePortOwner._importedSourcePorts = importedSourcePorts
+    for (const port of sourcePortOwner._getAllPortsFromChildren()) {
+      port._markDirty("SourceRender")
+    }
+  }
   const components: PrimitiveComponent[] = []
   const schematicSymbolsByImportedId = new Map<string, SymbolComponent>()
   const schematicComponentsByImportedId = new Map<string, SchematicComponent>()
@@ -271,7 +287,32 @@ export const createComponentsFromCircuitJson = (
           )
         : undefined
 
-    if (elm.type === "pcb_smtpad" && elm.shape === "rect") {
+    if (elm.type === "pcb_soldermask_opening") {
+      components.push(
+        new PcbSoldermaskOpening(
+          elm.shape === "polygon"
+            ? { shape: "polygon", layer: elm.layer, points: elm.points }
+            : elm.shape === "circle"
+              ? {
+                  shape: "circle",
+                  layer: elm.layer,
+                  pcbX: elm.x,
+                  pcbY: elm.y,
+                  radius: elm.radius,
+                }
+              : {
+                  shape: "rect",
+                  layer: elm.layer,
+                  pcbX: elm.x,
+                  pcbY: elm.y,
+                  width: elm.width,
+                  height: elm.height,
+                  pcbRotation:
+                    elm.shape === "rotated_rect" ? elm.ccw_rotation : 0,
+                },
+        ),
+      )
+    } else if (elm.type === "pcb_smtpad" && elm.shape === "rect") {
       components.push(
         new SmtPad({
           pcbX: elm.x,
@@ -337,14 +378,24 @@ export const createComponentsFromCircuitJson = (
         }),
       )
     } else if (elm.type === "pcb_smtpad" && elm.shape === "polygon") {
-      components.push(
-        new SmtPad({
-          shape: "polygon",
-          points: elm.points,
-          portHints: resolvedPortHints,
-          layer: elm.layer,
-        }),
+      const smtpad = new SmtPad({
+        shape: "polygon",
+        points: elm.points,
+        portHints: resolvedPortHints,
+        layer: elm.layer,
+        coveredWithSolderMask: elm.is_covered_with_solder_mask,
+        solderMaskMargin: elm.soldermask_margin,
+      })
+      const polygonPaste = circuitJson.filter(
+        (paste): paste is PcbSolderPastePolygon =>
+          paste.type === "pcb_solder_paste" &&
+          paste.shape === "polygon" &&
+          paste.pcb_smtpad_id === elm.pcb_smtpad_id,
       )
+      if (preserveSolderPaste || polygonPaste.length > 0) {
+        smtpad._inflatedPcbSolderPaste = polygonPaste
+      }
+      components.push(smtpad)
     } else if (elm.type === "pcb_silkscreen_path") {
       components.push(
         new SilkscreenPath({

@@ -4,6 +4,7 @@ import {
   type SupplierName,
   type SupplierPartNumbers,
   supplierProps,
+  resolveManufacturerPartNumber,
 } from "@tscircuit/props"
 import {
   type AnyCircuitElement,
@@ -13,6 +14,7 @@ import {
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import { Footprint } from "lib/components/primitive-components/Footprint"
 import { extractCadModelFromCircuitJson } from "lib/utils/connectors/extractCadModelFromCircuitJson"
+import { fetchPartCircuitJsonWithDatasheet } from "lib/utils/fetch-part-circuit-json-with-datasheet"
 import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromCircuitJson"
 import { resolveStaticFileImport } from "lib/utils/resolveStaticFileImport"
 import { isValidElement as isReactElement } from "react"
@@ -58,10 +60,14 @@ const getSupplierPartCircuitJsonResolver = (
   if (!fetchPartCircuitJson) return
 
   return async (supplierPartNumber) => {
-    const footprintCircuitJson = await fetchPartCircuitJson({
-      supplierPartNumber,
-      platformFetch: component.root?.platform?.platformFetch,
-    })
+    const footprintCircuitJson = await fetchPartCircuitJsonWithDatasheet(
+      {
+        fetchPartCircuitJson,
+        supplierPartNumber,
+        manufacturerPartNumber: resolveManufacturerPartNumber(component.props),
+      },
+      component,
+    )
     return { footprintCircuitJson: footprintCircuitJson ?? [] }
   }
 }
@@ -112,6 +118,7 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
         const result = await footprintParser.loadFromUrl(footprintUrl)
         const fpComponents = createComponentsFromCircuitJson(
           {
+            sourcePortOwner: component,
             componentName: component.name,
             componentRotation: pcbRotation,
             footprinterString: footprintUrl,
@@ -165,6 +172,7 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
         const soup = await res.json()
         const fpComponents = createComponentsFromCircuitJson(
           {
+            sourcePortOwner: component,
             componentName: component.name,
             componentRotation: pcbRotation,
             footprinterString: url,
@@ -247,6 +255,7 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
         }
         const fpComponents = createComponentsFromCircuitJson(
           {
+            sourcePortOwner: component,
             componentName: component.name,
             componentRotation: pcbRotation,
             footprinterString: footprint,
@@ -319,6 +328,7 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
     try {
       const fpComponents = createComponentsFromCircuitJson(
         {
+          sourcePortOwner: component,
           componentName: component.name,
           componentRotation: pcbRotation,
           footprinterString: "",

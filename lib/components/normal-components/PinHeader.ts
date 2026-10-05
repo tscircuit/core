@@ -1,4 +1,8 @@
-import { pinHeaderProps, type SchematicPortArrangement } from "@tscircuit/props"
+import {
+  pinHeaderProps,
+  type SchematicPortArrangement,
+  resolveManufacturerPartNumber,
+} from "@tscircuit/props"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { Port } from "../primitive-components/Port"
 import type { SourceSimplePinHeader } from "circuit-json"
@@ -157,7 +161,7 @@ export class PinHeader extends NormalComponent<typeof pinHeaderProps> {
       ftype: "simple_pin_header",
       name: this.name,
       supplier_part_numbers: props.supplierPartNumbers,
-      manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
+      manufacturer_part_number: resolveManufacturerPartNumber(props),
       pin_count: props.pinCount,
       gender: props.gender,
       are_pins_interchangeable: true,

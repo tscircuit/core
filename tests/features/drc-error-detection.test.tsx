@@ -123,7 +123,7 @@ test("design rule check detects crossing traces", async () => {
   // Check for trace overlap DRC error
   const traceOverlapError = drcErrors.find(
     (error) =>
-      error.message.includes("overlaps with trace") &&
+      error.message.includes("overlaps with") &&
       error.pcb_trace_id === "trace_horizontal" &&
       error.pcb_trace_error_id === "overlap_trace_horizontal_trace_vertical",
   )

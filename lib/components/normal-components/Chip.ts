@@ -1,15 +1,23 @@
 import { normalizeDegrees } from "@tscircuit/math-utils"
-import { chipProps } from "@tscircuit/props"
-import { pcb_component_invalid_layer_error } from "circuit-json"
+import { chipProps, resolveManufacturerPartNumber } from "@tscircuit/props"
+import {
+  pcb_component_invalid_layer_error,
+  type SourcePort,
+} from "circuit-json"
 import { NormalComponent } from "lib/components/base-components/NormalComponent"
 import { Port } from "lib/components/primitive-components/Port"
 import { Trace } from "lib/components/primitive-components/Trace/Trace"
 import { Chip_doInitialPcbPlacementDesignRuleChecks } from "./Chip_doInitialPcbPlacementDesignRuleChecks"
+import { Chip_doInitialSourcePinSpecificationChecks } from "./Chip_doInitialSourcePinSpecificationChecks"
 
 export class Chip<PinLabels extends string = never> extends NormalComponent<
   typeof chipProps,
   PinLabels
 > {
+  /** Fetched facts used only for comparison when the user supplies a custom footprint. */
+  _fetchedSourcePortsForPinAttributes: SourcePort[] = []
+  _hasStartedPinAttributesFetch = false
+
   get config() {
     return {
       componentName: "Chip",
@@ -73,12 +81,21 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
     const source_component = db.source_component.insert({
       ftype: "simple_chip",
       name: this.name,
-      manufacturer_part_number: props.manufacturerPartNumber,
+      manufacturer_part_number: resolveManufacturerPartNumber(props),
       supplier_part_numbers: props.supplierPartNumbers,
       display_name: props.displayName,
     })
 
     this.source_component_id = source_component.source_component_id!
+  }
+
+  override doInitialSourceDesignRuleChecks(): void {
+    super.doInitialSourceDesignRuleChecks()
+    Chip_doInitialSourcePinSpecificationChecks(this)
+  }
+
+  updateSourceDesignRuleChecks(): void {
+    Chip_doInitialSourcePinSpecificationChecks(this)
   }
 
   doInitialPcbComponentRender() {
