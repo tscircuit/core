@@ -36,4 +36,8 @@ test("routing preserves rectangular cutout rotation", async () => {
     { showPcbNotes: true },
   )
   expect(traces).toHaveLength(1)
+  const cutoutObstacle = simpleRouteJson.obstacles.find(
+    ({ center }) => center.x === 0 && center.y === 0,
+  )!
+  expect(cutoutObstacle.ccwRotationDegrees).toBe(45)
 })
