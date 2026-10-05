@@ -140,7 +140,10 @@ export const getAllDimensionsForSchematicBox = (
   if (pinCount === null) {
     if (sidePinCounts) {
       pinCount =
-        sidePinCounts.leftSize + sidePinCounts.rightSize + sidePinCounts.topSize
+        sidePinCounts.leftSize +
+        sidePinCounts.rightSize +
+        sidePinCounts.topSize +
+        sidePinCounts.bottomSize
     } else {
       throw new Error("Could not determine pin count for the schematic box")
     }

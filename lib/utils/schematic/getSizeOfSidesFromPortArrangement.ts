@@ -56,6 +56,10 @@ export const getSizeOfSidesFromPortArrangement = (
       bottomSize: getPinsFromSideDefinition(pa.bottomSide).length,
     }
   }
-  const { leftSize = 0, rightSize = 0, topSize = 0, bottomSize = 0 } = pa as any
+  const paAny = pa as any
+  const leftSize = paAny.leftPinCount ?? paAny.leftSize ?? 0
+  const rightSize = paAny.rightPinCount ?? paAny.rightSize ?? 0
+  const topSize = paAny.topPinCount ?? paAny.topSize ?? 0
+  const bottomSize = paAny.bottomPinCount ?? paAny.bottomSize ?? 0
   return { leftSize, rightSize, topSize, bottomSize }
 }
