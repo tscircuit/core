@@ -20,6 +20,23 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
     }
   }
 
+  getDiameter(): number {
+    const { _parsedProps: props } = this
+    const diameterFromParsed =
+      typeof props.diameter === "number" && !Number.isNaN(props.diameter)
+        ? props.diameter
+        : undefined
+    const rawDiameter =
+      (this.props as any)?.holeDiameter ?? (this.props as any)?.diameter
+    const parsedDiameter =
+      typeof rawDiameter === "string"
+        ? distance.parse(rawDiameter)
+        : typeof rawDiameter === "number" && !Number.isNaN(rawDiameter)
+          ? rawDiameter
+          : undefined
+    return diameterFromParsed ?? parsedDiameter ?? 0
+  }
+
   getPcbSize(): { width: number; height: number } {
     const { _parsedProps: props } = this
     const isPill = props.shape === "pill"
@@ -37,9 +54,10 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
         height: props.height,
       }
     } else {
+      const diameter = this.getDiameter()
       return {
-        width: props.diameter,
-        height: props.diameter,
+        width: diameter,
+        height: diameter,
       }
     }
   }
@@ -125,11 +143,12 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
       this.pcb_hole_id = inserted_hole.pcb_hole_id!
     } else {
       // Circle shape (default)
+      const diameter = this.getDiameter()
       const inserted_hole = db.pcb_hole.insert({
         pcb_component_id,
         type: "pcb_hole",
         hole_shape: "circle",
-        hole_diameter: props.diameter,
+        hole_diameter: diameter,
         x: position.x,
         y: position.y,
         soldermask_margin: soldermaskMargin,

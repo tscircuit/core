@@ -21,3 +21,22 @@ test("Hole component rendering", () => {
 
   expect(circuit.getCircuitJson()).toMatchPcbSnapshot(import.meta.path)
 })
+
+test("Hole component supports holeDiameter alias", () => {
+  const { circuit } = getTestFixture()
+
+  circuit.add(
+    <board width="20mm" height="20mm">
+      <hole name="H1" holeDiameter="3.2mm" pcbX={-5} pcbY={5} />
+    </board>,
+  )
+
+  circuit.render()
+
+  const pcbHoles = circuit.db.pcb_hole.list()
+
+  expect(pcbHoles.length).toBe(1)
+  expect((pcbHoles[0] as any).hole_diameter).toBeCloseTo(3.2)
+  expect(pcbHoles[0].x).toBe(-5)
+  expect(pcbHoles[0].y).toBe(5)
+})
