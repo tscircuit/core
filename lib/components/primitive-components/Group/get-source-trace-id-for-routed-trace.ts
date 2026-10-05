@@ -262,6 +262,19 @@ export function getSourceTraceIdForRoutedTrace({
     return trace.source_trace_id
   }
 
+  // Inner-layer routes can join existing via barrels without touching their
+  // logical surface ports. Preserve a known SRJ source identity before falling
+  // back to endpoint geometry; arbitrary router connection names still fall
+  // through to the existing inference below.
+  if (
+    "connection_name" in trace &&
+    trace.connection_name &&
+    (db.source_trace.get(trace.connection_name) ??
+      db.source_net.get(trace.connection_name))
+  ) {
+    return trace.connection_name
+  }
+
   const sourcePortIds = getSourcePortIdsFromRoutedTrace(db, trace)
   if (sourcePortIds.length === 0) {
     return getSourceIdsFromConnectedPcbTraces(db, trace)[0]
