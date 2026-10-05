@@ -46,7 +46,7 @@ export interface TscircuitElements {
   group: Props.GroupProps
   netlabel: Props.NetLabelProps
   opamp: Props.OpAmpProps
-  cadmodel: Props.CadModelProps
+  cadmodel: Exclude<Props.CadModelPropsInput, null | string>
   cadassembly: Props.CadAssemblyProps
   net: Props.NetProps
   trace: Props.TraceProps
