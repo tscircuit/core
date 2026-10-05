@@ -45,6 +45,7 @@ export class SchematicRect extends PrimitiveComponent<
         props.strokeWidth ?? SCHEMATIC_COMPONENT_OUTLINE_STROKE_WIDTH,
       color: props.color ?? SCHEMATIC_COMPONENT_OUTLINE_COLOR,
       is_filled: props.isFilled,
+      fill_color: props.fillColor,
       schematic_component_id,
       is_dashed: props.isDashed,
       rotation: props.rotation ?? 0,
