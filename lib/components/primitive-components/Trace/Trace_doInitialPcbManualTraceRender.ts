@@ -330,8 +330,30 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
   }
   const otherPort = ports.find((p) => p !== anchorPort) ?? ports[1]
 
-  const layer = anchorPort.getAvailablePcbLayers()[0] || "top"
-  let currentLayer = layer as LayerRef
+  const pcbPath = props.pcbPath as Array<string | ManualPcbPathPoint>
+  const firstViaPoint = pcbPath.find(
+    (pt) => typeof pt !== "string" && pt.via,
+  ) as ManualPcbPathPoint | undefined
+
+  const anchorLayers = anchorPort.getAvailablePcbLayers()
+  const otherLayers = otherPort?.getAvailablePcbLayers() ?? []
+
+  let layer: LayerRef
+  if (
+    firstViaPoint?.fromLayer &&
+    anchorLayers.includes(firstViaPoint.fromLayer as LayerRef)
+  ) {
+    layer = firstViaPoint.fromLayer as LayerRef
+  } else if (!firstViaPoint && otherLayers.length > 0) {
+    const sharedLayer = anchorLayers.find((l) => otherLayers.includes(l))
+    layer = (sharedLayer ??
+      anchorLayers[0] ??
+      otherLayers[0] ??
+      "top") as LayerRef
+  } else {
+    layer = (anchorLayers[0] ?? "top") as LayerRef
+  }
+  let currentLayer = layer
 
   const anchorPos = anchorPort._getGlobalPcbPositionAfterLayout()
   const otherPos = otherPort?._getGlobalPcbPositionAfterLayout()
@@ -348,7 +370,6 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
   const transform = subcircuit._isInflatedFromCircuitJson
     ? trace._computePcbGlobalTransformBeforeLayout()
     : anchorPort?._computePcbGlobalTransformBeforeLayout?.() || identity()
-  const pcbPath = props.pcbPath as Array<string | ManualPcbPathPoint>
   for (const pt of pcbPath) {
     let coordinates: { x: number; y: number }
     let isGlobalPosition = false
