@@ -1,5 +1,6 @@
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
-import { applyToPoint } from "transformation-matrix"
+import { applyToPoint, decomposeTSR } from "transformation-matrix"
+import { getAxisAlignedSizeFromRotatedRect } from "lib/utils/pcb/get-axis-aligned-size-from-rotated-rect"
 import type {
   PcbCutoutRect,
   PcbCutoutCircle,
@@ -28,11 +29,9 @@ export class Cutout extends PrimitiveComponent<typeof cutoutProps> {
 
     const globalPosition = this._getGlobalPcbPositionBeforeLayout()
 
-    // Get parent rotation like SmtPad does
     const container = this.getPrimitiveContainer()
     const pcb_component_id =
       this.parent?.pcb_component_id ?? container?.pcb_component_id ?? undefined
-    const parentRotation = container?._parsedProps.pcbRotation ?? 0
 
     let inserted_pcb_cutout:
       | PcbCutoutRect
@@ -42,18 +41,20 @@ export class Cutout extends PrimitiveComponent<typeof cutoutProps> {
       | undefined = undefined
 
     if (props.shape === "rect") {
-      // Handle rotation by swapping width/height for 90-degree rotations
-      const rotationDeg =
-        typeof parentRotation === "string"
-          ? parseInt(parentRotation.replace("deg", ""), 10)
-          : parentRotation
-      const isRotated90 = Math.abs(rotationDeg % 180) === 90
+      // Use the same footprint-to-board transform as SmtPad (+X right, +Y up, mm).
+      const globalTransform = this._computePcbGlobalTransformBeforeLayout()
+      const isReflected =
+        globalTransform.a * globalTransform.d -
+          globalTransform.b * globalTransform.c <
+        0
+      const { rotation } = decomposeTSR(globalTransform, false, isReflected)
 
       const rectData: Omit<PcbCutoutRect, "type" | "pcb_cutout_id"> = {
         shape: "rect",
         center: globalPosition,
-        width: isRotated90 ? props.height : props.width,
-        height: isRotated90 ? props.width : props.height,
+        width: props.width,
+        height: props.height,
+        rotation: (rotation.angle * 180) / Math.PI,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id,
         pcb_component_id,
@@ -128,16 +129,22 @@ export class Cutout extends PrimitiveComponent<typeof cutoutProps> {
     if (!cutout) return super._getPcbCircuitJsonBounds()
 
     if (cutout.shape === "rect") {
+      const { width, height, xExtent, yExtent } =
+        getAxisAlignedSizeFromRotatedRect({
+          width: cutout.width,
+          height: cutout.height,
+          ccwRotationDegrees: cutout.rotation ?? 0,
+        })
       return {
         center: cutout.center,
         bounds: {
-          left: cutout.center.x - cutout.width / 2,
-          top: cutout.center.y + cutout.height / 2, // Assuming Y is up
-          right: cutout.center.x + cutout.width / 2,
-          bottom: cutout.center.y - cutout.height / 2,
+          left: cutout.center.x - xExtent,
+          top: cutout.center.y + yExtent,
+          right: cutout.center.x + xExtent,
+          bottom: cutout.center.y - yExtent,
         },
-        width: cutout.width,
-        height: cutout.height,
+        width,
+        height,
       }
     } else if (cutout.shape === "circle") {
       return {
