@@ -1,4 +1,8 @@
-import type { PinAttributeMap, PinCapability } from "@tscircuit/props"
+import {
+  type PinAttributeMap,
+  type PinCapability,
+  pinAttributeMap,
+} from "@tscircuit/props"
 import { type SourcePinAttributes, voltage } from "circuit-json"
 
 const setSupportedCapability = (
@@ -149,6 +153,12 @@ export const applyPinAttributesToSourcePort = (
   }
   if (attributes.requiresVoltage !== undefined) {
     sourcePortProps.requires_voltage = voltage.parse(attributes.requiresVoltage)
+  }
+  if (attributes.requiredVoltageTolerance !== undefined) {
+    sourcePortProps.required_voltage_tolerance =
+      pinAttributeMap.shape.requiredVoltageTolerance
+        .unwrap()
+        .parse(attributes.requiredVoltageTolerance)
   }
   if (attributes.doNotConnect !== undefined) {
     sourcePortProps.do_not_connect = attributes.doNotConnect
