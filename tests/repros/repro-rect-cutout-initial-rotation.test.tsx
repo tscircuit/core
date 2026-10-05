@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("a rectangular cutout loses its footprint's 45 degree rotation", async () => {
+test("a rectangular cutout follows its footprint's 45 degree rotation", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width={12} height={12} routingDisabled schAutoLayoutEnabled>
@@ -40,9 +40,11 @@ test("a rectangular cutout loses its footprint's 45 degree rotation", async () =
   const cutout = circuit.db.pcb_cutout.list()[0]!
   if (cutout.shape !== "rect") throw new Error("Expected rectangular cutout")
   expect(circuit.db.pcb_component.list()[0]!.rotation).toBe(45)
-  // Captures the bug: the cutout should also rotate 45 degrees.
-  expect(cutout.rotation ?? 0).toBe(0)
+  expect(cutout.rotation).toBeCloseTo(45)
   expect(cutout.width).toBe(4)
   expect(cutout.height).toBe(1)
+  const bounds = circuit.selectOne("cutout")!._getPcbCircuitJsonBounds()
+  expect(bounds.width).toBeCloseTo(3.535534)
+  expect(bounds.height).toBeCloseTo(3.535534)
   expect(circuit).toMatchPcbSnapshot(import.meta.path, { showPcbNotes: true })
 })
