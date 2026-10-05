@@ -9,6 +9,8 @@ import {
 } from "@tscircuit/checks"
 import type { AnyCircuitElement } from "circuit-json"
 import type { DrcCheck } from "../../primitive-components/DrcCheck"
+import type { Port } from "../../primitive-components/Port"
+import { resolveSourcePinVoltageTolerances } from "./resolve-source-pin-voltage-tolerances"
 import type { Board } from "./Board"
 
 export const Board_updatePcbDesignRuleChecks = (board: Board) => {
@@ -165,7 +167,11 @@ export const Board_updatePcbDesignRuleChecks = (board: Board) => {
     if (shouldRunNetlistChecks) {
       queueCheck(
         "netlist",
-        () => runAllNetlistChecks(circuitJson) as Promise<AnyCircuitElement[]>,
+        () =>
+          runAllNetlistChecks(circuitJson, {
+            requiredVoltageToleranceBySourcePortId:
+              resolveSourcePinVoltageTolerances(board.selectAll<Port>("port")),
+          }) as Promise<AnyCircuitElement[]>,
       )
     }
 
