@@ -62,32 +62,20 @@ test("repro: authored PCB trace drops requested net connectivity", async () => {
         }
       />
       <pcbnotetext
-        text="AUTHORED PCB TRACE NET CONNECTIVITY"
-        pcbY={4.1}
-        fontSize={0.65}
-        color="#ffffff"
-      />
-      <pcbnotetext
-        text={`REQUESTED SOURCE NET: ${requestedNetName}`}
+        text={`REQUESTED NET: ${requestedNetName}`}
         pcbY={3.1}
-        fontSize={0.55}
+        fontSize={0.7}
         color="#66ccff"
       />
       <pcbnotetext
-        text="AUTHORED COPPER GEOMETRY"
-        pcbY={-0.3}
-        fontSize={0.48}
-        color="#ffdd66"
-      />
-      <pcbnotetext
-        text="GND PAD A"
+        text="GND A"
         pcbX={-5.5}
         pcbY={-2.65}
         fontSize={0.4}
         color="#66ccff"
       />
       <pcbnotetext
-        text="GND PAD B"
+        text="GND B"
         pcbX={5.5}
         pcbY={-2.65}
         fontSize={0.4}
@@ -105,26 +93,25 @@ test("repro: authored PCB trace drops requested net connectivity", async () => {
   const actualSourceNetName = sourceTrace?.connected_source_net_ids
     .map((sourceNetId) => circuit.db.source_net.get(sourceNetId)?.name)
     .find((sourceNetName) => sourceNetName !== undefined)
+  const hasPcbTraceError = circuit.db.pcb_trace_error.list().length > 0
 
   circuit.db.pcb_note_text.insert({
-    text: `ACTUAL SOURCE NET: ${actualSourceNetName ?? "NONE"}`,
-    anchor_position: { x: 0, y: 2.15 },
+    text: `TRACE NET: ${actualSourceNetName ?? "NONE"}`,
+    anchor_position: { x: 0, y: 1.9 },
     anchor_alignment: "center",
     layer: "top",
     font: "tscircuit2024",
-    font_size: 0.55,
+    font_size: 0.7,
     color: actualSourceNetName ? "#55ff99" : "#ff5555",
   })
   circuit.db.pcb_note_text.insert({
-    text: actualSourceNetName
-      ? "FIXED: CONNECTIVITY PRESERVED"
-      : "BUG: CONNECTIVITY SILENTLY LOST",
-    anchor_position: { x: 0, y: 1.3 },
+    text: `DRC ERROR: ${hasPcbTraceError ? "YES" : "NO"}`,
+    anchor_position: { x: 0, y: 0.7 },
     anchor_alignment: "center",
     layer: "top",
     font: "tscircuit2024",
-    font_size: 0.55,
-    color: actualSourceNetName ? "#55ff99" : "#ff5555",
+    font_size: 0.7,
+    color: hasPcbTraceError ? "#ff5555" : "#ffffff",
   })
 
   expect(pcbTrace.source_trace_id).toBeUndefined()
