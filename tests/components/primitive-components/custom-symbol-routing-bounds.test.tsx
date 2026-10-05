@@ -75,6 +75,14 @@ test("routing receives the drawn bounds of rotated custom symbols", async () => 
     expect(chip.center).toEqual(rect.center)
     expect(chip.width).toBeCloseTo(expectedSizes[index][0])
     expect(chip.height).toBeCloseTo(expectedSizes[index][1])
+    expect(chip).toMatchObject({
+      bodyBounds: {
+        minX: rect.center.x - chip.width / 2,
+        maxX: rect.center.x + chip.width / 2,
+        minY: rect.center.y - chip.height / 2,
+        maxY: rect.center.y + chip.height / 2,
+      },
+    })
     expect(schematicComponent.center).toEqual(chip.center)
     expect(schematicComponent.size.width).toBeCloseTo(chip.width)
     expect(schematicComponent.size.height).toBeCloseTo(chip.height)
