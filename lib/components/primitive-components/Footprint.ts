@@ -1,8 +1,8 @@
+import * as kiwi from "@lume/kiwi"
 import { footprintProps } from "@tscircuit/props"
+import Debug from "debug"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import type { Constraint } from "./Constraint"
-import * as kiwi from "@lume/kiwi"
-import Debug from "debug"
 
 const debug = Debug("tscircuit:core:footprint")
 
@@ -150,7 +150,7 @@ export class Footprint extends PrimitiveComponent<typeof footprintProps> {
           // topElmCenterY - topElmHeight/2 - bottomElmCenterY - bottomElmHeight/2 = ydist
           const expr = new kiwi.Expression(
             topVar,
-            topBounds.height / 2,
+            -topBounds.height / 2,
             [-1, bottomVar],
             -bottomBounds.height / 2,
           )
