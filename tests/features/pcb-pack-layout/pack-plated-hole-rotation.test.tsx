@@ -1,15 +1,14 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { applyPackOutput } from "lib/components/primitive-components/Group/Group_doInitialPcbLayoutPack/applyPackOutput"
-import type { PackOutput } from "calculate-packing"
+import type { Group } from "lib/components/primitive-components/Group"
 
 test("applyPackOutput propagates rotation to pcb_plated_hole elements", async () => {
   const { circuit } = getTestFixture()
 
-  let groupRef: any
   circuit.add(
     <board width="50mm" height="50mm">
-      <group ref={(ref) => (groupRef = ref)}>
+      <group>
         <chip
           name="U1"
           pcbX={0}
@@ -56,36 +55,34 @@ test("applyPackOutput propagates rotation to pcb_plated_hole elements", async ()
 
   await circuit.renderUntilSettled()
 
+  const group = circuit.selectOne("group") as Group
+
   const pcbComponent = circuit.db.pcb_component.getWhere({
     source_component_id: circuit.db.source_component.getWhere({ name: "U1" })!
       .source_component_id,
   })!
 
-  const packOutput: PackOutput = {
+  const packOutput: any = {
     components: [
       {
         componentId: pcbComponent.pcb_component_id,
         center: { x: 5, y: 5 },
-        width: 10,
-        height: 10,
         ccwRotationDegrees: 90,
       },
     ],
   }
 
-  const initialPackOutput: PackOutput = {
+  const initialPackOutput: any = {
     components: [
       {
         componentId: pcbComponent.pcb_component_id,
         center: { x: 0, y: 0 },
-        width: 10,
-        height: 10,
         ccwRotationDegrees: 0,
       },
     ],
   }
 
-  applyPackOutput(groupRef, packOutput, {}, initialPackOutput)
+  applyPackOutput(group, packOutput, {}, initialPackOutput)
 
   const h1 = circuit.db.pcb_plated_hole.getWhere({
     pcb_component_id: pcbComponent.pcb_component_id,
@@ -115,10 +112,9 @@ test("applyPackOutput propagates rotation to pcb_plated_hole elements", async ()
 test("applyPackOutput propagates rotation to cluster members and compounds with initial rotation", async () => {
   const { circuit } = getTestFixture()
 
-  let groupRef: any
   circuit.add(
     <board width="50mm" height="50mm">
-      <group ref={(ref) => (groupRef = ref)}>
+      <group>
         <chip
           name="U1"
           pcbX={0}
@@ -145,30 +141,28 @@ test("applyPackOutput propagates rotation to cluster members and compounds with 
 
   await circuit.renderUntilSettled()
 
+  const group = circuit.selectOne("group") as Group
+
   const pcbComponent = circuit.db.pcb_component.getWhere({
     source_component_id: circuit.db.source_component.getWhere({ name: "U1" })!
       .source_component_id,
   })!
 
-  const packOutput: PackOutput = {
+  const packOutput: any = {
     components: [
       {
         componentId: "cluster1",
         center: { x: 5, y: 5 },
-        width: 10,
-        height: 10,
         ccwRotationDegrees: 90,
       },
     ],
   }
 
-  const initialPackOutput: PackOutput = {
+  const initialPackOutput: any = {
     components: [
       {
         componentId: "cluster1",
         center: { x: 0, y: 0 },
-        width: 10,
-        height: 10,
         ccwRotationDegrees: 0,
       },
     ],
@@ -183,7 +177,7 @@ test("applyPackOutput propagates rotation to cluster members and compounds with 
     },
   }
 
-  applyPackOutput(groupRef, packOutput, clusterMap as any, initialPackOutput)
+  applyPackOutput(group, packOutput, clusterMap as any, initialPackOutput)
 
   const h1 = circuit.db.pcb_plated_hole.getWhere({
     pcb_component_id: pcbComponent.pcb_component_id,
