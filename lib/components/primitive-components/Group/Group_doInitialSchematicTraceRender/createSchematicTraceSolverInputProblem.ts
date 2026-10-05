@@ -298,14 +298,23 @@ export function createSchematicTraceSolverInputProblem(
         height: schematicComponent.size.height,
       })
 
-    chips.push({
+    const chip = {
       chipId,
+      // Custom symbols have drawn body bounds independent of external pins.
+      bodyBounds:
+        schematicComponent.is_box_with_pins === false
+          ? getBoundFromCenteredRect({
+              center: schematicComponent.center,
+              ...schematicComponent.size,
+            })
+          : undefined,
       center: getBoundsCenter(layoutBounds),
       width: layoutBounds.maxX - layoutBounds.minX,
       height: layoutBounds.maxY - layoutBounds.minY,
       pins,
       sectionId,
-    })
+    }
+    chips.push(chip)
   }
 
   // Maps for ports within this scope
