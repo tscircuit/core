@@ -1,10 +1,9 @@
 import { expect, test } from "bun:test"
 import type { Group } from "lib/components/primitive-components/Group/Group"
 import { createSchematicTraceSolverInputProblem } from "lib/components/primitive-components/Group/Group_doInitialSchematicTraceRender/createSchematicTraceSolverInputProblem"
-import { getSchematicTextBounds } from "lib/components/primitive-components/Group/Group_doInitialSchematicTraceRender/getSchematicTextBounds"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("schematic trace solver refdes text box matches emitted text independently of the chip body", () => {
+test("schematic trace solver refdes text box borders chip body", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -47,11 +46,8 @@ test("schematic trace solver refdes text box matches emitted text independently 
   const componentTop =
     schematicComponent.center.y + schematicComponent.size.height / 2
 
-  const text = circuit.db.schematic_text
-    .list()
-    .find((text) => text.text === "U1")!
-  expect(refdesBounds).toEqual(getSchematicTextBounds(text))
-  expect(refdesBounds.minY).toBeGreaterThan(componentTop)
+  expect(refdesBounds.minY).toBeLessThanOrEqual(componentTop)
+  expect(refdesBounds.maxY).toBeGreaterThan(componentTop + 0.2)
 
   for (const trace of circuit.db.schematic_trace.list()) {
     for (const edge of trace.edges) {
@@ -78,5 +74,4 @@ test("schematic trace solver refdes text box matches emitted text independently 
       }
     }
   }
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })

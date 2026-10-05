@@ -1,4 +1,7 @@
-import { getBoundsCenter } from "@tscircuit/math-utils"
+import {
+  getBoundFromCenteredRect,
+  getBoundsCenter,
+} from "@tscircuit/math-utils"
 import {
   type InputChip,
   type InputProblem,
@@ -10,13 +13,7 @@ import type { SchematicComponent, SourceNet, SourceTrace } from "circuit-json"
 import { getSourcePortConnectivityMapFromCircuitJson } from "circuit-json-to-connectivity-map"
 import { getSchematicNetLabelTextWidth } from "lib/utils/schematic/computeSchematicNetLabelCenter"
 import { convertFacingDirectionToElbowDirection } from "lib/utils/schematic/convertFacingDirectionToElbowDirection"
-import { getSymbolTextBounds } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
-import { getSchematicPortStemEnd } from "lib/utils/schematic/getSchematicPortStemEnd"
-import {
-  getSchematicComponentBodyBounds,
-  type SchematicSymbolId,
-} from "lib/utils/schematic/getSchematicComponentBodyBounds"
-import type { SymbolComponent } from "../../Symbol"
+import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
 import type { NetLabel } from "../../NetLabel"
 import { Port } from "../../Port"
 import { Group } from "../Group"
@@ -204,72 +201,41 @@ export function createSchematicTraceSolverInputProblem(
   const schematicComponentIds = new Set(
     schematicComponents.map((component) => component.schematic_component_id),
   )
-  const schematicSymbolIdsByComponentId = new Map<
-    SchematicComponentId,
-    Set<SchematicSymbolId>
-  >()
-  const schematicComponentIdBySymbolId = new Map<
-    SchematicSymbolId,
-    SchematicComponentId
-  >()
-  for (const symbol of group.selectAll<SymbolComponent>("symbol")) {
-    const componentId =
-      symbol.getParentNormalComponent()?.schematic_component_id
-    if (
-      !componentId ||
-      !symbol.schematic_symbol_id ||
-      !schematicComponentIds.has(componentId)
-    )
-      continue
-    let ids = schematicSymbolIdsByComponentId.get(componentId)
-    if (!ids)
-      schematicSymbolIdsByComponentId.set(componentId, (ids = new Set()))
-    ids.add(symbol.schematic_symbol_id)
-    schematicComponentIdBySymbolId.set(symbol.schematic_symbol_id, componentId)
-  }
+  const schematicComponentsById = new Map(
+    schematicComponents.map((component) => [
+      component.schematic_component_id,
+      component,
+    ]),
+  )
   const textBoxes = db.schematic_text
     .list()
-    .map((text) => ({
-      ...text,
-      schematic_component_id:
-        text.schematic_component_id ??
-        (text.schematic_symbol_id
-          ? schematicComponentIdBySymbolId.get(text.schematic_symbol_id)
-          : undefined),
-    }))
     .filter(
       (text) =>
         text.schematic_component_id &&
         schematicComponentIds.has(text.schematic_component_id),
     )
-    .map((text) => schematicTextToTextBox(text))
-    .filter((textBox): textBox is TextBoxes => Boolean(textBox))
+    .map((text) => {
+      const schematicComponent = schematicComponentsById.get(
+        text.schematic_component_id!,
+      )
+      if (!schematicComponent) return
+      const sourceComponent = db.source_component.get(
+        schematicComponent.source_component_id!,
+      )
 
-  for (const schematicComponent of schematicComponents) {
-    const sourceComponent = db.source_component.get(
-      schematicComponent.source_component_id!,
-    )
-    for (const bounds of getSymbolTextBounds({
-      schematicComponent,
-      sourceComponent: sourceComponent ?? undefined,
-    })) {
-      textBoxes.push({
-        chipId: schematicComponent.schematic_component_id,
-        center: getBoundsCenter(bounds),
-        width: bounds.maxX - bounds.minX,
-        height: bounds.maxY - bounds.minY,
-        text: bounds.text,
+      return schematicTextToTextBox(text, {
+        schematicComponent,
+        sourceComponent,
       })
-    }
-  }
+    })
+    .filter((textBox): textBox is TextBoxes => Boolean(textBox))
 
   const sectionIdBySchematicComponentId = new Map<
     SchematicComponentId,
     SectionId
   >()
-  const schematicDescendants =
-    group._getBoard()?.getDescendants() ?? group.getDescendants()
-  for (const component of schematicDescendants) {
+  const boardDescendants = group._getBoard()?.getDescendants() ?? []
+  for (const component of boardDescendants) {
     const schematicComponentId = component.schematic_component_id
     const sectionId = component.getSchematicSectionName()
     if (schematicComponentId && sectionId) {
@@ -280,9 +246,6 @@ export function createSchematicTraceSolverInputProblem(
   // Solver pin ids are schematic port ids because a source port can have
   // multiple schematic representations.
   const chips: InputChip[] = []
-  const portBySchematicPortId = new Map(
-    group.selectAll<Port>("port").map((port) => [port.schematic_port_id, port]),
-  )
 
   for (const schematicComponent of schematicComponents) {
     const chipId = schematicComponent.schematic_component_id
@@ -303,9 +266,6 @@ export function createSchematicTraceSolverInputProblem(
         const sourcePort = schematicPort.source_port_id
           ? db.source_port.get(schematicPort.source_port_id)
           : undefined
-        const stemLineId = portBySchematicPortId.get(
-          schematicPort.schematic_port_id,
-        )?.schematic_stem_line_id
         return {
           pinId: schematicPortId,
           displayName:
@@ -314,15 +274,12 @@ export function createSchematicTraceSolverInputProblem(
             sourcePort?.name,
           x: schematicPort.center.x,
           y: schematicPort.center.y,
-          stemEnd: getSchematicPortStemEnd(
-            schematicPort,
-            schematicComponent,
-            stemLineId
-              ? (db.schematic_line.get(stemLineId) ?? undefined)
-              : undefined,
-          ),
-          // Actual terminal direction in schematic world coordinates; body and
-          // text bounds never determine or move this point.
+          // Pass the port's true facing direction (known from the schematic
+          // symbol). The chip box handed to the solver is text-inclusive, so for
+          // small parts with a large reference designator the pins sit inside the
+          // box. The solver snaps such pins to the box edge along this facing
+          // direction (rather than guessing from geometry, which would pick the
+          // wrong edge for a resistor whose ref text widened the box).
           _facingDirection: convertFacingDirectionToElbowDirection(
             schematicPort.facing_direction ?? null,
           ),
@@ -333,18 +290,19 @@ export function createSchematicTraceSolverInputProblem(
       schematicComponent.schematic_component_id,
     )
 
-    const bodyBounds = getSchematicComponentBodyBounds({
-      db,
-      schematicComponent,
-      schematicSymbolIds:
-        schematicSymbolIdsByComponentId.get(chipId) ?? new Set(),
-    })
+    const layoutBounds =
+      getSchematicComponentWithTextBounds({ db, schematicComponent }) ??
+      getBoundFromCenteredRect({
+        center: schematicComponent.center,
+        width: schematicComponent.size.width,
+        height: schematicComponent.size.height,
+      })
 
     chips.push({
       chipId,
-      center: getBoundsCenter(bodyBounds),
-      width: bodyBounds.maxX - bodyBounds.minX,
-      height: bodyBounds.maxY - bodyBounds.minY,
+      center: getBoundsCenter(layoutBounds),
+      width: layoutBounds.maxX - layoutBounds.minX,
+      height: layoutBounds.maxY - layoutBounds.minY,
       pins,
       sectionId,
     })

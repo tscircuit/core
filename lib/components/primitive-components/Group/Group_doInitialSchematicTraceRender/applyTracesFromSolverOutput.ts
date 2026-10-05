@@ -1,6 +1,16 @@
+import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
+import {
+  type Bounds,
+  getBoundFromCenteredRect,
+  pointToBoundsDistance,
+} from "@tscircuit/math-utils"
 import { SchematicTracePipelineSolver } from "@tscircuit/schematic-trace-solver"
 import type { SchematicTrace } from "circuit-json"
 import Debug from "debug"
+import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
+import { isCircuitJsonSymbol } from "lib/utils/schematic/isCircuitJsonSymbol"
+import { isValidElement } from "react"
+import { Port } from "../../Port"
 import { Group } from "../Group"
 import { computeCrossings } from "./compute-crossings"
 import { computeJunctions } from "./compute-junctions"
@@ -8,6 +18,98 @@ import { type SchematicPortId, asSchematicPortId } from "./port-id-types"
 import { removeOverlappingSameNetCrossingSegments } from "./remove-overlapping-same-net-crossing-segments"
 
 const debug = Debug("Group_doInitialSchematicTraceRender")
+
+const MAX_PIN_SNAP_GAP = 1.5
+
+/**
+ * Adds the internal pin stub omitted by the schematic trace solver.
+ *
+ * A component's routing box can be expanded to include its text or asymmetric
+ * custom-symbol pins, placing an actual pin inside the box. The solver projects
+ * that pin to the box edge. Close the resulting gap back to the real pin; for
+ * larger gaps, only do so when the projected endpoint lies within the
+ * component's routing bounds.
+ */
+function extendTraceEndpointsToReachPinsInsideExpandedBoundingBox(
+  params: {
+    points: Array<{ x: number; y: number }>
+    schematicPortIds: SchematicPortId[]
+    componentBoundsByPortId: Map<SchematicPortId, Bounds>
+  },
+  db: CircuitJsonUtilObjects,
+): Array<{ x: number; y: number }> {
+  const { points, schematicPortIds, componentBoundsByPortId } = params
+  const centers = schematicPortIds
+    .map((id) => {
+      const center = db.schematic_port.get(id)?.center
+      const bounds = componentBoundsByPortId.get(id)
+      if (!center || !bounds) return null
+      return { center, bounds }
+    })
+    .filter(
+      (
+        port,
+      ): port is {
+        center: { x: number; y: number }
+        bounds: Bounds
+      } => Boolean(port),
+    )
+  if (centers.length === 0) return points
+
+  const result = points.map((p) => ({ x: p.x, y: p.y }))
+  const d2 = (a: { x: number; y: number }, b: { x: number; y: number }) =>
+    (a.x - b.x) ** 2 + (a.y - b.y) ** 2
+  const usedCenters = new Set<number>()
+
+  for (let i = 0; i < centers.length; i++) {
+    if (result.some((p) => d2(centers[i]!.center, p) <= 1e-12)) {
+      usedCenters.add(i)
+    }
+  }
+
+  const ALIGN_EPS = 1e-3
+  const endpoints: Array<"start" | "end"> = ["start", "end"]
+  const candidates: Array<{
+    endpoint: "start" | "end"
+    centerIndex: number
+    dist: number
+  }> = []
+  for (const endpoint of endpoints) {
+    const endpointPoint =
+      endpoint === "start" ? result[0]! : result[result.length - 1]!
+    for (let i = 0; i < centers.length; i++) {
+      if (usedCenters.has(i)) continue
+      const { center, bounds } = centers[i]!
+      const dist = d2(center, endpointPoint)
+      if (
+        Math.abs(center.x - endpointPoint.x) > ALIGN_EPS &&
+        Math.abs(center.y - endpointPoint.y) > ALIGN_EPS
+      ) {
+        continue
+      }
+      if (
+        dist > MAX_PIN_SNAP_GAP ** 2 &&
+        pointToBoundsDistance(endpointPoint, bounds) > ALIGN_EPS
+      ) {
+        continue
+      }
+      candidates.push({ endpoint, centerIndex: i, dist })
+    }
+  }
+  candidates.sort((a, b) => a.dist - b.dist)
+
+  const usedEndpoints = new Set<"start" | "end">()
+  for (const { endpoint, centerIndex, dist } of candidates) {
+    if (usedEndpoints.has(endpoint) || usedCenters.has(centerIndex)) continue
+    usedCenters.add(centerIndex)
+    usedEndpoints.add(endpoint)
+    if (dist <= 1e-12) continue
+    const center = centers[centerIndex]!.center
+    if (endpoint === "start") result.unshift({ x: center.x, y: center.y })
+    else result.push({ x: center.x, y: center.y })
+  }
+  return result
+}
 
 export function applyTracesFromSolverOutput(args: {
   group: Group<any>
@@ -22,6 +124,60 @@ export function applyTracesFromSolverOutput(args: {
     schematicPortIdsWithPreExistingNetLabels,
   } = args
   const { db } = group.root!
+
+  const customSymbolPortIds = new Set(
+    group
+      .selectAll<Port>("port")
+      .filter((port) => {
+        if (!port._getSymbolAncestor()) return false
+        const symbol = port.getParentNormalComponent()?._parsedProps.symbol
+        return isValidElement(symbol) || isCircuitJsonSymbol(symbol)
+      })
+      .map((port) => port.schematic_port_id)
+      .filter(
+        (schematicPortId): schematicPortId is string =>
+          schematicPortId !== null && schematicPortId !== undefined,
+      )
+      .map(asSchematicPortId),
+  )
+
+  const componentBoundsByPortId = new Map<SchematicPortId, Bounds>()
+  for (const schematicComponent of db.schematic_component.list()) {
+    const textInclusiveBounds = getSchematicComponentWithTextBounds({
+      db,
+      schematicComponent,
+    })
+    const componentBounds = getBoundFromCenteredRect({
+      center: schematicComponent.center,
+      width: schematicComponent.size.width,
+      height: schematicComponent.size.height,
+    })
+    for (const port of db.schematic_port.list({
+      schematic_component_id: schematicComponent.schematic_component_id,
+    })) {
+      const isInsideComponentBounds =
+        port.center.x > componentBounds.minX &&
+        port.center.x < componentBounds.maxX &&
+        port.center.y > componentBounds.minY &&
+        port.center.y < componentBounds.maxY
+
+      const schematicPortId = asSchematicPortId(port.schematic_port_id)
+      if (!textInclusiveBounds && !customSymbolPortIds.has(schematicPortId)) {
+        continue
+      }
+
+      // A custom symbol may intentionally place a port inside its body and
+      // rely on the solver to project the trace to the body edge. Do not draw
+      // back through the symbol in that case. Ports on or outside the normal
+      // boundary can still require reconnection after asymmetric expansion.
+      if (!textInclusiveBounds && isInsideComponentBounds) continue
+
+      componentBoundsByPortId.set(
+        schematicPortId,
+        textInclusiveBounds ?? componentBounds,
+      )
+    }
+  }
 
   // Use the final pipeline output so same-net branches share clean junctions.
   const traces =
@@ -66,11 +222,21 @@ export function applyTracesFromSolverOutput(args: {
       continue
     }
 
+    const snappedPoints =
+      extendTraceEndpointsToReachPinsInsideExpandedBoundingBox(
+        {
+          points,
+          schematicPortIds: solvedTraceSchematicPortIds,
+          componentBoundsByPortId,
+        },
+        db,
+      )
+
     const edges: SchematicTrace["edges"] = []
-    for (let i = 0; i < points.length - 1; i++) {
+    for (let i = 0; i < snappedPoints.length - 1; i++) {
       edges.push({
-        from: { x: points[i]!.x, y: points[i]!.y },
-        to: { x: points[i + 1]!.x, y: points[i + 1]!.y },
+        from: { x: snappedPoints[i]!.x, y: snappedPoints[i]!.y },
+        to: { x: snappedPoints[i + 1]!.x, y: snappedPoints[i + 1]!.y },
       })
     }
 

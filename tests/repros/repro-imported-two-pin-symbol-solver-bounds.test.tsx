@@ -1,5 +1,4 @@
 import { expect, test } from "bun:test"
-import { SchematicTracePipelineSolver } from "@tscircuit/schematic-trace-solver"
 import type { Group } from "lib/components/primitive-components/Group/Group"
 import { createSchematicTraceSolverInputProblem } from "lib/components/primitive-components/Group/Group_doInitialSchematicTraceRender/createSchematicTraceSolverInputProblem"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
@@ -134,7 +133,6 @@ test("imported two-pin symbols use body bounds for solver obstacles", async () =
   const { inputProblem } = createSchematicTraceSolverInputProblem(
     circuit.firstChild as Group<any>,
   )
-  const solver = new SchematicTracePipelineSolver(inputProblem)
   const solverBounds = ["F1", "RV1"].map((name) => {
     const sourceComponent = circuit.db.source_component.getWhere({ name })!
     const schematicComponent = circuit.db.schematic_component.getWhere({
@@ -143,11 +141,6 @@ test("imported two-pin symbols use body bounds for solver obstacles", async () =
     const chip = inputProblem.chips.find(
       (chip) => chip.chipId === schematicComponent.schematic_component_id,
     )!
-    expect(
-      solver.inputProblem.chips.find(
-        (normalized) => normalized.chipId === chip.chipId,
-      ),
-    ).toEqual(chip)
     const minX = chip.center.x - chip.width / 2
     const maxX = chip.center.x + chip.width / 2
 

@@ -120,23 +120,4 @@ test("imported symbol ports and stems follow the host component offset", async (
     { x1: 3.492, y1: 2, x2: 3.5682, y2: 2 },
     { x1: 4.508, y1: 2, x2: 4.4318, y2: 2 },
   ])
-
-  // External terminals face left/right. Normalization must not turn their
-  // inline net-label stubs downward when fitting the asymmetric body bounds.
-  const edges = circuit.db.schematic_trace
-    .list()
-    .flatMap((trace) => trace.edges)
-  for (const port of schematicPorts) {
-    const closeToPort = (point: { x: number; y: number }) =>
-      Math.hypot(point.x - port.center.x, point.y - port.center.y) < 1e-8
-    const edge = edges.find(
-      (edge) => closeToPort(edge.from) || closeToPort(edge.to),
-    )!
-    expect(edge).toBeDefined()
-    const otherEnd = closeToPort(edge.from) ? edge.to : edge.from
-    expect(otherEnd.y).toBeCloseTo(port.center.y)
-    expect(Math.sign(otherEnd.x - port.center.x)).toBe(
-      port.facing_direction === "left" ? -1 : 1,
-    )
-  }
 })

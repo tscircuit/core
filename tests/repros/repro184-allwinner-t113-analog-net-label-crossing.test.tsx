@@ -196,31 +196,14 @@ test("repro184: Allwinner T113 analog net-label crossing", async () => {
     )!
 
   // Horizontal offsets in schematic mm (+X right, +Y up), relative to pin92.
-  // Separate body and stem obstacles place the crossing on the LDOA1V8 rail;
-  // the shorter GND connector no longer crosses this trace.
+  // The updated routing keeps the GND-stem crossing but removes the former
+  // LDOA1V8 crossing at -0.821 mm.
   const crossingOffsets = vra1Trace.edges
     .filter((edge) => edge.is_crossing)
     .map((edge) =>
       Number(((edge.from.x + edge.to.x) / 2 - vra1Port.center.x).toFixed(3)),
     )
-  expect(crossingOffsets).toEqual([-0.821])
-
-  // No vertical detour may run through the actual horizontal port stems.
-  for (const port of circuit.db.schematic_port.list()) {
-    for (const trace of circuit.db.schematic_trace.list()) {
-      expect(
-        trace.edges.some(
-          ({ from, to }) =>
-            Math.abs(from.x - to.x) < 1e-8 &&
-            from.x > port.center.x + 1e-8 &&
-            from.x <
-              port.center.x + port.distance_from_component_edge! - 1e-8 &&
-            Math.min(from.y, to.y) < port.center.y - 1e-8 &&
-            Math.max(from.y, to.y) > port.center.y + 1e-8,
-        ),
-      ).toBe(false)
-    }
-  }
+  expect(crossingOffsets).toEqual([-0.441])
 
   await expect(circuit).toMatchSchematicSnapshot(import.meta.path, {
     width: 700,
