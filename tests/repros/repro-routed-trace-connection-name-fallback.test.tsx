@@ -36,7 +36,7 @@ test("router connection names preserve explicit-source precedence and geometry f
     type: "pcb_trace",
     pcb_trace_id: "returned_route",
     connection_name: secondSourceTrace.source_trace_id,
-    route,
+    route: route.map((point) => ({ ...point, layer: "inner1" })),
   }
   expect(getSourceTraceIdForRoutedTrace({ db, trace })).toBe(
     secondSourceTrace.source_trace_id,
@@ -50,7 +50,7 @@ test("router connection names preserve explicit-source precedence and geometry f
   expect(
     getSourceTraceIdForRoutedTrace({
       db,
-      trace: { ...trace, connection_name: "router-local-label" },
+      trace: { ...trace, connection_name: "router-local-label", route },
     }),
   ).toBe(firstSourceTrace.source_trace_id)
 })
