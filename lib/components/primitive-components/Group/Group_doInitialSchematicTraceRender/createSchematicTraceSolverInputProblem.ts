@@ -290,31 +290,26 @@ export function createSchematicTraceSolverInputProblem(
       schematicComponent.schematic_component_id,
     )
 
-    const layoutBounds =
-      getSchematicComponentWithTextBounds({ db, schematicComponent }) ??
+    // Custom-symbol obstacles use the drawn body, independently of text and
+    // external terminal positions. Box components retain their layout bounds.
+    const obstacleBounds =
+      (schematicComponent.is_box_with_pins === false
+        ? undefined
+        : getSchematicComponentWithTextBounds({ db, schematicComponent })) ??
       getBoundFromCenteredRect({
         center: schematicComponent.center,
         width: schematicComponent.size.width,
         height: schematicComponent.size.height,
       })
 
-    const chip = {
+    chips.push({
       chipId,
-      // Custom symbols have drawn body bounds independent of external pins.
-      bodyBounds:
-        schematicComponent.is_box_with_pins === false
-          ? getBoundFromCenteredRect({
-              center: schematicComponent.center,
-              ...schematicComponent.size,
-            })
-          : undefined,
-      center: getBoundsCenter(layoutBounds),
-      width: layoutBounds.maxX - layoutBounds.minX,
-      height: layoutBounds.maxY - layoutBounds.minY,
+      center: getBoundsCenter(obstacleBounds),
+      width: obstacleBounds.maxX - obstacleBounds.minX,
+      height: obstacleBounds.maxY - obstacleBounds.minY,
       pins,
       sectionId,
-    }
-    chips.push(chip)
+    })
   }
 
   // Maps for ports within this scope
