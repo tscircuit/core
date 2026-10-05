@@ -22,9 +22,11 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
 
   getDiameter(): number {
     const { _parsedProps: props } = this
+    const parsedPropsAny = props as any
     const diameterFromParsed =
-      typeof props.diameter === "number" && !Number.isNaN(props.diameter)
-        ? props.diameter
+      typeof parsedPropsAny.diameter === "number" &&
+      !Number.isNaN(parsedPropsAny.diameter)
+        ? parsedPropsAny.diameter
         : undefined
     const rawDiameter =
       (this.props as any)?.holeDiameter ?? (this.props as any)?.diameter

@@ -25,9 +25,16 @@ test("Hole component rendering", () => {
 test("Hole component supports holeDiameter alias", () => {
   const { circuit } = getTestFixture()
 
+  const holeProps: any = {
+    name: "H1",
+    holeDiameter: "3.2mm",
+    pcbX: -5,
+    pcbY: 5,
+  }
+
   circuit.add(
     <board width="20mm" height="20mm">
-      <hole name="H1" holeDiameter="3.2mm" pcbX={-5} pcbY={5} />
+      <hole {...holeProps} />
     </board>,
   )
 
