@@ -74,7 +74,7 @@
     "bun-match-svg": "0.0.12",
     "calculate-elbow": "^0.0.12",
     "chokidar-cli": "^3.0.0",
-    "circuit-json": "https://pkg.pr.new/circuit-json@710e91d",
+    "circuit-json": "^0.0.517",
     "circuit-json-to-bpc": "^0.0.13",
     "circuit-json-to-connectivity-map": "^0.0.33",
     "circuit-json-to-gltf": "^0.0.144",
@@ -145,7 +145,7 @@
   "overrides": {
     "@tscircuit/circuit-json-util": "^0.0.119",
     "@tscircuit/props": "^0.0.688",
-    "circuit-json": "https://pkg.pr.new/circuit-json@710e91d",
+    "circuit-json": "^0.0.517",
     "@tscircuit/cableprinter": "^0.0.4"
   }
 }
