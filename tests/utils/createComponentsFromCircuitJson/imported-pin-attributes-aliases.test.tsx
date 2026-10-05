@@ -15,11 +15,13 @@ test("imported pin attributes resolve BGA aliases and reject ambiguous or unrela
     name: "pinA1",
     port_hints: ["A1"],
     requires_voltage: 2.8,
+    required_voltage_tolerance: 0.05,
     is_input: false,
   }
   chip._importedSourcePorts = [sourcePort]
   expect(resolvePortSourcePinAttributes(port)).toEqual({
     requires_voltage: 2.8,
+    required_voltage_tolerance: 0.05,
     is_input: false,
   })
   chip._importedSourcePorts = [
@@ -40,4 +42,20 @@ test("imported pin attributes resolve BGA aliases and reject ambiguous or unrela
     { ...sourcePort, name: "pinA2", port_hints: ["A2"] },
   ]
   expect(resolvePortSourcePinAttributes(port)).toEqual({})
+  const overrideChip = new Chip({
+    name: "U_OVERRIDE",
+    pinAttributes: { AVCC: { requiredVoltageTolerance: 0 } },
+  })
+  const overridePort = new Port({
+    name: "AVCC",
+    pinNumber: 1,
+    aliases: ["pinA1"],
+  })
+  overrideChip.add(overridePort)
+  overrideChip._importedSourcePorts = [sourcePort]
+  expect(resolvePortSourcePinAttributes(overridePort)).toEqual({
+    requires_voltage: 2.8,
+    required_voltage_tolerance: 0,
+    is_input: false,
+  })
 })

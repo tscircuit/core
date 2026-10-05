@@ -57,6 +57,24 @@ test("core applies tolerances per consumer and preserves explicit zero alias ove
     "U_ZERO.VCC requires 2.8 V, but is connected to U_REG.VOUT, which provides 2.9 V.",
   ])
   expect(circuit.db.source_runtime_error.list()).toEqual([])
+  const sourceComponents = circuit.db.source_component.list()
+  for (const [name, tolerance] of [
+    ["U_TOLERANT", 0.05],
+    ["U_EXACT", undefined],
+    ["U_ZERO", 0],
+  ] as const) {
+    const sourceComponent = sourceComponents.find(
+      (component) => component.name === name,
+    )!
+    expect(
+      circuit.db.source_port
+        .list()
+        .find(
+          (port) =>
+            port.source_component_id === sourceComponent.source_component_id,
+        )!.required_voltage_tolerance,
+    ).toBe(tolerance)
+  }
   expect(circuit).toMatchSchematicSnapshot(import.meta.path, {
     showErrorsInTextOverlay: true,
   })
