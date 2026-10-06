@@ -18,6 +18,7 @@ import { resolveMotorFaceMount } from "./resolve-motor-face-mount"
 import type { AssemblyPlacement } from "./resolve-assembly-placement"
 import { resolveAssemblyMotorPlacement } from "./resolve-assembly-motor-placement"
 import { resolveAssemblyMotorRotation } from "./resolve-assembly-motor-rotation"
+import { resolveAssemblyCablePin1Position } from "./resolve-assembly-cable-pin1-position"
 
 /** Connector mating-center point and outward unit direction in right-handed
  * circuit world, mm (+X right, +Y top, +Z above). Points acquire translation;
@@ -26,6 +27,7 @@ import { resolveAssemblyMotorRotation } from "./resolve-assembly-motor-rotation"
 export interface AssemblyCableEndpoint {
   sourceComponentId: SourceComponentBase["source_component_id"]
   position: Point3
+  pin1Position?: Point3
   direction: BoardDirectionVector
   cableInput: CableInput
 }
@@ -84,7 +86,21 @@ export function resolveAssemblyCableEndpoint(
       [reference.position.x, reference.position.y, reference.position.z],
       orientation,
     )
-    // Paired with jscad-electronics createNemaMotorWireGeometry's header profile.
+    // Paired with createNemaMotorWireGeometry: contacts span local +Y before
+    // wireSideAngle rotation, with pin 1 at the negative end of the row.
+    const halfPinSpan =
+      ((motorConnector.pinCount - 1) * motorConnector.pitch) / 2
+    const pin1Offset = vec3.transformMat4(
+      vec3.create(),
+      [
+        reference.direction.y * halfPinSpan,
+        -reference.direction.x * halfPinSpan,
+        0,
+      ],
+      orientation,
+    )
+    // The shared header profile places the mating face beyond its body reference.
+
     return {
       sourceComponentId: motor.source_component_id!,
       position: {
@@ -100,6 +116,23 @@ export function resolveAssemblyCableEndpoint(
           point[2] +
           placement.position.z +
           direction[2] * motorConnector.matingDepth,
+      },
+      pin1Position: {
+        x:
+          point[0] +
+          placement.position.x +
+          direction[0] * motorConnector.matingDepth +
+          pin1Offset[0],
+        y:
+          point[1] +
+          placement.position.y +
+          direction[1] * motorConnector.matingDepth +
+          pin1Offset[1],
+        z:
+          point[2] +
+          placement.position.z +
+          direction[2] * motorConnector.matingDepth +
+          pin1Offset[2],
       },
       direction: { x: direction[0], y: direction[1], z: direction[2] },
       cableInput: {
@@ -167,13 +200,20 @@ export function resolveAssemblyCableEndpoint(
         : props.standard === "jst_sh"
           ? 1.4
           : 2.25
+  const position = {
+    x: center.x,
+    y: center.y,
+    z: sign * (board.boardThickness / 2 + height),
+  }
   return {
     sourceComponentId: connector.source_component_id,
-    position: {
-      x: center.x,
-      y: center.y,
-      z: sign * (board.boardThickness / 2 + height),
-    },
+    position,
+    pin1Position: resolveAssemblyCablePin1Position(
+      cable,
+      connector,
+      position,
+      direction,
+    ),
     direction,
     cableInput:
       props.standard === "usb_c"
