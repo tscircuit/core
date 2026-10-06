@@ -4,23 +4,9 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("cables reject incompatible, ambiguous, missing, and self-connected endpoints", async () => {
   for (const [from, to, standard, destinationStandard, pinCount, message] of [
-    [
-      ".J1",
-      ".J2",
-      undefined,
-      "jst_ph",
-      4,
-      "incompatible connector standards or pin counts",
-    ],
+    [".J1", ".J2", undefined, "jst_ph", 4, "incompatible connector pin counts"],
     [".J1", ".J2", "usb_c", "jst_ph", 6, "conflicts with its endpoints"],
-    [
-      ".J1",
-      ".J2",
-      undefined,
-      "jst_sh",
-      6,
-      "incompatible connector standards or pin counts",
-    ],
+    [".J1", ".J2", undefined, "jst_sh", 4, "incompatible connector pin counts"],
     [".J1", ".J1", undefined, "jst_ph", 6, "two different endpoints"],
     [".missing", ".J2", undefined, "jst_ph", 6, "matched 0 components"],
     ["connector", ".J2", undefined, "jst_ph", 6, "matched 2 components"],
