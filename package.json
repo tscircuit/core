@@ -77,7 +77,7 @@
     "circuit-json": "^0.0.516",
     "circuit-json-to-bpc": "^0.0.13",
     "circuit-json-to-connectivity-map": "^0.0.33",
-    "circuit-json-to-gltf": "https://pkg.pr.new/tscircuit/circuit-json-to-gltf@4373e19",
+    "circuit-json-to-gltf": "https://pkg.pr.new/tscircuit/circuit-json-to-gltf@394ca9b",
     "circuit-json-to-spice": "^0.0.45",
     "circuit-to-svg": "^0.0.440",
     "concurrently": "^9.1.2",

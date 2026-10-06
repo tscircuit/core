@@ -5,7 +5,7 @@ import { parseCableString } from "@tscircuit/cableprinter"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { expectAssemblySnapshot } from "./fixtures/expect-assembly-snapshot"
 
-test("inferred JST plug width directions follow emitted pins across rotations and PCB layers", async () => {
+test("inferred JST pin 1 sides follow emitted pins across rotations and PCB layers", async () => {
   const panels = []
   for (const standard of ["jst_ph", "jst_sh"] as const) {
     for (const layer of ["top", "bottom"] as const) {
@@ -79,6 +79,30 @@ test("inferred JST plug width directions follow emitted pins across rotations an
             parseCableString(cable.cableprinter_string).connectorA.bodyWidth,
             5,
           )
+          const wire = scene.boxes.find(
+            (box) => box.label === "CABLE / wire-1",
+          )!
+          const tip = end === "A" ? cable.path[0]! : cable.path.at(-1)!
+          const cap = wire
+            .mesh!.triangles.flatMap((triangle) => triangle.vertices)
+            .filter(
+              (vertex) =>
+                Math.abs(vertex.y - tip.z) < 1e-6 &&
+                Math.hypot(vertex.x - tip.x, vertex.z - tip.y) <
+                  parseCableString(cable.cableprinter_string).connectorA
+                    .bodyWidth /
+                    2 +
+                    1,
+            )
+          // Wire 1 must land toward the actual emitted pin 1, not merely
+          // anywhere on the same unsigned width axis.
+          const projectedCap = cap.map(
+            (vertex) => (vertex.x * dx + vertex.z * dy) / length,
+          )
+          const capCenter =
+            (Math.max(...projectedCap) + Math.min(...projectedCap)) / 2
+          const plugCenter = (tip.x * dx + tip.y * dy) / length
+          expect(capCenter - plugCenter).toBeCloseTo(-length / 2, 5)
         }
         if (standard === "jst_ph" && angle !== 35) {
           panels.push({
