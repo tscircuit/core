@@ -1,22 +1,24 @@
-import { getBulletConnector, type CableInput } from "@tscircuit/cableprinter"
+import { type CableInput, getBulletConnector } from "@tscircuit/cableprinter"
+import type { ParsedConnectorProps } from "@tscircuit/props"
 import type { Point3, SourceComponentBase } from "circuit-json"
-import { mat4, vec3 } from "gl-matrix"
 import { selectAll } from "css-select"
+import { mat4, vec3 } from "gl-matrix"
+import type { BoardDirectionVector } from "lib/utils/pcb/transform-footprint-insertion-direction"
 import { NormalComponent } from "../base-components/NormalComponent"
 import { cssSelectPrimitiveComponentAdapter } from "../base-components/PrimitiveComponent/cssSelectPrimitiveComponentAdapter"
 import { preprocessSelector } from "../base-components/PrimitiveComponent/preprocessSelector"
-import type { BoardDirectionVector } from "lib/utils/pcb/transform-footprint-insertion-direction"
 import type { AssemblyCable } from "./AssemblyCable"
 import type { AssemblyMotor } from "./AssemblyMotor"
-import type { ParsedConnectorProps } from "@tscircuit/props"
+import type { AssemblySubassembly } from "./AssemblySubassembly"
 import {
   getAssemblyScope,
   getComponentsInAssemblyScope,
 } from "./get-assembly-scope-components"
-import { resolveMotorFaceMount } from "./resolve-motor-face-mount"
-import type { AssemblyPlacement } from "./resolve-assembly-placement"
 import { resolveAssemblyMotorPlacement } from "./resolve-assembly-motor-placement"
 import { resolveAssemblyMotorRotation } from "./resolve-assembly-motor-rotation"
+import type { AssemblyPlacement } from "./resolve-assembly-placement"
+import { resolveCadAssemblyCableEndpoint } from "./resolve-cad-assembly-cable-endpoint"
+import { resolveMotorFaceMount } from "./resolve-motor-face-mount"
 
 /** Connector mating-center point and outward unit direction in right-handed
  * circuit world, mm (+X right, +Y top, +Z above). Points acquire translation;
@@ -34,6 +36,29 @@ export function resolveAssemblyCableEndpoint(
   selector: string,
 ): AssemblyCableEndpoint {
   const scoped = getComponentsInAssemblyScope(cable)
+  const namedConnector = selector.match(
+    /^([A-Za-z][A-Za-z0-9_]*)\.([A-Za-z][A-Za-z0-9_]*)$/,
+  )
+  if (namedConnector) {
+    const assemblies = scoped.filter(
+      (part): part is AssemblySubassembly =>
+        part.componentName === "AssemblySubassembly" &&
+        part.name === namedConnector[1],
+    )
+    if (assemblies.length > 0) {
+      if (assemblies.length !== 1)
+        throw new Error(
+          `assembly.cable "${cable.name}" endpoint "${selector}" must name exactly one CAD assembly`,
+        )
+      const owner = assemblies[0]!
+      const connector = owner._parsedProps.cableConnectors?.[namedConnector[2]!]
+      if (!connector)
+        throw new Error(
+          `Assembly "${owner.name}" has no cable connector named "${namedConnector[2]}"`,
+        )
+      return resolveCadAssemblyCableEndpoint(owner, connector)
+    }
+  }
   const motorReference = selector.match(/^(.+)\.wireside$/)
   if (motorReference) {
     const motors = scoped.filter(

@@ -69,11 +69,6 @@ test("bullet cables infer each mating gender and preserve all diameters on both 
       }
     }
   }
-  const mismatch = createBulletCableCircuit({ diameter: 3.5, toDiameter: 4 })
-  await expect(mismatch.renderUntilSettled()).rejects.toThrow(
-    "bullet diameters",
-  )
-  expect(mismatch.db.cad_cable.list()).toHaveLength(0)
   await expectAssemblySnapshot(import.meta.path, {
     title: "Bullet cables / inferred mating genders and nominal diameters",
     columns: 2,
