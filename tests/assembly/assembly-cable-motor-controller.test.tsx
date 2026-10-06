@@ -54,7 +54,7 @@ test("a cabled motor and controller mount inside one printed frame", async () =>
     jscad={<MotorControllerFrame />}>
     <assembly.motor name="MOTOR"
       standard="nema17"
-      wireConnection="jst-ph-6"
+      wireConnection="jst6_ph"
       mountedTo="FRAME.motor"
       mountFace="frontface" />
   </assembly.printedpart>

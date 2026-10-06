@@ -46,9 +46,11 @@ export function resolveAssemblyCableEndpoint(
         `assembly.cable "${cable.name}" endpoint "${selector}" must match exactly one motor in its assembly device`,
       )
     const motor = motors[0]!
+    // modelprinter's parsed termination uses its own legacy spelling.
+    // The public assembly prop is jst6_ph, encoded as the jstph6 model token.
     if (motor.motorModel.wireConnection !== "jst-ph-6")
       throw new Error(
-        `assembly.cable "${cable.name}" requires motor "${motor.name}" to have wireConnection="jst-ph-6" for its connector endpoint`,
+        `assembly.cable "${cable.name}" requires motor "${motor.name}" to have wireConnection="jst6_ph" for its connector endpoint`,
       )
     const faceMount = resolveMotorFaceMount(motor)
     const placement: AssemblyPlacement = faceMount

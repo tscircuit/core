@@ -6,7 +6,9 @@ test("motor wire terminations retain shaft-flat mounting references", () => {
   for (const [wireConnection, suffix] of [
     ["none", "nowires"],
     ["stubs", "wirestubs"],
+    ["jst6_ph", "jstph6"],
     ["jst-ph-6", "jstph6"],
+    ["jst_ph_6", "jstph6"],
   ] as const) {
     const { circuit } = getTestFixture()
     circuit.add(
