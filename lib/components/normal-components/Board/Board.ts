@@ -3,6 +3,7 @@ import { tryCreatePcbFold, type PcbFold } from "@tscircuit/flex-utils"
 import { jlcMinTolerances } from "@tscircuit/jlcpcb-manufacturing-specs"
 import { getBoundsFromPoints } from "@tscircuit/math-utils"
 import { boardProps } from "@tscircuit/props"
+import { pcb_stackup } from "circuit-json"
 import type {
   AnyCircuitElement,
   LayerRef,
@@ -497,6 +498,32 @@ export class Board
     const resolvedAllowBlindAndBuriedVias =
       rawProps.allowBlindAndBuriedVias ??
       pcbBoardFromCircuitJson?.allow_blind_and_buried_vias
+    let stackup = props.stackup
+    if (
+      stackup === undefined &&
+      pcbBoardFromCircuitJson?.stackup !== undefined
+    ) {
+      const parsedStackup = pcb_stackup.safeParse(
+        pcbBoardFromCircuitJson.stackup,
+      )
+      if (!parsedStackup.success) {
+        throw new Error(
+          `Board "${props.name ?? "unnamed board"}" has invalid physical stackup data. Supply a valid specified or assumed copper/dielectric sequence.`,
+        )
+      }
+      stackup = parsedStackup.data
+    }
+    const stackupCopperLayerCount = stackup?.layers.filter(
+      (layer) => layer.type === "copper",
+    ).length
+    if (
+      stackupCopperLayerCount !== undefined &&
+      stackupCopperLayerCount !== this.allLayers.length
+    ) {
+      throw new Error(
+        `Board "${props.name ?? "unnamed board"}" uses ${this.allLayers.length} copper layers, but its stackup declares ${stackupCopperLayerCount}. Set layers to match the supplied stackup.`,
+      )
+    }
 
     // Initialize with minimal dimensions if not provided
     // They will be updated in PcbBoardAutoSize phase
@@ -609,6 +636,7 @@ export class Board
         y: point.y + (props.outlineOffsetY ?? 0) + outlineTranslation.y,
       })),
       material: props.material,
+      ...(stackup !== undefined && { stackup: structuredClone(stackup) }),
       ...(resolvedIsViaInPadAllowed !== undefined && {
         is_via_in_pad_allowed: resolvedIsViaInPadAllowed,
       }),
