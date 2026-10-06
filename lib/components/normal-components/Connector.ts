@@ -1,5 +1,5 @@
 import {
-  type ConnectorProps,
+  type ParsedConnectorProps,
   type ConnectorStandard,
   type PartsEngine,
   type SchematicPinStyle,
@@ -88,16 +88,19 @@ const USB_C_DEFAULT_SCH_PIN_STYLE_BY_LABEL: ReadonlyArray<
 export class Connector<
   PinLabels extends string = never,
 > extends Chip<PinLabels> {
-  private _getConnectorProps(): ConnectorProps {
-    return this._parsedProps as ConnectorProps
+  private _getConnectorProps(): ParsedConnectorProps {
+    return this._parsedProps as ParsedConnectorProps
   }
 
   initPorts(): void {
     const props = this._getConnectorProps()
     super.initPorts({
-      pinCount: isJstConnectorStandard(props.standard)
-        ? props.pinCount
-        : undefined,
+      pinCount:
+        props.standard === "bullet"
+          ? 1
+          : isJstConnectorStandard(props.standard)
+            ? props.pinCount
+            : undefined,
     })
   }
 
@@ -376,7 +379,13 @@ export class Connector<
       supplier_part_numbers: props.supplierPartNumbers,
       display_name: props.displayName,
       standard: props.standard,
-      pin_count: props.pinCount,
+      pin_count: props.standard === "bullet" ? 1 : props.pinCount,
+      ...(props.standard === "bullet"
+        ? {
+            bullet_diameter: props.bulletDiameter,
+            bullet_gender: props.bulletGender,
+          }
+        : {}),
     } as SourceSimpleConnector)
 
     this.source_component_id = source_component.source_component_id!
@@ -419,7 +428,13 @@ export class Connector<
       name: this.name,
       manufacturer_part_number: resolveManufacturerPartNumber(props),
       standard,
-      pin_count: props.pinCount,
+      pin_count: props.standard === "bullet" ? 1 : props.pinCount,
+      ...(props.standard === "bullet"
+        ? {
+            bullet_diameter: props.bulletDiameter,
+            bullet_gender: props.bulletGender,
+          }
+        : {}),
     }
 
     this._queueAsyncEffect("load-standard-connector-circuit-json", async () => {

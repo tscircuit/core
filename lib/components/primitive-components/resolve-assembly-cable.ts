@@ -29,13 +29,18 @@ export function resolveAssemblyCable(
     )
   if (
     fromDefinition.standard !== toDefinition.standard ||
-    fromDefinition.connectorA.kind !== toDefinition.connectorA.kind ||
+    (fromDefinition.standard !== "bullet" &&
+      fromDefinition.connectorA.kind !== toDefinition.connectorA.kind) ||
+    ("diameter" in fromDefinition.connectorA &&
+      "diameter" in toDefinition.connectorA &&
+      fromDefinition.connectorA.diameter !==
+        toDefinition.connectorA.diameter) ||
     ("pinCount" in fromDefinition.connectorA &&
       "pinCount" in toDefinition.connectorA &&
       fromDefinition.connectorA.pinCount !== toDefinition.connectorA.pinCount)
   )
     throw new Error(
-      `assembly.cable "${cable.name}" endpoints "${cable._parsedProps.from}" and "${cable._parsedProps.to}" have incompatible connector standards or pin counts`,
+      `assembly.cable "${cable.name}" endpoints "${cable._parsedProps.from}" and "${cable._parsedProps.to}" have incompatible connector standards or pin counts (including bullet diameters)`,
     )
   if (
     cable._parsedProps.standard &&
@@ -44,7 +49,7 @@ export function resolveAssemblyCable(
     throw new Error(
       `assembly.cable "${cable.name}" standard="${cable._parsedProps.standard}" conflicts with its endpoints`,
     )
-  const definition = fromDefinition
+  const definition = { ...fromDefinition, connectorB: toDefinition.connectorA }
   const endpointExit = (
     position: Point3,
     direction: BoardDirectionVector,
@@ -73,9 +78,11 @@ export function resolveAssemblyCable(
     from_source_component_id: from.sourceComponentId,
     to_source_component_id: to.sourceComponentId,
     cableprinter_string:
-      "pinCount" in definition.connectorA
-        ? `${definition.standard}_pins${definition.connectorA.pinCount}`
-        : definition.standard,
+      definition.standard === "bullet" && "diameter" in definition.connectorA
+        ? `bullet_${definition.connectorA.diameter}mm_${definition.connectorA.kind === "bullet_male" ? "male" : "female"}_${definition.connectorB.kind === "bullet_male" ? "male" : "female"}`
+        : "pinCount" in definition.connectorA
+          ? `${definition.standard}_pins${definition.connectorA.pinCount}`
+          : definition.standard,
     path: inferAssemblyCablePath({
       from: fromExit,
       to: toExit,

@@ -1,4 +1,4 @@
-import type { CableInput } from "@tscircuit/cableprinter"
+import { getBulletConnector, type CableInput } from "@tscircuit/cableprinter"
 import type { Point3, SourceComponentBase } from "circuit-json"
 import { mat4, vec3 } from "gl-matrix"
 import { selectAll } from "css-select"
@@ -8,7 +8,7 @@ import { preprocessSelector } from "../base-components/PrimitiveComponent/prepro
 import type { BoardDirectionVector } from "lib/utils/pcb/transform-footprint-insertion-direction"
 import type { AssemblyCable } from "./AssemblyCable"
 import type { AssemblyMotor } from "./AssemblyMotor"
-import type { ConnectorProps } from "@tscircuit/props"
+import type { ParsedConnectorProps } from "@tscircuit/props"
 import {
   getAssemblyScope,
   getComponentsInAssemblyScope,
@@ -113,15 +113,24 @@ export function resolveAssemblyCableEndpoint(
     throw new Error(
       `assembly.cable "${cable.name}" endpoint "${selector}" must name a PCB connector or MOTOR.wireside`,
     )
-  const props = connector._parsedProps as ConnectorProps
+  const props = connector._parsedProps as ParsedConnectorProps
   if (
     props.standard !== "usb_c" &&
     props.standard !== "jst_sh" &&
-    props.standard !== "jst_ph"
+    props.standard !== "jst_ph" &&
+    props.standard !== "bullet"
   )
     throw new Error(
-      `assembly.cable "${cable.name}" cannot infer endpoint "${selector}"; use a connector with standard="usb_c", "jst_sh", or "jst_ph"`,
+      `assembly.cable "${cable.name}" cannot infer endpoint "${selector}"; use a connector with standard="usb_c", "jst_sh", "jst_ph", or "bullet"`,
     )
+  // The connector schema requires diameter and gender when standard is bullet.
+  const bulletConnector =
+    props.standard === "bullet"
+      ? getBulletConnector({
+          diameter: props.bulletDiameter!,
+          gender: props.bulletGender!,
+        })
+      : undefined
   const pcb = cable.root!.db.pcb_component.get(connector.pcb_component_id)!
   const board = connector._getBoard()!
   const layer = pcb.layer === "bottom" ? "bottom" : "top"
@@ -142,8 +151,11 @@ export function resolveAssemblyCableEndpoint(
   const sign = layer === "bottom" ? -1 : 1
   // Top-entry header mouths: JST PH BxB-PH is 6 mm; SH BMxxB is
   // 4.25 mm above copper, paired with jscad-electronics' header models.
-  const height =
-    Math.abs(direction.z) > 0.5
+  const height = bulletConnector
+    ? Math.abs(direction.z) > 0.5
+      ? bulletConnector.bodyDepth
+      : bulletConnector.bodyWidth / 2
+    : Math.abs(direction.z) > 0.5
       ? props.standard === "jst_ph"
         ? 6
         : props.standard === "jst_sh"
@@ -163,8 +175,15 @@ export function resolveAssemblyCableEndpoint(
     },
     direction,
     cableInput:
-      props.standard === "usb_c"
-        ? { standard: "usb_c" }
-        : { standard: props.standard, pinCount: props.pinCount },
+      props.standard === "bullet"
+        ? {
+            standard: "bullet",
+            diameter: props.bulletDiameter!,
+            genderA: props.bulletGender === "male" ? "female" : "male",
+            genderB: props.bulletGender === "male" ? "female" : "male",
+          }
+        : props.standard === "usb_c"
+          ? { standard: "usb_c" }
+          : { standard: props.standard, pinCount: props.pinCount },
   }
 }
