@@ -2,6 +2,7 @@ import { readFileSync, writeFileSync } from "node:fs"
 
 // Exercise the coordinated bullet PRs before npm releases exist. Only CI/preview
 // installations are changed; the checked-in publish manifest retains release specs.
+// Pin the feature revisions even if other PRs publish the same anticipated versions.
 if (
   process.env.GITHUB_EVENT_NAME === "pull_request" ||
   process.env.VERCEL_ENV === "preview"
@@ -17,15 +18,6 @@ if (
       "https://pkg.pr.new/tscircuit/circuit-json-to-gltf@6f2f234",
   }
   for (const [name, preview] of Object.entries(previews)) {
-    const release = manifest.devDependencies[name].replace(/^\^/, "")
-    const response = await fetch(
-      `https://registry.npmjs.org/${encodeURIComponent(name)}/${release}`,
-    )
-    if (response.ok) continue
-    if (response.status !== 404)
-      throw new Error(
-        `Cannot check ${name}@${release}: HTTP ${response.status}`,
-      )
     manifest.devDependencies[name] = preview
     manifest.overrides[name] = preview
     console.log(`Testing ${name} with its immutable bullet PR preview`)
