@@ -74,10 +74,10 @@
     "bun-match-svg": "0.0.12",
     "calculate-elbow": "^0.0.12",
     "chokidar-cli": "^3.0.0",
-    "circuit-json": "^0.0.516",
+    "circuit-json": "https://pkg.pr.new/tscircuit/circuit-json@4ce543c",
     "circuit-json-to-bpc": "^0.0.13",
     "circuit-json-to-connectivity-map": "^0.0.33",
-    "circuit-json-to-gltf": "https://pkg.pr.new/tscircuit/circuit-json-to-gltf@394ca9b",
+    "circuit-json-to-gltf": "https://pkg.pr.new/tscircuit/circuit-json-to-gltf@3536764",
     "circuit-json-to-spice": "^0.0.45",
     "circuit-to-svg": "^0.0.440",
     "concurrently": "^9.1.2",
@@ -145,7 +145,7 @@
   "overrides": {
     "@tscircuit/circuit-json-util": "^0.0.119",
     "@tscircuit/props": "^0.0.689",
-    "circuit-json": "^0.0.516",
+    "circuit-json": "https://pkg.pr.new/tscircuit/circuit-json@4ce543c",
     "@tscircuit/cableprinter": "^0.0.4"
   }
 }

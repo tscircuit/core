@@ -67,6 +67,38 @@ test("inferred JST pin 1 sides follow emitted pins across rotations and PCB laye
           const dx = last.x - first.x,
             dy = last.y - first.y
           const length = Math.hypot(dx, dy)
+          const pin1 =
+            end === "A"
+              ? cable.from_connector_pin1_position
+              : cable.to_connector_pin1_position
+          expect(pin1).toBeDefined()
+          const tipForPosition =
+            end === "A" ? cable.path[0]! : cable.path.at(-1)!
+          const adjacent = end === "A" ? cable.path[1]! : cable.path.at(-2)!
+          const axial = [
+            adjacent.x - tipForPosition.x,
+            adjacent.y - tipForPosition.y,
+            adjacent.z - tipForPosition.z,
+          ]
+          const axialLength = Math.hypot(...axial)
+          const offset = [
+            pin1!.x - tipForPosition.x,
+            pin1!.y - tipForPosition.y,
+            pin1!.z - tipForPosition.z,
+          ]
+          expect((offset[0]! * dx + offset[1]! * dy) / length).toBeCloseTo(
+            -length / 2,
+            5,
+          )
+          expect(
+            offset.reduce(
+              (sum, value, axis) => sum + (value * axial[axis]!) / axialLength,
+              0,
+            ),
+          ).toBeCloseTo(
+            -parseCableString(cable.cableprinter_string).connectorA.bodyDepth,
+            5,
+          )
           const housing = scene.boxes.find(
             (box) => box.label === `CABLE / ${end}-housing`,
           )!

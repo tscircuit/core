@@ -34,7 +34,7 @@ function MotorController(props: BoardProps) {
 
 // Reproduce https://docs.tscircuit.com/elements/assembly-printedpart with
 // the original connector placement and no cable orientation overrides.
-// The legacy panel omits endpoint lookup context to reproduce the old
+// The legacy panel omits resolved pin 1 positions to reproduce the old
 // renderer behavior; fixed panels use the unchanged emitted Circuit JSON.
 test("docs motor-spacer cable plug aligns automatically with its board header", async () => {
   const { circuit } = getTestFixture()
@@ -72,8 +72,8 @@ test("docs motor-spacer cable plug aligns automatically with its board header", 
     element.type === "cad_cable"
       ? {
           ...element,
-          from_source_component_id: "legacy_from",
-          to_source_component_id: "legacy_to",
+          from_connector_pin1_position: undefined,
+          to_connector_pin1_position: undefined,
         }
       : element,
   )
@@ -85,7 +85,7 @@ test("docs motor-spacer cable plug aligns automatically with its board header", 
       {
         title: "Before / route tangents leave connector roll ambiguous",
         code: `// Same circuit, path and camera.
-// Omit endpoint lookup context
+// Omit resolved pin 1 positions
 // to reproduce the legacy roll.
 // Physical geometry is unchanged.
 
