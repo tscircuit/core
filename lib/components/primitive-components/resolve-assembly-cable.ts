@@ -31,16 +31,12 @@ export function resolveAssemblyCable(
     fromDefinition.standard !== toDefinition.standard ||
     (fromDefinition.standard !== "bullet" &&
       fromDefinition.connectorA.kind !== toDefinition.connectorA.kind) ||
-    ("diameter" in fromDefinition.connectorA &&
-      "diameter" in toDefinition.connectorA &&
-      fromDefinition.connectorA.diameter !==
-        toDefinition.connectorA.diameter) ||
     ("pinCount" in fromDefinition.connectorA &&
       "pinCount" in toDefinition.connectorA &&
       fromDefinition.connectorA.pinCount !== toDefinition.connectorA.pinCount)
   )
     throw new Error(
-      `assembly.cable "${cable.name}" endpoints "${cable._parsedProps.from}" and "${cable._parsedProps.to}" have incompatible connector standards or pin counts (including bullet diameters)`,
+      `assembly.cable "${cable.name}" endpoints "${cable._parsedProps.from}" and "${cable._parsedProps.to}" have incompatible connector standards or pin counts`,
     )
   if (
     cable._parsedProps.standard &&
@@ -49,7 +45,23 @@ export function resolveAssemblyCable(
     throw new Error(
       `assembly.cable "${cable.name}" standard="${cable._parsedProps.standard}" conflicts with its endpoints`,
     )
-  const definition = { ...fromDefinition, connectorB: toDefinition.connectorA }
+  const definition =
+    fromDefinition.standard === "bullet" &&
+    "diameter" in fromDefinition.connectorA &&
+    "diameter" in toDefinition.connectorA
+      ? getCableDefinition({
+          standard: "bullet",
+          diameterA: fromDefinition.connectorA.diameter,
+          diameterB: toDefinition.connectorA.diameter,
+          pinCount: fromDefinition.connectorA.pinCount,
+          genderA:
+            fromDefinition.connectorA.kind === "bullet_male"
+              ? "male"
+              : "female",
+          genderB:
+            toDefinition.connectorA.kind === "bullet_male" ? "male" : "female",
+        })
+      : { ...fromDefinition, connectorB: toDefinition.connectorA }
   const endpointExit = (
     position: Point3,
     direction: BoardDirectionVector,
@@ -79,7 +91,7 @@ export function resolveAssemblyCable(
     to_source_component_id: to.sourceComponentId,
     cableprinter_string:
       definition.standard === "bullet" && "diameter" in definition.connectorA
-        ? `bullet${definition.connectorA.pinCount === 1 ? "" : definition.connectorA.pinCount}_d${definition.connectorA.diameter}mm_a${definition.connectorA.kind === "bullet_male" ? "male" : "female"}_b${definition.connectorB.kind === "bullet_male" ? "male" : "female"}`
+        ? `bullet${definition.connectorA.pinCount === 1 ? "" : definition.connectorA.pinCount}_${"diameter" in definition.connectorB && definition.connectorA.diameter !== definition.connectorB.diameter ? `da${definition.connectorA.diameter}mm_db${definition.connectorB.diameter}mm` : `d${definition.connectorA.diameter}mm`}_a${definition.connectorA.kind === "bullet_male" ? "male" : "female"}_b${definition.connectorB.kind === "bullet_male" ? "male" : "female"}`
         : "pinCount" in definition.connectorA
           ? `${definition.standard}_pins${definition.connectorA.pinCount}`
           : definition.standard,

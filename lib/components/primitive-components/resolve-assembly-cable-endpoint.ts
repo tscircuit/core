@@ -17,6 +17,8 @@ import { resolveMotorFaceMount } from "./resolve-motor-face-mount"
 import type { AssemblyPlacement } from "./resolve-assembly-placement"
 import { resolveAssemblyMotorPlacement } from "./resolve-assembly-motor-placement"
 import { resolveAssemblyMotorRotation } from "./resolve-assembly-motor-rotation"
+import type { AssemblySubassembly } from "./AssemblySubassembly"
+import { resolveCadAssemblyCableEndpoint } from "./resolve-cad-assembly-cable-endpoint"
 
 /** Connector mating-center point and outward unit direction in right-handed
  * circuit world, mm (+X right, +Y top, +Z above). Points acquire translation;
@@ -34,6 +36,29 @@ export function resolveAssemblyCableEndpoint(
   selector: string,
 ): AssemblyCableEndpoint {
   const scoped = getComponentsInAssemblyScope(cable)
+  const namedConnector = selector.match(
+    /^([A-Za-z][A-Za-z0-9_]*)\.([A-Za-z][A-Za-z0-9_]*)$/,
+  )
+  if (namedConnector) {
+    const assemblies = scoped.filter(
+      (part): part is AssemblySubassembly =>
+        part.componentName === "AssemblySubassembly" &&
+        part.name === namedConnector[1],
+    )
+    if (assemblies.length > 0) {
+      if (assemblies.length !== 1)
+        throw new Error(
+          `assembly.cable "${cable.name}" endpoint "${selector}" must name exactly one CAD assembly`,
+        )
+      const owner = assemblies[0]!
+      const connector = owner._parsedProps.cableConnectors?.[namedConnector[2]!]
+      if (!connector)
+        throw new Error(
+          `Assembly "${owner.name}" has no cable connector named "${namedConnector[2]}"`,
+        )
+      return resolveCadAssemblyCableEndpoint(owner, connector)
+    }
+  }
   const motorReference = selector.match(/^(.+)\.wireside$/)
   if (motorReference) {
     const motors = scoped.filter(

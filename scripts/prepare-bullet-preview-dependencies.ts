@@ -10,12 +10,12 @@ if (
   const packagePath = new URL("../package.json", import.meta.url)
   const manifest = JSON.parse(readFileSync(packagePath, "utf8"))
   const previews = {
-    "@tscircuit/props": "https://pkg.pr.new/@tscircuit/props@f165269",
+    "@tscircuit/props": "https://pkg.pr.new/@tscircuit/props@bc671a1",
     "circuit-json": "https://pkg.pr.new/circuit-json@a2aa046",
     "@tscircuit/cableprinter":
-      "https://pkg.pr.new/tscircuit/cableprinter/@tscircuit/cableprinter@6ee67c3",
+      "https://pkg.pr.new/tscircuit/cableprinter/@tscircuit/cableprinter@e7b28af",
     "circuit-json-to-gltf":
-      "https://pkg.pr.new/tscircuit/circuit-json-to-gltf@6794bae",
+      "https://pkg.pr.new/tscircuit/circuit-json-to-gltf@3f7eb88",
   }
   for (const [name, preview] of Object.entries(previews)) {
     manifest.devDependencies[name] = preview
