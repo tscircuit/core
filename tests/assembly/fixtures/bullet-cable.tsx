@@ -3,17 +3,36 @@ import { RootCircuit } from "lib/RootCircuit"
 import type { BulletDiameter, BulletGender } from "@tscircuit/cableprinter"
 
 /** Representative PCB bodies for the fixture; custom footprints supply their own CAD. */
-function bulletPcbBody(diameter: BulletDiameter, gender: BulletGender) {
+function bulletPcbBody(
+  diameter: BulletDiameter,
+  gender: BulletGender,
+  pinCount = 1,
+) {
   return {
     jscad: {
       type: "colorize",
       color: [0.83, 0.64, 0.22, 1],
-      shape: {
-        type: "cylinder",
-        radius: (diameter + (gender === "male" ? 0.6 : 1)) / 2,
-        height: diameter * 3.5,
-        center: [0, 0, diameter * 1.75],
-      },
+      shape:
+        pinCount === 1
+          ? {
+              type: "cylinder",
+              radius: (diameter + (gender === "male" ? 0.6 : 1)) / 2,
+              height: diameter * 3.5,
+              center: [0, 0, diameter * 1.75],
+            }
+          : {
+              type: "union",
+              shapes: Array.from({ length: pinCount }, (_, index) => ({
+                type: "cylinder",
+                radius: (diameter + (gender === "male" ? 0.6 : 1)) / 2,
+                height: diameter * 3.5,
+                center: [
+                  (index - (pinCount - 1) / 2) * (diameter + 2),
+                  0,
+                  diameter * 1.75,
+                ],
+              })),
+            },
     },
   }
 }
@@ -25,8 +44,12 @@ export function createBulletCableCircuit({
   toGender = "female",
   toDiameter = diameter,
   layer = "top",
+  pinCount = 1,
+  toPinCount = pinCount,
 }: {
   diameter: BulletDiameter
+  pinCount?: number
+  toPinCount?: number
   fromGender?: BulletGender
   toGender?: BulletGender
   toDiameter?: BulletDiameter
@@ -41,17 +64,22 @@ export function createBulletCableCircuit({
           standard="bullet"
           bulletDiameter={diameter}
           bulletGender={fromGender}
-          cadModel={bulletPcbBody(diameter, fromGender)}
+          pinCount={pinCount}
+          cadModel={bulletPcbBody(diameter, fromGender, pinCount)}
           pcbX={-25}
           layer={layer}
           footprint={
             <footprint>
-              <platedhole
-                portHints={["pin1"]}
-                holeDiameter={1.5}
-                outerDiameter={3}
-                shape="circle"
-              />
+              {Array.from({ length: pinCount }, (_, index) => (
+                <platedhole
+                  key={index}
+                  pcbX={(index - (pinCount - 1) / 2) * (diameter + 2)}
+                  portHints={[`pin${index + 1}`]}
+                  holeDiameter={1.5}
+                  outerDiameter={3}
+                  shape="circle"
+                />
+              ))}
             </footprint>
           }
         />
@@ -60,17 +88,22 @@ export function createBulletCableCircuit({
           standard="bullet"
           bulletDiameter={toDiameter}
           bulletGender={toGender}
-          cadModel={bulletPcbBody(toDiameter, toGender)}
+          pinCount={toPinCount}
+          cadModel={bulletPcbBody(toDiameter, toGender, toPinCount)}
           pcbX={25}
           layer={layer}
           footprint={
             <footprint>
-              <platedhole
-                portHints={["pin1"]}
-                holeDiameter={1.5}
-                outerDiameter={3}
-                shape="circle"
-              />
+              {Array.from({ length: toPinCount }, (_, index) => (
+                <platedhole
+                  key={index}
+                  pcbX={(index - (toPinCount - 1) / 2) * (toDiameter + 2)}
+                  portHints={[`pin${index + 1}`]}
+                  holeDiameter={1.5}
+                  outerDiameter={3}
+                  shape="circle"
+                />
+              ))}
             </footprint>
           }
         />

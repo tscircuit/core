@@ -79,7 +79,7 @@ export function resolveAssemblyCable(
     to_source_component_id: to.sourceComponentId,
     cableprinter_string:
       definition.standard === "bullet" && "diameter" in definition.connectorA
-        ? `bullet_${definition.connectorA.diameter}mm_${definition.connectorA.kind === "bullet_male" ? "male" : "female"}_${definition.connectorB.kind === "bullet_male" ? "male" : "female"}`
+        ? `bullet${definition.connectorA.pinCount === 1 ? "" : definition.connectorA.pinCount}_${definition.connectorA.diameter}mm_${definition.connectorA.kind === "bullet_male" ? "male" : "female"}_${definition.connectorB.kind === "bullet_male" ? "male" : "female"}`
         : "pinCount" in definition.connectorA
           ? `${definition.standard}_pins${definition.connectorA.pinCount}`
           : definition.standard,

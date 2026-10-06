@@ -97,7 +97,7 @@ export class Connector<
     super.initPorts({
       pinCount:
         props.standard === "bullet"
-          ? 1
+          ? (props.pinCount ?? 1)
           : isJstConnectorStandard(props.standard)
             ? props.pinCount
             : undefined,
@@ -379,7 +379,8 @@ export class Connector<
       supplier_part_numbers: props.supplierPartNumbers,
       display_name: props.displayName,
       standard: props.standard,
-      pin_count: props.standard === "bullet" ? 1 : props.pinCount,
+      pin_count:
+        props.standard === "bullet" ? (props.pinCount ?? 1) : props.pinCount,
       ...(props.standard === "bullet"
         ? {
             bullet_diameter: props.bulletDiameter,
@@ -428,7 +429,8 @@ export class Connector<
       name: this.name,
       manufacturer_part_number: resolveManufacturerPartNumber(props),
       standard,
-      pin_count: props.standard === "bullet" ? 1 : props.pinCount,
+      pin_count:
+        props.standard === "bullet" ? (props.pinCount ?? 1) : props.pinCount,
       ...(props.standard === "bullet"
         ? {
             bullet_diameter: props.bulletDiameter,

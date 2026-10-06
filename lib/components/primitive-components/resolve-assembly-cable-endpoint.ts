@@ -129,6 +129,7 @@ export function resolveAssemblyCableEndpoint(
       ? getBulletConnector({
           diameter: props.bulletDiameter!,
           gender: props.bulletGender!,
+          pinCount: props.pinCount ?? 1,
         })
       : undefined
   const pcb = cable.root!.db.pcb_component.get(connector.pcb_component_id)!
@@ -154,7 +155,7 @@ export function resolveAssemblyCableEndpoint(
   const height = bulletConnector
     ? Math.abs(direction.z) > 0.5
       ? bulletConnector.bodyDepth
-      : bulletConnector.bodyWidth / 2
+      : bulletConnector.bodyHeight / 2
     : Math.abs(direction.z) > 0.5
       ? props.standard === "jst_ph"
         ? 6
@@ -179,6 +180,7 @@ export function resolveAssemblyCableEndpoint(
         ? {
             standard: "bullet",
             diameter: props.bulletDiameter!,
+            pinCount: props.pinCount ?? 1,
             genderA: props.bulletGender === "male" ? "female" : "male",
             genderB: props.bulletGender === "male" ? "female" : "male",
           }
