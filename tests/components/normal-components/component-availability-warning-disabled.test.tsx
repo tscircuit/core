@@ -1,16 +1,19 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("availability checks default off and skip unassembled, BOM-disabled, and non-JLC parts", async () => {
+test("availability defaults off and skips unsupported engines, unassembled and disabled parts", async () => {
   for (const checkAvailability of [undefined, false, true]) {
-    const calls: string[] = []
+    let calls = 0
     const { circuit } = getTestFixture({
       platform: {
         checkAvailability,
-        platformFetch: (async (url: Parameters<typeof fetch>[0]) => {
-          calls.push(String(url))
-          throw new Error("No lookup expected")
-        }) as unknown as typeof fetch,
+        partsEngine: {
+          findPart: () => ({}),
+          fetchPartAvailability: async () => {
+            calls++
+            throw new Error("No lookup expected")
+          },
+        },
       },
     })
     circuit.add(
@@ -34,51 +37,62 @@ test("availability checks default off and skip unassembled, BOM-disabled, and no
           name="R3"
           resistance="1k"
           footprint="0402"
-          supplierPartNumbers={{ lcsc: ["C3"] }}
-        />
-        <resistor
-          name="R4"
-          resistance="1k"
-          footprint="0402"
           supplierPartNumbers={{ jlcpcb: [" "] }}
         />
         <group name="no-bom" subcircuit bomDisabled>
           <resistor
-            name="R5"
+            name="R4"
             resistance="1k"
             footprint="0402"
-            supplierPartNumbers={{ jlcpcb: ["C5"] }}
+            supplierPartNumbers={{ jlcpcb: ["C4"] }}
           />
         </group>
       </board>,
     )
     await circuit.renderUntilSettled()
-    expect(calls).toEqual([])
+    expect(calls).toBe(0)
     expect(
       circuit.db.source_component_availability_warning.list(),
     ).toHaveLength(0)
   }
-  const { circuit } = getTestFixture({
-    platform: {
+  for (const platform of [
+    { checkAvailability: true },
+    { checkAvailability: true, partsEngine: { findPart: () => ({}) } },
+    {
+      checkAvailability: true,
+      partsEngineDisabled: true,
+      partsEngine: {
+        findPart: () => ({}),
+        fetchPartAvailability: async () => {
+          throw new Error("No lookup expected")
+        },
+      },
+    },
+    {
       checkAvailability: true,
       drcChecksDisabled: true,
-      platformFetch: (async () => {
-        throw new Error("No lookup expected")
-      }) as unknown as typeof fetch,
+      partsEngine: {
+        findPart: () => ({}),
+        fetchPartAvailability: async () => {
+          throw new Error("No lookup expected")
+        },
+      },
     },
-  })
-  circuit.add(
-    <board routingDisabled>
-      <resistor
-        name="R1"
-        resistance="1k"
-        footprint="0402"
-        supplierPartNumbers={{ jlcpcb: ["C1"] }}
-      />
-    </board>,
-  )
-  await circuit.renderUntilSettled()
-  expect(circuit.db.source_component_availability_warning.list()).toHaveLength(
-    0,
-  )
+  ]) {
+    const { circuit } = getTestFixture({ platform })
+    circuit.add(
+      <board routingDisabled>
+        <resistor
+          name="R1"
+          resistance="1k"
+          footprint="0402"
+          supplierPartNumbers={{ jlcpcb: ["C1"] }}
+        />
+      </board>,
+    )
+    await circuit.renderUntilSettled()
+    expect(
+      circuit.db.source_component_availability_warning.list(),
+    ).toHaveLength(0)
+  }
 })

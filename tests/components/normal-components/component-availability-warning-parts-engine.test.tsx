@@ -1,21 +1,13 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("availability waits for async parts selection and treats failed lookups as advisory", async () => {
+test("availability waits for async parts selection and treats failed engine lookups as advisory", async () => {
   let finishSelection!: () => void
   const selection = new Promise<void>((resolve) => {
     finishSelection = resolve
   })
   let calls = 0
-  const { circuit } = getTestFixture({
-    platform: {
-      checkAvailability: true,
-      platformFetch: (async () => {
-        calls++
-        throw new Error("Service unavailable")
-      }) as unknown as typeof fetch,
-    },
-  })
+  const { circuit } = getTestFixture({ platform: { checkAvailability: true } })
   circuit.add(
     <board
       routingDisabled
@@ -23,6 +15,10 @@ test("availability waits for async parts selection and treats failed lookups as 
         findPart: async () => {
           await selection
           return { jlcpcb: ["C1525"] }
+        },
+        fetchPartAvailability: async () => {
+          calls++
+          throw new Error("Service unavailable")
         },
       }}
     >

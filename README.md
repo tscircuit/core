@@ -34,7 +34,11 @@ Stock checks are disabled by default. Opt in with `platform.checkAvailability`
 and await the asynchronous render:
 
 ```tsx
-const circuit = new Circuit({ platform: { checkAvailability: true } })
+import { jlcPartsEngine } from "@tscircuit/parts-engine"
+
+const circuit = new Circuit({
+  platform: { checkAvailability: true, partsEngine: jlcPartsEngine },
+})
 circuit.add(
   <board routingDisabled>
     <resistor
@@ -48,12 +52,16 @@ circuit.add(
 await circuit.renderUntilSettled()
 ```
 
-Core queries `jlcsearch.tscircuit.com` after parts-engine selection. If none of a
-component's JLCPCB alternatives can be confirmed in stock, it emits a
+Core calls the configured parts engine's optional `fetchPartAvailability` method
+after parts-engine selection. If none of a supplier's alternatives can be
+confirmed in stock, it emits a
 `source_component_availability_warning` saying the component “may not have
 availability.” Missing stock data, failed requests, and timeouts also produce
 this advisory warning. Parts marked `doNotPlace`, BOM-disabled parts, and disabled
-DRC checks are skipped. Platforms can supply `platformFetch` for these requests.
+DRC checks are skipped. Engines without the method and unsupported suppliers
+are skipped. Platforms can supply `platformFetch` for these requests.
+The JLC engine queries `jlcsearch.tscircuit.com` and returns stock, unit price,
+currency, and an optional lookup timestamp; core uses stock for warnings.
 
 Enabling this setting adds network requests and non-deterministic diagnostics.
 The service may cache stock data, so warnings do not guarantee current JLCPCB

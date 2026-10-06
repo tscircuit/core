@@ -1,18 +1,20 @@
 import { expect, test } from "bun:test"
-import { checkJlcPartAvailability } from "lib/utils/jlc-part-availability"
+import { checkPartAvailability } from "lib/utils/part-availability"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import type { PartsEngine } from "@tscircuit/props"
 
-test("availability timeout settles even if platformFetch ignores abort", async () => {
+test("availability timeout settles even if the engine ignores abort", async () => {
   const originalSetTimeout = globalThis.setTimeout
-  let signal: AbortSignal | null | undefined
-  const { circuit } = getTestFixture({
-    platform: {
-      checkAvailability: true,
-      platformFetch: ((_url, options) => {
-        signal = options?.signal
-        return new Promise<Response>(() => {})
-      }) as typeof fetch,
+  let signal: AbortSignal | undefined
+  const partsEngine: PartsEngine = {
+    findPart: () => ({}),
+    fetchPartAvailability: (request) => {
+      signal = request.signal
+      return new Promise(() => {})
     },
+  }
+  const { circuit } = getTestFixture({
+    platform: { checkAvailability: true, partsEngine },
   })
   globalThis.setTimeout = ((
     callback: (...args: any[]) => void,
@@ -25,7 +27,13 @@ test("availability timeout settles even if platformFetch ignores abort", async (
       ...args,
     )) as typeof setTimeout
   try {
-    expect(await checkJlcPartAvailability(circuit, "C1525")).toBe(false)
+    expect(
+      await checkPartAvailability(circuit, {
+        partsEngine,
+        supplierName: "jlcpcb",
+        supplierPartNumber: "C1525",
+      }),
+    ).toBe(false)
     expect(signal?.aborted).toBe(true)
   } finally {
     globalThis.setTimeout = originalSetTimeout

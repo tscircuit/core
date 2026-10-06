@@ -5,18 +5,22 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 test("supplier updates discard stale lookups and clear outdated availability warnings", async () => {
   const requests: {
     partNumber: string
-    resolve: (response: Response) => void
+    resolve: (availability: {
+      stock: number
+      price: number | null
+      currency: string | null
+    }) => void
   }[] = []
   const { circuit } = getTestFixture({
     platform: {
       checkAvailability: true,
-      platformFetch: ((url) =>
-        new Promise<Response>((resolve) => {
-          requests.push({
-            partNumber: new URL(String(url)).searchParams.get("q")!,
-            resolve,
-          })
-        })) as typeof fetch,
+      partsEngine: {
+        findPart: () => ({}),
+        fetchPartAvailability: ({ supplierPartNumber }) =>
+          new Promise((resolve) => {
+            requests.push({ partNumber: supplierPartNumber, resolve })
+          }),
+      },
     },
   })
   circuit.add(
@@ -30,21 +34,24 @@ test("supplier updates discard stale lookups and clear outdated availability war
     </board>,
   )
   circuit.render()
+  await Promise.resolve()
   const resistor = circuit.selectOne(".R1") as NormalComponent
   circuit.db.source_component.update(resistor.source_component_id!, {
     supplier_part_numbers: { jlcpcb: ["C2"] },
   })
   resistor.updateComponentAvailabilityWarning()
+  await Promise.resolve()
   expect(requests.map((request) => request.partNumber)).toEqual(["C1", "C2"])
-  requests[0].resolve(Response.json({ components: [{ lcsc: 1, stock: 0 }] }))
-  requests[1].resolve(Response.json({ components: [{ lcsc: 2, stock: 100 }] }))
+  requests[0].resolve({ stock: 0, price: null, currency: null })
+  requests[1].resolve({ stock: 100, price: null, currency: null })
   await circuit.renderUntilSettled()
   expect(circuit.db.source_component_availability_warning.list()).toHaveLength(
     0,
   )
 
   resistor.updateComponentAvailabilityWarning()
-  requests[2].resolve(Response.json({ components: [{ lcsc: 2, stock: 0 }] }))
+  await Promise.resolve()
+  requests[2].resolve({ stock: 0, price: null, currency: null })
   await circuit.renderUntilSettled()
   expect(circuit.db.source_component_availability_warning.list()).toHaveLength(
     1,

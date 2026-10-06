@@ -58,7 +58,7 @@
     "@tscircuit/miniflex": "^0.0.4",
     "@tscircuit/modelprinter": "^0.0.6",
     "@tscircuit/ngspice-spice-engine": "^0.0.20",
-    "@tscircuit/props": "https://pkg.pr.new/@tscircuit/props@0cf413b",
+    "@tscircuit/props": "https://pkg.pr.new/@tscircuit/props@f9fd53a",
     "@tscircuit/schematic-match-adapt": "^0.0.18",
     "@tscircuit/schematic-trace-solver": "https://jscdn.tscircuit.com/@tscircuit/schematic-trace-solver/0.0.228.tgz",
     "@tscircuit/solver-utils": "^0.0.16",
@@ -144,7 +144,7 @@
   },
   "overrides": {
     "@tscircuit/circuit-json-util": "^0.0.119",
-    "@tscircuit/props": "https://pkg.pr.new/@tscircuit/props@0cf413b",
+    "@tscircuit/props": "https://pkg.pr.new/@tscircuit/props@f9fd53a",
     "circuit-json": "https://pkg.pr.new/circuit-json@77cc329",
     "@tscircuit/cableprinter": "^0.0.4"
   }
