@@ -21,7 +21,7 @@ export class AssemblyMotor extends PrimitiveComponent<
     const base = this._parsedProps.model ?? this._parsedProps.standard!
     const wireConnection = this._parsedProps.wireConnection
     if (wireConnection === undefined) return base
-    return `${base}_${wireConnection === "jst-ph-6" ? "jstph6" : wireConnection === "none" ? "nowires" : "wirestubs"}`
+    return `${base}_${wireConnection === "jst6_ph" ? "jstph6" : wireConnection === "none" ? "nowires" : "wirestubs"}`
   }
 
   get motorModel() {
