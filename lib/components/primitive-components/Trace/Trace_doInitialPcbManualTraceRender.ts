@@ -15,7 +15,7 @@ import { TraceConnectionError } from "lib/errors"
 import { getPcbSelectorErrorForTracePort } from "./getPcbSelectorErrorForTracePort"
 import { jlcMinTolerances } from "@tscircuit/jlcpcb-manufacturing-specs"
 import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
-import { Trace_renderPcbPaths } from "./Trace_renderPcbPaths"
+import { renderPcbPaths } from "./render-pcb-paths"
 
 const findInflatedPcbViaForPoint = (
   vias: PcbVia[] | undefined,
@@ -263,7 +263,7 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
   }
 
   if (props.pcbPaths) {
-    Trace_renderPcbPaths({
+    renderPcbPaths({
       trace,
       paths: props.pcbPaths,
       ports,

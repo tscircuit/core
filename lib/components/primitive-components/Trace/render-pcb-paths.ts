@@ -3,11 +3,11 @@ import type { LayerRef } from "circuit-json"
 import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
 import { getViaDiameterDefaults } from "../../../utils/pcbStyle/getViaDiameterDefaults"
 import type { Port } from "../Port"
+import { getRouteForPcbPath } from "./get-route-for-pcb-path"
 import type { Trace } from "./Trace"
-import { Trace_getRouteForPcbPath } from "./Trace_getRouteForPcbPath"
 import { getTraceLength } from "./trace-utils/compute-trace-length"
 
-interface TraceRenderPcbPathsParams {
+interface RenderPcbPathsInput {
   trace: Trace
   paths: PcbPath[]
   ports: Port[]
@@ -15,13 +15,13 @@ interface TraceRenderPcbPathsParams {
   width: number
 }
 
-export const Trace_renderPcbPaths = ({
+export const renderPcbPaths = ({
   trace,
   paths,
   ports,
   portsWithSelectors,
   width,
-}: TraceRenderPcbPathsParams): void => {
+}: RenderPcbPathsInput): void => {
   const { db } = trace.root!
   const { pcbPathRelativeTo } = trace._parsedProps
   const subcircuit = trace.getSubcircuit()
@@ -52,12 +52,7 @@ export const Trace_renderPcbPaths = ({
     db.source_trace.get(trace.source_trace_id!)?.subcircuit_connectivity_map_key
 
   for (const path of paths) {
-    const route = Trace_getRouteForPcbPath({
-      trace,
-      path,
-      anchorPort,
-      width,
-    })
+    const route = getRouteForPcbPath({ trace, path, anchorPort, width })
     if (!route || route.length < 2) continue
 
     const pcbTrace = db.pcb_trace.insert({
