@@ -1,4 +1,7 @@
-import type { BoardProps } from "@tscircuit/props"
+import {
+  boardProps as boardPropsSchema,
+  type BoardProps,
+} from "@tscircuit/props"
 import type { PcbBoard } from "circuit-json"
 import { Board } from "lib/components/normal-components/Board/Board"
 import type { InflatorContext } from "../InflatorFn"
@@ -38,6 +41,18 @@ export function inflatePcbBoard(
   if (pcbBoard.outline) boardProps.outline = pcbBoard.outline
   if (pcbBoard.thickness) boardProps.thickness = pcbBoard.thickness
   if (pcbBoard.material) boardProps.material = pcbBoard.material
+  if (pcbBoard.stackup !== undefined) {
+    const importedLayers = boardPropsSchema.shape.layers.safeParse(
+      pcbBoard.num_layers ?? null,
+    )
+    if (!importedLayers.success) {
+      throw new Error(
+        "Imported board with physical stackup needs a supported copper layer count. Supply num_layers as 1, 2, 4, 6, 8 or 10.",
+      )
+    }
+    boardProps.layers = importedLayers.data
+    boardProps.stackup = pcbBoard.stackup
+  }
   if (pcbBoard.is_via_in_pad_allowed !== undefined) {
     boardProps.isViaInPadAllowed = pcbBoard.is_via_in_pad_allowed
   }
