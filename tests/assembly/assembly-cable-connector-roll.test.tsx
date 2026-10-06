@@ -1,5 +1,7 @@
 import { expect, test } from "bun:test"
 import { assembly } from "lib"
+import { convertCircuitJsonTo3D } from "circuit-json-to-gltf"
+import { parseCableString } from "@tscircuit/cableprinter"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { expectAssemblySnapshot } from "./fixtures/expect-assembly-snapshot"
 
@@ -36,9 +38,12 @@ test("inferred JST plug width directions follow emitted pins across rotations an
         )
         await circuit.renderUntilSettled()
         const cable = circuit.db.cad_cable.list()[0]!
-        for (const [name, width] of [
-          ["J1", cable.from_connector_width_direction],
-          ["J2", cable.to_connector_width_direction],
+        const scene = await convertCircuitJsonTo3D(circuit.getCircuitJson(), {
+          renderBoardTextures: false,
+        })
+        for (const [name, end] of [
+          ["J1", "A"],
+          ["J2", "B"],
         ] as const) {
           const connector = circuit.db.source_component
             .list()
@@ -62,9 +67,18 @@ test("inferred JST plug width directions follow emitted pins across rotations an
           const dx = last.x - first.x,
             dy = last.y - first.y
           const length = Math.hypot(dx, dy)
-          expect(width!.x).toBeCloseTo(dx / length, 5)
-          expect(width!.y).toBeCloseTo(dy / length, 5)
-          expect(width!.z).toBeCloseTo(0, 5)
+          const housing = scene.boxes.find(
+            (box) => box.label === `CABLE / ${end}-housing`,
+          )!
+          const projection = housing.mesh!.triangles.flatMap((triangle) =>
+            triangle.vertices.map(
+              (vertex) => (vertex.x * dx + vertex.z * dy) / length,
+            ),
+          )
+          expect(Math.max(...projection) - Math.min(...projection)).toBeCloseTo(
+            parseCableString(cable.cableprinter_string).connectorA.bodyWidth,
+            5,
+          )
         }
         if (standard === "jst_ph" && angle !== 35) {
           panels.push({
@@ -104,4 +118,4 @@ test("inferred JST plug width directions follow emitted pins across rotations an
     columns: 2,
     panels,
   })
-})
+}, 30_000)

@@ -72,8 +72,6 @@ export function resolveAssemblyCable(
     name: cable.name!,
     from_source_component_id: from.sourceComponentId,
     to_source_component_id: to.sourceComponentId,
-    from_connector_width_direction: from.widthDirection,
-    to_connector_width_direction: to.widthDirection,
     cableprinter_string:
       "pinCount" in definition.connectorA
         ? `${definition.standard}_pins${definition.connectorA.pinCount}`

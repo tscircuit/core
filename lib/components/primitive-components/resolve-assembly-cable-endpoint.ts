@@ -6,10 +6,6 @@ import { NormalComponent } from "../base-components/NormalComponent"
 import { cssSelectPrimitiveComponentAdapter } from "../base-components/PrimitiveComponent/cssSelectPrimitiveComponentAdapter"
 import { preprocessSelector } from "../base-components/PrimitiveComponent/preprocessSelector"
 import type { BoardDirectionVector } from "lib/utils/pcb/transform-footprint-insertion-direction"
-import {
-  isFootprintFlipped,
-  transformFootprintInsertionDirectionVector,
-} from "lib/utils/pcb/transform-footprint-insertion-direction"
 import type { AssemblyCable } from "./AssemblyCable"
 import type { AssemblyMotor } from "./AssemblyMotor"
 import type { ConnectorProps } from "@tscircuit/props"
@@ -30,8 +26,6 @@ export interface AssemblyCableEndpoint {
   sourceComponentId: SourceComponentBase["source_component_id"]
   position: Point3
   direction: BoardDirectionVector
-  /** Connector local +X width direction, circuit-world unit vector (no translation). */
-  widthDirection: BoardDirectionVector
   cableInput: CableInput
 }
 
@@ -88,13 +82,6 @@ export function resolveAssemblyCableEndpoint(
       [reference.position.x, reference.position.y, reference.position.z],
       orientation,
     )
-    // createNemaMotorWireGeometry places its pin row on local +Y, then
-    // rotates it by wireSideAngle about Z, just like the wireside direction.
-    const widthDirection = vec3.transformMat4(
-      vec3.create(),
-      [-reference.direction.y, reference.direction.x, 0],
-      orientation,
-    )
     // NEMA's PH header mating face is 6 mm beyond its body-side reference,
     // as specified by jscad-electronics createNemaMotorWireGeometry.
     return {
@@ -105,11 +92,6 @@ export function resolveAssemblyCableEndpoint(
         z: point[2] + placement.position.z + direction[2] * 6,
       },
       direction: { x: direction[0], y: direction[1], z: direction[2] },
-      widthDirection: {
-        x: widthDirection[0],
-        y: widthDirection[1],
-        z: widthDirection[2],
-      },
       cableInput: { standard: "jst_ph", pinCount: 6 },
     }
   }
@@ -172,23 +154,6 @@ export function resolveAssemblyCableEndpoint(
         : props.standard === "jst_sh"
           ? 1.4
           : 2.25
-  // Stock JST headers have their pin row along footprint-local X. Apply the
-  // paired pad transform, including bottom-layer reflection, rather than
-  // guessing roll from the cable's route. A side-entry port uses the in-plane
-  // direction perpendicular to insertion when local X is the insertion axis.
-  const localX = transformFootprintInsertionDirectionVector({
-    insertionDirection: "from_right",
-    rotationDegrees: pcb.rotation,
-    isFlipped: isFootprintFlipped({
-      componentLayer: layer,
-      originalLayer: connector._getFootprintOriginalLayer(),
-    }),
-  })!
-  const outward = vec3.fromValues(direction.x, direction.y, direction.z)
-  const width = vec3.fromValues(localX.x, localX.y, localX.z)
-  vec3.scaleAndAdd(width, width, outward, -vec3.dot(width, outward))
-  if (vec3.length(width) < 1e-6) vec3.cross(width, [0, 0, sign], outward)
-  vec3.normalize(width, width)
   return {
     sourceComponentId: connector.source_component_id,
     position: {
@@ -197,7 +162,6 @@ export function resolveAssemblyCableEndpoint(
       z: sign * (board.boardThickness / 2 + height),
     },
     direction,
-    widthDirection: { x: width[0], y: width[1], z: width[2] },
     cableInput:
       props.standard === "usb_c"
         ? { standard: "usb_c" }
