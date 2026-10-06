@@ -1,4 +1,8 @@
-type SvgPathPaint = "fill" | "stroke"
+import {
+  getSvgElementLocalPaint,
+  getSvgStylesheetPaintRules,
+  type SvgPathPaint,
+} from "./get-svg-stylesheet-paint"
 
 type SvgPaintSettings = Record<SvgPathPaint, string>
 
@@ -8,55 +12,16 @@ const DEFAULT_SVG_PAINT: SvgPaintSettings = {
   stroke: "none",
 }
 
-const getAttribute = ({
-  attributeName,
-  pathTag,
-}: {
-  attributeName: string
-  pathTag: string
-}): string | undefined => {
-  const attributePattern = new RegExp(
-    `(?:^|\\s)${attributeName}\\s*=\\s*(["'])(.*?)\\1`,
-    "iu",
-  )
-  return pathTag.match(attributePattern)?.[2]
-}
-
-const getInlineStylePaint = ({
-  paint,
-  pathTag,
-}: {
-  paint: SvgPathPaint
-  pathTag: string
-}): string | undefined => {
-  const style = getAttribute({ attributeName: "style", pathTag })
-  if (!style) return undefined
-
-  for (const declaration of style.split(";")) {
-    const [propertyName, propertyPaint] = declaration.split(":", 2)
-    if (propertyName?.trim().toLowerCase() === paint) {
-      return propertyPaint?.trim()
-    }
-  }
-  return undefined
-}
-
 const resolveElementPaint = ({
   inheritedPaint,
+  localPaint,
   paint,
-  tag,
 }: {
   inheritedPaint: string
+  localPaint: string | undefined
   paint: SvgPathPaint
-  tag: string
 }): string => {
-  const localPaint =
-    getInlineStylePaint({ paint, pathTag: tag }) ??
-    getAttribute({ attributeName: paint, pathTag: tag })
-  const normalizedPaint = localPaint
-    ?.replace(/\s*!important\s*$/iu, "")
-    .trim()
-    .toLowerCase()
+  const normalizedPaint = localPaint?.trim().toLowerCase()
 
   if (!normalizedPaint || normalizedPaint === "inherit") return inheritedPaint
   if (normalizedPaint === "unset") return inheritedPaint
@@ -84,6 +49,7 @@ export const getSvgWithPathPaint = ({
   svg: string
 }): string => {
   const paintStack: SvgPaintSettings[] = []
+  const stylesheetRules = getSvgStylesheetPaintRules(svg)
 
   return svg.replace(SVG_ELEMENT_TAG_PATTERN, (tag) => {
     const elementName = getElementName(tag)
@@ -98,13 +64,23 @@ export const getSvgWithPathPaint = ({
     const elementPaint: SvgPaintSettings = {
       fill: resolveElementPaint({
         inheritedPaint: inheritedPaint.fill,
+        localPaint: getSvgElementLocalPaint({
+          elementName,
+          paint: "fill",
+          stylesheetRules,
+          tag,
+        }),
         paint: "fill",
-        tag,
       }),
       stroke: resolveElementPaint({
         inheritedPaint: inheritedPaint.stroke,
+        localPaint: getSvgElementLocalPaint({
+          elementName,
+          paint: "stroke",
+          stylesheetRules,
+          tag,
+        }),
         paint: "stroke",
-        tag,
       }),
     }
 
