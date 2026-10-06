@@ -9,7 +9,11 @@ export const getSvgSelectorSpecificity = (selector: Selector[]): number => {
     if (token.type === SelectorType.Tag) tagCount += 1
     if (token.type === SelectorType.PseudoElement) tagCount += 1
     if (token.type === SelectorType.Attribute) {
-      if (token.name === "id" && token.action === AttributeAction.Equals) {
+      if (
+        token.name === "id" &&
+        token.action === AttributeAction.Equals &&
+        token.ignoreCase === "quirks"
+      ) {
         idCount += 1
       } else {
         classCount += 1

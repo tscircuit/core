@@ -2,13 +2,13 @@ import { is } from "css-select"
 import { type Selector, parse } from "css-what"
 import { getSvgSelectorSpecificity } from "./get-svg-selector-specificity"
 import {
-  svgElementCssSelectAdapter,
   type SvgElementNode,
+  svgElementCssSelectAdapter,
 } from "./svg-element-css-select-adapter"
 
 export type SvgPathPaint = "fill" | "stroke"
 
-type CssPaintDeclaration = { important: boolean; value: string }
+type CssPaintDeclaration = { important: boolean; paintSetting: string }
 
 export type SvgStylesheetPaintRule = {
   declarations: Partial<Record<SvgPathPaint, CssPaintDeclaration>>
@@ -29,12 +29,14 @@ const getPaintDeclarations = (
       .trim()
       .toLowerCase()
     if (propertyName !== "fill" && propertyName !== "stroke") continue
-    const rawValue = declaration.slice(separatorIndex + 1).trim()
-    const important = /\s*!important\s*$/iu.test(rawValue)
-    const value = rawValue.replace(/\s*!important\s*$/iu, "").trim()
+    const rawPaintSetting = declaration.slice(separatorIndex + 1).trim()
+    const important = /\s*!important\s*$/iu.test(rawPaintSetting)
+    const paintSetting = rawPaintSetting
+      .replace(/\s*!important\s*$/iu, "")
+      .trim()
     const previousDeclaration = declarations[propertyName]
     if (!previousDeclaration?.important || important) {
-      declarations[propertyName] = { important, value }
+      declarations[propertyName] = { important, paintSetting }
     }
   }
   return declarations
@@ -91,10 +93,16 @@ export const getSvgElementLocalPaint = ({
   paint: SvgPathPaint
   stylesheetRules: SvgStylesheetPaintRule[]
 }): string | undefined => {
-  const presentationValue = element.attributes[paint]
-  let winningDeclaration: RankedPaintDeclaration | undefined = presentationValue
-    ? { important: false, order: -1, specificity: 0, value: presentationValue }
-    : undefined
+  const presentationPaintSetting = element.attributes[paint]
+  let winningDeclaration: RankedPaintDeclaration | undefined =
+    presentationPaintSetting
+      ? {
+          important: false,
+          order: -1,
+          paintSetting: presentationPaintSetting,
+          specificity: 0,
+        }
+      : undefined
   for (const rule of stylesheetRules) {
     const declaration = rule.declarations[paint]
     if (
@@ -127,5 +135,5 @@ export const getSvgElementLocalPaint = ({
   ) {
     winningDeclaration = inlineCandidate
   }
-  return winningDeclaration?.value
+  return winningDeclaration?.paintSetting
 }
