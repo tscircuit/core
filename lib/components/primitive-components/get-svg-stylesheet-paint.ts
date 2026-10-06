@@ -70,7 +70,7 @@ const getSelectorSpecificityIfMatching = ({
   tag: string
 }): number | undefined => {
   const selectorMatch = selector.match(
-    /^([a-z][\w:.-]*|\*)?((?:[.#][\w-]+)*)$/iu,
+    /^([a-z_][\w:-]*|\*)?((?:[.#][\w-]+)*)$/iu,
   )
   if (!selectorMatch) return undefined
   const selectorElementName = selectorMatch[1]?.toLowerCase()

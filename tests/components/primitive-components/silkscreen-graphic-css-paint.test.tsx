@@ -5,8 +5,11 @@ test("SilkscreenGraphic resolves CSS and later inline paint", async () => {
   const { circuit } = getTestFixture()
   const cssPaintSvg = `
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">
-      <style>.outline { fill: none; stroke: black; }</style>
-      <path class="outline" d="M 1 1 L 9 1" />
+      <style>
+        .class-only { fill: none; stroke: black; }
+        path.outline { fill: none; stroke: black; }
+      </style>
+      <path class="class-only" d="M 1 1 L 9 1" />
       <path class="outline" d="M 2 3 L 8 3 L 8 7 L 2 7 Z" />
       <path style="fill:none;stroke:none;stroke:black" d="M 1 9 L 9 9" />
     </svg>
