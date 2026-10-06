@@ -3,10 +3,11 @@ import {
   getSvgStylesheetPaintRules,
   type SvgPathPaint,
 } from "./get-svg-stylesheet-paint"
+import { parseSvgElementTree } from "./parse-svg-element-tree"
+import type { SvgElementNode } from "./svg-element-css-select-adapter"
 
 type SvgPaintSettings = Record<SvgPathPaint, string>
 
-const SVG_ELEMENT_TAG_PATTERN = /<\/?[a-z][^>]*>/giu
 const DEFAULT_SVG_PAINT: SvgPaintSettings = {
   fill: "black",
   stroke: "none",
@@ -35,11 +36,8 @@ const resolveElementPaint = ({
   return normalizedPaint
 }
 
-const getElementName = (tag: string): string | undefined =>
-  tag.match(/^<\/?\s*([a-z][\w:.-]*)/iu)?.[1]?.toLowerCase()
-
 const removePathData = (pathTag: string): string =>
-  pathTag.replace(/\s+d\s*=\s*(["']).*?\1/iu, "")
+  pathTag.replace(/\s+d\s*=\s*(["'])[\s\S]*?\1/iu, "")
 
 export const getSvgWithPathPaint = ({
   paint,
@@ -48,47 +46,49 @@ export const getSvgWithPathPaint = ({
   paint: SvgPathPaint
   svg: string
 }): string => {
-  const paintStack: SvgPaintSettings[] = []
   const stylesheetRules = getSvgStylesheetPaintRules(svg)
-
-  return svg.replace(SVG_ELEMENT_TAG_PATTERN, (tag) => {
-    const elementName = getElementName(tag)
-    if (!elementName) return tag
-
-    if (/^<\//u.test(tag)) {
-      paintStack.pop()
-      return tag
+  const paintByElement = new Map<SvgElementNode, SvgPaintSettings>()
+  let output = ""
+  let outputCursor = 0
+  for (const tag of parseSvgElementTree(svg)) {
+    output += svg.slice(outputCursor, tag.start)
+    outputCursor = tag.end
+    const element = tag.element
+    if (!element) {
+      output += tag.raw
+      continue
     }
-
-    const inheritedPaint = paintStack.at(-1) ?? DEFAULT_SVG_PAINT
+    const inheritedPaint = element.parent
+      ? (paintByElement.get(element.parent) ?? DEFAULT_SVG_PAINT)
+      : DEFAULT_SVG_PAINT
     const elementPaint: SvgPaintSettings = {
       fill: resolveElementPaint({
         inheritedPaint: inheritedPaint.fill,
         localPaint: getSvgElementLocalPaint({
-          elementName,
+          element,
           paint: "fill",
           stylesheetRules,
-          tag,
         }),
         paint: "fill",
       }),
       stroke: resolveElementPaint({
         inheritedPaint: inheritedPaint.stroke,
         localPaint: getSvgElementLocalPaint({
-          elementName,
+          element,
           paint: "stroke",
           stylesheetRules,
-          tag,
         }),
         paint: "stroke",
       }),
     }
-
-    if (!/\/\s*>$/u.test(tag)) paintStack.push(elementPaint)
-    if (elementName !== "path" || elementPaint[paint] !== "none") return tag
-
+    paintByElement.set(element, elementPaint)
+    if (element.name !== "path" || elementPaint[paint] !== "none") {
+      output += tag.raw
+      continue
+    }
     // image-utils extracts every path's `d` regardless of SVG paint. Removing
     // only `d` keeps the surrounding XML and transform hierarchy intact.
-    return removePathData(tag)
-  })
+    output += removePathData(tag.raw)
+  }
+  return output + svg.slice(outputCursor)
 }

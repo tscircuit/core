@@ -1,20 +1,21 @@
+import { is } from "css-select"
+import { type Selector, parse } from "css-what"
+import { getSvgSelectorSpecificity } from "./get-svg-selector-specificity"
+import {
+  svgElementCssSelectAdapter,
+  type SvgElementNode,
+} from "./svg-element-css-select-adapter"
+
 export type SvgPathPaint = "fill" | "stroke"
 
-type CssPaintDeclaration = {
-  important: boolean
-  value: string
-}
+type CssPaintDeclaration = { important: boolean; value: string }
 
 export type SvgStylesheetPaintRule = {
   declarations: Partial<Record<SvgPathPaint, CssPaintDeclaration>>
   order: number
-  selector: string
+  selector: Selector[][]
+  specificity: number
 }
-
-const getAttribute = (tag: string, attributeName: string): string | undefined =>
-  tag.match(
-    new RegExp(`(?:^|\\s)${attributeName}\\s*=\\s*(["'])(.*?)\\1`, "iu"),
-  )?.[2]
 
 const getPaintDeclarations = (
   declarationBlock: string,
@@ -38,122 +39,93 @@ const getPaintDeclarations = (
   }
   return declarations
 }
-
 export const getSvgStylesheetPaintRules = (
   svg: string,
 ): SvgStylesheetPaintRule[] => {
   const rules: SvgStylesheetPaintRule[] = []
   const stylePattern = /<style\b[^>]*>([\s\S]*?)<\/style\s*>/giu
   for (const styleMatch of svg.matchAll(stylePattern)) {
-    const stylesheet = styleMatch[1]?.replace(/\/\*[\s\S]*?\*\//gu, "") ?? ""
+    const stylesheet = (styleMatch[1] ?? "")
+      .replace(/<!\[CDATA\[|\]\]>/gu, "")
+      .replace(/\/\*[\s\S]*?\*\//gu, "")
     for (const ruleMatch of stylesheet.matchAll(/([^{}]+)\{([^{}]*)\}/gu)) {
       const declarations = getPaintDeclarations(ruleMatch[2] ?? "")
-      for (const selector of (ruleMatch[1] ?? "").split(",")) {
-        rules.push({
-          declarations,
-          order: rules.length,
-          selector: selector.trim(),
-        })
+      try {
+        for (const selector of parse(ruleMatch[1] ?? "")) {
+          rules.push({
+            declarations,
+            order: rules.length,
+            selector: [selector],
+            specificity: getSvgSelectorSpecificity(selector),
+          })
+        }
+      } catch {
+        // Ignore malformed or unsupported author stylesheet rules.
       }
     }
   }
   return rules
 }
-
-const getSelectorSpecificityIfMatching = ({
-  elementName,
-  selector,
-  tag,
-}: {
-  elementName: string
-  selector: string
-  tag: string
-}): number | undefined => {
-  const selectorMatch = selector.match(
-    /^([a-z_][\w:-]*|\*)?((?:[.#][\w-]+)*)$/iu,
-  )
-  if (!selectorMatch) return undefined
-  const selectorElementName = selectorMatch[1]?.toLowerCase()
-  if (
-    selectorElementName &&
-    selectorElementName !== "*" &&
-    selectorElementName !== elementName
-  ) {
-    return undefined
-  }
-  const classNames = new Set((getAttribute(tag, "class") ?? "").split(/\s+/u))
-  const id = getAttribute(tag, "id")
-  const qualifierText = selectorMatch[2] ?? ""
-  const requiredClasses = [...qualifierText.matchAll(/\.([\w-]+)/gu)].map(
-    (match) => match[1],
-  )
-  const requiredIds = [...qualifierText.matchAll(/#([\w-]+)/gu)].map(
-    (match) => match[1],
-  )
-  if (requiredClasses.some((className) => !classNames.has(className))) {
-    return undefined
-  }
-  if (requiredIds.some((requiredId) => requiredId !== id)) return undefined
-  return (
-    requiredIds.length * 10_000 +
-    requiredClasses.length * 100 +
-    (selectorElementName && selectorElementName !== "*" ? 1 : 0)
-  )
+type RankedPaintDeclaration = CssPaintDeclaration & {
+  order: number
+  specificity: number
 }
 
+const shouldReplaceDeclaration = (
+  current: RankedPaintDeclaration | undefined,
+  candidate: RankedPaintDeclaration,
+): boolean =>
+  !current ||
+  Number(candidate.important) > Number(current.important) ||
+  (candidate.important === current.important &&
+    (candidate.specificity > current.specificity ||
+      (candidate.specificity === current.specificity &&
+        candidate.order >= current.order)))
+
 export const getSvgElementLocalPaint = ({
-  elementName,
+  element,
   paint,
   stylesheetRules,
-  tag,
 }: {
-  elementName: string
+  element: SvgElementNode
   paint: SvgPathPaint
   stylesheetRules: SvgStylesheetPaintRule[]
-  tag: string
 }): string | undefined => {
-  let winningDeclaration:
-    | (CssPaintDeclaration & { precedence: number })
-    | undefined
-  const presentationValue = getAttribute(tag, paint)
-  if (presentationValue) {
-    winningDeclaration = {
-      important: false,
-      precedence: 0,
-      value: presentationValue,
-    }
-  }
+  const presentationValue = element.attributes[paint]
+  let winningDeclaration: RankedPaintDeclaration | undefined = presentationValue
+    ? { important: false, order: -1, specificity: 0, value: presentationValue }
+    : undefined
   for (const rule of stylesheetRules) {
     const declaration = rule.declarations[paint]
-    const specificity = getSelectorSpecificityIfMatching({
-      elementName,
-      selector: rule.selector,
-      tag,
-    })
-    if (!declaration || specificity === undefined) continue
-    const precedence = specificity * 1_000 + rule.order
     if (
-      !winningDeclaration ||
-      Number(declaration.important) > Number(winningDeclaration.important) ||
-      (declaration.important === winningDeclaration.important &&
-        precedence >= winningDeclaration.precedence)
+      !declaration ||
+      !is<SvgElementNode, SvgElementNode>(element, rule.selector, {
+        adapter: svgElementCssSelectAdapter,
+        xmlMode: true,
+      })
     ) {
-      winningDeclaration = { ...declaration, precedence }
+      continue
+    }
+    const candidate = {
+      ...declaration,
+      order: rule.order,
+      specificity: rule.specificity,
+    }
+    if (shouldReplaceDeclaration(winningDeclaration, candidate)) {
+      winningDeclaration = candidate
     }
   }
   const inlineDeclaration = getPaintDeclarations(
-    getAttribute(tag, "style") ?? "",
+    element.attributes.style ?? "",
   )[paint]
+  const inlineCandidate = inlineDeclaration
+    ? { ...inlineDeclaration, order: 0, specificity: Number.MAX_SAFE_INTEGER }
+    : undefined
   if (
-    inlineDeclaration &&
-    (!winningDeclaration ||
-      inlineDeclaration.important ||
-      !winningDeclaration.important)
+    inlineCandidate &&
+    shouldReplaceDeclaration(winningDeclaration, inlineCandidate)
   ) {
-    winningDeclaration = {
-      ...inlineDeclaration,
-      precedence: Number.MAX_SAFE_INTEGER,
-    }
+    winningDeclaration = inlineCandidate
   }
   return winningDeclaration?.value
 }

@@ -131,6 +131,7 @@
     "calculate-cell-boundaries": "^0.0.25",
     "calculate-packing": "^0.0.90",
     "css-select": "5.1.0",
+    "css-what": "^6.2.2",
     "format-si-unit": "^0.0.12",
     "gl-matrix": "^3.4.4",
     "nanoid": "^5.0.7",
