@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test"
 import type { BoardProps } from "@tscircuit/props"
 import { assembly } from "lib"
+import { Fragment } from "react"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { expectAssemblySnapshot } from "tests/assembly/fixtures/expect-assembly-snapshot"
 import { holeCenters, MotorSpacer } from "tests/assembly/fixtures/motor-spacer"
@@ -15,7 +16,9 @@ function MotorController(props: BoardProps) {
       {...props}
     >
       {holeCenters.map(([x, y]) => (
-        <hole key={`${x},${y}`} diameter="3.2mm" pcbX={x} pcbY={y} />
+        <Fragment key={`${x},${y}`}>
+          <hole diameter="3.2mm" pcbX={x} pcbY={y} />
+        </Fragment>
       ))}
       <connector
         name="J_MOTOR"
