@@ -60,7 +60,7 @@
     "@tscircuit/miniflex": "^0.0.4",
     "@tscircuit/modelprinter": "^0.0.6",
     "@tscircuit/ngspice-spice-engine": "^0.0.20",
-    "@tscircuit/props": "https://pkg.pr.new/@tscircuit/props@f8e17e4",
+    "@tscircuit/props": "^0.0.693",
     "@tscircuit/schematic-match-adapt": "^0.0.18",
     "@tscircuit/schematic-trace-solver": "https://jscdn.tscircuit.com/@tscircuit/schematic-trace-solver/0.0.228.tgz",
     "@tscircuit/solver-utils": "^0.0.16",
@@ -81,7 +81,7 @@
     "circuit-json-to-connectivity-map": "^0.0.33",
     "circuit-json-to-gltf": "^0.0.145",
     "circuit-json-to-spice": "^0.0.45",
-    "circuit-to-svg": "^0.0.443",
+    "circuit-to-svg": "^0.0.444",
     "concurrently": "^9.1.2",
     "connectivity-map": "^1.0.1",
     "debug": "^4.3.6",
@@ -144,7 +144,7 @@
   },
   "overrides": {
     "@tscircuit/circuit-json-util": "^0.0.119",
-    "@tscircuit/props": "https://pkg.pr.new/@tscircuit/props@f8e17e4",
+    "@tscircuit/props": "^0.0.693",
     "circuit-json": "^0.0.518",
     "@tscircuit/cableprinter": "^0.0.4"
   }
