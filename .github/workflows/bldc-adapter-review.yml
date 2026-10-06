@@ -14,7 +14,7 @@ jobs:
           bun-version: 1.4.0
       - run: bun scripts/prepare-bullet-preview-dependencies.ts
         env:
-          GITHUB_EVENT_NAME: pull_request
+          VERCEL_ENV: preview
       - run: bun install
       - run: bun test tests/assembly/assembly-cable-bldc-adapter.test.tsx --timeout 30000
         env:
