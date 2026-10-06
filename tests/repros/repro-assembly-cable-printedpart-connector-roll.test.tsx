@@ -34,9 +34,9 @@ function MotorController(props: BoardProps) {
 
 // Reproduce https://docs.tscircuit.com/elements/assembly-printedpart with
 // the original connector placement and no cable orientation overrides.
-// The snapshots intentionally record the current bug: the cable plug's
-// pin row is perpendicular to the board header's pin row.
-test("docs motor-spacer cable plug is rolled 90 degrees relative to its board header", async () => {
+// The legacy panel drops only the new roll metadata to reproduce the old
+// renderer behavior; the fixed panels render the actual emitted Circuit JSON.
+test("docs motor-spacer cable plug aligns automatically with its board header", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <assembly.device>
@@ -68,10 +68,37 @@ test("docs motor-spacer cable plug is rolled 90 degrees relative to its board he
     .find((c) => c.name === "J_MOTOR")!
   expect(cable.to_source_component_id).toBe(header.source_component_id)
 
+  expect(cable.to_connector_width_direction).toEqual({ x: 1, y: 0, z: 0 })
+  const legacyJson = circuit.getCircuitJson().map((element) =>
+    element.type === "cad_cable"
+      ? {
+          ...element,
+          from_connector_width_direction: undefined,
+          to_connector_width_direction: undefined,
+        }
+      : element,
+  )
+
   await expectAssemblySnapshot(import.meta.path, {
-    title: "Docs reproduction: cable plug rotated 90 degrees",
+    title: "Docs cable alignment / before and after",
     font: "alphabet",
     panels: [
+      {
+        title: "Before / route tangents leave connector roll ambiguous",
+        code: `// Same circuit, path and camera.
+// Remove only the new connector
+// width directions to reproduce
+// the legacy renderer behavior.
+
+// The plug's pin row crosses the
+// board header at 90 degrees.`,
+        annotation:
+          "Legacy rendering: the route fixes insertion direction, but cannot fix roll.",
+        circuit: legacyJson,
+        renderOptions: {
+          poppygl: { camPos: [33, 30, 30], lookAt: [0, 10, 0], fov: 36 },
+        },
+      },
       {
         title: "Original docs example / automatic cable inference",
         code: `<assembly.device>
@@ -89,14 +116,14 @@ test("docs motor-spacer cable plug is rolled 90 degrees relative to its board he
     to=".CONTROLLER > .J_MOTOR" />
 </assembly.device>`,
         annotation:
-          "Current bug: the inferred PH plug and board header have perpendicular pin rows.",
+          "Fixed: each plug follows its header, with wire twist inferred between the endpoints.",
         circuit,
         renderOptions: {
           poppygl: { camPos: [100, 90, 75], lookAt: [0, -12, 0], fov: 40 },
         },
       },
       {
-        title: "Close-up / same circuit and unchanged geometry",
+        title: "After / automatically aligned with the board header",
         code: `<connector name="J_MOTOR"
   standard="jst_ph" pinCount={6}
   footprint="jst6_ph"
@@ -106,8 +133,8 @@ test("docs motor-spacer cable plug is rolled 90 degrees relative to its board he
 // CAD rotation or extra TSX.
 // Expected: plug aligns with the
 // existing header automatically.
-// Current: plug is a quarter-turn
-// away from the header.`,
+// Plug width follows the header.
+// Wire exits follow the plug.`,
         annotation:
           "Camera zoom only: inspect the long axes of the plug and the header beneath it.",
         circuit,
