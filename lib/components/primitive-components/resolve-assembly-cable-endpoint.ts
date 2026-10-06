@@ -71,7 +71,7 @@ export function resolveAssemblyCableEndpoint(
         `assembly.cable "${cable.name}" endpoint "${selector}" must match exactly one motor in its assembly device`,
       )
     const motor = motors[0]!
-    if (motor.motorModel.wireConnection !== "jst6_ph")
+    if (motor.motorModel.wireConnection !== "jst-ph-6")
       throw new Error(
         `assembly.cable "${cable.name}" requires motor "${motor.name}" to have wireConnection="jst-ph-6" for its connector endpoint`,
       )

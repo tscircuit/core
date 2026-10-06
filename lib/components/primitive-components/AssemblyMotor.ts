@@ -6,8 +6,8 @@ import { assemblyMotorProps } from "@tscircuit/props"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { renderAssemblyCadModel } from "./render-assembly-cad-model"
 import { resolveAssemblyModel } from "./resolve-assembly-model"
-import { resolveAssemblyMotorRotation } from "./resolve-assembly-motor-rotation"
 import { resolveAssemblyMotorPlacement } from "./resolve-assembly-motor-placement"
+import { resolveAssemblyMotorRotation } from "./resolve-assembly-motor-rotation"
 import { resolveMotorFaceMount } from "./resolve-motor-face-mount"
 
 export class AssemblyMotor extends PrimitiveComponent<
@@ -21,7 +21,10 @@ export class AssemblyMotor extends PrimitiveComponent<
     const base = this._parsedProps.model ?? this._parsedProps.standard!
     const wireConnection = this._parsedProps.wireConnection
     if (wireConnection === undefined) return base
-    return `${base}_${wireConnection === "jst6_ph" ? "jstph6" : wireConnection === "none" ? "nowires" : "wirestubs"}`
+    const isJstPh6 = ["jst6_ph", "jst-ph-6", "jst_ph_6"].includes(
+      wireConnection,
+    )
+    return `${base}_${isJstPh6 ? "jstph6" : wireConnection === "none" ? "nowires" : "wirestubs"}`
   }
 
   get motorModel() {
