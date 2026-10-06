@@ -114,6 +114,10 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
     return
   }
 
+  if (props.pcbPaths !== undefined) {
+    return
+  }
+
   if (props.pcbStraightLine) {
     return
   }
