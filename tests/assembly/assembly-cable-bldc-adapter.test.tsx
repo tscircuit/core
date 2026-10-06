@@ -12,7 +12,7 @@ test("BLDC CAD male outputs connect to 4 mm board contacts through three adapter
     const cable = circuit.db.cad_cable.list()[0]!
     const definition = parseCableString(cable.cableprinter_string)
     expect(cable.cableprinter_string).toBe(
-      `bullet3_da3.5mm_db4mm_afemale_b${boardGender === "male" ? "female" : "male"}`,
+      `adaptercable_a(bullet3_d3.5mm_gfemale)_b(bullet3_d4mm_g${boardGender === "male" ? "female" : "male"})`,
     )
     expect(definition.connectorA).toMatchObject({
       diameter: 3.5,

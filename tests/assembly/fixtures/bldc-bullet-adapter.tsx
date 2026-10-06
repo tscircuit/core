@@ -3,7 +3,7 @@ import { RootCircuit } from "lib/RootCircuit"
 import { Fragment } from "react"
 
 /** Representative imported BLDC geometry for the fixture, in physical mm.
- * Three male outputs have mating tips at z=32.25, centered at (3,4), pitch 6.
+ * Three male outputs have mating tips at z=32.25, centered at (3,4), pitch 5.5.
  * Substitute the user's CAD asset and measured connector point in real designs.
  */
 export function createBldcBulletAdapterCircuit({
@@ -48,7 +48,7 @@ export function createBldcBulletAdapterCircuit({
                   center: [0, 0, -5],
                 },
               },
-              ...[-6, 0, 6].map((x) => ({
+              ...[-5.5, 0, 5.5].map((x) => ({
                 type: "colorize",
                 color: [0.83, 0.64, 0.22, 1],
                 shape: {
