@@ -98,6 +98,7 @@ import { NormalComponent_doInitialSchematicComponentRender } from "./NormalCompo
 import { NormalComponent_doInitialSilkscreenOverlapAdjustment } from "./NormalComponent_doInitialSilkscreenOverlapAdjustment"
 import { NormalComponent_doInitialSourceDesignRuleChecks } from "./NormalComponent_doInitialSourceDesignRuleChecks"
 import { NormalComponent_doInitialMissingManufacturerPartNumberWarning } from "./NormalComponent_doInitialMissingManufacturerPartNumberWarning"
+import { NormalComponent_doInitialComponentAvailabilityWarning } from "./NormalComponent_doInitialComponentAvailabilityWarning"
 import { NormalComponent_doInitialSupplierFootprintMismatchWarning } from "./NormalComponent_doInitialSupplierFootprintMismatchWarning"
 import { canMergePortDefinitions } from "./utils/canMergePortDefinitions"
 import { getPrimaryPortsFromPortHintGroups } from "./utils/getPrimaryPortsFromPortHintGroups"
@@ -2287,6 +2288,16 @@ export class NormalComponent<
 
   updateMissingManufacturerPartNumberWarning(): void {
     this.doInitialMissingManufacturerPartNumberWarning()
+  }
+
+  doInitialComponentAvailabilityWarning(): void {
+    NormalComponent_doInitialComponentAvailabilityWarning(this)
+  }
+
+  updateComponentAvailabilityWarning(): void {
+    NormalComponent_doInitialComponentAvailabilityWarning(this, {
+      refresh: true,
+    })
   }
 
   doInitialPartOrientationAnalysis(): void {
