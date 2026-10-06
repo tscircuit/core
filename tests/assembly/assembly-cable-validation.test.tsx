@@ -76,7 +76,7 @@ test("cables reject incompatible, ambiguous, missing, and self-connected endpoin
       </assembly.device>,
     )
     await expect(circuit.renderUntilSettled()).rejects.toThrow(
-      'wireConnection="jst6_ph"',
+      "JST PH or SH wireConnection",
     )
   }
 })
