@@ -93,8 +93,6 @@ test("repro: authored PCB trace drops requested net connectivity", async () => {
   const actualSourceNetName = sourceTrace?.connected_source_net_ids
     .map((sourceNetId) => circuit.db.source_net.get(sourceNetId)?.name)
     .find((sourceNetName) => sourceNetName !== undefined)
-  const hasPcbTraceError = circuit.db.pcb_trace_error.list().length > 0
-
   circuit.db.pcb_note_text.insert({
     text: `TRACE NET: ${actualSourceNetName ?? "NONE"}`,
     anchor_position: { x: 0, y: 1.9 },
@@ -104,16 +102,6 @@ test("repro: authored PCB trace drops requested net connectivity", async () => {
     font_size: 0.7,
     color: actualSourceNetName ? "#55ff99" : "#ff5555",
   })
-  circuit.db.pcb_note_text.insert({
-    text: `DRC ERROR: ${hasPcbTraceError ? "YES" : "NO"}`,
-    anchor_position: { x: 0, y: 0.7 },
-    anchor_alignment: "center",
-    layer: "top",
-    font: "tscircuit2024",
-    font_size: 0.7,
-    color: hasPcbTraceError ? "#ff5555" : "#ffffff",
-  })
-
   expect(pcbTrace.source_trace_id).toBeUndefined()
   expect(actualSourceNetName).toBeUndefined()
   expect(circuit.db.pcb_trace_error.list()).toHaveLength(0)
