@@ -19,6 +19,7 @@ import { resolveAssemblyMotorRotation } from "./resolve-assembly-motor-rotation"
 import type { AssemblyPlacement } from "./resolve-assembly-placement"
 import { resolveCadAssemblyCableEndpoint } from "./resolve-cad-assembly-cable-endpoint"
 import { resolveMotorFaceMount } from "./resolve-motor-face-mount"
+import { resolveAssemblyCablePin1Position } from "./resolve-assembly-cable-pin1-position"
 
 /** Connector mating-center point and outward unit direction in right-handed
  * circuit world, mm (+X right, +Y top, +Z above). Points acquire translation;
@@ -27,6 +28,7 @@ import { resolveMotorFaceMount } from "./resolve-motor-face-mount"
 export interface AssemblyCableEndpoint {
   sourceComponentId: SourceComponentBase["source_component_id"]
   position: Point3
+  pin1Position?: Point3
   direction: BoardDirectionVector
   cableInput: CableInput
 }
@@ -107,6 +109,14 @@ export function resolveAssemblyCableEndpoint(
       [reference.position.x, reference.position.y, reference.position.z],
       orientation,
     )
+    // createNemaMotorWireGeometry places the PH6 pin row along local +Y
+    // before wireSideAngle rotation; pin 1 is at -5 mm on that row.
+    // The wireside reference applies the same rotation about local Z.
+    const pin1Offset = vec3.transformMat4(
+      vec3.create(),
+      [reference.direction.y * 5, -reference.direction.x * 5, 0],
+      orientation,
+    )
     // NEMA's PH header mating face is 6 mm beyond its body-side reference,
     // as specified by jscad-electronics createNemaMotorWireGeometry.
     return {
@@ -115,6 +125,11 @@ export function resolveAssemblyCableEndpoint(
         x: point[0] + placement.position.x + direction[0] * 6,
         y: point[1] + placement.position.y + direction[1] * 6,
         z: point[2] + placement.position.z + direction[2] * 6,
+      },
+      pin1Position: {
+        x: point[0] + placement.position.x + direction[0] * 6 + pin1Offset[0],
+        y: point[1] + placement.position.y + direction[1] * 6 + pin1Offset[1],
+        z: point[2] + placement.position.z + direction[2] * 6 + pin1Offset[2],
       },
       direction: { x: direction[0], y: direction[1], z: direction[2] },
       cableInput: { standard: "jst_ph", pinCount: 6 },
@@ -192,13 +207,20 @@ export function resolveAssemblyCableEndpoint(
         : props.standard === "jst_sh"
           ? 1.4
           : 2.25
+  const position = {
+    x: center.x,
+    y: center.y,
+    z: sign * (board.boardThickness / 2 + height),
+  }
   return {
     sourceComponentId: connector.source_component_id,
-    position: {
-      x: center.x,
-      y: center.y,
-      z: sign * (board.boardThickness / 2 + height),
-    },
+    position,
+    pin1Position: resolveAssemblyCablePin1Position(
+      cable,
+      connector,
+      position,
+      direction,
+    ),
     direction,
     cableInput:
       props.standard === "bullet"
