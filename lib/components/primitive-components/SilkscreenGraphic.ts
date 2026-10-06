@@ -4,19 +4,23 @@ import {
   SVG_MIMETYPE,
   ensureClockwise,
   getSvgBRepShapes,
-  getTransformedSvgPathRoutes,
   loadImageSource,
 } from "@tscircuit/image-utils"
-import type { PcbSilkscreenGraphic } from "circuit-json"
+import type { PcbSilkscreenGraphic, PcbSilkscreenPath } from "circuit-json"
 import { applyToPoint } from "transformation-matrix"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
+import { SilkscreenGraphic_insertRenderableSilkscreenPaths } from "./SilkscreenGraphic_insertRenderableSilkscreenPaths"
+import { getSvgWithPathPaint } from "./get-svg-with-path-paint"
+
+type PcbSilkscreenGraphicId = PcbSilkscreenGraphic["pcb_silkscreen_graphic_id"]
+type PcbSilkscreenPathId = PcbSilkscreenPath["pcb_silkscreen_path_id"]
 
 export class SilkscreenGraphic extends PrimitiveComponent<
   typeof silkscreenGraphicProps
 > {
-  pcb_silkscreen_graphic_id: string | null = null
-  pcb_silkscreen_graphic_ids: string[] = []
-  pcb_silkscreen_path_ids: string[] = []
+  pcb_silkscreen_graphic_id: PcbSilkscreenGraphicId | null = null
+  pcb_silkscreen_graphic_ids: PcbSilkscreenGraphicId[] = []
+  pcb_silkscreen_path_ids: PcbSilkscreenPathId[] = []
   isPcbPrimitive = true
 
   get config() {
@@ -58,10 +62,14 @@ export class SilkscreenGraphic extends PrimitiveComponent<
         url: sourceImage.dataUrl,
         mimetype: sourceImage.mimetype,
       }
+      const svgWithFilledPaths =
+        sourceImage.mimetype === SVG_MIMETYPE
+          ? getSvgWithPathPaint({ paint: "fill", svg: sourceImage.text })
+          : ""
       const brepShapes =
         sourceImage.mimetype === SVG_MIMETYPE
           ? getSvgBRepShapes({
-              svg: sourceImage.text,
+              svg: svgWithFilledPaths,
               width: props.width,
               height: props.height,
               transform: this._computePcbGlobalTransformBeforeLayout(),
@@ -95,38 +103,17 @@ export class SilkscreenGraphic extends PrimitiveComponent<
         this.pcb_silkscreen_graphic_ids[0] ?? null
 
       if (sourceImage.mimetype === SVG_MIMETYPE) {
-        this.insertRenderableSilkscreenPaths(sourceImage.text, layer)
+        const svgWithStrokedPaths = getSvgWithPathPaint({
+          paint: "stroke",
+          svg: sourceImage.text,
+        })
+        SilkscreenGraphic_insertRenderableSilkscreenPaths({
+          component: this,
+          layer,
+          svg: svgWithStrokedPaths,
+        })
       }
     })
-  }
-
-  insertRenderableSilkscreenPaths(svg: string, layer: "top" | "bottom"): void {
-    const { db } = this.root!
-    const { _parsedProps: props } = this
-    const transform = this._computePcbGlobalTransformBeforeLayout()
-    const pcb_component_id =
-      this.parent?.pcb_component_id ??
-      this.getPrimitiveContainer()?.pcb_component_id ??
-      ""
-
-    for (const route of getTransformedSvgPathRoutes({
-      svg,
-      width: props.width,
-      height: props.height,
-      transform,
-    })) {
-      if (route.length < 2) continue
-
-      const path = db.pcb_silkscreen_path.insert({
-        pcb_component_id,
-        layer,
-        route,
-        stroke_width: Math.max(Math.min(props.width, props.height) / 60, 0.05),
-        subcircuit_id: this.getSubcircuit()?.subcircuit_id ?? undefined,
-        pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
-      })
-      this.pcb_silkscreen_path_ids.push(path.pcb_silkscreen_path_id)
-    }
   }
 
   getPcbSize(): { width: number; height: number } {

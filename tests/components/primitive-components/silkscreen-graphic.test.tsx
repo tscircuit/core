@@ -50,6 +50,6 @@ test("SilkscreenGraphic renders imported svg as circuit json graphic", async () 
     ),
   ).toBe(true)
 
-  expect(circuit.db.pcb_silkscreen_path.list().length).toBeGreaterThan(0)
+  expect(circuit.db.pcb_silkscreen_path.list()).toEqual([])
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
