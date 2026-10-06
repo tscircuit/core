@@ -31,11 +31,13 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.8.3",
+    "@jscad/modeling": "^2.13.0",
     "@resvg/resvg-js": "^2.6.2",
     "@tsci/tscircuit.ti": "github:tscircuit/ti#57e314be4b2b06bc546d4def7453e619604d1157",
     "@tscircuit/alphabet": "0.0.25",
     "@tscircuit/bga-fanout-solver": "github:tscircuit/bga-fanout-solver#247c835cb8d69b65e53891dcf869731079415b39",
     "@tscircuit/bus-lanes-solver": "https://jscdn.tscircuit.com/@tscircuit/bus-lanes-solver/0.0.21.tgz",
+    "@tscircuit/cableprinter": "^0.0.4",
     "@tscircuit/capacity-autorouter": "^0.0.958",
     "@tscircuit/checks": "^0.0.242",
     "@tscircuit/circuit-json-util": "^0.0.119",
@@ -58,7 +60,7 @@
     "@tscircuit/miniflex": "^0.0.4",
     "@tscircuit/modelprinter": "^0.0.6",
     "@tscircuit/ngspice-spice-engine": "^0.0.20",
-    "@tscircuit/props": "^0.0.689",
+    "@tscircuit/props": "^0.0.693",
     "@tscircuit/schematic-match-adapt": "^0.0.18",
     "@tscircuit/schematic-trace-solver": "https://jscdn.tscircuit.com/@tscircuit/schematic-trace-solver/0.0.228.tgz",
     "@tscircuit/solver-utils": "^0.0.16",
@@ -74,12 +76,12 @@
     "bun-match-svg": "0.0.12",
     "calculate-elbow": "^0.0.12",
     "chokidar-cli": "^3.0.0",
-    "circuit-json": "^0.0.516",
+    "circuit-json": "^0.0.518",
     "circuit-json-to-bpc": "^0.0.13",
     "circuit-json-to-connectivity-map": "^0.0.33",
     "circuit-json-to-gltf": "^0.0.145",
     "circuit-json-to-spice": "^0.0.45",
-    "circuit-to-svg": "^0.0.440",
+    "circuit-to-svg": "^0.0.444",
     "concurrently": "^9.1.2",
     "connectivity-map": "^1.0.1",
     "debug": "^4.3.6",
@@ -99,9 +101,7 @@
     "spicey": "^0.0.14",
     "stack-svgs": "^0.0.1",
     "ts-expect": "^1.3.0",
-    "tsup": "^8.2.4",
-    "@jscad/modeling": "^2.13.0",
-    "@tscircuit/cableprinter": "^0.0.4"
+    "tsup": "^8.2.4"
   },
   "peerDependencies": {
     "@tscircuit/capacity-autorouter": "*",
@@ -144,8 +144,8 @@
   },
   "overrides": {
     "@tscircuit/circuit-json-util": "^0.0.119",
-    "@tscircuit/props": "^0.0.689",
-    "circuit-json": "^0.0.516",
+    "@tscircuit/props": "^0.0.693",
+    "circuit-json": "^0.0.518",
     "@tscircuit/cableprinter": "^0.0.4"
   }
 }
