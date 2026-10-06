@@ -37,7 +37,7 @@ test("BLDC CAD male outputs connect to 4 mm board contacts through three adapter
     expect(cable.path[0]!.z).toBeCloseTo(44.5)
     panels.push({
       title: `BLDC / 3.5 mm male -> 4 mm ${boardGender} board`,
-      code: `<assembly.subassembly name="MOTOR"\n  cadModel={motorCad}\n  cableConnectors={{ phases: {\n    standard: "bullet", bulletDiameter: 3.5,\n    bulletGender: "male", pinCount: 3,\n    position: { x: 3, y: 4, z: 32.25 },\n    facingDirection: "z+"\n  } }} />\n<connector name="J_PHASES" standard="bullet"\n  bulletDiameter={4} bulletGender="${boardGender}"\n  pinCount={3} footprint={bulletFootprint} />\n<assembly.cable name="PHASE_LEADS"\n  from="MOTOR.phases" to=".J_PHASES" />`,
+      code: `<assembly.subassembly name="MOTOR"\n  cadModel={motorCad}\n  cableConnectors={{ phases: {\n    standard: "bullet",\n    bulletDiameter: 3.5,\n    bulletGender: "male", pinCount: 3,\n    position: { x: 3, y: 4, z: 32.25 },\n    facingDirection: "z+"\n  } }} />\n<connector name="J_PHASES"\n  standard="bullet"\n  bulletDiameter={4}\n  bulletGender="${boardGender}"\n  pinCount={3} footprint={bulletFootprint} />\n<assembly.cable name="PHASE_LEADS"\n  from="MOTOR.phases" to=".J_PHASES" />`,
       annotation:
         "Three phase wires / 3.5 mm female motor end / 4 mm board end",
       circuit,
