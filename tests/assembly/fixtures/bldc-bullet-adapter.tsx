@@ -1,5 +1,6 @@
 import { assembly } from "lib"
 import { RootCircuit } from "lib/RootCircuit"
+import { Fragment } from "react"
 
 /** Representative imported BLDC geometry for the fixture, in physical mm.
  * Three male outputs have mating tips at z=32.25, centered at (3,4), pitch 6.
@@ -97,14 +98,15 @@ export function createBldcBulletAdapterCircuit({
           footprint={
             <footprint>
               {Array.from({ length: toPinCount }, (_, pin) => (
-                <platedhole
-                  key={`pin${pin + 1}`}
-                  pcbX={(pin - (toPinCount - 1) / 2) * 6}
-                  portHints={[`pin${pin + 1}`]}
-                  holeDiameter={1.5}
-                  outerDiameter={3}
-                  shape="circle"
-                />
+                <Fragment key={`pin${pin + 1}`}>
+                  <platedhole
+                    pcbX={(pin - (toPinCount - 1) / 2) * 6}
+                    portHints={[`pin${pin + 1}`]}
+                    holeDiameter={1.5}
+                    outerDiameter={3}
+                    shape="circle"
+                  />
+                </Fragment>
               ))}
             </footprint>
           }
