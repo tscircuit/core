@@ -10,8 +10,8 @@ if (
   const packagePath = new URL("../package.json", import.meta.url)
   const manifest = JSON.parse(readFileSync(packagePath, "utf8"))
   const previews = {
-    "@tscircuit/props": "https://pkg.pr.new/@tscircuit/props@813a9f6",
-    "circuit-json": "https://pkg.pr.new/circuit-json@4dcebf2",
+    "@tscircuit/props": "https://pkg.pr.new/@tscircuit/props@ee57239",
+    "circuit-json": "https://pkg.pr.new/circuit-json@21f8df9",
     "@tscircuit/cableprinter":
       "https://pkg.pr.new/tscircuit/cableprinter/@tscircuit/cableprinter@5a4a697",
     "circuit-json-to-gltf":

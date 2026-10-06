@@ -16,13 +16,12 @@ jobs:
         env:
           VERCEL_ENV: preview
       - run: bun install
-      - run: bun test tests/assembly/assembly-cable-adapter.test.tsx tests/assembly/assembly-cable-bldc-adapter.test.tsx --timeout 30000
+      - run: bun test tests/assembly/assembly-cable-adapter.test.tsx tests/assembly/assembly-cable-bldc-adapter.test.tsx tests/assembly/assembly-cable-bullet.test.tsx tests/assembly/assembly-cable-bullet-group.test.tsx tests/assembly/assembly-cable-motor-controller.test.tsx --timeout 30000
         env:
           BUN_UPDATE_SNAPSHOTS: "1"
       - uses: actions/upload-artifact@v4
         with:
           name: generic-adapter-review
           path: |
-            tests/assembly/__snapshots__/assembly-cable-adapter-annotated.snap.png
-            tests/assembly/__snapshots__/assembly-cable-bldc-adapter-annotated.snap.png
+            tests/assembly/__snapshots__/assembly-cable-*.snap.png
           if-no-files-found: error
