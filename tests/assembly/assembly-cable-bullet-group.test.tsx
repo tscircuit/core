@@ -27,7 +27,7 @@ test("grouped bullet assemblies preserve all wires and mate each contact on both
           const genderA = fromGender === "male" ? "female" : "male"
           const genderB = toGender === "male" ? "female" : "male"
           expect(cable.cableprinter_string).toBe(
-            `bullet${pinCount}_${diameter}mm_${genderA}_${genderB}`,
+            `bullet${pinCount}_d${diameter}mm_a${genderA}_b${genderB}`,
           )
           const definition = parseCableString(cable.cableprinter_string)
           expect(definition.connectorA).toMatchObject({
@@ -65,7 +65,8 @@ test("grouped bullet assemblies preserve all wires and mate each contact on both
   bulletGender="female" />
 <assembly.cable name="POWER"
   from=".J1" to=".J2" />`,
-              annotation: "bullet3_3.5mm_female_male / three insulated wires",
+              annotation:
+                "bullet3_d3.5mm_afemale_bmale / three insulated wires",
               circuit,
               renderOptions: {
                 poppygl: {

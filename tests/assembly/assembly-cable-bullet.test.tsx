@@ -25,7 +25,7 @@ test("bullet cables infer each mating gender and preserve all diameters on both 
         const genderA = fromGender === "male" ? "female" : "male"
         const genderB = toGender === "male" ? "female" : "male"
         expect(cable.cableprinter_string).toBe(
-          `bullet_${diameter}mm_${genderA}_${genderB}`,
+          `bullet_d${diameter}mm_a${genderA}_b${genderB}`,
         )
         const definition = parseCableString(cable.cableprinter_string)
         expect(definition.connectorA.kind).toBe(`bullet_${genderA}`)

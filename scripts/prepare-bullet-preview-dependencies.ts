@@ -13,9 +13,9 @@ if (
     "@tscircuit/props": "https://pkg.pr.new/@tscircuit/props@f165269",
     "circuit-json": "https://pkg.pr.new/circuit-json@a2aa046",
     "@tscircuit/cableprinter":
-      "https://pkg.pr.new/tscircuit/cableprinter/@tscircuit/cableprinter@5e55404",
+      "https://pkg.pr.new/tscircuit/cableprinter/@tscircuit/cableprinter@6ee67c3",
     "circuit-json-to-gltf":
-      "https://pkg.pr.new/tscircuit/circuit-json-to-gltf@6f2f234",
+      "https://pkg.pr.new/tscircuit/circuit-json-to-gltf@6794bae",
   }
   for (const [name, preview] of Object.entries(previews)) {
     manifest.devDependencies[name] = preview
