@@ -72,7 +72,6 @@ export function createBulletCableCircuit({
             <footprint>
               {Array.from({ length: pinCount }, (_, index) => (
                 <platedhole
-                  key={index}
                   pcbX={(index - (pinCount - 1) / 2) * (diameter + 2)}
                   portHints={[`pin${index + 1}`]}
                   holeDiameter={1.5}
@@ -96,7 +95,6 @@ export function createBulletCableCircuit({
             <footprint>
               {Array.from({ length: toPinCount }, (_, index) => (
                 <platedhole
-                  key={index}
                   pcbX={(index - (toPinCount - 1) / 2) * (toDiameter + 2)}
                   portHints={[`pin${index + 1}`]}
                   holeDiameter={1.5}
