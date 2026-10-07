@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("masked pill pads omit solder paste", () => {
+test("masked pill pads omit solder paste", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width={8} height={5}>
@@ -34,7 +34,7 @@ test("masked pill pads omit solder paste", () => {
   circuit.render()
   expect(circuit.db.pcb_smtpad.list()).toHaveLength(2)
   expect(circuit.db.pcb_solder_paste.list()).toHaveLength(0)
-  expect(circuit).toMatchPcbSnapshot(import.meta.path, {
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
     showSolderPaste: true,
   })
 })
