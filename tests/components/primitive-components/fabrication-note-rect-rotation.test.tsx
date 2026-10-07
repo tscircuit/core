@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { Fragment } from "react"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("fabrication rectangles match footprint paths after orthogonal rotations", async () => {
@@ -77,13 +78,14 @@ test("fabrication rectangles match footprint paths after orthogonal rotations", 
       )}
       {layers.flatMap((layer, row) =>
         rotations.map(({ group, chip }, column) => (
-          <pcbnotetext
-            key={`${layer}-${column}`}
-            pcbX={(column - 2.5) * 8}
-            pcbY={row === 0 ? 7.5 : -7.5}
-            text={`${layer}: ${group}+${chip} deg`}
-            fontSize={0.55}
-          />
+          <Fragment key={`${layer}-${column}`}>
+            <pcbnotetext
+              pcbX={(column - 2.5) * 8}
+              pcbY={row === 0 ? 7.5 : -7.5}
+              text={`${layer}: ${group}+${chip} deg`}
+              fontSize={0.55}
+            />
+          </Fragment>
         )),
       )}
       <pcbnotetext
@@ -116,7 +118,7 @@ test("fabrication rectangles match footprint paths after orthogonal rotations", 
     expect(rect.center.y).toBeCloseTo((minY + maxY) / 2)
     expect(rect.width).toBeCloseTo(maxX - minX)
     expect(rect.height).toBeCloseTo(maxY - minY)
-    expect(rect.layer).toBe(path.layer)
+    expect(path.layer).toBe(rect.layer)
     expect(rect).toMatchObject({
       stroke_width: 0.15,
       corner_radius: 0.1,
