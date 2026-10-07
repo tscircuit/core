@@ -3,12 +3,17 @@ import type { CadComponent, PcbComponent } from "circuit-json"
 import { NormalComponent } from "../base-components/NormalComponent"
 import type { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import type { AssemblyPrintedPart } from "./AssemblyPrintedPart"
+import type { AssemblyPart } from "./AssemblyPart"
 import { resolvePrintedPartMounts } from "./resolve-printed-part-mounts"
 import type { AssemblyScreen } from "./AssemblyScreen"
 import type { AssemblySubassembly } from "./AssemblySubassembly"
 import { getAssemblyTarget } from "./get-assembly-target"
 
-type Assembly = AssemblyScreen | AssemblySubassembly | AssemblyPrintedPart
+type Assembly =
+  | AssemblyScreen
+  | AssemblySubassembly
+  | AssemblyPrintedPart
+  | AssemblyPart
 
 /** Assembly origin in right-handed board-world coordinates: +X right, +Y top,
  * +Z above; position is a point in mm, pcbRotation is degrees around +Z.
@@ -24,6 +29,7 @@ export interface AssemblyPlacement {
 export const isPositionedAssembly = (
   component: PrimitiveComponent,
 ): component is Assembly =>
+  component.componentName === "AssemblyPart" ||
   component.componentName === "AssemblyPrintedPart" ||
   component.componentName === "AssemblyScreen" ||
   component.componentName === "AssemblySubassembly"
