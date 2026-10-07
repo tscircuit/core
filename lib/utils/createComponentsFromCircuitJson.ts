@@ -117,7 +117,7 @@ const getSchematicSymbolId = (elm: AnyCircuitElement): string | undefined => {
 export const createComponentsFromCircuitJson = (
   {
     sourcePortOwner,
-    componentName = "",
+    componentName,
     componentRotation,
     footprinterString,
     pinLabels,
@@ -125,7 +125,7 @@ export const createComponentsFromCircuitJson = (
     preserveSolderPaste = false,
   }: {
     sourcePortOwner?: NormalComponent
-    componentName?: string
+    componentName: string
     componentRotation: string
     footprinterString?: string
     pinLabels?: PinLabelsProp
@@ -642,9 +642,11 @@ export const createComponentsFromCircuitJson = (
           // resolve to the component name. A literal from the explicit
           // `silkscreenlabel(...)` footprint option is an intentional custom
           // label (for example a module name) and must be preserved. Other
-          // imported footprint text keeps the legacy component-name fallback.
+          // footprint templates keep the component-name fallback. Rendered
+          // Circuit JSON labels are preserved by default.
           text:
-            footprinterString?.includes("silkscreenlabel(") &&
+            (footprinterString === undefined ||
+              footprinterString.includes("silkscreenlabel(")) &&
             elm.text !== "{REF}" &&
             elm.text !== "{NAME}" &&
             elm.text !== "{REFERENCE}"
