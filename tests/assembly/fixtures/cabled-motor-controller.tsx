@@ -72,7 +72,7 @@ export function CabledMotorController() {
         <assembly.motor
           name="MOTOR"
           standard="nema17"
-          wireConnection="jst-ph-6"
+          wireConnection="jst6_ph"
           mountedTo="FRAME.motor"
           mountFace="frontface"
         />
