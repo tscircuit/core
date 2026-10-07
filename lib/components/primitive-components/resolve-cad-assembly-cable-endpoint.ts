@@ -1,3 +1,7 @@
+import {
+  resolveConnectorModel,
+  getMatingConnector,
+} from "lib/utils/connectors/resolve-connector-model-props"
 import { cadModelBase, point3 } from "@tscircuit/props"
 import type { ParsedAssemblyCableConnectorProps } from "@tscircuit/props"
 import { rotation } from "circuit-json"
@@ -87,7 +91,11 @@ export function resolveCadAssemblyCableEndpoint(
     ],
     placementOrientation,
   )
-  const opposite = connector.bulletGender === "male" ? "female" : "male"
+  const physicalConnector = resolveConnectorModel(connector.model)
+  if (!physicalConnector)
+    throw new Error(
+      `Assembly "${owner.name}" requires a supported connector model for its cable endpoint`,
+    )
   return {
     sourceComponentId: owner.source_component_id!,
     position: {
@@ -96,12 +104,6 @@ export function resolveCadAssemblyCableEndpoint(
       z: placement.position.z + translation[2] + point[2],
     },
     direction: { x: direction[0], y: direction[1], z: direction[2] },
-    cableInput: {
-      standard: "bullet",
-      diameter: connector.bulletDiameter,
-      genderA: opposite,
-      genderB: opposite,
-      pinCount: connector.pinCount ?? 1,
-    },
+    connector: getMatingConnector(physicalConnector),
   }
 }

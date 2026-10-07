@@ -41,12 +41,10 @@ test("bullet cables infer each mating gender and preserve all diameters on both 
         if (fromGender === "male" && toGender === "female")
           panels.push({
             title: `Bullet / ${diameter} mm / ${layer} layer`,
-            code: `<connector name="J1" standard="bullet"
-  bulletDiameter={${diameter}} bulletGender="male" />
-<connector name="J2" standard="bullet"
-  bulletDiameter={${diameter}} bulletGender="female" />
+            code: `<connector name="J1" model="bullet_d${diameter}mm_gmale" />
+<connector name="J2" model="bullet_d${diameter}mm_gfemale" />
 <assembly.cable name="POWER"
-  from=".J1" to=".J2" standard="bullet" />`,
+  from=".J1" to=".J2" />`,
             annotation:
               "Cable ends mate with the opposite gender; one insulated conductor.",
             circuit,

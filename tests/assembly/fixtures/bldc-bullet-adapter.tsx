@@ -63,10 +63,7 @@ export function createBldcBulletAdapterCircuit({
         }}
         cableConnectors={{
           phases: {
-            standard: "bullet",
-            bulletDiameter: 3.5,
-            bulletGender: "male",
-            pinCount: 3,
+            model: "bullet3_d3.5mm_gmale",
             position: { x: 3, y: 4, z: 32.25 },
             facingDirection: "z+",
           },
@@ -75,9 +72,7 @@ export function createBldcBulletAdapterCircuit({
       <board width={55} height={35} routingDisabled>
         <connector
           name="J_PHASES"
-          standard="bullet"
-          bulletDiameter={4}
-          bulletGender={boardGender}
+          model={`bullet${toPinCount === 1 ? "" : toPinCount}_d4mm_g${boardGender}`}
           pinCount={toPinCount}
           pcbX={18}
           cadModel={{

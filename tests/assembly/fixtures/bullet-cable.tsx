@@ -65,16 +65,8 @@ export function createBulletCableCircuit({
       <board width={70} height={30} routingDisabled>
         <connector
           name="J1"
-          {...(useModelprinterString
-            ? {
-                standard: modelStandard,
-                model: `bullet${pinCount === 1 ? "" : pinCount}_d${diameter}mm_g${fromGender}`,
-              }
-            : {
-                standard: "bullet" as const,
-                bulletDiameter: diameter,
-                bulletGender: fromGender,
-              })}
+          standard={modelStandard}
+          model={`bullet${pinCount === 1 ? "" : pinCount}_d${diameter}mm_g${fromGender}`}
           pinCount={pinCount}
           cadModel={
             useModelprinterString
@@ -99,16 +91,8 @@ export function createBulletCableCircuit({
         />
         <connector
           name="J2"
-          {...(useModelprinterString
-            ? {
-                standard: modelStandard,
-                model: `bullet${pinCount === 1 ? "" : pinCount}_d${toDiameter}mm_g${toGender}`,
-              }
-            : {
-                standard: "bullet" as const,
-                bulletDiameter: toDiameter,
-                bulletGender: toGender,
-              })}
+          standard={modelStandard}
+          model={`bullet${toPinCount === 1 ? "" : toPinCount}_d${toDiameter}mm_g${toGender}`}
           pinCount={toPinCount}
           cadModel={
             useModelprinterString
@@ -132,7 +116,7 @@ export function createBulletCableCircuit({
           }
         />
       </board>
-      <assembly.cable name="POWER" from=".J1" to=".J2" standard="bullet" />
+      <assembly.cable name="POWER" from=".J1" to=".J2" />
     </assembly.device>,
   )
   return circuit

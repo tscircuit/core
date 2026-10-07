@@ -57,12 +57,8 @@ test("grouped bullet assemblies preserve all wires and mate each contact on both
           )
             panels.push({
               title: `Three bullet pairs / 3.5 mm / ${layer} layer`,
-              code: `<connector name="J1" standard="bullet"
-  pinCount={3} bulletDiameter={3.5}
-  bulletGender="male" />
-<connector name="J2" standard="bullet"
-  pinCount={3} bulletDiameter={3.5}
-  bulletGender="female" />
+              code: `<connector name="J1" model="bullet3_d3.5mm_gmale" />
+<connector name="J2" model="bullet3_d3.5mm_gfemale" />
 <assembly.cable name="POWER"
   from=".J1" to=".J2" />`,
               annotation:

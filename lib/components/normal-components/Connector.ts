@@ -9,7 +9,10 @@ import {
 } from "@tscircuit/props"
 import type { AnyCircuitElement, SourceSimpleConnector } from "circuit-json"
 import { source_part_not_found_warning } from "circuit-json"
-import { resolveConnectorModelProps } from "lib/utils/connectors/resolve-connector-model-props"
+import {
+  resolveConnectorModelProps,
+  resolveConnectorModel,
+} from "lib/utils/connectors/resolve-connector-model-props"
 import { convertCircuitJsonToJstStandardCircuitJson } from "lib/utils/connectors/convertCircuitJsonToJstStandardCircuitJson"
 import { convertCircuitJsonToUsbCStandardCircuitJson } from "lib/utils/connectors/convertCircuitJsonToUsbCStandardCircuitJson"
 import { extractCadModelFromCircuitJson } from "lib/utils/connectors/extractCadModelFromCircuitJson"
@@ -97,11 +100,10 @@ export class Connector<
     const props = resolveConnectorModelProps(this._getConnectorProps())
     super.initPorts({
       pinCount:
-        props.standard === "bullet"
-          ? (props.pinCount ?? 1)
-          : isJstConnectorStandard(props.standard)
-            ? props.pinCount
-            : undefined,
+        resolveConnectorModel(props.model) ||
+        isJstConnectorStandard(props.standard)
+          ? props.pinCount
+          : undefined,
     })
   }
 
@@ -379,19 +381,9 @@ export class Connector<
       manufacturer_part_number: manufacturerPartNumber,
       supplier_part_numbers: props.supplierPartNumbers,
       display_name: props.displayName,
-      standard: props.standard === "bullet" ? undefined : props.standard,
+      standard: props.standard,
       modelprinter_string: props.model,
-      pin_count:
-        props.pinCount ??
-        resolveConnectorModelProps(props).pinCount ??
-        (props.standard === "bullet" ? 1 : undefined),
-      ...(props.standard === "bullet"
-        ? {
-            modelprinter_string:
-              props.model ??
-              `bullet${(props.pinCount ?? 1) === 1 ? "" : props.pinCount}_d${props.bulletDiameter}mm_g${props.bulletGender}`,
-          }
-        : {}),
+      pin_count: props.pinCount ?? resolveConnectorModelProps(props).pinCount,
     } as SourceSimpleConnector)
 
     this.source_component_id = source_component.source_component_id!
@@ -433,19 +425,9 @@ export class Connector<
       ftype: "simple_connector",
       name: this.name,
       manufacturer_part_number: resolveManufacturerPartNumber(props),
-      standard: standard === "bullet" ? undefined : standard,
+      standard,
       modelprinter_string: props.model,
-      pin_count:
-        props.pinCount ??
-        resolveConnectorModelProps(props).pinCount ??
-        (props.standard === "bullet" ? 1 : undefined),
-      ...(props.standard === "bullet"
-        ? {
-            modelprinter_string:
-              props.model ??
-              `bullet${(props.pinCount ?? 1) === 1 ? "" : props.pinCount}_d${props.bulletDiameter}mm_g${props.bulletGender}`,
-          }
-        : {}),
+      pin_count: props.pinCount ?? resolveConnectorModelProps(props).pinCount,
     }
 
     this._queueAsyncEffect("load-standard-connector-circuit-json", async () => {

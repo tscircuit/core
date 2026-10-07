@@ -25,11 +25,11 @@ test("assembly cables compose mixed families and support an explicit adapter pre
       return (
         <connector
           name={name}
-          standard={standard}
+          standard={standard === "bullet" ? undefined : standard}
           pinCount={pinCount}
           pcbX={pcbX}
           {...(standard === "bullet"
-            ? { bulletDiameter: 3.5, bulletGender: "male" as const }
+            ? { model: `bullet${pinCount}_d3.5mm_gmale` }
             : {})}
           cadModel={{
             jscad: {
@@ -88,7 +88,7 @@ test("assembly cables compose mixed families and support an explicit adapter pre
     expect(definition.crossSection.wires).toHaveLength(pinCount)
     panels.push({
       title: `${fromStandard} -> ${toStandard} / ${pinCount} contacts`,
-      code: `<connector name="J1"\n  standard="${fromStandard}" pinCount={${pinCount}}\n${fromStandard === "bullet" ? '  bulletDiameter={3.5}\n  bulletGender="male"\n' : ""}  footprint={fromFootprint} />\n<connector name="J2"\n  standard="${toStandard}" pinCount={${pinCount}}\n  footprint={toFootprint} />\n<assembly.cable name="ADAPTER"\n  from=".J1" to=".J2"${forceAdapter ? '\n  standard="adaptercable"' : ""} />`,
+      code: `<connector name="J1"\n  ${fromStandard === "bullet" ? 'model="bullet3_d3.5mm_gmale"' : `standard="${fromStandard}"`} pinCount={${pinCount}}\n  footprint={fromFootprint} />\n<connector name="J2"\n  standard="${toStandard}" pinCount={${pinCount}}\n  footprint={toFootprint} />\n<assembly.cable name="ADAPTER"\n  from=".J1" to=".J2"${forceAdapter ? '\n  standard="adaptercable"' : ""} />`,
       annotation:
         "Independent end families / native contact pitches / representative header bodies",
       circuit,

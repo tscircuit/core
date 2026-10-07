@@ -23,8 +23,10 @@ export function resolveAssemblyCable(
 ): Omit<CadCable, "type" | "cad_cable_id"> {
   const from = resolveAssemblyCableEndpoint(cable, cable._parsedProps.from)
   const to = resolveAssemblyCableEndpoint(cable, cable._parsedProps.to)
-  const fromDefinition = getCableDefinition(from.cableInput)
-  const toDefinition = getCableDefinition(to.cableInput)
+  const fromConnector =
+    from.connector ?? getCableDefinition(from.cableInput!).connectorA
+  const toConnector =
+    to.connector ?? getCableDefinition(to.cableInput!).connectorA
   if (from.sourceComponentId === to.sourceComponentId)
     throw new Error(
       `assembly.cable "${cable.name}" must connect two different endpoints`,
@@ -32,8 +34,7 @@ export function resolveAssemblyCable(
   if (
     cable._parsedProps.standard &&
     cable._parsedProps.standard !== "adaptercable" &&
-    (cable._parsedProps.standard !== fromDefinition.standard ||
-      cable._parsedProps.standard !== toDefinition.standard)
+    (fromConnector.kind !== "usb_c_plug" || toConnector.kind !== "usb_c_plug")
   )
     throw new Error(
       `assembly.cable "${cable.name}" standard="${cable._parsedProps.standard}" conflicts with its endpoints`,
@@ -41,8 +42,8 @@ export function resolveAssemblyCable(
   const definition = (() => {
     try {
       return getAdapterCableDefinition({
-        connectorA: fromDefinition.connectorA,
-        connectorB: toDefinition.connectorA,
+        connectorA: fromConnector,
+        connectorB: toConnector,
       })
     } catch (cause) {
       throw new Error(

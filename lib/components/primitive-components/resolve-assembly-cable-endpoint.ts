@@ -1,5 +1,8 @@
-import { resolveConnectorModelProps } from "lib/utils/connectors/resolve-connector-model-props"
-import { type CableInput, getBulletConnector } from "@tscircuit/cableprinter"
+import {
+  resolveConnectorModel,
+  getMatingConnector,
+} from "lib/utils/connectors/resolve-connector-model-props"
+import { type CableInput, type CableConnector } from "@tscircuit/cableprinter"
 import type { ParsedConnectorProps } from "@tscircuit/props"
 import { getJstMotorConnector } from "@tscircuit/modelprinter"
 import type { Point3, SourceComponentBase } from "circuit-json"
@@ -32,7 +35,8 @@ export interface AssemblyCableEndpoint {
   position: Point3
   pin1Position?: Point3
   direction: BoardDirectionVector
-  cableInput: CableInput
+  cableInput?: CableInput
+  connector?: CableConnector
 }
 
 export function resolveAssemblyCableEndpoint(
@@ -185,26 +189,29 @@ export function resolveAssemblyCableEndpoint(
     throw new Error(
       `assembly.cable "${cable.name}" endpoint "${selector}" must name a PCB connector or MOTOR.wireside`,
     )
-  const props = resolveConnectorModelProps(
-    connector._parsedProps as ParsedConnectorProps,
-  )
+  const props = connector._parsedProps as ParsedConnectorProps
+  const physicalConnector = resolveConnectorModel(props.model)
+  const standard =
+    physicalConnector?.kind === "jst_sh_housing"
+      ? "jst_sh"
+      : physicalConnector?.kind === "jst_ph_housing"
+        ? "jst_ph"
+        : physicalConnector?.kind === "usb_c_plug"
+          ? "usb_c"
+          : props.standard
   if (
-    props.standard !== "usb_c" &&
-    props.standard !== "jst_sh" &&
-    props.standard !== "jst_ph" &&
-    props.standard !== "bullet"
+    !physicalConnector &&
+    standard !== "usb_c" &&
+    standard !== "jst_sh" &&
+    standard !== "jst_ph"
   )
     throw new Error(
-      `assembly.cable "${cable.name}" cannot infer endpoint "${selector}"; use a connector with standard="usb_c", "jst_sh", "jst_ph", or "bullet"`,
+      `assembly.cable "${cable.name}" cannot infer endpoint "${selector}"; supply a supported connector model or standard`,
     )
-  // The connector schema requires diameter and gender when standard is bullet.
-  const bulletConnector =
-    props.standard === "bullet"
-      ? getBulletConnector({
-          diameter: props.bulletDiameter!,
-          gender: props.bulletGender!,
-          pinCount: props.pinCount ?? 1,
-        })
+  const contactConnector =
+    physicalConnector?.kind === "bullet_male" ||
+    physicalConnector?.kind === "bullet_female"
+      ? physicalConnector
       : undefined
   const pcb = cable.root!.db.pcb_component.get(connector.pcb_component_id)!
   const board = connector._getBoard()!
@@ -217,7 +224,7 @@ export function resolveAssemblyCableEndpoint(
   ])
   const direction =
     connector._getPcbComponentInsertionAxisDirection(layer, pcb.rotation) ??
-    (props.standard === "usb_c" && vec3.length(inferredDirection) > 0
+    (standard === "usb_c" && vec3.length(inferredDirection) > 0
       ? { x: inferredDirection[0], y: inferredDirection[1], z: 0 }
       : { x: 0, y: 0, z: layer === "bottom" ? -1 : 1 })
   // A 2D boundary guess is meaningful for a side-entry USB port. Stock JST
@@ -226,19 +233,19 @@ export function resolveAssemblyCableEndpoint(
   const sign = layer === "bottom" ? -1 : 1
   // Top-entry header mouths: JST PH BxB-PH is 6 mm; SH BMxxB is
   // 4.25 mm above copper, paired with jscad-electronics' header models.
-  const height = bulletConnector
+  const height = contactConnector
     ? Math.abs(direction.z) > 0.5
-      ? bulletConnector.bodyDepth
-      : bulletConnector.bodyHeight / 2
+      ? contactConnector.bodyDepth
+      : contactConnector.bodyHeight / 2
     : Math.abs(direction.z) > 0.5
-      ? props.standard === "jst_ph"
+      ? standard === "jst_ph"
         ? 6
-        : props.standard === "jst_sh"
+        : standard === "jst_sh"
           ? 4.25
           : 1.5
-      : props.standard === "usb_c"
+      : standard === "usb_c"
         ? 1.5
-        : props.standard === "jst_sh"
+        : standard === "jst_sh"
           ? 1.4
           : 2.25
   const position = {
@@ -256,17 +263,14 @@ export function resolveAssemblyCableEndpoint(
       direction,
     ),
     direction,
+    connector: physicalConnector
+      ? getMatingConnector(physicalConnector)
+      : undefined,
     cableInput:
-      props.standard === "bullet"
-        ? {
-            standard: "bullet",
-            diameter: props.bulletDiameter!,
-            pinCount: props.pinCount ?? 1,
-            genderA: props.bulletGender === "male" ? "female" : "male",
-            genderB: props.bulletGender === "male" ? "female" : "male",
-          }
-        : props.standard === "usb_c"
-          ? { standard: "usb_c" }
-          : { standard: props.standard, pinCount: props.pinCount },
+      standard === "usb_c"
+        ? { standard: "usb_c" }
+        : standard === "jst_sh" || standard === "jst_ph"
+          ? { standard, pinCount: props.pinCount }
+          : undefined,
   }
 }

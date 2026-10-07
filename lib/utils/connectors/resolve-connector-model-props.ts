@@ -1,35 +1,38 @@
-import { parseConnectorString } from "@tscircuit/cableprinter"
+import {
+  type CableConnector,
+  getBulletConnector,
+  parseConnectorString,
+} from "@tscircuit/cableprinter"
 import type { ParsedConnectorProps } from "@tscircuit/props"
 
-/** Recover a physical mating interface without treating its model family as a standard. */
+/** Resolve known physical mating interfaces without changing authored standards. */
+export function resolveConnectorModel(
+  model: string | undefined,
+): CableConnector | undefined {
+  if (!model) return undefined
+  try {
+    return parseConnectorString(model)
+  } catch {
+    return undefined
+  }
+}
+
 export function resolveConnectorModelProps(
   props: ParsedConnectorProps,
 ): ParsedConnectorProps {
-  if (!props.model) return props
-  // Modelprinter supports many non-connector models. Only decode known cable
-  // interfaces here; preserve other model specifications for CAD consumers.
-  if (!/^(bullet[0-9]*_|jst_(sh|ph)(_|$)|usb_c$)/i.test(props.model))
-    return props
-  const connector = parseConnectorString(props.model)
-  if (connector.kind === "bullet_male" || connector.kind === "bullet_female") {
-    return {
-      ...props,
-      standard: "bullet",
-      bulletDiameter: connector.diameter,
-      bulletGender: connector.kind === "bullet_male" ? "male" : "female",
+  const connector = resolveConnectorModel(props.model)
+  return connector && "pinCount" in connector
+    ? { ...props, pinCount: props.pinCount ?? connector.pinCount }
+    : props
+}
+
+/** Resolve the cable end that mates with a physical connector. */
+export function getMatingConnector(connector: CableConnector): CableConnector {
+  if (connector.kind === "bullet_male" || connector.kind === "bullet_female")
+    return getBulletConnector({
+      diameter: connector.diameter,
       pinCount: connector.pinCount,
-    }
-  }
-  if (
-    connector.kind === "jst_sh_housing" ||
-    connector.kind === "jst_ph_housing"
-  ) {
-    return {
-      ...props,
-      standard: connector.kind === "jst_sh_housing" ? "jst_sh" : "jst_ph",
-      pinCount: connector.pinCount,
-    }
-  }
-  if (connector.kind === "usb_c_plug") return { ...props, standard: "usb_c" }
-  return props
+      gender: connector.kind === "bullet_male" ? "female" : "male",
+    })
+  return connector
 }
