@@ -103,7 +103,11 @@ export abstract class PrimitiveComponent<
   getInheritedProperty(propertyName: string) {
     let current: PrimitiveComponent<ZodProps> | null = this
     while (current) {
-      if (current._parsedProps && propertyName in current._parsedProps) {
+      if (
+        current._parsedProps &&
+        propertyName in current._parsedProps &&
+        current._parsedProps[propertyName] !== undefined
+      ) {
         return current._parsedProps[propertyName]
       }
       current = current.parent as PrimitiveComponent<ZodProps> | null // Move up to the parent
