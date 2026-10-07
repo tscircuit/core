@@ -1,4 +1,5 @@
 import { schematicSheetProps } from "@tscircuit/props"
+import type { Point } from "circuit-json"
 import { getBoundsForSchematic } from "lib/utils/autorouting/getBoundsForSchematic"
 import { resolveCircuitJsonSchematicSheetProperties } from "lib/utils/schematic/get-circuit-json-schematic-sheet-size"
 import { insertSchematicElementOutsideSheetWarnings } from "lib/utils/schematic/insertSchematicElementOutsideSheetWarnings"
@@ -9,6 +10,8 @@ export class SchematicSheet extends PrimitiveComponent<
 > {
   isSchematicPrimitive = true
   resolvedSchematicSheetDisplayName = "Schematic Sheet"
+  /** Explicit page center point in schematic world coordinates. */
+  explicitSchematicSheetCenter: Point | undefined
 
   get config() {
     return {
@@ -45,6 +48,12 @@ export class SchematicSheet extends PrimitiveComponent<
     const name = props.name ?? props.displayName ?? `Sheet ${sheetIndex + 1}`
     const displayName = props.displayName ?? name
     this.resolvedSchematicSheetDisplayName = displayName
+    if (props.schX !== undefined || props.schY !== undefined) {
+      this.explicitSchematicSheetCenter = {
+        x: props.schX ?? 0,
+        y: props.schY ?? 0,
+      }
+    }
     const resolvedSheetProperties =
       resolveCircuitJsonSchematicSheetProperties(props)
 
@@ -55,8 +64,9 @@ export class SchematicSheet extends PrimitiveComponent<
       sheet_size: resolvedSheetProperties.sheetSize,
       sheet_width: resolvedSheetProperties.sheetWidth,
       sheet_height: resolvedSheetProperties.sheetHeight,
+      center: this.explicitSchematicSheetCenter,
       subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
-    } as any)
+    })
 
     this.schematic_sheet_id = schematicSheet.schematic_sheet_id
   }
@@ -79,12 +89,17 @@ export class SchematicSheet extends PrimitiveComponent<
       ...db.schematic_arc.list(),
       ...db.schematic_path.list(),
     ].filter(
-      (element) =>
-        (element as any).schematic_sheet_id === this.schematic_sheet_id,
+      (element) => element.schematic_sheet_id === this.schematic_sheet_id,
     )
 
-    let schematicSheetCenter = { x: 0, y: 0 }
-    if (schematicElements.length > 0) {
+    let schematicSheetCenter = this.explicitSchematicSheetCenter ?? {
+      x: 0,
+      y: 0,
+    }
+    if (
+      this.explicitSchematicSheetCenter === undefined &&
+      schematicElements.length > 0
+    ) {
       const bounds = getBoundsForSchematic(schematicElements)
       if (
         Number.isFinite(bounds.minX) &&
@@ -99,7 +114,7 @@ export class SchematicSheet extends PrimitiveComponent<
 
         db.schematic_sheet.update(this.schematic_sheet_id, {
           center: schematicSheetCenter,
-        } as any)
+        })
       }
     }
 
