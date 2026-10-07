@@ -1,7 +1,7 @@
 {
   "name": "@tscircuit/core",
   "type": "module",
-  "version": "0.0.2102",
+  "version": "0.0.2103",
   "types": "dist/index.d.ts",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -58,7 +58,7 @@
     "@tscircuit/matchpack": "^0.0.97",
     "@tscircuit/math-utils": "^0.0.36",
     "@tscircuit/miniflex": "^0.0.4",
-    "@tscircuit/modelprinter": "^0.0.10",
+    "@tscircuit/modelprinter": "^0.0.11",
     "@tscircuit/ngspice-spice-engine": "^0.0.20",
     "@tscircuit/props": "^0.0.693",
     "@tscircuit/schematic-match-adapt": "^0.0.18",
