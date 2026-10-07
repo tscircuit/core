@@ -39,3 +39,11 @@ import "./fiber/react-jsx-compat"
 export { fanoutTracePath, type FanoutTracePath } from "@tscircuit/props"
 
 export { jscad } from "jscad-fiber/headless"
+export {
+  getSuboptimalChipOrientationsSrj,
+  DEFAULT_CHIP_ORIENTATION_WARNING_THRESHOLD,
+} from "./utils/autorouting/get-suboptimal-chip-orientations-srj"
+export type {
+  ChipOrientationAnalysis,
+  ChipOrientationWarningThreshold,
+} from "./utils/autorouting/get-suboptimal-chip-orientations-srj"
