@@ -1,5 +1,5 @@
 import { fabricationNoteRectProps } from "@tscircuit/props"
-import { applyToPoint } from "transformation-matrix"
+import { decomposeTSR } from "transformation-matrix"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
 export class FabricationNoteRect extends PrimitiveComponent<
@@ -34,6 +34,7 @@ export class FabricationNoteRect extends PrimitiveComponent<
       this.getPrimitiveContainer()?.pcb_component_id!
 
     const subcircuit = this.getSubcircuit()
+    const { width, height } = this.getPcbSize()
 
     const hasStroke =
       props.hasStroke ??
@@ -48,8 +49,8 @@ export class FabricationNoteRect extends PrimitiveComponent<
         x: position.x,
         y: position.y,
       },
-      width: props.width,
-      height: props.height,
+      width,
+      height,
       stroke_width: props.strokeWidth ?? 1,
       is_filled: props.isFilled ?? false,
       has_stroke: hasStroke,
@@ -63,8 +64,24 @@ export class FabricationNoteRect extends PrimitiveComponent<
       fabrication_note_rect.pcb_fabrication_note_rect_id
   }
 
+  /**
+   * Axis-aligned size in PCB world mm (+X right, +Y top), after orthogonal
+   * footprint and parent rotations. Reflections do not change side lengths.
+   */
   getPcbSize(): { width: number; height: number } {
     const { _parsedProps: props } = this
+    // Use the same footprint placement transform that positions the center
+    // and that FabricationNotePath applies to every outline point.
+    const transform = this._computePcbGlobalTransformBeforeLayout()
+    const { rotation } = decomposeTSR(transform)
+    const rotationDegrees = (rotation.angle * 180) / Math.PI
+    const normalizedRotation = ((rotationDegrees % 180) + 180) % 180
+
+    // Circuit JSON fabrication rectangles are axis aligned. A quarter turn
+    // exchanges their sides; 0 and 180 degrees preserve their dimensions.
+    if (Math.abs(normalizedRotation - 90) < 0.01) {
+      return { width: props.height, height: props.width }
+    }
     return { width: props.width, height: props.height }
   }
 
