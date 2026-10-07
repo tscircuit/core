@@ -123,6 +123,7 @@ export const createComponentsFromCircuitJson = (
     pinLabels,
     pcbPinLabels,
     preserveSolderPaste = false,
+    preserveSilkscreenText = false,
   }: {
     sourcePortOwner?: NormalComponent
     componentName: string
@@ -131,6 +132,7 @@ export const createComponentsFromCircuitJson = (
     pinLabels?: PinLabelsProp
     pcbPinLabels?: PinLabelsProp
     preserveSolderPaste?: boolean
+    preserveSilkscreenText?: boolean
   },
   circuitJson: AnyCircuitElement[],
 ): PrimitiveComponent[] => {
@@ -641,13 +643,14 @@ export const createComponentsFromCircuitJson = (
           // Footprinter-generated reference text is a placeholder that should
           // resolve to the component name. A literal from the explicit
           // `silkscreenlabel(...)` footprint option is an intentional custom
-          // label (for example a module name) and must be preserved. Other
-          // imported footprint text keeps the legacy component-name fallback.
+          // label (for example a module name) and must be preserved. Rendered
+          // Circuit JSON also preserves literals such as polarity marks.
           text:
-            footprinterString?.includes("silkscreenlabel(") &&
-            elm.text !== "{REF}" &&
-            elm.text !== "{NAME}" &&
-            elm.text !== "{REFERENCE}"
+            preserveSilkscreenText ||
+            (footprinterString?.includes("silkscreenlabel(") &&
+              elm.text !== "{REF}" &&
+              elm.text !== "{NAME}" &&
+              elm.text !== "{REFERENCE}")
               ? elm.text
               : componentName || elm.text,
           pcbX: Number.isNaN(elm.anchor_position.x) ? 0 : elm.anchor_position.x,

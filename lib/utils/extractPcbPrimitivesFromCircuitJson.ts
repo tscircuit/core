@@ -60,6 +60,7 @@ export const extractPcbPrimitivesFromCircuitJson = ({
       componentRotation: "0deg",
       // Rendered footprints must retain missing apertures as well as geometry.
       preserveSolderPaste: true,
+      preserveSilkscreenText: true,
     },
     clonedRelativeElements,
   )
