@@ -1,4 +1,5 @@
 import type { CableInput } from "@tscircuit/cableprinter"
+import { getJstMotorConnector } from "@tscircuit/modelprinter"
 import type { Point3, SourceComponentBase } from "circuit-json"
 import { mat4, vec3 } from "gl-matrix"
 import { selectAll } from "css-select"
@@ -17,6 +18,7 @@ import { resolveMotorFaceMount } from "./resolve-motor-face-mount"
 import type { AssemblyPlacement } from "./resolve-assembly-placement"
 import { resolveAssemblyMotorPlacement } from "./resolve-assembly-motor-placement"
 import { resolveAssemblyMotorRotation } from "./resolve-assembly-motor-rotation"
+import { resolveAssemblyCablePin1Position } from "./resolve-assembly-cable-pin1-position"
 
 /** Connector mating-center point and outward unit direction in right-handed
  * circuit world, mm (+X right, +Y top, +Z above). Points acquire translation;
@@ -25,6 +27,7 @@ import { resolveAssemblyMotorRotation } from "./resolve-assembly-motor-rotation"
 export interface AssemblyCableEndpoint {
   sourceComponentId: SourceComponentBase["source_component_id"]
   position: Point3
+  pin1Position?: Point3
   direction: BoardDirectionVector
   cableInput: CableInput
 }
@@ -46,9 +49,10 @@ export function resolveAssemblyCableEndpoint(
         `assembly.cable "${cable.name}" endpoint "${selector}" must match exactly one motor in its assembly device`,
       )
     const motor = motors[0]!
-    if (motor.motorModel.wireConnection !== "jst-ph-6")
+    const motorConnector = getJstMotorConnector(motor.motorModel.wireConnection)
+    if (!motorConnector)
       throw new Error(
-        `assembly.cable "${cable.name}" requires motor "${motor.name}" to have wireConnection="jst-ph-6" for its connector endpoint`,
+        `assembly.cable "${cable.name}" requires motor "${motor.name}" to have a JST PH or SH wireConnection, e.g. "jst4_ph" or "jst4_sh", for its connector endpoint`,
       )
     const faceMount = resolveMotorFaceMount(motor)
     const placement: AssemblyPlacement = faceMount
@@ -82,17 +86,59 @@ export function resolveAssemblyCableEndpoint(
       [reference.position.x, reference.position.y, reference.position.z],
       orientation,
     )
-    // NEMA's PH header mating face is 6 mm beyond its body-side reference,
-    // as specified by jscad-electronics createNemaMotorWireGeometry.
+    // Paired with createNemaMotorWireGeometry: contacts span local +Y before
+    // wireSideAngle rotation, with pin 1 at the negative end of the row.
+    const halfPinSpan =
+      ((motorConnector.pinCount - 1) * motorConnector.pitch) / 2
+    const pin1Offset = vec3.transformMat4(
+      vec3.create(),
+      [
+        reference.direction.y * halfPinSpan,
+        -reference.direction.x * halfPinSpan,
+        0,
+      ],
+      orientation,
+    )
+    // The shared header profile places the mating face beyond its body reference.
+
     return {
       sourceComponentId: motor.source_component_id!,
       position: {
-        x: point[0] + placement.position.x + direction[0] * 6,
-        y: point[1] + placement.position.y + direction[1] * 6,
-        z: point[2] + placement.position.z + direction[2] * 6,
+        x:
+          point[0] +
+          placement.position.x +
+          direction[0] * motorConnector.matingDepth,
+        y:
+          point[1] +
+          placement.position.y +
+          direction[1] * motorConnector.matingDepth,
+        z:
+          point[2] +
+          placement.position.z +
+          direction[2] * motorConnector.matingDepth,
+      },
+      pin1Position: {
+        x:
+          point[0] +
+          placement.position.x +
+          direction[0] * motorConnector.matingDepth +
+          pin1Offset[0],
+        y:
+          point[1] +
+          placement.position.y +
+          direction[1] * motorConnector.matingDepth +
+          pin1Offset[1],
+        z:
+          point[2] +
+          placement.position.z +
+          direction[2] * motorConnector.matingDepth +
+          pin1Offset[2],
       },
       direction: { x: direction[0], y: direction[1], z: direction[2] },
-      cableInput: { standard: "jst_ph", pinCount: 6 },
+      cableInput: {
+        standard: motorConnector.standard,
+        pinCount: motorConnector.pinCount,
+      },
     }
   }
   const scope = getAssemblyScope(cable)
@@ -154,13 +200,20 @@ export function resolveAssemblyCableEndpoint(
         : props.standard === "jst_sh"
           ? 1.4
           : 2.25
+  const position = {
+    x: center.x,
+    y: center.y,
+    z: sign * (board.boardThickness / 2 + height),
+  }
   return {
     sourceComponentId: connector.source_component_id,
-    position: {
-      x: center.x,
-      y: center.y,
-      z: sign * (board.boardThickness / 2 + height),
-    },
+    position,
+    pin1Position: resolveAssemblyCablePin1Position(
+      cable,
+      connector,
+      position,
+      direction,
+    ),
     direction,
     cableInput:
       props.standard === "usb_c"
