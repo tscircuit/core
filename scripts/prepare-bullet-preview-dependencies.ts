@@ -12,10 +12,8 @@ if (
   const previews = {
     "@tscircuit/props": "https://pkg.pr.new/@tscircuit/props@30c249f",
     "circuit-json": "https://pkg.pr.new/circuit-json@15e3079",
-    "@tscircuit/cableprinter":
-      "^0.0.6",
-    "circuit-json-to-gltf":
-      "^0.0.148",
+    "@tscircuit/cableprinter": "^0.0.6",
+    "circuit-json-to-gltf": "^0.0.148",
   }
   for (const [name, preview] of Object.entries(previews)) {
     manifest.devDependencies[name] = preview
