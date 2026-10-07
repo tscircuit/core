@@ -15,7 +15,7 @@ if (
     "@tscircuit/cableprinter":
       "https://pkg.pr.new/tscircuit/cableprinter/@tscircuit/cableprinter@5a4a697",
     "circuit-json-to-gltf":
-      "https://pkg.pr.new/tscircuit/circuit-json-to-gltf@5cb3041",
+      "https://pkg.pr.new/tscircuit/circuit-json-to-gltf@b702e79",
   }
   for (const [name, preview] of Object.entries(previews)) {
     manifest.devDependencies[name] = preview
