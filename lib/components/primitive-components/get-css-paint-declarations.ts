@@ -61,7 +61,7 @@ export const getCssPaintDeclarationsFromStylesheetNodes = (
     if (stylesheetNode.type !== "decl") continue
     setPaintDeclaration({
       declarations,
-      important: stylesheetNode.important,
+      important: stylesheetNode.important ?? false,
       paintSetting: stylesheetNode.value.trim(),
       propertyName: stylesheetNode.prop.trim().toLowerCase(),
     })
