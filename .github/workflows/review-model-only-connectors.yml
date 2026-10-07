@@ -1,0 +1,30 @@
+name: Review model-only connector snapshots
+on:
+  push:
+    branches: [codex/review-model-only-connectors-20261007]
+permissions:
+  contents: read
+jobs:
+  snapshots:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.0
+      - run: bun scripts/prepare-bullet-preview-dependencies.ts
+        env:
+          GITHUB_EVENT_NAME: pull_request
+      - run: bun install
+      - run: bun test tests/assembly/assembly-cable-bullet.test.tsx tests/assembly/assembly-cable-bullet-group.test.tsx tests/assembly/assembly-cable-adapter.test.tsx tests/assembly/assembly-cable-bldc-adapter.test.tsx tests/assembly/assembly-cable-modelprinter-string.test.tsx --timeout 30000
+        env:
+          BUN_UPDATE_SNAPSHOTS: "1"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: model-only-connector-snapshots
+          path: |
+            tests/assembly/__snapshots__/assembly-cable-bullet-annotated.snap.png
+            tests/assembly/__snapshots__/assembly-cable-bullet-group-annotated.snap.png
+            tests/assembly/__snapshots__/assembly-cable-adapter-annotated.snap.png
+            tests/assembly/__snapshots__/assembly-cable-bldc-adapter-annotated.snap.png
