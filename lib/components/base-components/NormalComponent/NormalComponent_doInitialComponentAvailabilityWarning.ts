@@ -1,4 +1,8 @@
-import { type PartsEngine, supplierProps } from "@tscircuit/props"
+import {
+  type PartsEngine,
+  type SupplierPartNumbers,
+  supplierProps,
+} from "@tscircuit/props"
 import { source_component_availability_warning } from "circuit-json"
 import { checkPartAvailability } from "lib/utils/part-availability"
 import type { NormalComponent } from "./NormalComponent"
@@ -18,16 +22,18 @@ export function NormalComponent_doInitialComponentAvailabilityWarning(
   const sourceComponentId = component.source_component_id
   if (!root || !sourceComponentId) return
   const { db } = root
-  const sourceComponent = db.source_component.get(sourceComponentId)
   const partsEngine = component.getInheritedProperty("partsEngine") as
     | PartsEngine
     | undefined
+  // Only check suppliers explicitly chosen by the user, not automatic selections.
+  const supplierPartNumbers: SupplierPartNumbers =
+    component.props.supplierPartNumbers ?? {}
   const supplierAlternatives = supplierNames
     .map((supplierName) => ({
       supplierName,
       partNumbers: [
         ...new Set(
-          (sourceComponent?.supplier_part_numbers?.[supplierName] ?? [])
+          (supplierPartNumbers[supplierName] ?? [])
             .map((partNumber) => partNumber.trim())
             .filter(Boolean),
         ),
@@ -102,7 +108,7 @@ export function NormalComponent_doInitialComponentAvailabilityWarning(
           subcircuit_id: component.getSubcircuit()?.subcircuit_id ?? undefined,
           supplier_name: supplierName,
           supplier_part_numbers: checkedPartNumbers,
-          message: `${component.name || "Unnamed component"} may not have availability from ${supplierName === "jlcpcb" ? "JLCPCB" : supplierName} (${checkedPartNumbers.join(", ")}).`,
+          message: `${component.name || "Unnamed component"} may not have availability from ${supplierName} (${checkedPartNumbers.join(", ")}).`,
         }),
       )
     }
