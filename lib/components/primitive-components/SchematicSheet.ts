@@ -69,14 +69,13 @@ export class SchematicSheet extends PrimitiveComponent<
         defaultSheetProperties.sheetWidth ||
       resolvedSheetProperties.sheetHeight !== defaultSheetProperties.sheetHeight
     ) {
-      db.insert({
-        type: "schematic_sheet_styling_warning",
+      db.schematic_sheet_styling_warning.insert({
         warning_type: "schematic_sheet_styling_warning",
         styling_issue_type: "non_default_sheet_size",
         schematic_sheet_id: this.schematic_sheet_id,
         subcircuit_id: schematicSheet.subcircuit_id,
         message: `Schematic sheet "${displayName}" uses a non-default size (${resolvedSheetProperties.sheetWidth} × ${resolvedSheetProperties.sheetHeight} mm). Prefer the default A4 sheet size (297 × 210 mm) for consistent schematic styling.`,
-      } as any)
+      })
     }
   }
 
