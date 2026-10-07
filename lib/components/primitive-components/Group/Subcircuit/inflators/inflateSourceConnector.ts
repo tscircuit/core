@@ -111,8 +111,6 @@ export function inflateSourceConnector(
   const connectorProps: ConnectorProps = {
     name: sourceElm.name,
     standard: sourceElm.standard,
-    pinCount: sourceElm.pin_count,
-    model: sourceElm.modelprinter_string,
     manufacturerPartNumber: sourceElm.manufacturer_part_number,
     supplierPartNumbers: sourceElm.supplier_part_numbers ?? undefined,
     pinLabels:

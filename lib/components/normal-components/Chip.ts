@@ -4,7 +4,6 @@ import {
   pcb_component_invalid_layer_error,
   type SourcePort,
 } from "circuit-json"
-import type { BaseComponentConfig } from "lib/components/base-components/PrimitiveComponent"
 import { NormalComponent } from "lib/components/base-components/NormalComponent"
 import { Port } from "lib/components/primitive-components/Port"
 import { Trace } from "lib/components/primitive-components/Trace/Trace"
@@ -19,7 +18,7 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
   _fetchedSourcePortsForPinAttributes: SourcePort[] = []
   _hasStartedPinAttributesFetch = false
 
-  get config(): BaseComponentConfig {
+  get config() {
     return {
       componentName: "Chip",
       zodProps: chipProps,

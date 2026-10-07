@@ -1,29 +1,23 @@
-import {
-  resolveConnectorModel,
-  getMatingConnector,
-} from "lib/utils/connectors/resolve-connector-model-props"
-import { type CableInput, type CableConnector } from "@tscircuit/cableprinter"
-import type { ParsedConnectorProps } from "@tscircuit/props"
+import type { CableInput } from "@tscircuit/cableprinter"
 import { getJstMotorConnector } from "@tscircuit/modelprinter"
 import type { Point3, SourceComponentBase } from "circuit-json"
-import { selectAll } from "css-select"
 import { mat4, vec3 } from "gl-matrix"
-import type { BoardDirectionVector } from "lib/utils/pcb/transform-footprint-insertion-direction"
+import { selectAll } from "css-select"
 import { NormalComponent } from "../base-components/NormalComponent"
 import { cssSelectPrimitiveComponentAdapter } from "../base-components/PrimitiveComponent/cssSelectPrimitiveComponentAdapter"
 import { preprocessSelector } from "../base-components/PrimitiveComponent/preprocessSelector"
+import type { BoardDirectionVector } from "lib/utils/pcb/transform-footprint-insertion-direction"
 import type { AssemblyCable } from "./AssemblyCable"
 import type { AssemblyMotor } from "./AssemblyMotor"
-import type { AssemblySubassembly } from "./AssemblySubassembly"
+import type { ConnectorProps } from "@tscircuit/props"
 import {
   getAssemblyScope,
   getComponentsInAssemblyScope,
 } from "./get-assembly-scope-components"
+import { resolveMotorFaceMount } from "./resolve-motor-face-mount"
+import type { AssemblyPlacement } from "./resolve-assembly-placement"
 import { resolveAssemblyMotorPlacement } from "./resolve-assembly-motor-placement"
 import { resolveAssemblyMotorRotation } from "./resolve-assembly-motor-rotation"
-import type { AssemblyPlacement } from "./resolve-assembly-placement"
-import { resolveCadAssemblyCableEndpoint } from "./resolve-cad-assembly-cable-endpoint"
-import { resolveMotorFaceMount } from "./resolve-motor-face-mount"
 import { resolveAssemblyCablePin1Position } from "./resolve-assembly-cable-pin1-position"
 
 /** Connector mating-center point and outward unit direction in right-handed
@@ -36,37 +30,14 @@ export interface AssemblyCableEndpoint {
   pin1Position?: Point3
   direction: BoardDirectionVector
   cableInput?: CableInput
-  connector?: CableConnector
 }
 
 export function resolveAssemblyCableEndpoint(
   cable: AssemblyCable,
   selector: string,
+  cableConnector?: CableConnector,
 ): AssemblyCableEndpoint {
   const scoped = getComponentsInAssemblyScope(cable)
-  const namedConnector = selector.match(
-    /^([A-Za-z][A-Za-z0-9_]*)\.([A-Za-z][A-Za-z0-9_]*)$/,
-  )
-  if (namedConnector) {
-    const assemblies = scoped.filter(
-      (part): part is AssemblySubassembly =>
-        part.componentName === "AssemblySubassembly" &&
-        part.name === namedConnector[1],
-    )
-    if (assemblies.length > 0) {
-      if (assemblies.length !== 1)
-        throw new Error(
-          `assembly.cable "${cable.name}" endpoint "${selector}" must name exactly one CAD assembly`,
-        )
-      const owner = assemblies[0]!
-      const connector = owner._parsedProps.cableConnectors?.[namedConnector[2]!]
-      if (!connector)
-        throw new Error(
-          `Assembly "${owner.name}" has no cable connector named "${namedConnector[2]}"`,
-        )
-      return resolveCadAssemblyCableEndpoint(owner, connector)
-    }
-  }
   const motorReference = selector.match(/^(.+)\.wireside$/)
   if (motorReference) {
     const motors = scoped.filter(
@@ -189,30 +160,15 @@ export function resolveAssemblyCableEndpoint(
     throw new Error(
       `assembly.cable "${cable.name}" endpoint "${selector}" must name a PCB connector or MOTOR.wireside`,
     )
-  const props = connector._parsedProps as ParsedConnectorProps
-  const physicalConnector = resolveConnectorModel(props.model)
-  const standard =
-    physicalConnector?.kind === "jst_sh_housing"
-      ? "jst_sh"
-      : physicalConnector?.kind === "jst_ph_housing"
-        ? "jst_ph"
-        : physicalConnector?.kind === "usb_c_plug"
-          ? "usb_c"
-          : props.standard
+  const props = connector._parsedProps as ConnectorProps
   if (
-    !physicalConnector &&
-    standard !== "usb_c" &&
-    standard !== "jst_sh" &&
-    standard !== "jst_ph"
+    !cableConnector &&
+    props.standard !== "usb_c" && props.standard !== "jst_sh" &&
+    props.standard !== "jst_ph"
   )
     throw new Error(
-      `assembly.cable "${cable.name}" cannot infer endpoint "${selector}"; supply a supported connector model or standard`,
+      `assembly.cable "${cable.name}" cannot infer endpoint "${selector}"; use a connector with standard="usb_c", "jst_sh", or "jst_ph"`,
     )
-  const contactConnector =
-    physicalConnector?.kind === "bullet_male" ||
-    physicalConnector?.kind === "bullet_female"
-      ? physicalConnector
-      : undefined
   const pcb = cable.root!.db.pcb_component.get(connector.pcb_component_id)!
   const board = connector._getBoard()!
   const layer = pcb.layer === "bottom" ? "bottom" : "top"
@@ -224,7 +180,7 @@ export function resolveAssemblyCableEndpoint(
   ])
   const direction =
     connector._getPcbComponentInsertionAxisDirection(layer, pcb.rotation) ??
-    (standard === "usb_c" && vec3.length(inferredDirection) > 0
+    (props.standard === "usb_c" && vec3.length(inferredDirection) > 0
       ? { x: inferredDirection[0], y: inferredDirection[1], z: 0 }
       : { x: 0, y: 0, z: layer === "bottom" ? -1 : 1 })
   // A 2D boundary guess is meaningful for a side-entry USB port. Stock JST
@@ -233,21 +189,22 @@ export function resolveAssemblyCableEndpoint(
   const sign = layer === "bottom" ? -1 : 1
   // Top-entry header mouths: JST PH BxB-PH is 6 mm; SH BMxxB is
   // 4.25 mm above copper, paired with jscad-electronics' header models.
-  const height = contactConnector
-    ? Math.abs(direction.z) > 0.5
-      ? contactConnector.bodyDepth
-      : contactConnector.bodyHeight / 2
-    : Math.abs(direction.z) > 0.5
-      ? standard === "jst_ph"
-        ? 6
-        : standard === "jst_sh"
-          ? 4.25
-          : 1.5
-      : standard === "usb_c"
-        ? 1.5
-        : standard === "jst_sh"
-          ? 1.4
-          : 2.25
+  const height =
+    !props.standard && cableConnector
+      ? Math.abs(direction.z) > 0.5
+        ? cableConnector.bodyDepth
+        : cableConnector.bodyHeight / 2
+      : Math.abs(direction.z) > 0.5
+        ? props.standard === "jst_ph"
+          ? 6
+          : props.standard === "jst_sh"
+            ? 4.25
+            : 1.5
+        : props.standard === "usb_c"
+          ? 1.5
+          : props.standard === "jst_sh"
+            ? 1.4
+            : 2.25
   const position = {
     x: center.x,
     y: center.y,
@@ -263,14 +220,11 @@ export function resolveAssemblyCableEndpoint(
       direction,
     ),
     direction,
-    connector: physicalConnector
-      ? getMatingConnector(physicalConnector)
-      : undefined,
     cableInput:
-      standard === "usb_c"
+      props.standard === "usb_c"
         ? { standard: "usb_c" }
-        : standard === "jst_sh" || standard === "jst_ph"
-          ? { standard, pinCount: props.pinCount }
+        : props.standard === "jst_sh" || props.standard === "jst_ph"
+          ? { standard: props.standard, pinCount: props.pinCount }
           : undefined,
   }
 }

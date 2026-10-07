@@ -1,5 +1,5 @@
 import {
-  type ParsedConnectorProps,
+  type ConnectorProps,
   type ConnectorStandard,
   type PartsEngine,
   type SchematicPinStyle,
@@ -9,10 +9,6 @@ import {
 } from "@tscircuit/props"
 import type { AnyCircuitElement, SourceSimpleConnector } from "circuit-json"
 import { source_part_not_found_warning } from "circuit-json"
-import {
-  resolveConnectorModelProps,
-  resolveConnectorModel,
-} from "lib/utils/connectors/resolve-connector-model-props"
 import { convertCircuitJsonToJstStandardCircuitJson } from "lib/utils/connectors/convertCircuitJsonToJstStandardCircuitJson"
 import { convertCircuitJsonToUsbCStandardCircuitJson } from "lib/utils/connectors/convertCircuitJsonToUsbCStandardCircuitJson"
 import { extractCadModelFromCircuitJson } from "lib/utils/connectors/extractCadModelFromCircuitJson"
@@ -92,18 +88,16 @@ const USB_C_DEFAULT_SCH_PIN_STYLE_BY_LABEL: ReadonlyArray<
 export class Connector<
   PinLabels extends string = never,
 > extends Chip<PinLabels> {
-  private _getConnectorProps(): ParsedConnectorProps {
-    return this._parsedProps as ParsedConnectorProps
+  private _getConnectorProps(): ConnectorProps {
+    return this._parsedProps as ConnectorProps
   }
 
   initPorts(): void {
-    const props = resolveConnectorModelProps(this._getConnectorProps())
+    const props = this._getConnectorProps()
     super.initPorts({
-      pinCount:
-        resolveConnectorModel(props.model) ||
-        isJstConnectorStandard(props.standard)
-          ? props.pinCount
-          : undefined,
+      pinCount: isJstConnectorStandard(props.standard)
+        ? props.pinCount
+        : undefined,
     })
   }
 
@@ -382,8 +376,7 @@ export class Connector<
       supplier_part_numbers: props.supplierPartNumbers,
       display_name: props.displayName,
       standard: props.standard,
-      modelprinter_string: props.model,
-      pin_count: props.pinCount ?? resolveConnectorModelProps(props).pinCount,
+      pin_count: props.pinCount,
     } as SourceSimpleConnector)
 
     this.source_component_id = source_component.source_component_id!
@@ -426,8 +419,7 @@ export class Connector<
       name: this.name,
       manufacturer_part_number: resolveManufacturerPartNumber(props),
       standard,
-      modelprinter_string: props.model,
-      pin_count: props.pinCount ?? resolveConnectorModelProps(props).pinCount,
+      pin_count: props.pinCount,
     }
 
     this._queueAsyncEffect("load-standard-connector-circuit-json", async () => {
