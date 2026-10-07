@@ -47,11 +47,13 @@ export function createBulletCableCircuit({
   pinCount = 1,
   toPinCount = pinCount,
   useModelprinterString = false,
+  modelStandard,
 }: {
   diameter: BulletDiameter
   pinCount?: number
   toPinCount?: number
   useModelprinterString?: boolean
+  modelStandard?: "jst_ph"
   fromGender?: BulletGender
   toGender?: BulletGender
   toDiameter?: BulletDiameter
@@ -65,7 +67,8 @@ export function createBulletCableCircuit({
           name="J1"
           {...(useModelprinterString
             ? {
-                modelprinterString: `bullet${pinCount === 1 ? "" : pinCount}_d${diameter}mm_g${fromGender}`,
+                standard: modelStandard,
+                model: `bullet${pinCount === 1 ? "" : pinCount}_d${diameter}mm_g${fromGender}`,
               }
             : {
                 standard: "bullet" as const,
@@ -73,7 +76,11 @@ export function createBulletCableCircuit({
                 bulletGender: fromGender,
               })}
           pinCount={pinCount}
-          cadModel={bulletPcbBody(diameter, fromGender, pinCount)}
+          cadModel={
+            useModelprinterString
+              ? undefined
+              : bulletPcbBody(diameter, fromGender, pinCount)
+          }
           pcbX={-25}
           layer={layer}
           footprint={
@@ -94,7 +101,8 @@ export function createBulletCableCircuit({
           name="J2"
           {...(useModelprinterString
             ? {
-                modelprinterString: `bullet${pinCount === 1 ? "" : pinCount}_d${toDiameter}mm_g${toGender}`,
+                standard: modelStandard,
+                model: `bullet${pinCount === 1 ? "" : pinCount}_d${toDiameter}mm_g${toGender}`,
               }
             : {
                 standard: "bullet" as const,
@@ -102,7 +110,11 @@ export function createBulletCableCircuit({
                 bulletGender: toGender,
               })}
           pinCount={toPinCount}
-          cadModel={bulletPcbBody(toDiameter, toGender, toPinCount)}
+          cadModel={
+            useModelprinterString
+              ? undefined
+              : bulletPcbBody(toDiameter, toGender, toPinCount)
+          }
           pcbX={25}
           layer={layer}
           footprint={

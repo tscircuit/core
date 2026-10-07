@@ -112,7 +112,7 @@ export function inflateSourceConnector(
     name: sourceElm.name,
     standard: sourceElm.standard,
     pinCount: sourceElm.pin_count,
-    modelprinterString: sourceElm.modelprinter_string,
+    model: sourceElm.modelprinter_string,
     manufacturerPartNumber: sourceElm.manufacturer_part_number,
     supplierPartNumbers: sourceElm.supplier_part_numbers ?? undefined,
     pinLabels:

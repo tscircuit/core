@@ -1,3 +1,4 @@
+import { resolveAssemblyModel } from "lib/components/primitive-components/resolve-assembly-model"
 import { resolveManufacturerPartNumber } from "@tscircuit/props"
 import { composeCadModelRotation } from "lib/utils/cad/compose-cad-model-rotation"
 import { getFoldedCadComponentPlacement } from "lib/utils/cad/get-folded-cad-component-placement"
@@ -1942,7 +1943,13 @@ export class NormalComponent<
     if (this.props.doNotPlace) return
     const { db } = this.root!
     const { boardThickness = 0 } = this._getBoard() ?? {}
-    const cadModelProp = this._parsedProps.cadModel
+    const componentModel = (this._parsedProps as { model?: string }).model
+    const cadModelProp =
+      this._parsedProps.cadModel !== undefined
+        ? this._parsedProps.cadModel
+        : componentModel
+          ? resolveAssemblyModel({ model: componentModel })
+          : undefined
     const cadModel =
       cadModelProp === undefined ? this._asyncFootprintCadModel : cadModelProp
     const footprintString = this.getFootprinterString() ?? undefined

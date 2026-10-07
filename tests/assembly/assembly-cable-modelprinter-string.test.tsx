@@ -12,6 +12,7 @@ test("connector model strings resolve grouped adapter ends and survive inflation
     fromGender: "male",
     toGender: "male",
     useModelprinterString: true,
+    modelStandard: "jst_ph",
   })
   await circuit.renderUntilSettled()
   const connectors = circuit.db.source_component
@@ -22,10 +23,19 @@ test("connector model strings resolve grouped adapter ends and survive inflation
     "bullet3_d4mm_gmale",
   ])
   for (const connector of connectors) {
-    expect(connector.standard).toBeUndefined()
+    expect(connector.standard).toBe("jst_ph")
     expect("bullet_diameter" in connector).toBe(false)
     expect("bullet_gender" in connector).toBe(false)
   }
+  expect(
+    circuit.db.cad_component
+      .list()
+      .map((c) => c.model_glb_url)
+      .filter(Boolean),
+  ).toEqual([
+    "https://modelcdn.tscircuit.com/jscad_models/bullet3_d3.5mm_gmale.glb",
+    "https://modelcdn.tscircuit.com/jscad_models/bullet3_d4mm_gmale.glb",
+  ])
   const cableString =
     "adaptercable_a(bullet3_d3.5mm_gfemale)_b(bullet3_d4mm_gfemale)"
   expect(circuit.db.cad_cable.list()[0]!.cableprinter_string).toBe(cableString)

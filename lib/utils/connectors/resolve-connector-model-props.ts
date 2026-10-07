@@ -5,14 +5,12 @@ import type { ParsedConnectorProps } from "@tscircuit/props"
 export function resolveConnectorModelProps(
   props: ParsedConnectorProps,
 ): ParsedConnectorProps {
-  if (!props.modelprinterString) return props
+  if (!props.model) return props
   // Modelprinter supports many non-connector models. Only decode known cable
   // interfaces here; preserve other model specifications for CAD consumers.
-  if (
-    !/^(bullet[0-9]*_|jst_(sh|ph)(_|$)|usb_c$)/i.test(props.modelprinterString)
-  )
+  if (!/^(bullet[0-9]*_|jst_(sh|ph)(_|$)|usb_c$)/i.test(props.model))
     return props
-  const connector = parseConnectorString(props.modelprinterString)
+  const connector = parseConnectorString(props.model)
   if (connector.kind === "bullet_male" || connector.kind === "bullet_female") {
     return {
       ...props,
