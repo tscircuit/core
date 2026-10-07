@@ -117,7 +117,7 @@ const getSchematicSymbolId = (elm: AnyCircuitElement): string | undefined => {
 export const createComponentsFromCircuitJson = (
   {
     sourcePortOwner,
-    componentName,
+    componentName = "",
     componentRotation,
     footprinterString,
     pinLabels,
@@ -125,7 +125,7 @@ export const createComponentsFromCircuitJson = (
     preserveSolderPaste = false,
   }: {
     sourcePortOwner?: NormalComponent
-    componentName: string
+    componentName?: string
     componentRotation: string
     footprinterString?: string
     pinLabels?: PinLabelsProp
@@ -638,17 +638,18 @@ export const createComponentsFromCircuitJson = (
       } else {
         const silkscreenText = new SilkscreenText({
           anchorAlignment: elm.anchor_alignment || "center",
-          // Resolve reference placeholders from Footprinter and KiCad while
-          // preserving literal labels, values, and polarity marks.
-          text: [
-            "{REF}",
-            "{NAME}",
-            "{REFERENCE}",
-            "${REFERENCE}",
-            "REF**",
-          ].includes(elm.text)
-            ? componentName || elm.text
-            : elm.text,
+          // Footprinter-generated reference text is a placeholder that should
+          // resolve to the component name. A literal from the explicit
+          // `silkscreenlabel(...)` footprint option is an intentional custom
+          // label (for example a module name) and must be preserved. Other
+          // imported footprint text keeps the legacy component-name fallback.
+          text:
+            footprinterString?.includes("silkscreenlabel(") &&
+            elm.text !== "{REF}" &&
+            elm.text !== "{NAME}" &&
+            elm.text !== "{REFERENCE}"
+              ? elm.text
+              : componentName || elm.text,
           pcbX: Number.isNaN(elm.anchor_position.x) ? 0 : elm.anchor_position.x,
           pcbY: elm.anchor_position.y,
           pcbRotation: ccwRotation ?? 0,

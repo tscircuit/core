@@ -11,17 +11,14 @@ import { compose, inverse, rotate, translate } from "transformation-matrix"
  *
  * @param pcbElm - The PCB component element from circuit JSON
  * @param injectionDb - The circuit JSON utility objects for querying related elements
- * @param componentName - The name of the parent component (used for silkscreen text)
  * @returns Array of primitive components (SmtPad, PlatedHole, SilkscreenPath, etc.)
  */
 export const extractPcbPrimitivesFromCircuitJson = ({
   pcbComponent,
   db,
-  componentName,
 }: {
   pcbComponent: PcbComponent
   db: CircuitJsonUtilObjects
-  componentName: string
 }): PrimitiveComponent[] => {
   // Get the component center and rotation to make primitive positions relative
   const componentCenter = pcbComponent.center || { x: 0, y: 0 }
@@ -56,7 +53,8 @@ export const extractPcbPrimitivesFromCircuitJson = ({
 
   const components = createComponentsFromCircuitJson(
     {
-      componentName,
+      // Rendered labels already contain their intended text. Omit a replacement
+      // component name so the importer preserves them by default.
       componentRotation: "0deg",
       // Rendered footprints must retain missing apertures as well as geometry.
       preserveSolderPaste: true,

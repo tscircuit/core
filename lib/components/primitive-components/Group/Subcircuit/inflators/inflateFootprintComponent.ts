@@ -21,7 +21,6 @@ export const inflateFootprintComponent = (
   const primitives = extractPcbPrimitivesFromCircuitJson({
     pcbComponent: pcbElm,
     db: injectionDb,
-    componentName: normalComponent.name,
   })
 
   if (primitives.length === 0) return null
