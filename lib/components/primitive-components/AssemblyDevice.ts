@@ -4,12 +4,17 @@ import type { AssemblyDeviceContainer } from "../base-components/is-assembly-dev
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { resolveAssemblyModel } from "./resolve-assembly-model"
 import { renderAssemblyCadModel } from "./render-assembly-cad-model"
+import {
+  applyAssemblyExplodedView,
+  type CadComponentId,
+} from "./apply-assembly-exploded-view"
 
 export class AssemblyDevice
   extends PrimitiveComponent<typeof assemblyDeviceProps>
   implements AssemblyDeviceContainer
 {
   isAssemblyDeviceContainer = true as const
+  private explodedViewCadComponentIds = new Set<CadComponentId>()
 
   get config() {
     return {
@@ -44,19 +49,26 @@ export class AssemblyDevice
 
   doInitialCadModelRender(): void {
     const model = resolveAssemblyModel(this._parsedProps)
-    if (
-      !this.root ||
-      this.root.pcbDisabled ||
-      !this.source_component_id ||
-      !model
-    )
-      return
-    // Devices retain their world frame: right-handed, +X right, +Y top,
-    // +Z above; the origin is a point in millimetres, independent of children.
-    this.cad_component_id = renderAssemblyCadModel(this, model, {
-      position: { x: 0, y: 0, z: 0 },
-      pcbRotation: 0,
-      layer: "top",
+    if (!this.root || this.root.pcbDisabled) return
+    if (this.source_component_id && model) {
+      // Devices retain their world frame: right-handed, +X right, +Y top,
+      // +Z above; the origin is a point in millimetres, independent of children.
+      this.cad_component_id = renderAssemblyCadModel(this, model, {
+        position: { x: 0, y: 0, z: 0 },
+        pcbRotation: 0,
+        layer: "top",
+      })
+    }
+    this.explodedViewCadComponentIds = applyAssemblyExplodedView({
+      assemblyDevice: this,
+      previousCadComponentIds: this.explodedViewCadComponentIds,
+    })
+  }
+
+  updateCadModelRender(): void {
+    this.explodedViewCadComponentIds = applyAssemblyExplodedView({
+      assemblyDevice: this,
+      previousCadComponentIds: this.explodedViewCadComponentIds,
     })
   }
 }
