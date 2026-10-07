@@ -22,9 +22,9 @@ test("LMG342X-BB-EVM J2 CAD placement", async () => {
     rotation: cadComponent?.rotation,
   }).toMatchInlineSnapshot(`
     {
-      "layer": undefined,
+      "layer": "top",
       "position": {
-        "x": -15.112999999999985,
+        "x": -2.4129999999999967,
         "y": 42.30204646,
         "z": 0.8,
       },

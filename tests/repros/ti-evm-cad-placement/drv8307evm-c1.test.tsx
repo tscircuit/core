@@ -22,10 +22,10 @@ test("DRV8307EVM C1 CAD placement", async () => {
     rotation: cadComponent?.rotation,
   }).toMatchInlineSnapshot(`
     {
-      "layer": undefined,
+      "layer": "top",
       "position": {
-        "x": 27.69819962000001,
-        "y": -14.341050820000007,
+        "x": 27.318200379999993,
+        "y": -14.431053179999992,
         "z": 0.8,
       },
       "rotation": {

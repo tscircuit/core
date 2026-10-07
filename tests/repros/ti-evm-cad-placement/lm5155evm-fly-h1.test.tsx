@@ -22,9 +22,9 @@ test("LM5155EVM-FLY H1 CAD placement", async () => {
     rotation: cadComponent?.rotation,
   }).toMatchInlineSnapshot(`
     {
-      "layer": undefined,
+      "layer": "bottom",
       "position": {
-        "x": 37.46491871999999,
+        "x": 37.46508128,
         "y": 15.874918719999997,
         "z": -0.81532128,
       },

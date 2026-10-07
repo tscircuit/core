@@ -22,10 +22,10 @@ test("DP83825EVM J1 CAD placement", async () => {
     rotation: cadComponent?.rotation,
   }).toMatchInlineSnapshot(`
     {
-      "layer": undefined,
+      "layer": "top",
       "position": {
-        "x": -42.925917449999986,
-        "y": 19.150023929994916,
+        "x": -30.125976069999993,
+        "y": 6.349919989994916,
         "z": 3.05000058,
       },
       "rotation": {

@@ -22,10 +22,10 @@ test("LM251772EVM-PD D3 CAD placement", async () => {
     rotation: cadComponent?.rotation,
   }).toMatchInlineSnapshot(`
     {
-      "layer": undefined,
+      "layer": "bottom",
       "position": {
         "x": -4.951084839999993,
-        "y": -33.64006734,
+        "y": -33.63993526,
         "z": -2.1152399400000004,
       },
       "rotation": {

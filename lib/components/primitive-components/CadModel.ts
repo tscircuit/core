@@ -1,9 +1,10 @@
-import { composeCadModelRotation } from "lib/utils/cad/compose-cad-model-rotation"
-import { getFoldedCadComponentPlacement } from "lib/utils/cad/get-folded-cad-component-placement"
 import { cadmodelProps, point3 } from "@tscircuit/props"
 import type { CadModelProps } from "@tscircuit/props"
 import type { CadComponent } from "circuit-json"
 import { distance } from "circuit-json"
+import { composeCadModelRotation } from "lib/utils/cad/compose-cad-model-rotation"
+import { getCadModelBoardPosition } from "lib/utils/cad/get-cad-model-board-position"
+import { getFoldedCadComponentPlacement } from "lib/utils/cad/get-folded-cad-component-placement"
 import { constructAssetUrl } from "lib/utils/constructAssetUrl"
 import { decomposeTSR } from "transformation-matrix"
 import { z } from "zod"
@@ -36,9 +37,6 @@ export class CadModel extends PrimitiveComponent<typeof cadmodelProps> {
 
     const { db } = this.root!
     const { boardThickness = 0 } = parent._getBoard() ?? {}
-
-    const bounds = parent._getPcbCircuitJsonBounds()
-    const pcb_component = db.pcb_component.get(parent.pcb_component_id)
 
     const props = this._parsedProps as CadModelProps
 
@@ -80,6 +78,11 @@ export class CadModel extends PrimitiveComponent<typeof cadmodelProps> {
         : 0
 
     const layer = parent.props.layer === "bottom" ? "bottom" : "top"
+    const boardPosition = getCadModelBoardPosition({
+      componentLocalPosition: positionOffset,
+      componentPcbLocalToBoardTransform: parentTransform,
+      layer,
+    })
 
     const ext = props.modelUrl ? getFileExtension(props.modelUrl) : undefined
     const modelUrlWithoutExtFragment = props.modelUrl?.replace(/#ext=\w+$/, "")
@@ -120,8 +123,8 @@ export class CadModel extends PrimitiveComponent<typeof cadmodelProps> {
 
     let cadComponentPlacement = {
       position: {
-        x: bounds.center.x + Number(positionOffset.x),
-        y: bounds.center.y + Number(positionOffset.y),
+        x: boardPosition.x,
+        y: boardPosition.y,
         z:
           (layer === "bottom" ? -boardThickness / 2 : boardThickness / 2) +
           (layer === "bottom" ? -zOffsetFromSurface : zOffsetFromSurface) +
@@ -144,6 +147,7 @@ export class CadModel extends PrimitiveComponent<typeof cadmodelProps> {
     const cadComponent = db.cad_component.insert({
       ...cadComponentPlacement,
       pcb_component_id: parent.pcb_component_id,
+      layer,
       model_board_normal_direction: props.modelBoardNormalDirection,
       model_origin_alignment: "center_of_component_on_board_surface",
       anchor_alignment: "center_of_component_on_board_surface",
