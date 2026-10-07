@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test"
 import "lib/register-catalogue"
 import { assembly } from "lib"
+import { Fragment } from "react"
 import { RootCircuit } from "lib/RootCircuit"
 import { expectAssemblySnapshot } from "./fixtures/expect-assembly-snapshot"
 
@@ -46,14 +47,15 @@ test("assembly.cable renders an explicitly selected model between different endp
                 <footprint>
                   {Array.from({ length: pinCount }, (_, pin) => pin).map(
                     (pin) => (
-                      <platedhole
-                        key={pin}
-                        pcbX={(pin - (pinCount - 1) / 2) * pitches[index]!}
-                        portHints={[`pin${pin + 1}`]}
-                        holeDiameter={0.5}
-                        outerDiameter={0.8}
-                        shape="circle"
-                      />
+                      <Fragment key={pin}>
+                        <platedhole
+                          pcbX={(pin - (pinCount - 1) / 2) * pitches[index]!}
+                          portHints={[`pin${pin + 1}`]}
+                          holeDiameter={0.5}
+                          outerDiameter={0.8}
+                          shape="circle"
+                        />
+                      </Fragment>
                     ),
                   )}
                 </footprint>
@@ -73,10 +75,10 @@ test("assembly.cable renders an explicitly selected model between different endp
         .list()
         .filter((c) => c.ftype === "simple_connector")
         .map((c) => c.standard),
-    ).toEqual(standards)
+    ).toEqual([...standards])
     panels.push({
       title,
-      code: `<assembly.cable name="C1"\n  from=".J1" to=".J2"\n  model="${model}" />`,
+      code: `<assembly.cable name="C1"\n  from=".J1" to=".J2"\n  model={\n    "${model.split("_b(")[0]}" +\n    "_b(${model.split("_b(")[1]}"\n  } />`,
       annotation:
         "Model specifies the cable; connector standards remain unchanged",
       circuit,
