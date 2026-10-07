@@ -36,6 +36,10 @@ test("supplier updates discard stale lookups and clear outdated availability war
   circuit.render()
   await Promise.resolve()
   const resistor = circuit.selectOne(".R1") as NormalComponent
+  resistor.setProps({
+    ...resistor.props,
+    supplierPartNumbers: { jlcpcb: ["C2"] },
+  })
   circuit.db.source_component.update(resistor.source_component_id!, {
     supplier_part_numbers: { jlcpcb: ["C2"] },
   })
@@ -56,6 +60,13 @@ test("supplier updates discard stale lookups and clear outdated availability war
   expect(circuit.db.source_component_availability_warning.list()).toHaveLength(
     1,
   )
+  resistor.setProps({ ...resistor.props, supplierPartNumbers: undefined })
+  resistor.updateComponentAvailabilityWarning()
+  await circuit.renderUntilSettled()
+  expect(circuit.db.source_component_availability_warning.list()).toHaveLength(
+    0,
+  )
+  expect(requests).toHaveLength(3)
   circuit.setPlatform({ checkAvailability: false })
   resistor.updateComponentAvailabilityWarning()
   expect(circuit.db.source_component_availability_warning.list()).toHaveLength(

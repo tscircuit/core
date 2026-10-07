@@ -1,4 +1,8 @@
-import { type PartsEngine, supplierProps } from "@tscircuit/props"
+import {
+  type PartsEngine,
+  type SupplierPartNumbers,
+  supplierProps,
+} from "@tscircuit/props"
 import { source_component_availability_warning } from "circuit-json"
 import { checkPartAvailability } from "lib/utils/part-availability"
 import type { NormalComponent } from "./NormalComponent"
@@ -22,12 +26,17 @@ export function NormalComponent_doInitialComponentAvailabilityWarning(
   const partsEngine = component.getInheritedProperty("partsEngine") as
     | PartsEngine
     | undefined
+  // Parts selection can add JLCPCB numbers without the user choosing JLCPCB.
+  const supplierPartNumbers: SupplierPartNumbers = {
+    ...sourceComponent?.supplier_part_numbers,
+    jlcpcb: component.props.supplierPartNumbers?.jlcpcb,
+  }
   const supplierAlternatives = supplierNames
     .map((supplierName) => ({
       supplierName,
       partNumbers: [
         ...new Set(
-          (sourceComponent?.supplier_part_numbers?.[supplierName] ?? [])
+          (supplierPartNumbers[supplierName] ?? [])
             .map((partNumber) => partNumber.trim())
             .filter(Boolean),
         ),
