@@ -12,8 +12,11 @@ test("datasheet timeout preserves the supplier footprint and emits one pin attri
     findPart: async () => ({}),
     fetchPartCircuitJson: async ({
       includeDatasheetInformation,
+      manufacturerPartNumber,
     }: DatasheetPartCircuitJsonRequest) => {
-      includeOptions.push(includeDatasheetInformation)
+      // Geometry checks independently fetch the supplier part without enrichment.
+      if (manufacturerPartNumber === "EXAMPLE")
+        includeOptions.push(includeDatasheetInformation)
       if (includeDatasheetInformation)
         throw new Error("Datasheet API did not respond within 5 seconds")
       return external0402Footprint as AnyCircuitElement[]
