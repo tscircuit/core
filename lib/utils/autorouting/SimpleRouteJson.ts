@@ -131,6 +131,9 @@ export type SimpleRouteBus = {
     Record<SrjConnectionName, { x: number; y: number; layer?: string }>
   >
   maxLengthSkew?: number
+  /** Pad-to-pad planar copper limits per member, including fixed fanouts, in mm. */
+  minLength?: number
+  maxLength?: number
   traceWidth?: number
   allowedLayers?: string[]
   /** Highest-priority fanout layer for this bus. */

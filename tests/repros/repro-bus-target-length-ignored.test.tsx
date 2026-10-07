@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("repro: bus targetLength is dropped while relative skew matching succeeds", async () => {
+test("bus targetLength reaches routing and DRC for the eight-bit trainer", async () => {
   const { circuit } = getTestFixture()
   const inputs: SimpleRouteJson[] = []
   circuit.on("autorouting:start", (event) => inputs.push(event.simpleRouteJson))
@@ -40,12 +40,12 @@ test("repro: bus targetLength is dropped while relative skew matching succeeds",
         autorouter="bus_lanes"
       />
       <pcbnotetext
-        text="BUG: targetLength=50 mm; lengthTolerance=0.5 mm"
+        text="targetLength=50 mm; lengthTolerance=0.5 mm"
         pcbY={13}
         fontSize={0.8}
       />
       <pcbnotetext
-        text="Actual: D0=48.934 mm; D1-D7=48.834 mm; zero DRC errors"
+        text="Actual: D0-D7=49.500 mm; all within target; zero DRC errors"
         pcbY={-13}
         fontSize={0.7}
       />
@@ -79,18 +79,22 @@ test("repro: bus targetLength is dropped while relative skew matching succeeds",
     ),
   ).toBe(true)
 
-  // Assert the current bug: all eight routes miss the absolute target silently.
-  // A fix should instead assert every length is within [49.5, 50.5] mm.
-  expect(Math.max(...lengths)).toBeLessThan(49.5)
-  expect(Math.max(...lengths)).toBeCloseTo(48.93382, 5)
-  expect(Math.min(...lengths)).toBeCloseTo(48.83382, 5)
-  expect(Math.max(...lengths) - Math.min(...lengths)).toBeCloseTo(0.1, 7)
+  const lengthEpsilonMm = 1e-7
+  expect(Math.min(...lengths)).toBeGreaterThanOrEqual(49.5 - lengthEpsilonMm)
+  expect(Math.max(...lengths)).toBeLessThanOrEqual(50.5 + lengthEpsilonMm)
+  expect(Math.max(...lengths) - Math.min(...lengths)).toBeLessThanOrEqual(
+    0.1 + lengthEpsilonMm,
+  )
   expect(inputs).toHaveLength(1)
-  expect(inputs[0].buses?.[0]).toMatchObject({ maxLengthSkew: 0.1 })
-  expect(inputs[0].buses?.[0]).not.toHaveProperty("minLength")
-  expect(inputs[0].buses?.[0]).not.toHaveProperty("maxLength")
-  expect(circuit.db.source_bus.list()[0].target_length).toBeUndefined()
-  expect(circuit.db.source_bus.list()[0].length_tolerance).toBeUndefined()
+  expect(inputs[0].buses?.[0]).toMatchObject({
+    maxLengthSkew: 0.1,
+    minLength: 49.5,
+    maxLength: 50.5,
+  })
+  expect(circuit.db.source_bus.list()[0]).toMatchObject({
+    target_length: 50,
+    length_tolerance: 0.5,
+  })
   expect(
     circuit
       .getCircuitJson()
