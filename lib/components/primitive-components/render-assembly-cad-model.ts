@@ -82,7 +82,12 @@ export const renderAssemblyCadModel = (
     layer: placement.layer,
     source_component_id: owner.source_component_id!,
     subcircuit_id: placement.subcircuit_id,
-    model_origin_position: base.modelOriginPosition ?? { x: 0, y: 0, z: 0 },
+    model_origin_alignment: base.modelOriginAlignment,
+    model_origin_position:
+      base.modelOriginPosition ??
+      (base.modelOriginAlignment === undefined
+        ? { x: 0, y: 0, z: 0 }
+        : undefined),
     model_unit_to_mm_scale_factor: base.modelUnitToMmScale ?? 1,
     model_object_fit: "contain_within_bounds",
     model_board_normal_direction: base.modelBoardNormalDirection,

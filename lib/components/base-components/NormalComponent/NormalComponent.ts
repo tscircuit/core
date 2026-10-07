@@ -2111,7 +2111,9 @@ export class NormalComponent<
           ? cadModel.modelUnitToMmScale
           : undefined,
       model_board_normal_direction: cadModel?.modelBoardNormalDirection,
-      model_origin_alignment: "center_of_component_on_board_surface",
+      model_origin_alignment:
+        cadModel?.modelOriginAlignment ??
+        "center_of_component_on_board_surface",
       anchor_alignment: "center_of_component_on_board_surface",
       model_origin_position: cadModel?.modelOriginPosition,
       // The authored extent, carried on the record so consumers can read the

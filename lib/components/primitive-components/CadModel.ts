@@ -145,7 +145,8 @@ export class CadModel extends PrimitiveComponent<typeof cadmodelProps> {
       ...cadComponentPlacement,
       pcb_component_id: parent.pcb_component_id,
       model_board_normal_direction: props.modelBoardNormalDirection,
-      model_origin_alignment: "center_of_component_on_board_surface",
+      model_origin_alignment:
+        props.modelOriginAlignment ?? "center_of_component_on_board_surface",
       anchor_alignment: "center_of_component_on_board_surface",
       model_origin_position: props.modelOriginPosition,
       size: props.size ? point3.parse(props.size) : undefined,
