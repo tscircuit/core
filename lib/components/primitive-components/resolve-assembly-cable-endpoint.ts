@@ -163,7 +163,8 @@ export function resolveAssemblyCableEndpoint(
   const props = connector._parsedProps as ConnectorProps
   if (
     !cableConnector &&
-    props.standard !== "usb_c" && props.standard !== "jst_sh" &&
+    props.standard !== "usb_c" &&
+    props.standard !== "jst_sh" &&
     props.standard !== "jst_ph"
   )
     throw new Error(
