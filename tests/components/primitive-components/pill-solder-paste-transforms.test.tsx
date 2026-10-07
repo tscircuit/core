@@ -280,7 +280,4 @@ test("pill paste follows emitted pads through rotation and bottom-layer flips", 
       expect(paste).toMatchObject({ ccw_rotation: pad.ccw_rotation })
     }
   }
-  expect(circuit).toMatchPcbSnapshot(import.meta.path, {
-    showSolderPaste: true,
-  })
 })

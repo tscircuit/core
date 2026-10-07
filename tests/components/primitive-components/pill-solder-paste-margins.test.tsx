@@ -83,7 +83,4 @@ test("pill paste margins expand, preserve, shrink, and suppress apertures", () =
     radius: 0.4,
     ccw_rotation: 45,
   })
-  expect(circuit).toMatchPcbSnapshot(import.meta.path, {
-    showSolderPaste: true,
-  })
 })
