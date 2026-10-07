@@ -37,7 +37,7 @@
     "@tscircuit/alphabet": "0.0.25",
     "@tscircuit/bga-fanout-solver": "github:tscircuit/bga-fanout-solver#247c835cb8d69b65e53891dcf869731079415b39",
     "@tscircuit/bus-lanes-solver": "https://jscdn.tscircuit.com/@tscircuit/bus-lanes-solver/0.0.21.tgz",
-    "@tscircuit/cableprinter": "^0.0.4",
+    "@tscircuit/cableprinter": "^0.0.6",
     "@tscircuit/capacity-autorouter": "^0.0.958",
     "@tscircuit/checks": "^0.0.242",
     "@tscircuit/circuit-json-util": "^0.0.119",
@@ -60,7 +60,7 @@
     "@tscircuit/miniflex": "^0.0.4",
     "@tscircuit/modelprinter": "^0.0.11",
     "@tscircuit/ngspice-spice-engine": "^0.0.20",
-    "@tscircuit/props": "^0.0.694",
+    "@tscircuit/props": "^0.0.695",
     "@tscircuit/schematic-match-adapt": "^0.0.18",
     "@tscircuit/schematic-trace-solver": "https://jscdn.tscircuit.com/@tscircuit/schematic-trace-solver/0.0.228.tgz",
     "@tscircuit/solver-utils": "^0.0.16",
@@ -79,7 +79,7 @@
     "circuit-json": "^0.0.520",
     "circuit-json-to-bpc": "^0.0.13",
     "circuit-json-to-connectivity-map": "^0.0.33",
-    "circuit-json-to-gltf": "^0.0.147",
+    "circuit-json-to-gltf": "^0.0.148",
     "circuit-json-to-spice": "^0.0.45",
     "circuit-to-svg": "^0.0.444",
     "concurrently": "^9.1.2",
@@ -144,8 +144,8 @@
   },
   "overrides": {
     "@tscircuit/circuit-json-util": "^0.0.119",
-    "@tscircuit/props": "^0.0.694",
+    "@tscircuit/props": "^0.0.695",
     "circuit-json": "^0.0.520",
-    "@tscircuit/cableprinter": "^0.0.4"
+    "@tscircuit/cableprinter": "^0.0.6"
   }
 }

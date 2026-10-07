@@ -1,4 +1,4 @@
-import type { CableInput } from "@tscircuit/cableprinter"
+import type { CableConnector, CableInput } from "@tscircuit/cableprinter"
 import { getJstMotorConnector } from "@tscircuit/modelprinter"
 import type { Point3, SourceComponentBase } from "circuit-json"
 import { mat4, vec3 } from "gl-matrix"
@@ -29,12 +29,13 @@ export interface AssemblyCableEndpoint {
   position: Point3
   pin1Position?: Point3
   direction: BoardDirectionVector
-  cableInput: CableInput
+  cableInput?: CableInput
 }
 
 export function resolveAssemblyCableEndpoint(
   cable: AssemblyCable,
   selector: string,
+  cableConnector?: CableConnector,
 ): AssemblyCableEndpoint {
   const scoped = getComponentsInAssemblyScope(cable)
   const motorReference = selector.match(/^(.+)\.wireside$/)
@@ -161,6 +162,7 @@ export function resolveAssemblyCableEndpoint(
     )
   const props = connector._parsedProps as ConnectorProps
   if (
+    !cableConnector &&
     props.standard !== "usb_c" &&
     props.standard !== "jst_sh" &&
     props.standard !== "jst_ph"
@@ -189,17 +191,21 @@ export function resolveAssemblyCableEndpoint(
   // Top-entry header mouths: JST PH BxB-PH is 6 mm; SH BMxxB is
   // 4.25 mm above copper, paired with jscad-electronics' header models.
   const height =
-    Math.abs(direction.z) > 0.5
-      ? props.standard === "jst_ph"
-        ? 6
-        : props.standard === "jst_sh"
-          ? 4.25
-          : 1.5
-      : props.standard === "usb_c"
-        ? 1.5
-        : props.standard === "jst_sh"
-          ? 1.4
-          : 2.25
+    !props.standard && cableConnector
+      ? Math.abs(direction.z) > 0.5
+        ? cableConnector.bodyDepth
+        : cableConnector.bodyHeight / 2
+      : Math.abs(direction.z) > 0.5
+        ? props.standard === "jst_ph"
+          ? 6
+          : props.standard === "jst_sh"
+            ? 4.25
+            : 1.5
+        : props.standard === "usb_c"
+          ? 1.5
+          : props.standard === "jst_sh"
+            ? 1.4
+            : 2.25
   const position = {
     x: center.x,
     y: center.y,
@@ -218,6 +224,8 @@ export function resolveAssemblyCableEndpoint(
     cableInput:
       props.standard === "usb_c"
         ? { standard: "usb_c" }
-        : { standard: props.standard, pinCount: props.pinCount },
+        : props.standard === "jst_sh" || props.standard === "jst_ph"
+          ? { standard: props.standard, pinCount: props.pinCount }
+          : undefined,
   }
 }

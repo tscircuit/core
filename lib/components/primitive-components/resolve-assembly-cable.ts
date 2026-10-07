@@ -1,5 +1,6 @@
 import {
   getCableDefinition,
+  parseCableString,
   type CableConnector,
 } from "@tscircuit/cableprinter"
 import type { CadCable, Point3 } from "circuit-json"
@@ -19,20 +20,33 @@ const wireExitDepth = (connector: CableConnector) =>
 export function resolveAssemblyCable(
   cable: AssemblyCable,
 ): Omit<CadCable, "type" | "cad_cable_id"> {
-  const from = resolveAssemblyCableEndpoint(cable, cable._parsedProps.from)
-  const to = resolveAssemblyCableEndpoint(cable, cable._parsedProps.to)
-  const fromDefinition = getCableDefinition(from.cableInput)
-  const toDefinition = getCableDefinition(to.cableInput)
+  const model = cable._parsedProps.model
+  const explicitDefinition = model ? parseCableString(model) : undefined
+  const from = resolveAssemblyCableEndpoint(
+    cable,
+    cable._parsedProps.from,
+    explicitDefinition?.connectorA,
+  )
+  const to = resolveAssemblyCableEndpoint(
+    cable,
+    cable._parsedProps.to,
+    explicitDefinition?.connectorB,
+  )
+  const fromDefinition =
+    explicitDefinition ?? getCableDefinition(from.cableInput!)
+  const toDefinition = explicitDefinition ?? getCableDefinition(to.cableInput!)
   if (from.sourceComponentId === to.sourceComponentId)
     throw new Error(
       `assembly.cable "${cable.name}" must connect two different endpoints`,
     )
   if (
-    fromDefinition.standard !== toDefinition.standard ||
-    fromDefinition.connectorA.kind !== toDefinition.connectorA.kind ||
-    ("pinCount" in fromDefinition.connectorA &&
-      "pinCount" in toDefinition.connectorA &&
-      fromDefinition.connectorA.pinCount !== toDefinition.connectorA.pinCount)
+    !explicitDefinition &&
+    (fromDefinition.standard !== toDefinition.standard ||
+      fromDefinition.connectorA.kind !== toDefinition.connectorA.kind ||
+      ("pinCount" in fromDefinition.connectorA &&
+        "pinCount" in toDefinition.connectorA &&
+        fromDefinition.connectorA.pinCount !==
+          toDefinition.connectorA.pinCount))
   )
     throw new Error(
       `assembly.cable "${cable.name}" endpoints "${cable._parsedProps.from}" and "${cable._parsedProps.to}" have incompatible connector standards or pin counts`,
@@ -75,9 +89,10 @@ export function resolveAssemblyCable(
     from_connector_pin1_position: from.pin1Position,
     to_connector_pin1_position: to.pin1Position,
     cableprinter_string:
-      "pinCount" in definition.connectorA
+      model ??
+      ("pinCount" in definition.connectorA
         ? `${definition.standard}_pins${definition.connectorA.pinCount}`
-        : definition.standard,
+        : definition.standard),
     path: inferAssemblyCablePath({
       from: fromExit,
       to: toExit,
