@@ -886,12 +886,23 @@ export const createComponentsFromCircuitJson = (
         }),
       )
     } else if (elm.type === "schematic_text") {
+      const importedTextParts = elm.text_parts?.map((textPart) => ({
+        text: textPart.text,
+        overline: textPart.is_overlined,
+      }))
+      const importedText =
+        importedTextParts &&
+        importedTextParts.length > 0 &&
+        importedTextParts.every((textPart) => textPart.text.length > 0) &&
+        importedTextParts.map((textPart) => textPart.text).join("") === elm.text
+          ? importedTextParts
+          : elm.text
       addSchematicPrimitive(
         elm,
         new SchematicText({
           schX: elm.position.x,
           schY: elm.position.y,
-          text: elm.text,
+          text: importedText,
           fontSize: elm.font_size,
           anchor: elm.anchor,
           color: elm.color,

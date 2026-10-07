@@ -30,6 +30,7 @@ import type {
 } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
 import { getRotatedSymbolName } from "lib/utils/schematic/getRotatedSymbolName"
 import { isMatchingSelector } from "lib/utils/selector-matching"
+import { resolveTextTemplate } from "lib/utils/resolve-text-template"
 import { type SchSymbol, symbols } from "schematic-symbols"
 import {
   type Matrix,
@@ -622,23 +623,10 @@ export abstract class PrimitiveComponent<
   protected _resolveText(): string {
     const text = this._parsedProps.text
     if (!text) return ""
-    if (
-      !text.includes("{NAME}") &&
-      !text.includes("{REF}") &&
-      !text.includes("{REFERENCE}")
-    ) {
-      return text
-    }
-
-    const parentNormalComponent = this.getParentNormalComponent()
-    const refdes = parentNormalComponent?.name
-
-    if (!refdes) return text
-
-    return text
-      .replace(/\{NAME\}/g, refdes)
-      .replace(/\{REF\}/g, refdes)
-      .replace(/\{REFERENCE\}/g, refdes)
+    return resolveTextTemplate({
+      text,
+      referenceDesignator: this.getParentNormalComponent()?.name,
+    })
   }
 
   /**

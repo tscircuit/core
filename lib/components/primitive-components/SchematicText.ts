@@ -1,6 +1,7 @@
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { schematicTextProps } from "@tscircuit/props"
 import { normalizeTextForCircuitJson } from "lib/utils/normalizeTextForCircuitJson"
+import { resolveTextTemplate } from "lib/utils/resolve-text-template"
 import { applyToPoint } from "transformation-matrix"
 
 export class SchematicText extends PrimitiveComponent<
@@ -29,13 +30,28 @@ export class SchematicText extends PrimitiveComponent<
     const schematic_component_id =
       this.getParentNormalComponent()?.schematic_component_id ?? undefined
 
-    const text = this._resolveText()
+    const referenceDesignator = this.getParentNormalComponent()?.name
+    const textParts = Array.isArray(props.text)
+      ? props.text.map((textSpan) => ({
+          text: normalizeTextForCircuitJson(
+            resolveTextTemplate({
+              text: textSpan.text,
+              referenceDesignator,
+            }),
+          ),
+          ...(textSpan.overline ? { is_overlined: true } : {}),
+        }))
+      : undefined
+    const text = textParts
+      ? textParts.map((textPart) => textPart.text).join("")
+      : normalizeTextForCircuitJson(this._resolveText())
 
     const schematic_text = db.schematic_text.insert({
       schematic_symbol_id,
       schematic_component_id,
       anchor: props.anchor ?? "center",
-      text: normalizeTextForCircuitJson(text),
+      text,
+      text_parts: textParts,
       font_size: props.fontSize,
       color: props.color || "#000000",
       position: {
