@@ -1,4 +1,4 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "installCommand": "bun scripts/prepare-assembly-cable-preview.ts && bun install"
+  "installCommand": "bunx bun@1.4.0 install"
 }
