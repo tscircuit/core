@@ -1,4 +1,5 @@
 import type { CableInput } from "@tscircuit/cableprinter"
+import { getJstMotorConnector } from "@tscircuit/modelprinter"
 import type { Point3, SourceComponentBase } from "circuit-json"
 import { mat4, vec3 } from "gl-matrix"
 import { selectAll } from "css-select"
@@ -48,9 +49,10 @@ export function resolveAssemblyCableEndpoint(
         `assembly.cable "${cable.name}" endpoint "${selector}" must match exactly one motor in its assembly device`,
       )
     const motor = motors[0]!
-    if (motor.motorModel.wireConnection !== "jst-ph-6")
+    const motorConnector = getJstMotorConnector(motor.motorModel.wireConnection)
+    if (!motorConnector)
       throw new Error(
-        `assembly.cable "${cable.name}" requires motor "${motor.name}" to have wireConnection="jst-ph-6" for its connector endpoint`,
+        `assembly.cable "${cable.name}" requires motor "${motor.name}" to have a JST PH or SH wireConnection, e.g. "jst4_ph" or "jst4_sh", for its connector endpoint`,
       )
     const faceMount = resolveMotorFaceMount(motor)
     const placement: AssemblyPlacement = faceMount
@@ -84,30 +86,59 @@ export function resolveAssemblyCableEndpoint(
       [reference.position.x, reference.position.y, reference.position.z],
       orientation,
     )
-    // createNemaMotorWireGeometry places the PH6 pin row along local +Y
-    // before wireSideAngle rotation; pin 1 is at -5 mm on that row.
-    // The wireside reference applies the same rotation about local Z.
+    // Paired with createNemaMotorWireGeometry: contacts span local +Y before
+    // wireSideAngle rotation, with pin 1 at the negative end of the row.
+    const halfPinSpan =
+      ((motorConnector.pinCount - 1) * motorConnector.pitch) / 2
     const pin1Offset = vec3.transformMat4(
       vec3.create(),
-      [reference.direction.y * 5, -reference.direction.x * 5, 0],
+      [
+        reference.direction.y * halfPinSpan,
+        -reference.direction.x * halfPinSpan,
+        0,
+      ],
       orientation,
     )
-    // NEMA's PH header mating face is 6 mm beyond its body-side reference,
-    // as specified by jscad-electronics createNemaMotorWireGeometry.
+    // The shared header profile places the mating face beyond its body reference.
+
     return {
       sourceComponentId: motor.source_component_id!,
       position: {
-        x: point[0] + placement.position.x + direction[0] * 6,
-        y: point[1] + placement.position.y + direction[1] * 6,
-        z: point[2] + placement.position.z + direction[2] * 6,
+        x:
+          point[0] +
+          placement.position.x +
+          direction[0] * motorConnector.matingDepth,
+        y:
+          point[1] +
+          placement.position.y +
+          direction[1] * motorConnector.matingDepth,
+        z:
+          point[2] +
+          placement.position.z +
+          direction[2] * motorConnector.matingDepth,
       },
       pin1Position: {
-        x: point[0] + placement.position.x + direction[0] * 6 + pin1Offset[0],
-        y: point[1] + placement.position.y + direction[1] * 6 + pin1Offset[1],
-        z: point[2] + placement.position.z + direction[2] * 6 + pin1Offset[2],
+        x:
+          point[0] +
+          placement.position.x +
+          direction[0] * motorConnector.matingDepth +
+          pin1Offset[0],
+        y:
+          point[1] +
+          placement.position.y +
+          direction[1] * motorConnector.matingDepth +
+          pin1Offset[1],
+        z:
+          point[2] +
+          placement.position.z +
+          direction[2] * motorConnector.matingDepth +
+          pin1Offset[2],
       },
       direction: { x: direction[0], y: direction[1], z: direction[2] },
-      cableInput: { standard: "jst_ph", pinCount: 6 },
+      cableInput: {
+        standard: motorConnector.standard,
+        pinCount: motorConnector.pinCount,
+      },
     }
   }
   const scope = getAssemblyScope(cable)
