@@ -22,15 +22,12 @@ export function NormalComponent_doInitialComponentAvailabilityWarning(
   const sourceComponentId = component.source_component_id
   if (!root || !sourceComponentId) return
   const { db } = root
-  const sourceComponent = db.source_component.get(sourceComponentId)
   const partsEngine = component.getInheritedProperty("partsEngine") as
     | PartsEngine
     | undefined
-  // Parts selection can add JLCPCB numbers without the user choosing JLCPCB.
-  const supplierPartNumbers: SupplierPartNumbers = {
-    ...sourceComponent?.supplier_part_numbers,
-    jlcpcb: component.props.supplierPartNumbers?.jlcpcb,
-  }
+  // Only check suppliers explicitly chosen by the user, not automatic selections.
+  const supplierPartNumbers: SupplierPartNumbers =
+    component.props.supplierPartNumbers ?? {}
   const supplierAlternatives = supplierNames
     .map((supplierName) => ({
       supplierName,
@@ -111,7 +108,7 @@ export function NormalComponent_doInitialComponentAvailabilityWarning(
           subcircuit_id: component.getSubcircuit()?.subcircuit_id ?? undefined,
           supplier_name: supplierName,
           supplier_part_numbers: checkedPartNumbers,
-          message: `${component.name || "Unnamed component"} may not have availability from ${supplierName === "jlcpcb" ? "JLCPCB" : supplierName} (${checkedPartNumbers.join(", ")}).`,
+          message: `${component.name || "Unnamed component"} may not have availability from ${supplierName} (${checkedPartNumbers.join(", ")}).`,
         }),
       )
     }
