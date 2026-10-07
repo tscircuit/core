@@ -1,14 +1,19 @@
 import { is } from "css-select"
 import { type Selector, parse } from "css-what"
+import { type Root, parse as parseCss } from "postcss"
+import {
+  type CssPaintDeclaration,
+  type SvgPathPaint,
+  getCssPaintDeclarationsFromInlineStyle,
+  getCssPaintDeclarationsFromStylesheetNodes,
+} from "./get-css-paint-declarations"
 import { getSvgSelectorSpecificity } from "./get-svg-selector-specificity"
 import {
   type SvgElementNode,
   svgElementCssSelectAdapter,
 } from "./svg-element-css-select-adapter"
 
-export type SvgPathPaint = "fill" | "stroke"
-
-type CssPaintDeclaration = { important: boolean; paintSetting: string }
+export type { SvgPathPaint } from "./get-css-paint-declarations"
 
 export type SvgStylesheetPaintRule = {
   declarations: Partial<Record<SvgPathPaint, CssPaintDeclaration>>
@@ -17,43 +22,28 @@ export type SvgStylesheetPaintRule = {
   specificity: number
 }
 
-const getPaintDeclarations = (
-  declarationBlock: string,
-): Partial<Record<SvgPathPaint, CssPaintDeclaration>> => {
-  const declarations: Partial<Record<SvgPathPaint, CssPaintDeclaration>> = {}
-  for (const declaration of declarationBlock.split(";")) {
-    const separatorIndex = declaration.indexOf(":")
-    if (separatorIndex < 0) continue
-    const propertyName = declaration
-      .slice(0, separatorIndex)
-      .trim()
-      .toLowerCase()
-    if (propertyName !== "fill" && propertyName !== "stroke") continue
-    const rawPaintSetting = declaration.slice(separatorIndex + 1).trim()
-    const important = /\s*!important\s*$/iu.test(rawPaintSetting)
-    const paintSetting = rawPaintSetting
-      .replace(/\s*!important\s*$/iu, "")
-      .trim()
-    const previousDeclaration = declarations[propertyName]
-    if (!previousDeclaration?.important || important) {
-      declarations[propertyName] = { important, paintSetting }
-    }
-  }
-  return declarations
-}
 export const getSvgStylesheetPaintRules = (
   svg: string,
 ): SvgStylesheetPaintRule[] => {
   const rules: SvgStylesheetPaintRule[] = []
   const stylePattern = /<style\b[^>]*>([\s\S]*?)<\/style\s*>/giu
   for (const styleMatch of svg.matchAll(stylePattern)) {
-    const stylesheet = (styleMatch[1] ?? "")
-      .replace(/<!\[CDATA\[|\]\]>/gu, "")
-      .replace(/\/\*[\s\S]*?\*\//gu, "")
-    for (const ruleMatch of stylesheet.matchAll(/([^{}]+)\{([^{}]*)\}/gu)) {
-      const declarations = getPaintDeclarations(ruleMatch[2] ?? "")
+    const stylesheet = (styleMatch[1] ?? "").replace(/<!\[CDATA\[|\]\]>/gu, "")
+    let stylesheetRoot: Root
+    try {
+      stylesheetRoot = parseCss(stylesheet)
+    } catch {
+      continue
+    }
+    for (const stylesheetNode of stylesheetRoot.nodes) {
+      // Conditional at-rules require an SVG rendering environment to evaluate.
+      // Ignore their whole scope instead of promoting nested rules to top-level.
+      if (stylesheetNode.type !== "rule") continue
+      const declarations = getCssPaintDeclarationsFromStylesheetNodes(
+        stylesheetNode.nodes,
+      )
       try {
-        for (const selector of parse(ruleMatch[1] ?? "")) {
+        for (const selector of parse(stylesheetNode.selector)) {
           rules.push({
             declarations,
             order: rules.length,
@@ -123,7 +113,7 @@ export const getSvgElementLocalPaint = ({
       winningDeclaration = candidate
     }
   }
-  const inlineDeclaration = getPaintDeclarations(
+  const inlineDeclaration = getCssPaintDeclarationsFromInlineStyle(
     element.attributes.style ?? "",
   )[paint]
   const inlineCandidate = inlineDeclaration

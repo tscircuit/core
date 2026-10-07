@@ -136,6 +136,7 @@
     "gl-matrix": "^3.4.4",
     "nanoid": "^5.0.7",
     "performance-now": "^2.1.0",
+    "postcss": "^8.5.29",
     "react-reconciler": "^0.32.0",
     "svg-path-commander": "^2.1.11",
     "transformation-matrix": "^2.16.1",
