@@ -1,3 +1,4 @@
+import { resolveConnectorModelProps } from "lib/utils/connectors/resolve-connector-model-props"
 import { type CableInput, getBulletConnector } from "@tscircuit/cableprinter"
 import type { ParsedConnectorProps } from "@tscircuit/props"
 import { getJstMotorConnector } from "@tscircuit/modelprinter"
@@ -184,7 +185,9 @@ export function resolveAssemblyCableEndpoint(
     throw new Error(
       `assembly.cable "${cable.name}" endpoint "${selector}" must name a PCB connector or MOTOR.wireside`,
     )
-  const props = connector._parsedProps as ParsedConnectorProps
+  const props = resolveConnectorModelProps(
+    connector._parsedProps as ParsedConnectorProps,
+  )
   if (
     props.standard !== "usb_c" &&
     props.standard !== "jst_sh" &&

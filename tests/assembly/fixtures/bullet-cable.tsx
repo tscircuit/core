@@ -46,10 +46,12 @@ export function createBulletCableCircuit({
   layer = "top",
   pinCount = 1,
   toPinCount = pinCount,
+  useModelprinterString = false,
 }: {
   diameter: BulletDiameter
   pinCount?: number
   toPinCount?: number
+  useModelprinterString?: boolean
   fromGender?: BulletGender
   toGender?: BulletGender
   toDiameter?: BulletDiameter
@@ -61,9 +63,15 @@ export function createBulletCableCircuit({
       <board width={70} height={30} routingDisabled>
         <connector
           name="J1"
-          standard="bullet"
-          bulletDiameter={diameter}
-          bulletGender={fromGender}
+          {...(useModelprinterString
+            ? {
+                modelprinterString: `bullet${pinCount === 1 ? "" : pinCount}_d${diameter}mm_g${fromGender}`,
+              }
+            : {
+                standard: "bullet" as const,
+                bulletDiameter: diameter,
+                bulletGender: fromGender,
+              })}
           pinCount={pinCount}
           cadModel={bulletPcbBody(diameter, fromGender, pinCount)}
           pcbX={-25}
@@ -84,9 +92,15 @@ export function createBulletCableCircuit({
         />
         <connector
           name="J2"
-          standard="bullet"
-          bulletDiameter={toDiameter}
-          bulletGender={toGender}
+          {...(useModelprinterString
+            ? {
+                modelprinterString: `bullet${pinCount === 1 ? "" : pinCount}_d${toDiameter}mm_g${toGender}`,
+              }
+            : {
+                standard: "bullet" as const,
+                bulletDiameter: toDiameter,
+                bulletGender: toGender,
+              })}
           pinCount={toPinCount}
           cadModel={bulletPcbBody(toDiameter, toGender, toPinCount)}
           pcbX={25}

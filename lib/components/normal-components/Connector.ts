@@ -9,6 +9,7 @@ import {
 } from "@tscircuit/props"
 import type { AnyCircuitElement, SourceSimpleConnector } from "circuit-json"
 import { source_part_not_found_warning } from "circuit-json"
+import { resolveConnectorModelProps } from "lib/utils/connectors/resolve-connector-model-props"
 import { convertCircuitJsonToJstStandardCircuitJson } from "lib/utils/connectors/convertCircuitJsonToJstStandardCircuitJson"
 import { convertCircuitJsonToUsbCStandardCircuitJson } from "lib/utils/connectors/convertCircuitJsonToUsbCStandardCircuitJson"
 import { extractCadModelFromCircuitJson } from "lib/utils/connectors/extractCadModelFromCircuitJson"
@@ -89,7 +90,7 @@ export class Connector<
   PinLabels extends string = never,
 > extends Chip<PinLabels> {
   private _getConnectorProps(): ParsedConnectorProps {
-    return this._parsedProps as ParsedConnectorProps
+    return resolveConnectorModelProps(this._parsedProps as ParsedConnectorProps)
   }
 
   initPorts(): void {
@@ -378,13 +379,13 @@ export class Connector<
       manufacturer_part_number: manufacturerPartNumber,
       supplier_part_numbers: props.supplierPartNumbers,
       display_name: props.displayName,
-      standard: props.standard,
+      standard: props.standard === "bullet" ? undefined : props.standard,
+      modelprinter_string: props.modelprinterString,
       pin_count:
         props.standard === "bullet" ? (props.pinCount ?? 1) : props.pinCount,
       ...(props.standard === "bullet"
         ? {
-            bullet_diameter: props.bulletDiameter,
-            bullet_gender: props.bulletGender,
+            modelprinter_string: `bullet${(props.pinCount ?? 1) === 1 ? "" : props.pinCount}_d${props.bulletDiameter}mm_g${props.bulletGender}`,
           }
         : {}),
     } as SourceSimpleConnector)
@@ -428,13 +429,13 @@ export class Connector<
       ftype: "simple_connector",
       name: this.name,
       manufacturer_part_number: resolveManufacturerPartNumber(props),
-      standard,
+      standard: standard === "bullet" ? undefined : standard,
+      modelprinter_string: props.modelprinterString,
       pin_count:
         props.standard === "bullet" ? (props.pinCount ?? 1) : props.pinCount,
       ...(props.standard === "bullet"
         ? {
-            bullet_diameter: props.bulletDiameter,
-            bullet_gender: props.bulletGender,
+            modelprinter_string: `bullet${(props.pinCount ?? 1) === 1 ? "" : props.pinCount}_d${props.bulletDiameter}mm_g${props.bulletGender}`,
           }
         : {}),
     }
