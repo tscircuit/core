@@ -1,6 +1,7 @@
 import type { PartsEngine } from "@tscircuit/props"
 import type { IsolatedCircuit } from "lib/IsolatedCircuit"
 import type { NormalComponent } from "lib/components/base-components/NormalComponent"
+import { ZodError } from "zod"
 
 /** Optional request extension understood by parts-engine 0.0.36. */
 export type DatasheetPartCircuitJsonRequest = Parameters<
@@ -37,6 +38,20 @@ const fetchDatasheetPart = async (
   try {
     return { circuitJson: await fetchPartCircuitJson(request) }
   } catch (error) {
+    // Never turn a failed opt-out into enrichment via a modern engine's default.
+    // Only strict legacy schemas rejecting the new key can omit that option.
+    if (
+      !request.includeDatasheetInformation &&
+      !(
+        error instanceof ZodError &&
+        error.issues.some(
+          (issue) =>
+            issue.code === "unrecognized_keys" &&
+            issue.keys.includes("includeDatasheetInformation"),
+        )
+      )
+    )
+      throw error
     const fallbackRequest: DatasheetPartCircuitJsonRequest = {
       ...request,
       includeDatasheetInformation: false,
@@ -44,8 +59,13 @@ const fetchDatasheetPart = async (
     let circuitJson: Awaited<ReturnType<typeof fetchPartCircuitJson>>
     let usedLegacyRequest = false
     try {
-      circuitJson = await fetchPartCircuitJson(fallbackRequest)
+      // An unenriched request already tried false; only the legacy shape remains.
+      usedLegacyRequest = !request.includeDatasheetInformation
+      circuitJson = await fetchPartCircuitJson(
+        usedLegacyRequest ? legacyRequest : fallbackRequest,
+      )
     } catch {
+      if (usedLegacyRequest) throw error
       // Strict legacy engines reject the new option even when it is false.
       // Keep the explicit false attempt first for engines that enable
       // datasheet enrichment by default in their constructor.
@@ -77,6 +97,18 @@ const fetchDatasheetPart = async (
   }
 }
 
+/** Geometry-only reads must override engine-level datasheet enrichment. */
+export const fetchPartCircuitJsonWithoutDatasheet = async (
+  fetchPartCircuitJson: FetchPartCircuitJson,
+  request: DatasheetPartCircuitJsonRequest,
+) => {
+  const { circuitJson } = await fetchDatasheetPart(fetchPartCircuitJson, {
+    ...request,
+    includeDatasheetInformation: false,
+  })
+  return circuitJson
+}
+
 /** Optional enrichment must not discard an otherwise available footprint. */
 export const fetchPartCircuitJsonWithDatasheet = async (
   {
@@ -90,11 +122,16 @@ export const fetchPartCircuitJsonWithDatasheet = async (
   },
   sourcePortOwner: NormalComponent,
 ) => {
+  // Use the concrete class: Connector and Pinout inherit Chip but do not need
+  // chip electrical metadata. Pass false to override engine-level enrichment.
+  const includeDatasheetInformation =
+    sourcePortOwner.config.componentName === "Chip" ||
+    sourcePortOwner.config.componentName === "OpAmp"
   const request: DatasheetPartCircuitJsonRequest = {
     supplierPartNumber,
     manufacturerPartNumber,
     platformFetch: sourcePortOwner.root?.platform?.platformFetch,
-    includeDatasheetInformation: true,
+    includeDatasheetInformation,
   }
   let partFetch: Promise<DatasheetPartFetchResult>
   const circuit = sourcePortOwner.root
@@ -124,7 +161,7 @@ export const fetchPartCircuitJsonWithDatasheet = async (
   const { circuitJson, datasheetFailureReason } = await partFetch
   // Cache the fetch outcome, not a component's diagnostics: each chip gets its
   // own warning and readable name even when it shares a fallback result.
-  if (datasheetFailureReason !== undefined) {
+  if (includeDatasheetInformation && datasheetFailureReason !== undefined) {
     const message = `Datasheet information for ${sourcePortOwner.getDisplayName()} could not be fetched: ${datasheetFailureReason}. Pin attributes may not be populated.`
     if (sourcePortOwner.source_component_id && sourcePortOwner.root) {
       sourcePortOwner.root.db.source_property_ignored_warning.insert({

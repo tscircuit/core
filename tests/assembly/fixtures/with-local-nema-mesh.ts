@@ -1,4 +1,5 @@
 import type { AnyCircuitElement } from "circuit-json"
+import { parseModelStringParams } from "@tscircuit/modelprinter"
 
 const nemaFixtures = {
   nema8: "nema8.glb.gz",
@@ -26,7 +27,9 @@ export const withLocalNemaMesh = async (circuitJson: AnyCircuitElement[]) =>
       const model = decodeURIComponent(
         new URL(element.model_glb_url).pathname.split("/").at(-1)!,
       ).replace(/\.glb$/, "")
-      const filename = nemaFixtures[model as keyof typeof nemaFixtures]
+      const normalizedModel = parseModelStringParams(model).string
+      const filename =
+        nemaFixtures[normalizedModel as keyof typeof nemaFixtures]
       if (!filename) throw new Error(`No pinned mesh for NEMA model "${model}"`)
       const data = new Uint8Array(
         await Bun.file(new URL(filename, import.meta.url)).arrayBuffer(),
