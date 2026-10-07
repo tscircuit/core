@@ -1,4 +1,4 @@
-import type { CableInput } from "@tscircuit/cableprinter"
+import type { CableConnector, CableInput } from "@tscircuit/cableprinter"
 import { getJstMotorConnector } from "@tscircuit/modelprinter"
 import type { Point3, SourceComponentBase } from "circuit-json"
 import { mat4, vec3 } from "gl-matrix"
