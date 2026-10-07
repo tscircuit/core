@@ -34,4 +34,7 @@ test("masked pill pads omit solder paste", () => {
   circuit.render()
   expect(circuit.db.pcb_smtpad.list()).toHaveLength(2)
   expect(circuit.db.pcb_solder_paste.list()).toHaveLength(0)
+  expect(circuit).toMatchPcbSnapshot(import.meta.path, {
+    showSolderPaste: true,
+  })
 })
