@@ -13,14 +13,14 @@ if (
     "@tscircuit/props": "https://pkg.pr.new/@tscircuit/props@30c249f",
     "circuit-json": "https://pkg.pr.new/circuit-json@15e3079",
     "@tscircuit/cableprinter":
-      "https://pkg.pr.new/tscircuit/cableprinter/@tscircuit/cableprinter@357117e",
+      "^0.0.6",
     "circuit-json-to-gltf":
-      "https://pkg.pr.new/tscircuit/circuit-json-to-gltf@b702e79",
+      "^0.0.148",
   }
   for (const [name, preview] of Object.entries(previews)) {
     manifest.devDependencies[name] = preview
     manifest.overrides[name] = preview
-    console.log(`Testing ${name} with its immutable cable PR preview`)
+    console.log(`Using ${name} from ${preview}`)
   }
   writeFileSync(packagePath, `${JSON.stringify(manifest, null, 2)}\n`)
 }
