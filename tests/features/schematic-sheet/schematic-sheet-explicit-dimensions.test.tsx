@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("explicit schematic sheet dimensions work without sheetSize", async () => {
+test("explicit schematic sheet dimensions keep the origin fixed", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -9,24 +9,15 @@ test("explicit schematic sheet dimensions work without sheetSize", async () => {
       <schematicsheet
         name="Main Sheet"
         displayName="Main Sheet"
-        sheetWidth="500mm"
-        sheetHeight="300mm"
+        sheetWidth="120mm"
+        sheetHeight="80mm"
       >
-        <resistor
-          name="R1"
-          resistance="1k"
-          footprint="0402"
-          schX={-20}
-          schY={0}
+        <schematictext
+          text="FIXED ORIGIN"
+          schX={-3.5}
+          schY={3}
+          fontSize={0.4}
         />
-        <resistor
-          name="R2"
-          resistance="1k"
-          footprint="0402"
-          schX={20}
-          schY={0}
-        />
-        <trace from=".R1 > .pin2" to=".R2 > .pin1" />
       </schematicsheet>
     </board>,
   )
@@ -35,8 +26,9 @@ test("explicit schematic sheet dimensions work without sheetSize", async () => {
 
   expect(circuit.db.schematic_sheet.list()[0]).toMatchObject({
     sheet_size: "a4",
-    sheet_width: 500,
-    sheet_height: 300,
+    sheet_width: 120,
+    sheet_height: 80,
+    center: { x: 0, y: 0 },
   })
   expect(
     circuit.db.schematic_element_outside_sheet_warning.list(),

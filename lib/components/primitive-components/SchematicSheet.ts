@@ -101,8 +101,11 @@ export class SchematicSheet extends PrimitiveComponent<
         (element as any).schematic_sheet_id === this.schematic_sheet_id,
     )
 
+    const hasExplicitSheetDimensions =
+      this._parsedProps.sheetWidth !== undefined ||
+      this._parsedProps.sheetHeight !== undefined
     let schematicSheetCenter = { x: 0, y: 0 }
-    if (schematicElements.length > 0) {
+    if (!hasExplicitSheetDimensions && schematicElements.length > 0) {
       const bounds = getBoundsForSchematic(schematicElements)
       if (
         Number.isFinite(bounds.minX) &&
@@ -114,12 +117,12 @@ export class SchematicSheet extends PrimitiveComponent<
           x: (bounds.minX + bounds.maxX) / 2,
           y: (bounds.minY + bounds.maxY) / 2,
         }
-
-        db.schematic_sheet.update(this.schematic_sheet_id, {
-          center: schematicSheetCenter,
-        } as any)
       }
     }
+
+    db.schematic_sheet.update(this.schematic_sheet_id, {
+      center: schematicSheetCenter,
+    } as any)
 
     insertSchematicElementOutsideSheetWarnings({
       db,
