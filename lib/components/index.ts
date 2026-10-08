@@ -110,6 +110,7 @@ export { AnalogDcOperatingPointSimulation } from "./primitive-components/AnalogD
 export { AnalogDcSweepSimulation } from "./primitive-components/AnalogDcSweepSimulation"
 export { AnalogAcSweepSimulation } from "./primitive-components/AnalogAcSweepSimulation"
 export { AnalogSweepParameter } from "./primitive-components/AnalogSweepParameter"
+export { PcbReturnCurrentSimulation } from "./primitive-components/PcbReturnCurrentSimulation"
 export { VoltageProbe } from "./primitive-components/VoltageProbe"
 export { SpiceModel } from "./primitive-components/SpiceModel"
 export { PcbBend } from "./primitive-components/PcbBend"
