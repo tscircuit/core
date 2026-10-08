@@ -11,7 +11,7 @@ formats, including CAD JSX and model transforms. For example:
 
 The `jscad` prop compiles jscad-fiber JSX to a serializable plan in
 `cad_component.model_jscad`; viewers/exporters generate meshes. Reference rectangles authored with `jscad` define attachment frames and are removed
-before emission. Imported models do not acquire named reference faces automatically. There is no separate list of mounting-face coordinates.
+before emission. Imported models do not acquire named reference faces automatically. Child `assembly.referencesurface` elements can define named faces independently of the geometry, including for imported models.
 
 ```tsx
 import { assembly, jscad } from "@tscircuit/core"
@@ -94,3 +94,22 @@ entrypoint of jscad-fiber and does not import the Three.js viewer.
 ![Motor spacer mounting at four PCB rotations](../tests/assembly/__snapshots__/assembly-printedpart-mounting-annotated.snap.png)
 
 ![Offset reference faces and chained printed parts](../tests/assembly/__snapshots__/assembly-printedpart-chain-annotated.snap.png)
+
+## Child reference surfaces, color, and material
+
+```tsx
+<assembly.printedpart name="SPACER" modelUrl="./spacer.stl"
+  color="#ff8800" material="petg">
+  <assembly.referencesurface name="board" plane="xy" zOffset="10mm" />
+</assembly.printedpart>
+<board mountedTo="SPACER.board" />
+```
+
+`material` accepts `"pla"`, `"petg"`, or `"nylon"` and is preserved on the source
+printed part as manufacturing metadata; it does not change geometry or choose a
+color. `color` is preserved on the source and emitted CAD components. Supporting
+renderers use it to override authored JSCAD material colors while preserving
+roughness, metalness, and opacity. Omitting either prop adds no default.
+
+Child reference names and JSCAD reference names share one namespace and must be
+unique. See [reference surfaces](./assembly-reference-surface.md).

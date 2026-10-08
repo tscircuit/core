@@ -60,7 +60,7 @@
     "@tscircuit/miniflex": "^0.0.4",
     "@tscircuit/modelprinter": "^0.0.11",
     "@tscircuit/ngspice-spice-engine": "^0.0.20",
-    "@tscircuit/props": "^0.0.696",
+    "@tscircuit/props": "https://pkg.pr.new/@tscircuit/props@5ded181",
     "@tscircuit/schematic-match-adapt": "^0.0.18",
     "@tscircuit/schematic-trace-solver": "https://jscdn.tscircuit.com/@tscircuit/schematic-trace-solver/0.0.228.tgz",
     "@tscircuit/solver-utils": "^0.0.16",
@@ -76,7 +76,7 @@
     "bun-match-svg": "0.0.12",
     "calculate-elbow": "^0.0.12",
     "chokidar-cli": "^3.0.0",
-    "circuit-json": "^0.0.521",
+    "circuit-json": "https://pkg.pr.new/circuit-json@955e022",
     "circuit-json-to-bpc": "^0.0.13",
     "circuit-json-to-connectivity-map": "^0.0.33",
     "circuit-json-to-gltf": "^0.0.148",
@@ -144,8 +144,8 @@
   },
   "overrides": {
     "@tscircuit/circuit-json-util": "^0.0.119",
-    "@tscircuit/props": "^0.0.696",
-    "circuit-json": "^0.0.521",
+    "@tscircuit/props": "https://pkg.pr.new/@tscircuit/props@5ded181",
+    "circuit-json": "https://pkg.pr.new/circuit-json@955e022",
     "@tscircuit/cableprinter": "^0.0.6"
   }
 }

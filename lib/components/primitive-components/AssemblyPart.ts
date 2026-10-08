@@ -6,6 +6,7 @@ import type { AssemblyDeviceContainer } from "../base-components/is-assembly-dev
 import { renderAssemblyCadModel } from "./render-assembly-cad-model"
 import { resolveAssemblyModel } from "./resolve-assembly-model"
 import { resolveAssemblyPlacement } from "./resolve-assembly-placement"
+import { getPartReferenceSurfaces } from "./get-part-reference-surfaces"
 
 export class AssemblyPart
   extends PrimitiveComponent<typeof assemblyPartProps>
@@ -26,6 +27,7 @@ export class AssemblyPart
   }
 
   doInitialSourceRender(): void {
+    getPartReferenceSurfaces(this)
     this.source_component_id = this.root!.db.source_component.insert({
       // Circuit JSON currently represents generic assembly geometry as subassembly.
       ftype: "subassembly",

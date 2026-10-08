@@ -12,6 +12,7 @@ extendCatalogue({
   "assembly.device": Components.AssemblyDevice,
   "assembly.motor": Components.AssemblyMotor,
   "assembly.part": Components.AssemblyPart,
+  "assembly.referencesurface": Components.AssemblyReferenceSurface,
   "assembly.printedpart": Components.AssemblyPrintedPart,
   "assembly.screen": Components.AssemblyScreen,
   "assembly.subassembly": Components.AssemblySubassembly,

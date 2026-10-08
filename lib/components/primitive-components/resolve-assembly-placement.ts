@@ -1,10 +1,14 @@
 import { normalizeDegrees } from "@tscircuit/math-utils"
 import type { CadComponent, PcbComponent } from "circuit-json"
+import type { Matrix4 } from "jscad-planner"
 import { NormalComponent } from "../base-components/NormalComponent"
 import type { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import type { AssemblyPrintedPart } from "./AssemblyPrintedPart"
 import type { AssemblyPart } from "./AssemblyPart"
-import { resolvePrintedPartMounts } from "./resolve-printed-part-mounts"
+import {
+  resolvePrintedPartMounts,
+  getMountTransformPlacement,
+} from "./resolve-printed-part-mounts"
 import type { AssemblyScreen } from "./AssemblyScreen"
 import type { AssemblySubassembly } from "./AssemblySubassembly"
 import { getAssemblyTarget } from "./get-assembly-target"
@@ -20,6 +24,8 @@ type Assembly =
  * Bottom-layer orientation uses the same 180-degree Y flip as PCB components.
  */
 export interface AssemblyPlacement {
+  /** Full rigid part-local to world frame, when resolved by face mounting. */
+  worldTransform?: Matrix4
   position: CadComponent["position"]
   pcbRotation: number
   layer: "top" | "bottom"
@@ -54,17 +60,46 @@ export const resolveAssemblyPlacement = (
   component: Assembly,
   path: Assembly[] = [],
 ): AssemblyPlacement => {
-  if (component.componentName === "AssemblyPrintedPart") {
-    const part = component as AssemblyPrintedPart
+  if (path.includes(component)) {
+    throw new Error(
+      `Assembly attachment cycle: ${[...path, component].map((item) => item.name).join(" -> ")}`,
+    )
+  }
+  if (
+    component.componentName === "AssemblyPrintedPart" ||
+    component.componentName === "AssemblyPart"
+  ) {
+    const part = component as AssemblyPrintedPart | AssemblyPart
     const { transforms, subcircuitId } = resolvePrintedPartMounts(part)
     const transform = transforms.get(part)!
+    if (part.componentName === "AssemblyPart")
+      return {
+        ...getMountTransformPlacement(transform),
+        worldTransform:
+          Math.abs(Math.abs(transform[10]) - 1) > 1e-6 ? transform : undefined,
+        subcircuit_id: subcircuitId,
+      }
     return {
+      worldTransform: transform,
       position: { x: transform[12], y: transform[13], z: transform[14] },
       pcbRotation: 0,
       layer: "top",
       subcircuit_id: subcircuitId,
     }
   }
+  return resolveInheritedAssemblyPlacement(component, path)
+}
+
+/** Inherited assembly origin before face constraints, in right-handed world
+ * XYZ (mm). Kept separate so mounting can use it without re-entering itself.
+ */
+export const resolveInheritedAssemblyPlacement = (
+  component: Assembly,
+  path: Assembly[] = [],
+  resolvePartPlacement?: (
+    part: AssemblyPart | AssemblyPrintedPart,
+  ) => AssemblyPlacement,
+): AssemblyPlacement => {
   if (path.includes(component)) {
     throw new Error(
       `Assembly attachment cycle: ${[...path, component].map((item) => item.name).join(" -> ")}`,
@@ -80,6 +115,18 @@ export const resolveAssemblyPlacement = (
       : findParentAssembly(component)
   if (!target)
     return { position: { x: 0, y: 0, z: 0 }, pcbRotation: 0, layer: "top" }
+  if (
+    resolvePartPlacement &&
+    (target.componentName === "AssemblyPart" ||
+      target.componentName === "AssemblyPrintedPart")
+  )
+    return resolvePartPlacement(target as AssemblyPart | AssemblyPrintedPart)
+  if (resolvePartPlacement && isPositionedAssembly(target))
+    return resolveInheritedAssemblyPlacement(
+      target,
+      nextPath,
+      resolvePartPlacement,
+    )
   if (isPositionedAssembly(target))
     return resolveAssemblyPlacement(target, nextPath)
   const db = component.root!.db
