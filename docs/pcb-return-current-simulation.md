@@ -1,28 +1,69 @@
-# Declare a PCB return-current experiment
+# PCB return-current experiment declarations
 
-Use `<simulation.pcbreturncurrentsimulation>` inside a board or subcircuit to describe a
-pending experiment:
+`<simulation.pcbreturncurrentsimulation>` declares a pending `pcb_return_current`
+experiment in Circuit JSON. `<pcbreturncurrentexcitation>` specifies a routed
+signal, a peak current, real port resistances and physical ground contacts.
+Rendering these elements declares the experiment; it does not launch an EM
+solver or produce simulation results.
+
+Place the declaration inside a board or subcircuit. Its name is optional and
+defaults to `"PCB return current"`. Multiple declarations create separate
+experiments, and PCB-disabled rendering skips them. The elements use canonical
+typed schemas from `@tscircuit/props`.
 
 ```tsx
 import { simulation } from "@tscircuit/core"
 
-<board width="8mm" height="6mm">
-  <simulation.pcbreturncurrentsimulation name="DDR D13 return path" />
-</board>
+<simulation.pcbreturncurrentsimulation name="DDR_D13 escape">
+  <pcbreturncurrentexcitation
+    source=".U1 > .DDR_D13"
+    load=".U2 > .DQ13"
+    trace=".DDR_D13"
+    ground="net.GND"
+    current="5mA"
+    sourceImpedance="25ohm"
+    loadImpedance="100ohm"
+    returnSource=".U2 > .GND"
+    returnSink=".U1 > .VSS"
+  />
+</simulation.pcbreturncurrentsimulation>
 ```
 
-Core emits a `simulation_experiment` with `experiment_type: "pcb_return_current"`
-and the chosen name. A name is optional; the default is `"PCB return current"`.
-Multiple declarations produce separate experiments. PCB-disabled rendering
-skips the declarations. Rendering does not run a solver or create results.
+The selected signal ports and route must already exist on the PCB. The
+selectors use the normal subcircuit scope, and `trace` is optional when the
+source/load connection has exactly one complete routed trace. These elements
+do not add electrical connections or change the original PCB route.
 
-This first feature introduces the experiment container. The follow-up feature
-adds nested `<simulation.pcbreturncurrentexcitation>` elements for selecting a routed
-signal and its explicit ground return source/sink. An empty container is a
-draft definition; the simulation CLI cannot run it until excitations are added.
+For positive signal current from `source` to `load`, return current enters
+the ground conductor at the **load-side `returnSource`** and returns to the
+driver at **`returnSink`**. The source port pairs the signal driver with
+`returnSink`; the load port pairs the receiver with `returnSource`.
 
-Frequency, solver, mesh size, and sampling cell size are CLI run options. The
-current Circuit JSON pending-experiment schema has no fields for them, so they
-are not accepted as TSX props.
+Both return contacts must select real component PCB pads or plated-hole ports
+electrically connected to `ground`. No nearby ground pad, plane projection or
+return path is inferred. A ground port spanning multiple layers requires
+`returnSourceLayer` or `returnSinkLayer`; a specified layer must be present on
+that port. Standalone via and copper-pour selectors are not supported by this
+first TSX API. Signal and ground references must be distinct physical ports;
+a same-layer contact at the signal position is rejected.
 
-The component uses the canonical typed schema from `@tscircuit/props`.
+All electrical values are required. Raw current numbers are peak amperes;
+raw impedance numbers are positive real ohms. Unit strings such as `"5mA"`,
+`"25ohm"` and `"100Ω"` are accepted. Frequency, sampling cell size, copper
+model, physical stackup and solver settings are run parameters supplied to
+the simulation CLI, because pending experiment records do not have fields
+for these settings. Unsupported TSX properties fail validation.
+
+An empty `<simulation.pcbreturncurrentsimulation name="DDR escape" />` can reserve a
+pending experiment. It cannot be simulated until an excitation is added.
+An experiment can contain several excitations on **different** signal routes
+sharing one ground net. Use separate experiments to compare currents,
+directions or ground nets for the same route. Split or branched signal routes
+are rejected rather than selecting an arbitrary segment.
+
+After `await circuit.renderUntilSettled()`, save `circuit.getCircuitJson()`
+and pass it to the [simulate-return-current CLI](https://github.com/tscircuit/simulate-return-current).
+Select the generated experiment when several are present, supply the frequency
+and physical solver settings, and read the resulting Circuit JSON separately.
+
+![Physical signal and return contacts](../tests/features/__snapshots__/pcb-return-current-tsx-pcb.snap.svg)

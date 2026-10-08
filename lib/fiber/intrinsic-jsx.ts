@@ -109,6 +109,7 @@ export interface TscircuitElements {
   analogacsweepsimulation: Props.AnalogAcSweepSimulationProps
   analogsweepparameter: Props.AnalogSweepParameterProps
   pcbreturncurrentsimulation: Props.PcbReturnCurrentSimulationProps
+  pcbreturncurrentexcitation: Props.PcbReturnCurrentExcitationProps
   spicemodel: Props.SpiceModelProps
   fiducial: Props.FiducialProps
   jscad: any
