@@ -105,6 +105,7 @@ test("via-in-pad board policy is preserved in Simple Route JSON", async () => {
   const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({ circuitJson })
 
   expect(pcbBoard.is_via_in_pad_allowed).toBe(true)
+  expect(simpleRouteJson.allowViaInPad).toBe(true)
 
   const comparisonSvg = stackSvgsHorizontally(
     [
