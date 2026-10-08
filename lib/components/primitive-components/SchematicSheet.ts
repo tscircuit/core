@@ -87,6 +87,22 @@ export class SchematicSheet extends PrimitiveComponent<
     const resolvedSheetProperties = resolveCircuitJsonSchematicSheetProperties(
       this._parsedProps,
     )
+    const hasExplicitSheetDimensions =
+      this._parsedProps.sheetWidth !== undefined ||
+      this._parsedProps.sheetHeight !== undefined
+
+    if (hasExplicitSheetDimensions) {
+      insertSchematicElementOutsideSheetWarnings({
+        db,
+        schematicSheetId: this.schematic_sheet_id,
+        schematicSheetName: this.resolvedSchematicSheetDisplayName,
+        schematicSheetCenter: { x: 0, y: 0 },
+        sheetWidth: resolvedSheetProperties.sheetWidth,
+        sheetHeight: resolvedSheetProperties.sheetHeight,
+      })
+      return
+    }
+
     const schematicElements = [
       ...db.schematic_component.list(),
       ...db.schematic_port.list(),

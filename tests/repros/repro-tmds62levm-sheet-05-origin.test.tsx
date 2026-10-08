@@ -39,7 +39,7 @@ const createComparisonPanel = ({
   return `<svg x="${offsetX}" y="30" width="800" height="200" viewBox="300 0 600 150">${schematicContents}</svg>`
 }
 
-test("reproduces TMDS62LEVM sheet 05 title shifted into its frame", async () => {
+test("keeps the TMDS62LEVM sheet 05 title below its frame", async () => {
   const sourceCircuitJson = await loadTmds62levmSheet05()
   const sourceSheet = sourceCircuitJson.find(
     (element): element is SchematicSheet => element.type === "schematic_sheet",
@@ -109,6 +109,7 @@ test("reproduces TMDS62LEVM sheet 05 title shifted into its frame", async () => 
     sheet_width: sourceSheet.sheet_width,
     sheet_height: sourceSheet.sheet_height,
   })
+  expect(renderedSheet).not.toHaveProperty("center")
   const renderedCircuitJson = circuit
     .getCircuitJson()
     .filter((element) => element.type !== "schematic_graphic")
