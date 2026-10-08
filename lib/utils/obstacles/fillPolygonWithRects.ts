@@ -25,6 +25,7 @@ export function fillPolygonWithRects(
   const { rectHeight = 0.1 } = options
 
   const rects: Rect[] = []
+  let previousScanlineRects: Rect[] = []
 
   const yCoords = polygon.map((p) => p.y)
   const minY = Math.min(...yCoords)
@@ -33,6 +34,7 @@ export function fillPolygonWithRects(
   for (let y = minY; y < maxY; y += rectHeight) {
     const scanlineY = y + rectHeight / 2
     const intersections: number[] = []
+    const currentScanlineRects: Rect[] = []
 
     for (let i = 0; i < polygon.length; i++) {
       const p1 = polygon[i]
@@ -57,18 +59,32 @@ export function fillPolygonWithRects(
         const x2 = intersections[i + 1]
         const width = x2 - x1
         if (width > 1e-6) {
-          // Avoid creating zero-width rects
-          rects.push({
+          const centerX = x1 + width / 2
+          const previousRect = previousScanlineRects.find(
+            (rect) => rect.center.x === centerX && rect.width === width,
+          )
+          if (previousRect) {
+            previousRect.center.y += rectHeight / 2
+            previousRect.height += rectHeight
+            currentScanlineRects.push(previousRect)
+            continue
+          }
+
+          const rect = {
             center: {
-              x: x1 + width / 2,
+              x: centerX,
               y: scanlineY,
             },
             width,
             height: rectHeight,
-          })
+          }
+          rects.push(rect)
+          currentScanlineRects.push(rect)
         }
       }
     }
+
+    previousScanlineRects = currentScanlineRects
   }
 
   return rects
