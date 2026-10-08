@@ -50,6 +50,7 @@ export const Group_doInitialStandaloneSubcircuitPcbDesignRuleChecks = (
       try {
         const results = (await runAllRoutingChecks(
           subcircuitCircuitJson,
+          { platformConfig: group.root?.platform },
         )) as AnyCircuitElement[]
         db.insertAll(dedupePcbDrcErrors(results))
         group._standaloneSubcircuitDrcChecksComplete = true
