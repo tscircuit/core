@@ -295,6 +295,18 @@ export const getObstaclesFromCircuitJson = (
           })
         }
       } else if (element.shape === "polygon") {
+        const axisAlignedRect = getAxisAlignedRectFromPolygon(element.points)
+        if (axisAlignedRect) {
+          obstacles.push({
+            componentId: pcbComponentId,
+            type: "rect",
+            layers: everyLayer,
+            ...axisAlignedRect,
+            connectedTo: [],
+          })
+          continue
+        }
+
         const approximatingRects = fillPolygonWithRects(element.points, {
           rectHeight: 0.6,
         })
