@@ -7,6 +7,7 @@ import { renderAssemblyCadModel } from "./render-assembly-cad-model"
 import { resolveAssemblyModel } from "./resolve-assembly-model"
 import { resolveAssemblyPlacement } from "./resolve-assembly-placement"
 import { getPartReferenceSurfaces } from "./get-part-reference-surfaces"
+import { renderPartReferenceSurfaces } from "./render-part-reference-surfaces"
 
 export class AssemblyPart
   extends PrimitiveComponent<typeof assemblyPartProps>
@@ -38,6 +39,7 @@ export class AssemblyPart
 
   doInitialCadModelRender(): void {
     if (!this.root || this.root.pcbDisabled || !this.source_component_id) return
+    renderPartReferenceSurfaces(this)
     const model =
       resolveAssemblyModel(this._parsedProps) ?? this._parsedProps.cadModel
     if (model && !(typeof model === "object" && "type" in model)) {

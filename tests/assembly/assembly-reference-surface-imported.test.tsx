@@ -29,6 +29,15 @@ test("imported printed parts compose their model offsets inside a tilted child s
   expect(cad.position.x).toBeCloseTo(1)
   expect(cad.position.y).toBeCloseTo(7)
   expect(cad.position.z).toBeCloseTo(-2)
+  const surfaces = circuit.db.cad_reference_surface.list()
+  expect(surfaces).toHaveLength(2) // Includes the geometry-free BASE.
+  const assetFrame = surfaces.find((s) => s.name === "bottom")!
+  // Model offsets move the asset, never its mating frame.
+  expect(assetFrame.center).toEqual({ x: 0, y: 4, z: 0 })
+  expect(assetFrame.normal.y).toBeCloseTo(-1)
+  expect(assetFrame.x_axis).toEqual({ x: 1, y: 0, z: 0 })
+  await circuit.renderUntilSettled()
+  expect(circuit.db.cad_reference_surface.list()).toHaveLength(2)
   const frame = mat4.create()
   const rotation = cad.rotation!
   mat4.rotateZ(frame, frame, (rotation.z * Math.PI) / 180)

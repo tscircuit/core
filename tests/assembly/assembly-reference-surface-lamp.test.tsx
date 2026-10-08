@@ -13,6 +13,7 @@ test("child reference surfaces seat a hollow printed lampshade on a stem and lif
     await circuit.renderUntilSettled()
     circuits.push(circuit)
     expect(circuit.db.cad_component.list()).toHaveLength(4)
+    expect(circuit.db.cad_reference_surface.list()).toHaveLength(4)
     expect(circuit.db.pcb_component.list()).toHaveLength(0)
     for (const [name, bottom, top] of [
       ["BASE", 0, 12],
@@ -63,10 +64,11 @@ test("child reference surfaces seat a hollow printed lampshade on a stem and lif
         },
       },
       {
-        title: "Assembly view: lift the shade 60 mm above the bulb",
-        code: '<assembly.printedpart name="SHADE"\n  jscad={<LampShade />} material="pla"\n  mountedTo="STEM.shade" mountFace="stem"\n  mountGap="60mm">\n  <assembly.referencesurface name="stem"\n    normalDirection="z-" />\n</assembly.printedpart>\n\n// LampShade: hollow tapered shell,\n// mounting collar, and three spokes.\n// LampStem: a hollow wiring channel.',
+        title: "Assembly view: mounting frames and outward normals",
+        showReferenceSurfaces: true,
+        code: '<assembly.printedpart name="SHADE"\n  jscad={<LampShade />} material="pla"\n  mountedTo="STEM.shade" mountFace="stem"\n  mountGap="60mm">\n  <assembly.referencesurface name="stem"\n    normalDirection="z-" />\n</assembly.printedpart>\n\n// LampShade: hollow tapered shell,\n// mounting collar, and three spokes.\n// LampStem: a hollow wiring channel.\n// convertCircuitJsonToGltf(json, {\n//   showReferenceSurfaces: true\n// })',
         annotation:
-          "Only mountGap changes. The bulb, stem, and base stay in place; reference surfaces add no mesh.",
+          "Cyan: named reference rectangles. Orange: normals. mountGap lifts the shade 60 mm.",
         circuit: circuits[1],
         renderOptions: {
           camPos: [184, 120, 219],
@@ -74,12 +76,20 @@ test("child reference surfaces seat a hollow printed lampshade on a stem and lif
         },
       },
       {
-        title:
-          "Shade underside: the mounting frame sits on the collar's lower face",
-        code: '<assembly.printedpart name="SHADE"\n  jscad={<LampShade />}\n  mountedTo="STEM.shade" mountFace="stem">\n  <assembly.referencesurface name="stem"\n    normalDirection="z-"\n    centerZOffset="0mm" />\n</assembly.printedpart>\n\n// Collar at local Z=0..4 mm.\n// Hollow shell at local Z=-24..20 mm.\n// Three spokes connect collar to shell.',
+        title: "Shade underside: inspect the collar's downward mounting frame",
+        code: '<assembly.printedpart name="SHADE"\n  jscad={<LampShade />}\n  mountedTo="STEM.shade" mountFace="stem">\n  <assembly.referencesurface name="stem"\n    normalDirection="z-"\n    width="28mm" height="28mm"\n    centerZOffset="0mm" />\n</assembly.printedpart>\n\n// Collar at local Z=0..4 mm.\n// Hollow shell at local Z=-24..20 mm.\n// Three spokes connect collar to shell.',
         annotation:
-          "The collar is physical geometry. Its child reference surface supplies the mating frame.",
-        circuit: [shadeSource, shadeCad],
+          "The cyan frame surrounds the collar. Its orange arrow points down, toward the stem.",
+        showReferenceSurfaces: true,
+        circuit: [
+          shadeSource,
+          shadeCad,
+          ...circuits[0].db.cad_reference_surface
+            .list()
+            .filter(
+              (s) => s.source_component_id === shadeSource.source_component_id,
+            ),
+        ],
         renderOptions: {
           camPos: [55, 12, 70],
           poppygl: { lookAt: [0, 92, 0] },

@@ -71,7 +71,12 @@ export function ReferenceSurfaceLamp({ shadeGap = 0 }: { shadeGap?: number }) {
   return (
     <assembly.device name="LAMP">
       <assembly.part name="BASE" cadModel={{ jscad: lampBase }}>
-        <assembly.referencesurface name="stem" centerZOffset="12mm" />
+        <assembly.referencesurface
+          name="stem"
+          width="28mm"
+          height="28mm"
+          centerZOffset="12mm"
+        />
       </assembly.part>
       <assembly.printedpart
         name="STEM"
@@ -81,8 +86,18 @@ export function ReferenceSurfaceLamp({ shadeGap = 0 }: { shadeGap?: number }) {
         mountedTo="BASE.stem"
         mountFace="base"
       >
-        <assembly.referencesurface name="base" normalDirection="z-" />
-        <assembly.referencesurface name="shade" centerZOffset="80mm" />
+        <assembly.referencesurface
+          name="base"
+          width="28mm"
+          height="28mm"
+          normalDirection="z-"
+        />
+        <assembly.referencesurface
+          name="shade"
+          width="28mm"
+          height="28mm"
+          centerZOffset="80mm"
+        />
         <assembly.part
           name="BULB"
           cadModel={{
@@ -114,7 +129,12 @@ export function ReferenceSurfaceLamp({ shadeGap = 0 }: { shadeGap?: number }) {
         mountFace="stem"
         mountGap={shadeGap}
       >
-        <assembly.referencesurface name="stem" normalDirection="z-" />
+        <assembly.referencesurface
+          name="stem"
+          width="28mm"
+          height="28mm"
+          normalDirection="z-"
+        />
       </assembly.printedpart>
     </assembly.device>
   )

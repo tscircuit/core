@@ -15,6 +15,7 @@ import { renderAssemblyCadModel } from "./render-assembly-cad-model"
 import { resolvePrintedPartMounts } from "./resolve-printed-part-mounts"
 import { getPartReferenceSurfaces } from "./get-part-reference-surfaces"
 import { getAssemblyEulerAngles } from "./get-assembly-euler-angles"
+import { renderPartReferenceSurfaces } from "./render-part-reference-surfaces"
 
 export class AssemblyPrintedPart
   extends PrimitiveComponent<typeof assemblyPrintedPartProps>
@@ -75,6 +76,7 @@ export class AssemblyPrintedPart
 
   doInitialCadModelRender(): void {
     if (!this.root || this.root.pcbDisabled || !this.source_component_id) return
+    renderPartReferenceSurfaces(this)
     const plan = this.printedPartPlan
     if (!plan) {
       let model =

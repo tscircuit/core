@@ -29,6 +29,14 @@ test("part-local reference offsets follow inherited PCB yaw and both layer frame
             jscad={<jscad.cuboid size={[1, 1, 1]} center={[1, 2, 3]} />}
           >
             <assembly.referencesurface name="bottom" normalDirection="z-" />
+            <assembly.referencesurface
+              name="probe"
+              centerXOffset={1}
+              centerYOffset={2}
+              centerZOffset={3}
+              width={8}
+              height={6}
+            />
           </assembly.printedpart>
           <board width={30} height={20} thickness={1.6} routingDisabled>
             <chip
@@ -52,6 +60,22 @@ test("part-local reference offsets follow inherited PCB yaw and both layer frame
       const center = modeling.measurements.measureCenter(
         executeJscadOperations(modeling as any, cad.model_jscad),
       )
+      const surface = circuit.db.cad_reference_surface
+        .list()
+        .find(
+          (s) =>
+            s.source_component_id === source.source_component_id &&
+            s.name === "probe",
+        )!
+      for (const [axis, key] of ["x", "y", "z"].entries()) {
+        expect(surface.center[key as "x" | "y" | "z"]).toBeCloseTo(
+          center[axis] + cad.position[key as "x" | "y" | "z"],
+          5,
+        )
+      }
+      expect(surface.normal.z).toBeCloseTo(layer === "bottom" ? -1 : 1)
+      expect(surface.width).toBe(8)
+      expect(surface.height).toBe(6)
       const theta = (angle * Math.PI) / 180
       const sign = layer === "bottom" ? -1 : 1
       const expected = [

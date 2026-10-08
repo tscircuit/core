@@ -69,3 +69,24 @@ hole, and three support spokes. The [complete lamp fixture](../tests/assembly/fi
 includes the JSCAD base, hollow stem, tapered shell, collar, and spokes.
 
 ![Lamp assembled and shade lifted above its mounting surface](../tests/assembly/__snapshots__/assembly-reference-surface-lamp-annotated.snap.png)
+
+
+Core emits each child surface and each printed part's named JSCAD reference as a
+`cad_reference_surface` record with its resolved world-space center, normal, and
+X tangent. Records belong to the part's source component and are emitted even
+when the part has no CAD model. Model offsets do not move these mounting frames.
+Schematic-only builds omit CAD reference records.
+
+To inspect the frames in the 3D export:
+
+```ts
+const glb = await convertCircuitJsonToGltf(circuit.getCircuitJson(), {
+  format: "glb",
+  showReferenceSurfaces: true,
+})
+```
+
+This option defaults to false. Cyan rectangles and names identify the frames;
+orange arrows show their outward normals. Explicit `width` and `height` set the
+rectangle size. Frames without extents, including named JSCAD references, use a
+10 mm diagnostic rectangle. The exploded lamp view above enables this option.
