@@ -1,7 +1,6 @@
 import { expect, test } from "bun:test"
 import { assembly } from "lib"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
-import { expectAssemblySnapshot } from "./fixtures/expect-assembly-snapshot"
 
 test("a generic part's child reference surface anchors a board without rendering a surface", async () => {
   const { circuit } = getTestFixture()
@@ -40,20 +39,4 @@ test("a generic part's child reference surface anchors a board without rendering
       .list()
       .some((source) => source.name === "anchor"),
   ).toBe(false)
-  await expectAssemblySnapshot(import.meta.path, {
-    title: "Reference surface on a generic part",
-    panels: [
-      {
-        title: "2 mm surface clearance below the PCB",
-        code: '<assembly.part name="BRACKET" cadModel={...}>\n  <assembly.referencesurface\n    shape="rect" plane="xy"\n    centerZOffset="1mm" />\n</assembly.part>\n<board mountedTo="BRACKET.anchor"\n  mountGap="2mm" thickness={1.6} />',
-        annotation:
-          "The reference surface locates the mount; it adds no material.",
-        circuit,
-        renderOptions: {
-          camPos: [35, 25, 40],
-          poppygl: { lookAt: [4, -1, 3] },
-        },
-      },
-    ],
-  })
 })

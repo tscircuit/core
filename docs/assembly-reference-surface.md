@@ -46,4 +46,26 @@ plane and require a target face parallel to XY. Missing/duplicate references,
 attachment cycles, and multiple boards anchoring one connected assembly are
 errors.
 
-![Reference surface and PCB clearance](../tests/assembly/__snapshots__/assembly-reference-surface-part-annotated.snap.png)
+## Lamp assembly example
+
+A generic base provides `BASE.stem` at Z=12 mm. A hollow printed stem mates its
+`base` surface to that anchor and provides `STEM.shade` at its local Z=80 mm.
+The printed shade's `stem` surface faces `z-`, so its collar seats on the top of
+the stem at world Z=92 mm. The tapered shade is hollow and has three internal
+spokes connecting its wall to the mounting collar.
+
+```tsx
+<assembly.printedpart name="SHADE" material="pla"
+  jscad={<LampShade />}
+  mountedTo="STEM.shade" mountFace="stem">
+  <assembly.referencesurface name="stem" normalDirection="z-" />
+</assembly.printedpart>
+```
+
+The second view adds `mountGap="60mm"` to lift the shade for assembly; the bulb,
+stem, and base remain in place. Reference surfaces define the attachment frames
+without drawing extra geometry. The underside view shows the collar, wiring
+hole, and three support spokes. The [complete lamp fixture](../tests/assembly/fixtures/reference-surface-lamp.tsx)
+includes the JSCAD base, hollow stem, tapered shell, collar, and spokes.
+
+![Lamp assembled and shade lifted above its mounting surface](../tests/assembly/__snapshots__/assembly-reference-surface-lamp-annotated.snap.png)
