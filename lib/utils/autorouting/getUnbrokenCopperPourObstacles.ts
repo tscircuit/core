@@ -1,5 +1,4 @@
 import type { LayerRef, PcbBoard, PcbGroup } from "circuit-json"
-import type { ConnectivityMap } from "circuit-json-to-connectivity-map"
 import type { Obstacle } from "lib/utils/obstacles/types"
 import { fillPolygonWithRects } from "lib/utils/obstacles/fillPolygonWithRects"
 
@@ -101,23 +100,14 @@ const getCopperPourBoundsRect = ({
   return null
 }
 
-const getCopperPourConnectedTo = (
-  net: NetLike,
-  connMap: ConnectivityMap,
-): string[] =>
-  dedupeStrings([
-    net.source_net_id,
-    net.subcircuit_connectivity_map_key,
-    net.source_net_id ? connMap.getNetConnectedToId(net.source_net_id) : null,
-  ])
+const getCopperPourConnectedTo = (net: NetLike): string[] =>
+  dedupeStrings([net.source_net_id, net.subcircuit_connectivity_map_key])
 
 export const getUnbrokenCopperPourObstacles = ({
-  connMap,
   subcircuitComponent,
   board,
   group,
 }: {
-  connMap: ConnectivityMap
   subcircuitComponent?: CopperPourContainerLike
   board?: PcbBoard | null
   group?: PcbGroup | null
@@ -137,7 +127,7 @@ export const getUnbrokenCopperPourObstacles = ({
     if (!net?.source_net_id) continue
 
     const layer = getLayerName(props.layer)
-    const connectedTo = getCopperPourConnectedTo(net, connMap)
+    const connectedTo = getCopperPourConnectedTo(net)
     if (connectedTo.length === 0) continue
 
     const boundary = getCopperPourBoundary({

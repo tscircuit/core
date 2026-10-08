@@ -35,6 +35,7 @@ import {
 } from "./getBusesForSimpleRouteJson"
 import { getDifferentialPairsForSimpleRouteJson } from "./getDifferentialPairsForSimpleRouteJson"
 import { getPreservedRoutedSubcircuitTraces } from "./getPreservedRoutedSubcircuitTraces"
+import { getSrjObstaclesWithCircuitJsonConnectivity } from "./getSrjObstaclesWithCircuitJsonConnectivity"
 import { getUnbrokenCopperPourObstacles } from "./getUnbrokenCopperPourObstacles"
 
 /**
@@ -280,7 +281,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     })
   }
 
-  const obstacles = getObstaclesFromCircuitJson(
+  const obstaclesWithoutConnectivity = getObstaclesFromCircuitJson(
     [
       ...(board ? [board] : []),
       ...db.source_component.list(),
@@ -308,26 +309,24 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         !subcircuit_id ||
         relevantSubcircuitIds?.has(e.subcircuit_id!),
     ),
-    sharedConnMap,
   )
-  obstacles.push(
+  obstaclesWithoutConnectivity.push(
     ...getUnbrokenCopperPourObstacles({
-      connMap: sharedConnMap,
       subcircuitComponent,
       board,
       group: pcbGroup,
     }),
   )
 
-  // Add every equivalent ID from the shared connectivity map to each obstacle.
-  for (const obstacle of obstacles) {
-    const additionalIds = obstacle.connectedTo.flatMap((id) =>
-      sharedConnMap.getIdsConnectedToNet(id),
-    )
-    obstacle.connectedTo = [
-      ...new Set([...obstacle.connectedTo, ...additionalIds]),
-    ]
-  }
+  const obstacles = getSrjObstaclesWithCircuitJsonConnectivity({
+    connectivityMap: sharedConnMap,
+    obstacles: obstaclesWithoutConnectivity,
+    routeState: ignoreExistingTopLevelPcbRouteState
+      ? "fresh_route"
+      : "preserved_route",
+    sourceNets: db.source_net.list(),
+    sourceTraces: db.source_trace.list(),
+  })
 
   // Build mapping from source_port_id to internal connection ID for interconnects
   const internalConnections = db.source_component_internal_connection.list()
