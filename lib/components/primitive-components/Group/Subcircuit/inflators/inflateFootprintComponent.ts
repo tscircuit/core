@@ -1,5 +1,6 @@
 import type { PcbComponent } from "circuit-json"
 import { Footprint } from "lib/components/primitive-components/Footprint"
+import { SilkscreenText } from "lib/components/primitive-components/SilkscreenText"
 import { extractPcbPrimitivesFromCircuitJson } from "lib/utils/extractPcbPrimitivesFromCircuitJson"
 import type { InflatorContext } from "../InflatorFn"
 
@@ -15,7 +16,7 @@ export const inflateFootprintComponent = (
   pcbElm: PcbComponent,
   inflatorContext: InflatorContext,
 ): Footprint | null => {
-  const { injectionDb, normalComponent } = inflatorContext
+  const { injectionDb, normalComponent, isRenderedLayout } = inflatorContext
   if (!normalComponent) return null
 
   const primitives = extractPcbPrimitivesFromCircuitJson({
@@ -25,6 +26,14 @@ export const inflateFootprintComponent = (
   })
 
   if (primitives.length === 0) return null
+
+  // Label placement leaves text where the rendered layout put it
+  if (isRenderedLayout) {
+    for (const primitive of primitives) {
+      if (primitive instanceof SilkscreenText)
+        primitive._isFromRenderedLayout = true
+    }
+  }
 
   const footprint = new Footprint({ originalLayer: pcbElm.layer })
   footprint.addAll(primitives)

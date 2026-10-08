@@ -2,6 +2,7 @@ import { silkscreenTextProps, type PcbStyle } from "@tscircuit/props"
 import type { LayerRef } from "circuit-json"
 import { normalizeTextForCircuitJson } from "lib/utils/normalizeTextForCircuitJson"
 import { resolvePcbProperty } from "lib/utils/pcbSx/resolve-pcb-property"
+import { resolveSilkscreenTextPcbSxPosition } from "lib/utils/pcbSx/resolve-silkscreen-text-pcb-sx-position"
 import {
   applyToPoint,
   compose,
@@ -17,6 +18,8 @@ export class SilkscreenText extends PrimitiveComponent<
   pcb_silkscreen_text_ids: string[] = []
   isPcbPrimitive = true
   _footprinterFontSize?: number
+  /** Set when inflated from a rendered layout, which already placed the text. */
+  _isFromRenderedLayout = false
 
   get config() {
     return {
@@ -64,19 +67,8 @@ export class SilkscreenText extends PrimitiveComponent<
       component: this,
     }) as number | undefined
 
-    const resolvedPcbSxPcbX = resolvePcbProperty({
-      propertyName: "pcbX",
-      resolvedPcbSx: this.getResolvedPcbSx(),
-      pathFromAmpersand: "silkscreentext",
-      component: this,
-    })
-
-    const resolvedPcbSxPcbY = resolvePcbProperty({
-      propertyName: "pcbY",
-      resolvedPcbSx: this.getResolvedPcbSx(),
-      pathFromAmpersand: "silkscreentext",
-      component: this,
-    })
+    const { pcbX: resolvedPcbSxPcbX, pcbY: resolvedPcbSxPcbY } =
+      resolveSilkscreenTextPcbSxPosition(this)
 
     const resolvedPcbSxVisibility = resolvePcbProperty({
       propertyName: "visibility",

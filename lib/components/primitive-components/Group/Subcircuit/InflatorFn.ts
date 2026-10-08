@@ -9,6 +9,11 @@ export type SourceGroupId = string
 export interface InflatorContext {
   injectionDb: CircuitJsonUtilObjects
   subcircuit: SubcircuitI
+  /**
+   * True for a circuitJson prop, whose layout already placed its text; false
+   * for an isolated subcircuit render, which is the same circuit rendered apart.
+   */
+  isRenderedLayout: boolean
 
   normalComponent?: NormalComponent
   groupsMap?: Map<SourceGroupId, Group<any>>

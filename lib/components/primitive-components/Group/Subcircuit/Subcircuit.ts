@@ -118,7 +118,7 @@ export class Subcircuit
     if (isolatedJson) {
       this._isInflatedFromCircuitJson = true
       this._isolatedCircuitJson = null
-      inflateCircuitJson(this, isolatedJson, [])
+      inflateCircuitJson(this, isolatedJson, [], { isRenderedLayout: false })
       return
     }
 
@@ -126,7 +126,7 @@ export class Subcircuit
     if (circuitJson) {
       this._isInflatedFromCircuitJson = true
     }
-    inflateCircuitJson(this, circuitJson, children)
+    inflateCircuitJson(this, circuitJson, children, { isRenderedLayout: true })
   }
 }
 

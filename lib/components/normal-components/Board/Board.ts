@@ -28,6 +28,8 @@ import { Board_updatePcbDesignRuleChecks } from "./Board_updatePcbDesignRuleChec
 import type { BoardI } from "./BoardI"
 import { Board_doInitialPcbCopperPourCleanup } from "./Board_doInitialPcbCopperPourCleanup"
 import { Board_doInitialPcbPlacementDesignRuleChecks } from "./Board_doInitialPcbPlacementDesignRuleChecks"
+import { Board_doInitialSilkscreenOverlapAdjustment } from "./Board_doInitialSilkscreenOverlapAdjustment/Board_doInitialSilkscreenOverlapAdjustment"
+import type { SilkscreenLabelLayer } from "lib/utils/silkscreen-label-placement/types"
 import { BoardCastellatedHole } from "./board-castellated-hole"
 
 const MIN_EFFECTIVE_BORDER_RADIUS_MM = 0.01
@@ -469,7 +471,7 @@ export class Board
     if (isolatedJson) {
       this._isInflatedFromCircuitJson = true
       this._isolatedCircuitJson = null
-      inflateCircuitJson(this, isolatedJson, [])
+      inflateCircuitJson(this, isolatedJson, [], { isRenderedLayout: false })
       return
     }
 
@@ -477,7 +479,7 @@ export class Board
     if (circuitJson) {
       this._isInflatedFromCircuitJson = true
     }
-    inflateCircuitJson(this, circuitJson, children)
+    inflateCircuitJson(this, circuitJson, children, { isRenderedLayout: true })
   }
 
   doInitialPcbComponentRender(): void {
@@ -675,6 +677,22 @@ export class Board
 
   doInitialPcbCopperPourCleanup() {
     Board_doInitialPcbCopperPourCleanup(this)
+  }
+
+  /** The label placement inputs left by the last placement of each side, as JSON. */
+  _silkscreenLabelPlacementParamsJsonByLayer: Partial<
+    Record<SilkscreenLabelLayer, string>
+  > = {}
+
+  doInitialSilkscreenOverlapAdjustment() {
+    Board_doInitialSilkscreenOverlapAdjustment(this)
+  }
+
+  // Place labels again after child components render or update (e.g., parts
+  // added on rerender)
+  updateSilkscreenOverlapAdjustment() {
+    // Reuse the same logic as the initial placement; placed labels stay put
+    this.doInitialSilkscreenOverlapAdjustment()
   }
 
   updatePcbDesignRuleChecks() {
