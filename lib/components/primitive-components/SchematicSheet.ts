@@ -1,7 +1,7 @@
 import { schematicSheetProps } from "@tscircuit/props"
 import { getBoundsForSchematic } from "lib/utils/autorouting/getBoundsForSchematic"
 import { resolveCircuitJsonSchematicSheetProperties } from "lib/utils/schematic/get-circuit-json-schematic-sheet-size"
-import { insertSchematicElementOutsideSheetWarnings } from "lib/utils/schematic/insertSchematicElementOutsideSheetWarnings"
+import { warnIfSchematicElementsOutsideSheet } from "lib/utils/schematic/warn-if-schematic-elements-outside-sheet"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
 export class SchematicSheet extends PrimitiveComponent<
@@ -92,7 +92,7 @@ export class SchematicSheet extends PrimitiveComponent<
       this._parsedProps.sheetHeight !== undefined
 
     if (hasExplicitSheetDimensions) {
-      insertSchematicElementOutsideSheetWarnings({
+      warnIfSchematicElementsOutsideSheet({
         db,
         schematicSheetId: this.schematic_sheet_id,
         schematicSheetName: this.resolvedSchematicSheetDisplayName,
@@ -137,7 +137,7 @@ export class SchematicSheet extends PrimitiveComponent<
       }
     }
 
-    insertSchematicElementOutsideSheetWarnings({
+    warnIfSchematicElementsOutsideSheet({
       db,
       schematicSheetId: this.schematic_sheet_id,
       schematicSheetName: this.resolvedSchematicSheetDisplayName,
