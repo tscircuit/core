@@ -11,7 +11,7 @@ geometry, a source component, or a CAD component.
 <assembly.printedpart name="SPACER" material="pla" color="orange"
   mountedTo="BRACKET.anchor" mountFace="bottom"
   jscad={<jscad.cuboid size={[10, 10, 4]} center={[0, 0, 2]} />}>
-  <assembly.referencesurface name="bottom" normalDirection="negative" />
+  <assembly.referencesurface name="bottom" normalDirection="z-" />
   <assembly.referencesurface name="top" zOffset="4mm" />
 </assembly.printedpart>
 ```
@@ -24,15 +24,18 @@ Offsets locate the surface center in the part's local, right-handed XYZ frame.
 to zero. They describe the part origin, independently of model-only position
 offsets. Mounting uses that center and opposes the mating normals.
 
-| Plane | Positive normal | In-plane X direction |
+| Plane | Default normal | In-plane X direction |
 | --- | --- | --- |
-| `xy` (default) | +Z | +X |
-| `xz` | +Y | +X |
-| `yz` | +X | +Y |
+| `xy` (default) | `z+` | `x+` |
+| `xz` | `y+` | `x+` |
+| `yz` | `x+` | `y+` |
 
-`normalDirection="negative"` reverses the normal while retaining the in-plane X
-direction. The second tangent follows the right-handed frame, so positive XZ's
-second tangent is -Z. Optional `width` and `height` describe rectangular extents
+`normalDirection` accepts `x+`, `x-`, `y+`, `y-`, `z+`, or `z-` and must
+be perpendicular to `plane`: XY accepts `z+`/`z-`, XZ accepts `y+`/`y-`, and YZ
+accepts `x+`/`x-`. A negative direction reverses the normal while retaining the
+in-plane X direction. The earlier `positive`/`negative` spellings are replaced by
+these axis directions. The second tangent follows the right-handed frame, so
+XZ with `y+` has its second tangent along -Z. Optional `width` and `height` describe rectangular extents
 along the two tangents; provide both as positive distances. They do not alter
 the center-based mount or generate material.
 

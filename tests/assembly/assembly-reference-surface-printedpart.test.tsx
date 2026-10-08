@@ -21,7 +21,7 @@ test("printed parts mount by child surfaces and emit color and print material", 
         <assembly.referencesurface
           name="bottom"
           plane="xy"
-          normalDirection="negative"
+          normalDirection="z-"
         />
         <assembly.referencesurface name="top" plane="xy" zOffset="4mm" />
       </assembly.printedpart>

@@ -20,7 +20,7 @@ test("imported printed parts compose their model offsets inside a tilted child s
           rotationOffset: { x: 0, y: 0, z: 90 },
         }}
       >
-        <assembly.referencesurface name="bottom" normalDirection="negative" />
+        <assembly.referencesurface name="bottom" normalDirection="z-" />
       </assembly.printedpart>
     </assembly.device>,
   )

@@ -24,10 +24,7 @@ test("part-local reference offsets follow inherited PCB yaw and both layer frame
             mountFace="bottom"
             jscad={<jscad.cuboid size={[1, 1, 1]} center={[1, 2, 3]} />}
           >
-            <assembly.referencesurface
-              name="bottom"
-              normalDirection="negative"
-            />
+            <assembly.referencesurface name="bottom" normalDirection="z-" />
           </assembly.printedpart>
           <board width={30} height={20} thickness={1.6} routingDisabled>
             <chip

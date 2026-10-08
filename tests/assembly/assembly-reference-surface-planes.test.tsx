@@ -6,12 +6,12 @@ import * as modeling from "@jscad/modeling"
 
 test("surface planes and opposite normals place off-axis printed geometry in all six directions", async () => {
   for (const [plane, normalDirection, expected] of [
-    ["xy", "positive", [1, 2, 3]],
-    ["xy", "negative", [1, -2, -3]],
-    ["xz", "positive", [1, 3, -2]],
-    ["xz", "negative", [1, -3, 2]],
-    ["yz", "positive", [3, 1, 2]],
-    ["yz", "negative", [-3, 1, -2]],
+    ["xy", "z+", [1, 2, 3]],
+    ["xy", "z-", [1, -2, -3]],
+    ["xz", "y+", [1, 3, -2]],
+    ["xz", "y-", [1, -3, 2]],
+    ["yz", "x+", [3, 1, 2]],
+    ["yz", "x-", [-3, 1, -2]],
   ] as const) {
     const { circuit } = getTestFixture()
     circuit.add(
@@ -29,7 +29,7 @@ test("surface planes and opposite normals place off-axis printed geometry in all
           mountFace="bottom"
           jscad={<jscad.cuboid size={[1, 1, 1]} center={[1, 2, 3]} />}
         >
-          <assembly.referencesurface name="bottom" normalDirection="negative" />
+          <assembly.referencesurface name="bottom" normalDirection="z-" />
         </assembly.printedpart>
       </assembly.device>,
     )

@@ -29,7 +29,7 @@ export class AssemblyReferenceSurface extends PrimitiveComponent<
   get referenceFrame(): NamedReferencePlane {
     const { name, plane, normalDirection, xOffset, yOffset, zOffset } =
       this._parsedProps
-    const sign = normalDirection === "negative" ? -1 : 1
+    const sign = normalDirection.endsWith("-") ? -1 : 1
     const normal: Vector3D =
       plane === "xy"
         ? [0, 0, sign]
