@@ -27,8 +27,14 @@ export class AssemblyReferenceSurface extends PrimitiveComponent<
    * XZ's second tangent is -Z so its tangent basis remains right-handed.
    */
   get referenceFrame(): NamedReferencePlane {
-    const { name, plane, normalDirection, xOffset, yOffset, zOffset } =
-      this._parsedProps
+    const {
+      name,
+      plane,
+      normalDirection,
+      centerXOffset,
+      centerYOffset,
+      centerZOffset,
+    } = this._parsedProps
     const sign = normalDirection.endsWith("-") ? -1 : 1
     const normal: Vector3D =
       plane === "xy"
@@ -37,6 +43,11 @@ export class AssemblyReferenceSurface extends PrimitiveComponent<
           ? [0, sign, 0]
           : [sign, 0, 0]
     const xAxis: Vector3D = plane === "yz" ? [0, 1, 0] : [1, 0, 0]
-    return { name, origin: [xOffset, yOffset, zOffset], normal, xAxis }
+    return {
+      name,
+      origin: [centerXOffset, centerYOffset, centerZOffset],
+      normal,
+      xAxis,
+    }
   }
 }

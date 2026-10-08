@@ -15,7 +15,11 @@ test("part-local reference offsets follow inherited PCB yaw and both layer frame
             assembly.screen,
             { name: "SCREEN", connectsTo: ".U1", cadModel: "soic8" },
             <assembly.part name="BASE">
-              <assembly.referencesurface xOffset={4} yOffset={5} zOffset={6} />
+              <assembly.referencesurface
+                centerXOffset={4}
+                centerYOffset={5}
+                centerZOffset={6}
+              />
             </assembly.part>,
           )}
           <assembly.printedpart

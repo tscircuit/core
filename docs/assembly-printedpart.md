@@ -100,7 +100,7 @@ entrypoint of jscad-fiber and does not import the Three.js viewer.
 ```tsx
 <assembly.printedpart name="SPACER" modelUrl="./spacer.stl"
   color="#ff8800" material="petg">
-  <assembly.referencesurface name="board" plane="xy" zOffset="10mm" />
+  <assembly.referencesurface name="board" plane="xy" centerZOffset="10mm" />
 </assembly.printedpart>
 <board mountedTo="SPACER.board" />
 ```

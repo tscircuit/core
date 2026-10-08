@@ -6,13 +6,13 @@ geometry, a source component, or a CAD component.
 
 ```tsx
 <assembly.part name="BRACKET" modelUrl="./bracket.step">
-  <assembly.referencesurface shape="rect" plane="xy" zOffset="1mm" />
+  <assembly.referencesurface shape="rect" plane="xy" centerZOffset="1mm" />
 </assembly.part>
 <assembly.printedpart name="SPACER" material="pla" color="orange"
   mountedTo="BRACKET.anchor" mountFace="bottom"
   jscad={<jscad.cuboid size={[10, 10, 4]} center={[0, 0, 2]} />}>
   <assembly.referencesurface name="bottom" normalDirection="z-" />
-  <assembly.referencesurface name="top" zOffset="4mm" />
+  <assembly.referencesurface name="top" centerZOffset="4mm" />
 </assembly.printedpart>
 ```
 
@@ -20,9 +20,10 @@ The default name is `anchor` and the default shape is `rect`. Names must be
 unique within the owning part, including any JSCAD reference names.
 
 Offsets locate the surface center in the part's local, right-handed XYZ frame.
-`xOffset`, `yOffset`, and `zOffset` accept millimeters or unit strings and default
-to zero. They describe the part origin, independently of model-only position
-offsets. Mounting uses that center and opposes the mating normals.
+`centerXOffset`, `centerYOffset`, and `centerZOffset` accept millimeters or unit
+strings and default to zero. They measure from the part origin, independently of
+model-only position offsets. Mounting uses that center and opposes the mating
+normals.
 
 | Plane | Default normal | In-plane X direction |
 | --- | --- | --- |

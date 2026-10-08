@@ -8,7 +8,7 @@ test("imported printed parts compose their model offsets inside a tilted child s
   circuit.add(
     <assembly.device>
       <assembly.part name="BASE">
-        <assembly.referencesurface name="side" plane="xz" yOffset="4mm" />
+        <assembly.referencesurface name="side" plane="xz" centerYOffset="4mm" />
       </assembly.part>
       <assembly.printedpart
         name="ASSET"

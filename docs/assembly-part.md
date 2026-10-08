@@ -35,7 +35,7 @@ parts with no CAD model:
 
 ```tsx
 <assembly.part name="BRACKET" modelUrl="./bracket.step">
-  <assembly.referencesurface shape="rect" plane="xy" zOffset="1mm" />
+  <assembly.referencesurface shape="rect" plane="xy" centerZOffset="1mm" />
 </assembly.part>
 <board mountedTo="BRACKET.anchor" mountGap="2mm" />
 ```

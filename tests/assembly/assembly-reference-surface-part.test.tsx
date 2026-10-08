@@ -11,7 +11,11 @@ test("a generic part's child reference surface anchors a board without rendering
         name="BRACKET"
         cadModel={{ jscad: { type: "cuboid", size: [24, 16, 2] } }}
       >
-        <assembly.referencesurface shape="rect" plane="xy" zOffset="1mm" />
+        <assembly.referencesurface
+          shape="rect"
+          plane="xy"
+          centerZOffset="1mm"
+        />
       </assembly.part>
       <board
         name="B1"
@@ -41,7 +45,7 @@ test("a generic part's child reference surface anchors a board without rendering
     panels: [
       {
         title: "2 mm surface clearance below the PCB",
-        code: '<assembly.part name="BRACKET" cadModel={...}>\n  <assembly.referencesurface\n    shape="rect" plane="xy" zOffset="1mm" />\n</assembly.part>\n<board mountedTo="BRACKET.anchor"\n  mountGap="2mm" thickness={1.6} />',
+        code: '<assembly.part name="BRACKET" cadModel={...}>\n  <assembly.referencesurface\n    shape="rect" plane="xy"\n    centerZOffset="1mm" />\n</assembly.part>\n<board mountedTo="BRACKET.anchor"\n  mountGap="2mm" thickness={1.6} />',
         annotation:
           "The reference surface locates the mount; it adds no material.",
         circuit,

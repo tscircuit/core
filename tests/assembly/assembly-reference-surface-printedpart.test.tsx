@@ -7,7 +7,7 @@ test("printed parts mount by child surfaces and emit color and print material", 
   circuit.add(
     <assembly.device>
       <assembly.part name="BASE">
-        <assembly.referencesurface name="top" zOffset="1mm" />
+        <assembly.referencesurface name="top" centerZOffset="1mm" />
       </assembly.part>
       <assembly.printedpart
         name="SPACER"
@@ -23,7 +23,7 @@ test("printed parts mount by child surfaces and emit color and print material", 
           plane="xy"
           normalDirection="z-"
         />
-        <assembly.referencesurface name="top" plane="xy" zOffset="4mm" />
+        <assembly.referencesurface name="top" plane="xy" centerZOffset="4mm" />
       </assembly.printedpart>
     </assembly.device>,
   )
