@@ -12,7 +12,7 @@ test("printed-part color applies to imported models and JSX CAD children", () =>
         color="blue"
         material="nylon"
       >
-        <assembly.referencesurface name="board" zOffset="2mm" />
+        <assembly.referencesurface name="board" centerZOffset="2mm" />
       </assembly.printedpart>
       <assembly.printedpart
         name="JSX"
