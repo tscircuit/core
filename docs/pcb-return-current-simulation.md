@@ -1,11 +1,13 @@
 # Declare a PCB return-current experiment
 
-Use `<pcbreturncurrentsimulation>` inside a board or subcircuit to describe a
+Use `<simulation.pcbreturncurrentsimulation>` inside a board or subcircuit to describe a
 pending experiment:
 
 ```tsx
+import { simulation } from "@tscircuit/core"
+
 <board width="8mm" height="6mm">
-  <pcbreturncurrentsimulation name="DDR D13 return path" />
+  <simulation.pcbreturncurrentsimulation name="DDR D13 return path" />
 </board>
 ```
 
@@ -15,7 +17,7 @@ Multiple declarations produce separate experiments. PCB-disabled rendering
 skips the declarations. Rendering does not run a solver or create results.
 
 This first feature introduces the experiment container. The follow-up feature
-adds nested `<pcbreturncurrentexcitation>` elements for selecting a routed
+adds nested `<simulation.pcbreturncurrentexcitation>` elements for selecting a routed
 signal and its explicit ground return source/sink. An empty container is a
 draft definition; the simulation CLI cannot run it until excitations are added.
 

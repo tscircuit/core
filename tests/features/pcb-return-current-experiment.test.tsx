@@ -1,12 +1,13 @@
 import { expect, test } from "bun:test"
 import { simulation_experiment } from "circuit-json"
+import { simulation } from "lib"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("TSX declares separate pending PCB return-current experiments", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width={8} height={6} schematicDisabled>
-      <pcbreturncurrentsimulation name="DDR D13 return path" />
+      <simulation.pcbreturncurrentsimulation name="DDR D13 return path" />
       <pcbreturncurrentsimulation />
       <pcbnotetext
         text="Pending experiments: DDR D13 / PCB return current"
