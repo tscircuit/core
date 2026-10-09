@@ -1,8 +1,36 @@
 import { expect, test } from "bun:test"
-import { getDefaultThroughHolePasteFixture } from "tests/fixtures/get-default-through-hole-paste-fixture"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("ordinary round through-hole emits top and bottom paste without an opt-in", async () => {
-  const circuit = getDefaultThroughHolePasteFixture()
+  const { circuit } = getTestFixture()
+  circuit.add(
+    <board width={16} height={10} routingDisabled>
+      <platedhole
+        name="through_hole"
+        shape="circle"
+        outerDiameter={2}
+        holeDiameter={1}
+        pcbX={-4}
+      />
+      <chip
+        name="U1"
+        pcbX={4}
+        footprint={
+          <footprint>
+            <smtpad shape="rect" width={2} height={2} />
+          </footprint>
+        }
+      />
+      <pcbnotetext
+        text="THT: no paste requested"
+        pcbX={-4}
+        pcbY={3}
+        fontSize={0.35}
+      />
+      <pcbnotetext text="SMT control" pcbX={4} pcbY={3} fontSize={0.35} />
+    </board>,
+  )
+  circuit.render()
   expect(circuit.db.pcb_plated_hole.list()).toHaveLength(1)
   const [smtpad] = circuit.db.pcb_smtpad.list()
   expect(circuit.db.pcb_smtpad.list()).toHaveLength(1)
