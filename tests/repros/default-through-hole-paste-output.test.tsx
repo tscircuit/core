@@ -48,7 +48,19 @@ test("ordinary round through-hole emits top and bottom paste without an opt-in",
   )
   expect(smtPaste).toHaveLength(1)
   expect(smtPaste[0].layer).toBe("top")
-  await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
-    showSolderPaste: true,
-  })
+  // Show each paste layer alone so copper and drills cannot hide the openings.
+  for (const layer of ["top", "bottom"] as const) {
+    const pasteView = circuit
+      .getCircuitJson()
+      .filter(
+        (element) =>
+          element.type === "pcb_board" ||
+          element.type === "pcb_note_text" ||
+          (element.type === "pcb_solder_paste" && element.layer === layer),
+      )
+    await expect(pasteView).toMatchPcbSnapshot(
+      import.meta.path.replace(".test.tsx", `-${layer}.test.tsx`),
+      { showSolderPaste: true },
+    )
+  }
 })
