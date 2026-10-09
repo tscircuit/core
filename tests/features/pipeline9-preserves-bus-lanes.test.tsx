@@ -263,7 +263,7 @@ const caps = [
   [-28, 15],
 ]
 
-test("reproduces Pipeline 9 rerouting completed top-only LCD bus lanes", async () => {
+test("preserves completed top-only LCD bus lanes through Pipeline 9", async () => {
   const { circuit } = getTestFixture({ platform: { schematicDisabled: true } })
   const phases = createAutoroutingPhaseIoStack(circuit)
   circuit.add(
@@ -532,11 +532,12 @@ test("reproduces Pipeline 9 rerouting completed top-only LCD bus lanes", async (
   ).toEqual([16, 16, 17])
   expect(
     phases.map((phase) => phase.endSimpleRouteJson!.traces!.length),
-  ).toEqual([16, 32, 95])
+  ).toEqual([16, 16, 79])
   expect(phases[0]!.startSimpleRouteJson!.buses).toMatchObject([
     { maxLengthSkew: 0.1, allowedLayers: ["top"] },
   ])
   expect(circuit.db.pcb_autorouting_error.list()).toHaveLength(0)
+  expect(circuit.db.pcb_trace.list()).toHaveLength(95)
   const bus = circuit.db.source_bus.list()[0]!
   const busTraces = circuit.db.pcb_trace
     .list()
@@ -549,11 +550,19 @@ test("reproduces Pipeline 9 rerouting completed top-only LCD bus lanes", async (
   const busVias = busTraces.flatMap((trace) =>
     trace.route.filter((point) => point.route_type === "via"),
   )
-  expect(busVias).toHaveLength(4)
-  expect(circuit.db.pcb_bus_length_skew_error.list()).toHaveLength(1)
-  expect(
-    circuit.db.pcb_bus_length_skew_error.list()[0]!.actual_length_skew,
-  ).toBeCloseTo(6.878458, 5)
+  expect(busVias).toHaveLength(0)
+  expect(circuit.db.pcb_bus_length_skew_error.list()).toHaveLength(0)
+  for (const trace of busTraces) {
+    expect(
+      trace.route.every(
+        (point) => point.route_type === "wire" && point.layer === "top",
+      ),
+    ).toBe(true)
+    const original = phases[0]!.endSimpleRouteJson!.traces!.find(
+      (lane) => lane.connection_name === trace.source_trace_id,
+    )!
+    expect(trace.route).toMatchObject(original.route)
+  }
   await expect(phases).toMatchAutoroutingPhaseIoStackSnapshot(
     import.meta.path,
     "pipeline9-preserves-bus-lanes",
