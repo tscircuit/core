@@ -17,9 +17,8 @@ const pinLabels = {
 
 // Reduced from PD1180-EPR U7 to pins 6–16; PCB, passives, and other sheets
 // are not needed. Retain the signal pins below CLK: they constrain label
-// placement. The shared ground bus continues through the GND symbol/text.
-// This snapshot records the bug, not the expected corrected placement.
-test("repro: TMC5160 ground bus intersects its GND symbol", async () => {
+// placement. The shared ground bus must remain clear of the GND symbol/text.
+test("TMC5160 ground bus stays clear of its GND symbol", async () => {
   const { circuit } = getTestFixture()
   circuit.pcbDisabled = true
   circuit.add(
