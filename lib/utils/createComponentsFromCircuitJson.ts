@@ -42,6 +42,7 @@ import { SymbolComponent } from "lib/components/primitive-components/Symbol"
 import type { NormalComponent } from "lib/components/base-components/NormalComponent"
 import type { PrimitiveComponent } from "../components/base-components/PrimitiveComponent"
 import { createPinrowSilkscreenText } from "./createPinrowSilkscreenText"
+import { markFootprintCourtyards } from "./courtyard-precedence"
 
 type SchematicPrimitiveWithStrokeWidth = Extract<
   AnyCircuitElement,
@@ -123,6 +124,7 @@ export const createComponentsFromCircuitJson = (
     pinLabels,
     pcbPinLabels,
     preserveSolderPaste = false,
+    isFootprint = false,
   }: {
     sourcePortOwner?: NormalComponent
     componentName: string
@@ -131,6 +133,7 @@ export const createComponentsFromCircuitJson = (
     pinLabels?: PinLabelsProp
     pcbPinLabels?: PinLabelsProp
     preserveSolderPaste?: boolean
+    isFootprint?: boolean
   },
   circuitJson: AnyCircuitElement[],
 ): PrimitiveComponent[] => {
@@ -990,5 +993,6 @@ export const createComponentsFromCircuitJson = (
       }
     }
   }
+  if (isFootprint) markFootprintCourtyards(components)
   return components
 }

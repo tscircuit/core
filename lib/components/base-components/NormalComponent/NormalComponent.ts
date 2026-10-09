@@ -40,6 +40,7 @@ import { underscorifyPortArrangement } from "lib/soup/underscorifyPortArrangemen
 import { getBoundsForSchematic } from "lib/utils/autorouting/getBoundsForSchematic"
 import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
 import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromCircuitJson"
+import { markFootprintCourtyards } from "lib/utils/courtyard-precedence"
 import { filterPinLabels } from "lib/utils/filterPinLabels"
 import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
 import {
@@ -661,6 +662,7 @@ export class NormalComponent<
           componentName: this.name ?? this.componentName,
           componentRotation: pcbRotation,
           footprinterString: footprint,
+          isFootprint: true,
           pinLabels,
           pcbPinLabels,
         },
@@ -1407,7 +1409,9 @@ export class NormalComponent<
         (c) => c.componentName === "Footprint",
       )
       if (!hasFootprintChild) {
+        const firstFootprintChildIndex = this.children.length
         this.add(fpElm)
+        markFootprintCourtyards(this.children.slice(firstFootprintChildIndex))
       }
     }
 

@@ -1,6 +1,7 @@
 import { decomposeTSR } from "transformation-matrix"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { courtyardRectProps } from "@tscircuit/props"
+import { shouldRenderCourtyard } from "lib/utils/courtyard-precedence"
 
 export class CourtyardRect extends PrimitiveComponent<
   typeof courtyardRectProps
@@ -17,6 +18,7 @@ export class CourtyardRect extends PrimitiveComponent<
 
   doInitialPcbPrimitiveRender(): void {
     if (this.root?.pcbDisabled) return
+    if (!shouldRenderCourtyard(this)) return
     const { db } = this.root!
     const { _parsedProps: props } = this
     const position = this._getGlobalPcbPositionBeforeLayout()

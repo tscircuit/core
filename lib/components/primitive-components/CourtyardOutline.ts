@@ -2,6 +2,7 @@ import { courtyardOutlineProps } from "@tscircuit/props"
 import { getBoundsFromPoints } from "@tscircuit/math-utils"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { applyToPoint } from "transformation-matrix"
+import { shouldRenderCourtyard } from "lib/utils/courtyard-precedence"
 
 export class CourtyardOutline extends PrimitiveComponent<
   typeof courtyardOutlineProps
@@ -18,6 +19,7 @@ export class CourtyardOutline extends PrimitiveComponent<
 
   doInitialPcbPrimitiveRender(): void {
     if (this.root?.pcbDisabled) return
+    if (!shouldRenderCourtyard(this)) return
     const { db } = this.root!
     const { _parsedProps: props } = this
     const { maybeFlipLayer } = this._getPcbPrimitiveFlippedHelpers()
