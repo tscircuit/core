@@ -22,6 +22,7 @@ test("printed parts compile without emitting CAD in schematic-only builds", asyn
   )
   await circuit.renderUntilSettled()
   expect(circuit.db.cad_component.list()).toHaveLength(0)
+  expect(circuit.db.cad_reference_surface.list()).toHaveLength(0)
   expect(circuit.db.pcb_board.list()).toHaveLength(0)
   expect(circuit.db.schematic_component.list()).toHaveLength(1)
 })

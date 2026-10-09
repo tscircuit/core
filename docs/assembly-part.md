@@ -29,3 +29,16 @@ electrical ports. `pcbDisabled` suppresses their CAD geometry.
 For compatibility with current Circuit JSON, parts emit a `source_component`
 with `ftype: "subassembly"`, retaining `name`, `display_name`, and CAD ownership.
 This requires `@tscircuit/props` version `0.0.696` or later.
+
+Parts can define named mounting frames with child reference surfaces, including
+parts with no CAD model:
+
+```tsx
+<assembly.part name="BRACKET" modelUrl="./bracket.step">
+  <assembly.referencesurface shape="rect" plane="xy" centerZOffset="1mm" />
+</assembly.part>
+<board mountedTo="BRACKET.anchor" mountGap="2mm" />
+```
+
+An unnamed surface defaults to `anchor`. See
+[reference surfaces](./assembly-reference-surface.md) for axes and dimensions.
