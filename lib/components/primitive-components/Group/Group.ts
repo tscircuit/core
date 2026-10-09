@@ -1359,7 +1359,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           (child): child is Trace =>
             child instanceof Trace &&
             !child.getSubcircuit()._isInflatedFromCircuitJson &&
-            Boolean(child._parsedProps.pcbPath?.length),
+            Boolean(
+              child._parsedProps.pcbPath?.length ||
+                child._parsedProps.pcbPaths?.length,
+            ),
         )
         .map((trace) => trace.source_trace_id),
     )
