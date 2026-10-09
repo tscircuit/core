@@ -53,6 +53,7 @@ export const orderedRenderPhases = [
   "ValidatePcbCoordinates",
   "PcbComponentRender",
   "PcbPrimitiveRender",
+  "PcbCourtyardRender",
   "PcbFootprintLayout",
   "PcbPortRender",
   "PcbPortAttachment",
@@ -119,6 +120,7 @@ const asyncPhaseDependencies: Partial<Record<RenderPhase, RenderPhase[]>> = {
     "FetchPartFootprint",
     "SchematicTraceRender",
   ],
+  PcbCourtyardRender: ["PcbFootprintStringRender", "FetchPartFootprint"],
   PcbFootprintLayout: ["PcbFootprintStringRender", "FetchPartFootprint"],
   PcbComponentSizeCalculation: [
     "PcbFootprintStringRender",
@@ -299,10 +301,14 @@ export abstract class Renderable implements IRenderable {
     )
   }
 
-  _markDirty(phase: RenderPhase) {
-    // Mark this and all subsequent phases as dirty.
+  _markDirty(phase: RenderPhase, { includeSubsequentPhases = true } = {}) {
+    // Most changes invalidate subsequent phases; derived geometry can invalidate
+    // only its own phase without resetting the component's resolved placement.
     const phaseIndex = renderPhaseIndexMap.get(phase)!
-    for (let i = phaseIndex; i < orderedRenderPhases.length; i++) {
+    const endIndex = includeSubsequentPhases
+      ? orderedRenderPhases.length
+      : phaseIndex + 1
+    for (let i = phaseIndex; i < endIndex; i++) {
       const state =
         this._phaseStatesByName?.[orderedRenderPhases[i]] ??
         this._phaseStatesByIndex[i]
@@ -310,7 +316,7 @@ export abstract class Renderable implements IRenderable {
     }
 
     if (this.parent?._markDirty) {
-      this.parent._markDirty(phase)
+      this.parent._markDirty(phase, { includeSubsequentPhases })
     }
   }
 

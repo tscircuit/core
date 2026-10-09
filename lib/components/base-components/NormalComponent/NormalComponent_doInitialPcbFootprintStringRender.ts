@@ -122,13 +122,12 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
             componentName: component.name,
             componentRotation: pcbRotation,
             footprinterString: footprintUrl,
-            isFootprint: true,
             pinLabels,
             pcbPinLabels,
           },
           result.footprintCircuitJson,
         )
-        component.addAll(fpComponents)
+        component.addFootprintChildren(fpComponents)
         // Existing ports may have rendered before the async pads arrived.
         for (const child of component.children) {
           if (child.componentName === "Port") {
@@ -177,13 +176,12 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
             componentName: component.name,
             componentRotation: pcbRotation,
             footprinterString: url,
-            isFootprint: true,
             pinLabels,
             pcbPinLabels,
           },
           soup as any,
         )
-        component.addAll(fpComponents)
+        component.addFootprintChildren(fpComponents)
         component._markDirty("ResolveFootprintPinLabels")
         component._markDirty("InitializePortsFromChildren")
       } catch (err) {
@@ -261,7 +259,6 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
             componentName: component.name,
             componentRotation: pcbRotation,
             footprinterString: footprint,
-            isFootprint: true,
             pinLabels,
             pcbPinLabels,
           },
@@ -279,7 +276,7 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
             fpWrapper.add(c)
           }
         }
-        component.add(fpWrapper)
+        component.addFootprintChildren([fpWrapper])
         component.addAll(componentsOutsideFootprint)
         component._asyncFootprintCadModel =
           (!Array.isArray(result) && result.cadModel) ||
@@ -320,7 +317,7 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
     !isReactElement(footprint) &&
     (footprint as Footprint).componentName === "Footprint"
   ) {
-    component.add(footprint as Footprint)
+    component.addFootprintChildren([footprint as Footprint])
   }
 
   if (
@@ -335,13 +332,12 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
           componentName: component.name,
           componentRotation: pcbRotation,
           footprinterString: "",
-          isFootprint: true,
           pinLabels,
           pcbPinLabels,
         },
         footprint,
       )
-      component.addAll(fpComponents)
+      component.addFootprintChildren(fpComponents)
     } catch (err) {
       const db = component.root?.db
       if (db && component.source_component_id && component.pcb_component_id) {

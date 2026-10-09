@@ -1,8 +1,12 @@
 import { courtyardOutlineProps } from "@tscircuit/props"
 import { getBoundsFromPoints } from "@tscircuit/math-utils"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
-import { applyToPoint } from "transformation-matrix"
-import { shouldRenderCourtyard } from "lib/utils/courtyard-precedence"
+import {
+  applyToPoint,
+  compose,
+  identity,
+  type Matrix,
+} from "transformation-matrix"
 
 export class CourtyardOutline extends PrimitiveComponent<
   typeof courtyardOutlineProps
@@ -17,9 +21,11 @@ export class CourtyardOutline extends PrimitiveComponent<
     }
   }
 
-  doInitialPcbPrimitiveRender(): void {
+  /** Transform footprint-local points (+X right, +Y up, mm) into board space,
+   * applying resolved placement after the footprint-pad transform.
+   */
+  renderPcbCourtyard(pcbLayoutTransform: Matrix = identity()): void {
     if (this.root?.pcbDisabled) return
-    if (!shouldRenderCourtyard(this)) return
     const { db } = this.root!
     const { _parsedProps: props } = this
     const { maybeFlipLayer } = this._getPcbPrimitiveFlippedHelpers()
@@ -31,13 +37,16 @@ export class CourtyardOutline extends PrimitiveComponent<
       )
     }
 
-    const transform = this._computePcbGlobalTransformBeforeLayout()
+    const transform = compose(
+      pcbLayoutTransform,
+      this._computePcbGlobalTransformBeforeLayout(),
+    )
     const subcircuit = this.getSubcircuit()
     const pcb_component_id =
       this.parent?.pcb_component_id ??
       this.getPrimitiveContainer()?.pcb_component_id!
 
-    const pcb_courtyard_outline = db.pcb_courtyard_outline.insert({
+    const courtyard = {
       pcb_component_id,
       layer,
       outline: props.outline.map((p) => {
@@ -52,10 +61,20 @@ export class CourtyardOutline extends PrimitiveComponent<
       }),
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
-    })
+    }
 
-    this.pcb_courtyard_outline_id =
-      pcb_courtyard_outline.pcb_courtyard_outline_id
+    if (this.pcb_courtyard_outline_id) {
+      db.pcb_courtyard_outline.update(this.pcb_courtyard_outline_id, courtyard)
+    } else {
+      this.pcb_courtyard_outline_id =
+        db.pcb_courtyard_outline.insert(courtyard).pcb_courtyard_outline_id
+    }
+  }
+
+  removePcbCourtyard(): void {
+    if (!this.pcb_courtyard_outline_id) return
+    this.root!.db.pcb_courtyard_outline.delete(this.pcb_courtyard_outline_id)
+    this.pcb_courtyard_outline_id = null
   }
 
   _setPositionFromLayout(newCenter: { x: number; y: number }) {
