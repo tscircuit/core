@@ -285,7 +285,6 @@ test("reproduces Pipeline 9 rerouting completed top-only LCD bus lanes", async (
           <footprint>
             {mcuPads.map(([pin, pcbX, pcbY, width, height, radius]) => (
               <smtpad
-                key={pin}
                 portHints={[`pin${pin}`]}
                 pcbX={pcbX}
                 pcbY={pcbY}
