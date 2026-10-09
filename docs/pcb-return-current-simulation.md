@@ -1,7 +1,7 @@
 # PCB return-current experiment declarations
 
 `<simulation.pcbreturncurrentsimulation>` declares a pending `pcb_return_current`
-experiment in Circuit JSON. `<pcbreturncurrentexcitation>` specifies a routed
+experiment in Circuit JSON. `<simulation.pcbreturncurrentexcitation>` specifies a routed
 signal, a peak current, real port resistances and physical ground contacts.
 Rendering these elements declares the experiment; it does not launch an EM
 solver or produce simulation results.
@@ -15,7 +15,7 @@ typed schemas from `@tscircuit/props`.
 import { simulation } from "@tscircuit/core"
 
 <simulation.pcbreturncurrentsimulation name="DDR_D13 escape">
-  <pcbreturncurrentexcitation
+  <simulation.pcbreturncurrentexcitation
     source=".U1 > .DDR_D13"
     load=".U2 > .DQ13"
     trace=".DDR_D13"
@@ -28,6 +28,9 @@ import { simulation } from "@tscircuit/core"
   />
 </simulation.pcbreturncurrentsimulation>
 ```
+
+The flat `<pcbreturncurrentsimulation>` and `<pcbreturncurrentexcitation>`
+forms remain supported with the same props and Circuit JSON output.
 
 The selected signal ports and route must already exist on the PCB. The
 selectors use the normal subcircuit scope, and `trace` is optional when the

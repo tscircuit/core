@@ -1,3 +1,4 @@
+import { simulation } from "lib"
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import {
@@ -15,13 +16,13 @@ test("multilayer physical ground ports require an explicit layer for both return
   const { circuit } = getTestFixture()
   circuit.add(
     <ReturnCurrentBoard groundPortType="platedhole">
-      <pcbreturncurrentsimulation name="Through-hole returns use bottom copper">
-        <pcbreturncurrentexcitation
+      <simulation.pcbreturncurrentsimulation name="Through-hole returns use bottom copper">
+        <simulation.pcbreturncurrentexcitation
           {...returnCurrentExcitationProps}
           returnSourceLayer="bottom"
           returnSinkLayer="bottom"
         />
-      </pcbreturncurrentsimulation>
+      </simulation.pcbreturncurrentsimulation>
       <pcbnotetext
         text="GND contact layer: bottom"
         pcbY={-1.7}

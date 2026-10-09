@@ -1,3 +1,4 @@
+import { simulation } from "lib"
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import {
@@ -39,9 +40,11 @@ test("one experiment cannot mix two electrically separate return ground nets", a
       <trace from=".U3 > .SIGNAL" to=".U4 > .SIGNAL" pcbStraightLine />
       <trace from=".U3 > .GND" to="net.OTHER_GND" />
       <trace from=".U4 > .GND" to="net.OTHER_GND" />
-      <pcbreturncurrentsimulation>
-        <pcbreturncurrentexcitation {...returnCurrentExcitationProps} />
-        <pcbreturncurrentexcitation
+      <simulation.pcbreturncurrentsimulation>
+        <simulation.pcbreturncurrentexcitation
+          {...returnCurrentExcitationProps}
+        />
+        <simulation.pcbreturncurrentexcitation
           {...returnCurrentExcitationProps}
           source=".U3 > .SIGNAL"
           load=".U4 > .SIGNAL"
@@ -49,7 +52,7 @@ test("one experiment cannot mix two electrically separate return ground nets", a
           returnSource=".U4 > .GND"
           returnSink=".U3 > .GND"
         />
-      </pcbreturncurrentsimulation>
+      </simulation.pcbreturncurrentsimulation>
     </ReturnCurrentBoard>,
   )
   await expect(circuit.renderUntilSettled()).rejects.toThrow(

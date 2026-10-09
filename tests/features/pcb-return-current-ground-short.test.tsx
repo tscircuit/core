@@ -1,3 +1,4 @@
+import { simulation } from "lib"
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import {
@@ -10,9 +11,11 @@ test("a signal terminal electrically connected to the selected ground net is rej
   circuit.add(
     <ReturnCurrentBoard>
       <trace from=".U1 > .OUT" to="net.GND" />
-      <pcbreturncurrentsimulation>
-        <pcbreturncurrentexcitation {...returnCurrentExcitationProps} />
-      </pcbreturncurrentsimulation>
+      <simulation.pcbreturncurrentsimulation>
+        <simulation.pcbreturncurrentexcitation
+          {...returnCurrentExcitationProps}
+        />
+      </simulation.pcbreturncurrentsimulation>
     </ReturnCurrentBoard>,
   )
   await expect(circuit.renderUntilSettled()).rejects.toThrow(

@@ -1,3 +1,4 @@
+import { simulation } from "lib"
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import {
@@ -34,16 +35,18 @@ test("one experiment can declare two independent routed signals sharing actual G
         to=".U4 > .SIGNAL"
         pcbStraightLine
       />
-      <pcbreturncurrentsimulation name="Two isolated signal excitations">
-        <pcbreturncurrentexcitation {...returnCurrentExcitationProps} />
-        <pcbreturncurrentexcitation
+      <simulation.pcbreturncurrentsimulation name="Two isolated signal excitations">
+        <simulation.pcbreturncurrentexcitation
+          {...returnCurrentExcitationProps}
+        />
+        <simulation.pcbreturncurrentexcitation
           {...returnCurrentExcitationProps}
           source=".U3 > .SIGNAL"
           load=".U4 > .SIGNAL"
           current="10mA"
           trace=".SECOND_SIGNAL"
         />
-      </pcbreturncurrentsimulation>
+      </simulation.pcbreturncurrentsimulation>
       <pcbnotetext text="U1.OUT → U2.IN: 5 mA" pcbY={0.65} fontSize={0.35} />
       <pcbnotetext
         text="U3.SIGNAL → U4.SIGNAL: 10 mA"

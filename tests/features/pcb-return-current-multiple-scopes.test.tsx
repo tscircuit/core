@@ -1,3 +1,4 @@
+import { simulation } from "lib"
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import {
@@ -12,15 +13,19 @@ test("multiple experiments and excitations resolve identically named ports withi
       {[-5, 5].map((x, index) => (
         <group subcircuit name={`local${index}`} pcbX={x} key={index}>
           <ReturnCurrentConnections />
-          <pcbreturncurrentsimulation name={`experiment${index}`}>
-            <pcbreturncurrentexcitation {...returnCurrentExcitationProps} />
-          </pcbreturncurrentsimulation>
-          <pcbreturncurrentsimulation name={`experiment${index}-10mA`}>
-            <pcbreturncurrentexcitation
+          <simulation.pcbreturncurrentsimulation name={`experiment${index}`}>
+            <simulation.pcbreturncurrentexcitation
+              {...returnCurrentExcitationProps}
+            />
+          </simulation.pcbreturncurrentsimulation>
+          <simulation.pcbreturncurrentsimulation
+            name={`experiment${index}-10mA`}
+          >
+            <simulation.pcbreturncurrentexcitation
               {...returnCurrentExcitationProps}
               current="10mA"
             />
-          </pcbreturncurrentsimulation>
+          </simulation.pcbreturncurrentsimulation>
           <pcbnotetext
             text={`experiment${index}: 5 mA / 10 mA`}
             pcbY={-2}
