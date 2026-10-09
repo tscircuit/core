@@ -253,14 +253,14 @@ const lcdLabels = [
   "GND2",
 ]
 const caps = [
-  [-36, 9],
-  [-36, 3],
-  [-36, -3],
-  [-30, -7],
-  [-19, -7],
-  [-14, 6],
-  [-20, 15],
-  [-28, 15],
+  [-36, 9, 0],
+  [-36, 3, 0],
+  [-36, -3, 0],
+  [-30, -7, 0],
+  [-19, -7, 0],
+  [-14, 6, 0],
+  [-20, 15, 180],
+  [-28, 15, 0],
 ]
 
 test("preserves completed top-only LCD bus lanes through Pipeline 9", async () => {
@@ -392,7 +392,7 @@ test("preserves completed top-only LCD bus lanes through Pipeline 9", async () =
       {groundPins.map((p) => (
         <trace key={p} from={`.U1 > .${p}`} to="net.GND" />
       ))}
-      {caps.map(([x, y], i) => (
+      {caps.map(([x, y, ccwRotationDegrees], i) => (
         <capacitor
           key={i}
           name={`C${i + 1}`}
@@ -400,7 +400,7 @@ test("preserves completed top-only LCD bus lanes through Pipeline 9", async () =
           footprint="0402"
           pcbX={x}
           pcbY={y}
-          pcbRotation={i === 6 ? 180 : 0}
+          pcbRotation={ccwRotationDegrees}
           connections={{ pin1: "net.V3V3", pin2: "net.GND" }}
         />
       ))}
