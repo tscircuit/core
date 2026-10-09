@@ -1,4 +1,5 @@
 import type { Bounds, Point } from "@tscircuit/math-utils"
+import type { PcbSilkscreenText } from "circuit-json"
 import type {
   PcbComponentId,
   PcbSilkscreenTextId,
@@ -16,13 +17,15 @@ export type SilkscreenLabelRotation = 0 | 90 | 270
 
 /**
  * Notes are drawn in the viewer but never printed, so labels only prefer not
- * to cover them. A mounted board hides the silkscreen under it.
+ * to cover them. A mounted board hides the silkscreen under it, and so does a
+ * part, whose courtyard a label may touch but not cover.
  */
 export type SilkscreenLabelObstacleKind =
   | "copper"
   | "hole"
   | "cutout"
   | "silkscreen"
+  | "courtyard"
   | "text"
   | "note"
   | "mounted_board"
@@ -38,7 +41,7 @@ export interface SilkscreenLabelObstacle {
   pcbComponentId: PcbComponentId | null
 }
 
-/** `bounds` covers what reads as the part: its pads, holes and own silkscreen. */
+/** `bounds` covers what reads as the part: its pads, holes, own silkscreen and courtyard. */
 export interface SilkscreenLabelPart {
   pcbComponentId: PcbComponentId
   bounds: Bounds
@@ -49,6 +52,9 @@ export interface MovableSilkscreenLabel {
   pcbComponentId: PcbComponentId
   text: string
   fontSize: number
+  /** Knockout labels cover their padded fill. */
+  isKnockout?: boolean
+  knockoutPadding?: PcbSilkscreenText["knockout_padding"]
   currentBounds: Bounds
   /** Counter-clockwise degrees, any angle. */
   currentCcwRotation: number
@@ -84,9 +90,12 @@ export interface SilkscreenLabelPlacementSolverParams {
   options?: Partial<SilkscreenLabelPlacementOptions>
 }
 
-/** New spot of a moved label; its text is centered on `center`. */
+/**
+ * New spot of a moved label: the anchor of its center-aligned text. Glyphs sit
+ * low and left of their anchor, so it is not the center of the text.
+ */
 export interface SilkscreenLabelPlacement {
   pcbSilkscreenTextId: PcbSilkscreenTextId
-  center: Point
+  anchorPosition: Point
   ccwRotation: SilkscreenLabelRotation
 }

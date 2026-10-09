@@ -18,8 +18,11 @@ export class SilkscreenText extends PrimitiveComponent<
   pcb_silkscreen_text_ids: string[] = []
   isPcbPrimitive = true
   _footprinterFontSize?: number
-  /** Set when inflated from a rendered layout, which already placed the text. */
-  _isFromRenderedLayout = false
+  /**
+   * Set when inflated from circuit JSON that already placed the text: a
+   * rendered layout, or an isolated subcircuit render that placed it by hand.
+   */
+  _isPlacedInCircuitJson = false
 
   get config() {
     return {

@@ -28,7 +28,9 @@ export const inflateCircuitJson = (
   target: SubcircuitI & Group<any>,
   circuitJson: CircuitJson | undefined,
   children: any[],
-  { isRenderedLayout }: { isRenderedLayout: boolean },
+  {
+    isPlacedPcbSilkscreenText,
+  }: Pick<InflatorContext, "isPlacedPcbSilkscreenText">,
 ) => {
   if (!circuitJson) return
   const injectionDb = cju(circuitJson)
@@ -43,7 +45,7 @@ export const inflateCircuitJson = (
     injectionDb,
     subcircuit: target,
     groupsMap,
-    isRenderedLayout,
+    isPlacedPcbSilkscreenText,
   }
 
   // Inflate source_groups in dependency order (parents before children)

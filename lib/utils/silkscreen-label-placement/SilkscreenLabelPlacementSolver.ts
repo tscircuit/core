@@ -12,7 +12,11 @@ import {
   getCurrentSpotCandidate,
 } from "./generate-silkscreen-label-candidates"
 import { getLabelPairCost } from "./get-label-spot-cost"
-import { expandBounds, getBoundsUnion } from "./label-geometry"
+import {
+  expandBounds,
+  getBoundsUnion,
+  getLabelAnchorForBounds,
+} from "./label-geometry"
 import {
   createBoundsIndex,
   createSilkscreenLabelSpatialIndex,
@@ -30,7 +34,8 @@ export const DEFAULT_SILKSCREEN_LABEL_PLACEMENT_OPTIONS: SilkscreenLabelPlacemen
   {
     partGap: 0.2,
     ownPartGap: 0.2,
-    ownPartHugGap: 0.05,
+    // JLCPCB and most fabs clip silkscreen closer than 0.15 mm to a pad
+    ownPartHugGap: 0.15,
     labelClearance: 0.15,
     boardEdgeMargin: 0.2,
     candidateStep: 0.25,
@@ -51,6 +56,7 @@ const OBSTACLE_FILL_BY_KIND: Record<SilkscreenLabelObstacleKind, string> = {
   hole: "rgba(90, 90, 90, 0.45)",
   cutout: "rgba(90, 90, 90, 0.45)",
   silkscreen: "rgba(120, 120, 220, 0.45)",
+  courtyard: "rgba(200, 160, 60, 0.15)",
   text: "rgba(70, 120, 210, 0.3)",
   note: "rgba(70, 120, 210, 0.15)",
   mounted_board: "rgba(60, 140, 90, 0.2)",
@@ -397,7 +403,12 @@ export class SilkscreenLabelPlacementSolver extends BaseSolver {
       return [
         {
           pcbSilkscreenTextId: label.pcbSilkscreenTextId,
-          center: getBoundsCenter(bounds),
+          anchorPosition: getLabelAnchorForBounds(
+            label,
+            this.params.layer,
+            ccwRotation,
+            bounds,
+          ),
           ccwRotation,
         },
       ]

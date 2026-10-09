@@ -30,6 +30,6 @@ test("a part's bounds leave out its own label, even one placed by hand", async (
   const r1Part = parts.find(
     (part) => part.pcbComponentId === r1Label.pcb_component_id,
   )!
-  // An 0402's pads and outline end 0.44 mm below its center
-  expect(r1Part.bounds.minY).toBeCloseTo(-0.44)
+  // An 0402's courtyard ends 0.47 mm below its center
+  expect(r1Part.bounds.minY).toBeCloseTo(-0.47)
 })

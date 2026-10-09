@@ -60,7 +60,7 @@ test("silkscreen label placement solver events replay the placement", async () =
     const placedText = circuit.db.pcb_silkscreen_text.get(
       placement.pcbSilkscreenTextId,
     )!
-    expect(placedText.anchor_position).toEqual(placement.center)
+    expect(placedText.anchor_position).toEqual(placement.anchorPosition)
     expect(placedText.ccw_rotation).toBe(placement.ccwRotation)
   }
   expect(circuit).toMatchPcbSnapshot(import.meta.path)

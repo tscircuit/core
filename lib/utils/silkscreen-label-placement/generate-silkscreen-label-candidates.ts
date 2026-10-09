@@ -197,14 +197,22 @@ export interface SilkscreenLabelCandidateContext {
   options: SilkscreenLabelPlacementOptions
 }
 
-const isUpright = (ccwRotation: number) => {
-  const rotation = normalizeDegrees(ccwRotation)
-  return Math.min(rotation, 360 - rotation) < 1e-6
+const isSameRotation = (a: number, b: number) => {
+  const difference = normalizeDegrees(a - b)
+  return Math.min(difference, 360 - difference) < 1e-6
 }
+
+const isUpright = (ccwRotation: number) => isSameRotation(ccwRotation, 0)
+
+/** Horizontal, or vertical reading from the right edge of its side. */
+const isReadable = (ccwRotation: number, layer: SilkscreenLabelLayer) =>
+  isUpright(ccwRotation) ||
+  isSameRotation(ccwRotation, VERTICAL_CCW_ROTATION_BY_LAYER[layer])
 
 /** Returns the label's current spot, which costs nothing unless it has an issue. */
 export const getCurrentSpotCandidate = ({
   label,
+  layer,
   part,
   spatialIndex,
   boardOutline,
@@ -213,6 +221,7 @@ export const getCurrentSpotCandidate = ({
   const currentSpotCost = getLabelSpotCost({
     labelBounds: label.currentBounds,
     isUpright: isUpright(label.currentCcwRotation),
+    isReadable: isReadable(label.currentCcwRotation, layer),
     label,
     part,
     spatialIndex,
@@ -248,7 +257,7 @@ export const generateMovedSilkscreenLabelCandidates = ({
     VERTICAL_CCW_ROTATION_BY_LAYER[layer],
   ]
   for (const ccwRotation of ccwRotations) {
-    const labelSize = getLabelSize(label, ccwRotation)
+    const labelSize = getLabelSize(label, layer, ccwRotation)
     for (const ownPartGap of ownPartGaps) {
       for (const side of PART_SIDES) {
         for (const positionAlongSide of getPositionsAlongPartSide(
@@ -280,6 +289,7 @@ export const generateMovedSilkscreenLabelCandidates = ({
             const spotCost = getLabelSpotCost({
               labelBounds: bounds,
               isUpright: ccwRotation === 0,
+              isReadable: true,
               label,
               part,
               spatialIndex,

@@ -22,11 +22,12 @@ import type {
 } from "./types"
 
 /**
- * Lower is better. Unreadable outweighs misread, which outweighs crowded; the
- * other terms only rank spots without an issue.
+ * Lower is better. Unreadable outweighs misread, which outweighs misoriented
+ * and crowded; the other terms only rank spots without an issue.
  */
 const LABEL_PLACEMENT_COSTS = {
   unreadable: 1000,
+  misoriented: 150,
   crowdingMin: 100,
   crowdingMax: 250,
   crowdingCap: 1000,
@@ -51,6 +52,8 @@ export const getRequiredGapToObstacle = (
 ) => {
   if (obstacle.kind === "text" || obstacle.kind === "note")
     return options.labelClearance
+  // A label may touch a part's outline, just not go under it
+  if (obstacle.kind === "courtyard") return 0
   return obstacle.pcbComponentId === label.pcbComponentId
     ? options.ownPartHugGap
     : options.partGap
@@ -88,6 +91,7 @@ const getFarDistance = (partBounds: Bounds) =>
 export const getLabelSpotCost = ({
   labelBounds,
   isUpright,
+  isReadable,
   label,
   part,
   spatialIndex,
@@ -97,6 +101,11 @@ export const getLabelSpotCost = ({
   labelBounds: Bounds
   /** Horizontal and reading left to right. */
   isUpright: boolean
+  /**
+   * Reads from the bottom or the right edge of its side; upside-down text and
+   * text reading from the left edge are an issue.
+   */
+  isReadable: boolean
   label: MovableSilkscreenLabel
   part: SilkscreenLabelPart
   spatialIndex: SilkscreenLabelSpatialIndex
@@ -194,6 +203,7 @@ export const getLabelSpotCost = ({
     crowdingCost +
     misreadCost +
     noteCost +
+    (isReadable ? 0 : costs.misoriented) +
     costs.perMmOfAmbiguity * ambiguity +
     costs.perMmFromPart * Math.max(0, distanceToOwnPart - options.ownPartGap) +
     (distanceToOwnPart < options.ownPartGap - 1e-9 ? costs.hugOwnPart : 0) +
@@ -203,7 +213,8 @@ export const getLabelSpotCost = ({
 
   return {
     cost,
-    hasIssue: isUnreadable || crowdingCost > 0 || misreadCost > 0,
+    hasIssue:
+      isUnreadable || crowdingCost > 0 || misreadCost > 0 || !isReadable,
     isUnreadable,
   }
 }

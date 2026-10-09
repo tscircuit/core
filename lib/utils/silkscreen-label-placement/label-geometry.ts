@@ -16,23 +16,67 @@ import {
   rotateDEG,
   translate,
 } from "transformation-matrix"
-import type { MovableSilkscreenLabel, SilkscreenLabelRotation } from "./types"
+import type {
+  MovableSilkscreenLabel,
+  SilkscreenLabelLayer,
+  SilkscreenLabelRotation,
+} from "./types"
 
 /** Labels closer than this (mm) read as one. */
 export const LABEL_TOUCH_DISTANCE = 0.05
 
-export const getLabelSize = (
-  label: Pick<MovableSilkscreenLabel, "text" | "fontSize">,
+/** The fields that set a label's size. */
+type LabelText = Pick<
+  MovableSilkscreenLabel,
+  "text" | "fontSize" | "isKnockout" | "knockoutPadding"
+>
+
+const getCenteredLabelBoundsAtOrigin = (
+  label: LabelText,
+  layer: SilkscreenLabelLayer,
   ccwRotation: SilkscreenLabelRotation,
-) => {
-  const { width, height } = getPcbTextBounds({
+) =>
+  getPcbTextBounds({
     text: label.text,
     font_size: label.fontSize,
     anchor_position: { x: 0, y: 0 },
     anchor_alignment: "center",
     ccw_rotation: ccwRotation,
+    layer,
+    is_knockout: label.isKnockout,
+    knockout_padding: label.knockoutPadding,
   })
+
+export const getLabelSize = (
+  label: LabelText,
+  layer: SilkscreenLabelLayer,
+  ccwRotation: SilkscreenLabelRotation,
+) => {
+  const { width, height } = getCenteredLabelBoundsAtOrigin(
+    label,
+    layer,
+    ccwRotation,
+  )
   return { width, height }
+}
+
+/** Returns the anchor that puts a center-aligned label's text on `bounds`. */
+export const getLabelAnchorForBounds = (
+  label: LabelText,
+  layer: SilkscreenLabelLayer,
+  ccwRotation: SilkscreenLabelRotation,
+  bounds: Bounds,
+): Point => {
+  const { x, y, width, height } = getCenteredLabelBoundsAtOrigin(
+    label,
+    layer,
+    ccwRotation,
+  )
+  const boundsCenter = getBoundsCenter(bounds)
+  return {
+    x: boundsCenter.x - (x + width / 2),
+    y: boundsCenter.y - (y + height / 2),
+  }
 }
 
 export const getTextBounds = (text: PcbTextLayout): Bounds => {

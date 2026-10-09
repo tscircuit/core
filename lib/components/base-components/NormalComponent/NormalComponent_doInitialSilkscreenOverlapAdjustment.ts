@@ -33,6 +33,10 @@ export function NormalComponent_doInitialSilkscreenOverlapAdjustment(
     return
   }
 
+  // An isolated subcircuit render is inflated into the root circuit, which
+  // places its labels like those of a subcircuit rendered in place
+  if (!component.root?.isRootCircuit) return
+
   // Mark the board dirty so it places labels again when this component
   // renders after the board, since its pads and text are obstacles too
   getSilkscreenLabelPlacingBoard(component)?._markDirty(

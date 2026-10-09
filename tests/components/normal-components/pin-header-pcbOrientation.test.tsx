@@ -23,10 +23,10 @@ test("pinheader pcbOrientation vertical places pins vertically", () => {
       {
         "anchor_alignment": "center",
         "anchor_position": {
-          "x": 2.54,
-          "y": 1.5553014349171386e-16,
+          "x": 0.125631275,
+          "y": 3.4979481100000007,
         },
-        "ccw_rotation": -90,
+        "ccw_rotation": 0,
         "font": "tscircuit2024",
         "font_size": 0.7,
         "is_knockout": undefined,

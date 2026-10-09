@@ -54,7 +54,7 @@ const placeSilkscreenLabels = (board: Board, layer: SilkscreenLabelLayer) => {
   const placements = solver.getOutput()
   for (const placement of placements) {
     root.db.pcb_silkscreen_text.update(placement.pcbSilkscreenTextId, {
-      anchor_position: placement.center,
+      anchor_position: placement.anchorPosition,
       anchor_alignment: "center",
       ccw_rotation: placement.ccwRotation,
     })
@@ -70,10 +70,12 @@ const placeSilkscreenLabels = (board: Board, layer: SilkscreenLabelLayer) => {
  * pads, holes, silkscreen, other text and each other, one side at a time.
  * Labels are cosmetic, so an error leaves them where they are. Updates that
  * change none of a side's inputs, like routing, don't run its solver again.
+ * A board rendered in an isolated subcircuit render is placed once inflated
+ * into the root circuit.
  */
 export const Board_doInitialSilkscreenOverlapAdjustment = (board: Board) => {
   const { root } = board
-  if (!root || root.pcbDisabled || !board.pcb_board_id) return
+  if (!root?.isRootCircuit || root.pcbDisabled || !board.pcb_board_id) return
   for (const layer of SILKSCREEN_LABEL_LAYERS)
     placeSilkscreenLabels(board, layer)
 }

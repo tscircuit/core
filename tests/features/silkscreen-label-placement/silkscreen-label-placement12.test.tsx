@@ -6,7 +6,7 @@ import {
 } from "lib/utils/silkscreen-label-placement/label-geometry"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("silkscreen labels of a cached subcircuit are placed with the board's", async () => {
+test("silkscreen labels of a cached subcircuit are placed with the board's, but not those placed by hand", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -14,20 +14,30 @@ test("silkscreen labels of a cached subcircuit are placed with the board's", asy
       <pcbnotetext
         pcbY={2.6}
         fontSize={0.4}
-        text="S1 renders apart and is cached: R1's label still moves off the hole"
+        text="S1 is cached: R1's label moves off the hole, C1's placed by hand stays"
       />
       <subcircuit name="S1" _subcircuitCachingEnabled>
         <resistor name="R1" resistance="1k" footprint="0402" />
         {/* An 0402's default label is centered 1.22 mm above the part */}
         <hole pcbY={1.22} diameter="0.4mm" />
+        <capacitor
+          name="C1"
+          capacitance="100nF"
+          footprint="0402"
+          pcbX={2.5}
+          pcbSx={{ "& silkscreentext": { pcbX: 0, pcbY: 0 } }}
+        />
       </subcircuit>
     </board>,
   )
   await circuit.renderUntilSettled()
 
-  const r1Label = circuit.db.pcb_silkscreen_text
-    .list()
-    .find((text) => text.text === "R1")!
+  const getLabel = (name: string) =>
+    circuit.db.pcb_silkscreen_text.list().find((text) => text.text === name)!
+  expect(getLabel("C1").anchor_position.x).toBeCloseTo(2.5)
+  expect(getLabel("C1").anchor_position.y).toBeCloseTo(0)
+
+  const r1Label = getLabel("R1")
   const holeBounds = getBoundFromCenteredRect({
     center: { x: 0, y: 1.22 },
     width: 0.4,

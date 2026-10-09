@@ -1,5 +1,5 @@
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
-import type { SourceComponentBase } from "circuit-json"
+import type { PcbSilkscreenText, SourceComponentBase } from "circuit-json"
 import type { SubcircuitI } from "./SubcircuitI"
 import type { NormalComponent } from "lib/components/base-components/NormalComponent"
 import type { Group } from "../Group"
@@ -10,10 +10,12 @@ export interface InflatorContext {
   injectionDb: CircuitJsonUtilObjects
   subcircuit: SubcircuitI
   /**
-   * True for a circuitJson prop, whose layout already placed its text; false
-   * for an isolated subcircuit render, which is the same circuit rendered apart.
+   * Checks if label placement must leave the text where the circuit JSON puts
+   * it: all the text of a circuitJson prop, whose layout already placed it, but
+   * only the text an isolated subcircuit render placed by hand or by a rendered
+   * layout, since that render is the same circuit rendered apart.
    */
-  isRenderedLayout: boolean
+  isPlacedPcbSilkscreenText: (pcbSilkscreenText: PcbSilkscreenText) => boolean
 
   normalComponent?: NormalComponent
   groupsMap?: Map<SourceGroupId, Group<any>>

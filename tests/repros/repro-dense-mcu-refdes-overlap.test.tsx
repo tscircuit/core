@@ -1,4 +1,9 @@
 import { expect, test } from "bun:test"
+import { getPcbElementBounds } from "@tscircuit/circuit-json-util"
+import {
+  doBoundsShareArea,
+  getTextBounds,
+} from "lib/utils/silkscreen-label-placement/label-geometry"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 // https://github.com/tscircuit/tscircuit/issues/5381
@@ -112,5 +117,26 @@ test("refdes labels on a dense MCU module stay clear of pads and each other", as
 
   await circuit.renderUntilSettled()
 
+  const partNames = new Set(
+    circuit.db.source_component.list().map((component) => component.name),
+  )
+  const labelBoundsList = circuit.db.pcb_silkscreen_text
+    .list()
+    .filter((text) => partNames.has(text.text))
+    .map((label) => ({ text: label.text, bounds: getTextBounds(label) }))
+  const padBoundsList = [
+    ...circuit.db.pcb_smtpad.list(),
+    ...circuit.db.pcb_plated_hole.list(),
+  ].flatMap((pad) => getPcbElementBounds(pad) ?? [])
+  const overlaps = labelBoundsList.flatMap(({ text, bounds }, i) => [
+    ...(padBoundsList.some((padBounds) => doBoundsShareArea(bounds, padBounds))
+      ? [`${text} on a pad`]
+      : []),
+    ...labelBoundsList
+      .slice(i + 1)
+      .filter((other) => doBoundsShareArea(bounds, other.bounds))
+      .map((other) => `${text} on ${other.text}`),
+  ])
+  expect(overlaps).toEqual([])
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

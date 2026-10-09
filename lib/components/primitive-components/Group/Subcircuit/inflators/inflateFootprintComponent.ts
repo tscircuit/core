@@ -16,7 +16,8 @@ export const inflateFootprintComponent = (
   pcbElm: PcbComponent,
   inflatorContext: InflatorContext,
 ): Footprint | null => {
-  const { injectionDb, normalComponent, isRenderedLayout } = inflatorContext
+  const { injectionDb, normalComponent, isPlacedPcbSilkscreenText } =
+    inflatorContext
   if (!normalComponent) return null
 
   const primitives = extractPcbPrimitivesFromCircuitJson({
@@ -27,13 +28,21 @@ export const inflateFootprintComponent = (
 
   if (primitives.length === 0) return null
 
-  // Label placement leaves text where the rendered layout put it
-  if (isRenderedLayout) {
-    for (const primitive of primitives) {
-      if (primitive instanceof SilkscreenText)
-        primitive._isFromRenderedLayout = true
-    }
-  }
+  // Label placement leaves the text the circuit JSON placed where it is. Each
+  // pcb_silkscreen_text becomes one SilkscreenText, in order.
+  const pcbSilkscreenTexts = injectionDb.pcb_silkscreen_text.list({
+    pcb_component_id: pcbElm.pcb_component_id,
+  })
+  primitives
+    .filter(
+      (primitive): primitive is SilkscreenText =>
+        primitive instanceof SilkscreenText,
+    )
+    .forEach((silkscreenText, i) => {
+      const pcbSilkscreenText = pcbSilkscreenTexts[i]
+      if (pcbSilkscreenText && isPlacedPcbSilkscreenText(pcbSilkscreenText))
+        silkscreenText._isPlacedInCircuitJson = true
+    })
 
   const footprint = new Footprint({ originalLayer: pcbElm.layer })
   footprint.addAll(primitives)

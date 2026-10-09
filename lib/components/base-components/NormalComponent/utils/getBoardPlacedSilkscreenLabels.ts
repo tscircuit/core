@@ -1,4 +1,5 @@
-import type { PcbSilkscreenText } from "circuit-json"
+import type { AnyCircuitElement, PcbSilkscreenText } from "circuit-json"
+import type { IsolatedCircuit } from "lib/IsolatedCircuit"
 import type { Board } from "lib/components/normal-components/Board/Board"
 import type { SilkscreenText } from "lib/components/primitive-components/SilkscreenText"
 import type { PcbSilkscreenTextId } from "lib/utils/circuit-json/circuit-json-id-types"
@@ -10,17 +11,68 @@ import type { NormalComponent } from "../NormalComponent"
  * layout, so no label placement moves it.
  */
 const isPlacedSilkscreenText = (silkscreenText: SilkscreenText) => {
-  if (silkscreenText._isFromRenderedLayout) return true
+  if (silkscreenText._isPlacedInCircuitJson) return true
   const { pcbX, pcbY } = resolveSilkscreenTextPcbSxPosition(silkscreenText)
   return pcbX !== undefined || pcbY !== undefined
 }
 
 /**
+ * The text an isolated subcircuit render placed, keyed by its circuit JSON,
+ * which loses the pcbSx and rendered layouts that placed it.
+ */
+const placedPcbSilkscreenTextIdsByIsolatedCircuitJson = new WeakMap<
+  AnyCircuitElement[],
+  Set<PcbSilkscreenTextId>
+>()
+
+/** Records the text of an isolated subcircuit render that was placed. */
+export const recordPlacedSilkscreenTextOfIsolatedRender = (
+  isolatedCircuit: IsolatedCircuit,
+  circuitJson: AnyCircuitElement[],
+) => {
+  placedPcbSilkscreenTextIdsByIsolatedCircuitJson.set(
+    circuitJson,
+    new Set(
+      (isolatedCircuit.firstChild?.getDescendants() ?? [])
+        .filter(
+          (descendant): descendant is SilkscreenText =>
+            descendant.componentName === "SilkscreenText",
+        )
+        .filter(isPlacedSilkscreenText)
+        .flatMap((silkscreenText) => silkscreenText.pcb_silkscreen_text_ids),
+    ),
+  )
+}
+
+/** Returns a check for the text an isolated subcircuit render placed. */
+export const getIsPlacedInIsolatedRender = (
+  isolatedCircuitJson: AnyCircuitElement[],
+) => {
+  const placedPcbSilkscreenTextIds =
+    placedPcbSilkscreenTextIdsByIsolatedCircuitJson.get(isolatedCircuitJson)
+  return (pcbSilkscreenText: PcbSilkscreenText) =>
+    placedPcbSilkscreenTextIds?.has(pcbSilkscreenText.pcb_silkscreen_text_id) ??
+    false
+}
+
+const DESIGNATOR_PLACEHOLDERS = new Set(["{NAME}", "{REF}", "{REFERENCE}"])
+
+/**
+ * Checks if the text is a <footprint>'s designator placeholder, like the
+ * {NAME} text of a footprint imported from a parts library.
+ */
+const isFootprintDesignatorPlaceholder = (silkscreenText: SilkscreenText) =>
+  silkscreenText.parent?.componentName === "Footprint" &&
+  DESIGNATOR_PLACEHOLDERS.has(silkscreenText._parsedProps.text?.trim() ?? "")
+
+/**
  * Checks if the text comes from a footprint string, KiCad, a URL or the parts
- * engine and still sits where that footprint put it.
+ * engine, or is a <footprint>'s designator placeholder, and still sits where
+ * that footprint put it.
  */
 const isFootprintDefaultText = (silkscreenText: SilkscreenText) =>
-  silkscreenText._footprinterFontSize !== undefined &&
+  (silkscreenText._footprinterFontSize !== undefined ||
+    isFootprintDesignatorPlaceholder(silkscreenText)) &&
   !isPlacedSilkscreenText(silkscreenText)
 
 /** Returns the ids of the component's text that no label placement moves. */

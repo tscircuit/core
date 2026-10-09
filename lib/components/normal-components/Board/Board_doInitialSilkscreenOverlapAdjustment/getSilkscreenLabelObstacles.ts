@@ -107,7 +107,7 @@ const getSilkscreenRectBoundsList = (rect: PcbSilkscreenRect): Bounds[] => {
 }
 
 /**
- * Copper, silkscreen, fixed text and notes on one side, holes and cutouts,
+ * Copper, silkscreen, courtyards, fixed text and notes on one side, holes and cutouts,
  * which go through the board, and on the top side, mounted boards. Traces and
  * vias are left out, so routing never moves a label.
  */
@@ -209,6 +209,38 @@ export const getSilkscreenLabelObstacles = ({
     )
   for (const pill of db.pcb_silkscreen_pill.list())
     addObstacles("silkscreen", pill, [getPcbElementBounds(pill)])
+  // A mounted part hides the silkscreen under it; its courtyard is the nearest
+  // thing to its outline that circuit-json has
+  for (const rect of db.pcb_courtyard_rect.list())
+    addObstacles("courtyard", rect, [
+      getRotatedRectBounds(
+        rect.center,
+        rect.width,
+        rect.height,
+        rect.ccw_rotation ?? 0,
+      ),
+    ])
+  for (const outline of db.pcb_courtyard_outline.list())
+    addObstacles("courtyard", outline, [getBoundsFromPoints(outline.outline)])
+  for (const polygon of db.pcb_courtyard_polygon.list())
+    addObstacles("courtyard", polygon, [getBoundsFromPoints(polygon.points)])
+  for (const circle of db.pcb_courtyard_circle.list())
+    addObstacles("courtyard", circle, [
+      getBoundFromCenteredRect({
+        center: circle.center,
+        width: 2 * circle.radius,
+        height: 2 * circle.radius,
+      }),
+    ])
+  for (const pill of db.pcb_courtyard_pill.list())
+    addObstacles("courtyard", pill, [
+      getBoundFromCenteredRect({
+        center: pill.center,
+        width: pill.width,
+        height: pill.height,
+      }),
+    ])
+
   // Graphics block their whole outline, since PNG graphics have no paths
   for (const graphic of db.pcb_silkscreen_graphic.list())
     addObstacles("silkscreen", graphic, [

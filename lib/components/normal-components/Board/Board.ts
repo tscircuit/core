@@ -18,6 +18,7 @@ import { getBoardCenterFromAnchor } from "../../../utils/boards/get-board-center
 import { inflateCircuitJson } from "../../../utils/circuit-json/inflate-circuit-json"
 import { getViaDiameterDefaults } from "../../../utils/pcbStyle/getViaDiameterDefaults"
 import { NormalComponent } from "../../base-components/NormalComponent/NormalComponent"
+import { getIsPlacedInIsolatedRender } from "../../base-components/NormalComponent/utils/getBoardPlacedSilkscreenLabels"
 import type { RenderPhase } from "../../base-components/Renderable"
 import { Group } from "../../primitive-components/Group/Group"
 import { resolveBoardMotorMount } from "../../primitive-components/resolve-board-motor-mount"
@@ -471,7 +472,9 @@ export class Board
     if (isolatedJson) {
       this._isInflatedFromCircuitJson = true
       this._isolatedCircuitJson = null
-      inflateCircuitJson(this, isolatedJson, [], { isRenderedLayout: false })
+      inflateCircuitJson(this, isolatedJson, [], {
+        isPlacedPcbSilkscreenText: getIsPlacedInIsolatedRender(isolatedJson),
+      })
       return
     }
 
@@ -479,7 +482,9 @@ export class Board
     if (circuitJson) {
       this._isInflatedFromCircuitJson = true
     }
-    inflateCircuitJson(this, circuitJson, children, { isRenderedLayout: true })
+    inflateCircuitJson(this, circuitJson, children, {
+      isPlacedPcbSilkscreenText: () => true,
+    })
   }
 
   doInitialPcbComponentRender(): void {
