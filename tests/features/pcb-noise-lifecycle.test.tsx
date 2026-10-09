@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test"
-import { PcbNoiseExcitation, PcbNoiseSimulation, simulation } from "lib"
+import { PcbNoiseChannel, PcbNoiseSimulation, simulation } from "lib"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { NoiseBoard, NoiseSimulation } from "tests/fixtures/pcb-noise-board"
 
@@ -40,7 +40,7 @@ test("pending noise updates and removal preserve other experiments and parsed pr
   expect(selected.simulation_pcb_noise_configuration_id).toBe(configurationId)
   expect(circuit.db.simulation_pcb_noise_configuration.list()).toHaveLength(2)
   const source = selected.children.find(
-    (child): child is PcbNoiseExcitation => child instanceof PcbNoiseExcitation,
+    (child): child is PcbNoiseChannel => child instanceof PcbNoiseChannel,
   )!
   source.setProps({
     ...source.props,

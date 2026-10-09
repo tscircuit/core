@@ -1,15 +1,23 @@
 import { expect, test } from "bun:test"
 import { simulation } from "lib"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
-import { NoiseBoard } from "tests/fixtures/pcb-noise-board"
+import { NoiseBoard, noisePrbs } from "tests/fixtures/pcb-noise-board"
 
-test("noise configuration rejects unresolved local models and duplicate names", async () => {
+test("noise channels reject duplicate, unresolved, DC eye, nested and unsupported declarations", async () => {
   for (const invalid of [
-    "duplicate_port",
-    "unknown_source_port",
-    "unknown_observation_port",
-    "unknown_baseline_source",
+    "duplicate_channel",
+    "unknown_eye_channel",
+    "unknown_timing_channel",
+    "unknown_baseline_channel",
+    "victim_baseline_channel",
+    "dc_data_channel",
+    "dc_timing_channel",
+    "invalid_offset",
+    "duplicate_eye",
     "unsupported_child",
+    "nested_simulation",
+    "channel_children",
+    "no_channels",
   ] as const) {
     const { circuit } = getTestFixture()
     circuit.add(
@@ -18,51 +26,91 @@ test("noise configuration rejects unresolved local models and duplicate names", 
           duration="512ns"
           sampleInterval="20ps"
           baseline={
-            invalid === "unknown_baseline_source"
-              ? {
-                  kind: "quiet_sources",
-                  sourceNames: ["MISSING"],
-                  voltage: "0V",
-                }
-              : undefined
+            invalid === "unknown_baseline_channel"
+              ? { quietChannels: ["MISSING"], voltage: "0V" }
+              : invalid === "victim_baseline_channel"
+                ? { quietChannels: ["v"], voltage: "0V" }
+                : undefined
           }
         >
-          <simulation.pcbnoiseport
-            name="a_tx"
-            signal=".U1 > .A"
-            reference=".U1 > .REF"
-            referenceLayer="top"
-          />
-          {invalid === "duplicate_port" && (
-            <simulation.pcbnoiseport
-              name="a_tx"
-              signal=".U2 > .A"
-              reference=".U2 > .REF"
-              referenceLayer="top"
+          {invalid !== "no_channels" &&
+            ["a", "v"].map((name) => (
+              <simulation.pcbnoisechannel
+                key={name}
+                name={invalid === "duplicate_channel" ? "a" : name}
+                role={name === "a" ? "aggressor" : "victim"}
+                source={`.U1 > .${name.toUpperCase()}`}
+                sourceReference=".U1 > .REF"
+                sourceReferenceLayer="top"
+                load={`.U2 > .${name.toUpperCase()}`}
+                loadReference=".U2 > .REF"
+                loadReferenceLayer="top"
+                sourceImpedance="50ohm"
+                loadImpedance="50ohm"
+                loadBiasVoltage="0V"
+                waveform={
+                  (invalid === "dc_data_channel" && name === "v") ||
+                  (invalid === "dc_timing_channel" && name === "a")
+                    ? { kind: "dc", voltage: "0V" }
+                    : noisePrbs
+                }
+                {...(invalid === "channel_children"
+                  ? {
+                      children: <pcbnotetext text="Unsupported nested child" />,
+                    }
+                  : {})}
+              />
+            ))}
+          {invalid !== "no_channels" && (
+            <simulation.pcbnoiseeye
+              channel={
+                invalid === "unknown_eye_channel"
+                  ? "MISSING"
+                  : invalid === "duplicate_channel"
+                    ? "a"
+                    : "v"
+              }
+              timing={{
+                kind: "source",
+                channel: invalid === "unknown_timing_channel" ? "MISSING" : "a",
+                sampleOffset: invalid === "invalid_offset" ? "2ns" : "1ns",
+              }}
             />
           )}
-          <simulation.pcbnoiseexcitation
-            port={invalid === "unknown_source_port" ? "MISSING" : "a_tx"}
-            role="aggressor"
-            sourceModel={{ kind: "thevenin", resistance: "50ohm" }}
-            waveform={{ kind: "dc", voltage: "0V" }}
-          />
-          <simulation.pcbnoiseobservation
-            name="voltage"
-            port={invalid === "unknown_observation_port" ? "MISSING" : "a_tx"}
-            quantity="voltage"
-          />
+          {invalid === "duplicate_eye" && (
+            <simulation.pcbnoiseeye
+              channel="v"
+              timing={{ kind: "source", channel: "v", sampleOffset: "1ns" }}
+            />
+          )}
           {invalid === "unsupported_child" && (
             <pcbnotetext text="Unsupported child" />
+          )}
+          {invalid === "nested_simulation" && (
+            <simulation.pcbnoisesimulation
+              duration="512ns"
+              sampleInterval="20ps"
+            />
           )}
         </simulation.pcbnoisesimulation>
       </NoiseBoard>,
     )
-    await expect(circuit.renderUntilSettled()).rejects.toThrow(
-      invalid === "unsupported_child"
-        ? "can contain only noise"
-        : "Invalid PCB noise configuration",
-    )
+    const message = {
+      duplicate_channel: "Names must be unique",
+      unknown_eye_channel: "Unknown eye channel",
+      unknown_timing_channel: "Unknown timing channel",
+      unknown_baseline_channel: "Unknown baseline channel",
+      victim_baseline_channel: "must be an aggressor",
+      dc_data_channel: "must have an active PRBS waveform",
+      dc_timing_channel: "must have a PRBS waveform",
+      invalid_offset: "sampleOffset must be less than the unit interval",
+      duplicate_eye: "Only one eye per observation",
+      unsupported_child: "can contain only noise channels and eyes",
+      nested_simulation: "cannot contain another simulation",
+      channel_children: "can contain only noise channels and eyes",
+      no_channels: "Invalid PCB noise configuration",
+    }[invalid]
+    await expect(circuit.renderUntilSettled()).rejects.toThrow(message)
     expect(circuit.db.simulation_pcb_noise_configuration.list()).toHaveLength(0)
   }
 })

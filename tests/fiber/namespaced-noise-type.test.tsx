@@ -2,51 +2,53 @@ import { expect, test } from "bun:test"
 import { simulation } from "lib"
 import { noisePrbs } from "tests/fixtures/pcb-noise-board"
 
-test("noise namespace and flat hosts retain explicit physical and electrical input types", () => {
-  const port = (
-    <simulation.pcbnoiseport
-      name="a_tx"
-      signal=".U1 > .A"
-      reference=".U1 > .REF"
-      referenceLayer="bottom"
+test("compact noise namespace and flat hosts retain explicit physical and electrical input types", () => {
+  const channel = (
+    <simulation.pcbnoisechannel
+      name="a"
+      role="aggressor"
+      source=".U1 > .A"
+      sourceReference=".U1 > .REF"
+      sourceReferenceLayer="bottom"
+      load=".U2 > .A"
+      loadReference=".U2 > .REF"
+      loadReferenceLayer="bottom"
+      sourceImpedance="50ohm"
+      loadImpedance="50ohm"
+      loadBiasVoltage="0V"
+      waveform={noisePrbs}
     />
   )
-  const source = (
-    <simulation.pcbnoiseexcitation
-      port="a_tx"
-      role="aggressor"
-      sourceModel={{ kind: "thevenin", resistance: "50ohm" }}
-      waveform={noisePrbs}
+  const eye = (
+    <simulation.pcbnoiseeye
+      channel="a"
+      timing={{ kind: "source", channel: "a", sampleOffset: "1ns" }}
     />
   )
   const flat = (
     <pcbnoisesimulation duration="512ns" sampleInterval="20ps">
-      {port}
-      {source}
+      {channel}
+      {eye}
     </pcbnoisesimulation>
   )
-  expect(port.type).toBe(simulation.pcbnoiseport)
-  expect(source.type).toBe(simulation.pcbnoiseexcitation)
+  expect(channel.type).toBe(simulation.pcbnoisechannel)
+  expect(eye.type).toBe(simulation.pcbnoiseeye)
   expect(flat.type).toBe("pcbnoisesimulation")
 })
 
 const missingReference = (
-  // @ts-expect-error a physical reference selector is mandatory
-  <simulation.pcbnoiseport name="a_tx" signal=".U1 > .A" />
+  // @ts-expect-error source and load physical reference selectors are mandatory
+  <simulation.pcbnoisechannel name="a" source=".U1 > .A" load=".U2 > .A" />
 )
-const invalidLayer = (
-  <simulation.pcbnoiseport
-    name="a_tx"
-    signal=".U1 > .A"
-    reference=".U1 > .REF"
-    // @ts-expect-error layer inputs use canonical physical PCB layers
-    referenceLayer="middle"
+const noElectricalDefaults = (
+  // @ts-expect-error impedances, load bias, waveform and role are mandatory
+  <pcbnoisechannel
+    name="a"
+    source=".U1 > .A"
+    sourceReference=".U1 > .REF"
+    load=".U2 > .A"
+    loadReference=".U2 > .REF"
   />
 )
-const noSourceDefaults = (
-  // @ts-expect-error source impedance, waveform and role are mandatory
-  <pcbnoiseexcitation port="a_tx" />
-)
 void missingReference
-void invalidLayer
-void noSourceDefaults
+void noElectricalDefaults

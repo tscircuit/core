@@ -1,6 +1,6 @@
+import type { PcbNoiseWaveform } from "@tscircuit/props"
 import { simulation } from "lib"
 import type { ReactNode } from "react"
-import type { PcbNoiseWaveform } from "@tscircuit/props"
 
 export const noisePrbs = {
   kind: "prbs",
@@ -10,10 +10,7 @@ export const noisePrbs = {
   highVoltage: "1V",
   riseTime: "200ps",
   fallTime: "200ps",
-  edgeTimeConvention: "10_90",
   seed: 1,
-  algorithm: "lfsr_fibonacci",
-  algorithmVersion: "1",
 } satisfies PcbNoiseWaveform
 
 /** Independent signal pads can share the same real plated-hole reference. */
@@ -120,62 +117,29 @@ export function NoiseSimulation({
       name={name}
       duration="512ns"
       sampleInterval="20ps"
-      baseline={{
-        kind: "quiet_sources",
-        sourceNames: ["a_tx_source"],
-        voltage: "0V",
-      }}
+      baseline={{ quietChannels: ["a"], voltage: "0V" }}
     >
-      {["a", "v"].flatMap((signal) =>
-        [1, 2].map((component) => (
-          <simulation.pcbnoiseport
-            key={`${signal}${component}`}
-            name={`${signal}_${component === 1 ? "tx" : "rx"}`}
-            signal={`.U${component} > .${signal.toUpperCase()}`}
-            reference={`.U${component} > .REF`}
-            referenceLayer={layer}
-          />
-        )),
-      )}
-      <simulation.pcbnoiseexcitation
-        port="a_tx"
-        role="aggressor"
-        sourceModel={{ kind: "thevenin", resistance: "50ohm" }}
-        waveform={noisePrbs}
-      />
-      <simulation.pcbnoiseexcitation
-        port="v_tx"
-        role="victim"
-        sourceModel={{ kind: "thevenin", resistance: "50ohm" }}
-        waveform={{ ...noisePrbs, seed: 2 }}
-      />
-      <simulation.pcbnoisetermination
-        port="a_rx"
-        model={{ kind: "resistor", resistance: "50ohm", biasVoltage: "0V" }}
-      />
-      <simulation.pcbnoisetermination
-        port="v_rx"
-        model={{
-          kind: "parallel_rc",
-          resistance: "50ohm",
-          capacitance: "1pF",
-          biasVoltage: "0V",
-        }}
-      />
-      <simulation.pcbnoiseobservation
-        name="victim_voltage"
-        port="v_rx"
-        quantity="voltage"
-      />
+      {["a", "v"].map((signal, index) => (
+        <simulation.pcbnoisechannel
+          key={signal}
+          name={signal}
+          role={signal === "a" ? "aggressor" : "victim"}
+          source={`.U1 > .${signal.toUpperCase()}`}
+          sourceReference=".U1 > .REF"
+          sourceReferenceLayer={layer}
+          load={`.U2 > .${signal.toUpperCase()}`}
+          loadReference=".U2 > .REF"
+          loadReferenceLayer={layer}
+          sourceImpedance="50ohm"
+          loadImpedance="50ohm"
+          loadBiasVoltage="0V"
+          loadCapacitance={signal === "v" ? "1pF" : undefined}
+          waveform={{ ...noisePrbs, seed: index + 1 }}
+        />
+      ))}
       <simulation.pcbnoiseeye
-        observation="victim_voltage"
-        modulation="nrz"
-        timing={{
-          kind: "known_ui",
-          unitInterval: "2ns",
-          epoch: "0ns",
-          sampleOffset: "1ns",
-        }}
+        channel="v"
+        timing={{ kind: "source", channel: "v", sampleOffset: "1ns" }}
       />
     </simulation.pcbnoisesimulation>
   )

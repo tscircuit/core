@@ -1,31 +1,46 @@
 import { expect, test } from "bun:test"
-import type { PcbNoisePortProps } from "@tscircuit/props"
+import type { PcbNoiseChannelProps } from "@tscircuit/props"
 import { simulation } from "lib"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
-import { NoiseBoard } from "tests/fixtures/pcb-noise-board"
+import { NoiseBoard, noisePrbs } from "tests/fixtures/pcb-noise-board"
 
 test("invalid noise selectors and physical layer ambiguity never emit a configuration", async () => {
-  const cases: Array<{ props: Partial<PcbNoisePortProps>; message: string }> = [
+  const cases: Array<{
+    props: Partial<PcbNoiseChannelProps>
+    message: string
+  }> = [
     {
-      props: { signal: ".MISSING > .A" },
+      props: { source: ".MISSING > .A" },
       message:
-        'Signal selector ".MISSING > .A" must identify exactly one physical PCB port',
+        'source signal selector ".MISSING > .A" must identify exactly one physical PCB port',
     },
     {
-      props: { signal: ".U1 > port" },
+      props: { source: ".U1 > port" },
       message:
-        'Signal selector ".U1 > port" must identify exactly one physical PCB port',
+        'source signal selector ".U1 > port" must identify exactly one physical PCB port',
     },
     {
-      props: { referenceLayer: undefined },
-      message: "spans multiple layers; specify referenceLayer",
+      props: { sourceReferenceLayer: undefined },
+      message: "spans multiple layers; specify sourceReferenceLayer",
     },
     {
-      props: { signalLayer: "bottom" },
+      props: { loadReferenceLayer: undefined },
+      message: "spans multiple layers; specify loadReferenceLayer",
+    },
+    {
+      props: { sourceLayer: "bottom" },
       message: 'has no physical port on layer "bottom"',
     },
     {
-      props: { reference: ".U1 > .A" },
+      props: { loadLayer: "bottom" },
+      message: 'has no physical port on layer "bottom"',
+    },
+    {
+      props: { sourceReference: ".U1 > .A" },
+      message: "needs different physical signal and reference contacts",
+    },
+    {
+      props: { loadReference: ".U2 > .A" },
       message: "needs different physical signal and reference contacts",
     },
   ]
@@ -34,17 +49,20 @@ test("invalid noise selectors and physical layer ambiguity never emit a configur
     circuit.add(
       <NoiseBoard>
         <simulation.pcbnoisesimulation duration="512ns" sampleInterval="20ps">
-          <simulation.pcbnoiseport
-            name="a_tx"
-            signal=".U1 > .A"
-            reference=".U1 > .REF"
-            referenceLayer="top"
+          <simulation.pcbnoisechannel
+            name="a"
+            role="aggressor"
+            source=".U1 > .A"
+            sourceReference=".U1 > .REF"
+            sourceReferenceLayer="top"
+            load=".U2 > .A"
+            loadReference=".U2 > .REF"
+            loadReferenceLayer="top"
+            sourceImpedance="50ohm"
+            loadImpedance="50ohm"
+            loadBiasVoltage="0V"
+            waveform={noisePrbs}
             {...props}
-          />
-          <simulation.pcbnoiseobservation
-            name="voltage"
-            port="a_tx"
-            quantity="voltage"
           />
         </simulation.pcbnoisesimulation>
       </NoiseBoard>,

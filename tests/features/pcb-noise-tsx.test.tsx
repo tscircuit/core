@@ -21,15 +21,51 @@ test("TSX emits pending physical noise with shared references and normalized SI 
     kind: "prbs",
     baud_rate_hz: 500e6,
     rise_time_s: 200e-12,
+    algorithm: "lfsr_fibonacci",
+    algorithm_version: "1",
+    edge_time_convention: "10_90",
   })
+  expect(configuration.baseline).toEqual({
+    kind: "quiet_sources",
+    source_names: ["a_source"],
+    voltage_v: 0,
+  })
+  expect(configuration.observations).toEqual(
+    ["a", "v"].flatMap((name) => [
+      {
+        name: `${name}_source_voltage`,
+        port_name: `${name}_tx`,
+        quantity: "voltage",
+      },
+      {
+        name: `${name}_load_voltage`,
+        port_name: `${name}_rx`,
+        quantity: "voltage",
+      },
+      {
+        name: `${name}_source_current`,
+        port_name: `${name}_tx`,
+        quantity: "current",
+      },
+      {
+        name: `${name}_load_current`,
+        port_name: `${name}_rx`,
+        quantity: "current",
+      },
+    ]),
+  )
   expect(configuration.terminations[1].model).toMatchObject({
     kind: "parallel_rc",
     capacitance_f: 1e-12,
   })
   expect(configuration.eyes?.[0].timing).toMatchObject({
-    kind: "known_ui",
-    unit_interval_s: 2e-9,
-    origin: { kind: "authored_epoch", epoch_s: 0 },
+    kind: "explicit_clock",
+    clock: { kind: "authored_edges", source_name: "v_source" },
+    edge: "rising",
+    threshold_v: 0.5,
+    ui_per_selected_edge: 1,
+    sample_offset_s: 1e-9,
+    interpretation: "nominal_reference",
   })
   expect(pending.db.simulation_experiment.list()[0].experiment_type).toBe(
     "pcb_noise",
