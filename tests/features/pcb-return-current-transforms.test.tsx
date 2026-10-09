@@ -1,3 +1,4 @@
+import { simulation } from "lib"
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import {
@@ -11,9 +12,11 @@ test("return contacts use the emitted PCB geometry on rotated and bottom-side co
       const { circuit } = getTestFixture()
       circuit.add(
         <ReturnCurrentBoard layer={layer} rotation={rotation}>
-          <pcbreturncurrentsimulation>
-            <pcbreturncurrentexcitation {...returnCurrentExcitationProps} />
-          </pcbreturncurrentsimulation>
+          <simulation.pcbreturncurrentsimulation>
+            <simulation.pcbreturncurrentexcitation
+              {...returnCurrentExcitationProps}
+            />
+          </simulation.pcbreturncurrentsimulation>
           <pcbnotetext
             text={`Contacts: ${layer}, ${rotation}°`}
             pcbY={-2.4}

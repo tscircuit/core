@@ -1,3 +1,4 @@
+import { simulation } from "lib"
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import {
@@ -27,12 +28,12 @@ test("same-layer coincident signal and return contacts are rejected while explic
           }
         />
         <trace from=".G1 > .GND" to="net.GND" />
-        <pcbreturncurrentsimulation name="Ground contact beneath the signal">
-          <pcbreturncurrentexcitation
+        <simulation.pcbreturncurrentsimulation name="Ground contact beneath the signal">
+          <simulation.pcbreturncurrentexcitation
             {...returnCurrentExcitationProps}
             returnSink=".G1 > .GND"
           />
-        </pcbreturncurrentsimulation>
+        </simulation.pcbreturncurrentsimulation>
         <pcbnotetext
           text="G1.GND beneath U1.OUT: bottom layer"
           pcbY={-1.8}

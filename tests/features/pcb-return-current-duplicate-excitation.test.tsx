@@ -1,3 +1,4 @@
+import { simulation } from "lib"
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import {
@@ -9,13 +10,15 @@ test("a repeated signal trace in one experiment is rejected instead of producing
   const { circuit } = getTestFixture()
   circuit.add(
     <ReturnCurrentBoard>
-      <pcbreturncurrentsimulation>
-        <pcbreturncurrentexcitation {...returnCurrentExcitationProps} />
-        <pcbreturncurrentexcitation
+      <simulation.pcbreturncurrentsimulation>
+        <simulation.pcbreturncurrentexcitation
+          {...returnCurrentExcitationProps}
+        />
+        <simulation.pcbreturncurrentexcitation
           {...returnCurrentExcitationProps}
           current="10mA"
         />
-      </pcbreturncurrentsimulation>
+      </simulation.pcbreturncurrentsimulation>
     </ReturnCurrentBoard>,
   )
   await expect(circuit.renderUntilSettled()).rejects.toThrow(

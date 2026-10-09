@@ -1,3 +1,4 @@
+import { simulation } from "lib"
 import type { PcbReturnCurrentExcitationProps } from "@tscircuit/props"
 import type { ReactNode } from "react"
 
@@ -79,9 +80,11 @@ export function ReturnCurrentConnections({
 
 export function ReturnCurrentBoard({
   children = (
-    <pcbreturncurrentsimulation name="Explicit GND returns">
-      <pcbreturncurrentexcitation {...returnCurrentExcitationProps} />
-    </pcbreturncurrentsimulation>
+    <simulation.pcbreturncurrentsimulation name="Explicit GND returns">
+      <simulation.pcbreturncurrentexcitation
+        {...returnCurrentExcitationProps}
+      />
+    </simulation.pcbreturncurrentsimulation>
   ),
   ...connections
 }: Parameters<typeof ReturnCurrentConnections>[0] & { children?: ReactNode }) {

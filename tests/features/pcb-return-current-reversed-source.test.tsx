@@ -1,3 +1,4 @@
+import { simulation } from "lib"
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import {
@@ -9,18 +10,20 @@ test("opposite signal directions select one PCB route without reversing existing
   const { circuit } = getTestFixture()
   circuit.add(
     <ReturnCurrentBoard>
-      <pcbreturncurrentsimulation name="Forward excitation">
-        <pcbreturncurrentexcitation {...returnCurrentExcitationProps} />
-      </pcbreturncurrentsimulation>
-      <pcbreturncurrentsimulation name="Reverse excitation">
-        <pcbreturncurrentexcitation
+      <simulation.pcbreturncurrentsimulation name="Forward excitation">
+        <simulation.pcbreturncurrentexcitation
+          {...returnCurrentExcitationProps}
+        />
+      </simulation.pcbreturncurrentsimulation>
+      <simulation.pcbreturncurrentsimulation name="Reverse excitation">
+        <simulation.pcbreturncurrentexcitation
           {...returnCurrentExcitationProps}
           source=".U2 > .IN"
           load=".U1 > .OUT"
           returnSource=".U1 > .GND"
           returnSink=".U2 > .GND"
         />
-      </pcbreturncurrentsimulation>
+      </simulation.pcbreturncurrentsimulation>
       <pcbnotetext
         text="One route; two excitation directions"
         pcbY={-1.6}

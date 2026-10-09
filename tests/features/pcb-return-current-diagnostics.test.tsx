@@ -1,3 +1,4 @@
+import { simulation } from "lib"
 import { expect, test } from "bun:test"
 import type { PcbReturnCurrentExcitationProps } from "@tscircuit/props"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
@@ -55,12 +56,12 @@ test("invalid selectors, ground membership and terminal layers report readable e
     circuit.add(
       <ReturnCurrentBoard>
         <net name="OTHER" />
-        <pcbreturncurrentsimulation name="Invalid terminal example">
-          <pcbreturncurrentexcitation
+        <simulation.pcbreturncurrentsimulation name="Invalid terminal example">
+          <simulation.pcbreturncurrentexcitation
             {...returnCurrentExcitationProps}
             {...props}
           />
-        </pcbreturncurrentsimulation>
+        </simulation.pcbreturncurrentsimulation>
       </ReturnCurrentBoard>,
     )
     await expect(circuit.renderUntilSettled()).rejects.toThrow(message)

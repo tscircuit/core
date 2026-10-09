@@ -1,3 +1,4 @@
+import { simulation } from "lib"
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import {
@@ -10,9 +11,11 @@ test("PCB-disabled rendering skips pending PCB simulation declarations", async (
   circuit.add(
     <board schematicDisabled>
       <ReturnCurrentConnections />
-      <pcbreturncurrentsimulation>
-        <pcbreturncurrentexcitation {...returnCurrentExcitationProps} />
-      </pcbreturncurrentsimulation>
+      <simulation.pcbreturncurrentsimulation>
+        <simulation.pcbreturncurrentexcitation
+          {...returnCurrentExcitationProps}
+        />
+      </simulation.pcbreturncurrentsimulation>
     </board>,
   )
   await circuit.renderUntilSettled()

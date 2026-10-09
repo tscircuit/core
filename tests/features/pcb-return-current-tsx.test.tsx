@@ -1,3 +1,4 @@
+import { simulation } from "lib"
 import { expect, test } from "bun:test"
 import {
   simulation_experiment,
@@ -13,12 +14,12 @@ test("TSX declares a pending experiment with independent physical ground termina
   const { circuit } = getTestFixture()
   circuit.add(
     <ReturnCurrentBoard>
-      <pcbreturncurrentsimulation name="Explicit 5 mA peak return">
-        <pcbreturncurrentexcitation
+      <simulation.pcbreturncurrentsimulation name="Explicit 5 mA peak return">
+        <simulation.pcbreturncurrentexcitation
           {...returnCurrentExcitationProps}
           trace=".SIGNAL"
         />
-      </pcbreturncurrentsimulation>
+      </simulation.pcbreturncurrentsimulation>
       <pcbnotetext text="Signal: U1.OUT → U2.IN" pcbY={-1.4} fontSize={0.45} />
       <pcbnotetext text="Return: U2.GND → U1.GND" pcbY={2.3} fontSize={0.4} />
     </ReturnCurrentBoard>,
