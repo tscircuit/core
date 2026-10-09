@@ -122,3 +122,7 @@ export { PcbSoldermaskOpening } from "./primitive-components/PcbSoldermaskOpenin
 export { AssemblyPrintedPart } from "./primitive-components/AssemblyPrintedPart"
 
 export { AssemblyCable } from "./primitive-components/AssemblyCable"
+
+export { PcbNoiseSimulation } from "./primitive-components/PcbNoiseSimulation"
+export { PcbNoiseChannel } from "./primitive-components/PcbNoiseChannel"
+export { PcbNoiseEye } from "./primitive-components/PcbNoiseEye"

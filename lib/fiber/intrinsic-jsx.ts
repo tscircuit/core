@@ -108,6 +108,9 @@ export interface TscircuitElements {
   analogdcsweepsimulation: Props.AnalogDcSweepSimulationProps
   analogacsweepsimulation: Props.AnalogAcSweepSimulationProps
   analogsweepparameter: Props.AnalogSweepParameterProps
+  pcbnoisesimulation: Props.PcbNoiseSimulationProps
+  pcbnoisechannel: Props.PcbNoiseChannelProps
+  pcbnoiseeye: Props.PcbNoiseEyeProps
   pcbreturncurrentsimulation: Props.PcbReturnCurrentSimulationProps
   pcbreturncurrentexcitation: Props.PcbReturnCurrentExcitationProps
   spicemodel: Props.SpiceModelProps

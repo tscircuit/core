@@ -1,13 +1,11 @@
-import type {
-  LayerRef,
-  PcbPort,
-  PcbTrace,
-  SimulationReturnCurrentPortContact,
-} from "circuit-json"
+import type { PcbPort, PcbTrace } from "circuit-json"
 import type { PcbReturnCurrentExcitation } from "./PcbReturnCurrentExcitation"
 import type { PcbReturnCurrentSimulation } from "./PcbReturnCurrentSimulation"
 import type { Net } from "./Net"
-import type { Port } from "./Port"
+import {
+  resolvePhysicalPcbPort,
+  resolvePhysicalPcbPortContact,
+} from "lib/utils/pcb-simulation/resolve-physical-pcb-port"
 import type { Trace } from "./Trace/Trace"
 
 const positionToleranceMm = 1e-6
@@ -38,29 +36,8 @@ export function PcbReturnCurrentExcitation_doInitialPcbSimulationRender(
   }
 
   const subcircuit = excitation.getSubcircuit()
-  const resolvePcbPort = (selector: string, role: string): PcbPort => {
-    const ports = subcircuit
-      .selectAll<Port>(selector)
-      .filter((component) => component.componentName === "Port")
-    if (ports.length !== 1) {
-      excitation.renderError(
-        `${role} selector "${selector}" must identify exactly one physical PCB port.`,
-      )
-    }
-    const port = ports[0]
-    const pcbPort = port?.pcb_port_id ? db.pcb_port.get(port.pcb_port_id) : null
-    const hasPhysicalPad =
-      pcbPort &&
-      (db.pcb_smtpad.list({ pcb_port_id: pcbPort.pcb_port_id }).length > 0 ||
-        db.pcb_plated_hole.list({ pcb_port_id: pcbPort.pcb_port_id }).length >
-          0)
-    if (!pcbPort || !hasPhysicalPad) {
-      excitation.renderError(
-        `${role} selector "${selector}" needs a physical PCB pad or plated-hole port.`,
-      )
-    }
-    return pcbPort!
-  }
+  const resolvePcbPort = (selector: string, role: string) =>
+    resolvePhysicalPcbPort(excitation, selector, role)
 
   const signalSource = resolvePcbPort(props.source, "Signal source")
   const signalLoad = resolvePcbPort(props.load, "Signal load")
@@ -129,43 +106,21 @@ export function PcbReturnCurrentExcitation_doInitialPcbSimulationRender(
     }
   }
 
-  const contact = (
-    pcbPort: PcbPort,
-    selector: string,
-    requestedLayer: LayerRef | undefined,
-    role: string,
-  ): SimulationReturnCurrentPortContact => {
-    const layers = [...new Set(pcbPort.layers)]
-    if (!requestedLayer && layers.length !== 1) {
-      excitation.renderError(
-        `${role} "${selector}" spans multiple layers; specify ${role === "Return source" ? "returnSourceLayer" : "returnSinkLayer"}.`,
-      )
-    }
-    const layer = requestedLayer ?? layers[0]
-    if (!layers.includes(layer)) {
-      excitation.renderError(
-        `${role} "${selector}" has no physical port on layer "${layer}".`,
-      )
-    }
-    return {
-      contact_type: "pcb_port",
-      pcb_port_id: pcbPort.pcb_port_id,
-      x: pcbPort.x,
-      y: pcbPort.y,
-      layer,
-    }
-  }
-  const returnSourceContact = contact(
+  const returnSourceContact = resolvePhysicalPcbPortContact(
+    excitation,
     returnSource,
     props.returnSource,
     props.returnSourceLayer,
     "Return source",
+    "returnSourceLayer",
   )
-  const returnSinkContact = contact(
+  const returnSinkContact = resolvePhysicalPcbPortContact(
+    excitation,
     returnSink,
     props.returnSink,
     props.returnSinkLayer,
     "Return sink",
+    "returnSinkLayer",
   )
   for (const [signalPort, referenceContact] of [
     [signalSource, returnSinkContact],
