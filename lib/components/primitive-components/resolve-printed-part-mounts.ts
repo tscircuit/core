@@ -6,16 +6,40 @@ import type { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import type { Board } from "../normal-components/Board/Board"
 import type { AssemblyMotor } from "./AssemblyMotor"
 import type { AssemblyPrintedPart } from "./AssemblyPrintedPart"
+import type { AssemblyPart } from "./AssemblyPart"
+import { getPartReferenceSurfaces } from "./get-part-reference-surfaces"
+import {
+  findParentAssembly,
+  resolveInheritedAssemblyPlacement,
+} from "./resolve-assembly-placement"
 import { getComponentsInAssemblyScope } from "./get-assembly-scope-components"
 import type { AssemblyPlacement } from "./resolve-assembly-placement"
 
-type MountablePart = AssemblyMotor | AssemblyPrintedPart
+type MountablePart = AssemblyMotor | AssemblyPrintedPart | AssemblyPart
 const isMountablePart = (part: PrimitiveComponent): part is MountablePart =>
   part.componentName === "AssemblyMotor" ||
+  part.componentName === "AssemblyPart" ||
   part.componentName === "AssemblyPrintedPart"
 const isPrintedPart = (part: MountablePart): part is AssemblyPrintedPart =>
   part.componentName === "AssemblyPrintedPart"
+const isMotor = (part: MountablePart): part is AssemblyMotor =>
+  part.componentName === "AssemblyMotor"
 const identity = (): Matrix4 => [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]
+
+/** Mount matrix to inherited placement: circuit-world, mm, right-handed +Z up.
+ * Remove the bottom-side X reversal before recovering board-plane yaw.
+ */
+export const getMountTransformPlacement = (
+  world: Matrix4,
+): AssemblyPlacement => {
+  const bottom = world[10] < 0
+  const sign = bottom ? -1 : 1
+  return {
+    position: { x: world[12], y: world[13], z: world[14] },
+    pcbRotation: (Math.atan2(sign * world[1], sign * world[0]) * 180) / Math.PI,
+    layer: bottom ? "bottom" : "top",
+  }
+}
 
 /** Frame-to-matrix boundary: local right-handed XYZ, mm. origin is a point;
  * normal and xAxis are unit directions. Use gl-matrix for 3D composition;
@@ -39,14 +63,12 @@ const getFace = (
   part: MountablePart,
   faceName: string,
 ): NamedReferencePlane => {
-  if (isPrintedPart(part)) {
-    const face = part.printedPartPlan?.referencePlanes.find(
+  if (!isMotor(part)) {
+    const face = getPartReferenceSurfaces(part).find(
       (face) => face.name === faceName,
     )
     if (!face)
-      throw new Error(
-        `Printed part "${part.name}" has no reference face "${faceName}"`,
-      )
+      throw new Error(`Part "${part.name}" has no reference face "${faceName}"`)
     return face
   }
   if (faceName !== "backface" && faceName !== "frontface")
@@ -88,9 +110,24 @@ const findTarget = (
  * bottom-side Y flip: local +Z is the shaft; circuit +X right, +Y top, +Z above.
  * Translations are points in mm. No authored props are modified.
  */
-const rootOrientation = (part: MountablePart): Matrix4 => {
+const rootOrientation = (
+  part: MountablePart,
+  placement?: AssemblyPlacement,
+): Matrix4 => {
   const result = identity()
   if (isPrintedPart(part)) return result
+  if (!isMotor(part)) {
+    if (!placement)
+      throw new Error(`Part "${part.name}" has no inherited placement`)
+    mat4.translate(result, result, [
+      placement.position.x,
+      placement.position.y,
+      placement.position.z,
+    ])
+    mat4.rotateZ(result, result, (placement.pcbRotation * Math.PI) / 180)
+    if (placement.layer === "bottom") mat4.rotateY(result, result, Math.PI)
+    return result
+  }
   switch (part._parsedProps.shaftFacingDirection) {
     case "x+":
       return mat4.rotateY(result, result, Math.PI / 2) as Matrix4
@@ -129,9 +166,31 @@ export const resolvePrintedPartMounts = (component: PrimitiveComponent) => {
       )
     const existing = transforms.get(part)
     if (existing) return existing
-    let world = rootOrientation(part)
+    let world: Matrix4
     let root = part
-    if (part._parsedProps.mountedTo) {
+    const parent =
+      part.componentName === "AssemblyPart"
+        ? findParentAssembly(part)
+        : undefined
+    if (parent && isMountablePart(parent)) {
+      world = [...resolvePart(parent, [...path, part])]
+      root = roots.get(parent)!
+    } else {
+      const placement =
+        part.componentName === "AssemblyPart"
+          ? resolveInheritedAssemblyPlacement(
+              part as AssemblyPart,
+              [],
+              (target) => {
+                const targetWorld = resolvePart(target, [...path, part])
+                root = roots.get(target)!
+                return getMountTransformPlacement(targetWorld)
+              },
+            )
+          : undefined
+      world = rootOrientation(part, placement)
+    }
+    if ((isMotor(part) || isPrintedPart(part)) && part._parsedProps.mountedTo) {
       const { part: target, face } = findTarget(
         part,
         part._parsedProps.mountedTo,
@@ -157,7 +216,7 @@ export const resolvePrintedPartMounts = (component: PrimitiveComponent) => {
   for (const part of parts) resolvePart(part)
   const motorMountRoots = new Set(
     parts
-      .filter((part) => !isPrintedPart(part) && part._parsedProps.mountedTo)
+      .filter((part) => isMotor(part) && part._parsedProps.mountedTo)
       .map((part) => roots.get(part)!),
   )
   const anchoredRoots = new Set<MountablePart>()
@@ -177,7 +236,7 @@ export const resolvePrintedPartMounts = (component: PrimitiveComponent) => {
       )
     anchoredRoots.add(root)
     if (
-      !isPrintedPart(root) &&
+      isMotor(root) &&
       !["z+", "z-"].includes(root._parsedProps.shaftFacingDirection ?? "z+")
     )
       throw new Error(
@@ -275,7 +334,8 @@ export const boardMountsToPrintedPart = (board: Board) => {
   const partName = selector.slice(0, selector.lastIndexOf("."))
   return getComponentsInAssemblyScope(board).some(
     (part) =>
-      part.componentName === "AssemblyPrintedPart" &&
+      (part.componentName === "AssemblyPrintedPart" ||
+        part.componentName === "AssemblyPart") &&
       matchesAssemblyIdentity(part, partName),
   )
 }

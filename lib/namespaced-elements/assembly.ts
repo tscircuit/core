@@ -3,6 +3,7 @@ import type {
   AssemblyDevicePropsInput,
   AssemblyMotorPropsInput,
   AssemblyPartPropsInput,
+  AssemblyReferenceSurfacePropsInput,
   AssemblyPrintedPartPropsInput,
   AssemblyScreenPropsInput,
   AssemblySubassemblyPropsInput,
@@ -32,6 +33,9 @@ export type AssemblyCadAssemblyJsxProps = AssemblySubassemblyJsxProps
 export interface AssemblyCableJsxProps extends AssemblyCablePropsInput {}
 
 export const assembly = {
+  referencesurface: createNamespacedElement<AssemblyReferenceSurfacePropsInput>(
+    "assembly.referencesurface",
+  ),
   part: createNamespacedElement<AssemblyPartJsxProps>("assembly.part"),
   cable: createNamespacedElement<AssemblyCableJsxProps>("assembly.cable"),
   printedpart: createNamespacedElement<AssemblyPrintedPartJsxProps>(

@@ -1,7 +1,7 @@
 {
   "name": "@tscircuit/core",
   "type": "module",
-  "version": "0.0.2113",
+  "version": "0.0.2116",
   "types": "dist/index.d.ts",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -58,7 +58,7 @@
     "@tscircuit/matchpack": "^0.0.97",
     "@tscircuit/math-utils": "^0.0.36",
     "@tscircuit/miniflex": "^0.0.4",
-    "@tscircuit/modelprinter": "^0.0.11",
+    "@tscircuit/modelprinter": "^0.0.18",
     "@tscircuit/ngspice-spice-engine": "^0.0.20",
     "@tscircuit/props": "https://pkg.pr.new/tscircuit/props/@tscircuit/props@0dcdae1",
     "@tscircuit/schematic-match-adapt": "^0.0.18",
@@ -76,10 +76,10 @@
     "bun-match-svg": "0.0.12",
     "calculate-elbow": "^0.0.12",
     "chokidar-cli": "^3.0.0",
-    "circuit-json": "^0.0.522",
+    "circuit-json": "^0.0.525",
     "circuit-json-to-bpc": "^0.0.13",
     "circuit-json-to-connectivity-map": "^0.0.33",
-    "circuit-json-to-gltf": "^0.0.148",
+    "circuit-json-to-gltf": "^0.0.151",
     "circuit-json-to-spice": "^0.0.45",
     "circuit-to-svg": "^0.0.445",
     "concurrently": "^9.1.2",
@@ -145,7 +145,7 @@
   "overrides": {
     "@tscircuit/circuit-json-util": "^0.0.119",
     "@tscircuit/props": "https://pkg.pr.new/tscircuit/props/@tscircuit/props@0dcdae1",
-    "circuit-json": "^0.0.522",
+    "circuit-json": "^0.0.525",
     "@tscircuit/cableprinter": "^0.0.6"
   }
 }
