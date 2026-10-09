@@ -61,6 +61,19 @@ test("printed parts follow offset and rotated named faces through forward-refere
     expect((min[0] + max[0]) / 2).toBeCloseTo(12, 5)
     expect((min[1] + max[1]) / 2).toBeCloseTo(3, 5)
   }
+  const standSource = circuit.db.source_component
+    .list()
+    .find((s) => s.name === "STAND")!
+  const standSurface = circuit.db.cad_reference_surface
+    .list()
+    .find((s) => s.source_component_id === standSource.source_component_id)!
+  expect(standSurface).toMatchObject({
+    name: "top",
+    center: { x: 12, y: 3, z: 4 },
+    normal: { x: 0, y: 0, z: 1 },
+  })
+  expect(standSurface.x_axis.x).toBeCloseTo(0)
+  expect(standSurface.x_axis.y).toBeCloseTo(1)
   await expectAssemblySnapshot(import.meta.path, {
     title: "Named faces follow authored offsets and rotations",
     panels: [

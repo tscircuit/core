@@ -429,6 +429,38 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         } as PcbSmtPadPill)
       }
     }
+    if (
+      shouldCreateSolderPaste &&
+      (pcb_smtpad?.shape === "pill" || pcb_smtpad?.shape === "rotated_pill")
+    ) {
+      const pasteWidth = getSolderPasteSize(pcb_smtpad.width)
+      const pasteHeight = getSolderPasteSize(pcb_smtpad.height)
+      if (pasteWidth > 0 && pasteHeight > 0) {
+        // Reuse emitted pad geometry in board-world mm (+X right, +Y up),
+        // including its transformed center, layer, and counterclockwise rotation.
+        const pillPaste = {
+          x: pcb_smtpad.x,
+          y: pcb_smtpad.y,
+          width: pasteWidth,
+          height: pasteHeight,
+          radius: getSolderPasteSize(pcb_smtpad.radius, 1),
+          layer: pcb_smtpad.layer,
+          pcb_component_id: pcb_smtpad.pcb_component_id,
+          pcb_smtpad_id: pcb_smtpad.pcb_smtpad_id,
+          subcircuit_id: pcb_smtpad.subcircuit_id,
+          pcb_group_id: pcb_smtpad.pcb_group_id,
+        }
+        if (pcb_smtpad.shape === "rotated_pill") {
+          db.pcb_solder_paste.insert({
+            ...pillPaste,
+            shape: "rotated_pill",
+            ccw_rotation: pcb_smtpad.ccw_rotation,
+          })
+        } else {
+          db.pcb_solder_paste.insert({ ...pillPaste, shape: "pill" })
+        }
+      }
+    }
     if (pcb_smtpad) {
       this.pcb_smtpad_id = pcb_smtpad.pcb_smtpad_id
     }

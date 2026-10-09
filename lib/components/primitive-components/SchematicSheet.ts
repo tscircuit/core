@@ -1,7 +1,7 @@
 import { schematicSheetProps } from "@tscircuit/props"
 import { getBoundsForSchematic } from "lib/utils/autorouting/getBoundsForSchematic"
 import { resolveCircuitJsonSchematicSheetProperties } from "lib/utils/schematic/get-circuit-json-schematic-sheet-size"
-import { insertSchematicElementOutsideSheetWarnings } from "lib/utils/schematic/insertSchematicElementOutsideSheetWarnings"
+import { warnIfSchematicElementsOutsideSheet } from "lib/utils/schematic/warn-if-schematic-elements-outside-sheet"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
 export class SchematicSheet extends PrimitiveComponent<
@@ -59,6 +59,24 @@ export class SchematicSheet extends PrimitiveComponent<
     } as any)
 
     this.schematic_sheet_id = schematicSheet.schematic_sheet_id
+
+    const defaultSheetProperties = resolveCircuitJsonSchematicSheetProperties({
+      sheetSize: "A4",
+    })
+    if (
+      resolvedSheetProperties.sheetSize !== defaultSheetProperties.sheetSize ||
+      resolvedSheetProperties.sheetWidth !==
+        defaultSheetProperties.sheetWidth ||
+      resolvedSheetProperties.sheetHeight !== defaultSheetProperties.sheetHeight
+    ) {
+      db.schematic_sheet_styling_warning.insert({
+        warning_type: "schematic_sheet_styling_warning",
+        styling_issue_type: "non_default_sheet_size",
+        schematic_sheet_id: this.schematic_sheet_id,
+        subcircuit_id: schematicSheet.subcircuit_id,
+        message: `Schematic sheet "${displayName}" uses a non-default size (${resolvedSheetProperties.sheetWidth} × ${resolvedSheetProperties.sheetHeight} mm). Prefer the default A4 sheet size (297 × 210 mm) for consistent schematic styling.`,
+      })
+    }
   }
 
   doInitialSchematicSheetRender(): void {
@@ -69,6 +87,22 @@ export class SchematicSheet extends PrimitiveComponent<
     const resolvedSheetProperties = resolveCircuitJsonSchematicSheetProperties(
       this._parsedProps,
     )
+    const hasExplicitSheetDimensions =
+      this._parsedProps.sheetWidth !== undefined ||
+      this._parsedProps.sheetHeight !== undefined
+
+    if (hasExplicitSheetDimensions) {
+      warnIfSchematicElementsOutsideSheet({
+        db,
+        schematicSheetId: this.schematic_sheet_id,
+        schematicSheetName: this.resolvedSchematicSheetDisplayName,
+        schematicSheetCenter: { x: 0, y: 0 },
+        sheetWidth: resolvedSheetProperties.sheetWidth,
+        sheetHeight: resolvedSheetProperties.sheetHeight,
+      })
+      return
+    }
+
     const schematicElements = [
       ...db.schematic_component.list(),
       ...db.schematic_port.list(),
@@ -103,7 +137,7 @@ export class SchematicSheet extends PrimitiveComponent<
       }
     }
 
-    insertSchematicElementOutsideSheetWarnings({
+    warnIfSchematicElementsOutsideSheet({
       db,
       schematicSheetId: this.schematic_sheet_id,
       schematicSheetName: this.resolvedSchematicSheetDisplayName,

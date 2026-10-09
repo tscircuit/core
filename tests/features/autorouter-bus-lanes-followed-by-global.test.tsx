@@ -5,7 +5,9 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 test("global routing preserves the completed selected bus phase", async () => {
   const { circuit } = getTestFixture()
   const inputs: SimpleRouteJson[] = []
+  const outputs: SimpleRouteJson[] = []
   circuit.on("autorouting:start", (event) => inputs.push(event.simpleRouteJson))
+  circuit.on("autorouting:end", (event) => outputs.push(event.simpleRouteJson))
   circuit.add(
     <board width={16} height={12}>
       <autoroutingphase
@@ -54,7 +56,12 @@ test("global routing preserves the completed selected bus phase", async () => {
       (c) => c.source_trace_id === ddrSourceTrace.source_trace_id,
     ),
   ).toBe(false)
-  const fixedDdr = inputs[1].traces!.find(
+  expect(
+    inputs[1].traces!.some(
+      (trace) => trace.connection_name === inputs[0].connections[0].name,
+    ),
+  ).toBe(false)
+  const fixedDdr = outputs[0].traces!.find(
     (t) => t.connection_name === inputs[0].connections[0].name,
   )!
   expect(fixedDdr).toBeDefined()
