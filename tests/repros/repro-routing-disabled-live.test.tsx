@@ -8,7 +8,7 @@ const livePartsEngineTimeoutMs = 60_000
 
 // Run separately from the offline suite: RUN_LIVE_PARTS_ENGINE_TESTS=1 bun test tests/repros/repro-routing-disabled-live.test.tsx
 test.skipIf(process.env.RUN_LIVE_PARTS_ENGINE_TESTS !== "1")(
-  "repro: real chip metadata starts routing despite routingDisabled",
+  "routingDisabled survives a real chip metadata response",
   async () => {
     const circuit = new Circuit({ platform: getPlatformConfig() })
     circuit.add(
@@ -47,7 +47,7 @@ test.skipIf(process.env.RUN_LIVE_PARTS_ENGINE_TESTS !== "1")(
     const chip = circuit.selectOne(".U1") as Chip<string>
     expect(chip._fetchedSourcePortsForPinAttributes).toHaveLength(5)
     expect(circuit.db.source_trace.list()).toHaveLength(1)
-    expect(circuit.db.pcb_trace.list()).toHaveLength(1)
+    expect(circuit.db.pcb_trace.list()).toHaveLength(0)
     await expect(circuit).toMatchPcbSnapshot(import.meta.path)
   },
   livePartsEngineTimeoutMs,
