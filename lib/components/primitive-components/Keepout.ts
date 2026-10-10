@@ -76,7 +76,7 @@ export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
           y: position.y,
         },
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
-        pcb_group_id: subcircuit?.getGroup()?.pcb_group_id ?? undefined,
+        pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
       })
     } else if (props.shape === "rect") {
       const bounds = this._getPcbBoundsBeforeLayout()
@@ -101,7 +101,7 @@ export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
           y: position.y,
         },
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
-        pcb_group_id: subcircuit?.getGroup()?.pcb_group_id ?? undefined,
+        pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
       })
     }
     if (pcb_keepout) {
