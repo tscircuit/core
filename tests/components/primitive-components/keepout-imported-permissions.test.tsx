@@ -43,14 +43,14 @@ const footprint: AnyCircuitElement[] = [
 test("flipped imported keepouts preserve permissions and layer collections", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
-    <board
-      width={22}
-      height={12}
-      schematicDisabled
-      cadDisabled
-      autorouter="none"
-    >
-      <chip name="J1" footprint={footprint} layer="bottom" pcbRotation={90} />
+    <board width={22} height={12} schematicDisabled autorouter="none">
+      <chip
+        name="J1"
+        footprint={footprint}
+        layer="bottom"
+        pcbRotation={90}
+        cadModel={null}
+      />
       <keepout
         shape="rect"
         width={2}

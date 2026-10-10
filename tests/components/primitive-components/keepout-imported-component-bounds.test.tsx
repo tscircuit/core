@@ -23,13 +23,7 @@ test("component bounds rotate imported keepout-local dimensions only once withou
   ]
   try {
     circuit.add(
-      <board
-        width={28}
-        height={20}
-        schematicDisabled
-        cadDisabled
-        autorouter="none"
-      >
+      <board width={28} height={20} schematicDisabled autorouter="none">
         {(["top", "bottom"] as const).flatMap((layer, row) =>
           [0, 90, 45].map((rotation, column) => (
             <Fragment key={`${layer}${rotation}`}>
@@ -39,6 +33,7 @@ test("component bounds rotate imported keepout-local dimensions only once withou
                 pcbY={5 - row * 10}
                 pcbRotation={rotation}
                 layer={layer}
+                cadModel={null}
                 footprint={footprint}
               />
               <pcbnotetext

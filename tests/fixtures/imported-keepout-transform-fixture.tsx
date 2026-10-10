@@ -74,6 +74,7 @@ export const KeepoutTransformChip = ({
     pcbY={pcbY}
     pcbRotation={pcbRotation}
     layer={layer}
+    cadModel={null}
     footprint={importedKeepoutFootprint}
     pinLabels={{
       pin1: ["center"],

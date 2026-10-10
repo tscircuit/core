@@ -9,13 +9,7 @@ import {
 test("rotated keepout bounds conservatively contain every transformed corner on both layers", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
-    <board
-      width={48}
-      height={29}
-      schematicDisabled
-      cadDisabled
-      autorouter="none"
-    >
+    <board width={48} height={29} schematicDisabled autorouter="none">
       {(["top", "bottom"] as const).flatMap((layer, row) =>
         [45, -30, 135, 315].map((rotation, position) => (
           <Fragment key={`${layer}${rotation}`}>

@@ -9,13 +9,7 @@ import {
 test("imported keepouts mirror and follow bottom-layer pads at each right-angle rotation", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
-    <board
-      width={48}
-      height={18}
-      schematicDisabled
-      cadDisabled
-      autorouter="none"
-    >
+    <board width={48} height={18} schematicDisabled autorouter="none">
       {[0, 90, 180, 270].map((rotation, position) => (
         <Fragment key={rotation}>
           <KeepoutTransformChip
