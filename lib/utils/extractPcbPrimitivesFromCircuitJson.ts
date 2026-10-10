@@ -1,6 +1,6 @@
 import { transformPCBElements } from "@tscircuit/circuit-json-util"
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
-import type { PcbComponent } from "circuit-json"
+import type { PcbComponent, PcbSilkscreenText } from "circuit-json"
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromCircuitJson"
 import { compose, inverse, rotate, translate } from "transformation-matrix"
@@ -12,16 +12,19 @@ import { compose, inverse, rotate, translate } from "transformation-matrix"
  * @param pcbElm - The PCB component element from circuit JSON
  * @param injectionDb - The circuit JSON utility objects for querying related elements
  * @param componentName - The name of the parent component (used for silkscreen text)
+ * @param isPlacedPcbSilkscreenText - Checks if label placement must leave the text where it is
  * @returns Array of primitive components (SmtPad, PlatedHole, SilkscreenPath, etc.)
  */
 export const extractPcbPrimitivesFromCircuitJson = ({
   pcbComponent,
   db,
   componentName,
+  isPlacedPcbSilkscreenText,
 }: {
   pcbComponent: PcbComponent
   db: CircuitJsonUtilObjects
   componentName: string
+  isPlacedPcbSilkscreenText?: (pcbSilkscreenText: PcbSilkscreenText) => boolean
 }): PrimitiveComponent[] => {
   // Get the component center and rotation to make primitive positions relative
   const componentCenter = pcbComponent.center || { x: 0, y: 0 }
@@ -60,6 +63,7 @@ export const extractPcbPrimitivesFromCircuitJson = ({
       componentRotation: "0deg",
       // Rendered footprints must retain missing apertures as well as geometry.
       preserveSolderPaste: true,
+      isPlacedPcbSilkscreenText,
     },
     clonedRelativeElements,
   )

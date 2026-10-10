@@ -1,6 +1,5 @@
 import type { PcbComponent } from "circuit-json"
 import { Footprint } from "lib/components/primitive-components/Footprint"
-import { SilkscreenText } from "lib/components/primitive-components/SilkscreenText"
 import { extractPcbPrimitivesFromCircuitJson } from "lib/utils/extractPcbPrimitivesFromCircuitJson"
 import type { InflatorContext } from "../InflatorFn"
 
@@ -24,25 +23,10 @@ export const inflateFootprintComponent = (
     pcbComponent: pcbElm,
     db: injectionDb,
     componentName: normalComponent.name,
+    isPlacedPcbSilkscreenText,
   })
 
   if (primitives.length === 0) return null
-
-  // Label placement leaves the text the circuit JSON placed where it is. Each
-  // pcb_silkscreen_text becomes one SilkscreenText, in order.
-  const pcbSilkscreenTexts = injectionDb.pcb_silkscreen_text.list({
-    pcb_component_id: pcbElm.pcb_component_id,
-  })
-  primitives
-    .filter(
-      (primitive): primitive is SilkscreenText =>
-        primitive instanceof SilkscreenText,
-    )
-    .forEach((silkscreenText, i) => {
-      const pcbSilkscreenText = pcbSilkscreenTexts[i]
-      if (pcbSilkscreenText && isPlacedPcbSilkscreenText(pcbSilkscreenText))
-        silkscreenText._isPlacedInCircuitJson = true
-    })
 
   const footprint = new Footprint({ originalLayer: pcbElm.layer })
   footprint.addAll(primitives)

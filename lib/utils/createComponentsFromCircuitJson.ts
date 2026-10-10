@@ -4,6 +4,7 @@ import {
   pcb_via,
   layer_ref,
   type AnyCircuitElement,
+  type PcbSilkscreenText,
   type SchematicComponent,
   type PcbSolderPastePolygon,
 } from "circuit-json"
@@ -123,6 +124,7 @@ export const createComponentsFromCircuitJson = (
     pinLabels,
     pcbPinLabels,
     preserveSolderPaste = false,
+    isPlacedPcbSilkscreenText,
   }: {
     sourcePortOwner?: NormalComponent
     componentName: string
@@ -131,6 +133,10 @@ export const createComponentsFromCircuitJson = (
     pinLabels?: PinLabelsProp
     pcbPinLabels?: PinLabelsProp
     preserveSolderPaste?: boolean
+    /** Checks if label placement must leave the text where the circuit JSON puts it. */
+    isPlacedPcbSilkscreenText?: (
+      pcbSilkscreenText: PcbSilkscreenText,
+    ) => boolean
   },
   circuitJson: AnyCircuitElement[],
 ): PrimitiveComponent[] => {
@@ -621,22 +627,21 @@ export const createComponentsFromCircuitJson = (
         componentRotation,
         elm.ccw_rotation,
       )
+      let silkscreenText: SilkscreenText
       if (
         (footprinterString?.includes("pinrow") ||
           footprinterString?.includes("headermodule")) &&
         elm.text.includes("PIN")
       ) {
-        components.push(
-          createPinrowSilkscreenText({
-            elm,
-            pinLabels: pcbPinLabels ?? pinLabels ?? {},
-            layer: elm.layer,
-            readableRotation: ccwRotation,
-            anchorAlignment: elm.anchor_alignment,
-          }),
-        )
+        silkscreenText = createPinrowSilkscreenText({
+          elm,
+          pinLabels: pcbPinLabels ?? pinLabels ?? {},
+          layer: elm.layer,
+          readableRotation: ccwRotation,
+          anchorAlignment: elm.anchor_alignment,
+        })
       } else {
-        const silkscreenText = new SilkscreenText({
+        silkscreenText = new SilkscreenText({
           anchorAlignment: elm.anchor_alignment || "center",
           // Footprinter-generated reference text is a placeholder that should
           // resolve to the component name. A literal from the explicit
@@ -655,8 +660,10 @@ export const createComponentsFromCircuitJson = (
           pcbRotation: ccwRotation ?? 0,
         })
         silkscreenText._footprinterFontSize = elm.font_size + 0.2
-        components.push(silkscreenText)
       }
+      silkscreenText._isPlacedInCircuitJson =
+        isPlacedPcbSilkscreenText?.(elm) ?? false
+      components.push(silkscreenText)
     } else if (elm.type === "pcb_trace") {
       components.push(
         new PcbTrace({

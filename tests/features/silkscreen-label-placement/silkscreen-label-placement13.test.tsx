@@ -1,39 +1,52 @@
 import { expect, test } from "bun:test"
+import { getPcbElementBounds } from "@tscircuit/circuit-json-util"
+import {
+  doBoundsShareArea,
+  getTextBounds,
+} from "lib/utils/silkscreen-label-placement/label-geometry"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("a passive's label placed by hand isn't flipped off another part", async () => {
+test("a part's label without a position is placed beside it, one with a position stays put", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="10mm" height="6mm" routingDisabled>
+    <board width="22mm" height="12mm" routingDisabled>
       <pcbnotetext
-        pcbY={-2.6}
+        pcbY={5.4}
         fontSize={0.4}
-        text="R1's label is placed by hand over R2: it stays there"
+        text="RST has no position: it moves off SW1. BOOT is placed by hand: it stays"
       />
-      <resistor
-        name="R1"
-        resistance="1k"
-        footprint="0402"
-        pcbX={1}
-        pcbY={-1}
-        pcbSx={{ "& silkscreentext": { pcbX: 1.5, pcbY: 2.22 } }}
-      />
-      <resistor
-        name="R2"
-        resistance="1k"
-        footprint="0402"
-        pcbX={2.5}
-        pcbY={1.3}
-      />
+      <pushbutton
+        name="SW1"
+        footprint="pushbutton"
+        pcbX={-5.5}
+        pcbRotation={180}
+      >
+        <silkscreentext text="RST" />
+      </pushbutton>
+      <pushbutton name="SW2" footprint="pushbutton" pcbX={5.5}>
+        <silkscreentext text="BOOT" pcbX={0} pcbY={-2.5} />
+      </pushbutton>
     </board>,
   )
   await circuit.renderUntilSettled()
 
-  const r1Label = circuit.db.pcb_silkscreen_text
-    .list()
-    .find((text) => text.text === "R1")!
-  expect(r1Label.anchor_position.x).toBeCloseTo(2.5)
-  expect(r1Label.anchor_position.y).toBeCloseTo(1.22)
+  const texts = circuit.db.pcb_silkscreen_text.list()
+  const rstLabel = texts.find((text) => text.text === "RST")!
+  const bootLabel = texts.find((text) => text.text === "BOOT")!
+  const sw1 = circuit.db.pcb_component.get(rstLabel.pcb_component_id)!
+
+  // RST started on SW1's center, upside down with the part
+  const rstBounds = getTextBounds(rstLabel)
+  const { pcb_component_id } = sw1
+  const sw1CopperBoundsList = [
+    ...circuit.db.pcb_plated_hole.list({ pcb_component_id }),
+    ...circuit.db.pcb_smtpad.list({ pcb_component_id }),
+  ].flatMap((copper) => getPcbElementBounds(copper) ?? [])
+  expect(sw1CopperBoundsList.length).toBeGreaterThan(0)
+  for (const copperBounds of sw1CopperBoundsList)
+    expect(doBoundsShareArea(rstBounds, copperBounds)).toBe(false)
+  expect([0, 90]).toContain(rstLabel.ccw_rotation!)
+  expect(bootLabel.anchor_position).toEqual({ x: 5.5, y: -2.5 })
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

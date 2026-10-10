@@ -2,14 +2,16 @@ import {
   type Bounds,
   type Point,
   boundsAreaOverlap,
+  getBoundFromCenteredRect,
   getBoundsCenter,
   getBoundsFromPoints,
   segmentToBoundsMinDistance,
 } from "@tscircuit/math-utils"
+import { getAxisAlignedSizeFromRotatedRect } from "lib/utils/pcb/get-axis-aligned-size-from-rotated-rect"
 import {
   type PcbTextLayout,
   getPcbTextBounds,
-} from "lib/components/base-components/NormalComponent/utils/getPcbTextBounds"
+} from "lib/utils/pcb/get-pcb-text-bounds"
 import {
   applyToPoints,
   compose,
@@ -95,12 +97,14 @@ export const expandBounds = (bounds: Bounds, margin: number): Bounds => ({
   maxY: bounds.maxY + margin,
 })
 
-export const getBoundsUnion = (boundsList: Bounds[]): Bounds => ({
-  minX: Math.min(...boundsList.map((bounds) => bounds.minX)),
-  maxX: Math.max(...boundsList.map((bounds) => bounds.maxX)),
-  minY: Math.min(...boundsList.map((bounds) => bounds.minY)),
-  maxY: Math.max(...boundsList.map((bounds) => bounds.maxY)),
-})
+/** Unions any number of bounds; spreading them into Math.min could overflow the stack. */
+export const getBoundsUnion = (boundsList: Bounds[]): Bounds =>
+  getBoundsFromPoints(
+    boundsList.flatMap((bounds) => [
+      { x: bounds.minX, y: bounds.minY },
+      { x: bounds.maxX, y: bounds.maxY },
+    ]),
+  )!
 
 export const getStrokeBounds = (
   start: Point,
@@ -122,18 +126,18 @@ export const getRotatedRectBounds = (
   width: number,
   height: number,
   ccwRotation: number,
-): Bounds =>
-  getBoundsFromPoints(
-    applyToPoints(
-      compose(translate(center.x, center.y), rotateDEG(ccwRotation)),
-      [
-        { x: -width / 2, y: -height / 2 },
-        { x: width / 2, y: -height / 2 },
-        { x: width / 2, y: height / 2 },
-        { x: -width / 2, y: height / 2 },
-      ],
-    ),
-  )!
+): Bounds => {
+  const axisAlignedSize = getAxisAlignedSizeFromRotatedRect({
+    width,
+    height,
+    ccwRotationDegrees: ccwRotation,
+  })
+  return getBoundFromCenteredRect({
+    center,
+    width: axisAlignedSize.width,
+    height: axisAlignedSize.height,
+  })
+}
 
 const ELLIPSE_OUTLINE_SEGMENTS = 16
 

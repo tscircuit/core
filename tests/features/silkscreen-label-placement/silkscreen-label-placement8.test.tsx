@@ -1,40 +1,68 @@
 import { expect, test } from "bun:test"
-import { Resistor } from "lib/components/normal-components/Resistor"
+import {
+  doBoundsShareArea,
+  getTextBounds,
+} from "lib/utils/silkscreen-label-placement/label-geometry"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("a part added after the first render gets the labels placed again", async () => {
+test("a <footprint>'s {NAME} text is placed like a footprint string's label", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="8mm" height="6mm" routingDisabled>
+    <board width="10mm" height="8mm" routingDisabled>
       <pcbnotetext
-        pcbY={-2.6}
+        pcbY={3.4}
         fontSize={0.4}
-        text="R2 is added after the first render, on R1's label: R1's label moves"
+        text="An imported footprint puts U1's {NAME} text on its pads: it moves"
       />
-      <resistor name="R1" resistance="1k" footprint="0402" pcbX={0} pcbY={0} />
+      <chip
+        name="U1"
+        footprint={
+          <footprint>
+            <smtpad
+              portHints={["pin1"]}
+              pcbX={-0.8}
+              pcbY={0}
+              shape="rect"
+              width={1}
+              height={1.2}
+            />
+            <smtpad
+              portHints={["pin2"]}
+              pcbX={0.8}
+              pcbY={0}
+              shape="rect"
+              width={1}
+              height={1.2}
+            />
+            <silkscreentext
+              text="{NAME}"
+              pcbX={0}
+              pcbY={0}
+              anchorAlignment="center"
+              fontSize={1}
+            />
+          </footprint>
+        }
+      />
     </board>,
   )
   await circuit.renderUntilSettled()
 
-  const getR1LabelPosition = () =>
-    circuit.db.pcb_silkscreen_text.list().find((text) => text.text === "R1")!
-      .anchor_position
-  // An 0402's default label is centered 1.22 mm above the part
-  expect(getR1LabelPosition()).toEqual({ x: 0, y: 1.22 })
-
-  circuit.firstChild!.add(
-    new Resistor({
-      name: "R2",
-      resistance: "1k",
-      footprint: "0402",
-      pcbX: 0,
-      pcbY: 1.22,
-    }),
-  )
-  await circuit.renderUntilSettled()
-
-  const { x, y } = getR1LabelPosition()
-  expect(Math.hypot(x, y - 1.22)).toBeGreaterThan(0.1)
+  const u1Label = circuit.db.pcb_silkscreen_text
+    .list()
+    .find((text) => text.text === "U1")!
+  const labelBounds = getTextBounds(u1Label)
+  for (const pad of circuit.db.pcb_smtpad.list()) {
+    if (pad.shape !== "rect") continue
+    expect(
+      doBoundsShareArea(labelBounds, {
+        minX: pad.x - pad.width / 2,
+        maxX: pad.x + pad.width / 2,
+        minY: pad.y - pad.height / 2,
+        maxY: pad.y + pad.height / 2,
+      }),
+    ).toBe(false)
+  }
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

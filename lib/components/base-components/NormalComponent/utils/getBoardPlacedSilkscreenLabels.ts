@@ -20,10 +20,9 @@ const isPlacedSilkscreenText = (silkscreenText: SilkscreenText) => {
     return pcbX !== undefined || pcbY !== undefined
   }
   if (silkscreenText.parent?.componentName === "Footprint") return false
-  const { pcbRotation } = silkscreenText._parsedProps
   return (
     silkscreenText._hasUserDefinedPcbPosition() ||
-    (pcbRotation !== undefined && pcbRotation !== 0) ||
+    silkscreenText._parsedProps.pcbRotation !== undefined ||
     silkscreenText
       .getSubcircuit()
       ._getPcbManualPlacementForComponent(silkscreenText) !== null
@@ -53,7 +52,9 @@ export const recordPlacedSilkscreenTextOfIsolatedRender = (
       .filter(
         (descendant): descendant is NormalComponent<any, any> =>
           "_isNormalComponent" in descendant &&
-          descendant._isNormalComponent === true,
+          descendant._isNormalComponent === true &&
+          // Groups are normal components too, but have no part labels
+          descendant.pcb_component_id !== null,
       )
       .flatMap(getMovableSilkscreenLabels)
       .map((label) => label.pcb_silkscreen_text_id),
@@ -75,7 +76,10 @@ export const recordPlacedSilkscreenTextOfIsolatedRender = (
   )
 }
 
-/** Returns a check for the text an isolated subcircuit render placed. */
+/**
+ * Returns a check for the text an isolated subcircuit render placed. Without a
+ * record of the render, like for circuit JSON cached elsewhere, all of it is.
+ */
 export const getIsPlacedInIsolatedRender = (
   isolatedCircuitJson: AnyCircuitElement[],
 ) => {
@@ -83,7 +87,7 @@ export const getIsPlacedInIsolatedRender = (
     placedPcbSilkscreenTextIdsByIsolatedCircuitJson.get(isolatedCircuitJson)
   return (pcbSilkscreenText: PcbSilkscreenText) =>
     placedPcbSilkscreenTextIds?.has(pcbSilkscreenText.pcb_silkscreen_text_id) ??
-    false
+    true
 }
 
 const DESIGNATOR_PLACEHOLDERS = new Set(["{NAME}", "{REF}", "{REFERENCE}"])
@@ -176,8 +180,7 @@ export const getSilkscreenLabelPlacingBoard = (
 /**
  * Returns the labels placed by the board's SilkscreenLabelPlacementSolvers:
  * those getMovableSilkscreenLabels returns for a component inside a <board>,
- * on the component's side. NormalComponent_doInitialSilkscreenOverlapAdjustment
- * handles the other labels.
+ * on the component's side. Its other text stays where it is.
  */
 export const getBoardPlacedSilkscreenLabels = (
   normalComponent: NormalComponent<any, any>,

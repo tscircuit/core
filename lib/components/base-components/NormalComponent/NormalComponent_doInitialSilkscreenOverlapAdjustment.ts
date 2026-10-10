@@ -1,10 +1,9 @@
 import type { NormalComponent } from "./NormalComponent"
 import {
-  getBoardPlacedSilkscreenLabels,
   getPlacedSilkscreenTextIds,
   getSilkscreenLabelPlacingBoard,
 } from "./utils/getBoardPlacedSilkscreenLabels"
-import { getPcbTextBounds } from "./utils/getPcbTextBounds"
+import { getPcbTextBounds } from "lib/utils/pcb/get-pcb-text-bounds"
 import {
   type Box,
   type Bounds,
@@ -23,7 +22,8 @@ import {
  * 4. If intersecting, tries flipping text across component center
  * 5. Commits position change if it resolves the overlap
  *
- * Labels placed by the board, by hand or by a rendered layout are skipped.
+ * Parts on a <board> are skipped, since the board places their labels, and so
+ * are labels placed by hand or by a rendered layout.
  */
 export function NormalComponent_doInitialSilkscreenOverlapAdjustment(
   component: NormalComponent<any, any>,
@@ -37,11 +37,14 @@ export function NormalComponent_doInitialSilkscreenOverlapAdjustment(
   // places its labels like those of a subcircuit rendered in place
   if (!component.root?.isRootCircuit) return
 
-  // Mark the board dirty so it places labels again when this component
-  // renders after the board, since its pads and text are obstacles too
-  getSilkscreenLabelPlacingBoard(component)?._markDirty(
-    "SilkscreenOverlapAdjustment",
-  )
+  const board = getSilkscreenLabelPlacingBoard(component)
+  if (board) {
+    // The board places labels after its parts. One rendering after it, like a
+    // part added on rerender, has the board place them again, since its pads
+    // and text are obstacles too; nothing else depends on label positions.
+    board.renderPhaseStates.SilkscreenOverlapAdjustment.dirty = true
+    return
+  }
 
   // Only adjust silkscreen for components that have this feature enabled
   if (!component._adjustSilkscreenTextAutomatically) {
@@ -55,12 +58,7 @@ export function NormalComponent_doInitialSilkscreenOverlapAdjustment(
   const componentCenter = componentBounds.center
 
   // Find silkscreen text elements for this component
-  const skippedTextIds = new Set([
-    ...getBoardPlacedSilkscreenLabels(component).map(
-      (label) => label.pcb_silkscreen_text_id,
-    ),
-    ...getPlacedSilkscreenTextIds(component),
-  ])
+  const placedTextIds = getPlacedSilkscreenTextIds(component)
   const silkscreenTexts = db.pcb_silkscreen_text
     .list({
       pcb_component_id: component.pcb_component_id,
@@ -68,7 +66,7 @@ export function NormalComponent_doInitialSilkscreenOverlapAdjustment(
     .filter(
       (text) =>
         text.text === component.name &&
-        !skippedTextIds.has(text.pcb_silkscreen_text_id),
+        !placedTextIds.has(text.pcb_silkscreen_text_id),
     )
 
   if (silkscreenTexts.length === 0) {

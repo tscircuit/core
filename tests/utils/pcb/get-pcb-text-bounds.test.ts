@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test"
-import { getPcbTextBounds } from "lib/components/base-components/NormalComponent/utils/getPcbTextBounds"
+import { getPcbTextBounds } from "lib/utils/pcb/get-pcb-text-bounds"
 
 test("text bounds cover the glyph strokes, and knockout text its padded fill", () => {
   // At 1 mm, glyphs advance 0.692 mm in 0.7 mm tall boxes and are drawn with

@@ -14,33 +14,15 @@ test("pinheader pcbOrientation vertical places pins vertically", () => {
 
   circuit.render()
 
-  const circuitJson = circuit.getCircuitJson()
-  const pcb_silkscreen_text = circuitJson.filter(
-    (c) => c.type === "pcb_silkscreen_text",
-  )
-  expect(pcb_silkscreen_text).toMatchInlineSnapshot(`
-    [
-      {
-        "anchor_alignment": "center",
-        "anchor_position": {
-          "x": 0.125631275,
-          "y": 3.4979481100000007,
-        },
-        "ccw_rotation": 0,
-        "font": "tscircuit2024",
-        "font_size": 0.7,
-        "is_knockout": undefined,
-        "knockout_padding": undefined,
-        "layer": "top",
-        "pcb_component_id": "pcb_component_0",
-        "pcb_group_id": undefined,
-        "pcb_silkscreen_text_id": "pcb_silkscreen_text_0",
-        "subcircuit_id": "subcircuit_source_group_0",
-        "text": "J1",
-        "type": "pcb_silkscreen_text",
-      },
-    ]
-  `)
+  const [pin1, pin2] = circuit.db.pcb_plated_hole.list()
+  expect(pin1!.x).toBeCloseTo(pin2!.x)
+  expect(Math.abs(pin1!.y - pin2!.y)).toBeCloseTo(2.54)
+
+  // The footprint turns J1's label with the pins; label placement turns it
+  // back to read from the bottom or the right edge
+  const [label] = circuit.db.pcb_silkscreen_text.list()
+  expect(label!.text).toBe("J1")
+  expect([0, 90]).toContain(label!.ccw_rotation!)
 
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

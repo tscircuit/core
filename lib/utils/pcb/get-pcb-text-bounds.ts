@@ -7,6 +7,11 @@ import {
   spaceWidthRatio,
   strokeWidthRatio,
 } from "@tscircuit/alphabet"
+import {
+  type Bounds,
+  type Point,
+  getBoundsFromPoints,
+} from "@tscircuit/math-utils"
 import type { PcbSilkscreenText } from "circuit-json"
 import {
   applyToPoints,
@@ -21,23 +26,6 @@ import {
 // bottom of a box that tall
 const GLYPH_BOX_HEIGHT_RATIO = 0.7
 
-interface LocalBounds {
-  minX: number
-  minY: number
-  maxX: number
-  maxY: number
-}
-
-const getBoundsUnion = (a: LocalBounds | null, b: LocalBounds) =>
-  a
-    ? {
-        minX: Math.min(a.minX, b.minX),
-        minY: Math.min(a.minY, b.minY),
-        maxX: Math.max(a.maxX, b.maxX),
-        maxY: Math.max(a.maxY, b.maxY),
-      }
-    : b
-
 /**
  * Lays out one line like the Gerber writer, from the lower-left corner of its
  * glyph box. Returns its advance width and the extent of its strokes'
@@ -47,15 +35,13 @@ const layOutLine = (line: string, fontSize: number) => {
   const glyphScale = fontSize * GLYPH_BOX_HEIGHT_RATIO
   const characters = [...line]
   let x = 0
-  let ink: LocalBounds | null = null
+  const strokeEnds: Point[] = []
   characters.forEach((character, i) => {
     for (const { x1, y1, x2, y2 } of lineAlphabet[character] ?? []) {
-      ink = getBoundsUnion(ink, {
-        minX: x + Math.min(x1, x2) * glyphScale,
-        minY: Math.min(y1, y2) * glyphScale,
-        maxX: x + Math.max(x1, x2) * glyphScale,
-        maxY: Math.max(y1, y2) * glyphScale,
-      })
+      strokeEnds.push(
+        { x: x + x1 * glyphScale, y: y1 * glyphScale },
+        { x: x + x2 * glyphScale, y: y2 * glyphScale },
+      )
     }
     const advanceRatio =
       character === " "
@@ -64,7 +50,7 @@ const layOutLine = (line: string, fontSize: number) => {
     x += advanceRatio * fontSize
     if (i < characters.length - 1) x += letterSpacingRatio * fontSize
   })
-  return { width: x, ink: ink as LocalBounds | null }
+  return { width: x, ink: getBoundsFromPoints(strokeEnds) }
 }
 
 // circuit-to-svg lays knockout text out apart: full-size glyphs squashed to
@@ -72,22 +58,26 @@ const layOutLine = (line: string, fontSize: number) => {
 // centered and 1.1 font sizes below the one above
 const KNOCKOUT_GLYPH_HEIGHT_RATIO = 0.94
 const KNOCKOUT_LINE_HEIGHT_RATIO = 1.1
-const knockoutGlyphInkByCharacter = new Map<string, LocalBounds>(
+const knockoutGlyphInkByCharacter = new Map<string, Bounds>(
   Object.entries(lineAlphabet).flatMap(([character, segments]) => {
-    if (segments.length === 0) return []
-    const xs = segments.flatMap(({ x1, x2 }) => [x1, x2])
-    const ys = segments.flatMap(({ y1, y2 }) => [y1, y2])
+    const strokeExtent = getBoundsFromPoints(
+      segments.flatMap(({ x1, y1, x2, y2 }) => [
+        { x: x1, y: y1 },
+        { x: x2, y: y2 },
+      ]),
+    )
+    if (!strokeExtent) return []
     const halfStrokeWidth = strokeWidthRatio / 2
     return [
       [
         character,
         {
-          minX: Math.min(...xs) - halfStrokeWidth,
+          minX: strokeExtent.minX - halfStrokeWidth,
           minY:
-            (Math.min(...ys) - halfStrokeWidth) * KNOCKOUT_GLYPH_HEIGHT_RATIO,
-          maxX: Math.max(...xs) + halfStrokeWidth,
+            (strokeExtent.minY - halfStrokeWidth) * KNOCKOUT_GLYPH_HEIGHT_RATIO,
+          maxX: strokeExtent.maxX + halfStrokeWidth,
           maxY:
-            (Math.max(...ys) + halfStrokeWidth) * KNOCKOUT_GLYPH_HEIGHT_RATIO,
+            (strokeExtent.maxY + halfStrokeWidth) * KNOCKOUT_GLYPH_HEIGHT_RATIO,
         },
       ],
     ]
@@ -107,7 +97,7 @@ const KNOCKOUT_GLYPH_ADVANCE_RATIO =
  * when it draws nothing.
  */
 const getKnockoutInkSize = (text: string, fontSize: number) => {
-  let ink: LocalBounds | null = null
+  const inkCorners: Point[] = []
   for (const [lineIndex, line] of text.split("\n").entries()) {
     const characters = [...line]
     const lineMinX = (-characters.length * KNOCKOUT_GLYPH_ADVANCE_RATIO) / 2
@@ -116,14 +106,13 @@ const getKnockoutInkSize = (text: string, fontSize: number) => {
       const glyphInk = knockoutGlyphInkByCharacter.get(character)
       if (!glyphInk) continue
       const offsetX = lineMinX + i * KNOCKOUT_GLYPH_ADVANCE_RATIO
-      ink = getBoundsUnion(ink, {
-        minX: offsetX + glyphInk.minX,
-        minY: lineOffsetY + glyphInk.minY,
-        maxX: offsetX + glyphInk.maxX,
-        maxY: lineOffsetY + glyphInk.maxY,
-      })
+      inkCorners.push(
+        { x: offsetX + glyphInk.minX, y: lineOffsetY + glyphInk.minY },
+        { x: offsetX + glyphInk.maxX, y: lineOffsetY + glyphInk.maxY },
+      )
     }
   }
+  const ink = getBoundsFromPoints(inkCorners)
   if (!ink) return null
   return {
     width: (ink.maxX - ink.minX) * fontSize,
@@ -185,28 +174,31 @@ export function getPcbTextBounds(text: PcbTextLayout): {
   const glyphBoxHeight = fontSize * GLYPH_BOX_HEIGHT_RATIO
   const firstGlyphBoxTop = getAlignedMaxY(glyphBoxHeight)
   const halfStrokeWidth = (fontSize * strokeWidthRatio) / 2
-  let ink: LocalBounds | null = null
-  let glyphBoxes: LocalBounds | null = null
+  const inkCorners: Point[] = []
+  const glyphBoxCorners: Point[] = []
   text.text.split("\n").forEach((line, lineIndex) => {
     const { width, ink: lineInk } = layOutLine(line, fontSize)
     const offsetX = getAlignedMinX(width)
     const offsetY =
       firstGlyphBoxTop - glyphBoxHeight - lineIndex * lineHeightRatio * fontSize
-    glyphBoxes = getBoundsUnion(glyphBoxes, {
-      minX: offsetX,
-      minY: offsetY,
-      maxX: offsetX + width,
-      maxY: offsetY + glyphBoxHeight,
-    })
+    glyphBoxCorners.push(
+      { x: offsetX, y: offsetY },
+      { x: offsetX + width, y: offsetY + glyphBoxHeight },
+    )
     if (!lineInk) return
-    ink = getBoundsUnion(ink, {
-      minX: offsetX + lineInk.minX - halfStrokeWidth,
-      minY: offsetY + lineInk.minY - halfStrokeWidth,
-      maxX: offsetX + lineInk.maxX + halfStrokeWidth,
-      maxY: offsetY + lineInk.maxY + halfStrokeWidth,
-    })
+    inkCorners.push(
+      {
+        x: offsetX + lineInk.minX - halfStrokeWidth,
+        y: offsetY + lineInk.minY - halfStrokeWidth,
+      },
+      {
+        x: offsetX + lineInk.maxX + halfStrokeWidth,
+        y: offsetY + lineInk.maxY + halfStrokeWidth,
+      },
+    )
   })
-  let local: LocalBounds = ink ?? glyphBoxes!
+  let local: Bounds =
+    getBoundsFromPoints(inkCorners) ?? getBoundsFromPoints(glyphBoxCorners)!
 
   const knockoutInkSize = text.is_knockout
     ? getKnockoutInkSize(text.text, fontSize)
@@ -226,13 +218,6 @@ export function getPcbTextBounds(text: PcbTextLayout): {
     local = { minX, minY: maxY - height, maxX: minX + width, maxY }
   }
 
-  const localCorners = [
-    { x: local.minX, y: local.minY },
-    { x: local.maxX, y: local.minY },
-    { x: local.minX, y: local.maxY },
-    { x: local.maxX, y: local.maxY },
-  ]
-
   // Same transform as circuit-to-svg, in the board's y-up frame
   const isMirrored = text.layer === "bottom" || text.is_mirrored === true
   const textToBoard = compose(
@@ -240,15 +225,18 @@ export function getPcbTextBounds(text: PcbTextLayout): {
     rotateDEG(text.ccw_rotation ?? 0),
     isMirrored ? scale(-1, 1) : identity(),
   )
-  const boardCorners = applyToPoints(textToBoard, localCorners)
-  const boardMinX = Math.min(...boardCorners.map((corner) => corner.x))
-  const boardMaxX = Math.max(...boardCorners.map((corner) => corner.x))
-  const boardMinY = Math.min(...boardCorners.map((corner) => corner.y))
-  const boardMaxY = Math.max(...boardCorners.map((corner) => corner.y))
+  const board = getBoundsFromPoints(
+    applyToPoints(textToBoard, [
+      { x: local.minX, y: local.minY },
+      { x: local.maxX, y: local.minY },
+      { x: local.minX, y: local.maxY },
+      { x: local.maxX, y: local.maxY },
+    ]),
+  )!
   return {
-    x: boardMinX,
-    y: boardMinY,
-    width: boardMaxX - boardMinX,
-    height: boardMaxY - boardMinY,
+    x: board.minX,
+    y: board.minY,
+    width: board.maxX - board.minX,
+    height: board.maxY - board.minY,
   }
 }
