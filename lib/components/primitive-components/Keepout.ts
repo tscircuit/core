@@ -2,8 +2,8 @@ import { pcbKeepoutProps } from "@tscircuit/props"
 import type { PCBKeepout } from "circuit-json"
 import type { PcbComponentId } from "lib/utils/circuit-json/circuit-json-id-types"
 import { decomposeTSR } from "transformation-matrix"
+import { getAxisAlignedSizeFromRotatedRect } from "lib/utils/pcb/get-axis-aligned-size-from-rotated-rect"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
-import type { RenderPhaseFn } from "../base-components/Renderable"
 
 export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
   pcb_keepout_id: string | null = null
@@ -35,11 +35,7 @@ export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
     const { db } = this.root!
     const { _parsedProps: props } = this
     const position = this._getGlobalPcbPositionBeforeLayout()
-    const decomposedMat = decomposeTSR(
-      this._computePcbGlobalTransformBeforeLayout(),
-    )
-    const isRotated90 =
-      Math.abs(decomposedMat.rotation.angle * (180 / Math.PI) - 90) % 180 < 0.01
+    const { maybeFlipLayer } = this._getPcbPrimitiveFlippedHelpers()
     let layers = props.layers
     if (!layers && props.layer) {
       layers = [props.layer]
@@ -47,6 +43,11 @@ export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
     if (!layers) {
       layers = ["top"]
     }
+    // Surface layers follow the same footprint flip as SmtPad. Inner layer
+    // references remain board-relative; the helper only flips surface layers.
+    layers = layers.map((layer) =>
+      layer === "top" || layer === "bottom" ? maybeFlipLayer(layer) : layer,
+    )
     const excludedPcbComponentIds = this.getExcludedPcbComponentIds()
     const pcbKeepoutExclusionProps =
       excludedPcbComponentIds.length > 0
@@ -78,6 +79,7 @@ export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
         pcb_group_id: subcircuit?.getGroup()?.pcb_group_id ?? undefined,
       })
     } else if (props.shape === "rect") {
+      const bounds = this._getPcbBoundsBeforeLayout()
       pcb_keepout = db.pcb_keepout.insert({
         layers,
         shape: "rect",
@@ -91,9 +93,8 @@ export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
         ...(props.warningOnly !== undefined
           ? { warning_only: props.warningOnly }
           : {}),
-        ...(isRotated90
-          ? { width: props.height, height: props.width }
-          : { width: props.width, height: props.height }),
+        width: bounds.right - bounds.left,
+        height: bounds.top - bounds.bottom,
         // @ts-ignore: no idea why this is triggering
         center: {
           x: position.x,
@@ -105,6 +106,32 @@ export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
     }
     if (pcb_keepout) {
       this.pcb_keepout_id = pcb_keepout.pcb_keepout_id
+    }
+  }
+
+  /**
+   * Axis-aligned bounds in board-world mm (+X right, +Y top, +Z above,
+   * right-handed). Rect keepouts cannot store rotation, so these bounds
+   * conservatively cover the footprint-local rectangle using the same
+   * transform as doInitialPcbPrimitiveRender's center point.
+   */
+  _getPcbBoundsBeforeLayout() {
+    const { _parsedProps: props } = this
+    if (props.shape !== "rect") return super._getPcbBoundsBeforeLayout()
+    const center = this._getGlobalPcbPositionBeforeLayout()
+    const { rotation } = decomposeTSR(
+      this._computePcbGlobalTransformBeforeLayout(),
+    )
+    const { width, height } = getAxisAlignedSizeFromRotatedRect({
+      width: props.width,
+      height: props.height,
+      ccwRotationDegrees: (rotation.angle * 180) / Math.PI,
+    })
+    return {
+      left: center.x - width / 2,
+      right: center.x + width / 2,
+      top: center.y + height / 2,
+      bottom: center.y - height / 2,
     }
   }
 
