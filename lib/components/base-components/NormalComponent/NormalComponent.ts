@@ -1904,10 +1904,18 @@ export class NormalComponent<
     const pinSpacing = 0.2
 
     const pinLabelsFromPorts = this._getPinLabelsFromPorts()
+    const pinLabelsFromProps = Array.isArray(props.pinLabels)
+      ? Object.fromEntries(
+          props.pinLabels.map((label: string, pinIndex: number) => [
+            `pin${pinIndex + 1}`,
+            label,
+          ]),
+        )
+      : props.pinLabels
     // Merge with props.pinLabels for label-to-pin-number mapping
     const allPinLabels = {
       ...pinLabelsFromPorts,
-      ...props.pinLabels,
+      ...pinLabelsFromProps,
     }
     const schPortArrangement =
       this._getSchematicPortArrangement() ??
