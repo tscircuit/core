@@ -34,6 +34,7 @@ export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
     const subcircuit = this.getSubcircuit()
     const { db } = this.root!
     const { _parsedProps: props } = this
+    const pcbComponentId = this.getParentNormalComponent()?.pcb_component_id
     const position = this._getGlobalPcbPositionBeforeLayout()
     const { maybeFlipLayer } = this._getPcbPrimitiveFlippedHelpers()
     let layers = props.layers
@@ -59,6 +60,7 @@ export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
       pcb_keepout = db.pcb_keepout.insert({
         layers,
         shape: "circle",
+        pcb_component_id: pcbComponentId ?? undefined,
         ...pcbKeepoutExclusionProps,
         ...(props.allowTraces !== undefined
           ? { allow_traces: props.allowTraces }
@@ -83,6 +85,7 @@ export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
       pcb_keepout = db.pcb_keepout.insert({
         layers,
         shape: "rect",
+        pcb_component_id: pcbComponentId ?? undefined,
         ...pcbKeepoutExclusionProps,
         ...(props.allowTraces !== undefined
           ? { allow_traces: props.allowTraces }
