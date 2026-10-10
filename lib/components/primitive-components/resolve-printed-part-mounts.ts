@@ -35,6 +35,7 @@ export const getMountTransformPlacement = (
   const bottom = world[10] < 0
   const sign = bottom ? -1 : 1
   return {
+    worldTransform: world,
     position: { x: world[12], y: world[13], z: world[14] },
     pcbRotation: (Math.atan2(sign * world[1], sign * world[0]) * 180) / Math.PI,
     layer: bottom ? "bottom" : "top",
@@ -119,6 +120,7 @@ const rootOrientation = (
   if (!isMotor(part)) {
     if (!placement)
       throw new Error(`Part "${part.name}" has no inherited placement`)
+    if (placement.worldTransform) return [...placement.worldTransform]
     mat4.translate(result, result, [
       placement.position.x,
       placement.position.y,
