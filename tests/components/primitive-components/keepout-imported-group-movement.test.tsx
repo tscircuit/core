@@ -13,13 +13,7 @@ test("group anchor placement moves imported circle and rectangle keepouts with t
   })
   try {
     circuit.add(
-      <board
-        width={40}
-        height={26}
-        schematicDisabled
-        cadDisabled
-        autorouter="none"
-      >
+      <board width={40} height={26} schematicDisabled autorouter="none">
         {(["top", "bottom"] as const).flatMap((layer, row) =>
           [0, 90].map((rotation, column) => (
             <Fragment key={`${layer}${rotation}`}>
