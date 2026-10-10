@@ -1,7 +1,7 @@
 {
   "name": "@tscircuit/core",
   "type": "module",
-  "version": "0.0.2119",
+  "version": "0.0.2125",
   "types": "dist/index.d.ts",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -38,8 +38,8 @@
     "@tscircuit/bga-fanout-solver": "github:tscircuit/bga-fanout-solver#247c835cb8d69b65e53891dcf869731079415b39",
     "@tscircuit/bus-lanes-solver": "https://jscdn.tscircuit.com/@tscircuit/bus-lanes-solver/0.0.21.tgz",
     "@tscircuit/cableprinter": "^0.0.6",
-    "@tscircuit/capacity-autorouter": "^0.0.958",
-    "@tscircuit/checks": "^0.0.243",
+    "@tscircuit/capacity-autorouter": "^0.0.965",
+    "@tscircuit/checks": "^0.0.245",
     "@tscircuit/circuit-json-util": "^0.0.119",
     "@tscircuit/common": "^0.0.20",
     "@tscircuit/copper-pour-solver": "^0.0.67",
@@ -60,7 +60,7 @@
     "@tscircuit/miniflex": "^0.0.4",
     "@tscircuit/modelprinter": "^0.0.18",
     "@tscircuit/ngspice-spice-engine": "^0.0.20",
-    "@tscircuit/props": "^0.0.697",
+    "@tscircuit/props": "^0.0.698",
     "@tscircuit/schematic-match-adapt": "^0.0.18",
     "@tscircuit/schematic-trace-solver": "https://jscdn.tscircuit.com/@tscircuit/schematic-trace-solver/0.0.230.tgz",
     "@tscircuit/solver-utils": "^0.0.16",
@@ -144,7 +144,7 @@
   },
   "overrides": {
     "@tscircuit/circuit-json-util": "^0.0.119",
-    "@tscircuit/props": "^0.0.697",
+    "@tscircuit/props": "^0.0.698",
     "circuit-json": "^0.0.525",
     "@tscircuit/cableprinter": "^0.0.6"
   }
