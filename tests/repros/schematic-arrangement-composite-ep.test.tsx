@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import { Fragment } from "react"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("schematic pin arrangement leaves a composite exposed pad ambiguous", async () => {
+test("schematic pin arrangement preserves composite exposed pad ports", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -64,9 +64,13 @@ test("schematic pin arrangement leaves a composite exposed pad ambiguous", async
         pad.pcb_component_id === chip.pcb_component_id,
     )
   expect(exposedPads).toHaveLength(9)
-  expect(exposedPads.filter((pad) => pad.pcb_port_id)).toHaveLength(0)
-  expect(circuit.db.source_ambiguous_port_reference.list()).toHaveLength(1)
-  expect(circuit.db.pcb_trace.list()).toHaveLength(0)
+  expect(exposedPads.filter((pad) => pad.pcb_port_id)).toHaveLength(9)
+  expect(new Set(exposedPads.map((pad) => pad.pcb_port_id)).size).toBe(9)
+  expect(
+    circuit.db.source_component_internal_connection.list()[0].source_port_ids,
+  ).toHaveLength(9)
+  expect(circuit.db.source_ambiguous_port_reference.list()).toHaveLength(0)
+  expect(circuit.db.pcb_trace.list()).toHaveLength(1)
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
