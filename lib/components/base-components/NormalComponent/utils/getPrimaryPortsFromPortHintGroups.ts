@@ -29,6 +29,7 @@ export function getPrimaryPortsFromPortHintGroups(
     inferredInternallyConnectedPinNames?: string[][]
     allowImplicitPinNumbers?: boolean
     implicitPinNumberByHint?: Map<string, number>
+    allowedPinNumbers?: ReadonlySet<number>
   },
 ): Port[] {
   let implicitPinNumber = 1
@@ -71,6 +72,9 @@ export function getPrimaryPortsFromPortHintGroups(
 
     const pinNumber = newPort._parsedProps.pinNumber
     if (pinNumber === undefined) continue
+    if (opts?.allowedPinNumbers && !opts.allowedPinNumbers.has(pinNumber)) {
+      continue
+    }
 
     if (!entriesByPinNumber.has(pinNumber))
       entriesByPinNumber.set(pinNumber, [])
