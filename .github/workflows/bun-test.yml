@@ -7,6 +7,20 @@ on:
     branches: [main]
 
 jobs:
+  live-parts-engine-repro:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.0
+      - run: bun install
+      - name: Render the real parts-engine repro and compare its snapshot
+        env:
+          RUN_LIVE_PARTS_ENGINE_TESTS: "1"
+        run: bun test tests/repros/repro-routing-disabled-live.test.tsx
+
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 15

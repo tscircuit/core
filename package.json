@@ -45,6 +45,7 @@
     "@tscircuit/copper-pour-solver": "^0.0.67",
     "@tscircuit/create-fdm-enclosure": "0.0.4",
     "@tscircuit/dogbone-solver": "https://jscdn.tscircuit.com/@tscircuit/dogbone-solver/0.0.1.tgz",
+    "@tscircuit/eval": "0.0.1589",
     "@tscircuit/fanout-solver": "0.0.78",
     "@tscircuit/flex-utils": "https://jscdn.tscircuit.com/@tscircuit/flex-utils/0.0.8.tgz",
     "@tscircuit/footprinter": "^0.0.431",
