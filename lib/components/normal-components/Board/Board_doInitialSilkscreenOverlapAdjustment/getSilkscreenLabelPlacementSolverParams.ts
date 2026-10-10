@@ -97,6 +97,9 @@ export const getSilkscreenLabelPlacementSolverParams = (
     }
   }
 
+  const movablePcbSilkscreenTextIds = new Set<PcbSilkscreenTextId>(
+    labels.map((label) => label.pcbSilkscreenTextId),
+  )
   const obstacles = getSilkscreenLabelObstacles({
     db,
     layer,
@@ -115,13 +118,12 @@ export const getSilkscreenLabelPlacementSolverParams = (
         return null
       return undefined
     },
-    movablePcbSilkscreenTextIds: new Set<PcbSilkscreenTextId>(
-      labels.map((label) => label.pcbSilkscreenTextId),
-    ),
+    movablePcbSilkscreenTextIds,
   })
 
   // A part covers its pads and holes plus its own outline, courtyard and pin
-  // labels, but not its own label, even one that stays put
+  // labels, but not its own labels: its designator, even one that stays put,
+  // and the labels placed beside it
   const outlineBoundsListByPcbComponentId = new Map<PcbComponentId, Bounds[]>()
   const addToPartOutline = (pcbComponentId: PcbComponentId, bounds: Bounds) => {
     const outlineBoundsList =
@@ -139,7 +141,10 @@ export const getSilkscreenLabelPlacementSolverParams = (
   for (const text of db.pcb_silkscreen_text.list()) {
     const partName = nameByPcbComponentId.get(text.pcb_component_id)
     if (partName === undefined || text.layer !== layer) continue
-    if (text.text !== partName)
+    if (
+      text.text !== partName &&
+      !movablePcbSilkscreenTextIds.has(text.pcb_silkscreen_text_id)
+    )
       addToPartOutline(text.pcb_component_id, getTextBounds(text))
   }
   const parts: SilkscreenLabelPart[] = pcbComponents.map((pcbComponent) => ({

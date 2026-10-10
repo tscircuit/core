@@ -66,8 +66,9 @@ const placeSilkscreenLabels = (board: Board, layer: SilkscreenLabelLayer) => {
 }
 
 /**
- * Moves the footprint reference designator labels of the board's parts off
- * pads, holes, silkscreen, other text and each other, one side at a time.
+ * Moves the labels of the board's parts, their footprints' reference
+ * designators and the labels written on them, off pads, holes, silkscreen,
+ * other text and each other, one side at a time.
  * Labels are cosmetic, so an error leaves them where they are. Updates that
  * change none of a side's inputs, like routing, don't run its solver again.
  * A board rendered in an isolated subcircuit render is placed once inflated

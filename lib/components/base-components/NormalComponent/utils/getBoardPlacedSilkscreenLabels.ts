@@ -7,39 +7,70 @@ import { resolveSilkscreenTextPcbSxPosition } from "lib/utils/pcbSx/resolve-silk
 import type { NormalComponent } from "../NormalComponent"
 
 /**
- * Checks if the text was placed by hand (a pcbSx position) or by a rendered
- * layout, so no label placement moves it.
+ * Checks if something placed the text, so no label placement moves it. Mirrors
+ * where SilkscreenText puts it: placed in circuit JSON, by a pcbSx position on
+ * footprint text (the only text pcbSx moves), or by a position, rotation or
+ * manual edit on text written on the part. A <footprint>'s text sits where the
+ * footprint puts it.
  */
 const isPlacedSilkscreenText = (silkscreenText: SilkscreenText) => {
   if (silkscreenText._isPlacedInCircuitJson) return true
-  const { pcbX, pcbY } = resolveSilkscreenTextPcbSxPosition(silkscreenText)
-  return pcbX !== undefined || pcbY !== undefined
+  if (silkscreenText._footprinterFontSize !== undefined) {
+    const { pcbX, pcbY } = resolveSilkscreenTextPcbSxPosition(silkscreenText)
+    return pcbX !== undefined || pcbY !== undefined
+  }
+  if (silkscreenText.parent?.componentName === "Footprint") return false
+  const { pcbRotation } = silkscreenText._parsedProps
+  return (
+    silkscreenText._hasUserDefinedPcbPosition() ||
+    (pcbRotation !== undefined && pcbRotation !== 0) ||
+    silkscreenText
+      .getSubcircuit()
+      ._getPcbManualPlacementForComponent(silkscreenText) !== null
+  )
 }
 
 /**
- * The text an isolated subcircuit render placed, keyed by its circuit JSON,
- * which loses the pcbSx and rendered layouts that placed it.
+ * The text of an isolated subcircuit render that no label placement may move,
+ * keyed by its circuit JSON, which loses why.
  */
 const placedPcbSilkscreenTextIdsByIsolatedCircuitJson = new WeakMap<
   AnyCircuitElement[],
   Set<PcbSilkscreenTextId>
 >()
 
-/** Records the text of an isolated subcircuit render that was placed. */
+/**
+ * Records the text of an isolated subcircuit render that no label placement
+ * may move: all of it but the labels getMovableSilkscreenLabels returns.
+ */
 export const recordPlacedSilkscreenTextOfIsolatedRender = (
   isolatedCircuit: IsolatedCircuit,
   circuitJson: AnyCircuitElement[],
 ) => {
+  const descendants = isolatedCircuit.firstChild?.getDescendants() ?? []
+  const movablePcbSilkscreenTextIds = new Set(
+    descendants
+      .filter(
+        (descendant): descendant is NormalComponent<any, any> =>
+          "_isNormalComponent" in descendant &&
+          descendant._isNormalComponent === true,
+      )
+      .flatMap(getMovableSilkscreenLabels)
+      .map((label) => label.pcb_silkscreen_text_id),
+  )
   placedPcbSilkscreenTextIdsByIsolatedCircuitJson.set(
     circuitJson,
     new Set(
-      (isolatedCircuit.firstChild?.getDescendants() ?? [])
+      descendants
         .filter(
           (descendant): descendant is SilkscreenText =>
             descendant.componentName === "SilkscreenText",
         )
-        .filter(isPlacedSilkscreenText)
-        .flatMap((silkscreenText) => silkscreenText.pcb_silkscreen_text_ids),
+        .flatMap((silkscreenText) => silkscreenText.pcb_silkscreen_text_ids)
+        .filter(
+          (pcbSilkscreenTextId) =>
+            !movablePcbSilkscreenTextIds.has(pcbSilkscreenTextId),
+        ),
     ),
   )
 }
@@ -67,13 +98,51 @@ const isFootprintDesignatorPlaceholder = (silkscreenText: SilkscreenText) =>
 
 /**
  * Checks if the text comes from a footprint string, KiCad, a URL or the parts
- * engine, or is a <footprint>'s designator placeholder, and still sits where
- * that footprint put it.
+ * engine, or is a <footprint>'s designator placeholder.
  */
-const isFootprintDefaultText = (silkscreenText: SilkscreenText) =>
-  (silkscreenText._footprinterFontSize !== undefined ||
-    isFootprintDesignatorPlaceholder(silkscreenText)) &&
-  !isPlacedSilkscreenText(silkscreenText)
+const isFootprintText = (silkscreenText: SilkscreenText) =>
+  silkscreenText._footprinterFontSize !== undefined ||
+  isFootprintDesignatorPlaceholder(silkscreenText)
+
+/**
+ * Checks if the text is a label written on the part itself, like its function
+ * name, printed on one side. Unless placed, it is placed like a designator; a
+ * position or rotation keeps it where it is, on the part's body for instance.
+ */
+const isPartLabel = (
+  silkscreenText: SilkscreenText,
+  normalComponent: NormalComponent<any, any>,
+) =>
+  silkscreenText.parent === normalComponent &&
+  silkscreenText._footprinterFontSize === undefined &&
+  silkscreenText.pcb_silkscreen_text_ids.length === 1
+
+/**
+ * Returns the component's labels that label placement may move, unless
+ * something placed them: its footprint text matching its name, and the labels
+ * written on it.
+ */
+const getMovableSilkscreenLabels = (
+  normalComponent: NormalComponent<any, any>,
+): PcbSilkscreenText[] => {
+  const { db } = normalComponent.root!
+  const getPcbSilkscreenTexts = (silkscreenText: SilkscreenText) =>
+    silkscreenText.pcb_silkscreen_text_ids.flatMap(
+      (pcbSilkscreenTextId) =>
+        db.pcb_silkscreen_text.get(pcbSilkscreenTextId) ?? [],
+    )
+  const unplacedTexts = normalComponent
+    .selectAll<SilkscreenText>("silkscreentext")
+    .filter((silkscreenText) => !isPlacedSilkscreenText(silkscreenText))
+  const designators = unplacedTexts
+    .filter(isFootprintText)
+    .flatMap(getPcbSilkscreenTexts)
+    .filter((text) => text.text === normalComponent.name)
+  const partLabels = unplacedTexts
+    .filter((silkscreenText) => isPartLabel(silkscreenText, normalComponent))
+    .flatMap(getPcbSilkscreenTexts)
+  return [...designators, ...partLabels]
+}
 
 /** Returns the ids of the component's text that no label placement moves. */
 export const getPlacedSilkscreenTextIds = (
@@ -106,8 +175,8 @@ export const getSilkscreenLabelPlacingBoard = (
 
 /**
  * Returns the labels placed by the board's SilkscreenLabelPlacementSolvers:
- * footprint text matching the name of a component inside a <board>, on the
- * component's side. NormalComponent_doInitialSilkscreenOverlapAdjustment
+ * those getMovableSilkscreenLabels returns for a component inside a <board>,
+ * on the component's side. NormalComponent_doInitialSilkscreenOverlapAdjustment
  * handles the other labels.
  */
 export const getBoardPlacedSilkscreenLabels = (
@@ -119,16 +188,7 @@ export const getBoardPlacedSilkscreenLabels = (
   const { db } = normalComponent.root!
   const layer = db.pcb_component.get(pcb_component_id)?.layer
   if (layer !== "top" && layer !== "bottom") return []
-  return normalComponent
-    .selectAll<SilkscreenText>("silkscreentext")
-    .filter(isFootprintDefaultText)
-    .flatMap((silkscreenText) => silkscreenText.pcb_silkscreen_text_ids)
-    .map((pcbSilkscreenTextId) =>
-      db.pcb_silkscreen_text.get(pcbSilkscreenTextId),
-    )
-    .filter(
-      (pcbSilkscreenText): pcbSilkscreenText is PcbSilkscreenText =>
-        pcbSilkscreenText?.layer === layer &&
-        pcbSilkscreenText.text === normalComponent.name,
-    )
+  return getMovableSilkscreenLabels(normalComponent).filter(
+    (label) => label.layer === layer,
+  )
 }

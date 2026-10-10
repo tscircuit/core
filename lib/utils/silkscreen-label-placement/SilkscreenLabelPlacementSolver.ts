@@ -63,14 +63,15 @@ const OBSTACLE_FILL_BY_KIND: Record<SilkscreenLabelObstacleKind, string> = {
 }
 
 /**
- * Moves reference designator labels off pads, holes, silkscreen, other text,
- * each other and the board edge, keeping each nearest its own part. A solver
- * places the labels of one side of the board.
+ * Moves part labels, reference designators and the labels written on parts,
+ * off pads, holes, silkscreen, other text, each other and the board edge,
+ * keeping each nearest its own part. A solver places the labels of one side of
+ * the board.
  *
  * Every label starts on its current spot, which costs nothing unless it has an
  * issue; when no label has one, setup solves it. A label gets its other spots
  * the first time it has an issue, since without one it never moves. Descent
- * passes then move each label, in refdes order, to its cheapest candidate
+ * passes then move each label, in text order, to its cheapest candidate
  * given the others. Ejection passes let a label with an issue take a
  * spot held by up to `maxEjectedLabels` others when that lowers the total cost.
  * Both repeat until neither improves; no randomness, ties keep the earlier
