@@ -7,6 +7,7 @@ export default defineConfig({
     resolve: ["@tscircuit/flex-utils", "@tscircuit/schematic-trace-solver"],
   },
   noExternal: [
+    "@tscircuit/alphabet",
     "@tscircuit/cableprinter",
     "@tscircuit/dogbone-solver",
     "@tscircuit/flex-utils",

@@ -18,6 +18,7 @@ import { getBoardCenterFromAnchor } from "../../../utils/boards/get-board-center
 import { inflateCircuitJson } from "../../../utils/circuit-json/inflate-circuit-json"
 import { getViaDiameterDefaults } from "../../../utils/pcbStyle/getViaDiameterDefaults"
 import { NormalComponent } from "../../base-components/NormalComponent/NormalComponent"
+import { getIsPlacedInIsolatedRender } from "../../base-components/NormalComponent/utils/getBoardPlacedSilkscreenLabels"
 import type { RenderPhase } from "../../base-components/Renderable"
 import { Group } from "../../primitive-components/Group/Group"
 import { resolveBoardMotorMount } from "../../primitive-components/resolve-board-motor-mount"
@@ -28,6 +29,8 @@ import { Board_updatePcbDesignRuleChecks } from "./Board_updatePcbDesignRuleChec
 import type { BoardI } from "./BoardI"
 import { Board_doInitialPcbCopperPourCleanup } from "./Board_doInitialPcbCopperPourCleanup"
 import { Board_doInitialPcbPlacementDesignRuleChecks } from "./Board_doInitialPcbPlacementDesignRuleChecks"
+import { Board_doInitialSilkscreenOverlapAdjustment } from "./Board_doInitialSilkscreenOverlapAdjustment/Board_doInitialSilkscreenOverlapAdjustment"
+import type { SilkscreenLabelLayer } from "lib/utils/silkscreen-label-placement/types"
 import { BoardCastellatedHole } from "./board-castellated-hole"
 
 const MIN_EFFECTIVE_BORDER_RADIUS_MM = 0.01
@@ -469,7 +472,9 @@ export class Board
     if (isolatedJson) {
       this._isInflatedFromCircuitJson = true
       this._isolatedCircuitJson = null
-      inflateCircuitJson(this, isolatedJson, [])
+      inflateCircuitJson(this, isolatedJson, [], {
+        isPlacedPcbSilkscreenText: getIsPlacedInIsolatedRender(isolatedJson),
+      })
       return
     }
 
@@ -477,7 +482,9 @@ export class Board
     if (circuitJson) {
       this._isInflatedFromCircuitJson = true
     }
-    inflateCircuitJson(this, circuitJson, children)
+    inflateCircuitJson(this, circuitJson, children, {
+      isPlacedPcbSilkscreenText: () => true,
+    })
   }
 
   doInitialPcbComponentRender(): void {
@@ -675,6 +682,22 @@ export class Board
 
   doInitialPcbCopperPourCleanup() {
     Board_doInitialPcbCopperPourCleanup(this)
+  }
+
+  /** The label placement inputs left by the last placement of each side, as JSON. */
+  _silkscreenLabelPlacementParamsJsonByLayer: Partial<
+    Record<SilkscreenLabelLayer, string>
+  > = {}
+
+  doInitialSilkscreenOverlapAdjustment() {
+    Board_doInitialSilkscreenOverlapAdjustment(this)
+  }
+
+  // Place labels again after child components render or update (e.g., parts
+  // added on rerender)
+  updateSilkscreenOverlapAdjustment() {
+    // Reuse the same logic as the initial placement; placed labels stay put
+    this.doInitialSilkscreenOverlapAdjustment()
   }
 
   updatePcbDesignRuleChecks() {

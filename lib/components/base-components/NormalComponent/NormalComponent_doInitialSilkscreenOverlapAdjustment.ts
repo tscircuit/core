@@ -1,5 +1,9 @@
 import type { NormalComponent } from "./NormalComponent"
-import { getPcbTextBounds } from "./utils/getPcbTextBounds"
+import {
+  getPlacedSilkscreenTextIds,
+  getSilkscreenLabelPlacingBoard,
+} from "./utils/getBoardPlacedSilkscreenLabels"
+import { getPcbTextBounds } from "lib/utils/pcb/get-pcb-text-bounds"
 import {
   type Box,
   type Bounds,
@@ -17,17 +21,33 @@ import {
  * 3. Determines if silkscreen text intersects any obstacle bounds
  * 4. If intersecting, tries flipping text across component center
  * 5. Commits position change if it resolves the overlap
+ *
+ * Parts on a <board> are skipped, since the board places their labels, and so
+ * are labels placed by hand or by a rendered layout.
  */
 export function NormalComponent_doInitialSilkscreenOverlapAdjustment(
   component: NormalComponent<any, any>,
 ): void {
-  // Only adjust silkscreen for components that have this feature enabled
-  if (!component._adjustSilkscreenTextAutomatically) {
+  // Skip if PCB is disabled or component has no PCB component
+  if (component.root?.pcbDisabled || !component.pcb_component_id) {
     return
   }
 
-  // Skip if PCB is disabled or component has no PCB component
-  if (component.root?.pcbDisabled || !component.pcb_component_id) {
+  // An isolated subcircuit render is inflated into the root circuit, which
+  // places its labels like those of a subcircuit rendered in place
+  if (!component.root?.isRootCircuit) return
+
+  const board = getSilkscreenLabelPlacingBoard(component)
+  if (board) {
+    // The board places labels after its parts. One rendering after it, like a
+    // part added on rerender, has the board place them again, since its pads
+    // and text are obstacles too; nothing else depends on label positions.
+    board.renderPhaseStates.SilkscreenOverlapAdjustment.dirty = true
+    return
+  }
+
+  // Only adjust silkscreen for components that have this feature enabled
+  if (!component._adjustSilkscreenTextAutomatically) {
     return
   }
 
@@ -38,11 +58,16 @@ export function NormalComponent_doInitialSilkscreenOverlapAdjustment(
   const componentCenter = componentBounds.center
 
   // Find silkscreen text elements for this component
-  let silkscreenTexts = db.pcb_silkscreen_text
+  const placedTextIds = getPlacedSilkscreenTextIds(component)
+  const silkscreenTexts = db.pcb_silkscreen_text
     .list({
       pcb_component_id: component.pcb_component_id,
     })
-    .filter((text) => text.text === component.name)
+    .filter(
+      (text) =>
+        text.text === component.name &&
+        !placedTextIds.has(text.pcb_silkscreen_text_id),
+    )
 
   if (silkscreenTexts.length === 0) {
     return
@@ -91,16 +116,20 @@ export function NormalComponent_doInitialSilkscreenOverlapAdjustment(
       continue // No overlap, no adjustment needed
     }
 
-    // Try flipping the text position across the component center
-    const flippedX = 2 * componentCenter.x - currentPosition.x
-    const flippedY = 2 * componentCenter.y - currentPosition.y
-
+    // Try flipping the text box across the component center; the anchor
+    // moves with it
     const flippedTextBox: Box = {
-      center: { x: flippedX, y: flippedY },
-      width: textBounds.width,
-      height: textBounds.height,
+      ...textBox,
+      center: {
+        x: 2 * componentCenter.x - textBox.center.x,
+        y: 2 * componentCenter.y - textBox.center.y,
+      },
     }
     const flippedTextBounds: Bounds = getBoundingBox(flippedTextBox)
+    const flippedX =
+      currentPosition.x + flippedTextBox.center.x - textBox.center.x
+    const flippedY =
+      currentPosition.y + flippedTextBox.center.y - textBox.center.y
 
     // Check if flipped position resolves the intersection
     const flippedHasOverlap = obstacleBounds.some((obstacle) =>
