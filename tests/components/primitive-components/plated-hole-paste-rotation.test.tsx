@@ -1,8 +1,8 @@
 import { expect, test } from "bun:test"
-import { pcb_solder_paste } from "circuit-json"
+
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("pill paste follows transformed holes on both outer layers", () => {
+test("rotated through-hole slots retain copper without stencil paste", async () => {
   const { circuit } = getTestFixture()
   const rotationsDegrees = [0, 90, 180, 270]
   circuit.add(
@@ -41,27 +41,18 @@ test("pill paste follows transformed holes on both outer layers", () => {
   const platedHoles = circuit.db.pcb_plated_hole.list()
   const solderPaste = circuit.db.pcb_solder_paste.list()
   expect(platedHoles).toHaveLength(8)
-  expect(solderPaste).toHaveLength(16)
+  expect(solderPaste).toHaveLength(0)
   for (const hole of platedHoles) {
-    if (hole.shape !== "pill") throw new Error("Expected pill hole")
-    const pasteOnHole = solderPaste.filter(
-      (paste) =>
-        paste.shape !== "polygon" && paste.x === hole.x && paste.y === hole.y,
-    )
-    expect(pasteOnHole.map((paste) => paste.layer).sort()).toEqual([
-      "bottom",
-      "top",
-    ])
-    for (const paste of pasteOnHole) {
-      pcb_solder_paste.parse(paste)
-      if (paste.shape !== "rotated_pill") throw new Error("Expected pill paste")
-      expect(paste.ccw_rotation).toBe(hole.ccw_rotation)
-      expect(paste.width).toBe(1.5)
-      expect(paste.height).toBe(2.2)
-      expect(paste.radius).toBe(0.75)
-    }
+    expect(hole).toMatchObject({
+      shape: "pill",
+      outer_width: 1.5,
+      outer_height: 2.2,
+      hole_width: 0.9,
+      hole_height: 1.5,
+      layers: ["top", "bottom"],
+    })
   }
-  expect(circuit).toMatchPcbSnapshot(import.meta.path, {
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
     showSolderPaste: true,
   })
 })

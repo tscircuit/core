@@ -40,7 +40,7 @@ export const getPlatedHolePasteFixture = () => {
         }
       />
       <pcbnotetext
-        text="THT paste: slots at 0 and 90 deg"
+        text="THT slots: copper only; SMT: paste"
         pcbY={5}
         fontSize={0.6}
       />

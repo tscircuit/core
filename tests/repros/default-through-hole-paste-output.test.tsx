@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("ordinary round through-hole emits top and bottom paste without an opt-in", async () => {
+test("ordinary through-hole emits no paste while top SMT paste is preserved", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width={16} height={10} routingDisabled>
@@ -35,14 +35,11 @@ test("ordinary round through-hole emits top and bottom paste without an opt-in",
   const [smtpad] = circuit.db.pcb_smtpad.list()
   expect(circuit.db.pcb_smtpad.list()).toHaveLength(1)
   const paste = circuit.db.pcb_solder_paste.list()
-  expect(paste).toHaveLength(3)
+  expect(paste).toHaveLength(1)
   const throughHolePaste = paste.filter(
     (entry) => entry.shape === "circle" && entry.x === -4 && entry.y === 0,
   )
-  expect(throughHolePaste.map((entry) => entry.layer).sort()).toEqual([
-    "bottom",
-    "top",
-  ])
+  expect(throughHolePaste).toHaveLength(0)
   const smtPaste = paste.filter(
     (entry) => entry.pcb_smtpad_id === smtpad.pcb_smtpad_id,
   )
