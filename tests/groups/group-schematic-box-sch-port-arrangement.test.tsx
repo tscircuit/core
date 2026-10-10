@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { schematic_component } from "circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("group schematic box ports respect schPinArrangement", () => {
@@ -33,6 +34,11 @@ test("group schematic box ports respect schPinArrangement", () => {
     source_group_id: sourceGroup?.source_group_id,
   })
   expect(schematicGroupComponent).toBeDefined()
+  schematic_component.parse(schematicGroupComponent)
+  expect(schematicGroupComponent!.port_arrangement).toMatchObject({
+    right_side: { pins: [1, 3], direction: "top-to-bottom" },
+    bottom_side: { pins: [2], direction: "left-to-right" },
+  })
 
   const portsByLabel = Object.fromEntries(
     circuit.db.schematic_port

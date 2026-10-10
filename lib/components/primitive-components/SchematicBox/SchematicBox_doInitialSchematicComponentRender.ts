@@ -167,7 +167,10 @@ export const SchematicBox_doInitialSchematicComponentRender = (
     size,
     source_component_id: referencedChip.source_component_id,
     is_box_with_pins: true,
-    port_arrangement: underscorifyPortArrangement(props.schPinArrangement),
+    port_arrangement: underscorifyPortArrangement(
+      props.schPinArrangement,
+      props.pinLabels,
+    ),
     port_labels: portLabels,
     pin_spacing: 0.2,
     pin_styles: underscorifyPinStyles(

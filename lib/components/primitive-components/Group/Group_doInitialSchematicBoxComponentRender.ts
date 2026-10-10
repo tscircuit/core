@@ -104,7 +104,10 @@ export const Group_doInitialSchematicBoxComponentRender = (
       group.subcircuit_id ?? group.getSubcircuit()?.subcircuit_id ?? undefined,
     is_schematic_group: true,
     is_box_with_pins: true,
-    port_arrangement: underscorifyPortArrangement(schPortArrangement!),
+    port_arrangement: underscorifyPortArrangement(schPortArrangement!, {
+      ...portLabels,
+      ...group._resolvePinLabels(),
+    }),
     pin_spacing: 0.2,
     pin_styles: underscorifyPinStyles(
       props.schPinStyle,
