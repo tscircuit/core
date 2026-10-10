@@ -239,7 +239,7 @@ export class Connector<
       this._asyncFootprintCadModel = fetchedCadModel
     }
 
-    this.addAll(fpComponents)
+    this.addFootprintChildren(fpComponents)
     this._markDirty("InitializePortsFromChildren")
   }
 

@@ -40,6 +40,11 @@ import { underscorifyPortArrangement } from "lib/soup/underscorifyPortArrangemen
 import { getBoundsForSchematic } from "lib/utils/autorouting/getBoundsForSchematic"
 import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
 import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromCircuitJson"
+import {
+  type Courtyard,
+  resolveCourtyards,
+  resolveCourtyardLayoutTransform,
+} from "lib/utils/resolve-courtyards"
 import { filterPinLabels } from "lib/utils/filterPinLabels"
 import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
 import {
@@ -70,7 +75,7 @@ import {
   isValidElement,
 } from "react"
 import { type SchSymbol, symbols } from "schematic-symbols"
-import { decomposeTSR } from "transformation-matrix"
+import { decomposeTSR, type Matrix } from "transformation-matrix"
 import { ZodType, z } from "zod"
 import { InvalidProps } from "../../../errors/InvalidProps"
 import { CadAssembly } from "../../primitive-components/CadAssembly"
@@ -147,6 +152,8 @@ export class NormalComponent<
 {
   schematicBoxDimensions: SchematicBoxDimensions | null = null
   reactSubtrees: Array<ReactSubtree> = []
+  private _footprintChildren = new Set<PrimitiveComponent>()
+  private _renderedCourtyards = new Set<Courtyard>()
   _impliedFootprint?: string | undefined
   _resolvedPcbCalcOffsetX: number | undefined
   _resolvedPcbCalcOffsetY: number | undefined
@@ -666,7 +673,7 @@ export class NormalComponent<
         },
         fpCircuitJson,
       )
-      this.addAll(fpComponents)
+      this.addFootprintChildren(fpComponents)
     }
   }
 
@@ -1407,7 +1414,7 @@ export class NormalComponent<
         (c) => c.componentName === "Footprint",
       )
       if (!hasFootprintChild) {
-        this.add(fpElm)
+        this.addFootprintChildren([fpElm])
       }
     }
 
@@ -1505,7 +1512,10 @@ export class NormalComponent<
     )
   }
 
-  add(componentOrElm: PrimitiveComponent | ReactElement) {
+  add(
+    componentOrElm: PrimitiveComponent | ReactElement,
+    source?: "footprint",
+  ): void {
     let component: PrimitiveComponent
     if (isReactElement(componentOrElm)) {
       const subtree = this._renderReactSubtree(componentOrElm)
@@ -1526,6 +1536,55 @@ export class NormalComponent<
     }
 
     super.add(component)
+    if (source === "footprint") this._footprintChildren.add(component)
+    this._markCourtyardsDirty()
+  }
+
+  /** Attach a footprint without changing the hierarchy of its primitives. */
+  addFootprintChildren(children: (PrimitiveComponent | ReactElement)[]) {
+    for (const child of children) {
+      this.add(child, "footprint")
+    }
+  }
+
+  resolveCourtyards(): Courtyard[] {
+    return resolveCourtyards(this, this._footprintChildren)
+  }
+
+  doInitialPcbCourtyardRender(pcbLayoutTransform?: Matrix): void {
+    if (this.root?.pcbDisabled) return
+
+    const selectedCourtyards = new Set(this.resolveCourtyards())
+    for (const courtyard of this._renderedCourtyards) {
+      if (!selectedCourtyards.has(courtyard)) {
+        courtyard.removePcbCourtyard()
+        this._renderedCourtyards.delete(courtyard)
+      }
+    }
+    for (const courtyard of selectedCourtyards) {
+      courtyard.renderPcbCourtyard(pcbLayoutTransform)
+      this._renderedCourtyards.add(courtyard)
+    }
+  }
+
+  updatePcbCourtyardRender(): void {
+    this.doInitialPcbCourtyardRender(resolveCourtyardLayoutTransform(this))
+  }
+
+  private _markCourtyardsDirty(): void {
+    this._markDirty("PcbCourtyardRender", { includeSubsequentPhases: false })
+    this._markDirty("PcbPlacementDesignRuleChecks")
+  }
+
+  onChildChanged(child: PrimitiveComponent) {
+    this._markCourtyardsDirty()
+    super.onChildChanged(child)
+  }
+
+  remove(child: PrimitiveComponent) {
+    super.remove(child)
+    this._footprintChildren.delete(child)
+    this._markCourtyardsDirty()
   }
 
   getPortsFromFootprint(opts?: {
