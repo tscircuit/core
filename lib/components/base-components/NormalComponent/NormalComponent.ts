@@ -497,37 +497,46 @@ export class NormalComponent<
       this.addAll(portsToCreate)
     }
 
-    if (!this._getSchematicPortArrangement()) {
-      const hasReactSymbol = isValidElement(this.props.symbol)
-      const hasCircuitJsonSymbolProp = isCircuitJsonSymbol(this.props.symbol)
-      if (hasReactSymbol || hasCircuitJsonSymbolProp) {
-      } else {
-        const portsFromFootprint = this.getPortsFromFootprint({
-          ...opts,
-          allowImplicitPinNumbers: !pinLabelsFromProps,
-          collectInferredInternallyConnectedPins: true,
-        })
-        const existingPorts = this._getAllPortsFromChildren()
-        for (const port of portsFromFootprint) {
-          if (!port._isPrimaryPort) {
-            portsToCreate.push(port)
-            continue
-          }
+    // Schematic arrangements select primary pins, but footprint copper still
+    // determines whether a pin has multiple internally connected terminals.
+    if (
+      !isValidElement(this.props.symbol) &&
+      !isCircuitJsonSymbol(this.props.symbol)
+    ) {
+      const portsFromFootprint = this.getPortsFromFootprint({
+        ...opts,
+        allowImplicitPinNumbers: !pinLabelsFromProps,
+        collectInferredInternallyConnectedPins: true,
+        allowedPinNumbers: schPortArrangement
+          ? new Set(
+              [...existingChildPorts, ...portsToCreate].flatMap((port) =>
+                port._parsedProps.pinNumber !== undefined
+                  ? [port._parsedProps.pinNumber]
+                  : [],
+              ),
+            )
+          : undefined,
+      })
+      const existingPorts = this._getAllPortsFromChildren()
+      for (const port of portsFromFootprint) {
+        if (!port._isPrimaryPort) {
+          portsToCreate.push(port)
+          continue
+        }
 
-          const matchingPort =
-            existingPorts.find((p) => canMergePortDefinitions(p, port)) ??
-            portsToCreate.find((p) => canMergePortDefinitions(p, port))
+        const matchingPort =
+          existingPorts.find((p) => canMergePortDefinitions(p, port)) ??
+          portsToCreate.find((p) => canMergePortDefinitions(p, port))
 
-          if (matchingPort) {
-            const mergedAliases = port
-              .getNameAndAliases()
-              .filter(
-                (alias) => !matchingPort.getNameAndAliases().includes(alias),
-              )
-            matchingPort.externallyAddedAliases.push(...mergedAliases)
-          } else {
-            portsToCreate.push(port)
-          }
+        if (matchingPort) {
+          const mergedAliases = port
+            .getNameAndAliases()
+            .filter(
+              (alias) => !matchingPort.getNameAndAliases().includes(alias),
+            )
+          matchingPort.externallyAddedAliases.push(...mergedAliases)
+        } else {
+          portsToCreate.push(port)
         }
       }
     }
@@ -1532,6 +1541,7 @@ export class NormalComponent<
     additionalAliases?: Record<string, string[]>
     allowImplicitPinNumbers?: boolean
     collectInferredInternallyConnectedPins?: boolean
+    allowedPinNumbers?: ReadonlySet<number>
   }): Port[] {
     let inferredInternallyConnectedPinNames: string[][] | undefined = undefined
     if (opts?.collectInferredInternallyConnectedPins) {
@@ -1567,14 +1577,21 @@ export class NormalComponent<
       implicitPinNumberByHint,
     }
     let { footprint } = this.props
+    const footprintChild = this.children.find(
+      (child) => child.componentName === "Footprint",
+    )
+    // Materialized primitives provide the geometry needed to split repeated
+    // pin numbers into internally connected physical terminals.
     if (
       typeof footprint === "string" &&
-      parseLibraryFootprintRef(footprint) &&
-      this.children.some((c) => c.componentName === "Footprint")
+      (footprintChild ||
+        this.children.some(
+          (child) => child.isPcbPrimitive && child.props.portHints,
+        ))
     ) {
-      footprint = this.children.find((c) => c.componentName === "Footprint")
+      footprint = footprintChild
     } else if (!footprint || isValidElement(footprint)) {
-      footprint = this.children.find((c) => c.componentName === "Footprint")
+      footprint = footprintChild
     }
 
     if (typeof footprint === "string") {
