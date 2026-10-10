@@ -26,6 +26,12 @@ export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
           .filter((id): id is PcbComponentId => id !== null),
       ) ?? []
 
+    // A footprint keepout restricts other components, not its owning part's
+    // lands or courtyard. Board/group keepouts have no owning PCB component.
+    const ownerPcbComponentId =
+      this.getParentNormalComponent()?.pcb_component_id
+    if (ownerPcbComponentId) excludedPcbComponentIds.push(ownerPcbComponentId)
+
     return Array.from(new Set(excludedPcbComponentIds))
   }
 
