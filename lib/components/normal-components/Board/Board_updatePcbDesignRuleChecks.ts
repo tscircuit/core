@@ -122,9 +122,7 @@ export const Board_updatePcbDesignRuleChecks = (board: Board) => {
       queueCheck(
         "routing",
         () =>
-          runAllRoutingChecks(circuitJson, {
-            platformConfig: board.root?.platform,
-          }).then((results) =>
+          runAllRoutingChecks(circuitJson).then((results) =>
             results.filter(
               (result) => !board._isExpectedCastellatedHoleDrcError(result),
             ),

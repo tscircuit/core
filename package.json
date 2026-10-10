@@ -39,7 +39,7 @@
     "@tscircuit/bus-lanes-solver": "https://jscdn.tscircuit.com/@tscircuit/bus-lanes-solver/0.0.21.tgz",
     "@tscircuit/cableprinter": "^0.0.6",
     "@tscircuit/capacity-autorouter": "^0.0.958",
-    "@tscircuit/checks": "^0.0.244",
+    "@tscircuit/checks": "https://pkg.pr.new/@tscircuit/checks@996eaf1",
     "@tscircuit/circuit-json-util": "^0.0.119",
     "@tscircuit/common": "^0.0.20",
     "@tscircuit/copper-pour-solver": "^0.0.67",
@@ -60,7 +60,7 @@
     "@tscircuit/miniflex": "^0.0.4",
     "@tscircuit/modelprinter": "^0.0.18",
     "@tscircuit/ngspice-spice-engine": "^0.0.20",
-    "@tscircuit/props": "https://pkg.pr.new/tscircuit/props/@tscircuit/props@bd4d9e6889dfdf90f3b7d3f9740c90ec2097d0a0",
+    "@tscircuit/props": "^0.0.696",
     "@tscircuit/schematic-match-adapt": "^0.0.18",
     "@tscircuit/schematic-trace-solver": "https://jscdn.tscircuit.com/@tscircuit/schematic-trace-solver/0.0.228.tgz",
     "@tscircuit/solver-utils": "^0.0.16",
@@ -144,7 +144,7 @@
   },
   "overrides": {
     "@tscircuit/circuit-json-util": "^0.0.119",
-    "@tscircuit/props": "https://pkg.pr.new/tscircuit/props/@tscircuit/props@bd4d9e6889dfdf90f3b7d3f9740c90ec2097d0a0",
+    "@tscircuit/props": "^0.0.696",
     "circuit-json": "^0.0.525",
     "@tscircuit/cableprinter": "^0.0.6"
   }
