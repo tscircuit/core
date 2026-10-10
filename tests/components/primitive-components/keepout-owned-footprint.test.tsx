@@ -53,20 +53,16 @@ test("footprint keepouts exempt their own lands and courtyard while foreign copp
   })
   try {
     circuit.add(
-      <board
-        width={26}
-        height={12}
-        schematicDisabled
-        cadDisabled
-        autorouter="none"
-      >
+      <board width={26} height={12} schematicDisabled autorouter="none">
         <chip
+          cadModel={null}
           name="IMPORTED"
           pcbX={-7}
           pinLabels={{ pin1: "SHELL" }}
           footprint={importedFootprint}
         />
         <chip
+          cadModel={null}
           name="JSX"
           pcbX={6}
           pinLabels={{ pin1: "SHELL" }}
@@ -94,6 +90,7 @@ test("footprint keepouts exempt their own lands and courtyard while foreign copp
         />
         {[-5, 8].map((pcbX, column) => (
           <chip
+            cadModel={null}
             key={pcbX}
             name={`FOREIGN_SMT${column}`}
             pcbX={pcbX}
@@ -114,6 +111,7 @@ test("footprint keepouts exempt their own lands and courtyard while foreign copp
         ))}
         {[-5, 8].map((pcbX, column) => (
           <chip
+            cadModel={null}
             key={pcbX}
             name={`FOREIGN_PTH${column}`}
             pcbX={pcbX}
@@ -133,6 +131,7 @@ test("footprint keepouts exempt their own lands and courtyard while foreign copp
           />
         ))}
         <chip
+          cadModel={null}
           name="EXEMPT"
           pcbX={8}
           pinLabels={{ pin1: "ALLOWED" }}

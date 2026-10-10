@@ -9,13 +9,7 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 test("board and group keepouts have no implicit component exemption", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
-    <board
-      width={24}
-      height={10}
-      schematicDisabled
-      cadDisabled
-      autorouter="none"
-    >
+    <board width={24} height={10} schematicDisabled autorouter="none">
       <keepout
         pcbX={-7}
         shape="rect"
@@ -34,6 +28,7 @@ test("board and group keepouts have no implicit component exemption", async () =
       </group>
       {[-7, 7].map((pcbX, column) => (
         <chip
+          cadModel={null}
           key={pcbX}
           name={`FOREIGN${column}`}
           pcbX={pcbX}
