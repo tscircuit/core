@@ -100,7 +100,7 @@ test("symbol port selectors and saved paths", async () => {
       colorOverrides: { boardOutline: "#64748b" },
     }).replace(
       "</svg>",
-      `<text x="400" y="30" text-anchor="middle" font-family="Arial" font-size="16" fill="#172033">tscircuit/core converts TSX circuits to Circuit JSON.</text><text x="400" y="55" text-anchor="middle" font-family="Arial" font-size="15" fill="${pass ? "#15803d" : "#b91c1c"}">${pass ? "PASS" : "FAIL"}: selector matches ${output.matches} ports; ambiguous anchors exported: ${counts[1]! + counts[7]!}.</text><text x="400" y="475" text-anchor="middle" font-family="Arial" font-size="15" fill="#172033">Saved paths from the generated selector: ${counts[0]}</text></svg>`,
+      `<text x="400" y="30" text-anchor="middle" font-family="Arial" font-size="16" fill="#172033">tscircuit/core converts TSX circuits to Circuit JSON.</text><text x="400" y="55" text-anchor="middle" font-family="Arial" font-size="15" fill="${pass ? "#15803d" : "#b91c1c"}">${pass ? "PASS" : "FAIL"}: selector matches ${output.matches}; saved paths: ${counts[0]}; ambiguous exports: ${counts[1]! + counts[7]!}.</text></svg>`,
     )
     await Bun.write(
       new URL(
