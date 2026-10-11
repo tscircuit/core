@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import { convertCircuitJsonToSchematicSvg } from "circuit-to-svg"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test.failing("rotation preserves capacitor aliases", async () => {
+test("rotation preserves capacitor aliases", async () => {
   const { circuit } = getTestFixture()
   circuit.pcbDisabled = true
   circuit.add(
