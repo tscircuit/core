@@ -1,4 +1,5 @@
 import { silkscreenCircleProps } from "@tscircuit/props"
+import { resolvePcbProperty } from "lib/utils/pcbSx/resolve-pcb-property"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
 export class SilkscreenCircle extends PrimitiveComponent<
@@ -16,6 +17,14 @@ export class SilkscreenCircle extends PrimitiveComponent<
 
   doInitialPcbPrimitiveRender(): void {
     if (this.root?.pcbDisabled) return
+    const visibility = resolvePcbProperty({
+      propertyName: "visibility",
+      resolvedPcbSx: this.getResolvedPcbSx(),
+      pathFromAmpersand: "silkscreencircle",
+      component: this,
+    })
+    if (visibility === "hidden") return
+
     const { db } = this.root!
     const { _parsedProps: props } = this
     const position = this._getGlobalPcbPositionBeforeLayout()
