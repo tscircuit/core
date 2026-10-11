@@ -1,7 +1,0 @@
-Core turns TSX circuits into PCB Circuit JSON. A source module can import a distinct core instance from the evaluator. This test bundles current `Port` source to a temporary module, verifies constructor inequality and a false cross-module `instanceof`, then attaches one foreign inner1 port to a via through its ref callback. No constructor or instanceof result is mocked.
-
-All three ports render at the via and share its PCB component. Expected: `pcb_via.pcb_port_ids` includes all three. Observed: only the local top/bottom ports are included. `failure/run.log` is the actual unannotated failure (exit 1); white SVG and raw circuit records are captured before the assertion. They are not passing baselines.
-
-Run `bun test tests/repros/duplicate-core-via-port.test.tsx`. Remove only `.failing` to observe the failure. Regenerate with `EVIDENCE_DIR=debug-output/duplicate-port`. Checked core main `9c500c7ffcf4d3a1198c7f179b61307504790238` / 0.0.2130 on 2026-10-11. This isolates attachment membership, not the complete evaluator or board.
-
-The fix recognizes direct child ports by the existing `componentName` discriminator. It retains component ownership and avoids scanning ports by coordinate. The same assertion passes without `test.failing`. Three neighboring via tests and `bunx tsc --noEmit` pass. The complete core suite was not run.
