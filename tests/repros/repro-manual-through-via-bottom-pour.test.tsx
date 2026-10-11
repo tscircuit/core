@@ -3,7 +3,7 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import ManualThroughViaBoard from "tests/fixtures/manual-through-via-board"
 import { getManualViaPourDiagnostic } from "tests/fixtures/manual-via-pour-diagnostic"
 
-test("BUG: shortened manual-via metadata hides three bottom GND shorts", async () => {
+test("manual through-via spans clear three bottom GND short locations", async () => {
   const { circuit } = getTestFixture()
   circuit.add(<ManualThroughViaBoard />)
   await circuit.renderUntilSettled()
@@ -14,10 +14,19 @@ test("BUG: shortened manual-via metadata hides three bottom GND shorts", async (
     allow_blind_and_buried_vias: false,
   })
   expect(result.vias).toHaveLength(3)
-  expect(result.vias.every((via) => !via.layers.includes("bottom"))).toBe(true)
+  expect(result.vias.map((via) => via.layers)).toEqual([
+    ["top", "inner1", "inner2", "bottom"],
+    ["top", "inner1", "inner2", "bottom"],
+    ["top", "inner1", "inner2", "bottom"],
+  ])
+  expect(result.vias.map((via) => [via.from_layer, via.to_layer])).toEqual([
+    ["top", "inner1"],
+    ["inner1", "inner2"],
+    ["inner2", "top"],
+  ])
   expect(result.pours.length).toBeGreaterThan(0)
   expect(result.compiledDrc).toHaveLength(0)
-  expect(result.physicalDrc).toHaveLength(3)
+  expect(result.physicalDrc).toHaveLength(0)
   for (const via of result.vias) {
     const physicalVia = result.physical.find(
       (element) =>
@@ -30,12 +39,9 @@ test("BUG: shortened manual-via metadata hides three bottom GND shorts", async (
       result.physicalDrc.some((error) =>
         error.pcb_placement_error_id.includes(via.pcb_via_id),
       ),
-    ).toBe(true)
+    ).toBe(false)
   }
-  expect(result.foreignLandOverlapArea).toBeCloseTo(
-    3 * Math.PI * (0.4 ** 2 - 0.2 ** 2),
-    6,
-  )
+  expect(result.foreignLandOverlapArea).toBeCloseTo(0, 8)
   expect(circuit.getCircuitJson()).toEqual(original)
   await expect(result.snapshot).toMatchPcbSnapshot(import.meta.path, {
     layer: "bottom",

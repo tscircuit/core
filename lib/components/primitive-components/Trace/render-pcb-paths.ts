@@ -1,6 +1,6 @@
 import type { PcbPath } from "@tscircuit/props"
 import type { LayerRef } from "circuit-json"
-import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
+import { getAutoroutedViaLayers } from "lib/utils/getViaSpanLayers"
 import { getViaDiameterDefaults } from "../../../utils/pcbStyle/getViaDiameterDefaults"
 import type { Port } from "../Port"
 import { getRouteForPcbPath } from "./get-route-for-pcb-path"
@@ -50,6 +50,10 @@ export const renderPcbPaths = ({
   const connectivityMapKey =
     trace.subcircuit_connectivity_map_key ??
     db.source_trace.get(trace.source_trace_id!)?.subcircuit_connectivity_map_key
+  const boardComponent = trace._getBoard()
+  const board = boardComponent?.pcb_board_id
+    ? db.pcb_board.get(boardComponent.pcb_board_id)
+    : db.pcb_board.list()[0]
 
   for (const path of paths) {
     const route = getRouteForPcbPath({ trace, path, anchorPort, width })
@@ -75,10 +79,12 @@ export const renderPcbPaths = ({
         y: point.y,
         hole_diameter: holeDiameter,
         outer_diameter: padDiameter,
-        layers: getViaSpanLayers({
+        // Logical path transitions do not restrict a through-hole barrel.
+        layers: getAutoroutedViaLayers({
           fromLayer,
           toLayer,
           layerCount: subcircuit._getSubcircuitLayerCount(),
+          allowBlindAndBuriedVias: board?.allow_blind_and_buried_vias ?? false,
         }),
         from_layer: fromLayer,
         to_layer: toLayer,

@@ -14,7 +14,10 @@ import type { ManualPcbPathPoint } from "lib/utils/pcbTraceRouteToPcbPath"
 import { TraceConnectionError } from "lib/errors"
 import { getPcbSelectorErrorForTracePort } from "./getPcbSelectorErrorForTracePort"
 import { jlcMinTolerances } from "@tscircuit/jlcpcb-manufacturing-specs"
-import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
+import {
+  getAutoroutedViaLayers,
+  getViaSpanLayers,
+} from "lib/utils/getViaSpanLayers"
 import { renderPcbPaths } from "./render-pcb-paths"
 
 const findInflatedPcbViaForPoint = (
@@ -485,6 +488,10 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
     db.source_trace.get(trace.source_trace_id!)?.subcircuit_connectivity_map_key
   const pcbStyle = trace.getInheritedMergedProperty("pcbStyle")
   const { holeDiameter, padDiameter } = getViaDiameterDefaults(pcbStyle)
+  const boardComponent = trace._getBoard()
+  const board = boardComponent?.pcb_board_id
+    ? db.pcb_board.get(boardComponent.pcb_board_id)
+    : db.pcb_board.list()[0]
   for (const point of route) {
     if (point.route_type === "via") {
       const fromLayer = point.from_layer as LayerRef
@@ -495,10 +502,12 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
         y: point.y,
         hole_diameter: holeDiameter,
         outer_diameter: padDiameter,
-        layers: getViaSpanLayers({
+        // A route transition does not imply a blind or buried drilled barrel.
+        layers: getAutoroutedViaLayers({
           fromLayer,
           toLayer,
           layerCount: subcircuit._getSubcircuitLayerCount(),
+          allowBlindAndBuriedVias: board?.allow_blind_and_buried_vias ?? false,
         }),
         from_layer: fromLayer,
         to_layer: toLayer,
