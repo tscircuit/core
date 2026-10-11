@@ -58,5 +58,5 @@ test.failing("footprint keepout follows PCB grid placement", async () => {
   // Emitted board-world points in mm (+X right, +Y top, +Z above, right-handed).
   const [expectedClearance] = circuit.db.pcb_note_rect.list()
   const [antennaKeepout] = circuit.db.pcb_keepout.list()
-  expect(antennaKeepout.center).toEqual(expectedClearance.center)
+  expect(antennaKeepout).toMatchObject({ center: expectedClearance.center })
 })
