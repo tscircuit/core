@@ -118,7 +118,9 @@ test("standalone handoff ignores retained pour copper and shorts a subsequent si
   const controlRouteNotes = controlOutput.routedTraces.map((trace) =>
     controls.circuit.db.pcb_note_path.insert({
       // Display the actual computed centerline above same-net copper.
-      route: trace.route.map(({ x, y }) => ({ x, y })),
+      route: trace.route.flatMap((point) =>
+        point.route_type === "through_pad" ? [] : [{ x: point.x, y: point.y }],
+      ),
       layer: "top",
       stroke_width: 0.05,
       color: "#00ffff",
