@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import type { AutoroutingEndEvent } from "lib/events"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("repro: a custom symbol routes but cannot export its saved PCB path", async (): Promise<void> => {
+test("a custom symbol exports its routed PCB path", async (): Promise<void> => {
   const { circuit } = getTestFixture()
   const routingEvents: AutoroutingEndEvent[] = []
   circuit.on("autorouting:end", (event): void => {
@@ -52,7 +52,7 @@ test("repro: a custom symbol routes but cannot export its saved PCB path", async
         fontSize={0.6}
       />
       <pcbnotetext
-        text="Trace routes; saved-path export fails"
+        text="Trace routes; saved-path export succeeds"
         pcbY={-3}
         fontSize={0.6}
       />
@@ -67,10 +67,14 @@ test("repro: a custom symbol routes but cannot export its saved PCB path", async
     phaseName: "signal-route",
     routingPhaseIndex: 0,
     connectionCount: 1,
-    pcbTracePathsUnavailableReason:
-      "PCB port selector is not unique: .U1 > port.pin1",
   })
-  expect(routingEvents[0]!.pcbTracePaths).toBeUndefined()
+  expect(routingEvents[0]!.pcbTracePathsUnavailableReason).toBeUndefined()
+  expect(routingEvents[0]!.pcbTracePaths).toHaveLength(1)
+  const savedPath = routingEvents[0]!.pcbTracePaths![0]!
+  expect(savedPath.connection).toBe(".U1 port.pin1")
+  expect(circuit.selectAll(savedPath.connection)).toEqual(
+    circuit.selectAll("U1.pin1"),
+  )
   expect(circuit.selectAll(".U1 > port.pin1")).toHaveLength(0)
   expect(circuit.selectAll(".U1 port.pin1")).toHaveLength(1)
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
