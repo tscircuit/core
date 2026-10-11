@@ -108,8 +108,13 @@ test.each(cases)("manual via physical span: %j", async (config) => {
     ).toEqual(expectedLayers)
     assertionsPassed = true
   } finally {
-    // Failed assertions still produce an actual snapshot and expected/actual diff.
-    if (layerCount === 4 && allowBlindAndBuriedVias === false) {
+    // Both APIs are asserted independently; one picture represents their shared geometry.
+    // Failed assertions still produce the actual snapshot without updating the baseline.
+    if (
+      api === "pcbPath" &&
+      layerCount === 4 &&
+      allowBlindAndBuriedVias === false
+    ) {
       const svg = renderManualViaSpan({
         api,
         allowBlindAndBuriedVias,
