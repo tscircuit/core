@@ -4,7 +4,7 @@ import type { Group, Port } from "lib"
 import { getAutoroutingPhasePcbTracePaths } from "lib/components/primitive-components/Group/get-autorouting-phase-pcb-trace-paths"
 import { captureSelectorSnapshot } from "./repro-symbol-port-selector-snapshot"
 
-test.failing("first port rejects a selector matching two ports", async () => {
+test("first port rejects a selector matching two ports", async () => {
   const circuit = new RootCircuit()
   circuit.add(
     <board width={10} height={5} routingDisabled schematicDisabled>

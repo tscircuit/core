@@ -110,8 +110,13 @@ export function getAutoroutingPhasePcbTracePaths({
           const port = portsByPcbPortId.get(terminal.pcb_port_id)
           if (!port || usedPorts.has(port)) continue
           const selector = terminal.port_selector ?? port.getPortSelector()
-          if (subcircuit.selectOne(selector, { type: "port" }) !== port) {
-            throw new Error(`PCB port selector is not unique: ${selector}`)
+          const matches = subcircuit
+            .selectAll(selector)
+            .filter((port) => port.lowercaseComponentName === "port")
+          if (matches.length !== 1 || matches[0] !== port) {
+            throw new Error(
+              `PCB port selector must match only its original port (matched ${matches.length}): ${selector}`,
+            )
           }
           const route = reverse
             ? routes[routeIndex]!.toReversed().map((point) =>

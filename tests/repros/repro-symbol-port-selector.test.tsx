@@ -4,7 +4,7 @@ import type { Group, Port } from "lib"
 import { getAutoroutingPhasePcbTracePaths } from "lib/components/primitive-components/Group/get-autorouting-phase-pcb-trace-paths"
 import { captureSelectorSnapshot } from "./repro-symbol-port-selector-snapshot"
 
-test.failing("Symbol port selector anchors a saved path", async () => {
+test("Symbol port selector anchors a saved path", async () => {
   const circuit = new RootCircuit()
   circuit.add(
     <board width={10} height={5} routingDisabled schematicDisabled>
