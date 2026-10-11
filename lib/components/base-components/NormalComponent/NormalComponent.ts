@@ -176,6 +176,7 @@ export class NormalComponent<
   private _invalidFootprintPropMessages: string[] = []
 
   _invalidPinLabelMessages: string[] = []
+  _pendingEmptyConnectionsErrors?: string[]
   _impliedFootprintPinLabels?: Record<string, string | string[]>
 
   /**
@@ -2343,6 +2344,25 @@ export class NormalComponent<
       for (const [pinName, target] of Object.entries(props.connections)) {
         const targets = Array.isArray(target) ? target : [target]
         for (const targetPath of targets) {
+          const targetStr =
+            typeof targetPath === "string" ? targetPath.trim() : ""
+          if (!targetStr) {
+            const err =
+              this.root?.db.source_component_misconfigured_error.insert({
+                error_type: "source_component_misconfigured_error",
+                message: `<${this.componentName} name=".${this.name}" /> has an empty connections target for pin "${pinName}". Provide a selector such as ".R1 > .pin1" or "net.VCC", or remove the entry.`,
+                source_component_ids: this.source_component_id
+                  ? [this.source_component_id]
+                  : [],
+              })
+            if (err) {
+              this._pendingEmptyConnectionsErrors ??= []
+              this._pendingEmptyConnectionsErrors.push(
+                err.source_component_misconfigured_error_id,
+              )
+            }
+            continue
+          }
           this.add(
             new Trace({
               from: `.${this.name} > .${pinName}`,
@@ -2356,6 +2376,17 @@ export class NormalComponent<
 
   doInitialSourceDesignRuleChecks(): void {
     NormalComponent_doInitialSourceDesignRuleChecks(this)
+    if (
+      this._pendingEmptyConnectionsErrors?.length &&
+      this.source_component_id
+    ) {
+      for (const errId of this._pendingEmptyConnectionsErrors) {
+        this.root?.db.source_component_misconfigured_error.update(errId, {
+          source_component_ids: [this.source_component_id],
+        })
+      }
+      this._pendingEmptyConnectionsErrors = []
+    }
   }
 
   doInitialSourceComponentPropertyValidation(): void {
