@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { createPcbLayerStackSvg } from "tests/fixtures/create-pcb-layer-stack-svg"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { getViaLayerPortsSvg } from "tests/fixtures/get-via-layer-ports-svg"
 import {
@@ -21,20 +22,12 @@ test("snapshot through-via ports and inner2 copper", async () => {
   everyLayerCircuit.add(<ViaPortsEveryLayerBoard />)
   await everyLayerCircuit.renderUntilSettled()
 
-  await expect(everyLayerCircuit).toMatchPcbSnapshot(
-    import.meta.path.replace(/\.test\.tsx$/, "-top.test.tsx"),
-    { layer: "top" },
+  const layerStackSvg = createPcbLayerStackSvg(
+    everyLayerCircuit.getCircuitJson(),
   )
-  await expect(everyLayerCircuit).toMatchPcbSnapshot(
-    import.meta.path.replace(/\.test\.tsx$/, "-inner1.test.tsx"),
-    { layer: "inner1" },
-  )
-  await expect(everyLayerCircuit).toMatchPcbSnapshot(
-    import.meta.path.replace(/\.test\.tsx$/, "-inner2.test.tsx"),
-    { layer: "inner2" },
-  )
-  await expect(everyLayerCircuit).toMatchPcbSnapshot(
-    import.meta.path.replace(/\.test\.tsx$/, "-bottom.test.tsx"),
-    { layer: "bottom" },
+  await expect(layerStackSvg).toMatchSvgSnapshot(
+    import.meta.path,
+    "repro-via-inner2-ports-layers",
+    { diffThresholdPercent: 0 },
   )
 })
