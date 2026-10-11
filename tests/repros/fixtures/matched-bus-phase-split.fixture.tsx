@@ -1,5 +1,5 @@
 // PCB coordinates are board-world points in mm: +X right and +Y up.
-const SignalTerminal = ({
+export const SignalTerminal = ({
   name,
   pcbX,
   pcbY,

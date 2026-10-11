@@ -80,8 +80,11 @@ export function Group_filterSimpleRouteJsonForPhase(
     if (positiveConnectionIncluded) differentialPairs.push(differentialPair)
   }
 
-  const connectionByName = new Map(
-    connections.map((connection) => [connection.name, connection]),
+  const srjConnectionByName = new Map(
+    simpleRouteJson.connections.map((connection) => [
+      connection.name,
+      connection,
+    ]),
   )
 
   const buses = (simpleRouteJson.buses ?? [])
@@ -89,10 +92,18 @@ export function Group_filterSimpleRouteJsonForPhase(
       const connectionNames = bus.connectionNames.filter((connectionName) =>
         includedConnectionNames.has(connectionName),
       )
+      // A breakout splits each member into local escapes and a global bridge.
+      // Compare within the same physical routing cohort, as differential-pair
+      // conversion does in getDifferentialPairSrjConnectionNamesByCohortOrThrow.
+      const cohortConnectionNames = bus.connectionNames.filter(
+        (connectionName) =>
+          srjConnectionByName.get(connectionName)?.routingPcbGroupId ===
+          phasePlan.routingPcbGroupId,
+      )
       if (
         bus.maxLengthSkew !== undefined &&
         connectionNames.length > 0 &&
-        connectionNames.length !== bus.connectionNames.length
+        connectionNames.length !== cohortConnectionNames.length
       ) {
         throw new RoutingPhasePreparationError(
           `Length-matched bus "${bus.name || "unnamed bus"}" cannot be split across autorouting phases. Assign the complete bus to one routingPhaseIndex.`,
@@ -100,7 +111,7 @@ export function Group_filterSimpleRouteJsonForPhase(
       }
       const connectionExitTargets = Object.fromEntries(
         connectionNames.flatMap((connectionName) => {
-          const connection = connectionByName.get(connectionName)
+          const connection = srjConnectionByName.get(connectionName)
           if (!connection) return []
           const pairedTarget = getPairedBreakoutExitTarget(
             simpleRouteJson,

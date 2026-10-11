@@ -28,5 +28,5 @@ test("a complete matched bus still routes together with its declared skew", asyn
     0.1 + 1e-7,
   )
   expect(json.filter((record) => record.type.endsWith("_error"))).toEqual([])
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

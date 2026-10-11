@@ -26,7 +26,7 @@ regressionTest(
 
     const json = circuit.getCircuitJson()
     const pcbTraces = json.filter((record) => record.type === "pcb_trace")
-    expect(circuit).toMatchPcbSnapshot(import.meta.path)
+    await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 
     if (pcbTraces.length > 0) {
       // Main routes both singleton phases to 20mm/16mm, violating the bus's
