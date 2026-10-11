@@ -13,51 +13,51 @@ export const RetainedPourCircuit = ({
 }: {
   pourLayer?: LayerRef
 }) => (
-  <board width={12} height={8} layers={2}>
+  <board width={16} height={10} layers={2}>
     <net name="GND" />
     <testpoint
       name="GND"
       footprintVariant="pad"
       pcbX={0}
-      pcbY={1.6}
+      pcbY={2.2}
       padDiameter={0.5}
       connections={{ pin1: "net.GND" }}
     />
-    <testpoint
+    <resistor
       name="SIGNAL_A"
-      footprintVariant="pad"
-      pcbX={-0.6}
-      pcbY={0.3}
-      padDiameter={0.5}
+      resistance="33"
+      footprint="0402"
+      pcbX={0}
+      pcbY={0.65}
     />
-    <testpoint
+    <resistor
       name="SIGNAL_B"
-      footprintVariant="pad"
-      pcbX={4}
-      pcbY={0.3}
-      padDiameter={0.5}
+      resistance="33"
+      footprint="0603"
+      pcbX={5}
+      pcbY={0.65}
     />
-    <trace from="SIGNAL_A.pin1" to="SIGNAL_B.pin1" thickness={0.2} />
-    <testpoint
+    <trace from="SIGNAL_A.pin2" to="SIGNAL_B.pin1" thickness={0.2} />
+    <resistor
       name="HOLE_A"
-      footprintVariant="pad"
-      pcbX={-0.7}
-      pcbY={-0.5}
-      padDiameter={0.4}
+      resistance="1k"
+      footprint="0402"
+      pcbX={-0.975}
+      pcbY={-0.7}
     />
-    <testpoint
+    <resistor
       name="HOLE_B"
-      footprintVariant="pad"
-      pcbX={0.7}
-      pcbY={-0.5}
-      padDiameter={0.4}
+      resistance="1k"
+      footprint="0402"
+      pcbX={0.975}
+      pcbY={-0.7}
     />
-    <trace from="HOLE_A.pin1" to="HOLE_B.pin1" thickness={0.2} />
+    <trace from="HOLE_A.pin2" to="HOLE_B.pin1" thickness={0.2} />
     {/* A warning-only keepout cuts the poured copper without blocking routing. */}
     <keepout
       shape="rect"
-      width={2.8}
-      height={2}
+      width={4}
+      height={3}
       layers={[pourLayer]}
       warningOnly
       pcbX={0}
@@ -68,55 +68,60 @@ export const RetainedPourCircuit = ({
       connectsTo="net.GND"
       layer={pourLayer}
       outline={[
-        { x: -2.5, y: -2 },
-        { x: 2.5, y: -2 },
-        { x: 2.5, y: 2 },
-        { x: -2.5, y: 2 },
+        { x: -3, y: -2.5 },
+        { x: 3, y: -2.5 },
+        { x: 3, y: 2.5 },
+        { x: -3, y: 2.5 },
       ]}
       clearance={0.2}
     />
-    <pcbnotetext text="GND" pcbY={1.92} fontSize={0.22} color="#ffffff" />
     <pcbnotetext
-      text="SIGNAL A"
-      pcbX={-0.6}
-      pcbY={0.7}
+      text="GND testpoint"
+      pcbY={2.65}
       fontSize={0.22}
       color="#ffffff"
     />
     <pcbnotetext
-      text="SIGNAL B"
-      pcbX={4}
-      pcbY={0.9}
+      text="SIGNAL A: 0402"
+      pcbX={0}
+      pcbY={1.15}
       fontSize={0.22}
       color="#ffffff"
     />
     <pcbnotetext
-      text="HOLE CONTROL"
-      pcbY={-0.82}
+      text="SIGNAL B: 0603"
+      pcbX={5}
+      pcbY={1.35}
+      fontSize={0.22}
+      color="#ffffff"
+    />
+    <pcbnotetext
+      text="HOLE CONTROL: 0402 resistor pads"
+      pcbY={-1.15}
       fontSize={0.22}
       color="#ffffff"
     />
     <pcbnotetext
       text="Next routing phase: retain generated TOP GND copper and its hole"
-      pcbY={3.4}
+      pcbY={4.2}
       fontSize={0.35}
       color="#ffffff"
     />
     <pcbnotetext
       text="SIGNAL must escape the hole without touching retained GND"
-      pcbY={2.7}
+      pcbY={3.5}
       fontSize={0.3}
       color="#ffffff"
     />
     <pcbnotetext
       text="HOLE control must stay routable on TOP, without vias"
-      pcbY={-2.6}
+      pcbY={-3.4}
       fontSize={0.3}
       color="#ffffff"
     />
     <pcbnotetext
       text="Copper and void are compiled from TSX; no geometry edits"
-      pcbY={-3.4}
+      pcbY={-4.2}
       fontSize={0.28}
       color="#ffffff"
     />

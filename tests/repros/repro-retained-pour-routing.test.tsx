@@ -36,18 +36,19 @@ test("standalone handoff preserves retained pour copper without closing its hole
   const { routedTraces, vias } =
     await routeRetainedPourConnections(simpleRouteJson)
   for (const [traceIndex, pcbTrace] of routedTraces.entries()) {
-    expect([pcbTrace.route[0], pcbTrace.route.at(-1)]).toEqual(
-      expect.arrayContaining(
-        simpleRouteJson.connections[traceIndex]!.pointsToConnect.map((point) =>
-          expect.objectContaining({
-            route_type: "wire",
-            x: point.x,
-            y: point.y,
-            layer: point.layer,
-          }),
-        ),
-      ),
-    )
+    const endpoints = [pcbTrace.route[0]!, pcbTrace.route.at(-1)!]
+    for (const point of simpleRouteJson.connections[traceIndex]!
+      .pointsToConnect) {
+      const endpoint = endpoints.find(
+        (endpoint) =>
+          endpoint.route_type === "wire" &&
+          endpoint.layer === point.layer &&
+          Math.hypot(endpoint.x - point.x, endpoint.y - point.y) < 1e-8,
+      )
+      // Native routing rounds millimeter coordinates; contacts must still meet
+      // their actual compiled footprint pads within numerical precision.
+      expect(endpoint).toBeDefined()
+    }
   }
   const signal = routedTraces[0]!
   const holeControl = routedTraces[1]!
@@ -78,13 +79,13 @@ test("standalone handoff preserves retained pour copper without closing its hole
   const status = circuit.db.pcb_note_text.insert({
     font: "tscircuit2024",
     text: `FIXED: BOTTOM bridge | ${shorts.length} pour shorts | ${overlapArea.toFixed(2)} mm2 overlap`,
-    anchor_position: { x: 0, y: 2.2 },
+    anchor_position: { x: 0, y: 3.0 },
     anchor_alignment: "center",
     font_size: 0.32,
     layer: "top",
     color: "#ffcc00",
   })
-  // Authored notes replace oversized automatic testpoint silkscreen only in
+  // Authored notes replace oversized automatic component silkscreen only in
   // diagnostic views. Routing/checking still use every compiled record.
   await expect(
     [...routed, status].filter(
@@ -110,7 +111,7 @@ test("standalone handoff preserves retained pour copper without closing its hole
   const pipeline4Status = circuit.db.pcb_note_text.insert({
     font: "tscircuit2024",
     text: "Pipeline4: STILL UNSAFE | retained-copper GND short",
-    anchor_position: { x: 0, y: 2.2 },
+    anchor_position: { x: 0, y: 3.0 },
     anchor_alignment: "center",
     font_size: 0.32,
     layer: "top",
