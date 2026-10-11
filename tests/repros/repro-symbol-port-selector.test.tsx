@@ -10,13 +10,7 @@ regression(
   async () => {
     const circuit = new RootCircuit({ platform: { pcbDisabled: true } })
     circuit.add(
-      <board
-        width={10}
-        height={10}
-        routingDisabled
-        pcbDisabled
-        schematicDisabled
-      >
+      <board width={10} height={10} routingDisabled schematicDisabled>
         <chip
           name="Q_PD_INHIBIT"
           symbol={
