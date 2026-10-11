@@ -39,7 +39,7 @@
     "@tscircuit/bus-lanes-solver": "https://jscdn.tscircuit.com/@tscircuit/bus-lanes-solver/0.0.21.tgz",
     "@tscircuit/cableprinter": "^0.0.6",
     "@tscircuit/capacity-autorouter": "^0.0.958",
-    "@tscircuit/checks": "https://pkg.pr.new/@tscircuit/checks@996eaf1",
+    "@tscircuit/checks": "https://pkg.pr.new/@tscircuit/checks@3620465",
     "@tscircuit/circuit-json-util": "^0.0.119",
     "@tscircuit/common": "^0.0.20",
     "@tscircuit/copper-pour-solver": "^0.0.67",
