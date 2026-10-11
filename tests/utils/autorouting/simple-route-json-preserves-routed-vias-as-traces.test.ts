@@ -117,3 +117,44 @@ test("preserved routed vias stay in SRJ traces instead of obstacles", () => {
     ),
   ).toEqual(["pcb_via_separate_span", "pcb_via_separate_geometry"])
 })
+
+test("ignores existing top-level pcb traces when requested", () => {
+  const circuitJson: AnyCircuitElement[] = [
+    {
+      type: "pcb_board",
+      pcb_board_id: "pcb_board_0",
+      center: { x: 0, y: 0 },
+      width: 10,
+      height: 10,
+      num_layers: 4,
+    } as any,
+
+    {
+      type: "pcb_trace",
+      pcb_trace_id: "pcb_trace_top_level",
+      route: [
+        {
+          route_type: "wire",
+          x: 0,
+          y: 0,
+          width: 0.1,
+          layer: "top",
+        },
+        {
+          route_type: "wire",
+          x: 1,
+          y: 1,
+          width: 0.1,
+          layer: "top",
+        },
+      ],
+    } as any,
+  ]
+
+  expect(() => {
+    getSimpleRouteJsonFromCircuitJson({
+      circuitJson,
+      ignoreExistingTopLevelPcbRouteState: true,
+    })
+  }).not.toThrow()
+})
