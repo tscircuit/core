@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test"
 import type { RootCircuit } from "lib"
+import { createPcbLayerStackSvg } from "tests/fixtures/create-pcb-layer-stack-svg"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import {
   ConnectedManualViaPcbPathBoard,
@@ -86,23 +87,10 @@ test("manual via contact snapshots show rejected and valid geometry", async () =
     diffThresholdPercent: 0,
   })
 
-  await expect(invalidCircuit).toMatchPcbSnapshot(
-    import.meta.path.replace(/\.test\.tsx$/, "-top.test.tsx"),
-    { layer: "top" },
-  )
-  await expect(invalidCircuit).toMatchPcbSnapshot(
-    import.meta.path.replace(/\.test\.tsx$/, "-inner1.test.tsx"),
-    { layer: "inner1" },
-  )
-  await expect(invalidCircuit).toMatchPcbSnapshot(
-    import.meta.path.replace(/\.test\.tsx$/, "-inner2.test.tsx"),
-    { layer: "inner2" },
-  )
-  await expect(invalidCircuit).toMatchPcbSnapshot(
-    import.meta.path.replace(/\.test\.tsx$/, "-bottom.test.tsx"),
-    { layer: "bottom" },
-  )
-  await expect(validCircuit).toMatchPcbSnapshot(
-    import.meta.path.replace(/\.test\.tsx$/, "-valid.test.tsx"),
+  const layerStackSvg = createPcbLayerStackSvg(invalidCircuit.getCircuitJson())
+  await expect(layerStackSvg).toMatchSvgSnapshot(
+    import.meta.path,
+    "manual-via-transition-layers",
+    { diffThresholdPercent: 0 },
   )
 })
