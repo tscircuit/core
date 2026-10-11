@@ -13,15 +13,10 @@ test.failing("rotation preserves capacitor aliases", async () => {
         schY={1.4}
         fontSize={0.12}
       />
-      {[0, 90, 180, 270].map((rotation, i) => (
-        <capacitor
-          key={String(rotation)}
-          name={`C${i + 1}`}
-          capacitance="100nF"
-          schX={i}
-          schRotation={rotation}
-        />
-      ))}
+      <capacitor name="C1" capacitance="100nF" schX={0} schRotation={0} />
+      <capacitor name="C2" capacitance="100nF" schX={1} schRotation={90} />
+      <capacitor name="C3" capacitance="100nF" schX={2} schRotation={180} />
+      <capacitor name="C4" capacitance="100nF" schX={3} schRotation={270} />
     </board>,
   )
   await circuit.renderUntilSettled()
