@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { captureRunEvidence } from "tests/fixtures/capture-run-evidence"
 
-test.failing("saved paths reject an origin selector matching two PCB ports", async () => {
+test("saved paths reject an origin selector matching two PCB ports", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width={12} height={6} schematicDisabled routeRemaining={false}>
@@ -36,7 +36,7 @@ test.failing("saved paths reject an origin selector matching two PCB ports", asy
   await circuit.renderUntilSettled()
   expect(circuit.selectAll("A.1, B.1")).toHaveLength(2)
   const errors = circuit.db.pcb_autorouting_error.list()
-  await captureRunEvidence(
+  const svg = await captureRunEvidence(
     circuit.getCircuitJson(),
     `Two origin matches: ${circuit.db.pcb_trace.list().length} copper paths, ${errors.length} errors. Expected 0 paths / 1 error.`,
   )
@@ -44,4 +44,5 @@ test.failing("saved paths reject an origin selector matching two PCB ports", asy
     "must select exactly one PCB port",
   )
   expect(circuit.db.pcb_trace.list()).toHaveLength(0)
+  await expect(svg).toMatchSvgSnapshot(import.meta.path)
 })

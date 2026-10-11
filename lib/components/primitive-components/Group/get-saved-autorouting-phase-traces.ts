@@ -73,7 +73,7 @@ export function getSavedAutoroutingPhaseTracesFromPaths({
   isFanout,
 }: {
   group: Pick<IGroup, "pcb_group_id" | "_computePcbGlobalTransformBeforeLayout">
-  subcircuit: Pick<ISubcircuit, "selectOne" | "selectAll">
+  subcircuit: Pick<ISubcircuit, "selectAll">
   paths: z.output<typeof fanoutTracePath>[]
   phaseIndex?: number | null
   input: SimpleRouteJson
@@ -91,9 +91,16 @@ export function getSavedAutoroutingPhaseTracesFromPaths({
   const traces: SimplifiedPcbTrace[] = []
 
   for (const [pathIndex, path] of paths.entries()) {
-    const port = subcircuit.selectOne(path.connection, {
-      type: "port",
-    }) as Port | null
+    const ports = subcircuit
+      .selectAll(path.connection)
+      .filter(
+        (component): component is Port => component.componentName === "Port",
+      )
+    if (ports.length > 1)
+      throw new Error(
+        `Saved phase path "${path.connection}" must select exactly one PCB port; matched ${ports.length}`,
+      )
+    const port = ports[0]
     if (!port)
       throw new Error(
         `Saved phase path "${path.connection}" must select a PCB port`,

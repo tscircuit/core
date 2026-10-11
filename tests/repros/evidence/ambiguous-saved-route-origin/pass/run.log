@@ -1,0 +1,23 @@
+bun test v1.3.14 (0d9b296a)
+
+tests/repros/ambiguous-saved-route-origin.test.tsx:
+Async effect error in PcbTraceRender "autorouting":
+Error: Saved phase path "A.1, B.1" must select exactly one PCB port; matched 2
+    at getSavedAutoroutingPhaseTracesFromPaths (/Users/ankan/Documents/Codex/2026-10-11/tsx-saved-route-bug-reproductions/work/core/lib/components/primitive-components/Group/get-saved-autorouting-phase-traces.ts:100:17)
+    at _runLocalAutorouting (/Users/ankan/Documents/Codex/2026-10-11/tsx-saved-route-bug-reproductions/work/core/lib/components/primitive-components/Group/Group.ts:1744:26)
+    at <anonymous> (/Users/ankan/Documents/Codex/2026-10-11/tsx-saved-route-bug-reproductions/work/core/lib/components/primitive-components/Group/Group.ts:2064:22)
+    at _queueAsyncEffect (/Users/ankan/Documents/Codex/2026-10-11/tsx-saved-route-bug-reproductions/work/core/lib/components/base-components/Renderable.ts:332:16)
+    at _startAsyncAutorouting (/Users/ankan/Documents/Codex/2026-10-11/tsx-saved-route-bug-reproductions/work/core/lib/components/primitive-components/Group/Group.ts:2062:12)
+    at doInitialPcbTraceRender (/Users/ankan/Documents/Codex/2026-10-11/tsx-saved-route-bug-reproductions/work/core/lib/components/primitive-components/Group/Group.ts:2141:10)
+    at runRenderPhase (/Users/ankan/Documents/Codex/2026-10-11/tsx-saved-route-bug-reproductions/work/core/lib/components/base-components/Renderable.ts:541:34)
+    at runRenderCycle (/Users/ankan/Documents/Codex/2026-10-11/tsx-saved-route-bug-reproductions/work/core/lib/components/base-components/Renderable.ts:478:12)
+    at render (/Users/ankan/Documents/Codex/2026-10-11/tsx-saved-route-bug-reproductions/work/core/lib/IsolatedCircuit.ts:211:16)
+    at renderUntilSettled (/Users/ankan/Documents/Codex/2026-10-11/tsx-saved-route-bug-reproductions/work/core/lib/IsolatedCircuit.ts:244:14)
+    at async <anonymous> (/Users/ankan/Documents/Codex/2026-10-11/tsx-saved-route-bug-reproductions/work/core/tests/repros/ambiguous-saved-route-origin.test.tsx:36:17)
+    at processTicksAndRejections (native:7:39)
+(pass) saved paths reject an origin selector matching two PCB ports [73.16ms]
+
+ 1 pass
+ 0 fail
+ 4 expect() calls
+Ran 1 test across 1 file. [1045.00ms]
