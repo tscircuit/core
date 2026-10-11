@@ -5,7 +5,7 @@ import { getAutoroutingPhasePcbTracePaths } from "lib/components/primitive-compo
 import { captureSelectorSnapshot } from "./repro-symbol-port-selector-snapshot"
 
 test.failing(
-  "symbol port selector anchors its own saved PCB path",
+  "custom Symbol port selector selects its original port and exports its saved path",
   async () => {
     const circuit = new RootCircuit()
     circuit.add(
