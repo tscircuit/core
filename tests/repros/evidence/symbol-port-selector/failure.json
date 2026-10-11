@@ -1,0 +1,10 @@
+{
+  "coreVersion": "0.0.2131",
+  "owner": "Q_PD_INHIBIT",
+  "parent": "Symbol",
+  "port": "pin2",
+  "selector": ".Q_PD_INHIBIT > port.pin2",
+  "matchCount": 0,
+  "roundTrip": false,
+  "shortSelectorRoundTrip": true
+}

@@ -1,0 +1,44 @@
+bun test v1.3.14 (0d9b296a)
+
+tests/repros/repro-symbol-port-selector.test.tsx:
+33 |     expect(
+34 |       circuit.selectOne("Q_PD_INHIBIT.pin2", { type: "port" }) === port,
+35 |     ).toBe(true)
+36 |     expect(
+37 |       circuit.selectOne(port!.getPortSelector(), { type: "port" }) === port,
+38 |     ).toBe(true)
+           ^
+error: expect(received).toBe(expected)
+
+Expected: true
+Received: false
+
+      at <anonymous> (/Users/ankan/Documents/Codex/2026-10-11/symbol-port-route-selector-reproduction/work/core/tests/repros/repro-symbol-port-selector.test.tsx:38:7)
+(fail) a symbol port's generated selector resolves only the original port [35.11ms]
+
+tests/repros/repro-pcb-path-selector-ambiguity.test.tsx:
+65 |       rejected.push(
+66 |         result.pcbTracePaths === undefined &&
+67 |           !!result.pcbTracePathsUnavailableReason,
+68 |       )
+69 |     }
+70 |     expect(rejected).toEqual([true, true])
+                          ^
+error: expect(received).toEqual(expected)
+
+  [
+-   true,
++   false,
+    true,
+  ]
+
+- Expected  - 1
++ Received  + 1
+
+      at <anonymous> (/Users/ankan/Documents/Codex/2026-10-11/symbol-port-route-selector-reproduction/work/core/tests/repros/repro-pcb-path-selector-ambiguity.test.tsx:70:22)
+(fail) saved paths reject ambiguous selectors, including the first matching port [30.48ms]
+
+ 0 pass
+ 2 fail
+ 5 expect() calls
+Ran 2 tests across 2 files. [689.00ms]

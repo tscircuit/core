@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="520" viewBox="0 0 960 520">
+<rect width="960" height="520" fill="white"/>
+<g font-family="Arial, sans-serif" text-anchor="middle" fill="#172033">
+<text x="480" y="38" font-size="18">tscircuit/core converts React circuit elements to Circuit JSON.</text>
+<text x="480" y="67" font-size="16" fill="#b91c1c">FAIL: the generated selector skips the port’s Symbol parent and matches nothing.</text>
+<rect x="310" y="110" width="340" height="65" rx="8" fill="#f8fafc" stroke="#64748b"/>
+<text x="480" y="150" font-size="22">Chip: Q_PD_INHIBIT</text>
+<path d="M480 175V207 M480 272V307" stroke="#64748b" stroke-width="2"/>
+<rect x="360" y="207" width="240" height="65" rx="8" fill="#f8fafc" stroke="#64748b"/>
+<text x="480" y="247" font-size="22">Symbol</text>
+<rect x="360" y="307" width="240" height="65" rx="8" fill="#f8fafc" stroke="#64748b"/>
+<text x="480" y="347" font-size="22">Port: pin2</text>
+<text x="480" y="417" font-size="21" font-family="monospace">.Q_PD_INHIBIT &gt; port.pin2</text>
+<text x="480" y="452" font-size="19" fill="#b91c1c">Matches: 0 · Same original port: no</text>
+<text x="480" y="487" font-size="14" fill="#64748b">Actual Bun 1.3.14 run · core 0.0.2131 · no routing</text>
+</g></svg>
