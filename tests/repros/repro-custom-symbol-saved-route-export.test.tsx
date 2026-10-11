@@ -51,11 +51,6 @@ test("repro: a custom symbol routes but cannot export its saved PCB path", async
         pcbY={3}
         fontSize={0.6}
       />
-      <pcbnotetext
-        text="Trace routes; saved-path export fails"
-        pcbY={-3}
-        fontSize={0.6}
-      />
     </board>,
   )
   await circuit.renderUntilSettled()
@@ -73,5 +68,39 @@ test("repro: a custom symbol routes but cannot export its saved PCB path", async
   expect(routingEvents[0]!.pcbTracePaths).toBeUndefined()
   expect(circuit.selectAll(".U1 > port.pin1")).toHaveLength(0)
   expect(circuit.selectAll(".U1 port.pin1")).toHaveLength(1)
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  const routingEvent = routingEvents[0]!
+  const { circuit: annotations } = getTestFixture()
+  let exportColor = "#55dd88"
+  if (routingEvent.pcbTracePathsUnavailableReason !== undefined) {
+    exportColor = "#ff6666"
+  }
+  annotations.add(
+    <pcbnotetext
+      text={`Saved PCB paths: ${routingEvent.pcbTracePaths?.length ?? 0}`}
+      pcbY={-2.4}
+      fontSize={1}
+      color={exportColor}
+    />,
+  )
+  annotations.add(
+    <pcbnotetext
+      text={`Export error: ${routingEvent.pcbTracePathsUnavailableReason ?? "none"}`}
+      pcbY={-3.6}
+      fontSize={0.4}
+      color={exportColor}
+    />,
+  )
+  annotations.add(
+    <pcbnotetext
+      text={`Saved connection: ${routingEvent.pcbTracePaths?.[0]?.connection ?? "unavailable"}`}
+      pcbY={-4.4}
+      fontSize={0.5}
+    />,
+  )
+  await annotations.renderUntilSettled()
+
+  await expect([
+    ...circuit.getCircuitJson(),
+    ...annotations.getCircuitJson(),
+  ]).toMatchPcbSnapshot(import.meta.path)
 })
