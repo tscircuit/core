@@ -1,7 +1,6 @@
 import { beforeAll, expect, test } from "bun:test"
 import type { SchematicComponent, SchematicLine } from "circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
-import { Rp2040SectionDividerReferenceFixture } from "./fixtures/rp2040-section-divider-reference.fixture"
 
 // Affected board: https://tscircuit.com/imrishabh18/rp2040-motor-controller#schematic
 // Version 1.0.42, motor_driver sheet, R_DRV_ENABLE_PU.
@@ -13,7 +12,29 @@ let divider: SchematicLine
 
 beforeAll(async () => {
   const { circuit } = getTestFixture({ platform: { pcbDisabled: true } })
-  circuit.add(<Rp2040SectionDividerReferenceFixture />)
+  circuit.add(
+    <board routingDisabled>
+      <schematicsection name="driver" displayName="Driver section" />
+      <schematicsection name="output" displayName="Motor output" />
+      <resistor
+        name="R_DRV_ENABLE_PU"
+        resistance="10k"
+        schX={7.97}
+        schY={-11.42}
+        schOrientation="vertical"
+        schSectionName="driver"
+      />
+      <chip
+        name="J1"
+        pinLabels={{}}
+        schX={10.7}
+        schY={-11.42}
+        schWidth={1.2}
+        schHeight={1}
+        schSectionName="output"
+      />
+    </board>,
+  )
   await circuit.renderUntilSettled()
   const resistorSource = circuit.db.source_component
     .list()
