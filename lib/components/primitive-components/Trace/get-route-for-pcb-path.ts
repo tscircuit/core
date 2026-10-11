@@ -4,6 +4,7 @@ import { applyToPoint, identity } from "transformation-matrix"
 import type { Port } from "../Port"
 import { getPcbSelectorErrorForTracePort } from "./getPcbSelectorErrorForTracePort"
 import type { Trace } from "./Trace"
+import { getViaDiameterDefaults } from "lib/utils/pcbStyle/getViaDiameterDefaults"
 
 interface GetRouteForPcbPathInput {
   trace: Trace
@@ -27,6 +28,9 @@ export const getRouteForPcbPath = ({
 }: GetRouteForPcbPathInput): PcbTraceRoutePoint[] | undefined => {
   const { db } = trace.root!
   const subcircuit = trace.getSubcircuit()
+  const { holeDiameter, padDiameter } = getViaDiameterDefaults(
+    trace.getInheritedMergedProperty("pcbStyle"),
+  )
   const pcbPathLocalToBoardTransform = subcircuit._isInflatedFromCircuitJson
     ? trace._computePcbGlobalTransformBeforeLayout()
     : (anchorPort._computePcbGlobalTransformBeforeLayout?.() ?? identity())
@@ -99,6 +103,8 @@ export const getRouteForPcbPath = ({
         y: position.y,
         from_layer: fromLayer,
         to_layer: toLayer,
+        outer_diameter: padDiameter,
+        hole_diameter: holeDiameter,
       })
       currentLayer = toLayer
     } else {

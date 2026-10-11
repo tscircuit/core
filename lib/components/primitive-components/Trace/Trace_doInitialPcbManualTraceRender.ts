@@ -371,6 +371,8 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
   const anchorPos = anchorPort._getGlobalPcbPositionAfterLayout()
   const otherPos = otherPort?._getGlobalPcbPositionAfterLayout()
 
+  const pcbStyle = trace.getInheritedMergedProperty("pcbStyle")
+  const { holeDiameter, padDiameter } = getViaDiameterDefaults(pcbStyle)
   const route: PcbTraceRoutePoint[] = []
   route.push({
     route_type: "wire",
@@ -448,6 +450,8 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
         y: finalCoordinates.y,
         from_layer: viaFromLayer ?? currentLayer,
         to_layer: viaToLayer ?? currentLayer,
+        outer_diameter: padDiameter,
+        hole_diameter: holeDiameter,
       })
       currentLayer = (viaToLayer ?? currentLayer) as LayerRef
     } else {
@@ -483,8 +487,6 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
   const subcircuitConnectivityMapKey =
     trace.subcircuit_connectivity_map_key ??
     db.source_trace.get(trace.source_trace_id!)?.subcircuit_connectivity_map_key
-  const pcbStyle = trace.getInheritedMergedProperty("pcbStyle")
-  const { holeDiameter, padDiameter } = getViaDiameterDefaults(pcbStyle)
   for (const point of route) {
     if (point.route_type === "via") {
       const fromLayer = point.from_layer as LayerRef
