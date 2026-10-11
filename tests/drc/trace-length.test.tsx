@@ -58,7 +58,7 @@ const TraceLengthViolation = ({ errorMessage }: { errorMessage?: string }) => (
     />
     {errorMessage && (
       <pcbnotetext
-        text={`DRC: ${errorMessage.replace(", ", ",\n")}`}
+        text={`DRC: ${errorMessage.replace(/(.{1,65})(?:\s|$)/g, "$1\n").trim()}`}
         pcbX={-10}
         pcbY={-12.5}
         anchorAlignment="top_left"

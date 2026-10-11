@@ -27,7 +27,7 @@ test("standalone subcircuit emits the trace length error without a board", async
     <subcircuit name="SIGNAL">
       <LengthDrcTrace
         explanationColor="#ff6b6b"
-        explanation={`<subcircuit name="SIGNAL">\n30 mm > 24 mm: 6 mm too long\nDRC: ${errors[0].message.replace(", ", ",\n")}`}
+        explanation={`<subcircuit name="SIGNAL">\n30 mm > 24 mm: 6 mm too long\nDRC: ${errors[0].message.replace(/(.{1,65})(?:\s|$)/g, "$1\n").trim()}`}
       />
     </subcircuit>,
   )

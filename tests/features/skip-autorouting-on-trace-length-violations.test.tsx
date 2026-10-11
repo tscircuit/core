@@ -28,7 +28,7 @@ test("autorouting is skipped when straight-line distance exceeds maxLength", asy
         pcbX={-4}
       />
       <resistor name="R1" resistance="1k" footprint="0402" pcbX={4} />
-      <trace from=".C1 > .pin1" to="net.VCC" />
+      <trace from=".C1 > .pin1" to="net.VCC" maxLength={2} />
       <trace from=".R1 > .pin1" to="net.VCC" />
     </board>,
   )

@@ -19,7 +19,7 @@ test("configured crystal maximum propagates without replacing stricter limits", 
       <capacitor name="C2" capacitance="10pF" />
       <trace from=".Y1 > .pin1" to="net.XTAL_OUT" />
       <trace from=".U1 > .XTAL_OUT" to="net.XTAL_OUT" />
-      <trace from=".C1 > .pin1" to="net.XTAL_OUT" />
+      <trace from=".C1 > .pin1" to="net.XTAL_OUT" maxLength="3mm" />
       <trace from=".C2 > .pin1" to="net.UNRELATED" />
     </board>,
   )

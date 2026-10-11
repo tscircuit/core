@@ -3,7 +3,7 @@ import { GROUND_NET_REGEX } from "lib/utils/gnd-power-net-regex"
 import type { Port } from "./Port"
 import { resolvePortSourcePinAttributes } from "./resolve-port-source-pin-attributes"
 
-function portIsGround(port: Port): boolean {
+export function portIsGround(port: Port): boolean {
   const attributes = resolvePortSourcePinAttributes(port)
   if (
     attributes.requires_ground === true ||
