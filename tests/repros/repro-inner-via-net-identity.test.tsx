@@ -17,6 +17,55 @@ test("a real inner bridge retains VDD identity and avoids false downstream error
     errors,
     pour,
   } = result
+  const pads = circuit.db.pcb_smtpad
+    .list()
+    .filter((pad) => pad.shape === "rect")
+  expect(
+    circuit.db.source_component.list().map((component) => component.name),
+  ).toEqual(["R1", "R2"])
+  expect(pads).toHaveLength(4)
+  expect(
+    pads.map(({ shape, width, height, layer }) => ({
+      shape,
+      width,
+      height,
+      layer,
+    })),
+  ).toEqual(
+    Array.from({ length: 4 }, () => ({
+      shape: "rect",
+      width: 0.8,
+      height: 0.95,
+      layer: "top",
+    })),
+  )
+  // The retained TOP fanouts start at the actual compiled 0603 terminals.
+  // No endpoint or fixed copper is synthesized by the native-router adapter.
+  for (const fixedTrace of compiledInput.traces ?? []) {
+    const pad = pads.find(
+      (pad) => pad.pcb_port_id === fixedTrace.connectsTo?.[0],
+    )!
+    expect(fixedTrace.route[0]).toEqual({
+      route_type: "wire",
+      x: pad.x,
+      y: pad.y,
+      width: 0.1,
+      layer: pad.layer,
+    })
+    expect(
+      JSON.stringify(circuit.db.pcb_trace.get(fixedTrace.pcb_trace_id)!.route),
+    ).toBe(
+      JSON.stringify(
+        fixedTrace.route.map((point, index) => ({
+          ...point,
+          ...(index === 0
+            ? { start_pcb_port_id: fixedTrace.connectsTo![0] }
+            : { end_pcb_port_id: fixedTrace.connectsTo![1] }),
+        })),
+      ),
+    )
+  }
+  expect(compiledInput.connections[0]!.pointsToConnect).toHaveLength(4)
   const vias = circuit.db.pcb_via.list()
   expect(vias).toHaveLength(2)
   expect(vias.map((via) => via.layers)).toEqual([
