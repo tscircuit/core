@@ -1,0 +1,142 @@
+import { expect, test } from "bun:test"
+import { checkCopperPourShorts } from "@tscircuit/checks"
+import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
+import {
+  getRetainedPourFixture,
+  getRetainedPourHoleControls,
+} from "./fixtures/retained-pour.fixture"
+import {
+  getRetainedPourWireOverlapArea,
+  routeRetainedPourConnections,
+} from "./fixtures/retained-pour-routing"
+
+test("standalone handoff ignores retained pour copper and shorts a subsequent signal", async () => {
+  const { circuit, circuitJson } = await getRetainedPourFixture()
+  const original = structuredClone(circuitJson)
+  expect(
+    circuitJson.filter((element) => element.type.endsWith("error")),
+  ).toEqual([])
+  const pour = circuit.db.pcb_copper_pour.list()[0]!
+  expect(pour.shape).toBe("brep")
+  if (pour.shape !== "brep") throw new Error("Expected generated BREP copper")
+  expect(pour.brep_shape.inner_rings).toHaveLength(1)
+
+  const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
+    circuitJson,
+    minTraceWidth: 0.2,
+    minTraceToPadEdgeClearance: 0.2,
+  })
+  expect(simpleRouteJson.connections).toHaveLength(2)
+  expect(
+    simpleRouteJson.obstacles.filter((obstacle) => obstacle.isCopperPour),
+  ).toHaveLength(0)
+
+  const { routedTraces, vias } = routeRetainedPourConnections(simpleRouteJson)
+  for (const [traceIndex, pcbTrace] of routedTraces.entries()) {
+    expect([pcbTrace.route[0], pcbTrace.route.at(-1)]).toEqual(
+      expect.arrayContaining(
+        simpleRouteJson.connections[traceIndex]!.pointsToConnect.map((point) =>
+          expect.objectContaining({
+            route_type: "wire",
+            x: point.x,
+            y: point.y,
+            layer: point.layer,
+          }),
+        ),
+      ),
+    )
+  }
+  const signal = routedTraces[0]!
+  const holeControl = routedTraces[1]!
+  const routed = [...circuitJson, ...routedTraces, ...vias]
+  const shorts = checkCopperPourShorts(routed)
+  expect(shorts).toHaveLength(1)
+  expect(shorts[0]!.message).toContain("SIGNAL_A.pin1 to SIGNAL_B.pin1")
+  const overlapArea = getRetainedPourWireOverlapArea(pour, signal)
+  expect(overlapArea).toBeCloseTo(0.18, 6)
+  expect(checkCopperPourShorts([...circuitJson, holeControl])).toHaveLength(0)
+  expect(holeControl.route.every((point) => point.route_type === "wire")).toBe(
+    true,
+  )
+  expect(
+    holeControl.route.every(
+      (point) => point.route_type === "wire" && point.layer === "top",
+    ),
+  ).toBe(true)
+  expect(signal.route.some((point) => point.route_type === "via")).toBe(false)
+  expect(circuitJson).toEqual(original)
+  const status = circuit.db.pcb_note_text.insert({
+    font: "tscircuit2024",
+    text: `FAIL: GND short | ${shorts.length} DRC error | ${overlapArea.toFixed(2)} mm2 overlap`,
+    anchor_position: { x: 0, y: 2.2 },
+    anchor_alignment: "center",
+    font_size: 0.32,
+    layer: "top",
+    color: "#ffcc00",
+  })
+  // Authored notes replace oversized automatic testpoint silkscreen only in
+  // diagnostic views. Routing/checking still use every compiled record.
+  await expect(
+    [...routed, status].filter(
+      (element) => element.type !== "pcb_silkscreen_text",
+    ),
+  ).toMatchPcbSnapshot(import.meta.path)
+
+  const controls = await getRetainedPourHoleControls()
+  const controlsOriginal = structuredClone(controls.circuitJson)
+  const controlPour = controls.circuit.db.pcb_copper_pour.list()[0]!
+  if (controlPour.shape !== "brep") throw new Error("Expected BREP controls")
+  expect(controlPour.brep_shape.inner_rings).toHaveLength(2)
+  const controlInput = getSimpleRouteJsonFromCircuitJson({
+    circuitJson: controls.circuitJson,
+    minTraceWidth: 0.1,
+  }).simpleRouteJson
+  const controlOutput = routeRetainedPourConnections({
+    ...controlInput,
+    connections: controlInput.connections.filter(
+      (connection) => connection.name === connection.source_trace_id,
+    ),
+  })
+  expect(controlOutput.routedTraces).toHaveLength(3)
+  expect(controlOutput.vias).toHaveLength(0)
+  expect(
+    checkCopperPourShorts([
+      ...controls.circuitJson,
+      ...controlOutput.routedTraces,
+    ]),
+  ).toHaveLength(0)
+  expect(controls.circuitJson).toEqual(controlsOriginal)
+  await expect(
+    [...controls.circuitJson, ...controlOutput.routedTraces].filter(
+      (element) => element.type !== "pcb_silkscreen_text",
+    ),
+  ).toMatchPcbSnapshot(
+    import.meta.path.replace(".test.tsx", "-controls.test.tsx"),
+  )
+
+  const bottom = await getRetainedPourFixture("bottom")
+  const bottomInput = getSimpleRouteJsonFromCircuitJson({
+    circuitJson: bottom.circuitJson,
+    minTraceWidth: 0.2,
+  }).simpleRouteJson
+  const bottomOutput = routeRetainedPourConnections(bottomInput)
+  expect(bottomOutput.vias).toHaveLength(0)
+  expect(
+    checkCopperPourShorts([
+      ...bottom.circuitJson,
+      ...bottomOutput.routedTraces,
+    ]),
+  ).toHaveLength(0)
+  expect(
+    getSimpleRouteJsonFromCircuitJson({
+      circuitJson,
+      ignoreExistingTopLevelPcbRouteState: true,
+    }).simpleRouteJson.obstacles.filter((obstacle) => obstacle.isCopperPour),
+  ).toHaveLength(0)
+  expect(
+    getSimpleRouteJsonFromCircuitJson({
+      db: circuit.db,
+      subcircuitComponent: circuit.firstChild!,
+    }).simpleRouteJson.obstacles.filter((obstacle) => obstacle.isCopperPour),
+  ).toHaveLength(0)
+})
