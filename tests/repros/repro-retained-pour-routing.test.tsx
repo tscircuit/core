@@ -10,7 +10,7 @@ import {
   routeRetainedPourConnections,
 } from "./fixtures/retained-pour-routing"
 
-test("standalone handoff ignores retained pour copper and shorts a subsequent signal", async () => {
+test("standalone handoff preserves retained pour copper without closing its holes", async () => {
   const { circuit, circuitJson } = await getRetainedPourFixture()
   const original = structuredClone(circuitJson)
   expect(
@@ -28,8 +28,10 @@ test("standalone handoff ignores retained pour copper and shorts a subsequent si
   })
   expect(simpleRouteJson.connections).toHaveLength(2)
   expect(
-    simpleRouteJson.obstacles.filter((obstacle) => obstacle.isCopperPour),
-  ).toHaveLength(0)
+    simpleRouteJson.obstacles.filter((obstacle) =>
+      obstacle.connectedTo.includes(pour.pcb_copper_pour_id),
+    ),
+  ).toHaveLength(4)
 
   const { routedTraces, vias } =
     await routeRetainedPourConnections(simpleRouteJson)
@@ -51,10 +53,10 @@ test("standalone handoff ignores retained pour copper and shorts a subsequent si
   const holeControl = routedTraces[1]!
   const routed = [...circuitJson, ...routedTraces, ...vias]
   const shorts = checkCopperPourShorts(routed)
-  expect(shorts).toHaveLength(1)
-  expect(shorts[0]!.message).toContain("SIGNAL_A.pin1 to SIGNAL_B.pin1")
+  expect(shorts).toHaveLength(0)
   const overlapArea = getRetainedPourWireOverlapArea(pour, signal)
-  expect(overlapArea).toBeCloseTo(0.18, 6)
+  expect(overlapArea).toBeLessThan(1e-9)
+  expect(getRetainedPourWireOverlapArea(pour, signal, 0.2)).toBeLessThan(1e-9)
   expect(checkCopperPourShorts([...circuitJson, holeControl])).toHaveLength(0)
   expect(holeControl.route.every((point) => point.route_type === "wire")).toBe(
     true,
@@ -64,11 +66,18 @@ test("standalone handoff ignores retained pour copper and shorts a subsequent si
       (point) => point.route_type === "wire" && point.layer === "top",
     ),
   ).toBe(true)
-  expect(signal.route.some((point) => point.route_type === "via")).toBe(false)
+  expect(
+    signal.route.filter((point) => point.route_type === "via"),
+  ).toHaveLength(2)
+  expect(
+    signal.route.some(
+      (point) => point.route_type === "wire" && point.layer === "bottom",
+    ),
+  ).toBe(true)
   expect(circuitJson).toEqual(original)
   const status = circuit.db.pcb_note_text.insert({
     font: "tscircuit2024",
-    text: `FAIL: GND short | ${shorts.length} DRC error | ${overlapArea.toFixed(2)} mm2 overlap`,
+    text: `FIXED: BOTTOM bridge | ${shorts.length} pour shorts | ${overlapArea.toFixed(2)} mm2 overlap`,
     anchor_position: { x: 0, y: 2.2 },
     anchor_alignment: "center",
     font_size: 0.32,
@@ -100,7 +109,7 @@ test("standalone handoff ignores retained pour copper and shorts a subsequent si
   ).toBeGreaterThan(0.1)
   const pipeline4Status = circuit.db.pcb_note_text.insert({
     font: "tscircuit2024",
-    text: "Pipeline4: FAIL | actual foreign GND short",
+    text: "Pipeline4: STILL UNSAFE | retained-copper GND short",
     anchor_position: { x: 0, y: 2.2 },
     anchor_alignment: "center",
     font_size: 0.32,
@@ -188,12 +197,16 @@ test("standalone handoff ignores retained pour copper and shorts a subsequent si
     getSimpleRouteJsonFromCircuitJson({
       circuitJson,
       ignoreExistingTopLevelPcbRouteState: true,
-    }).simpleRouteJson.obstacles.filter((obstacle) => obstacle.isCopperPour),
+    }).simpleRouteJson.obstacles.filter((obstacle) =>
+      obstacle.connectedTo.includes(pour.pcb_copper_pour_id),
+    ),
   ).toHaveLength(0)
   expect(
     getSimpleRouteJsonFromCircuitJson({
       db: circuit.db,
       subcircuitComponent: circuit.firstChild!,
-    }).simpleRouteJson.obstacles.filter((obstacle) => obstacle.isCopperPour),
+    }).simpleRouteJson.obstacles.filter((obstacle) =>
+      obstacle.connectedTo.includes(pour.pcb_copper_pour_id),
+    ),
   ).toHaveLength(0)
 })
