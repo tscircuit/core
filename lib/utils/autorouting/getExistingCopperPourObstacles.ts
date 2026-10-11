@@ -1,7 +1,6 @@
-import { getPourPolygon } from "@tscircuit/circuit-json-util"
 import type { PcbCopperPour } from "circuit-json"
 import type { ConnectivityMap } from "circuit-json-to-connectivity-map"
-import { fillCopperPolygonWithRects } from "lib/utils/obstacles/fillCopperPolygonWithRects"
+import { getObstaclesFromCopperPour } from "lib/utils/obstacles/get-obstacles-from-copper-pour"
 import type { Obstacle } from "lib/utils/obstacles/types"
 
 /**
@@ -25,6 +24,7 @@ export const getExistingCopperPourObstacles = ({
       ? connMap.getNetConnectedToId(pour.source_net_id)
       : null
     const copperNetIds = [
+      pour.pcb_copper_pour_id,
       copperNetId,
       ...(connectedNetId ? [connectedNetId] : []),
     ]
@@ -34,15 +34,5 @@ export const getExistingCopperPourObstacles = ({
         ...copperNetIds.flatMap((netId) => connMap.getIdsConnectedToNet(netId)),
       ]),
     )
-    return fillCopperPolygonWithRects(
-      getPourPolygon(pour),
-      maxBoundaryError,
-    ).map((rect, rectIndex) => ({
-      ...rect,
-      type: "rect",
-      obstacleId: `${pour.pcb_copper_pour_id}_${rectIndex}`,
-      layers: [pour.layer],
-      connectedTo,
-      isCopperPour: true,
-    }))
+    return getObstaclesFromCopperPour(pour, connectedTo, maxBoundaryError)
   })

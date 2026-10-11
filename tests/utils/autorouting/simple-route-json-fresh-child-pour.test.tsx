@@ -29,8 +29,10 @@ test("fresh parent routing preserves child pours and discards root pours", async
     ignoreExistingTopLevelPcbRouteState: true,
     minTraceToPadEdgeClearance: 0.2,
   }).simpleRouteJson
-  const pourObstacles = routingInput.obstacles.filter(
-    (obstacle) => obstacle.isCopperPour,
+  const pourObstacles = routingInput.obstacles.filter((obstacle) =>
+    pours.some((pour) =>
+      obstacle.connectedTo.includes(pour.pcb_copper_pour_id),
+    ),
   )
   expect(pourObstacles).toHaveLength(4)
   expect(
@@ -50,11 +52,14 @@ test("fresh parent routing preserves child pours and discards root pours", async
     ),
   ).toBe(false)
   expect(routingInput.connections).toHaveLength(1)
-  const { routedTraces, vias } = await routeRetainedPourConnections(routingInput)
+  const { routedTraces, vias } =
+    await routeRetainedPourConnections(routingInput)
   expect(routedTraces).toHaveLength(1)
   const signal = routedTraces[0]!
   expect(vias).toHaveLength(2)
-  expect(getRetainedPourWireOverlapArea(childPour, signal, 0.2)).toBeLessThan(1e-9)
+  expect(getRetainedPourWireOverlapArea(childPour, signal, 0.2)).toBeLessThan(
+    1e-9,
+  )
   expect([signal.route[0], signal.route.at(-1)]).toEqual(
     expect.arrayContaining(
       routingInput.connections[0]!.pointsToConnect.map((point) =>

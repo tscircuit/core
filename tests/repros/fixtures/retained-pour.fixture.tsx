@@ -131,7 +131,10 @@ export const getRetainedPourFixture = async (pourLayer: LayerRef = "top") => {
   return { circuit, circuitJson: circuit.getCircuitJson() }
 }
 
-export const getRetainedPourHoleControls = async () => {
+export const getRetainedPourHoleControls = async (
+  traceWidth = 0.1,
+  boardMinTraceWidth = 0.1,
+) => {
   const { circuit } = getTestFixture()
   circuit.pcbRoutingDisabled = true
   // Authored local points become world points through the standard transform.
@@ -142,7 +145,7 @@ export const getRetainedPourHoleControls = async () => {
     { x: -1, y: 0.7 },
   ].map((point) => applyToPoint(compose(translate(2, 0), rotateDEG(30)), point))
   circuit.add(
-    <board width={14} height={10} layers={2}>
+    <board width={14} height={10} layers={2} minTraceWidth={boardMinTraceWidth}>
       <net name="GND" />
       <net name="VCC" />
       <testpoint
@@ -159,7 +162,7 @@ export const getRetainedPourHoleControls = async () => {
         pcbY={0}
         padDiameter={0.25}
       />
-      <trace from="ROUND_A.pin1" to="ROUND_B.pin1" thickness={0.1} />
+      <trace from="ROUND_A.pin1" to="ROUND_B.pin1" thickness={traceWidth} />
       <testpoint
         name="ROTATED_A"
         footprintVariant="pad"
@@ -176,7 +179,7 @@ export const getRetainedPourHoleControls = async () => {
         padDiameter={0.25}
         connections={{ pin1: "net.VCC" }}
       />
-      <trace from="ROTATED_A.pin1" to="ROTATED_B.pin1" thickness={0.1} />
+      <trace from="ROTATED_A.pin1" to="ROTATED_B.pin1" thickness={traceWidth} />
       <testpoint
         name="GND_L"
         footprintVariant="pad"
@@ -193,7 +196,7 @@ export const getRetainedPourHoleControls = async () => {
         padDiameter={0.4}
         connections={{ pin1: "net.GND" }}
       />
-      <trace from="GND_L.pin1" to="GND_R.pin1" thickness={0.1} />
+      <trace from="GND_L.pin1" to="GND_R.pin1" thickness={traceWidth} />
       <keepout
         shape="circle"
         radius={0.9}

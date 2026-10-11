@@ -28,7 +28,9 @@ test("standalone handoff preserves retained pour copper without closing its hole
   })
   expect(simpleRouteJson.connections).toHaveLength(2)
   expect(
-    simpleRouteJson.obstacles.filter((obstacle) => obstacle.isCopperPour),
+    simpleRouteJson.obstacles.filter((obstacle) =>
+      obstacle.connectedTo.includes(pour.pcb_copper_pour_id),
+    ),
   ).toHaveLength(4)
 
   const { routedTraces, vias } =
@@ -64,7 +66,9 @@ test("standalone handoff preserves retained pour copper without closing its hole
       (point) => point.route_type === "wire" && point.layer === "top",
     ),
   ).toBe(true)
-  expect(signal.route.filter((point) => point.route_type === "via")).toHaveLength(2)
+  expect(
+    signal.route.filter((point) => point.route_type === "via"),
+  ).toHaveLength(2)
   expect(
     signal.route.some(
       (point) => point.route_type === "wire" && point.layer === "bottom",
@@ -105,7 +109,7 @@ test("standalone handoff preserves retained pour copper without closing its hole
   ).toBeGreaterThan(0.1)
   const pipeline4Status = circuit.db.pcb_note_text.insert({
     font: "tscircuit2024",
-    text: "Pipeline4: FAIL | actual foreign GND short",
+    text: "Pipeline4: STILL UNSAFE | retained-copper GND short",
     anchor_position: { x: 0, y: 2.2 },
     anchor_alignment: "center",
     font_size: 0.32,
@@ -193,12 +197,16 @@ test("standalone handoff preserves retained pour copper without closing its hole
     getSimpleRouteJsonFromCircuitJson({
       circuitJson,
       ignoreExistingTopLevelPcbRouteState: true,
-    }).simpleRouteJson.obstacles.filter((obstacle) => obstacle.isCopperPour),
+    }).simpleRouteJson.obstacles.filter((obstacle) =>
+      obstacle.connectedTo.includes(pour.pcb_copper_pour_id),
+    ),
   ).toHaveLength(0)
   expect(
     getSimpleRouteJsonFromCircuitJson({
       db: circuit.db,
       subcircuitComponent: circuit.firstChild!,
-    }).simpleRouteJson.obstacles.filter((obstacle) => obstacle.isCopperPour),
+    }).simpleRouteJson.obstacles.filter((obstacle) =>
+      obstacle.connectedTo.includes(pour.pcb_copper_pour_id),
+    ),
   ).toHaveLength(0)
 })

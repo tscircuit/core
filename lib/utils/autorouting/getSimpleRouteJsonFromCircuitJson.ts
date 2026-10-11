@@ -331,8 +331,6 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         ),
       ...db.pcb_keepout.list(),
       ...db.pcb_cutout.list(),
-      // Native pours already exist as physical copper during incremental routing.
-      ...db.pcb_copper_pour.list(),
     ].filter(
       (e) =>
         e.type === "pcb_board" ||
@@ -892,16 +890,14 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     ...getExistingCopperPourObstacles({
       copperPours: subcircuitComponent
         ? []
-        : db.pcb_copper_pour
-            .list()
-            .filter(
-              (pour) =>
-                !ignoreExistingTopLevelPcbRouteState ||
-                (pour.subcircuit_id &&
-                  db.source_group.getWhere({
-                    subcircuit_id: pour.subcircuit_id,
-                  })?.parent_subcircuit_id),
-            ),
+        : db.pcb_copper_pour.list().filter(
+            (pour) =>
+              !ignoreExistingTopLevelPcbRouteState ||
+              (pour.subcircuit_id &&
+                db.source_group.getWhere({
+                  subcircuit_id: pour.subcircuit_id,
+                })?.parent_subcircuit_id),
+          ),
       connMap: sharedConnMap,
       maxBoundaryError: resolvedMinTraceWidth / 4,
     }),

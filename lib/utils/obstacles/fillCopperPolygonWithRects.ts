@@ -5,6 +5,8 @@ type CopperBoundaryCurve = Flatten.Segment | Flatten.Arc
 type CopperRect = Pick<Obstacle, "center" | "width" | "height">
 
 const getCurveXAtY = (curve: CopperBoundaryCurve, y: number) => {
+  if (y === curve.start.y) return curve.start.x
+  if (y === curve.end.y) return curve.end.x
   if (curve instanceof Flatten.Segment) {
     const { start, end } = curve
     return start.x + ((y - start.y) * (end.x - start.x)) / (end.y - start.y)
@@ -23,6 +25,7 @@ const getCurveXAtY = (curve: CopperBoundaryCurve, y: number) => {
  * Polygon coordinates are circuit-world points in mm (+X right, +Y up).
  * No transform is applied. Segment and bulge-arc geometry comes from the
  * existing circuit-json-util pour polygon converter.
+ * Rings must be valid simple boundaries, with nonintersecting hole interiors.
  *
  * Bands split at all topology/quadrant changes and then only when a boundary
  * moves more than maxBoundaryError horizontally. Bounding monotone boundaries
