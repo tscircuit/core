@@ -3,7 +3,7 @@ import type { AnyCircuitElement } from "circuit-json"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 import "tests/fixtures/extend-expect-circuit-snapshot"
 
-test("fixed copper disappears when its scope exists only on the source trace", async () => {
+test("fixed copper inherits its known source trace scope without changing geometry", async () => {
   const subcircuitId = "subcircuit_power"
   const circuitJson: AnyCircuitElement[] = [
     {
@@ -42,11 +42,39 @@ test("fixed copper disappears when its scope exists only on the source trace", a
     subcircuit_id: subcircuitId,
   }).simpleRouteJson
 
-  // This is the AM3352 failure: source ownership is known, yet actual copper
-  // is absent from both the global and scoped routing inputs.
-  expect(global.traces).toBeUndefined()
-  expect(scoped.traces).toBeUndefined()
+  for (const input of [global, scoped]) {
+    expect(input.traces).toEqual([
+      expect.objectContaining({
+        pcb_trace_id: "pcb_trace_power",
+        source_trace_id: "source_trace_power",
+        route: circuitJson[2].type === "pcb_trace" ? circuitJson[2].route : [],
+      }),
+    ])
+  }
   expect(circuitJson).toEqual(original)
+
+  // An explicit physical scope takes priority; no ownership is invented for
+  // source traces that also lack a scope.
+  const explicitlyForeign = circuitJson.map((element) =>
+    element.type === "pcb_trace"
+      ? { ...element, subcircuit_id: "subcircuit_other" }
+      : element,
+  )
+  expect(
+    getSimpleRouteJsonFromCircuitJson({
+      circuitJson: explicitlyForeign,
+      subcircuit_id: subcircuitId,
+    }).simpleRouteJson.traces,
+  ).toBeUndefined()
+  const unscoped = circuitJson.map((element) =>
+    element.type === "source_trace"
+      ? { ...element, subcircuit_id: undefined }
+      : element,
+  )
+  expect(
+    getSimpleRouteJsonFromCircuitJson({ circuitJson: unscoped }).simpleRouteJson
+      .traces,
+  ).toBeUndefined()
 
   await expect([
     ...circuitJson,
