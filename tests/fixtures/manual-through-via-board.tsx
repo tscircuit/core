@@ -92,6 +92,12 @@ export function ManualThroughViaBoard({
           />
         </Fragment>
       ))}
+      <pcbnotetext
+        text="GND stitch (same net as pour)"
+        pcbY={-2.1}
+        fontSize={0.35}
+        layer="bottom"
+      />
     </board>
   )
 }
