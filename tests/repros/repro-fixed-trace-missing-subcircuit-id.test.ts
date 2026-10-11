@@ -53,6 +53,16 @@ test("fixed copper inherits its known source trace scope without changing geomet
   }
   expect(circuitJson).toEqual(original)
 
+  for (const scope of [undefined, subcircuitId]) {
+    expect(
+      getSimpleRouteJsonFromCircuitJson({
+        circuitJson,
+        subcircuit_id: scope,
+        ignoreExistingTopLevelPcbRouteState: true,
+      }).simpleRouteJson.traces,
+    ).toBeUndefined()
+  }
+
   // An explicit physical scope takes priority; no ownership is invented for
   // source traces that also lack a scope.
   const explicitlyForeign = circuitJson.map((element) =>
