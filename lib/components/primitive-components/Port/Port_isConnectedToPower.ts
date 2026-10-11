@@ -2,7 +2,7 @@ import { POWER_NET_REGEX } from "lib/utils/gnd-power-net-regex"
 import type { Port } from "./Port"
 import { resolvePortSourcePinAttributes } from "./resolve-port-source-pin-attributes"
 
-function portShouldHaveDecouplingCapacitor(port: Port): boolean {
+export function portShouldHaveDecouplingCapacitor(port: Port): boolean {
   if (port.getParentNormalComponent()?.config.componentName !== "Chip") {
     return false
   }

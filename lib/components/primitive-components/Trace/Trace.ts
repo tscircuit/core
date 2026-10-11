@@ -45,7 +45,7 @@ import { Trace_doInitialPcbManualTraceRender } from "./Trace_doInitialPcbManualT
 import { Trace_doInitialPcbTraceTeardropRender } from "./Trace_doInitialPcbTraceTeardropRender"
 import { Trace_doInitialPcbTraceRender } from "./Trace_doInitialPcbTraceRender"
 import { Trace_doInitialSchematicTraceRender } from "./Trace_doInitialSchematicTraceRender"
-import { getMaxLengthFromConnectedComponents } from "./trace-utils/get-max-length-from-connected-components"
+import { getDecouplingLengthConstraintFromConnectedComponents } from "./trace-utils/get-max-length-from-connected-components"
 import { getTraceDisplayName } from "./trace-utils/get-trace-display-name"
 
 function getNetsConnectedThroughViaPorts(
@@ -309,17 +309,23 @@ export class Trace
       if (!nets.includes(connectedViaNet)) nets.push(connectedViaNet)
     }
     const displayName = getTraceDisplayName({ ports: ports, nets: nets })
+    const decouplingConstraint =
+      props.maxLength === undefined
+        ? getDecouplingLengthConstraintFromConnectedComponents(
+            ports.map((p) => p.port),
+            { db },
+          )
+        : undefined
     const trace = db.source_trace.insert({
       connected_source_port_ids: ports.map((p) => p.port.source_port_id!),
       connected_source_net_ids: nets.map((n) => n.source_net_id!),
       subcircuit_id: this.getSubcircuit()?.subcircuit_id!,
       name: props.name,
-      max_length:
-        props.maxLength ??
-        getMaxLengthFromConnectedComponents(
-          ports.map((p) => p.port),
-          { db },
-        ),
+      max_length: props.maxLength ?? decouplingConstraint?.maxLength,
+      max_length_constraint:
+        props.maxLength !== undefined
+          ? { origin: "explicit" }
+          : decouplingConstraint?.constraint,
       max_via_count: props.maxViaCount,
       display_name: props.displayName ?? displayName,
       min_trace_thickness: this._getExplicitTraceThickness(),
