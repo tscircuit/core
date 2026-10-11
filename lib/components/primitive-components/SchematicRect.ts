@@ -4,7 +4,7 @@ import {
   SCHEMATIC_COMPONENT_OUTLINE_COLOR,
   SCHEMATIC_COMPONENT_OUTLINE_STROKE_WIDTH,
 } from "lib/utils/constants"
-import { applyToPoint } from "transformation-matrix"
+import { applyToPoint, decomposeTSR } from "transformation-matrix"
 
 export class SchematicRect extends PrimitiveComponent<
   typeof schematicRectProps
@@ -67,27 +67,15 @@ export class SchematicRect extends PrimitiveComponent<
     const rect = db.schematic_rect.get(this.schematic_rect_id)
     if (!rect) return
 
-    // Transform corner points to get new dimensions
-    const topLeft = applyToPoint(transform, {
-      x: rect.center.x - rect.width / 2,
-      y: rect.center.y + rect.height / 2,
-    })
-    const bottomRight = applyToPoint(transform, {
-      x: rect.center.x + rect.width / 2,
-      y: rect.center.y - rect.height / 2,
-    })
-
-    const newWidth = Math.abs(bottomRight.x - topLeft.x)
-    const newHeight = Math.abs(topLeft.y - bottomRight.y)
-    const newCenter = {
-      x: (topLeft.x + bottomRight.x) / 2,
-      y: (topLeft.y + bottomRight.y) / 2,
-    }
+    // SymbolComponent applies axis-aligned scaling in schematic world mm
+    // (+X right, +Y up). Quarter turns exchange the rectangle's local axes.
+    const { scale } = decomposeTSR(transform)
+    const isQuarterTurn = Math.abs((rect.rotation ?? 0) % 180) === 90
 
     db.schematic_rect.update(this.schematic_rect_id, {
-      center: newCenter,
-      width: newWidth,
-      height: newHeight,
+      center: applyToPoint(transform, rect.center),
+      width: rect.width * Math.abs(isQuarterTurn ? scale.sy : scale.sx),
+      height: rect.height * Math.abs(isQuarterTurn ? scale.sx : scale.sy),
     })
   }
 }
