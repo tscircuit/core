@@ -93,10 +93,12 @@ function getAutoroutingPhasesSvg({
   autoroutingPhaseIoStack,
   snapshotName,
   fullCircuitSvg,
+  includePreloadedTraces = true,
 }: {
   autoroutingPhaseIoStack: AutoroutingPhaseIo[]
   snapshotName: string
   fullCircuitSvg?: string
+  includePreloadedTraces?: boolean
 }) {
   const phasePanelPairs = autoroutingPhaseIoStack.map((phase, index) => {
     const phaseNumber = index + 1
@@ -114,10 +116,12 @@ function getAutoroutingPhasesSvg({
     }
 
     if (phase.endSimpleRouteJson) {
-      const srj = getEndSrjWithPreloadedTraces(
-        phase.startSimpleRouteJson,
-        phase.endSimpleRouteJson,
-      )
+      const srj = includePreloadedTraces
+        ? getEndSrjWithPreloadedTraces(
+            phase.startSimpleRouteJson,
+            phase.endSimpleRouteJson,
+          )
+        : phase.endSimpleRouteJson
       endPanelSvg = createLabeledSrjSvg(
         `AUTOROUTING PHASE ${phaseNumber} END: ${srj.connections.length} CONNECTIONS, ${
           srj.traces?.length ?? 0
@@ -195,6 +199,7 @@ expect.extend({
       autoroutingPhaseIoStack,
       snapshotName: args[1],
       fullCircuitSvg,
+      includePreloadedTraces: args[3]?.includePreloadedTraces,
     })
     const testPath = args[0].replace(/\.test\.tsx?$/, "")
     const snapshotDir = path.join(path.dirname(testPath), "__snapshots__")
@@ -242,7 +247,11 @@ declare module "bun:test" {
       testPath: string,
       snapshotName: string,
       circuit?: { getCircuitJson(): any[] },
-      options?: { diffThresholdPercent?: number },
+      options?: {
+        diffThresholdPercent?: number
+        /** Set false to show the exact phase output without restoring input copper. */
+        includePreloadedTraces?: boolean
+      },
     ): Promise<MatcherResult>
   }
 }
