@@ -67,6 +67,18 @@ test("inherited fixed-copper scope prevents a subsequent phase shorting POWER", 
       signalOutput.route as PcbTraceRoutePointWithSrjMetadata[],
     ),
   }
+  expect([routedSignal.route[0], routedSignal.route.at(-1)]).toEqual(
+    expect.arrayContaining(
+      routingInput.connections[0]!.pointsToConnect.map((point) =>
+        expect.objectContaining({
+          route_type: "wire",
+          x: point.x,
+          y: point.y,
+          layer: point.layer,
+        }),
+      ),
+    ),
+  )
   const viaPoints = signalOutput.route.filter(
     (point) => point.route_type === "via",
   )
@@ -132,7 +144,7 @@ test("inherited fixed-copper scope prevents a subsequent phase shorting POWER", 
   ).toEqual(original.find((element) => element.type === "pcb_trace"))
   const status = circuit.db.pcb_note_text.insert({
     font: "tscircuit2024",
-    text: `FIXED: SIGNAL crosses on BOTTOM | ${drc.length} DRC errors`,
+    text: `FIXED: BOTTOM bridge | ${drc.length} trace-overlap DRC errors`,
     anchor_position: { x: 0, y: 3.7 },
     anchor_alignment: "center",
     font_size: 0.4,
