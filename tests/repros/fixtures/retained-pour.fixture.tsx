@@ -128,7 +128,7 @@ export const getRetainedPourFixture = async (pourLayer: LayerRef = "top") => {
   circuit.pcbRoutingDisabled = true
   circuit.add(<RetainedPourCircuit pourLayer={pourLayer} />)
   await circuit.renderUntilSettled()
-  return { circuit, circuitJson: circuit.getCircuitJson() }
+  return { circuit, circuitJson: structuredClone(circuit.getCircuitJson()) }
 }
 
 export const getRetainedPourHoleControls = async () => {
@@ -261,5 +261,5 @@ export const getRetainedPourHoleControls = async () => {
     </board>,
   )
   await circuit.renderUntilSettled()
-  return { circuit, circuitJson: circuit.getCircuitJson() }
+  return { circuit, circuitJson: structuredClone(circuit.getCircuitJson()) }
 }
