@@ -255,9 +255,9 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
     // The via is emitted before its child ports, so attach their IDs only
     // after PcbPortRender has created the layer ports.
     this.root!.db.pcb_via.update(this.pcb_via_id!, {
-      pcb_port_ids: this.children.flatMap((child) =>
-        child instanceof Port && child.pcb_port_id ? [child.pcb_port_id] : [],
-      ),
+      pcb_port_ids: this.children
+        .filter((child): child is Port => child.componentName === "Port")
+        .flatMap((port) => (port.pcb_port_id ? [port.pcb_port_id] : [])),
     })
   }
 
