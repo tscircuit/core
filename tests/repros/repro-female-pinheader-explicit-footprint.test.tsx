@@ -41,8 +41,14 @@ test.failing(
 
     const explicitHeader = circuit.db.source_component.getWhere({ name: "J1" })
     const automaticHeader = circuit.db.source_component.getWhere({ name: "J2" })
-    expect(explicitHeader?.gender).toBe("female")
-    expect(automaticHeader?.gender).toBe("female")
+    expect(explicitHeader).toMatchObject({
+      ftype: "simple_pin_header",
+      gender: "female",
+    })
+    expect(automaticHeader).toMatchObject({
+      ftype: "simple_pin_header",
+      gender: "female",
+    })
 
     const automaticCad = circuit.db.cad_component.getWhere({
       source_component_id: automaticHeader?.source_component_id,
