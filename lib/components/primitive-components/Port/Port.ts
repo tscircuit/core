@@ -360,7 +360,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
   getPortSelector() {
     // TODO this.parent.getSubcircuitSelector() >
     const parentComponent = this.getParentNormalComponent() ?? this.parent
-    return `.${parentComponent?.props.name} > port.${this.props.name}`
+    return `.${parentComponent?.props.name} port.${this.props.name}`
   }
   getAvailablePcbLayers(): LayerRef[] {
     const { layer, layers } = this._parsedProps

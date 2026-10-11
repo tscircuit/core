@@ -1,0 +1,15 @@
+bun test v1.3.14 (0d9b296a)
+
+tests/repros/repro-symbol-port-selector.test.tsx:
+(pass) a symbol port's generated selector resolves only the original port [94.58ms]
+
+tests/repros/port-selector-boundaries.test.ts:
+(pass) port selector identity works before rendering, while duplicate names stay ambiguous [5.48ms]
+
+tests/repros/repro-pcb-path-selector-ambiguity.test.tsx:
+(pass) saved paths reject ambiguous selectors, including the first matching port [136.83ms]
+
+ 3 pass
+ 0 fail
+ 34 expect() calls
+Ran 3 tests across 3 files. [2.01s]

@@ -1,0 +1,10 @@
+bun test v1.3.14 (0d9b296a)
+
+tests/repros/verify-existing-fix.test.tsx:
+Creating snapshot at /Users/ankan/Documents/Codex/2026-10-11/symbol-port-route-selector-reproduction/work/core/tests/repros/__snapshots__/verify-existing-fix-pcb.snap.svg
+(pass) a custom symbol exports its routed PCB path [108.83ms]
+
+ 1 pass
+ 0 fail
+ 11 expect() calls
+Ran 1 test across 1 file. [711.00ms]

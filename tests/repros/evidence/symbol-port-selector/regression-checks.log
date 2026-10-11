@@ -1,0 +1,52 @@
+bun test v1.3.14 (0d9b296a)
+
+tests/features/autoroutingphase-emitted-paths-fanout.test.tsx:
+(pass) emitted fanout paths preserve escaped copper and allow follow-up routing [1231.14ms]
+
+tests/features/autoroutingphase-emitted-paths-unavailable.test.tsx:
+(pass) unrepresentable output reports a reason without partial paths or input mutation [96.27ms]
+
+tests/features/autoroutingphase-emitted-paths-cache.test.tsx:
+(pass) cached phases emit independent replayable arrays without earlier phase copper [779.65ms]
+
+tests/features/autoroutingphase-emitted-paths-parity.test.tsx:
+Dense RP2040 saved-path parity {
+  differentPixels: 0,
+  parityPercent: 100,
+  foregroundParityPercent: 100,
+}
+(pass) dense RP2040 emitted PCB paths replay the autorouter copper with visual parity [6246.84ms]
+
+tests/features/autoroutingphase-emitted-paths-transforms.test.tsx:
+(pass) emitted routes replay translated and rotated groups on both layers [4097.14ms]
+
+tests/utils/autorouting/simple-route-json-port-selectors.test.tsx:
+(pass) simple route json points include semantic port selectors [19.77ms]
+
+tests/components/primitive-components/trace-pcb-path-selectors.test.tsx:
+(pass) trace pcbPath supports selectors [347.36ms]
+(pass) trace pcbPath selectors can set thickness [314.14ms]
+(pass) trace pcbPath selectors with kicad footprints [413.46ms]
+
+tests/components/primitive-components/schematic-symbol-selector-scope.test.tsx:
+(pass) schematicsymbol and physical chip selectors share mapped connections [1568.65ms]
+
+tests/components/base-components/shorthand-selector.test.tsx:
+(pass) shorthand selectors resolve correctly [13.48ms]
+(pass) shorthand selector errors use original selector [3.14ms]
+(pass) shorthand selectors resolve ports nested in custom symbol [23.25ms]
+(pass) shorthand selectors resolve ports for kicad library footprint refs [61.69ms]
+
+tests/components/base-components/trace-port-selector-errors.test.tsx:
+(pass) error when component is missing [4.73ms]
+(pass) error when component has no ports [4.50ms]
+(pass) error when component has numeric pins only [7.64ms]
+(pass) error lists available labeled pins [3.03ms]
+
+tests/components/normal-components/chip-pin-selector.test.tsx:
+(pass) should be able to select a pin/port by label on a chip [5.59ms]
+
+ 19 pass
+ 0 fail
+ 116 expect() calls
+Ran 19 tests across 11 files. [16.56s]

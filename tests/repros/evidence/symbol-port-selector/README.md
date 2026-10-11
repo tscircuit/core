@@ -18,6 +18,22 @@ ASSERT_PORT_SELECTOR_CONTRACT=1 bun test tests/repros/repro-symbol-port-selector
 bun tests/repros/evidence/symbol-port-selector/capture.tsx failure
 ```
 
-The default reproduction uses `test.failing`: Bun reports two expected failures as passes. The environment flag runs the exact same behavioral assertions normally, exiting 1 with two failures; see [failure.log](failure.log) and [expected-failure.log](expected-failure.log). No production code changes are present in the reproduction commit.
+On the [reproduction branch / PR #4545](https://github.com/tscircuit/core/pull/4545), the default tests use `test.failing`: Bun reports two expected failures as passes. The environment flag runs the exact same behavioral assertions normally, exiting 1 with two failures; see [failure.log](failure.log) and [expected-failure.log](expected-failure.log). No production code changes are present in that branch.
 
 [failure.json](failure.json) and the white-background [failure.svg](failure.svg) / [failure.png](failure.png) are captured observations of the rendered component tree and native lookup results, not expected snapshot baselines. The snapshot contains minimal centered top text explaining core's purpose and the observed failure. Capture it separately from any passing evidence; never update an expected baseline to bless the broken selector.
+
+## Fix branch
+
+Generate a descendant selector to support the actual Symbol parent. Direct ports also resolve with this selector. Export checks all matching **ports**, requires exactly one, and verifies identity against the original anchor. The error reports the observed port count, so zero matches are no longer called "not unique". CLI forwards this core message and requires no separate code change.
+
+The same reproduction assertions now run as ordinary tests. Additional controls cover direct and symbol-owned ports before cache warming, numeric and named pins, duplicate component names, zero matches, a unique wrong port, and a selector matching non-port elements alongside one valid port. Only uniquely selected original ports export.
+
+```sh
+bun test tests/repros/repro-symbol-port-selector.test.tsx tests/repros/repro-pcb-path-selector-ambiguity.test.tsx tests/repros/port-selector-boundaries.test.ts
+bun tests/repros/evidence/symbol-port-selector/capture.tsx pass
+bunx tsc --noEmit
+```
+
+See [pass.log](pass.log), [pass.json](pass.json), and the independent [passing snapshot](pass.png). Failure evidence is preserved unchanged. This fix is stacked on #4545; merge the reproduction first and then retarget/merge the fix, or land both commits together. Neither PR is merged by this task.
+
+Validation: 3 focused tests pass (34 assertions); 19 existing selector/export tests pass; after the final port-only cardinality change, all 5 export/replay tests pass again, including dense RP2040 visual replay parity (zero differing pixels) and translated/rotated groups on both layers. The end-to-end custom-symbol export fixture from #4541 at `98ae04ebeadaf2990fcdf8be109461947002e357` also passes against this fix, exporting one path with no unavailable reason. See [regression-checks.log](regression-checks.log), [export-checks.log](export-checks.log), and [custom-symbol-export.log](custom-symbol-export.log). `bunx tsc --noEmit` passes on both branches; Biome formatting and `git diff --check` pass.
