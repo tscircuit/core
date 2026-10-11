@@ -1,0 +1,22 @@
+bun test v1.3.14 (0d9b296a)
+
+tests/repros/ambiguous-saved-route-origin.test.tsx:
+38 |   const errors = circuit.db.pcb_autorouting_error.list()
+39 |   await captureRunEvidence(
+40 |     circuit.getCircuitJson(),
+41 |     `Two origin matches: ${circuit.db.pcb_trace.list().length} copper paths, ${errors.length} errors. Expected 0 paths / 1 error.`,
+42 |   )
+43 |   expect(errors.map((error) => error.message).join("\n")).toContain(
+                                                               ^
+error: expect(received).toContain(expected)
+
+Expected to contain: "must select exactly one PCB port"
+Received: ""
+
+      at <anonymous> (/Users/ankan/Documents/Codex/2026-10-11/tsx-saved-route-bug-reproductions/work/core/tests/repros/ambiguous-saved-route-origin.test.tsx:43:59)
+(fail) saved paths reject an origin selector matching two PCB ports [44.02ms]
+
+ 0 pass
+ 1 fail
+ 2 expect() calls
+Ran 1 test across 1 file. [709.00ms]
