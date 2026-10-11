@@ -44,18 +44,6 @@ export function ViaLayerPortsBoard({
   return (
     <board width={20} height={12} layers={layerCount} routeRemaining={false}>
       {nested ? <group subcircuit>{viasAndTrace}</group> : viasAndTrace}
-      <pcbnotetext
-        text={`Through vias: requested ${traceLayer} copper`}
-        pcbY={4}
-        fontSize={0.6}
-      />
-      <pcbnotetext text="VA" pcbX={-2} pcbY={1} fontSize={0.5} />
-      <pcbnotetext text="VB" pcbX={2} pcbY={1} fontSize={0.5} />
-      <pcbnotetext
-        text="Layer ports must match the physical barrel span"
-        pcbY={-3}
-        fontSize={0.4}
-      />
     </board>
   )
 }
