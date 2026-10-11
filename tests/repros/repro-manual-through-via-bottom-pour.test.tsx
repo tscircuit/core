@@ -40,4 +40,8 @@ test("BUG: shortened manual-via metadata hides three bottom GND shorts", async (
   await expect(result.snapshot).toMatchPcbSnapshot(import.meta.path, {
     layer: "bottom",
   })
+  await expect(circuit).toMatchPcbSnapshot(
+    import.meta.path.replace(".test.tsx", "-top.test.tsx"),
+    { layer: "top" },
+  )
 })

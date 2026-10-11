@@ -24,25 +24,22 @@ export function ManualThroughViaBoard({
       pcbStyle={{ viaPadDiameter: 0.8, viaHoleDiameter: 0.4 }}
       schematicDisabled
     >
-      {[-4, 4].map((x, index) => (
-        <chip
-          key={x}
-          name={`J${index + 1}`}
-          pcbX={x}
-          pinLabels={{ pin1: "SIGNAL" }}
-          footprint={
-            <footprint>
-              <smtpad portHints={["1"]} shape="circle" radius={0.4} />
-            </footprint>
-          }
-        />
-      ))}
+      {/* Standard 0603 pads sit 0.825 mm from their component origins.
+          The facing pads are the real manual-route endpoints at (-4,0)/(4,0). */}
+      <resistor name="R1" resistance="0" footprint="0603" pcbX={-4.825} />
+      <resistor name="R2" resistance="0" footprint="0603" pcbX={4.825} />
       <trace
-        from="J1.pin1"
-        to="J2.pin1"
+        from="R1.pin2"
+        to="R2.pin1"
         {...(multiplePaths
-          ? { pcbPaths: [["J1.pin1", ...path, "J2.pin1"]] }
+          ? { pcbPaths: [["R1.pin2", ...path, "R2.pin1"]] }
           : { pcbPath: path })}
+      />
+      <pcbnotetext
+        text="0603 R1.2 to R2.1: three manual vias"
+        pcbY={4.6}
+        fontSize={0.4}
+        layer="top"
       />
       <net name="GND" />
       <via
