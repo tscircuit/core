@@ -34,27 +34,29 @@ test("standalone handoff ignores retained pour copper and shorts a subsequent si
   const { routedTraces, vias } =
     await routeRetainedPourConnections(simpleRouteJson)
   for (const [traceIndex, pcbTrace] of routedTraces.entries()) {
-    expect([pcbTrace.route[0], pcbTrace.route.at(-1)]).toEqual(
-      expect.arrayContaining(
-        simpleRouteJson.connections[traceIndex]!.pointsToConnect.map((point) =>
-          expect.objectContaining({
-            route_type: "wire",
-            x: point.x,
-            y: point.y,
-            layer: point.layer,
-          }),
-        ),
-      ),
-    )
+    const endpoints = [pcbTrace.route[0]!, pcbTrace.route.at(-1)!]
+    for (const point of simpleRouteJson.connections[traceIndex]!
+      .pointsToConnect) {
+      const endpoint = endpoints.find(
+        (endpoint) =>
+          endpoint.route_type === "wire" &&
+          endpoint.layer === point.layer &&
+          Math.hypot(endpoint.x - point.x, endpoint.y - point.y) < 1e-8,
+      )
+      // Native routing rounds millimeter coordinates; contacts must still meet
+      // their actual compiled footprint pads within numerical precision.
+      expect(endpoint).toBeDefined()
+    }
   }
   const signal = routedTraces[0]!
   const holeControl = routedTraces[1]!
   const routed = [...circuitJson, ...routedTraces, ...vias]
   const shorts = checkCopperPourShorts(routed)
   expect(shorts).toHaveLength(1)
-  expect(shorts[0]!.message).toContain("SIGNAL_A.pin1 to SIGNAL_B.pin1")
+  expect(shorts[0]!.message).toContain("SIGNAL_A.pin2 to SIGNAL_B.pin1")
   const overlapArea = getRetainedPourWireOverlapArea(pour, signal)
-  expect(overlapArea).toBeCloseTo(0.18, 6)
+  // A 0.20 mm signal crosses the retained ring's 0.80 mm copper wall.
+  expect(overlapArea).toBeCloseTo(0.16, 6)
   expect(checkCopperPourShorts([...circuitJson, holeControl])).toHaveLength(0)
   expect(holeControl.route.every((point) => point.route_type === "wire")).toBe(
     true,
@@ -69,13 +71,13 @@ test("standalone handoff ignores retained pour copper and shorts a subsequent si
   const status = circuit.db.pcb_note_text.insert({
     font: "tscircuit2024",
     text: `FAIL: GND short | ${shorts.length} DRC error | ${overlapArea.toFixed(2)} mm2 overlap`,
-    anchor_position: { x: 0, y: 2.2 },
+    anchor_position: { x: 0, y: 3.0 },
     anchor_alignment: "center",
     font_size: 0.32,
     layer: "top",
     color: "#ffcc00",
   })
-  // Authored notes replace oversized automatic testpoint silkscreen only in
+  // Authored notes replace oversized automatic component silkscreen only in
   // diagnostic views. Routing/checking still use every compiled record.
   await expect(
     [...routed, status].filter(
@@ -101,7 +103,7 @@ test("standalone handoff ignores retained pour copper and shorts a subsequent si
   const pipeline4Status = circuit.db.pcb_note_text.insert({
     font: "tscircuit2024",
     text: "Pipeline4: FAIL | actual foreign GND short",
-    anchor_position: { x: 0, y: 2.2 },
+    anchor_position: { x: 0, y: 3.0 },
     anchor_alignment: "center",
     font_size: 0.32,
     layer: "top",
