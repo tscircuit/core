@@ -227,7 +227,7 @@ export const getRetainedPourHoleControls = async () => {
         color="#ffffff"
       />
       <pcbnotetext
-        text="All three real routes must remain on TOP with no pour shorts"
+        text="KRT: cyan centerlines are real TOP routes, with no pour shorts"
         pcbY={3.5}
         fontSize={0.3}
         color="#ffffff"

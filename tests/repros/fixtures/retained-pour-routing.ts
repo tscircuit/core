@@ -1,4 +1,8 @@
 import Flatten from "@flatten-js/core"
+import {
+  initKiCadRoutingToolsAutorouter,
+  KiCadRoutingToolsAutorouter,
+} from "@tscircuit/krt-wasm"
 import type {
   AnyCircuitElement,
   PcbCopperPourBRep,
@@ -11,21 +15,36 @@ import {
   type PcbTraceRoutePointWithSrjMetadata,
 } from "lib/utils/autorouting/get-circuit-json-pcb-trace-route"
 
-export const routeRetainedPourConnections = (routingInput: SimpleRouteJson) => {
+/** Run each declared connection in a real backend against the same fixed copper. */
+export const routeRetainedPourConnections = async (
+  routingInput: SimpleRouteJson,
+  backend: "pipeline9" | "krt" = "pipeline9",
+) => {
+  if (backend === "krt") await initKiCadRoutingToolsAutorouter()
   const routedTraces: PcbTrace[] = []
   const vias: AnyCircuitElement[] = []
   for (const connection of routingInput.connections) {
-    const output = new TscircuitAutorouter(
-      { ...routingInput, connections: [connection] },
-      { autorouterVersion: "beta_pipeline9" },
-    ).solveSync()
+    const connectionInput = { ...routingInput, connections: [connection] }
+    const router =
+      backend === "krt"
+        ? new KiCadRoutingToolsAutorouter(connectionInput, {
+            gridStep: 0.05,
+            clearance: 0.1,
+            maxIterations: 100_000,
+          })
+        : new TscircuitAutorouter(connectionInput, {
+            autorouterVersion: "beta_pipeline9",
+          })
+    const output = router.solveSync()
     const outputTrace = output.find(
       (trace) => trace.connection_name === connection.name,
     )
     if (!outputTrace) throw new Error("The native router returned no route")
     const pcbTrace: PcbTrace = {
       type: "pcb_trace",
-      pcb_trace_id: outputTrace.pcb_trace_id,
+      // Each backend starts a fresh solve here; KRT resets its trace counter.
+      // Give the combined Circuit JSON unique record IDs without editing copper.
+      pcb_trace_id: `${connection.name}_${outputTrace.pcb_trace_id}`,
       source_trace_id: connection.source_trace_id,
       route: getCircuitJsonPcbTraceRoute(
         outputTrace.route as PcbTraceRoutePointWithSrjMetadata[],
@@ -37,7 +56,7 @@ export const routeRetainedPourConnections = (routingInput: SimpleRouteJson) => {
       .entries()) {
       vias.push({
         type: "pcb_via",
-        pcb_via_id: `${outputTrace.pcb_trace_id}_via_${viaIndex}`,
+        pcb_via_id: `${pcbTrace.pcb_trace_id}_via_${viaIndex}`,
         pcb_trace_id: pcbTrace.pcb_trace_id,
         x: via.x,
         y: via.y,
