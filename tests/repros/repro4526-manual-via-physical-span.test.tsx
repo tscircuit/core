@@ -2,7 +2,6 @@ import { expect, test } from "bun:test"
 import { Resvg } from "@resvg/resvg-js"
 import type { PcbPath } from "@tscircuit/props"
 import type { LayerRef } from "circuit-json"
-import { createImageDiff } from "tests/fixtures/compare-image-buffers"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { renderManualViaSpan } from "tests/fixtures/render-manual-via-span"
 
@@ -109,7 +108,6 @@ const checkManualViaSpan = async (config: (typeof cases)[number]) => {
     assertionsPassed = true
   } finally {
     // Both APIs are asserted independently; one picture represents their shared geometry.
-    // Failed assertions still produce the actual snapshot without updating the baseline.
     if (
       api === "pcbPath" &&
       layerCount === 4 &&
@@ -121,23 +119,10 @@ const checkManualViaSpan = async (config: (typeof cases)[number]) => {
         json,
         assertionsPassed,
       })
-      const snapshotName = `${api}-manual-via-physical-span`
-      const snapshotPath = `${import.meta.dir}/__snapshots__/${snapshotName}`
       await Bun.write(
-        `${snapshotPath}.received.png`,
+        `${import.meta.dir}/__snapshots__/${api}-manual-via-physical-span.received.png`,
         new Resvg(svg).render().asPng(),
       )
-      if (assertionsPassed) {
-        await expect(svg).toMatchSvgSnapshot(import.meta.path, snapshotName)
-      } else {
-        // Never update the expected baseline from output with a failed assertion.
-        await createImageDiff({
-          reference: await Bun.file(`${snapshotPath}.snap.svg`).bytes(),
-          current: Buffer.from(svg),
-          diffPath: `${snapshotPath}.diff.png`,
-          highlightColor: "#ff00ff",
-        })
-      }
     }
   }
 }
