@@ -32,20 +32,12 @@ test("a via owns an inner-layer port supplied by a distinct core module", async 
     const { circuit } = getTestFixture()
     circuit.add(
       <board width={8} height={6} layers={4} schematicDisabled routingDisabled>
-        <via
-          name="V1"
-          outerDiameter={0.7}
-          holeDiameter={0.3}
-          {...{
-            ref: (via: Via | null) => {
-              if (!via) return
-              inner.registerMatch(via)
-              via.add(inner)
-            },
-          }}
-        />
+        <via name="V1" outerDiameter={0.7} holeDiameter={0.3} />
       </board>,
     )
+    const viaComponent = circuit.selectOne(".V1") as Via
+    inner.registerMatch(viaComponent)
+    viaComponent.add(inner)
     await circuit.renderUntilSettled()
     const via = circuit.db.pcb_via.list()[0]!
     const owned = circuit.db.pcb_port
