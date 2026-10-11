@@ -46,4 +46,8 @@ test("manual through-via spans clear three bottom GND short locations", async ()
   await expect(result.snapshot).toMatchPcbSnapshot(import.meta.path, {
     layer: "bottom",
   })
+  await expect(circuit).toMatchPcbSnapshot(
+    import.meta.path.replace(".test.tsx", "-top.test.tsx"),
+    { layer: "top" },
+  )
 })
