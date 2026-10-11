@@ -81,7 +81,7 @@ test("fixed copper inherits its known source trace scope without changing geomet
     {
       type: "pcb_fabrication_note_text",
       pcb_fabrication_note_text_id: "note",
-      text: `Power copper exists; router preserves ${global.traces?.length ?? 0} traces`,
+      text: `Power copper exists; router preserves ${global.traces?.length ?? 0} trace`,
       anchor_position: { x: 0, y: 2 },
       anchor_alignment: "center",
       font_size: 0.4,
