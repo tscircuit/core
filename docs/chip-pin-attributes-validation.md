@@ -1,5 +1,13 @@
 # Chip pin attributes compared with fetched metadata
 
+Supplier footprint imports automatically request datasheet enrichment only for
+`<chip>` and `<opamp>`. Microcontrollers represented by `<chip>` are included.
+Other primitives, including passives, discrete semiconductors, connectors, and
+pinouts, explicitly disable enrichment even if the parts engine enables it by
+default. Eligibility follows the concrete primitive, not inheritance from Chip
+or the manufacturer part number; a physical passive declared as `<chip>` still
+qualifies. Strict legacy engines can still import footprints without the option.
+
 Each chip compares explicitly declared `pinAttributes` with the original
 fetched part's electrical pin metadata, before user overrides merge into the
 rendered source ports. For example, declaring `requiresVoltage: "1.8V"` for a

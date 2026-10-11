@@ -2,6 +2,9 @@ import { normalizeDegrees } from "@tscircuit/math-utils"
 import { type CadModelProp, cadModelBase, point3 } from "@tscircuit/props"
 import type { CadComponent } from "circuit-json"
 import { rotation } from "circuit-json"
+import { mat4, vec3 } from "gl-matrix"
+import type { Matrix4 } from "jscad-planner"
+import { getAssemblyEulerAngles } from "./get-assembly-euler-angles"
 import { constructAssetUrl } from "lib/utils/constructAssetUrl"
 import type { ReactElement } from "react"
 import {
@@ -45,6 +48,30 @@ export const renderAssemblyCadModel = (
         }
   const assetUrl = (url: string) =>
     constructAssetUrl(url, owner.root?.platform?.projectBaseUrl)
+  // Face-mounted models may tilt out of the PCB plane. Transform their local
+  // offset as a point and compose authored Rz * Ry * Rx inside the world frame.
+  let mountedPosition: CadComponent["position"] | undefined
+  let mountedRotation: CadComponent["rotation"] | undefined
+  if (placement.worldTransform) {
+    const point = vec3.transformMat4(
+      [0, 0, 0],
+      [offset.x, offset.y, offset.z + (base.zOffsetFromSurface ?? 0)],
+      placement.worldTransform,
+    )
+    mountedPosition = { x: point[0], y: point[1], z: point[2] }
+    const frame: Matrix4 = [...placement.worldTransform]
+    mat4.rotateZ(frame, frame, (rotationOffset.z * Math.PI) / 180)
+    mat4.rotateY(frame, frame, (rotationOffset.y * Math.PI) / 180)
+    mat4.rotateX(frame, frame, (rotationOffset.x * Math.PI) / 180)
+    const angles = getAssemblyEulerAngles(frame).map(
+      (angle) => (angle * 180) / Math.PI,
+    )
+    mountedRotation = {
+      x: angles[0],
+      y: angles[1],
+      z: normalizeDegrees(angles[2]),
+    }
+  }
   const urls =
     typeof model === "string"
       ? { footprinter_string: model }
@@ -64,7 +91,7 @@ export const renderAssemblyCadModel = (
         }
   const cad = owner.root!.db.cad_component.insert({
     ...urls,
-    position: {
+    position: mountedPosition ?? {
       ...xy,
       z:
         placement.position.z +
@@ -72,7 +99,7 @@ export const renderAssemblyCadModel = (
     },
     // Same CAD Euler convention as NormalComponent.doInitialCadModelRender:
     // bottom flips Y and negates the board-plane Z angle.
-    rotation: {
+    rotation: mountedRotation ?? {
       x: rotationOffset.x,
       y: (bottom ? 180 : 0) + rotationOffset.y,
       z: normalizeDegrees(
@@ -81,6 +108,10 @@ export const renderAssemblyCadModel = (
     },
     layer: placement.layer,
     source_component_id: owner.source_component_id!,
+    color:
+      owner.componentName === "AssemblyPrintedPart"
+        ? owner._parsedProps.color
+        : undefined,
     subcircuit_id: placement.subcircuit_id,
     model_origin_position: base.modelOriginPosition ?? { x: 0, y: 0, z: 0 },
     model_unit_to_mm_scale_factor: base.modelUnitToMmScale ?? 1,

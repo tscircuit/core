@@ -46,7 +46,7 @@ export interface TscircuitElements {
   group: Props.GroupProps
   netlabel: Props.NetLabelProps
   opamp: Props.OpAmpProps
-  cadmodel: Props.CadModelProps
+  cadmodel: Exclude<Props.CadModelPropsInput, null | string>
   cadassembly: Props.CadAssemblyProps
   net: Props.NetProps
   trace: Props.TraceProps
@@ -108,6 +108,8 @@ export interface TscircuitElements {
   analogdcsweepsimulation: Props.AnalogDcSweepSimulationProps
   analogacsweepsimulation: Props.AnalogAcSweepSimulationProps
   analogsweepparameter: Props.AnalogSweepParameterProps
+  pcbreturncurrentsimulation: Props.PcbReturnCurrentSimulationProps
+  pcbreturncurrentexcitation: Props.PcbReturnCurrentExcitationProps
   spicemodel: Props.SpiceModelProps
   fiducial: Props.FiducialProps
   jscad: any

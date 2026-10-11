@@ -271,6 +271,7 @@ export const getObstaclesFromCircuitJson = (
           },
           width: element.width,
           height: element.height,
+          ccwRotationDegrees: element.rotation,
           connectedTo: [],
         })
       } else if (element.shape === "circle") {

@@ -18,7 +18,7 @@ test("connector with standard='usb_c' fetches circuit json from parts engine", a
       return {}
     },
     fetchPartCircuitJson: async (request) => {
-      expect(request).toMatchObject({ includeDatasheetInformation: true })
+      expect(request).toMatchObject({ includeDatasheetInformation: false })
       const { supplierPartNumber } = request
       if (supplierPartNumber === "C165948") {
         return (usbCC165948CircuitJson as AnyCircuitElement[]).map((element) =>

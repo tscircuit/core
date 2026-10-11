@@ -12,6 +12,7 @@ import {
 } from "circuit-json"
 import type { NormalComponent } from "./NormalComponent"
 import type { Bounds } from "@tscircuit/math-utils"
+import { fetchPartCircuitJsonWithoutDatasheet } from "lib/utils/fetch-part-circuit-json-with-datasheet"
 
 const SUPPLIER_FOOTPRINT_IOU_WARNING_THRESHOLD = 0.8
 
@@ -140,7 +141,9 @@ export function NormalComponent_doInitialSupplierFootprintMismatchWarning(
       try {
         const supplierCircuitJson =
           (await Promise.resolve(
-            fetchPartCircuitJson({ supplierPartNumber }),
+            fetchPartCircuitJsonWithoutDatasheet(fetchPartCircuitJson, {
+              supplierPartNumber,
+            }),
           )) ?? null
         if (!supplierCircuitJson?.length) continue
 

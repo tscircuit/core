@@ -38,6 +38,8 @@ export class FabricationNotePath extends PrimitiveComponent<
       pcb_component_id,
       layer,
       color: props.color,
+      is_filled: props.isFilled,
+      has_stroke: props.hasStroke,
       route: props.route.map((p) => {
         const transformedPosition = applyToPoint(transform, {
           x: p.x,

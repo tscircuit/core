@@ -141,6 +141,7 @@ const localAutorouterStrategies = new Map<string, LocalAutorouterStrategy>([
     "bus_lanes",
     {
       name: "bus_lanes",
+      preserveOutputTraces: true,
       cacheable: false,
       getSolverName: () => "BusLanesPipelineSolver",
       create: ({ simpleRouteJson, onSolverStarted }) => {

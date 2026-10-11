@@ -15,6 +15,7 @@ import { TraceConnectionError } from "lib/errors"
 import { getPcbSelectorErrorForTracePort } from "./getPcbSelectorErrorForTracePort"
 import { jlcMinTolerances } from "@tscircuit/jlcpcb-manufacturing-specs"
 import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
+import { renderPcbPaths } from "./render-pcb-paths"
 
 const findInflatedPcbViaForPoint = (
   vias: PcbVia[] | undefined,
@@ -51,10 +52,16 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
   const subcircuit = trace.getSubcircuit()
 
   const hasPcbPath = props.pcbPath !== undefined
+  const hasPcbPaths = props.pcbPaths !== undefined
   const wantsStraightLine = Boolean(props.pcbStraightLine)
   const inflatedPcbTraces = trace._inflatedPcbTraces ?? []
 
-  if (!hasPcbPath && !wantsStraightLine && inflatedPcbTraces.length === 0)
+  if (
+    !hasPcbPath &&
+    !hasPcbPaths &&
+    !wantsStraightLine &&
+    inflatedPcbTraces.length === 0
+  )
     return
 
   let allPortsFound: boolean
@@ -252,6 +259,17 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
       trace._insertErrorIfTraceIsOutsideBoard(route, ports)
     }
     trace._portsRoutedOnPcb = ports
+    return
+  }
+
+  if (props.pcbPaths) {
+    renderPcbPaths({
+      trace,
+      paths: props.pcbPaths,
+      ports,
+      portsWithSelectors,
+      width,
+    })
     return
   }
 

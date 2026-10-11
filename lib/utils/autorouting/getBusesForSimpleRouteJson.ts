@@ -1,4 +1,5 @@
 import { getBusSourceTraceIdOrThrow } from "./getBusSourceTraceIdOrThrow"
+import { getBusTargetLengthBounds } from "./getBusTargetLengthBounds"
 import type { SourceNet, SourceTrace } from "circuit-json"
 import type { Bus } from "lib/components/primitive-components/Bus"
 import type {
@@ -180,6 +181,7 @@ export const getBusesForSimpleRouteJson = ({
       busId: bus.name,
       name: bus.name,
       connectionNames,
+      ...getBusTargetLengthBounds(bus),
       ...(bus._parsedProps.maxLengthSkew !== undefined
         ? { maxLengthSkew: bus._parsedProps.maxLengthSkew }
         : {}),

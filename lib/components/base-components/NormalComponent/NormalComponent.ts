@@ -98,6 +98,7 @@ import { NormalComponent_doInitialSchematicComponentRender } from "./NormalCompo
 import { NormalComponent_doInitialSilkscreenOverlapAdjustment } from "./NormalComponent_doInitialSilkscreenOverlapAdjustment"
 import { NormalComponent_doInitialSourceDesignRuleChecks } from "./NormalComponent_doInitialSourceDesignRuleChecks"
 import { NormalComponent_doInitialMissingManufacturerPartNumberWarning } from "./NormalComponent_doInitialMissingManufacturerPartNumberWarning"
+import { NormalComponent_doInitialComponentAvailabilityWarning } from "./NormalComponent_doInitialComponentAvailabilityWarning"
 import { NormalComponent_doInitialSupplierFootprintMismatchWarning } from "./NormalComponent_doInitialSupplierFootprintMismatchWarning"
 import { canMergePortDefinitions } from "./utils/canMergePortDefinitions"
 import { getPrimaryPortsFromPortHintGroups } from "./utils/getPrimaryPortsFromPortHintGroups"
@@ -1903,10 +1904,18 @@ export class NormalComponent<
     const pinSpacing = 0.2
 
     const pinLabelsFromPorts = this._getPinLabelsFromPorts()
+    const pinLabelsFromProps = Array.isArray(props.pinLabels)
+      ? Object.fromEntries(
+          props.pinLabels.map((label: string, pinIndex: number) => [
+            `pin${pinIndex + 1}`,
+            label,
+          ]),
+        )
+      : props.pinLabels
     // Merge with props.pinLabels for label-to-pin-number mapping
     const allPinLabels = {
       ...pinLabelsFromPorts,
-      ...props.pinLabels,
+      ...pinLabelsFromProps,
     }
     const schPortArrangement =
       this._getSchematicPortArrangement() ??
@@ -2287,6 +2296,16 @@ export class NormalComponent<
 
   updateMissingManufacturerPartNumberWarning(): void {
     this.doInitialMissingManufacturerPartNumberWarning()
+  }
+
+  doInitialComponentAvailabilityWarning(): void {
+    NormalComponent_doInitialComponentAvailabilityWarning(this)
+  }
+
+  updateComponentAvailabilityWarning(): void {
+    NormalComponent_doInitialComponentAvailabilityWarning(this, {
+      refresh: true,
+    })
   }
 
   doInitialPartOrientationAnalysis(): void {

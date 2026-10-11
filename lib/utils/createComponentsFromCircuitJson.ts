@@ -734,6 +734,8 @@ export const createComponentsFromCircuitJson = (
           route: elm.route,
           strokeWidth: elm.stroke_width,
           color: elm.color,
+          isFilled: elm.is_filled,
+          hasStroke: elm.has_stroke,
           layer: elm.layer,
         }),
       )

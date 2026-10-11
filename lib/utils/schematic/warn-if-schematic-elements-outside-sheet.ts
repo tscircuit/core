@@ -25,7 +25,7 @@ const getSchematicElementId = (
   }
 }
 
-export const insertSchematicElementOutsideSheetWarnings = ({
+export const warnIfSchematicElementsOutsideSheet = ({
   db,
   schematicSheetId,
   schematicSheetName,

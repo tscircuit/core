@@ -484,12 +484,11 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       getDisabledLegacyAutorouterPreset(this)
     if (!disabledLegacyAutorouterPreset) return
 
-    db.source_property_ignored_warning.insert({
+    db.source_invalid_component_property_error.insert({
       source_component_id: this.source_component_id ?? "",
       property_name: "autorouter",
-      subcircuit_id: this.subcircuit_id ?? undefined,
-      error_type: "source_property_ignored_warning",
-      message: `The "${disabledLegacyAutorouterPreset}" autorouter is deprecated, so autorouting has been disabled for this subcircuit. Use the default autorouter and introduce <autoroutingphase /> or <fanout /> elements as needed.`,
+      error_type: "source_invalid_component_property_error",
+      message: `The "${disabledLegacyAutorouterPreset}" autorouter is deprecated and is not enabled by this platform. Use the default autorouter and introduce <autoroutingphase /> or <fanout /> elements as needed.`,
     })
   }
 

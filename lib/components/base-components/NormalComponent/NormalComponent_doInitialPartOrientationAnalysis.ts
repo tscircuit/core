@@ -14,6 +14,7 @@ import {
   source_component_misconfigured_error,
 } from "circuit-json"
 import { isFootprintFlipped } from "lib/utils/pcb/transform-footprint-insertion-direction"
+import { fetchPartCircuitJsonWithoutDatasheet } from "lib/utils/fetch-part-circuit-json-with-datasheet"
 import type { NormalComponent } from "./NormalComponent"
 
 type SupplierPartCandidate = {
@@ -251,7 +252,7 @@ const analyzeSupplierPartOrientation = async ({
 
   const analysis = (async () => {
     const supplierCircuitJson = await Promise.resolve(
-      partsEngine.fetchPartCircuitJson!({
+      fetchPartCircuitJsonWithoutDatasheet(partsEngine.fetchPartCircuitJson!, {
         supplierPartNumber: supplierPartCandidate.supplierPartNumber,
         platformFetch: component.root?.platform?.platformFetch,
       }),

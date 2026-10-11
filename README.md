@@ -55,5 +55,7 @@ circuit.getCircuitJson() // [{ type: "board", ...}, { type: "resistor", ...}, ..
 
 ## Development
 
+- [Declare PCB return-current experiments in TSX](./docs/pcb-return-current-simulation.md)
+
 - [How does core work?](./docs/DEVELOPMENT.md#overview-of-how-core-works)
 - [How to do benchmarking or debug performance](./docs/DEVELOPMENT.md#debugging-performance)

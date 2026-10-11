@@ -24,6 +24,7 @@ interface AssemblySnapshotPanel {
   annotation: string
   circuit: RootCircuit | AnyCircuitElement[]
   view?: "3d" | "schematic"
+  showReferenceSurfaces?: boolean
   renderOptions?: Match3dSnapshotOptions
 }
 
@@ -118,6 +119,7 @@ export const expectAssemblySnapshot = async (
         boardTextureResolution: 512,
         includeModels: true,
         showBoundingBoxes: false,
+        showReferenceSurfaces: panel.showReferenceSurfaces,
         format: "glb",
       })
       const renderOptions = await resolvePoppyglOptions(

@@ -9,11 +9,13 @@ import {
   resolveReferencePlanes,
   type JscadOperation,
   type NamedReferencePlane,
-  type Vector3D,
 } from "jscad-planner"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { renderAssemblyCadModel } from "./render-assembly-cad-model"
 import { resolvePrintedPartMounts } from "./resolve-printed-part-mounts"
+import { getPartReferenceSurfaces } from "./get-part-reference-surfaces"
+import { getAssemblyEulerAngles } from "./get-assembly-euler-angles"
+import { renderPartReferenceSurfaces } from "./render-part-reference-surfaces"
 
 export class AssemblyPrintedPart
   extends PrimitiveComponent<typeof assemblyPrintedPartProps>
@@ -63,14 +65,18 @@ export class AssemblyPrintedPart
 
   doInitialSourceRender(): void {
     this.printedPartPlan
+    getPartReferenceSurfaces(this)
     this.source_component_id = this.root!.db.source_component.insert({
       ftype: "printedpart",
       name: this.name,
+      color: this._parsedProps.color,
+      material: this._parsedProps.material,
     }).source_component_id
   }
 
   doInitialCadModelRender(): void {
     if (!this.root || this.root.pcbDisabled || !this.source_component_id) return
+    renderPartReferenceSurfaces(this)
     const plan = this.printedPartPlan
     if (!plan) {
       let model =
@@ -98,15 +104,7 @@ export class AssemblyPrintedPart
     // Decompose the rigid frame using JSCAD rotate's Rz * Ry * Rx convention
     // (paired with jscad-planner resolveReferencePlanes). Emit a standard rotate
     // operation so viewers with older planners need no new matrix operation.
-    const y = Math.asin(Math.max(-1, Math.min(1, -transform[2])))
-    const angles: Vector3D =
-      Math.abs(Math.cos(y)) > 1e-8
-        ? [
-            Math.atan2(transform[6], transform[10]),
-            y,
-            Math.atan2(transform[1], transform[0]),
-          ]
-        : [0, y, Math.atan2(-transform[4], transform[5])]
+    const angles = getAssemblyEulerAngles(transform)
     this.cad_component_id = renderAssemblyCadModel(
       this,
       {
