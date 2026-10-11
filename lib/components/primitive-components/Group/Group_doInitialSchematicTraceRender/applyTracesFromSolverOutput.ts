@@ -34,11 +34,13 @@ function extendTraceEndpointsToReachPinsInsideExpandedBoundingBox(
   params: {
     points: Array<{ x: number; y: number }>
     schematicPortIds: SchematicPortId[]
+    netTracePoints: Array<{ x: number; y: number }>
     componentBoundsByPortId: Map<SchematicPortId, Bounds>
   },
   db: CircuitJsonUtilObjects,
 ): Array<{ x: number; y: number }> {
-  const { points, schematicPortIds, componentBoundsByPortId } = params
+  const { points, schematicPortIds, netTracePoints, componentBoundsByPortId } =
+    params
   const centers = schematicPortIds
     .map((id) => {
       const center = db.schematic_port.get(id)?.center
@@ -62,7 +64,7 @@ function extendTraceEndpointsToReachPinsInsideExpandedBoundingBox(
   const usedCenters = new Set<number>()
 
   for (let i = 0; i < centers.length; i++) {
-    if (result.some((p) => d2(centers[i]!.center, p) <= 1e-12)) {
+    if (netTracePoints.some((p) => d2(centers[i]!.center, p) <= 1e-12)) {
       usedCenters.add(i)
     }
   }
@@ -227,6 +229,12 @@ export function applyTracesFromSolverOutput(args: {
         {
           points,
           schematicPortIds: solvedTraceSchematicPortIds,
+          netTracePoints: (traces ?? [])
+            .filter(
+              (trace) =>
+                trace.globalConnNetId === solvedTracePath.globalConnNetId,
+            )
+            .flatMap((trace) => trace.tracePath),
           componentBoundsByPortId,
         },
         db,
