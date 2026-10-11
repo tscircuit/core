@@ -40,7 +40,10 @@ export function getViaLayerPortsSvg(circuitJson: AnyCircuitElement[]): string {
           (port) =>
             port &&
             [route[0], route.at(-1)!].some(
-              (point) => point.x === port.x && point.y === port.y,
+              (point) =>
+                point.route_type === "wire" &&
+                point.x === port.x &&
+                point.y === port.y,
             ),
         ),
     )
@@ -96,7 +99,7 @@ export function getViaLayerPortsSvg(circuitJson: AnyCircuitElement[]): string {
       )
     }
   }
-  svg.push(`<text x="450" y="350" text-anchor="middle" font-size="14" fill="#86868b">${ports.length} ports · ${traces.length} traces · ${errors.length} missing-port errors</text>
+  svg.push(`<text x="450" y="350" text-anchor="middle" font-size="14" fill="#86868b">${ports.length} ports · ${traces.length} trace${traces.length === 1 ? "" : "s"} · ${errors.length} missing-port errors</text>
 <text x="450" y="382" text-anchor="middle" font-size="11" fill="#a1a1a6">Circuit JSON · y = 0 section · layer spacing exaggerated</text>
 </g></svg>`)
   return svg.join("\n")
