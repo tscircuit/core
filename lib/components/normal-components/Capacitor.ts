@@ -55,18 +55,13 @@ export class Capacitor extends NormalComponent<
   }
 
   initPorts() {
-    // When using footprinter strings, we automatically map pin1/pin2 to
-    // anode/cathode and pos/neg (IPC standard)
-    if (typeof this.props.footprint === "string") {
-      super.initPorts({
-        additionalAliases: {
-          pin1: ["anode", "pos"],
-          pin2: ["cathode", "neg"],
-        },
-      })
-    } else {
-      super.initPorts()
-    }
+    const usesFootprinter = typeof this.props.footprint === "string"
+    super.initPorts({
+      additionalAliases: {
+        pin1: [...(usesFootprinter ? ["anode"] : []), "pos"],
+        pin2: [...(usesFootprinter ? ["cathode"] : []), "neg"],
+      },
+    })
   }
 
   _getSchematicSymbolDisplayValue(): string | undefined {
