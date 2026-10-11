@@ -31,7 +31,8 @@ test("standalone handoff ignores retained pour copper and shorts a subsequent si
     simpleRouteJson.obstacles.filter((obstacle) => obstacle.isCopperPour),
   ).toHaveLength(0)
 
-  const { routedTraces, vias } = routeRetainedPourConnections(simpleRouteJson)
+  const { routedTraces, vias } =
+    await routeRetainedPourConnections(simpleRouteJson)
   for (const [traceIndex, pcbTrace] of routedTraces.entries()) {
     expect([pcbTrace.route[0], pcbTrace.route.at(-1)]).toEqual(
       expect.arrayContaining(
@@ -91,13 +92,21 @@ test("standalone handoff ignores retained pour copper and shorts a subsequent si
     circuitJson: controls.circuitJson,
     minTraceWidth: 0.1,
   }).simpleRouteJson
-  const controlOutput = routeRetainedPourConnections({
-    ...controlInput,
-    connections: controlInput.connections.filter(
-      (connection) => connection.name === connection.source_trace_id,
-    ),
-  })
+  // KRT exercises the many curved/rotated obstacle spans; the short regression
+  // above keeps Pipeline9. Both baseline and fix use these same backends.
+  const controlOutput = await routeRetainedPourConnections(
+    {
+      ...controlInput,
+      connections: controlInput.connections.filter(
+        (connection) => connection.name === connection.source_trace_id,
+      ),
+    },
+    "krt",
+  )
   expect(controlOutput.routedTraces).toHaveLength(3)
+  expect(
+    new Set(controlOutput.routedTraces.map((trace) => trace.pcb_trace_id)).size,
+  ).toBe(3)
   expect(controlOutput.vias).toHaveLength(0)
   expect(
     checkCopperPourShorts([
@@ -106,10 +115,21 @@ test("standalone handoff ignores retained pour copper and shorts a subsequent si
     ]),
   ).toHaveLength(0)
   expect(controls.circuitJson).toEqual(controlsOriginal)
+  const controlRouteNotes = controlOutput.routedTraces.map((trace) =>
+    controls.circuit.db.pcb_note_path.insert({
+      // Display the actual computed centerline above same-net copper.
+      route: trace.route.map(({ x, y }) => ({ x, y })),
+      layer: "top",
+      stroke_width: 0.05,
+      color: "#00ffff",
+    }),
+  )
   await expect(
-    [...controls.circuitJson, ...controlOutput.routedTraces].filter(
-      (element) => element.type !== "pcb_silkscreen_text",
-    ),
+    [
+      ...controls.circuitJson,
+      ...controlOutput.routedTraces,
+      ...controlRouteNotes,
+    ].filter((element) => element.type !== "pcb_silkscreen_text"),
   ).toMatchPcbSnapshot(
     import.meta.path.replace(".test.tsx", "-controls.test.tsx"),
   )
@@ -119,7 +139,7 @@ test("standalone handoff ignores retained pour copper and shorts a subsequent si
     circuitJson: bottom.circuitJson,
     minTraceWidth: 0.2,
   }).simpleRouteJson
-  const bottomOutput = routeRetainedPourConnections(bottomInput)
+  const bottomOutput = await routeRetainedPourConnections(bottomInput)
   expect(bottomOutput.vias).toHaveLength(0)
   expect(
     checkCopperPourShorts([
