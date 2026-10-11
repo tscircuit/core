@@ -18,7 +18,7 @@ import {
 /** Run each declared connection in a real backend against the same fixed copper. */
 export const routeRetainedPourConnections = async (
   routingInput: SimpleRouteJson,
-  backend: "pipeline9" | "krt" = "pipeline9",
+  backend: "pipeline9" | "pipeline4" | "krt" = "pipeline9",
 ) => {
   if (backend === "krt") await initKiCadRoutingToolsAutorouter()
   const routedTraces: PcbTrace[] = []
@@ -33,7 +33,8 @@ export const routeRetainedPourConnections = async (
             maxIterations: 100_000,
           })
         : new TscircuitAutorouter(connectionInput, {
-            autorouterVersion: "beta_pipeline9",
+            autorouterVersion:
+              backend === "pipeline4" ? "beta_pipeline4" : "beta_pipeline9",
           })
     const output = router.solveSync()
     const outputTrace = output.find(

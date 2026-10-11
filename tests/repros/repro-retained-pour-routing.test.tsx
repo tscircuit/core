@@ -83,6 +83,41 @@ test("standalone handoff ignores retained pour copper and shorts a subsequent si
     ),
   ).toMatchPcbSnapshot(import.meta.path)
 
+  const pipeline4Output = await routeRetainedPourConnections(
+    simpleRouteJson,
+    "pipeline4",
+  )
+  expect(pipeline4Output.routedTraces).toHaveLength(2)
+  expect(
+    checkCopperPourShorts([
+      ...circuitJson,
+      ...pipeline4Output.routedTraces,
+      ...pipeline4Output.vias,
+    ]),
+  ).toHaveLength(1)
+  expect(
+    getRetainedPourWireOverlapArea(pour, pipeline4Output.routedTraces[0]!),
+  ).toBeGreaterThan(0.1)
+  const pipeline4Status = circuit.db.pcb_note_text.insert({
+    font: "tscircuit2024",
+    text: "Pipeline4: FAIL | actual foreign GND short",
+    anchor_position: { x: 0, y: 2.2 },
+    anchor_alignment: "center",
+    font_size: 0.32,
+    layer: "top",
+    color: "#ffcc00",
+  })
+  await expect(
+    [
+      ...circuitJson,
+      ...pipeline4Output.routedTraces,
+      ...pipeline4Output.vias,
+      pipeline4Status,
+    ].filter((element) => element.type !== "pcb_silkscreen_text"),
+  ).toMatchPcbSnapshot(
+    import.meta.path.replace(".test.tsx", "-pipeline4.test.tsx"),
+  )
+
   const controls = await getRetainedPourHoleControls()
   const controlsOriginal = structuredClone(controls.circuitJson)
   const controlPour = controls.circuit.db.pcb_copper_pour.list()[0]!
