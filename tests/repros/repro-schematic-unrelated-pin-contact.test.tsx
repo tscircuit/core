@@ -1,13 +1,13 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test.failing("supply wires avoid grounded pins", async () => {
+test("supply wires avoid grounded pins", async () => {
   const { circuit } = getTestFixture()
   circuit.pcbDisabled = true
   circuit.add(
     <board>
       <schematictext
-        text="core: supply wires must avoid grounded pins"
+        text="PASS: core supply wires avoid grounded pins"
         schX={0.7}
         schY={1.2}
         fontSize={0.12}
