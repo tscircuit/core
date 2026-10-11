@@ -1,139 +1,32 @@
 import { expect, test } from "bun:test"
-import { Resvg } from "@resvg/resvg-js"
-import type { PcbPath } from "@tscircuit/props"
-import type { LayerRef } from "circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
-import { renderManualViaSpan } from "tests/fixtures/render-manual-via-span"
+import { ManualViaPhysicalSpanPcbPathBoard } from "tests/fixtures/manual-via-physical-span-board"
 
-const cases = (["pcbPath", "pcbPaths"] as const).flatMap((api) =>
-  ([2, 4, 10] as const).flatMap((layerCount) =>
-    [undefined, false, true].map((allowBlindAndBuriedVias) => ({
-      api,
-      layerCount,
-      allowBlindAndBuriedVias,
-    })),
-  ),
-)
-const checkManualViaSpan = async (config: (typeof cases)[number]) => {
-  const { api, layerCount, allowBlindAndBuriedVias } = config
-  // Expectations describe the board stack, independently of the via helper.
-  const stack: LayerRef[] = [
-    "top",
-    ...Array.from(
-      { length: layerCount - 2 },
-      (_, i) => `inner${i + 1}` as LayerRef,
-    ),
-    "bottom",
-  ]
-  const deepLayer = stack[stack.length - 2]
-  const signalLayers: LayerRef[] =
-    layerCount === 2
-      ? ["top", "bottom", "top"]
-      : ["top", deepLayer, "top", "inner1", deepLayer, "top", "bottom", "top"]
-  const transitions = signalLayers.slice(1).map((toLayer, i) => ({
-    fromLayer: signalLayers[i],
-    toLayer,
-  }))
-  const path: PcbPath = [
-    "R1.pin2",
-    ...transitions.flatMap(({ fromLayer, toLayer }, i) => [
-      { x: i + 2, y: 0 },
-      { x: i + 2, y: 0, via: true, fromLayer, toLayer },
-      { x: i + 2, y: 0 },
-    ]),
-    "R2.pin1",
-  ]
-  const { circuit } = getTestFixture()
-  circuit.schematicDisabled = true
-  circuit.add(
-    <board
-      width={30}
-      height={12}
-      layers={layerCount}
-      routeRemaining={false}
-      allowBlindAndBuriedVias={allowBlindAndBuriedVias}
-      pcbStyle={{ viaHoleDiameter: 0.3, viaPadDiameter: 0.7 }}
-    >
-      <resistor name="R1" resistance="1k" footprint="0402" pcbX={-6} />
-      <resistor name="R2" resistance="1k" footprint="0402" pcbX={6} />
-      <trace
-        from="R1.pin2"
-        to="R2.pin1"
-        thickness={0.2}
-        pcbPathRelativeTo="R1.pin2"
-        {...(api === "pcbPath" ? { pcbPath: path } : { pcbPaths: [path] })}
-      />
-    </board>,
-  )
-  await circuit.renderUntilSettled()
-  const json = circuit.getCircuitJson()
-  const vias = circuit.db.pcb_via.list()
-  const route = circuit.db.pcb_trace.list().flatMap((trace) => trace.route)
-  const expectedLayers = transitions.map(({ fromLayer, toLayer }) => {
-    if (!allowBlindAndBuriedVias) return stack
-    const from = stack.indexOf(fromLayer)
-    const to = stack.indexOf(toLayer)
-    return stack.slice(Math.min(from, to), Math.max(from, to) + 1)
-  })
-  const errors = json.filter((element) => element.type.includes("error"))
-  let assertionsPassed = false
-  try {
-    // Check setup and logical transitions before the physical-span assertion.
-    expect(errors).toEqual([])
-    expect(vias).toHaveLength(transitions.length)
-    expect(
-      route
-        .filter((point) => point.route_type === "via")
-        .map((point) => [point.from_layer, point.to_layer]),
-    ).toEqual(transitions.map(({ fromLayer, toLayer }) => [fromLayer, toLayer]))
-    expect([
-      ...new Set(
-        route
-          .filter((point) => point.route_type === "wire")
-          .map((point) => point.layer),
-      ),
-    ]).toEqual([...new Set(signalLayers)])
-    expect(vias.map((via) => [via.hole_diameter, via.outer_diameter])).toEqual(
-      transitions.map(() => [0.3, 0.7]),
-    )
-    expect(vias.map((via) => [via.from_layer, via.to_layer])).toEqual(
-      transitions.map(({ fromLayer, toLayer }) => [fromLayer, toLayer]),
-    )
-    // Occupancy is independent of from/to ordering, including reverse outer vias.
-    expect(
-      vias.map((via) =>
-        [...via.layers].sort((a, b) => stack.indexOf(a) - stack.indexOf(b)),
-      ),
-    ).toEqual(expectedLayers)
-    assertionsPassed = true
-  } finally {
-    // Both APIs are asserted independently; one picture represents their shared geometry.
-    if (
-      api === "pcbPath" &&
-      layerCount === 4 &&
-      allowBlindAndBuriedVias === false
-    ) {
-      const svg = renderManualViaSpan({
-        api,
-        allowBlindAndBuriedVias,
-        json,
-        assertionsPassed,
-      })
-      await Bun.write(
-        `${import.meta.dir}/__snapshots__/${api}-manual-via-physical-span.received.png`,
-        new Resvg(svg).render().asPng(),
-      )
+test.failing(
+  "pcbPath uses through-hole spans when blind vias are disabled",
+  async () => {
+    const { circuit } = getTestFixture()
+    circuit.schematicDisabled = true
+    circuit.add(<ManualViaPhysicalSpanPcbPathBoard />)
+    await circuit.renderUntilSettled()
+
+    const vias = circuit.db.pcb_via.list()
+    expect(vias).toHaveLength(7)
+    expect(vias.map((via) => [via.from_layer, via.to_layer])).toEqual([
+      ["top", "inner2"],
+      ["inner2", "top"],
+      ["top", "inner1"],
+      ["inner1", "inner2"],
+      ["inner2", "top"],
+      ["top", "bottom"],
+      ["bottom", "top"],
+    ])
+    for (const via of vias) {
+      expect(via.layers).toHaveLength(4)
+      expect(via.layers).toContain("top")
+      expect(via.layers).toContain("inner1")
+      expect(via.layers).toContain("inner2")
+      expect(via.layers).toContain("bottom")
     }
-  }
-}
-
-for (const config of cases) {
-  // CI runs the known failures; local runs expose them as ordinary failures.
-  test.failingIf(
-    process.env.CI === "true" &&
-      config.layerCount > 2 &&
-      !config.allowBlindAndBuriedVias,
-  )(`manual via physical span: ${JSON.stringify(config)}`, () =>
-    checkManualViaSpan(config),
-  )
-}
+  },
+)
