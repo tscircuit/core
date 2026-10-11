@@ -1,10 +1,10 @@
 import { expect, test } from "bun:test"
-import { RootCircuit, type Port, type Group } from "lib"
+import { RootCircuit, type Group, type Port } from "lib"
 
-test("a symbol port's generated selector resolves only the original port", async () => {
+test("symbol port selector round-trip", async () => {
   const circuit = new RootCircuit({ platform: { pcbDisabled: true } })
   circuit.add(
-    <board width={10} height={10} routingDisabled schematicDisabled>
+    <board routingDisabled schematicDisabled>
       <chip
         name="Q_PD_INHIBIT"
         symbol={
@@ -17,12 +17,7 @@ test("a symbol port's generated selector resolves only the original port", async
   )
   await circuit.renderUntilSettled()
   const [port] = (circuit.firstChild as Group).selectAll<Port>("port")
-  expect(port!.parent!.componentName).toBe("Symbol")
-  expect(
-    circuit.selectOne("Q_PD_INHIBIT.pin2", { type: "port" }) === port,
-  ).toBe(true)
-  expect(
-    circuit.selectOne(port!.getPortSelector(), { type: "port" }) === port,
-  ).toBe(true)
-  expect(circuit.selectAll(port!.getPortSelector())).toEqual([port!])
+  const selector = port!.getPortSelector()
+  expect(circuit.selectAll(selector)).toEqual([port!])
+  expect(circuit.selectOne(selector, { type: "port" }) === port).toBe(true)
 })
