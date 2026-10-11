@@ -1,0 +1,22 @@
+bun test v1.3.14 (0d9b296a)
+
+tests/repros/duplicate-core-via-port.test.tsx:
+59 |     expect(inner.pcb_port_id).toBeDefined()
+60 |     await captureRunEvidence(
+61 |       circuit.getCircuitJson(),
+62 |       `One through via: ${owned.length} owned layer ports; ${via.pcb_port_ids?.length ?? 0} attached. Expected 3.`,
+63 |     )
+64 |     expect(via.pcb_port_ids).toContain(inner.pcb_port_id!)
+                                  ^
+error: expect(received).toContain(expected)
+
+Expected to contain: "pcb_port_2"
+Received: [ "pcb_port_0", "pcb_port_1" ]
+
+      at <anonymous> (/Users/ankan/Documents/Codex/2026-10-11/tsx-saved-route-bug-reproductions/work/core/tests/repros/duplicate-core-via-port.test.tsx:64:30)
+(fail) a via owns an inner-layer port supplied by a distinct core module [34.17ms]
+
+ 0 pass
+ 1 fail
+ 6 expect() calls
+Ran 1 test across 1 file. [555.00ms]
