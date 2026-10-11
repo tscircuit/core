@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test"
-import { RootCircuit, type Port } from "lib"
+import { RootCircuit, type Port, type Group } from "lib"
 
 const regression = process.env.ASSERT_PORT_SELECTOR_CONTRACT
   ? test
@@ -8,7 +8,7 @@ const regression = process.env.ASSERT_PORT_SELECTOR_CONTRACT
 regression(
   "a symbol port's generated selector resolves only the original port",
   async () => {
-    const circuit = new RootCircuit()
+    const circuit = new RootCircuit({ platform: { pcbDisabled: true } })
     circuit.add(
       <board
         width={10}
@@ -28,7 +28,7 @@ regression(
       </board>,
     )
     await circuit.renderUntilSettled()
-    const [port] = circuit.selectAll<Port>("port")
+    const [port] = (circuit.firstChild as Group).selectAll<Port>("port")
     expect(port!.parent!.componentName).toBe("Symbol")
     expect(
       circuit.selectOne("Q_PD_INHIBIT.pin2", { type: "port" }) === port,

@@ -1,12 +1,12 @@
-import { RootCircuit, type Port } from "lib"
+import { RootCircuit, type Port, type Group } from "lib"
 import { Resvg } from "@resvg/resvg-js"
 import { join } from "node:path"
 
 // Observed-run evidence, never an expected snapshot baseline.
 const label = process.argv[2] ?? "failure"
-const circuit = new RootCircuit()
+const circuit = new RootCircuit({ platform: { pcbDisabled: true } })
 circuit.add(
-  <board width={10} height={10} routingDisabled pcbDisabled schematicDisabled>
+  <board width={10} height={10} routingDisabled schematicDisabled>
     <chip
       name="Q_PD_INHIBIT"
       symbol={
@@ -18,7 +18,7 @@ circuit.add(
   </board>,
 )
 await circuit.renderUntilSettled()
-const [port] = circuit.selectAll<Port>("port")
+const [port] = (circuit.firstChild as Group).selectAll<Port>("port")
 const selector = port!.getPortSelector()
 const matches = circuit.selectAll(selector)
 const roundTrip = circuit.selectOne(selector, { type: "port" }) === port

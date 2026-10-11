@@ -13,8 +13,8 @@ error: expect(received).toBe(expected)
 Expected: true
 Received: false
 
-      at <anonymous> (/Users/ankan/Documents/Codex/2026-10-11/symbol-port-route-selector-reproduction/work/core/tests/repros/repro-symbol-port-selector.test.tsx:38:7)
-(fail) a symbol port's generated selector resolves only the original port [35.11ms]
+      at <anonymous> (/Users/ankan/Documents/Codex/2026-10-11/symbol-port-route-selector-reproduction/work/repro-types/tests/repros/repro-symbol-port-selector.test.tsx:38:7)
+(fail) a symbol port's generated selector resolves only the original port [19.21ms]
 
 tests/repros/repro-pcb-path-selector-ambiguity.test.tsx:
 65 |       rejected.push(
@@ -35,10 +35,10 @@ error: expect(received).toEqual(expected)
 - Expected  - 1
 + Received  + 1
 
-      at <anonymous> (/Users/ankan/Documents/Codex/2026-10-11/symbol-port-route-selector-reproduction/work/core/tests/repros/repro-pcb-path-selector-ambiguity.test.tsx:70:22)
-(fail) saved paths reject ambiguous selectors, including the first matching port [30.48ms]
+      at <anonymous> (/Users/ankan/Documents/Codex/2026-10-11/symbol-port-route-selector-reproduction/work/repro-types/tests/repros/repro-pcb-path-selector-ambiguity.test.tsx:70:22)
+(fail) saved paths reject ambiguous selectors, including the first matching port [23.44ms]
 
  0 pass
  2 fail
  5 expect() calls
-Ran 2 tests across 2 files. [689.00ms]
+Ran 2 tests across 2 files. [499.00ms]
