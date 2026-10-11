@@ -1,6 +1,8 @@
-import { afterAll, expect, test } from "bun:test"
+import { expect, test } from "bun:test"
+import { Resvg } from "@resvg/resvg-js"
 import type { PcbPath } from "@tscircuit/props"
 import type { LayerRef } from "circuit-json"
+import { createImageDiff } from "tests/fixtures/compare-image-buffers"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { renderManualViaSpan } from "tests/fixtures/render-manual-via-span"
 
@@ -13,19 +15,6 @@ const cases = (["pcbPath", "pcbPaths"] as const).flatMap((api) =>
     })),
   ),
 )
-const observations: unknown[] = []
-
-afterAll(async () => {
-  if (process.env.VIA_SPAN_EVIDENCE_DIR) {
-    await Bun.write(
-      `${process.env.VIA_SPAN_EVIDENCE_DIR}/observations.json`,
-      `[\n${observations
-        .map((observation) => JSON.stringify(observation))
-        .join(",\n")}\n]\n`,
-    )
-  }
-})
-
 test.each(cases)("manual via physical span: %j", async (config) => {
   const { api, layerCount, allowBlindAndBuriedVias } = config
   // Expectations describe the board stack, independently of the via helper.
@@ -89,7 +78,6 @@ test.each(cases)("manual via physical span: %j", async (config) => {
   })
   const errors = json.filter((element) => element.type.includes("error"))
   let assertionsPassed = false
-  let svg = ""
   try {
     // Check setup and logical transitions before the physical-span assertion.
     expect(errors).toEqual([])
@@ -120,34 +108,31 @@ test.each(cases)("manual via physical span: %j", async (config) => {
     ).toEqual(expectedLayers)
     assertionsPassed = true
   } finally {
-    observations.push({
-      ...config,
-      assertionsPassed,
-      expectedLayers,
-      vias,
-      errors,
-    })
+    // Failed assertions still produce an actual snapshot and expected/actual diff.
     if (layerCount === 4 && allowBlindAndBuriedVias === false) {
-      svg = renderManualViaSpan({
+      const svg = renderManualViaSpan({
         api,
         allowBlindAndBuriedVias,
         json,
         assertionsPassed,
       })
-      if (process.env.VIA_SPAN_EVIDENCE_DIR) {
-        await Bun.write(`${process.env.VIA_SPAN_EVIDENCE_DIR}/${api}.svg`, svg)
-        await Bun.write(
-          `${process.env.VIA_SPAN_EVIDENCE_DIR}/${api}.json`,
-          `[\n${json.map((element) => JSON.stringify(element)).join(",\n")}\n]\n`,
-        )
+      const snapshotName = `${api}-manual-via-physical-span`
+      const snapshotPath = `${import.meta.dir}/__snapshots__/${snapshotName}`
+      await Bun.write(
+        `${snapshotPath}.received.png`,
+        new Resvg(svg).render().asPng(),
+      )
+      if (assertionsPassed) {
+        await expect(svg).toMatchSvgSnapshot(import.meta.path, snapshotName)
+      } else {
+        // Never update the expected baseline from output with a failed assertion.
+        await createImageDiff({
+          reference: await Bun.file(`${snapshotPath}.snap.svg`).bytes(),
+          current: Buffer.from(svg),
+          diffPath: `${snapshotPath}.diff.png`,
+          highlightColor: "#ff00ff",
+        })
       }
     }
-  }
-  // Only establish an expected visual baseline after the behavioral check passes.
-  if (layerCount === 4 && allowBlindAndBuriedVias === false) {
-    await expect(svg).toMatchSvgSnapshot(
-      import.meta.path,
-      `${api}-manual-via-physical-span`,
-    )
   }
 })
