@@ -29,6 +29,13 @@ test.failing(
           }
         />
         <trace from="A.1" to="B.1" />
+        <pcbnotetext text="A.1" pcbX={0} pcbY={-1} fontSize={0.4} />
+        <pcbnotetext text="B.1" pcbX={4} pcbY={-1} fontSize={0.4} />
+        <pcbnotetext
+          text="Expected: ambiguous origin rejects this route"
+          pcbY={2}
+          fontSize={0.35}
+        />
         <autoroutingphase
           pcbTracePaths={[
             {
@@ -49,6 +56,7 @@ test.failing(
       circuit.getCircuitJson(),
       `Two origin matches: ${circuit.db.pcb_trace.list().length} copper paths, ${errors.length} errors. Expected 0 paths / 1 error.`,
     )
+    await expect(circuit).toMatchPcbSnapshot(import.meta.path)
     expect(errors.map((error) => error.message).join("\n")).toContain(
       "must select exactly one PCB port",
     )
