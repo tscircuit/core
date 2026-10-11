@@ -3,10 +3,7 @@ import type { SimpleRouteBus } from "lib/utils/autorouting/SimpleRouteJson"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { MatchedBusPhaseSplitFixture } from "./fixtures/matched-bus-phase-split.fixture"
 
-// Enable the intended assertion directly with TSCIRCUIT_ENABLE_SPLIT_BUS_REPRO=1.
-const regressionTest = process.env.TSCIRCUIT_ENABLE_SPLIT_BUS_REPRO
-  ? test
-  : test.failing
+const regressionTest = test
 
 regressionTest(
   "a length-matched bus must not silently become independent phase singletons",

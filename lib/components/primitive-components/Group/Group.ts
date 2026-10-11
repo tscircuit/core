@@ -99,6 +99,7 @@ import { Group_doInitialSourceAddConnectivityMapKey } from "./Group_doInitialSou
 import { Group_doInitialStandaloneSubcircuitPcbDesignRuleChecks } from "./Group_doInitialStandaloneSubcircuitPcbDesignRuleChecks"
 import { Group_getFanoutPourNetMap } from "./Group_getFanoutPourNetMap"
 import { Group_getRoutingPhasePlans } from "./Group_getRoutingPhasePlans"
+import { RoutingPhasePreparationError } from "lib/utils/autorouting/routing-phase-preparation-error"
 import {
   cacheLocalAutoroutingPhaseResult,
   getCachedLocalAutoroutingPhaseResult,
@@ -2058,9 +2059,39 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     if (this._hasStartedAsyncAutorouting) return
     this._hasStartedAsyncAutorouting = true
     if (this._getAutorouterConfig().local) {
-      this._queueAsyncEffect("autorouting", async () =>
-        this._runLocalAutorouting(),
-      )
+      this._queueAsyncEffect("autorouting", async () => {
+        try {
+          await this._runLocalAutorouting()
+        } catch (error) {
+          if (!(error instanceof RoutingPhasePreparationError)) throw error
+
+          // Matching constraints can fail before the per-stage solver catch.
+          const { db } = this.root!
+          const pcbErrorId = `pcb_autorouter_error_subcircuit_${this.subcircuit_id}`
+          const alreadyRecorded = db.pcb_autorouting_error
+            .list()
+            .some(
+              (recordedError) =>
+                recordedError.pcb_error_id === pcbErrorId &&
+                recordedError.message === error.message,
+            )
+          if (!alreadyRecorded) {
+            db.pcb_autorouting_error.insert({
+              pcb_error_id: pcbErrorId,
+              error_type: "pcb_autorouting_error",
+              message: error.message,
+              subcircuit_id: this.subcircuit_id ?? undefined,
+            })
+            this.root?.emit("autorouting:error", {
+              type: "autorouting:error",
+              subcircuit_id: this.subcircuit_id!,
+              componentDisplayName: this.getString(),
+              error: { message: error.message },
+            })
+          }
+          throw error
+        }
+      })
     } else {
       this._queueAsyncEffect("make-http-autorouting-request", async () =>
         this._runEffectMakeHttpAutoroutingRequest(),

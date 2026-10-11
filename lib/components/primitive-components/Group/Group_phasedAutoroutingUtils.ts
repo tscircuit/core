@@ -5,6 +5,7 @@ import type {
 } from "lib/utils/autorouting/SimpleRouteJson"
 import { getSrjOutlineForRoutingBounds } from "lib/utils/autorouting/get-srj-outline-for-routing-bounds"
 import { expandSrjBoundsToIncludeConnectionPoints } from "lib/utils/autorouting/expand-srj-bounds-to-include-connection-points"
+import { RoutingPhasePreparationError } from "lib/utils/autorouting/routing-phase-preparation-error"
 import type {
   RoutingPhaseDrcTolerances,
   RoutingPhasePlan,
@@ -88,6 +89,15 @@ export function Group_filterSimpleRouteJsonForPhase(
       const connectionNames = bus.connectionNames.filter((connectionName) =>
         includedConnectionNames.has(connectionName),
       )
+      if (
+        bus.maxLengthSkew !== undefined &&
+        connectionNames.length > 0 &&
+        connectionNames.length !== bus.connectionNames.length
+      ) {
+        throw new RoutingPhasePreparationError(
+          `Length-matched bus "${bus.name || "unnamed bus"}" cannot be split across autorouting phases. Assign the complete bus to one routingPhaseIndex.`,
+        )
+      }
       const connectionExitTargets = Object.fromEntries(
         connectionNames.flatMap((connectionName) => {
           const connection = connectionByName.get(connectionName)
