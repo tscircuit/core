@@ -1,45 +1,36 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="810" viewBox="0 0 1100 810">
-<rect width="1100" height="810" fill="#101b2c"/>
-<g font-family="Arial, sans-serif" fill="#eef4ff">
-<text x="550" y="45" text-anchor="middle" font-size="26" font-weight="bold">Through-hole vias: requested inner2 connection</text>
-<rect x="470" y="63" width="160" height="44" rx="22" fill="#ff747f"/>
-<text x="550" y="94" text-anchor="middle" fill="#101b2c" font-size="25" font-weight="bold">FAIL</text>
-<text x="550" y="139" text-anchor="middle" font-size="17">Four-layer barrels exist; inner2 ports and copper are missing</text>
-<text x="550" y="173" text-anchor="middle" fill="#aabbd3" font-size="14">Annotated section from emitted Circuit JSON at y = 0 · vertical separation exaggerated</text>
-<rect x="185" y="256" width="655" height="18" rx="3" fill="#25384c"/>
-  <text x="145" y="271" text-anchor="end" font-size="19" fill="#b7c9df">top</text>
-<rect x="185" y="341" width="655" height="18" rx="3" fill="#25384c"/>
-  <text x="145" y="356" text-anchor="end" font-size="19" fill="#b7c9df">inner1</text>
-<rect x="185" y="426" width="655" height="18" rx="3" fill="#25384c"/>
-  <text x="145" y="441" text-anchor="end" font-size="19" fill="#ff747f">inner2</text>
-<rect x="185" y="511" width="655" height="18" rx="3" fill="#25384c"/>
-  <text x="145" y="526" text-anchor="end" font-size="19" fill="#b7c9df">bottom</text>
-<rect x="308.5" y="255" width="62.99999999999999" height="275" rx="5" fill="#ba8f4a" stroke="#f5c77b" stroke-width="2"/>
-  <rect x="326.5" y="254" width="27" height="277" fill="#101b2c"/>
-  <text x="340" y="221" text-anchor="middle" font-size="21" font-weight="bold">VA</text>
-  <text x="340" y="559" text-anchor="middle" font-size="14" fill="#b7c9df">x = -2 mm</text>
-<rect x="668.5" y="255" width="62.99999999999999" height="275" rx="5" fill="#ba8f4a" stroke="#f5c77b" stroke-width="2"/>
-  <rect x="686.5" y="254" width="27" height="277" fill="#101b2c"/>
-  <text x="700" y="221" text-anchor="middle" font-size="21" font-weight="bold">VB</text>
-  <text x="700" y="559" text-anchor="middle" font-size="14" fill="#b7c9df">x = 2 mm</text>
-<circle cx="340" cy="265" r="10" fill="#56e5b2" stroke="#b4ffe3" stroke-width="3"/>
-<circle cx="340" cy="350" r="10" fill="#101b2c" stroke="#ff747f" stroke-width="3"/>
-<path d="M 335 345 l 10 10 m 0 -10 l -10 10" stroke="#ff747f" stroke-width="2"/>
-<circle cx="340" cy="435" r="10" fill="#101b2c" stroke="#ff747f" stroke-width="3"/>
-<path d="M 335 430 l 10 10 m 0 -10 l -10 10" stroke="#ff747f" stroke-width="2"/>
-<circle cx="340" cy="520" r="10" fill="#56e5b2" stroke="#b4ffe3" stroke-width="3"/>
-<circle cx="700" cy="265" r="10" fill="#56e5b2" stroke="#b4ffe3" stroke-width="3"/>
-<circle cx="700" cy="350" r="10" fill="#101b2c" stroke="#ff747f" stroke-width="3"/>
-<path d="M 695 345 l 10 10 m 0 -10 l -10 10" stroke="#ff747f" stroke-width="2"/>
-<circle cx="700" cy="435" r="10" fill="#101b2c" stroke="#ff747f" stroke-width="3"/>
-<path d="M 695 430 l 10 10 m 0 -10 l -10 10" stroke="#ff747f" stroke-width="2"/>
-<circle cx="700" cy="520" r="10" fill="#56e5b2" stroke="#b4ffe3" stroke-width="3"/>
-<text x="890" y="345" fill="#56e5b2" font-size="16">● emitted port</text>
-<text x="890" y="372" fill="#ff747f" font-size="16">⊗ missing port</text>
-<text x="520" y="470" text-anchor="middle" fill="#ff747f" font-size="17" font-weight="bold">NO EMITTED COPPER</text>
-<text x="550" y="607" text-anchor="middle" fill="#f5c77b" font-size="16">Both physical barrels: top / inner1 / inner2 / bottom · hole Ø0.3 mm · pad Ø0.7 mm</text>
-<rect x="115" y="632" width="870" height="85" rx="10" fill="#1c2b40"/>
-<text x="550" y="664" text-anchor="middle" font-size="18">4 PCB ports · 0 copper trace · 2 missing-port errors</text>
-<text x="550" y="693" text-anchor="middle" fill="#b7c9df" font-size="15">FAIL = bun test rejected missing inner2 port selectors</text>
-<text x="550" y="751" text-anchor="middle" fill="#aabbd3" font-size="14">Source and PCB data shown as emitted; no copper added to illustrate expectations</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="530" viewBox="0 0 1080 530">
+<rect width="1080" height="530" fill="#fff"/>
+<g font-family="Arial, sans-serif" fill="#1d1d1f">
+<text x="540" y="35" text-anchor="middle" font-size="13" fill="#86868b">tscircuit/core · React circuits → PCB geometry</text>
+<text x="540" y="72" text-anchor="middle" font-size="26" font-weight="600">Through-hole vias · inner2 connection</text>
+<text x="540" y="103" text-anchor="middle" font-size="15" font-weight="600" fill="#d94242">FAIL · Inner ports missing</text>
+<line x1="190" y1="190" x2="890" y2="190" stroke="#e5e5ea" stroke-width="2"/>
+<text x="155" y="195" text-anchor="end" font-size="15" fill="#86868b">top</text>
+<line x1="190" y1="250" x2="890" y2="250" stroke="#e5e5ea" stroke-width="2"/>
+<text x="155" y="255" text-anchor="end" font-size="15" fill="#86868b">inner1</text>
+<line x1="190" y1="310" x2="890" y2="310" stroke="#e5e5ea" stroke-width="2"/>
+<text x="155" y="315" text-anchor="end" font-size="15" fill="#d94242">inner2</text>
+<line x1="190" y1="370" x2="890" y2="370" stroke="#e5e5ea" stroke-width="2"/>
+<text x="155" y="375" text-anchor="end" font-size="15" fill="#86868b">bottom</text>
+<rect x="305" y="182" width="70" height="196" rx="4" fill="#e6bf77"/>
+<rect x="325" y="181" width="30" height="198" fill="#fff"/>
+<text x="340" y="155" text-anchor="middle" font-size="16" font-weight="600">VA</text>
+<rect x="705" y="182" width="70" height="196" rx="4" fill="#e6bf77"/>
+<rect x="725" y="181" width="30" height="198" fill="#fff"/>
+<text x="740" y="155" text-anchor="middle" font-size="16" font-weight="600">VB</text>
+<circle cx="340" cy="190" r="7" fill="#008965" stroke="#fff" stroke-width="2"/>
+<circle cx="340" cy="250" r="8" fill="#fff" stroke="#d94242" stroke-width="1.5"/>
+<path d="M 337 247 l 6 6 m 0 -6 l -6 6" stroke="#d94242" stroke-width="1.5" stroke-linecap="round"/>
+<circle cx="340" cy="310" r="8" fill="#fff" stroke="#d94242" stroke-width="1.5"/>
+<path d="M 337 307 l 6 6 m 0 -6 l -6 6" stroke="#d94242" stroke-width="1.5" stroke-linecap="round"/>
+<circle cx="340" cy="370" r="7" fill="#008965" stroke="#fff" stroke-width="2"/>
+<circle cx="740" cy="190" r="7" fill="#008965" stroke="#fff" stroke-width="2"/>
+<circle cx="740" cy="250" r="8" fill="#fff" stroke="#d94242" stroke-width="1.5"/>
+<path d="M 737 247 l 6 6 m 0 -6 l -6 6" stroke="#d94242" stroke-width="1.5" stroke-linecap="round"/>
+<circle cx="740" cy="310" r="8" fill="#fff" stroke="#d94242" stroke-width="1.5"/>
+<path d="M 737 307 l 6 6 m 0 -6 l -6 6" stroke="#d94242" stroke-width="1.5" stroke-linecap="round"/>
+<circle cx="740" cy="370" r="7" fill="#008965" stroke="#fff" stroke-width="2"/>
+<text x="540" y="425" text-anchor="middle" font-size="16" fill="#1d1d1f">Both barrels exist. The inner2 copper does not.</text>
+<text x="540" y="451" text-anchor="middle" font-size="13" fill="#86868b">4 ports · 0 traces · 2 missing-port errors</text>
+<text x="540" y="499" text-anchor="middle" font-size="11" fill="#a1a1a6">Emitted Circuit JSON · section at y = 0 · layer spacing exaggerated</text>
 </g></svg>
