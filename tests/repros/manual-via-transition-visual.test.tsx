@@ -66,7 +66,8 @@ test("manual via contact snapshots show rejected and valid geometry", async () =
       invalid.db.pcb_trace_error
         .list()
         .some((error) => /does not reach incoming top/.test(error.message))
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="900" height="440" viewBox="0 0 900 440">
+    const svg =
+      `<svg xmlns="http://www.w3.org/2000/svg" width="900" height="440" viewBox="0 0 900 440">
       <rect width="900" height="440" fill="white"/>
       <g font-family="Arial, sans-serif" font-size="18" fill="#222">
         <text x="450" y="44" text-anchor="middle" font-size="25" fill="${rejected ? "#15803d" : "#b91c1c"}">${rejected ? "PASS: invalid rejected" : "FAIL: disconnected via accepted"}</text>
