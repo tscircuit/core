@@ -77,7 +77,7 @@ test("standalone handoff preserves retained pour copper without closing its hole
   expect(circuitJson).toEqual(original)
   const status = circuit.db.pcb_note_text.insert({
     font: "tscircuit2024",
-    text: `FIXED: BOTTOM bridge | ${shorts.length} DRC errors | ${overlapArea.toFixed(2)} mm2 overlap`,
+    text: `FIXED: BOTTOM bridge | ${shorts.length} pour shorts | ${overlapArea.toFixed(2)} mm2 overlap`,
     anchor_position: { x: 0, y: 2.2 },
     anchor_alignment: "center",
     font_size: 0.32,
