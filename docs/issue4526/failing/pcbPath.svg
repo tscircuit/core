@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="690" viewBox="0 0 1100 690">
+    <style>text{font-family:Arial,sans-serif;fill:#172033;font-size:19px}.small{font-size:16px}.mono{font-family:monospace;font-size:16px}</style>
+    <rect width="1100" height="690" fill="#f8fafc"/>
+    <text x="550" y="38" text-anchor="middle" font-weight="bold" font-size="25">Saved trace changes top ↔ inner2 on a four-layer PCB</text>
+    <text x="550" y="70" text-anchor="middle">pcbPath · allowBlindAndBuriedVias=false</text>
+    <rect x="467" y="87" width="166" height="43" rx="8" fill="#be123c"/>
+    <text x="550" y="117" text-anchor="middle" font-weight="bold" style="fill:white;font-size:28px">FAIL</text>
+    <text x="550" y="158" text-anchor="middle">Expected: ordinary through-hole barrels occupy every copper layer</text>
+    <rect x="80" y="239" width="940" height="294" rx="8" fill="#e2e8f0"/>
+    <path d="M100 250 H1000" stroke="#b7791f" stroke-width="8"/><text x="110" y="234" font-weight="bold">top</text><path d="M100 340 H1000" stroke="#b7791f" stroke-width="8"/><text x="110" y="324" font-weight="bold">inner1</text><path d="M100 430 H1000" stroke="#b7791f" stroke-width="8"/><text x="110" y="414" font-weight="bold">inner2</text><path d="M100 520 H1000" stroke="#b7791f" stroke-width="8"/><text x="110" y="504" font-weight="bold">bottom</text>
+    <text x="410" y="200" text-anchor="middle" font-weight="bold">top → inner2</text>
+        <text x="410" y="224" text-anchor="middle" class="small">(-4.00, 0.00) mm</text>
+        <rect x="375" y="242" width="70" height="196" rx="4" fill="#d99b43" stroke="#784b15" stroke-width="2"/>
+        <rect x="395" y="242" width="30" height="196" fill="#f8fafc"/>
+        <circle cx="410" cy="250" r="9" fill="#172033"/><circle cx="410" cy="340" r="9" fill="#172033"/><circle cx="410" cy="430" r="9" fill="#172033"/><circle cx="410" cy="520" r="15" fill="#fff1f2" stroke="#be123c" stroke-width="3"/><text x="433" y="526" style="fill:#be123c;font-size:15px;font-weight:bold">MISSING</text>
+        <text x="410" y="566" text-anchor="middle" class="mono">Emitted layers</text>
+        <text x="410" y="590" text-anchor="middle" style="font-family:monospace;font-size:13px">top, inner1, inner2</text><text x="750" y="200" text-anchor="middle" font-weight="bold">inner2 → top</text>
+        <text x="750" y="224" text-anchor="middle" class="small">(-3.00, 0.00) mm</text>
+        <rect x="715" y="242" width="70" height="196" rx="4" fill="#d99b43" stroke="#784b15" stroke-width="2"/>
+        <rect x="735" y="242" width="30" height="196" fill="#f8fafc"/>
+        <circle cx="750" cy="250" r="9" fill="#172033"/><circle cx="750" cy="340" r="9" fill="#172033"/><circle cx="750" cy="430" r="9" fill="#172033"/><circle cx="750" cy="520" r="15" fill="#fff1f2" stroke="#be123c" stroke-width="3"/><text x="773" y="526" style="fill:#be123c;font-size:15px;font-weight:bold">MISSING</text>
+        <text x="750" y="566" text-anchor="middle" class="mono">Emitted layers</text>
+        <text x="750" y="590" text-anchor="middle" style="font-family:monospace;font-size:13px">inner2, inner1, top</text>
+    <text x="550" y="624" text-anchor="middle" style="fill:#be123c;font-weight:bold">Physical-span assertion over all 7 vias: FAIL · errors: 0</text>
+    <text x="550" y="652" text-anchor="middle" class="small">Gold = emitted barrel extent · dots = occupied copper layers · circles = missing occupancy</text>
+    <text x="550" y="680" text-anchor="middle" class="small">Logical route transitions are retained. Layer spacing is schematic; dimensions come from Circuit JSON.</text>
+  </svg>

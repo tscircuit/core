@@ -1,0 +1,658 @@
+bun test v1.3.14 (0d9b296a)
+
+tests/repros/repro4526-manual-via-physical-span.test.tsx:
+(pass) manual via physical span: {"api":"pcbPath","layerCount":2} [84.77ms]
+(pass) manual via physical span: {"api":"pcbPath","layerCount":2,"allowBlindAndBuriedVias":false} [19.03ms]
+(pass) manual via physical span: {"api":"pcbPath","layerCount":2,"allowBlindAndBuriedVias":true} [17.82ms]
+115 |     // Occupancy is independent of from/to ordering, including reverse outer vias.
+116 |     expect(
+117 |       vias.map((via) =>
+118 |         [...via.layers].sort((a, b) => stack.indexOf(a) - stack.indexOf(b)),
+119 |       ),
+120 |     ).toEqual(expectedLayers)
+            ^
+error: expect(received).toEqual(expected)
+
+  [
+    [
+      "top",
+      "inner1",
+      "inner2",
+-     "bottom",
+    ],
+    [
+      "top",
+      "inner1",
+      "inner2",
+-     "bottom",
+    ],
+    [
+      "top",
+      "inner1",
+-     "inner2",
+-     "bottom",
+    ],
+    [
+-     "top",
+      "inner1",
+      "inner2",
+-     "bottom",
+    ],
+    [
+      "top",
+      "inner1",
+      "inner2",
+-     "bottom",
+    ],
+    [
+      "top",
+      "inner1",
+      "inner2",
+      "bottom",
+    ],
+    [
+      "top",
+      "inner1",
+      "inner2",
+      "bottom",
+    ],
+  ]
+
+- Expected  - 7
++ Received  + 0
+
+      at <anonymous> (/Users/ankan/Documents/Codex/2026-10-11/tscircuit-via-span-stack-fix/work/core/tests/repros/repro4526-manual-via-physical-span.test.tsx:120:7)
+(fail) manual via physical span: {"api":"pcbPath","layerCount":4} [27.20ms]
+115 |     // Occupancy is independent of from/to ordering, including reverse outer vias.
+116 |     expect(
+117 |       vias.map((via) =>
+118 |         [...via.layers].sort((a, b) => stack.indexOf(a) - stack.indexOf(b)),
+119 |       ),
+120 |     ).toEqual(expectedLayers)
+            ^
+error: expect(received).toEqual(expected)
+
+  [
+    [
+      "top",
+      "inner1",
+      "inner2",
+-     "bottom",
+    ],
+    [
+      "top",
+      "inner1",
+      "inner2",
+-     "bottom",
+    ],
+    [
+      "top",
+      "inner1",
+-     "inner2",
+-     "bottom",
+    ],
+    [
+-     "top",
+      "inner1",
+      "inner2",
+-     "bottom",
+    ],
+    [
+      "top",
+      "inner1",
+      "inner2",
+-     "bottom",
+    ],
+    [
+      "top",
+      "inner1",
+      "inner2",
+      "bottom",
+    ],
+    [
+      "top",
+      "inner1",
+      "inner2",
+      "bottom",
+    ],
+  ]
+
+- Expected  - 7
++ Received  + 0
+
+      at <anonymous> (/Users/ankan/Documents/Codex/2026-10-11/tscircuit-via-span-stack-fix/work/core/tests/repros/repro4526-manual-via-physical-span.test.tsx:120:7)
+(fail) manual via physical span: {"api":"pcbPath","layerCount":4,"allowBlindAndBuriedVias":false} [25.91ms]
+(pass) manual via physical span: {"api":"pcbPath","layerCount":4,"allowBlindAndBuriedVias":true} [25.82ms]
+115 |     // Occupancy is independent of from/to ordering, including reverse outer vias.
+116 |     expect(
+117 |       vias.map((via) =>
+118 |         [...via.layers].sort((a, b) => stack.indexOf(a) - stack.indexOf(b)),
+119 |       ),
+120 |     ).toEqual(expectedLayers)
+            ^
+error: expect(received).toEqual(expected)
+
+  [
+    [
+      "top",
+      "inner1",
+      "inner2",
+      "inner3",
+      "inner4",
+      "inner5",
+      "inner6",
+      "inner7",
+      "inner8",
+-     "bottom",
+    ],
+    [
+      "top",
+      "inner1",
+      "inner2",
+      "inner3",
+      "inner4",
+      "inner5",
+      "inner6",
+      "inner7",
+      "inner8",
+-     "bottom",
+    ],
+    [
+      "top",
+      "inner1",
+-     "inner2",
+-     "inner3",
+-     "inner4",
+-     "inner5",
+-     "inner6",
+-     "inner7",
+-     "inner8",
+-     "bottom",
+    ],
+    [
+-     "top",
+      "inner1",
+      "inner2",
+      "inner3",
+      "inner4",
+      "inner5",
+      "inner6",
+      "inner7",
+      "inner8",
+-     "bottom",
+    ],
+    [
+      "top",
+      "inner1",
+      "inner2",
+      "inner3",
+      "inner4",
+      "inner5",
+      "inner6",
+      "inner7",
+      "inner8",
+-     "bottom",
+    ],
+    [
+      "top",
+      "inner1",
+      "inner2",
+      "inner3",
+      "inner4",
+      "inner5",
+      "inner6",
+      "inner7",
+      "inner8",
+      "bottom",
+    ],
+    [
+      "top",
+      "inner1",
+      "inner2",
+      "inner3",
+      "inner4",
+      "inner5",
+      "inner6",
+      "inner7",
+      "inner8",
+      "bottom",
+    ],
+  ]
+
+- Expected  - 13
++ Received  + 0
+
+      at <anonymous> (/Users/ankan/Documents/Codex/2026-10-11/tscircuit-via-span-stack-fix/work/core/tests/repros/repro4526-manual-via-physical-span.test.tsx:120:7)
+(fail) manual via physical span: {"api":"pcbPath","layerCount":10} [21.67ms]
+115 |     // Occupancy is independent of from/to ordering, including reverse outer vias.
+116 |     expect(
+117 |       vias.map((via) =>
+118 |         [...via.layers].sort((a, b) => stack.indexOf(a) - stack.indexOf(b)),
+119 |       ),
+120 |     ).toEqual(expectedLayers)
+            ^
+error: expect(received).toEqual(expected)
+
+  [
+    [
+      "top",
+      "inner1",
+      "inner2",
+      "inner3",
+      "inner4",
+      "inner5",
+      "inner6",
+      "inner7",
+      "inner8",
+-     "bottom",
+    ],
+    [
+      "top",
+      "inner1",
+      "inner2",
+      "inner3",
+      "inner4",
+      "inner5",
+      "inner6",
+      "inner7",
+      "inner8",
+-     "bottom",
+    ],
+    [
+      "top",
+      "inner1",
+-     "inner2",
+-     "inner3",
+-     "inner4",
+-     "inner5",
+-     "inner6",
+-     "inner7",
+-     "inner8",
+-     "bottom",
+    ],
+    [
+-     "top",
+      "inner1",
+      "inner2",
+      "inner3",
+      "inner4",
+      "inner5",
+      "inner6",
+      "inner7",
+      "inner8",
+-     "bottom",
+    ],
+    [
+      "top",
+      "inner1",
+      "inner2",
+      "inner3",
+      "inner4",
+      "inner5",
+      "inner6",
+      "inner7",
+      "inner8",
+-     "bottom",
+    ],
+    [
+      "top",
+      "inner1",
+      "inner2",
+      "inner3",
+      "inner4",
+      "inner5",
+      "inner6",
+      "inner7",
+      "inner8",
+      "bottom",
+    ],
+    [
+      "top",
+      "inner1",
+      "inner2",
+      "inner3",
+      "inner4",
+      "inner5",
+      "inner6",
+      "inner7",
+      "inner8",
+      "bottom",
+    ],
+  ]
+
+- Expected  - 13
++ Received  + 0
+
+      at <anonymous> (/Users/ankan/Documents/Codex/2026-10-11/tscircuit-via-span-stack-fix/work/core/tests/repros/repro4526-manual-via-physical-span.test.tsx:120:7)
+(fail) manual via physical span: {"api":"pcbPath","layerCount":10,"allowBlindAndBuriedVias":false} [23.81ms]
+(pass) manual via physical span: {"api":"pcbPath","layerCount":10,"allowBlindAndBuriedVias":true} [27.36ms]
+(pass) manual via physical span: {"api":"pcbPaths","layerCount":2} [15.96ms]
+(pass) manual via physical span: {"api":"pcbPaths","layerCount":2,"allowBlindAndBuriedVias":false} [11.91ms]
+(pass) manual via physical span: {"api":"pcbPaths","layerCount":2,"allowBlindAndBuriedVias":true} [13.26ms]
+115 |     // Occupancy is independent of from/to ordering, including reverse outer vias.
+116 |     expect(
+117 |       vias.map((via) =>
+118 |         [...via.layers].sort((a, b) => stack.indexOf(a) - stack.indexOf(b)),
+119 |       ),
+120 |     ).toEqual(expectedLayers)
+            ^
+error: expect(received).toEqual(expected)
+
+  [
+    [
+      "top",
+      "inner1",
+      "inner2",
+-     "bottom",
+    ],
+    [
+      "top",
+      "inner1",
+      "inner2",
+-     "bottom",
+    ],
+    [
+      "top",
+      "inner1",
+-     "inner2",
+-     "bottom",
+    ],
+    [
+-     "top",
+      "inner1",
+      "inner2",
+-     "bottom",
+    ],
+    [
+      "top",
+      "inner1",
+      "inner2",
+-     "bottom",
+    ],
+    [
+      "top",
+      "inner1",
+      "inner2",
+      "bottom",
+    ],
+    [
+      "top",
+      "inner1",
+      "inner2",
+      "bottom",
+    ],
+  ]
+
+- Expected  - 7
++ Received  + 0
+
+      at <anonymous> (/Users/ankan/Documents/Codex/2026-10-11/tscircuit-via-span-stack-fix/work/core/tests/repros/repro4526-manual-via-physical-span.test.tsx:120:7)
+(fail) manual via physical span: {"api":"pcbPaths","layerCount":4} [16.26ms]
+115 |     // Occupancy is independent of from/to ordering, including reverse outer vias.
+116 |     expect(
+117 |       vias.map((via) =>
+118 |         [...via.layers].sort((a, b) => stack.indexOf(a) - stack.indexOf(b)),
+119 |       ),
+120 |     ).toEqual(expectedLayers)
+            ^
+error: expect(received).toEqual(expected)
+
+  [
+    [
+      "top",
+      "inner1",
+      "inner2",
+-     "bottom",
+    ],
+    [
+      "top",
+      "inner1",
+      "inner2",
+-     "bottom",
+    ],
+    [
+      "top",
+      "inner1",
+-     "inner2",
+-     "bottom",
+    ],
+    [
+-     "top",
+      "inner1",
+      "inner2",
+-     "bottom",
+    ],
+    [
+      "top",
+      "inner1",
+      "inner2",
+-     "bottom",
+    ],
+    [
+      "top",
+      "inner1",
+      "inner2",
+      "bottom",
+    ],
+    [
+      "top",
+      "inner1",
+      "inner2",
+      "bottom",
+    ],
+  ]
+
+- Expected  - 7
++ Received  + 0
+
+      at <anonymous> (/Users/ankan/Documents/Codex/2026-10-11/tscircuit-via-span-stack-fix/work/core/tests/repros/repro4526-manual-via-physical-span.test.tsx:120:7)
+(fail) manual via physical span: {"api":"pcbPaths","layerCount":4,"allowBlindAndBuriedVias":false} [16.31ms]
+(pass) manual via physical span: {"api":"pcbPaths","layerCount":4,"allowBlindAndBuriedVias":true} [16.69ms]
+115 |     // Occupancy is independent of from/to ordering, including reverse outer vias.
+116 |     expect(
+117 |       vias.map((via) =>
+118 |         [...via.layers].sort((a, b) => stack.indexOf(a) - stack.indexOf(b)),
+119 |       ),
+120 |     ).toEqual(expectedLayers)
+            ^
+error: expect(received).toEqual(expected)
+
+  [
+    [
+      "top",
+      "inner1",
+      "inner2",
+      "inner3",
+      "inner4",
+      "inner5",
+      "inner6",
+      "inner7",
+      "inner8",
+-     "bottom",
+    ],
+    [
+      "top",
+      "inner1",
+      "inner2",
+      "inner3",
+      "inner4",
+      "inner5",
+      "inner6",
+      "inner7",
+      "inner8",
+-     "bottom",
+    ],
+    [
+      "top",
+      "inner1",
+-     "inner2",
+-     "inner3",
+-     "inner4",
+-     "inner5",
+-     "inner6",
+-     "inner7",
+-     "inner8",
+-     "bottom",
+    ],
+    [
+-     "top",
+      "inner1",
+      "inner2",
+      "inner3",
+      "inner4",
+      "inner5",
+      "inner6",
+      "inner7",
+      "inner8",
+-     "bottom",
+    ],
+    [
+      "top",
+      "inner1",
+      "inner2",
+      "inner3",
+      "inner4",
+      "inner5",
+      "inner6",
+      "inner7",
+      "inner8",
+-     "bottom",
+    ],
+    [
+      "top",
+      "inner1",
+      "inner2",
+      "inner3",
+      "inner4",
+      "inner5",
+      "inner6",
+      "inner7",
+      "inner8",
+      "bottom",
+    ],
+    [
+      "top",
+      "inner1",
+      "inner2",
+      "inner3",
+      "inner4",
+      "inner5",
+      "inner6",
+      "inner7",
+      "inner8",
+      "bottom",
+    ],
+  ]
+
+- Expected  - 13
++ Received  + 0
+
+      at <anonymous> (/Users/ankan/Documents/Codex/2026-10-11/tscircuit-via-span-stack-fix/work/core/tests/repros/repro4526-manual-via-physical-span.test.tsx:120:7)
+(fail) manual via physical span: {"api":"pcbPaths","layerCount":10} [15.07ms]
+115 |     // Occupancy is independent of from/to ordering, including reverse outer vias.
+116 |     expect(
+117 |       vias.map((via) =>
+118 |         [...via.layers].sort((a, b) => stack.indexOf(a) - stack.indexOf(b)),
+119 |       ),
+120 |     ).toEqual(expectedLayers)
+            ^
+error: expect(received).toEqual(expected)
+
+  [
+    [
+      "top",
+      "inner1",
+      "inner2",
+      "inner3",
+      "inner4",
+      "inner5",
+      "inner6",
+      "inner7",
+      "inner8",
+-     "bottom",
+    ],
+    [
+      "top",
+      "inner1",
+      "inner2",
+      "inner3",
+      "inner4",
+      "inner5",
+      "inner6",
+      "inner7",
+      "inner8",
+-     "bottom",
+    ],
+    [
+      "top",
+      "inner1",
+-     "inner2",
+-     "inner3",
+-     "inner4",
+-     "inner5",
+-     "inner6",
+-     "inner7",
+-     "inner8",
+-     "bottom",
+    ],
+    [
+-     "top",
+      "inner1",
+      "inner2",
+      "inner3",
+      "inner4",
+      "inner5",
+      "inner6",
+      "inner7",
+      "inner8",
+-     "bottom",
+    ],
+    [
+      "top",
+      "inner1",
+      "inner2",
+      "inner3",
+      "inner4",
+      "inner5",
+      "inner6",
+      "inner7",
+      "inner8",
+-     "bottom",
+    ],
+    [
+      "top",
+      "inner1",
+      "inner2",
+      "inner3",
+      "inner4",
+      "inner5",
+      "inner6",
+      "inner7",
+      "inner8",
+      "bottom",
+    ],
+    [
+      "top",
+      "inner1",
+      "inner2",
+      "inner3",
+      "inner4",
+      "inner5",
+      "inner6",
+      "inner7",
+      "inner8",
+      "bottom",
+    ],
+  ]
+
+- Expected  - 13
++ Received  + 0
+
+      at <anonymous> (/Users/ankan/Documents/Codex/2026-10-11/tscircuit-via-span-stack-fix/work/core/tests/repros/repro4526-manual-via-physical-span.test.tsx:120:7)
+(fail) manual via physical span: {"api":"pcbPaths","layerCount":10,"allowBlindAndBuriedVias":false} [16.92ms]
+(pass) manual via physical span: {"api":"pcbPaths","layerCount":10,"allowBlindAndBuriedVias":true} [15.10ms]
+
+ 10 pass
+ 8 fail
+ 126 expect() calls
+Ran 18 tests across 1 file. [1.55s]
