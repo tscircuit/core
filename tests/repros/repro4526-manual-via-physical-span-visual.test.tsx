@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { createPcbLayerStackSvg } from "tests/fixtures/create-pcb-layer-stack-svg"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
-import { ManualViaPhysicalSpanPcbPathBoard } from "tests/fixtures/manual-via-physical-span-board"
+import { ManualViaPhysicalSpanPcbPathBoard } from "tests/fixtures/manual-via-physical-span-pcb-path-board"
 
 test("manual through-via spans on every PCB layer", async () => {
   const { circuit } = getTestFixture()

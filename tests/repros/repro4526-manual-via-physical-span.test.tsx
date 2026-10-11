@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
-import { ManualViaPhysicalSpanPcbPathBoard } from "tests/fixtures/manual-via-physical-span-board"
+import { ManualViaPhysicalSpanPcbPathBoard } from "tests/fixtures/manual-via-physical-span-pcb-path-board"
 
 test.failing(
   "pcbPath uses through-hole spans when blind vias are disabled",
