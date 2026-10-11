@@ -6,19 +6,26 @@ test("saved paths reject an origin selector matching two PCB ports", async () =>
   const { circuit } = getTestFixture()
   circuit.add(
     <board width={12} height={6} schematicDisabled routeRemaining={false}>
-      {[0, 4].map((x, index) => (
-        <chip
-          key={index}
-          name={index ? "B" : "A"}
-          pcbX={x}
-          pinLabels={{ pin1: "SIGNAL" }}
-          footprint={
-            <footprint>
-              <smtpad shape="rect" width={0.8} height={0.8} portHints={["1"]} />
-            </footprint>
-          }
-        />
-      ))}
+      <chip
+        name="A"
+        pcbX={0}
+        pinLabels={{ pin1: "SIGNAL" }}
+        footprint={
+          <footprint>
+            <smtpad shape="rect" width={0.8} height={0.8} portHints={["1"]} />
+          </footprint>
+        }
+      />
+      <chip
+        name="B"
+        pcbX={4}
+        pinLabels={{ pin1: "SIGNAL" }}
+        footprint={
+          <footprint>
+            <smtpad shape="rect" width={0.8} height={0.8} portHints={["1"]} />
+          </footprint>
+        }
+      />
       <trace from="A.1" to="B.1" />
       <autoroutingphase
         pcbTracePaths={[
