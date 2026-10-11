@@ -1826,6 +1826,20 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           precomputedOutputSimpleRouteJson ??
           autorouter?.getOutputSimpleRouteJson?.()
         if (
+          localAutorouterStrategy.preserveOutputTraces &&
+          transformedSimpleRouteJson?.traces
+        ) {
+          // Local escapes may return only their new copper. Keep earlier SRJ
+          // traces in the handoff, with returned replacements authoritative.
+          transformedSimpleRouteJson = {
+            ...transformedSimpleRouteJson,
+            traces: getAccumulatedPcbTracesWithStageOutputReplacements({
+              accumulatedPcbTraces: simpleRouteJson.traces ?? [],
+              stageOutputPcbTraces: transformedSimpleRouteJson.traces,
+            }),
+          }
+        }
+        if (
           transformedSimpleRouteJson &&
           !usesPreviousStageOutput &&
           ["fanout", "single_layer_fanout", "dogbone"].includes(
