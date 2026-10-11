@@ -8,6 +8,7 @@ const SILKSCREEN_LABEL_LAYERS: SilkscreenLabelLayer[] = ["top", "bottom"]
 const placeSilkscreenLabels = (board: Board, layer: SilkscreenLabelLayer) => {
   const root = board.root!
   const params = getSilkscreenLabelPlacementSolverParams(board, layer)
+  if (!params) return
   const paramsJson = JSON.stringify(params)
   // Placement is deterministic, so the same inputs are placed, or fail, once
   if (paramsJson === board._silkscreenLabelPlacementParamsJsonByLayer[layer])
@@ -73,10 +74,16 @@ export const Board_doInitialSilkscreenOverlapAdjustment = (board: Board) => {
       placeSilkscreenLabels(board, layer)
     } catch (error) {
       const cause = error instanceof Error ? error.message : String(error)
+      const message = `Silkscreen labels on the ${layer} side of ${board.getString()} could not be placed: ${cause}`
+      // An error collecting the inputs recurs on every update of the board
+      const isReported = root.db.source_runtime_error
+        .list()
+        .some((runtimeError) => runtimeError.message === message)
+      if (isReported) continue
       root.db.source_runtime_error.insert({
         error_type: "source_runtime_error",
         phase_name: "SilkscreenOverlapAdjustment",
-        message: `Silkscreen labels on the ${layer} side of ${board.getString()} could not be placed: ${cause}`,
+        message,
       })
     }
   }

@@ -43,6 +43,7 @@ import { SymbolComponent } from "lib/components/primitive-components/Symbol"
 import type { NormalComponent } from "lib/components/base-components/NormalComponent"
 import type { PrimitiveComponent } from "../components/base-components/PrimitiveComponent"
 import { createPinrowSilkscreenText } from "./createPinrowSilkscreenText"
+import { DESIGNATOR_PLACEHOLDERS } from "./designator-placeholders"
 
 type SchematicPrimitiveWithStrokeWidth = Extract<
   AnyCircuitElement,
@@ -650,9 +651,7 @@ export const createComponentsFromCircuitJson = (
           // imported footprint text keeps the legacy component-name fallback.
           text:
             footprinterString?.includes("silkscreenlabel(") &&
-            elm.text !== "{REF}" &&
-            elm.text !== "{NAME}" &&
-            elm.text !== "{REFERENCE}"
+            !DESIGNATOR_PLACEHOLDERS.includes(elm.text)
               ? elm.text
               : componentName || elm.text,
           pcbX: Number.isNaN(elm.anchor_position.x) ? 0 : elm.anchor_position.x,

@@ -1,9 +1,14 @@
-import { type Bounds, getBoundFromCenteredRect } from "@tscircuit/math-utils"
+import {
+  type Bounds,
+  doBoundsOverlap,
+  getBoundFromCenteredRect,
+  getBoundsFromPoints,
+} from "@tscircuit/math-utils"
 import type { PcbComponent, Point } from "circuit-json"
-import { NormalComponent } from "lib/components/base-components/NormalComponent/NormalComponent"
 import {
   getBoardPlacedSilkscreenLabels,
   getSilkscreenLabelPlacingBoard,
+  isPcbPart,
 } from "lib/components/base-components/NormalComponent/utils/getBoardPlacedSilkscreenLabels"
 import type {
   PcbComponentId,
@@ -39,21 +44,22 @@ const getBoardOutline = (board: Board): Point[] | null => {
 
 /**
  * Collects one side of the board: its parts, obstacles and the labels returned
- * by getBoardPlacedSilkscreenLabels. Parts of nested subcircuits are included,
- * parts on a mounted board are not.
+ * by getBoardPlacedSilkscreenLabels, or null when no label on that side can
+ * move. Parts of nested subcircuits are included, parts on a mounted board are
+ * not.
  */
 export const getSilkscreenLabelPlacementSolverParams = (
   board: Board,
   layer: SilkscreenLabelLayer,
-): SilkscreenLabelPlacementSolverParams => {
+): SilkscreenLabelPlacementSolverParams | null => {
   const { db } = board.root!
   const boardDescendants = board.getDescendants()
-  const boardNormalComponents = boardDescendants.filter(
-    (descendant): descendant is NormalComponent<any, any> =>
-      descendant instanceof NormalComponent &&
-      descendant.pcb_component_id !== null &&
-      getSilkscreenLabelPlacingBoard(descendant) === board,
-  )
+  const boardNormalComponents = boardDescendants
+    .filter(isPcbPart)
+    .filter(
+      (normalComponent) =>
+        getSilkscreenLabelPlacingBoard(normalComponent) === board,
+    )
   const boardPcbComponentIds = new Set<PcbComponentId>(
     boardNormalComponents.map(
       (normalComponent) => normalComponent.pcb_component_id!,
@@ -83,6 +89,7 @@ export const getSilkscreenLabelPlacementSolverParams = (
 
     for (const pcbSilkscreenText of getBoardPlacedSilkscreenLabels(
       normalComponent,
+      layer,
     )) {
       labels.push({
         pcbSilkscreenTextId: pcbSilkscreenText.pcb_silkscreen_text_id,
@@ -97,6 +104,11 @@ export const getSilkscreenLabelPlacementSolverParams = (
     }
   }
 
+  // Obstacles are only collected for a side with labels to place
+  if (labels.length === 0) return null
+
+  const boardOutline = getBoardOutline(board)
+  const boardBounds = boardOutline && getBoundsFromPoints(boardOutline)
   const movablePcbSilkscreenTextIds = new Set<PcbSilkscreenTextId>(
     labels.map((label) => label.pcbSilkscreenTextId),
   )
@@ -104,20 +116,30 @@ export const getSilkscreenLabelPlacementSolverParams = (
     db,
     layer,
     pcbBoardId: board.pcb_board_id!,
-    getPcbComponentIdOnBoard: ({ pcb_component_id, subcircuit_id }) => {
+    getPcbComponentIdOnBoard: ({ pcb_component_id, subcircuit_id }, bounds) => {
       if (pcb_component_id && boardPcbComponentIds.has(pcb_component_id))
         return pcb_component_id
       // The board's own text, like its project name, carries the board's id
       if (pcb_component_id && pcb_component_id === board.pcb_board_id)
         return null
-      if (
-        !pcb_component_id &&
-        subcircuit_id !== undefined &&
-        boardSubcircuitIds.has(subcircuit_id)
-      )
-        return null
-      return undefined
+      // A pcb_component inserted without a component, like an autoplaced
+      // jumper's, may carry the subcircuit its elements don't
+      const elementSubcircuitId =
+        subcircuit_id ??
+        (pcb_component_id
+          ? db.pcb_component.get(pcb_component_id)?.subcircuit_id
+          : undefined)
+      if (elementSubcircuitId !== undefined)
+        return boardSubcircuitIds.has(elementSubcircuitId)
+          ? (pcb_component_id ?? null)
+          : undefined
+      // Elements that tell neither, like fiducial pads, are on the board they
+      // overlap
+      return !boardBounds || doBoundsOverlap(bounds, boardBounds)
+        ? (pcb_component_id ?? null)
+        : undefined
     },
+    stitchingPcbViaIds: board._generatedStitchingViaIds,
     movablePcbSilkscreenTextIds,
   })
 
@@ -163,7 +185,7 @@ export const getSilkscreenLabelPlacementSolverParams = (
 
   return {
     layer,
-    boardOutline: getBoardOutline(board),
+    boardOutline,
     parts,
     obstacles,
     labels,

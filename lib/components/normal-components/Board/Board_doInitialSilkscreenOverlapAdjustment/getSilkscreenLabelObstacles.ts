@@ -12,6 +12,7 @@ import type {
   PcbHole,
   PcbPlatedHole,
   PcbSilkscreenRect,
+  PcbVia,
   Point,
 } from "circuit-json"
 import type {
@@ -32,6 +33,8 @@ import type {
 
 // circuit-to-svg draws silkscreen ovals with a 0.1 mm stroke
 const SILKSCREEN_OVAL_STROKE_WIDTH = 0.1
+
+type PcbViaId = PcbVia["pcb_via_id"]
 
 /** The fields that tell which board an element is on. */
 interface BoardMembership {
@@ -107,15 +110,17 @@ const getSilkscreenRectBoundsList = (rect: PcbSilkscreenRect): Bounds[] => {
 }
 
 /**
- * Copper, silkscreen, courtyards, fixed text and notes on one side, holes and cutouts,
- * which go through the board, and on the top side, mounted boards. Traces and
- * vias are left out, so routing never moves a label.
+ * Copper, silkscreen, courtyards, fixed text and notes on one side, holes and
+ * cutouts, which go through the board, and on the top side, mounted boards.
+ * Traces and the vias of routing and via stitching are left out, so routing
+ * never moves a label; so are tented vias, which silkscreen prints over.
  */
 export const getSilkscreenLabelObstacles = ({
   db,
   layer,
   pcbBoardId,
   getPcbComponentIdOnBoard,
+  stitchingPcbViaIds,
   movablePcbSilkscreenTextIds,
 }: {
   db: CircuitJsonUtilObjects
@@ -124,10 +129,13 @@ export const getSilkscreenLabelObstacles = ({
   /**
    * Returns the id of the board part an element belongs to, null for a
    * board-level element, or undefined for an element that is not on the board.
+   * `bounds` is where the element is, for elements that tell no more.
    */
   getPcbComponentIdOnBoard: (
     element: BoardMembership,
+    bounds: Bounds,
   ) => PcbComponentId | null | undefined
+  stitchingPcbViaIds: Set<PcbViaId>
   movablePcbSilkscreenTextIds: Set<PcbSilkscreenTextId>
 }): SilkscreenLabelObstacle[] => {
   const obstacles: SilkscreenLabelObstacle[] = []
@@ -138,10 +146,10 @@ export const getSilkscreenLabelObstacles = ({
   ) => {
     // Elements without a layer, like holes, go through the board
     if (element.layer !== undefined && element.layer !== layer) return
-    const pcbComponentId = getPcbComponentIdOnBoard(element)
-    if (pcbComponentId === undefined) return
     for (const bounds of boundsList) {
       if (!bounds) continue
+      const pcbComponentId = getPcbComponentIdOnBoard(element, bounds)
+      if (pcbComponentId === undefined) continue
       obstacles.push({ kind, bounds, pcbComponentId })
     }
   }
@@ -152,6 +160,22 @@ export const getSilkscreenLabelObstacles = ({
     addObstacles("copper", platedHole, [getPlatedHoleBounds(platedHole)])
   for (const copperText of db.pcb_copper_text.list())
     addObstacles("copper", copperText, [getTextBounds(copperText)])
+  for (const via of db.pcb_via.list()) {
+    if (via.pcb_trace_id || stitchingPcbViaIds.has(via.pcb_via_id)) continue
+    // The fab clips silkscreen off a via's copper only when it is left exposed;
+    // without tenting, the fab's default, usually tented, applies
+    const isTented = layer === "top" ? via.tented_on_top : via.tented_on_bottom
+    if (isTented !== false) continue
+    // A via without layers goes through the board
+    if (via.layers && !via.layers.includes(layer)) continue
+    addObstacles("copper", via, [
+      getBoundFromCenteredRect({
+        center: { x: via.x, y: via.y },
+        width: via.outer_diameter,
+        height: via.outer_diameter,
+      }),
+    ])
+  }
   for (const hole of db.pcb_hole.list())
     addObstacles("hole", hole, [getHoleBounds(hole)])
   for (const cutout of db.pcb_cutout.list())

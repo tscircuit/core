@@ -14,6 +14,8 @@ test("a part's bounds leave out its own label, even one placed by hand", async (
         footprint="0402"
         pcbSx={{ "& silkscreentext": { pcbX: 0, pcbY: -3 } }}
       />
+      {/* Gives the side a label to place, so its parts are collected */}
+      <resistor name="R2" resistance="1k" footprint="0402" pcbX={3} />
     </board>,
   )
   await circuit.renderUntilSettled()
@@ -26,7 +28,7 @@ test("a part's bounds leave out its own label, even one placed by hand", async (
   const { parts } = getSilkscreenLabelPlacementSolverParams(
     circuit.firstChild as Board,
     "top",
-  )
+  )!
   const r1Part = parts.find(
     (part) => part.pcbComponentId === r1Label.pcb_component_id,
   )!

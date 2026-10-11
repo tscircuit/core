@@ -1,10 +1,24 @@
 import type { AnyCircuitElement, PcbSilkscreenText } from "circuit-json"
 import type { IsolatedCircuit } from "lib/IsolatedCircuit"
+import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import type { Board } from "lib/components/normal-components/Board/Board"
 import type { SilkscreenText } from "lib/components/primitive-components/SilkscreenText"
 import type { PcbSilkscreenTextId } from "lib/utils/circuit-json/circuit-json-id-types"
+import { DESIGNATOR_PLACEHOLDERS } from "lib/utils/designator-placeholders"
+import type { SilkscreenLabelLayer } from "lib/utils/silkscreen-label-placement/types"
 import { resolveSilkscreenTextPcbSxPosition } from "lib/utils/pcbSx/resolve-silkscreen-text-pcb-sx-position"
 import type { NormalComponent } from "../NormalComponent"
+
+/**
+ * Checks if the component is a part on the PCB, whose labels label placement
+ * may move. Groups are normal components too, but have no pcb_component.
+ */
+export const isPcbPart = (
+  component: PrimitiveComponent,
+): component is NormalComponent<any, any> =>
+  "_isNormalComponent" in component &&
+  component._isNormalComponent === true &&
+  component.pcb_component_id !== null
 
 /**
  * Checks if something placed the text, so no label placement moves it. Mirrors
@@ -49,13 +63,7 @@ export const recordPlacedSilkscreenTextOfIsolatedRender = (
   const descendants = isolatedCircuit.firstChild?.getDescendants() ?? []
   const movablePcbSilkscreenTextIds = new Set(
     descendants
-      .filter(
-        (descendant): descendant is NormalComponent<any, any> =>
-          "_isNormalComponent" in descendant &&
-          descendant._isNormalComponent === true &&
-          // Groups are normal components too, but have no part labels
-          descendant.pcb_component_id !== null,
-      )
+      .filter(isPcbPart)
       .flatMap(getMovableSilkscreenLabels)
       .map((label) => label.pcb_silkscreen_text_id),
   )
@@ -90,15 +98,15 @@ export const getIsPlacedInIsolatedRender = (
     true
 }
 
-const DESIGNATOR_PLACEHOLDERS = new Set(["{NAME}", "{REF}", "{REFERENCE}"])
-
 /**
  * Checks if the text is a <footprint>'s designator placeholder, like the
  * {NAME} text of a footprint imported from a parts library.
  */
 const isFootprintDesignatorPlaceholder = (silkscreenText: SilkscreenText) =>
   silkscreenText.parent?.componentName === "Footprint" &&
-  DESIGNATOR_PLACEHOLDERS.has(silkscreenText._parsedProps.text?.trim() ?? "")
+  DESIGNATOR_PLACEHOLDERS.includes(
+    silkscreenText._parsedProps.text?.trim() ?? "",
+  )
 
 /**
  * Checks if the text comes from a footprint string, KiCad, a URL or the parts
@@ -162,6 +170,8 @@ export const getPlacedSilkscreenTextIds = (
 /**
  * Returns the <board> whose label placement solver places the component's
  * labels, or null for components on a mounted board or outside every board.
+ * Unlike _getBoard, it doesn't fall back to the circuit's board, whose solver
+ * only places the labels of its descendants.
  */
 export const getSilkscreenLabelPlacingBoard = (
   normalComponent: NormalComponent<any, any>,
@@ -178,20 +188,14 @@ export const getSilkscreenLabelPlacingBoard = (
 }
 
 /**
- * Returns the labels placed by the board's SilkscreenLabelPlacementSolvers:
- * those getMovableSilkscreenLabels returns for a component inside a <board>,
- * on the component's side. Its other text stays where it is.
+ * Returns the labels the board's SilkscreenLabelPlacementSolver places for a
+ * part on the given side, which is the part's: those getMovableSilkscreenLabels
+ * returns on that side. Its other text stays where it is.
  */
 export const getBoardPlacedSilkscreenLabels = (
   normalComponent: NormalComponent<any, any>,
-): PcbSilkscreenText[] => {
-  const { pcb_component_id } = normalComponent
-  if (!pcb_component_id || !getSilkscreenLabelPlacingBoard(normalComponent))
-    return []
-  const { db } = normalComponent.root!
-  const layer = db.pcb_component.get(pcb_component_id)?.layer
-  if (layer !== "top" && layer !== "bottom") return []
-  return getMovableSilkscreenLabels(normalComponent).filter(
+  layer: SilkscreenLabelLayer,
+): PcbSilkscreenText[] =>
+  getMovableSilkscreenLabels(normalComponent).filter(
     (label) => label.layer === layer,
   )
-}
