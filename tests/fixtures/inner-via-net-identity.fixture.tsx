@@ -20,7 +20,7 @@ export const renderInnerViaNetIdentityFixture = async () => {
   let nativeOutput: SimplifiedPcbTrace[] | undefined
   circuit.add(
     <board
-      width={12}
+      width={13}
       height={8}
       layers={4}
       schematicDisabled
@@ -60,17 +60,17 @@ export const renderInnerViaNetIdentityFixture = async () => {
       }}
     >
       <net name="VDD" />
-      {[-4, 4].map((x, index) => (
-        <testpoint
+      {[-4.7, 4.7].map((x, index) => (
+        <resistor
           key={x}
-          name={`J${index + 1}`}
-          footprintVariant="pad"
+          name={`R${index + 1}`}
+          resistance="10k"
+          footprint="0603"
           pcbX={x}
-          padDiameter={0.6}
         />
       ))}
-      <trace from="J1.pin1" to="V_LEFT.top" pcbStraightLine />
-      <trace from="J2.pin1" to="V_RIGHT.top" pcbStraightLine />
+      <trace from="R1.pin2" to="V_LEFT.top" pcbStraightLine />
+      <trace from="R2.pin1" to="V_RIGHT.top" pcbStraightLine />
       <via
         name="V_LEFT"
         pcbX={-3}
@@ -104,7 +104,7 @@ export const renderInnerViaNetIdentityFixture = async () => {
         ]}
       />
       <pcbnotetext
-        text="VDD through-vias joined by real Pipeline9 on INNER1"
+        text="0603 resistor VDD pads fed through INNER1 bridge"
         pcbY={3.35}
         fontSize={0.32}
         color="#ffffff"
@@ -122,6 +122,20 @@ export const renderInnerViaNetIdentityFixture = async () => {
         pcbX={3}
         pcbY={0.75}
         fontSize={0.3}
+        color="#ffffff"
+      />
+      <pcbnotetext
+        text="R1 / 0603"
+        pcbX={-4.7}
+        pcbY={1.25}
+        fontSize={0.25}
+        color="#ffffff"
+      />
+      <pcbnotetext
+        text="R2 / 0603"
+        pcbX={4.7}
+        pcbY={1.25}
+        fontSize={0.25}
         color="#ffffff"
       />
       <pcbnotetext
