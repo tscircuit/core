@@ -5,6 +5,7 @@ import { Port } from "lib/components/primitive-components/Port"
 import type { Via } from "lib/components/primitive-components/Via"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { captureRunEvidence } from "tests/fixtures/capture-run-evidence"
+import { renderPcbLayers } from "tests/fixtures/render-pcb-layers"
 
 test.failing(
   "a via owns an inner-layer port supplied by a distinct core module",
@@ -60,6 +61,15 @@ test.failing(
       await captureRunEvidence(
         circuit.getCircuitJson(),
         `One through via: ${owned.length} owned layer ports; ${via.pcb_port_ids?.length ?? 0} attached. Expected 3.`,
+      )
+      await expect(
+        renderPcbLayers(
+          circuit.getCircuitJson(),
+          `V1: ${owned.length} layer ports, ${via.pcb_port_ids?.length ?? 0} attached (expected 3).`,
+        ),
+      ).toMatchSvgSnapshot(
+        import.meta.path,
+        "duplicate-core-via-port-pcb-layers",
       )
       expect(via.pcb_port_ids).toContain(inner.pcb_port_id!)
       expect(via.pcb_port_ids).toEqual(owned.map((port) => port.pcb_port_id))
