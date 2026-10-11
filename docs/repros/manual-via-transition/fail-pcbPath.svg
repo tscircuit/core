@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="760" viewBox="0 0 1100 760">
+    <rect width="1100" height="760" fill="#101a29"/>
+    <g font-family="Arial, sans-serif" fill="#e4edf7">
+      <text x="550" y="42" text-anchor="middle" font-size="27" font-weight="bold">Top wire enters a bottom → inner2 manual via</text>
+      <text x="550" y="74" text-anchor="middle" font-size="18">Four layers · blind/buried enabled · pcbPath · Circuit JSON cutaway</text>
+      <rect x="55" y="98" width="990" height="82" rx="12" fill="#ff7575" fill-opacity="0.12"/>
+      <text x="550" y="132" text-anchor="middle" font-size="27" font-weight="bold" fill="#ff7575">Assertion FAIL: missing diagnosis; disconnected copper accepted</text>
+      <text x="550" y="160" text-anchor="middle" font-size="17">Expected: reject this deliberately malformed path before copper is emitted</text>
+      <text x="62" y="256" font-size="21">top</text><line x1="160" x2="1020" y1="250" y2="250" stroke="#425367" stroke-width="2" stroke-dasharray="5 5"/><text x="62" y="346" font-size="21">inner1</text><line x1="160" x2="1020" y1="340" y2="340" stroke="#425367" stroke-width="2" stroke-dasharray="5 5"/><text x="62" y="436" font-size="21">inner2</text><line x1="160" x2="1020" y1="430" y2="430" stroke="#425367" stroke-width="2" stroke-dasharray="5 5"/><text x="62" y="526" font-size="21">bottom</text><line x1="160" x2="1020" y1="520" y2="520" stroke="#425367" stroke-width="2" stroke-dasharray="5 5"/>
+      <line x1="253.34999999999997" y1="250" x2="253.34999999999997" y2="250" stroke="#f5bb5b" stroke-width="7" stroke-linecap="round"/><line x1="253.34999999999997" y1="250" x2="465" y2="250" stroke="#f5bb5b" stroke-width="7" stroke-linecap="round"/><line x1="465" y1="250" x2="465" y2="250" stroke="#f5bb5b" stroke-width="7" stroke-linecap="round"/><line x1="465" y1="430" x2="465" y2="430" stroke="#f5bb5b" stroke-width="7" stroke-linecap="round"/><line x1="465" y1="430" x2="635" y2="430" stroke="#f5bb5b" stroke-width="7" stroke-linecap="round"/><line x1="635" y1="430" x2="635" y2="430" stroke="#f5bb5b" stroke-width="7" stroke-linecap="round"/><line x1="635" y1="250" x2="635" y2="250" stroke="#f5bb5b" stroke-width="7" stroke-linecap="round"/><line x1="635" y1="250" x2="846.6500000000001" y2="250" stroke="#f5bb5b" stroke-width="7" stroke-linecap="round"/><line x1="846.6500000000001" y1="250" x2="846.6500000000001" y2="250" stroke="#f5bb5b" stroke-width="7" stroke-linecap="round"/><rect x="456" y="423" width="18" height="104" rx="5" fill="#f5bb5b"/>
+      <text x="465" y="552" text-anchor="middle" font-size="16" fill="#f5bb5b">Via 1: bottom, inner2</text><rect x="626" y="243" width="18" height="194" rx="5" fill="#f5bb5b"/>
+      <text x="635" y="462" text-anchor="middle" font-size="16" fill="#f5bb5b">Via 2: inner2, inner1, top</text><line x1="465" y1="264" x2="465" y2="412" stroke="#ff7575" stroke-width="3" stroke-dasharray="6 5"/>
+    <circle cx="465" cy="250" r="13" fill="none" stroke="#ff7575" stroke-width="3"/>
+    <text x="443" y="340" text-anchor="end" fill="#ff7575" font-size="19">No barrel contact on top</text>
+
+      <rect x="55" y="594" width="990" height="118" rx="12" fill="#1d2b3e"/>
+      <text x="78" y="623" font-size="20">Observed: pcb_trace=1, pcb_via=2, pcb_trace_error=0</text>
+      <text x="78" y="654" font-size="17">errors: [] · Incoming top wire stops above the first emitted barrel</text>
+      <text x="78" y="685" font-size="16">X positions and barrel occupancy from actual output; layer spacing is schematic</text>
+      <text x="550" y="740" text-anchor="middle" font-size="15" fill="#9dafc4">Amber = emitted copper · dashed lines = copper layer planes · red = physical gap</text>
+    </g>
+  </svg>

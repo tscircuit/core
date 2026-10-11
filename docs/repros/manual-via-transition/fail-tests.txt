@@ -1,0 +1,68 @@
+bun test v1.3.14 (0d9b296a)
+
+tests/repros/manual-via-physical-contact-controls.test.tsx:
+(pass) manual vias accept physical barrel contact even when the logical fromLayer differs [981.57ms]
+
+tests/repros/repro-disconnected-manual-via.test.tsx:
+29 |         traceCount: circuit.db.pcb_trace.list().length,
+30 |         viaCount: circuit.db.pcb_via.list().length,
+31 |       })
+32 |     }
+33 |   }
+34 |   expect(results).toEqual([
+                       ^
+error: expect(received).toEqual(expected)
+
+  [
+    {
+      "api": "pcbPath",
+-     "diagnosed": true,
++     "diagnosed": false,
+      "scenario": "disconnected_top",
+-     "traceCount": 0,
+-     "viaCount": 0,
++     "traceCount": 1,
++     "viaCount": 2,
+    },
+    {
+      "api": "pcbPath",
+-     "diagnosed": true,
++     "diagnosed": false,
+      "scenario": "disconnected_inner",
+-     "traceCount": 0,
+-     "viaCount": 0,
++     "traceCount": 1,
++     "viaCount": 3,
+    },
+    {
+      "api": "pcbPaths",
+-     "diagnosed": true,
++     "diagnosed": false,
+      "scenario": "disconnected_top",
+-     "traceCount": 0,
+-     "viaCount": 0,
++     "traceCount": 1,
++     "viaCount": 2,
+    },
+    {
+      "api": "pcbPaths",
+-     "diagnosed": true,
++     "diagnosed": false,
+      "scenario": "disconnected_inner",
+-     "traceCount": 0,
+-     "viaCount": 0,
++     "traceCount": 1,
++     "viaCount": 3,
+    },
+  ]
+
+- Expected  - 12
++ Received  + 12
+
+      at <anonymous> (/Users/ankan/Documents/Codex/2026-10-11/tscircuit-via-transition-validation-stack/work/core/tests/repros/repro-disconnected-manual-via.test.tsx:34:19)
+(fail) manual paths reject a via barrel that does not reach the incoming copper layer [175.68ms]
+
+ 1 pass
+ 1 fail
+ 81 expect() calls
+Ran 2 tests across 2 files. [4.96s]

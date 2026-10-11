@@ -1,0 +1,38 @@
+[
+  {
+    "api": "pcbPath",
+    "scenario": "disconnected_top",
+    "status": "FAIL",
+    "diagnosed": false,
+    "traceCount": 1,
+    "viaCount": 2,
+    "errors": []
+  },
+  {
+    "api": "pcbPath",
+    "scenario": "disconnected_inner",
+    "status": "FAIL",
+    "diagnosed": false,
+    "traceCount": 1,
+    "viaCount": 3,
+    "errors": []
+  },
+  {
+    "api": "pcbPaths",
+    "scenario": "disconnected_top",
+    "status": "FAIL",
+    "diagnosed": false,
+    "traceCount": 1,
+    "viaCount": 2,
+    "errors": []
+  },
+  {
+    "api": "pcbPaths",
+    "scenario": "disconnected_inner",
+    "status": "FAIL",
+    "diagnosed": false,
+    "traceCount": 1,
+    "viaCount": 3,
+    "errors": []
+  }
+]
