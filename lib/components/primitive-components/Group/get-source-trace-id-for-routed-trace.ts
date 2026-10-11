@@ -262,9 +262,22 @@ export function getSourceTraceIdForRoutedTrace({
     return trace.source_trace_id
   }
 
+  // Existing via barrels may have surface-only logical ports. Keep the
+  // router's known source identity as a fallback when geometry cannot identify
+  // a source; normal port-to-port routes retain their more specific trace IDs.
+  const connectionSourceId =
+    "connection_name" in trace &&
+    trace.connection_name &&
+    (db.source_trace.get(trace.connection_name) ??
+      db.source_net.get(trace.connection_name))
+      ? trace.connection_name
+      : undefined
+
   const sourcePortIds = getSourcePortIdsFromRoutedTrace(db, trace)
   if (sourcePortIds.length === 0) {
-    return getSourceIdsFromConnectedPcbTraces(db, trace)[0]
+    return (
+      getSourceIdsFromConnectedPcbTraces(db, trace)[0] ?? connectionSourceId
+    )
   }
 
   const sourceTraces = db.source_trace.list()
@@ -300,7 +313,7 @@ export function getSourceTraceIdForRoutedTrace({
     connectedToEndpoint.length > 0
       ? connectedToEndpoint
       : sourceTracesInEndpointNets
-  if (candidates.length === 0) return undefined
+  if (candidates.length === 0) return connectionSourceId
 
   return (
     candidates.find(
