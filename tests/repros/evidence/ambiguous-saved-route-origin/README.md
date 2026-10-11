@@ -1,7 +1,0 @@
-Core replays saved PCB routes from a selected origin port. The saved-path documentation identifies ambiguous selectors as unrepresentable, and the importer already checks anchors, layers, membership and coverage. This fixture has one complete path from A.1 to B.1, whose origin selector `A.1, B.1` matches both ports. Expected: a clear `pcb_autorouting_error` and no emitted copper. Observed: one copper path and no errors, because the importer uses selectOne.
-
-Run `bun test tests/repros/ambiguous-saved-route-origin.test.tsx`; remove only `.failing` to expose the expected assertion failure. `failure/run.log` is that exit-1 run. The white SVG and raw circuit records are captured from the run before asserting, not accepted as passing baselines. Regenerate with `EVIDENCE_DIR=debug-output/ambiguous-origin`.
-
-Verified core main `9c500c7ffcf4d3a1198c7f179b61307504790238` / 0.0.2130 on 2026-10-11. This checks selector cardinality, not exhaustive physical route DRC. `renderUntilSettled` resolving with database errors is intentionally exercised by core validation tests and is not alleged as a separate bug.
-
-The fix checks all matching ports before replay, reports the ambiguous selector with its match count, and emits no saved copper. The same assertion passes after removing test.failing. Unknown-port diagnostics retain their existing wording. Three neighboring saved-path tests and bunx tsc --noEmit pass.
