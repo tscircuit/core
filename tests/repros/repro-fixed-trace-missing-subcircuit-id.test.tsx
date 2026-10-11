@@ -49,6 +49,18 @@ test("missing fixed-copper scope lets the next routing phase short POWER", async
       signalOutput.route as PcbTraceRoutePointWithSrjMetadata[],
     ),
   }
+  expect([routedSignal.route[0], routedSignal.route.at(-1)]).toEqual(
+    expect.arrayContaining(
+      routingInput.connections[0]!.pointsToConnect.map((point) =>
+        expect.objectContaining({
+          route_type: "wire",
+          x: point.x,
+          y: point.y,
+          layer: point.layer,
+        }),
+      ),
+    ),
+  )
   const viaPoints = signalOutput.route.filter(
     (point) => point.route_type === "via",
   )
@@ -81,23 +93,21 @@ test("missing fixed-copper scope lets the next routing phase short POWER", async
   ).toEqual(original.find((element) => element.type === "pcb_trace"))
   const status = circuit.db.pcb_note_text.insert({
     font: "tscircuit2024",
-    text: `BUG: SIGNAL shorts POWER on TOP | ${drc.length} DRC error`,
+    text: `BUG: TOP SIGNAL shorts POWER | ${drc.length} trace-overlap DRC error`,
     anchor_position: { x: 0, y: 3.7 },
     anchor_alignment: "center",
     font_size: 0.4,
     layer: "top",
     color: "#ffcc00",
-    ccw_rotation: 0,
   })
   const crossing = circuit.db.pcb_note_text.insert({
     font: "tscircuit2024",
     text: "SHORT at crossing",
-    anchor_position: { x: 1.8, y: -0.7 },
+    anchor_position: { x: 3.4, y: -1.4 },
     anchor_alignment: "center",
     font_size: 0.35,
     layer: "top",
     color: "#ffcc00",
-    ccw_rotation: 0,
   })
   await expect([
     ...routedCircuitJson,
