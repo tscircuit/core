@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "../fixtures/get-test-fixture"
 
-test("repro: board visibility is ignored by silkscreen circles", () => {
+test("silkscreen circles inherit board visibility and allow visible overrides", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -36,7 +36,6 @@ test("repro: board visibility is ignored by silkscreen circles", () => {
 
   circuit.render()
 
-  // Capture the bug: only the two visible overrides should remain.
-  expect(circuit.db.pcb_silkscreen_circle.list()).toHaveLength(4)
+  expect(circuit.db.pcb_silkscreen_circle.list()).toHaveLength(2)
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

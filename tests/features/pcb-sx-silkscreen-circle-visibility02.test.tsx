@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "../fixtures/get-test-fixture"
 
-test("repro: group visibility is ignored by silkscreen circles", () => {
+test("group visibility hides only its circles and allows a visible child override", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -28,7 +28,6 @@ test("repro: group visibility is ignored by silkscreen circles", () => {
 
   circuit.render()
 
-  // Capture the bug: the hidden group circle should be omitted.
-  expect(circuit.db.pcb_silkscreen_circle.list()).toHaveLength(3)
+  expect(circuit.db.pcb_silkscreen_circle.list()).toHaveLength(2)
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
