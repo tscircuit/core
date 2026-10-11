@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { convertCircuitJsonToSchematicSvg } from "circuit-to-svg"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test.failing("supply wires avoid grounded pins", async () => {
@@ -13,6 +14,7 @@ test.failing("supply wires avoid grounded pins", async () => {
         fontSize={0.12}
       />
       <net name="SUPPLY" isPowerNet />
+      <net name="GND" />
       <capacitor
         name="C1"
         capacitance="100nF"
@@ -58,19 +60,39 @@ test.failing("supply wires avoid grounded pins", async () => {
     )
     .flatMap((trace) => trace.edges)
   expect(supplyEdges.length).toBeGreaterThan(0)
-  expect(
-    supplyEdges.some(
-      ({ from, to }) =>
-        (Math.abs(from.y - groundPin.y) < 1e-6 &&
-          Math.abs(to.y - groundPin.y) < 1e-6 &&
-          groundPin.x >= Math.min(from.x, to.x) &&
-          groundPin.x <= Math.max(from.x, to.x)) ||
-        (Math.abs(from.x - groundPin.x) < 1e-6 &&
-          Math.abs(to.x - groundPin.x) < 1e-6 &&
-          groundPin.y >= Math.min(from.y, to.y) &&
-          groundPin.y <= Math.max(from.y, to.y)),
-    ),
-  ).toBe(false)
+  const contactsGround = supplyEdges.some(
+    ({ from, to }) =>
+      (Math.abs(from.y - groundPin.y) < 1e-6 &&
+        Math.abs(to.y - groundPin.y) < 1e-6 &&
+        groundPin.x >= Math.min(from.x, to.x) &&
+        groundPin.x <= Math.max(from.x, to.x)) ||
+      (Math.abs(from.x - groundPin.x) < 1e-6 &&
+        Math.abs(to.x - groundPin.x) < 1e-6 &&
+        groundPin.y >= Math.min(from.y, to.y) &&
+        groundPin.y <= Math.max(from.y, to.y)),
+  )
+  const caption = circuit.db.schematic_text.getWhere({
+    text: "core: supply wires must avoid grounded pins",
+  })!
+  circuit.db.schematic_text.update(caption.schematic_text_id, {
+    text: contactsGround
+      ? "FAIL: supply wire touches a grounded pin"
+      : "PASS: supply wires avoid grounded pins",
+  })
+  if (process.env.BUN_UPDATE_SNAPSHOTS && contactsGround) {
+    await Bun.write(
+      new URL(
+        "./assets/schematic-unrelated-pin-contact-failure.svg",
+        import.meta.url,
+      ),
+      convertCircuitJsonToSchematicSvg(circuit.db.toArray(), {
+        colorOverrides: { schematic: { background: "white" } },
+        width: 800,
+        height: 500,
+      }).replace(/[ \t]+$/gm, ""),
+    )
+  }
+  expect(contactsGround).toBe(false)
   expect(
     circuit.db.schematic_port.list().every((port) => port.is_connected),
   ).toBe(true)
