@@ -102,8 +102,25 @@ test("retained copper pours are present in routing obstacles", async () => {
   await expect(
     convertCircuitJsonToPcbSvg([...circuitJson, ...notes]),
   ).toMatchSvgSnapshot(import.meta.path)
-  // Reproduction branch pins the omission. The stacked fix changes these to
-  // coverage and open-cutout assertions against exactly the same copper.
-  expect(directObstacles).toEqual([])
-  expect(simpleRouteJson.obstacles).toEqual([])
+  expect(directObstacles.length).toBeGreaterThan(0)
+  expect(simpleRouteJson.obstacles).toEqual(directObstacles)
+  const covers = (x: number, y: number) =>
+    directObstacles.some(
+      (obstacle) =>
+        Math.abs(x - obstacle.center.x) <= obstacle.width / 2 &&
+        Math.abs(y - obstacle.center.y) <= obstacle.height / 2,
+    )
+  expect(covers(-2, 0)).toBe(true)
+  expect(covers(2, 0)).toBe(true)
+  expect(covers(0, 1.5)).toBe(true)
+  expect(covers(0, -1.5)).toBe(true)
+  expect(covers(0, 0)).toBe(false)
+  expect(
+    directObstacles.every(
+      (obstacle) =>
+        obstacle.layers.length === 1 &&
+        obstacle.layers[0] === "top" &&
+        obstacle.connectedTo.includes("source_net_power"),
+    ),
+  ).toBe(true)
 })

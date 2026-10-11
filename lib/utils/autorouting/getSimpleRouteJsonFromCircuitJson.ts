@@ -36,6 +36,7 @@ import {
 import { getDifferentialPairsForSimpleRouteJson } from "./getDifferentialPairsForSimpleRouteJson"
 import { getPreservedRoutedSubcircuitTraces } from "./getPreservedRoutedSubcircuitTraces"
 import { getUnbrokenCopperPourObstacles } from "./getUnbrokenCopperPourObstacles"
+import { getExistingCopperPourObstacles } from "./getExistingCopperPourObstacles"
 
 /**
  * Converts PCB trace-hint route points to SRJ connection points. Both inputs
@@ -878,6 +879,29 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     conn.nominalTraceWidth ??= nominalTraceWidth ?? defaultTraceWidth
     conn.width ??= nominalTraceWidth ?? defaultTraceWidth
   }
+  const resolvedMinTraceWidth = Math.min(
+    defaultTraceWidth,
+    ...allConns.map((connection) => connection.width!),
+  )
+  // Live component pours conform after routing; only standalone handoffs
+  // retain already-generated copper. Explicit fresh routing discards root
+  // pours but keeps copper belonging to previously rendered children.
+  obstacles.push(
+    ...getExistingCopperPourObstacles({
+      copperPours: subcircuitComponent
+        ? []
+        : db.pcb_copper_pour.list().filter(
+            (pour) =>
+              !ignoreExistingTopLevelPcbRouteState ||
+              (pour.subcircuit_id &&
+                db.source_group.getWhere({
+                  subcircuit_id: pour.subcircuit_id,
+                })?.parent_subcircuit_id),
+          ),
+      connMap: sharedConnMap,
+      maxBoundaryError: resolvedMinTraceWidth / 4,
+    }),
+  )
 
   bounds = expandSrjBoundsToIncludeConnectionPoints({
     bounds,
@@ -973,10 +997,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
           : undefined,
       layerCount: board?.num_layers ?? 2,
       allowBlindAndBuriedVias: board?.allow_blind_and_buried_vias ?? false,
-      minTraceWidth: Math.min(
-        defaultTraceWidth,
-        ...allConns.map((c) => c.width!),
-      ),
+      minTraceWidth: resolvedMinTraceWidth,
       minViaDiameter: resolvedMinViaPadDiameter,
       minViaHoleDiameter: resolvedMinViaHoleDiameter,
       minViaPadDiameter: resolvedMinViaPadDiameter,

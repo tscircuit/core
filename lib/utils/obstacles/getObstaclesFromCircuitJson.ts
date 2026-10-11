@@ -6,6 +6,7 @@ import { fillPolygonWithRects } from "./fillPolygonWithRects"
 import { type RotatedRect } from "./generateApproximatingRects"
 import { getAxisAlignedRectFromPolygon } from "./getAxisAlignedRectFromPolygon"
 import { getObstaclesFromPcbKeepoutOutline } from "./getObstaclesFromPcbKeepoutOutline"
+import { getObstaclesFromCopperPour } from "./get-obstacles-from-copper-pour"
 import { getObstaclesFromRoute } from "./getObstaclesFromRoute"
 import type { CircuitJsonMetadata, Obstacle } from "./types"
 
@@ -518,6 +519,16 @@ export const getObstaclesFromCircuitJson = (
           })
         }
       }
+    } else if (element.type === "pcb_copper_pour") {
+      obstacles.push(
+        ...getObstaclesFromCopperPour(
+          element,
+          withNetId([
+            element.pcb_copper_pour_id,
+            ...(element.source_net_id ? [element.source_net_id] : []),
+          ]),
+        ),
+      )
     } else if (element.type === "pcb_trace") {
       const traceObstacles = getObstaclesFromRoute(
         element.route.flatMap((rp) => {
