@@ -55,6 +55,8 @@ import {
   getPresetAutoroutingConfig,
 } from "lib/utils/autorouting/getPresetAutoroutingConfig"
 import { getLocalAutoroutingStages } from "lib/utils/autorouting/local-autorouter-strategies"
+import { getSuboptimalChipOrientationsSrj } from "lib/utils/autorouting/get-suboptimal-chip-orientations-srj"
+import type { PcbSuboptimalOrientationWarningEvent } from "lib/events"
 import { shouldSkipAutoroutingBecauseOfPlacementErrors } from "lib/utils/autorouting/should-skip-autorouting-because-of-placement-errors"
 import { shouldSkipAutoroutingBecauseOfTraceLengthViolations } from "lib/utils/autorouting/should-skip-autorouting-because-of-trace-length-violations"
 import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
@@ -1719,6 +1721,27 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         cacheKey,
         cacheDisabledReason,
       } as const
+
+      if (
+        phaseAutorouterConfig.preset === "bus_lanes" &&
+        !getPrecomputedRoutingResult &&
+        !phaseAutorouterConfig.algorithmFn
+      ) {
+        for (const analysis of getSuboptimalChipOrientationsSrj({
+          db,
+          simpleRouteJson,
+        })) {
+          if (!analysis.shouldWarn) continue
+          const warning: PcbSuboptimalOrientationWarningEvent = {
+            type: "pcb:suboptimal_orientation_warning",
+            subcircuit_id: this.subcircuit_id!,
+            phaseName: routingPhasePlan.phaseName,
+            ...analysis,
+            message: `Suboptimal orientation for ${analysis.chipName}: ${analysis.currentRotation}° has ${analysis.currentCrossings} airwire crossings; ${analysis.recommendedRotation}° has ${analysis.bestCrossings}. Consider rotating the chip. This is an airwire heuristic, not a routing guarantee.`,
+          }
+          this.root?.emit(warning.type, warning)
+        }
+      }
 
       this.root?.emit("autorouting:start", {
         type: "autorouting:start",

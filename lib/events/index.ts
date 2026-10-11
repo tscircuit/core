@@ -2,6 +2,7 @@ import type { FanoutTracePath } from "@tscircuit/props"
 import type { RenderPhase } from "lib/components/base-components/Renderable"
 import type { SOLVERS } from "lib/solvers"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
+import type { ChipOrientationAnalysis } from "lib/utils/autorouting/get-suboptimal-chip-orientations-srj"
 
 export type RootCircuitEventName =
   | "asyncEffect:start"
@@ -15,6 +16,7 @@ export type RootCircuitEventName =
   | "autorouting:end"
   | "autorouting:error"
   | "autorouting:progress"
+  | "pcb:suboptimal_orientation_warning"
   | "packing:start"
   | "packing:end"
   | "packing:error"
@@ -58,6 +60,16 @@ export interface AutoroutingStartEvent extends AutoroutingExecutionMetadata {
   phaseStageIndex?: number
   phaseStageCount?: number
   simpleRouteJson: SimpleRouteJson
+}
+
+/** Advisory airwire diagnostic emitted before constructing the bus lanes solver.
+ * This prototype event is not a persisted Circuit JSON warning element. */
+export interface PcbSuboptimalOrientationWarningEvent
+  extends ChipOrientationAnalysis {
+  type: "pcb:suboptimal_orientation_warning"
+  subcircuit_id: string
+  phaseName?: string
+  message: string
 }
 
 export interface AutoroutingErrorEvent extends AutoroutingExecutionMetadata {
