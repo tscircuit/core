@@ -40,8 +40,8 @@ test.failing("rotation preserves capacitor aliases", async () => {
     )
   const missing = ports.some(
     (capacitor) =>
-      !capacitor[0]!.hints.includes("pos") ||
-      !capacitor[1]!.hints.includes("neg"),
+      !capacitor[0]!.hints!.includes("pos") ||
+      !capacitor[1]!.hints!.includes("neg"),
   )
   const caption = circuit.db.schematic_text.getWhere({
     text: "capacitor rotation preserves source aliases",
