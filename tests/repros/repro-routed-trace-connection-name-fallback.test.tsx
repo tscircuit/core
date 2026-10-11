@@ -53,4 +53,13 @@ test("router connection names preserve explicit-source precedence and geometry f
       trace: { ...trace, connection_name: "router-local-label", route },
     }),
   ).toBe(firstSourceTrace.source_trace_id)
+  expect(
+    getSourceTraceIdForRoutedTrace({ db, trace: { ...trace, route } }),
+  ).toBe(firstSourceTrace.source_trace_id)
+  expect(
+    getSourceTraceIdForRoutedTrace({
+      db,
+      trace: { ...trace, connection_name: "router-local-label" },
+    }),
+  ).toBeUndefined()
 })

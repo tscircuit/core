@@ -4,7 +4,7 @@ import Flatten from "@flatten-js/core"
 import { renderInnerViaNetIdentityFixture } from "tests/fixtures/inner-via-net-identity.fixture"
 import { renderInnerViaNetIdentitySnapshot } from "tests/fixtures/inner-via-net-identity-snapshot"
 
-test("a real inner bridge loses VDD identity and produces false downstream errors", async () => {
+test("a real inner bridge retains VDD identity and avoids false downstream errors", async () => {
   const result = await renderInnerViaNetIdentityFixture()
   const {
     circuit,
@@ -53,27 +53,26 @@ test("a real inner bridge loses VDD identity and produces false downstream error
     { route_type: "wire", x: -3, y: 0, width: 0.15, layer: "inner1" },
     { route_type: "wire", x: 3, y: 0, width: 0.15, layer: "inner1" },
   ])
-  expect(JSON.stringify(bridge.route)).toBe(JSON.stringify(nativeBridge.route))
-  expect(bridge.source_trace_id).toBeUndefined()
-  expect(errors).toHaveLength(7)
-  const messages = errors.map((error) => (error as { message: string }).message)
+  // Correct ownership lets Core mark this same-net trace inside its pour.
+  // Ignore only that derived annotation when comparing physical copper.
+  const physicalRoute = bridge.route.map((point) => {
+    if (point.route_type !== "wire") return point
+    const {
+      is_inside_copper_pour: _inside,
+      copper_pour_id: _pour,
+      ...copper
+    } = point
+    return copper
+  })
+  expect(JSON.stringify(physicalRoute)).toBe(JSON.stringify(nativeBridge.route))
+  expect(bridge.source_trace_id).toBe(net.source_net_id)
+  expect(errors).toEqual([])
   expect(
-    messages.filter((message) => message.includes("accidental contact")),
-  ).toHaveLength(2)
-  expect(
-    messages.filter((message) => message.includes("accidental copper contact")),
-  ).toHaveLength(1)
-  expect(
-    messages.filter((message) => message.includes("disconnected endpoint")),
-  ).toHaveLength(2)
-  expect(
-    messages.filter((message) => message.includes("dangling endpoint")),
-  ).toHaveLength(2)
-  expect(
-    errors.every(
-      (error) =>
-        !("pcb_trace_id" in error) ||
-        error.pcb_trace_id === bridge.pcb_trace_id,
+    bridge.route.every(
+      (point) =>
+        point.route_type === "wire" &&
+        point.is_inside_copper_pour &&
+        point.copper_pour_id === pour.pcb_copper_pour_id,
     ),
   ).toBe(true)
   expect(circuit.db.pcb_trace.list()).toHaveLength(3)
