@@ -6,7 +6,7 @@ import type { Via } from "lib/components/primitive-components/Via"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { captureRunEvidence } from "tests/fixtures/capture-run-evidence"
 
-test.failing("a via owns an inner-layer port supplied by a distinct core module", async () => {
+test("a via owns an inner-layer port supplied by a distinct core module", async () => {
   const directory = await mkdtemp(
     join(process.cwd(), "node_modules/.core-port-"),
   )
@@ -57,12 +57,13 @@ test.failing("a via owns an inner-layer port supplied by a distinct core module"
       )
     expect(owned).toHaveLength(3)
     expect(inner.pcb_port_id).toBeDefined()
-    await captureRunEvidence(
+    const svg = await captureRunEvidence(
       circuit.getCircuitJson(),
       `One through via: ${owned.length} owned layer ports; ${via.pcb_port_ids?.length ?? 0} attached. Expected 3.`,
     )
     expect(via.pcb_port_ids).toContain(inner.pcb_port_id!)
     expect(via.pcb_port_ids).toEqual(owned.map((port) => port.pcb_port_id))
+    await expect(svg).toMatchSvgSnapshot(import.meta.path)
   } finally {
     await rm(directory, { recursive: true, force: true })
   }
