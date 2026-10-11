@@ -44,24 +44,21 @@ beforeAll(async () => {
   )
 })
 
-test.failing(
-  "native dogbone preserves earlier copper for a collision-free bus-lanes continuation",
-  () => {
-    const earlierTrace = phaseIo[0]!.endSimpleRouteJson!.traces![0]!
-    expect(
-      phaseIo[1]!.endSimpleRouteJson!.traces?.filter(
-        (trace) => trace.pcb_trace_id === earlierTrace.pcb_trace_id,
-      ),
-    ).toEqual([earlierTrace])
-    expect(
-      phaseIo[2]!.startSimpleRouteJson!.traces?.filter(
-        (trace) => trace.pcb_trace_id === earlierTrace.pcb_trace_id,
-      ),
-    ).toEqual([earlierTrace])
-    expect(
-      circuit
-        .getCircuitJson()
-        .filter((element) => element.type.endsWith("_error")),
-    ).toEqual([])
-  },
-)
+test("native dogbone preserves earlier copper for a collision-free bus-lanes continuation", () => {
+  const earlierTrace = phaseIo[0]!.endSimpleRouteJson!.traces![0]!
+  expect(
+    phaseIo[1]!.endSimpleRouteJson!.traces?.filter(
+      (trace) => trace.pcb_trace_id === earlierTrace.pcb_trace_id,
+    ),
+  ).toEqual([earlierTrace])
+  expect(
+    phaseIo[2]!.startSimpleRouteJson!.traces?.filter(
+      (trace) => trace.pcb_trace_id === earlierTrace.pcb_trace_id,
+    ),
+  ).toEqual([earlierTrace])
+  expect(
+    circuit
+      .getCircuitJson()
+      .filter((element) => element.type.endsWith("_error")),
+  ).toEqual([])
+})

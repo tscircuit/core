@@ -68,24 +68,21 @@ beforeAll(async () => {
   })
 })
 
-test.failing(
-  "saved copper stays fixed while native SIGNAL avoids earlier custom copper",
-  () => {
-    const earlierTrace = phaseIo[1]!.endSimpleRouteJson!.traces![0]!
-    expect(
-      phaseIo[2]!.endSimpleRouteJson!.traces?.filter(
-        (trace) => trace.pcb_trace_id === earlierTrace.pcb_trace_id,
-      ),
-    ).toEqual([earlierTrace])
-    expect(
-      phaseIo[3]!.startSimpleRouteJson!.traces?.filter(
-        (trace) => trace.pcb_trace_id === earlierTrace.pcb_trace_id,
-      ),
-    ).toEqual([earlierTrace])
-    expect(
-      circuit
-        .getCircuitJson()
-        .filter((element) => element.type.endsWith("_error")),
-    ).toEqual([])
-  },
-)
+test("saved copper stays fixed while native SIGNAL avoids earlier custom copper", () => {
+  const earlierTrace = phaseIo[1]!.endSimpleRouteJson!.traces![0]!
+  expect(
+    phaseIo[2]!.endSimpleRouteJson!.traces?.filter(
+      (trace) => trace.pcb_trace_id === earlierTrace.pcb_trace_id,
+    ),
+  ).toEqual([earlierTrace])
+  expect(
+    phaseIo[3]!.startSimpleRouteJson!.traces?.filter(
+      (trace) => trace.pcb_trace_id === earlierTrace.pcb_trace_id,
+    ),
+  ).toEqual([earlierTrace])
+  expect(
+    circuit
+      .getCircuitJson()
+      .filter((element) => element.type.endsWith("_error")),
+  ).toEqual([])
+})
