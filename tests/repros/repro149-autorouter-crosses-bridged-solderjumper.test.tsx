@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { checkPadTraceClearance } from "@tscircuit/checks"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("autorouter routes around a closed solderjumper bridge", async () => {
@@ -24,5 +25,8 @@ test("autorouter routes around a closed solderjumper bridge", async () => {
 
   expect(circuit.db.pcb_trace_error.list()).toHaveLength(0)
   expect(circuit.db.pcb_autorouting_error.list()).toHaveLength(0)
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  expect(
+    checkPadTraceClearance(circuit.getCircuitJson(), { minClearance: 0 }),
+  ).toEqual([])
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
