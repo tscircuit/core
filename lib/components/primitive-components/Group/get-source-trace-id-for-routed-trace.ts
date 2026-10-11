@@ -109,6 +109,7 @@ function getEndpointSourcePortIdsFromGeometry(
   )
 
   for (const endpoint of endpoints) {
+    const exactEndpointSourcePortIds = new Set<string>()
     for (const pcbPort of db.pcb_port.list()) {
       if (!pcbPort.source_port_id) continue
       if (
@@ -118,8 +119,14 @@ function getEndpointSourcePortIdsFromGeometry(
       )
         continue
       if (distance(endpoint, pcbPort) <= 0.01) {
-        sourcePortIds.add(pcbPort.source_port_id)
+        exactEndpointSourcePortIds.add(pcbPort.source_port_id)
       }
+    }
+    if (exactEndpointSourcePortIds.size > 0) {
+      for (const sourcePortId of exactEndpointSourcePortIds) {
+        sourcePortIds.add(sourcePortId)
+      }
+      continue
     }
 
     for (const smtpad of db.pcb_smtpad.list()) {
