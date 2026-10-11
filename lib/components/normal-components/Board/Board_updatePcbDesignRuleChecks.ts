@@ -2,7 +2,6 @@ import {
   dedupePcbDrcErrors,
   consolidatePcbOverlapErrors,
   runAllNetlistChecks,
-  runAllPinSpecificationChecks,
   runAllPlacementChecks,
   runAllRoutingChecks,
   runAllSchematicChecks,
@@ -34,9 +33,6 @@ export const Board_updatePcbDesignRuleChecks = (board: Board) => {
   const netlistDrcChecksDisabled =
     board.root?.platform?.netlistDrcChecksDisabled ??
     board.getInheritedProperty("netlistDrcChecksDisabled")
-  const pinSpecificationDrcChecksDisabled = board.getInheritedProperty(
-    "pinSpecificationDrcChecksDisabled",
-  )
   const placementDrcChecksDisabled =
     board.root?.platform?.placementDrcChecksDisabled ??
     board.getInheritedProperty("placementDrcChecksDisabled")
@@ -45,8 +41,6 @@ export const Board_updatePcbDesignRuleChecks = (board: Board) => {
     board.getInheritedProperty("routingDrcChecksDisabled")
 
   const shouldRunNetlistChecks = !drcChecksDisabled && !netlistDrcChecksDisabled
-  const shouldRunPinSpecificationChecks =
-    !drcChecksDisabled && !pinSpecificationDrcChecksDisabled
   const shouldRunSchematicChecks = !drcChecksDisabled && !schematicDisabled
   const shouldRunPlacementChecks =
     !drcChecksDisabled && !pcbDisabled && !placementDrcChecksDisabled
@@ -166,16 +160,6 @@ export const Board_updatePcbDesignRuleChecks = (board: Board) => {
       queueCheck(
         "netlist",
         () => runAllNetlistChecks(circuitJson) as Promise<AnyCircuitElement[]>,
-      )
-    }
-
-    if (shouldRunPinSpecificationChecks) {
-      queueCheck(
-        "pin_specification",
-        () =>
-          runAllPinSpecificationChecks(circuitJson) as Promise<
-            AnyCircuitElement[]
-          >,
       )
     }
 

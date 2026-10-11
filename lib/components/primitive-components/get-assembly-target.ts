@@ -48,6 +48,7 @@ export const getAssemblyTarget = (
   if (
     !target.pcb_component_id &&
     target.componentName !== "AssemblyScreen" &&
+    target.componentName !== "AssemblyPart" &&
     target.componentName !== "AssemblySubassembly"
   ) {
     throw new Error(

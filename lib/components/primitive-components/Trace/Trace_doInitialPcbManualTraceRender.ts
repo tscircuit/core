@@ -18,6 +18,7 @@ import {
   getAutoroutedViaLayers,
   getViaSpanLayers,
 } from "lib/utils/getViaSpanLayers"
+import { renderPcbPaths } from "./render-pcb-paths"
 
 const findInflatedPcbViaForPoint = (
   vias: PcbVia[] | undefined,
@@ -54,10 +55,16 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
   const subcircuit = trace.getSubcircuit()
 
   const hasPcbPath = props.pcbPath !== undefined
+  const hasPcbPaths = props.pcbPaths !== undefined
   const wantsStraightLine = Boolean(props.pcbStraightLine)
   const inflatedPcbTraces = trace._inflatedPcbTraces ?? []
 
-  if (!hasPcbPath && !wantsStraightLine && inflatedPcbTraces.length === 0)
+  if (
+    !hasPcbPath &&
+    !hasPcbPaths &&
+    !wantsStraightLine &&
+    inflatedPcbTraces.length === 0
+  )
     return
 
   let allPortsFound: boolean
@@ -258,6 +265,17 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
     return
   }
 
+  if (props.pcbPaths) {
+    renderPcbPaths({
+      trace,
+      paths: props.pcbPaths,
+      ports,
+      portsWithSelectors,
+      width,
+    })
+    return
+  }
+
   if (wantsStraightLine && !hasPcbPath) {
     if (!ports || ports.length < 2) {
       trace.renderError("pcbStraightLine requires exactly two connected ports")
@@ -338,6 +356,15 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
   }
   if (!anchorPort) {
     anchorPort = ports[0]
+  }
+  if (!anchorPort) {
+    db.source_trace_not_connected_error.insert({
+      error_type: "source_trace_not_connected_error",
+      source_trace_id: trace.source_trace_id ?? undefined,
+      subcircuit_id: subcircuit.subcircuit_id ?? undefined,
+      message: "pcbPath requires a connected port or pcbPathRelativeTo port",
+    })
+    return
   }
   const otherPort = ports.find((p) => p !== anchorPort) ?? ports[1]
 

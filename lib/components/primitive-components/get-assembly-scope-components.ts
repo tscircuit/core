@@ -1,6 +1,6 @@
 import type { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
-const getAssemblyScope = (
+export const getAssemblyScope = (
   component: PrimitiveComponent,
 ): PrimitiveComponent => {
   let ancestor = component.parent
