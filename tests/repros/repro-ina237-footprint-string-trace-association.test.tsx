@@ -67,19 +67,19 @@ test("INA237 footprint string assigns routed traces to adjacent pins", async () 
         color="#ffbb55"
       />
       <fabricationnotetext
-        text="BUG: SDA (pin4) is assigned to ALERT (pin3)"
+        text="SDA route is assigned to pin 4"
         pcbY={-6}
         fontSize={0.4}
         color="#ffbb55"
       />
       <fabricationnotetext
-        text="BUG: SCL (pin5) is assigned to SDA (pin4)"
+        text="SCL route is assigned to pin 5"
         pcbY={-7}
         fontSize={0.4}
         color="#ffbb55"
       />
       <fabricationnotetext
-        text="Routes exist; pin/net attribution is wrong."
+        text="Rotated pads preserve pin/net attribution."
         pcbY={-8}
         fontSize={0.4}
         color="#ffffff"
@@ -99,17 +99,9 @@ test("INA237 footprint string assigns routed traces to adjacent pins", async () 
         sourcePort.source_component_id === sensor.source_component_id,
     )
 
-  // Pin the defect illustrated by the notes to the emitted route metadata.
-  // Update these expectations and the visual notes when the bug is fixed.
-  for (const [routedPinName, assignedPinName] of [
-    ["SDA", "ALERT"],
-    ["SCL", "SDA"],
-  ] as const) {
+  for (const routedPinName of ["SDA", "SCL"] as const) {
     const routedPort = sensorPorts.find(
       (sourcePort) => sourcePort.name === routedPinName,
-    )!
-    const assignedPort = sensorPorts.find(
-      (sourcePort) => sourcePort.name === assignedPinName,
     )!
     const pcbPort = circuit.db.pcb_port
       .list()
@@ -129,9 +121,6 @@ test("INA237 footprint string assigns routed traces to adjacent pins", async () 
     )!
 
     expect(assignedSourceTrace.connected_source_port_ids).toContain(
-      assignedPort.source_port_id,
-    )
-    expect(assignedSourceTrace.connected_source_port_ids).not.toContain(
       routedPort.source_port_id,
     )
   }
