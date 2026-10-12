@@ -3,10 +3,8 @@ import type { LayerRef } from "circuit-json"
 import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
 import { getViaDiameterDefaults } from "../../../utils/pcbStyle/getViaDiameterDefaults"
 import type { Port } from "../Port"
-import {
-  getRouteForPcbPath,
-  insertPcbPathViaContactErrors,
-} from "./get-route-for-pcb-path"
+import { getRouteForPcbPath } from "./get-route-for-pcb-path"
+import { insertPcbPathViaContactErrors } from "./insert-pcb-path-via-contact-errors"
 import type { Trace } from "./Trace"
 import { getTraceLength } from "./trace-utils/compute-trace-length"
 
@@ -90,7 +88,7 @@ export const renderPcbPaths = ({
         subcircuit_connectivity_map_key: connectivityMapKey,
       })
     }
-    insertPcbPathViaContactErrors(trace, pcbTrace, ports, pathIndex)
+    insertPcbPathViaContactErrors({ trace, pcbTrace, ports, pathIndex })
     trace._insertErrorIfTraceIsOutsideBoard(route, ports)
   }
   trace._portsRoutedOnPcb = ports
