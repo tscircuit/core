@@ -89,7 +89,7 @@ const varistorSymbol = (
   </symbol>
 )
 
-test("imported two-pin symbols use body bounds for solver obstacles", async () => {
+test("imported two-pin symbols include terminals in solver obstacles", async () => {
   const { circuit } = getTestFixture()
   circuit.pcbDisabled = true
 
@@ -146,11 +146,12 @@ test("imported two-pin symbols use body bounds for solver obstacles", async () =
 
     return {
       name,
+      bodyWidth: schematicComponent.size.width,
       minX,
       maxX,
       pins: chip.pins.map((pin) => ({
         x: pin.x,
-        isInsideBounds: pin.x > minX && pin.x < maxX,
+        isWithinBounds: pin.x >= minX && pin.x <= maxX,
       })),
     }
   })
@@ -158,31 +159,33 @@ test("imported two-pin symbols use body bounds for solver obstacles", async () =
   expect(solverBounds).toMatchInlineSnapshot(`
     [
       {
-        "maxX": 0.2,
-        "minX": -0.2,
+        "bodyWidth": 0.4,
+        "maxX": 0.4,
+        "minX": -0.4,
         "name": "F1",
         "pins": [
           {
-            "isInsideBounds": false,
+            "isWithinBounds": true,
             "x": -0.4,
           },
           {
-            "isInsideBounds": false,
+            "isWithinBounds": true,
             "x": 0.4,
           },
         ],
       },
       {
-        "maxX": 0.2,
-        "minX": -0.2,
+        "bodyWidth": 0.4,
+        "maxX": 0.4,
+        "minX": -0.4,
         "name": "RV1",
         "pins": [
           {
-            "isInsideBounds": false,
+            "isWithinBounds": true,
             "x": -0.4,
           },
           {
-            "isInsideBounds": false,
+            "isWithinBounds": true,
             "x": 0.4,
           },
         ],
