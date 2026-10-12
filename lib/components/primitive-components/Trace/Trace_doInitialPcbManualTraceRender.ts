@@ -5,6 +5,7 @@ import {
   type PcbVia,
 } from "circuit-json"
 import { getTraceLength } from "./trace-utils/compute-trace-length"
+import { insertPcbPathViaContactErrors } from "./insert-pcb-path-via-contact-errors"
 import type { Port } from "../Port"
 import type { Trace } from "./Trace"
 import { applyToPoint, identity } from "transformation-matrix"
@@ -510,5 +511,6 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
   }
   trace._portsRoutedOnPcb = ports
   trace.pcb_trace_id = pcb_trace.pcb_trace_id
+  insertPcbPathViaContactErrors({ trace, pcbTrace: pcb_trace, ports })
   trace._insertErrorIfTraceIsOutsideBoard(route, ports)
 }
