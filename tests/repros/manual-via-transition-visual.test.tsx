@@ -53,6 +53,20 @@ test("snapshot disconnected manual via transitions on each PCB layer", async () 
   )
   await circuit.renderUntilSettled()
 
+  const pcbTrace = circuit.db.pcb_trace.list()[0]!
+  const invalidVia = circuit.db.pcb_via.list()[0]!
+  expect(circuit.db.pcb_trace_error.list()).toEqual([
+    expect.objectContaining({
+      pcb_trace_id: pcbTrace.pcb_trace_id,
+      source_trace_id: pcbTrace.source_trace_id,
+      center: { x: invalidVia.x, y: invalidVia.y },
+      is_fatal: false,
+      message: expect.stringMatching(
+        /^Invalid pcbPath \(R1\.pin2 to R2\.pin1\): via 1.*bottom → inner2.*incoming top copper\.$/,
+      ),
+    }),
+  ])
+
   const layerStackSvg = createPcbLayerStackSvg(circuit.getCircuitJson())
   await expect(layerStackSvg).toMatchSvgSnapshot(
     import.meta.path,

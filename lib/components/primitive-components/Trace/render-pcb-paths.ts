@@ -5,7 +5,7 @@ import { getViaDiameterDefaults } from "../../../utils/pcbStyle/getViaDiameterDe
 import type { Port } from "../Port"
 import {
   getRouteForPcbPath,
-  validatePcbPathViaContact,
+  insertPcbPathViaContactErrors,
 } from "./get-route-for-pcb-path"
 import type { Trace } from "./Trace"
 import { getTraceLength } from "./trace-utils/compute-trace-length"
@@ -54,10 +54,9 @@ export const renderPcbPaths = ({
     trace.subcircuit_connectivity_map_key ??
     db.source_trace.get(trace.source_trace_id!)?.subcircuit_connectivity_map_key
 
-  for (const path of paths) {
+  for (const [pathIndex, path] of paths.entries()) {
     const route = getRouteForPcbPath({ trace, path, anchorPort, width })
     if (!route || route.length < 2) continue
-    if (!validatePcbPathViaContact(trace, route, ports)) continue
 
     const pcbTrace = db.pcb_trace.insert({
       route,
@@ -91,6 +90,7 @@ export const renderPcbPaths = ({
         subcircuit_connectivity_map_key: connectivityMapKey,
       })
     }
+    insertPcbPathViaContactErrors(trace, pcbTrace, ports, pathIndex)
     trace._insertErrorIfTraceIsOutsideBoard(route, ports)
   }
   trace._portsRoutedOnPcb = ports

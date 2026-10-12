@@ -5,7 +5,7 @@ import {
   type PcbVia,
 } from "circuit-json"
 import { getTraceLength } from "./trace-utils/compute-trace-length"
-import { validatePcbPathViaContact } from "./get-route-for-pcb-path"
+import { insertPcbPathViaContactErrors } from "./get-route-for-pcb-path"
 import type { Port } from "../Port"
 import type { Trace } from "./Trace"
 import { applyToPoint, identity } from "transformation-matrix"
@@ -472,8 +472,6 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
     })
   }
 
-  if (!validatePcbPathViaContact(trace, route, ports)) return
-
   const traceLength = getTraceLength(route)
   const pcb_trace = db.pcb_trace.insert({
     route,
@@ -513,5 +511,6 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
   }
   trace._portsRoutedOnPcb = ports
   trace.pcb_trace_id = pcb_trace.pcb_trace_id
+  insertPcbPathViaContactErrors(trace, pcb_trace, ports)
   trace._insertErrorIfTraceIsOutsideBoard(route, ports)
 }
