@@ -1,4 +1,4 @@
-import { beforeAll, expect, test } from "bun:test"
+import { expect, test } from "bun:test"
 import type { SchematicRect } from "circuit-json"
 import type { Group } from "lib/components/primitive-components/Group/Group"
 import { createSchematicTraceSolverInputProblem } from "lib/components/primitive-components/Group/Group_doInitialSchematicTraceRender/createSchematicTraceSolverInputProblem"
@@ -12,12 +12,8 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 // Core reserves 4.92 mm for J1's MPN using a fixed character-width estimate.
 // The rendered, left-aligned text is shorter. The oversized obstacle pushes
 // J1's GND rail past R1's CC1 trace, creating two unnecessary crossings.
-// This expected-failure test records the bug without changing production code.
-let groundCrossingCount: number
-
-// Keep setup and snapshot failures outside test.failing so only the known
-// routing defect is treated as an expected failure.
-beforeAll(async () => {
+// The snapshot records the current bug; GND should fit before R1's CC1 trace.
+test("repro: oversized USB-C MPN text bounds force GND across CC1", async () => {
   const { circuit } = getTestFixture()
   circuit.pcbDisabled = true
 
@@ -110,20 +106,6 @@ beforeAll(async () => {
   const mpnTextBox = inputProblem.textBoxes!.find(
     (textBox) => textBox.text === manufacturerPartNumber,
   )!
-  const groundNet = circuit.db.source_net.getWhere({ name: "GND" })!
-  const groundSourceTrace = circuit.db.source_trace
-    .list()
-    .find((trace) =>
-      trace.connected_source_net_ids.includes(groundNet.source_net_id),
-    )!
-  const groundCrossings = circuit.db.schematic_trace
-    .list()
-    .filter(
-      (trace) =>
-        trace.subcircuit_connectivity_map_key ===
-        groundSourceTrace.subcircuit_connectivity_map_key,
-    )
-    .flatMap((trace) => trace.edges.filter((edge) => edge.is_crossing))
 
   // Overlay the actual Core-generated routing obstacle after rendering. The
   // original text retains its original font size, position and left anchor.
@@ -154,12 +136,4 @@ beforeAll(async () => {
       color: "red",
     },
   ]).toMatchSchematicSnapshot(import.meta.path, { grid: false })
-
-  groundCrossingCount = groundCrossings.length
-})
-
-test.failing("USB-C MPN text bounds should not force GND across CC1", () => {
-  // Desired behavior: fit the GND label after the visible MPN text and before
-  // R1's vertical CC1 trace. Current Core output has two GND crossing edges.
-  expect(groundCrossingCount).toBe(0)
 })
