@@ -1,14 +1,12 @@
 import type { PcbKeepoutOutline } from "circuit-json"
 import type { PcbComponentId } from "lib/utils/circuit-json/circuit-json-id-types"
-import { fillCircleWithRects } from "./fillCircleWithRects"
-import { generateApproximatingRects } from "./generateApproximatingRects"
 import { getCircumscribedRectFromCircularPcbKeepoutOutline } from "./getCircumscribedRectFromCircularPcbKeepoutOutline"
 import type { Obstacle } from "./types"
 
 /**
- * Approximates a rounded stroked keepout path with axis-aligned rectangles.
- * Segment bodies use the existing rotated-rectangle approximation, while
- * vertices use the existing circle-fill approximation for round joins/caps.
+ * Represents a rounded stroked keepout path with native rotated rectangles.
+ * Vertices use the same circumscribed-square representation as circular
+ * keepouts so downstream routers can normalize the geometry when needed.
  */
 export const getObstaclesFromPcbKeepoutOutline = (
   keepout: PcbKeepoutOutline,
@@ -45,26 +43,20 @@ export const getObstaclesFromPcbKeepoutOutline = (
     const segmentLength = Math.hypot(deltaX, deltaY)
     if (!Number.isFinite(segmentLength) || segmentLength === 0) continue
 
-    const approximatingRects = generateApproximatingRects({
+    obstacles.push({
+      obstacleId: `${keepout.pcb_keepout_id}_segment_${segmentIndex}`,
+      componentId,
+      type: "rect",
+      layers: keepout.layers,
       center: {
         x: (start.x + end.x) / 2,
         y: (start.y + end.y) / 2,
       },
       width: segmentLength,
       height: stroke_width,
-      rotation: (Math.atan2(deltaY, deltaX) * 180) / Math.PI,
+      ccwRotationDegrees: (Math.atan2(deltaY, deltaX) * 180) / Math.PI,
+      connectedTo: [],
     })
-
-    for (const [approximationIndex, rect] of approximatingRects.entries()) {
-      obstacles.push({
-        obstacleId: `${keepout.pcb_keepout_id}_segment_${segmentIndex}_rect_${approximationIndex}`,
-        componentId,
-        type: "rect",
-        layers: keepout.layers,
-        ...rect,
-        connectedTo: [],
-      })
-    }
   }
 
   const isClosed =
@@ -74,21 +66,16 @@ export const getObstaclesFromPcbKeepoutOutline = (
   const joinPoints = isClosed ? outline.slice(0, -1) : outline
 
   for (const [joinIndex, point] of joinPoints.entries()) {
-    const approximatingRects = fillCircleWithRects(
-      { center: point, radius: stroke_width / 2 },
-      { rectHeight: stroke_width / 4 },
-    )
-
-    for (const [approximationIndex, rect] of approximatingRects.entries()) {
-      obstacles.push({
-        obstacleId: `${keepout.pcb_keepout_id}_join_${joinIndex}_rect_${approximationIndex}`,
-        componentId,
-        type: "rect",
-        layers: keepout.layers,
-        ...rect,
-        connectedTo: [],
-      })
-    }
+    obstacles.push({
+      obstacleId: `${keepout.pcb_keepout_id}_join_${joinIndex}`,
+      componentId,
+      type: "rect",
+      layers: keepout.layers,
+      center: point,
+      width: stroke_width,
+      height: stroke_width,
+      connectedTo: [],
+    })
   }
 
   return obstacles
