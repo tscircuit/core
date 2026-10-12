@@ -45,6 +45,12 @@ test("snapshot disconnected manual via transitions on each PCB layer", async () 
       />
       <pcbnotetext
         pcbX={0}
+        pcbY={5}
+        fontSize={0.6}
+        text="PASS: disconnected via contact is reported"
+      />
+      <pcbnotetext
+        pcbX={0}
         pcbY={4}
         fontSize={0.6}
         text="Invalid: top trace enters a bottom-to-inner2 via"

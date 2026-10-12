@@ -32,18 +32,33 @@ const createLayerPanelSvg = (
       convertCircuitJsonToPcbSvg(circuitJson, {
         layer,
         showDebugObjects: true,
+        shouldDrawErrors: true,
       }),
     ],
     { gap: 0, normalizeSize: false },
   )
 
-export const createPcbLayerStackSvg = (circuitJson: AnyCircuitElement[]) =>
-  stackSvgsVertically(
+/**
+ * Stack four PCB layer views. Circuit JSON geometry contains board-world
+ * points in mm (+X right, +Y up, right-handed); the renderer maps them to SVG
+ * screen points in pixels (+X right, +Y down).
+ */
+export const createPcbLayerStackSvg = (circuitJson: AnyCircuitElement[]) => {
+  // The SVG renderer prioritizes connected ports over an error's center.
+  // Use a rendering copy so each error marker points at the reported via.
+  const circuitJsonWithErrorCenters = circuitJson.map((element) => {
+    if (element.type === "pcb_trace_error" && element.center) {
+      return { ...element, pcb_port_ids: [] }
+    }
+    return element
+  })
+
+  return stackSvgsVertically(
     [
-      createLayerPanelSvg(circuitJson, "top"),
-      createLayerPanelSvg(circuitJson, "inner1"),
-      createLayerPanelSvg(circuitJson, "inner2"),
-      createLayerPanelSvg(circuitJson, "bottom"),
+      createLayerPanelSvg(circuitJsonWithErrorCenters, "top"),
+      createLayerPanelSvg(circuitJsonWithErrorCenters, "inner1"),
+      createLayerPanelSvg(circuitJsonWithErrorCenters, "inner2"),
+      createLayerPanelSvg(circuitJsonWithErrorCenters, "bottom"),
     ],
     {
       gap: 16,
@@ -51,3 +66,4 @@ export const createPcbLayerStackSvg = (circuitJson: AnyCircuitElement[]) =>
       rootAttributes: { "data-testid": "pcb-layer-stack" },
     },
   )
+}
