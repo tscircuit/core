@@ -3,7 +3,10 @@ import type { LayerRef } from "circuit-json"
 import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
 import { getViaDiameterDefaults } from "../../../utils/pcbStyle/getViaDiameterDefaults"
 import type { Port } from "../Port"
-import { getRouteForPcbPath } from "./get-route-for-pcb-path"
+import {
+  getRouteForPcbPath,
+  validatePcbPathViaContact,
+} from "./get-route-for-pcb-path"
 import type { Trace } from "./Trace"
 import { getTraceLength } from "./trace-utils/compute-trace-length"
 
@@ -54,6 +57,7 @@ export const renderPcbPaths = ({
   for (const path of paths) {
     const route = getRouteForPcbPath({ trace, path, anchorPort, width })
     if (!route || route.length < 2) continue
+    if (!validatePcbPathViaContact(trace, route, ports)) continue
 
     const pcbTrace = db.pcb_trace.insert({
       route,

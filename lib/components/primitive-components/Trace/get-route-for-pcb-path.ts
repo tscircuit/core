@@ -1,5 +1,6 @@
 import type { PcbPath } from "@tscircuit/props"
 import type { LayerRef, PcbTraceRoutePoint } from "circuit-json"
+import { getAutoroutedViaLayers } from "lib/utils/getViaSpanLayers"
 import { applyToPoint, identity } from "transformation-matrix"
 import type { Port } from "../Port"
 import { getPcbSelectorErrorForTracePort } from "./getPcbSelectorErrorForTracePort"
@@ -113,4 +114,42 @@ export const getRouteForPcbPath = ({
   }
 
   return route
+}
+
+/**
+ * Validate barrel contact for board-world route points, in mm (+X right,
+ * +Y up, right-handed). Emit a routing error before inserting copper when
+ * a via's physical span cannot reach the incoming wire's copper layer.
+ */
+export const validatePcbPathViaContact = (
+  trace: Trace,
+  route: PcbTraceRoutePoint[],
+  ports: Port[],
+): boolean => {
+  let incomingLayer: LayerRef | undefined
+  for (const point of route) {
+    if (point.route_type === "wire") incomingLayer = point.layer
+    if (point.route_type !== "via") continue
+    const layers = getAutoroutedViaLayers({
+      fromLayer: point.from_layer,
+      toLayer: point.to_layer,
+      layerCount: trace.getSubcircuit()._getSubcircuitLayerCount(),
+      allowBlindAndBuriedVias: trace
+        ._getBoard()
+        ?.getInheritedProperty("allowBlindAndBuriedVias"),
+    })
+    if (incomingLayer && !layers.includes(incomingLayer)) {
+      trace.root!.db.pcb_trace_error.insert({
+        error_type: "pcb_trace_error",
+        source_trace_id: trace.source_trace_id!,
+        message: `Manual path via ${point.from_layer} → ${point.to_layer} does not reach incoming ${incomingLayer} copper (occupied layers: ${layers.join(", ")}) for ${trace.getDisplayName()}`,
+        pcb_trace_id: trace.pcb_trace_id!,
+        pcb_component_ids: [],
+        pcb_port_ids: ports.map((port) => port.pcb_port_id!).filter(Boolean),
+      })
+      return false
+    }
+    incomingLayer = point.to_layer
+  }
+  return true
 }
