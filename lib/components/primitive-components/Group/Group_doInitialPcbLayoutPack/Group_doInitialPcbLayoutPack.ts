@@ -61,7 +61,12 @@ const getOutsideStaticObstacles = ({
   const pcbComponents = db.pcb_component?.list ? db.pcb_component.list() : []
 
   for (const pcbComp of pcbComponents) {
-    if (!pcbComp.center || pcbComp.position_mode === "packed") continue
+    if (
+      !pcbComp.center ||
+      pcbComp.position_mode !== "relative_to_group_anchor"
+    ) {
+      continue
+    }
     const srcComp = db.source_component.get(pcbComp.source_component_id)
     const compGroupId = srcComp?.source_group_id
     if (
