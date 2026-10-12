@@ -530,7 +530,7 @@ export class Board
     }
 
     // Compute width and height from outline if not provided
-    if (props.outline) {
+    if (props.outline && props.outline.length > 0) {
       const xValues = props.outline.map((point) => point.x)
       const yValues = props.outline.map((point) => point.y)
 
@@ -541,6 +541,20 @@ export class Board
 
       computedWidth = maxX - minX
       computedHeight = maxY - minY
+
+      if (
+        !boardAnchorPosition &&
+        rawProps.pcbX === undefined &&
+        rawProps.pcbY === undefined &&
+        (rawProps as any).center === undefined &&
+        this.parent?.lowercaseComponentName !== "panel" &&
+        this.parent?.lowercaseComponentName !== "subpanel"
+      ) {
+        center = {
+          x: (minX + maxX) / 2 + (props.outlineOffsetX ?? 0),
+          y: (minY + maxY) / 2 + (props.outlineOffsetY ?? 0),
+        }
+      }
     }
 
     let outline = props.outline
