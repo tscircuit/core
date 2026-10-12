@@ -4,6 +4,7 @@ import type {
   PcbPlatedHole,
   PcbSmtPad,
   PcbTrace,
+  SourcePort,
   SourceTrace,
 } from "circuit-json"
 import { ConnectivityMap } from "circuit-json-to-connectivity-map"
@@ -13,6 +14,7 @@ import { applyToPoint, rotateDEG } from "transformation-matrix"
 type RoutedTrace = (PcbTrace | SimplifiedPcbTrace) & {
   source_trace_id?: string
 }
+type SourcePortId = SourcePort["source_port_id"]
 
 type RoutePointWithPortIds = {
   route_type: string
@@ -98,7 +100,7 @@ function getEndpointSourcePortIdsFromGeometry(
   db: CircuitJsonUtilObjects,
   trace: RoutedTrace,
 ) {
-  const sourcePortIds = new Set<string>()
+  const sourcePortIds = new Set<SourcePortId>()
   const route = trace.route as RoutePointWithPortIds[]
   const endpoints = [route[0], route[route.length - 1]].filter(
     (point): point is RoutePointWithPortIds & { x: number; y: number } =>
@@ -109,7 +111,7 @@ function getEndpointSourcePortIdsFromGeometry(
   )
 
   for (const endpoint of endpoints) {
-    const exactEndpointSourcePortIds = new Set<string>()
+    const exactEndpointSourcePortIds = new Set<SourcePortId>()
     for (const pcbPort of db.pcb_port.list()) {
       if (!pcbPort.source_port_id) continue
       if (
@@ -232,7 +234,7 @@ function getSourcePortIdsFromRoutedTrace(
   db: CircuitJsonUtilObjects,
   trace: RoutedTrace,
 ) {
-  const sourcePortIds = new Set<string>()
+  const sourcePortIds = new Set<SourcePortId>()
 
   for (const point of trace.route as RoutePointWithPortIds[]) {
     for (const pcbPortId of [point.start_pcb_port_id, point.end_pcb_port_id]) {
