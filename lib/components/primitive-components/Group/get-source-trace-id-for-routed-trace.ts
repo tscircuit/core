@@ -8,6 +8,12 @@ import type {
 } from "circuit-json"
 import { ConnectivityMap } from "circuit-json-to-connectivity-map"
 import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
+import {
+  applyToPoint,
+  compose,
+  rotateDEG,
+  translate,
+} from "transformation-matrix"
 
 type RoutedTrace = (PcbTrace | SimplifiedPcbTrace) & {
   source_trace_id?: string
@@ -46,6 +52,11 @@ function isPointOnWireSegment({
   )
 }
 
+/**
+ * Test a board/circuit-world point against pad copper in mm (+X right, +Y up,
+ * right-handed). Translate the point to the pad center, then undo the emitted
+ * CCW rotation to compare it along the pad-local width/height axes.
+ */
 function isPointInSmtPad({
   point,
   pad,
@@ -56,14 +67,21 @@ function isPointInSmtPad({
   traceWidth?: number
 }) {
   if (pad.shape === "rect" || pad.shape === "rotated_rect") {
+    const padLocalPoint = applyToPoint(
+      compose(
+        rotateDEG(pad.shape === "rotated_rect" ? -pad.ccw_rotation : 0),
+        translate(-pad.x, -pad.y),
+      ),
+      point,
+    )
     return (
-      Math.abs(point.x - pad.x) <= (pad as any).width / 2 + traceWidth / 2 &&
-      Math.abs(point.y - pad.y) <= (pad as any).height / 2 + traceWidth / 2
+      Math.abs(padLocalPoint.x) <= pad.width / 2 + traceWidth / 2 &&
+      Math.abs(padLocalPoint.y) <= pad.height / 2 + traceWidth / 2
     )
   }
 
   if (pad.shape === "circle") {
-    return distance(point, pad) <= (pad as any).radius + traceWidth / 2
+    return distance(point, pad) <= pad.radius + traceWidth / 2
   }
 
   return false
