@@ -3,7 +3,6 @@ import type { PCBKeepout } from "circuit-json"
 import type { PcbComponentId } from "lib/utils/circuit-json/circuit-json-id-types"
 import { decomposeTSR } from "transformation-matrix"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
-import type { RenderPhaseFn } from "../base-components/Renderable"
 
 export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
   pcb_keepout_id: string | null = null
@@ -34,6 +33,12 @@ export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
     const subcircuit = this.getSubcircuit()
     const { db } = this.root!
     const { _parsedProps: props } = this
+    // Shared PCB layout utilities move primitives by their owning component.
+    const pcbComponentId = this.getPrimitiveContainer()?.pcb_component_id
+    const pcbKeepoutOwnershipProps = pcbComponentId
+      ? { pcb_component_id: pcbComponentId }
+      : {}
+    const pcbGroupId = this.getGroup()?.pcb_group_id ?? undefined
     const position = this._getGlobalPcbPositionBeforeLayout()
     const decomposedMat = decomposeTSR(
       this._computePcbGlobalTransformBeforeLayout(),
@@ -58,6 +63,7 @@ export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
       pcb_keepout = db.pcb_keepout.insert({
         layers,
         shape: "circle",
+        ...pcbKeepoutOwnershipProps,
         ...pcbKeepoutExclusionProps,
         ...(props.allowTraces !== undefined
           ? { allow_traces: props.allowTraces }
@@ -75,12 +81,13 @@ export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
           y: position.y,
         },
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
-        pcb_group_id: subcircuit?.getGroup()?.pcb_group_id ?? undefined,
+        pcb_group_id: pcbGroupId,
       })
     } else if (props.shape === "rect") {
       pcb_keepout = db.pcb_keepout.insert({
         layers,
         shape: "rect",
+        ...pcbKeepoutOwnershipProps,
         ...pcbKeepoutExclusionProps,
         ...(props.allowTraces !== undefined
           ? { allow_traces: props.allowTraces }
@@ -100,7 +107,7 @@ export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
           y: position.y,
         },
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
-        pcb_group_id: subcircuit?.getGroup()?.pcb_group_id ?? undefined,
+        pcb_group_id: pcbGroupId,
       })
     }
     if (pcb_keepout) {

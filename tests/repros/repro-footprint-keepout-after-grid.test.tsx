@@ -7,7 +7,7 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
  */
 const antennaClearance = { pcbY: 15.8, width: 43.2, height: 20.4 }
 
-test.failing("footprint keepout follows PCB grid placement", async () => {
+test("footprint keepout follows PCB grid placement", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width={100} height={70} routingDisabled schematicDisabled>
@@ -45,18 +45,13 @@ test.failing("footprint keepout follows PCB grid placement", async () => {
         pcbY={31}
         fontSize={2}
       />
-      <pcbnotetext
-        text="BUG: COPPER FILLS ANTENNA AREA"
-        pcbY={-30}
-        fontSize={2}
-      />
+      <pcbnotetext text="COPPER CLEARS ANTENNA AREA" pcbY={-30} fontSize={2} />
     </board>,
   )
   await circuit.renderUntilSettled()
-  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
-
   // Emitted board-world points in mm (+X right, +Y top, +Z above, right-handed).
   const [expectedClearance] = circuit.db.pcb_note_rect.list()
   const [antennaKeepout] = circuit.db.pcb_keepout.list()
   expect(antennaKeepout).toMatchObject({ center: expectedClearance.center })
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
