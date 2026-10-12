@@ -39,13 +39,16 @@ const isDescendantGroup = (
 
 const getOutsideStaticObstacles = ({
   group,
+  bounds,
   targetLayer,
   db,
 }: {
   group: Group
+  bounds?: { minX: number; minY: number; maxX: number; maxY: number }
   targetLayer?: LayerRef
   db: CircuitJsonUtilObjects
 }): InputObstacle[] => {
+  if (!bounds) return []
   const obstacles: InputObstacle[] = []
   const groupTransform = group._computePcbGlobalTransformBeforeLayout()
   let invGroupTransform: any
@@ -150,12 +153,25 @@ const getOutsideStaticObstacles = ({
     }
 
     if (width > 0 && height > 0) {
-      obstacles.push({
-        obstacleId: `outside_${pcbComp.pcb_component_id}`,
-        absoluteCenter: localCenter,
-        width,
-        height,
-      })
+      const obsMinX = localCenter.x - width / 2
+      const obsMaxX = localCenter.x + width / 2
+      const obsMinY = localCenter.y - height / 2
+      const obsMaxY = localCenter.y + height / 2
+
+      const intersectsBounds =
+        obsMinX <= bounds.maxX &&
+        obsMaxX >= bounds.minX &&
+        obsMinY <= bounds.maxY &&
+        obsMaxY >= bounds.minY
+
+      if (intersectsBounds) {
+        obstacles.push({
+          obstacleId: `outside_${pcbComp.pcb_component_id}`,
+          absoluteCenter: localCenter,
+          width,
+          height,
+        })
+      }
     }
   }
 
@@ -512,6 +528,7 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
         : []
       const outsideStaticObstacles = getOutsideStaticObstacles({
         group,
+        bounds,
         targetLayer,
         db,
       })
