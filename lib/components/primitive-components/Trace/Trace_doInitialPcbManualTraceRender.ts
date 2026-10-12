@@ -1,23 +1,23 @@
+import { jlcMinTolerances } from "@tscircuit/jlcpcb-manufacturing-specs"
 import {
-  pcb_via,
   type LayerRef,
   type PcbTraceRoutePoint,
   type PcbVia,
+  pcb_via,
 } from "circuit-json"
-import { getTraceLength } from "./trace-utils/compute-trace-length"
-import { insertPcbPathViaContactErrors } from "./insert-pcb-path-via-contact-errors"
+import { TraceConnectionError } from "lib/errors"
+import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
+import type { ManualPcbPathPoint } from "lib/utils/pcbTraceRouteToPcbPath"
+import { applyToPoint, identity } from "transformation-matrix"
+import { getViaDiameterDefaults } from "../../../utils/pcbStyle/getViaDiameterDefaults"
+import { clipTraceEndAtPad } from "../../../utils/trace-clipping/clipTraceEndAtPad"
 import type { Port } from "../Port"
 import type { Trace } from "./Trace"
-import { applyToPoint, identity } from "transformation-matrix"
-import { clipTraceEndAtPad } from "../../../utils/trace-clipping/clipTraceEndAtPad"
-import { getViaDiameterDefaults } from "../../../utils/pcbStyle/getViaDiameterDefaults"
-import type { ManualPcbPathPoint } from "lib/utils/pcbTraceRouteToPcbPath"
-import { TraceConnectionError } from "lib/errors"
 import { getPcbSelectorErrorForTracePort } from "./getPcbSelectorErrorForTracePort"
-import { jlcMinTolerances } from "@tscircuit/jlcpcb-manufacturing-specs"
-import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
-import { renderPcbPaths } from "./render-pcb-paths"
+import { insertPcbPathViaContactErrors } from "./insert-pcb-path-via-contact-errors"
 import { insertPcbPathViaPolicyErrors } from "./insert-pcb-path-via-policy-errors"
+import { renderPcbPaths } from "./render-pcb-paths"
+import { getTraceLength } from "./trace-utils/compute-trace-length"
 
 const findInflatedPcbViaForPoint = (
   vias: PcbVia[] | undefined,
@@ -189,7 +189,10 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
         pcb_group_id: trace.getGroup()?.pcb_group_id ?? undefined,
       })
       const pcbStyle = trace.getInheritedMergedProperty("pcbStyle")
-      const { holeDiameter, padDiameter } = getViaDiameterDefaults(pcbStyle)
+      const { holeDiameter, padDiameter } = getViaDiameterDefaults(
+        pcbStyle,
+        trace._getFallbackViaDiameters(),
+      )
       for (let index = 0; index < transformedRoute.length; index++) {
         const point = transformedRoute[index]
         if (point.route_type === "via") {
@@ -486,7 +489,10 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
     trace.subcircuit_connectivity_map_key ??
     db.source_trace.get(trace.source_trace_id!)?.subcircuit_connectivity_map_key
   const pcbStyle = trace.getInheritedMergedProperty("pcbStyle")
-  const { holeDiameter, padDiameter } = getViaDiameterDefaults(pcbStyle)
+  const { holeDiameter, padDiameter } = getViaDiameterDefaults(
+    pcbStyle,
+    trace._getFallbackViaDiameters(),
+  )
   for (const point of route) {
     if (point.route_type === "via") {
       const fromLayer = point.from_layer as LayerRef

@@ -2,8 +2,8 @@ import { type PcbStyle, viaProps } from "@tscircuit/props"
 import type { LayerRef, PcbVia } from "circuit-json"
 import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
 import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
-import { getViaDiameterDefaultsWithOverrides } from "lib/utils/pcbStyle/getViaDiameterDefaults"
 import { getViaTenting } from "lib/utils/getViaTenting"
+import { getViaDiameterDefaultsWithOverrides } from "lib/utils/pcbStyle/getViaDiameterDefaults"
 import { z } from "zod"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { Net } from "./Net"
@@ -36,6 +36,32 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
     return this._getLayers()
   }
 
+  private _getFallbackViaDiameters(): {
+    holeDiameter?: number
+    padDiameter?: number
+  } {
+    const boardComponent = this._getBoard()
+    const board = boardComponent?.pcb_board_id
+      ? this.root?.db.pcb_board.get(boardComponent.pcb_board_id)
+      : undefined
+    const holeDiameter =
+      this.getInheritedProperty("minViaHoleDiameter") ??
+      boardComponent?._parsedProps?.minViaHoleDiameter ??
+      board?.min_via_hole_diameter
+    const padDiameter =
+      this.getInheritedProperty("minViaPadDiameter") ??
+      boardComponent?._parsedProps?.minViaPadDiameter ??
+      board?.min_via_pad_diameter
+    return {
+      holeDiameter:
+        typeof holeDiameter === "string"
+          ? parseFloat(holeDiameter)
+          : holeDiameter,
+      padDiameter:
+        typeof padDiameter === "string" ? parseFloat(padDiameter) : padDiameter,
+    }
+  }
+
   private _getResolvedViaDiameters(pcbStyle?: PcbStyle) {
     return getViaDiameterDefaultsWithOverrides(
       {
@@ -43,6 +69,7 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
         padDiameter: this._parsedProps.outerDiameter,
       },
       pcbStyle,
+      this._getFallbackViaDiameters(),
     )
   }
 
