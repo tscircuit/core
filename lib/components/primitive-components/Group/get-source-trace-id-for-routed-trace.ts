@@ -8,12 +8,7 @@ import type {
 } from "circuit-json"
 import { ConnectivityMap } from "circuit-json-to-connectivity-map"
 import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
-import {
-  applyToPoint,
-  compose,
-  rotateDEG,
-  translate,
-} from "transformation-matrix"
+import { applyToPoint, rotateDEG } from "transformation-matrix"
 
 type RoutedTrace = (PcbTrace | SimplifiedPcbTrace) & {
   source_trace_id?: string
@@ -62,21 +57,18 @@ function isPointInSmtPad({
   traceWidth?: number
 }) {
   if (pad.shape === "rect" || pad.shape === "rotated_rect") {
-    const padLocalPoint = applyToPoint(
-      compose(
-        rotateDEG(pad.shape === "rotated_rect" ? -pad.ccw_rotation : 0),
-        translate(-pad.x, -pad.y),
-      ),
-      point,
-    )
+    const unrotatedPoint =
+      pad.shape === "rotated_rect"
+        ? applyToPoint(rotateDEG(-pad.ccw_rotation, pad.x, pad.y), point)
+        : point
     return (
-      Math.abs(padLocalPoint.x) <= pad.width / 2 + traceWidth / 2 &&
-      Math.abs(padLocalPoint.y) <= pad.height / 2 + traceWidth / 2
+      Math.abs(unrotatedPoint.x - pad.x) <= pad.width / 2 + traceWidth / 2 &&
+      Math.abs(unrotatedPoint.y - pad.y) <= pad.height / 2 + traceWidth / 2
     )
   }
 
   if (pad.shape === "circle") {
-    return distance(point, pad) <= pad.radius + traceWidth / 2
+    return distance(point, pad) <= (pad as any).radius + traceWidth / 2
   }
 
   return false
