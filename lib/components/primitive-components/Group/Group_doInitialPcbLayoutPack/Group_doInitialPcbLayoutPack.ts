@@ -16,6 +16,7 @@ import { solvePackSolverWithTimeout } from "lib/utils/packing/solvePackSolverWit
 import type { Group } from "../Group"
 import { applyComponentConstraintClusters } from "./applyComponentConstraintClusters"
 import { applyPackOutput } from "./applyPackOutput"
+import { applyToPoint, inverse } from "transformation-matrix"
 import {
   getPackComponentPcbLayer,
   getPackInputsByPcbLayer,
@@ -23,6 +24,143 @@ import {
 
 const DEFAULT_MIN_GAP = "1mm"
 const debug = Debug("Group_doInitialPcbLayoutPack")
+
+const isDescendantGroup = (
+  db: any,
+  groupId: string | null | undefined,
+  ancestorId: string | null | undefined,
+): boolean => {
+  if (!groupId || !ancestorId) return false
+  if (groupId === ancestorId) return true
+  const group = db.source_group.get(groupId)
+  if (!group || !group.parent_source_group_id) return false
+  return isDescendantGroup(db, group.parent_source_group_id, ancestorId)
+}
+
+const getOutsideStaticObstacles = ({
+  group,
+  targetLayer,
+  db,
+}: {
+  group: Group
+  targetLayer?: LayerRef
+  db: CircuitJsonUtilObjects
+}): InputObstacle[] => {
+  const obstacles: InputObstacle[] = []
+  const groupTransform = group._computePcbGlobalTransformBeforeLayout()
+  let invGroupTransform: any
+  try {
+    invGroupTransform = inverse(groupTransform)
+  } catch {
+    return []
+  }
+
+  const pcbComponents = db.pcb_component?.list ? db.pcb_component.list() : []
+
+  for (const pcbComp of pcbComponents) {
+    if (!pcbComp.center || pcbComp.position_mode === "packed") continue
+    const srcComp = db.source_component.get(pcbComp.source_component_id)
+    const compGroupId = srcComp?.source_group_id
+    if (
+      compGroupId &&
+      group.source_group_id &&
+      isDescendantGroup(db, compGroupId, group.source_group_id)
+    ) {
+      continue
+    }
+
+    const compLayer = pcbComp.layer ?? "top"
+    const pads = db.pcb_smtpad?.list
+      ? db.pcb_smtpad.list({ pcb_component_id: pcbComp.pcb_component_id })
+      : []
+    const platedHoles = db.pcb_plated_hole?.list
+      ? db.pcb_plated_hole.list({ pcb_component_id: pcbComp.pcb_component_id })
+      : []
+
+    const occupiesTargetLayer =
+      !targetLayer ||
+      compLayer === targetLayer ||
+      platedHoles.some((ph) => ph.layers?.includes(targetLayer)) ||
+      pads.some((pad) => pad.layer === targetLayer)
+
+    if (!occupiesTargetLayer) continue
+
+    const localCenter = applyToPoint(invGroupTransform, pcbComp.center)
+
+    let width = pcbComp.width ?? 0
+    let height = pcbComp.height ?? 0
+
+    const courtyardRects = db.pcb_courtyard_rect?.list
+      ? db.pcb_courtyard_rect.list({
+          pcb_component_id: pcbComp.pcb_component_id,
+        })
+      : []
+    for (const cy of courtyardRects) {
+      if (cy.width && cy.height) {
+        width = Math.max(width, cy.width)
+        height = Math.max(height, cy.height)
+      }
+    }
+
+    if (width === 0 || height === 0) {
+      let minX = Infinity
+      let minY = Infinity
+      let maxX = -Infinity
+      let maxY = -Infinity
+      for (const pad of pads) {
+        const padAny = pad as any
+        const px = typeof padAny.x === "number" ? padAny.x : 0
+        const py = typeof padAny.y === "number" ? padAny.y : 0
+        const pw =
+          typeof padAny.width === "number"
+            ? padAny.width
+            : typeof padAny.radius === "number"
+              ? padAny.radius * 2
+              : 0
+        const ph =
+          typeof padAny.height === "number"
+            ? padAny.height
+            : typeof padAny.radius === "number"
+              ? padAny.radius * 2
+              : 0
+        minX = Math.min(minX, px - pw / 2)
+        maxX = Math.max(maxX, px + pw / 2)
+        minY = Math.min(minY, py - ph / 2)
+        maxY = Math.max(maxY, py + ph / 2)
+      }
+      for (const ph of platedHoles) {
+        const phAny = ph as any
+        const px = typeof phAny.x === "number" ? phAny.x : 0
+        const py = typeof phAny.y === "number" ? phAny.y : 0
+        const d =
+          (typeof phAny.outer_diameter === "number"
+            ? phAny.outer_diameter
+            : typeof phAny.hole_diameter === "number"
+              ? phAny.hole_diameter
+              : 0) / 2
+        minX = Math.min(minX, px - d)
+        maxX = Math.max(maxX, px + d)
+        minY = Math.min(minY, py - d)
+        maxY = Math.max(maxY, py + d)
+      }
+      if (minX !== Infinity) {
+        width = maxX - minX
+        height = maxY - minY
+      }
+    }
+
+    if (width > 0 && height > 0) {
+      obstacles.push({
+        obstacleId: `outside_${pcbComp.pcb_component_id}`,
+        absoluteCenter: localCenter,
+        width,
+        height,
+      })
+    }
+  }
+
+  return obstacles
+}
 
 const getCollisionObstacleForStaticComponent = (
   component: InputComponent,
@@ -173,17 +311,6 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
         )
       }
     }
-  }
-
-  const isDescendantGroup = (
-    db: any,
-    groupId: string,
-    ancestorId: string,
-  ): boolean => {
-    if (groupId === ancestorId) return true
-    const group = db.source_group.get(groupId)
-    if (!group || !group.parent_source_group_id) return false
-    return isDescendantGroup(db, group.parent_source_group_id, ancestorId)
   }
 
   // Mark all components belonging to relatively positioned groups as static
@@ -383,6 +510,11 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
             db,
           })
         : []
+      const outsideStaticObstacles = getOutsideStaticObstacles({
+        group,
+        targetLayer,
+        db,
+      })
       const solverInput = {
         ...layerPackInput,
         weightedConnections: layerPackInput.weightedConnections?.filter(
@@ -394,6 +526,7 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
           ...staticLayerObstacles,
           ...fallbackCrossLayerObstacles,
           ...crossLayerPadObstacles,
+          ...outsideStaticObstacles,
         ],
         components: [
           ...networkReferenceComponents,
