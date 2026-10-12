@@ -124,6 +124,14 @@ test("USB-C MPN text bounds leave room for GND before CC1", async () => {
   expect(groundCrossings).toHaveLength(0)
   // J1's MPN is left-anchored at the connector's left edge.
   expect(mpnTextBox.center.x - mpnTextBox.width / 2).toBeCloseTo(-5)
+  expect(mpnTextBox).toMatchObject({
+    textPlacement: {
+      position: { x: -5, y: -0.83 },
+      anchor: "left",
+      fontSize: 0.18,
+      rotation: 0,
+    },
+  })
 
   // Overlay the actual Core-generated routing obstacle after rendering. The
   // original text retains its original font size, position and left anchor.
