@@ -52,11 +52,6 @@ function isPointOnWireSegment({
   )
 }
 
-/**
- * Test a board/circuit-world point against pad copper in mm (+X right, +Y up,
- * right-handed). Translate the point to the pad center, then undo the emitted
- * CCW rotation to compare it along the pad-local width/height axes.
- */
 function isPointInSmtPad({
   point,
   pad,
