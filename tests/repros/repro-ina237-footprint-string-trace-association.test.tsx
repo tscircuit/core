@@ -99,7 +99,7 @@ test("INA237 footprint string assigns routed traces to the correct pins", async 
         sourcePort.source_component_id === sensor.source_component_id,
     )
 
-  for (const [routedPinName, adjacentPinName] of [
+  for (const [routedPinName, unrelatedPinName] of [
     ["ALERT", "A0"],
     ["SDA", "ALERT"],
     ["SCL", "SDA"],
@@ -107,8 +107,8 @@ test("INA237 footprint string assigns routed traces to the correct pins", async 
     const routedPort = sensorPorts.find(
       (sourcePort) => sourcePort.name === routedPinName,
     )!
-    const adjacentPort = sensorPorts.find(
-      (sourcePort) => sourcePort.name === adjacentPinName,
+    const unrelatedPort = sensorPorts.find(
+      (sourcePort) => sourcePort.name === unrelatedPinName,
     )!
     const pcbPort = circuit.db.pcb_port
       .list()
@@ -123,15 +123,15 @@ test("INA237 footprint string assigns routed traces to the correct pins", async 
               routePoint.end_pcb_port_id === pcbPort.pcb_port_id),
         ),
       )!
-    const assignedSourceTrace = circuit.db.source_trace.get(
+    const routedSourceTrace = circuit.db.source_trace.get(
       copperTrace.source_trace_id!,
     )!
 
-    expect(assignedSourceTrace.connected_source_port_ids).toContain(
+    expect(routedSourceTrace.connected_source_port_ids).toContain(
       routedPort.source_port_id,
     )
-    expect(assignedSourceTrace.connected_source_port_ids).not.toContain(
-      adjacentPort.source_port_id,
+    expect(routedSourceTrace.connected_source_port_ids).not.toContain(
+      unrelatedPort.source_port_id,
     )
   }
 
