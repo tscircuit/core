@@ -7,6 +7,7 @@ import {
   type InputProblem,
   type NetId,
   type SectionId,
+  type TextBoxes,
 } from "@tscircuit/schematic-trace-solver"
 import type { SchematicComponent, SourceNet, SourceTrace } from "circuit-json"
 import { getSourcePortConnectivityMapFromCircuitJson } from "circuit-json-to-connectivity-map"
@@ -227,7 +228,7 @@ export function createSchematicTraceSolverInputProblem(
         sourceComponent,
       })
     })
-    .filter((textBox) => textBox != null)
+    .filter((textBox): textBox is TextBoxes => Boolean(textBox))
 
   const sectionIdBySchematicComponentId = new Map<
     SchematicComponentId,

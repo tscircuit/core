@@ -37,17 +37,6 @@ test("schematic trace solver refdes text box borders chip body", () => {
   )
 
   expect(refdesTextBox).toBeDefined()
-  const refdesText = circuit.db.schematic_text
-    .list()
-    .find((text) => text.text === "U1")!
-  expect(refdesTextBox).toMatchObject({
-    textPlacement: {
-      position: refdesText.position,
-      anchor: refdesText.anchor,
-      fontSize: refdesText.font_size,
-      rotation: refdesText.rotation,
-    },
-  })
   const refdesBounds = {
     minX: refdesTextBox!.center.x - refdesTextBox!.width / 2,
     maxX: refdesTextBox!.center.x + refdesTextBox!.width / 2,

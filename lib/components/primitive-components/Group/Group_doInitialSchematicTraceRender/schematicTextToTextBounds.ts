@@ -2,6 +2,7 @@ import {
   getBoundFromCenteredRect,
   getBoundsCenter,
 } from "@tscircuit/math-utils"
+import type { TextBoxes } from "@tscircuit/schematic-trace-solver"
 import type {
   SchematicComponent,
   SchematicText,
@@ -31,7 +32,7 @@ function isReferenceDesignatorText(
 export function schematicTextToTextBox(
   text: SchematicText,
   options: SchematicTextToTextBoxOptions = {},
-) {
+): TextBoxes | null {
   if (!text.text) return null
 
   const bounds = getSchematicTextBounds(text)
@@ -61,14 +62,5 @@ export function schematicTextToTextBox(
     width: bounds.maxX - bounds.minX,
     height: bounds.maxY - bounds.minY,
     text: text.text,
-    // Preserve the original anchor point in schematic world mm (+X right,
-    // +Y up), separately from the padded routing obstacle. Rotation follows
-    // Circuit JSON's clockwise screen convention.
-    textPlacement: {
-      position: text.position,
-      anchor: text.anchor,
-      fontSize: text.font_size ?? 0.18,
-      rotation: text.rotation,
-    },
   }
 }
