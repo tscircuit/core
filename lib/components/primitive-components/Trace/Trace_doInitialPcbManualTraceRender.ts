@@ -14,7 +14,10 @@ import type { ManualPcbPathPoint } from "lib/utils/pcbTraceRouteToPcbPath"
 import { TraceConnectionError } from "lib/errors"
 import { getPcbSelectorErrorForTracePort } from "./getPcbSelectorErrorForTracePort"
 import { jlcMinTolerances } from "@tscircuit/jlcpcb-manufacturing-specs"
-import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
+import {
+  getAutoroutedViaLayers,
+  getViaSpanLayers,
+} from "lib/utils/getViaSpanLayers"
 import { renderPcbPaths } from "./render-pcb-paths"
 
 const findInflatedPcbViaForPoint = (
@@ -495,10 +498,15 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
         y: point.y,
         hole_diameter: holeDiameter,
         outer_diameter: padDiameter,
-        layers: getViaSpanLayers({
+        layers: getAutoroutedViaLayers({
           fromLayer,
           toLayer,
           layerCount: subcircuit._getSubcircuitLayerCount(),
+          allowBlindAndBuriedVias: Boolean(
+            trace.getInheritedProperty("allowBlindAndBuriedVias") ??
+              subcircuit?.getInheritedProperty?.("allowBlindAndBuriedVias"),
+          ),
+          physicalLayers: (point as any).layers,
         }),
         from_layer: fromLayer,
         to_layer: toLayer,
