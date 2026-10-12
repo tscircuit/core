@@ -56,6 +56,21 @@ test("LM5155 adjacent rotated pads preserve routed trace attribution", async () 
       />
       <trace from="PGND_PAD.pin1" to="net.PGND" />
       <trace from="SIGNAL.pin1" to="SIGNAL.pin2" />
+      <pcbnoteline
+        x1={0.35}
+        y1={-0.95}
+        x2={3}
+        y2={-0.95}
+        strokeWidth={0.1}
+        color="magenta"
+      />
+      <pcbnotetext
+        pcbX={1.5}
+        pcbY={-1.8}
+        text="Offset endpoint must match SIGNAL, not rotated PGND"
+        fontSize={0.25}
+        color="magenta"
+      />
     </board>,
   )
 
@@ -69,7 +84,7 @@ test("LM5155 adjacent rotated pads preserve routed trace attribution", async () 
     type: "pcb_trace",
     pcb_trace_id: "lm5155_signal_route",
     route: [
-      { route_type: "wire", x: 0.25, y: -0.95, width: 0.15, layer: "top" },
+      { route_type: "wire", x: 0.35, y: -0.95, width: 0.15, layer: "top" },
       { route_type: "wire", x: 3, y: -0.95, width: 0.15, layer: "top" },
     ],
   }
@@ -79,4 +94,5 @@ test("LM5155 adjacent rotated pads preserve routed trace attribution", async () 
   })
 
   expect(attributedSourceTraceId).toBe(signalSourceTrace?.source_trace_id)
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
