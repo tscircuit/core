@@ -154,6 +154,13 @@ export class NormalComponent<
   isPrimitiveContainer = true
   _isNormalComponent = true
 
+  _getIsSmt(): boolean {
+    if (this._parsedProps.isSmt !== undefined) return this._parsedProps.isSmt
+    return this.selectAll("smtpad").some(
+      (pad) => pad.getPrimitiveContainer() === this,
+    )
+  }
+
   // Mapping from camelCase attribute names to their lowercase equivalents
   // This is used by the CSS selector adapter for fast attribute lookups
   // Reverse mapping from lowercase to camelCase for O(1) lookups
