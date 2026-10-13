@@ -6,15 +6,7 @@ import type {
   PcbSolderPasteRect,
   PcbSolderPasteRotatedRect,
 } from "circuit-json"
-import {
-  type Matrix,
-  applyToPoint,
-  compose,
-  decomposeTSR,
-  identity,
-  rotate,
-  translate,
-} from "transformation-matrix"
+import { applyToPoint, decomposeTSR } from "transformation-matrix"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
 type PcbSolderPasteId = PcbSolderPaste["pcb_solder_paste_id"]
@@ -43,29 +35,16 @@ export class SolderPaste extends PrimitiveComponent<typeof solderPasteProps> {
   private circuitJsonRotation = 0
 
   /**
-   * Reconstruct an aperture in its parent's local PCB frame (+X right, +Y top,
-   * +Z above, right-handed, mm). sourceToParent maps source-frame points to
-   * that frame; rotation is CCW degrees. The default preserves the source frame.
+   * Reconstruct an aperture already in its parent's local PCB frame (+X right,
+   * +Y top, +Z above, right-handed, mm). Its center is a point and its rotation
+   * is in CCW degrees; coordinate transforms happen before this import.
    * Cached records may carry rotation even though the authored props expose
    * only axis-aligned shapes. Keep that derived state separate from props.
    */
-  static fromCircuitJson(
-    aperture: StandalonePcbSolderPaste,
-    sourceToParent: Matrix = identity(),
-  ): SolderPaste {
-    let apertureRotation = 0
-    if (aperture.shape === "rotated_rect") {
-      apertureRotation = aperture.ccw_rotation
-    }
-    const transform = compose(
-      sourceToParent,
-      translate(aperture.x, aperture.y),
-      rotate((apertureRotation * Math.PI) / 180),
-    )
-    const center = applyToPoint(transform, { x: 0, y: 0 })
+  static fromCircuitJson(aperture: StandalonePcbSolderPaste): SolderPaste {
     const placement = {
-      pcbX: center.x,
-      pcbY: center.y,
+      pcbX: aperture.x,
+      pcbY: aperture.y,
       layer: aperture.layer,
     }
     let props: SolderPasteProps
@@ -80,8 +59,9 @@ export class SolderPaste extends PrimitiveComponent<typeof solderPasteProps> {
       }
     }
     const paste = new SolderPaste(props)
-    paste.circuitJsonRotation =
-      (decomposeTSR(transform).rotation.angle * 180) / Math.PI
+    if (aperture.shape === "rotated_rect") {
+      paste.circuitJsonRotation = aperture.ccw_rotation
+    }
     return paste
   }
 

@@ -2,10 +2,6 @@ import { transformPCBElements } from "@tscircuit/circuit-json-util"
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import type { PcbComponent } from "circuit-json"
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
-import {
-  SolderPaste,
-  isStandalonePcbSolderPaste,
-} from "lib/components/primitive-components/SolderPaste"
 import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromCircuitJson"
 import { compose, inverse, rotate, translate } from "transformation-matrix"
 
@@ -49,20 +45,15 @@ export const extractPcbPrimitivesFromCircuitJson = ({
         elm.pcb_component_id === pcbComponent.pcb_component_id,
     )
 
-  const standalonePaste = relativeElements.filter(isStandalonePcbSolderPaste)
-  const clonedRelativeElements = structuredClone(
-    relativeElements.filter((element) => !isStandalonePcbSolderPaste(element)),
-  )
+  const clonedRelativeElements = structuredClone(relativeElements)
 
   // Transform all PCB elements using the standard transformation utility
-  // Paste is imported separately below so its position and rectangle orientation
-  // are transformed together, including rotations that are not multiples of 90.
   transformPCBElements(
     clonedRelativeElements,
     absoluteToComponentRelativeTransform,
   )
 
-  const components = createComponentsFromCircuitJson(
+  return createComponentsFromCircuitJson(
     {
       componentName,
       componentRotation: "0deg",
@@ -71,14 +62,4 @@ export const extractPcbPrimitivesFromCircuitJson = ({
     },
     clonedRelativeElements,
   )
-  components.push(
-    ...standalonePaste.map((aperture) =>
-      SolderPaste.fromCircuitJson(
-        aperture,
-        absoluteToComponentRelativeTransform,
-      ),
-    ),
-  )
-
-  return components
 }
