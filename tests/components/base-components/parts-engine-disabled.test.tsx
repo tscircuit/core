@@ -32,5 +32,5 @@ it("should not have supplier part numbers when parts engine is disabled", async 
   expect(sourceComponent?.supplier_part_numbers).toBeUndefined()
   expect(
     circuit.db.source_missing_manufacturer_part_number_warning.list(),
-  ).toHaveLength(1)
+  ).toHaveLength(0)
 })

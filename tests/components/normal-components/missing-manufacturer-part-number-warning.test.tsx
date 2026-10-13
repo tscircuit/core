@@ -4,7 +4,7 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { NormalComponent_doInitialMissingManufacturerPartNumberWarning } from "lib/components/base-components/NormalComponent/NormalComponent_doInitialMissingManufacturerPartNumberWarning"
 import type { NormalComponent } from "lib/components/base-components/NormalComponent/NormalComponent"
 
-test("warns once for unresolved parts, accepting MPNs and non-empty supplier numbers", () => {
+test("warns once for unresolved non-passive parts, accepting MPNs and non-empty supplier numbers", () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board routingDisabled>
@@ -42,7 +42,7 @@ test("warns once for unresolved parts, accepting MPNs and non-empty supplier num
   circuit.render()
   const warnings =
     circuit.db.source_missing_manufacturer_part_number_warning.list()
-  expect(warnings).toHaveLength(10)
+  expect(warnings).toHaveLength(7)
   const warnedNames = warnings.map((warning) => {
     expect(
       source_missing_manufacturer_part_number_warning.safeParse(warning)
@@ -54,24 +54,13 @@ test("warns once for unresolved parts, accepting MPNs and non-empty supplier num
     )
     return circuit.db.source_component.get(warning.source_component_id)?.name
   })
-  expect(warnedNames.sort()).toEqual([
-    "C1",
-    "D1",
-    "J1",
-    "L1",
-    "R1",
-    "R2",
-    "U1",
-    "U2",
-    "U4",
-    "U5",
-  ])
+  expect(warnedNames.sort()).toEqual(["D1", "J1", "R2", "U1", "U2", "U4", "U5"])
   NormalComponent_doInitialMissingManufacturerPartNumberWarning(
     circuit.selectOne(".parts .U1") as NormalComponent,
   )
   expect(
     circuit.db.source_missing_manufacturer_part_number_warning.list(),
-  ).toHaveLength(10)
+  ).toHaveLength(7)
   const resolvedChip = circuit.selectOne(".parts .U1") as NormalComponent
   circuit.db.source_component.update(resolvedChip.source_component_id!, {
     supplier_part_numbers: { jlcpcb: ["C456"] },
@@ -79,5 +68,5 @@ test("warns once for unresolved parts, accepting MPNs and non-empty supplier num
   resolvedChip.updateMissingManufacturerPartNumberWarning()
   expect(
     circuit.db.source_missing_manufacturer_part_number_warning.list(),
-  ).toHaveLength(9)
+  ).toHaveLength(6)
 })
