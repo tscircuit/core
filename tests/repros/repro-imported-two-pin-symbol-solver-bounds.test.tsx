@@ -146,12 +146,11 @@ test("imported two-pin symbols include terminals in solver obstacles", async () 
 
     return {
       name,
-      bodyWidth: schematicComponent.size.width,
       minX,
       maxX,
       pins: chip.pins.map((pin) => ({
         x: pin.x,
-        isWithinBounds: pin.x >= minX && pin.x <= maxX,
+        isInsideBounds: pin.x > minX && pin.x < maxX,
       })),
     }
   })
@@ -159,33 +158,31 @@ test("imported two-pin symbols include terminals in solver obstacles", async () 
   expect(solverBounds).toMatchInlineSnapshot(`
     [
       {
-        "bodyWidth": 0.4,
         "maxX": 0.4,
         "minX": -0.4,
         "name": "F1",
         "pins": [
           {
-            "isWithinBounds": true,
+            "isInsideBounds": false,
             "x": -0.4,
           },
           {
-            "isWithinBounds": true,
+            "isInsideBounds": false,
             "x": 0.4,
           },
         ],
       },
       {
-        "bodyWidth": 0.4,
         "maxX": 0.4,
         "minX": -0.4,
         "name": "RV1",
         "pins": [
           {
-            "isWithinBounds": true,
+            "isInsideBounds": false,
             "x": -0.4,
           },
           {
-            "isWithinBounds": true,
+            "isInsideBounds": false,
             "x": 0.4,
           },
         ],
