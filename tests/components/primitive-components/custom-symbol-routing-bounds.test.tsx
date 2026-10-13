@@ -3,7 +3,7 @@ import type { Group } from "lib/components/primitive-components/Group/Group"
 import { createSchematicTraceSolverInputProblem } from "lib/components/primitive-components/Group/Group_doInitialSchematicTraceRender/createSchematicTraceSolverInputProblem"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("routing receives the drawn bounds of rotated custom symbols", async () => {
+test("routing includes custom symbol terminals while preserving rotated body bounds", async () => {
   const { circuit } = getTestFixture({ platform: { pcbDisabled: true } })
   const rotations = [0, 45, 90, 180, 270]
   circuit.add(
@@ -70,18 +70,18 @@ test("routing receives the drawn bounds of rotated custom symbols", async () => 
     })!
     const schematicComponent = circuit.db.schematic_component.get(chip.chipId)!
     // World-space points and AABB dimensions in mm, +X right and +Y up.
-    // The off-center drawing, external text and asymmetric terminal positions
-    // must not be replaced by the component's placement or a pin envelope.
-    expect(chip.center).toEqual(rect.center)
-    expect(chip.width).toBeCloseTo(expectedSizes[index][0])
+    // The component retains its off-center drawn body. Only the solver obstacle
+    // expands to the asymmetric terminals; the external text stays separate.
+    expect(schematicComponent.center).toEqual(rect.center)
+    expect(schematicComponent.size.width).toBeCloseTo(expectedSizes[index][0])
+    expect(schematicComponent.size.height).toBeCloseTo(expectedSizes[index][1])
+    expect(chip.center).toEqual({ x: rect.center.x + 0.5, y: rect.center.y })
+    expect(chip.width).toBeCloseTo(5)
     expect(chip.height).toBeCloseTo(expectedSizes[index][1])
-    expect(schematicComponent.center).toEqual(chip.center)
-    expect(schematicComponent.size.width).toBeCloseTo(chip.width)
-    expect(schematicComponent.size.height).toBeCloseTo(chip.height)
     for (const pin of chip.pins) {
       const port = circuit.db.schematic_port.get(pin.pinId)!
       expect({ x: pin.x, y: pin.y }).toEqual(port.center)
-      expect(Math.abs(pin.x - chip.center.x)).toBeGreaterThan(chip.width / 2)
+      expect(Math.abs(pin.x - chip.center.x)).toBeCloseTo(chip.width / 2)
     }
   }
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
