@@ -3,7 +3,7 @@ import { convertCircuitJsonToPcbSvg } from "circuit-to-svg"
 import { stackSvgsHorizontally, stackSvgsVertically } from "stack-svgs"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("snapshot manual vias missing bottom-layer pads with blind vias disabled", async () => {
+test("saved blind via spans are preserved and reported when disabled", async () => {
   const { circuit } = getTestFixture()
   circuit.schematicDisabled = true
   circuit.add(
@@ -40,21 +40,59 @@ test("snapshot manual vias missing bottom-layer pads with blind vias disabled", 
   await circuit.renderUntilSettled()
 
   const vias = circuit.db.pcb_via.list()
-  const boardLayers = ["top", "inner1", "inner2", "bottom"] as const
-  const throughVias = vias.filter((via) =>
-    boardLayers.every((layer) => via.layers.includes(layer)),
-  )
-  const fullSpan = vias.length === 2 && throughVias.length === 2
+  const pcbTrace = circuit.db.pcb_trace.list()[0]!
+  const pcbTraceErrors = circuit.db.pcb_trace_error.list()
+  const expectedPathEntryIndices = [2, 5]
+
+  // The board policy must report the saved blind vias, preserving each
+  // barrel's original span instead of expanding it to reach the bottom layer.
+  expect(vias.map((via) => via.layers)).toEqual([
+    ["top", "inner1", "inner2"],
+    ["inner2", "inner1", "top"],
+  ])
+  expect(pcbTraceErrors).toEqual([
+    expect.objectContaining({
+      pcb_trace_id: pcbTrace.pcb_trace_id,
+      source_trace_id: pcbTrace.source_trace_id,
+      center: { x: vias[0]!.x, y: vias[0]!.y },
+      is_fatal: false,
+      message: expect.stringContaining(
+        "blind vias aren't allowed by allowBlindAndBuriedVias settings in pcbPath (R1.pin2 to R2.pin1): 2 disallowed vias",
+      ),
+    }),
+  ])
+  const message = pcbTraceErrors[0]!.message
+  for (const [viaIndex, via] of vias.entries()) {
+    expect(message).toContain(
+      `pcbPath[${expectedPathEntryIndices[viaIndex]}]: blind via ` +
+        `(fromLayer: "${via.from_layer}", toLayer: "${via.to_layer}") ` +
+        `spanning [${via.layers.join(", ")}]`,
+    )
+  }
+  expect(message).toContain('fromLayer: "top", toLayer: "bottom"')
+  expect(message).toContain("allowBlindAndBuriedVias={true}")
   const bottomVias = vias.filter((via) => via.layers.includes("bottom"))
   const explanationSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="144" viewBox="0 0 1800 144">
     <rect width="1800" height="144" fill="#141414" />
     <g font-family="sans-serif" text-anchor="middle">
-      <text x="900" y="42" font-size="38" font-weight="bold" fill="${fullSpan ? "#4ade80" : "#fb7185"}">Manual via physical span: ${fullSpan ? "PASSING" : "FAILING"}</text>
-      <text x="900" y="86" font-size="28" fill="#f4f4f4">Blind vias disabled: both vias must span top, inner1, inner2, and bottom.</text>
-      <text x="900" y="126" font-size="28" fill="#f4f4f4">Actual: ${throughVias.length} of ${vias.length} vias span all four layers; ${bottomVias.length} reach bottom.</text>
+      <text x="900" y="42" font-size="38" font-weight="bold" fill="#4ade80">${message.split(" (")[0]}</text>
+      <text x="900" y="86" font-size="28" fill="#f4f4f4">Saved blind-via spans are preserved; one nonfatal error lists all disallowed vias in the path.</text>
+      <text x="900" y="126" font-size="28" fill="#f4f4f4">Policy errors: ${pcbTraceErrors.length}; saved vias: ${vias.length}; vias reaching bottom: ${bottomVias.length}.</text>
     </g>
   </svg>`
-  const circuitJson = circuit.getCircuitJson()
+  // The SVG renderer prioritizes connected ports over an error's center.
+  // Show the actual diagnostic's opening sentence at the first disallowed via;
+  // the assertions above verify the full message, including path entry indices.
+  const circuitJsonForSnapshot = circuit.getCircuitJson().map((element) => {
+    if (element.type !== "pcb_trace_error") {
+      return element
+    }
+    return {
+      ...element,
+      pcb_port_ids: [],
+      message: element.message.split(". ")[0]!,
+    }
+  })
   const layerPanels = (["top", "bottom"] as const).map((layer) =>
     stackSvgsVertically(
       [
@@ -62,10 +100,11 @@ test("snapshot manual vias missing bottom-layer pads with blind vias disabled", 
           <rect width="892" height="48" fill="#141414" />
           <text x="446" y="34" font-family="sans-serif" font-size="30" fill="#f4f4f4" text-anchor="middle">${layer}: ${vias.filter((via) => via.layers.includes(layer)).length} via pads</text>
         </svg>`,
-        convertCircuitJsonToPcbSvg(circuitJson, {
+        convertCircuitJsonToPcbSvg(circuitJsonForSnapshot, {
           layer,
           width: 892,
           height: 512,
+          shouldDrawErrors: true,
         }),
       ],
       { gap: 0, normalizeSize: false },
