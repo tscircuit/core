@@ -1,0 +1,55 @@
+PR proposal 3: Resolve named traces in routing phases and diagnose unmatched selectors
+Repository: https://github.com/tscircuit/core
+Related documentation: tscircuit/props autoroutingphase connection(s) declarations
+Status: DESIGN PROPOSAL; no selector implementation patch yet.
+
+Problem / resulting behavior
+A bus accepts a named DDR trace, but an autoroutingphase connections list is
+currently matched against trace endpoints. In the AM3352 design, listing the
+49 trace names selected no DDR traces. The intended first phase was silently
+skipped and the remaining phase received the work.
+The phase should select the requested traces, or stop with a useful diagnostic
+before routing. A typo must not silently change routing order.
+
+Relevant code
+core/lib/components/primitive-components/Group/Group_getRoutingPhasePlans.ts:
+getConnectionSelectorsFromAutoroutingPhaseProps,
+convertPortSelectorToEndpointKey,
+traceHasEndpointMatchingConnectionSelector,
+and the connectionSelectors loop.
+Group.ts skips phase inputs with zero connections, which makes this mismatch
+particularly difficult to see.
+
+Proposed contract
+- Preserve existing endpoint forms such as ".U1 > .A1" and existing pin aliases.
+- Accept a bare exact trace name, e.g. "DDR_D0", scoped to the phase's subcircuit.
+- Support an explicit trace-qualified selector, e.g. "trace.DDR_D0", using the
+  existing selector engine where possible.
+- Resolve all selectors before moving any traces between plans. Track matched
+  trace identities and deduplicate repeated names/endpoints.
+- If a bare selector has competing trace/port meanings, report ambiguity and
+  require an explicit form. Do not change endpoint semantics through precedence.
+- An explicit selector matching nothing produces an actionable diagnostic:
+  'Autorouting phase "DDR_FIRST": connection "DDR_D00" matched no trace or
+   endpoint. Use a trace name such as "DDR_D0" or a port such as ".U1 > .A1".'
+- Distinguish unresolved selectors from valid selections that are already routed,
+  excluded by a breakout, or empty because of an earlier phase. Do not treat all
+  zero-connection phases as invalid. Untargeted phases retain their current use.
+
+Acceptance tests
+- Trace-name list routes exactly the selected named traces in the earlier phase.
+- Existing numeric-port and aliased-port selectors keep working.
+- Misspelled selector reports the phase and selector before router invocation.
+- Duplicate selectors do not duplicate routes.
+- Ambiguous names and duplicate names in different subcircuits are covered.
+- Saved pcbTracePaths, reroute phases, breakout ownership and already-routed
+  selections retain correct behavior.
+- Mixed valid/invalid selectors do not partially mutate the phase plan.
+- Error text contains readable names; IDs remain only in structured references.
+
+Compatibility and rollout
+This expands valid input but changes silently ignored invalid selectors into
+errors. Document that migration explicitly. Keep matching and validation in
+one resolver shared by selection and diagnostics so they cannot disagree.
+Runtime integration tests should use a new small circuit; no existing AM3352
+TSX reference is necessary.
