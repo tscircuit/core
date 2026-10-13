@@ -33,11 +33,8 @@ export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
     const subcircuit = this.getSubcircuit()
     const { db } = this.root!
     const { _parsedProps: props } = this
-    // Shared PCB layout utilities move primitives by their owning component.
-    const pcbComponentId = this.getPrimitiveContainer()?.pcb_component_id
-    const pcbKeepoutOwnershipProps = pcbComponentId
-      ? { pcb_component_id: pcbComponentId }
-      : {}
+    const pcbComponentId =
+      this.getPrimitiveContainer()?.pcb_component_id ?? undefined
     const pcbGroupId = this.getGroup()?.pcb_group_id ?? undefined
     const position = this._getGlobalPcbPositionBeforeLayout()
     const decomposedMat = decomposeTSR(
@@ -63,7 +60,7 @@ export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
       pcb_keepout = db.pcb_keepout.insert({
         layers,
         shape: "circle",
-        ...pcbKeepoutOwnershipProps,
+        pcb_component_id: pcbComponentId,
         ...pcbKeepoutExclusionProps,
         ...(props.allowTraces !== undefined
           ? { allow_traces: props.allowTraces }
@@ -87,7 +84,7 @@ export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
       pcb_keepout = db.pcb_keepout.insert({
         layers,
         shape: "rect",
-        ...pcbKeepoutOwnershipProps,
+        pcb_component_id: pcbComponentId,
         ...pcbKeepoutExclusionProps,
         ...(props.allowTraces !== undefined
           ? { allow_traces: props.allowTraces }
