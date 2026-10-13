@@ -15,11 +15,11 @@ import type { ManualPcbPathPoint } from "lib/utils/pcbTraceRouteToPcbPath"
 import { TraceConnectionError } from "lib/errors"
 import { getPcbSelectorErrorForTracePort } from "./getPcbSelectorErrorForTracePort"
 import { jlcMinTolerances } from "@tscircuit/jlcpcb-manufacturing-specs"
+import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
 import {
-  getAutoroutedViaLayers,
-  getViaSpanLayers,
-} from "lib/utils/getViaSpanLayers"
-import { renderPcbPaths } from "./render-pcb-paths"
+  insertPcbPathViaPolicyErrors,
+  renderPcbPaths,
+} from "./render-pcb-paths"
 
 const findInflatedPcbViaForPoint = (
   vias: PcbVia[] | undefined,
@@ -499,13 +499,10 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
         y: point.y,
         hole_diameter: holeDiameter,
         outer_diameter: padDiameter,
-        layers: getAutoroutedViaLayers({
+        layers: getViaSpanLayers({
           fromLayer,
           toLayer,
           layerCount: subcircuit._getSubcircuitLayerCount(),
-          allowBlindAndBuriedVias: trace
-            ._getBoard()
-            ?.getInheritedProperty("allowBlindAndBuriedVias"),
         }),
         from_layer: fromLayer,
         to_layer: toLayer,
@@ -515,6 +512,7 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
       })
     }
   }
+  insertPcbPathViaPolicyErrors(trace, pcb_trace, props.pcbPath!, ports)
   trace._portsRoutedOnPcb = ports
   trace.pcb_trace_id = pcb_trace.pcb_trace_id
   insertPcbPathViaContactErrors({ trace, pcbTrace: pcb_trace, ports })

@@ -40,6 +40,22 @@ test("snapshot manual vias missing bottom-layer pads with blind vias disabled", 
   await circuit.renderUntilSettled()
 
   const vias = circuit.db.pcb_via.list()
+  const pcbTrace = circuit.db.pcb_trace.list()[0]!
+  expect(circuit.db.pcb_trace_error.list()).toEqual(
+    vias.map((via, viaIndex) =>
+      expect.objectContaining({
+        pcb_trace_id: pcbTrace.pcb_trace_id,
+        source_trace_id: pcbTrace.source_trace_id,
+        center: { x: via.x, y: via.y },
+        is_fatal: false,
+        message: expect.stringMatching(
+          new RegExp(
+            `^Invalid pcbPath\\[${viaIndex === 0 ? 2 : 5}\\] \\(R1\\.pin2 to R2\\.pin1\\): TSX via.*fromLayer: "${via.from_layer}", toLayer: "${via.to_layer}".*blind via.*allowBlindAndBuriedVias=\\{false\\}.*only top-to-bottom through vias`,
+          ),
+        ),
+      }),
+    ),
+  )
   const boardLayers = ["top", "inner1", "inner2", "bottom"] as const
   const throughVias = vias.filter((via) =>
     boardLayers.every((layer) => via.layers.includes(layer)),
