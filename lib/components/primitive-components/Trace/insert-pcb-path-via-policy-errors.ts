@@ -108,7 +108,7 @@ export const insertPcbPathViaPolicyErrors = ({
     center: { x: firstDisallowedVia.x, y: firstDisallowedVia.y },
     is_fatal: false,
     message:
-      `Invalid ${pathName} (${traceDescription}): ${viaCountDescription}. ` +
+      `Disallowed vias in ${pathName} (${traceDescription}): ${viaCountDescription}. ` +
       `The board's effective allowBlindAndBuriedVias={false} permits only ` +
       `top-to-bottom through vias. To fix this path, reroute the affected ` +
       `transitions using through vias with fromLayer: "top", toLayer: "bottom" ` +
