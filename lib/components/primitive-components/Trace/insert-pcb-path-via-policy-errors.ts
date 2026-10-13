@@ -1,5 +1,5 @@
 import type { PcbPath } from "@tscircuit/props"
-import type { PcbTrace } from "circuit-json"
+import type { PcbTrace, PcbVia } from "circuit-json"
 import type { Port } from "../Port"
 import type { Trace } from "./Trace"
 
@@ -12,7 +12,7 @@ interface InsertPcbPathViaPolicyErrorsInput {
 }
 
 /**
- * Report disabled blind/buried vias without changing the saved copper. Via
+ * Report disabled blind/buried vias once per path without changing saved copper. Via
  * centers are points in right-handed board-world mm (+X right, +Y up).
  * Path entry indices refer directly to the original TSX array.
  */
@@ -57,6 +57,8 @@ export const insertPcbPathViaPolicyErrors = ({
   }
 
   const pcbVias = db.pcb_via.list({ pcb_trace_id: pcbTrace.pcb_trace_id })
+  const viaDescriptions: string[] = []
+  let firstDisallowedVia: PcbVia | undefined
   for (const [viaIndex, via] of pcbVias.entries()) {
     // Check the emitted copper span: reaching both outer layers makes this a
     // through via, which is permitted even when blind and buried vias are off.
@@ -77,25 +79,42 @@ export const insertPcbPathViaPolicyErrors = ({
     const boardX = Number(via.x.toFixed(4))
     const boardY = Number(via.y.toFixed(4))
 
-    // Preserve the saved via and copper instead of silently expanding the
-    // barrel. A nonfatal error keeps the invalid span visible for inspection.
-    db.pcb_trace_error.insert({
-      error_type: "pcb_trace_error",
-      source_trace_id: trace.source_trace_id!,
-      pcb_trace_id: pcbTrace.pcb_trace_id,
-      pcb_component_ids: [],
-      pcb_port_ids: ports.map((port) => port.pcb_port_id!).filter(Boolean),
-      subcircuit_id: pcbTrace.subcircuit_id,
-      center: { x: via.x, y: via.y },
-      is_fatal: false,
-      message:
-        `Invalid ${pathEntry} (${traceDescription}): ` +
-        `TSX via (resolved fromLayer: "${via.from_layer}", ` +
-        `toLayer: "${via.to_layer}") creates a ${viaKind} via ` +
-        `spanning [${via.layers.join(", ")}] at board (${boardX}, ${boardY}) mm, ` +
-        `but the board's effective allowBlindAndBuriedVias={false} permits ` +
-        `only top-to-bottom through vias. Use a top-to-bottom via span ` +
-        `or set allowBlindAndBuriedVias={true}.`,
-    })
+    firstDisallowedVia ??= via
+    viaDescriptions.push(
+      `${pathEntry}: ${viaKind} via ` +
+        `(fromLayer: "${via.from_layer}", toLayer: "${via.to_layer}") ` +
+        `spanning [${via.layers.join(", ")}] at board (${boardX}, ${boardY}) mm`,
+    )
   }
+
+  if (!firstDisallowedVia) {
+    return
+  }
+
+  let viaCountDescription = "1 disallowed via"
+  if (viaDescriptions.length > 1) {
+    viaCountDescription = `${viaDescriptions.length} disallowed vias`
+  }
+
+  // Preserve saved copper and report all violations together so fixing one
+  // path requires reading only one diagnostic. Anchor it at the first bad via.
+  db.pcb_trace_error.insert({
+    error_type: "pcb_trace_error",
+    source_trace_id: trace.source_trace_id!,
+    pcb_trace_id: pcbTrace.pcb_trace_id,
+    pcb_component_ids: [],
+    pcb_port_ids: ports.map((port) => port.pcb_port_id!).filter(Boolean),
+    subcircuit_id: pcbTrace.subcircuit_id,
+    center: { x: firstDisallowedVia.x, y: firstDisallowedVia.y },
+    is_fatal: false,
+    message:
+      `Invalid ${pathName} (${traceDescription}): ${viaCountDescription}. ` +
+      `The board's effective allowBlindAndBuriedVias={false} permits only ` +
+      `top-to-bottom through vias. To fix this path, reroute the affected ` +
+      `transitions using through vias with fromLayer: "top", toLayer: "bottom" ` +
+      `(or the reverse), adjusting the adjoining wire layers to match. ` +
+      `If your board fabrication supports blind/buried vias, you can instead ` +
+      `set allowBlindAndBuriedVias={true} on <board>. ` +
+      `Saved copper has been preserved. Affected entries: ${viaDescriptions.join("; ")}.`,
+  })
 }

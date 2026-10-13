@@ -50,33 +50,38 @@ test("saved blind via spans are preserved and reported when disabled", async () 
     ["top", "inner1", "inner2"],
     ["inner2", "inner1", "top"],
   ])
-  expect(pcbTraceErrors).toEqual(
-    vias.map((via, viaIndex) => {
-      const pathEntryIndex = expectedPathEntryIndices[viaIndex]!
-      return expect.objectContaining({
-        pcb_trace_id: pcbTrace.pcb_trace_id,
-        source_trace_id: pcbTrace.source_trace_id,
-        center: { x: via.x, y: via.y },
-        is_fatal: false,
-        message: expect.stringMatching(
-          new RegExp(
-            `^Invalid pcbPath\\[${pathEntryIndex}\\] \\(R1\\.pin2 to R2\\.pin1\\): TSX via.*fromLayer: "${via.from_layer}", toLayer: "${via.to_layer}".*blind via.*allowBlindAndBuriedVias=\\{false\\}.*only top-to-bottom through vias`,
-          ),
-        ),
-      })
+  expect(pcbTraceErrors).toEqual([
+    expect.objectContaining({
+      pcb_trace_id: pcbTrace.pcb_trace_id,
+      source_trace_id: pcbTrace.source_trace_id,
+      center: { x: vias[0]!.x, y: vias[0]!.y },
+      is_fatal: false,
+      message: expect.stringContaining(
+        "Invalid pcbPath (R1.pin2 to R2.pin1): 2 disallowed vias",
+      ),
     }),
-  )
+  ])
+  const message = pcbTraceErrors[0]!.message
+  for (const [viaIndex, via] of vias.entries()) {
+    expect(message).toContain(
+      `pcbPath[${expectedPathEntryIndices[viaIndex]}]: blind via ` +
+        `(fromLayer: "${via.from_layer}", toLayer: "${via.to_layer}") ` +
+        `spanning [${via.layers.join(", ")}]`,
+    )
+  }
+  expect(message).toContain('fromLayer: "top", toLayer: "bottom"')
+  expect(message).toContain("allowBlindAndBuriedVias={true}")
   const bottomVias = vias.filter((via) => via.layers.includes("bottom"))
   const explanationSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="144" viewBox="0 0 1800 144">
     <rect width="1800" height="144" fill="#141414" />
     <g font-family="sans-serif" text-anchor="middle">
       <text x="900" y="42" font-size="38" font-weight="bold" fill="#4ade80">Manual via policy: PASSING</text>
-      <text x="900" y="86" font-size="28" fill="#f4f4f4">Saved blind-via spans are preserved; each disallowed via reports a nonfatal error.</text>
-      <text x="900" y="126" font-size="28" fill="#f4f4f4">Actual: ${pcbTraceErrors.length} policy errors for ${vias.length} saved vias; ${bottomVias.length} reach bottom.</text>
+      <text x="900" y="86" font-size="28" fill="#f4f4f4">Saved blind-via spans are preserved; one nonfatal error lists all disallowed vias in the path.</text>
+      <text x="900" y="126" font-size="28" fill="#f4f4f4">Policy errors: ${pcbTraceErrors.length}; saved vias: ${vias.length}; vias reaching bottom: ${bottomVias.length}.</text>
     </g>
   </svg>`
   // The SVG renderer prioritizes connected ports over an error's center.
-  // Use a rendering copy with short callouts at the actual via positions;
+  // Use a rendering copy with short callouts at the first disallowed via;
   // the assertions above verify the original full diagnostic messages.
   const circuitJsonForSnapshot = circuit.getCircuitJson().map((element) => {
     if (element.type !== "pcb_trace_error") {
@@ -86,7 +91,7 @@ test("saved blind via spans are preserved and reported when disabled", async () 
     return {
       ...element,
       pcb_port_ids: [],
-      message: `${pathEntry}: blind vias disabled`,
+      message: `${pathEntry}: fix vias at entries 2 and 5`,
     }
   })
   const layerPanels = (["top", "bottom"] as const).map((layer) =>
