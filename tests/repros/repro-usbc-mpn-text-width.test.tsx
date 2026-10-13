@@ -9,11 +9,10 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 // Preserve all schematic placements, pin arrangements, connections and names.
 // PCB footprints, paths and CAD models are omitted.
 //
-// Core reserves 4.92 mm for J1's MPN using a fixed character-width estimate.
-// The rendered, left-aligned text is shorter. The oversized obstacle pushes
-// J1's GND rail past R1's CC1 trace, creating two unnecessary crossings.
-// The snapshot records the current bug; GND should fit before R1's CC1 trace.
-test("repro: oversized USB-C MPN text bounds force GND across CC1", async () => {
+// The old fixed character-width estimate reserved 4.92 mm for J1's MPN,
+// pushing its GND rail across R1's CC1 trace twice. Proportional text bounds
+// should leave enough room for GND before R1's CC1 trace.
+test("USB-C MPN text bounds leave room for GND before CC1", async () => {
   const { circuit } = getTestFixture()
   circuit.pcbDisabled = true
 
@@ -107,6 +106,25 @@ test("repro: oversized USB-C MPN text bounds force GND across CC1", async () => 
     (textBox) => textBox.text === manufacturerPartNumber,
   )!
 
+  const groundNet = circuit.db.source_net.getWhere({ name: "GND" })!
+  const groundSourceTrace = circuit.db.source_trace
+    .list()
+    .find((trace) =>
+      trace.connected_source_net_ids.includes(groundNet.source_net_id),
+    )!
+  const groundCrossings = circuit.db.schematic_trace
+    .list()
+    .filter(
+      (trace) =>
+        trace.subcircuit_connectivity_map_key ===
+        groundSourceTrace.subcircuit_connectivity_map_key,
+    )
+    .flatMap((trace) => trace.edges.filter((edge) => edge.is_crossing))
+
+  expect(groundCrossings).toHaveLength(0)
+  // J1's MPN is left-anchored at the connector's left edge.
+  expect(mpnTextBox.center.x - mpnTextBox.width / 2).toBeCloseTo(-5)
+
   // Overlay the actual Core-generated routing obstacle after rendering. The
   // original text retains its original font size, position and left anchor.
   // Coordinates are schematic world mm (+X right, +Y up); center is a point.
@@ -128,7 +146,7 @@ test("repro: oversized USB-C MPN text bounds force GND across CC1", async () => 
     {
       type: "schematic_text",
       schematic_text_id: "repro_explanation",
-      text: `Red box: Core MPN obstacle (${mpnTextBox.width.toFixed(2)} mm). GND crosses CC1 twice.`,
+      text: `Red box: Core MPN obstacle (${mpnTextBox.width.toFixed(2)} mm). GND fits before CC1.`,
       position: { x: 0, y: 2.2 },
       anchor: "center",
       rotation: 0,
