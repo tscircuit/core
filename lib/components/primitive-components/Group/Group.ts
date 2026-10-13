@@ -1539,9 +1539,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         ? undefined
         : routingPhasePlan.getPrecomputedRoutingResult
 
-      const preflightRoutingCheckPolicy = this.getInheritedProperty(
-        "preflightRoutingCheckPolicy",
-      )
+      const preflightRoutingCheckPolicy =
+        this.getInheritedProperty("preflightRoutingCheckPolicy") ?? "basic"
       if (
         routingPhasePlan.isImplicitRemainingPhase &&
         phaseStageIndex === 0 &&
