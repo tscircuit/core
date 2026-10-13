@@ -91,7 +91,7 @@ test("saved blind via spans are preserved and reported when disabled", async () 
     return {
       ...element,
       pcb_port_ids: [],
-      message: `${pathEntry}: fix vias at entries 2 and 5`,
+      message: `${pathEntry}: fix vias at indices 2 and 5`,
     }
   })
   const layerPanels = (["top", "bottom"] as const).map((layer) =>

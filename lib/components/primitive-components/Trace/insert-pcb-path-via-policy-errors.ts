@@ -14,7 +14,7 @@ interface InsertPcbPathViaPolicyErrorsInput {
 /**
  * Report disabled blind/buried vias once per path without changing saved copper. Via
  * centers are points in right-handed board-world mm (+X right, +Y up).
- * Path entry indices refer directly to the original TSX array.
+ * Path indices are zero-based positions in the original TSX array.
  */
 export const insertPcbPathViaPolicyErrors = ({
   trace,
@@ -115,6 +115,6 @@ export const insertPcbPathViaPolicyErrors = ({
       `(or the reverse), adjusting the adjoining wire layers to match. ` +
       `If your board fabrication supports blind/buried vias, you can instead ` +
       `set allowBlindAndBuriedVias={true} on <board>. ` +
-      `Saved copper has been preserved. Affected entries: ${viaDescriptions.join("; ")}.`,
+      `Saved copper has been preserved. Affected indices (zero-based): ${viaDescriptions.join("; ")}.`,
   })
 }
