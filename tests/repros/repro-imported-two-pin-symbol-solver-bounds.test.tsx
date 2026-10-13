@@ -89,7 +89,7 @@ const varistorSymbol = (
   </symbol>
 )
 
-test("imported two-pin symbols use body bounds for solver obstacles", async () => {
+test("imported two-pin symbols include terminals in solver obstacles", async () => {
   const { circuit } = getTestFixture()
   circuit.pcbDisabled = true
 
@@ -158,8 +158,8 @@ test("imported two-pin symbols use body bounds for solver obstacles", async () =
   expect(solverBounds).toMatchInlineSnapshot(`
     [
       {
-        "maxX": 0.2,
-        "minX": -0.2,
+        "maxX": 0.4,
+        "minX": -0.4,
         "name": "F1",
         "pins": [
           {
@@ -173,8 +173,8 @@ test("imported two-pin symbols use body bounds for solver obstacles", async () =
         ],
       },
       {
-        "maxX": 0.2,
-        "minX": -0.2,
+        "maxX": 0.4,
+        "minX": -0.4,
         "name": "RV1",
         "pins": [
           {
