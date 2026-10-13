@@ -33,19 +33,12 @@ export const insertPcbPathViaPolicyErrors = ({
   const { db } = trace.root!
   const connection = db.source_trace.get(trace.source_trace_id!)?.display_name
 
-  let traceDescription = "unnamed trace"
-  if (connection && trace._parsedProps.name) {
-    traceDescription = `${trace.getDisplayName()}, ${connection}`
-  } else if (connection) {
-    traceDescription = connection
-  } else if (trace._parsedProps.name) {
-    traceDescription = trace.getDisplayName()
-  }
-
-  let pathName = "pcbPath"
-  if (pathIndex !== undefined) {
-    pathName = `pcbPaths[${pathIndex}]`
-  }
+  const traceDescription =
+    [trace._parsedProps.name ? trace.getDisplayName() : undefined, connection]
+      .filter(Boolean)
+      .join(", ") || "unnamed trace"
+  const pathName =
+    pathIndex === undefined ? "pcbPath" : `pcbPaths[${pathIndex}]`
 
   // Keep the original TSX entry indices, including selectors and wire points,
   // so the diagnostic identifies the exact via the user needs to edit.
@@ -58,6 +51,7 @@ export const insertPcbPathViaPolicyErrors = ({
 
   const pcbVias = db.pcb_via.list({ pcb_trace_id: pcbTrace.pcb_trace_id })
   const viaDescriptions: string[] = []
+  const viaKinds = new Set<"blind" | "buried">()
   let firstDisallowedVia: PcbVia | undefined
   for (const [viaIndex, via] of pcbVias.entries()) {
     // Check the emitted copper span: reaching both outer layers makes this a
@@ -68,10 +62,8 @@ export const insertPcbPathViaPolicyErrors = ({
       continue
     }
 
-    let viaKind = "buried"
-    if (reachesTop || reachesBottom) {
-      viaKind = "blind"
-    }
+    const viaKind = reachesTop || reachesBottom ? "blind" : "buried"
+    viaKinds.add(viaKind)
 
     // PCB vias are inserted in the same occurrence order as path via entries.
     const pathEntryIndex = viaPathEntryIndices[viaIndex]!
@@ -91,10 +83,12 @@ export const insertPcbPathViaPolicyErrors = ({
     return
   }
 
-  let viaCountDescription = "1 disallowed via"
-  if (viaDescriptions.length > 1) {
-    viaCountDescription = `${viaDescriptions.length} disallowed vias`
-  }
+  const viaKindDescription =
+    viaKinds.size === 2
+      ? "Blind and buried"
+      : viaKinds.has("blind")
+        ? "Blind"
+        : "Buried"
 
   // Preserve saved copper and report all violations together so fixing one
   // path requires reading only one diagnostic. Anchor it at the first bad via.
@@ -108,13 +102,11 @@ export const insertPcbPathViaPolicyErrors = ({
     center: { x: firstDisallowedVia.x, y: firstDisallowedVia.y },
     is_fatal: false,
     message:
-      `Disallowed vias in ${pathName} (${traceDescription}): ${viaCountDescription}. ` +
-      `The board's effective allowBlindAndBuriedVias={false} permits only ` +
-      `top-to-bottom through vias. To fix this path, reroute the affected ` +
-      `transitions using through vias with fromLayer: "top", toLayer: "bottom" ` +
-      `(or the reverse), adjusting the adjoining wire layers to match. ` +
-      `If your board fabrication supports blind/buried vias, you can instead ` +
-      `set allowBlindAndBuriedVias={true} on <board>. ` +
+      `${viaKindDescription} vias aren't allowed by allowBlindAndBuriedVias={false} ` +
+      `in ${pathName} (${traceDescription}): ${viaDescriptions.length} disallowed via${viaDescriptions.length === 1 ? "" : "s"}. ` +
+      `Use top-to-bottom through vias (fromLayer: "top", toLayer: "bottom", or the reverse) ` +
+      `and adjust the adjoining wire layers to match, or set allowBlindAndBuriedVias={true} ` +
+      `on <board> if fabrication supports blind/buried vias. ` +
       `Saved copper has been preserved. Affected indices (zero-based): ${viaDescriptions.join("; ")}.`,
   })
 }

@@ -57,7 +57,7 @@ test("saved blind via spans are preserved and reported when disabled", async () 
       center: { x: vias[0]!.x, y: vias[0]!.y },
       is_fatal: false,
       message: expect.stringContaining(
-        "Disallowed vias in pcbPath (R1.pin2 to R2.pin1): 2 disallowed vias",
+        "Blind vias aren't allowed by allowBlindAndBuriedVias={false} in pcbPath (R1.pin2 to R2.pin1): 2 disallowed vias",
       ),
     }),
   ])
@@ -91,11 +91,10 @@ test("saved blind via spans are preserved and reported when disabled", async () 
     if (element.type !== "pcb_trace_error") {
       return element
     }
-    const pathDescription = element.message.split(" (")[0]
     return {
       ...element,
       pcb_port_ids: [],
-      message: `${pathDescription} (${connection}): fix vias at indices ${expectedPathEntryIndices.join(" and ")}`,
+      message: `Blind vias aren't allowed in pcbPath (${connection}): fix indices ${expectedPathEntryIndices.join(" and ")}`,
     }
   })
   const layerPanels = (["top", "bottom"] as const).map((layer) =>
