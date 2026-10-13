@@ -35,6 +35,9 @@ export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
     const { _parsedProps: props } = this
     const pcbComponentId =
       this.getPrimitiveContainer()?.pcb_component_id ?? undefined
+    const pcbKeepoutOwnershipProps = pcbComponentId
+      ? { pcb_component_id: pcbComponentId }
+      : {}
     const pcbGroupId = this.getGroup()?.pcb_group_id ?? undefined
     const position = this._getGlobalPcbPositionBeforeLayout()
     const decomposedMat = decomposeTSR(
@@ -60,7 +63,7 @@ export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
       pcb_keepout = db.pcb_keepout.insert({
         layers,
         shape: "circle",
-        pcb_component_id: pcbComponentId,
+        ...pcbKeepoutOwnershipProps,
         ...pcbKeepoutExclusionProps,
         ...(props.allowTraces !== undefined
           ? { allow_traces: props.allowTraces }
@@ -84,7 +87,7 @@ export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
       pcb_keepout = db.pcb_keepout.insert({
         layers,
         shape: "rect",
-        pcb_component_id: pcbComponentId,
+        ...pcbKeepoutOwnershipProps,
         ...pcbKeepoutExclusionProps,
         ...(props.allowTraces !== undefined
           ? { allow_traces: props.allowTraces }
