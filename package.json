@@ -1,7 +1,7 @@
 {
   "name": "@tscircuit/core",
   "type": "module",
-  "version": "0.0.2142",
+  "version": "0.0.2143",
   "types": "dist/index.d.ts",
   "main": "dist/index.js",
   "module": "dist/index.js",
