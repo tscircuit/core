@@ -47,7 +47,7 @@ export const getViaBoardLayers = (layerCount: number): LayerRef[] => {
 }
 
 /**
- * Physical copper layers occupied by an autorouter-generated via.
+ * Physical copper layers occupied by an autorouted or manual trace via.
  *
  * `fromLayer` and `toLayer` describe the logical trace transition. Unless the
  * board explicitly permits blind or buried vias, the drilled barrel spans the
