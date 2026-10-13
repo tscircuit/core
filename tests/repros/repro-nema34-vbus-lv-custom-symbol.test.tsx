@@ -45,8 +45,6 @@ const getSourceStem = () => {
 beforeAll(async () => {
   await circuit.renderUntilSettled()
 
-  // Keep setup/snapshot failures outside test.failing, so they cannot disguise
-  // a broken fixture as a successful reproduction.
   expect(getVbusLabel().symbol_name).toBe("rail_up")
   expect(getSourceStem().y2 - getSourceStem().y1).toBeCloseTo(0.635)
   await expect(circuit).toMatchSchematicSnapshot(import.meta.path, {
@@ -54,21 +52,32 @@ beforeAll(async () => {
   })
 })
 
-// Known bug: the rail is allowed to point back along the custom symbol's stem.
-// Expected: keep the power rail pointing up, but route it clear of the symbol.
-test.failing(
-  "NEMA34 Q1 VBUS_LV text clears the custom MOSFET source stem",
-  () => {
-    const label = getVbusLabel()
-    const stem = getSourceStem()
-    // Emitted schematic-world points in mm: +X right, +Y up. These are the drawn
-    // stem endpoints, not a reconstruction of the symbol's transform.
-    expect(
-      doesSegmentIntersectRect(
-        { x: stem.x1, y: stem.y1 },
-        { x: stem.x2, y: stem.y2 },
-        getNetLabelTextBounds(label),
-      ),
-    ).toBe(false)
-  },
-)
+// The routing envelope includes external terminals, so the upward rail must
+// connect around the symbol instead of pointing back along its source stem.
+test("NEMA34 Q1 VBUS_LV text clears the custom MOSFET source stem", () => {
+  const label = getVbusLabel()
+  const stem = getSourceStem()
+  const labelAnchor = label.anchor_position!
+  // Emitted schematic-world points in mm: +X right, +Y up. These are the drawn
+  // stem endpoints, not a reconstruction of the symbol's transform.
+  expect(
+    doesSegmentIntersectRect(
+      { x: stem.x1, y: stem.y1 },
+      { x: stem.x2, y: stem.y2 },
+      getNetLabelTextBounds(label),
+    ),
+  ).toBe(false)
+
+  // The relocated rail must remain connected to the source terminal.
+  expect(
+    circuit.db.schematic_trace.list().some((trace) => {
+      const points = trace.edges.flatMap((edge) => [edge.from, edge.to])
+      return (
+        points.some((point) => point.x === stem.x1 && point.y === stem.y1) &&
+        points.some(
+          (point) => point.x === labelAnchor.x && point.y === labelAnchor.y,
+        )
+      )
+    }),
+  ).toBe(true)
+})

@@ -12,6 +12,7 @@ test("pill paste follows transformed holes on both outer layers", () => {
           <chip
             key={`${layer}_${rotationDegrees}`}
             name={`${layer}_${rotationDegrees}`}
+            isSmt
             layer={layer}
             pcbX={rotationIndex * 5 - 7.5}
             pcbY={layer === "top" ? 3 : -3}

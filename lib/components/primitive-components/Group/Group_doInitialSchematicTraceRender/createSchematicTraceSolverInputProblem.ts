@@ -290,8 +290,8 @@ export function createSchematicTraceSolverInputProblem(
       schematicComponent.schematic_component_id,
     )
 
-    // Custom-symbol obstacles use the drawn body, independently of text and
-    // external terminal positions. Box components retain their layout bounds.
+    // Custom-symbol obstacles start with the drawn body, independently of text.
+    // All symbols include their terminal positions in the routing envelope below.
     const obstacleBounds =
       (schematicComponent.is_box_with_pins === false
         ? undefined
@@ -302,14 +302,13 @@ export function createSchematicTraceSolverInputProblem(
         height: schematicComponent.size.height,
       })
 
-    // Box symbols include their visible pin stems in the routing envelope.
-    if (schematicComponent.is_box_with_pins !== false) {
-      for (const port of schematicPorts) {
-        obstacleBounds.minX = Math.min(obstacleBounds.minX, port.center.x)
-        obstacleBounds.maxX = Math.max(obstacleBounds.maxX, port.center.x)
-        obstacleBounds.minY = Math.min(obstacleBounds.minY, port.center.y)
-        obstacleBounds.maxY = Math.max(obstacleBounds.maxY, port.center.y)
-      }
+    // Include external pin stems for custom symbols as well as box symbols so
+    // labels cannot occupy the gap between a terminal and the drawn body.
+    for (const port of schematicPorts) {
+      obstacleBounds.minX = Math.min(obstacleBounds.minX, port.center.x)
+      obstacleBounds.maxX = Math.max(obstacleBounds.maxX, port.center.x)
+      obstacleBounds.minY = Math.min(obstacleBounds.minY, port.center.y)
+      obstacleBounds.maxY = Math.max(obstacleBounds.maxY, port.center.y)
     }
 
     chips.push({

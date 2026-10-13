@@ -129,6 +129,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
       this.parent?.pcb_component_id ??
       this.getPrimitiveContainer()?.pcb_component_id!
     const subcircuit = this.getSubcircuit()
+    const shouldCreateSolderPaste = this._getIsSmt()
     const platedHoleLayers = this.getAvailablePcbLayers()
     const soldermaskMargin = props.solderMaskMargin
     const isCoveredWithSolderMask = props.coveredWithSolderMask ?? false
@@ -161,26 +162,28 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
       })
 
       this.pcb_plated_hole_id = pcb_plated_hole.pcb_plated_hole_id
-      db.pcb_solder_paste.insert({
-        layer: "top",
-        shape: "circle",
-        // @ts-ignore: no idea why this is triggering
-        radius: props.outerDiameter / 2,
-        x: position.x,
-        y: position.y,
-        subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
-        pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
-      })
-      db.pcb_solder_paste.insert({
-        layer: "bottom",
-        shape: "circle",
-        // @ts-ignore: no idea why this is triggering
-        radius: props.outerDiameter / 2,
-        x: position.x,
-        y: position.y,
-        subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
-        pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
-      })
+      if (shouldCreateSolderPaste) {
+        db.pcb_solder_paste.insert({
+          layer: "top",
+          shape: "circle",
+          // @ts-ignore: no idea why this is triggering
+          radius: props.outerDiameter / 2,
+          x: position.x,
+          y: position.y,
+          subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+          pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
+        })
+        db.pcb_solder_paste.insert({
+          layer: "bottom",
+          shape: "circle",
+          // @ts-ignore: no idea why this is triggering
+          radius: props.outerDiameter / 2,
+          x: position.x,
+          y: position.y,
+          subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+          pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
+        })
+      }
     } else if (props.shape === "pill" && props.rectPad) {
       const pcb_plated_hole = db.pcb_plated_hole.insert({
         pcb_component_id,
@@ -234,7 +237,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
       } as PcbPlatedHoleOval)
 
       this.pcb_plated_hole_id = pcb_plated_hole.pcb_plated_hole_id
-      if (props.shape === "pill") {
+      if (props.shape === "pill" && shouldCreateSolderPaste) {
         db.pcb_solder_paste.insert({
           layer: "top",
           shape: "rotated_pill",
@@ -259,7 +262,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
           subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
           pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
         })
-      } else if (props.shape === "oval") {
+      } else if (props.shape === "oval" && shouldCreateSolderPaste) {
         db.pcb_solder_paste.insert({
           layer: "top",
           shape: "oval",

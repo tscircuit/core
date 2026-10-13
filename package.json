@@ -1,7 +1,7 @@
 {
   "name": "@tscircuit/core",
   "type": "module",
-  "version": "0.0.2144",
+  "version": "0.0.2147",
   "types": "dist/index.d.ts",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -60,7 +60,7 @@
     "@tscircuit/miniflex": "^0.0.4",
     "@tscircuit/modelprinter": "^0.0.18",
     "@tscircuit/ngspice-spice-engine": "^0.0.20",
-    "@tscircuit/props": "^0.0.700",
+    "@tscircuit/props": "^0.0.701",
     "@tscircuit/schematic-match-adapt": "^0.0.18",
     "@tscircuit/schematic-trace-solver": "https://jscdn.tscircuit.com/@tscircuit/schematic-trace-solver/0.0.230.tgz",
     "@tscircuit/solver-utils": "^0.0.16",
@@ -144,7 +144,7 @@
   },
   "overrides": {
     "@tscircuit/circuit-json-util": "^0.0.121",
-    "@tscircuit/props": "^0.0.700",
+    "@tscircuit/props": "^0.0.701",
     "circuit-json": "^0.0.525",
     "@tscircuit/cableprinter": "^0.0.6"
   }
