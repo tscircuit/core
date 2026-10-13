@@ -81,17 +81,21 @@ test("saved blind via spans are preserved and reported when disabled", async () 
     </g>
   </svg>`
   // The SVG renderer prioritizes connected ports over an error's center.
-  // Use a rendering copy with short callouts at the first disallowed via;
+  // Keep connection endpoints and path indices in short callouts at the first
+  // disallowed via using a rendering copy;
   // the assertions above verify the original full diagnostic messages.
+  const connection = circuit.db.source_trace
+    .get(pcbTrace.source_trace_id!)!
+    .display_name!.replace(" to ", " → ")
   const circuitJsonForSnapshot = circuit.getCircuitJson().map((element) => {
     if (element.type !== "pcb_trace_error") {
       return element
     }
-    const pathEntry = element.message.split(" (")[0]
+    const pathName = element.message.split(" (")[0]!.replace("Invalid ", "")
     return {
       ...element,
       pcb_port_ids: [],
-      message: `${pathEntry}: fix vias at indices 2 and 5`,
+      message: `${connection}: fix vias at ${pathName} indices ${expectedPathEntryIndices.join(" and ")}`,
     }
   })
   const layerPanels = (["top", "bottom"] as const).map((layer) =>
