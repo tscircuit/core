@@ -7,6 +7,7 @@ import { LengthTestTerminal } from "tests/fixtures/length-test-terminal"
 const { circuit } = getTestFixture()
 const phaseInputs: SimpleRouteJson[] = []
 const diagnosticMessages: string[] = []
+let fixedCopperBeforeRouting: PcbTrace[] = []
 
 /** Planar wire length in board world coordinates: +X right, +Y up, units mm. */
 const getPlanarWireLengthMm = (trace: PcbTrace) =>
@@ -21,6 +22,7 @@ const getPlanarWireLengthMm = (trace: PcbTrace) =>
 beforeAll(async () => {
   circuit.on("autorouting:start", (event) => {
     phaseInputs.push(event.simpleRouteJson)
+    fixedCopperBeforeRouting = structuredClone(circuit.db.pcb_trace.list())
   })
   circuit.on("autorouting:error", (event) => {
     diagnosticMessages.push(event.error.message)
@@ -46,7 +48,7 @@ beforeAll(async () => {
       <pcbnotetext
         pcbY={10}
         fontSize={0.5}
-        text="DATA0 has a manual path; DATA1 is pending"
+        text="Preserve manual DATA0; autoroute DATA1 to match"
       />
       <pcbnotetext pcbX={-10} pcbY={1.4} fontSize={0.5} text="TX0 / DATA0" />
       <pcbnotetext pcbX={10} pcbY={1.4} fontSize={0.5} text="RX0 / DATA0" />
@@ -128,11 +130,19 @@ beforeAll(async () => {
     `Native routing phases started: ${phaseInputs.length}; source bus members: ${circuit.db.source_bus.list()[0].source_trace_ids.length}`,
     -8,
   )
+  const routedLengths = circuit.db.pcb_trace.list().map(getPlanarWireLengthMm)
+  if (routedLengths.length === 2) {
+    addMeasuredNote(
+      `Measured complete-bus skew: ${Math.abs(routedLengths[1] - routedLengths[0]).toFixed(2)} mm`,
+      -10,
+      0.6,
+    )
+  }
   const skewError = circuit.db.pcb_bus_length_skew_error.list()[0]
   if (skewError) {
     addMeasuredNote(
       `Native DRC: skew ${skewError.actual_length_skew.toFixed(2)} mm > ${skewError.maximum_length_skew.toFixed(2)} mm allowed`,
-      -10,
+      -11.5,
       0.65,
       "#ff6b6b",
     )
@@ -153,20 +163,29 @@ beforeAll(async () => {
   }
 
   // A visual regression must fail the suite, not satisfy test.failing below.
-  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
+    diffThresholdPercent: 0,
+  })
 })
 
-test.failing("a matched bus cannot silently omit a pre-routed member", () => {
-  // Main emits 28 mm and 20 mm copper, then reports 8 mm complete-bus skew.
-  // Reject before routing instead of constraining only part of the bus.
-  expect(phaseInputs).toHaveLength(0)
-  expect(circuit.db.pcb_autorouting_error.list()).toMatchObject([
-    { message: expect.stringContaining('pre-routed member "DATA0"') },
-  ])
-  expect(diagnosticMessages).toEqual([
-    circuit.db.pcb_autorouting_error.list()[0].message,
-  ])
-  expect(diagnosticMessages[0]).not.toContain("source_trace_")
-  expect(circuit.db.pcb_trace.list()).toHaveLength(1)
+test.failing("a pending bus member matches preserved copper", () => {
+  expect(phaseInputs).toHaveLength(1)
+  expect(phaseInputs[0].buses![0]).toMatchObject({
+    minLength: 27.9,
+    maxLength: 28.1,
+    maxLengthSkew: 0.1,
+  })
+  expect(phaseInputs[0].buses![0].connectionNames).toHaveLength(1)
+  expect(diagnosticMessages).toEqual([])
+  expect(circuit.db.pcb_trace.list()).toHaveLength(2)
+  expect(circuit.db.pcb_trace.list()[0]).toEqual(fixedCopperBeforeRouting[0])
   expect(circuit.db.source_bus.list()[0].source_trace_ids).toHaveLength(2)
+  const lengths = circuit.db.pcb_trace.list().map(getPlanarWireLengthMm)
+  expect(lengths[0]).toBeCloseTo(28, 8)
+  expect(Math.abs(lengths[1] - lengths[0])).toBeLessThanOrEqual(0.100000001)
+  expect(
+    circuit
+      .getCircuitJson()
+      .filter((element) => element.type.endsWith("_error")),
+  ).toEqual([])
 })
