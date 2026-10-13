@@ -83,12 +83,7 @@ export const insertPcbPathViaPolicyErrors = ({
     return
   }
 
-  const viaKindDescription =
-    viaKinds.size === 2
-      ? "Blind and buried"
-      : viaKinds.has("blind")
-        ? "Blind"
-        : "Buried"
+  const viaKindDescription = [...viaKinds].sort().join(" and ")
 
   // Preserve saved copper and report all violations together so fixing one
   // path requires reading only one diagnostic. Anchor it at the first bad via.
@@ -102,7 +97,7 @@ export const insertPcbPathViaPolicyErrors = ({
     center: { x: firstDisallowedVia.x, y: firstDisallowedVia.y },
     is_fatal: false,
     message:
-      `${viaKindDescription} vias aren't allowed by allowBlindAndBuriedVias={false} ` +
+      `${viaKindDescription} vias aren't allowed by allowBlindAndBuriedVias settings ` +
       `in ${pathName} (${traceDescription}): ${viaDescriptions.length} disallowed via${viaDescriptions.length === 1 ? "" : "s"}. ` +
       `Use top-to-bottom through vias (fromLayer: "top", toLayer: "bottom", or the reverse) ` +
       `and adjust the adjoining wire layers to match, or set allowBlindAndBuriedVias={true} ` +

@@ -49,7 +49,7 @@ test("trace pcbPath supports vias with inner layer transitions", async () => {
   expect(circuit.db.pcb_trace_error.list()).toContainEqual(
     expect.objectContaining({
       message: expect.stringContaining(
-        "Blind and buried vias aren't allowed by allowBlindAndBuriedVias={false} in pcbPath",
+        "blind and buried vias aren't allowed by allowBlindAndBuriedVias settings in pcbPath",
       ),
     }),
   )

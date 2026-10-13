@@ -57,7 +57,7 @@ test("saved blind via spans are preserved and reported when disabled", async () 
       center: { x: vias[0]!.x, y: vias[0]!.y },
       is_fatal: false,
       message: expect.stringContaining(
-        "Blind vias aren't allowed by allowBlindAndBuriedVias={false} in pcbPath (R1.pin2 to R2.pin1): 2 disallowed vias",
+        "blind vias aren't allowed by allowBlindAndBuriedVias settings in pcbPath (R1.pin2 to R2.pin1): 2 disallowed vias",
       ),
     }),
   ])
@@ -75,18 +75,14 @@ test("saved blind via spans are preserved and reported when disabled", async () 
   const explanationSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="144" viewBox="0 0 1800 144">
     <rect width="1800" height="144" fill="#141414" />
     <g font-family="sans-serif" text-anchor="middle">
-      <text x="900" y="42" font-size="38" font-weight="bold" fill="#4ade80">Manual via policy: PASSING</text>
+      <text x="900" y="42" font-size="38" font-weight="bold" fill="#4ade80">${message.split(" (")[0]}</text>
       <text x="900" y="86" font-size="28" fill="#f4f4f4">Saved blind-via spans are preserved; one nonfatal error lists all disallowed vias in the path.</text>
       <text x="900" y="126" font-size="28" fill="#f4f4f4">Policy errors: ${pcbTraceErrors.length}; saved vias: ${vias.length}; vias reaching bottom: ${bottomVias.length}.</text>
     </g>
   </svg>`
   // The SVG renderer prioritizes connected ports over an error's center.
-  // Keep connection endpoints and path indices in short callouts at the first
-  // disallowed via using a rendering copy;
-  // the assertions above verify the original full diagnostic messages.
-  const connection = circuit.db.source_trace
-    .get(pcbTrace.source_trace_id!)!
-    .display_name!.replace(" to ", " → ")
+  // Show the actual diagnostic's opening sentence at the first disallowed via;
+  // the assertions above verify the full message, including path entry indices.
   const circuitJsonForSnapshot = circuit.getCircuitJson().map((element) => {
     if (element.type !== "pcb_trace_error") {
       return element
@@ -94,7 +90,7 @@ test("saved blind via spans are preserved and reported when disabled", async () 
     return {
       ...element,
       pcb_port_ids: [],
-      message: `Blind vias aren't allowed in pcbPath (${connection}): fix indices ${expectedPathEntryIndices.join(" and ")}`,
+      message: element.message.split(". ")[0]!,
     }
   })
   const layerPanels = (["top", "bottom"] as const).map((layer) =>
