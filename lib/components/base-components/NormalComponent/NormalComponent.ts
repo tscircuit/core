@@ -497,37 +497,34 @@ export class NormalComponent<
       this.addAll(portsToCreate)
     }
 
-    if (!this._getSchematicPortArrangement()) {
-      const hasReactSymbol = isValidElement(this.props.symbol)
-      const hasCircuitJsonSymbolProp = isCircuitJsonSymbol(this.props.symbol)
-      if (hasReactSymbol || hasCircuitJsonSymbolProp) {
-      } else {
-        const portsFromFootprint = this.getPortsFromFootprint({
-          ...opts,
-          allowImplicitPinNumbers: !pinLabelsFromProps,
-          collectInferredInternallyConnectedPins: true,
-        })
-        const existingPorts = this._getAllPortsFromChildren()
-        for (const port of portsFromFootprint) {
-          if (!port._isPrimaryPort) {
-            portsToCreate.push(port)
-            continue
-          }
+    const hasReactSymbol = isValidElement(this.props.symbol)
+    const hasCircuitJsonSymbolProp = isCircuitJsonSymbol(this.props.symbol)
+    if (!hasReactSymbol && !hasCircuitJsonSymbolProp) {
+      const portsFromFootprint = this.getPortsFromFootprint({
+        ...opts,
+        allowImplicitPinNumbers: !pinLabelsFromProps,
+        collectInferredInternallyConnectedPins: true,
+      })
+      const existingPorts = this._getAllPortsFromChildren()
+      for (const port of portsFromFootprint) {
+        if (!port._isPrimaryPort) {
+          portsToCreate.push(port)
+          continue
+        }
 
-          const matchingPort =
-            existingPorts.find((p) => canMergePortDefinitions(p, port)) ??
-            portsToCreate.find((p) => canMergePortDefinitions(p, port))
+        const matchingPort =
+          existingPorts.find((p) => canMergePortDefinitions(p, port)) ??
+          portsToCreate.find((p) => canMergePortDefinitions(p, port))
 
-          if (matchingPort) {
-            const mergedAliases = port
-              .getNameAndAliases()
-              .filter(
-                (alias) => !matchingPort.getNameAndAliases().includes(alias),
-              )
-            matchingPort.externallyAddedAliases.push(...mergedAliases)
-          } else {
-            portsToCreate.push(port)
-          }
+        if (matchingPort) {
+          const mergedAliases = port
+            .getNameAndAliases()
+            .filter(
+              (alias) => !matchingPort.getNameAndAliases().includes(alias),
+            )
+          matchingPort.externallyAddedAliases.push(...mergedAliases)
+        } else if (!schPortArrangement) {
+          portsToCreate.push(port)
         }
       }
     }
