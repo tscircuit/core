@@ -1,47 +1,37 @@
-PR proposal 4: Support physical BGA ball names consistently through port resolution
-Repositories: https://github.com/tscircuit/core and https://github.com/tscircuit/props
-Status: DESIGN PROPOSAL + DIRECT RESOLVER REPRODUCTION; larger API follow-up.
+Physical BGA ball identities
 
-Problem / resulting behavior
-The props schema already accepts an alphanumeric pinLabels key such as A1.
-However, parsePinNumberFromLabelsOrThrow("DQ0", { A1: "DQ0" }) rejects the key
-because downstream code expects pin<number>. The numeric-key workaround
-{ pin1: ["A1", "DQ0"] } works. The API therefore accepts a shape that later
-fails during pin resolution.
-Users should be able to identify a BGA pad by its actual ball name and keep that
-identity across footprints, selectors, connectivity and export.
+Implemented core contract
+Object pinLabels can use uppercase physical ball names (A1, A2, B1, AA1), as
+well as existing numeric / pin<number> keys. The explicit map defines the
+package pins. Physical rows sort by length and ASCII, columns numerically;
+numeric keys reserve their existing ordinals. Schematic ordinals therefore do
+not depend on map insertion order or footprint child order. Changing the set
+of package pins can change layout ordinals; physical names remain identity.
 
-Evidence / relevant code
-props/lib/components/chip.ts: pinLabelsProp uses schematicPinLabel for keys.
-props/lib/common/schematicPinLabel.ts accepts letters, numbers and underscores.
-core/lib/utils/schematic/parsePinNumberFromLabelsOrThrow.ts requires a numeric
-key when resolving an alias. getPinNumberFromPinLabelsKey.ts only accepts
-numeric and pin-prefixed numeric identifiers.
-The direct resolver failure and successful workaround are captured in
-bga-pin-reproduction.log. This is not a request to loosen the schema alone.
+Physical names are retained as source_port.name and port_hints. Physical source
+ports omit pin_number: their package pin identifier is a string, not a number.
+The numeric layout ordinal remains on schematic_port.pin_number, linked by
+source_port_id. Footprint pads retain their physical hints and bind to the
+corresponding source port. This serializes the mapping without a new JSON field.
+Numeric-key pins retain source_port.pin_number; a signal label such as IN4
+therefore cannot accidentally replace their numeric package pin identity.
 
-Proposed implementation
-- Introduce a resolved physical-pin identity at the component boundary: retain
-  the physical name (A1) separately from any internal numeric ordinal needed
-  by schematic layout. Reuse existing canonical identity types where possible.
-- Resolve footprint portHints and connections against the physical name and
-  explicit aliases; do not derive identity from object insertion order.
-- Keep numeric-key behavior stable. If ordinals are needed, derive them from a
-  stable package mapping and preserve that mapping through serialization.
-- Preserve ball names in emitted ports, diagnostics, readable netlists and PCB
-  pad identifiers. Verify the KiCad/export path rather than assuming it follows.
-- Reject ambiguous signal aliases with readable pin names. Repeated power labels
-  such as GND must not accidentally collapse physically distinct balls.
+Physical aliases resolve in connections, schematic arrangements and pin styles.
+A repeated label such as GND does not imply an internal connection between
+physical balls; connect each named ball explicitly to net.GND when appropriate.
+A singular selector using an ambiguous alias errors with the physical ball names.
+Explicit physical hints take priority over shared signal labels in pad matching.
+Existing numeric pins and numeric-key ball aliases retain their behavior.
 
-Acceptance tests
-- A1/A2/B1 physical pads connect to the correct ports and traces.
-- Equivalent pin maps with different object/footprint ordering preserve identity.
-- Existing numeric pins and numeric-key ball aliases stay compatible.
-- Multiple GND balls remain distinct pads while joining an explicitly named net.
-- Source JSON, schematic, PCB selectors and exported pad identities agree.
-- Unknown balls and ambiguous aliases report actionable errors.
+Validation
+Fresh three-ball circuit tests check source/schematic/PCB links and geometry,
+reordered maps and footprints, explicit shared nets, ambiguous aliases, unknown
+balls, numeric compatibility and multi-letter rows. PCB and schematic snapshots
+are included. Existing numeric-pin and internally-connected-pin tests pass.
+The previous invalid-key regression now uses INVALID_PIN; A1 is valid.
 
-Review boundary
-This is broader than the small props fix and should follow it separately.
-A partial change that makes only one parser accept A1 could introduce unstable
-pin numbering or incorrect connectivity elsewhere. Require end-to-end tests.
+Export boundary
+KiCad requires physical strings for pad numbers, library symbol pin numbers and
+symbol-instance pin numbers. The companion https://github.com/tscircuit/circuit-json-to-kicad/pull/634 uses the
+physical source-port name at all three boundaries. Older exporter versions use
+numeric layout ordinals and need that companion change before BGA export.

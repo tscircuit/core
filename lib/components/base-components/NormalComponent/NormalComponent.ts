@@ -1,3 +1,9 @@
+import {
+  getNumericPinLabels,
+  isPhysicalPinName,
+  resolvePinLabels,
+  type ResolvedPinLabel,
+} from "lib/utils/schematic/resolvePinLabels"
 import { resolveManufacturerPartNumber } from "@tscircuit/props"
 import { composeCadModelRotation } from "lib/utils/cad/compose-cad-model-rotation"
 import { getFoldedCadComponentPlacement } from "lib/utils/cad/get-folded-cad-component-placement"
@@ -226,7 +232,9 @@ export class NormalComponent<
 
     if (filteredProps.pinLabels && !Array.isArray(filteredProps.pinLabels)) {
       const invalidPinKey = Object.keys(filteredProps.pinLabels).find(
-        (pinKey) => getPinNumberFromPinLabelsKey(pinKey) === null,
+        (pinKey) =>
+          getPinNumberFromPinLabelsKey(pinKey) === null &&
+          !isPhysicalPinName(pinKey),
       )
 
       if (invalidPinKey) {
@@ -234,7 +242,7 @@ export class NormalComponent<
           _errors: [],
           pinLabels: {
             _errors: [
-              `Invalid pinLabels key "${invalidPinKey}". Expected "pin\${number}" (e.g. pin1, pin2).`,
+              `Invalid pinLabels key "${invalidPinKey}". Expected "pin\${number}" (e.g. pin1, pin2) or a physical ball name (e.g. A1).`,
             ],
           },
         } as any)
@@ -327,6 +335,8 @@ export class NormalComponent<
             propsPinLabels.map((label, index) => [`pin${index + 1}`, label]),
           )
         : propsPinLabels
+          ? getNumericPinLabels(propsPinLabels)
+          : undefined
     const existingChildPorts = this._getAllPortsFromChildren()
     const hasExistingOrQueuedPortWithPinNumber = (pinNumber: number) =>
       existingChildPorts.some((p) => p._parsedProps.pinNumber === pinNumber) ||
@@ -390,7 +400,7 @@ export class NormalComponent<
         const pinNumber = getPinNumberFromPinLabelsKey(pinKey)
         if (pinNumber === null) {
           throw new Error(
-            `Invalid pinLabels key "${pinKey}". Expected "pin\${number}" (e.g. pin1, pin2).`,
+            `Invalid pinLabels key "${pinKey}". Expected "pin\${number}" (e.g. pin1, pin2) or a physical ball name (e.g. A1).`,
           )
         }
         let existingPort =
@@ -400,8 +410,14 @@ export class NormalComponent<
         const labelList = Array.isArray(label) ? label : [label]
         const propLabel = pinLabelsFromProps?.[pinKey]
         const hasPropLabel = propLabel !== undefined
-        const primaryLabel = hasPropLabel ? labelList[0] : `pin${pinNumber}`
-        const otherLabels = hasPropLabel ? labelList.slice(1) : labelList
+        const physicalPinName = this._getPhysicalPinName(pinNumber)
+        const primaryLabel =
+          physicalPinName ?? (hasPropLabel ? labelList[0] : `pin${pinNumber}`)
+        const otherLabels = physicalPinName
+          ? labelList
+          : hasPropLabel
+            ? labelList.slice(1)
+            : labelList
 
         if (!existingPort) {
           existingPort = new Port(
@@ -426,6 +442,7 @@ export class NormalComponent<
         } else {
           existingPort.externallyAddedAliases.push(primaryLabel, ...otherLabels)
         }
+        existingPort.physicalPinName = physicalPinName
       }
     }
 
@@ -601,7 +618,11 @@ export class NormalComponent<
 
     inferInternallyConnectedPinNamesFromPorts(
       Array.from(
-        new Set([...this._getAllPortsFromChildren(), ...portsToCreate]),
+        new Set(
+          [...this._getAllPortsFromChildren(), ...portsToCreate].filter(
+            (port) => !port.physicalPinName,
+          ),
+        ),
       ),
       this._inferredInternallyConnectedPinNames,
     )
@@ -620,12 +641,25 @@ export class NormalComponent<
             pinLabels.map((label, index) => [`pin${index + 1}`, label]),
           )
         : pinLabels
+          ? getNumericPinLabels(pinLabels)
+          : undefined
     const resolvedPinLabels = {
       ...(this._impliedFootprintPinLabels ?? {}),
       ...(parsedPinLabels ?? {}),
     }
     if (Object.keys(resolvedPinLabels).length === 0) return undefined
     return resolvedPinLabels
+  }
+
+  private _resolvedPackagePins?: ResolvedPinLabel[]
+
+  /** Physical package name, separate from the internal schematic ordinal. */
+  _getPhysicalPinName(pinNumber: number): string | undefined {
+    const pinLabels = this._parsedProps.pinLabels
+    if (!pinLabels || Array.isArray(pinLabels)) return undefined
+    this._resolvedPackagePins ??= resolvePinLabels(pinLabels)
+    return this._resolvedPackagePins.find((pin) => pin.pinNumber === pinNumber)
+      ?.physicalPinName
   }
 
   _getImpliedFootprintString(): string | null {
@@ -1543,9 +1577,14 @@ export class NormalComponent<
         this._inferredInternallyConnectedPinNames
     }
 
+    const physicalPinLabels = this._parsedProps.pinLabels
+    const hasPhysicalPins =
+      physicalPinLabels &&
+      !Array.isArray(physicalPinLabels) &&
+      Object.keys(physicalPinLabels).some(isPhysicalPinName)
     const implicitPinNumberByHint = new Map<string, number>()
-    const explicitPinLabels =
-      this._parsedProps?.pinLabels ?? this.props.pinLabels
+    const ambiguousHints = new Set<string>()
+    const explicitPinLabels = this._resolvePinLabels()
     if (explicitPinLabels) {
       const pinLabelEntries = Array.isArray(explicitPinLabels)
         ? explicitPinLabels.map((label, index) => [`pin${index + 1}`, label])
@@ -1559,14 +1598,27 @@ export class NormalComponent<
           : [labelOrLabels]
         for (const label of labels) {
           if (typeof label === "string" && label.length > 0) {
+            const previousPinNumber = implicitPinNumberByHint.get(label)
+            if (
+              hasPhysicalPins &&
+              previousPinNumber !== undefined &&
+              previousPinNumber !== pinNumber
+            ) {
+              ambiguousHints.add(label)
+            }
             implicitPinNumberByHint.set(label, pinNumber)
           }
         }
       }
     }
 
+    for (const hint of ambiguousHints) implicitPinNumberByHint.delete(hint)
+
     const primaryPortOpts = {
       ...opts,
+      inferSharedAliases: !hasPhysicalPins,
+      getPhysicalPinName: (pinNumber: number) =>
+        this._getPhysicalPinName(pinNumber),
       inferredInternallyConnectedPinNames,
       implicitPinNumberByHint,
     }
@@ -1916,6 +1968,8 @@ export class NormalComponent<
           ]),
         )
       : props.pinLabels
+        ? getNumericPinLabels(props.pinLabels)
+        : undefined
     // Merge with props.pinLabels for label-to-pin-number mapping
     const allPinLabels = {
       ...pinLabelsFromPorts,
@@ -1925,13 +1979,28 @@ export class NormalComponent<
       this._getSchematicPortArrangement() ??
       this._getImplicitSparseSchematicPortArrangement(pinCount)
 
+    // Validate physical aliases against the original package map before its
+    // numeric layout representation loses physical-name metadata.
+    if (
+      props.pinLabels &&
+      !Array.isArray(props.pinLabels) &&
+      Object.keys(props.pinLabels).some(isPhysicalPinName) &&
+      schPortArrangement
+    ) {
+      for (const pin of getPinsFromPortArrangement(schPortArrangement)) {
+        parsePinNumberFromLabelsOrThrow(pin, props.pinLabels)
+      }
+    }
+
     return getAllDimensionsForSchematicBox({
       schWidth: props.schWidth,
       schHeight: props.schHeight,
       schPinSpacing: pinSpacing,
       numericSchPinStyle: getNumericSchPinStyle(
         props.schPinStyle,
-        allPinLabels,
+        !Array.isArray(props.pinLabels)
+          ? (props.pinLabels ?? allPinLabels)
+          : allPinLabels,
       ),
 
       pinCount,
