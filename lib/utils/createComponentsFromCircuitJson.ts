@@ -38,6 +38,10 @@ import { SilkscreenPath } from "lib/components/primitive-components/SilkscreenPa
 import { SilkscreenRect } from "lib/components/primitive-components/SilkscreenRect"
 import { SilkscreenText } from "lib/components/primitive-components/SilkscreenText"
 import { SmtPad } from "lib/components/primitive-components/SmtPad"
+import {
+  SolderPaste,
+  isStandalonePcbSolderPaste,
+} from "lib/components/primitive-components/SolderPaste"
 import { SymbolComponent } from "lib/components/primitive-components/Symbol"
 import type { NormalComponent } from "lib/components/base-components/NormalComponent"
 import type { PrimitiveComponent } from "../components/base-components/PrimitiveComponent"
@@ -287,7 +291,20 @@ export const createComponentsFromCircuitJson = (
           )
         : undefined
 
-    if (elm.type === "pcb_soldermask_opening") {
+    // When rebuilding rendered copper, do not recreate an automatic aperture
+    // that was deliberately suppressed (for example, for a windowed stencil).
+    const suppressAutomaticPaste =
+      preserveSolderPaste &&
+      elm.type === "pcb_smtpad" &&
+      !circuitJson.some(
+        (paste) =>
+          paste.type === "pcb_solder_paste" &&
+          paste.pcb_smtpad_id === elm.pcb_smtpad_id,
+      )
+
+    if (isStandalonePcbSolderPaste(elm)) {
+      components.push(SolderPaste.fromCircuitJson(elm))
+    } else if (elm.type === "pcb_soldermask_opening") {
       components.push(
         new PcbSoldermaskOpening(
           elm.shape === "polygon"
@@ -323,6 +340,9 @@ export const createComponentsFromCircuitJson = (
           width: elm.width,
           portHints: resolvedPortHints,
           rectBorderRadius: elm.rect_border_radius,
+          solderPasteMargin: suppressAutomaticPaste
+            ? -Math.min(elm.width, elm.height) / 2
+            : undefined,
         }),
       )
     } else if (elm.type === "pcb_smtpad" && elm.shape === "circle") {
@@ -334,6 +354,7 @@ export const createComponentsFromCircuitJson = (
           shape: "circle",
           radius: elm.radius,
           portHints: resolvedPortHints,
+          solderPasteMargin: suppressAutomaticPaste ? -elm.radius : undefined,
         }),
       )
     } else if (elm.type === "pcb_smtpad" && elm.shape === "pill") {
@@ -347,6 +368,9 @@ export const createComponentsFromCircuitJson = (
           pcbX: elm.x,
           pcbY: elm.y,
           layer: elm.layer,
+          solderPasteMargin: suppressAutomaticPaste
+            ? -Math.min(elm.width, elm.height) / 2
+            : undefined,
         }),
       )
     } else if (elm.type === "pcb_smtpad" && elm.shape === "rotated_pill") {
@@ -361,6 +385,9 @@ export const createComponentsFromCircuitJson = (
           pcbY: elm.y,
           layer: elm.layer,
           ccwRotation: elm.ccw_rotation,
+          solderPasteMargin: suppressAutomaticPaste
+            ? -Math.min(elm.width, elm.height) / 2
+            : undefined,
         }),
       )
     } else if (elm.type === "pcb_smtpad" && elm.shape === "rotated_rect") {
@@ -375,6 +402,9 @@ export const createComponentsFromCircuitJson = (
           ccwRotation: elm.ccw_rotation,
           cornerRadius: elm.corner_radius,
           portHints: resolvedPortHints,
+          solderPasteMargin: suppressAutomaticPaste
+            ? -Math.min(elm.width, elm.height) / 2
+            : undefined,
         }),
       )
     } else if (elm.type === "pcb_smtpad" && elm.shape === "polygon") {
