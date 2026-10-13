@@ -179,11 +179,13 @@ export const getBusesForSimpleRouteJson = ({
       )
     }
 
+    // A fully routed bus is checked by PCB DRC; it has no pending matching job.
+    if (connectionNames.length === 0) continue
+
     const lengthBounds = getPreservedBusLengthBoundsForSrjOrThrow({
       bus,
       preservedSourceTraceIds: preservedBusSourceTraceIds,
     })
-    if (connectionNames.length === 0) continue
 
     declaredSrjBuses.push({
       busId: bus.name,
