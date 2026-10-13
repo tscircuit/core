@@ -655,7 +655,7 @@ export class NormalComponent<
 
   /** Physical package name, separate from the internal schematic ordinal. */
   _getPhysicalPinName(pinNumber: number): string | undefined {
-    const pinLabels = this._parsedProps.pinLabels
+    const pinLabels = this._parsedProps?.pinLabels ?? this.props.pinLabels
     if (!pinLabels || Array.isArray(pinLabels)) return undefined
     this._resolvedPackagePins ??= resolvePinLabels(pinLabels)
     return this._resolvedPackagePins.find((pin) => pin.pinNumber === pinNumber)
@@ -1577,14 +1577,20 @@ export class NormalComponent<
         this._inferredInternallyConnectedPinNames
     }
 
-    const physicalPinLabels = this._parsedProps.pinLabels
+    const physicalPinLabels =
+      this._parsedProps?.pinLabels ?? this.props.pinLabels
     const hasPhysicalPins =
       physicalPinLabels &&
       !Array.isArray(physicalPinLabels) &&
       Object.keys(physicalPinLabels).some(isPhysicalPinName)
     const implicitPinNumberByHint = new Map<string, number>()
     const ambiguousHints = new Set<string>()
-    const explicitPinLabels = this._resolvePinLabels()
+    const rawExplicitPinLabels =
+      this._parsedProps?.pinLabels ?? this.props.pinLabels
+    const explicitPinLabels =
+      rawExplicitPinLabels && !Array.isArray(rawExplicitPinLabels)
+        ? getNumericPinLabels(rawExplicitPinLabels)
+        : rawExplicitPinLabels
     if (explicitPinLabels) {
       const pinLabelEntries = Array.isArray(explicitPinLabels)
         ? explicitPinLabels.map((label, index) => [`pin${index + 1}`, label])
