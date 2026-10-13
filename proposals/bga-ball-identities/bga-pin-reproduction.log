@@ -1,0 +1,12 @@
+{
+  labels: {
+    A1: "DQ0",
+  },
+  error: "Invalid pinLabels key \"A1\". Expected \"pin${number}\" (e.g. pin1, pin2).",
+}
+{
+  labels: {
+    pin1: [ "A1", "DQ0" ],
+  },
+  result: 1,
+}

@@ -1,0 +1,7 @@
+{
+  "core": "263f47b7c61600d1d91f39efce28fe3a9c03adc0",
+  "props": "269ef5a1f5d9b91822ccd244727393999835f9e0",
+  "tscircuit-autorouter": "66f3528935460b53df4dc090e26e6e4ac02713f9",
+  "dogbone-solver": "published 0.0.1",
+  "testedCoreBundle": "0.0.2138"
+}
