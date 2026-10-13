@@ -168,7 +168,7 @@ beforeAll(async () => {
   })
 })
 
-test.failing("a pending bus member matches preserved copper", () => {
+test("a pending bus member matches preserved copper", () => {
   expect(phaseInputs).toHaveLength(1)
   expect(phaseInputs[0].buses![0]).toMatchObject({
     minLength: 27.9,
