@@ -81,13 +81,12 @@ test("six independent paste windows share one continuous exposed copper pad", as
         ).toBe(true)
       }
     }
-    await expect(circuit).toMatchPcbSnapshot(
-      cached
-        ? import.meta.path.replace(".test.tsx", "-cached.test.tsx")
-        : import.meta.path,
-      {
-        showSolderPaste: true,
-      },
-    )
+    let snapshotPath = import.meta.path
+    if (cached) {
+      snapshotPath = import.meta.path.replace(".test.tsx", "-cached.test.tsx")
+    }
+    await expect(circuit).toMatchPcbSnapshot(snapshotPath, {
+      showSolderPaste: true,
+    })
   }
 })

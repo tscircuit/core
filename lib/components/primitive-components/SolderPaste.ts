@@ -1,4 +1,4 @@
-import { solderPasteProps } from "@tscircuit/props"
+import { type SolderPasteProps, solderPasteProps } from "@tscircuit/props"
 import type {
   AnyCircuitElement,
   PcbSolderPaste,
@@ -53,24 +53,33 @@ export class SolderPaste extends PrimitiveComponent<typeof solderPasteProps> {
     aperture: StandalonePcbSolderPaste,
     sourceToParent: Matrix = identity(),
   ): SolderPaste {
+    let apertureRotation = 0
+    if (aperture.shape === "rotated_rect") {
+      apertureRotation = aperture.ccw_rotation
+    }
     const transform = compose(
       sourceToParent,
       translate(aperture.x, aperture.y),
-      rotate(
-        ((aperture.shape === "rotated_rect" ? aperture.ccw_rotation : 0) *
-          Math.PI) /
-          180,
-      ),
+      rotate((apertureRotation * Math.PI) / 180),
     )
     const center = applyToPoint(transform, { x: 0, y: 0 })
-    const paste = new SolderPaste({
+    const placement = {
       pcbX: center.x,
       pcbY: center.y,
       layer: aperture.layer,
-      ...(aperture.shape === "circle"
-        ? { shape: "circle", radius: aperture.radius }
-        : { shape: "rect", width: aperture.width, height: aperture.height }),
-    })
+    }
+    let props: SolderPasteProps
+    if (aperture.shape === "circle") {
+      props = { ...placement, shape: "circle", radius: aperture.radius }
+    } else {
+      props = {
+        ...placement,
+        shape: "rect",
+        width: aperture.width,
+        height: aperture.height,
+      }
+    }
+    const paste = new SolderPaste(props)
     paste.circuitJsonRotation =
       (decomposeTSR(transform).rotation.angle * 180) / Math.PI
     return paste
@@ -86,13 +95,15 @@ export class SolderPaste extends PrimitiveComponent<typeof solderPasteProps> {
 
   getPcbSize() {
     const props = this._parsedProps
-    return props.shape === "circle"
-      ? { width: props.radius * 2, height: props.radius * 2 }
-      : { width: props.width, height: props.height }
+    if (props.shape === "circle") {
+      return { width: props.radius * 2, height: props.radius * 2 }
+    }
+    return { width: props.width, height: props.height }
   }
 
   doInitialPcbPrimitiveRender(): void {
     if (this.root?.pcbDisabled) return
+    const { db } = this.root!
     const props = this._parsedProps
     const authoredLayer = props.layer ?? "top"
     if (authoredLayer !== "top" && authoredLayer !== "bottom") {
@@ -110,19 +121,7 @@ export class SolderPaste extends PrimitiveComponent<typeof solderPasteProps> {
     // is invariant under that reflection, while its world rotation is not.
     const rotation =
       (decomposeTSR(transform, false, isFlipped).rotation.angle * 180) / Math.PI
-    const geometry =
-      props.shape === "circle"
-        ? { shape: "circle" as const, radius: props.radius }
-        : {
-            ...(Math.abs(rotation) < 1e-8
-              ? { shape: "rect" as const }
-              : { shape: "rotated_rect" as const, ccw_rotation: rotation }),
-            width: props.width,
-            height: props.height,
-          }
-
-    this.pcb_solder_paste_id = this.root!.db.pcb_solder_paste.insert({
-      ...geometry,
+    const base = {
       ...center,
       layer: maybeFlipLayer(authoredLayer) as "top" | "bottom",
       pcb_component_id:
@@ -131,7 +130,31 @@ export class SolderPaste extends PrimitiveComponent<typeof solderPasteProps> {
         undefined,
       pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
       subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
-    }).pcb_solder_paste_id
+    }
+    let aperture: PcbSolderPaste
+    if (props.shape === "circle") {
+      aperture = db.pcb_solder_paste.insert({
+        ...base,
+        shape: "circle",
+        radius: props.radius,
+      })
+    } else if (Math.abs(rotation) < 1e-8) {
+      aperture = db.pcb_solder_paste.insert({
+        ...base,
+        shape: "rect",
+        width: props.width,
+        height: props.height,
+      })
+    } else {
+      aperture = db.pcb_solder_paste.insert({
+        ...base,
+        shape: "rotated_rect",
+        ccw_rotation: rotation,
+        width: props.width,
+        height: props.height,
+      })
+    }
+    this.pcb_solder_paste_id = aperture.pcb_solder_paste_id
   }
 
   _moveCircuitJsonElements({

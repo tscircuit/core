@@ -25,14 +25,19 @@ test("paste centers, corners and sides follow emitted pads under rotations and f
         schematicDisabled
       >
         <group name="ROTATED" pcbX={1} pcbY={-1} pcbRotation={30}>
-          {(["top", "bottom"] as const).map((originalLayer, row) =>
+          {(
+            [
+              { originalLayer: "top", pcbY: 4 },
+              { originalLayer: "bottom", pcbY: -4 },
+            ] as const
+          ).map(({ originalLayer, pcbY }, row) =>
             [0, 90, 180, 270, 37].map((pcbRotation, column) => (
               <chip
                 key={`${originalLayer}-${pcbRotation}`}
                 name={`U${row * 5 + column + 1}`}
                 layer={layer}
                 pcbX={-16 + column * 8}
-                pcbY={row === 0 ? 4 : -4}
+                pcbY={pcbY}
                 pcbRotation={pcbRotation}
                 footprint={
                   <footprint originalLayer={originalLayer}>
@@ -110,13 +115,13 @@ test("paste centers, corners and sides follow emitted pads under rotations and f
         }
         if (aperture.shape !== "rect" && aperture.shape !== "rotated_rect")
           throw new Error("Expected rectangular aperture")
+        let rotation = 0
+        if (aperture.shape === "rotated_rect") {
+          rotation = aperture.ccw_rotation
+        }
         const transform = compose(
           translate(aperture.x, aperture.y),
-          rotate(
-            ((aperture.shape === "rotated_rect" ? aperture.ccw_rotation : 0) *
-              Math.PI) /
-              180,
-          ),
+          rotate((rotation * Math.PI) / 180),
         )
         for (const x of [-1, 1])
           for (const y of [-1, 1]) {
