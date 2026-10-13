@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import type { PartsEngine } from "@tscircuit/props"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("waits for parts engine selection and warns only for unresolved parts", async () => {
+test("waits for parts engine selection and warns only for unresolved non-passive parts", async () => {
   const { circuit } = getTestFixture()
   let finishLookup!: () => void
   const lookup = new Promise<void>((resolve) => {
@@ -15,9 +15,8 @@ test("waits for parts engine selection and warns only for unresolved parts", asy
         throw new Error("Expected a source component")
       calls.push(sourceComponent.name)
       await lookup
-      if (["U1", "R1", "C1", "L1"].includes(sourceComponent.name))
-        return { jlcpcb: ["C123"] }
-      if (sourceComponent.name === "U2") return {}
+      if (sourceComponent.name === "U1") return { jlcpcb: ["C123"] }
+      if (["U2", "R1", "C1", "L1"].includes(sourceComponent.name)) return {}
       if (sourceComponent.name === "U3") return { jlcpcb: [] }
       throw new Error("Parts service unavailable")
     },
