@@ -39,7 +39,7 @@ const createLabeledPanel = (label: string, svg: string) =>
     { gap: 0, normalizeSize: false },
   )
 
-test("PMP22650 near-closed keepout expands to 286 SRJ obstacles", async () => {
+test("PMP22650 near-closed keepout uses native SRJ obstacles", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -72,7 +72,7 @@ test("PMP22650 near-closed keepout expands to 286 SRJ obstacles", async () => {
     (obstacle) => obstacle.connectedTo.length === 0,
   )
 
-  expect(keepoutObstacles).toHaveLength(286)
+  expect(keepoutObstacles).toHaveLength(95)
 
   const comparisonSvg = stackSvgsHorizontally(
     [
@@ -97,5 +97,7 @@ test("PMP22650 near-closed keepout expands to 286 SRJ obstacles", async () => {
     { gap: 24, normalizeSize: true },
   )
 
-  expect(comparisonSvg).toMatchSvgSnapshot(import.meta.path)
+  expect(comparisonSvg).toMatchSvgSnapshot(import.meta.path, undefined, {
+    diffThresholdPercent: 0,
+  })
 })
