@@ -565,6 +565,12 @@ export abstract class PrimitiveComponent<
     return this.parent?.getPrimitiveContainer?.() ?? null
   }
 
+  /** Resolve mounting intent from the container owning this primitive. */
+  _getIsSmt(): boolean {
+    const container = this.getPrimitiveContainer()
+    return container && container !== this ? container._getIsSmt() : true
+  }
+
   /**
    * Get the Symbol ancestor if this component is inside a Symbol primitive container.
    * Used by schematic primitives to access the symbol's resize transform.
