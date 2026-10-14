@@ -40,7 +40,7 @@ const createUsbConnectorFootprint = async () => {
   const sourceCircuitJson = (await Bun.file(
     join(
       import.meta.dir,
-      "assets/usb4105-compatible-oval-shell-source.circuit.json",
+      "assets/repro-usb-c-rotated-oval-shield-routing-source.circuit.json",
     ),
   ).json()) as AnyCircuitElement[]
   const sourcePcbComponent = sourceCircuitJson.find(
