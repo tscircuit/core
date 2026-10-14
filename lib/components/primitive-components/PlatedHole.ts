@@ -51,12 +51,14 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
           "padOutline is required for hole_with_polygon_pad shape",
         )
       }
-      const xs = props.padOutline.map((p) =>
-        typeof p.x === "number" ? p.x : parseFloat(String(p.x)),
-      )
-      const ys = props.padOutline.map((p) =>
-        typeof p.y === "number" ? p.y : parseFloat(String(p.y)),
-      )
+      const xs = props.padOutline.map((p) => {
+        if (typeof p.x === "number") return p.x
+        return parseFloat(String(p.x))
+      })
+      const ys = props.padOutline.map((p) => {
+        if (typeof p.y === "number") return p.y
+        return parseFloat(String(p.y))
+      })
       const minX = Math.min(...xs)
       const maxX = Math.max(...xs)
       const minY = Math.min(...ys)
@@ -162,7 +164,10 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
       })
 
       this.pcb_plated_hole_id = pcb_plated_hole.pcb_plated_hole_id
-      if (shouldCreateSolderPaste) {
+      // Cached circular apertures are restored by inflateStandalonePcbPrimitives
+      // as SolderPaste components. Preserve that geometry (or its absence)
+      // instead of generating another pair from the inflated hole.
+      if (shouldCreateSolderPaste && !subcircuit._isInflatedFromCircuitJson) {
         db.pcb_solder_paste.insert({
           layer: "top",
           shape: "circle",
@@ -360,15 +365,24 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
     } else if (props.shape === "hole_with_polygon_pad") {
       // Pad outline points are relative to the hole position (x, y)
       const padOutline = (props.padOutline || []).map((point) => {
-        const x =
-          typeof point.x === "number" ? point.x : parseFloat(String(point.x))
-        const y =
-          typeof point.y === "number" ? point.y : parseFloat(String(point.y))
+        let x = point.x
+        if (typeof x !== "number") x = parseFloat(String(x))
+        let y = point.y
+        if (typeof y !== "number") y = parseFloat(String(y))
         return {
           x,
           y,
         }
       })
+
+      let holeOffsetX = props.holeOffsetX
+      if (typeof holeOffsetX !== "number") {
+        holeOffsetX = parseFloat(String(holeOffsetX || 0))
+      }
+      let holeOffsetY = props.holeOffsetY
+      if (typeof holeOffsetY !== "number") {
+        holeOffsetY = parseFloat(String(holeOffsetY || 0))
+      }
 
       const pcb_plated_hole = db.pcb_plated_hole.insert({
         pcb_component_id,
@@ -379,14 +393,8 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         hole_width: props.holeWidth,
         hole_height: props.holeHeight,
         pad_outline: padOutline,
-        hole_offset_x:
-          typeof props.holeOffsetX === "number"
-            ? props.holeOffsetX
-            : parseFloat(String(props.holeOffsetX || 0)),
-        hole_offset_y:
-          typeof props.holeOffsetY === "number"
-            ? props.holeOffsetY
-            : parseFloat(String(props.holeOffsetY || 0)),
+        hole_offset_x: holeOffsetX,
+        hole_offset_y: holeOffsetY,
         port_hints: this.getNameAndAliases(),
         x: position.x,
         y: position.y,
