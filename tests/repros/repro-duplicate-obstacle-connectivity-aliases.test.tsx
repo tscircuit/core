@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("repro duplicate obstacle connectivity aliases on shared power nets", async () => {
+test("SRJ obstacles keep only routing-relevant shared-net identities", async () => {
   const { circuit } = getTestFixture()
   circuit.pcbRoutingDisabled = true
   circuit.add(
@@ -53,24 +53,24 @@ test("repro duplicate obstacle connectivity aliases on shared power nets", async
     })),
   ).toEqual([
     {
-      entries: 10,
-      uniqueEntries: 10,
+      entries: 4,
+      uniqueEntries: 4,
     },
     {
-      entries: 10,
-      uniqueEntries: 10,
+      entries: 4,
+      uniqueEntries: 4,
     },
     {
-      entries: 10,
-      uniqueEntries: 10,
+      entries: 4,
+      uniqueEntries: 4,
     },
     {
-      entries: 10,
-      uniqueEntries: 10,
+      entries: 4,
+      uniqueEntries: 4,
     },
     {
-      entries: 11,
-      uniqueEntries: 11,
+      entries: 3,
+      uniqueEntries: 3,
     },
   ])
 })
