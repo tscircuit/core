@@ -126,7 +126,7 @@
   "dependencies": {
     "@flatten-js/core": "^1.6.2",
     "@lume/kiwi": "^0.4.3",
-    "@tscircuit/capacity-autorouter": "https://npm-releases.tscircuit.com/npm-tarballs/38525189543-1/tscircuit-capacity-autorouter-0.0.983.tgz",
+    "@tscircuit/capacity-autorouter": "https://pkg.pr.new/tscircuit/tscircuit-autorouter/@tscircuit/capacity-autorouter@e39b359",
     "calculate-cell-boundaries": "^0.0.25",
     "calculate-packing": "^0.0.90",
     "css-select": "5.1.0",
