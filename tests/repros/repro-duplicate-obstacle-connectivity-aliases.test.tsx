@@ -27,6 +27,7 @@ test("repro duplicate obstacle connectivity aliases on shared power nets", async
     </board>,
   )
   await circuit.renderUntilSettled()
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
   const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
     db: circuit.db,
     subcircuitComponent: circuit.firstChild!,
