@@ -32,7 +32,7 @@ const pmp22650KeepoutArc: PcbKeepoutOutline = {
   description: "Altium arc keepout",
 }
 
-test("PMP22650 near-circular keepout arc expands into many SRJ obstacles", () => {
+test("PMP22650 unpassable keepout arc becomes one SRJ obstacle", () => {
   const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
     circuitJson: [pmp22650KeepoutArc],
     minTraceWidth: 0.1,
@@ -41,10 +41,12 @@ test("PMP22650 near-circular keepout arc expands into many SRJ obstacles", () =>
     obstacle.obstacleId?.startsWith(pmp22650KeepoutArc.pcb_keepout_id),
   )
 
-  expect(keepoutObstacles).toHaveLength(286)
+  expect(keepoutObstacles).toHaveLength(1)
   expect(
     getSvgFromGraphicsObject({
       rects: keepoutObstacles,
     }),
-  ).toMatchSvgSnapshot(import.meta.path)
+  ).toMatchSvgSnapshot(import.meta.path, undefined, {
+    diffThresholdPercent: 0,
+  })
 })

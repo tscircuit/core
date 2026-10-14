@@ -11,6 +11,11 @@ import type { CircuitJsonMetadata, Obstacle } from "./types"
 
 const QUARTER_TURN_TOLERANCE_DEGREES = 0.01
 
+type GetObstaclesFromCircuitJsonOptions = {
+  connMap?: ConnectivityMap
+  minTraceWidth?: number
+}
+
 const getAxisAlignedRectFromRotatedRect = (
   rotatedRect: RotatedRect,
 ): {
@@ -43,7 +48,7 @@ const getAxisAlignedRectFromRotatedRect = (
 
 export const getObstaclesFromCircuitJson = (
   circuitJson: AnyCircuitElement[],
-  connMap?: ConnectivityMap,
+  { connMap, minTraceWidth }: GetObstaclesFromCircuitJsonOptions = {},
 ) => {
   const board = circuitJson.find((element) => element.type === "pcb_board") as
     | PcbBoard
@@ -256,7 +261,10 @@ export const getObstaclesFromCircuitJson = (
         })
       } else if (element.shape === "outline") {
         obstacles.push(
-          ...getObstaclesFromPcbKeepoutOutline(element, pcbComponentId),
+          ...getObstaclesFromPcbKeepoutOutline(element, {
+            componentId: pcbComponentId,
+            minTraceWidth,
+          }),
         )
       }
     } else if (element.type === "pcb_cutout") {

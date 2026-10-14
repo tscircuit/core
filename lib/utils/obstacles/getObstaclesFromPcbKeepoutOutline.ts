@@ -5,6 +5,11 @@ import { generateApproximatingRects } from "./generateApproximatingRects"
 import { getCircumscribedRectFromCircularPcbKeepoutOutline } from "./getCircumscribedRectFromCircularPcbKeepoutOutline"
 import type { Obstacle } from "./types"
 
+type PcbKeepoutOutlineObstacleOptions = {
+  componentId?: PcbComponentId
+  minTraceWidth?: number
+}
+
 /**
  * Approximates a rounded stroked keepout path with axis-aligned rectangles.
  * Segment bodies use the existing rotated-rectangle approximation, while
@@ -12,13 +17,15 @@ import type { Obstacle } from "./types"
  */
 export const getObstaclesFromPcbKeepoutOutline = (
   keepout: PcbKeepoutOutline,
-  componentId?: PcbComponentId,
+  { componentId, minTraceWidth }: PcbKeepoutOutlineObstacleOptions = {},
 ): Obstacle[] => {
   const { outline, stroke_width } = keepout
   if (!Number.isFinite(stroke_width) || stroke_width <= 0) return []
 
-  const circularKeepoutRect =
-    getCircumscribedRectFromCircularPcbKeepoutOutline(keepout)
+  const circularKeepoutRect = getCircumscribedRectFromCircularPcbKeepoutOutline(
+    keepout,
+    minTraceWidth,
+  )
   if (circularKeepoutRect) {
     return [
       {

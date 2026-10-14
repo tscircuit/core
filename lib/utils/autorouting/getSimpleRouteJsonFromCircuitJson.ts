@@ -224,6 +224,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   if (!board) {
     board = db.pcb_board.list()[0]
   }
+  const defaultTraceWidth = minTraceWidth ?? board?.min_trace_width ?? 0.1
 
   db = su(subcircuitElements)
   const getPortSelector = (sourcePort: SourcePort | null | undefined) => {
@@ -336,7 +337,10 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         !subcircuit_id ||
         relevantSubcircuitIds?.has(e.subcircuit_id!),
     ),
-    sharedConnMap,
+    {
+      connMap: sharedConnMap,
+      minTraceWidth: defaultTraceWidth,
+    },
   )
   obstacles.push(
     ...getUnbrokenCopperPourObstacles({
@@ -873,7 +877,6 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     ...routableConnectionsFromNets,
     ...connectionsFromBreakoutPoints,
   ]
-  const defaultTraceWidth = minTraceWidth ?? board?.min_trace_width ?? 0.1
   for (const conn of allConns) {
     conn.nominalTraceWidth ??= nominalTraceWidth ?? defaultTraceWidth
     conn.width ??= nominalTraceWidth ?? defaultTraceWidth

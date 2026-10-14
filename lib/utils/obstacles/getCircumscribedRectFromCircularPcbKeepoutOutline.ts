@@ -6,20 +6,32 @@ const MINIMUM_CIRCULAR_OUTLINE_ASPECT_RATIO = 0.99
 const MAXIMUM_RADIUS_VARIATION_RATIO = 0.001
 
 /**
- * Detects a complete circular centerline from board-world points in millimeters
- * (+X right, +Y up, right-handed) and returns the square center point and size
- * in that same frame, including the full stroke.
+ * Detects a circular centerline from board-world points in millimeters (+X
+ * right, +Y up, right-handed). Closed circles and open circles whose gap cannot
+ * fit the minimum trace width return their circumscribed square in that same
+ * frame, including the full stroke.
  */
 export const getCircumscribedRectFromCircularPcbKeepoutOutline = (
   keepout: PcbKeepoutOutline,
+  minTraceWidth?: number,
 ): Pick<Obstacle, "center" | "width" | "height"> | null => {
   const { outline, stroke_width } = keepout
   const firstPoint = outline[0]
   const lastPoint = outline.at(-1)
   if (!firstPoint || !lastPoint) return null
-  if (firstPoint.x !== lastPoint.x || firstPoint.y !== lastPoint.y) return null
+  const isClosed = firstPoint.x === lastPoint.x && firstPoint.y === lastPoint.y
+  const endpointGap = Math.hypot(
+    firstPoint.x - lastPoint.x,
+    firstPoint.y - lastPoint.y,
+  )
+  const openingCannotFitTrace =
+    minTraceWidth !== undefined &&
+    Number.isFinite(minTraceWidth) &&
+    minTraceWidth > 0 &&
+    endpointGap <= stroke_width + minTraceWidth
+  if (!isClosed && !openingCannotFitTrace) return null
 
-  const centerlinePoints = outline.slice(0, -1)
+  const centerlinePoints = isClosed ? outline.slice(0, -1) : outline
   if (centerlinePoints.length < MINIMUM_CIRCULAR_OUTLINE_POINT_COUNT)
     return null
 

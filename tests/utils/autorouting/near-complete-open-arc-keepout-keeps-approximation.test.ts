@@ -20,7 +20,9 @@ test("near-complete open keepout arcs retain their segment approximation", () =>
       layers: ["top"],
     }
 
-    const obstacles = getObstaclesFromPcbKeepoutOutline(openArcKeepout)
+    const obstacles = getObstaclesFromPcbKeepoutOutline(openArcKeepout, {
+      minTraceWidth: 0.1,
+    })
 
     expect(obstacles.length).toBeGreaterThan(1)
     expect(
