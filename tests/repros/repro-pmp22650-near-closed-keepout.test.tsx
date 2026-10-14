@@ -86,7 +86,12 @@ test("PMP22650 near-closed keepout expands to 286 SRJ obstacles", async () => {
       createLabeledPanel(
         `${keepoutObstacles.length} SIMPLE ROUTE JSON OBSTACLES`,
         getSvgFromGraphicsObject(
-          convertSrjToGraphicsObject(simpleRouteJson as any),
+          convertSrjToGraphicsObject({
+            ...simpleRouteJson,
+            obstacles: keepoutObstacles,
+            connections: [],
+            traces: undefined,
+          }),
           {
             backgroundColor: "#11161b",
             hideInlineLabels: true,
