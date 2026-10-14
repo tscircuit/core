@@ -2,11 +2,11 @@
 
 **Approval status: pending. This is a draft experiment, not approved for merge.**
 
-| Proposal                                                                      | Status                               | Dependency / approval gate                                         |
-| ----------------------------------------------------------------------------- | ------------------------------------ | ------------------------------------------------------------------ |
-| [Props stage and move API](https://github.com/tscircuit/props/pull/936)       | Draft, awaiting API approval         | Approve the public stage/move API before adopting it.              |
-| [PoppyGL explosion guide lines](https://github.com/tscircuit/poppygl/pull/49) | Speculative draft, awaiting approval | Opt-in depth-tested guide rendering.                               |
-| Core constrained explosion views (this PR)                                    | Speculative draft, awaiting approval | Requires approval of both upstream drafts and this implementation. |
+| Proposal                                                                        | Status                               | Dependency / approval gate                                         |
+| ------------------------------------------------------------------------------- | ------------------------------------ | ------------------------------------------------------------------ |
+| [Props stage and move API](https://github.com/tscircuit/props/pull/936)         | Draft, awaiting API approval         | Approve the public stage/move API before adopting it.              |
+| [PoppyGL explosion guide lines](https://github.com/tscircuit/poppygl/pull/49)   | Speculative draft, awaiting approval | Opt-in depth-tested guide rendering.                               |
+| [Core constrained explosion views](https://github.com/tscircuit/core/pull/4631) | Speculative draft, awaiting approval | Requires approval of both upstream drafts and this implementation. |
 
 The core branch pins upstream PR previews for reproducibility. The existing
 dependency-check workflow intentionally rejects preview dependencies before
