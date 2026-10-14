@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import type { PcbKeepoutOutline } from "circuit-json"
 import { getSvgFromGraphicsObject } from "graphics-debug"
-import { getObstaclesFromPcbKeepoutOutline } from "lib/utils/obstacles/getObstaclesFromPcbKeepoutOutline"
+import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 
 const PMP22650_ARC_POINT_COUNT = 48
 const PMP22650_ARC_START_DEGREES = 14.036243467900022
@@ -33,12 +33,18 @@ const pmp22650KeepoutArc: PcbKeepoutOutline = {
 }
 
 test("PMP22650 near-circular keepout arc expands into many SRJ obstacles", () => {
-  const obstacles = getObstaclesFromPcbKeepoutOutline(pmp22650KeepoutArc)
+  const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
+    circuitJson: [pmp22650KeepoutArc],
+    minTraceWidth: 0.1,
+  })
+  const keepoutObstacles = simpleRouteJson.obstacles.filter((obstacle) =>
+    obstacle.obstacleId?.startsWith(pmp22650KeepoutArc.pcb_keepout_id),
+  )
 
-  expect(obstacles).toHaveLength(286)
+  expect(keepoutObstacles).toHaveLength(286)
   expect(
     getSvgFromGraphicsObject({
-      rects: obstacles,
+      rects: keepoutObstacles,
     }),
   ).toMatchSvgSnapshot(import.meta.path)
 })
