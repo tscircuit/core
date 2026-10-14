@@ -7,10 +7,14 @@ import type {
   SourceTrace,
 } from "circuit-json"
 import { ConnectivityMap } from "circuit-json-to-connectivity-map"
-import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
+import type {
+  SimplifiedPcbTrace,
+  SrjConnectionName,
+} from "lib/utils/autorouting/SimpleRouteJson"
 
 type RoutedTrace = (PcbTrace | SimplifiedPcbTrace) & {
   source_trace_id?: string
+  connection_name?: SrjConnectionName
 }
 
 type RoutePointWithPortIds = {
@@ -262,6 +266,10 @@ export function getSourceTraceIdForRoutedTrace({
     return trace.source_trace_id
   }
 
+  if (trace.connection_name && db.source_trace.get(trace.connection_name)) {
+    return trace.connection_name
+  }
+
   const sourcePortIds = getSourcePortIdsFromRoutedTrace(db, trace)
   if (sourcePortIds.length === 0) {
     return getSourceIdsFromConnectedPcbTraces(db, trace)[0]
@@ -269,13 +277,23 @@ export function getSourceTraceIdForRoutedTrace({
 
   const sourceTraces = db.source_trace.list()
   const connMap = buildSourceConnectivityMap(sourceTraces)
+  const routedConnectionConnectivityMapKey = trace.connection_name
+    ? connMap.getNetConnectedToId(trace.connection_name)
+    : undefined
+  const sourceTracesInRoutedConnection = routedConnectionConnectivityMapKey
+    ? sourceTraces.filter(
+        (sourceTrace) =>
+          connMap.getNetConnectedToId(sourceTrace.source_trace_id) ===
+          routedConnectionConnectivityMapKey,
+      )
+    : sourceTraces
   const endpointNetIds = sourcePortIds
     .map((sourcePortId) => connMap.getNetConnectedToId(sourcePortId))
     .filter((netId): netId is string => Boolean(netId))
 
   const exactSourceTrace =
     sourcePortIds.length >= 2
-      ? sourceTraces.find((sourceTrace) =>
+      ? sourceTracesInRoutedConnection.find((sourceTrace) =>
           sourcePortIds.every((sourcePortId) =>
             sourceTrace.connected_source_port_ids.includes(sourcePortId),
           ),
@@ -283,12 +301,14 @@ export function getSourceTraceIdForRoutedTrace({
       : undefined
   if (exactSourceTrace) return exactSourceTrace.source_trace_id
 
-  const sourceTracesInEndpointNets = sourceTraces.filter((sourceTrace) => {
-    const sourceTraceNetId = connMap.getNetConnectedToId(
-      sourceTrace.source_trace_id,
-    )
-    return endpointNetIds.some((netId) => netId === sourceTraceNetId)
-  })
+  const sourceTracesInEndpointNets = sourceTracesInRoutedConnection.filter(
+    (sourceTrace) => {
+      const sourceTraceNetId = connMap.getNetConnectedToId(
+        sourceTrace.source_trace_id,
+      )
+      return endpointNetIds.some((netId) => netId === sourceTraceNetId)
+    },
+  )
 
   const connectedToEndpoint = sourceTracesInEndpointNets.filter((sourceTrace) =>
     sourceTrace.connected_source_port_ids.some((sourcePortId) =>
@@ -296,10 +316,11 @@ export function getSourceTraceIdForRoutedTrace({
     ),
   )
 
-  const candidates =
-    connectedToEndpoint.length > 0
-      ? connectedToEndpoint
-      : sourceTracesInEndpointNets
+  let candidates = connectedToEndpoint
+  if (candidates.length === 0) candidates = sourceTracesInEndpointNets
+  if (candidates.length === 0 && routedConnectionConnectivityMapKey) {
+    candidates = sourceTracesInRoutedConnection
+  }
   if (candidates.length === 0) return undefined
 
   return (
