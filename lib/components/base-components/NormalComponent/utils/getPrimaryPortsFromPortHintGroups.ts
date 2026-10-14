@@ -26,6 +26,8 @@ export function getPrimaryPortsFromPortHintGroups(
   portHintGroups: PortHintGroup[],
   opts?: {
     additionalAliases?: Record<string, string[]>
+    inferSharedAliases?: boolean
+    getPhysicalPinName?: (pinNumber: number) => string | undefined
     inferredInternallyConnectedPinNames?: string[][]
     allowImplicitPinNumbers?: boolean
     implicitPinNumberByHint?: Map<string, number>
@@ -45,6 +47,20 @@ export function getPrimaryPortsFromPortHintGroups(
     if (filteredPortHints.length === 0) continue
 
     let portHintsList = filteredPortHints
+    // Package names take precedence over footprint-local numeric hints.
+    const physicalPinNumber = portHintsList
+      .map((hint) => opts?.implicitPinNumberByHint?.get(hint))
+      .find(
+        (pinNumber) =>
+          pinNumber !== undefined &&
+          portHintsList.includes(opts?.getPhysicalPinName?.(pinNumber) ?? ""),
+      )
+    if (physicalPinNumber !== undefined) {
+      portHintsList = [
+        ...portHintsList.filter((hint) => !/^(?:pin)?\d+$/.test(hint)),
+        `pin${physicalPinNumber}`,
+      ]
+    }
     const hasPinIdentifier = portHintsList.some(
       (hint) => hint.startsWith("pin") || /^(?:pin)?\d+$/.test(hint),
     )
@@ -71,6 +87,7 @@ export function getPrimaryPortsFromPortHintGroups(
 
     const pinNumber = newPort._parsedProps.pinNumber
     if (pinNumber === undefined) continue
+    newPort.physicalPinName = opts?.getPhysicalPinName?.(pinNumber)
 
     if (!entriesByPinNumber.has(pinNumber))
       entriesByPinNumber.set(pinNumber, [])
@@ -149,7 +166,10 @@ export function getPrimaryPortsFromPortHintGroups(
     opts?.inferredInternallyConnectedPinNames?.push(internallyConnectedPinNames)
   }
 
-  if (opts?.inferredInternallyConnectedPinNames) {
+  if (
+    opts?.inferredInternallyConnectedPinNames &&
+    opts.inferSharedAliases !== false
+  ) {
     inferInternallyConnectedPinNamesFromPorts(
       ports,
       opts.inferredInternallyConnectedPinNames,

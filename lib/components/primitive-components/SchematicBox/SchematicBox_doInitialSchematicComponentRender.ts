@@ -1,3 +1,4 @@
+import { getNumericPinLabels } from "lib/utils/schematic/resolvePinLabels"
 import type { PinLabelsProp, SchematicPinStyle } from "@tscircuit/props"
 import type {
   SchematicComponent,
@@ -24,21 +25,24 @@ export const getSchematicBoxPinLabels = (
 }> => {
   if (!pinLabels) return []
 
-  return Object.entries(pinLabels).map(([pinKey, pinLabel]) => {
-    const pinNumber = getPinNumberFromPinLabelsKey(pinKey)
-    if (pinNumber === null) {
-      throw new Error(
-        `Invalid schematicbox pinLabels key "${pinKey}". Expected pin<number>.`,
-      )
-    }
+  return Object.entries(getNumericPinLabels(pinLabels)).map(
+    ([pinKey, pinLabel]) => {
+      const pinNumber = getPinNumberFromPinLabelsKey(pinKey)
+      if (pinNumber === null) {
+        throw new Error(
+          `Invalid schematicbox pinLabels key "${pinKey}". Expected pin<number>.`,
+        )
+      }
 
-    const pinAliases = typeof pinLabel === "string" ? [pinLabel] : [...pinLabel]
-    return {
-      pinNumber,
-      displayPinLabel: pinAliases[0] ?? pinKey,
-      pinAliases,
-    }
-  })
+      const pinAliases =
+        typeof pinLabel === "string" ? [pinLabel] : [...pinLabel]
+      return {
+        pinNumber,
+        displayPinLabel: pinAliases[0] ?? pinKey,
+        pinAliases,
+      }
+    },
+  )
 }
 
 const getSchematicBoxPinStyleFromReferencedChip = ({
