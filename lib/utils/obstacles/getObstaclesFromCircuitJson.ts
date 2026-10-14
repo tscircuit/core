@@ -458,18 +458,29 @@ export const getObstaclesFromCircuitJson = (
           connectedTo: withNetId([element.pcb_plated_hole_id]),
         })
       } else if (element.shape === "oval") {
+        // Outer copper dimensions are hole-local mm. The center is a
+        // board-world point (+X right, +Y up); rotation is CCW about it.
+        const rotatedRect: RotatedRect = {
+          center: { x: element.x, y: element.y },
+          width: element.outer_width,
+          height: element.outer_height,
+          rotation: element.ccw_rotation ?? 0,
+        }
+        const axisAlignedRect = getAxisAlignedRectFromRotatedRect(rotatedRect)
+        const rect = axisAlignedRect ?? rotatedRect
+
         obstacles.push({
           circuitJsonMetadata: pcbPlatedHoleCircuitJsonMetadata,
           componentId: pcbComponentId,
           // @ts-ignore
           type: "oval",
           layers: everyLayer,
-          center: {
-            x: element.x,
-            y: element.y,
-          },
-          width: element.outer_width,
-          height: element.outer_height,
+          center: rect.center,
+          width: rect.width,
+          height: rect.height,
+          ccwRotationDegrees: axisAlignedRect
+            ? undefined
+            : rotatedRect.rotation,
           connectedTo: withNetId([element.pcb_plated_hole_id]),
         })
       } else if (element.shape === "pill") {
