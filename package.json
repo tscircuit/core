@@ -103,7 +103,6 @@
     "tsup": "^8.2.4"
   },
   "peerDependencies": {
-    "@tscircuit/capacity-autorouter": "*",
     "@tscircuit/checks": "*",
     "@tscircuit/circuit-json-util": "*",
     "@tscircuit/create-fdm-enclosure": "*",
