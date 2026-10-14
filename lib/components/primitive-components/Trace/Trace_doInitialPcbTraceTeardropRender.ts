@@ -122,9 +122,23 @@ export function Trace_doInitialPcbTraceTeardropRender(
     PcbTraceId,
     { original: PcbTrace["route"]; generated: PcbTrace["route"] }
   >()
-  for (const pcbTrace of db.pcb_trace.list({
+  const sourceTrace = db.source_trace.get(trace.source_trace_id)
+  const connectivityMapKey = sourceTrace?.subcircuit_connectivity_map_key
+  let connectedPcbTraces = db.pcb_trace.list({
     source_trace_id: trace.source_trace_id,
-  })) {
+  })
+  if (connectivityMapKey) {
+    connectedPcbTraces = db.pcb_trace.list().filter((pcbTrace) => {
+      if (pcbTrace.source_trace_id === trace.source_trace_id) return true
+      if (!pcbTrace.source_trace_id) return false
+      const routedSourceTrace = db.source_trace.get(pcbTrace.source_trace_id)
+      return (
+        routedSourceTrace?.subcircuit_connectivity_map_key ===
+        connectivityMapKey
+      )
+    })
+  }
+  for (const pcbTrace of connectedPcbTraces) {
     const contacts = [...padContacts]
     for (const via of db.pcb_via.list({
       pcb_trace_id: pcbTrace.pcb_trace_id,

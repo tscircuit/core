@@ -69,5 +69,5 @@ test("teardrops follow routed traces attributed to an equivalent source trace", 
         routePoint.width_interpolation_mode === "quadratic",
     )
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
-  expect(teardrops).toHaveLength(0)
+  expect(teardrops).toHaveLength(1)
 })
