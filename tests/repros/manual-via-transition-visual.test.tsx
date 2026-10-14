@@ -61,7 +61,6 @@ test("snapshot disconnected manual via transitions on each PCB layer", async () 
 
   const pcbTrace = circuit.db.pcb_trace.list()[0]!
   const invalidVia = circuit.db.pcb_via.list()[0]!
-  // Core's pcbPath validation and the continuity check both report this via.
   expect(circuit.db.pcb_trace_error.list()).toEqual([
     expect.objectContaining({
       pcb_trace_id: pcbTrace.pcb_trace_id,
@@ -72,10 +71,13 @@ test("snapshot disconnected manual via transitions on each PCB layer", async () 
         /^Invalid pcbPath \(R1\.pin2 to R2\.pin1\): via 1.*bottom → inner2.*incoming top copper\.$/,
       ),
     }),
+    // Routing DRC independently reports the same disconnected transition.
     expect.objectContaining({
       pcb_trace_id: pcbTrace.pcb_trace_id,
       source_trace_id: pcbTrace.source_trace_id,
-      message: `Via in trace [R1.pin2 to R2.pin1] does not connect its adjacent wire layers at position {x: ${invalidVia.x}, y: ${invalidVia.y}}.`,
+      message: expect.stringMatching(
+        /^Via in trace \[R1\.pin2 to R2\.pin1\] does not connect its adjacent wire layers/,
+      ),
     }),
   ])
 

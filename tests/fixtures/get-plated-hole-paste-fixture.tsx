@@ -4,31 +4,39 @@ export const getPlatedHolePasteFixture = () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width={16} height={12}>
-      <platedhole
-        name="vertical_slot"
-        shape="pill"
-        outerWidth={1.524}
-        outerHeight={2.2}
-        holeWidth={0.914}
-        holeHeight={1.5}
-        pcbX={-4}
-      />
-      <platedhole
-        name="rotated_slot"
-        shape="pill"
-        outerWidth={1.524}
-        outerHeight={2.2}
-        holeWidth={0.914}
-        holeHeight={1.5}
-        pcbX={4}
-        pcbRotation={90}
-      />
-      <platedhole
-        name="round_hole"
-        shape="circle"
-        outerDiameter={1.5}
-        holeDiameter={0.8}
-        pcbY={-3}
+      <chip
+        name="SLOTS"
+        isSmt
+        footprint={
+          <footprint>
+            <platedhole
+              name="vertical_slot"
+              shape="pill"
+              outerWidth={1.524}
+              outerHeight={2.2}
+              holeWidth={0.914}
+              holeHeight={1.5}
+              pcbX={-4}
+            />
+            <platedhole
+              name="rotated_slot"
+              shape="pill"
+              outerWidth={1.524}
+              outerHeight={2.2}
+              holeWidth={0.914}
+              holeHeight={1.5}
+              pcbX={4}
+              pcbRotation={90}
+            />
+            <platedhole
+              name="round_hole"
+              shape="circle"
+              outerDiameter={1.5}
+              holeDiameter={0.8}
+              pcbY={-3}
+            />
+          </footprint>
+        }
       />
       <chip
         name="U_SMD"
