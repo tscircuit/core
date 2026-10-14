@@ -44,7 +44,9 @@ export class CadModel extends PrimitiveComponent<typeof cadmodelProps> {
 
     if (
       !props ||
-      (typeof props.modelUrl !== "string" && typeof props.stepUrl !== "string")
+      (typeof props.modelUrl !== "string" &&
+        typeof props.stepUrl !== "string" &&
+        props.jscad === undefined)
     )
       return
 
@@ -117,6 +119,7 @@ export class CadModel extends PrimitiveComponent<typeof cadmodelProps> {
       const transformed = this._addCachebustToModelUrl(props.stepUrl)
       if (transformed) urlProps.model_step_url = transformed
     }
+    if (props.jscad !== undefined) urlProps.model_jscad = props.jscad
 
     let cadComponentPlacement = {
       position: {

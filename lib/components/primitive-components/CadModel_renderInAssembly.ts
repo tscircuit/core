@@ -1,4 +1,10 @@
-import { type CadModelProps, cadModelBase, point3 } from "@tscircuit/props"
+import {
+  type CadModelProp,
+  type CadModelProps,
+  cadModelBase,
+  point3,
+} from "@tscircuit/props"
+import type { ReactElement } from "react"
 import { resolveAssemblyModelUrl } from "./resolve-assembly-model-url"
 import type { CadModel } from "./CadModel"
 import { renderAssemblyCadModel } from "./render-assembly-cad-model"
@@ -31,7 +37,14 @@ export const CadModel_renderInAssembly = (component: CadModel): boolean => {
         z: props.pcbZ ?? 0,
       }),
   })
-  const model = { ...base, ...resolveAssemblyModelUrl(props.modelUrl) }
+  let model: Exclude<CadModelProp, ReactElement | null> | undefined
+  if (props.jscad !== undefined) {
+    model = { ...base, jscad: props.jscad }
+  } else if (props.modelUrl !== undefined) {
+    model = { ...base, ...resolveAssemblyModelUrl(props.modelUrl) }
+  } else {
+    return true
+  }
   component.cad_component_id = renderAssemblyCadModel(owner, model, placement)
   return true
 }
