@@ -81,6 +81,7 @@ test("PMP22650 near-closed keepout expands to 286 SRJ obstacles", async () => {
         convertCircuitJsonToPcbSvg(circuitJson, {
           backgroundColor: "#11161b",
           includeVersion: false,
+          layer: "inner4",
         }),
       ),
       createLabeledPanel(
