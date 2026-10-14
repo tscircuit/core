@@ -1,9 +1,5 @@
 import { expect, test } from "bun:test"
-import { join } from "node:path"
-import { cju } from "@tscircuit/circuit-json-util"
-import type { AnyCircuitElement } from "circuit-json"
-import { Footprint } from "lib/components/primitive-components/Footprint"
-import { extractPcbPrimitivesFromCircuitJson } from "lib/utils/extractPcbPrimitivesFromCircuitJson"
+import { Fragment } from "react"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 const contactNames = [
@@ -32,43 +28,73 @@ const contactNames = [
 /**
  * Connector geometry copied from the published USB4105-compatible export:
  * https://github.com/AnasSarkiz/new_tscircuit_landing_page/blob/066cba26d9e773b76cd97baa7538ba7c7a11f74e/public/circuit/tscircuit.json
- * Its points are board-world mm (+X right, +Y top, +Z above, right-handed).
- * Extraction converts them to component-local points before placement.
+ * Points below are footprint-local mm (+X right, +Y top, +Z above,
+ * right-handed), relative to the export's component centre (-103, -34.725).
  * Name each physical contact separately so every VBUS/GND contact is routed.
  */
-const createUsbConnectorFootprint = async () => {
-  const sourceCircuitJson = (await Bun.file(
-    join(
-      import.meta.dir,
-      "assets/repro-usb-c-rotated-oval-shield-routing-source.circuit.json",
-    ),
-  ).json()) as AnyCircuitElement[]
-  const sourcePcbComponent = sourceCircuitJson.find(
-    (element) => element.type === "pcb_component",
-  )!
-  let physicalPinNumber = 0
-  const sourcePrimitives = sourceCircuitJson
-    .filter((element) => element.type !== "pcb_component")
-    .map((element) => {
-      if (element.type !== "pcb_smtpad" && element.type !== "pcb_plated_hole") {
-        return element
-      }
-      return { ...element, port_hints: [`pin${++physicalPinNumber}`] }
-    })
-  const footprint = new Footprint({})
-  for (const primitive of extractPcbPrimitivesFromCircuitJson({
-    pcbComponent: sourcePcbComponent,
-    db: cju(sourcePrimitives),
-    componentName: "J1",
-  })) {
-    footprint.add(primitive)
-  }
-  return footprint
-}
+const usbConnectorFootprint = (
+  <footprint>
+    {contactNames.slice(0, 16).map((contactName, index) => (
+      <Fragment key={contactName}>
+        <smtpad
+          portHints={[`pin${index + 1}`]}
+          shape="rect"
+          width={0.3}
+          height={1.4}
+          pcbX={-3.75 + index * 0.5}
+          pcbY={0.875}
+        />
+      </Fragment>
+    ))}
+    <platedhole
+      portHints={["pin17"]}
+      shape="oval"
+      outerWidth={2.2}
+      outerHeight={3.2}
+      holeWidth={1.2}
+      holeHeight={2.2}
+      pcbX={-4.45}
+      pcbY={-1.275}
+    />
+    <platedhole
+      portHints={["pin18"]}
+      shape="oval"
+      outerWidth={2.2}
+      outerHeight={3.2}
+      holeWidth={1.2}
+      holeHeight={2.2}
+      pcbX={4.45}
+      pcbY={-1.275}
+    />
+    <smtpad
+      portHints={["pin19"]}
+      shape="rect"
+      width={2}
+      height={1.8}
+      pcbX={-4.75}
+      pcbY={1.975}
+    />
+    <smtpad
+      portHints={["pin20"]}
+      shape="rect"
+      width={2}
+      height={1.8}
+      pcbX={4.75}
+      pcbY={1.975}
+    />
+    <silkscreenrect
+      pcbX={0}
+      pcbY={-1.575}
+      width={9.2}
+      height={7.4}
+      strokeWidth={0.15}
+      filled={false}
+    />
+  </footprint>
+)
 
 test.failing("USB-C CC traces avoid rotated oval shield slots", async () => {
   const { circuit } = getTestFixture()
-  const footprint = await createUsbConnectorFootprint()
   circuit.add(
     <board width={26} height={22} schematicDisabled>
       <chip
@@ -77,6 +103,7 @@ test.failing("USB-C CC traces avoid rotated oval shield slots", async () => {
         pcbX={-6}
         pcbY={0}
         pcbRotation={90}
+        footprint={usbConnectorFootprint}
         pinLabels={Object.fromEntries(
           contactNames.map((name, index) => [`pin${index + 1}`, name]),
         )}
@@ -138,7 +165,6 @@ test.failing("USB-C CC traces avoid rotated oval shield slots", async () => {
     </board>,
   )
   const connector = circuit.selectOne(".J1")!
-  connector.add(footprint)
   await circuit.renderUntilSettled()
 
   const shieldSlots = circuit.db.pcb_plated_hole
