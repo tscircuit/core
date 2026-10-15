@@ -20,7 +20,6 @@ import { Group } from "../Group"
 import { applyInlineNetLabelEligibility } from "./applyInlineNetLabelEligibility"
 import { createCanonicalSchematicNetLabelTextResolver } from "./createCanonicalSchematicNetLabelTextResolver"
 import { getNetNameFromPorts } from "./getNetNameFromPorts"
-import { getSchematicPortIdsWithAssignedNetLabels } from "./getSchematicPortIdsWithAssignedNetLabels"
 import { createRoutedSchematicPortIdMap } from "./createRoutedSchematicPortIdMap"
 import type { AxisDirection } from "./getSide"
 import {
@@ -101,7 +100,6 @@ export type SolverInputContext = {
   schematicPortIdsWithExternallyRoutedRepresentations: Set<SchematicPortId>
   schPortIdToSourcePortId: Map<SchematicPortId, SourcePortId>
   netLabelsInScope: NetLabel[]
-  schematicPortIdsWithPreExistingNetLabels: Set<SchematicPortId>
 
   /**
    * Solver pin pair (sorted schematic port ids joined by "::") to the
@@ -359,11 +357,6 @@ export function createSchematicTraceSolverInputProblem(
       )
     }),
   )
-  const schematicPortIdsWithPreExistingNetLabels =
-    getSchematicPortIdsWithAssignedNetLabels(
-      netLabelsInScope,
-      routedSchematicPortIdBySchematicPortId,
-    )
   const schematicPortIdsWithExplicitNetLabels = new Set(
     netLabelsInScope
       .filter((netLabel) => !netLabel._parsedProps.inline)
@@ -1024,7 +1017,6 @@ export function createSchematicTraceSolverInputProblem(
 
   const inputProblem: InputProblem = {
     chips,
-    externallyConnectedPinIds: [...schematicPortIdsWithPreExistingNetLabels],
     directConnections: directConnections.map(
       ({ schematicPortIds, connKey, ...connection }) => ({
         ...connection,
@@ -1070,7 +1062,6 @@ export function createSchematicTraceSolverInputProblem(
     schematicPortIdsWithExternallyRoutedRepresentations,
     schPortIdToSourcePortId,
     netLabelsInScope,
-    schematicPortIdsWithPreExistingNetLabels,
     sourceTraceIdByPinPairKey,
   }
 }
