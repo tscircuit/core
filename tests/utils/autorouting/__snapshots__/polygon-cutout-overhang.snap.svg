@@ -1,0 +1,41 @@
+<svg width="1320" height="510" viewBox="0 0 1320 510" xmlns="http://www.w3.org/2000/svg">
+  <g transform="translate(0, 0) scale(1, 1) translate(0, 0)">
+    <rect width="100%" height="100%" fill="#101820"/>
+  <g fill="#eef4f8" font-family="Arial,sans-serif"><text x="20" y="27" font-size="18">45 degree edge: outside 0.2236 mm</text>
+  <text x="20" y="49" font-size="12">Blue: emitted obstacles · Orange: source boundary · Green: regression point</text></g>
+  <defs><clipPath id="panel-0"><rect x="20" y="80" width="400" height="390"/></clipPath></defs>
+    <text x="20" y="70" fill="#eef4f8" font-family="Arial,sans-serif" font-size="13">Full cutout</text>
+    <g clip-path="url(#panel-0)"><g transform="translate(20 470) scale(65 -65) translate(1 1)">
+    <rect x="0" y="0" width="3.7" height="0.6" fill="#398fd1" stroke="#83c5ee" stroke-width="0.006923076923076923"/><rect x="0" y="0.5999999999999999" width="3.1" height="0.6" fill="#398fd1" stroke="#83c5ee" stroke-width="0.006923076923076923"/><rect x="0" y="1.2" width="2.5" height="0.6" fill="#398fd1" stroke="#83c5ee" stroke-width="0.006923076923076923"/><rect x="0" y="1.7999999999999996" width="1.9000000000000004" height="0.6" fill="#398fd1" stroke="#83c5ee" stroke-width="0.006923076923076923"/><rect x="0" y="2.4" width="1.3000000000000003" height="0.6" fill="#398fd1" stroke="#83c5ee" stroke-width="0.006923076923076923"/><rect x="0" y="3" width="0.7000000000000002" height="0.6" fill="#398fd1" stroke="#83c5ee" stroke-width="0.006923076923076923"/><rect x="0" y="3.6" width="0.10000000000000009" height="0.6" fill="#398fd1" stroke="#83c5ee" stroke-width="0.006923076923076923"/>
+    <polygon points="0,0 4,0 0,4" fill="none" stroke="#ffae50" stroke-width="0.03076923076923077"/>
+    
+    </g></g>
+  <text x="20" y="495" fill="#eef4f8" font-family="Arial,sans-serif" font-size="12">7 rectangles · uncovered area: 0.314995 mm²</text>
+  </g>
+  <g transform="translate(440, 0) scale(1, 1) translate(0, 0)">
+    <rect width="100%" height="100%" fill="#101820"/>
+  <g fill="#eef4f8" font-family="Arial,sans-serif"><text x="20" y="27" font-size="18">Shallow edge: outside 0.2985 mm</text>
+  <text x="20" y="49" font-size="12">Blue: emitted obstacles · Orange: source boundary · Green: regression point</text></g>
+  <defs><clipPath id="panel-0__stack1"><rect x="20" y="80" width="400" height="390"/></clipPath></defs>
+    <text x="20" y="70" fill="#eef4f8" font-family="Arial,sans-serif" font-size="13">Full cutout</text>
+    <g clip-path="url(#panel-0__stack1)"><g transform="translate(20 470) scale(66.66666666666667 -66.66666666666667) translate(1 1)">
+    <rect x="0" y="0" width="1.0000000000000004" height="0.6" fill="#398fd1" stroke="#83c5ee" stroke-width="0.00675"/>
+    <polygon points="0,0 4,0 0,0.4" fill="none" stroke="#ffae50" stroke-width="0.03"/>
+    
+    </g></g>
+  <text x="20" y="495" fill="#eef4f8" font-family="Arial,sans-serif" font-size="12">1 rectangles · uncovered area: 0.449999 mm²</text>
+  </g>
+  <g transform="translate(880, 0) scale(1, 1) translate(0, 0)">
+    <rect width="100%" height="100%" fill="#101820"/>
+  <g fill="#eef4f8" font-family="Arial,sans-serif"><text x="20" y="27" font-size="18">Steep edge: outside 0.2002 mm</text>
+  <text x="20" y="49" font-size="12">Blue: emitted obstacles · Orange: source boundary · Green: regression point</text></g>
+  <defs><clipPath id="panel-0__stack2"><rect x="20" y="80" width="400" height="390"/></clipPath></defs>
+    <text x="20" y="70" fill="#eef4f8" font-family="Arial,sans-serif" font-size="13">Full cutout</text>
+    <g clip-path="url(#panel-0__stack2)"><g transform="translate(20 470) scale(65 -65) translate(1 1)">
+    <rect x="0" y="0" width="0.37" height="0.6" fill="#398fd1" stroke="#83c5ee" stroke-width="0.006923076923076923"/><rect x="0" y="0.5999999999999999" width="0.31000000000000005" height="0.6" fill="#398fd1" stroke="#83c5ee" stroke-width="0.006923076923076923"/><rect x="0" y="1.2" width="0.25" height="0.6" fill="#398fd1" stroke="#83c5ee" stroke-width="0.006923076923076923"/><rect x="0" y="1.7999999999999996" width="0.19000000000000006" height="0.6" fill="#398fd1" stroke="#83c5ee" stroke-width="0.006923076923076923"/><rect x="0" y="2.4" width="0.13000000000000006" height="0.6" fill="#398fd1" stroke="#83c5ee" stroke-width="0.006923076923076923"/><rect x="0" y="3" width="0.07" height="0.6" fill="#398fd1" stroke="#83c5ee" stroke-width="0.006923076923076923"/><rect x="0" y="3.6" width="0.010000000000000009" height="0.6" fill="#398fd1" stroke="#83c5ee" stroke-width="0.006923076923076923"/>
+    <polygon points="0,0 0.4,0 0,4" fill="none" stroke="#ffae50" stroke-width="0.03076923076923077"/>
+    
+    </g></g>
+  <text x="20" y="495" fill="#eef4f8" font-family="Arial,sans-serif" font-size="12">7 rectangles · uncovered area: 0.031497 mm²</text>
+  </g>
+</svg>
