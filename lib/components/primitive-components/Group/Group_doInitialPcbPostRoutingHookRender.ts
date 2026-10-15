@@ -2,8 +2,35 @@ import type {
   PcbPostRoutingHookContext,
   SubcircuitGroupProps,
 } from "@tscircuit/props"
+import * as circuitJsonSchemas from "circuit-json"
 import type { AnyCircuitElement, PcbComponent, PcbPort } from "circuit-json"
 import type { Group } from "./Group"
+
+const getTable = (group: Group<any>, type: string) => {
+  const table = (group.root!.db as any)[type]
+  if (!table?.insert) {
+    throw new Error(`pcbPostRoutingHook: unknown element type "${type}"`)
+  }
+  return table as {
+    insert: (elm: any) => any
+    update: (id: string, patch: any) => any
+    delete: (id: string) => void
+  }
+}
+
+/** Validates an element against its circuit-json schema; returns the parsed (defaulted) element. */
+const validate = (element: Record<string, unknown>) => {
+  const type = element.type as string
+  const schema =
+    (circuitJsonSchemas as any)[type] ?? circuitJsonSchemas.any_circuit_element
+  const result = schema.safeParse(element)
+  if (!result.success) {
+    throw new Error(
+      `pcbPostRoutingHook: invalid ${type}: ${result.error.message}`,
+    )
+  }
+  return result.data as Record<string, unknown>
+}
 
 const createContext = (group: Group<any>): PcbPostRoutingHookContext => {
   const { db } = group.root!
@@ -29,6 +56,27 @@ const createContext = (group: Group<any>): PcbPostRoutingHookContext => {
         : null
       return (structuredClone(pcbComponent) as PcbComponent | null) ?? undefined
     },
+    insert: ((element: Record<string, unknown>) => {
+      const type = String(element.type ?? "")
+      if (!type.startsWith("pcb_")) {
+        throw new Error(
+          `pcbPostRoutingHook: insert takes pcb_* elements, not "${type}"`,
+        )
+      }
+      const idKey = `${type}_id`
+      if (idKey in element) {
+        throw new Error(
+          `pcbPostRoutingHook: ${idKey} is generated; leave it out`,
+        )
+      }
+      const { [idKey]: _candidate, ...parsed } = validate({
+        subcircuit_id: group.subcircuit_id ?? undefined,
+        ...element,
+        [idKey]: `${type}_post_routing_hook_candidate`,
+      })
+      const inserted = getTable(group, type).insert(parsed)
+      return structuredClone(inserted)
+    }) as PcbPostRoutingHookContext["insert"],
   } as PcbPostRoutingHookContext
 }
 
