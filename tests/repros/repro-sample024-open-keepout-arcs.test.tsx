@@ -141,7 +141,8 @@ test("Sample024 open keepouts use 475 obstacles without losing coverage or closi
             Math.abs(local.y) <= obstacle.height / 2 + 1e-9
           )
         })
-      expect(strokePoints.filter((point) => !isBlocked(point))).toHaveLength(0)
+      const uncoveredPoints = strokePoints.filter((point) => !isBlocked(point))
+      expect(uncoveredPoints).toHaveLength(0)
       expect(isBlocked(gapMidpoint)).toBe(false)
       for (const obstacle of obstacles) {
         expect(obstacle.layers).toEqual(["inner4"])
@@ -161,13 +162,26 @@ test("Sample024 open keepouts use 475 obstacles without losing coverage or closi
                 strokeWidth: 0.002,
               },
             ],
-            circles: [{ center: gapMidpoint, radius: 0.004, fill: "green" }],
+            circles: [
+              { center: gapMidpoint, radius: 0.004, fill: "green" },
+              ...uncoveredPoints.map((center) => ({
+                center,
+                radius: 0.0015,
+                fill: "#e07600",
+              })),
+            ],
             texts: [
               {
                 x: panelCenter.x,
                 y: panelCenter.y + 0.34,
                 text: `ARC ${arcIndex + 1}: ${stage === 0 ? "CORE" : "AUTOROUTER"} / ${obstacles.length}`,
                 fontSize: 0.025,
+              },
+              {
+                x: panelCenter.x,
+                y: panelCenter.y + 0.3,
+                text: `${uncoveredPoints.length}/${strokePoints.length} stroke points uncovered`,
+                fontSize: 0.02,
               },
             ],
           },

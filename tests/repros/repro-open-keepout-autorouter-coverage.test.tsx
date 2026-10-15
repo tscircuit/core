@@ -49,6 +49,11 @@ test("core keepouts remain blocked on every layer after autorouter preprocessing
       db: circuit.db,
     })
     expect(simpleRouteJson.obstacles).toHaveLength(3)
+    for (const obstacle of simpleRouteJson.obstacles) {
+      expect(obstacle.layers).toEqual([...boardLayers])
+      expect(obstacle.connectedTo).toEqual([])
+    }
+
     expect(simpleRouteJson.obstacles[0]).toMatchObject({
       height: segment.height,
       layers: boardLayers,
@@ -116,7 +121,7 @@ test("core keepouts remain blocked on every layer after autorouter preprocessing
     )
     expect(uncoveredPoints).toHaveLength(0)
 
-    // Keep the existing diagonal SVG; assert cardinal cases numerically too.
+    // Show the diagonal coverage; assert cardinal cases numerically too.
     if (ccwRotationDegrees === 45) {
       const sourceGraphics: GraphicsObject = {
         rects: [
@@ -194,7 +199,7 @@ test("core keepouts remain blocked on every layer after autorouter preprocessing
                   {
                     x: segment.center.x,
                     y: 0.35,
-                    text: `${simpleRouteJson.obstacles.length} NATIVE SRJ OBSTACLES`,
+                    text: `${simpleRouteJson.obstacles.length} SRJ OBSTACLES`,
                     fontSize: 0.026,
                   },
                 ],
