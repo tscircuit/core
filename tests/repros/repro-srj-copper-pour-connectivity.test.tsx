@@ -64,7 +64,9 @@ test("SRJ reports copper-pour-connected terminals as one existing component", as
     throw new Error("Expected both GND terminals to have point IDs")
   }
 
-  expect(gndConnection.externallyConnectedPointIds).toBeUndefined()
+  expect(gndConnection.externallyConnectedPointIds).toEqual([
+    [firstPoint.pointId, secondPoint.pointId],
+  ])
 
   const hasExistingCopperConnection =
     gndConnection.externallyConnectedPointIds?.some(
@@ -91,7 +93,9 @@ test("SRJ reports copper-pour-connected terminals as one existing component", as
     [
       createLabel(
         "SRJ remaining routing demand",
-        `${remainingRouteCount} route still requested between terminals already joined by copper`,
+        remainingRouteCount === 0
+          ? "No route requested between terminals already joined by copper"
+          : "1 route still requested between terminals already joined by copper",
       ),
       getSvgFromGraphicsObject(
         {

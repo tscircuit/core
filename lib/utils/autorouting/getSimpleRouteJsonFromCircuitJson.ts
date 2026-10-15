@@ -17,6 +17,7 @@ import { Bus } from "lib/components/primitive-components/Bus"
 import { DifferentialPair } from "lib/components/primitive-components/DifferentialPair"
 import type { ISubcircuit } from "lib/components/primitive-components/Group/Subcircuit/ISubcircuit"
 import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
+import { getPcbPortIdsConnectedByCopperPours } from "../copper-pour-connectivity/find-floating-copper"
 import { getObstaclesFromCircuitJson } from "../obstacles/getObstaclesFromCircuitJson"
 import type {
   PcbGroupId,
@@ -877,6 +878,52 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   for (const conn of allConns) {
     conn.nominalTraceWidth ??= nominalTraceWidth ?? defaultTraceWidth
     conn.width ??= nominalTraceWidth ?? defaultTraceWidth
+  }
+
+  const pcbPortIdToConnection = new Map<
+    PcbPort["pcb_port_id"],
+    SimpleRouteConnection
+  >()
+  for (const connection of allConns) {
+    for (const point of connection.pointsToConnect) {
+      if (point.pcb_port_id) {
+        pcbPortIdToConnection.set(point.pcb_port_id, connection)
+      }
+    }
+  }
+
+  // Copper pours are geometry, not SRJ traces, so preserve their physical
+  // terminal connectivity separately. A fresh-routing request still excludes
+  // the original root-level routes that it intends to replace.
+  const copperConnectivityElements = subcircuitElements.filter(
+    (element) =>
+      !ignoreExistingTopLevelPcbRouteState ||
+      (element.type !== "pcb_trace" && element.type !== "pcb_via") ||
+      ("subcircuit_id" in element && Boolean(element.subcircuit_id)) ||
+      (element.type === "pcb_trace" && !element.source_trace_id),
+  )
+  for (const pcbPortIds of getPcbPortIdsConnectedByCopperPours(
+    copperConnectivityElements,
+  )) {
+    const pcbPortIdsByConnection = new Map<
+      SimpleRouteConnection,
+      PcbPort["pcb_port_id"][]
+    >()
+    for (const pcbPortId of pcbPortIds) {
+      const connection = pcbPortIdToConnection.get(pcbPortId)
+      if (!connection) continue
+      const connectedPcbPortIds = pcbPortIdsByConnection.get(connection)
+      if (connectedPcbPortIds) {
+        connectedPcbPortIds.push(pcbPortId)
+      } else {
+        pcbPortIdsByConnection.set(connection, [pcbPortId])
+      }
+    }
+    for (const [connection, connectedPcbPortIds] of pcbPortIdsByConnection) {
+      if (connectedPcbPortIds.length < 2) continue
+      connection.externallyConnectedPointIds ??= []
+      connection.externallyConnectedPointIds.push(connectedPcbPortIds)
+    }
   }
 
   bounds = expandSrjBoundsToIncludeConnectionPoints({

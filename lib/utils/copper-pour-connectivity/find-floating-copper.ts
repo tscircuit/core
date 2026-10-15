@@ -3,6 +3,7 @@ import type {
   AnyCircuitElement,
   LayerRef,
   PcbCopperPour,
+  PcbPort,
   PcbTraceRoutePoint,
   PcbVia,
 } from "circuit-json"
@@ -37,6 +38,7 @@ interface CopperConductor {
   netId: CopperNetId
   isTerminal: boolean
   pourId?: PcbCopperPour["pcb_copper_pour_id"]
+  pcbPortId?: PcbPort["pcb_port_id"]
   viaId?: PcbVia["pcb_via_id"]
 }
 
@@ -57,17 +59,16 @@ const getRouteEndpoint = (
   }
 }
 
-/** Find copper components with no same-net terminal or authored via.
+/** Build physically connected, same-net copper components.
  * All polygons are board-world points in mm (+X right, +Y up, right-handed).
  * Net membership only permits a contact; it never creates a physical edge.
  * Trace segments are independent conductors, and only plated barrels bridge
  * layers. Generated stitching vias and broken traces cannot anchor pours.
- * Nets without terminals or authored vias retain their authored pour geometry.
  * Includes every subcircuit so a child pour can reach a parent terminal.
  */
-export const findFloatingCopper = (
+const getCopperConductorComponents = (
   circuitJson: AnyCircuitElement[],
-  generatedStitchingViaIds: ReadonlySet<PcbVia["pcb_via_id"]> = new Set(),
+  generatedStitchingViaIds: ReadonlySet<PcbVia["pcb_via_id"]>,
 ) => {
   const connectivity = getFullConnectivityMapFromCircuitJson(circuitJson)
   const pours = circuitJson.filter((e) => e.type === "pcb_copper_pour")
@@ -118,6 +119,7 @@ export const findFloatingCopper = (
           layers: [element.layer],
           netId,
           isTerminal: !!element.pcb_port_id,
+          pcbPortId: element.pcb_port_id,
         })
     } else if (element.type === "pcb_plated_hole") {
       const netId = connectivity.getNetConnectedToId(element.pcb_plated_hole_id)
@@ -132,6 +134,7 @@ export const findFloatingCopper = (
           layers: element.layers,
           netId,
           isTerminal: !!element.pcb_port_id,
+          pcbPortId: element.pcb_port_id,
         })
     } else if (element.type === "pcb_via") {
       const netId = connectivity.getNetConnectedToId(element.pcb_via_id)
@@ -215,9 +218,7 @@ export const findFloatingCopper = (
     }
   }
 
-  const floatingPourIds = new Set<PcbCopperPour["pcb_copper_pour_id"]>()
-  const floatingViaIds = new Set<PcbVia["pcb_via_id"]>()
-  if (conductors.length === 0) return { floatingPourIds, floatingViaIds }
+  if (conductors.length === 0) return []
   const parent = conductors.map((_, i) => i)
   const find = (i: number): number => {
     while (parent[i] !== i) {
@@ -256,21 +257,69 @@ export const findFloatingCopper = (
         parent[find(j)] = find(i)
     }
   }
-  const netsWithTerminals = new Set(
-    conductors.flatMap((conductor) =>
-      conductor.isTerminal ? [conductor.netId] : [],
-    ),
-  )
-  const terminalRoots = new Set(
-    conductors.flatMap((conductor, i) =>
-      conductor.isTerminal ? [find(i)] : [],
-    ),
-  )
+  const conductorsByRoot = new Map<number, CopperConductor[]>()
   for (const [i, conductor] of conductors.entries()) {
-    if (!netsWithTerminals.has(conductor.netId) || terminalRoots.has(find(i)))
+    const root = find(i)
+    const connectedConductors = conductorsByRoot.get(root)
+    if (connectedConductors) {
+      connectedConductors.push(conductor)
+    } else {
+      conductorsByRoot.set(root, [conductor])
+    }
+  }
+
+  return [...conductorsByRoot.values()]
+}
+
+export const getPcbPortIdsConnectedByCopperPours = (
+  circuitJson: AnyCircuitElement[],
+): PcbPort["pcb_port_id"][][] =>
+  getCopperConductorComponents(circuitJson, new Set()).flatMap(
+    (connectedConductors) => {
+      if (!connectedConductors.some((conductor) => conductor.pourId)) return []
+      const connectedPcbPortIds = [
+        ...new Set(
+          connectedConductors.flatMap((conductor) =>
+            conductor.pcbPortId ? [conductor.pcbPortId] : [],
+          ),
+        ),
+      ]
+      return connectedPcbPortIds.length > 1 ? [connectedPcbPortIds] : []
+    },
+  )
+
+/** Find copper components with no same-net terminal or authored via.
+ * Nets without terminals or authored vias retain their authored pour geometry.
+ */
+export const findFloatingCopper = (
+  circuitJson: AnyCircuitElement[],
+  generatedStitchingViaIds: ReadonlySet<PcbVia["pcb_via_id"]> = new Set(),
+) => {
+  const conductorComponents = getCopperConductorComponents(
+    circuitJson,
+    generatedStitchingViaIds,
+  )
+  const floatingPourIds = new Set<PcbCopperPour["pcb_copper_pour_id"]>()
+  const floatingViaIds = new Set<PcbVia["pcb_via_id"]>()
+  const netsWithTerminals = new Set(
+    conductorComponents.flatMap((connectedConductors) =>
+      connectedConductors.some((conductor) => conductor.isTerminal)
+        ? [connectedConductors[0]!.netId]
+        : [],
+    ),
+  )
+
+  for (const connectedConductors of conductorComponents) {
+    if (
+      !netsWithTerminals.has(connectedConductors[0]!.netId) ||
+      connectedConductors.some((conductor) => conductor.isTerminal)
+    ) {
       continue
-    if (conductor.pourId) floatingPourIds.add(conductor.pourId)
-    if (conductor.viaId) floatingViaIds.add(conductor.viaId)
+    }
+    for (const conductor of connectedConductors) {
+      if (conductor.pourId) floatingPourIds.add(conductor.pourId)
+      if (conductor.viaId) floatingViaIds.add(conductor.viaId)
+    }
   }
   return { floatingPourIds, floatingViaIds }
 }
