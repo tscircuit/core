@@ -179,6 +179,28 @@ const createContext = (
   }
 }
 
+/** Records a failure as a pcb_autorouting_error; journaled, so a re-run replaces it. */
+const recordHookError = (
+  group: Group<any>,
+  state: PcbPostRoutingHookState,
+  error: unknown,
+) => {
+  const message = error instanceof Error ? error.message : String(error)
+  const inserted = group.root!.db.pcb_autorouting_error.insert({
+    pcb_error_id: `pcb_post_routing_hook_error_${group.subcircuit_id}`,
+    error_type: "pcb_autorouting_error",
+    message: `pcbPostRoutingHook failed: ${message}`,
+    subcircuit_id: group.subcircuit_id ?? undefined,
+  })
+  state.journal.push({
+    kind: "insert",
+    type: "pcb_autorouting_error",
+    // the db keys every table by <type>_id, alongside the schema's pcb_error_id
+    id: (inserted as unknown as { pcb_autorouting_error_id: string })
+      .pcb_autorouting_error_id,
+  })
+}
+
 /**
  * Runs the subcircuit's pcbPostRoutingHook once routing and teardrops are done,
  * before copper pours, via stitching and PCB design rule checks. A sync hook
@@ -197,9 +219,23 @@ export function Group_doInitialPcbPostRoutingHookRender(
   const state = getState(group)
   // normally already undone when the phase was marked dirty
   Group_undoPcbPostRoutingHook(group)
-  const result = hook(createContext(group, state))
+  const generation = state.generation
+  const context = createContext(group, state)
+
+  let result: void | Promise<void>
+  try {
+    result = hook(context)
+  } catch (error) {
+    recordHookError(group, state, error)
+    return
+  }
   if (!(result instanceof Promise)) return
   group._queueAsyncEffect("pcb-post-routing-hook", async () => {
-    await result
+    try {
+      await result
+    } catch (error) {
+      // a superseded run's failure is expected and its changes are discarded
+      if (state.generation === generation) recordHookError(group, state, error)
+    }
   })
 }
