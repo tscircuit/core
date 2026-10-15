@@ -1,6 +1,6 @@
-import polygonClipping, { type Polygon } from "polygon-clipping"
+import Flatten from "@flatten-js/core"
+import type { Point } from "@tscircuit/math-utils"
 
-type Point = { x: number; y: number }
 type Rect = { center: Point; width: number; height: number }
 
 /**
@@ -10,47 +10,26 @@ type Rect = { center: Point; width: number; height: number }
  */
 export const getUncoveredPolygonArea = (points: Point[], rects: Rect[]) => {
   const scale = 1e6
-  const source: Polygon = [
-    points.map(({ x, y }) => [Math.round(x * scale), Math.round(y * scale)]),
-  ]
-  const covers: Polygon[] = rects.map(({ center, width, height }) => {
-    const minX = Math.floor((center.x - width / 2) * scale) - 1
-    const maxX = Math.ceil((center.x + width / 2) * scale) + 1
-    const minY = Math.floor((center.y - height / 2) * scale) - 1
-    const maxY = Math.ceil((center.y + height / 2) * scale) + 1
-    return [
-      [
-        [minX, minY],
-        [maxX, minY],
-        [maxX, maxY],
-        [minX, maxY],
-        [minX, minY],
-      ],
-    ]
-  })
-  const uncovered = covers.length
-    ? polygonClipping.difference(source, ...covers)
-    : [source]
-  return uncovered.reduce(
-    (area, polygon) =>
-      area +
-      polygon.reduce((polygonArea, ring, ringIndex) => {
-        const [originX, originY] = ring[0]!
-        let twiceArea = 0
-        for (let index = 0; index + 1 < ring.length; index++) {
-          const a = ring[index]!,
-            b = ring[index + 1]!
-          twiceArea +=
-            (a[0] - originX) * (b[1] - originY) -
-            (b[0] - originX) * (a[1] - originY)
-        }
-        return (
-          polygonArea +
-          ((ringIndex === 0 ? 1 : -1) * Math.abs(twiceArea)) / 2 / scale ** 2
-        )
-      }, 0),
-    0,
+  let uncovered = new Flatten.Polygon(
+    points.map(
+      ({ x, y }) =>
+        new Flatten.Point(Math.round(x * scale), Math.round(y * scale)),
+    ),
   )
+  if (uncovered.orientation() === Flatten.ORIENTATION.CW) uncovered.reverse()
+  for (const { center, width, height } of rects) {
+    const bounds = new Flatten.Box(
+      Math.floor((center.x - width / 2) * scale) - 1,
+      Math.floor((center.y - height / 2) * scale) - 1,
+      Math.ceil((center.x + width / 2) * scale) + 1,
+      Math.ceil((center.y + height / 2) * scale) + 1,
+    )
+    uncovered = Flatten.BooleanOperations.subtract(
+      uncovered,
+      new Flatten.Polygon(bounds),
+    )
+  }
+  return uncovered.area() / scale ** 2
 }
 
 export const containsPoint = (rect: Rect, point: Point) =>
