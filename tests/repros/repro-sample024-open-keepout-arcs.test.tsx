@@ -18,7 +18,7 @@ import {
   translate,
 } from "transformation-matrix"
 
-test("Sample024 open keepouts expand into 1430 obstacles and leave stroke points uncovered", async () => {
+test("Sample024 open keepouts use 475 obstacles without losing coverage or closing their gaps", async () => {
   const { circuit } = getTestFixture()
   circuit.add(<board width={300} height={250} layers={8} routingDisabled />)
   circuit.render()
@@ -37,7 +37,7 @@ test("Sample024 open keepouts expand into 1430 obstacles and leave stroke points
   const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
     db: circuit.db,
   })
-  expect(simpleRouteJson.obstacles).toHaveLength(1430)
+  expect(simpleRouteJson.obstacles).toHaveLength(475)
 
   const solver = new SOLVERS.AutoroutingPipelineSolver9_PreloadedTraceGraph(
     {
@@ -69,8 +69,8 @@ test("Sample024 open keepouts expand into 1430 obstacles and leave stroke points
     const normalized = processed.obstacles.filter((obstacle) =>
       obstacle.obstacleId?.startsWith(`${keepout.pcb_keepout_id}_`),
     )
-    expect(native).toHaveLength(286)
-    expect(normalized).toHaveLength(286)
+    expect(native).toHaveLength(95)
+    expect(normalized).toHaveLength(95)
     const strokePoints = []
     for (
       let segmentIndex = 0;
@@ -142,9 +142,7 @@ test("Sample024 open keepouts expand into 1430 obstacles and leave stroke points
           )
         })
       const uncoveredPoints = strokePoints.filter((point) => !isBlocked(point))
-      // Record the existing approximation's gaps along the source stroke,
-      // including round joins/caps, before and after preprocessing.
-      expect(uncoveredPoints).toHaveLength(590)
+      expect(uncoveredPoints).toHaveLength(0)
       expect(isBlocked(gapMidpoint)).toBe(false)
       for (const obstacle of obstacles) {
         expect(obstacle.layers).toEqual(["inner4"])

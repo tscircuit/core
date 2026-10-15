@@ -20,7 +20,7 @@ const createLabeledPanel = (label: string, svg: string) =>
     { gap: 0, normalizeSize: false },
   )
 
-test("Sample024's open inner4 arc expands to 286 SRJ obstacles", async () => {
+test("Sample024's open inner4 arc uses 95 native SRJ obstacles", async () => {
   // Unmodified source records from dataset-srj24@6340ee4,
   // circuit-json/sample024-pmp22650-main.json. All positions are board-world
   // points in mm (+X right, +Y up, +Z toward the top layer; right-handed).
@@ -45,7 +45,7 @@ test("Sample024's open inner4 arc expands to 286 SRJ obstacles", async () => {
 
   const circuitJson = circuit.getCircuitJson()
   const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({ circuitJson })
-  expect(simpleRouteJson.obstacles).toHaveLength(286)
+  expect(simpleRouteJson.obstacles).toHaveLength(95)
   for (const obstacle of simpleRouteJson.obstacles) {
     expect(obstacle.layers).toEqual(["inner4"])
     expect(obstacle.connectedTo).toEqual([])
