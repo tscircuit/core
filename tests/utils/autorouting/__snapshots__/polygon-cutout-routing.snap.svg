@@ -1,9 +1,8 @@
-<svg width="800" height="500" viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg"><rect width="100%" height="100%" fill="white"/><g><polyline data-points="0,-1 -0.6029414960974009,-1 -1.7675186603338606,0.16457716423645974 -0.9320958245703204,1 0,1" data-type="line" data-label="" points="480.5894593350554,460 353.9717451546012,460 109.41054066494468,215.43879551034345 284.8493361752881,40 480.5894593350554,40" fill="none" stroke="red" stroke-width="21"/></g><g><rect data-type="rect" data-label="top
-bottom" data-x="0" data-y="0" x="270.5894593350554" y="229" width="420" height="42" fill="rgba(255,0,0,0.75)" stroke="black" stroke-width="0.004761904761904762"/></g><g><circle data-type="point" data-label="signal
+<svg width="800" height="500" viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg"><rect width="100%" height="100%" fill="white"/><g><polyline data-points="0,-1 0,1" data-type="line" data-label="" points="400,460 400,40" fill="none" stroke="red" stroke-width="21"/></g><g><polyline data-points="-1,-0.1 1,-0.1 1,0.1 -1,0.1 -1,-0.1" data-type="line" data-label="Source cutout boundary" points="190,271 610,271 610,229 190,229 190,271" fill="none" stroke="#f59e0b" stroke-width="4.2"/></g><g><circle data-type="point" data-label="signal
 signal
-top" data-x="0" data-y="-1" cx="480.5894593350554" cy="460" r="3" fill="hsl(0, 100%, 50%)"/></g><g><circle data-type="point" data-label="signal
+top" data-x="0" data-y="-1" cx="400" cy="460" r="3" fill="hsl(0, 100%, 50%)"/></g><g><circle data-type="point" data-label="signal
 signal
-top" data-x="0" data-y="1" cx="480.5894593350554" cy="40" r="3" fill="hsl(0, 100%, 50%)"/></g><g id="crosshair" style="display: none"><line id="crosshair-h" y1="0" y2="500" stroke="#666" stroke-width="0.5"/><line id="crosshair-v" x1="0" x2="800" stroke="#666" stroke-width="0.5"/><text id="coordinates" font-family="monospace" font-size="12" fill="#666"></text></g><script><![CDATA[
+top" data-x="0" data-y="1" cx="400" cy="40" r="3" fill="hsl(0, 100%, 50%)"/></g><g id="crosshair" style="display: none"><line id="crosshair-h" y1="0" y2="500" stroke="#666" stroke-width="0.5"/><line id="crosshair-v" x1="0" x2="800" stroke="#666" stroke-width="0.5"/><text id="coordinates" font-family="monospace" font-size="12" fill="#666"></text></g><script><![CDATA[
               document.currentScript.parentElement.addEventListener('mousemove', (e) => {
                 const svg = e.currentTarget;
                 const rect = svg.getBoundingClientRect();
@@ -25,7 +24,7 @@ top" data-x="0" data-y="1" cx="480.5894593350554" cy="40" r="3" fill="hsl(0, 100
                 v.setAttribute('y2', '500');
 
                 // Calculate real coordinates using inverse transformation
-                const matrix = {"a":210,"c":0,"e":480.5894593350554,"b":0,"d":-210,"f":250};
+                const matrix = {"a":210,"c":0,"e":400,"b":0,"d":-210,"f":250};
                 // Manually invert and apply the affine transform
                 // Since we only use translate and scale, we can directly compute:
                 // x' = (x - tx) / sx
@@ -46,4 +45,4 @@ top" data-x="0" data-y="1" cx="480.5894593350554" cy="40" r="3" fill="hsl(0, 100
               document.currentScript.parentElement.addEventListener('mouseleave', () => {
                 document.currentScript.parentElement.getElementById('crosshair').style.display = 'none';
               });
-            ]]></script><text x="20" y="26" font-family="Arial" font-size="18">Signal detours around a 2 × 0.2 mm polygon cutout</text></svg>
+            ]]></script><text x="20" y="26" font-family="Arial" font-size="18">2 × 0.2 mm cutout: 0 obstacles, 2 boundary crossings</text></svg>

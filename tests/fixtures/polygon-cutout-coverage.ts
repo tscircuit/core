@@ -84,7 +84,7 @@ export const renderPolygonCutoutCoverage = ({
     ...(witness
       ? [
           {
-            label: "Previously uncovered corner",
+            label: "Reported corner",
             minX: witness.x - 1.2,
             maxX: witness.x + 1.2,
             minY: witness.y - 1.2,
@@ -93,6 +93,7 @@ export const renderPolygonCutoutCoverage = ({
         ]
       : []),
   ]
+  const missingArea = getUncoveredPolygonArea(points, rects)
   const width = panels.length * 440
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="510" viewBox="0 0 ${width} 510">
   <rect width="100%" height="100%" fill="#101820"/>
@@ -115,5 +116,5 @@ export const renderPolygonCutoutCoverage = ({
     </g></g>`
     })
     .join("")}
-  <text x="20" y="495" fill="#eef4f8" font-family="Arial,sans-serif" font-size="12">${rects.length} rectangles · complete polygon coverage · all copper layers blocked</text></svg>`
+  <text x="20" y="495" fill="#eef4f8" font-family="Arial,sans-serif" font-size="12">${rects.length} rectangles · uncovered area: ${missingArea.toFixed(6)} mm²</text></svg>`
 }
