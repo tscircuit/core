@@ -1,4 +1,3 @@
-import { coverPolygonWithRects } from "@tscircuit/math-utils"
 import type { AnyCircuitElement, PcbBoard } from "circuit-json"
 import type { ConnectivityMap } from "circuit-json-to-connectivity-map"
 import { getViaBoardLayers } from "lib/utils/getViaSpanLayers"
@@ -298,9 +297,9 @@ export const getObstaclesFromCircuitJson = (
       } else if (element.shape === "polygon") {
         // Cover the entire cutout, including steps between scanlines. The
         // overhang cap controls approximation error, not copper clearance.
-        const approximatingRects = coverPolygonWithRects(element.points, {
-          maxBandHeight: 0.6,
-          maxSideOverhang: 0.3,
+        const approximatingRects = fillPolygonWithRects(element.points, {
+          rectHeight: 0.6,
+          fullCoverage: true,
         })
 
         for (const [rectIndex, rect] of approximatingRects.entries()) {
