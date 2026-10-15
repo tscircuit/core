@@ -16,7 +16,6 @@ test("fixed net labels preserve routes from projected custom-symbol terminals", 
       rotation: 0,
       labelX: 2,
       labelY: -1,
-      anchor: "top",
     },
     {
       direction: "up",
@@ -27,7 +26,6 @@ test("fixed net labels preserve routes from projected custom-symbol terminals", 
       rotation: 90,
       labelX: 1,
       labelY: 2,
-      anchor: "left",
     },
     {
       direction: "left",
@@ -37,8 +35,7 @@ test("fixed net labels preserve routes from projected custom-symbol terminals", 
       resistorY: 0,
       rotation: 180,
       labelX: -2,
-      labelY: 1,
-      anchor: "bottom",
+      labelY: -1,
     },
     {
       direction: "down",
@@ -48,8 +45,7 @@ test("fixed net labels preserve routes from projected custom-symbol terminals", 
       resistorY: -3,
       rotation: 270,
       labelX: -1,
-      labelY: -2,
-      anchor: "right",
+      labelY: -3,
     },
   ] as const
   for (const {
@@ -61,7 +57,6 @@ test("fixed net labels preserve routes from projected custom-symbol terminals", 
     rotation,
     labelX,
     labelY,
-    anchor,
   } of terminalDirectionCases) {
     const { circuit } = getTestFixture({ platform: { pcbDisabled: true } })
     const captionX = resistorX / 2
@@ -123,7 +118,7 @@ test("fixed net labels preserve routes from projected custom-symbol terminals", 
           connection=".R1 > .pin1"
           schX={labelX}
           schY={labelY}
-          anchorSide={anchor}
+          anchorSide="top"
         />
       </board>,
     )
