@@ -144,8 +144,10 @@ export const createComponentsFromCircuitJson = (
     (elm) => elm.type === "source_port",
   )
   if (sourcePortOwner) {
-    sourcePortOwner._importedInternallyConnectedPinNames =
-      getImportedInternallyConnectedPinNames(circuitJson)
+    const internalGroups = getImportedInternallyConnectedPinNames(circuitJson)
+    if (internalGroups !== undefined) {
+      sourcePortOwner._importedInternallyConnectedPinNames = internalGroups
+    }
   }
   if (sourcePortOwner && importedSourcePorts.length > 0) {
     sourcePortOwner._importedSourcePorts = importedSourcePorts
