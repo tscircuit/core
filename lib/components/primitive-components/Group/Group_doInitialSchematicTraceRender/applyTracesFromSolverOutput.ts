@@ -394,39 +394,39 @@ export function applyTracesFromSolverOutput(args: {
     ),
   })
 
-  const existingTracesWithConnectivity: Array<{
+  const existingTracesForJunctions: Array<{
     schematic_trace_id: string
     source_trace_id: string
     edges: SchematicTrace["edges"]
     connectivity_key?: string
   }> = []
-  for (const trace of existingTraces) {
-    if (trace.edges.length === 0) continue
-    const sourceTrace = trace.source_trace_id
-      ? db.source_trace.get(trace.source_trace_id)
+  for (const t of existingTraces) {
+    if (t.edges.length === 0) continue
+    const sourceTrace = t.source_trace_id
+      ? db.source_trace.get(t.source_trace_id)
       : undefined
-    existingTracesWithConnectivity.push({
-      schematic_trace_id: trace.schematic_trace_id,
-      source_trace_id: trace.source_trace_id ?? trace.schematic_trace_id,
-      edges: trace.edges,
+    existingTracesForJunctions.push({
+      schematic_trace_id: t.schematic_trace_id,
+      source_trace_id: t.source_trace_id ?? t.schematic_trace_id,
+      edges: t.edges,
       connectivity_key:
-        trace.subcircuit_connectivity_map_key ??
+        t.subcircuit_connectivity_map_key ??
         sourceTrace?.subcircuit_connectivity_map_key,
     })
   }
   // Include fixed label wires: the solver wire that used to overlap them may
   // have been removed, but crossings with other nets still need visible hops.
-  const tracesWithCrossings = computeCrossings([
+  const withCrossings = computeCrossings([
     ...retainedTraces.map((trace) => ({
       source_trace_id: trace.source_trace_id,
       edges: trace.edges,
       connectivity_key: trace.subcircuit_connectivity_map_key,
     })),
-    ...existingTracesWithConnectivity,
+    ...existingTracesForJunctions,
   ])
   const tracesWithTrimmedCrossingOverlaps =
-    removeOverlappingSameNetCrossingSegments(tracesWithCrossings)
-  const visibleSolverTraces = tracesWithTrimmedCrossingOverlaps.slice(
+    removeOverlappingSameNetCrossingSegments(withCrossings)
+  const visibleTraces = tracesWithTrimmedCrossingOverlaps.slice(
     0,
     retainedTraces.length,
   )
@@ -441,23 +441,23 @@ export function applyTracesFromSolverOutput(args: {
     })
   }
 
-  const junctionsBySourceTraceId = computeJunctions([
-    ...visibleSolverTraces,
+  const junctionsById = computeJunctions([
+    ...visibleTraces,
     ...visibleExistingTraces,
   ])
 
-  for (const trace of visibleSolverTraces) {
+  for (const t of visibleTraces) {
     const pendingTrace = pendingTraces.find(
-      (pendingTrace) => pendingTrace.source_trace_id === trace.source_trace_id,
+      (pendingTrace) => pendingTrace.source_trace_id === t.source_trace_id,
     )
     let traceSchematicSheetId = schematicSheetId
     if (pendingTrace?.schematic_sheet_id) {
       traceSchematicSheetId = pendingTrace.schematic_sheet_id
     }
     db.schematic_trace.insert({
-      source_trace_id: trace.source_trace_id,
-      edges: trace.edges,
-      junctions: junctionsBySourceTraceId[trace.source_trace_id] ?? [],
+      source_trace_id: t.source_trace_id,
+      edges: t.edges,
+      junctions: junctionsById[t.source_trace_id] ?? [],
       subcircuit_connectivity_map_key:
         pendingTrace?.subcircuit_connectivity_map_key,
       schematic_sheet_id: traceSchematicSheetId,

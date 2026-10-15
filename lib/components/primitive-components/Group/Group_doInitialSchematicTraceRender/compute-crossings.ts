@@ -211,40 +211,33 @@ export function computeCrossings<Trace extends TraceEdges>(
   }
 
   // Build new traces with crossings inserted
-  const tracesWithCrossings: Trace[] = traces.map((trace) => ({
+  const out: Trace[] = traces.map((trace) => ({
     ...trace,
     edges: [],
   }))
 
-  for (let traceIndex = 0; traceIndex < traces.length; traceIndex++) {
-    const trace = traces[traceIndex]
-    for (let edgeIndex = 0; edgeIndex < trace.edges.length; edgeIndex++) {
-      const edgeReferenceKey = keyOf({
-        traceIdx: traceIndex,
-        edgeIdx: edgeIndex,
-      })
-      const crossingDistances = crossingsByEdge.get(edgeReferenceKey) ?? []
-      if (crossingDistances.length === 0) {
-        tracesWithCrossings[traceIndex]!.edges.push(trace.edges[edgeIndex]!)
+  for (let ti = 0; ti < traces.length; ti++) {
+    const trace = traces[ti]
+    for (let ei = 0; ei < trace.edges.length; ei++) {
+      const eRefKey = keyOf({ traceIdx: ti, edgeIdx: ei })
+      const splittingDistances = crossingsByEdge.get(eRefKey) ?? []
+      if (splittingDistances.length === 0) {
+        out[ti]!.edges.push(trace.edges[ei]!)
         continue
       }
       // Sort and unique distances
-      const sortedCrossingDistances = Array.from(
-        new Set(
-          crossingDistances.map((crossingDistance) =>
-            Number(crossingDistance.toFixed(6)),
-          ),
-        ),
+      const uniqueSorted = Array.from(
+        new Set(splittingDistances.map((d) => Number(d.toFixed(6)))),
       ).sort((a, b) => a - b)
 
-      const crossingEdges = splitEdgeByCrossings(
-        trace.edges[edgeIndex]!,
-        sortedCrossingDistances,
+      const split = splitEdgeByCrossings(
+        trace.edges[ei]!,
+        uniqueSorted,
         crossLen,
       )
-      tracesWithCrossings[traceIndex]!.edges.push(...crossingEdges)
+      out[ti]!.edges.push(...split)
     }
   }
 
-  return tracesWithCrossings
+  return out
 }
