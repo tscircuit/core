@@ -3,7 +3,7 @@ import type { AnyCircuitElement } from "circuit-json"
 import { Board } from "lib/components/normal-components/Board/Board"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("imported symbols replace default terminals without hiding genuine missing traces", async () => {
+test("explicit pin labels exclude extra imported-switch terminals without hiding genuine missing traces", async () => {
   const symbolCircuitJson: AnyCircuitElement[] = [
     {
       type: "schematic_symbol",
@@ -75,6 +75,7 @@ test("imported symbols replace default terminals without hiding genuine missing 
         type="spst"
         schY={1}
         symbol={symbolCircuitJson}
+        pinLabels={{ pin3: "pin3", pin7: "pin7" }}
         noConnect={["pin3"]}
       />
       <schematictext
