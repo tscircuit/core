@@ -97,7 +97,15 @@ import { Group_doInitialSchematicTraceRender } from "./Group_doInitialSchematicT
 import { Group_doInitialSimulationSpiceEngineRender } from "./Group_doInitialSimulationSpiceEngineRender"
 import { Group_doInitialSourceAddConnectivityMapKey } from "./Group_doInitialSourceAddConnectivityMapKey"
 import { Group_doInitialStandaloneSubcircuitPcbDesignRuleChecks } from "./Group_doInitialStandaloneSubcircuitPcbDesignRuleChecks"
-import { Group_doInitialPcbPostRoutingHookRender } from "./Group_doInitialPcbPostRoutingHookRender"
+import {
+  type RenderPhase,
+  renderPhaseIndexMap,
+} from "lib/components/base-components/Renderable"
+import {
+  Group_doInitialPcbPostRoutingHookRender,
+  Group_undoPcbPostRoutingHook,
+  type PcbPostRoutingHookState,
+} from "./Group_doInitialPcbPostRoutingHookRender"
 import { Group_getFanoutPourNetMap } from "./Group_getFanoutPourNetMap"
 import { Group_getRoutingPhasePlans } from "./Group_getRoutingPhasePlans"
 import { RoutingPhasePreparationError } from "lib/utils/autorouting/routing-phase-preparation-error"
@@ -2908,6 +2916,24 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     return autorouter.groupMode === "sequential-trace"
   }
 
+  _pcbPostRoutingHookState?: PcbPostRoutingHookState
+
+  /**
+   * Anything at or before the post-routing hook going dirty (re-routing above
+   * all) first undoes the hook's changes, before the next cycle rewrites any
+   * copper. The hook then runs again on the fresh board.
+   */
+  override _markDirty(phase: RenderPhase) {
+    if (
+      this._pcbPostRoutingHookState?.journal.length &&
+      renderPhaseIndexMap.get(phase)! <=
+        renderPhaseIndexMap.get("PcbPostRoutingHookRender")!
+    ) {
+      Group_undoPcbPostRoutingHook(this)
+    }
+    super._markDirty(phase)
+  }
+
   /**
    * True while this subcircuit (or a child subcircuit) still has async routing
    * to finish. The post-routing hook waits for it: when the routing result
@@ -2931,6 +2957,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   updatePcbPostRoutingHookRender() {
     Group_doInitialPcbPostRoutingHookRender(this)
+  }
+
+  removePcbPostRoutingHookRender() {
+    Group_undoPcbPostRoutingHook(this)
   }
 
   doInitialPcbDesignRuleChecks() {

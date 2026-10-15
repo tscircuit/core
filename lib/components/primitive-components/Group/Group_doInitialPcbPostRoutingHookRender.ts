@@ -7,6 +7,29 @@ import * as circuitJsonSchemas from "circuit-json"
 import type { AnyCircuitElement, PcbComponent, PcbPort } from "circuit-json"
 import type { Group } from "./Group"
 
+type JournalEntry =
+  | { kind: "insert"; type: string; id: string }
+  | {
+      kind: "update"
+      type: string
+      id: string
+      /** Previous values of the patched keys; undefined restores an absent key */
+      before: Record<string, unknown>
+    }
+  | { kind: "remove"; type: string; element: AnyCircuitElement }
+
+export interface PcbPostRoutingHookState {
+  /** Every change the current run made, in order, so it can be undone */
+  journal: JournalEntry[]
+  /** Increments whenever a run is superseded; a stale run's context refuses edits */
+  generation: number
+}
+
+const getState = (group: Group<any>): PcbPostRoutingHookState => {
+  group._pcbPostRoutingHookState ??= { journal: [], generation: 0 }
+  return group._pcbPostRoutingHookState
+}
+
 const getTable = (group: Group<any>, type: string) => {
   const table = (group.root!.db as any)[type]
   if (!table?.insert) {
@@ -48,7 +71,38 @@ const validate = (element: Record<string, unknown>) => {
   return result.data as Record<string, unknown>
 }
 
-const createContext = (group: Group<any>): PcbPostRoutingHookContext => {
+/** Undoes the hook's recorded changes, newest first, restoring the routed board. */
+export function Group_undoPcbPostRoutingHook(group: Group<any>): void {
+  const state = group._pcbPostRoutingHookState
+  if (!state || !group.root) return
+  state.generation++
+  const journal = state.journal
+  state.journal = []
+  for (const entry of journal.reverse()) {
+    const table = getTable(group, entry.type)
+    if (entry.kind === "insert") {
+      table.delete(entry.id)
+    } else if (entry.kind === "update") {
+      table.update(entry.id, entry.before)
+    } else {
+      // insert keeps the element's own id
+      table.insert(entry.element)
+    }
+  }
+}
+
+const createContext = (
+  group: Group<any>,
+  state: PcbPostRoutingHookState,
+): PcbPostRoutingHookContext => {
+  const generation = state.generation
+  const assertCurrent = () => {
+    if (state.generation !== generation) {
+      throw new Error(
+        "pcbPostRoutingHook: this run was superseded (the board changed and the hook runs again); its changes are discarded",
+      )
+    }
+  }
   const { db } = group.root!
   const pcbPortFor = (selector: string) => {
     const port = group.selectOne(selector, { port: true }) as {
@@ -73,6 +127,7 @@ const createContext = (group: Group<any>): PcbPostRoutingHookContext => {
       return (structuredClone(pcbComponent) as PcbComponent | null) ?? undefined
     },
     insert: ((element: Record<string, unknown>) => {
+      assertCurrent()
       const type = String(element.type ?? "")
       if (!type.startsWith("pcb_")) {
         throw new Error(
@@ -91,9 +146,11 @@ const createContext = (group: Group<any>): PcbPostRoutingHookContext => {
         [idKey]: `${type}_post_routing_hook_candidate`,
       })
       const inserted = getTable(group, type).insert(parsed)
+      state.journal.push({ kind: "insert", type, id: inserted[idKey] })
       return structuredClone(inserted)
     }) as PcbPostRoutingHookContext["insert"],
     update: (id, patch) => {
+      assertCurrent()
       const element = findElement(group, id) as Record<string, any>
       const idKey = `${element.type}_id`
       if ("type" in patch || idKey in patch) {
@@ -102,11 +159,21 @@ const createContext = (group: Group<any>): PcbPostRoutingHookContext => {
         )
       }
       validate({ ...element, ...patch })
+      const before = Object.fromEntries(
+        Object.keys(patch).map((key) => [key, element[key]]),
+      )
       getTable(group, element.type).update(id, patch)
+      state.journal.push({ kind: "update", type: element.type, id, before })
       return structuredClone(findElement(group, id)) as PcbCircuitElement
     },
     remove: (id) => {
+      assertCurrent()
       const element = findElement(group, id)
+      state.journal.push({
+        kind: "remove",
+        type: element.type,
+        element: structuredClone(element),
+      })
       getTable(group, element.type).delete(id)
     },
   }
@@ -116,6 +183,7 @@ const createContext = (group: Group<any>): PcbPostRoutingHookContext => {
  * Runs the subcircuit's pcbPostRoutingHook once routing and teardrops are done,
  * before copper pours, via stitching and PCB design rule checks. A sync hook
  * runs inline; an async hook runs as an async effect the later phases wait for.
+ * Before a re-run the previous run's changes are undone (see Group._markDirty).
  */
 export function Group_doInitialPcbPostRoutingHookRender(
   group: Group<any>,
@@ -126,7 +194,10 @@ export function Group_doInitialPcbPostRoutingHookRender(
   // never show user code a half-routed board; routing completion re-runs this phase
   if (group._isPcbRoutingPending()) return
 
-  const result = hook(createContext(group))
+  const state = getState(group)
+  // normally already undone when the phase was marked dirty
+  Group_undoPcbPostRoutingHook(group)
+  const result = hook(createContext(group, state))
   if (!(result instanceof Promise)) return
   group._queueAsyncEffect("pcb-post-routing-hook", async () => {
     await result
