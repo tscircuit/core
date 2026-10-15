@@ -16,10 +16,6 @@ import { computeCrossings } from "./compute-crossings"
 import { computeJunctions } from "./compute-junctions"
 import { type SchematicPortId, asSchematicPortId } from "./port-id-types"
 import { removeOverlappingSameNetCrossingSegments } from "./remove-overlapping-same-net-crossing-segments"
-import {
-  removeRedundantTracesToNetLabels,
-  type SchematicRoutingTerminal,
-} from "./remove-redundant-traces-to-net-labels"
 
 const debug = Debug("Group_doInitialSchematicTraceRender")
 
@@ -119,16 +115,8 @@ export function applyTracesFromSolverOutput(args: {
   group: Group<any>
   solver: SchematicTracePipelineSolver
   userNetIdToConnKey: Map<string, string>
-  schematicPortIdsWithPreExistingNetLabels: Set<SchematicPortId>
-  schematicSheetId?: SchematicTrace["schematic_sheet_id"]
 }) {
-  const {
-    group,
-    solver,
-    userNetIdToConnKey,
-    schematicPortIdsWithPreExistingNetLabels,
-    schematicSheetId,
-  } = args
+  const { group, solver, userNetIdToConnKey } = args
   const { db } = group.root!
 
   const customSymbolPortIds = new Set(
@@ -199,9 +187,6 @@ export function applyTracesFromSolverOutput(args: {
     subcircuit_connectivity_map_key?: string
     schematic_sheet_id?: string
   }> = []
-
-  const terminals: SchematicRoutingTerminal[] = []
-  const netLabelTerminals: SchematicRoutingTerminal[] = []
 
   debug(`Traces inside SchematicTraceSolver output: ${(traces ?? []).length}`)
 
@@ -282,21 +267,6 @@ export function applyTracesFromSolverOutput(args: {
       }
     }
 
-    if (subcircuit_connectivity_map_key) {
-      for (const schematicPortId of solvedTraceSchematicPortIds) {
-        const port = db.schematic_port.get(schematicPortId)
-        if (!port) continue
-        const terminal = {
-          position: port.center,
-          connectivityKey: subcircuit_connectivity_map_key,
-        }
-        terminals.push(terminal)
-        if (schematicPortIdsWithPreExistingNetLabels.has(schematicPortId)) {
-          netLabelTerminals.push(terminal)
-        }
-      }
-    }
-
     // Solver traces belong to the sheet shared by their endpoint ports.
     const endpointSchematicSheetIds = new Set(
       solvedTraceSchematicPortIds
@@ -325,51 +295,24 @@ export function applyTracesFromSolverOutput(args: {
     `Applying ${pendingTraces.length} traces from SchematicTraceSolver output`,
   )
 
-  const existingTraces = db.schematic_trace
-    .list()
-    .filter((trace) => trace.schematic_sheet_id === schematicSheetId)
-  // Preserve solver label connectors that will still be rendered. Placements
-  // covered by a fixed label are omitted by applyNetLabelPlacements as well.
-  const netLabelPlacements =
-    solver.inlineNetLabelSolver?.getOutput().netLabelPlacements ??
-    solver.netLabelNetLabelCollisionSolver?.getOutput().netLabelPlacements ??
-    solver.netLabelTraceCollisionSolver?.getOutput().netLabelPlacements ??
-    solver.netLabelPlacementSolver?.netLabelPlacements ??
-    solver.traceLabelOverlapAvoidanceSolver?.getOutput().netLabelPlacements ??
-    []
-  for (const placement of netLabelPlacements) {
-    if (
-      placement.pinIds.some((id) =>
-        schematicPortIdsWithPreExistingNetLabels.has(asSchematicPortId(id)),
-      )
-    )
-      continue
-    const userNetId = solver
-      .mspConnectionPairSolver!.globalConnMap.getIdsConnectedToNet(
-        placement.globalConnNetId,
-      )
-      .find((netId) => userNetIdToConnKey.has(netId))
-    const connectivityKey = userNetId
-      ? userNetIdToConnKey.get(userNetId)
-      : undefined
-    if (connectivityKey)
-      terminals.push({ position: placement.anchorPoint, connectivityKey })
-  }
-  const retainedTraces = removeRedundantTracesToNetLabels({
-    traces: pendingTraces,
-    existingTraces,
-    netLabelTerminals,
-    terminals,
-  })
-
+  // Compute crossings and junctions without relying on DB lookups
+  const withCrossings = computeCrossings(
+    pendingTraces.map((t) => ({
+      source_trace_id: t.source_trace_id,
+      edges: t.edges,
+      connectivity_key: t.subcircuit_connectivity_map_key,
+    })),
+  )
   const existingTracesForJunctions: Array<{
     schematic_trace_id: string
     source_trace_id: string
     edges: SchematicTrace["edges"]
     connectivity_key?: string
   }> = []
-  for (const t of existingTraces) {
+  const schematicSheetId = group._resolveSchematicSheetId()
+  for (const t of db.schematic_trace.list()) {
     if (t.edges.length === 0) continue
+    if (t.schematic_sheet_id !== schematicSheetId) continue
     const sourceTrace = t.source_trace_id
       ? db.source_trace.get(t.source_trace_id)
       : undefined
@@ -382,24 +325,17 @@ export function applyTracesFromSolverOutput(args: {
         sourceTrace?.subcircuit_connectivity_map_key,
     })
   }
-  // Include fixed label wires: the solver wire that used to overlap them may
-  // have been removed, but crossings with other nets still need visible hops.
-  const withCrossings = computeCrossings([
-    ...retainedTraces.map((t) => ({
-      source_trace_id: t.source_trace_id,
-      edges: t.edges,
-      connectivity_key: t.subcircuit_connectivity_map_key,
-    })),
-    ...existingTracesForJunctions,
-  ])
   const tracesWithTrimmedCrossingOverlaps =
-    removeOverlappingSameNetCrossingSegments(withCrossings)
+    removeOverlappingSameNetCrossingSegments([
+      ...withCrossings,
+      ...existingTracesForJunctions,
+    ])
   const visibleTraces = tracesWithTrimmedCrossingOverlaps.slice(
     0,
-    retainedTraces.length,
+    withCrossings.length,
   )
   const visibleExistingTraces = tracesWithTrimmedCrossingOverlaps.slice(
-    retainedTraces.length,
+    withCrossings.length,
   )
 
   for (const trace of visibleExistingTraces) {

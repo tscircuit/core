@@ -127,10 +127,10 @@ function splitEdgeByCrossings(
  * Inserts short segments flagged with is_crossing where traces intersect
  * away from endpoints. Does not consult the database.
  */
-export function computeCrossings<T extends TraceEdges>(
-  traces: T[],
+export function computeCrossings(
+  traces: TraceEdges[],
   opts: { crossSegmentLength?: number; tolerance?: number } = {},
-): T[] {
+): TraceEdges[] {
   const crossLen = opts.crossSegmentLength ?? 0.075
   const tol = opts.tolerance ?? TOL
 
@@ -211,8 +211,9 @@ export function computeCrossings<T extends TraceEdges>(
   }
 
   // Build new traces with crossings inserted
-  const out: T[] = traces.map((t) => ({
-    ...t,
+  const out: TraceEdges[] = traces.map((t) => ({
+    source_trace_id: t.source_trace_id,
+    connectivity_key: t.connectivity_key,
     edges: [],
   }))
 

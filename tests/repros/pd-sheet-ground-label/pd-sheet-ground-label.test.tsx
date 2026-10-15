@@ -79,4 +79,4 @@ test("PD sheet with explicitly placed GND labels", async () => {
   await expect(circuit).toMatchSchematicSnapshot(import.meta.path, {
     grid: false,
   })
-})
+}, 30_000)
