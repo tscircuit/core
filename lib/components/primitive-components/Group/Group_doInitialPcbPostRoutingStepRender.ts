@@ -1,6 +1,15 @@
 import type { PcbCircuitElement, PcbPostRoutingContext } from "@tscircuit/props"
 import * as circuitJsonSchemas from "circuit-json"
 import type { AnyCircuitElement, PcbComponent, PcbPort } from "circuit-json"
+import { transformPCBElement } from "@tscircuit/circuit-json-util"
+import type { ReactNode } from "react"
+import { translate } from "transformation-matrix"
+import {
+  orderedRenderPhases,
+  renderPhaseIndexMap,
+} from "lib/components/base-components/Renderable"
+import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
+import { createInstancesFromReactNode } from "lib/fiber/create-instance-from-react-element"
 import type { PcbPostRoutingStep } from "../PcbPostRoutingStep"
 import type { Group } from "./Group"
 
@@ -14,6 +23,8 @@ type JournalEntry =
       before: Record<string, unknown>
     }
   | { kind: "remove"; type: string; element: AnyCircuitElement }
+  /** A primitive a render step added to the tree */
+  | { kind: "instance"; component: PrimitiveComponent }
 
 export interface PcbPostRoutingStepState {
   /** Every change the current run made, in order, so it can be undone */
@@ -69,6 +80,27 @@ const validate = (element: Record<string, unknown>) => {
   return result.data as Record<string, unknown>
 }
 
+/** Takes a primitive a render step added back out of the tree. */
+const detachInstance = (component: PrimitiveComponent) => {
+  const visit = (node: PrimitiveComponent) => {
+    const port = (node as any).matchedPort as
+      | { matchedComponents: PrimitiveComponent[] }
+      | null
+      | undefined
+    if (port) {
+      port.matchedComponents = port.matchedComponents.filter((c) => c !== node)
+    }
+    for (const child of node.children) visit(child as PrimitiveComponent)
+  }
+  visit(component)
+  const parent = component.parent as PrimitiveComponent | null
+  if (!parent) return
+  parent.children = parent.children.filter((c) => c !== component)
+  ;(parent as any)._childrenVersion++
+  ;(parent as any)._clearSelectorCachesUpTree?.()
+  component.shouldBeRemoved = true
+}
+
 /** Undoes the steps' recorded changes, newest first, restoring the routed board. */
 export function Group_undoPcbPostRoutingSteps(group: Group<any>): void {
   const state = group._pcbPostRoutingStepState
@@ -77,6 +109,10 @@ export function Group_undoPcbPostRoutingSteps(group: Group<any>): void {
   const journal = state.journal
   state.journal = []
   for (const entry of journal.reverse()) {
+    if (entry.kind === "instance") {
+      detachInstance(entry.component)
+      continue
+    }
     const table = getTable(group, entry.type)
     if (entry.kind === "insert") {
       table.delete(entry.id)
@@ -177,6 +213,77 @@ const createContext = (
   }
 }
 
+const stepPhaseIndex = renderPhaseIndexMap.get("PcbPostRoutingStepRender")!
+
+/**
+ * Adds a render step's JSX beside the step and renders it up to this phase
+ * right away, so copper pours and design rule checks see it. Only PCB
+ * primitives are accepted: anything else would need placement and routing.
+ */
+const renderPrimitives = (
+  group: Group<any>,
+  state: PcbPostRoutingStepState,
+  step: PcbPostRoutingStep,
+  node: ReactNode,
+) => {
+  const instances = createInstancesFromReactNode(node) as PrimitiveComponent[]
+  if (instances.length === 0) return
+  const assertPrimitive = (component: PrimitiveComponent) => {
+    if (!component.isPcbPrimitive) {
+      throw new Error(
+        `pcbpostroutingstep: render may only return PCB primitives (pads, holes, silkscreen, notes...), not <${component.lowercaseComponentName}>`,
+      )
+    }
+    for (const child of component.children) {
+      assertPrimitive(child as PrimitiveComponent)
+    }
+  }
+  instances.forEach(assertPrimitive)
+
+  const { db } = group.root!
+  const before = new Set(db.toArray().map(idOf))
+  const parent = step.parent as PrimitiveComponent
+  for (const instance of instances) {
+    parent.add(instance)
+    state.journal.push({ kind: "instance", component: instance })
+  }
+  for (const phase of orderedRenderPhases.slice(0, stepPhaseIndex + 1)) {
+    for (const instance of instances) {
+      instance.runRenderPhaseForChildren(phase)
+      instance.runRenderPhase(phase)
+    }
+  }
+  const added = db.toArray().filter((element) => !before.has(idOf(element)))
+
+  // Primitives are placed with the component's position before layout; follow
+  // the component if a layout has moved it since
+  const container = parent.getPrimitiveContainer()
+  const pcbComponent = container?.pcb_component_id
+    ? db.pcb_component.get(container.pcb_component_id)
+    : null
+  if (container && pcbComponent) {
+    const planned = container._getGlobalPcbPositionBeforeLayout()
+    const dx = pcbComponent.center.x - planned.x
+    const dy = pcbComponent.center.y - planned.y
+    if (Math.abs(dx) > 1e-9 || Math.abs(dy) > 1e-9) {
+      for (const element of added) {
+        const moved = transformPCBElement(
+          structuredClone(element) as any,
+          translate(dx, dy),
+        )
+        getTable(group, element.type).update(idOf(element), moved)
+      }
+    }
+  }
+  for (const element of added) {
+    state.journal.push({
+      kind: "insert",
+      type: element.type,
+      id: idOf(element),
+    })
+  }
+}
+
 /** Records a failure as a pcb_autorouting_error; journaled, so a re-run replaces it. */
 const recordStepError = (
   group: Group<any>,
@@ -237,8 +344,23 @@ export function Group_doInitialPcbPostRoutingStepRender(
   const context = createContext(group, state, generation)
   const isCurrent = () => state.generation === generation
 
-  const runStep = (step: PcbPostRoutingStep): void | Promise<void> =>
-    step._parsedProps.fn?.(context)
+  const runStep = (step: PcbPostRoutingStep): void | Promise<void> => {
+    const { fn, render } = step._parsedProps
+    const afterFn = () => {
+      if (!render) return
+      const node = render(context)
+      if (!(node instanceof Promise)) {
+        renderPrimitives(group, state, step, node)
+        return
+      }
+      return node.then((resolved) => {
+        if (!isCurrent()) return
+        renderPrimitives(group, state, step, resolved)
+      })
+    }
+    const fnResult = fn?.(context)
+    return fnResult instanceof Promise ? fnResult.then(afterFn) : afterFn()
+  }
 
   for (let i = 0; i < steps.length; i++) {
     let result: void | Promise<void>

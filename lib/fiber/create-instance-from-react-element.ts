@@ -171,9 +171,7 @@ const hostConfig: HostConfig<
 
 const reconciler = ReactReconciler(hostConfig as any)
 
-export const createInstanceFromReactElement = (
-  reactElm: React.JSX.Element,
-): NormalComponent => {
+const renderReactNode = (reactNode: ReactNode) => {
   const rootContainer = {
     children: [] as any[],
     props: {
@@ -208,7 +206,7 @@ export const createInstanceFromReactElement = (
 
   // @ts-expect-error
   // https://github.com/diegomura/react-pdf/blob/fabecc56727dfb6d590a3fa1e11f50250ecbbea1/packages/reconciler/src/reconciler-31.js#L78
-  reconciler.updateContainerSync(reactElm, container, null, () => {})
+  reconciler.updateContainerSync(reactNode, container, null, () => {})
   // @ts-expect-error
   // https://github.com/diegomura/react-pdf/blob/fabecc56727dfb6d590a3fa1e11f50250ecbbea1/packages/reconciler/src/reconciler-31.js#L78
   reconciler.flushSyncWork()
@@ -218,9 +216,24 @@ export const createInstanceFromReactElement = (
     throw containerErrors[0]
   }
 
+  return { container, rootContainer }
+}
+
+export const createInstanceFromReactElement = (
+  reactElm: React.JSX.Element,
+): NormalComponent => {
+  const { container, rootContainer } = renderReactNode(reactElm)
   const rootInstance = reconciler.getPublicRootInstance(
     container,
   ) as NormalComponent
   if (rootInstance) return rootInstance
   return rootContainer.children[0] as NormalComponent
 }
+
+/** Every top-level instance a node renders to: a fragment or array gives several. */
+export const createInstancesFromReactNode = (
+  reactNode: ReactNode,
+): NormalComponent[] =>
+  renderReactNode(reactNode).rootContainer.children.filter(
+    (child) => typeof child.__text !== "string",
+  )
