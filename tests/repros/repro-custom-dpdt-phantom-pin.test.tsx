@@ -3,7 +3,7 @@ import { Board } from "lib/components/normal-components/Board/Board"
 import { Fragment } from "react"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("custom DPDT symbol incorrectly inherits pin4 from the built-in symbol", async () => {
+test("custom DPDT symbol keeps its explicit non-contiguous pin numbers", async () => {
   const { circuit } = getTestFixture()
   circuit.pcbDisabled = true
 
@@ -107,10 +107,8 @@ test("custom DPDT symbol incorrectly inherits pin4 from the built-in symbol", as
     .sort((a, b) => a! - b!)
   const warnings = circuit.db.source_pin_missing_trace_warning.list()
 
-  // Capture the current bug; the fix must remove pin4, not suppress its warning.
-  expect(sourcePins).toEqual([1, 2, 3, 4, 5, 6, 7])
-  expect(warnings).toHaveLength(1)
-  expect(warnings[0]!.message).toContain("pin4")
+  expect(sourcePins).toEqual([1, 2, 3, 5, 6, 7])
+  expect(warnings).toHaveLength(0)
 
   // Derive snapshot annotations from actual output, not a fabricated diagram.
   const board = circuit.firstChild as Board

@@ -316,11 +316,13 @@ export class NormalComponent<
       ignoreSymbolPorts?: boolean
     } = {},
   ) {
+    const hasReactSymbol = isValidElement(this.props.symbol)
+    const hasCircuitJsonSymbolProp = isCircuitJsonSymbol(this.props.symbol)
     // React symbol ports are added during ReactSubtreesRender. Wait for them so
     // pinLabels and footprint inference can reuse those ports instead of
     // creating a duplicate set during construction.
     const hasPendingReactSymbol =
-      isValidElement(this.props.symbol) &&
+      hasReactSymbol &&
       !this.children.some((child) => child.componentName === "Symbol")
     if (hasPendingReactSymbol) return
 
@@ -446,7 +448,14 @@ export class NormalComponent<
       }
     }
 
-    if (config.schematicSymbolName && !opts.ignoreSymbolPorts) {
+    // An explicit symbol supplies its own ports. The built-in symbol is only a
+    // fallback and may use different terminal numbers from the custom symbol.
+    if (
+      config.schematicSymbolName &&
+      !opts.ignoreSymbolPorts &&
+      !hasReactSymbol &&
+      !hasCircuitJsonSymbolProp
+    ) {
       const sym = symbols[this._getSchematicSymbolNameOrThrow()]
       if (!sym) return
 
@@ -521,8 +530,6 @@ export class NormalComponent<
       this.addAll(portsToCreate)
     }
 
-    const hasReactSymbol = isValidElement(this.props.symbol)
-    const hasCircuitJsonSymbolProp = isCircuitJsonSymbol(this.props.symbol)
     if (!hasReactSymbol && !hasCircuitJsonSymbolProp) {
       const portsFromFootprint = this.getPortsFromFootprint({
         ...opts,
