@@ -64,14 +64,16 @@ test("routing through a narrow channel between sloping polygon cutouts", () => {
   const output = solver.getOutputSimpleRouteJson()
   expect(output.traces).toHaveLength(1)
   const trace = output.traces![0]!
+  const route = trace.route.filter((point) => point.route_type === "wire")
+  expect(route).toHaveLength(trace.route.length)
   // Keep the route inside the board so it cannot bypass the channel ends.
-  for (const point of trace.route) {
+  for (const point of route) {
     expect(point.x).toBeGreaterThanOrEqual(input.bounds.minX)
     expect(point.x).toBeLessThanOrEqual(input.bounds.maxX)
     expect(point.y).toBeGreaterThanOrEqual(input.bounds.minY)
     expect(point.y).toBeLessThanOrEqual(input.bounds.maxY)
   }
-  const endpoints = [trace.route[0]!, trace.route.at(-1)!]
+  const endpoints = [route[0]!, route.at(-1)!]
   for (const terminal of input.connections[0]!.pointsToConnect) {
     expect(
       endpoints.some(
@@ -85,12 +87,9 @@ test("routing through a narrow channel between sloping polygon cutouts", () => {
       new Flatten.Polygon(points.map(({ x, y }) => new Flatten.Point(x, y))),
   )
   let minimumCopperClearance = Infinity
-  for (let routeIndex = 1; routeIndex < trace.route.length; routeIndex++) {
-    const start = trace.route[routeIndex - 1]!,
-      end = trace.route[routeIndex]!
-    expect(start.route_type).toBe("wire")
-    expect(end.route_type).toBe("wire")
-    if (start.route_type !== "wire" || end.route_type !== "wire") continue
+  for (let routeIndex = 1; routeIndex < route.length; routeIndex++) {
+    const start = route[routeIndex - 1]!,
+      end = route[routeIndex]!
     expect(start.layer).toBe("top")
     expect(end.layer).toBe("top")
     if (Math.hypot(end.x - start.x, end.y - start.y) < 1e-9) continue
