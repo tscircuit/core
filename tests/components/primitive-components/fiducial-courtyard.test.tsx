@@ -17,6 +17,15 @@ test("fiducial courtyard rendering", () => {
   )
   circuit.render()
 
+  const pad = circuit.db.pcb_smtpad.list()[0]
+  expect(circuit.db.pcb_courtyard_circle.list()).toMatchObject([
+    {
+      center: { x: 2, y: 3 },
+      radius: 0.8,
+      layer: "top",
+      pcb_component_id: pad.pcb_component_id,
+    },
+  ])
   expect(circuit).toMatchPcbSnapshot(import.meta.path, {
     showCourtyards: true,
     showSolderMask: true,
