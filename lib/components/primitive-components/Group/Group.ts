@@ -97,6 +97,7 @@ import { Group_doInitialSchematicTraceRender } from "./Group_doInitialSchematicT
 import { Group_doInitialSimulationSpiceEngineRender } from "./Group_doInitialSimulationSpiceEngineRender"
 import { Group_doInitialSourceAddConnectivityMapKey } from "./Group_doInitialSourceAddConnectivityMapKey"
 import { Group_doInitialStandaloneSubcircuitPcbDesignRuleChecks } from "./Group_doInitialStandaloneSubcircuitPcbDesignRuleChecks"
+import { Group_doInitialPcbPostRoutingHookRender } from "./Group_doInitialPcbPostRoutingHookRender"
 import { Group_getFanoutPourNetMap } from "./Group_getFanoutPourNetMap"
 import { Group_getRoutingPhasePlans } from "./Group_getRoutingPhasePlans"
 import { RoutingPhasePreparationError } from "lib/utils/autorouting/routing-phase-preparation-error"
@@ -2905,6 +2906,31 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     // Inherit from parent if not set by props
     const autorouter = this._getAutorouterConfig()
     return autorouter.groupMode === "sequential-trace"
+  }
+
+  /**
+   * True while this subcircuit (or a child subcircuit) still has async routing
+   * to finish. The post-routing hook waits for it: when the routing result
+   * arrives, PcbTraceRender is marked dirty and the hook runs.
+   */
+  _isPcbRoutingPending(): boolean {
+    if (this._isInflatedFromCircuitJson) return false
+    if (!this._areChildSubcircuitsRouted()) return true
+    if (
+      this.root?.pcbRoutingDisabled ||
+      this.getInheritedProperty("routingDisabled")
+    )
+      return false
+    if (!this._hasTracesToRoute()) return false
+    return this._shouldRouteAsync() && !this._asyncAutoroutingResult
+  }
+
+  doInitialPcbPostRoutingHookRender() {
+    Group_doInitialPcbPostRoutingHookRender(this)
+  }
+
+  updatePcbPostRoutingHookRender() {
+    Group_doInitialPcbPostRoutingHookRender(this)
   }
 
   doInitialPcbDesignRuleChecks() {

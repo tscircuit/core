@@ -70,6 +70,7 @@ export const orderedRenderPhases = [
   "PcbTraceRender",
   "PcbRouteNetIslands",
   "PcbTraceTeardropRender",
+  "PcbPostRoutingHookRender",
   "PcbCopperPourRender",
   "PcbViaStitchRender",
   "PcbCopperPourCleanup",
@@ -130,6 +131,12 @@ const asyncPhaseDependencies: Partial<Record<RenderPhase, RenderPhase[]>> = {
   PcbTraceHintRender: ["PcbFootprintStringRender", "FetchPartFootprint"],
   PcbManualTraceRender: ["PcbFootprintStringRender", "FetchPartFootprint"],
   PcbTraceTeardropRender: ["PcbTraceRender", "PcbRouteNetIslands"],
+  // A post-routing hook sees the board as routed, teardrops included
+  PcbPostRoutingHookRender: [
+    "PcbTraceRender",
+    "PcbRouteNetIslands",
+    "PcbTraceTeardropRender",
+  ],
   PcbCopperPourRender: [
     "PcbFootprintStringRender",
     "FetchPartFootprint",
@@ -137,6 +144,7 @@ const asyncPhaseDependencies: Partial<Record<RenderPhase, RenderPhase[]>> = {
     "PcbTraceRender",
     "PcbRouteNetIslands",
     "PcbTraceTeardropRender",
+    "PcbPostRoutingHookRender",
   ],
   PcbViaStitchRender: [
     "PcbFootprintStringRender",
@@ -145,6 +153,7 @@ const asyncPhaseDependencies: Partial<Record<RenderPhase, RenderPhase[]>> = {
     "PcbTraceRender",
     "PcbRouteNetIslands",
     "PcbCopperPourRender",
+    "PcbPostRoutingHookRender",
   ],
   PcbPlacementDesignRuleChecks: [
     "PcbFootprintStringRender",
@@ -158,6 +167,7 @@ const asyncPhaseDependencies: Partial<Record<RenderPhase, RenderPhase[]>> = {
     "PcbRouteNetIslands",
     "PcbCopperPourRender",
     "PcbViaStitchRender",
+    "PcbPostRoutingHookRender",
   ],
   PcbTraceRender: ["PcbFootprintStringRender", "FetchPartFootprint"],
   PcbRouteNetIslands: [
@@ -173,6 +183,7 @@ const asyncPhaseDependencies: Partial<Record<RenderPhase, RenderPhase[]>> = {
     "PcbCopperPourRender",
     "PcbViaStitchRender",
     "PcbCopperPourCleanup",
+    "PcbPostRoutingHookRender",
   ],
   PcbSimulationRender: [
     "PcbFootprintStringRender",
@@ -183,10 +194,12 @@ const asyncPhaseDependencies: Partial<Record<RenderPhase, RenderPhase[]>> = {
     "PcbCopperPourRender",
     "PcbViaStitchRender",
     "PcbCopperPourCleanup",
+    "PcbPostRoutingHookRender",
   ],
   SilkscreenOverlapAdjustment: [
     "PcbFootprintStringRender",
     "FetchPartFootprint",
+    "PcbPostRoutingHookRender",
   ],
   CadModelRender: ["PcbFootprintStringRender", "FetchPartFootprint"],
   PartsEngineRender: ["PcbFootprintStringRender", "FetchPartFootprint"],
