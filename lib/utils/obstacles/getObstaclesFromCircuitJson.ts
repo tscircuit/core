@@ -295,10 +295,11 @@ export const getObstaclesFromCircuitJson = (
           })
         }
       } else if (element.shape === "polygon") {
-        // Cover the entire cutout, including steps between scanlines. The
-        // overhang cap controls approximation error, not copper clearance.
+        // Limit full-coverage horizontal overhang to 0.1 mm so the
+        // approximation preserves narrow channels beside sloping edges.
+        // This is approximation error, not copper clearance.
         const approximatingRects = fillPolygonWithRects(element.points, {
-          rectHeight: 0.6,
+          rectHeight: 0.2,
           fullCoverage: true,
         })
 

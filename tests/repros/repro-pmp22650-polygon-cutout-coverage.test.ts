@@ -42,7 +42,7 @@ test("PMP22650 polygon cutout coverage before and after preprocessing", () => {
     "inner6",
     "bottom",
   ]
-  expect(simpleRouteJson.obstacles).toHaveLength(260)
+  expect(simpleRouteJson.obstacles).toHaveLength(600)
   expect(
     getUncoveredPolygonArea(cutout.points, simpleRouteJson.obstacles),
   ).toBeCloseTo(expectedMissingArea, 6)
