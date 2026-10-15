@@ -45,23 +45,28 @@ test("PD sheet with explicitly placed GND labels", async () => {
         ) < 1e-6,
     ),
   )
-  let previousSize = -1
-  while (previousSize !== connectedEdges.size) {
-    previousSize = connectedEdges.size
+  let previousConnectedEdgeCount = -1
+  while (previousConnectedEdgeCount !== connectedEdges.size) {
+    previousConnectedEdgeCount = connectedEdges.size
     for (const edge of groundEdges) {
       if (
-        [...connectedEdges].some((connected) =>
-          doSegmentsIntersect(edge.from, edge.to, connected.from, connected.to),
+        [...connectedEdges].some((connectedEdge) =>
+          doSegmentsIntersect(
+            edge.from,
+            edge.to,
+            connectedEdge.from,
+            connectedEdge.to,
+          ),
         )
       ) {
         connectedEdges.add(edge)
       }
     }
   }
-  for (const pin of ["pin19", "pin22", "pin25"]) {
-    const port = circuit.selectOne(`.U_PD > .${pin}`) as Port
+  for (const pinName of ["pin19", "pin22", "pin25"]) {
+    const groundPort = circuit.selectOne(`.U_PD > .${pinName}`) as Port
     const center = circuit.db.schematic_port.get(
-      port.schematic_port_id!,
+      groundPort.schematic_port_id!,
     )!.center
     expect(
       [...connectedEdges].some(

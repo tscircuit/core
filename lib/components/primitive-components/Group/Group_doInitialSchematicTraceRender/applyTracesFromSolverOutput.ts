@@ -289,13 +289,13 @@ export function applyTracesFromSolverOutput(args: {
 
     if (subcircuit_connectivity_map_key) {
       for (const schematicPortId of solvedTraceSchematicPortIds) {
-        const port = db.schematic_port.get(schematicPortId)
-        if (!port) continue
-        const terminal = {
-          position: port.center,
+        const schematicPort = db.schematic_port.get(schematicPortId)
+        if (!schematicPort) continue
+        const portTerminal = {
+          position: schematicPort.center,
           connectivityKey: subcircuit_connectivity_map_key,
         }
-        terminals.push(terminal)
+        terminals.push(portTerminal)
         // The pipeline's normalized input contains the actual routing
         // terminals, including pins projected out of custom symbol bodies.
         // Preserve those endpoints as well as any real-pin stubs added above;
@@ -309,7 +309,7 @@ export function applyTracesFromSolverOutput(args: {
           })
         }
         if (schematicPortIdsWithPreExistingNetLabels.has(schematicPortId)) {
-          netLabelTerminals.push(terminal)
+          netLabelTerminals.push(portTerminal)
         }
       }
     }
@@ -356,8 +356,8 @@ export function applyTracesFromSolverOutput(args: {
     []
   for (const placement of netLabelPlacements) {
     if (
-      placement.pinIds.some((id) =>
-        schematicPortIdsWithPreExistingNetLabels.has(asSchematicPortId(id)),
+      placement.pinIds.some((pinId) =>
+        schematicPortIdsWithPreExistingNetLabels.has(asSchematicPortId(pinId)),
       )
     )
       continue
@@ -387,46 +387,46 @@ export function applyTracesFromSolverOutput(args: {
     existingTraces,
     netLabelTerminals,
     terminals,
-    tracesToPreserve: new Set(
+    inlineNetLabelTraces: new Set(
       pendingTraces.filter((trace) =>
         inlineNetLabelTraceIds.has(trace.source_trace_id),
       ),
     ),
   })
 
-  const existingTracesForJunctions: Array<{
+  const existingTracesWithConnectivity: Array<{
     schematic_trace_id: string
     source_trace_id: string
     edges: SchematicTrace["edges"]
     connectivity_key?: string
   }> = []
-  for (const t of existingTraces) {
-    if (t.edges.length === 0) continue
-    const sourceTrace = t.source_trace_id
-      ? db.source_trace.get(t.source_trace_id)
+  for (const trace of existingTraces) {
+    if (trace.edges.length === 0) continue
+    const sourceTrace = trace.source_trace_id
+      ? db.source_trace.get(trace.source_trace_id)
       : undefined
-    existingTracesForJunctions.push({
-      schematic_trace_id: t.schematic_trace_id,
-      source_trace_id: t.source_trace_id ?? t.schematic_trace_id,
-      edges: t.edges,
+    existingTracesWithConnectivity.push({
+      schematic_trace_id: trace.schematic_trace_id,
+      source_trace_id: trace.source_trace_id ?? trace.schematic_trace_id,
+      edges: trace.edges,
       connectivity_key:
-        t.subcircuit_connectivity_map_key ??
+        trace.subcircuit_connectivity_map_key ??
         sourceTrace?.subcircuit_connectivity_map_key,
     })
   }
   // Include fixed label wires: the solver wire that used to overlap them may
   // have been removed, but crossings with other nets still need visible hops.
-  const withCrossings = computeCrossings([
-    ...retainedTraces.map((t) => ({
-      source_trace_id: t.source_trace_id,
-      edges: t.edges,
-      connectivity_key: t.subcircuit_connectivity_map_key,
+  const tracesWithCrossings = computeCrossings([
+    ...retainedTraces.map((trace) => ({
+      source_trace_id: trace.source_trace_id,
+      edges: trace.edges,
+      connectivity_key: trace.subcircuit_connectivity_map_key,
     })),
-    ...existingTracesForJunctions,
+    ...existingTracesWithConnectivity,
   ])
   const tracesWithTrimmedCrossingOverlaps =
-    removeOverlappingSameNetCrossingSegments(withCrossings)
-  const visibleTraces = tracesWithTrimmedCrossingOverlaps.slice(
+    removeOverlappingSameNetCrossingSegments(tracesWithCrossings)
+  const visibleSolverTraces = tracesWithTrimmedCrossingOverlaps.slice(
     0,
     retainedTraces.length,
   )
@@ -441,23 +441,23 @@ export function applyTracesFromSolverOutput(args: {
     })
   }
 
-  const junctionsById = computeJunctions([
-    ...visibleTraces,
+  const junctionsBySourceTraceId = computeJunctions([
+    ...visibleSolverTraces,
     ...visibleExistingTraces,
   ])
 
-  for (const t of visibleTraces) {
+  for (const trace of visibleSolverTraces) {
     const pendingTrace = pendingTraces.find(
-      (pendingTrace) => pendingTrace.source_trace_id === t.source_trace_id,
+      (pendingTrace) => pendingTrace.source_trace_id === trace.source_trace_id,
     )
     let traceSchematicSheetId = schematicSheetId
     if (pendingTrace?.schematic_sheet_id) {
       traceSchematicSheetId = pendingTrace.schematic_sheet_id
     }
     db.schematic_trace.insert({
-      source_trace_id: t.source_trace_id,
-      edges: t.edges,
-      junctions: junctionsById[t.source_trace_id] ?? [],
+      source_trace_id: trace.source_trace_id,
+      edges: trace.edges,
+      junctions: junctionsBySourceTraceId[trace.source_trace_id] ?? [],
       subcircuit_connectivity_map_key:
         pendingTrace?.subcircuit_connectivity_map_key,
       schematic_sheet_id: traceSchematicSheetId,

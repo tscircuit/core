@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import { removeRedundantTracesToNetLabels } from "lib/components/primitive-components/Group/Group_doInitialSchematicTraceRender/remove-redundant-traces-to-net-labels"
 
 test("a branch retains the shared rail it needs even when both rail pins have labels", () => {
-  const result = removeRedundantTracesToNetLabels({
+  const retainedTraces = removeRedundantTracesToNetLabels({
     traces: [
       {
         subcircuit_connectivity_map_key: "ground",
@@ -27,7 +27,7 @@ test("a branch retains the shared rail it needs even when both rail pins have la
     })),
   })
 
-  expect(result.map((trace) => trace.edges)).toEqual([
+  expect(retainedTraces.map((trace) => trace.edges)).toEqual([
     [{ from: { x: -2, y: 0 }, to: { x: 0, y: 0 } }],
     [{ from: { x: 0, y: 1 }, to: { x: 0, y: 0 } }],
   ])

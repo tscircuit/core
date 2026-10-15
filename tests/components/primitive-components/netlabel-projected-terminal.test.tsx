@@ -6,7 +6,7 @@ import {
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("fixed net labels preserve routes from projected custom-symbol terminals", async () => {
-  const cases = [
+  const terminalDirectionCases = [
     {
       direction: "right",
       x: 0.5,
@@ -62,7 +62,7 @@ test("fixed net labels preserve routes from projected custom-symbol terminals", 
     labelX,
     labelY,
     anchor,
-  } of cases) {
+  } of terminalDirectionCases) {
     const { circuit } = getTestFixture({ platform: { pcbDisabled: true } })
     circuit.add(
       <board>
@@ -103,59 +103,72 @@ test("fixed net labels preserve routes from projected custom-symbol terminals", 
       </board>,
     )
     await circuit.renderUntilSettled()
-    const port = circuit.db.schematic_port
+    const schematicPort = circuit.db.schematic_port
       .list()
-      .find((port) => port.display_pin_label === "OUT")!
-    const component = circuit.db.schematic_component.get(
-      port.schematic_component_id!,
+      .find((schematicPort) => schematicPort.display_pin_label === "OUT")!
+    const schematicComponent = circuit.db.schematic_component.get(
+      schematicPort.schematic_component_id!,
     )!
-    const label = circuit.db.schematic_net_label
+    const groundLabel = circuit.db.schematic_net_label
       .list()
-      .find((label) => label.text === "GND")!
+      .find((groundLabel) => groundLabel.text === "GND")!
     // The custom symbol intentionally starts its pin inside its body. Routing
     // projects that terminal to the body boundary instead of drawing through
     // the symbol. Derive the expected point from emitted bounds and direction.
     // Points are in circuit-world mm, +X right and +Y up.
-    const terminal = { ...port.center }
-    switch (port.facing_direction) {
+    const projectedTerminal = { ...schematicPort.center }
+    switch (schematicPort.facing_direction) {
       case "right":
-        terminal.x = component.center.x + component.size.width / 2
+        projectedTerminal.x =
+          schematicComponent.center.x + schematicComponent.size.width / 2
         break
       case "left":
-        terminal.x = component.center.x - component.size.width / 2
+        projectedTerminal.x =
+          schematicComponent.center.x - schematicComponent.size.width / 2
         break
       case "up":
-        terminal.y = component.center.y + component.size.height / 2
+        projectedTerminal.y =
+          schematicComponent.center.y + schematicComponent.size.height / 2
         break
       case "down":
-        terminal.y = component.center.y - component.size.height / 2
+        projectedTerminal.y =
+          schematicComponent.center.y - schematicComponent.size.height / 2
         break
     }
     const edges = circuit.db.schematic_trace
       .list()
       .flatMap((trace) => trace.edges)
-    const connected = new Set(
+    const connectedEdges = new Set(
       edges.filter(
         (edge) =>
-          pointToSegmentDistance(label.anchor_position!, edge.from, edge.to) <
-          1e-6,
+          pointToSegmentDistance(
+            groundLabel.anchor_position!,
+            edge.from,
+            edge.to,
+          ) < 1e-6,
       ),
     )
-    let previousSize = -1
-    while (previousSize !== connected.size) {
-      previousSize = connected.size
+    let previousConnectedEdgeCount = -1
+    while (previousConnectedEdgeCount !== connectedEdges.size) {
+      previousConnectedEdgeCount = connectedEdges.size
       for (const edge of edges) {
         if (
-          [...connected].some((other) =>
-            doSegmentsIntersect(edge.from, edge.to, other.from, other.to),
+          [...connectedEdges].some((connectedEdge) =>
+            doSegmentsIntersect(
+              edge.from,
+              edge.to,
+              connectedEdge.from,
+              connectedEdge.to,
+            ),
           )
         )
-          connected.add(edge)
+          connectedEdges.add(edge)
       }
     }
     expect(
-      [...connected].some(
-        (edge) => pointToSegmentDistance(terminal, edge.from, edge.to) < 1e-6,
+      [...connectedEdges].some(
+        (edge) =>
+          pointToSegmentDistance(projectedTerminal, edge.from, edge.to) < 1e-6,
       ),
     ).toBe(true)
     await expect(circuit).toMatchSchematicSnapshot(

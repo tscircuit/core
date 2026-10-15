@@ -127,10 +127,10 @@ function splitEdgeByCrossings(
  * Inserts short segments flagged with is_crossing where traces intersect
  * away from endpoints. Does not consult the database.
  */
-export function computeCrossings<T extends TraceEdges>(
-  traces: T[],
+export function computeCrossings<Trace extends TraceEdges>(
+  traces: Trace[],
   opts: { crossSegmentLength?: number; tolerance?: number } = {},
-): T[] {
+): Trace[] {
   const crossLen = opts.crossSegmentLength ?? 0.075
   const tol = opts.tolerance ?? TOL
 
@@ -211,33 +211,40 @@ export function computeCrossings<T extends TraceEdges>(
   }
 
   // Build new traces with crossings inserted
-  const out: T[] = traces.map((t) => ({
-    ...t,
+  const tracesWithCrossings: Trace[] = traces.map((trace) => ({
+    ...trace,
     edges: [],
   }))
 
-  for (let ti = 0; ti < traces.length; ti++) {
-    const trace = traces[ti]
-    for (let ei = 0; ei < trace.edges.length; ei++) {
-      const eRefKey = keyOf({ traceIdx: ti, edgeIdx: ei })
-      const splittingDistances = crossingsByEdge.get(eRefKey) ?? []
-      if (splittingDistances.length === 0) {
-        out[ti]!.edges.push(trace.edges[ei]!)
+  for (let traceIndex = 0; traceIndex < traces.length; traceIndex++) {
+    const trace = traces[traceIndex]
+    for (let edgeIndex = 0; edgeIndex < trace.edges.length; edgeIndex++) {
+      const edgeReferenceKey = keyOf({
+        traceIdx: traceIndex,
+        edgeIdx: edgeIndex,
+      })
+      const crossingDistances = crossingsByEdge.get(edgeReferenceKey) ?? []
+      if (crossingDistances.length === 0) {
+        tracesWithCrossings[traceIndex]!.edges.push(trace.edges[edgeIndex]!)
         continue
       }
       // Sort and unique distances
-      const uniqueSorted = Array.from(
-        new Set(splittingDistances.map((d) => Number(d.toFixed(6)))),
+      const sortedCrossingDistances = Array.from(
+        new Set(
+          crossingDistances.map((crossingDistance) =>
+            Number(crossingDistance.toFixed(6)),
+          ),
+        ),
       ).sort((a, b) => a - b)
 
-      const split = splitEdgeByCrossings(
-        trace.edges[ei]!,
-        uniqueSorted,
+      const crossingEdges = splitEdgeByCrossings(
+        trace.edges[edgeIndex]!,
+        sortedCrossingDistances,
         crossLen,
       )
-      out[ti]!.edges.push(...split)
+      tracesWithCrossings[traceIndex]!.edges.push(...crossingEdges)
     }
   }
 
-  return out
+  return tracesWithCrossings
 }

@@ -44,19 +44,19 @@ test("fixed labels preserve the wire carrying an inline net annotation", async (
   )
   await circuit.renderUntilSettled()
 
-  const inlineLabels = circuit.db.schematic_text
+  const inlineLabelTexts = circuit.db.schematic_text
     .list()
     .filter((text) => text.text === "SIGNAL" && text.source_trace_id)
   const edges = circuit.db.schematic_trace
     .list()
     .flatMap((trace) => trace.edges)
-  expect(inlineLabels.length).toBeGreaterThan(0)
-  for (const text of inlineLabels) {
+  expect(inlineLabelTexts.length).toBeGreaterThan(0)
+  for (const inlineLabelText of inlineLabelTexts) {
     // Horizontal inline labels sit immediately above their wire. Check the
     // emitted text against the emitted traces in circuit-world mm (+Y up).
     const wirePosition = {
-      x: text.position.x,
-      y: text.position.y - text.font_size! / 2,
+      x: inlineLabelText.position.x,
+      y: inlineLabelText.position.y - inlineLabelText.font_size! / 2,
     }
     expect(
       edges.some(

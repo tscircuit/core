@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import { removeRedundantTracesToNetLabels } from "lib/components/primitive-components/Group/Group_doInitialSchematicTraceRender/remove-redundant-traces-to-net-labels"
 
 test("preserve a branch beyond a fixed label and a solver label connector", () => {
-  const result = removeRedundantTracesToNetLabels({
+  const retainedTraces = removeRedundantTracesToNetLabels({
     traces: [
       {
         subcircuit_connectivity_map_key: "ground",
@@ -33,7 +33,7 @@ test("preserve a branch beyond a fixed label and a solver label connector", () =
     ],
   })
 
-  expect(result.map((trace) => trace.edges)).toEqual([
+  expect(retainedTraces.map((trace) => trace.edges)).toEqual([
     [{ from: { x: 0, y: 2 }, to: { x: 0, y: -1 } }],
     [{ from: { x: 1, y: -1 }, to: { x: 0, y: -1 } }],
     [{ from: { x: 0, y: 1.5 }, to: { x: -1, y: 1.5 } }],

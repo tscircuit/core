@@ -16,7 +16,7 @@ test("trim at an existing label connection while preserving other nets and disco
       edges: [{ from: { x: -1, y: -1 }, to: { x: 1, y: -1 } }],
     },
   ]
-  const result = removeRedundantTracesToNetLabels({
+  const retainedTraces = removeRedundantTracesToNetLabels({
     traces,
     existingTraces: [
       {
@@ -33,9 +33,9 @@ test("trim at an existing label connection while preserving other nets and disco
     terminals: [{ position: { x: 0, y: 2 }, connectivityKey: "ground" }],
   })
 
-  expect(result[0]!.edges).toEqual([
+  expect(retainedTraces[0]!.edges).toEqual([
     { from: { x: 0, y: 2 }, to: { x: 0, y: 1 } },
   ])
-  expect(result.slice(1)).toEqual(traces.slice(1))
+  expect(retainedTraces.slice(1)).toEqual(traces.slice(1))
   expect(traces[0]!.edges[0]!.to).toEqual({ x: 0, y: -2 })
 })
