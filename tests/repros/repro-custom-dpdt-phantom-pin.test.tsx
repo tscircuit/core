@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test"
 import { Board } from "lib/components/normal-components/Board/Board"
+import { Fragment } from "react"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("custom DPDT symbol incorrectly inherits pin4 from the built-in symbol", async () => {
@@ -43,45 +44,45 @@ test("custom DPDT symbol incorrectly inherits pin4 from the built-in symbol", as
           <symbol>
             <schematictext text="{NAME}" schY={1.65} fontSize={0.2} />
             {terminals.map(({ pinNumber, x, y, direction }) => (
-              <port
-                key={pinNumber}
-                name={`pin${pinNumber}`}
-                pinNumber={pinNumber}
-                direction={direction}
-                schX={x}
-                schY={y}
-                schStemLength={0.3}
-              />
-            ))}
-            {terminals.map(({ pinNumber, x, y, direction }) => (
-              <schematictext
-                key={pinNumber}
-                text={`pin${pinNumber}`}
-                schX={x * 1.25}
-                schY={y}
-                anchor={direction === "left" ? "right" : "left"}
-                fontSize={0.18}
-              />
+              <Fragment key={pinNumber}>
+                <port
+                  name={`pin${pinNumber}`}
+                  pinNumber={pinNumber}
+                  direction={direction}
+                  schX={x}
+                  schY={y}
+                  schStemLength={0.3}
+                />
+                <schematictext
+                  text={`pin${pinNumber}`}
+                  schX={x * 1.25}
+                  schY={y}
+                  anchor={direction === "left" ? "right" : "left"}
+                  fontSize={0.18}
+                />
+              </Fragment>
             ))}
             {[0, -1.4].map((offset) => (
-              <schematicpath
-                key={offset}
-                points={[
-                  { x: -0.7, y: 1 + offset },
-                  { x: -0.4, y: 1 + offset },
-                  { x: 0.4, y: 0.7 + offset },
-                  { x: 0.7, y: 0.7 + offset },
-                ]}
-              />
+              <Fragment key={offset}>
+                <schematicpath
+                  points={[
+                    { x: -0.7, y: 1 + offset },
+                    { x: -0.4, y: 1 + offset },
+                    { x: 0.4, y: 0.7 + offset },
+                    { x: 0.7, y: 0.7 + offset },
+                  ]}
+                />
+              </Fragment>
             ))}
             {[0.4, -1].map((y) => (
-              <schematicpath
-                key={y}
-                points={[
-                  { x: -0.7, y },
-                  { x: -0.4, y },
-                ]}
-              />
+              <Fragment key={y}>
+                <schematicpath
+                  points={[
+                    { x: -0.7, y },
+                    { x: -0.4, y },
+                  ]}
+                />
+              </Fragment>
             ))}
           </symbol>
         }
