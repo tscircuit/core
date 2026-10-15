@@ -93,7 +93,6 @@
     "live-server": "^1.2.2",
     "minicssgrid": "^0.0.9",
     "pkg-pr-new": "^0.0.37",
-    "polygon-clipping": "0.15.7",
     "poppygl": "0.0.34",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
