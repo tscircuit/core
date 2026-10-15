@@ -99,6 +99,7 @@ const renderSchematicTracesForSheet = ({
     solver,
     userNetIdToConnKey,
     schematicPortIdsWithPreExistingNetLabels,
+    schematicSheetId,
   })
 
   // Apply net labels (from solver placements and net-only ports)
