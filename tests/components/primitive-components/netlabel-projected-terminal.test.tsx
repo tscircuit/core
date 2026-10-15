@@ -64,16 +64,41 @@ test("fixed net labels preserve routes from projected custom-symbol terminals", 
     anchor,
   } of terminalDirectionCases) {
     const { circuit } = getTestFixture({ platform: { pcbDisabled: true } })
+    const captionX = resistorX / 2
+    const captionY = Math.max(1.6, resistorY + 0.6, labelY + 0.6) + 1.2
     circuit.add(
       <board>
+        <schematictext
+          text={`Projected terminal: ${direction}-facing pin`}
+          schX={captionX}
+          schY={captionY}
+          fontSize={0.24}
+        />
+        <schematictext
+          text="Test input: the red OUT pin stem is intentionally inside U1."
+          schX={captionX}
+          schY={captionY - 0.4}
+          fontSize={0.18}
+        />
+        <schematictext
+          text="Expected: the green wire connects U1's border to R1 and GND."
+          schX={captionX}
+          schY={captionY - 0.75}
+          fontSize={0.18}
+        />
         <chip
           name="U1"
           pinLabels={{ pin1: "OUT" }}
           connections={{ pin1: ".R1 > .pin1" }}
           symbol={
             <symbol>
-              <schematicrect width={2} height={2} />
-              <schematictext text="{NAME}" schY={1.3} fontSize={0.2} />
+              <schematicrect width={2} height={2} strokeWidth={0.02} />
+              <schematictext
+                text="{NAME}"
+                schX={-0.65}
+                schY={1.3}
+                fontSize={0.2}
+              />
               <port
                 name="OUT"
                 pinNumber={1}

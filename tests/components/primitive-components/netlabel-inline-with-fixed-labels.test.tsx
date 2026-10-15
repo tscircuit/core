@@ -6,6 +6,24 @@ test("fixed labels preserve the wire carrying an inline net annotation", async (
   const { circuit } = getTestFixture({ platform: { pcbDisabled: true } })
   circuit.add(
     <board>
+      <schematictext
+        text="Fixed and inline labels on the same SIGNAL net"
+        schX={-1}
+        schY={2.8}
+        fontSize={0.24}
+      />
+      <schematictext
+        text="R1 and R2 have fixed labels; R3 has an inline label above its wire."
+        schX={-1}
+        schY={2.4}
+        fontSize={0.18}
+      />
+      <schematictext
+        text="Expected: the green wire beneath R3's SIGNAL text remains connected to R3."
+        schX={-1}
+        schY={2.05}
+        fontSize={0.18}
+      />
       <resistor
         name="R1"
         resistance="1k"
