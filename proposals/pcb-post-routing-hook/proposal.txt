@@ -1,0 +1,60 @@
+Post-routing hook (pcbPostRoutingHook)
+
+Implemented contract
+- <board> and subcircuit <group> accept pcbPostRoutingHook, a function (sync
+  or async) that receives a context and edits the routed PCB.
+- A new render phase, PcbPostRoutingHookRender, runs after PcbTraceRender,
+  PcbRouteNetIslands and PcbTraceTeardropRender. PcbCopperPourRender,
+  PcbViaStitchRender, PcbCopperPourCleanup, PcbSimulationRender,
+  PcbDesignRuleChecks and SilkscreenOverlapAdjustment wait for it, so
+  everything the hook changes is poured around, checked and exported.
+- The hook does not run while the subcircuit (or a child subcircuit) still has
+  async routing to finish, so user code never sees a half-routed board. When
+  routing completes, PcbTraceRender is marked dirty and the hook runs. It does
+  not run if routing never produces a result.
+- Context:
+  - getCircuitJson(): a copy of the circuit as it is now;
+  - getPcbPort(selector) / getPcbComponent(selector): resolve selectors
+    relative to the group;
+  - insert(element) / update(id, patch) / remove(id): change any pcb_* element.
+    Inserts and updates are validated against the circuit-json schema for the
+    type. Ids are generated. subcircuit_id defaults to the hook's subcircuit.
+    Non-PCB elements are rejected.
+  - subcircuitId.
+- Every change made through the context is journaled. When a phase at or
+  before PcbPostRoutingHookRender is marked dirty (re-routing, above all), the
+  journal is undone before the next cycle rewrites any copper, and the hook
+  runs again on the restored board. A superseded async run's context refuses
+  further edits.
+- A sync hook runs inline (circuit.render() works without autorouting). An
+  async hook runs as an async effect of the phase.
+- A throw, or a failed validation, becomes a pcb_autorouting_error whose message
+  starts "pcbPostRoutingHook failed:". It is journaled too, so a re-run replaces
+  it.
+- Component bounds, CAD model positions and footprint origins are computed
+  before the hook and are not recomputed.
+
+Migration
+None. Boards without the prop render exactly as before: the phase returns
+immediately.
+
+Validation
+tests/features/pcb-post-routing-hook, one behaviour per file, added with the
+commit that implements it:
+01-06 the phase and read context: runs once after routing, sync hook with
+      circuit.render(), async hook before DRC, getPcbPort, getPcbComponent,
+      subcircuit groups;
+07-13 insert: a pad on a port (PCB snapshot), generated id and subcircuit_id,
+      DRC reports inserted copper, a pour clears it (PCB snapshot), and
+      rejection of non-PCB types, invalid elements and given ids;
+14-18 update and remove: moving a footprint pad (PCB snapshot), the type/id
+      guard, schema validation, removing silkscreen (PCB snapshot), refusing
+      non-PCB elements;
+19-22 re-runs undo inserts, updates and removals; a superseded async run
+      cannot edit;
+23-25 throws and rejections become pcb_autorouting_error; a re-run replaces
+      the error.
+
+Each commit's tests fail against the commit before it (01-06 against main).
+Existing tests touching render phases, pours, teardrops, DRC, the root circuit
+and subcircuits pass as on main.
