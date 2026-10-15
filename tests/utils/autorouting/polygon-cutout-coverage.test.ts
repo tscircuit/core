@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { fillPolygonWithRects } from "lib/utils/obstacles/fillPolygonWithRects"
 import { getObstaclesFromCircuitJson } from "lib/utils/obstacles/getObstaclesFromCircuitJson"
 import {
   containsPoint,
@@ -59,7 +60,19 @@ test("polygon cutout output for thin slots, slopes, winding and open notches", (
   ].map((shape) => shape.map(([x, y]) => ({ x: x!, y: y! })))
   const expectedMissingAreas = [0.4, 0.309996, 0, 0]
   const expectedRectangleCounts = [0, 3, 50, 12]
+  // Preserve the existing midpoint approximation for callers that do not
+  // request a full cutout cover (polygon pads and unbroken copper pours).
+  const midpointRectangleCounts = [0, 3, 50, 12]
+  const midpointMissingAreas = [0.4, 0.309996, 0, 0]
   for (const [shapeIndex, points] of shapes.entries()) {
+    const midpointRectangles = fillPolygonWithRects(points, { rectHeight: 0.6 })
+    expect(midpointRectangles).toHaveLength(
+      midpointRectangleCounts[shapeIndex]!,
+    )
+    expect(getUncoveredPolygonArea(points, midpointRectangles)).toBeCloseTo(
+      midpointMissingAreas[shapeIndex]!,
+      6,
+    )
     for (const ring of [points, points.toReversed(), [...points, points[0]!]]) {
       const rectangles = getCutoutRectangles(ring)
       expect(rectangles).toHaveLength(expectedRectangleCounts[shapeIndex]!)
