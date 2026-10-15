@@ -178,6 +178,7 @@ export class NormalComponent<
   _asyncFootprintCadModel?: CadModelProp
   /** Electrical attributes from imported ports; user props remain authoritative. */
   _importedSourcePorts: SourcePort[] = []
+  _importedInternallyConnectedPinNames?: string[][]
   _isCadModelChild?: boolean
   _inferredInternallyConnectedPinNames: string[][] = []
   pcb_missing_footprint_error_id?: string
@@ -206,6 +207,7 @@ export class NormalComponent<
   get internallyConnectedPinNames(): string[][] {
     const rawPins =
       this._parsedProps.internallyConnectedPins ??
+      this._importedInternallyConnectedPinNames ??
       this.defaultInternallyConnectedPinNames
     return [...rawPins, ...this._inferredInternallyConnectedPinNames].map(
       (pinGroup: (string | number)[]) =>
@@ -891,7 +893,10 @@ export class NormalComponent<
     for (const netPortNames of this.internallyConnectedPinNames) {
       const ports: Port[] = []
       for (const portName of netPortNames) {
-        ports.push(this.portMap[portName as PortNames] as Port)
+        const port =
+          this.portMap[portName as PortNames] ??
+          this.portMap[`pin${portName}` as PortNames]
+        if (port) ports.push(port as Port)
       }
       internallyConnectedPorts.push(ports)
     }

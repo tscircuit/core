@@ -21,14 +21,29 @@ function portShouldHaveDecouplingCapacitor(port: Port): boolean {
 }
 
 /**
- * Returns true when this port shares a trace directly with an eligible chip
+ * Follow permanent internal contacts to a trace reaching an eligible chip
  * power-input port. Merely sharing a named power net does not qualify.
  */
 export function Port_isConnectedToPower(port: Port): boolean {
-  for (const connectedTrace of port._getDirectlyConnectedTraces()) {
+  const internallyConnectedPorts = new Set([
+    port,
+    ...port._getPortsInternallyConnectedToThisPort(),
+  ])
+  const traces = new Set(
+    [...internallyConnectedPorts].flatMap((connectedPort) =>
+      connectedPort._getDirectlyConnectedTraces(),
+    ),
+  )
+  for (const connectedTrace of traces) {
     const connectedPorts = connectedTrace._findConnectedPorts().ports ?? []
-    for (const connectedPort of connectedPorts) {
-      if (connectedPort === port) continue
+    const connectedPortGroup = new Set(
+      connectedPorts.flatMap((connectedPort) => [
+        connectedPort,
+        ...connectedPort._getPortsInternallyConnectedToThisPort(),
+      ]),
+    )
+    for (const connectedPort of connectedPortGroup) {
+      if (internallyConnectedPorts.has(connectedPort)) continue
       if (portShouldHaveDecouplingCapacitor(connectedPort)) return true
     }
   }

@@ -1,3 +1,4 @@
+import { getImportedInternallyConnectedPinNames } from "./get-imported-internally-connected-pin-names"
 import { getUnitVectorFromDirection } from "@tscircuit/math-utils"
 import type { PcbSoldermaskOpeningProps, PinLabelsProp } from "@tscircuit/props"
 import {
@@ -142,6 +143,10 @@ export const createComponentsFromCircuitJson = (
   const importedSourcePorts = circuitJson.filter(
     (elm) => elm.type === "source_port",
   )
+  if (sourcePortOwner) {
+    sourcePortOwner._importedInternallyConnectedPinNames =
+      getImportedInternallyConnectedPinNames(circuitJson)
+  }
   if (sourcePortOwner && importedSourcePorts.length > 0) {
     sourcePortOwner._importedSourcePorts = importedSourcePorts
     for (const port of sourcePortOwner._getAllPortsFromChildren()) {

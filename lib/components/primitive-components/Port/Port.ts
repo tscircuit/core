@@ -160,12 +160,21 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     const parent = this.parent as unknown as INormalComponent | undefined
     if (!parent || !parent._getInternallyConnectedPins) return []
     const internallyConnectedPorts = parent._getInternallyConnectedPins()
-    for (const ports of internallyConnectedPorts) {
-      if (ports.some((port) => port === this)) {
-        return ports
+    const connected = new Set<Port>([this])
+    let changed = true
+    while (changed) {
+      changed = false
+      for (const ports of internallyConnectedPorts) {
+        if (!ports.some((port) => connected.has(port))) continue
+        for (const port of ports) {
+          if (!connected.has(port)) {
+            connected.add(port)
+            changed = true
+          }
+        }
       }
     }
-    return []
+    return connected.size > 1 ? [...connected] : []
   }
 
   /**
