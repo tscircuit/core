@@ -15,7 +15,7 @@ import {
   translate,
 } from "transformation-matrix"
 
-test("core open keepout approximation leaves diagonal coverage gaps", async () => {
+test("core keepouts remain blocked on every layer after autorouter preprocessing", async () => {
   for (const ccwRotationDegrees of [0, 45, 90, 180, 270]) {
     const { circuit } = getTestFixture()
     circuit.add(<board width={4} height={3} layers={4} routingDisabled />)
@@ -48,12 +48,29 @@ test("core open keepout approximation leaves diagonal coverage gaps", async () =
     const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
       db: circuit.db,
     })
-    expect(simpleRouteJson.obstacles).toHaveLength(10)
+    expect(simpleRouteJson.obstacles).toHaveLength(3)
     for (const obstacle of simpleRouteJson.obstacles) {
-      expect(obstacle.ccwRotationDegrees).toBeUndefined()
       expect(obstacle.layers).toEqual([...boardLayers])
       expect(obstacle.connectedTo).toEqual([])
     }
+
+    expect(simpleRouteJson.obstacles[0]).toMatchObject({
+      height: segment.height,
+      layers: boardLayers,
+      connectedTo: [],
+    })
+    expect(
+      (simpleRouteJson.obstacles[0]!.ccwRotationDegrees! + 360) % 360,
+    ).toBeCloseTo(ccwRotationDegrees, 10)
+    expect(simpleRouteJson.obstacles[0]!.width).toBeCloseTo(segment.width, 12)
+    expect(simpleRouteJson.obstacles[0]!.center.x).toBeCloseTo(
+      segment.center.x,
+      12,
+    )
+    expect(simpleRouteJson.obstacles[0]!.center.y).toBeCloseTo(
+      segment.center.y,
+      12,
+    )
 
     // Exercise the installed Pipeline 9 used by core, stopping at its real
     // preprocessing output before node generation or route search begins.
@@ -102,11 +119,9 @@ test("core open keepout approximation leaves diagonal coverage gaps", async () =
           ),
       ),
     )
-    // Record the current defect: the diagonal approximation leaves two
-    // sampled source points uncovered; the cardinal cases remain blocked.
-    expect(uncoveredPoints).toHaveLength(ccwRotationDegrees === 45 ? 2 : 0)
+    expect(uncoveredPoints).toHaveLength(0)
 
-    // Show the diagonal defect; assert cardinal cases numerically too.
+    // Show the diagonal coverage; assert cardinal cases numerically too.
     if (ccwRotationDegrees === 45) {
       const sourceGraphics: GraphicsObject = {
         rects: [
