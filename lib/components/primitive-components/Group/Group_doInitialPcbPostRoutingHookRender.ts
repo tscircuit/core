@@ -1,4 +1,5 @@
 import type {
+  PcbCircuitElement,
   PcbPostRoutingHookContext,
   SubcircuitGroupProps,
 } from "@tscircuit/props"
@@ -16,6 +17,21 @@ const getTable = (group: Group<any>, type: string) => {
     update: (id: string, patch: any) => any
     delete: (id: string) => void
   }
+}
+
+const findElement = (group: Group<any>, id: string): AnyCircuitElement => {
+  const element = group
+    .root!.db.toArray()
+    .find((elm) => (elm as any)[`${elm.type}_id`] === id)
+  if (!element) {
+    throw new Error(`pcbPostRoutingHook: no element with id "${id}"`)
+  }
+  if (!element.type.startsWith("pcb_")) {
+    throw new Error(
+      `pcbPostRoutingHook: only pcb_* elements can be changed, "${id}" is a ${element.type}`,
+    )
+  }
+  return element
 }
 
 /** Validates an element against its circuit-json schema; returns the parsed (defaulted) element. */
@@ -77,7 +93,23 @@ const createContext = (group: Group<any>): PcbPostRoutingHookContext => {
       const inserted = getTable(group, type).insert(parsed)
       return structuredClone(inserted)
     }) as PcbPostRoutingHookContext["insert"],
-  } as PcbPostRoutingHookContext
+    update: (id, patch) => {
+      const element = findElement(group, id) as Record<string, any>
+      const idKey = `${element.type}_id`
+      if ("type" in patch || idKey in patch) {
+        throw new Error(
+          `pcbPostRoutingHook: update cannot change type or ${idKey}`,
+        )
+      }
+      validate({ ...element, ...patch })
+      getTable(group, element.type).update(id, patch)
+      return structuredClone(findElement(group, id)) as PcbCircuitElement
+    },
+    remove: (id) => {
+      const element = findElement(group, id)
+      getTable(group, element.type).delete(id)
+    },
+  }
 }
 
 /**
