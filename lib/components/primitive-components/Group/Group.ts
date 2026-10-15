@@ -102,10 +102,10 @@ import {
   renderPhaseIndexMap,
 } from "lib/components/base-components/Renderable"
 import {
-  Group_doInitialPcbPostRoutingHookRender,
-  Group_undoPcbPostRoutingHook,
-  type PcbPostRoutingHookState,
-} from "./Group_doInitialPcbPostRoutingHookRender"
+  Group_doInitialPcbPostRoutingStepRender,
+  Group_undoPcbPostRoutingSteps,
+  type PcbPostRoutingStepState,
+} from "./Group_doInitialPcbPostRoutingStepRender"
 import { Group_getFanoutPourNetMap } from "./Group_getFanoutPourNetMap"
 import { Group_getRoutingPhasePlans } from "./Group_getRoutingPhasePlans"
 import { RoutingPhasePreparationError } from "lib/utils/autorouting/routing-phase-preparation-error"
@@ -2916,28 +2916,28 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     return autorouter.groupMode === "sequential-trace"
   }
 
-  _pcbPostRoutingHookState?: PcbPostRoutingHookState
+  _pcbPostRoutingStepState?: PcbPostRoutingStepState
 
   /**
-   * Anything at or before the post-routing hook going dirty (re-routing above
-   * all) first undoes the hook's changes, before the next cycle rewrites any
-   * copper. The hook then runs again on the fresh board.
+   * Anything at or before the post-routing steps going dirty (re-routing above
+   * all) first undoes the steps' changes, before the next cycle rewrites any
+   * copper. The steps then run again on the fresh board.
    */
   override _markDirty(phase: RenderPhase) {
     if (
-      this._pcbPostRoutingHookState?.journal.length &&
+      this._pcbPostRoutingStepState?.journal.length &&
       renderPhaseIndexMap.get(phase)! <=
-        renderPhaseIndexMap.get("PcbPostRoutingHookRender")!
+        renderPhaseIndexMap.get("PcbPostRoutingStepRender")!
     ) {
-      Group_undoPcbPostRoutingHook(this)
+      Group_undoPcbPostRoutingSteps(this)
     }
     super._markDirty(phase)
   }
 
   /**
    * True while this subcircuit (or a child subcircuit) still has async routing
-   * to finish. The post-routing hook waits for it: when the routing result
-   * arrives, PcbTraceRender is marked dirty and the hook runs.
+   * to finish. The post-routing steps wait for it: when the routing result
+   * arrives, PcbTraceRender is marked dirty and the steps run.
    */
   _isPcbRoutingPending(): boolean {
     if (this._isInflatedFromCircuitJson) return false
@@ -2951,16 +2951,16 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     return this._shouldRouteAsync() && !this._asyncAutoroutingResult
   }
 
-  doInitialPcbPostRoutingHookRender() {
-    Group_doInitialPcbPostRoutingHookRender(this)
+  doInitialPcbPostRoutingStepRender() {
+    Group_doInitialPcbPostRoutingStepRender(this)
   }
 
-  updatePcbPostRoutingHookRender() {
-    Group_doInitialPcbPostRoutingHookRender(this)
+  updatePcbPostRoutingStepRender() {
+    Group_doInitialPcbPostRoutingStepRender(this)
   }
 
-  removePcbPostRoutingHookRender() {
-    Group_undoPcbPostRoutingHook(this)
+  removePcbPostRoutingStepRender() {
+    Group_undoPcbPostRoutingSteps(this)
   }
 
   doInitialPcbDesignRuleChecks() {
