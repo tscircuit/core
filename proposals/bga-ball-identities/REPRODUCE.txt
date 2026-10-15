@@ -1,0 +1,3 @@
+From the repository root, run:
+bun proposals/bga-ball-identities/reproduce-bga-pin.ts .
+The recorded log is baseline evidence, not a passing regression test.

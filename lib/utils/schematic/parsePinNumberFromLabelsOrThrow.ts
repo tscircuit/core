@@ -1,3 +1,4 @@
+import { resolvePinLabels } from "./resolvePinLabels"
 import { getPinNumberFromPinLabelsKey } from "./getPinNumberFromPinLabelsKey"
 import { getPinLabelRecommendation } from "../filterPinLabels"
 
@@ -32,21 +33,20 @@ export const parsePinNumberFromLabelsOrThrow = (
     throw new Error(getInvalidPinLabelMessage(pinNumberOrLabel))
   }
 
-  for (const pinNumberKey in pinLabels) {
-    const aliases = Array.isArray(pinLabels[pinNumberKey])
-      ? pinLabels[pinNumberKey]
-      : [pinLabels[pinNumberKey]]
-
-    if (aliases.includes(pinNumberOrLabel)) {
-      const pinNumber = getPinNumberFromPinLabelsKey(pinNumberKey)
-      if (pinNumber === null) {
-        throw new Error(
-          `Invalid pinLabels key "${pinNumberKey}". Expected "pin\${number}" (e.g. pin1, pin2).`,
-        )
-      }
-      return pinNumber
-    }
+  const resolvedPins = resolvePinLabels(pinLabels)
+  const physicalPin = resolvedPins.find(
+    (pin) => pin.physicalPinName === pinNumberOrLabel,
+  )
+  if (physicalPin) return physicalPin.pinNumber
+  const matches = resolvedPins.filter((pin) =>
+    pin.labels.includes(pinNumberOrLabel),
+  )
+  if (matches.length > 1 && matches.some((pin) => pin.physicalPinName)) {
+    throw new Error(
+      `Ambiguous pin label "${pinNumberOrLabel}"; use a physical ball name: ${matches.map((pin) => pin.physicalPinName ?? `pin${pin.pinNumber}`).join(", ")}.`,
+    )
   }
+  if (matches.length > 0) return matches[0].pinNumber
 
   throw new Error(getInvalidPinLabelMessage(pinNumberOrLabel))
 }

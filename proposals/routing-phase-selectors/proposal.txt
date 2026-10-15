@@ -1,0 +1,26 @@
+Routing-phase connection selectors
+
+Implemented contract
+- A phase connection accepts a bare exact trace name (DDR_D0), an explicit
+  trace-qualified selector (trace.DDR_D0), or an existing endpoint selector
+  (.U1 > .A1, .U1 > port.DQ0, U1.1).
+- Selection stays inside the phase's subcircuit. Duplicate trace names in sibling
+  subcircuits do not conflict. Multiple matches for a named trace, or a bare
+  selector matching both a named trace and an endpoint, require disambiguation.
+- All phase selector lists resolve before phase ownership is assigned. Repeated
+  selectors deduplicate trace objects. Diagnostics identify the phase and input.
+- Breakout ownership, reroute inclusion, saved paths and untargeted phases retain
+  their existing behavior. A resolved breakout-owned trace is not an error even
+  when its requesting phase has no remaining work.
+
+Migration
+Previously ignored unmatched explicit selectors now fail before router execution.
+Correct misspelled names or use an explicit trace/port selector. This does not
+change the port-based connection contract of individual saved pcbTracePaths.
+
+Validation
+New tests exercise named/qualified/endpoint selections, duplicates, unmatched and
+ambiguous selectors, sibling scope, rerouting and breakout ownership. Named trace
+selection fails against the original implementation. Existing phase tests cover
+saved paths and replay, including typed port selectors. PCB snapshots accompany
+the new selection and subcircuit cases.

@@ -21,12 +21,20 @@ test("create solderpaste from smtpad", async () => {
         pcbRotation={70}
         footprint={"0402"}
       />
-      <platedhole
-        outerHeight={0.2}
-        outerWidth={0.5}
-        holeHeight={0.2}
-        holeWidth={0.2}
-        shape="pill"
+      <chip
+        name="SLOT"
+        isSmt
+        footprint={
+          <footprint>
+            <platedhole
+              outerHeight={0.2}
+              outerWidth={0.5}
+              holeHeight={0.2}
+              holeWidth={0.2}
+              shape="pill"
+            />
+          </footprint>
+        }
       />
     </board>,
   )

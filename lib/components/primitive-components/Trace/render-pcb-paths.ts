@@ -5,6 +5,7 @@ import { getViaDiameterDefaults } from "../../../utils/pcbStyle/getViaDiameterDe
 import type { Port } from "../Port"
 import { getRouteForPcbPath } from "./get-route-for-pcb-path"
 import { insertPcbPathViaContactErrors } from "./insert-pcb-path-via-contact-errors"
+import { insertPcbPathViaPolicyErrors } from "./insert-pcb-path-via-policy-errors"
 import type { Trace } from "./Trace"
 import { getTraceLength } from "./trace-utils/compute-trace-length"
 
@@ -90,6 +91,7 @@ export const renderPcbPaths = ({
     }
     insertPcbPathViaContactErrors({ trace, pcbTrace, ports, pathIndex })
     trace._insertErrorIfTraceIsOutsideBoard(route, ports)
+    insertPcbPathViaPolicyErrors({ trace, pcbTrace, path, ports, pathIndex })
   }
   trace._portsRoutedOnPcb = ports
 }

@@ -136,8 +136,10 @@ function getConnectionSelectorsFromAutoroutingPhaseProps(
 
 function traceHasEndpointMatchingConnectionSelector(
   trace: Trace,
-  connectionSelectorEndpointKey: string,
+  connectionSelector: string,
 ): boolean {
+  const connectionSelectorEndpointKey =
+    convertPortSelectorToEndpointKey(connectionSelector)
   if (
     trace
       .getTracePortPathSelectors()
@@ -152,11 +154,53 @@ function traceHasEndpointMatchingConnectionSelector(
   // Resolve both to the port identity before deciding phase membership.
   const port = trace
     .getSubcircuit()
-    .selectOne(connectionSelectorEndpointKey, { type: "port" }) as Port | null
+    .selectOne(connectionSelector, { type: "port" }) as Port | null
   return (
     port !== null &&
     (trace._findConnectedPorts().ports?.includes(port) ?? false)
   )
+}
+
+/** Resolve targets before assigning any phase ownership, including breakout traces. */
+function resolvePhaseConnectionTraces(
+  group: Group<z.ZodType>,
+  traces: Trace[],
+  phaseProps: AutoroutingPhaseProps,
+): Set<Trace> {
+  const resolvedTraces = new Set<Trace>()
+  const phaseName = phaseProps.name ?? "unnamed phase"
+  for (const rawSelector of getConnectionSelectorsFromAutoroutingPhaseProps(
+    phaseProps,
+  )) {
+    const selector = rawSelector.trim()
+    const explicitlySelectsTrace = selector.startsWith("trace.")
+    const namedTraces = explicitlySelectsTrace
+      ? group
+          .selectAll<Trace>(selector)
+          .filter((trace) => traces.includes(trace))
+      : traces.filter((trace) => trace.name === selector)
+    const endpointTraces = explicitlySelectsTrace
+      ? []
+      : traces.filter((trace) =>
+          traceHasEndpointMatchingConnectionSelector(trace, selector),
+        )
+    if (
+      namedTraces.length > 1 ||
+      (namedTraces.length > 0 && endpointTraces.length > 0)
+    ) {
+      throw new Error(
+        `Autorouting phase "${phaseName}": connection "${rawSelector}" is ambiguous. Use a unique trace name qualified as "trace.DDR_D0" or a port such as ".U1 > .A1".`,
+      )
+    }
+    const matches = namedTraces.length > 0 ? namedTraces : endpointTraces
+    if (matches.length === 0) {
+      throw new Error(
+        `Autorouting phase "${phaseName}": connection "${rawSelector}" matched no trace or endpoint. Use a trace name such as "DDR_D0" or a port such as ".U1 > .A1".`,
+      )
+    }
+    for (const trace of matches) resolvedTraces.add(trace)
+  }
+  return resolvedTraces
 }
 
 function getAutoroutersByPhaseIndex(
@@ -286,6 +330,12 @@ export function Group_getRoutingPhasePlans(
   const plansByPhaseIndex = new Map<number | null, RoutingPhasePlan>()
   const autoroutersByPhaseIndex = getAutoroutersByPhaseIndex(group)
   const phasePropsByPhaseIndex = getAutoroutingPhasePropsByPhaseIndex(group)
+  const selectedTracesByPhaseIndex = new Map(
+    Array.from(phasePropsByPhaseIndex, ([phaseIndex, phaseProps]) => [
+      phaseIndex,
+      resolvePhaseConnectionTraces(group, traces, phaseProps),
+    ]),
+  )
   const groupFanoutProps = group._parsedProps as GroupFanoutProps
   const routeRemaining = group.getInheritedProperty("routeRemaining") !== false
   const defaultPhaseProps = phasePropsByPhaseIndex.get(null)
@@ -340,18 +390,11 @@ export function Group_getRoutingPhasePlans(
       getConnectionSelectorsFromAutoroutingPhaseProps(phaseProps)
     if (connectionSelectors.length > 0) {
       const plan = getOrCreateRoutingPhasePlan(plansByPhaseIndex, phaseIndex)
-      const connectionSelectorEndpointKeys = connectionSelectors.map(
-        convertPortSelectorToEndpointKey,
-      )
       plan.connectionSelectors = connectionSelectors
 
       for (const trace of traces) {
         if (breakoutByTrace.has(trace)) continue
-        if (
-          connectionSelectorEndpointKeys.some((endpointKey) =>
-            traceHasEndpointMatchingConnectionSelector(trace, endpointKey),
-          )
-        ) {
+        if (selectedTracesByPhaseIndex.get(phaseIndex)!.has(trace)) {
           if (!phaseProps.reroute) {
             for (const existingPlan of plansByPhaseIndex.values()) {
               if (existingPlan === plan) continue
