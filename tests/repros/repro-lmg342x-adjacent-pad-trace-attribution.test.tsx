@@ -4,7 +4,7 @@ import { getSourceTraceIdForRoutedTrace } from "lib/components/primitive-compone
 import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("LMG342X pad-center route endpoints expose incorrect source trace attribution", async () => {
+test("LMG342X pad-center route endpoints preserve source trace attribution", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -78,9 +78,6 @@ test("LMG342X pad-center route endpoints expose incorrect source trace attributi
   const feedbackSourceTrace = circuit.db.source_trace
     .list()
     .find((sourceTrace) => sourceTrace.display_name?.includes("R25"))!
-  const outputSourceTrace = circuit.db.source_trace
-    .list()
-    .find((sourceTrace) => sourceTrace.display_name?.includes("C1"))!
   const routedTrace: SimplifiedPcbTrace = {
     type: "pcb_trace",
     pcb_trace_id: "lmg342x_feedback_route",
@@ -94,8 +91,7 @@ test("LMG342X pad-center route endpoints expose incorrect source trace attributi
     trace: routedTrace,
   })
 
-  expect(attributedSourceTraceId).toBe(outputSourceTrace.source_trace_id)
-  expect(attributedSourceTraceId).not.toBe(feedbackSourceTrace.source_trace_id)
+  expect(attributedSourceTraceId).toBe(feedbackSourceTrace.source_trace_id)
 
   circuit.db.pcb_trace.insert({
     source_trace_id: attributedSourceTraceId,
@@ -105,7 +101,7 @@ test("LMG342X pad-center route endpoints expose incorrect source trace attributi
     ],
   })
   const connectivityErrors = checkTracesAreContiguous(circuit.getCircuitJson())
-  expect(connectivityErrors.length).toBeGreaterThan(0)
+  expect(connectivityErrors).toEqual([])
   circuit.db.insertAll(connectivityErrors)
 
   expect(circuit).toMatchPcbSnapshot(import.meta.path, {
