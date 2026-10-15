@@ -2,8 +2,8 @@ import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 // Reduced from tscircuit/sparkfun-boards#361. The footprint string emits
-// 90-degree rotated pads whose geometry is misread when assigning source traces.
-test("INA237 footprint string assigns routed traces to adjacent pins", async () => {
+// 90-degree rotated pads must retain the correct source trace associations.
+test("INA237 footprint string assigns routed traces to the correct pins", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -55,7 +55,7 @@ test("INA237 footprint string assigns routed traces to adjacent pins", async () 
         connections={{ pin1: "net.SCL" }}
       />
       <fabricationnotetext
-        text="INA237: footprint string routing repro"
+        text="INA237: correct footprint string routing"
         pcbY={7.4}
         fontSize={0.55}
         color="#ffffff"
@@ -67,19 +67,19 @@ test("INA237 footprint string assigns routed traces to adjacent pins", async () 
         color="#ffbb55"
       />
       <fabricationnotetext
-        text="BUG: SDA (pin4) is assigned to ALERT (pin3)"
+        text="SDA route is assigned to SDA (pin4)"
         pcbY={-6}
         fontSize={0.4}
         color="#ffbb55"
       />
       <fabricationnotetext
-        text="BUG: SCL (pin5) is assigned to SDA (pin4)"
+        text="SCL route is assigned to SCL (pin5)"
         pcbY={-7}
         fontSize={0.4}
         color="#ffbb55"
       />
       <fabricationnotetext
-        text="Routes exist; pin/net attribution is wrong."
+        text="Routes and pin/net attribution agree."
         pcbY={-8}
         fontSize={0.4}
         color="#ffffff"
@@ -99,17 +99,16 @@ test("INA237 footprint string assigns routed traces to adjacent pins", async () 
         sourcePort.source_component_id === sensor.source_component_id,
     )
 
-  // Pin the defect illustrated by the notes to the emitted route metadata.
-  // Update these expectations and the visual notes when the bug is fixed.
-  for (const [routedPinName, assignedPinName] of [
+  for (const [routedPinName, unrelatedPinName] of [
+    ["ALERT", "A0"],
     ["SDA", "ALERT"],
     ["SCL", "SDA"],
   ] as const) {
     const routedPort = sensorPorts.find(
       (sourcePort) => sourcePort.name === routedPinName,
     )!
-    const assignedPort = sensorPorts.find(
-      (sourcePort) => sourcePort.name === assignedPinName,
+    const unrelatedPort = sensorPorts.find(
+      (sourcePort) => sourcePort.name === unrelatedPinName,
     )!
     const pcbPort = circuit.db.pcb_port
       .list()
@@ -124,15 +123,15 @@ test("INA237 footprint string assigns routed traces to adjacent pins", async () 
               routePoint.end_pcb_port_id === pcbPort.pcb_port_id),
         ),
       )!
-    const assignedSourceTrace = circuit.db.source_trace.get(
+    const routedSourceTrace = circuit.db.source_trace.get(
       copperTrace.source_trace_id!,
     )!
 
-    expect(assignedSourceTrace.connected_source_port_ids).toContain(
-      assignedPort.source_port_id,
-    )
-    expect(assignedSourceTrace.connected_source_port_ids).not.toContain(
+    expect(routedSourceTrace.connected_source_port_ids).toContain(
       routedPort.source_port_id,
+    )
+    expect(routedSourceTrace.connected_source_port_ids).not.toContain(
+      unrelatedPort.source_port_id,
     )
   }
 

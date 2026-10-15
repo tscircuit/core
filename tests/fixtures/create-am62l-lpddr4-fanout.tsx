@@ -2591,9 +2591,27 @@ export const renderAm62lLpddr4Fanout = async ({
   }
   expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
   expect(circuit.db.pcb_component_outside_board_error.list()).toEqual([])
+  const pcbTraceErrors = circuit.db.pcb_trace_error.list()
+  // Each authored bottom-to-inner-layer decoupling drop now reports the
+  // board's disabled blind-via policy, in addition to the existing DRC errors.
+  const viaPolicyErrors = pcbTraceErrors.filter(({ message }) =>
+    message.includes("disallowed via"),
+  )
+  expect(viaPolicyErrors).toEqual(
+    decouplingPlaneDrops.map((drop) =>
+      expect.objectContaining({
+        source_trace_id: circuit.db.source_trace.getWhere({
+          name: drop.traceName,
+        })!.source_trace_id,
+        is_fatal: false,
+        message: expect.stringContaining("1 disallowed via."),
+      }),
+    ),
+  )
   // The checks upgrade detects three overlaps in addition to 48 open via ends.
-  expect(circuit.db.pcb_trace_error.list()).toHaveLength(
-    includeDirectDecouplingNetworkInInitialRender ? 51 : 0,
+  expect(pcbTraceErrors).toHaveLength(
+    decouplingPlaneDrops.length +
+      (includeDirectDecouplingNetworkInInitialRender ? 51 : 0),
   )
   expect(circuit.db.pcb_via_trace_clearance_error.list()).toEqual([])
   const pcbBoard = circuit.db.pcb_board.list()[0]!
