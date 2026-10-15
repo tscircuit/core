@@ -133,7 +133,12 @@ export class Crystal extends NormalComponent<
       if (!needsMaximumTraceLength && !needsMaximumViaCount) continue
 
       db.source_trace.update(sourceTrace.source_trace_id, {
-        ...(needsMaximumTraceLength ? { max_length: maximumTraceLength } : {}),
+        ...(needsMaximumTraceLength
+          ? {
+              max_length: maximumTraceLength,
+              max_length_origin: "crystal" as const,
+            }
+          : {}),
         ...(needsMaximumViaCount
           ? { max_via_count: DEFAULT_CRYSTAL_MAX_VIA_COUNT }
           : {}),

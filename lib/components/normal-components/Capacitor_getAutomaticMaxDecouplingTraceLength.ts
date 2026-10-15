@@ -18,6 +18,11 @@ function getCapacitorPorts(capacitor: Capacitor): Port[] {
 export function Capacitor_getAutomaticMaxDecouplingTraceLength(
   capacitor: Capacitor,
 ): number | undefined {
+  if (
+    capacitor._parsedProps.capacitorRole &&
+    capacitor._parsedProps.capacitorRole !== "decoupling"
+  )
+    return undefined
   const capacitorPorts = getCapacitorPorts(capacitor)
   if (capacitorPorts.length !== 2) return undefined
 

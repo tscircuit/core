@@ -1,8 +1,12 @@
-import { POWER_NET_REGEX } from "lib/utils/gnd-power-net-regex"
 import type { Port } from "./Port"
 import { resolvePortSourcePinAttributes } from "./resolve-port-source-pin-attributes"
 
-function portShouldHaveDecouplingCapacitor(port: Port): boolean {
+// Supply pin names are narrower than power net names. VREF, VREG_FB, EN and
+// connector pull-ups do not identify an IC decoupling supply input.
+const DECOUPLING_SUPPLY_PIN_REGEX =
+  /(?:^|_)(?:[ADIP]?VDD\d*|IOVDD\d*|VCC\d*|AVCC|PVCC|VBAT|VSYS|VIN|VREG_IN|VREG_AVDD)(?:$|_)/i
+
+export function portShouldHaveDecouplingCapacitor(port: Port): boolean {
   if (port.getParentNormalComponent()?.config.componentName !== "Chip") {
     return false
   }
@@ -15,7 +19,7 @@ function portShouldHaveDecouplingCapacitor(port: Port): boolean {
   if (attributes.provides_power === true) return false
 
   for (const portName of port.getNameAndAliases()) {
-    if (POWER_NET_REGEX.test(portName)) return true
+    if (DECOUPLING_SUPPLY_PIN_REGEX.test(portName)) return true
   }
   return false
 }

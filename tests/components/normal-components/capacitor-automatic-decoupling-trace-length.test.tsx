@@ -43,7 +43,7 @@ test("capacitor between a requiresPower chip pin and ground gets 1mm trace limit
   expect(capacitorSourceComponent?.max_decoupling_trace_length).toBe(1)
   expect(sourceTraceMaxLengths).toEqual({
     ".U1 > .VBAT to .C1 > .1": 1,
-    ".C1 > .2 to net.GND": 1,
+    ".C1 > .2 to net.GND": undefined,
     ".U1 > .GND to net.GND": undefined,
   })
 })

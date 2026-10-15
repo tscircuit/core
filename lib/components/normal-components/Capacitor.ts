@@ -136,6 +136,9 @@ export class Capacitor extends NormalComponent<
   doInitialSourceRender() {
     const { db } = this.root!
     const { _parsedProps: props } = this
+    const maximumDecouplingTraceLength =
+      props.maxDecouplingTraceLength ??
+      Capacitor_getAutomaticMaxDecouplingTraceLength(this)
     const source_component = db.source_component.insert({
       ftype: "simple_capacitor",
       name: this.name,
@@ -143,10 +146,15 @@ export class Capacitor extends NormalComponent<
       supplier_part_numbers: props.supplierPartNumbers,
       capacitance: props.capacitance,
       max_voltage_rating: props.maxVoltageRating,
-      max_decoupling_trace_length:
-        props.maxDecouplingTraceLength ??
-        Capacitor_getAutomaticMaxDecouplingTraceLength(this),
+      max_decoupling_trace_length: maximumDecouplingTraceLength,
       display_capacitance: this._getSchematicSymbolDisplayValue(),
+      max_decoupling_trace_length_origin:
+        maximumDecouplingTraceLength === undefined
+          ? undefined
+          : props.maxDecouplingTraceLength !== undefined
+            ? "configured"
+            : "automatic",
+      capacitor_role: props.capacitorRole,
       are_pins_interchangeable: !props.polarized,
       display_name: props.displayName,
     } as SourceSimpleCapacitorInput)

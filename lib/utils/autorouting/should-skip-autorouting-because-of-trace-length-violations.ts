@@ -165,7 +165,7 @@ export const getStraightLineTraceLengthViolations = ({
 
     violations.push({
       sourceTraceId: sourceTrace.source_trace_id,
-      traceDisplayName: sourceTrace.display_name,
+      traceDisplayName: sourceTrace.name ?? sourceTrace.display_name,
       straightLineDistance,
       maximumTraceLength: sourceTrace.max_length,
     })
@@ -195,8 +195,7 @@ export const shouldSkipAutoroutingBecauseOfTraceLengthViolations = ({
 
   if (!errorAlreadyExists) {
     const firstViolation = violations[0]
-    const traceName =
-      firstViolation.traceDisplayName ?? firstViolation.sourceTraceId
+    const traceName = firstViolation.traceDisplayName ?? "unnamed trace"
     const additionalViolationCount = violations.length - 1
     const additionalViolationMessage =
       additionalViolationCount > 0
