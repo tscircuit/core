@@ -4,6 +4,7 @@ import type {
   PcbPlatedHole,
   PcbSmtPad,
   PcbTrace,
+  SourcePort,
   SourceTrace,
 } from "circuit-json"
 import { ConnectivityMap } from "circuit-json-to-connectivity-map"
@@ -13,6 +14,7 @@ import { applyToPoint, rotateDEG } from "transformation-matrix"
 type RoutedTrace = (PcbTrace | SimplifiedPcbTrace) & {
   source_trace_id?: string
 }
+type SourcePortId = SourcePort["source_port_id"]
 
 type RoutePointWithPortIds = {
   route_type: string
@@ -47,6 +49,12 @@ function isPointOnWireSegment({
   )
 }
 
+/**
+ * Tests a board-world point against a top-view SMT pad. All coordinates and
+ * dimensions are millimetres in the right-handed PCB frame (+X right, +Y top).
+ * `ccw_rotation` maps pad-local axes into that frame, so this inverse rotation
+ * maps the translated point back into pad-local coordinates for containment.
+ */
 function isPointInSmtPad({
   point,
   pad,
@@ -94,7 +102,7 @@ function getEndpointSourcePortIdsFromGeometry(
   db: CircuitJsonUtilObjects,
   trace: RoutedTrace,
 ) {
-  const sourcePortIds = new Set<string>()
+  const sourcePortIds = new Set<SourcePortId>()
   const route = trace.route as RoutePointWithPortIds[]
   const endpoints = [route[0], route[route.length - 1]].filter(
     (point): point is RoutePointWithPortIds & { x: number; y: number } =>
@@ -105,6 +113,7 @@ function getEndpointSourcePortIdsFromGeometry(
   )
 
   for (const endpoint of endpoints) {
+    const exactEndpointSourcePortIds = new Set<SourcePortId>()
     for (const pcbPort of db.pcb_port.list()) {
       if (!pcbPort.source_port_id) continue
       if (
@@ -114,8 +123,14 @@ function getEndpointSourcePortIdsFromGeometry(
       )
         continue
       if (distance(endpoint, pcbPort) <= 0.01) {
-        sourcePortIds.add(pcbPort.source_port_id)
+        exactEndpointSourcePortIds.add(pcbPort.source_port_id)
       }
+    }
+    if (exactEndpointSourcePortIds.size > 0) {
+      for (const sourcePortId of exactEndpointSourcePortIds) {
+        sourcePortIds.add(sourcePortId)
+      }
+      continue
     }
 
     for (const smtpad of db.pcb_smtpad.list()) {
@@ -221,7 +236,7 @@ function getSourcePortIdsFromRoutedTrace(
   db: CircuitJsonUtilObjects,
   trace: RoutedTrace,
 ) {
-  const sourcePortIds = new Set<string>()
+  const sourcePortIds = new Set<SourcePortId>()
 
   for (const point of trace.route as RoutePointWithPortIds[]) {
     for (const pcbPortId of [point.start_pcb_port_id, point.end_pcb_port_id]) {
