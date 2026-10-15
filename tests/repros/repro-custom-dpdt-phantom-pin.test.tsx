@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import { Board } from "lib/components/normal-components/Board/Board"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("project SW4 symbol incorrectly inherits pin4 from the built-in DPDT symbol", async () => {
+test("project SW4 symbol keeps its exact pins without a phantom pin4", async () => {
   const { circuit } = getTestFixture()
   circuit.pcbDisabled = true
 
@@ -165,10 +165,8 @@ test("project SW4 symbol incorrectly inherits pin4 from the built-in DPDT symbol
     .sort((a, b) => a! - b!)
   const warnings = circuit.db.source_pin_missing_trace_warning.list()
 
-  // Capture the current bug; the fix must remove pin4, not suppress its warning.
-  expect(sourcePins).toEqual([1, 2, 3, 4, 5, 6, 7])
-  expect(warnings).toHaveLength(1)
-  expect(warnings[0]!.message).toBe("Port pin4 on SW4 is missing a trace")
+  expect(sourcePins).toEqual([1, 2, 3, 5, 6, 7])
+  expect(warnings).toHaveLength(0)
   expect(
     sourcePorts
       .filter((port) => port.do_not_connect)
