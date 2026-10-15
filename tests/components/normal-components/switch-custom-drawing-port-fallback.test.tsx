@@ -99,7 +99,7 @@ test("custom drawings without ports retain built-in terminal inference and layou
         }}
       />
       <schematictext
-        text="Fallback locations remain unchanged; pin7 still lacks a drawing terminal."
+        text="Main fallback retained: built-in pin4 exists; pin7 lacks a drawing terminal."
         schX={-4}
         schY={-2.1}
         fontSize={0.14}
@@ -134,7 +134,7 @@ test("custom drawings without ports retain built-in terminal inference and layou
 
   const board = circuit.firstChild as Board
   for (const [name, schX, expectedSourcePins, expectedSchematicPins] of [
-    ["SW4", -4, [1, 2, 3, 5, 6, 7], [1, 2, 3, 5, 6]],
+    ["SW4", -4, [1, 2, 3, 4, 5, 6, 7], [1, 2, 3, 4, 5, 6]],
     ["SW5", 4, [1, 2], [1, 2]],
   ] as const) {
     const component = circuit.db.source_component
@@ -174,7 +174,9 @@ test("custom drawings without ports retain built-in terminal inference and layou
       />,
     )
   }
-  expect(circuit.db.source_pin_missing_trace_warning.list()).toHaveLength(0)
+  const warnings = circuit.db.source_pin_missing_trace_warning.list()
+  expect(warnings).toHaveLength(1)
+  expect(warnings[0]!.message).toBe("Port pin4 on SW4 is missing a trace")
   expect(circuit.db.schematic_trace.list()).toHaveLength(7)
   await circuit.renderUntilSettled()
   await expect(circuit).toMatchSchematicSnapshot(import.meta.path, {
