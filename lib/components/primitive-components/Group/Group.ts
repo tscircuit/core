@@ -821,7 +821,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       hasReroutePhaseWithExistingTraceInput ||= Boolean(
         routingPhasePlan.reroute &&
           (routingPhasePlan.region ||
-            phaseAutorouterConfig?.preset === "simplify"),
+            phaseAutorouterConfig?.preset === "simplify" ||
+            routingPhasePlan.connectionSelectors?.length === 0),
       )
     }
     debug(`[${this.getString()}] has ${traceCount} traces to route`)
@@ -1411,17 +1412,27 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           routingPhasePlan.region &&
           !isTraceSimplificationPhase,
       )
+      const isUnboundedReroutePhase = Boolean(
+        routingPhasePlan.reroute &&
+          !isTraceSimplificationPhase &&
+          !routingPhasePlan.region &&
+          routingPhasePlan.connectionSelectors?.length === 0,
+      )
       const isConnectionReroutePhase = Boolean(
         routingPhasePlan.reroute &&
           !isTraceSimplificationPhase &&
           !routingPhasePlan.region &&
+          !isUnboundedReroutePhase &&
           routingPhasePlan.traces.length > 0,
       )
       const isReroutePhase =
         isRegionReroutePhase ||
+        isUnboundedReroutePhase ||
         isConnectionReroutePhase ||
         isTraceSimplificationPhase
-      const rerouteOriginalSrj = isRegionReroutePhase
+      const isGeometricReroutePhase =
+        isRegionReroutePhase || isUnboundedReroutePhase
+      const rerouteOriginalSrj = isGeometricReroutePhase
         ? {
             ...baseSimpleRouteJson,
             traces: [...existingRerouteSeedTraces, ...outputTraces],
@@ -1442,15 +1453,20 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         }
       } else if (
         !usesPreviousStageOutput &&
-        isRegionReroutePhase &&
+        isGeometricReroutePhase &&
         rerouteOriginalSrj
       ) {
+        const rerouteRegion: RerouteRectRegion = routingPhasePlan.region
+          ? { ...routingPhasePlan.region, shape: "rect" }
+          : {
+              // Without an explicit region, reroute all routed copper within
+              // the subcircuit's natural routing envelope.
+              shape: "rect",
+              ...baseSimpleRouteJson.bounds,
+            }
         simpleRouteJson = getRerouteSimpleRouteJson(
           rerouteOriginalSrj as AutorouterSimpleRouteJson,
-          {
-            shape: "rect",
-            ...routingPhasePlan.region,
-          } as RerouteRectRegion,
+          rerouteRegion,
         ) as SimpleRouteJson
       } else if (!usesPreviousStageOutput && isConnectionReroutePhase) {
         const phaseInput = Group_filterSimpleRouteJsonForPhase(
@@ -1975,7 +1991,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           outputJumpers.push(...(solver.getOutputJumpers() || []))
         }
 
-        if (isRegionReroutePhase && rerouteOriginalSrj) {
+        if (isGeometricReroutePhase && rerouteOriginalSrj) {
           for (const trace of rerouteOriginalSrj.traces ?? []) {
             if (trace.type === "pcb_trace") {
               pcbTraceIdsToDelete.add(trace.pcb_trace_id)
