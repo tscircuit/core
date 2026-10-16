@@ -160,12 +160,21 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     const parent = this.parent as unknown as INormalComponent | undefined
     if (!parent || !parent._getInternallyConnectedPins) return []
     const internallyConnectedPorts = parent._getInternallyConnectedPins()
-    for (const ports of internallyConnectedPorts) {
-      if (ports.some((port) => port === this)) {
-        return ports
+    const connected = new Set<Port>([this])
+    let changed = true
+    while (changed) {
+      changed = false
+      for (const ports of internallyConnectedPorts) {
+        if (!ports.some((port) => connected.has(port))) continue
+        for (const port of ports) {
+          if (!connected.has(port)) {
+            connected.add(port)
+            changed = true
+          }
+        }
       }
     }
-    return []
+    return connected.size > 1 ? [...connected] : []
   }
 
   /**
@@ -302,10 +311,14 @@ export class Port extends PrimitiveComponent<typeof portProps> {
   registerMatch(component: PrimitiveComponent) {
     this.matchedComponents.push(component)
   }
+  /** Physical package ball name; pinNumber remains a schematic layout ordinal. */
+  physicalPinName?: string
+
   getNameAndAliases() {
     const { _parsedProps: props } = this
     return Array.from(
       new Set([
+        ...(this.physicalPinName ? [this.physicalPinName] : []),
         ...(props.name ? [props.name] : []),
         ...(props.aliases ?? []),
         ...(typeof props.pinNumber === "number"
@@ -432,8 +445,10 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     const portAttributesFromParent = resolvePortSourcePinAttributes(this)
 
     const source_port = db.source_port.insert({
-      name: props.name!,
-      pin_number: props.pinNumber,
+      name: this.physicalPinName ?? props.name!,
+      // Physical balls have a string package identity. Keep their numeric
+      // layout ordinal on schematic_port, not the physical source pin number.
+      pin_number: this.physicalPinName ? undefined : props.pinNumber,
       port_hints,
       source_component_id: source_component_id!,
       subcircuit_id: this.getSubcircuit()?.subcircuit_id!,

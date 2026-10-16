@@ -51,13 +51,12 @@ export const extractPcbPrimitivesFromCircuitJson = ({
   const clonedRelativeElements = structuredClone(relativeElements)
 
   // Transform all PCB elements using the standard transformation utility
-  // This handles all element types (holes, pads, keepouts, silkscreen, etc.)
   transformPCBElements(
     clonedRelativeElements,
     absoluteToComponentRelativeTransform,
   )
 
-  const components = createComponentsFromCircuitJson(
+  return createComponentsFromCircuitJson(
     {
       componentName,
       componentRotation: "0deg",
@@ -67,6 +66,4 @@ export const extractPcbPrimitivesFromCircuitJson = ({
     },
     clonedRelativeElements,
   )
-
-  return components
 }

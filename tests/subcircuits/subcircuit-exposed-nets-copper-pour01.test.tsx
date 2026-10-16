@@ -17,7 +17,7 @@ const SubcircuitChild = () => (
 )
 
 const SubcircuitConnectivityRepro = () => (
-  <board name="SubcircuitParent" width="10mm" height="7mm">
+  <board name="SubcircuitParent" width="10.2mm" height="7mm">
     <pinheader
       name="J1"
       pinCount={1}
@@ -72,6 +72,9 @@ test("copper pour connects to exposed net across subcircuit boundary", async () 
   circuit.add(<SubcircuitConnectivityRepro />)
 
   await circuit.renderUntilSettled()
+
+  expect(circuit.db.pcb_component_outside_board_error.list()).toEqual([])
+  expect(circuit.db.pcb_trace.list().length).toBeGreaterThan(0)
 
   const gndNets = circuit.db.source_net
     .list()

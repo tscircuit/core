@@ -179,7 +179,35 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     }
   }
 
-  const subcircuitElements = (circuitJson ?? db.toArray()).filter(
+  const allElements = circuitJson ?? db.toArray()
+  const sourceTraceById = new Map(
+    allElements.flatMap((element) =>
+      element.type === "source_trace"
+        ? [[element.source_trace_id, element] as const]
+        : [],
+    ),
+  )
+  // Imported copper can omit its optional scope metadata while its source
+  // trace still declares the owning subcircuit. Resolve that ownership before
+  // filtering, preserving the physical route and the caller's input objects.
+  // A fresh-routing request retains its policy of discarding unscoped copper.
+  const scopedElements = allElements.map((element) => {
+    if (
+      ignoreExistingTopLevelPcbRouteState ||
+      element.type !== "pcb_trace" ||
+      element.subcircuit_id ||
+      !element.source_trace_id
+    ) {
+      return element
+    }
+    const inheritedSubcircuitId = sourceTraceById.get(
+      element.source_trace_id,
+    )?.subcircuit_id
+    return inheritedSubcircuitId
+      ? { ...element, subcircuit_id: inheritedSubcircuitId }
+      : element
+  })
+  const subcircuitElements = scopedElements.filter(
     (e) =>
       !subcircuit_id ||
       ("subcircuit_id" in e && relevantSubcircuitIds!.has(e.subcircuit_id!)),

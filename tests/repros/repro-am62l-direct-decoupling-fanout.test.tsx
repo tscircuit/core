@@ -52,7 +52,13 @@ test("routes the AM62L and LPDDR4 with the real decoupling network present", asy
   expect(
     circuit.db.pcb_trace_error
       .list()
-      .filter(({ message }) => !message.includes("dangling endpoint"))
+      // Via-policy diagnostics are asserted against the authored drops in
+      // renderAm62lLpddr4Fanout; retain the separate overlap regression here.
+      .filter(
+        ({ message }) =>
+          !message.includes("dangling endpoint") &&
+          !message.includes("disallowed via"),
+      )
       .map(({ message }) => message),
   ).toMatchInlineSnapshot(`
     [

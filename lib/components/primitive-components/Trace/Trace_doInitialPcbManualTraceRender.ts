@@ -5,6 +5,7 @@ import {
   type PcbVia,
 } from "circuit-json"
 import { getTraceLength } from "./trace-utils/compute-trace-length"
+import { insertPcbPathViaContactErrors } from "./insert-pcb-path-via-contact-errors"
 import type { Port } from "../Port"
 import type { Trace } from "./Trace"
 import { applyToPoint, identity } from "transformation-matrix"
@@ -16,6 +17,7 @@ import { getPcbSelectorErrorForTracePort } from "./getPcbSelectorErrorForTracePo
 import { jlcMinTolerances } from "@tscircuit/jlcpcb-manufacturing-specs"
 import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
 import { renderPcbPaths } from "./render-pcb-paths"
+import { insertPcbPathViaPolicyErrors } from "./insert-pcb-path-via-policy-errors"
 
 const findInflatedPcbViaForPoint = (
   vias: PcbVia[] | undefined,
@@ -508,7 +510,14 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
       })
     }
   }
+  insertPcbPathViaPolicyErrors({
+    trace,
+    pcbTrace: pcb_trace,
+    path: props.pcbPath!,
+    ports,
+  })
   trace._portsRoutedOnPcb = ports
   trace.pcb_trace_id = pcb_trace.pcb_trace_id
+  insertPcbPathViaContactErrors({ trace, pcbTrace: pcb_trace, ports })
   trace._insertErrorIfTraceIsOutsideBoard(route, ports)
 }

@@ -1,13 +1,15 @@
+import { getImportedInternallyConnectedPinNames } from "./get-imported-internally-connected-pin-names"
 import { getUnitVectorFromDirection } from "@tscircuit/math-utils"
-import type { PinLabelsProp } from "@tscircuit/props"
+import type { PcbSoldermaskOpeningProps, PinLabelsProp } from "@tscircuit/props"
 import {
-  pcb_via,
-  layer_ref,
   type AnyCircuitElement,
   type PcbSilkscreenText,
-  type SchematicComponent,
   type PcbSolderPastePolygon,
+  type SchematicComponent,
+  layer_ref,
+  pcb_via,
 } from "circuit-json"
+import type { NormalComponent } from "lib/components/base-components/NormalComponent"
 import { CopperText } from "lib/components/primitive-components/CopperText"
 import { CourtyardCircle } from "lib/components/primitive-components/CourtyardCircle"
 import { CourtyardOutline } from "lib/components/primitive-components/CourtyardOutline"
@@ -39,8 +41,11 @@ import { SilkscreenPath } from "lib/components/primitive-components/SilkscreenPa
 import { SilkscreenRect } from "lib/components/primitive-components/SilkscreenRect"
 import { SilkscreenText } from "lib/components/primitive-components/SilkscreenText"
 import { SmtPad } from "lib/components/primitive-components/SmtPad"
+import {
+  SolderPaste,
+  isStandalonePcbSolderPaste,
+} from "lib/components/primitive-components/SolderPaste"
 import { SymbolComponent } from "lib/components/primitive-components/Symbol"
-import type { NormalComponent } from "lib/components/base-components/NormalComponent"
 import type { PrimitiveComponent } from "../components/base-components/PrimitiveComponent"
 import { createPinrowSilkscreenText } from "./createPinrowSilkscreenText"
 import { DESIGNATOR_PLACEHOLDERS } from "./designator-placeholders"
@@ -111,9 +116,10 @@ const isSchematicPrimitiveWithStrokeWidth = (
 
 const getSchematicSymbolId = (elm: AnyCircuitElement): string | undefined => {
   if (!("schematic_symbol_id" in elm)) return undefined
-  return typeof elm.schematic_symbol_id === "string"
-    ? elm.schematic_symbol_id
-    : undefined
+  if (typeof elm.schematic_symbol_id === "string") {
+    return elm.schematic_symbol_id
+  }
+  return undefined
 }
 
 export const createComponentsFromCircuitJson = (
@@ -144,6 +150,12 @@ export const createComponentsFromCircuitJson = (
   const importedSourcePorts = circuitJson.filter(
     (elm) => elm.type === "source_port",
   )
+  if (sourcePortOwner) {
+    const internalGroups = getImportedInternallyConnectedPinNames(circuitJson)
+    if (internalGroups !== undefined) {
+      sourcePortOwner._importedInternallyConnectedPinNames = internalGroups
+    }
+  }
   if (sourcePortOwner && importedSourcePorts.length > 0) {
     sourcePortOwner._importedSourcePorts = importedSourcePorts
     for (const port of sourcePortOwner._getAllPortsFromChildren()) {
@@ -201,16 +213,13 @@ export const createComponentsFromCircuitJson = (
     pcbComponentId: string | undefined,
   ) => {
     const pinNumber = getPinNumberFromPortHints(portHints)
+    if (typeof pcbComponentId !== "string") return portHints
     const sourceComponentId =
-      typeof pcbComponentId === "string"
-        ? sourceComponentIdByPcbComponentId.get(pcbComponentId)
-        : undefined
-    const sourcePort =
-      typeof pinNumber === "number" && sourceComponentId
-        ? sourcePortsByComponentAndPinNumber
-            .get(sourceComponentId)
-            ?.get(pinNumber)
-        : undefined
+      sourceComponentIdByPcbComponentId.get(pcbComponentId)
+    if (typeof pinNumber !== "number" || !sourceComponentId) return portHints
+    const sourcePort = sourcePortsByComponentAndPinNumber
+      .get(sourceComponentId)
+      ?.get(pinNumber)
 
     if (!sourcePort) return portHints
 
@@ -227,7 +236,8 @@ export const createComponentsFromCircuitJson = (
       ),
     )
 
-    return mergedPortHints.length > 0 ? mergedPortHints : portHints
+    if (mergedPortHints.length > 0) return mergedPortHints
+    return portHints
   }
 
   for (const elm of circuitJson) {
@@ -266,59 +276,91 @@ export const createComponentsFromCircuitJson = (
     elm: AnyCircuitElement,
     primitive: PrimitiveComponent,
   ) => {
-    const schematicSymbolId =
-      getSchematicSymbolId(elm) ??
-      ("schematic_component_id" in elm &&
+    let schematicSymbolId = getSchematicSymbolId(elm)
+    if (
+      schematicSymbolId === undefined &&
+      "schematic_component_id" in elm &&
       typeof elm.schematic_component_id === "string"
-        ? schematicComponentsByImportedId.get(elm.schematic_component_id)
-            ?.schematic_symbol_id
-        : undefined)
-    const parentSymbol =
-      typeof schematicSymbolId === "string"
-        ? schematicSymbolsByImportedId.get(schematicSymbolId)
-        : undefined
-
-    if (parentSymbol) {
-      parentSymbol.add(primitive)
-    } else {
-      components.push(primitive)
+    ) {
+      schematicSymbolId = schematicComponentsByImportedId.get(
+        elm.schematic_component_id,
+      )?.schematic_symbol_id
     }
+    if (typeof schematicSymbolId === "string") {
+      const parentSymbol = schematicSymbolsByImportedId.get(schematicSymbolId)
+      if (parentSymbol) {
+        parentSymbol.add(primitive)
+        return
+      }
+    }
+    components.push(primitive)
   }
 
   for (const elm of circuitJson) {
-    const resolvedPortHints =
-      "port_hints" in elm
-        ? getPortHintsWithSourcePortAliases(
-            elm.port_hints,
-            "pcb_component_id" in elm ? elm.pcb_component_id : undefined,
-          )
-        : undefined
+    let resolvedPortHints: string[] | undefined
+    if ("port_hints" in elm) {
+      resolvedPortHints = elm.port_hints
+      if ("pcb_component_id" in elm) {
+        resolvedPortHints = getPortHintsWithSourcePortAliases(
+          elm.port_hints,
+          elm.pcb_component_id,
+        )
+      }
+    }
 
-    if (elm.type === "pcb_soldermask_opening") {
-      components.push(
-        new PcbSoldermaskOpening(
-          elm.shape === "polygon"
-            ? { shape: "polygon", layer: elm.layer, points: elm.points }
-            : elm.shape === "circle"
-              ? {
-                  shape: "circle",
-                  layer: elm.layer,
-                  pcbX: elm.x,
-                  pcbY: elm.y,
-                  radius: elm.radius,
-                }
-              : {
-                  shape: "rect",
-                  layer: elm.layer,
-                  pcbX: elm.x,
-                  pcbY: elm.y,
-                  width: elm.width,
-                  height: elm.height,
-                  pcbRotation:
-                    elm.shape === "rotated_rect" ? elm.ccw_rotation : 0,
-                },
-        ),
+    // When rebuilding rendered copper, do not recreate an automatic aperture
+    // that was deliberately suppressed (for example, for a windowed stencil).
+    let solderPasteMargin: number | undefined
+    if (
+      preserveSolderPaste &&
+      elm.type === "pcb_smtpad" &&
+      !circuitJson.some(
+        (paste) =>
+          paste.type === "pcb_solder_paste" &&
+          paste.pcb_smtpad_id === elm.pcb_smtpad_id,
       )
+    ) {
+      if (elm.shape === "circle") {
+        solderPasteMargin = -elm.radius
+      } else if (elm.shape !== "polygon") {
+        solderPasteMargin = -Math.min(elm.width, elm.height) / 2
+      }
+    }
+
+    if (isStandalonePcbSolderPaste(elm)) {
+      components.push(SolderPaste.fromCircuitJson(elm))
+    } else if (elm.type === "pcb_soldermask_opening") {
+      let openingProps: PcbSoldermaskOpeningProps
+      if (elm.shape === "polygon") {
+        openingProps = {
+          shape: "polygon",
+          layer: elm.layer,
+          points: elm.points,
+        }
+      } else if (elm.shape === "circle") {
+        openingProps = {
+          shape: "circle",
+          layer: elm.layer,
+          pcbX: elm.x,
+          pcbY: elm.y,
+          radius: elm.radius,
+        }
+      } else {
+        let pcbRotation = 0
+        if (elm.shape === "rotated_rect") {
+          pcbRotation = elm.ccw_rotation
+        }
+        openingProps = {
+          shape: "rect",
+          layer: elm.layer,
+          pcbX: elm.x,
+          pcbY: elm.y,
+          width: elm.width,
+          height: elm.height,
+          pcbRotation,
+        }
+      }
+      components.push(new PcbSoldermaskOpening(openingProps))
     } else if (elm.type === "pcb_smtpad" && elm.shape === "rect") {
       components.push(
         new SmtPad({
@@ -330,6 +372,7 @@ export const createComponentsFromCircuitJson = (
           width: elm.width,
           portHints: resolvedPortHints,
           rectBorderRadius: elm.rect_border_radius,
+          solderPasteMargin,
         }),
       )
     } else if (elm.type === "pcb_smtpad" && elm.shape === "circle") {
@@ -341,6 +384,7 @@ export const createComponentsFromCircuitJson = (
           shape: "circle",
           radius: elm.radius,
           portHints: resolvedPortHints,
+          solderPasteMargin,
         }),
       )
     } else if (elm.type === "pcb_smtpad" && elm.shape === "pill") {
@@ -354,6 +398,7 @@ export const createComponentsFromCircuitJson = (
           pcbX: elm.x,
           pcbY: elm.y,
           layer: elm.layer,
+          solderPasteMargin,
         }),
       )
     } else if (elm.type === "pcb_smtpad" && elm.shape === "rotated_pill") {
@@ -368,6 +413,7 @@ export const createComponentsFromCircuitJson = (
           pcbY: elm.y,
           layer: elm.layer,
           ccwRotation: elm.ccw_rotation,
+          solderPasteMargin,
         }),
       )
     } else if (elm.type === "pcb_smtpad" && elm.shape === "rotated_rect") {
@@ -382,6 +428,7 @@ export const createComponentsFromCircuitJson = (
           ccwRotation: elm.ccw_rotation,
           cornerRadius: elm.corner_radius,
           portHints: resolvedPortHints,
+          solderPasteMargin,
         }),
       )
     } else if (elm.type === "pcb_smtpad" && elm.shape === "polygon") {
@@ -642,19 +689,26 @@ export const createComponentsFromCircuitJson = (
           anchorAlignment: elm.anchor_alignment,
         })
       } else {
+        // Footprinter-generated reference text is a placeholder that should
+        // resolve to the component name. A literal from the explicit
+        // `silkscreenlabel(...)` footprint option is an intentional custom
+        // label (for example a module name) and must be preserved. Other
+        // imported footprint text keeps the legacy component-name fallback.
+        let text = componentName || elm.text
+        if (
+          footprinterString?.includes("silkscreenlabel(") &&
+          !DESIGNATOR_PLACEHOLDERS.includes(elm.text)
+        ) {
+          text = elm.text
+        }
+        let pcbX = elm.anchor_position.x
+        if (Number.isNaN(pcbX)) {
+          pcbX = 0
+        }
         silkscreenText = new SilkscreenText({
           anchorAlignment: elm.anchor_alignment || "center",
-          // Footprinter-generated reference text is a placeholder that should
-          // resolve to the component name. A literal from the explicit
-          // `silkscreenlabel(...)` footprint option is an intentional custom
-          // label (for example a module name) and must be preserved. Other
-          // imported footprint text keeps the legacy component-name fallback.
-          text:
-            footprinterString?.includes("silkscreenlabel(") &&
-            !DESIGNATOR_PLACEHOLDERS.includes(elm.text)
-              ? elm.text
-              : componentName || elm.text,
-          pcbX: Number.isNaN(elm.anchor_position.x) ? 0 : elm.anchor_position.x,
+          text,
+          pcbX,
           pcbY: elm.anchor_position.y,
           pcbRotation: ccwRotation ?? 0,
         })
@@ -924,10 +978,10 @@ export const createComponentsFromCircuitJson = (
       const schematicComponent =
         schematicComponentsByImportedId.get(schematicComponentId)
       const schematicSymbolId = schematicComponent?.schematic_symbol_id
-      const parentSymbol =
-        typeof schematicSymbolId === "string"
-          ? schematicSymbolsByImportedId.get(schematicSymbolId)
-          : undefined
+      let parentSymbol: SymbolComponent | undefined
+      if (typeof schematicSymbolId === "string") {
+        parentSymbol = schematicSymbolsByImportedId.get(schematicSymbolId)
+      }
 
       if (
         parentSymbol &&
@@ -942,7 +996,10 @@ export const createComponentsFromCircuitJson = (
         if (!facingDirection) continue
 
         const directionVector = getUnitVectorFromDirection(facingDirection)
-        const stemDirection = elm.facing_direction === facingDirection ? 1 : -1
+        let stemDirection = -1
+        if (elm.facing_direction === facingDirection) {
+          stemDirection = 1
+        }
         const portCenter = {
           x: elm.center.x + directionVector.x * distance * stemDirection,
           y: elm.center.y + directionVector.y * distance * stemDirection,
@@ -962,9 +1019,10 @@ export const createComponentsFromCircuitJson = (
           ),
         )
 
-        const fallbackPortName = elm.pin_number
-          ? `pin${elm.pin_number}`
-          : elm.schematic_port_id
+        let fallbackPortName = elm.schematic_port_id
+        if (elm.pin_number) {
+          fallbackPortName = `pin${elm.pin_number}`
+        }
         const portName = aliases[0] ?? elm.source_port_id ?? fallbackPortName
 
         parentSymbol.add(
@@ -978,18 +1036,19 @@ export const createComponentsFromCircuitJson = (
           }),
         )
 
+        let strokeWidth: number | undefined
+        if (typeof schematicSymbolId === "string") {
+          strokeWidth = optional(
+            schematicStrokeWidthBySymbolId.get(schematicSymbolId),
+          )
+        }
         parentSymbol.add(
           new SchematicLine({
             x1: elm.center.x,
             y1: elm.center.y,
             x2: portCenter.x,
             y2: portCenter.y,
-            strokeWidth:
-              typeof schematicSymbolId === "string"
-                ? optional(
-                    schematicStrokeWidthBySymbolId.get(schematicSymbolId),
-                  )
-                : undefined,
+            strokeWidth,
             isDashed: false,
           }),
         )
