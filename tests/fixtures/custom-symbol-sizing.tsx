@@ -4,8 +4,8 @@ export const RoundContact = ({
 }: {
   width?: number
   height?: number
-  fit?: "fill" | "contain"
-  viewbox?: { x: number; y: number; width: number; height: number }
+  fit?: "fill" | "contain" | "stretch"
+  viewbox?: { minX: number; maxX: number; minY: number; maxY: number }
   sourceCenter?: { x: number; y: number }
 }) => (
   <symbol {...props}>

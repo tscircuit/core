@@ -81,15 +81,15 @@ export class SymbolComponent
     const { db } = this.root!
     const { viewbox } = this._parsedProps
     if (viewbox) {
-      // viewbox is symbol-local (+X right, +Y up, mm). Children are emitted
-      // in schematic world coordinates before resizing, so translate its
-      // corner points by the same symbol position before deriving the transform.
+      // viewbox defines the local symbol coordinate space (+X right, +Y up, mm).
+      // Child points are in schematic world coordinates before resizing, so
+      // translate the local bounds by the symbol position for the same frame.
       const globalPos = this._getGlobalSchematicPositionBeforeLayout()
       this.schematicSymbolBoundsInUserCoordinates = {
-        minX: globalPos.x + viewbox.x,
-        maxX: globalPos.x + viewbox.x + viewbox.width,
-        minY: globalPos.y + viewbox.y,
-        maxY: globalPos.y + viewbox.y + viewbox.height,
+        minX: globalPos.x + viewbox.minX,
+        maxX: globalPos.x + viewbox.maxX,
+        minY: globalPos.y + viewbox.minY,
+        maxY: globalPos.y + viewbox.maxY,
       }
       return
     }
@@ -165,7 +165,7 @@ export class SymbolComponent
     const currentCenterX = (bounds.minX + bounds.maxX) / 2
     const currentCenterY = (bounds.minY + bounds.maxY) / 2
 
-    // Calculate scale factors
+    // CSS-style fill (default) and explicit stretch scale each axis independently.
     let scaleX =
       targetWidth !== undefined && currentWidth > 0
         ? targetWidth / currentWidth
