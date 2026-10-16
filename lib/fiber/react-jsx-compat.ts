@@ -7,7 +7,7 @@ type SwitchSvgAttributeProps = Partial<
 >
 // <symbol> is typed as React's SVG symbol element; its tscircuit-only props are added the same way
 type SymbolSvgAttributeProps = Partial<
-  Pick<Props.SymbolProps, "objectFit" | "viewbox">
+  Pick<Props.SymbolProps, "objectFit" | "viewbox" | "viewboxPreset">
 >
 
 declare module "react" {

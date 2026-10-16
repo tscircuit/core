@@ -85,9 +85,12 @@ export class SymbolComponent
     }> = []
 
     // Collect circuit-json elements from children, including ports so
-    // the full symbol (body + stems) fits within the specified width/height
+    // the full symbol (body + stems) fits within the specified width/height,
+    // unless viewboxPreset="shape_bounds" asks for the drawing alone
+    const includePorts = this._parsedProps.viewboxPreset !== "shape_bounds"
     for (const child of this.children) {
       if (child.componentName === "Port") {
+        if (!includePorts) continue
         const portId = (child as Port).schematic_port_id
         if (portId) {
           const port = db.schematic_port.get(portId)
