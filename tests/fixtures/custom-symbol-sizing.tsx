@@ -5,6 +5,7 @@ export const RoundContact = (props: {
   sizeIncludesPorts?: boolean
 }) => (
   <symbol {...props}>
+    {/* A path outline makes independent axis scaling visible as an ellipse. */}
     <schematicpath
       points={Array.from({ length: 65 }, (_, pointIndex) => {
         const angle = (pointIndex / 64) * 2 * Math.PI
