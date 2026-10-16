@@ -20,7 +20,7 @@ export const getChipPinMetadataFixture = (
     }),
   )
   const importedCircuitJson = [
-    ...externalFootprint,
+    ...structuredClone(externalFootprint),
     ...importedPorts,
   ] as AnyCircuitElement[]
   const partsEngine: PartsEngine = {
