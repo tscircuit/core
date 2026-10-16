@@ -134,7 +134,17 @@ export class SymbolComponent
 
   private _computeUserCoordinateToResizedSymbolTransform(): void {
     const { _parsedProps: props } = this
-    const bounds = this.getSchematicSymbolBounds()
+    // The region fitted into width / height: the viewbox when given (SVG convention), else the measured bounds of
+    // the primitives and ports
+    const viewbox = props.viewbox
+    const bounds = viewbox
+      ? {
+          minX: viewbox.x,
+          maxX: viewbox.x + viewbox.width,
+          minY: viewbox.y,
+          maxY: viewbox.y + viewbox.height,
+        }
+      : this.getSchematicSymbolBounds()
     if (!bounds) return
 
     const targetWidth = props.width
