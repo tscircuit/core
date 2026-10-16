@@ -41,7 +41,7 @@ test("plated hole layers inside a four-layer panel board", async () => {
   })
 
   expect(circuit.db.pcb_plated_hole.list().map((hole) => hole.layers)).toEqual([
-    ["top", "bottom"],
-    ["top", "bottom"],
+    ["top", "bottom", "inner1", "inner2"],
+    ["top", "bottom", "inner1", "inner2"],
   ])
 })
