@@ -1,5 +1,3 @@
-import type { SchematicSymbolBounds } from "lib/components/primitive-components/Symbol/ISymbol"
-
 export const RoundContact = ({
   sourceCenter = { x: 0, y: 0 },
   ...props
@@ -7,8 +5,7 @@ export const RoundContact = ({
   width?: number
   height?: number
   fit?: "fill" | "contain" | "stretch"
-  viewbox?: SchematicSymbolBounds
-  viewboxPreset?: "shape_bounds"
+  viewbox?: { minX: number; maxX: number; minY: number; maxY: number }
   sourceCenter?: { x: number; y: number }
 }) => (
   <symbol {...props}>
