@@ -32,7 +32,7 @@ const ORTHO_DIRS = [
  * the goal by `|goal - node|`.
  */
 export class MultilayerIjump extends BaseMultilayerIjump {
-  override getNeighbors(node: any) {
+  override getNeighbors(node: any): any[] {
     const neighbors = super.getNeighbors(node)
     const goalPoint = (this as any).goalPoint
     const obstacles = (this as any).obstacles
