@@ -11,6 +11,18 @@ test.failing(
     const { circuit } = getTestFixture()
     circuit.add(
       <board width={20} height={20} routingDisabled>
+        <schematictext
+          schX={-3}
+          schY={-2}
+          text="Legacy: independent scaling"
+          fontSize={0.2}
+        />
+        <schematictext
+          schX={3}
+          schY={-2}
+          text="Opt-in: preserve proportions"
+          fontSize={0.2}
+        />
         <chip
           name="Legacy"
           schX={-3}
