@@ -11,7 +11,7 @@ test("an imported board omits its via-in-pad policy", async () => {
     ignoreExistingTopLevelPcbRouteState: true,
   })
 
-  expect(simpleRouteJson.allowViaInPad).toBeUndefined()
+  expect(simpleRouteJson.allowViaInPad).toBe(false)
 
   const snapshot = `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="180" viewBox="0 0 640 180">
     <rect width="640" height="180" fill="#111827" />

@@ -4,6 +4,6 @@
       <text x="28" y="38" font-size="23" font-weight="bold">Board via-in-pad policy: local routing</text>
       <text x="28" y="88" font-size="18">Board permission: true</text>
       <text x="28" y="128" font-size="18">Autorouter override: unspecified</text>
-      <text x="28" y="168" font-size="18">Input received by algorithmFn: undefined</text>
+      <text x="28" y="168" font-size="18">Input received by algorithmFn: true</text>
     </g>
   </svg>

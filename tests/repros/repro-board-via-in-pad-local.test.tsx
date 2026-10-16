@@ -32,7 +32,7 @@ test("local routing receives the board via-in-pad policy", async () => {
   expect(circuit.db.pcb_board.list()[0].is_via_in_pad_allowed).toBe(true)
   expect(autorouterInput).toBeDefined()
   expect(autorouterInput!.connections).toHaveLength(1)
-  expect(autorouterInput!.allowViaInPad).toBeUndefined()
+  expect(autorouterInput!.allowViaInPad).toBe(true)
 
   const snapshot = `<svg xmlns="http://www.w3.org/2000/svg" width="680" height="200" viewBox="0 0 680 200">
     <rect width="680" height="200" fill="#111827" />
