@@ -75,6 +75,19 @@ export class PinHeader extends NormalComponent<typeof pinHeaderProps> {
     return null
   }
 
+  resolveFootprint() {
+    const footprint = super.resolveFootprint()
+    if (typeof footprint !== "string") return footprint
+    if (
+      this._parsedProps.gender === "female" &&
+      /^pinrow\d+/.test(footprint) &&
+      !/_(female|male)(_|$)/.test(footprint)
+    ) {
+      return `${footprint}_female`
+    }
+    return footprint
+  }
+
   initPorts() {
     const pinCount =
       this._parsedProps.pinCount ??
