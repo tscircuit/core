@@ -25,18 +25,22 @@ test("pcbnoterect stays horizontal when its parent chip rotates 90 degrees", asy
           pinLabels={{ pin1: "A", pin2: "B" }}
           footprint={
             <footprint>
-              {[-2.5, 2.5].map((padX, index) => (
-                <Fragment key={padX}>
-                  <smtpad
-                    pcbX={padX}
-                    pcbY={0}
-                    width={1.2}
-                    height={1.2}
-                    shape="rect"
-                    portHints={[`pin${index + 1}`]}
-                  />
-                </Fragment>
-              ))}
+              <smtpad
+                pcbX={-2.5}
+                pcbY={0}
+                width={1.2}
+                height={1.2}
+                shape="rect"
+                portHints={["pin1"]}
+              />
+              <smtpad
+                pcbX={2.5}
+                pcbY={0}
+                width={1.2}
+                height={1.2}
+                shape="rect"
+                portHints={["pin2"]}
+              />
               {usePath ? (
                 <pcbnotepath
                   route={[
