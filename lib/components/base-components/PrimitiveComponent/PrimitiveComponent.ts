@@ -687,6 +687,10 @@ export abstract class PrimitiveComponent<
     }
   }
 
+  _getPcbFootprintOrigin(): { x: number; y: number } {
+    return this._getPcbCircuitJsonBounds().center
+  }
+
   /**
    * Bounds in the primitive's footprint-local PCB frame before parent
    * transforms are applied. This is a right-handed frame with +X right, +Y

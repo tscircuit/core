@@ -1819,6 +1819,55 @@ export class NormalComponent<
     }
   }
 
+  /**
+   * Returns the post-layout position of the footprint's local (0, 0) origin in
+   * board coordinates. When a footprint's copper bounding-box center differs
+   * from its local (0, 0) origin, `pcb_component.center` tracks the copper
+   * bounding-box center while 3D models and KiCad footprints remain anchored at
+   * the footprint origin.
+   */
+  _getPcbFootprintOrigin(): { x: number; y: number } {
+    const { db } = this.root!
+    if (!this.pcb_component_id) return this._getGlobalPcbPositionBeforeLayout()
+
+    const pcbComponent = db.pcb_component.get(this.pcb_component_id)
+    if (!pcbComponent) return this._getGlobalPcbPositionBeforeLayout()
+
+    const preLayoutOrigin = this._getGlobalPcbPositionBeforeLayout()
+    const preLayoutBounds = getBoundsOfPcbComponents(this.children)
+    if (preLayoutBounds.width === 0 || preLayoutBounds.height === 0) {
+      return { x: pcbComponent.center.x, y: pcbComponent.center.y }
+    }
+
+    const preLayoutCenter = {
+      x: (preLayoutBounds.minX + preLayoutBounds.maxX) / 2,
+      y: (preLayoutBounds.minY + preLayoutBounds.maxY) / 2,
+    }
+    const dx = preLayoutOrigin.x - preLayoutCenter.x
+    const dy = preLayoutOrigin.y - preLayoutCenter.y
+
+    const globalTransform = this._computePcbGlobalTransformBeforeLayout()
+    const decomposedTransform = decomposeTSR(globalTransform)
+    const preLayoutRotation =
+      (decomposedTransform.rotation.angle * 180) / Math.PI
+    const totalRotation =
+      pcbComponent.position_mode === "packed"
+        ? (pcbComponent.rotation ?? preLayoutRotation)
+        : preLayoutRotation
+    const deltaRad = ((totalRotation - preLayoutRotation) * Math.PI) / 180
+
+    return {
+      x:
+        pcbComponent.center.x +
+        dx * Math.cos(deltaRad) -
+        dy * Math.sin(deltaRad),
+      y:
+        pcbComponent.center.y +
+        dx * Math.sin(deltaRad) +
+        dy * Math.cos(deltaRad),
+    }
+  }
+
   _getPinCountFromSchematicPortArrangement(): number {
     const schPortArrangement = this._getSchematicPortArrangement()
     if (!schPortArrangement) return 0
@@ -2149,10 +2198,12 @@ export class NormalComponent<
       footprinterStringForCadComponent = footprintString
     }
 
+    const footprintOrigin = this._getPcbFootprintOrigin()
+
     let cadComponentPlacement = {
       position: {
-        x: bounds.center.x + positionOffset.x,
-        y: bounds.center.y + positionOffset.y,
+        x: footprintOrigin.x + positionOffset.x,
+        y: footprintOrigin.y + positionOffset.y,
         z:
           (computedLayer === "bottom"
             ? -boardThickness / 2
