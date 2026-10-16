@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { Fragment } from "react"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("pcbnoterect stays horizontal when its parent chip rotates 90 degrees", async () => {
@@ -25,15 +26,16 @@ test("pcbnoterect stays horizontal when its parent chip rotates 90 degrees", asy
           footprint={
             <footprint>
               {[-2.5, 2.5].map((padX, index) => (
-                <smtpad
-                  key={padX}
-                  pcbX={padX}
-                  pcbY={0}
-                  width={1.2}
-                  height={1.2}
-                  shape="rect"
-                  portHints={[`pin${index + 1}`]}
-                />
+                <Fragment key={padX}>
+                  <smtpad
+                    pcbX={padX}
+                    pcbY={0}
+                    width={1.2}
+                    height={1.2}
+                    shape="rect"
+                    portHints={[`pin${index + 1}`]}
+                  />
+                </Fragment>
               ))}
               {usePath ? (
                 <pcbnotepath
@@ -60,13 +62,14 @@ test("pcbnoterect stays horizontal when its parent chip rotates 90 degrees", asy
         />
       ))}
       {cases.map(({ name, x, rotation, usePath }) => (
-        <pcbnotetext
-          key={name}
-          text={`${rotation} deg: ${usePath ? "path control" : "rectangle"}`}
-          pcbX={x}
-          pcbY={-5}
-          fontSize={0.6}
-        />
+        <Fragment key={name}>
+          <pcbnotetext
+            text={`${rotation} deg: ${usePath ? "path control" : "rectangle"}`}
+            pcbX={x}
+            pcbY={-5}
+            fontSize={0.6}
+          />
+        </Fragment>
       ))}
     </board>,
   )
