@@ -5,7 +5,7 @@ import {
   getRoundContactDimensions,
 } from "tests/fixtures/custom-symbol-sizing"
 
-test("contain fitting keeps a round contact circular: artwork-bounds", () => {
+test("contain fitting keeps a round contact circular: viewbox", () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width={20} height={20} routingDisabled>
@@ -30,7 +30,11 @@ test("contain fitting keeps a round contact circular: artwork-bounds", () => {
         name="Uniform"
         schX={3}
         symbol={
-          <RoundContact fit="contain" width={2} sizeIncludesPorts={false} />
+          <RoundContact
+            fit="contain"
+            width={2}
+            viewbox={{ x: -0.5, y: -0.5, width: 1, height: 1 }}
+          />
         }
       />
     </board>,
@@ -45,7 +49,7 @@ test("contain fitting keeps a round contact circular: artwork-bounds", () => {
   expect(legacy.height).toBeCloseTo(1.2, 6)
   expect(uniform.width).toBeCloseTo(2, 6)
   expect(uniform.height).toBeCloseTo(uniform.width, 6)
-  // Artwork-only bounds still transform the connection port with the drawing.
+  // Explicit local viewbox bounds still transform the connection port with the drawing.
   const uniformPort = circuit.db.schematic_port.list()[1]!
   expect(uniformPort.center.x).toBeCloseTo(4, 6)
   expect(uniformPort.center.y).toBeCloseTo(0, 6)

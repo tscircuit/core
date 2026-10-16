@@ -79,16 +79,29 @@ export class SymbolComponent
     if (this.root?.schematicDisabled) return
 
     const { db } = this.root!
+    const { viewbox } = this._parsedProps
+    if (viewbox) {
+      // viewbox is symbol-local (+X right, +Y up, mm). Children are emitted
+      // in schematic world coordinates before resizing, so translate its
+      // corner points by the same symbol position before deriving the transform.
+      const globalPos = this._getGlobalSchematicPositionBeforeLayout()
+      this.schematicSymbolBoundsInUserCoordinates = {
+        minX: globalPos.x + viewbox.x,
+        maxX: globalPos.x + viewbox.x + viewbox.width,
+        minY: globalPos.y + viewbox.y,
+        maxY: globalPos.y + viewbox.y + viewbox.height,
+      }
+      return
+    }
+
     const schematicElements: Array<{
       type: string
       [key: string]: any
     }> = []
 
-    // Size the full symbol (body + stems) by default. Artwork-only sizing
-    // excludes ports from measurement; ports still receive the same transform.
+    // Automatic sizing includes both artwork and port stems by default.
     for (const child of this.children) {
       if (child.componentName === "Port") {
-        if (this._parsedProps.sizeIncludesPorts === false) continue
         const portId = (child as Port).schematic_port_id
         if (portId) {
           const port = db.schematic_port.get(portId)
