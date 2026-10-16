@@ -1,8 +1,8 @@
-import { MultilayerIjump } from "@tscircuit/infgrid-ijump-astar"
 import { jlcMinTolerances } from "@tscircuit/jlcpcb-manufacturing-specs"
 import { type LayerRef, type PcbTrace, type RouteHintPoint } from "circuit-json"
 import { getFullConnectivityMapFromCircuitJson } from "circuit-json-to-connectivity-map"
 import { TraceConnectionError } from "lib/errors"
+import { MultilayerIjump } from "lib/utils/autorouting/MultilayerIjump"
 import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
 import { findPossibleTraceLayerCombinations } from "lib/utils/autorouting/findPossibleTraceLayerCombinations"
 import {

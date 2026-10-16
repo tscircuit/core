@@ -1,8 +1,8 @@
-import { MultilayerIjump } from "@tscircuit/infgrid-ijump-astar"
 import { type Point, doesLineIntersectLine } from "@tscircuit/math-utils"
 import { calculateElbow } from "calculate-elbow"
 import { type SchematicNetLabel, type SchematicTrace } from "circuit-json"
 import { DirectLineRouter } from "lib/utils/autorouting/DirectLineRouter"
+import { MultilayerIjump } from "lib/utils/autorouting/MultilayerIjump"
 import type {
   Obstacle,
   SimpleRouteConnection,

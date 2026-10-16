@@ -1,4 +1,3 @@
-import { MultilayerIjump } from "@tscircuit/infgrid-ijump-astar"
 import { traceProps } from "@tscircuit/props"
 import {
   type LayerRef,
@@ -11,6 +10,7 @@ import {
 } from "circuit-json"
 import { getFullConnectivityMapFromCircuitJson } from "circuit-json-to-connectivity-map"
 import { DirectLineRouter } from "lib/utils/autorouting/DirectLineRouter"
+import { MultilayerIjump } from "lib/utils/autorouting/MultilayerIjump"
 import type {
   SimpleRouteConnection,
   SimpleRouteJson,
@@ -42,8 +42,8 @@ import type { TraceI } from "./TraceI"
 import { Trace__doInitialSchematicTraceRenderWithDisplayLabel } from "./Trace__doInitialSchematicTraceRenderWithDisplayLabel"
 import { Trace__findConnectedPorts } from "./Trace__findConnectedPorts"
 import { Trace_doInitialPcbManualTraceRender } from "./Trace_doInitialPcbManualTraceRender"
-import { Trace_doInitialPcbTraceTeardropRender } from "./Trace_doInitialPcbTraceTeardropRender"
 import { Trace_doInitialPcbTraceRender } from "./Trace_doInitialPcbTraceRender"
+import { Trace_doInitialPcbTraceTeardropRender } from "./Trace_doInitialPcbTraceTeardropRender"
 import { Trace_doInitialSchematicTraceRender } from "./Trace_doInitialSchematicTraceRender"
 import { getMaxLengthFromConnectedComponents } from "./trace-utils/get-max-length-from-connected-components"
 import { getTraceDisplayName } from "./trace-utils/get-trace-display-name"
