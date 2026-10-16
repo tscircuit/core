@@ -33,7 +33,7 @@ test.failing("contain fitting keeps a round contact circular: viewbox", () => {
           <RoundContact
             fit="contain"
             width={2}
-            viewbox={{ x: -0.5, y: -0.5, width: 1, height: 1 }}
+            viewbox={{ minX: -0.5, maxX: 0.5, minY: -0.5, maxY: 0.5 }}
           />
         }
       />

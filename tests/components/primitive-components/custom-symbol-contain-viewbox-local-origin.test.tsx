@@ -26,7 +26,7 @@ test.failing(
               sourceCenter={{ x: 1, y: 2 }}
               fit="contain"
               width={2}
-              viewbox={{ x: 0.5, y: 1.5, width: 1, height: 1 }}
+              viewbox={{ minX: 0.5, maxX: 1.5, minY: 1.5, maxY: 2.5 }}
             />
           }
         />
