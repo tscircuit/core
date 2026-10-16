@@ -58,5 +58,5 @@ test("nested routing uses its owning board via policy", async () => {
 
   expect(simpleRouteJson.layerCount).toBe(8)
   expect(simpleRouteJson.allowBlindAndBuriedVias).toBe(true)
-  expect(simpleRouteJson.allowViaInPad).toBeUndefined()
+  expect(simpleRouteJson.allowViaInPad).toBe(true)
 })

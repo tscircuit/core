@@ -5,6 +5,6 @@
       <text x="28" y="88" font-size="18">Circuit JSON is_via_in_pad_allowed</text>
       <text x="500" y="88" font-size="18">false</text>
       <text x="28" y="138" font-size="18">SRJ allowViaInPad</text>
-      <text x="500" y="138" font-size="18" fill="#fbbf24">not emitted</text>
+      <text x="500" y="138" font-size="18" fill="#34d399">false</text>
     </g>
   </svg>
