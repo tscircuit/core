@@ -8,6 +8,8 @@ import type {
   PcbHoleRect,
   PcbHoleCircle,
 } from "circuit-json"
+import { decomposeTSR } from "transformation-matrix"
+import { getAxisAlignedSizeFromRotatedRect } from "lib/utils/pcb/get-axis-aligned-size-from-rotated-rect"
 
 export class Hole extends PrimitiveComponent<typeof holeProps> {
   pcb_hole_id: string | null = null
@@ -58,9 +60,24 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
 
     this.emitSolderMaskMarginWarning(isCoveredWithSolderMask, soldermaskMargin)
 
+    const decomposedTransform = decomposeTSR(
+      this._computePcbGlobalTransformBeforeLayout(),
+    )
+    const rotationDegrees = (decomposedTransform.rotation.angle * 180) / Math.PI
+    const normalizedRotationDegrees = ((rotationDegrees % 360) + 360) % 360
+    const rotationTolerance = 0.01
+    const finalRotationDegrees =
+      Math.abs(normalizedRotationDegrees) < rotationTolerance ||
+      Math.abs(normalizedRotationDegrees - 360) < rotationTolerance
+        ? 0
+        : normalizedRotationDegrees
+    const isRotated90Degrees =
+      Math.abs(finalRotationDegrees - 90) < rotationTolerance ||
+      Math.abs(finalRotationDegrees - 270) < rotationTolerance
+
     if (props.shape === "pill") {
-      // Check if rotation is specified to determine pill type
-      if (props.pcbRotation && props.pcbRotation !== 0) {
+      // Check if rotation is specified (directly or from parent transform) to determine pill type
+      if (finalRotationDegrees !== 0) {
         const inserted_hole = db.pcb_hole.insert({
           pcb_component_id,
           type: "pcb_hole",
@@ -69,7 +86,7 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
           hole_height: props.height,
           x: position.x,
           y: position.y,
-          ccw_rotation: props.pcbRotation,
+          ccw_rotation: finalRotationDegrees,
           soldermask_margin: soldermaskMargin,
           is_covered_with_solder_mask: isCoveredWithSolderMask,
           subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
@@ -97,8 +114,8 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
         pcb_component_id,
         type: "pcb_hole",
         hole_shape: "oval",
-        hole_width: props.width,
-        hole_height: props.height,
+        hole_width: isRotated90Degrees ? props.height : props.width,
+        hole_height: isRotated90Degrees ? props.width : props.height,
         x: position.x,
         y: position.y,
         soldermask_margin: soldermaskMargin,
@@ -113,8 +130,8 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
         pcb_component_id,
         type: "pcb_hole",
         hole_shape: "rect",
-        hole_width: props.width,
-        hole_height: props.height,
+        hole_width: isRotated90Degrees ? props.height : props.width,
+        hole_height: isRotated90Degrees ? props.width : props.height,
         x: position.x,
         y: position.y,
         soldermask_margin: soldermaskMargin,
@@ -149,7 +166,18 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
   } {
     const { db } = this.root!
     const hole = db.pcb_hole.get(this.pcb_hole_id!)!
-    const size = this.getPcbSize()
+    const size =
+      hole.hole_shape === "rotated_pill"
+        ? getAxisAlignedSizeFromRotatedRect({
+            width: hole.hole_width,
+            height: hole.hole_height,
+            ccwRotationDegrees: hole.ccw_rotation,
+          })
+        : hole.hole_shape === "pill" ||
+            hole.hole_shape === "oval" ||
+            hole.hole_shape === "rect"
+          ? { width: hole.hole_width, height: hole.hole_height }
+          : this.getPcbSize()
 
     return {
       center: { x: hole.x, y: hole.y },
