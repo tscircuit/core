@@ -6,6 +6,7 @@ import {
 import type { ISubcircuit } from "../Group/Subcircuit/ISubcircuit"
 import type { Net } from "../Net"
 import type { CopperPour } from "./CopperPour"
+import { preserveExplicitZeroClearanceCopperPour } from "./preserve-explicit-zero-clearance-copper-pour"
 import { markTraceSegmentsInsideCopperPour } from "./utils/mark-trace-segments-inside-copper-pour"
 
 // Each CopperPour queues this phase, but the solver processes every pour in a
@@ -40,6 +41,17 @@ const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
 
   if (resolvedCopperPours.length === 0) return
 
+  const copperPoursRequiringSolver = resolvedCopperPours.filter(
+    ({ copperPour, sourceNetId }) =>
+      !preserveExplicitZeroClearanceCopperPour({
+        copperPour,
+        db,
+        sourceNetId,
+        subcircuitId: subcircuit.subcircuit_id ?? undefined,
+      }),
+  )
+  if (copperPoursRequiringSolver.length === 0) return
+
   const circuitJson = db.toArray()
   const boardComponent = subcircuit._getBoard()
   const pcbBoard = boardComponent?.pcb_board_id
@@ -64,7 +76,7 @@ const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
   // warningOnly affects routing and DRC severity; pours still avoid every keepout.
   const inputProblem = convertCircuitJsonToInputProblem(
     circuitJson,
-    resolvedCopperPours.map(({ copperPour, sourceNetId }) => {
+    copperPoursRequiringSolver.map(({ copperPour, sourceNetId }) => {
       const { _parsedProps: props } = copperPour
       const clearance = props.clearance ?? 0.2
       return {
@@ -109,7 +121,7 @@ const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
   for (const [
     regionIndex,
     { copperPour, sourceNetId },
-  ] of resolvedCopperPours.entries()) {
+  ] of copperPoursRequiringSolver.entries()) {
     const { _parsedProps: props } = copperPour
     const coveredWithSolderMask = props.coveredWithSolderMask ?? false
 
