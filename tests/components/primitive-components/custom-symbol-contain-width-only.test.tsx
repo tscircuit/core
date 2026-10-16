@@ -5,7 +5,7 @@ import {
   getSizingSquareDimensions,
 } from "tests/fixtures/custom-symbol-sizing"
 
-test.failing("contain fitting preserves square proportions: width-only", () => {
+test("contain fitting preserves square proportions: width-only", () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width={20} height={20} routingDisabled>

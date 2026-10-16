@@ -84,10 +84,11 @@ export class SymbolComponent
       [key: string]: any
     }> = []
 
-    // Collect circuit-json elements from children, including ports so
-    // the full symbol (body + stems) fits within the specified width/height
+    // Size the full symbol (body + stems) by default. Artwork-only sizing
+    // excludes ports from measurement; ports still receive the same transform.
     for (const child of this.children) {
       if (child.componentName === "Port") {
+        if (this._parsedProps.sizeIncludesPorts === false) continue
         const portId = (child as Port).schematic_port_id
         if (portId) {
           const port = db.schematic_port.get(portId)
@@ -152,14 +153,31 @@ export class SymbolComponent
     const currentCenterY = (bounds.minY + bounds.maxY) / 2
 
     // Calculate scale factors
-    const scaleX =
+    let scaleX =
       targetWidth !== undefined && currentWidth > 0
         ? targetWidth / currentWidth
         : 1
-    const scaleY =
+    let scaleY =
       targetHeight !== undefined && currentHeight > 0
         ? targetHeight / currentHeight
         : 1
+
+    if (props.fit === "contain") {
+      // Bounds and drawing points are in schematic world space (+X right,
+      // +Y up, mm). Use only constrained, nondegenerate axes for a uniform fit.
+      const constrainedScales = []
+      if (targetWidth !== undefined && currentWidth > 0) {
+        constrainedScales.push(targetWidth / currentWidth)
+      }
+      if (targetHeight !== undefined && currentHeight > 0) {
+        constrainedScales.push(targetHeight / currentHeight)
+      }
+      const uniformScale = constrainedScales.length
+        ? Math.min(...constrainedScales)
+        : 1
+      scaleX = uniformScale
+      scaleY = uniformScale
+    }
 
     // Get the global position for the Symbol (where the content should be centered)
     const globalPos = this._getGlobalSchematicPositionBeforeLayout()
