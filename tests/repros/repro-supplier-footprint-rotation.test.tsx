@@ -3,7 +3,7 @@ import { Board } from "lib/components/normal-components/Board/Board"
 import { getMatching0603PartsEngine } from "tests/fixtures/get-matching-0603-parts-engine"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("repro: matching supplier footprint falsely warns at 30 degrees", async () => {
+test("matching supplier footprints do not warn at 0 or 30 degrees", async () => {
   const partsEngine = await getMatching0603PartsEngine()
   const { circuit } = getTestFixture()
   const board = new Board({
@@ -44,25 +44,12 @@ test("repro: matching supplier footprint falsely warns at 30 degrees", async () 
   await circuit.renderUntilSettled()
 
   const warnings = circuit.db.supplier_footprint_mismatch_warning.list()
-  expect(warnings).toHaveLength(1)
-  expect(warnings[0]!.source_component_id).toBe(
-    circuit.db.source_component.select(".C2")!.source_component_id,
-  )
-
-  // circuit-to-svg does not draw supplier footprint warnings yet.
-  // Display its diagnostic fields as PCB notes without the internal component ID.
+  expect(warnings).toHaveLength(0)
   board.add(
     <pcbnotetext
-      text={`C2: ${warnings[0]!.warning_type}`}
+      text={`Supplier footprint mismatch warnings: ${warnings.length}`}
       pcbY={-4}
       fontSize={0.65}
-    />,
-  )
-  board.add(
-    <pcbnotetext
-      text={`${warnings[0]!.supplier_name}:${warnings[0]!.supplier_part_number}, copper IoU: ${warnings[0]!.footprint_copper_intersection_over_union}`}
-      pcbY={-6}
-      fontSize={0.6}
     />,
   )
   await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
