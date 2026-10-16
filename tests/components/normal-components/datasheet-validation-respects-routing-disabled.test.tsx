@@ -37,7 +37,7 @@ test("async datasheet validation does not restart routing when routing is disabl
       </board>,
     )
     await circuit.renderUntilSettled()
-    const chip = circuit.selectOne<Chip>(".U1")!
+    const chip = circuit.selectOne(".U1") as Chip
     expect(chip._fetchedSourcePortsForPinAttributes).toHaveLength(2)
     expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
     expect(circuit.db.pcb_trace.list()).toEqual([])
