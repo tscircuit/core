@@ -13,5 +13,5 @@ test("an imported board explicitly disables via-in-pad", () => {
     ignoreExistingTopLevelPcbRouteState: true,
   })
 
-  expect(simpleRouteJson.allowViaInPad).toBeUndefined()
+  expect(simpleRouteJson.allowViaInPad).toBe(false)
 })

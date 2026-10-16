@@ -15,8 +15,8 @@
       <line x1="28" y1="126" x2="872" y2="126" stroke="#374151" />
       <g font-size="18">
         <text x="28" y="159">true</text>
-        <text x="320" y="159" fill="#fbbf24">not emitted</text>
-        <text x="620" y="159">false</text>
+        <text x="320" y="159" fill="#34d399">true</text>
+        <text x="620" y="159">true</text>
       </g>
       <text x="28" y="195" font-size="14" fill="#9ca3af">Source: dataset-srj24 / sample024 / pcb_board</text>
     </g>
