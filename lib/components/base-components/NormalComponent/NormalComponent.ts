@@ -1,3 +1,4 @@
+import { NormalComponent_doInitialSourcePinSpecificationChecks } from "./NormalComponent_doInitialSourcePinSpecificationChecks"
 import {
   getNumericPinLabels,
   isPhysicalPinName,
@@ -179,6 +180,10 @@ export class NormalComponent<
   /** Electrical attributes from imported ports; user props remain authoritative. */
   _importedSourcePorts: SourcePort[] = []
   _importedInternallyConnectedPinNames?: string[][]
+  /** Optional datasheet facts fetched solely for source-level validation. */
+  _fetchedSourcePortsForPinAttributes: SourcePort[] = []
+  _fetchedInternallyConnectedPinNames?: string[][]
+  _hasStartedPinAttributesFetch = false
   _isCadModelChild?: boolean
   _inferredInternallyConnectedPinNames: string[][] = []
   pcb_missing_footprint_error_id?: string
@@ -2446,6 +2451,11 @@ export class NormalComponent<
 
   doInitialSourceDesignRuleChecks(): void {
     NormalComponent_doInitialSourceDesignRuleChecks(this)
+    NormalComponent_doInitialSourcePinSpecificationChecks(this)
+  }
+
+  updateSourceDesignRuleChecks(): void {
+    NormalComponent_doInitialSourcePinSpecificationChecks(this)
   }
 
   doInitialSourceComponentPropertyValidation(): void {

@@ -94,6 +94,21 @@ test("imported internal connections reach connectivity checks and explicit empty
         (warning) => warning.source_component_id === u2.source_component_id,
       ),
   ).toHaveLength(1)
+  const connectionWarnings =
+    circuit.db.source_component_pins_underspecified_warning
+      .list()
+      .filter((warning) => warning.message.includes("internallyConnectedPins"))
+  expect(connectionWarnings).toHaveLength(2)
+  expect(
+    connectionWarnings.find(
+      (warning) => warning.source_component_id === u1.source_component_id,
+    )?.message,
+  ).toContain("isn't set")
+  expect(
+    connectionWarnings.find(
+      (warning) => warning.source_component_id === u2.source_component_id,
+    )?.message,
+  ).toContain("does not declare that connection")
   expect(imported).toEqual(original)
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
