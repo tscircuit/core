@@ -25,7 +25,7 @@ export interface ISymbol {
    * The computed bounds of the symbol's schematic primitives before any
    * resizing is applied.
    */
-  schematicSymbolBoundsInLocalCoordinateSpace?: SchematicSymbolBounds
+  schematicSymbolBoundsInSymbolLocalCoordinateSpace?: SchematicSymbolBounds
 
   /**
    * Get the bounds of the symbol's schematic primitives.
