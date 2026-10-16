@@ -1,4 +1,4 @@
-export const SizingSquare = (props: {
+export const RoundContact = (props: {
   width?: number
   height?: number
   fit?: "fill" | "contain"
@@ -6,20 +6,19 @@ export const SizingSquare = (props: {
 }) => (
   <symbol {...props}>
     <schematicpath
-      points={[
-        { x: -0.5, y: -0.5 },
-        { x: 0.5, y: -0.5 },
-        { x: 0.5, y: 0.5 },
-        { x: -0.5, y: 0.5 },
-        { x: -0.5, y: -0.5 },
-      ]}
+      points={Array.from({ length: 65 }, (_, pointIndex) => {
+        const angle = (pointIndex / 64) * 2 * Math.PI
+        return { x: 0.5 * Math.cos(angle), y: 0.5 * Math.sin(angle) }
+      })}
       strokeWidth={0.05}
     />
+    <schematicline x1={-0.22} y1={0} x2={0.22} y2={0} strokeWidth={0.05} />
+    <schematicline x1={0} y1={-0.22} x2={0} y2={0.22} strokeWidth={0.05} />
     <port name="pin1" pinNumber={1} direction="right" schX={0.5} schY={0} />
   </symbol>
 )
 
-export const getSizingSquareDimensions = (
+export const getRoundContactDimensions = (
   points: { x: number; y: number }[],
 ) => ({
   width:
