@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import type { SymbolComponent } from "lib/components/primitive-components/Symbol"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import {
   RoundContact,
@@ -34,6 +35,14 @@ test.failing(
     )
     circuit.render()
     expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+    const symbol = circuit.selectAll("symbol")[0] as SymbolComponent
+    // The cached source bounds stay local even when the chip is placed at (3, 4).
+    expect(symbol.getSchematicSymbolBounds()).toEqual({
+      minX: 0.5,
+      maxX: 1.5,
+      minY: 1.5,
+      maxY: 2.5,
+    })
     const points = circuit.db.schematic_path.list()[0]!.points
     const dimensions = getRoundContactDimensions(points)
     expect(dimensions.width).toBeCloseTo(2, 6)
