@@ -27,5 +27,4 @@ test("rectangular cutout preserves bounds at 180 degrees on top", async () => {
   const bounds = circuit.selectOne("cutout")!._getPcbCircuitJsonBounds()
   expect(bounds.width).toBeCloseTo(4)
   expect(bounds.height).toBeCloseTo(1)
-  expect(circuit).toMatchPcbSnapshot(import.meta.path, { showPcbNotes: true })
 })

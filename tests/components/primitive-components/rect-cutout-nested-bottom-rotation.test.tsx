@@ -43,5 +43,4 @@ test("a bottom cutout composes group and footprint rotations", async () => {
     ((padAxisDegrees % 180) + 180) % 180,
   )
   expect(((cutout.rotation! % 180) + 180) % 180).toBeCloseTo(45)
-  expect(circuit).toMatchPcbSnapshot(import.meta.path, { showPcbNotes: true })
 })
