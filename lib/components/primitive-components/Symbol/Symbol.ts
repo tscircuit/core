@@ -13,7 +13,7 @@ export class SymbolComponent
 
   schematic_symbol_id?: string
   userCoordinateToResizedSymbolTransformMat?: Matrix
-  schematicSymbolBoundsInUserCoordinates?: SchematicSymbolBounds
+  schematicSymbolBoundsInLocalCoordinateSpace?: SchematicSymbolBounds
 
   get config() {
     return {
@@ -52,13 +52,13 @@ export class SymbolComponent
   }
 
   getSchematicSymbolBounds(): SchematicSymbolBounds | null {
-    if (this.schematicSymbolBoundsInUserCoordinates) {
-      return this.schematicSymbolBoundsInUserCoordinates
+    if (this.schematicSymbolBoundsInLocalCoordinateSpace) {
+      return this.schematicSymbolBoundsInLocalCoordinateSpace
     }
 
     // Compute bounds from children's circuit-json elements
     this._computeSchematicSymbolBounds()
-    return this.schematicSymbolBoundsInUserCoordinates ?? null
+    return this.schematicSymbolBoundsInLocalCoordinateSpace ?? null
   }
 
   getUserCoordinateToResizedSymbolTransform(): Matrix | null {
@@ -85,7 +85,7 @@ export class SymbolComponent
       // Child points are in schematic world coordinates before resizing, so
       // translate the local bounds by the symbol position for the same frame.
       const globalPos = this._getGlobalSchematicPositionBeforeLayout()
-      this.schematicSymbolBoundsInUserCoordinates = {
+      this.schematicSymbolBoundsInLocalCoordinateSpace = {
         minX: globalPos.x + viewbox.minX,
         maxX: globalPos.x + viewbox.maxX,
         minY: globalPos.y + viewbox.minY,
@@ -143,7 +143,7 @@ export class SymbolComponent
     if (schematicElements.length === 0) return
 
     const bounds = getBoundsForSchematic(schematicElements)
-    this.schematicSymbolBoundsInUserCoordinates = bounds
+    this.schematicSymbolBoundsInLocalCoordinateSpace = bounds
   }
 
   private _computeUserCoordinateToResizedSymbolTransform(): void {
