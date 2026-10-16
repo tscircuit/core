@@ -12,19 +12,24 @@ test.failing(
     const fits = ["fill", "stretch", "contain"] as const
     circuit.add(
       <board width={20} height={20} routingDisabled>
-        {fits.map((fit, fitIndex) => (
-          <schematictext
-            key={`label_${fit}`}
-            schX={(fitIndex - 1) * 4}
-            schY={-2}
-            text={
-              fit === "contain"
-                ? "contain: circular"
-                : `${fit}: independent axes`
-            }
-            fontSize={0.2}
-          />
-        ))}
+        <schematictext
+          schX={-4}
+          schY={-2}
+          text="fill: independent axes"
+          fontSize={0.2}
+        />
+        <schematictext
+          schX={0}
+          schY={-2}
+          text="stretch: independent axes"
+          fontSize={0.2}
+        />
+        <schematictext
+          schX={4}
+          schY={-2}
+          text="contain: circular"
+          fontSize={0.2}
+        />
         {fits.map((fit, fitIndex) => (
           <chip
             key={fit}
