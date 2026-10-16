@@ -77,15 +77,17 @@ export class PinHeader extends NormalComponent<typeof pinHeaderProps> {
 
   getFootprinterString(): string | null {
     const footprintString = super.getFootprinterString()
-    if (
-      this._parsedProps.gender !== "female" ||
-      !footprintString ||
-      !/^pinrow\d+(?:_|$)/.test(footprintString) ||
-      /(?:^|_)(?:female|male)(?:_|$)/.test(footprintString)
-    ) {
+    if (!footprintString || this._parsedProps.gender !== "female") {
       return footprintString
     }
 
+    const isPinrowFootprint = /^pinrow\d+(?:_|$)/.test(footprintString)
+    const hasGenderOption = /(?:^|_)(?:female|male)(?:_|$)/.test(
+      footprintString,
+    )
+    if (!isPinrowFootprint || hasGenderOption) return footprintString
+
+    // Select the female 3D model without changing the explicit PCB footprint.
     return `${footprintString}_female`
   }
 
