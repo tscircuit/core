@@ -4,11 +4,7 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 const isPointInPolygon = (point: Point, vertices: Point[]): boolean => {
   let isInside = false
-  for (
-    let i = 0, prev = vertices.length - 1;
-    i < vertices.length;
-    prev = i++
-  ) {
+  for (let i = 0, prev = vertices.length - 1; i < vertices.length; prev = i++) {
     const curr = vertices[i]!
     const prevPt = vertices[prev]!
     if (

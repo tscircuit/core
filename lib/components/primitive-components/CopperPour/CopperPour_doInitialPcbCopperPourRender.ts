@@ -90,7 +90,10 @@ const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
     netIds.add(sourceNetId)
   }
 
-  const partitionedOutlinesByLayerAndNet = new Map<LayerRef, Map<string, Point[][]>>()
+  const partitionedOutlinesByLayerAndNet = new Map<
+    LayerRef,
+    Map<string, Point[][]>
+  >()
   if (pcbBoard) {
     for (const [layer, netIds] of fullBoardNetIdsByLayer.entries()) {
       if (netIds.size < 2) continue
@@ -211,7 +214,8 @@ const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
           ...(props.useThermalReliefs
             ? {
                 use_thermal_reliefs: true,
-                thermal_relief_spoke_width: DEFAULT_THERMAL_RELIEF_SPOKE_WIDTH_MM,
+                thermal_relief_spoke_width:
+                  DEFAULT_THERMAL_RELIEF_SPOKE_WIDTH_MM,
               }
             : {}),
           outline,
