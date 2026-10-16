@@ -1,3 +1,4 @@
+import { getImportedInternallyConnectedPinNames } from "./get-imported-internally-connected-pin-names"
 import { getUnitVectorFromDirection } from "@tscircuit/math-utils"
 import type { PcbSoldermaskOpeningProps, PinLabelsProp } from "@tscircuit/props"
 import {
@@ -46,7 +47,6 @@ import {
 import { SymbolComponent } from "lib/components/primitive-components/Symbol"
 import type { PrimitiveComponent } from "../components/base-components/PrimitiveComponent"
 import { createPinrowSilkscreenText } from "./createPinrowSilkscreenText"
-import { getImportedInternallyConnectedPinNames } from "./get-imported-internally-connected-pin-names"
 
 type SchematicPrimitiveWithStrokeWidth = Extract<
   AnyCircuitElement,
@@ -490,7 +490,6 @@ export const createComponentsFromCircuitJson = (
             rectBorderRadius: elm.rect_border_radius,
             holeOffsetX: elm.hole_offset_x,
             holeOffsetY: elm.hole_offset_y,
-            pcbRotation: elm.rect_ccw_rotation,
           }),
         )
       } else if (elm.shape === "pill" || elm.shape === "oval") {
@@ -504,7 +503,6 @@ export const createComponentsFromCircuitJson = (
             outerWidth: elm.outer_width,
             outerHeight: elm.outer_height,
             portHints: resolvedPortHints,
-            pcbRotation: elm.ccw_rotation,
           }),
         )
       } else if (elm.shape === "pill_hole_with_rect_pad") {
