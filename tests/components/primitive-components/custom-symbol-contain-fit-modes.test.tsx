@@ -14,6 +14,7 @@ test.failing(
       <board width={20} height={20} routingDisabled>
         {fits.map((fit, fitIndex) => (
           <schematictext
+            key={`label_${fit}`}
             schX={(fitIndex - 1) * 4}
             schY={-2}
             text={
@@ -26,6 +27,7 @@ test.failing(
         ))}
         {fits.map((fit, fitIndex) => (
           <chip
+            key={fit}
             name={fit}
             schX={(fitIndex - 1) * 4}
             symbol={
