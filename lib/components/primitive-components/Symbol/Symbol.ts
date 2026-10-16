@@ -133,10 +133,10 @@ export class SymbolComponent
   }
 
   private _computeUserCoordinateToResizedSymbolTransform(): void {
+    const { _parsedProps: props } = this
     const bounds = this.getSchematicSymbolBounds()
     if (!bounds) return
 
-    const { _parsedProps: props } = this
     const targetWidth = props.width
     const targetHeight = props.height
 
@@ -152,14 +152,26 @@ export class SymbolComponent
     const currentCenterY = (bounds.minY + bounds.maxY) / 2
 
     // Calculate scale factors
-    const scaleX =
+    let scaleX =
       targetWidth !== undefined && currentWidth > 0
         ? targetWidth / currentWidth
         : 1
-    const scaleY =
+    let scaleY =
       targetHeight !== undefined && currentHeight > 0
         ? targetHeight / currentHeight
         : 1
+
+    // objectFit "contain" (CSS convention): one factor for both axes, the largest that fits the given size
+    if (props.objectFit === "contain") {
+      const factor =
+        targetWidth !== undefined && targetHeight !== undefined
+          ? Math.min(scaleX, scaleY)
+          : targetWidth !== undefined
+            ? scaleX
+            : scaleY
+      scaleX = factor
+      scaleY = factor
+    }
 
     // Get the global position for the Symbol (where the content should be centered)
     const globalPos = this._getGlobalSchematicPositionBeforeLayout()

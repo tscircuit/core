@@ -5,9 +5,13 @@ type TscircuitElementsWithoutReactConflicts = Omit<TscircuitElements, "switch">
 type SwitchSvgAttributeProps = Partial<
   Omit<Props.SwitchProps, "children" | "type">
 >
+// <symbol> is typed as React's SVG symbol element; its tscircuit-only props are added the same way
+type SymbolSvgAttributeProps = Partial<Pick<Props.SymbolProps, "objectFit">>
 
 declare module "react" {
-  interface SVGAttributes<T> extends SwitchSvgAttributeProps {}
+  interface SVGAttributes<T>
+    extends SwitchSvgAttributeProps,
+      SymbolSvgAttributeProps {}
 
   namespace JSX {
     interface IntrinsicElements
