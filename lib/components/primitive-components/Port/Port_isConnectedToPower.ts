@@ -1,4 +1,7 @@
-import { POWER_NET_REGEX } from "lib/utils/gnd-power-net-regex"
+import {
+  GROUND_NET_REGEX,
+  POWER_NET_REGEX,
+} from "lib/utils/gnd-power-net-regex"
 import type { Port } from "./Port"
 import { resolvePortSourcePinAttributes } from "./resolve-port-source-pin-attributes"
 
@@ -14,7 +17,17 @@ function portShouldHaveDecouplingCapacitor(port: Port): boolean {
   if (attributes.requires_power !== undefined) return attributes.requires_power
   if (attributes.provides_power === true) return false
 
-  for (const portName of port.getNameAndAliases()) {
+  // A ground pin can also have a BGA ball alias such as V3. Do not mistake
+  // that package address for a supply name when following internal contacts.
+  const aliases = port.getNameAndAliases()
+  if (
+    attributes.requires_ground === true ||
+    attributes.provides_ground === true ||
+    aliases.some((alias) => GROUND_NET_REGEX.test(alias))
+  )
+    return false
+  for (const portName of aliases) {
+    if (portName === port.physicalPinName) continue
     if (POWER_NET_REGEX.test(portName)) return true
   }
   return false
