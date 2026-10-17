@@ -89,6 +89,9 @@ const isPointInCopperPour = (point: Point, pour: PcbCopperPour): boolean => {
   if (pour.shape === "brep") {
     return isPointInBrepPour(point, pour)
   }
+  if (pour.shape === "polygon") {
+    return isPointInRing(point, pour.points)
+  }
   return false
 }
 
