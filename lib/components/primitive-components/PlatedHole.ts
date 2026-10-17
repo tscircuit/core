@@ -395,6 +395,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         pad_outline: padOutline,
         hole_offset_x: holeOffsetX,
         hole_offset_y: holeOffsetY,
+        ccw_rotation: finalRotationDegrees,
         port_hints: this.getNameAndAliases(),
         x: position.x,
         y: position.y,
