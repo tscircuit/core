@@ -792,6 +792,12 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   _shouldRouteAsync(): boolean {
     if (this._isLegacyAutorouterDisabled()) return false
+    if (this.root?.pcbDisabled) return false
+    if (
+      this.root?.pcbRoutingDisabled ||
+      this.getInheritedProperty("routingDisabled")
+    )
+      return false
     const autorouter = this._getAutorouterConfig()
     if (autorouter.groupMode === "sequential-trace") return false
     // Local subcircuit mode should use async routing with the CapacityMeshAutorouter
