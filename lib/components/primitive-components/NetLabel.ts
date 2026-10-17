@@ -1,19 +1,19 @@
 import { netLabelProps } from "@tscircuit/props"
-import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
-import { Port } from "./Port"
-import { Trace } from "./Trace/Trace"
-import { Net } from "./Net"
+import { calculateElbow } from "calculate-elbow"
 import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
 import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
+import { convertFacingDirectionToElbowDirection } from "lib/utils/schematic/convertFacingDirectionToElbowDirection"
+import { getEnteringEdgeFromDirection } from "lib/utils/schematic/getEnteringEdgeFromDirection"
 import {
+  type Matrix,
   applyToPoint,
   identity,
   translate,
-  type Matrix,
 } from "transformation-matrix"
-import { calculateElbow } from "calculate-elbow"
-import { convertFacingDirectionToElbowDirection } from "lib/utils/schematic/convertFacingDirectionToElbowDirection"
-import { getEnteringEdgeFromDirection } from "lib/utils/schematic/getEnteringEdgeFromDirection"
+import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
+import { Net } from "./Net"
+import { Port } from "./Port"
+import { Trace } from "./Trace/Trace"
 
 export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
   source_net_label_id?: string
@@ -24,6 +24,33 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
       componentName: "NetLabel",
       zodProps: netLabelProps,
     }
+  }
+
+  _getPortSchematicPositionBeforeLayout(port: Port): { x: number; y: number } {
+    if (port.schematic_port_id) {
+      const schematicPort = this.root?.db.schematic_port.get(
+        port.schematic_port_id,
+      )
+      if (schematicPort?.center) {
+        return schematicPort.center
+      }
+    }
+    return port._getGlobalSchematicPositionBeforeLayout()
+  }
+
+  _getPortFacingDirection(
+    port: Port,
+  ): "up" | "down" | "left" | "right" | undefined {
+    if (port.facingDirection) return port.facingDirection
+    if (port.schematic_port_id) {
+      const schematicPort = this.root?.db.schematic_port.get(
+        port.schematic_port_id,
+      )
+      if (schematicPort?.facing_direction) {
+        return schematicPort.facing_direction
+      }
+    }
+    return undefined
   }
 
   _getAnchorSide(): "top" | "bottom" | "left" | "right" {
@@ -51,11 +78,13 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
     if (connectedPorts.length === 0) return "right"
 
     const port = connectedPorts[0]
-    if (port.facingDirection) {
-      return getEnteringEdgeFromDirection(port.facingDirection as any)
+    const portFacingDirection = this._getPortFacingDirection(port)
+    if (portFacingDirection) {
+      return getEnteringEdgeFromDirection(portFacingDirection as any)
     }
 
-    const connectedPortPosition = port._getGlobalSchematicPositionBeforeLayout()
+    const connectedPortPosition =
+      this._getPortSchematicPositionBeforeLayout(port)
 
     const dx = connectedPortPosition.x - anchorPos.x
     const dy = connectedPortPosition.y - anchorPos.y
@@ -92,8 +121,9 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
     if (props.schX === undefined && props.schY === undefined) {
       const connectedPorts = this._getConnectedPorts()
       if (connectedPorts.length > 0) {
-        const portPos =
-          connectedPorts[0]._getGlobalSchematicPositionBeforeLayout()
+        const portPos = this._getPortSchematicPositionBeforeLayout(
+          connectedPorts[0],
+        )
         const parentCenter = applyToPoint(
           this.parent?.computeSchematicGlobalTransform?.() ?? identity(),
           { x: 0, y: 0 },
@@ -198,9 +228,21 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
     if (this.getCollapsedSchematicBoxAncestor()) return
     if (this._parsedProps.inline) return
     const { schX, schY } = this._parsedProps
-    if (schX === undefined && schY === undefined) return
-
     const { db } = this.root!
+    if (schX === undefined && schY === undefined) {
+      for (const port of this._getConnectedPorts()) {
+        if (
+          port.schematic_port_id &&
+          port.parent?.componentName === "SchematicSymbol"
+        ) {
+          db.schematic_port.update(port.schematic_port_id, {
+            is_connected: true,
+          })
+        }
+      }
+      return
+    }
+
     const connectsTo = this._resolveConnectsTo()
     if (!connectsTo || connectsTo.length === 0) return
 
@@ -229,30 +271,58 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
       }) as Port | null
       if (!port || !port.schematic_port_id) continue
 
-      // If a schematic trace for this connection already exists, skip
+      const portPos = port._getGlobalSchematicPositionAfterLayout()
+
+      // If a schematic trace for this specific schematic port already exists, skip
       let existingTraceForThisConnection = false
       if (net?.source_net_id) {
-        const candidateSourceTrace = db.source_trace
-          .list()
-          .find(
-            (st) =>
-              st.connected_source_net_ids?.includes(net.source_net_id!) &&
-              st.connected_source_port_ids?.includes(port.source_port_id ?? ""),
-          )
-        if (candidateSourceTrace) {
+        const candidateSourceTraceIds = new Set(
+          db.source_trace
+            .list()
+            .filter(
+              (st) =>
+                st.connected_source_net_ids?.includes(net.source_net_id!) &&
+                st.connected_source_port_ids?.includes(
+                  port.source_port_id ?? "",
+                ),
+            )
+            .map((st) => st.source_trace_id),
+        )
+        if (candidateSourceTraceIds.size > 0) {
           existingTraceForThisConnection = db.schematic_trace
             .list()
             .some(
-              (t) => t.source_trace_id === candidateSourceTrace.source_trace_id,
+              (t) =>
+                t.source_trace_id !== undefined &&
+                candidateSourceTraceIds.has(t.source_trace_id) &&
+                t.edges.some(
+                  (edge) =>
+                    (Math.abs(edge.from.x - portPos.x) < 1e-3 &&
+                      Math.abs(edge.from.y - portPos.y) < 1e-3) ||
+                    (Math.abs(edge.to.x - portPos.x) < 1e-3 &&
+                      Math.abs(edge.to.y - portPos.y) < 1e-3),
+                ),
             )
         }
-        if (existingTraceForThisConnection) continue
+        if (existingTraceForThisConnection) {
+          db.schematic_port.update(port.schematic_port_id, {
+            is_connected: true,
+          })
+          continue
+        }
       }
 
-      const portPos = port._getGlobalSchematicPositionAfterLayout()
+      if (
+        Math.abs(portPos.x - anchorPos.x) < 1e-6 &&
+        Math.abs(portPos.y - anchorPos.y) < 1e-6
+      ) {
+        db.schematic_port.update(port.schematic_port_id, { is_connected: true })
+        continue
+      }
+
       const portFacing =
         convertFacingDirectionToElbowDirection(
-          (port.facingDirection as any) ?? "right",
+          (this._getPortFacingDirection(port) as any) ?? "right",
         ) ?? "x+"
 
       const path = calculateElbow(
@@ -268,7 +338,10 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
         },
       )
 
-      if (!Array.isArray(path) || path.length < 2) continue
+      if (!Array.isArray(path) || path.length < 2) {
+        db.schematic_port.update(port.schematic_port_id, { is_connected: true })
+        continue
+      }
 
       const edges = []
       for (let i = 0; i < path.length - 1; i++) {
