@@ -26,6 +26,7 @@ import { ViaStitchSolver } from "@tscircuit/via-stitch-solver"
 import { PackSolver2 } from "calculate-packing"
 
 import { DogboneFanoutSolver } from "@tscircuit/dogbone-solver"
+import { SilkscreenLabelPlacementSolver } from "./utils/silkscreen-label-placement/SilkscreenLabelPlacementSolver"
 
 export const SOLVERS = {
   DogboneFanoutSolver,
@@ -50,6 +51,7 @@ export const SOLVERS = {
   FanoutSolver,
   ImplicitCopperPourPipelineSolver,
   SchematicTracePipelineSolver,
+  SilkscreenLabelPlacementSolver,
   ViaStitchSolver,
 }
 

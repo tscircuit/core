@@ -1,5 +1,6 @@
 import type { AnyCircuitElement } from "circuit-json"
 import { IsolatedCircuit } from "lib/IsolatedCircuit"
+import { recordPlacedSilkscreenTextOfIsolatedRender } from "lib/components/base-components/NormalComponent/utils/getBoardPlacedSilkscreenLabels"
 import type { ISubcircuit } from "./ISubcircuit"
 
 /**
@@ -96,6 +97,7 @@ export function Subcircuit_doInitialRenderIsolatedSubcircuits(
       await isolatedCircuit.renderUntilSettled()
 
       const circuitJson = isolatedCircuit.getCircuitJson()
+      recordPlacedSilkscreenTextOfIsolatedRender(isolatedCircuit, circuitJson)
 
       // Store in cache for reuse by identical subcircuits
       cachedSubcircuits?.set(propHash, circuitJson)

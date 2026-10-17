@@ -32,6 +32,7 @@ import type {
 } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
 import { getRotatedSymbolName } from "lib/utils/schematic/getRotatedSymbolName"
 import { isMatchingSelector } from "lib/utils/selector-matching"
+import { DESIGNATOR_PLACEHOLDERS } from "lib/utils/designator-placeholders"
 import { type SchSymbol, symbols } from "schematic-symbols"
 import {
   type Matrix,
@@ -631,9 +632,7 @@ export abstract class PrimitiveComponent<
     const text = this._parsedProps.text
     if (!text) return ""
     if (
-      !text.includes("{NAME}") &&
-      !text.includes("{REF}") &&
-      !text.includes("{REFERENCE}")
+      !DESIGNATOR_PLACEHOLDERS.some((placeholder) => text.includes(placeholder))
     ) {
       return text
     }
@@ -643,10 +642,11 @@ export abstract class PrimitiveComponent<
 
     if (!refdes) return text
 
-    return text
-      .replace(/\{NAME\}/g, refdes)
-      .replace(/\{REF\}/g, refdes)
-      .replace(/\{REFERENCE\}/g, refdes)
+    return DESIGNATOR_PLACEHOLDERS.reduce(
+      (resolvedText, placeholder) =>
+        resolvedText.replaceAll(placeholder, refdes),
+      text,
+    )
   }
 
   /**
