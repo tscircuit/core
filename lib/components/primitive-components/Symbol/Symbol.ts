@@ -1,16 +1,16 @@
 import { symbolProps } from "@tscircuit/props"
+import { getBoundsForSchematic } from "lib/utils/autorouting/getBoundsForSchematic"
+import {
+  compose,
+  identity,
+  type Matrix,
+  rotateDEG,
+  scale,
+  translate,
+} from "transformation-matrix"
 import { PrimitiveComponent } from "../../base-components/PrimitiveComponent"
 import type { Port } from "../Port/Port"
 import type { ISymbol, SchematicSymbolBounds } from "./ISymbol"
-import {
-  compose,
-  translate,
-  scale,
-  rotateDEG,
-  identity,
-  type Matrix,
-} from "transformation-matrix"
-import { getBoundsForSchematic } from "lib/utils/autorouting/getBoundsForSchematic"
 
 export class SymbolComponent
   extends PrimitiveComponent<typeof symbolProps>
