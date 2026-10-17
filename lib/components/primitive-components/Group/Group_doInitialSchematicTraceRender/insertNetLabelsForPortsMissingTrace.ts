@@ -217,7 +217,9 @@ export const insertNetLabelsForPortsMissingTrace = ({
           anchor_side: side,
         },
       )
-      connectedSchematicPortIds.add(schematicPortId)
+      if (!isCollapsedBoxPort) {
+        connectedSchematicPortIds.add(schematicPortId)
+      }
       continue
     }
 
@@ -269,7 +271,9 @@ export const insertNetLabelsForPortsMissingTrace = ({
             },
           )
         }
-        connectedSchematicPortIds.add(schematicPortId)
+        if (!isCollapsedBoxPort) {
+          connectedSchematicPortIds.add(schematicPortId)
+        }
         continue
       }
 
@@ -291,7 +295,9 @@ export const insertNetLabelsForPortsMissingTrace = ({
         })
       })
       if (existingAtPort) {
-        connectedSchematicPortIds.add(schematicPortId)
+        if (!isCollapsedBoxPort) {
+          connectedSchematicPortIds.add(schematicPortId)
+        }
         continue
       }
     }
@@ -338,7 +344,9 @@ export const insertNetLabelsForPortsMissingTrace = ({
       schematic_sheet_id: portSchematicSheetId,
     }
     db.schematic_net_label.insert(netLabel)
-    connectedSchematicPortIds.add(schematicPortId)
+    if (!isCollapsedBoxPort) {
+      connectedSchematicPortIds.add(schematicPortId)
+    }
   }
 
   for (const schematicPortId of connectedSchematicPortIds) {
