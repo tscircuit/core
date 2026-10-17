@@ -20,16 +20,19 @@ export function fillCircleWithRects(
 ): Rect[] {
   const { center, radius } = circle
   const { rectHeight = 0.1 } = options
+  if (radius <= 0 || rectHeight <= 0) return []
+
+  const effectiveRectHeight = Math.min(rectHeight, radius * 2)
   const rects: Rect[] = []
 
-  const numSlices = Math.ceil((radius * 2) / rectHeight)
+  const numSlices = Math.ceil((radius * 2) / effectiveRectHeight)
 
   for (let i = 0; i < numSlices; i++) {
-    const y = center.y - radius + (i + 0.5) * rectHeight
+    const y = center.y - radius + (i + 0.5) * effectiveRectHeight
     const dy = y - center.y
 
     // Using circle equation x^2 + y^2 = r^2 to find width at this y
-    const halfWidth = Math.sqrt(radius * radius - dy * dy)
+    const halfWidth = Math.sqrt(Math.max(0, radius * radius - dy * dy))
 
     if (halfWidth > 0) {
       rects.push({
@@ -38,7 +41,7 @@ export function fillCircleWithRects(
           y: y,
         },
         width: halfWidth * 2,
-        height: rectHeight,
+        height: effectiveRectHeight,
       })
     }
   }
