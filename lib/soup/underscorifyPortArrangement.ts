@@ -23,27 +23,18 @@ export const underscorifyPortArrangement = (
     "leftPinCount" in portArrangement ||
     "rightPinCount" in portArrangement ||
     "topPinCount" in portArrangement ||
-    "bottomPinCount" in portArrangement
-  ) {
-    return {
-      left_size: portArrangement.leftPinCount!,
-      right_size: portArrangement.rightPinCount!,
-      top_size: portArrangement.topPinCount,
-      bottom_size: portArrangement.bottomPinCount,
-    }
-  }
-
-  if (
+    "bottomPinCount" in portArrangement ||
     "leftSize" in portArrangement ||
     "rightSize" in portArrangement ||
     "topSize" in portArrangement ||
     "bottomSize" in portArrangement
   ) {
+    const pa = portArrangement as any
     return {
-      left_size: portArrangement.leftSize!,
-      right_size: portArrangement.rightSize!,
-      top_size: portArrangement.topSize,
-      bottom_size: portArrangement.bottomSize,
+      left_size: pa.leftPinCount ?? pa.leftSize,
+      right_size: pa.rightPinCount ?? pa.rightSize,
+      top_size: pa.topPinCount ?? pa.topSize,
+      bottom_size: pa.bottomPinCount ?? pa.bottomSize,
     }
   }
 
