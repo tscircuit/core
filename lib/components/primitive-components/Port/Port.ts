@@ -372,8 +372,18 @@ export class Port extends PrimitiveComponent<typeof portProps> {
   }
   getPortSelector() {
     // TODO this.parent.getSubcircuitSelector() >
-    const parentComponent = this.getParentNormalComponent() ?? this.parent
-    return `.${parentComponent?.props.name} > port.${this.props.name}`
+    const parentComponent: PrimitiveComponent | null =
+      this.getParentNormalComponent() ?? this.parent
+    const siblingPorts = parentComponent?.selectAll<Port>("port") ?? []
+    const portName =
+      [this.props.name, ...this.getNameAndAliases()].find(
+        (name) =>
+          name !== undefined &&
+          siblingPorts.every(
+            (port) => port === this || !port.getNameAndAliases().includes(name),
+          ),
+      ) ?? this.props.name
+    return `.${parentComponent?.props.name} > port.${portName}`
   }
   getAvailablePcbLayers(): LayerRef[] {
     const { layer, layers } = this._parsedProps
