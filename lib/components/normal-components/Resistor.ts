@@ -102,6 +102,7 @@ export class Resistor extends NormalComponent<
       supplier_part_numbers: props.supplierPartNumbers,
 
       resistance: props.resistance,
+      ...(props.tolerance !== undefined ? { tolerance: props.tolerance } : {}),
       display_resistance: this._getSchematicSymbolDisplayValue(),
       are_pins_interchangeable: true,
       display_name: props.displayName,
