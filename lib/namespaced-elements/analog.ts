@@ -4,10 +4,17 @@ import type {
   AnalogDcSweepSimulationProps,
   AnalogSweepParameterProps,
   AnalogTransientSimulationProps,
+  AnalogDigitalStimulusProps,
+  AnalogEyeDiagramProps,
 } from "@tscircuit/props"
 import { createNamespacedElement } from "./create-namespaced-element"
 
 export const analog = {
+  digitalstimulus: createNamespacedElement<AnalogDigitalStimulusProps>(
+    "analogdigitalstimulus",
+  ),
+  eyediagram:
+    createNamespacedElement<AnalogEyeDiagramProps>("analogeyediagram"),
   transientsimulation: createNamespacedElement<AnalogTransientSimulationProps>(
     "analogtransientsimulation",
   ),
