@@ -74,6 +74,30 @@ export function Group_doInitialSourceAddConnectivityMapKey(group: Group<any>) {
     })
   }
 
+  const internalConnections = db.source_component_internal_connection
+    .list()
+    .filter((ic) => ic.subcircuit_id === group.subcircuit_id)
+  for (const ic of internalConnections) {
+    const connectedSourcePort = ic.source_port_ids
+      .map((id) => db.source_port.get(id))
+      .find((sp) => Boolean(sp?.subcircuit_connectivity_map_key))
+    if (!connectedSourcePort?.subcircuit_connectivity_map_key) continue
+    for (const portId of ic.source_port_ids) {
+      const sp = db.source_port.get(portId)
+      if (
+        sp &&
+        !sp.subcircuit_connectivity_map_key &&
+        sp.pin_number === undefined &&
+        /^pin\d+_internal_\d+$/.test(sp.name)
+      ) {
+        db.source_port.update(portId, {
+          subcircuit_connectivity_map_key:
+            connectedSourcePort.subcircuit_connectivity_map_key,
+        })
+      }
+    }
+  }
+
   // Update source_net.subcircuit_connectivity_map_key for all nets in this subcircuit
   // Start with nets connected through traces
   const allSourceNetIds = new Set<string>()
