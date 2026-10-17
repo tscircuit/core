@@ -53,6 +53,8 @@ export const insertNetLabelsForPortsMissingTrace = ({
       ),
   )
 
+  const connectedSchematicPortIds = new Set<SchematicPortId>()
+
   // Create net labels for ports connected only to a net (no trace connected)
   for (const schematicPortId of schematicPortIdsInScope) {
     if (
@@ -126,7 +128,20 @@ export const insertNetLabelsForPortsMissingTrace = ({
             .list({
               source_port_id: directConnectionOutsideSchematicScopeSourcePortId,
             })
-            .some((port) => !port.is_connected)
+            .some(
+              (port) =>
+                !port.is_connected ||
+                db.schematic_net_label.list().some((nl) => {
+                  if (!nl.anchor_position || !port.center) return false
+                  const dx = nl.anchor_position.x - port.center.x
+                  const dy = nl.anchor_position.y - port.center.y
+                  return (
+                    dx * dx + dy * dy <
+                    SAME_ANCHOR_POSITION_DISTANCE *
+                      SAME_ANCHOR_POSITION_DISTANCE
+                  )
+                }),
+            )
         : false
     const shouldPreserveDirectConnectionEndpointLabels =
       directConnectionOutsideScopePortAlsoNeedsNetLabel
@@ -202,6 +217,9 @@ export const insertNetLabelsForPortsMissingTrace = ({
           anchor_side: side,
         },
       )
+      if (!isCollapsedBoxPort) {
+        connectedSchematicPortIds.add(schematicPortId)
+      }
       continue
     }
 
@@ -253,6 +271,9 @@ export const insertNetLabelsForPortsMissingTrace = ({
             },
           )
         }
+        if (!isCollapsedBoxPort) {
+          connectedSchematicPortIds.add(schematicPortId)
+        }
         continue
       }
 
@@ -273,7 +294,12 @@ export const insertNetLabelsForPortsMissingTrace = ({
           text,
         })
       })
-      if (existingAtPort) continue
+      if (existingAtPort) {
+        if (!isCollapsedBoxPort) {
+          connectedSchematicPortIds.add(schematicPortId)
+        }
+        continue
+      }
     }
 
     if (!sourceNet && !shouldPreserveDirectConnectionEndpointLabels) {
@@ -318,5 +344,12 @@ export const insertNetLabelsForPortsMissingTrace = ({
       schematic_sheet_id: portSchematicSheetId,
     }
     db.schematic_net_label.insert(netLabel)
+    if (!isCollapsedBoxPort) {
+      connectedSchematicPortIds.add(schematicPortId)
+    }
+  }
+
+  for (const schematicPortId of connectedSchematicPortIds) {
+    db.schematic_port.update(schematicPortId, { is_connected: true })
   }
 }

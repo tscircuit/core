@@ -55,6 +55,18 @@ const renderSchematicTracesForSheet = ({
     inputProblem.directConnections.length > 0 ||
     inputProblem.netConnections.length > 0
 
+  const { db } = group.root!
+  const reconcileRoutedSchematicPortAliases = () => {
+    for (const [
+      schematicPortId,
+      routedSchematicPortId,
+    ] of routedSchematicPortIdBySchematicPortId) {
+      if (db.schematic_port.get(routedSchematicPortId)?.is_connected) {
+        db.schematic_port.update(schematicPortId, { is_connected: true })
+      }
+    }
+  }
+
   if (!hasRouteableSchematicConnections) {
     insertNetLabelsForPortsMissingTrace({
       group,
@@ -63,6 +75,7 @@ const renderSchematicTracesForSheet = ({
       schPortIdToSourcePortId,
       connKeyToSourceNet,
     })
+    reconcileRoutedSchematicPortAliases()
     return
   }
 
@@ -128,15 +141,7 @@ const renderSchematicTracesForSheet = ({
 
   // Physical aliases of a displayed terminal share its routing state. Inline
   // stubs are applied after ordinary traces, so reconcile only after both.
-  const { db } = group.root!
-  for (const [
-    schematicPortId,
-    routedSchematicPortId,
-  ] of routedSchematicPortIdBySchematicPortId) {
-    if (db.schematic_port.get(routedSchematicPortId)?.is_connected) {
-      db.schematic_port.update(schematicPortId, { is_connected: true })
-    }
-  }
+  reconcileRoutedSchematicPortAliases()
 
   insertNetLabelsForPortsMissingTrace({
     group,
@@ -145,6 +150,8 @@ const renderSchematicTracesForSheet = ({
     schPortIdToSourcePortId,
     connKeyToSourceNet,
   })
+
+  reconcileRoutedSchematicPortAliases()
 }
 
 /**
