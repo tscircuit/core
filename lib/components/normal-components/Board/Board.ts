@@ -226,19 +226,42 @@ export class Board
     let width = dbBoard?.width ?? props.width
     let height = dbBoard?.height ?? props.height
 
-    if ((width == null || height == null) && props.outline?.length) {
-      const outlineBounds = getBoundsFromPoints(props.outline)
-      if (outlineBounds) {
-        width ??= outlineBounds.maxX - outlineBounds.minX
-        height ??= outlineBounds.maxY - outlineBounds.minY
-      }
+    const outlineBounds = props.outline?.length
+      ? getBoundsFromPoints(props.outline)
+      : null
+    if ((width == null || height == null) && outlineBounds) {
+      width ??= outlineBounds.maxX - outlineBounds.minX
+      height ??= outlineBounds.maxY - outlineBounds.minY
     }
 
     const { pcbX, pcbY } = this.getResolvedPcbPositionProp()
-    const center = dbBoard?.center ?? {
-      x: pcbX + (props.outlineOffsetX ?? 0),
-      y: pcbY + (props.outlineOffsetY ?? 0),
-    }
+    const rawProps = this.props
+    const hasExplicitCenter =
+      rawProps.pcbX !== undefined ||
+      rawProps.pcbY !== undefined ||
+      (rawProps as any).center !== undefined ||
+      Boolean(props.boardAnchorPosition)
+
+    const isInsidePanel =
+      this.parent?.lowercaseComponentName === "panel" ||
+      this.parent?.lowercaseComponentName === "subpanel"
+
+    const fallbackCenter =
+      !hasExplicitCenter && outlineBounds && !isInsidePanel
+        ? {
+            x:
+              (outlineBounds.minX + outlineBounds.maxX) / 2 +
+              (props.outlineOffsetX ?? 0),
+            y:
+              (outlineBounds.minY + outlineBounds.maxY) / 2 +
+              (props.outlineOffsetY ?? 0),
+          }
+        : {
+            x: pcbX + (props.outlineOffsetX ?? 0),
+            y: pcbY + (props.outlineOffsetY ?? 0),
+          }
+
+    const center = dbBoard?.center ?? fallbackCenter
 
     const resolvedWidth = width ?? 0
     const resolvedHeight = height ?? 0
@@ -520,17 +543,8 @@ export class Board
 
     const { boardAnchorPosition, boardAnchorAlignment } = props
 
-    if (boardAnchorPosition) {
-      center = getBoardCenterFromAnchor({
-        boardAnchorPosition,
-        boardAnchorAlignment: boardAnchorAlignment ?? "center",
-        width: computedWidth,
-        height: computedHeight,
-      })
-    }
-
-    // Compute width and height from outline if not provided
-    if (props.outline) {
+    // Compute width, height, and center from outline if provided
+    if (props.outline && props.outline.length > 0) {
       const xValues = props.outline.map((point) => point.x)
       const yValues = props.outline.map((point) => point.y)
 
@@ -541,6 +555,32 @@ export class Board
 
       computedWidth = maxX - minX
       computedHeight = maxY - minY
+
+      const hasExplicitCenter =
+        rawProps.pcbX !== undefined ||
+        rawProps.pcbY !== undefined ||
+        (rawProps as any).center !== undefined ||
+        Boolean(boardAnchorPosition)
+
+      const isInsidePanel =
+        this.parent?.lowercaseComponentName === "panel" ||
+        this.parent?.lowercaseComponentName === "subpanel"
+
+      if (!hasExplicitCenter && !isInsidePanel) {
+        center = {
+          x: globalPos.x + (minX + maxX) / 2 + (props.outlineOffsetX ?? 0),
+          y: globalPos.y + (minY + maxY) / 2 + (props.outlineOffsetY ?? 0),
+        }
+      }
+    }
+
+    if (boardAnchorPosition) {
+      center = getBoardCenterFromAnchor({
+        boardAnchorPosition,
+        boardAnchorAlignment: boardAnchorAlignment ?? "center",
+        width: computedWidth,
+        height: computedHeight,
+      })
     }
 
     let outline = props.outline
