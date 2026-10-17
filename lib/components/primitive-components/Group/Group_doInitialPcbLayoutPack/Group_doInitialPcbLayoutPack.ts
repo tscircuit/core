@@ -8,11 +8,15 @@ import {
   convertPackOutputToPackInput,
   getGraphicsFromPackOutput,
 } from "calculate-packing"
-import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
+import {
+  type CircuitJsonUtilObjects,
+  transformPCBElements,
+} from "@tscircuit/circuit-json-util"
 import { type LayerRef, type PcbComponent, length } from "circuit-json"
 import Debug from "debug"
 import type { NormalComponent } from "lib/components/base-components/NormalComponent"
 import { solvePackSolverWithTimeout } from "lib/utils/packing/solvePackSolverWithTimeout"
+import { inverse } from "transformation-matrix"
 import type { Group } from "../Group"
 import { applyComponentConstraintClusters } from "./applyComponentConstraintClusters"
 import { applyPackOutput } from "./applyPackOutput"
@@ -22,6 +26,7 @@ import {
 } from "./getPackInputsByPcbLayer"
 
 const DEFAULT_MIN_GAP = "1mm"
+const TIGHTER_BOUNDED_GAP_CANDIDATES_MM = [0.5, 0.25, 0.15]
 const debug = Debug("Group_doInitialPcbLayoutPack")
 
 const getCollisionObstacleForStaticComponent = (
@@ -383,6 +388,171 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
             db,
           })
         : []
+      const isBoardInstance = (target: any): boolean =>
+        target?.componentName === "Board" || Boolean(target?.pcb_board_id)
+      const isBoardGroup = isBoardInstance(group)
+
+      const isGroupFixedInWorld = (targetGroup: Group): boolean => {
+        let curr: Group | null = targetGroup
+        while (curr) {
+          if (isBoardInstance(curr) || !curr.parent) return true
+          const parentGroup = curr.parent?.getGroup?.() as unknown as
+            | Group
+            | undefined
+          if (!parentGroup) return true
+          if (!curr.isRelativelyPositioned?.()) {
+            const parentLayoutMode = parentGroup._getPcbLayoutMode?.() ?? "none"
+            if (parentLayoutMode !== "none") return false
+          }
+          curr = parentGroup
+        }
+        return true
+      }
+
+      const externalPlacedObstacles: InputObstacle[] = []
+      if (
+        bounds !== undefined &&
+        !isBoardGroup &&
+        group.source_group_id &&
+        isGroupFixedInWorld(group)
+      ) {
+        const worldToLocalTransform = inverse(
+          group._computePcbGlobalTransformBeforeLayout(),
+        )
+        const explicitlyFixedExternalPcbCompIds = new Set<string>()
+        const rootContainer = group._getBoard?.() ?? group.getSubcircuit?.()
+        const collectFixedExternalIds = (comp: any) => {
+          if (!comp || comp === group) return
+          if (
+            comp._isNormalComponent &&
+            comp.pcb_component_id &&
+            comp.isRelativelyPositioned?.()
+          ) {
+            const parentGrp = comp.getGroup?.() as Group | undefined
+            if (!parentGrp || isGroupFixedInWorld(parentGrp)) {
+              explicitlyFixedExternalPcbCompIds.add(comp.pcb_component_id)
+            }
+          }
+          if (Array.isArray(comp.children)) {
+            for (const child of comp.children) {
+              collectFixedExternalIds(child)
+            }
+          }
+        }
+        collectFixedExternalIds(rootContainer)
+
+        const allElements = db.toArray()
+        for (const extComp of db.pcb_component.list()) {
+          if (
+            extComp.position_mode !== "relative_to_group_anchor" &&
+            extComp.position_mode !== "packed" &&
+            !explicitlyFixedExternalPcbCompIds.has(extComp.pcb_component_id)
+          ) {
+            continue
+          }
+          const sourceComp = db.source_component.get(
+            extComp.source_component_id,
+          )
+          if (
+            sourceComp?.source_group_id &&
+            isDescendantGroup(
+              db,
+              sourceComp.source_group_id,
+              group.source_group_id,
+            )
+          ) {
+            continue
+          }
+
+          const related = structuredClone(
+            allElements.filter(
+              (elm) =>
+                (elm.type === "pcb_component" &&
+                  elm.pcb_component_id === extComp.pcb_component_id) ||
+                ("pcb_component_id" in elm &&
+                  elm.pcb_component_id === extComp.pcb_component_id),
+            ),
+          )
+          transformPCBElements(related as any, worldToLocalTransform)
+
+          const extLayer = (extComp.layer ?? "top") as LayerRef
+          if (!targetLayer || extLayer === targetLayer) {
+            let minX = Infinity
+            let minY = Infinity
+            let maxX = -Infinity
+            let maxY = -Infinity
+            for (const elm of related) {
+              if (elm.type === "pcb_courtyard_rect") {
+                minX = Math.min(minX, elm.center.x - elm.width / 2)
+                maxX = Math.max(maxX, elm.center.x + elm.width / 2)
+                minY = Math.min(minY, elm.center.y - elm.height / 2)
+                maxY = Math.max(maxY, elm.center.y + elm.height / 2)
+              } else if (elm.type === "pcb_courtyard_circle") {
+                minX = Math.min(minX, elm.center.x - elm.radius)
+                maxX = Math.max(maxX, elm.center.x + elm.radius)
+                minY = Math.min(minY, elm.center.y - elm.radius)
+                maxY = Math.max(maxY, elm.center.y + elm.radius)
+              } else if (elm.type === "pcb_courtyard_outline") {
+                for (const pt of elm.outline) {
+                  minX = Math.min(minX, pt.x)
+                  maxX = Math.max(maxX, pt.x)
+                  minY = Math.min(minY, pt.y)
+                  maxY = Math.max(maxY, pt.y)
+                }
+              }
+            }
+            const localComp = related.find(
+              (e): e is PcbComponent => e.type === "pcb_component",
+            )
+            if (!Number.isFinite(minX) && localComp) {
+              minX = localComp.center.x - localComp.width / 2
+              maxX = localComp.center.x + localComp.width / 2
+              minY = localComp.center.y - localComp.height / 2
+              maxY = localComp.center.y + localComp.height / 2
+            }
+            if (Number.isFinite(minX) && maxX > minX && maxY > minY) {
+              externalPlacedObstacles.push({
+                obstacleId: `external_static_${extComp.pcb_component_id}`,
+                absoluteCenter: {
+                  x: (minX + maxX) / 2,
+                  y: (minY + maxY) / 2,
+                },
+                width: maxX - minX,
+                height: maxY - minY,
+              })
+            }
+          } else {
+            for (const elm of related) {
+              if (
+                elm.type === "pcb_plated_hole" &&
+                elm.layers.includes(targetLayer)
+              ) {
+                const width =
+                  "outer_diameter" in elm
+                    ? elm.outer_diameter
+                    : "outer_width" in elm
+                      ? elm.outer_width
+                      : 0
+                const height =
+                  "outer_diameter" in elm
+                    ? elm.outer_diameter
+                    : "outer_height" in elm
+                      ? elm.outer_height
+                      : 0
+                if (width > 0 && height > 0) {
+                  externalPlacedObstacles.push({
+                    obstacleId: `external_cross_layer_${targetLayer}_${elm.pcb_plated_hole_id}`,
+                    absoluteCenter: { x: elm.x, y: elm.y },
+                    width,
+                    height,
+                  })
+                }
+              }
+            }
+          }
+        }
+      }
+
       const solverInput = {
         ...layerPackInput,
         weightedConnections: layerPackInput.weightedConnections?.filter(
@@ -394,6 +564,7 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
           ...staticLayerObstacles,
           ...fallbackCrossLayerObstacles,
           ...crossLayerPadObstacles,
+          ...externalPlacedObstacles,
         ],
         components: [
           ...networkReferenceComponents,
@@ -402,7 +573,7 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
           ),
         ],
       }
-      const solver = new PackSolver2(solverInput)
+      let solver = new PackSolver2(solverInput)
       const solverParams = solver.getConstructorParams()
       group.root?.emit("solver:started", {
         type: "solver:started",
@@ -414,10 +585,38 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
 
       const pcbPackSolverTimeoutMs =
         group.root?.platform?.pcbPackSolverTimeoutMs
-      const { timedOut } = solvePackSolverWithTimeout(
+      let { timedOut } = solvePackSolverWithTimeout(
         solver,
         pcbPackSolverTimeoutMs,
       )
+
+      if (
+        solver.failed &&
+        !timedOut &&
+        bounds !== undefined &&
+        !isBoardGroup &&
+        gap === undefined
+      ) {
+        for (const candidateGap of TIGHTER_BOUNDED_GAP_CANDIDATES_MM) {
+          if (candidateGap >= gapMm) continue
+          const retrySolver = new PackSolver2({
+            ...solverInput,
+            minGap: candidateGap,
+          })
+          const retryResult = solvePackSolverWithTimeout(
+            retrySolver,
+            pcbPackSolverTimeoutMs,
+          )
+          if (retryResult.timedOut) {
+            timedOut = true
+            break
+          }
+          if (!retrySolver.failed) {
+            solver = retrySolver
+            break
+          }
+        }
+      }
 
       if (timedOut) {
         packingFailed = true
@@ -426,6 +625,10 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
         )
       }
 
+      const packedForLayer = solver.packedComponents.filter((component) =>
+        componentIdsForLayer.has(component.componentId),
+      )
+
       if (solver.failed) {
         packingFailed = true
         const solverErrorMessage =
@@ -433,13 +636,43 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
           solver.activeSubSolver?.error ??
           "No valid packing solution found"
         reportPackingError(solverErrorMessage)
+
+        if (!timedOut && bounds !== undefined && !isBoardGroup) {
+          const placedIds = new Set(
+            packedForLayer.map((component) => component.componentId),
+          )
+          const unplacedComponents = layerPackInput.components.filter(
+            (component) =>
+              !component.isStatic && !placedIds.has(component.componentId),
+          )
+          if (unplacedComponents.length > 0) {
+            const placedObstacles = packedForLayer.flatMap((component) => {
+              const obstacle = getCollisionObstacleForStaticComponent({
+                ...component,
+                isStatic: true,
+              })
+              return obstacle ? [obstacle] : []
+            })
+            const fallbackSolver = new PackSolver2({
+              ...solverInput,
+              bounds: undefined,
+              obstacles: [...(solverInput.obstacles ?? []), ...placedObstacles],
+              components: unplacedComponents,
+            })
+            solvePackSolverWithTimeout(fallbackSolver, pcbPackSolverTimeoutMs)
+            for (const fallbackPacked of fallbackSolver.packedComponents) {
+              if (
+                componentIdsForLayer.has(fallbackPacked.componentId) &&
+                !placedIds.has(fallbackPacked.componentId)
+              ) {
+                packedForLayer.push(fallbackPacked)
+              }
+            }
+          }
+        }
       }
 
-      packOutput.components.push(
-        ...solver.packedComponents.filter((component) =>
-          componentIdsForLayer.has(component.componentId),
-        ),
-      )
+      packOutput.components.push(...packedForLayer)
 
       if (timedOut) break
     }
