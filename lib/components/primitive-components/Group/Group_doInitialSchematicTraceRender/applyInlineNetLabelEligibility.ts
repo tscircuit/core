@@ -106,9 +106,6 @@ export const applyInlineNetLabelEligibility = ({
     const { connKey } = directConnection
     if (!connKey) continue
 
-    const portsOnNet = connKeyToSchematicPortIds.get(connKey)
-    if (portsOnNet?.length !== 2) continue
-
     const sourceNet = connKeyToSourceNet.get(connKey)
     if (sourceNet?.is_power || sourceNet?.is_ground) continue
 
@@ -116,6 +113,9 @@ export const applyInlineNetLabelEligibility = ({
       subcircuitConnectivityMapKey: connKey,
     })
     if (!name || !wasAssignedDisplayLabel) continue
+
+    const portsOnNet = connKeyToSchematicPortIds.get(connKey)
+    if (!wasAssignedDisplayLabel && portsOnNet?.length !== 2) continue
 
     markConnectionEligibleForInlineNetLabel(directConnection, name)
   }

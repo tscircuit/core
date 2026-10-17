@@ -20,6 +20,19 @@ export class SchematicSymbol extends PrimitiveComponent<
     }
   }
 
+  override _getSchematicSymbolName(): keyof typeof symbols | undefined {
+    const rawName =
+      this.props.symbolName ?? (this._parsedProps as any)?.symbolName
+    if (
+      rawName &&
+      /_(left|right|up|down)$/.test(rawName) &&
+      rawName in symbols
+    ) {
+      return rawName as keyof typeof symbols
+    }
+    return super._getSchematicSymbolName()
+  }
+
   initPorts(): void {
     const symbol = symbols[this._getSchematicSymbolNameOrThrow()]!
     const shouldCreateSourcePort = !(

@@ -1,0 +1,76 @@
+import { expect, test } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
+
+test("schematicsymbol preserves symbolName and applies geometric rotation for oriented native symbols (issue #3520)", async () => {
+  const { circuit } = getTestFixture()
+
+  circuit.add(
+    <board width="20mm" height="10mm">
+      <chip
+        name="U"
+        pinLabels={{
+          pin1: "IN_PLUS",
+          pin2: "IN_MINUS",
+          pin3: "V_MINUS",
+          pin4: "OUT",
+          pin5: "V_PLUS",
+        }}
+        noSchematicRepresentation
+      />
+      <schematicsymbol
+        name="U1"
+        chipRef=".U"
+        symbolName="opamp_with_power_left"
+        schRotation={180}
+        connections={{
+          inp1: "U.IN_PLUS",
+          inp2: "U.IN_MINUS",
+          out: "U.OUT",
+          "V-": "U.V_PLUS",
+          "V+": "U.V_MINUS",
+        }}
+      />
+    </board>,
+  )
+
+  await circuit.renderUntilSettled()
+
+  const components = circuit.db.schematic_component.list()
+  expect(components).toHaveLength(1)
+  const opamp = components[0]
+  expect(opamp.symbol_name).toBe("opamp_with_power_left")
+
+  const ports = circuit.db.schematic_port.list()
+  expect(ports).toHaveLength(5)
+
+  // Find ports by their pin_number / display label
+  const inp1 = ports.find((p) => p.display_pin_label === "inp1")!
+  const inp2 = ports.find((p) => p.display_pin_label === "inp2")!
+  const out = ports.find((p) => p.display_pin_label === "out")!
+  const vMinus = ports.find((p) => p.display_pin_label === "V-")!
+  const vPlus = ports.find((p) => p.display_pin_label === "V+")!
+
+  // With 180-degree geometric rotation:
+  // inp2 (inverting input) is on the top-left (y > 0)
+  // inp1 (non-inverting input) is on the bottom-left (y < 0)
+  expect(inp2.center.y).toBeGreaterThan(0)
+  expect(inp2.center.x).toBeLessThan(0)
+  expect(inp2.facing_direction).toBe("left")
+
+  expect(inp1.center.y).toBeLessThan(0)
+  expect(inp1.center.x).toBeLessThan(0)
+  expect(inp1.facing_direction).toBe("left")
+
+  // Output faces right
+  expect(out.center.x).toBeGreaterThan(0)
+  expect(out.facing_direction).toBe("right")
+
+  // V- port is rotated to top (y > 0), V+ port is rotated to bottom (y < 0)
+  expect(vMinus.center.y).toBeGreaterThan(0)
+  expect(vMinus.facing_direction).toBe("up")
+
+  expect(vPlus.center.y).toBeLessThan(0)
+  expect(vPlus.facing_direction).toBe("down")
+
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+})
