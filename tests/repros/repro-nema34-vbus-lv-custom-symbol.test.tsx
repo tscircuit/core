@@ -46,7 +46,9 @@ beforeAll(async () => {
   await circuit.renderUntilSettled()
 
   expect(getVbusLabel().symbol_name).toBe("rail_up")
-  expect(getSourceStem().y2 - getSourceStem().y1).toBeCloseTo(0.635)
+  // schRotation={90} turns the symbol, so the source stem runs along x
+  const stem = getSourceStem()
+  expect(Math.hypot(stem.x2 - stem.x1, stem.y2 - stem.y1)).toBeCloseTo(0.635)
   await expect(circuit).toMatchSchematicSnapshot(import.meta.path, {
     grid: false,
   })
