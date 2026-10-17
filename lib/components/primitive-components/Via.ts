@@ -155,27 +155,6 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
     return containingPadPorts.size === 1 ? [...containingPadPorts][0] : null
   }
 
-  doInitialPcbComponentRender(): void {
-    if (this.root?.pcbDisabled) return
-    const { db } = this.root!
-    const pcbStyle = this.getInheritedMergedProperty("pcbStyle") as
-      | PcbStyle
-      | undefined
-    const { padDiameter } = this._getResolvedViaDiameters(pcbStyle)
-    const position = this._getGlobalPcbPositionBeforeLayout()
-    const subcircuit = this.getSubcircuit()
-    const pcb_component = db.pcb_component.insert({
-      center: position,
-      width: padDiameter,
-      height: padDiameter,
-      layer: this._parsedProps.fromLayer ?? "top",
-      rotation: 0,
-      source_component_id: this.source_component_id!,
-      subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
-      obstructs_within_bounds: true,
-    })
-    this.pcb_component_id = pcb_component.pcb_component_id
-  }
   doInitialSourceRender(): void {
     const { db } = this.root!
     const group = this.getGroup()
