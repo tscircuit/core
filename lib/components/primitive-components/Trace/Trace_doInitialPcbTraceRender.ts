@@ -1,4 +1,3 @@
-import { MultilayerIjump } from "@tscircuit/infgrid-ijump-astar"
 import { jlcMinTolerances } from "@tscircuit/jlcpcb-manufacturing-specs"
 import { type LayerRef, type PcbTrace, type RouteHintPoint } from "circuit-json"
 import { getFullConnectivityMapFromCircuitJson } from "circuit-json-to-connectivity-map"
@@ -12,6 +11,7 @@ import {
 import { mergeRoutes } from "lib/utils/autorouting/mergeRoutes"
 import { shouldSkipAutoroutingBecauseOfPlacementErrors } from "lib/utils/autorouting/should-skip-autorouting-because-of-placement-errors"
 import { shouldSkipAutoroutingBecauseOfTraceLengthViolations } from "lib/utils/autorouting/should-skip-autorouting-because-of-trace-length-violations"
+import { MultilayerIjump } from "lib/utils/autorouting/vendor/infgrid-ijump-astar/index"
 import { getClosest } from "lib/utils/getClosest"
 import {
   getAutoroutedViaLayers,
