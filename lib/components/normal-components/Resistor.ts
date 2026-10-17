@@ -3,22 +3,32 @@ import type { SourceSimpleResistorInput } from "circuit-json"
 import { formatSiUnit } from "format-si-unit"
 import type { Ftype, PassivePorts } from "lib/utils/constants"
 import { symbols } from "schematic-symbols"
+import { z } from "zod"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { Port } from "../primitive-components/Port"
 import { Trace } from "../primitive-components/Trace/Trace"
 
+const resistorPropsWithSmallAlias = resistorProps.extend({
+  schSize: z
+    .union([resistorProps.shape.schSize, z.literal("small")])
+    .optional(),
+})
+
 export class Resistor extends NormalComponent<
-  typeof resistorProps,
+  typeof resistorPropsWithSmallAlias,
   PassivePorts
 > {
   _adjustSilkscreenTextAutomatically = true
 
   get config() {
     const baseSymbolName = this.props.symbolName ?? "boxresistor"
+    const schSize = this.props.schSize
     const compactSize =
-      this.props.schSize === "sm" || this.props.schSize === "xs"
-        ? this.props.schSize
-        : undefined
+      schSize === "xs" || schSize === "sm"
+        ? schSize
+        : schSize === "small"
+          ? "sm"
+          : undefined
     const compactSymbolName =
       compactSize &&
       (baseSymbolName === "boxresistor" || baseSymbolName === "resistor")
@@ -32,7 +42,7 @@ export class Resistor extends NormalComponent<
     return {
       componentName: "Resistor",
       schematicSymbolName,
-      zodProps: resistorProps,
+      zodProps: resistorPropsWithSmallAlias,
       sourceFtype: "simple_resistor" as Ftype,
     }
   }

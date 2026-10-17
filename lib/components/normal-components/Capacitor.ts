@@ -7,6 +7,7 @@ import {
   type PolarizedPassivePorts,
 } from "lib/utils/constants"
 import { symbols } from "schematic-symbols"
+import { z } from "zod"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { Trace } from "../primitive-components/Trace/Trace"
 import { Capacitor_addPolarityFabricationSymbols } from "./Capacitor_addPolarityFabricationSymbols"
@@ -24,17 +25,26 @@ const CAPACITOR_CHIP_FOOTPRINTS = new Set([
   "2512",
 ])
 
+const capacitorPropsWithSmallAlias = capacitorProps.extend({
+  schSize: z
+    .union([capacitorProps.shape.schSize, z.literal("small")])
+    .optional(),
+})
+
 export class Capacitor extends NormalComponent<
-  typeof capacitorProps,
+  typeof capacitorPropsWithSmallAlias,
   PolarizedPassivePorts
 > {
   _adjustSilkscreenTextAutomatically = true
   get config() {
     const baseSymbolName = this.props.symbolName ?? "capacitor"
+    const schSize = this.props.schSize
     const compactSize =
-      this.props.schSize === "sm" || this.props.schSize === "xs"
-        ? this.props.schSize
-        : undefined
+      schSize === "xs" || schSize === "sm"
+        ? schSize
+        : schSize === "small"
+          ? "sm"
+          : undefined
     const compactSymbolName =
       compactSize && baseSymbolName === "capacitor"
         ? (`capacitor_${compactSize}` as BaseSymbolName)
@@ -49,7 +59,7 @@ export class Capacitor extends NormalComponent<
       schematicSymbolName: this.props.polarized
         ? "capacitor_polarized"
         : schematicSymbolName,
-      zodProps: capacitorProps,
+      zodProps: capacitorPropsWithSmallAlias,
       sourceFtype: FTYPE.simple_capacitor,
     }
   }
