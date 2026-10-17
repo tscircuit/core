@@ -53,7 +53,7 @@ const createPhaseAutorouter = ({
     })
   })
 
-test("repro: unbounded reroute phase is skipped", async () => {
+test("unbounded reroute phase processes every routed connection", async () => {
   const { circuit } = getTestFixture()
   const initialPhaseInputs: SimpleRouteJson[] = []
   const reroutePhaseInputs: SimpleRouteJson[] = []
@@ -89,16 +89,17 @@ test("repro: unbounded reroute phase is skipped", async () => {
       />
 
       <trace from=".LEFT > .pin1" to=".RIGHT > .pin1" routingPhaseIndex={0} />
-      <pcbnotetext text="BUG: REROUTE PHASE SKIPPED" pcbX={0} pcbY={5} />
-      <pcbnotetext text="STRAIGHT TRACE IS PHASE 0 OUTPUT" pcbX={0} pcbY={-4} />
+      <pcbnotetext text="REROUTE PHASE RAN" pcbX={0} pcbY={5} />
+      <pcbnotetext text="BENT TRACE IS PHASE 1 OUTPUT" pcbX={0} pcbY={-4} />
     </board>,
   )
 
   await circuit.renderUntilSettled()
 
   expect(initialPhaseInputs).toHaveLength(1)
-  expect(reroutePhaseInputs).toHaveLength(0)
+  expect(reroutePhaseInputs).toHaveLength(1)
+  expect(reroutePhaseInputs[0]!.connections).toHaveLength(1)
   expect(circuit.db.pcb_trace.list()).toHaveLength(1)
-  expect(circuit.db.pcb_trace.list()[0]!.pcb_trace_id).toEndWith("_initial")
+  expect(circuit.db.pcb_trace.list()[0]!.pcb_trace_id).toEndWith("_rerouted")
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
