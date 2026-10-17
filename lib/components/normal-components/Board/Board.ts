@@ -235,13 +235,22 @@ export class Board
     }
 
     const { pcbX, pcbY } = this.getResolvedPcbPositionProp()
-    const center = dbBoard?.center ?? {
-      x: pcbX + (props.outlineOffsetX ?? 0),
-      y: pcbY + (props.outlineOffsetY ?? 0),
-    }
-
     const resolvedWidth = width ?? 0
     const resolvedHeight = height ?? 0
+    const center =
+      dbBoard?.center ??
+      (props.boardAnchorPosition
+        ? getBoardCenterFromAnchor({
+            boardAnchorPosition: props.boardAnchorPosition,
+            boardAnchorAlignment:
+              props.anchorAlignment ?? props.boardAnchorAlignment ?? "center",
+            width: resolvedWidth,
+            height: resolvedHeight,
+          })
+        : {
+            x: pcbX + (props.outlineOffsetX ?? 0),
+            y: pcbY + (props.outlineOffsetY ?? 0),
+          })
 
     return {
       "board.minX": center.x - resolvedWidth / 2,
@@ -518,12 +527,13 @@ export class Board
       y: globalPos.y + (props.outlineOffsetY ?? 0),
     }
 
-    const { boardAnchorPosition, boardAnchorAlignment } = props
+    const { boardAnchorPosition, anchorAlignment, boardAnchorAlignment } = props
 
     if (boardAnchorPosition) {
       center = getBoardCenterFromAnchor({
         boardAnchorPosition,
-        boardAnchorAlignment: boardAnchorAlignment ?? "center",
+        boardAnchorAlignment:
+          anchorAlignment ?? boardAnchorAlignment ?? "center",
         width: computedWidth,
         height: computedHeight,
       })
