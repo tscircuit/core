@@ -506,6 +506,13 @@ export class Board
     const resolvedAllowBlindAndBuriedVias =
       rawProps.allowBlindAndBuriedVias ??
       pcbBoardFromCircuitJson?.allow_blind_and_buried_vias
+    const resolvedDoubleSidedAssembly =
+      rawProps.doubleSidedAssembly ??
+      (
+        pcbBoardFromCircuitJson as
+          | { double_sided_assembly?: boolean }
+          | undefined
+      )?.double_sided_assembly
 
     // Initialize with minimal dimensions if not provided
     // They will be updated in PcbBoardAutoSize phase
@@ -647,8 +654,8 @@ export class Board
       ...(props.bottomSilkscreenColor !== undefined && {
         bottom_silkscreen_color: props.bottomSilkscreenColor,
       }),
-      ...(props.doubleSidedAssembly !== undefined && {
-        double_sided_assembly: props.doubleSidedAssembly,
+      ...(resolvedDoubleSidedAssembly !== undefined && {
+        double_sided_assembly: resolvedDoubleSidedAssembly,
       }),
 
       min_trace_width:
