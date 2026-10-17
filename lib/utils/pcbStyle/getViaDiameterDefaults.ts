@@ -13,15 +13,18 @@ const parseDistance = (
   return Number.isFinite(parsed) ? parsed : fallback
 }
 
-export const getViaDiameterDefaults = (pcbStyle?: PcbStyle) => {
+export const getViaDiameterDefaults = (
+  pcbStyle?: PcbStyle,
+  fallback?: { holeDiameter?: number; padDiameter?: number },
+) => {
   return {
     holeDiameter: parseDistance(
       pcbStyle?.viaHoleDiameter,
-      DEFAULT_VIA_HOLE_DIAMETER,
+      fallback?.holeDiameter ?? DEFAULT_VIA_HOLE_DIAMETER,
     ),
     padDiameter: parseDistance(
       pcbStyle?.viaPadDiameter,
-      DEFAULT_VIA_PAD_DIAMETER,
+      fallback?.padDiameter ?? DEFAULT_VIA_PAD_DIAMETER,
     ),
   }
 }
@@ -29,8 +32,9 @@ export const getViaDiameterDefaults = (pcbStyle?: PcbStyle) => {
 export const getViaDiameterDefaultsWithOverrides = (
   overrides: { holeDiameter?: number; padDiameter?: number },
   pcbStyle?: PcbStyle,
+  fallback?: { holeDiameter?: number; padDiameter?: number },
 ) => {
-  const defaults = getViaDiameterDefaults(pcbStyle)
+  const defaults = getViaDiameterDefaults(pcbStyle, fallback)
   return {
     holeDiameter: overrides.holeDiameter ?? defaults.holeDiameter,
     padDiameter: overrides.padDiameter ?? defaults.padDiameter,

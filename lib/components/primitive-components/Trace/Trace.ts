@@ -42,8 +42,8 @@ import type { TraceI } from "./TraceI"
 import { Trace__doInitialSchematicTraceRenderWithDisplayLabel } from "./Trace__doInitialSchematicTraceRenderWithDisplayLabel"
 import { Trace__findConnectedPorts } from "./Trace__findConnectedPorts"
 import { Trace_doInitialPcbManualTraceRender } from "./Trace_doInitialPcbManualTraceRender"
-import { Trace_doInitialPcbTraceTeardropRender } from "./Trace_doInitialPcbTraceTeardropRender"
 import { Trace_doInitialPcbTraceRender } from "./Trace_doInitialPcbTraceRender"
+import { Trace_doInitialPcbTraceTeardropRender } from "./Trace_doInitialPcbTraceTeardropRender"
 import { Trace_doInitialSchematicTraceRender } from "./Trace_doInitialSchematicTraceRender"
 import { getMaxLengthFromConnectedComponents } from "./trace-utils/get-max-length-from-connected-components"
 import { getTraceDisplayName } from "./trace-utils/get-trace-display-name"
@@ -415,6 +415,32 @@ export class Trace
 
     // Check if both ports are chips
     return isPort1Chip && isPort2Chip
+  }
+
+  _getFallbackViaDiameters(): {
+    holeDiameter?: number
+    padDiameter?: number
+  } {
+    const boardComponent = this._getBoard()
+    const board = boardComponent?.pcb_board_id
+      ? this.root?.db.pcb_board.get(boardComponent.pcb_board_id)
+      : undefined
+    const holeDiameter =
+      this.getInheritedProperty("minViaHoleDiameter") ??
+      boardComponent?._parsedProps?.minViaHoleDiameter ??
+      board?.min_via_hole_diameter
+    const padDiameter =
+      this.getInheritedProperty("minViaPadDiameter") ??
+      boardComponent?._parsedProps?.minViaPadDiameter ??
+      board?.min_via_pad_diameter
+    return {
+      holeDiameter:
+        typeof holeDiameter === "string"
+          ? parseFloat(holeDiameter)
+          : holeDiameter,
+      padDiameter:
+        typeof padDiameter === "string" ? parseFloat(padDiameter) : padDiameter,
+    }
   }
 
   doInitialSchematicTraceRender(): void {
