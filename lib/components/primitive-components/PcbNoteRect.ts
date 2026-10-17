@@ -1,5 +1,5 @@
 import { pcbNoteRectProps } from "@tscircuit/props"
-import { applyToPoint } from "transformation-matrix"
+import { applyToPoint, decomposeTSR } from "transformation-matrix"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
 export class PcbNoteRect extends PrimitiveComponent<typeof pcbNoteRectProps> {
@@ -13,6 +13,19 @@ export class PcbNoteRect extends PrimitiveComponent<typeof pcbNoteRectProps> {
     }
   }
 
+  private _isRotated90Degrees(): boolean {
+    const globalTransform = this._computePcbGlobalTransformBeforeLayout()
+    const decomposedTransform = decomposeTSR(globalTransform)
+    const rotationDegrees = (decomposedTransform.rotation.angle * 180) / Math.PI
+    const normalizedRotationDegrees = ((rotationDegrees % 360) + 360) % 360
+    const rotationTolerance = 0.01
+
+    return (
+      Math.abs(normalizedRotationDegrees - 90) < rotationTolerance ||
+      Math.abs(normalizedRotationDegrees - 270) < rotationTolerance
+    )
+  }
+
   doInitialPcbPrimitiveRender(): void {
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
@@ -21,6 +34,10 @@ export class PcbNoteRect extends PrimitiveComponent<typeof pcbNoteRectProps> {
     const center = applyToPoint(transform, { x: 0, y: 0 })
     const subcircuit = this.getSubcircuit()
     const group = this.getGroup()
+
+    const isRotated90Degrees = this._isRotated90Degrees()
+    const finalWidth = isRotated90Degrees ? props.height : props.width
+    const finalHeight = isRotated90Degrees ? props.width : props.height
 
     const pcb_component_id =
       this.parent?.pcb_component_id ??
@@ -32,8 +49,8 @@ export class PcbNoteRect extends PrimitiveComponent<typeof pcbNoteRectProps> {
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       pcb_group_id: group?.pcb_group_id ?? undefined,
       center,
-      width: props.width,
-      height: props.height,
+      width: finalWidth,
+      height: finalHeight,
       layer: props.layer === "bottom" ? "bottom" : "top",
       stroke_width: props.strokeWidth ?? 0.1,
       is_filled: props.isFilled ?? false,
@@ -53,6 +70,9 @@ export class PcbNoteRect extends PrimitiveComponent<typeof pcbNoteRectProps> {
     const height =
       typeof props.height === "string" ? parseFloat(props.height) : props.height
 
+    if (this._isRotated90Degrees()) {
+      return { width: height, height: width }
+    }
     return { width, height }
   }
 
