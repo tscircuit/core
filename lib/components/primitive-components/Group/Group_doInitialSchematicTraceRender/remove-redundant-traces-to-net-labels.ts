@@ -195,7 +195,8 @@ export function removeRedundantTracesToNetLabels<Trace extends TraceGeometry>({
       for (const segment of segments) {
         if (
           !retainedSegments.has(segment) &&
-          Number.isFinite(segment.from.distanceToLabel)
+          (Number.isFinite(segment.from.distanceToLabel) ||
+            Number.isFinite(segment.to.distanceToLabel))
         )
           continue
         const previousRetainedEdge = retainedEdgeSegments.at(-1)
