@@ -28,9 +28,14 @@ export function inflateSourceResistor(
     inflatorContext,
   })
 
+  const sourceTolerance = (
+    sourceElm as SourceSimpleResistor & { tolerance?: number | string }
+  ).tolerance
+
   const resistor = new Resistor({
     name: sourceElm.name,
     resistance: sourceElm.resistance,
+    ...(sourceTolerance !== undefined ? { tolerance: sourceTolerance } : {}),
     layer: pcbElm?.layer,
     pcbX,
     pcbY,
