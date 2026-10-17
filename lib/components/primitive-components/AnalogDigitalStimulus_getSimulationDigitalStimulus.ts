@@ -20,6 +20,16 @@ export function AnalogDigitalStimulus_getSimulationDigitalStimulus(
   const experiment = simulation.getOrCreateSimulationExperiment()!
   if (props.startTime >= experiment.end_time_ms!)
     throw new Error(`Stimulus "${props.name}" starts outside its simulation.`)
+  const pinState = declaration
+    .root!.db.simulation_ibis_pin_state.list({
+      simulation_experiment_id: experiment.simulation_experiment_id,
+    })
+    .find((state) => state.source_port_id === port.source_port_id)
+  if (pinState?.mode !== "output" || pinState.enabled !== true) {
+    throw new Error(
+      `Stimulus "${props.name}" must drive a pin declared as an enabled output in its simulation.`,
+    )
+  }
   if (
     declaration
       .root!.db.simulation_digital_stimulus.list({

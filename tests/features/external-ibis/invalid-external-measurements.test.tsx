@@ -30,6 +30,7 @@ test("external measurements reject native experiments, duplicate traffic, and in
         name="run"
         executionMode="external"
         duration="20ns"
+        ibisPinStates={{ ".U1 > .pin1": { mode: "output", enabled: true } }}
       />
       {["one", "two"].map((name) => (
         <analog.digitalstimulus

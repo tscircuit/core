@@ -2,7 +2,11 @@ import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("IBIS models reject missing and ambiguous physical component or pin selectors", async () => {
-  for (const componentRef of [".missing", "chip", ".U1"]) {
+  for (const [componentRef, expectedError] of [
+    [".missing", "identify one component"],
+    ["chip", "identify one component"],
+    [".U1", "physical source pin"],
+  ]) {
     const { circuit } = getTestFixture()
     circuit.add(
       <board routingDisabled>
@@ -18,8 +22,6 @@ test("IBIS models reject missing and ambiguous physical component or pin selecto
         />
       </board>,
     )
-    await expect(circuit.renderUntilSettled()).rejects.toThrow(
-      componentRef === ".U1" ? "physical source pin" : "identify one component",
-    )
+    await expect(circuit.renderUntilSettled()).rejects.toThrow(expectedError)
   }
 })

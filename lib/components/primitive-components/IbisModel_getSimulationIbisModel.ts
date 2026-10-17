@@ -1,4 +1,7 @@
-import type { SimulationIbisModelInput } from "circuit-json"
+import type {
+  SimulationIbisModelInput,
+  SimulationIbisSource,
+} from "circuit-json"
 import type { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { resolveExternalSimulationPort } from "lib/utils/simulation/resolveExternalSimulation"
 import type { IbisModel } from "./IbisModel"
@@ -33,22 +36,52 @@ export function IbisModel_getSimulationIbisModel(
       `Component "${props.componentRef}" already has an IBIS model.`,
     )
   }
-  const archive =
-    "archive" in props.source && props.source.archive
-      ? {
-          member: props.source.archive.member,
-          member_sha256: props.source.archive.memberSha256,
-        }
-      : undefined
+  let archive: Extract<SimulationIbisSource, { file: string }>["archive"]
+  if ("archive" in props.source && props.source.archive) {
+    archive = {
+      member: props.source.archive.member,
+      member_sha256: props.source.archive.memberSha256,
+    }
+  }
+  let source: SimulationIbisSource = props.source
+  if ("url" in props.source) {
+    source = { url: props.source.url, sha256: props.source.sha256, archive }
+  } else if ("file" in props.source) {
+    source = { file: props.source.file, sha256: props.source.sha256, archive }
+  }
+  for (const pin of [
+    ...Object.keys(props.references ?? {}),
+    ...Object.keys(props.modelSelections ?? {}),
+  ]) {
+    if (!Object.hasOwn(props.pinMap, pin)) {
+      throw new Error(
+        `IBIS pin "${pin}" is referenced but not present in pinMap.`,
+      )
+    }
+  }
+  let references: SimulationIbisModelInput["references"]
+  if (props.references) {
+    references = {}
+    for (const [pin, pinReferences] of Object.entries(props.references)) {
+      references[pin] = {}
+      for (const [role, label] of Object.entries(pinReferences)) {
+        if (label === undefined) continue
+        let referenceRole = role
+        if (role === "powerClamp") referenceRole = "power_clamp"
+        if (role === "groundClamp") referenceRole = "ground_clamp"
+        Object.assign(references[pin], {
+          [referenceRole]: resolveExternalSimulationPort({
+            declaration,
+            selector: `${props.componentRef} > .${label}`,
+          }).source_port_id!,
+        })
+      }
+    }
+  }
   return {
     type: "simulation_ibis_model",
     source_component_id: chip.source_component_id!,
-    source:
-      "url" in props.source
-        ? { url: props.source.url, sha256: props.source.sha256, archive }
-        : "file" in props.source
-          ? { file: props.source.file, sha256: props.source.sha256, archive }
-          : props.source,
+    source,
     component: props.component,
     corner: props.corner,
     package_policy: props.packagePolicy,
@@ -62,27 +95,6 @@ export function IbisModel_getSimulationIbisModel(
         }).source_port_id!,
       ]),
     ),
-    references: props.references
-      ? Object.fromEntries(
-          Object.entries(props.references).map(([pin, references]) => [
-            pin,
-            Object.fromEntries(
-              Object.entries(references)
-                .filter(([, label]) => label !== undefined)
-                .map(([role, label]) => [
-                  role === "powerClamp"
-                    ? "power_clamp"
-                    : role === "groundClamp"
-                      ? "ground_clamp"
-                      : role,
-                  resolveExternalSimulationPort({
-                    declaration,
-                    selector: `${props.componentRef} > .${label}`,
-                  }).source_port_id!,
-                ]),
-            ),
-          ]),
-        )
-      : undefined,
+    references,
   }
 }
