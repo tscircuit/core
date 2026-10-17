@@ -895,6 +895,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       differentialPairs,
       sourceTraces: db.source_trace.list(),
       subcircuitId: subcircuit_id,
+      preservedSourceTraceIds: sourceTraceIdsAlreadyPreservedAsSrjTraces,
     })
 
   const srjBuses = getBusesForSimpleRouteJson({

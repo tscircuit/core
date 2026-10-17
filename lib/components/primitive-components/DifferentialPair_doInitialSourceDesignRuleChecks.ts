@@ -180,7 +180,7 @@ export const DifferentialPair_doInitialSourceDesignRuleChecks = (
     db.source_bus.insert({
       name: differentialPair.name,
       source_trace_ids: [...new Set(memberTraceIds)],
-      max_length_skew: differentialPair._parsedProps.maxLengthSkew,
+      max_length_skew: differentialPair._parsedProps.maxLengthSkew ?? 0.1,
       subcircuit_id:
         differentialPair.getSubcircuit().subcircuit_id ?? undefined,
     })

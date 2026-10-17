@@ -21,6 +21,7 @@ type GetDifferentialPairsParams = {
   differentialPairs: DifferentialPair[]
   sourceTraces: SourceTrace[]
   subcircuitId?: SubcircuitId | null
+  preservedSourceTraceIds?: ReadonlySet<SourceTraceId>
 }
 
 type GetDifferentialPairTraceSubcircuitConnectivityMapKeyOrThrowParams = {
@@ -35,6 +36,7 @@ type GetDifferentialPairSrjConnectionNamesByCohortOrThrowParams = {
   differentialPairSourceTraces: SourceTrace[]
   traceSubcircuitConnectivityMapKey: SubcircuitConnectivityMapKey
   traceNameOrPortSelector: string
+  preservedSourceTraceIds?: ReadonlySet<SourceTraceId>
 }
 
 /**
@@ -121,10 +123,14 @@ const getDifferentialPairSrjConnectionNamesByCohortOrThrow = ({
   differentialPairSourceTraces,
   traceSubcircuitConnectivityMapKey,
   traceNameOrPortSelector,
-}: GetDifferentialPairSrjConnectionNamesByCohortOrThrowParams): Map<
-  DifferentialPairSrjConnectionCohort,
-  SrjConnectionName
-> => {
+  preservedSourceTraceIds,
+}: GetDifferentialPairSrjConnectionNamesByCohortOrThrowParams): {
+  connectionNamesByCohort: Map<
+    DifferentialPairSrjConnectionCohort,
+    SrjConnectionName
+  >
+  hasPreservedSourceTrace: boolean
+} => {
   const differentialPairSourceTraceIds: SourceTraceId[] = []
   const differentialPairSourceNetIds = new Set<SourceNetId>()
   for (const sourceTrace of differentialPairSourceTraces) {
@@ -139,6 +145,10 @@ const getDifferentialPairSrjConnectionNamesByCohortOrThrow = ({
     }
   }
 
+  const hasPreservedSourceTrace = differentialPairSourceTraceIds.some((id) =>
+    preservedSourceTraceIds?.has(id),
+  )
+
   const matchingSrjConnections: SimpleRouteConnection[] = []
   for (const srjConnection of srjConnections) {
     if (
@@ -151,6 +161,12 @@ const getDifferentialPairSrjConnectionNamesByCohortOrThrow = ({
   }
 
   if (matchingSrjConnections.length === 0) {
+    if (hasPreservedSourceTrace) {
+      return {
+        connectionNamesByCohort: new Map(),
+        hasPreservedSourceTrace: true,
+      }
+    }
     throw new Error(
       `Could not find an SRJ connection for trace name or port selector "${traceNameOrPortSelector}" in differential pair "${differentialPairName}"`,
     )
@@ -174,7 +190,10 @@ const getDifferentialPairSrjConnectionNamesByCohortOrThrow = ({
     connectionNamesByCohort.set(cohort, srjConnection.name)
   }
 
-  return connectionNamesByCohort
+  return {
+    connectionNamesByCohort,
+    hasPreservedSourceTrace,
+  }
 }
 
 const getDifferentialPairCohortLabel = (
@@ -190,6 +209,7 @@ export const getDifferentialPairsForSimpleRouteJson = ({
   differentialPairs,
   sourceTraces,
   subcircuitId,
+  preservedSourceTraceIds,
 }: GetDifferentialPairsParams): SimpleRouteDifferentialPair[] | undefined => {
   const srjDifferentialPairs: SimpleRouteDifferentialPair[] = []
   for (const differentialPair of differentialPairs) {
@@ -220,35 +240,49 @@ export const getDifferentialPairsForSimpleRouteJson = ({
         traceNameOrPortSelector: negativeTraceNameOrPortSelector,
       })
 
-    const positiveSrjConnectionNamesByCohort =
-      getDifferentialPairSrjConnectionNamesByCohortOrThrow({
-        srjConnections,
-        differentialPairName: differentialPair.name,
-        differentialPairSourceTraces,
-        traceSubcircuitConnectivityMapKey: positiveSubcircuitConnectivityMapKey,
-        traceNameOrPortSelector: positiveTraceNameOrPortSelector,
-      })
-    const negativeSrjConnectionNamesByCohort =
-      getDifferentialPairSrjConnectionNamesByCohortOrThrow({
-        srjConnections,
-        differentialPairName: differentialPair.name,
-        differentialPairSourceTraces,
-        traceSubcircuitConnectivityMapKey: negativeSubcircuitConnectivityMapKey,
-        traceNameOrPortSelector: negativeTraceNameOrPortSelector,
-      })
+    const {
+      connectionNamesByCohort: positiveSrjConnectionNamesByCohort,
+      hasPreservedSourceTrace: positiveHasPreservedSourceTrace,
+    } = getDifferentialPairSrjConnectionNamesByCohortOrThrow({
+      srjConnections,
+      differentialPairName: differentialPair.name,
+      differentialPairSourceTraces,
+      traceSubcircuitConnectivityMapKey: positiveSubcircuitConnectivityMapKey,
+      traceNameOrPortSelector: positiveTraceNameOrPortSelector,
+      preservedSourceTraceIds,
+    })
+    const {
+      connectionNamesByCohort: negativeSrjConnectionNamesByCohort,
+      hasPreservedSourceTrace: negativeHasPreservedSourceTrace,
+    } = getDifferentialPairSrjConnectionNamesByCohortOrThrow({
+      srjConnections,
+      differentialPairName: differentialPair.name,
+      differentialPairSourceTraces,
+      traceSubcircuitConnectivityMapKey: negativeSubcircuitConnectivityMapKey,
+      traceNameOrPortSelector: negativeTraceNameOrPortSelector,
+      preservedSourceTraceIds,
+    })
 
     // Note: SRJ names this value lengthTolerance, but it carries
     // maxLengthSkew unchanged.
     const lengthTolerance: number =
       differentialPair._parsedProps.maxLengthSkew ?? 0.1
     for (const cohort of positiveSrjConnectionNamesByCohort.keys()) {
-      if (negativeSrjConnectionNamesByCohort.has(cohort)) continue
+      if (
+        negativeSrjConnectionNamesByCohort.has(cohort) ||
+        negativeHasPreservedSourceTrace
+      )
+        continue
       throw new Error(
         `Differential pair "${differentialPair.name}" has a positive SRJ connection in ${getDifferentialPairCohortLabel(cohort)} without a matching negative SRJ connection`,
       )
     }
     for (const cohort of negativeSrjConnectionNamesByCohort.keys()) {
-      if (positiveSrjConnectionNamesByCohort.has(cohort)) continue
+      if (
+        positiveSrjConnectionNamesByCohort.has(cohort) ||
+        positiveHasPreservedSourceTrace
+      )
+        continue
       throw new Error(
         `Differential pair "${differentialPair.name}" has a negative SRJ connection in ${getDifferentialPairCohortLabel(cohort)} without a matching positive SRJ connection`,
       )
@@ -258,7 +292,8 @@ export const getDifferentialPairsForSimpleRouteJson = ({
       positiveSrjConnectionName,
     ] of positiveSrjConnectionNamesByCohort) {
       const negativeSrjConnectionName =
-        negativeSrjConnectionNamesByCohort.get(cohort)!
+        negativeSrjConnectionNamesByCohort.get(cohort)
+      if (!negativeSrjConnectionName) continue
       srjDifferentialPairs.push({
         connectionNames: [positiveSrjConnectionName, negativeSrjConnectionName],
         lengthTolerance,
