@@ -171,7 +171,10 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
     const simulationExperiment = root.db.simulation_experiment.get(
       simulationExperimentId,
     )
-    if (!simulationExperiment) {
+    if (
+      !simulationExperiment ||
+      simulationExperiment.execution_mode === "external"
+    ) {
       debug("No simulation experiment found, skipping simulation")
       continue
     }
