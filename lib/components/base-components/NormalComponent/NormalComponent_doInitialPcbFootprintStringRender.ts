@@ -277,7 +277,9 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
           }
         }
         component.add(fpWrapper)
-        component.addAll(componentsOutsideFootprint)
+        if (!component._getSchematicPortArrangement()) {
+          component.addAll(componentsOutsideFootprint)
+        }
         component._asyncFootprintCadModel =
           (!Array.isArray(result) && result.cadModel) ||
           extractCadModelFromCircuitJson(circuitJson)
