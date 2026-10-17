@@ -118,10 +118,12 @@ export class CadModel extends PrimitiveComponent<typeof cadmodelProps> {
       if (transformed) urlProps.model_step_url = transformed
     }
 
+    const footprintOrigin = parent._getPcbFootprintOrigin()
+
     let cadComponentPlacement = {
       position: {
-        x: bounds.center.x + Number(positionOffset.x),
-        y: bounds.center.y + Number(positionOffset.y),
+        x: footprintOrigin.x + Number(positionOffset.x),
+        y: footprintOrigin.y + Number(positionOffset.y),
         z:
           (layer === "bottom" ? -boardThickness / 2 : boardThickness / 2) +
           (layer === "bottom" ? -zOffsetFromSurface : zOffsetFromSurface) +
