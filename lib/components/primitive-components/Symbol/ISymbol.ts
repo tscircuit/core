@@ -35,7 +35,8 @@ export interface ISymbol {
 
   /**
    * Get the transformation matrix for resizing symbol contents.
-   * Returns null if no resizing is needed (no width/height specified).
+   * Returns null if no resizing or rotation is needed (no width/height
+   * specified and no schRotation on the parent component).
    */
   getUserCoordinateToResizedSymbolTransform(): Matrix | null
 
@@ -43,4 +44,10 @@ export interface ISymbol {
    * Check if this symbol has explicit width/height that requires resizing.
    */
   hasExplicitSize(): boolean
+
+  /**
+   * The parent component's schRotation as a counter-clockwise quarter turn
+   * (0, 90, 180 or 270), composed into the transform above.
+   */
+  getSchematicRotationDegrees(): number
 }
