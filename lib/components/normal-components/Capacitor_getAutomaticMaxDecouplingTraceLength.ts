@@ -2,6 +2,7 @@ import { Port } from "lib/components/primitive-components/Port"
 import type { Capacitor } from "./Capacitor"
 
 const DEFAULT_MAX_DECOUPLING_TRACE_LENGTH_MM = 1
+const MAX_AUTOMATIC_DECOUPLING_CAPACITANCE_FARADS = 10e-6
 
 function getCapacitorPorts(capacitor: Capacitor): Port[] {
   const capacitorPorts: Port[] = []
@@ -20,6 +21,16 @@ export function Capacitor_getAutomaticMaxDecouplingTraceLength(
 ): number | undefined {
   const capacitorPorts = getCapacitorPorts(capacitor)
   if (capacitorPorts.length !== 2) return undefined
+
+  const { capacitance, polarized, decouplingFor } = capacitor._parsedProps
+  if (
+    !decouplingFor &&
+    (polarized ||
+      (typeof capacitance === "number" &&
+        capacitance > MAX_AUTOMATIC_DECOUPLING_CAPACITANCE_FARADS))
+  ) {
+    return undefined
+  }
 
   const firstPortIsConnectedToPower = capacitorPorts[0].isConnectedToPower()
   const firstPortIsConnectedToGround = capacitorPorts[0].isConnectedToGround()
