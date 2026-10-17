@@ -43,6 +43,90 @@ const updateCadRotation = ({
   cadComponent.rotation = nextRotation
 }
 
+const updatePcbPlatedHoleRotation = ({
+  db,
+  pcbComponentId,
+  rotationDegrees,
+}: {
+  db: CircuitJsonUtilObjects
+  pcbComponentId: string
+  rotationDegrees: number
+}) => {
+  if (!rotationDegrees) return
+  if (!db?.pcb_plated_hole?.list) return
+
+  const relatedHoles = db.pcb_plated_hole.list({
+    pcb_component_id: pcbComponentId,
+  })
+
+  const rad = (rotationDegrees * Math.PI) / 180
+
+  for (const hole of relatedHoles) {
+    const updates: Record<string, any> = {}
+
+    if (
+      typeof (hole as any).hole_offset_x === "number" ||
+      typeof (hole as any).hole_offset_y === "number"
+    ) {
+      const ox = (hole as any).hole_offset_x ?? 0
+      const oy = (hole as any).hole_offset_y ?? 0
+      updates.hole_offset_x = ox * Math.cos(rad) - oy * Math.sin(rad)
+      updates.hole_offset_y = ox * Math.sin(rad) + oy * Math.cos(rad)
+    }
+
+    if (hole.shape === "pill" || hole.shape === "oval") {
+      const currentRot = (hole as any).ccw_rotation ?? 0
+      updates.ccw_rotation = normalizeDegrees(currentRot + rotationDegrees)
+    } else if (hole.shape === "circular_hole_with_rect_pad") {
+      const currentRot = (hole as any).rect_ccw_rotation ?? 0
+      updates.rect_ccw_rotation = normalizeDegrees(currentRot + rotationDegrees)
+    } else if (hole.shape === "rotated_pill_hole_with_rect_pad") {
+      const currentHoleRot = (hole as any).hole_ccw_rotation ?? 0
+      const currentRectRot = (hole as any).rect_ccw_rotation ?? 0
+      updates.hole_ccw_rotation = normalizeDegrees(
+        currentHoleRot + rotationDegrees,
+      )
+      updates.rect_ccw_rotation = normalizeDegrees(
+        currentRectRot + rotationDegrees,
+      )
+    } else if (hole.shape === "pill_hole_with_rect_pad") {
+      updates.shape = "rotated_pill_hole_with_rect_pad"
+      updates.hole_shape = "rotated_pill"
+      updates.pad_shape = "rect"
+      updates.hole_ccw_rotation = normalizeDegrees(rotationDegrees)
+      updates.rect_ccw_rotation = normalizeDegrees(rotationDegrees)
+    } else if (hole.shape === "hole_with_polygon_pad") {
+      if (typeof (hole as any).ccw_rotation === "number") {
+        updates.ccw_rotation = normalizeDegrees(
+          (hole as any).ccw_rotation + rotationDegrees,
+        )
+      }
+    }
+
+    if (Object.keys(updates).length > 0) {
+      db.pcb_plated_hole.update(hole.pcb_plated_hole_id, updates as any)
+      Object.assign(hole, updates)
+    }
+  }
+
+  if (db?.pcb_solder_paste?.list) {
+    const relatedPastes = db.pcb_solder_paste.list({
+      pcb_component_id: pcbComponentId,
+    })
+    for (const paste of relatedPastes) {
+      if (typeof (paste as any).ccw_rotation === "number") {
+        const nextRot = normalizeDegrees(
+          (paste as any).ccw_rotation + rotationDegrees,
+        )
+        db.pcb_solder_paste.update(paste.pcb_solder_paste_id, {
+          ccw_rotation: nextRot,
+        })
+        ;(paste as any).ccw_rotation = nextRot
+      }
+    }
+  }
+}
+
 const isDescendantGroup = (
   db: any,
   groupId: string,
@@ -106,6 +190,11 @@ export const applyPackOutput = (
           rotationDegrees,
           layer: member.layer,
         })
+        updatePcbPlatedHoleRotation({
+          db,
+          pcbComponentId: memberId,
+          rotationDegrees,
+        })
       }
       continue
     }
@@ -148,6 +237,11 @@ export const applyPackOutput = (
         pcbComponentId: componentId,
         rotationDegrees,
         layer: pcbComponent.layer,
+      })
+      updatePcbPlatedHoleRotation({
+        db,
+        pcbComponentId: componentId,
+        rotationDegrees,
       })
       continue
     }
@@ -223,6 +317,17 @@ export const applyPackOutput = (
     }
 
     transformPCBElements(relatedElements as any, transformMatrix)
+    if (rotationDegrees !== 0) {
+      for (const elm of relatedElements) {
+        if (elm.type === "pcb_component") {
+          updatePcbPlatedHoleRotation({
+            db,
+            pcbComponentId: elm.pcb_component_id,
+            rotationDegrees,
+          })
+        }
+      }
+    }
     db.pcb_group.update(pcbGroup.pcb_group_id, { center })
   }
 
