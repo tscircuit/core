@@ -1,6 +1,6 @@
-import { serve } from "bun"
 import { afterEach } from "bun:test"
-import { MultilayerIjump } from "@tscircuit/infgrid-ijump-astar"
+import { serve } from "bun"
+import { MultilayerIjump } from "lib/utils/autorouting/MultilayerIjump"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 
