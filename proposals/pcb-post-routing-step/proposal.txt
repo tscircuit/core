@@ -1,0 +1,88 @@
+Post-routing steps (<pcbpostroutingstep />)
+
+Implemented contract
+- <pcbpostroutingstep name? order? fn? render? /> may appear anywhere in a board
+  or subcircuit group, including inside a component's footprint. It needs fn,
+  render or both. It renders nothing itself.
+- A new render phase, PcbPostRoutingStepRender, runs after PcbTraceRender,
+  PcbRouteNetIslands and PcbTraceTeardropRender. PcbCopperPourRender,
+  PcbViaStitchRender, PcbCopperPourCleanup, PcbSimulationRender,
+  PcbDesignRuleChecks and SilkscreenOverlapAdjustment wait for it, so
+  everything a step changes is poured around, checked and exported.
+- Each board or subcircuit runs its own steps (selectAll stops at nested
+  subcircuits, which run theirs) in ascending order (default 0); equal orders
+  keep document order. A later step sees what earlier steps changed.
+- Steps run inline until one returns a promise; that step and the rest then
+  run in order as one async effect of the phase, which the later phases wait
+  for.
+- No step runs while the subcircuit (or a child subcircuit) still has async
+  routing to finish, so user code never sees a half-routed board. When routing
+  completes, PcbTraceRender is marked dirty and the steps run. They do not run
+  if routing never produces a result.
+- fn(context) edits the routed PCB as circuit-json:
+  - getCircuitJson(): a copy of the circuit as it is now;
+  - getPcbPort(selector) / getPcbComponent(selector): selectors relative to
+    the board or subcircuit;
+  - insert(element) / update(id, patch) / remove(id): any pcb_* element.
+    Inserts and updates are validated against the circuit-json schema for the
+    type. Ids are generated. subcircuit_id defaults to the subcircuit.
+    Non-PCB elements are rejected.
+  - subcircuitId.
+- render(context) returns PCB primitives as JSX (smtpad, platedhole, hole,
+  silkscreen*, pcbnote*, fabricationnote*, courtyard*, cutout...). They are
+  added beside the step and rendered up to this phase at once: a pad's
+  portHints match its component's ports, coordinates are relative to the
+  parent, and if a layout moved the component after its primitives were
+  placed, the new primitives are moved with it. Anything that is not a PCB
+  primitive (a component, a trace) is rejected, since it would need placement
+  and routing.
+- Every change is journaled: inserts, updates, removals, and the primitives a
+  render added (taken out of the tree again, port matches included). When a
+  phase at or before PcbPostRoutingStepRender is marked dirty (re-routing,
+  above all), the journal is undone before the next cycle rewrites any copper,
+  and the steps run again on the restored board. A superseded async run's
+  context refuses further edits, and its render output is dropped.
+- A throw, a rejected promise or a failed validation becomes a
+  pcb_autorouting_error whose message starts
+  '<pcbpostroutingstep name="..." /> failed:'. It is journaled too, so a
+  re-run replaces it. The next step still runs.
+- Component bounds, CAD model positions and footprint origins are computed
+  before the steps and are not recomputed.
+
+Why an element (review feedback)
+- Several steps can be stacked and ordered, including steps shipped inside
+  library components, without wrappers forwarding a board prop.
+- render lets a component add its own copper after routing in TSX, with the
+  same props as any footprint primitive, instead of writing circuit-json.
+
+Migration
+None. Boards without the element render exactly as before: the phase returns
+immediately. The earlier pcbPostRoutingHook prop was never released.
+
+Validation
+tests/features/pcb-post-routing-step (one test per file):
+01-25 fn: runs once after routing, inline sync, async before DRC,
+  getPcbPort/getPcbComponent, subcircuit groups, insert (pad on a port,
+  generated ids, DRC and pours see it, rejects non-PCB elements, invalid
+  elements and given ids), update (footprint pad, rejects type/id changes and
+  invalid patches), remove (silkscreen, rejects non-PCB), re-runs undo
+  inserts, updates and removals, a superseded async run refuses edits, errors
+  become pcb_autorouting_error and are replaced on re-run;
+26-32 steps: ascending order, ties in document order, a step inside a
+  component's footprint, later steps see earlier changes, subcircuits run
+  their own steps, a failed step does not stop the next, steps after an async
+  step wait for it and DRC waits for all;
+33-39 render: a TSX pad joins its component's port at the right place, render
+  reads the routed board and DRC checks its pads, output follows a pack
+  layout, a re-run replaces the output (db and tree), non-primitives are
+  reported, an async render lands before DRC, several primitives at once.
+
+Failing on purpose: each of 26-39 fails when the behaviour it covers is
+removed from the implementation (no sort; ties reversed; direct children
+only; a stale getCircuitJson; steps collected across subcircuits; stopping at
+a failure; not awaiting later steps; skipping port matching; rendering a cycle
+late; ignoring layout; not detaching instances; accepting any element; not
+awaiting an async render).
+
+Existing tests touching render phases, pours, teardrops, DRC, root circuit and
+subcircuits pass as on main (see the PR).

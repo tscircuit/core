@@ -97,6 +97,15 @@ import { Group_doInitialSchematicTraceRender } from "./Group_doInitialSchematicT
 import { Group_doInitialSimulationSpiceEngineRender } from "./Group_doInitialSimulationSpiceEngineRender"
 import { Group_doInitialSourceAddConnectivityMapKey } from "./Group_doInitialSourceAddConnectivityMapKey"
 import { Group_doInitialStandaloneSubcircuitPcbDesignRuleChecks } from "./Group_doInitialStandaloneSubcircuitPcbDesignRuleChecks"
+import {
+  type RenderPhase,
+  renderPhaseIndexMap,
+} from "lib/components/base-components/Renderable"
+import {
+  Group_doInitialPcbPostRoutingStepRender,
+  Group_undoPcbPostRoutingSteps,
+  type PcbPostRoutingStepState,
+} from "./Group_doInitialPcbPostRoutingStepRender"
 import { Group_getFanoutPourNetMap } from "./Group_getFanoutPourNetMap"
 import { Group_getRoutingPhasePlans } from "./Group_getRoutingPhasePlans"
 import { RoutingPhasePreparationError } from "lib/utils/autorouting/routing-phase-preparation-error"
@@ -2911,6 +2920,53 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     // Inherit from parent if not set by props
     const autorouter = this._getAutorouterConfig()
     return autorouter.groupMode === "sequential-trace"
+  }
+
+  _pcbPostRoutingStepState?: PcbPostRoutingStepState
+
+  /**
+   * Anything at or before the post-routing steps going dirty (re-routing above
+   * all) first undoes the steps' changes, before the next cycle rewrites any
+   * copper. The steps then run again on the fresh board.
+   */
+  override _markDirty(phase: RenderPhase) {
+    if (
+      this._pcbPostRoutingStepState?.journal.length &&
+      renderPhaseIndexMap.get(phase)! <=
+        renderPhaseIndexMap.get("PcbPostRoutingStepRender")!
+    ) {
+      Group_undoPcbPostRoutingSteps(this)
+    }
+    super._markDirty(phase)
+  }
+
+  /**
+   * True while this subcircuit (or a child subcircuit) still has async routing
+   * to finish. The post-routing steps wait for it: when the routing result
+   * arrives, PcbTraceRender is marked dirty and the steps run.
+   */
+  _isPcbRoutingPending(): boolean {
+    if (this._isInflatedFromCircuitJson) return false
+    if (!this._areChildSubcircuitsRouted()) return true
+    if (
+      this.root?.pcbRoutingDisabled ||
+      this.getInheritedProperty("routingDisabled")
+    )
+      return false
+    if (!this._hasTracesToRoute()) return false
+    return this._shouldRouteAsync() && !this._asyncAutoroutingResult
+  }
+
+  doInitialPcbPostRoutingStepRender() {
+    Group_doInitialPcbPostRoutingStepRender(this)
+  }
+
+  updatePcbPostRoutingStepRender() {
+    Group_doInitialPcbPostRoutingStepRender(this)
+  }
+
+  removePcbPostRoutingStepRender() {
+    Group_undoPcbPostRoutingSteps(this)
   }
 
   doInitialPcbDesignRuleChecks() {

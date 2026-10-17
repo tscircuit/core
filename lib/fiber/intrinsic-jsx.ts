@@ -12,6 +12,7 @@ export interface TscircuitElements {
   led: Props.LedProps
   board: Props.BoardProps
   drccheck: Props.DrcCheckProps
+  pcbpostroutingstep: Props.PcbPostRoutingStepProps
   mountedboard: Props.MountedBoardProps
   panel: Props.PanelProps
   subpanel: Props.SubpanelProps
