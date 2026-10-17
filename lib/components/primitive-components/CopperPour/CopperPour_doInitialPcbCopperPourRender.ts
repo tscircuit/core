@@ -1,8 +1,10 @@
+import Flatten from "@flatten-js/core"
 import {
   CopperPourPipelineSolver,
   convertCircuitJsonToInputProblem,
   initializeManifoldGeometry,
 } from "@tscircuit/copper-pour-solver"
+import type { Point } from "circuit-json"
 import type { ISubcircuit } from "../Group/Subcircuit/ISubcircuit"
 import type { Net } from "../Net"
 import type { CopperPour } from "./CopperPour"
@@ -12,6 +14,74 @@ import { markTraceSegmentsInsideCopperPour } from "./utils/mark-trace-segments-i
 // subcircuit together. Share that batch across the component-owned effects.
 const pendingCopperPourRenders = new WeakMap<ISubcircuit, Promise<void>>()
 const DEFAULT_THERMAL_RELIEF_SPOKE_WIDTH_MM = 0.3
+const POINT_EPSILON = 1e-6
+
+const normalizeRingPoints = (points: Point[]): Point[] => {
+  const deduped: Point[] = []
+  for (const pt of points) {
+    const prev = deduped[deduped.length - 1]
+    if (!prev || Math.hypot(pt.x - prev.x, pt.y - prev.y) > POINT_EPSILON) {
+      deduped.push(pt)
+    }
+  }
+  if (deduped.length > 1) {
+    const first = deduped[0]!
+    const last = deduped[deduped.length - 1]!
+    if (Math.hypot(first.x - last.x, first.y - last.y) <= POINT_EPSILON) {
+      deduped.pop()
+    }
+  }
+  return deduped
+}
+
+const createCcwPolygon = (points: Point[]): Flatten.Polygon | null => {
+  const ring = normalizeRingPoints(points)
+  if (ring.length < 3) return null
+  const polygon = new Flatten.Polygon(
+    ring.map(({ x, y }) => Flatten.point(x, y)),
+  )
+  if (polygon.orientation() === Flatten.ORIENTATION.CW) {
+    polygon.reverse()
+  }
+  return polygon
+}
+
+const clipCopperPourOutlineToBoard = (
+  pourOutline: Point[],
+  boardOutline?: Point[],
+): Point[][] => {
+  if (!boardOutline || boardOutline.length < 3) {
+    return [pourOutline]
+  }
+  const pourPolygon = createCcwPolygon(pourOutline)
+  const boardPolygon = createCcwPolygon(boardOutline)
+  if (!pourPolygon || !boardPolygon) {
+    return [pourOutline]
+  }
+  if (boardPolygon.contains(pourPolygon)) {
+    return [pourOutline]
+  }
+  try {
+    const clipped = Flatten.BooleanOperations.intersect(
+      pourPolygon,
+      boardPolygon,
+    )
+    const clippedOutlines = clipped
+      .splitToIslands()
+      .map((island) => {
+        const faces = ([...island.faces] as Flatten.Face[]).sort(
+          (a, b) => b.area() - a.area(),
+        )
+        const outerFace = faces[0]
+        return outerFace ? outerFace.vertices.map(({ x, y }) => ({ x, y })) : []
+      })
+      .filter((ring) => ring.length >= 3)
+
+    return clippedOutlines
+  } catch {
+    return [pourOutline]
+  }
+}
 
 const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
   if (!subcircuit.root) return
@@ -61,10 +131,31 @@ const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
       { x: center.x - width / 2, y: center.y + height / 2 },
     ]
   }
+
+  const expandedPourRegions = resolvedCopperPours.flatMap(
+    ({ copperPour, sourceNetId }) => {
+      const { _parsedProps: props } = copperPour
+      if (!props.outline) {
+        return [{ copperPour, sourceNetId, outline: resolvedPcbBoardOutline }]
+      }
+      const clippedOutlines = clipCopperPourOutlineToBoard(
+        props.outline,
+        resolvedPcbBoardOutline,
+      )
+      return clippedOutlines.map((outline) => ({
+        copperPour,
+        sourceNetId,
+        outline,
+      }))
+    },
+  )
+
+  if (expandedPourRegions.length === 0) return
+
   // warningOnly affects routing and DRC severity; pours still avoid every keepout.
   const inputProblem = convertCircuitJsonToInputProblem(
     circuitJson,
-    resolvedCopperPours.map(({ copperPour, sourceNetId }) => {
+    expandedPourRegions.map(({ copperPour, sourceNetId, outline }) => {
       const { _parsedProps: props } = copperPour
       const clearance = props.clearance ?? 0.2
       return {
@@ -88,7 +179,7 @@ const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
               thermal_relief_spoke_width: DEFAULT_THERMAL_RELIEF_SPOKE_WIDTH_MM,
             }
           : {}),
-        outline: props.outline ?? resolvedPcbBoardOutline,
+        outline,
       }
     }),
   )
@@ -109,7 +200,7 @@ const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
   for (const [
     regionIndex,
     { copperPour, sourceNetId },
-  ] of resolvedCopperPours.entries()) {
+  ] of expandedPourRegions.entries()) {
     const { _parsedProps: props } = copperPour
     const coveredWithSolderMask = props.coveredWithSolderMask ?? false
 
