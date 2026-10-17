@@ -365,22 +365,25 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
     })
     return
   }
-  const otherPort = ports.find((p) => p !== anchorPort) ?? ports[1]
+  const startPort = ports.includes(anchorPort)
+    ? anchorPort
+    : (ports[0] ?? anchorPort)
+  const otherPort = ports.find((p) => p !== startPort) ?? ports[1]
 
-  const layer = anchorPort.getAvailablePcbLayers()[0] || "top"
+  const layer = startPort.getAvailablePcbLayers()[0] || "top"
   let currentLayer = layer as LayerRef
 
-  const anchorPos = anchorPort._getGlobalPcbPositionAfterLayout()
+  const startPos = startPort._getGlobalPcbPositionAfterLayout()
   const otherPos = otherPort?._getGlobalPcbPositionAfterLayout()
 
   const route: PcbTraceRoutePoint[] = []
   route.push({
     route_type: "wire",
-    x: anchorPos.x,
-    y: anchorPos.y,
+    x: startPos.x,
+    y: startPos.y,
     width,
     layer: currentLayer,
-    start_pcb_port_id: anchorPort.pcb_port_id!,
+    start_pcb_port_id: startPort.pcb_port_id!,
   })
   const transform = subcircuit._isInflatedFromCircuitJson
     ? trace._computePcbGlobalTransformBeforeLayout()
