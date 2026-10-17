@@ -11,10 +11,19 @@ export function inflatePcbBoard(
 
   // Don't inflate a board if the subcircuit is already a Board or MountedBoard component
   // These components create their own pcb_board entry
+  const targetSubcircuit = subcircuit as any
   if (
-    (subcircuit as any).lowercaseComponentName === "board" ||
-    (subcircuit as any).lowercaseComponentName === "mountedboard"
+    targetSubcircuit.lowercaseComponentName === "board" ||
+    targetSubcircuit.lowercaseComponentName === "mountedboard"
   ) {
+    if (
+      targetSubcircuit.lowercaseComponentName === "board" &&
+      targetSubcircuit.props?.material === undefined &&
+      pcbBoard.material !== undefined &&
+      targetSubcircuit._parsedProps
+    ) {
+      targetSubcircuit._parsedProps.material = pcbBoard.material
+    }
     return
   }
   // Don't inflate a board if the subcircuit is already inside a Board component
