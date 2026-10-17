@@ -1,5 +1,13 @@
-import { PrimitiveComponent } from "../base-components/PrimitiveComponent/PrimitiveComponent"
+import {
+  type BaseComponentConfig,
+  PrimitiveComponent,
+} from "../base-components/PrimitiveComponent/PrimitiveComponent"
 import { z } from "zod"
+
+const errorPlaceholderConfig: BaseComponentConfig = {
+  componentName: "ErrorPlaceholder",
+  zodProps: z.object({}).passthrough(),
+}
 
 class ErrorPlaceholderComponent extends PrimitiveComponent {
   constructor(props: any, error: any) {
@@ -85,11 +93,8 @@ class ErrorPlaceholderComponent extends PrimitiveComponent {
     return json
   }
 
-  get config() {
-    return {
-      componentName: "ErrorPlaceholder",
-      zodProps: z.object({}).passthrough(),
-    }
+  get config(): BaseComponentConfig {
+    return errorPlaceholderConfig
   }
 
   doInitialSourceRender() {
