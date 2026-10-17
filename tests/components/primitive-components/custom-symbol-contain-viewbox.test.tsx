@@ -5,7 +5,7 @@ import {
   getRoundContactDimensions,
 } from "tests/fixtures/custom-symbol-sizing"
 
-test.failing("contain fitting keeps a round contact circular: viewbox", () => {
+test("contain fitting keeps a round contact circular: viewbox", () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width={20} height={20} routingDisabled>
