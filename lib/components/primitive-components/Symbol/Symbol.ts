@@ -2,7 +2,13 @@ import { symbolProps } from "@tscircuit/props"
 import { PrimitiveComponent } from "../../base-components/PrimitiveComponent"
 import type { Port } from "../Port/Port"
 import type { ISymbol, SchematicSymbolBounds } from "./ISymbol"
-import { compose, translate, scale, type Matrix } from "transformation-matrix"
+import {
+  compose,
+  rotateDEG,
+  scale,
+  translate,
+  type Matrix,
+} from "transformation-matrix"
 import { getBoundsForSchematic } from "lib/utils/autorouting/getBoundsForSchematic"
 
 export class SymbolComponent
@@ -61,8 +67,19 @@ export class SymbolComponent
     return this.schematicSymbolBoundsInUserCoordinates ?? null
   }
 
+  /**
+   * The parent component's schRotation as a counter-clockwise quarter turn
+   * (0, 90, 180 or 270). Other angles are not applied to custom symbols.
+   */
+  getSchematicRotationDegrees(): number {
+    const rotation =
+      this.getParentNormalComponent()?._parsedProps?.schRotation ?? 0
+    if (typeof rotation !== "number" || rotation % 90 !== 0) return 0
+    return ((rotation % 360) + 360) % 360
+  }
+
   getUserCoordinateToResizedSymbolTransform(): Matrix | null {
-    if (!this.hasExplicitSize()) {
+    if (!this.hasExplicitSize() && this.getSchematicRotationDegrees() === 0) {
       return null
     }
 
@@ -133,6 +150,18 @@ export class SymbolComponent
   }
 
   private _computeUserCoordinateToResizedSymbolTransform(): void {
+    const rotationDegrees = this.getSchematicRotationDegrees()
+    if (!this.hasExplicitSize()) {
+      // Rotation only: turn the user coordinates about the symbol origin
+      const globalPos = this._getGlobalSchematicPositionBeforeLayout()
+      this.userCoordinateToResizedSymbolTransformMat = compose(
+        translate(globalPos.x, globalPos.y),
+        rotateDEG(rotationDegrees),
+        translate(-globalPos.x, -globalPos.y),
+      )
+      return
+    }
+
     const bounds = this.getSchematicSymbolBounds()
     if (!bounds) return
 
@@ -166,10 +195,12 @@ export class SymbolComponent
 
     // Build transformation matrix:
     // 1. Translate content center to origin
-    // 2. Scale
-    // 3. Translate to global position
+    // 2. Scale (along the symbol's own axes)
+    // 3. Rotate by the parent's schRotation
+    // 4. Translate to global position
     this.userCoordinateToResizedSymbolTransformMat = compose(
       translate(globalPos.x, globalPos.y),
+      rotateDEG(rotationDegrees),
       scale(scaleX, scaleY),
       translate(-currentCenterX, -currentCenterY),
     )

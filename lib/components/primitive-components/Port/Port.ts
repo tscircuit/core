@@ -21,6 +21,20 @@ import { Port_isConnectedToGround } from "./Port_isConnectedToGround"
 import { Port_isConnectedToPower } from "./Port_isConnectedToPower"
 import { Port_tryRenderGroupPcbPort } from "./Port_tryRenderGroupPcbPort"
 import { getSourcePortNetLabelText } from "lib/utils/schematic/getSourcePortNetLabelText"
+import { rotateDirection } from "lib/utils/schematic/getRotatedSymbolName"
+
+const FACING_OF_SIDE = {
+  top: "up",
+  bottom: "down",
+  left: "left",
+  right: "right",
+} as const
+const SIDE_OF_FACING = {
+  up: "top",
+  down: "bottom",
+  left: "left",
+  right: "right",
+} as const
 
 const SMALL_SCHEMATIC_PIN_LABEL_FONT_SIZE = 0.12
 
@@ -828,12 +842,29 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
     const { db } = this.root!
 
-    // Transform the schematic_port center
+    // Transform the schematic_port center, and turn its facing with the symbol
     const schPort = db.schematic_port.get(this.schematic_port_id)
     if (schPort) {
       const newCenter = applyToPoint(transform, schPort.center)
+      const rotationDegrees = symbol!.getSchematicRotationDegrees()
+      const facingDirection = schPort.facing_direction
+        ? rotateDirection(schPort.facing_direction, rotationDegrees)
+        : undefined
+      if (facingDirection) this.facingDirection = facingDirection
       db.schematic_port.update(this.schematic_port_id, {
         center: newCenter,
+        ...(facingDirection ? { facing_direction: facingDirection } : {}),
+        ...(rotationDegrees && schPort.side_of_component
+          ? {
+              side_of_component:
+                SIDE_OF_FACING[
+                  rotateDirection(
+                    FACING_OF_SIDE[schPort.side_of_component],
+                    rotationDegrees,
+                  )
+                ],
+            }
+          : {}),
       })
 
       // Transform the stem line endpoints
