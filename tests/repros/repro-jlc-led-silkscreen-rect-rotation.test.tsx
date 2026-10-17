@@ -137,6 +137,25 @@ test("JLC LED silkscreen rectangles stay axis-aligned at 45 degrees", async () =
     </board>,
   )
   circuit.render()
+
+  const pcbComponents = circuit.db.pcb_component.list()
+  const silkscreenRects = circuit.db.pcb_silkscreen_rect.list()
+  const [u1, u2, u3, u4] = ["U1", "U2", "U3", "U4"].map((name) => {
+    const sourceComponent = circuit.db.source_component.getWhere({ name })!
+    const pcbComponent = pcbComponents.find(
+      (comp) =>
+        comp.source_component_id === sourceComponent.source_component_id,
+    )!
+    return silkscreenRects.find(
+      (rect) => rect.pcb_component_id === pcbComponent.pcb_component_id,
+    )!
+  })
+
+  expect(u1.ccw_rotation).toBeUndefined()
+  expect(u2.ccw_rotation).toBeCloseTo(45, 6)
+  expect(u3.ccw_rotation).toBeUndefined()
+  expect(u4.ccw_rotation).toBeCloseTo(45, 6)
+
   await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
     width: 1200,
     height: 800,
