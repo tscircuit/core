@@ -4,7 +4,11 @@ import type { Attributes } from "react"
 export interface TscircuitElements {
   antenna: Props.AntennaProps
   resistor: Props.ResistorProps
-  capacitor: Props.CapacitorProps
+  capacitor: Props.CapacitorProps & {
+    tolerance?: number | string
+    temperatureCoefficient?: string
+    equivalentSeriesResistance?: number | string
+  }
   inductor: Props.InductorProps
   pushbutton: Props.PushButtonProps
   diode: Props.DiodeProps
