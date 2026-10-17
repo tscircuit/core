@@ -20,6 +20,7 @@ import { inflateSourcePort } from "../../components/primitive-components/Group/S
 import { inflateSourcePushButton } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourcePushButton"
 import { inflateSourceResistor } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceResistor"
 import { inflateSourceSwitch } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceSwitch"
+import { inflateSourceTestPoint } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceTestPoint"
 import { inflateSourceTrace } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceTrace"
 import { inflateSourceTransistor } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceTransistor"
 import { inflateStandalonePcbPrimitives } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateStandalonePcbPrimitives"
@@ -116,6 +117,9 @@ export const inflateCircuitJson = (
         break
       case "simple_switch":
         inflateSourceSwitch(sourceComponent, inflationCtx)
+        break
+      case "simple_test_point":
+        inflateSourceTestPoint(sourceComponent, inflationCtx)
         break
       default:
         throw new Error(
