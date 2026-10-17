@@ -58,8 +58,8 @@ test("polygon cutout output for thin slots, slopes, winding and open notches", (
       [0, 4],
     ],
   ].map((shape) => shape.map(([x, y]) => ({ x: x!, y: y! })))
-  const expectedMissingAreas = [0.4, 0.309996, 0, 0]
-  const expectedRectangleCounts = [0, 3, 50, 12]
+  const expectedMissingAreas = [0, 0, 0, 0]
+  const expectedRectangleCounts = [1, 20, 1, 3]
   // Preserve the existing midpoint approximation for callers that do not
   // request a full cutout cover (polygon pads and unbroken copper pours).
   const midpointRectangleCounts = [0, 3, 50, 12]

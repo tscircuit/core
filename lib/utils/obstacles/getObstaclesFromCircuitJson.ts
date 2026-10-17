@@ -295,12 +295,17 @@ export const getObstaclesFromCircuitJson = (
           })
         }
       } else if (element.shape === "polygon") {
+        // Limit full-coverage horizontal overhang to 0.1 mm so the
+        // approximation preserves narrow channels beside sloping edges.
+        // This is approximation error, not copper clearance.
         const approximatingRects = fillPolygonWithRects(element.points, {
-          rectHeight: 0.6,
+          rectHeight: 0.2,
+          fullCoverage: true,
         })
 
-        for (const rect of approximatingRects) {
+        for (const [rectIndex, rect] of approximatingRects.entries()) {
           obstacles.push({
+            obstacleId: `${element.pcb_cutout_id}_rect_${rectIndex}`,
             componentId: pcbComponentId,
             type: "rect",
             layers: everyLayer,
