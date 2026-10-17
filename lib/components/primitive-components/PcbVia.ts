@@ -8,6 +8,9 @@ import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
 import { getViaTenting } from "lib/utils/getViaTenting"
 import { z } from "zod"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
+import type { Port } from "./Port"
+import { isPcbPrimitiveContainedWithinBeforeRender } from "./Port/pcbPrimitiveOverlapBeforeRender"
+import type { SmtPad } from "./SmtPad"
 
 export const pcbViaProps = viaProps
   .extend({
@@ -32,6 +35,7 @@ export interface PcbViaProps extends Partial<ViaProps> {
 
 export class PcbVia extends PrimitiveComponent<typeof pcbViaProps> {
   pcb_via_id: string | null = null
+  private _containingPadPort: Port | null = null
   // pcb_trace_id copied from imported circuit-json; not a public JSX prop.
   _importedPcbTraceId?: string
   isPcbPrimitive = true
@@ -98,6 +102,44 @@ export class PcbVia extends PrimitiveComponent<typeof pcbViaProps> {
     })
   }
 
+  private _getPortFromContainingPad(layers: LayerRef[]): Port | null {
+    if (
+      this._importedPcbTraceId ||
+      this._parsedProps.connectsTo ||
+      this._parsedProps.netIsAssignable
+    ) {
+      return null
+    }
+    if (
+      this.parent?.componentName !== "Footprint" &&
+      this.parent !== this.getParentNormalComponent()
+    ) {
+      return null
+    }
+
+    // Footprinter vias are direct component children; JSX footprints wrap them.
+    // Use the same containment rule as Via._getPortFromContainingPad.
+    const containingPadPorts = new Set(
+      this.parent?.children
+        .filter((child): child is SmtPad => child.componentName === "SmtPad")
+        .filter((pad) =>
+          layers.some((layer) => pad.getAvailablePcbLayers().includes(layer)),
+        )
+        .filter((pad) => isPcbPrimitiveContainedWithinBeforeRender(this, pad))
+        .map((pad) => pad.matchedPort)
+        .filter((port): port is Port => port !== null),
+    )
+    if (containingPadPorts.size !== 1) return null
+    return [...containingPadPorts][0]
+  }
+
+  doInitialPcbPortAttachment(): void {
+    if (this.root?.pcbDisabled || !this._containingPadPort?.pcb_port_id) return
+    this.root!.db.pcb_via.update(this.pcb_via_id!, {
+      pcb_port_ids: [this._containingPadPort.pcb_port_id],
+    })
+  }
+
   doInitialPcbPrimitiveRender(): void {
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
@@ -126,6 +168,12 @@ export class PcbVia extends PrimitiveComponent<typeof pcbViaProps> {
     const toLayer = this._parsedProps.toLayer
       ? maybeFlipLayer(this._parsedProps.toLayer as LayerRef)
       : (layers[layers.length - 1] ?? fromLayer)
+    this._containingPadPort = this._getPortFromContainingPad(layers)
+    const containingPadTraceId =
+      this._containingPadPort?._getDirectlyConnectedTraces()[0]?.source_trace_id
+    const containingPadTrace = containingPadTraceId
+      ? db.source_trace.get(containingPadTraceId)
+      : null
 
     const pcbVia = db.pcb_via.insert({
       x: position.x,
@@ -136,6 +184,9 @@ export class PcbVia extends PrimitiveComponent<typeof pcbViaProps> {
       from_layer: fromLayer,
       to_layer: toLayer,
       pcb_trace_id: this._importedPcbTraceId,
+      source_trace_id: containingPadTrace?.source_trace_id,
+      subcircuit_connectivity_map_key:
+        containingPadTrace?.subcircuit_connectivity_map_key,
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
       net_is_assignable: netIsAssignable,
