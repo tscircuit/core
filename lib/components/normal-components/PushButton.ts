@@ -26,8 +26,73 @@ export class PushButton extends NormalComponent<
     }
   }
 
+  private _includeDefaultInternalConnections = false
+
   get defaultInternallyConnectedPinNames(): string[][] {
+    const ports = this.selectAll<Port>("port")
+    const portNames = new Set(ports.map((port) => port.props.name))
+    if (
+      portNames.has("pin1") &&
+      portNames.has("pin2") &&
+      portNames.has("pin3") &&
+      portNames.has("pin4")
+    ) {
+      const pin2Port = ports.find((p) => p.props.pinNumber === 2)
+      const pin3Port = ports.find((p) => p.props.pinNumber === 3)
+      const pin4Port = ports.find((p) => p.props.pinNumber === 4)
+      const subcircuit = this.getSubcircuit()
+      if (subcircuit && pin2Port) {
+        const traces = subcircuit.selectAll("trace") as any[]
+        const referencedPorts = new Set<Port>()
+        for (const trace of traces) {
+          const selectors = [
+            trace._parsedProps?.from,
+            trace._parsedProps?.to,
+            ...(trace._parsedProps?.path ?? []),
+          ].filter((s): s is string => typeof s === "string")
+          for (const sel of selectors) {
+            if (!this.name || !sel.includes(this.name)) continue
+            const targetPort = subcircuit.selectOne(sel, {
+              type: "port",
+            }) as Port | null
+            if (targetPort) referencedPorts.add(targetPort)
+          }
+        }
+        if (
+          referencedPorts.has(pin2Port) &&
+          (!pin3Port || !referencedPorts.has(pin3Port)) &&
+          (!pin4Port || !referencedPorts.has(pin4Port))
+        ) {
+          return []
+        }
+      }
+      return [
+        ["pin1", "pin2"],
+        ["pin3", "pin4"],
+      ]
+    }
     return []
+  }
+
+  override _getInternallyConnectedPins(): Port[][] {
+    if (
+      !this._includeDefaultInternalConnections &&
+      this._parsedProps.internallyConnectedPins === undefined &&
+      this._importedInternallyConnectedPinNames === undefined &&
+      this._inferredInternallyConnectedPinNames.length === 0
+    ) {
+      return []
+    }
+    return super._getInternallyConnectedPins()
+  }
+
+  override doInitialSourceParentAttachment(): void {
+    this._includeDefaultInternalConnections = true
+    try {
+      super.doInitialSourceParentAttachment()
+    } finally {
+      this._includeDefaultInternalConnections = false
+    }
   }
 
   override initPorts() {
