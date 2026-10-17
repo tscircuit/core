@@ -89,6 +89,25 @@ export function getAutoroutingPhasePcbTracePaths({
         )
       }
     }
+    const connectionByTerminal = new Map<
+      SingleLayerConnectionPoint,
+      SimpleRouteJson["connections"][number]
+    >()
+    for (const connection of input.connections) {
+      for (const point of connection.pointsToConnect) {
+        connectionByTerminal.set(point, connection)
+      }
+    }
+    const portName = (terminal: SingleLayerConnectionPoint) => {
+      const terminalPort = terminal.pcb_port_id
+        ? portsByPcbPortId.get(terminal.pcb_port_id)
+        : undefined
+      return (
+        terminal.port_selector ??
+        terminalPort?.getPortSelector() ??
+        "unnamed port"
+      )
+    }
     const paths: z.output<typeof fanoutTracePath>[] = []
     const usedPorts = new Set<Port>()
     const remainingRoutes = new Set(routes.keys())
@@ -112,6 +131,24 @@ export function getAutoroutingPhasePcbTracePaths({
           const selector = terminal.port_selector ?? port.getPortSelector()
           if (subcircuit.selectOne(selector, { type: "port" }) !== port) {
             throw new Error(`PCB port selector is not unique: ${selector}`)
+          }
+          // A router may connect one net as a tree that reaches a connection's
+          // port through another connection's port rather than with a trace
+          // between the two. Saved paths join endpoints of a single connection,
+          // so report that shape here instead of letting the saved-path importer
+          // blame this anchor for ending on the wrong endpoint.
+          const anchorConnection = connectionByTerminal.get(terminal)
+          const oppositeTerminal = endpoints[routeIndex]![
+            reverse ? 0 : 1
+          ]!.filter(
+            (opposite) =>
+              opposite.pcb_port_id &&
+              connectionByTerminal.get(opposite) !== anchorConnection,
+          ).at(0)
+          if (oppositeTerminal && !isFanout) {
+            throw new Error(
+              `Route between ${portName(terminal)} and ${portName(oppositeTerminal)} spans separate connections of the same net; the router reached one port through the other instead of tracing between them, which a saved path cannot express`,
+            )
           }
           const route = reverse
             ? routes[routeIndex]!.toReversed().map((point) =>
