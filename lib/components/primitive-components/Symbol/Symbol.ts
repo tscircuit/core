@@ -152,14 +152,19 @@ export class SymbolComponent
     const currentCenterY = (bounds.minY + bounds.maxY) / 2
 
     // Calculate scale factors
-    const scaleX =
-      targetWidth !== undefined && currentWidth > 0
-        ? targetWidth / currentWidth
-        : 1
-    const scaleY =
-      targetHeight !== undefined && currentHeight > 0
-        ? targetHeight / currentHeight
-        : 1
+    let scaleX = 1
+    let scaleY = 1
+
+    if (targetWidth !== undefined && targetHeight !== undefined) {
+      scaleX = currentWidth > 0 ? targetWidth / currentWidth : 1
+      scaleY = currentHeight > 0 ? targetHeight / currentHeight : 1
+    } else if (targetWidth !== undefined && currentWidth > 0) {
+      scaleX = targetWidth / currentWidth
+      scaleY = scaleX
+    } else if (targetHeight !== undefined && currentHeight > 0) {
+      scaleY = targetHeight / currentHeight
+      scaleX = scaleY
+    }
 
     // Get the global position for the Symbol (where the content should be centered)
     const globalPos = this._getGlobalSchematicPositionBeforeLayout()
