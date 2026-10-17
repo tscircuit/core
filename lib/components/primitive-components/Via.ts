@@ -4,7 +4,6 @@ import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
 import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
 import { getViaDiameterDefaultsWithOverrides } from "lib/utils/pcbStyle/getViaDiameterDefaults"
 import { getViaTenting } from "lib/utils/getViaTenting"
-import { z } from "zod"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { Net } from "./Net"
 import { Port } from "./Port"
@@ -19,12 +18,6 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
   source_trace_id: string | null = null
   subcircuit_connectivity_map_key: string | null = null
 
-  constructor(props: z.input<typeof viaProps>) {
-    super(props)
-    const layers = this._getLayers()
-    ;(this._parsedProps as any).layers = layers
-    this.initPorts()
-  }
   get config() {
     return {
       componentName: "Via",
@@ -86,17 +79,16 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
   }
   _getLayers(): LayerRef[] {
     const { fromLayer = "top", toLayer = "bottom" } = this._parsedProps
-    // Before the via is attached to the tree (constructor/port init) the board
-    // layer count is unknown — fall back to 2, which yields [fromLayer, toLayer].
+    // Unattached layer queries do not yet know the board's layer count.
     const layerCount = this.parent
       ? this.getSubcircuit()._getSubcircuitLayerCount()
       : 2
     return getViaSpanLayers({ fromLayer, toLayer, layerCount })
   }
 
-  initPorts() {
-    const layers = (this._parsedProps as any).layers as LayerRef[]
-    for (const layer of layers) {
+  doInitialInitializePortsFromChildren(): void {
+    // Resolve ports after attachment, using the same span as the barrel.
+    for (const layer of this._getLayers()) {
       const port = new Port({ name: layer, layer })
       port.registerMatch(this)
       this.add(port)
