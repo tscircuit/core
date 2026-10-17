@@ -81,6 +81,20 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
     )
   }
 
+  _getPcbLocalBoundsBeforeLayout() {
+    const { _parsedProps: props } = this
+    if (props.shape === "polygon") {
+      const bounds = getBoundsFromPoints(props.points)!
+      return {
+        left: bounds.minX,
+        right: bounds.maxX,
+        top: bounds.maxY,
+        bottom: bounds.minY,
+      }
+    }
+    return super._getPcbLocalBoundsBeforeLayout()
+  }
+
   /**
    * Polygon vertices are pad-local points in mm (+X right, +Y top). Return
    * their axis-aligned bounds in the right-handed board-world PCB frame.

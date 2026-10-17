@@ -115,5 +115,35 @@ test("imported TVS polygon pads overlap despite a 0.8mm flex gap", async () => {
     </board>,
   )
   await circuit.renderUntilSettled()
+
+  const pcbComponents = circuit.db.pcb_component.list()
+  const [d1, d2, d3, d4] = ["D1", "D2", "D3", "D4"].map((name) => {
+    const sourceComponent = circuit.db.source_component.getWhere({ name })!
+    return pcbComponents.find(
+      (comp) =>
+        comp.source_component_id === sourceComponent.source_component_id,
+    )!
+  })
+
+  expect(d1.width).toBeCloseTo(d3.width, 6)
+  expect(d2.width).toBeCloseTo(d4.width, 6)
+  expect(d1.center.x).toBeCloseTo(d3.center.x, 6)
+  expect(d2.center.x).toBeCloseTo(d4.center.x, 6)
+
+  const polygonPads = circuit.db.pcb_smtpad
+    .list()
+    .filter((pad) => pad.shape === "polygon")
+  const d1RightEdge = Math.max(
+    ...polygonPads
+      .filter((pad) => pad.pcb_component_id === d1.pcb_component_id)
+      .flatMap((pad) => pad.points.map((point) => point.x)),
+  )
+  const d2LeftEdge = Math.min(
+    ...polygonPads
+      .filter((pad) => pad.pcb_component_id === d2.pcb_component_id)
+      .flatMap((pad) => pad.points.map((point) => point.x)),
+  )
+  expect(d2LeftEdge - d1RightEdge).toBeCloseTo(0.8, 6)
+
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
