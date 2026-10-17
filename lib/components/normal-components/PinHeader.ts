@@ -116,13 +116,26 @@ export class PinHeader extends NormalComponent<typeof pinHeaderProps> {
       "right"
     const schPinArrangement = this._parsedProps.schPinArrangement
 
-    const pins = Array.from({ length: pinCount }, (_, i) => `pin${i + 1}`)
+    const defaultPins = Array.from({ length: pinCount }, (_, i) => i + 1)
+    const normalizePins = (
+      configuredPins?: (number | string)[],
+    ): (number | string)[] =>
+      configuredPins
+        ? configuredPins.map((pin) => {
+            if (typeof pin === "number") return pin
+            const match = pin.match(/^pin(\d+)$/)
+            if (match) return Number.parseInt(match[1]!, 10)
+            const num = Number.parseInt(pin, 10)
+            if (!Number.isNaN(num) && String(num) === pin) return num
+            return pin
+          })
+        : defaultPins
 
     if (facingDirection === "left") {
       return {
         leftSide: {
           direction: schPinArrangement?.leftSide?.direction ?? "top-to-bottom",
-          pins: schPinArrangement?.leftSide?.pins ?? pins,
+          pins: normalizePins(schPinArrangement?.leftSide?.pins),
         },
       }
     }
@@ -131,7 +144,7 @@ export class PinHeader extends NormalComponent<typeof pinHeaderProps> {
       return {
         topSide: {
           direction: schPinArrangement?.topSide?.direction ?? "left-to-right",
-          pins: schPinArrangement?.topSide?.pins ?? pins,
+          pins: normalizePins(schPinArrangement?.topSide?.pins),
         },
       }
     }
@@ -141,7 +154,7 @@ export class PinHeader extends NormalComponent<typeof pinHeaderProps> {
         bottomSide: {
           direction:
             schPinArrangement?.bottomSide?.direction ?? "left-to-right",
-          pins: schPinArrangement?.bottomSide?.pins ?? pins,
+          pins: normalizePins(schPinArrangement?.bottomSide?.pins),
         },
       }
     }
@@ -149,7 +162,7 @@ export class PinHeader extends NormalComponent<typeof pinHeaderProps> {
     return {
       rightSide: {
         direction: schPinArrangement?.rightSide?.direction ?? "top-to-bottom",
-        pins: schPinArrangement?.rightSide?.pins ?? pins,
+        pins: normalizePins(schPinArrangement?.rightSide?.pins),
       },
     }
   }
