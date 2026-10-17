@@ -22,27 +22,30 @@ export class Diode extends NormalComponent<
       photodiode: "photodiode",
     }
 
-    const variant = this.props.schottky
-      ? "schottky"
-      : this.props.avalanche
-        ? "avalanche"
-        : this.props.zener
-          ? "zener"
-          : this.props.photo
-            ? "photo"
-            : this.props.standard
-              ? "standard"
-              : this.props.variant
+    const rawProps = this.props
+    const parsedProps = this._parsedProps
+    const variant =
+      rawProps.schottky || parsedProps?.schottky
+        ? "schottky"
+        : rawProps.avalanche || parsedProps?.avalanche
+          ? "avalanche"
+          : rawProps.zener || parsedProps?.zener
+            ? "zener"
+            : rawProps.photo || parsedProps?.photo
+              ? "photo"
+              : rawProps.standard
+                ? "standard"
+                : (rawProps.variant ?? parsedProps?.variant)
     const variantSymbol = variant === "photo" ? "photodiode" : variant
 
     const baseSymbolName =
       (variantSymbol && symbolMap[variantSymbol]) ||
-      this.props.symbolName ||
+      rawProps.symbolName ||
+      parsedProps?.symbolName ||
       "diode"
+    const schSize = rawProps.schSize ?? parsedProps?.schSize
     const compactSize =
-      this.props.schSize === "sm" || this.props.schSize === "xs"
-        ? this.props.schSize
-        : undefined
+      schSize === "sm" || schSize === "xs" ? schSize : undefined
     const compactSymbolName =
       compactSize &&
       (baseSymbolName === "diode" ||
