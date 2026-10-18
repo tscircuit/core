@@ -31,11 +31,23 @@ test("explicit pour on rounded board", async () => {
   )
   await circuit.renderUntilSettled()
   const clearanceErrors = circuit.db.pcb_placement_error.list()
-  expect(clearanceErrors).toHaveLength(1)
-  expect(clearanceErrors[0]!.message).toContain(
-    "violates copper-to-board-edge clearance (measured 0.000mm",
+  expect(clearanceErrors).toHaveLength(0)
+  const pours = circuit.db.pcb_copper_pour.list()
+  expect(pours).toHaveLength(1)
+  const pour = pours[0]!
+  expect(pour.shape).toBe("brep")
+  if (pour.shape !== "brep") throw new Error("Expected boundary representation")
+  const cornerVertices = pour.brep_shape.outer_ring.vertices.filter(
+    (vertex) => Math.abs(vertex.x) > 3.5 && vertex.y > 3.5,
   )
+  expect(cornerVertices.length).toBeGreaterThan(0)
+  for (const vertex of cornerVertices) {
+    expect(
+      Math.hypot(Math.abs(vertex.x) - 3.5, vertex.y - 3.5),
+    ).toBeLessThanOrEqual(1.201)
+  }
   await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
     layer: "bottom",
+    showErrorsInTextOverlay: true,
   })
 })
