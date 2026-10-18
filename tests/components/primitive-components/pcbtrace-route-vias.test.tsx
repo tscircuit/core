@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { Fragment } from "react"
 import type { PcbTraceRoutePoint } from "circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
@@ -32,7 +33,11 @@ test("pcbtrace materializes route vias with explicit dimensions or PCB style def
             ...diameters,
           },
         ] satisfies PcbTraceRoutePoint[]
-        return <pcbtrace key={x} route={route} />
+        return (
+          <Fragment key={x}>
+            <pcbtrace route={route} />
+          </Fragment>
+        )
       })}
     </board>,
   )
