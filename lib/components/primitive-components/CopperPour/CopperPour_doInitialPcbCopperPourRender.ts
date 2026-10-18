@@ -6,6 +6,7 @@ import {
 import type { ISubcircuit } from "../Group/Subcircuit/ISubcircuit"
 import type { Net } from "../Net"
 import type { CopperPour } from "./CopperPour"
+import { clipPourOutlineToBoard } from "./utils/clip-pour-outline-to-board"
 import { markTraceSegmentsInsideCopperPour } from "./utils/mark-trace-segments-inside-copper-pour"
 
 // Each CopperPour queues this phase, but the solver processes every pour in a
@@ -61,10 +62,22 @@ const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
       { x: center.x - width / 2, y: center.y + height / 2 },
     ]
   }
+  const pourRegions = resolvedCopperPours.flatMap(
+    ({ copperPour, sourceNetId }) => {
+      const outline = copperPour._parsedProps.outline
+      const outlines =
+        outline && resolvedPcbBoardOutline
+          ? clipPourOutlineToBoard(outline, resolvedPcbBoardOutline)
+          : [outline ?? resolvedPcbBoardOutline]
+      return outlines.map((outline) => ({ copperPour, sourceNetId, outline }))
+    },
+  )
+  if (pourRegions.length === 0) return
+
   // warningOnly affects routing and DRC severity; pours still avoid every keepout.
   const inputProblem = convertCircuitJsonToInputProblem(
     circuitJson,
-    resolvedCopperPours.map(({ copperPour, sourceNetId }) => {
+    pourRegions.map(({ copperPour, sourceNetId, outline }) => {
       const { _parsedProps: props } = copperPour
       const clearance = props.clearance ?? 0.2
       return {
@@ -88,7 +101,7 @@ const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
               thermal_relief_spoke_width: DEFAULT_THERMAL_RELIEF_SPOKE_WIDTH_MM,
             }
           : {}),
-        outline: props.outline ?? resolvedPcbBoardOutline,
+        outline,
       }
     }),
   )
@@ -109,7 +122,7 @@ const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
   for (const [
     regionIndex,
     { copperPour, sourceNetId },
-  ] of resolvedCopperPours.entries()) {
+  ] of pourRegions.entries()) {
     const { _parsedProps: props } = copperPour
     const coveredWithSolderMask = props.coveredWithSolderMask ?? false
 
