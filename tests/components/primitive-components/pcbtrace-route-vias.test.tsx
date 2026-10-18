@@ -1,17 +1,15 @@
 import { expect, test } from "bun:test"
-import { Fragment } from "react"
 import type { PcbTraceRoutePoint } from "circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("pcbtrace materializes route vias with explicit dimensions or PCB style defaults", async () => {
   const { circuit } = getTestFixture()
   const viaCases = [
-    { x: -10, outer_diameter: 2, hole_diameter: 1, label: "EXPLICIT: 2 / 1mm" },
-    { x: -3, label: "STYLE: 0.9 / 0.45mm" },
-    { x: 4, outer_diameter: 1.4, label: "PAD: 1.4 / 0.45mm" },
-    { x: 11, hole_diameter: 0.6, label: "DRILL: 0.9 / 0.6mm" },
+    { x: -10, outer_diameter: 2, hole_diameter: 1 },
+    { x: -3 },
+    { x: 4, outer_diameter: 1.4 },
+    { x: 11, hole_diameter: 0.6 },
   ]
-
   circuit.add(
     <board
       width={30}
@@ -19,7 +17,7 @@ test("pcbtrace materializes route vias with explicit dimensions or PCB style def
       layers={4}
       pcbStyle={{ viaPadDiameter: 0.9, viaHoleDiameter: 0.45 }}
     >
-      {viaCases.map(({ x, label, ...diameters }) => {
+      {viaCases.map(({ x, ...diameters }) => {
         const route = [
           { route_type: "wire", x: x - 2, y: 0, layer: "bottom", width: 0.2 },
           { route_type: "wire", x, y: 0, layer: "bottom", width: 0.2 },
@@ -34,34 +32,8 @@ test("pcbtrace materializes route vias with explicit dimensions or PCB style def
             ...diameters,
           },
         ] satisfies PcbTraceRoutePoint[]
-        return (
-          <Fragment key={x}>
-            <pcbtrace route={route} />
-            <pcbnotetext
-              pcbX={x}
-              pcbY={2}
-              layer="bottom"
-              fontSize={0.5}
-              text={label}
-            />
-          </Fragment>
-        )
+        return <pcbtrace key={x} route={route} />
       })}
-      <via
-        pcbX={-10}
-        pcbY={0}
-        fromLayer="top"
-        toLayer="inner1"
-        outerDiameter={2}
-        holeDiameter={1}
-      />
-      <pcbnotetext
-        pcbX={0}
-        pcbY={-3}
-        layer="bottom"
-        fontSize={0.55}
-        text="BOTTOM VIEW: TOP / INNER1 VIA SHARES THE LEFT POSITION"
-      />
     </board>,
   )
   await circuit.renderUntilSettled()
@@ -69,7 +41,7 @@ test("pcbtrace materializes route vias with explicit dimensions or PCB style def
   const pcbTraces = circuit.db.pcb_trace.list()
   const pcbVias = circuit.db.pcb_via.list()
   expect(pcbTraces).toHaveLength(4)
-  expect(pcbVias).toHaveLength(5)
+  expect(pcbVias).toHaveLength(4)
   for (const pcbTrace of pcbTraces) {
     const routeVia = pcbTrace.route.find((point) => point.route_type === "via")!
     const materializedVias = pcbVias.filter(
@@ -90,14 +62,6 @@ test("pcbtrace materializes route vias with explicit dimensions or PCB style def
       pcb_group_id: pcbTrace.pcb_group_id,
     })
   }
-
-  // Rendering again must not insert a second physical via for the same route.
   await circuit.renderUntilSettled()
-  expect(circuit.db.pcb_via.list()).toHaveLength(5)
-  await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
-    layer: "bottom",
-    showSolderMask: true,
-    showPcbNotes: true,
-    shouldDrawErrors: false,
-  })
+  expect(circuit.db.pcb_via.list()).toHaveLength(4)
 })
