@@ -17,7 +17,9 @@ test("imported traces reuse unassociated and shared vias at the same position an
       expectedViaCount: 1,
     },
     { pcb_trace_id: undefined, layers: ["top", "inner1"], expectedViaCount: 3 },
-  ]) {
+  ] satisfies (Pick<PcbVia, "pcb_trace_id" | "layers"> & {
+    expectedViaCount: number
+  })[]) {
     const { circuit } = getTestFixture()
     const board = new Board({ width: 20, height: 10, layers: 4 })
     const traces = ["first_trace", "second_trace"].map(
