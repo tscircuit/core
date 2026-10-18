@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test"
 import { Fragment } from "react"
+import type { PcbTraceRoutePoint } from "circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("pcbtrace route vias lack physical via records and differ from explicit controls", async () => {
@@ -13,47 +14,48 @@ test("pcbtrace route vias lack physical via records and differ from explicit con
         fontSize={0.9}
         text="BOTTOM VIEW: EACH LEFT VIA SHOULD MATCH ITS RIGHT CONTROL"
       />
-      {[4, -4].map((y) => (
-        <Fragment key={y}>
-          <pcbtrace
-            route={[
-              { route_type: "wire", x: -15, y, width: 0.3, layer: "bottom" },
-              { route_type: "wire", x: -10, y, width: 0.3, layer: "bottom" },
-              {
-                route_type: "via",
-                x: -10,
-                y,
-                from_layer: "bottom",
-                to_layer: "inner2",
-                outer_diameter: 3,
-                hole_diameter: 1.5,
-              },
-            ]}
-          />
-          <via
-            pcbX={10}
-            pcbY={y}
-            fromLayer="bottom"
-            toLayer="inner2"
-            outerDiameter={3}
-            holeDiameter={1.5}
-          />
-          <pcbnotetext
-            pcbX={-10}
-            pcbY={y + 2.5}
-            layer="bottom"
-            fontSize={0.8}
-            text={y > 0 ? "ROUTE VIA: 3 / 1.5mm" : "ROUTE VIA + TOP-ONLY VIA"}
-          />
-          <pcbnotetext
-            pcbX={10}
-            pcbY={y + 2.5}
-            layer="bottom"
-            fontSize={0.8}
-            text="EXPLICIT VIA: 3 / 1.5mm"
-          />
-        </Fragment>
-      ))}
+      {[4, -4].map((y) => {
+        const route = [
+          { route_type: "wire", x: -15, y, width: 0.3, layer: "bottom" },
+          { route_type: "wire", x: -10, y, width: 0.3, layer: "bottom" },
+          {
+            route_type: "via",
+            x: -10,
+            y,
+            from_layer: "bottom",
+            to_layer: "inner2",
+            outer_diameter: 3,
+            hole_diameter: 1.5,
+          },
+        ] satisfies PcbTraceRoutePoint[]
+        return (
+          <Fragment key={y}>
+            <pcbtrace route={route} />
+            <via
+              pcbX={10}
+              pcbY={y}
+              fromLayer="bottom"
+              toLayer="inner2"
+              outerDiameter={3}
+              holeDiameter={1.5}
+            />
+            <pcbnotetext
+              pcbX={-10}
+              pcbY={y + 2.5}
+              layer="bottom"
+              fontSize={0.8}
+              text={y > 0 ? "ROUTE VIA: 3 / 1.5mm" : "ROUTE VIA + TOP-ONLY VIA"}
+            />
+            <pcbnotetext
+              pcbX={10}
+              pcbY={y + 2.5}
+              layer="bottom"
+              fontSize={0.8}
+              text="EXPLICIT VIA: 3 / 1.5mm"
+            />
+          </Fragment>
+        )
+      })}
       <via
         pcbX={-10}
         pcbY={-4}
