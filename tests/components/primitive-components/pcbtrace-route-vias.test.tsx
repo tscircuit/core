@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test"
-import { Fragment } from "react"
+import { Board } from "lib/components/normal-components/Board/Board"
+import { PcbTrace } from "lib/components/primitive-components/PcbTrace"
 import type { PcbTraceRoutePoint } from "circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
@@ -11,36 +12,30 @@ test("pcbtrace materializes route vias with explicit dimensions or PCB style def
     { x: 4, outer_diameter: 1.4 },
     { x: 11, hole_diameter: 0.6 },
   ]
-  circuit.add(
-    <board
-      width={30}
-      height={12}
-      layers={4}
-      pcbStyle={{ viaPadDiameter: 0.9, viaHoleDiameter: 0.45 }}
-    >
-      {viaCases.map(({ x, ...diameters }) => {
-        const route = [
-          { route_type: "wire", x: x - 2, y: 0, layer: "bottom", width: 0.2 },
-          { route_type: "wire", x, y: 0, layer: "bottom", width: 0.2 },
-          {
-            route_type: "via",
-            x,
-            y: 0,
-            from_layer: "bottom",
-            to_layer: "inner1",
-            tented_on_top: true,
-            tented_on_bottom: false,
-            ...diameters,
-          },
-        ] satisfies PcbTraceRoutePoint[]
-        return (
-          <Fragment key={x}>
-            <pcbtrace route={route} />
-          </Fragment>
-        )
-      })}
-    </board>,
-  )
+  const board = new Board({
+    width: 30,
+    height: 12,
+    layers: 4,
+    pcbStyle: { viaPadDiameter: 0.9, viaHoleDiameter: 0.45 },
+  })
+  for (const { x, ...diameters } of viaCases) {
+    const route = [
+      { route_type: "wire", x: x - 2, y: 0, layer: "bottom", width: 0.2 },
+      { route_type: "wire", x, y: 0, layer: "bottom", width: 0.2 },
+      {
+        route_type: "via",
+        x,
+        y: 0,
+        from_layer: "bottom",
+        to_layer: "inner1",
+        tented_on_top: true,
+        tented_on_bottom: false,
+        ...diameters,
+      },
+    ] satisfies PcbTraceRoutePoint[]
+    board.add(new PcbTrace({ route }))
+  }
+  circuit.add(board)
   await circuit.renderUntilSettled()
 
   const pcbTraces = circuit.db.pcb_trace.list()

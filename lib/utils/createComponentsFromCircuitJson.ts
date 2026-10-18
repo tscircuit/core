@@ -719,7 +719,6 @@ export const createComponentsFromCircuitJson = (
           circuitJson.some(
             (via) =>
               via.type === "pcb_via" &&
-              via.pcb_trace_id === elm.pcb_trace_id &&
               via.x === point.x &&
               via.y === point.y &&
               via.layers.includes(point.from_layer) &&
