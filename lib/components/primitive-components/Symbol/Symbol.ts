@@ -13,7 +13,7 @@ export class SymbolComponent
 
   schematic_symbol_id?: string
   userCoordinateToResizedSymbolTransformMat?: Matrix
-  schematicSymbolBoundsInUserCoordinates?: SchematicSymbolBounds
+  schematicSymbolBoundsInSymbolLocalCoordinateSpace?: SchematicSymbolBounds
 
   get config() {
     return {
@@ -52,13 +52,13 @@ export class SymbolComponent
   }
 
   getSchematicSymbolBounds(): SchematicSymbolBounds | null {
-    if (this.schematicSymbolBoundsInUserCoordinates) {
-      return this.schematicSymbolBoundsInUserCoordinates
+    if (this.schematicSymbolBoundsInSymbolLocalCoordinateSpace) {
+      return this.schematicSymbolBoundsInSymbolLocalCoordinateSpace
     }
 
     // Compute bounds from children's circuit-json elements
     this._computeSchematicSymbolBounds()
-    return this.schematicSymbolBoundsInUserCoordinates ?? null
+    return this.schematicSymbolBoundsInSymbolLocalCoordinateSpace ?? null
   }
 
   getUserCoordinateToResizedSymbolTransform(): Matrix | null {
@@ -79,13 +79,27 @@ export class SymbolComponent
     if (this.root?.schematicDisabled) return
 
     const { db } = this.root!
+    const { viewbox } = this._parsedProps
+    if (viewbox) {
+      // viewbox defines the local symbol coordinate space (+X right, +Y up, mm).
+      // Child points are in schematic world coordinates before resizing, so
+      // translate the local bounds by the symbol position for the same frame.
+      const globalPos = this._getGlobalSchematicPositionBeforeLayout()
+      this.schematicSymbolBoundsInSymbolLocalCoordinateSpace = {
+        minX: globalPos.x + viewbox.minX,
+        maxX: globalPos.x + viewbox.maxX,
+        minY: globalPos.y + viewbox.minY,
+        maxY: globalPos.y + viewbox.maxY,
+      }
+      return
+    }
+
     const schematicElements: Array<{
       type: string
       [key: string]: any
     }> = []
 
-    // Collect circuit-json elements from children, including ports so
-    // the full symbol (body + stems) fits within the specified width/height
+    // Automatic sizing includes both artwork and port stems by default.
     for (const child of this.children) {
       if (child.componentName === "Port") {
         const portId = (child as Port).schematic_port_id
@@ -129,7 +143,7 @@ export class SymbolComponent
     if (schematicElements.length === 0) return
 
     const bounds = getBoundsForSchematic(schematicElements)
-    this.schematicSymbolBoundsInUserCoordinates = bounds
+    this.schematicSymbolBoundsInSymbolLocalCoordinateSpace = bounds
   }
 
   private _computeUserCoordinateToResizedSymbolTransform(): void {
@@ -151,15 +165,32 @@ export class SymbolComponent
     const currentCenterX = (bounds.minX + bounds.maxX) / 2
     const currentCenterY = (bounds.minY + bounds.maxY) / 2
 
-    // Calculate scale factors
-    const scaleX =
+    // CSS-style fill (default) and explicit stretch scale each axis independently.
+    let scaleX =
       targetWidth !== undefined && currentWidth > 0
         ? targetWidth / currentWidth
         : 1
-    const scaleY =
+    let scaleY =
       targetHeight !== undefined && currentHeight > 0
         ? targetHeight / currentHeight
         : 1
+
+    if (props.fit === "contain") {
+      // Bounds and drawing points are in schematic world space (+X right,
+      // +Y up, mm). Use only constrained, nondegenerate axes for a uniform fit.
+      const constrainedScales = []
+      if (targetWidth !== undefined && currentWidth > 0) {
+        constrainedScales.push(targetWidth / currentWidth)
+      }
+      if (targetHeight !== undefined && currentHeight > 0) {
+        constrainedScales.push(targetHeight / currentHeight)
+      }
+      const uniformScale = constrainedScales.length
+        ? Math.min(...constrainedScales)
+        : 1
+      scaleX = uniformScale
+      scaleY = uniformScale
+    }
 
     // Get the global position for the Symbol (where the content should be centered)
     const globalPos = this._getGlobalSchematicPositionBeforeLayout()
