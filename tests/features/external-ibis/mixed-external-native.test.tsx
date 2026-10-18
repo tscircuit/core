@@ -32,9 +32,8 @@ test("external declarations coexist with an executed native experiment", async (
         timePerStep="100us"
       />
       <analog.transientsimulation
+        spiceEngine="pcb_spice"
         name="external"
-        executionMode="external"
-        spiceEngine="uninstalled"
         duration="20ns"
         timePerStep="20ps"
       />

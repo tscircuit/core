@@ -3,8 +3,8 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("IBIS references and model selections must name mapped vendor pins", async () => {
   for (const invalidBinding of [
-    { references: { "2": { pullup: "VCC" } } },
-    { modelSelections: { "2": "BUFFER" } },
+    { ibisPinNameToReferencePortLabels: { "2": { pullup: "VCC" } } },
+    { ibisPinNameToModelName: { "2": "BUFFER" } },
   ]) {
     const { circuit } = getTestFixture()
     circuit.add(
@@ -16,17 +16,21 @@ test("IBIS references and model selections must name mapped vendor pins", async 
         />
         <ibismodel
           componentRef=".U1"
-          source={{ file: "model.ibs" }}
-          component="BUFFER"
-          pinMap={{ "1": "DATA" }}
-          corner="typical"
-          packagePolicy="omit"
+          ibisModelAsset={{
+            project_relative_path: "models/model.ibs",
+            url: "https://example.com/model.ibs",
+            mimetype: "text/plain",
+          }}
+          ibisComponentName="BUFFER"
+          ibisPinNameToPortLabel={{ "1": "DATA" }}
+          modelValueCorner="typical"
+          includePackageParasitics={false}
           {...invalidBinding}
         />
       </board>,
     )
     await expect(circuit.renderUntilSettled()).rejects.toThrow(
-      'IBIS pin "2" is referenced but not present in pinMap',
+      'IBIS pin "2" is referenced but not present in ibisPinNameToPortLabel',
     )
   }
 })

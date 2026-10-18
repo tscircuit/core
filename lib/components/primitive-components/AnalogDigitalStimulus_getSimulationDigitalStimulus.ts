@@ -25,7 +25,7 @@ export function AnalogDigitalStimulus_getSimulationDigitalStimulus(
       simulation_experiment_id: experiment.simulation_experiment_id,
     })
     .find((state) => state.source_port_id === port.source_port_id)
-  if (pinState?.mode !== "output" || pinState.enabled !== true) {
+  if (pinState?.is_output !== true || pinState.is_output_enabled !== true) {
     throw new Error(
       `Stimulus "${props.name}" must drive a pin declared as an enabled output in its simulation.`,
     )

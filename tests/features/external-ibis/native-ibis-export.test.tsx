@@ -8,7 +8,7 @@ test("native TSX exports physical IBIS bindings without fetching or running a so
   const { circuit } = getTestFixture({
     platform: {
       spiceEngineMap: {
-        external: {
+        pcb_spice: {
           async simulate() {
             solverCalls++
             throw new Error("External simulation must not run during rendering")
@@ -34,16 +34,19 @@ test("native TSX exports physical IBIS bindings without fetching or running a so
       <trace from=".U1 > .DATA" to=".U2 > .DATA" />
       <ibismodel
         componentRef=".U1"
-        source={{
-          url: "https://example.com/vendor.zip",
-          sha256: "a".repeat(64),
-          archive: { member: "chip.ibs", memberSha256: "b".repeat(64) },
+        ibisModelAsset={{
+          project_relative_path: "models/model.ibs",
+          url: "https://example.com/model.ibs",
+          mimetype: "text/plain",
         }}
-        component="DRIVER"
-        pinMap={{ "1": "DATA", "2": "VCC", "3": "GND" }}
-        references={{ "1": { pullup: "VCC", groundClamp: "GND" } }}
-        corner="typical"
-        packagePolicy="vendor"
+        ibisComponentName="DRIVER"
+        ibisPinNameToPortLabel={{ "1": "DATA", "2": "VCC", "3": "GND" }}
+        ibisPinNameToModelName={{ "1": "DRIVER_OUT" }}
+        ibisPinNameToReferencePortLabels={{
+          "1": { pullup: "VCC", groundClamp: "GND" },
+        }}
+        modelValueCorner="typical"
+        includePackageParasitics={true}
       />
       <analog.eyediagram
         name="data-eye"
@@ -69,25 +72,36 @@ test("native TSX exports physical IBIS bindings without fetching or running a so
         referenceTo=".U2 > .GND"
       />
       <analog.transientsimulation
+        spiceEngine="pcb_spice"
         name="switching"
-        executionMode="external"
-        spiceEngine="external"
         duration="20ns"
         timePerStep="20ps"
         ibisPinStates={{
-          ".U1 > .DATA": { mode: "output", enabled: true },
-          ".U2 > .DATA": { mode: "input" },
+          ".U1 > .DATA": { isOutput: true, isOutputEnabled: true },
+          ".U2 > .DATA": { isOutput: false },
         }}
       />
       <analog.transientsimulation
+        spiceEngine="pcb_spice"
         name="quiet"
-        executionMode="external"
         duration="20ns"
         timePerStep="20ps"
         ibisPinStates={{
-          ".U1 > .DATA": { mode: "output", enabled: false },
-          ".U2 > .DATA": { mode: "input" },
+          ".U1 > .DATA": { isOutput: true, isOutputEnabled: false },
+          ".U2 > .DATA": { isOutput: false },
         }}
+      />
+      <ibismodel
+        componentRef=".U2"
+        ibisModelAsset={{
+          project_relative_path: "models/receiver.ibs",
+          url: "https://example.com/receiver.ibs",
+          mimetype: "text/plain",
+        }}
+        ibisComponentName="RECEIVER"
+        ibisPinNameToPortLabel={{ "1": "DATA", "2": "VCC", "3": "GND" }}
+        modelValueCorner="typical"
+        includePackageParasitics={false}
       />
     </board>,
   )
@@ -113,32 +127,42 @@ test("native TSX exports physical IBIS bindings without fetching or running a so
         port.source_component_id === receiver.source_component_id &&
         port.pin_number === 1,
     )!
-  expect(models).toHaveLength(1)
-  expect(models[0].source_component_id).toBe(driver.source_component_id)
-  expect(models[0].pin_to_source_port_map["1"]).toBe(driverPort.source_port_id)
-  expect(models[0].source).toEqual({
-    url: "https://example.com/vendor.zip",
-    sha256: "a".repeat(64),
-    archive: { member: "chip.ibs", member_sha256: "b".repeat(64) },
-  })
-  expect(models[0].references?.["1"].ground_clamp).toBe(
-    models[0].pin_to_source_port_map["3"],
+  expect(models).toHaveLength(2)
+  const driverModel = models.find(
+    (model) => model.source_component_id === driver.source_component_id,
+  )!
+  expect(driverModel.source_component_id).toBe(driver.source_component_id)
+  expect(driverModel.ibis_component_name).toBe("DRIVER")
+  expect(driverModel.model_value_corner).toBe("typical")
+  expect(driverModel.include_package_parasitics).toBe(true)
+  expect(driverModel.ibis_pin_name_to_model_name).toEqual({ "1": "DRIVER_OUT" })
+  expect(driverModel.ibis_pin_name_to_source_port_id["1"]).toBe(
+    driverPort.source_port_id,
   )
+  expect(driverModel.ibis_model_asset).toEqual({
+    project_relative_path: "models/model.ibs",
+    url: "https://example.com/model.ibs",
+    mimetype: "text/plain",
+  })
+  expect(
+    driverModel.ibis_pin_name_to_reference_source_port_ids?.["1"]
+      .ground_clamp_reference_source_port_id,
+  ).toBe(driverModel.ibis_pin_name_to_source_port_id["3"])
   const experiments = circuit.db.simulation_experiment.list()
   expect(experiments).toHaveLength(2)
   const switching = experiments.find(
     (experiment) => experiment.name === "switching",
   )!
-  expect(switching.execution_mode).toBe("external")
+  expect(switching.spice_engine).toBe("pcb_spice")
   expect(switching.subcircuit_id).toBeTruthy()
-  expect(switching.spice_engine).toBe("external")
+  expect(switching).not.toHaveProperty("execution_mode")
   expect(switching.end_time_ms).toBeCloseTo(0.00002, 14)
   const states = circuit.db.simulation_ibis_pin_state.list()
   expect(states).toHaveLength(4)
   expect(
     states
-      .filter((state) => state.mode === "output")
-      .map((state) => state.enabled)
+      .filter((state) => state.is_output)
+      .map((state) => state.is_output_enabled)
       .sort(),
   ).toEqual([false, true])
   const stimulus = circuit.db.simulation_digital_stimulus.list()[0]

@@ -173,7 +173,7 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
     )
     if (
       !simulationExperiment ||
-      simulationExperiment.execution_mode === "external"
+      simulationExperiment.spice_engine === "pcb_spice"
     ) {
       debug("No simulation experiment found, skipping simulation")
       continue

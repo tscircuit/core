@@ -14,11 +14,15 @@ test("IBIS models reject missing and ambiguous physical component or pin selecto
         <chip name="U2" footprint="soic4" />
         <ibismodel
           componentRef={componentRef}
-          source={{ file: "model.ibs" }}
-          component="BUFFER"
-          pinMap={{ "1": "MISSING" }}
-          corner="typical"
-          packagePolicy="omit"
+          ibisModelAsset={{
+            project_relative_path: "models/model.ibs",
+            url: "https://example.com/model.ibs",
+            mimetype: "text/plain",
+          }}
+          ibisComponentName="BUFFER"
+          ibisPinNameToPortLabel={{ "1": "MISSING" }}
+          modelValueCorner="typical"
+          includePackageParasitics={false}
         />
       </board>,
     )

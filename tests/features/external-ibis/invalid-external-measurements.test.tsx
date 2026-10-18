@@ -20,17 +20,19 @@ test("external measurements reject native experiments, duplicate traffic, and in
     </board>,
   )
   await expect(native.renderUntilSettled()).rejects.toThrow(
-    'executionMode="external"',
+    'spiceEngine="pcb_spice"',
   )
   const duplicate = getTestFixture().circuit
   duplicate.add(
     <board routingDisabled>
       <chip name="U1" footprint="soic4" />
       <analog.transientsimulation
+        spiceEngine="pcb_spice"
         name="run"
-        executionMode="external"
         duration="20ns"
-        ibisPinStates={{ ".U1 > .pin1": { mode: "output", enabled: true } }}
+        ibisPinStates={{
+          ".U1 > .pin1": { isOutput: true, isOutputEnabled: true },
+        }}
       />
       {["one", "two"].map((name) => (
         <analog.digitalstimulus
@@ -54,8 +56,8 @@ test("external measurements reject native experiments, duplicate traffic, and in
     <board routingDisabled>
       <chip name="U1" footprint="soic4" />
       <analog.transientsimulation
+        spiceEngine="pcb_spice"
         name="run"
-        executionMode="external"
         duration="20ns"
       />
       <voltageprobe name="probe" connectsTo=".U1 > .pin1" />

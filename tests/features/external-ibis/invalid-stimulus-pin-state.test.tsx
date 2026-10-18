@@ -6,8 +6,8 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 test("traffic requires an explicitly enabled output in its own experiment", async () => {
   const invalidPinStates: Record<string, IbisPinRunState>[] = [
     {},
-    { ".U1 > .pin1": { mode: "input" } },
-    { ".U1 > .pin1": { mode: "output", enabled: false } },
+    { ".U1 > .pin1": { isOutput: false } },
+    { ".U1 > .pin1": { isOutput: true, isOutputEnabled: false } },
   ]
   for (const ibisPinStates of invalidPinStates) {
     const { circuit } = getTestFixture()
@@ -15,14 +15,16 @@ test("traffic requires an explicitly enabled output in its own experiment", asyn
       <board routingDisabled>
         <chip name="U1" footprint="soic4" />
         <analog.transientsimulation
+          spiceEngine="pcb_spice"
           name="other"
-          executionMode="external"
           duration="20ns"
-          ibisPinStates={{ ".U1 > .pin1": { mode: "output", enabled: true } }}
+          ibisPinStates={{
+            ".U1 > .pin1": { isOutput: true, isOutputEnabled: true },
+          }}
         />
         <analog.transientsimulation
+          spiceEngine="pcb_spice"
           name="run"
-          executionMode="external"
           duration="20ns"
           ibisPinStates={ibisPinStates}
         />

@@ -52,9 +52,9 @@ export function resolveExternalTransientSimulation({
     )
   }
   const simulation = simulations[0]
-  if (simulation._parsedProps.executionMode !== "external") {
+  if (simulation.getSpiceEngineName() !== "pcb_spice") {
     throw new Error(
-      `Simulation "${selector}" requires executionMode="external" for IBIS declarations.`,
+      `Simulation "${selector}" requires spiceEngine="pcb_spice" for IBIS declarations.`,
     )
   }
   simulation.getOrCreateSimulationExperiment()
