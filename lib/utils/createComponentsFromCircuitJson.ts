@@ -120,6 +120,130 @@ const getSchematicSymbolId = (elm: AnyCircuitElement): string | undefined => {
   return undefined
 }
 
+const getPolygonSignedArea = (pts: Array<{ x: number; y: number }>): number => {
+  if (pts.length < 3) return 0
+  let area = 0
+  for (let i = 0; i < pts.length; i++) {
+    const p1 = pts[i]!
+    const p2 = pts[(i + 1) % pts.length]!
+    area += p1.x * p2.y - p2.x * p1.y
+  }
+  return area / 2
+}
+
+const mergeCourtyardOutlineElements = (
+  circuitJson: AnyCircuitElement[],
+): AnyCircuitElement[] => {
+  const courtyardOutlines = circuitJson.filter(
+    (elm): elm is Extract<AnyCircuitElement, { type: "pcb_courtyard_outline" }> =>
+      elm.type === "pcb_courtyard_outline",
+  )
+  if (courtyardOutlines.length === 0) return circuitJson
+
+  const EPS = 1e-3
+  const pointsClose = (
+    a: { x: number; y: number },
+    b: { x: number; y: number },
+  ) => Math.hypot(a.x - b.x, a.y - b.y) <= EPS
+
+  const byLayer = new Map<
+    string,
+    Array<Extract<AnyCircuitElement, { type: "pcb_courtyard_outline" }>>
+  >()
+  for (const co of courtyardOutlines) {
+    const layer = co.layer ?? "top"
+    if (!byLayer.has(layer)) byLayer.set(layer, [])
+    byLayer.get(layer)!.push(co)
+  }
+
+  const mergedCourtyards: Array<
+    Extract<AnyCircuitElement, { type: "pcb_courtyard_outline" }>
+  > = []
+
+  for (const [layer, items] of byLayer.entries()) {
+    const validPolygons: Array<
+      Extract<AnyCircuitElement, { type: "pcb_courtyard_outline" }>
+    > = []
+    const openChains: Array<Array<{ x: number; y: number }>> = []
+
+    for (const item of items) {
+      const pts = item.outline ?? []
+      if (pts.length >= 3 && Math.abs(getPolygonSignedArea(pts)) > 1e-6) {
+        validPolygons.push(item)
+      } else if (pts.length >= 2) {
+        openChains.push(pts.map((p) => ({ x: p.x, y: p.y })))
+      }
+    }
+
+    const used = new Array(openChains.length).fill(false)
+    for (let i = 0; i < openChains.length; i++) {
+      if (used[i]) continue
+      used[i] = true
+      const chain = [...openChains[i]!]
+
+      let progress = true
+      while (progress) {
+        progress = false
+        for (let j = 0; j < openChains.length; j++) {
+          if (used[j]) continue
+          const cand = openChains[j]!
+          const chainStart = chain[0]!
+          const chainEnd = chain[chain.length - 1]!
+          const candStart = cand[0]!
+          const candEnd = cand[cand.length - 1]!
+
+          if (pointsClose(chainEnd, candStart)) {
+            chain.push(...cand.slice(1))
+            used[j] = true
+            progress = true
+          } else if (pointsClose(chainEnd, candEnd)) {
+            chain.push(...[...cand].reverse().slice(1))
+            used[j] = true
+            progress = true
+          } else if (pointsClose(chainStart, candEnd)) {
+            chain.unshift(...cand.slice(0, -1))
+            used[j] = true
+            progress = true
+          } else if (pointsClose(chainStart, candStart)) {
+            chain.unshift(...[...cand].reverse().slice(0, -1))
+            used[j] = true
+            progress = true
+          }
+        }
+      }
+
+      if (chain.length >= 2 && pointsClose(chain[0]!, chain[chain.length - 1]!)) {
+        chain.pop()
+      }
+
+      if (chain.length >= 3 && Math.abs(getPolygonSignedArea(chain)) > 1e-6) {
+        validPolygons.push({
+          ...items[0]!,
+          type: "pcb_courtyard_outline",
+          layer: layer as any,
+          outline: chain,
+        })
+      }
+    }
+
+    mergedCourtyards.push(...validPolygons)
+  }
+
+  const result: AnyCircuitElement[] = []
+  let insertedCourtyards = false
+  for (const elm of circuitJson) {
+    if (elm.type === "pcb_courtyard_outline") {
+      if (!insertedCourtyards) {
+        result.push(...mergedCourtyards)
+        insertedCourtyards = true
+      }
+      continue
+    }
+    result.push(elm)
+  }
+  return result
+}
+
 export const createComponentsFromCircuitJson = (
   {
     sourcePortOwner,
@@ -138,8 +262,9 @@ export const createComponentsFromCircuitJson = (
     pcbPinLabels?: PinLabelsProp
     preserveSolderPaste?: boolean
   },
-  circuitJson: AnyCircuitElement[],
+  rawCircuitJson: AnyCircuitElement[],
 ): PrimitiveComponent[] => {
+  const circuitJson = mergeCourtyardOutlineElements(rawCircuitJson)
   const importedSourcePorts = circuitJson.filter(
     (elm) => elm.type === "source_port",
   )
