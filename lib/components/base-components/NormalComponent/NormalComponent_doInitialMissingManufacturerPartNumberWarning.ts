@@ -20,6 +20,9 @@ export const NormalComponent_doInitialMissingManufacturerPartNumberWarning = (
   if (
     drcChecksDisabled ||
     component.props.doNotPlace ||
+    sourceComponent.ftype === "simple_resistor" ||
+    sourceComponent.ftype === "simple_capacitor" ||
+    sourceComponent.ftype === "simple_inductor" ||
     sourceComponent.manufacturer_part_number?.trim() ||
     hasSupplierPartNumber
   ) {

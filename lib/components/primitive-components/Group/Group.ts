@@ -1539,9 +1539,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         ? undefined
         : routingPhasePlan.getPrecomputedRoutingResult
 
-      const preflightRoutingCheckPolicy = this.getInheritedProperty(
-        "preflightRoutingCheckPolicy",
-      )
+      const preflightRoutingCheckPolicy =
+        this.getInheritedProperty("preflightRoutingCheckPolicy") ?? "basic"
       if (
         routingPhasePlan.isImplicitRemainingPhase &&
         phaseStageIndex === 0 &&
@@ -1826,6 +1825,20 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         let transformedSimpleRouteJson =
           precomputedOutputSimpleRouteJson ??
           autorouter?.getOutputSimpleRouteJson?.()
+        if (
+          localAutorouterStrategy.preserveOutputTraces &&
+          transformedSimpleRouteJson?.traces
+        ) {
+          // Local escapes may return only their new copper. Keep earlier SRJ
+          // traces in the handoff, with returned replacements authoritative.
+          transformedSimpleRouteJson = {
+            ...transformedSimpleRouteJson,
+            traces: getAccumulatedPcbTracesWithStageOutputReplacements({
+              accumulatedPcbTraces: simpleRouteJson.traces ?? [],
+              stageOutputPcbTraces: transformedSimpleRouteJson.traces,
+            }),
+          }
+        }
         if (
           transformedSimpleRouteJson &&
           !usesPreviousStageOutput &&
@@ -2158,6 +2171,12 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const debug = Debug("tscircuit:core:updatePcbTraceRender")
     debug(`[${this.getString()}] updating...`)
     if (!this.isSubcircuit) return
+    if (this.root?.pcbDisabled) return
+    if (
+      this.root?.pcbRoutingDisabled ||
+      this.getInheritedProperty("routingDisabled")
+    )
+      return
     if (this._isInflatedFromCircuitJson) return
     if (this._isLegacyAutorouterDisabled()) return
     if (

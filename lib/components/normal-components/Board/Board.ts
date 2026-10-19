@@ -33,6 +33,10 @@ import { BoardCastellatedHole } from "./board-castellated-hole"
 const MIN_EFFECTIVE_BORDER_RADIUS_MM = 0.01
 const DEFAULT_VIA_PAD_DIAMETER_OVER_HOLE_DIAMETER_MM = 0.15
 
+/**
+ * Return board-local outline points in mm, centered at the origin in the
+ * right-handed PCB frame (+X right, +Y top, +Z above).
+ */
 const getRoundedRectOutline = (
   width: number,
   height: number,
@@ -361,7 +365,10 @@ export class Board
         finalWidth,
         finalHeight,
         props.borderRadius,
-      )
+      ).map((point) => ({
+        x: point.x + center.x,
+        y: point.y + center.y,
+      }))
     }
 
     const update: Record<string, unknown> = {
@@ -371,10 +378,12 @@ export class Board
     }
 
     if (outline) {
-      update.outline = outline.map((point) => ({
-        x: point.x + (props.outlineOffsetX ?? 0),
-        y: point.y + (props.outlineOffsetY ?? 0),
-      }))
+      update.outline = props.outline
+        ? outline.map((point) => ({
+            x: point.x + (props.outlineOffsetX ?? 0),
+            y: point.y + (props.outlineOffsetY ?? 0),
+          }))
+        : outline
     }
 
     db.pcb_board.update(this.pcb_board_id, update)
@@ -545,14 +554,17 @@ export class Board
         computedWidth,
         computedHeight,
         props.borderRadius,
-      )
+      ).map((point) => ({
+        x: point.x + center.x,
+        y: point.y + center.y,
+      }))
     }
 
-    // Calculate outline translation to center it on the board position
-    // This is ONLY needed for boards inside panels/subpanels, where the board
-    // position is offset from the origin by the panel layout
+    // Generated outlines are already circuit-world points centered on the board.
+    // Explicit outlines in panels/subpanels need to be centered by panel layout.
     let outlineTranslation = { x: 0, y: 0 }
     if (
+      props.outline &&
       outline &&
       outline.length > 0 &&
       (this.parent?.lowercaseComponentName === "panel" ||
@@ -604,10 +616,12 @@ export class Board
 
       width: computedWidth!,
       height: computedHeight!,
-      outline: outline?.map((point) => ({
-        x: point.x + (props.outlineOffsetX ?? 0) + outlineTranslation.x,
-        y: point.y + (props.outlineOffsetY ?? 0) + outlineTranslation.y,
-      })),
+      outline: props.outline
+        ? outline?.map((point) => ({
+            x: point.x + (props.outlineOffsetX ?? 0) + outlineTranslation.x,
+            y: point.y + (props.outlineOffsetY ?? 0) + outlineTranslation.y,
+          }))
+        : outline,
       material: props.material,
       ...(resolvedIsViaInPadAllowed !== undefined && {
         is_via_in_pad_allowed: resolvedIsViaInPadAllowed,

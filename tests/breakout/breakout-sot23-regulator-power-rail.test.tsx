@@ -7,7 +7,7 @@ test("breakout routes sot23 regulator power rail parts without breakoutpoints", 
   const autoroutingPhaseIoStack = createAutoroutingPhaseIoStack(circuit)
 
   circuit.add(
-    <board width="18mm" height="12mm">
+    <board width="18.2mm" height="12mm">
       <breakout name="REG_BREAKOUT" autorouter="auto" padding="1.2mm">
         <chip
           name="U1"
@@ -81,6 +81,7 @@ test("breakout routes sot23 regulator power rail parts without breakoutpoints", 
     source_group_id: breakoutSourceGroup!.source_group_id,
   })
 
+  expect(circuit.db.pcb_component_outside_board_error.list()).toEqual([])
   expect(breakoutPcbGroup).toBeDefined()
   expect(circuit.db.pcb_breakout_point.list().length).toBe(3)
   expect(circuit.db.pcb_trace.list().length).toBeGreaterThanOrEqual(7)

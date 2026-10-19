@@ -1,12 +1,12 @@
 import type { SchematicText } from "circuit-json"
 import { getBoundsFromPoints } from "@tscircuit/math-utils"
-import { getSchematicTextWidth } from "lib/utils/schematic/getSchematicTextWidth"
+import { getSchematicTextObstacleWidth } from "lib/utils/schematic/getSchematicTextObstacleWidth"
 
 const DEFAULT_SCHEMATIC_TEXT_FONT_SIZE = 0.18
 
 export function getSchematicTextBounds(text: SchematicText) {
   const fontSize = text.font_size ?? DEFAULT_SCHEMATIC_TEXT_FONT_SIZE
-  const width = getSchematicTextWidth({
+  const width = getSchematicTextObstacleWidth({
     text: text.text ?? "",
     fontSize,
   })

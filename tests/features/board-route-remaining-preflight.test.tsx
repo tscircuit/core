@@ -19,7 +19,15 @@ test("remaining routing preflight limits implicit phases to 50 connections", asy
     { policy: "conservative", count: 51, routed: 0, routingError: true },
     { policy: "basic", count: 50, routed: 50 },
     { policy: "none", count: 51, routed: 51 },
-    { count: 51, routed: 51 },
+    { count: 51, routed: 0, routingError: true },
+    { count: 50, routed: 50 },
+    { count: 51, routeRemaining: true, routed: 51 },
+    { count: 51, routeRemaining: false, routed: 0 },
+    { count: 51, untargeted: true, routed: 51 },
+    { count: 51, nested: true, routed: 0, routingError: true },
+    { policy: "none", count: 51, nested: true, routed: 51 },
+    { count: 52, explicitCount: 1, routed: 1, routingError: true },
+    { count: 52, explicitCount: 2, routed: 52 },
     { policy: "basic", count: 51, routeRemaining: true, routed: 51 },
     { policy: "basic", count: 51, routeRemaining: false, routed: 0 },
     {
@@ -120,7 +128,7 @@ test("remaining routing preflight limits implicit phases to 50 connections", asy
     expect(routingErrors).toHaveLength(scenario.routingError ? 1 : 0)
     if (scenario.routingError) {
       expect(routingErrors[0].message).toBe(
-        `Remaining routes left unrouted (over 50 traces remaining and preflightRoutingCheckPolicy="${scenario.policy}"). Set <board routeRemaining={true} /> or create <autoroutingphase /> elements for specific connections in the order you'd like to route them. The autorouter may hang unless you create autorouting phases incrementally.`,
+        `Remaining routes left unrouted (over 50 traces remaining and preflightRoutingCheckPolicy="${scenario.policy ?? "basic"}"). Set <board routeRemaining={true} /> or create <autoroutingphase /> elements for specific connections in the order you'd like to route them. The autorouter may hang unless you create autorouting phases incrementally.`,
       )
     }
     if (scenario === scenarios[0]) {

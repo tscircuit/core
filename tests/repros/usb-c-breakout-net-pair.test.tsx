@@ -15,8 +15,10 @@ function UsbBreakoutBoard() {
       <net name="CC2" routingPhaseIndex={1} />
       <net name="DP_USB" routingPhaseIndex={1} />
       <net name="DM_USB" routingPhaseIndex={1} />
+      {/* The USB-C shell and courtyard intentionally extend past the board edge. */}
       <connector
         name="J1"
+        allowOffBoard
         standard="usb_c"
         manufacturerPartNumber="TYPE-C-31-M-12"
         footprint={<UsbFootprint />}
@@ -140,6 +142,7 @@ test("USB-C breakout pair wired through named nets", async () => {
   await circuit.renderUntilSettled()
   expect(circuit.db.source_failed_to_create_component_error.list()).toEqual([])
   expect(circuit.db.source_trace_not_connected_error.list()).toEqual([])
+  expect(circuit.db.pcb_component_outside_board_error.list()).toEqual([])
   expect(phases).toHaveLength(2)
   expect(phases[0]?.startSimpleRouteJson?.differentialPairs).toHaveLength(1)
   expect(phases[0]?.endSimpleRouteJson?.traces).toHaveLength(2)

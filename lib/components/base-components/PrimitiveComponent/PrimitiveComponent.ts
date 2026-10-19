@@ -1,3 +1,5 @@
+import type { Port } from "lib/components/primitive-components/Port"
+import { assertUnambiguousPhysicalPortSelection } from "lib/components/primitive-components/Port/assertUnambiguousPhysicalPortSelection"
 import { getConstructionPropsSchema } from "./get-construction-props-schema"
 import {
   selectNetByLiteralSelector,
@@ -563,6 +565,12 @@ export abstract class PrimitiveComponent<
   getPrimitiveContainer(): PrimitiveComponent | null {
     if (this.isPrimitiveContainer) return this
     return this.parent?.getPrimitiveContainer?.() ?? null
+  }
+
+  /** Resolve mounting intent from the container owning this primitive. */
+  _getIsSmt(): boolean {
+    const container = this.getPrimitiveContainer()
+    return container && container !== this ? container._getIsSmt() : true
   }
 
   /**
@@ -1318,9 +1326,16 @@ export abstract class PrimitiveComponent<
         this,
         cssSelectOptionsInsideSubcircuit,
       )
-      result = allMatching.find(
+      const matchingComponents = allMatching.filter(
         (n) => n.lowercaseComponentName === options.type,
-      ) as T | null
+      )
+      if (options.type === "port") {
+        assertUnambiguousPhysicalPortSelection(
+          matchingComponents as Port[],
+          selectorRaw,
+        )
+      }
+      result = (matchingComponents[0] ?? null) as T | null
     }
 
     if (!options?.type) {
@@ -1332,6 +1347,17 @@ export abstract class PrimitiveComponent<
     }
 
     if (result) {
+      if (
+        !options?.type &&
+        (result as unknown as PrimitiveComponent).componentName === "Port"
+      ) {
+        assertUnambiguousPhysicalPortSelection(
+          this.selectAll(selectorRaw).filter(
+            (component) => component.componentName === "Port",
+          ) as Port[],
+          selectorRaw,
+        )
+      }
       this._cachedSelectOneQueries.set(selectorRaw, result as any)
       return result
     }

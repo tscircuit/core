@@ -1,4 +1,9 @@
-import { getBoundsOfPcbElements } from "@tscircuit/circuit-json-util"
+import {
+  getPlatedHolePolygon,
+  getSmtPadPolygon,
+  placePolygon,
+} from "@tscircuit/circuit-json-util"
+import type { Bounds } from "@tscircuit/math-utils"
 import {
   type PartsEngine,
   type SupplierName,
@@ -10,9 +15,8 @@ import {
   source_part_not_found_warning,
   supplier_footprint_mismatch_warning,
 } from "circuit-json"
-import type { NormalComponent } from "./NormalComponent"
-import type { Bounds } from "@tscircuit/math-utils"
 import { fetchPartCircuitJsonWithoutDatasheet } from "lib/utils/fetch-part-circuit-json-with-datasheet"
+import type { NormalComponent } from "./NormalComponent"
 
 const SUPPLIER_FOOTPRINT_IOU_WARNING_THRESHOLD = 0.8
 
@@ -24,9 +28,6 @@ type SupplierPartCandidate = {
 const supplierNames = supplierProps.shape.supplierPartNumbers.unwrap().keySchema
   .options satisfies SupplierName[]
 
-const isCopperElement = (elm: AnyCircuitElement) =>
-  elm.type === "pcb_smtpad" || elm.type === "pcb_plated_hole"
-
 const isValidBounds = (bounds: Bounds) =>
   Number.isFinite(bounds.minX) &&
   Number.isFinite(bounds.minY) &&
@@ -35,11 +36,34 @@ const isValidBounds = (bounds: Bounds) =>
   bounds.maxX > bounds.minX &&
   bounds.maxY > bounds.minY
 
-const getCopperBounds = (elements: AnyCircuitElement[]): Bounds | null => {
-  const copperElements = elements.filter(isCopperElement)
-  if (copperElements.length === 0) return null
-
-  const bounds = getBoundsOfPcbElements(copperElements)
+/**
+ * Bounds of copper points in mm (+X right, +Y up), with board-space placement
+ * rotation removed. Translation and layer reflection do not affect centered IoU.
+ */
+const getCopperBounds = (
+  elements: AnyCircuitElement[],
+  ccwRotationDegrees = 0,
+): Bounds | null => {
+  const bounds: Bounds = {
+    minX: Infinity,
+    minY: Infinity,
+    maxX: -Infinity,
+    maxY: -Infinity,
+  }
+  for (const element of elements) {
+    if (element.type !== "pcb_smtpad" && element.type !== "pcb_plated_hole")
+      continue
+    // SMT pads encode rotation; polygon plated holes may need the component rotation fallback.
+    const polygon =
+      element.type === "pcb_smtpad"
+        ? getSmtPadPolygon(element)
+        : getPlatedHolePolygon(element, ccwRotationDegrees)
+    const box = placePolygon(polygon, { x: 0, y: 0 }, -ccwRotationDegrees).box
+    bounds.minX = Math.min(bounds.minX, box.xmin)
+    bounds.minY = Math.min(bounds.minY, box.ymin)
+    bounds.maxX = Math.max(bounds.maxX, box.xmax)
+    bounds.maxY = Math.max(bounds.maxY, box.ymax)
+  }
   if (!isValidBounds(bounds)) return null
   return bounds
 }
@@ -127,7 +151,11 @@ export function NormalComponent_doInitialSupplierFootprintMismatchWarning(
       pcb_component_id: component.pcb_component_id,
     }),
   ] as AnyCircuitElement[]
-  const localBounds = getCopperBounds(localCopperElements)
+  const pcbComponent = db.pcb_component.get(component.pcb_component_id)!
+  const localBounds = getCopperBounds(
+    localCopperElements,
+    pcbComponent.rotation,
+  )
   if (!localBounds) return
 
   component._hasStartedSupplierFootprintMismatchWarningCheck = true
