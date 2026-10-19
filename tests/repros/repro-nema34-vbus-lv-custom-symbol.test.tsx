@@ -11,11 +11,11 @@ circuit.add(
     <net name="VBUS_LV" isPowerNet />
     <net name="PD_VBUS" isPowerNet />
     <net name="EPR_BLK_GATE" isPowerNet={false} />
+    {/* Keep the source facing down to exercise the upward rail's detour. */}
     <BSS123LT1G
       name="Q1"
       schX={5}
       schY={-0.5}
-      schRotation={90}
       connections={{
         gate: "net.EPR_BLK_GATE",
         source: "net.VBUS_LV",

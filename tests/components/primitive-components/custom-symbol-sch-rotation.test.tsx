@@ -3,7 +3,7 @@ import { Fragment } from "react"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { BSS123LT1G } from "tests/repros/assets/nema34-vbus-lv/bss123lt1g"
 
-test("custom MOSFET schRotation reproduction with connected nets", async () => {
+test("schRotation rotates custom MOSFET artwork, terminals and connected nets", async () => {
   const { circuit } = getTestFixture({ platform: { pcbDisabled: true } })
   const rotations = [0, 90, 180, 270, -90, 450]
 
@@ -39,8 +39,6 @@ test("custom MOSFET schRotation reproduction with connected nets", async () => {
   )
   await circuit.renderUntilSettled()
 
-  // Reproduces #4697: every MOSFET stays gate-left, drain-up, source-down
-  // despite the requested rotation. The fix PR updates this same snapshot.
   expect(circuit).toMatchSchematicSnapshot(import.meta.path, {
     grid: false,
     width: 1600,
