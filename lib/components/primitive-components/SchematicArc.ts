@@ -71,11 +71,17 @@ export class SchematicArc extends PrimitiveComponent<typeof schematicArcProps> {
       x: arc.center.x + arc.radius,
       y: arc.center.y,
     })
-    const newRadius = Math.abs(edgePoint.x - newCenter.x)
+    const newRadius = Math.hypot(
+      edgePoint.x - newCenter.x,
+      edgePoint.y - newCenter.y,
+    )
+    const rotation = (Math.atan2(transform.b, transform.a) * 180) / Math.PI
 
     db.schematic_arc.update(this.schematic_arc_id, {
       center: { x: newCenter.x, y: newCenter.y },
       radius: newRadius,
+      start_angle_degrees: arc.start_angle_degrees + rotation,
+      end_angle_degrees: arc.end_angle_degrees + rotation,
     })
   }
 }
