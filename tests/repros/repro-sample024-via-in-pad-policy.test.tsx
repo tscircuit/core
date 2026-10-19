@@ -1,8 +1,6 @@
 import { expect, test } from "bun:test"
 import { pcb_board } from "circuit-json"
-import { convertCircuitJsonToPcbSvg } from "circuit-to-svg"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
-import { stackSvgsVertically } from "stack-svgs"
 import boardData from "tests/fixtures/assets/sample024-board-via-policy.json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
@@ -103,41 +101,12 @@ test("Sample024 explicitly allows via-in-pad in Circuit JSON", async () => {
   })
   expect(simpleRouteJson.allowViaInPad).toBeUndefined()
 
-  const snapshot = `<svg xmlns="http://www.w3.org/2000/svg" width="900" height="210" viewBox="0 0 900 210">
-    <rect width="900" height="210" fill="#111827" />
-    <g font-family="Arial, sans-serif" fill="#e5e7eb">
-      <text x="28" y="38" font-size="23" font-weight="bold">PMP22650: via-in-pad policy conversion</text>
-      <text x="28" y="68" font-size="15">The imported board allows vias in pads. Missing SRJ policy defaults to false.</text>
-      <g font-size="16" fill="#9ca3af">
-        <text x="28" y="110">Source policy</text>
-        <text x="320" y="110">SRJ allowViaInPad</text>
-        <text x="620" y="110">Router flag (?? false)</text>
-      </g>
-      <line x1="28" y1="126" x2="872" y2="126" stroke="#374151" />
-      <g font-size="18">
-        <text x="28" y="159">${importedBoard.is_via_in_pad_allowed}</text>
-        <text x="320" y="159" fill="${simpleRouteJson.allowViaInPad === undefined ? "#fbbf24" : "#34d399"}">${simpleRouteJson.allowViaInPad ?? "not emitted"}</text>
-        <text x="620" y="159">${simpleRouteJson.allowViaInPad ?? false}</text>
-      </g>
-      <text x="28" y="195" font-size="14" fill="#9ca3af">Source: dataset-srj24 / sample024 / pcb_board</text>
-    </g>
-  </svg>`
-
-  const comparison = stackSvgsVertically(
-    [
-      convertCircuitJsonToPcbSvg(circuitJson, {
-        width: 900,
-        height: 460,
-        layer: "top",
-        backgroundColor: "#111827",
-        includeVersion: false,
-        shouldDrawRatsNest: false,
-      }),
-      snapshot,
-    ],
-    { gap: 16, normalizeSize: false },
-  )
-  await expect(comparison).toMatchSvgSnapshot(import.meta.path, undefined, {
-    diffThresholdPercent: 0.01,
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
+    width: 900,
+    height: 460,
+    layer: "top",
+    backgroundColor: "#111827",
+    includeVersion: false,
+    shouldDrawRatsNest: false,
   })
 })
