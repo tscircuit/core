@@ -16,7 +16,7 @@ test("source_refdes_convention_warning is emitted for mismatched ftype refdes pr
 
   const resistor = circuit.db.source_component.getWhere({ name: "C1" })!
   const diode = circuit.db.source_component.getWhere({ name: "R1" })!
-  const warnings = (circuit.db as any).source_refdes_convention_warning.list()
+  const warnings = circuit.db.source_refdes_convention_warning.list()
 
   expect(warnings).toHaveLength(2)
   expect(warnings).toContainEqual(
@@ -50,4 +50,51 @@ test("source_refdes_convention_warning is emitted for mismatched ftype refdes pr
     warning_type: "source_refdes_convention_warning",
   })
   expect(warnings[0].source_refdes_convention_warning_id).toBeDefined()
+})
+
+test.failing(
+  "multi-letter prefixes that start with the expected letter should not emit warning",
+  () => {
+    const { circuit } = getTestFixture()
+
+    circuit.add(
+      <board>
+        <resistor name="RV1" resistance="10k" />
+        <capacitor name="CBAT" capacitance="100nF" />
+        <resistor name="RN2" resistance="10k" />
+        <capacitor name="C5" capacitance="100nF" />
+        <resistor name="R6" resistance="10k" />
+      </board>,
+    )
+
+    circuit.render()
+
+    const warnings = circuit.db.source_refdes_convention_warning.list()
+
+    // RV1/RN2 start with R, CBAT/C5 start with C, R6 starts with R. None warn.
+    expect(warnings).toHaveLength(0)
+  },
+)
+
+test("a genuinely mismatched prefix still warns even with multi-letter names", () => {
+  const { circuit } = getTestFixture()
+
+  circuit.add(
+    <board>
+      <resistor name="CV1" resistance="10k" />
+    </board>,
+  )
+
+  circuit.render()
+
+  const warnings = circuit.db.source_refdes_convention_warning.list()
+
+  expect(warnings).toHaveLength(1)
+  expect(warnings[0]).toMatchObject({
+    warning_type: "source_refdes_convention_warning",
+    refdes: "CV1",
+    source_component_ftype: "simple_resistor",
+    expected_prefixes: ["R"],
+    actual_prefix: "CV",
+  })
 })
