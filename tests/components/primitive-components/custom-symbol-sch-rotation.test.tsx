@@ -1,66 +1,49 @@
 import { expect, test } from "bun:test"
 import { Fragment } from "react"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { BSS123LT1G } from "tests/repros/assets/nema34-vbus-lv/bss123lt1g"
 
-test("custom symbol schRotation reproduction", () => {
-  const { circuit } = getTestFixture()
-  const cases = [0, 90, 180, 270, -90, 450].map((rotation) => ({ rotation }))
+test("custom MOSFET schRotation reproduction with connected nets", async () => {
+  const { circuit } = getTestFixture({ platform: { pcbDisabled: true } })
+  const rotations = [0, 90, 180, 270, -90, 450]
 
   circuit.add(
-    <board width={20} height={20} routingDisabled>
+    <board>
       <group schX={2} schY={3}>
-        {cases.map(({ rotation }, i) => (
-          <chip
-            key={rotation}
-            name={`S${rotation}`}
-            schX={i * 2}
-            schY={1}
-            schRotation={rotation}
-            footprint={
-              <footprint>
-                <smtpad shape="rect" width={1} height={1} portHints={["1"]} />
-              </footprint>
-            }
-            symbol={
-              <symbol>
-                <schematicpath
-                  points={[
-                    { x: -0.5, y: -0.3 },
-                    { x: 0.3, y: -0.3 },
-                    { x: 0.5, y: 0 },
-                    { x: 0.3, y: 0.3 },
-                    { x: -0.5, y: 0.3 },
-                    { x: -0.5, y: -0.3 },
-                  ]}
-                  strokeWidth={0.05}
-                />
-                <port
-                  name="1"
-                  direction="right"
-                  schX={0.5}
-                  schY={0}
-                  schStemLength={0.2}
-                />
-              </symbol>
-            }
-          />
-        ))}
-        {cases.map(({ rotation }, i) => (
+        {rotations.map((rotation, i) => (
           <Fragment key={rotation}>
+            <net name={`GATE_${i + 1}`} isPowerNet={false} />
+            <net name={`DRAIN_${i + 1}`} isPowerNet={false} />
+            <net name={`SOURCE_${i + 1}`} isPowerNet={false} />
+            <BSS123LT1G
+              name={`Q${i + 1}`}
+              schX={(i % 3) * 7}
+              schY={-Math.floor(i / 3) * 7}
+              schRotation={rotation}
+              connections={{
+                gate: `net.GATE_${i + 1}`,
+                drain: `net.DRAIN_${i + 1}`,
+                source: `net.SOURCE_${i + 1}`,
+              }}
+            />
             <schematictext
-              schX={i * 2}
-              schY={-0.2}
-              text={`${rotation} deg`}
-              fontSize={0.2}
+              schX={(i % 3) * 7}
+              schY={-Math.floor(i / 3) * 7 - 3}
+              text={`schRotation = ${rotation} deg`}
+              fontSize={0.26}
             />
           </Fragment>
         ))}
       </group>
     </board>,
   )
-  circuit.render()
+  await circuit.renderUntilSettled()
 
-  // Reproduces #4697: every arrow points right despite the rotation below it.
-  // The fix PR updates this snapshot to show the requested rotations.
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+  // Reproduces #4697: every MOSFET stays gate-left, drain-up, source-down
+  // despite the requested rotation. The fix PR updates this same snapshot.
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path, {
+    grid: false,
+    width: 1600,
+    height: 1000,
+  })
 })
