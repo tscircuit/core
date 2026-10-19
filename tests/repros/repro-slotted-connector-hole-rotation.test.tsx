@@ -2,13 +2,13 @@ import { expect, test } from "bun:test"
 import { Fragment } from "react"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("mounting slots stay horizontal when their connector rotates 90 degrees", async () => {
+test("mounting slots rotate with their connector and silkscreen guides", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
     <board width={60} height={28} routingDisabled>
       <pcbnotetext
-        text="SLOTTED CONNECTOR: PADS + GUIDES ROTATE, SLOTS DO NOT"
+        text="SLOTTED CONNECTOR: PADS, GUIDES AND SLOTS ROTATE TOGETHER"
         pcbY={12}
         fontSize={0.7}
       />
@@ -61,6 +61,18 @@ test("mounting slots stay horizontal when their connector rotates 90 degrees", a
   )
 
   circuit.render()
+  const holes = circuit.db.pcb_hole.list()
+  expect(holes).toHaveLength(4)
+  expect(holes.slice(0, 2).map((hole) => hole.hole_shape)).toEqual([
+    "pill",
+    "pill",
+  ])
+  for (const hole of holes.slice(2)) {
+    expect(hole.hole_shape).toBe("rotated_pill")
+    if (hole.hole_shape !== "rotated_pill")
+      throw new Error("Expected rotated slot")
+    expect(hole.ccw_rotation).toBeCloseTo(90)
+  }
   await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
     width: 1200,
     height: 650,

@@ -1,6 +1,9 @@
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { holeProps } from "@tscircuit/props"
 import { distance } from "circuit-json"
+import { normalizeDegrees } from "@tscircuit/math-utils"
+import { decomposeTSR } from "transformation-matrix"
+import { getAxisAlignedSizeFromRotatedRect } from "lib/utils/pcb/get-axis-aligned-size-from-rotated-rect"
 import type {
   PCBHole,
   PcbHolePill,
@@ -59,8 +62,20 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
     this.emitSolderMaskMarginWarning(isCoveredWithSolderMask, soldermaskMargin)
 
     if (props.shape === "pill") {
-      // Check if rotation is specified to determine pill type
-      if (props.pcbRotation && props.pcbRotation !== 0) {
+      // Match Cutout.doInitialPcbPrimitiveRender's footprint-to-board transform:
+      // points use board-world mm (+X right, +Y up); this direction omits translation.
+      const globalTransform = this._computePcbGlobalTransformBeforeLayout()
+      const isReflected =
+        globalTransform.a * globalTransform.d -
+          globalTransform.b * globalTransform.c <
+        0
+      const { rotation } = decomposeTSR(globalTransform, false, isReflected)
+      const rotationDegrees = normalizeDegrees((rotation.angle * 180) / Math.PI)
+      const resolvedRotation =
+        Math.min(rotationDegrees, 360 - rotationDegrees) < 1e-8
+          ? 0
+          : rotationDegrees
+      if (resolvedRotation !== 0) {
         const inserted_hole = db.pcb_hole.insert({
           pcb_component_id,
           type: "pcb_hole",
@@ -69,7 +84,7 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
           hole_height: props.height,
           x: position.x,
           y: position.y,
-          ccw_rotation: props.pcbRotation,
+          ccw_rotation: resolvedRotation,
           soldermask_margin: soldermaskMargin,
           is_covered_with_solder_mask: isCoveredWithSolderMask,
           subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
@@ -149,15 +164,22 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
   } {
     const { db } = this.root!
     const hole = db.pcb_hole.get(this.pcb_hole_id!)!
-    const size = this.getPcbSize()
+    const size =
+      hole.hole_shape === "rotated_pill"
+        ? getAxisAlignedSizeFromRotatedRect({
+            width: hole.hole_width,
+            height: hole.hole_height,
+            ccwRotationDegrees: hole.ccw_rotation,
+          })
+        : this.getPcbSize()
 
     return {
       center: { x: hole.x, y: hole.y },
       bounds: {
         left: hole.x - size.width / 2,
-        top: hole.y - size.height / 2,
+        top: hole.y + size.height / 2,
         right: hole.x + size.width / 2,
-        bottom: hole.y + size.height / 2,
+        bottom: hole.y - size.height / 2,
       },
       width: size.width,
       height: size.height,
