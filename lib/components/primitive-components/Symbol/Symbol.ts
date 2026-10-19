@@ -68,6 +68,17 @@ export class SymbolComponent
     return this.schematicSymbolBoundsInSymbolLocalCoordinateSpace ?? null
   }
 
+  /**
+   * The parent component's schRotation as a counter-clockwise quarter turn
+   * (0, 90, 180 or 270). Other angles are not applied to custom symbols.
+   */
+  getSchematicRotationDegrees(): number {
+    const rotation =
+      this.getParentNormalComponent()?._parsedProps?.schRotation ?? 0
+    if (typeof rotation !== "number" || rotation % 90 !== 0) return 0
+    return ((rotation % 360) + 360) % 360
+  }
+
   getUserCoordinateToResizedSymbolTransform(): Matrix | null {
     if (this.userCoordinateToResizedSymbolTransformMat) {
       return this.userCoordinateToResizedSymbolTransformMat

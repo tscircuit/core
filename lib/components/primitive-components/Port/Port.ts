@@ -850,6 +850,23 @@ export class Port extends PrimitiveComponent<typeof portProps> {
                 ? "bottom"
                 : this.facingDirection,
         })
+      } else if (schPort.side_of_component && rotation !== 0) {
+        const rotatedFacing = rotateDirection(
+          schPort.side_of_component === "top"
+            ? "up"
+            : schPort.side_of_component === "bottom"
+              ? "down"
+              : schPort.side_of_component,
+          rotation,
+        )
+        db.schematic_port.update(this.schematic_port_id, {
+          side_of_component:
+            rotatedFacing === "up"
+              ? "top"
+              : rotatedFacing === "down"
+                ? "bottom"
+                : rotatedFacing,
+        })
       }
       db.schematic_port.update(this.schematic_port_id, {
         center: newCenter,

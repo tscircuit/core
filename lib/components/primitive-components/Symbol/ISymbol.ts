@@ -44,4 +44,10 @@ export interface ISymbol {
    * Check if this symbol has explicit width/height that requires resizing.
    */
   hasExplicitSize(): boolean
+
+  /**
+   * The parent component's schRotation as a counter-clockwise quarter turn
+   * (0, 90, 180 or 270), composed into the transform above.
+   */
+  getSchematicRotationDegrees(): number
 }
