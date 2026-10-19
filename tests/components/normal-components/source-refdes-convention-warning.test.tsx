@@ -53,7 +53,7 @@ test("source_refdes_convention_warning is emitted for mismatched ftype refdes pr
 })
 
 test.failing(
-  "multi-letter prefixes that start with the expected letter do not warn",
+  "multi-letter prefixes that start with the expected letter should not emit warning",
   () => {
     const { circuit } = getTestFixture()
 
