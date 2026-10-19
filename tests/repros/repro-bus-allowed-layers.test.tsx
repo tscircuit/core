@@ -1,4 +1,5 @@
 import { beforeAll, expect, test } from "bun:test"
+import { convertCircuitJsonToPcbSvg } from "circuit-to-svg"
 import { createAutoroutingPhaseIoStack } from "tests/fixtures/create-autorouting-phase-io-stack"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
@@ -54,7 +55,7 @@ beforeAll(async () => {
       <pcbnotetext
         pcbY={5.5}
         fontSize={0.6}
-        text="View: inner1 (no signal allowed)"
+        text="Inner layers reserved for planes"
       />
     </board>,
   )
@@ -72,16 +73,24 @@ beforeAll(async () => {
   expect(circuit.db.pcb_trace.list()).toHaveLength(1)
   expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
 
-  // Keep snapshot failures outside test.failing so they cannot hide the bug.
+  // The reserved inner layer must contain no signal wire.
   await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
     layer: "inner1",
     showDebugObjects: false,
     showSolderMask: false,
     hiddenLayerOpacity: 0.2,
   })
+  await expect(
+    convertCircuitJsonToPcbSvg(circuit.getCircuitJson(), {
+      layer: "bottom",
+      showDebugObjects: false,
+      showSolderMask: false,
+      hiddenLayerOpacity: 0.2,
+    }),
+  ).toMatchSvgSnapshot(import.meta.path, "repro-bus-allowed-layers-bottom")
 })
 
-test.failing("bus pcbAllowedLayers keeps signal wires off inner layers", () => {
+test("bus pcbAllowedLayers keeps signal wires off inner layers", () => {
   const wireLayers = new Set(
     circuit.db.pcb_trace
       .list()
