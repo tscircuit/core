@@ -1,0 +1,118 @@
+[
+  {
+    "type": "pcb_smtpad",
+    "pcb_smtpad_id": "pcb_smtpad_0",
+    "pcb_component_id": "pcb_component_0",
+    "x": 3.15,
+    "y": 0,
+    "width": 2,
+    "height": 3.8,
+    "layer": "top",
+    "pcb_port_id": "pcb_port_0",
+    "port_hints": ["2"],
+    "shape": "rect"
+  },
+  {
+    "type": "pcb_smtpad",
+    "pcb_smtpad_id": "pcb_smtpad_1",
+    "pcb_component_id": "pcb_component_0",
+    "x": -3.15,
+    "y": 0,
+    "width": 2,
+    "height": 1.5,
+    "layer": "top",
+    "pcb_port_id": "pcb_port_1",
+    "port_hints": ["2"],
+    "shape": "rect"
+  },
+  {
+    "type": "pcb_smtpad",
+    "pcb_smtpad_id": "pcb_smtpad_2",
+    "pcb_component_id": "pcb_component_0",
+    "x": -3.15,
+    "y": -2.3,
+    "width": 2,
+    "height": 1.5,
+    "layer": "top",
+    "pcb_port_id": "pcb_port_2",
+    "port_hints": ["3"],
+    "shape": "rect"
+  },
+  {
+    "type": "pcb_smtpad",
+    "pcb_smtpad_id": "pcb_smtpad_3",
+    "pcb_component_id": "pcb_component_0",
+    "x": -3.15,
+    "y": 2.3,
+    "width": 2,
+    "height": 1.5,
+    "layer": "top",
+    "pcb_port_id": "pcb_port_3",
+    "port_hints": ["1"],
+    "shape": "rect"
+  },
+  {
+    "type": "pcb_courtyard_outline",
+    "pcb_courtyard_outline_id": "pcb_courtyard_outline_0",
+    "pcb_component_id": "pcb_component_0",
+    "layer": "top",
+    "outline": [
+      {
+        "x": 4.4,
+        "y": 3.6
+      },
+      {
+        "x": -4.4,
+        "y": 3.6
+      }
+    ]
+  },
+  {
+    "type": "pcb_courtyard_outline",
+    "pcb_courtyard_outline_id": "pcb_courtyard_outline_1",
+    "pcb_component_id": "pcb_component_0",
+    "layer": "top",
+    "outline": [
+      {
+        "x": 4.4,
+        "y": -3.6
+      },
+      {
+        "x": 4.4,
+        "y": 3.6
+      }
+    ]
+  },
+  {
+    "type": "pcb_courtyard_outline",
+    "pcb_courtyard_outline_id": "pcb_courtyard_outline_2",
+    "pcb_component_id": "pcb_component_0",
+    "layer": "top",
+    "outline": [
+      {
+        "x": -4.4,
+        "y": -3.6
+      },
+      {
+        "x": 4.4,
+        "y": -3.6
+      }
+    ]
+  },
+  {
+    "type": "pcb_courtyard_outline",
+    "pcb_courtyard_outline_id": "pcb_courtyard_outline_3",
+    "pcb_component_id": "pcb_component_0",
+    "layer": "top",
+    "outline": [
+      {
+        "x": -4.4,
+        "y": 3.6
+      },
+      {
+        "x": -4.4,
+        "y": -3.6
+      }
+    ]
+  }
+]
