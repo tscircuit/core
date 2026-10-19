@@ -16,7 +16,7 @@ test("source_refdes_convention_warning is emitted for mismatched ftype refdes pr
 
   const resistor = circuit.db.source_component.getWhere({ name: "C1" })!
   const diode = circuit.db.source_component.getWhere({ name: "R1" })!
-  const warnings = (circuit.db as any).source_refdes_convention_warning.list()
+  const warnings = circuit.db.source_refdes_convention_warning.list()
 
   expect(warnings).toHaveLength(2)
   expect(warnings).toContainEqual(
@@ -69,7 +69,7 @@ test.failing(
 
     circuit.render()
 
-    const warnings = (circuit.db as any).source_refdes_convention_warning.list()
+    const warnings = circuit.db.source_refdes_convention_warning.list()
 
     // RV1/RN2 start with R, CBAT/C5 start with C, R6 starts with R. None warn.
     expect(warnings).toHaveLength(0)
@@ -87,7 +87,7 @@ test("a genuinely mismatched prefix still warns even with multi-letter names", (
 
   circuit.render()
 
-  const warnings = (circuit.db as any).source_refdes_convention_warning.list()
+  const warnings = circuit.db.source_refdes_convention_warning.list()
 
   expect(warnings).toHaveLength(1)
   expect(warnings[0]).toMatchObject({
