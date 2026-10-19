@@ -87,7 +87,9 @@ beforeAll(async () => {
       showSolderMask: false,
       hiddenLayerOpacity: 0.2,
     }),
-  ).toMatchSvgSnapshot(import.meta.path, "repro-bus-allowed-layers-bottom")
+  ).toMatchSvgSnapshot(import.meta.path, "repro-bus-allowed-layers-bottom", {
+    diffThresholdPercent: 0,
+  })
 })
 
 test("bus pcbAllowedLayers keeps signal wires off inner layers", () => {
