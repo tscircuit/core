@@ -712,11 +712,23 @@ export const createComponentsFromCircuitJson = (
         components.push(silkscreenText)
       }
     } else if (elm.type === "pcb_trace") {
-      components.push(
-        new PcbTrace({
-          route: elm.route,
-        }),
-      )
+      const pcbTrace = new PcbTrace({ route: elm.route })
+      for (const [routeIndex, point] of elm.route.entries()) {
+        if (point.route_type !== "via") continue
+        if (
+          circuitJson.some(
+            (via) =>
+              via.type === "pcb_via" &&
+              via.x === point.x &&
+              via.y === point.y &&
+              via.layers.includes(point.from_layer) &&
+              via.layers.includes(point.to_layer),
+          )
+        ) {
+          pcbTrace._materializedRouteViaIndices.add(routeIndex)
+        }
+      }
+      components.push(pcbTrace)
     } else if (elm.type === "pcb_via") {
       const via = pcb_via.parse(elm)
       const layers = elm.layers ?? []
