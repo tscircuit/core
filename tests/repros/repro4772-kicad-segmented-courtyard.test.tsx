@@ -1,7 +1,6 @@
 import { expect, test } from "bun:test"
-import { convertCircuitJsonToPcbSvg } from "circuit-to-svg"
-import { stackSvgsVertically } from "stack-svgs"
 import { createKicadSegmentedCourtyardCircuit } from "./fixtures/kicad-segmented-courtyard"
+import { renderKicadCourtyardComparison } from "./fixtures/render-kicad-courtyard-comparison"
 
 test("four KiCad courtyard segments block all routing while the same closed boundary routes", async () => {
   const segmented = createKicadSegmentedCourtyardCircuit()
@@ -60,23 +59,10 @@ test("four KiCad courtyard segments block all routing while the same closed boun
     segmented.circuit.db.pcb_smtpad.list(),
   )
 
-  const label = (text: string) =>
-    `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="40"><rect width="800" height="40" fill="#151515"/><text x="400" y="26" text-anchor="middle" font-family="Arial" font-size="18" fill="white">${text}</text></svg>`
   await expect(
-    stackSvgsVertically(
-      [
-        label("Four courtyard segments: placement throws; ALL routing skipped"),
-        convertCircuitJsonToPcbSvg(segmented.circuit.getCircuitJson(), {
-          showCourtyards: true,
-        }),
-        label(
-          "Same pads and boundary as one polygon: placement succeeds; routing runs",
-        ),
-        convertCircuitJsonToPcbSvg(closed.circuit.getCircuitJson(), {
-          showCourtyards: true,
-        }),
-      ],
-      { gap: 8, normalizeSize: false },
+    renderKicadCourtyardComparison(
+      segmented.circuit.getCircuitJson(),
+      closed.circuit.getCircuitJson(),
     ),
   ).toMatchSvgSnapshot(import.meta.path)
 }, 30_000)
