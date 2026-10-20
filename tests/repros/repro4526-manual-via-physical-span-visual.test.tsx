@@ -43,6 +43,10 @@ test("saved blind via spans are preserved and reported when disabled", async () 
   const pcbTrace = circuit.db.pcb_trace.list()[0]!
   const pcbTraceErrors = circuit.db.pcb_trace_error.list()
   const expectedPathEntryIndices = [2, 5]
+  const expectedTransitions = [
+    ["top", "inner2"],
+    ["inner2", "top"],
+  ]
 
   // The board policy must report the saved blind vias, preserving each
   // barrel's original span instead of expanding it to reach the bottom layer.
@@ -62,14 +66,13 @@ test("saved blind via spans are preserved and reported when disabled", async () 
     }),
   ])
   const message = pcbTraceErrors[0]!.message
-  const routeVias = pcbTrace.route.filter((point) => point.route_type === "via")
   for (const [viaIndex, via] of vias.entries()) {
-    const routeVia = routeVias[viaIndex]!
+    const [fromLayer, toLayer] = expectedTransitions[viaIndex]!
     expect(via).not.toHaveProperty("from_layer")
     expect(via).not.toHaveProperty("to_layer")
     expect(message).toContain(
       `pcbPath[${expectedPathEntryIndices[viaIndex]}]: blind via ` +
-        `(fromLayer: "${routeVia.from_layer}", toLayer: "${routeVia.to_layer}") ` +
+        `(fromLayer: "${fromLayer}", toLayer: "${toLayer}") ` +
         `spanning [${via.layers.join(", ")}]`,
     )
   }

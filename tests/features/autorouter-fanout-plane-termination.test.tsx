@@ -188,12 +188,17 @@ test("fanout infers plane nets from copper pours", async () => {
     },
   ])
   expect(
-    circuit.db.pcb_trace
-      .list()
-      .some((trace) =>
-        trace.route.some(
-          (point) => point.route_type === "via" && point.to_layer === "inner1",
-        ),
+    circuit.db.pcb_trace.list().some((trace) =>
+      trace.route.some(
+        (point) =>
+          point.route_type === "via" &&
+          point.to_layer === "inner1" &&
+          circuit.db.pcb_via.getWhere({
+            pcb_trace_id: trace.pcb_trace_id,
+            x: point.x,
+            y: point.y,
+          }),
       ),
+    ),
   ).toBe(true)
 })
