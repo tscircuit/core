@@ -120,8 +120,12 @@ export class CadModel extends PrimitiveComponent<typeof cadmodelProps> {
 
     let cadComponentPlacement = {
       position: {
-        x: bounds.center.x + Number(positionOffset.x),
-        y: bounds.center.y + Number(positionOffset.y),
+        x:
+          (pcb_component?.footprint_origin ?? bounds.center).x +
+          Number(positionOffset.x),
+        y:
+          (pcb_component?.footprint_origin ?? bounds.center).y +
+          Number(positionOffset.y),
         z:
           (layer === "bottom" ? -boardThickness / 2 : boardThickness / 2) +
           (layer === "bottom" ? -zOffsetFromSurface : zOffsetFromSurface) +
