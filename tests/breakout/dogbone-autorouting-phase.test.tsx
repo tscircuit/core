@@ -77,7 +77,20 @@ test("dogbone autorouting phase uses SRJ and feeds the following router", async 
   expect(circuit.db.pcb_via.list()).toHaveLength(1)
   expect(circuit.db.pcb_trace.list().length).toBeGreaterThan(1)
   const exit = circuit.db.pcb_via.list()[0]!
-  expect(exit.to_layer).toBe("bottom")
+  expect(exit.layers).toEqual(["top", "bottom"])
+  expect(exit).not.toHaveProperty("from_layer")
+  expect(exit).not.toHaveProperty("to_layer")
+  expect(
+    circuit.db.pcb_trace.list().flatMap((trace) => trace.route),
+  ).toContainEqual(
+    expect.objectContaining({
+      route_type: "via",
+      x: exit.x,
+      y: exit.y,
+      from_layer: "top",
+      to_layer: "bottom",
+    }),
+  )
   expect(
     circuit.db.pcb_trace
       .list()

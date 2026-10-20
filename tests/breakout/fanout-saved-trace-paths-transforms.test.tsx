@@ -87,11 +87,20 @@ test("saved fanout routes follow placement and preserve physical via layers", as
         .list()
         .find((via) => via.pcb_trace_id === saved.pcb_trace_id)!
       expect(via).toMatchObject({
-        from_layer: layer,
-        to_layer: exitLayer,
+        layers: ["top", "bottom"],
         hole_diameter: 0.3,
         outer_diameter: 0.6,
       })
+      expect(via).not.toHaveProperty("from_layer")
+      expect(via).not.toHaveProperty("to_layer")
+      expect(saved.route[2]).toMatchObject({
+        route_type: "via",
+        x: via.x,
+        y: via.y,
+        from_layer: layer,
+        to_layer: exitLayer,
+      })
+      expect(saved.route[2]).not.toHaveProperty("layers")
       expect(saved.route).toHaveLength(5)
       await expect(circuit).toMatchPcbSnapshot(
         import.meta.path.replace(".test.tsx", `-${layer}-${rotation}.test.tsx`),
