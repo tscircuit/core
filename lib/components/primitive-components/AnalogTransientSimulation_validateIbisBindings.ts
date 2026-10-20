@@ -10,7 +10,9 @@ export function AnalogTransientSimulation_validateIbisBindings(
   const subcircuit = simulation.getSubcircuit()
   const models = subcircuit
     .selectAll<IbisModel>("ibismodel")
-    .filter((model) => model.getSubcircuit() === subcircuit)
+    .filter(
+      (model) => !model.shouldBeRemoved && model.getSubcircuit() === subcircuit,
+    )
     .map(
       (model) =>
         simulation.root!.db.simulation_ibis_model.get(

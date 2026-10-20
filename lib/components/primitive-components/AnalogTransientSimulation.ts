@@ -17,6 +17,35 @@ export class AnalogTransientSimulation extends AnalogAnalysisSimulation<
     AnalogTransientSimulation_validateIbisBindings(this)
   }
 
+  updateSimulationSpiceEngineRender(): void {
+    this.doInitialSimulationSpiceEngineRender()
+  }
+
+  onPropsChange(): void {
+    this._markDirty("SimulationRender")
+  }
+
+  updateSimulationRender(): void {
+    this.insertSimulationExperiment()
+  }
+
+  private removeIbisPinStates(): void {
+    for (const state of this.root!.db.simulation_ibis_pin_state.list({
+      simulation_experiment_id: this.simulation_experiment_id,
+    })) {
+      this.root!.db.simulation_ibis_pin_state.delete(
+        state.simulation_ibis_pin_state_id,
+      )
+    }
+  }
+
+  removeSimulationRender(): void {
+    if (!this.simulation_experiment_id) return
+    this.removeIbisPinStates()
+    this.root!.db.simulation_experiment.delete(this.simulation_experiment_id)
+    this.simulation_experiment_id = null
+  }
+
   protected insertSimulationExperiment() {
     const { db } = this.root!
     const { duration, name, startTime, timePerStep, spiceOptions } =
@@ -41,16 +70,23 @@ export class AnalogTransientSimulation extends AnalogAnalysisSimulation<
         `Simulation "${name ?? "transient"}" assigns multiple states to the same physical pin.`,
       )
     }
-    const experiment = db.simulation_experiment.insert({
+    const experimentProps = {
       name: name ?? "spice_transient_analysis",
-      experiment_type: "spice_transient_analysis",
+      experiment_type: "spice_transient_analysis" as const,
       end_time_ms: duration,
       start_time_ms: startTime,
       time_per_step: timePerStep,
       spice_options: spiceOptions,
       spice_engine: this.getSpiceEngineName(),
       subcircuit_id: this.getSubcircuit().subcircuit_id!,
-    })
+    }
+    const experiment = this.simulation_experiment_id
+      ? db.simulation_experiment.update(
+          this.simulation_experiment_id,
+          experimentProps,
+        )
+      : db.simulation_experiment.insert(experimentProps)
+    if (this.simulation_experiment_id) this.removeIbisPinStates()
     for (const pin of pins) {
       db.simulation_ibis_pin_state.insert({
         simulation_experiment_id: experiment.simulation_experiment_id,

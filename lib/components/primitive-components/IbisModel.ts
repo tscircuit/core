@@ -2,6 +2,7 @@ import { ibisModelProps } from "@tscircuit/props"
 import type { SimulationIbisModel } from "circuit-json"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { IbisModel_getSimulationIbisModel } from "./IbisModel_getSimulationIbisModel"
+import type { AnalogTransientSimulation } from "./AnalogTransientSimulation"
 
 type SimulationIbisModelId = SimulationIbisModel["simulation_ibis_model_id"]
 
@@ -11,6 +12,20 @@ export class IbisModel extends PrimitiveComponent<typeof ibisModelProps> {
 
   get config() {
     return { componentName: "IbisModel", zodProps: ibisModelProps }
+  }
+
+  onPropsChange(): void {
+    this._markDirty("SimulationRender")
+  }
+
+  private markIbisBindingsDirty(): void {
+    const subcircuit = this.getSubcircuit()
+    for (const simulation of subcircuit.selectAll<AnalogTransientSimulation>(
+      "analogtransientsimulation",
+    )) {
+      if (simulation.getSubcircuit() === subcircuit)
+        simulation._markDirty("SimulationSpiceEngineRender")
+    }
   }
 
   doInitialSimulationRender(): void {
@@ -25,6 +40,7 @@ export class IbisModel extends PrimitiveComponent<typeof ibisModelProps> {
         this.root!.db.simulation_ibis_model.insert(
           model,
         ).simulation_ibis_model_id
+    this.markIbisBindingsDirty()
   }
 
   updateSimulationRender(): void {
@@ -35,5 +51,6 @@ export class IbisModel extends PrimitiveComponent<typeof ibisModelProps> {
     if (this.simulation_ibis_model_id)
       this.root!.db.simulation_ibis_model.delete(this.simulation_ibis_model_id)
     this.simulation_ibis_model_id = null
+    this.markIbisBindingsDirty()
   }
 }
