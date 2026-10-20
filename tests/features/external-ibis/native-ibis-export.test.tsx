@@ -60,11 +60,15 @@ test("native TSX exports physical IBIS bindings without fetching or running a so
       <analog.digitalstimulus
         name="data"
         simulationRef=".switching"
-        drives=".U1 > .DATA"
-        unitInterval="2ns"
+        sourcePinRef=".U1 > .DATA"
+        bitDuration="2ns"
         startTime="0ns"
         initialState={0}
-        pattern={{ type: "bits", bits: "010011", repeat: true }}
+        transmittedData={{
+          transmissionType: "bits",
+          bits: "010011",
+          repeat: true,
+        }}
       />
       <voltageprobe
         name="data-probe"
@@ -170,7 +174,7 @@ test("native TSX exports physical IBIS bindings without fetching or running a so
     switching.simulation_experiment_id,
   )
   expect(stimulus.source_port_id).toBe(driverPort.source_port_id)
-  expect(stimulus.unit_interval_ms).toBeCloseTo(0.000002, 14)
+  expect(stimulus.bit_duration_ms).toBeCloseTo(0.000002, 14)
   expect(stimulus.inverted).toBe(false)
   const probes = circuit.db.simulation_voltage_probe.list()
   expect(probes).toHaveLength(1)

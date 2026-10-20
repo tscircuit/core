@@ -31,11 +31,15 @@ test("traffic requires an explicitly enabled output in its own experiment", asyn
         <analog.digitalstimulus
           name="data"
           simulationRef=".run"
-          drives=".U1 > .pin1"
-          unitInterval="2ns"
+          sourcePinRef=".U1 > .pin1"
+          bitDuration="2ns"
           startTime="0ns"
           initialState={0}
-          pattern={{ type: "bits", bits: "01", repeat: true }}
+          transmittedData={{
+            transmissionType: "bits",
+            bits: "01",
+            repeat: true,
+          }}
         />
       </board>,
     )

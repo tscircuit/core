@@ -15,7 +15,7 @@ export function AnalogDigitalStimulus_getSimulationDigitalStimulus(
   })
   const port = resolveExternalSimulationPort({
     declaration,
-    selector: props.drives,
+    selector: props.sourcePinRef,
   })
   const experiment = simulation.getOrCreateSimulationExperiment()!
   if (props.startTime >= experiment.end_time_ms!)
@@ -52,10 +52,14 @@ export function AnalogDigitalStimulus_getSimulationDigitalStimulus(
     name: props.name,
     simulation_experiment_id: experiment.simulation_experiment_id,
     source_port_id: port.source_port_id!,
-    unit_interval_ms: props.unitInterval,
+    bit_duration_ms: props.bitDuration,
     start_time_ms: props.startTime,
     initial_state: props.initialState,
     inverted: props.inverted,
-    pattern: props.pattern,
+    transmission_pattern: {
+      transmission_type: props.transmittedData.transmissionType,
+      bits: props.transmittedData.bits,
+      repeat: props.transmittedData.repeat,
+    },
   }
 }

@@ -11,11 +11,11 @@ test("external measurements reject native experiments, duplicate traffic, and in
       <analog.digitalstimulus
         name="data"
         simulationRef=".run"
-        drives=".U1 > .pin1"
-        unitInterval="2ns"
+        sourcePinRef=".U1 > .pin1"
+        bitDuration="2ns"
         startTime="0ns"
         initialState={0}
-        pattern={{ type: "bits", bits: "01", repeat: true }}
+        transmittedData={{ transmissionType: "bits", bits: "01", repeat: true }}
       />
     </board>,
   )
@@ -39,11 +39,15 @@ test("external measurements reject native experiments, duplicate traffic, and in
           key={name}
           name={name}
           simulationRef=".run"
-          drives=".U1 > .pin1"
-          unitInterval="2ns"
+          sourcePinRef=".U1 > .pin1"
+          bitDuration="2ns"
           startTime="0ns"
           initialState={0}
-          pattern={{ type: "bits", bits: "01", repeat: true }}
+          transmittedData={{
+            transmissionType: "bits",
+            bits: "01",
+            repeat: true,
+          }}
         />
       ))}
     </board>,
