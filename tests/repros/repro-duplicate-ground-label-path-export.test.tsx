@@ -1,6 +1,5 @@
 import { expect, test } from "bun:test"
 import type { FanoutTracePath } from "@tscircuit/props"
-import type { Port } from "lib/components/primitive-components/Port"
 import type { AutoroutingEndEvent } from "lib/events"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
@@ -103,9 +102,7 @@ test("saved routes distinguish repeated pin labels and preserve unique labels", 
       expect(events[0]!.pcbTracePathsUnavailableReason).toBeUndefined()
       const paths = events[0]!.pcbTracePaths!
       expect(paths).toHaveLength(1)
-      const routedPort = circuit.selectOne<Port>(
-        `.J1 > port.pin${routedPinNumber}`,
-      )!
+      const routedPort = circuit.selectOne(`.J1 > port.pin${routedPinNumber}`)!
       const expectedPortName =
         pinLabels.pin1 === pinLabels.pin2
           ? `pin${routedPinNumber}`
