@@ -1,6 +1,6 @@
-import { NormalComponent } from "./NormalComponent"
 import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
 import { Port } from "../../primitive-components/Port"
+import { NormalComponent } from "./NormalComponent"
 
 export function NormalComponent_doInitialPcbComponentAnchorAlignment(
   component: NormalComponent<any, any>,
@@ -12,6 +12,8 @@ export function NormalComponent_doInitialPcbComponentAnchorAlignment(
   const pcbPositionAnchor = (component.props as any)?.pcbPositionAnchor
   if (!pcbPositionAnchor) return
   if (pcbX === undefined && pcbY === undefined) return
+
+  const targetPosition = component._getGlobalPcbPositionBeforeLayout()
 
   const bounds = getBoundsOfPcbComponents(component.children)
 
@@ -89,8 +91,8 @@ export function NormalComponent_doInitialPcbComponentAnchorAlignment(
   if (!anchorPos) return
 
   const newCenter = { ...currentCenter }
-  if (pcbX !== undefined) newCenter.x += pcbX - anchorPos.x
-  if (pcbY !== undefined) newCenter.y += pcbY - anchorPos.y
+  if (pcbX !== undefined) newCenter.x += targetPosition.x - anchorPos.x
+  if (pcbY !== undefined) newCenter.y += targetPosition.y - anchorPos.y
 
   if (
     Math.abs(newCenter.x - currentCenter.x) > 1e-6 ||
