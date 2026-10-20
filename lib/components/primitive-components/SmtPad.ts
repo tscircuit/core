@@ -132,13 +132,10 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
     const shouldCreateSolderPaste =
       !props.noSolderPaste && !isCoveredWithSolderMask && this._getIsSmt()
     const soldermaskMargin = props.solderMaskMargin
-    const solderPasteMargin = props.solderPasteMargin
-    // solderPasteMargin is absolute per side; without it the aperture keeps
-    // the default 0.7 scale
+    const solderPasteMargin = props.solderPasteMargin ?? 0
+    // solderPasteMargin is absolute per side (default 0 for a 1:1 aperture)
     const getSolderPasteSize = (padSize: number, marginScale = 2): number =>
-      solderPasteMargin !== undefined
-        ? Math.max(padSize + marginScale * solderPasteMargin, 0)
-        : padSize * 0.7
+      Math.max(padSize + marginScale * solderPasteMargin, 0)
 
     this.emitSolderMaskMarginWarning(isCoveredWithSolderMask, soldermaskMargin)
 
