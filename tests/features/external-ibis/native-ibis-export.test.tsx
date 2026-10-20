@@ -8,7 +8,7 @@ test("native TSX exports physical IBIS bindings without fetching or running a so
   const { circuit } = getTestFixture({
     platform: {
       spiceEngineMap: {
-        pcb_spice: {
+        spicey: {
           async simulate() {
             solverCalls++
             throw new Error("External simulation must not run during rendering")

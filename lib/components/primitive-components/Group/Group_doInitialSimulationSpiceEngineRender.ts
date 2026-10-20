@@ -173,7 +173,8 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
     )
     if (
       !simulationExperiment ||
-      simulationExperiment.spice_engine === "pcb_spice"
+      (simulationExperiment.spice_engine === "pcb_spice" &&
+        !spiceEngineMap.pcb_spice)
     ) {
       debug("No simulation experiment found, skipping simulation")
       continue
