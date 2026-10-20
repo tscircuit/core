@@ -1,7 +1,7 @@
 import type { PcbPath } from "@tscircuit/props"
 import type { LayerRef } from "circuit-json"
 import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
-import { getViaDiameterDefaults } from "../../../utils/pcbStyle/getViaDiameterDefaults"
+import { getViaDiameterDefaultsForComponent } from "../../../utils/pcbStyle/getViaDiameterDefaults"
 import type { Port } from "../Port"
 import { getRouteForPcbPath } from "./get-route-for-pcb-path"
 import { insertPcbPathViaContactErrors } from "./insert-pcb-path-via-contact-errors"
@@ -47,8 +47,8 @@ export const renderPcbPaths = ({
     return
   }
 
-  const pcbStyle = trace.getInheritedMergedProperty("pcbStyle")
-  const { holeDiameter, padDiameter } = getViaDiameterDefaults(pcbStyle)
+  const { holeDiameter, padDiameter } =
+    getViaDiameterDefaultsForComponent(trace)
   const connectivityMapKey =
     trace.subcircuit_connectivity_map_key ??
     db.source_trace.get(trace.source_trace_id!)?.subcircuit_connectivity_map_key

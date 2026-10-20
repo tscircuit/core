@@ -251,6 +251,35 @@ export class Board
     }
   }
 
+  /**
+   * Via hole/pad diameters (mm) required by this board's design rules:
+   * minViaHoleDiameter/minViaPadDiameter, then the board's pcbStyle via size,
+   * then JLCPCB's minimums. These are recorded on pcb_board and are the
+   * default size for vias placed without an explicit or styled size.
+   */
+  _getResolvedMinViaDiameters(): { holeDiameter: number; padDiameter: number } {
+    const subcircuitProps = this.getSubcircuit()._parsedProps
+    const pcbStyle = this.getInheritedMergedProperty("pcbStyle")
+    const styledViaDimensions = getViaDiameterDefaults(pcbStyle)
+    const configuredViaHoleDiameter =
+      subcircuitProps.minViaHoleDiameter ??
+      (pcbStyle?.viaHoleDiameter !== undefined
+        ? styledViaDimensions.holeDiameter
+        : undefined)
+    return {
+      holeDiameter:
+        configuredViaHoleDiameter ?? jlcMinTolerances.min_via_hole_diameter!,
+      padDiameter:
+        subcircuitProps.minViaPadDiameter ??
+        (pcbStyle?.viaPadDiameter !== undefined
+          ? styledViaDimensions.padDiameter
+          : configuredViaHoleDiameter !== undefined
+            ? configuredViaHoleDiameter +
+              DEFAULT_VIA_PAD_DIAMETER_OVER_HOLE_DIAMETER_MM
+            : jlcMinTolerances.min_via_pad_diameter!),
+    }
+  }
+
   doInitialPcbBoardAutoSize(): void {
     if (this.root?.pcbDisabled) return
     if (!this.pcb_board_id) return
@@ -583,23 +612,10 @@ export class Board
       }
     }
     const subcircuitProps = this.getSubcircuit()._parsedProps
-    const pcbStyle = this.getInheritedMergedProperty("pcbStyle")
-    const styledViaDimensions = getViaDiameterDefaults(pcbStyle)
-    const configuredViaHoleDiameter =
-      subcircuitProps.minViaHoleDiameter ??
-      (pcbStyle?.viaHoleDiameter !== undefined
-        ? styledViaDimensions.holeDiameter
-        : undefined)
-    const resolvedMinViaHoleDiameter =
-      configuredViaHoleDiameter ?? jlcMinTolerances.min_via_hole_diameter
-    const resolvedMinViaPadDiameter =
-      subcircuitProps.minViaPadDiameter ??
-      (pcbStyle?.viaPadDiameter !== undefined
-        ? styledViaDimensions.padDiameter
-        : configuredViaHoleDiameter !== undefined
-          ? configuredViaHoleDiameter +
-            DEFAULT_VIA_PAD_DIAMETER_OVER_HOLE_DIAMETER_MM
-          : jlcMinTolerances.min_via_pad_diameter)
+    const {
+      holeDiameter: resolvedMinViaHoleDiameter,
+      padDiameter: resolvedMinViaPadDiameter,
+    } = this._getResolvedMinViaDiameters()
     const pcb_board = db.pcb_board.insert({
       source_board_id: this.source_board_id,
       subcircuit_id: this.subcircuit_id ?? undefined,

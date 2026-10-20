@@ -1,8 +1,8 @@
-import { type PcbStyle, viaProps } from "@tscircuit/props"
+import { viaProps } from "@tscircuit/props"
 import type { LayerRef, PcbVia } from "circuit-json"
 import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
 import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
-import { getViaDiameterDefaultsWithOverrides } from "lib/utils/pcbStyle/getViaDiameterDefaults"
+import { getViaDiameterDefaultsForComponent } from "lib/utils/pcbStyle/getViaDiameterDefaults"
 import { getViaTenting } from "lib/utils/getViaTenting"
 import { z } from "zod"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
@@ -36,21 +36,15 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
     return this._getLayers()
   }
 
-  private _getResolvedViaDiameters(pcbStyle?: PcbStyle) {
-    return getViaDiameterDefaultsWithOverrides(
-      {
-        holeDiameter: this._parsedProps.holeDiameter,
-        padDiameter: this._parsedProps.outerDiameter,
-      },
-      pcbStyle,
-    )
+  private _getResolvedViaDiameters() {
+    return getViaDiameterDefaultsForComponent(this, {
+      holeDiameter: this._parsedProps.holeDiameter,
+      padDiameter: this._parsedProps.outerDiameter,
+    })
   }
 
   getPcbSize(): { width: number; height: number } {
-    const pcbStyle = this.getInheritedMergedProperty("pcbStyle") as
-      | PcbStyle
-      | undefined
-    const { padDiameter } = this._getResolvedViaDiameters(pcbStyle)
+    const { padDiameter } = this._getResolvedViaDiameters()
     return { width: padDiameter, height: padDiameter }
   }
 
@@ -158,10 +152,7 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
   doInitialPcbComponentRender(): void {
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
-    const pcbStyle = this.getInheritedMergedProperty("pcbStyle") as
-      | PcbStyle
-      | undefined
-    const { padDiameter } = this._getResolvedViaDiameters(pcbStyle)
+    const { padDiameter } = this._getResolvedViaDiameters()
     const position = this._getGlobalPcbPositionBeforeLayout()
     const subcircuit = this.getSubcircuit()
     const pcb_component = db.pcb_component.insert({
@@ -264,11 +255,7 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
   doInitialPcbPrimitiveRender(): void {
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
-    const pcbStyle = this.getInheritedMergedProperty("pcbStyle") as
-      | PcbStyle
-      | undefined
-    const { holeDiameter, padDiameter } =
-      this._getResolvedViaDiameters(pcbStyle)
+    const { holeDiameter, padDiameter } = this._getResolvedViaDiameters()
     const position = this._getGlobalPcbPositionBeforeLayout()
     const subcircuit = this.getSubcircuit()
     const connectedNetOrTrace = this._getConnectedNetOrTrace()
