@@ -104,6 +104,19 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
     }
   }
 
+  /** Pad-local points in mm, +X right, +Y top, +Z above (right-handed). */
+  override _getPcbLocalBoundsBeforeLayout() {
+    const { _parsedProps: props } = this
+    if (props.shape !== "polygon") return super._getPcbLocalBoundsBeforeLayout()
+    const bounds = getBoundsFromPoints(props.points)!
+    return {
+      left: bounds.minX,
+      right: bounds.maxX,
+      top: bounds.maxY,
+      bottom: bounds.minY,
+    }
+  }
+
   doInitialPortMatching(): void {
     const parentPorts = this.getPrimitiveContainer()?.selectAll(
       "port",
