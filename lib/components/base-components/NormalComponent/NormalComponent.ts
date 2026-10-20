@@ -2151,14 +2151,11 @@ export class NormalComponent<
       footprinterStringForCadComponent = footprintString
     }
 
+    const footprintOrigin = pcbComponent?.footprint_origin ?? bounds.center
     let cadComponentPlacement = {
       position: {
-        x:
-          (pcbComponent?.footprint_origin ?? bounds.center).x +
-          positionOffset.x,
-        y:
-          (pcbComponent?.footprint_origin ?? bounds.center).y +
-          positionOffset.y,
+        x: footprintOrigin.x + positionOffset.x,
+        y: footprintOrigin.y + positionOffset.y,
         z:
           (computedLayer === "bottom"
             ? -boardThickness / 2
