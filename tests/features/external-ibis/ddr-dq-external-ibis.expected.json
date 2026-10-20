@@ -1,0 +1,532 @@
+[
+  {
+    "type": "source_group",
+    "source_group_id": "source_group_0",
+    "is_subcircuit": true,
+    "was_automatically_named": true,
+    "subcircuit_id": "subcircuit_source_group_0"
+  },
+  {
+    "type": "source_port",
+    "source_port_id": "source_port_0",
+    "name": "M3",
+    "pin_number": 1,
+    "port_hints": ["M3", "pin1", "1"],
+    "source_component_id": "source_component_0",
+    "subcircuit_id": "subcircuit_source_group_0",
+    "subcircuit_connectivity_map_key": "unnamedsubcircuitsubcircuit_source_group_0_connectivity_net0"
+  },
+  {
+    "type": "source_port",
+    "source_port_id": "source_port_1",
+    "name": "P1",
+    "pin_number": 2,
+    "port_hints": ["P1", "pin2", "2"],
+    "source_component_id": "source_component_0",
+    "subcircuit_id": "subcircuit_source_group_0",
+    "subcircuit_connectivity_map_key": "unnamedsubcircuitsubcircuit_source_group_0_connectivity_net1"
+  },
+  {
+    "type": "source_port",
+    "source_port_id": "source_port_2",
+    "name": "P2",
+    "pin_number": 3,
+    "port_hints": ["P2", "pin3", "3"],
+    "source_component_id": "source_component_0",
+    "subcircuit_id": "subcircuit_source_group_0",
+    "subcircuit_connectivity_map_key": "unnamedsubcircuitsubcircuit_source_group_0_connectivity_net2"
+  },
+  {
+    "type": "source_port",
+    "source_port_id": "source_port_3",
+    "name": "E5",
+    "pin_number": 4,
+    "port_hints": ["E5", "pin4", "4"],
+    "source_component_id": "source_component_0",
+    "subcircuit_id": "subcircuit_source_group_0"
+  },
+  {
+    "type": "source_port",
+    "source_port_id": "source_port_4",
+    "name": "A1",
+    "pin_number": 5,
+    "port_hints": ["A1", "pin5", "5"],
+    "source_component_id": "source_component_0",
+    "subcircuit_id": "subcircuit_source_group_0"
+  },
+  {
+    "type": "source_port",
+    "source_port_id": "source_port_5",
+    "name": "VREF",
+    "pin_number": 6,
+    "port_hints": ["VREF", "pin6", "6"],
+    "source_component_id": "source_component_0",
+    "subcircuit_id": "subcircuit_source_group_0"
+  },
+  {
+    "type": "source_component",
+    "source_component_id": "source_component_0",
+    "ftype": "simple_chip",
+    "name": "U1",
+    "source_group_id": "source_group_0"
+  },
+  {
+    "type": "source_port",
+    "source_port_id": "source_port_6",
+    "name": "E3",
+    "pin_number": 1,
+    "port_hints": ["E3", "pin1", "1"],
+    "source_component_id": "source_component_1",
+    "subcircuit_id": "subcircuit_source_group_0",
+    "subcircuit_connectivity_map_key": "unnamedsubcircuitsubcircuit_source_group_0_connectivity_net0"
+  },
+  {
+    "type": "source_port",
+    "source_port_id": "source_port_7",
+    "name": "F3",
+    "pin_number": 2,
+    "port_hints": ["F3", "pin2", "2"],
+    "source_component_id": "source_component_1",
+    "subcircuit_id": "subcircuit_source_group_0",
+    "subcircuit_connectivity_map_key": "unnamedsubcircuitsubcircuit_source_group_0_connectivity_net1"
+  },
+  {
+    "type": "source_port",
+    "source_port_id": "source_port_8",
+    "name": "G3",
+    "pin_number": 3,
+    "port_hints": ["G3", "pin3", "3"],
+    "source_component_id": "source_component_1",
+    "subcircuit_id": "subcircuit_source_group_0",
+    "subcircuit_connectivity_map_key": "unnamedsubcircuitsubcircuit_source_group_0_connectivity_net2"
+  },
+  {
+    "type": "source_port",
+    "source_port_id": "source_port_9",
+    "name": "A1",
+    "pin_number": 4,
+    "port_hints": ["A1", "pin4", "4"],
+    "source_component_id": "source_component_1",
+    "subcircuit_id": "subcircuit_source_group_0"
+  },
+  {
+    "type": "source_port",
+    "source_port_id": "source_port_10",
+    "name": "B1",
+    "pin_number": 5,
+    "port_hints": ["B1", "pin5", "5"],
+    "source_component_id": "source_component_1",
+    "subcircuit_id": "subcircuit_source_group_0"
+  },
+  {
+    "type": "source_port",
+    "source_port_id": "source_port_11",
+    "name": "VREF",
+    "pin_number": 6,
+    "port_hints": ["VREF", "pin6", "6"],
+    "source_component_id": "source_component_1",
+    "subcircuit_id": "subcircuit_source_group_0"
+  },
+  {
+    "type": "source_component",
+    "source_component_id": "source_component_1",
+    "ftype": "simple_chip",
+    "name": "U3",
+    "source_group_id": "source_group_0"
+  },
+  {
+    "type": "source_trace",
+    "source_trace_id": "source_trace_0",
+    "connected_source_port_ids": ["source_port_0", "source_port_6"],
+    "connected_source_net_ids": [],
+    "subcircuit_id": "subcircuit_source_group_0",
+    "display_name": ".U1 > .M3 to .U3 > .E3",
+    "subcircuit_connectivity_map_key": "unnamedsubcircuitsubcircuit_source_group_0_connectivity_net0"
+  },
+  {
+    "type": "source_trace",
+    "source_trace_id": "source_trace_1",
+    "connected_source_port_ids": ["source_port_1", "source_port_7"],
+    "connected_source_net_ids": [],
+    "subcircuit_id": "subcircuit_source_group_0",
+    "display_name": ".U1 > .P1 to .U3 > .F3",
+    "subcircuit_connectivity_map_key": "unnamedsubcircuitsubcircuit_source_group_0_connectivity_net1"
+  },
+  {
+    "type": "source_trace",
+    "source_trace_id": "source_trace_2",
+    "connected_source_port_ids": ["source_port_2", "source_port_8"],
+    "connected_source_net_ids": [],
+    "subcircuit_id": "subcircuit_source_group_0",
+    "display_name": ".U1 > .P2 to .U3 > .G3",
+    "subcircuit_connectivity_map_key": "unnamedsubcircuitsubcircuit_source_group_0_connectivity_net2"
+  },
+  {
+    "type": "simulation_ibis_model",
+    "simulation_ibis_model_id": "simulation_ibis_model_0",
+    "source_component_id": "source_component_0",
+    "ibis_model_asset": {
+      "project_relative_path": "models/synthetic-ddr.ibs",
+      "url": "models/synthetic-ddr.ibs",
+      "mimetype": "text/plain"
+    },
+    "ibis_component_name": "SYNTHETIC_DRIVER",
+    "model_value_corner": "typical",
+    "include_package_parasitics": true,
+    "ibis_pin_name_to_model_name": {
+      "M3": "OUTPUT",
+      "P1": "OUTPUT",
+      "P2": "OUTPUT"
+    },
+    "ibis_pin_name_to_source_port_id": {
+      "M3": "source_port_0",
+      "P1": "source_port_1",
+      "P2": "source_port_2",
+      "E5": "source_port_3",
+      "A1": "source_port_4",
+      "VREF": "source_port_5"
+    },
+    "ibis_pin_name_to_reference_source_port_ids": {
+      "M3": {
+        "pullup_reference_source_port_id": "source_port_3",
+        "pulldown_reference_source_port_id": "source_port_4",
+        "power_clamp_reference_source_port_id": "source_port_3",
+        "ground_clamp_reference_source_port_id": "source_port_4",
+        "external_reference_source_port_id": "source_port_5"
+      },
+      "P1": {
+        "pullup_reference_source_port_id": "source_port_3",
+        "pulldown_reference_source_port_id": "source_port_4",
+        "power_clamp_reference_source_port_id": "source_port_3",
+        "ground_clamp_reference_source_port_id": "source_port_4",
+        "external_reference_source_port_id": "source_port_5"
+      },
+      "P2": {
+        "pullup_reference_source_port_id": "source_port_3",
+        "pulldown_reference_source_port_id": "source_port_4",
+        "power_clamp_reference_source_port_id": "source_port_3",
+        "ground_clamp_reference_source_port_id": "source_port_4",
+        "external_reference_source_port_id": "source_port_5"
+      }
+    }
+  },
+  {
+    "type": "simulation_ibis_model",
+    "simulation_ibis_model_id": "simulation_ibis_model_1",
+    "source_component_id": "source_component_1",
+    "ibis_model_asset": {
+      "project_relative_path": "models/synthetic-ddr.ibs",
+      "url": "models/synthetic-ddr.ibs",
+      "mimetype": "text/plain"
+    },
+    "ibis_component_name": "SYNTHETIC_RECEIVER",
+    "model_value_corner": "typical",
+    "include_package_parasitics": true,
+    "ibis_pin_name_to_model_name": {
+      "E3": "INPUT",
+      "F3": "INPUT",
+      "G3": "INPUT"
+    },
+    "ibis_pin_name_to_source_port_id": {
+      "E3": "source_port_6",
+      "F3": "source_port_7",
+      "G3": "source_port_8",
+      "A1": "source_port_9",
+      "B1": "source_port_10",
+      "VREF": "source_port_11"
+    },
+    "ibis_pin_name_to_reference_source_port_ids": {
+      "E3": {
+        "pullup_reference_source_port_id": "source_port_9",
+        "pulldown_reference_source_port_id": "source_port_10",
+        "power_clamp_reference_source_port_id": "source_port_9",
+        "ground_clamp_reference_source_port_id": "source_port_10",
+        "external_reference_source_port_id": "source_port_11"
+      },
+      "F3": {
+        "pullup_reference_source_port_id": "source_port_9",
+        "pulldown_reference_source_port_id": "source_port_10",
+        "power_clamp_reference_source_port_id": "source_port_9",
+        "ground_clamp_reference_source_port_id": "source_port_10",
+        "external_reference_source_port_id": "source_port_11"
+      },
+      "G3": {
+        "pullup_reference_source_port_id": "source_port_9",
+        "pulldown_reference_source_port_id": "source_port_10",
+        "power_clamp_reference_source_port_id": "source_port_9",
+        "ground_clamp_reference_source_port_id": "source_port_10",
+        "external_reference_source_port_id": "source_port_11"
+      }
+    }
+  },
+  {
+    "type": "simulation_voltage_probe",
+    "simulation_voltage_probe_id": "simulation_voltage_probe_0",
+    "name": "DQ0_RX",
+    "signal_input_source_port_id": "source_port_6",
+    "reference_input_source_port_id": "source_port_10",
+    "subcircuit_id": "subcircuit_source_group_0",
+    "color": "rgb(0, 150, 0)"
+  },
+  {
+    "type": "simulation_voltage_probe",
+    "simulation_voltage_probe_id": "simulation_voltage_probe_1",
+    "name": "DDR_RX",
+    "signal_input_source_port_id": "source_port_7",
+    "reference_input_source_port_id": "source_port_8",
+    "subcircuit_id": "subcircuit_source_group_0",
+    "color": "rgb(0, 0, 220)"
+  },
+  {
+    "type": "simulation_experiment",
+    "simulation_experiment_id": "simulation_experiment_0",
+    "name": "DDR_QUIET",
+    "experiment_type": "spice_transient_analysis",
+    "end_time_ms": 0.00015999999999999999,
+    "start_time_ms": 0,
+    "time_per_step": 1e-8,
+    "spice_engine": "pcb_spice",
+    "subcircuit_id": "subcircuit_source_group_0"
+  },
+  {
+    "type": "simulation_ibis_pin_state",
+    "simulation_ibis_pin_state_id": "simulation_ibis_pin_state_0",
+    "simulation_experiment_id": "simulation_experiment_0",
+    "source_port_id": "source_port_0",
+    "is_output": true,
+    "is_output_enabled": true
+  },
+  {
+    "type": "simulation_ibis_pin_state",
+    "simulation_ibis_pin_state_id": "simulation_ibis_pin_state_1",
+    "simulation_experiment_id": "simulation_experiment_0",
+    "source_port_id": "source_port_1",
+    "is_output": true,
+    "is_output_enabled": true
+  },
+  {
+    "type": "simulation_ibis_pin_state",
+    "simulation_ibis_pin_state_id": "simulation_ibis_pin_state_2",
+    "simulation_experiment_id": "simulation_experiment_0",
+    "source_port_id": "source_port_2",
+    "is_output": true,
+    "is_output_enabled": true
+  },
+  {
+    "type": "simulation_ibis_pin_state",
+    "simulation_ibis_pin_state_id": "simulation_ibis_pin_state_3",
+    "simulation_experiment_id": "simulation_experiment_0",
+    "source_port_id": "source_port_6",
+    "is_output": false
+  },
+  {
+    "type": "simulation_ibis_pin_state",
+    "simulation_ibis_pin_state_id": "simulation_ibis_pin_state_4",
+    "simulation_experiment_id": "simulation_experiment_0",
+    "source_port_id": "source_port_7",
+    "is_output": false
+  },
+  {
+    "type": "simulation_ibis_pin_state",
+    "simulation_ibis_pin_state_id": "simulation_ibis_pin_state_5",
+    "simulation_experiment_id": "simulation_experiment_0",
+    "source_port_id": "source_port_8",
+    "is_output": false
+  },
+  {
+    "type": "simulation_digital_stimulus",
+    "simulation_digital_stimulus_id": "simulation_digital_stimulus_0",
+    "name": "M3_QUIET",
+    "simulation_experiment_id": "simulation_experiment_0",
+    "source_port_id": "source_port_0",
+    "bit_duration_ms": 0.0000024999999999999998,
+    "start_time_ms": 0,
+    "initial_state": 0,
+    "inverted": false,
+    "transmission_pattern": {
+      "transmission_type": "bits",
+      "bits": "0110",
+      "repeat": true
+    }
+  },
+  {
+    "type": "simulation_digital_stimulus",
+    "simulation_digital_stimulus_id": "simulation_digital_stimulus_1",
+    "name": "P1_QUIET",
+    "simulation_experiment_id": "simulation_experiment_0",
+    "source_port_id": "source_port_1",
+    "bit_duration_ms": 0.0000024999999999999998,
+    "start_time_ms": 0.0000012499999999999999,
+    "initial_state": 0,
+    "inverted": false,
+    "transmission_pattern": {
+      "transmission_type": "bits",
+      "bits": "0",
+      "repeat": true
+    }
+  },
+  {
+    "type": "simulation_digital_stimulus",
+    "simulation_digital_stimulus_id": "simulation_digital_stimulus_2",
+    "name": "P2_QUIET",
+    "simulation_experiment_id": "simulation_experiment_0",
+    "source_port_id": "source_port_2",
+    "bit_duration_ms": 0.0000024999999999999998,
+    "start_time_ms": 0.0000012499999999999999,
+    "initial_state": 0,
+    "inverted": true,
+    "transmission_pattern": {
+      "transmission_type": "bits",
+      "bits": "0",
+      "repeat": true
+    }
+  },
+  {
+    "type": "simulation_experiment",
+    "simulation_experiment_id": "simulation_experiment_1",
+    "name": "DDR_SWITCHING",
+    "experiment_type": "spice_transient_analysis",
+    "end_time_ms": 0.00015999999999999999,
+    "start_time_ms": 0,
+    "time_per_step": 1e-8,
+    "spice_engine": "pcb_spice",
+    "subcircuit_id": "subcircuit_source_group_0"
+  },
+  {
+    "type": "simulation_ibis_pin_state",
+    "simulation_ibis_pin_state_id": "simulation_ibis_pin_state_6",
+    "simulation_experiment_id": "simulation_experiment_1",
+    "source_port_id": "source_port_0",
+    "is_output": true,
+    "is_output_enabled": true
+  },
+  {
+    "type": "simulation_ibis_pin_state",
+    "simulation_ibis_pin_state_id": "simulation_ibis_pin_state_7",
+    "simulation_experiment_id": "simulation_experiment_1",
+    "source_port_id": "source_port_1",
+    "is_output": true,
+    "is_output_enabled": true
+  },
+  {
+    "type": "simulation_ibis_pin_state",
+    "simulation_ibis_pin_state_id": "simulation_ibis_pin_state_8",
+    "simulation_experiment_id": "simulation_experiment_1",
+    "source_port_id": "source_port_2",
+    "is_output": true,
+    "is_output_enabled": true
+  },
+  {
+    "type": "simulation_ibis_pin_state",
+    "simulation_ibis_pin_state_id": "simulation_ibis_pin_state_9",
+    "simulation_experiment_id": "simulation_experiment_1",
+    "source_port_id": "source_port_6",
+    "is_output": false
+  },
+  {
+    "type": "simulation_ibis_pin_state",
+    "simulation_ibis_pin_state_id": "simulation_ibis_pin_state_10",
+    "simulation_experiment_id": "simulation_experiment_1",
+    "source_port_id": "source_port_7",
+    "is_output": false
+  },
+  {
+    "type": "simulation_ibis_pin_state",
+    "simulation_ibis_pin_state_id": "simulation_ibis_pin_state_11",
+    "simulation_experiment_id": "simulation_experiment_1",
+    "source_port_id": "source_port_8",
+    "is_output": false
+  },
+  {
+    "type": "simulation_digital_stimulus",
+    "simulation_digital_stimulus_id": "simulation_digital_stimulus_3",
+    "name": "M3_SWITCHING",
+    "simulation_experiment_id": "simulation_experiment_1",
+    "source_port_id": "source_port_0",
+    "bit_duration_ms": 0.0000024999999999999998,
+    "start_time_ms": 0,
+    "initial_state": 0,
+    "inverted": false,
+    "transmission_pattern": {
+      "transmission_type": "bits",
+      "bits": "0110",
+      "repeat": true
+    }
+  },
+  {
+    "type": "simulation_digital_stimulus",
+    "simulation_digital_stimulus_id": "simulation_digital_stimulus_4",
+    "name": "P1_SWITCHING",
+    "simulation_experiment_id": "simulation_experiment_1",
+    "source_port_id": "source_port_1",
+    "bit_duration_ms": 0.0000024999999999999998,
+    "start_time_ms": 0.0000012499999999999999,
+    "initial_state": 0,
+    "inverted": false,
+    "transmission_pattern": {
+      "transmission_type": "bits",
+      "bits": "01",
+      "repeat": true
+    }
+  },
+  {
+    "type": "simulation_digital_stimulus",
+    "simulation_digital_stimulus_id": "simulation_digital_stimulus_5",
+    "name": "P2_SWITCHING",
+    "simulation_experiment_id": "simulation_experiment_1",
+    "source_port_id": "source_port_2",
+    "bit_duration_ms": 0.0000024999999999999998,
+    "start_time_ms": 0.0000012499999999999999,
+    "initial_state": 0,
+    "inverted": true,
+    "transmission_pattern": {
+      "transmission_type": "bits",
+      "bits": "01",
+      "repeat": true
+    }
+  },
+  {
+    "type": "simulation_eye_diagram",
+    "simulation_eye_diagram_id": "simulation_eye_diagram_0",
+    "name": "DQ0_receive_eye_QUIET",
+    "simulation_experiment_id": "simulation_experiment_0",
+    "simulation_voltage_probe_id": "simulation_voltage_probe_0",
+    "unit_interval_ms": 0.0000024999999999999998,
+    "time_origin_ms": 0,
+    "start_time_ms": 0.000039999999999999996,
+    "end_time_ms": 0.00015999999999999999
+  },
+  {
+    "type": "simulation_eye_diagram",
+    "simulation_eye_diagram_id": "simulation_eye_diagram_1",
+    "name": "DQS_receive_eye_QUIET",
+    "simulation_experiment_id": "simulation_experiment_0",
+    "simulation_voltage_probe_id": "simulation_voltage_probe_1",
+    "unit_interval_ms": 0.0000024999999999999998,
+    "time_origin_ms": 0.0000012499999999999999,
+    "start_time_ms": 0.000039999999999999996,
+    "end_time_ms": 0.00015999999999999999
+  },
+  {
+    "type": "simulation_eye_diagram",
+    "simulation_eye_diagram_id": "simulation_eye_diagram_2",
+    "name": "DQ0_receive_eye_SWITCHING",
+    "simulation_experiment_id": "simulation_experiment_1",
+    "simulation_voltage_probe_id": "simulation_voltage_probe_0",
+    "unit_interval_ms": 0.0000024999999999999998,
+    "time_origin_ms": 0,
+    "start_time_ms": 0.000039999999999999996,
+    "end_time_ms": 0.00015999999999999999
+  },
+  {
+    "type": "simulation_eye_diagram",
+    "simulation_eye_diagram_id": "simulation_eye_diagram_3",
+    "name": "DQS_receive_eye_SWITCHING",
+    "simulation_experiment_id": "simulation_experiment_1",
+    "simulation_voltage_probe_id": "simulation_voltage_probe_1",
+    "unit_interval_ms": 0.0000024999999999999998,
+    "time_origin_ms": 0.0000012499999999999999,
+    "start_time_ms": 0.000039999999999999996,
+    "end_time_ms": 0.00015999999999999999
+  }
+]
