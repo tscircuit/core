@@ -374,17 +374,20 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     // TODO this.parent.getSubcircuitSelector() >
     const parentComponent: PrimitiveComponent | null =
       this.getParentNormalComponent() ?? this.parent
-    const siblingPorts = parentComponent?.selectAll<Port>("port") ?? []
-    const portName =
-      [this.props.name, ...this.getNameAndAliases()].find(
-        (name) =>
-          name !== undefined &&
-          siblingPorts.every(
-            (port) => port === this || !port.getNameAndAliases().includes(name),
-          ),
-      ) ?? this.props.name
-    return `.${parentComponent?.props.name} > port.${portName}`
+    const uniqueNames = new Set(this.getNameAndAliases())
+    for (const port of parentComponent?.selectAll<Port>("port") ?? []) {
+      if (port === this) continue
+      for (const name of port.getNameAndAliases()) uniqueNames.delete(name)
+    }
+    const uniqueName =
+      this.props.name && uniqueNames.has(this.props.name)
+        ? this.props.name
+        : uniqueNames.values().next().value
+    // Keep the legacy selector when no alias distinguishes this port, so callers
+    // can report the ambiguity rather than receiving an invented pin identity.
+    return `.${parentComponent?.props.name} > port.${uniqueName ?? this.props.name}`
   }
+
   getAvailablePcbLayers(): LayerRef[] {
     const { layer, layers } = this._parsedProps
     if (layers) return layers as LayerRef[]
