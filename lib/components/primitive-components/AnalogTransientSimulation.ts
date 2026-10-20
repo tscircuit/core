@@ -14,6 +14,8 @@ export class AnalogTransientSimulation extends AnalogAnalysisSimulation<
   }
 
   doInitialSimulationSpiceEngineRender(): void {
+    if (this.getInheritedProperty("analogSimulationDisabled")) return
+
     AnalogTransientSimulation_validateIbisBindings(this)
   }
 
@@ -22,7 +24,10 @@ export class AnalogTransientSimulation extends AnalogAnalysisSimulation<
     const { duration, name, startTime, timePerStep, spiceOptions } =
       this._parsedProps
 
-    const pins = Object.entries(this._parsedProps.ibisPinStates ?? {}).map(
+    const ibisPinStates = this.getInheritedProperty("analogSimulationDisabled")
+      ? {}
+      : this._parsedProps.ibisPinStates
+    const pins = Object.entries(ibisPinStates ?? {}).map(
       ([selector, state]) => {
         const pin = {
           source_port_id: resolveExternalSimulationPort({

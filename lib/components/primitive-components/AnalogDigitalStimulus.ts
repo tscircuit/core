@@ -18,6 +18,8 @@ export class AnalogDigitalStimulus extends PrimitiveComponent<
   }
 
   doInitialSimulationRender(): void {
+    if (this.getInheritedProperty("analogSimulationDisabled")) return
+
     const stimulus = AnalogDigitalStimulus_getSimulationDigitalStimulus(this)
     if (this.simulation_digital_stimulus_id)
       this.root!.db.simulation_digital_stimulus.update(

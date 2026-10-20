@@ -18,6 +18,8 @@ export class AnalogEyeDiagram extends PrimitiveComponent<
 
   // Probes have finished SimulationRender before this phase, independent of JSX order.
   doInitialSimulationSpiceEngineRender(): void {
+    if (this.getInheritedProperty("analogSimulationDisabled")) return
+
     const eye = AnalogEyeDiagram_getSimulationEyeDiagram(this)
     if (this.simulation_eye_diagram_id)
       this.root!.db.simulation_eye_diagram.update(

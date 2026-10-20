@@ -14,6 +14,8 @@ export class IbisModel extends PrimitiveComponent<typeof ibisModelProps> {
   }
 
   doInitialSimulationRender(): void {
+    if (this.getInheritedProperty("analogSimulationDisabled")) return
+
     const model = IbisModel_getSimulationIbisModel(this)
     if (this.simulation_ibis_model_id)
       this.root!.db.simulation_ibis_model.update(
