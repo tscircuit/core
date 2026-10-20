@@ -363,11 +363,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         this.pcb_plated_hole_id = pcb_plated_hole.pcb_plated_hole_id
       }
     } else if (props.shape === "hole_with_polygon_pad") {
-      /**
-       * Pad vertices are points in the unrotated pad frame (mm; +X right,
-       * +Y top, +Z above, right handed). Drill offsets are local displacements.
-       * ccw_rotation orients both around the board-space position (x, y).
-       */
+      // Pad outline points are relative to the hole position (x, y)
       const padOutline = (props.padOutline || []).map((point) => {
         let x = point.x
         if (typeof x !== "number") x = parseFloat(String(x))
