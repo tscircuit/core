@@ -32,14 +32,23 @@ export function AnalogEyeDiagram_getSimulationEyeDiagram(
   }
   const start = props.startTime ?? experiment.start_time_ms ?? 0,
     end = props.endTime ?? experiment.end_time_ms!
+  // The runner folds [origin + k*UI - UI/2, origin + k*UI + 3*UI/2].
+  // Only integer boundaries whose full two-UI window fits the gate are usable.
+  const firstBoundary = (start - props.timeOrigin) / props.unitInterval + 0.5
+  const lastBoundary = (end - props.timeOrigin) / props.unitInterval - 1.5
+  const roundingTolerance =
+    8 *
+    Number.EPSILON *
+    Math.max(1, Math.abs(firstBoundary), Math.abs(lastBoundary))
   if (
     start < (experiment.start_time_ms ?? 0) ||
     end > experiment.end_time_ms! ||
     end <= start ||
-    end - start < 2 * props.unitInterval
+    Math.ceil(firstBoundary - roundingTolerance) >
+      Math.floor(lastBoundary + roundingTolerance)
   ) {
     throw new Error(
-      `Eye "${props.name}" needs a gate within its simulation containing at least two bit intervals.`,
+      `Eye "${props.name}" needs a gate within its simulation containing at least two bit intervals forming a complete two-UI eye window aligned to timeOrigin after recording starts.`,
     )
   }
   return {

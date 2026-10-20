@@ -3,7 +3,7 @@ import { any_circuit_element } from "circuit-json"
 import { analog } from "lib/namespaced-elements/analog"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("digital stimulus preserves array-form bits in circuit JSON", async () => {
+test("digital stimulus and eye diagram emit schema-valid simulation and IBIS records", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board routingDisabled>
@@ -28,6 +28,14 @@ test("digital stimulus preserves array-form bits in circuit JSON", async () => {
           ".U1 > .DATA": { isOutput: true, isOutputEnabled: true },
         }}
       />
+      <voltageprobe name="probe" connectsTo=".U1 > .DATA" />
+      <analog.eyediagram
+        name="eye"
+        simulationRef=".run"
+        probeRef=".probe"
+        unitInterval="2ns"
+        timeOrigin="0ns"
+      />
       <analog.digitalstimulus
         name="data"
         simulationRef=".run"
@@ -51,5 +59,10 @@ test("digital stimulus preserves array-form bits in circuit JSON", async () => {
     bits: [0, 1, 1, 0],
     repeat: true,
   })
-  expect(any_circuit_element.safeParse(stimulus).success).toBe(true)
+  expect(circuit.db.simulation_eye_diagram.list()).toHaveLength(1)
+  for (const record of circuit.getCircuitJson()) {
+    if (record.type.startsWith("simulation_") || record.type.includes("ibis")) {
+      expect(any_circuit_element.parse(record)).toEqual(record)
+    }
+  }
 })

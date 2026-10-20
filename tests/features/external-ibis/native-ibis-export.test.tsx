@@ -189,6 +189,6 @@ test("native TSX exports physical IBIS bindings without fetching or running a so
   for (const record of circuit
     .getCircuitJson()
     .filter((record) => record.type.startsWith("simulation_")))
-    expect(any_circuit_element.safeParse(record).success).toBe(true)
+    expect(any_circuit_element.parse(record)).toEqual(record)
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
