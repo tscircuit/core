@@ -66,8 +66,7 @@ test("a complete saved fanout path with a pad via needs no follow-up routing", a
     expect.objectContaining({
       x: 0,
       y: 0,
-      from_layer: "top",
-      to_layer: "bottom",
+      layers: ["top", "bottom"],
       outer_diameter: 0.6,
       hole_diameter: 0.3,
     }),

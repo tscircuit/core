@@ -2472,8 +2472,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
                   board?.allow_blind_and_buried_vias ?? false,
                 physicalLayers: routedViaPoint.layers as LayerRef[] | undefined,
               }),
-              from_layer: fromLayer,
-              to_layer: toLayer,
               subcircuit_id: this.subcircuit_id!,
               pcb_group_id: this.pcb_group_id ?? undefined,
               subcircuit_connectivity_map_key: subcircuitConnectivityMapKey,

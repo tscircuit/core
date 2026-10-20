@@ -32,7 +32,6 @@ test("manual vias reference only their own layer ports", async () => {
   expect(vias).toMatchInlineSnapshot(`
     [
       {
-        "from_layer": "bottom",
         "hole_diameter": 0.2,
         "layers": [
           "top",
@@ -51,13 +50,11 @@ test("manual vias reference only their own layer ports", async () => {
         "subcircuit_id": "subcircuit_source_group_0",
         "tented_on_bottom": undefined,
         "tented_on_top": undefined,
-        "to_layer": "top",
         "type": "pcb_via",
         "x": -2,
         "y": 1,
       },
       {
-        "from_layer": "bottom",
         "hole_diameter": 0.2,
         "layers": [
           "top",
@@ -76,7 +73,6 @@ test("manual vias reference only their own layer ports", async () => {
         "subcircuit_id": "subcircuit_source_group_0",
         "tented_on_bottom": undefined,
         "tented_on_top": undefined,
-        "to_layer": "top",
         "type": "pcb_via",
         "x": 2,
         "y": 1,

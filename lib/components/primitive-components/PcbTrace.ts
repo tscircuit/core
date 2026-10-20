@@ -104,8 +104,6 @@ export class PcbTrace extends PrimitiveComponent<typeof pcbTraceProps> {
           toLayer: point.to_layer,
           layerCount: subcircuit._getSubcircuitLayerCount(),
         }),
-        from_layer: point.from_layer,
-        to_layer: point.to_layer,
         tented_on_top: point.tented_on_top,
         tented_on_bottom: point.tented_on_bottom,
         subcircuit_id: pcb_trace.subcircuit_id,

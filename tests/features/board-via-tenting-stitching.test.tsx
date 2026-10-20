@@ -20,6 +20,10 @@ test("stitching vias leave tenting unset to inherit the board default", async ()
   })
   const vias = circuit.db.pcb_via.list()
   expect(vias.length).toBeGreaterThan(0)
+  for (const via of vias) {
+    expect(via).not.toHaveProperty("from_layer")
+    expect(via).not.toHaveProperty("to_layer")
+  }
   expect(
     vias.every(
       (via) =>

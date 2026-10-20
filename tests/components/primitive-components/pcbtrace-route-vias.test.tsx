@@ -44,6 +44,10 @@ test("pcbtrace materializes route vias with explicit dimensions or PCB style def
   expect(pcbVias).toHaveLength(4)
   for (const pcbTrace of pcbTraces) {
     const routeVia = pcbTrace.route.find((point) => point.route_type === "via")!
+    expect(routeVia).toMatchObject({
+      from_layer: "bottom",
+      to_layer: "inner1",
+    })
     const materializedVias = pcbVias.filter(
       (via) => via.pcb_trace_id === pcbTrace.pcb_trace_id,
     )
@@ -54,13 +58,13 @@ test("pcbtrace materializes route vias with explicit dimensions or PCB style def
       outer_diameter: routeVia.outer_diameter ?? 0.9,
       hole_diameter: routeVia.hole_diameter ?? 0.45,
       layers: ["bottom", "inner2", "inner1"],
-      from_layer: "bottom",
-      to_layer: "inner1",
       tented_on_top: true,
       tented_on_bottom: false,
       subcircuit_id: pcbTrace.subcircuit_id,
       pcb_group_id: pcbTrace.pcb_group_id,
     })
+    expect(materializedVias[0]).not.toHaveProperty("from_layer")
+    expect(materializedVias[0]).not.toHaveProperty("to_layer")
   }
   await circuit.renderUntilSettled()
   expect(circuit.db.pcb_via.list()).toHaveLength(4)

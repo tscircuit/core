@@ -120,12 +120,6 @@ export class PcbVia extends PrimitiveComponent<typeof pcbViaProps> {
     const layers = this._getLayers().map((layer) =>
       maybeFlipLayer(layer),
     ) as LayerRef[]
-    const fromLayer = this._parsedProps.fromLayer
-      ? maybeFlipLayer(this._parsedProps.fromLayer as LayerRef)
-      : layers[0]
-    const toLayer = this._parsedProps.toLayer
-      ? maybeFlipLayer(this._parsedProps.toLayer as LayerRef)
-      : (layers[layers.length - 1] ?? fromLayer)
 
     const pcbVia = db.pcb_via.insert({
       x: position.x,
@@ -133,8 +127,6 @@ export class PcbVia extends PrimitiveComponent<typeof pcbViaProps> {
       ...(holeDiameter !== undefined ? { hole_diameter: holeDiameter } : {}),
       ...(outerDiameter !== undefined ? { outer_diameter: outerDiameter } : {}),
       layers,
-      from_layer: fromLayer,
-      to_layer: toLayer,
       pcb_trace_id: this._importedPcbTraceId,
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,

@@ -82,8 +82,6 @@ export const renderPcbPaths = ({
           toLayer,
           layerCount: subcircuit._getSubcircuitLayerCount(),
         }),
-        from_layer: fromLayer,
-        to_layer: toLayer,
         subcircuit_id: subcircuit.subcircuit_id ?? undefined,
         pcb_group_id: trace.getGroup()?.pcb_group_id ?? undefined,
         subcircuit_connectivity_map_key: connectivityMapKey,

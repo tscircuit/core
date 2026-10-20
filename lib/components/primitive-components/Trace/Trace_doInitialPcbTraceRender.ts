@@ -546,8 +546,6 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
           allowBlindAndBuriedVias: board?.allow_blind_and_buried_vias ?? false,
           physicalLayers: routedViaPoint.layers,
         }),
-        from_layer: fromLayer,
-        to_layer: toLayer,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: trace.getGroup()?.pcb_group_id ?? undefined,
         subcircuit_connectivity_map_key: subcircuitConnectivityMapKey,

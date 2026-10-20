@@ -62,10 +62,14 @@ test("saved blind via spans are preserved and reported when disabled", async () 
     }),
   ])
   const message = pcbTraceErrors[0]!.message
+  const routeVias = pcbTrace.route.filter((point) => point.route_type === "via")
   for (const [viaIndex, via] of vias.entries()) {
+    const routeVia = routeVias[viaIndex]!
+    expect(via).not.toHaveProperty("from_layer")
+    expect(via).not.toHaveProperty("to_layer")
     expect(message).toContain(
       `pcbPath[${expectedPathEntryIndices[viaIndex]}]: blind via ` +
-        `(fromLayer: "${via.from_layer}", toLayer: "${via.to_layer}") ` +
+        `(fromLayer: "${routeVia.from_layer}", toLayer: "${routeVia.to_layer}") ` +
         `spanning [${via.layers.join(", ")}]`,
     )
   }

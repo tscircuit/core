@@ -50,6 +50,7 @@ export const insertPcbPathViaPolicyErrors = ({
   }
 
   const pcbVias = db.pcb_via.list({ pcb_trace_id: pcbTrace.pcb_trace_id })
+  const routeVias = pcbTrace.route.filter((point) => point.route_type === "via")
   const viaDescriptions: string[] = []
   const viaKinds = new Set<"blind" | "buried">()
   let firstDisallowedVia: PcbVia | undefined
@@ -67,6 +68,7 @@ export const insertPcbPathViaPolicyErrors = ({
 
     // PCB vias are inserted in the same occurrence order as path via entries.
     const pathEntryIndex = viaPathEntryIndices[viaIndex]!
+    const routeVia = routeVias[viaIndex]!
     const pathEntry = `${pathName}[${pathEntryIndex}]`
     const boardX = Number(via.x.toFixed(4))
     const boardY = Number(via.y.toFixed(4))
@@ -74,7 +76,7 @@ export const insertPcbPathViaPolicyErrors = ({
     firstDisallowedVia ??= via
     viaDescriptions.push(
       `${pathEntry}: ${viaKind} via ` +
-        `(fromLayer: "${via.from_layer}", toLayer: "${via.to_layer}") ` +
+        `(fromLayer: "${routeVia.from_layer}", toLayer: "${routeVia.to_layer}") ` +
         `spanning [${via.layers.join(", ")}] at board (${boardX}, ${boardY}) mm`,
     )
   }

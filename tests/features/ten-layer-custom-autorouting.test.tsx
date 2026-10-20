@@ -123,7 +123,15 @@ test("Core keeps an inner8 logical route on physical through-all vias", async ()
     throughAllLayers,
     throughAllLayers,
   ])
-  expect(vias.map((via) => [via.from_layer, via.to_layer])).toEqual([
+  for (const via of vias) {
+    expect(via).not.toHaveProperty("from_layer")
+    expect(via).not.toHaveProperty("to_layer")
+  }
+  const routeVias = circuit.db.pcb_trace
+    .list()
+    .flatMap((trace) => trace.route)
+    .filter((point) => point.route_type === "via")
+  expect(routeVias.map((via) => [via.from_layer, via.to_layer])).toEqual([
     ["top", "inner8"],
     ["inner8", "top"],
   ])

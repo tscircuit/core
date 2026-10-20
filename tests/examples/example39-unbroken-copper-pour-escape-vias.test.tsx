@@ -65,7 +65,18 @@ test("unbroken inner-layer copper pours participate in autorouting", async () =>
 
   const topToInner2Vias = circuit.db.pcb_via
     .list()
-    .filter((via) => via.from_layer === "top" && via.to_layer === "inner2")
+    .filter((via) =>
+      circuit.db.pcb_trace
+        .get(via.pcb_trace_id!)
+        ?.route.some(
+          (point) =>
+            point.route_type === "via" &&
+            point.x === via.x &&
+            point.y === via.y &&
+            point.from_layer === "top" &&
+            point.to_layer === "inner2",
+        ),
+    )
 
   expect(topToInner2Vias.length).toBeGreaterThan(0)
   expect(

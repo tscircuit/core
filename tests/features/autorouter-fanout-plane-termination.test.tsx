@@ -110,14 +110,18 @@ test("fanout drops source-only power and ground connections to internal planes",
   ).toHaveLength(2)
 
   const vias = circuit.db.pcb_via.list()
-  expect(vias.some((via) => via.to_layer === "inner1")).toBe(true)
-  expect(vias.some((via) => via.to_layer === "inner2")).toBe(true)
-  expect(vias.find((via) => via.to_layer === "inner1")?.layers).toEqual(
-    getViaBoardLayers(6),
-  )
-  expect(vias.find((via) => via.to_layer === "inner2")?.layers).toEqual(
-    getViaBoardLayers(6),
-  )
+  const routeVias = circuit.db.pcb_trace
+    .list()
+    .flatMap((trace) => trace.route)
+    .filter((point) => point.route_type === "via")
+  for (const layer of ["inner1", "inner2"]) {
+    const routeVia = routeVias.find((via) => via.to_layer === layer)
+    expect(routeVia).toBeDefined()
+    expect(
+      vias.find((via) => via.x === routeVia!.x && via.y === routeVia!.y)
+        ?.layers,
+    ).toEqual(getViaBoardLayers(6))
+  }
 
   const signalSourceTraceIds = new Set(
     ["SIGNAL", "SIGNAL_RETURN"].map(
@@ -184,6 +188,12 @@ test("fanout infers plane nets from copper pours", async () => {
     },
   ])
   expect(
-    circuit.db.pcb_via.list().some((via) => via.to_layer === "inner1"),
+    circuit.db.pcb_trace
+      .list()
+      .some((trace) =>
+        trace.route.some(
+          (point) => point.route_type === "via" && point.to_layer === "inner1",
+        ),
+      ),
   ).toBe(true)
 })

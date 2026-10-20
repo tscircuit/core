@@ -203,8 +203,9 @@ test("subcircuit-circuit-json02 - chip inflation", async () => {
     )
     expect(matchingVia).toBeDefined()
     if (matchingVia) {
-      expect(matchingVia.from_layer).toBe(origVia.from_layer)
-      expect(matchingVia.to_layer).toBe(origVia.to_layer)
+      expect(matchingVia.layers).toEqual(origVia.layers)
+      expect(matchingVia).not.toHaveProperty("from_layer")
+      expect(matchingVia).not.toHaveProperty("to_layer")
     }
   }
 

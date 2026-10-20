@@ -28,8 +28,8 @@ const findInflatedPcbViaForPoint = (
     (via) =>
       Math.abs(via.x - point.x) < 0.0001 &&
       Math.abs(via.y - point.y) < 0.0001 &&
-      (!via.from_layer || via.from_layer === point.from_layer) &&
-      (!via.to_layer || via.to_layer === point.to_layer),
+      via.layers.includes(point.from_layer as LayerRef) &&
+      via.layers.includes(point.to_layer as LayerRef),
   )
 }
 
@@ -202,12 +202,6 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
             ? pcb_via.parse(originalPcbVia)
             : undefined
           const routePointViaDiameter = getViaDiameterFromRoutePoint(point)
-          const fromLayer = maybeFlipLayer(
-            (inflatedPcbVia?.from_layer ?? point.from_layer) as LayerRef,
-          )
-          const toLayer = maybeFlipLayer(
-            (inflatedPcbVia?.to_layer ?? point.to_layer) as LayerRef,
-          )
           const layers = (
             inflatedPcbVia?.layers ??
             getViaSpanLayers({
@@ -230,8 +224,6 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
               routePointViaDiameter.outerDiameter ??
               padDiameter,
             layers,
-            from_layer: fromLayer,
-            to_layer: toLayer,
             subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
             pcb_group_id: trace.getGroup()?.pcb_group_id ?? undefined,
             subcircuit_connectivity_map_key:
@@ -502,8 +494,6 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
           toLayer,
           layerCount: subcircuit._getSubcircuitLayerCount(),
         }),
-        from_layer: fromLayer,
-        to_layer: toLayer,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: trace.getGroup()?.pcb_group_id ?? undefined,
         subcircuit_connectivity_map_key: subcircuitConnectivityMapKey,

@@ -14,8 +14,8 @@ it("pcb_via.layers includes intermediate inner layers on a 4-layer board", () =>
 
   const [pcbVia] = project.db.pcb_via.list()
   expect(pcbVia.layers).toEqual(["top", "inner1", "inner2", "bottom"])
-  expect(pcbVia.from_layer).toBe("top")
-  expect(pcbVia.to_layer).toBe("bottom")
+  expect(pcbVia).not.toHaveProperty("from_layer")
+  expect(pcbVia).not.toHaveProperty("to_layer")
 })
 
 it("pcb_via.layers spans only the crossed layers for a partial-span via", () => {

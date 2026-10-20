@@ -158,39 +158,44 @@ test("breakout fanout props escape buses and plane nets without a phase", async 
   const planeNetIds = sourceNets
     .filter((net) => net.name === "GND" || net.name === "VCC")
     .map((net) => net.source_net_id)
-  const planeVias = circuit.db.pcb_via
-    .list()
-    .filter(
-      (via): via is typeof via & { to_layer: string; pcb_trace_id: string } => {
-        if (
-          (via.to_layer !== "inner1" && via.to_layer !== "inner2") ||
-          via.pcb_trace_id === undefined
-        ) {
-          return false
-        }
-        // Signal vias may also traverse plane layers; select the power nets.
-        const trace = circuit.db.pcb_trace.get(via.pcb_trace_id)
-        const sourceTrace = trace?.source_trace_id
-          ? circuit.db.source_trace.get(trace.source_trace_id)
-          : undefined
-        return planeNetIds.some((sourceNetId) =>
-          sourceTrace?.connected_source_net_ids?.includes(sourceNetId),
-        )
-      },
+  const planeVias = circuit.db.pcb_trace.list().flatMap((trace) => {
+    // Signal vias may also traverse plane layers; select the power nets.
+    const sourceTrace = trace.source_trace_id
+      ? circuit.db.source_trace.get(trace.source_trace_id)
+      : undefined
+    if (
+      !planeNetIds.some((sourceNetId) =>
+        sourceTrace?.connected_source_net_ids?.includes(sourceNetId),
+      )
     )
-  expect(planeVias.map((via) => via.to_layer).sort()).toEqual([
+      return []
+    return trace.route.flatMap((point) =>
+      point.route_type === "via" &&
+      (point.to_layer === "inner1" || point.to_layer === "inner2")
+        ? [{ routeVia: point, trace }]
+        : [],
+    )
+  })
+  expect(planeVias.map(({ routeVia }) => routeVia.to_layer).sort()).toEqual([
     "inner1",
     "inner2",
   ])
 
   const pours = circuit.db.pcb_copper_pour.list()
-  for (const via of planeVias) {
-    const pour = pours.find((candidate) => candidate.layer === via.to_layer)
+  for (const { routeVia, trace: routedTrace } of planeVias) {
+    const via = circuit.db.pcb_via.getWhere({
+      pcb_trace_id: routedTrace.pcb_trace_id,
+      x: routeVia.x,
+      y: routeVia.y,
+    })!
+    expect(via).toBeDefined()
+    const pour = pours.find(
+      (candidate) => candidate.layer === routeVia.to_layer,
+    )
     expect(pour).toBeDefined()
     expect(pour?.shape).toBe("brep")
     if (!pour || pour.shape !== "brep") continue
 
-    const routedTrace = circuit.db.pcb_trace.get(via.pcb_trace_id)
     expect(routedTrace?.source_trace_id).toBeDefined()
     if (!routedTrace?.source_trace_id) continue
 

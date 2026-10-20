@@ -3053,10 +3053,8 @@ export const renderAm62lLpddr4Fanout = async ({
         expect(matchingVias).toHaveLength(1)
         const powerVia = matchingVias[0]!
         expect(powerVia).toMatchObject({
-          from_layer: "top",
           hole_diameter: 0.15,
           outer_diameter: 0.24,
-          to_layer: "bottom",
         })
         expect(powerVia.layers).toEqual(getViaBoardLayers(8))
         return powerVia
@@ -3088,8 +3086,8 @@ export const renderAm62lLpddr4Fanout = async ({
     for (const via of directGroundVias) {
       expect(via.hole_diameter).toBeCloseTo(0.15)
       expect(via.outer_diameter).toBeCloseTo(0.24)
-      expect(via.from_layer).toBe("top")
-      expect(via.to_layer).toBe("bottom")
+      expect(via).not.toHaveProperty("from_layer")
+      expect(via).not.toHaveProperty("to_layer")
       expect(via.layers).toEqual(getViaBoardLayers(8))
     }
   }
@@ -3823,8 +3821,8 @@ export const renderAm62lLpddr4Fanout = async ({
       expect(matchingVias).toHaveLength(1)
       const matchingVia = matchingVias[0]!
       expect(matchingVia.layers).toEqual(getViaBoardLayers(8))
-      expect(matchingVia.from_layer).toBe(planeDrop.fromLayer)
-      expect(matchingVias[0]?.to_layer).toBe(planeDrop.layer)
+      expect(matchingVia).not.toHaveProperty("from_layer")
+      expect(matchingVia).not.toHaveProperty("to_layer")
       expect(matchingVia.subcircuit_connectivity_map_key).toBe(
         expectedNet.subcircuit_connectivity_map_key,
       )
