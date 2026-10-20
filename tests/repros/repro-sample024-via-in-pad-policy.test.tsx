@@ -91,7 +91,7 @@ test("Sample024 explicitly allows via-in-pad in Circuit JSON", async () => {
   const { simpleRouteJson: footprintSrj } = getSimpleRouteJsonFromCircuitJson({
     circuitJson,
   })
-  expect(footprintSrj.allowViaInPad).toBeUndefined()
+  expect(footprintSrj.allowViaInPad).toBe(true)
   expect(circuit.db.pcb_via.list()).toHaveLength(4)
   for (const via of circuit.db.pcb_via.list()) {
     expect(via.layers).toEqual(["top", "inner1"])
@@ -101,7 +101,7 @@ test("Sample024 explicitly allows via-in-pad in Circuit JSON", async () => {
     circuitJson: [importedBoard],
     ignoreExistingTopLevelPcbRouteState: true,
   })
-  expect(simpleRouteJson.allowViaInPad).toBeUndefined()
+  expect(simpleRouteJson.allowViaInPad).toBe(true)
 
   const snapshot = `<svg xmlns="http://www.w3.org/2000/svg" width="900" height="210" viewBox="0 0 900 210">
     <rect width="900" height="210" fill="#111827" />
