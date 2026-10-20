@@ -78,7 +78,7 @@ function ImportedTvs({
   )
 }
 
-test("imported TVS polygon pads overlap despite a 0.8mm flex gap", async () => {
+test("imported TVS polygon pads preserve the same flex gap as equivalent rectangles", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width={12} height={11} routingDisabled>
@@ -102,11 +102,7 @@ test("imported TVS polygon pads overlap despite a 0.8mm flex gap", async () => {
         <ImportedTvs name="D3" rectangular />
         <ImportedTvs name="D4" rectangular />
       </group>
-      <pcbnotetext
-        text="POLYGON PADS: INNER PADS OVERLAP"
-        pcbY={4.5}
-        fontSize={0.45}
-      />
+      <pcbnotetext text="POLYGON PADS: 0.8mm GAP" pcbY={4.5} fontSize={0.45} />
       <pcbnotetext
         text="SAME COPPER AS RECTANGLES: 0.8mm GAP"
         pcbY={-4}
@@ -115,5 +111,25 @@ test("imported TVS polygon pads overlap despite a 0.8mm flex gap", async () => {
     </board>,
   )
   await circuit.renderUntilSettled()
+  const polygonPads = circuit.db.pcb_smtpad
+    .list()
+    .filter((pad) => pad.shape === "polygon")
+  const rectangularPads = circuit.db.pcb_smtpad
+    .list()
+    .filter((pad) => pad.shape === "rect")
+  expect(polygonPads).toHaveLength(4)
+  for (const [padIndex, polygonPad] of polygonPads.entries()) {
+    const rectangularPad = rectangularPads[padIndex]!
+    expect(Math.min(...polygonPad.points.map((point) => point.x))).toBeCloseTo(
+      rectangularPad.x - rectangularPad.width / 2,
+    )
+    expect(Math.max(...polygonPad.points.map((point) => point.x))).toBeCloseTo(
+      rectangularPad.x + rectangularPad.width / 2,
+    )
+  }
+  const innerCopperGap =
+    Math.min(...polygonPads[2]!.points.map((point) => point.x)) -
+    Math.max(...polygonPads[1]!.points.map((point) => point.x))
+  expect(innerCopperGap).toBeCloseTo(0.8)
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
