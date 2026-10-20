@@ -33,7 +33,12 @@ export class AnalogDigitalStimulus extends PrimitiveComponent<
         ).simulation_digital_stimulus_id
   }
 
-  updateSimulationRender(): void {
+  onPropsChange(): void {
+    this._markDirty("SimulationSpiceEngineRender")
+  }
+
+  // Refresh traffic after every experiment has updated its pin states.
+  updateSimulationSpiceEngineRender(): void {
     this.doInitialSimulationRender()
   }
   removeSimulationRender(): void {

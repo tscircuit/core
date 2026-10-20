@@ -63,6 +63,16 @@ function IbisSubcircuit({ name, pcbX }: { name: string; pcbX: number }) {
         connectsTo=".IO > .U1 > .DATA"
         referenceTo=".IO > .U1 > .GND"
       />
+      <analog.transientsimulation
+        name="native"
+        spiceEngine="native"
+        duration="1ms"
+      />
+      <voltageprobe
+        name="native_probe"
+        connectsTo=".IO > .U1 > .RX"
+        graphDisplayName="Native"
+      />
       <analog.eyediagram
         name="eye"
         simulationRef=".switching"
@@ -79,6 +89,11 @@ test("cached IBIS subcircuits preserve simulation records and remap every refere
   const { circuit } = getTestFixture({
     platform: {
       spiceEngineMap: {
+        native: {
+          async simulate(): Promise<{ simulationResultCircuitJson: never[] }> {
+            throw new Error("Native solver failed")
+          },
+        },
         pcb_spice: {
           async simulate() {
             solverCalls++
@@ -100,6 +115,19 @@ test("cached IBIS subcircuits preserve simulation records and remap every refere
   expect(
     cachedJson.filter((record) => record.type === "simulation_ibis_model"),
   ).toHaveLength(1)
+  expect(
+    cachedJson.filter((record) => record.type === "simulation_experiment"),
+  ).toHaveLength(2)
+  expect(
+    cachedJson.filter((record) => record.type === "simulation_voltage_probe"),
+  ).toHaveLength(2)
+  expect(
+    cachedJson.some(
+      (record) => record.type === "simulation_unknown_experiment_error",
+    ),
+  ).toBe(true)
+  expect(circuit.db.simulation_unknown_experiment_error.list()).toHaveLength(0)
+  expect(circuit.db.simulation_oscilloscope_trace.list()).toHaveLength(0)
   const models = circuit.db.simulation_ibis_model.list()
   expect(models).toHaveLength(2)
   const experiments = circuit.db.simulation_experiment.list()

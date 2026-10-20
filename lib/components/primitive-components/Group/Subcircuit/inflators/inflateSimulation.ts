@@ -9,15 +9,18 @@ import type {
 import { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import type { InflatorContext } from "../InflatorFn"
 
-// Dependencies must precede records that reference them.
-const simulationTypes = [
-  "simulation_experiment",
-  "simulation_voltage_probe",
+const ibisSimulationTypes = [
   "simulation_ibis_model",
   "simulation_ibis_pin_state",
   "simulation_digital_stimulus",
   "simulation_eye_diagram",
-  "simulation_oscilloscope_trace",
+] as const
+
+// Dependencies must precede records that reference them.
+const simulationTypes = [
+  "simulation_experiment",
+  "simulation_voltage_probe",
+  ...ibisSimulationTypes,
 ] as const
 
 type SimulationReferenceId =
@@ -37,6 +40,7 @@ class InflatedSimulation extends PrimitiveComponent {
   }
 
   doInitialSimulationRender() {
+    if (this.getInheritedProperty("analogSimulationDisabled")) return
     restoreSimulationRecords(this.inflationCtx)
   }
 }
@@ -47,6 +51,15 @@ function restoreSimulationRecords({
   groupsMap,
 }: InflatorContext) {
   const { db } = subcircuit.root!
+  const eyes = injectionDb.simulation_eye_diagram.list()
+  const experimentIds = new Set(
+    [
+      ...injectionDb.simulation_ibis_pin_state.list(),
+      ...injectionDb.simulation_digital_stimulus.list(),
+      ...eyes,
+    ].map((record) => record.simulation_experiment_id),
+  )
+  const probeIds = new Set(eyes.map((eye) => eye.simulation_voltage_probe_id))
   const restoredIds = new Map<SimulationReferenceId, SimulationReferenceId>()
 
   const remapId = (
@@ -139,6 +152,14 @@ function restoreSimulationRecords({
 
   for (const type of simulationTypes) {
     for (const record of injectionDb[type].list()) {
+      // Main ignores cached simulation records. Restore only IBIS dependencies.
+      if (
+        (record.type === "simulation_experiment" &&
+          !experimentIds.has(record.simulation_experiment_id)) ||
+        (record.type === "simulation_voltage_probe" &&
+          !probeIds.has(record.simulation_voltage_probe_id))
+      )
+        continue
       const primaryIdField = `${type}_id`
       const fields = Object.fromEntries(
         Object.entries(record).filter(([key]) => key !== primaryIdField),
@@ -153,16 +174,11 @@ function restoreSimulationRecords({
 }
 
 export function inflateSimulation(inflationCtx: InflatorContext) {
-  const records = inflationCtx.injectionDb
-    .toArray()
-    .filter((record) => record.type.startsWith("simulation_"))
-  if (records.length === 0) return
-  for (const record of records) {
-    if (!simulationTypes.some((type) => type === record.type)) {
-      throw new Error(
-        `Cannot restore simulation records: unsupported element type "${record.type}".`,
-      )
-    }
-  }
+  if (
+    !ibisSimulationTypes.some(
+      (type) => inflationCtx.injectionDb[type].list().length > 0,
+    )
+  )
+    return
   inflationCtx.subcircuit.add(new InflatedSimulation(inflationCtx))
 }

@@ -33,6 +33,10 @@ export class AnalogEyeDiagram extends PrimitiveComponent<
         ).simulation_eye_diagram_id
   }
 
+  onPropsChange(): void {
+    this._markDirty("SimulationSpiceEngineRender")
+  }
+
   updateSimulationSpiceEngineRender(): void {
     this.doInitialSimulationSpiceEngineRender()
   }

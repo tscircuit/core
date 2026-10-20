@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("restoring an unsupported simulation record fails instead of dropping it", async () => {
+test("cached simulation results are ignored as on main", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board routingDisabled>
@@ -23,7 +23,6 @@ test("restoring an unsupported simulation record fails instead of dropping it", 
       />
     </board>,
   )
-  await expect(circuit.renderUntilSettled()).rejects.toThrow(
-    'Cannot restore simulation records: unsupported element type "simulation_transient_voltage_graph".',
-  )
+  await circuit.renderUntilSettled()
+  expect(circuit.db.simulation_transient_voltage_graph.list()).toHaveLength(0)
 })

@@ -1,5 +1,7 @@
 import { analogTransientSimulationProps } from "@tscircuit/props"
 import { AnalogAnalysisSimulation } from "./AnalogAnalysisSimulation"
+import type { AnalogDigitalStimulus } from "./AnalogDigitalStimulus"
+import type { AnalogEyeDiagram } from "./AnalogEyeDiagram"
 import { resolveExternalSimulationPort } from "lib/utils/simulation/resolveExternalSimulation"
 import { AnalogTransientSimulation_validateIbisBindings } from "./AnalogTransientSimulation_validateIbisBindings"
 
@@ -25,6 +27,15 @@ export class AnalogTransientSimulation extends AnalogAnalysisSimulation<
 
   onPropsChange(): void {
     this._markDirty("SimulationRender")
+    if (!this.simulation_experiment_id) return
+    const subcircuit = this.getSubcircuit()
+    for (const declaration of [
+      ...subcircuit.selectAll<AnalogDigitalStimulus>("analogdigitalstimulus"),
+      ...subcircuit.selectAll<AnalogEyeDiagram>("analogeyediagram"),
+    ]) {
+      if (declaration.getSubcircuit() === subcircuit)
+        declaration._markDirty("SimulationSpiceEngineRender")
+    }
   }
 
   updateSimulationRender(): void {
