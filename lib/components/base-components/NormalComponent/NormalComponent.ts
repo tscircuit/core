@@ -2455,6 +2455,7 @@ export class NormalComponent<
   }
 
   updateSourceDesignRuleChecks(): void {
+    NormalComponent_doInitialSourceDesignRuleChecks(this)
     NormalComponent_doInitialSourcePinSpecificationChecks(this)
   }
 
