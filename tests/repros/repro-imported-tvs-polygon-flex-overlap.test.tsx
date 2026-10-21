@@ -78,7 +78,7 @@ function ImportedTvs({
   )
 }
 
-test("imported TVS polygon pads overlap despite a 0.8mm flex gap", async () => {
+test("imported TVS polygon pads preserve the requested 0.8mm flex gap", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width={12} height={11} routingDisabled>
@@ -102,11 +102,7 @@ test("imported TVS polygon pads overlap despite a 0.8mm flex gap", async () => {
         <ImportedTvs name="D3" rectangular />
         <ImportedTvs name="D4" rectangular />
       </group>
-      <pcbnotetext
-        text="POLYGON PADS: INNER PADS OVERLAP"
-        pcbY={4.5}
-        fontSize={0.45}
-      />
+      <pcbnotetext text="POLYGON PADS: 0.8mm GAP" pcbY={4.5} fontSize={0.45} />
       <pcbnotetext
         text="SAME COPPER AS RECTANGLES: 0.8mm GAP"
         pcbY={-4}
@@ -115,5 +111,26 @@ test("imported TVS polygon pads overlap despite a 0.8mm flex gap", async () => {
     </board>,
   )
   await circuit.renderUntilSettled()
+  // Measure the actual copper edges, not just the layout's component widths.
+  const copperBounds = (name: string) => {
+    const source = circuit.db.source_component
+      .list()
+      .find((c) => c.name === name)!
+    const component = circuit.db.pcb_component
+      .list()
+      .find((c) => c.source_component_id === source.source_component_id)!
+    const xs = circuit.db.pcb_smtpad
+      .list()
+      .filter((pad) => pad.pcb_component_id === component.pcb_component_id)
+      .flatMap((pad) => {
+        if (pad.shape === "polygon") return pad.points.map((p) => p.x)
+        if (pad.shape === "rect")
+          return [pad.x - pad.width / 2, pad.x + pad.width / 2]
+        throw new Error("Expected polygon or rectangular TVS pads")
+      })
+    return { left: Math.min(...xs), right: Math.max(...xs) }
+  }
+  expect(copperBounds("D2").left - copperBounds("D1").right).toBeCloseTo(0.8, 6)
+  expect(copperBounds("D4").left - copperBounds("D3").right).toBeCloseTo(0.8, 6)
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
