@@ -719,13 +719,42 @@ export abstract class PrimitiveComponent<
   _getPcbBoundsBeforeLayout(): ReturnType<
     PrimitiveComponent["_getPcbLocalBoundsBeforeLayout"]
   > {
-    const center = this._getGlobalPcbPositionBeforeLayout()
-    const { width, height } = this.getPcbSize()
+    const { left, right, top, bottom } = this._getPcbLocalBoundsBeforeLayout()
+    const footprintLocalToBoardTransform =
+      this._computePcbGlobalTransformBeforeLayout()
+    if (
+      this._parsedProps.shape === "circle" ||
+      ["Via", "SilkscreenCircle", "CourtyardCircle"].includes(
+        this.componentName,
+      ) ||
+      (this.componentName === "Hole" && this._parsedProps.shape === undefined)
+    ) {
+      // Transform a circle's center, not its bounding square: rotation and
+      // bottom-layer reflection leave the diameter unchanged.
+      const center = applyToPoint(footprintLocalToBoardTransform, {
+        x: 0,
+        y: 0,
+      })
+      return {
+        left: center.x + left,
+        right: center.x + right,
+        top: center.y + top,
+        bottom: center.y + bottom,
+      }
+    }
+    const boardWorldCorners = [
+      { x: left, y: bottom },
+      { x: right, y: bottom },
+      { x: right, y: top },
+      { x: left, y: top },
+    ].map((point) => applyToPoint(footprintLocalToBoardTransform, point))
+    const boardXs = boardWorldCorners.map((point) => point.x)
+    const boardYs = boardWorldCorners.map((point) => point.y)
     return {
-      left: center.x - width / 2,
-      right: center.x + width / 2,
-      top: center.y + height / 2,
-      bottom: center.y - height / 2,
+      left: Math.min(...boardXs),
+      right: Math.max(...boardXs),
+      top: Math.max(...boardYs),
+      bottom: Math.min(...boardYs),
     }
   }
 
