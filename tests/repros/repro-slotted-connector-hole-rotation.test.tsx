@@ -2,20 +2,20 @@ import { expect, test } from "bun:test"
 import { Fragment } from "react"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("mounting slots stay horizontal when their connector rotates 90 degrees", async () => {
+test("mounting slots rotate with their connector at 90 degrees", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
     <board width={60} height={28} routingDisabled>
       <pcbnotetext
-        text="SLOTTED CONNECTOR: PADS + GUIDES ROTATE, SLOTS DO NOT"
+        text="SLOTTED CONNECTOR: PADS, GUIDES AND SLOTS ROTATE TOGETHER"
         pcbY={12}
         fontSize={0.7}
       />
-      {[0, 90].map((rotation, column) => (
-        <Fragment key={rotation}>
+      {[0, 90].map((ccwRotationDegrees, column) => (
+        <Fragment key={ccwRotationDegrees}>
           <pcbnotetext
-            text={`${rotation}deg`}
+            text={`${ccwRotationDegrees}deg`}
             pcbX={column === 0 ? -15 : 15}
             pcbY={8.5}
             fontSize={0.9}
@@ -23,14 +23,14 @@ test("mounting slots stay horizontal when their connector rotates 90 degrees", a
           <chip
             name={`J${column + 1}`}
             pcbX={column === 0 ? -15 : 15}
-            pcbRotation={rotation}
+            pcbRotation={ccwRotationDegrees}
             pinLabels={{ pin1: "VCC", pin2: "GND", pin3: "SDA", pin4: "SCL" }}
             footprint={
               <footprint>
-                {[-3.81, -1.27, 1.27, 3.81].map((x, i) => (
+                {[-3.81, -1.27, 1.27, 3.81].map((x, pinIndex) => (
                   <Fragment key={x}>
                     <platedhole
-                      portHints={[`pin${i + 1}`]}
+                      portHints={[`pin${pinIndex + 1}`]}
                       pcbX={x}
                       shape="circle"
                       holeDiameter={0.9}

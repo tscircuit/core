@@ -44,7 +44,8 @@ test("inline net label spans a route with a small elbow jog", async () => {
   const routeMaxY = Math.max(...routePoints.map((p) => p.y))
   expect(inlineLabel.position.x).toBeGreaterThan(routeMinX)
   expect(inlineLabel.position.x).toBeLessThan(routeMaxX)
-  expect(inlineLabel.position.y).toBeGreaterThan(routeMaxY)
+  expect(inlineLabel.position.y).toBeCloseTo(routeMaxY)
+  expect(inlineLabel.anchor).toBe("bottom_center")
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })

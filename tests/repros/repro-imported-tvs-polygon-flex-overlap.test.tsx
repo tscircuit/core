@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import type { RootCircuit } from "lib/RootCircuit"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 // ESD5Z5.0T1G (C82044) pad geometry from the imported ble-pedometer part
@@ -78,7 +79,21 @@ function ImportedTvs({
   )
 }
 
-test("imported TVS polygon pads overlap despite a 0.8mm flex gap", async () => {
+function getTvsCopperBounds(circuit: RootCircuit, name: string) {
+  const component = circuit.selectOne(`.${name}`)!
+  const xs = circuit.db.pcb_smtpad
+    .list()
+    .filter((pad) => pad.pcb_component_id === component.pcb_component_id)
+    .flatMap((pad) => {
+      if (pad.shape === "polygon") return pad.points.map((p) => p.x)
+      if (pad.shape === "rect")
+        return [pad.x - pad.width / 2, pad.x + pad.width / 2]
+      throw new Error("Expected polygon or rectangular TVS pads")
+    })
+  return { left: Math.min(...xs), right: Math.max(...xs) }
+}
+
+test("imported TVS polygon pads preserve the requested 0.8mm flex gap", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width={12} height={11} routingDisabled>
@@ -102,11 +117,7 @@ test("imported TVS polygon pads overlap despite a 0.8mm flex gap", async () => {
         <ImportedTvs name="D3" rectangular />
         <ImportedTvs name="D4" rectangular />
       </group>
-      <pcbnotetext
-        text="POLYGON PADS: INNER PADS OVERLAP"
-        pcbY={4.5}
-        fontSize={0.45}
-      />
+      <pcbnotetext text="POLYGON PADS: 0.8mm GAP" pcbY={4.5} fontSize={0.45} />
       <pcbnotetext
         text="SAME COPPER AS RECTANGLES: 0.8mm GAP"
         pcbY={-4}
@@ -115,5 +126,14 @@ test("imported TVS polygon pads overlap despite a 0.8mm flex gap", async () => {
     </board>,
   )
   await circuit.renderUntilSettled()
+  // Measure the actual copper edges, not just the layout's component widths.
+  expect(
+    getTvsCopperBounds(circuit, "D2").left -
+      getTvsCopperBounds(circuit, "D1").right,
+  ).toBeCloseTo(0.8, 6)
+  expect(
+    getTvsCopperBounds(circuit, "D4").left -
+      getTvsCopperBounds(circuit, "D3").right,
+  ).toBeCloseTo(0.8, 6)
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
