@@ -722,6 +722,26 @@ export abstract class PrimitiveComponent<
     const { left, right, top, bottom } = this._getPcbLocalBoundsBeforeLayout()
     const footprintLocalToBoardTransform =
       this._computePcbGlobalTransformBeforeLayout()
+    if (
+      this._parsedProps.shape === "circle" ||
+      ["Via", "SilkscreenCircle", "CourtyardCircle"].includes(
+        this.componentName,
+      ) ||
+      (this.componentName === "Hole" && this._parsedProps.shape === undefined)
+    ) {
+      // Transform a circle's center, not its bounding square: rotation and
+      // bottom-layer reflection leave the diameter unchanged.
+      const center = applyToPoint(footprintLocalToBoardTransform, {
+        x: 0,
+        y: 0,
+      })
+      return {
+        left: center.x + left,
+        right: center.x + right,
+        top: center.y + top,
+        bottom: center.y + bottom,
+      }
+    }
     const boardWorldCorners = [
       { x: left, y: bottom },
       { x: right, y: bottom },
