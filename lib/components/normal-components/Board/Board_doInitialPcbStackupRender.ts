@@ -10,9 +10,7 @@ export function Board_doInitialPcbStackupRender(
   const { pcb_board_id, subcircuit_id } = board
   if (!pcb_board_id || db.pcb_stackup.getWhere({ pcb_board_id })) return
 
-  // Inflation recreates pcb_board rather than copying it. Reassociate the
-  // imported construction with the new board and preserve it instead of
-  // generating a second stackup from the preset.
+  // Imported stackups take precedence and must use the new board ID.
   const importedStackup = board._parsedProps.circuitJson?.find(
     (element) =>
       element.type === "pcb_stackup" &&
@@ -23,7 +21,7 @@ export function Board_doInitialPcbStackupRender(
     resolveJlcpcbStackupPreset(
       board._parsedProps.fabricatorPreset,
       importedPcbBoard ?? db.pcb_board.get(pcb_board_id)!,
-    )?.layers
+    )
   if (!layers) return
 
   db.pcb_stackup.insert({
