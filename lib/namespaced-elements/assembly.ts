@@ -1,4 +1,6 @@
 import type {
+  AssemblyExplosionStagePropsInput,
+  AssemblyExplosionMovePropsInput,
   AssemblyCablePropsInput,
   AssemblyDevicePropsInput,
   AssemblyMotorPropsInput,
@@ -33,6 +35,14 @@ export type AssemblyCadAssemblyJsxProps = AssemblySubassemblyJsxProps
 export interface AssemblyCableJsxProps extends AssemblyCablePropsInput {}
 
 export const assembly = {
+  explosion: {
+    stage: createNamespacedElement<AssemblyExplosionStagePropsInput>(
+      "assembly.explosion.stage",
+    ),
+    move: createNamespacedElement<AssemblyExplosionMovePropsInput>(
+      "assembly.explosion.move",
+    ),
+  },
   referencesurface: createNamespacedElement<AssemblyReferenceSurfacePropsInput>(
     "assembly.referencesurface",
   ),

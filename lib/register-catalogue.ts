@@ -10,6 +10,8 @@ extendCatalogue(Components)
 extendCatalogue({
   "assembly.cable": Components.AssemblyCable,
   "assembly.device": Components.AssemblyDevice,
+  "assembly.explosion.stage": Components.AssemblyExplosionStage,
+  "assembly.explosion.move": Components.AssemblyExplosionMove,
   "assembly.motor": Components.AssemblyMotor,
   "assembly.part": Components.AssemblyPart,
   "assembly.referencesurface": Components.AssemblyReferenceSurface,
