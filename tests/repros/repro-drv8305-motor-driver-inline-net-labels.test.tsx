@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { pointToSegmentDistance } from "@tscircuit/math-utils"
 import type { ChipProps, MosfetProps } from "@tscircuit/props"
 import type { InputProblem } from "@tscircuit/schematic-trace-solver"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
@@ -1054,5 +1055,21 @@ test("DRV8305 motor-driver remote signal labels render inline", async () => {
       .list()
       .filter((label) => remoteSignalLabels.includes(label.text)),
   ).toHaveLength(0)
+  for (const text of circuit.db.schematic_text.list()) {
+    if (!text.source_trace_id) continue
+    const sourceTrace = circuit.db.source_trace.get(text.source_trace_id)!
+    const edges = circuit.db.schematic_trace
+      .list({
+        subcircuit_connectivity_map_key:
+          sourceTrace.subcircuit_connectivity_map_key,
+      })
+      .flatMap((trace) => trace.edges)
+    expect(
+      edges.some(
+        (edge) =>
+          pointToSegmentDistance(text.position, edge.from, edge.to) < 1e-6,
+      ),
+    ).toBe(true)
+  }
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 }, 120_000)

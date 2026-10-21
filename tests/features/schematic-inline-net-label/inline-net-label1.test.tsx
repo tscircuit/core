@@ -57,9 +57,8 @@ test("named point-to-point trace gets a horizontal inline net label", async () =
         Math.abs(inlineLabel.position.y - edgeA.from.y) -
         Math.abs(inlineLabel.position.y - edgeB.from.y),
     )[0]!
-  expect(inlineLabel.position.y - nearestHorizontalEdge.from.y).toBeCloseTo(
-    INLINE_NET_LABEL_FONT_SIZE / 2,
-  )
+  expect(inlineLabel.position.y - nearestHorizontalEdge.from.y).toBeCloseTo(0)
+  expect(inlineLabel.anchor).toBe("bottom_center")
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
