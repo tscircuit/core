@@ -86,7 +86,9 @@ test.failing("polygon plated holes retain rotation", () => {
     const rectanglePad = rectanglePads.find(
       (hole) => hole.pcb_component_id === polygonPad.pcb_component_id,
     )!
-    expect(polygonPad.ccw_rotation).toBe(rectanglePad.rect_ccw_rotation)
+    expect(polygonPad.ccw_rotation ?? 0).toBe(
+      rectanglePad.rect_ccw_rotation ?? 0,
+    )
   }
 
   const { circuit: importedCircuit } = getTestFixture()
