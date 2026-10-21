@@ -100,12 +100,12 @@ const leds = [
   },
 ]
 
-test("JLC LED silkscreen rectangles stay axis-aligned at 45 degrees", async () => {
+test("JLC LED silkscreen rectangles rotate with their pads at 45 degrees", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width={52} height={34} routingDisabled>
       <pcbnotetext
-        text="LED pads rotate; silkscreen rectangles stay axis-aligned"
+        text="LED pads and silkscreen rectangles rotate together"
         pcbY={14}
         fontSize={0.7}
       />

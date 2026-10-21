@@ -48,11 +48,15 @@ export class SilkscreenRect extends PrimitiveComponent<
     const subcircuit = this.getSubcircuit()
     const position = this._getGlobalPcbPositionBeforeLayout()
 
-    // For 0, 90, 180, 270 degree rotations, swap width/height for 90/270
-    // Don't use ccw_rotation for these angles (like SilkscreenPath handles rotation)
+    // Preserve the existing axis-aligned representation for quarter turns.
     const isRotated90Degrees = this._isRotated90Degrees()
     const finalWidth = isRotated90Degrees ? props.height : props.width
     const finalHeight = isRotated90Degrees ? props.width : props.height
+    // The transformed local +X direction gives the rectangle's board-world
+    // orientation (+X right, +Y top, CCW degrees), including bottom-layer flips.
+    // Use the same placement matrix as SilkscreenPath's transformed corners.
+    const transform = this._computePcbGlobalTransformBeforeLayout()
+    const rotation = (Math.atan2(transform.b, transform.a) * 180) / Math.PI
 
     const pcb_component_id =
       this.parent?.pcb_component_id ??
@@ -66,6 +70,7 @@ export class SilkscreenRect extends PrimitiveComponent<
       },
       width: finalWidth,
       height: finalHeight,
+      ccw_rotation: isRotated90Degrees ? 0 : rotation,
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       pcb_group_id: this?.getGroup()?.pcb_group_id ?? undefined,
       stroke_width: props.strokeWidth ?? 0.1,
