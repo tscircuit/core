@@ -1,23 +1,73 @@
 import { expect, test } from "bun:test"
 import { AutoroutingPipelineSolver } from "@tscircuit/capacity-autorouter"
-import type { PcbNotePath } from "circuit-json"
 import { convertCircuitJsonToPcbSvg } from "circuit-to-svg"
+import { getSvgFromGraphicsObject } from "graphics-debug"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
-import { getCopperPourTerminalsFixture } from "./fixtures/copper-pour-terminals.fixture"
+import { stackSvgsHorizontally, stackSvgsVertically } from "stack-svgs"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("only the terminal outside the copper pour needs routing", async () => {
-  const circuit = await getCopperPourTerminalsFixture()
+const createLabel = (title: string, detail: string) => `<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="800"
+  height="72"
+  viewBox="0 0 800 72"
+>
+  <rect width="800" height="72" fill="#172131" />
+  <text x="20" y="29" fill="white" font-family="Arial, sans-serif" font-size="21" font-weight="bold">${title}</text>
+  <text x="20" y="56" fill="#cbd5e1" font-family="Arial, sans-serif" font-size="17">${detail}</text>
+</svg>`
+
+test("SRJ skips routing between terminals already joined by copper", async () => {
+  const { circuit } = getTestFixture()
+
+  circuit.add(
+    <board width="20mm" height="12mm" routingDisabled>
+      <net name="GND" />
+      <resistor
+        name="R1"
+        resistance="10k"
+        footprint="0805"
+        pcbX={-4}
+        connections={{ pin2: "net.GND" }}
+      />
+      <resistor
+        name="R2"
+        resistance="1k"
+        footprint="0805"
+        pcbX={4}
+        connections={{ pin1: "net.GND" }}
+      />
+      <copperpour connectsTo="net.GND" layer="top" />
+    </board>,
+  )
+
+  await circuit.renderUntilSettled()
+
   const circuitJson = circuit.getCircuitJson()
+  const gndNet = circuit.db.source_net.list().find((net) => net.name === "GND")
+  if (!gndNet) throw new Error("Expected the GND source net")
+
   const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
     circuitJson,
     ignoreExistingTopLevelPcbRouteState: true,
   })
-  const gndConnection = simpleRouteJson.connections[0]!
-  expect(gndConnection.pointsToConnect).toHaveLength(3)
+  const gndConnection = simpleRouteJson.connections.find(
+    (connection) => connection.name === gndNet.source_net_id,
+  )
+  if (!gndConnection) {
+    throw new Error("Expected the GND SRJ connection")
+  }
+  if (gndConnection.pointsToConnect.length !== 2) {
+    throw new Error("Expected exactly two GND terminals")
+  }
+
+  const [firstPoint, secondPoint] = gndConnection.pointsToConnect
+  if (!firstPoint?.pointId || !secondPoint?.pointId) {
+    throw new Error("Expected both GND terminals to have point IDs")
+  }
+
   expect(gndConnection.externallyConnectedPointIds).toEqual([
-    gndConnection.pointsToConnect
-      .filter((point) => point.x <= 0)
-      .map((point) => point.pointId!),
+    [firstPoint.pointId, secondPoint.pointId],
   ])
 
   expect(simpleRouteJson.traces ?? []).toHaveLength(0)
@@ -29,32 +79,57 @@ test("only the terminal outside the copper pour needs routing", async () => {
     router.step()
   }
   expect(router.failed).toBe(false)
-  expect(router.srjWithPointPairs!.connections).toHaveLength(1)
+  const requestedRoutes = router.srjWithPointPairs!.connections
+  expect(requestedRoutes).toHaveLength(0)
 
-  // Draw the actual router's requested point pairs over the original copper.
-  const requestedRoutes: PcbNotePath[] =
-    router.srjWithPointPairs!.connections.map((connection, index) => ({
-      type: "pcb_note_path",
-      pcb_note_path_id: `requested_route_${index}`,
-      route: connection.pointsToConnect.map(({ x, y }) => ({ x, y })),
-      layer: "top",
-      stroke_width: 0.1,
-      color: "#00d4ff",
-    }))
+  const remainingRouteCount = requestedRoutes.length
+  const pcbPanel = stackSvgsVertically(
+    [
+      createLabel(
+        "Circuit JSON",
+        "The top-layer GND pour already joins the two GND terminals",
+      ),
+      convertCircuitJsonToPcbSvg(circuitJson, {
+        width: 800,
+        height: 500,
+        showPinNumbers: true,
+      }),
+    ],
+    { gap: 0, normalizeSize: false },
+  )
+  const routingDemandPanel = stackSvgsVertically(
+    [
+      createLabel(
+        "SRJ remaining routing demand",
+        `${remainingRouteCount} ${remainingRouteCount === 1 ? "route" : "routes"} still requested between terminals already joined by copper`,
+      ),
+      getSvgFromGraphicsObject(
+        {
+          points: [
+            { ...firstPoint, color: "#ff2ca8", label: "R1 GND" },
+            { ...secondPoint, color: "#ff2ca8", label: "R2 GND" },
+          ],
+          lines: requestedRoutes.map((connection) => ({
+            points: connection.pointsToConnect,
+            strokeColor: "#ff2ca8",
+            strokeWidth: 0.18,
+            label: "unnecessary route request",
+          })),
+        },
+        {
+          backgroundColor: "#fff",
+          svgWidth: 800,
+          svgHeight: 500,
+        },
+      ),
+    ],
+    { gap: 0, normalizeSize: false },
+  )
+
   await expect(
-    convertCircuitJsonToPcbSvg([
-      ...circuitJson,
-      ...requestedRoutes,
-      {
-        type: "pcb_note_text",
-        pcb_note_text_id: "requested_routes_legend",
-        text: `CYAN = ${requestedRoutes.length} SRJ route ${requestedRoutes.length === 1 ? "pair" : "pairs"} requested`,
-        anchor_position: { x: 0, y: -2.8 },
-        anchor_alignment: "center",
-        font: "tscircuit2024",
-        font_size: 0.5,
-        layer: "top",
-      },
-    ]),
+    stackSvgsHorizontally([pcbPanel, routingDemandPanel], {
+      gap: 16,
+      normalizeSize: false,
+    }),
   ).toMatchSvgSnapshot(import.meta.path, undefined, { diffThresholdPercent: 0 })
 })
