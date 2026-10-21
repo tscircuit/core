@@ -5,7 +5,7 @@ import { convertCircuitJsonToPcbSvg } from "circuit-to-svg"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 import { getCopperPourTerminalsFixture } from "./fixtures/copper-pour-terminals.fixture"
 
-test("a copper-connected pair is still requested as routing work", async () => {
+test("only the terminal outside the copper pour needs routing", async () => {
   const circuit = await getCopperPourTerminalsFixture()
   const circuitJson = circuit.getCircuitJson()
   const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
@@ -14,7 +14,11 @@ test("a copper-connected pair is still requested as routing work", async () => {
   })
   const gndConnection = simpleRouteJson.connections[0]!
   expect(gndConnection.pointsToConnect).toHaveLength(3)
-  expect(gndConnection.externallyConnectedPointIds).toBeUndefined()
+  expect(gndConnection.externallyConnectedPointIds).toEqual([
+    gndConnection.pointsToConnect
+      .filter((point) => point.x <= 0)
+      .map((point) => point.pointId!),
+  ])
 
   expect(simpleRouteJson.traces ?? []).toHaveLength(0)
   const router = new AutoroutingPipelineSolver({
@@ -25,7 +29,7 @@ test("a copper-connected pair is still requested as routing work", async () => {
     router.step()
   }
   expect(router.failed).toBe(false)
-  expect(router.srjWithPointPairs!.connections).toHaveLength(2)
+  expect(router.srjWithPointPairs!.connections).toHaveLength(1)
 
   // Draw the actual router's requested point pairs over the original copper.
   const requestedRoutes: PcbNotePath[] =
@@ -44,7 +48,7 @@ test("a copper-connected pair is still requested as routing work", async () => {
       {
         type: "pcb_note_text",
         pcb_note_text_id: "requested_routes_legend",
-        text: `CYAN = ${requestedRoutes.length} SRJ route pairs requested`,
+        text: `CYAN = ${requestedRoutes.length} SRJ route ${requestedRoutes.length === 1 ? "pair" : "pairs"} requested`,
         anchor_position: { x: 0, y: -2.8 },
         anchor_alignment: "center",
         font: "tscircuit2024",
