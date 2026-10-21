@@ -1,5 +1,9 @@
 import { expect, test } from "bun:test"
-import { getBoundsCenter, getBoundsFromPoints } from "@tscircuit/math-utils"
+import {
+  getBoundsCenter,
+  getBoundsFromPoints,
+  pointToSegmentDistance,
+} from "@tscircuit/math-utils"
 import type {
   AnyCircuitElement,
   SchematicCircle,
@@ -252,7 +256,10 @@ test("TB67 bent-route inline label positions", async () => {
   // Bounds and circle centers are points in schematic-world mm (+x right, +y up).
   const guides: (SchematicRect | SchematicCircle)[] = []
   const detail: AnyCircuitElement[] = []
-  for (const name of ["OUT_A_P", "OUT_B_P"]) {
+  for (const [name, anchor] of [
+    ["OUT_A_P", "bottom_left"],
+    ["OUT_B_P", "top_right"],
+  ] as const) {
     const labels = circuit.db.schematic_text
       .list()
       .filter((text) => text.text === name)
@@ -264,6 +271,14 @@ test("TB67 bent-route inline label positions", async () => {
         sourceTrace.subcircuit_connectivity_map_key,
     })
     expect(traces).toHaveLength(1)
+    const edges = traces[0]!.edges
+    expect(
+      edges.some(
+        (edge) =>
+          pointToSegmentDistance(label.position, edge.from, edge.to) < 1e-6,
+      ),
+    ).toBe(true)
+    expect(label.anchor).toBe(anchor)
     expect(label.rotation).toBe(0)
 
     const bounds = getSchematicTextBounds({

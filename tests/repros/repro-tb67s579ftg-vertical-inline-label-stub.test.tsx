@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test"
-import { getBoundsCenter } from "@tscircuit/math-utils"
+import { getBoundsCenter, pointToSegmentDistance } from "@tscircuit/math-utils"
 import type { SchematicCircle, SchematicRect } from "circuit-json"
 import { sel } from "lib/sel"
 import { getSchematicTextBounds } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
@@ -262,6 +262,10 @@ test("TB67 straight vertical stub inline label position", async () => {
   expect(edge.from.x).toBeCloseTo(edge.to.x)
   expect(edge.to.y).toBeLessThan(edge.from.y)
   expect(label.rotation).toBe(-90)
+  expect(
+    pointToSegmentDistance(label.position, edge.from, edge.to),
+  ).toBeLessThan(1e-6)
+  expect(label.anchor).toBe("bottom_right")
 
   const bounds = getSchematicTextBounds({
     text: label.text,
