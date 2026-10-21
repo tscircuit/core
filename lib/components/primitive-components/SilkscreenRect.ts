@@ -1,6 +1,6 @@
 import { silkscreenRectProps } from "@tscircuit/props"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
-import { decomposeTSR } from "transformation-matrix"
+import { getAxisAlignedSizeFromRotatedRect } from "lib/utils/pcb/get-axis-aligned-size-from-rotated-rect"
 
 export class SilkscreenRect extends PrimitiveComponent<
   typeof silkscreenRectProps
@@ -15,20 +15,31 @@ export class SilkscreenRect extends PrimitiveComponent<
     }
   }
 
-  /**
-   * Check if the component is rotated 90 or 270 degrees based on global transform.
-   * For these rotations, we need to swap width/height instead of using ccw_rotation.
-   */
+  private _getPcbCcwRotationDegrees(): number {
+    // Same placement matrix as SilkscreenPath's corners: footprint-local to
+    // board space (+X right, +Y top), including bottom-layer mirroring.
+    const footprintLocalToBoardTransform =
+      this._computePcbGlobalTransformBeforeLayout()
+    return (
+      (Math.atan2(
+        footprintLocalToBoardTransform.b,
+        footprintLocalToBoardTransform.a,
+      ) *
+        180) /
+      Math.PI
+    )
+  }
+
+  /** Quarter turns use swapped dimensions instead of ccw_rotation. */
   private _isRotated90Degrees(): boolean {
-    const globalTransform = this._computePcbGlobalTransformBeforeLayout()
-    const decomposedTransform = decomposeTSR(globalTransform)
-    const rotationDegrees = (decomposedTransform.rotation.angle * 180) / Math.PI
-    const normalizedRotationDegrees = ((rotationDegrees % 360) + 360) % 360
-    const rotationTolerance = 0.01
+    const ccwRotationDegrees = this._getPcbCcwRotationDegrees()
+    const normalizedCcwRotationDegrees =
+      ((ccwRotationDegrees % 360) + 360) % 360
+    const rotationToleranceDegrees = 0.01
 
     return (
-      Math.abs(normalizedRotationDegrees - 90) < rotationTolerance ||
-      Math.abs(normalizedRotationDegrees - 270) < rotationTolerance
+      Math.abs(normalizedCcwRotationDegrees - 90) < rotationToleranceDegrees ||
+      Math.abs(normalizedCcwRotationDegrees - 270) < rotationToleranceDegrees
     )
   }
 
@@ -52,11 +63,6 @@ export class SilkscreenRect extends PrimitiveComponent<
     const isRotated90Degrees = this._isRotated90Degrees()
     const finalWidth = isRotated90Degrees ? props.height : props.width
     const finalHeight = isRotated90Degrees ? props.width : props.height
-    // The transformed local +X direction gives the rectangle's board-world
-    // orientation (+X right, +Y top, CCW degrees), including bottom-layer flips.
-    // Use the same placement matrix as SilkscreenPath's transformed corners.
-    const transform = this._computePcbGlobalTransformBeforeLayout()
-    const rotation = (Math.atan2(transform.b, transform.a) * 180) / Math.PI
 
     const pcb_component_id =
       this.parent?.pcb_component_id ??
@@ -70,7 +76,7 @@ export class SilkscreenRect extends PrimitiveComponent<
       },
       width: finalWidth,
       height: finalHeight,
-      ccw_rotation: isRotated90Degrees ? 0 : rotation,
+      ccw_rotation: isRotated90Degrees ? 0 : this._getPcbCcwRotationDegrees(),
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       pcb_group_id: this?.getGroup()?.pcb_group_id ?? undefined,
       stroke_width: props.strokeWidth ?? 0.1,
@@ -81,15 +87,15 @@ export class SilkscreenRect extends PrimitiveComponent<
     this.pcb_silkscreen_rect_id = pcb_silkscreen_rect.pcb_silkscreen_rect_id
   }
 
+  /** Axis-aligned board-space size in mm (+X right, +Y top). */
   getPcbSize(): { width: number; height: number } {
     const { _parsedProps: props } = this
-    // Account for rotation by checking if width/height should be swapped
-    const isRotated90Degrees = this._isRotated90Degrees()
-
-    if (isRotated90Degrees) {
-      return { width: props.height, height: props.width }
-    }
-    return { width: props.width, height: props.height }
+    const { width, height } = getAxisAlignedSizeFromRotatedRect({
+      width: props.width,
+      height: props.height,
+      ccwRotationDegrees: this._getPcbCcwRotationDegrees(),
+    })
+    return { width, height }
   }
 
   _moveCircuitJsonElements({

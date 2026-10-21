@@ -119,16 +119,16 @@ test("JLC LED silkscreen rectangles rotate with their pads at 45 degrees", async
             pcbY={4 - row * 12}
             fontSize={0.9}
           />
-          {[0, 45].map((rotation, column) => (
+          {[0, 45].map((ccwRotationDegrees, column) => (
             <chip
-              key={rotation}
+              key={ccwRotationDegrees}
               name={`U${row * 2 + column + 1}`}
               manufacturerPartNumber={led.manufacturerPartNumber}
               supplierPartNumbers={{ jlcpcb: [led.partNumber] }}
               pinLabels={led.pinLabels}
               pcbX={-4 + column * 17}
               pcbY={4 - row * 12}
-              pcbRotation={rotation}
+              pcbRotation={ccwRotationDegrees}
               footprint={led.footprint}
             />
           ))}
