@@ -1,5 +1,5 @@
+import { getJlcStackup } from "@tscircuit/jlcpcb-manufacturing-specs"
 import type { PcbBoard } from "circuit-json"
-import { resolveJlcpcbStackupPreset } from "lib/utils/stackup/jlcpcb-stackup-presets"
 import type { Board } from "./Board"
 
 export function Board_doInitialPcbStackupRender(
@@ -18,10 +18,10 @@ export function Board_doInitialPcbStackupRender(
   )
   const layers =
     importedStackup?.layers ??
-    resolveJlcpcbStackupPreset(
-      board._parsedProps.fabricatorPreset,
-      importedPcbBoard ?? db.pcb_board.get(pcb_board_id)!,
-    )
+    (board._parsedProps.fabricatorPreset
+      ? getJlcStackup(importedPcbBoard ?? db.pcb_board.get(pcb_board_id)!)
+          ?.layers
+      : undefined)
   if (!layers) return
 
   db.pcb_stackup.insert({
