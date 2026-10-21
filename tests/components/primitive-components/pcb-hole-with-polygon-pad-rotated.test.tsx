@@ -11,12 +11,11 @@ const footprint = (
   <footprint>
     <platedhole
       portHints={["pin1"]}
-      pcbX={-2.5}
       shape="hole_with_polygon_pad"
       holeShape="circle"
       holeDiameter={0.8}
-      holeOffsetX={0.5}
-      holeOffsetY={0.2}
+      holeOffsetX={0}
+      holeOffsetY={0}
       padOutline={[
         { x: -2, y: -1 },
         { x: 2, y: -1 },
@@ -24,13 +23,14 @@ const footprint = (
         { x: -2, y: 1 },
       ]}
     />
-    <platedhole
-      portHints={["pin2"]}
-      pcbX={2.5}
-      shape="circular_hole_with_rect_pad"
-      holeDiameter={0.8}
-      rectPadWidth={4}
-      rectPadHeight={2}
+    <silkscreenpath
+      route={[
+        { x: -2.5, y: -1.5 },
+        { x: 2.5, y: -1.5 },
+        { x: 2.5, y: 1.5 },
+        { x: -2.5, y: 1.5 },
+        { x: -2.5, y: -1.5 },
+      ]}
     />
   </footprint>
 )
@@ -39,39 +39,40 @@ const placements = (["top", "bottom"] as const).flatMap((layer, row) =>
     name: `U${row * 4 + column + 1}`,
     layer,
     pcbRotation,
-    pcbX: column * 10 - 15,
-    pcbY: row === 0 ? 7 : -7,
+    pcbX: column * 8 - 10,
+    pcbY: row === 0 ? 3 : -5,
   })),
 )
 
 beforeAll(async () => {
   circuit.add(
-    <board width={40} height={28} routingDisabled>
+    <board width={36} height={24} routingDisabled>
+      <pcbnotetext text="Polygon pad rotation" pcbY={10} fontSize={0.9} />
+      <pcbnotetext
+        text="Copper should fit inside the outline"
+        pcbY={8.5}
+        fontSize={0.6}
+      />
+      <pcbnotetext text="Top" pcbX={-15} pcbY={3} fontSize={0.7} />
+      <pcbnotetext text="Bottom" pcbX={-15} pcbY={-5} fontSize={0.7} />
       {placements.map((placement) => (
         <chip key={placement.name} {...placement} footprint={footprint} />
       ))}
-      {placements.map(({ name, layer, pcbRotation, pcbX, pcbY }) => (
+      {placements.map(({ name, pcbRotation, pcbX, pcbY }) => (
         <Fragment key={name}>
           <pcbnotetext
-            text={`${name}: ${layer} ${pcbRotation} degrees`}
+            text={`${pcbRotation} deg`}
             pcbX={pcbX}
-            pcbY={pcbY - 5}
-            fontSize={0.5}
+            pcbY={pcbY - 3.5}
+            fontSize={0.7}
           />
         </Fragment>
       ))}
-      <pcbnotetext
-        text="Pin 1: polygon + offset drill. Pin 2: reference."
-        pcbY={12.5}
-        fontSize={0.6}
-      />
     </board>,
   )
   await circuit.renderUntilSettled()
   // Keep snapshot failures outside the expected-failure test.
-  await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
-    showPinNumbers: true,
-  })
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 }, 30_000)
 
 test.failing("polygon plated holes retain rotation", () => {
@@ -79,15 +80,15 @@ test.failing("polygon plated holes retain rotation", () => {
   const polygonPads = platedHoles.filter(
     (hole) => hole.shape === "hole_with_polygon_pad",
   )
-  const rectanglePads = platedHoles.filter(
-    (hole) => hole.shape === "circular_hole_with_rect_pad",
-  )
   for (const polygonPad of polygonPads) {
-    const rectanglePad = rectanglePads.find(
-      (hole) => hole.pcb_component_id === polygonPad.pcb_component_id,
-    )!
-    expect(polygonPad.ccw_rotation ?? 0).toBe(
-      rectanglePad.rect_ccw_rotation ?? 0,
+    const outline = circuit.db.pcb_silkscreen_path
+      .list()
+      .find((path) => path.pcb_component_id === polygonPad.pcb_component_id)!
+    const [start, end] = outline.route
+    const outlineRotation =
+      (Math.atan2(end.y - start.y, end.x - start.x) * 180) / Math.PI
+    expect((polygonPad.ccw_rotation ?? 0) % 180).toBeCloseTo(
+      (outlineRotation + 360) % 180,
     )
   }
 
