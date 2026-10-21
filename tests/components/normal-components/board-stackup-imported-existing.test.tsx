@@ -22,19 +22,27 @@ test("an imported stackup is preserved and reassociated without duplication", as
   const importedJson = [
     ...simpleCircuitJson.map((element) =>
       element.type === "pcb_board"
-        ? { ...element, pcb_board_id: "pcb_board_imported" }
+        ? {
+            ...element,
+            pcb_board_id: "pcb_board_imported",
+            num_layers: 4,
+            thickness: 1.6,
+            material: "fr4",
+          }
         : element,
     ),
     stackup,
   ]
   const originalJson = structuredClone(importedJson)
-  for (const stackupPreset of [undefined, "JLC04161H-3313"] as const) {
+  for (const fabricatorPreset of [undefined, "jlcpcb_standard"] as const) {
     const { circuit } = getTestFixture()
     circuit.add(
       <board
         circuitJson={importedJson as any}
-        layers={4}
-        stackupPreset={stackupPreset}
+        layers={6}
+        thickness={1.2}
+        material="flex"
+        fabricatorPreset={fabricatorPreset}
       />,
     )
     await circuit.renderUntilSettled()

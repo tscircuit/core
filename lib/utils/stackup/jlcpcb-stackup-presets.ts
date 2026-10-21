@@ -1,10 +1,11 @@
-import type { PcbStackupLayer } from "circuit-json"
+import type { BoardProps } from "@tscircuit/props"
+import type { PcbBoard, PcbStackupLayer } from "circuit-json"
 
 // JLCPCB JLC04161H-3313, nominal 1.6 mm board. Physical layers run top
 // to bottom, with thicknesses in mm. No soldermask or plating is specified.
 // Source: https://raw.githubusercontent.com/tscircuit/am3352-sbc/837245bceb6ac898fd5451507d6b2b8024095fe7/design/fabrication-stackup.json
-export const jlcpcbStackupPresets = {
-  "JLC04161H-3313": {
+const jlcpcbStackupPresets: Record<string, { layers: PcbStackupLayer[] }> = {
+  "4:1.6:fr4": {
     layers: [
       {
         layer_type: "copper",
@@ -28,7 +29,7 @@ export const jlcpcbStackupPresets = {
       {
         layer_type: "dielectric",
         dielectric_type: "core",
-        material_name: "NP-155F",
+        material_name: "NP-155F core",
         thickness: 1.265,
         relative_permittivity: 4.42,
       },
@@ -53,4 +54,22 @@ export const jlcpcbStackupPresets = {
       },
     ],
   },
-} satisfies Record<string, { layers: PcbStackupLayer[] }>
+}
+
+const fabricatorFamilies = {
+  jlcpcb_economy: "JLCPCB",
+  jlcpcb_standard: "JLCPCB",
+  jlcpcb_economy_20260912: "JLCPCB",
+  jlcpcb_standard_20260912: "JLCPCB",
+} satisfies Record<NonNullable<BoardProps["fabricatorPreset"]>, "JLCPCB">
+
+export function resolveJlcpcbStackupPreset(
+  fabricatorPreset: BoardProps["fabricatorPreset"],
+  construction: Pick<PcbBoard, "num_layers" | "thickness" | "material">,
+) {
+  if (!fabricatorPreset || fabricatorFamilies[fabricatorPreset] !== "JLCPCB")
+    return
+  return jlcpcbStackupPresets[
+    `${construction.num_layers}:${construction.thickness}:${construction.material ?? "fr4"}`
+  ]
+}
