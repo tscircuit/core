@@ -21,6 +21,8 @@ collision-check element, `run`, or `detach`.
 
 ```tsx
 <assembly.device name="instrument">
+  <assembly.part name="leftScrew" modelUrl="./left-screw.step" />
+  <assembly.part name="rightScrew" modelUrl="./right-screw.step" />
   <assembly.subassembly name="cover">
     <assembly.part name="shell" modelUrl="./shell.step" />
     <assembly.part name="window" modelUrl="./window.step" />
@@ -28,6 +30,9 @@ collision-check element, `run`, or `detach`.
       <assembly.explosion.move targetRef="window" offZ="15mm" />
     </assembly.explosion.stage>
   </assembly.subassembly>
+  <assembly.explosion.stage name="remove-screws">
+    <assembly.explosion.move targetRefs="leftScrew, rightScrew" offZ="8mm" />
+  </assembly.explosion.stage>
   <assembly.explosion.stage name="lift-cover">
     <assembly.explosion.move targetRef="cover" offZ="12mm" />
   </assembly.explosion.stage>
@@ -66,10 +71,20 @@ paths, unknown stage references, cycles, and missing or ambiguous move targets
 produce named errors. Every target is validated, including stages beyond the
 selected view.
 
+Use `targetRefs` to select the parts moved by one instruction. It accepts a
+comma-separated string, such as `targetRefs="leftScrew, rightScrew"`, or an array,
+such as `targetRefs={["leftScrew", "rightScrew"]}`. Each reference is trimmed and
+resolved relative to the stage's owning assembly. Empty lists, blank entries,
+and unresolved or ambiguous references are rejected. The legacy singular
+`targetRef="cover"` remains supported; supply exactly one of `targetRef` and
+`targetRefs`.
+
 Stages contain ordered moves. `offX`, `offY`, and `offZ` describe one simultaneous
-straight translation in the owning assembly's resolved frame. Multiple moves
-execute sequentially. The optional progress value advances through the selected
-stage's moves in equal portions, leaving previous stages complete; zero shows
+straight translation in the owning assembly's resolved frame. Every selected
+target shares that displacement and the move's progress. Repeated references
+and overlapping parent/child selections translate each descendant only once.
+Separate moves execute sequentially. The optional progress value advances through
+the selected stage's moves in equal portions, leaving previous stages complete; zero shows
 the selected stage's initial pose. Model-less carrier geometry moves with its
 descendants, and child stages operate at the displaced pose. Reference-surface
 centers move with the solids; their normal and tangent directions stay unchanged
@@ -98,6 +113,9 @@ guide endpoints against actual emitted glTF node translations.
 PoppyGL guides are depth-tested and do not write depth. The core fixture uses
 them for lift-then-slide paths and the final cap movement. Guide origins on
 model-less subassemblies use the centroid of emitted descendant CAD origins.
+For a multi-target move, `lines` contains one guide per distinct selected part,
+with its individual `targetRef` and origin sampled before any target moves.
+Model-less centroids include prior moves of their descendants.
 
 ## Remaining work before assembly verification
 

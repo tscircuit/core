@@ -167,38 +167,42 @@ export function getAssemblyExplosion(
     const owner = stage.parent!
     for (const [moveIndex, instruction] of stage.children.entries()) {
       const move = instruction as AssemblyExplosionMove
-      const segments = move._parsedProps.targetRef.split(".")
-      let target = owner
-      for (const segment of segments) {
-        const matches = target.children.filter(
-          (part) =>
-            part.name === segment &&
-            [
-              "AssemblyPart",
-              "AssemblyPrintedPart",
-              "AssemblySubassembly",
-              "AssemblyScreen",
-              "AssemblyMotor",
-            ].includes(part.componentName),
-        )
-        if (matches.length !== 1)
-          throw new Error(
-            `Explosion stage "${stages[stageIndex]}" target "${move._parsedProps.targetRef}" matched ${matches.length} assembly parts; expected one`,
+      const targets = new Map<PrimitiveComponent, string>()
+      // Resolve and validate the entire instruction before applying its shared
+      // displacement, including stages later than the selected view.
+      for (const targetRef of move._parsedProps.targetRefs) {
+        let target = owner
+        for (const segment of targetRef.split(".")) {
+          const matches = target.children.filter(
+            (part) =>
+              part.name === segment &&
+              [
+                "AssemblyPart",
+                "AssemblyPrintedPart",
+                "AssemblySubassembly",
+                "AssemblyScreen",
+                "AssemblyMotor",
+              ].includes(part.componentName),
           )
-        target = matches[0]
-      }
-      // Validate every declared target, including stages later than the selected view.
-      if (
-        [target, ...target.getDescendants()].some(
-          (part) =>
-            part.pcb_component_id ||
-            part.componentName === "Board" ||
-            part.componentName === "AssemblyCable",
-        )
-      ) {
-        throw new Error(
-          `Explosion target "${move._parsedProps.targetRef}" includes PCB or cable geometry; this prototype moves mechanical CAD parts only`,
-        )
+          if (matches.length !== 1)
+            throw new Error(
+              `Explosion stage "${stages[stageIndex]}" target "${targetRef}" matched ${matches.length} assembly parts; expected one`,
+            )
+          target = matches[0]
+        }
+        if (
+          [target, ...target.getDescendants()].some(
+            (part) =>
+              part.pcb_component_id ||
+              part.componentName === "Board" ||
+              part.componentName === "AssemblyCable",
+          )
+        ) {
+          throw new Error(
+            `Explosion target "${targetRef}" includes PCB or cable geometry; this prototype moves mechanical CAD parts only`,
+          )
+        }
+        if (!targets.has(target)) targets.set(target, targetRef)
       }
       if (stageIndex > stop) continue
       const fraction =
@@ -233,66 +237,89 @@ export function getAssemblyExplosion(
         y: displacement[1],
         z: displacement[2],
       }
-      const targetCad = assembled.find(
-        (cad): cad is CadComponent =>
-          cad.type === "cad_component" &&
-          cad.source_component_id === target.source_component_id,
-      )
-      // Model-less containers use the centroid of their emitted CAD origins for
-      // guide placement. Motion frames still come from the constraint resolver.
-      const targetSources = new Set(
-        [target, ...target.getDescendants()].map(
-          (part) => part.source_component_id,
-        ),
-      )
-      const descendantCad = assembled.filter(
-        (cad): cad is CadComponent =>
-          cad.type === "cad_component" &&
-          targetSources.has(cad.source_component_id),
-      )
-      const centroid = descendantCad.length
-        ? {
-            x:
-              descendantCad.reduce((sum, cad) => sum + cad.position.x, 0) /
-              descendantCad.length,
-            y:
-              descendantCad.reduce((sum, cad) => sum + cad.position.y, 0) /
-              descendantCad.length,
-            z:
-              descendantCad.reduce((sum, cad) => sum + cad.position.z, 0) /
-              descendantCad.length,
-          }
-        : undefined
-      const anchor =
-        targetCad?.position ??
-        centroid ??
-        (isPositionedAssembly(target)
-          ? resolveAssemblyPlacement(target).position
-          : undefined)
-      if (!anchor)
-        throw new Error(
-          `Explosion target "${move._parsedProps.targetRef}" has no resolved assembly pose`,
+      const movedParts = new Set<PrimitiveComponent>()
+      for (const [target, targetRef] of targets) {
+        const descendants = [target, ...target.getDescendants()]
+        const targetCad = assembled.find(
+          (cad): cad is CadComponent =>
+            cad.type === "cad_component" &&
+            cad.source_component_id === target.source_component_id,
         )
-      const from = pointPlus(anchor, partOffsets.get(target) ?? zero())
-      if (Math.hypot(offset.x, offset.y, offset.z) > 0)
-        lines.push({
-          stageRef: stages[stageIndex],
-          targetRef: move._parsedProps.targetRef,
-          points: [from, pointPlus(from, offset)],
-        })
-      for (const part of [target, ...target.getDescendants()]) {
+        // Model-less containers use the centroid of their emitted CAD origins for
+        // guide placement. Motion frames still come from the constraint resolver.
+        const targetSources = new Set(
+          descendants.map((part) => part.source_component_id),
+        )
+        const descendantCad = assembled.filter(
+          (cad): cad is CadComponent =>
+            cad.type === "cad_component" &&
+            targetSources.has(cad.source_component_id),
+        )
+        const currentCadPositions = descendantCad.map((cad) =>
+          pointPlus(
+            cad.position,
+            sourceOffsets.get(cad.source_component_id) ?? zero(),
+          ),
+        )
+        const centroid = currentCadPositions.length
+          ? {
+              x:
+                currentCadPositions.reduce(
+                  (sum, position) => sum + position.x,
+                  0,
+                ) / currentCadPositions.length,
+              y:
+                currentCadPositions.reduce(
+                  (sum, position) => sum + position.y,
+                  0,
+                ) / currentCadPositions.length,
+              z:
+                currentCadPositions.reduce(
+                  (sum, position) => sum + position.z,
+                  0,
+                ) / currentCadPositions.length,
+            }
+          : undefined
+        const anchor =
+          (targetCad
+            ? pointPlus(
+                targetCad.position,
+                sourceOffsets.get(targetCad.source_component_id) ?? zero(),
+              )
+            : undefined) ??
+          centroid ??
+          (isPositionedAssembly(target)
+            ? pointPlus(
+                resolveAssemblyPlacement(target).position,
+                partOffsets.get(target) ?? zero(),
+              )
+            : undefined)
+        if (!anchor)
+          throw new Error(
+            `Explosion target "${targetRef}" has no resolved assembly pose`,
+          )
+        const from = anchor
+        if (Math.hypot(offset.x, offset.y, offset.z) > 0)
+          lines.push({
+            stageRef: stages[stageIndex],
+            targetRef,
+            points: [from, pointPlus(from, offset)],
+          })
+        for (const part of descendants) movedParts.add(part)
+      }
+      const movedSources = new Set<SourceComponentId>()
+      for (const part of movedParts) {
         partOffsets.set(
           part,
           pointPlus(partOffsets.get(part) ?? zero(), offset),
         )
-        if (part.source_component_id)
-          sourceOffsets.set(
-            part.source_component_id,
-            pointPlus(
-              sourceOffsets.get(part.source_component_id) ?? zero(),
-              offset,
-            ),
-          )
+        if (part.source_component_id) movedSources.add(part.source_component_id)
+      }
+      for (const sourceId of movedSources) {
+        sourceOffsets.set(
+          sourceId,
+          pointPlus(sourceOffsets.get(sourceId) ?? zero(), offset),
+        )
       }
     }
   }
