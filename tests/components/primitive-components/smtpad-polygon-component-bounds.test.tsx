@@ -24,7 +24,6 @@ test("offset polygon pad bounds match emitted copper on both PCB layers", async 
                     { x: 1, y: 1 },
                     { x: 3, y: 1 },
                     { x: 3, y: 2 },
-                    { x: 1, y: 2 },
                   ]}
                 />
                 <silkscreentext

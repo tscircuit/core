@@ -719,13 +719,21 @@ export abstract class PrimitiveComponent<
   _getPcbBoundsBeforeLayout(): ReturnType<
     PrimitiveComponent["_getPcbLocalBoundsBeforeLayout"]
   > {
-    const center = this._getGlobalPcbPositionBeforeLayout()
-    const { width, height } = this.getPcbSize()
+    const { left, right, top, bottom } = this._getPcbLocalBoundsBeforeLayout()
+    const transform = this._computePcbGlobalTransformBeforeLayout()
+    const corners = [
+      { x: left, y: bottom },
+      { x: right, y: bottom },
+      { x: right, y: top },
+      { x: left, y: top },
+    ].map((point) => applyToPoint(transform, point))
+    const xs = corners.map((point) => point.x)
+    const ys = corners.map((point) => point.y)
     return {
-      left: center.x - width / 2,
-      right: center.x + width / 2,
-      top: center.y + height / 2,
-      bottom: center.y - height / 2,
+      left: Math.min(...xs),
+      right: Math.max(...xs),
+      top: Math.max(...ys),
+      bottom: Math.min(...ys),
     }
   }
 

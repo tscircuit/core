@@ -113,12 +113,7 @@ test("imported TVS polygon pads preserve the requested 0.8mm flex gap", async ()
   await circuit.renderUntilSettled()
   // Measure the actual copper edges, not just the layout's component widths.
   const copperBounds = (name: string) => {
-    const source = circuit.db.source_component
-      .list()
-      .find((c) => c.name === name)!
-    const component = circuit.db.pcb_component
-      .list()
-      .find((c) => c.source_component_id === source.source_component_id)!
+    const component = circuit.selectOne(`.${name}`)!
     const xs = circuit.db.pcb_smtpad
       .list()
       .filter((pad) => pad.pcb_component_id === component.pcb_component_id)

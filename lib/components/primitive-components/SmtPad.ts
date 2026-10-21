@@ -82,24 +82,6 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
   }
 
   /**
-   * Bounds of authored pad-local points in mm, in the right-handed PCB frame
-   * (+X right, +Y top, +Z above). Preserve vertex offsets from the origin;
-   * getBoundsOfPcbComponents applies the placement transform to these points.
-   */
-  _getPcbLocalBoundsBeforeLayout() {
-    const props = this._parsedProps
-    if (props.shape !== "polygon") return super._getPcbLocalBoundsBeforeLayout()
-
-    const bounds = getBoundsFromPoints(props.points)!
-    return {
-      left: bounds.minX,
-      right: bounds.maxX,
-      top: bounds.maxY,
-      bottom: bounds.minY,
-    }
-  }
-
-  /**
    * Polygon vertices are pad-local points in mm (+X right, +Y top). Return
    * their axis-aligned bounds in the right-handed board-world PCB frame.
    */
