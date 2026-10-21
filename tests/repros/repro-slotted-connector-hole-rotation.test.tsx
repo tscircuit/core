@@ -2,13 +2,13 @@ import { expect, test } from "bun:test"
 import { Fragment } from "react"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("mounting slots stay horizontal when their connector rotates 90 degrees", async () => {
+test("mounting slots rotate with their connector at 90 degrees", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
     <board width={60} height={28} routingDisabled>
       <pcbnotetext
-        text="SLOTTED CONNECTOR: PADS + GUIDES ROTATE, SLOTS DO NOT"
+        text="SLOTTED CONNECTOR: PADS, GUIDES AND SLOTS ROTATE TOGETHER"
         pcbY={12}
         fontSize={0.7}
       />
