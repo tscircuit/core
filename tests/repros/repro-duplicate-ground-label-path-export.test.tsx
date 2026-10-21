@@ -1,5 +1,7 @@
 import { expect, test } from "bun:test"
 import type { FanoutTracePath } from "@tscircuit/props"
+import { Chip } from "lib/components/normal-components/Chip"
+import { Port } from "lib/components/primitive-components/Port"
 import type { AutoroutingEndEvent } from "lib/events"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
@@ -70,6 +72,13 @@ function RepeatedPinLabelsBoard({
 }
 
 test("saved route selects and replays GND pin 2", async () => {
+  const connector = new Chip({ name: "J1" })
+  const pin1 = new Port({ name: "GND", pinNumber: 1, aliases: ["ground.1"] })
+  const pin2 = new Port({ name: "GND", pinNumber: 2, aliases: ["ground.2"] })
+  connector.add(pin1)
+  connector.add(pin2)
+  expect(connector.selectAll(pin2.getPortSelector())).toEqual([pin2])
+
   const { circuit } = getTestFixture()
   circuit.schematicDisabled = true
   const events: AutoroutingEndEvent[] = []

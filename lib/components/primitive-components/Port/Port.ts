@@ -383,7 +383,9 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     const uniqueName =
       this.props.name && uniqueNames.has(this.props.name)
         ? this.props.name
-        : uniqueNames.values().next().value
+        : [...uniqueNames].find((name) =>
+            /^[A-Za-z_][A-Za-z0-9_-]*$/.test(name),
+          )
     // Preserve the legacy name when no unique alias exists.
     const portName = uniqueName ?? this.props.name
     if (parentComponent !== this.parent) {
