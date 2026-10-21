@@ -1,17 +1,16 @@
-# Speculative assembly explosion rendering
+# Assembly explosion rendering
 
-**Approval status: pending. This is a draft experiment, not approved for merge.**
+The stage/move props and PoppyGL guide APIs are merged. The core implementation
+is under review in [core #4631](https://github.com/tscircuit/core/pull/4631).
 
-| Proposal                                                                        | Status                               | Dependency / approval gate                                         |
-| ------------------------------------------------------------------------------- | ------------------------------------ | ------------------------------------------------------------------ |
-| [Props stage and move API](https://github.com/tscircuit/props/pull/936)         | Draft, awaiting API approval         | Approve the public stage/move API before adopting it.              |
-| [PoppyGL explosion guide lines](https://github.com/tscircuit/poppygl/pull/49)   | Speculative draft, awaiting approval | Opt-in depth-tested guide rendering.                               |
-| [Core constrained explosion views](https://github.com/tscircuit/core/pull/4631) | Speculative draft, awaiting approval | Requires approval of both upstream drafts and this implementation. |
+| Implementation | Status | Published dependency |
+| --- | --- | --- |
+| [Props stage and move API](https://github.com/tscircuit/props/pull/936) | Merged | `@tscircuit/props@0.0.707` |
+| [PoppyGL explosion guide lines](https://github.com/tscircuit/poppygl/pull/49) | Merged | `poppygl@0.0.36` |
+| [Core constrained explosion views](https://github.com/tscircuit/core/pull/4631) | Under review | Uses the published releases above |
 
-The core branch pins upstream PR previews for reproducibility. The existing
-dependency-check workflow intentionally rejects preview dependencies before
-merge. After approval, release the upstream packages and replace these pins with
-published versions; do not weaken that merge gate.
+Core consumes published npm versions of both upstream packages. The existing
+dependency check continues to reject PR preview dependencies before merge.
 
 ## Usage
 
@@ -90,7 +89,7 @@ descendants, and child stages operate at the displaced pose. Reference-surface
 centers move with the solids; their normal and tangent directions stay unchanged
 under these translation-only operations.
 
-## PoppyGL preview
+## PoppyGL rendering
 
 Reproduce standalone PNGs, GLBs, and resolved view JSON with:
 
@@ -119,14 +118,14 @@ Model-less centroids include prior moves of their descendants.
 
 ## Remaining work before assembly verification
 
-This prototype renders mechanical CAD translations. It rejects movement of
+This implementation renders mechanical CAD translations. It rejects movement of
 targets containing PCB or cable geometry rather than producing a partially
 displaced assembly. Moving folded/flat boards, flexible cables, physical fastening
 constraints, and rotations require further work.
 
 The returned view explicitly reports `collisionCheckStatus: "not_implemented"`.
 There is no swept-solid collision engine or successful assembly-verification
-claim in this draft. A follow-up needs full-path collision checks, intentional
+claim in this implementation. A follow-up needs full-path collision checks, intentional
 mating contact rules, missing-geometry/incomplete results, and reproducible
 diagnostics tied to stage and move positions. Guides show declared motion paths;
 they do not certify clearance.

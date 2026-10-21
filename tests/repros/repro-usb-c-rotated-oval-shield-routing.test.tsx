@@ -93,7 +93,7 @@ const usbConnectorFootprint = (
   </footprint>
 )
 
-test.failing("USB-C CC traces avoid rotated oval shield slots", async () => {
+test("USB-C CC traces avoid rotated oval shield slots", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width={26} height={22} schematicDisabled>

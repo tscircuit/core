@@ -8,41 +8,44 @@ import type { Port } from "lib/components/primitive-components/Port"
 import { getPinAttributeMismatches } from "lib/components/primitive-components/Port/get-pin-attribute-mismatches"
 import { getImportedSourcePinAttributes } from "lib/components/primitive-components/Port/resolve-port-source-pin-attributes"
 import type { PinAttributeMap } from "@tscircuit/props"
-import type { Chip } from "./Chip"
-import { Chip_fetchPinAttributesForValidation } from "./Chip_fetchPinAttributesForValidation"
+import type { NormalComponent } from "./NormalComponent"
+import { getDatasheetInternalConnectionWarnings } from "lib/utils/get-datasheet-internal-connection-warnings"
+import { NormalComponent_fetchDatasheetForValidation } from "./NormalComponent_fetchDatasheetForValidation"
 
-/** Compare explicit attributes with fetched pin metadata in this chip's source lifecycle. */
-export const Chip_doInitialSourcePinSpecificationChecks = (
-  chip: Chip<string>,
+/** Compare explicit attributes with fetched pin metadata during source design-rule checks. */
+export const NormalComponent_doInitialSourcePinSpecificationChecks = (
+  component: NormalComponent,
 ) => {
-  if (chip.config.componentName !== "Chip") return
-  if (!chip.source_component_id) return
-  const { db } = chip.root!
+  if (!["Chip", "PushButton", "OpAmp"].includes(component.config.componentName))
+    return
+  const isChip = component.config.componentName === "Chip"
+  if (!component.source_component_id) return
+  const { db } = component.root!
   const existingWarning =
     db.source_component_pins_underspecified_warning.getWhere({
-      source_component_id: chip.source_component_id,
+      source_component_id: component.source_component_id,
     })
   const drcChecksDisabled =
-    chip.root?.platform?.drcChecksDisabled ??
-    chip.getInheritedProperty("drcChecksDisabled")
+    component.root?.platform?.drcChecksDisabled ??
+    component.getInheritedProperty("drcChecksDisabled")
   const pinSpecificationDrcChecksDisabled =
-    chip.root?.platform?.pinSpecificationDrcChecksDisabled ??
-    chip.getInheritedProperty("pinSpecificationDrcChecksDisabled")
+    component.root?.platform?.pinSpecificationDrcChecksDisabled ??
+    component.getInheritedProperty("pinSpecificationDrcChecksDisabled")
 
   const checksDisabled = drcChecksDisabled || pinSpecificationDrcChecksDisabled
-  if (!checksDisabled) Chip_fetchPinAttributesForValidation(chip)
+  if (!checksDisabled) NormalComponent_fetchDatasheetForValidation(component)
   const sourcePorts = checksDisabled
     ? []
-    : chip.selectAll<Port>("port").flatMap((port) => {
+    : component.selectAll<Port>("port").flatMap((port) => {
         if (!port.source_port_id) return []
         const sourcePort = db.source_port.get(port.source_port_id)
-        return sourcePort?.source_component_id === chip.source_component_id
+        return sourcePort?.source_component_id === component.source_component_id
           ? [sourcePort]
           : []
       })
   const sourceComponent = checksDisabled
     ? null
-    : db.source_component.get(chip.source_component_id)
+    : db.source_component.get(component.source_component_id)
   const chipCircuitJson = sourceComponent
     ? [sourceComponent, ...sourcePorts]
     : []
@@ -52,8 +55,8 @@ export const Chip_doInitialSourcePinSpecificationChecks = (
     reasons: string[]
     sourcePort: SourcePort
   }[] = []
-  if (!checksDisabled) {
-    for (const port of chip.selectAll<Port>("port")) {
+  if (!checksDisabled && isChip) {
+    for (const port of component.selectAll<Port>("port")) {
       const sourcePort = sourcePorts.find(
         (sourcePort) => sourcePort.source_port_id === port.source_port_id,
       )
@@ -62,13 +65,13 @@ export const Chip_doInitialSourcePinSpecificationChecks = (
       // Use the same alias precedence as source rendering, excluding synthetic
       // noConnect attributes: leaving a usable pin unconnected is intentional.
       for (const alias of port.getNameAndAliases()) {
-        Object.assign(declared, chip._parsedProps.pinAttributes?.[alias])
+        Object.assign(declared, component._parsedProps.pinAttributes?.[alias])
       }
       const imported = getImportedSourcePinAttributes(
         port,
-        chip._fetchedSourcePortsForPinAttributes.length
-          ? chip._fetchedSourcePortsForPinAttributes
-          : chip._importedSourcePorts,
+        component._fetchedSourcePortsForPinAttributes.length
+          ? component._fetchedSourcePortsForPinAttributes
+          : component._importedSourcePorts,
       )
       const reasons = getPinAttributeMismatches(declared, imported)
       if (reasons.length)
@@ -86,14 +89,14 @@ export const Chip_doInitialSourcePinSpecificationChecks = (
     [db.source_no_ground_pin_defined_warning, checkNoGroundPinDefined],
   ] as const) {
     const existing = warningTable.getWhere({
-      source_component_id: chip.source_component_id,
+      source_component_id: component.source_component_id,
     })
     const existingId =
       existing?.type === "source_no_power_pin_defined_warning"
         ? existing.source_no_power_pin_defined_warning_id
         : existing?.source_no_ground_pin_defined_warning_id
     const [warning] =
-      checksDisabled || issues.length ? [] : check(chipCircuitJson)
+      checksDisabled || !isChip || issues.length ? [] : check(chipCircuitJson)
     if (warning) {
       if (existingId) {
         warningTable.update(existingId, {
@@ -110,11 +113,16 @@ export const Chip_doInitialSourcePinSpecificationChecks = (
   }
   // Keep the existing all-underspecified warning when no comparison conflicts
   // exist. Both use the existing aggregate chip-pin diagnostic table.
-  const [underspecifiedWarning] = checksDisabled
-    ? []
-    : checkAllPinsInComponentAreUnderspecified(chipCircuitJson)
+  const [underspecifiedWarning] =
+    checksDisabled || !isChip
+      ? []
+      : checkAllPinsInComponentAreUnderspecified(chipCircuitJson)
 
-  if (!issues.length && !underspecifiedWarning) {
+  const internalWarnings = checksDisabled
+    ? []
+    : getDatasheetInternalConnectionWarnings(component)
+
+  if (!issues.length && !underspecifiedWarning && !internalWarnings.length) {
     if (existingWarning) {
       db.source_component_pins_underspecified_warning.delete(
         existingWarning.source_component_pins_underspecified_warning_id,
@@ -128,16 +136,24 @@ export const Chip_doInitialSourcePinSpecificationChecks = (
     .map(({ pinName, reasons }) => `${pinName} (${reasons.join("; ")})`)
     .join(", ")
   const remaining = issues.length > 3 ? `, and ${issues.length - 3} more` : ""
+  const pinMessage = issues.length
+    ? `Chip ${component.name || "unnamed chip"} has pinAttributes that conflict with fetched pin metadata on ${issues.length} pin${issues.length === 1 ? "" : "s"}: ${examples}${remaining}. Check the chip configuration against the part datasheet.`
+    : underspecifiedWarning?.message
   const warning = {
-    source_component_id: chip.source_component_id,
-    source_port_ids: issues.length
-      ? issues.map(({ sourcePort }) => sourcePort.source_port_id)
-      : underspecifiedWarning!.source_port_ids,
-    subcircuit_id: chip.getSubcircuit().subcircuit_id ?? undefined,
+    source_component_id: component.source_component_id,
+    source_port_ids: [
+      ...new Set([
+        ...(issues.length
+          ? issues.map(({ sourcePort }) => sourcePort.source_port_id)
+          : (underspecifiedWarning?.source_port_ids ?? [])),
+        ...internalWarnings.flatMap((warning) => warning.sourcePortIds),
+      ]),
+    ],
+    subcircuit_id: component.getSubcircuit().subcircuit_id ?? undefined,
     warning_type: "source_component_pins_underspecified_warning" as const,
-    message: issues.length
-      ? `Chip ${chip.name || "unnamed chip"} has pinAttributes that conflict with fetched pin metadata on ${issues.length} pin${issues.length === 1 ? "" : "s"}: ${examples}${remaining}. Check the chip configuration against the part datasheet.`
-      : underspecifiedWarning!.message,
+    message: [pinMessage, ...internalWarnings.map((warning) => warning.message)]
+      .filter(Boolean)
+      .join(" "),
   }
   if (existingWarning) {
     db.source_component_pins_underspecified_warning.update(

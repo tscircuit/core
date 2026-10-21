@@ -1,3 +1,4 @@
+import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import type {
   AnyCircuitElement,
   SimulationCurrentProbe,
@@ -173,6 +174,17 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
     )
     if (!simulationExperiment) {
       debug("No simulation experiment found, skipping simulation")
+      continue
+    }
+    // External IBIS experiments are executed by an out-of-process backend,
+    // never during rendering. Other pcb_spice experiments still run when a
+    // pcb_spice engine is registered.
+    if (
+      simulationExperiment.spice_engine === "pcb_spice" &&
+      (!spiceEngineMap.pcb_spice ||
+        isExternalIbisExperiment(root.db, simulationExperimentId))
+    ) {
+      debug("Skipping external pcb_spice experiment during rendering")
       continue
     }
 
@@ -454,4 +466,18 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
       }
     })
   }
+}
+
+function isExternalIbisExperiment(
+  db: CircuitJsonUtilObjects,
+  simulationExperimentId: string,
+): boolean {
+  const belongsToExperiment = (record: {
+    simulation_experiment_id?: string
+  }) => record.simulation_experiment_id === simulationExperimentId
+  return (
+    db.simulation_ibis_pin_state.list().some(belongsToExperiment) ||
+    db.simulation_digital_stimulus.list().some(belongsToExperiment) ||
+    db.simulation_eye_diagram.list().some(belongsToExperiment)
+  )
 }

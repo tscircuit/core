@@ -6,6 +6,7 @@ import type {
 } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
 import { type SchSymbol } from "schematic-symbols"
 import { applyToPoint, compose, translate } from "transformation-matrix"
+import { rotateDirection } from "lib/utils/schematic/getRotatedSymbolName"
 import { z } from "zod"
 import { PrimitiveComponent } from "../../base-components/PrimitiveComponent"
 import type { Trace } from "../Trace/Trace"
@@ -160,12 +161,21 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     const parent = this.parent as unknown as INormalComponent | undefined
     if (!parent || !parent._getInternallyConnectedPins) return []
     const internallyConnectedPorts = parent._getInternallyConnectedPins()
-    for (const ports of internallyConnectedPorts) {
-      if (ports.some((port) => port === this)) {
-        return ports
+    const connected = new Set<Port>([this])
+    let changed = true
+    while (changed) {
+      changed = false
+      for (const ports of internallyConnectedPorts) {
+        if (!ports.some((port) => connected.has(port))) continue
+        for (const port of ports) {
+          if (!connected.has(port)) {
+            connected.add(port)
+            changed = true
+          }
+        }
       }
     }
-    return []
+    return connected.size > 1 ? [...connected] : []
   }
 
   /**
@@ -364,6 +374,9 @@ export class Port extends PrimitiveComponent<typeof portProps> {
   getPortSelector() {
     // TODO this.parent.getSubcircuitSelector() >
     const parentComponent = this.getParentNormalComponent() ?? this.parent
+    if (parentComponent !== this.parent) {
+      return `.${parentComponent?.props.name} port.${this.props.name}`
+    }
     return `.${parentComponent?.props.name} > port.${this.props.name}`
   }
   getAvailablePcbLayers(): LayerRef[] {
@@ -823,6 +836,24 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     const schPort = db.schematic_port.get(this.schematic_port_id)
     if (schPort) {
       const newCenter = applyToPoint(transform, schPort.center)
+      const rotation = (Math.atan2(transform.b, transform.a) * 180) / Math.PI
+      if (schPort.facing_direction && rotation !== 0) {
+        // Use the rotation of the same transform as the artwork and stem;
+        // a facing direction must not pick up translation.
+        this.facingDirection = rotateDirection(
+          schPort.facing_direction,
+          rotation,
+        )
+        db.schematic_port.update(this.schematic_port_id, {
+          facing_direction: this.facingDirection,
+          side_of_component:
+            this.facingDirection === "up"
+              ? "top"
+              : this.facingDirection === "down"
+                ? "bottom"
+                : this.facingDirection,
+        })
+      }
       db.schematic_port.update(this.schematic_port_id, {
         center: newCenter,
       })

@@ -129,7 +129,8 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
     const { db } = this.root!
     const { _parsedProps: props } = this
     const isCoveredWithSolderMask = props.coveredWithSolderMask ?? false
-    const shouldCreateSolderPaste = !isCoveredWithSolderMask && this._getIsSmt()
+    const shouldCreateSolderPaste =
+      !props.noSolderPaste && !isCoveredWithSolderMask && this._getIsSmt()
     const soldermaskMargin = props.solderMaskMargin
     const solderPasteMargin = props.solderPasteMargin
     // solderPasteMargin is absolute per side; without it the aperture keeps

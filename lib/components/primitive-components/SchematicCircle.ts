@@ -72,7 +72,10 @@ export class SchematicCircle extends PrimitiveComponent<
       x: circle.center.x + circle.radius,
       y: circle.center.y,
     })
-    const newRadius = Math.abs(edgePoint.x - newCenter.x)
+    const newRadius = Math.hypot(
+      edgePoint.x - newCenter.x,
+      edgePoint.y - newCenter.y,
+    )
 
     db.schematic_circle.update(this.schematic_circle_id, {
       center: { x: newCenter.x, y: newCenter.y },

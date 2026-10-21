@@ -65,6 +65,9 @@ export class SchematicText extends PrimitiveComponent<
 
     db.schematic_text.update(this.schematic_text_id, {
       position: { x: newPosition.x, y: newPosition.y },
+      rotation:
+        (text.rotation ?? 0) +
+        (Math.atan2(transform.b, transform.a) * 180) / Math.PI,
     })
   }
 }

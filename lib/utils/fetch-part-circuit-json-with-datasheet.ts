@@ -126,7 +126,8 @@ export const fetchPartCircuitJsonWithDatasheet = async (
   // chip electrical metadata. Pass false to override engine-level enrichment.
   const includeDatasheetInformation =
     sourcePortOwner.config.componentName === "Chip" ||
-    sourcePortOwner.config.componentName === "OpAmp"
+    sourcePortOwner.config.componentName === "OpAmp" ||
+    sourcePortOwner.config.componentName === "PushButton"
   const request: DatasheetPartCircuitJsonRequest = {
     supplierPartNumber,
     manufacturerPartNumber,

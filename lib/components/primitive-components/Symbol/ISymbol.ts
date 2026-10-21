@@ -15,9 +15,9 @@ export interface ISymbol {
   schematic_symbol_id?: string
 
   /**
-   * The transformation matrix to convert from user coordinates (as specified
-   * in the symbol's children) to the final resized symbol coordinates.
-   * This is computed lazily when first requested.
+   * Maps pre-resize schematic world points to resized and rotated world points
+   * (mm, +X right, +Y up, right-handed). Includes translation, so directions
+   * must use only its linear part. Computed lazily when first requested.
    */
   userCoordinateToResizedSymbolTransformMat?: Matrix
 
@@ -25,7 +25,7 @@ export interface ISymbol {
    * The computed bounds of the symbol's schematic primitives before any
    * resizing is applied.
    */
-  schematicSymbolBoundsInUserCoordinates?: SchematicSymbolBounds
+  schematicSymbolBoundsInSymbolLocalCoordinateSpace?: SchematicSymbolBounds
 
   /**
    * Get the bounds of the symbol's schematic primitives.
@@ -34,8 +34,9 @@ export interface ISymbol {
   getSchematicSymbolBounds(): SchematicSymbolBounds | null
 
   /**
-   * Get the transformation matrix for resizing symbol contents.
-   * Returns null if no resizing is needed (no width/height specified).
+   * Get the point transform for resizing symbol contents and applying the
+   * parent component's schRotation, in the world frame described above.
+   * Returns null if neither resizing nor rotation is needed.
    */
   getUserCoordinateToResizedSymbolTransform(): Matrix | null
 
