@@ -75,7 +75,7 @@ beforeAll(async () => {
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 }, 30_000)
 
-test.failing("polygon plated holes retain rotation", () => {
+test("polygon plated holes retain rotation", () => {
   const platedHoles = circuit.db.pcb_plated_hole.list()
   const polygonPads = platedHoles.filter(
     (hole) => hole.shape === "hole_with_polygon_pad",
