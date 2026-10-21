@@ -6,12 +6,12 @@ test("offset polygon pad bounds match emitted copper on both PCB layers", async 
   circuit.add(
     <board width={60} height={30} routingDisabled>
       {(["top", "bottom"] as const).flatMap((layer, row) =>
-        [0, 45, 90, 180, 270].map((rotation, column) => (
+        [0, 45, 90, 180, 270].map((ccwRotationDegrees, column) => (
           <chip
-            key={`${layer}-${rotation}`}
-            name={`${layer}_${rotation}`}
+            key={`${layer}-${ccwRotationDegrees}`}
+            name={`${layer}_${ccwRotationDegrees}`}
             layer={layer}
-            pcbRotation={rotation}
+            pcbRotation={ccwRotationDegrees}
             pcbX={column * 11 - 22}
             pcbY={row === 0 ? 7 : -7}
             footprint={
@@ -27,7 +27,7 @@ test("offset polygon pad bounds match emitted copper on both PCB layers", async 
                   ]}
                 />
                 <silkscreentext
-                  text={`${layer} ${rotation}deg`}
+                  text={`${layer} ${ccwRotationDegrees}deg`}
                   pcbY={-2}
                   fontSize={0.6}
                 />

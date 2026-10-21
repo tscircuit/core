@@ -720,20 +720,21 @@ export abstract class PrimitiveComponent<
     PrimitiveComponent["_getPcbLocalBoundsBeforeLayout"]
   > {
     const { left, right, top, bottom } = this._getPcbLocalBoundsBeforeLayout()
-    const transform = this._computePcbGlobalTransformBeforeLayout()
-    const corners = [
+    const footprintLocalToBoardTransform =
+      this._computePcbGlobalTransformBeforeLayout()
+    const boardWorldCorners = [
       { x: left, y: bottom },
       { x: right, y: bottom },
       { x: right, y: top },
       { x: left, y: top },
-    ].map((point) => applyToPoint(transform, point))
-    const xs = corners.map((point) => point.x)
-    const ys = corners.map((point) => point.y)
+    ].map((point) => applyToPoint(footprintLocalToBoardTransform, point))
+    const boardXs = boardWorldCorners.map((point) => point.x)
+    const boardYs = boardWorldCorners.map((point) => point.y)
     return {
-      left: Math.min(...xs),
-      right: Math.max(...xs),
-      top: Math.max(...ys),
-      bottom: Math.min(...ys),
+      left: Math.min(...boardXs),
+      right: Math.max(...boardXs),
+      top: Math.max(...boardYs),
+      bottom: Math.min(...boardYs),
     }
   }
 
