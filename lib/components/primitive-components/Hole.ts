@@ -62,10 +62,18 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
       // Use the same footprint-to-board transform as SilkscreenPath. Its local
       // +X direction gives the slot axis in board space (+X right, +Y top),
       // including parent rotation and bottom-layer mirroring, in CCW degrees.
-      const transform = this._computePcbGlobalTransformBeforeLayout()
-      const rotation = (Math.atan2(transform.b, transform.a) * 180) / Math.PI
-      const normalizedRotation = ((rotation % 360) + 360) % 360
-      if (normalizedRotation !== 0) {
+      const footprintLocalToBoardTransform =
+        this._computePcbGlobalTransformBeforeLayout()
+      const ccwRotationDegrees =
+        (Math.atan2(
+          footprintLocalToBoardTransform.b,
+          footprintLocalToBoardTransform.a,
+        ) *
+          180) /
+        Math.PI
+      const normalizedCcwRotationDegrees =
+        ((ccwRotationDegrees % 360) + 360) % 360
+      if (normalizedCcwRotationDegrees !== 0) {
         const inserted_hole = db.pcb_hole.insert({
           pcb_component_id,
           type: "pcb_hole",
@@ -74,7 +82,7 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
           hole_height: props.height,
           x: position.x,
           y: position.y,
-          ccw_rotation: normalizedRotation,
+          ccw_rotation: normalizedCcwRotationDegrees,
           soldermask_margin: soldermaskMargin,
           is_covered_with_solder_mask: isCoveredWithSolderMask,
           subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
