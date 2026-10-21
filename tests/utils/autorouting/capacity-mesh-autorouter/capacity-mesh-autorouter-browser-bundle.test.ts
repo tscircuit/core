@@ -9,7 +9,6 @@ test("browser consumers can bundle the autorouter without native worker adapters
       ).pathname,
     ],
     target: "browser",
-    write: false,
   })
   expect(build.success).toBe(true)
   const source = await build.outputs[0]!.text()
