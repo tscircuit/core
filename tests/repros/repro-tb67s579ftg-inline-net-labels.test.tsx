@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { pointToSegmentDistance } from "@tscircuit/math-utils"
 import type { InputProblem } from "@tscircuit/schematic-trace-solver"
 import { sel } from "lib/sel"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
@@ -268,5 +269,23 @@ test("TB67S579FTG breakout renders named point-to-point traces", async () => {
     ).toHaveLength(1)
   }
 
+  // Inline text positions are electrical attachment points on their own
+  // net, including labels spanning the driver's bent routes.
+  for (const text of circuit.db.schematic_text.list()) {
+    if (!text.source_trace_id) continue
+    const sourceTrace = circuit.db.source_trace.get(text.source_trace_id)!
+    const edges = circuit.db.schematic_trace
+      .list({
+        subcircuit_connectivity_map_key:
+          sourceTrace.subcircuit_connectivity_map_key,
+      })
+      .flatMap((trace) => trace.edges)
+    expect(
+      edges.some(
+        (edge) =>
+          pointToSegmentDistance(text.position, edge.from, edge.to) < 1e-6,
+      ),
+    ).toBe(true)
+  }
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })

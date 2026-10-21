@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import type { RootCircuit } from "lib/RootCircuit"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 // ESD5Z5.0T1G (C82044) pad geometry from the imported ble-pedometer part
@@ -78,7 +79,21 @@ function ImportedTvs({
   )
 }
 
-test("imported TVS polygon pads preserve the same flex gap as equivalent rectangles", async () => {
+function getTvsCopperBounds(circuit: RootCircuit, name: string) {
+  const component = circuit.selectOne(`.${name}`)!
+  const xs = circuit.db.pcb_smtpad
+    .list()
+    .filter((pad) => pad.pcb_component_id === component.pcb_component_id)
+    .flatMap((pad) => {
+      if (pad.shape === "polygon") return pad.points.map((p) => p.x)
+      if (pad.shape === "rect")
+        return [pad.x - pad.width / 2, pad.x + pad.width / 2]
+      throw new Error("Expected polygon or rectangular TVS pads")
+    })
+  return { left: Math.min(...xs), right: Math.max(...xs) }
+}
+
+test("imported TVS polygon pads preserve the requested 0.8mm flex gap", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width={12} height={11} routingDisabled>
@@ -111,25 +126,14 @@ test("imported TVS polygon pads preserve the same flex gap as equivalent rectang
     </board>,
   )
   await circuit.renderUntilSettled()
-  const polygonPads = circuit.db.pcb_smtpad
-    .list()
-    .filter((pad) => pad.shape === "polygon")
-  const rectangularPads = circuit.db.pcb_smtpad
-    .list()
-    .filter((pad) => pad.shape === "rect")
-  expect(polygonPads).toHaveLength(4)
-  for (const [padIndex, polygonPad] of polygonPads.entries()) {
-    const rectangularPad = rectangularPads[padIndex]!
-    expect(Math.min(...polygonPad.points.map((point) => point.x))).toBeCloseTo(
-      rectangularPad.x - rectangularPad.width / 2,
-    )
-    expect(Math.max(...polygonPad.points.map((point) => point.x))).toBeCloseTo(
-      rectangularPad.x + rectangularPad.width / 2,
-    )
-  }
-  const innerCopperGap =
-    Math.min(...polygonPads[2]!.points.map((point) => point.x)) -
-    Math.max(...polygonPads[1]!.points.map((point) => point.x))
-  expect(innerCopperGap).toBeCloseTo(0.8)
+  // Measure the actual copper edges, not just the layout's component widths.
+  expect(
+    getTvsCopperBounds(circuit, "D2").left -
+      getTvsCopperBounds(circuit, "D1").right,
+  ).toBeCloseTo(0.8, 6)
+  expect(
+    getTvsCopperBounds(circuit, "D4").left -
+      getTvsCopperBounds(circuit, "D3").right,
+  ).toBeCloseTo(0.8, 6)
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

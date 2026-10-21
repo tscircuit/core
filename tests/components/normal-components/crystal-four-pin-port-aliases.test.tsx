@@ -40,11 +40,11 @@ test("four-pin crystal aliases resolve to distinct numbered pins", () => {
   )
 
   expect(inlineLabelByText.get("PIN1_SIGNAL")).toMatchObject({
-    anchor: "right",
+    anchor: "bottom_right",
     rotation: 0,
   })
   expect(inlineLabelByText.get("PIN3_SIGNAL")).toMatchObject({
-    anchor: "left",
+    anchor: "bottom_left",
     rotation: 0,
   })
 

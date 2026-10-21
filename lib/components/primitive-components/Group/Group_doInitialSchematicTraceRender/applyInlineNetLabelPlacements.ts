@@ -30,6 +30,11 @@ const VERTICAL_INLINE_NET_LABEL_ROTATION = -90
  * always axis-aligned with an anchor side and a tag symbol). The anchored
  * placement for the same net has already been dropped by the solver, so this
  * never doubles up with `applyNetLabelPlacements`.
+ *
+ * Placement points are in schematic-world millimetres (+x right, +y up).
+ * The saved position is on the wire; the text anchor describes the label's
+ * side in its unrotated text frame. Vertical text then rotates -90 degrees
+ * in the SVG renderer's clockwise-positive frame.
  */
 export function applyInlineNetLabelPlacements(args: {
   group: Group<any>
@@ -140,41 +145,28 @@ export function applyInlineNetLabelPlacements(args: {
       }
     }
 
-    const shiftedAnchorPoint = {
+    const position = {
       x: placement.anchorPoint.x + placementOffset.x,
       y: placement.anchorPoint.y + placementOffset.y,
     }
-    const position = {
-      x: placement.center.x + placementOffset.x,
-      y: placement.center.y + placementOffset.y,
-    }
-    let textAnchor: "center" | "left" | "right" = "center"
-    const halfHeight = placement.height / 2
-    switch (placement.side) {
-      case "y+":
-        position.y = shiftedAnchorPoint.y + halfHeight
-        break
-      case "y-":
-        position.y = shiftedAnchorPoint.y - halfHeight
-        break
-      case "x+":
-        position.x = shiftedAnchorPoint.x + halfHeight
-        break
-      case "x-":
-        position.x = shiftedAnchorPoint.x - halfHeight
-        break
-    }
+    let textAnchor = placement.textAnchor ?? "center"
 
     if (stubTracePath && stubTracePath.length === 2) {
       const [start, end] = stubTracePath
       if (placement.axis === "x") {
         const extendsRight = end.x > start.x
         textAnchor = extendsRight ? "left" : "right"
-        position.x += extendsRight ? -placement.width / 2 : placement.width / 2
+        position.x =
+          placement.center.x +
+          placementOffset.x +
+          (extendsRight ? -placement.width / 2 : placement.width / 2)
       } else {
         const extendsUp = end.y > start.y
         textAnchor = extendsUp ? "left" : "right"
-        position.y += extendsUp ? -placement.width / 2 : placement.width / 2
+        position.y =
+          placement.center.y +
+          placementOffset.y +
+          (extendsUp ? -placement.width / 2 : placement.width / 2)
       }
     }
 
@@ -198,8 +190,12 @@ export function applyInlineNetLabelPlacements(args: {
       source_trace_id: sourceTraceId,
       // A terminal label grows outward from the pin: labels leaving the right
       // side start at their inner edge, while labels leaving the left side end
-      // there. Point-to-point inline labels remain centered.
-      anchor: textAnchor,
+      // there. The perpendicular anchor records which side the solver chose;
+      // position records the electrical attachment point.
+      anchor:
+        placement.side === "y+" || placement.side === "x-"
+          ? `bottom_${textAnchor}`
+          : `top_${textAnchor}`,
       position,
       rotation: placement.axis === "y" ? VERTICAL_INLINE_NET_LABEL_ROTATION : 0,
       font_size: placement.height,

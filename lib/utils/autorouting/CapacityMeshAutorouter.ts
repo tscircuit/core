@@ -26,6 +26,10 @@ import type {
 import { getCacheProviderForLocalCacheEngine } from "./LocalCacheEngineCacheProvider"
 import type { SimpleRouteJson, SimplifiedPcbTrace } from "./SimpleRouteJson"
 import type { AutorouterVersion } from "./autorouter-version"
+import {
+  runThreadedAutorouter,
+  type ThreadedAutoroutingRun,
+} from "./run-threaded-autorouter"
 
 export interface SolverStartedDetails {
   solverName: SolverName
@@ -52,7 +56,7 @@ export interface AutorouterOptions {
   effort?: number
   platformConfig?: Pick<
     PlatformConfig,
-    "localCacheEngine" | "useCloudAutorouter"
+    "localCacheEngine" | "useCloudAutorouter" | "autorouterThreads"
   >
   onSolverStarted?: (details: SolverStartedDetails) => void
 }
@@ -157,6 +161,9 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
   private cycleCount = 0
   private stepDelay: number
   private timeoutId?: number
+  private autorouterThreads?: number
+  private solverName: AutorouterSolverName
+  private threadedRun?: ThreadedAutoroutingRun
 
   constructor(input: SimpleRouteJson, options: AutorouterOptions = {}) {
     this.input = input
@@ -184,6 +191,15 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
       platformConfig,
       effort,
     })
+    this.solverName = solverName
+    this.autorouterThreads = platformConfig?.autorouterThreads
+    if (
+      this.autorouterThreads !== undefined &&
+      (!Number.isSafeInteger(this.autorouterThreads) ||
+        this.autorouterThreads < 1)
+    ) {
+      throw new AutorouterError("autorouterThreads must be a positive integer")
+    }
     const solverCacheProvider =
       getCapacityAutorouterCacheProvider(platformConfig)
 
@@ -222,13 +238,65 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
    * This will emit progress events during routing and a complete event when done
    */
   start(): void {
-    if (this.isRouting) return
+    if (this.isRouting || this.threadedRun) return
 
     this.isRouting = true
     this.cycleCount = 0
 
+    if (
+      this.autorouterThreads !== undefined &&
+      this.autorouterThreads > 1 &&
+      this.solverName === "AutoroutingPipelineSolver9_PreloadedTraceGraph"
+    ) {
+      void this.runThreadedSolver(this.autorouterThreads)
+      return
+    }
+
     // Start the routing process with steps
     void this.runCycleAndQueueNextCycle()
+  }
+
+  private async runThreadedSolver(workerCount: number): Promise<void> {
+    const run: ThreadedAutoroutingRun = { stopped: false }
+    this.threadedRun = run
+    try {
+      // The selected name excludes networked Pipeline9 and legacy pipelines.
+      const status = await runThreadedAutorouter(
+        this.solver as AutoroutingPipelineSolver9_PreloadedTraceGraph,
+        workerCount,
+        run,
+        (progress) => {
+          this.cycleCount++
+          this.emitEvent({ ...progress, steps: this.cycleCount })
+        },
+      )
+      if (run.stopped) return
+      if (status === "inline") {
+        // Browser hosts keep the existing stepped execution path.
+        void this.runCycleAndQueueNextCycle()
+        return
+      }
+      this.isRouting = false
+      if (this.solver.failed) {
+        throw new AutorouterError(this.solver.error || "Routing failed")
+      }
+      this.emitEvent({
+        type: "complete",
+        traces:
+          this.solver.getOutputSimplifiedPcbTraces() as SimplifiedPcbTrace[],
+      })
+    } catch (error) {
+      if (run.stopped) return
+      this.isRouting = false
+      this.emitEvent({
+        type: "error",
+        error: new AutorouterError(
+          error instanceof Error ? error.message : String(error),
+        ),
+      })
+    } finally {
+      this.threadedRun = undefined
+    }
   }
 
   private async stepSolver(): Promise<void> {
@@ -337,6 +405,15 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
     if (!this.isRouting) return
 
     this.isRouting = false
+    if (this.threadedRun) {
+      const run = this.threadedRun
+      run.stopped = true
+      if (run.runtime) {
+        run.disposal ??= run.runtime.dispose()
+        // The pending solve awaits this same disposal; stop suppresses its events.
+        void run.disposal.catch(() => {})
+      }
+    }
     if (this.timeoutId !== undefined) {
       clearTimeout(this.timeoutId)
       this.timeoutId = undefined
@@ -392,6 +469,11 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
    * @returns Array of routed traces
    */
   solveSync(): SimplifiedPcbTrace[] {
+    if (this.isRouting || this.threadedRun) {
+      throw new AutorouterError(
+        "Cannot solve synchronously while autorouting is active",
+      )
+    }
     this.solver.solve()
 
     if (this.solver.failed) {
