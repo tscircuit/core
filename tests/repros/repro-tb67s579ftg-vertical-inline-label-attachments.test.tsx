@@ -259,9 +259,12 @@ test("TB67 vertical bent-route inline label positions", async () => {
   // Bounds and circle centers are points in schematic-world mm (+x right, +y up).
   const guides: (SchematicRect | SchematicCircle)[] = []
   const detail: AnyCircuitElement[] = []
+  const stubGuides: (SchematicRect | SchematicCircle)[] = []
+  const stubDetail: AnyCircuitElement[] = []
   for (const [name, anchor] of [
     ["OUT_A_P", "bottom_left"],
     ["OUT_B_P", "top_right"],
+    ["AGC_OUT", "bottom_right"],
   ] as const) {
     const labels = circuit.db.schematic_text
       .list()
@@ -283,6 +286,12 @@ test("TB67 vertical bent-route inline label positions", async () => {
     ).toBe(true)
     expect(label.anchor).toBe(anchor)
     expect(label.rotation).toBe(-90)
+    if (name === "AGC_OUT") {
+      expect(traces[0]!.edges).toHaveLength(1)
+      const edge = traces[0]!.edges[0]!
+      expect(edge.from.x).toBeCloseTo(edge.to.x)
+      expect(edge.to.y).toBeLessThan(edge.from.y)
+    }
 
     const bounds = getSchematicTextBounds({
       text: label.text,
@@ -297,7 +306,8 @@ test("TB67 vertical bent-route inline label positions", async () => {
       label.position.x,
       label.position.y,
     )
-    guides.push(
+    const labelGuides = name === "AGC_OUT" ? stubGuides : guides
+    labelGuides.push(
       {
         type: "schematic_rect",
         schematic_rect_id: `bounds_${label.schematic_text_id}`,
@@ -321,35 +331,42 @@ test("TB67 vertical bent-route inline label positions", async () => {
         stroke_width: 0.008,
       },
     )
-    detail.push(...traces, label)
+    const view = name === "AGC_OUT" ? stubDetail : detail
+    view.push(...traces, label)
   }
 
   await expect([
     ...circuit.getCircuitJson(),
     ...guides,
+    ...stubGuides,
   ]).toMatchSchematicSnapshot(import.meta.path, { grid: false })
-  const detailBounds = getBoundsFromPoints(
-    detail.flatMap((element) =>
-      element.type === "schematic_trace"
-        ? element.edges.flatMap((edge) => [edge.from, edge.to])
-        : [],
-    ),
-  )!
-  detail.push({
-    type: "schematic_text",
-    schematic_text_id: "attachment_guide_legend",
-    text: "Dashed: text bounds / Blue dot: saved position",
-    position: {
-      x: (detailBounds.minX + detailBounds.maxX) / 2,
-      y: detailBounds.maxY + 0.3,
-    },
-    anchor: "center",
-    rotation: 0,
-    font_size: 0.045,
-    color: "#2563eb",
-  })
-  await expect([...detail, ...guides]).toMatchSchematicSnapshot(
-    import.meta.path.replace(".test.tsx", "-detail.test.tsx"),
-    { grid: false, width: 1000, height: 700 },
-  )
+  for (const [suffix, view, viewGuides] of [
+    ["detail", detail, guides],
+    ["straight-stub", stubDetail, stubGuides],
+  ] as const) {
+    const detailBounds = getBoundsFromPoints(
+      view.flatMap((element) =>
+        element.type === "schematic_trace"
+          ? element.edges.flatMap((edge) => [edge.from, edge.to])
+          : [],
+      ),
+    )!
+    view.push({
+      type: "schematic_text",
+      schematic_text_id: "attachment_guide_legend",
+      text: "Dashed: text bounds / Blue dot: saved position",
+      position: {
+        x: (detailBounds.minX + detailBounds.maxX) / 2,
+        y: detailBounds.maxY + 0.3,
+      },
+      anchor: "center",
+      rotation: 0,
+      font_size: 0.045,
+      color: "#2563eb",
+    })
+    await expect([...view, ...viewGuides]).toMatchSchematicSnapshot(
+      import.meta.path.replace(".test.tsx", `-${suffix}.test.tsx`),
+      { grid: false, width: 1000, height: 700 },
+    )
+  }
 })
