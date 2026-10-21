@@ -52,5 +52,5 @@ test("a copper-connected pair is still requested as routing work", async () => {
         layer: "top",
       },
     ]),
-  ).toMatchSvgSnapshot(import.meta.path)
+  ).toMatchSvgSnapshot(import.meta.path, undefined, { diffThresholdPercent: 0 })
 })
