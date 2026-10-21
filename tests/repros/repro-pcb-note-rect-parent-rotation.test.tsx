@@ -64,15 +64,19 @@ test("pcbnoterect stays horizontal when its parent chip rotates 90 degrees", asy
           }
         />
       ))}
-      {cases.map(({ name, x, rotation, usePath }) => (
-        <pcbnotetext
-          key={name}
-          text={`${rotation} deg: ${usePath ? "path control" : "rectangle"}`}
-          pcbX={x}
-          pcbY={-5}
-          fontSize={0.6}
-        />
-      ))}
+      <pcbnotetext
+        text="0 deg: rectangle"
+        pcbX={-11}
+        pcbY={-5}
+        fontSize={0.6}
+      />
+      <pcbnotetext text="90 deg: rectangle" pcbX={0} pcbY={-5} fontSize={0.6} />
+      <pcbnotetext
+        text="90 deg: path control"
+        pcbX={11}
+        pcbY={-5}
+        fontSize={0.6}
+      />
     </board>,
   )
 
