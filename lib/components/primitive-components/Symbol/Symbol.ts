@@ -2,7 +2,14 @@ import { symbolProps } from "@tscircuit/props"
 import { PrimitiveComponent } from "../../base-components/PrimitiveComponent"
 import type { Port } from "../Port/Port"
 import type { ISymbol, SchematicSymbolBounds } from "./ISymbol"
-import { compose, translate, scale, type Matrix } from "transformation-matrix"
+import {
+  compose,
+  translate,
+  scale,
+  rotateDEG,
+  identity,
+  type Matrix,
+} from "transformation-matrix"
 import { getBoundsForSchematic } from "lib/utils/autorouting/getBoundsForSchematic"
 
 export class SymbolComponent
@@ -62,16 +69,27 @@ export class SymbolComponent
   }
 
   getUserCoordinateToResizedSymbolTransform(): Matrix | null {
-    if (!this.hasExplicitSize()) {
-      return null
-    }
-
     if (this.userCoordinateToResizedSymbolTransformMat) {
       return this.userCoordinateToResizedSymbolTransformMat
     }
 
     // Compute the transform
     this._computeUserCoordinateToResizedSymbolTransform()
+
+    const parentNormal = this.getParentNormalComponent()
+    const rotation = parentNormal?._parsedProps.schRotation ?? 0
+    if (parentNormal && rotation !== 0) {
+      const center = parentNormal._getGlobalSchematicPositionBeforeLayout()
+      // Points are in schematic world mm (+X right, +Y up, right-handed).
+      // Resize first, then rotate CCW about the chip's placement origin.
+      this.userCoordinateToResizedSymbolTransformMat = compose(
+        translate(center.x, center.y),
+        rotateDEG(rotation),
+        translate(-center.x, -center.y),
+        this.userCoordinateToResizedSymbolTransformMat ?? identity(),
+      )
+    }
+
     return this.userCoordinateToResizedSymbolTransformMat ?? null
   }
 
@@ -147,6 +165,8 @@ export class SymbolComponent
   }
 
   private _computeUserCoordinateToResizedSymbolTransform(): void {
+    if (!this.hasExplicitSize()) return
+
     const bounds = this.getSchematicSymbolBounds()
     if (!bounds) return
 

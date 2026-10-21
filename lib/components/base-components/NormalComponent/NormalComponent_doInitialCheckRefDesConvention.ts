@@ -78,7 +78,17 @@ export const NormalComponent_doInitialCheckRefDesConvention = (
       : undefined)
   if (!expectedPrefixes || expectedPrefixes.length === 0) return
 
-  if (actualPrefix && expectedPrefixes.includes(actualPrefix)) return
+  // Multi-letter prefixes are standard practice (RV, RN, CB, RT), so accept a
+  // name whose prefix merely starts with an expected one.
+  if (
+    actualPrefix &&
+    expectedPrefixes.some(
+      (expectedPrefix) =>
+        actualPrefix === expectedPrefix ||
+        actualPrefix.startsWith(expectedPrefix),
+    )
+  )
+    return
 
   const expectedPrefixMessage =
     expectedPrefixes.length === 1

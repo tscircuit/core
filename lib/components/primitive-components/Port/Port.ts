@@ -6,6 +6,7 @@ import type {
 } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
 import { type SchSymbol } from "schematic-symbols"
 import { applyToPoint, compose, translate } from "transformation-matrix"
+import { rotateDirection } from "lib/utils/schematic/getRotatedSymbolName"
 import { z } from "zod"
 import { PrimitiveComponent } from "../../base-components/PrimitiveComponent"
 import type { Trace } from "../Trace/Trace"
@@ -383,9 +384,12 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       this.props.name && uniqueNames.has(this.props.name)
         ? this.props.name
         : uniqueNames.values().next().value
-    // Keep the legacy selector when no alias distinguishes this port, so callers
-    // can report the ambiguity rather than receiving an invented pin identity.
-    return `.${parentComponent?.props.name} > port.${uniqueName ?? this.props.name}`
+    // Preserve the legacy name when no unique alias exists.
+    const portName = uniqueName ?? this.props.name
+    if (parentComponent !== this.parent) {
+      return `.${parentComponent?.props.name} port.${portName}`
+    }
+    return `.${parentComponent?.props.name} > port.${portName}`
   }
 
   getAvailablePcbLayers(): LayerRef[] {
@@ -845,6 +849,24 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     const schPort = db.schematic_port.get(this.schematic_port_id)
     if (schPort) {
       const newCenter = applyToPoint(transform, schPort.center)
+      const rotation = (Math.atan2(transform.b, transform.a) * 180) / Math.PI
+      if (schPort.facing_direction && rotation !== 0) {
+        // Use the rotation of the same transform as the artwork and stem;
+        // a facing direction must not pick up translation.
+        this.facingDirection = rotateDirection(
+          schPort.facing_direction,
+          rotation,
+        )
+        db.schematic_port.update(this.schematic_port_id, {
+          facing_direction: this.facingDirection,
+          side_of_component:
+            this.facingDirection === "up"
+              ? "top"
+              : this.facingDirection === "down"
+                ? "bottom"
+                : this.facingDirection,
+        })
+      }
       db.schematic_port.update(this.schematic_port_id, {
         center: newCenter,
       })

@@ -37,6 +37,7 @@ test("45 degree rects bug", () => {
   expect(simpleRouteJson).toMatchInlineSnapshot(`
     {
       "allowBlindAndBuriedVias": false,
+      "allowViaInPad": false,
       "bounds": {
         "maxX": 3.6970562748477143,
         "maxY": 3.6970562748477143,
