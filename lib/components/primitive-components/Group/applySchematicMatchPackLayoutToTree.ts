@@ -22,9 +22,11 @@ import {
 } from "lib/utils/schematic/getRotatedSymbolName"
 import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
 import type { z } from "zod"
+import { compose, rotateDEG, translate } from "transformation-matrix"
 import type { Group } from "./Group"
 import type { AxisDirection } from "./Group_doInitialSchematicTraceRender/getSide"
 import { updateSchematicPrimitivesForLayoutShift } from "./utils/updateSchematicPrimitivesForLayoutShift"
+import { rotateSchematicPathsAndLinesForLayout } from "./utils/rotateSchematicPathsAndLinesForLayout"
 
 const debug = Debug("Group_doInitialSchematicLayoutMatchpack")
 
@@ -1021,6 +1023,18 @@ export function applySchematicMatchPackLayoutToTree<
             schematicComponent.size.width = schematicComponent.size.height
             schematicComponent.size.height = prevWidth
           }
+
+          const schematicLayoutRotation = compose(
+            translate(newCenter.x, newCenter.y),
+            rotateDEG(placement.ccwRotationDegrees),
+            translate(-newCenter.x, -newCenter.y),
+          )
+
+          rotateSchematicPathsAndLinesForLayout({
+            db,
+            schematicComponentId: schematicComponent.schematic_component_id,
+            schematicLayoutRotation,
+          })
 
           const angleRad = (placement.ccwRotationDegrees * Math.PI) / 180
           const cos = Math.cos(angleRad)
