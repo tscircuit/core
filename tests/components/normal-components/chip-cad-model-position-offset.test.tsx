@@ -28,6 +28,6 @@ test("chip with cadModel positionOffset", () => {
   expect(cadComponent.position).toEqual({
     x: 1,
     y: 2,
-    z: expect.closeTo(3.8, 0.01), // 0.8 is half of the default board thickness
+    z: expect.closeTo(3.8, 2), // 0.8 is half of the default board thickness
   })
 })

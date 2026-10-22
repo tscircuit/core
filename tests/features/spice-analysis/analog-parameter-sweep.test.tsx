@@ -37,7 +37,7 @@ test("analog parameter sweeps execute one run per ordered sweep point", async ()
       />
       <trace from=".V1 > .pin1" to=".R1 > .pin1" schDisplayLabel="GND" />
       <trace from=".V1 > .pin2" to=".R1 > .pin2" />
-      <voltageprobe name="VOUT" connectsTo=".R1 > .pin2" />
+      <voltageprobe name="VOUT" connectsTo=".R1 > .pin2" color="#009600" />
       <analog.dcoperatingpointsimulation name="swept-op" spiceEngine="fake">
         <analog.sweepparameter
           parameterType="resistance"

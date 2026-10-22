@@ -499,8 +499,7 @@ export class Board
     const { db } = this.root!
     const { _parsedProps: props } = this
 
-    const circuitJsonElements = props.circuitJson
-    const pcbBoardFromCircuitJson = circuitJsonElements?.find(
+    const pcbBoardFromCircuitJson = props.circuitJson?.find(
       (elm) => elm.type === "pcb_board",
     )
     const viaTenting = getViaTenting(props.defaultViaTenting)
@@ -628,7 +627,7 @@ export class Board
           }))
         : outline,
       material:
-        this.props.material ??
+        rawProps.material ??
         pcbBoardFromCircuitJson?.material ??
         props.material,
       ...(resolvedIsViaInPadAllowed !== undefined && {

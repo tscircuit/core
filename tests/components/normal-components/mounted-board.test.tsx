@@ -1,6 +1,5 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
-import { su } from "@tscircuit/circuit-json-util"
 
 test("MountedBoard sets carrier_pcb_board_id and is_mounted_to_carrier_board", () => {
   const { circuit } = getTestFixture()
@@ -25,18 +24,18 @@ test("MountedBoard sets carrier_pcb_board_id and is_mounted_to_carrier_board", (
 
   circuit.render()
 
-  const circuitJson = circuit.getCircuitJson()
-  const boards = su(circuitJson).pcb_board.list()
+  const boards = circuit.db.pcb_board.list()
 
-  expect(boards.length).toBe(2)
+  expect(boards).toHaveLength(2)
 
   const carrierBoard = boards.find((b) => !b.is_mounted_to_carrier_board)
   const mountedBoard = boards.find((b) => b.is_mounted_to_carrier_board)
 
   expect(carrierBoard).toBeDefined()
-  expect(mountedBoard).toBeDefined()
-  expect(mountedBoard?.is_mounted_to_carrier_board).toBe(true)
-  expect(mountedBoard?.carrier_pcb_board_id).toBe(carrierBoard?.pcb_board_id)
+  expect(mountedBoard).toMatchObject({
+    is_mounted_to_carrier_board: true,
+    carrier_pcb_board_id: carrierBoard?.pcb_board_id,
+  })
   for (const board of boards) {
     expect(board).toMatchObject({ material: "fr4", thickness: 1.6 })
   }
