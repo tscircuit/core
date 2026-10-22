@@ -34,7 +34,7 @@ test("color for  cad model", async () => {
       "position": {
         "x": 0,
         "y": 0,
-        "z": 0.7,
+        "z": 0.8,
       },
       "rotation": {
         "x": 0,

@@ -37,4 +37,7 @@ test("MountedBoard sets carrier_pcb_board_id and is_mounted_to_carrier_board", (
   expect(mountedBoard).toBeDefined()
   expect(mountedBoard?.is_mounted_to_carrier_board).toBe(true)
   expect(mountedBoard?.carrier_pcb_board_id).toBe(carrierBoard?.pcb_board_id)
+  for (const board of boards) {
+    expect(board).toMatchObject({ material: "fr4", thickness: 1.6 })
+  }
 })

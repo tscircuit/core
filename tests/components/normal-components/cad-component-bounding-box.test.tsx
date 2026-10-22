@@ -46,7 +46,7 @@ it("emits a bounding-box cad_component when no cad_component exists", async () =
     type: "cad_component",
     pcb_component_id: expect.any(String),
     source_component_id: expect.any(String),
-    position: { x: 0, y: 0, z: 0.7 },
+    position: { x: 0, y: 0, z: 0.8 },
     show_as_bounding_box: true,
   })
   expect(cadComponents[0]).not.toHaveProperty("footprinter_string")

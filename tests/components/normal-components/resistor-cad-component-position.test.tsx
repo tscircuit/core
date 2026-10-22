@@ -27,5 +27,5 @@ test("resistor CAD component position", () => {
   expect(cadComponent).toBeDefined()
   expect(cadComponent.position.x).toBeCloseTo(3, 1)
   expect(cadComponent.position.y).toBeCloseTo(0, 1)
-  expect(cadComponent.position.z).toBeCloseTo(0.7, 1)
+  expect(cadComponent.position.z).toBeCloseTo(0.8, 1)
 })

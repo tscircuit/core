@@ -15,7 +15,7 @@ export class MountedBoard extends Subcircuit implements BoardI {
   }
 
   get boardThickness() {
-    return 1.4
+    return 1.6
   }
 
   get allLayers() {
@@ -55,6 +55,8 @@ export class MountedBoard extends Subcircuit implements BoardI {
       center: { x: globalPos.x, y: globalPos.y },
       width: props.width ?? 0,
       height: props.height ?? 0,
+      thickness: this.boardThickness,
+      material: "fr4",
       is_mounted_to_carrier_board: true,
     } as Omit<PcbBoard, "type" | "pcb_board_id">)
 

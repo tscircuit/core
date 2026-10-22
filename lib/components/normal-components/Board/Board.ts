@@ -180,7 +180,12 @@ export class Board
   }
 
   get boardThickness() {
-    return this._parsedProps.thickness ?? 1.4
+    return (
+      this._parsedProps.thickness ??
+      this._parsedProps.circuitJson?.find((elm) => elm.type === "pcb_board")
+        ?.thickness ??
+      1.6
+    )
   }
 
   /**
@@ -622,7 +627,10 @@ export class Board
             y: point.y + (props.outlineOffsetY ?? 0) + outlineTranslation.y,
           }))
         : outline,
-      material: props.material,
+      material:
+        this.props.material ??
+        pcbBoardFromCircuitJson?.material ??
+        props.material,
       ...(resolvedIsViaInPadAllowed !== undefined && {
         is_via_in_pad_allowed: resolvedIsViaInPadAllowed,
       }),

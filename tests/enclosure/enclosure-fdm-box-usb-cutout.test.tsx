@@ -72,7 +72,7 @@ test("generates an FDM enclosure and USB-C aperture with the enclosure solver", 
   expect(enclosureSolverEvent?.solverParams.board).toEqual({
     width: 40,
     height: 24,
-    thickness: 1.4,
+    thickness: 1.6,
   })
   expect(enclosureSolverEvent?.solverParams.apertures[0]).toMatchObject({
     shape: "pill",

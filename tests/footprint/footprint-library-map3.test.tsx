@@ -61,7 +61,7 @@ test("footprint library map 3", async () => {
         "pcb_board_id": "pcb_board_0",
         "source_board_id": "source_board_0",
         "subcircuit_id": "subcircuit_source_group_0",
-        "thickness": 1.4,
+        "thickness": 1.6,
         "type": "pcb_board",
         "width": 5.5600000000000005,
       },
