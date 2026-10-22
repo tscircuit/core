@@ -6,11 +6,18 @@ import { getTestPointInflationFixture } from "tests/fixtures/get-testpoint-infla
 const label = (text: string, color = "#1f2937") =>
   `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="48"><rect width="600" height="48" fill="white"/><text x="12" y="30" font-family="sans-serif" font-size="17" fill="${color}">${text}</text></svg>`
 
-test("show the native testpoint Circuit JSON import result", async () => {
+test("show the AM3352 USB-C output probe Circuit JSON import result", async () => {
   const { original, imported, importError } =
     await getTestPointInflationFixture()
-  expect(original.db.pcb_smtpad.list()).toHaveLength(2)
-  expect(original.db.pcb_plated_hole.list()).toHaveLength(1)
+  expect(original.db.pcb_smtpad.list()).toHaveLength(3)
+  expect(original.db.pcb_plated_hole.list()).toHaveLength(0)
+  expect(original.db.source_trace.list()).toHaveLength(2)
+  expect(original.db.pcb_trace.list()).toHaveLength(1)
+  expect(
+    original
+      .getCircuitJson()
+      .filter((element) => element.type.endsWith("_error")),
+  ).toEqual([])
   expect(importError?.message).toBe(
     'No inflator implemented for source component ftype: "simple_test_point"',
   )
@@ -25,7 +32,7 @@ test("show the native testpoint Circuit JSON import result", async () => {
   const svg = stackSvgsHorizontally(
     [
       stackSvgsVertically([
-        label("Original: circular, rectangular and through-hole probes"),
+        label("AM3352 USB-C output: C_PD_OUT (10 uF) + TP_5V"),
         convertCircuitJsonToPcbSvg(originalJson, options),
       ]),
       stackSvgsVertically([
