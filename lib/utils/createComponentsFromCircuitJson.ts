@@ -3,6 +3,7 @@ import { getUnitVectorFromDirection } from "@tscircuit/math-utils"
 import type { PcbSoldermaskOpeningProps, PinLabelsProp } from "@tscircuit/props"
 import {
   type AnyCircuitElement,
+  type PcbSilkscreenText,
   type PcbSolderPastePolygon,
   type SchematicComponent,
   layer_ref,
@@ -47,6 +48,7 @@ import {
 import { SymbolComponent } from "lib/components/primitive-components/Symbol"
 import type { PrimitiveComponent } from "../components/base-components/PrimitiveComponent"
 import { createPinrowSilkscreenText } from "./createPinrowSilkscreenText"
+import { DESIGNATOR_PLACEHOLDERS } from "./designator-placeholders"
 
 type SchematicPrimitiveWithStrokeWidth = Extract<
   AnyCircuitElement,
@@ -129,6 +131,7 @@ export const createComponentsFromCircuitJson = (
     pinLabels,
     pcbPinLabels,
     preserveSolderPaste = false,
+    isPlacedPcbSilkscreenText,
   }: {
     sourcePortOwner?: NormalComponent
     componentName: string
@@ -137,6 +140,10 @@ export const createComponentsFromCircuitJson = (
     pinLabels?: PinLabelsProp
     pcbPinLabels?: PinLabelsProp
     preserveSolderPaste?: boolean
+    /** Checks if label placement must leave the text where the circuit JSON puts it. */
+    isPlacedPcbSilkscreenText?: (
+      pcbSilkscreenText: PcbSilkscreenText,
+    ) => boolean
   },
   circuitJson: AnyCircuitElement[],
 ): PrimitiveComponent[] => {
@@ -669,20 +676,19 @@ export const createComponentsFromCircuitJson = (
         componentRotation,
         elm.ccw_rotation,
       )
+      let silkscreenText: SilkscreenText
       if (
         (footprinterString?.includes("pinrow") ||
           footprinterString?.includes("headermodule")) &&
         elm.text.includes("PIN")
       ) {
-        components.push(
-          createPinrowSilkscreenText({
-            elm,
-            pinLabels: pcbPinLabels ?? pinLabels ?? {},
-            layer: elm.layer,
-            readableRotation: ccwRotation,
-            anchorAlignment: elm.anchor_alignment,
-          }),
-        )
+        silkscreenText = createPinrowSilkscreenText({
+          elm,
+          pinLabels: pcbPinLabels ?? pinLabels ?? {},
+          layer: elm.layer,
+          readableRotation: ccwRotation,
+          anchorAlignment: elm.anchor_alignment,
+        })
       } else {
         // Footprinter-generated reference text is a placeholder that should
         // resolve to the component name. A literal from the explicit
@@ -692,9 +698,7 @@ export const createComponentsFromCircuitJson = (
         let text = componentName || elm.text
         if (
           footprinterString?.includes("silkscreenlabel(") &&
-          elm.text !== "{REF}" &&
-          elm.text !== "{NAME}" &&
-          elm.text !== "{REFERENCE}"
+          !DESIGNATOR_PLACEHOLDERS.includes(elm.text)
         ) {
           text = elm.text
         }
@@ -702,7 +706,7 @@ export const createComponentsFromCircuitJson = (
         if (Number.isNaN(pcbX)) {
           pcbX = 0
         }
-        const silkscreenText = new SilkscreenText({
+        silkscreenText = new SilkscreenText({
           anchorAlignment: elm.anchor_alignment || "center",
           text,
           pcbX,
@@ -710,8 +714,10 @@ export const createComponentsFromCircuitJson = (
           pcbRotation: ccwRotation ?? 0,
         })
         silkscreenText._footprinterFontSize = elm.font_size + 0.2
-        components.push(silkscreenText)
       }
+      silkscreenText._isPlacedInCircuitJson =
+        isPlacedPcbSilkscreenText?.(elm) ?? false
+      components.push(silkscreenText)
     } else if (elm.type === "pcb_trace") {
       const pcbTrace = new PcbTrace({ route: elm.route })
       for (const [routeIndex, point] of elm.route.entries()) {

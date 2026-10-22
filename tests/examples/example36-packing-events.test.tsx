@@ -62,7 +62,7 @@ test("solver:started fires with packing solver details", async () => {
   let solverStartedEvent: any
 
   circuit.on("solver:started", (event) => {
-    solverStartedEvent = event
+    if (event.solverName === "PackSolver2") solverStartedEvent = event
   })
 
   circuit.add(

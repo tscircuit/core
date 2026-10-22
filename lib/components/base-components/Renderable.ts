@@ -192,6 +192,7 @@ const asyncPhaseDependencies: Partial<Record<RenderPhase, RenderPhase[]>> = {
   SilkscreenOverlapAdjustment: [
     "PcbFootprintStringRender",
     "FetchPartFootprint",
+    "PcbPrimitiveRender",
   ],
   CadModelRender: ["PcbFootprintStringRender", "FetchPartFootprint"],
   PartsEngineRender: ["PcbFootprintStringRender", "FetchPartFootprint"],

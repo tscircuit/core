@@ -15,13 +15,15 @@ export const inflateFootprintComponent = (
   pcbElm: PcbComponent,
   inflatorContext: InflatorContext,
 ): Footprint | null => {
-  const { injectionDb, normalComponent } = inflatorContext
+  const { injectionDb, normalComponent, isPlacedPcbSilkscreenText } =
+    inflatorContext
   if (!normalComponent) return null
 
   const primitives = extractPcbPrimitivesFromCircuitJson({
     pcbComponent: pcbElm,
     db: injectionDb,
     componentName: normalComponent.name,
+    isPlacedPcbSilkscreenText,
   })
 
   if (primitives.length === 0) return null

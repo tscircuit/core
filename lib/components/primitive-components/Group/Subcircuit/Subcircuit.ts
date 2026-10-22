@@ -1,6 +1,7 @@
 import { subcircuitProps } from "@tscircuit/props"
 import type { z } from "zod"
 import { inflateCircuitJson } from "../../../../utils/circuit-json/inflate-circuit-json"
+import { getIsPlacedInIsolatedRender } from "../../../base-components/NormalComponent/utils/getBoardPlacedSilkscreenLabels"
 import { Net } from "../../Net"
 import { Trace } from "../../Trace/Trace"
 import { Group } from "../Group"
@@ -118,7 +119,9 @@ export class Subcircuit
     if (isolatedJson) {
       this._isInflatedFromCircuitJson = true
       this._isolatedCircuitJson = null
-      inflateCircuitJson(this, isolatedJson, [])
+      inflateCircuitJson(this, isolatedJson, [], {
+        isPlacedPcbSilkscreenText: getIsPlacedInIsolatedRender(isolatedJson),
+      })
       return
     }
 
@@ -126,7 +129,9 @@ export class Subcircuit
     if (circuitJson) {
       this._isInflatedFromCircuitJson = true
     }
-    inflateCircuitJson(this, circuitJson, children)
+    inflateCircuitJson(this, circuitJson, children, {
+      isPlacedPcbSilkscreenText: () => true,
+    })
   }
 }
 
