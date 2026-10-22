@@ -30,9 +30,29 @@ test("infers pin 1 orientation for a slightly skewed two-pad footprint", () => {
         }
       />
       <silkscreentext
-        text="Pin 1 left"
-        pcbY={-1.5}
-        fontSize={0.5}
+        text="PIN 1"
+        pcbX={-0.8}
+        pcbY={1}
+        fontSize={0.4}
+        anchorAlignment="center"
+      />
+      <silkscreentext
+        text="PIN 2"
+        pcbX={0.8}
+        pcbY={1}
+        fontSize={0.4}
+        anchorAlignment="center"
+      />
+      <silkscreentext
+        text="Center Y skew: 0.006858 mm"
+        pcbY={-1.1}
+        fontSize={0.26}
+        anchorAlignment="center"
+      />
+      <silkscreentext
+        text="Expected: pin1_location = topside_left"
+        pcbY={-1.75}
+        fontSize={0.22}
         anchorAlignment="center"
       />
     </board>,
