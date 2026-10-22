@@ -73,7 +73,7 @@ test.failing("native testpoints round-trip through Circuit JSON", async () => {
       name: port.name,
     })!
     expect(importedPort.port_hints).toEqual(
-      expect.arrayContaining(port.port_hints),
+      expect.arrayContaining(port.port_hints ?? []),
     )
   }
   expect(
