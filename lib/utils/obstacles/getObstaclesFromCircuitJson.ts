@@ -209,8 +209,14 @@ export const getObstaclesFromCircuitJson = (
           continue
         }
 
+        const yCoords = element.points.map((p) => p.y)
+        const verticalExtent =
+          yCoords.length > 0 ? Math.max(...yCoords) - Math.min(...yCoords) : 0
+        const rectHeight =
+          verticalExtent > 0 ? Math.min(0.1, verticalExtent) : 0.1
+
         const approximatingRects = fillPolygonWithRects(element.points, {
-          rectHeight: 0.1,
+          rectHeight,
         })
 
         for (const rect of approximatingRects) {
@@ -275,12 +281,14 @@ export const getObstaclesFromCircuitJson = (
           connectedTo: [],
         })
       } else if (element.shape === "circle") {
+        const diameter = element.radius * 2
+        const rectHeight = diameter > 0 ? Math.min(0.6, diameter) : 0.6
         const approximatingRects = fillCircleWithRects(
           {
             center: element.center,
             radius: element.radius,
           },
-          { rectHeight: 0.6 },
+          { rectHeight },
         )
 
         for (const rect of approximatingRects) {
@@ -295,8 +303,13 @@ export const getObstaclesFromCircuitJson = (
           })
         }
       } else if (element.shape === "polygon") {
+        const yCoords = element.points.map((p) => p.y)
+        const verticalExtent =
+          yCoords.length > 0 ? Math.max(...yCoords) - Math.min(...yCoords) : 0
+        const rectHeight =
+          verticalExtent > 0 ? Math.min(0.6, verticalExtent) : 0.6
         const approximatingRects = fillPolygonWithRects(element.points, {
-          rectHeight: 0.6,
+          rectHeight,
         })
 
         for (const rect of approximatingRects) {
