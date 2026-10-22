@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { Fragment } from "react"
 import { assembly } from "lib"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
@@ -8,18 +9,24 @@ test("board part references select source groups without altering PCB placement"
     <assembly.device>
       <board name="CONTROL" width={30} height={20} routingDisabled>
         {[-11, 11].flatMap((x) =>
-          [-6, 6].map((y) => <hole diameter={2.5} pcbX={x} pcbY={y} />),
+          [-6, 6].map((y) => (
+            <Fragment key={`${x}-${y}`}>
+              <hole diameter={2.5} pcbX={x} pcbY={y} />
+            </Fragment>
+          )),
         )}
         {[-5.08, -2.54, 0, 2.54, 5.08].flatMap((x) =>
           [-6, 6].map((y) => (
-            <platedhole
-              name={`J${y > 0 ? 1 : 2}_${x}`}
-              holeDiameter={1}
-              outerDiameter={1.8}
-              shape="circle"
-              pcbX={x}
-              pcbY={y}
-            />
+            <Fragment key={`${x}-${y}`}>
+              <platedhole
+                name={`J${y > 0 ? 1 : 2}_${x}`}
+                holeDiameter={1}
+                outerDiameter={1.8}
+                shape="circle"
+                pcbX={x}
+                pcbY={y}
+              />
+            </Fragment>
           )),
         )}
       </board>
