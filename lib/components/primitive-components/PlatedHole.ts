@@ -1,17 +1,17 @@
-import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { platedHoleProps } from "@tscircuit/props"
 import { distance } from "circuit-json"
-import type { Port } from "./Port"
 import type {
   LayerRef,
   PCBPlatedHoleInput,
-  PcbPlatedHoleOval,
   PcbHoleCircularWithRectPad,
   PcbHolePillWithRectPad,
   PcbHoleRotatedPillWithRectPad,
   PcbHoleWithPolygonPad,
+  PcbPlatedHoleOval,
 } from "circuit-json"
 import { decomposeTSR } from "transformation-matrix"
+import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
+import type { Port } from "./Port"
 import { selectPortForPcbPrimitive } from "./Port/selectPortForPcbPrimitive"
 
 export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
@@ -175,6 +175,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
           radius: props.outerDiameter / 2,
           x: position.x,
           y: position.y,
+          pcb_component_id: pcb_component_id ?? undefined,
           subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
           pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
         })
@@ -185,6 +186,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
           radius: props.outerDiameter / 2,
           x: position.x,
           y: position.y,
+          pcb_component_id: pcb_component_id ?? undefined,
           subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
           pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
         })
@@ -252,6 +254,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
           height: props.outerHeight,
           x: position.x,
           y: position.y,
+          pcb_component_id: pcb_component_id ?? undefined,
           subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
           pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
         })
@@ -264,6 +267,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
           height: props.outerHeight,
           x: position.x,
           y: position.y,
+          pcb_component_id: pcb_component_id ?? undefined,
           subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
           pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
         })
@@ -275,6 +279,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
           height: props.outerHeight,
           x: position.x,
           y: position.y,
+          pcb_component_id: pcb_component_id ?? undefined,
           subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
           pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
         })
@@ -285,6 +290,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
           height: props.outerHeight,
           x: position.x,
           y: position.y,
+          pcb_component_id: pcb_component_id ?? undefined,
           subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
           pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
         })
