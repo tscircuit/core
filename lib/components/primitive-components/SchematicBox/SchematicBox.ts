@@ -111,6 +111,20 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
       return
     }
 
+    for (const [propertyName, value] of [
+      ["width", width],
+      ["height", height],
+    ] as const) {
+      if (typeof value === "number" && value <= 0) {
+        db.source_invalid_component_property_error.insert({
+          source_component_id: this.source_component_id || "",
+          property_name: propertyName,
+          message: `Invalid ${propertyName} for ${this.getString()}: ${value}, which must be greater than zero.`,
+          error_type: "source_invalid_component_property_error",
+        })
+      }
+    }
+
     db.schematic_box.insert({
       height,
       width,
