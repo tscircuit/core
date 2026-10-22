@@ -67,7 +67,7 @@ const describeCopper = (circuit: RootCircuit) => ({
   vias: circuit.db.pcb_via.list().map(describeElement),
 })
 
-test.failing(
+test(
   "AM3352 USB-C output probe round-trips through Circuit JSON",
   async () => {
     const { original, imported, importError } =
