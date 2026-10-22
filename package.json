@@ -144,7 +144,7 @@
   },
   "overrides": {
     "@tscircuit/props": "^0.0.707",
-    "circuit-json": "^0.0.529",
+    "circuit-json": "^0.0.531",
     "@tscircuit/cableprinter": "^0.0.6"
   }
 }

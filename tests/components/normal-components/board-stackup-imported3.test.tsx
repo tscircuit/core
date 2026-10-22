@@ -1,22 +1,18 @@
 import { expect, test } from "bun:test"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
-import simpleCircuitJson from "./assets/simple-circuit.json"
+import {
+  getBoardStackupFixture,
+  getImportedBoardCircuitJson,
+} from "tests/fixtures/get-board-stackup-fixture"
 
 test("an imported board defaults to FR-4 for stackup lookup", async () => {
-  const { circuit } = getTestFixture()
-  circuit.add(
-    <board
-      circuitJson={
-        simpleCircuitJson.map((element) =>
-          element.type === "pcb_board"
-            ? { ...element, num_layers: 4, thickness: 1.6, material: undefined }
-            : element,
-        ) as any
-      }
-      fabricatorPreset="jlcpcb_standard"
-    />,
-  )
-  await circuit.renderUntilSettled()
+  const circuit = await getBoardStackupFixture({
+    circuitJson: getImportedBoardCircuitJson({
+      num_layers: 4,
+      thickness: 1.6,
+      material: undefined,
+    }),
+    fabricatorPreset: "jlcpcb_standard",
+  })
   const stackups = circuit.db.pcb_stackup.list()
   expect(circuit.db.pcb_board.list()).toHaveLength(1)
   expect(stackups).toHaveLength(1)

@@ -16,14 +16,16 @@ export function Board_doInitialPcbStackupRender(
       element.type === "pcb_stackup" &&
       element.pcb_board_id === importedPcbBoard?.pcb_board_id,
   )
-  const layers =
-    importedStackup?.layers ??
-    (board._parsedProps.fabricatorPreset
-      ? getJlcStackup({
-          ...(importedPcbBoard ?? db.pcb_board.get(pcb_board_id)!),
-          thickness: importedPcbBoard?.thickness ?? board.boardThickness,
-        })?.layers
-      : undefined)
+  let layers = importedStackup?.layers
+  if (!layers && board._parsedProps.fabricatorPreset) {
+    const { num_layers, thickness, material } =
+      importedPcbBoard ?? db.pcb_board.get(pcb_board_id)!
+    layers = getJlcStackup({
+      num_layers,
+      thickness: thickness ?? board.boardThickness,
+      material,
+    })?.layers
+  }
   if (!layers) return
 
   db.pcb_stackup.insert({

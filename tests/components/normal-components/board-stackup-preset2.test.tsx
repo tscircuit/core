@@ -1,19 +1,15 @@
 import { expect, test } from "bun:test"
 import { pcb_stackup } from "circuit-json"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { getBoardStackupFixture } from "tests/fixtures/get-board-stackup-fixture"
 
 test("jlcpcb_standard resolves the sourced JLC04161H-3313 construction", async () => {
-  const { circuit } = getTestFixture()
-  circuit.add(
-    <board
-      width={20}
-      height={20}
-      layers={4}
-      thickness="1.6mm"
-      fabricatorPreset="jlcpcb_standard"
-    />,
-  )
-  await circuit.renderUntilSettled()
+  const circuit = await getBoardStackupFixture({
+    width: 20,
+    height: 20,
+    layers: 4,
+    thickness: "1.6mm",
+    fabricatorPreset: "jlcpcb_standard",
+  })
   const stackups = circuit.db.pcb_stackup.list()
   expect(stackups).toHaveLength(1)
   const stackup = stackups[0]!
