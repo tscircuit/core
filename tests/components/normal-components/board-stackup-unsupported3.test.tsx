@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("unsupported 4-layer 1.2mm fr4 construction emits no stackup or error", async () => {
+test("unsupported 4-layer 1.5mm fr4 construction emits no stackup or error", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board
@@ -9,7 +9,7 @@ test("unsupported 4-layer 1.2mm fr4 construction emits no stackup or error", asy
       height={20}
       fabricatorPreset="jlcpcb_standard"
       layers={4}
-      thickness={1.2}
+      thickness={1.5}
       material="fr4"
     />,
   )
