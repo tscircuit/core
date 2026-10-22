@@ -1,7 +1,8 @@
 import { expect, test } from "bun:test"
+import { getSchematicTextWidth } from "lib/utils/schematic/getSchematicTextWidth"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("repro: default USB-C box crowds SHELL4 and right-side labels", async () => {
+test("default USB-C shell labels clear the right-side labels", async () => {
   const { circuit } = getTestFixture()
   circuit.pcbDisabled = true
 
@@ -34,8 +35,30 @@ test("repro: default USB-C box crowds SHELL4 and right-side labels", async () =>
 
   await circuit.renderUntilSettled()
 
-  // Keep the default box sizing and pin arrangement: SHELL4 is too close to
-  // SBU2, GND1, and GND2 at the lower-right corner (minimum clearance: 0.1).
-  expect(circuit.db.schematic_port.list()).toHaveLength(16)
+  const schematicPorts = circuit.db.schematic_port.list()
+  const shell4Port = schematicPorts.find(
+    (port) => port.display_pin_label === "SHELL4",
+  )!
+  const schematicComponent = circuit.db.schematic_component.get(
+    shell4Port.schematic_component_id!,
+  )!
+  const pinLabelFontSize = 0.15
+  const pinLabelEdgePadding = 0.1
+  const minimumLabelBankGap = 0.1
+  const geometryTolerance = 1e-9
+  // SBU2, GND1, and GND2 have the same width in core's conservative estimate.
+  const rightLabelLeftEdge =
+    schematicComponent.center.x +
+    schematicComponent.size.width / 2 -
+    pinLabelEdgePadding -
+    getSchematicTextWidth({ text: "SBU2", fontSize: pinLabelFontSize })
+  const shell4LabelRightEdge = shell4Port.center.x + pinLabelFontSize / 2
+
+  expect(schematicPorts).toHaveLength(16)
+  expect(schematicComponent.size.width).toBeCloseTo(1.7)
+  expect(schematicComponent.size.height).toBeCloseTo(3.2)
+  expect(rightLabelLeftEdge - shell4LabelRightEdge).toBeGreaterThanOrEqual(
+    minimumLabelBankGap - geometryTolerance,
+  )
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })

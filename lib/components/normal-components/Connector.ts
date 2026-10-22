@@ -81,8 +81,8 @@ const USB_C_DEFAULT_SCH_PIN_STYLE_BY_LABEL: ReadonlyArray<
   ["DP1", { marginTop: 0.15 }],
   ["SBU1", { marginTop: 0.15 }],
   ["GND1", { marginTop: 0.15 }],
-  // Bottom-side label spacing uses horizontal margins.
-  ["SHELL4", { marginRight: 0.15 }],
+  // Leave clearance between the bottom shell labels and right-side signal labels.
+  ["SHELL4", { marginRight: 0.25 }],
 ]
 
 export class Connector<
