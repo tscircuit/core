@@ -1,4 +1,5 @@
 import { fp } from "@tscircuit/footprinter"
+import type { PinLabelsProp } from "@tscircuit/props"
 
 const positiveLabels = new Set(["a", "anode", "pos", "positive"])
 const negativeLabels = new Set(["k", "c", "cathode", "neg", "negative"])
@@ -16,7 +17,7 @@ export function resolveFootprinterPolarity({
   footprint: string
   componentName: string
   name: string
-  pinLabels?: Record<string, string | string[]>
+  pinLabels?: PinLabelsProp
   polarized?: boolean
 }) {
   if (!["Diode", "Led", "Capacitor"].includes(componentName))
@@ -32,8 +33,8 @@ export function resolveFootprinterPolarity({
   const explicitNegative = parameters[negativeOption]
   const labelPolarities = [1, 2].map((pin) => {
     const labels = pinLabels?.[`pin${pin}`] ?? pinLabels?.[String(pin)] ?? []
-    const aliases = (Array.isArray(labels) ? labels : [labels]).map((label) =>
-      label.toLowerCase().replace(/[^a-z0-9]/g, ""),
+    const aliases = (typeof labels === "string" ? [labels] : labels).map(
+      (label) => label.toLowerCase().replace(/[^a-z0-9]/g, ""),
     )
     const positive = aliases.some((label) => positiveLabels.has(label))
     const negative = aliases.some((label) => negativeLabels.has(label))

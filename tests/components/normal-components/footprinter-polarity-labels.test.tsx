@@ -4,13 +4,34 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 test("native footprint polarity follows pinLabels through rotation and mirroring", async () => {
   const { circuit } = getTestFixture()
   const cases = [
-    { name: "D_A1", reversed: false, rotation: 0, layer: "top", x: -12, y: 6 },
-    { name: "D_A2", reversed: true, rotation: 0, layer: "top", x: -4, y: 6 },
-    { name: "D_90", reversed: true, rotation: 90, layer: "top", x: 4, y: 6 },
+    {
+      name: "D_A1",
+      reversed: false,
+      ccwRotationDegrees: 0,
+      layer: "top",
+      x: -12,
+      y: 6,
+    },
+    {
+      name: "D_A2",
+      reversed: true,
+      ccwRotationDegrees: 0,
+      layer: "top",
+      x: -4,
+      y: 6,
+    },
+    {
+      name: "D_90",
+      reversed: true,
+      ccwRotationDegrees: 90,
+      layer: "top",
+      x: 4,
+      y: 6,
+    },
     {
       name: "D_180",
       reversed: true,
-      rotation: 180,
+      ccwRotationDegrees: 180,
       layer: "bottom",
       x: 12,
       y: 6,
@@ -18,16 +39,23 @@ test("native footprint polarity follows pinLabels through rotation and mirroring
     {
       name: "LED_A1",
       reversed: false,
-      rotation: 0,
+      ccwRotationDegrees: 0,
       layer: "top",
       x: -12,
       y: -6,
     },
-    { name: "LED_A2", reversed: true, rotation: 0, layer: "top", x: -4, y: -6 },
+    {
+      name: "LED_A2",
+      reversed: true,
+      ccwRotationDegrees: 0,
+      layer: "top",
+      x: -4,
+      y: -6,
+    },
     {
       name: "LED_270",
       reversed: true,
-      rotation: 270,
+      ccwRotationDegrees: 270,
       layer: "bottom",
       x: 4,
       y: -6,
@@ -35,7 +63,7 @@ test("native footprint polarity follows pinLabels through rotation and mirroring
     {
       name: "D_BOTTOM",
       reversed: true,
-      rotation: 90,
+      ccwRotationDegrees: 90,
       layer: "bottom",
       x: 12,
       y: -6,
@@ -54,7 +82,7 @@ test("native footprint polarity follows pinLabels through rotation and mirroring
             : { pin1: ["anode", "pos"], pin2: ["cathode", "neg"] },
           pcbX: configuration.x,
           pcbY: configuration.y,
-          pcbRotation: configuration.rotation,
+          pcbRotation: configuration.ccwRotationDegrees,
           layer: configuration.layer,
         }
         return configuration.name.startsWith("LED") ? (
