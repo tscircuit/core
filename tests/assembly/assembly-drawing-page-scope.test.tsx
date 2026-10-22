@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test"
 import { assembly } from "lib"
+import { lampBase, LampShade } from "./fixtures/reference-surface-lamp"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("drawing pages isolate sibling references and resolve geometry within each assembly device", async () => {
@@ -8,21 +9,31 @@ test("drawing pages isolate sibling references and resolve geometry within each 
     <assembly.device name="PRODUCT">
       {["A", "B"].map((name, i) => (
         <assembly.device key={name} name={name}>
-          <assembly.part
-            name="housing"
-            cadModel={{ jscad: { type: "cuboid", size: [20 + 10 * i, 12, 6] } }}
-          />
+          {i === 0 ? (
+            <assembly.part name="housing" cadModel={{ jscad: lampBase }} />
+          ) : (
+            <assembly.printedpart name="housing" jscad={<LampShade />} />
+          )}
           <assembly.drawing.page
             name={name}
             size="ansi_a"
             orientation="portrait"
           >
             <assembly.drawing.titleblock
-              title={`Assembly ${name} — isolated geometry and view names`}
+              title={i === 0 ? "LAMP BASE" : "LAMP SHADE"}
+              identificationNumber={`LMP-001-${name}`}
+              revisionIndex="A"
+              creator="tscircuit"
+              legalOwner="tscircuit"
+              approvalPerson="PRELIMINARY"
+              dateOfIssue="2026-10-21"
+              sheetNumber={1}
+              numberOfSheets={1}
             />
             <assembly.drawing.partview
               partRef=".housing"
               name="plan"
+              displayName="TOP VIEW"
               direction="z+"
               width={60}
               height={50}
@@ -32,7 +43,8 @@ test("drawing pages isolate sibling references and resolve geometry within each 
             <assembly.drawing.partview
               partRef=".housing"
               name="side"
-              direction="x+"
+              displayName="ISOMETRIC"
+              direction="isometric"
               width={60}
               height={50}
               rightOfRef=".plan"

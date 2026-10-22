@@ -1,63 +1,71 @@
 import { expect, test } from "bun:test"
 import { assembly } from "lib"
+import { lampBase } from "./fixtures/reference-surface-lamp"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("all four relative references resolve forward declarations and unequal viewport sizes", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <assembly.device>
-      <assembly.part
-        name="housing"
-        cadModel={{ jscad: { type: "cuboid", size: [24, 16, 10] } }}
-      />
-      <assembly.drawing.page width={297} height={210}>
-        <assembly.drawing.titleblock title="Relative view placement — forward references" />
+      <assembly.part name="housing" cadModel={{ jscad: lampBase }} />
+      <assembly.drawing.page size="iso_a3">
+        <assembly.drawing.titleblock
+          title="DESK LAMP - BASE"
+          identificationNumber="LMP-001-BASE"
+          revisionIndex="A"
+          creator="tscircuit"
+          legalOwner="tscircuit"
+          approvalPerson="PRELIMINARY"
+          dateOfIssue="2026-10-21"
+          sheetNumber={1}
+          numberOfSheets={1}
+        />
         <assembly.drawing.partview
           partRef=".housing"
           name="left"
-          displayName="LEFT"
+          displayName="LEFT ELEVATION"
           direction="x-"
-          width={50}
-          height={40}
+          width={60}
+          height={30}
           leftOfRef=".plan"
-          centerY={20}
+          centerY={30}
         />
         <assembly.drawing.partview
           partRef=".housing"
           name="right"
-          displayName="RIGHT"
+          displayName="RIGHT ELEVATION"
           direction="x+"
-          width={70}
-          height={40}
+          width={60}
+          height={35}
           rightOfRef=".plan"
-          centerY={20}
+          centerY={30}
         />
         <assembly.drawing.partview
           partRef=".housing"
           name="above"
-          displayName="ABOVE"
-          direction="y+"
+          displayName="TOP VIEW"
+          direction="z+"
           width={60}
-          height={30}
+          height={70}
           aboveRef=".plan"
         />
         <assembly.drawing.partview
           partRef=".housing"
           name="below"
-          displayName="BELOW"
-          direction="y-"
+          displayName="UNDERSIDE"
+          direction="z-"
           width={60}
-          height={20}
+          height={70}
           belowRef=".plan"
         />
         <assembly.drawing.partview
           partRef=".housing"
           name="plan"
-          displayName="PLAN"
-          direction="z+"
+          displayName="FRONT ELEVATION"
+          direction="y-"
           width={60}
-          height={40}
-          centerY={20}
+          height={30}
+          centerY={30}
         />
       </assembly.drawing.page>
     </assembly.device>,
@@ -67,11 +75,11 @@ test("all four relative references resolve forward declarations and unequal view
     circuit.db.drawing_part_view.list().map((view) => [view.name, view.center]),
   )
   expect(centers).toEqual({
-    left: { x: -55, y: 20 },
-    right: { x: 65, y: 20 },
-    above: { x: 0, y: 55 },
-    below: { x: 0, y: -10 },
-    plan: { x: 0, y: 20 },
+    left: { x: -60, y: 30 },
+    right: { x: 60, y: 30 },
+    above: { x: 0, y: 80 },
+    below: { x: 0, y: -20 },
+    plan: { x: 0, y: 30 },
   })
   const relative = circuit.selectOne(".left")!
   expect(relative._parsedProps.centerX).toBeUndefined()

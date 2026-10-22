@@ -7,14 +7,38 @@ test("board part references select source groups without altering PCB placement"
   circuit.add(
     <assembly.device>
       <board name="CONTROL" width={30} height={20} routingDisabled>
-        <hole diameter={3} pcbX={-10} pcbY={-5} />
-        <hole diameter={3} pcbX={10} pcbY={5} />
+        {[-11, 11].flatMap((x) =>
+          [-6, 6].map((y) => <hole diameter={2.5} pcbX={x} pcbY={y} />),
+        )}
+        {[-5.08, -2.54, 0, 2.54, 5.08].flatMap((x) =>
+          [-6, 6].map((y) => (
+            <platedhole
+              name={`J${y > 0 ? 1 : 2}_${x}`}
+              holeDiameter={1}
+              outerDiameter={1.8}
+              shape="circle"
+              pcbX={x}
+              pcbY={y}
+            />
+          )),
+        )}
       </board>
-      <assembly.drawing.page width={210} height={150}>
-        <assembly.drawing.titleblock title="Control board — source group selection" />
+      <assembly.drawing.page size="iso_a4">
+        <assembly.drawing.titleblock
+          title="LAMP DRIVER CARRIER - DRILL PATTERN"
+          identificationNumber="LMP-002-PCB"
+          revisionIndex="A"
+          creator="tscircuit"
+          legalOwner="tscircuit"
+          approvalPerson="PRELIMINARY"
+          dateOfIssue="2026-10-21"
+          sheetNumber={1}
+          numberOfSheets={1}
+        />
         <assembly.drawing.partview
           partRef=".CONTROL"
           name="plan"
+          displayName="COMPONENT SIDE"
           direction="z+"
           width={90}
           height={65}
@@ -24,6 +48,7 @@ test("board part references select source groups without altering PCB placement"
         <assembly.drawing.partview
           partRef=".CONTROL"
           name="bottom"
+          displayName="SOLDER SIDE"
           direction="z-"
           width={90}
           height={65}

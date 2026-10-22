@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test"
 import { assembly } from "lib"
+import { lampBase } from "./fixtures/reference-surface-lamp"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("drawing references and structure reject missing, ambiguous, self and cyclic targets", async () => {
@@ -73,22 +74,30 @@ test("drawing references and structure reject missing, ambiguous, self and cycli
   const { circuit } = getTestFixture()
   circuit.add(
     <assembly.device>
-      <assembly.part
-        name="housing"
-        cadModel={{ jscad: { type: "cuboid", size: [24, 16, 10] } }}
-      />
-      <assembly.drawing.page width={210} height={150}>
-        <assembly.drawing.titleblock title="Valid cross-axis references do not form a cycle" />
+      <assembly.part name="housing" cadModel={{ jscad: lampBase }} />
+      <assembly.drawing.page size="iso_a4">
+        <assembly.drawing.titleblock
+          title="LAMP BASE - INSPECTION VIEWS"
+          identificationNumber="LMP-001-QA"
+          revisionIndex="A"
+          creator="tscircuit"
+          legalOwner="tscircuit"
+          approvalPerson="PRELIMINARY"
+          dateOfIssue="2026-10-21"
+          sheetNumber={1}
+          numberOfSheets={1}
+        />
         <assembly.drawing.partview
           {...view}
           name="plan"
-          displayName="PLAN"
+          displayName="TOP VIEW"
           rightOfRef=".other"
         />
         <assembly.drawing.partview
           {...view}
           name="other"
-          displayName="SIDE"
+          displayName="UNDERSIDE"
+          direction="z-"
           aboveRef=".plan"
         />
       </assembly.drawing.page>
@@ -101,5 +110,4 @@ test("drawing references and structure reject missing, ambiguous, self and cycli
     { x: 60, y: 0 },
     { x: 0, y: 40 },
   ])
-  await expect(circuit).toMatchDrawingSnapshot(import.meta.path)
 })

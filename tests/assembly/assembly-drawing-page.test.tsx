@@ -1,99 +1,98 @@
 import { expect, test } from "bun:test"
-import { assembly, jscad } from "lib"
+import { assembly } from "lib"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { ReferenceSurfaceLamp } from "./fixtures/reference-surface-lamp"
 
-test("drawing page emits selected geometry, sections and ISO title-block metadata", async () => {
+test("desk lamp general arrangement draws the mounted assembly in aligned third-angle views", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
-    <assembly.device name="DEVICE">
-      <assembly.printedpart
-        name="housing"
-        jscad={
-          <jscad.subtract>
-            <jscad.cuboid size={[24, 16, 10]} />
-            <jscad.cylinder radius={4} height={12} />
-          </jscad.subtract>
-        }
-      />
-      <assembly.part
-        name="unselected"
-        cadModel={{ jscad: { type: "cuboid", size: [80, 80, 80] } }}
-      />
-      <assembly.drawing.page name="housing-drawing" size="iso_a4">
+    <ReferenceSurfaceLamp>
+      <assembly.drawing.page name="lamp-general-arrangement" size="iso_a3">
         <assembly.drawing.titleblock
-          title="Housing — plan, section and isometric"
-          identificationNumber="H-001"
+          title="DESK LAMP - GENERAL ARRANGEMENT"
+          identificationNumber="LMP-001-GA"
           revisionIndex="A"
           legalOwner="tscircuit"
-          creator="Designer"
+          creator="tscircuit"
+          approvalPerson="PRELIMINARY"
+          dateOfIssue="2026-10-21"
           sheetNumber={1}
           numberOfSheets={1}
         />
+        {/* Third-angle: top above front, right elevation to its right.
+            72 x 72 x 112 mm assembly; viewport ratios preserve matching fit. */}
         <assembly.drawing.partview
-          partRef=".housing"
-          name="plan"
-          displayName="PLAN"
-          direction="z+"
-          width={80}
-          height={60}
-          centerX={-45}
-          centerY={60}
-          showHiddenEdges
-        />
-        <assembly.drawing.partview
-          partRef=".housing"
-          name="section"
-          displayName="A–A"
-          direction="x+"
-          width={80}
-          height={60}
-          centerX={45}
-          centerY={60}
-          section={{
-            axis: "x",
-            offset: "5mm",
-            keepSide: "less",
-            hatchSpacing: "1mm",
-          }}
-        />
-        <assembly.drawing.partview
-          partRef=".housing"
-          name="overview"
-          displayName="ISOMETRIC"
-          direction="isometric"
-          width={160}
-          height={80}
+          partRef=".LAMP"
+          name="front"
+          displayName="FRONT ELEVATION"
+          direction="y-"
+          width={90}
+          height={140}
+          centerX={-105}
           centerY={-20}
         />
+        <assembly.drawing.partview
+          partRef=".LAMP"
+          name="top"
+          displayName="TOP VIEW"
+          direction="z+"
+          width={90}
+          height={90}
+          centerX={-105}
+          aboveRef=".front"
+        />
+        <assembly.drawing.partview
+          partRef=".LAMP"
+          name="right"
+          displayName="RIGHT ELEVATION"
+          direction="x+"
+          width={90}
+          height={140}
+          rightOfRef=".front"
+          centerY={-20}
+        />
+        <assembly.drawing.partview
+          partRef=".LAMP"
+          name="overview"
+          displayName="ASSEMBLED ISOMETRIC"
+          direction="isometric"
+          width={115}
+          height={180}
+          centerX={105}
+          centerY={25}
+        />
       </assembly.drawing.page>
-    </assembly.device>,
+    </ReferenceSurfaceLamp>,
   )
   await circuit.renderUntilSettled()
   expect(circuit.db.drawing_page.list()[0]).toMatchObject({
-    name: "housing-drawing",
-    width: 297,
-    height: 210,
-    page_size: "iso_a4",
+    name: "lamp-general-arrangement",
+    width: 420,
+    height: 297,
+    page_size: "iso_a3",
     orientation: "landscape",
   })
-  const source = circuit.db.source_component
+  const sources = circuit.db.source_component
     .list()
-    .find((part) => part.name === "housing")!
+    .filter((part) =>
+      ["BASE", "STEM", "BULB", "SHADE"].includes(part.name ?? ""),
+    )
+  expect(sources).toHaveLength(4)
   const views = circuit.db.drawing_part_view.list()
-  expect(views.map((view) => view.source_component_ids)).toEqual([
-    [source.source_component_id],
-    [source.source_component_id],
-    [source.source_component_id],
+  for (const view of views) {
+    expect(new Set(view.source_component_ids)).toEqual(
+      new Set(sources.map((part) => part.source_component_id)),
+    )
+  }
+  expect(views.map((view) => view.center)).toEqual([
+    { x: -105, y: -20 },
+    { x: -105, y: 95 },
+    { x: -15, y: -20 },
+    { x: 105, y: 25 },
   ])
-  expect(views[1]).toMatchObject({
-    direction: "x_positive",
-    center: { x: 45, y: 60 },
-    section: { axis: "x", offset: 5, keep_side: "less", hatch_spacing: 1 },
-  })
-  expect(views.every((view) => view.scale === undefined)).toBe(true)
   const before = structuredClone(circuit.getCircuitJson())
   await expect(circuit).toMatchDrawingSnapshot(import.meta.path)
   expect(circuit.getCircuitJson()).toEqual(before)
   circuit.render()
-  expect(circuit.db.drawing_part_view.list()).toHaveLength(3)
+  expect(circuit.db.drawing_part_view.list()).toHaveLength(4)
 })

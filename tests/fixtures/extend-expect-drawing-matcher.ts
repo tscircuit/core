@@ -32,8 +32,8 @@ export async function getDrawingSnapshotSvg(
   const scenes = new Map<string, ReturnType<typeof createSceneFromGLTF>>()
   return convertCircuitJsonToDrawingSvg(circuitJson, {
     ...options,
-    pixelsPerMm: options.pixelsPerMm ?? 2,
-    supersampling: 1,
+    pixelsPerMm: options.pixelsPerMm ?? 4,
+    supersampling: 2,
     resolveScene: async (view) => {
       const key = JSON.stringify([
         view.source_group_id,
@@ -50,6 +50,28 @@ export async function getDrawingSnapshotSvg(
                 element.type === "source_component") &&
               ids.has(element.source_component_id),
           )
+      // buildSubtree follows component ownership; standalone PCB holes/cutouts
+      // belong to a subcircuit and have no pcb_component_id to follow.
+      if (view.source_group_id) {
+        const subcircuitIds = new Set(
+          selected.flatMap((element) =>
+            element.type === "source_group" && element.subcircuit_id
+              ? [element.subcircuit_id]
+              : [],
+          ),
+        )
+        const selectedElements = new Set(selected)
+        selected.push(
+          ...geometry.filter(
+            (element) =>
+              element.type.startsWith("pcb_") &&
+              "subcircuit_id" in element &&
+              subcircuitIds.has(element.subcircuit_id!) &&
+              !("pcb_component_id" in element && element.pcb_component_id) &&
+              !selectedElements.has(element),
+          ),
+        )
+      }
       const glb = await convertCircuitJsonToGltf(selected, {
         format: "glb",
         includeModels: true,

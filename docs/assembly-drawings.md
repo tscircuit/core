@@ -7,21 +7,25 @@ placement. Core emits `drawing_page`, `drawing_part_view`, and optional
 ```tsx
 import { assembly } from "@tscircuit/core"
 
-<assembly.device>
-  <assembly.part name="housing"
-    cadModel={{ jscad: { type: "cuboid", size: [24, 16, 10] } }} />
-  <assembly.drawing.page name="housing-drawing" size="iso_a4">
-    <assembly.drawing.titleblock title="Housing" identificationNumber="H-001"
-      revisionIndex="A" sheetNumber={1} numberOfSheets={1} />
-    <assembly.drawing.partview partRef=".housing" name="plan" direction="z+"
-      width="80mm" height="60mm" centerX="-45mm" centerY="60mm" />
-    <assembly.drawing.partview partRef=".housing" name="section" direction="x+"
-      width="80mm" height="60mm" rightOfRef=".plan" centerY="60mm"
-      section={{ axis: "x", offset: "5mm", keepSide: "less", hatchSpacing: "1mm" }} />
-    <assembly.drawing.partview partRef=".housing" name="overview" direction="isometric"
-      width="160mm" height="80mm" belowRef=".plan" />
-  </assembly.drawing.page>
-</assembly.device>
+// Inside the mounted LAMP device from the reference-surface-lamp fixture:
+<assembly.drawing.page name="lamp-general-arrangement" size="iso_a3">
+  <assembly.drawing.titleblock title="DESK LAMP - GENERAL ARRANGEMENT"
+    identificationNumber="LMP-001-GA" revisionIndex="A"
+    legalOwner="tscircuit" creator="tscircuit" approvalPerson="PRELIMINARY"
+    dateOfIssue="2026-10-21" sheetNumber={1} numberOfSheets={1} />
+  <assembly.drawing.partview partRef=".LAMP" name="front"
+    displayName="FRONT ELEVATION" direction="y-"
+    width={90} height={140} centerX={-105} centerY={-20} />
+  <assembly.drawing.partview partRef=".LAMP" name="top"
+    displayName="TOP VIEW" direction="z+"
+    width={90} height={90} centerX={-105} aboveRef=".front" />
+  <assembly.drawing.partview partRef=".LAMP" name="right"
+    displayName="RIGHT ELEVATION" direction="x+"
+    width={90} height={140} rightOfRef=".front" centerY={-20} />
+  <assembly.drawing.partview partRef=".LAMP" name="overview"
+    displayName="ASSEMBLED ISOMETRIC" direction="isometric"
+    width={115} height={180} centerX={105} centerY={25} />
+</assembly.drawing.page>
 ```
 
 Pages support ISO A0–A4 and ANSI A–E named sizes with landscape (default) or
@@ -72,6 +76,24 @@ resolves the emitted geometry selection, converts it to glTF, and renders an SVG
 page with PoppyGL outline views. It caches scenes across views of the same part.
 The drawing exporter is a test dependency and is not imported by core's runtime.
 
-The initial integration pins the exporter release PR while its jscdn publishing
-workflow awaits activation. After publishing, its dependency can use
+The exporter uses the published jscdn package:
 `https://jscdn.tscircuit.com/@tscircuit/circuit-json-to-drawing/0.0.2.tgz`.
+Snapshots render at 4 pixels/mm with 2x supersampling.
+
+## Real assembly examples
+
+The visual fixtures reuse the reference-surface desk lamp's mounted geometry:
+its stepped base with a cable passage, hollow stem, bulb, and tapered shade with
+three support ribs and a mounting collar. The general-arrangement sheet uses
+third-angle placement: top above front, right elevation beside front. Equal
+front/right viewport sizes align their extents; the top viewport's width and
+aspect ratio preserve the same fitted width for this 72 × 72 × 112 mm assembly.
+The shade sheet cuts through the actual shell and collar at world X=0 and
+shows the resulting hatching beside its front elevation. Separate sheets show
+the base's elevations and underside, and a carrier board's mounting/header drills.
+All viewports and their labels leave the bottom-right title block clear.
+
+These are preliminary arrangement/inspection sheets. `FIT` denotes automatic
+viewport fitting, not a declared manufacturing scale; dimensioning and tolerances
+are not supplied by this API. Standalone board holes are included by their owning
+subcircuit as well as component-owned geometry when resolving source groups.
