@@ -8,6 +8,8 @@ import {
 } from "lib/utils/constants"
 import { symbols } from "schematic-symbols"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
+import { isFootprinterString } from "../base-components/NormalComponent/utils/isFootprinterString"
+import { resolveFootprinterPolarity } from "../base-components/NormalComponent/utils/resolve-footprinter-polarity"
 import { Trace } from "../primitive-components/Trace/Trace"
 import { Capacitor_addPolarityFabricationSymbols } from "./Capacitor_addPolarityFabricationSymbols"
 import { Capacitor_getAutomaticMaxDecouplingTraceLength } from "./Capacitor_getAutomaticMaxDecouplingTraceLength"
@@ -55,13 +57,29 @@ export class Capacitor extends NormalComponent<
   }
 
   initPorts() {
-    // When using footprinter strings, we automatically map pin1/pin2 to
-    // anode/cathode and pos/neg (IPC standard)
+    // Keep electrical polarity aliases aligned with footprint terminal options.
     if (typeof this.props.footprint === "string") {
+      const { positivePin, negativePin } = isFootprinterString(
+        this.props.footprint,
+      )
+        ? resolveFootprinterPolarity({
+            footprint: this.props.footprint,
+            componentName: this.componentName,
+            name: this.name,
+            polarized: this._parsedProps.polarized,
+          })
+        : { positivePin: 1, negativePin: 2 }
       super.initPorts({
+        implicitPinLabels:
+          positivePin !== 1
+            ? {
+                [`pin${positivePin}`]: ["anode", "pos"],
+                [`pin${negativePin}`]: ["cathode", "neg"],
+              }
+            : undefined,
         additionalAliases: {
-          pin1: ["anode", "pos"],
-          pin2: ["cathode", "neg"],
+          [`pin${positivePin}`]: ["anode", "pos"],
+          [`pin${negativePin}`]: ["cathode", "neg"],
         },
       })
     } else {
