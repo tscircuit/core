@@ -28,6 +28,7 @@ import { Board_updatePcbDesignRuleChecks } from "./Board_updatePcbDesignRuleChec
 import type { BoardI } from "./BoardI"
 import { Board_doInitialPcbCopperPourCleanup } from "./Board_doInitialPcbCopperPourCleanup"
 import { Board_doInitialPcbPlacementDesignRuleChecks } from "./Board_doInitialPcbPlacementDesignRuleChecks"
+import { Board_doInitialPcbStackupRender } from "./Board_doInitialPcbStackupRender"
 import { BoardCastellatedHole } from "./board-castellated-hole"
 
 const MIN_EFFECTIVE_BORDER_RADIUS_MM = 0.01
@@ -664,6 +665,7 @@ export class Board
     } as Omit<PcbBoard, "type" | "pcb_board_id">)
 
     this.pcb_board_id = pcb_board.pcb_board_id!
+    Board_doInitialPcbStackupRender(this, pcbBoardFromCircuitJson)
 
     // Add board information silkscreen text
     this._addBoardInformationToSilkscreen()
