@@ -11,7 +11,7 @@ const describeText = (text: PcbSilkscreenText) => ({
   layer: text.layer,
 })
 
-test.failing("saved silkscreen survives Circuit JSON import", async () => {
+test("saved silkscreen survives Circuit JSON import", async () => {
   const { circuit: original } = getTestFixture()
   original.add(
     <board width={24} height={14} routingDisabled>

@@ -131,6 +131,7 @@ export const createComponentsFromCircuitJson = (
     pinLabels,
     pcbPinLabels,
     preserveSolderPaste = false,
+    preserveSilkscreenText = false,
   }: {
     sourcePortOwner?: NormalComponent
     componentName: string
@@ -139,6 +140,7 @@ export const createComponentsFromCircuitJson = (
     pinLabels?: PinLabelsProp
     pcbPinLabels?: PinLabelsProp
     preserveSolderPaste?: boolean
+    preserveSilkscreenText?: boolean
   },
   circuitJson: AnyCircuitElement[],
 ): PrimitiveComponent[] => {
@@ -671,6 +673,25 @@ export const createComponentsFromCircuitJson = (
         componentRotation,
         elm.ccw_rotation,
       )
+      if (preserveSilkscreenText) {
+        // Saved text already has resolved font metrics and a physical layer.
+        // Footprinter label defaults would enlarge it and move bottom text.
+        const silkscreenText = new SilkscreenText({
+          text: elm.text,
+          font: elm.font,
+          fontSize: elm.font_size,
+          layer: elm.layer,
+          anchorAlignment: elm.anchor_alignment,
+          pcbX: elm.anchor_position.x,
+          pcbY: elm.anchor_position.y,
+          pcbRotation: ccwRotation,
+        })
+        // extractPcbPrimitivesFromCircuitJson makes saved anchors and angles
+        // component-local. Compose them with the restored parent placement.
+        silkscreenText._pcbRotationIsLocal = true
+        components.push(silkscreenText)
+        continue
+      }
       if (
         (footprinterString?.includes("pinrow") ||
           footprinterString?.includes("headermodule")) &&

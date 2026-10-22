@@ -3,11 +3,19 @@ import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import type { PcbComponent } from "circuit-json"
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromCircuitJson"
-import { compose, inverse, rotate, translate } from "transformation-matrix"
+import {
+  compose,
+  decomposeTSR,
+  inverse,
+  rotate,
+  translate,
+} from "transformation-matrix"
 
 /**
  * Extracts PCB primitive components (pads, holes, silkscreen, etc.) from circuit JSON
  * and returns them as an array of component instances.
+ * Saved positions and CCW angles are in board space (mm, +X right, +Y up).
+ * Returned positions and angles use the component-local frame with the same axes.
  *
  * @param pcbElm - The PCB component element from circuit JSON
  * @param injectionDb - The circuit JSON utility objects for querying related elements
@@ -53,12 +61,26 @@ export const extractPcbPrimitivesFromCircuitJson = ({
     absoluteToComponentRelativeTransform,
   )
 
+  // transformPCBElements moves text anchors but leaves text angles unchanged.
+  // Convert their orientations with the same board-to-component transform.
+  for (const elm of clonedRelativeElements) {
+    if (elm.type !== "pcb_silkscreen_text") continue
+    const orientation = decomposeTSR(
+      compose(
+        absoluteToComponentRelativeTransform,
+        rotate(((elm.ccw_rotation ?? 0) * Math.PI) / 180),
+      ),
+    )
+    elm.ccw_rotation = (orientation.rotation.angle * 180) / Math.PI
+  }
+
   return createComponentsFromCircuitJson(
     {
       componentName,
       componentRotation: "0deg",
       // Rendered footprints must retain missing apertures as well as geometry.
       preserveSolderPaste: true,
+      preserveSilkscreenText: true,
     },
     clonedRelativeElements,
   )
