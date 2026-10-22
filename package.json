@@ -60,7 +60,7 @@
     "@tscircuit/miniflex": "^0.0.4",
     "@tscircuit/modelprinter": "^0.0.18",
     "@tscircuit/ngspice-spice-engine": "^0.0.20",
-    "@tscircuit/props": "^0.0.707",
+    "@tscircuit/props": "^0.0.708",
     "@tscircuit/schematic-match-adapt": "^0.0.18",
     "@tscircuit/schematic-trace-solver": "https://jscdn.tscircuit.com/@tscircuit/schematic-trace-solver/0.0.237.tgz",
     "@tscircuit/solver-utils": "^0.0.16",
@@ -76,7 +76,7 @@
     "bun-match-svg": "0.0.12",
     "calculate-elbow": "^0.0.12",
     "chokidar-cli": "^3.0.0",
-    "circuit-json": "^0.0.529",
+    "circuit-json": "^0.0.532",
     "circuit-json-to-bpc": "^0.0.13",
     "circuit-json-to-connectivity-map": "^0.0.33",
     "circuit-json-to-gltf": "^0.0.151",
@@ -93,7 +93,7 @@
     "live-server": "^1.2.2",
     "minicssgrid": "^0.0.9",
     "pkg-pr-new": "^0.0.37",
-    "poppygl": "0.0.36",
+    "poppygl": "0.0.37",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "schematic-symbols": "^0.0.248",
@@ -101,7 +101,8 @@
     "spicey": "^0.0.14",
     "stack-svgs": "^0.0.1",
     "ts-expect": "^1.3.0",
-    "tsup": "^8.2.4"
+    "tsup": "^8.2.4",
+    "@tscircuit/circuit-json-to-drawing": "github:tscircuit/circuit-json-to-drawing#52f7e63150c402abf73928dd5e5415fb45633fc5"
   },
   "peerDependencies": {
     "@tscircuit/capacity-autorouter": "*",
@@ -143,8 +144,8 @@
     "jscad-fiber": "^0.0.88"
   },
   "overrides": {
-    "@tscircuit/props": "^0.0.707",
-    "circuit-json": "^0.0.529",
+    "@tscircuit/props": "^0.0.708",
+    "circuit-json": "^0.0.532",
     "@tscircuit/cableprinter": "^0.0.6"
   }
 }
