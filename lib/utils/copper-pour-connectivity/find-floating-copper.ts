@@ -1,5 +1,5 @@
 import type { AnyCircuitElement, PcbCopperPour, PcbVia } from "circuit-json"
-import { getCopperConductorComponents } from "circuit-json-to-connectivity-map"
+import { PcbConnectivityMap } from "circuit-json-to-connectivity-map"
 
 /** Find copper components with no same-net terminal or authored via.
  * Nets without terminals or authored vias retain their authored pour geometry.
@@ -8,10 +8,9 @@ export const findFloatingCopper = (
   circuitJson: AnyCircuitElement[],
   generatedStitchingViaIds: ReadonlySet<PcbVia["pcb_via_id"]> = new Set(),
 ) => {
-  const conductorComponents = getCopperConductorComponents(
+  const conductorComponents = new PcbConnectivityMap(
     circuitJson,
-    generatedStitchingViaIds,
-  )
+  ).getCopperConductorComponents(generatedStitchingViaIds)
   const floatingPourIds = new Set<PcbCopperPour["pcb_copper_pour_id"]>()
   const floatingViaIds = new Set<PcbVia["pcb_via_id"]>()
   const netsWithTerminals = new Set(

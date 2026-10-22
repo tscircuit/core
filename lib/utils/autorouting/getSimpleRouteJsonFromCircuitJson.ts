@@ -12,7 +12,7 @@ import type {
 import {
   ConnectivityMap,
   getFullConnectivityMapFromCircuitJson,
-  getCopperConductorComponents,
+  PcbConnectivityMap,
 } from "circuit-json-to-connectivity-map"
 import { Bus } from "lib/components/primitive-components/Bus"
 import { DifferentialPair } from "lib/components/primitive-components/DifferentialPair"
@@ -896,9 +896,9 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     }
     return true
   })
-  for (const conductors of getCopperConductorComponents(
+  for (const conductors of new PcbConnectivityMap(
     retainedCopperElements,
-  )) {
+  ).getCopperConductorComponents()) {
     if (!conductors.some((conductor) => conductor.pourId)) continue
     const connectedPcbPortIds = new Set(
       conductors.flatMap((conductor) => conductor.pcbPortIds ?? []),
