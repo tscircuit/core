@@ -32,7 +32,7 @@ test("show the native testpoint Circuit JSON import result", async () => {
         label(
           importError
             ? "Import failed: no simple_test_point inflator"
-            : "Imported: geometry and connections preserved",
+            : "Imported: probes, copper and labels preserved",
           importError ? "#b91c1c" : "#166534",
         ),
         convertCircuitJsonToPcbSvg(importedJson, options),

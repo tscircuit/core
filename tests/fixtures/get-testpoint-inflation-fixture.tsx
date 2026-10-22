@@ -30,9 +30,25 @@ export const getTestPointInflationFixture = async () => {
           holeDiameter={0.8}
           pcbX={4}
         />
-        <trace from=".TP_CIRCLE > .pin1" to=".TP_RECT > .pin1" />
-        <trace from=".TP_RECT > .pin1" to=".TP_HOLE > .pin1" />
       </group>
+      <trace
+        from=".TP_CIRCLE > .pin1"
+        to=".TP_HOLE > .pin1"
+        thickness={0.25}
+        pcbPath={[
+          { x: 6, y: -3 },
+          { x: 6, y: 5 },
+        ]}
+      />
+      <trace
+        from=".TP_RECT > .pin1"
+        to=".TP_HOLE > .pin1"
+        thickness={0.35}
+        pcbPath={[
+          { x: -2, y: 1 },
+          { x: -2, y: 5 },
+        ]}
+      />
     </board>,
   )
   await original.renderUntilSettled()
