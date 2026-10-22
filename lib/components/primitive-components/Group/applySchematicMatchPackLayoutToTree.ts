@@ -1,6 +1,7 @@
 import {
   type CircuitJsonTreeNode,
   type CircuitJsonUtilObjects,
+  transformSchematicElements,
 } from "@tscircuit/circuit-json-util"
 import { type InputProblem, LayoutPipelineSolver } from "@tscircuit/matchpack"
 import { getBoundFromCenteredRect } from "@tscircuit/math-utils"
@@ -26,7 +27,6 @@ import { compose, rotateDEG, translate } from "transformation-matrix"
 import type { Group } from "./Group"
 import type { AxisDirection } from "./Group_doInitialSchematicTraceRender/getSide"
 import { updateSchematicPrimitivesForLayoutShift } from "./utils/updateSchematicPrimitivesForLayoutShift"
-import { rotateSchematicPathsAndLinesForLayout } from "./utils/rotateSchematicPathsAndLinesForLayout"
 
 const debug = Debug("Group_doInitialSchematicLayoutMatchpack")
 
@@ -1030,11 +1030,19 @@ export function applySchematicMatchPackLayoutToTree<
             translate(-newCenter.x, -newCenter.y),
           )
 
-          rotateSchematicPathsAndLinesForLayout({
-            db,
-            schematicComponentId: schematicComponent.schematic_component_id,
+          const symbolOwner = {
+            schematic_component_id: schematicComponent.schematic_component_id,
+          }
+          transformSchematicElements(
+            [
+              ...db.schematic_line.list(symbolOwner),
+              ...db.schematic_path.list(symbolOwner),
+              ...db.schematic_rect.list(symbolOwner),
+              ...db.schematic_circle.list(symbolOwner),
+              ...db.schematic_arc.list(symbolOwner),
+            ],
             schematicLayoutRotation,
-          })
+          )
 
           const angleRad = (placement.ccwRotationDegrees * Math.PI) / 180
           const cos = Math.cos(angleRad)
