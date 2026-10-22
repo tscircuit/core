@@ -1,5 +1,4 @@
-import { getReadablePcbFoldIssueMessage } from "lib/utils/cad/get-readable-pcb-fold-issue-message"
-import { tryCreatePcbFold, type PcbFold } from "@tscircuit/flex-utils"
+import { type PcbFold, tryCreatePcbFold } from "@tscircuit/flex-utils"
 import { jlcMinTolerances } from "@tscircuit/jlcpcb-manufacturing-specs"
 import { getBoundsFromPoints } from "@tscircuit/math-utils"
 import { boardProps } from "@tscircuit/props"
@@ -7,8 +6,10 @@ import type {
   AnyCircuitElement,
   LayerRef,
   PcbBoard,
+  PcbCopperPour,
   PcbVia,
 } from "circuit-json"
+import { getReadablePcbFoldIssueMessage } from "lib/utils/cad/get-readable-pcb-fold-issue-message"
 import { getBoardAvailableLayers } from "lib/utils/getViaSpanLayers"
 import { getViaTenting } from "lib/utils/getViaTenting"
 import { type Matrix, compose, translate } from "transformation-matrix"
@@ -20,14 +21,14 @@ import { getViaDiameterDefaults } from "../../../utils/pcbStyle/getViaDiameterDe
 import { NormalComponent } from "../../base-components/NormalComponent/NormalComponent"
 import type { RenderPhase } from "../../base-components/Renderable"
 import { Group } from "../../primitive-components/Group/Group"
-import { resolveBoardMotorMount } from "../../primitive-components/resolve-board-motor-mount"
 import type { SubcircuitI } from "../../primitive-components/Group/Subcircuit/SubcircuitI"
 import { Subcircuit_doInitialRenderIsolatedSubcircuits } from "../../primitive-components/Group/Subcircuit/Subcircuit_doInitialRenderIsolatedSubcircuits"
 import { Subcircuit_getSubcircuitPropHash } from "../../primitive-components/Group/Subcircuit_getSubcircuitPropHash"
-import { Board_updatePcbDesignRuleChecks } from "./Board_updatePcbDesignRuleChecks"
+import { resolveBoardMotorMount } from "../../primitive-components/resolve-board-motor-mount"
 import type { BoardI } from "./BoardI"
 import { Board_doInitialPcbCopperPourCleanup } from "./Board_doInitialPcbCopperPourCleanup"
 import { Board_doInitialPcbPlacementDesignRuleChecks } from "./Board_doInitialPcbPlacementDesignRuleChecks"
+import { Board_updatePcbDesignRuleChecks } from "./Board_updatePcbDesignRuleChecks"
 import { BoardCastellatedHole } from "./board-castellated-hole"
 
 const MIN_EFFECTIVE_BORDER_RADIUS_MM = 0.01
@@ -686,6 +687,7 @@ export class Board
   }
 
   _generatedStitchingViaIds = new Set<PcbVia["pcb_via_id"]>()
+  _generatedCopperPourIds = new Set<PcbCopperPour["pcb_copper_pour_id"]>()
 
   doInitialPcbCopperPourCleanup() {
     Board_doInitialPcbCopperPourCleanup(this)

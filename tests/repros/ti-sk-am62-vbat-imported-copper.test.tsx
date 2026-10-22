@@ -25,7 +25,7 @@ const vbatFanoutCopperOutline = [
   { x: 0.930422, y: 1.033574 },
 ]
 
-test("TI SK-AM62 imported VBAT fanout copper is deleted", async () => {
+test("TI SK-AM62 imported VBAT fanout copper preserves its outline", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -169,6 +169,11 @@ test("TI SK-AM62 imported VBAT fanout copper is deleted", async () => {
 
   await circuit.renderUntilSettled()
 
-  expect(circuit.db.pcb_copper_pour.list()).toHaveLength(0)
+  expect(circuit.db.pcb_copper_pour.list()).toMatchObject([
+    {
+      shape: "polygon",
+      points: vbatFanoutCopperOutline,
+    },
+  ])
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

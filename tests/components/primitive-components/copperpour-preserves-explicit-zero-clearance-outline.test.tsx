@@ -15,7 +15,9 @@ test("copper pour preserves an explicit zero-clearance outline", async () => {
   })
 
   circuit.add(
-    <board width="12mm" height="10mm" routingDisabled>
+    <board width="16mm" height="10mm" routingDisabled>
+      <resistor name="R1" resistance="1k" footprint="0402" pcbX={-6} />
+      <trace from=".R1 > .pin1" to="net.GND" />
       <copperpour
         connectsTo="net.GND"
         layer="top"
@@ -28,7 +30,7 @@ test("copper pour preserves an explicit zero-clearance outline", async () => {
         useThermalReliefs={false}
       />
       <pcbnotetext
-        text="EXPLICIT ZERO-CLEARANCE OUTLINE"
+        text="AUTHORED OUTLINE PRESERVED"
         pcbX={0}
         pcbY={4}
         fontSize={0.7}

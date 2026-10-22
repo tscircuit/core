@@ -1,17 +1,4 @@
 import type { Polygon } from "@flatten-js/core"
-import type {
-  AnyCircuitElement,
-  LayerRef,
-  PcbCopperPour,
-  PcbTraceRoutePoint,
-  PcbVia,
-} from "circuit-json"
-import {
-  getFullConnectivityMapFromCircuitJson,
-  type ConnectivityMap,
-} from "circuit-json-to-connectivity-map"
-import Flatbush from "flatbush"
-import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
 import {
   copperPolygonsTouch,
   getPlatedHolePolygon,
@@ -20,6 +7,19 @@ import {
   getTraceSegmentPolygon,
   getViaPolygon,
 } from "@tscircuit/circuit-json-util"
+import type {
+  AnyCircuitElement,
+  LayerRef,
+  PcbCopperPour,
+  PcbTraceRoutePoint,
+  PcbVia,
+} from "circuit-json"
+import {
+  type ConnectivityMap,
+  getFullConnectivityMapFromCircuitJson,
+} from "circuit-json-to-connectivity-map"
+import Flatbush from "flatbush"
+import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
 
 type CopperNetId = NonNullable<
   ReturnType<ConnectivityMap["getNetConnectedToId"]>
@@ -57,18 +57,24 @@ const getRouteEndpoint = (
   }
 }
 
-/** Find copper components with no same-net terminal or authored via.
+/** Find generated copper components with no same-net terminal or authored copper.
  * All polygons are board-world points in mm (+X right, +Y up, right-handed).
  * Net membership only permits a contact; it never creates a physical edge.
  * Trace segments are independent conductors, and only plated barrels bridge
- * layers. Generated stitching vias and broken traces cannot anchor pours.
+ * layers. Precomputed copper and authored vias are terminals; generated
+ * stitching vias and broken traces cannot anchor pours.
  * Nets without terminals or authored vias retain their authored pour geometry.
  * Includes every subcircuit so a child pour can reach a parent terminal.
  */
-export const findFloatingCopper = (
-  circuitJson: AnyCircuitElement[],
-  generatedStitchingViaIds: ReadonlySet<PcbVia["pcb_via_id"]> = new Set(),
-) => {
+export const findFloatingCopper = ({
+  circuitJson,
+  generatedStitchingViaIds = new Set(),
+  removablePourIds,
+}: {
+  circuitJson: AnyCircuitElement[]
+  generatedStitchingViaIds?: ReadonlySet<PcbVia["pcb_via_id"]>
+  removablePourIds: ReadonlySet<PcbCopperPour["pcb_copper_pour_id"]>
+}) => {
   const connectivity = getFullConnectivityMapFromCircuitJson(circuitJson)
   const pours = circuitJson.filter((e) => e.type === "pcb_copper_pour")
   const pouredNets = new Set(
@@ -99,14 +105,15 @@ export const findFloatingCopper = (
 
   for (const pour of pours) {
     if (!pour.source_net_id) continue // Unassigned decorative copper has no target net to validate.
+    const isRemovable = removablePourIds.has(pour.pcb_copper_pour_id)
     add({
       polygon: getPourPolygon(pour),
       layers: [pour.layer],
       netId:
         connectivity.getNetConnectedToId(pour.source_net_id) ??
         pour.source_net_id,
-      isTerminal: false,
-      pourId: pour.pcb_copper_pour_id,
+      isTerminal: !isRemovable,
+      pourId: isRemovable ? pour.pcb_copper_pour_id : undefined,
     })
   }
   for (const element of circuitJson) {
@@ -219,12 +226,13 @@ export const findFloatingCopper = (
   const floatingViaIds = new Set<PcbVia["pcb_via_id"]>()
   if (conductors.length === 0) return { floatingPourIds, floatingViaIds }
   const parent = conductors.map((_, i) => i)
-  const find = (i: number): number => {
-    while (parent[i] !== i) {
-      parent[i] = parent[parent[i]!]!
-      i = parent[i]!
+  const find = (conductorIndex: number): number => {
+    let currentIndex = conductorIndex
+    while (parent[currentIndex] !== currentIndex) {
+      parent[currentIndex] = parent[parent[currentIndex]!]!
+      currentIndex = parent[currentIndex]!
     }
-    return i
+    return currentIndex
   }
   const bounds = conductors.map((conductor) => conductor.polygon.box)
   const spatialIndex = new Flatbush(conductors.length)
