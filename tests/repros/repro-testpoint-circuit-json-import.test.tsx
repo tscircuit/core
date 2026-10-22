@@ -1,9 +1,9 @@
 import { expect, test } from "bun:test"
-import type { AnyCircuitElement } from "circuit-json"
+import type { AnyCircuitElement, PcbTraceRoutePoint } from "circuit-json"
 import type { RootCircuit } from "lib/RootCircuit"
 import { getTestPointInflationFixture } from "tests/fixtures/get-testpoint-inflation-fixture"
 
-const describeElement = (element: AnyCircuitElement) =>
+const describeElement = (element: AnyCircuitElement | PcbTraceRoutePoint) =>
   Object.fromEntries(
     Object.entries(element).filter(
       ([key]) =>
@@ -41,6 +41,9 @@ const describeTestPoints = (circuit: RootCircuit) =>
         pcbPorts: circuit.db.pcb_port
           .list({ pcb_component_id: pcb.pcb_component_id })
           .map(describeElement),
+        labels: circuit.db.pcb_silkscreen_text
+          .list({ pcb_component_id: pcb.pcb_component_id })
+          .map(describeElement),
       }
     })
 
@@ -53,6 +56,14 @@ const describeConnections = (circuit: RootCircuit) =>
     }),
   )
 
+const describeCopper = (circuit: RootCircuit) => ({
+  traces: circuit.db.pcb_trace.list().map((trace) => ({
+    ...describeElement(trace),
+    route: trace.route.map(describeElement),
+  })),
+  vias: circuit.db.pcb_via.list().map(describeElement),
+})
+
 test.failing("native testpoints round-trip through Circuit JSON", async () => {
   const { original, imported, importError } =
     await getTestPointInflationFixture()
@@ -60,9 +71,20 @@ test.failing("native testpoints round-trip through Circuit JSON", async () => {
   expect(original.db.pcb_smtpad.list()).toHaveLength(2)
   expect(original.db.pcb_plated_hole.list()).toHaveLength(1)
   expect(original.db.source_trace.list()).toHaveLength(2)
+  expect(original.db.pcb_trace.list()).toHaveLength(2)
+  expect(
+    original.db.pcb_trace
+      .list()
+      .map(
+        (trace) =>
+          trace.route.find((point) => point.route_type === "wire")?.layer,
+      ),
+  ).toEqual(["top", "bottom"])
+  expect(original.db.pcb_via.list()).toHaveLength(0)
   expect(importError).toBeUndefined()
   expect(describeTestPoints(imported)).toEqual(describeTestPoints(original))
   expect(describeConnections(imported)).toEqual(describeConnections(original))
+  expect(describeCopper(imported)).toEqual(describeCopper(original))
   for (const port of original.db.source_port.list()) {
     const source = original.db.source_component.get(port.source_component_id!)!
     const importedSource = imported.db.source_component.getWhere({
