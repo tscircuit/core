@@ -373,12 +373,37 @@ export class Port extends PrimitiveComponent<typeof portProps> {
   }
   getPortSelector() {
     // TODO this.parent.getSubcircuitSelector() >
-    const parentComponent = this.getParentNormalComponent() ?? this.parent
-    if (parentComponent !== this.parent) {
-      return `.${parentComponent?.props.name} port.${this.props.name}`
+    const parentComponent: PrimitiveComponent | null =
+      this.getParentNormalComponent() ?? this.parent
+    const parentSelector =
+      parentComponent !== this.parent
+        ? `.${parentComponent?.props.name} `
+        : `.${parentComponent?.props.name} > `
+    const selectableNames = this.getNameAndAliases().filter((name) =>
+      /^[A-Za-z_][A-Za-z0-9_-]*$/.test(name),
+    )
+    for (const name of new Set([this.props.name, ...selectableNames])) {
+      if (!name) continue
+      const portSelector = `port.${name}`
+      try {
+        const selectedPorts = parentComponent?.selectAll(portSelector)
+        if (selectedPorts?.length === 1 && selectedPorts[0] === this) {
+          return `${parentSelector}${portSelector}`
+        }
+      } catch {
+        continue
+      }
     }
-    return `.${parentComponent?.props.name} > port.${this.props.name}`
+    const ports = parentComponent?.selectAll<Port>("port") ?? []
+    const portSelector =
+      this.props.name &&
+      selectableNames.includes(this.props.name) &&
+      ports.filter((port) => port.props.name === this.props.name).length === 1
+        ? `port[name="${this.props.name}"]`
+        : `port.${this.props.name}`
+    return `${parentSelector}${portSelector}`
   }
+
   getAvailablePcbLayers(): LayerRef[] {
     const { layer, layers } = this._parsedProps
     if (layers) return layers as LayerRef[]
