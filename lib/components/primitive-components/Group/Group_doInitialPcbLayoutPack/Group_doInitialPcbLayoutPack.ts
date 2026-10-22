@@ -396,7 +396,9 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
           ...staticLayerObstacles,
           ...fallbackCrossLayerObstacles,
           ...crossLayerPadObstacles,
-          ...getOutsideFixedComponentObstacles(group, targetLayer),
+          ...(bounds && props.pcbPack
+            ? getOutsideFixedComponentObstacles(group, targetLayer)
+            : []),
         ],
         components: [
           ...networkReferenceComponents,
@@ -422,7 +424,12 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
         pcbPackSolverTimeoutMs,
       )
 
-      if (solver.failed && !timedOut && pcbPackSolverTimeoutMs == null) {
+      if (
+        props.pcbPack &&
+        solver.failed &&
+        !timedOut &&
+        pcbPackSolverTimeoutMs == null
+      ) {
         solver = retryBoundedPack(solverInput) ?? solver
       }
 
