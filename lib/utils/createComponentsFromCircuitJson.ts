@@ -553,6 +553,7 @@ export const createComponentsFromCircuitJson = (
             holeWidth: elm.hole_width,
             holeHeight: elm.hole_height,
             padOutline: elm.pad_outline || [],
+            pcbRotation: elm.ccw_rotation,
             holeOffsetX: elm.hole_offset_x,
             holeOffsetY: elm.hole_offset_y,
             portHints: resolvedPortHints,

@@ -2,21 +2,23 @@ import type { SourceBusRouteLength, SourceTrace } from "circuit-json"
 import type { Bus } from "lib/components/primitive-components/Bus"
 import { getBusSourceTraceIdOrThrow } from "./getBusSourceTraceIdOrThrow"
 
-export const getSourceBusTargetLength = ({
+export const getSourceBusRouteLength = ({
   bus,
   busSourceTraces,
+  property,
 }: {
   bus: Bus
   busSourceTraces: SourceTrace[]
+  property: "minLength" | "maxLength" | "targetLength"
 }): SourceBusRouteLength | undefined => {
-  const targetLength = bus._parsedProps.targetLength
-  if (targetLength === undefined || typeof targetLength === "number") {
-    return targetLength
+  const routeLength = bus._parsedProps[property]
+  if (routeLength === undefined || typeof routeLength === "number") {
+    return routeLength
   }
   return {
-    reference: targetLength.reference,
-    offset: targetLength.offset,
-    source_trace_ids: targetLength.of?.map((traceNameOrPortSelector) =>
+    reference: routeLength.reference,
+    offset: routeLength.offset,
+    source_trace_ids: routeLength.of?.map((traceNameOrPortSelector) =>
       getBusSourceTraceIdOrThrow({
         bus,
         busSourceTraces,
