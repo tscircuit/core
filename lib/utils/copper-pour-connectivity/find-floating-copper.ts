@@ -1,5 +1,5 @@
 import type { AnyCircuitElement, PcbCopperPour, PcbVia } from "circuit-json"
-import { getCopperConductorComponents } from "./get-copper-conductor-components"
+import { getCopperConductorComponents } from "circuit-json-to-connectivity-map"
 
 /** Find copper components with no same-net terminal or authored via.
  * Nets without terminals or authored vias retain their authored pour geometry.

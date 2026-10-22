@@ -12,12 +12,12 @@ import type {
 import {
   ConnectivityMap,
   getFullConnectivityMapFromCircuitJson,
+  getCopperConductorComponents,
 } from "circuit-json-to-connectivity-map"
 import { Bus } from "lib/components/primitive-components/Bus"
 import { DifferentialPair } from "lib/components/primitive-components/DifferentialPair"
 import type { ISubcircuit } from "lib/components/primitive-components/Group/Subcircuit/ISubcircuit"
 import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
-import { getCopperConductorComponents } from "../copper-pour-connectivity/get-copper-conductor-components"
 import { getObstaclesFromCircuitJson } from "../obstacles/getObstaclesFromCircuitJson"
 import type {
   PcbGroupId,
