@@ -19,8 +19,10 @@ export function Board_doInitialPcbStackupRender(
   const layers =
     importedStackup?.layers ??
     (board._parsedProps.fabricatorPreset
-      ? getJlcStackup(importedPcbBoard ?? db.pcb_board.get(pcb_board_id)!)
-          ?.layers
+      ? getJlcStackup({
+          ...(importedPcbBoard ?? db.pcb_board.get(pcb_board_id)!),
+          thickness: importedPcbBoard?.thickness ?? board.boardThickness,
+        })?.layers
       : undefined)
   if (!layers) return
 
