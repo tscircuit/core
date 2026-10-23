@@ -17,7 +17,7 @@ const createLabel = (title: string, detail: string) => `<svg
   <text x="20" y="56" fill="#cbd5e1" font-family="Arial, sans-serif" font-size="17">${detail}</text>
 </svg>`
 
-test("SRJ requests a route between terminals already joined by copper", async () => {
+test("SRJ skips routing between terminals already joined by copper", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -66,7 +66,9 @@ test("SRJ requests a route between terminals already joined by copper", async ()
     throw new Error("Expected both GND terminals to have point IDs")
   }
 
-  expect(gndConnection.externallyConnectedPointIds).toBeUndefined()
+  expect(gndConnection.externallyConnectedPointIds).toEqual([
+    [firstPoint.pointId, secondPoint.pointId],
+  ])
 
   expect(simpleRouteJson.traces ?? []).toHaveLength(0)
   const router = new AutoroutingPipelineSolver({
@@ -78,7 +80,7 @@ test("SRJ requests a route between terminals already joined by copper", async ()
   }
   expect(router.failed).toBe(false)
   const requestedRoutes = router.srjWithPointPairs!.connections
-  expect(requestedRoutes).toHaveLength(1)
+  expect(requestedRoutes).toHaveLength(0)
 
   const remainingRouteCount = requestedRoutes.length
   const pcbPanel = stackSvgsVertically(
