@@ -624,6 +624,10 @@ export class Board
           }))
         : outline,
       material: props.material,
+      ...(props.material === "flex" &&
+        props.coverlayColor !== undefined && {
+          coverlay_color: props.coverlayColor,
+        }),
       ...(resolvedIsViaInPadAllowed !== undefined && {
         is_via_in_pad_allowed: resolvedIsViaInPadAllowed,
       }),
