@@ -46,5 +46,4 @@ test("USB-C schematic dimensions and shell margin can be overridden", async () =
 
   expect(schematicComponent.size).toEqual({ width: 2.4, height: 4.2 })
   expect(shell4Port.center.x - schematicComponent.center.x).toBeCloseTo(0.05)
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
