@@ -1,3 +1,4 @@
+import { resolveFootprinterPolarity } from "./utils/resolve-footprinter-polarity"
 import { NormalComponent_doInitialSourcePinSpecificationChecks } from "./NormalComponent_doInitialSourcePinSpecificationChecks"
 import {
   getNumericPinLabels,
@@ -319,6 +320,7 @@ export class NormalComponent<
   initPorts(
     opts: {
       additionalAliases?: Record<`pin${number}`, string[]>
+      implicitPinLabels?: Record<string, string[]>
       pinCount?: number
       ignoreSymbolPorts?: boolean
     } = {},
@@ -334,7 +336,7 @@ export class NormalComponent<
     this._inferredInternallyConnectedPinNames = []
     const { config } = this
     const portsToCreate: Port[] = []
-    const pinLabels = this._resolvePinLabels()
+    const pinLabels = this._resolvePinLabels() ?? opts.implicitPinLabels
     const propsPinLabels = this._parsedProps.pinLabels
     const pinLabelsFromProps =
       propsPinLabels && Array.isArray(propsPinLabels)
@@ -701,7 +703,16 @@ export class NormalComponent<
       if (parseLibraryFootprintRef(footprint)) return
       let fpCircuitJson: AnyCircuitElement[]
       try {
-        fpCircuitJson = fp.string(footprint).soup() as AnyCircuitElement[]
+        const resolved = resolveFootprinterPolarity({
+          footprint,
+          componentName: this.componentName,
+          name: this.name ?? this.componentName,
+          pinLabels: this._resolvePinLabels(),
+          polarized: this._parsedProps.polarized,
+        })
+        fpCircuitJson = fp
+          .string(resolved.footprint)
+          .soup() as AnyCircuitElement[]
       } catch (error) {
         this._queueInvalidFootprintPropMessage(footprint, error)
         return
