@@ -164,15 +164,8 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         ? 0
         : normalizedRotationDegrees
     const transformRotationBeforeFlip = finalRotationDegrees
-    const { maybeFlipLayer: maybeFlipDefaultLayer, isFlipped } =
-      this._getPcbPrimitiveFlippedHelpers()
-    const primitiveContainer = this.getPrimitiveContainer()
-    const primitiveContainerLayer =
-      primitiveContainer?.props?.layer !== undefined
-        ? primitiveContainer?._parsedProps.layer
-        : undefined
-    const maybeFlipLayer = (layer: LayerRef) =>
-      primitiveContainerLayer ?? maybeFlipDefaultLayer(layer)
+    const { isFlipped } = this._getPcbPrimitiveFlippedHelpers()
+    const layer = this.getAvailablePcbLayers()[0]
 
     if (isFlipped) {
       finalRotationDegrees = (360 - finalRotationDegrees + 360) % 360
@@ -188,7 +181,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
       pcb_smtpad = db.pcb_smtpad.insert({
         pcb_component_id,
         pcb_port_id: this.matchedPort?.pcb_port_id!, // port likely isn't matched
-        layer: maybeFlipLayer(props.layer ?? "top"),
+        layer,
         shape: "circle",
         radius: props.radius!,
         port_hints: portHints,
@@ -217,7 +210,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         pcb_smtpad = db.pcb_smtpad.insert({
           pcb_component_id,
           pcb_port_id: this.matchedPort?.pcb_port_id!,
-          layer: maybeFlipLayer(props.layer ?? "top"),
+          layer,
           shape: "rotated_rect",
           width: props.width!,
           height: props.height!,
@@ -235,7 +228,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         pcb_smtpad = db.pcb_smtpad.insert({
           pcb_component_id,
           pcb_port_id: this.matchedPort?.pcb_port_id!,
-          layer: maybeFlipLayer(props.layer ?? "top"),
+          layer,
           shape: "rect",
           width: isRotated90Degrees ? props.height! : props.width!,
           height: isRotated90Degrees ? props.width! : props.height!,
@@ -254,7 +247,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
       if (shouldCreateSolderPaste && pasteWidth > 0 && pasteHeight > 0) {
         if (pcb_smtpad.shape === "rect") {
           db.pcb_solder_paste.insert({
-            layer: maybeFlipLayer(props.layer ?? "top"),
+            layer,
             shape: "rect",
             width: pasteWidth,
             height: pasteHeight,
@@ -267,7 +260,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
           } as PcbSmtPadRect)
         } else if (pcb_smtpad.shape === "rotated_rect") {
           db.pcb_solder_paste.insert({
-            layer: maybeFlipLayer(props.layer ?? "top"),
+            layer,
             shape: "rotated_rect",
             width: pasteWidth,
             height: pasteHeight,
@@ -292,7 +285,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
       pcb_smtpad = db.pcb_smtpad.insert({
         pcb_component_id,
         pcb_port_id: this.matchedPort?.pcb_port_id!,
-        layer: maybeFlipLayer(props.layer ?? "top"),
+        layer,
         shape: "rotated_rect",
         width: props.width!,
         height: props.height!,
@@ -311,7 +304,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
       const pasteHeight = getSolderPasteSize(pcb_smtpad.height)
       if (shouldCreateSolderPaste && pasteWidth > 0 && pasteHeight > 0)
         db.pcb_solder_paste.insert({
-          layer: maybeFlipLayer(props.layer ?? "top"),
+          layer,
           shape: "rotated_rect",
           width: pasteWidth,
           height: pasteHeight,
@@ -335,7 +328,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
       pcb_smtpad = db.pcb_smtpad.insert({
         pcb_component_id,
         pcb_port_id: this.matchedPort?.pcb_port_id!, // port likely isn't matched
-        layer: maybeFlipLayer(props.layer ?? "top"),
+        layer,
         shape: "polygon",
         points: transformedPoints,
         port_hints: portHints,
@@ -378,7 +371,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
       pcb_smtpad = db.pcb_smtpad.insert({
         pcb_component_id,
         pcb_port_id: this.matchedPort?.pcb_port_id!,
-        layer: maybeFlipLayer(props.layer ?? "top"),
+        layer,
         shape: "rotated_pill",
         x: position.x,
         y: position.y,
@@ -397,7 +390,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         pcb_smtpad = db.pcb_smtpad.insert({
           pcb_component_id,
           pcb_port_id: this.matchedPort?.pcb_port_id!, // port likely isn't matched
-          layer: maybeFlipLayer(props.layer ?? "top"),
+          layer,
           shape: "rotated_pill",
           x: position.x,
           y: position.y,
@@ -415,7 +408,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         pcb_smtpad = db.pcb_smtpad.insert({
           pcb_component_id,
           pcb_port_id: this.matchedPort?.pcb_port_id!, // port likely isn't matched
-          layer: maybeFlipLayer(props.layer ?? "top"),
+          layer,
           shape: "pill",
           x: position.x,
           y: position.y,
@@ -475,17 +468,17 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
     })
   }
 
-  getAvailablePcbLayers(): string[] {
+  getAvailablePcbLayers(): LayerRef[] {
     const { maybeFlipLayer } = this._getPcbPrimitiveFlippedHelpers()
+    if (this._parsedProps.layer !== undefined) {
+      return [maybeFlipLayer(this._parsedProps.layer)]
+    }
     const primitiveContainer = this.getPrimitiveContainer()
     const primitiveContainerLayer =
       primitiveContainer?.props?.layer !== undefined
         ? primitiveContainer?._parsedProps.layer
         : undefined
-    return [
-      primitiveContainerLayer ??
-        maybeFlipLayer(this._parsedProps.layer ?? "top"),
-    ]
+    return [primitiveContainerLayer ?? maybeFlipLayer("top")]
   }
 
   _getPcbCircuitJsonBounds(): {
