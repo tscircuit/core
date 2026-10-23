@@ -3,7 +3,6 @@ import type { NormalComponent } from "../base-components/NormalComponent/NormalC
 import { resolveExternalSimulationPort } from "lib/utils/simulation/resolveExternalSimulation"
 import type { AnalogTransientSimulation } from "./AnalogTransientSimulation"
 
-/** Parsed props already use Hz and mm; resolve selectors at the Circuit JSON boundary. */
 export function AnalogTransientSimulation_getPcbSpiceChannel(
   declaration: AnalogTransientSimulation,
 ): PcbSpiceChannel | undefined {
