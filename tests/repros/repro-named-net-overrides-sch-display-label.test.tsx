@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("named net overrides trace schDisplayLabel", async () => {
+test("trace schDisplayLabel overrides the named net display text", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -20,7 +20,7 @@ test("named net overrides trace schDisplayLabel", async () => {
   ])
   expect(
     circuit.db.schematic_net_label.list().map((label) => label.text),
-  ).toEqual(["V5_INTERNAL"])
+  ).toEqual(["5V"])
 
   await expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
