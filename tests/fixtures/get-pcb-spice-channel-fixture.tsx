@@ -4,7 +4,6 @@ import { getTestFixture } from "./get-test-fixture"
 
 export async function getPcbSpiceChannelFixture() {
   const { circuit } = getTestFixture()
-  const sha256 = "Ab01".repeat(16)
   circuit.add(
     <board width="30mm" height="15mm" routingDisabled>
       <chip
@@ -32,7 +31,6 @@ export async function getPcbSpiceChannelFixture() {
           project_relative_path: "models/chip.ibs",
           url: "models/chip.ibs",
           mimetype: "text/plain",
-          sha256,
         }}
         ibisComponentName="DRIVER"
         ibisPinNameToPortLabel={{ "1": "DATA" }}
@@ -105,7 +103,6 @@ export async function getPcbSpiceChannelFixture() {
   const experiment = circuit.db.simulation_experiment.list()[0]
   return {
     circuit,
-    sha256,
     driverPort,
     receiverPort,
     groundPort,

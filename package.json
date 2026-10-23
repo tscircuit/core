@@ -60,7 +60,7 @@
     "@tscircuit/miniflex": "^0.0.4",
     "@tscircuit/modelprinter": "^0.0.18",
     "@tscircuit/ngspice-spice-engine": "^0.0.20",
-    "@tscircuit/props": "https://api.github.com/repos/tscircuit/props/tarball/045f345751e23909523a85e17ba9cfd94b74ad08",
+    "@tscircuit/props": "https://api.github.com/repos/tscircuit/props/tarball/96dae5c65597cdb8535c547568aa5cb510816858",
     "@tscircuit/schematic-match-adapt": "^0.0.18",
     "@tscircuit/schematic-trace-solver": "https://jscdn.tscircuit.com/@tscircuit/schematic-trace-solver/0.0.237.tgz",
     "@tscircuit/solver-utils": "^0.0.16",
@@ -76,7 +76,7 @@
     "bun-match-svg": "0.0.12",
     "calculate-elbow": "^0.0.12",
     "chokidar-cli": "^3.0.0",
-    "circuit-json": "https://api.github.com/repos/tscircuit/circuit-json/tarball/ac69acd282d521bab7f3156aa3be3069584ba9d7",
+    "circuit-json": "https://api.github.com/repos/tscircuit/circuit-json/tarball/f9f7c98f687ebea5dd8111548ab60fe7df975eac",
     "circuit-json-to-bpc": "^0.0.13",
     "circuit-json-to-connectivity-map": "^0.0.33",
     "circuit-json-to-gltf": "^0.0.151",
@@ -143,8 +143,8 @@
     "jscad-fiber": "^0.0.88"
   },
   "overrides": {
-    "@tscircuit/props": "https://api.github.com/repos/tscircuit/props/tarball/045f345751e23909523a85e17ba9cfd94b74ad08",
-    "circuit-json": "https://api.github.com/repos/tscircuit/circuit-json/tarball/ac69acd282d521bab7f3156aa3be3069584ba9d7",
+    "@tscircuit/props": "https://api.github.com/repos/tscircuit/props/tarball/96dae5c65597cdb8535c547568aa5cb510816858",
+    "circuit-json": "https://api.github.com/repos/tscircuit/circuit-json/tarball/f9f7c98f687ebea5dd8111548ab60fe7df975eac",
     "@tscircuit/cableprinter": "^0.0.6"
   }
 }
