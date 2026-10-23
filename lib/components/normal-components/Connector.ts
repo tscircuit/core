@@ -73,6 +73,7 @@ const isJstConnectorStandard = (
 ): boolean => standard !== undefined && JST_CONNECTOR_STANDARDS.has(standard)
 
 type SinglePinStyle = NonNullable<SchematicPinStyle[string]>
+const USB_C_PIN_LABEL_WIDTH_PADDING = 0.9
 const USB_C_DEFAULT_SCH_PIN_STYLE_BY_LABEL: ReadonlyArray<
   readonly [UsbCCanonicalLabel, SinglePinStyle]
 > = [
@@ -81,8 +82,8 @@ const USB_C_DEFAULT_SCH_PIN_STYLE_BY_LABEL: ReadonlyArray<
   ["DP1", { marginTop: 0.15 }],
   ["SBU1", { marginTop: 0.15 }],
   ["GND1", { marginTop: 0.15 }],
-  // Bottom-side label spacing uses horizontal margins.
-  ["SHELL4", { marginRight: 0.15 }],
+  // Leave clearance between the bottom shell labels and right-side signal labels.
+  ["SHELL4", { marginRight: 0.45 }],
 ]
 
 export class Connector<
@@ -346,6 +347,7 @@ export class Connector<
       schWidth: props.schWidth,
       schHeight: props.schHeight,
       schPinSpacing: pinSpacing,
+      labelWidthPadding: USB_C_PIN_LABEL_WIDTH_PADDING,
       numericSchPinStyle: getNumericSchPinStyle(
         mergedSchPinStyle,
         allPinLabels,
