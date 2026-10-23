@@ -4,6 +4,7 @@ import type { AnalogDigitalStimulus } from "./AnalogDigitalStimulus"
 import type { AnalogEyeDiagram } from "./AnalogEyeDiagram"
 import { resolveExternalSimulationPort } from "lib/utils/simulation/resolveExternalSimulation"
 import { AnalogTransientSimulation_validateIbisBindings } from "./AnalogTransientSimulation_validateIbisBindings"
+import { AnalogTransientSimulation_getPcbSpiceChannel } from "./AnalogTransientSimulation_getPcbSpiceChannel"
 
 export class AnalogTransientSimulation extends AnalogAnalysisSimulation<
   typeof analogTransientSimulationProps
@@ -94,6 +95,7 @@ export class AnalogTransientSimulation extends AnalogAnalysisSimulation<
       time_per_step: timePerStep,
       spice_options: spiceOptions,
       spice_engine: this.getSpiceEngineName(),
+      pcb_spice_channel: AnalogTransientSimulation_getPcbSpiceChannel(this),
       subcircuit_id: this.getSubcircuit().subcircuit_id!,
     }
     const experiment = this.simulation_experiment_id
