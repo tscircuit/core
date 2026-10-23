@@ -2,6 +2,7 @@ import { getSizeOfSidesFromPortArrangement } from "./getSizeOfSidesFromPortArran
 import { parsePinNumberFromLabelsOrThrow } from "./parsePinNumberFromLabelsOrThrow"
 
 const DEFAULT_SCHEMATIC_BOX_PADDING_MM = 0.4
+const DEFAULT_PIN_LABEL_WIDTH_PADDING = 1.1
 const ESTIMATED_PIN_LABEL_CHARACTER_WIDTH = 0.1
 const PIN_LABEL_EDGE_PADDING = 0.1
 
@@ -79,6 +80,8 @@ interface Params {
   pinCount?: number
   schPortArrangement?: PortArrangement
   pinLabels?: Record<string, PinLabel>
+  /** Extra box width beyond the longest pin label, in schematic mm. */
+  labelWidthPadding?: number
 }
 
 type Side = "left" | "right" | "top" | "bottom"
@@ -395,8 +398,15 @@ export const getAllDimensionsForSchematicBox = (
       : 0
 
     // When label is present, only then add some padding to the width
-    const LABEL_PADDING = labelWidth > 0 ? 1.1 : 0
-    resolvedSchWidth = Math.max(resolvedSchWidth, labelWidth + LABEL_PADDING)
+    let labelWidthPadding = 0
+    if (labelWidth > 0) {
+      labelWidthPadding =
+        params.labelWidthPadding ?? DEFAULT_PIN_LABEL_WIDTH_PADDING
+    }
+    resolvedSchWidth = Math.max(
+      resolvedSchWidth,
+      labelWidth + labelWidthPadding,
+    )
 
     const maxLabelWidthBySide = {
       left: 0,

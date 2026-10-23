@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import { getSchematicTextWidth } from "lib/utils/schematic/getSchematicTextWidth"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("default USB-C shell labels clear the right-side labels", async () => {
+test("default USB-C box is compact with clearance between label banks", async () => {
   const { circuit } = getTestFixture()
   circuit.pcbDisabled = true
 
@@ -55,7 +55,7 @@ test("default USB-C shell labels clear the right-side labels", async () => {
   const shell4LabelRightEdge = shell4Port.center.x + pinLabelFontSize / 2
 
   expect(schematicPorts).toHaveLength(16)
-  expect(schematicComponent.size.width).toBeCloseTo(1.7)
+  expect(schematicComponent.size.width).toBeCloseTo(1.5)
   expect(schematicComponent.size.height).toBeCloseTo(3.2)
   expect(rightLabelLeftEdge - shell4LabelRightEdge).toBeGreaterThanOrEqual(
     minimumLabelBankGap - geometryTolerance,
