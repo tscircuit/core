@@ -3,7 +3,7 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { Fragment } from "react"
 
 const xiaoBottomFootprint = (
-  <footprint>
+  <footprint originalLayer="bottom">
     {Array.from({ length: 7 }, (_, i) => (
       <Fragment key={`xiao-left-${i + 1}`}>
         <smtpad
