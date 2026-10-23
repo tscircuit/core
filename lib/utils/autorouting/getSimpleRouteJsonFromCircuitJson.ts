@@ -225,11 +225,13 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     // electrical geometry or cutouts belonging to unrelated subcircuits.
     const owningBoardSubcircuitId = board?.subcircuit_id
     if (owningBoardSubcircuitId && !subcircuitIsBoard) {
-      inheritedBoardCutouts = db.pcb_cutout.list().filter(
-        (cutout) =>
-          cutout.subcircuit_id === owningBoardSubcircuitId &&
-          !relevantSubcircuitIds!.has(cutout.subcircuit_id),
-      )
+      inheritedBoardCutouts = db.pcb_cutout
+        .list()
+        .filter(
+          (cutout) =>
+            cutout.subcircuit_id === owningBoardSubcircuitId &&
+            !relevantSubcircuitIds!.has(cutout.subcircuit_id),
+        )
     }
   }
 
@@ -351,6 +353,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         (e.type === "pcb_cutout" && inheritedBoardCutouts.includes(e)),
     ),
     sharedConnMap,
+    minBoardEdgeClearance,
   )
   obstacles.push(
     ...getUnbrokenCopperPourObstacles({

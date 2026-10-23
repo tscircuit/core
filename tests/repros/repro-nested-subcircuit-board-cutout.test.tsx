@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { segmentToBoxMinDistance } from "@tscircuit/math-utils"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
@@ -47,8 +48,8 @@ test("nested subcircuit routing avoids a board-owned cutout", async () => {
   expect(routingInputs[0].obstacles).toContainEqual(
     expect.objectContaining({
       center: { x: 0, y: 0 },
-      width: 4,
-      height: 8,
+      width: 4.4,
+      height: 8.4,
       layers: ["top", "bottom"],
       connectedTo: [],
     }),
@@ -65,26 +66,16 @@ test("nested subcircuit routing avoids a board-owned cutout", async () => {
     const a = route[i - 1]
     const b = route[i]
     if (a.route_type !== "wire" || b.route_type !== "wire") continue
-    // Route points are circuit-world points in mm (+X right, +Y up).
-    // Clip each copper segment against the slot interior, excluding contact
-    // with its boundary. Checking endpoints alone misses a straight crossing.
-    let lower = 0
-    let upper = 1
-    for (const [axis, min, max] of [
-      ["x", -2 + 1e-6, 2 - 1e-6],
-      ["y", -4 + 1e-6, 4 - 1e-6],
-    ] as const) {
-      const delta = b[axis] - a[axis]
-      if (delta === 0) {
-        if (a[axis] < min || a[axis] > max) upper = -1
-        continue
-      }
-      const first = (min - a[axis]) / delta
-      const second = (max - a[axis]) / delta
-      lower = Math.max(lower, Math.min(first, second))
-      upper = Math.min(upper, Math.max(first, second))
-    }
-    expect(lower < upper).toBe(false)
+    // Circuit-world mm (+X right, +Y up): measure actual copper, not just
+    // centerline avoidance, against the physical slot rather than its keepout.
+    const copperClearance =
+      segmentToBoxMinDistance(a, b, {
+        center: { x: 0, y: 0 },
+        width: 4,
+        height: 8,
+      }) -
+      Math.max(a.width, b.width) / 2
+    expect(copperClearance).toBeGreaterThanOrEqual(0.2 - 1e-6)
   }
   await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
     showPcbNotes: true,

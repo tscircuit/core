@@ -46,10 +46,10 @@ test("nested routing inherits only its owning board's cutouts", async () => {
       .simpleRouteJson
   const nested = convert(target.subcircuit_id)
 
-  // Widths distinguish the owning board, own, and descendant cutouts from
-  // the other board, sibling cutout, and parent electrical geometry.
+  // Widths include the default 0.2 mm board-edge keepout on each side.
+  // Parent electrical geometry is not inflated or imported into the child.
   expect(nested.obstacles.map((obstacle) => obstacle.width).sort()).toEqual([
-    2, 3, 4,
+    2.4, 3.4, 4.4,
   ])
   for (const width of [2, 3, 4]) {
     const cutout = circuit.db.pcb_cutout
@@ -59,8 +59,8 @@ test("nested routing inherits only its owning board's cutouts", async () => {
     expect(nested.obstacles).toContainEqual(
       expect.objectContaining({
         center: cutout.center,
-        width,
-        height: width + 1,
+        width: width + 0.4,
+        height: width + 1.4,
         ccwRotationDegrees: cutout.rotation,
         layers: ["top", "inner1", "inner2", "bottom"],
         connectedTo: [],
@@ -72,10 +72,10 @@ test("nested routing inherits only its owning board's cutouts", async () => {
     convert(secondBoard.subcircuit_id)
       .obstacles.map((obstacle) => obstacle.width)
       .sort(),
-  ).toEqual([2, 3, 4, 5, 9])
+  ).toEqual([2.4, 3.4, 4.4, 5.4, 9])
   expect(
     convert()
       .obstacles.map((obstacle) => obstacle.width)
       .sort(),
-  ).toEqual([1, 2, 3, 4, 5, 9])
+  ).toEqual([1.4, 2.4, 3.4, 4.4, 5.4, 9])
 })
