@@ -1,11 +1,27 @@
+import { getViaBoardLayers } from "../getViaSpanLayers"
 import type {
+  Obstacle,
   SimpleRouteJson,
   SimplifiedPcbTrace,
-  Obstacle,
 } from "./SimpleRouteJson"
-import { getViaBoardLayers } from "../getViaSpanLayers"
 
 type PcbTraceId = SimplifiedPcbTrace["pcb_trace_id"]
+
+const isPointOnObstacle = (
+  point: { x: number; y: number; layer: string },
+  obstacle: Obstacle,
+): boolean => {
+  if (!obstacle.layers.includes(point.layer)) return false
+  const dx = point.x - obstacle.center.x
+  const dy = point.y - obstacle.center.y
+  const radians = ((obstacle.ccwRotationDegrees ?? 0) * Math.PI) / 180
+  const localX = dx * Math.cos(radians) + dy * Math.sin(radians)
+  const localY = -dx * Math.sin(radians) + dy * Math.cos(radians)
+  return (
+    Math.abs(localX) <= obstacle.width / 2 + 1e-3 &&
+    Math.abs(localY) <= obstacle.height / 2 + 1e-3
+  )
+}
 
 /**
  * Represent manual and saved copper as obstacles so subsequent solvers cannot simplify
@@ -21,6 +37,20 @@ export function withFixedTraces(
     fixedTraceIds.has(trace.pcb_trace_id),
   )
   if (fixedTraces.length === 0) return input
+  const connectionPointsByPointId = new Map<
+    string,
+    Array<{ x: number; y: number; layer: string }>
+  >()
+  for (const connection of input.connections) {
+    for (const point of connection.pointsToConnect) {
+      for (const pointId of [point.pointId, point.pcb_port_id]) {
+        if (!pointId) continue
+        const points = connectionPointsByPointId.get(pointId) ?? []
+        points.push(point)
+        connectionPointsByPointId.set(pointId, points)
+      }
+    }
+  }
   const obstacles: Obstacle[] = []
   for (const trace of fixedTraces) {
     const connectedTo = [
@@ -91,6 +121,16 @@ export function withFixedTraces(
     traces: input.traces?.filter(
       (trace) => !fixedTraceIds.has(trace.pcb_trace_id),
     ),
-    obstacles: [...input.obstacles, ...obstacles],
+    obstacles: [
+      ...input.obstacles.map((obstacle) => ({
+        ...obstacle,
+        connectedTo: obstacle.connectedTo.filter((id) => {
+          const points = connectionPointsByPointId.get(id)
+          if (!points) return true
+          return points.some((point) => isPointOnObstacle(point, obstacle))
+        }),
+      })),
+      ...obstacles,
+    ],
   }
 }
