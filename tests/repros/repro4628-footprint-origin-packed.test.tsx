@@ -12,12 +12,12 @@ test("packing preserves the authored origin under rotations and both PCB layers"
       />
       <group pcbX={3} pcbY={-2} pcbPack pcbGap={1}>
         {["top", "bottom"].map((layer) =>
-          [0, 90, 180, 270].map((rotation) => (
+          [0, 90, 180, 270].map((ccwRotationDegrees) => (
             <chip
-              key={`${layer}_${rotation}`}
-              name={`${layer}_${rotation}`}
+              key={`${layer}_${ccwRotationDegrees}`}
+              name={`${layer}_${ccwRotationDegrees}`}
               layer={layer as "top" | "bottom"}
-              pcbRotation={rotation}
+              pcbRotation={ccwRotationDegrees}
               cadModel={{ stepUrl: "https://example.com/contact.step" }}
               footprint={
                 <footprint>
@@ -36,7 +36,7 @@ test("packing preserves the authored origin under rotations and both PCB layers"
                     portHints={["1"]}
                   />
                   <pcbnotetext
-                    text={`${layer} ${rotation}°`}
+                    text={`${layer} ${ccwRotationDegrees}°`}
                     pcbY={-1.2}
                     fontSize={0.35}
                   />

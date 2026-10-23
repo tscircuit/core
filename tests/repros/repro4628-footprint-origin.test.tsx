@@ -17,15 +17,15 @@ test("CAD and exported footprint origins stay on the reference hole for equivale
       />
       <group pcbX={1} pcbY={-1} pcbRotation={90}>
         {["top", "bottom"].map((layer, layerIndex) =>
-          [0, 90, 180, 270].map((rotation, rotationIndex) =>
+          [0, 90, 180, 270].map((ccwRotationDegrees, rotationIndex) =>
             ["circle", "polygon"].map((shape, shapeIndex) => (
               <chip
-                key={`${layer}_${rotation}_${shape}`}
-                name={`${layer}_${rotation}_${shape}`}
+                key={`${layer}_${ccwRotationDegrees}_${shape}`}
+                name={`${layer}_${ccwRotationDegrees}_${shape}`}
                 layer={layer as "top" | "bottom"}
                 pcbX={-8 + rotationIndex * 5}
                 pcbY={-11 + layerIndex * 12 + shapeIndex * 5}
-                pcbRotation={rotation}
+                pcbRotation={ccwRotationDegrees}
                 cadModel={
                   shape === "circle" ? (
                     { stepUrl: "https://example.com/contact.step" }
@@ -62,7 +62,7 @@ test("CAD and exported footprint origins stay on the reference hole for equivale
                       />
                     )}
                     <pcbnotetext
-                      text={`${layer} ${rotation}° ${shape}`}
+                      text={`${layer} ${ccwRotationDegrees}° ${shape}`}
                       pcbY={-1.5}
                       fontSize={0.35}
                     />
