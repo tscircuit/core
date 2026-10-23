@@ -1,2 +1,0 @@
-export const isStaticAssetPath = (s: string): boolean =>
-  s.startsWith("/") || s.startsWith("./")
