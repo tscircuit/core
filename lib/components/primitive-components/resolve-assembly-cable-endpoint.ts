@@ -19,6 +19,7 @@ import type { AssemblyPlacement } from "./resolve-assembly-placement"
 import { resolveAssemblyMotorPlacement } from "./resolve-assembly-motor-placement"
 import { resolveAssemblyMotorRotation } from "./resolve-assembly-motor-rotation"
 import { resolveAssemblyCablePin1Position } from "./resolve-assembly-cable-pin1-position"
+import { resolveAssemblyPartCableEndpoint } from "./resolve-assembly-part-cable-endpoint"
 
 /** Connector mating-center point and outward unit direction in right-handed
  * circuit world, mm (+X right, +Y top, +Z above). Points acquire translation;
@@ -37,6 +38,12 @@ export function resolveAssemblyCableEndpoint(
   selector: string,
   cableConnector?: CableConnector,
 ): AssemblyCableEndpoint {
+  const partEndpoint = resolveAssemblyPartCableEndpoint({
+    cable,
+    selector,
+    cableConnector,
+  })
+  if (partEndpoint) return partEndpoint
   const scoped = getComponentsInAssemblyScope(cable)
   const motorReference = selector.match(/^(.+)\.wireside$/)
   if (motorReference) {
@@ -158,7 +165,7 @@ export function resolveAssemblyCableEndpoint(
     !connector.source_component_id
   )
     throw new Error(
-      `assembly.cable "${cable.name}" endpoint "${selector}" must name a PCB connector or MOTOR.wireside`,
+      `assembly.cable "${cable.name}" endpoint "${selector}" must name a PCB connector or an assembly part reference`,
     )
   const props = connector._parsedProps as ConnectorProps
   if (

@@ -18,6 +18,10 @@ export class AssemblyCable extends PrimitiveComponent<
     this.cadCableId = this.root.db.cad_cable.insert(cable).cad_cable_id
   }
 
+  onPropsChange(): void {
+    this._markDirty("CadModelRender")
+  }
+
   updateCadModelRender(): void {
     if (!this.root || this.root.pcbDisabled || !this.cadCableId) return
     this.root.db.cad_cable.update(this.cadCableId, resolveAssemblyCable(this))

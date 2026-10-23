@@ -8,7 +8,7 @@ import { vec3 } from "gl-matrix"
 import type { BoardDirectionVector } from "lib/utils/pcb/transform-footprint-insertion-direction"
 import type { AssemblyCable } from "./AssemblyCable"
 import { resolveAssemblyCableEndpoint } from "./resolve-assembly-cable-endpoint"
-import { inferAssemblyCablePath } from "./infer-assembly-cable-path"
+import { resolveAssemblyCablePath } from "./resolve-assembly-cable-path"
 
 /** Mating-face to wire-exit offset along local +Z, mm. Paired with the physical
  * connector definitions and jscad-electronics connectorWireExitDepth.
@@ -93,7 +93,9 @@ export function resolveAssemblyCable(
       ("pinCount" in definition.connectorA
         ? `${definition.standard}_pins${definition.connectorA.pinCount}`
         : definition.standard),
-    path: inferAssemblyCablePath({
+    path: resolveAssemblyCablePath({
+      cableName: cable.name!,
+      waypoints: cable._parsedProps.waypoints,
       from: fromExit,
       to: toExit,
       fromDirection: from.direction,
