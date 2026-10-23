@@ -11,6 +11,8 @@ test("ignoreExistingTopLevelPcbRouteState omits unowned top-level traces but ret
       width: 50,
       height: 50,
       num_layers: 2,
+      thickness: 1.6,
+      material: "fr4",
     },
     // Top-level unowned trace (e.g. imported Altium diagonal arc/trace without source_trace_id or pcb_component_id)
     {
