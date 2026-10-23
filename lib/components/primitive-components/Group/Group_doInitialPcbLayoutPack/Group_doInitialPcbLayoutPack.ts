@@ -13,9 +13,11 @@ import { type LayerRef, type PcbComponent, length } from "circuit-json"
 import Debug from "debug"
 import type { NormalComponent } from "lib/components/base-components/NormalComponent"
 import { solvePackSolverWithTimeout } from "lib/utils/packing/solvePackSolverWithTimeout"
+import { retryBoundedPack } from "lib/utils/packing/retryBoundedPack"
 import type { Group } from "../Group"
 import { applyComponentConstraintClusters } from "./applyComponentConstraintClusters"
 import { applyPackOutput } from "./applyPackOutput"
+import { getOutsideFixedComponentObstacles } from "./getOutsideFixedComponentObstacles"
 import {
   getPackComponentPcbLayer,
   getPackInputsByPcbLayer,
@@ -394,6 +396,9 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
           ...staticLayerObstacles,
           ...fallbackCrossLayerObstacles,
           ...crossLayerPadObstacles,
+          ...(bounds && props.pcbPack
+            ? getOutsideFixedComponentObstacles(group, targetLayer)
+            : []),
         ],
         components: [
           ...networkReferenceComponents,
@@ -402,7 +407,7 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
           ),
         ],
       }
-      const solver = new PackSolver2(solverInput)
+      let solver = new PackSolver2(solverInput)
       const solverParams = solver.getConstructorParams()
       group.root?.emit("solver:started", {
         type: "solver:started",
@@ -418,6 +423,15 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
         solver,
         pcbPackSolverTimeoutMs,
       )
+
+      if (
+        props.pcbPack &&
+        solver.failed &&
+        !timedOut &&
+        pcbPackSolverTimeoutMs == null
+      ) {
+        solver = retryBoundedPack(solverInput) ?? solver
+      }
 
       if (timedOut) {
         packingFailed = true

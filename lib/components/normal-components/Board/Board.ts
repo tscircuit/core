@@ -35,6 +35,30 @@ const MIN_EFFECTIVE_BORDER_RADIUS_MM = 0.01
 const DEFAULT_VIA_PAD_DIAMETER_OVER_HOLE_DIAMETER_MM = 0.15
 
 /**
+ * Infer a circuit-world point in mm from an unpositioned explicit outline.
+ * PCB axes are right-handed: +X right, +Y top, +Z above the board.
+ * Panel layout and authored board positions take precedence over inference.
+ */
+const resolveOutlineCenter = (board: Board) => {
+  const props = board._parsedProps
+  if (
+    !props.outline?.length ||
+    props.pcbX != null ||
+    props.pcbY != null ||
+    props.boardAnchorPosition != null ||
+    board.parent?.lowercaseComponentName === "panel" ||
+    board.parent?.lowercaseComponentName === "subpanel"
+  )
+    return undefined
+  const bounds = getBoundsFromPoints(props.outline)
+  if (!bounds) return undefined
+  return {
+    x: (bounds.minX + bounds.maxX) / 2 + (props.outlineOffsetX ?? 0),
+    y: (bounds.minY + bounds.maxY) / 2 + (props.outlineOffsetY ?? 0),
+  }
+}
+
+/**
  * Return board-local outline points in mm, centered at the origin in the
  * right-handed PCB frame (+X right, +Y top, +Z above).
  */
@@ -236,10 +260,11 @@ export class Board
     }
 
     const { pcbX, pcbY } = this.getResolvedPcbPositionProp()
-    const center = dbBoard?.center ?? {
-      x: pcbX + (props.outlineOffsetX ?? 0),
-      y: pcbY + (props.outlineOffsetY ?? 0),
-    }
+    const center = dbBoard?.center ??
+      resolveOutlineCenter(this) ?? {
+        x: pcbX + (props.outlineOffsetX ?? 0),
+        y: pcbY + (props.outlineOffsetY ?? 0),
+      }
 
     const resolvedWidth = width ?? 0
     const resolvedHeight = height ?? 0
@@ -514,7 +539,7 @@ export class Board
     let computedHeight = props.height ?? pcbBoardFromCircuitJson?.height ?? 0
     // Use global position to properly handle boards inside panels
     const globalPos = this._getGlobalPcbPositionBeforeLayout()
-    let center = {
+    let center = resolveOutlineCenter(this) ?? {
       x: globalPos.x + (props.outlineOffsetX ?? 0),
       y: globalPos.y + (props.outlineOffsetY ?? 0),
     }
