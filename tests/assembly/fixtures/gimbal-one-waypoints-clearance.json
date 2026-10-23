@@ -1,0 +1,33 @@
+{
+  "scope": "New emitted native cad_cable paths, neutral pose, 2.6 mm capsules and PH3 housing boxes",
+  "source_sha256": "78d2b56be4ff38f493f3c7f33b176253f382a37584cc67b6435585dba9b7eef5",
+  "circuit_sha256": "c94f1b70bac737cdc829d17e13914b054b1b5e821e938b3db53239031e2a7062",
+  "mechanical_fixture_sha256": "367e033b735c78e83bbbe067a5e2b103b0fd0d68006293189ae82586ad201744",
+  "parts": 221,
+  "cables": 3,
+  "checked_segment_part_pairs": 70,
+  "minimum_rigid_clearances": [
+    {
+      "cable": "HARNESS_PITCH",
+      "part": "P02_UpperJaw",
+      "segment": 1,
+      "clearance_mm": 0.4104
+    },
+    {
+      "cable": "HARNESS_ROLL",
+      "part": "P02_UpperJaw",
+      "segment": 1,
+      "clearance_mm": 0.4104
+    },
+    {
+      "cable": "HARNESS_YAW",
+      "part": "P02_UpperJaw",
+      "segment": 1,
+      "clearance_mm": 0.4104
+    }
+  ],
+  "minimum_bundle_to_bundle_clearance_mm": 7.2379,
+  "wire_interferences": [],
+  "housing_interferences": [],
+  "bundle_interferences": []
+}
