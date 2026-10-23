@@ -32,7 +32,7 @@ test("routing output around a polygon slot thinner than the sampling band", () =
       points,
     },
   ])
-  expect(obstacles).toHaveLength(0)
+  expect(obstacles).toHaveLength(1)
   const solver = new AutoroutingPipelineSolver9_PreloadedTraceGraph({
     layerCount: 2,
     minTraceWidth: 0.1,
@@ -75,8 +75,8 @@ test("routing output around a polygon slot thinner than the sampling band", () =
       )
     }
   }
-  expect(boundaryCrossings).toBe(2)
-  expect(minimumCopperClearance >= -1e-6).toBe(false)
+  expect(boundaryCrossings).toBe(0)
+  expect(minimumCopperClearance >= -1e-6).toBe(true)
   const graphics = convertSrjToGraphicsObject(output)
   // Show the source boundary even when no cutout obstacle is emitted.
   graphics.lines = [

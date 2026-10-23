@@ -14,7 +14,7 @@ test("polygon cutout outside overhang for diagonal, shallow and steep edges", ()
     { name: "Shallow edge", width: 4, height: 0.4 },
     { name: "Steep edge", width: 0.4, height: 4 },
   ]
-  const maximumOutsideDistance = 0.3
+  const maximumOutsideDistance = 0.1
   const panels: string[] = []
   for (const { name, width, height } of cases) {
     for (const rotation of [0, 90, 180, 270]) {

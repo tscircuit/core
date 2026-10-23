@@ -15,7 +15,7 @@ import sourceCutout from "./fixtures/pmp22650-polygon-cutout.json"
 test("PMP22650 polygon cutout coverage before and after preprocessing", () => {
   const cutout = sourceCutout as PcbCutoutPolygon
   const witness = { x: 200.08379856, y: 78.98260016 }
-  const expectedMissingArea = 13.569547
+  const expectedMissingArea = 0
   const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
     circuitJson: [
       {
@@ -42,7 +42,7 @@ test("PMP22650 polygon cutout coverage before and after preprocessing", () => {
     "inner6",
     "bottom",
   ]
-  expect(simpleRouteJson.obstacles).toHaveLength(166)
+  expect(simpleRouteJson.obstacles).toHaveLength(600)
   expect(
     getUncoveredPolygonArea(cutout.points, simpleRouteJson.obstacles),
   ).toBeCloseTo(expectedMissingArea, 6)
@@ -50,7 +50,7 @@ test("PMP22650 polygon cutout coverage before and after preprocessing", () => {
     simpleRouteJson.obstacles.every((obstacle) =>
       obstacle.obstacleId?.startsWith(`${cutout.pcb_cutout_id}_rect_`),
     ),
-  ).toBe(false)
+  ).toBe(true)
   for (const obstacle of simpleRouteJson.obstacles) {
     expect(obstacle.layers).toEqual(layers)
     expect(obstacle.connectedTo).toEqual([])
@@ -76,7 +76,7 @@ test("PMP22650 polygon cutout coverage before and after preprocessing", () => {
       obstacle.layers.includes(layer),
     )
     expect(obstacles.some((obstacle) => containsPoint(obstacle, witness))).toBe(
-      false,
+      true,
     )
     expect(getUncoveredPolygonArea(cutout.points, obstacles)).toBeCloseTo(
       expectedMissingArea,
