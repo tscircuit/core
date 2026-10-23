@@ -44,10 +44,16 @@ const getAxisAlignedRectFromRotatedRect = (
 export const getObstaclesFromCircuitJson = (
   circuitJson: AnyCircuitElement[],
   connMap?: ConnectivityMap,
+  minBoardEdgeClearance?: number,
 ) => {
   const board = circuitJson.find((element) => element.type === "pcb_board") as
     | PcbBoard
     | undefined
+  // Cutouts are routed board edges, not copper pads. Reserve the mechanical
+  // clearance in their keepout geometry; generic obstacle margins supplied
+  // by a router may add further spacing but cannot replace this board rule.
+  const cutoutClearance =
+    minBoardEdgeClearance ?? board?.min_board_edge_clearance ?? 0
   const everyLayer = getViaBoardLayers(board?.num_layers ?? 4)
   const pcbComponentById = new Map(
     circuitJson.flatMap((element) =>
@@ -269,8 +275,8 @@ export const getObstaclesFromCircuitJson = (
             x: element.center.x,
             y: element.center.y,
           },
-          width: element.width,
-          height: element.height,
+          width: element.width + 2 * cutoutClearance,
+          height: element.height + 2 * cutoutClearance,
           ccwRotationDegrees: element.rotation,
           connectedTo: [],
         })
@@ -289,8 +295,8 @@ export const getObstaclesFromCircuitJson = (
             type: "rect",
             layers: everyLayer,
             center: rect.center,
-            width: rect.width,
-            height: rect.height,
+            width: rect.width + 2 * cutoutClearance,
+            height: rect.height + 2 * cutoutClearance,
             connectedTo: [],
           })
         }
@@ -305,8 +311,8 @@ export const getObstaclesFromCircuitJson = (
             type: "rect",
             layers: everyLayer,
             center: rect.center,
-            width: rect.width,
-            height: rect.height,
+            width: rect.width + 2 * cutoutClearance,
+            height: rect.height + 2 * cutoutClearance,
             connectedTo: [],
           })
         }

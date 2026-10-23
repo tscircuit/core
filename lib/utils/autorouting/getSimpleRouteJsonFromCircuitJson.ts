@@ -4,6 +4,7 @@ import type {
   AnyCircuitElement,
   LayerRef,
   PcbBoard,
+  PcbCutout,
   PcbPort,
   PcbTraceHint,
   PcbVia,
@@ -215,10 +216,23 @@ export const getSimpleRouteJsonFromCircuitJson = ({
 
   let board: PcbBoard | undefined | null = null
   let subcircuitIsBoard = false
+  let inheritedBoardCutouts: PcbCutout[] = []
   if (subcircuit_id) {
     const owningBoard = getOwningPcbBoardForSubcircuit(db, subcircuit_id)
     board = owningBoard.board
     subcircuitIsBoard = owningBoard.subcircuitIsBoard && board !== null
+    // Board openings constrain child routing without importing the board's
+    // electrical geometry or cutouts belonging to unrelated subcircuits.
+    const owningBoardSubcircuitId = board?.subcircuit_id
+    if (owningBoardSubcircuitId && !subcircuitIsBoard) {
+      inheritedBoardCutouts = db.pcb_cutout
+        .list()
+        .filter(
+          (cutout) =>
+            cutout.subcircuit_id === owningBoardSubcircuitId &&
+            !relevantSubcircuitIds!.has(cutout.subcircuit_id),
+        )
+    }
   }
 
   if (!board) {
@@ -330,13 +344,16 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         ),
       ...db.pcb_keepout.list(),
       ...db.pcb_cutout.list(),
+      ...inheritedBoardCutouts,
     ].filter(
       (e) =>
         e.type === "pcb_board" ||
         !subcircuit_id ||
-        relevantSubcircuitIds?.has(e.subcircuit_id!),
+        relevantSubcircuitIds?.has(e.subcircuit_id!) ||
+        (e.type === "pcb_cutout" && inheritedBoardCutouts.includes(e)),
     ),
     sharedConnMap,
+    minBoardEdgeClearance,
   )
   obstacles.push(
     ...getUnbrokenCopperPourObstacles({
