@@ -1,4 +1,4 @@
-import { Trace } from "../Trace/Trace"
+import { PropGeneratedTrace, Trace } from "../Trace/Trace"
 import type { Port } from "./Port"
 
 const getConnectionTargets = (
@@ -43,6 +43,6 @@ export function Port_doInitialCreateTracesFromProps(port: Port): void {
     })
     if (traceAlreadyExists) continue
 
-    parent.add(new Trace({ from, to: target }))
+    parent.add(new PropGeneratedTrace({ from, to: target }))
   }
 }

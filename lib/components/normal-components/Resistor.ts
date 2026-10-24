@@ -5,7 +5,7 @@ import type { Ftype, PassivePorts } from "lib/utils/constants"
 import { symbols } from "schematic-symbols"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { Port } from "../primitive-components/Port"
-import { Trace } from "../primitive-components/Trace/Trace"
+import { PropGeneratedTrace } from "../primitive-components/Trace/Trace"
 
 export class Resistor extends NormalComponent<
   typeof resistorProps,
@@ -62,32 +62,28 @@ export class Resistor extends NormalComponent<
 
   doInitialCreateTracesFromProps() {
     if (this.props.pullupFor && this.props.pullupTo) {
-      this.add(
-        new Trace({
-          from: `${this.getSubcircuitSelector()} > port.1`,
-          to: this.props.pullupFor,
-        }),
-      )
-      this.add(
-        new Trace({
-          from: `${this.getSubcircuitSelector()} > port.2`,
-          to: this.props.pullupTo,
-        }),
-      )
+      const pullupForTrace = new PropGeneratedTrace({
+        from: `${this.getSubcircuitSelector()} > port.1`,
+        to: this.props.pullupFor,
+      })
+      this.add(pullupForTrace)
+      const pullupToTrace = new PropGeneratedTrace({
+        from: `${this.getSubcircuitSelector()} > port.2`,
+        to: this.props.pullupTo,
+      })
+      this.add(pullupToTrace)
     }
     if (this.props.pulldownFor && this.props.pulldownTo) {
-      this.add(
-        new Trace({
-          from: `${this.getSubcircuitSelector()} > port.1`,
-          to: this.props.pulldownFor,
-        }),
-      )
-      this.add(
-        new Trace({
-          from: `${this.getSubcircuitSelector()} > port.2`,
-          to: this.props.pulldownTo,
-        }),
-      )
+      const pulldownForTrace = new PropGeneratedTrace({
+        from: `${this.getSubcircuitSelector()} > port.1`,
+        to: this.props.pulldownFor,
+      })
+      this.add(pulldownForTrace)
+      const pulldownToTrace = new PropGeneratedTrace({
+        from: `${this.getSubcircuitSelector()} > port.2`,
+        to: this.props.pulldownTo,
+      })
+      this.add(pulldownToTrace)
     }
     this._createTracesFromConnectionsProp()
   }
