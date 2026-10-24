@@ -4,12 +4,11 @@ import type {
   AutoroutingPhaseProps,
   BreakoutProps,
 } from "@tscircuit/props"
-import type { z } from "zod"
-import { getSavedAutoroutingPhaseTraces } from "./get-saved-autorouting-phase-traces"
 import { getPresetAutoroutingConfig } from "lib/utils/autorouting/getPresetAutoroutingConfig"
+import type { z } from "zod"
 import type { AutoroutingPhase } from "../AutoroutingPhase"
-import { getSavedFanoutTraces } from "../Breakout/get-saved-fanout-traces"
 import type { Breakout } from "../Breakout/Breakout"
+import { getSavedFanoutTraces } from "../Breakout/get-saved-fanout-traces"
 import { BreakoutPoint } from "../BreakoutPoint"
 import type { Bus } from "../Bus"
 import type { Net } from "../Net"
@@ -20,6 +19,7 @@ import type {
   RoutingPhaseDrcTolerances,
   RoutingPhasePlan,
 } from "./GroupRoutingPhasePlan"
+import { getSavedAutoroutingPhaseTraces } from "./get-saved-autorouting-phase-traces"
 
 type GroupFanoutProps = Pick<
   BreakoutProps,
@@ -138,6 +138,15 @@ function traceHasEndpointMatchingConnectionSelector(
   trace: Trace,
   connectionSelector: string,
 ): boolean {
+  if (connectionSelector.startsWith("net.")) {
+    const selectedNet = trace
+      .getSubcircuit()
+      .selectOne<Net>(connectionSelector, { type: "net" })
+    return (
+      selectedNet !== null &&
+      trace._findConnectedNets().nets.includes(selectedNet)
+    )
+  }
   const connectionSelectorEndpointKey =
     convertPortSelectorToEndpointKey(connectionSelector)
   if (
@@ -391,6 +400,25 @@ export function Group_getRoutingPhasePlans(
     if (connectionSelectors.length > 0) {
       const plan = getOrCreateRoutingPhasePlan(plansByPhaseIndex, phaseIndex)
       plan.connectionSelectors = connectionSelectors
+
+      // A named net owns the joined routing task as well as its port-to-net traces.
+      // Moving only the traces leaves the actual task in the original phase.
+      for (const connectionSelector of connectionSelectors) {
+        if (!connectionSelector.trim().startsWith("net.")) continue
+        const selectedNet = group.selectOne<Net>(connectionSelector.trim(), {
+          type: "net",
+        })
+        if (!selectedNet || breakoutByNet.has(selectedNet)) continue
+        if (!phaseProps.reroute) {
+          for (const existingPlan of plansByPhaseIndex.values()) {
+            if (existingPlan === plan) continue
+            existingPlan.nets = existingPlan.nets.filter(
+              (net) => net !== selectedNet,
+            )
+          }
+        }
+        if (!plan.nets.includes(selectedNet)) plan.nets.push(selectedNet)
+      }
 
       for (const trace of traces) {
         if (breakoutByTrace.has(trace)) continue

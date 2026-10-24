@@ -31,5 +31,5 @@ test("named net declaration routes the whole net", async () => {
     import.meta.path,
     "named-net-control-phase-io",
   )
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

@@ -241,3 +241,12 @@ Use an honest label such as "unnamed component" when no name is available; NEVER
 fall back to an ID or append one in parentheses/brackets. Keep IDs in structured
 diagnostic reference fields only. Do not forward raw dependency error messages
 that contain IDs; format their typed reason using readable circuit names.
+
+## Routing benchmark evidence
+
+Every PR that changes routing behavior must report its effect on the relevant
+benchmark or fixed regression fixture set: base/head revisions, identical inputs,
+budgets, pass counts, failures and elapsed time. Report pre-existing failures
+explicitly; do not present a single successful sample as a clean suite or claim a
+speedup from one run. Include an inspected, successfully routed visual snapshot.
+Do not merge routing changes without this analysis in the PR description.

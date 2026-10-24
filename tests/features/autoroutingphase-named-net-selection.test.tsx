@@ -31,5 +31,5 @@ test("phase net selector moves the whole named net", async () => {
     import.meta.path,
     "named-net-selection-phase-io",
   )
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
