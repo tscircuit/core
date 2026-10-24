@@ -97,6 +97,7 @@ import { Group_doInitialSchematicTraceRender } from "./Group_doInitialSchematicT
 import { Group_doInitialSimulationSpiceEngineRender } from "./Group_doInitialSimulationSpiceEngineRender"
 import { Group_doInitialSourceAddConnectivityMapKey } from "./Group_doInitialSourceAddConnectivityMapKey"
 import { Group_doInitialStandaloneSubcircuitPcbDesignRuleChecks } from "./Group_doInitialStandaloneSubcircuitPcbDesignRuleChecks"
+import { Group_getAutoroutingTraceWidths } from "./Group_getAutoroutingTraceWidths"
 import { Group_getFanoutPourNetMap } from "./Group_getFanoutPourNetMap"
 import { Group_getRoutingPhasePlans } from "./Group_getRoutingPhasePlans"
 import { RoutingPhasePreparationError } from "lib/utils/autorouting/routing-phase-preparation-error"
@@ -480,6 +481,22 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     }
 
     if (!this.isSubcircuit) return
+
+    const {
+      minTraceWidth,
+      nominalTraceWidthPropertyName,
+      requestedNominalTraceWidth,
+      isNominalTraceWidthRaisedToMin,
+    } = Group_getAutoroutingTraceWidths(this)
+    if (isNominalTraceWidthRaisedToMin) {
+      db.source_property_ignored_warning.insert({
+        source_component_id: this.source_group_id ?? "",
+        property_name: nominalTraceWidthPropertyName,
+        error_type: "source_property_ignored_warning",
+        message: `${nominalTraceWidthPropertyName} (${requestedNominalTraceWidth}mm) is below minTraceWidth (${minTraceWidth}mm); autorouted traces will use ${minTraceWidth}mm`,
+        subcircuit_id: this.subcircuit_id ?? undefined,
+      })
+    }
 
     const disabledLegacyAutorouterPreset =
       getDisabledLegacyAutorouterPreset(this)
@@ -870,15 +887,12 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     if (serverMode === "solve-endpoint") {
       // Legacy solve endpoint mode
       if (this.props.autorouter?.inputFormat === "simplified") {
-        const preferredTraceWidth =
-          props.defaultTraceWidth ?? props.nominalTraceWidth
+        const { minTraceWidth, nominalTraceWidth } =
+          Group_getAutoroutingTraceWidths(this)
         const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
           db,
-          minTraceWidth: Number(props.minTraceWidth ?? 0.15),
-          nominalTraceWidth:
-            preferredTraceWidth != null
-              ? Number(preferredTraceWidth)
-              : undefined,
+          minTraceWidth,
+          nominalTraceWidth,
           subcircuit_id: this.subcircuit_id,
           subcircuitComponent: this,
         })
@@ -1013,10 +1027,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const isAutoJumperPreset = this._isAutoJumperAutorouter(autorouterConfig)
     const isSingleLayerBoard = this._getSubcircuitLayerCount() === 1
 
-    const minTraceWidth = Number(props.minTraceWidth ?? 0.15)
-    const nominalTraceWidth = Number(
-      props.defaultTraceWidth ?? props.nominalTraceWidth ?? minTraceWidth,
-    )
+    const autoroutingTraceWidths = Group_getAutoroutingTraceWidths(this)
+    const minTraceWidth = autoroutingTraceWidths.minTraceWidth
+    const nominalTraceWidth =
+      autoroutingTraceWidths.nominalTraceWidth ?? minTraceWidth
 
     const routingPhasePlans = this._getRoutingPhasePlans()
     const hasPhasedAutorouting =
