@@ -62,32 +62,32 @@ export class Resistor extends NormalComponent<
 
   doInitialCreateTracesFromProps() {
     if (this.props.pullupFor && this.props.pullupTo) {
-      this.add(
-        new Trace({
-          from: `${this.getSubcircuitSelector()} > port.1`,
-          to: this.props.pullupFor,
-        }),
-      )
-      this.add(
-        new Trace({
-          from: `${this.getSubcircuitSelector()} > port.2`,
-          to: this.props.pullupTo,
-        }),
-      )
+      const pullupForTrace = new Trace({
+        from: `${this.getSubcircuitSelector()} > port.1`,
+        to: this.props.pullupFor,
+      })
+      pullupForTrace.isImplicitTrace = true
+      this.add(pullupForTrace)
+      const pullupToTrace = new Trace({
+        from: `${this.getSubcircuitSelector()} > port.2`,
+        to: this.props.pullupTo,
+      })
+      pullupToTrace.isImplicitTrace = true
+      this.add(pullupToTrace)
     }
     if (this.props.pulldownFor && this.props.pulldownTo) {
-      this.add(
-        new Trace({
-          from: `${this.getSubcircuitSelector()} > port.1`,
-          to: this.props.pulldownFor,
-        }),
-      )
-      this.add(
-        new Trace({
-          from: `${this.getSubcircuitSelector()} > port.2`,
-          to: this.props.pulldownTo,
-        }),
-      )
+      const pulldownForTrace = new Trace({
+        from: `${this.getSubcircuitSelector()} > port.1`,
+        to: this.props.pulldownFor,
+      })
+      pulldownForTrace.isImplicitTrace = true
+      this.add(pulldownForTrace)
+      const pulldownToTrace = new Trace({
+        from: `${this.getSubcircuitSelector()} > port.2`,
+        to: this.props.pulldownTo,
+      })
+      pulldownToTrace.isImplicitTrace = true
+      this.add(pulldownToTrace)
     }
     this._createTracesFromConnectionsProp()
   }

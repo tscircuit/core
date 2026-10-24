@@ -2449,12 +2449,12 @@ export class NormalComponent<
       for (const [pinName, target] of Object.entries(props.connections)) {
         const targets = Array.isArray(target) ? target : [target]
         for (const targetPath of targets) {
-          this.add(
-            new Trace({
-              from: `.${this.name} > .${pinName}`,
-              to: String(targetPath),
-            }),
-          )
+          const connectionTrace = new Trace({
+            from: `.${this.name} > .${pinName}`,
+            to: String(targetPath),
+          })
+          connectionTrace.isImplicitTrace = true
+          this.add(connectionTrace)
         }
       }
     }
