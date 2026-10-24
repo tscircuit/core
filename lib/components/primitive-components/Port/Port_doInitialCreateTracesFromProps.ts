@@ -43,6 +43,8 @@ export function Port_doInitialCreateTracesFromProps(port: Port): void {
     })
     if (traceAlreadyExists) continue
 
-    parent.add(new Trace({ from, to: target }))
+    const connectsToTrace = new Trace({ from, to: target })
+    connectsToTrace.isImplicitTrace = true
+    parent.add(connectsToTrace)
   }
 }

@@ -130,18 +130,18 @@ export class Capacitor extends NormalComponent<
 
   doInitialCreateTracesFromProps() {
     if (this.props.decouplingFor && this.props.decouplingTo) {
-      this.add(
-        new Trace({
-          from: `${this.getSubcircuitSelector()} > port.1`,
-          to: this.props.decouplingFor,
-        }),
-      )
-      this.add(
-        new Trace({
-          from: `${this.getSubcircuitSelector()} > port.2`,
-          to: this.props.decouplingTo,
-        }),
-      )
+      const decouplingForTrace = new Trace({
+        from: `${this.getSubcircuitSelector()} > port.1`,
+        to: this.props.decouplingFor,
+      })
+      decouplingForTrace.isImplicitTrace = true
+      this.add(decouplingForTrace)
+      const decouplingToTrace = new Trace({
+        from: `${this.getSubcircuitSelector()} > port.2`,
+        to: this.props.decouplingTo,
+      })
+      decouplingToTrace.isImplicitTrace = true
+      this.add(decouplingToTrace)
     }
     this._createTracesFromConnectionsProp()
   }

@@ -58,6 +58,9 @@ export class BoardCastellatedHole extends PlatedHole {
           displayName: `Castellated hole ${outlinePointIndex + 1} connectivity`,
         })
       : null
+    if (this.trace) {
+      this.trace.isImplicitTrace = true
+    }
   }
 
   private _getParentBoard(): Board {

@@ -153,12 +153,12 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
 
     if (props.externallyConnectedPins) {
       for (const [pin1, pin2] of props.externallyConnectedPins) {
-        this.add(
-          new Trace({
-            from: `${this.getSubcircuitSelector()} > port.${pin1}`,
-            to: `${this.getSubcircuitSelector()} > port.${pin2}`,
-          }),
-        )
+        const externallyConnectedTrace = new Trace({
+          from: `${this.getSubcircuitSelector()} > port.${pin1}`,
+          to: `${this.getSubcircuitSelector()} > port.${pin2}`,
+        })
+        externallyConnectedTrace.isImplicitTrace = true
+        this.add(externallyConnectedTrace)
       }
     }
 
