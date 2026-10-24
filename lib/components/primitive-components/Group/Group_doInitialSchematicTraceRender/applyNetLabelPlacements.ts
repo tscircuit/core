@@ -159,8 +159,21 @@ export function applyNetLabelPlacements(args: {
     })
     .filter((label): label is UserDefinedNetLabel => label !== null)
 
+  const inlineNetLabelPlacements =
+    solver.inlineNetLabelSolver?.getOutput().inlineNetLabelPlacements ?? []
+  const globalNetIdsWithInlineLabels = new Set(
+    inlineNetLabelPlacements.map((p) => p.globalConnNetId),
+  )
+
   for (const placement of dedupedNetLabelPlacements) {
     debug(`processing placement: ${placement.netId}`)
+
+    if (globalNetIdsWithInlineLabels.has(placement.globalConnNetId)) {
+      debug(
+        `skipping net label placement for "${placement.netId!}" REASON:net has inline label`,
+      )
+      continue
+    }
 
     const schPortIds = placement.pinIds.map(asSchematicPortId)
     // Port-only placements have no solver pair id. A boundary label is owned
