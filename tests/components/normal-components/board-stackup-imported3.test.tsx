@@ -8,7 +8,7 @@ test("an imported board defaults to FR-4 for stackup lookup", async () => {
   const circuit = await getBoardStackupFixture({
     circuitJson: getImportedBoardCircuitJson({
       num_layers: 4,
-      thickness: 1.6,
+      thickness: 0.4,
       material: undefined,
     }),
     fabricatorPreset: "jlcpcb_standard",
