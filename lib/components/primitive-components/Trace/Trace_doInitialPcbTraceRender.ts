@@ -511,7 +511,10 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
 
   const traceLength = getTraceLength(mergedRoute)
   const pcbStyle = trace.getInheritedMergedProperty("pcbStyle")
-  const { holeDiameter, padDiameter } = getViaDiameterDefaults(pcbStyle)
+  const { holeDiameter, padDiameter } = getViaDiameterDefaults(
+    pcbStyle,
+    trace._getFallbackViaDiameters(),
+  )
   const pcb_trace = db.pcb_trace.insert({
     route: getCircuitJsonPcbTraceRoute(
       mergedRoute as PcbTraceRoutePointWithSrjMetadata[],
