@@ -1,11 +1,10 @@
 import { expect, test } from "bun:test"
-import { jlc08141h1080Stackup } from "@tscircuit/jlcpcb-manufacturing-specs"
 import {
   getBoardStackupFixture,
   getImportedBoardCircuitJson,
 } from "tests/fixtures/get-board-stackup-fixture"
 
-test("an imported board without thickness resolves its default 1.4mm stackup", async () => {
+test("an imported board defaults to 1.4mm without guessing an ambiguous stackup", async () => {
   const circuit = await getBoardStackupFixture({
     circuitJson: getImportedBoardCircuitJson({
       num_layers: 8,
@@ -15,8 +14,6 @@ test("an imported board without thickness resolves its default 1.4mm stackup", a
     layers: 8,
   })
   expect(circuit.db.pcb_board.list()[0]!.thickness).toBe(1.4)
-  expect(circuit.db.pcb_stackup.list()).toMatchObject([
-    { layers: jlc08141h1080Stackup.layers },
-  ])
+  expect(circuit.db.pcb_stackup.list()).toHaveLength(0)
   expect(circuit.db.pcb_placement_error.list()).toHaveLength(0)
 })

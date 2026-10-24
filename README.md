@@ -53,6 +53,19 @@ board.add(trace)
 circuit.getCircuitJson() // [{ type: "board", ...}, { type: "resistor", ...}, ...]
 ```
 
+## Fabricator stackups
+
+A `fabricatorPreset` infers a `pcb_stackup` only when the board's layer count,
+nominal thickness and material identify exactly one construction in the sourced
+JLCPCB catalogue. Unsupported or ambiguous combinations emit no inferred stackup.
+For example, a 4-layer, 1.0 mm FR-4 board matches several prepreg constructions;
+choosing the first would give downstream calculations unconfirmed dielectric data.
+
+An explicit `pcb_stackup` in imported `circuitJson` takes precedence, including
+when the board dimensions alone are ambiguous. Supply the chosen construction's
+layer data there when it is known; see the
+[imported stackup example](./tests/components/normal-components/board-stackup-imported5.test.tsx).
+
 ## Development
 
 - [Declare PCB return-current experiments in TSX](./docs/pcb-return-current-simulation.md)
