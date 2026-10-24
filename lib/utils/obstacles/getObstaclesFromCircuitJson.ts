@@ -6,40 +6,9 @@ import { fillPolygonWithRects } from "./fillPolygonWithRects"
 import { type RotatedRect } from "./generateApproximatingRects"
 import { getAxisAlignedRectFromPolygon } from "./getAxisAlignedRectFromPolygon"
 import { getObstaclesFromPcbKeepoutOutline } from "./getObstaclesFromPcbKeepoutOutline"
+import { getAxisAlignedRectFromRotatedRect } from "./getAxisAlignedRectFromRotatedRect"
 import { getObstaclesFromRoute } from "./getObstaclesFromRoute"
 import type { CircuitJsonMetadata, Obstacle } from "./types"
-
-const QUARTER_TURN_TOLERANCE_DEGREES = 0.01
-
-const getAxisAlignedRectFromRotatedRect = (
-  rotatedRect: RotatedRect,
-): {
-  center: { x: number; y: number }
-  width: number
-  height: number
-} | null => {
-  const normalizedRotation = ((rotatedRect.rotation % 360) + 360) % 360
-  const axisAlignedAngles = [0, 90, 180, 270] as const
-
-  for (const angle of axisAlignedAngles) {
-    const angularDistance = Math.min(
-      Math.abs(normalizedRotation - angle),
-      360 - Math.abs(normalizedRotation - angle),
-    )
-
-    if (angularDistance > QUARTER_TURN_TOLERANCE_DEGREES) continue
-
-    const isVertical = angle === 90 || angle === 270
-
-    return {
-      center: rotatedRect.center,
-      width: isVertical ? rotatedRect.height : rotatedRect.width,
-      height: isVertical ? rotatedRect.width : rotatedRect.height,
-    }
-  }
-
-  return null
-}
 
 export const getObstaclesFromCircuitJson = (
   circuitJson: AnyCircuitElement[],
@@ -531,31 +500,12 @@ export const getObstaclesFromCircuitJson = (
       }
     } else if (element.type === "pcb_trace") {
       const traceObstacles = getObstaclesFromRoute(
-        element.route.flatMap((rp) => {
-          if (rp.route_type === "through_pad") {
-            return [
-              {
-                x: rp.start.x,
-                y: rp.start.y,
-                layer: rp.start_layer,
-              },
-              {
-                x: rp.end.x,
-                y: rp.end.y,
-                layer: rp.end_layer,
-              },
-            ]
-          }
-
-          return [
-            {
-              x: rp.x,
-              y: rp.y,
-              layer: rp.route_type === "wire" ? rp.layer : rp.from_layer,
-            },
-          ]
-        }),
+        element.route,
         element.source_trace_id ?? element.pcb_trace_id,
+        {
+          layerCount: board?.num_layers,
+          routeThicknessMode: element.route_thickness_mode,
+        },
       )
       obstacles.push(
         ...traceObstacles.map((obstacle) => ({
