@@ -1,7 +1,7 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("default behaviour without any paste props stays 0.7", async () => {
+test("default behaviour without any paste props defaults to 1:1 (margin 0)", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width="12mm" height="10mm">
@@ -22,13 +22,13 @@ test("default behaviour without any paste props stays 0.7", async () => {
   const rectPaste = pastes.find((p) => p.shape === "rect")
   const circlePaste = pastes.find((p) => p.shape === "circle")
   if (rectPaste?.shape === "rect") {
-    expect(rectPaste.width).toBeCloseTo(2 * 0.7)
-    expect(rectPaste.height).toBeCloseTo(1 * 0.7)
+    expect(rectPaste.width).toBeCloseTo(2)
+    expect(rectPaste.height).toBeCloseTo(1)
   } else {
     throw new Error("Expected rect solder paste")
   }
   if (circlePaste?.shape === "circle") {
-    expect(circlePaste.radius).toBeCloseTo(0.5 * 0.7)
+    expect(circlePaste.radius).toBeCloseTo(0.5)
   } else {
     throw new Error("Expected circle solder paste")
   }

@@ -14,7 +14,7 @@ const createPolygon = (points: Point[]) => {
 /** Points are footprint-local mm (+X right, +Y up, right-handed +Z above). */
 export function getPolygonSolderPasteContours({
   points,
-  solderPasteMargin,
+  solderPasteMargin = 0,
 }: {
   points: Point[]
   solderPasteMargin?: number
