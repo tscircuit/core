@@ -1,16 +1,16 @@
 import { symbolProps } from "@tscircuit/props"
+import { getBoundsForSchematic } from "lib/utils/autorouting/getBoundsForSchematic"
+import {
+  compose,
+  identity,
+  type Matrix,
+  rotateDEG,
+  scale,
+  translate,
+} from "transformation-matrix"
 import { PrimitiveComponent } from "../../base-components/PrimitiveComponent"
 import type { Port } from "../Port/Port"
 import type { ISymbol, SchematicSymbolBounds } from "./ISymbol"
-import {
-  compose,
-  translate,
-  scale,
-  rotateDEG,
-  identity,
-  type Matrix,
-} from "transformation-matrix"
-import { getBoundsForSchematic } from "lib/utils/autorouting/getBoundsForSchematic"
 
 export class SymbolComponent
   extends PrimitiveComponent<typeof symbolProps>
@@ -185,15 +185,20 @@ export class SymbolComponent
     const currentCenterX = (bounds.minX + bounds.maxX) / 2
     const currentCenterY = (bounds.minY + bounds.maxY) / 2
 
-    // CSS-style fill (default) and explicit stretch scale each axis independently.
-    let scaleX =
-      targetWidth !== undefined && currentWidth > 0
-        ? targetWidth / currentWidth
-        : 1
-    let scaleY =
-      targetHeight !== undefined && currentHeight > 0
-        ? targetHeight / currentHeight
-        : 1
+    // Calculate scale factors
+    let scaleX = 1
+    let scaleY = 1
+
+    if (targetWidth !== undefined && targetHeight !== undefined) {
+      scaleX = currentWidth > 0 ? targetWidth / currentWidth : 1
+      scaleY = currentHeight > 0 ? targetHeight / currentHeight : 1
+    } else if (targetWidth !== undefined && currentWidth > 0) {
+      scaleX = targetWidth / currentWidth
+      scaleY = props.fit === "stretch" ? 1 : scaleX
+    } else if (targetHeight !== undefined && currentHeight > 0) {
+      scaleY = targetHeight / currentHeight
+      scaleX = props.fit === "stretch" ? 1 : scaleY
+    }
 
     if (props.fit === "contain") {
       // Bounds and drawing points are in schematic world space (+X right,
