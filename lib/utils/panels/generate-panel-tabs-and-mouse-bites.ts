@@ -1,6 +1,7 @@
 import type { PcbBoard, PcbCutout, PcbHoleCircle, Point } from "circuit-json"
 import * as Flatten from "@flatten-js/core"
 import { point, Polygon } from "@flatten-js/core"
+import { getPcbBoardOutlinePolygon } from "../get-pcb-board-outline-polygon"
 
 export const DEFAULT_TAB_LENGTH = 5
 export const DEFAULT_TAB_WIDTH = 2
@@ -265,6 +266,22 @@ export function generatePanelTabsAndMouseBites(
     }
     return board
   })
+
+  // Manual positions and larger grid cells can provide more clearance than boardGap.
+  const boardOutlines = processedBoards
+    .filter((board) => (board.outline?.length ?? 0) > 0)
+    .map(getPcbBoardOutlinePolygon)
+
+  for (const [boardIndex, boardOutline] of boardOutlines.entries()) {
+    for (const otherBoardOutline of boardOutlines.slice(boardIndex + 1)) {
+      const [boardClearance] = boardOutline.distanceTo(otherBoardOutline)
+      if (Flatten.Utils.LT(boardClearance, tabWidth)) {
+        throw new Error(
+          `Panel board clearance (${boardClearance.toFixed(3)} mm) must be at least the routing cutout width (${tabWidth} mm). Increase board spacing or reduce tabWidth.`,
+        )
+      }
+    }
+  }
 
   for (const board of processedBoards) {
     if (board.outline && board.outline.length > 0) {

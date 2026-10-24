@@ -100,7 +100,12 @@ test("panel boards with grid layout ignores explicit positions", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <panel width="100mm" height="100mm" panelizationMethod="tab-routing">
+    <panel
+      width="100mm"
+      height="120mm"
+      layoutMode="grid"
+      panelizationMethod="tab-routing"
+    >
       <board width="20mm" height="50mm" routingDisabled />
       <board width="20mm" height="50mm" routingDisabled />
       <board width="20mm" height="50mm" routingDisabled />

@@ -35,10 +35,12 @@ test("panel routing slots must fit between neighboring boards", async () => {
       </board>
     </panel>,
   )
-  await circuit.renderUntilSettled()
+  await expect(circuit.renderUntilSettled()).rejects.toThrow(
+    "Panel board clearance (1.000 mm) must be at least the routing cutout width (2 mm). Increase board spacing or reduce tabWidth.",
+  )
 
-  expect(circuit.db.pcb_cutout.list()).toHaveLength(16)
-  await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
+  expect(circuit.db.pcb_cutout.list()).toHaveLength(0)
+  await expect(circuit.db.toArray()).toMatchPcbSnapshot(import.meta.path, {
     showPcbNotes: true,
   })
 })
