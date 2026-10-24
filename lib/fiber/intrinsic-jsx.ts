@@ -10,7 +10,7 @@ export interface TscircuitElements {
   diode: Props.DiodeProps
   fuse: Props.FuseProps
   led: Props.LedProps
-  board: Props.BoardProps
+  board: Props.BoardProps & { jlcpcbStackup?: string }
   drccheck: Props.DrcCheckProps
   mountedboard: Props.MountedBoardProps
   panel: Props.PanelProps
