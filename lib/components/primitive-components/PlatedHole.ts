@@ -131,7 +131,9 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
       this.parent?.pcb_component_id ??
       this.getPrimitiveContainer()?.pcb_component_id!
     const subcircuit = this.getSubcircuit()
-    const shouldCreateSolderPaste = this._getIsSmt()
+    const shouldCreateSolderPaste =
+      !this._getEnclosingFootprint()?._parsedProps.noSolderPaste &&
+      this._getIsSmt()
     const platedHoleLayers = this.getAvailablePcbLayers()
     const soldermaskMargin = props.solderMaskMargin
     const isCoveredWithSolderMask = props.coveredWithSolderMask ?? false
