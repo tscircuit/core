@@ -69,6 +69,18 @@ export const createCanonicalSchematicNetLabelTextResolver = (
     const cached = resolvedTextByConnectionKey.get(subcircuitConnectivityMapKey)
     if (cached) return cached
 
+    const schDisplayLabel = (
+      portsByConnectionKey.get(subcircuitConnectivityMapKey) ?? []
+    )
+      .flatMap((port) => port._getDirectlyConnectedTraces())
+      .find((trace) => trace._parsedProps.schDisplayLabel)
+      ?._parsedProps.schDisplayLabel
+    if (schDisplayLabel) {
+      const result = { name: schDisplayLabel, wasAssignedDisplayLabel: true }
+      resolvedTextByConnectionKey.set(subcircuitConnectivityMapKey, result)
+      return result
+    }
+
     const resolvedSourceNet = sourceNetByConnectionKey.get(
       subcircuitConnectivityMapKey,
     )
