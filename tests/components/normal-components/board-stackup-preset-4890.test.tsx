@@ -27,8 +27,9 @@ test.failing(
       layers: 4,
       thickness: "1.0mm",
       fabricatorPreset: "jlcpcb_standard",
+      // @ts-expect-error - jlcpcbStackup is the proposed API and is not implemented yet
       jlcpcbStackup: "JLC04101H-3313",
-    } as any)
+    })
 
     const stackup = circuit.db.pcb_stackup.list()[0]!
     expect(stackup.layers[1]).toMatchObject({
