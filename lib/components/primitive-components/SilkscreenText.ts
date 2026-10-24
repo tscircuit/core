@@ -17,6 +17,8 @@ export class SilkscreenText extends PrimitiveComponent<
   pcb_silkscreen_text_ids: string[] = []
   isPcbPrimitive = true
   _footprinterFontSize?: number
+  // Inflated footprint text uses component-local angles, including zero.
+  _pcbRotationIsLocal = false
 
   get config() {
     return {
@@ -37,13 +39,20 @@ export class SilkscreenText extends PrimitiveComponent<
     let rotation = 0
 
     // If the component has an explicit rotation, use that
-    if (props.pcbRotation !== undefined && props.pcbRotation !== 0) {
+    if (
+      !this._pcbRotationIsLocal &&
+      props.pcbRotation !== undefined &&
+      props.pcbRotation !== 0
+    ) {
       rotation = props.pcbRotation
     } else {
       // Otherwise, check for parent group rotations
       const globalTransform = this._computePcbGlobalTransformBeforeLayout()
       const decomposedTransform = decomposeTSR(globalTransform)
       rotation = (decomposedTransform.rotation.angle * 180) / Math.PI
+      if (this._pcbRotationIsLocal) {
+        rotation = ((rotation % 360) + 360) % 360
+      }
     }
     // When text is on bottom layer, adjust rotation to keep text readable
     if (isFlipped) {
