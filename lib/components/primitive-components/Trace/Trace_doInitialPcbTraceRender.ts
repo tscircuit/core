@@ -20,7 +20,7 @@ import {
 import { getObstaclesFromCircuitJson } from "lib/utils/obstacles/getObstaclesFromCircuitJson"
 import { pairs } from "lib/utils/pairs"
 import { getRoutePointPosition } from "lib/utils/pcb-trace-route-point-utils"
-import { getViaDiameterDefaults } from "lib/utils/pcbStyle/getViaDiameterDefaults"
+import { getViaDiameterDefaultsForComponent } from "lib/utils/pcbStyle/getViaDiameterDefaults"
 import { reversePcbTraceRoute } from "lib/utils/reverse-pcb-trace-route"
 import { tryNow } from "lib/utils/try-now"
 import type { Port } from "../Port"
@@ -510,8 +510,8 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
   const mergedRoute = mergeRoutes(routes)
 
   const traceLength = getTraceLength(mergedRoute)
-  const pcbStyle = trace.getInheritedMergedProperty("pcbStyle")
-  const { holeDiameter, padDiameter } = getViaDiameterDefaults(pcbStyle)
+  const { holeDiameter, padDiameter } =
+    getViaDiameterDefaultsForComponent(trace)
   const pcb_trace = db.pcb_trace.insert({
     route: getCircuitJsonPcbTraceRoute(
       mergedRoute as PcbTraceRoutePointWithSrjMetadata[],

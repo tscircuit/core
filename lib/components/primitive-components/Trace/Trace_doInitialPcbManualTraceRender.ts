@@ -10,7 +10,7 @@ import type { Port } from "../Port"
 import type { Trace } from "./Trace"
 import { applyToPoint, identity } from "transformation-matrix"
 import { clipTraceEndAtPad } from "../../../utils/trace-clipping/clipTraceEndAtPad"
-import { getViaDiameterDefaults } from "../../../utils/pcbStyle/getViaDiameterDefaults"
+import { getViaDiameterDefaultsForComponent } from "../../../utils/pcbStyle/getViaDiameterDefaults"
 import type { ManualPcbPathPoint } from "lib/utils/pcbTraceRouteToPcbPath"
 import { TraceConnectionError } from "lib/errors"
 import { getPcbSelectorErrorForTracePort } from "./getPcbSelectorErrorForTracePort"
@@ -188,8 +188,8 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: trace.getGroup()?.pcb_group_id ?? undefined,
       })
-      const pcbStyle = trace.getInheritedMergedProperty("pcbStyle")
-      const { holeDiameter, padDiameter } = getViaDiameterDefaults(pcbStyle)
+      const { holeDiameter, padDiameter } =
+        getViaDiameterDefaultsForComponent(trace)
       for (let index = 0; index < transformedRoute.length; index++) {
         const point = transformedRoute[index]
         if (point.route_type === "via") {
@@ -485,8 +485,8 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
   const subcircuitConnectivityMapKey =
     trace.subcircuit_connectivity_map_key ??
     db.source_trace.get(trace.source_trace_id!)?.subcircuit_connectivity_map_key
-  const pcbStyle = trace.getInheritedMergedProperty("pcbStyle")
-  const { holeDiameter, padDiameter } = getViaDiameterDefaults(pcbStyle)
+  const { holeDiameter, padDiameter } =
+    getViaDiameterDefaultsForComponent(trace)
   for (const point of route) {
     if (point.route_type === "via") {
       const fromLayer = point.from_layer as LayerRef

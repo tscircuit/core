@@ -2,7 +2,7 @@ import { type PcbTraceRoutePoint, pcb_trace_route_point } from "circuit-json"
 import { applyToPoint } from "transformation-matrix"
 import { z } from "zod"
 import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
-import { getViaDiameterDefaults } from "lib/utils/pcbStyle/getViaDiameterDefaults"
+import { getViaDiameterDefaultsForComponent } from "lib/utils/pcbStyle/getViaDiameterDefaults"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
 export const pcbTraceProps = z.object({
@@ -87,9 +87,8 @@ export class PcbTrace extends PrimitiveComponent<typeof pcbTraceProps> {
     })
     this.pcb_trace_id = pcb_trace.pcb_trace_id
 
-    const { holeDiameter, padDiameter } = getViaDiameterDefaults(
-      this.getInheritedMergedProperty("pcbStyle"),
-    )
+    const { holeDiameter, padDiameter } =
+      getViaDiameterDefaultsForComponent(this)
     for (const [routeIndex, point] of transformedRoute.entries()) {
       if (point.route_type !== "via") continue
       if (this._materializedRouteViaIndices.has(routeIndex)) continue
