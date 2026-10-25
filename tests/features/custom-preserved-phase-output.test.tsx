@@ -7,7 +7,7 @@ import { TscircuitAutorouter } from "lib/utils/autorouting/CapacityMeshAutoroute
 import { createBasicAutorouter } from "../fixtures/createBasicAutorouter"
 import { getTestFixture } from "../fixtures/get-test-fixture"
 
-test("capacity router receives preserved phase copper without obstacle rasterization", async () => {
+test("capacity router keeps completed phase copper immutable with compact oriented obstacles", async () => {
   const { circuit } = getTestFixture()
   let firstTrace: SimplifiedPcbTrace | undefined,
     secondInput: SimpleRouteJson | undefined
@@ -36,8 +36,8 @@ test("capacity router receives preserved phase copper without obstacle rasteriza
           connection_name: c.name,
           route: [
             wire(a.x, a.y),
-            wire(a.x, a.y + 1),
-            wire(b.x, b.y + 1),
+            wire(a.x + 1, a.y + 1),
+            wire(b.x - 1, b.y + 1),
             wire(b.x, b.y),
           ],
         }
@@ -64,13 +64,28 @@ test("capacity router receives preserved phase copper without obstacle rasteriza
     await circuit.renderUntilSettled()
     expect(circuit.db.pcb_trace.list()).toHaveLength(2)
     expect(circuit.db.pcb_autorouting_error.list()).toHaveLength(0)
-    expect(circuit).toMatchPcbSnapshot(import.meta.path)
     expect(secondInput).toBeDefined()
     expect(firstTrace).toBeDefined()
-    const preserved = secondInput?.traces?.find(
-      (t) => t.pcb_trace_id === firstTrace!.pcb_trace_id,
+    expect(secondInput!.traces ?? []).toHaveLength(0)
+    const fixedObstacles = secondInput!.obstacles.filter((obstacle) =>
+      obstacle.obstacleId?.startsWith(`trace_obstacle_fixed_${firstTrace!.pcb_trace_id}_`),
     )
-    expect(preserved).toEqual(firstTrace!)
+    expect(fixedObstacles).toHaveLength(3)
+    expect(fixedObstacles.map((obstacle) => obstacle.ccwRotationDegrees)).toEqual([45, 0, -45])
+    const emitted = circuit.db.pcb_trace
+      .list()
+      .find((t) => t.source_trace_id === firstTrace!.connection_name)
+    const geometry = (route: any[]) =>
+      route.map((p) => ({
+        type: p.route_type,
+        x: p.x,
+        y: p.y,
+        width: p.width,
+        layer: p.layer,
+      }))
+    expect(emitted).toBeDefined()
+    expect(geometry(emitted!.route)).toEqual(geometry(firstTrace!.route))
+    await expect(circuit).toMatchPcbSnapshot(import.meta.path)
   } finally {
     spy.mockRestore()
   }
