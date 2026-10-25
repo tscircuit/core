@@ -10,7 +10,7 @@ import { symbols } from "schematic-symbols"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { isFootprinterString } from "../base-components/NormalComponent/utils/isFootprinterString"
 import { resolveFootprinterPolarity } from "../base-components/NormalComponent/utils/resolve-footprinter-polarity"
-import { Trace } from "../primitive-components/Trace/Trace"
+import { PropGeneratedTrace } from "../primitive-components/Trace/Trace"
 import { Capacitor_addPolarityFabricationSymbols } from "./Capacitor_addPolarityFabricationSymbols"
 import { Capacitor_getAutomaticMaxDecouplingTraceLength } from "./Capacitor_getAutomaticMaxDecouplingTraceLength"
 
@@ -130,18 +130,16 @@ export class Capacitor extends NormalComponent<
 
   doInitialCreateTracesFromProps() {
     if (this.props.decouplingFor && this.props.decouplingTo) {
-      this.add(
-        new Trace({
-          from: `${this.getSubcircuitSelector()} > port.1`,
-          to: this.props.decouplingFor,
-        }),
-      )
-      this.add(
-        new Trace({
-          from: `${this.getSubcircuitSelector()} > port.2`,
-          to: this.props.decouplingTo,
-        }),
-      )
+      const decouplingForTrace = new PropGeneratedTrace({
+        from: `${this.getSubcircuitSelector()} > port.1`,
+        to: this.props.decouplingFor,
+      })
+      this.add(decouplingForTrace)
+      const decouplingToTrace = new PropGeneratedTrace({
+        from: `${this.getSubcircuitSelector()} > port.2`,
+        to: this.props.decouplingTo,
+      })
+      this.add(decouplingToTrace)
     }
     this._createTracesFromConnectionsProp()
   }
