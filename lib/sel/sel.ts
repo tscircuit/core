@@ -15,8 +15,20 @@ import type {
   TransistorPinNames,
 } from "./sel-utility-types"
 
+/**
+ * A refdes of a given prefix with any number: `R1`, `R535`, `U501`, `CN12`.
+ *
+ * Enumerating "0".."40" only covered hand-written example boards. Real boards
+ * number by block (`U100`, `U501`) or just keep counting (`R535`, `C403`), and
+ * every one of those designators fell through to the generic
+ * `Record<string, ...>` branch, where a chip-typed `sel.U501(Chip)` resolved to
+ * `never`. A template literal makes any number type-check while still rejecting
+ * prefixes that are not refdes (see sel1.test.ts).
+ */
+type RefDes<Prefix extends string> = `${Prefix}${number}`
+
 type NonPolarizedSel = Record<
-  `R${Nums40}` | `F${Nums40}`,
+  RefDes<"R"> | RefDes<"F">,
   {
     pin1: string
     pin2: string
@@ -26,7 +38,7 @@ type NonPolarizedSel = Record<
 >
 
 type SwSel = Record<
-  `SW${Nums40}`,
+  RefDes<"SW">,
   {
     pin1: string
     pin2: string
@@ -42,11 +54,11 @@ type SwSel = Record<
 >
 
 type PolarizedSel = Record<
-  | `C${Nums40}`
-  | `L${Nums40}`
-  | `LED${Nums40}`
-  | `D${Nums40}`
-  | `Y${Nums40}`
+  | RefDes<"C">
+  | RefDes<"L">
+  | RefDes<"LED">
+  | RefDes<"D">
+  | RefDes<"Y">
   | `B${Nums16}`,
   {
     pin1: string
@@ -94,15 +106,15 @@ type CommonNetNames =
   | "SWD"
   | `GPIO${Nums40}`
 
-type TransistorSel = Record<`Q${Nums40}`, Record<TransistorPinNames, string>>
+type TransistorSel = Record<RefDes<"Q">, Record<TransistorPinNames, string>>
 
 type JumperSel = Record<
-  `J${Nums40}` | `JP${Nums40}` | `CN${Nums40}`,
+  RefDes<"J"> | RefDes<"JP"> | RefDes<"CN">,
   Record<PinNumbers100 | CommonPinNames, string> & ChipFnSel
 >
 
 type ChipSel = Record<
-  `U${Nums40}` | "USBC",
+  RefDes<"U"> | "USBC",
   Record<CommonPinNames | PinNumbers100, string> & ChipFnSel
 >
 
@@ -115,7 +127,7 @@ type NetSel<N extends string = CommonNetNames> = Record<"net", NetSelFn<N>>
 
 type ExplicitModuleSel = Record<
   "subcircuit" | "module" | "group",
-  Record<`S${Nums40}` | `M${Nums40}` | `G${Nums40}`, SelWithoutSubcircuit>
+  Record<RefDes<"S"> | RefDes<"M"> | RefDes<"G">, SelWithoutSubcircuit>
 >
 
 export type GenericConnectionsAndSelectorsSel = Record<
@@ -136,7 +148,7 @@ export type GenericConnectionsAndSelectorsSel = Record<
         : never
     : never
 >
-type TestPointSel = Record<`TP${Nums40}`, { pin1: string }>
+type TestPointSel = Record<RefDes<"TP">, { pin1: string }>
 
 type SelWithoutSubcircuit = NonPolarizedSel &
   PolarizedSel &
