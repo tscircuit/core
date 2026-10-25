@@ -92,4 +92,12 @@ test("cached auto-jumper routing restores the jumper components and pads", async
   expect(warm.circuit.db.pcb_trace.list()).toEqual(
     cold.circuit.db.pcb_trace.list(),
   )
+  // Warning messages contain per-render instance counters; electrical and
+  // physical output must otherwise be identical on the cache hit.
+  expect(
+    warm.circuit.getCircuitJson().filter((e) => !e.type.endsWith("_warning")),
+  ).toEqual(
+    cold.circuit.getCircuitJson().filter((e) => !e.type.endsWith("_warning")),
+  )
+  expect(warm.circuit).toMatchPcbSnapshot(import.meta.path)
 }, 60_000)

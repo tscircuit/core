@@ -121,7 +121,10 @@ import { claimSrjAssignablePcbViasTraversedByRoute } from "./claim-srj-assignabl
 import { findFanoutPhaseSeparationConflict } from "./find-fanout-phase-separation-conflict"
 import { getAccumulatedPcbTracesWithStageOutputReplacements } from "./get-accumulated-pcb-traces-with-stage-output-replacements"
 import { getSourceTraceIdForRoutedTrace } from "./get-source-trace-id-for-routed-trace"
-import { insertAutoplacedJumpers } from "./insert-autoplaced-jumpers"
+import {
+  insertAutoplacedJumpers,
+  type AutoplacedJumper,
+} from "./insert-autoplaced-jumpers"
 import {
   deleteExistingPcbTracesReplacedBy,
   getExistingPcbTracesForReroute,
@@ -278,17 +281,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     output_pcb_traces?: (PcbTrace | PcbVia)[]
     // PCB traces that are being re-routed
     pcb_trace_ids_to_be_replaced?: string[]
-    output_jumpers?: Array<{
-      jumper_footprint: string
-      center: { x: number; y: number }
-      orientation: string
-      pads: Array<{
-        center: { x: number; y: number }
-        width: number
-        height: number
-        layer: string
-      }>
-    }>
+    output_jumpers?: AutoplacedJumper[]
   } | null = null
 
   get config() {
@@ -1304,17 +1297,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     }
 
     const outputTraces: SimplifiedPcbTrace[] = []
-    const outputJumpers: Array<{
-      jumper_footprint: string
-      center: { x: number; y: number }
-      orientation: string
-      pads: Array<{
-        center: { x: number; y: number }
-        width: number
-        height: number
-        layer: string
-      }>
-    }> = []
+    const outputJumpers: AutoplacedJumper[] = []
     const pcbTraceIdsToDelete = new Set<string>()
     const existingRerouteSeedTraces =
       getExistingSimplifiedPcbTracesForReroute(this)
@@ -1915,6 +1898,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           ? outputSimpleRouteJson
           : undefined
 
+        const solver = (autorouter as any)?.solver
+        const stageOutputJumpers: AutoplacedJumper[] =
+          cachedResult?.outputJumpers ?? solver?.getOutputJumpers?.() ?? []
+
         if (!cachedResult && cacheKey) {
           await cacheLocalAutoroutingPhaseResult({
             cacheEngine,
@@ -1922,6 +1909,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             result: {
               ...simpleRouteJson,
               traces,
+              outputJumpers: stageOutputJumpers,
             },
           })
         }
@@ -1972,10 +1960,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         }
 
         // Get jumper output from solver
-        const solver = (autorouter as any)?.solver
-        if (solver?.getOutputJumpers) {
-          outputJumpers.push(...(solver.getOutputJumpers() || []))
-        }
+        outputJumpers.push(...stageOutputJumpers)
 
         if (isRegionReroutePhase && rerouteOriginalSrj) {
           for (const trace of rerouteOriginalSrj.traces ?? []) {
