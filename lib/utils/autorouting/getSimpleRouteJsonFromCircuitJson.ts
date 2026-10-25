@@ -12,6 +12,7 @@ import type {
 import {
   ConnectivityMap,
   getFullConnectivityMapFromCircuitJson,
+  PcbConnectivityMap,
 } from "circuit-json-to-connectivity-map"
 import { Bus } from "lib/components/primitive-components/Bus"
 import { DifferentialPair } from "lib/components/primitive-components/DifferentialPair"
@@ -877,6 +878,47 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   for (const conn of allConns) {
     conn.nominalTraceWidth ??= nominalTraceWidth ?? defaultTraceWidth
     conn.width ??= nominalTraceWidth ?? defaultTraceWidth
+  }
+
+  // Count only copper retained in this routing problem. In particular, a
+  // discarded imported route must not join otherwise disconnected pours.
+  const retainedCopperElements = subcircuitElements.filter((element) => {
+    if (element.type === "pcb_trace") {
+      return (
+        !element.source_trace_id ||
+        preservedSrjTraceByPcbTraceId.has(element.pcb_trace_id)
+      )
+    }
+    if (element.type === "pcb_via") {
+      return (
+        !ignoreExistingTopLevelPcbRouteState || Boolean(element.subcircuit_id)
+      )
+    }
+    return true
+  })
+  for (const conductors of new PcbConnectivityMap(
+    retainedCopperElements,
+  ).getCopperConductorComponents()) {
+    if (!conductors.some((conductor) => conductor.pourId)) continue
+    const connectedPcbPortIds = new Set(
+      conductors.flatMap((conductor) => conductor.pcbPortIds ?? []),
+    )
+    for (const connection of allConns) {
+      const pointIds = [
+        ...new Set(
+          connection.pointsToConnect.flatMap((point) =>
+            point.pointId &&
+            point.pcb_port_id &&
+            connectedPcbPortIds.has(point.pcb_port_id)
+              ? [point.pointId]
+              : [],
+          ),
+        ),
+      ]
+      if (pointIds.length < 2) continue
+      connection.externallyConnectedPointIds ??= []
+      connection.externallyConnectedPointIds.push(pointIds)
+    }
   }
 
   bounds = expandSrjBoundsToIncludeConnectionPoints({

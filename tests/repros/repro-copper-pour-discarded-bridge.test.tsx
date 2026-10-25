@@ -21,5 +21,13 @@ test("fresh routing must not use a discarded root trace to join copper terminals
   expect(
     simpleRouteJson.connections[0]!.externallyConnectedPointIds,
   ).toBeUndefined()
+  const netConnection = simpleRouteJson.connections.find(
+    (connection) => connection.pointsToConnect.length === 3,
+  )!
+  expect(netConnection.externallyConnectedPointIds).toEqual([
+    netConnection.pointsToConnect
+      .filter((point) => point.x <= 0)
+      .map((point) => point.pointId!),
+  ])
   expect(circuitJson).toEqual(original)
 })

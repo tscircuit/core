@@ -46,6 +46,8 @@ test("discarded imported vias must not connect pours on different layers", async
     circuitJson,
     ignoreExistingTopLevelPcbRouteState: true,
   })
-  expect(retained.connections[0]!.externallyConnectedPointIds).toBeUndefined()
+  expect(retained.connections[0]!.externallyConnectedPointIds).toEqual([
+    retained.connections[0]!.pointsToConnect.map((point) => point.pointId!),
+  ])
   expect(fresh.connections[0]!.externallyConnectedPointIds).toBeUndefined()
 })
