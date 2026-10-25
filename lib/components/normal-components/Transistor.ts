@@ -1,4 +1,5 @@
 import {
+  pinLabelsProp,
   transistorProps,
   resolveManufacturerPartNumber,
 } from "@tscircuit/props"
@@ -10,6 +11,12 @@ import {
 import { getPinNumberFromLabels } from "lib/utils/getPortFromHints"
 import type { Port } from "../primitive-components/Port"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
+
+// @tscircuit/props' transistorProps doesn't declare pinLabels, so zod would
+// strip it. Accept it here so SOT-23 style B/E/C pin orders can be remapped.
+const transistorPropsWithPinLabels = transistorProps.extend({
+  pinLabels: pinLabelsProp.optional(),
+})
 
 const SHORT_ALIASES: Record<string, string[]> = {
   collector: ["c"],
@@ -31,7 +38,7 @@ export class Transistor extends NormalComponent<
       componentName: "Transistor",
       schematicSymbolName: (this.props.symbolName ??
         baseSymbolName) as BaseSymbolName,
-      zodProps: transistorProps,
+      zodProps: transistorPropsWithPinLabels,
       sourceFtype: "simple_transistor" as Ftype,
       shouldRenderAsSchematicBox: false,
     }
@@ -43,14 +50,28 @@ export class Transistor extends NormalComponent<
     // hardcoded pin-number map; only short aliases ("c"/"b"/"e") are added
     // here, attached to whichever pin the symbol labels with the long name.
     const additionalAliases: Record<`pin${number}`, string[]> = {}
-    const symbol = this.getSchematicSymbol()
-    for (const symPort of symbol?.ports ?? []) {
-      const pinNumber = getPinNumberFromLabels(symPort.labels)
-      if (!pinNumber) continue
-      for (const label of symPort.labels) {
-        const shortAliases = SHORT_ALIASES[label]
-        if (shortAliases) {
-          additionalAliases[`pin${pinNumber}`] = shortAliases
+    const pinLabels = this._resolvePinLabels()
+    if (pinLabels) {
+      // User-provided labels (e.g. SOT-23: pin1 base, pin2 emitter, pin3
+      // collector) decide which pin gets each short alias.
+      for (const [pinKey, label] of Object.entries(pinLabels)) {
+        const shortAliases = (Array.isArray(label) ? label : [label]).flatMap(
+          (l) => SHORT_ALIASES[l] ?? [],
+        )
+        if (shortAliases.length > 0) {
+          additionalAliases[pinKey as `pin${number}`] = shortAliases
+        }
+      }
+    } else {
+      const symbol = this.getSchematicSymbol()
+      for (const symPort of symbol?.ports ?? []) {
+        const pinNumber = getPinNumberFromLabels(symPort.labels)
+        if (!pinNumber) continue
+        for (const label of symPort.labels) {
+          const shortAliases = SHORT_ALIASES[label]
+          if (shortAliases) {
+            additionalAliases[`pin${pinNumber}`] = shortAliases
+          }
         }
       }
     }

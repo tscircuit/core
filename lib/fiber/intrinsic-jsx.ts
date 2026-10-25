@@ -94,7 +94,7 @@ export interface TscircuitElements {
   pinheader: Props.PinHeaderProps
   resonator: Props.ResonatorProps
   subcircuit: Props.SubcircuitGroupProps
-  transistor: Props.TransistorProps
+  transistor: Props.TransistorProps & { pinLabels?: Props.PinLabelsProp }
   switch: Props.SwitchProps
   mosfet: Props.MosfetProps
   testpoint: Props.TestpointProps
