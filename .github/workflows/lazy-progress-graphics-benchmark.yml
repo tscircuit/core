@@ -25,7 +25,7 @@ jobs:
           ln -s "$GITHUB_WORKSPACE/node_modules" "$RUNNER_TEMP/progress-base/node_modules"
           cp tests/fixtures/get-lazy-progress-graphics-fixture.tsx "$RUNNER_TEMP/progress-base/tests/fixtures/"
           mkdir -p comparison
-          bun scripts/benchmark-lazy-progress-graphics.ts "$RUNNER_TEMP/progress-base" comparison/base.json
+          (cd "$RUNNER_TEMP/progress-base" && bun "$GITHUB_WORKSPACE/scripts/benchmark-lazy-progress-graphics.ts" . "$GITHUB_WORKSPACE/comparison/base.json")
           bun scripts/benchmark-lazy-progress-graphics.ts . comparison/head.json
           bun scripts/check-lazy-progress-graphics-comparison.ts comparison/base.json comparison/head.json
           mapfile -t controls < scripts/custom-followup-controls.txt
