@@ -18,7 +18,7 @@ test("custom cache identities preserve branched copper and transformed handoffs"
       (connection, i) => {
         const [start, end] = connection.pointsToConnect
         const width = connection.nominalTraceWidth ?? input.minTraceWidth
-      /** PCB board-space points in mm: +X right, +Y up; no frame transformation. */
+        /** PCB board-space points in mm: +X right, +Y up; no frame transformation. */
         const wire = (x: number, y: number, layer: string) => ({
           route_type: "wire" as const,
           x,
@@ -26,8 +26,8 @@ test("custom cache identities preserve branched copper and transformed handoffs"
           layer,
           width,
         })
-      /** Same PCB frame, at a point; TOP is above BOTTOM along the Z axis. */
-      const via = (
+        /** Same PCB frame, at a point; TOP is above BOTTOM along the Z axis. */
+        const via = (
           x: number,
           y: number,
           from_layer: string,

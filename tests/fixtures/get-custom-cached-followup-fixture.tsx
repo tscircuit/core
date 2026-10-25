@@ -67,12 +67,9 @@ export function getCustomCachedFollowupFixture(failFollowUpOnce = false) {
     }
     return new TscircuitAutorouter(input)
   }
-  const algorithmFn = withAutorouterCache(
-    partial,
-    "custom_prefix_v1",
-    // @ts-expect-error The stacked fix adds an explicit follow-up option.
-    { followUpAutorouter: { preset: "auto_local", algorithmFn: followUp } },
-  )
+  const algorithmFn = withAutorouterCache(partial, "custom_prefix_v1", {
+    followUpAutorouter: { algorithmFn: followUp },
+  })
   const render = async (control = false) => {
     const circuit = new RootCircuit({
       platform: {

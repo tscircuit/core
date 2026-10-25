@@ -17,5 +17,20 @@ test("a failed follow-up retains the accepted custom prefix in the native cache"
     [],
   )
   expect(recovered.firstStageTraces).toEqual(failed.firstStageTraces)
+  expect(
+    recovered.circuit.db.pcb_trace
+      .get("custom_prefix")
+      ?.route.map((point) =>
+        point.route_type === "wire"
+          ? [point.x, point.y, point.layer, point.width]
+          : [],
+      ),
+  ).toEqual(
+    failed.firstStageTraces[0]?.route.map((point) =>
+      point.route_type === "wire"
+        ? [point.x, point.y, point.layer, point.width]
+        : [],
+    ),
+  )
   await expect(recovered.circuit).toMatchPcbSnapshot(import.meta.path)
 })

@@ -13,5 +13,20 @@ test("an opted-in cached custom router runs its native follow-up without repeati
   expect(second.rows.filter((row) => row.type === "pcb_trace")).toHaveLength(2)
   expect(second.rows.filter((row) => row.type.endsWith("_error"))).toEqual([])
   expect(second.firstStageTraces).toEqual(first.firstStageTraces)
+  expect(
+    second.circuit.db.pcb_trace
+      .get("custom_prefix")
+      ?.route.map((point) =>
+        point.route_type === "wire"
+          ? [point.x, point.y, point.layer, point.width]
+          : [],
+      ),
+  ).toEqual(
+    first.firstStageTraces[0]?.route.map((point) =>
+      point.route_type === "wire"
+        ? [point.x, point.y, point.layer, point.width]
+        : [],
+    ),
+  )
   await expect(second.circuit).toMatchPcbSnapshot(import.meta.path)
 })
