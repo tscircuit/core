@@ -1,3 +1,4 @@
+import { getCustomAutorouterCacheIdentity } from "lib/utils/autorouting/with-autorouter-cache"
 import { getAutoroutingPhasePcbTracePaths } from "./get-autorouting-phase-pcb-trace-paths"
 import {
   type SimpleRouteJson as AutorouterSimpleRouteJson,
@@ -1649,9 +1650,16 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         getPrecomputedRoutingResult || phaseAutorouterConfig.algorithmFn
           ? undefined
           : localAutorouterStrategy.getSolverName(commonAutorouterOptions)
+      const customAlgorithmCacheIdentity = getCustomAutorouterCacheIdentity(
+        phaseAutorouterConfig.algorithmFn,
+      )
+      const canCacheLocalAutorouter = phaseAutorouterConfig.algorithmFn
+        ? customAlgorithmCacheIdentity !== undefined
+        : localAutorouterStrategy.cacheable
       const localAutoroutingCacheSolverOptions = {
         autorouterName,
         solverName,
+        customAlgorithmCacheIdentity,
         capacityDepth: commonAutorouterOptions.capacityDepth,
         targetMinCapacity: commonAutorouterOptions.targetMinCapacity,
         useAssignableSolver: commonAutorouterOptions.useAssignableSolver,
@@ -1664,9 +1672,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       }
 
       const cacheEngine =
-        getPrecomputedRoutingResult ||
-        phaseAutorouterConfig.algorithmFn ||
-        !localAutorouterStrategy.cacheable
+        getPrecomputedRoutingResult || !canCacheLocalAutorouter
           ? undefined
           : this.root?.platform?.localCacheEngine
       const cacheKey = cacheEngine
@@ -1680,9 +1686,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         : null
       const cacheDisabledReason = getPrecomputedRoutingResult
         ? "precomputed"
-        : phaseAutorouterConfig.algorithmFn
+        : phaseAutorouterConfig.algorithmFn &&
+            customAlgorithmCacheIdentity === undefined
           ? "custom_algorithm"
-          : !localAutorouterStrategy.cacheable
+          : !canCacheLocalAutorouter
             ? "strategy_not_cacheable"
             : !cacheEngine
               ? "no_cache_engine"
@@ -1807,9 +1814,11 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           traces = await routingPromise
         }
 
-        let transformedSimpleRouteJson =
+        const autorouterOutputSimpleRouteJson =
           precomputedOutputSimpleRouteJson ??
+          cachedResult?.outputSimpleRouteJson ??
           autorouter?.getOutputSimpleRouteJson?.()
+        let transformedSimpleRouteJson = autorouterOutputSimpleRouteJson
         if (
           localAutorouterStrategy.preserveOutputTraces &&
           transformedSimpleRouteJson?.traces
@@ -1902,6 +1911,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         const stageOutputJumpers: AutoplacedJumper[] =
           cachedResult?.outputJumpers ?? solver?.getOutputJumpers?.() ?? []
 
+        const connectedOffboardObstacles =
+          cachedResult?.connectedOffboardObstacles ??
+          autorouter?.getConnectedOffboardObstacles?.()
+
         if (!cachedResult && cacheKey) {
           await cacheLocalAutoroutingPhaseResult({
             cacheEngine,
@@ -1910,6 +1923,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
               ...simpleRouteJson,
               traces,
               outputJumpers: stageOutputJumpers,
+              outputSimpleRouteJson: autorouterOutputSimpleRouteJson,
+              connectedOffboardObstacles,
             },
           })
         }
@@ -1948,9 +1963,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         // Create source_traces for interconnect ports that were connected via
         // off-board paths during routing. This allows DRC to understand that
         // these ports are intentionally connected.
-        if (autorouter?.getConnectedOffboardObstacles) {
-          const connectedOffboardObstacles =
-            autorouter.getConnectedOffboardObstacles()
+        if (connectedOffboardObstacles) {
           createSourceTracesFromOffboardConnections({
             db,
             connectedOffboardObstacles,
