@@ -1,0 +1,60 @@
+{
+  "scope": "Synthetic native Core stage/cache regression fixtures; not an AM3352 timing benchmark",
+  "bun": "1.4.0",
+  "cases": [
+    {
+      "mode": "normal",
+      "inputSha256": "d149cf5b474ba46b3b408496cd6c74998f0552b67920b43188bab7bd3beeced9",
+      "complete": false,
+      "firstStageCalls": 1,
+      "followUpCalls": 0,
+      "stageCounts": [1, 1],
+      "firstErrors": 2,
+      "secondErrors": 2,
+      "retryCacheStatus": "hit",
+      "prefixGeometryUnchanged": true,
+      "outputSha256": "c1aa29c8ed6c2489f3d418d4a5d101dc1ac7e6aff16aef16652057bbe7674b8b",
+      "medianMs": 73.36201499999993,
+      "trialsMs": [
+        67.40065099999993, 72.54359099999988, 73.36201499999993,
+        104.69504299999994, 164.85546999999997
+      ]
+    },
+    {
+      "mode": "failed_followup",
+      "inputSha256": "d149cf5b474ba46b3b408496cd6c74998f0552b67920b43188bab7bd3beeced9",
+      "complete": false,
+      "firstStageCalls": 1,
+      "followUpCalls": 0,
+      "stageCounts": [1, 1],
+      "firstErrors": 2,
+      "secondErrors": 2,
+      "retryCacheStatus": "hit",
+      "prefixGeometryUnchanged": true,
+      "outputSha256": "c1aa29c8ed6c2489f3d418d4a5d101dc1ac7e6aff16aef16652057bbe7674b8b",
+      "medianMs": 74.60108300000002,
+      "trialsMs": [
+        63.22570300000007, 70.24675099999968, 74.60108300000002,
+        113.16775299999972, 119.09304399999974
+      ]
+    },
+    {
+      "mode": "native_control",
+      "inputSha256": "d149cf5b474ba46b3b408496cd6c74998f0552b67920b43188bab7bd3beeced9",
+      "complete": true,
+      "firstStageCalls": 0,
+      "followUpCalls": 0,
+      "stageCounts": [1, 1],
+      "firstErrors": 0,
+      "secondErrors": 0,
+      "retryCacheStatus": "hit",
+      "prefixGeometryUnchanged": true,
+      "outputSha256": "b32502f60520a688cc49ba3835c4a158091de5e1fbc299e3c316c24dd9bf0b5b",
+      "medianMs": 93.36605699999973,
+      "trialsMs": [
+        72.96882000000005, 83.39245400000027, 93.36605699999973,
+        95.23846000000003, 115.3839280000002
+      ]
+    }
+  ]
+}

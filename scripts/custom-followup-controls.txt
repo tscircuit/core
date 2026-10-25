@@ -1,0 +1,9 @@
+tests/features/custom-autorouter-opt-in-cache.test.tsx
+tests/features/custom-autorouting-algorithmfn.test.tsx
+tests/features/autoroutingphase-algorithm-fn.test.tsx
+tests/features/autoroutingphase-dogbone-preserves-saved-copper.test.tsx
+tests/features/autorouter-fanout.test.tsx
+tests/features/autorouter-single-layer-fanout.test.tsx
+tests/features/autorouter-fanout-sequential-phases.test.tsx
+tests/features/autorouter-bus-lanes-followed-by-global.test.tsx
+tests/features/autoroutingphase-emitted-paths-fanout.test.tsx

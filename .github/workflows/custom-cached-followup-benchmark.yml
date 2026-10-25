@@ -1,0 +1,38 @@
+name: Custom follow-up comparison
+on:
+  pull_request:
+  workflow_dispatch:
+jobs:
+  compare:
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+    timeout-minutes: 20
+    env:
+      BASE_SHA: ${{ github.event.pull_request.base.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.2
+      - run: bun install
+      - name: Paired cache and stage fixtures
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="${BASE_SHA:-4f092ce7}"
+          git worktree add --detach "$RUNNER_TEMP/followup-base" "$base"
+          ln -s "$GITHUB_WORKSPACE/node_modules" "$RUNNER_TEMP/followup-base/node_modules"
+          cp scripts/benchmark-custom-cached-followup.ts "$RUNNER_TEMP/followup-base/scripts/"
+          mkdir -p comparison
+          (cd "$RUNNER_TEMP/followup-base" && bun scripts/benchmark-custom-cached-followup.ts "$GITHUB_WORKSPACE/comparison/base.json")
+          bun scripts/benchmark-custom-cached-followup.ts comparison/head.json
+          bun scripts/check-custom-cached-followup-comparison.ts comparison/base.json comparison/head.json
+          mapfile -t controls < scripts/custom-followup-controls.txt
+          (cd "$RUNNER_TEMP/followup-base" && bun test "${controls[@]}") > comparison/base-controls.log 2>&1
+          bun test "${controls[@]}" > comparison/head-controls.log 2>&1
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: custom-followup-comparison
+          path: comparison
