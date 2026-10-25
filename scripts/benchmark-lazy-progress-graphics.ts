@@ -15,7 +15,7 @@ for(const consumeGraphics of [false,true]) {
     const elapsed=performance.now()-start
     if(result.errors.length || result.traces.length!==1) throw new Error("Native progress fixture did not route")
     if(trial)times.push(elapsed)
-    row={consumeGraphics,completedTraces:result.traces.length,errors:result.errors,progressEvents:result.progress.length,previewCalls:result.previews.count,repeatedGraphicsReadsStable:result.graphicReads.every((r:{sameObject:boolean})=>r.sameObject),routeSha256:createHash("sha256").update(JSON.stringify(result.traces.map((t:{route:unknown})=>t.route))).digest("hex")}
+    row={consumeGraphics,completedTraces:result.traces.length,errors:result.errors,progressEvents:result.progress.length,previewCalls:result.previews.count,peakRssBytes:process.resourceUsage().maxRSS*1024,repeatedGraphicsReadsStable:result.graphicReads.every((r:{sameObject:boolean})=>r.sameObject),routeSha256:createHash("sha256").update(JSON.stringify(result.traces.map((t:{route:unknown})=>t.route))).digest("hex")}
   }
   times.sort((a,b)=>a-b)
   cases.push({...row,medianMs:times[1],trialsMs:times})

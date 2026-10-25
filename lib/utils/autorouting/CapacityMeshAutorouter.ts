@@ -353,8 +353,10 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
         1000
       this.cycleCount++
 
-      // Get visualization data if available
-      const debugGraphics = this.solver?.preview() || undefined
+      // Metrics listeners do not need to materialize potentially large previews.
+      let debugGraphics: AutorouterProgressEvent["debugGraphics"]
+      let graphicsComputed = false
+      const solver = this.solver
 
       // Report progress
       const progress = this.solver.progress
@@ -369,7 +371,13 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
             ? this.solver.getCurrentPhase()
             : (this.solver.activeSubSolver?.getSolverName() ??
               this.solver.getSolverName()),
-        debugGraphics,
+        get debugGraphics() {
+          if (!graphicsComputed) {
+            debugGraphics = solver.preview() || undefined
+            graphicsComputed = true
+          }
+          return debugGraphics
+        },
       })
 
       // Schedule the next step
