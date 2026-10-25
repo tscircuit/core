@@ -1491,6 +1491,37 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           }),
         }
       }
+      // Enable jumpers for auto_jumper preset
+      const phaseIsAutoJumperPreset =
+        routingPhasePlan.autorouter !== undefined
+          ? this._isAutoJumperAutorouter(phaseAutorouterConfig)
+          : isAutoJumperPreset
+      const phaseIsLaserPrefabPreset =
+        routingPhasePlan.autorouter !== undefined
+          ? this._isLaserPrefabAutorouter(phaseAutorouterConfig)
+          : isLaserPrefabPreset
+
+      const autorouterVersion =
+        phaseAutorouterConfig.autorouterVersion ?? this.props.autorouterVersion
+      const effortLevel = this.props.autorouterEffortLevel
+      const effort = effortLevel
+        ? Number.parseInt(effortLevel.replace("x", ""), 10)
+        : undefined
+      const commonAutorouterOptions: AutorouterOptions = {
+        capacityDepth: phaseAutorouterConfig.capacityDepth,
+        targetMinCapacity: phaseAutorouterConfig.targetMinCapacity,
+        platformConfig: this.root?.platform,
+        useAssignableSolver: phaseIsLaserPrefabPreset || isSingleLayerBoard,
+        useAutoJumperSolver: phaseIsAutoJumperPreset,
+        useLaserPrefabSolver: phaseIsLaserPrefabPreset,
+        autorouterVersion,
+        effort,
+      }
+      const preservesCapacityFixedTraceGeometry =
+        !phaseAutorouterConfig.algorithmFn &&
+        localAutorouterStrategy.name === "tscircuit" &&
+        localAutorouterStrategy.getSolverName(commonAutorouterOptions) ===
+          "AutoroutingPipelineSolver9_PreloadedTraceGraph"
       // bus_lanes preserves prior traces verbatim and checks their exact copper
       // geometry. Rasterizing diagonal fanout traces can bury a legal exit in
       // an enlarged rectangular obstacle before the lane search even starts.
@@ -1505,13 +1536,15 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             phaseAutorouterConfig.preset === "single_layer_fanout")
         simpleRouteJson = withFixedTraces(
           simpleRouteJson,
-          preservesManualTraceGeometry
-            ? new Set(
-                [...fixedTraceIds].filter(
-                  (pcbTraceId) => !manualPcbTraceIds.has(pcbTraceId),
-                ),
-              )
-            : fixedTraceIds,
+          preservesCapacityFixedTraceGeometry
+            ? manualPcbTraceIds
+            : preservesManualTraceGeometry
+              ? new Set(
+                  [...fixedTraceIds].filter(
+                    (pcbTraceId) => !manualPcbTraceIds.has(pcbTraceId),
+                  ),
+                )
+              : fixedTraceIds,
         )
       }
       simpleRouteJson = Group_applyDrcTolerancesToSimpleRouteJson(
@@ -1566,16 +1599,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         continue
       }
 
-      // Enable jumpers for auto_jumper preset
-      const phaseIsAutoJumperPreset =
-        routingPhasePlan.autorouter !== undefined
-          ? this._isAutoJumperAutorouter(phaseAutorouterConfig)
-          : isAutoJumperPreset
-      const phaseIsLaserPrefabPreset =
-        routingPhasePlan.autorouter !== undefined
-          ? this._isLaserPrefabAutorouter(phaseAutorouterConfig)
-          : isLaserPrefabPreset
-
       if (phaseIsAutoJumperPreset) {
         simpleRouteJson.allowJumpers = true
         if (phaseAutorouterConfig.availableJumperTypes) {
@@ -1625,22 +1648,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         ;(global as any).debugGraphics?.push(graphicsObject)
       }
 
-      const autorouterVersion =
-        phaseAutorouterConfig.autorouterVersion ?? this.props.autorouterVersion
-      const effortLevel = this.props.autorouterEffortLevel
-      const effort = effortLevel
-        ? Number.parseInt(effortLevel.replace("x", ""), 10)
-        : undefined
-      const commonAutorouterOptions: AutorouterOptions = {
-        capacityDepth: phaseAutorouterConfig.capacityDepth,
-        targetMinCapacity: phaseAutorouterConfig.targetMinCapacity,
-        platformConfig: this.root?.platform,
-        useAssignableSolver: phaseIsLaserPrefabPreset || isSingleLayerBoard,
-        useAutoJumperSolver: phaseIsAutoJumperPreset,
-        useLaserPrefabSolver: phaseIsLaserPrefabPreset,
-        autorouterVersion,
-        effort,
-      }
       const autorouterName = getPrecomputedRoutingResult
         ? "precomputed"
         : phaseAutorouterConfig.algorithmFn

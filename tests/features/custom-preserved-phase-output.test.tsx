@@ -71,6 +71,19 @@ test("capacity router receives preserved phase copper without obstacle rasteriza
       (t) => t.pcb_trace_id === firstTrace!.pcb_trace_id,
     )
     expect(preserved).toEqual(firstTrace!)
+    const emitted = circuit.db.pcb_trace
+      .list()
+      .find((t) => t.source_trace_id === firstTrace!.connection_name)
+    const geometry = (route: any[]) =>
+      route.map((p) => ({
+        type: p.route_type,
+        x: p.x,
+        y: p.y,
+        width: p.width,
+        layer: p.layer,
+      }))
+    expect(emitted).toBeDefined()
+    expect(geometry(emitted!.route)).toEqual(geometry(firstTrace!.route))
   } finally {
     spy.mockRestore()
   }
