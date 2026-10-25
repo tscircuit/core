@@ -8,5 +8,5 @@ test("interactive progress consumers retain graphics and reuse one preview per e
   expect(result.errors).toHaveLength(0)
   expect(result.progress.length).toBeGreaterThan(0)
   expect(result.previews.count).toBe(result.progress.length)
-  expect(result.graphicReads.every(read => read.sameObject)).toBe(true)
+  expect(result.graphicReads.every((read) => read.sameObject)).toBe(true)
 })

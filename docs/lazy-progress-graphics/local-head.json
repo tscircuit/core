@@ -1,0 +1,31 @@
+{
+  "scope": "Generated native routing progress; same route geometry, one warmup plus three trials",
+  "bun": "1.4.0",
+  "capacityMeshAutorouterSourceSha256": "079bf02765ec6737b8e031372e096c618214a364b285a120dc5ccf3bf78136d4",
+  "cases": [
+    {
+      "consumeGraphics": false,
+      "completedTraces": 1,
+      "errors": [],
+      "progressEvents": 1,
+      "previewCalls": 0,
+      "peakRssBytes": 476499968,
+      "repeatedGraphicsReadsStable": true,
+      "routeSha256": "b4544e0ee92519c87b648f5d70d6b1d3b8379593324c942bb08cf7052110a0eb",
+      "medianMs": 57.05183800000009,
+      "trialsMs": [50.57138000000009, 57.05183800000009, 107.26530899999989]
+    },
+    {
+      "consumeGraphics": true,
+      "completedTraces": 1,
+      "errors": [],
+      "progressEvents": 1,
+      "previewCalls": 1,
+      "peakRssBytes": 563679232,
+      "repeatedGraphicsReadsStable": true,
+      "routeSha256": "b4544e0ee92519c87b648f5d70d6b1d3b8379593324c942bb08cf7052110a0eb",
+      "medianMs": 46.376719000000094,
+      "trialsMs": [46.27681800000005, 46.376719000000094, 60.89675399999987]
+    }
+  ]
+}

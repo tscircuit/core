@@ -1,3 +1,4 @@
+import type { AutoroutingProgressEvent } from "lib/events"
 import { getCustomAutorouterCacheIdentity } from "lib/utils/autorouting/with-autorouter-cache"
 import { getAutoroutingPhasePcbTracePaths } from "./get-autorouting-phase-pcb-trace-paths"
 import {
@@ -1800,20 +1801,28 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           )
 
           activeAutorouter.on("progress", (event) => {
-            this.root?.emit("autorouting:progress", {
-              subcircuit_id: this.subcircuit_id,
-              componentDisplayName: this.getString(),
-              ...(routingPhasePlan.phaseName !== undefined
-                ? {
-                    phaseName: routingPhasePlan.phaseName,
-                    phaseStageIndex,
-                    phaseStageCount,
-                  }
-                : {}),
-              ...autoroutingMetadata,
-              ...event,
-              type: "autorouting:progress",
-            })
+            // Copy descriptors so forwarding does not evaluate lazy debug graphics.
+            const { type: progressType, ...progressDescriptors } =
+              Object.getOwnPropertyDescriptors(event)
+            this.root?.emit(
+              "autorouting:progress",
+              Object.defineProperties(
+                {
+                  subcircuit_id: this.subcircuit_id,
+                  componentDisplayName: this.getString(),
+                  ...(routingPhasePlan.phaseName !== undefined
+                    ? {
+                        phaseName: routingPhasePlan.phaseName,
+                        phaseStageIndex,
+                        phaseStageCount,
+                      }
+                    : {}),
+                  ...autoroutingMetadata,
+                  type: "autorouting:progress",
+                },
+                progressDescriptors,
+              ) as AutoroutingProgressEvent,
+            )
           })
 
           activeAutorouter.start()
