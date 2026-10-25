@@ -68,10 +68,14 @@ test("capacity router keeps completed phase copper immutable with compact orient
     expect(firstTrace).toBeDefined()
     expect(secondInput!.traces ?? []).toHaveLength(0)
     const fixedObstacles = secondInput!.obstacles.filter((obstacle) =>
-      obstacle.obstacleId?.startsWith(`trace_obstacle_fixed_${firstTrace!.pcb_trace_id}_`),
+      obstacle.obstacleId?.startsWith(
+        `trace_obstacle_fixed_${firstTrace!.pcb_trace_id}_`,
+      ),
     )
     expect(fixedObstacles).toHaveLength(3)
-    expect(fixedObstacles.map((obstacle) => obstacle.ccwRotationDegrees)).toEqual([45, 0, -45])
+    expect(
+      fixedObstacles.map((obstacle) => obstacle.ccwRotationDegrees),
+    ).toEqual([45, 0, -45])
     const emitted = circuit.db.pcb_trace
       .list()
       .find((t) => t.source_trace_id === firstTrace!.connection_name)

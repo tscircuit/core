@@ -98,7 +98,9 @@ const report = {
     .map((e: any) => e.type),
   inputTraceCount: following?.traces?.length ?? 0,
   inputObstacleCount: following?.obstacles.length,
-  orientedObstacleCount: following?.obstacles.filter((o: any) => o.ccwRotationDegrees !== undefined).length,
+  orientedObstacleCount: following?.obstacles.filter(
+    (o: any) => o.ccwRotationDegrees !== undefined,
+  ).length,
   exactInputCopper:
     !!prior &&
     JSON.stringify(geometry(prior.route)) ===
