@@ -117,6 +117,11 @@ export class SilkscreenGraphic extends PrimitiveComponent<
     })) {
       if (route.length < 2) continue
 
+      const firstPoint = route[0]
+      const lastPoint = route[route.length - 1]
+      // Closed contours are already rendered by the BRep, including its holes.
+      if (firstPoint.x === lastPoint.x && firstPoint.y === lastPoint.y) continue
+
       const path = db.pcb_silkscreen_path.insert({
         pcb_component_id,
         layer,
