@@ -1,3 +1,4 @@
+import type { AutoplacedJumper } from "./insert-autoplaced-jumpers"
 import type { LocalCacheEngine } from "lib/local-cache-engine"
 import type { AutorouterOptions } from "lib/utils/autorouting/CapacityMeshAutorouter"
 import type {
@@ -41,13 +42,15 @@ export type LocalAutoroutingCacheSolverOptions = Pick<
 
 type CachedAutoroutingPhaseResult = SimpleRouteJson & {
   traces: SimplifiedPcbTrace[]
+  outputJumpers?: AutoplacedJumper[]
 }
 
+// Invalidate trace-only entries that cannot restore physical jumpers.
 export const getLocalAutoroutingCacheKey = (
   simpleRouteJson: SimpleRouteJson,
   solverOptions: LocalAutoroutingCacheSolverOptions,
 ): string =>
-  `routes:core@${pkgJson.version}:solver:${getJsonHash(solverOptions)}:srj:${getJsonHash(simpleRouteJson)}`
+  `routes:core@${pkgJson.version}:solver:${getJsonHash({ ...solverOptions, cacheSchemaVersion: 2 })}:srj:${getJsonHash(simpleRouteJson)}`
 
 export const getCachedLocalAutoroutingPhaseResult = async ({
   cacheEngine,
