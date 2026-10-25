@@ -1,3 +1,4 @@
+import { getCustomAutorouterFollowUp } from "./with-autorouter-cache"
 import { DogboneAutorouter } from "@tscircuit/dogbone-solver"
 import type { SolverEndedEvent } from "lib/events"
 import { BusLanesAutorouter } from "./BusLanesAutorouter"
@@ -175,11 +176,13 @@ export const getLocalAutoroutingStages = (
     },
   ]
 
-  // A custom algorithm returns final traces and may omit a transformed SRJ.
-  // Only the built-in preset supplies the problem for its follow-up stage.
-  if (strategy.followUpAutorouter && !autorouterConfig.algorithmFn) {
+  // Custom algorithms remain final unless explicitly wrapped with a follow-up.
+  const followUpAutorouter =
+    getCustomAutorouterFollowUp(autorouterConfig.algorithmFn) ??
+    (!autorouterConfig.algorithmFn ? strategy.followUpAutorouter : undefined)
+  if (followUpAutorouter) {
     const followUpAutorouterConfig = getPresetAutoroutingConfig(
-      strategy.followUpAutorouter,
+      followUpAutorouter,
       platformConfig,
     )
     stages.push({
