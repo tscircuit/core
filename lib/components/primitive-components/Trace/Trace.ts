@@ -73,6 +73,9 @@ export class Trace
   pcb_trace_id: string | null = null
   // Marks radiating copper created by Antenna, never its feed connection.
   isAntennaTrace = false
+  // Set for traces synthesised from a `connections` prop; the user wrote no
+  // <trace /> element, so there is nothing for them to name.
+  isCreatedFromConnectionsProp = false
   schematic_trace_id: string | null = null
   _inflatedPcbTraces?: PcbTrace[]
   _inflatedPcbVias?: PcbVia[]
@@ -327,7 +330,11 @@ export class Trace
 
     this.source_trace_id = trace.source_trace_id
 
-    if (!props.name && nets.length === 0) {
+    if (
+      !props.name &&
+      nets.length === 0 &&
+      !this.isCreatedFromConnectionsProp
+    ) {
       db.source_unnamed_trace_warning.insert({
         message: `${this.getString()} is missing a name. Add a name prop to make the trace easier to identify.`,
         source_trace_id: trace.source_trace_id,
