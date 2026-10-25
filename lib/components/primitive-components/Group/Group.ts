@@ -1804,19 +1804,25 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             // Copy descriptors so forwarding does not evaluate lazy debug graphics.
             const { type: progressType, ...progressDescriptors } =
               Object.getOwnPropertyDescriptors(event)
-            this.root?.emit("autorouting:progress", Object.defineProperties({
-              subcircuit_id: this.subcircuit_id,
-              componentDisplayName: this.getString(),
-              ...(routingPhasePlan.phaseName !== undefined
-                ? {
-                    phaseName: routingPhasePlan.phaseName,
-                    phaseStageIndex,
-                    phaseStageCount,
-                  }
-                : {}),
-              ...autoroutingMetadata,
-              type: "autorouting:progress",
-            }, progressDescriptors) as AutoroutingProgressEvent)
+            this.root?.emit(
+              "autorouting:progress",
+              Object.defineProperties(
+                {
+                  subcircuit_id: this.subcircuit_id,
+                  componentDisplayName: this.getString(),
+                  ...(routingPhasePlan.phaseName !== undefined
+                    ? {
+                        phaseName: routingPhasePlan.phaseName,
+                        phaseStageIndex,
+                        phaseStageCount,
+                      }
+                    : {}),
+                  ...autoroutingMetadata,
+                  type: "autorouting:progress",
+                },
+                progressDescriptors,
+              ) as AutoroutingProgressEvent,
+            )
           })
 
           activeAutorouter.start()

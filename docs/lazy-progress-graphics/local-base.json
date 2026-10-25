@@ -12,11 +12,7 @@
       "repeatedGraphicsReadsStable": true,
       "routeSha256": "b4544e0ee92519c87b648f5d70d6b1d3b8379593324c942bb08cf7052110a0eb",
       "medianMs": 68.7507169999999,
-      "trialsMs": [
-        68.25809499999991,
-        68.7507169999999,
-        96.44369900000015
-      ]
+      "trialsMs": [68.25809499999991, 68.7507169999999, 96.44369900000015]
     },
     {
       "consumeGraphics": true,
@@ -27,11 +23,7 @@
       "repeatedGraphicsReadsStable": true,
       "routeSha256": "b4544e0ee92519c87b648f5d70d6b1d3b8379593324c942bb08cf7052110a0eb",
       "medianMs": 54.04465100000016,
-      "trialsMs": [
-        52.25720100000012,
-        54.04465100000016,
-        58.738967
-      ]
+      "trialsMs": [52.25720100000012, 54.04465100000016, 58.738967]
     }
   ]
 }
