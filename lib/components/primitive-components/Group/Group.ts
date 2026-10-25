@@ -1517,7 +1517,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         autorouterVersion,
         effort,
       }
-      const preservesCapacityFixedTraceGeometry =
+      const usesCompactFixedTraceObstacles =
         !phaseAutorouterConfig.algorithmFn &&
         localAutorouterStrategy.name === "tscircuit" &&
         localAutorouterStrategy.getSolverName(commonAutorouterOptions) ===
@@ -1536,15 +1536,14 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             phaseAutorouterConfig.preset === "single_layer_fanout")
         simpleRouteJson = withFixedTraces(
           simpleRouteJson,
-          preservesCapacityFixedTraceGeometry
-            ? manualPcbTraceIds
-            : preservesManualTraceGeometry
-              ? new Set(
-                  [...fixedTraceIds].filter(
-                    (pcbTraceId) => !manualPcbTraceIds.has(pcbTraceId),
-                  ),
-                )
-              : fixedTraceIds,
+          preservesManualTraceGeometry
+            ? new Set(
+                [...fixedTraceIds].filter(
+                  (pcbTraceId) => !manualPcbTraceIds.has(pcbTraceId),
+                ),
+              )
+            : fixedTraceIds,
+          { useOrientedWireObstacles: usesCompactFixedTraceObstacles },
         )
       }
       simpleRouteJson = Group_applyDrcTolerancesToSimpleRouteJson(

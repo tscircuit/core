@@ -15,6 +15,7 @@ type PcbTraceId = SimplifiedPcbTrace["pcb_trace_id"]
 export function withFixedTraces(
   input: SimpleRouteJson,
   fixedTraceIds: ReadonlySet<PcbTraceId>,
+  options: { useOrientedWireObstacles?: boolean } = {},
 ): SimpleRouteJson {
   if (fixedTraceIds.size === 0) return input
   const fixedTraces = (input.traces ?? []).filter((trace) =>
@@ -62,6 +63,21 @@ export function withFixedTraces(
             ? next.width
             : input.minTraceWidth
       const layer = point.route_type === "wire" ? point.layer : point.to_layer
+      if (options.useOrientedWireObstacles) {
+        const dx = next.x - point.x
+        const dy = next.y - point.y
+        obstacles.push({
+          obstacleId: `trace_obstacle_fixed_${trace.pcb_trace_id}_${index}`,
+          type: "rect",
+          center: { x: (point.x + next.x) / 2, y: (point.y + next.y) / 2 },
+          width: Math.hypot(dx, dy) + width,
+          height: width,
+          ccwRotationDegrees: (Math.atan2(dy, dx) * 180) / Math.PI,
+          layers: [layer],
+          connectedTo,
+        })
+        continue
+      }
       // Small axis-aligned boxes conservatively cover diagonal copper too.
       const steps =
         point.x === next.x || point.y === next.y
