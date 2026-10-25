@@ -35,7 +35,7 @@ test("compact fixed obstacles contain diagonal wire copper and both round end ca
     expect(output.traces).toHaveLength(0)
     expect(output.obstacles).toHaveLength(1)
     const obstacle = output.obstacles[0]!,
-      rotation = (obstacle.ccwRotationDegrees! * Math.PI) / 180
+      rotation = ((obstacle.ccwRotationDegrees ?? 0) * Math.PI) / 180
     for (const center of [start, end])
       for (let i = 0; i < 32; i++) {
         const point = {

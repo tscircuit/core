@@ -63,7 +63,11 @@ export function withFixedTraces(
             ? next.width
             : input.minTraceWidth
       const layer = point.route_type === "wire" ? point.layer : point.to_layer
-      if (options.useOrientedWireObstacles) {
+      if (
+        options.useOrientedWireObstacles &&
+        point.x !== next.x &&
+        point.y !== next.y
+      ) {
         const dx = next.x - point.x
         const dy = next.y - point.y
         obstacles.push({
