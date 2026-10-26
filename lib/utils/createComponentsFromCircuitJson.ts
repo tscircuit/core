@@ -1,4 +1,3 @@
-import { getImportedInternallyConnectedPinNames } from "./get-imported-internally-connected-pin-names"
 import { getUnitVectorFromDirection } from "@tscircuit/math-utils"
 import type { PcbSoldermaskOpeningProps, PinLabelsProp } from "@tscircuit/props"
 import {
@@ -45,8 +44,10 @@ import {
   isStandalonePcbSolderPaste,
 } from "lib/components/primitive-components/SolderPaste"
 import { SymbolComponent } from "lib/components/primitive-components/Symbol"
+import { stitchCourtyardOutlines } from "lib/utils/stitchCourtyardOutlines"
 import type { PrimitiveComponent } from "../components/base-components/PrimitiveComponent"
 import { createPinrowSilkscreenText } from "./createPinrowSilkscreenText"
+import { getImportedInternallyConnectedPinNames } from "./get-imported-internally-connected-pin-names"
 
 type SchematicPrimitiveWithStrokeWidth = Extract<
   AnyCircuitElement,
@@ -156,6 +157,14 @@ export const createComponentsFromCircuitJson = (
     }
   }
   const components: PrimitiveComponent[] = []
+  const rawCourtyardOutlines = circuitJson.filter(
+    (
+      elm,
+    ): elm is Extract<AnyCircuitElement, { type: "pcb_courtyard_outline" }> =>
+      elm.type === "pcb_courtyard_outline",
+  )
+  const stitchedCourtyardOutlines =
+    stitchCourtyardOutlines(rawCourtyardOutlines)
   const schematicSymbolsByImportedId = new Map<string, SymbolComponent>()
   const schematicComponentsByImportedId = new Map<string, SchematicComponent>()
   const sourceComponentIdByPcbComponentId = new Map<string, string>()
@@ -889,13 +898,6 @@ export const createComponentsFromCircuitJson = (
           layer: elm.layer,
         }),
       )
-    } else if (elm.type === "pcb_courtyard_outline") {
-      components.push(
-        new CourtyardOutline({
-          outline: elm.outline,
-          layer: elm.layer,
-        }),
-      )
     } else if (elm.type === "schematic_line") {
       addSchematicPrimitive(
         elm,
@@ -1062,5 +1064,14 @@ export const createComponentsFromCircuitJson = (
       }
     }
   }
+  for (const courtyard of stitchedCourtyardOutlines) {
+    components.push(
+      new CourtyardOutline({
+        outline: courtyard.outline,
+        layer: courtyard.layer,
+      }),
+    )
+  }
+
   return components
 }

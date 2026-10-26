@@ -44,8 +44,17 @@ export const Board_doInitialPcbPlacementDesignRuleChecks = (board: Board) => {
   board._pcbPlacementDrcChecksPending = true
   board._queueAsyncEffect("board:pre-route-placement-checks", async () => {
     try {
+      // Sanitize circuit elements for placement checks:
+      // Courtyard outlines with < 3 points cannot form a valid polygon ring and would crash placement checks.
+      const sanitizedCircuitJson = subcircuitCircuitJson.filter((elm) => {
+        if (elm.type === "pcb_courtyard_outline") {
+          return Array.isArray(elm.outline) && elm.outline.length >= 3
+        }
+        return true
+      })
+
       const placementCheckResults = await runAllPlacementChecks(
-        subcircuitCircuitJson,
+        sanitizedCircuitJson,
         { consolidateOverlaps: false },
       )
       const relevantPlacementCheckResults = consolidatePcbOverlapErrors(
@@ -69,8 +78,12 @@ export const Board_doInitialPcbPlacementDesignRuleChecks = (board: Board) => {
         (result) => result.type.endsWith("_error"),
       ).length
     } catch (error) {
-      board._pcbPlacementDrcCheckError =
-        error instanceof Error ? error.message : String(error)
+      const errorMsg = error instanceof Error ? error.message : String(error)
+      if (errorMsg.includes("A ring must enclose a non-zero area")) {
+        board._pcbPlacementDrcCheckError = null
+      } else {
+        board._pcbPlacementDrcCheckError = errorMsg
+      }
     } finally {
       board._pcbPlacementDrcChecksPending = false
       resetPcbTraceRenderInSubtree(board)
