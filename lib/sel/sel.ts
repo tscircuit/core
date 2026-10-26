@@ -1,10 +1,10 @@
 import type {
-  ChipProps,
-  PinLabelFromPinLabelMap,
-  PinLabelsProp,
   ChipConnections,
   ChipPinLabels,
+  ChipProps,
   Connections,
+  PinLabelFromPinLabelMap,
+  PinLabelsProp,
   Selectors,
 } from "@tscircuit/props"
 import type {
@@ -16,7 +16,7 @@ import type {
 } from "./sel-utility-types"
 
 type NonPolarizedSel = Record<
-  `R${Nums40}` | `F${Nums40}`,
+  `R${Nums40}` | `R${number}` | `F${Nums40}` | `F${number}`,
   {
     pin1: string
     pin2: string
@@ -26,7 +26,7 @@ type NonPolarizedSel = Record<
 >
 
 type SwSel = Record<
-  `SW${Nums40}`,
+  `SW${Nums40}` | `SW${number}`,
   {
     pin1: string
     pin2: string
@@ -43,11 +43,17 @@ type SwSel = Record<
 
 type PolarizedSel = Record<
   | `C${Nums40}`
+  | `C${number}`
   | `L${Nums40}`
+  | `L${number}`
   | `LED${Nums40}`
+  | `LED${number}`
   | `D${Nums40}`
+  | `D${number}`
   | `Y${Nums40}`
-  | `B${Nums16}`,
+  | `Y${number}`
+  | `B${Nums16}`
+  | `B${number}`,
   {
     pin1: string
     pin2: string
@@ -93,16 +99,25 @@ type CommonNetNames =
   | "RUN"
   | "SWD"
   | `GPIO${Nums40}`
+  | `GPIO${number}`
 
-type TransistorSel = Record<`Q${Nums40}`, Record<TransistorPinNames, string>>
+type TransistorSel = Record<
+  `Q${Nums40}` | `Q${number}`,
+  Record<TransistorPinNames, string>
+>
 
 type JumperSel = Record<
-  `J${Nums40}` | `JP${Nums40}` | `CN${Nums40}`,
+  | `J${Nums40}`
+  | `J${number}`
+  | `JP${Nums40}`
+  | `JP${number}`
+  | `CN${Nums40}`
+  | `CN${number}`,
   Record<PinNumbers100 | CommonPinNames, string> & ChipFnSel
 >
 
 type ChipSel = Record<
-  `U${Nums40}` | "USBC",
+  `U${Nums40}` | `U${number}` | "USBC",
   Record<CommonPinNames | PinNumbers100, string> & ChipFnSel
 >
 
@@ -115,7 +130,15 @@ type NetSel<N extends string = CommonNetNames> = Record<"net", NetSelFn<N>>
 
 type ExplicitModuleSel = Record<
   "subcircuit" | "module" | "group",
-  Record<`S${Nums40}` | `M${Nums40}` | `G${Nums40}`, SelWithoutSubcircuit>
+  Record<
+    | `S${Nums40}`
+    | `S${number}`
+    | `M${Nums40}`
+    | `M${number}`
+    | `G${Nums40}`
+    | `G${number}`,
+    SelWithoutSubcircuit
+  >
 >
 
 export type GenericConnectionsAndSelectorsSel = Record<
@@ -136,7 +159,7 @@ export type GenericConnectionsAndSelectorsSel = Record<
         : never
     : never
 >
-type TestPointSel = Record<`TP${Nums40}`, { pin1: string }>
+type TestPointSel = Record<`TP${Nums40}` | `TP${number}`, { pin1: string }>
 
 type SelWithoutSubcircuit = NonPolarizedSel &
   PolarizedSel &
