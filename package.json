@@ -143,6 +143,7 @@
     "jscad-fiber": "^0.0.88"
   },
   "overrides": {
+    "@tscircuit/cli": "0.1.2410",
     "@tscircuit/props": "^0.0.709",
     "circuit-json": "^0.0.534",
     "@tscircuit/cableprinter": "^0.0.6"
