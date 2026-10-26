@@ -1,6 +1,6 @@
 import {
-  transistorProps,
   resolveManufacturerPartNumber,
+  transistorProps,
 } from "@tscircuit/props"
 import {
   type BaseSymbolName,
@@ -8,8 +8,8 @@ import {
   type TransistorPorts,
 } from "lib/utils/constants"
 import { getPinNumberFromLabels } from "lib/utils/getPortFromHints"
-import type { Port } from "../primitive-components/Port"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
+import type { Port } from "../primitive-components/Port"
 
 const SHORT_ALIASES: Record<string, string[]> = {
   collector: ["c"],
@@ -38,10 +38,55 @@ export class Transistor extends NormalComponent<
   }
 
   initPorts() {
-    // Pin roles come from the schematic symbol's named port labels
-    // (e.g. [["1","collector"],["2","base"],["3","emitter"]]) rather than a
-    // hardcoded pin-number map; only short aliases ("c"/"b"/"e") are added
-    // here, attached to whichever pin the symbol labels with the long name.
+    const pinLabels = this._resolvePinLabels()
+    const hasPinLabels = Boolean(pinLabels)
+
+    if (hasPinLabels && pinLabels) {
+      const additionalAliases: Record<`pin${number}`, string[]> = {}
+      for (const [pinKey, labelOrLabels] of Object.entries(pinLabels)) {
+        const pinNum = Number(pinKey.replace(/\D/g, ""))
+        if (!pinNum) continue
+        const labels = Array.isArray(labelOrLabels)
+          ? labelOrLabels
+          : [labelOrLabels]
+        const extra: string[] = []
+        for (const l of labels) {
+          const lower = l.toLowerCase()
+          if (lower === "base" || lower === "b") extra.push("base", "b")
+          if (lower === "collector" || lower === "c")
+            extra.push("collector", "c")
+          if (lower === "emitter" || lower === "e") extra.push("emitter", "e")
+        }
+        if (extra.length > 0) {
+          additionalAliases[`pin${pinNum}`] = Array.from(new Set(extra))
+        }
+      }
+
+      super.initPorts({
+        pinCount: 3,
+        ignoreSymbolPorts: true,
+        additionalAliases,
+      })
+
+      const symbol = this.getSchematicSymbol()
+      if (symbol) {
+        if (this.collector) {
+          this.collector.schematicSymbolPortDef =
+            symbol.ports.find((p) => p.labels.includes("collector")) ?? null
+        }
+        if (this.base) {
+          this.base.schematicSymbolPortDef =
+            symbol.ports.find((p) => p.labels.includes("base")) ?? null
+        }
+        if (this.emitter) {
+          this.emitter.schematicSymbolPortDef =
+            symbol.ports.find((p) => p.labels.includes("emitter")) ?? null
+        }
+      }
+      return
+    }
+
+    // Default pin assignment when no pinLabels provided
     const additionalAliases: Record<`pin${number}`, string[]> = {}
     const symbol = this.getSchematicSymbol()
     for (const symPort of symbol?.ports ?? []) {

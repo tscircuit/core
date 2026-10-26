@@ -1,16 +1,6 @@
-import { resolveFootprinterPolarity } from "./utils/resolve-footprinter-polarity"
-import { NormalComponent_doInitialSourcePinSpecificationChecks } from "./NormalComponent_doInitialSourcePinSpecificationChecks"
-import {
-  getNumericPinLabels,
-  isPhysicalPinName,
-  resolvePinLabels,
-  type ResolvedPinLabel,
-} from "lib/utils/schematic/resolvePinLabels"
-import { resolveManufacturerPartNumber } from "@tscircuit/props"
-import { composeCadModelRotation } from "lib/utils/cad/compose-cad-model-rotation"
-import { getFoldedCadComponentPlacement } from "lib/utils/cad/get-folded-cad-component-placement"
 import { fp } from "@tscircuit/footprinter"
 import { normalizeDegrees } from "@tscircuit/math-utils"
+import { resolveManufacturerPartNumber } from "@tscircuit/props"
 import type {
   CadModelGlb,
   CadModelGltf,
@@ -46,6 +36,8 @@ import {
 import { underscorifyPinStyles } from "lib/soup/underscorifyPinStyles"
 import { underscorifyPortArrangement } from "lib/soup/underscorifyPortArrangement"
 import { getBoundsForSchematic } from "lib/utils/autorouting/getBoundsForSchematic"
+import { composeCadModelRotation } from "lib/utils/cad/compose-cad-model-rotation"
+import { getFoldedCadComponentPlacement } from "lib/utils/cad/get-folded-cad-component-placement"
 import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
 import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromCircuitJson"
 import { filterPinLabels } from "lib/utils/filterPinLabels"
@@ -71,6 +63,12 @@ import { getPinsFromPortArrangement } from "lib/utils/schematic/getSizeOfSidesFr
 import { isCircuitJsonSymbol } from "lib/utils/schematic/isCircuitJsonSymbol"
 import { normalizeSchematicSymbolCircuitJson } from "lib/utils/schematic/normalizeSchematicSymbolCircuitJson"
 import { parsePinNumberFromLabelsOrThrow } from "lib/utils/schematic/parsePinNumberFromLabelsOrThrow"
+import {
+  type ResolvedPinLabel,
+  getNumericPinLabels,
+  isPhysicalPinName,
+  resolvePinLabels,
+} from "lib/utils/schematic/resolvePinLabels"
 import { selectSymbolCircuitJson } from "lib/utils/schematic/selectSymbolCircuitJson"
 import {
   type ReactElement,
@@ -95,6 +93,8 @@ import {
   NormalComponent_doInitialCheckRefDesConvention,
   getDefaultExpectedRefDesPrefixesForFtype,
 } from "./NormalComponent_doInitialCheckRefDesConvention"
+import { NormalComponent_doInitialComponentAvailabilityWarning } from "./NormalComponent_doInitialComponentAvailabilityWarning"
+import { NormalComponent_doInitialMissingManufacturerPartNumberWarning } from "./NormalComponent_doInitialMissingManufacturerPartNumberWarning"
 import {
   NormalComponent_doInitialPartOrientationAnalysis,
   NormalComponent_updatePartOrientationAnalysis,
@@ -105,8 +105,7 @@ import { NormalComponent_doInitialResolveFootprintPinLabels } from "./NormalComp
 import { NormalComponent_doInitialSchematicComponentRender } from "./NormalComponent_doInitialSchematicComponentRender"
 import { NormalComponent_doInitialSilkscreenOverlapAdjustment } from "./NormalComponent_doInitialSilkscreenOverlapAdjustment"
 import { NormalComponent_doInitialSourceDesignRuleChecks } from "./NormalComponent_doInitialSourceDesignRuleChecks"
-import { NormalComponent_doInitialMissingManufacturerPartNumberWarning } from "./NormalComponent_doInitialMissingManufacturerPartNumberWarning"
-import { NormalComponent_doInitialComponentAvailabilityWarning } from "./NormalComponent_doInitialComponentAvailabilityWarning"
+import { NormalComponent_doInitialSourcePinSpecificationChecks } from "./NormalComponent_doInitialSourcePinSpecificationChecks"
 import { NormalComponent_doInitialSupplierFootprintMismatchWarning } from "./NormalComponent_doInitialSupplierFootprintMismatchWarning"
 import { canMergePortDefinitions } from "./utils/canMergePortDefinitions"
 import { getPrimaryPortsFromPortHintGroups } from "./utils/getPrimaryPortsFromPortHintGroups"
@@ -115,6 +114,7 @@ import { isBlobUrl } from "./utils/isBlobUrl"
 import { isHttpUrl } from "./utils/isHttpUrl"
 import { isStaticAssetPath } from "./utils/isStaticAssetPath"
 import { parseLibraryFootprintRef } from "./utils/parseLibraryFootprintRef"
+import { resolveFootprinterPolarity } from "./utils/resolve-footprinter-polarity"
 
 const debug = Debug("tscircuit:core")
 
@@ -649,7 +649,8 @@ export class NormalComponent<
   }
 
   _resolvePinLabels(): Record<string, string | string[]> | undefined {
-    const pinLabels = this._parsedProps.pinLabels
+    const pinLabels =
+      this._parsedProps.pinLabels ?? (this.props as any).pinLabels
     const parsedPinLabels =
       pinLabels && Array.isArray(pinLabels)
         ? Object.fromEntries(
