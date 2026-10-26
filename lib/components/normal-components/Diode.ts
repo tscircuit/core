@@ -1,4 +1,3 @@
-import { symbols } from "schematic-symbols"
 import { diodeProps, resolveManufacturerPartNumber } from "@tscircuit/props"
 import type { SourceSimpleDiodeInput } from "circuit-json"
 import {
@@ -6,8 +5,10 @@ import {
   type Ftype,
   type PolarizedPassivePorts,
 } from "lib/utils/constants"
+import { symbols } from "schematic-symbols"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { isFootprinterString } from "../base-components/NormalComponent/utils/isFootprinterString"
+import { resolveFootprinterPolarity } from "../base-components/NormalComponent/utils/resolve-footprinter-polarity"
 import type { Port } from "../primitive-components/Port"
 
 export class Diode extends NormalComponent<
@@ -74,12 +75,32 @@ export class Diode extends NormalComponent<
       !hasFootprintChild &&
       (!footprint || isFootprinterString(footprint))
 
+    const { positivePin, negativePin } =
+      footprint && isFootprinterString(footprint)
+        ? resolveFootprinterPolarity({
+            footprint,
+            componentName: this.componentName,
+            name: this.name,
+            pinLabels: this._resolvePinLabels(),
+          })
+        : { positivePin: 1, negativePin: 2 }
     super.initPorts({
       pinCount: 2,
+      implicitPinLabels:
+        shouldAddDefaultAliases && positivePin !== 1
+          ? {
+              [`pin${positivePin}`]: ["anode", "pos"],
+              [`pin${negativePin}`]: ["cathode", "neg"],
+            }
+          : undefined,
       ignoreSymbolPorts: !hasPinLabels && !shouldAddDefaultAliases,
       additionalAliases: {
-        pin1: shouldAddDefaultAliases ? ["anode", "pos", "left"] : [],
-        pin2: shouldAddDefaultAliases ? ["cathode", "neg", "right"] : [],
+        [`pin${positivePin}`]: shouldAddDefaultAliases
+          ? ["anode", "pos", positivePin === 1 ? "left" : "right"]
+          : [],
+        [`pin${negativePin}`]: shouldAddDefaultAliases
+          ? ["cathode", "neg", negativePin === 1 ? "left" : "right"]
+          : [],
       },
     })
   }
