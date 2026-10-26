@@ -77,6 +77,7 @@ export const orderedRenderPhases = [
   "PcbDesignRuleChecks",
   "SilkscreenOverlapAdjustment",
   "CadModelRender",
+  "DrawingRender",
   "PartsEngineRender",
   "MissingManufacturerPartNumberWarning",
   "ComponentAvailabilityWarning",

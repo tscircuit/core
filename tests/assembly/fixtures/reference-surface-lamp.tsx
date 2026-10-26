@@ -1,4 +1,5 @@
 import { assembly, jscad } from "lib"
+import type { ReactNode } from "react"
 import type { JscadOperation } from "jscad-planner"
 
 /** Part-local, right-handed XYZ in mm, +Z up. The base's top is Z=12;
@@ -67,7 +68,10 @@ export function LampShade() {
   )
 }
 
-export function ReferenceSurfaceLamp({ shadeGap = 0 }: { shadeGap?: number }) {
+export function ReferenceSurfaceLamp({
+  shadeGap = 0,
+  children,
+}: { shadeGap?: number; children?: ReactNode }) {
   return (
     <assembly.device name="LAMP">
       <assembly.part name="BASE" cadModel={{ jscad: lampBase }}>
@@ -136,6 +140,7 @@ export function ReferenceSurfaceLamp({ shadeGap = 0 }: { shadeGap?: number }) {
           normalDirection="z-"
         />
       </assembly.printedpart>
+      {children}
     </assembly.device>
   )
 }
