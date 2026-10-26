@@ -10,6 +10,10 @@ import { symbols } from "schematic-symbols"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { isFootprinterString } from "../base-components/NormalComponent/utils/isFootprinterString"
 import { resolveFootprinterPolarity } from "../base-components/NormalComponent/utils/resolve-footprinter-polarity"
+import {
+  resolveCompactSchSize,
+  withSchSizeNormalization,
+} from "../base-components/NormalComponent/utils/resolveCompactSchSize"
 import { Trace } from "../primitive-components/Trace/Trace"
 import { Capacitor_addPolarityFabricationSymbols } from "./Capacitor_addPolarityFabricationSymbols"
 import { Capacitor_getAutomaticMaxDecouplingTraceLength } from "./Capacitor_getAutomaticMaxDecouplingTraceLength"
@@ -33,10 +37,7 @@ export class Capacitor extends NormalComponent<
   _adjustSilkscreenTextAutomatically = true
   get config() {
     const baseSymbolName = this.props.symbolName ?? "capacitor"
-    const compactSize =
-      this.props.schSize === "sm" || this.props.schSize === "xs"
-        ? this.props.schSize
-        : undefined
+    const compactSize = resolveCompactSchSize(this.props.schSize)
     const compactSymbolName =
       compactSize && baseSymbolName === "capacitor"
         ? (`capacitor_${compactSize}` as BaseSymbolName)
@@ -51,7 +52,7 @@ export class Capacitor extends NormalComponent<
       schematicSymbolName: this.props.polarized
         ? "capacitor_polarized"
         : schematicSymbolName,
-      zodProps: capacitorProps,
+      zodProps: withSchSizeNormalization(capacitorProps),
       sourceFtype: FTYPE.simple_capacitor,
     }
   }
@@ -93,7 +94,7 @@ export class Capacitor extends NormalComponent<
 
     if (
       this._parsedProps.capacitance !== undefined &&
-      !isNaN(this._parsedProps.capacitance)
+      !Number.isNaN(this._parsedProps.capacitance)
     ) {
       capacitanceDisplay =
         typeof inputCapacitance === "string"

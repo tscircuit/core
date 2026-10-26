@@ -9,6 +9,10 @@ import { symbols } from "schematic-symbols"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { isFootprinterString } from "../base-components/NormalComponent/utils/isFootprinterString"
 import { resolveFootprinterPolarity } from "../base-components/NormalComponent/utils/resolve-footprinter-polarity"
+import {
+  resolveCompactSchSize,
+  withSchSizeNormalization,
+} from "../base-components/NormalComponent/utils/resolveCompactSchSize"
 import type { Port } from "../primitive-components/Port"
 
 export class Diode extends NormalComponent<
@@ -40,10 +44,7 @@ export class Diode extends NormalComponent<
       (variantSymbol && symbolMap[variantSymbol]) ||
       this.props.symbolName ||
       "diode"
-    const compactSize =
-      this.props.schSize === "sm" || this.props.schSize === "xs"
-        ? this.props.schSize
-        : undefined
+    const compactSize = resolveCompactSchSize(this.props.schSize)
     const compactSymbolName =
       compactSize &&
       (baseSymbolName === "diode" ||
@@ -59,7 +60,7 @@ export class Diode extends NormalComponent<
     return {
       schematicSymbolName,
       componentName: "Diode",
-      zodProps: diodeProps,
+      zodProps: withSchSizeNormalization(diodeProps),
       sourceFtype: "simple_diode" as Ftype,
     }
   }

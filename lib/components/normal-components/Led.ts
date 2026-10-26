@@ -8,6 +8,10 @@ import { symbols } from "schematic-symbols"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { isFootprinterString } from "../base-components/NormalComponent/utils/isFootprinterString"
 import { resolveFootprinterPolarity } from "../base-components/NormalComponent/utils/resolve-footprinter-polarity"
+import {
+  resolveCompactSchSize,
+  withSchSizeNormalization,
+} from "../base-components/NormalComponent/utils/resolveCompactSchSize"
 import type { Port } from "../primitive-components/Port"
 import { Led_addPolarityFabricationSymbol } from "./Led_addPolarityFabricationSymbol"
 
@@ -25,10 +29,7 @@ export class Led extends NormalComponent<
     const baseSymbolName = variantSymbol
       ? symbolMap[variantSymbol]
       : (this.props.symbolName ?? "led")
-    const compactSize =
-      this.props.schSize === "sm" || this.props.schSize === "xs"
-        ? this.props.schSize
-        : undefined
+    const compactSize = resolveCompactSchSize(this.props.schSize)
     const compactSymbolName =
       compactSize && baseSymbolName === "led" ? `led_${compactSize}` : undefined
     const schematicSymbolName =
@@ -39,7 +40,7 @@ export class Led extends NormalComponent<
     return {
       schematicSymbolName,
       componentName: "Led",
-      zodProps: ledProps,
+      zodProps: withSchSizeNormalization(ledProps),
       sourceFtype: "simple_led" as Ftype,
     }
   }

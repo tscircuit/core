@@ -4,6 +4,10 @@ import { formatSiUnit } from "format-si-unit"
 import type { Ftype, PassivePorts } from "lib/utils/constants"
 import { symbols } from "schematic-symbols"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
+import {
+  resolveCompactSchSize,
+  withSchSizeNormalization,
+} from "../base-components/NormalComponent/utils/resolveCompactSchSize"
 import { Port } from "../primitive-components/Port"
 import { Trace } from "../primitive-components/Trace/Trace"
 
@@ -15,10 +19,7 @@ export class Resistor extends NormalComponent<
 
   get config() {
     const baseSymbolName = this.props.symbolName ?? "boxresistor"
-    const compactSize =
-      this.props.schSize === "sm" || this.props.schSize === "xs"
-        ? this.props.schSize
-        : undefined
+    const compactSize = resolveCompactSchSize(this.props.schSize)
     const compactSymbolName =
       compactSize &&
       (baseSymbolName === "boxresistor" || baseSymbolName === "resistor")
@@ -32,7 +33,7 @@ export class Resistor extends NormalComponent<
     return {
       componentName: "Resistor",
       schematicSymbolName,
-      zodProps: resistorProps,
+      zodProps: withSchSizeNormalization(resistorProps),
       sourceFtype: "simple_resistor" as Ftype,
     }
   }
