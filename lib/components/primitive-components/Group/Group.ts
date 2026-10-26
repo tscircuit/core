@@ -1,3 +1,4 @@
+import { getDogboneViaSizeError } from "lib/utils/autorouting/get-dogbone-via-size-error"
 import { getAutoroutingPhasePcbTracePaths } from "./get-autorouting-phase-pcb-trace-paths"
 import {
   type SimpleRouteJson as AutorouterSimpleRouteJson,
@@ -1582,6 +1583,16 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         continue
       }
 
+      if (!getPrecomputedRoutingResult && !isTraceSimplificationPhase) {
+        const dogboneViaSizeError = getDogboneViaSizeError(simpleRouteJson, {
+          componentNamesById: getPcbComponentNamesById(this.root!.db),
+          requiresDogbone: phaseAutorouterConfig.preset === "dogbone",
+        })
+        if (dogboneViaSizeError) {
+          throw new RoutingPhasePreparationError(dogboneViaSizeError)
+        }
+      }
+
       // Enable jumpers for auto_jumper preset
       const phaseIsAutoJumperPreset =
         routingPhasePlan.autorouter !== undefined
@@ -2073,10 +2084,39 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   _startAsyncAutorouting() {
     if (this._hasStartedAsyncAutorouting) return
     this._hasStartedAsyncAutorouting = true
-    if (this._getAutorouterConfig().local) {
-      this._queueAsyncEffect("autorouting", async () => {
+    const autorouterConfig = this._getAutorouterConfig()
+    this._queueAsyncEffect(
+      autorouterConfig.local ? "autorouting" : "make-http-autorouting-request",
+      async () => {
         try {
-          await this._runLocalAutorouting()
+          if (autorouterConfig.local) {
+            await this._runLocalAutorouting()
+          } else {
+            const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
+              db: this.root!.db,
+              minTraceWidth: Number(this._parsedProps.minTraceWidth ?? 0.15),
+              nominalTraceWidth: Number(
+                this._parsedProps.defaultTraceWidth ??
+                  this._parsedProps.nominalTraceWidth ??
+                  this._parsedProps.minTraceWidth ??
+                  0.15,
+              ),
+              subcircuit_id: this.subcircuit_id,
+              subcircuitComponent: this,
+            })
+            simpleRouteJson.allowViaInPad =
+              autorouterConfig.allowViaInPad ?? simpleRouteJson.allowViaInPad
+            const dogboneViaSizeError = getDogboneViaSizeError(
+              simpleRouteJson,
+              {
+                componentNamesById: getPcbComponentNamesById(this.root!.db),
+              },
+            )
+            if (dogboneViaSizeError) {
+              throw new RoutingPhasePreparationError(dogboneViaSizeError)
+            }
+            await this._runEffectMakeHttpAutoroutingRequest()
+          }
         } catch (error) {
           if (!(error instanceof RoutingPhasePreparationError)) throw error
 
@@ -2106,12 +2146,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           }
           throw error
         }
-      })
-    } else {
-      this._queueAsyncEffect("make-http-autorouting-request", async () =>
-        this._runEffectMakeHttpAutoroutingRequest(),
-      )
-    }
+      },
+    )
   }
 
   doInitialPcbTraceRender() {
