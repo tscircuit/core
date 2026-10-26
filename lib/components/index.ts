@@ -128,3 +128,7 @@ export { PcbSoldermaskOpening } from "./primitive-components/PcbSoldermaskOpenin
 export { AssemblyPrintedPart } from "./primitive-components/AssemblyPrintedPart"
 
 export { AssemblyCable } from "./primitive-components/AssemblyCable"
+
+export { AssemblyDrawingPage } from "./primitive-components/AssemblyDrawingPage"
+export { AssemblyDrawingPartView } from "./primitive-components/AssemblyDrawingPartView"
+export { AssemblyDrawingTitleBlock } from "./primitive-components/AssemblyDrawingTitleBlock"
