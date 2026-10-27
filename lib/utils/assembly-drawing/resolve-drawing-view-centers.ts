@@ -1,8 +1,8 @@
 import { selectAll } from "css-select"
-import { cssSelectPrimitiveComponentAdapter } from "../base-components/PrimitiveComponent/cssSelectPrimitiveComponentAdapter"
-import { preprocessSelector } from "../base-components/PrimitiveComponent/preprocessSelector"
-import type { AssemblyDrawingPage } from "./AssemblyDrawingPage"
-import { AssemblyDrawingPartView } from "./AssemblyDrawingPartView"
+import { cssSelectPrimitiveComponentAdapter } from "lib/components/base-components/PrimitiveComponent/cssSelectPrimitiveComponentAdapter"
+import { preprocessSelector } from "lib/components/base-components/PrimitiveComponent/preprocessSelector"
+import type { AssemblyDrawingPage } from "lib/components/primitive-components/AssemblyDrawingPage"
+import { AssemblyDrawingPartView } from "lib/components/primitive-components/AssemblyDrawingPartView"
 
 /** Paper-space points in mm, +X right and +Y up. Viewport centers are independent
  * of the right-handed CAD world frame (+Z up); they never transform model points.

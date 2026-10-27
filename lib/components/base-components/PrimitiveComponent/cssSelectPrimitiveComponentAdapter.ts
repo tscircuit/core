@@ -1,4 +1,4 @@
-import { PrimitiveComponent } from "lib/components"
+import type { PrimitiveComponent } from "./PrimitiveComponent"
 import type { Options } from "css-select"
 
 /**

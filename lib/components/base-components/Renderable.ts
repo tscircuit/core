@@ -195,6 +195,11 @@ const asyncPhaseDependencies: Partial<Record<RenderPhase, RenderPhase[]>> = {
     "FetchPartFootprint",
   ],
   CadModelRender: ["PcbFootprintStringRender", "FetchPartFootprint"],
+  DrawingRender: [
+    "PcbFootprintStringRender",
+    "FetchPartFootprint",
+    "CadModelRender",
+  ],
   PartsEngineRender: ["PcbFootprintStringRender", "FetchPartFootprint"],
   MissingManufacturerPartNumberWarning: [
     "PcbFootprintStringRender",
