@@ -1,7 +1,7 @@
 {
   "name": "@tscircuit/core",
   "type": "module",
-  "version": "0.0.2219",
+  "version": "0.0.2220",
   "types": "dist/index.d.ts",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -38,7 +38,7 @@
     "@tscircuit/bus-lanes-solver": "https://jscdn.tscircuit.com/@tscircuit/bus-lanes-solver/0.0.35.tgz",
     "@tscircuit/cableprinter": "^0.0.6",
     "@tscircuit/capacity-autorouter": "^0.0.1012",
-    "@tscircuit/checks": "^0.0.264",
+    "@tscircuit/checks": "^0.0.265",
     "@tscircuit/circuit-json-util": "^0.0.128",
     "@tscircuit/common": "^0.0.20",
     "@tscircuit/copper-pour-solver": "^0.0.67",
@@ -75,11 +75,11 @@
     "bun-match-svg": "0.0.12",
     "calculate-elbow": "^0.0.12",
     "chokidar-cli": "^3.0.0",
-    "circuit-json": "^0.0.534",
+    "circuit-json": "^0.0.537",
     "circuit-json-to-bpc": "^0.0.13",
     "circuit-json-to-connectivity-map": "^0.0.33",
     "circuit-json-to-spice": "^0.0.45",
-    "circuit-to-svg": "^0.0.453",
+    "circuit-to-svg": "^0.0.454",
     "concurrently": "^9.1.2",
     "connectivity-map": "^1.0.1",
     "debug": "^4.3.6",
@@ -148,7 +148,7 @@
   },
   "overrides": {
     "@tscircuit/props": "https://pkg.pr.new/@tscircuit/props@f3be05bdfdda383371b6159fd65d3a3cc9ec6c4a",
-    "circuit-json": "^0.0.534",
+    "circuit-json": "^0.0.537",
     "@tscircuit/cableprinter": "^0.0.6"
   },
   "browser": {
