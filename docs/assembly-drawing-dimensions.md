@@ -38,9 +38,11 @@ parts. Missing or ambiguous names produce an error rather than measuring an
 arbitrary mesh edge. Each named feature must identify one native contour.
 
 The first reader supports native JSCAD operation plans, including printed-part
-JSX compiled to plans. View extent dimensions also work with imported CAD models
-and boards; native feature names in STEP/glTF and modelprinter strings are not
-resolved yet.
+JSX compiled to plans. This first reader measures native JSCAD parts at their authored origins, including
+translation, rotation, and unit scaling. Imported CAD, modelprinter URLs, boards,
+and models with fitted bounds or remapped axes need additional readers and produce
+a clear error when dimensioned. They continue to render normally in views without
+dimensions.
 
 Circuit JSON contains only resolved `drawing_dimension_line` strokes, witness
 attachments, formatted measurement text, and optional model-feature names. It

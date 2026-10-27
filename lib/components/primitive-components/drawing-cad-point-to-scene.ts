@@ -20,6 +20,12 @@ export function drawingCadPointToScene(cad: CadComponent, point: vec3): vec3 {
     [mat4.rotateZ, cad.rotation?.z ?? 0],
   ] as const)
     rotate(placement, placement, (angle * Math.PI) / 180)
+  if (cad.model_origin_position)
+    mat4.translate(placement, placement, [
+      -cad.model_origin_position.x,
+      -cad.model_origin_position.y,
+      -cad.model_origin_position.z,
+    ])
   const scale = cad.model_unit_to_mm_scale_factor ?? 1
   mat4.scale(placement, placement, [scale, scale, scale])
   const transformed = vec3.transformMat4([0, 0, 0], point, placement)

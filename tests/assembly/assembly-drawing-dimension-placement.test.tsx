@@ -1,3 +1,6 @@
+import { convertCircuitJsonToGltf } from "circuit-json-to-gltf"
+import { loadGLTFWithResourcesFromURL, createSceneFromGLTF } from "poppygl"
+import { vec3 } from "gl-matrix"
 import { expect, test } from "bun:test"
 import { assembly, jscad } from "lib"
 import { renderToJscadPlan } from "jscad-fiber/headless"
@@ -56,9 +59,37 @@ test("named witnesses match emitted meshes after CAD translation and quarter-tur
   const views = circuit.db.drawing_part_view.list()
   const lines = circuit.db.drawing_dimension_line.list()
   for (const view of views) {
-    const { points, camera } = await resolveDrawingDimensionGeometry(
+    const { camera } = await resolveDrawingDimensionGeometry(
       circuit.getCircuitJson(),
       view,
+    )
+    const glb = await convertCircuitJsonToGltf(
+      circuit
+        .getCircuitJson()
+        .filter(
+          (element) =>
+            (element.type === "cad_component" ||
+              element.type === "source_component") &&
+            view.source_component_ids!.includes(element.source_component_id),
+        ),
+      { format: "glb", includeModels: true, showBoundingBoxes: false },
+    )
+    const { gltf, resources } = await loadGLTFWithResourcesFromURL(
+      `data:model/gltf-binary;base64,${Buffer.from(glb as ArrayBuffer).toString("base64")}`,
+    )
+    const scene = createSceneFromGLTF(gltf, resources)
+    const points = scene.drawCalls.flatMap((call) =>
+      Array.from(call.indices!, (vertex) =>
+        vec3.transformMat4(
+          [0, 0, 0],
+          [
+            call.positions[vertex * 3]!,
+            call.positions[vertex * 3 + 1]!,
+            call.positions[vertex * 3 + 2]!,
+          ],
+          call.model,
+        ),
+      ),
     )
     const samples = projectDrawingDimensionPoints(points, camera, view)
     const line = lines.find(

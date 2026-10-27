@@ -61,4 +61,23 @@ test("dimensions reject misplaced children and unresolved model refs without par
   await expect(ambiguous.renderUntilSettled()).rejects.toThrow(
     'edgeRef ".rim" is ambiguous',
   )
+  const { circuit: imported } = getTestFixture()
+  imported.add(
+    <assembly.device name="fixture">
+      <assembly.part name="imported" modelUrl="https://example.com/part.glb" />
+      <assembly.drawing.page name="unsupported-reader" size="iso_a4">
+        <assembly.drawing.partview
+          partRef=".imported"
+          direction="z+"
+          width={80}
+          height={60}
+        >
+          <assembly.drawing.dimension widthOfView />
+        </assembly.drawing.partview>
+      </assembly.drawing.page>
+    </assembly.device>,
+  )
+  await expect(imported.renderUntilSettled()).rejects.toThrow(
+    "needs another model reader",
+  )
 })
