@@ -1,3 +1,5 @@
+import { isFootprinterString } from "../base-components/NormalComponent/utils/isFootprinterString"
+import { resolveFootprinterPolarity } from "../base-components/NormalComponent/utils/resolve-footprinter-polarity"
 import { normalizeDegrees } from "@tscircuit/math-utils"
 import { chipProps, resolveManufacturerPartNumber } from "@tscircuit/props"
 import { pcb_component_invalid_layer_error } from "circuit-json"
@@ -10,6 +12,17 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
   typeof chipProps,
   PinLabels
 > {
+  resolveFootprint() {
+    const footprint = super.resolveFootprint()
+    if (!isFootprinterString(footprint)) return footprint
+    return resolveFootprinterPolarity({
+      footprint,
+      componentName: "Chip",
+      name: this.name ?? "Chip",
+      pinLabels: this._resolvePinLabels(),
+    }).footprint
+  }
+
   get config() {
     return {
       componentName: "Chip",

@@ -1,4 +1,3 @@
-import { resolveFootprinterPolarity } from "./utils/resolve-footprinter-polarity"
 import { NormalComponent_doInitialSourcePinSpecificationChecks } from "./NormalComponent_doInitialSourcePinSpecificationChecks"
 import {
   getNumericPinLabels,
@@ -112,7 +111,6 @@ import { canMergePortDefinitions } from "./utils/canMergePortDefinitions"
 import { getPrimaryPortsFromPortHintGroups } from "./utils/getPrimaryPortsFromPortHintGroups"
 import { inferInternallyConnectedPinNamesFromPorts } from "./utils/inferInternallyConnectedPinNamesFromPorts"
 import { isBlobUrl } from "./utils/isBlobUrl"
-import { isFootprinterString } from "./utils/isFootprinterString"
 import { isHttpUrl } from "./utils/isHttpUrl"
 import { isStaticAssetPath } from "./utils/isStaticAssetPath"
 import { parseLibraryFootprintRef } from "./utils/parseLibraryFootprintRef"
@@ -684,18 +682,12 @@ export class NormalComponent<
 
   // Override to choose the effective footprint without rewriting user props.
   resolveFootprint() {
-    const footprint =
-      this._parsedProps.footprint ??
+    // Footprint-driven config can discover ports before props have been parsed.
+    return (
+      this._parsedProps?.footprint ??
       this.props.footprint ??
       this._getImpliedFootprintString?.()
-    if (!isFootprinterString(footprint)) return footprint
-    return resolveFootprinterPolarity({
-      footprint,
-      componentName: this.componentName,
-      name: this.name ?? this.componentName,
-      pinLabels: this._resolvePinLabels(),
-      polarized: this._parsedProps.polarized,
-    }).footprint
+    )
   }
 
   _addChildrenFromStringFootprint() {

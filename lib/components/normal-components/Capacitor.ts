@@ -18,6 +18,18 @@ export class Capacitor extends NormalComponent<
   PolarizedPassivePorts
 > {
   _adjustSilkscreenTextAutomatically = true
+  resolveFootprint() {
+    const footprint = super.resolveFootprint()
+    if (!isFootprinterString(footprint)) return footprint
+    return resolveFootprinterPolarity({
+      footprint,
+      componentName: "Capacitor",
+      name: this.name ?? "Capacitor",
+      pinLabels: this._resolvePinLabels(),
+      polarized: this._parsedProps.polarized,
+    }).footprint
+  }
+
   get config() {
     const baseSymbolName = this.props.symbolName ?? "capacitor"
     const compactSize =

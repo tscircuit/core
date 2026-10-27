@@ -15,6 +15,17 @@ export class Diode extends NormalComponent<
   typeof diodeProps,
   PolarizedPassivePorts
 > {
+  resolveFootprint() {
+    const footprint = super.resolveFootprint()
+    if (!isFootprinterString(footprint)) return footprint
+    return resolveFootprinterPolarity({
+      footprint,
+      componentName: "Diode",
+      name: this.name ?? "Diode",
+      pinLabels: this._resolvePinLabels(),
+    }).footprint
+  }
+
   get config() {
     const symbolMap: Record<string, BaseSymbolName> = {
       schottky: "schottky_diode",

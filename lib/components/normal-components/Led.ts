@@ -14,6 +14,17 @@ export class Led extends NormalComponent<
   typeof ledProps,
   PolarizedPassivePorts
 > {
+  resolveFootprint() {
+    const footprint = super.resolveFootprint()
+    if (!isFootprinterString(footprint)) return footprint
+    return resolveFootprinterPolarity({
+      footprint,
+      componentName: "Led",
+      name: this.name ?? "Led",
+      pinLabels: this._resolvePinLabels(),
+    }).footprint
+  }
+
   get config() {
     const symbolMap: Record<string, BaseSymbolName> = {
       laser: "laser_diode",
