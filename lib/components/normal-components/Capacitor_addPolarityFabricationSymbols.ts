@@ -37,6 +37,7 @@ export const Capacitor_addPolarityFabricationSymbols = (
   if (
     root.pcbDisabled ||
     !capacitor.props.polarized ||
+    capacitor._parsedProps.pcbAutoPolarityMarkings === false ||
     !capacitor.pcb_component_id
   )
     return

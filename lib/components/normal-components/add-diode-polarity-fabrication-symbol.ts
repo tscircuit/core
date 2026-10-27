@@ -1,8 +1,9 @@
 import type { PcbFabricationNotePath, SourcePort } from "circuit-json"
 import { applyToPoint, compose, rotate, translate } from "transformation-matrix"
 import type { Led } from "./Led"
+import type { Diode } from "./Diode"
 
-const generatedNotes = new WeakMap<Led, PcbFabricationNotePath[]>()
+const generatedNotes = new WeakMap<Led | Diode, PcbFabricationNotePath[]>()
 
 const getPolarity = (port: SourcePort) => {
   const hints = [port.name, ...(port.port_hints ?? [])].map((hint) =>
@@ -24,35 +25,26 @@ const getPolarity = (port: SourcePort) => {
  * +Y up, +Z above the PCB. The diode axis is the direction from A to K, derived
  * after footprint rotation and layer mirroring; no second layer flip is applied.
  */
-export const Led_addPolarityFabricationSymbol = (led: Led): void => {
-  const root = led.root
+export const addDiodePolarityFabricationSymbol = (diode: Led | Diode): void => {
+  const root = diode.root
   if (!root) return
   const { db } = root
-  const previous = generatedNotes.get(led)
+  const previous = generatedNotes.get(diode)
   for (const path of previous ?? []) {
     db.pcb_fabrication_note_path.delete(path.pcb_fabrication_note_path_id)
   }
-  generatedNotes.delete(led)
-  if (root.pcbDisabled || !led.pcb_component_id) return
-  const pcb = db.pcb_component.get(led.pcb_component_id)
+  generatedNotes.delete(diode)
+  if (
+    root.pcbDisabled ||
+    diode._parsedProps.pcbAutoPolarityMarkings === false ||
+    !diode.pcb_component_id
+  )
+    return
+  const pcb = db.pcb_component.get(diode.pcb_component_id)
   if (!pcb || (pcb.layer !== "top" && pcb.layer !== "bottom")) return
 
-  // A producer explicitly declares when artwork supplies polarity. Ordinary
-  // paths and text must not suppress the fallback based on their appearance.
-  const filter = { pcb_component_id: pcb.pcb_component_id }
-  if (
-    db.pcb_fabrication_note_path
-      .list(filter)
-      .some((note) => note.is_polarity_marking === true) ||
-    db.pcb_fabrication_note_text
-      .list(filter)
-      .some((note) => note.is_polarity_marking === true)
-  ) {
-    return
-  }
-
   const ports = db.source_port.list({
-    source_component_id: led.source_component_id!,
+    source_component_id: diode.source_component_id!,
   })
   const anodes = ports.filter((port) => getPolarity(port) === "anode")
   const cathodes = ports.filter((port) => getPolarity(port) === "cathode")
@@ -73,12 +65,11 @@ export const Led_addPolarityFabricationSymbol = (led: Led): void => {
   const point = (x: number, y: number) => applyToPoint(frame, { x, y })
   const common = {
     pcb_component_id: pcb.pcb_component_id,
-    subcircuit_id: led.getSubcircuit()?.subcircuit_id ?? undefined,
+    subcircuit_id: diode.getSubcircuit()?.subcircuit_id ?? undefined,
     layer: pcb.layer,
-    is_polarity_marking: true,
   }
   const notes: PcbFabricationNotePath[] = []
-  generatedNotes.set(led, notes)
+  generatedNotes.set(diode, notes)
 
   const halfLength = Math.min(distance * 0.2, 0.4)
   const halfHeight = halfLength * 0.75
