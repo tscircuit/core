@@ -3,49 +3,78 @@ import { Chip } from "lib/components/normal-components/Chip"
 import { Diode } from "lib/components/normal-components/Diode"
 import { Led } from "lib/components/normal-components/Led"
 import { Capacitor } from "lib/components/normal-components/Capacitor"
-import { resolveFootprinterPolarity } from "lib/components/base-components/NormalComponent/utils/resolve-footprinter-polarity"
+import { Resistor } from "lib/components/normal-components/Resistor"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("component intent resolves Footprinter strings once without rewriting authored props", async () => {
+  const led = (footprint: string) => new Led({ name: "PART", footprint })
+  const diode = (footprint: string) => new Diode({ name: "PART", footprint })
+  const genericChip = (footprint: string) =>
+    new Chip({ name: "PART", footprint })
+  const polarizedCapacitor = (footprint: string) =>
+    new Capacitor({
+      name: "PART",
+      footprint,
+      capacitance: "10uF",
+      polarized: true,
+    })
+  const nonpolarizedCapacitor = (footprint: string) =>
+    new Capacitor({
+      name: "PART",
+      footprint,
+      capacitance: "10uF",
+      polarized: false,
+    })
   const cases = [
-    ["Led", "0805", undefined, "diode0805"],
-    ["Led", " 0805_pw0.8mm ", undefined, "diode0805_pw0.8mm"],
-    ["Chip", "C2040", undefined, "C2040"],
-    ["Chip", "sod835", undefined, "sod835"],
-    ["Diode", "0603_pw0.8mm", undefined, "diode0603_pw0.8mm"],
-    ["Led", "1608_metric", undefined, "diode1608_metric"],
-    ["Led", "led0805", undefined, "led0805"],
-    ["Led", "smdpads2_p2mm", undefined, "smdpads2_p2mm_anodepin1_cathodepin2"],
-    ["Chip", "sod123", undefined, "sod123_nonpolarized"],
-    ["Chip", "sod123_nonpolarized", undefined, "sod123_nonpolarized"],
-    ["Chip", "cap0805_polarized", undefined, "cap0805_polarized"],
-    ["Capacitor", "0805", true, "cap0805_polarized"],
-    ["Capacitor", "0805", false, "cap0805_nonpolarized"],
-    ["Capacitor", "cap0805_color(red)", true, "cap0805_color(red)_polarized"],
-    ["Capacitor", "cap0805_polarized", false, "cap0805_polarized"],
-    ["Resistor", "0805", undefined, "0805"],
+    [led, "0805", "diode0805"],
+    [led, " 0805_pw0.8mm ", "diode0805_pw0.8mm"],
+    [genericChip, "C2040", "C2040"],
+    [genericChip, "sod835", "sod835"],
+    [diode, "0603_pw0.8mm", "diode0603_pw0.8mm"],
+    [led, "1608_metric", "diode1608_metric"],
+    [led, "led0805", "led0805"],
+    [led, "smdpads2_p2mm", "smdpads2_p2mm_anodepin1_cathodepin2"],
+    [genericChip, "sod123", "sod123_nonpolarized"],
+    [genericChip, "sod123_nonpolarized", "sod123_nonpolarized"],
+    [genericChip, "cap0805_polarized", "cap0805_polarized"],
+    [polarizedCapacitor, "0805", "cap0805_polarized"],
+    [nonpolarizedCapacitor, "0805", "cap0805_nonpolarized"],
+    [polarizedCapacitor, "cap0805_color(red)", "cap0805_color(red)_polarized"],
+    [nonpolarizedCapacitor, "cap0805_polarized", "cap0805_polarized"],
   ] as const
-  for (const [componentName, footprint, polarized, expected] of cases) {
-    const input = { componentName, footprint, polarized, name: "PART" }
-    const resolved = resolveFootprinterPolarity(input)
-    expect(resolved.footprint).toBe(expected)
-    expect(
-      resolveFootprinterPolarity({ ...input, footprint: resolved.footprint }),
-    ).toEqual(resolved)
-    expect(input.footprint).toBe(footprint)
+  for (const [createComponent, footprint, expected] of cases) {
+    const component = createComponent(footprint)
+    expect(component.resolveFootprint()).toBe(expected)
+    expect(component.getFootprinterString()).toBe(expected)
+    expect(component.props.footprint).toBe(footprint)
+    expect(component._parsedProps.footprint).toBe(footprint)
+    const normalized = createComponent(expected)
+    expect(normalized.resolveFootprint()).toBe(expected)
+    expect(normalized.getFootprinterString()).toBe(expected)
   }
-  const pinLabels = { pin1: ["cathode"], pin2: ["anode"] }
-  const swapped = {
-    componentName: "Led",
+  const resistor = new Resistor({
+    name: "R_EXISTING",
     footprint: "0805",
-    name: "LED_SWAP",
-    pinLabels,
-  }
-  const result = resolveFootprinterPolarity(swapped)
-  expect(result.footprint).toBe("diode0805_anodepin2_cathodepin1")
-  expect(
-    resolveFootprinterPolarity({ ...swapped, footprint: result.footprint }),
-  ).toEqual(result)
+    resistance: "1k",
+  })
+  expect(resistor.resolveFootprint()).toBe("res0805")
+  expect(resistor.getFootprinterString()).toBe("res0805")
+  const pinLabels = { pin1: ["cathode"], pin2: ["anode"] }
+  const swappedLed = (footprint: string) =>
+    new Led({ name: "LED_SWAP", footprint, pinLabels })
+  const swapped = swappedLed("0805")
+  const swappedDefinition = "diode0805_anodepin2_cathodepin1"
+  expect(swapped.resolveFootprint()).toBe(swappedDefinition)
+  expect(swapped.getFootprinterString()).toBe(swappedDefinition)
+  expect(swapped.props.footprint).toBe("0805")
+  expect(swapped._parsedProps.footprint).toBe("0805")
+  expect(swapped._parsedProps.pinLabels).toEqual({
+    pin1: ["cathode"],
+    pin2: ["anode"],
+  })
+  expect(swappedLed(swappedDefinition).resolveFootprint()).toBe(
+    swappedDefinition,
+  )
 
   const { circuit } = getTestFixture()
   circuit.add(

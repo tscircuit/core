@@ -1,4 +1,8 @@
-import { diodeProps, resolveManufacturerPartNumber } from "@tscircuit/props"
+import {
+  diodeProps,
+  resolveManufacturerPartNumber,
+  type PinLabelsProp,
+} from "@tscircuit/props"
 import type { SourceSimpleDiodeInput } from "circuit-json"
 import {
   type BaseSymbolName,
@@ -8,8 +12,41 @@ import {
 import { symbols } from "schematic-symbols"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { isFootprinterString } from "../base-components/NormalComponent/utils/isFootprinterString"
-import { resolveFootprinterPolarity } from "../base-components/NormalComponent/utils/resolve-footprinter-polarity"
+import { parseFootprinterDefinition } from "lib/utils/footprints/parse-footprinter-definition"
+import { resolveTwoTerminalPinMapping } from "lib/utils/footprints/resolve-two-terminal-pin-mapping"
 import type { Port } from "../primitive-components/Port"
+
+/** Diode and LED packages share A/K terminal and Footprinter artwork rules. */
+export const resolveDiodeFootprint = <Footprint>(
+  footprint: Footprint,
+  { name, pinLabels }: { name: string; pinLabels?: PinLabelsProp },
+) => {
+  const parsed = parseFootprinterDefinition(footprint)
+  if (!parsed) return { footprint, positivePin: 1, negativePin: 2 }
+  const { definition, parameters } = parsed
+  const terminals = resolveTwoTerminalPinMapping({
+    name,
+    pinLabels,
+    explicitPositive: parameters.anodepin,
+    explicitNegative: parameters.cathodepin,
+    positiveOption: "anodepin",
+    negativeOption: "cathodepin",
+    defaultPositivePin: ["do219ad", "sod323he"].includes(parameters.fn) ? 2 : 1,
+  })
+  let resolved = /^\d{4,5}(?=$|_|x)/.test(definition)
+    ? `diode${definition}`
+    : definition
+  if (
+    terminals.hasPolarityLabels ||
+    (parameters.fn === "smdpads" && parameters.num_pins === 2)
+  ) {
+    if (parameters.anodepin === undefined)
+      resolved += `_anodepin${terminals.positivePin}`
+    if (parameters.cathodepin === undefined)
+      resolved += `_cathodepin${terminals.negativePin}`
+  }
+  return { ...terminals, footprint: resolved }
+}
 
 export class Diode extends NormalComponent<
   typeof diodeProps,
@@ -18,9 +55,7 @@ export class Diode extends NormalComponent<
   resolveFootprint() {
     const footprint = super.resolveFootprint()
     if (!isFootprinterString(footprint)) return footprint
-    return resolveFootprinterPolarity({
-      footprint,
-      componentName: "Diode",
+    return resolveDiodeFootprint(footprint, {
       name: this.name ?? "Diode",
       pinLabels: this._resolvePinLabels(),
     }).footprint
@@ -88,9 +123,7 @@ export class Diode extends NormalComponent<
 
     const { positivePin, negativePin } =
       footprint && isFootprinterString(footprint)
-        ? resolveFootprinterPolarity({
-            footprint,
-            componentName: this.componentName,
+        ? resolveDiodeFootprint(footprint, {
             name: this.name,
             pinLabels: this._resolvePinLabels(),
           })

@@ -7,7 +7,7 @@ import type {
 import { symbols } from "schematic-symbols"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { isFootprinterString } from "../base-components/NormalComponent/utils/isFootprinterString"
-import { resolveFootprinterPolarity } from "../base-components/NormalComponent/utils/resolve-footprinter-polarity"
+import { resolveDiodeFootprint } from "./Diode"
 import type { Port } from "../primitive-components/Port"
 
 export class Led extends NormalComponent<
@@ -17,9 +17,7 @@ export class Led extends NormalComponent<
   resolveFootprint() {
     const footprint = super.resolveFootprint()
     if (!isFootprinterString(footprint)) return footprint
-    return resolveFootprinterPolarity({
-      footprint,
-      componentName: "Led",
+    return resolveDiodeFootprint(footprint, {
       name: this.name ?? "Led",
       pinLabels: this._resolvePinLabels(),
     }).footprint
@@ -67,9 +65,7 @@ export class Led extends NormalComponent<
 
     const { positivePin, negativePin } =
       footprint && isFootprinterString(footprint)
-        ? resolveFootprinterPolarity({
-            footprint,
-            componentName: this.componentName,
+        ? resolveDiodeFootprint(footprint, {
             name: this.name,
             pinLabels: this._resolvePinLabels(),
           })

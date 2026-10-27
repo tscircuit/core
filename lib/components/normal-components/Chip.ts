@@ -1,11 +1,10 @@
-import { isFootprinterString } from "../base-components/NormalComponent/utils/isFootprinterString"
-import { resolveFootprinterPolarity } from "../base-components/NormalComponent/utils/resolve-footprinter-polarity"
 import { normalizeDegrees } from "@tscircuit/math-utils"
 import { chipProps, resolveManufacturerPartNumber } from "@tscircuit/props"
 import { pcb_component_invalid_layer_error } from "circuit-json"
 import { NormalComponent } from "lib/components/base-components/NormalComponent"
 import { Port } from "lib/components/primitive-components/Port"
 import { Trace } from "lib/components/primitive-components/Trace/Trace"
+import { parseFootprinterDefinition } from "lib/utils/footprints/parse-footprinter-definition"
 import { Chip_doInitialPcbPlacementDesignRuleChecks } from "./Chip_doInitialPcbPlacementDesignRuleChecks"
 
 export class Chip<PinLabels extends string = never> extends NormalComponent<
@@ -14,13 +13,16 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
 > {
   resolveFootprint() {
     const footprint = super.resolveFootprint()
-    if (!isFootprinterString(footprint)) return footprint
-    return resolveFootprinterPolarity({
-      footprint,
-      componentName: "Chip",
-      name: this.name ?? "Chip",
-      pinLabels: this._resolvePinLabels(),
-    }).footprint
+    const parsed = parseFootprinterDefinition(footprint)
+    if (!parsed) return footprint
+    const { definition, parameters } = parsed
+    if (
+      parameters.polarized !== undefined ||
+      parameters.nonpolarized !== undefined
+    ) {
+      return definition
+    }
+    return `${definition}_nonpolarized`
   }
 
   get config() {
