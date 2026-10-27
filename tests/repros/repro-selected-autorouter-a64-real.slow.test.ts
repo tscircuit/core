@@ -49,9 +49,6 @@ beforeAll(async () => {
   ).toMatchSvgSnapshot(import.meta.path, undefined, { diffThresholdPercent: 0 })
 })
 
-test.failing(
-  "Core's selected autorouter repairs all original A64 byte-zero drill/pad intersections",
-  () => {
-    expect(overlaps).toHaveLength(0)
-  },
-)
+test("Core's selected autorouter repairs all original A64 byte-zero drill/pad intersections", () => {
+  expect(overlaps).toHaveLength(0)
+})
