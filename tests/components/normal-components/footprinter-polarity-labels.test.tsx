@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("core polarity symbols follow resolved footprint terminals through rotation and mirroring", async () => {
+test("native footprint polarity follows pinLabels through rotation and mirroring", async () => {
   const { circuit } = getTestFixture()
   const cases = [
     {
@@ -105,34 +105,29 @@ test("core polarity symbols follow resolved footprint terminals through rotation
       .list({ source_component_id: source.source_component_id })
       .find((port) => port.name === "anode")!
     expect(anode.pin_number).toBe(configuration.reversed ? 2 : 1)
-    const cathode = circuit.db.source_port
-      .list({ source_component_id: source.source_component_id })
-      .find((port) => port.name === "cathode")!
-    const a = circuit.db.pcb_port.getWhere({
+    const port = circuit.db.pcb_port.getWhere({
       source_port_id: anode.source_port_id,
     })!
-    const k = circuit.db.pcb_port.getWhere({
-      source_port_id: cathode.source_port_id,
-    })!
-    const filter = { pcb_component_id: pcb.pcb_component_id }
-    const paths = circuit.db.pcb_fabrication_note_path.list(filter)
-    expect(paths).toHaveLength(4)
-    expect(circuit.db.pcb_fabrication_note_text.list(filter)).toHaveLength(0)
-    expect(paths.every((path) => path.layer === configuration.layer)).toBe(true)
-    // Board/world points in mm (+X right, +Y up): compare artwork to the
-    // emitted terminals rather than reproducing the rotation or mirror.
-    expect(paths[0]!.route[0]!.x).toBeCloseTo(a.x)
-    expect(paths[0]!.route[0]!.y).toBeCloseTo(a.y)
-    expect(paths[3]!.route[1]!.x).toBeCloseTo(k.x)
-    expect(paths[3]!.route[1]!.y).toBeCloseTo(k.y)
-    const bar = paths[2]!.route
-    const barCenter = {
-      x: (bar[0]!.x + bar[1]!.x) / 2,
-      y: (bar[0]!.y + bar[1]!.y) / 2,
-    }
-    expect(Math.hypot(barCenter.x - k.x, barCenter.y - k.y)).toBeLessThan(
-      Math.hypot(barCenter.x - a.x, barCenter.y - a.y),
-    )
+    expect(
+      circuit.db.pcb_fabrication_note_path.list({
+        pcb_component_id: pcb.pcb_component_id,
+      }),
+    ).toHaveLength(4)
+    expect(
+      circuit.db.pcb_fabrication_note_text.list({
+        pcb_component_id: pcb.pcb_component_id,
+      }),
+    ).toHaveLength(2)
+    const plus = circuit.db.pcb_fabrication_note_text
+      .list({ pcb_component_id: pcb.pcb_component_id })
+      .find((note) => note.text === "+")!
+    expect(plus.layer).toBe(configuration.layer)
+    // Compare emitted points in board/world mm (+X right, +Y up). A positive
+    // dot product places the annotation on the same side of the body as A.
+    expect(
+      (plus.anchor_position.x - pcb.center.x) * (port.x - pcb.center.x) +
+        (plus.anchor_position.y - pcb.center.y) * (port.y - pcb.center.y),
+    ).toBeGreaterThan(0)
   }
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

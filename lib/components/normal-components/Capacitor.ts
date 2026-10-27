@@ -11,20 +11,7 @@ import { NormalComponent } from "../base-components/NormalComponent/NormalCompon
 import { isFootprinterString } from "../base-components/NormalComponent/utils/isFootprinterString"
 import { resolveFootprinterPolarity } from "../base-components/NormalComponent/utils/resolve-footprinter-polarity"
 import { Trace } from "../primitive-components/Trace/Trace"
-import { Capacitor_addPolarityFabricationSymbols } from "./Capacitor_addPolarityFabricationSymbols"
 import { Capacitor_getAutomaticMaxDecouplingTraceLength } from "./Capacitor_getAutomaticMaxDecouplingTraceLength"
-
-const CAPACITOR_CHIP_FOOTPRINTS = new Set([
-  "01005",
-  "0201",
-  "0402",
-  "0603",
-  "0805",
-  "1206",
-  "1210",
-  "2010",
-  "2512",
-])
 
 export class Capacitor extends NormalComponent<
   typeof capacitorProps,
@@ -66,6 +53,7 @@ export class Capacitor extends NormalComponent<
             footprint: this.props.footprint,
             componentName: this.componentName,
             name: this.name,
+            pinLabels: this._resolvePinLabels(),
             polarized: this._parsedProps.polarized,
           })
         : { positivePin: 1, negativePin: 2 }
@@ -112,14 +100,6 @@ export class Capacitor extends NormalComponent<
     return capacitanceDisplay
   }
 
-  getFootprinterString(): string | null {
-    const baseFootprint = super.getFootprinterString()
-    if (baseFootprint && CAPACITOR_CHIP_FOOTPRINTS.has(baseFootprint)) {
-      return `cap${baseFootprint}`
-    }
-    return baseFootprint
-  }
-
   doInitialCreateNetsFromProps() {
     this._createNetsFromProps([
       this.props.decouplingFor,
@@ -144,11 +124,6 @@ export class Capacitor extends NormalComponent<
       )
     }
     this._createTracesFromConnectionsProp()
-  }
-
-  doInitialPcbComponentSizeCalculation(): void {
-    super.doInitialPcbComponentSizeCalculation()
-    Capacitor_addPolarityFabricationSymbols(this)
   }
 
   doInitialSourceRender() {

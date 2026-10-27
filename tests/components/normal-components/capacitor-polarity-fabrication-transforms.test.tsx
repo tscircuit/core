@@ -1,7 +1,9 @@
 import { expect, test } from "bun:test"
+import { fp } from "@tscircuit/footprinter"
+import type { Capacitor } from "lib/components/normal-components/Capacitor"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("polarized capacitor signs follow actual pads on both layers and custom footprints", async () => {
+test("capacitor footprints retain resolved terminals and delegate artwork on both layers", async () => {
   const { circuit } = getTestFixture()
   const cases = [false, true].flatMap((reversed, mapping) =>
     (["top", "bottom"] as const).flatMap((layer, side) =>
@@ -76,32 +78,25 @@ test("polarized capacitor signs follow actual pads on both layers and custom foo
     const paths = circuit.db.pcb_fabrication_note_path.list({
       pcb_component_id: pcb.pcb_component_id,
     })
-    expect(paths).toHaveLength(3)
+    const capacitor = circuit.selectOne(`.${name}`) as Capacitor
+    const footprint = capacitor.resolveFootprint()
+    const expected =
+      typeof footprint === "string"
+        ? fp
+            .string(footprint)
+            .circuitJson()
+            .filter((e) => e.type === "pcb_fabrication_note_path").length
+        : 0
+    expect(paths).toHaveLength(expected)
     expect(paths.every((p) => p.layer === layer)).toBe(true)
-    // Compare sign centers with emitted ports rather than reconstructing a mirror.
-    for (const [path, target, other] of [
-      [paths[0]!, positive, negative],
-      [paths[2]!, negative, positive],
-    ] as const) {
-      const center = {
-        x: (path.route[0]!.x + path.route[1]!.x) / 2,
-        y: (path.route[0]!.y + path.route[1]!.y) / 2,
-      }
-      expect(Math.hypot(center.x - target.x, center.y - target.y)).toBeLessThan(
-        Math.hypot(center.x - other.x, center.y - other.y),
-      )
+    const pads = circuit.db.pcb_smtpad.list({
+      pcb_component_id: pcb.pcb_component_id,
+    })
+    for (const port of [positive, negative]) {
+      const pad = pads.find((pad) => pad.pcb_port_id === port.pcb_port_id)!
+      expect("x" in pad ? pad.x : undefined).toBeCloseTo(port.x)
+      expect("y" in pad ? pad.y : undefined).toBeCloseTo(port.y)
     }
-    const dx = negative.x - positive.x,
-      dy = negative.y - positive.y
-    const lengthSquared = dx * dx + dy * dy
-    for (const path of paths)
-      for (const point of path.route) {
-        const projection =
-          ((point.x - positive.x) * dx + (point.y - positive.y) * dy) /
-          lengthSquared
-        expect(projection).toBeGreaterThan(0)
-        expect(projection).toBeLessThan(1)
-      }
   }
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

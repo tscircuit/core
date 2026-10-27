@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("LED fabrication symbols follow actual pads at every rotation on both layers", async () => {
+test("Footprinter LED artwork follows resolved terminals at every rotation on both layers", async () => {
   const { circuit } = getTestFixture()
   const cases = (["top", "bottom"] as const).flatMap((layer, row) =>
     [0, 90, 180, 270].map((rotation, col) => ({
@@ -51,13 +51,20 @@ test("LED fabrication symbols follow actual pads at every rotation on both layer
       pcb_component_id: pcb.pcb_component_id,
     })
     expect(paths).toHaveLength(4)
-    expect(notes).toHaveLength(0)
+    expect(notes).toHaveLength(2)
     expect(paths.every((n) => n.layer === layer)).toBe(true)
-    // Compare to emitted ports, not a restatement of core's mirror/rotation.
-    expect(paths[0]!.route[0]!.x).toBeCloseTo(a.x)
-    expect(paths[0]!.route[0]!.y).toBeCloseTo(a.y)
-    expect(paths[3]!.route[1]!.x).toBeCloseTo(k.x)
-    expect(paths[3]!.route[1]!.y).toBeCloseTo(k.y)
+    // Compare emitted annotation points to the actual electrical terminals.
+    const center = { x: (a.x + k.x) / 2, y: (a.y + k.y) / 2 }
+    for (const [sign, terminal] of [
+      ["+", a],
+      ["-", k],
+    ] as const) {
+      const label = notes.find((note) => note.text === sign)!
+      expect(
+        (label.anchor_position.x - center.x) * (terminal.x - center.x) +
+          (label.anchor_position.y - center.y) * (terminal.y - center.y),
+      ).toBeGreaterThan(0)
+    }
     const bar = paths[2]!.route
     const bx = (bar[0]!.x + bar[1]!.x) / 2
     const by = (bar[0]!.y + bar[1]!.y) / 2

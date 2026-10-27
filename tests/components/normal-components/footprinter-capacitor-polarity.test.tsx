@@ -43,7 +43,7 @@ test("polarized capacitor footprint options agree with its electrical ports", as
       name: "C1",
       polarized: true,
     }).footprint,
-  ).toBe("cap0805_positivepin1_negativepin2")
+  ).toBe("cap0805_polarized")
   expect(
     resolveFootprinterPolarity({
       footprint: "0805",
@@ -51,6 +51,6 @@ test("polarized capacitor footprint options agree with its electrical ports", as
       name: "C1",
       polarized: false,
     }).footprint,
-  ).toBe("0805")
+  ).toBe("cap0805_nonpolarized")
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

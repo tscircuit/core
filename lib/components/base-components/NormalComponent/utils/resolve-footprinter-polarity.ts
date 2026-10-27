@@ -1,11 +1,14 @@
 import { fp } from "@tscircuit/footprinter"
 import type { PinLabelsProp } from "@tscircuit/props"
 
+const footprinterFunctions = new Set(fp.getFootprintNames())
+
 const positiveLabels = new Set(["a", "anode", "pos", "positive"])
 const negativeLabels = new Set(["k", "c", "cathode", "neg", "negative"])
 
-/** Resolve electrical terminal identities before generating footprint artwork.
- * Numeric pad identities and footprint-local geometry remain unchanged.
+/** Select the Footprinter definition from component intent without changing props.
+ * Footprinter owns the resulting geometry and fabrication artwork. Resolved
+ * terminal identities remain available to core's electrical port initialization.
  */
 export function resolveFootprinterPolarity({
   footprint,
@@ -20,11 +23,35 @@ export function resolveFootprinterPolarity({
   pinLabels?: PinLabelsProp
   polarized?: boolean
 }) {
-  if (!["Diode", "Led", "Capacitor"].includes(componentName))
+  if (!["Diode", "Led", "Capacitor", "Chip"].includes(componentName))
     return { footprint, positivePin: 1, negativePin: 2 }
 
   const capacitor = componentName === "Capacitor"
-  const parameters = fp.string(footprint).params()
+  const definition = footprint.trim()
+  const parameters = fp.string(definition).params()
+  // Invalid definitions must retain their authored spelling for normal diagnostics.
+  if (!footprinterFunctions.has(parameters.fn)) {
+    return { footprint, positivePin: 1, negativePin: 2 }
+  }
+  const hasPolarityModifier =
+    parameters.polarized !== undefined || parameters.nonpolarized !== undefined
+
+  // A generic chip does not acquire electrical polarity from its package name.
+  // Preserve an explicitly authored modifier; otherwise request neutral artwork.
+  if (componentName === "Chip") {
+    return {
+      footprint: hasPolarityModifier
+        ? definition
+        : `${definition}_nonpolarized`,
+      positivePin: 1,
+      negativePin: 2,
+    }
+  }
+
+  // Match Footprinter's bare-size syntax, including dimensions and _metric.
+  let resolvedFootprint = /^\d{4,5}(?=$|_|x)/.test(definition)
+    ? `${capacitor ? "cap" : "diode"}${definition}`
+    : definition
   let positivePin = 1
   let negativePin = 2
   const positiveOption = capacitor ? "positivepin" : "anodepin"
@@ -38,6 +65,11 @@ export function resolveFootprinterPolarity({
     )
     const positive = aliases.some((label) => positiveLabels.has(label))
     const negative = aliases.some((label) => negativeLabels.has(label))
+    if (positive && negative) {
+      throw new Error(
+        `${name} pin${pin} has conflicting positive and negative polarity labels.`,
+      )
+    }
     return positive === negative
       ? undefined
       : positive
@@ -90,36 +122,31 @@ export function resolveFootprinterPolarity({
   }
 
   if (capacitor) {
-    if (polarized) {
-      if (
-        parameters.nonpolarized ||
+    if (
+      polarized &&
+      (parameters.nonpolarized ||
         parameters.polarized === false ||
-        parameters.polarized === "false"
-      ) {
-        throw new Error(
-          `${name} is polarized but its footprint explicitly disables polarity.`,
-        )
-      }
-      // Bare chip sizes normally select resistor geometry. Keep capacitor
-      // geometry while resolving its electrical terminal identities.
-      const capacitorFootprint = /^\d{4,5}(?=_|$)/.test(footprint)
-        ? `cap${footprint}`
-        : footprint
-      // Core already emits pin-aware fabrication polarity symbols. Leave the
-      // additional footprinter silkscreen mark opt-in: its current capacitor
-      // implementation always marks pin 1, even when positivepin is 2.
-      return {
-        footprint: `${capacitorFootprint}_positivepin${positivePin}_negativepin${negativePin}`,
-        positivePin,
-        negativePin,
-      }
+        parameters.polarized === "false")
+    ) {
+      throw new Error(
+        `${name} is polarized but its footprint explicitly disables polarity.`,
+      )
     }
-  } else if (hasPolarityLabels) {
-    return {
-      footprint: `${footprint}_anodepin${positivePin}_cathodepin${negativePin}`,
-      positivePin,
-      negativePin,
+    if (!hasPolarityModifier) {
+      resolvedFootprint += polarized ? "_polarized" : "_nonpolarized"
     }
   }
-  return { footprint, positivePin, negativePin }
+
+  // Add only missing modifiers so every consumer can resolve idempotently.
+  const genericDiodePads =
+    !capacitor && parameters.fn === "smdpads" && parameters.num_pins === 2
+  if (hasPolarityLabels || genericDiodePads) {
+    if (explicitPositive === undefined) {
+      resolvedFootprint += `_${positiveOption}${positivePin}`
+    }
+    if (explicitNegative === undefined) {
+      resolvedFootprint += `_${negativeOption}${negativePin}`
+    }
+  }
+  return { footprint: resolvedFootprint, positivePin, negativePin }
 }

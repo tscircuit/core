@@ -112,6 +112,7 @@ import { canMergePortDefinitions } from "./utils/canMergePortDefinitions"
 import { getPrimaryPortsFromPortHintGroups } from "./utils/getPrimaryPortsFromPortHintGroups"
 import { inferInternallyConnectedPinNamesFromPorts } from "./utils/inferInternallyConnectedPinNamesFromPorts"
 import { isBlobUrl } from "./utils/isBlobUrl"
+import { isFootprinterString } from "./utils/isFootprinterString"
 import { isHttpUrl } from "./utils/isHttpUrl"
 import { isStaticAssetPath } from "./utils/isStaticAssetPath"
 import { parseLibraryFootprintRef } from "./utils/parseLibraryFootprintRef"
@@ -683,11 +684,18 @@ export class NormalComponent<
 
   // Override to choose the effective footprint without rewriting user props.
   resolveFootprint() {
-    return (
+    const footprint =
       this._parsedProps.footprint ??
       this.props.footprint ??
       this._getImpliedFootprintString?.()
-    )
+    if (!isFootprinterString(footprint)) return footprint
+    return resolveFootprinterPolarity({
+      footprint,
+      componentName: this.componentName,
+      name: this.name ?? this.componentName,
+      pinLabels: this._resolvePinLabels(),
+      polarized: this._parsedProps.polarized,
+    }).footprint
   }
 
   _addChildrenFromStringFootprint() {
@@ -703,16 +711,7 @@ export class NormalComponent<
       if (parseLibraryFootprintRef(footprint)) return
       let fpCircuitJson: AnyCircuitElement[]
       try {
-        const resolved = resolveFootprinterPolarity({
-          footprint,
-          componentName: this.componentName,
-          name: this.name ?? this.componentName,
-          pinLabels: this._resolvePinLabels(),
-          polarized: this._parsedProps.polarized,
-        })
-        fpCircuitJson = fp
-          .string(resolved.footprint)
-          .soup() as AnyCircuitElement[]
+        fpCircuitJson = fp.string(footprint).soup() as AnyCircuitElement[]
       } catch (error) {
         this._queueInvalidFootprintPropMessage(footprint, error)
         return
@@ -1657,7 +1656,7 @@ export class NormalComponent<
       inferredInternallyConnectedPinNames,
       implicitPinNumberByHint,
     }
-    let { footprint } = this.props
+    let footprint = this.resolveFootprint()
     if (
       typeof footprint === "string" &&
       parseLibraryFootprintRef(footprint) &&

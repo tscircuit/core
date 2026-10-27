@@ -91,7 +91,7 @@ test("subcircuit-circuit-json02 - chip inflation", async () => {
   ) as any
 
   expect(cadComponent).toBeDefined()
-  expect(cadComponent?.footprinter_string).toBe("soic8")
+  expect(cadComponent?.footprinter_string).toBe("soic8_nonpolarized")
 
   // Verify that pcb_ports exist and are linked to their source_ports
   const pcbPorts = circuitJson.filter((element) => element.type === "pcb_port")

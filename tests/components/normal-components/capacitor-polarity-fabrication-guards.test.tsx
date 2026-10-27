@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import type { Capacitor } from "lib/components/normal-components/Capacitor"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("capacitor polarity signs require polarized and distinct pads and preserve authored notes", async () => {
+test("capacitors delegate artwork to footprints and preserve authored fabrication notes", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width={32} height={10} routingDisabled>
@@ -38,9 +38,9 @@ test("capacitor polarity signs require polarized and distinct pads and preserve 
   )
   await circuit.renderUntilSettled()
   const capacitor = circuit.selectOne(".C_POL") as Capacitor
-  expect(circuit.db.pcb_fabrication_note_path.list()).toHaveLength(4)
+  expect(circuit.db.pcb_fabrication_note_path.list()).toHaveLength(1)
   capacitor.updatePcbComponentSizeCalculation()
-  expect(circuit.db.pcb_fabrication_note_path.list()).toHaveLength(4)
+  expect(circuit.db.pcb_fabrication_note_path.list()).toHaveLength(1)
   expect(
     circuit.db.pcb_fabrication_note_text.list().map((n) => n.text),
   ).toEqual(["USER NOTE"])

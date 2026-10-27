@@ -20,7 +20,7 @@ it("does not emit a bounding-box cad_component when a cad_component already exis
   expect(cadComponents).toHaveLength(1)
   expect(cadComponents[0]).toMatchObject({
     type: "cad_component",
-    footprinter_string: "soic8",
+    footprinter_string: "soic8_nonpolarized",
   })
   expect(cadComponents[0]).not.toHaveProperty("show_as_bounding_box")
 })
