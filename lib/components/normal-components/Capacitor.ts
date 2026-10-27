@@ -1,3 +1,4 @@
+import { resolvePassiveFootprintDefinition } from "@tscircuit/footprinter"
 import { capacitorProps, resolveManufacturerPartNumber } from "@tscircuit/props"
 import type { SourceSimpleCapacitorInput } from "circuit-json"
 import { formatSiUnit } from "format-si-unit"
@@ -51,9 +52,9 @@ export class Capacitor extends NormalComponent<
         `${this.name} is polarized but its footprint explicitly disables polarity.`,
       )
     }
-    let resolved = /^\d{4,5}(?=$|_|x)/.test(definition)
-      ? `cap${definition}`
-      : definition
+    let resolved = resolvePassiveFootprintDefinition(definition, {
+      defaultFamily: "cap",
+    })
     if (
       parameters.polarized === undefined &&
       parameters.nonpolarized === undefined

@@ -1,3 +1,4 @@
+import { resolvePassiveFootprintDefinition } from "@tscircuit/footprinter"
 import {
   diodeProps,
   resolveManufacturerPartNumber,
@@ -33,9 +34,9 @@ export const resolveDiodeFootprint = (
     negativeOption: "cathodepin",
     defaultPositivePin: ["do219ad", "sod323he"].includes(parameters.fn) ? 2 : 1,
   })
-  let resolved = /^\d{4,5}(?=$|_|x)/.test(definition)
-    ? `diode${definition}`
-    : definition
+  let resolved = resolvePassiveFootprintDefinition(definition, {
+    defaultFamily: "diode",
+  })
   if (
     terminals.hasPolarityLabels ||
     (parameters.fn === "smdpads" && parameters.num_pins === 2)
