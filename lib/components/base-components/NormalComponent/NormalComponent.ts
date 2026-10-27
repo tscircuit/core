@@ -545,9 +545,20 @@ export class NormalComponent<
         collectInferredInternallyConnectedPins: true,
       })
       const existingPorts = this._getAllPortsFromChildren()
+      // A pin that the schematic arrangement leaves out gets no port, so the
+      // ports for its extra pad clusters (pinN_internal_M) are left out too.
+      const pinNumbersLeftOutOfArrangement = new Set<number>()
+      const leftOutInternalPortNames = new Set<string>()
       for (const port of portsFromFootprint) {
         if (!port._isPrimaryPort) {
-          portsToCreate.push(port)
+          if (
+            port._primaryPinNumber !== null &&
+            pinNumbersLeftOutOfArrangement.has(port._primaryPinNumber)
+          ) {
+            leftOutInternalPortNames.add(port.props.name!)
+          } else {
+            portsToCreate.push(port)
+          }
           continue
         }
 
@@ -564,8 +575,15 @@ export class NormalComponent<
           matchingPort.externallyAddedAliases.push(...mergedAliases)
         } else if (!schPortArrangement) {
           portsToCreate.push(port)
+        } else if (port._parsedProps.pinNumber !== undefined) {
+          pinNumbersLeftOutOfArrangement.add(port._parsedProps.pinNumber)
         }
       }
+      this._inferredInternallyConnectedPinNames =
+        this._inferredInternallyConnectedPinNames.filter(
+          (pinNames) =>
+            !pinNames.some((pinName) => leftOutInternalPortNames.has(pinName)),
+        )
     }
 
     // Add ports that we know must exist because we know the pin count and
