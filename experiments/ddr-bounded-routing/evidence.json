@@ -1,0 +1,116 @@
+{
+  "status": "partial_validation_only",
+  "wholeBoardComplete": false,
+  "completeDdr47": false,
+  "coreProposalBase": "8b46e058e746d635c07db1b859d182683e8c92c2",
+  "coreCaptureRevision": "a165eb88a9403c6d7855a2c8d2d054eaef9d53ac",
+  "solverBase": "992e0448aee2c40b0d8fa1d3f0537f364b0e60cc",
+  "commonSolverPatchSha256": "c19f9f05142feeb97c2da875936fcf4ae6dbf5fdebb1d0b4abf63a4508044218",
+  "bunVersion": "1.4.0",
+  "nativeChecksVersion": "0.0.264",
+  "connectivityMapVersion": "0.0.33",
+  "fixtureSha256": {
+    "input.json": "5924990976b5d4411540178f0611e2b1c9b19de924cfd7cf4ee9dc100b682538",
+    "native.circuit.json": "00f74feea9b40e532de4579aec1740ed6303a5fa114a139c195d44f4ed2d5152",
+    "capture.json": "456c0da18d90020e05d58242bdfcb520ba4f71d45b59a04415b0121641d52eed"
+  },
+  "layerCount": 6,
+  "timingCaveat": "Single observations on a development machine; some early trials overlapped other diagnostic work. Not a statistical speed benchmark.",
+  "fresh": {
+    "status": "incomplete",
+    "acceptedStages": [
+      "ddr_group_0"
+    ],
+    "attempts": [
+      {
+        "stage": "ddr_group_0",
+        "attempt": "default",
+        "status": "validated",
+        "milliseconds": 10578.005814
+      },
+      {
+        "stage": "ddr_group_1",
+        "attempt": "default",
+        "status": "failed",
+        "milliseconds": 457.2270470000003
+      },
+      {
+        "stage": "ddr_group_1",
+        "attempt": "fine_grid",
+        "status": "failed",
+        "milliseconds": 676.4002110000001
+      }
+    ],
+    "milliseconds": 11723.936343000001,
+    "wholeBoardComplete": false,
+    "artifactHash": "a163ac05f69e796d699eccc6679c5d1101fa701ae3b9c875c9b953f6c748b3ee"
+  },
+  "deadlineRecovery": {
+    "status": "incomplete",
+    "acceptedStages": [
+      "ddr_group_0"
+    ],
+    "attempts": [
+      {
+        "stage": "ddr_group_0",
+        "attempt": "short_budget",
+        "status": "timed_out",
+        "milliseconds": 1014.753472
+      },
+      {
+        "stage": "ddr_group_0",
+        "attempt": "default",
+        "status": "validated",
+        "milliseconds": 10665.893815000001
+      },
+      {
+        "stage": "ddr_group_1",
+        "attempt": "default",
+        "status": "failed",
+        "milliseconds": 452.4440250000007
+      },
+      {
+        "stage": "ddr_group_1",
+        "attempt": "fine_grid",
+        "status": "failed",
+        "milliseconds": 681.9987959999999
+      }
+    ],
+    "milliseconds": 12827.645922000002,
+    "wholeBoardComplete": false,
+    "artifactHash": "a163ac05f69e796d699eccc6679c5d1101fa701ae3b9c875c9b953f6c748b3ee"
+  },
+  "resume": {
+    "status": "incomplete",
+    "acceptedStages": [
+      "ddr_group_0"
+    ],
+    "attempts": [
+      {
+        "stage": "ddr_group_1",
+        "attempt": "default",
+        "status": "failed",
+        "milliseconds": 435.088565
+      },
+      {
+        "stage": "ddr_group_1",
+        "attempt": "fine_grid",
+        "status": "failed",
+        "milliseconds": 646.9059550000002
+      }
+    ],
+    "milliseconds": 3292.584685,
+    "wholeBoardComplete": false,
+    "artifactHash": "a163ac05f69e796d699eccc6679c5d1101fa701ae3b9c875c9b953f6c748b3ee"
+  },
+  "monolithicBaseline": {
+    "status": "timed_out",
+    "externalBudgetSeconds": 120,
+    "exitCode": 124,
+    "lastProgress": {
+      "seconds": 116.473775876,
+      "phase": "route_shared_layers",
+      "iterations": 163944
+    }
+  }
+}
