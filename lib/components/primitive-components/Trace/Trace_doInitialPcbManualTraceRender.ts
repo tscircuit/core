@@ -366,8 +366,46 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
     return
   }
   const otherPort = ports.find((p) => p !== anchorPort) ?? ports[1]
+  const pcbPath = props.pcbPath as Array<string | ManualPcbPathPoint>
 
-  const layer = anchorPort.getAvailablePcbLayers()[0] || "top"
+  const anchorLayers = anchorPort.getAvailablePcbLayers()
+  const constrainingLayerSets: LayerRef[][] = []
+  let hasViaPoint = false
+  for (const pt of pcbPath) {
+    if (typeof pt === "string") {
+      const resolvedPort = trace.getSubcircuit().selectOne(pt, {
+        type: "port",
+      }) as Port | undefined
+      const portLayers = resolvedPort?.getAvailablePcbLayers() ?? []
+      if (portLayers.length > 0) {
+        constrainingLayerSets.push(portLayers)
+      }
+      continue
+    }
+    if (pt.via) {
+      hasViaPoint = true
+      if (pt.fromLayer) {
+        constrainingLayerSets.push([pt.fromLayer as LayerRef])
+      }
+      break
+    }
+  }
+  if (!hasViaPoint && otherPort) {
+    const otherLayers = otherPort.getAvailablePcbLayers()
+    if (otherLayers.length > 0) {
+      constrainingLayerSets.push(otherLayers)
+    }
+  }
+  const sharedInitialLayer =
+    constrainingLayerSets.length > 0
+      ? anchorLayers.find((candidateLayer) =>
+          constrainingLayerSets.every((layerSet) =>
+            layerSet.includes(candidateLayer),
+          ),
+        )
+      : undefined
+
+  const layer = sharedInitialLayer || anchorLayers[0] || "top"
   let currentLayer = layer as LayerRef
 
   const anchorPos = anchorPort._getGlobalPcbPositionAfterLayout()
@@ -385,7 +423,6 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
   const transform = subcircuit._isInflatedFromCircuitJson
     ? trace._computePcbGlobalTransformBeforeLayout()
     : anchorPort?._computePcbGlobalTransformBeforeLayout?.() || identity()
-  const pcbPath = props.pcbPath as Array<string | ManualPcbPathPoint>
   for (const pt of pcbPath) {
     let coordinates: { x: number; y: number }
     let isGlobalPosition = false
