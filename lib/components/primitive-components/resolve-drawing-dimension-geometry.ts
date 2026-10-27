@@ -14,12 +14,12 @@ export async function resolveDrawingDimensionGeometry(
   circuitJson: AnyCircuitElement[],
   view: DrawingPartView,
 ) {
-  const { default: jscad, geom3ToIndexedMesh } = await import("@tscircuit/jscad")
-  const {
-    computeWorldAABB,
-    createOutlineSection,
-    buildCamera,
-  } = await import("poppygl")
+  const { default: jscad, geom3ToIndexedMesh } = await import(
+    "@tscircuit/jscad"
+  )
+  const { computeWorldAABB, createOutlineSection, buildCamera } = await import(
+    "poppygl"
+  )
   const geometry = circuitJson.filter(
     (element) => !element.type.startsWith("drawing_"),
   )
@@ -53,34 +53,52 @@ export async function resolveDrawingDimensionGeometry(
     )
   }
   if (selected.some((element) => element.type === "pcb_board"))
-    throw new Error("Drawing dimensions currently require a part view selecting native JSCAD parts; board geometry needs another model reader")
+    throw new Error(
+      "Drawing dimensions currently require a part view selecting native JSCAD parts; board geometry needs another model reader",
+    )
   const drawCalls: GLTFScene["drawCalls"] = []
   for (const cad of selected) {
     if (cad.type !== "cad_component") continue
     if (
       !cad.model_jscad ||
-      (cad.model_origin_position && Object.values(cad.model_origin_position).some((value) => value !== 0)) ||
-      (!cad.model_origin_position && cad.model_origin_alignment && cad.model_origin_alignment !== "unknown") ||
+      (cad.model_origin_position &&
+        Object.values(cad.model_origin_position).some(
+          (value) => value !== 0,
+        )) ||
+      (!cad.model_origin_position &&
+        cad.model_origin_alignment &&
+        cad.model_origin_alignment !== "unknown") ||
       (cad.size && cad.model_object_fit) ||
-      (cad.model_board_normal_direction && cad.model_board_normal_direction !== "z+")
+      (cad.model_board_normal_direction &&
+        cad.model_board_normal_direction !== "z+")
     ) {
-      const partName = selected.find((part) => part.type === "source_component" && part.source_component_id === cad.source_component_id)
-      throw new Error(`Drawing dimensions currently require native JSCAD models with their authored origin; part "${partName && "name" in partName ? partName.name : "unnamed part"}" needs another model reader`)
+      const partName = selected.find(
+        (part) =>
+          part.type === "source_component" &&
+          part.source_component_id === cad.source_component_id,
+      )
+      throw new Error(
+        `Drawing dimensions currently require native JSCAD models with their authored origin; part "${partName && "name" in partName ? partName.name : "unnamed part"}" needs another model reader`,
+      )
     }
     const plans = Array.isArray(cad.model_jscad)
       ? cad.model_jscad.flat(Infinity)
       : [cad.model_jscad]
     for (const plan of plans) {
-      const solids = [executeJscadOperations(jscad as unknown as JscadImplementation, plan)].flat(Infinity)
+      const solids = [
+        executeJscadOperations(jscad as unknown as JscadImplementation, plan),
+      ].flat(Infinity)
       for (const solid of solids) {
         const mesh = geom3ToIndexedMesh(solid)
         const positions: number[] = []
         for (let vertex = 0; vertex < mesh.positions.length; vertex += 3)
-          positions.push(...drawingCadPointToScene(cad, [
-            mesh.positions[vertex]!,
-            mesh.positions[vertex + 1]!,
-            mesh.positions[vertex + 2]!,
-          ]))
+          positions.push(
+            ...drawingCadPointToScene(cad, [
+              mesh.positions[vertex]!,
+              mesh.positions[vertex + 1]!,
+              mesh.positions[vertex + 2]!,
+            ]),
+          )
         drawCalls.push({
           positions: new Float32Array(positions),
           indices: new Uint32Array(mesh.indices),
