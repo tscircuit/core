@@ -78,7 +78,7 @@ test("assembly.screen emits a connector-anchored modelprinter FlexScreen", async
     pin_count: ER_OLED096_1_3W_CONTACT_COUNT,
   })
   expect(connectorCadComponent?.footprinter_string).toBe(
-    ER_OLED096_1_3W_CONNECTOR_FOOTPRINT,
+    `${ER_OLED096_1_3W_CONNECTOR_FOOTPRINT}_nonpolarized`,
   )
   expect(connectorPcbComponent?.cable_insertion_center).toBeDefined()
   expect(screenPcbComponent).toBeUndefined()
