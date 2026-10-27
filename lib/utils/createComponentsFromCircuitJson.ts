@@ -14,11 +14,13 @@ import { CourtyardCircle } from "lib/components/primitive-components/CourtyardCi
 import { CourtyardOutline } from "lib/components/primitive-components/CourtyardOutline"
 import { CourtyardRect } from "lib/components/primitive-components/CourtyardRect"
 import { Cutout } from "lib/components/primitive-components/Cutout"
+import { FabricationNoteDimension } from "lib/components/primitive-components/FabricationNoteDimension"
 import { FabricationNotePath } from "lib/components/primitive-components/FabricationNotePath"
 import { FabricationNoteRect } from "lib/components/primitive-components/FabricationNoteRect"
 import { FabricationNoteText } from "lib/components/primitive-components/FabricationNoteText"
 import { Hole } from "lib/components/primitive-components/Hole"
 import { Keepout } from "lib/components/primitive-components/Keepout"
+import { PcbNoteDimension } from "lib/components/primitive-components/PcbNoteDimension"
 import { PcbNoteLine } from "lib/components/primitive-components/PcbNoteLine"
 import { PcbNotePath } from "lib/components/primitive-components/PcbNotePath"
 import { PcbNoteRect } from "lib/components/primitive-components/PcbNoteRect"
@@ -795,6 +797,21 @@ export const createComponentsFromCircuitJson = (
           pcbRotation: elm.ccw_rotation,
         }),
       )
+    } else if (elm.type === "pcb_fabrication_note_dimension") {
+      components.push(
+        new FabricationNoteDimension({
+          from: elm.from,
+          to: elm.to,
+          text: elm.text,
+          offset: elm.offset_distance ?? elm.offset,
+          offsetDirection: elm.offset_direction,
+          font: elm.font,
+          fontSize: elm.font_size,
+          color: elm.color,
+          arrowSize: elm.arrow_size,
+          layer: elm.layer,
+        }),
+      )
     } else if (elm.type === "pcb_fabrication_note_path") {
       components.push(
         new FabricationNotePath({
@@ -820,6 +837,21 @@ export const createComponentsFromCircuitJson = (
           cornerRadius: elm.corner_radius,
           hasStroke: elm.has_stroke,
           isStrokeDashed: elm.is_stroke_dashed,
+        }),
+      )
+    } else if (elm.type === "pcb_note_dimension") {
+      components.push(
+        new PcbNoteDimension({
+          from: elm.from,
+          to: elm.to,
+          text: elm.text,
+          offset: elm.offset_distance,
+          offsetDirection: elm.offset_direction,
+          font: elm.font,
+          fontSize: elm.font_size,
+          color: elm.color,
+          arrowSize: elm.arrow_size,
+          layer: elm.layer,
         }),
       )
     } else if (elm.type === "pcb_note_text") {
