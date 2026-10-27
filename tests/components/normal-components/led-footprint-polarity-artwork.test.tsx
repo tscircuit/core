@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import type { Led } from "lib/components/normal-components/Led"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("LED footprint polarity artwork is not duplicated and partial notes keep the fallback", async () => {
+test("LED footprint polarity artwork is not duplicated and explicit authored polarity is preserved", async () => {
   const { circuit } = getTestFixture()
   const cases = [
     {
@@ -53,6 +53,7 @@ test("LED footprint polarity artwork is not duplicated and partial notes keep th
         <fabricationnotetext text="-" pcbX={-0.7} fontSize={0.4} />
         <fabricationnotetext text="+" pcbX={0.7} fontSize={0.4} />
         <fabricationnotepath
+          isPolarityMarking
           route={[
             { x: -0.3, y: 0 },
             { x: 0.3, y: 0 },
@@ -75,6 +76,7 @@ test("LED footprint polarity artwork is not duplicated and partial notes keep th
     expect(paths).toHaveLength(4)
     expect(labels.map((n) => n.text).sort()).toEqual(["+", "-"])
     expect([...paths, ...labels].every((n) => n.layer === layer)).toBe(true)
+    expect([...paths, ...labels].every((n) => n.is_polarity_marking)).toBe(true)
     const ports = circuit.db.source_port.list({
       source_component_id: led.source_component_id!,
     })

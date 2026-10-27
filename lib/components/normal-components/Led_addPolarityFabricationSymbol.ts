@@ -37,15 +37,16 @@ export const Led_addPolarityFabricationSymbol = (led: Led): void => {
   const pcb = db.pcb_component.get(led.pcb_component_id)
   if (!pcb || (pcb.layer !== "top" && pcb.layer !== "bottom")) return
 
-  // A footprint or user may already provide polarity artwork. Treat a path
-  // together with both polarity labels as complete; text-only notes still get
-  // the fallback symbol, and we never delete authored elements on re-render.
+  // A producer explicitly declares when artwork supplies polarity. Ordinary
+  // paths and text must not suppress the fallback based on their appearance.
   const filter = { pcb_component_id: pcb.pcb_component_id }
-  const existingLabels = db.pcb_fabrication_note_text.list(filter)
   if (
-    db.pcb_fabrication_note_path.list(filter).length > 0 &&
-    existingLabels.some((note) => note.text === "+") &&
-    existingLabels.some((note) => note.text === "-")
+    db.pcb_fabrication_note_path
+      .list(filter)
+      .some((note) => note.is_polarity_marking === true) ||
+    db.pcb_fabrication_note_text
+      .list(filter)
+      .some((note) => note.is_polarity_marking === true)
   ) {
     return
   }
@@ -74,6 +75,7 @@ export const Led_addPolarityFabricationSymbol = (led: Led): void => {
     pcb_component_id: pcb.pcb_component_id,
     subcircuit_id: led.getSubcircuit()?.subcircuit_id ?? undefined,
     layer: pcb.layer,
+    is_polarity_marking: true,
   }
   const notes: PcbFabricationNotePath[] = []
   generatedNotes.set(led, notes)

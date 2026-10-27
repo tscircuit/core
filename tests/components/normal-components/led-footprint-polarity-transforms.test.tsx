@@ -61,6 +61,7 @@ test("LED footprint polarity artwork follows both mappings at every rotation on 
     expect(paths).toHaveLength(4)
     expect(labels).toHaveLength(2)
     expect([...paths, ...labels].every((n) => n.layer === c.layer)).toBe(true)
+    expect([...paths, ...labels].every((n) => n.is_polarity_marking)).toBe(true)
     const center = { x: (a.x + k.x) / 2, y: (a.y + k.y) / 2 }
     for (const [sign, port] of [
       ["+", a],

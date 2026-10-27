@@ -58,6 +58,7 @@ export class FabricationNoteText extends PrimitiveComponent<
       font_size: props.fontSize ?? 1,
       layer,
       color: props.color,
+      is_polarity_marking: props.isPolarityMarking,
       ccw_rotation: ccwRotation,
       text: normalizeTextForCircuitJson(props.text ?? ""),
       pcb_component_id: container.pcb_component_id!,
