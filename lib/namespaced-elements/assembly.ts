@@ -1,4 +1,10 @@
 import type {
+  AssemblyDrawingDimensionProps,
+  AssemblyDrawingPageProps,
+  AssemblyDrawingPartViewProps,
+  AssemblyDrawingTitleBlockProps,
+  AssemblyExplosionStagePropsInput,
+  AssemblyExplosionMovePropsInput,
   AssemblyCablePropsInput,
   AssemblyDevicePropsInput,
   AssemblyMotorPropsInput,
@@ -33,6 +39,28 @@ export type AssemblyCadAssemblyJsxProps = AssemblySubassemblyJsxProps
 export interface AssemblyCableJsxProps extends AssemblyCablePropsInput {}
 
 export const assembly = {
+  drawing: {
+    dimension: createNamespacedElement<AssemblyDrawingDimensionProps>(
+      "assembly.drawing.dimension",
+    ),
+    page: createNamespacedElement<AssemblyDrawingPageProps>(
+      "assembly.drawing.page",
+    ),
+    partview: createNamespacedElement<AssemblyDrawingPartViewProps>(
+      "assembly.drawing.partview",
+    ),
+    titleblock: createNamespacedElement<AssemblyDrawingTitleBlockProps>(
+      "assembly.drawing.titleblock",
+    ),
+  },
+  explosion: {
+    stage: createNamespacedElement<AssemblyExplosionStagePropsInput>(
+      "assembly.explosion.stage",
+    ),
+    move: createNamespacedElement<AssemblyExplosionMovePropsInput>(
+      "assembly.explosion.move",
+    ),
+  },
   referencesurface: createNamespacedElement<AssemblyReferenceSurfacePropsInput>(
     "assembly.referencesurface",
   ),

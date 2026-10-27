@@ -51,7 +51,8 @@ test("inline net label on a vertical trace reads bottom-to-top", async () => {
     .sort(
       (a, b) => Math.abs(b.from.y - b.to.y) - Math.abs(a.from.y - a.to.y),
     )[0]!
-  expect(inlineLabel.position.x).toBeLessThan(longestVerticalEdge.from.x)
+  expect(inlineLabel.position.x).toBeCloseTo(longestVerticalEdge.from.x)
+  expect(inlineLabel.anchor).toBe("bottom_center")
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })

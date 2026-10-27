@@ -896,7 +896,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           subcircuit_id: this.subcircuit_id,
           subcircuitComponent: this,
         })
-        simpleRouteJson.allowViaInPad = autorouterConfig.allowViaInPad
+        simpleRouteJson.allowViaInPad =
+          autorouterConfig.allowViaInPad ?? simpleRouteJson.allowViaInPad
 
         const { autorouting_result } = await fetchWithDebug(
           `${serverUrl}/autorouting/solve`,
@@ -1547,7 +1548,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         simpleRouteJson,
         routingPhasePlan.drcTolerances,
       )
-      simpleRouteJson.allowViaInPad = phaseAutorouterConfig.allowViaInPad
+      simpleRouteJson.allowViaInPad =
+        phaseAutorouterConfig.allowViaInPad ?? simpleRouteJson.allowViaInPad
 
       const getPrecomputedRoutingResult = usesPreviousStageOutput
         ? undefined
