@@ -30,6 +30,10 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
    */
   _inflatedPcbSolderPaste?: PcbSolderPastePolygon[]
 
+  // Imported rotated rectangles can carry this separately from corner_radius,
+  // while rotatedRectSmtPadProps currently only exposes cornerRadius.
+  _importedRectBorderRadius?: PcbSmtPadRotatedRect["rect_border_radius"]
+
   isPcbPrimitive = true
 
   get config() {
@@ -221,6 +225,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
           shape: "rotated_rect",
           width: props.width!,
           height: props.height!,
+          rect_border_radius: props.rectBorderRadius,
           corner_radius: props.cornerRadius ?? undefined,
           x: position.x,
           y: position.y,
@@ -239,6 +244,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
           shape: "rect",
           width: isRotated90Degrees ? props.height! : props.width!,
           height: isRotated90Degrees ? props.width! : props.height!,
+          rect_border_radius: props.rectBorderRadius,
           corner_radius: props.cornerRadius ?? undefined,
           port_hints: portHints,
           is_covered_with_solder_mask: isCoveredWithSolderMask,
@@ -296,6 +302,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         shape: "rotated_rect",
         width: props.width!,
         height: props.height!,
+        rect_border_radius: this._importedRectBorderRadius,
         corner_radius: props.cornerRadius ?? undefined,
         x: position.x,
         y: position.y,

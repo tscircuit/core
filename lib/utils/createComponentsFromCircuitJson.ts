@@ -365,6 +365,7 @@ export const createComponentsFromCircuitJson = (
           width: elm.width,
           portHints: resolvedPortHints,
           rectBorderRadius: elm.rect_border_radius,
+          cornerRadius: elm.corner_radius,
           solderPasteMargin,
         }),
       )
@@ -410,20 +411,20 @@ export const createComponentsFromCircuitJson = (
         }),
       )
     } else if (elm.type === "pcb_smtpad" && elm.shape === "rotated_rect") {
-      components.push(
-        new SmtPad({
-          pcbX: elm.x,
-          pcbY: elm.y,
-          layer: elm.layer,
-          shape: "rotated_rect",
-          height: elm.height,
-          width: elm.width,
-          ccwRotation: elm.ccw_rotation,
-          cornerRadius: elm.corner_radius,
-          portHints: resolvedPortHints,
-          solderPasteMargin,
-        }),
-      )
+      const smtpad = new SmtPad({
+        pcbX: elm.x,
+        pcbY: elm.y,
+        layer: elm.layer,
+        shape: "rotated_rect",
+        height: elm.height,
+        width: elm.width,
+        ccwRotation: elm.ccw_rotation,
+        cornerRadius: elm.corner_radius,
+        portHints: resolvedPortHints,
+        solderPasteMargin,
+      })
+      smtpad._importedRectBorderRadius = elm.rect_border_radius
+      components.push(smtpad)
     } else if (elm.type === "pcb_smtpad" && elm.shape === "polygon") {
       const smtpad = new SmtPad({
         shape: "polygon",
