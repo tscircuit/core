@@ -1,3 +1,5 @@
+import { executeJscadOperations, type JscadImplementation } from "jscad-planner"
+import { drawingCadPointToScene } from "./drawing-cad-point-to-scene"
 import { buildSubtree } from "@tscircuit/circuit-json-util"
 import type { AnyCircuitElement, DrawingPartView } from "circuit-json"
 import { mat4, vec3 } from "gl-matrix"
@@ -11,12 +13,9 @@ import type { Camera, GLTFScene } from "poppygl"
 export async function resolveDrawingDimensionGeometry(
   circuitJson: AnyCircuitElement[],
   view: DrawingPartView,
-  projectBaseUrl?: string,
 ) {
-  const { convertCircuitJsonToGltf } = await import("circuit-json-to-gltf")
+  const { default: jscad, geom3ToIndexedMesh } = await import("@tscircuit/jscad")
   const {
-    createSceneFromGLTF,
-    loadGLTFWithResourcesFromURL,
     computeWorldAABB,
     createOutlineSection,
     buildCamera,
@@ -53,21 +52,50 @@ export async function resolveDrawingDimensionGeometry(
       ),
     )
   }
-  const glb = await convertCircuitJsonToGltf(selected, {
-    format: "glb",
-    includeModels: true,
-    showBoundingBoxes: false,
-    projectBaseUrl,
-  })
-  // A data URI works in browsers and Node; no filesystem or Node-only loader.
-  const bytes = new Uint8Array(glb as ArrayBuffer)
-  let binary = ""
-  for (let offset = 0; offset < bytes.length; offset += 0x8000)
-    binary += String.fromCharCode(...bytes.subarray(offset, offset + 0x8000))
-  const { gltf, resources } = await loadGLTFWithResourcesFromURL(
-    `data:model/gltf-binary;base64,${btoa(binary)}`,
-  )
-  const scene = createSceneFromGLTF(gltf, resources)
+  if (selected.some((element) => element.type === "pcb_board"))
+    throw new Error("Drawing dimensions currently require a part view selecting native JSCAD parts; board geometry needs another model reader")
+  const drawCalls: GLTFScene["drawCalls"] = []
+  for (const cad of selected) {
+    if (cad.type !== "cad_component") continue
+    if (
+      !cad.model_jscad ||
+      (cad.model_origin_position && Object.values(cad.model_origin_position).some((value) => value !== 0)) ||
+      (!cad.model_origin_position && cad.model_origin_alignment && cad.model_origin_alignment !== "unknown") ||
+      (cad.size && cad.model_object_fit) ||
+      (cad.model_board_normal_direction && cad.model_board_normal_direction !== "z+")
+    ) {
+      const partName = selected.find((part) => part.type === "source_component" && part.source_component_id === cad.source_component_id)
+      throw new Error(`Drawing dimensions currently require native JSCAD models with their authored origin; part "${partName && "name" in partName ? partName.name : "unnamed part"}" needs another model reader`)
+    }
+    const plans = Array.isArray(cad.model_jscad)
+      ? cad.model_jscad.flat(Infinity)
+      : [cad.model_jscad]
+    for (const plan of plans) {
+      const solids = [executeJscadOperations(jscad as unknown as JscadImplementation, plan)].flat(Infinity)
+      for (const solid of solids) {
+        const mesh = geom3ToIndexedMesh(solid)
+        const positions: number[] = []
+        for (let vertex = 0; vertex < mesh.positions.length; vertex += 3)
+          positions.push(...drawingCadPointToScene(cad, [
+            mesh.positions[vertex]!,
+            mesh.positions[vertex + 1]!,
+            mesh.positions[vertex + 2]!,
+          ]))
+        drawCalls.push({
+          positions: new Float32Array(positions),
+          indices: new Uint32Array(mesh.indices),
+          normals: null,
+          uvs: null,
+          model: mat4.create(),
+          material: {
+            baseColorFactor: [0.7, 0.7, 0.7, 1],
+            baseColorTexture: null,
+          },
+        })
+      }
+    }
+  }
+  const scene: GLTFScene = { gltf: { asset: { version: "2.0" } }, drawCalls }
   const bounds = computeWorldAABB(scene.drawCalls)
   const center = bounds.min.map(
     (min, axis) => (min + bounds.max[axis]!) / 2,
@@ -91,7 +119,7 @@ export async function resolveDrawingDimensionGeometry(
       value + (direction[axis]! * distance) / Math.hypot(...direction),
   ) as [number, number, number]
   const section = view.section
-  const drawCalls = section
+  const retainedDrawCalls = section
     ? createOutlineSection(scene.drawCalls, {
         axis: section.axis === "x" ? "x" : section.axis === "y" ? "z" : "y",
         offset: section.axis === "y" ? -section.offset : section.offset,
@@ -104,11 +132,11 @@ export async function resolveDrawingDimensionGeometry(
         hatchSpacing: section.hatch_spacing ?? 1,
       }).drawCalls
     : scene.drawCalls
-  const points = drawingScenePoints({ ...scene, drawCalls })
+  const points = drawingScenePoints({ ...scene, drawCalls: retainedDrawCalls })
   if (!points.length)
     throw new Error("The part view has no measurable geometry")
   let camera = buildCamera(
-    drawCalls,
+    retainedDrawCalls,
     Math.round(view.width * 4),
     Math.round(view.height * 4),
     45,
@@ -127,7 +155,7 @@ export async function resolveDrawingDimensionGeometry(
       .map((step) => step * decade)
       .find((candidate) => candidate <= fittedScale)!
     camera = buildCamera(
-      drawCalls,
+      retainedDrawCalls,
       Math.round(view.width * 4),
       Math.round(view.height * 4),
       45,
