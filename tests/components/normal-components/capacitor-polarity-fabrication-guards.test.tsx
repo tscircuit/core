@@ -38,9 +38,9 @@ test("capacitors delegate artwork to footprints and preserve authored fabricatio
   )
   await circuit.renderUntilSettled()
   const capacitor = circuit.selectOne(".C_POL") as Capacitor
-  expect(circuit.db.pcb_fabrication_note_path.list()).toHaveLength(1)
+  expect(circuit.db.pcb_fabrication_note_path.list()).toHaveLength(4)
   capacitor.updatePcbComponentSizeCalculation()
-  expect(circuit.db.pcb_fabrication_note_path.list()).toHaveLength(1)
+  expect(circuit.db.pcb_fabrication_note_path.list()).toHaveLength(4)
   expect(
     circuit.db.pcb_fabrication_note_text.list().map((n) => n.text),
   ).toEqual(["USER NOTE"])

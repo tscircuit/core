@@ -1,9 +1,7 @@
 import { expect, test } from "bun:test"
-import { fp } from "@tscircuit/footprinter"
-import type { Capacitor } from "lib/components/normal-components/Capacitor"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("capacitor footprints retain resolved terminals and delegate artwork on both layers", async () => {
+test("capacitor fabrication marks follow both terminal mappings, rotations and board sides", async () => {
   const { circuit } = getTestFixture()
   const cases = [false, true].flatMap((reversed, mapping) =>
     (["top", "bottom"] as const).flatMap((layer, side) =>
@@ -25,31 +23,12 @@ test("capacitor footprints retain resolved terminals and delegate artwork on bot
           name={name}
           capacitance="10uF"
           polarized
-          footprint={reversed ? undefined : "1206"}
+          footprint={reversed ? "1206_positivepin2_negativepin1" : "1206"}
           layer={layer}
           pcbRotation={rotation}
           pcbX={x}
           pcbY={y}
-        >
-          {reversed && (
-            <footprint>
-              <smtpad
-                shape="rect"
-                width={1}
-                height={1.5}
-                pcbX={1.5}
-                portHints={["1", "pos"]}
-              />
-              <smtpad
-                shape="rect"
-                width={1}
-                height={1.5}
-                pcbX={-1.5}
-                portHints={["2", "neg"]}
-              />
-            </footprint>
-          )}
-        </capacitor>
+        />
       ))}
     </board>,
   )
@@ -78,17 +57,36 @@ test("capacitor footprints retain resolved terminals and delegate artwork on bot
     const paths = circuit.db.pcb_fabrication_note_path.list({
       pcb_component_id: pcb.pcb_component_id,
     })
-    const capacitor = circuit.selectOne(`.${name}`) as Capacitor
-    const footprint = capacitor.resolveFootprint()
-    const expected =
-      typeof footprint === "string"
-        ? fp
-            .string(footprint)
-            .circuitJson()
-            .filter((e) => e.type === "pcb_fabrication_note_path").length
-        : 0
-    expect(paths).toHaveLength(expected)
-    expect(paths.every((p) => p.layer === layer)).toBe(true)
+    expect(paths).toHaveLength(3)
+    for (const path of paths) {
+      expect(path.layer).toBe(layer)
+      expect(path.route).toHaveLength(2)
+    }
+    const plus = paths.filter(
+      (path) =>
+        Math.hypot(
+          (path.route[0]!.x + path.route[1]!.x) / 2 - positive.x,
+          (path.route[0]!.y + path.route[1]!.y) / 2 - positive.y,
+        ) < 1e-6,
+    )
+    expect(plus).toHaveLength(2)
+    const plusDirections = plus.map((path) => ({
+      x: path.route[1]!.x - path.route[0]!.x,
+      y: path.route[1]!.y - path.route[0]!.y,
+    }))
+    expect(
+      plusDirections[0]!.x * plusDirections[1]!.x +
+        plusDirections[0]!.y * plusDirections[1]!.y,
+    ).toBeCloseTo(0)
+    const minus = paths.find((path) => !plus.includes(path))!
+    expect((minus.route[0]!.x + minus.route[1]!.x) / 2).toBeCloseTo(negative.x)
+    expect((minus.route[0]!.y + minus.route[1]!.y) / 2).toBeCloseTo(negative.y)
+    const mark = {
+      x: minus.route[1]!.x - minus.route[0]!.x,
+      y: minus.route[1]!.y - minus.route[0]!.y,
+    }
+    const terminals = { x: positive.x - negative.x, y: positive.y - negative.y }
+    expect(mark.x * terminals.y - mark.y * terminals.x).toBeCloseTo(0)
     const pads = circuit.db.pcb_smtpad.list({
       pcb_component_id: pcb.pcb_component_id,
     })

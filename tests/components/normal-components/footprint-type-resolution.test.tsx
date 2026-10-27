@@ -59,6 +59,7 @@ test("component intent resolves Footprinter strings once without rewriting autho
         polarized
         pcbX={14}
       />
+      <chip name="U_NEUTRAL" footprint="sod123" pcbY={-4.5} />
       <pcbnotetext
         text="Core selects diode0805 / cap0805_polarized; Footprinter supplies artwork"
         pcbY={5}
@@ -74,6 +75,11 @@ test("component intent resolves Footprinter strings once without rewriting autho
     const expected = name === "C_POL" ? "cap0805_polarized" : "diode0805"
     expect(component.resolveFootprint()).toBe(expected)
     expect(component.getFootprinterString()).toBe(expected)
+    expect(
+      circuit.db.pcb_fabrication_note_path.list({
+        pcb_component_id: component.pcb_component_id!,
+      }),
+    ).toHaveLength(name === "C_POL" ? 3 : 4)
     const pcb = circuit.db.pcb_component.get(component.pcb_component_id!)!
     expect(
       circuit.db.cad_component.getWhere({
@@ -81,8 +87,11 @@ test("component intent resolves Footprinter strings once without rewriting autho
       })!.footprinter_string,
     ).toBe(expected)
   }
-  const chip = new Chip({ name: "U1", footprint: "sod123" })
+  const chip = circuit.selectOne(".U_NEUTRAL") as Chip
   expect(chip.resolveFootprint()).toBe("sod123_nonpolarized")
+  const chipFilter = { pcb_component_id: chip.pcb_component_id! }
+  expect(circuit.db.pcb_fabrication_note_path.list(chipFilter)).toHaveLength(0)
+  expect(circuit.db.pcb_fabrication_note_text.list(chipFilter)).toHaveLength(0)
   for (const footprint of [
     "https://example.com/footprint.json",
     "kicad:Diode_SMD/D_SOD-123",
