@@ -13,8 +13,8 @@ import {
   pcb_pin1_location,
   source_component_misconfigured_error,
 } from "circuit-json"
-import { isFootprintFlipped } from "lib/utils/pcb/transform-footprint-insertion-direction"
 import { fetchPartCircuitJsonWithoutDatasheet } from "lib/utils/fetch-part-circuit-json-with-datasheet"
+import { isFootprintFlipped } from "lib/utils/pcb/transform-footprint-insertion-direction"
 import type { NormalComponent } from "./NormalComponent"
 
 type SupplierPartCandidate = {
@@ -29,9 +29,9 @@ type SupplierPartOrientationAnalysis = {
   pin1Polarity: Pin1Polarity | null
 }
 
-// v4 invalidates null straight-row frames cached before circuit-json-util 0.0.117.
+// v5 invalidates null two-pad frames cached before circuit-json-util 0.0.128.
 type SupplierPartOrientationCacheKey =
-  `part-orientation-analysis:v4:${SupplierName}:${string}`
+  `part-orientation-analysis:v5:${SupplierName}:${string}`
 
 type CachedSupplierPartOrientationAnalysis = {
   pin1_location: PcbPin1Location | null
@@ -183,7 +183,7 @@ const getSupplierPartOrientationCacheKey = ({
   supplierName,
   supplierPartNumber,
 }: SupplierPartCandidate): SupplierPartOrientationCacheKey =>
-  `part-orientation-analysis:v4:${supplierName}:${supplierPartNumber}`
+  `part-orientation-analysis:v5:${supplierName}:${supplierPartNumber}`
 
 const readCachedSupplierPartOrientationAnalysis = async ({
   cacheKey,
