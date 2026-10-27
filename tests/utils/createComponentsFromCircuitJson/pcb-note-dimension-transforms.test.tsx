@@ -9,9 +9,6 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("imported dimension endpoints and offset directions follow footprint placement", async () => {
   const { circuit } = getTestFixture()
-  // Footprint-local points in mm: +X right, +Y top, +Z above, right-handed.
-  // Three pads mark from, to, and from + the unitless offset direction.
-  // Compare emitted geometry so an offset translated as a point cannot pass.
   const footprint = [
     {
       type: "pcb_note_dimension",
@@ -91,8 +88,6 @@ test("imported dimension endpoints and offset directions follow footprint placem
         pcbY={20}
         fontSize={0.7}
       />
-      {/* The legacy FootprintProp union omits dimensions; footprint above is
-          checked against the current Circuit JSON record types. */}
       <pcbnotetext text="top 0deg" pcbX={-36} pcbY={16} fontSize={0.75} />
       <chip
         name="U_TOP_0"
@@ -209,7 +204,6 @@ test("imported dimension endpoints and offset directions follow footprint placem
       expect(pcb.layer).toBe(dimension.layer)
       expect(dimension.offset_distance).toBe(3)
     } else {
-      // PCB notes retain their explicit annotation layer, matching native JSX.
       expect(dimension.layer).toBe("top")
       expect(dimension.offset_distance).toBe(1)
     }

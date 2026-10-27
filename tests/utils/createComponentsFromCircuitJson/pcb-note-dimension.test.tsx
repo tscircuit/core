@@ -5,8 +5,6 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("Circuit JSON imports PCB note dimensions with geometry and styling", async () => {
   const { circuit } = getTestFixture()
-  // Footprint-local points in mm: +X right, +Y top, +Z above, right-handed.
-  // offset_direction is unitless and receives no translation.
   const dimension: PcbNoteDimension = {
     type: "pcb_note_dimension",
     pcb_note_dimension_id: "input_dimension",
@@ -63,8 +61,6 @@ test("Circuit JSON imports PCB note dimensions with geometry and styling", async
           </footprint>
         }
       />
-      {/* The legacy FootprintProp union omits dimensions; the inputs above
-          are checked against the current Circuit JSON record type. */}
       <chip
         name="U_JSON"
         pcbX={8}

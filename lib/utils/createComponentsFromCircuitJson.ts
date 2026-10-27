@@ -798,10 +798,6 @@ export const createComponentsFromCircuitJson = (
         }),
       )
     } else if (elm.type === "pcb_fabrication_note_dimension") {
-      // Endpoints are footprint-local points in mm (+X right, +Y top,
-      // +Z above, right-handed); offset_direction is unitless. The native
-      // dimension applies placement to points and rotation/reflection to
-      // the direction, without translating it.
       components.push(
         new FabricationNoteDimension({
           from: elm.from,
@@ -844,8 +840,6 @@ export const createComponentsFromCircuitJson = (
         }),
       )
     } else if (elm.type === "pcb_note_dimension") {
-      // Same footprint-local point/direction convention as fabrication
-      // dimensions above; PcbNoteDimension handles placement itself.
       components.push(
         new PcbNoteDimension({
           from: elm.from,
