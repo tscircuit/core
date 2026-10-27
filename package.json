@@ -23,7 +23,7 @@
     "format": "biome format . --write",
     "measure-bundle": "howfat -r table .",
     "pkg-pr-new-release": "bunx pkg-pr-new publish --comment=off --peerDeps",
-    "smoke-test:dist": "bun run scripts/smoke-tests/test-dist-simple-circuit.tsx && bun run scripts/smoke-tests/check-dist-bundled-schematic-solver.ts",
+    "smoke-test:dist": "bun run scripts/smoke-tests/test-dist-simple-circuit.tsx && bun run scripts/smoke-tests/check-dist-bundled-schematic-solver.ts && bun run scripts/smoke-tests/test-dist-drawing-dimensions.tsx",
     "build:benchmarking": "bun build --experimental-html ./benchmarking/website/index.html --outdir ./benchmarking-dist",
     "build:benchmarking:watch": "chokidar \"./{benchmarking,lib}/**/*.{ts,tsx}\" -c 'bun build --experimental-html ./benchmarking/website/index.html --outdir ./benchmarking-dist'",
     "start:benchmarking": "concurrently \"bun run build:benchmarking:watch\" \"live-server ./benchmarking-dist\"",
@@ -59,7 +59,7 @@
     "@tscircuit/miniflex": "^0.0.4",
     "@tscircuit/modelprinter": "^0.0.18",
     "@tscircuit/ngspice-spice-engine": "^0.0.20",
-    "@tscircuit/props": "^0.0.711",
+    "@tscircuit/props": "^0.0.712",
     "@tscircuit/schematic-match-adapt": "^0.0.18",
     "@tscircuit/schematic-trace-solver": "https://jscdn.tscircuit.com/@tscircuit/schematic-trace-solver/0.0.238.tgz",
     "@tscircuit/solver-utils": "^0.0.16",
@@ -146,7 +146,7 @@
     "@jscad/modeling": "^2.13.0"
   },
   "overrides": {
-    "@tscircuit/props": "^0.0.711",
+    "@tscircuit/props": "^0.0.712",
     "circuit-json": "^0.0.534",
     "@tscircuit/cableprinter": "^0.0.6"
   },
