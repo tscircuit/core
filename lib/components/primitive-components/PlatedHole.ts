@@ -11,7 +11,6 @@ import type {
   PcbHoleRotatedPillWithRectPad,
   PcbHoleWithPolygonPad,
 } from "circuit-json"
-import { decomposeTSR } from "transformation-matrix"
 import { selectPortForPcbPrimitive } from "./Port/selectPortForPcbPrimitive"
 
 export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
@@ -138,10 +137,20 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
 
     this.emitSolderMaskMarginWarning(isCoveredWithSolderMask, soldermaskMargin)
 
-    const decomposedTransform = decomposeTSR(
-      this._computePcbGlobalTransformBeforeLayout(),
-    )
-    const rotationDegrees = (decomposedTransform.rotation.angle * 180) / Math.PI
+    // Orient the local +X direction with the same footprint-local to board
+    // placement used for the center (+X right, +Y top, mm). Decomposing a
+    // reflected matrix can assign the reflection to a different axis and
+    // reverse the angle of bottom-layer pads. Match SilkscreenRect's use of
+    // PrimitiveComponent._computePcbGlobalTransformBeforeLayout instead.
+    const footprintLocalToBoardTransform =
+      this._computePcbGlobalTransformBeforeLayout()
+    const rotationDegrees =
+      (Math.atan2(
+        footprintLocalToBoardTransform.b,
+        footprintLocalToBoardTransform.a,
+      ) *
+        180) /
+      Math.PI
     const normalizedRotationDegrees = ((rotationDegrees % 360) + 360) % 360
     const finalRotationDegrees = normalizedRotationDegrees
 
