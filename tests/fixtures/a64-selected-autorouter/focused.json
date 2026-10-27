@@ -28,19 +28,14 @@
         "obstacleId": "U2.E3",
         "componentId": "U2",
         "type": "rect",
-        "layers": [
-          "top"
-        ],
+        "layers": ["top"],
         "center": {
           "x": 131.8,
           "y": -85.4
         },
         "width": 0.4,
         "height": 0.4,
-        "connectedTo": [
-          "/S0SDQ4",
-          "U2.E3"
-        ],
+        "connectedTo": ["/S0SDQ4", "U2.E3"],
         "circuitJsonMetadata": {
           "source_component_name": "U2",
           "source_port_name": "E3"
@@ -51,19 +46,14 @@
         "obstacleId": "U2.D3",
         "componentId": "U2",
         "type": "rect",
-        "layers": [
-          "top"
-        ],
+        "layers": ["top"],
         "center": {
           "x": 132.6,
           "y": -85.4
         },
         "width": 0.4,
         "height": 0.4,
-        "connectedTo": [
-          "/S0SDQM1",
-          "U2.D3"
-        ],
+        "connectedTo": ["/S0SDQM1", "U2.D3"],
         "circuitJsonMetadata": {
           "source_component_name": "U2",
           "source_port_name": "D3"
@@ -97,10 +87,7 @@
     "type": "pcb_trace",
     "pcb_trace_id": "/S0SDQ4_0",
     "connection_name": "/S0SDQ4",
-    "connectsTo": [
-      "U2.E3",
-      "cropped-inner1-end"
-    ],
+    "connectsTo": ["U2.E3", "cropped-inner1-end"],
     "route": [
       {
         "route_type": "wire",
