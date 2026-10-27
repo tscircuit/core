@@ -72,14 +72,11 @@ test("fixed labels preserve the wire carrying an inline net annotation", async (
   for (const inlineLabelText of inlineLabelTexts) {
     // Horizontal inline labels sit immediately above their wire. Check the
     // emitted text against the emitted traces in circuit-world mm (+Y up).
-    const wirePosition = {
-      x: inlineLabelText.position.x,
-      y: inlineLabelText.position.y - inlineLabelText.font_size! / 2,
-    }
     expect(
       edges.some(
         (edge) =>
-          pointToSegmentDistance(wirePosition, edge.from, edge.to) < 1e-6,
+          pointToSegmentDistance(inlineLabelText.position, edge.from, edge.to) <
+          1e-6,
       ),
     ).toBe(true)
   }

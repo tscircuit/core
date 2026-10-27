@@ -37,6 +37,6 @@ test("netlabel center offset", () => {
       .list()
       .find((text) => text.source_trace_id && text.text === "TESTNET"),
   ).toMatchObject({
-    anchor: "right",
+    anchor: "bottom_right",
   })
 })

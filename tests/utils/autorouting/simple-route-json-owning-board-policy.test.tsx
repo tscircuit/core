@@ -13,6 +13,7 @@ test("nested routing uses its owning board via policy", async () => {
         height="15mm"
         layers={4}
         allowBlindAndBuriedVias={false}
+        isViaInPadAllowed={false}
         routingDisabled
       />
       <board
@@ -21,6 +22,7 @@ test("nested routing uses its owning board via policy", async () => {
         height="15mm"
         layers={8}
         allowBlindAndBuriedVias
+        isViaInPadAllowed
         routingDisabled
       >
         <subcircuit name="TARGET">
@@ -56,4 +58,5 @@ test("nested routing uses its owning board via policy", async () => {
 
   expect(simpleRouteJson.layerCount).toBe(8)
   expect(simpleRouteJson.allowBlindAndBuriedVias).toBe(true)
+  expect(simpleRouteJson.allowViaInPad).toBe(true)
 })

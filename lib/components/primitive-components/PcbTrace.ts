@@ -1,6 +1,8 @@
 import { type PcbTraceRoutePoint, pcb_trace_route_point } from "circuit-json"
 import { applyToPoint } from "transformation-matrix"
 import { z } from "zod"
+import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
+import { getViaDiameterDefaults } from "lib/utils/pcbStyle/getViaDiameterDefaults"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
 export const pcbTraceProps = z.object({
@@ -14,6 +16,8 @@ export type PcbTraceProps = z.infer<typeof pcbTraceProps>
 
 export class PcbTrace extends PrimitiveComponent<typeof pcbTraceProps> {
   pcb_trace_id: string | null = null
+  // Imported footprints can already supply the physical via as a pcb_via.
+  _materializedRouteViaIndices = new Set<number>()
   // Marks radiating copper created by Antenna, never its feed connection.
   isAntennaTrace = false
   isPcbPrimitive = true
@@ -82,6 +86,32 @@ export class PcbTrace extends PrimitiveComponent<typeof pcbTraceProps> {
       pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
     })
     this.pcb_trace_id = pcb_trace.pcb_trace_id
+
+    const { holeDiameter, padDiameter } = getViaDiameterDefaults(
+      this.getInheritedMergedProperty("pcbStyle"),
+    )
+    for (const [routeIndex, point] of transformedRoute.entries()) {
+      if (point.route_type !== "via") continue
+      if (this._materializedRouteViaIndices.has(routeIndex)) continue
+      db.pcb_via.insert({
+        pcb_trace_id: pcb_trace.pcb_trace_id,
+        x: point.x,
+        y: point.y,
+        hole_diameter: point.hole_diameter ?? holeDiameter,
+        outer_diameter: point.outer_diameter ?? padDiameter,
+        layers: getViaSpanLayers({
+          fromLayer: point.from_layer,
+          toLayer: point.to_layer,
+          layerCount: subcircuit._getSubcircuitLayerCount(),
+        }),
+        from_layer: point.from_layer,
+        to_layer: point.to_layer,
+        tented_on_top: point.tented_on_top,
+        tented_on_bottom: point.tented_on_bottom,
+        subcircuit_id: pcb_trace.subcircuit_id,
+        pcb_group_id: pcb_trace.pcb_group_id,
+      })
+    }
   }
 
   getPcbSize(): { width: number; height: number } {

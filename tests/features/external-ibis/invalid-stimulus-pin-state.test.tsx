@@ -1,0 +1,50 @@
+import { expect, test } from "bun:test"
+import type { IbisPinRunState } from "@tscircuit/props"
+import { analog } from "lib/namespaced-elements/analog"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
+
+test("traffic requires an explicitly enabled output in its own experiment", async () => {
+  const invalidPinStates: Record<string, IbisPinRunState>[] = [
+    {},
+    { ".U1 > .pin1": { isOutput: false } },
+    { ".U1 > .pin1": { isOutput: true, isOutputEnabled: false } },
+  ]
+  for (const ibisPinStates of invalidPinStates) {
+    const { circuit } = getTestFixture()
+    circuit.add(
+      <board routingDisabled>
+        <chip name="U1" footprint="soic4" />
+        <analog.transientsimulation
+          spiceEngine="pcb_spice"
+          name="other"
+          duration="20ns"
+          ibisPinStates={{
+            ".U1 > .pin1": { isOutput: true, isOutputEnabled: true },
+          }}
+        />
+        <analog.transientsimulation
+          spiceEngine="pcb_spice"
+          name="run"
+          duration="20ns"
+          ibisPinStates={ibisPinStates}
+        />
+        <analog.digitalstimulus
+          name="data"
+          simulationRef=".run"
+          sourcePinRef=".U1 > .pin1"
+          bitDuration="2ns"
+          startTime="0ns"
+          initialState={0}
+          transmittedData={{
+            transmissionType: "bits",
+            bits: "01",
+            repeat: true,
+          }}
+        />
+      </board>,
+    )
+    await expect(circuit.renderUntilSettled()).rejects.toThrow(
+      "declared as an enabled output",
+    )
+  }
+})

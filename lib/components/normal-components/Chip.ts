@@ -119,6 +119,7 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
     const globalTransformRotation = this.getGlobalTransformRotation()
 
     const pcb_component = db.pcb_component.insert({
+      footprint_origin: this._getGlobalPcbPositionBeforeLayout(),
       center: { x: pcbX, y: pcbY },
       width: 2, // Default width, adjust as needed
       height: 3, // Default height, adjust as needed

@@ -77,6 +77,7 @@ export const orderedRenderPhases = [
   "PcbDesignRuleChecks",
   "SilkscreenOverlapAdjustment",
   "CadModelRender",
+  "DrawingRender",
   "PartsEngineRender",
   "MissingManufacturerPartNumberWarning",
   "ComponentAvailabilityWarning",
@@ -97,6 +98,11 @@ export const renderPhaseIndexMap = new Map<RenderPhase, number>(
 const asyncPhaseDependencies: Partial<Record<RenderPhase, RenderPhase[]>> = {
   InflateSubcircuitCircuitJson: ["RenderIsolatedSubcircuits"],
   ResolveFootprintPinLabels: ["PcbFootprintStringRender", "FetchPartFootprint"],
+  SimulationRender: ["PcbFootprintStringRender", "FetchPartFootprint"],
+  SimulationSpiceEngineRender: [
+    "PcbFootprintStringRender",
+    "FetchPartFootprint",
+  ],
   SchematicComponentRender: ["PcbFootprintStringRender", "FetchPartFootprint"],
   SchematicPortRender: ["PcbFootprintStringRender", "FetchPartFootprint"],
   SymbolContainerRender: ["PcbFootprintStringRender", "FetchPartFootprint"],

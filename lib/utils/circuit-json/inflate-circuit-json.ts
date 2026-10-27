@@ -7,6 +7,7 @@ import type {
 } from "../../components/primitive-components/Group/Subcircuit/InflatorFn"
 import type { SubcircuitI } from "../../components/primitive-components/Group/Subcircuit/SubcircuitI"
 import { inflatePcbBoard } from "../../components/primitive-components/Group/Subcircuit/inflators/inflatePcbBoard"
+import { inflateSimulation } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSimulation"
 import { inflateSourceCapacitor } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceCapacitor"
 import { inflateSourceChip } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceChip"
 import { inflateSourceConnector } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceConnector"
@@ -137,4 +138,5 @@ export const inflateCircuitJson = (
   // Inflate standalone PCB primitives (silkscreen, fab notes, pcb notes, etc.)
   // These are elements placed directly on the board without a component association
   inflateStandalonePcbPrimitives(inflationCtx)
+  inflateSimulation(inflationCtx)
 }

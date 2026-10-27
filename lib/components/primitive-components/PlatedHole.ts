@@ -27,7 +27,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
   }
 
   getAvailablePcbLayers(): LayerRef[] {
-    return [...(this.root?._getBoard()?.allLayers ?? ["top", "bottom"])]
+    return [...(this._getBoard()?.allLayers ?? ["top", "bottom"])]
   }
 
   getPcbSize(): { width: number; height: number } {
@@ -393,6 +393,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         hole_width: props.holeWidth,
         hole_height: props.holeHeight,
         pad_outline: padOutline,
+        ccw_rotation: finalRotationDegrees,
         hole_offset_x: holeOffsetX,
         hole_offset_y: holeOffsetY,
         port_hints: this.getNameAndAliases(),
