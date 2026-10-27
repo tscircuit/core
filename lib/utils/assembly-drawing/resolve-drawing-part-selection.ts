@@ -1,9 +1,9 @@
 import { selectAll } from "css-select"
 import type { DrawingPartView } from "circuit-json"
-import { cssSelectPrimitiveComponentAdapter } from "../base-components/PrimitiveComponent/cssSelectPrimitiveComponentAdapter"
-import { preprocessSelector } from "../base-components/PrimitiveComponent/preprocessSelector"
-import type { AssemblyDrawingPartView } from "./AssemblyDrawingPartView"
-import { getAssemblyScope } from "./get-assembly-scope-components"
+import { cssSelectPrimitiveComponentAdapter } from "lib/components/base-components/PrimitiveComponent/cssSelectPrimitiveComponentAdapter"
+import { preprocessSelector } from "lib/components/base-components/PrimitiveComponent/preprocessSelector"
+import type { AssemblyDrawingPartView } from "lib/components/primitive-components/AssemblyDrawingPartView"
+import { getAssemblyScope } from "lib/components/primitive-components/get-assembly-scope-components"
 
 /** Resolve geometry in the nearest assembly device, preserving CAD world-space
  * points in mm (+Z up); selectors do not change the model's placement or frame.

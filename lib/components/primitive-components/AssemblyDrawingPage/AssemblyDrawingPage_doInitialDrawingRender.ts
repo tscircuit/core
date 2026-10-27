@@ -1,10 +1,10 @@
 import type { DrawingPartView, DrawingPartViewDirection } from "circuit-json"
 import type { AssemblyDrawingPartViewDirection } from "@tscircuit/props"
 import type { AssemblyDrawingPage } from "./AssemblyDrawingPage"
-import { AssemblyDrawingTitleBlock } from "./AssemblyDrawingTitleBlock"
-import { resolveDrawingViewCenters } from "./resolve-drawing-view-centers"
-import type { ResolvedDrawingDimension } from "./resolve-drawing-dimensions"
-import { resolveDrawingPartSelection } from "./resolve-drawing-part-selection"
+import { AssemblyDrawingTitleBlock } from "lib/components/primitive-components/AssemblyDrawingTitleBlock"
+import { resolveDrawingViewCenters } from "lib/utils/assembly-drawing/resolve-drawing-view-centers"
+import type { ResolvedDrawingDimension } from "lib/utils/assembly-drawing/dimensions/resolve-drawing-dimensions"
+import { resolveDrawingPartSelection } from "lib/utils/assembly-drawing/resolve-drawing-part-selection"
 
 /** Camera directions remain CAD world directions (+Z up). Viewport centers are
  * paper-space points in mm (+X right, +Y up); renderers handle frame conversion.
@@ -101,7 +101,7 @@ export function AssemblyDrawingPage_doInitialDrawingRender(
   page._queueAsyncEffect("resolve-drawing-dimensions", async () => {
     try {
       const { resolveDrawingDimensions } = await import(
-        "./resolve-drawing-dimensions"
+        "lib/utils/assembly-drawing/dimensions/resolve-drawing-dimensions"
       )
       for (const prepared of preparedViews) {
         prepared.dimensions = await resolveDrawingDimensions(

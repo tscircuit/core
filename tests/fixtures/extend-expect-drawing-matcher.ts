@@ -1,5 +1,5 @@
 import { expect } from "bun:test"
-import { getDrawingViewGeometry } from "lib/components/primitive-components/get-drawing-view-geometry"
+import { getDrawingViewGeometry } from "lib/utils/assembly-drawing/geometry/get-drawing-view-geometry"
 import { RootCircuit } from "lib/RootCircuit"
 import { toMatchSvgSnapshot } from "./extend-expect-any-svg"
 

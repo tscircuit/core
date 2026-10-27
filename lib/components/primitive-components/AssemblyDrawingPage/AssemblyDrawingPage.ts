@@ -1,5 +1,5 @@
 import { assemblyDrawingPageProps } from "@tscircuit/props"
-import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
+import { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import { AssemblyDrawingPage_doInitialDrawingRender } from "./AssemblyDrawingPage_doInitialDrawingRender"
 
 export class AssemblyDrawingPage extends PrimitiveComponent<

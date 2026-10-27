@@ -146,3 +146,12 @@ Missing, ambiguous or out-of-selection feature references, empty sections and
 zero projected extents are errors. A failed model load cannot be measured using
 a placeholder bounding box. Pages without dimensions keep their synchronous
 metadata-only behavior.
+
+## Source organization
+
+The page component and its render-phase implementation live together in
+`lib/components/primitive-components/AssemblyDrawingPage/`. Shared drawing
+helpers live in `lib/utils/assembly-drawing/`: `dimensions/` contains measurement,
+projection, annotation placement and edge-reference resolution; `geometry/`
+contains model-feature extraction and view-geometry loading. Page placement and
+part-selection helpers live at the drawing utility directory's root.

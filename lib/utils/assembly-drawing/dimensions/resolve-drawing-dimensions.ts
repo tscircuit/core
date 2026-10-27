@@ -15,12 +15,12 @@ import {
   type CameraUp,
   type DrawCall,
 } from "poppygl"
-import type { AssemblyDrawingPartView } from "./AssemblyDrawingPartView"
-import type { AssemblyDrawingDimension } from "./AssemblyDrawingDimension"
+import type { AssemblyDrawingPartView } from "lib/components/primitive-components/AssemblyDrawingPartView"
+import type { AssemblyDrawingDimension } from "lib/components/primitive-components/AssemblyDrawingDimension"
 import {
   getDrawingViewGeometry,
   loadDrawingScene,
-} from "./get-drawing-view-geometry"
+} from "../geometry/get-drawing-view-geometry"
 import { resolveDrawingEdgeReferences } from "./resolve-drawing-edge-references"
 
 export type ResolvedDrawingDimension = Omit<

@@ -1,15 +1,15 @@
 import { selectAll, type Options } from "css-select"
 import type { AnyCircuitElement } from "circuit-json"
-import type { PrimitiveComponent } from "../base-components/PrimitiveComponent"
-import { cssSelectPrimitiveComponentAdapter } from "../base-components/PrimitiveComponent/cssSelectPrimitiveComponentAdapter"
-import { preprocessSelector } from "../base-components/PrimitiveComponent/preprocessSelector"
-import type { AssemblyDrawingDimension } from "./AssemblyDrawingDimension"
-import type { AssemblyDrawingPartView } from "./AssemblyDrawingPartView"
-import { getAssemblyScope } from "./get-assembly-scope-components"
+import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
+import { cssSelectPrimitiveComponentAdapter } from "lib/components/base-components/PrimitiveComponent/cssSelectPrimitiveComponentAdapter"
+import { preprocessSelector } from "lib/components/base-components/PrimitiveComponent/preprocessSelector"
+import type { AssemblyDrawingDimension } from "lib/components/primitive-components/AssemblyDrawingDimension"
+import type { AssemblyDrawingPartView } from "lib/components/primitive-components/AssemblyDrawingPartView"
+import { getAssemblyScope } from "lib/components/primitive-components/get-assembly-scope-components"
 import {
   getDrawingModelFeatures,
   type DrawingModelFeature,
-} from "./get-drawing-model-features"
+} from "../geometry/get-drawing-model-features"
 
 interface DrawingSelectorNode {
   part?: PrimitiveComponent
