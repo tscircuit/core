@@ -94,23 +94,8 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
     return
   }
 
-  // Check for cached route
-  const cachedRoute = subcircuit._parsedProps.pcbRouteCache?.pcbTraces
-  if (cachedRoute) {
-    if (subcircuit._isLegacyAutorouterDisabled()) return
-
-    const pcb_trace = db.pcb_trace.insert({
-      route: cachedRoute.flatMap((trace) => trace.route),
-      source_trace_id: trace.source_trace_id!,
-      subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
-      pcb_group_id: trace.getGroup()?.pcb_group_id ?? undefined,
-    })
-    trace.pcb_trace_id = pcb_trace.pcb_trace_id
-    return
-  }
-
   // Manual traces are handled in PcbManualTraceRender phase
-  if (props.pcbPath && props.pcbPath.length > 0) {
+  if (props.pcbPath !== undefined) {
     return
   }
 
@@ -120,6 +105,28 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
 
   if (props.pcbStraightLine) {
     return
+  }
+
+  // Check for cached route
+  const cachedTraces = subcircuit._parsedProps.pcbRouteCache?.pcbTraces
+  if (cachedTraces) {
+    if (subcircuit._isLegacyAutorouterDisabled()) return
+
+    const matchingTraces = cachedTraces.filter(
+      (cachedTrace) => cachedTrace.source_trace_id === trace.source_trace_id,
+    )
+    for (const cachedTrace of matchingTraces) {
+      const { pcb_trace_id: _cachedPcbTraceId, ...cachedTraceData } =
+        cachedTrace
+      const pcbTrace = db.pcb_trace.insert({
+        ...cachedTraceData,
+        source_trace_id: trace.source_trace_id!,
+        subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+        pcb_group_id: trace.getGroup()?.pcb_group_id ?? undefined,
+      })
+      trace.pcb_trace_id ??= pcbTrace.pcb_trace_id
+    }
+    if (matchingTraces.length > 0) return
   }
 
   if (!subcircuit._shouldUseTraceByTraceRouting()) {
