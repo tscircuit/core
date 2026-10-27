@@ -7,7 +7,7 @@ import type {
 import { symbols } from "schematic-symbols"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { isFootprinterString } from "../base-components/NormalComponent/utils/isFootprinterString"
-import { resolveDiodeFootprint } from "./Diode"
+import { getDiodePortOptions, resolveDiodeFootprint } from "./Diode"
 import type { Port } from "../primitive-components/Port"
 
 export class Led extends NormalComponent<
@@ -53,42 +53,7 @@ export class Led extends NormalComponent<
   }
 
   initPorts() {
-    const hasFootprintChild = this.children.some(
-      (child) => child.componentName === "Footprint",
-    )
-    const footprint = this.resolveFootprint()
-    const hasPinLabels = Boolean(this._resolvePinLabels())
-    const shouldAddDefaultAliases =
-      !hasPinLabels &&
-      !hasFootprintChild &&
-      (!footprint || isFootprinterString(footprint))
-
-    const { positivePin, negativePin } =
-      footprint && isFootprinterString(footprint)
-        ? resolveDiodeFootprint(footprint, {
-            name: this.name,
-            pinLabels: this._resolvePinLabels(),
-          })
-        : { positivePin: 1, negativePin: 2 }
-    super.initPorts({
-      pinCount: 2,
-      implicitPinLabels:
-        shouldAddDefaultAliases && positivePin !== 1
-          ? {
-              [`pin${positivePin}`]: ["anode", "pos"],
-              [`pin${negativePin}`]: ["cathode", "neg"],
-            }
-          : undefined,
-      ignoreSymbolPorts: !hasPinLabels && !shouldAddDefaultAliases,
-      additionalAliases: {
-        [`pin${positivePin}`]: shouldAddDefaultAliases
-          ? ["anode", "pos", positivePin === 1 ? "left" : "right"]
-          : [],
-        [`pin${negativePin}`]: shouldAddDefaultAliases
-          ? ["cathode", "neg", negativePin === 1 ? "left" : "right"]
-          : [],
-      },
-    })
+    super.initPorts(getDiodePortOptions(this))
   }
 
   _getSchematicSymbolDisplayValue(): string | undefined {
