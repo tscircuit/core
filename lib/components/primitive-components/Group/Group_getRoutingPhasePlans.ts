@@ -454,11 +454,11 @@ export function Group_getRoutingPhasePlans(
     const props = phase._parsedProps
     if (props.addTestPoints) {
       plan.testPointOptions = {
-        layer: props.layer ?? "bottom",
-        diameter: props.diameter ?? 1,
-        clearance: props.clearance ?? 0.2,
-        minProbeSpacing: props.minProbeSpacing ?? 2.54,
-        maxDetour: props.maxDetour ?? 1,
+        layer: props.testPointLayer ?? "bottom",
+        diameter: props.testPointDiameter ?? 1,
+        clearance: props.testPointClearance ?? 0.2,
+        minProbeSpacing: props.testPointMinProbeSpacing ?? 2.54,
+        maxDetour: props.testPointMaxDetour ?? 1,
       }
     }
     plan.autoroutingPhase = phase

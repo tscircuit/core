@@ -28,7 +28,7 @@ test("test-point autorouter defaults apply to all routed traces without selector
       <testpoint name="LEFT" pcbX={-7} padDiameter={1} layer="bottom" />
       <testpoint name="RIGHT" pcbX={7} padDiameter={1} layer="bottom" />
       <trace from="LEFT.pin1" to="RIGHT.pin1" />
-      <autoroutingphase reroute addTestPoints maxDetour="10mm" />
+      <autoroutingphase reroute addTestPoints testPointMaxDetour="10mm" />
     </board>,
   )
   await circuit.renderUntilSettled()

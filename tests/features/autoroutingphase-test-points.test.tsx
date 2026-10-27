@@ -33,11 +33,11 @@ test("a designated trace receives an exposed, electrically connected probe pad",
         reroute
         connection="LEFT.pin1"
         addTestPoints
-        layer="top"
-        diameter="1mm"
-        clearance="0.2mm"
-        minProbeSpacing="2.54mm"
-        maxDetour={0}
+        testPointLayer="top"
+        testPointDiameter="1mm"
+        testPointClearance="0.2mm"
+        testPointMinProbeSpacing="2.54mm"
+        testPointMaxDetour={0}
       />
     </board>,
   )
