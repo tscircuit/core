@@ -451,6 +451,7 @@ export function Group_getRoutingPhasePlans(
   ) as AutoroutingPhase[]) {
     const plan = plansByPhaseIndex.get(phase._parsedProps.phaseIndex ?? null)
     if (!plan) continue
+    plan.pcbTestPoints = phase._parsedProps.pcbTestPoints
     plan.autoroutingPhase = phase
     if (phase._parsedProps.pcbTracePaths === undefined) continue
     const config =

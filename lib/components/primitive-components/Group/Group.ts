@@ -1,3 +1,8 @@
+import { TestPointSolver } from "@tscircuit/capacity-autorouter"
+import {
+  materializeRoutedTestPoints,
+  type ConnectedRoutedTestPoint,
+} from "lib/utils/autorouting/materialize-routed-test-points"
 import { getAutoroutingPhasePcbTracePaths } from "./get-autorouting-phase-pcb-trace-paths"
 import {
   type SimpleRouteJson as AutorouterSimpleRouteJson,
@@ -274,6 +279,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   _asyncAutoroutingResult: {
+    output_test_points?: ConnectedRoutedTestPoint[]
     output_simple_route_json?: SimpleRouteJson
     output_pcb_traces?: (PcbTrace | PcbVia)[]
     // PCB traces that are being re-routed
@@ -802,7 +808,17 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   _getRoutingPhasePlans(): RoutingPhasePlan[] {
-    return Group_getRoutingPhasePlans(this)
+    const plans = Group_getRoutingPhasePlans(this)
+    const testPointPhases = plans.filter((plan) => plan.pcbTestPoints)
+    if (
+      testPointPhases.length > 1 ||
+      (testPointPhases.length === 1 && plans.at(-1) !== testPointPhases[0])
+    ) {
+      throw new Error(
+        "Use a single final autorouting phase for PCB test points",
+      )
+    }
+    return plans
   }
 
   _hasTracesToRoute(): boolean {
@@ -1065,18 +1081,20 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             )
           : autorouterConfig
       const preset = resolvedPhaseAutorouterConfig.preset
-      const implicitPhaseLabel = routingPhasePlan.reroute
-        ? preset === "simplify"
-          ? "simplify"
-          : "reroute"
-        : routingPhasePlan.fanoutRegionPcbGroupId
-          ? routingPhasePlan.autorouter === "default" &&
-            !routingPhasePlan.getPrecomputedRoutingResult
-            ? "breakout"
-            : "fanout"
-          : preset && preset !== "default"
-            ? preset.replaceAll("_", " ")
-            : "default"
+      const implicitPhaseLabel = routingPhasePlan.pcbTestPoints
+        ? "test points"
+        : routingPhasePlan.reroute
+          ? preset === "simplify"
+            ? "simplify"
+            : "reroute"
+          : routingPhasePlan.fanoutRegionPcbGroupId
+            ? routingPhasePlan.autorouter === "default" &&
+              !routingPhasePlan.getPrecomputedRoutingResult
+              ? "breakout"
+              : "fanout"
+            : preset && preset !== "default"
+              ? preset.replaceAll("_", " ")
+              : "default"
       routingPhaseDebugLabels.set(
         routingPhasePlan,
         routingPhasePlan.routingPhaseIndex?.toString() ?? implicitPhaseLabel,
@@ -1091,13 +1109,15 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           }
         : resolvedPhaseAutorouterConfig
       const stages = getLocalAutoroutingStages(
-        routingPhasePlan.algorithmFn
-          ? {
-              ...phaseAutorouterConfig,
-              // The phase callback overrides inherited or preset callbacks.
-              algorithmFn: routingPhasePlan.algorithmFn,
-            }
-          : phaseAutorouterConfig,
+        routingPhasePlan.pcbTestPoints
+          ? { local: true, groupMode: "subcircuit", preset: "default" }
+          : routingPhasePlan.algorithmFn
+            ? {
+                ...phaseAutorouterConfig,
+                // The phase callback overrides inherited or preset callbacks.
+                algorithmFn: routingPhasePlan.algorithmFn,
+              }
+            : phaseAutorouterConfig,
         this.root?.platform,
       )
       return stages.map((stage, phaseStageIndex) => ({
@@ -1303,6 +1323,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       })
     }
 
+    const outputTestPoints: ConnectedRoutedTestPoint[] = []
     const outputTraces: SimplifiedPcbTrace[] = []
     const outputJumpers: Array<{
       jumper_footprint: string
@@ -1404,24 +1425,27 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       }
       let simpleRouteJson =
         previousStageOutputSimpleRouteJson ?? baseSimpleRouteJson
+      const isTestPointPhase = Boolean(routingPhasePlan.pcbTestPoints)
       const isTraceSimplificationPhase = Boolean(
         routingPhasePlan.reroute && phaseAutorouterConfig.preset === "simplify",
       )
+      const preservesExistingTraceInput =
+        isTraceSimplificationPhase || isTestPointPhase
       const isRegionReroutePhase = Boolean(
         routingPhasePlan.reroute &&
           routingPhasePlan.region &&
-          !isTraceSimplificationPhase,
+          !preservesExistingTraceInput,
       )
       const isConnectionReroutePhase = Boolean(
         routingPhasePlan.reroute &&
-          !isTraceSimplificationPhase &&
+          !preservesExistingTraceInput &&
           !routingPhasePlan.region &&
           routingPhasePlan.traces.length > 0,
       )
       const isReroutePhase =
         isRegionReroutePhase ||
         isConnectionReroutePhase ||
-        isTraceSimplificationPhase
+        preservesExistingTraceInput
       const rerouteOriginalSrj = isRegionReroutePhase
         ? {
             ...baseSimpleRouteJson,
@@ -1429,7 +1453,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           }
         : null
 
-      if (!usesPreviousStageOutput && isTraceSimplificationPhase) {
+      if (!usesPreviousStageOutput && preservesExistingTraceInput) {
         const phaseInput = Group_filterSimpleRouteJsonForPhase(
           baseSimpleRouteJson,
           routingPhasePlan,
@@ -1510,7 +1534,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       // bus_lanes preserves prior traces verbatim and checks their exact copper
       // geometry. Rasterizing diagonal fanout traces can bury a legal exit in
       // an enlarged rectangular obstacle before the lane search even starts.
-      if (phaseAutorouterConfig.preset !== "bus_lanes") {
+      if (phaseAutorouterConfig.preset !== "bus_lanes" && !isTestPointPhase) {
         // FanoutSolver preserves supplied trace routes and checks their exact
         // copper geometry (build-output.ts / get-routed-trace-copper.ts).
         // Keep manual copper in that representation: rectangular approximations
@@ -1567,7 +1591,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       if (
         (hasPhasedAutorouting || isReroutePhase || usesPreviousStageOutput) &&
         ((simpleRouteJson.connections.length === 0 &&
-          !isTraceSimplificationPhase &&
+          !preservesExistingTraceInput &&
           !getPrecomputedRoutingResult) ||
           simplificationHasNoTraceInput)
       ) {
@@ -1657,13 +1681,17 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         autorouterVersion,
         effort,
       }
-      const autorouterName = getPrecomputedRoutingResult
-        ? "precomputed"
-        : phaseAutorouterConfig.algorithmFn
-          ? "custom"
-          : localAutorouterStrategy.name
+      const autorouterName = isTestPointPhase
+        ? "test_points"
+        : getPrecomputedRoutingResult
+          ? "precomputed"
+          : phaseAutorouterConfig.algorithmFn
+            ? "custom"
+            : localAutorouterStrategy.name
       const solverName =
-        getPrecomputedRoutingResult || phaseAutorouterConfig.algorithmFn
+        isTestPointPhase ||
+        getPrecomputedRoutingResult ||
+        phaseAutorouterConfig.algorithmFn
           ? undefined
           : localAutorouterStrategy.getSolverName(commonAutorouterOptions)
       const localAutoroutingCacheSolverOptions = {
@@ -1681,6 +1709,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       }
 
       const cacheEngine =
+        isTestPointPhase ||
         getPrecomputedRoutingResult ||
         phaseAutorouterConfig.algorithmFn ||
         !localAutorouterStrategy.cacheable
@@ -1741,7 +1770,84 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       try {
         let traces: SimplifiedPcbTrace[]
         let precomputedOutputSimpleRouteJson: SimpleRouteJson | undefined
-        if (getPrecomputedRoutingResult) {
+        if (isTestPointPhase) {
+          const settings = routingPhasePlan.pcbTestPoints!
+          const selectedTraces = (simpleRouteJson.traces ?? []).filter(
+            (trace) => traceMatchesRoutingPhase(trace, routingPhasePlan),
+          )
+          if (
+            selectedTraces.some((trace) =>
+              fixedTraceIds.has(trace.pcb_trace_id),
+            )
+          ) {
+            throw new Error("Test point phases cannot modify fixed PCB paths")
+          }
+          if (selectedTraces.length === 0)
+            throw new Error("Test point phase has no selected routed traces")
+          const probeInput = {
+            ...simpleRouteJson,
+            obstacles: [
+              ...simpleRouteJson.obstacles,
+              ...db.pcb_component
+                .list()
+                .filter((component) => !component.do_not_place)
+                .map((component) => ({
+                  type: "rect" as const,
+                  center: component.center,
+                  width: component.width,
+                  height: component.height,
+                  layers: [component.layer],
+                  ccwRotationDegrees: component.rotation,
+                  connectedTo: [],
+                })),
+            ],
+          }
+          const solver = new TestPointSolver(
+            probeInput as AutorouterSimpleRouteJson,
+            {
+              ...settings,
+              requests: selectedTraces.map((trace, index) => ({
+                name: `TP_AUTO_${routingStageIndex + 1}_${index + 1}`,
+                pcbTraceId: trace.pcb_trace_id,
+                layer: settings.layer,
+                diameter: settings.diameter,
+              })),
+            },
+          )
+          solver.solve()
+          const result = solver.getOutput()
+          for (const point of result.testPoints) {
+            const trace = selectedTraces.find(
+              (trace) => trace.pcb_trace_id === point.pcbTraceId,
+            )!
+            const sourceTraceId = getSourceTraceIdForRoutedTrace({
+              db,
+              trace: {
+                ...trace,
+                source_trace_id: trace.connection_name,
+              },
+              subcircuit_id: this.subcircuit_id,
+            })
+            if (!sourceTraceId || !db.source_trace.get(sourceTraceId)) {
+              throw new Error(
+                `Test point ${point.name} has no source connection`,
+              )
+            }
+            outputTestPoints.push({ ...point, sourceTraceId })
+          }
+          traces = result.traces!
+          precomputedOutputSimpleRouteJson = result as SimpleRouteJson
+          // Reserve the new copper for all subsequent phases.
+          baseSimpleRouteJson = {
+            ...baseSimpleRouteJson,
+            obstacles: [
+              ...baseSimpleRouteJson.obstacles,
+              ...result.obstacles.slice(probeInput.obstacles.length),
+            ],
+          }
+          for (const trace of selectedTraces)
+            fixedTraceIds.add(trace.pcb_trace_id)
+        } else if (getPrecomputedRoutingResult) {
           const result = getPrecomputedRoutingResult(simpleRouteJson)
           traces = result.traces
           precomputedOutputSimpleRouteJson = result.outputSimpleRouteJson
@@ -2008,11 +2114,15 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             }),
           )
         } else {
-          if (isTraceSimplificationPhase) {
+          if (preservesExistingTraceInput) {
             for (const existingTrace of existingRerouteSeedTraces) {
               // Fixed copper was excluded from the simplifier's input traces,
               // so it has no replacement in the solver output.
-              if (fixedTraceIds.has(existingTrace.pcb_trace_id)) continue
+              if (
+                !isTestPointPhase &&
+                fixedTraceIds.has(existingTrace.pcb_trace_id)
+              )
+                continue
               pcbTraceIdsToDelete.add(existingTrace.pcb_trace_id)
             }
           }
@@ -2063,6 +2173,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     this._asyncAutoroutingResult = {
       output_pcb_traces: outputTraces as any,
       output_jumpers: outputJumpers,
+      output_test_points: outputTestPoints,
       pcb_trace_ids_to_be_replaced: [...pcbTraceIdsToDelete],
     }
 
@@ -2300,6 +2411,11 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     if (!output_pcb_traces) return
 
     const { db } = this.root!
+    const testPoints = this._asyncAutoroutingResult!.output_test_points
+    if (testPoints?.length) {
+      materializeRoutedTestPoints(db, testPoints, this.subcircuit_id!)
+      this._asyncAutoroutingResult!.output_test_points = []
+    }
 
     // Delete any previously created traces
     // TODO
