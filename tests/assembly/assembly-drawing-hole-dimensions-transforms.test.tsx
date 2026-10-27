@@ -26,6 +26,7 @@ test("hole witnesses follow finalized footprint rotation and both PCB layers", a
                 <footprint>
                   <hole name="H1" diameter={2} pcbX={9} pcbY={3} />
                   <platedhole
+                    shape="circle"
                     name="H2"
                     holeDiameter={2}
                     outerDiameter={4}

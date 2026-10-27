@@ -17,6 +17,7 @@ test("drawing dimensions measure PCB hole centers and board-edge offsets", async
         <hole name="H1" diameter={3} pcbX={17} pcbY={8} />
         <hole name="H2" diameter={5} pcbX={-13} pcbY={-6} />
         <platedhole
+          shape="circle"
           name="P1"
           holeDiameter={2}
           outerDiameter={4}
