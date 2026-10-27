@@ -365,7 +365,6 @@ export const createComponentsFromCircuitJson = (
           width: elm.width,
           portHints: resolvedPortHints,
           rectBorderRadius: elm.rect_border_radius,
-          cornerRadius: elm.corner_radius,
           solderPasteMargin,
         }),
       )
