@@ -32,13 +32,12 @@ test("a designated trace receives an exposed, electrically connected probe pad",
         name="probe pads"
         reroute
         connection="LEFT.pin1"
-        pcbTestPoints={{
-          layer: "top",
-          diameter: "1mm",
-          clearance: "0.2mm",
-          minProbeSpacing: "2.54mm",
-          maxDetour: 0,
-        }}
+        addTestPoints
+        layer="top"
+        diameter="1mm"
+        clearance="0.2mm"
+        minProbeSpacing="2.54mm"
+        maxDetour={0}
       />
     </board>,
   )

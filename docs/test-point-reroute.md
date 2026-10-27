@@ -7,17 +7,16 @@ Use one final reroute phase to add one exposed circular pad per selected routed 
   name="Probe access"
   reroute
   connections={["U1.pin3", "U1.pin4"]}
-  pcbTestPoints={{
-    layer: "bottom",
-    diameter: "1mm",
-    clearance: "0.2mm",
-    minProbeSpacing: "2.54mm",
-    maxDetour: "1mm",
-  }}
+  addTestPoints
+  layer="bottom"
+  diameter="1mm"
+  clearance="0.2mm"
+  minProbeSpacing="2.54mm"
+  maxDetour="1mm"
 />
 ```
 
-Selectors use the existing connection-selection rules. Every selected route must have a legal location on the requested outer layer; an impossible request fails the phase. The prototype does not add vias to bring inner-layer-only signals out to a surface. Fixed/manual routes are rejected. Request multiple pads in the same final phase so center spacing is checked across the whole set. Names are generated as `TP_AUTO_<phase>_<ordinal>` and collisions are rejected.
+The short form `<autoroutingphase reroute addTestPoints maxDetour="10mm" />` targets all routed traces. Defaults are bottom layer, 1 mm diameter, 0.2 mm clearance, 2.54 mm probe spacing, and 1 mm maximum detour. Selectors use the existing connection-selection rules. Every selected route must have a legal location on the requested outer layer; an impossible request fails the phase. The prototype does not add vias to bring inner-layer-only signals out to a surface. Fixed/manual routes are rejected. Request multiple pads in the same final phase so center spacing is checked across the whole set. Names are generated as `TP_AUTO_<phase>_<ordinal>` and collisions are rejected.
 
 Pads have source test-point components, source connectivity, PCB components/ports and circular SMT copper with `is_covered_with_solder_mask: false`. No solder paste is generated. Component envelopes are included as probe-access keepouts. The phase must be last so later rerouting cannot detach its pads. Probe barrel/fixture access and manufacture-specific mask/finish rules still require a separate fixture design step.
 

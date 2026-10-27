@@ -809,7 +809,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   _getRoutingPhasePlans(): RoutingPhasePlan[] {
     const plans = Group_getRoutingPhasePlans(this)
-    const testPointPhases = plans.filter((plan) => plan.pcbTestPoints)
+    const testPointPhases = plans.filter((plan) => plan.testPointOptions)
     if (
       testPointPhases.length > 1 ||
       (testPointPhases.length === 1 && plans.at(-1) !== testPointPhases[0])
@@ -1081,7 +1081,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             )
           : autorouterConfig
       const preset = resolvedPhaseAutorouterConfig.preset
-      const implicitPhaseLabel = routingPhasePlan.pcbTestPoints
+      const implicitPhaseLabel = routingPhasePlan.testPointOptions
         ? "test points"
         : routingPhasePlan.reroute
           ? preset === "simplify"
@@ -1109,7 +1109,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           }
         : resolvedPhaseAutorouterConfig
       const stages = getLocalAutoroutingStages(
-        routingPhasePlan.pcbTestPoints
+        routingPhasePlan.testPointOptions
           ? { local: true, groupMode: "subcircuit", preset: "default" }
           : routingPhasePlan.algorithmFn
             ? {
@@ -1425,7 +1425,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       }
       let simpleRouteJson =
         previousStageOutputSimpleRouteJson ?? baseSimpleRouteJson
-      const isTestPointPhase = Boolean(routingPhasePlan.pcbTestPoints)
+      const isTestPointPhase = Boolean(routingPhasePlan.testPointOptions)
       const isTraceSimplificationPhase = Boolean(
         routingPhasePlan.reroute && phaseAutorouterConfig.preset === "simplify",
       )
@@ -1771,7 +1771,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         let traces: SimplifiedPcbTrace[]
         let precomputedOutputSimpleRouteJson: SimpleRouteJson | undefined
         if (isTestPointPhase) {
-          const settings = routingPhasePlan.pcbTestPoints!
+          const settings = routingPhasePlan.testPointOptions!
           const selectedTraces = (simpleRouteJson.traces ?? []).filter(
             (trace) => traceMatchesRoutingPhase(trace, routingPhasePlan),
           )

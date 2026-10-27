@@ -45,7 +45,12 @@ export interface RoutingPhasePlan {
   autorouter?: AutorouterProp
   algorithmFn?: AutoroutingPhaseProps["algorithmFn"]
   reroute?: boolean
-  pcbTestPoints?: AutoroutingPhase["_parsedProps"]["pcbTestPoints"]
+  testPointOptions?: Required<
+    Pick<
+      AutoroutingPhase["_parsedProps"],
+      "layer" | "diameter" | "clearance" | "minProbeSpacing" | "maxDetour"
+    >
+  >
   region?: AutoroutingPhaseProps["region"]
   connectionSelectors?: string[]
   busFanoutDirections?: AutoroutingPhaseProps["busFanoutDirections"]
