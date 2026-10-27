@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { pointToSegmentDistance } from "@tscircuit/math-utils"
 import { Fragment } from "react"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
@@ -101,14 +102,14 @@ test("dense single-port nets use inline labeled stubs", async () => {
         .filter((text) => text.position.x < 0)
         .map((text) => text.anchor),
     ),
-  ).toEqual(new Set(["right"]))
+  ).toEqual(new Set(["bottom_right"]))
   expect(
     new Set(
       inlineTexts
         .filter((text) => text.position.x > 0)
         .map((text) => text.anchor),
     ),
-  ).toEqual(new Set(["left"]))
+  ).toEqual(new Set(["bottom_left"]))
   expect(
     circuit.db.schematic_net_label
       .list()
@@ -128,5 +129,16 @@ test("dense single-port nets use inline labeled stubs", async () => {
   expect(new Set(leftStubEndXs).size).toBe(1)
   expect(new Set(rightStubEndXs).size).toBe(1)
 
+  for (const text of inlineTexts) {
+    const edges = circuit.db.schematic_trace
+      .list({ source_trace_id: text.source_trace_id })
+      .flatMap((trace) => trace.edges)
+    expect(
+      edges.some(
+        (edge) =>
+          pointToSegmentDistance(text.position, edge.from, edge.to) < 1e-6,
+      ),
+    ).toBe(true)
+  }
   expect(circuit).toMatchSchematicSnapshot(import.meta.path, {})
 })

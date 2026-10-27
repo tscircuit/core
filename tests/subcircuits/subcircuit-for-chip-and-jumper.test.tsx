@@ -21,6 +21,10 @@ test("subcircuit-id property for chip", async () => {
         "y": 0,
       },
       "do_not_place": false,
+      "footprint_origin": {
+        "x": 0,
+        "y": 0,
+      },
       "height": 3,
       "insertion_direction": undefined,
       "is_allowed_to_be_off_board": false,
@@ -56,6 +60,10 @@ test("subcircuit-id property for jumper", async () => {
         "y": 0,
       },
       "do_not_place": false,
+      "footprint_origin": {
+        "x": 0,
+        "y": 0,
+      },
       "height": 3,
       "insertion_direction": undefined,
       "is_allowed_to_be_off_board": false,
