@@ -22,16 +22,33 @@ type PcbPortId = PcbPort["pcb_port_id"]
 type WireOrVia = Extract<SimplifiedPcbTrace["route"][number], { x: number }>
 
 const touches = (
-  point: WireOrVia,
-  terminal: SingleLayerConnectionPoint,
-  end = false,
-) =>
-  Math.hypot(point.x - terminal.x, point.y - terminal.y) < 1e-4 &&
-  (point.route_type === "wire"
-    ? point.layer
-    : end
-      ? point.to_layer
-      : point.from_layer) === terminal.layer
+  {
+    point,
+    terminal,
+    end = false,
+  }: {
+    point: WireOrVia
+    terminal: SingleLayerConnectionPoint
+    end?: boolean
+  },
+  portsByPcbPortId: Map<PcbPortId, Port>,
+) => {
+  const layer =
+    point.route_type === "wire"
+      ? point.layer
+      : end
+        ? point.to_layer
+        : point.from_layer
+  const port = terminal.pcb_port_id
+    ? portsByPcbPortId.get(terminal.pcb_port_id)
+    : undefined
+  return (
+    Math.hypot(point.x - terminal.x, point.y - terminal.y) < 1e-4 &&
+    (port
+      ? port.getAvailablePcbLayers().some((portLayer) => portLayer === layer)
+      : terminal.layer === layer)
+  )
+}
 
 /**
  * Export only this routing stage's copper, using port selectors and the enclosing
@@ -77,8 +94,15 @@ export function getAutoroutingPhasePcbTracePaths({
       return trace.route as WireOrVia[]
     })
     const endpoints = routes.map((route) => [
-      terminals.filter((terminal) => touches(route[0]!, terminal)),
-      terminals.filter((terminal) => touches(route.at(-1)!, terminal, true)),
+      terminals.filter((terminal) =>
+        touches({ point: route[0]!, terminal }, portsByPcbPortId),
+      ),
+      terminals.filter((terminal) =>
+        touches(
+          { point: route.at(-1)!, terminal, end: true },
+          portsByPcbPortId,
+        ),
+      ),
     ])
     const degreeByTerminal = new Map<SingleLayerConnectionPoint, number>()
     for (const routeEndpoints of endpoints) {
@@ -110,7 +134,10 @@ export function getAutoroutingPhasePcbTracePaths({
           const port = portsByPcbPortId.get(terminal.pcb_port_id)
           if (!port || usedPorts.has(port)) continue
           const selector = terminal.port_selector ?? port.getPortSelector()
-          if (subcircuit.selectOne(selector, { type: "port" }) !== port) {
+          const selectedPorts = subcircuit
+            .selectAll(selector)
+            .filter((selected) => selected.lowercaseComponentName === "port")
+          if (selectedPorts.length !== 1 || selectedPorts[0] !== port) {
             throw new Error(`PCB port selector is not unique: ${selector}`)
           }
           const route = reverse

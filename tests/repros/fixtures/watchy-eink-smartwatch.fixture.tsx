@@ -1,4 +1,4 @@
-import type { ChipProps } from "@tscircuit/props"
+import type { ChipProps, FanoutTracePath } from "@tscircuit/props"
 
 import { Fragment } from "react"
 
@@ -4166,8 +4166,10 @@ const UsbInterfaceTraces = () => (
 
 function WatchyEinkSmartwatch({
   routingDisabled = false,
+  pcbTracePaths,
 }: {
   routingDisabled?: boolean
+  pcbTracePaths?: FanoutTracePath[]
 } = {}) {
   return (
     <board
@@ -4199,6 +4201,7 @@ function WatchyEinkSmartwatch({
       <UsbInterfaceTraces />
       <SensorsAndButtonsTraces />
       <BoardCopper />
+      {pcbTracePaths && <autoroutingphase pcbTracePaths={pcbTracePaths} />}
     </board>
   )
 }
