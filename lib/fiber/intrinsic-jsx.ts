@@ -1,4 +1,8 @@
 import type * as Props from "@tscircuit/props"
+import type {
+  SilkscreenOvalProps,
+  SilkscreenPillProps,
+} from "lib/components/primitive-components/silkscreen-shape-props"
 import type { Attributes } from "react"
 
 export interface TscircuitElements {
@@ -69,6 +73,8 @@ export interface TscircuitElements {
   silkscreenpath: Props.SilkscreenPathProps
   silkscreenline: Props.SilkscreenLineProps
   silkscreenrect: Props.SilkscreenRectProps
+  silkscreenoval: SilkscreenOvalProps
+  silkscreenpill: SilkscreenPillProps
   silkscreencircle: Props.SilkscreenCircleProps
   tracehint: Props.TraceHintProps
   courtyardcircle: Props.CourtyardCircleProps

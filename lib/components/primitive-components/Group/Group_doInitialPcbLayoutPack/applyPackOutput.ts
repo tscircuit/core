@@ -1,8 +1,8 @@
 import {
   type CircuitJsonUtilObjects,
   findBoundsAndCenter,
-  transformPCBElements,
 } from "@tscircuit/circuit-json-util"
+import { transformPcbElements } from "lib/utils/transform-pcb-elements"
 import { normalizeDegrees } from "@tscircuit/math-utils"
 import type { PackOutput } from "calculate-packing"
 import { compose, rotate, translate } from "transformation-matrix"
@@ -99,7 +99,7 @@ export const applyPackOutput = (
             (elm) =>
               "pcb_component_id" in elm && elm.pcb_component_id === memberId,
           )
-        transformPCBElements(related as any, transformMatrix)
+        transformPcbElements(related as any, transformMatrix)
         updateCadRotation({
           db,
           pcbComponentId: memberId,
@@ -142,7 +142,7 @@ export const applyPackOutput = (
           (elm) =>
             "pcb_component_id" in elm && elm.pcb_component_id === componentId,
         )
-      transformPCBElements(related as any, transformMatrix)
+      transformPcbElements(related as any, transformMatrix)
       updateCadRotation({
         db,
         pcbComponentId: componentId,
@@ -222,7 +222,7 @@ export const applyPackOutput = (
       }
     }
 
-    transformPCBElements(relatedElements as any, transformMatrix)
+    transformPcbElements(relatedElements as any, transformMatrix)
     db.pcb_group.update(pcbGroup.pcb_group_id, { center })
   }
 

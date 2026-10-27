@@ -34,6 +34,8 @@ import { SchematicLine } from "lib/components/primitive-components/SchematicLine
 import { SchematicPath } from "lib/components/primitive-components/SchematicPath"
 import { SchematicRect } from "lib/components/primitive-components/SchematicRect"
 import { SchematicText } from "lib/components/primitive-components/SchematicText"
+import { SilkscreenOval } from "lib/components/primitive-components/SilkscreenOval"
+import { SilkscreenPill } from "lib/components/primitive-components/SilkscreenPill"
 import { SilkscreenCircle } from "lib/components/primitive-components/SilkscreenCircle"
 import { SilkscreenLine } from "lib/components/primitive-components/SilkscreenLine"
 import { SilkscreenPath } from "lib/components/primitive-components/SilkscreenPath"
@@ -758,6 +760,28 @@ export const createComponentsFromCircuitJson = (
           strokeWidth: elm.stroke_width,
           filled: elm.is_filled,
           cornerRadius: elm.corner_radius,
+        }),
+      )
+    } else if (elm.type === "pcb_silkscreen_oval") {
+      components.push(
+        new SilkscreenOval({
+          pcbX: elm.center.x,
+          pcbY: elm.center.y,
+          pcbRotation: elm.ccw_rotation,
+          radiusX: elm.radius_x,
+          radiusY: elm.radius_y,
+          layer: elm.layer,
+        }),
+      )
+    } else if (elm.type === "pcb_silkscreen_pill") {
+      components.push(
+        new SilkscreenPill({
+          pcbX: elm.center.x,
+          pcbY: elm.center.y,
+          pcbRotation: elm.ccw_rotation,
+          width: elm.width,
+          height: elm.height,
+          layer: elm.layer,
         }),
       )
     } else if (elm.type === "pcb_silkscreen_circle") {

@@ -14,6 +14,8 @@ export function inflateStandalonePcbPrimitives(
   const standalonePrimitiveTypes = [
     "pcb_silkscreen_rect",
     "pcb_silkscreen_circle",
+    "pcb_silkscreen_oval",
+    "pcb_silkscreen_pill",
     "pcb_silkscreen_line",
     "pcb_silkscreen_path",
     "pcb_silkscreen_text",
@@ -62,6 +64,12 @@ export function inflateStandalonePcbPrimitives(
     }
     if (elm.type === "pcb_soldermask_opening") {
       return elm.pcb_component_id === undefined
+    }
+    if (
+      elm.type === "pcb_silkscreen_oval" ||
+      elm.type === "pcb_silkscreen_pill"
+    ) {
+      return elm.pcb_component_id == null
     }
     // Check for null or undefined pcb_component_id
     return (

@@ -50,6 +50,12 @@ export { Port } from "./primitive-components/Port"
 export { CourtyardCircle } from "./primitive-components/CourtyardCircle"
 export { CourtyardOutline } from "./primitive-components/CourtyardOutline"
 export { CourtyardRect } from "./primitive-components/CourtyardRect"
+export { SilkscreenOval } from "./primitive-components/SilkscreenOval"
+export { SilkscreenPill } from "./primitive-components/SilkscreenPill"
+export type {
+  SilkscreenOvalProps,
+  SilkscreenPillProps,
+} from "./primitive-components/silkscreen-shape-props"
 export { SilkscreenCircle } from "./primitive-components/SilkscreenCircle"
 export { SilkscreenPath } from "./primitive-components/SilkscreenPath"
 export { SilkscreenRect } from "./primitive-components/SilkscreenRect"

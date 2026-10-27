@@ -1,4 +1,4 @@
-import { transformPCBElements } from "@tscircuit/circuit-json-util"
+import { transformPcbElements } from "./transform-pcb-elements"
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import type { PcbComponent } from "circuit-json"
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
@@ -48,7 +48,7 @@ export const extractPcbPrimitivesFromCircuitJson = ({
   const clonedRelativeElements = structuredClone(relativeElements)
 
   // Transform all PCB elements using the standard transformation utility
-  transformPCBElements(
+  transformPcbElements(
     clonedRelativeElements,
     absoluteToComponentRelativeTransform,
   )
