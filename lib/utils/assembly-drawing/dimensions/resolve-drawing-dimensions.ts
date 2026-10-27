@@ -13,7 +13,6 @@ import {
   computeWorldAABB,
   createOutlineSection,
   type CameraUp,
-  type DrawCall,
 } from "poppygl"
 import type { AssemblyDrawingPartView } from "lib/components/primitive-components/AssemblyDrawingPartView"
 import type { AssemblyDrawingDimension } from "lib/components/primitive-components/AssemblyDrawingDimension"
@@ -21,6 +20,11 @@ import {
   getDrawingViewGeometry,
   loadDrawingScene,
 } from "../geometry/get-drawing-view-geometry"
+import { getDrawingScenePoints } from "../geometry/get-drawing-scene-points"
+import { getDrawingModelFeatures } from "../geometry/get-drawing-model-features"
+import { createDrawingReferenceSelector } from "./create-drawing-reference-selector"
+import { resolveDrawingReferencePoints } from "./resolve-drawing-reference-points"
+import { getDrawingReferenceAnchor } from "./get-drawing-reference-anchor"
 import { resolveDrawingEdgeReferences } from "./resolve-drawing-edge-references"
 
 export type ResolvedDrawingDimension = Omit<
@@ -44,22 +48,6 @@ const cameraDirections: Record<
   isometric: [1, 1, -1],
 }
 
-/** World-space glTF points, right-handed +Y up, in mm; apply placement once. */
-export function getDrawingScenePoints(drawCalls: DrawCall[]) {
-  return drawCalls.flatMap((drawCall) => {
-    const indices =
-      drawCall.indices ??
-      Array.from({ length: drawCall.positions.length / 3 }, (_, i) => i)
-    return Array.from(indices, (index) =>
-      vec3.transformMat4(
-        new Float64Array(3),
-        drawCall.positions.subarray(index * 3, index * 3 + 3),
-        drawCall.model,
-      ),
-    )
-  })
-}
-
 /** Resolve physical view-axis measurements and paper-space annotation points
  * (mm, +X right/+Y up). Orthographic camera coordinates retain physical mm;
  * only witness/line placement is scaled into paper coordinates.
@@ -78,7 +66,19 @@ export async function resolveDrawingDimensions(
   )
   if (!dimensions.length) return []
   const selected = getDrawingViewGeometry(circuitJson, drawingView)
-  const edges = await resolveDrawingEdgeReferences(view, dimensions, selected)
+  const features = dimensions.some(
+    ({ _parsedProps: props }) => props.edgeRef || props.fromRef,
+  )
+    ? await getDrawingModelFeatures(selected)
+    : []
+  const select = createDrawingReferenceSelector(view, features)
+  const edges = resolveDrawingEdgeReferences(view, dimensions, select)
+  const referencePoints = await resolveDrawingReferencePoints(
+    view,
+    dimensions,
+    selected,
+    select,
+  )
   const fail = (reason: string): never => {
     throw new Error(`Part view "${view.name || "unnamed part view"}" ${reason}`)
   }
@@ -200,7 +200,25 @@ export async function resolveDrawingDimensions(
     const extent = (axis: number) =>
       targetPoints.reduce((max, p) => Math.max(max, p[axis]!), -Infinity) -
       targetPoints.reduce((min, p) => Math.min(min, p[axis]!), Infinity)
-    const axis = props.heightOfView || (edge && extent(1) > extent(0)) ? 1 : 0
+    const pair = referencePoints.get(dimension)
+    const anchors = pair?.map((points, index) =>
+      getDrawingReferenceAnchor(
+        points,
+        index === 0 ? props.fromAnchor : props.toAnchor,
+        camera.view,
+        sectionPlane,
+        index === 0 ? props.fromRef! : props.toRef!,
+      ),
+    )
+    let axis = props.heightOfView || (edge && extent(1) > extent(0)) ? 1 : 0
+    if (anchors) {
+      const horizontal = Math.abs(anchors[1]![0]! - anchors[0]![0]!)
+      const vertical = Math.abs(anchors[1]![1]! - anchors[0]![1]!)
+      axis =
+        props.axis === "y" || (props.axis !== "x" && vertical > horizontal)
+          ? 1
+          : 0
+    }
     const other = axis === 0 ? 1 : 0
     // Among equally extreme points choose the one nearest the dimension lane,
     // making witness placement independent of triangle/profile ordering.
@@ -212,8 +230,9 @@ export async function resolveDrawingDimensions(
           ? b
           : a
       })
-    const startPoint = extreme(-1),
-      endPoint = extreme(1)
+    const orderedAnchors = anchors?.sort((a, b) => a[axis]! - b[axis]!)
+    const startPoint = orderedAnchors?.[0] ?? extreme(-1),
+      endPoint = orderedAnchors?.[1] ?? extreme(1)
     const measurement = endPoint[axis]! - startPoint[axis]!
     if (!Number.isFinite(measurement) || measurement <= 1e-7)
       fail(

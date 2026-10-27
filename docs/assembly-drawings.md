@@ -147,11 +147,50 @@ zero projected extents are errors. A failed model load cannot be measured using
 a placeholder bounding box. Pages without dimensions keep their synchronous
 metadata-only behavior.
 
+### Hole spacing and edge offsets
+
+Use paired references to measure between two selected features:
+
+```tsx
+// PCB mounting or plated holes, measured between their centers:
+<assembly.drawing.dimension fromRef=".carrier .H1" toRef=".carrier .H2" axis="x" />
+// From the board's left edge to a mounting-hole center:
+<assembly.drawing.dimension fromRef=".carrier" fromAnchor="left"
+  toRef=".carrier .H1" axis="x" />
+// Named native CAD hole outlines (e.g. ExtrudeLinear topOutlineName):
+<assembly.drawing.dimension fromRef=".plate > .bore1" toRef=".plate > .bore2" axis="y" />
+// From a named outer outline to a CAD bore:
+<assembly.drawing.dimension fromRef=".plate > .rim" fromAnchor="left"
+  toRef=".plate > .bore1" axis="x" />
+```
+
+Both `fromRef` and `toRef` are required, and cannot be combined with `edgeRef`,
+`widthOfView`, or `heightOfView`. Each selector must match exactly one hole,
+board, or named native outline within the view's selected geometry. PCB references
+use final drill coordinates after layout, including footprint rotation and layer
+placement. CAD references reuse the native feature transforms used by `edgeRef`.
+
+Anchors default to `center`. Boards and native outlines also accept `left`,
+`right`, `top`, and `bottom`, meaning the midpoint of that edge of the reference's
+projected bounding rectangle. A native circular bore's center is the center of
+its projected bounds; arbitrary asymmetric outlines use that same bounds-center
+rule, not a centroid. PCB holes expose their through-axis center at the board
+midplane and accept only `center`. Folded PCB reference anchors are not yet
+supported and produce an error.
+
+`axis="x"` measures horizontal separation and `axis="y"` vertical separation in
+physical view-space mm. Without `axis`, core chooses the larger separation,
+using x on ties. These directions and the edge anchors are relative to the
+rendered view, not CAD world axes. Reversing the references preserves the positive
+measurement. The witness lines attach to the projected anchors. Section cuts
+never move a hole center: an anchor removed by the section is rejected, as are
+coincident anchors or zero separation along the requested axis.
+
 ## Source organization
 
 The page component and its render-phase implementation live together in
 `lib/components/primitive-components/AssemblyDrawingPage/`. Shared drawing
 helpers live in `lib/utils/assembly-drawing/`: `dimensions/` contains measurement,
-projection, annotation placement and edge-reference resolution; `geometry/`
+projection, annotation placement and reference resolution; `geometry/`
 contains model-feature extraction and view-geometry loading. Page placement and
 part-selection helpers live at the drawing utility directory's root.
