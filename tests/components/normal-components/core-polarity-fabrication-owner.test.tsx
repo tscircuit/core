@@ -98,9 +98,10 @@ test("core marks typed polarized components across footprint sources and leaves 
         pcbX={7}
         pcbY={-12}
       />
+      {/* A mechanical diode package does not make a generic chip polarized. */}
       <chip
         name="U_GENERIC"
-        footprint="smdpads2_p2.4mm_pw0.8mm_ph0.8mm"
+        footprint="sod882"
         pcbX={21}
         pcbY={-12}
         pinLabels={{ pin1: ["positive"], pin2: ["negative"] }}
