@@ -1,4 +1,8 @@
 import { expect, test } from "bun:test"
+import type { FootprintProp } from "@tscircuit/props"
+import { parseFootprinterDefinition } from "lib/utils/footprints/parse-footprinter-definition"
+import { resolveTwoTerminalPinMapping } from "lib/utils/footprints/resolve-two-terminal-pin-mapping"
+import { expectTypesMatch } from "tests/fixtures/expect-types-match"
 import { Chip } from "lib/components/normal-components/Chip"
 import { Diode } from "lib/components/normal-components/Diode"
 import { Led } from "lib/components/normal-components/Led"
@@ -7,6 +11,25 @@ import { Resistor } from "lib/components/normal-components/Resistor"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("component intent resolves Footprinter strings once without rewriting authored props", async () => {
+  expectTypesMatch<
+    Parameters<typeof parseFootprinterDefinition>[0],
+    FootprintProp | null | undefined
+  >(true)
+  const parsed = parseFootprinterDefinition("0805")!
+  expectTypesMatch<typeof parsed.parameters.fn, string>(true)
+  expectTypesMatch<typeof parsed.parameters.positivepin, number | undefined>(
+    true,
+  )
+  expectTypesMatch<typeof parsed.parameters.anodepin, number | undefined>(true)
+  expectTypesMatch<
+    ReturnType<typeof resolveTwoTerminalPinMapping>["positivePin"],
+    1 | 2
+  >(true)
+  expectTypesMatch<
+    ReturnType<typeof resolveTwoTerminalPinMapping>["negativePin"],
+    1 | 2
+  >(true)
+
   const led = (footprint: string) => new Led({ name: "PART", footprint })
   const diode = (footprint: string) => new Diode({ name: "PART", footprint })
   const genericChip = (footprint: string) =>

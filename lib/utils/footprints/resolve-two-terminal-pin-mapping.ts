@@ -1,5 +1,10 @@
 import type { PinLabelsProp } from "@tscircuit/props"
 
+export type TwoTerminalPin = 1 | 2
+
+const isTwoTerminalPin = (pin: number): pin is TwoTerminalPin =>
+  pin === 1 || pin === 2
+
 const positiveLabels = new Set(["a", "anode", "pos", "positive"])
 const negativeLabels = new Set(["k", "c", "cathode", "neg", "negative"])
 
@@ -15,14 +20,14 @@ export const resolveTwoTerminalPinMapping = ({
 }: {
   name: string
   pinLabels?: PinLabelsProp
-  explicitPositive?: unknown
-  explicitNegative?: unknown
+  explicitPositive?: number
+  explicitNegative?: number
   positiveOption: string
   negativeOption: string
-  defaultPositivePin?: number
+  defaultPositivePin?: TwoTerminalPin
 }) => {
-  let positivePin = defaultPositivePin
-  let negativePin = 3 - defaultPositivePin
+  let positivePinCandidate: number = defaultPositivePin
+  let negativePinCandidate = 3 - defaultPositivePin
   const labelPolarities = [1, 2].map((pin) => {
     const labels = pinLabels?.[`pin${pin}`] ?? pinLabels?.[String(pin)] ?? []
     const aliases = (typeof labels === "string" ? [labels] : labels).map(
@@ -48,39 +53,43 @@ export const resolveTwoTerminalPinMapping = ({
         `${name} must assign positive and negative polarity to different pins.`,
       )
     }
-    positivePin =
+    positivePinCandidate =
       labelPolarities[0] === "positive" || labelPolarities[1] === "negative"
         ? 1
         : 2
-    negativePin = 3 - positivePin
+    negativePinCandidate = 3 - positivePinCandidate
     if (
       (explicitPositive !== undefined &&
-        Number(explicitPositive) !== positivePin) ||
+        explicitPositive !== positivePinCandidate) ||
       (explicitNegative !== undefined &&
-        Number(explicitNegative) !== negativePin)
+        explicitNegative !== negativePinCandidate)
     ) {
       throw new Error(
         `${name} pinLabels conflict with the footprint's ${positiveOption}/${negativeOption} options.`,
       )
     }
   } else {
-    if (explicitPositive !== undefined) positivePin = Number(explicitPositive)
+    if (explicitPositive !== undefined) positivePinCandidate = explicitPositive
     else if (explicitNegative !== undefined)
-      positivePin = 3 - Number(explicitNegative)
-    negativePin =
+      positivePinCandidate = 3 - explicitNegative
+    negativePinCandidate =
       explicitNegative === undefined
-        ? 3 - positivePin
-        : Number(explicitNegative)
+        ? 3 - positivePinCandidate
+        : explicitNegative
   }
   if (
-    ![1, 2].includes(positivePin) ||
-    ![1, 2].includes(negativePin) ||
-    positivePin === negativePin
+    !isTwoTerminalPin(positivePinCandidate) ||
+    !isTwoTerminalPin(negativePinCandidate) ||
+    positivePinCandidate === negativePinCandidate
   ) {
     throw new Error(
       `${name} polarity options must identify distinct pins 1 and 2.`,
     )
   }
 
-  return { positivePin, negativePin, hasPolarityLabels }
+  return {
+    positivePin: positivePinCandidate,
+    negativePin: negativePinCandidate,
+    hasPolarityLabels,
+  }
 }
