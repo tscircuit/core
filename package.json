@@ -101,7 +101,8 @@
     "tsup": "^8.2.4",
     "@tscircuit/circuit-json-to-drawing": "https://jscdn.tscircuit.com/@tscircuit/circuit-json-to-drawing/0.0.4.tgz",
     "circuit-json-to-gltf": "^0.0.151",
-    "@tscircuit/jscad": "https://jscdn.tscircuit.com/@tscircuit/jscad/0.0.3.tgz"
+    "@tscircuit/jscad": "https://jscdn.tscircuit.com/@tscircuit/jscad/0.0.3.tgz",
+    "@tscircuit/test-point-rerouter": "^0.0.1"
   },
   "peerDependencies": {
     "@tscircuit/capacity-autorouter": "*",
@@ -124,7 +125,8 @@
     "spicets": "*",
     "typescript": "^5.0.0",
     "@tscircuit/cableprinter": "*",
-    "circuit-json-to-gltf": "*"
+    "circuit-json-to-gltf": "*",
+    "@tscircuit/test-point-rerouter": "^0.0.1"
   },
   "dependencies": {
     "@flatten-js/core": "^1.6.2",

@@ -1,10 +1,8 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs"
 import { gunzipSync } from "node:zlib"
 import { su } from "@tscircuit/circuit-json-util"
-import {
-  TestPointSolver,
-  type SimpleRouteJson,
-} from "@tscircuit/capacity-autorouter"
+import { TestPointSolver } from "@tscircuit/test-point-rerouter"
+import type { SimpleRouteJson } from "@tscircuit/capacity-autorouter"
 import {
   checkPadPadClearance,
   checkPadTraceClearance,

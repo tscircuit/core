@@ -1,5 +1,5 @@
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
-import type { RoutedTestPoint } from "@tscircuit/capacity-autorouter"
+import type { RoutedTestPoint } from "@tscircuit/test-point-rerouter"
 import type { SourceTrace } from "circuit-json"
 
 type SourceTraceId = SourceTrace["source_trace_id"]

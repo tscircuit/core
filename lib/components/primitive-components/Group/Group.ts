@@ -1,4 +1,4 @@
-import { TestPointSolver } from "@tscircuit/capacity-autorouter"
+import { TestPointSolver } from "@tscircuit/test-point-rerouter"
 import {
   materializeRoutedTestPoints,
   type ConnectedRoutedTestPoint,

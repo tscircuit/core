@@ -7,10 +7,8 @@ import { expect, test } from "bun:test"
 import { readFileSync } from "node:fs"
 import { gunzipSync } from "node:zlib"
 import { su } from "@tscircuit/circuit-json-util"
-import {
-  TestPointSolver,
-  type SimpleRouteJson,
-} from "@tscircuit/capacity-autorouter"
+import { TestPointSolver } from "@tscircuit/test-point-rerouter"
+import type { SimpleRouteJson } from "@tscircuit/capacity-autorouter"
 import { convertCircuitJsonToPcbSvg } from "circuit-to-svg"
 import { materializeRoutedTestPoints } from "lib/utils/autorouting/materialize-routed-test-points"
 import input from "../fixtures/test-points/astra-pd-power-supply.srj.json"
