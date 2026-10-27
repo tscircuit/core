@@ -23,10 +23,7 @@ export async function resolveDrawingDimensions(
 ): Promise<ResolvedDrawingDimension[]> {
   if (!view.children.length) return []
   const { points, camera, selected, scale } =
-    await resolveDrawingDimensionGeometry(
-      view.root!.db.toArray(),
-      drawingView,
-    )
+    await resolveDrawingDimensionGeometry(view.root!.db.toArray(), drawingView)
   const projected = projectDrawingDimensionPoints(points, camera, drawingView)
   const lanes = [0, 0]
   const lines: ResolvedDrawingDimension[] = []
