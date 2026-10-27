@@ -1,0 +1,26 @@
+{
+  "source": "OLIMEX A64-OLinuXino revision H",
+  "sourceCommit": "b48543c9674439c97a5bfa2024830f22a94d7a35",
+  "sourceUrl": "https://github.com/OLIMEX/OLINUXINO/tree/b48543c9674439c97a5bfa2024830f22a94d7a35/HARDWARE/A64-OLinuXino",
+  "sourceBoardSha256": "3acf7af7d39d54ba87343845d78851b0245a6290841cb463c42c7e41696404f4",
+  "attribution": "Copyright OLIMEX Ltd.",
+  "license": "CC-BY-SA-3.0-US",
+  "frozenOriginalInputSha256": "1966c316d2223d5c9f5a162dd00f3fdf61b811ab7ef707cac160a42fe1a4c01e",
+  "checkpointArchiveSha256": "fad95954128c49520efa000d8cd345e7ed8d9bb08a5c8c5b63a0e454ee415615",
+  "checkpointExpandedSha256": "d16ebd26d4c42b5a6eae0413a0770260534f959d4afc79240f1a1cb75474bdd6",
+  "capture": {
+    "package": "@tscircuit/capacity-autorouter",
+    "version": "0.0.999",
+    "phase": "pipeline9JointDrcRepairSolver",
+    "effort": 1,
+    "cacheProvider": null,
+    "freshPrefixElapsedSeconds": 73.651701365,
+    "originalObstacles": 2122,
+    "originalSignals": 11,
+    "originalEndpoints": 22,
+    "layers": 6,
+    "retainedCopperFragments": 0
+  },
+  "scope": "Replay of the exact repair-stage input captured during a fresh solve of the frozen real board input. All original obstacles and source endpoints remain in originalSrj; srj retains the native preprocessing and point-pair output. This test does not rerun graph construction or establish complete-board or electrical timing closure.",
+  "knownLimit": "The dependency update fixes the foreign-pad drill intersection. Annular copper-pad clearance findings are a separate routing issue; no general zero-DRC claim is made."
+}

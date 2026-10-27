@@ -65,7 +65,10 @@ export function balanceTestFiles(
 if (import.meta.main) {
   const allTestFiles = Array.from(
     new Glob("tests/**/*.test.{ts,tsx}").scanSync({ cwd: process.cwd() }),
-  ).sort()
+  )
+    // These run in the dedicated slow-routing-repros CI job with a CLI budget.
+    .filter((file) => !/\.slow\.test\.tsx?$/.test(file))
+    .sort()
   const nodeCount = getNodeCount()
   const plans = balanceTestFiles(
     allTestFiles,
