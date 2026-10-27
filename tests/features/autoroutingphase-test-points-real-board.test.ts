@@ -1,15 +1,11 @@
-import {
-  checkPadPadClearance,
-  checkPadTraceClearance,
-  checkViaPadClearance,
-} from "@tscircuit/checks"
 import { expect, test } from "bun:test"
 import { readFileSync } from "node:fs"
 import { gunzipSync } from "node:zlib"
 import { su } from "@tscircuit/circuit-json-util"
 import { TestPointSolver } from "@tscircuit/test-point-rerouter"
 import type { SimpleRouteJson } from "@tscircuit/capacity-autorouter"
-import { convertCircuitJsonToPcbSvg } from "circuit-to-svg"
+import { getBoardComparisonSvg } from "../fixtures/test-points/get-board-comparison-svg"
+import { compareBoardDrc } from "../fixtures/test-points/compare-board-drc"
 import { materializeRoutedTestPoints } from "lib/utils/autorouting/materialize-routed-test-points"
 import input from "../fixtures/test-points/astra-pd-power-supply.srj.json"
 import "tests/fixtures/extend-expect-circuit-snapshot"
@@ -24,14 +20,6 @@ test("real PD power supply emits connected exposed pads for a bottom probe fixtu
         ),
       ),
     ).toString(),
-  )
-  const clearanceChecks = [
-    checkPadPadClearance,
-    checkPadTraceClearance,
-    checkViaPadClearance,
-  ]
-  const baselineCounts = clearanceChecks.map(
-    (check) => check(circuit, { minClearance: 0.2 }).length,
   )
   const db = su(structuredClone(circuit))
   const solver = new TestPointSolver(input as SimpleRouteJson, {
@@ -98,37 +86,9 @@ test("real PD power supply emits connected exposed pads for a bottom probe fixtu
       source.subcircuit_connectivity_map_key,
     )
   }
-  expect(
-    clearanceChecks.map(
-      (check) => check(db.toArray(), { minClearance: 0.2 }).length,
-    ),
-  ).toEqual(baselineCounts)
-  for (const point of result.testPoints) {
-    db.pcb_note_rect.insert({
-      center: point,
-      width: 1.8,
-      height: 1.8,
-      layer: "bottom",
-      stroke_width: 0.15,
-      color: "#ffcf40",
-      has_stroke: true,
-    })
-    db.pcb_note_text.insert({
-      text: point.name,
-      anchor_position: { x: point.x + 3, y: point.y - 2 },
-      anchor_alignment: "center",
-      font: "tscircuit2024",
-      font_size: 0.7,
-      layer: "bottom",
-      color: "#ffcf40",
-    })
-  }
+  const report = await compareBoardDrc(circuit, db.toArray())
+  expect(report.added).toEqual([])
   await expect(
-    convertCircuitJsonToPcbSvg(db.toArray(), {
-      layer: "bottom",
-      showPcbNotes: true,
-      showFabricationNotes: false,
-      shouldDrawRatsNest: false,
-    }),
+    getBoardComparisonSvg(circuit, db.toArray(), result.testPoints),
   ).toMatchSvgSnapshot(import.meta.path)
-})
+}, 30_000)

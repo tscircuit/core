@@ -65,4 +65,5 @@ test("a designated trace receives an exposed, electrically connected probe pad",
   ).toBe(true)
   expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
   expect(circuit.db.pcb_trace.list()).toHaveLength(1)
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

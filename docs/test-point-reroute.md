@@ -21,18 +21,12 @@ Selectors use the existing connection-selection rules. Every selected route must
 
 Pads have source test-point components, source connectivity, PCB components/ports and circular SMT copper with `is_covered_with_solder_mask: false`. No solder paste is generated. Component envelopes are included as probe-access keepouts. The phase must be last so later rerouting cannot detach its pads. Probe barrel/fixture access and manufacture-specific mask/finish rules still require a separate fixture design step.
 
-The reproducible board prototype uses [astra/pd-power-supply](https://tscircuit.com/astra/pd-power-supply), release `57387f49-bd91-4277-8a82-706b1575c5ed`. The gzip fixture is the full published `dist/board/circuit.json`; the SRJ fixture comes from the test-point-rerouter repository's `scripts/prepare-test-point-board.ts`. Run `bun scripts/prototype-test-point-board.ts <directory>` to produce annotated before/after board images, updated Circuit JSON, validation counts and probe targets. Targets are board-world points in mm (+X right, +Y up, +Z above, right-handed); bottom coordinates are not mirrored. A fixture generator should perform that transform explicitly.
+The reproducible board prototype uses [astra/pd-power-supply](https://tscircuit.com/astra/pd-power-supply), release `57387f49-bd91-4277-8a82-706b1575c5ed`. The gzip fixture is the full published `dist/board/circuit.json`; the SRJ fixture comes from the test-point-rerouter repository's `scripts/prepare-test-point-board.ts`. Run `bun scripts/prototype-test-point-board.ts <directory>` to produce annotated before/after board images, updated Circuit JSON, a DRC finding comparison and probe targets. Targets are board-world points in mm (+X right, +Y up, +Z above, right-handed); bottom coordinates are not mirrored. A fixture generator should perform that transform explicitly.
 
-The prototype places three 1 mm bottom pads for SDA, SCL and OUTPUT_EN with 2.54 mm minimum center spacing. Independent checks at 0.2 mm clearance report unchanged counts: pad/pad 2, pad/trace 110, via/pad 28. These are pre-existing board violations at the stricter prototype clearance, not a clean DRC claim.
+The prototype places three 1 mm bottom pads for SDA, SCL and OUTPUT_EN with 2.54 mm minimum center spacing. Full routing and placement checks plus explicit 0.2 mm pad/pad, pad/trace and via/pad clearance checks introduce no findings. The comparison retains referenced objects and physical geometry instead of relying on counts alone. Existing board findings remain.
 
-This integration requires the accompanying `@tscircuit/props` and `@tscircuit/test-point-rerouter` releases. Until those publish and the dependency versions are updated, keep this PR in draft. Local validation used built artifacts of both companion branches.
+The merged rerouter is consumed as a pinned GitHub source package and bundled into core. The props API currently comes from the preview of [props #963](https://github.com/tscircuit/props/pull/963). Merge and publish that PR, then replace both props preview dependency entries with the published version before merging core. The dependency CI gate intentionally rejects preview URLs.
 
-Companion PRs: [props #963](https://github.com/tscircuit/props/pull/963) and [test-point-rerouter #1](https://github.com/tscircuit/test-point-rerouter/pull/1).
+![PD power supply before and after, standard layer colors and footprints with marked test points](test-point-images/pd-power-supply-before-after.png)
 
-Before:
-
-![Published PD power supply, bottom copper](test-point-images/pd-power-supply-before.png)
-
-After (gold annotations identify the generated pads):
-
-![PD power supply with generated probe targets](test-point-images/pd-power-supply-after.png)
+The visualization shows component pads and silkscreen. Filled copper pours are hidden only in the review image, and enlarged magenta rings label the three new pads; emitted manufacturing geometry and DRC inputs retain the complete board.

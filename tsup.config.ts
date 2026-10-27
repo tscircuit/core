@@ -4,9 +4,22 @@ export default defineConfig({
   entry: ["index.ts"],
   format: ["esm"],
   dts: {
-    resolve: ["@tscircuit/flex-utils", "@tscircuit/schematic-trace-solver"],
+    compilerOptions: {
+      paths: {
+        "lib/*": ["lib/*"],
+        "@tscircuit/test-point-rerouter": [
+          "./.build/test-point-rerouter/index.d.ts",
+        ],
+      },
+    },
+    resolve: [
+      "@tscircuit/flex-utils",
+      "@tscircuit/schematic-trace-solver",
+      "@tscircuit/test-point-rerouter",
+    ],
   },
   noExternal: [
+    "@tscircuit/test-point-rerouter",
     "@tscircuit/jscad",
     "@tscircuit/cableprinter",
     "@tscircuit/dogbone-solver",

@@ -19,11 +19,11 @@
     "url": "https://github.com/tscircuit/core"
   },
   "scripts": {
-    "build": "tsup-node",
+    "build": "bun run scripts/build-test-point-rerouter-types.ts && tsup-node",
     "format": "biome format . --write",
     "measure-bundle": "howfat -r table .",
     "pkg-pr-new-release": "bunx pkg-pr-new publish --comment=off --peerDeps",
-    "smoke-test:dist": "bun run scripts/smoke-tests/test-dist-simple-circuit.tsx && bun run scripts/smoke-tests/check-dist-bundled-schematic-solver.ts && bun run scripts/smoke-tests/test-dist-drawing-dimensions.tsx",
+    "smoke-test:dist": "bun run scripts/smoke-tests/test-dist-simple-circuit.tsx && bun run scripts/smoke-tests/check-dist-bundled-schematic-solver.ts && bun run scripts/smoke-tests/test-dist-drawing-dimensions.tsx && bun run scripts/smoke-tests/check-dist-bundled-test-point-rerouter.ts",
     "build:benchmarking": "bun build --experimental-html ./benchmarking/website/index.html --outdir ./benchmarking-dist",
     "build:benchmarking:watch": "chokidar \"./{benchmarking,lib}/**/*.{ts,tsx}\" -c 'bun build --experimental-html ./benchmarking/website/index.html --outdir ./benchmarking-dist'",
     "start:benchmarking": "concurrently \"bun run build:benchmarking:watch\" \"live-server ./benchmarking-dist\"",
@@ -59,7 +59,7 @@
     "@tscircuit/miniflex": "^0.0.4",
     "@tscircuit/modelprinter": "^0.0.18",
     "@tscircuit/ngspice-spice-engine": "^0.0.20",
-    "@tscircuit/props": "^0.0.712",
+    "@tscircuit/props": "https://pkg.pr.new/@tscircuit/props@f3be05bdfdda383371b6159fd65d3a3cc9ec6c4a",
     "@tscircuit/schematic-match-adapt": "^0.0.18",
     "@tscircuit/schematic-trace-solver": "https://jscdn.tscircuit.com/@tscircuit/schematic-trace-solver/0.0.238.tgz",
     "@tscircuit/solver-utils": "^0.0.16",
@@ -102,7 +102,7 @@
     "@tscircuit/circuit-json-to-drawing": "https://jscdn.tscircuit.com/@tscircuit/circuit-json-to-drawing/0.0.4.tgz",
     "circuit-json-to-gltf": "^0.0.151",
     "@tscircuit/jscad": "https://jscdn.tscircuit.com/@tscircuit/jscad/0.0.3.tgz",
-    "@tscircuit/test-point-rerouter": "^0.0.1"
+    "@tscircuit/test-point-rerouter": "github:tscircuit/test-point-rerouter#b0ccfaca75a7e187c55ddb6f2071a1f2084e3167"
   },
   "peerDependencies": {
     "@tscircuit/capacity-autorouter": "*",
@@ -125,8 +125,7 @@
     "spicets": "*",
     "typescript": "^5.0.0",
     "@tscircuit/cableprinter": "*",
-    "circuit-json-to-gltf": "*",
-    "@tscircuit/test-point-rerouter": "^0.0.1"
+    "circuit-json-to-gltf": "*"
   },
   "dependencies": {
     "@flatten-js/core": "^1.6.2",
@@ -148,7 +147,7 @@
     "@jscad/modeling": "^2.13.0"
   },
   "overrides": {
-    "@tscircuit/props": "^0.0.712",
+    "@tscircuit/props": "https://pkg.pr.new/@tscircuit/props@f3be05bdfdda383371b6159fd65d3a3cc9ec6c4a",
     "circuit-json": "^0.0.534",
     "@tscircuit/cableprinter": "^0.0.6"
   },
