@@ -132,3 +132,5 @@ export { AssemblyCable } from "./primitive-components/AssemblyCable"
 export { AssemblyDrawingPage } from "./primitive-components/AssemblyDrawingPage"
 export { AssemblyDrawingPartView } from "./primitive-components/AssemblyDrawingPartView"
 export { AssemblyDrawingTitleBlock } from "./primitive-components/AssemblyDrawingTitleBlock"
+
+export { AssemblyDrawingDimension } from "./primitive-components/AssemblyDrawingDimension"

@@ -1,4 +1,5 @@
 import type {
+  AssemblyDrawingDimensionProps,
   AssemblyDrawingPageProps,
   AssemblyDrawingPartViewProps,
   AssemblyDrawingTitleBlockProps,
@@ -39,6 +40,9 @@ export interface AssemblyCableJsxProps extends AssemblyCablePropsInput {}
 
 export const assembly = {
   drawing: {
+    dimension: createNamespacedElement<AssemblyDrawingDimensionProps>(
+      "assembly.drawing.dimension",
+    ),
     page: createNamespacedElement<AssemblyDrawingPageProps>(
       "assembly.drawing.page",
     ),

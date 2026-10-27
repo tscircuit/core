@@ -1,6 +1,5 @@
 import { expect } from "bun:test"
-import { buildSubtree } from "@tscircuit/circuit-json-util"
-import type { AnyCircuitElement } from "circuit-json"
+import { getDrawingViewGeometry } from "lib/utils/assembly-drawing/geometry/get-drawing-view-geometry"
 import { RootCircuit } from "lib/RootCircuit"
 import { toMatchSvgSnapshot } from "./extend-expect-any-svg"
 
@@ -41,37 +40,7 @@ export async function getDrawingSnapshotSvg(
       ])
       const cached = scenes.get(key)
       if (cached) return cached
-      const ids = new Set(view.source_component_ids)
-      const selected: AnyCircuitElement[] = view.source_group_id
-        ? buildSubtree(geometry, { source_group_id: view.source_group_id })
-        : geometry.filter(
-            (element) =>
-              (element.type === "cad_component" ||
-                element.type === "source_component") &&
-              ids.has(element.source_component_id),
-          )
-      // buildSubtree follows component ownership; standalone PCB holes/cutouts
-      // belong to a subcircuit and have no pcb_component_id to follow.
-      if (view.source_group_id) {
-        const subcircuitIds = new Set(
-          selected.flatMap((element) =>
-            element.type === "source_group" && element.subcircuit_id
-              ? [element.subcircuit_id]
-              : [],
-          ),
-        )
-        const selectedElements = new Set(selected)
-        selected.push(
-          ...geometry.filter(
-            (element) =>
-              element.type.startsWith("pcb_") &&
-              "subcircuit_id" in element &&
-              subcircuitIds.has(element.subcircuit_id!) &&
-              !("pcb_component_id" in element && element.pcb_component_id) &&
-              !selectedElements.has(element),
-          ),
-        )
-      }
+      const selected = getDrawingViewGeometry(geometry, view)
       const glb = await convertCircuitJsonToGltf(selected, {
         format: "glb",
         includeModels: true,
