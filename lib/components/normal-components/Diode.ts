@@ -10,6 +10,7 @@ import { NormalComponent } from "../base-components/NormalComponent/NormalCompon
 import { isFootprinterString } from "../base-components/NormalComponent/utils/isFootprinterString"
 import { resolveFootprinterPolarity } from "../base-components/NormalComponent/utils/resolve-footprinter-polarity"
 import type { Port } from "../primitive-components/Port"
+import { Diode_addPolarityFabricationNotes } from "./Diode_addPolarityFabricationNotes"
 
 export class Diode extends NormalComponent<
   typeof diodeProps,
@@ -121,6 +122,11 @@ export class Diode extends NormalComponent<
 
   getRefDesPrefixes(): string[] {
     return ["D"]
+  }
+
+  doInitialPcbComponentSizeCalculation(): void {
+    super.doInitialPcbComponentSizeCalculation()
+    Diode_addPolarityFabricationNotes(this)
   }
 
   get pos(): Port {
