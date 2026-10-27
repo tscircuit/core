@@ -149,5 +149,8 @@
     "@tscircuit/props": "^0.0.711",
     "circuit-json": "^0.0.534",
     "@tscircuit/cableprinter": "^0.0.6"
+  },
+  "browser": {
+    "@resvg/resvg-js": false
   }
 }

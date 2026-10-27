@@ -26,3 +26,6 @@ jobs:
 
       - name: Run smoke test script
         run: bun run smoke-test:dist
+
+      - name: Build browser benchmarks
+        run: bun run build:benchmarking
