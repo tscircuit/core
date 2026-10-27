@@ -1,6 +1,7 @@
 import { pcbKeepoutProps } from "@tscircuit/props"
 import type { PCBKeepout } from "circuit-json"
 import type { PcbComponentId } from "lib/utils/circuit-json/circuit-json-id-types"
+import { getBoardAvailableLayers } from "lib/utils/getViaSpanLayers"
 import { decomposeTSR } from "transformation-matrix"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
@@ -50,7 +51,7 @@ export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
       layers = [props.layer]
     }
     if (!layers) {
-      layers = ["top"]
+      layers = getBoardAvailableLayers(subcircuit._getSubcircuitLayerCount())
     }
     const excludedPcbComponentIds = this.getExcludedPcbComponentIds()
     const pcbKeepoutExclusionProps =
