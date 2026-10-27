@@ -22,6 +22,16 @@ test("does not warn for a two-terminal conductor split through a source net", ()
 
   circuit.render()
 
+  const exportedPair = circuit.db.source_bus.getWhere({ name: "USB_DATA" })!
+  expect(exportedPair.source_trace_ids).toHaveLength(3)
+  expect(exportedPair.differential_pair).toEqual({
+    positive_source_trace_id: circuit.db.source_trace.getWhere({
+      name: "DP_FROM_J1",
+    })!.source_trace_id,
+    negative_source_trace_id: circuit.db.source_trace.getWhere({ name: "DM" })!
+      .source_trace_id,
+  })
+
   expect(
     circuit.db.source_property_ignored_warning
       .list()

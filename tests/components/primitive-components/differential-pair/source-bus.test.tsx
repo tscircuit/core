@@ -10,11 +10,14 @@ test("exports differential-pair membership without routing or duplicate records"
         positiveConnection="USB_P"
         negativeConnection=".U1 > .pin2"
         maxLengthSkew={0.05}
+        pcbTraceGap="120um"
+        maxUncoupledLength="500um"
+        targetDifferentialImpedance={90}
       />
       <chip name="U1" footprint="soic8" pcbX={-7} />
       <chip name="U2" footprint="soic8" pcbX={7} />
-      <trace name="USB_P" from=".U1 > .pin1" to=".U2 > .pin1" />
       <trace name="USB_N" from=".U1 > .pin2" to=".U2 > .pin2" />
+      <trace name="USB_P" from=".U1 > .pin1" to=".U2 > .pin1" />
       <trace name="OTHER" from=".U1 > .pin3" to=".U2 > .pin3" />
     </board>,
   )
@@ -27,6 +30,17 @@ test("exports differential-pair membership without routing or duplicate records"
         (name) => circuit.db.source_trace.getWhere({ name })!.source_trace_id,
       ),
       max_length_skew: 0.05,
+      target_differential_impedance: 90,
+      differential_pair: {
+        positive_source_trace_id: circuit.db.source_trace.getWhere({
+          name: "USB_P",
+        })!.source_trace_id,
+        negative_source_trace_id: circuit.db.source_trace.getWhere({
+          name: "USB_N",
+        })!.source_trace_id,
+        trace_gap: 0.12,
+        max_uncoupled_length: 0.5,
+      },
       subcircuit_id: circuit.firstChild!.getSubcircuit().subcircuit_id,
     }),
   ])
