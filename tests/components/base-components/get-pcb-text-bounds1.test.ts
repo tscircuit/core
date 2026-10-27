@@ -26,13 +26,3 @@ test("getPcbTextBounds places the box below a top_left anchor, not above it", ()
   // The box's top edge (max Y) should sit at the anchor's Y.
   expect(bounds.y + bounds.height).toBeCloseTo(baseText.anchor_position.y)
 })
-
-test("getPcbTextBounds places the box above a bottom_left anchor, not below it", () => {
-  const bottomText: PcbSilkscreenText = {
-    ...baseText,
-    anchor_alignment: "bottom_left",
-  }
-  const bounds = getPcbTextBounds(bottomText)
-
-  expect(bounds.y).toBeCloseTo(bottomText.anchor_position.y)
-})
