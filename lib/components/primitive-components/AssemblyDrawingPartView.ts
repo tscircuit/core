@@ -17,7 +17,11 @@ export class AssemblyDrawingPartView extends PrimitiveComponent<
   doInitialSourceRender(): void {
     if (this.parent?.componentName !== "AssemblyDrawingPage")
       throw new Error("assembly.drawing.partview must belong to a drawing page")
-    if (this.children.length)
-      throw new Error("assembly.drawing.partview cannot contain children")
+    if (
+      this.children.some(
+        (child) => child.componentName !== "AssemblyDrawingDimension",
+      )
+    )
+      throw new Error("assembly.drawing.partview can contain only dimensions")
   }
 }

@@ -102,7 +102,8 @@
     "stack-svgs": "^0.0.1",
     "ts-expect": "^1.3.0",
     "tsup": "^8.2.4",
-    "@tscircuit/circuit-json-to-drawing": "https://jscdn.tscircuit.com/@tscircuit/circuit-json-to-drawing/0.0.2.tgz"
+    "@tscircuit/circuit-json-to-drawing": "https://jscdn.tscircuit.com/@tscircuit/circuit-json-to-drawing/0.0.3.tgz",
+    "@tscircuit/jscad": "https://jscdn.tscircuit.com/@tscircuit/jscad/0.0.3.tgz"
   },
   "peerDependencies": {
     "@tscircuit/capacity-autorouter": "*",
@@ -124,7 +125,10 @@
     "schematic-symbols": "*",
     "spicets": "*",
     "typescript": "^5.0.0",
-    "@tscircuit/cableprinter": "*"
+    "@tscircuit/cableprinter": "*",
+    "poppygl": "*",
+    "circuit-json-to-gltf": "*",
+    "@tscircuit/jscad": "*"
   },
   "dependencies": {
     "@flatten-js/core": "^1.6.2",
@@ -147,5 +151,16 @@
     "@tscircuit/props": "^0.0.710",
     "circuit-json": "^0.0.534",
     "@tscircuit/cableprinter": "^0.0.6"
+  },
+  "peerDependenciesMeta": {
+    "poppygl": {
+      "optional": true
+    },
+    "circuit-json-to-gltf": {
+      "optional": true
+    },
+    "@tscircuit/jscad": {
+      "optional": true
+    }
   }
 }

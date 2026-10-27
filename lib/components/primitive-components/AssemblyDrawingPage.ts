@@ -5,6 +5,12 @@ import { AssemblyDrawingPage_doInitialDrawingRender } from "./AssemblyDrawingPag
 export class AssemblyDrawingPage extends PrimitiveComponent<
   typeof assemblyDrawingPageProps
 > {
+  drawingDimensionError?: Error
+
+  updateDrawingRender(): void {
+    if (this.drawingDimensionError) throw this.drawingDimensionError
+  }
+
   get config() {
     return {
       componentName: "AssemblyDrawingPage",

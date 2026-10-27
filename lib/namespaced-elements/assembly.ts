@@ -1,4 +1,5 @@
 import type {
+  AssemblyDrawingDimensionProps,
   AssemblyDrawingPageProps,
   AssemblyDrawingPartViewProps,
   AssemblyDrawingTitleBlockProps,
@@ -42,9 +43,12 @@ export const assembly = {
     page: createNamespacedElement<AssemblyDrawingPageProps>(
       "assembly.drawing.page",
     ),
-    partview: createNamespacedElement<AssemblyDrawingPartViewProps>(
-      "assembly.drawing.partview",
+    dimension: createNamespacedElement<AssemblyDrawingDimensionProps>(
+      "assembly.drawing.dimension",
     ),
+    partview: createNamespacedElement<
+      AssemblyDrawingPartViewProps & { children?: ReactNode }
+    >("assembly.drawing.partview"),
     titleblock: createNamespacedElement<AssemblyDrawingTitleBlockProps>(
       "assembly.drawing.titleblock",
     ),
