@@ -21,7 +21,7 @@ const CacheBoard = ({ cache }: { cache?: PcbRouteCache }) => (
       pcbPath={cache ? undefined : [{ x: 3, y: -1 }]}
     />
     <pcbnotetext
-      text="BUG: cached nets are joined"
+      text="Cached nets stay separate"
       pcbX={0}
       pcbY={0}
       fontSize={0.4}
@@ -29,7 +29,7 @@ const CacheBoard = ({ cache }: { cache?: PcbRouteCache }) => (
   </board>
 )
 
-test("replaying a cache joins routes from distinct source traces", async () => {
+test("replaying a cache preserves routes for distinct source traces", async () => {
   const { circuit: original } = getTestFixture()
   original.add(<CacheBoard />)
   await original.renderUntilSettled()
@@ -53,9 +53,17 @@ test("replaying a cache joins routes from distinct source traces", async () => {
   expect(replayedTraces.map((trace) => trace.source_trace_id)).toEqual(
     sourceTraces.map((trace) => trace.source_trace_id),
   )
-  // Each logical trace incorrectly receives both routes, including both nets' ports.
-  for (const trace of replayedTraces) {
-    expect(trace.route).toEqual(pcbTraces.flatMap((cached) => cached.route))
+  for (const [index, trace] of replayedTraces.entries()) {
+    // The full route comparison includes widths, layers, orientation and port IDs.
+    expect(trace.route).toEqual(pcbTraces[index].route)
+    const endpointPortIds = trace.route.flatMap((point) =>
+      point.route_type === "wire"
+        ? [point.start_pcb_port_id, point.end_pcb_port_id].filter(Boolean)
+        : [],
+    )
+    expect(
+      endpointPortIds.map((id) => replay.db.pcb_port.get(id!)?.source_port_id),
+    ).toEqual(sourceTraces[index].connected_source_port_ids)
   }
   expect(replay).toMatchPcbSnapshot(import.meta.path)
 })
