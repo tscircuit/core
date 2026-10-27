@@ -34,6 +34,16 @@ test("oval copper obstacles match emitted holes on both board sides", async () =
                   holeWidth={1.2}
                   holeHeight={2.2}
                 />
+                <silkscreenpath
+                  strokeWidth={0.05}
+                  route={[
+                    { x: -1.1, y: -1.6 },
+                    { x: 1.1, y: -1.6 },
+                    { x: 1.1, y: 1.6 },
+                    { x: -1.1, y: 1.6 },
+                    { x: -1.1, y: -1.6 },
+                  ]}
+                />
               </footprint>
             }
           />
@@ -73,19 +83,34 @@ test("oval copper obstacles match emitted holes on both board sides", async () =
     expect(obstacle.layers).toEqual(["top", "bottom"])
 
     const rotation = hole.ccw_rotation ?? 0
+    const transform = compose(translate(hole.x, hole.y), rotateDEG(rotation))
+    const corners = [-1, 1].flatMap((xSign) =>
+      [-1, 1].map((ySign) =>
+        applyToPoint(transform, {
+          x: (xSign * hole.outer_width) / 2,
+          y: (ySign * hole.outer_height) / 2,
+        }),
+      ),
+    )
+    // The sibling path carries the same local bounds through actual board
+    // placement. Checking it also detects a hole/obstacle pair that agrees
+    // with itself while using the wrong reflection angle on the bottom.
+    const outline = circuit.db.pcb_silkscreen_path
+      .list()
+      .find((path) => path.pcb_component_id === hole.pcb_component_id)!
+    for (const point of outline.route.slice(0, 4)) {
+      expect(
+        Math.min(
+          ...corners.map((corner) =>
+            Math.hypot(corner.x - point.x, corner.y - point.y),
+          ),
+        ),
+      ).toBeLessThan(0.000001)
+    }
     if (Math.abs(rotation % 90) < 1e-6) {
       // Derive board-world copper bounds from the emitted hole's local
       // rectangle corners (mm, +X right/+Y up), rather than copying the
       // converter's quarter-turn width/height selection.
-      const transform = compose(translate(hole.x, hole.y), rotateDEG(rotation))
-      const corners = [-1, 1].flatMap((xSign) =>
-        [-1, 1].map((ySign) =>
-          applyToPoint(transform, {
-            x: (xSign * hole.outer_width) / 2,
-            y: (ySign * hole.outer_height) / 2,
-          }),
-        ),
-      )
       expect(obstacle.width).toBeCloseTo(
         Math.max(...corners.map((corner) => corner.x)) -
           Math.min(...corners.map((corner) => corner.x)),
