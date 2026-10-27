@@ -170,8 +170,14 @@ test("saving and importing native SMT pads preserves solder mask settings", asyn
             // Label emitted board-world geometry, in mm (+X right, +Y up).
             const bounds =
               pad.shape === "polygon" ? getBoundsFromPoints(pad.points)! : null
-            const x = bounds ? (bounds.minX + bounds.maxX) / 2 : pad.x!
-            const y = bounds ? (bounds.minY + bounds.maxY) / 2 : pad.y!
+            const x =
+              pad.shape === "polygon"
+                ? (bounds!.minX + bounds!.maxX) / 2
+                : pad.x
+            const y =
+              pad.shape === "polygon"
+                ? (bounds!.minY + bounds!.maxY) / 2
+                : pad.y
             return {
               ...authored.db.pcb_note_text.list()[0],
               pcb_note_text_id: `mask_settings_${pad.pcb_smtpad_id}`,
