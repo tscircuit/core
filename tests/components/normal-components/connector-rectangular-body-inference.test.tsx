@@ -3,8 +3,9 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("USB-A rectangular bodies infer top-edge access without explicit insertion metadata", async () => {
   const { circuit } = getTestFixture()
+  circuit.schematicDisabled = true
   circuit.add(
-    <board width={100} height={80} routingDisabled schDisabled>
+    <board width={100} height={80} routingDisabled>
       {[16, 36].map((pcbX, index) => (
         <connector
           key={pcbX}
@@ -24,7 +25,6 @@ test("USB-A rectangular bodies infer top-edge access without explicit insertion 
             <footprint>
               {[0, 2.5, 4.5, 7].map((x, pin) => (
                 <platedhole
-                  key={pin}
                   portHints={[`pin${pin + 1}`]}
                   pcbX={x - 3.5}
                   pcbY={0}
@@ -35,7 +35,6 @@ test("USB-A rectangular bodies infer top-edge access without explicit insertion 
               ))}
               {[-3.07, 10.07].map((x) => (
                 <platedhole
-                  key={x}
                   portHints={["pin5"]}
                   pcbX={x - 3.5}
                   pcbY={-2.71}
