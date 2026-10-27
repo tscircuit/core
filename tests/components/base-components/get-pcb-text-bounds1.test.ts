@@ -20,7 +20,10 @@ test("getPcbTextBounds places the box below a top_left anchor, not above it", ()
   // bounds.top = center.y + height / 2). So a "top_left" anchored box's
   // center must be BELOW the anchor by half the text height.
   const bounds = getPcbTextBounds(baseText)
-  const center = { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 }
+  const center = {
+    x: bounds.x + bounds.width / 2,
+    y: bounds.y + bounds.height / 2,
+  }
 
   expect(center.y).toBeCloseTo(baseText.anchor_position.y - bounds.height / 2)
   // The box's top edge (max Y) should sit at the anchor's Y.
