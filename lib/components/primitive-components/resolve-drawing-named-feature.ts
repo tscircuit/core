@@ -1,5 +1,6 @@
+import { drawingCadPointToScene } from "./drawing-cad-point-to-scene"
 import type { AnyCircuitElement, CadComponent } from "circuit-json"
-import { mat4, vec3 } from "gl-matrix"
+import { vec3 } from "gl-matrix"
 import { executeJscadOperations, type JscadImplementation } from "jscad-planner"
 import type { AssemblyDrawingPartView } from "./AssemblyDrawingPartView"
 import { getAssemblyScope } from "./get-assembly-scope-components"
@@ -68,27 +69,11 @@ export async function resolveDrawingNamedFeature(
         )
       path = outlines[0]!
     }
-    const placement = mat4.create()
-    const position = cad.position
-    mat4.translate(placement, placement, [position.x, position.y, position.z])
-    // Paired with circuit-json-to-gltf GLTFBuilder.transformMesh: its scene
-    // rotations are applied Y, Z, X after the CAD/scene axis exchange.
-    // In CAD axes that is Rx * Ry * Rz, not JSCAD rotate's Rz * Ry * Rx.
-    // The emitted-mesh placement test pins the noncommuting combined rotations.
-    for (const [rotate, angle] of [
-      [mat4.rotateX, cad.rotation?.x ?? 0],
-      [mat4.rotateY, cad.rotation?.y ?? 0],
-      [mat4.rotateZ, cad.rotation?.z ?? 0],
-    ] as const)
-      rotate(placement, placement, (angle * Math.PI) / 180)
-    const scale = cad.model_unit_to_mm_scale_factor ?? 1
-    mat4.scale(placement, placement, [scale, scale, scale])
-    mat4.multiply(placement, placement, matrix)
     matching.push({
       cad,
       points: path.map(([x, y]) => {
-        const point = vec3.transformMat4([0, 0, 0], [x!, y!, 0], placement)
-        return [-point[0], point[2], point[1]]
+        const point = vec3.transformMat4([0, 0, 0], [x!, y!, 0], matrix)
+        return drawingCadPointToScene(cad, point)
       }),
     })
   }
