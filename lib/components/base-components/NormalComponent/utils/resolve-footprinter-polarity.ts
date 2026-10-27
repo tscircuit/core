@@ -100,13 +100,16 @@ export function resolveFootprinterPolarity({
           `${name} is polarized but its footprint explicitly disables polarity.`,
         )
       }
-      // Bare chip sizes normally select resistor geometry. Select capacitor
-      // geometry when requesting capacitor-specific polarity artwork.
+      // Bare chip sizes normally select resistor geometry. Keep capacitor
+      // geometry while resolving its electrical terminal identities.
       const capacitorFootprint = /^\d{4,5}(?=_|$)/.test(footprint)
         ? `cap${footprint}`
         : footprint
+      // Core already emits pin-aware fabrication polarity symbols. Leave the
+      // additional footprinter silkscreen mark opt-in: its current capacitor
+      // implementation always marks pin 1, even when positivepin is 2.
       return {
-        footprint: `${capacitorFootprint}_polarized_positivepin${positivePin}_negativepin${negativePin}`,
+        footprint: `${capacitorFootprint}_positivepin${positivePin}_negativepin${negativePin}`,
         positivePin,
         negativePin,
       }
