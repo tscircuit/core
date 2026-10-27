@@ -17,8 +17,8 @@ import { resolveTwoTerminalPinMapping } from "lib/utils/footprints/resolve-two-t
 import type { Port } from "../primitive-components/Port"
 
 /** Diode and LED packages share A/K terminal and Footprinter artwork rules. */
-export const resolveDiodeFootprint = <Footprint>(
-  footprint: Footprint,
+export const resolveDiodeFootprint = (
+  footprint: string,
   { name, pinLabels }: { name: string; pinLabels?: PinLabelsProp },
 ) => {
   const parsed = parseFootprinterDefinition(footprint)
