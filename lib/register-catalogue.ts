@@ -8,6 +8,7 @@ extendCatalogue(Components)
 
 // Aliases (only when class name is different than the name of the component)
 extendCatalogue({
+  "assembly.drawing.dimension": Components.AssemblyDrawingDimension,
   "assembly.drawing.page": Components.AssemblyDrawingPage,
   "assembly.drawing.partview": Components.AssemblyDrawingPartView,
   "assembly.drawing.titleblock": Components.AssemblyDrawingTitleBlock,
