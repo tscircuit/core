@@ -5,6 +5,8 @@ import { AssemblyDrawingPage_doInitialDrawingRender } from "./AssemblyDrawingPag
 export class AssemblyDrawingPage extends PrimitiveComponent<
   typeof assemblyDrawingPageProps
 > {
+  drawingRenderError?: unknown
+
   get config() {
     return {
       componentName: "AssemblyDrawingPage",
@@ -31,6 +33,10 @@ export class AssemblyDrawingPage extends PrimitiveComponent<
       ).length > 1
     )
       throw new Error("A drawing page can contain at most one title block")
+  }
+
+  updateDrawingRender(): void {
+    if (this.drawingRenderError) throw this.drawingRenderError
   }
 
   doInitialDrawingRender(): void {

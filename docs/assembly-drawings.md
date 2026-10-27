@@ -3,6 +3,7 @@
 Drawing pages describe paper layout independently of the assembly's physical
 placement. Core emits `drawing_page`, `drawing_part_view`, and optional
 `drawing_page_title_block` Circuit JSON records after CAD model rendering.
+Dimension children emit resolved `drawing_dimension_line` records.
 
 ```tsx
 import { assembly } from "@tscircuit/core"
@@ -75,9 +76,11 @@ For multiple pages, pass `{ drawingPageId }` to select one page. The matcher
 resolves the emitted geometry selection, converts it to glTF, and renders an SVG
 page with PoppyGL outline views. It caches scenes across views of the same part.
 The drawing exporter is a test dependency and is not imported by core's runtime.
+Dimension resolution lazily loads the CAD geometry converter and PoppyGL camera
+utilities; it does not rasterize a drawing.
 
 The exporter uses the published jscdn package:
-`https://jscdn.tscircuit.com/@tscircuit/circuit-json-to-drawing/0.0.2.tgz`.
+`https://jscdn.tscircuit.com/@tscircuit/circuit-json-to-drawing/0.0.3.tgz`.
 Snapshots render at 4 pixels/mm with 2x supersampling.
 
 ## Real assembly examples
@@ -94,6 +97,52 @@ the base's elevations and underside, and a carrier board's mounting/header drill
 All viewports and their labels leave the bottom-right title block clear.
 
 These are preliminary arrangement/inspection sheets. `FIT` denotes automatic
-viewport fitting, not a declared manufacturing scale; dimensioning and tolerances
-are not supplied by this API. Standalone board holes are included by their owning
+viewport fitting, not a declared manufacturing scale. Views with dimensions emit
+the resolved fit scale so annotations align at any export resolution. Tolerances
+and GD&T annotations are not supplied by this API. Standalone board holes are included by their owning
 subcircuit as well as component-owned geometry when resolving source groups.
+
+## Dimensions
+
+Nest dimensions inside a part view and choose exactly one target:
+
+```tsx
+<assembly.drawing.partview partRef=".tube" name="end-view"
+  direction="z+" width={100} height={80}>
+  <assembly.drawing.dimension name="bore" edgeRef=".tube > .inner_top" />
+  <assembly.drawing.dimension widthOfView />
+  <assembly.drawing.dimension heightOfView />
+</assembly.drawing.partview>
+```
+
+`widthOfView` and `heightOfView` measure the selected geometry on the camera's
+right/up axes in physical mm, independently of viewport size and paper scale.
+They work with assembly parts, groups, boards and imported models supported by
+the CAD converter. Section views measure only retained geometry.
+
+`edgeRef` selects exactly one native named feature within the view's selected
+parts. Currently, named features are read from JSCAD plans, including Fiber
+models authored with `topOutlineName` / `bottomOutlineName` on `ExtrudeLinear`,
+and native `nameReference` / `nameOutlines` operations. For example, an extrusion
+of a 34 × 14 mm bore profile named `inner_top` measures 34 mm in an end view.
+Closed or curved outlines use their larger projected axis (horizontal on ties),
+not perimeter length. Construction feature placement, CAD origins, unit scales,
+model fitting, rotations and bottom-layer placement follow the rendered solid.
+Section planes also clip feature attachments. Mesh indices and arbitrary names
+are not interpreted as stable features; imported mesh/STEP feature labels are not
+yet read by this native-feature provider.
+
+Core formats measurements in mm with up to three decimal places (three
+significant digits for values below 0.001 mm), places width
+lines above and height lines to the right of the geometry, and separates parallel
+dimension lines by 5 paper mm. Optional `name` is annotation identity, independent
+of the measurement text. Resolved line endpoints and witness points use
+page-centered paper mm (+X right, +Y up); renderers do not recalculate values.
+Leave space around viewports for dimension lines and labels.
+
+Use `await circuit.renderUntilSettled()` for pages with dimensions. Core resolves
+and validates every dimension before inserting any records for that page.
+Missing, ambiguous or out-of-selection feature references, empty sections and
+zero projected extents are errors. A failed model load cannot be measured using
+a placeholder bounding box. Pages without dimensions keep their synchronous
+metadata-only behavior.
