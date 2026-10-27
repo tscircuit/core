@@ -1,9 +1,8 @@
-import { beforeAll, expect, test } from "bun:test"
+import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-const { circuit } = getTestFixture()
-
-beforeAll(async () => {
+test("rectBorderRadius survives rendering, including parent rotation", async () => {
+  const { circuit } = getTestFixture()
   circuit.add(
     <board width={24} height={14} schematicDisabled routingDisabled>
       {[0, 45].map((rotation, column) => (
@@ -18,7 +17,7 @@ beforeAll(async () => {
                 shape="rect"
                 width={3}
                 height={2}
-                rectBorderRadius={0.5}
+                rectBorderRadius="0.5mm"
                 portHints={["1"]}
               />
             </footprint>
@@ -52,16 +51,9 @@ beforeAll(async () => {
     "rect",
   ])
   expect(circuit.db.pcb_smtpad.list()[2]).toMatchObject({ corner_radius: 0.5 })
-  // Keep rendering and snapshot failures outside the expected failure.
+  expect(circuit.db.pcb_smtpad.list().slice(0, 2)).toMatchObject([
+    { shape: "rect", rect_border_radius: 0.5 },
+    { shape: "rotated_rect", rect_border_radius: 0.5 },
+  ])
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
-
-test.failing(
-  "rectBorderRadius survives rendering, including parent rotation",
-  () => {
-    expect(circuit.db.pcb_smtpad.list().slice(0, 2)).toMatchObject([
-      { shape: "rect", rect_border_radius: 0.5 },
-      { shape: "rotated_rect", rect_border_radius: 0.5 },
-    ])
-  },
-)
