@@ -24,19 +24,22 @@ export function getPcbTextBounds(text: PcbSilkscreenText): {
   let centerX = text.anchor_position.x
   let centerY = text.anchor_position.y
 
-  // Adjust center position based on anchor alignment
+  // Adjust center position based on anchor alignment. PCB world is +Y-up
+  // (see Group_doInitialPcbComponentAnchorAlignment.ts), so a "top_*" anchor
+  // sits at the box's max-Y edge and a "bottom_*" anchor at its min-Y edge:
+  // the center is below a top anchor and above a bottom anchor.
   switch (anchorAlignment) {
     case "top_left":
       centerX = text.anchor_position.x + textWidth / 2
-      centerY = text.anchor_position.y + textHeight / 2
+      centerY = text.anchor_position.y - textHeight / 2
       break
     case "top_center":
       centerX = text.anchor_position.x
-      centerY = text.anchor_position.y + textHeight / 2
+      centerY = text.anchor_position.y - textHeight / 2
       break
     case "top_right":
       centerX = text.anchor_position.x - textWidth / 2
-      centerY = text.anchor_position.y + textHeight / 2
+      centerY = text.anchor_position.y - textHeight / 2
       break
     case "center_left":
       centerX = text.anchor_position.x + textWidth / 2
@@ -53,15 +56,15 @@ export function getPcbTextBounds(text: PcbSilkscreenText): {
       break
     case "bottom_left":
       centerX = text.anchor_position.x + textWidth / 2
-      centerY = text.anchor_position.y - textHeight / 2
+      centerY = text.anchor_position.y + textHeight / 2
       break
     case "bottom_center":
       centerX = text.anchor_position.x
-      centerY = text.anchor_position.y - textHeight / 2
+      centerY = text.anchor_position.y + textHeight / 2
       break
     case "bottom_right":
       centerX = text.anchor_position.x - textWidth / 2
-      centerY = text.anchor_position.y - textHeight / 2
+      centerY = text.anchor_position.y + textHeight / 2
       break
     default:
       // Default to center if unknown alignment
