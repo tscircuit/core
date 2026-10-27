@@ -26,7 +26,6 @@ export async function resolveDrawingDimensions(
     await resolveDrawingDimensionGeometry(
       view.root!.db.toArray(),
       drawingView,
-      view.root!.platform?.projectBaseUrl,
     )
   const projected = projectDrawingDimensionPoints(points, camera, drawingView)
   const lanes = [0, 0]
