@@ -483,6 +483,7 @@ export const createComponentsFromCircuitJson = (
             pcbX: elm.x,
             pcbY: elm.y,
             shape: "circular_hole_with_rect_pad",
+            pcbRotation: elm.rect_ccw_rotation,
             holeDiameter: elm.hole_diameter,
             rectPadHeight: elm.rect_pad_height,
             rectPadWidth: elm.rect_pad_width,
@@ -748,18 +749,7 @@ export const createComponentsFromCircuitJson = (
       pcbVia._importedPcbTraceId = elm.pcb_trace_id
       components.push(pcbVia)
     } else if (elm.type === "pcb_silkscreen_rect") {
-      components.push(
-        new SilkscreenRect({
-          pcbX: elm.center.x,
-          pcbY: elm.center.y,
-          width: elm.width,
-          height: elm.height,
-          layer: elm.layer,
-          strokeWidth: elm.stroke_width,
-          filled: elm.is_filled,
-          cornerRadius: elm.corner_radius,
-        }),
-      )
+      components.push(SilkscreenRect.fromCircuitJson(elm))
     } else if (elm.type === "pcb_silkscreen_circle") {
       components.push(
         new SilkscreenCircle({
