@@ -368,6 +368,8 @@ export const createComponentsFromCircuitJson = (
           portHints: resolvedPortHints,
           rectBorderRadius: elm.rect_border_radius,
           solderPasteMargin,
+          coveredWithSolderMask: elm.is_covered_with_solder_mask,
+          solderMaskMargin: elm.soldermask_margin,
         }),
       )
     } else if (elm.type === "pcb_smtpad" && elm.shape === "circle") {
@@ -380,6 +382,8 @@ export const createComponentsFromCircuitJson = (
           radius: elm.radius,
           portHints: resolvedPortHints,
           solderPasteMargin,
+          coveredWithSolderMask: elm.is_covered_with_solder_mask,
+          solderMaskMargin: elm.soldermask_margin,
         }),
       )
     } else if (elm.type === "pcb_smtpad" && elm.shape === "pill") {
@@ -394,6 +398,8 @@ export const createComponentsFromCircuitJson = (
           pcbY: elm.y,
           layer: elm.layer,
           solderPasteMargin,
+          coveredWithSolderMask: elm.is_covered_with_solder_mask,
+          solderMaskMargin: elm.soldermask_margin,
         }),
       )
     } else if (elm.type === "pcb_smtpad" && elm.shape === "rotated_pill") {
@@ -409,6 +415,8 @@ export const createComponentsFromCircuitJson = (
           layer: elm.layer,
           ccwRotation: elm.ccw_rotation,
           solderPasteMargin,
+          coveredWithSolderMask: elm.is_covered_with_solder_mask,
+          solderMaskMargin: elm.soldermask_margin,
         }),
       )
     } else if (elm.type === "pcb_smtpad" && elm.shape === "rotated_rect") {
@@ -423,6 +431,8 @@ export const createComponentsFromCircuitJson = (
         cornerRadius: elm.corner_radius,
         portHints: resolvedPortHints,
         solderPasteMargin,
+        coveredWithSolderMask: elm.is_covered_with_solder_mask,
+        solderMaskMargin: elm.soldermask_margin,
       })
       smtpad._importedRectBorderRadius = elm.rect_border_radius
       components.push(smtpad)
