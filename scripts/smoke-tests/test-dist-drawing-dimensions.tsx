@@ -17,12 +17,7 @@ circuit.add(
         height={60}
       >
         <assembly.drawing.dimension fromRef=".H1" toRef=".H2" axis="x" />
-        <assembly.drawing.dimension
-          fromRef=".carrier"
-          fromAnchor="left"
-          toRef=".H1"
-          axis="x"
-        />
+        <assembly.drawing.dimension fromRef=".carrier" toRef=".H1" axis="x" />
       </assembly.drawing.partview>
     </assembly.drawing.page>
   </assembly.device>,

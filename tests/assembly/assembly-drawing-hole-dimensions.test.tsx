@@ -52,7 +52,6 @@ test("drawing dimensions measure PCB hole centers and board-edge offsets", async
           <assembly.drawing.dimension
             name="left_offset"
             fromRef=".carrier"
-            fromAnchor="left"
             toRef=".H1"
             axis="x"
           />
@@ -60,7 +59,6 @@ test("drawing dimensions measure PCB hole centers and board-edge offsets", async
             name="top_offset"
             fromRef=".H2"
             toRef=".carrier"
-            toAnchor="top"
             axis="y"
           />
           <assembly.drawing.dimension

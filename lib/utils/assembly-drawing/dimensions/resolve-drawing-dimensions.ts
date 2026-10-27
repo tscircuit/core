@@ -208,6 +208,8 @@ export async function resolveDrawingDimensions(
         camera.view,
         sectionPlane,
         index === 0 ? props.fromRef! : props.toRef!,
+        pair![1 - index]!,
+        props.axis,
       ),
     )
     let axis = props.heightOfView || (edge && extent(1) > extent(0)) ? 1 : 0

@@ -35,7 +35,6 @@ test("drawing dimensions measure named CAD hole centers and outline edges", asyn
           <assembly.drawing.dimension
             name="left_offset"
             fromRef=".plate > .rim"
-            fromAnchor="left"
             toRef=".plate > .H1"
             axis="x"
           />
@@ -43,7 +42,6 @@ test("drawing dimensions measure named CAD hole centers and outline edges", asyn
             name="right_offset"
             fromRef=".plate > .H2"
             toRef=".plate > .rim"
-            toAnchor="right"
             axis="x"
           />
         </assembly.drawing.partview>
