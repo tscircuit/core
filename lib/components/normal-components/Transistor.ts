@@ -38,21 +38,22 @@ export class Transistor extends NormalComponent<
   }
 
   initPorts() {
-    // Pin roles come from the schematic symbol's named port labels
-    // (e.g. [["1","collector"],["2","base"],["3","emitter"]]) rather than a
-    // hardcoded pin-number map; only short aliases ("c"/"b"/"e") are added
-    // here, attached to whichever pin the symbol labels with the long name.
+    // Explicit labels describe physical package pins. Symbol pin numbers are
+    // only the fallback; short aliases must follow the selected semantic role.
     const additionalAliases: Record<`pin${number}`, string[]> = {}
-    const symbol = this.getSchematicSymbol()
-    for (const symPort of symbol?.ports ?? []) {
-      const pinNumber = getPinNumberFromLabels(symPort.labels)
+    const pinLabels = this._resolvePinLabels()
+    const portLabels = pinLabels
+      ? Object.entries(pinLabels).map(([pin, labels]) => [
+          pin,
+          ...(Array.isArray(labels) ? labels : [labels]),
+        ])
+      : (this.getSchematicSymbol()?.ports.map((port) => port.labels) ?? [])
+    for (const labels of portLabels) {
+      const pinNumber = getPinNumberFromLabels(labels)
       if (!pinNumber) continue
-      for (const label of symPort.labels) {
-        const shortAliases = SHORT_ALIASES[label]
-        if (shortAliases) {
-          additionalAliases[`pin${pinNumber}`] = shortAliases
-        }
-      }
+      additionalAliases[`pin${pinNumber}`] = labels.flatMap(
+        (label) => SHORT_ALIASES[label] ?? [],
+      )
     }
 
     super.initPorts({
