@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("crystals omit frequency and load capacitance display fields", async () => {
+test("crystals emit frequency and load capacitance display fields", async () => {
   const { circuit } = getTestFixture({ platform: { pcbDisabled: true } })
   circuit.add(
     <board>
@@ -17,7 +17,7 @@ test("crystals omit frequency and load capacitance display fields", async () => 
   expect(crystal).toMatchObject({
     frequency: 40000000,
     load_capacitance: 1.2e-11,
+    display_frequency: "40MHz",
+    display_load_capacitance: "12pF",
   })
-  expect(crystal).not.toHaveProperty("display_frequency")
-  expect(crystal).not.toHaveProperty("display_load_capacitance")
 })
