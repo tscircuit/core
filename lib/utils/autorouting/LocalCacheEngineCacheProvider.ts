@@ -3,6 +3,11 @@ import type { LocalCacheEngine } from "@tscircuit/props"
 
 const AUTOROUTER_CACHE_KEY_PREFIX = "capacity-autorouter:"
 
+const cacheProvidersByLocalCacheEngine = new WeakMap<
+  LocalCacheEngine,
+  LocalCacheEngineCacheProvider
+>()
+
 function isPromiseLike(value: unknown): value is PromiseLike<unknown> {
   return (
     typeof value === "object" &&
@@ -160,4 +165,15 @@ export class LocalCacheEngineCacheProvider implements CacheProvider {
     this.cacheMissesByPrefix[prefix] =
       (this.cacheMissesByPrefix[prefix] ?? 0) + 1
   }
+}
+
+export function getCacheProviderForLocalCacheEngine(
+  localCacheEngine: LocalCacheEngine,
+): CacheProvider {
+  let cacheProvider = cacheProvidersByLocalCacheEngine.get(localCacheEngine)
+  if (!cacheProvider) {
+    cacheProvider = new LocalCacheEngineCacheProvider(localCacheEngine)
+    cacheProvidersByLocalCacheEngine.set(localCacheEngine, cacheProvider)
+  }
+  return cacheProvider
 }

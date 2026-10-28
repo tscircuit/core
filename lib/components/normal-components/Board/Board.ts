@@ -18,7 +18,7 @@ import { getBoardCenterFromAnchor } from "../../../utils/boards/get-board-center
 import { inflateCircuitJson } from "../../../utils/circuit-json/inflate-circuit-json"
 import { getViaDiameterDefaults } from "../../../utils/pcbStyle/getViaDiameterDefaults"
 import { NormalComponent } from "../../base-components/NormalComponent/NormalComponent"
-import type { RenderPhase } from "../../base-components/render-phases"
+import type { RenderPhase } from "../../base-components/Renderable"
 import { Group } from "../../primitive-components/Group/Group"
 import { resolveBoardMotorMount } from "../../primitive-components/resolve-board-motor-mount"
 import type { SubcircuitI } from "../../primitive-components/Group/Subcircuit/SubcircuitI"

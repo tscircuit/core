@@ -1,4 +1,4 @@
-import type { RenderPhase } from "./components/base-components/render-phases"
+import type { RenderPhase } from "lib/components/base-components/Renderable"
 import type { RootCircuitEventName } from "lib/events"
 
 export interface IIsolatedCircuit {

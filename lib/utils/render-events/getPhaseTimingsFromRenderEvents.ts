@@ -1,4 +1,4 @@
-import { orderedRenderPhases } from "../../components/base-components/render-phases"
+import { orderedRenderPhases } from "lib/components/base-components/Renderable"
 
 type RenderEvent = { type: string; renderId: string; createdAt: number }
 

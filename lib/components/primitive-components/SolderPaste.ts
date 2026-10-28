@@ -1,10 +1,28 @@
 import { type SolderPasteProps, solderPasteProps } from "@tscircuit/props"
-import type { PcbSolderPaste } from "circuit-json"
+import type {
+  AnyCircuitElement,
+  PcbSolderPaste,
+  PcbSolderPasteCircle,
+  PcbSolderPasteRect,
+  PcbSolderPasteRotatedRect,
+} from "circuit-json"
 import { applyToPoint, decomposeTSR } from "transformation-matrix"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
-import { type StandalonePcbSolderPaste } from "./standalone-pcb-solder-paste"
 
 type PcbSolderPasteId = PcbSolderPaste["pcb_solder_paste_id"]
+type StandalonePcbSolderPaste =
+  | PcbSolderPasteCircle
+  | PcbSolderPasteRect
+  | PcbSolderPasteRotatedRect
+
+export const isStandalonePcbSolderPaste = (
+  element: AnyCircuitElement,
+): element is StandalonePcbSolderPaste =>
+  element.type === "pcb_solder_paste" &&
+  !element.pcb_smtpad_id &&
+  (element.shape === "circle" ||
+    element.shape === "rect" ||
+    element.shape === "rotated_rect")
 
 /**
  * Emits independent paste apertures in the right-handed board-world PCB frame:

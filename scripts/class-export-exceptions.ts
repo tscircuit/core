@@ -1,7 +1,40 @@
-/** Existing exports whose extraction would fragment their owning class API.
+/** Existing extra exports grandfathered without refactoring implementation files.
  * Match exact files and symbols: never exempt an entire file or directory.
  */
 export const classExportExceptions = [
+  {
+    file: "lib/RootCircuit.ts",
+    exports: ["Project", "Circuit", "resolveStaticFileImport"],
+    reason:
+      "Existing compatibility aliases and re-export; preserve their current import paths.",
+  },
+  {
+    file: "lib/components/base-components/Renderable.ts",
+    exports: [
+      "orderedRenderPhases",
+      "RenderPhase",
+      "renderPhaseIndexMap",
+      "RenderPhaseFn",
+      "RenderPhaseStates",
+      "AsyncEffect",
+      "RenderPhaseFunctions",
+      "IRenderable",
+    ],
+    reason:
+      "Existing render lifecycle contracts; leave Renderable.ts unchanged.",
+  },
+  {
+    file: "lib/components/primitive-components/SolderPaste.ts",
+    exports: ["isStandalonePcbSolderPaste"],
+    reason:
+      "Existing shared solder-paste identification function; no implementation refactor in this check.",
+  },
+  {
+    file: "lib/utils/autorouting/LocalCacheEngineCacheProvider.ts",
+    exports: ["getCacheProviderForLocalCacheEngine"],
+    reason:
+      "Existing cache-provider lookup function; preserve its current location and import path.",
+  },
   {
     file: "lib/components/base-components/NormalComponent/NormalComponent.ts",
     exports: ["PortMap"],

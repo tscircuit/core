@@ -4,7 +4,6 @@ export * from "./IIsolatedCircuit"
 export * from "./IRootCircuit"
 export * from "./IsolatedCircuit"
 export * from "./RootCircuit"
-export * from "./root-circuit-aliases"
 export * from "./hooks/use-rendered-circuit"
 export * from "./hooks/create-use-component"
 export * from "./hooks/use-capacitor"
@@ -28,7 +27,6 @@ export * from "./solvers"
 
 // Allows easier introspection of render process
 export * from "./components/base-components/Renderable"
-export * from "./components/base-components/render-phases"
 export * from "./events/index"
 
 export { createElement } from "react"

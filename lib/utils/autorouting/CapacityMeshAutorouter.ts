@@ -23,7 +23,7 @@ import type {
   AutorouterProgressEvent,
   GenericLocalAutorouter,
 } from "./GenericLocalAutorouter"
-import { getCacheProviderForLocalCacheEngine } from "./get-cache-provider-for-local-cache-engine"
+import { getCacheProviderForLocalCacheEngine } from "./LocalCacheEngineCacheProvider"
 import type { SimpleRouteJson, SimplifiedPcbTrace } from "./SimpleRouteJson"
 import type { AutorouterVersion } from "./autorouter-version"
 import {

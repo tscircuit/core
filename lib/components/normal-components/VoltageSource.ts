@@ -7,7 +7,7 @@ import { formatSiUnit } from "format-si-unit"
 import { type BaseSymbolName, type Ftype } from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 
-import type { RenderPhase } from "../base-components/render-phases"
+import type { RenderPhase } from "lib/components/base-components/Renderable"
 
 export type WaveShape = "sinewave" | "square" | "triangle" | "sawtooth"
 

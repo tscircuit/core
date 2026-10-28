@@ -1,6 +1,6 @@
 import { test, expect } from "bun:test"
 import { RootCircuit } from "lib/RootCircuit"
-import type { RenderPhase } from "../../../lib/components/base-components/render-phases"
+import type { RenderPhase } from "lib/components/base-components/Renderable"
 
 test("render lifecycle events are emitted", () => {
   const circuit = new RootCircuit()

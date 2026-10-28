@@ -1,6 +1,6 @@
 import { expect } from "bun:test"
 import type { ChipProps } from "@tscircuit/props"
-import { orderedRenderPhases } from "../../lib/components/base-components/render-phases"
+import { orderedRenderPhases } from "lib/components/base-components/Renderable"
 import type { Board } from "lib/components/normal-components/Board/Board"
 import { createInstanceFromReactElement } from "lib/fiber/create-instance-from-react-element"
 import type { GenericLocalAutorouter } from "lib/utils/autorouting/GenericLocalAutorouter"

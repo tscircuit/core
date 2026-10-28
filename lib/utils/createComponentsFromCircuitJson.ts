@@ -42,8 +42,10 @@ import { SilkscreenPath } from "lib/components/primitive-components/SilkscreenPa
 import { SilkscreenRect } from "lib/components/primitive-components/SilkscreenRect"
 import { SilkscreenText } from "lib/components/primitive-components/SilkscreenText"
 import { SmtPad } from "lib/components/primitive-components/SmtPad"
-import { SolderPaste } from "lib/components/primitive-components/SolderPaste"
-import { isStandalonePcbSolderPaste } from "../components/primitive-components/standalone-pcb-solder-paste"
+import {
+  SolderPaste,
+  isStandalonePcbSolderPaste,
+} from "lib/components/primitive-components/SolderPaste"
 import { SymbolComponent } from "lib/components/primitive-components/Symbol"
 import type { PrimitiveComponent } from "../components/base-components/PrimitiveComponent"
 import { createPinrowSilkscreenText } from "./createPinrowSilkscreenText"

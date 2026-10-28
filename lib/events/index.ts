@@ -1,5 +1,5 @@
 import type { FanoutTracePath } from "@tscircuit/props"
-import type { RenderPhase } from "../components/base-components/render-phases"
+import type { RenderPhase } from "lib/components/base-components/Renderable"
 import type { SOLVERS } from "lib/solvers"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 

@@ -1,6 +1,8 @@
 import { expect, test } from "bun:test"
-import { Renderable } from "lib/components/base-components/Renderable"
-import { type RenderPhaseStates } from "../../../lib/components/base-components/render-phases"
+import {
+  Renderable,
+  type RenderPhaseStates,
+} from "lib/components/base-components/Renderable"
 
 class ReplacingRenderable extends Renderable {
   capturedState?: RenderPhaseStates["SourceRender"]

@@ -4,7 +4,7 @@ import type {
   SimulationOscilloscopeTraceInput,
   SourceSimpleAmmeterInput,
 } from "circuit-json"
-import type { RenderPhase } from "../base-components/render-phases"
+import type { RenderPhase } from "lib/components/base-components/Renderable"
 import { type BaseSymbolName, type Ftype } from "lib/utils/constants"
 import { parseSimulationGraphValue } from "lib/utils/simulation/parseSimulationGraphValue"
 import { symbols } from "schematic-symbols"
