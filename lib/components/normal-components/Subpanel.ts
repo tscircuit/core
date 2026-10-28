@@ -1,3 +1,4 @@
+import { getOwningPanel } from "lib/utils/panels/get-owning-panel"
 import { subpanelProps } from "@tscircuit/props"
 import { distance } from "circuit-json"
 import type { Matrix } from "transformation-matrix"
@@ -61,13 +62,14 @@ export class Subpanel extends Group<typeof subpanelProps> {
   override doInitialSchematicTraceRender(): void {}
 
   add(component: PrimitiveComponent) {
-    // Subpanel can contain boards and other subpanels
+    // Panel-level traces connect ports across the contained boards.
     if (
       component.lowercaseComponentName !== "board" &&
-      component.lowercaseComponentName !== "subpanel"
+      component.lowercaseComponentName !== "subpanel" &&
+      component.lowercaseComponentName !== "trace"
     ) {
       throw new Error(
-        `<${this._errorComponentName}> can only contain <board> or <subpanel> elements`,
+        `<${this._errorComponentName}> can only contain <board>, <subpanel>, or <trace> elements`,
       )
     }
     super.add(component)
@@ -365,7 +367,8 @@ export class Subpanel extends Group<typeof subpanelProps> {
           db.pcb_cutout.insert({
             ...outlineRoutingCutout,
             pcb_group_id: this.pcb_group_id ?? undefined,
-            pcb_panel_id: this.pcb_panel_id ?? undefined,
+            pcb_panel_id: getOwningPanel(this)?.pcb_panel_id ?? undefined,
+            subcircuit_id: this.subcircuit_id ?? undefined,
           })
         }
       } else {
@@ -381,11 +384,18 @@ export class Subpanel extends Group<typeof subpanelProps> {
         )
 
         for (const tabCutout of tabCutouts) {
-          db.pcb_cutout.insert(tabCutout)
+          db.pcb_cutout.insert({
+            ...tabCutout,
+            subcircuit_id: this.subcircuit_id ?? undefined,
+            pcb_panel_id: getOwningPanel(this)?.pcb_panel_id ?? undefined,
+          })
         }
 
         for (const mouseBiteHole of mouseBiteHoles) {
-          db.pcb_hole.insert(mouseBiteHole)
+          db.pcb_hole.insert({
+            ...mouseBiteHole,
+            subcircuit_id: this.subcircuit_id ?? undefined,
+          })
         }
       }
     }

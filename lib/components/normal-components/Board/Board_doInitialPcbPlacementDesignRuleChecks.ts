@@ -1,3 +1,4 @@
+import { getBoardCircuitJsonForDrc } from "lib/utils/panels/get-board-circuit-json-for-drc"
 import {
   consolidatePcbOverlapErrors,
   runAllPlacementChecks,
@@ -36,9 +37,7 @@ export const Board_doInitialPcbPlacementDesignRuleChecks = (board: Board) => {
   }
 
   const { db } = board.root!
-  const subcircuitCircuitJson = db
-    .subtree({ subcircuit_id: board.subcircuit_id })
-    .toArray()
+  const subcircuitCircuitJson = getBoardCircuitJsonForDrc(board)
   const existingPlacementDiagnostics = db.toArray()
 
   board._pcbPlacementDrcChecksPending = true

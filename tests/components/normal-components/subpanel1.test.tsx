@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("subpanel can only contain boards or subpanels", () => {
+test("subpanel can only contain boards, subpanels, or traces", () => {
   const { circuit } = getTestFixture()
 
   expect(() =>
@@ -12,5 +12,7 @@ test("subpanel can only contain boards or subpanels", () => {
         </subpanel>
       </panel>,
     ),
-  ).toThrow("<subpanel> can only contain <board> or <subpanel> elements")
+  ).toThrow(
+    "<subpanel> can only contain <board>, <subpanel>, or <trace> elements",
+  )
 })
