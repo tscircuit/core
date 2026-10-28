@@ -1,4 +1,3 @@
-import { serializeAssemblyExplosion } from "./assembly-explosion/serialize-assembly-explosion"
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import { createCircuitJsonDatabase } from "./utils/circuit-json/create-circuit-json-database"
 import type { PlatformConfig } from "@tscircuit/props"
@@ -274,17 +273,7 @@ export class IsolatedCircuit {
 
   getCircuitJson(): AnyCircuitElement[] {
     if (!this._hasRenderedAtleastOnce) this.render()
-    const assembled = this.db.toArray()
-    if (
-      !this.children.every(
-        (child) => child.renderPhaseStates.CadModelRender.initialized,
-      )
-    )
-      return assembled
-    return [
-      ...assembled,
-      ...serializeAssemblyExplosion(this.children, assembled),
-    ]
+    return this.db.toArray()
   }
 
   toJson(): AnyCircuitElement[] {

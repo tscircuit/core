@@ -132,11 +132,20 @@ they do not certify clearance.
 
 ## Circuit JSON programs and whole-stage targets
 
-After CAD rendering, `getCircuitJson()` emits `cad_explosion_stage` and
-`cad_explosion_move` records alongside assembled geometry. These follow the
+The render pipeline inserts `cad_explosion_stage` and `cad_explosion_move`
+records into the circuit database alongside assembled geometry. `getCircuitJson()`
+reads that database without generating instructions. These follow the
 [merged Circuit JSON schema](https://github.com/tscircuit/circuit-json/pull/937),
 published in `circuit-json@0.0.539`. Core uses that published release; the existing
 dependency gate remains enabled.
+
+`CadExplosionStageRender` allocates database-owned stage identities, then
+`CadExplosionRender` resolves membership, ordering and move targets. Both phases
+wait for async CAD rendering to settle. Separate phases allow forward stage
+references regardless of authored tree order. Stages and moves implement the
+usual initial, update and removal hooks; prop changes invalidate dependent
+explosion records, and stage removal also deletes its moves. Invalid references
+and membership cycles fail during rendering, before consumers request JSON.
 
 Stage records contain explicit CAD/reference-surface membership and resolved
 playback order. Move records contain sequential order, typed targets and resolved
@@ -145,8 +154,8 @@ descendant geometry, including reference surfaces on model-less owners.
 
 `targetRef="remove-bolts"` can name another explosion stage. Its members move
 together, preserving earlier displacements, without replaying its instructions.
-Membership is the union of a stage's authored targets, resolved transitively at
-export. Cyclic stage membership and ambiguous part/stage names are errors.
+Membership is the union of a stage's authored targets, resolved transitively during
+rendering. Cyclic stage membership and ambiguous part/stage names are errors.
 Targeting a stage does not change temporal ordering; use `prevStageRef` or
 `nextStageRef` to specify playback precedence as before.
 
@@ -174,6 +183,7 @@ tree without rerendering electrical geometry. It uses registered component names
 rather than constructor identity when finding stages. This lets the real RP2040
 fixture retain its copper-preservation guards and pinned renderer. The producer
 must supply settled roots and the matching assembled geometry from that circuit.
+This compatibility adapter is not called by the normal render pipeline or getter.
 
 Derived pose outputs omit explosion instructions so saving and reopening an
 already-exploded pose cannot accidentally apply the same movements twice. Retain

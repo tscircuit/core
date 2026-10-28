@@ -61,6 +61,15 @@ export const assemblyPath = (
   return names.join(".")
 }
 
+const hasRemovedAncestor = (part: PrimitiveComponent): boolean => {
+  let parent = part.parent
+  while (parent) {
+    if (parent.shouldBeRemoved) return true
+    parent = parent.parent
+  }
+  return false
+}
+
 /** Schedule precedence edges; depth-first authored order only breaks ties.
  * References are scoped to the stage owner or explicitly qualified from root.
  */
@@ -71,7 +80,9 @@ export const resolveAssemblyExplosionStages = (
     .flatMap((root) => [root, ...root.getDescendants()])
     .filter(
       (part): part is AssemblyExplosionStage =>
-        part.componentName === "AssemblyExplosionStage",
+        part.componentName === "AssemblyExplosionStage" &&
+        !part.shouldBeRemoved &&
+        !hasRemovedAncestor(part),
     )
   const stageRef = (stage: AssemblyExplosionStage) =>
     `${assemblyPath(stage.parent!)}.${stage.name}`
@@ -175,7 +186,8 @@ export function getAssemblyExplosion(
   const lines: AssemblyExplosionLine[] = []
   for (const [stageIndex, stage] of ordered.entries()) {
     const owner = stage.parent!
-    for (const [moveIndex, instruction] of stage.children.entries()) {
+    const instructions = stage.children.filter((move) => !move.shouldBeRemoved)
+    for (const [moveIndex, instruction] of instructions.entries()) {
       const move = instruction as AssemblyExplosionMove
       const targets = new Map<PrimitiveComponent, string>()
       // Resolve and validate the entire instruction before applying its shared
@@ -185,6 +197,7 @@ export function getAssemblyExplosion(
         for (const segment of targetRef.split(".")) {
           const matches = target.children.filter(
             (part) =>
+              !part.shouldBeRemoved &&
               part.name === segment &&
               [
                 "AssemblyPart",
@@ -217,10 +230,7 @@ export function getAssemblyExplosion(
       if (stageIndex > stop) continue
       const fraction =
         stageIndex === stop
-          ? Math.max(
-              0,
-              Math.min(1, progress * stage.children.length - moveIndex),
-            )
+          ? Math.max(0, Math.min(1, progress * instructions.length - moveIndex))
           : 1
       if (!fraction) continue
       const placement = isPositionedAssembly(owner)

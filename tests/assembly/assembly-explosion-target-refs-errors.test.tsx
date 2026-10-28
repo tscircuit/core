@@ -1,8 +1,8 @@
 import { expect, test } from "bun:test"
-import { assembly, getAssemblyExplosion } from "lib"
+import { assembly } from "lib"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("every plural target is validated even when its stage or progress is not displayed", async () => {
+test("rendering validates every plural target, including later stages", async () => {
   for (const targetRefs of [
     "A, missing",
     ["A", "missing"],
@@ -23,22 +23,13 @@ test("every plural target is validated even when its stage or progress is not di
         </assembly.explosion.stage>
       </assembly.device>,
     )
-    await circuit.renderUntilSettled()
-    const assembled = structuredClone(circuit.db.toArray())
     const invalid =
       typeof targetRefs === "string" || targetRefs[1] === "missing"
         ? "missing"
         : "DUPLICATE"
     const matches = invalid === "missing" ? 0 : 2
-    for (const options of [
-      { throughStageRef: "DEVICE.first" },
-      { throughStageRef: "DEVICE.later", stageProgress: 0 },
-    ]) {
-      expect(() => getAssemblyExplosion(circuit, options)).toThrow(
-        `Explosion stage "DEVICE.later" target "${invalid}" matched ${matches} assembly parts; expected one`,
-      )
-      expect(circuit.db.toArray()).toEqual(assembled)
-      expect(() => circuit.getCircuitJson()).toThrow()
-    }
+    await expect(circuit.renderUntilSettled()).rejects.toThrow(
+      `Explosion stage "DEVICE.later" target "${invalid}" matched ${matches} assembly parts; expected one`,
+    )
   }
 })
