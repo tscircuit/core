@@ -1,3 +1,4 @@
+import { getCircuitJsonAssemblyExplosion } from "./get-circuit-json-assembly-explosion"
 import type { AnyCircuitElement, CadComponent } from "circuit-json"
 import { mat3, mat4, vec3 } from "gl-matrix"
 import type { RootCircuit } from "lib/RootCircuit"
@@ -37,7 +38,7 @@ export interface AssemblyExplosionView {
   collisionCheckStatus: "not_implemented"
 }
 
-const assemblyPath = (
+export const assemblyPath = (
   assembly: PrimitiveComponent,
 ): AssemblyExplosionStageRef => {
   const names: string[] = []
@@ -160,6 +161,15 @@ export function getAssemblyExplosion(
   if (options.throughStageRef !== undefined && stop < 0)
     throw new Error(`Unknown explosion stage "${options.throughStageRef}"`)
   const assembled = circuit.getCircuitJson()
+  // Stage targets use the same explicit membership program as JSON consumers.
+  if (
+    assembled.some(
+      (record) =>
+        record.type === "cad_explosion_move" &&
+        record.targets.some((target) => target.type === "cad_explosion_stage"),
+    )
+  )
+    return getCircuitJsonAssemblyExplosion(assembled, options)
   const sourceOffsets = new Map<SourceComponentId, AssemblyWorldPoint>()
   const partOffsets = new Map<PrimitiveComponent, AssemblyWorldPoint>()
   const lines: AssemblyExplosionLine[] = []

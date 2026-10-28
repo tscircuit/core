@@ -24,7 +24,7 @@ test("every plural target is validated even when its stage or progress is not di
       </assembly.device>,
     )
     await circuit.renderUntilSettled()
-    const assembled = structuredClone(circuit.getCircuitJson())
+    const assembled = structuredClone(circuit.db.toArray())
     const invalid =
       typeof targetRefs === "string" || targetRefs[1] === "missing"
         ? "missing"
@@ -37,7 +37,8 @@ test("every plural target is validated even when its stage or progress is not di
       expect(() => getAssemblyExplosion(circuit, options)).toThrow(
         `Explosion stage "DEVICE.later" target "${invalid}" matched ${matches} assembly parts; expected one`,
       )
-      expect(circuit.getCircuitJson()).toEqual(assembled)
+      expect(circuit.db.toArray()).toEqual(assembled)
+      expect(() => circuit.getCircuitJson()).toThrow()
     }
   }
 })

@@ -129,3 +129,41 @@ claim in this implementation. A follow-up needs full-path collision checks, inte
 mating contact rules, missing-geometry/incomplete results, and reproducible
 diagnostics tied to stage and move positions. Guides show declared motion paths;
 they do not certify clearance.
+
+## Circuit JSON programs and whole-stage targets
+
+After CAD rendering, `getCircuitJson()` emits `cad_explosion_stage` and
+`cad_explosion_move` records alongside assembled geometry. These follow the
+[Circuit JSON schema proposal](https://github.com/tscircuit/circuit-json/pull/937).
+The draft dependency uses that proposal's preview; replace it with a published
+release before merging (the existing dependency gate remains enabled).
+
+Stage records contain explicit CAD/reference-surface membership and resolved
+playback order. Move records contain sequential order, typed targets and resolved
+world-space displacement vectors. Physical assembly targets expand to all emitted
+descendant geometry, including reference surfaces on model-less owners.
+
+`targetRef="remove-bolts"` can name another explosion stage. Its members move
+together, preserving earlier displacements, without replaying its instructions.
+Membership is the union of a stage's authored targets, resolved transitively at
+export. Cyclic stage membership and ambiguous part/stage names are errors.
+Targeting a stage does not change temporal ordering; use `prevStageRef` or
+`nextStageRef` to specify playback precedence as before.
+
+```tsx
+<assembly.explosion.stage name="remove-bolts">
+  <assembly.explosion.move targetRefs="bolt1,bolt2" offZ="30mm" />
+</assembly.explosion.stage>
+<assembly.explosion.stage name="park-bolts" prevStageRef="remove-bolts">
+  <assembly.explosion.move targetRef="remove-bolts" offX="20mm" />
+</assembly.explosion.stage>
+```
+
+JSON consumers call `getCircuitJsonAssemblyExplosion(assembledCircuitJson,
+options)` without a live circuit tree. The evaluator validates all stage and move
+references, membership, contiguous order and finite translations before applying
+a partial view. It deduplicates overlapping selections per move, moves surface
+centers without rotating axes and never mutates assembled input. Guide segments
+are emitted per moving CAD component. Backward scrubbing always restarts from
+assembled positions. Existing live-tree evaluation retains its part-level guide
+anchors; whole-stage targets use the JSON evaluator.

@@ -40,3 +40,5 @@ export { fanoutTracePath, type FanoutTracePath } from "@tscircuit/props"
 
 export { jscad } from "jscad-fiber/headless"
 export * from "./assembly-explosion/get-assembly-explosion"
+
+export * from "./assembly-explosion/get-circuit-json-assembly-explosion"
