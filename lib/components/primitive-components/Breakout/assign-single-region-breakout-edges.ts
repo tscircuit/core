@@ -162,21 +162,26 @@ export const assignSingleRegionBreakoutEdges = ({
     if (externalPositions.length === 0) {
       return edge === fallbackEdge ? 0 : regionDiagonal
     }
-    // The pin is inside the region, so its escape is the perpendicular run to
-    // the edge.
     const pin = pinPositionByConnectionId.get(id)
-    let escapeLength = 0
-    if (pin) {
-      if (edge === "left") escapeLength = pin.x - bounds.minX
-      else if (edge === "right") escapeLength = bounds.maxX - pin.x
-      else if (edge === "bottom") escapeLength = pin.y - bounds.minY
-      else escapeLength = bounds.maxY - pin.y
-    }
-    return (
-      escapeLength +
-      Math.min(
+    if (!pin) {
+      return Math.min(
         ...externalPositions.map((position) =>
           distanceFromPointToEdge(bounds, position, edge),
+        ),
+      )
+    }
+    // Estimate the route as a straight escape from the pin to the edge, then a
+    // straight run from that exit to the nearest destination. Destinations
+    // inside the bounds (parts tucked next to the breakout) are measured the
+    // same way, so the run back along the edge counts.
+    const exit = isVerticalBreakoutEdge(edge)
+      ? { x: edge === "left" ? bounds.minX : bounds.maxX, y: pin.y }
+      : { x: pin.x, y: edge === "bottom" ? bounds.minY : bounds.maxY }
+    return (
+      Math.hypot(exit.x - pin.x, exit.y - pin.y) +
+      Math.min(
+        ...externalPositions.map((position) =>
+          Math.hypot(position.x - exit.x, position.y - exit.y),
         ),
       )
     )

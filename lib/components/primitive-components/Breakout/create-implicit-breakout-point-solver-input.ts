@@ -311,12 +311,9 @@ const getExternalPositionsBySourceTraceId = ({
       ) {
         continue
       }
-      const isInsideRegion =
-        pcbPort.x >= region.bounds.minX &&
-        pcbPort.x <= region.bounds.maxX &&
-        pcbPort.y >= region.bounds.minY &&
-        pcbPort.y <= region.bounds.maxY
-      if (isInsideRegion) continue
+      // Ports of parts placed inside the breakout's bounds (but not in the
+      // breakout) are still destinations the exit should face.
+      if (pcbPort.pcb_group_id === region.pcbGroupId) continue
       const externalPositions =
         externalPositionsBySourceTraceId.get(sourceTrace.source_trace_id) ??
         new Map<string, { x: number; y: number }>()
@@ -346,6 +343,12 @@ const getSingleRegionPreferredEdge = ({
   const externalPcbPorts = new Map<string, { x: number; y: number }>()
   for (const externalPositions of externalPositionsBySourceTraceId.values()) {
     for (const [pcbPortId, position] of externalPositions) {
+      const isInsideRegion =
+        position.x >= region.bounds.minX &&
+        position.x <= region.bounds.maxX &&
+        position.y >= region.bounds.minY &&
+        position.y <= region.bounds.maxY
+      if (isInsideRegion) continue
       externalPcbPorts.set(pcbPortId, position)
     }
   }
