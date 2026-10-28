@@ -167,3 +167,10 @@ centers without rotating axes and never mutates assembled input. Guide segments
 are emitted per moving CAD component. Backward scrubbing always restarts from
 assembled positions. Existing live-tree evaluation retains its part-level guide
 anchors; whole-stage targets use the JSON evaluator.
+
+For a PCB pinned to an older core renderer, `serializeAssemblyExplosion(roots,
+assembledGeometry)` exports the instructions from its already-rendered assembly
+tree without rerendering electrical geometry. It uses registered component names
+rather than constructor identity when finding stages. This lets the real RP2040
+fixture retain its copper-preservation guards and pinned renderer. The producer
+must supply settled roots and the matching assembled geometry from that circuit.

@@ -3,7 +3,7 @@ import type { AnyCircuitElement, CadComponent } from "circuit-json"
 import { mat3, mat4, vec3 } from "gl-matrix"
 import type { RootCircuit } from "lib/RootCircuit"
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
-import { AssemblyExplosionStage } from "lib/components/primitive-components/AssemblyExplosionStage"
+import type { AssemblyExplosionStage } from "lib/components/primitive-components/AssemblyExplosionStage"
 import type { AssemblyExplosionMove } from "lib/components/primitive-components/AssemblyExplosionMove"
 import {
   isPositionedAssembly,
@@ -71,7 +71,7 @@ export const resolveAssemblyExplosionStages = (
     .flatMap((root) => [root, ...root.getDescendants()])
     .filter(
       (part): part is AssemblyExplosionStage =>
-        part instanceof AssemblyExplosionStage,
+        part.componentName === "AssemblyExplosionStage",
     )
   const stageRef = (stage: AssemblyExplosionStage) =>
     `${assemblyPath(stage.parent!)}.${stage.name}`
