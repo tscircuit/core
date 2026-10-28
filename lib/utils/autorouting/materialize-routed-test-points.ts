@@ -1,13 +1,32 @@
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import type { RoutedTestPoint } from "@tscircuit/test-point-rerouter"
 import type { SourceTrace } from "circuit-json"
+import {
+  placeTestPointSilkscreenLabels,
+  type TestPointLabelTarget,
+} from "./place-test-point-silkscreen-labels"
 
 type SourceTraceId = SourceTrace["source_trace_id"]
 export type ConnectedRoutedTestPoint = RoutedTestPoint & {
+  /** The routed connection: a source_trace, or a source_net for net routes. */
   sourceTraceId: SourceTraceId
 }
 
-/** Emit probe targets as source testpoints, PCB ports and exposed circular pads.
+/** Connectivity the test point joins, from a source_trace or source_net id. */
+function getSourceConnection(db: CircuitJsonUtilObjects, id: string) {
+  const trace = db.source_trace.get(id)
+  if (trace) return trace
+  const net = db.source_net.get(id)
+  if (!net) return undefined
+  return {
+    connected_source_port_ids: [],
+    connected_source_net_ids: [net.source_net_id],
+    subcircuit_connectivity_map_key: net.subcircuit_connectivity_map_key,
+  }
+}
+
+/** Emit probe targets as source testpoints, PCB ports, exposed circular pads
+ * and silkscreen labels.
  * Positions are board-world points in mm, +X right, +Y up, +Z above (right-handed).
  * Bottom-layer points retain board coordinates; fixture mirroring is a later transform.
  */
@@ -17,7 +36,7 @@ export function materializeRoutedTestPoints(
   subcircuitId: string,
 ): void {
   for (const point of points) {
-    const original = db.source_trace.get(point.sourceTraceId)
+    const original = getSourceConnection(db, point.sourceTraceId)
     if (!original)
       throw new Error(`Test point ${point.name} has no source connection`)
     if (
@@ -28,8 +47,9 @@ export function materializeRoutedTestPoints(
       throw new Error(`Test point name ${point.name} already exists`)
     }
   }
+  const labelTargets: TestPointLabelTarget[] = []
   for (const point of points) {
-    const original = db.source_trace.get(point.sourceTraceId)!
+    const original = getSourceConnection(db, point.sourceTraceId)!
     const component = db.source_component.insert({
       ftype: "simple_test_point",
       name: point.name,
@@ -83,5 +103,14 @@ export function materializeRoutedTestPoints(
       subcircuit_id: subcircuitId,
       is_covered_with_solder_mask: false,
     })
+    labelTargets.push({
+      pcbComponentId: pcbComponent.pcb_component_id,
+      sourceTraceId: point.sourceTraceId,
+      x: point.x,
+      y: point.y,
+      diameter: point.diameter,
+      layer: point.layer,
+    })
   }
+  placeTestPointSilkscreenLabels(db, labelTargets, subcircuitId)
 }

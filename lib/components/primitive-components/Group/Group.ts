@@ -1865,7 +1865,13 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
               },
               subcircuit_id: this.subcircuit_id,
             })
-            if (!sourceTraceId || !db.source_trace.get(sourceTraceId)) {
+            if (
+              !sourceTraceId ||
+              !(
+                db.source_trace.get(sourceTraceId) ??
+                db.source_net.get(sourceTraceId)
+              )
+            ) {
               throw new Error(
                 `Test point ${point.name} has no source connection`,
               )
