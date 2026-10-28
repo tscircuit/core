@@ -9,6 +9,7 @@ import type { BoardDirectionVector } from "lib/utils/pcb/transform-footprint-ins
 import type { AssemblyCable } from "./AssemblyCable"
 import { resolveAssemblyCableEndpoint } from "./resolve-assembly-cable-endpoint"
 import { resolveAssemblyCablePath } from "./resolve-assembly-cable-path"
+import { resolveAssemblyCableWaypoints } from "./resolve-assembly-cable-waypoints"
 
 /** Mating-face to wire-exit offset along local +Z, mm. Paired with the physical
  * connector definitions and jscad-electronics connectorWireExitDepth.
@@ -95,7 +96,7 @@ export function resolveAssemblyCable(
         : definition.standard),
     path: resolveAssemblyCablePath({
       cableName: cable.name!,
-      waypoints: cable._parsedProps.waypoints,
+      waypoints: resolveAssemblyCableWaypoints({ cable, from, to }),
       from: fromExit,
       to: toExit,
       fromDirection: from.direction,

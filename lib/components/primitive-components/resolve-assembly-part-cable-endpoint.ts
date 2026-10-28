@@ -1,7 +1,7 @@
 import type { CableConnector } from "@tscircuit/cableprinter"
 import { mat3, vec3 } from "gl-matrix"
 import type { AssemblyCable } from "./AssemblyCable"
-import type { AssemblyPart } from "./AssemblyPart"
+import { AssemblyPart } from "./AssemblyPart"
 import type { AssemblyPrintedPart } from "./AssemblyPrintedPart"
 import type { AssemblyCableEndpoint } from "./resolve-assembly-cable-endpoint"
 import { getComponentsInAssemblyScope } from "./get-assembly-scope-components"
@@ -9,6 +9,8 @@ import { getPartReferenceSurfaces } from "./get-part-reference-surfaces"
 import { matchesAssemblyIdentity } from "./matches-assembly-identity"
 import { parseAssemblyReferenceSelector } from "./parse-assembly-reference-selector"
 import { resolvePrintedPartMounts } from "./resolve-printed-part-mounts"
+import { resolveAssemblyCableEndpointBoard } from "./resolve-assembly-cable-endpoint-board"
+import { resolveInheritedAssemblyPlacement } from "./resolve-assembly-placement"
 
 /** Named part references are local mating frames, in right-handed XYZ mm.
  * Use the same mounting transform as CAD/reference rendering to return circuit
@@ -49,7 +51,19 @@ export const resolveAssemblyPartCableEndpoint = ({
     throw new Error(
       `assembly.cable "${cable.name}" endpoint "${selector}" requires an explicit model to define its connector`,
     )
-  const { transforms } = resolvePrintedPartMounts(cable)
+  const { transforms, roots, subcircuitId } = resolvePrintedPartMounts(part)
+  let board = resolveAssemblyCableEndpointBoard({
+    component: part,
+    subcircuitId,
+  })
+  const root = roots.get(part)!
+  if (!board && root instanceof AssemblyPart) {
+    const placement = resolveInheritedAssemblyPlacement(root)
+    board = resolveAssemblyCableEndpointBoard({
+      component: root,
+      subcircuitId: placement.subcircuit_id,
+    })
+  }
   const partToWorld = transforms.get(part)!
   const partToWorldRotation = mat3.fromMat4(mat3.create(), partToWorld)
   const position = vec3.transformMat4(
@@ -77,6 +91,7 @@ export const resolveAssemblyPartCableEndpoint = ({
   }
   return {
     sourceComponentId: part.source_component_id!,
+    board,
     position: { x: position[0], y: position[1], z: position[2] },
     direction: { x: direction[0], y: direction[1], z: direction[2] },
     pin1Position,

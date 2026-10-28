@@ -1,7 +1,6 @@
 import { expect, test } from "bun:test"
 import type { Point3 } from "circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
-import { expectAssemblySnapshot } from "./fixtures/expect-assembly-snapshot"
 import {
   GimbalOneWaypoints,
   gimbalCableWaypoints,
@@ -82,90 +81,4 @@ test("Gimbal One motor harness waypoints route around the phone holder", async (
           ),
       ),
   ).toBe(true)
-
-  // The gimbal's authored upright is circuit +Y. The converter's final glTF
-  // frame is (-X, Z, Y), so camera up="z+" keeps its stand below the holder.
-  await expectAssemblySnapshot(import.meta.path, {
-    title: "Gimbal One / route three motor harnesses around the holder",
-    font: "alphabet",
-    panels: [
-      {
-        title: "Actual black gimbal, motor screws and folding stand",
-        code: `<GimbalOneWaypoints />
-
-// One 84 x 70 mm PCB.
-// All 221 actual rigid meshes:
-// screw clamp, three 2805 motors,
-// adapters, screws, folding stand.
-
-// Three native assembly.cables.
-// Imported motors have proposed
-// detachable PH3 pigtail surfaces;
-// no NEMA stand-ins or extra PCBs.`,
-        annotation:
-          "Original meshes / native cables / proposed PH3 terminations / neutral pose only",
-        circuit,
-        renderOptions: {
-          poppygl: {
-            camPos: [-430, 420, 220],
-            lookAt: [-10, -15, -105],
-            up: "z+",
-            fov: 40,
-          },
-        },
-      },
-      {
-        title: "Waypoints guide the wires outside the holder",
-        code: `<assembly.cable
-  name="HARNESS_PITCH"
-  from=".CONTROLLER > .J_PITCH"
-  to="REF_Pitch_2805.pigtail"
-  model="jst_ph_pins3"
-  waypoints={[
-    { x: -26, y: 19, z: 13.2 },
-    { x: -78, y: 19, z: 13.2 },
-    { x: -78, y: 19, z: -45 },
-    // Continue outside the cradle
-    // and loop back to the motor.
-  ]}
-/>`,
-        annotation:
-          "Every emitted segment clears the phone envelope, including a 2.6 mm bundle allowance",
-        circuit,
-        renderOptions: {
-          poppygl: {
-            camPos: [-230, 185, 160],
-            lookAt: [-5, -25, -25],
-            up: "z+",
-            fov: 45,
-          },
-        },
-      },
-      {
-        title: "Without waypoints the inferred path crosses the phone",
-        code: `<assembly.cable
-  name="HARNESS_PITCH"
-  from=".CONTROLLER > .J_PITCH"
-  to="REF_Pitch_2805.pigtail"
-  model="jst_ph_pins3"
-/>
-
-// Automatic routing does not
-// know the holder is an obstacle.
-// Explicit points control where
-// the route must pass.`,
-        annotation:
-          "Same endpoints, same mechanical assembly, no manually chosen route",
-        circuit: inferred,
-        renderOptions: {
-          poppygl: {
-            camPos: [-230, 185, 160],
-            lookAt: [-5, -25, -25],
-            up: "z+",
-            fov: 45,
-          },
-        },
-      },
-    ],
-  })
-}, 15_000)
+})

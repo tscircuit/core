@@ -1,9 +1,10 @@
 # `<assembly.cable />` waypoints
 
 Use `waypoints` to guide a cable around a holder, through clips, or along an
-external lane. The points are finite numeric XYZ coordinates in millimeters in
-right-handed **circuit world**: +X right, +Y top, +Z above. They do not inherit a
-board or part's local translation or rotation.
+external lane. The points are finite numeric XYZ offsets in millimeters.
+`waypointAnchor` chooses the start or end mating center as their origin.
+`waypointAxisOrientation` independently chooses the start or end board's axes.
+Both props are required whenever `waypoints` is supplied, including `[]`.
 
 ```tsx
 <assembly.cable
@@ -11,11 +12,12 @@ board or part's local translation or rotation.
   from=".CONTROLLER > .J_PITCH"
   to="PITCH_MOTOR.pigtail"
   model="jst_ph_pins3"
+  waypointAnchor="start"
+  waypointAxisOrientation="board_at_start"
   waypoints={[
-    { x: -26, y: 29, z: 20 },
-    { x: -78, y: 29, z: 20 },
-    { x: -78, y: 19, z: -45 },
-    { x: 107, y: 20.5, z: 30 },
+    { x: 0, y: -10, z: 6.4 },
+    { x: -52, y: -10, z: 6.4 },
+    { x: -52, y: -10, z: -51.8 },
   ]}
 />
 ```
@@ -24,6 +26,10 @@ The start and end stay at their resolved wire exits, including the existing
 0.1 mm outward tangent samples that orient their connector housings. Authored
 points appear between those samples, in the supplied order. The result uses
 Circuit JSON's existing `cad_cable.path`; viewers do not reroute it or add sag.
+The anchor is the mating center, before the connector housing's wire-exit offset.
+Rotating the connector or placing it on the bottom layer does not rotate the
+chosen board axes. The selected orientation endpoint must belong to a board;
+standalone part references can still be anchors while using the other end's board.
 Omitting `waypoints`, or passing `[]`, preserves the automatic arched route.
 
 Waypoints describe a polyline. Add samples around a bend for a smooth-looking
@@ -60,9 +66,6 @@ to contain a JST socket. The single 84 × 70 mm controller, screw clamp,
 fasteners, three motors and stand retain their project dimensions. Its PCB
 population is reduced to the three motor headers to keep the cable example
 focused; it is not a replacement fabrication file. See
-`tests/assembly/fixtures/gimbal-one-mechanical.md` and the paired before/after
-assembly snapshot.
+`tests/assembly/fixtures/gimbal-one-mechanical.md`.
 
-This core change requires the `@tscircuit/props` waypoint schema to be released
-first. Development validation uses the official props source from the companion
-PR; no package override or unpublished branch is added to this repository.
+This implementation uses the released `@tscircuit/props` 0.0.715 waypoint schema.

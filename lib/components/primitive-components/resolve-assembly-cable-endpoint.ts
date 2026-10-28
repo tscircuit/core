@@ -20,6 +20,7 @@ import { resolveAssemblyMotorPlacement } from "./resolve-assembly-motor-placemen
 import { resolveAssemblyMotorRotation } from "./resolve-assembly-motor-rotation"
 import { resolveAssemblyCablePin1Position } from "./resolve-assembly-cable-pin1-position"
 import { resolveAssemblyPartCableEndpoint } from "./resolve-assembly-part-cable-endpoint"
+import { resolveAssemblyCableEndpointBoard } from "./resolve-assembly-cable-endpoint-board"
 
 /** Connector mating-center point and outward unit direction in right-handed
  * circuit world, mm (+X right, +Y top, +Z above). Points acquire translation;
@@ -31,6 +32,7 @@ export interface AssemblyCableEndpoint {
   pin1Position?: Point3
   direction: BoardDirectionVector
   cableInput?: CableInput
+  board?: ReturnType<NormalComponent["_getBoard"]>
 }
 
 export function resolveAssemblyCableEndpoint(
@@ -111,6 +113,10 @@ export function resolveAssemblyCableEndpoint(
 
     return {
       sourceComponentId: motor.source_component_id!,
+      board: resolveAssemblyCableEndpointBoard({
+        component: motor,
+        subcircuitId: faceMount?.subcircuit_id ?? placement.subcircuit_id,
+      }),
       position: {
         x:
           point[0] +
@@ -220,6 +226,7 @@ export function resolveAssemblyCableEndpoint(
   }
   return {
     sourceComponentId: connector.source_component_id,
+    board,
     position,
     pin1Position: resolveAssemblyCablePin1Position(
       cable,

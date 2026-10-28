@@ -153,28 +153,44 @@ export function GimbalOneWaypoints({
               />
             </assembly.part>
           )
-        return part.printable ? (
-          <assembly.printedpart
-            key={part.name}
-            name={part.name}
-            material="petg"
-            color="#121314"
-            cadModel={cadModel}
-          />
-        ) : (
+        if (part.printable)
+          return (
+            <assembly.printedpart
+              key={part.name}
+              name={part.name}
+              material="petg"
+              color="#121314"
+              cadModel={cadModel}
+            />
+          )
+        return (
           <assembly.part key={part.name} name={part.name} cadModel={cadModel} />
         )
       })}
-      {gimbalMotorPigtails.map(({ axis, motor }) => (
-        <assembly.cable
-          key={axis}
-          name={`HARNESS_${axis}`}
-          from={`.CONTROLLER > .J_${axis}`}
-          to={`${motor}.pigtail`}
-          model="jst_ph_pins3"
-          waypoints={routed ? gimbalCableWaypoints[axis] : undefined}
-        />
-      ))}
+      {gimbalMotorPigtails.map(({ axis, motor, connectorX }) => {
+        let waypoints: Point3[] | undefined
+        if (routed) {
+          // PH3 mating centers sit 6 mm above this 1.6 mm board's top face.
+          const matingZ = 6 + 1.6 / 2
+          waypoints = gimbalCableWaypoints[axis].map((point) => ({
+            x: point.x - connectorX,
+            y: point.y - 29,
+            z: point.z - matingZ,
+          }))
+        }
+        return (
+          <assembly.cable
+            key={axis}
+            name={`HARNESS_${axis}`}
+            from={`.CONTROLLER > .J_${axis}`}
+            to={`${motor}.pigtail`}
+            model="jst_ph_pins3"
+            waypointAnchor="start"
+            waypointAxisOrientation="board_at_start"
+            waypoints={waypoints}
+          />
+        )
+      })}
     </assembly.device>
   )
 }

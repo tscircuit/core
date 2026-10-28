@@ -3,7 +3,7 @@ import { cad_cable } from "circuit-json"
 import { assembly } from "lib"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("authored world waypoints preserve the connector exits and input points", async () => {
+test("start-relative waypoints preserve the connector exits and input points", async () => {
   const { circuit } = getTestFixture()
   const waypoints = [
     { x: -30, y: -40, z: 35 },
@@ -12,7 +12,14 @@ test("authored world waypoints preserve the connector exits and input points", a
   const authoredWaypoints = structuredClone(waypoints)
   circuit.add(
     <assembly.device>
-      <board width={50} height={30} pcbX={15} pcbY={10} routingDisabled>
+      <board
+        width={50}
+        height={30}
+        thickness={1.6}
+        pcbX={15}
+        pcbY={10}
+        routingDisabled
+      >
         <connector
           name="J1"
           standard="jst_ph"
@@ -32,13 +39,18 @@ test("authored world waypoints preserve the connector exits and input points", a
         name="HARNESS"
         from=".J1"
         to=".J2"
+        waypointAnchor="start"
+        waypointAxisOrientation="board_at_start"
         waypoints={waypoints}
       />
     </assembly.device>,
   )
   await circuit.renderUntilSettled()
   const cable = cad_cable.parse(circuit.db.cad_cable.list()[0])
-  expect(cable.path.slice(2, -2)).toEqual(authoredWaypoints)
+  expect(cable.path.slice(2, -2)).toEqual([
+    { x: -30, y: -30, z: 41.8 },
+    { x: 30, y: -30, z: 41.8 },
+  ])
   expect(cable.path[0]).toMatchObject({ x: 0, y: 10 })
   expect(cable.path.at(-1)).toMatchObject({ x: 30, y: 10 })
   expect(cable.path[1]!.z - cable.path[0]!.z).toBeCloseTo(0.1)
