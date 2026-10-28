@@ -8,21 +8,7 @@ import {
 
 type SourceTraceId = SourceTrace["source_trace_id"]
 export type ConnectedRoutedTestPoint = RoutedTestPoint & {
-  /** The routed connection: a source_trace, or a source_net for net routes. */
   sourceTraceId: SourceTraceId
-}
-
-/** Connectivity the test point joins, from a source_trace or source_net id. */
-function getSourceConnection(db: CircuitJsonUtilObjects, id: string) {
-  const trace = db.source_trace.get(id)
-  if (trace) return trace
-  const net = db.source_net.get(id)
-  if (!net) return undefined
-  return {
-    connected_source_port_ids: [],
-    connected_source_net_ids: [net.source_net_id],
-    subcircuit_connectivity_map_key: net.subcircuit_connectivity_map_key,
-  }
 }
 
 /** Emit probe targets as source testpoints, PCB ports, exposed circular pads
@@ -36,7 +22,7 @@ export function materializeRoutedTestPoints(
   subcircuitId: string,
 ): void {
   for (const point of points) {
-    const original = getSourceConnection(db, point.sourceTraceId)
+    const original = db.source_trace.get(point.sourceTraceId)
     if (!original)
       throw new Error(`Test point ${point.name} has no source connection`)
     if (
@@ -49,7 +35,7 @@ export function materializeRoutedTestPoints(
   }
   const labelTargets: TestPointLabelTarget[] = []
   for (const point of points) {
-    const original = getSourceConnection(db, point.sourceTraceId)!
+    const original = db.source_trace.get(point.sourceTraceId)!
     const component = db.source_component.insert({
       ftype: "simple_test_point",
       name: point.name,

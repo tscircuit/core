@@ -45,8 +45,6 @@ function getLabelText(
 ): string {
   const trace = db.source_trace.get(sourceTraceId)
   const candidates = [
-    // Net routes are identified by their source_net
-    db.source_net.get(sourceTraceId)?.name,
     ...(trace?.connected_source_net_ids ?? []).map(
       (id) => db.source_net.get(id)?.name,
     ),

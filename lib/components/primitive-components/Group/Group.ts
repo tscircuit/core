@@ -1857,7 +1857,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             const trace = selectedTraces.find(
               (trace) => trace.pcb_trace_id === point.pcbTraceId,
             )!
-            const sourceTraceId = getSourceTraceIdForRoutedTrace({
+            const routedSourceId = getSourceTraceIdForRoutedTrace({
               db,
               trace: {
                 ...trace,
@@ -1865,13 +1865,19 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
               },
               subcircuit_id: this.subcircuit_id,
             })
-            if (
-              !sourceTraceId ||
-              !(
-                db.source_trace.get(sourceTraceId) ??
-                db.source_net.get(sourceTraceId)
-              )
-            ) {
+            // A net route resolves to its source_net; the test point joins
+            // that net through one of the net's own source traces.
+            const sourceTraceId = routedSourceId
+              ? (db.source_trace.get(routedSourceId)?.source_trace_id ??
+                db.source_trace
+                  .list()
+                  .find((sourceTrace) =>
+                    sourceTrace.connected_source_net_ids.includes(
+                      routedSourceId,
+                    ),
+                  )?.source_trace_id)
+              : undefined
+            if (!sourceTraceId) {
               throw new Error(
                 `Test point ${point.name} has no source connection`,
               )
