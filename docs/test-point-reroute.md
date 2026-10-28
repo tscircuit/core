@@ -26,6 +26,6 @@ The prototype places three 1 mm bottom pads for SDA, SCL and OUTPUT_EN with 2.54
 
 The merged rerouter is consumed as a pinned GitHub source package and bundled into core. The phase API uses published `@tscircuit/props` version `0.0.714` or later, including the `testPoint`-prefixed options from [props #963](https://github.com/tscircuit/props/pull/963).
 
-![PD power supply before and after, standard layer colors and footprints with marked test points](test-point-images/pd-power-supply-before-after.png)
+![PD power supply before and after, top-layer colors and footprints with marked test-point locations](test-point-images/pd-power-supply-before-after.png)
 
-The visualization shows component pads and silkscreen. Filled copper pours are hidden only in the review image, and enlarged magenta rings label the three new pads; emitted manufacturing geometry and DRC inputs retain the complete board.
+The visualization renders the top layer, including component pads and silkscreen. Magenta review overlays locate the generated bottom-side pads in board coordinates; they are not top-layer copper. Filled copper pours are hidden only in the review image, and enlarged magenta rings label the three new pads; emitted manufacturing geometry and DRC inputs retain the complete board.

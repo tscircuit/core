@@ -22,13 +22,13 @@ export function getBoardComparisonSvg(
         x: point.x + 1.15 * Math.cos((i * Math.PI) / 24),
         y: point.y + 1.15 * Math.sin((i * Math.PI) / 24),
       })),
-      layer: "bottom",
+      layer: "top",
       stroke_width: 0.24,
       color: "#db007c",
     })
     db.pcb_note_path.insert({
       route: [point, anchor],
-      layer: "bottom",
+      layer: "top",
       stroke_width: 0.12,
       color: "#db007c",
     })
@@ -38,7 +38,7 @@ export function getBoardComparisonSvg(
       anchor_alignment: "center",
       font: "tscircuit2024",
       font_size: 1.05,
-      layer: "bottom",
+      layer: "top",
       color: "#db007c",
     })
   }
@@ -50,7 +50,8 @@ export function getBoardComparisonSvg(
     const board = convertCircuitJsonToPcbSvg(
       circuit.filter((element) => element.type !== "pcb_copper_pour"),
       {
-        // Include top-side footprint pads and silkscreen alongside bottom test points.
+        // Show top copper and footprints; review overlays locate the bottom-side pads.
+        layer: "top",
         width: 1000,
         height: 562.5,
         matchBoardAspectRatio: true,
@@ -60,7 +61,7 @@ export function getBoardComparisonSvg(
         showPcbNotes: true,
       },
     )
-    return `<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="680" viewBox="0 0 1040 680"><rect width="1040" height="680" fill="#000000"/><text x="20" y="34" font-family="sans-serif" font-size="24" font-weight="700" fill="#ffffff">${title}</text><text x="20" y="62" font-family="sans-serif" font-size="16" fill="#cbd5e1">${subtitle}</text><g transform="translate(20 86)">${board}</g><text x="20" y="665" font-family="sans-serif" font-size="15" fill="#cbd5e1">astra/pd-power-supply · All layers + footprints · pours hidden · 80 × 45 mm · board coordinates</text></svg>`
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="680" viewBox="0 0 1040 680"><rect width="1040" height="680" fill="#000000"/><text x="20" y="34" font-family="sans-serif" font-size="24" font-weight="700" fill="#ffffff">${title}</text><text x="20" y="62" font-family="sans-serif" font-size="16" fill="#cbd5e1">${subtitle}</text><g transform="translate(20 86)">${board}</g><text x="20" y="665" font-family="sans-serif" font-size="15" fill="#cbd5e1">astra/pd-power-supply · Top layer + footprints · pours hidden · 80 × 45 mm · board coordinates</text></svg>`
   }
   return stackSvgsHorizontally(
     [
@@ -72,7 +73,7 @@ export function getBoardComparisonSvg(
       renderPanel(
         db.toArray(),
         "AFTER — 3 TEST POINTS ADDED",
-        "Magenta rings + labels = added 1 mm pads (rings enlarged for visibility)",
+        "Magenta overlays locate added 1 mm BOTTOM pads (rings enlarged)",
       ),
     ],
     { gap: 20, normalizeSize: false },
