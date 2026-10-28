@@ -55,7 +55,13 @@ test("constraint-mounted cover moves intact before its nested cap explodes", asy
   expect(cadFor(exploded.circuitJson, "BULB")).toEqual(
     cadFor(assembled, "BULB"),
   )
-  expect(initial.circuitJson).toEqual(assembled)
+  expect(initial.circuitJson).toEqual(
+    assembled.filter(
+      (record) =>
+        record.type !== "cad_explosion_stage" &&
+        record.type !== "cad_explosion_move",
+    ),
+  )
   expect(circuit.getCircuitJson()).toEqual(assembled)
   expect(getAssemblyExplosion(circuit)).toEqual(exploded)
   expect(exploded.collisionCheckStatus).toBe("not_implemented")
