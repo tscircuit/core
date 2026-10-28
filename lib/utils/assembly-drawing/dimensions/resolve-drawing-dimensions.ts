@@ -3,10 +3,6 @@ import type {
   DrawingDimensionLine,
   DrawingPartView,
 } from "circuit-json"
-import {
-  convertCircuitJsonTo3D,
-  convertSceneToGLTF,
-} from "circuit-json-to-gltf"
 import { vec3 } from "gl-matrix"
 import {
   buildCamera,
@@ -16,10 +12,8 @@ import {
 } from "poppygl"
 import type { AssemblyDrawingPartView } from "lib/components/primitive-components/AssemblyDrawingPartView"
 import type { AssemblyDrawingDimension } from "lib/components/primitive-components/AssemblyDrawingDimension"
-import {
-  getDrawingViewGeometry,
-  loadDrawingScene,
-} from "../geometry/get-drawing-view-geometry"
+import { getDrawingViewGeometry } from "../geometry/get-drawing-view-geometry"
+import { getDrawingDrawCalls } from "../geometry/get-drawing-draw-calls"
 import { getDrawingScenePoints } from "../geometry/get-drawing-scene-points"
 import { getDrawingModelFeatures } from "../geometry/get-drawing-model-features"
 import { createDrawingReferenceSelector } from "./create-drawing-reference-selector"
@@ -69,7 +63,7 @@ export async function resolveDrawingDimensions(
   const features = dimensions.some(
     ({ _parsedProps: props }) => props.edgeRef || props.fromRef,
   )
-    ? await getDrawingModelFeatures(selected)
+    ? getDrawingModelFeatures(selected)
     : []
   const select = createDrawingReferenceSelector(view, features)
   const edges = resolveDrawingEdgeReferences(view, dimensions, select)
@@ -82,25 +76,20 @@ export async function resolveDrawingDimensions(
   const fail = (reason: string): never => {
     throw new Error(`Part view "${view.name || "unnamed part view"}" ${reason}`)
   }
-  const model = await convertCircuitJsonTo3D(selected, {
-    renderBoardTextures: false,
-    showBoundingBoxes: false,
-    projectBaseUrl: view.root?.platform?.projectBaseUrl,
-  }).catch(() => fail("could not resolve model geometry for dimensions"))
-  // Failed model loaders may provide a display bounding box. Such a fallback
-  // cannot establish a physical measurement.
-  if (model.boxes.some((box) => box.meshUrl && !box.mesh))
-    fail("could not load model geometry for dimensions")
-  const scene = await loadDrawingScene(
-    await convertSceneToGLTF(model, { binary: true }).catch(() =>
-      fail("could not prepare model geometry for dimensions"),
-    ),
-  )
-  if (!getDrawingScenePoints(scene.drawCalls).length)
+  const drawCalls = (() => {
+    try {
+      return getDrawingDrawCalls(selected)
+    } catch (error) {
+      return fail(
+        `could not resolve model geometry for dimensions: ${(error as Error).message}`,
+      )
+    }
+  })()
+  if (!getDrawingScenePoints(drawCalls).length)
     fail("has no geometry to dimension")
   // Paired with circuit-json-to-drawing: eye/target use the uncut world bounds;
   // fitting uses retained section geometry. No rasterization is needed here.
-  const bounds = computeWorldAABB(scene.drawCalls)
+  const bounds = computeWorldAABB(drawCalls)
   const center = bounds.min.map((min, i) => (min + bounds.max[i]!) / 2) as [
     number,
     number,
@@ -135,8 +124,8 @@ export async function resolveDrawingDimensions(
       }
     : undefined
   const retained = sectionPlane
-    ? createOutlineSection(scene.drawCalls, sectionPlane).drawCalls
-    : scene.drawCalls
+    ? createOutlineSection(drawCalls, sectionPlane).drawCalls
+    : drawCalls
   const points = getDrawingScenePoints(retained)
   if (!points.length) fail("has no retained geometry to dimension")
   let camera = buildCamera(

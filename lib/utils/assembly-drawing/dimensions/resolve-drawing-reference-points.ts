@@ -1,8 +1,4 @@
-import type { AnyCircuitElement } from "circuit-json"
-import {
-  convertCircuitJsonTo3D,
-  convertSceneToGLTF,
-} from "circuit-json-to-gltf"
+import type { AnyCircuitElement, PcbBoard } from "circuit-json"
 import type { vec3 } from "gl-matrix"
 import type { Board } from "lib/components/normal-components/Board/Board"
 import type { Hole } from "lib/components/primitive-components/Hole"
@@ -10,7 +6,7 @@ import type { PlatedHole } from "lib/components/primitive-components/PlatedHole"
 import type { AssemblyDrawingDimension } from "lib/components/primitive-components/AssemblyDrawingDimension"
 import type { AssemblyDrawingPartView } from "lib/components/primitive-components/AssemblyDrawingPartView"
 import { getDrawingScenePoints } from "../geometry/get-drawing-scene-points"
-import { loadDrawingScene } from "../geometry/get-drawing-view-geometry"
+import { getBoardDrawCalls } from "../geometry/get-drawing-draw-calls"
 import type {
   createDrawingReferenceSelector,
   DrawingSelectorNode,
@@ -18,7 +14,7 @@ import type {
 
 /** Resolve finalized reference points in right-handed glTF world mm (+X negative CAD X,
  * +Y CAD Z, +Z CAD Y). Points include PCB layout/model placement once.
- * Native features use the exporter's transforms, just like edgeRef dimensions.
+ * Native features use the same model placement as edgeRef dimensions.
  */
 export async function resolveDrawingReferencePoints(
   view: AssemblyDrawingPartView,
@@ -81,16 +77,9 @@ export async function resolveDrawingReferencePoints(
         // A through-hole reference is its midplane center.
         points = [[-geometry.x, 0, geometry.y]]
       } else {
-        const model = await convertCircuitJsonTo3D([geometry], {
-          renderBoardTextures: false,
-          showBoundingBoxes: false,
-        }).catch(() => fail("could not resolve board geometry"))
-        const scene = await loadDrawingScene(
-          await convertSceneToGLTF(model, { binary: true }).catch(() =>
-            fail("could not prepare board geometry"),
-          ),
-        ).catch(() => fail("could not prepare board geometry"))
-        points = getDrawingScenePoints(scene.drawCalls)
+        points = getDrawingScenePoints(
+          getBoardDrawCalls(geometry as PcbBoard, [geometry]),
+        )
       }
     }
     if (!points.length) fail("has no geometry")
