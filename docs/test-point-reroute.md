@@ -29,3 +29,5 @@ The merged rerouter is consumed as a pinned GitHub source package and bundled in
 ![PD power supply before and after, top-layer colors and footprints with marked test-point locations](test-point-images/pd-power-supply-before-after.png)
 
 The visualization renders the top layer, including component pads and silkscreen. Magenta review overlays identify the generated top-side pads in board coordinates. Filled copper pours are hidden only in the review image, and enlarged magenta rings label the three new pads; emitted manufacturing geometry and DRC inputs retain the complete board.
+
+The phase runs inside the existing autorouting async effect through the local autorouter start/progress/complete/error/stop lifecycle. It yields between target searches; a single target search remains synchronous.

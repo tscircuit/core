@@ -1,4 +1,4 @@
-import { TestPointSolver } from "@tscircuit/test-point-rerouter"
+import { TestPointAutorouter } from "lib/utils/autorouting/TestPointAutorouter"
 import {
   materializeRoutedTestPoints,
   type ConnectedRoutedTestPoint,
@@ -1768,6 +1768,45 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       let autorouter: GenericLocalAutorouter | undefined
 
       try {
+        const runAutorouter = async (
+          activeAutorouter: GenericLocalAutorouter,
+        ): Promise<SimplifiedPcbTrace[]> => {
+          const routingPromise = new Promise<SimplifiedPcbTrace[]>(
+            (resolve, reject) => {
+              activeAutorouter.on("complete", (event) => {
+                debug(`[${this.getString()}] local autorouting complete`)
+                resolve(event.traces)
+              })
+
+              activeAutorouter.on("error", (event) => {
+                debug(
+                  `[${this.getString()}] local autorouting error: ${event.error.message}`,
+                )
+                reject(event.error)
+              })
+            },
+          )
+
+          activeAutorouter.on("progress", (event) => {
+            this.root?.emit("autorouting:progress", {
+              subcircuit_id: this.subcircuit_id,
+              componentDisplayName: this.getString(),
+              ...(routingPhasePlan.phaseName !== undefined
+                ? {
+                    phaseName: routingPhasePlan.phaseName,
+                    phaseStageIndex,
+                    phaseStageCount,
+                  }
+                : {}),
+              ...autoroutingMetadata,
+              ...event,
+              type: "autorouting:progress",
+            })
+          })
+
+          activeAutorouter.start()
+          return await routingPromise
+        }
         let traces: SimplifiedPcbTrace[]
         let precomputedOutputSimpleRouteJson: SimpleRouteJson | undefined
         if (isTestPointPhase) {
@@ -1802,21 +1841,19 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
                 })),
             ],
           }
-          const solver = new TestPointSolver(
-            probeInput as AutorouterSimpleRouteJson,
-            {
-              ...settings,
-              requests: selectedTraces.map((trace, index) => ({
-                name: `TP_AUTO_${routingStageIndex + 1}_${index + 1}`,
-                pcbTraceId: trace.pcb_trace_id,
-                layer: settings.layer,
-                diameter: settings.diameter,
-              })),
-            },
-          )
-          solver.solve()
-          const result = solver.getOutput()
-          for (const point of result.testPoints) {
+          const testPointAutorouter = new TestPointAutorouter(probeInput, {
+            ...settings,
+            requests: selectedTraces.map((trace, index) => ({
+              name: `TP_AUTO_${routingStageIndex + 1}_${index + 1}`,
+              pcbTraceId: trace.pcb_trace_id,
+              layer: settings.layer,
+              diameter: settings.diameter,
+            })),
+          })
+          autorouter = testPointAutorouter
+          traces = await runAutorouter(testPointAutorouter)
+          const result = testPointAutorouter.getOutputSimpleRouteJson()
+          for (const point of testPointAutorouter.getTestPoints()) {
             const trace = selectedTraces.find(
               (trace) => trace.pcb_trace_id === point.pcbTraceId,
             )!
@@ -1892,42 +1929,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           if (!autorouter) {
             throw new Error("Failed to create local autorouter")
           }
-          const activeAutorouter = autorouter
-          const routingPromise = new Promise<SimplifiedPcbTrace[]>(
-            (resolve, reject) => {
-              activeAutorouter.on("complete", (event) => {
-                debug(`[${this.getString()}] local autorouting complete`)
-                resolve(event.traces)
-              })
-
-              activeAutorouter.on("error", (event) => {
-                debug(
-                  `[${this.getString()}] local autorouting error: ${event.error.message}`,
-                )
-                reject(event.error)
-              })
-            },
-          )
-
-          activeAutorouter.on("progress", (event) => {
-            this.root?.emit("autorouting:progress", {
-              subcircuit_id: this.subcircuit_id,
-              componentDisplayName: this.getString(),
-              ...(routingPhasePlan.phaseName !== undefined
-                ? {
-                    phaseName: routingPhasePlan.phaseName,
-                    phaseStageIndex,
-                    phaseStageCount,
-                  }
-                : {}),
-              ...autoroutingMetadata,
-              ...event,
-              type: "autorouting:progress",
-            })
-          })
-
-          activeAutorouter.start()
-          traces = await routingPromise
+          traces = await runAutorouter(autorouter)
         }
 
         let transformedSimpleRouteJson =

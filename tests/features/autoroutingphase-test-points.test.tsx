@@ -4,6 +4,10 @@ import { createBasicAutorouter } from "tests/fixtures/createBasicAutorouter"
 
 test("a designated trace receives an exposed, electrically connected probe pad", async () => {
   const { circuit } = getTestFixture()
+  let testPointProgressEvents = 0
+  circuit.on("autorouting:progress", (event) => {
+    if (event.phaseName === "probe pads") testPointProgressEvents++
+  })
   circuit.add(
     <board
       width={20}
@@ -46,6 +50,7 @@ test("a designated trace receives an exposed, electrically connected probe pad",
     .list()
     .filter((c) => c.name.startsWith("TP_AUTO_"))
   expect(generated).toHaveLength(1)
+  expect(testPointProgressEvents).toBeGreaterThan(0)
   const port = circuit.db.source_port.getWhere({
     source_component_id: generated[0]!.source_component_id,
   })!
