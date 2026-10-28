@@ -18,9 +18,7 @@ test("show the AM3352 USB-C output probe Circuit JSON import result", async () =
       .getCircuitJson()
       .filter((element) => element.type.endsWith("_error")),
   ).toEqual([])
-  expect(importError?.message).toBe(
-    'No inflator implemented for source component ftype: "simple_test_point"',
-  )
+  expect(importError).toBeUndefined()
 
   const originalJson = original.getCircuitJson()
   // The failed import has no board. Reuse only its empty board outline to
