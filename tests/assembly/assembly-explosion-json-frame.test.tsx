@@ -2,6 +2,7 @@ import { expect, test } from "bun:test"
 import {
   Circuit,
   assembly,
+  jscad,
   getAssemblyExplosion,
   getCircuitJsonAssemblyExplosion,
 } from "lib"
@@ -21,11 +22,11 @@ test("serialized movements preserve resolved local frames and nested physical as
             normalDirection={normalDirection}
           />
         </assembly.part>
-        <assembly.part
+        <assembly.printedpart
           name="CARRIER"
           mountedTo="BASE.face"
           mountFace="back"
-          cadModel={{ jscad: { type: "cube", size: 2 } }}
+          jscad={<jscad.cube size={2} />}
         >
           <assembly.referencesurface name="back" normalDirection="z-" />
           <assembly.subassembly name="MODULE">
@@ -42,7 +43,7 @@ test("serialized movements preserve resolved local frames and nested physical as
               />
             </assembly.explosion.stage>
           </assembly.subassembly>
-        </assembly.part>
+        </assembly.printedpart>
       </assembly.device>,
     )
     await circuit.renderUntilSettled()
