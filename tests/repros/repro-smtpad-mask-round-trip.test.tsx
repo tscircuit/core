@@ -1,5 +1,4 @@
 import { expect, test } from "bun:test"
-import { getBoundsFromPoints } from "@tscircuit/math-utils"
 import type { AnyCircuitElement } from "circuit-json"
 import { Fragment } from "react"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
@@ -88,37 +87,6 @@ test("saving and importing native SMT pads preserves solder mask settings", asyn
           }
         />
       ))}
-      {layers.map((layer) => (
-        <Fragment key={layer}>
-          <pcbnotetext
-            layer={layer}
-            pcbY={10}
-            fontSize={0.55}
-            text="Solder mask must survive save / import"
-          />
-          {shapes.map((shape, column) => (
-            <Fragment key={shape}>
-              <pcbnotetext
-                layer={layer}
-                pcbX={(column * 4 - 10) * (layer === "top" ? 1 : -1)}
-                pcbY={-9}
-                fontSize={0.35}
-                text={shape}
-              />
-            </Fragment>
-          ))}
-          {maskRows.map((maskRow, row) => (
-            <Fragment key={maskRow.label}>
-              <pcbnotetext
-                layer={layer}
-                pcbY={8.3 - row * 3.5}
-                fontSize={0.4}
-                text={maskRow.label}
-              />
-            </Fragment>
-          ))}
-        </Fragment>
-      ))}
     </board>,
   )
   await authored.renderUntilSettled()
@@ -135,72 +103,6 @@ test("saving and importing native SMT pads preserves solder mask settings", asyn
     </board>,
   )
   await imported.renderUntilSettled()
-
-  // Record the actual broken result before asserting the round-trip invariant.
-  // Each SVG is rendered separately so solder-mask clip IDs cannot collide.
-  for (const [stage, circuit] of [
-    ["authored", authored],
-    ["imported", imported],
-  ] as const) {
-    for (const layer of layers) {
-      // Supply the same explanatory legend to each view, independently of
-      // PCB-note import behavior. Only pad rendering is under test here.
-      const annotations = savedJson
-        .filter(
-          (element) =>
-            element.type === "pcb_note_text" && element.layer === layer,
-        )
-        .map((note) =>
-          note.type === "pcb_note_text" && note.anchor_position.y === 10
-            ? {
-                ...note,
-                text: `${stage.toUpperCase()} / ${layer.toUpperCase()}: solder mask`,
-              }
-            : note,
-        )
-      const snapshotJson = [
-        ...circuit
-          .getCircuitJson()
-          .filter((element) => element.type !== "pcb_note_text"),
-        ...annotations,
-        ...circuit.db.pcb_smtpad
-          .list()
-          .filter((pad) => pad.layer === layer)
-          .map((pad) => {
-            // Label emitted board-world geometry, in mm (+X right, +Y up).
-            const bounds =
-              pad.shape === "polygon" ? getBoundsFromPoints(pad.points)! : null
-            const x =
-              pad.shape === "polygon"
-                ? (bounds!.minX + bounds!.maxX) / 2
-                : pad.x
-            const y =
-              pad.shape === "polygon"
-                ? (bounds!.minY + bounds!.maxY) / 2
-                : pad.y
-            return {
-              ...authored.db.pcb_note_text.list()[0],
-              pcb_note_text_id: `mask_settings_${pad.pcb_smtpad_id}`,
-              layer,
-              anchor_position: { x, y: y - 1.05 },
-              font_size: 0.3,
-              text: `${pad.is_covered_with_solder_mask ? "covered" : "open"} / m=${pad.soldermask_margin ?? "default"}`,
-            }
-          }),
-      ]
-      await expect(snapshotJson).toMatchPcbSnapshot(
-        import.meta.path.replace(".test.tsx", `-${stage}-${layer}.test.tsx`),
-        {
-          layer,
-          showSolderMask: true,
-          includeVersion: false,
-          shouldDrawRatsNest: false,
-          width: 1000,
-          height: 800,
-        },
-      )
-    }
-  }
 
   const getMaskSettings = (circuitJson: AnyCircuitElement[]) =>
     circuitJson

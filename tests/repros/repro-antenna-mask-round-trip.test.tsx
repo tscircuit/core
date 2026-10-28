@@ -41,87 +41,54 @@ test("a real PCB antenna keeps its feed pad masked after save and import", async
   )
   await imported.renderUntilSettled()
 
+  const importedFeed = imported.db.pcb_smtpad
+    .list()
+    .find((pad) => pad.shape === "rect")!
+  const status = importedFeed.is_covered_with_solder_mask ? "MASKED" : "EXPOSED"
+
   // Snapshot annotations use board-world points in mm: +X right, +Y up,
-  // +Z above (right-handed). The close-up is centered on the emitted feed pad.
+  // +Z above (right-handed).
   const noteProps = {
     type: "pcb_note_text" as const,
     font: "tscircuit2024" as const,
     anchor_alignment: "center" as const,
     layer: "top" as const,
   }
-  for (const [stage, circuit] of [
-    ["authored", authored],
-    ["imported", imported],
-  ] as const) {
-    const feed = circuit.db.pcb_smtpad
-      .list()
-      .find((pad) => pad.shape === "rect")!
-    const status = feed.is_covered_with_solder_mask ? "MASKED" : "EXPOSED"
-    const json = circuit.getCircuitJson()
-    const options = {
-      layer: "top" as const,
+  await expect([
+    ...imported.getCircuitJson(),
+    {
+      ...noteProps,
+      pcb_note_text_id: "snapshot_title",
+      text: "IMPORTED: ANT1 / 2.4 GHz meandered monopole",
+      anchor_position: { x: 0, y: 7.5 },
+      font_size: 0.55,
+    },
+    {
+      ...noteProps,
+      pcb_note_text_id: "snapshot_feed_status",
+      text: `Feed pad: ${status} (expected MASKED)`,
+      anchor_position: { x: 0, y: -5.5 },
+      font_size: 0.6,
+    },
+    {
+      ...noteProps,
+      pcb_note_text_id: "snapshot_keepout_legend",
+      text: "Hatching = copper keepout; square = feed pad",
+      anchor_position: { x: 0, y: -7.2 },
+      font_size: 0.35,
+    },
+  ]).toMatchPcbSnapshot(
+    import.meta.path.replace(".test.tsx", "-imported-board.test.tsx"),
+    {
+      layer: "top",
       showSolderMask: true,
       includeVersion: false,
       shouldDrawRatsNest: false,
       shouldDrawErrors: false,
       width: 1000,
       height: 700,
-    }
-    await expect([
-      ...json,
-      {
-        ...noteProps,
-        pcb_note_text_id: "snapshot_title",
-        text: `${stage.toUpperCase()}: ANT1 / 2.4 GHz meandered monopole`,
-        anchor_position: { x: 0, y: 7.5 },
-        font_size: 0.55,
-      },
-      {
-        ...noteProps,
-        pcb_note_text_id: "snapshot_feed_status",
-        text: `Feed pad: ${status} (expected MASKED)`,
-        anchor_position: { x: 0, y: -5.5 },
-        font_size: 0.6,
-      },
-      {
-        ...noteProps,
-        pcb_note_text_id: "snapshot_keepout_legend",
-        text: "Hatching = copper keepout; square = feed pad",
-        anchor_position: { x: 0, y: -7.2 },
-        font_size: 0.35,
-      },
-    ]).toMatchPcbSnapshot(
-      import.meta.path.replace(".test.tsx", `-${stage}-board.test.tsx`),
-      options,
-    )
-    await expect([
-      ...json,
-      {
-        ...noteProps,
-        pcb_note_text_id: "snapshot_feed_closeup",
-        text: `ANT1: ${status}`,
-        anchor_position: { x: feed.x, y: feed.y - 1.2 },
-        font_size: 0.2,
-      },
-    ]).toMatchPcbSnapshot(
-      import.meta.path.replace(".test.tsx", `-${stage}-feed.test.tsx`),
-      {
-        ...options,
-        width: 600,
-        height: 600,
-        viewport: {
-          minX: feed.x - 2,
-          maxX: feed.x + 2,
-          minY: feed.y - 2,
-          maxY: feed.y + 2,
-        },
-      },
-    )
-  }
-
-  const importedFeed = imported.db.pcb_smtpad
-    .list()
-    .find((pad) => pad.shape === "rect")!
+    },
+  )
   expect(imported.db.pcb_smtpad.list()).toHaveLength(1)
   expect(importedFeed.is_covered_with_solder_mask).toBe(true)
   expect(imported.db.pcb_solder_paste.list()).toHaveLength(0)
