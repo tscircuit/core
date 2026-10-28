@@ -1,4 +1,8 @@
-import type { ImplicitBreakoutPointSolverFn } from "@tscircuit/props"
+import type {
+  ImplicitBreakoutPointSolverFn,
+  ImplicitBreakoutPointSolverInput,
+  ImplicitBreakoutSolverPoint,
+} from "@tscircuit/props"
 import type { PcbGroup, SourcePort, SourceTrace } from "circuit-json"
 import type { z } from "zod"
 import type { Group } from "../Group/Group"
@@ -7,6 +11,7 @@ import {
   type ImplicitBreakoutPointSolverContext,
   createImplicitBreakoutPointSolverContext,
 } from "./create-implicit-breakout-point-solver-input"
+import { packBreakoutEdgeGroups } from "./pack-breakout-edge-groups"
 
 type SourceTraceId = SourceTrace["source_trace_id"]
 type SourcePortId = NonNullable<SourcePort["source_port_id"]>
@@ -37,17 +42,80 @@ const cachedSolutionsByRoutingScope = new WeakMap<
   CachedRoutingScopeSolutions
 >()
 
-const solveScope = (
-  breakout: Breakout,
+const runSolverSynchronously = (
   solverFn: ImplicitBreakoutPointSolverFn,
-): CoordinatedScopeSolution => {
-  const context = createImplicitBreakoutPointSolverContext(breakout)
-  const output = solverFn(context.input)
+  input: ImplicitBreakoutPointSolverInput,
+): readonly ImplicitBreakoutSolverPoint[] => {
+  const output = solverFn(input)
   if (output instanceof Promise) {
     throw new Error(
       "Implicit breakout point solvers must return synchronously during PCB layout",
     )
   }
+  return output.breakoutPoints
+}
+
+/**
+ * Solve a single-region breakout once per exit-edge group, then pack the
+ * groups that share an edge so their points do not overlap.
+ */
+const solveSingleRegionEdgeGroups = (
+  context: ImplicitBreakoutPointSolverContext,
+  solverFn: ImplicitBreakoutPointSolverFn,
+): readonly ImplicitBreakoutSolverPoint[] => {
+  const { input, singleRegionEdgeGroups } = context
+  const region = input.regions[0]!
+  const blocksByEdge = new Map<
+    (typeof region)["edge"],
+    Parameters<typeof packBreakoutEdgeGroups>[0]["blocks"][number][]
+  >()
+  for (const group of singleRegionEdgeGroups!) {
+    const groupConnectionIds = new Set(group.connectionIds)
+    const points = runSolverSynchronously(solverFn, {
+      ...input,
+      regions: [{ ...region, edge: group.edge }],
+      connections: input.connections.filter((connection) =>
+        "type" in connection
+          ? groupConnectionIds.has(connection.connections[0].connectionId)
+          : groupConnectionIds.has(connection.connectionId),
+      ),
+      buses: input.buses
+        .map((bus) => ({
+          ...bus,
+          connectionIds: bus.connectionIds.filter((connectionId) =>
+            groupConnectionIds.has(connectionId),
+          ),
+        }))
+        .filter((bus) => bus.connectionIds.length > 0),
+    })
+    const blocks = blocksByEdge.get(group.edge) ?? []
+    blocks.push({ band: group.band, points })
+    blocksByEdge.set(group.edge, blocks)
+  }
+  return [...blocksByEdge].flatMap(([edge, blocks]) =>
+    packBreakoutEdgeGroups({
+      bounds: region.bounds,
+      edge,
+      blocks,
+      boundaryPointSpacing: input.boundaryPointSpacing,
+    }),
+  )
+}
+
+const solveScope = (
+  breakout: Breakout,
+  solverFn: ImplicitBreakoutPointSolverFn,
+): CoordinatedScopeSolution => {
+  const context = createImplicitBreakoutPointSolverContext(breakout)
+  const singleRegionEdgeGroups = context.singleRegionEdgeGroups
+  // One unbanded group is exactly the classic single-edge solve.
+  const usesEdgeGroups =
+    singleRegionEdgeGroups !== undefined &&
+    (singleRegionEdgeGroups.length > 1 ||
+      singleRegionEdgeGroups[0]?.band !== undefined)
+  const outputBreakoutPoints = usesEdgeGroups
+    ? solveSingleRegionEdgeGroups(context, solverFn)
+    : runSolverSynchronously(solverFn, context.input)
   let expectedConnectionCount = 0
   for (const connection of context.input.connections) {
     if ("type" in connection) {
@@ -64,7 +132,7 @@ const solveScope = (
   for (const region of context.input.regions) {
     breakoutPointsByRegionId.set(region.regionId, [])
   }
-  for (const breakoutPoint of output.breakoutPoints) {
+  for (const breakoutPoint of outputBreakoutPoints) {
     const regionBreakoutPoints = breakoutPointsByRegionId.get(
       breakoutPoint.regionId,
     )

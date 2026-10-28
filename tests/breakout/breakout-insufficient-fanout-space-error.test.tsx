@@ -62,5 +62,11 @@ test("a breakout with too little room reports how to give the fanout space", asy
   // Does not leak the raw solver phrasing.
   expect(message).not.toContain("best layer assignment")
   // A failed solve must not leave unresolved automatic points at the origin.
-  expect(circuit.db.pcb_breakout_point.list()).toEqual([])
+  // Exits now split across the top and bottom edges, so breakout points can be
+  // solved and the failure surfaces in the fanout escape instead.
+  expect(
+    circuit.db.pcb_breakout_point
+      .list()
+      .filter((point) => point.x === 0 && point.y === 0),
+  ).toEqual([])
 })
