@@ -5,6 +5,7 @@ import type {
   LayerRef,
   PcbBoard,
   PcbPort,
+  PcbPanel,
   PcbTraceHint,
   PcbVia,
   SourcePort,
@@ -120,6 +121,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   nominalTraceWidth,
   subcircuitComponent,
   routingPcbGroupId,
+  pcb_panel_id,
   fanoutPourNetMap,
   ignoreExistingTopLevelPcbRouteState = false,
 }: {
@@ -140,6 +142,8 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   subcircuitComponent?: Pick<ISubcircuit, "selectAll"> & {
     pcb_group_id?: PcbGroupId | null
   }
+  /** Manufacturing panel boundary for inter-board routing. */
+  pcb_panel_id?: PcbPanel["pcb_panel_id"]
   /**
    * Selects the routing group used to bound outline-less copper pours. Other
    * SRJ content retains its normal subcircuit-wide semantics.
@@ -221,7 +225,8 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     subcircuitIsBoard = owningBoard.subcircuitIsBoard && board !== null
   }
 
-  if (!board) {
+  const panel = pcb_panel_id ? db.pcb_panel.get(pcb_panel_id) : undefined
+  if (!board && !panel) {
     board = db.pcb_board.list()[0]
   }
 
@@ -333,6 +338,9 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     ].filter(
       (e) =>
         e.type === "pcb_board" ||
+        (panel &&
+          "pcb_panel_id" in e &&
+          e.pcb_panel_id === panel.pcb_panel_id) ||
         !subcircuit_id ||
         relevantSubcircuitIds?.has(e.subcircuit_id!),
     ),
@@ -452,6 +460,13 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       maxX: pcbGroup!.center.x + pcbGroup!.width! / 2,
       minY: pcbGroup!.center.y - pcbGroup!.height! / 2,
       maxY: pcbGroup!.center.y + pcbGroup!.height! / 2,
+    }
+  } else if (panel) {
+    bounds = {
+      minX: panel.center.x - panel.width / 2,
+      maxX: panel.center.x + panel.width / 2,
+      minY: panel.center.y - panel.height / 2,
+      maxY: panel.center.y + panel.height / 2,
     }
   } else if (boardBounds) {
     bounds = boardBounds

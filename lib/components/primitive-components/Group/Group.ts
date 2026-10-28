@@ -1,3 +1,4 @@
+import { getOwningPanel } from "lib/utils/panels/get-owning-panel"
 import { TestPointAutorouter } from "lib/utils/autorouting/TestPointAutorouter"
 import {
   materializeRoutedTestPoints,
@@ -889,6 +890,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         const preferredTraceWidth =
           props.defaultTraceWidth ?? props.nominalTraceWidth
         const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
+          pcb_panel_id: getOwningPanel(this)?.pcb_panel_id ?? undefined,
           db,
           minTraceWidth: Number(props.minTraceWidth ?? 0.15),
           nominalTraceWidth:
@@ -1157,6 +1159,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       : undefined
     let { simpleRouteJson: baseSimpleRouteJson } =
       getSimpleRouteJsonFromCircuitJson({
+        pcb_panel_id: getOwningPanel(this)?.pcb_panel_id ?? undefined,
         db,
         minTraceWidth,
         nominalTraceWidth,
@@ -1502,6 +1505,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           routingPhasePlan.routingPcbGroupId
         if (activeCustomBreakoutRoutingGroupId) {
           const activeGroupSimpleRouteJson = getSimpleRouteJsonFromCircuitJson({
+            pcb_panel_id: getOwningPanel(this)?.pcb_panel_id ?? undefined,
             db,
             minTraceWidth,
             nominalTraceWidth,
@@ -2529,6 +2533,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           })
           const insertedPcbTrace = db.pcb_trace.insert({
             ...pcb_trace,
+            pcb_panel_id: getOwningPanel(this)?.pcb_panel_id ?? undefined,
             source_trace_id: sourceTraceId,
             route: circuitJsonSegment,
           })
@@ -2608,6 +2613,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
               to_layer: toLayer,
               subcircuit_id: this.subcircuit_id!,
               pcb_group_id: this.pcb_group_id ?? undefined,
+              pcb_panel_id: getOwningPanel(this)?.pcb_panel_id ?? undefined,
               subcircuit_connectivity_map_key: subcircuitConnectivityMapKey,
             }
             if (

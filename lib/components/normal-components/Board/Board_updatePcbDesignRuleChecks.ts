@@ -1,3 +1,4 @@
+import { getBoardCircuitJsonForDrc } from "lib/utils/panels/get-board-circuit-json-for-drc"
 import {
   dedupePcbDrcErrors,
   consolidatePcbOverlapErrors,
@@ -188,8 +189,7 @@ export const Board_updatePcbDesignRuleChecks = (board: Board) => {
     )
   }
 
-  const subcircuit = db.subtree({ subcircuit_id: board.subcircuit_id })
-  const subcircuitCircuitJson = subcircuit.toArray()
+  const subcircuitCircuitJson = getBoardCircuitJsonForDrc(board)
 
   board._drcChecksInProgress = true
   board._queueAsyncEffect("board:drc-checks", async () => {

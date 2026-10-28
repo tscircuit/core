@@ -1,3 +1,4 @@
+import { getOwningPanel } from "lib/utils/panels/get-owning-panel"
 import type { PcbPath } from "@tscircuit/props"
 import type { LayerRef } from "circuit-json"
 import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
@@ -63,6 +64,7 @@ export const renderPcbPaths = ({
       source_trace_id: trace.source_trace_id!,
       subcircuit_id: subcircuit.subcircuit_id ?? undefined,
       pcb_group_id: trace.getGroup()?.pcb_group_id ?? undefined,
+      pcb_panel_id: getOwningPanel(trace)?.pcb_panel_id ?? undefined,
       trace_length: getTraceLength(route),
     })
     trace.pcb_trace_id ??= pcbTrace.pcb_trace_id
@@ -86,6 +88,7 @@ export const renderPcbPaths = ({
         to_layer: toLayer,
         subcircuit_id: subcircuit.subcircuit_id ?? undefined,
         pcb_group_id: trace.getGroup()?.pcb_group_id ?? undefined,
+        pcb_panel_id: getOwningPanel(trace)?.pcb_panel_id ?? undefined,
         subcircuit_connectivity_map_key: connectivityMapKey,
       })
     }

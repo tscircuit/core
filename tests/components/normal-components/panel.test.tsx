@@ -7,7 +7,7 @@ const createPanel = () => (
   </panel>
 )
 
-test("panel can only contain boards or subpanels", () => {
+test("panel can only contain boards, subpanels, or traces", () => {
   const { circuit } = getTestFixture()
 
   expect(() =>
@@ -16,7 +16,7 @@ test("panel can only contain boards or subpanels", () => {
         <resistor name="R1" resistance={100} />
       </panel>,
     ),
-  ).toThrow("<panel> can only contain <board> or <subpanel> elements")
+  ).toThrow("<panel> can only contain <board>, <subpanel>, or <trace> elements")
 })
 
 test("panel must be a root element", () => {
