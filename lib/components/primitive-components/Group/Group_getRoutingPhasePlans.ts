@@ -451,6 +451,16 @@ export function Group_getRoutingPhasePlans(
   ) as AutoroutingPhase[]) {
     const plan = plansByPhaseIndex.get(phase._parsedProps.phaseIndex ?? null)
     if (!plan) continue
+    const props = phase._parsedProps
+    if (props.addTestPoints) {
+      plan.testPointOptions = {
+        layer: props.testPointLayer ?? "bottom",
+        diameter: props.testPointDiameter ?? 1,
+        clearance: props.testPointClearance ?? 0.2,
+        minProbeSpacing: props.testPointMinProbeSpacing ?? 2.54,
+        maxDetour: props.testPointMaxDetour ?? 1,
+      }
+    }
     plan.autoroutingPhase = phase
     if (phase._parsedProps.pcbTracePaths === undefined) continue
     const config =
