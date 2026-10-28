@@ -1,3 +1,7 @@
+import type {
+  TestPointOptions,
+  TestPointRequest,
+} from "@tscircuit/test-point-rerouter"
 import type { AutorouterProp, AutoroutingPhaseProps } from "@tscircuit/props"
 import type {
   PcbGroupId,
@@ -45,6 +49,11 @@ export interface RoutingPhasePlan {
   autorouter?: AutorouterProp
   algorithmFn?: AutoroutingPhaseProps["algorithmFn"]
   reroute?: boolean
+  testPointOptions?: Pick<
+    TestPointOptions,
+    "clearance" | "minProbeSpacing" | "maxDetour"
+  > &
+    Pick<TestPointRequest, "layer" | "diameter">
   region?: AutoroutingPhaseProps["region"]
   connectionSelectors?: string[]
   busFanoutDirections?: AutoroutingPhaseProps["busFanoutDirections"]

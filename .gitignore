@@ -195,3 +195,6 @@ references
 debug-output
 debug-outputs
 .github/test-plans/
+
+# Declarations emitted from the source-only rerouter during the build
+.build/

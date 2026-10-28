@@ -126,6 +126,9 @@ export const DifferentialPair_doInitialSourceDesignRuleChecks = (
   }
 
   const memberTraceIds: SourceTrace["source_trace_id"][] = []
+  const pointToPointTraceIds: Partial<
+    Record<ConnectionPolarity, SourceTrace["source_trace_id"]>
+  > = {}
   let resolvedPolarityCount = 0
   for (const connectionPolarity of ["positive", "negative"] as const) {
     let connectionSelector = differentialPair._parsedProps.negativeConnection
@@ -142,7 +145,14 @@ export const DifferentialPair_doInitialSourceDesignRuleChecks = (
     memberTraceIds.push(...resolvedConnection.sourceTraceIds)
 
     const terminalSourcePorts = resolvedConnection.sourcePorts
-    if (terminalSourcePorts.length === 2) continue
+    if (terminalSourcePorts.length === 2) {
+      // A conductor may consist of multiple source traces joined through a net.
+      // One resolved member identifies its polarity; source_trace_ids retains
+      // every fragment for connectivity consumers.
+      pointToPointTraceIds[connectionPolarity] =
+        resolvedConnection.sourceTraceIds[0]
+      continue
+    }
     let warningSourceComponentId = ""
     const firstTerminalSourcePort = terminalSourcePorts[0]
     if (firstTerminalSourcePort) {
@@ -181,6 +191,19 @@ export const DifferentialPair_doInitialSourceDesignRuleChecks = (
       name: differentialPair.name,
       source_trace_ids: [...new Set(memberTraceIds)],
       max_length_skew: differentialPair._parsedProps.maxLengthSkew,
+      target_differential_impedance:
+        differentialPair._parsedProps.targetDifferentialImpedance,
+      ...(pointToPointTraceIds.positive && pointToPointTraceIds.negative
+        ? {
+            differential_pair: {
+              positive_source_trace_id: pointToPointTraceIds.positive,
+              negative_source_trace_id: pointToPointTraceIds.negative,
+              trace_gap: differentialPair._parsedProps.pcbTraceGap,
+              max_uncoupled_length:
+                differentialPair._parsedProps.maxUncoupledLength,
+            },
+          }
+        : {}),
       subcircuit_id:
         differentialPair.getSubcircuit().subcircuit_id ?? undefined,
     })

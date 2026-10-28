@@ -422,16 +422,25 @@ export class Connector<
       pin_count: props.pinCount,
     }
 
+    // A connector that names its part keeps it. findPart ranks standard
+    // candidates by stock and ignores the MPN, so only search when the part is
+    // unspecified; an MPN alone is resolved by fetchPartCircuitJson.
+    const pinnedSupplierPartNumbers =
+      props.supplierPartNumbers ??
+      (sourceComponentForQuery.manufacturer_part_number ? {} : undefined)
+
     this._queueAsyncEffect("load-standard-connector-circuit-json", async () => {
       const { db } = this.root!
       try {
-        const supplierPartNumbers = await this._getSupplierPartNumbers(
-          partsEngine,
-          sourceComponentForQuery,
-          `standard:${standard}`,
-        )
+        const supplierPartNumbers =
+          pinnedSupplierPartNumbers ??
+          (await this._getSupplierPartNumbers(
+            partsEngine,
+            sourceComponentForQuery,
+            `standard:${standard}`,
+          ))
 
-        if (this.source_component_id) {
+        if (this.source_component_id && !pinnedSupplierPartNumbers) {
           db.source_component.update(this.source_component_id, {
             supplier_part_numbers: supplierPartNumbers,
           })
@@ -452,7 +461,7 @@ export class Connector<
 
         this._addConnectorFootprintFromCircuitJson(standard, circuitJson)
       } catch (error: any) {
-        if (this.source_component_id) {
+        if (this.source_component_id && !pinnedSupplierPartNumbers) {
           db.source_component.update(this.source_component_id, {
             supplier_part_numbers: {},
           })

@@ -5,7 +5,7 @@ import type { LocalCacheEngine } from "lib/local-cache-engine"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("recomputes cached unknown LED orientation and reuses the new frame", async () => {
-  const oldCacheKey = "part-orientation-analysis:v2:jlcpcb:C123"
+  const oldCacheKey = "part-orientation-analysis:v4:jlcpcb:C123"
   const cache = new Map([
     [oldCacheKey, JSON.stringify({ pin1_location: null, pin1_polarity: null })],
   ])
@@ -20,14 +20,14 @@ test("recomputes cached unknown LED orientation and reuses the new frame", async
   const partsEngine: PartsEngine = {
     findPart: () => ({ jlcpcb: ["C123"] }),
     fetchPartCircuitJson: () => {
-      // Synthetic supplier footprint, in local mm: +X right, +Y up.
+      // Slightly skewed supplier footprint, in local mm: +X right, +Y up.
       // Pin 1 is right, opposite to the authored LED's local footprint.
       return [1, 2].map((pin) => ({
         type: "pcb_smtpad",
         pcb_smtpad_id: `supplier_pad_${pin}`,
         shape: "rect",
         x: pin === 1 ? 0.749 : -0.749,
-        y: 0,
+        y: pin === 1 ? 0.003429 : -0.003429,
         width: 0.8,
         height: 0.8,
         layer: "top",
@@ -63,6 +63,6 @@ test("recomputes cached unknown LED orientation and reuses the new frame", async
     if (render === 0) expect(circuit).toMatchPcbSnapshot(import.meta.path)
   }
   expect(
-    JSON.parse(cache.get("part-orientation-analysis:v4:jlcpcb:C123")!),
+    JSON.parse(cache.get("part-orientation-analysis:v5:jlcpcb:C123")!),
   ).toMatchObject({ pin1_location: "bottomside_right" })
 })

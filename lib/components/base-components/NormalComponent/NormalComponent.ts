@@ -1073,6 +1073,8 @@ export class NormalComponent<
 
     const pcb_component = db.pcb_component.insert({
       center: this._getGlobalPcbPositionBeforeLayout(),
+      // Authored (0, 0), in board-world mm; layout transforms it with the pads.
+      footprint_origin: this._getGlobalPcbPositionBeforeLayout(),
       // width/height are computed in the PcbComponentSizeCalculation phase
       width: 0,
       height: 0,
@@ -2160,10 +2162,11 @@ export class NormalComponent<
       footprinterStringForCadComponent = footprintString
     }
 
+    const footprintOrigin = pcbComponent?.footprint_origin ?? bounds.center
     let cadComponentPlacement = {
       position: {
-        x: bounds.center.x + positionOffset.x,
-        y: bounds.center.y + positionOffset.y,
+        x: footprintOrigin.x + positionOffset.x,
+        y: footprintOrigin.y + positionOffset.y,
         z:
           (computedLayer === "bottom"
             ? -boardThickness / 2

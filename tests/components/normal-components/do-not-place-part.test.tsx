@@ -30,6 +30,10 @@ test("do not place part should be skipped", async () => {
           "y": 0,
         },
         "do_not_place": true,
+        "footprint_origin": {
+          "x": 0,
+          "y": 0,
+        },
         "height": 4.41,
         "insertion_direction": undefined,
         "is_allowed_to_be_off_board": false,

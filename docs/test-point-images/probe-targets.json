@@ -1,0 +1,69 @@
+{
+  "board": "astra/pd-power-supply",
+  "release": "57387f49-bd91-4277-8a82-706b1575c5ed",
+  "clearanceMm": 0.2,
+  "suites": [
+    {
+      "name": "routing",
+      "before": 10,
+      "after": 10,
+      "added": []
+    },
+    {
+      "name": "placement",
+      "before": 16,
+      "after": 16,
+      "added": []
+    },
+    {
+      "name": "padPad",
+      "before": 2,
+      "after": 2,
+      "added": []
+    },
+    {
+      "name": "padTrace",
+      "before": 110,
+      "after": 110,
+      "added": []
+    },
+    {
+      "name": "viaPad",
+      "before": 28,
+      "after": 28,
+      "added": []
+    }
+  ],
+  "added": [],
+  "testPoints": [
+    {
+      "name": "TP_AUTO_SDA",
+      "pcbTraceId": "source_net_33_mst1_0",
+      "layer": "top",
+      "diameter": 1,
+      "x": 5.528,
+      "y": -0.6,
+      "connectionName": "source_trace_267"
+    },
+    {
+      "name": "TP_AUTO_SCL",
+      "pcbTraceId": "source_net_34_mst0_0",
+      "layer": "top",
+      "diameter": 1,
+      "x": -20.589031411038434,
+      "y": 7.262851234346786,
+      "connectionName": "source_trace_153"
+    },
+    {
+      "name": "TP_AUTO_OUTPUT_EN",
+      "pcbTraceId": "source_net_50_mst0_0",
+      "layer": "top",
+      "diameter": 1,
+      "x": 29.962051902423806,
+      "y": 15.77136535985843,
+      "connectionName": "source_trace_278"
+    }
+  ],
+  "units": "mm",
+  "coordinateFrame": "board (+X right, +Y up), not mirrored"
+}

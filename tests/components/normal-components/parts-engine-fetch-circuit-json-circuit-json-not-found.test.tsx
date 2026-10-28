@@ -35,8 +35,8 @@ test("connector usb_c leaves footprint empty when supplier and manufacturer circ
 
   await circuit.renderUntilSettled()
 
+  // The MPN names the part, so the stock-ranked findPart search is skipped
   expect(calls).toEqual([
-    { supplierPartNumber: "C165948", manufacturerPartNumber: "USB4135-GF-A" },
     { supplierPartNumber: undefined, manufacturerPartNumber: "USB4135-GF-A" },
   ])
 
@@ -44,9 +44,7 @@ test("connector usb_c leaves footprint empty when supplier and manufacturer circ
     .list()
     .find((c: any) => c.name === "USB1")
   expect(sourceComponent).toBeTruthy()
-  expect(sourceComponent!.supplier_part_numbers).toEqual({
-    jlcpcb: ["C165948"],
-  })
+  expect(sourceComponent!.supplier_part_numbers).toBeUndefined()
 
   expect(circuit.db.pcb_smtpad.list().length).toBe(0)
   expect(circuit.db.unknown_error_finding_part.list().length).toBe(0)
