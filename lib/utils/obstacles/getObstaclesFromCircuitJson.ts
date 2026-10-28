@@ -7,6 +7,7 @@ import { type RotatedRect } from "./generateApproximatingRects"
 import { getAxisAlignedRectFromPolygon } from "./getAxisAlignedRectFromPolygon"
 import { getObstaclesFromPcbKeepoutOutline } from "./getObstaclesFromPcbKeepoutOutline"
 import { getObstaclesFromRoute } from "./getObstaclesFromRoute"
+import { separateViaInPadObstacles } from "./separateViaInPadObstacles"
 import type { CircuitJsonMetadata, Obstacle } from "./types"
 
 const QUARTER_TURN_TOLERANCE_DEGREES = 0.01
@@ -587,5 +588,5 @@ export const getObstaclesFromCircuitJson = (
       })
     }
   }
-  return obstacles
+  return separateViaInPadObstacles(obstacles)
 }
