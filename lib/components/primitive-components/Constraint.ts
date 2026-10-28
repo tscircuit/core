@@ -1,16 +1,7 @@
 import { constraintProps } from "@tscircuit/props"
 import { z } from "zod"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
-
-const edgeSpecifiers = [
-  "leftedge",
-  "rightedge",
-  "topedge",
-  "bottomedge",
-  "center",
-] as const
-
-export type EdgeSpecifier = (typeof edgeSpecifiers)[number]
+import { type EdgeSpecifier, edgeSpecifiers } from "./edge-specifiers"
 
 export class Constraint extends PrimitiveComponent<typeof constraintProps> {
   get config() {

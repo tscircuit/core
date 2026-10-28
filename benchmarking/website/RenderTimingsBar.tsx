@@ -1,5 +1,4 @@
-import { orderedRenderPhases } from "lib"
-import React from "react"
+import { orderedRenderPhases } from "../../lib/components/base-components/render-phases"
 
 export const RenderTimingsBar = ({
   phaseTimings,

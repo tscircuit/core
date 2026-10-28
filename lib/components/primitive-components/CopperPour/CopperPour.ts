@@ -1,10 +1,8 @@
-import { copperPourProps, type CopperPourProps } from "@tscircuit/props"
-import { PrimitiveComponent } from "../../base-components/PrimitiveComponent"
+import { copperPourProps } from "@tscircuit/props"
 import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
+import { PrimitiveComponent } from "../../base-components/PrimitiveComponent"
 import { CopperPour_doInitialPcbCopperPourRender } from "./CopperPour_doInitialPcbCopperPourRender"
 import { CopperPour_doInitialPcbViaStitchRender } from "./CopperPour_doInitialPcbViaStitchRender"
-
-export type { CopperPourProps }
 
 export class CopperPour extends PrimitiveComponent<typeof copperPourProps> {
   isPcbPrimitive = true

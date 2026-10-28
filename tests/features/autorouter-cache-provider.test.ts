@@ -1,9 +1,7 @@
 import { expect, test } from "bun:test"
 import type { CacheProvider } from "@tscircuit/capacity-autorouter"
-import {
-  type AutorouterOptions,
-  TscircuitAutorouter,
-} from "lib/utils/autorouting/CapacityMeshAutorouter"
+import { type AutorouterOptions } from "../../lib/utils/autorouting/capacity-mesh-autorouter-options"
+import { TscircuitAutorouter } from "lib/utils/autorouting/CapacityMeshAutorouter"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 
 const simpleRouteJson: SimpleRouteJson = {

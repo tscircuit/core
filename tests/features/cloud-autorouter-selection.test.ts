@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import {
   getAutorouterSolverName,
   type AutorouterOptions,
-} from "lib/utils/autorouting/CapacityMeshAutorouter"
+} from "../../lib/utils/autorouting/capacity-mesh-autorouter-options"
 
 test("cloud routing selects Pipeline9 only for eligible pipeline and effort choices", () => {
   const cloud = { platformConfig: { useCloudAutorouter: true } }

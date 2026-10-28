@@ -1,7 +1,7 @@
 import { test, expect } from "bun:test"
 import type { Connections, Selectors } from "@tscircuit/props"
 import { sel } from "lib/sel"
-import { Circuit } from "lib/RootCircuit"
+import { Circuit } from "../../lib/root-circuit-aliases"
 
 // Define a simple module that uses the `connections` prop
 const MyModuleWithConnections = (props: {

@@ -1,6 +1,7 @@
 import { it, expect } from "bun:test"
 import "lib/register-catalogue"
-import { Circuit, createElement } from "../index"
+import { Circuit } from "../lib/root-circuit-aliases"
+import { createElement } from "../index"
 
 it("should allow usage of createElement without explicit React import", () => {
   const circuit = new Circuit()

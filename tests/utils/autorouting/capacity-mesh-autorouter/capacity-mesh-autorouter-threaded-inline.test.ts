@@ -1,7 +1,7 @@
 import { expect, spyOn, test } from "bun:test"
 import * as runtimeLoader from "lib/utils/autorouting/create-autorouter-runtime"
 import { createThreadedAutorouter } from "tests/fixtures/autorouter-threads/createThreadedAutorouter"
-import type { AutorouterOptions } from "lib/utils/autorouting/CapacityMeshAutorouter"
+import type { AutorouterOptions } from "../../../../lib/utils/autorouting/capacity-mesh-autorouter-options"
 
 test("omitted and inline threads plus cloud and legacy solvers retain stepped routing", async () => {
   const loader = spyOn(

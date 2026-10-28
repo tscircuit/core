@@ -1,8 +1,6 @@
 import { expect, test } from "bun:test"
-import {
-  Renderable,
-  orderedRenderPhases,
-} from "lib/components/base-components/Renderable"
+import { Renderable } from "lib/components/base-components/Renderable"
+import { orderedRenderPhases } from "../../../lib/components/base-components/render-phases"
 
 test("superscript phase waits for descendant label work and supports dirty updates", async () => {
   let finishTraceRender!: () => void

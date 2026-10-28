@@ -1,8 +1,6 @@
 import { test, expect } from "bun:test"
-import {
-  TscircuitAutorouter,
-  type SolverStartedDetails,
-} from "lib/utils/autorouting/CapacityMeshAutorouter"
+import { TscircuitAutorouter } from "lib/utils/autorouting/CapacityMeshAutorouter"
+import { type SolverStartedDetails } from "../../../../lib/utils/autorouting/capacity-mesh-autorouter-options"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 
 // Create a simple route test fixture

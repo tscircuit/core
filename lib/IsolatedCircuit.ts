@@ -1,18 +1,18 @@
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
-import { createCircuitJsonDatabase } from "./utils/circuit-json/create-circuit-json-database"
 import type { PlatformConfig } from "@tscircuit/props"
 import type { AnyCircuitElement } from "circuit-json"
 import Debug from "debug"
 import { type ReactElement, isValidElement } from "react"
 import { type Matrix, identity } from "transformation-matrix"
 import pkgJson from "../package.json"
+import { isAssemblyDeviceContainer } from "./components/base-components/is-assembly-device-container"
 import type { PrimitiveComponent } from "./components/base-components/PrimitiveComponent"
-import type { RenderPhase } from "./components/base-components/Renderable"
+import type { RenderPhase } from "./components/base-components/render-phases"
 import type { BoardI } from "./components/normal-components/Board/BoardI"
 import { Group } from "./components/primitive-components/Group"
 import type { RootCircuitEventName } from "./events"
 import { createInstanceFromReactElement } from "./fiber/create-instance-from-react-element"
-import { isAssemblyDeviceContainer } from "./components/base-components/is-assembly-device-container"
+import { createCircuitJsonDatabase } from "./utils/circuit-json/create-circuit-json-database"
 
 export class IsolatedCircuit {
   firstChild: PrimitiveComponent | null = null

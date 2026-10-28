@@ -1,8 +1,6 @@
 import { differentialPairProps } from "@tscircuit/props"
-import {
-  type BaseComponentConfig,
-  PrimitiveComponent,
-} from "../base-components/PrimitiveComponent"
+import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
+import { type BaseComponentConfig } from "../base-components/PrimitiveComponent/base-component-config"
 import { DifferentialPair_doInitialSourceDesignRuleChecks } from "./DifferentialPair_doInitialSourceDesignRuleChecks"
 
 /**

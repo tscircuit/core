@@ -1,18 +1,9 @@
-import { type PcbTraceRoutePoint, pcb_trace_route_point } from "circuit-json"
-import { applyToPoint } from "transformation-matrix"
-import { z } from "zod"
+import { type PcbTraceRoutePoint } from "circuit-json"
 import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
 import { getViaDiameterDefaults } from "lib/utils/pcbStyle/getViaDiameterDefaults"
+import { applyToPoint } from "transformation-matrix"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
-
-export const pcbTraceProps = z.object({
-  route: z.array(pcb_trace_route_point),
-  // If this primitive PcbTrace needs to be associated with a source_trace_id
-  // it can be added as a prop here. For footprints, it's often not needed.
-  source_trace_id: z.string().optional(),
-})
-
-export type PcbTraceProps = z.infer<typeof pcbTraceProps>
+import { pcbTraceProps } from "./pcb-trace-props"
 
 export class PcbTrace extends PrimitiveComponent<typeof pcbTraceProps> {
   pcb_trace_id: string | null = null

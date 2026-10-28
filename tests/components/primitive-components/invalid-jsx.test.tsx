@@ -1,5 +1,5 @@
 import { test, expect } from "bun:test"
-import { Circuit } from "lib"
+import { Circuit } from "../../../lib/root-circuit-aliases"
 
 test("snippet-import1-contribution-board", async () => {
   const circuit = new Circuit()

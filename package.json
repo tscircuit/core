@@ -19,6 +19,7 @@
     "url": "https://github.com/tscircuit/core"
   },
   "scripts": {
+    "check:class-exports": "bun run scripts/check-class-exports.ts",
     "build": "bun run scripts/build-test-point-rerouter-types.ts && tsup-node",
     "format": "biome format . --write",
     "measure-bundle": "howfat -r table .",

@@ -1,18 +1,19 @@
 import { DogboneAutorouter } from "@tscircuit/dogbone-solver"
-import type { SolverEndedEvent } from "lib/events"
-import { BusLanesAutorouter } from "./BusLanesAutorouter"
 import type {
   AutorouterProp,
   AutoroutingPhaseProps,
   PlatformConfig,
 } from "@tscircuit/props"
+import type { SolverEndedEvent } from "lib/events"
 import type { SolverName } from "lib/solvers"
+import { BusLanesAutorouter } from "./BusLanesAutorouter"
+import { TscircuitAutorouter } from "./CapacityMeshAutorouter"
 import {
   type AutorouterOptions,
-  TscircuitAutorouter,
   getAutorouterSolverName,
-} from "./CapacityMeshAutorouter"
-import { FanoutAutorouter, type FanoutAutorouterMode } from "./FanoutAutorouter"
+} from "./capacity-mesh-autorouter-options"
+import { FanoutAutorouter } from "./FanoutAutorouter"
+import { type FanoutAutorouterMode } from "./fanout-autorouter-options"
 import type { GenericLocalAutorouter } from "./GenericLocalAutorouter"
 import type { SimpleRouteBounds, SimpleRouteJson } from "./SimpleRouteJson"
 import {
