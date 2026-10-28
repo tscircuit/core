@@ -50,7 +50,7 @@ export function getBoardComparisonSvg(
     const board = convertCircuitJsonToPcbSvg(
       circuit.filter((element) => element.type !== "pcb_copper_pour"),
       {
-        // Show top copper and footprints; review overlays locate the bottom-side pads.
+        // Show top copper and footprints; review overlays identify the generated top-side pads.
         layer: "top",
         width: 1000,
         height: 562.5,
@@ -73,7 +73,7 @@ export function getBoardComparisonSvg(
       renderPanel(
         db.toArray(),
         "AFTER — 3 TEST POINTS ADDED",
-        "Magenta overlays locate added 1 mm BOTTOM pads (rings enlarged)",
+        "Magenta rings + labels = added 1 mm TOP pads (rings enlarged)",
       ),
     ],
     { gap: 20, normalizeSize: false },

@@ -10,7 +10,7 @@ import { materializeRoutedTestPoints } from "lib/utils/autorouting/materialize-r
 import input from "../fixtures/test-points/astra-pd-power-supply.srj.json"
 import "tests/fixtures/extend-expect-circuit-snapshot"
 
-test("real PD power supply emits connected exposed pads for a bottom probe fixture", async () => {
+test("real PD power supply emits connected exposed pads for a top probe fixture", async () => {
   const circuit = JSON.parse(
     gunzipSync(
       readFileSync(
@@ -26,20 +26,20 @@ test("real PD power supply emits connected exposed pads for a bottom probe fixtu
     requests: [
       {
         name: "TP_AUTO_SDA",
-        pcbTraceId: "source_net_33_mst0_0",
-        layer: "bottom",
+        pcbTraceId: "source_net_33_mst1_0",
+        layer: "top",
         diameter: 1,
       },
       {
         name: "TP_AUTO_SCL",
         pcbTraceId: "source_net_34_mst0_0",
-        layer: "bottom",
+        layer: "top",
         diameter: 1,
       },
       {
         name: "TP_AUTO_OUTPUT_EN",
-        pcbTraceId: "source_net_50_mst1_0",
-        layer: "bottom",
+        pcbTraceId: "source_net_50_mst0_0",
+        layer: "top",
         diameter: 1,
       },
     ],
@@ -72,7 +72,7 @@ test("real PD power supply emits connected exposed pads for a bottom probe fixtu
       x: p.x,
       y: p.y,
       radius: 0.5,
-      layer: "bottom",
+      layer: "top",
       is_covered_with_solder_mask: false,
     })
     const source = db.source_trace.get(p.connectionName)!

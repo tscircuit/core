@@ -26,20 +26,20 @@ const solver = new TestPointSolver(input as SimpleRouteJson, {
   requests: [
     {
       name: "TP_AUTO_SDA",
-      pcbTraceId: "source_net_33_mst0_0",
-      layer: "bottom",
+      pcbTraceId: "source_net_33_mst1_0",
+      layer: "top",
       diameter: 1,
     },
     {
       name: "TP_AUTO_SCL",
       pcbTraceId: "source_net_34_mst0_0",
-      layer: "bottom",
+      layer: "top",
       diameter: 1,
     },
     {
       name: "TP_AUTO_OUTPUT_EN",
-      pcbTraceId: "source_net_50_mst1_0",
-      layer: "bottom",
+      pcbTraceId: "source_net_50_mst0_0",
+      layer: "top",
       diameter: 1,
     },
   ],
