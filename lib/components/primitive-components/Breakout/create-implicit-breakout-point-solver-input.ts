@@ -15,6 +15,10 @@ import type { Bus } from "../Bus"
 import type { DifferentialPair } from "../DifferentialPair"
 import type { Group } from "../Group/Group"
 import type { Port } from "../Port"
+import {
+  type SingleRegionEdgeGroup,
+  assignSingleRegionBreakoutEdges,
+} from "./assign-single-region-breakout-edges"
 import type { Breakout } from "./Breakout"
 
 type SourceTraceId = SourceTrace["source_trace_id"]
@@ -42,6 +46,11 @@ export interface ImplicitBreakoutPointSolverContext {
     PcbGroupId,
     ReadonlyMap<SourceTraceId, SourcePortId>
   >
+  /**
+   * For a breakout solved on its own, the connections grouped by the edge
+   * (and band) they should exit through. The solver runs once per group.
+   */
+  singleRegionEdgeGroups?: readonly SingleRegionEdgeGroup[]
 }
 
 const getRoutingScopeOrThrow = (breakout: Breakout): Group<z.ZodType> => {
@@ -265,20 +274,23 @@ const getFacingEdge = ({
   return "bottom"
 }
 
-const getSingleRegionPreferredEdge = ({
+const getExternalPositionsBySourceTraceId = ({
   region,
   sourceTraces,
 }: {
   region: BreakoutRegionGeometry
   sourceTraces: readonly SourceTrace[]
-}): BreakoutEdge | undefined => {
+}): Map<SourceTraceId, Map<string, { x: number; y: number }>> => {
+  const externalPositionsBySourceTraceId = new Map<
+    SourceTraceId,
+    Map<string, { x: number; y: number }>
+  >()
   const root = region.breakout.root
-  if (!root) return undefined
+  if (!root) return externalPositionsBySourceTraceId
 
   const internalSourcePortIds = new Set(
     region.sourcePortIdBySourceTraceId.values(),
   )
-  const externalPcbPorts = new Map<string, { x: number; y: number }>()
   for (const sourceTrace of sourceTraces) {
     if (
       !sourceTrace.connected_source_port_ids.some((sourcePortId) =>
@@ -305,10 +317,36 @@ const getSingleRegionPreferredEdge = ({
         pcbPort.y >= region.bounds.minY &&
         pcbPort.y <= region.bounds.maxY
       if (isInsideRegion) continue
-      externalPcbPorts.set(pcbPort.pcb_port_id, {
+      const externalPositions =
+        externalPositionsBySourceTraceId.get(sourceTrace.source_trace_id) ??
+        new Map<string, { x: number; y: number }>()
+      externalPositions.set(pcbPort.pcb_port_id, {
         x: pcbPort.x,
         y: pcbPort.y,
       })
+      externalPositionsBySourceTraceId.set(
+        sourceTrace.source_trace_id,
+        externalPositions,
+      )
+    }
+  }
+  return externalPositionsBySourceTraceId
+}
+
+const getSingleRegionPreferredEdge = ({
+  region,
+  externalPositionsBySourceTraceId,
+}: {
+  region: BreakoutRegionGeometry
+  externalPositionsBySourceTraceId: ReadonlyMap<
+    SourceTraceId,
+    ReadonlyMap<string, { x: number; y: number }>
+  >
+}): BreakoutEdge | undefined => {
+  const externalPcbPorts = new Map<string, { x: number; y: number }>()
+  for (const externalPositions of externalPositionsBySourceTraceId.values()) {
+    for (const [pcbPortId, position] of externalPositions) {
+      externalPcbPorts.set(pcbPortId, position)
     }
   }
   if (externalPcbPorts.size === 0) return undefined
@@ -518,6 +556,40 @@ const getCoordinatedFanoutLayers = ({
   return coordinatedLayers
 }
 
+const warnAboutUnknownFanoutDirectionBuses = ({
+  breakout,
+  routingScope,
+  busFanoutDirections,
+}: {
+  breakout: Breakout
+  routingScope: Group<z.ZodType>
+  busFanoutDirections?: Readonly<Record<string, unknown>>
+}) => {
+  if (!busFanoutDirections || !breakout.root) return
+  const sourceComponentId = breakout.root.db.pcb_component
+    .list()
+    .find(
+      (pcbComponent) => pcbComponent.pcb_group_id === breakout.pcb_group_id,
+    )?.source_component_id
+  if (!sourceComponentId) return
+  const subcircuitId = routingScope.getSubcircuit().subcircuit_id
+  const busNames = new Set(
+    (routingScope.selectAll("bus") as Bus[])
+      .filter((bus) => bus.getSubcircuit().subcircuit_id === subcircuitId)
+      .map((bus) => bus.name),
+  )
+  for (const busName of Object.keys(busFanoutDirections)) {
+    if (busNames.has(busName)) continue
+    breakout.root.db.source_property_ignored_warning.insert({
+      source_component_id: sourceComponentId,
+      property_name: "busFanoutDirections",
+      error_type: "source_property_ignored_warning",
+      message: `Breakout "${breakout.name}" busFanoutDirections names unknown bus "${busName}"; the entry is ignored`,
+      subcircuit_id: subcircuitId ?? undefined,
+    })
+  }
+}
+
 /** Build one canonical input for every automatic breakout in a routing scope. */
 export const createImplicitBreakoutPointSolverContext = (
   breakout: Breakout,
@@ -672,10 +744,19 @@ export const createImplicitBreakoutPointSolverContext = (
     PcbGroupId,
     ReadonlyMap<SourceTraceId, SourcePortId>
   >()
-  const singleRegionPreferredEdge =
+  const externalPositionsBySourceTraceId =
     regions.length === 1
-      ? getSingleRegionPreferredEdge({ region: regions[0]!, sourceTraces })
+      ? getExternalPositionsBySourceTraceId({
+          region: regions[0]!,
+          sourceTraces,
+        })
       : undefined
+  const singleRegionPreferredEdge = externalPositionsBySourceTraceId
+    ? getSingleRegionPreferredEdge({
+        region: regions[0]!,
+        externalPositionsBySourceTraceId,
+      })
+    : undefined
   const solverRegions = regions.map((region, regionIndex) => {
     sourcePortIdByConnectionIdByRegionId.set(
       region.pcbGroupId,
@@ -694,13 +775,55 @@ export const createImplicitBreakoutPointSolverContext = (
     }
   })
 
+  const boundaryPointSpacing = getBoundaryPointSpacing(breakout)
+  let singleRegionEdgeGroups: SingleRegionEdgeGroup[] | undefined
+  if (externalPositionsBySourceTraceId) {
+    const region = regions[0]!
+    const busFanoutDirections = region.breakout._parsedProps.busFanoutDirections
+    warnAboutUnknownFanoutDirectionBuses({
+      breakout: region.breakout,
+      routingScope,
+      busFanoutDirections,
+    })
+    singleRegionEdgeGroups = assignSingleRegionBreakoutEdges({
+      bounds: region.bounds,
+      connectionIds: sortedSourceTraceIds,
+      pinPositionByConnectionId: new Map(
+        [...region.endpointBySourceTraceId].map(([sourceTraceId, endpoint]) => [
+          sourceTraceId,
+          endpoint.position,
+        ]),
+      ),
+      externalPositionsByConnectionId: new Map(
+        [...externalPositionsBySourceTraceId].map(
+          ([sourceTraceId, positions]) => [
+            sourceTraceId,
+            [...positions.values()],
+          ],
+        ),
+      ),
+      atomicGroups: [...new Set(differentialPairBySourceTraceId.values())].map(
+        (pair) => [pair.positiveSourceTraceId, pair.negativeSourceTraceId],
+      ),
+      buses,
+      busFanoutDirections,
+      fallbackEdge: solverRegions[0]!.edge,
+      boundaryPointSpacing,
+      layerCount: getCoordinatedFanoutLayers({
+        routingScope,
+        automaticBreakouts,
+      }).length,
+    })
+  }
+
   return {
     input: {
       regions: solverRegions,
       connections,
       buses,
-      boundaryPointSpacing: getBoundaryPointSpacing(breakout),
+      boundaryPointSpacing,
     },
     sourcePortIdByConnectionIdByRegionId,
+    ...(singleRegionEdgeGroups ? { singleRegionEdgeGroups } : {}),
   }
 }
