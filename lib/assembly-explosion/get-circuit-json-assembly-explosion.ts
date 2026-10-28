@@ -203,25 +203,31 @@ export function getCircuitJsonAssemblyExplosion(
     }
   }
   return {
-    circuitJson: structuredClone(assembled).map((record) => {
-      if (record.type === "cad_component")
-        return {
-          ...record,
-          position: plus(
-            record.position,
-            cadOffsets.get(record.cad_component_id) ?? zero(),
-          ),
-        }
-      if (record.type === "cad_reference_surface")
-        return {
-          ...record,
-          center: plus(
-            record.center,
-            surfaceOffsets.get(record.cad_reference_surface_id) ?? zero(),
-          ),
-        }
-      return record
-    }),
+    circuitJson: structuredClone(assembled)
+      .filter(
+        (record) =>
+          record.type !== "cad_explosion_stage" &&
+          record.type !== "cad_explosion_move",
+      )
+      .map((record) => {
+        if (record.type === "cad_component")
+          return {
+            ...record,
+            position: plus(
+              record.position,
+              cadOffsets.get(record.cad_component_id) ?? zero(),
+            ),
+          }
+        if (record.type === "cad_reference_surface")
+          return {
+            ...record,
+            center: plus(
+              record.center,
+              surfaceOffsets.get(record.cad_reference_surface_id) ?? zero(),
+            ),
+          }
+        return record
+      }),
     stages: stages.map((stage) => stage.name),
     lines,
     collisionCheckStatus: "not_implemented",

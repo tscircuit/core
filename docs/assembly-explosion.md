@@ -174,3 +174,7 @@ tree without rerendering electrical geometry. It uses registered component names
 rather than constructor identity when finding stages. This lets the real RP2040
 fixture retain its copper-preservation guards and pinned renderer. The producer
 must supply settled roots and the matching assembled geometry from that circuit.
+
+Derived pose outputs omit explosion instructions so saving and reopening an
+already-exploded pose cannot accidentally apply the same movements twice. Retain
+the assembled document for interactive playback.

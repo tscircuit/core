@@ -93,5 +93,9 @@ test("TSX exports ordered movements and whole-stage targets that survive JSON-on
   expect(getCircuitJsonAssemblyExplosion(json).circuitJson).toEqual(
     full.circuitJson,
   )
+  expect(getCircuitJsonAssemblyExplosion(full.circuitJson).stages).toEqual([])
+  expect(getCircuitJsonAssemblyExplosion(full.circuitJson).circuitJson).toEqual(
+    full.circuitJson,
+  )
   expect(json).toEqual(original)
 })

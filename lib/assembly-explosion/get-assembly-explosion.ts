@@ -333,17 +333,23 @@ export function getAssemblyExplosion(
       }
     }
   }
-  const circuitJson = structuredClone(assembled).map((record) => {
-    if (
-      record.type !== "cad_component" &&
-      record.type !== "cad_reference_surface"
+  const circuitJson = structuredClone(assembled)
+    .filter(
+      (record) =>
+        record.type !== "cad_explosion_stage" &&
+        record.type !== "cad_explosion_move",
     )
-      return record
-    const offset = sourceOffsets.get(record.source_component_id)
-    if (!offset) return record
-    if (record.type === "cad_component")
-      return { ...record, position: pointPlus(record.position, offset) }
-    return { ...record, center: pointPlus(record.center, offset) }
-  })
+    .map((record) => {
+      if (
+        record.type !== "cad_component" &&
+        record.type !== "cad_reference_surface"
+      )
+        return record
+      const offset = sourceOffsets.get(record.source_component_id)
+      if (!offset) return record
+      if (record.type === "cad_component")
+        return { ...record, position: pointPlus(record.position, offset) }
+      return { ...record, center: pointPlus(record.center, offset) }
+    })
   return { circuitJson, stages, lines, collisionCheckStatus: "not_implemented" }
 }
