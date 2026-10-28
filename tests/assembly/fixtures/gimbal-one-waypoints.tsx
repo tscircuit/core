@@ -10,9 +10,12 @@ interface GimbalPart {
   objUrl: string
 }
 
-// See gimbal-one-mechanical.md for the original assembly and asset provenance.
-// Mesh vertices are circuit-world points, right-handed millimeters:
-// +X right, +Y top, +Z above. Keep each imported part at the world origin.
+// Actual assembly: https://tscircuit.com/mohan-bee/gimbal-one-pcb?version=0.1.10#3d
+// Lossless 221-part OBJ extract; archive SHA-256:
+// 367e033b735c78e83bbbe067a5e2b103b0fd0d68006293189ae82586ad201744
+// Vertices are circuit-world points in right-handed mm: +X right, +Y top,
+// +Z above. Keep imported parts at the world origin. PH3 motor terminations
+// below are proposed additions, not connectors supplied with the Robu motors.
 const parts: GimbalPart[] = JSON.parse(
   gunzipSync(
     readFileSync(new URL("./gimbal-one-mechanical.json.gz", import.meta.url)),

@@ -1,51 +1,13 @@
 import { expect, test } from "bun:test"
 import { assembly } from "lib"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { RotatedCableBoards } from "./fixtures/rotated-cable-boards"
 
 test("end-anchored waypoints follow the start board axes", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <assembly.device>
-      <board
-        name="START"
-        width={30}
-        height={20}
-        thickness={1.6}
-        pcbX={20}
-        pcbY={10}
-        pcbRotation={90}
-        routingDisabled
-      >
-        <connector
-          name="J1"
-          standard="jst_ph"
-          pinCount={3}
-          footprint="jst3_ph"
-          pcbX={3}
-          pcbY={5}
-          pcbRotation={30}
-        />
-      </board>
-      <board
-        name="END"
-        width={30}
-        height={20}
-        thickness={1.6}
-        pcbX={-30}
-        pcbY={-20}
-        pcbRotation={270}
-        routingDisabled
-      >
-        <connector
-          name="J2"
-          standard="jst_ph"
-          pinCount={3}
-          footprint="jst3_ph"
-          pcbX={3}
-          pcbY={5}
-          pcbRotation={120}
-        />
-      </board>
+      <RotatedCableBoards />
       <assembly.cable
         name="HARNESS"
         from=".J1"
