@@ -1,13 +1,13 @@
 # Assembly explosion rendering
 
-The stage/move props and PoppyGL guide APIs are merged. The core implementation
-is under review in [core #4631](https://github.com/tscircuit/core/pull/4631).
+The stage/move props and PoppyGL guide APIs are merged. The original core implementation
+merged in [core #4631](https://github.com/tscircuit/core/pull/4631).
 
 | Implementation | Status | Published dependency |
 | --- | --- | --- |
 | [Props stage and move API](https://github.com/tscircuit/props/pull/936) | Merged | `@tscircuit/props@0.0.707` |
 | [PoppyGL explosion guide lines](https://github.com/tscircuit/poppygl/pull/49) | Merged | `poppygl@0.0.36` |
-| [Core constrained explosion views](https://github.com/tscircuit/core/pull/4631) | Under review | Uses the published releases above |
+| [Core constrained explosion views](https://github.com/tscircuit/core/pull/4631) | Merged | Uses the published releases above |
 
 Core consumes published npm versions of both upstream packages. The existing
 dependency check continues to reject PR preview dependencies before merge.
@@ -134,9 +134,9 @@ they do not certify clearance.
 
 After CAD rendering, `getCircuitJson()` emits `cad_explosion_stage` and
 `cad_explosion_move` records alongside assembled geometry. These follow the
-[Circuit JSON schema proposal](https://github.com/tscircuit/circuit-json/pull/937).
-The draft dependency uses that proposal's preview; replace it with a published
-release before merging (the existing dependency gate remains enabled).
+[merged Circuit JSON schema](https://github.com/tscircuit/circuit-json/pull/937),
+published in `circuit-json@0.0.539`. Core uses that published release; the existing
+dependency gate remains enabled.
 
 Stage records contain explicit CAD/reference-surface membership and resolved
 playback order. Move records contain sequential order, typed targets and resolved
