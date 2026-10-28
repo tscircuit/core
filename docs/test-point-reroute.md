@@ -24,7 +24,7 @@ The reproducible board prototype uses [astra/pd-power-supply](https://tscircuit.
 
 The prototype places three 1 mm bottom pads for SDA, SCL and OUTPUT_EN with 2.54 mm minimum center spacing. Full routing and placement checks plus explicit 0.2 mm pad/pad, pad/trace and via/pad clearance checks introduce no findings. The comparison retains referenced objects and physical geometry instead of relying on counts alone. Existing board findings remain.
 
-The merged rerouter is consumed as a pinned GitHub source package and bundled into core. The props API currently comes from the preview of [props #963](https://github.com/tscircuit/props/pull/963). Merge and publish that PR, then replace both props preview dependency entries with the published version before merging core. The dependency CI gate intentionally rejects preview URLs.
+The merged rerouter is consumed as a pinned GitHub source package and bundled into core. The phase API uses published `@tscircuit/props` version `0.0.714` or later, including the `testPoint`-prefixed options from [props #963](https://github.com/tscircuit/props/pull/963).
 
 ![PD power supply before and after, standard layer colors and footprints with marked test points](test-point-images/pd-power-supply-before-after.png)
 
