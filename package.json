@@ -124,8 +124,7 @@
     "schematic-symbols": "*",
     "spicets": "*",
     "typescript": "^5.0.0",
-    "@tscircuit/cableprinter": "*",
-    "circuit-json-to-gltf": "*"
+    "@tscircuit/cableprinter": "*"
   },
   "dependencies": {
     "@flatten-js/core": "^1.6.2",

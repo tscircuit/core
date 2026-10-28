@@ -1,6 +1,5 @@
 import { buildSubtree } from "@tscircuit/circuit-json-util"
 import type { AnyCircuitElement, DrawingPartView } from "circuit-json"
-import { createSceneFromGLTF, loadGLTFWithResourcesFromURL } from "poppygl"
 
 /** Select finalized CAD/PCB world geometry (right-handed XYZ, +Z up, mm).
  * Standalone board holes belong to subcircuits rather than source components.
@@ -42,18 +41,4 @@ export function getDrawingViewGeometry(
     )
   }
   return selected
-}
-
-/** Load exporter geometry in right-handed glTF scene mm (+Y up). Positions are
- * points; each draw call's model matrix must be applied before measurement.
- */
-export async function loadDrawingScene(glb: ArrayBuffer | object) {
-  const bytes = new Uint8Array(glb as ArrayBuffer)
-  let binary = ""
-  for (let i = 0; i < bytes.length; i += 8192)
-    binary += String.fromCharCode(...bytes.subarray(i, i + 8192))
-  const { gltf, resources } = await loadGLTFWithResourcesFromURL(
-    `data:model/gltf-binary;base64,${btoa(binary)}`,
-  )
-  return createSceneFromGLTF(gltf, resources)
 }
