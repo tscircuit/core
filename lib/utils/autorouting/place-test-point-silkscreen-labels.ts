@@ -100,11 +100,17 @@ export function placeTestPointSilkscreenLabels(
   ])
   const board = db.pcb_board.list()[0]
   const boardBounds = board ? getBoardBounds(board) : undefined
+  // Measure each layer's obstacles once; placed labels join their layer's list.
+  const obstaclesByLayer = new Map<LayerRef, Bounds[]>()
 
   for (const target of targets) {
     const text = getLabelText(db, target.sourceTraceId, usedNames)
     usedNames.add(text)
-    const obstacles = getObstacleBounds(db, target.layer)
+    let obstacles = obstaclesByLayer.get(target.layer)
+    if (!obstacles) {
+      obstacles = getObstacleBounds(db, target.layer)
+      obstaclesByLayer.set(target.layer, obstacles)
+    }
     const radius = target.diameter / 2
     const label = {
       pcb_component_id: target.pcbComponentId,
@@ -139,9 +145,11 @@ export function placeTestPointSilkscreenLabels(
         !obstacles.some((obstacle) => doBoundsOverlap(bounds, obstacle))
       )
     }
-    db.pcb_silkscreen_text.insert({
+    const placed = db.pcb_silkscreen_text.insert({
       ...label,
       anchor_position: positions.find(isClear) ?? positions[0]!,
     })
+    const placedBounds = getPcbElementBounds(placed)
+    if (placedBounds) obstacles.push(placedBounds)
   }
 }
