@@ -9,8 +9,14 @@ test("USB-C connector text is aligned with the schematic box left edge", async (
 
   const mockPartsEngine: PartsEngine = {
     findPart: async () => ({ jlcpcb: ["C165948"] }),
-    fetchPartCircuitJson: async ({ supplierPartNumber }) => {
-      if (supplierPartNumber === "C165948") {
+    fetchPartCircuitJson: async ({
+      supplierPartNumber,
+      manufacturerPartNumber,
+    }) => {
+      if (
+        supplierPartNumber === "C165948" ||
+        manufacturerPartNumber === "HRO-TYPE-C-31-M-12"
+      ) {
         return usbCC165948CircuitJson as AnyCircuitElement[]
       }
       return undefined
