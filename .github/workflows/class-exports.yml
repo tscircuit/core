@@ -15,5 +15,5 @@ jobs:
         with:
           bun-version: latest
       - run: bun install
-      - run: bun test tests/scripts/check-class-exports.test.ts
+      - run: bun test tests/scripts/
       - run: bun run check:class-exports

@@ -28,6 +28,7 @@ export * from "./solvers"
 
 // Allows easier introspection of render process
 export * from "./components/base-components/Renderable"
+export * from "./components/base-components/render-phases"
 export * from "./events/index"
 
 export { createElement } from "react"

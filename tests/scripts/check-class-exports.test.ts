@@ -72,11 +72,11 @@ test("class export check detects additional exports without flagging utilities o
       join(root, "lib/utils.ts"),
       "export const a = 1; export const b = 2",
     )
-    expect(checkClassExports(root)).toEqual([
+    expect(checkClassExports(root, [])).toEqual([
       "lib/nested/Diode.tsx:2: Class files must have only one export; found Diode, helper. Move extra exports to a separate module.",
     ])
     writeFileSync(join(root, "lib/nested/Diode.tsx"), "export class Diode {}")
-    expect(checkClassExports(root)).toEqual([])
+    expect(checkClassExports(root, [])).toEqual([])
   } finally {
     rmSync(root, { recursive: true, force: true })
   }

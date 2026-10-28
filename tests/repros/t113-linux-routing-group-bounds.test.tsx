@@ -3,7 +3,7 @@ import { WindingBreakoutSolver } from "@tscircuit/winding-breakout-point-solver"
 import { convertCircuitJsonToPcbSvg } from "circuit-to-svg"
 import { getSvgFromGraphicsObject } from "graphics-debug"
 import React from "react"
-import { Circuit } from "../../lib/root-circuit-aliases"
+import { Circuit } from "../../lib"
 import T113LinuxBoard from "../fixtures/t113-linux-exact/index.circuit"
 import windingBreakoutInput from "../fixtures/t113-linux-exact/winding-breakout-input.json"
 

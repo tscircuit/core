@@ -1,5 +1,5 @@
+import { Circuit } from "lib"
 import { getPhaseTimingsFromRenderEvents } from "lib/utils/render-events/getPhaseTimingsFromRenderEvents"
-import { Circuit } from "../../lib/root-circuit-aliases"
 
 export const runBenchmark = async ({ Component }: { Component: any }) => {
   const circuit = new Circuit()

@@ -1,7 +1,7 @@
 import type { FanoutTracePath } from "@tscircuit/props"
+import type { RenderPhase } from "../components/base-components/render-phases"
 import type { SOLVERS } from "lib/solvers"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
-import type { RenderPhase } from "../components/base-components/render-phases"
 
 export type RootCircuitEventName =
   | "asyncEffect:start"

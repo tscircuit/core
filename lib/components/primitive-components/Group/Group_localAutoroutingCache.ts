@@ -1,10 +1,10 @@
 import type { LocalCacheEngine } from "lib/local-cache-engine"
+import type { AutorouterOptions } from "lib/utils/autorouting/CapacityMeshAutorouter"
 import type {
   SimpleRouteJson,
   SimplifiedPcbTrace,
 } from "lib/utils/autorouting/SimpleRouteJson"
 import pkgJson from "../../../../package.json"
-import type { AutorouterOptions } from "../../../utils/autorouting/capacity-mesh-autorouter-options"
 
 const getFnv1aHash = (value: string): number => {
   let hash = 2166136261

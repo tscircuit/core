@@ -1,9 +1,18 @@
+import { pcbLayoutProps } from "@tscircuit/props"
 import type { LayerRef } from "circuit-json"
 import type { ZodType } from "zod"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
-import { baseBreakoutPointProps } from "./base-breakout-point-props"
 import type { Net } from "./Net"
 import type { Port } from "./Port"
+
+/**
+ * Shared base props for breakout points — layout props without rotation/layer.
+ * Subclasses extend this schema with additional fields (e.g. `connection`).
+ */
+export const baseBreakoutPointProps = pcbLayoutProps.omit({
+  pcbRotation: true,
+  layer: true,
+})
 
 /**
  * Base class for both user-facing `BreakoutPoint` (which requires a

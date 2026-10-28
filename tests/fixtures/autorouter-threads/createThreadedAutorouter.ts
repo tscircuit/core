@@ -1,6 +1,6 @@
 import { mock } from "bun:test"
 import { TscircuitAutorouter } from "lib/utils/autorouting/CapacityMeshAutorouter"
-import type { AutorouterOptions } from "../../../lib/utils/autorouting/capacity-mesh-autorouter-options"
+import type { AutorouterOptions } from "lib/utils/autorouting/CapacityMeshAutorouter"
 import type { AutorouterRuntime } from "lib/utils/autorouting/create-autorouter-runtime"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 

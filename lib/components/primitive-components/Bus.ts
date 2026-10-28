@@ -1,9 +1,11 @@
-import { busProps } from "@tscircuit/props"
 import type { SourceBus } from "circuit-json"
 import { getBusSourceTraceIdOrThrow } from "lib/utils/autorouting/getBusSourceTraceIdOrThrow"
+import { busProps } from "@tscircuit/props"
 import { getSourceBusRouteLength } from "lib/utils/autorouting/getSourceBusRouteLength"
-import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
-import { type BaseComponentConfig } from "../base-components/PrimitiveComponent/base-component-config"
+import {
+  type BaseComponentConfig,
+  PrimitiveComponent,
+} from "../base-components/PrimitiveComponent"
 
 /**
  * Declares a group of connections that an autorouter should keep together.

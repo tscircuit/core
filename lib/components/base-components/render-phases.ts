@@ -1,5 +1,3 @@
-import Debug from "debug"
-
 export const orderedRenderPhases = [
   "ReactSubtreesRender",
   "RenderIsolatedSubcircuits",

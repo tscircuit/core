@@ -1,3 +1,14 @@
+import { resolveFootprinterPolarity } from "./utils/resolve-footprinter-polarity"
+import { NormalComponent_doInitialSourcePinSpecificationChecks } from "./NormalComponent_doInitialSourcePinSpecificationChecks"
+import {
+  getNumericPinLabels,
+  isPhysicalPinName,
+  resolvePinLabels,
+  type ResolvedPinLabel,
+} from "lib/utils/schematic/resolvePinLabels"
+import { resolveManufacturerPartNumber } from "@tscircuit/props"
+import { composeCadModelRotation } from "lib/utils/cad/compose-cad-model-rotation"
+import { getFoldedCadComponentPlacement } from "lib/utils/cad/get-folded-cad-component-placement"
 import { fp } from "@tscircuit/footprinter"
 import { normalizeDegrees } from "@tscircuit/math-utils"
 import type {
@@ -14,7 +25,6 @@ import type {
   SpiceModelElement,
   SupplierPartNumbers,
 } from "@tscircuit/props"
-import { resolveManufacturerPartNumber } from "@tscircuit/props"
 import {
   type AnyCircuitElement,
   type LayerRef,
@@ -36,8 +46,6 @@ import {
 import { underscorifyPinStyles } from "lib/soup/underscorifyPinStyles"
 import { underscorifyPortArrangement } from "lib/soup/underscorifyPortArrangement"
 import { getBoundsForSchematic } from "lib/utils/autorouting/getBoundsForSchematic"
-import { composeCadModelRotation } from "lib/utils/cad/compose-cad-model-rotation"
-import { getFoldedCadComponentPlacement } from "lib/utils/cad/get-folded-cad-component-placement"
 import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
 import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromCircuitJson"
 import { filterPinLabels } from "lib/utils/filterPinLabels"
@@ -63,12 +71,6 @@ import { getPinsFromPortArrangement } from "lib/utils/schematic/getSizeOfSidesFr
 import { isCircuitJsonSymbol } from "lib/utils/schematic/isCircuitJsonSymbol"
 import { normalizeSchematicSymbolCircuitJson } from "lib/utils/schematic/normalizeSchematicSymbolCircuitJson"
 import { parsePinNumberFromLabelsOrThrow } from "lib/utils/schematic/parsePinNumberFromLabelsOrThrow"
-import {
-  type ResolvedPinLabel,
-  getNumericPinLabels,
-  isPhysicalPinName,
-  resolvePinLabels,
-} from "lib/utils/schematic/resolvePinLabels"
 import { selectSymbolCircuitJson } from "lib/utils/schematic/selectSymbolCircuitJson"
 import {
   type ReactElement,
@@ -77,14 +79,15 @@ import {
 } from "react"
 import { type SchSymbol, symbols } from "schematic-symbols"
 import { decomposeTSR } from "transformation-matrix"
-import { z } from "zod"
+import { ZodType, z } from "zod"
 import { InvalidProps } from "../../../errors/InvalidProps"
+import { CadAssembly } from "../../primitive-components/CadAssembly"
+import { CadModel } from "../../primitive-components/CadModel"
 import { Footprint } from "../../primitive-components/Footprint"
 import { Port } from "../../primitive-components/Port"
 import { SymbolComponent } from "../../primitive-components/Symbol"
 import { PrimitiveComponent } from "../PrimitiveComponent"
 import type { INormalComponent } from "./INormalComponent"
-import { type PortMap } from "./port-map"
 import { NormalComponent__getMinimumFlexContainerSize } from "./NormalComponent__getMinimumFlexContainerSize"
 import { NormalComponent__repositionOnPcb } from "./NormalComponent__repositionOnPcb"
 import { NormalComponent_addInternalConnectionFabricationNotes } from "./NormalComponent_addInternalConnectionFabricationNotes"
@@ -92,8 +95,6 @@ import {
   NormalComponent_doInitialCheckRefDesConvention,
   getDefaultExpectedRefDesPrefixesForFtype,
 } from "./NormalComponent_doInitialCheckRefDesConvention"
-import { NormalComponent_doInitialComponentAvailabilityWarning } from "./NormalComponent_doInitialComponentAvailabilityWarning"
-import { NormalComponent_doInitialMissingManufacturerPartNumberWarning } from "./NormalComponent_doInitialMissingManufacturerPartNumberWarning"
 import {
   NormalComponent_doInitialPartOrientationAnalysis,
   NormalComponent_updatePartOrientationAnalysis,
@@ -104,7 +105,8 @@ import { NormalComponent_doInitialResolveFootprintPinLabels } from "./NormalComp
 import { NormalComponent_doInitialSchematicComponentRender } from "./NormalComponent_doInitialSchematicComponentRender"
 import { NormalComponent_doInitialSilkscreenOverlapAdjustment } from "./NormalComponent_doInitialSilkscreenOverlapAdjustment"
 import { NormalComponent_doInitialSourceDesignRuleChecks } from "./NormalComponent_doInitialSourceDesignRuleChecks"
-import { NormalComponent_doInitialSourcePinSpecificationChecks } from "./NormalComponent_doInitialSourcePinSpecificationChecks"
+import { NormalComponent_doInitialMissingManufacturerPartNumberWarning } from "./NormalComponent_doInitialMissingManufacturerPartNumberWarning"
+import { NormalComponent_doInitialComponentAvailabilityWarning } from "./NormalComponent_doInitialComponentAvailabilityWarning"
 import { NormalComponent_doInitialSupplierFootprintMismatchWarning } from "./NormalComponent_doInitialSupplierFootprintMismatchWarning"
 import { canMergePortDefinitions } from "./utils/canMergePortDefinitions"
 import { getPrimaryPortsFromPortHintGroups } from "./utils/getPrimaryPortsFromPortHintGroups"
@@ -113,7 +115,6 @@ import { isBlobUrl } from "./utils/isBlobUrl"
 import { isHttpUrl } from "./utils/isHttpUrl"
 import { isStaticAssetPath } from "./utils/isStaticAssetPath"
 import { parseLibraryFootprintRef } from "./utils/parseLibraryFootprintRef"
-import { resolveFootprinterPolarity } from "./utils/resolve-footprinter-polarity"
 
 const debug = Debug("tscircuit:core")
 
@@ -122,6 +123,10 @@ const rotation3 = z.object({
   y: rotation,
   z: rotation,
 })
+
+export type PortMap<T extends string> = {
+  [K in T]: Port
+}
 
 /**
  * A NormalComponent is the base class for most components that a user will

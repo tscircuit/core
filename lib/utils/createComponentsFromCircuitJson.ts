@@ -1,3 +1,4 @@
+import { getImportedInternallyConnectedPinNames } from "./get-imported-internally-connected-pin-names"
 import { getUnitVectorFromDirection } from "@tscircuit/math-utils"
 import type { PcbSoldermaskOpeningProps, PinLabelsProp } from "@tscircuit/props"
 import {
@@ -42,11 +43,10 @@ import { SilkscreenRect } from "lib/components/primitive-components/SilkscreenRe
 import { SilkscreenText } from "lib/components/primitive-components/SilkscreenText"
 import { SmtPad } from "lib/components/primitive-components/SmtPad"
 import { SolderPaste } from "lib/components/primitive-components/SolderPaste"
+import { isStandalonePcbSolderPaste } from "../components/primitive-components/standalone-pcb-solder-paste"
 import { SymbolComponent } from "lib/components/primitive-components/Symbol"
 import type { PrimitiveComponent } from "../components/base-components/PrimitiveComponent"
-import { isStandalonePcbSolderPaste } from "../components/primitive-components/standalone-pcb-solder-paste"
 import { createPinrowSilkscreenText } from "./createPinrowSilkscreenText"
-import { getImportedInternallyConnectedPinNames } from "./get-imported-internally-connected-pin-names"
 
 type SchematicPrimitiveWithStrokeWidth = Extract<
   AnyCircuitElement,

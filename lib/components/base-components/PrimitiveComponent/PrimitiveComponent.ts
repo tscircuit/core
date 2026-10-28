@@ -1,16 +1,24 @@
+import type { Port } from "lib/components/primitive-components/Port"
+import { assertUnambiguousPhysicalPortSelection } from "lib/components/primitive-components/Port/assertUnambiguousPhysicalPortSelection"
+import { getConstructionPropsSchema } from "./get-construction-props-schema"
+import {
+  selectNetByLiteralSelector,
+  type NetSelector,
+} from "./select-net-by-literal-selector"
+import type { Net } from "lib/components/primitive-components/Net"
 import type { PcbSx } from "@tscircuit/props"
-import type { LayerRef } from "circuit-json"
+import type { AnySourceComponent, LayerRef } from "circuit-json"
 import { type Options, selectAll, selectOne } from "css-select"
+import Debug from "debug"
 import type { IsolatedCircuit } from "lib/IsolatedCircuit"
+import type { RootCircuit } from "lib/RootCircuit"
 import { Renderable } from "lib/components/base-components/Renderable"
 import type { BoardI } from "lib/components/normal-components/Board/BoardI"
 import type { IGroup } from "lib/components/primitive-components/Group/IGroup"
 import type { ISubcircuit } from "lib/components/primitive-components/Group/Subcircuit/ISubcircuit"
-import type { Net } from "lib/components/primitive-components/Net"
-import type { Port } from "lib/components/primitive-components/Port"
-import { assertUnambiguousPhysicalPortSelection } from "lib/components/primitive-components/Port/assertUnambiguousPhysicalPortSelection"
 import type { ISymbol } from "lib/components/primitive-components/Symbol/ISymbol"
 import { InvalidProps } from "lib/errors/InvalidProps"
+import type { Ftype } from "lib/utils/constants"
 import {
   evaluateCalcString,
   extractCalcIdentifiers,
@@ -34,19 +42,14 @@ import {
   rotate,
   translate,
 } from "transformation-matrix"
-import type { ZodType } from "zod"
+import type { Primitive, ZodType } from "zod"
 import { z } from "zod"
-import { type BaseComponentConfig } from "./base-component-config"
 import {
+  cssSelectPrimitiveComponentAdapter,
   cssSelectPrimitiveComponentAdapterOnlySubcircuits,
   cssSelectPrimitiveComponentAdapterWithoutSubcircuits,
 } from "./cssSelectPrimitiveComponentAdapter"
-import { getConstructionPropsSchema } from "./get-construction-props-schema"
 import { preprocessSelector } from "./preprocessSelector"
-import {
-  type NetSelector,
-  selectNetByLiteralSelector,
-} from "./select-net-by-literal-selector"
 
 const cssSelectOptionsInsideSubcircuit: Options<
   PrimitiveComponent,
@@ -54,6 +57,14 @@ const cssSelectOptionsInsideSubcircuit: Options<
 > = {
   adapter: cssSelectPrimitiveComponentAdapterWithoutSubcircuits,
   cacheResults: true,
+}
+
+export interface BaseComponentConfig {
+  componentName: string
+  schematicSymbolName?: string | null
+  zodProps: z.ZodType
+  sourceFtype?: Ftype | null
+  shouldRenderAsSchematicBox?: boolean
 }
 
 /**

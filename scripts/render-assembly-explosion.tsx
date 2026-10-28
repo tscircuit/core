@@ -1,11 +1,10 @@
-import { convertCircuitJsonToGltf } from "circuit-json-to-gltf"
-import { getAssemblyExplosion } from "lib"
 import { mkdirSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
+import { Circuit, getAssemblyExplosion } from "lib"
+import { convertCircuitJsonToGltf } from "circuit-json-to-gltf"
 import { renderGLTFToPNGFromGLB } from "poppygl"
 import { ExplosionLamp } from "tests/assembly/fixtures/explosion-lamp"
 import { poppyglExplosionLines } from "tests/assembly/fixtures/poppygl-explosion-lines"
-import { Circuit } from "../lib/root-circuit-aliases"
 
 // Run: bun scripts/render-assembly-explosion.tsx [output-directory]
 const outputDirectory = process.argv[2] ?? "work/assembly-explosion-preview"

@@ -1,6 +1,5 @@
 import { layer_ref } from "circuit-json"
-import { BaseBreakoutPoint } from "./BaseBreakoutPoint"
-import { baseBreakoutPointProps } from "./base-breakout-point-props"
+import { BaseBreakoutPoint, baseBreakoutPointProps } from "./BaseBreakoutPoint"
 
 /**
  * Internal-only breakout point that is created automatically by

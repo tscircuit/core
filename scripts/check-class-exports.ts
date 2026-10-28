@@ -2,6 +2,7 @@ import { readdirSync, readFileSync } from "node:fs"
 import { resolve, relative } from "node:path"
 import { fileURLToPath } from "node:url"
 import ts from "typescript"
+import { classExportExceptions } from "./class-export-exceptions"
 
 /** Class implementation files get one export, including type-only exports.
  * Barrel files and utility modules without a top-level class are unaffected.
@@ -84,7 +85,15 @@ export function getClassFileExports(fileName: string, source: string) {
   )
 }
 
-export function checkClassExports(root: string) {
+export function checkClassExports(
+  root: string,
+  exceptions: typeof classExportExceptions = classExportExceptions,
+) {
+  const remainingExceptions = new Set(
+    exceptions.flatMap(({ file, exports }) =>
+      exports.map((name) => `${file}#${name}`),
+    ),
+  )
   const violations: string[] = []
   for (const path of readdirSync(resolve(root, "lib"), {
     recursive: true,
@@ -92,15 +101,31 @@ export function checkClassExports(root: string) {
   }).sort()) {
     if (!/\.[cm]?tsx?$/.test(path) || /\.d\.[cm]?ts$/.test(path)) continue
     const fileName = resolve(root, "lib", path)
+    const relativePath = relative(root, fileName).replaceAll("\\", "/")
     const exports = getClassFileExports(
       fileName,
       readFileSync(fileName, "utf8"),
     )
-    if (exports.length > 1) {
+    const allowedNames = new Set(
+      exceptions
+        .filter(({ file }) => file === relativePath)
+        .flatMap(({ exports }) => exports),
+    )
+    const uncheckedExports = exports.filter(({ name }) => {
+      if (!allowedNames.has(name)) return true
+      remainingExceptions.delete(`${relativePath}#${name}`)
+      return false
+    })
+    if (uncheckedExports.length > 1) {
       violations.push(
-        `${relative(root, fileName)}:${exports[1]!.line}: Class files must have only one export; found ${exports.map(({ name }) => name).join(", ")}. Move extra exports to a separate module.`,
+        `${relativePath}:${uncheckedExports[1]!.line}: Class files must have only one export; found ${exports.map(({ name }) => name).join(", ")}. Move extra exports to a separate module.`,
       )
     }
+  }
+  for (const exception of remainingExceptions) {
+    violations.push(
+      `${exception}: Stale class-export exception; remove it from scripts/class-export-exceptions.ts.`,
+    )
   }
   return violations
 }

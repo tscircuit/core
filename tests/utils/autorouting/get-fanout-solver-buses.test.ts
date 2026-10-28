@@ -4,7 +4,7 @@ import type {
   CanonicalBusFanoutDirection,
   NinePointAnchor,
 } from "@tscircuit/props"
-import { getFanoutSolverBuses } from "../../../lib/utils/autorouting/fanout-autorouter-options"
+import { getFanoutSolverBuses } from "lib/utils/autorouting/FanoutAutorouter"
 
 const canonicalDirections: CanonicalBusFanoutDirection[] = [
   "topside_left",
