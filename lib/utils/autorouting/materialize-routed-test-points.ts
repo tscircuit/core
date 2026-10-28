@@ -1,13 +1,18 @@
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import type { RoutedTestPoint } from "@tscircuit/test-point-rerouter"
 import type { SourceTrace } from "circuit-json"
+import {
+  placeTestPointSilkscreenLabels,
+  type TestPointLabelTarget,
+} from "./place-test-point-silkscreen-labels"
 
 type SourceTraceId = SourceTrace["source_trace_id"]
 export type ConnectedRoutedTestPoint = RoutedTestPoint & {
   sourceTraceId: SourceTraceId
 }
 
-/** Emit probe targets as source testpoints, PCB ports and exposed circular pads.
+/** Emit probe targets as source testpoints, PCB ports, exposed circular pads
+ * and silkscreen labels.
  * Positions are board-world points in mm, +X right, +Y up, +Z above (right-handed).
  * Bottom-layer points retain board coordinates; fixture mirroring is a later transform.
  */
@@ -28,6 +33,7 @@ export function materializeRoutedTestPoints(
       throw new Error(`Test point name ${point.name} already exists`)
     }
   }
+  const labelTargets: TestPointLabelTarget[] = []
   for (const point of points) {
     const original = db.source_trace.get(point.sourceTraceId)!
     const component = db.source_component.insert({
@@ -83,5 +89,14 @@ export function materializeRoutedTestPoints(
       subcircuit_id: subcircuitId,
       is_covered_with_solder_mask: false,
     })
+    labelTargets.push({
+      pcbComponentId: pcbComponent.pcb_component_id,
+      sourceTraceId: point.sourceTraceId,
+      x: point.x,
+      y: point.y,
+      diameter: point.diameter,
+      layer: point.layer,
+    })
   }
+  placeTestPointSilkscreenLabels(db, labelTargets, subcircuitId)
 }
