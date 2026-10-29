@@ -8,7 +8,7 @@ test("authored waypoints reject coincident points and reversing bends", async ()
   const { circuit } = getTestFixture()
   circuit.add(
     <assembly.device>
-      <board width={50} height={30} routingDisabled>
+      <board width={50} height={30} thickness={1.6} routingDisabled>
         <connector
           name="J1"
           standard="jst_ph"
@@ -57,5 +57,25 @@ test("authored waypoints reject coincident points and reversing bends", async ()
   })
   expect(() => resolveAssemblyCable(harness)).toThrow(
     'assembly.cable "HARNESS" waypoints must not reverse direction',
+  )
+  harness.setProps({
+    ...harness.props,
+    waypoints: [
+      { x: 0.5209445330007908, y: 0, z: 3.9955767409633762 },
+      { x: 9.137991233038413, y: 0, z: -1.0785247725432971 },
+    ],
+  })
+  expect(() => resolveAssemblyCable(harness)).toThrow(
+    'assembly.cable "HARNESS" smooth curve must not reverse direction',
+  )
+  harness.setProps({
+    ...harness.props,
+    waypoints: [
+      { x: 1.1e-11, y: 0, z: 6.9499989 },
+      { x: 1.1e-11, y: 0, z: 5.95 },
+    ],
+  })
+  expect(() => resolveAssemblyCable(harness)).toThrow(
+    'assembly.cable "HARNESS" waypoints produce invalid curve points',
   )
 })

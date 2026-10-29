@@ -3,7 +3,7 @@ import {
   parseCableString,
   type CableConnector,
 } from "@tscircuit/cableprinter"
-import type { CadCable, Point3 } from "circuit-json"
+import { cad_cable, type CadCable, type Point3 } from "circuit-json"
 import { vec3 } from "gl-matrix"
 import { applyToPoint } from "transformation-matrix"
 import type { BoardDirectionVector } from "lib/utils/pcb/transform-footprint-insertion-direction"
@@ -158,7 +158,34 @@ function resolveAuthoredAssemblyCablePath({
     smoothPath.push(end)
   }
   smoothPath.push(path.at(-1)!)
-  return smoothPath
+  const validatedPath = cad_cable.shape.path.safeParse(smoothPath)
+  if (!validatedPath.success) {
+    throw new Error(
+      `assembly.cable "${cable.name}" waypoints produce invalid curve points; adjust their positions or spacing`,
+    )
+  }
+  previousDirection = undefined
+  for (let vertex = 1; vertex < validatedPath.data.length; vertex++) {
+    const previous = validatedPath.data[vertex - 1]!
+    const current = validatedPath.data[vertex]!
+    const direction = vec3.subtract(
+      [0, 0, 0],
+      [current.x, current.y, current.z],
+      [previous.x, previous.y, previous.z],
+    )
+    vec3.normalize(direction, direction)
+    if (
+      previousDirection &&
+      vec3.length(vec3.add([0, 0, 0], previousDirection, direction)) <
+        MIN_TANGENT_LENGTH
+    ) {
+      throw new Error(
+        `assembly.cable "${cable.name}" smooth curve must not reverse direction; adjust the nearby waypoints`,
+      )
+    }
+    previousDirection = direction
+  }
+  return validatedPath.data
 }
 
 /** Mating-face to wire-exit offset along local +Z, mm. Paired with the physical
