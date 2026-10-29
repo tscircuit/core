@@ -108,12 +108,17 @@ export function resolveAssemblyCableEndpoint(
       let boardAncestor = motor.parent
       const subcircuitId = faceMount?.subcircuit_id ?? placement.subcircuit_id
       if (subcircuitId) {
-        boardAncestor =
-          scoped.find(
-            (part) =>
-              part.isSubcircuit &&
-              part.getSubcircuit().subcircuit_id === subcircuitId,
-          ) ?? null
+        const mountedSubcircuit = scoped.find(
+          (part) =>
+            part.isSubcircuit &&
+            part.getSubcircuit().subcircuit_id === subcircuitId,
+        )
+        if (!mountedSubcircuit) {
+          throw new Error(
+            `assembly.cable "${cable.name}" motor "${motor.name}" mounting subcircuit is not in its assembly device`,
+          )
+        }
+        boardAncestor = mountedSubcircuit
       }
       while (
         boardAncestor &&
