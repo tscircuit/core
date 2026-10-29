@@ -14,6 +14,13 @@ import { resolveTwoTerminalPinMapping } from "lib/utils/footprints/resolve-two-t
 import { Trace } from "../primitive-components/Trace/Trace"
 import { Capacitor_getAutomaticMaxDecouplingTraceLength } from "./Capacitor_getAutomaticMaxDecouplingTraceLength"
 
+const validatedCapacitorProps = capacitorProps.extend({
+  capacitance: capacitorProps.shape.capacitance.refine(
+    (val) => typeof val === "number" && Number.isFinite(val) && val > 0,
+    "Capacitance must be a positive finite numeric value or valid unit string",
+  ),
+})
+
 export class Capacitor extends NormalComponent<
   typeof capacitorProps,
   PolarizedPassivePorts
@@ -90,7 +97,7 @@ export class Capacitor extends NormalComponent<
       schematicSymbolName: this.props.polarized
         ? "capacitor_polarized"
         : schematicSymbolName,
-      zodProps: capacitorProps,
+      zodProps: validatedCapacitorProps,
       sourceFtype: FTYPE.simple_capacitor,
     }
   }
@@ -129,19 +136,21 @@ export class Capacitor extends NormalComponent<
 
   _getSchematicSymbolDisplayValue(): string | undefined {
     const inputCapacitance = this.props.capacitance
-    let capacitanceDisplay: string | undefined
+    const capValue = this._parsedProps.capacitance
 
     if (
-      this._parsedProps.capacitance !== undefined &&
-      !isNaN(this._parsedProps.capacitance)
+      capValue === undefined ||
+      capValue === null ||
+      typeof capValue !== "number" ||
+      Number.isNaN(capValue)
     ) {
-      capacitanceDisplay =
-        typeof inputCapacitance === "string"
-          ? inputCapacitance
-          : `${formatSiUnit(this._parsedProps.capacitance)}F`
-    } else {
-      capacitanceDisplay = `${formatSiUnit(this._parsedProps.capacitance)}F`
+      return undefined
     }
+
+    const capacitanceDisplay =
+      typeof inputCapacitance === "string"
+        ? inputCapacitance
+        : `${formatSiUnit(capValue)}F`
 
     if (
       this._parsedProps.schShowRatings &&
