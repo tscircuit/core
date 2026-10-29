@@ -35,7 +35,6 @@ test("editing waypoints, anchor and axes updates the cable without detaching its
         to=".J2"
         waypointAnchor="start"
         waypointAxisOrientation="board_at_start"
-        waypoints={[{ x: 4, y: 7, z: 9 }]}
       />
     </assembly.device>,
   )
@@ -60,4 +59,7 @@ test("editing waypoints, anchor and axes updates the cable without detaching its
   expect(cables[0]!.path[0]).toEqual(before.path[0])
   expect(cables[0]!.path.at(-1)).toEqual(before.path.at(-1))
   expect(waypoints).toEqual([{ x: 5, y: 30, z: 35 }])
+  harness.setProps({ ...harness.props, waypoints: [] })
+  await circuit.renderUntilSettled()
+  expect(circuit.db.cad_cable.list()[0]!.path).toEqual(before.path)
 })

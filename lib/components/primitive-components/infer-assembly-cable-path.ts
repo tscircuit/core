@@ -2,79 +2,22 @@ import { vec3 } from "gl-matrix"
 import type { Point3 } from "circuit-json"
 import type { BoardDirectionVector } from "lib/utils/pcb/transform-footprint-insertion-direction"
 
-const CONNECTOR_TANGENT_LENGTH_MM = 0.1
-const MIN_SEGMENT_LENGTH_MM = 1e-6
-const MIN_TANGENT_LENGTH = 1e-10
-
-/** Resolve an authored or initial cable route in right-handed circuit world, mm
+/** Resolve a smooth initial cable route in right-handed circuit world, mm
  * (+X right, +Y top, +Z above). Endpoint points are wire exits; directions point
  * away from their mating connectors. This simple route supplies endpoint
- * clearance and a smooth arch when waypoints are omitted or empty.
+ * clearance and a smooth arch, without obstacle avoidance or a gravity solver.
  */
 export function inferAssemblyCablePath({
   from,
   to,
   fromDirection,
   toDirection,
-  waypoints,
-  cableName,
 }: {
   from: Point3
   to: Point3
   fromDirection: BoardDirectionVector
   toDirection: BoardDirectionVector
-  /** Authored circuit-world points, in mm, between the wire exits. */
-  waypoints?: Point3[]
-  cableName?: string
 }): Point3[] {
-  if (waypoints?.length) {
-    const fromTangent = vec3.scaleAndAdd(
-      vec3.create(),
-      [from.x, from.y, from.z],
-      [fromDirection.x, fromDirection.y, fromDirection.z],
-      CONNECTOR_TANGENT_LENGTH_MM,
-    )
-    const toTangent = vec3.scaleAndAdd(
-      vec3.create(),
-      [to.x, to.y, to.z],
-      [toDirection.x, toDirection.y, toDirection.z],
-      CONNECTOR_TANGENT_LENGTH_MM,
-    )
-    const path = [
-      from,
-      { x: fromTangent[0], y: fromTangent[1], z: fromTangent[2] },
-      ...waypoints.map((point) => ({ ...point })),
-      { x: toTangent[0], y: toTangent[1], z: toTangent[2] },
-      to,
-    ]
-    let previousDirection: vec3 | undefined
-    for (let vertex = 1; vertex < path.length; vertex++) {
-      const previous = path[vertex - 1]!
-      const current = path[vertex]!
-      const direction = vec3.subtract(
-        vec3.create(),
-        [current.x, current.y, current.z],
-        [previous.x, previous.y, previous.z],
-      )
-      if (vec3.length(direction) < MIN_SEGMENT_LENGTH_MM) {
-        throw new Error(
-          `assembly.cable "${cableName ?? "unnamed cable"}" waypoints must leave distinct consecutive path points, including connector exits`,
-        )
-      }
-      vec3.normalize(direction, direction)
-      if (
-        previousDirection &&
-        vec3.length(vec3.add(vec3.create(), previousDirection, direction)) <
-          MIN_TANGENT_LENGTH
-      ) {
-        throw new Error(
-          `assembly.cable "${cableName ?? "unnamed cable"}" waypoints must not reverse direction at a path point`,
-        )
-      }
-      previousDirection = direction
-    }
-    return path
-  }
   const distance = Math.hypot(to.x - from.x, to.y - from.y, to.z - from.z)
   if (distance < 1e-6)
     throw new Error("Cable wire exits must be at different positions")
