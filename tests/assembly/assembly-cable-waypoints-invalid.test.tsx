@@ -50,9 +50,9 @@ test("authored waypoints reject coincident points and reversing bends", async ()
   harness.setProps({
     ...harness.props,
     waypoints: [
-      { x: 0, y: 20, z: 30 },
-      { x: 0, y: 30, z: 30 },
-      { x: 0, y: 20, z: 30 },
+      { x: 0.1, y: 0.2, z: 20.3 },
+      { x: 0.4, y: 0.8, z: 21.2 },
+      { x: 0.2, y: 0.4, z: 20.6 },
     ],
   })
   expect(() => resolveAssemblyCable(harness)).toThrow(

@@ -16,7 +16,8 @@ import { inferAssemblyCablePath } from "./infer-assembly-cable-path"
 
 const CONNECTOR_TANGENT_LENGTH_MM = 0.1
 const MIN_SEGMENT_LENGTH_MM = 1e-6
-const MIN_TANGENT_LENGTH = 1e-10
+// Normalized vec3 directions use Float32 storage.
+const MIN_TANGENT_LENGTH = 1e-6
 
 function resolveAuthoredAssemblyCablePath({
   cable,
