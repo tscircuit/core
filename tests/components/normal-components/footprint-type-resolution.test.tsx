@@ -1,6 +1,4 @@
 import { expect, test } from "bun:test"
-import type { FootprintProp } from "@tscircuit/props"
-import { parseFootprinterDefinition } from "lib/utils/footprints/parse-footprinter-definition"
 import { resolveTwoTerminalPinMapping } from "lib/utils/footprints/resolve-two-terminal-pin-mapping"
 import { expectTypesMatch } from "tests/fixtures/expect-types-match"
 import { Chip } from "lib/components/normal-components/Chip"
@@ -11,16 +9,6 @@ import { Resistor } from "lib/components/normal-components/Resistor"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("component intent resolves Footprinter strings once without rewriting authored props", async () => {
-  expectTypesMatch<
-    Parameters<typeof parseFootprinterDefinition>[0],
-    FootprintProp | null | undefined
-  >(true)
-  const parsed = parseFootprinterDefinition("0805")!
-  expectTypesMatch<typeof parsed.parameters.fn, string>(true)
-  expectTypesMatch<typeof parsed.parameters.positivepin, number | undefined>(
-    true,
-  )
-  expectTypesMatch<typeof parsed.parameters.anodepin, number | undefined>(true)
   expectTypesMatch<
     ReturnType<typeof resolveTwoTerminalPinMapping>["positivePin"],
     1 | 2
@@ -61,7 +49,20 @@ test("component intent resolves Footprinter strings once without rewriting autho
     [led, "cap0805", "cap0805"],
     [diode, "res0805", "res0805"],
     [led, "smdpads2_p2mm", "smdpads2_p2mm_anodepin1_cathodepin2"],
+    [genericChip, "soic8", "soic8"],
+    [genericChip, "qfn32", "qfn32"],
+    [genericChip, "dip8", "dip8"],
+    [genericChip, "sot23", "sot23"],
+    [genericChip, "0805", "0805"],
+    [genericChip, "cap0805", "cap0805"],
+    [genericChip, "smdpads2", "smdpads2"],
     [genericChip, "sod123", "sod123_nonpolarized"],
+    [genericChip, "sod323he", "sod323he_nonpolarized"],
+    [genericChip, "do-219ad", "do-219ad_nonpolarized"],
+    [genericChip, "sma", "sma_nonpolarized"],
+    [genericChip, "minimelf", "minimelf_nonpolarized"],
+    [genericChip, "led0805", "led0805_nonpolarized"],
+    [genericChip, "diode0805", "diode0805_nonpolarized"],
     [genericChip, "sod123_nonpolarized", "sod123_nonpolarized"],
     [genericChip, "cap0805_polarized", "cap0805_polarized"],
     [polarizedCapacitor, "0805", "cap0805_polarized"],

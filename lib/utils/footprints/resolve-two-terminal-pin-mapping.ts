@@ -12,20 +12,25 @@ const negativeLabels = new Set(["k", "c", "cathode", "neg", "negative"])
 export const resolveTwoTerminalPinMapping = ({
   name,
   pinLabels,
-  explicitPositive,
-  explicitNegative,
+  explicitPositive: rawExplicitPositive,
+  explicitNegative: rawExplicitNegative,
   positiveOption,
   negativeOption,
   defaultPositivePin = 1,
 }: {
   name: string
   pinLabels?: PinLabelsProp
-  explicitPositive?: number
-  explicitNegative?: number
+  explicitPositive?: unknown
+  explicitNegative?: unknown
   positiveOption: string
   negativeOption: string
   defaultPositivePin?: TwoTerminalPin
 }) => {
+  // Footprinter's params() retains authored pin options as strings.
+  const explicitPositive =
+    rawExplicitPositive === undefined ? undefined : Number(rawExplicitPositive)
+  const explicitNegative =
+    rawExplicitNegative === undefined ? undefined : Number(rawExplicitNegative)
   let positivePinCandidate: number = defaultPositivePin
   let negativePinCandidate = 3 - defaultPositivePin
   const labelPolarities = [1, 2].map((pin) => {

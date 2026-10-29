@@ -22,7 +22,25 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
     ) {
       return definition
     }
-    return `${definition}_nonpolarized`
+    // Only diode/LED packages add electrical polarity artwork by default.
+    const hasAutomaticPolarity =
+      parameters.fn.startsWith("sod") ||
+      [
+        "diode",
+        "led",
+        "led2835",
+        "led5050",
+        "do219ad",
+        "sma",
+        "smb",
+        "smbf",
+        "smc",
+        "smf",
+        "melf",
+        "minimelf",
+        "micromelf",
+      ].includes(parameters.fn)
+    return hasAutomaticPolarity ? `${definition}_nonpolarized` : footprint
   }
 
   get config() {

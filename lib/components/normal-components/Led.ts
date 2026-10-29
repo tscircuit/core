@@ -7,7 +7,8 @@ import type {
 import { symbols } from "schematic-symbols"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { isFootprinterString } from "../base-components/NormalComponent/utils/isFootprinterString"
-import { getDiodePortOptions, resolveDiodeFootprint } from "./Diode"
+import { getDiodePortOptions } from "lib/utils/footprints/get-diode-port-options"
+import { resolveDiodeFootprint } from "lib/utils/footprints/resolve-diode-footprint"
 import type { Port } from "../primitive-components/Port"
 
 export class Led extends NormalComponent<

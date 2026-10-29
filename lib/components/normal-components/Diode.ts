@@ -1,9 +1,4 @@
-import { resolvePassiveFootprintDefinition } from "@tscircuit/footprinter"
-import {
-  diodeProps,
-  resolveManufacturerPartNumber,
-  type PinLabelsProp,
-} from "@tscircuit/props"
+import { diodeProps, resolveManufacturerPartNumber } from "@tscircuit/props"
 import type { SourceSimpleDiodeInput } from "circuit-json"
 import {
   type BaseSymbolName,
@@ -13,87 +8,9 @@ import {
 import { symbols } from "schematic-symbols"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { isFootprinterString } from "../base-components/NormalComponent/utils/isFootprinterString"
-import { parseFootprinterDefinition } from "lib/utils/footprints/parse-footprinter-definition"
-import { resolveTwoTerminalPinMapping } from "lib/utils/footprints/resolve-two-terminal-pin-mapping"
+import { getDiodePortOptions } from "lib/utils/footprints/get-diode-port-options"
+import { resolveDiodeFootprint } from "lib/utils/footprints/resolve-diode-footprint"
 import type { Port } from "../primitive-components/Port"
-
-/** Diode and LED packages share A/K terminal and Footprinter artwork rules. */
-export const resolveDiodeFootprint = (
-  footprint: string,
-  { name, pinLabels }: { name: string; pinLabels?: PinLabelsProp },
-) => {
-  const parsed = parseFootprinterDefinition(footprint)
-  if (!parsed) return { footprint, positivePin: 1, negativePin: 2 }
-  const { definition, parameters } = parsed
-  const terminals = resolveTwoTerminalPinMapping({
-    name,
-    pinLabels,
-    explicitPositive: parameters.anodepin,
-    explicitNegative: parameters.cathodepin,
-    positiveOption: "anodepin",
-    negativeOption: "cathodepin",
-    defaultPositivePin: ["do219ad", "sod323he"].includes(parameters.fn) ? 2 : 1,
-  })
-  let resolved = resolvePassiveFootprintDefinition(definition, {
-    defaultFamily: "diode",
-  })
-  if (
-    terminals.hasPolarityLabels ||
-    (parameters.fn === "smdpads" && parameters.num_pins === 2)
-  ) {
-    if (parameters.anodepin === undefined)
-      resolved += `_anodepin${terminals.positivePin}`
-    if (parameters.cathodepin === undefined)
-      resolved += `_cathodepin${terminals.negativePin}`
-  }
-  return { ...terminals, footprint: resolved }
-}
-
-/** Shared port defaults for diodes and LEDs, including authored footprint handling. */
-export const getDiodePortOptions = (
-  diode: Pick<
-    Diode,
-    "children" | "name" | "resolveFootprint" | "_resolvePinLabels"
-  >,
-) => {
-  const hasFootprintChild = diode.children.some(
-    (child) => child.componentName === "Footprint",
-  )
-  const footprint = diode.resolveFootprint()
-  const pinLabels = diode._resolvePinLabels()
-  const hasPinLabels = Boolean(pinLabels)
-  const shouldAddDefaultAliases =
-    !hasPinLabels &&
-    !hasFootprintChild &&
-    (!footprint || isFootprinterString(footprint))
-
-  const { positivePin, negativePin } =
-    footprint && isFootprinterString(footprint)
-      ? resolveDiodeFootprint(footprint, {
-          name: diode.name,
-          pinLabels,
-        })
-      : { positivePin: 1, negativePin: 2 }
-  return {
-    pinCount: 2,
-    implicitPinLabels:
-      shouldAddDefaultAliases && positivePin !== 1
-        ? {
-            [`pin${positivePin}`]: ["anode", "pos"],
-            [`pin${negativePin}`]: ["cathode", "neg"],
-          }
-        : undefined,
-    ignoreSymbolPorts: !hasPinLabels && !shouldAddDefaultAliases,
-    additionalAliases: {
-      [`pin${positivePin}`]: shouldAddDefaultAliases
-        ? ["anode", "pos", positivePin === 1 ? "left" : "right"]
-        : [],
-      [`pin${negativePin}`]: shouldAddDefaultAliases
-        ? ["cathode", "neg", negativePin === 1 ? "left" : "right"]
-        : [],
-    },
-  }
-}
 
 export class Diode extends NormalComponent<
   typeof diodeProps,
