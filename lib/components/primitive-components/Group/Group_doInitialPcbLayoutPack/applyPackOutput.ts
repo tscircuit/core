@@ -194,7 +194,7 @@ export const applyPackOutput = (
           return true
         }
       }
-      if ("pcb_group_id" in elm && elm.pcb_group_id) {
+      if (elm.type === "pcb_keepout" && elm.pcb_group_id) {
         const elmPcbGroup = db.pcb_group.get(elm.pcb_group_id)
         if (elmPcbGroup?.source_group_id) {
           if (elmPcbGroup.source_group_id === componentId) {

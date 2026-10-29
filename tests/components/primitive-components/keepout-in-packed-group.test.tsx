@@ -60,6 +60,9 @@ test("keepout inside a packed group is moved with the group", async () => {
       (c) => c.pcb_group_id === keepout.pcb_group_id,
     )
     expect(comp).toBeDefined()
+    if (keepout.shape !== "rect") {
+      throw new Error("Expected rect keepout")
+    }
     expect(keepout.center.x).toBeCloseTo(comp!.center.x, 5)
     expect(keepout.center.y).toBeCloseTo(comp!.center.y, 5)
   }
