@@ -1,3 +1,4 @@
+import { getOwningPanel } from "lib/utils/panels/get-owning-panel"
 import { MultilayerIjump } from "@tscircuit/infgrid-ijump-astar"
 import { jlcMinTolerances } from "@tscircuit/jlcpcb-manufacturing-specs"
 import { type LayerRef, type PcbTrace, type RouteHintPoint } from "circuit-json"
@@ -123,6 +124,7 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
         source_trace_id: trace.source_trace_id!,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: trace.getGroup()?.pcb_group_id ?? undefined,
+        pcb_panel_id: getOwningPanel(trace)?.pcb_panel_id ?? undefined,
       })
       trace.pcb_trace_id ??= pcbTrace.pcb_trace_id
     }
@@ -525,6 +527,7 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
     ),
     source_trace_id: trace.source_trace_id!,
     subcircuit_id: trace.getSubcircuit()?.subcircuit_id!,
+    pcb_panel_id: getOwningPanel(trace)?.pcb_panel_id ?? undefined,
     trace_length: traceLength,
   })
   const subcircuitConnectivityMapKey =
@@ -557,6 +560,7 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
         to_layer: toLayer,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: trace.getGroup()?.pcb_group_id ?? undefined,
+        pcb_panel_id: getOwningPanel(trace)?.pcb_panel_id ?? undefined,
         subcircuit_connectivity_map_key: subcircuitConnectivityMapKey,
       })
     }
