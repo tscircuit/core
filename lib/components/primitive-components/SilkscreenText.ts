@@ -148,7 +148,7 @@ export class SilkscreenText extends PrimitiveComponent<
         layer: maybeFlipLayer(layer) as "top" | "bottom",
         text: normalizeTextForCircuitJson(text),
         ccw_rotation: rotation,
-        pcb_component_id: container.pcb_component_id!,
+        pcb_component_id: container.pcb_component_id ?? undefined,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
         is_knockout: props.isKnockout,

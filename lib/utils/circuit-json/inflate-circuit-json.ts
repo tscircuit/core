@@ -13,6 +13,7 @@ import { inflateSourceChip } from "../../components/primitive-components/Group/S
 import { inflateSourceConnector } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceConnector"
 import { inflateSourceDiode } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceDiode"
 import { inflateSourceFiducial } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceFiducial"
+import { inflateSourceFuse } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceFuse"
 import { inflateSourceGroup } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceGroup"
 import { inflateSourceInductor } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceInductor"
 import { inflateSourceLed } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceLed"
@@ -84,6 +85,9 @@ export const inflateCircuitJson = (
     switch (sourceComponent.ftype) {
       case "simple_resistor":
         inflateSourceResistor(sourceComponent, inflationCtx)
+        break
+      case "simple_fuse":
+        inflateSourceFuse(sourceComponent, inflationCtx)
         break
       case "simple_capacitor":
         inflateSourceCapacitor(sourceComponent, inflationCtx)

@@ -1,3 +1,4 @@
+import { formatPcbDisplayOffset } from "lib/utils/format-pcb-display-offset"
 import { NormalComponent_doInitialSourcePinSpecificationChecks } from "./NormalComponent_doInitialSourcePinSpecificationChecks"
 import {
   getNumericPinLabels,
@@ -2611,8 +2612,8 @@ export class NormalComponent<
       position_mode: "relative_to_group_anchor",
       positioned_relative_to_pcb_group_id: positionedRelativeToGroupId,
       positioned_relative_to_pcb_board_id: positionedRelativeToBoardId,
-      display_offset_x: resolvedPcbX as any,
-      display_offset_y: resolvedPcbY as any,
+      display_offset_x: formatPcbDisplayOffset(resolvedPcbX),
+      display_offset_y: formatPcbDisplayOffset(resolvedPcbY),
     })
   }
 
