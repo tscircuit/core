@@ -76,7 +76,7 @@
     "bun-match-svg": "0.0.12",
     "calculate-elbow": "^0.0.12",
     "chokidar-cli": "^3.0.0",
-    "circuit-json": "^0.0.538",
+    "circuit-json": "^0.0.539",
     "circuit-json-to-bpc": "^0.0.13",
     "circuit-json-to-connectivity-map": "^0.0.33",
     "circuit-json-to-spice": "^0.0.45",
@@ -101,7 +101,7 @@
     "ts-expect": "^1.3.0",
     "tsup": "^8.2.4",
     "@tscircuit/circuit-json-to-drawing": "https://jscdn.tscircuit.com/@tscircuit/circuit-json-to-drawing/0.0.4.tgz",
-    "circuit-json-to-gltf": "^0.0.158",
+    "circuit-json-to-gltf": "^0.0.159",
     "@tscircuit/jscad": "https://jscdn.tscircuit.com/@tscircuit/jscad/0.0.3.tgz",
     "@tscircuit/test-point-rerouter": "github:tscircuit/test-point-rerouter#b0ccfaca75a7e187c55ddb6f2071a1f2084e3167"
   },
@@ -148,7 +148,7 @@
   },
   "overrides": {
     "@tscircuit/props": "^0.0.714",
-    "circuit-json": "^0.0.538",
+    "circuit-json": "^0.0.539",
     "@tscircuit/cableprinter": "^0.0.6"
   },
   "browser": {

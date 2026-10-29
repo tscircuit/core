@@ -1,8 +1,9 @@
+import { getCircuitJsonAssemblyExplosion } from "./get-circuit-json-assembly-explosion"
 import type { AnyCircuitElement, CadComponent } from "circuit-json"
 import { mat3, mat4, vec3 } from "gl-matrix"
 import type { RootCircuit } from "lib/RootCircuit"
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
-import { AssemblyExplosionStage } from "lib/components/primitive-components/AssemblyExplosionStage"
+import type { AssemblyExplosionStage } from "lib/components/primitive-components/AssemblyExplosionStage"
 import type { AssemblyExplosionMove } from "lib/components/primitive-components/AssemblyExplosionMove"
 import {
   isPositionedAssembly,
@@ -37,7 +38,7 @@ export interface AssemblyExplosionView {
   collisionCheckStatus: "not_implemented"
 }
 
-const assemblyPath = (
+export const assemblyPath = (
   assembly: PrimitiveComponent,
 ): AssemblyExplosionStageRef => {
   const names: string[] = []
@@ -60,6 +61,15 @@ const assemblyPath = (
   return names.join(".")
 }
 
+const hasRemovedAncestor = (part: PrimitiveComponent): boolean => {
+  let parent = part.parent
+  while (parent) {
+    if (parent.shouldBeRemoved) return true
+    parent = parent.parent
+  }
+  return false
+}
+
 /** Schedule precedence edges; depth-first authored order only breaks ties.
  * References are scoped to the stage owner or explicitly qualified from root.
  */
@@ -70,7 +80,9 @@ export const resolveAssemblyExplosionStages = (
     .flatMap((root) => [root, ...root.getDescendants()])
     .filter(
       (part): part is AssemblyExplosionStage =>
-        part instanceof AssemblyExplosionStage,
+        part.componentName === "AssemblyExplosionStage" &&
+        !part.shouldBeRemoved &&
+        !hasRemovedAncestor(part),
     )
   const stageRef = (stage: AssemblyExplosionStage) =>
     `${assemblyPath(stage.parent!)}.${stage.name}`
@@ -160,12 +172,22 @@ export function getAssemblyExplosion(
   if (options.throughStageRef !== undefined && stop < 0)
     throw new Error(`Unknown explosion stage "${options.throughStageRef}"`)
   const assembled = circuit.getCircuitJson()
+  // Stage targets use the same explicit membership program as JSON consumers.
+  if (
+    assembled.some(
+      (record) =>
+        record.type === "cad_explosion_move" &&
+        record.targets.some((target) => target.type === "cad_explosion_stage"),
+    )
+  )
+    return getCircuitJsonAssemblyExplosion(assembled, options)
   const sourceOffsets = new Map<SourceComponentId, AssemblyWorldPoint>()
   const partOffsets = new Map<PrimitiveComponent, AssemblyWorldPoint>()
   const lines: AssemblyExplosionLine[] = []
   for (const [stageIndex, stage] of ordered.entries()) {
     const owner = stage.parent!
-    for (const [moveIndex, instruction] of stage.children.entries()) {
+    const instructions = stage.children.filter((move) => !move.shouldBeRemoved)
+    for (const [moveIndex, instruction] of instructions.entries()) {
       const move = instruction as AssemblyExplosionMove
       const targets = new Map<PrimitiveComponent, string>()
       // Resolve and validate the entire instruction before applying its shared
@@ -175,6 +197,7 @@ export function getAssemblyExplosion(
         for (const segment of targetRef.split(".")) {
           const matches = target.children.filter(
             (part) =>
+              !part.shouldBeRemoved &&
               part.name === segment &&
               [
                 "AssemblyPart",
@@ -207,10 +230,7 @@ export function getAssemblyExplosion(
       if (stageIndex > stop) continue
       const fraction =
         stageIndex === stop
-          ? Math.max(
-              0,
-              Math.min(1, progress * stage.children.length - moveIndex),
-            )
+          ? Math.max(0, Math.min(1, progress * instructions.length - moveIndex))
           : 1
       if (!fraction) continue
       const placement = isPositionedAssembly(owner)
@@ -323,17 +343,23 @@ export function getAssemblyExplosion(
       }
     }
   }
-  const circuitJson = structuredClone(assembled).map((record) => {
-    if (
-      record.type !== "cad_component" &&
-      record.type !== "cad_reference_surface"
+  const circuitJson = structuredClone(assembled)
+    .filter(
+      (record) =>
+        record.type !== "cad_explosion_stage" &&
+        record.type !== "cad_explosion_move",
     )
-      return record
-    const offset = sourceOffsets.get(record.source_component_id)
-    if (!offset) return record
-    if (record.type === "cad_component")
-      return { ...record, position: pointPlus(record.position, offset) }
-    return { ...record, center: pointPlus(record.center, offset) }
-  })
+    .map((record) => {
+      if (
+        record.type !== "cad_component" &&
+        record.type !== "cad_reference_surface"
+      )
+        return record
+      const offset = sourceOffsets.get(record.source_component_id)
+      if (!offset) return record
+      if (record.type === "cad_component")
+        return { ...record, position: pointPlus(record.position, offset) }
+      return { ...record, center: pointPlus(record.center, offset) }
+    })
   return { circuitJson, stages, lines, collisionCheckStatus: "not_implemented" }
 }
