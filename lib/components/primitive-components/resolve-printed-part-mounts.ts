@@ -14,7 +14,6 @@ import {
 } from "./resolve-assembly-placement"
 import { getComponentsInAssemblyScope } from "./get-assembly-scope-components"
 import type { AssemblyPlacement } from "./resolve-assembly-placement"
-import { parseAssemblyReferenceSelector } from "./parse-assembly-reference-selector"
 
 type MountablePart = AssemblyMotor | AssemblyPrintedPart | AssemblyPart
 const isMountablePart = (part: PrimitiveComponent): part is MountablePart =>
@@ -89,12 +88,13 @@ const findTarget = (
   selector: string,
   parts: MountablePart[],
 ) => {
-  const referenceSelector = parseAssemblyReferenceSelector(selector)
-  if (!referenceSelector)
+  const separator = selector.lastIndexOf(".")
+  const partName = selector.slice(0, separator)
+  const faceName = selector.slice(separator + 1)
+  if (separator < 1 || !faceName)
     throw new Error(
       `"${owner.name}" mountedTo must name a part and face, e.g. "SPACER.board"`,
     )
-  const { partName, faceName } = referenceSelector
   const matches = parts.filter((part) =>
     matchesAssemblyIdentity(part, partName),
   )

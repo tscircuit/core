@@ -5,11 +5,55 @@ import {
 } from "@tscircuit/cableprinter"
 import type { CadCable, Point3 } from "circuit-json"
 import { vec3 } from "gl-matrix"
+import { applyToPoint } from "transformation-matrix"
 import type { BoardDirectionVector } from "lib/utils/pcb/transform-footprint-insertion-direction"
 import type { AssemblyCable } from "./AssemblyCable"
-import { resolveAssemblyCableEndpoint } from "./resolve-assembly-cable-endpoint"
-import { resolveAssemblyCablePath } from "./resolve-assembly-cable-path"
-import { resolveAssemblyCableWaypoints } from "./resolve-assembly-cable-waypoints"
+import {
+  resolveAssemblyCableEndpoint,
+  type AssemblyCableEndpoint,
+} from "./resolve-assembly-cable-endpoint"
+import { inferAssemblyCablePath } from "./infer-assembly-cable-path"
+
+function resolveAssemblyCableWaypoints({
+  cable,
+  from,
+  to,
+}: {
+  cable: AssemblyCable
+  from: AssemblyCableEndpoint
+  to: AssemblyCableEndpoint
+}): Point3[] | undefined {
+  const { waypoints, waypointAnchor, waypointAxisOrientation } =
+    cable._parsedProps
+  if (!waypoints?.length) return waypoints
+  let anchor = from.position
+  if (waypointAnchor === "end") anchor = to.position
+  let board = from.board
+  if (waypointAxisOrientation === "board_at_end") board = to.board
+  if (!board) {
+    let endpoint = cable._parsedProps.from
+    if (waypointAxisOrientation === "board_at_end")
+      endpoint = cable._parsedProps.to
+    throw new Error(
+      `assembly.cable "${cable.name}" endpoint "${endpoint}" has no board for waypointAxisOrientation="${waypointAxisOrientation}"`,
+    )
+  }
+  // Paired with board placement in _computePcbGlobalTransformBeforeLayout;
+  // offsets are directions, so board translation does not apply.
+  const boardToWorld = {
+    ...board._computePcbGlobalTransformBeforeLayout(),
+    e: 0,
+    f: 0,
+  }
+  return waypoints.map((waypoint) => {
+    const offset = applyToPoint(boardToWorld, waypoint)
+    return {
+      x: anchor.x + offset.x,
+      y: anchor.y + offset.y,
+      z: anchor.z + waypoint.z,
+    }
+  })
+}
 
 /** Mating-face to wire-exit offset along local +Z, mm. Paired with the physical
  * connector definitions and jscad-electronics connectorWireExitDepth.
@@ -94,7 +138,7 @@ export function resolveAssemblyCable(
       ("pinCount" in definition.connectorA
         ? `${definition.standard}_pins${definition.connectorA.pinCount}`
         : definition.standard),
-    path: resolveAssemblyCablePath({
+    path: inferAssemblyCablePath({
       cableName: cable.name!,
       waypoints: resolveAssemblyCableWaypoints({ cable, from, to }),
       from: fromExit,

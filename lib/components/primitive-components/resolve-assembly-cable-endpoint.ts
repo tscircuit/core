@@ -19,8 +19,6 @@ import type { AssemblyPlacement } from "./resolve-assembly-placement"
 import { resolveAssemblyMotorPlacement } from "./resolve-assembly-motor-placement"
 import { resolveAssemblyMotorRotation } from "./resolve-assembly-motor-rotation"
 import { resolveAssemblyCablePin1Position } from "./resolve-assembly-cable-pin1-position"
-import { resolveAssemblyPartCableEndpoint } from "./resolve-assembly-part-cable-endpoint"
-import { resolveAssemblyCableEndpointBoard } from "./resolve-assembly-cable-endpoint-board"
 
 /** Connector mating-center point and outward unit direction in right-handed
  * circuit world, mm (+X right, +Y top, +Z above). Points acquire translation;
@@ -40,12 +38,6 @@ export function resolveAssemblyCableEndpoint(
   selector: string,
   cableConnector?: CableConnector,
 ): AssemblyCableEndpoint {
-  const partEndpoint = resolveAssemblyPartCableEndpoint({
-    cable,
-    selector,
-    cableConnector,
-  })
-  if (partEndpoint) return partEndpoint
   const scoped = getComponentsInAssemblyScope(cable)
   const motorReference = selector.match(/^(.+)\.wireside$/)
   if (motorReference) {
@@ -111,12 +103,26 @@ export function resolveAssemblyCableEndpoint(
     )
     // The shared header profile places the mating face beyond its body reference.
 
+    let boardAncestor = motor.parent
+    const subcircuitId = faceMount?.subcircuit_id ?? placement.subcircuit_id
+    if (subcircuitId) {
+      boardAncestor =
+        scoped.find(
+          (part) =>
+            part.isSubcircuit &&
+            part.getSubcircuit().subcircuit_id === subcircuitId,
+        ) ?? null
+    }
+    while (
+      boardAncestor &&
+      boardAncestor.componentName !== "Board" &&
+      boardAncestor.componentName !== "MountedBoard"
+    ) {
+      boardAncestor = boardAncestor.parent
+    }
     return {
       sourceComponentId: motor.source_component_id!,
-      board: resolveAssemblyCableEndpointBoard({
-        component: motor,
-        subcircuitId: faceMount?.subcircuit_id ?? placement.subcircuit_id,
-      }),
+      board: boardAncestor?._getBoard(),
       position: {
         x:
           point[0] +
@@ -171,7 +177,7 @@ export function resolveAssemblyCableEndpoint(
     !connector.source_component_id
   )
     throw new Error(
-      `assembly.cable "${cable.name}" endpoint "${selector}" must name a PCB connector or an assembly part reference`,
+      `assembly.cable "${cable.name}" endpoint "${selector}" must name a PCB connector or MOTOR.wireside`,
     )
   const props = connector._parsedProps as ConnectorProps
   if (
