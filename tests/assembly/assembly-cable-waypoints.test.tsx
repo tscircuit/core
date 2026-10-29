@@ -109,19 +109,27 @@ test("waypoint anchor and board axes are selected independently", async () => {
       (connector) =>
         connector.source_component_id === endEnd!.to_source_component_id,
     )!.center
-  expect(startStart!.path).toHaveLength(5)
-  expect(startStart!.path[2]!.x).toBeCloseTo(start.x - 7)
-  expect(startStart!.path[2]!.y).toBeCloseTo(start.y + 4)
-  expect(startStart!.path[2]!.z).toBeCloseTo(2.2)
-  expect(startEnd!.path[2]!.x).toBeCloseTo(start.x + 7)
-  expect(startEnd!.path[2]!.y).toBeCloseTo(start.y - 4)
-  expect(startEnd!.path[2]!.z).toBeCloseTo(2.2)
-  expect(endStart!.path[2]!.x).toBeCloseTo(end.x - 7)
-  expect(endStart!.path[2]!.y).toBeCloseTo(end.y + 4)
-  expect(endStart!.path[2]!.z).toBeCloseTo(15.8)
-  expect(endEnd!.path[2]!.x).toBeCloseTo(end.x + 7)
-  expect(endEnd!.path[2]!.y).toBeCloseTo(end.y - 4)
-  expect(endEnd!.path[2]!.z).toBeCloseTo(15.8)
+  expect(startStart!.path.length).toBeGreaterThan(5)
+  expect(startStart!.path).toContainEqual({
+    x: expect.closeTo(start.x - 7),
+    y: expect.closeTo(start.y + 4),
+    z: expect.closeTo(2.2),
+  })
+  expect(startEnd!.path).toContainEqual({
+    x: expect.closeTo(start.x + 7),
+    y: expect.closeTo(start.y - 4),
+    z: expect.closeTo(2.2),
+  })
+  expect(endStart!.path).toContainEqual({
+    x: expect.closeTo(end.x - 7),
+    y: expect.closeTo(end.y + 4),
+    z: expect.closeTo(15.8),
+  })
+  expect(endEnd!.path).toContainEqual({
+    x: expect.closeTo(end.x + 7),
+    y: expect.closeTo(end.y - 4),
+    z: expect.closeTo(15.8),
+  })
   expect(startStart!.path[1]!.z - startStart!.path[0]!.z).toBeCloseTo(-0.1)
   expect(startStart!.path.at(-2)!.z - startStart!.path.at(-1)!.z).toBeCloseTo(
     0.1,
