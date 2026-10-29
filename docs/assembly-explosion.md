@@ -160,11 +160,14 @@ Targeting a stage does not change temporal ordering; use `prevStageRef` or
 `nextStageRef` to specify playback precedence as before.
 
 ```tsx
-<assembly.explosion.stage name="remove-bolts">
-  <assembly.explosion.move targetRefs="bolt1,bolt2" offZ="30mm" />
+<assembly.explosion.stage name="lift-cover">
+  <assembly.explosion.move
+    targetRefs={["cover", "remove-bolts"]}
+    offZ="24mm"
+  />
 </assembly.explosion.stage>
-<assembly.explosion.stage name="park-bolts" prevStageRef="remove-bolts">
-  <assembly.explosion.move targetRef="remove-bolts" offX="20mm" />
+<assembly.explosion.stage name="remove-bolts" prevStageRef="lift-cover">
+  <assembly.explosion.move targetRefs="bolt1,bolt2" offZ="41mm" />
 </assembly.explosion.stage>
 ```
 
@@ -224,7 +227,9 @@ GLTF animation tracks.
 Four annotated snapshot sheets cover 20 views: round trips with sequential partial
 progress, whole-stage movement and backward scrubbing; four mounting-frame
 orientations; retargeting and stage removal/restoration; and the real RP2040 board
-assembled plus all five explosion stages. Every panel sends the original program
-directly to the exporter. The real-board fixture pins its exported JSON and 26
+assembled, all four completed explosion stages and halfway through bolt removal.
+The cover and bolts lift together before the bolts, motor and spacers separate.
+Every panel sends the original program directly to the exporter. The real-board
+fixture pins its exported JSON and 26
 model assets for offline rendering; see its
 [source and reproduction notes](../tests/assembly/fixtures/rp2040-explosion/README.md).

@@ -104,16 +104,22 @@ export function Rp2040MotorAssembly({ board }: { board: ReactElement }) {
           }}
         />
       ))}
-      <assembly.explosion.stage name="remove-bolts">
+      <assembly.explosion.stage name="lift-cover">
         <assembly.explosion.move
-          targetRefs="bolt1,bolt2,bolt3,bolt4"
-          offZ={65}
+          targetRefs={["cover", "remove-bolts"]}
+          offZ={24}
         />
       </assembly.explosion.stage>
-      <assembly.explosion.stage name="lift-cover" prevStageRef="remove-bolts">
-        <assembly.explosion.move targetRef="cover" offZ={24} />
+      <assembly.explosion.stage name="remove-bolts" prevStageRef="lift-cover">
+        <assembly.explosion.move
+          targetRefs="bolt1,bolt2,bolt3,bolt4"
+          offZ={41}
+        />
       </assembly.explosion.stage>
-      <assembly.explosion.stage name="separate-motor" prevStageRef="lift-cover">
+      <assembly.explosion.stage
+        name="separate-motor"
+        prevStageRef="remove-bolts"
+      >
         <assembly.explosion.move targetRef="motor" offZ={-24} />
       </assembly.explosion.stage>
       <assembly.explosion.stage
@@ -124,12 +130,6 @@ export function Rp2040MotorAssembly({ board }: { board: ReactElement }) {
           targetRefs={["spacer1", "spacer2", "spacer3", "spacer4"]}
           offZ={-12}
         />
-      </assembly.explosion.stage>
-      <assembly.explosion.stage
-        name="park-bolts"
-        prevStageRef="separate-spacers"
-      >
-        <assembly.explosion.move targetRef="remove-bolts" offX={24} />
       </assembly.explosion.stage>
     </assembly.device>
   )

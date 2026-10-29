@@ -1,10 +1,10 @@
 # RP2040 / NEMA17 stage snapshot fixture
 
-This is the unmodified 5,119-record TSX export used by
+This is the unmodified 5,117-record TSX export used by
 [3d-viewer #1082](https://github.com/tscircuit/3d-viewer/pull/1082).
 The original board is [imrishabh18/rp2040-motor-controller v1.0.48](https://tscircuit.com/imrishabh18/rp2040-motor-controller),
 release `bc93e130-7357-4352-a45f-c9cf65563446`. `assembly.source.tsx` preserves
-the custom TSX for the NEMA17, four spacers, four bolts, cover and five stages.
+the custom TSX for the NEMA17, four spacers, four bolts, cover and four stages.
 The source board is supplied to its `board` prop. PD-Stepper attribution and
 GPL-3.0 license are retained in `PD-Stepper-LICENSE`.
 
@@ -31,6 +31,12 @@ bun scripts/update-rp2040-explosion-snapshot-fixture.ts /path/to/assembled.circu
 BUN_UPDATE_SNAPSHOTS=1 bun test tests/assembly/assembly-explosion-rp2040-stages.test.tsx
 ```
 
-The six panels use the same camera and show assembled plus every completed stage.
-The final move targets the entire `remove-bolts` stage. Snapshots establish visual
-placement and playback, not fastening fit, fabrication readiness or collision clearance.
+The six panels use the same camera and show assembled, every completed stage, and
+a halfway bolt-removal pose. The first move targets `cover` and the entire
+`remove-bolts` stage, lifting them 24 mm together. The bolts then rise another
+41 mm, followed by the motor and spacers separating below the fixed PCB.
+The code captions come from `assembly.source.tsx` and use a bundled monospace font.
+Snapshots establish visual placement and playback, not fastening fit,
+fabrication readiness or collision clearance.
+
+![RP2040 assembly stage snapshots](../../__snapshots__/assembly-explosion-rp2040-stages-annotated.snap.png)
