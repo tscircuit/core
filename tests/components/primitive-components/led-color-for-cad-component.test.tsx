@@ -17,7 +17,7 @@ test("color for  cad model", async () => {
     {
       "anchor_alignment": "center_of_component_on_board_surface",
       "cad_component_id": "cad_component_0",
-      "footprinter_string": "0402_color(red)",
+      "footprinter_string": "diode0402_color(red)",
       "model_board_normal_direction": undefined,
       "model_glb_url": undefined,
       "model_gltf_url": undefined,

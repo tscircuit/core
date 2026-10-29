@@ -8,13 +8,23 @@ import {
 import { symbols } from "schematic-symbols"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { isFootprinterString } from "../base-components/NormalComponent/utils/isFootprinterString"
-import { resolveFootprinterPolarity } from "../base-components/NormalComponent/utils/resolve-footprinter-polarity"
+import { getDiodePortOptions } from "lib/utils/footprints/get-diode-port-options"
+import { resolveDiodeFootprint } from "lib/utils/footprints/resolve-diode-footprint"
 import type { Port } from "../primitive-components/Port"
 
 export class Diode extends NormalComponent<
   typeof diodeProps,
   PolarizedPassivePorts
 > {
+  resolveFootprint() {
+    const footprint = super.resolveFootprint()
+    if (!isFootprinterString(footprint)) return footprint
+    return resolveDiodeFootprint(footprint, {
+      name: this.name ?? "Diode",
+      pinLabels: this._resolvePinLabels(),
+    }).footprint
+  }
+
   get config() {
     const symbolMap: Record<string, BaseSymbolName> = {
       schottky: "schottky_diode",
@@ -65,44 +75,7 @@ export class Diode extends NormalComponent<
   }
 
   initPorts() {
-    const hasFootprintChild = this.children.some(
-      (child) => child.componentName === "Footprint",
-    )
-    const footprint = this.resolveFootprint()
-    const hasPinLabels = Boolean(this._resolvePinLabels())
-    const shouldAddDefaultAliases =
-      !hasPinLabels &&
-      !hasFootprintChild &&
-      (!footprint || isFootprinterString(footprint))
-
-    const { positivePin, negativePin } =
-      footprint && isFootprinterString(footprint)
-        ? resolveFootprinterPolarity({
-            footprint,
-            componentName: this.componentName,
-            name: this.name,
-            pinLabels: this._resolvePinLabels(),
-          })
-        : { positivePin: 1, negativePin: 2 }
-    super.initPorts({
-      pinCount: 2,
-      implicitPinLabels:
-        shouldAddDefaultAliases && positivePin !== 1
-          ? {
-              [`pin${positivePin}`]: ["anode", "pos"],
-              [`pin${negativePin}`]: ["cathode", "neg"],
-            }
-          : undefined,
-      ignoreSymbolPorts: !hasPinLabels && !shouldAddDefaultAliases,
-      additionalAliases: {
-        [`pin${positivePin}`]: shouldAddDefaultAliases
-          ? ["anode", "pos", positivePin === 1 ? "left" : "right"]
-          : [],
-        [`pin${negativePin}`]: shouldAddDefaultAliases
-          ? ["cathode", "neg", negativePin === 1 ? "left" : "right"]
-          : [],
-      },
-    })
+    super.initPorts(getDiodePortOptions(this))
   }
 
   doInitialSourceRender() {

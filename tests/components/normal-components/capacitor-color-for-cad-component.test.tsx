@@ -43,7 +43,7 @@ test("capacitor CAD footprinter strings identify supported chip packages", () =>
       .list()
       .map(({ footprinter_string }) => footprinter_string),
   ).toEqual([
-    ...chipFootprints.map((footprint) => `cap${footprint}`),
-    "0402_color(red)",
+    ...chipFootprints.map((footprint) => `cap${footprint}_nonpolarized`),
+    "cap0402_color(red)_nonpolarized",
   ])
 })

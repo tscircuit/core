@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("capacitor silkscreen polarity requires an explicit footprint option", async () => {
+test("capacitor intent requests Footprinter polarity for implicit and explicit definitions", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width={26} height={8} routingDisabled>
@@ -30,7 +30,7 @@ test("capacitor silkscreen polarity requires an explicit footprint option", asyn
   )
   await circuit.renderUntilSettled()
 
-  // The explicit footprint has two extra paths forming its silkscreen plus.
+  // Core delegates polarized intent; Footprinter supplies its existing silkscreen plus.
   expect(
     circuit.db.pcb_component
       .list()
@@ -38,6 +38,6 @@ test("capacitor silkscreen polarity requires an explicit footprint option", asyn
         ({ pcb_component_id }) =>
           circuit.db.pcb_silkscreen_path.list({ pcb_component_id }).length,
       ),
-  ).toEqual([1, 1, 3])
+  ).toEqual([3, 3, 3])
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
