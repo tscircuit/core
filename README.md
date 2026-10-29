@@ -53,19 +53,6 @@ board.add(trace)
 circuit.getCircuitJson() // [{ type: "board", ...}, { type: "resistor", ...}, ...]
 ```
 
-## Assembly explosions
-
-Author ordered movements with `assembly.explosion.stage` and
-`assembly.explosion.move`. Core exports the program to Circuit JSON for playback
-and stage snapshots. In this real RP2040/NEMA17 example, the cover and bolts lift
-together before the bolts, motor and spacers separate. The image includes each
-completed stage and a halfway bolt-removal pose, alongside the actual TSX.
-
-![RP2040 assembly explosion stages with TSX](./tests/assembly/__snapshots__/assembly-explosion-rp2040-stages-annotated.snap.png)
-
-See the [explosion API](./docs/assembly-explosion.md) and
-[fixture source and reproduction notes](./tests/assembly/fixtures/rp2040-explosion/README.md).
-
 ## Development
 
 - [Declare PCB return-current experiments in TSX](./docs/pcb-return-current-simulation.md)
