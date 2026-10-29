@@ -58,10 +58,5 @@ test("native group anchor alignment follows the Circuit JSON schema", async () =
   await expect(
     stackSvgsHorizontally(panels, { gap: 16, normalizeSize: false }),
   ).toMatchSvgSnapshot(import.meta.path, undefined, { diffThresholdPercent: 0 })
-  // Reproduction: omitted alignment is rejected despite valid PCB geometry.
-  expect(validationResults).toEqual([
-    ["anchor_alignment"],
-    "center",
-    "top_left",
-  ])
+  expect(validationResults).toEqual(["center", "center", "top_left"])
 })

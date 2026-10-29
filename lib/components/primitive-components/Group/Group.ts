@@ -552,7 +552,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             trace_clearance: props.autorouter.traceClearance,
           }
         : undefined,
-      anchor_alignment: props.pcbAnchorAlignment ?? null,
+      anchor_alignment: props.pcbAnchorAlignment,
     })
     this.pcb_group_id = pcb_group.pcb_group_id
 
