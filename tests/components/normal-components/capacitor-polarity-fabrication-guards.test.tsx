@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import type { Capacitor } from "lib/components/normal-components/Capacitor"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("capacitor polarity signs require polarized and distinct pads and preserve authored notes", async () => {
+test("capacitors delegate artwork to footprints and preserve authored fabrication notes", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width={32} height={10} routingDisabled>

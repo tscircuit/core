@@ -31,6 +31,15 @@ test("explicit polarity conflicts are rejected and matching options preserve use
         footprint: "cap0805_nonpolarized",
       }),
   ).toThrow("explicitly disables polarity")
+  for (const footprint of [
+    "diode0805_anodepin3",
+    "diode0805_anodepin(hello)",
+    "diode0805_anodepin1_cathodepin1",
+  ]) {
+    expect(() => new Diode({ name: "D_INVALID", footprint })).toThrow(
+      "polarity options must identify distinct pins 1 and 2",
+    )
+  }
   const { circuit } = getTestFixture()
   const props = {
     name: "D_MATCH",
