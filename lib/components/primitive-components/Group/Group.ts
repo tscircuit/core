@@ -108,6 +108,7 @@ import { Group_getRoutingPhasePlans } from "./Group_getRoutingPhasePlans"
 import { RoutingPhasePreparationError } from "lib/utils/autorouting/routing-phase-preparation-error"
 import {
   cacheLocalAutoroutingPhaseResult,
+  getAlgorithmFnFingerprint,
   getCachedLocalAutoroutingPhaseResult,
   getLocalAutoroutingCacheKey,
 } from "./Group_localAutoroutingCache"
@@ -1118,6 +1119,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
                 ...phaseAutorouterConfig,
                 // The phase callback overrides inherited or preset callbacks.
                 algorithmFn: routingPhasePlan.algorithmFn,
+                isPlatformAutorouter: false,
               }
             : phaseAutorouterConfig,
         this.root?.platform,
@@ -1712,17 +1714,31 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         effort: commonAutorouterOptions.effort,
       }
 
+      const platformCacheEngine = this.root?.platform?.localCacheEngine
+      // A custom algorithm replaces the strategy's solver; its results are
+      // cacheable only when the cache engine can fingerprint its code.
+      const algorithmFnFingerprint =
+        phaseAutorouterConfig.algorithmFn &&
+        !phaseAutorouterConfig.isPlatformAutorouter &&
+        !isTestPointPhase &&
+        !getPrecomputedRoutingResult
+          ? await getAlgorithmFnFingerprint({
+              cacheEngine: platformCacheEngine,
+              algorithmFn: phaseAutorouterConfig.algorithmFn,
+            })
+          : undefined
+      const isPhaseCacheable = phaseAutorouterConfig.algorithmFn
+        ? Boolean(algorithmFnFingerprint)
+        : localAutorouterStrategy.cacheable
       const cacheEngine =
-        isTestPointPhase ||
-        getPrecomputedRoutingResult ||
-        phaseAutorouterConfig.algorithmFn ||
-        !localAutorouterStrategy.cacheable
+        isTestPointPhase || getPrecomputedRoutingResult || !isPhaseCacheable
           ? undefined
-          : this.root?.platform?.localCacheEngine
+          : platformCacheEngine
       const cacheKey = cacheEngine
         ? getLocalAutoroutingCacheKey(
             simpleRouteJson,
             localAutoroutingCacheSolverOptions,
+            algorithmFnFingerprint ?? undefined,
           )
         : undefined
       const cachedResult = cacheKey
@@ -1730,13 +1746,17 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         : null
       const cacheDisabledReason = getPrecomputedRoutingResult
         ? "precomputed"
-        : phaseAutorouterConfig.algorithmFn
-          ? "custom_algorithm"
-          : !localAutorouterStrategy.cacheable
-            ? "strategy_not_cacheable"
-            : !cacheEngine
-              ? "no_cache_engine"
-              : undefined
+        : phaseAutorouterConfig.algorithmFn && !platformCacheEngine
+          ? "no_cache_engine"
+          : phaseAutorouterConfig.algorithmFn && algorithmFnFingerprint === null
+            ? "custom_algorithm_not_fingerprintable"
+            : phaseAutorouterConfig.algorithmFn && !algorithmFnFingerprint
+              ? "custom_algorithm"
+              : !isPhaseCacheable
+                ? "strategy_not_cacheable"
+                : !cacheEngine
+                  ? "no_cache_engine"
+                  : undefined
       const autoroutingMetadata = {
         routingPhaseIndex: routingPhasePlan.routingPhaseIndex,
         _actualRoutingPhaseOrderIndex: routingStageIndex,
@@ -1908,6 +1928,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         } else if (cachedResult) {
           debug(`[${this.getString()}] using cached local autorouting result`)
           traces = cachedResult.traces
+          precomputedOutputSimpleRouteJson = cachedResult.outputSimpleRouteJson
         } else {
           if (phaseAutorouterConfig.algorithmFn) {
             autorouter =
@@ -1948,9 +1969,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           traces = await runAutorouter(autorouter)
         }
 
-        let transformedSimpleRouteJson =
+        const autorouterOutputSimpleRouteJson =
           precomputedOutputSimpleRouteJson ??
           autorouter?.getOutputSimpleRouteJson?.()
+        let transformedSimpleRouteJson = autorouterOutputSimpleRouteJson
         if (
           localAutorouterStrategy.preserveOutputTraces &&
           transformedSimpleRouteJson?.traces
@@ -2046,6 +2068,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             result: {
               ...simpleRouteJson,
               traces,
+              outputSimpleRouteJson: autorouterOutputSimpleRouteJson,
             },
           })
         }
