@@ -194,11 +194,9 @@ the assembled document for interactive playback.
 
 ## Native GLTF playback and stage snapshots
 
-[circuit-json-to-gltf #274](https://github.com/tscircuit/circuit-json-to-gltf/pull/274)
-adds direct evaluation of the serialized stage/move records. The visual tests
-temporarily use its PR preview; merge and publish that exporter change, then
-replace the preview dependency before merging core. The dependency gate remains
-enabled.
+`circuit-json-to-gltf@0.0.159` adds direct evaluation of the serialized stage/move
+records, released from [#274](https://github.com/tscircuit/circuit-json-to-gltf/pull/274).
+The visual tests use this published exporter release.
 
 ```ts
 import {
