@@ -51,9 +51,14 @@ export function getPrimaryPortsFromPortHintGroups(
       }
     }
   }
-  const hasExplicitThermalPadPinInLabels = [
-    ...(opts?.implicitPinNumberByHint?.values() ?? []),
-  ].includes(maxExplicitPinNumber + 1)
+  const thermalPinNumberCandidate = maxExplicitPinNumber + 1
+  const hasExplicitThermalPadPinInLabels = Array.from(
+    opts?.implicitPinNumberByHint?.entries() ?? [],
+  ).some(
+    ([hint, pinNum]) =>
+      pinNum === thermalPinNumberCandidate &&
+      /^(?:thermalpad|ep|epad|pad|gnd|agnd|pgnd|dgnd|vss)$/i.test(hint.trim()),
+  )
 
   for (const portHintGroup of portHintGroups) {
     const filteredPortHints = portHintGroup.hints.filter(

@@ -75,12 +75,11 @@ function shouldNeckDownAtPad(
   allPads: RectPadBounds[],
   minClearance = DEFAULT_MIN_PAD_CLEARANCE,
 ): boolean {
+  // Only neck down when the trace is meaningfully wider than the pad's narrow
+  // dimension (e.g. a 0.5mm power/motor trace entering a 0.25mm-0.35mm fine-pitch pad).
   if (pad.minDim >= traceWidth - EPSILON) return false
-
-  // Check if any adjacent SMD pad on the same layer is close enough that a
-  // full-width trace exiting this pad could violate copper clearance.
-  const searchRadiusX = pad.width / 2 + traceWidth / 2 + minClearance
-  const searchRadiusY = pad.height / 2 + traceWidth / 2 + minClearance
+  const sideOverhang = (traceWidth - pad.minDim) / 2
+  if (sideOverhang <= 0.05 + EPSILON) return false
 
   for (const other of allPads) {
     if (other.pcb_smtpad_id === pad.pcb_smtpad_id) continue
@@ -102,12 +101,7 @@ function shouldNeckDownAtPad(
       Math.abs(pad.y - other.y) - (pad.height / 2 + other.height / 2),
     )
     const edgeGap = Math.hypot(dx, dy)
-    if (
-      edgeGap < traceWidth - pad.minDim + minClearance + EPSILON ||
-      (Math.abs(pad.x - other.x) <= searchRadiusX + other.width / 2 &&
-        Math.abs(pad.y - other.y) <= searchRadiusY + other.height / 2 &&
-        edgeGap < traceWidth / 2 + minClearance + EPSILON)
-    ) {
+    if (edgeGap - sideOverhang < minClearance - EPSILON) {
       return true
     }
   }
