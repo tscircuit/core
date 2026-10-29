@@ -188,3 +188,43 @@ This compatibility adapter is not called by the normal render pipeline or getter
 Derived pose outputs omit explosion instructions so saving and reopening an
 already-exploded pose cannot accidentally apply the same movements twice. Retain
 the assembled document for interactive playback.
+
+## Native GLTF playback and stage snapshots
+
+[circuit-json-to-gltf #274](https://github.com/tscircuit/circuit-json-to-gltf/pull/274)
+adds direct evaluation of the serialized stage/move records. The visual tests
+temporarily use its PR preview; merge and publish that exporter change, then
+replace the preview dependency before merging core. The dependency gate remains
+enabled.
+
+```ts
+import {
+  convertCircuitJsonToGltf,
+  getAssemblyExplosionFrames,
+} from "circuit-json-to-gltf";
+
+const assembledJson = circuit.getCircuitJson();
+const frames = getAssemblyExplosionFrames(assembledJson);
+for (const frame of frames) {
+  const glb = await convertCircuitJsonToGltf(assembledJson, {
+    format: "glb",
+    explosion: frame.explosion,
+  });
+  // Render glb with one fixed camera and label it with frame.name.
+}
+```
+
+The helper returns assembled plus every completed stage in playback order.
+`explosion: { throughStageRef, stageProgress }` also renders intermediate poses;
+omitting `explosion` retains the assembled pose. Each call starts from the original
+document, so whole-stage moves retain earlier displacements and backward scrubbing
+is deterministic. This is pose sampling for playback and snapshots, not embedded
+GLTF animation tracks.
+
+Four annotated snapshot sheets cover 20 views: round trips with sequential partial
+progress, whole-stage movement and backward scrubbing; four mounting-frame
+orientations; retargeting and stage removal/restoration; and the real RP2040 board
+assembled plus all five explosion stages. Every panel sends the original program
+directly to the exporter. The real-board fixture pins its exported JSON and 26
+model assets for offline rendering; see its
+[source and reproduction notes](../tests/assembly/fixtures/rp2040-explosion/README.md).

@@ -8,7 +8,7 @@ import type { ExplosionLine } from "poppygl"
  * center. This matches emitted glTF geometry, without a renderer compensation.
  */
 export const poppyglExplosionLines = (
-  view: AssemblyExplosionView,
+  view: Pick<AssemblyExplosionView, "lines">,
 ): ExplosionLine[] =>
   view.lines.map((line) => ({
     points: line.points.map((point) => [-point.x, point.z, point.y] as const),

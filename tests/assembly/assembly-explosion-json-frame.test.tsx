@@ -1,3 +1,5 @@
+import { poppyglExplosionLines } from "./fixtures/poppygl-explosion-lines"
+import { expectAssemblySnapshot } from "./fixtures/expect-assembly-snapshot"
 import { expect, test } from "bun:test"
 import {
   Circuit,
@@ -8,13 +10,20 @@ import {
 } from "lib"
 
 test("serialized movements preserve resolved local frames and nested physical assemblies", async () => {
+  const panels: Parameters<typeof expectAssemblySnapshot>[1]["panels"] = []
   for (const normalDirection of ["z+", "z-", "y+", "y-"] as const) {
     const circuit = new Circuit()
     circuit.add(
       <assembly.device name="D">
         <assembly.part
           name="BASE"
-          cadModel={{ jscad: { type: "cube", size: 4 } }}
+          cadModel={{
+            jscad: {
+              type: "colorize",
+              color: [0.3, 0.4, 0.5],
+              shape: { type: "cuboid", size: [5, 4, 2] },
+            },
+          }}
         >
           <assembly.referencesurface
             name="face"
@@ -26,13 +35,20 @@ test("serialized movements preserve resolved local frames and nested physical as
           name="CARRIER"
           mountedTo="BASE.face"
           mountFace="back"
+          color="#3283b5"
           jscad={<jscad.cube size={2} />}
         >
           <assembly.referencesurface name="back" normalDirection="z-" />
           <assembly.subassembly name="MODULE">
             <assembly.part
               name="MARKER"
-              cadModel={{ jscad: { type: "cube", size: 1 } }}
+              cadModel={{
+                jscad: {
+                  type: "colorize",
+                  color: [0.95, 0.65, 0.2],
+                  shape: { type: "cuboid", size: [2, 1, 3] },
+                },
+              }}
             />
             <assembly.explosion.stage name="move">
               <assembly.explosion.move
@@ -73,5 +89,33 @@ test("serialized movements preserve resolved local frames and nested physical as
           expect((record as any)[key][axis]).toBeCloseTo(prior[key][axis], 5)
       }
     }
+    panels.push({
+      title: `Mount normal ${normalDirection}: local XYZ movement`,
+      code: `<assembly.referencesurface
+  normalDirection="${normalDirection}" />
+<assembly.explosion.move
+  targetRef="MARKER"
+  offX="5mm" offY="7mm" offZ="11mm" />`,
+      annotation:
+        "Gray base / blue carrier stay fixed. Amber marker follows the resolved local frame.",
+      circuit: json,
+      showReferenceSurfaces: true,
+      renderOptions: {
+        camPos: [-26, 22, 27],
+        poppygl: {
+          lookAt: [0, 0, 0],
+          explosionLines: poppyglExplosionLines(
+            getCircuitJsonAssemblyExplosion(json),
+          ),
+        },
+        gltf: { explosion: {} },
+      },
+    })
   }
+  await expectAssemblySnapshot(import.meta.path, {
+    title: "Serialized directions across upright, inverted and tilted mounts",
+    panels,
+    columns: 2,
+    font: "alphabet",
+  })
 })

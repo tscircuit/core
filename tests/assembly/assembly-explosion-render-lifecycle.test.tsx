@@ -1,3 +1,5 @@
+import { poppyglExplosionLines } from "./fixtures/poppygl-explosion-lines"
+import { expectAssemblySnapshot } from "./fixtures/expect-assembly-snapshot"
 import { expect, test } from "bun:test"
 import { Circuit, assembly, getCircuitJsonAssemblyExplosion } from "lib"
 import { AssemblyExplosionMove } from "lib/components/primitive-components/AssemblyExplosionMove"
@@ -44,6 +46,15 @@ test("render phases own stable explosion IDs and update dependent membership, or
       .find((move) => move.cad_explosion_stage_id === parkId)?.targets,
   ).toEqual([{ type: "cad_explosion_stage", cad_explosion_stage_id: liftId }])
   const initial = structuredClone(db.toArray())
+  const panels: Parameters<typeof expectAssemblySnapshot>[1]["panels"] = [
+    {
+      title: "1. Initial move targets A",
+      code: 'targetRef="A" offZ={10}\npark: targetRef="lift" offX={20}',
+      annotation:
+        "Small A is lifted and parked; large B remains at the origin.",
+      circuit: initial,
+    },
+  ]
   await circuit.renderUntilSettled()
   expect(db.toArray()).toEqual(initial)
 
@@ -60,6 +71,14 @@ test("render phases own stable explosion IDs and update dependent membership, or
       record.type === "cad_component" && record.cad_component_id === bId,
   )
   expect(moved).toMatchObject({ position: { x: 20, y: 0, z: 15 } })
+
+  panels.push({
+    title: "2. Change the move target to B",
+    code: 'liftMove.setProps({\n  targetRef: "B", offZ: 15\n})\nawait circuit.renderUntilSettled()',
+    annotation:
+      "Membership updates transitively: large B moves; A returns to the origin.",
+    circuit: structuredClone(db.toArray()),
+  })
 
   const addedMove = new AssemblyExplosionMove({ targetRef: "A", offY: 3 })
   lift.add(addedMove)
@@ -94,9 +113,45 @@ test("render phases own stable explosion IDs and update dependent membership, or
   expect(db.cad_explosion_move.get(moveId)?.cad_explosion_stage_id).toBe(liftId)
   expect(circuit.getCircuitJson()).toEqual(db.toArray())
 
+  panels.push({
+    title: "3. Remove the park stage",
+    code: "park.shouldBeRemoved = true\nawait circuit.renderUntilSettled()",
+    annotation:
+      "B still lifts, but the removed stage no longer translates it sideways.",
+    circuit: structuredClone(db.toArray()),
+  })
+
   park.shouldBeRemoved = false
   await circuit.renderUntilSettled()
   expect(db.cad_explosion_stage.list()).toHaveLength(2)
   expect(db.cad_explosion_move.list()).toHaveLength(2)
   expect(() => getCircuitJsonAssemblyExplosion(db.toArray())).not.toThrow()
+  panels.push({
+    title: "4. Restore the park stage",
+    code: "park.shouldBeRemoved = false\nawait circuit.renderUntilSettled()",
+    annotation:
+      "Stage and owned move records are recreated; whole-stage playback is restored.",
+    circuit: structuredClone(db.toArray()),
+  })
+  await expectAssemblySnapshot(import.meta.path, {
+    title:
+      "Render lifecycle: visual consequences of retargeting and stage removal",
+    columns: 2,
+    font: "alphabet",
+    panels: panels.map((panel) => ({
+      ...panel,
+      renderOptions: {
+        camPos: [-35, 26, 30],
+        poppygl: {
+          lookAt: [-10, 7, 0],
+          explosionLines: poppyglExplosionLines(
+            getCircuitJsonAssemblyExplosion(
+              panel.circuit as import("circuit-json").AnyCircuitElement[],
+            ),
+          ),
+        },
+        gltf: { explosion: {} },
+      },
+    })),
+  })
 })
