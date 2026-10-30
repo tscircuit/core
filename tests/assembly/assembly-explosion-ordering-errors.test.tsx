@@ -55,13 +55,7 @@ test("invalid ordering and targets fail with named diagnostics even outside the 
     circuit.add(
       <assembly.device name="DEVICE">{scenario.stages}</assembly.device>,
     )
-    await circuit.renderUntilSettled()
-    expect(() =>
-      getAssemblyExplosion(circuit, {
-        throughStageRef: "DEVICE.first",
-        stageProgress: 0,
-      }),
-    ).toThrow(scenario.error)
+    await expect(circuit.renderUntilSettled()).rejects.toThrow(scenario.error)
   }
   const { circuit } = getTestFixture()
   circuit.add(

@@ -4,12 +4,45 @@ import { pcb_component_invalid_layer_error } from "circuit-json"
 import { NormalComponent } from "lib/components/base-components/NormalComponent"
 import { Port } from "lib/components/primitive-components/Port"
 import { Trace } from "lib/components/primitive-components/Trace/Trace"
+import { parseFootprinterDefinition } from "lib/utils/footprints/parse-footprinter-definition"
 import { Chip_doInitialPcbPlacementDesignRuleChecks } from "./Chip_doInitialPcbPlacementDesignRuleChecks"
 
 export class Chip<PinLabels extends string = never> extends NormalComponent<
   typeof chipProps,
   PinLabels
 > {
+  resolveFootprint() {
+    const footprint = super.resolveFootprint()
+    const parsed = parseFootprinterDefinition(footprint)
+    if (!parsed) return footprint
+    const { definition, parameters } = parsed
+    if (
+      parameters.polarized !== undefined ||
+      parameters.nonpolarized !== undefined
+    ) {
+      return definition
+    }
+    // Only diode/LED packages add electrical polarity artwork by default.
+    const hasAutomaticPolarity =
+      parameters.fn.startsWith("sod") ||
+      [
+        "diode",
+        "led",
+        "led2835",
+        "led5050",
+        "do219ad",
+        "sma",
+        "smb",
+        "smbf",
+        "smc",
+        "smf",
+        "melf",
+        "minimelf",
+        "micromelf",
+      ].includes(parameters.fn)
+    return hasAutomaticPolarity ? `${definition}_nonpolarized` : footprint
+  }
+
   get config() {
     return {
       componentName: "Chip",

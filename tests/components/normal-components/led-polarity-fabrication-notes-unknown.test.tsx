@@ -1,7 +1,16 @@
 import { expect, test } from "bun:test"
+import { Led } from "lib/components/normal-components/Led"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("only draws symbols for LEDs with unambiguous polarity", async () => {
+test("ambiguous polarity is rejected and custom footprints remain authored", async () => {
+  expect(
+    () =>
+      new Led({
+        name: "LED_CONFLICT",
+        footprint: "0603",
+        pinLabels: { pin1: ["anode", "cathode"], pin2: ["cathode"] },
+      }),
+  ).toThrow("conflicting positive and negative")
   const { circuit } = getTestFixture()
   circuit.add(
     <board width={42} height={10} routingDisabled>
@@ -33,12 +42,6 @@ test("only draws symbols for LEDs with unambiguous polarity", async () => {
           />
         </footprint>
       </led>
-      <led
-        name="LED_CONFLICT"
-        footprint="0603"
-        pcbX={15}
-        pinLabels={{ pin1: ["anode", "cathode"], pin2: ["cathode"] }}
-      />
     </board>,
   )
   await circuit.renderUntilSettled()
@@ -47,7 +50,7 @@ test("only draws symbols for LEDs with unambiguous polarity", async () => {
       .list()
       .map((note) => note.text)
       .sort(),
-  ).toEqual(["custom footprint"])
+  ).toEqual(["+", "-", "custom footprint"])
   expect(circuit.db.pcb_fabrication_note_path.list()).toHaveLength(4)
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
