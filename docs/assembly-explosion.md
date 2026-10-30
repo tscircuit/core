@@ -130,9 +130,13 @@ entire program asynchronously during rendering. Await `renderUntilSettled()`
 before inspecting its diagnostics. Getters only read the result; they do not
 generate errors or load the geometry kernel.
 
-The checker uses Manifold and the existing `jscad-to-manifold` converter. It
-constructs a continuous swept solid for each straight translation, preserving
-holes and concavities. An obstacle between two clear endpoints is still detected.
+The checker delegates mesh movement checks to
+[`@tscircuit/cad-collision-checking`](https://github.com/tscircuit/cad-collision-checking),
+a standalone `BaseSolver` with step-by-step debugging and visualization. Core
+converts JSCAD/PCB geometry into world-space meshes and maps the solver's output
+back to Circuit JSON diagnostics. The library uses Manifold to construct a
+continuous swept solid for each straight translation, preserving holes and
+concavities. An obstacle between two clear endpoints is still detected.
 Earlier moves are applied before checking later moves; all targets of a single
 move travel together, including members selected through another stage.
 
@@ -184,10 +188,10 @@ The render pipeline inserts `cad_explosion_stage` and `cad_explosion_move`
 records into the circuit database alongside assembled geometry. `getCircuitJson()`
 reads that database without generating instructions. These follow the
 [merged Circuit JSON schema](https://github.com/tscircuit/circuit-json/pull/937),
-published in `circuit-json@0.0.539`. The collision diagnostics are proposed in
-[Circuit JSON #944](https://github.com/tscircuit/circuit-json/pull/944); this branch
-uses its preview until publication. The dependency gate remains enabled and must
-pass with the published schema version before merging.
+published in `circuit-json@0.0.539`. The collision diagnostics from
+[Circuit JSON #944](https://github.com/tscircuit/circuit-json/pull/944) are published
+in `circuit-json@0.0.541`. Core uses that release, and the existing dependency
+gate continues to reject preview package dependencies before merging.
 
 `CadExplosionStageRender` allocates database-owned stage identities, then
 `CadExplosionRender` resolves membership, ordering and move targets. Both phases

@@ -4,12 +4,16 @@ import {
   type AnyCircuitElement,
   type CadExplosionCollisionCheckWarning,
 } from "circuit-json"
-import type { Manifold, ManifoldToplevel, Vec3 } from "manifold-3d"
+import type { ManifoldToplevel, Vec3 } from "manifold-3d"
+import {
+  CadCollisionCheckingSolver,
+  loadCollisionManifold,
+  serializeCollisionMesh,
+  type CollisionSolidId,
+} from "@tscircuit/cad-collision-checking"
 import { getCircuitJsonAssemblyExplosion } from "./get-circuit-json-assembly-explosion"
 import { createCadCollisionSolid } from "./collision/create-cad-collision-solid"
 import { createBoardCollisionSolid } from "./collision/create-board-collision-solid"
-import { createTranslationSweep } from "./collision/create-translation-sweep"
-import { loadCollisionManifold } from "./collision/load-collision-manifold"
 import type {
   AssemblyExplosionCollisionCheck,
   ExplosionCollisionSolid,
@@ -17,13 +21,12 @@ import type {
   ExplosionBoardId,
 } from "./collision/types"
 
-const boundsOverlap = (
-  a: ReturnType<Manifold["boundingBox"]>,
-  b: ReturnType<Manifold["boundingBox"]>,
-) =>
-  [0, 1, 2].every(
-    (axis) => a.min[axis] < b.max[axis] && b.min[axis] < a.max[axis],
-  )
+const getCollisionSolidId = (
+  obstacle: ExplosionCollisionSolid["reference"],
+): CollisionSolidId =>
+  obstacle.type === "cad_component"
+    ? `cad_component:${obstacle.cad_component_id}`
+    : `pcb_board:${obstacle.pcb_board_id}`
 
 /** Check the entire serialized explosion program without mutating its geometry.
  * All solids/points and translations use right-handed Circuit JSON world mm
@@ -132,128 +135,93 @@ export async function checkCircuitJsonAssemblyExplosionCollisions(
         }
       }
     }
-    const cadSolids = new Map<ExplosionCadId, ExplosionCollisionSolid>()
-    for (const entry of solids)
-      if (entry.reference.type === "cad_component")
-        cadSolids.set(entry.reference.cad_component_id, entry)
+    const solidsById = new Map(
+      solids.map((solid) => [getCollisionSolidId(solid.reference), solid]),
+    )
     const stagesById = new Map(
       stages.map((stage) => [stage.cad_explosion_stage_id, stage]),
     )
-    for (const stage of stages) {
-      const stageMoves = moves
-        .filter(
-          (move) =>
-            move.cad_explosion_stage_id === stage.cad_explosion_stage_id,
-        )
-        .sort((a, b) => a.order - b.order)
-      for (const move of stageMoves) {
-        const displacement: Vec3 = [
-          move.translation.x,
-          move.translation.y,
-          move.translation.z,
-        ]
-        if (!Math.hypot(...displacement)) continue
-        const moved = new Set<ExplosionCadId>()
-        for (const target of move.targets) {
-          if (target.type === "cad_component")
-            moved.add(target.cad_component_id)
-          else if (target.type === "cad_explosion_stage")
-            for (const id of stagesById.get(target.cad_explosion_stage_id)!
-              .cad_component_ids)
-              moved.add(id)
-        }
-        // All parts in one move have zero relative displacement. Exclude them
-        // together, including duplicated/overlapping whole-stage memberships.
-        const obstacles = solids.filter(
-          (entry) =>
-            entry.reference.type === "pcb_board" ||
-            !moved.has(entry.reference.cad_component_id),
-        )
-        for (const cadId of moved) {
-          const moving = cadSolids.get(cadId)
-          if (!moving) continue
-          const bounds = moving.solid.boundingBox()
-          const sweptBounds = {
-            min: bounds.min.map(
-              (v, axis) => v + Math.min(0, displacement[axis]),
-            ) as Vec3,
-            max: bounds.max.map(
-              (v, axis) => v + Math.max(0, displacement[axis]),
-            ) as Vec3,
-          }
-          const candidates = obstacles.filter((obstacle) =>
-            boundsOverlap(sweptBounds, obstacle.solid.boundingBox()),
-          )
-          if (!candidates.length) continue
-          const sweep = createTranslationSweep(
-            moving.solid,
-            displacement,
-            manifold,
-          )
-          let entered: Manifold | undefined
-          try {
-            entered = sweep.subtract(moving.solid)
-            if (entered.status() !== "NoError")
-              throw new Error("Could not evaluate newly swept geometry")
-            for (const obstacle of candidates) {
-              const intersection = entered.intersect(obstacle.solid)
-              try {
-                if (intersection.status() !== "NoError")
-                  throw new Error("Could not intersect explosion solids")
-                const volume = intersection.volume()
-                // Ignore rounding at touching faces. The threshold follows the
-                // kernel's linear tolerance and intersected surface area, in mm³.
-                const threshold = Math.max(
-                  1e-9,
-                  intersection.tolerance() * intersection.surfaceArea(),
-                )
-                if (volume <= threshold) continue
-                result.errors.push(
-                  cad_explosion_collision_error.parse({
-                    type: "cad_explosion_collision_error",
-                    cad_explosion_stage_id: stage.cad_explosion_stage_id,
-                    cad_explosion_move_id: move.cad_explosion_move_id,
-                    moving_cad_component_id: cadId,
-                    obstacle: obstacle.reference,
-                    source_component_ids: [
-                      ...new Set([
-                        moving.sourceComponentId!,
-                        ...(obstacle.sourceComponentId
-                          ? [obstacle.sourceComponentId]
-                          : []),
-                      ]),
-                    ],
-                    swept_intersection_volume_mm3: volume,
-                    message: `Explosion stage "${stage.name}" moves "${moving.name}" through "${obstacle.name}"`,
-                    is_fatal: false,
+    const movesById = new Map(
+      moves.map((move) => [move.cad_explosion_move_id, move]),
+    )
+    const solver = new CadCollisionCheckingSolver(
+      {
+        solids: solids.map((solid) => ({
+          solidId: getCollisionSolidId(solid.reference),
+          name: solid.name,
+          mesh: serializeCollisionMesh(solid.solid),
+        })),
+        moves: stages.flatMap((stage) =>
+          moves
+            .filter(
+              (move) =>
+                move.cad_explosion_stage_id === stage.cad_explosion_stage_id,
+            )
+            .sort((a, b) => a.order - b.order)
+            .map((move) => ({
+              moveId: move.cad_explosion_move_id,
+              name: stage.name,
+              translation: [
+                move.translation.x,
+                move.translation.y,
+                move.translation.z,
+              ] as Vec3,
+              solidIds: [
+                ...new Set(
+                  move.targets.flatMap((target) =>
+                    target.type === "cad_component"
+                      ? [target.cad_component_id]
+                      : target.type === "cad_explosion_stage"
+                        ? stagesById.get(target.cad_explosion_stage_id)!
+                            .cad_component_ids
+                        : [],
+                  ),
+                ),
+              ]
+                .map((cad_component_id) =>
+                  getCollisionSolidId({
+                    type: "cad_component",
+                    cad_component_id,
                   }),
                 )
-              } finally {
-                intersection.delete()
-              }
-            }
-          } finally {
-            entered?.delete()
-            sweep.delete()
-          }
-        }
-        // Apply each shared translation once, after every pair has been checked
-        // against the same pre-move scene. Subsequent moves use these new poses.
-        for (const cadId of moved) {
-          const entry = cadSolids.get(cadId)
-          if (!entry) continue
-          const translated = entry.solid.translate(displacement)
-          try {
-            if (translated.status() !== "NoError")
-              throw new Error("Could not translate explosion solid")
-          } catch (error) {
-            translated.delete()
-            throw error
-          }
-          entry.solid.delete()
-          entry.solid = translated
-        }
+                // Missing geometry is already represented by an incomplete warning.
+                .filter((solidId) => solidsById.has(solidId)),
+            })),
+        ),
+      },
+      { manifold },
+    )
+    try {
+      solver.solve()
+      for (const collision of solver.getOutput().collisions) {
+        const move = movesById.get(collision.moveId)!
+        const stage = stagesById.get(move.cad_explosion_stage_id)!
+        const moving = solidsById.get(collision.movingSolidId)!
+        const obstacle = solidsById.get(collision.obstacleSolidId)!
+        if (moving.reference.type !== "cad_component") continue
+        result.errors.push(
+          cad_explosion_collision_error.parse({
+            type: "cad_explosion_collision_error",
+            cad_explosion_stage_id: stage.cad_explosion_stage_id,
+            cad_explosion_move_id: move.cad_explosion_move_id,
+            moving_cad_component_id: moving.reference.cad_component_id,
+            obstacle: obstacle.reference,
+            source_component_ids: [
+              ...new Set([
+                moving.sourceComponentId!,
+                ...(obstacle.sourceComponentId
+                  ? [obstacle.sourceComponentId]
+                  : []),
+              ]),
+            ],
+            swept_intersection_volume_mm3: collision.sweptIntersectionVolumeMm3,
+            message: `Explosion stage "${stage.name}" moves "${moving.name}" through "${obstacle.name}"`,
+            is_fatal: false,
+          }),
+        )
       }
+    } finally {
+      solver.dispose()
     }
     for (const [reason, group] of unavailable) {
       const names = [...new Set(group.names)]

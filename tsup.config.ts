@@ -19,6 +19,7 @@ export default defineConfig({
     ],
   },
   noExternal: [
+    "@tscircuit/cad-collision-checking",
     "jscad-to-manifold",
     "@tscircuit/test-point-rerouter",
     "@tscircuit/jscad",

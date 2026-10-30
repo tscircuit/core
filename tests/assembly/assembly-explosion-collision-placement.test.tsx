@@ -4,7 +4,7 @@ import { convertCircuitJsonToGltf } from "circuit-json-to-gltf"
 import { createSceneFromGLTF, loadGLTFWithResourcesFromURL } from "poppygl"
 import { vec3 } from "gl-matrix"
 import { createCadCollisionSolid } from "lib/assembly-explosion/collision/create-cad-collision-solid"
-import { loadCollisionManifold } from "lib/assembly-explosion/collision/load-collision-manifold"
+import { loadCollisionManifold } from "@tscircuit/cad-collision-checking"
 
 test("collision model placement matches emitted glTF with nonzero origins, units, fit and compound rotations", async () => {
   const circuit = new Circuit()
