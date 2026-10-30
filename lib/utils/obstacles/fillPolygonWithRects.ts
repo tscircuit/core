@@ -22,13 +22,19 @@ export function fillPolygonWithRects(
 ): Rect[] {
   if (polygon.length < 3) return []
 
-  const { rectHeight = 0.1 } = options
-
-  const rects: Rect[] = []
-
   const yCoords = polygon.map((p) => p.y)
   const minY = Math.min(...yCoords)
   const maxY = Math.max(...yCoords)
+  const verticalExtent = maxY - minY
+  if (verticalExtent <= 0) return []
+
+  const rectHeightOption = options.rectHeight ?? 0.1
+  const rectHeight =
+    verticalExtent > 0
+      ? Math.min(rectHeightOption, verticalExtent)
+      : rectHeightOption
+
+  const rects: Rect[] = []
 
   for (let y = minY; y < maxY; y += rectHeight) {
     const scanlineY = y + rectHeight / 2
