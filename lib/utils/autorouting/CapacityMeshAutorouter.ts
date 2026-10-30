@@ -82,6 +82,7 @@ export const getAutorouterSolverName = ({
   useTraceSimplificationSolver = false,
   platformConfig,
   effort,
+  input,
 }: Pick<
   AutorouterOptions,
   | "useAssignableSolver"
@@ -91,7 +92,9 @@ export const getAutorouterSolverName = ({
   | "useTraceSimplificationSolver"
   | "platformConfig"
   | "effort"
->): AutorouterSolverName => {
+> & {
+  input?: Pick<SimpleRouteJson, "traces">
+}): AutorouterSolverName => {
   const pipeline9SolverName =
     platformConfig?.useCloudAutorouter && (effort === undefined || effort === 1)
       ? "AutoroutingPipelineSolver9_Networked"
@@ -124,6 +127,9 @@ export const getAutorouterSolverName = ({
   if (useLaserPrefabSolver) return "AutoroutingPipelineSolver8"
   if (useAutoJumperSolver) return "AssignableAutoroutingPipeline3"
   if (useAssignableSolver) return "AssignableAutoroutingPipeline2"
+  if ((input?.traces?.length ?? 0) > 0) {
+    return pipeline9SolverName
+  }
   return pipeline9SolverName
 }
 
@@ -190,6 +196,7 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
       useTraceSimplificationSolver,
       platformConfig,
       effort,
+      input,
     })
     this.solverName = solverName
     this.autorouterThreads = platformConfig?.autorouterThreads
