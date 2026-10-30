@@ -11,10 +11,7 @@ import {
 import type { NormalComponent } from "lib/components/base-components/NormalComponent"
 import { CopperText } from "lib/components/primitive-components/CopperText"
 import { CourtyardCircle } from "lib/components/primitive-components/CourtyardCircle"
-import {
-  CourtyardOutline,
-  getCourtyardOutlineRingArea,
-} from "lib/components/primitive-components/CourtyardOutline"
+import { CourtyardOutline } from "lib/components/primitive-components/CourtyardOutline"
 import { CourtyardRect } from "lib/components/primitive-components/CourtyardRect"
 import { Cutout } from "lib/components/primitive-components/Cutout"
 import { FabricationNoteDimension } from "lib/components/primitive-components/FabricationNoteDimension"
@@ -126,6 +123,35 @@ const getSchematicSymbolId = (elm: AnyCircuitElement): string | undefined => {
 }
 
 const COURTYARD_ENDPOINT_TOL = 1e-3
+const COURTYARD_RING_EPS = 1e-6
+
+const getCourtyardOutlineRingArea = (
+  outline: Array<{ x: number; y: number }>,
+): number => {
+  const clean = outline.filter(
+    (p, i) =>
+      i === 0 ||
+      Math.hypot(p.x - outline[i - 1]!.x, p.y - outline[i - 1]!.y) >
+        COURTYARD_RING_EPS,
+  )
+  if (
+    clean.length > 1 &&
+    Math.hypot(
+      clean[0]!.x - clean[clean.length - 1]!.x,
+      clean[0]!.y - clean[clean.length - 1]!.y,
+    ) <= COURTYARD_RING_EPS
+  ) {
+    clean.pop()
+  }
+  if (clean.length < 3) return 0
+  let twiceArea = 0
+  for (let i = 0; i < clean.length; i++) {
+    const a = clean[i]!
+    const b = clean[(i + 1) % clean.length]!
+    twiceArea += a.x * b.y - b.x * a.y
+  }
+  return Math.abs(twiceArea) / 2
+}
 
 const stitchOpenCourtyardOutlines = (
   openOutlines: Array<Array<{ x: number; y: number }>>,

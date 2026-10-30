@@ -5,7 +5,7 @@ import { applyToPoint } from "transformation-matrix"
 
 const COURTYARD_RING_EPS = 1e-6
 
-export const getCourtyardOutlineRingArea = (
+const getCourtyardOutlineRingArea = (
   outline: Array<{ x: number; y: number }>,
 ): number => {
   const clean = outline.filter(
