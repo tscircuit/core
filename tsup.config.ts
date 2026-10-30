@@ -19,6 +19,7 @@ export default defineConfig({
     ],
   },
   noExternal: [
+    "jscad-to-manifold",
     "@tscircuit/test-point-rerouter",
     "@tscircuit/jscad",
     "@tscircuit/cableprinter",

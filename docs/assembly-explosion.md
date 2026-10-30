@@ -103,11 +103,11 @@ from the displaced cover. A second fixture checks local movement against emitted
 reference-frame directions for upright, inverted, and tilted mounting faces.
 
 `lines` contains world-space movement segments, with origins in right-handed
-circuit XYZ (mm, +Z above). Convert points through the same frame boundary as the
-GLTF exporter before passing them to PoppyGL's `explosionLines`. The current
-exporter uses `[-x, z, y]` in its final glTF scene, as established by
-`GltfBuilder.toGltfTranslation` after CAD center conversion. The regression checks
-guide endpoints against actual emitted glTF node translations.
+circuit XYZ (mm, +Z above). The GLTF exporter evaluates the serialized program
+and embeds the guides in glTF extras automatically. PoppyGL reads those extras;
+the snapshot fixtures do not inject custom explosion lines. The exporter handles
+the circuit-to-scene frame conversion, and regressions check guide endpoints
+against actual emitted glTF node translations.
 
 PoppyGL guides are depth-tested and do not write depth. The core fixture uses
 them for lift-then-slide paths and the final cap movement. Guide origins on
@@ -123,12 +123,60 @@ targets containing PCB or cable geometry rather than producing a partially
 displaced assembly. Moving folded/flat boards, flexible cables, physical fastening
 constraints, and rotations require further work.
 
-The returned view explicitly reports `collisionCheckStatus: "not_implemented"`.
-There is no swept-solid collision engine or successful assembly-verification
-claim in this implementation. A follow-up needs full-path collision checks, intentional
-mating contact rules, missing-geometry/incomplete results, and reproducible
-diagnostics tied to stage and move positions. Guides show declared motion paths;
-they do not certify clearance.
+## Collision checking
+
+After CAD and explosion records settle, `CadExplosionCollisionCheck` checks the
+entire program asynchronously during rendering. Await `renderUntilSettled()`
+before inspecting its diagnostics. Getters only read the result; they do not
+generate errors or load the geometry kernel.
+
+The checker uses Manifold and the existing `jscad-to-manifold` converter. It
+constructs a continuous swept solid for each straight translation, preserving
+holes and concavities. An obstacle between two clear endpoints is still detected.
+Earlier moves are applied before checking later moves; all targets of a single
+move travel together, including members selected through another stage.
+
+Only intersections introduced by movement are reported. At each move, the
+moving solid's starting occupied space is excluded from the sweep. Existing
+overlap can therefore separate without an error, while moving deeper into an
+obstacle reports the newly entered volume. Touching faces with no positive-volume
+intersection are not collisions.
+
+`cad_explosion_collision_error` identifies the stage, move, moving CAD component
+and obstructing CAD component or PCB. `swept_intersection_volume_mm3` measures the
+obstacle volume intersecting the newly swept space; it is not instantaneous
+penetration depth or a contact timestamp. Editing/removing stages or geometry
+invalidates the check and removes its stale diagnostics.
+
+`getAssemblyExplosion(circuit).collisionCheckStatus` is `not_checked`, `pending`,
+`checked`, or `incomplete`. `checked` means the supported program was evaluated,
+including any reported collisions; it does not mean collision-free. Unsupported
+or invalid geometry emits `cad_explosion_collision_check_warning` with structured
+geometry IDs and leaves the result `incomplete`, even when known collisions were
+also found.
+
+This version checks JSCAD solids and flat PCB substrate with supported drill
+holes and cutouts. Imported OBJ/GLB/STL/STEP and other model assets, footprint-only
+CAD records, folded PCBs, and unsupported hole/cutout shapes remain unchecked
+and generate warnings.
+Curved profiles are tessellated. The real RP2040 regression checks its JSCAD
+cover/spacers against the PCB, while explicitly reporting incomplete coverage
+for its imported motor, bolts and electronic component meshes. Electrical copper,
+flexible-cable clearance, rotations and fastening constraints are not verified.
+
+For an already serialized program, use the asynchronous API directly:
+
+```ts
+import { checkCircuitJsonAssemblyExplosionCollisions } from "@tscircuit/core";
+
+const { status, errors, warnings } =
+  await checkCircuitJsonAssemblyExplosionCollisions(assembledJson);
+```
+
+The input remains unchanged. An optional `{ manifold }` argument accepts an
+initialized Manifold module. The default loader uses the installed package in
+Node/Bun and the pinned Manifold 3.5.4 jsDelivr module in browsers. The synchronous
+JSON playback getter alone reports `not_checked`.
 
 ## Circuit JSON programs and whole-stage targets
 
@@ -136,8 +184,10 @@ The render pipeline inserts `cad_explosion_stage` and `cad_explosion_move`
 records into the circuit database alongside assembled geometry. `getCircuitJson()`
 reads that database without generating instructions. These follow the
 [merged Circuit JSON schema](https://github.com/tscircuit/circuit-json/pull/937),
-published in `circuit-json@0.0.539`. Core uses that published release; the existing
-dependency gate remains enabled.
+published in `circuit-json@0.0.539`. The collision diagnostics are proposed in
+[Circuit JSON #944](https://github.com/tscircuit/circuit-json/pull/944); this branch
+uses its preview until publication. The dependency gate remains enabled and must
+pass with the published schema version before merging.
 
 `CadExplosionStageRender` allocates database-owned stage identities, then
 `CadExplosionRender` resolves membership, ordering and move targets. Both phases

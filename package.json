@@ -24,7 +24,7 @@
     "format": "biome format . --write",
     "measure-bundle": "howfat -r table .",
     "pkg-pr-new-release": "bunx pkg-pr-new publish --comment=off --peerDeps",
-    "smoke-test:dist": "bun run scripts/smoke-tests/test-dist-simple-circuit.tsx && bun run scripts/smoke-tests/check-dist-bundled-schematic-solver.ts && bun run scripts/smoke-tests/test-dist-drawing-dimensions.tsx && bun run scripts/smoke-tests/check-dist-bundled-test-point-rerouter.ts",
+    "smoke-test:dist": "bun run scripts/smoke-tests/test-dist-simple-circuit.tsx && bun run scripts/smoke-tests/check-dist-bundled-schematic-solver.ts && bun run scripts/smoke-tests/test-dist-drawing-dimensions.tsx && bun run scripts/smoke-tests/check-dist-bundled-test-point-rerouter.ts && bun run scripts/smoke-tests/test-dist-explosion-collisions.tsx",
     "build:benchmarking": "bun build --experimental-html ./benchmarking/website/index.html --outdir ./benchmarking-dist",
     "build:benchmarking:watch": "chokidar \"./{benchmarking,lib}/**/*.{ts,tsx}\" -c 'bun build --experimental-html ./benchmarking/website/index.html --outdir ./benchmarking-dist'",
     "start:benchmarking": "concurrently \"bun run build:benchmarking:watch\" \"live-server ./benchmarking-dist\"",
@@ -76,7 +76,7 @@
     "bun-match-svg": "0.0.12",
     "calculate-elbow": "^0.0.12",
     "chokidar-cli": "^3.0.0",
-    "circuit-json": "^0.0.539",
+    "circuit-json": "https://pkg.pr.new/tscircuit/circuit-json@9673bac",
     "circuit-json-to-bpc": "^0.0.13",
     "circuit-json-to-connectivity-map": "^0.0.33",
     "circuit-json-to-spice": "^0.0.45",
@@ -89,6 +89,7 @@
     "howfat": "^0.3.8",
     "kicad-to-circuit-json": "^0.0.142",
     "kicadts": "^0.0.53",
+    "jscad-to-manifold": "github:tscircuit/jscad-to-manifold#6db5a7bde97223e5598f2dbf2b1555619d159c36",
     "live-server": "^1.2.2",
     "minicssgrid": "^0.0.9",
     "pkg-pr-new": "^0.0.37",
@@ -144,14 +145,18 @@
     "jscad-planner": "^0.0.21",
     "jscad-fiber": "^0.0.92",
     "poppygl": "0.0.38",
-    "@jscad/modeling": "^2.13.0"
+    "@jscad/modeling": "^2.13.0",
+    "manifold-3d": "3.5.4"
   },
   "overrides": {
     "@tscircuit/props": "^0.0.715",
-    "circuit-json": "^0.0.539",
+    "circuit-json": "https://pkg.pr.new/tscircuit/circuit-json@9673bac",
     "@tscircuit/cableprinter": "^0.0.6"
   },
   "browser": {
     "@resvg/resvg-js": false
-  }
+  },
+  "trustedDependencies": [
+    "jscad-to-manifold"
+  ]
 }
