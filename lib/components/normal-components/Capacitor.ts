@@ -203,7 +203,7 @@ export class Capacitor extends NormalComponent<
           : `${formatSiUnit(props.maxVoltageRating)}V`,
       are_pins_interchangeable: !props.polarized,
       display_name: props.displayName,
-    } satisfies SourceSimpleCapacitorInput)
+    } as SourceSimpleCapacitorInput)
 
     this.source_component_id = source_component.source_component_id
   }

@@ -15,7 +15,13 @@ test("capacitor voltage display handles optional, zero and numeric ratings", asy
   const capacitors = circuit.db.source_component
     .list()
     .filter((sourceComponent) => sourceComponent.ftype === "simple_capacitor")
-  expect(capacitors).toMatchObject([
+  expect(
+    capacitors.map((capacitor) => ({
+      name: capacitor.name,
+      display_capacitance: capacitor.display_capacitance,
+      display_max_voltage_rating: capacitor.display_max_voltage_rating,
+    })),
+  ).toEqual([
     {
       name: "C1",
       display_capacitance: "1uF",
