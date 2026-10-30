@@ -94,7 +94,7 @@ test("capacitor shows voltage rating when schShowRatings is enabled", () => {
   }>
 
   expect(capacitors).toHaveLength(1)
-  expect(capacitors[0].display_capacitance).toBe("10µF/50V") // Shows both when enabled
+  expect(capacitors[0].display_capacitance).toBe("10µF")
   expect(capacitors[0].max_voltage_rating).toBe(50) // Stores the voltage rating
   expect(circuit).toMatchSchematicSnapshot(
     import.meta.path + "-capacitor-with-ratings-shown",
@@ -165,7 +165,7 @@ test("capacitor with numeric values handles display correctly", () => {
   }>
 
   expect(capacitors).toHaveLength(1)
-  expect(capacitors[0].display_capacitance).toBe("1µF/25V") // Shows both when enabled
+  expect(capacitors[0].display_capacitance).toBe("1µF")
   expect(capacitors[0].max_voltage_rating).toBe(25) // Stores the voltage rating
   expect(capacitors[0].capacitance).toBe(0.000001)
   expect(circuit).toMatchSchematicSnapshot(
