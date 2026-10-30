@@ -126,7 +126,5 @@ test("pairs differential SRJ segments by routing PCB group", () => {
         pointsToConnect: [],
       },
     ]),
-  ).toThrow(
-    /multiple SRJ connections in routing PCB group "pcb_group_soc_fanout"/,
-  )
+  ).toThrow(/multiple SRJ connections in one local routing region/)
 })
