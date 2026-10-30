@@ -1,6 +1,7 @@
 import { capacitorProps, resolveManufacturerPartNumber } from "@tscircuit/props"
 import type { SourceSimpleCapacitorInput } from "circuit-json"
 import { formatSiUnit } from "format-si-unit"
+import { z } from "zod"
 import {
   type BaseSymbolName,
   FTYPE,
@@ -33,10 +34,13 @@ export class Capacitor extends NormalComponent<
   _adjustSilkscreenTextAutomatically = true
   get config() {
     const baseSymbolName = this.props.symbolName ?? "capacitor"
+    const schSize = this.props.schSize as string | undefined
     const compactSize =
-      this.props.schSize === "sm" || this.props.schSize === "xs"
-        ? this.props.schSize
-        : undefined
+      schSize === "xs" || schSize === "sm"
+        ? schSize
+        : schSize === "small"
+          ? "sm"
+          : undefined
     const compactSymbolName =
       compactSize && baseSymbolName === "capacitor"
         ? (`capacitor_${compactSize}` as BaseSymbolName)
@@ -51,7 +55,11 @@ export class Capacitor extends NormalComponent<
       schematicSymbolName: this.props.polarized
         ? "capacitor_polarized"
         : schematicSymbolName,
-      zodProps: capacitorProps,
+      zodProps: capacitorProps.extend({
+        schSize: z
+          .union([capacitorProps.shape.schSize, z.literal("small")])
+          .optional(),
+      }),
       sourceFtype: FTYPE.simple_capacitor,
     }
   }
