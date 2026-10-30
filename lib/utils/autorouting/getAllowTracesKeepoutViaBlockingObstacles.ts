@@ -120,6 +120,7 @@ export const getAllowTracesKeepoutViaBlockingObstacles = ({
 
   const boardLayers = getViaBoardLayers(layerCount)
   if (boardLayers.length < 2) return []
+  const boardLayerSet = new Set<string>(boardLayers)
 
   const allConnectionPoints = connections.flatMap(
     (connection) => connection.pointsToConnect,
@@ -127,20 +128,20 @@ export const getAllowTracesKeepoutViaBlockingObstacles = ({
   const connectionPointLayers = new Set(
     allConnectionPoints
       .map((point) => point.layer)
-      .filter((layer): layer is string => boardLayers.includes(layer as any)),
+      .filter((layer): layer is string => boardLayerSet.has(layer)),
   )
 
   const obstacles: Obstacle[] = []
 
   for (const keepout of keepouts) {
     if (keepout.warning_only || !keepout.allow_traces) continue
-    if (!keepout.layers.some((layer) => boardLayers.includes(layer))) continue
+    if (!keepout.layers.some((layer) => boardLayerSet.has(layer))) continue
 
     const requiredLayersInsideKeepout = new Set<string>()
 
     for (const point of allConnectionPoints) {
       if (
-        boardLayers.includes(point.layer as any) &&
+        boardLayerSet.has(point.layer) &&
         isPointInsideKeepout(keepout, point)
       ) {
         requiredLayersInsideKeepout.add(point.layer)
@@ -153,7 +154,7 @@ export const getAllowTracesKeepoutViaBlockingObstacles = ({
         "y" in pad &&
         typeof pad.x === "number" &&
         typeof pad.y === "number" &&
-        boardLayers.includes(pad.layer) &&
+        boardLayerSet.has(pad.layer) &&
         isPointInsideKeepout(keepout, { x: pad.x, y: pad.y })
       ) {
         requiredLayersInsideKeepout.add(pad.layer)
@@ -173,7 +174,7 @@ export const getAllowTracesKeepoutViaBlockingObstacles = ({
     } else {
       const preferredOpenLayer = keepout.layers.includes("top")
         ? "top"
-        : (keepout.layers.find((layer) => boardLayers.includes(layer)) ??
+        : (keepout.layers.find((layer) => boardLayerSet.has(layer)) ??
           boardLayers[0])
       blockedLayers = boardLayers.filter(
         (layer) => layer !== preferredOpenLayer,
