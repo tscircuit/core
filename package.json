@@ -60,7 +60,7 @@
     "@tscircuit/miniflex": "^0.0.4",
     "@tscircuit/modelprinter": "^0.0.18",
     "@tscircuit/ngspice-spice-engine": "^0.0.20",
-    "@tscircuit/props": "^0.0.714",
+    "@tscircuit/props": "^0.0.715",
     "@tscircuit/schematic-match-adapt": "^0.0.18",
     "@tscircuit/schematic-trace-solver": "https://jscdn.tscircuit.com/@tscircuit/schematic-trace-solver/0.0.238.tgz",
     "@tscircuit/solver-utils": "^0.0.16",
@@ -147,7 +147,7 @@
     "@jscad/modeling": "^2.13.0"
   },
   "overrides": {
-    "@tscircuit/props": "^0.0.714",
+    "@tscircuit/props": "^0.0.715",
     "circuit-json": "^0.0.539",
     "@tscircuit/cableprinter": "^0.0.6"
   },
