@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { SmtPad } from "lib/components/primitive-components/SmtPad"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("polygon paste follows margins, rotation, layer and layout movement", async () => {
   const { circuit } = getTestFixture()
@@ -58,7 +58,7 @@ test("polygon paste follows margins, rotation, layer and layout movement", async
     expect(paste?.layer).toBe(pad.layer)
     expect(paste?.shape).toBe("polygon")
     if (
-      padIndex % margins.length === 1 &&
+      padIndex % margins.length <= 1 &&
       pad.shape === "polygon" &&
       paste?.shape === "polygon"
     ) {
