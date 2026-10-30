@@ -4,7 +4,6 @@ import type { CadComponent, CadReferenceSurface } from "circuit-json"
 import { vec3 } from "gl-matrix"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { expectAssemblySnapshot } from "./fixtures/expect-assembly-snapshot"
-import { poppyglExplosionLines } from "./fixtures/poppygl-explosion-lines"
 
 test("overlapping targetRefs share one mounted-frame translation and retain pre-move guide anchors", async () => {
   const { circuit } = getTestFixture()
@@ -152,20 +151,22 @@ test("overlapping targetRefs share one mounted-frame translation and retain pre-
     panels: [
       {
         title: "Prepare: A moves independently",
-        circuit: prepared.circuitJson,
+        circuit: assembled,
         code: '<assembly.printedpart name="CARRIER"\n  mountedTo="BASE.face" mountFace="back">\n  <assembly.subassembly name="OWNER">\n    <assembly.explosion.stage name="prepare">\n      <assembly.explosion.move\n        targetRef="MODULE.A" offZ="4mm" />\n    </assembly.explosion.stage>\n  </assembly.subassembly>\n</assembly.printedpart>',
         annotation: "The carrier's mounted face points along world +Y.",
         renderOptions: {
           camPos: [45, 35, 45],
           poppygl: {
             lookAt: [0, 7, 0],
-            explosionLines: poppyglExplosionLines(prepared),
+          },
+          gltf: {
+            explosion: { throughStageRef: "FRAME.CARRIER.OWNER.prepare" },
           },
         },
       },
       {
         title: "Half progress: overlapping selections move once",
-        circuit: halfway.circuitJson,
+        circuit: assembled,
         code: '<assembly.explosion.move\n  targetRefs={["MODULE", "MODULE.A",\n    "MODULE.A", "MODULE.B"]}\n  offX="6mm" offY="8mm" offZ="10mm" />\n\ngetAssemblyExplosion(circuit, {\n  throughStageRef:\n    "FRAME.CARRIER.OWNER.move",\n  stageProgress: 0.5,\n})',
         annotation:
           "A and B share one half displacement; duplicate selection adds no motion.",
@@ -173,7 +174,12 @@ test("overlapping targetRefs share one mounted-frame translation and retain pre-
           camPos: [45, 35, 45],
           poppygl: {
             lookAt: [0, 7, 0],
-            explosionLines: poppyglExplosionLines(halfway),
+          },
+          gltf: {
+            explosion: {
+              throughStageRef: "FRAME.CARRIER.OWNER.move",
+              stageProgress: 0.5,
+            },
           },
         },
       },

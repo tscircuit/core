@@ -3,7 +3,6 @@ import { assembly, getAssemblyExplosion, jscad } from "lib"
 import type { CadComponent } from "circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { expectAssemblySnapshot } from "./fixtures/expect-assembly-snapshot"
-import { poppyglExplosionLines } from "./fixtures/poppygl-explosion-lines"
 
 test("comma and array targetRefs move parts together while targetRef remains compatible", async () => {
   const panels = []
@@ -104,32 +103,34 @@ test("comma and array targetRefs move parts together while targetRef remains com
         form === "legacy"
           ? "Legacy single target remains supported"
           : `${form === "comma" ? "Comma string" : "Array"}: both parts lift 12 mm`,
-      circuit: exploded.circuitJson,
+      circuit: assembled,
       code: `<assembly.explosion.stage name="lift">\n  <assembly.explosion.move\n    ${form === "legacy" ? 'targetRef="A"' : form === "comma" ? 'targetRefs="A, B"' : 'targetRefs={["A", "B"]}'}\n    offZ="12mm" />\n</assembly.explosion.stage>`,
       annotation:
         form === "legacy"
           ? "A lifts; B and BASE stay mounted."
           : "One move applies the same displacement to A and B.",
       renderOptions: {
+        gltf: { explosion: {} },
         camPos: [65, 45, 55] as [number, number, number],
         poppygl: {
           lookAt: [0, 8, 0] as [number, number, number],
-          explosionLines: poppyglExplosionLines(exploded),
         },
       },
     })
     if (form === "comma") {
       panels.push({
         title: "Half progress moves both selected parts halfway",
-        circuit: halfway.circuitJson,
+        circuit: assembled,
         code: '<assembly.explosion.move\n  targetRefs="A, B" offZ="12mm" />\n\ngetAssemblyExplosion(circuit, {\n  throughStageRef: "PAIR.lift",\n  stageProgress: 0.5,\n})',
         annotation:
           "A and B each lift 6 mm; targets share one move's progress.",
         renderOptions: {
+          gltf: {
+            explosion: { throughStageRef: "PAIR.lift", stageProgress: 0.5 },
+          },
           camPos: [65, 45, 55] as [number, number, number],
           poppygl: {
             lookAt: [0, 8, 0] as [number, number, number],
-            explosionLines: poppyglExplosionLines(halfway),
           },
         },
       })
