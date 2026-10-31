@@ -68,7 +68,7 @@ test("constraint-mounted cover moves intact before its nested cap explodes", asy
   )
   expect(circuit.getCircuitJson()).toEqual(assembled)
   expect(getAssemblyExplosion(circuit)).toEqual(exploded)
-  expect(exploded.collisionCheckStatus).toBe("not_implemented")
+  expect(exploded.collisionCheckStatus).toBe("checked")
   const capSurface = exploded.circuitJson.find(
     (record): record is import("circuit-json").CadReferenceSurface =>
       record.type === "cad_reference_surface" &&

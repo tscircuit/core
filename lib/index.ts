@@ -44,3 +44,9 @@ export * from "./assembly-explosion/get-assembly-explosion"
 export * from "./assembly-explosion/get-circuit-json-assembly-explosion"
 
 export * from "./assembly-explosion/serialize-assembly-explosion"
+
+export * from "./assembly-explosion/check-circuit-json-assembly-explosion-collisions"
+export type {
+  AssemblyExplosionCollisionCheck,
+  AssemblyExplosionCollisionCheckStatus,
+} from "./assembly-explosion/collision/types"
