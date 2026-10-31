@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("explicit chip layer overrides the requested bottom SMT pad layer", () => {
+test("explicit chip layer preserves the requested bottom SMT pad layer", () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width={12} height={6} routingDisabled>
@@ -51,7 +51,14 @@ test("explicit chip layer overrides the requested bottom SMT pad layer", () => {
 
   expect(circuit.db.pcb_smtpad.list().map((pad) => pad.layer)).toEqual([
     "bottom",
-    "top",
+    "bottom",
   ])
+  expect(circuit.db.pcb_port.list().map((port) => port.layers)).toEqual([
+    ["bottom"],
+    ["bottom"],
+  ])
+  expect(
+    circuit.db.pcb_solder_paste.list().map((paste) => paste.layer),
+  ).toEqual(["bottom", "bottom"])
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
