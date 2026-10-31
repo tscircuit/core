@@ -2,12 +2,12 @@ import { expect, test } from "bun:test"
 import { pcb_stackup } from "circuit-json"
 import { getBoardStackupFixture } from "tests/fixtures/get-board-stackup-fixture"
 
-test("jlcpcb_economy resolves the sourced JLC04161H-3313 construction", async () => {
+test("jlcpcb_economy resolves the sourced JLC04041H-3313 construction", async () => {
   const circuit = await getBoardStackupFixture({
     width: 20,
     height: 20,
     layers: 4,
-    thickness: "1.6mm",
+    thickness: "0.4mm",
     fabricatorPreset: "jlcpcb_economy",
   })
   const stackups = circuit.db.pcb_stackup.list()
@@ -41,8 +41,8 @@ test("jlcpcb_economy resolves the sourced JLC04161H-3313 construction", async ()
       layer_type: "dielectric",
       dielectric_type: "core",
       material_name: "NP-155F core",
-      thickness: 1.265,
-      relative_permittivity: 4.42,
+      thickness: 0.1,
+      relative_permittivity: 4.36,
     },
     {
       layer_type: "copper",
@@ -66,6 +66,6 @@ test("jlcpcb_economy resolves the sourced JLC04161H-3313 construction", async ()
   ])
   expect(
     stackup.layers.reduce((sum, layer) => sum + (layer.thickness ?? 0), 0),
-  ).toBeCloseTo(1.5642)
+  ).toBeCloseTo(0.3992)
   expect(circuit.db.pcb_placement_error.list()).toHaveLength(0)
 })

@@ -2,12 +2,12 @@ import { expect, test } from "bun:test"
 import { pcb_stackup } from "circuit-json"
 import { getBoardStackupFixture } from "tests/fixtures/get-board-stackup-fixture"
 
-test("jlcpcb_standard_20260912 resolves the sourced JLC04161H-3313 construction", async () => {
+test("jlcpcb_standard_20260912 resolves the sourced JLC04041H-3313 construction", async () => {
   const circuit = await getBoardStackupFixture({
     width: 20,
     height: 20,
     layers: 4,
-    thickness: "1.6mm",
+    thickness: "0.4mm",
     fabricatorPreset: "jlcpcb_standard_20260912",
   })
   const stackups = circuit.db.pcb_stackup.list()
