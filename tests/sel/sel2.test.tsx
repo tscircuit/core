@@ -90,3 +90,17 @@ test('sel2 - sel.J1<"custompin1">().custompin1 = .J1 > .custompin1', () => {
 test('sel2 - dynamic refdes sel<"custompin">("SJ1")', () => {
   expect(sel<"custompin">("SJ1").custompin.toString()).toBe(".SJ1 > .custompin")
 })
+
+test("sel2 - chip-typed references for designators above 40", () => {
+  expect(sel.U501(MyChip).CUSTOM_DATA_1).toBe(".U501 > .CUSTOM_DATA_1")
+  expect(sel.J100(MyChip).CUSTOM_DATA_1).toBe(".J100 > .CUSTOM_DATA_1")
+  expect(sel.U501<"custompin1" | "custompin2">().custompin1.toString()).toBe(
+    ".U501 > .custompin1",
+  )
+
+  // @ts-expect-error
+  expect(sel.U501(MyChip).DOES_NOT_EXIST).toBe(".U501 > .DOES_NOT_EXIST")
+
+  // @ts-expect-error
+  sel.U501<"custompin1" | "custompin2">().doesnotexist
+})
