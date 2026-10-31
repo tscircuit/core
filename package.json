@@ -31,7 +31,7 @@
     "generate-test-plan": "bun run scripts/generate-test-plan.ts"
   },
   "devDependencies": {
-    "@tscircuit/cad-collision-checking": "https://jscdn.tscircuit.com/@tscircuit/cad-collision-checking/0.0.2.tgz",
+    "@tscircuit/cad-collision-checking": "https://jscdn.tscircuit.com/@tscircuit/cad-collision-checking/0.0.3.tgz",
     "@tscircuit/graphics-debug-3d": "https://jscdn.tscircuit.com/@tscircuit/graphics-debug-3d/0.0.1.tgz",
     "@biomejs/biome": "^1.8.3",
     "@resvg/resvg-js": "^2.6.2",
