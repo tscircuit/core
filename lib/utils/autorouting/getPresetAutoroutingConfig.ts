@@ -9,6 +9,8 @@ export type NormalizedAutorouterConfig = AutorouterConfig & {
   capacityDepth?: number
   targetMinCapacity?: number
   autorouterVersion?: AutorouterVersion
+  /** algorithmFn wraps a platform autorouterMap entry, not user code. */
+  isPlatformAutorouter?: boolean
 }
 
 export type LegacyAutorouterPreset = "sequential_trace" | "auto_cloud"
@@ -86,6 +88,7 @@ export function getPresetAutoroutingConfig(
       groupMode: "subcircuit",
       algorithmFn: async (simpleRouteJson) =>
         platformAutorouter.createAutorouter(simpleRouteJson),
+      isPlatformAutorouter: true,
     }
   }
 

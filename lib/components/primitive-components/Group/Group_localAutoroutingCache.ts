@@ -41,13 +41,37 @@ export type LocalAutoroutingCacheSolverOptions = Pick<
 
 type CachedAutoroutingPhaseResult = SimpleRouteJson & {
   traces: SimplifiedPcbTrace[]
+  outputSimpleRouteJson?: SimpleRouteJson
+}
+
+/**
+ * Asks the cache engine for the algorithmFn's code fingerprint. Returns
+ * undefined when the engine cannot fingerprint functions and null when it
+ * could not identify this one.
+ */
+export const getAlgorithmFnFingerprint = async ({
+  cacheEngine,
+  algorithmFn,
+}: {
+  cacheEngine: LocalCacheEngine | undefined
+  algorithmFn: Function
+}): Promise<string | null | undefined> => {
+  if (!cacheEngine?.getAlgorithmFnFingerprint) return undefined
+  try {
+    return (await cacheEngine.getAlgorithmFnFingerprint(algorithmFn)) ?? null
+  } catch {
+    return null
+  }
 }
 
 export const getLocalAutoroutingCacheKey = (
   simpleRouteJson: SimpleRouteJson,
   solverOptions: LocalAutoroutingCacheSolverOptions,
+  algorithmFnFingerprint?: string,
 ): string =>
-  `routes:core@${pkgJson.version}:solver:${getJsonHash(solverOptions)}:srj:${getJsonHash(simpleRouteJson)}`
+  `routes:core@${pkgJson.version}:solver:${getJsonHash(solverOptions)}${
+    algorithmFnFingerprint ? `:algorithm:${algorithmFnFingerprint}` : ""
+  }:srj:${getJsonHash(simpleRouteJson)}`
 
 export const getCachedLocalAutoroutingPhaseResult = async ({
   cacheEngine,
