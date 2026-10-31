@@ -1,0 +1,13 @@
+{
+  "name": "ddr-escape-planning-experiment",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@tscircuit/checks": "0.0.264",
+    "circuit-json-to-connectivity-map": "0.0.33"
+  },
+  "devDependencies": {
+    "@types/bun": "1.4.4",
+    "typescript": "5.9.3"
+  }
+}

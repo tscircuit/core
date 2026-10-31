@@ -1,0 +1,383 @@
+{
+  "phase": "DDR_FIRST",
+  "inputSha256": "4f5ba59d731b2397e5dd8febd54c0098746a402dfb9c670f890caab8b00f765e",
+  "nativeSha256": "3278f452523f9367f6223537e894fc85d09a648f95935294df775a505eeb4ee2",
+  "connections": 47,
+  "physicalLayerCount": 6,
+  "suppliedTraces": 0,
+  "suppliedVias": 0,
+  "obstacles": 1167,
+  "buses": [
+    {
+      "name": "DDR_BYTE0",
+      "members": 11,
+      "maxLengthSkew": 0.635,
+      "allowedLayers": [
+        "top",
+        "inner2",
+        "inner3",
+        "bottom"
+      ]
+    },
+    {
+      "name": "DDR_BYTE1",
+      "members": 11,
+      "maxLengthSkew": 0.635,
+      "allowedLayers": [
+        "top",
+        "inner2",
+        "inner3",
+        "bottom"
+      ]
+    },
+    {
+      "name": "DDR_ADDR_CTRL_CK",
+      "members": 24,
+      "maxLengthSkew": 0.635,
+      "allowedLayers": [
+        "top",
+        "inner2",
+        "inner3",
+        "bottom"
+      ]
+    },
+    {
+      "name": "DDR_RESET_LAYER",
+      "members": 1,
+      "allowedLayers": [
+        "top",
+        "inner2",
+        "inner3",
+        "bottom"
+      ]
+    }
+  ],
+  "savedDdrCopperLoaded": false,
+  "fixedCopperHydration": {
+    "nativeTraceCount": 0,
+    "addedTraceCount": 0,
+    "preservedPreloadCount": 0,
+    "removedTraceProxyCount": 0,
+    "addedNativeViaObstacleCount": 0,
+    "nativeInlineViaCount": 0,
+    "shapeRefinements": [
+      {
+        "nativeId": "pcb_smtpad_967",
+        "nativeShape": "rotated_pill",
+        "primitiveCount": 3
+      },
+      {
+        "nativeId": "pcb_smtpad_968",
+        "nativeShape": "rotated_pill",
+        "primitiveCount": 3
+      },
+      {
+        "nativeId": "pcb_smtpad_969",
+        "nativeShape": "rotated_pill",
+        "primitiveCount": 3
+      },
+      {
+        "nativeId": "pcb_smtpad_970",
+        "nativeShape": "rotated_pill",
+        "primitiveCount": 3
+      },
+      {
+        "nativeId": "pcb_smtpad_971",
+        "nativeShape": "rotated_pill",
+        "primitiveCount": 3
+      },
+      {
+        "nativeId": "pcb_smtpad_972",
+        "nativeShape": "rotated_pill",
+        "primitiveCount": 3
+      },
+      {
+        "nativeId": "pcb_smtpad_973",
+        "nativeShape": "rotated_pill",
+        "primitiveCount": 3
+      },
+      {
+        "nativeId": "pcb_smtpad_974",
+        "nativeShape": "rotated_pill",
+        "primitiveCount": 3
+      },
+      {
+        "nativeId": "pcb_smtpad_975",
+        "nativeShape": "rotated_pill",
+        "primitiveCount": 3
+      },
+      {
+        "nativeId": "pcb_smtpad_976",
+        "nativeShape": "rotated_pill",
+        "primitiveCount": 3
+      },
+      {
+        "nativeId": "pcb_smtpad_977",
+        "nativeShape": "rotated_pill",
+        "primitiveCount": 3
+      },
+      {
+        "nativeId": "pcb_smtpad_978",
+        "nativeShape": "rotated_pill",
+        "primitiveCount": 3
+      },
+      {
+        "nativeId": "pcb_smtpad_979",
+        "nativeShape": "rotated_pill",
+        "primitiveCount": 3
+      },
+      {
+        "nativeId": "pcb_smtpad_980",
+        "nativeShape": "rotated_pill",
+        "primitiveCount": 3
+      },
+      {
+        "nativeId": "pcb_smtpad_981",
+        "nativeShape": "rotated_pill",
+        "primitiveCount": 3
+      },
+      {
+        "nativeId": "pcb_smtpad_982",
+        "nativeShape": "rotated_pill",
+        "primitiveCount": 3
+      },
+      {
+        "nativeId": "pcb_smtpad_983",
+        "nativeShape": "rotated_pill",
+        "primitiveCount": 3
+      },
+      {
+        "nativeId": "pcb_smtpad_984",
+        "nativeShape": "rotated_pill",
+        "primitiveCount": 3
+      },
+      {
+        "nativeId": "pcb_smtpad_985",
+        "nativeShape": "rotated_pill",
+        "primitiveCount": 3
+      },
+      {
+        "nativeId": "pcb_plated_hole_1",
+        "nativeShape": "circle",
+        "primitiveCount": 1
+      },
+      {
+        "nativeId": "pcb_plated_hole_2",
+        "nativeShape": "circle",
+        "primitiveCount": 1
+      },
+      {
+        "nativeId": "pcb_plated_hole_3",
+        "nativeShape": "circle",
+        "primitiveCount": 1
+      },
+      {
+        "nativeId": "pcb_plated_hole_4",
+        "nativeShape": "circle",
+        "primitiveCount": 1
+      },
+      {
+        "nativeId": "pcb_plated_hole_5",
+        "nativeShape": "circle",
+        "primitiveCount": 1
+      },
+      {
+        "nativeId": "pcb_plated_hole_6",
+        "nativeShape": "circle",
+        "primitiveCount": 1
+      },
+      {
+        "nativeId": "pcb_plated_hole_7",
+        "nativeShape": "circle",
+        "primitiveCount": 1
+      },
+      {
+        "nativeId": "pcb_plated_hole_8",
+        "nativeShape": "circle",
+        "primitiveCount": 1
+      },
+      {
+        "nativeId": "pcb_plated_hole_9",
+        "nativeShape": "circle",
+        "primitiveCount": 1
+      },
+      {
+        "nativeId": "pcb_plated_hole_10",
+        "nativeShape": "circle",
+        "primitiveCount": 1
+      },
+      {
+        "nativeId": "pcb_plated_hole_11",
+        "nativeShape": "circle",
+        "primitiveCount": 1
+      },
+      {
+        "nativeId": "pcb_plated_hole_12",
+        "nativeShape": "circle",
+        "primitiveCount": 1
+      },
+      {
+        "nativeId": "pcb_plated_hole_13",
+        "nativeShape": "circle",
+        "primitiveCount": 1
+      },
+      {
+        "nativeId": "pcb_plated_hole_14",
+        "nativeShape": "circle",
+        "primitiveCount": 1
+      },
+      {
+        "nativeId": "pcb_plated_hole_15",
+        "nativeShape": "circle",
+        "primitiveCount": 1
+      },
+      {
+        "nativeId": "pcb_plated_hole_16",
+        "nativeShape": "circle",
+        "primitiveCount": 1
+      },
+      {
+        "nativeId": "pcb_plated_hole_17",
+        "nativeShape": "circle",
+        "primitiveCount": 1
+      },
+      {
+        "nativeId": "pcb_plated_hole_19",
+        "nativeShape": "circle",
+        "primitiveCount": 1
+      },
+      {
+        "nativeId": "pcb_plated_hole_20",
+        "nativeShape": "pill",
+        "primitiveCount": 3
+      },
+      {
+        "nativeId": "pcb_plated_hole_21",
+        "nativeShape": "pill",
+        "primitiveCount": 3
+      },
+      {
+        "nativeId": "pcb_plated_hole_22",
+        "nativeShape": "pill",
+        "primitiveCount": 3
+      },
+      {
+        "nativeId": "pcb_plated_hole_23",
+        "nativeShape": "pill",
+        "primitiveCount": 3
+      },
+      {
+        "nativeId": "pcb_plated_hole_24",
+        "nativeShape": "circle",
+        "primitiveCount": 1
+      },
+      {
+        "nativeId": "pcb_plated_hole_25",
+        "nativeShape": "circle",
+        "primitiveCount": 1
+      },
+      {
+        "nativeId": "pcb_plated_hole_26",
+        "nativeShape": "circle",
+        "primitiveCount": 1
+      },
+      {
+        "nativeId": "pcb_plated_hole_27",
+        "nativeShape": "circle",
+        "primitiveCount": 1
+      },
+      {
+        "nativeId": "pcb_plated_hole_28",
+        "nativeShape": "circle",
+        "primitiveCount": 1
+      },
+      {
+        "nativeId": "pcb_plated_hole_29",
+        "nativeShape": "circle",
+        "primitiveCount": 1
+      },
+      {
+        "nativeId": "pcb_plated_hole_30",
+        "nativeShape": "circle",
+        "primitiveCount": 1
+      },
+      {
+        "nativeId": "pcb_plated_hole_31",
+        "nativeShape": "circle",
+        "primitiveCount": 1
+      },
+      {
+        "nativeId": "pcb_plated_hole_32",
+        "nativeShape": "circle",
+        "primitiveCount": 1
+      },
+      {
+        "nativeId": "pcb_plated_hole_33",
+        "nativeShape": "circle",
+        "primitiveCount": 1
+      },
+      {
+        "nativeId": "pcb_plated_hole_34",
+        "nativeShape": "circle",
+        "primitiveCount": 1
+      },
+      {
+        "nativeId": "pcb_plated_hole_35",
+        "nativeShape": "circle",
+        "primitiveCount": 1
+      },
+      {
+        "nativeId": "pcb_plated_hole_36",
+        "nativeShape": "circle",
+        "primitiveCount": 1
+      },
+      {
+        "nativeId": "pcb_plated_hole_37",
+        "nativeShape": "circle",
+        "primitiveCount": 1
+      },
+      {
+        "nativeId": "pcb_plated_hole_38",
+        "nativeShape": "circle",
+        "primitiveCount": 1
+      },
+      {
+        "nativeId": "pcb_plated_hole_39",
+        "nativeShape": "circle",
+        "primitiveCount": 1
+      },
+      {
+        "nativeId": "pcb_plated_hole_40",
+        "nativeShape": "pill",
+        "primitiveCount": 3
+      },
+      {
+        "nativeId": "pcb_plated_hole_41",
+        "nativeShape": "pill",
+        "primitiveCount": 3
+      },
+      {
+        "nativeId": "pcb_plated_hole_42",
+        "nativeShape": "pill",
+        "primitiveCount": 3
+      },
+      {
+        "nativeId": "pcb_plated_hole_43",
+        "nativeShape": "pill",
+        "primitiveCount": 3
+      },
+      {
+        "nativeId": "pcb_plated_hole_44",
+        "nativeShape": "circle",
+        "primitiveCount": 1
+      },
+      {
+        "nativeId": "pcb_plated_hole_45",
+        "nativeShape": "circle",
+        "primitiveCount": 1
+      }
+    ],
+    "requiresFinalNativeAudit": true
+  },
+  "note": "Fresh native pre-routing input. This capture is diagnostic input, not a routed artifact."
+}

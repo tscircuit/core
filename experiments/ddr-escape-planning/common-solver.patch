@@ -1,0 +1,158 @@
+diff --git a/lib/match-native-carrier-signals.ts b/lib/match-native-carrier-signals.ts
+index 533d60c..8f53501 100644
+--- a/lib/match-native-carrier-signals.ts
++++ b/lib/match-native-carrier-signals.ts
+@@ -55,7 +55,6 @@ export function* matchNativeCarrierSignals(
+     connections: original.connections.filter((c) => !pairedNames.has(c.name)),
+     traces: [...(original.traces ?? []), ...paired],
+   }
+-  if (!input.connections.length) return paired
+   const minimums = new Map<string, number>(),
+     maximums = new Map<string, number>()
+   for (const bus of original.buses ?? []) {
+@@ -163,6 +162,7 @@ export function* matchNativeCarrierSignals(
+       allowBlindAndBuriedVias: false,
+     } as unknown as Parameters<typeof validateRoutedCopperDrc>[0]).valid
+   }
++  if (!input.connections.length) return valid([]) ? paired : null
+   function* negotiate(
+     seed: Trace[],
+     frozen: Trace[],
+diff --git a/lib/native-carrier-router.ts b/lib/native-carrier-router.ts
+index 4ee6533..b394f07 100644
+--- a/lib/native-carrier-router.ts
++++ b/lib/native-carrier-router.ts
+@@ -124,6 +124,36 @@ export class NativeCarrierRouter {
+       N = this.cellCount
+     const width = input.minTraceWidth,
+       diameter = input.minViaPadDiameter ?? 0.3
++    // A same-net pad is transparent to copper clearance, but not to a drill.
++    // Keep its physical hole out of SMT pads unless fabrication permits it.
++    const ownPads =
++      input.allowViaInPad === true
++        ? []
++        : input.obstacles.filter(
++            (o) =>
++              o.componentId &&
++              (o.connectedTo.includes(c.name) ||
++                c.pointsToConnect.some(
++                  (p) => p.pcb_port_id && o.connectedTo.includes(p.pcb_port_id),
++                )),
++          )
++    const holeRadius = (input.minViaHoleDiameter ?? 0.15) / 2
++    const holeClearsOwnPads = (p: Point) =>
++      ownPads.every((o) => {
++        const angle = (-(o.ccwRotationDegrees ?? 0) * Math.PI) / 180
++        const dx = p.x - o.center.x,
++          dy = p.y - o.center.y
++        const x = dx * Math.cos(angle) - dy * Math.sin(angle),
++          y = dx * Math.sin(angle) + dy * Math.cos(angle)
++        const distance =
++          o.shape === "circle"
++            ? Math.hypot(dx, dy) - o.width / 2
++            : Math.hypot(
++                Math.max(0, Math.abs(x) - o.width / 2),
++                Math.max(0, Math.abs(y) - o.height / 2),
++              )
++        return distance >= holeRadius + 1e-5
++      })
+     const wireMargin = width / 2 + (input.minBoardEdgeClearance ?? 0)
+     const viaMargin = diameter / 2 + (input.minBoardEdgeClearance ?? 0)
+     const softGroups = (options.softTraces ?? []).map((t) =>
+@@ -257,7 +287,8 @@ export class NativeCarrierRouter {
+           a.x <= bounds.maxX - viaMargin &&
+           a.y >= bounds.minY + viaMargin &&
+           a.y <= bounds.maxY - viaMargin &&
+-          vias.every((v) => !v.isBlocked(cell))
++          vias.every((v) => !v.isBlocked(cell)) &&
++          holeClearsOwnPads(a)
+         ) {
+           const cost = softVia.reduce(
+             (sum, v) => sum + (v.softEdgeIsClear(a, a) ? 0 : penalty * 4),
+diff --git a/lib/plan-native-paired-carriers.ts b/lib/plan-native-paired-carriers.ts
+index 2045e3e..823c493 100644
+--- a/lib/plan-native-paired-carriers.ts
++++ b/lib/plan-native-paired-carriers.ts
+@@ -466,7 +466,16 @@ export function* planNativePairedCarriers(
+       .map((pair) => ({
+         busId: `native_${bus.busId}`,
+         connectionNames: pair.connectionNames,
+-        minLength: Math.max(target, bus.minLength ?? 0),
++        minLength: Math.max(
++          options.busTargetLength === undefined
++            ? Math.min(
++                target,
++                (bus.maxLength ?? Infinity) - (pair.lengthTolerance ?? 0),
++              )
++            : target,
++          bus.minLength ?? 0,
++        ),
++        maxLength: bus.maxLength,
+         maxLengthSkew: pair.lengthTolerance,
+       })),
+   )
+diff --git a/lib/types.ts b/lib/types.ts
+index 9a64cb0..018b35f 100644
+--- a/lib/types.ts
++++ b/lib/types.ts
+@@ -74,6 +74,8 @@ export interface SimpleRouteJson {
+   minViaPadDiameter?: number
+   minViaHoleDiameter?: number
+   minViaHoleEdgeToViaHoleEdgeClearance?: number
++  /** Whether drilled holes may overlap SMT pads (requires suitable fabrication). */
++  allowViaInPad?: boolean
+   allowBlindAndBuriedVias?: boolean
+   bounds: { minX: number; maxX: number; minY: number; maxY: number }
+   connections: Connection[]
+diff --git a/lib/vector-scene.ts b/lib/vector-scene.ts
+index 15e370f..f2e9de6 100644
+--- a/lib/vector-scene.ts
++++ b/lib/vector-scene.ts
+@@ -14,6 +14,18 @@ export interface Copper {
+   owners: string[]
+   rect?: { minX: number; maxX: number; minY: number; maxY: number }
+ }
++// Investigation-only optimization. The scene's copper ownership is immutable.
++const ownerIndexes = new WeakMap<string[], Set<string>>()
++function sharesOwner(aliases: string[], owners: Set<string>): boolean {
++  if (aliases.length <= 16) return aliases.some((alias) => owners.has(alias))
++  let index = ownerIndexes.get(aliases)
++  if (!index) {
++    index = new Set(aliases)
++    ownerIndexes.set(aliases, index)
++  }
++  for (const owner of owners) if (index.has(owner)) return true
++  return false
++}
+ export function fixedCopper(input: SimpleRouteJson): Copper[] {
+   const result: Copper[] = []
+   for (const o of input.obstacles) {
+@@ -316,7 +328,7 @@ export class VectorScene {
+     this.copper = all.filter(
+       (c) =>
+         c.layer === connection.pointsToConnect[0].layer &&
+-        !c.owners.some((n) => this.owners.has(n)),
++        !sharesOwner(c.owners, this.owners),
+     )
+     this.margin =
+       width / 2 +
+diff --git a/tests/native-carrier-router.test.ts b/tests/native-carrier-router.test.ts
+index 038d3e3..90c2a54 100644
+--- a/tests/native-carrier-router.test.ts
++++ b/tests/native-carrier-router.test.ts
+@@ -97,3 +97,15 @@ test("via placement checks copper on unused physical planes", () => {
+   })
+   expect(route(input)).toBeNull()
+ })
++
++test("native carrier keeps drill holes outside its own pads by default", () => {
++  const input = nativeInput()
++  input.allowViaInPad = false
++  const trace = route(input)!
++  expect(trace).not.toBeNull()
++  for (const via of trace.route.filter((p) => p.route_type === "via"))
++    for (const pad of input.obstacles)
++      expect(
++        Math.hypot(via.x - pad.center.x, via.y - pad.center.y),
++      ).toBeGreaterThanOrEqual(pad.width / 2 + input.minViaHoleDiameter! / 2)
++})

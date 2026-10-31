@@ -1,0 +1,95 @@
+{
+  "status": "partial_validation_only",
+  "wholeBoardComplete": false,
+  "completeDdr47": false,
+  "coreProposalBase": "8b46e058e746d635c07db1b859d182683e8c92c2",
+  "coreCaptureRevision": "a165eb88a9403c6d7855a2c8d2d054eaef9d53ac",
+  "solverBase": "992e0448aee2c40b0d8fa1d3f0537f364b0e60cc",
+  "commonSolverPatchSha256": "c19f9f05142feeb97c2da875936fcf4ae6dbf5fdebb1d0b4abf63a4508044218",
+  "bunVersion": "1.4.0",
+  "nativeChecksVersion": "0.0.264",
+  "connectivityMapVersion": "0.0.33",
+  "fixtureSha256": {
+    "input.json": "b337b5d138281abe3d433c90ade3f34ee9144f11413401684fce607ed863befc",
+    "native.circuit.json": "3278f452523f9367f6223537e894fc85d09a648f95935294df775a505eeb4ee2",
+    "capture.json": "9bfcfb0102d18c6fce6f60e29d2cb59772948434a3a72b28074afc4501aa9281"
+  },
+  "layerCount": 6,
+  "timingCaveat": "Single observations on a development machine; some early trials overlapped other diagnostic work. Not a statistical speed benchmark.",
+  "planning": {
+    "before": {
+      "placementValid": true,
+      "escapedConnections": 45,
+      "requiredConnections": 47,
+      "jointlyFeasible": false,
+      "blockedBy": [
+        "pcb_component_42",
+        "pcb_component_97",
+        "pcb_component_101"
+      ]
+    },
+    "status": "escape_feasible",
+    "evaluations": 97,
+    "assessment": {
+      "placementValid": true,
+      "escapedConnections": 47,
+      "requiredConnections": 47,
+      "jointlyFeasible": true,
+      "blockedBy": []
+    },
+    "changes": [
+      {
+        "componentId": "pcb_component_42",
+        "from": {
+          "x": -2.2,
+          "y": -3.71
+        },
+        "to": {
+          "x": -2.2,
+          "y": -3.41
+        }
+      },
+      {
+        "componentId": "pcb_component_101",
+        "from": {
+          "x": 3.110046,
+          "y": -26.400023
+        },
+        "to": {
+          "x": 3.110046,
+          "y": -25.900023
+        }
+      }
+    ],
+    "milliseconds": 176185.052952
+  },
+  "baselineDdr": {
+    "solved": false,
+    "failed": true,
+    "error": "No collision-free local dogbone assignment; stage=preferred_assignment; attempt=5; fixedTraces=0; unavailableLocalVia=[]; nativeFallbacks=[]; cohortTrials=0",
+    "phase": "failed",
+    "seconds": 1.558831621,
+    "stats": {
+      "carrierStrategy": "preferred"
+    }
+  },
+  "afterDdr": {
+    "status": "timed_out",
+    "externalBudgetSeconds": 120,
+    "exitCode": 124,
+    "lastProgress": {
+      "seconds": 117.21377526399999,
+      "phase": "route_shared_layers",
+      "iterations": 265013
+    }
+  },
+  "unmodifiedNudgedControl": {
+    "jointEscapeFeasible": true,
+    "escapedConnections": 47,
+    "benefitObserved": false,
+    "ramPositionMm": {
+      "x": 0,
+      "y": -25
+    }
+  }
+}
