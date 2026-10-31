@@ -92,7 +92,7 @@ type CommonNetNames =
   | "XOUT"
   | "RUN"
   | "SWD"
-  | `GPIO${Nums40}`
+  | `GPIO${number}`
 
 type TransistorSel = Record<`Q${Nums40}`, Record<TransistorPinNames, string>>
 

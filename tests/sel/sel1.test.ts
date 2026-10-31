@@ -63,8 +63,10 @@ test("sel1 - sel.SW1.pin4 = .SW1 > .pin4", () => {
 })
 
 test("sel1 - invalid CN pin number", () => {
+  // pin numbers are not capped at 100 any more (sel5), so only a non-numeric
+  // suffix is invalid now
   // @ts-expect-error
-  const someval = sel.CN1.pin101
+  const someval = sel.CN1.pinX
 })
 
 test("sel1 - sel.subcircuit.S1.U1.pin1 = subcircuit.S1 > .pin1", () => {
