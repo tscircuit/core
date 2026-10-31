@@ -135,37 +135,37 @@ const getDifferentialPairSrjConnectionNamesByCohortOrThrow = ({
   DifferentialPairSrjConnectionCohort,
   SrjConnectionName
 > => {
-  const differentialPairSourceTraceIds: SourceTraceId[] = []
+  const differentialPairSourcePortIds = new Set<SourcePortId>()
   const differentialPairSourceNetIds = new Set<SourceNetId>()
   for (const sourceTrace of differentialPairSourceTraces) {
     if (
       sourceTrace.subcircuit_connectivity_map_key ===
       traceSubcircuitConnectivityMapKey
     ) {
-      differentialPairSourceTraceIds.push(sourceTrace.source_trace_id)
+      for (const sourcePortId of sourceTrace.connected_source_port_ids) {
+        differentialPairSourcePortIds.add(sourcePortId)
+      }
       for (const sourceNetId of sourceTrace.connected_source_net_ids ?? []) {
         differentialPairSourceNetIds.add(sourceNetId)
       }
     }
   }
 
-  // A named trunk and its termination tap share an electrical net. Resolve the
-  // selected trace's own global/local connections before using net-level SRJ
-  // connections, as bus conversion does for distinct branches on one net.
-  const directSrjConnections = srjConnections.filter(
+  // A shared electrical net does not identify the selected physical path.
+  let matchingSrjConnections = srjConnections.filter(
     (connection) => connection.source_trace_id === sourceTraceId,
   )
-  const matchingSrjConnections =
-    directSrjConnections.length > 0
-      ? directSrjConnections
-      : srjConnections.filter(
-          (connection) =>
-            differentialPairSourceNetIds.has(connection.name) ||
-            (connection.source_trace_id &&
-              differentialPairSourceTraceIds.includes(
-                connection.source_trace_id,
-              )),
-        )
+  if (
+    matchingSrjConnections.length === 0 &&
+    differentialPairSourcePortIds.size === 2
+  ) {
+    // Net-attached fragments may be represented by one net-level connection.
+    // This is safe only for a two-terminal conductor, never another branch's
+    // source_trace_id or an aggregate net containing termination terminals.
+    matchingSrjConnections = srjConnections.filter((connection) =>
+      differentialPairSourceNetIds.has(connection.name),
+    )
+  }
 
   if (matchingSrjConnections.length === 0) {
     throw new Error(
