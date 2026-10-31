@@ -946,6 +946,7 @@ export class NormalComponent<
 
     const schematic_component = db.schematic_component.insert({
       center,
+      rotation: normalizeDegrees(this._parsedProps.schRotation ?? 0),
       // width/height are computed in the SchematicComponentSizeCalculation phase
       size: { width: 0, height: 0 },
       source_component_id: this.source_component_id!,
