@@ -14,14 +14,8 @@
     "is_covered_with_solder_mask": false,
     "x": -3.9602409999999395,
     "y": 0,
-    "layers": [
-      "top",
-      "bottom"
-    ],
-    "port_hints": [
-      "unnamed_platedhole21",
-      "pin1"
-    ],
+    "layers": ["top", "bottom"],
+    "port_hints": ["unnamed_platedhole21", "pin1"],
     "pcb_component_id": "pcb_component_13",
     "pcb_port_id": "pcb_port_67",
     "pcb_plated_hole_id": "pcb_plated_hole_20"
@@ -35,14 +29,8 @@
     "is_covered_with_solder_mask": false,
     "x": 3.9602409999999395,
     "y": 0,
-    "layers": [
-      "top",
-      "bottom"
-    ],
-    "port_hints": [
-      "unnamed_platedhole22",
-      "pin3"
-    ],
+    "layers": ["top", "bottom"],
+    "port_hints": ["unnamed_platedhole22", "pin3"],
     "pcb_component_id": "pcb_component_13",
     "pcb_port_id": "pcb_port_69",
     "pcb_plated_hole_id": "pcb_plated_hole_21"
@@ -56,14 +44,8 @@
     "is_covered_with_solder_mask": false,
     "x": 0.00012700000007725976,
     "y": 0,
-    "layers": [
-      "top",
-      "bottom"
-    ],
-    "port_hints": [
-      "unnamed_platedhole23",
-      "pin2"
-    ],
+    "layers": ["top", "bottom"],
+    "port_hints": ["unnamed_platedhole23", "pin2"],
     "pcb_component_id": "pcb_component_13",
     "pcb_port_id": "pcb_port_68",
     "pcb_plated_hole_id": "pcb_plated_hole_22"
