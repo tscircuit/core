@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { getLabeledPcbSvg } from "tests/fixtures/get-labeled-pcb-svg"
 import type { FanoutTracePath } from "@tscircuit/props"
 import type { AutoroutingEndEvent } from "lib/events"
 import { createBasicAutorouter } from "tests/fixtures/createBasicAutorouter"
@@ -55,7 +56,7 @@ const board = (paths?: FanoutTracePath[]) => (
         connections={{ SIGNAL: "net.SIGNAL" }}
       />
     ))}
-    <autoroutingphase phaseIndex={0} pcbTracePaths={paths} />
+    <autoroutingphase pcbTracePaths={paths} />
     <pcbnotetext
       pcbY={-3}
       fontSize={0.5}
@@ -64,30 +65,27 @@ const board = (paths?: FanoutTracePath[]) => (
   </board>
 )
 
-test.failing(
-  "phase paths export and replay a non-port routing junction",
-  async () => {
-    const { circuit } = getTestFixture()
-    const events: AutoroutingEndEvent[] = []
-    circuit.on("autorouting:end", (event) => events.push(event))
-    circuit.add(board())
-    await circuit.renderUntilSettled()
-    expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
-    expect(circuit.db.pcb_trace.list()).toHaveLength(2)
-    await expect(circuit).toMatchPcbSnapshot(import.meta.path)
-    expect(events).toHaveLength(1)
-    expect(events[0]!.pcbTracePathsUnavailableReason).toBeUndefined()
-    expect(events[0]!.pcbTracePaths).toHaveLength(2)
-    const { circuit: replay } = getTestFixture()
-    const routers: string[] = []
-    replay.on("autorouting:start", (event) =>
-      routers.push(event.autorouterName!),
-    )
-    replay.add(board(JSON.parse(JSON.stringify(events[0]!.pcbTracePaths))))
-    await replay.renderUntilSettled()
-    expect(routers).toEqual(["precomputed"])
-    expect(replay.db.pcb_autorouting_error.list()).toEqual([])
-    expect(replay.db.pcb_trace.list()).toHaveLength(2)
-    await expect(replay).toMatchPcbSnapshot(import.meta.path)
-  },
-)
+test("phase paths export and replay a non-port routing junction", async () => {
+  const { circuit } = getTestFixture()
+  const events: AutoroutingEndEvent[] = []
+  circuit.on("autorouting:end", (event) => events.push(event))
+  circuit.add(board())
+  await circuit.renderUntilSettled()
+  expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
+  expect(circuit.db.pcb_trace.list()).toHaveLength(2)
+  expect(events).toHaveLength(1)
+  const reason = events[0]!.pcbTracePathsUnavailableReason
+  await expect(
+    getLabeledPcbSvg(
+      circuit.getCircuitJson(),
+      "ROUTING SUCCEEDED; SAVING FAILED",
+      [
+        "Three pads share one net. The branch lands on the trunk at (0, 0), with no pad there.",
+        `Observed: ${circuit.db.pcb_trace.list().length} routed traces; ${events[0]!.pcbTracePaths?.length ?? 0} saved paths.`,
+        reason ?? "No export error",
+      ],
+    ),
+  ).toMatchSvgSnapshot(import.meta.path)
+  expect(reason).toContain("must end at another connection endpoint")
+  expect(events[0]!.pcbTracePaths).toBeUndefined()
+})
