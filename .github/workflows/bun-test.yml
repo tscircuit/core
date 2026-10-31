@@ -100,3 +100,32 @@ jobs:
             tests/**/__snapshots__/*.diff.png
             tests/**/__snapshots__/*.snap.png
           if-no-files-found: ignore
+
+  slow-routing-repros:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.2
+      - run: bun install
+      - name: Run full-board routing replays
+        shell: bash
+        run: |
+          mapfile -t test_files < <(bun -e 'console.log(Array.from(new Bun.Glob("tests/**/*.slow.test.{ts,tsx}").scanSync()).sort().join("\n"))')
+          if [ ${#test_files[@]} -eq 0 ]; then
+            echo "ERROR: No slow routing repros found"
+            exit 1
+          fi
+          mkdir -p .github/test-plans
+          bun test "${test_files[@]}" --timeout 300000 2>&1 | tee .github/test-plans/slow-routing.log
+      - name: Report test timings
+        if: always() && hashFiles('.github/test-plans/slow-routing.log') != ''
+        run: bun run scripts/report-test-times.ts .github/test-plans/slow-routing.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-timings-slow-routing
+          path: .github/test-plans/slow-routing.log
+          if-no-files-found: ignore
