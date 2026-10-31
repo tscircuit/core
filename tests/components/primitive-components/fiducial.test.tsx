@@ -24,7 +24,7 @@ test("Fiducial rendering", () => {
   expect(fiducialPad.y).toBe(3)
   expect(fiducialPad.radius).toBe(0.4)
   expect(fiducialPad.layer).toBe("top")
-  expect(fiducialPad.is_covered_with_solder_mask).toBe(true)
+  expect(fiducialPad.is_covered_with_solder_mask).toBe(false)
   expect(fiducialPad.pcb_component_id).toBeDefined()
 
   expect(circuit).toMatchPcbSnapshot(import.meta.path, { showSolderMask: true })

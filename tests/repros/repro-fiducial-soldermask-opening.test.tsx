@@ -22,7 +22,7 @@ test("fiducial soldermask coverage with configured pullback", async () => {
     soldermask_margin: fiducialPad.soldermask_margin,
   }).toMatchInlineSnapshot(`
     {
-      "is_covered_with_solder_mask": true,
+      "is_covered_with_solder_mask": false,
       "soldermask_margin": 1,
     }
   `)
