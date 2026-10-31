@@ -54,6 +54,18 @@ const isDescendantGroup = (
   return isDescendantGroup(db, group.parent_source_group_id, ancestorId)
 }
 
+const swapRotatedRectKeepoutDimensions = (
+  elements: unknown[],
+  rotationDegrees: number,
+) => {
+  if (Math.abs(Math.round(rotationDegrees / 90)) % 2 !== 1) return
+  for (const elm of elements as any[]) {
+    if (elm?.type === "pcb_keepout" && elm.shape === "rect") {
+      ;[elm.width, elm.height] = [elm.height, elm.width]
+    }
+  }
+}
+
 export const applyPackOutput = (
   group: Group,
   packOutput: PackOutput,
@@ -100,6 +112,7 @@ export const applyPackOutput = (
               "pcb_component_id" in elm && elm.pcb_component_id === memberId,
           )
         transformPCBElements(related as any, transformMatrix)
+        swapRotatedRectKeepoutDimensions(related, rotationDegrees)
         updateCadRotation({
           db,
           pcbComponentId: memberId,
@@ -143,6 +156,7 @@ export const applyPackOutput = (
             "pcb_component_id" in elm && elm.pcb_component_id === componentId,
         )
       transformPCBElements(related as any, transformMatrix)
+      swapRotatedRectKeepoutDimensions(related, rotationDegrees)
       updateCadRotation({
         db,
         pcbComponentId: componentId,
@@ -178,6 +192,17 @@ export const applyPackOutput = (
         }
         if (isDescendantGroup(db, elm.source_group_id, componentId)) {
           return true
+        }
+      }
+      if (elm.type === "pcb_keepout" && elm.pcb_group_id) {
+        const elmPcbGroup = db.pcb_group.get(elm.pcb_group_id)
+        if (elmPcbGroup?.source_group_id) {
+          if (elmPcbGroup.source_group_id === componentId) {
+            return true
+          }
+          if (isDescendantGroup(db, elmPcbGroup.source_group_id, componentId)) {
+            return true
+          }
         }
       }
       if ("source_component_id" in elm && elm.source_component_id) {
@@ -223,6 +248,7 @@ export const applyPackOutput = (
     }
 
     transformPCBElements(relatedElements as any, transformMatrix)
+    swapRotatedRectKeepoutDimensions(relatedElements, rotationDegrees)
     db.pcb_group.update(pcbGroup.pcb_group_id, { center })
   }
 
