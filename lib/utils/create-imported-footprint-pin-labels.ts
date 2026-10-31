@@ -2,8 +2,14 @@ import {
   getBoundsOfPcbElements,
   getPcbElementBounds,
 } from "@tscircuit/circuit-json-util"
-import type { AnyCircuitElement, PcbSilkscreenText } from "circuit-json"
+import type {
+  AnyCircuitElement,
+  PcbSilkscreenText,
+  PcbSmtPad,
+} from "circuit-json"
 import { SilkscreenText } from "lib/components/primitive-components/SilkscreenText"
+
+type PcbPortHint = NonNullable<PcbSmtPad["port_hints"]>[number]
 
 const PIN_LABEL_PAD_GAP_MM = 0.6
 const PIN_LABEL_FONT_SIZE_MM = 0.7
@@ -20,11 +26,34 @@ export const createImportedFootprintPinLabels = ({
   pcbPinLabels?: Record<string, string>
 }) => {
   if (!pcbPinLabels) return []
+  const labelEntries = Object.entries(pcbPinLabels).filter(
+    ([, text]) => text.length > 0,
+  )
+  if (labelEntries.length === 0) return []
 
   const pads = circuitJson.filter(
     (elm) => elm.type === "pcb_smtpad" || elm.type === "pcb_plated_hole",
   )
   if (pads.length === 0) return []
+
+  const padsByPortHint = new Map<PcbPortHint, (typeof pads)[number]>()
+  if (labelEntries.length === 1) {
+    const [pinName] = labelEntries[0]
+    const pad = pads.find((pad) => pad.port_hints?.includes(pinName))
+    if (pad) padsByPortHint.set(pinName, pad)
+  } else {
+    for (const pad of pads) {
+      for (const portHint of pad.port_hints ?? []) {
+        if (
+          Object.hasOwn(pcbPinLabels, portHint) &&
+          !padsByPortHint.has(portHint)
+        ) {
+          padsByPortHint.set(portHint, pad)
+        }
+      }
+    }
+  }
+  if (padsByPortHint.size === 0) return []
 
   const footprintPadBounds = getBoundsOfPcbElements(pads)
   const footprintBounds = getBoundsOfPcbElements([
@@ -38,9 +67,8 @@ export const createImportedFootprintPinLabels = ({
   ])
   const labels: SilkscreenText[] = []
 
-  for (const [pinName, text] of Object.entries(pcbPinLabels)) {
-    if (!text) continue
-    const pad = pads.find((pad) => pad.port_hints?.includes(pinName))
+  for (const [pinName, text] of labelEntries) {
+    const pad = padsByPortHint.get(pinName)
     if (!pad) continue
     const padBounds = getPcbElementBounds(pad)
     if (!padBounds) continue
