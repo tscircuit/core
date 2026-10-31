@@ -16,6 +16,7 @@ import { Footprint } from "lib/components/primitive-components/Footprint"
 import { extractCadModelFromCircuitJson } from "lib/utils/connectors/extractCadModelFromCircuitJson"
 import { fetchPartCircuitJsonWithDatasheet } from "lib/utils/fetch-part-circuit-json-with-datasheet"
 import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromCircuitJson"
+import { createImportedFootprintPinLabels } from "lib/utils/create-imported-footprint-pin-labels"
 import { resolveStaticFileImport } from "lib/utils/resolveStaticFileImport"
 import { isValidElement as isReactElement } from "react"
 import { NormalComponent } from "./NormalComponent"
@@ -263,6 +264,9 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
             pcbPinLabels,
           },
           circuitJson,
+        )
+        fpComponents.push(
+          ...createImportedFootprintPinLabels({ circuitJson, pcbPinLabels }),
         )
         // Wrap in a Footprint with src so pcbSx selectors like
         // "& footprint[src^='kicad:'] silkscreentext" can match
