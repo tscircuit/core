@@ -1,4 +1,6 @@
 import { expect, test } from "bun:test"
+import { getLabeledPcbSvg } from "tests/fixtures/get-labeled-pcb-svg"
+import { stackSvgsHorizontally } from "stack-svgs"
 import type { FanoutTracePath } from "@tscircuit/props"
 import type { AutoroutingEndEvent } from "lib/events"
 import { createBasicAutorouter } from "tests/fixtures/createBasicAutorouter"
@@ -72,7 +74,6 @@ test("phase paths export and replay a non-port routing junction", async () => {
   await circuit.renderUntilSettled()
   expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
   expect(circuit.db.pcb_trace.list()).toHaveLength(2)
-  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
   expect(events).toHaveLength(1)
   expect(events[0]!.pcbTracePathsUnavailableReason).toBeUndefined()
   expect(events[0]!.pcbTracePaths).toHaveLength(2)
@@ -84,5 +85,21 @@ test("phase paths export and replay a non-port routing junction", async () => {
   expect(routers).toEqual(["precomputed"])
   expect(replay.db.pcb_autorouting_error.list()).toEqual([])
   expect(replay.db.pcb_trace.list()).toHaveLength(2)
-  await expect(replay).toMatchPcbSnapshot(import.meta.path)
+  await expect(
+    stackSvgsHorizontally(
+      [
+        getLabeledPcbSvg(circuit.getCircuitJson(), "ORIGINAL ROUTED COPPER", [
+          "Three pads share one net; the branch joins the trunk at (0, 0).",
+          `Observed: ${circuit.db.pcb_trace.list().length} routed traces; ${events[0]!.pcbTracePaths!.length} saved paths.`,
+          "The exporter orders the trunk before its branch.",
+        ]),
+        getLabeledPcbSvg(replay.getCircuitJson(), "REPLAYED SAVED PATHS", [
+          `Observed: ${replay.db.pcb_trace.list().length} traces; ${replay.db.pcb_autorouting_error.list().length} routing errors.`,
+          `Router: ${routers.join(", ")}. Copper must match the original.`,
+          "The same-layer junction is accepted without an extra PCB port.",
+        ]),
+      ],
+      { gap: 20, normalizeSize: false },
+    ),
+  ).toMatchSvgSnapshot(import.meta.path)
 })

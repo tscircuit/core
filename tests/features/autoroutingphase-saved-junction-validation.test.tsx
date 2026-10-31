@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { getSavedJunctionReviewSvg } from "tests/fixtures/get-saved-junction-review-svg"
 import type { FanoutTracePath } from "@tscircuit/props"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
@@ -75,6 +76,25 @@ test("saved branches require prior copper on the same connection and layer", asy
     const messages = circuit.db.pcb_autorouting_error
       .list()
       .map((e) => e.message)
+    await expect(
+      getSavedJunctionReviewSvg(
+        circuit.getCircuitJson(),
+        paths,
+        `BRANCH CONTACT: ${scenario}`,
+        [
+          `Trunk: A to B on top. Branch: C on ${layer}.`,
+          scenario === "other-net"
+            ? "A/B = SIGNAL; C/D = OTHER. Coincident copper is not same-net coverage."
+            : "A, B and C share SIGNAL.",
+          scenario === "branch-first"
+            ? "Input order is branch then trunk: the branch has no supporting copper yet."
+            : scenario === "gap"
+              ? "The branch ends 0.25 mm above the trunk."
+              : "The proposed branch endpoint is at the trunk center (0, 0).",
+        ],
+        messages,
+      ),
+    ).toMatchSvgSnapshot(import.meta.path, `saved-junction-${scenario}`)
     if (scenario === "connected") {
       expect(messages).toEqual([])
       expect(circuit.db.pcb_trace.list()).toHaveLength(2)

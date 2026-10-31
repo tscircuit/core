@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { getSavedJunctionReviewSvg } from "tests/fixtures/get-saved-junction-review-svg"
 import type { FanoutTracePath } from "@tscircuit/props"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
@@ -6,7 +7,7 @@ const wire = (x: number, y: number) => ({
   route_type: "wire" as const,
   x,
   y,
-  layer: "top",
+  layer: "top" as const,
   width: 0.2,
 })
 
@@ -55,6 +56,25 @@ test("joining saved copper merges distinct trees without hiding a disconnected t
     const messages = circuit.db.pcb_autorouting_error
       .list()
       .map((e) => e.message)
+    await expect(
+      getSavedJunctionReviewSvg(
+        circuit.getCircuitJson(),
+        paths,
+        joinsOtherTree
+          ? "JOIN TWO ROUTED TREES"
+          : "SELF-JOIN LEAVES A TREE DISCONNECTED",
+        [
+          "All four pads share SIGNAL. A-B is the lower trunk; C-D is the upper trunk.",
+          joinsOtherTree
+            ? "The diagonal path from B joins the C-D trunk: one connected tree."
+            : "The third path doubles back along A-B. C-D remains disconnected.",
+        ],
+        messages,
+      ),
+    ).toMatchSvgSnapshot(
+      import.meta.path,
+      `saved-junction-tree-${joinsOtherTree ? "merged" : "disconnected"}`,
+    )
     if (joinsOtherTree) {
       expect(messages).toEqual([])
       expect(circuit.db.pcb_trace.list()).toHaveLength(3)
