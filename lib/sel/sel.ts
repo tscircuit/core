@@ -201,7 +201,7 @@ export const sel: Sel = new Proxy(
           if (prop1 === "net") {
             return `net.${prop2}`
           }
-          if (prop1 === "subcircuit") {
+          if (prop1 === "subcircuit" || prop1 === "group") {
             return new Proxy(
               {},
               {
@@ -210,7 +210,7 @@ export const sel: Sel = new Proxy(
                     {},
                     {
                       get: (_, prop4: string) => {
-                        return `subcircuit.${prop2} > .${prop3} > .${prop4}`
+                        return `${prop1}.${prop2} > .${prop3} > .${prop4}`
                       },
                     },
                   )
