@@ -1,23 +1,23 @@
-import { smtPadProps } from "@tscircuit/props"
 import { getBoundsFromPoints } from "@tscircuit/math-utils"
+import { smtPadProps } from "@tscircuit/props"
 import {
-  distance,
   type LayerRef,
   type PcbSmtPad,
   type PcbSmtPadCircle,
-  type PcbSmtPadRect,
-  type PcbSmtPadPolygon,
-  type PcbSmtPadRotatedRect,
   type PcbSmtPadPill,
+  type PcbSmtPadPolygon,
+  type PcbSmtPadRect,
   type PcbSmtPadRotatedPill,
+  type PcbSmtPadRotatedRect,
   type PcbSolderPastePolygon,
+  distance,
 } from "circuit-json"
+import { getAxisAlignedSizeFromRotatedRect } from "lib/utils/pcb/get-axis-aligned-size-from-rotated-rect"
+import { getPolygonSolderPasteContours } from "lib/utils/pcb/get-polygon-solder-paste-contours"
 import { applyToPoint, decomposeTSR } from "transformation-matrix"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import type { Port } from "./Port"
 import { selectPortForPcbPrimitive } from "./Port/selectPortForPcbPrimitive"
-import { getAxisAlignedSizeFromRotatedRect } from "lib/utils/pcb/get-axis-aligned-size-from-rotated-rect"
-import { getPolygonSolderPasteContours } from "lib/utils/pcb/get-polygon-solder-paste-contours"
 
 export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
   pcb_smtpad_id: string | null = null
@@ -136,13 +136,9 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
     const shouldCreateSolderPaste =
       !props.noSolderPaste && !isCoveredWithSolderMask && this._getIsSmt()
     const soldermaskMargin = props.solderMaskMargin
-    const solderPasteMargin = props.solderPasteMargin
-    // solderPasteMargin is absolute per side; without it the aperture keeps
-    // the default 0.7 scale
+    const solderPasteMargin = props.solderPasteMargin ?? 0
     const getSolderPasteSize = (padSize: number, marginScale = 2): number =>
-      solderPasteMargin !== undefined
-        ? Math.max(padSize + marginScale * solderPasteMargin, 0)
-        : padSize * 0.7
+      Math.max(padSize + marginScale * solderPasteMargin, 0)
 
     this.emitSolderMaskMarginWarning(isCoveredWithSolderMask, soldermaskMargin)
 
