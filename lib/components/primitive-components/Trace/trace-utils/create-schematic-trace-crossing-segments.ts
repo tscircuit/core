@@ -1,8 +1,11 @@
-import { distance, doesLineIntersectLine } from "@tscircuit/math-utils"
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
+import {
+  distance,
+  doesLineIntersectLine,
+  getUnitVectorFromPointAToB,
+} from "@tscircuit/math-utils"
 import type { SchematicTrace } from "circuit-json"
 import { getOtherSchematicTraces } from "./get-other-schematic-traces"
-import { getUnitVectorFromPointAToB } from "@tscircuit/math-utils"
 
 /**
  *  Find all intersections between myEdges and all otherEdges and create a
@@ -72,6 +75,15 @@ export const createSchematicTraceCrossingSegments = ({
 
         const crossingPoint = { x: intersectX, y: intersectY }
 
+        // A contact at the start of the edge needs no crossing segment and
+        // should not suppress subsequent crossings along the same edge.
+        if (
+          crossingPoint.x === edge.from.x &&
+          crossingPoint.y === edge.from.y
+        ) {
+          continue
+        }
+
         otherEdgesIntersections.push({
           otherEdge,
           crossingPoint: crossingPoint,
@@ -97,11 +109,6 @@ export const createSchematicTraceCrossingSegments = ({
     const crossingPoint = closestIntersection.crossingPoint
     const crossingSegmentLength = 0.075 // mm
 
-    if (crossingPoint.x === edge.from.x && crossingPoint.y === edge.from.y) {
-      // On top of each other, the unit vector would be undefined, no crossing
-      // necessary
-      continue
-    }
     const crossingUnitVec = getUnitVectorFromPointAToB(edge.from, crossingPoint)
 
     // Calculate points slightly before and after crossing
