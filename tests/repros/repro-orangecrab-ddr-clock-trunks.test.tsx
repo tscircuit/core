@@ -106,7 +106,7 @@ async function verifyOrangeCrabClockTrunks(): Promise<void> {
 
 // Expected failure on the repro branch. The stacked fix removes .failing;
 // the geometry, source connectivity and routing assertions stay identical.
-test.failing(
+test(
   "routes the real OrangeCrab clock trunks while keeping termination taps on their nets",
   verifyOrangeCrabClockTrunks,
   60_000,

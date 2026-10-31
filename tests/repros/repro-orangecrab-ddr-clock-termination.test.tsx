@@ -6,7 +6,7 @@ import {
 } from "tests/fixtures/orangecrab-ddr-clock/render"
 
 test("records the unresolved full OrangeCrab clock and termination route", async () => {
-  const { circuit, inputs, outputs, asyncErrors } =
+  const { circuit, inputs, outputs, asyncErrors, phaseNames } =
     await renderOrangeCrabDdrClock(true)
   expect(circuit.db.pcb_smtpad.list()).toHaveLength(387)
   expect(
@@ -30,13 +30,13 @@ test("records the unresolved full OrangeCrab clock and termination route", async
     expect(pcbPort.x).toBeCloseTo(pad.x, 7)
     expect(pcbPort.y).toBeCloseTo(pad.y, 7)
   }
-  expect(inputs).toHaveLength(0)
-  expect(outputs).toHaveLength(0)
+  expect(phaseNames).toEqual(["CLOCK_TRUNKS", "TERMINATION_TAPS"])
+  expect(inputs.map((input) => input.connections.length)).toEqual([2, 4])
+  expect(outputs).toHaveLength(1)
+  expect(outputs[0].traces).toHaveLength(2)
   expect(circuit.db.pcb_trace.list()).toHaveLength(0)
   expect(asyncErrors).toEqual([
-    expect.stringContaining(
-      "matches multiple SRJ connections in the global routing cohort",
-    ),
+    expect.stringContaining("no bordering routing edge"),
   ])
   await expect(circuit).toMatchPcbSnapshot(
     import.meta.path,
