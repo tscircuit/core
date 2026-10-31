@@ -569,7 +569,12 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   const planeTerminatedSourceTraceLayers = getPlaneTerminatedSourceTraceLayers({
     fanoutPourNetMap,
     sourceNets: db.source_net.list(),
-    sourceTraces,
+    sourceTraces: sourceTraces.filter(
+      (sourceTrace) =>
+        !sourceTrace.connected_source_port_ids.some((sourcePortId) =>
+          sourcePortIdToBreakoutPoint.has(sourcePortId),
+        ),
+    ),
     subcircuitId: subcircuit_id,
   })
   const directTraceConnections = sourceTraces
