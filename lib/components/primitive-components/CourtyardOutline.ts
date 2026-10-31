@@ -3,6 +3,36 @@ import { getBoundsFromPoints } from "@tscircuit/math-utils"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { applyToPoint } from "transformation-matrix"
 
+const COURTYARD_RING_EPS = 1e-6
+
+const getCourtyardOutlineRingArea = (
+  outline: Array<{ x: number; y: number }>,
+): number => {
+  const clean = outline.filter(
+    (p, i) =>
+      i === 0 ||
+      Math.hypot(p.x - outline[i - 1]!.x, p.y - outline[i - 1]!.y) >
+        COURTYARD_RING_EPS,
+  )
+  if (
+    clean.length > 1 &&
+    Math.hypot(
+      clean[0]!.x - clean[clean.length - 1]!.x,
+      clean[0]!.y - clean[clean.length - 1]!.y,
+    ) <= COURTYARD_RING_EPS
+  ) {
+    clean.pop()
+  }
+  if (clean.length < 3) return 0
+  let twiceArea = 0
+  for (let i = 0; i < clean.length; i++) {
+    const a = clean[i]!
+    const b = clean[(i + 1) % clean.length]!
+    twiceArea += a.x * b.y - b.x * a.y
+  }
+  return Math.abs(twiceArea) / 2
+}
+
 export class CourtyardOutline extends PrimitiveComponent<
   typeof courtyardOutlineProps
 > {
@@ -35,19 +65,24 @@ export class CourtyardOutline extends PrimitiveComponent<
       this.parent?.pcb_component_id ??
       this.getPrimitiveContainer()?.pcb_component_id!
 
+    const transformedOutline = props.outline.map((p) => {
+      const transformedPosition = applyToPoint(transform, {
+        x: p.x,
+        y: p.y,
+      })
+      return {
+        x: transformedPosition.x,
+        y: transformedPosition.y,
+      }
+    })
+    if (getCourtyardOutlineRingArea(transformedOutline) <= COURTYARD_RING_EPS) {
+      return
+    }
+
     const pcb_courtyard_outline = db.pcb_courtyard_outline.insert({
       pcb_component_id,
       layer,
-      outline: props.outline.map((p) => {
-        const transformedPosition = applyToPoint(transform, {
-          x: p.x,
-          y: p.y,
-        })
-        return {
-          x: transformedPosition.x,
-          y: transformedPosition.y,
-        }
-      }),
+      outline: transformedOutline,
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
     })

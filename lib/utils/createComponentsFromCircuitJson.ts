@@ -122,6 +122,222 @@ const getSchematicSymbolId = (elm: AnyCircuitElement): string | undefined => {
   return undefined
 }
 
+const COURTYARD_ENDPOINT_TOL = 1e-3
+const COURTYARD_RING_EPS = 1e-6
+
+const getCourtyardOutlineRingArea = (
+  outline: Array<{ x: number; y: number }>,
+): number => {
+  const clean = outline.filter(
+    (p, i) =>
+      i === 0 ||
+      Math.hypot(p.x - outline[i - 1]!.x, p.y - outline[i - 1]!.y) >
+        COURTYARD_RING_EPS,
+  )
+  if (
+    clean.length > 1 &&
+    Math.hypot(
+      clean[0]!.x - clean[clean.length - 1]!.x,
+      clean[0]!.y - clean[clean.length - 1]!.y,
+    ) <= COURTYARD_RING_EPS
+  ) {
+    clean.pop()
+  }
+  if (clean.length < 3) return 0
+  let twiceArea = 0
+  for (let i = 0; i < clean.length; i++) {
+    const a = clean[i]!
+    const b = clean[(i + 1) % clean.length]!
+    twiceArea += a.x * b.y - b.x * a.y
+  }
+  return Math.abs(twiceArea) / 2
+}
+
+const stitchOpenCourtyardOutlines = (
+  openOutlines: Array<Array<{ x: number; y: number }>>,
+): Array<Array<{ x: number; y: number }>> => {
+  const vertices: Array<{ x: number; y: number }> = []
+  const getVertexId = (pt: { x: number; y: number }): number => {
+    for (let i = 0; i < vertices.length; i++) {
+      if (
+        Math.hypot(vertices[i]!.x - pt.x, vertices[i]!.y - pt.y) <=
+        COURTYARD_ENDPOINT_TOL
+      ) {
+        return i
+      }
+    }
+    vertices.push({ x: pt.x, y: pt.y })
+    return vertices.length - 1
+  }
+
+  const adj = new Map<number, Set<number>>()
+  for (const outline of openOutlines) {
+    for (let i = 0; i < outline.length - 1; i++) {
+      const u = getVertexId(outline[i]!)
+      const v = getVertexId(outline[i + 1]!)
+      if (u === v) continue
+      if (!adj.has(u)) adj.set(u, new Set())
+      if (!adj.has(v)) adj.set(v, new Set())
+      adj.get(u)!.add(v)
+      adj.get(v)!.add(u)
+    }
+  }
+
+  let changed = true
+  while (changed) {
+    changed = false
+    for (const [u, neighbors] of adj.entries()) {
+      if (neighbors.size < 2) {
+        for (const v of neighbors) {
+          adj.get(v)?.delete(u)
+        }
+        adj.delete(u)
+        changed = true
+      }
+    }
+  }
+
+  const visitedEdges = new Set<string>()
+  const edgeKey = (u: number, v: number) => (u < v ? `${u}:${v}` : `${v}:${u}`)
+  const cycles: Array<Array<{ x: number; y: number }>> = []
+
+  for (const [startU, startNeighbors] of adj.entries()) {
+    for (const startV of startNeighbors) {
+      if (visitedEdges.has(edgeKey(startU, startV))) continue
+      const path: number[] = [startU, startV]
+      visitedEdges.add(edgeKey(startU, startV))
+      let prev = startU
+      let curr = startV
+
+      while (true) {
+        const neighbors = adj.get(curr)
+        if (!neighbors) break
+        let next: number | undefined
+        for (const candidate of neighbors) {
+          if (candidate === prev) continue
+          if (!visitedEdges.has(edgeKey(curr, candidate))) {
+            next = candidate
+            break
+          }
+        }
+        if (next === undefined) break
+        visitedEdges.add(edgeKey(curr, next))
+        const existingIdx = path.indexOf(next)
+        if (existingIdx !== -1) {
+          const cyclePoints = path.slice(existingIdx).map((id) => vertices[id]!)
+          if (getCourtyardOutlineRingArea(cyclePoints) > 1e-6) {
+            cycles.push(cyclePoints)
+          }
+          break
+        }
+        path.push(next)
+        prev = curr
+        curr = next
+      }
+    }
+  }
+
+  return cycles
+}
+
+const getNormalizedCourtyardOutlinesByGroup = (
+  circuitJson: AnyCircuitElement[],
+): Map<
+  string,
+  Array<{
+    layer: "top" | "bottom"
+    outline: Array<{ x: number; y: number }>
+  }>
+> => {
+  const rawGroups = new Map<
+    string,
+    Array<{
+      layer: "top" | "bottom"
+      outline: Array<{ x: number; y: number }>
+    }>
+  >()
+
+  for (const elm of circuitJson) {
+    if (elm.type !== "pcb_courtyard_outline") continue
+    const layer = (elm.layer === "bottom" ? "bottom" : "top") as
+      | "top"
+      | "bottom"
+    const key = `${elm.pcb_component_id ?? ""}:${layer}`
+    if (!rawGroups.has(key)) rawGroups.set(key, [])
+    rawGroups.get(key)!.push({ layer, outline: elm.outline })
+  }
+
+  const normalizedGroups = new Map<
+    string,
+    Array<{
+      layer: "top" | "bottom"
+      outline: Array<{ x: number; y: number }>
+    }>
+  >()
+
+  for (const [key, items] of rawGroups.entries()) {
+    const layer = items[0]!.layer
+    const closedOutlines: Array<{
+      layer: "top" | "bottom"
+      outline: Array<{ x: number; y: number }>
+    }> = []
+    const openOutlines: Array<Array<{ x: number; y: number }>> = []
+
+    const isExplicitlyClosed = (pts: Array<{ x: number; y: number }>) =>
+      pts.length >= 4 &&
+      Math.hypot(
+        pts[0]!.x - pts[pts.length - 1]!.x,
+        pts[0]!.y - pts[pts.length - 1]!.y,
+      ) <= COURTYARD_ENDPOINT_TOL
+
+    const sharesEndpointWithAnotherUnclosedItem = (
+      pts: Array<{ x: number; y: number }>,
+      selfIdx: number,
+    ) => {
+      if (pts.length < 2) return false
+      const start = pts[0]!
+      const end = pts[pts.length - 1]!
+      return items.some((other, otherIdx) => {
+        if (otherIdx === selfIdx || other.outline.length < 2) return false
+        if (isExplicitlyClosed(other.outline)) return false
+        const otherStart = other.outline[0]!
+        const otherEnd = other.outline[other.outline.length - 1]!
+        return (
+          Math.hypot(start.x - otherStart.x, start.y - otherStart.y) <=
+            COURTYARD_ENDPOINT_TOL ||
+          Math.hypot(start.x - otherEnd.x, start.y - otherEnd.y) <=
+            COURTYARD_ENDPOINT_TOL ||
+          Math.hypot(end.x - otherStart.x, end.y - otherStart.y) <=
+            COURTYARD_ENDPOINT_TOL ||
+          Math.hypot(end.x - otherEnd.x, end.y - otherEnd.y) <=
+            COURTYARD_ENDPOINT_TOL
+        )
+      })
+    }
+
+    for (let i = 0; i < items.length; i++) {
+      const pts = items[i]!.outline
+      if (
+        getCourtyardOutlineRingArea(pts) > 1e-6 &&
+        (isExplicitlyClosed(pts) ||
+          !sharesEndpointWithAnotherUnclosedItem(pts, i))
+      ) {
+        closedOutlines.push({ layer, outline: pts })
+      } else {
+        openOutlines.push(pts)
+      }
+    }
+
+    for (const stitched of stitchOpenCourtyardOutlines(openOutlines)) {
+      closedOutlines.push({ layer, outline: stitched })
+    }
+
+    normalizedGroups.set(key, closedOutlines)
+  }
+
+  return normalizedGroups
+}
+
 export const createComponentsFromCircuitJson = (
   {
     sourcePortOwner,
@@ -158,6 +374,9 @@ export const createComponentsFromCircuitJson = (
     }
   }
   const components: PrimitiveComponent[] = []
+  const normalizedCourtyardOutlinesByGroup =
+    getNormalizedCourtyardOutlinesByGroup(circuitJson)
+  const emittedCourtyardGroups = new Set<string>()
   const schematicSymbolsByImportedId = new Map<string, SymbolComponent>()
   const schematicComponentsByImportedId = new Map<string, SchematicComponent>()
   const sourceComponentIdByPcbComponentId = new Map<string, string>()
@@ -922,12 +1141,23 @@ export const createComponentsFromCircuitJson = (
         }),
       )
     } else if (elm.type === "pcb_courtyard_outline") {
-      components.push(
-        new CourtyardOutline({
-          outline: elm.outline,
-          layer: elm.layer,
-        }),
-      )
+      const layer = (elm.layer === "bottom" ? "bottom" : "top") as
+        | "top"
+        | "bottom"
+      const groupKey = `${elm.pcb_component_id ?? ""}:${layer}`
+      if (!emittedCourtyardGroups.has(groupKey)) {
+        emittedCourtyardGroups.add(groupKey)
+        for (const courtyard of normalizedCourtyardOutlinesByGroup.get(
+          groupKey,
+        ) ?? []) {
+          components.push(
+            new CourtyardOutline({
+              outline: courtyard.outline,
+              layer: courtyard.layer,
+            }),
+          )
+        }
+      }
     } else if (elm.type === "schematic_line") {
       addSchematicPrimitive(
         elm,
