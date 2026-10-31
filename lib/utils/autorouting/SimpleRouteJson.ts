@@ -2,11 +2,12 @@ import type {
   SimpleRouteJson as AutorouterSimpleRouteJson,
   SimplifiedPcbTrace as AutorouterSimplifiedPcbTrace,
 } from "@tscircuit/capacity-autorouter"
-import type { PcbGroup } from "circuit-json"
+import type { PcbGroup, PcbClearanceRule, SourceNet } from "circuit-json"
 import type { CircuitJsonMetadata, Obstacle } from "../obstacles/types"
 
 export type { CircuitJsonMetadata, Obstacle } from "../obstacles/types"
 
+export type SourceNetId = SourceNet["source_net_id"]
 export type PcbGroupId = PcbGroup["pcb_group_id"]
 export type SimpleRouteBounds = {
   minX: number
@@ -85,6 +86,7 @@ export type SingleLayerConnectionPoint = {
 export type SimpleRoutePoint = SingleLayerConnectionPoint
 
 export type SimpleRouteConnection = {
+  sourceNetIds?: SourceNetId[]
   name: SrjConnectionName
   routingPcbGroupId?: PcbGroupId
   source_trace_id?: string
@@ -156,6 +158,7 @@ export type SimpleRouteJson = Omit<
   | "buses"
 > & {
   layerCount: number
+  clearanceRules?: PcbClearanceRule[]
   /** Whether autorouters may use vias that do not span the full board stack. */
   allowBlindAndBuriedVias?: boolean
   minTraceWidth: number

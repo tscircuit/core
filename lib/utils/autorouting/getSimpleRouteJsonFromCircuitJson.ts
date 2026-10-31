@@ -890,6 +890,13 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   ]
   const defaultTraceWidth = minTraceWidth ?? board?.min_trace_width ?? 0.1
   for (const conn of allConns) {
+    if (board?.clearance_rules?.length) {
+      conn.sourceNetIds = [...sourceNetIds].filter(
+        (netId) =>
+          conn.name === netId ||
+          sharedConnMap.areIdsConnected(conn.name, netId),
+      )
+    }
     conn.nominalTraceWidth ??= nominalTraceWidth ?? defaultTraceWidth
     conn.width ??= nominalTraceWidth ?? defaultTraceWidth
   }
@@ -980,6 +987,9 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       bounds,
       obstacles,
       connections: allConns,
+      ...(board?.clearance_rules?.length
+        ? { clearanceRules: structuredClone(board.clearance_rules) }
+        : {}),
       differentialPairs: srjDifferentialPairs,
       ...(srjBuses ? { buses: srjBuses } : {}),
       traces:
