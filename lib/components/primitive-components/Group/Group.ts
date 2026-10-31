@@ -855,6 +855,30 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     return false
   }
 
+  /**
+   * Build Simple Route JSON while the source component tree is still available.
+   * Remote raw-Circuit-JSON payloads are assembled during PcbTraceRender, before
+   * PcbCopperPourRender, so unbroken-pour intent only exists on the component.
+   */
+  _buildRemoteAutoroutingSimpleRouteJson(
+    autorouterConfig: AutorouterConfig,
+  ): SimpleRouteJson {
+    const props = this._parsedProps as SubcircuitGroupProps
+    const preferredTraceWidth =
+      props.defaultTraceWidth ?? props.nominalTraceWidth
+    const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
+      db: this.root!.db,
+      minTraceWidth: Number(props.minTraceWidth ?? 0.15),
+      nominalTraceWidth:
+        preferredTraceWidth != null ? Number(preferredTraceWidth) : undefined,
+      subcircuit_id: this.subcircuit_id,
+      subcircuitComponent: this,
+    })
+    simpleRouteJson.allowViaInPad =
+      autorouterConfig.allowViaInPad ?? simpleRouteJson.allowViaInPad
+    return simpleRouteJson
+  }
+
   async _runEffectMakeHttpAutoroutingRequest() {
     const { db } = this.root!
     const debug = Debug("tscircuit:core:_runEffectMakeHttpAutoroutingRequest")
@@ -927,6 +951,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           method: "POST",
           body: JSON.stringify({
             input_circuit_json: pcbAndSourceCircuitJson,
+            input_simple_route_json:
+              this._buildRemoteAutoroutingSimpleRouteJson(autorouterConfig),
             subcircuit_id: this.subcircuit_id!,
           }),
           headers: {
@@ -945,6 +971,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         method: "POST",
         body: JSON.stringify({
           input_circuit_json: pcbAndSourceCircuitJson,
+          input_simple_route_json:
+            this._buildRemoteAutoroutingSimpleRouteJson(autorouterConfig),
           provider: "freerouting",
           autostart: true,
           display_name: this.root?.name,
