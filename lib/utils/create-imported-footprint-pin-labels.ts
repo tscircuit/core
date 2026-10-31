@@ -37,21 +37,16 @@ export const createImportedFootprintPinLabels = ({
   if (pads.length === 0) return []
 
   const padsByPortHint = new Map<PcbPortHint, (typeof pads)[number]>()
-  if (labelEntries.length === 1) {
-    const [pinName] = labelEntries[0]
-    const pad = pads.find((pad) => pad.port_hints?.includes(pinName))
-    if (pad) padsByPortHint.set(pinName, pad)
-  } else {
-    for (const pad of pads) {
-      for (const portHint of pad.port_hints ?? []) {
-        if (
-          Object.hasOwn(pcbPinLabels, portHint) &&
-          !padsByPortHint.has(portHint)
-        ) {
-          padsByPortHint.set(portHint, pad)
-        }
-      }
+  const unmatchedPinNames = new Set<PcbPortHint>(
+    labelEntries.map(([pinName]) => pinName),
+  )
+  for (const pad of pads) {
+    for (const portHint of pad.port_hints ?? []) {
+      if (!unmatchedPinNames.has(portHint)) continue
+      padsByPortHint.set(portHint, pad)
+      unmatchedPinNames.delete(portHint)
     }
+    if (unmatchedPinNames.size === 0) break
   }
   if (padsByPortHint.size === 0) return []
 
@@ -75,28 +70,29 @@ export const createImportedFootprintPinLabels = ({
 
     const padCenterX = (padBounds.minX + padBounds.maxX) / 2
     const padCenterY = (padBounds.minY + padBounds.maxY) / 2
-    let distanceToEdge = padBounds.minY - footprintPadBounds.minY
+    // Choose a side from the pad layout, then place text outside the courtyard.
+    let nearestEdgeDistance = padBounds.minY - footprintPadBounds.minY
     let pcbX = padCenterX
     let pcbY = footprintBounds.minY - PIN_LABEL_PAD_GAP_MM
     let anchorAlignment: PcbSilkscreenText["anchor_alignment"] = "top_center"
 
     const distanceToTop = footprintPadBounds.maxY - padBounds.maxY
-    if (distanceToTop < distanceToEdge) {
-      distanceToEdge = distanceToTop
+    if (distanceToTop < nearestEdgeDistance) {
+      nearestEdgeDistance = distanceToTop
       pcbY = footprintBounds.maxY + PIN_LABEL_PAD_GAP_MM
       anchorAlignment = "bottom_center"
     }
 
     const distanceToLeft = padBounds.minX - footprintPadBounds.minX
-    if (distanceToLeft < distanceToEdge) {
-      distanceToEdge = distanceToLeft
+    if (distanceToLeft < nearestEdgeDistance) {
+      nearestEdgeDistance = distanceToLeft
       pcbX = footprintBounds.minX - PIN_LABEL_PAD_GAP_MM
       pcbY = padCenterY
       anchorAlignment = "center_right"
     }
 
     const distanceToRight = footprintPadBounds.maxX - padBounds.maxX
-    if (distanceToRight < distanceToEdge) {
+    if (distanceToRight < nearestEdgeDistance) {
       pcbX = footprintBounds.maxX + PIN_LABEL_PAD_GAP_MM
       pcbY = padCenterY
       anchorAlignment = "center_left"
@@ -108,6 +104,7 @@ export const createImportedFootprintPinLabels = ({
       pcbY,
       anchorAlignment,
     })
+    // Existing PCB styles can override this imported-font default.
     label._footprinterFontSize = PIN_LABEL_FONT_SIZE_MM
     labels.push(label)
   }
