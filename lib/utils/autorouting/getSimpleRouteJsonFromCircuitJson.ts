@@ -36,6 +36,7 @@ import {
 } from "./getBusesForSimpleRouteJson"
 import { getDifferentialPairsForSimpleRouteJson } from "./getDifferentialPairsForSimpleRouteJson"
 import { getPreservedRoutedSubcircuitTraces } from "./getPreservedRoutedSubcircuitTraces"
+import { getAllowTracesKeepoutViaBlockingObstacles } from "./getAllowTracesKeepoutViaBlockingObstacles"
 import { getUnbrokenCopperPourObstacles } from "./getUnbrokenCopperPourObstacles"
 
 /**
@@ -893,6 +894,34 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     conn.nominalTraceWidth ??= nominalTraceWidth ?? defaultTraceWidth
     conn.width ??= nominalTraceWidth ?? defaultTraceWidth
   }
+
+  obstacles.push(
+    ...getAllowTracesKeepoutViaBlockingObstacles({
+      keepouts: db.pcb_keepout
+        .list()
+        .filter(
+          (e) =>
+            (panel &&
+              "pcb_panel_id" in e &&
+              e.pcb_panel_id === panel.pcb_panel_id) ||
+            !subcircuit_id ||
+            relevantSubcircuitIds?.has(e.subcircuit_id!),
+        ),
+      smtPads: db.pcb_smtpad
+        .list()
+        .filter(
+          (e) =>
+            (panel &&
+              "pcb_panel_id" in e &&
+              e.pcb_panel_id === panel.pcb_panel_id) ||
+            !subcircuit_id ||
+            relevantSubcircuitIds?.has(e.subcircuit_id!),
+        ),
+      connections: allConns,
+      layerCount: board?.num_layers ?? 2,
+      allowBlindAndBuriedVias: board?.allow_blind_and_buried_vias ?? false,
+    }),
+  )
 
   bounds = expandSrjBoundsToIncludeConnectionPoints({
     bounds,
