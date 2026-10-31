@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import headerFootprint from "tests/fixtures/assets/jlcpcb-C160316-vh-header.circuit.json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("imported JST VH header does not render its requested PCB pin labels", async () => {
+test("imported JST VH header renders PCB pin labels outside its housing", async () => {
   const { circuit } = getTestFixture({
     platform: {
       footprintLibraryMap: {
@@ -27,6 +27,15 @@ test("imported JST VH header does not render its requested PCB pin labels", asyn
   await circuit.renderUntilSettled()
 
   expect(circuit.db.pcb_plated_hole.list()).toHaveLength(3)
-  expect(circuit.db.pcb_silkscreen_text.list()).toHaveLength(0)
+  const labels = circuit.db.pcb_silkscreen_text.list()
+  expect(labels.map((label) => label.text)).toEqual(["L", "NC", "N"])
+  const courtyardBottomY = Math.min(
+    ...circuit.db.pcb_courtyard_outline
+      .list()[0]!
+      .outline.map((point) => point.y),
+  )
+  expect(
+    labels.every((label) => label.anchor_position.y < courtyardBottomY),
+  ).toBe(true)
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
