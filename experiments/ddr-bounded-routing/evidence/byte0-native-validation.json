@@ -1,0 +1,148 @@
+{
+  "passed": true,
+  "scope": "selected_ddr_groups_only",
+  "complete": true,
+  "preserved": true,
+  "endpoints": true,
+  "routedConnections": 11,
+  "wholeBoardComplete": false,
+  "drc": {
+    "valid": true,
+    "checkedTraceCount": 11,
+    "checkedSegmentCount": 8449,
+    "checkedViaCount": 22,
+    "issues": []
+  },
+  "buses": [
+    {
+      "busId": "DDR_BYTE0",
+      "minLengthMm": 0,
+      "aboveMinimumLength": true,
+      "maxLengthMm": 28.600277000000002,
+      "withinLengthLimit": true,
+      "toleranceMm": 0.635,
+      "skewMm": 0.6350000000020479,
+      "matched": true,
+      "lengths": [
+        {
+          "name": "source_trace_14",
+          "carrierLengthMm": 27.91527699999876,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 27.91527699999876
+        },
+        {
+          "name": "source_trace_30",
+          "carrierLengthMm": 27.91527699999668,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 27.91527699999668
+        },
+        {
+          "name": "source_trace_3",
+          "carrierLengthMm": 27.915276999998767,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 27.915276999998767
+        },
+        {
+          "name": "source_trace_40",
+          "carrierLengthMm": 27.915276999998753,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 27.915276999998753
+        },
+        {
+          "name": "source_trace_17",
+          "carrierLengthMm": 27.915276999999133,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 27.915276999999133
+        },
+        {
+          "name": "source_trace_41",
+          "carrierLengthMm": 27.91527699999875,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 27.91527699999875
+        },
+        {
+          "name": "source_trace_4",
+          "carrierLengthMm": 27.915276999998124,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 27.915276999998124
+        },
+        {
+          "name": "source_trace_31",
+          "carrierLengthMm": 27.915276999998763,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 27.915276999998763
+        },
+        {
+          "name": "source_trace_29",
+          "carrierLengthMm": 27.915276999998728,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 27.915276999998728
+        },
+        {
+          "name": "source_trace_15",
+          "carrierLengthMm": 28.55027699999873,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 28.55027699999873
+        },
+        {
+          "name": "source_trace_16",
+          "carrierLengthMm": 28.423276999998695,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 28.423276999998695
+        }
+      ]
+    }
+  ],
+  "pairs": [
+    {
+      "busId": "pair_0",
+      "minLengthMm": null,
+      "aboveMinimumLength": true,
+      "maxLengthMm": null,
+      "withinLengthLimit": true,
+      "toleranceMm": 0.127,
+      "skewMm": 0.12700000000003442,
+      "matched": true,
+      "lengths": [
+        {
+          "name": "source_trace_15",
+          "carrierLengthMm": 28.55027699999873,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 28.55027699999873
+        },
+        {
+          "name": "source_trace_16",
+          "carrierLengthMm": 28.423276999998695,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 28.423276999998695
+        }
+      ]
+    }
+  ],
+  "coupling": [
+    {
+      "connectionNames": [
+        "source_trace_15",
+        "source_trace_16"
+      ],
+      "applicable": true,
+      "matched": true,
+      "maxExteriorEdgeGapMm": 0.11999999999999998,
+      "maxSamplingErrorMm": 0.0009998532863849782,
+      "separatedExteriorLengthMm": 0
+    }
+  ],
+  "nativeFindings": {
+    "checkEachPcbTraceNonOverlapping": [],
+    "checkPadTraceClearance": [],
+    "checkViaPadClearance": [],
+    "checkViaTraceClearance": [],
+    "checkDifferentNetViaSpacing": [],
+    "checkHoleTraceClearance": [],
+    "checkViasInPads": [],
+    "checkTracesAreContiguous": [],
+    "checkPcbTraceStyle": [],
+    "checkPcbBusLengthSkew": [],
+    "checkPcbRoutingConstraints": []
+  }
+}

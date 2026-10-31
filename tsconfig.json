@@ -30,5 +30,11 @@
     "noUnusedParameters": false,
     "noPropertyAccessFromIndexSignature": false
   },
-  "exclude": ["node_modules", "dist", "benchmarking-dist", "references"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "benchmarking-dist",
+    "references",
+    "experiments"
+  ]
 }
