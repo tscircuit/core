@@ -23,7 +23,7 @@ test("records the unresolved full OrangeCrab clock and termination route", async
     { selector: ".C27 > .pin1", x: 19.6, y: 0.25 },
   ]
   for (const pad of nativeClockPads) {
-    const port = circuit.selectOne<Port>(pad.selector)!
+    const port = circuit.firstChild!.selectOne<Port>(pad.selector)!
     const pcbPort = circuit.db.pcb_port.getWhere({
       source_port_id: port.source_port_id!,
     })!
