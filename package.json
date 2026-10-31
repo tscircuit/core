@@ -31,7 +31,8 @@
     "generate-test-plan": "bun run scripts/generate-test-plan.ts"
   },
   "devDependencies": {
-    "@tscircuit/cad-collision-checking": "https://jscdn.tscircuit.com/@tscircuit/cad-collision-checking/0.0.1.tgz",
+    "@tscircuit/cad-collision-checking": "https://jscdn.tscircuit.com/@tscircuit/cad-collision-checking/0.0.2.tgz",
+    "@tscircuit/graphics-debug-3d": "https://jscdn.tscircuit.com/@tscircuit/graphics-debug-3d/0.0.1.tgz",
     "@biomejs/biome": "^1.8.3",
     "@resvg/resvg-js": "^2.6.2",
     "@tsci/tscircuit.ti": "github:tscircuit/ti#57e314be4b2b06bc546d4def7453e619604d1157",
@@ -150,6 +151,7 @@
     "manifold-3d": "3.5.4"
   },
   "overrides": {
+    "@tscircuit/graphics-debug-3d": "https://jscdn.tscircuit.com/@tscircuit/graphics-debug-3d/0.0.1.tgz",
     "@tscircuit/props": "^0.0.715",
     "circuit-json": "^0.0.541",
     "@tscircuit/cableprinter": "^0.0.6"
