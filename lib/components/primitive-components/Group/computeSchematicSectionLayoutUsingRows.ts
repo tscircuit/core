@@ -18,16 +18,19 @@ const MARGIN = 1.5
 export function computeSchematicSectionLayoutUsingRows({
   sectionBlocks,
   groupSchPositionBeforeLayout: groupOffset,
+  maxRowWidth,
 }: {
   sectionBlocks: SectionLayoutInput[]
   groupSchPositionBeforeLayout: { x: number; y: number }
+  /** Maximum width in schematic units, if constrained by a sheet. */
+  maxRowWidth?: number
 }): Map<SectionName, { x: number; y: number }> {
   const totalArea = sectionBlocks.reduce((sum, block) => {
     const paddedWidth = Math.max(block.size.x, 0.5) + MARGIN * 2
     const paddedHeight = Math.max(block.size.y, 0.5) + MARGIN * 2
     return sum + paddedWidth * paddedHeight
   }, 0)
-  const targetRowWidth = Math.sqrt(totalArea) * 2
+  const targetRowWidth = maxRowWidth ?? Math.sqrt(totalArea) * 2
 
   const computedSectionsMatrix: ComputedSection[][] = []
   let currentSectionRow: ComputedSection[] = []
