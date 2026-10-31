@@ -19,6 +19,7 @@ import type { AutoroutingPhase } from "../AutoroutingPhase"
 import type { Port } from "../Port"
 import type { PrecomputedRoutingResult } from "./GroupRoutingPhasePlan"
 import type { RootCircuit } from "lib/RootCircuit"
+import { doesSavedPathEndOnRoute } from "./does-saved-path-end-on-route"
 
 const touchesEndpoint = (
   {
@@ -89,6 +90,9 @@ export function getSavedAutoroutingPhaseTracesFromPaths({
   const coveredConnections = new Set<SimpleRouteConnection>()
   const savedPorts = new Set<Port>()
   const traces: SimplifiedPcbTrace[] = []
+  // Each saved tree retains one unconsumed terminal. Joining its copper must
+  // merge trees, rather than consume the last terminal of a disconnected tree.
+  const rootByTrace = new Map<SimplifiedPcbTrace, SingleLayerConnectionPoint>()
 
   for (const [pathIndex, path] of paths.entries()) {
     const port = subcircuit.selectOne(path.connection, {
@@ -154,7 +158,7 @@ export function getSavedAutoroutingPhaseTracesFromPaths({
         `Saved phase path "${path.connection}" must start at its PCB port on an available layer`,
       )
     }
-    const endIndex = remainingPoints.findIndex(
+    let endIndex = remainingPoints.findIndex(
       (point, index) =>
         index !== startIndex &&
         touchesEndpoint(
@@ -173,11 +177,25 @@ export function getSavedAutoroutingPhaseTracesFromPaths({
     }
     const pcbTraceId = `saved_phase_${group.pcb_group_id}_${phaseIndex ?? "default"}_${pathIndex}`
     if (endIndex < 0 && !isFanout) {
+      const trunk = traces.find(
+        (trace) =>
+          trace.connection_name === connection.name &&
+          rootByTrace.get(trace) !== remainingPoints[startIndex] &&
+          doesSavedPathEndOnRoute({ ...last, layer: lastLayer }, trace.route),
+      )
+      if (trunk) endIndex = remainingPoints.indexOf(rootByTrace.get(trunk)!)
+    }
+    if (endIndex < 0 && !isFanout) {
       throw new Error(
         `Saved phase path "${path.connection}" must end at another connection endpoint; use autorouter="fanout" for saved escapes`,
       )
     }
+    const root = remainingPoints[endIndex]
     if (endIndex >= 0) {
+      for (const [trace, traceRoot] of rootByTrace) {
+        if (traceRoot === remainingPoints[startIndex])
+          rootByTrace.set(trace, root!)
+      }
       remainingPoints.splice(startIndex, 1)
     } else {
       remainingPoints[startIndex] = {
@@ -239,6 +257,7 @@ export function getSavedAutoroutingPhaseTracesFromPaths({
       ].filter((id): id is string => Boolean(id)),
       route: routeWithViaContacts,
     })
+    if (root) rootByTrace.set(traces.at(-1)!, root)
   }
   for (const connection of input.connections) {
     if (!coveredConnections.has(connection)) {

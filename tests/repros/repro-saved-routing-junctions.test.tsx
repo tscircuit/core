@@ -55,7 +55,7 @@ const board = (paths?: FanoutTracePath[]) => (
         connections={{ SIGNAL: "net.SIGNAL" }}
       />
     ))}
-    <autoroutingphase phaseIndex={0} pcbTracePaths={paths} />
+    <autoroutingphase pcbTracePaths={paths} />
     <pcbnotetext
       pcbY={-3}
       fontSize={0.5}
@@ -64,30 +64,25 @@ const board = (paths?: FanoutTracePath[]) => (
   </board>
 )
 
-test.failing(
-  "phase paths export and replay a non-port routing junction",
-  async () => {
-    const { circuit } = getTestFixture()
-    const events: AutoroutingEndEvent[] = []
-    circuit.on("autorouting:end", (event) => events.push(event))
-    circuit.add(board())
-    await circuit.renderUntilSettled()
-    expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
-    expect(circuit.db.pcb_trace.list()).toHaveLength(2)
-    await expect(circuit).toMatchPcbSnapshot(import.meta.path)
-    expect(events).toHaveLength(1)
-    expect(events[0]!.pcbTracePathsUnavailableReason).toBeUndefined()
-    expect(events[0]!.pcbTracePaths).toHaveLength(2)
-    const { circuit: replay } = getTestFixture()
-    const routers: string[] = []
-    replay.on("autorouting:start", (event) =>
-      routers.push(event.autorouterName!),
-    )
-    replay.add(board(JSON.parse(JSON.stringify(events[0]!.pcbTracePaths))))
-    await replay.renderUntilSettled()
-    expect(routers).toEqual(["precomputed"])
-    expect(replay.db.pcb_autorouting_error.list()).toEqual([])
-    expect(replay.db.pcb_trace.list()).toHaveLength(2)
-    await expect(replay).toMatchPcbSnapshot(import.meta.path)
-  },
-)
+test("phase paths export and replay a non-port routing junction", async () => {
+  const { circuit } = getTestFixture()
+  const events: AutoroutingEndEvent[] = []
+  circuit.on("autorouting:end", (event) => events.push(event))
+  circuit.add(board())
+  await circuit.renderUntilSettled()
+  expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
+  expect(circuit.db.pcb_trace.list()).toHaveLength(2)
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  expect(events).toHaveLength(1)
+  expect(events[0]!.pcbTracePathsUnavailableReason).toBeUndefined()
+  expect(events[0]!.pcbTracePaths).toHaveLength(2)
+  const { circuit: replay } = getTestFixture()
+  const routers: string[] = []
+  replay.on("autorouting:start", (event) => routers.push(event.autorouterName!))
+  replay.add(board(JSON.parse(JSON.stringify(events[0]!.pcbTracePaths))))
+  await replay.renderUntilSettled()
+  expect(routers).toEqual(["precomputed"])
+  expect(replay.db.pcb_autorouting_error.list()).toEqual([])
+  expect(replay.db.pcb_trace.list()).toHaveLength(2)
+  await expect(replay).toMatchPcbSnapshot(import.meta.path)
+})
