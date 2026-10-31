@@ -69,7 +69,7 @@ const symbolCircuitJson = [
     height: 1.6,
     rotation: 0,
     stroke_width: 0.05,
-    color: "rgba(132, 0, 0)",
+    color: "rgb(132, 0, 0)",
     is_filled: false,
     is_dashed: false,
   },
