@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test"
 import { getLabeledPcbSvg } from "tests/fixtures/get-labeled-pcb-svg"
+import { stackSvgsHorizontally } from "stack-svgs"
 import type { FanoutTracePath } from "@tscircuit/props"
 import type { AutoroutingEndEvent } from "lib/events"
 import { createBasicAutorouter } from "tests/fixtures/createBasicAutorouter"
@@ -74,18 +75,31 @@ test("phase paths export and replay a non-port routing junction", async () => {
   expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
   expect(circuit.db.pcb_trace.list()).toHaveLength(2)
   expect(events).toHaveLength(1)
-  const reason = events[0]!.pcbTracePathsUnavailableReason
+  expect(events[0]!.pcbTracePathsUnavailableReason).toBeUndefined()
+  expect(events[0]!.pcbTracePaths).toHaveLength(2)
+  const { circuit: replay } = getTestFixture()
+  const routers: string[] = []
+  replay.on("autorouting:start", (event) => routers.push(event.autorouterName!))
+  replay.add(board(JSON.parse(JSON.stringify(events[0]!.pcbTracePaths))))
+  await replay.renderUntilSettled()
+  expect(routers).toEqual(["precomputed"])
+  expect(replay.db.pcb_autorouting_error.list()).toEqual([])
+  expect(replay.db.pcb_trace.list()).toHaveLength(2)
   await expect(
-    getLabeledPcbSvg(
-      circuit.getCircuitJson(),
-      "ROUTING SUCCEEDED; SAVING FAILED",
+    stackSvgsHorizontally(
       [
-        "Three pads share one net. The branch lands on the trunk at (0, 0), with no pad there.",
-        `Observed: ${circuit.db.pcb_trace.list().length} routed traces; ${events[0]!.pcbTracePaths?.length ?? 0} saved paths.`,
-        reason ?? "No export error",
+        getLabeledPcbSvg(circuit.getCircuitJson(), "ORIGINAL ROUTED COPPER", [
+          "Three pads share one net; the branch joins the trunk at (0, 0).",
+          `Observed: ${circuit.db.pcb_trace.list().length} routed traces; ${events[0]!.pcbTracePaths!.length} saved paths.`,
+          "The exporter orders the trunk before its branch.",
+        ]),
+        getLabeledPcbSvg(replay.getCircuitJson(), "REPLAYED SAVED PATHS", [
+          `Observed: ${replay.db.pcb_trace.list().length} traces; ${replay.db.pcb_autorouting_error.list().length} routing errors.`,
+          `Router: ${routers.join(", ")}. Copper must match the original.`,
+          "The same-layer junction is accepted without an extra PCB port.",
+        ]),
       ],
+      { gap: 20, normalizeSize: false },
     ),
   ).toMatchSvgSnapshot(import.meta.path)
-  expect(reason).toContain("must end at another connection endpoint")
-  expect(events[0]!.pcbTracePaths).toBeUndefined()
 })

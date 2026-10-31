@@ -6,12 +6,14 @@ import type {
   SimpleRouteJson,
   SimplifiedPcbTrace,
   SingleLayerConnectionPoint,
+  SimpleRouteConnection,
 } from "lib/utils/autorouting/SimpleRouteJson"
 import type { Port } from "../Port"
 import type { IGroup } from "./IGroup"
 import type { ISubcircuit } from "./Subcircuit/ISubcircuit"
 import { getSavedPcbTracePathTransform } from "./get-saved-pcb-trace-path-transform"
 import { getSavedAutoroutingPhaseTracesFromPaths } from "./get-saved-autorouting-phase-traces"
+import { doesSavedPathEndOnRoute } from "./does-saved-path-end-on-route"
 
 export type AutoroutingPhasePcbTracePaths = {
   pcbTracePaths?: z.output<typeof fanoutTracePath>[]
@@ -91,6 +93,7 @@ export function getAutoroutingPhasePcbTracePaths({
     }
     const paths: z.output<typeof fanoutTracePath>[] = []
     const usedPorts = new Set<Port>()
+    const exportedRoutes = new Map<SimpleRouteConnection, WireOrVia[][]>()
     const remainingRoutes = new Set(routes.keys())
     // Peel off leaves so each path starts at a still-available PCB port. This
     // matches the importer's endpoint-consumption order for multi-terminal nets.
@@ -124,6 +127,26 @@ export function getAutoroutingPhasePcbTracePaths({
                   : point,
               )
             : routes[routeIndex]!
+          const connection = input.connections.find((connection) =>
+            connection.pointsToConnect.includes(terminal),
+          )!
+          const last = route.at(-1)!
+          const endpoint = {
+            ...last,
+            layer: last.route_type === "wire" ? last.layer : last.to_layer,
+          }
+          // Emit port-to-port trunks before their branches, regardless of the
+          // solver's output order. A branch may then land on existing copper.
+          if (
+            !isFanout &&
+            !connection.pointsToConnect.some(
+              (point) => point !== terminal && touches(last, point, true),
+            ) &&
+            !(exportedRoutes.get(connection) ?? []).some((savedRoute) =>
+              doesSavedPathEndOnRoute(endpoint, savedRoute),
+            )
+          )
+            continue
           const transform = inverse(getSavedPcbTracePathTransform(group, port))
           paths.push(
             fanoutTracePath.parse({
@@ -135,6 +158,10 @@ export function getAutoroutingPhasePcbTracePaths({
             }),
           )
           usedPorts.add(port)
+          exportedRoutes.set(connection, [
+            ...(exportedRoutes.get(connection) ?? []),
+            route,
+          ])
           remainingRoutes.delete(routeIndex)
           for (const endpoint of new Set(endpoints[routeIndex]!.flat())) {
             degreeByTerminal.set(endpoint, degreeByTerminal.get(endpoint)! - 1)
