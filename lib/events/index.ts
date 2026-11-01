@@ -26,7 +26,10 @@ export type RootCircuitEventName =
 export type AutoroutingCacheStatus = "disabled" | "hit" | "miss"
 
 export type AutoroutingCacheDisabledReason =
+  /** The cache engine cannot fingerprint custom algorithms. */
   | "custom_algorithm"
+  /** The cache engine could not fingerprint this algorithmFn. */
+  | "custom_algorithm_not_fingerprintable"
   | "strategy_not_cacheable"
   | "no_cache_engine"
 
