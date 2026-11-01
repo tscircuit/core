@@ -67,7 +67,7 @@ const describeCopper = (circuit: RootCircuit) => ({
   vias: circuit.db.pcb_via.list().map(describeElement),
 })
 
-test.failing("AM3352 probe survives Circuit JSON import", async () => {
+test("AM3352 probe survives Circuit JSON import", async () => {
   const { original, imported, importError } =
     await getTestPointInflationFixture()
 
