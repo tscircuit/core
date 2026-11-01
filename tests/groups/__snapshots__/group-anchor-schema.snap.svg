@@ -4,8 +4,8 @@
     <rect width="400" height="100" fill="#111827" />
       <g fill="white" font-family="monospace" font-size="14">
         <text x="16" y="24">pcbAnchorAlignment: omitted</text>
-        <text x="16" y="48">emitted: null</text>
-        <text x="16" y="76" fill="#fca5a5">Schema: REJECTED (anchor_alignment)</text>
+        <text x="16" y="48">emitted: omitted</text>
+        <text x="16" y="76" fill="#86efac">Schema: VALID</text>
       </g>
   </g>
   <g transform="translate(0, 100)">
