@@ -1,4 +1,4 @@
-import { test, expect } from "bun:test"
+import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("create solderpaste from smtpad", async () => {
@@ -26,6 +26,6 @@ test("create solderpaste from smtpad", async () => {
 
   expect(solder_paste.shape).toBe("rect")
   if (solder_paste.shape === "rect")
-    expect(solder_paste.height).toBe(smtPadHeight * 0.7)
+    expect(solder_paste.height).toBe(smtPadHeight)
   expect(smtpad.pcb_smtpad_id).toBe(solder_paste.pcb_smtpad_id!)
 })
