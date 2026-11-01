@@ -102,7 +102,7 @@
     "tsup": "^8.2.4",
     "@tscircuit/circuit-json-to-drawing": "https://jscdn.tscircuit.com/@tscircuit/circuit-json-to-drawing/0.0.4.tgz",
     "circuit-json-to-gltf": "^0.0.163",
-    "@tscircuit/jscad": "https://jscdn.tscircuit.com/@tscircuit/jscad/0.0.3.tgz",
+    "@tscircuit/jscad": "^0.0.6",
     "@tscircuit/test-point-rerouter": "github:tscircuit/test-point-rerouter#b0ccfaca75a7e187c55ddb6f2071a1f2084e3167"
   },
   "peerDependencies": {
