@@ -1,4 +1,3 @@
-import { getOwningPanel } from "lib/utils/panels/get-owning-panel"
 import { MultilayerIjump } from "@tscircuit/infgrid-ijump-astar"
 import { jlcMinTolerances } from "@tscircuit/jlcpcb-manufacturing-specs"
 import { type LayerRef, type PcbTrace, type RouteHintPoint } from "circuit-json"
@@ -20,6 +19,7 @@ import {
 } from "lib/utils/getViaSpanLayers"
 import { getObstaclesFromCircuitJson } from "lib/utils/obstacles/getObstaclesFromCircuitJson"
 import { pairs } from "lib/utils/pairs"
+import { getOwningPanel } from "lib/utils/panels/get-owning-panel"
 import { getRoutePointPosition } from "lib/utils/pcb-trace-route-point-utils"
 import { getViaDiameterDefaults } from "lib/utils/pcbStyle/getViaDiameterDefaults"
 import { reversePcbTraceRoute } from "lib/utils/reverse-pcb-trace-route"
@@ -520,7 +520,7 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
 
   const traceLength = getTraceLength(mergedRoute)
   const pcbStyle = trace.getInheritedMergedProperty("pcbStyle")
-  const { holeDiameter, padDiameter } = getViaDiameterDefaults(pcbStyle)
+  const { holeDiameter, padDiameter } = getViaDiameterDefaults(pcbStyle, board)
   const pcb_trace = db.pcb_trace.insert({
     route: getCircuitJsonPcbTraceRoute(
       mergedRoute as PcbTraceRoutePointWithSrjMetadata[],

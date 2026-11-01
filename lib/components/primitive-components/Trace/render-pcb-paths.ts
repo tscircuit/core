@@ -1,13 +1,13 @@
-import { getOwningPanel } from "lib/utils/panels/get-owning-panel"
 import type { PcbPath } from "@tscircuit/props"
 import type { LayerRef } from "circuit-json"
 import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
+import { getOwningPanel } from "lib/utils/panels/get-owning-panel"
 import { getViaDiameterDefaults } from "../../../utils/pcbStyle/getViaDiameterDefaults"
 import type { Port } from "../Port"
+import type { Trace } from "./Trace"
 import { getRouteForPcbPath } from "./get-route-for-pcb-path"
 import { insertPcbPathViaContactErrors } from "./insert-pcb-path-via-contact-errors"
 import { insertPcbPathViaPolicyErrors } from "./insert-pcb-path-via-policy-errors"
-import type { Trace } from "./Trace"
 import { getTraceLength } from "./trace-utils/compute-trace-length"
 
 interface RenderPcbPathsInput {
@@ -49,7 +49,11 @@ export const renderPcbPaths = ({
   }
 
   const pcbStyle = trace.getInheritedMergedProperty("pcbStyle")
-  const { holeDiameter, padDiameter } = getViaDiameterDefaults(pcbStyle)
+  const boardComponent = trace._getBoard()
+  const board = boardComponent?.pcb_board_id
+    ? db.pcb_board.get(boardComponent.pcb_board_id)
+    : db.pcb_board.list()[0]
+  const { holeDiameter, padDiameter } = getViaDiameterDefaults(pcbStyle, board)
   const connectivityMapKey =
     trace.subcircuit_connectivity_map_key ??
     db.source_trace.get(trace.source_trace_id!)?.subcircuit_connectivity_map_key
