@@ -2,14 +2,14 @@ import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 /**
- * Reproduction for tscircuit/tscircuit#6066:
- * Keepout inside a packed group is not moved with the group.
+ * Reproduction & Fix for tscircuit/tscircuit#6066:
+ * Keepout inside a packed group is moved with the group.
  *
- * When groups are packed with `pcbPack`, components like resistors are shifted
- * according to the pack layout, but group-level primitives like `<keepout>`
- * currently remain at the board origin (0, 0).
+ * When groups are packed with `pcbPack`, child components and group-level
+ * primitives like `<keepout>` must be transformed by the pack solver output,
+ * ensuring keepouts remain centered with their respective group components.
  */
-test("repro: keepout inside packed group does not move with group (#6066)", async () => {
+test("keepout inside packed group is moved with the group (#6066)", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -57,7 +57,12 @@ test("repro: keepout inside packed group does not move with group (#6066)", asyn
   const keepouts = circuit.db.pcb_keepout.list()
   expect(keepouts.length).toBe(3)
 
-  // Resistors have moved to non-zero packed locations
+  const r1 = circuit.db.pcb_component
+    .list()
+    .find(
+      (c) =>
+        c.source_component_id === circuit.selectOne(".R1")?.source_component_id,
+    )
   const r2 = circuit.db.pcb_component
     .list()
     .find(
@@ -71,15 +76,30 @@ test("repro: keepout inside packed group does not move with group (#6066)", asyn
         c.source_component_id === circuit.selectOne(".R3")?.source_component_id,
     )
 
-  expect(r2?.center.x).toBeGreaterThan(0)
-  expect(r3?.center.x).toBeGreaterThan(0)
+  expect(r1).toBeDefined()
+  expect(r2).toBeDefined()
+  expect(r3).toBeDefined()
 
-  // Capture current buggy behavior: all keepouts stay at (0, 0)
-  // Expected behavior after fix: each keepout moves with its parent group
-  for (const keepout of keepouts) {
-    expect(keepout.center.x).toBe(0)
-    expect(keepout.center.y).toBe(0)
-  }
+  expect(r2!.center.x).toBeGreaterThan(0)
+  expect(r3!.center.x).toBeGreaterThan(0)
+
+  // Each keepout must match the center coordinates of the resistor in its group
+  const keepoutGA = keepouts.find((k) => k.pcb_group_id === r1!.pcb_group_id)
+  const keepoutGB = keepouts.find((k) => k.pcb_group_id === r2!.pcb_group_id)
+  const keepoutGC = keepouts.find((k) => k.pcb_group_id === r3!.pcb_group_id)
+
+  expect(keepoutGA).toBeDefined()
+  expect(keepoutGB).toBeDefined()
+  expect(keepoutGC).toBeDefined()
+
+  expect(keepoutGA!.center.x).toBeCloseTo(r1!.center.x, 2)
+  expect(keepoutGA!.center.y).toBeCloseTo(r1!.center.y, 2)
+
+  expect(keepoutGB!.center.x).toBeCloseTo(r2!.center.x, 2)
+  expect(keepoutGB!.center.y).toBeCloseTo(r2!.center.y, 2)
+
+  expect(keepoutGC!.center.x).toBeCloseTo(r3!.center.x, 2)
+  expect(keepoutGC!.center.y).toBeCloseTo(r3!.center.y, 2)
 
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
