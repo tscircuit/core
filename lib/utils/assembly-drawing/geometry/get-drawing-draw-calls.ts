@@ -260,12 +260,9 @@ function getModelOrigin(
 ): Point3 {
   if (cad.model_origin_position) {
     const { x, y, z } = cad.model_origin_position
-    // The exporter maps origins through the default jscad loader transform,
-    // even though the plan's own triangles only swap Y and Z.
-    const identity = ["x-", "y+", "y-"].includes(
-      cad.model_board_normal_direction ?? "",
-    )
-    const loaded = identity ? [x, y, z] : [x, -z, -y]
+    // Paired with circuit-json-to-gltf's cad-component-box/getMeshOrigin:
+    // authored JSCAD origins use the same Y/Z swap as the plan's triangles.
+    const loaded = [x, z, y]
     const origin = cad.model_board_normal_direction
       ? vec3.transformMat4(
           vec3.create(),
