@@ -14,8 +14,10 @@ import { symbols } from "schematic-symbols"
 
 export class PushButton extends NormalComponent<
   typeof pushButtonProps,
-  PassivePorts
+  PassivePorts | "side1" | "side2"
 > {
+  private _defaultTerminalAliasPorts?: Map<"side1" | "side2", Port>
+
   get config() {
     return {
       componentName: "PushButton",
@@ -31,6 +33,18 @@ export class PushButton extends NormalComponent<
   }
 
   override initPorts() {
+    this._defaultTerminalAliasPorts ??= new Map()
+    for (const [alias, port] of this._defaultTerminalAliasPorts) {
+      port.externallyAddedAliases = port.externallyAddedAliases.filter(
+        (existingAlias) => existingAlias !== alias,
+      )
+    }
+    this._defaultTerminalAliasPorts.clear()
+
+    for (const port of this.selectAll<Port>("port")) {
+      port.schematicSymbolPortDef = null
+    }
+
     super.initPorts({
       pinCount: 2,
       ignoreSymbolPorts: true,
@@ -44,6 +58,10 @@ export class PushButton extends NormalComponent<
     const ports = this.selectAll<Port>("port")
     const pin1Port = ports.find((port) => port.props.pinNumber === 1)!
     pin1Port.schematicSymbolPortDef = symPort1!
+    if (!ports.some((port) => port.getNameAndAliases().includes("side1"))) {
+      pin1Port.externallyAddedAliases.push("side1")
+      this._defaultTerminalAliasPorts.set("side1", pin1Port)
+    }
 
     // Each symbol terminal has one physical owner. Other pads inherit that
     // terminal through their resolved internal connections (including aliases
@@ -56,6 +74,10 @@ export class PushButton extends NormalComponent<
       .sort((a, b) => (a.props.pinNumber ?? 0) - (b.props.pinNumber ?? 0))[0]
     if (secondTerminalPort) {
       secondTerminalPort.schematicSymbolPortDef = symPort2!
+      if (!ports.some((port) => port.getNameAndAliases().includes("side2"))) {
+        secondTerminalPort.externallyAddedAliases.push("side2")
+        this._defaultTerminalAliasPorts.set("side2", secondTerminalPort)
+      }
     }
   }
 
