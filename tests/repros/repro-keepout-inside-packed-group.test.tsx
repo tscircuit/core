@@ -77,8 +77,10 @@ test("repro: keepout inside packed group does not move with group (#6066)", asyn
   // Capture current buggy behavior: all keepouts stay at (0, 0)
   // Expected behavior after fix: each keepout moves with its parent group
   for (const keepout of keepouts) {
-    expect(keepout.center.x).toBe(0)
-    expect(keepout.center.y).toBe(0)
+    if ("center" in keepout) {
+      expect(keepout.center.x).toBe(0)
+      expect(keepout.center.y).toBe(0)
+    }
   }
 
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
