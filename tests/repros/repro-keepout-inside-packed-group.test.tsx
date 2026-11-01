@@ -84,22 +84,37 @@ test("keepout inside packed group is moved with the group (#6066)", async () => 
   expect(r3!.center.x).toBeGreaterThan(0)
 
   // Each keepout must match the center coordinates of the resistor in its group
-  const keepoutGA = keepouts.find((k) => k.pcb_group_id === r1!.pcb_group_id)
-  const keepoutGB = keepouts.find((k) => k.pcb_group_id === r2!.pcb_group_id)
-  const keepoutGC = keepouts.find((k) => k.pcb_group_id === r3!.pcb_group_id)
+  const keepoutGA = keepouts.find(
+    (k) => k.shape === "rect" && k.pcb_group_id === r1!.pcb_group_id,
+  )
+  const keepoutGB = keepouts.find(
+    (k) => k.shape === "rect" && k.pcb_group_id === r2!.pcb_group_id,
+  )
+  const keepoutGC = keepouts.find(
+    (k) => k.shape === "rect" && k.pcb_group_id === r3!.pcb_group_id,
+  )
 
   expect(keepoutGA).toBeDefined()
   expect(keepoutGB).toBeDefined()
   expect(keepoutGC).toBeDefined()
 
-  expect(keepoutGA!.center.x).toBeCloseTo(r1!.center.x, 2)
-  expect(keepoutGA!.center.y).toBeCloseTo(r1!.center.y, 2)
+  if (
+    keepoutGA &&
+    keepoutGB &&
+    keepoutGC &&
+    "center" in keepoutGA &&
+    "center" in keepoutGB &&
+    "center" in keepoutGC
+  ) {
+    expect(keepoutGA.center.x).toBeCloseTo(r1!.center.x, 2)
+    expect(keepoutGA.center.y).toBeCloseTo(r1!.center.y, 2)
 
-  expect(keepoutGB!.center.x).toBeCloseTo(r2!.center.x, 2)
-  expect(keepoutGB!.center.y).toBeCloseTo(r2!.center.y, 2)
+    expect(keepoutGB.center.x).toBeCloseTo(r2!.center.x, 2)
+    expect(keepoutGB.center.y).toBeCloseTo(r2!.center.y, 2)
 
-  expect(keepoutGC!.center.x).toBeCloseTo(r3!.center.x, 2)
-  expect(keepoutGC!.center.y).toBeCloseTo(r3!.center.y, 2)
+    expect(keepoutGC.center.x).toBeCloseTo(r3!.center.x, 2)
+    expect(keepoutGC.center.y).toBeCloseTo(r3!.center.y, 2)
+  }
 
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

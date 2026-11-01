@@ -172,7 +172,11 @@ export const applyPackOutput = (
     )
 
     const relatedElements = db.toArray().filter((elm) => {
-      if ("pcb_group_id" in elm && elm.pcb_group_id) {
+      if (
+        elm.type === "pcb_keepout" &&
+        "pcb_group_id" in elm &&
+        elm.pcb_group_id
+      ) {
         if (elm.pcb_group_id === pcbGroup.pcb_group_id) {
           return true
         }
