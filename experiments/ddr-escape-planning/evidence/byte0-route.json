@@ -1,0 +1,144 @@
+{
+  "accepted": true,
+  "seconds": 7.205650255,
+  "solved": true,
+  "failed": false,
+  "error": null,
+  "phase": "solved",
+  "buses": [
+    {
+      "busId": "DDR_BYTE0",
+      "minLengthMm": 0,
+      "aboveMinimumLength": true,
+      "maxLengthMm": 24.600277000000002,
+      "withinLengthLimit": true,
+      "toleranceMm": 0.635,
+      "skewMm": 0.6350000000005558,
+      "matched": true,
+      "lengths": [
+        {
+          "name": "source_trace_14",
+          "carrierLengthMm": 23.915277000000035,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 23.915277000000035
+        },
+        {
+          "name": "source_trace_30",
+          "carrierLengthMm": 23.915276999999993,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 23.915276999999993
+        },
+        {
+          "name": "source_trace_3",
+          "carrierLengthMm": 23.915276999999964,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 23.915276999999964
+        },
+        {
+          "name": "source_trace_40",
+          "carrierLengthMm": 23.915277000000014,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 23.915277000000014
+        },
+        {
+          "name": "source_trace_17",
+          "carrierLengthMm": 23.915276999999865,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 23.915276999999865
+        },
+        {
+          "name": "source_trace_41",
+          "carrierLengthMm": 23.915276999999985,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 23.915276999999985
+        },
+        {
+          "name": "source_trace_4",
+          "carrierLengthMm": 23.915276999999406,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 23.915276999999406
+        },
+        {
+          "name": "source_trace_31",
+          "carrierLengthMm": 23.915277000000387,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 23.915277000000387
+        },
+        {
+          "name": "source_trace_29",
+          "carrierLengthMm": 23.915277000000046,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 23.915277000000046
+        },
+        {
+          "name": "source_trace_15",
+          "carrierLengthMm": 24.550276999999962,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 24.550276999999962
+        },
+        {
+          "name": "source_trace_16",
+          "carrierLengthMm": 24.423277000000006,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 24.423277000000006
+        }
+      ]
+    }
+  ],
+  "pairs": [
+    {
+      "busId": "pair_0",
+      "minLengthMm": null,
+      "aboveMinimumLength": true,
+      "maxLengthMm": null,
+      "withinLengthLimit": true,
+      "toleranceMm": 0.127,
+      "skewMm": 0.12699999999995626,
+      "matched": true,
+      "lengths": [
+        {
+          "name": "source_trace_15",
+          "carrierLengthMm": 24.550276999999962,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 24.550276999999962
+        },
+        {
+          "name": "source_trace_16",
+          "carrierLengthMm": 24.423277000000006,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 24.423277000000006
+        }
+      ]
+    }
+  ],
+  "coupling": [
+    {
+      "connectionNames": [
+        "source_trace_15",
+        "source_trace_16"
+      ],
+      "applicable": true,
+      "matched": true,
+      "maxExteriorEdgeGapMm": 0.12000000000000242,
+      "maxSamplingErrorMm": 0.0009998082822085922,
+      "separatedExteriorLengthMm": 0
+    }
+  ],
+  "drc": {
+    "valid": true,
+    "checkedTraceCount": 11,
+    "checkedSegmentCount": 8192,
+    "checkedViaCount": 22,
+    "issues": []
+  },
+  "stats": {
+    "carrierStrategy": "preferred",
+    "nativeSingleCarrier": {
+      "stage": "native_global_matching",
+      "pass": 1,
+      "collisions": 0,
+      "unfinished": []
+    },
+    "optimizationStoppedEarly": false
+  }
+}
