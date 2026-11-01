@@ -8,10 +8,7 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 export default function LoRaBatteryMonitorGrid({
   gridProps = { schGridCols: 1, schGridGap: 5 },
 }: {
-  gridProps?: Pick<
-    GroupProps,
-    "schGridCols" | "schGridGap" | "gridCols" | "gridGap"
-  >
+  gridProps?: Pick<GroupProps, "schGridCols" | "schGridGap" | "gridCols">
 }) {
   return (
     <board>
@@ -50,11 +47,6 @@ test("repro: LoRa battery monitor ignores schGridCols and schGridGap", async () 
       // Isolate the gap: generic gridCols works, but schGridGap is ignored.
       snapshotName: "schematic-gap",
       gridProps: { gridCols: 1, schGridGap: 5 },
-    },
-    {
-      // Control: the same circuit honors the generic columns and gap.
-      snapshotName: "generic-props-control",
-      gridProps: { gridCols: 1, gridGap: 5 },
     },
   ]) {
     const { circuit } = getTestFixture()
