@@ -210,3 +210,90 @@ test("simple route json keeps existing pcb traces as routing state inside subcir
     ["pcb_port_a", "pcb_port_b"],
   ])
 })
+
+test("simple route json omits unowned top-level pcb traces while keeping component-owned footprint copper when ignoreExistingTopLevelPcbRouteState is enabled", () => {
+  const circuitJson: AnyCircuitElement[] = [
+    {
+      type: "pcb_board",
+      pcb_board_id: "pcb_board_0",
+      center: { x: 0, y: 0 },
+      width: 10,
+      height: 10,
+      num_layers: 2,
+    } as any,
+    {
+      type: "pcb_component",
+      pcb_component_id: "pcb_component_0",
+      source_component_id: "source_component_0",
+      center: { x: 0, y: 0 },
+      width: 2,
+      height: 1,
+      layer: "top",
+      rotation: 0,
+      obstructs_within_bounds: false,
+    } as any,
+    {
+      type: "pcb_trace",
+      pcb_trace_id: "pcb_trace_unowned_top_level",
+      route: [
+        {
+          route_type: "wire",
+          x: -2,
+          y: -2,
+          width: 0.15,
+          layer: "top",
+        },
+        {
+          route_type: "wire",
+          x: 2,
+          y: 2,
+          width: 0.15,
+          layer: "top",
+        },
+      ],
+    } as any,
+    {
+      type: "pcb_trace",
+      pcb_trace_id: "pcb_trace_footprint_bridge",
+      pcb_component_id: "pcb_component_0",
+      route: [
+        {
+          route_type: "wire",
+          x: -1,
+          y: 0,
+          width: 0.2,
+          layer: "top",
+        },
+        {
+          route_type: "wire",
+          x: 1,
+          y: 0,
+          width: 0.2,
+          layer: "top",
+        },
+      ],
+    } as any,
+  ]
+
+  const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
+    circuitJson,
+    ignoreExistingTopLevelPcbRouteState: true,
+  })
+
+  expect(simpleRouteJson.traces).toBeUndefined()
+  expect(
+    simpleRouteJson.obstacles.some((obstacle) =>
+      obstacle.connectedTo.includes("pcb_trace_unowned_top_level"),
+    ),
+  ).toBe(false)
+  expect(simpleRouteJson.obstacles).toContainEqual(
+    expect.objectContaining({
+      componentId: "pcb_component_0",
+      center: { x: 0, y: 0 },
+      width: 2,
+      height: 0.1,
+      layers: ["top"],
+      connectedTo: expect.arrayContaining(["pcb_trace_footprint_bridge"]),
+    }),
+  )
+})
