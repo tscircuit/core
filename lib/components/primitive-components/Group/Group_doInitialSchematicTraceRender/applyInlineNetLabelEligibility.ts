@@ -6,6 +6,8 @@ export const INLINE_NET_LABEL_FONT_SIZE = 0.12
 
 type EligibleDirectConnection = {
   schematicPortIds: [SchematicPortId, SchematicPortId]
+  netId?: string
+  netLabelWidth?: number
   anchoredNetLabelWidth?: number
   allowInlineNetLabel?: boolean
   inlineNetLabelWidth?: number
@@ -17,6 +19,7 @@ type EligibleNetConnection = {
   netId: string
   netLabelText?: string
   schematicPortIds: SchematicPortId[]
+  netLabelWidth?: number
   anchoredNetLabelWidth?: number
   allowInlineNetLabel?: boolean
   inlineNetLabelWidth?: number
@@ -56,11 +59,16 @@ const markConnectionEligibleForInlineNetLabel = (
  *
  * A direct connection qualifies when it is a genuine point-to-point signal:
  *
- * - the whole net is exactly these two ports (a third tap would make the label
- *   ambiguous about which leg it names),
+ * - the whole net is two ports without explicit `<netlabel>` elements,
  * - the net is not power or ground (those render as rail symbols), and
  * - the net has a name the user chose - a `schDisplayLabel`/`name` on the trace
  *   or a named net - rather than one derived from the ports it happens to hit.
+ *
+ * A branched signal net (more than two ports) formed by direct traces without
+ * a `source_net` is also eligible when its traces specify a single unambiguous
+ * `schDisplayLabel` and span multiple components. It is promoted to a
+ * `netConnection` so each routed connected component receives one inline label
+ * along its trace and unrouted endpoints receive outward stubs.
  *
  * A named signal net made from explicit port-to-net traces is also eligible
  * when it has either one port or ports on multiple components. A single-port
@@ -100,27 +108,75 @@ export const applyInlineNetLabelEligibility = ({
   ) => boolean
   resolveCanonicalNetLabelText: (args: {
     subcircuitConnectivityMapKey: string
-  }) => { name: string; wasAssignedDisplayLabel: boolean }
+  }) => {
+    name: string
+    wasAssignedDisplayLabel: boolean
+    hasUnambiguousSchDisplayLabel?: boolean
+  }
 }) => {
+  const promotedBranchedConnKeys = new Set<string>()
+
   for (const directConnection of directConnections) {
     const { connKey } = directConnection
     if (!connKey) continue
 
     const portsOnNet = connKeyToSchematicPortIds.get(connKey)
-    if (portsOnNet?.length !== 2) continue
+    if (!portsOnNet || portsOnNet.length < 2) continue
 
     const sourceNet = connKeyToSourceNet.get(connKey)
     if (sourceNet?.is_power || sourceNet?.is_ground) continue
 
-    const { name, wasAssignedDisplayLabel } = resolveCanonicalNetLabelText({
-      subcircuitConnectivityMapKey: connKey,
-    })
+    const { name, wasAssignedDisplayLabel, hasUnambiguousSchDisplayLabel } =
+      resolveCanonicalNetLabelText({
+        subcircuitConnectivityMapKey: connKey,
+      })
     if (!name || !wasAssignedDisplayLabel) continue
 
-    markConnectionEligibleForInlineNetLabel(directConnection, name)
+    if (portsOnNet.length === 2) {
+      markConnectionEligibleForInlineNetLabel(directConnection, name)
+      continue
+    }
+
+    if (
+      !sourceNet &&
+      hasUnambiguousSchDisplayLabel &&
+      !promotedBranchedConnKeys.has(connKey) &&
+      !portsOnNet.some((schematicPortId) =>
+        schematicPortIdsWithExplicitNetLabels.has(schematicPortId),
+      ) &&
+      !directConnections.some(
+        (dc) => dc.connKey === connKey && dc.netLabelWidth !== undefined,
+      )
+    ) {
+      const firstPortId = portsOnNet[0]
+      const hasPortsOnDifferentComponents =
+        firstPortId !== undefined &&
+        portsOnNet
+          .slice(1)
+          .some((otherPortId) =>
+            areSchematicPortsOnDifferentComponents([firstPortId, otherPortId]),
+          )
+      if (!hasPortsOnDifferentComponents) continue
+
+      promotedBranchedConnKeys.add(connKey)
+      const netLabelWidth = Number(
+        getSchematicNetLabelTextWidth({ text: name }).toFixed(2),
+      )
+      const branchedNetConnection: EligibleNetConnection = {
+        netId: directConnection.netId ?? name,
+        netLabelText: name,
+        schematicPortIds: [...portsOnNet],
+        netLabelWidth,
+        anchoredNetLabelWidth: netLabelWidth,
+        connKey,
+      }
+      markConnectionEligibleForInlineNetLabel(branchedNetConnection, name)
+      netConnections.push(branchedNetConnection)
+    }
   }
 
   for (const netConnection of netConnections) {
+    if (netConnection.allowInlineNetLabel) continue
     const { schematicPortIds } = netConnection
     const { isSameSheetCrossSectionConnection } = netConnection
     const hasInlineNetLabel = schematicPortIds.some((schematicPortId) =>

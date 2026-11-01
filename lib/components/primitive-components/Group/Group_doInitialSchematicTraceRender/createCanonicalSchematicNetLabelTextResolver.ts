@@ -32,7 +32,11 @@ export const createCanonicalSchematicNetLabelTextResolver = (
   >()
   const resolvedTextByConnectionKey = new Map<
     SubcircuitConnectivityMapKey,
-    { name: string; wasAssignedDisplayLabel: boolean }
+    {
+      name: string
+      wasAssignedDisplayLabel: boolean
+      hasUnambiguousSchDisplayLabel?: boolean
+    }
   >()
 
   for (const sourceNet of db.source_net.list()) {
@@ -65,7 +69,11 @@ export const createCanonicalSchematicNetLabelTextResolver = (
     subcircuitConnectivityMapKey,
   }: {
     subcircuitConnectivityMapKey: SubcircuitConnectivityMapKey
-  }): { name: string; wasAssignedDisplayLabel: boolean } => {
+  }): {
+    name: string
+    wasAssignedDisplayLabel: boolean
+    hasUnambiguousSchDisplayLabel?: boolean
+  } => {
     const cached = resolvedTextByConnectionKey.get(subcircuitConnectivityMapKey)
     if (cached) return cached
 
@@ -97,6 +105,7 @@ export const createCanonicalSchematicNetLabelTextResolver = (
           sourcePortIdsByConnectionKey.get(subcircuitConnectivityMapKey) ?? [],
         ) ?? "",
       wasAssignedDisplayLabel: false,
+      hasUnambiguousSchDisplayLabel: false,
     }
     resolvedTextByConnectionKey.set(subcircuitConnectivityMapKey, result)
     return result
