@@ -48,5 +48,10 @@ test("offset drill placement on a rotated copper pad", async () => {
   )
 
   await circuit.renderUntilSettled()
+  const [, rotatedHole] = circuit.db.pcb_plated_hole
+    .list()
+    .filter((hole) => hole.shape === "circular_hole_with_rect_pad")
+  expect(rotatedHole.x + rotatedHole.hole_offset_x).toBeCloseTo(3)
+  expect(rotatedHole.y + rotatedHole.hole_offset_y).toBeCloseTo(0.8)
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
