@@ -125,4 +125,80 @@ export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
     }
     return { width: 0, height: 0 }
   }
+
+  _getPcbCircuitJsonBounds(): {
+    center: { x: number; y: number }
+    bounds: { left: number; top: number; right: number; bottom: number }
+    width: number
+    height: number
+  } {
+    if (!this.pcb_keepout_id) return super._getPcbCircuitJsonBounds()
+    const { db } = this.root!
+    const keepout = db.pcb_keepout.get(this.pcb_keepout_id)
+    if (!keepout) return super._getPcbCircuitJsonBounds()
+
+    if (keepout.shape === "rect") {
+      return {
+        center: keepout.center,
+        bounds: {
+          left: keepout.center.x - keepout.width / 2,
+          top: keepout.center.y + keepout.height / 2,
+          right: keepout.center.x + keepout.width / 2,
+          bottom: keepout.center.y - keepout.height / 2,
+        },
+        width: keepout.width,
+        height: keepout.height,
+      }
+    }
+
+    if (keepout.shape === "circle") {
+      return {
+        center: keepout.center,
+        bounds: {
+          left: keepout.center.x - keepout.radius,
+          top: keepout.center.y + keepout.radius,
+          right: keepout.center.x + keepout.radius,
+          bottom: keepout.center.y - keepout.radius,
+        },
+        width: keepout.radius * 2,
+        height: keepout.radius * 2,
+      }
+    }
+
+    return super._getPcbCircuitJsonBounds()
+  }
+
+  _setPositionFromLayout(newCenter: { x: number; y: number }): void {
+    if (!this.pcb_keepout_id) return
+    const { db } = this.root!
+    const keepout = db.pcb_keepout.get(this.pcb_keepout_id)
+    if (!keepout) return
+
+    if (keepout.shape === "rect" || keepout.shape === "circle") {
+      db.pcb_keepout.update(this.pcb_keepout_id, {
+        ...keepout,
+        center: newCenter,
+      } as any)
+    }
+  }
+
+  _moveCircuitJsonElements({
+    deltaX,
+    deltaY,
+  }: { deltaX: number; deltaY: number }): void {
+    if (this.root?.pcbDisabled) return
+    if (!this.pcb_keepout_id) return
+    const { db } = this.root!
+    const keepout = db.pcb_keepout.get(this.pcb_keepout_id)
+    if (!keepout) return
+
+    if (keepout.shape === "rect" || keepout.shape === "circle") {
+      db.pcb_keepout.update(this.pcb_keepout_id, {
+        center: {
+          x: keepout.center.x + deltaX,
+          y: keepout.center.y + deltaY,
+        },
+      } as any)
+    }
+  }
 }
