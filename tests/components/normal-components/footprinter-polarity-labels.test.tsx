@@ -108,6 +108,16 @@ test("native footprint polarity follows pinLabels through rotation and mirroring
     const port = circuit.db.pcb_port.getWhere({
       source_port_id: anode.source_port_id,
     })!
+    expect(
+      circuit.db.pcb_fabrication_note_path.list({
+        pcb_component_id: pcb.pcb_component_id,
+      }),
+    ).toHaveLength(4)
+    expect(
+      circuit.db.pcb_fabrication_note_text.list({
+        pcb_component_id: pcb.pcb_component_id,
+      }),
+    ).toHaveLength(2)
     const plus = circuit.db.pcb_fabrication_note_text
       .list({ pcb_component_id: pcb.pcb_component_id })
       .find((note) => note.text === "+")!

@@ -30,6 +30,7 @@ export interface AssemblyCableEndpoint {
   pin1Position?: Point3
   direction: BoardDirectionVector
   cableInput?: CableInput
+  board?: ReturnType<NormalComponent["_getBoard"]>
 }
 
 export function resolveAssemblyCableEndpoint(
@@ -102,8 +103,35 @@ export function resolveAssemblyCableEndpoint(
     )
     // The shared header profile places the mating face beyond its body reference.
 
+    let board: AssemblyCableEndpoint["board"]
+    if (cable._parsedProps.waypoints?.length) {
+      let boardAncestor = motor.parent
+      const subcircuitId = faceMount?.subcircuit_id ?? placement.subcircuit_id
+      if (subcircuitId) {
+        const mountedSubcircuit = scoped.find(
+          (part) =>
+            part.isSubcircuit &&
+            part.getSubcircuit().subcircuit_id === subcircuitId,
+        )
+        if (!mountedSubcircuit) {
+          throw new Error(
+            `assembly.cable "${cable.name}" motor "${motor.name}" mounting subcircuit is not in its assembly device`,
+          )
+        }
+        boardAncestor = mountedSubcircuit
+      }
+      while (
+        boardAncestor &&
+        boardAncestor.componentName !== "Board" &&
+        boardAncestor.componentName !== "MountedBoard"
+      ) {
+        boardAncestor = boardAncestor.parent
+      }
+      board = boardAncestor?._getBoard()
+    }
     return {
       sourceComponentId: motor.source_component_id!,
+      board,
       position: {
         x:
           point[0] +
@@ -213,6 +241,7 @@ export function resolveAssemblyCableEndpoint(
   }
   return {
     sourceComponentId: connector.source_component_id,
+    board,
     position,
     pin1Position: resolveAssemblyCablePin1Position(
       cable,

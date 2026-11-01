@@ -1,3 +1,4 @@
+import { getOwningPanel } from "lib/utils/panels/get-owning-panel"
 import { MultilayerIjump } from "@tscircuit/infgrid-ijump-astar"
 import { type Point, doesLineIntersectLine } from "@tscircuit/math-utils"
 import { calculateElbow } from "calculate-elbow"
@@ -27,6 +28,7 @@ import { getOtherSchematicTraces } from "./trace-utils/get-other-schematic-trace
 import { pushEdgesOfSchematicTraceToPreventOverlap } from "./trace-utils/push-edges-of-schematic-trace-to-prevent-overlap"
 
 export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
+  if (getOwningPanel(trace)) return
   if (trace.root?._featureMspSchematicTraceRouting) return
   if (trace._couldNotFindPort) return
   if (trace.root?.schematicDisabled) return

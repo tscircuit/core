@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test"
-import { resolveFootprinterPolarity } from "lib/components/base-components/NormalComponent/utils/resolve-footprinter-polarity"
+import { Capacitor } from "lib/components/normal-components/Capacitor"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("polarized capacitor footprint options agree with its electrical ports", async () => {
@@ -36,21 +36,29 @@ test("polarized capacitor footprint options agree with its electrical ports", as
     .list({ source_component_id: swapped.source_component_id })
     .find((port) => port.port_hints?.includes("pos"))!
   expect(positive.pin_number).toBe(2)
-  expect(
-    resolveFootprinterPolarity({
-      footprint: "0805",
-      componentName: "Capacitor",
-      name: "C1",
-      polarized: true,
-    }).footprint,
-  ).toBe("cap0805_positivepin1_negativepin2")
-  expect(
-    resolveFootprinterPolarity({
-      footprint: "0805",
-      componentName: "Capacitor",
-      name: "C1",
-      polarized: false,
-    }).footprint,
-  ).toBe("0805")
+  for (const [name, footprint, expected, polarized] of [
+    ["C_POS1", "cap0805", "cap0805_polarized", true],
+    [
+      "C_POS2",
+      "cap0805_positivepin2_negativepin1",
+      "cap0805_positivepin2_negativepin1_polarized",
+      true,
+    ],
+    ["C_CERAMIC", "0805", "cap0805_nonpolarized", false],
+  ] as const) {
+    const capacitor = circuit.selectOne(`.${name}`) as Capacitor
+    expect(capacitor.props.footprint).toBe(footprint)
+    expect(capacitor._parsedProps.footprint).toBe(footprint)
+    expect(capacitor.resolveFootprint()).toBe(expected)
+    expect(capacitor.getFootprinterString()).toBe(expected)
+    const normalized = new Capacitor({
+      name: "C_NORMALIZED",
+      capacitance: "10uF",
+      footprint: expected,
+      polarized,
+    })
+    expect(normalized.resolveFootprint()).toBe(expected)
+    expect(normalized.getFootprinterString()).toBe(expected)
+  }
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

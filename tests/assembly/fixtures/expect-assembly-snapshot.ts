@@ -120,6 +120,7 @@ export const expectAssemblySnapshot = async (
         includeModels: true,
         showBoundingBoxes: false,
         showReferenceSurfaces: panel.showReferenceSurfaces,
+        ...panel.renderOptions?.gltf,
         format: "glb",
       })
       const renderOptions = await resolvePoppyglOptions(

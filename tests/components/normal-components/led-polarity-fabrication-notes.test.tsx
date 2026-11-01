@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import type { Led } from "lib/components/normal-components/Led"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("LED fabrication symbol follows polarity ports and preserves authored notes", async () => {
+test("Footprinter supplies LED polarity artwork once and preserves authored notes", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width={26} height={12} routingDisabled>
@@ -23,12 +23,12 @@ test("LED fabrication symbol follows polarity ports and preserves authored notes
   const led = circuit.selectOne("led") as Led
   const filter = { pcb_component_id: led.pcb_component_id! }
   const notes = circuit.db.pcb_fabrication_note_text.list(filter)
-  expect(notes.map((note) => note.text)).toEqual(["USER NOTE"])
+  expect(notes.map((note) => note.text).sort()).toEqual(["+", "-", "USER NOTE"])
   const paths = circuit.db.pcb_fabrication_note_path.list(filter)
   expect(paths[0]!.route[0]!.x).toBeGreaterThan(paths[3]!.route[1]!.x)
   expect(circuit.db.pcb_fabrication_note_path.list(filter)).toHaveLength(4)
   led.updatePcbComponentSizeCalculation()
-  expect(circuit.db.pcb_fabrication_note_text.list(filter)).toHaveLength(1)
+  expect(circuit.db.pcb_fabrication_note_text.list(filter)).toHaveLength(3)
   expect(circuit.db.pcb_fabrication_note_path.list(filter)).toHaveLength(4)
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

@@ -1,4 +1,3 @@
-import { resolveFootprinterPolarity } from "./utils/resolve-footprinter-polarity"
 import { NormalComponent_doInitialSourcePinSpecificationChecks } from "./NormalComponent_doInitialSourcePinSpecificationChecks"
 import {
   getNumericPinLabels,
@@ -683,8 +682,9 @@ export class NormalComponent<
 
   // Override to choose the effective footprint without rewriting user props.
   resolveFootprint() {
+    // Footprint-driven config can discover ports before props have been parsed.
     return (
-      this._parsedProps.footprint ??
+      this._parsedProps?.footprint ??
       this.props.footprint ??
       this._getImpliedFootprintString?.()
     )
@@ -703,16 +703,7 @@ export class NormalComponent<
       if (parseLibraryFootprintRef(footprint)) return
       let fpCircuitJson: AnyCircuitElement[]
       try {
-        const resolved = resolveFootprinterPolarity({
-          footprint,
-          componentName: this.componentName,
-          name: this.name ?? this.componentName,
-          pinLabels: this._resolvePinLabels(),
-          polarized: this._parsedProps.polarized,
-        })
-        fpCircuitJson = fp
-          .string(resolved.footprint)
-          .soup() as AnyCircuitElement[]
+        fpCircuitJson = fp.string(footprint).soup() as AnyCircuitElement[]
       } catch (error) {
         this._queueInvalidFootprintPropMessage(footprint, error)
         return
@@ -1657,7 +1648,7 @@ export class NormalComponent<
       inferredInternallyConnectedPinNames,
       implicitPinNumberByHint,
     }
-    let { footprint } = this.props
+    let footprint = this.resolveFootprint()
     if (
       typeof footprint === "string" &&
       parseLibraryFootprintRef(footprint) &&

@@ -1,3 +1,4 @@
+import { getOwningPanel } from "lib/utils/panels/get-owning-panel"
 import { dedupePcbDrcErrors, runAllRoutingChecks } from "@tscircuit/checks"
 import type { AnyCircuitElement } from "circuit-json"
 import type { Group } from "./Group"
@@ -43,13 +44,35 @@ export const Group_doInitialStandaloneSubcircuitPcbDesignRuleChecks = (
     .subtree({ subcircuit_id: group.subcircuit_id })
     .toArray()
 
+  // The panel is the physical boundary for inter-board copper. Child boards
+  // perform their own DRC; their outlines must not clip panel-level traces.
+  const panelComponent = getOwningPanel(group)
+  const panel = panelComponent?.pcb_panel_id
+    ? db.pcb_panel.get(panelComponent.pcb_panel_id)
+    : undefined
+  const routingCircuitJson = panel
+    ? subcircuitCircuitJson.filter((element) => element.type !== "pcb_board")
+    : subcircuitCircuitJson
+  if (panel) {
+    routingCircuitJson.push({
+      type: "pcb_board",
+      pcb_board_id: panel.pcb_panel_id,
+      center: panel.center,
+      width: panel.width,
+      height: panel.height,
+      thickness: panel.thickness,
+      num_layers: 2,
+      material: "fr4",
+    })
+  }
+
   group._standaloneSubcircuitDrcChecksInProgress = true
   group._queueAsyncEffect(
     "standalone-subcircuit:routing-drc-checks",
     async () => {
       try {
         const results = (await runAllRoutingChecks(
-          subcircuitCircuitJson,
+          routingCircuitJson,
         )) as AnyCircuitElement[]
         db.insertAll(dedupePcbDrcErrors(results))
         group._standaloneSubcircuitDrcChecksComplete = true

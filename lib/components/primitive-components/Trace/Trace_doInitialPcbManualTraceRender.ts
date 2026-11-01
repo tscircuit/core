@@ -1,3 +1,4 @@
+import { getOwningPanel } from "lib/utils/panels/get-owning-panel"
 import {
   pcb_via,
   type LayerRef,
@@ -187,6 +188,7 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
         source_trace_id: trace.source_trace_id!,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: trace.getGroup()?.pcb_group_id ?? undefined,
+        pcb_panel_id: getOwningPanel(trace)?.pcb_panel_id ?? undefined,
       })
       const pcbStyle = trace.getInheritedMergedProperty("pcbStyle")
       const { holeDiameter, padDiameter } = getViaDiameterDefaults(pcbStyle)
@@ -234,6 +236,7 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
             to_layer: toLayer,
             subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
             pcb_group_id: trace.getGroup()?.pcb_group_id ?? undefined,
+            pcb_panel_id: getOwningPanel(trace)?.pcb_panel_id ?? undefined,
             subcircuit_connectivity_map_key:
               inflatedPcbVia?.subcircuit_connectivity_map_key ??
               subcircuitConnectivityMapKey,
@@ -332,6 +335,7 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
       source_trace_id: trace.source_trace_id!,
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       pcb_group_id: trace.getGroup()?.pcb_group_id ?? undefined,
+      pcb_panel_id: getOwningPanel(trace)?.pcb_panel_id ?? undefined,
       trace_length: traceLength,
     })
     trace._portsRoutedOnPcb = ports
@@ -480,6 +484,7 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
     source_trace_id: trace.source_trace_id!,
     subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
     pcb_group_id: trace.getGroup()?.pcb_group_id ?? undefined,
+    pcb_panel_id: getOwningPanel(trace)?.pcb_panel_id ?? undefined,
     trace_length: traceLength,
   })
   const subcircuitConnectivityMapKey =
@@ -506,6 +511,7 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
         to_layer: toLayer,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: trace.getGroup()?.pcb_group_id ?? undefined,
+        pcb_panel_id: getOwningPanel(trace)?.pcb_panel_id ?? undefined,
         subcircuit_connectivity_map_key: subcircuitConnectivityMapKey,
       })
     }
