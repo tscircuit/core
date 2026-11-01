@@ -1,4 +1,5 @@
 import { silkscreenRectProps } from "@tscircuit/props"
+import type { PcbSilkscreenRect } from "circuit-json"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { getAxisAlignedSizeFromRotatedRect } from "lib/utils/pcb/get-axis-aligned-size-from-rotated-rect"
 
@@ -7,6 +8,32 @@ export class SilkscreenRect extends PrimitiveComponent<
 > {
   pcb_silkscreen_rect_id: string | null = null
   isPcbPrimitive = true
+  private circuitJsonRotation: number | null = null
+
+  /**
+   * Restore a rectangle in its parent's local PCB frame: mm, +X right, +Y
+   * top, +Z above, right-handed. The center is a point; rotation is CCW in
+   * degrees. Like SolderPaste.fromCircuitJson, keep imported orientation
+   * separate from authored props, which only expose axis-aligned rectangles.
+   */
+  static fromCircuitJson(rect: PcbSilkscreenRect): SilkscreenRect {
+    const silkscreenRect = new SilkscreenRect({
+      pcbX: rect.center.x,
+      pcbY: rect.center.y,
+      width: rect.width,
+      height: rect.height,
+      layer: rect.layer,
+      strokeWidth: rect.stroke_width,
+      filled: rect.is_filled,
+      cornerRadius: rect.corner_radius,
+    })
+    silkscreenRect.circuitJsonRotation = rect.ccw_rotation ?? 0
+    return silkscreenRect
+  }
+
+  _getPcbRotationBeforeLayout(): number | null {
+    return this.circuitJsonRotation ?? super._getPcbRotationBeforeLayout()
+  }
 
   get config() {
     return {
