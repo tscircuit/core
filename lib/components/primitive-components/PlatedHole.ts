@@ -11,7 +11,7 @@ import type {
   PcbHoleRotatedPillWithRectPad,
   PcbHoleWithPolygonPad,
 } from "circuit-json"
-import { decomposeTSR } from "transformation-matrix"
+import { applyToPoint, decomposeTSR } from "transformation-matrix"
 import { selectPortForPcbPrimitive } from "./Port/selectPortForPcbPrimitive"
 
 export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
@@ -138,9 +138,9 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
 
     this.emitSolderMaskMarginWarning(isCoveredWithSolderMask, soldermaskMargin)
 
-    const decomposedTransform = decomposeTSR(
-      this._computePcbGlobalTransformBeforeLayout(),
-    )
+    const pcbLocalToGlobalTransform =
+      this._computePcbGlobalTransformBeforeLayout()
+    const decomposedTransform = decomposeTSR(pcbLocalToGlobalTransform)
     const rotationDegrees = (decomposedTransform.rotation.angle * 180) / Math.PI
     const normalizedRotationDegrees = ((rotationDegrees % 360) + 360) % 360
     const finalRotationDegrees = normalizedRotationDegrees
@@ -290,6 +290,11 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         })
       }
     } else if (props.shape === "circular_hole_with_rect_pad") {
+      // Footprint-local offset to board XY (mm, +Y up); a direction has no translation.
+      const holeOffset = applyToPoint(
+        { ...pcbLocalToGlobalTransform, e: 0, f: 0 },
+        { x: props.holeOffsetX ?? 0, y: props.holeOffsetY ?? 0 },
+      )
       const pcb_plated_hole = db.pcb_plated_hole.insert({
         pcb_component_id,
         pcb_port_id: this.matchedPort?.pcb_port_id!,
@@ -305,8 +310,8 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         is_covered_with_solder_mask: isCoveredWithSolderMask,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
-        hole_offset_x: props.holeOffsetX,
-        hole_offset_y: props.holeOffsetY,
+        hole_offset_x: holeOffset.x,
+        hole_offset_y: holeOffset.y,
         rect_border_radius: props.rectBorderRadius ?? 0,
         rect_ccw_rotation: finalRotationDegrees,
       } as PcbHoleCircularWithRectPad)
