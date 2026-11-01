@@ -13,16 +13,30 @@ const parseDistance = (
   return Number.isFinite(parsed) ? parsed : fallback
 }
 
-export const getViaDiameterDefaults = (pcbStyle?: PcbStyle) => {
+export const getViaDiameterDefaults = (
+  pcbStyle?: PcbStyle,
+  board?: {
+    min_via_hole_diameter?: number
+    min_via_pad_diameter?: number
+  } | null,
+) => {
+  const holeDiameter = parseDistance(
+    pcbStyle?.viaHoleDiameter,
+    DEFAULT_VIA_HOLE_DIAMETER,
+  )
+  const padDiameter = parseDistance(
+    pcbStyle?.viaPadDiameter,
+    DEFAULT_VIA_PAD_DIAMETER,
+  )
   return {
-    holeDiameter: parseDistance(
-      pcbStyle?.viaHoleDiameter,
-      DEFAULT_VIA_HOLE_DIAMETER,
-    ),
-    padDiameter: parseDistance(
-      pcbStyle?.viaPadDiameter,
-      DEFAULT_VIA_PAD_DIAMETER,
-    ),
+    holeDiameter:
+      pcbStyle?.viaHoleDiameter !== undefined
+        ? Math.max(holeDiameter, board?.min_via_hole_diameter ?? 0)
+        : (board?.min_via_hole_diameter ?? holeDiameter),
+    padDiameter:
+      pcbStyle?.viaPadDiameter !== undefined
+        ? Math.max(padDiameter, board?.min_via_pad_diameter ?? 0)
+        : (board?.min_via_pad_diameter ?? padDiameter),
   }
 }
 
