@@ -67,19 +67,35 @@ const getSrjConnectionPointsFromPcbTraceHints = (
 const getOwningPcbBoardForSubcircuit = (
   db: CircuitJsonUtilObjects,
   subcircuitId: string,
-): { board: PcbBoard | null; subcircuitIsBoard: boolean } => {
+): {
+  board: PcbBoard | null
+  subcircuitIsBoard: boolean
+  standaloneRootSubcircuitId: string | null
+} => {
   const visitedSubcircuitIds = new Set<string>()
   let currentSubcircuitId: string | null = subcircuitId
   let isRequestedSubcircuit = true
+  let standaloneRootSubcircuitId: string | null = null
 
   while (
     currentSubcircuitId &&
     !visitedSubcircuitIds.has(currentSubcircuitId)
   ) {
     visitedSubcircuitIds.add(currentSubcircuitId)
+    standaloneRootSubcircuitId = currentSubcircuitId
     const sourceGroup = db.source_group.getWhere({
       subcircuit_id: currentSubcircuitId,
     })
+    const directBoard = db.pcb_board.getWhere({
+      subcircuit_id: currentSubcircuitId,
+    })
+    if (directBoard) {
+      return {
+        board: directBoard,
+        subcircuitIsBoard: isRequestedSubcircuit,
+        standaloneRootSubcircuitId: null,
+      }
+    }
     const sourceBoard = sourceGroup
       ? db.source_board.getWhere({
           source_group_id: sourceGroup.source_group_id,
@@ -92,13 +108,14 @@ const getOwningPcbBoardForSubcircuit = (
             source_board_id: sourceBoard.source_board_id,
           }) ?? null,
         subcircuitIsBoard: isRequestedSubcircuit,
+        standaloneRootSubcircuitId: null,
       }
     }
     currentSubcircuitId = sourceGroup?.parent_subcircuit_id ?? null
     isRequestedSubcircuit = false
   }
 
-  return { board: null, subcircuitIsBoard: false }
+  return { board: null, subcircuitIsBoard: false, standaloneRootSubcircuitId }
 }
 
 /**
@@ -219,16 +236,44 @@ export const getSimpleRouteJsonFromCircuitJson = ({
 
   let board: PcbBoard | undefined | null = null
   let subcircuitIsBoard = false
+  let standaloneRootSubcircuitId: string | null = null
   if (subcircuit_id) {
     const owningBoard = getOwningPcbBoardForSubcircuit(db, subcircuit_id)
     board = owningBoard.board
+    standaloneRootSubcircuitId = owningBoard.standaloneRootSubcircuitId
     subcircuitIsBoard = owningBoard.subcircuitIsBoard && board !== null
   }
 
   const panel = pcb_panel_id ? db.pcb_panel.get(pcb_panel_id) : undefined
-  if (!board && !panel) {
+  if (!subcircuit_id && !panel) {
     board = db.pcb_board.list()[0]
   }
+
+  // Keepouts are physical-board geometry, not owned routing connections. Read
+  // from the unfiltered DB so child routing sees parent/sibling constraints on
+  // the same board, while separately owned boards remain isolated.
+  const physicalBoardDb = db
+  const physicalBoardKeepouts = physicalBoardDb.pcb_keepout
+    .list()
+    .filter((keepout) => {
+      if (!board) {
+        if (!subcircuit_id) return true
+        // A boardless root is a physical routing scope too. Its children must
+        // see parent/sibling geometry without importing other standalone roots.
+        return (
+          !!standaloneRootSubcircuitId &&
+          !!keepout.subcircuit_id &&
+          getOwningPcbBoardForSubcircuit(physicalBoardDb, keepout.subcircuit_id)
+            .standaloneRootSubcircuitId === standaloneRootSubcircuitId
+        )
+      }
+      if (!keepout.subcircuit_id)
+        return physicalBoardDb.pcb_board.list().length === 1
+      return (
+        getOwningPcbBoardForSubcircuit(physicalBoardDb, keepout.subcircuit_id)
+          .board?.pcb_board_id === board.pcb_board_id
+      )
+    })
 
   db = su(subcircuitElements)
   const getPortSelector = (sourcePort: SourcePort | null | undefined) => {
@@ -975,10 +1020,37 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   const resolvedMinBoardEdgeClearance =
     minBoardEdgeClearance ?? board?.min_board_edge_clearance
 
+  const viaKeepouts = physicalBoardKeepouts
+    .filter((keepout) => keepout.allow_traces && !keepout.warning_only)
+    .map((keepout) =>
+      keepout.shape === "circle"
+        ? {
+            shape: "circle" as const,
+            center: keepout.center,
+            radius: keepout.radius,
+            layers: keepout.layers,
+          }
+        : keepout.shape === "outline"
+          ? {
+              shape: "outline" as const,
+              outline: keepout.outline,
+              strokeWidth: keepout.stroke_width,
+              layers: keepout.layers,
+            }
+          : {
+              shape: "rect" as const,
+              center: keepout.center,
+              width: keepout.width,
+              height: keepout.height,
+              layers: keepout.layers,
+            },
+    )
+
   return {
     simpleRouteJson: {
       bounds,
       obstacles,
+      ...(viaKeepouts.length > 0 ? { viaKeepouts } : {}),
       connections: allConns,
       differentialPairs: srjDifferentialPairs,
       ...(srjBuses ? { buses: srjBuses } : {}),

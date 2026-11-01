@@ -191,6 +191,23 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
       platformConfig,
       effort,
     })
+    if (
+      input.viaKeepouts?.length &&
+      solverName !== "AutoroutingPipelineSolver9_PreloadedTraceGraph" &&
+      solverName !== "AutoroutingPipelineSolver9_Networked"
+    ) {
+      throw new AutorouterError(
+        "Via-only keepouts require the default Pipeline9 autorouter",
+      )
+    }
+    if (
+      input.viaKeepouts?.length &&
+      !AutoroutingPipelineSolver9_PreloadedTraceGraph.supportsViaKeepouts
+    ) {
+      throw new AutorouterError(
+        "Installed autorouter does not support via-only keepouts; update @tscircuit/capacity-autorouter",
+      )
+    }
     this.solverName = solverName
     this.autorouterThreads = platformConfig?.autorouterThreads
     if (
