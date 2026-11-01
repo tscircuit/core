@@ -172,6 +172,23 @@ export const applyPackOutput = (
     )
 
     const relatedElements = db.toArray().filter((elm) => {
+      if (
+        elm.type === "pcb_keepout" &&
+        "pcb_group_id" in elm &&
+        elm.pcb_group_id
+      ) {
+        if (elm.pcb_group_id === pcbGroup.pcb_group_id) {
+          return true
+        }
+        const elmPcbGroup = db.pcb_group.get(elm.pcb_group_id)
+        if (
+          elmPcbGroup?.source_group_id &&
+          (elmPcbGroup.source_group_id === componentId ||
+            isDescendantGroup(db, elmPcbGroup.source_group_id, componentId))
+        ) {
+          return true
+        }
+      }
       if ("source_group_id" in elm && elm.source_group_id) {
         if (elm.source_group_id === componentId) {
           return true
