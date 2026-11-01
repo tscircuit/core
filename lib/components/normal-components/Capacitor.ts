@@ -127,7 +127,7 @@ export class Capacitor extends NormalComponent<
     }
   }
 
-  _getSchematicSymbolDisplayValue(): string | undefined {
+  private _getCapacitanceDisplayValue(): string | undefined {
     const inputCapacitance = this.props.capacitance
     let capacitanceDisplay: string | undefined
 
@@ -143,6 +143,11 @@ export class Capacitor extends NormalComponent<
       capacitanceDisplay = `${formatSiUnit(this._parsedProps.capacitance)}F`
     }
 
+    return capacitanceDisplay
+  }
+
+  _getSchematicSymbolDisplayValue(): string | undefined {
+    const capacitanceDisplay = this._getCapacitanceDisplayValue()
     if (
       this._parsedProps.schShowRatings &&
       this._parsedProps.maxVoltageRating
@@ -191,7 +196,11 @@ export class Capacitor extends NormalComponent<
       max_decoupling_trace_length:
         props.maxDecouplingTraceLength ??
         Capacitor_getAutomaticMaxDecouplingTraceLength(this),
-      display_capacitance: this._getSchematicSymbolDisplayValue(),
+      display_capacitance: this._getCapacitanceDisplayValue(),
+      display_max_voltage_rating:
+        props.maxVoltageRating === undefined
+          ? undefined
+          : `${formatSiUnit(props.maxVoltageRating)}V`,
       are_pins_interchangeable: !props.polarized,
       display_name: props.displayName,
     } as SourceSimpleCapacitorInput)
