@@ -108,15 +108,35 @@ export function applyInlineNetLabelPlacements(args: {
           db.schematic_port.get(schematicPortId)?.source_port_id
         return sourcePortId ? [sourcePortId] : []
       })
-      sourceTraceId = db.source_trace
+      const matchingSourceTraces = db.source_trace
         .list()
-        .find(
+        .filter(
           (sourceTrace) =>
             sourceTrace.subcircuit_connectivity_map_key === connKey &&
             sourcePortIds.some((sourcePortId) =>
               sourceTrace.connected_source_port_ids.includes(sourcePortId),
             ),
-        )?.source_trace_id
+        )
+      const traceIdsWithMatchingSchDisplayLabel = new Set(
+        group
+          .selectAll("trace")
+          .filter(
+            (trace: any) =>
+              trace._parsedProps?.schDisplayLabel === text &&
+              typeof trace.source_trace_id === "string",
+          )
+          .map((trace: any) => trace.source_trace_id as string),
+      )
+      sourceTraceId = (
+        matchingSourceTraces.find((sourceTrace) =>
+          traceIdsWithMatchingSchDisplayLabel.has(sourceTrace.source_trace_id),
+        ) ??
+        matchingSourceTraces.find(
+          (sourceTrace) =>
+            sourceTrace.display_name === text || sourceTrace.name === text,
+        ) ??
+        matchingSourceTraces[0]
+      )?.source_trace_id
     }
 
     // Inline labels belong to the same sheet as the trace they annotate.

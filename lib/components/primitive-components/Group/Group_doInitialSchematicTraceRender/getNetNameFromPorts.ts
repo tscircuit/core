@@ -7,9 +7,23 @@ import { Port } from "../../Port"
  */
 export const getNetNameFromPorts = (
   ports: Port[],
-): { name: string; wasAssignedDisplayLabel: boolean } => {
+): {
+  name: string
+  wasAssignedDisplayLabel: boolean
+  hasUnambiguousSchDisplayLabel?: boolean
+} => {
   const directlyConnectedTraces = [
     ...new Set(ports.flatMap((port) => port._getDirectlyConnectedTraces())),
+  ]
+  const tracesWithSchDisplayLabel = directlyConnectedTraces.filter((trace) =>
+    Boolean(trace._parsedProps.schDisplayLabel),
+  )
+  const schDisplayLabels = [
+    ...new Set(
+      tracesWithSchDisplayLabel.map(
+        (trace) => trace._parsedProps.schDisplayLabel!,
+      ),
+    ),
   ]
   const displayLabel =
     directlyConnectedTraces.find((trace) => trace._parsedProps.schDisplayLabel)
@@ -20,7 +34,15 @@ export const getNetNameFromPorts = (
       ?._parsedProps.name
 
   if (displayLabel) {
-    return { name: displayLabel, wasAssignedDisplayLabel: true }
+    return {
+      name: displayLabel,
+      wasAssignedDisplayLabel: true,
+      hasUnambiguousSchDisplayLabel:
+        schDisplayLabels.length === 1 &&
+        tracesWithSchDisplayLabel.some((trace) =>
+          Boolean(trace._parsedProps.name),
+        ),
+    }
   }
 
   const db = ports.find((port) => port.root)?.root?.db
@@ -36,5 +58,9 @@ export const getNetNameFromPorts = (
           a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }),
         )[0]
 
-  return { name: netName ?? "", wasAssignedDisplayLabel: false }
+  return {
+    name: netName ?? "",
+    wasAssignedDisplayLabel: false,
+    hasUnambiguousSchDisplayLabel: false,
+  }
 }
