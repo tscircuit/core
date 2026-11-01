@@ -15,31 +15,39 @@ import type {
   TransistorPinNames,
 } from "./sel-utility-types"
 
-type NonPolarizedSel = Record<
-  `R${Nums40}` | `F${Nums40}`,
-  {
-    pin1: string
-    pin2: string
-    pos: string
-    neg: string
-  }
->
+type NonPolarizedPins = {
+  pin1: string
+  pin2: string
+  pos: string
+  neg: string
+}
 
-type SwSel = Record<
-  `SW${Nums40}`,
-  {
-    pin1: string
-    pin2: string
-    pin3: string
-    pin4: string
-    pin5: string
-    pin6: string
-    pos: string
-    neg: string
-    side1: string
-    side2: string
-  }
->
+type NonPolarizedSel = Record<`R${Nums40}` | `F${Nums40}`, NonPolarizedPins> &
+  Record<`R${number}` | `F${number}`, NonPolarizedPins>
+
+type SwPins = {
+  pin1: string
+  pin2: string
+  pin3: string
+  pin4: string
+  pin5: string
+  pin6: string
+  pos: string
+  neg: string
+  side1: string
+  side2: string
+}
+
+type SwSel = Record<`SW${Nums40}`, SwPins> & Record<`SW${number}`, SwPins>
+
+type PolarizedPins = {
+  pin1: string
+  pin2: string
+  anode: string
+  cathode: string
+  pos: string
+  neg: string
+}
 
 type PolarizedSel = Record<
   | `C${Nums40}`
@@ -48,15 +56,17 @@ type PolarizedSel = Record<
   | `D${Nums40}`
   | `Y${Nums40}`
   | `B${Nums16}`,
-  {
-    pin1: string
-    pin2: string
-    anode: string
-    cathode: string
-    pos: string
-    neg: string
-  }
->
+  PolarizedPins
+> &
+  Record<
+    | `C${number}`
+    | `L${number}`
+    | `LED${number}`
+    | `D${number}`
+    | `Y${number}`
+    | `B${number}`,
+    PolarizedPins
+  >
 
 type CommonNetNames =
   | "VCC"
@@ -94,17 +104,21 @@ type CommonNetNames =
   | "SWD"
   | `GPIO${Nums40}`
 
-type TransistorSel = Record<`Q${Nums40}`, Record<TransistorPinNames, string>>
+type TransistorSel = Record<`Q${Nums40}`, Record<TransistorPinNames, string>> &
+  Record<`Q${number}`, Record<TransistorPinNames, string>>
+
+type JumperVal = Record<PinNumbers100 | CommonPinNames, string> & ChipFnSel
 
 type JumperSel = Record<
   `J${Nums40}` | `JP${Nums40}` | `CN${Nums40}`,
-  Record<PinNumbers100 | CommonPinNames, string> & ChipFnSel
->
+  JumperVal
+> &
+  Record<`J${number}` | `JP${number}` | `CN${number}`, JumperVal>
 
-type ChipSel = Record<
-  `U${Nums40}` | "USBC",
-  Record<CommonPinNames | PinNumbers100, string> & ChipFnSel
->
+type ChipVal = Record<CommonPinNames | PinNumbers100, string> & ChipFnSel
+
+type ChipSel = Record<`U${Nums40}` | "USBC", ChipVal> &
+  Record<`U${number}`, ChipVal>
 
 type NetSelFn<N extends string = CommonNetNames> = (<
   N2 extends string,
@@ -115,7 +129,8 @@ type NetSel<N extends string = CommonNetNames> = Record<"net", NetSelFn<N>>
 
 type ExplicitModuleSel = Record<
   "subcircuit" | "module" | "group",
-  Record<`S${Nums40}` | `M${Nums40}` | `G${Nums40}`, SelWithoutSubcircuit>
+  Record<`S${Nums40}` | `M${Nums40}` | `G${Nums40}`, SelWithoutSubcircuit> &
+    Record<`S${number}` | `M${number}` | `G${number}`, SelWithoutSubcircuit>
 >
 
 export type GenericConnectionsAndSelectorsSel = Record<
@@ -133,10 +148,13 @@ export type GenericConnectionsAndSelectorsSel = Record<
                 : never
             }
           : never
-        : never
+        : CMP_FN extends ChipFn<any>
+          ? UnionToIntersection<ChipConnections<CMP_FN>>
+          : never
     : never
 >
-type TestPointSel = Record<`TP${Nums40}`, { pin1: string }>
+type TestPointSel = Record<`TP${Nums40}`, { pin1: string }> &
+  Record<`TP${number}`, { pin1: string }>
 
 type SelWithoutSubcircuit = NonPolarizedSel &
   PolarizedSel &
