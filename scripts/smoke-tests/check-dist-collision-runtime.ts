@@ -2,6 +2,7 @@ import { strict as assert } from "node:assert"
 import { readFile } from "node:fs/promises"
 import ts from "typescript"
 import manifest from "../../package.json"
+import collisionManifest from "@tscircuit/cad-collision-checking/package.json"
 
 // Keep tscircuit's packed-install dependency guarantee intact. A development
 // tool may use manifold-3d, but consumers of the published core must not need it.
@@ -14,6 +15,15 @@ for (const kind of [
     | Record<string, string>
     | undefined
   assert.equal(dependencies?.["manifold-3d"], undefined)
+}
+
+// Core chooses the concrete versions for the collision library's peers, and
+// downstream development-dependency synchronization copies those choices.
+for (const name of Object.keys(collisionManifest.peerDependencies)) {
+  assert.ok(
+    (manifest.devDependencies as Record<string, string>)[name],
+    `Core must supply the collision library peer ${name} as a development dependency`,
+  )
 }
 
 const declarations = await readFile(

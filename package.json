@@ -31,7 +31,7 @@
     "generate-test-plan": "bun run scripts/generate-test-plan.ts"
   },
   "devDependencies": {
-    "@tscircuit/cad-collision-checking": "https://jscdn.tscircuit.com/@tscircuit/cad-collision-checking/0.0.5.tgz",
+    "@tscircuit/cad-collision-checking": "github:tscircuit/cad-collision-checking#2fb252e1fbb7ac489dbe06478175f523d98b4cc6",
     "@tscircuit/graphics-debug-3d": "https://jscdn.tscircuit.com/@tscircuit/graphics-debug-3d/0.0.1.tgz",
     "@biomejs/biome": "^1.8.3",
     "@resvg/resvg-js": "^2.6.2",
@@ -107,7 +107,8 @@
     "circuit-json-to-gltf": "^0.0.163",
     "@tscircuit/jscad": "^0.0.6",
     "@tscircuit/test-point-rerouter": "github:tscircuit/test-point-rerouter#b0ccfaca75a7e187c55ddb6f2071a1f2084e3167",
-    "@tscircuit/manifold-2d": "^0.0.8"
+    "@tscircuit/manifold-2d": "^0.0.8",
+    "typescript": "^5.9.3"
   },
   "peerDependencies": {
     "@tscircuit/capacity-autorouter": "*",
