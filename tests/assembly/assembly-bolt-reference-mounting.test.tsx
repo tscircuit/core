@@ -25,7 +25,7 @@ test("bolts follow tilted mechanical hole datums, relative offsets and exploded 
       >
         <assembly.bolt
           name="RIGHT"
-          model="m3bolt"
+          model="hexsocketbolt_m3_l10mm"
           fastenedTo=".BRACKET > .slotRight"
         />
         <assembly.bolt
@@ -124,7 +124,7 @@ test("bolts follow tilted mechanical hole datums, relative offsets and exploded 
     panels: [
       {
         title: "Assembled: heads seat on the angle bracket's two slotted feet",
-        code: '<assembly.bolt name="RIGHT"\n  model="m3bolt"\n  fastenedTo=\n    ".BRACKET > .slotRight"/>\n\n<assembly.bolt name="LEFT"\n  diameter={3} length="1cm"\n  fastenedTo="BRACKET.slotLeft"\n  mountOffset={{y:6}}/>',
+        code: '<assembly.bolt name="RIGHT"\n  model="hexsocketbolt_m3_l10mm"\n  fastenedTo=\n    ".BRACKET > .slotRight"/>\n\n<assembly.bolt name="LEFT"\n  diameter={3} length="1cm"\n  fastenedTo="BRACKET.slotLeft"\n  mountOffset={{y:6}}/>',
         annotation:
           "The named slot datums coincide with real machined slots. The bracket is mounted to a vertical YZ plate.\nBoth heads seat at X=18; their shafts point along world -X. LEFT also moves 6 mm along its slot.",
         circuit: json,

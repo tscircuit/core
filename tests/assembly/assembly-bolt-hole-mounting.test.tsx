@@ -11,16 +11,24 @@ test("bolts fasten to finalized PCB holes, plated holes and their bottom faces",
   const driver = await loadMechanicalModel("soic8_driver")
   circuit.add(
     <assembly.device>
-      <assembly.bolt name="B1" model="m3bolt" fastenedTo=".CONTROL > .H1" />
-      <assembly.bolt name="B2" model="bolt_m3" fastenedTo="CONTROL.H2" />
+      <assembly.bolt
+        name="B1"
+        model="hexsocketbolt_m3_l10mm"
+        fastenedTo=".CONTROL > .H1"
+      />
+      <assembly.bolt
+        name="B2"
+        model="hexsocketbolt_m3_l10mm"
+        fastenedTo="CONTROL.H2"
+      />
       <assembly.bolt
         name="B3"
-        model="m3bolt"
+        model="hexsocketbolt_m3_l10mm"
         fastenedTo=".CONTROL > .H3 > .bottom"
       />
       <assembly.bolt
         name="B4"
-        model="bolt_m3"
+        model="hexsocketbolt_m3_l10mm"
         fastenedTo=".CONTROL > .H4"
         mountGap={2}
       />
@@ -135,7 +143,7 @@ test("bolts fasten to finalized PCB holes, plated holes and their bottom faces",
       {
         title:
           "Top: two seated bolts, one bottom bolt, one 2 mm inspection gap",
-        code: '<assembly.bolt name="B1"\n  model="m3bolt"\n  fastenedTo=".CONTROL > .H1"/>\n<assembly.bolt name="B2"\n  model="bolt_m3"\n  fastenedTo="CONTROL.H2"/>\n\nB3 fastenedTo=\n  ".CONTROL > .H3 > .bottom"\nB4 fastenedTo=".CONTROL > .H4"\n   mountGap={2}',
+        code: '<assembly.bolt name="B1"\n  model="hexsocketbolt_m3_l10mm"\n  fastenedTo=".CONTROL > .H1"/>\n<assembly.bolt name="B2"\n  model="hexsocketbolt_m3_l10mm"\n  fastenedTo="CONTROL.H2"/>\n\nB3 fastenedTo=\n  ".CONTROL > .H3 > .bottom"\nB4 fastenedTo=".CONTROL > .H4"\n   mountGap={2}',
         annotation:
           "The hole pattern is rotated 30 degrees and translated to [12,8]. Bolts follow emitted holes, including plated H4.\nB1/B2 heads seat at Z=0.8; B3 seats below at Z=-0.8; B4 floats 2 mm above H4 for inspection.",
         circuit: json,
@@ -156,9 +164,9 @@ test("bolts fasten to finalized PCB holes, plated holes and their bottom faces",
       {
         title:
           "Underside: B3 head faces down; B1/B2 shafts enter the support posts",
-        code: '// Bare hole target = top surface\nfastenedTo=".CONTROL > .H1"\n\n// Explicit opposite surface\nfastenedTo=\n  ".CONTROL > .H3 > .bottom"\n\n// Both aliases resolve to\n// hexsocketbolt_m3_l10mm',
+        code: '// Bare hole target = top surface\nfastenedTo=".CONTROL > .H1"\n\n// Explicit opposite surface\nfastenedTo=\n  ".CONTROL > .H3 > .bottom"\n\n// Standard modelprinter model\nmodel="hexsocketbolt_m3_l10mm"',
         annotation:
-          "Both model aliases use the existing modelcdn socket-head model. The default mating origin is under the head.\nActual exported GLB bounds verify shaft direction and 10 mm length on both PCB surfaces.",
+          "The model string uses the existing modelcdn socket-head model. The default mating origin is under the head.\nActual exported GLB bounds verify shaft direction and 10 mm length on both PCB surfaces.",
         circuit: json,
         legend: [
           { color: "#a9b6c1", label: "B3: head below, shaft above PCB" },

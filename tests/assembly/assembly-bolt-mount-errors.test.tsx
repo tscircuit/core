@@ -9,7 +9,7 @@ test("bolts reject missing, ambiguous, invalid, cross-device and cyclic fastenin
         <board width={30} height={30}>
           <hole name="H" diameter={3.2} />
         </board>
-        <assembly.bolt name="B" model="m3bolt" fastenedTo="[" />
+        <assembly.bolt name="B" model="hexsocketbolt_m3_l10mm" fastenedTo="[" />
       </>,
       /invalid mounting selector/,
     ],
@@ -18,7 +18,11 @@ test("bolts reject missing, ambiguous, invalid, cross-device and cyclic fastenin
         <board width={30} height={30}>
           <hole name="H" diameter={3.2} />
         </board>
-        <assembly.bolt name="B" model="m3bolt" fastenedTo=".MISSING" />
+        <assembly.bolt
+          name="B"
+          model="hexsocketbolt_m3_l10mm"
+          fastenedTo=".MISSING"
+        />
       </>,
       /matched 0 reference faces/,
     ],
@@ -28,7 +32,11 @@ test("bolts reject missing, ambiguous, invalid, cross-device and cyclic fastenin
           <hole name="H" pcbX={-5} diameter={3.2} />
           <hole name="H" pcbX={5} diameter={3.2} />
         </board>
-        <assembly.bolt name="B" model="m3bolt" fastenedTo=".H" />
+        <assembly.bolt
+          name="B"
+          model="hexsocketbolt_m3_l10mm"
+          fastenedTo=".H"
+        />
       </>,
       /matched 2 reference faces/,
     ],
@@ -39,19 +47,31 @@ test("bolts reject missing, ambiguous, invalid, cross-device and cyclic fastenin
             <hole name="H" diameter={3.2} />
           </board>
         </assembly.device>
-        <assembly.bolt name="B" model="m3bolt" fastenedTo=".H" />
+        <assembly.bolt
+          name="B"
+          model="hexsocketbolt_m3_l10mm"
+          fastenedTo=".H"
+        />
       </>,
       /matched 0 reference faces/,
     ],
     [
       <>
-        <assembly.bolt name="B1" model="m3bolt" fastenedTo=".B2 > .base" />
-        <assembly.bolt name="B2" model="m3bolt" fastenedTo=".B1 > .base" />
+        <assembly.bolt
+          name="B1"
+          model="hexsocketbolt_m3_l10mm"
+          fastenedTo=".B2 > .base"
+        />
+        <assembly.bolt
+          name="B2"
+          model="hexsocketbolt_m3_l10mm"
+          fastenedTo=".B1 > .base"
+        />
       </>,
       /mounting cycle.*B1.*B2/,
     ],
     [
-      <assembly.bolt name="BAD" model="m3bolt_m4" />,
+      <assembly.bolt name="BAD" diameter={3} length={10} threadPitch={0.7} />,
       /Bolt "BAD" has an unsupported model/,
     ],
   ] as const) {
