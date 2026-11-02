@@ -1,5 +1,4 @@
-import { getReadablePcbFoldIssueMessage } from "lib/utils/cad/get-readable-pcb-fold-issue-message"
-import { tryCreatePcbFold, type PcbFold } from "@tscircuit/flex-utils"
+import { type PcbFold, tryCreatePcbFold } from "@tscircuit/flex-utils"
 import { jlcMinTolerances } from "@tscircuit/jlcpcb-manufacturing-specs"
 import { getBoundsFromPoints } from "@tscircuit/math-utils"
 import { boardProps } from "@tscircuit/props"
@@ -9,10 +8,11 @@ import type {
   PcbBoard,
   PcbVia,
 } from "circuit-json"
+import { getReadablePcbFoldIssueMessage } from "lib/utils/cad/get-readable-pcb-fold-issue-message"
 import { getBoardAvailableLayers } from "lib/utils/getViaSpanLayers"
 import { getViaTenting } from "lib/utils/getViaTenting"
 import { type Matrix, compose, translate } from "transformation-matrix"
-import type { z } from "zod"
+import { z } from "zod"
 import { getDescendantSubcircuitIds } from "../../../utils/autorouting/getAncestorSubcircuitIds"
 import { getBoardCenterFromAnchor } from "../../../utils/boards/get-board-center-from-anchor"
 import { inflateCircuitJson } from "../../../utils/circuit-json/inflate-circuit-json"
@@ -20,19 +20,22 @@ import { getViaDiameterDefaults } from "../../../utils/pcbStyle/getViaDiameterDe
 import { NormalComponent } from "../../base-components/NormalComponent/NormalComponent"
 import type { RenderPhase } from "../../base-components/Renderable"
 import { Group } from "../../primitive-components/Group/Group"
-import { resolveBoardMotorMount } from "../../primitive-components/resolve-board-motor-mount"
 import type { SubcircuitI } from "../../primitive-components/Group/Subcircuit/SubcircuitI"
 import { Subcircuit_doInitialRenderIsolatedSubcircuits } from "../../primitive-components/Group/Subcircuit/Subcircuit_doInitialRenderIsolatedSubcircuits"
 import { Subcircuit_getSubcircuitPropHash } from "../../primitive-components/Group/Subcircuit_getSubcircuitPropHash"
-import { Board_updatePcbDesignRuleChecks } from "./Board_updatePcbDesignRuleChecks"
+import { resolveBoardMotorMount } from "../../primitive-components/resolve-board-motor-mount"
 import type { BoardI } from "./BoardI"
 import { Board_doInitialPcbCopperPourCleanup } from "./Board_doInitialPcbCopperPourCleanup"
 import { Board_doInitialPcbPlacementDesignRuleChecks } from "./Board_doInitialPcbPlacementDesignRuleChecks"
 import { Board_doInitialPcbStackupRender } from "./Board_doInitialPcbStackupRender"
+import { Board_updatePcbDesignRuleChecks } from "./Board_updatePcbDesignRuleChecks"
 import { BoardCastellatedHole } from "./board-castellated-hole"
 
 const MIN_EFFECTIVE_BORDER_RADIUS_MM = 0.01
 const DEFAULT_VIA_PAD_DIAMETER_OVER_HOLE_DIAMETER_MM = 0.15
+const boardPropsWithStackup = boardProps.extend({
+  jlcpcbStackup: z.string().optional(),
+})
 
 /**
  * Return board-local outline points in mm, centered at the origin in the
@@ -106,7 +109,7 @@ const getRoundedRectOutline = (
 }
 
 export class Board
-  extends Group<typeof boardProps>
+  extends Group<typeof boardPropsWithStackup>
   implements BoardI, SubcircuitI
 {
   pcbFold: PcbFold | undefined
@@ -124,7 +127,7 @@ export class Board
     super.doInitialCadModelRender()
   }
 
-  constructor(props: z.input<typeof boardProps>) {
+  constructor(props: z.input<typeof boardPropsWithStackup>) {
     super(props)
     this._castellatedHoles = BoardCastellatedHole.fromBoardOutline(
       this._parsedProps.outline,
@@ -176,7 +179,7 @@ export class Board
   get config() {
     return {
       componentName: "Board",
-      zodProps: boardProps,
+      zodProps: boardPropsWithStackup,
     }
   }
 

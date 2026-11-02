@@ -1,4 +1,7 @@
-import { getJlcStackup } from "@tscircuit/jlcpcb-manufacturing-specs"
+import {
+  getJlcStackup,
+  jlcStackups,
+} from "@tscircuit/jlcpcb-manufacturing-specs"
 import type { PcbBoard } from "circuit-json"
 import type { Board } from "./Board"
 
@@ -17,14 +20,29 @@ export function Board_doInitialPcbStackupRender(
       element.pcb_board_id === importedPcbBoard?.pcb_board_id,
   )
   let layers = importedStackup?.layers
-  if (!layers && board._parsedProps.fabricatorPreset) {
-    const { num_layers, thickness, material } =
-      importedPcbBoard ?? db.pcb_board.get(pcb_board_id)!
-    layers = getJlcStackup({
+  const { fabricatorPreset, jlcpcbStackup } = board._parsedProps
+  if (!layers && (fabricatorPreset || jlcpcbStackup)) {
+    const {
       num_layers,
-      thickness: thickness ?? board.boardThickness,
-      material,
-    })?.layers
+      thickness,
+      material = "fr4",
+    } = importedPcbBoard ?? db.pcb_board.get(pcb_board_id)!
+    const resolvedThickness = thickness ?? board.boardThickness
+    layers = (
+      jlcpcbStackup
+        ? jlcStackups.find(
+            (stackup) =>
+              stackup.name === jlcpcbStackup &&
+              stackup.num_layers === num_layers &&
+              stackup.thickness === resolvedThickness &&
+              stackup.material === material,
+          )
+        : getJlcStackup({
+            num_layers,
+            thickness: resolvedThickness,
+            material,
+          })
+    )?.layers
   }
   if (!layers) return
 
