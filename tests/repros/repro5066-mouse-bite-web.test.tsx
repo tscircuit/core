@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import type { PcbHoleCircle } from "circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("mouse-bite rows use the requested tab span and leave a drillable web", async () => {
@@ -29,7 +30,7 @@ test("mouse-bite rows use the requested tab span and leave a drillable web", asy
   await circuit.renderUntilSettled()
   const holes = circuit.db.pcb_hole
     .list()
-    .filter((hole) => hole.hole_shape === "circle")
+    .filter((hole): hole is PcbHoleCircle => hole.hole_shape === "circle")
   let minimumWeb = Number.POSITIVE_INFINITY
   for (let holeIndex = 0; holeIndex < holes.length; holeIndex++) {
     const hole = holes[holeIndex]!
