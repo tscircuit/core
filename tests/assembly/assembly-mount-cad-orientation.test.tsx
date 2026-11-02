@@ -1,14 +1,31 @@
 import { expect, test } from "bun:test"
-import { assembly } from "lib"
+import { assembly, jscad } from "lib"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { getRenderedMotorBounds } from "./fixtures/get-rendered-motor-bounds"
 import { expectAssemblySnapshot } from "./fixtures/expect-assembly-snapshot"
+
+import {
+  mechanicalPlan,
+  AngleBracket,
+  SlottedPlate,
+} from "./fixtures/mechanical-assembly-models"
 
 test("tilted mounts keep CAD offsets and exported anisotropic geometry aligned with datums", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <assembly.device>
-      <assembly.part name="BASE">
+      <assembly.part
+        name="BASE"
+        cadModel={{
+          jscad: mechanicalPlan(
+            <jscad.translate offset={[10, 20, 30]}>
+              <jscad.rotate angles={[Math.PI / 2, 0, Math.PI / 2]}>
+                <SlottedPlate color="#2879b7" />
+              </jscad.rotate>
+            </jscad.translate>,
+          ),
+        }}
+      >
         <assembly.referencesurface
           name="face"
           plane="yz"
@@ -24,7 +41,11 @@ test("tilted mounts keep CAD offsets and exported anisotropic geometry aligned w
         mountOffset={{ x: 2, y: 3 }}
         mountGap={4}
         cadModel={{
-          jscad: { type: "cuboid", size: [2, 4, 8] },
+          jscad: mechanicalPlan(
+            <jscad.translate offset={[-2, -3, -4]}>
+              <AngleBracket />
+            </jscad.translate>,
+          ),
           positionOffset: { x: 2, y: 3, z: 4 },
         }}
       >
@@ -40,29 +61,47 @@ test("tilted mounts keep CAD offsets and exported anisotropic geometry aligned w
     .list()
     .find((p) => p.source_component_id === source.source_component_id)!
   expect(cad.position).toEqual({ x: 18, y: 24, z: 36 })
-  const bounds = await getRenderedMotorBounds(circuit.getCircuitJson())
+  const bounds = await getRenderedMotorBounds(
+    circuit
+      .getCircuitJson()
+      .filter(
+        (element) =>
+          element.type !== "cad_component" ||
+          element.source_component_id === source.source_component_id,
+      ),
+  )
   // Native GLB uses (-X, +Z, +Y). The YZ target maps local XYZ -> world YZX.
-  // Offsets place its center at [18,24,36], with half-extents [4,1,2].
+  // Vendor-origin offset cancels [-2,-3,-4] inside the angle-bracket asset.
+  // Physical part bounds are X[-27,27], Y[-32,32], Z[0,70] in its datum frame.
   for (const [i, lo, hi] of [
-    [0, -22, -14],
-    [1, 34, 38],
-    [2, 23, 25],
+    [0, -84, -14],
+    [1, 1, 65],
+    [2, -5, 49],
   ]) {
     expect(bounds.min[i]).toBeCloseTo(lo, 4)
     expect(bounds.max[i]).toBeCloseTo(hi, 4)
   }
   await expectAssemblySnapshot(import.meta.path, {
-    title: "Mounted CAD geometry matches its tilted reference frame",
+    title:
+      "Side-mounted angle bracket: exported geometry follows the face frame",
+    layout: "model_focus",
     panels: [
       {
-        title: "YZ mounting plane with signed offsets",
+        title: "Machined angle bracket on a vertical slotted plate",
         code: 'mountedTo=".BASE > .face"\nmountOffset={{x:2,y:3}} mountGap={4}\ncadModel.positionOffset={x:2,y:3,z:4}',
-        annotation: "Part center [18,24,36] mm; local XYZ maps to world YZX.",
+        annotation:
+          "The slotted foot mates to the vertical plate; the circular pilot bore faces world +Z.\nCAD origin [18,24,36] mm; local XYZ maps to world YZX. Exported GLB bounds are asserted.",
         circuit,
-        showReferenceSurfaces: true,
+        legend: [
+          { color: "#2879b7", label: "Vertical slotted plate" },
+          { color: "#a9b6c1", label: "90 degree angle bracket" },
+        ],
+        callouts: [
+          { label: "4 mm face gap", at: [0.77, 0.28], target: [0.689, 0.461] },
+        ],
         renderOptions: {
-          camPos: [-35, 55, 45],
-          poppygl: { lookAt: [-18, 36, 24] },
+          camPos: [-160, 140, 180],
+          poppygl: { lookAt: [-40, 30, 20] },
         },
       },
     ],
