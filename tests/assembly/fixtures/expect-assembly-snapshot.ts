@@ -155,6 +155,15 @@ export const expectAssemblySnapshot = async (
     const y = 94 + Math.floor(index / columns) * (rowHeight + gap)
     const contentOffset = hasCollisionCheck ? 65 : 0
     const check = panel.collisionCheck
+    const shownErrors =
+      check?.errors
+        .toSorted(
+          (a, b) =>
+            b.swept_intersection_volume_mm3 - a.swept_intersection_volume_mm3,
+        )
+        .slice(0, 7) ?? []
+    const hiddenErrorCount = (check?.errors.length ?? 0) - shownErrors.length
+    const detailLineCount = shownErrors.length + (hiddenErrorCount ? 1 : 0)
     const status = check?.errors.length
       ? "COLLISION DETECTED"
       : check?.status === "incomplete"
@@ -230,7 +239,7 @@ export const expectAssemblySnapshot = async (
               statusColor,
             ),
             ...(check.errors.length
-              ? check.errors.map((error, errorIndex) =>
+              ? shownErrors.map((error, errorIndex) =>
                   svgText(
                     `${partName(error.moving_cad_component_id)} / ${error.obstacle.type === "pcb_board" ? "PCB" : partName(error.obstacle.cad_component_id)}: ${Number(error.swept_intersection_volume_mm3.toPrecision(5))}`,
                     x + 26,
@@ -248,10 +257,21 @@ export const expectAssemblySnapshot = async (
                     statusColor,
                   ),
                 ]),
+            ...(hiddenErrorCount
+              ? [
+                  svgText(
+                    `+ ${hiddenErrorCount} other colliding pairs`,
+                    x + 26,
+                    detailY + 27 + shownErrors.length * 23,
+                    16,
+                    statusColor,
+                  ),
+                ]
+              : []),
             svgText(
               "Over the movement, not this pose.",
               x + 26,
-              detailY + 50 + Math.max(1, check.errors.length) * 23,
+              detailY + 50 + Math.max(1, detailLineCount) * 23,
               14,
             ),
             ...(panel.collisionNote
@@ -259,7 +279,7 @@ export const expectAssemblySnapshot = async (
                   svgText(
                     panel.collisionNote,
                     x + 26,
-                    detailY + 75 + Math.max(1, check.errors.length) * 23,
+                    detailY + 75 + Math.max(1, detailLineCount) * 23,
                     14,
                     "#92400e",
                   ),

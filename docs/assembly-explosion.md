@@ -133,7 +133,7 @@ generate errors or load the geometry kernel.
 The checker delegates mesh movement checks to
 [`@tscircuit/cad-collision-checking`](https://github.com/tscircuit/cad-collision-checking),
 a standalone `BaseSolver` with step-by-step debugging and visualization. Core
-converts JSCAD/PCB geometry into world-space meshes and maps the solver's output
+loads actual CAD/PCB geometry into world-space meshes and maps the solver's output
 back to Circuit JSON diagnostics. The library uses Manifold to construct a
 continuous swept solid for each straight translation, preserving holes and
 concavities. An obstacle between two clear endpoints is still detected.
@@ -164,14 +164,39 @@ or invalid geometry emits `cad_explosion_collision_check_warning` with structure
 geometry IDs and leaves the result `incomplete`, even when known collisions were
 also found.
 
-This version checks JSCAD solids and flat PCB substrate with supported drill
-holes and cutouts. Imported OBJ/GLB/STL/STEP and other model assets, footprint-only
-CAD records, folded PCBs, and unsupported hole/cutout shapes remain unchecked
-and generate warnings.
-Curved profiles are tessellated. The real RP2040 regression checks its JSCAD
-cover/spacers against the PCB, while explicitly reporting incomplete coverage
-for its imported motor, bolts and electronic component meshes. Electrical copper,
-flexible-cable clearance, rotations and fastening constraints are not verified.
+Native JSCAD solids and flat PCB substrate (including supported drills/cutouts)
+retain their direct solid paths. Imported models and generated footprint geometry
+use `circuit-json-to-gltf`'s shared `loadCadComponentMesh`, so their origins, units,
+fit, rotation and layer placement match rendering. Core does not reimplement
+format parsing or replace models with bounding boxes. Relative assets use the
+platform's project base URL; the standalone API also accepts `projectBaseUrl`
+and `authHeaders` options.
+
+The collision library validates those meshes and reuses `@tscircuit/jscad`'s
+boundary subdivision for legacy nonconforming triangles, limited to a 0.001 mm
+boundary adjustment tolerance. Actual openings remain openings. Invalid/open
+meshes, missing generated models, unsupported formats and folded PCBs leave
+explicit incomplete-coverage warnings. Curved surfaces remain tessellated;
+zero-clearance contacts are sensitive to that finite mesh precision. Electrical
+copper, flexible-cable clearance, rotations and fastening constraints are not
+verified.
+
+The real RP2040 regression checks **112 of 117 CAD models plus the PCB**, including
+the original GLB motor and OBJ bolts. Five models remain unavailable:
+`L_AVDD` has no model source; `F_MOTOR_VBUS`'s footprint has no generated mesh;
+`J_USB`, `J_MOTOR_USB` and `U_TEMP` do not yield valid closed solids. The first
+cover/bolt lift is clear in checked geometry. The later motor-removal stage
+reports about **0.33685 mm³ per spacer** of newly entered material around existing
+rear-screw overlaps. Initial overlap itself is excluded. Reversing the lift also
+reports the cover and bolt heads passing through the PCB and component meshes.
+
+Reproduce those results offline with the pinned, unmodified TSX export:
+
+```sh
+bun scripts/repro-rp2040-explosion-collisions.ts
+bun scripts/repro-rp2040-explosion-collisions.ts --reverse-cover
+bun test tests/assembly/assembly-explosion-collision
+```
 
 For an already serialized program, use the asynchronous API directly:
 

@@ -82,7 +82,9 @@ export function PrimitiveComponent_doInitialCadExplosionCollisionCheck(
         const { checkCircuitJsonAssemblyExplosionCollisions } = await import(
           "lib/assembly-explosion/check-circuit-json-assembly-explosion-collisions"
         )
-        check = await checkCircuitJsonAssemblyExplosionCollisions(input)
+        check = await checkCircuitJsonAssemblyExplosionCollisions(input, {
+          projectBaseUrl: root.platform?.projectBaseUrl,
+        })
       } catch {
         check = {
           status: "incomplete" as const,

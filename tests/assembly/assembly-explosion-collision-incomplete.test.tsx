@@ -19,7 +19,7 @@ test("unsupported or invalid geometry produces incomplete coverage without hidin
       />
       <assembly.part
         name="EXTERNAL"
-        modelUrl="https://example.com/not-fetched.glb"
+        cadModel={{ wrlUrl: "https://example.com/not-supported.wrl" }}
       />
       <assembly.part
         name="INVALID"

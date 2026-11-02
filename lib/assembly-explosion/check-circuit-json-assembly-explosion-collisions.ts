@@ -12,7 +12,10 @@ import {
   type CollisionSolidId,
 } from "@tscircuit/cad-collision-checking"
 import { getCircuitJsonAssemblyExplosion } from "./get-circuit-json-assembly-explosion"
-import { createCadCollisionSolid } from "./collision/create-cad-collision-solid"
+import {
+  loadCadCollisionSolid,
+  type CollisionModelLoadOptions,
+} from "./collision/load-cad-collision-solid"
 import { createBoardCollisionSolid } from "./collision/create-board-collision-solid"
 import type {
   AssemblyExplosionCollisionCheck,
@@ -38,7 +41,7 @@ const getCollisionSolidId = (
  */
 export async function checkCircuitJsonAssemblyExplosionCollisions(
   circuitJson: AnyCircuitElement[],
-  options: { manifold?: ManifoldToplevel } = {},
+  options: CollisionModelLoadOptions & { manifold?: ManifoldToplevel } = {},
 ): Promise<AssemblyExplosionCollisionCheck> {
   // Use the playback validator before looking at any geometry or partial path.
   getCircuitJsonAssemblyExplosion(circuitJson)
@@ -97,16 +100,20 @@ export async function checkCircuitJsonAssemblyExplosionCollisions(
           cad_component_id: record.cad_component_id,
         }
         const name = sources.get(record.source_component_id) || "unnamed part"
+        const hasSupportedModel = Boolean(
+          record.model_jscad ||
+            record.model_stl_url ||
+            record.model_obj_url ||
+            record.model_gltf_url ||
+            record.model_glb_url ||
+            record.model_step_url,
+        )
         if (
-          !record.model_jscad ||
-          record.model_stl_url ||
-          record.model_obj_url ||
-          record.model_gltf_url ||
-          record.model_glb_url ||
-          record.model_step_url ||
-          record.model_wrl_url ||
-          record.model_3mf_url ||
-          record.model_asset
+          !hasSupportedModel &&
+          (record.model_wrl_url ||
+            record.model_3mf_url ||
+            record.model_asset ||
+            !record.footprinter_string)
         ) {
           skip("unsupported_geometry", reference, name)
           continue
@@ -116,7 +123,12 @@ export async function checkCircuitJsonAssemblyExplosionCollisions(
             reference,
             name,
             sourceComponentId: record.source_component_id,
-            solid: createCadCollisionSolid(record, circuitJson, manifold),
+            solid: await loadCadCollisionSolid(
+              record,
+              circuitJson,
+              manifold,
+              options,
+            ),
           })
         } catch {
           skip("invalid_geometry", reference, name)
@@ -238,7 +250,7 @@ export async function checkCircuitJsonAssemblyExplosionCollisions(
           cad_component_ids: group.cad_component_ids,
           pcb_board_ids: group.pcb_board_ids,
           reason,
-          message: `Explosion collision checking is incomplete: could not check ${description}${remaining}`,
+          message: `Explosion collision checking is incomplete: ${reason === "invalid_geometry" ? "could not load or validate closed geometry for" : "unsupported geometry for"} ${description}${remaining}`,
           is_fatal: false,
         }),
       )
