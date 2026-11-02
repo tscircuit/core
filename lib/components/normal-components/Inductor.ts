@@ -1,13 +1,20 @@
 import { inductorProps, resolveManufacturerPartNumber } from "@tscircuit/props"
+import type { SourceSimpleInductor } from "circuit-json"
+import { formatSiUnit, parseAndConvertSiUnit } from "format-si-unit"
 import {
-  FTYPE,
   type BaseSymbolName,
+  FTYPE,
   type PassivePorts,
 } from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { Port } from "../primitive-components/Port"
-import { formatSiUnit, parseAndConvertSiUnit } from "format-si-unit"
-import type { SourceSimpleInductor } from "circuit-json"
+
+const validatedInductorProps = inductorProps.extend({
+  inductance: inductorProps.shape.inductance.refine(
+    (val) => typeof val === "number" && Number.isFinite(val) && val > 0,
+    "Inductance must be a positive finite numeric value or valid unit string",
+  ),
+})
 
 export class Inductor extends NormalComponent<
   typeof inductorProps,
@@ -20,7 +27,7 @@ export class Inductor extends NormalComponent<
       componentName: "Inductor",
       schematicSymbolName: (this.props.symbolName ??
         ("inductor" as BaseSymbolName)) as BaseSymbolName,
-      zodProps: inductorProps,
+      zodProps: validatedInductorProps,
       sourceFtype: FTYPE.simple_inductor,
     }
   }
@@ -44,7 +51,7 @@ export class Inductor extends NormalComponent<
     const source_component = db.source_component.insert({
       name: this.name,
       ftype: FTYPE.simple_inductor,
-      inductance: this.props.inductance,
+      inductance: props.inductance,
       max_current_rating:
         props.maxCurrentRating === undefined
           ? undefined
