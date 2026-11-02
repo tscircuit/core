@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { Fragment } from "react"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 // Footprint-local points in right-handed mm: +X right, +Y top, +Z above.
@@ -78,50 +79,44 @@ test("thermal holes share each SMD shape's port across rotations and layers", as
       {thermalPadShapes.flatMap(({ name, pad }, row) =>
         (["top", "bottom"] as const).flatMap((layer, side) =>
           [0, 45, 90, 180, 270].map((rotation, column) => (
-            <chip
-              key={`${name}_${layer}_${rotation}`}
-              name={`${name}_${layer}_${rotation}`}
-              pcbX={(column + side * 5) * 11 - 49.5}
-              pcbY={20 - row * 8}
-              pcbRotation={rotation}
-              layer={layer}
-              pinLabels={{ pin1: ["GND_EP", "THERMAL"] }}
-              footprint={
-                <footprint>
-                  {pad}
-                  <platedhole
-                    portHints={["1"]}
-                    pcbX={0.5}
-                    pcbY={0.35}
-                    shape="circle"
-                    outerDiameter={0.5}
-                    holeDiameter={0.3}
-                  />
-                  <platedhole
-                    portHints={["1"]}
-                    pcbX={0.5}
-                    pcbY={-0.85}
-                    shape="circle"
-                    outerDiameter={0.5}
-                    holeDiameter={0.3}
-                  />
-                </footprint>
-              }
-              noSchematicRepresentation
-            />
-          )),
-        ),
-      )}
-      {thermalPadShapes.flatMap(({ name }, row) =>
-        (["top", "bottom"] as const).flatMap((layer, side) =>
-          [0, 45, 90, 180, 270].map((rotation, column) => (
-            <pcbnotetext
-              key={`${name}_${layer}_${rotation}`}
-              pcbX={(column + side * 5) * 11 - 49.5}
-              pcbY={16.5 - row * 8}
-              fontSize={0.45}
-              text={`${name} ${layer} ${rotation}deg`}
-            />
+            <Fragment key={`${name}_${layer}_${rotation}`}>
+              <chip
+                name={`${name}_${layer}_${rotation}`}
+                pcbX={(column + side * 5) * 11 - 49.5}
+                pcbY={20 - row * 8}
+                pcbRotation={rotation}
+                layer={layer}
+                pinLabels={{ pin1: ["GND_EP", "THERMAL"] }}
+                footprint={
+                  <footprint>
+                    {pad}
+                    <platedhole
+                      portHints={["1"]}
+                      pcbX={0.5}
+                      pcbY={0.35}
+                      shape="circle"
+                      outerDiameter={0.5}
+                      holeDiameter={0.3}
+                    />
+                    <platedhole
+                      portHints={["1"]}
+                      pcbX={0.5}
+                      pcbY={-0.85}
+                      shape="circle"
+                      outerDiameter={0.5}
+                      holeDiameter={0.3}
+                    />
+                  </footprint>
+                }
+                noSchematicRepresentation
+              />
+              <pcbnotetext
+                pcbX={(column + side * 5) * 11 - 49.5}
+                pcbY={16.5 - row * 8}
+                fontSize={0.45}
+                text={`${name} ${layer} ${rotation}deg`}
+              />
+            </Fragment>
           )),
         ),
       )}
