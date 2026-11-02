@@ -1,4 +1,4 @@
-import * as jscadModeling from "@jscad/modeling"
+import jscadModeling from "@jscad/modeling"
 import type { Geom3 } from "@jscad/modeling/src/geometries/types"
 import type {
   AnyCircuitElement,
