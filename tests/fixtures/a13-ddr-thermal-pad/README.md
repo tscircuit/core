@@ -17,3 +17,5 @@ The repro uses `test.failing` and snapshots core's emitted Circuit JSON before c
 ![Native A13 D0-D3 routing output](../../repros/__snapshots__/repro-a13-ddr-thermal-pad-routing-pcb.snap.svg)
 
 `source-data.json` was extracted from the pinned native board using the [real DDR dataset](https://github.com/ShiboSoftwareDev/dataset-srj36-real-ddr) and its KiCad parser. It records the source pin, hash, pad geometry, placements, electrical nets, and fabrication rules. `native-a13-part.tsx` converts KiCad-local pad points into core's board frame; no runtime data or pad geometry is patched. The upstream hardware's license is not declared in the dataset (`NOASSERTION`); this fixture does not assign a new license to that hardware.
+
+With the bounds fix, U100.GND_EP has one PCB port shared by all ten primitives, the false clearance errors disappear, and all eight D0-D3 paths route with eight routing vias. The test checks their endpoint connectivity, continuity, and physical clearance against the unchanged native pads. Other DDR signals remain pending.
