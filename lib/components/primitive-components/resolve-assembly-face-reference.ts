@@ -1,3 +1,9 @@
+import type { AssemblyBolt } from "./AssemblyBolt"
+import {
+  isAssemblyMountHole,
+  getAssemblyHoleMount,
+  type AssemblyMountHole,
+} from "./get-assembly-hole-mount"
 import { selectAll, type Options } from "css-select"
 import type { NamedReferencePlane } from "jscad-planner"
 import type { PrimitiveComponent } from "../base-components/PrimitiveComponent"
@@ -15,6 +21,7 @@ import { getPartReferenceSurfaces } from "./get-part-reference-surfaces"
 import { matchesAssemblyIdentity } from "./matches-assembly-identity"
 
 export type AssemblyMountPart =
+  | AssemblyBolt
   | AssemblyMotor
   | AssemblyPart
   | AssemblyPrintedPart
@@ -24,6 +31,7 @@ export const isAssemblyMountPart = (
   part: PrimitiveComponent,
 ): part is AssemblyMountPart =>
   [
+    "AssemblyBolt",
     "AssemblyMotor",
     "AssemblyPart",
     "AssemblyPrintedPart",
@@ -34,6 +42,20 @@ export const isAssemblyMountPart = (
  * and in-plane X axes are directions. Model alignment does not move datums.
  */
 const facesFor = (part: AssemblyMountPart): NamedReferencePlane[] => {
+  if (part.componentName === "AssemblyBolt") {
+    const authored = getPartReferenceSurfaces(part as AssemblyBolt)
+    return authored.some((face) => face.name === "base")
+      ? authored
+      : [
+          ...authored,
+          {
+            name: "base",
+            origin: [0, 0, 0],
+            normal: [0, 0, -1],
+            xAxis: [1, 0, 0],
+          },
+        ]
+  }
   if (part.componentName !== "AssemblyMotor")
     return getPartReferenceSurfaces(
       part as AssemblyPart | AssemblyPrintedPart | AssemblySubassembly,
@@ -53,6 +75,8 @@ interface MountSelectorNode {
   children: MountSelectorNode[]
   part?: AssemblyMountPart
   face?: NamedReferencePlane
+  hole?: AssemblyMountHole
+  holeSide?: "top" | "bottom"
 }
 
 const descendants = (nodes: MountSelectorNode[]): MountSelectorNode[] =>
@@ -65,7 +89,7 @@ const attribute = (node: MountSelectorNode, name: string) =>
         name,
       ) ?? undefined)
     : name === "class" || name === "name"
-      ? node.face?.name
+      ? (node.face?.name ?? node.holeSide)
       : undefined
 
 const adapter: Required<
@@ -120,6 +144,17 @@ const selectorTree = (
     node.children = component.children
       .filter((child) => allowed.has(child))
       .map((child) => build(child, node))
+    if (isAssemblyMountHole(component)) {
+      node.hole = component
+      node.children.push(
+        ...(["top", "bottom"] as const).map((holeSide) => ({
+          parent: node,
+          children: [],
+          hole: component,
+          holeSide,
+        })),
+      )
+    }
     if (isAssemblyMountPart(component) && owners.has(component)) {
       for (const face of facesFor(component)) {
         const child = node.children.find(
@@ -149,19 +184,26 @@ const selectFaces = (
   reference: string,
   scope: PrimitiveComponent,
   parts: AssemblyMountPart[],
-) => {
+  includeHoles = false,
+): (AssemblyFaceTarget | ReturnType<typeof getAssemblyHoleMount>)[] => {
   const tree = selectorTree(scope, parts)
+  let matches: MountSelectorNode[]
   try {
-    return selectAll(preprocessSelector(reference, owner), [tree], {
+    matches = selectAll(preprocessSelector(reference, owner), [tree], {
       adapter,
-    }).flatMap((node) =>
-      node.part && node.face ? [{ part: node.part, face: node.face }] : [],
-    )
+    })
   } catch {
     throw new Error(
       `"${owner.name}" has an invalid mounting selector "${reference}"`,
     )
   }
+  return matches.flatMap<AssemblyFastenerTarget>((node) =>
+    node.part && node.face
+      ? [{ part: node.part, face: node.face }]
+      : includeHoles && node.hole
+        ? [getAssemblyHoleMount(node.hole, node.holeSide)]
+        : [],
+  )
 }
 
 export const resolveAssemblyMountFace = (
@@ -171,7 +213,8 @@ export const resolveAssemblyMountFace = (
   const named = facesFor(part).find((face) => face.name === reference)
   if (named) return named
   const matches = selectFaces(part, reference, part, [part]).filter(
-    (match) => match.part === part,
+    (match): match is AssemblyFaceTarget =>
+      "part" in match && match.part === part,
   )
   if (matches.length === 1) return matches[0]!.face
   if (matches.length === 0) {
@@ -186,11 +229,31 @@ export const resolveAssemblyMountFace = (
   )
 }
 
-export const resolveAssemblyMountTarget = (
+interface AssemblyFaceTarget {
+  part: AssemblyMountPart
+  face: NamedReferencePlane
+}
+type AssemblyFastenerTarget =
+  | AssemblyFaceTarget
+  | ReturnType<typeof getAssemblyHoleMount>
+
+export function resolveAssemblyMountTarget(
   owner: PrimitiveComponent,
   reference: string,
   parts: AssemblyMountPart[],
-) => {
+): AssemblyFaceTarget
+export function resolveAssemblyMountTarget(
+  owner: PrimitiveComponent,
+  reference: string,
+  parts: AssemblyMountPart[],
+  includeHoles: true,
+): AssemblyFastenerTarget
+export function resolveAssemblyMountTarget(
+  owner: PrimitiveComponent,
+  reference: string,
+  parts: AssemblyMountPart[],
+  includeHoles = false,
+): AssemblyFastenerTarget {
   // Preserve compact identity paths without treating them as CSS tag names.
   const compact =
     /^[A-Za-z_][A-Za-z0-9_-]*(?:\.[A-Za-z_][A-Za-z0-9_-]*)+$/.test(reference)
@@ -211,7 +274,23 @@ export const resolveAssemblyMountTarget = (
       }
     }
   }
-  const matches = selectFaces(owner, reference, getAssemblyScope(owner), parts)
+  if (compact && includeHoles) {
+    const holes = getComponentsInAssemblyScope(owner)
+      .filter(isAssemblyMountHole)
+      .filter((hole) => matchesAssemblyIdentity(hole, reference))
+    if (holes.length === 1) return getAssemblyHoleMount(holes[0]!)
+    if (holes.length > 1)
+      throw new Error(
+        `"${owner.name}" mounting target "${reference}" matched multiple holes; expected exactly one`,
+      )
+  }
+  const matches = selectFaces(
+    owner,
+    reference,
+    getAssemblyScope(owner),
+    parts,
+    includeHoles,
+  )
   if (compact && matches.length === 0)
     throw new Error(
       `"${owner.name}" mountedTo "${reference}" matched 0 assembly parts or reference faces; expected exactly one in the assembly device`,

@@ -1,3 +1,4 @@
+import type { AssemblyBolt } from "./AssemblyBolt"
 import {
   resolveReferencePlanes,
   type JscadOperation,
@@ -12,7 +13,7 @@ import type { AssemblyReferenceSurface } from "./AssemblyReferenceSurface"
  * solid geometry. Child frames share the part origin, not its CAD model offsets.
  */
 export const getPartReferenceSurfaces = (
-  part: AssemblyPart | AssemblyPrintedPart | AssemblySubassembly,
+  part: AssemblyPart | AssemblyPrintedPart | AssemblySubassembly | AssemblyBolt,
 ): NamedReferencePlane[] => {
   const model = part._parsedProps.cadModel
   const authored =

@@ -17,7 +17,7 @@ test("CSS face constraints position geometry-less containers and their nested pa
     <assembly.device>
       <assembly.subassembly
         name="BRIDGE"
-        mountedTo=".ROOT > [name='rail']"
+        mountedTo=".ROOT > .rail"
         mountFace=".base"
         mountOffset={{ x: 20, y: 0 }}
         mountGap={2}
@@ -104,7 +104,7 @@ test("CSS face constraints position geometry-less containers and their nested pa
     panels: [
       {
         title: "Overview: extrusion gantry with a rail-mounted spindle",
-        code: 'BRIDGE mountedTo=\n  ".ROOT > [name=rail]"\nmountFace=".base"\nmountOffset={{x:20,y:0}}\nmountGap={2}\n\nTOOL mountedTo=\n  "assemblyreferencesurface.toolMount"\nmountFace="base"\nmountOffset={{x:-5,y:12}}\nmountGap={3}',
+        code: 'BRIDGE mountedTo=\n  ".ROOT > .rail"\nmountFace=".base"\nmountOffset={{x:20,y:0}}\nmountGap={2}\n\nTOOL mountedTo=\n  "assemblyreferencesurface.toolMount"\nmountFace="base"\nmountOffset={{x:-5,y:12}}\nmountGap={3}',
         annotation:
           "BRIDGE and TOOL have no model. Their children inherit the constrained frames.\nCarriage origin [20,19,120]; spindle origin [15,29,108] mm.",
         circuit,

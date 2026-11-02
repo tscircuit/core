@@ -48,6 +48,7 @@ export const assemblyPath = (
       [
         "AssemblyDevice",
         "AssemblySubassembly",
+        "AssemblyBolt",
         "AssemblyPart",
         "AssemblyPrintedPart",
         "AssemblyScreen",
@@ -200,6 +201,7 @@ export function getAssemblyExplosion(
               !part.shouldBeRemoved &&
               part.name === segment &&
               [
+                "AssemblyBolt",
                 "AssemblyPart",
                 "AssemblyPrintedPart",
                 "AssemblySubassembly",

@@ -1,3 +1,4 @@
+import type { AssemblyBolt } from "./AssemblyBolt"
 import { mat3, vec3 } from "gl-matrix"
 import type { AssemblyPart } from "./AssemblyPart"
 import type { AssemblyPrintedPart } from "./AssemblyPrintedPart"
@@ -12,7 +13,7 @@ import { resolvePrintedPartMounts } from "./resolve-printed-part-mounts"
  * independent of model position offsets and whether a model exists.
  */
 export const renderPartReferenceSurfaces = (
-  part: AssemblyPart | AssemblyPrintedPart | AssemblySubassembly,
+  part: AssemblyPart | AssemblyPrintedPart | AssemblySubassembly | AssemblyBolt,
 ) => {
   const surfaces = getPartReferenceSurfaces(part)
   if (!surfaces.length) return
