@@ -19,8 +19,11 @@ fails with `ERR_MODULE_NOT_FOUND` for
 `@tscircuit/infer-cable-insertion-point`. The expected result is a successful
 import without requiring a consumer to add that transitive dependency manually.
 
-Declare the existing `^0.0.5` dependency at runtime. Keep the version upgrade from
-PR #4971; this change concerns package installation, not inference geometry.
+Declare the package as a required runtime peer (`*`), following Core's internal
+library dependency policy. Keep the development version `^0.0.5` from PR #4971;
+this change concerns package installation, not inference geometry. The test uses
+npm's standard peer installation; consumers disabling that behavior must supply
+the required peer themselves.
 This focused test does not claim that all Core imports are self-contained. A
 separate clean full-`Circuit` import still fails on undeclared `debug` in 0.0.2251;
 other runtime packaging gaps remain outside this change. It also does not
