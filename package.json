@@ -24,13 +24,15 @@
     "format": "biome format . --write",
     "measure-bundle": "howfat -r table .",
     "pkg-pr-new-release": "bunx pkg-pr-new publish --comment=off --peerDeps",
-    "smoke-test:dist": "bun run scripts/smoke-tests/test-dist-simple-circuit.tsx && bun run scripts/smoke-tests/check-dist-bundled-schematic-solver.ts && bun run scripts/smoke-tests/test-dist-drawing-dimensions.tsx && bun run scripts/smoke-tests/check-dist-bundled-test-point-rerouter.ts",
+    "smoke-test:dist": "bun run scripts/smoke-tests/test-dist-simple-circuit.tsx && bun run scripts/smoke-tests/check-dist-bundled-schematic-solver.ts && bun run scripts/smoke-tests/test-dist-drawing-dimensions.tsx && bun run scripts/smoke-tests/check-dist-bundled-test-point-rerouter.ts && bun run scripts/smoke-tests/check-dist-collision-runtime.ts && bun run scripts/smoke-tests/test-dist-explosion-collisions.tsx && node scripts/smoke-tests/test-dist-node-explosion-collisions.mjs",
     "build:benchmarking": "bun build --experimental-html ./benchmarking/website/index.html --outdir ./benchmarking-dist",
     "build:benchmarking:watch": "chokidar \"./{benchmarking,lib}/**/*.{ts,tsx}\" -c 'bun build --experimental-html ./benchmarking/website/index.html --outdir ./benchmarking-dist'",
     "start:benchmarking": "concurrently \"bun run build:benchmarking:watch\" \"live-server ./benchmarking-dist\"",
     "generate-test-plan": "bun run scripts/generate-test-plan.ts"
   },
   "devDependencies": {
+    "@tscircuit/cad-collision-checking": "https://jscdn.tscircuit.com/@tscircuit/cad-collision-checking/0.0.6.tgz",
+    "@tscircuit/graphics-debug-3d": "https://jscdn.tscircuit.com/@tscircuit/graphics-debug-3d/0.0.1.tgz",
     "@biomejs/biome": "^1.8.3",
     "@resvg/resvg-js": "^2.6.2",
     "@tsci/tscircuit.ti": "github:tscircuit/ti#57e314be4b2b06bc546d4def7453e619604d1157",
@@ -76,7 +78,7 @@
     "bun-match-svg": "0.0.12",
     "calculate-elbow": "^0.0.12",
     "chokidar-cli": "^3.0.0",
-    "circuit-json": "^0.0.539",
+    "circuit-json": "^0.0.541",
     "circuit-json-to-bpc": "^0.0.13",
     "circuit-json-to-connectivity-map": "^0.0.33",
     "circuit-json-to-spice": "^0.0.45",
@@ -103,7 +105,10 @@
     "@tscircuit/circuit-json-to-drawing": "https://jscdn.tscircuit.com/@tscircuit/circuit-json-to-drawing/0.0.4.tgz",
     "circuit-json-to-gltf": "^0.0.164",
     "@tscircuit/jscad": "^0.0.6",
-    "@tscircuit/test-point-rerouter": "github:tscircuit/test-point-rerouter#b0ccfaca75a7e187c55ddb6f2071a1f2084e3167"
+    "@tscircuit/test-point-rerouter": "github:tscircuit/test-point-rerouter#b0ccfaca75a7e187c55ddb6f2071a1f2084e3167",
+    "@tscircuit/manifold-2d": "^0.0.8",
+    "typescript": "^5.9.3",
+    "@tscircuit/jscad-to-manifold": "https://jscdn.tscircuit.com/@tscircuit/jscad-to-manifold/0.0.1.tgz"
   },
   "peerDependencies": {
     "@tscircuit/capacity-autorouter": "*",
@@ -125,7 +130,8 @@
     "schematic-symbols": "*",
     "spicets": "*",
     "typescript": "^5.0.0",
-    "@tscircuit/cableprinter": "*"
+    "@tscircuit/cableprinter": "*",
+    "@tscircuit/manifold-2d": "*"
   },
   "dependencies": {
     "@flatten-js/core": "^1.6.2",
@@ -147,8 +153,9 @@
     "@jscad/modeling": "^2.13.0"
   },
   "overrides": {
+    "@tscircuit/graphics-debug-3d": "https://jscdn.tscircuit.com/@tscircuit/graphics-debug-3d/0.0.1.tgz",
     "@tscircuit/props": "^0.0.716",
-    "circuit-json": "^0.0.539",
+    "circuit-json": "^0.0.541",
     "@tscircuit/cableprinter": "^0.0.6"
   },
   "browser": {
