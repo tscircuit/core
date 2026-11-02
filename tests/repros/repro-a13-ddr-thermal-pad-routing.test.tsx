@@ -11,8 +11,7 @@ import type { Port } from "lib/components/primitive-components/Port/Port"
 import { NativeA13DdrThermalPadBoard } from "tests/fixtures/a13-ddr-thermal-pad/board"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-const testName =
-  "routes native A13 DDR D0 past its shared exposed-pad thermal vias"
+const testName = "routes native A13 DDR D0-D3 past the exposed-pad thermal vias"
 
 test.failing(testName, async (): Promise<void> => {
   const { circuit } = getTestFixture()
@@ -64,15 +63,14 @@ test.failing(testName, async (): Promise<void> => {
   expect(circuit.db.pcb_pad_pad_clearance_error.list()).toEqual([])
   expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
   expect(asyncErrors).toEqual([])
-  expect(startedPhases).toEqual(["DDR_D0"])
-  expect(circuit.db.pcb_trace.list()).toHaveLength(2)
+  expect(startedPhases).toEqual(["DDR_DATA"])
+  expect(circuit.db.pcb_trace.list()).toHaveLength(8)
 
   const json = circuit.getCircuitJson()
   const dataChannel = json.filter(
     (element) =>
       element.type !== "source_trace" ||
-      element.name === "CPU_D0" ||
-      element.name === "DRAM_D0",
+      /^(CPU|DRAM)_D[0-3]$/.test(element.name!),
   )
   expect(checkEachPcbPortConnectedToPcbTraces(dataChannel)).toEqual([])
   const physicalErrors = [
