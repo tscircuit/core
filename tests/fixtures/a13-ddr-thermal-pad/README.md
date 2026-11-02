@@ -9,7 +9,7 @@ U100's native pin 177 / GND consists of a 6 × 6 mm exposed SMD pad rotated 315�
 `board.tsx` requests only D0's two native paths: U100 pin 22 → RN4 pin 5 (`CPU_D0`), then RN4 pin 4 → U200 pin 27 (`DRAM_D0`). RN4 supplies the series resistor between those copper paths. All other DDR connections remain declared and pending. Trace widths, 0.2 mm global clearance, and 0.45/0.3 mm via dimensions come from the source rules. This isolates the routing block; it does not claim a fully routed or timing-qualified DDR interface.
 
 ```sh
-bun test tests/repros/repro-a13-ddr-thermal-pad-routing.test.tsx
+bun test --timeout 30000 tests/repros/repro-a13-ddr-thermal-pad-routing.test.tsx
 ```
 
 The repro uses `test.failing` and snapshots core's emitted Circuit JSON before checking the expected connected ground pad and D0 routing. The stacked fix removes the expected-failure marker and keeps the same geometry, connectivity, and physical-clearance assertions.
@@ -17,3 +17,5 @@ The repro uses `test.failing` and snapshots core's emitted Circuit JSON before c
 ![Native A13 D0 routing output](../../repros/__snapshots__/repro-a13-ddr-thermal-pad-routing-pcb.snap.svg)
 
 `source-data.json` was extracted from the pinned native board using the [real DDR dataset](https://github.com/ShiboSoftwareDev/dataset-srj36-real-ddr) and its KiCad parser. It records the source pin, hash, pad geometry, placements, electrical nets, and fabrication rules. `native-a13-part.tsx` converts KiCad-local pad points into core's board frame; no runtime data or pad geometry is patched. The upstream hardware's license is not declared in the dataset (`NOASSERTION`); this fixture does not assign a new license to that hardware.
+
+With the bounds fix, U100.GND_EP has one PCB port shared by all ten primitives, the false clearance errors disappear, and both D0 paths route. The test checks their endpoint connectivity, continuity, and physical clearance against the unchanged native pads. Other DDR signals remain pending.

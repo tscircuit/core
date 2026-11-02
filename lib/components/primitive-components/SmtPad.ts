@@ -495,6 +495,10 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
     ]
   }
 
+  /**
+   * Axis-aligned pad bounds and center point in right-handed board-world mm:
+   * +X right, +Y top, +Z above. Top is max Y; bottom is min Y.
+   */
   _getPcbCircuitJsonBounds(): {
     center: { x: number; y: number }
     bounds: { left: number; top: number; right: number; bottom: number }
@@ -530,8 +534,8 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         bounds: {
           left: smtpad.x - xExtent,
           right: smtpad.x + xExtent,
-          top: smtpad.y - yExtent,
-          bottom: smtpad.y + yExtent,
+          top: smtpad.y + yExtent,
+          bottom: smtpad.y - yExtent,
         },
         width,
         height,
@@ -542,9 +546,9 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         center: { x: smtpad.x, y: smtpad.y },
         bounds: {
           left: smtpad.x - smtpad.radius,
-          top: smtpad.y - smtpad.radius,
+          top: smtpad.y + smtpad.radius,
           right: smtpad.x + smtpad.radius,
-          bottom: smtpad.y + smtpad.radius,
+          bottom: smtpad.y - smtpad.radius,
         },
         width: smtpad.radius * 2,
         height: smtpad.radius * 2,
@@ -579,9 +583,9 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         center: { x: smtpad.x, y: smtpad.y },
         bounds: {
           left: smtpad.x - halfWidth,
-          top: smtpad.y - halfHeight,
+          top: smtpad.y + halfHeight,
           right: smtpad.x + halfWidth,
-          bottom: smtpad.y + halfHeight,
+          bottom: smtpad.y - halfHeight,
         },
         width: smtpad.width,
         height: smtpad.height,
@@ -600,8 +604,8 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         bounds: {
           left: smtpad.x - xExtent,
           right: smtpad.x + xExtent,
-          top: smtpad.y - yExtent,
-          bottom: smtpad.y + yExtent,
+          top: smtpad.y + yExtent,
+          bottom: smtpad.y - yExtent,
         },
         width,
         height,

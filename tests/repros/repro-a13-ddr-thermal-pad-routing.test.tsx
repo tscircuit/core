@@ -14,7 +14,7 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 const testName =
   "routes native A13 DDR D0 past its shared exposed-pad thermal vias"
 
-test.failing(testName, async (): Promise<void> => {
+test(testName, async (): Promise<void> => {
   const { circuit } = getTestFixture()
   const asyncErrors: string[] = []
   const startedPhases: string[] = []
