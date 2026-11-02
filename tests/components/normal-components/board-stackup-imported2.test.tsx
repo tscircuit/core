@@ -8,7 +8,7 @@ test("an imported FR-4 board resolves its construction", async () => {
   const circuit = await getBoardStackupFixture({
     circuitJson: getImportedBoardCircuitJson({
       num_layers: 4,
-      thickness: 1.6,
+      thickness: 0.4,
       material: "fr4",
     }),
     fabricatorPreset: "jlcpcb_standard",
