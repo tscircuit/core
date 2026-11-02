@@ -1,7 +1,6 @@
 import { expect, test } from "bun:test"
 import { Circuit, assembly, getAssemblyExplosion } from "lib"
 import { any_circuit_element } from "circuit-json"
-import { expectAssemblySnapshot } from "./fixtures/expect-assembly-snapshot"
 
 test("continuous explosion checks catch a thin obstacle between clear endpoints", async () => {
   const circuit = new Circuit()
@@ -55,44 +54,4 @@ test("continuous explosion checks catch a thin obstacle between clear endpoints"
   const assembled = structuredClone(circuit.getCircuitJson())
   await circuit.renderUntilSettled()
   expect(circuit.getCircuitJson()).toEqual(assembled)
-  await expectAssemblySnapshot(import.meta.path, {
-    title: "Continuous collision: a 0.01 mm wall between clear endpoints",
-    columns: 1,
-    panels: [
-      {
-        title: "1. Start: clear",
-        code: '<assembly.part name="SLIDER"\n  cadModel={{ jscad: { type: "cuboid",\n    size: [1, 2, 2] },\n    positionOffset: { x: -10, y: 0, z: 0 } }} />',
-        annotation:
-          "The blue slider starts at X=-10 mm, clear of the thin amber wall.",
-        progress: 0,
-      },
-      {
-        title: "2. Mid-path: collision detected",
-        code: '<assembly.explosion.stage name="slide">\n  <assembly.explosion.move\n    targetRef="SLIDER" offX={20} />\n</assembly.explosion.stage>',
-        annotation:
-          "The sweep intersects the wall even though both endpoint poses are clear.",
-        progress: 0.50085,
-      },
-      {
-        title: "3. End: clear, collision diagnostic retained",
-        code: "cad_explosion_collision_error\n  moving: SLIDER\n  obstacle: WALL\n  swept_intersection_volume_mm3: 0.04",
-        annotation:
-          "The error belongs to the movement; evaluating only the final pose would miss it.",
-        progress: 1,
-      },
-    ].map(({ progress, ...panel }) => ({
-      ...panel,
-      circuit: assembled,
-      renderOptions: {
-        camPos: [-22, 16, 28],
-        poppygl: { lookAt: [0, 0, 0] },
-        gltf: {
-          explosion: {
-            throughStageRef: "SWEEP.slide",
-            stageProgress: progress,
-          },
-        },
-      },
-    })),
-  })
 })

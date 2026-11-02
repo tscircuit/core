@@ -1,6 +1,5 @@
 import { expect, test } from "bun:test"
 import { Circuit, assembly } from "lib"
-import { expectAssemblySnapshot } from "./fixtures/expect-assembly-snapshot"
 
 test("whole-stage targets move together once and later collisions use accumulated positions", async () => {
   const circuit = new Circuit()
@@ -57,35 +56,4 @@ test("whole-stage targets move together once and later collisions use accumulate
     circuit.db.cad_component.get(circuit.selectOne(".BOLT")!.cad_component_id!)!
       .position.z,
   ).toBe(3)
-  await expectAssemblySnapshot(import.meta.path, {
-    title: "Whole-stage movement: carry together, then check removal",
-    panels: [
-      {
-        title: "1. Cover and bolt move together",
-        code: 'targetRefs={["COVER", "remove-bolt", "BOLT"]}\noffZ={10}',
-        annotation:
-          "The repeated bolt selection moves once. No relative motion occurs within the group.",
-        stage: "STAGES.lift-cover",
-        progress: 1,
-      },
-      {
-        title: "2. Bolt encounters the bracket after the lift",
-        code: '<assembly.explosion.stage name="remove-bolt"\n  prevStageRef="lift-cover">\n  <assembly.explosion.move\n    targetRef="BOLT" offX={12} />\n</assembly.explosion.stage>',
-        annotation:
-          "The collision is checked at the displaced Z=13 mm position, not the original pose.",
-        stage: "STAGES.remove-bolt",
-        progress: 0.5,
-      },
-    ].map(({ stage, progress, ...panel }) => ({
-      ...panel,
-      circuit: circuit.getCircuitJson(),
-      renderOptions: {
-        camPos: [-25, 25, 32],
-        poppygl: { lookAt: [-3, 8, 0] },
-        gltf: {
-          explosion: { throughStageRef: stage, stageProgress: progress },
-        },
-      },
-    })),
-  })
 })

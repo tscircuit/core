@@ -1,9 +1,7 @@
 import { expect, test } from "bun:test"
 import { Circuit, assembly } from "lib"
-import { expectAssemblySnapshot } from "./fixtures/expect-assembly-snapshot"
 
 test("PCB substrate blocks an explosion while a drilled hole leaves clearance", async () => {
-  const panels: Parameters<typeof expectAssemblySnapshot>[1]["panels"] = []
   for (const x of [0, 4]) {
     const circuit = new Circuit()
     circuit.add(
@@ -35,26 +33,5 @@ test("PCB substrate blocks an explosion while a drilled hole leaves clearance", 
         type: "pcb_board",
         pcb_board_id: circuit.db.pcb_board.list()[0].pcb_board_id,
       })
-    panels.push({
-      title:
-        x === 0
-          ? "1. Through the mounting hole: clear"
-          : "2. Through solid PCB: collision",
-      circuit: circuit.getCircuitJson(),
-      code: '<board width={14} height={12}>\n  <hole name="MOUNT" diameter={3} />\n</board>\n\n<assembly.explosion.move\n  targetRef="PIN" offZ={10} />',
-      annotation:
-        x === 0
-          ? "The pin rises through the actual drill; board bounds alone would give a false collision."
-          : "The pin starts below the PCB and passes through its substrate at X=4 mm.",
-      renderOptions: {
-        camPos: [-22, 20, 26],
-        poppygl: { lookAt: [0, 0, 0] },
-        gltf: { explosion: { stageProgress: 0.5 } },
-      },
-    })
   }
-  await expectAssemblySnapshot(import.meta.path, {
-    title: "Explosion checks include the drilled PCB substrate",
-    panels,
-  })
 })

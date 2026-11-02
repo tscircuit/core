@@ -60,19 +60,21 @@ test("the real RP2040 TSX export detects a cover driven through the PCB and repo
     title: "RP2040 assembly: lift clear, or drive the cover through the board",
     panels: [
       {
-        title: "1. Authored lift: clear for supported solids",
-        code: '<assembly.explosion.stage name="lift-cover">\n  <assembly.explosion.move\n    targetRefs={["cover", "remove-bolts"]}\n    offZ={24} />\n</assembly.explosion.stage>',
+        title: "1. Lift the real cover and bolts",
+        code: '<assembly.explosion.stage\n  name="lift-cover">\n  <assembly.explosion.move\n    targetRefs={[\n      "cover", "remove-bolts"\n    ]}\n    offZ={24} />\n</assembly.explosion.stage>',
         annotation:
-          "JSCAD cover/spacers and PCB checked; other model representations remain unchecked.",
+          "No collision in the checked cover, spacers and PCB. The whole assembly is not verified.",
         circuit: assembled,
+        collisionCheck: clear,
         progress: 1,
       },
       {
-        title: "2. Reversed lift: cover-to-PCB collision",
-        code: '<assembly.explosion.stage name="lift-cover">\n  <assembly.explosion.move\n    targetRefs={["cover", "remove-bolts"]}\n    offZ={-24} />\n</assembly.explosion.stage>',
+        title: "2. Reversed lift: cover intersects the PCB",
+        code: '<assembly.explosion.stage\n  name="lift-cover">\n  <assembly.explosion.move\n    targetRefs={[\n      "cover", "remove-bolts"\n    ]}\n    offZ={-24} />\n</assembly.explosion.stage>',
         annotation:
-          "The continuous path crosses the PCB. Unsupported models still produce a warning.",
+          "RED = diagnosed colliding cover, shown translucent where it passes through the PCB.",
         circuit: reversed,
+        collisionCheck: blocked,
         progress: 0.8,
       },
     ].map(({ progress, ...panel }) => ({

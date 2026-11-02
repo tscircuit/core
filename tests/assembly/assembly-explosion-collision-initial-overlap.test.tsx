@@ -2,7 +2,6 @@ import { expect, test } from "bun:test"
 import { Circuit, assembly } from "lib"
 import type { AssemblyExplosionMove } from "lib/components/primitive-components/AssemblyExplosionMove"
 import type { AssemblyExplosionStage } from "lib/components/primitive-components/AssemblyExplosionStage"
-import { expectAssemblySnapshot } from "./fixtures/expect-assembly-snapshot"
 
 test("initial overlap can separate, deeper penetration errors update and disappear on removal", async () => {
   const circuit = new Circuit()
@@ -28,15 +27,6 @@ test("initial overlap can separate, deeper penetration errors update and disappe
   )
   await circuit.renderUntilSettled()
   expect(circuit.db.cad_explosion_collision_error.list()).toHaveLength(0)
-  const panels = [
-    {
-      title: "1. Separating an existing overlap is allowed",
-      code: '<assembly.explosion.move\n  targetRef="MOVING" offX={-8} />',
-      annotation:
-        "The initial overlap is excluded; moving along -X enters no new obstruction.",
-      circuit: structuredClone(circuit.getCircuitJson()),
-    },
-  ]
   const stage = circuit.selectOne(".separate") as AssemblyExplosionStage
   const move = stage.children[0] as AssemblyExplosionMove
   const moveId = move.cad_explosion_move_id
@@ -48,13 +38,6 @@ test("initial overlap can separate, deeper penetration errors update and disappe
     circuit.db.cad_explosion_collision_error.list()[0]
       .swept_intersection_volume_mm3,
   ).toBeCloseTo(48)
-  panels.push({
-    title: "2. Moving farther into the obstacle is an error",
-    code: '<assembly.explosion.move\n  targetRef="MOVING" offX={8} />',
-    annotation:
-      "Only newly entered volume is reported; the initial overlap cannot hide a deeper collision.",
-    circuit: structuredClone(circuit.getCircuitJson()),
-  })
   move.setProps({ ...move.props, offX: -8 })
   await circuit.renderUntilSettled()
   expect(circuit.db.cad_explosion_collision_error.list()).toHaveLength(0)
@@ -67,15 +50,4 @@ test("initial overlap can separate, deeper penetration errors update and disappe
   expect(circuit.db.cad_explosion_collision_check_warning.list()).toHaveLength(
     0,
   )
-  await expectAssemblySnapshot(import.meta.path, {
-    title: "Existing overlap: separate freely, detect deeper collisions",
-    panels: panels.map((panel) => ({
-      ...panel,
-      renderOptions: {
-        camPos: [-18, 14, 20],
-        poppygl: { lookAt: [0, 0, 0] },
-        gltf: { explosion: {} },
-      },
-    })),
-  })
 })

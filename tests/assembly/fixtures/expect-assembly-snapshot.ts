@@ -9,6 +9,8 @@ import { renderGLTFToPNGFromGLB } from "poppygl"
 import { mkdirSync, existsSync, readFileSync, writeFileSync } from "node:fs"
 import { dirname, basename, join } from "node:path"
 import { fileURLToPath } from "node:url"
+import type { AssemblyExplosionCollisionCheck } from "lib/assembly-explosion/collision/types"
+import { renderCollisionAssembly } from "./render-collision-assembly"
 import {
   compareImageBuffers,
   createImageDiff,
@@ -26,6 +28,7 @@ interface AssemblySnapshotPanel {
   view?: "3d" | "schematic"
   showReferenceSurfaces?: boolean
   renderOptions?: Match3dSnapshotOptions
+  collisionCheck?: AssemblyExplosionCollisionCheck
 }
 
 const escapeXml = (value: string) =>
@@ -81,11 +84,12 @@ export const expectAssemblySnapshot = async (
           alphabetText({ text, x, y, size })
       : legacySvgText
   const panelWidth = 1000
-  const codeWidth = 530
+  const hasCollisionCheck = panels.some((panel) => panel.collisionCheck)
+  const codeWidth = hasCollisionCheck ? 430 : 530
   const gap = 20
-  const renderSize = 430
+  const renderSize = hasCollisionCheck ? 530 : 430
   const rowHeight = Math.max(
-    440,
+    hasCollisionCheck ? 620 : 440,
     ...panels.map((panel) => 130 + panel.code.split("\n").length * 23),
   )
   const width = columns * panelWidth + (columns + 1) * gap
@@ -127,26 +131,73 @@ export const expectAssemblySnapshot = async (
         circuitJson,
         panel.renderOptions,
       )
-      png = await renderGLTFToPNGFromGLB(Buffer.from(glb as Uint8Array), {
+      const options = {
         ...renderOptions,
         width: renderSize,
         height: renderSize,
         fov: renderOptions.fov ?? 40,
         grid: false,
-        backgroundColor: [1, 1, 1],
-      })
+        backgroundColor: [1, 1, 1] as [number, number, number],
+      }
+      png = panel.collisionCheck
+        ? await renderCollisionAssembly(
+            glb as Uint8Array,
+            panel.collisionCheck,
+            options,
+          )
+        : await renderGLTFToPNGFromGLB(Buffer.from(glb as Uint8Array), options)
     }
     const x = gap + (index % columns) * (panelWidth + gap)
     const y = 94 + Math.floor(index / columns) * (rowHeight + gap)
+    const contentOffset = hasCollisionCheck ? 65 : 0
+    const check = panel.collisionCheck
+    const status = check?.errors.length
+      ? "COLLISION DETECTED"
+      : check?.status === "incomplete"
+        ? "NO COLLISION IN CHECKED GEOMETRY"
+        : "NO COLLISION DETECTED"
+    const statusColor = check?.errors.length
+      ? "#b91c1c"
+      : check?.status === "incomplete"
+        ? "#92400e"
+        : "#166534"
+    const uncheckedCount = check
+      ? new Set(check.warnings.flatMap((warning) => warning.cad_component_ids))
+          .size
+      : 0
+    const uncheckedBoards = check
+      ? new Set(check.warnings.flatMap((warning) => warning.pcb_board_ids)).size
+      : 0
     svgParts.push(
       `<rect x="${x}" y="${y}" width="${panelWidth}" height="${rowHeight}" rx="8" fill="white"/>`,
       svgText(panel.title, x + 20, y + 34, 21, "#0f172a"),
-      `<rect x="${x + 14}" y="${y + 55}" width="${codeWidth - 24}" height="${rowHeight - 110}" rx="5" fill="#f1f5f9"/>`,
-      `<image x="${x + codeWidth}" y="${y + 45}" width="${renderSize}" height="${rowHeight - 100}" preserveAspectRatio="xMidYMid meet" href="data:image/png;base64,${Buffer.from(png).toString("base64")}"/>`,
+      ...(check
+        ? [
+            `<rect x="${x + 14}" y="${y + 48}" width="${panelWidth - 28}" height="57" rx="5" fill="${check.errors.length ? "#fef2f2" : check.status === "incomplete" ? "#fff7ed" : "#f0fdf4"}"/>`,
+            svgText(status, x + 26, y + 72, 20, statusColor),
+            svgText(
+              check.status === "incomplete"
+                ? `INCOMPLETE COVERAGE: ${uncheckedCount} CAD models${uncheckedBoards ? ` + ${uncheckedBoards} PCBs` : ""} not checked`
+                : "Complete path checked for every model",
+              x + 26,
+              y + 94,
+              14,
+              statusColor,
+            ),
+          ]
+        : []),
+      `<rect x="${x + 14}" y="${y + 55 + contentOffset}" width="${codeWidth - 24}" height="${rowHeight - 110 - contentOffset}" rx="5" fill="#f1f5f9"/>`,
+      `<image x="${x + codeWidth}" y="${y + 45 + contentOffset}" width="${renderSize}" height="${rowHeight - 100 - contentOffset}" preserveAspectRatio="xMidYMid meet" href="data:image/png;base64,${Buffer.from(png).toString("base64")}"/>`,
       ...panel.code
         .split("\n")
         .map((line, lineIndex) =>
-          svgText(line, x + 26, y + 86 + lineIndex * 23, 17, "#0f172a"),
+          svgText(
+            line,
+            x + 26,
+            y + 86 + contentOffset + lineIndex * 23,
+            17,
+            "#0f172a",
+          ),
         ),
       svgText(panel.annotation, x + 20, y + rowHeight - 23, 15),
     )
