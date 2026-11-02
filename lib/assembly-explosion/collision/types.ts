@@ -5,7 +5,7 @@ import type {
   CadExplosionCollisionObstacle,
   PcbBoard,
 } from "circuit-json"
-import type { Manifold } from "manifold-3d"
+import type { Manifold } from "@tscircuit/manifold-2d"
 
 export type ExplosionCadId = CadComponent["cad_component_id"]
 export type ExplosionBoardId = PcbBoard["pcb_board_id"]

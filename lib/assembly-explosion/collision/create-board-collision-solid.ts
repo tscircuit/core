@@ -15,7 +15,7 @@ import type {
   Manifold,
   CrossSection,
   Vec2,
-} from "manifold-3d"
+} from "@tscircuit/manifold-2d"
 
 const ellipse = (width: number, height: number): Vec2[] =>
   Array.from({ length: 64 }, (_, i) => [

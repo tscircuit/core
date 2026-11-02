@@ -1,7 +1,7 @@
 import type { AnyCircuitElement, CadComponent } from "circuit-json"
 import { mat4 } from "gl-matrix"
 import { jscadToManifold } from "jscad-to-manifold"
-import type { Manifold, ManifoldToplevel, Mat4 } from "manifold-3d"
+import type { Manifold, ManifoldToplevel, Mat4 } from "@tscircuit/manifold-2d"
 import { getCadModelMatrix } from "lib/utils/assembly-drawing/geometry/get-drawing-draw-calls"
 
 /** Convert JSCAD model-local points to a solid in right-handed circuit world

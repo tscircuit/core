@@ -4,7 +4,7 @@ import {
   type AnyCircuitElement,
   type CadExplosionCollisionCheckWarning,
 } from "circuit-json"
-import type { ManifoldToplevel, Vec3 } from "manifold-3d"
+import type { ManifoldToplevel, Vec3 } from "@tscircuit/manifold-2d"
 import {
   CadCollisionCheckingSolver,
   loadCollisionManifold,

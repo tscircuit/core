@@ -11,7 +11,7 @@ import {
   prepareCollisionMesh,
   createCollisionSolid,
 } from "@tscircuit/cad-collision-checking"
-import type { Manifold, ManifoldToplevel } from "manifold-3d"
+import type { Manifold, ManifoldToplevel } from "@tscircuit/manifold-2d"
 import { createCadCollisionSolid } from "./create-cad-collision-solid"
 
 export type CollisionModelLoadOptions = Pick<
