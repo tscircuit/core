@@ -101,9 +101,7 @@ export function generateContinuousPanelRoutingSlots(
   if (edges.length < 3 || Math.abs(twiceSignedArea) < 1e-9)
     return { tabCutouts: [], mouseBiteHoles: [] }
 
-  const requestedGapLength = options.mouseBites
-    ? 2 * options.mouseBiteHoleDiameter + options.mouseBiteHoleSpacing
-    : options.gapLength
+  const requestedGapLength = options.gapLength
   let tabCenters = edges
     .filter(
       (edge) => edge.length >= requestedGapLength + 2 * options.cutoutWidth,
@@ -151,11 +149,18 @@ export function generateContinuousPanelRoutingSlots(
       points: [...route, ...outerBoundary.reverse()],
     })
 
-    if (options.mouseBites && gapLength >= requestedGapLength) {
-      const halfPitch =
-        (options.mouseBiteHoleDiameter + options.mouseBiteHoleSpacing) / 2
-      for (const offset of [-halfPitch, halfPitch])
+    if (
+      options.mouseBites &&
+      options.mouseBiteHoleDiameter > 0 &&
+      gapLength >= options.mouseBiteHoleDiameter
+    ) {
+      const pitch = options.mouseBiteHoleDiameter + options.mouseBiteHoleSpacing
+      const holeCount =
+        Math.floor((gapLength - options.mouseBiteHoleDiameter) / pitch) + 1
+      for (let holeIndex = 0; holeIndex < holeCount; holeIndex++) {
+        const offset = (holeIndex - (holeCount - 1) / 2) * pitch
         mouseBiteHoles.push(getPointAlongOutline(edges, tabCenter + offset))
+      }
     }
   }
   return { tabCutouts, mouseBiteHoles }
