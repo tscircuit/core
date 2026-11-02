@@ -49,12 +49,28 @@ test("the real RP2040 TSX export detects a cover driven through the PCB and repo
   })
   expect(pcbCollision.swept_intersection_volume_mm3).toBeGreaterThan(2000)
   expect(pcbCollision.message).toContain('moves "cover" through "PCB"')
+  expect(pcbCollision.message).toContain("new swept intersection: 2132.7 mm³")
   // Unsupported motor/bolt/component meshes never turn partial coverage into a pass.
   expect(blocked.status).toBe("incomplete")
   expect(blocked.warnings[0].cad_component_ids).toEqual(
     warning.cad_component_ids,
   )
   expect(JSON.stringify(assembled)).toBe(original)
+  // This image shows the lift only. Later spacer movements must not color
+  // stationary spacers as moving collision parts in this earlier stage.
+  const liftCheck = {
+    ...blocked,
+    errors: blocked.errors.filter(
+      (error) => error.cad_explosion_stage_id === lift.cad_explosion_stage_id,
+    ),
+  }
+  expect(liftCheck.errors).toHaveLength(5)
+  expect(
+    liftCheck.errors.every(
+      (error) =>
+        error.moving_cad_component_id === pcbCollision.moving_cad_component_id,
+    ),
+  ).toBe(true)
 
   await expectAssemblySnapshot(import.meta.path, {
     title: "RP2040 assembly: lift clear, or drive the cover through the board",
@@ -63,25 +79,27 @@ test("the real RP2040 TSX export detects a cover driven through the PCB and repo
         title: "1. Lift the real cover and bolts",
         code: '<assembly.explosion.stage\n  name="lift-cover">\n  <assembly.explosion.move\n    targetRefs={[\n      "cover", "remove-bolts"\n    ]}\n    offZ={24} />\n</assembly.explosion.stage>',
         annotation:
-          "No collision in the checked cover, spacers and PCB. The whole assembly is not verified.",
+          "Cover, spacers and PCB checked. Bolt-to-motor fit is NOT checked in this assembly.",
         circuit: assembled,
         collisionCheck: clear,
         progress: 1,
       },
       {
-        title: "2. Reversed lift: cover intersects the PCB",
+        title: "2. Cover driven DOWN through the PCB and spacers",
         code: '<assembly.explosion.stage\n  name="lift-cover">\n  <assembly.explosion.move\n    targetRefs={[\n      "cover", "remove-bolts"\n    ]}\n    offZ={-24} />\n</assembly.explosion.stage>',
         annotation:
-          "RED = diagnosed colliding cover, shown translucent where it passes through the PCB.",
+          "RED = moving cover crossing the green PCB and stationary spacers; bolt/motor meshes unchecked.",
         circuit: reversed,
-        collisionCheck: blocked,
-        progress: 0.8,
+        collisionCheck: liftCheck,
+        progress: 5 / 6,
       },
     ].map(({ progress, ...panel }) => ({
       ...panel,
+      collisionNote: "Bolt / motor fit: NOT CHECKED",
       renderOptions: {
-        camPos: [-100, 90, 110],
-        poppygl: { lookAt: [0, 8, 0] },
+        camPos: progress === 1 ? [-100, 90, 110] : [-70, 22, 70],
+        fov: progress === 1 ? 40 : 32,
+        poppygl: { lookAt: progress === 1 ? [0, 8, 0] : [0, 0, 0] },
         gltf: {
           explosion: {
             throughStageRef: "RP2040_NEMA17.lift-cover",

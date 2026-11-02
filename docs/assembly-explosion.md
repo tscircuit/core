@@ -152,6 +152,11 @@ obstacle volume intersecting the newly swept space; it is not instantaneous
 penetration depth or a contact timestamp. Editing/removing stages or geometry
 invalidates the check and removes its stale diagnostics.
 
+The readable diagnostic also names both parts and includes this volume, for
+example `moves "cover" through "PCB" (new swept intersection: 2132.7 mm³)`.
+This describes the movement's interference; it does not assert that the entire
+volume overlaps at the single pose displayed by a viewer.
+
 `getAssemblyExplosion(circuit).collisionCheckStatus` is `not_checked`, `pending`,
 `checked`, or `incomplete`. `checked` means the supported program was evaluated,
 including any reported collisions; it does not mean collision-free. Unsupported

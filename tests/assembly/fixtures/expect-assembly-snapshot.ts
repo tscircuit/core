@@ -9,7 +9,10 @@ import { renderGLTFToPNGFromGLB } from "poppygl"
 import { mkdirSync, existsSync, readFileSync, writeFileSync } from "node:fs"
 import { dirname, basename, join } from "node:path"
 import { fileURLToPath } from "node:url"
-import type { AssemblyExplosionCollisionCheck } from "lib/assembly-explosion/collision/types"
+import type {
+  AssemblyExplosionCollisionCheck,
+  ExplosionCadId,
+} from "lib/assembly-explosion/collision/types"
 import { renderCollisionAssembly } from "./render-collision-assembly"
 import {
   compareImageBuffers,
@@ -29,6 +32,7 @@ interface AssemblySnapshotPanel {
   showReferenceSurfaces?: boolean
   renderOptions?: Match3dSnapshotOptions
   collisionCheck?: AssemblyExplosionCollisionCheck
+  collisionNote?: string
 }
 
 const escapeXml = (value: string) =>
@@ -89,7 +93,7 @@ export const expectAssemblySnapshot = async (
   const gap = 20
   const renderSize = hasCollisionCheck ? 530 : 430
   const rowHeight = Math.max(
-    hasCollisionCheck ? 620 : 440,
+    hasCollisionCheck ? 740 : 440,
     ...panels.map((panel) => 130 + panel.code.split("\n").length * 23),
   )
   const width = columns * panelWidth + (columns + 1) * gap
@@ -168,6 +172,23 @@ export const expectAssemblySnapshot = async (
     const uncheckedBoards = check
       ? new Set(check.warnings.flatMap((warning) => warning.pcb_board_ids)).size
       : 0
+    const partName = (cadId: ExplosionCadId) => {
+      const cad = circuitJson.find(
+        (record) =>
+          record.type === "cad_component" && record.cad_component_id === cadId,
+      )
+      if (cad?.type !== "cad_component")
+        throw new Error("Missing collision part")
+      const source = circuitJson.find(
+        (record) =>
+          record.type === "source_component" &&
+          record.source_component_id === cad.source_component_id,
+      )
+      return source?.type === "source_component" && source.name
+        ? source.name
+        : "unnamed part"
+    }
+    const detailY = y + 116 + contentOffset + panel.code.split("\n").length * 23
     svgParts.push(
       `<rect x="${x}" y="${y}" width="${panelWidth}" height="${rowHeight}" rx="8" fill="white"/>`,
       svgText(panel.title, x + 20, y + 34, 21, "#0f172a"),
@@ -199,6 +220,53 @@ export const expectAssemblySnapshot = async (
             "#0f172a",
           ),
         ),
+      ...(check
+        ? [
+            svgText(
+              "NEW SWEPT INTERSECTION (mm³)",
+              x + 26,
+              detailY,
+              17,
+              statusColor,
+            ),
+            ...(check.errors.length
+              ? check.errors.map((error, errorIndex) =>
+                  svgText(
+                    `${partName(error.moving_cad_component_id)} / ${error.obstacle.type === "pcb_board" ? "PCB" : partName(error.obstacle.cad_component_id)}: ${Number(error.swept_intersection_volume_mm3.toPrecision(5))}`,
+                    x + 26,
+                    detailY + 27 + errorIndex * 23,
+                    16,
+                    statusColor,
+                  ),
+                )
+              : [
+                  svgText(
+                    "0 in checked geometry",
+                    x + 26,
+                    detailY + 27,
+                    16,
+                    statusColor,
+                  ),
+                ]),
+            svgText(
+              "Over the movement, not this pose.",
+              x + 26,
+              detailY + 50 + Math.max(1, check.errors.length) * 23,
+              14,
+            ),
+            ...(panel.collisionNote
+              ? [
+                  svgText(
+                    panel.collisionNote,
+                    x + 26,
+                    detailY + 75 + Math.max(1, check.errors.length) * 23,
+                    14,
+                    "#92400e",
+                  ),
+                ]
+              : []),
+          ]
+        : []),
       svgText(panel.annotation, x + 20, y + rowHeight - 23, 15),
     )
   }

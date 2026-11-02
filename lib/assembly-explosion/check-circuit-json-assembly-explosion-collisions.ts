@@ -215,7 +215,7 @@ export async function checkCircuitJsonAssemblyExplosionCollisions(
               ]),
             ],
             swept_intersection_volume_mm3: collision.sweptIntersectionVolumeMm3,
-            message: `Explosion stage "${stage.name}" moves "${moving.name}" through "${obstacle.name}"`,
+            message: `Explosion stage "${stage.name}" moves "${moving.name}" through "${obstacle.name}" (new swept intersection: ${Number(collision.sweptIntersectionVolumeMm3.toPrecision(5))} mm³)`,
             is_fatal: false,
           }),
         )

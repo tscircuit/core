@@ -44,7 +44,7 @@ test("continuous explosion checks catch a thin obstacle between clear endpoints"
   })
   expect(errors[0].swept_intersection_volume_mm3).toBeCloseTo(0.04, 5)
   expect(errors[0].message).toBe(
-    'Explosion stage "SWEEP.slide" moves "SLIDER" through "WALL"',
+    'Explosion stage "SWEEP.slide" moves "SLIDER" through "WALL" (new swept intersection: 0.04 mm³)',
   )
   expect(any_circuit_element.parse(errors[0])).toEqual(errors[0])
   expect(circuit.db.cad_explosion_collision_check_warning.list()).toHaveLength(
