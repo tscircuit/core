@@ -67,16 +67,19 @@ export const resolveAssemblyPlacement = (
   }
   if (
     component.componentName === "AssemblyPrintedPart" ||
-    component.componentName === "AssemblyPart"
+    component.componentName === "AssemblyPart" ||
+    component.componentName === "AssemblySubassembly"
   ) {
-    const part = component as AssemblyPrintedPart | AssemblyPart
+    const part = component as
+      | AssemblyPrintedPart
+      | AssemblyPart
+      | AssemblySubassembly
     const { transforms, subcircuitId } = resolvePrintedPartMounts(part)
     const transform = transforms.get(part)!
-    if (part.componentName === "AssemblyPart")
+    if (part.componentName !== "AssemblyPrintedPart")
       return {
         ...getMountTransformPlacement(transform),
-        worldTransform:
-          Math.abs(Math.abs(transform[10]) - 1) > 1e-6 ? transform : undefined,
+        worldTransform: transform,
         subcircuit_id: subcircuitId,
       }
     return {
@@ -97,7 +100,7 @@ export const resolveInheritedAssemblyPlacement = (
   component: Assembly,
   path: Assembly[] = [],
   resolvePartPlacement?: (
-    part: AssemblyPart | AssemblyPrintedPart,
+    part: AssemblyPart | AssemblyPrintedPart | AssemblySubassembly,
   ) => AssemblyPlacement,
 ): AssemblyPlacement => {
   if (path.includes(component)) {
@@ -118,9 +121,12 @@ export const resolveInheritedAssemblyPlacement = (
   if (
     resolvePartPlacement &&
     (target.componentName === "AssemblyPart" ||
-      target.componentName === "AssemblyPrintedPart")
+      target.componentName === "AssemblyPrintedPart" ||
+      target.componentName === "AssemblySubassembly")
   )
-    return resolvePartPlacement(target as AssemblyPart | AssemblyPrintedPart)
+    return resolvePartPlacement(
+      target as AssemblyPart | AssemblyPrintedPart | AssemblySubassembly,
+    )
   if (resolvePartPlacement && isPositionedAssembly(target))
     return resolveInheritedAssemblyPlacement(
       target,

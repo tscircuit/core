@@ -4,7 +4,7 @@ import type { CadComponent } from "circuit-json"
 import { rotation } from "circuit-json"
 import { mat4, vec3 } from "gl-matrix"
 import type { Matrix4 } from "jscad-planner"
-import { getAssemblyEulerAngles } from "./get-assembly-euler-angles"
+import { getAssemblyCadRotation } from "./get-assembly-cad-rotation"
 import { constructAssetUrl } from "lib/utils/constructAssetUrl"
 import type { ReactElement } from "react"
 import {
@@ -49,7 +49,7 @@ export const renderAssemblyCadModel = (
   const assetUrl = (url: string) =>
     constructAssetUrl(url, owner.root?.platform?.projectBaseUrl)
   // Face-mounted models may tilt out of the PCB plane. Transform their local
-  // offset as a point and compose authored Rz * Ry * Rx inside the world frame.
+  // offset as a point and compose CAD's authored Rx * Ry * Rz inside the world frame.
   let mountedPosition: CadComponent["position"] | undefined
   let mountedRotation: CadComponent["rotation"] | undefined
   if (placement.worldTransform) {
@@ -60,17 +60,10 @@ export const renderAssemblyCadModel = (
     )
     mountedPosition = { x: point[0], y: point[1], z: point[2] }
     const frame: Matrix4 = [...placement.worldTransform]
-    mat4.rotateZ(frame, frame, (rotationOffset.z * Math.PI) / 180)
-    mat4.rotateY(frame, frame, (rotationOffset.y * Math.PI) / 180)
     mat4.rotateX(frame, frame, (rotationOffset.x * Math.PI) / 180)
-    const angles = getAssemblyEulerAngles(frame).map(
-      (angle) => (angle * 180) / Math.PI,
-    )
-    mountedRotation = {
-      x: angles[0],
-      y: angles[1],
-      z: normalizeDegrees(angles[2]),
-    }
+    mat4.rotateY(frame, frame, (rotationOffset.y * Math.PI) / 180)
+    mat4.rotateZ(frame, frame, (rotationOffset.z * Math.PI) / 180)
+    mountedRotation = getAssemblyCadRotation(frame)
   }
   const urls =
     typeof model === "string"

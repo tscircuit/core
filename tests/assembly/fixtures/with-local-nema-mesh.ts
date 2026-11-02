@@ -4,6 +4,7 @@ import { parseModelStringParams } from "@tscircuit/modelprinter"
 const nemaFixtures = {
   nema8: "nema8.glb.gz",
   nema17: "nema17-wireangle0.glb",
+  nema17_bodylength40mm_plainbackface: "nema17-body40.glb.gz",
   nema17_jstph6: "nema17-jstph6.glb.gz",
   nema23: "nema23.glb.gz",
   nema17_wireangle90deg: "nema17-wireangle90.glb",

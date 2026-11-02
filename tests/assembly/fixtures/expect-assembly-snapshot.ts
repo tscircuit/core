@@ -26,6 +26,10 @@ interface AssemblySnapshotPanel {
   view?: "3d" | "schematic"
   showReferenceSurfaces?: boolean
   renderOptions?: Match3dSnapshotOptions
+  legend?: { color: string; label: string }[]
+  /** Label and target are normalized image-plane points (top-left = [0,0]),
+   * not geometric coordinates. Leaders identify visible features for review. */
+  callouts?: { label: string; at: [number, number]; target: [number, number] }[]
 }
 
 const escapeXml = (value: string) =>
@@ -68,11 +72,13 @@ export const expectAssemblySnapshot = async (
     panels,
     columns = 1,
     font = "legacy",
+    layout = "default",
   }: {
     title: string
     panels: AssemblySnapshotPanel[]
     columns?: number
     font?: "legacy" | "alphabet"
+    layout?: "default" | "model_focus"
   },
 ) => {
   const svgText =
@@ -80,12 +86,14 @@ export const expectAssemblySnapshot = async (
       ? (text: string, x: number, y: number, size = 17, _color?: string) =>
           alphabetText({ text, x, y, size })
       : legacySvgText
-  const panelWidth = 1000
-  const codeWidth = 530
+  const modelFocus = layout === "model_focus"
+  const panelWidth = modelFocus ? 1400 : 1000
+  const codeWidth = modelFocus ? 470 : 530
   const gap = 20
-  const renderSize = 430
+  const renderSize = modelFocus ? 900 : 430
+  const renderHeight = modelFocus ? 620 : renderSize
   const rowHeight = Math.max(
-    440,
+    modelFocus ? 740 : 440,
     ...panels.map((panel) => 130 + panel.code.split("\n").length * 23),
   )
   const width = columns * panelWidth + (columns + 1) * gap
@@ -94,7 +102,14 @@ export const expectAssemblySnapshot = async (
     `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`,
     `<rect width="${width}" height="${height}" fill="#e2e8f0"/>`,
     svgText(title, gap + 10, 39, 25, "#0f172a"),
-    svgText("TSX on the left / rendered output on the right", gap + 10, 68, 16),
+    svgText(
+      modelFocus
+        ? "Placement constraints / rendered mechanical assembly | dimensions in mm"
+        : "TSX on the left / rendered output on the right",
+      gap + 10,
+      68,
+      16,
+    ),
   ]
   for (const [index, panel] of panels.entries()) {
     if (panel.circuit instanceof RootCircuit)
@@ -108,7 +123,7 @@ export const expectAssemblySnapshot = async (
       png = new Resvg(
         convertCircuitJsonToSchematicSvg(circuitJson, {
           width: renderSize,
-          height: renderSize,
+          height: renderHeight,
         }),
         resvgOptions,
       )
@@ -130,7 +145,7 @@ export const expectAssemblySnapshot = async (
       png = await renderGLTFToPNGFromGLB(Buffer.from(glb as Uint8Array), {
         ...renderOptions,
         width: renderSize,
-        height: renderSize,
+        height: renderHeight,
         fov: renderOptions.fov ?? 40,
         grid: false,
         backgroundColor: [1, 1, 1],
@@ -141,14 +156,43 @@ export const expectAssemblySnapshot = async (
     svgParts.push(
       `<rect x="${x}" y="${y}" width="${panelWidth}" height="${rowHeight}" rx="8" fill="white"/>`,
       svgText(panel.title, x + 20, y + 34, 21, "#0f172a"),
-      `<rect x="${x + 14}" y="${y + 55}" width="${codeWidth - 24}" height="${rowHeight - 110}" rx="5" fill="#f1f5f9"/>`,
-      `<image x="${x + codeWidth}" y="${y + 45}" width="${renderSize}" height="${rowHeight - 100}" preserveAspectRatio="xMidYMid meet" href="data:image/png;base64,${Buffer.from(png).toString("base64")}"/>`,
+      `<rect x="${x + 14}" y="${y + 55}" width="${codeWidth - 24}" height="${modelFocus ? rowHeight - 150 : rowHeight - 110}" rx="5" fill="#f1f5f9"/>`,
+      `<image x="${x + codeWidth}" y="${y + 45}" width="${renderSize}" height="${modelFocus ? renderHeight : rowHeight - 100}" preserveAspectRatio="xMidYMid meet" href="data:image/png;base64,${Buffer.from(png).toString("base64")}"/>`,
+      ...(panel.callouts ?? []).flatMap((callout) => {
+        const labelX = x + codeWidth + callout.at[0] * renderSize
+        const labelY = y + 45 + callout.at[1] * renderHeight
+        const targetX = x + codeWidth + callout.target[0] * renderSize
+        const targetY = y + 45 + callout.target[1] * renderHeight
+        return [
+          `<path d="M${labelX},${labelY - 6} L${targetX},${targetY}" stroke="#475569" stroke-width="1.5" fill="none"/>`,
+          `<circle cx="${targetX}" cy="${targetY}" r="3" fill="#475569" stroke="white"/>`,
+          `<rect x="${labelX - 6}" y="${labelY - 20}" width="${callout.label.length * 9.1 + 12}" height="28" rx="4" fill="white" stroke="#cbd5e1"/>`,
+          svgText(callout.label, labelX, labelY, 15, "#0f172a"),
+        ]
+      }),
       ...panel.code
         .split("\n")
         .map((line, lineIndex) =>
           svgText(line, x + 26, y + 86 + lineIndex * 23, 17, "#0f172a"),
         ),
-      svgText(panel.annotation, x + 20, y + rowHeight - 23, 15),
+      ...(panel.legend ?? []).flatMap((entry, legendIndex) => {
+        const legendY =
+          y + 116 + panel.code.split("\n").length * 23 + legendIndex * 30
+        return [
+          `<rect x="${x + 26}" y="${legendY - 13}" width="14" height="14" rx="3" fill="${entry.color}"/>`,
+          svgText(entry.label, x + 50, legendY, 15),
+        ]
+      }),
+      ...panel.annotation
+        .split("\n")
+        .map((line, lineIndex, lines) =>
+          svgText(
+            line,
+            x + 20,
+            y + rowHeight - 23 - (lines.length - 1 - lineIndex) * 23,
+            15,
+          ),
+        ),
     )
   }
   svgParts.push("</svg>")
