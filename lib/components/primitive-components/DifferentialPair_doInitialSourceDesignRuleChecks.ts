@@ -25,6 +25,26 @@ const resolvePointToPointConnection = (
   const matchingSourceTraces = subcircuitSourceTraces.filter(
     (sourceTrace) => sourceTrace.name === connectionSelector,
   )
+
+  // A named two-terminal trunk may share its net with termination taps. Its
+  // differential constraint applies to that path, not to every net branch.
+  const namedSourceTrace = matchingSourceTraces[0]
+  if (
+    matchingSourceTraces.length === 1 &&
+    namedSourceTrace?.connected_source_port_ids.length === 2
+  ) {
+    return {
+      sourceTraceIds: [namedSourceTrace.source_trace_id],
+      sourcePorts: db.source_port
+        .list()
+        .filter((sourcePort) =>
+          namedSourceTrace.connected_source_port_ids.includes(
+            sourcePort.source_port_id,
+          ),
+        ),
+      sourceTraceName: connectionSelector,
+    }
+  }
   const connectivityMapKeys = new Set<string>()
 
   if (matchingSourceTraces.length > 0) {
