@@ -17,7 +17,7 @@ export function NativeA13DdrThermalPadBoard(): ReactElement {
       title="Native A13 DDR: exposed pad and thermal vias"
       width={source.width}
       height={source.height}
-      layers={source.layers}
+      layers={4}
       minTraceWidth={Math.min(...source.rules.widths)}
       minTraceToPadEdgeClearance={source.rules.appliedGlobalClearance}
       minViaPadDiameter={source.rules.viaPad}
