@@ -1,7 +1,8 @@
 import type { Matrix4, Vector3D } from "jscad-planner"
 
 /** Rigid local-to-world frame to radians in Rz * Ry * Rx order, matching
- * JSCAD and CAD Euler rotations. Translation is ignored.
+ * JSCAD operation rotations. CAD component angles use Rx * Ry * Rz instead.
+ * Translation is ignored.
  */
 export const getAssemblyEulerAngles = (transform: Matrix4): Vector3D => {
   const y = Math.asin(Math.max(-1, Math.min(1, -transform[2])))

@@ -1,6 +1,7 @@
 import { mat3, vec3 } from "gl-matrix"
 import type { AssemblyPart } from "./AssemblyPart"
 import type { AssemblyPrintedPart } from "./AssemblyPrintedPart"
+import type { AssemblySubassembly } from "./AssemblySubassembly"
 import type { AssemblyReferenceSurface } from "./AssemblyReferenceSurface"
 import { getPartReferenceSurfaces } from "./get-part-reference-surfaces"
 import { resolvePrintedPartMounts } from "./resolve-printed-part-mounts"
@@ -11,7 +12,7 @@ import { resolvePrintedPartMounts } from "./resolve-printed-part-mounts"
  * independent of model position offsets and whether a model exists.
  */
 export const renderPartReferenceSurfaces = (
-  part: AssemblyPart | AssemblyPrintedPart,
+  part: AssemblyPart | AssemblyPrintedPart | AssemblySubassembly,
 ) => {
   const surfaces = getPartReferenceSurfaces(part)
   if (!surfaces.length) return

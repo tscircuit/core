@@ -5,13 +5,14 @@ import {
 } from "jscad-planner"
 import type { AssemblyPart } from "./AssemblyPart"
 import type { AssemblyPrintedPart } from "./AssemblyPrintedPart"
+import type { AssemblySubassembly } from "./AssemblySubassembly"
 import type { AssemblyReferenceSurface } from "./AssemblyReferenceSurface"
 
 /** Collect part-local mounting frames (mm, right-handed XYZ) without producing
  * solid geometry. Child frames share the part origin, not its CAD model offsets.
  */
 export const getPartReferenceSurfaces = (
-  part: AssemblyPart | AssemblyPrintedPart,
+  part: AssemblyPart | AssemblyPrintedPart | AssemblySubassembly,
 ): NamedReferencePlane[] => {
   const model = part._parsedProps.cadModel
   const authored =
