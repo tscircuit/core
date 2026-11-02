@@ -1,11 +1,20 @@
 import { expect, test } from "bun:test"
+import {
+  checkDifferentNetViaSpacing,
+  checkEachPcbTraceNonOverlapping,
+  checkPadTraceClearance,
+  checkTracesAreContiguous,
+  checkViaPadClearance,
+  checkViasInPads,
+  checkViaTraceClearance,
+} from "@tscircuit/checks"
 import type { Port } from "lib/components/primitive-components/Port/Port"
 import {
   orangeCrabClockSnapshotOptions,
   renderOrangeCrabDdrClock,
 } from "tests/fixtures/orangecrab-ddr-clock/render"
 
-test("records the unresolved full OrangeCrab clock and termination route", async () => {
+test("routes the real OrangeCrab clock trunks and termination branches", async (): Promise<void> => {
   const { circuit, inputs, outputs, asyncErrors, phaseNames } =
     await renderOrangeCrabDdrClock(true)
   expect(circuit.db.pcb_smtpad.list()).toHaveLength(387)
@@ -32,12 +41,24 @@ test("records the unresolved full OrangeCrab clock and termination route", async
   }
   expect(phaseNames).toEqual(["CLOCK_TRUNKS", "TERMINATION_TAPS"])
   expect(inputs.map((input) => input.connections.length)).toEqual([2, 4])
-  expect(outputs).toHaveLength(1)
+  expect(outputs).toHaveLength(2)
   expect(outputs[0].traces).toHaveLength(2)
-  expect(circuit.db.pcb_trace.list()).toHaveLength(0)
-  expect(asyncErrors).toEqual([
-    expect.stringContaining("no bordering routing edge"),
-  ])
+  expect(outputs[1].traces).toHaveLength(4)
+  expect(circuit.db.pcb_trace.list()).toHaveLength(6)
+  expect(asyncErrors).toEqual([])
+  expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
+  expect(circuit.db.pcb_bus_length_skew_error.list()).toEqual([])
+  const json = circuit.getCircuitJson()
+  const physicalErrors = [
+    ...checkEachPcbTraceNonOverlapping(json, { minClearance: 0.089 }),
+    ...checkPadTraceClearance(json, { minClearance: 0.089 }),
+    ...checkViaTraceClearance(json, { minClearance: 0.089 }),
+    ...checkViaPadClearance(json, { minClearance: 0.089 }),
+    ...checkDifferentNetViaSpacing(json),
+    ...checkViasInPads(json),
+    ...checkTracesAreContiguous(json),
+  ].filter((finding) => finding.type.endsWith("_error"))
+  expect(physicalErrors).toEqual([])
   await expect(circuit).toMatchPcbSnapshot(
     import.meta.path,
     orangeCrabClockSnapshotOptions,

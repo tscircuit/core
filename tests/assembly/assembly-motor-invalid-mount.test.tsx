@@ -7,7 +7,7 @@ test("motor mounts reject missing, ambiguous, invalid-face and sideways targets"
     [
       "MISSING.backface",
       <assembly.motor name="MOTOR" standard="nema17" />,
-      /matched 0 motors/,
+      /matched 0 assembly parts/,
     ],
     [
       "MOTOR.frontface",
@@ -17,7 +17,7 @@ test("motor mounts reject missing, ambiguous, invalid-face and sideways targets"
     [
       "MOTOR",
       <assembly.motor name="MOTOR" standard="nema17" />,
-      /must name a motor backface/,
+      /matched 0 reference faces/,
     ],
     [
       "MOTOR.backface",
@@ -34,12 +34,12 @@ test("motor mounts reject missing, ambiguous, invalid-face and sideways targets"
         <assembly.motor name="MOTOR" standard="nema17" />
         <assembly.motor name="MOTOR" standard="nema23" />
       </>,
-      /matched 2 motors/,
+      /matched 2 assembly parts/,
     ],
     [
       "MOTOR.backface",
       <assembly.subassembly name="MOTOR" model="nema17" />,
-      /matched 0 motors/,
+      /no reference face "backface"/,
     ],
   ] as const) {
     const { circuit } = getTestFixture()

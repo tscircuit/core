@@ -40,9 +40,11 @@ test("imported printed parts compose their model offsets inside a tilted child s
   expect(circuit.db.cad_reference_surface.list()).toHaveLength(2)
   const frame = mat4.create()
   const rotation = cad.rotation!
-  mat4.rotateZ(frame, frame, (rotation.z * Math.PI) / 180)
-  mat4.rotateY(frame, frame, (rotation.y * Math.PI) / 180)
+  // Circuit JSON CAD angles use intrinsic XYZ, paired with the emitted GLB
+  // check in assembly-mount-cad-orientation.test.tsx (JSCAD angles differ).
   mat4.rotateX(frame, frame, (rotation.x * Math.PI) / 180)
+  mat4.rotateY(frame, frame, (rotation.y * Math.PI) / 180)
+  mat4.rotateZ(frame, frame, (rotation.z * Math.PI) / 180)
   const point = vec3.transformMat4(vec3.create(), [1, 2, 3], frame)
   for (const [axis, expected] of [-2, 3, -1].entries())
     expect(point[axis]).toBeCloseTo(expected)
