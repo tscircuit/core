@@ -25,6 +25,7 @@
     "measure-bundle": "howfat -r table .",
     "pkg-pr-new-release": "bunx pkg-pr-new publish --comment=off --peerDeps",
     "smoke-test:dist": "bun run scripts/smoke-tests/test-dist-simple-circuit.tsx && bun run scripts/smoke-tests/check-dist-bundled-schematic-solver.ts && bun run scripts/smoke-tests/test-dist-drawing-dimensions.tsx && bun run scripts/smoke-tests/check-dist-bundled-test-point-rerouter.ts",
+    "smoke-test:packed-cable-inference": "node scripts/smoke-tests/test-packed-cable-inference.mjs",
     "build:benchmarking": "bun build --experimental-html ./benchmarking/website/index.html --outdir ./benchmarking-dist",
     "build:benchmarking:watch": "chokidar \"./{benchmarking,lib}/**/*.{ts,tsx}\" -c 'bun build --experimental-html ./benchmarking/website/index.html --outdir ./benchmarking-dist'",
     "start:benchmarking": "concurrently \"bun run build:benchmarking:watch\" \"live-server ./benchmarking-dist\"",
@@ -50,7 +51,6 @@
     "@tscircuit/footprinter": "^0.0.450",
     "@tscircuit/image-utils": "^0.0.8",
     "@tscircuit/implicit-copper-pour-solver": "github:tscircuit/implicit-copper-pour-solver#a5cbbda0cd65fd4707c5c1af25779837c25aba92",
-    "@tscircuit/infer-cable-insertion-point": "^0.0.5",
     "@tscircuit/infgrid-ijump-astar": "^0.0.35",
     "@tscircuit/jlcpcb-manufacturing-specs": "git+https://github.com/tscircuit/jlcpcb-manufacturing-specs#d2fcf9a557a196cf9f2824463d06cd86534b1c21",
     "@tscircuit/krt-wasm": "^0.1.1",
@@ -128,6 +128,7 @@
     "@tscircuit/cableprinter": "*"
   },
   "dependencies": {
+    "@tscircuit/infer-cable-insertion-point": "^0.0.5",
     "@flatten-js/core": "^1.6.2",
     "@lume/kiwi": "^0.4.3",
     "calculate-cell-boundaries": "^0.0.25",
