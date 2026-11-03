@@ -1,11 +1,12 @@
 import type { PcbBoard } from "circuit-json"
 
 export function getRectangularPanelBoardBounds(board: PcbBoard) {
+  const firstCorner = board.outline?.[0]
   const outline = board.outline?.filter(
-    (position, outlineIndex, vertices) =>
+    (position, outlineIndex) =>
       outlineIndex === 0 ||
-      position.x !== vertices[0]!.x ||
-      position.y !== vertices[0]!.y,
+      position.x !== firstCorner?.x ||
+      position.y !== firstCorner?.y,
   )
   if (outline?.length) {
     const minX =

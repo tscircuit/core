@@ -1,4 +1,4 @@
-import type { PanelTabPlacement } from "@tscircuit/props"
+import type { PanelEdge, PanelTabPlacement } from "@tscircuit/props"
 import type {
   PcbBoard,
   PcbCutoutRect,
@@ -66,7 +66,7 @@ export function generateControlledPanelTabs(
   for (const { board, boardName } of boards) {
     const bounds = getRectangularPanelBoardBounds(board)
     const edges: {
-      side: "top" | "bottom" | "left" | "right"
+      side: PanelEdge
       origin: Point
       length: number
       ccwRotationDegrees: number
@@ -125,7 +125,9 @@ export function generateControlledPanelTabs(
             (!keepout.boardName || keepout.boardName === boardName),
         ) ?? []
       const intervals: PanelTabInterval[] = []
-      for (const centre of tabCentres.sort((first, second) => first - second)) {
+      for (const centre of tabCentres.sort(
+        (firstCentreMm, secondCentreMm) => firstCentreMm - secondCentreMm,
+      )) {
         const start = centre - tabLength / 2
         const end = centre + tabLength / 2
         if (start < 0 || end > edge.length)
