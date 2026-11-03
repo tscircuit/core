@@ -15,6 +15,7 @@ type CopperPourLike = {
     layer: LayerRef | { name: string }
     connectsTo: string
     unbroken?: boolean
+    isStatic?: boolean
     outline?: Point[]
   }
   getSubcircuit(): {
@@ -40,12 +41,14 @@ const createCopperPourObstacle = ({
   center,
   width,
   height,
+  isStatic,
 }: {
   layer: string
   connectedTo: string[]
   center: { x: number; y: number }
   width: number
   height: number
+  isStatic?: boolean
 }): Obstacle => ({
   type: "rect",
   layers: [layer],
@@ -53,7 +56,7 @@ const createCopperPourObstacle = ({
   width,
   height,
   connectedTo,
-  isCopperPour: true,
+  isCopperPour: !isStatic,
 })
 
 const getCopperPourBoundary = ({
@@ -131,7 +134,7 @@ export const getUnbrokenCopperPourObstacles = ({
 
   for (const copperPour of copperPours) {
     const props = copperPour._parsedProps
-    if (!props.unbroken) continue
+    if (!props.unbroken && !props.isStatic) continue
 
     const net = copperPour.getSubcircuit().selectOne<NetLike>(props.connectsTo)
     if (!net?.source_net_id) continue
@@ -158,6 +161,7 @@ export const getUnbrokenCopperPourObstacles = ({
               center: rect.center,
               width: rect.width,
               height: rect.height,
+              isStatic: props.isStatic,
             }),
           ),
         )
@@ -175,6 +179,7 @@ export const getUnbrokenCopperPourObstacles = ({
         center: boundsRect.center,
         width: boundsRect.width,
         height: boundsRect.height,
+        isStatic: props.isStatic,
       }),
     )
   }

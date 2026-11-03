@@ -7,6 +7,7 @@ import type { ISubcircuit } from "../Group/Subcircuit/ISubcircuit"
 import type { Net } from "../Net"
 import type { CopperPour } from "./CopperPour"
 import { markTraceSegmentsInsideCopperPour } from "./utils/mark-trace-segments-inside-copper-pour"
+import { getCopperPourClearanceRules } from "./utils/get-copper-pour-clearance-rules"
 
 // Each CopperPour queues this phase, but the solver processes every pour in a
 // subcircuit together. Share that batch across the component-owned effects.
@@ -77,10 +78,15 @@ const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
         pad_margin: props.padMargin ?? clearance,
         trace_margin: props.traceMargin ?? clearance,
         pour_margin: clearance,
+        ...(props.clearanceRules
+          ? { clearance_rules: getCopperPourClearanceRules(copperPour) }
+          : {}),
+        ...(props.isStatic ? { is_static: true } : {}),
         board_edge_margin: props.boardEdgeMargin ?? clearance,
-        board_edge_outline: copperPour._isImplicitCopperPour
-          ? resolvedPcbBoardOutline
-          : undefined,
+        board_edge_outline:
+          copperPour._isImplicitCopperPour || props.clearanceRules !== undefined
+            ? resolvedPcbBoardOutline
+            : undefined,
         cutout_margin: props.cutoutMargin ?? clearance,
         ...(props.useThermalReliefs
           ? {
@@ -121,6 +127,14 @@ const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
         source_net_id: sourceNetId,
         subcircuit_id: subcircuit.subcircuit_id ?? undefined,
         covered_with_solder_mask: coveredWithSolderMask,
+        ...(props.clearanceRules || props.isStatic
+          ? {
+              clearance: props.clearance,
+              clearance_rules: getCopperPourClearanceRules(copperPour),
+              board_edge_margin: props.boardEdgeMargin,
+              ...(props.isStatic ? { is_static: true } : {}),
+            }
+          : {}),
       })
 
       markTraceSegmentsInsideCopperPour({
