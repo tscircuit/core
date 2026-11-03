@@ -29,17 +29,26 @@ test("Bluetooth pedometer loses its requested trace clearance before routing", a
       element.type === "pcb_board"
         ? {
             ...element,
-            min_trace_to_pad_edge_clearance: board.min_trace_to_pad_edge_clearance,
+            min_trace_to_pad_edge_clearance:
+              board.min_trace_to_pad_edge_clearance,
             min_different_net_trace_edge_to_trace_edge_clearance:
               board.min_different_net_trace_edge_to_trace_edge_clearance,
           }
         : element,
   )
   const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({ circuitJson })
-  expect(circuitJson.filter((element) => element.type === "pcb_component")).toHaveLength(61)
-  expect(circuitJson.filter((element) => element.type === "pcb_trace")).toHaveLength(0)
-  expect(board.min_different_net_trace_edge_to_trace_edge_clearance).toBeUndefined()
-  expect(simpleRouteJson).not.toHaveProperty("minDifferentNetTraceEdgeToTraceEdgeClearance")
+  expect(
+    circuitJson.filter((element) => element.type === "pcb_component"),
+  ).toHaveLength(61)
+  expect(
+    circuitJson.filter((element) => element.type === "pcb_trace"),
+  ).toHaveLength(0)
+  expect(
+    board.min_different_net_trace_edge_to_trace_edge_clearance,
+  ).toBeUndefined()
+  expect(simpleRouteJson).not.toHaveProperty(
+    "minDifferentNetTraceEdgeToTraceEdgeClearance",
+  )
   expect(simpleRouteJson.minTraceToPadEdgeClearance).toBe(0.05)
   circuitJson.push({
     type: "pcb_note_text",
