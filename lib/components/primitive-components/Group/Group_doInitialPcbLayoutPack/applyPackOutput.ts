@@ -180,6 +180,17 @@ export const applyPackOutput = (
           return true
         }
       }
+      if ("pcb_group_id" in elm && elm.pcb_group_id) {
+        const elmPcbGroup = db.pcb_group.get(elm.pcb_group_id)
+        if (elmPcbGroup?.source_group_id) {
+          if (elmPcbGroup.source_group_id === componentId) {
+            return true
+          }
+          if (isDescendantGroup(db, elmPcbGroup.source_group_id, componentId)) {
+            return true
+          }
+        }
+      }
       if ("source_component_id" in elm && elm.source_component_id) {
         const sourceComponent = db.source_component.get(elm.source_component_id)
         if (sourceComponent?.source_group_id) {
@@ -223,6 +234,15 @@ export const applyPackOutput = (
     }
 
     transformPCBElements(relatedElements as any, transformMatrix)
+    if (Math.abs(Math.round(rotationDegrees / 90)) % 2 === 1) {
+      for (const elm of relatedElements) {
+        if (elm.type === "pcb_keepout" && elm.shape === "rect") {
+          const [width, height] = [elm.height, elm.width]
+          elm.width = width
+          elm.height = height
+        }
+      }
+    }
     db.pcb_group.update(pcbGroup.pcb_group_id, { center })
   }
 
