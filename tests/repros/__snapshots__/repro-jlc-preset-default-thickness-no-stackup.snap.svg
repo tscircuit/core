@@ -5,7 +5,7 @@
 <text x="16" y="52" font-size="13" fill="#444">layers={4} fabricatorPreset="jlcpcb_standard"</text>
 <rect x="16" y="72" width="348" height="280" fill="none" stroke="#c62828" stroke-width="2" stroke-dasharray="8 6" />
 <text x="190" y="204" font-size="18" font-weight="700" fill="#c62828" text-anchor="middle">no pcb_stackup emitted</text>
-<text x="190" y="230" font-size="13" fill="#c62828" text-anchor="middle">source_property_ignored_warning explains why</text>
+<text x="190" y="230" font-size="13" fill="#c62828" text-anchor="middle">no error or warning explains why</text>
 <text x="396" y="30" font-size="16" font-weight="700" fill="#111">thickness={1.6}</text>
 <text x="396" y="52" font-size="13" fill="#444">layers={4} fabricatorPreset="jlcpcb_standard"</text>
 <rect x="396" y="72" width="348" height="22" fill="#d98c2b" stroke="#333" stroke-width="0.5" />
