@@ -1,0 +1,24 @@
+name: Verify scoped copper rendering
+on:
+  push:
+    branches: [codex/scoped-copper-render-check]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.3
+      - run: bun install
+      - run: bun test tests/components/primitive-components/copperpour/copper-pour-scoped-clearance.test.tsx tests/repros/repro-polygon-pad-copper-pour-clearance.test.tsx
+      - name: Report synthetic visual regression
+        run: |
+          node <<'NODE'
+          const fs=require("node:fs"),z=require("node:zlib");
+          const directory="tests/components/primitive-components/copperpour/__snapshots__";
+          for(const file of fs.readdirSync(directory).filter(file=>file.startsWith("copper-pour-scoped-clearance")&&file.endsWith(".svg")))console.log("SCOPED_SYNTHETIC_SVG "+JSON.stringify({path:directory+"/"+file,gzip:z.gzipSync(fs.readFileSync(directory+"/"+file)).toString("base64")}));
+          NODE
