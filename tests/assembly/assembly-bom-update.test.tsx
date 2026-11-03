@@ -25,19 +25,18 @@ test("BOM edits retain identity, clear metadata, reparent children and remove de
     .find((entry) => entry.name === "part")!
   part.setProps({
     ...part.props,
-    bomQuantity: 5,
     displayName: "Renamed part",
     purchaseUrls: undefined,
     supplierPartNumbers: {},
   })
-  device.setProps({ ...device.props, bomQuantity: 2 })
+  device.setProps({ ...device.props, purchaseUrls: [] })
   circuit.render()
   const updated = circuit.db.cad_assembly_bom_item.get(
     before.cad_assembly_bom_item_id,
   )!
   expect(updated).toMatchObject({
     name: "Renamed part",
-    quantity: 5,
+    quantity: 1,
     supplier_part_numbers: {},
   })
   expect(updated.purchase_urls).toBeUndefined()
@@ -46,7 +45,7 @@ test("BOM edits retain identity, clear metadata, reparent children and remove de
       .list()
       .find((entry) => entry.name === "device")?.cad_assembly_bom_item_id,
   )
-  device.setProps({ ...device.props, bomQuantity: undefined })
+  device.setProps({ ...device.props, purchaseUrls: undefined })
   circuit.render()
   expect(circuit.db.cad_assembly_bom_item.list()).toHaveLength(2)
   expect(
@@ -56,9 +55,9 @@ test("BOM edits retain identity, clear metadata, reparent children and remove de
   device.remove(part)
   circuit.render()
   expect(circuit.db.cad_assembly_bom_item.list()).toHaveLength(0)
-  device.add(new AssemblyPart({ name: "replacement", bomQuantity: 2 }))
+  device.add(new AssemblyPart({ name: "replacement" }))
   circuit.render()
   expect(circuit.db.cad_assembly_bom_item.list()).toMatchObject([
-    { name: "replacement", quantity: 2 },
+    { name: "replacement", quantity: 1 },
   ])
 })

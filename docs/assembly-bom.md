@@ -13,10 +13,9 @@ circuit.add(
     <assembly.subassembly
       name="housing"
       displayName="ABS enclosure"
-      bomQuantity={2}
       purchaseUrls={["https://amazon.com/dp/example", "https://store.example/enclosure"]}
     >
-      <assembly.part name="screws" bomQuantity={4} purchaseUrls={["https://store.example/m3"]} />
+      <assembly.part name="screws" purchaseUrls={["https://store.example/m3"]} />
       <assembly.part name="module" supplierPartNumbers={{ jlcpcb: ["C123", "C456"] }} />
     </assembly.subassembly>
   </assembly.device>,
@@ -25,8 +24,8 @@ await circuit.renderUntilSettled()
 const circuitJson = circuit.getCircuitJson()
 ```
 
-The enclosure has quantity 2; screws have local quantity 4 (8 total), and the
-module has local quantity 1 (2 total). Geometry is not duplicated. Use
+Each assembly element emits a BOM quantity of one, independent of its number
+of CAD models. Use
 `convertCircuitJsonToAssemblyBom({ circuitJson })` from the converter PR to obtain
 the nested display model, or pass `circuitJson` directly to Runframe's BOM UI.
 `tests/assembly/fixtures/assembly-bom.tsx` is a complete reusable TSX fixture with
@@ -38,11 +37,11 @@ and passes its actual output to the converter.
 - Each part, bolt, printed part, motor, screen, cable and subassembly gets one
   material record. `assembly.cadassembly` follows the subassembly alias.
 - `assembly.device` stays transparent when it has neither a model nor explicit
-  BOM metadata. Supplying `bomQuantity`, `purchaseUrls` or `supplierPartNumbers`
+  BOM metadata. Supplying `purchaseUrls` or `supplierPartNumbers`
   opts the device into a BOM line. An explicitly empty array/map still opts in.
 - Parent IDs come from the nearest material ancestor in the component tree.
   Mounting selectors affect placement, not BOM ownership.
-- Local quantity defaults to 1. `displayName` is used where supported, otherwise
+- Local quantity is always 1. `displayName` is used where supported, otherwise
   `name`. The BOM identity stays stable when purchasing metadata changes.
 - Each record references its source and all CAD components owned by that source,
   excluding descendants' source records. Cables currently have a `cad_cable`

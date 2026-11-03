@@ -6,10 +6,9 @@ import { convertCircuitJsonToAssemblyBom } from "circuit-json-to-bom-csv"
 const circuit = new Circuit()
 circuit.add(
   <assembly.device>
-    <assembly.subassembly name="housing" bomQuantity={2}>
+    <assembly.subassembly name="housing">
       <assembly.part
         name="screws"
-        bomQuantity={4}
         purchaseUrls={["https://store.example/screws"]}
       />
     </assembly.subassembly>
@@ -19,8 +18,8 @@ await circuit.renderUntilSettled()
 const [housing] = await convertCircuitJsonToAssemblyBom({
   circuitJson: circuit.getCircuitJson(),
 })
-assert.equal(housing.total_quantity, 2)
-assert.equal(housing.children[0].total_quantity, 8)
+assert.equal(housing.total_quantity, 1)
+assert.equal(housing.children[0].total_quantity, 1)
 assert.deepEqual(housing.children[0].purchase_urls, [
   "https://store.example/screws",
 ])

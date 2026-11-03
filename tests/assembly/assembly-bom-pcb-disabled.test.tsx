@@ -6,7 +6,7 @@ test("all material assembly elements emit BOM records with PCB rendering disable
   const { circuit } = getTestFixture()
   circuit.pcbDisabled = true
   circuit.add(
-    <assembly.device name="device" bomQuantity={3}>
+    <assembly.device name="device" purchaseUrls={[]}>
       <assembly.cadassembly name="group">
         <assembly.part name="part" />
         <assembly.bolt name="bolt" diameter={3} length={8} />
@@ -32,7 +32,7 @@ test("all material assembly elements emit BOM records with PCB rendering disable
   expect(bom).toHaveLength(8)
   const device = bom.find((entry) => entry.name === "device")!
   const group = bom.find((entry) => entry.name === "group")!
-  expect(device.quantity).toBe(3)
+  expect(device.quantity).toBe(1)
   expect(group.parent_cad_assembly_bom_item_id).toBe(
     device.cad_assembly_bom_item_id,
   )

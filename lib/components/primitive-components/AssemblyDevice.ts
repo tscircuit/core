@@ -33,7 +33,6 @@ export class AssemblyDevice
     return (
       props.model !== undefined ||
       props.modelUrl !== undefined ||
-      props.bomQuantity !== undefined ||
       props.purchaseUrls !== undefined ||
       props.supplierPartNumbers !== undefined
     )

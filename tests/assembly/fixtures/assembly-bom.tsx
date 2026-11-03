@@ -6,7 +6,6 @@ export const AssemblyBomExample = () => (
     <assembly.subassembly
       name="housing"
       displayName="ABS enclosure"
-      bomQuantity={2}
       purchaseUrls={[
         "https://amazon.com/dp/example",
         "https://store.example/enclosure",
@@ -15,7 +14,6 @@ export const AssemblyBomExample = () => (
       <assembly.part
         name="screws"
         displayName="M3 screws"
-        bomQuantity={4}
         purchaseUrls={["https://store.example/m3"]}
       />
       <assembly.part

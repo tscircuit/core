@@ -18,7 +18,6 @@ test("BOM geometry references wait for async CAD generation", async () => {
   device.add(
     new DelayedAssemblyPart({
       name: "delayed",
-      bomQuantity: 3,
       modelUrl: "https://models.example/part.glb",
     }),
   )
@@ -27,7 +26,7 @@ test("BOM geometry references wait for async CAD generation", async () => {
   const [bom] = circuit.db.cad_assembly_bom_item.list()
   expect(bom).toMatchObject({
     name: "delayed",
-    quantity: 3,
+    quantity: 1,
     cad_component_ids: [circuit.db.cad_component.list()[0].cad_component_id],
   })
   expect(circuit.db.cad_component.list()).toHaveLength(1)

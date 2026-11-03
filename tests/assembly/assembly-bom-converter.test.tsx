@@ -13,13 +13,13 @@ test("real TSX renders through the assembly BOM converter without CAD-count dupl
   const circuitJson = circuit.getCircuitJson()
   const [housing] = await convertCircuitJsonToAssemblyBom({ circuitJson })
   expect(housing.name).toBe("ABS enclosure")
-  expect(housing.total_quantity).toBe(2)
+  expect(housing.total_quantity).toBe(1)
   expect(housing.purchase_urls).toHaveLength(2)
   expect(
     housing.children.map((child) => [child.name, child.total_quantity]),
   ).toEqual([
-    ["M3 screws", 8],
-    ["module", 2],
+    ["M3 screws", 1],
+    ["module", 1],
   ])
   expect(housing.children[1].cad_component_ids).toHaveLength(2)
   expect(housing.children[1].supplier_part_numbers).toEqual({

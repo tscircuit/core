@@ -37,7 +37,7 @@ export abstract class AssemblyComponent<
     if (!this.cadAssemblyBomItemId) {
       this.cadAssemblyBomItemId = this.root.db.cad_assembly_bom_item.insert({
         name: this._parsedProps.displayName || this.name || "Unnamed assembly",
-        quantity: this._parsedProps.bomQuantity ?? 1,
+        quantity: 1,
         parent_cad_assembly_bom_item_id: this.getParentAssemblyBomId(),
       }).cad_assembly_bom_item_id
     }
@@ -61,7 +61,7 @@ export abstract class AssemblyComponent<
       : []
     this.root.db.cad_assembly_bom_item.update(cadAssemblyBomItemId, {
       name: this._parsedProps.displayName || this.name || "Unnamed assembly",
-      quantity: this._parsedProps.bomQuantity ?? 1,
+      quantity: 1,
       parent_cad_assembly_bom_item_id: this.getParentAssemblyBomId(),
       source_component_id: this.source_component_id ?? undefined,
       cad_component_ids: cadComponentIds.length ? cadComponentIds : undefined,

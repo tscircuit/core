@@ -13,7 +13,7 @@ test("TSX assembly materials emit nested BOM entries with owned CAD references",
   const screws = bom.find((entry) => entry.name === "M3 screws")!
   const module = bom.find((entry) => entry.name === "module")!
   expect(housing).toMatchObject({
-    quantity: 2,
+    quantity: 1,
     purchase_urls: [
       "https://amazon.com/dp/example",
       "https://store.example/enclosure",
@@ -21,7 +21,7 @@ test("TSX assembly materials emit nested BOM entries with owned CAD references",
   })
   expect(housing.parent_cad_assembly_bom_item_id).toBeUndefined()
   expect(screws).toMatchObject({
-    quantity: 4,
+    quantity: 1,
     parent_cad_assembly_bom_item_id: housing.cad_assembly_bom_item_id,
   })
   expect(screws.cad_component_ids).toBeUndefined()
