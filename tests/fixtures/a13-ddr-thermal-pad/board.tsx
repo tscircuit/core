@@ -2,22 +2,24 @@ import type { ReactElement } from "react"
 import { NativeA13Part } from "./native-a13-part"
 import source from "./source-data.json"
 
-const selectedDataNets = new Map([
-  ["/DDR3 Memory/d00", "CPU_D0"],
-  ["/DDR3 Memory/ddr-d0", "DRAM_D0"],
-  ["/DDR3 Memory/d01", "CPU_D1"],
-  ["/DDR3 Memory/ddr-d1", "DRAM_D1"],
-  ["/DDR3 Memory/d02", "CPU_D2"],
-  ["/DDR3 Memory/ddr-d2", "DRAM_D2"],
-  ["/DDR3 Memory/d03", "CPU_D3"],
-  ["/DDR3 Memory/ddr-d3", "DRAM_D3"],
-])
-
 /** Native A13 DDR subsystem in board-world mm: +X right, +Y top, +Z above.
  * All parts retain their pinned native placement in this right-handed frame.
- * D0-D3's eight paths through RN4/RN1 are requested; other DDR nets remain.
+ * Selected data paths use the native resistor arrays; other DDR paths remain.
  */
-export function NativeA13DdrThermalPadBoard(): ReactElement {
+export function NativeA13DdrThermalPadBoard({
+  dataBits = [0, 1, 2, 3],
+  routingNote,
+}: {
+  dataBits?: number[]
+  routingNote?: string
+} = {}): ReactElement {
+  const selectedDataNets = dataBits.flatMap((bit) => [
+    {
+      nativeNet: `/DDR3 Memory/d${String(bit).padStart(2, "0")}`,
+      name: `CPU_D${bit}`,
+    },
+    { nativeNet: `/DDR3 Memory/ddr-d${bit}`, name: `DRAM_D${bit}` },
+  ])
   return (
     <board
       title="Native A13 DDR: exposed pad and thermal vias"
@@ -29,6 +31,7 @@ export function NativeA13DdrThermalPadBoard(): ReactElement {
       minViaEdgeToPadEdgeClearance={source.rules.appliedGlobalClearance}
       minViaPadDiameter={source.rules.viaPad}
       minViaHoleDiameter={source.rules.viaDrill}
+      isViaInPadAllowed={false}
       routeRemaining={false}
       schematicDisabled
     >
@@ -39,10 +42,12 @@ export function NativeA13DdrThermalPadBoard(): ReactElement {
         name="DDR_DATA"
         phaseIndex={0}
         autorouter="auto"
-        connections={[...selectedDataNets.values()]}
+        connections={selectedDataNets.map((net) => net.name)}
       />
       {source.traces.map((trace) => {
-        const selectedName = selectedDataNets.get(trace.nativeNet)
+        const selectedName = selectedDataNets.find(
+          (net) => net.nativeNet === trace.nativeNet,
+        )?.name
         const name = selectedName ?? trace.name
         const routingPhaseIndex = selectedName ? 0 : undefined
         return (
@@ -60,7 +65,7 @@ export function NativeA13DdrThermalPadBoard(): ReactElement {
         pcbX={10}
         pcbY={19}
         fontSize={0.8}
-        text="A13 DDR D0-D3: CPU through RN4/RN1 to RAM"
+        text={`A13 DDR: ${dataBits.length * 2} requested paths through series resistors`}
       />
       <pcbnotetext
         pcbX={10}
@@ -75,8 +80,11 @@ export function NativeA13DdrThermalPadBoard(): ReactElement {
         pcbX={10}
         pcbY={-19}
         fontSize={0.65}
-        text="Native placements; 96 DDR nets retained; D0-D3 routing only"
+        text={`Selected data: D${dataBits.join(", D")}; 96 source paths retained`}
       />
+      {routingNote && (
+        <pcbnotetext pcbX={10} pcbY={-20.2} fontSize={0.6} text={routingNote} />
+      )}
     </board>
   )
 }
