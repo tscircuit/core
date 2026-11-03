@@ -22,6 +22,7 @@ import { getObstaclesFromCircuitJson } from "../obstacles/getObstaclesFromCircui
 import type {
   PcbGroupId,
   SimpleRouteConnection,
+  SimpleRouteConstraint,
   SimpleRouteDifferentialPair,
   SimpleRouteJson,
   SingleLayerConnectionPoint,
@@ -894,6 +895,34 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     conn.width ??= nominalTraceWidth ?? defaultTraceWidth
   }
 
+  // Preserve source-trace scope: a capacitor's terminal-to-net length limit
+  // must not become a total-length limit on the entire supply or ground net.
+  const srjRouteConstraints: SimpleRouteConstraint[] = []
+  for (const srjConnection of allConns) {
+    const connectionNetKey = getSourceConnectivityKey(srjConnection.name)
+    for (const sourceTrace of sourceTraces) {
+      if (sourceTrace.max_length == null && sourceTrace.max_via_count == null) continue
+      if (subcircuit_id && sourceTrace.subcircuit_id !== subcircuit_id) continue
+      if (getSourceConnectivityKey(sourceTrace.source_trace_id) !== connectionNetKey) continue
+      const pointIds = sourceTrace.connected_source_port_ids.flatMap((sourcePortId) => {
+        const pcbPort = db.pcb_port.getWhere({ source_port_id: sourcePortId })
+        if (!pcbPort) return []
+        const routePoint = getPcbPortRoutePoint(pcbPort)
+        return srjConnection.pointsToConnect.some((point) => point.pointId === routePoint.pointId)
+          ? [routePoint.pointId] : []
+      })
+      if (pointIds.length === 0) continue
+      srjRouteConstraints.push({
+        connectionName: srjConnection.name,
+        sourceTraceId: sourceTrace.source_trace_id,
+        name: sourceTrace.display_name ?? sourceTrace.name,
+        pointIds,
+        ...(sourceTrace.max_length != null ? { maxLength: sourceTrace.max_length } : {}),
+        ...(sourceTrace.max_via_count != null ? { maxViaCount: sourceTrace.max_via_count } : {}),
+      })
+    }
+  }
+
   bounds = expandSrjBoundsToIncludeConnectionPoints({
     bounds,
     connections: allConns,
@@ -980,6 +1009,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       bounds,
       obstacles,
       connections: allConns,
+      ...(srjRouteConstraints.length > 0 ? { routeConstraints: srjRouteConstraints } : {}),
       differentialPairs: srjDifferentialPairs,
       ...(srjBuses ? { buses: srjBuses } : {}),
       traces:
@@ -987,6 +1017,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
           ? preservedRoutedSubcircuitTraces
           : undefined,
       layerCount: board?.num_layers ?? 2,
+      ...(srjRouteConstraints.length > 0 ? { boardThickness: board?.thickness ?? 1.6 } : {}),
       allowBlindAndBuriedVias: board?.allow_blind_and_buried_vias ?? false,
       allowViaInPad: board?.is_via_in_pad_allowed ?? false,
       minTraceWidth: Math.min(

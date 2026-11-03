@@ -4,7 +4,7 @@ import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimp
 import "tests/fixtures/get-test-fixture"
 import fixture from "../assets/bluetooth-pedometer-clock.circuit.json"
 
-test("Bluetooth pedometer loses its X48_N clock constraints at SRJ export", () => {
+test("Bluetooth pedometer preserves its X48_N clock constraints at SRJ export", () => {
   // Real board: https://tscircuit.com/techmannih/Bluetooth-pedometer
   // ebe6cfad63786434183a4ec6709409ade261dfff, manual copper removed.
   // Frozen source/PCB export avoids the unrelated GND preflight and crystal inflator.
@@ -18,7 +18,9 @@ test("Bluetooth pedometer loses its X48_N clock constraints at SRJ export", () =
     routeConstraints?: Array<{ sourceTraceId?: string; maxViaCount?: number; maxLength?: number; pointIds: string[] }>
   }).routeConstraints
   const clockRule = constraints?.find((rule) => rule.sourceTraceId === "source_trace_217")
-  expect(clockRule).toBeUndefined()
+  expect(clockRule).toMatchObject({ maxViaCount: 0, maxLength: 6, pointIds: ["pcb_port_137"] })
+  const groundRule = constraints?.find((rule) => rule.sourceTraceId === "source_trace_135")
+  expect(groundRule?.pointIds).toEqual(["pcb_port_148"])
   expect(simpleRouteJson.connections.find((connection) => connection.name === "source_net_29")?.pointsToConnect).toHaveLength(2)
   circuitJson.push({
     type: "pcb_note_text", pcb_note_text_id: "clock_rule_caption",

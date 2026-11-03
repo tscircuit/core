@@ -84,6 +84,17 @@ export type SingleLayerConnectionPoint = {
 /** Backward-compatible name for core's single-layer routing terminals. */
 export type SimpleRoutePoint = SingleLayerConnectionPoint
 
+/** Limits on a source trace's terminal-to-terminal or terminal-to-net path. */
+export type SimpleRouteConstraint = {
+  connectionName: SrjConnectionName
+  sourceTraceId: string
+  name?: string
+  /** Original routing point IDs; one point means its attachment to the net. */
+  pointIds: string[]
+  maxLength?: number
+  maxViaCount?: number
+}
+
 export type SimpleRouteConnection = {
   name: SrjConnectionName
   routingPcbGroupId?: PcbGroupId
@@ -155,6 +166,8 @@ export type SimpleRouteJson = Omit<
   | "differentialPairs"
   | "buses"
 > & {
+  routeConstraints?: SimpleRouteConstraint[]
+  boardThickness?: number
   layerCount: number
   /** Whether autorouters may use vias that do not span the full board stack. */
   allowBlindAndBuriedVias?: boolean
