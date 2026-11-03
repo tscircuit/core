@@ -56,7 +56,10 @@ test("keepout inside a packed group moves with the group (#6066)", async () => {
       (c) => c.pcb_group_id === keepout.pcb_group_id,
     )
     expect(groupComp).toBeDefined()
-    expect(keepout.center.x).toBeCloseTo(groupComp!.center.x, 3)
-    expect(keepout.center.y).toBeCloseTo(groupComp!.center.y, 3)
+    expect(keepout.shape).toBe("rect")
+    if (keepout.shape !== "outline") {
+      expect(keepout.center.x).toBeCloseTo(groupComp!.center.x, 3)
+      expect(keepout.center.y).toBeCloseTo(groupComp!.center.y, 3)
+    }
   }
 })
