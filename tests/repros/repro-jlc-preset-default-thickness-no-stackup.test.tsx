@@ -10,8 +10,8 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 //
 // Cause: the default board thickness is 1.4mm and the JLC stackup templates
 // have no 1.4mm entry, so Board_doInitialPcbStackupRender inserts nothing.
-// board-stackup-unsupported3 covers this as intended; this repro shows what a
-// user sees: nothing explains why the preset produced no stackup.
+// board-stackup-unsupported3 covers this as intended; a
+// source_property_ignored_warning now explains why no stackup was emitted.
 const renderBoard = async (thickness?: number) => {
   const { circuit } = getTestFixture()
   circuit.add(
@@ -59,7 +59,7 @@ const createStackupPanelSvg = ({
     rows.push(
       `<rect x="${x + 16}" y="72" width="${PANEL_WIDTH - 32}" height="280" fill="none" stroke="#c62828" stroke-width="2" stroke-dasharray="8 6" />`,
       `<text x="${x + PANEL_WIDTH / 2}" y="204" font-size="18" font-weight="700" fill="#c62828" text-anchor="middle">no pcb_stackup emitted</text>`,
-      `<text x="${x + PANEL_WIDTH / 2}" y="230" font-size="13" fill="#c62828" text-anchor="middle">no error or warning explains why</text>`,
+      `<text x="${x + PANEL_WIDTH / 2}" y="230" font-size="13" fill="#c62828" text-anchor="middle">source_property_ignored_warning explains why</text>`,
     )
     return rows.join("\n")
   }
@@ -89,30 +89,27 @@ const createStackupPanelSvg = ({
   return rows.join("\n")
 }
 
-test("repro: jlcpcb_standard preset with the default board thickness emits no pcb_stackup", async () => {
+test("repro: jlcpcb_standard preset with the default board thickness warns that no pcb_stackup was emitted", async () => {
   expect(
     getJlcStackup({ num_layers: 4, thickness: 1.4, material: "fr4" }),
   ).toBeUndefined()
 
   const defaultThickness = await renderBoard()
   expect(defaultThickness.db.pcb_board.list()[0].thickness).toBe(1.4)
-  // Expected: a pcb_stackup, or an error/warning explaining that 1.4mm has
-  // no JLC template. Actual: nothing at all.
   expect(defaultThickness.db.pcb_stackup.list()).toHaveLength(0)
-  expect(
-    defaultThickness
-      .getCircuitJson()
-      .filter(
-        (element) =>
-          (element.type.includes("error") ||
-            element.type.includes("warning")) &&
-          JSON.stringify(element).toLowerCase().includes("stackup"),
-      ),
-  ).toHaveLength(0)
+  const warnings = defaultThickness.db.source_property_ignored_warning.list()
+  expect(warnings).toHaveLength(1)
+  expect(warnings[0].property_name).toBe("fabricatorPreset")
+  expect(warnings[0].message).toMatchInlineSnapshot(
+    `"fabricatorPreset "jlcpcb_standard" has no stackup template for a 4-layer 1.4mm fr4 board, so no pcb_stackup was emitted. Supported thicknesses for 4-layer fr4: 0.4mm, 0.6mm, 0.8mm, 1mm, 1.2mm, 1.6mm, 1.8mm, 2mm, 2.5mm, 3mm. Set thickness on <board> to one of these."`,
+  )
 
   // An explicit thickness that has a JLC template works.
   const explicitThickness = await renderBoard(1.6)
   expect(explicitThickness.db.pcb_stackup.list()).toHaveLength(1)
+  expect(
+    explicitThickness.db.source_property_ignored_warning.list(),
+  ).toHaveLength(0)
 
   const comparisonSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${PANEL_WIDTH * 2}" height="${PANEL_HEIGHT}" viewBox="0 0 ${PANEL_WIDTH * 2} ${PANEL_HEIGHT}" font-family="Arial, sans-serif">
 <rect x="0" y="0" width="${PANEL_WIDTH * 2}" height="${PANEL_HEIGHT}" fill="#fafafa" />
