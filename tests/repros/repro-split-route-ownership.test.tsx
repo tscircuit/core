@@ -5,39 +5,16 @@ import {
   checkTracesAreContiguous,
 } from "@tscircuit/checks"
 import { cju } from "@tscircuit/circuit-json-util"
-import type {
-  CircuitJson,
-  LayerRef,
-  PcbPort,
-  PcbTrace,
-  SourceNet,
-} from "circuit-json"
 import { Board } from "lib/components/normal-components/Board/Board"
+import { sourceCircuit } from "tests/fixtures/pocket-audio-player/source-circuit"
+import { pcbCircuit } from "tests/fixtures/pocket-audio-player/pcb-circuit"
+import { savedRouting } from "tests/fixtures/pocket-audio-player/btn-play-routes"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("saved audio-board BTN_PLAY pieces lose ownership during route import", async () => {
   // Saved BTN_PLAY response and placement from the earlier six-layer audio board.
   // Coordinates are board-world points in mm, +X right, +Y up, right-handed.
-  const fixtureDirectory = new URL(
-    "../fixtures/pocket-audio-player/",
-    import.meta.url,
-  )
-  const [sourceCircuit, pcbCircuit]: [CircuitJson, CircuitJson] =
-    await Promise.all([
-      Bun.file(new URL("source.circuit.json", fixtureDirectory)).json(),
-      Bun.file(new URL("pcb.circuit.json", fixtureDirectory)).json(),
-    ])
   const savedBoard = [...sourceCircuit, ...pcbCircuit]
-  const savedRouting: {
-    connectionName: SourceNet["source_net_id"]
-    anchors: {
-      x: number
-      y: number
-      layer: LayerRef
-      portId: PcbPort["pcb_port_id"]
-    }[]
-    traces: (PcbTrace & { connection_name: SourceNet["source_net_id"] })[]
-  } = await Bun.file(new URL("btn-play-routes.json", fixtureDirectory)).json()
   const savedDb = cju(savedBoard)
   const pcbBoard = savedDb.pcb_board.list()[0]
   const playNet = savedDb.source_net
