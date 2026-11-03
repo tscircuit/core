@@ -42,7 +42,7 @@ test("waypoint curves preserve short spans between unequal-length segments", asy
   const cable = circuit.db.cad_cable.list()[0]!
   expect(cad_cable.parse(cable).path).toEqual(cable.path)
   const knot = cable.path.findIndex(
-    (point) => point.x === -60 && point.y === 20.00001 && point.z === 36.8,
+    (point) => point.x === -60 && point.y === 20.00001 && point.z === 33.4,
   )
   expect(knot).toBeGreaterThan(1)
   const previous = cable.path[knot - 1]!

@@ -43,9 +43,9 @@ test("editing waypoints, anchor and axes updates the cable without detaching its
   const harness = circuit.selectOne(".HARNESS")
   if (!(harness instanceof AssemblyCable)) throw new Error("Missing cable")
   const waypoints = [
-    { x: 44, y: 70, z: -3.5 },
-    { x: 47, y: 70, z: -3.5 },
-    { x: 52, y: 62, z: -0.5 },
+    { x: 44, y: 70, z: -0.1 },
+    { x: 47, y: 70, z: -0.1 },
+    { x: 52, y: 62, z: 2.9 },
     { x: 52, y: 30, z: 10 },
     { x: 36, y: 8, z: 16 },
     { x: 14, y: 0, z: 16 },
@@ -68,7 +68,7 @@ test("editing waypoints, anchor and axes updates the cable without detaching its
   expect(path).toContainEqual({
     x: expect.closeTo(40),
     y: expect.closeTo(52),
-    z: expect.closeTo(16.8),
+    z: expect.closeTo(13.4),
   })
   expect(path[0]).toEqual(before.path[0])
   expect(path.at(-1)).toEqual(before.path.at(-1))
@@ -79,7 +79,7 @@ test("editing waypoints, anchor and axes updates the cable without detaching its
     expect(point.z).toBeCloseTo(path[0]!.z)
   }
   const receiverLeadStart = path.findLastIndex(
-    (point) => Math.abs(point.z - 16.8) < 1e-6,
+    (point) => Math.abs(point.z - 13.4) < 1e-6,
   )
   expect(receiverLeadStart).toBeGreaterThan(motorLeadEnd)
   for (const point of path.slice(receiverLeadStart)) {
@@ -138,9 +138,9 @@ test("editing waypoints, anchor and axes updates the cable without detaching its
   waypointAnchor="end"
   waypointAxisOrientation="board_at_start"
   waypoints={[
-    { x: 44, y: 70, z: -3.5 },
-    { x: 47, y: 70, z: -3.5 },
-    { x: 52, y: 62, z: -0.5 },
+    { x: 44, y: 70, z: -0.1 },
+    { x: 47, y: 70, z: -0.1 },
+    { x: 52, y: 62, z: 2.9 },
     { x: 52, y: 30, z: 10 },
     { x: 36, y: 8, z: 16 },
     { x: 14, y: 0, z: 16 },
