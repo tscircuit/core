@@ -79,6 +79,7 @@ export const orderedRenderPhases = [
   "CadModelRender",
   "CadExplosionStageRender",
   "CadExplosionRender",
+  "CadExplosionCollisionCheck",
   "DrawingRender",
   "PartsEngineRender",
   "MissingManufacturerPartNumberWarning",
@@ -207,6 +208,13 @@ const asyncPhaseDependencies: Partial<Record<RenderPhase, RenderPhase[]>> = {
     "FetchPartFootprint",
     "CadModelRender",
     "CadExplosionStageRender",
+  ],
+  CadExplosionCollisionCheck: [
+    "PcbFootprintStringRender",
+    "FetchPartFootprint",
+    "CadModelRender",
+    "CadExplosionStageRender",
+    "CadExplosionRender",
   ],
   DrawingRender: [
     "PcbFootprintStringRender",
