@@ -154,8 +154,8 @@
   },
   "overrides": {
     "@tscircuit/graphics-debug-3d": "https://jscdn.tscircuit.com/@tscircuit/graphics-debug-3d/0.0.1.tgz",
-    "@tscircuit/props": "^0.0.716",
-    "circuit-json": "^0.0.541",
+    "@tscircuit/props": "https://pkg.pr.new/@tscircuit/props@ffc8e20",
+    "circuit-json": "https://pkg.pr.new/circuit-json@4729012",
     "@tscircuit/cableprinter": "^0.0.6"
   },
   "browser": {
