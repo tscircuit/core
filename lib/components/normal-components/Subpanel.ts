@@ -1,14 +1,9 @@
-import { getOwningPanel } from "lib/utils/panels/get-owning-panel"
+import { Subpanel_generatePanelizationFeatures } from "./Subpanel_generatePanelizationFeatures"
 import { subpanelProps } from "@tscircuit/props"
 import { distance } from "circuit-json"
 import type { Matrix } from "transformation-matrix"
 import { compose, identity, translate } from "transformation-matrix"
-import {
-  DEFAULT_TAB_LENGTH,
-  DEFAULT_TAB_WIDTH,
-  generatePanelOutlineRoutingCutouts,
-  generatePanelTabsAndMouseBites,
-} from "../../utils/panels/generate-panel-tabs-and-mouse-bites"
+import { DEFAULT_TAB_WIDTH } from "../../utils/panels/generate-panel-tabs-and-mouse-bites"
 import { packIntoGrid } from "../../utils/panels/pack-into-grid"
 import type { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { Group } from "../primitive-components/Group/Group"
@@ -66,10 +61,20 @@ export class Subpanel extends Group<typeof subpanelProps> {
     if (
       component.lowercaseComponentName !== "board" &&
       component.lowercaseComponentName !== "subpanel" &&
-      component.lowercaseComponentName !== "trace"
+      component.lowercaseComponentName !== "trace" &&
+      ![
+        "toolingrail",
+        "hole",
+        "fiducial",
+        "silkscreentext",
+        "silkscreenpath",
+        "silkscreenline",
+        "silkscreenrect",
+        "silkscreencircle",
+      ].includes(component.lowercaseComponentName)
     ) {
       throw new Error(
-        `<${this._errorComponentName}> can only contain <board>, <subpanel>, or <trace> elements`,
+        `<${this._errorComponentName}> can contain boards, subpanels, traces, tooling rails, holes, fiducials, or silkscreen elements`,
       )
     }
     super.add(component)
@@ -175,7 +180,12 @@ export class Subpanel extends Group<typeof subpanelProps> {
     if (layoutMode !== "grid") return
 
     const tabWidth = this._parsedProps.tabWidth ?? DEFAULT_TAB_WIDTH
-    const boardGap = this._parsedProps.boardGap ?? tabWidth
+    const isVScore = this._parsedProps.panelizationMethod === "v_score"
+    const boardGap = this._parsedProps.boardGap ?? (isVScore ? 0 : tabWidth)
+    if (isVScore && boardGap !== 0)
+      throw new Error(
+        "V-scoring requires boardGap={0}; routed gaps cannot be V-scored",
+      )
 
     // Calculate available space for the grid if panel dimensions are specified
     // but rows/cols are not (auto-calculate optimal grid)
@@ -335,72 +345,7 @@ export class Subpanel extends Group<typeof subpanelProps> {
    * Generate routed cutouts and optional mouse bites for panelization.
    */
   protected _generatePanelizationFeatures() {
-    if (this._panelizationFeaturesGenerated) return
-
-    const { db } = this.root!
-    const props = this._parsedProps
-    const panelizationMethod = props.panelizationMethod ?? "none"
-    // Use _getAllBoardInstances to include boards inside nested subpanels
-    const childBoardInstances = this._getAllBoardInstances()
-
-    if (panelizationMethod !== "none") {
-      // Get all boards that are children of this panel/subpanel (including nested)
-      const childBoardIds = childBoardInstances
-        .map((c) => c.pcb_board_id)
-        .filter((id): id is string => !!id)
-
-      const boardsInPanel = db.pcb_board
-        .list()
-        .filter((b) => childBoardIds.includes(b.pcb_board_id!))
-
-      if (boardsInPanel.length === 0) return
-
-      const tabWidth = props.tabWidth ?? DEFAULT_TAB_WIDTH
-
-      if (panelizationMethod === "outline_routing") {
-        const outlineRoutingCutouts = generatePanelOutlineRoutingCutouts(
-          boardsInPanel,
-          { cutoutWidth: tabWidth },
-        )
-
-        for (const outlineRoutingCutout of outlineRoutingCutouts) {
-          db.pcb_cutout.insert({
-            ...outlineRoutingCutout,
-            pcb_group_id: this.pcb_group_id ?? undefined,
-            pcb_panel_id: getOwningPanel(this)?.pcb_panel_id ?? undefined,
-            subcircuit_id: this.subcircuit_id ?? undefined,
-          })
-        }
-      } else {
-        const boardGap = props.boardGap ?? tabWidth
-        const { tabCutouts, mouseBiteHoles } = generatePanelTabsAndMouseBites(
-          boardsInPanel,
-          {
-            boardGap,
-            tabWidth,
-            tabLength: props.tabLength ?? DEFAULT_TAB_LENGTH,
-            mouseBites: props.mouseBites ?? true,
-          },
-        )
-
-        for (const tabCutout of tabCutouts) {
-          db.pcb_cutout.insert({
-            ...tabCutout,
-            subcircuit_id: this.subcircuit_id ?? undefined,
-            pcb_panel_id: getOwningPanel(this)?.pcb_panel_id ?? undefined,
-          })
-        }
-
-        for (const mouseBiteHole of mouseBiteHoles) {
-          db.pcb_hole.insert({
-            ...mouseBiteHole,
-            subcircuit_id: this.subcircuit_id ?? undefined,
-          })
-        }
-      }
-    }
-
-    this._panelizationFeaturesGenerated = true
+    Subpanel_generatePanelizationFeatures(this)
   }
 
   /**

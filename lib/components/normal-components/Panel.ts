@@ -50,6 +50,37 @@ export class Panel extends Subpanel {
     this.pcb_panel_id = inserted.pcb_panel_id
   }
 
+  override doInitialPanelLayout() {
+    super.doInitialPanelLayout()
+    if (this.root?.pcbDisabled || !this.pcb_panel_id) return
+    const panel = this.root!.db.pcb_panel.get(this.pcb_panel_id)!
+    const constraints = this._parsedProps.sizeConstraints
+    if (!constraints) return
+    const violations = [
+      constraints.minWidth !== undefined && panel.width < constraints.minWidth
+        ? `Panel width ${panel.width} mm is below the minimum width ${constraints.minWidth} mm`
+        : undefined,
+      constraints.maxWidth !== undefined && panel.width > constraints.maxWidth
+        ? `Panel width ${panel.width} mm exceeds the maximum width ${constraints.maxWidth} mm`
+        : undefined,
+      constraints.minHeight !== undefined &&
+      panel.height < constraints.minHeight
+        ? `Panel height ${panel.height} mm is below the minimum height ${constraints.minHeight} mm`
+        : undefined,
+      constraints.maxHeight !== undefined &&
+      panel.height > constraints.maxHeight
+        ? `Panel height ${panel.height} mm exceeds the maximum height ${constraints.maxHeight} mm`
+        : undefined,
+    ]
+    for (const message of violations)
+      if (message)
+        this.root!.db.pcb_panelization_placement_error.insert({
+          message,
+          pcb_panel_id: this.pcb_panel_id,
+          error_type: "pcb_panelization_placement_error",
+        })
+  }
+
   /**
    * Panel updates pcb_panel dimensions instead of pcb_group
    */

@@ -15,6 +15,7 @@ export interface TscircuitElements {
   mountedboard: Props.MountedBoardProps
   panel: Props.PanelProps
   subpanel: Props.SubpanelProps
+  toolingrail: Props.ToolingrailProps
   jumper: Props.JumperProps
   interconnect: Props.InterconnectProps
   solderjumper: Props.SolderJumperProps
