@@ -18,6 +18,41 @@ test("repro: a trace to a voltagesource aborts autorouting for every trace", asy
       <resistor name="R2" resistance="1k" footprint="0402" pcbX={5} />
       <trace from=".V1 > .pin1" to=".R1 > .pin1" />
       <trace from=".R1 > .pin2" to=".R2 > .pin1" />
+      {/* Where V1's 0402 footprint should be: it renders no pads. */}
+      <pcbnoterect
+        pcbX={-5}
+        pcbY={0}
+        width={1.6}
+        height={0.8}
+        isStrokeDashed
+        color="#ff5252"
+      />
+      {/* The R1.pin2 -> R2.pin1 route that should exist. */}
+      <pcbnoteline x1={0.5} y1={0} x2={4.5} y2={0} isDashed color="#ffb300" />
+      <pcbnotetext
+        pcbX={-5}
+        pcbY={-2}
+        fontSize={0.5}
+        text="V1: pcb_component, no pads"
+      />
+      <pcbnotetext
+        pcbX={2.5}
+        pcbY={2}
+        fontSize={0.5}
+        text="R1-R2 has pads, still unrouted"
+      />
+      <pcbnotetext
+        pcbX={0}
+        pcbY={6}
+        fontSize={0.5}
+        text="Expected: R1-R2 routed, only V1 trace errors"
+      />
+      <pcbnotetext
+        pcbX={0}
+        pcbY={5}
+        fontSize={0.5}
+        text="Actual: router throws connectedPort.x, 0 traces"
+      />
     </board>,
   )
   await circuit.renderUntilSettled()
@@ -53,4 +88,8 @@ test("repro: a trace to a voltagesource aborts autorouting for every trace", asy
       .map((e) => e.message)
       .some((m) => m.includes(".R1 > .pin2 to .R2 > .pin1")),
   ).toBe(true)
+
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
+    shouldDrawErrors: true,
+  })
 })
