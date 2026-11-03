@@ -12,6 +12,8 @@ test("unbroken copper smaller than a scanline retains its own routing bounds", (
       width: 10,
       height: 8,
       num_layers: 2,
+      thickness: 1.6,
+      material: "fr4",
     },
     subcircuitComponent: {
       selectAll: () => [{
