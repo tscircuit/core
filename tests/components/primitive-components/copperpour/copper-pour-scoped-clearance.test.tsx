@@ -63,6 +63,7 @@ test("per-net copper gaps and authored fixed copper survive core rendering", asy
   )
   await circuit.renderUntilSettled()
   const pours = circuit.db.pcb_copper_pour.list()
+  console.log("SCOPED_CORE_DIAG " + JSON.stringify({pours, errors:circuit.getCircuitJson().filter(element=>element.type.endsWith("_error")), props:circuit.selectAll("copperpour").map(pour=>pour._parsedProps)}))
   const fixed = pours.find((pour) => pour.is_static)
   const generated = pours.find((pour) => !pour.is_static)
   if (fixed?.shape !== "brep" || generated?.shape !== "brep")
