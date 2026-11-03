@@ -48,7 +48,7 @@ test("motor cable inference follows JST family and selected pin count", async ()
       const pin1 = cable.from_connector_pin1_position!
       expect(pin1).toBeDefined()
       const halfSpan = ((pinCount - 1) * (family === "ph" ? 2 : 1)) / 2
-      const matingX = family === "ph" ? 27.15 : 25.4
+      const matingX = family === "ph" ? 23.75 : 22.5
       // Renderer-local pin 1 is at (matingX, -halfSpan, -35.5) mm.
       // Cardinal cases pin the emitted world's rotation of that physical contact.
       const [x, y] =
@@ -61,7 +61,10 @@ test("motor cable inference follows JST family and selected pin count", async ()
               : [-halfSpan, -matingX]
       expect(pin1.x - motor.position.x).toBeCloseTo(x, 4)
       expect(pin1.y - motor.position.y).toBeCloseTo(y, 4)
-      expect(pin1.z - motor.position.z).toBeCloseTo(-35.5, 4)
+      expect(pin1.z - motor.position.z).toBeCloseTo(
+        family === "ph" ? -35.5 : -35.75,
+        4,
+      )
     }
   }
 })
