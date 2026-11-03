@@ -1,239 +1,163 @@
 import { expect, test } from "bun:test"
-import type { PcbTrace } from "circuit-json"
-import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
-import { createBasicAutorouter } from "tests/fixtures/createBasicAutorouter"
+import {
+  checkDanglingTraces,
+  checkEachPcbTraceNonOverlapping,
+  checkTracesAreContiguous,
+} from "@tscircuit/checks"
+import { cju } from "@tscircuit/circuit-json-util"
+import type {
+  CircuitJson,
+  LayerRef,
+  PcbPort,
+  PcbTrace,
+  SourceNet,
+} from "circuit-json"
+import { Board } from "lib/components/normal-components/Board/Board"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-/** Compare physical segments in board-world mm (+X right, +Y up),
- * independent of trace direction and endpoint metadata. */
-function getWireSegments(traces: PcbTrace[]) {
-  return traces
-    .flatMap((trace) =>
-      trace.route.flatMap((start, pointIndex) => {
-        const end = trace.route[pointIndex + 1]
-        if (
-          start.route_type !== "wire" ||
-          end?.route_type !== "wire" ||
-          start.layer !== end.layer ||
-          (start.x === end.x && start.y === end.y)
-        )
-          return []
-        return [
-          {
-            endpoints: [
-              [start.x, start.y],
-              [end.x, end.y],
-            ].sort(),
-            layer: start.layer,
-            width: start.width,
-          },
-        ]
-      }),
-    )
-    .sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)))
-}
+test("saved audio-board BTN_PLAY pieces lose ownership during route import", async () => {
+  // Actual historical board and router response; see fixture README for scope.
+  // Coordinates are board-world points in mm, +X right, +Y up, right-handed.
+  const fixtureDirectory = new URL(
+    "../fixtures/pocket-audio-player/",
+    import.meta.url,
+  )
+  const [sourceCircuit, pcbCircuit]: [CircuitJson, CircuitJson] =
+    await Promise.all([
+      Bun.file(new URL("source.circuit.json", fixtureDirectory)).json(),
+      Bun.file(new URL("pcb.circuit.json", fixtureDirectory)).json(),
+    ])
+  const savedBoard = [...sourceCircuit, ...pcbCircuit]
+  const savedRouting: {
+    connectionName: SourceNet["source_net_id"]
+    anchors: {
+      x: number
+      y: number
+      layer: LayerRef
+      portId: PcbPort["pcb_port_id"]
+    }[]
+    traces: (PcbTrace & { connection_name: SourceNet["source_net_id"] })[]
+  } = await Bun.file(new URL("btn-play-routes.json", fixtureDirectory)).json()
+  const savedDb = cju(savedBoard)
+  const pcbBoard = savedDb.pcb_board.list()[0]
+  const playNet = savedDb.source_net
+    .list()
+    .find((net) => net.name === "BTN_PLAY")!
+  expect(savedRouting.connectionName).toBe(playNet.source_net_id)
+  // The saved response belongs to these real component pads, without remapping.
+  for (const anchor of savedRouting.anchors) {
+    const port = savedDb.pcb_port.get(anchor.portId)!
+    expect({ x: port.x, y: port.y }).toEqual({ x: anchor.x, y: anchor.y })
+    expect(port.layers).toContain(anchor.layer)
+  }
 
-test("split via-to-via route loses ownership despite identical connected copper", async () => {
-  // Minimized during Pocket Audio Player routing investigation:
-  // https://tscircuit.com/gokul/pocket-audio-player
-  // A deterministic router response isolates Core's import, not solver quality.
-  const renderedCircuits = []
-  for (const split of [true, false]) {
+  const importedCircuits = []
+  for (const restoreOwnership of [false, true]) {
     const { circuit } = getTestFixture()
-    circuit.add(
-      <board width={18} height={12} schLayout={{ layoutMode: "none" }}>
-        <resistor
-          name="R1"
-          resistance="1k"
-          footprint="0603"
-          pcbX={-4}
-          layer="bottom"
-        />
-        <resistor
-          name="R2"
-          resistance="1k"
-          footprint="0603"
-          pcbX={4}
-          layer="bottom"
-        />
-        <trace from="R1.pin1" to="R2.pin1" />
-        <autoroutingphase
-          name="saved-route"
-          algorithmFn={createBasicAutorouter(async (input) => {
-            const connection = input.connections[0]!
-            const [first, last] = connection.pointsToConnect
-            const left = { x: first.x, y: first.y + 1 }
-            const right = { x: last.x, y: last.y + 1 }
-            // Board-world points in mm, +X right / +Y up, two outer copper layers.
-            const parts: SimplifiedPcbTrace["route"][] = [
-              [
-                {
-                  route_type: "wire",
-                  x: first.x,
-                  y: first.y,
-                  layer: "bottom",
-                  width: 0.2,
-                },
-                { route_type: "wire", ...left, layer: "bottom", width: 0.2 },
-                {
-                  route_type: "via",
-                  ...left,
-                  from_layer: "bottom",
-                  to_layer: "top",
-                  via_diameter: 0.6,
-                  via_hole_diameter: 0.3,
-                },
-                { route_type: "wire", ...left, layer: "top", width: 0.2 },
-              ],
-              [
-                { route_type: "wire", ...left, layer: "top", width: 0.2 },
-                { route_type: "wire", ...right, layer: "top", width: 0.2 },
-              ],
-              [
-                { route_type: "wire", ...right, layer: "top", width: 0.2 },
-                {
-                  route_type: "via",
-                  ...right,
-                  from_layer: "top",
-                  to_layer: "bottom",
-                  via_diameter: 0.6,
-                  via_hole_diameter: 0.3,
-                },
-                { route_type: "wire", ...right, layer: "bottom", width: 0.2 },
-                {
-                  route_type: "wire",
-                  x: last.x,
-                  y: last.y,
-                  layer: "bottom",
-                  width: 0.2,
-                },
-              ],
-            ]
-            return (split ? parts : [parts.flat()]).map(
-              (route, traceIndex) => ({
-                type: "pcb_trace",
-                pcb_trace_id: `saved_route_${traceIndex}`,
-                connection_name: connection.name,
-                connectsTo: connection.pointsToConnect.map(
-                  (point) => point.pcb_port_id!,
-                ),
-                route,
-              }),
-            )
-          })}
-        />
-        <pcbnotetext
-          pcbY={4.7}
-          fontSize={0.65}
-          text={split ? "SPLIT ROUTE: 3 pieces" : "CONTROL: 1 continuous piece"}
-        />
-        <pcbnotetext
-          pcbY={3.4}
-          fontSize={0.45}
-          text="Same pads, copper widths and two through vias"
-        />
-        <pcbnotetext
-          pcbY={2.2}
-          fontSize={0.45}
-          text={
-            split
-              ? "Top bridge: connection identity missing"
-              : "Top bridge: connection identity retained"
-          }
-        />
-        <pcbnotetext
-          pcbY={-2}
-          fontSize={0.45}
-          text="Bottom-layer pads and short escapes"
-        />
-        <pcbnotetext
-          pcbY={-3.4}
-          fontSize={0.5}
-          text={
-            split
-              ? "Actual: 8 false contact / endpoint errors"
-              : "Actual: 0 errors; ownership retained"
-          }
-        />
-        <pcbnotetext
-          pcbY={-4.7}
-          fontSize={0.45}
-          text="Expected: connected copper, 0 errors in both cases"
-        />
-      </board>,
+    const board = new Board({
+      width: pcbBoard.width,
+      height: pcbBoard.height,
+      layers: 6,
+    })
+    circuit.add(board)
+    circuit.render()
+    circuit.db = cju(structuredClone(savedBoard))
+    board.pcb_board_id = pcbBoard.pcb_board_id
+    board.subcircuit_id = pcbBoard.subcircuit_id!
+    const routedTraces = structuredClone(savedRouting.traces)
+    if (restoreOwnership) {
+      // Control: preserve every route point and supply the known net identity
+      // only where the first import could not infer ownership.
+      for (const trace of routedTraces) {
+        trace.source_trace_id =
+          importedCircuits[0].db.pcb_trace.get(trace.pcb_trace_id)
+            ?.source_trace_id ?? playNet.source_net_id
+      }
+    }
+    board._asyncAutoroutingResult = { output_pcb_traces: routedTraces }
+    board._updatePcbTraceRenderFromPcbTraces()
+    importedCircuits.push(circuit)
+
+    const circuitJson = circuit.getCircuitJson()
+    const contactErrors = checkEachPcbTraceNonOverlapping(circuitJson)
+    const disconnectedErrors = checkTracesAreContiguous(circuitJson)
+    const danglingErrors = checkDanglingTraces(circuitJson)
+    expect(contactErrors).toHaveLength(restoreOwnership ? 0 : 12)
+    expect(disconnectedErrors).toHaveLength(restoreOwnership ? 1 : 8)
+    expect(danglingErrors).toHaveLength(restoreOwnership ? 1 : 8)
+    if (restoreOwnership) {
+      // This historical capture has one endpoint warning even with ownership.
+      // Keep it visible: the control is not a zero-DRC/fabrication claim.
+      expect(disconnectedErrors[0].center).toEqual({ x: 7.785, y: 15.75 })
+      expect(danglingErrors[0].center).toEqual(disconnectedErrors[0].center)
+    }
+
+    const noteLines = [
+      restoreOwnership
+        ? "CONTROL: same copper, ownership supplied"
+        : "SAVED AUDIO BOARD: ownership lost on 5 pieces",
+      `BTN_PLAY: ${contactErrors.length} contact, ${disconnectedErrors.length} disconnected, ${danglingErrors.length} dangling warnings`,
+      "SW2 play-button bridge on inner2; through vias at both ends",
+      "Warning counts cover the entire saved BTN_PLAY route",
+    ]
+    for (const [lineIndex, text] of noteLines.entries()) {
+      circuit.db.pcb_note_text.insert({
+        text,
+        font: "tscircuit2024",
+        font_size: 0.22,
+        anchor_position: { x: 0, y: -11 - lineIndex * 0.5 },
+        anchor_alignment: "center",
+        layer: "top",
+      })
+    }
+    // Native error labels overlap here; notes report all asserted counts.
+    // The overview shows the real placement; the crop exposes inner2 copper.
+    const snapshotOptions = {
+      shouldDrawErrors: false,
+      showSolderMask: false,
+      showSolderPaste: false,
+      showDebugObjects: false,
+      showFabricationNotes: false,
+      showCourtyards: false,
+    }
+    const snapshotPath = import.meta.path.replace(".test.tsx", "")
+    if (!restoreOwnership) {
+      circuit.db.pcb_note_text.insert({
+        text: "Pocket Audio Player: saved BTN_PLAY route only",
+        font: "tscircuit2024",
+        font_size: 1,
+        anchor_position: { x: 0, y: 46 },
+        anchor_alignment: "center",
+        layer: "top",
+      })
+      await expect(circuit).toMatchPcbSnapshot(`${snapshotPath}-board`, {
+        ...snapshotOptions,
+        width: 900,
+        height: 1300,
+      })
+    }
+    await expect(circuit).toMatchPcbSnapshot(
+      `${snapshotPath}-${restoreOwnership ? "control" : "split"}`,
+      {
+        ...snapshotOptions,
+        layer: "inner2",
+        viewport: { minX: -5, maxX: 5, minY: -18, maxY: -10 },
+        width: 1000,
+        height: 800,
+      },
     )
-    await circuit.renderUntilSettled()
-    renderedCircuits.push(circuit)
   }
 
-  const [splitCircuit, continuousCircuit] = renderedCircuits
+  const [splitCircuit, controlCircuit] = importedCircuits
   const splitTraces = splitCircuit.db.pcb_trace.list()
-  const continuousTraces = continuousCircuit.db.pcb_trace.list()
-  expect(splitTraces).toHaveLength(3)
-  expect(continuousTraces).toHaveLength(1)
-  expect(getWireSegments(splitTraces)).toEqual(
-    getWireSegments(continuousTraces),
+  const controlTraces = controlCircuit.db.pcb_trace.list()
+  expect(splitTraces).toHaveLength(savedRouting.traces.length)
+  expect(splitTraces.filter((trace) => !trace.source_trace_id)).toHaveLength(5)
+  expect(controlTraces.every((trace) => trace.source_trace_id)).toBe(true)
+  expect(splitTraces.map((trace) => trace.route)).toEqual(
+    controlTraces.map((trace) => trace.route),
   )
-  expect(splitCircuit.db.pcb_via.list()).toHaveLength(2)
-  expect(
-    splitCircuit.db.pcb_via
-      .list()
-      .map(({ x, y, layers, outer_diameter, hole_diameter }) => ({
-        x,
-        y,
-        layers,
-        outer_diameter,
-        hole_diameter,
-      })),
-  ).toEqual(
-    continuousCircuit.db.pcb_via
-      .list()
-      .map(({ x, y, layers, outer_diameter, hole_diameter }) => ({
-        x,
-        y,
-        layers,
-        outer_diameter,
-        hole_diameter,
-      })),
-  )
-  const sourceTraceId = splitCircuit.db.source_trace.list()[0].source_trace_id
-  // Pin current broken behavior. A fix should retain ownership on all pieces
-  // and remove these diagnostics without changing any copper geometry.
-  expect(splitTraces.map((trace) => trace.source_trace_id)).toEqual([
-    sourceTraceId,
-    undefined,
-    sourceTraceId,
-  ])
-  const errors = splitCircuit.db.pcb_trace_error.list()
-  expect(errors).toHaveLength(8)
-  expect(
-    errors.filter((error) => error.message.includes("accidental contact")),
-  ).toHaveLength(4)
-  expect(
-    errors.filter((error) => error.message.includes("disconnected endpoint")),
-  ).toHaveLength(2)
-  expect(
-    errors.filter((error) => error.message.includes("dangling endpoint")),
-  ).toHaveLength(2)
-  expect(continuousCircuit.db.pcb_trace_error.list()).toEqual([])
-  expect(continuousTraces[0].source_trace_id).toBe(
-    continuousCircuit.db.source_trace.list()[0].source_trace_id,
-  )
-  // The eight coincident native error labels obscure the bridge. Keep the
-  // asserted diagnostic totals in PCB notes and show the unchanged copper.
-  const snapshotOptions = {
-    shouldDrawErrors: false,
-    showSolderMask: false,
-    showSolderPaste: false,
-    showDebugObjects: false,
-  }
-  const snapshotPath = import.meta.path.replace(".test.tsx", "")
-  await expect(splitCircuit).toMatchPcbSnapshot(
-    `${snapshotPath}-split`,
-    snapshotOptions,
-  )
-  await expect(continuousCircuit).toMatchPcbSnapshot(
-    `${snapshotPath}-continuous`,
-    snapshotOptions,
+  expect(splitCircuit.db.pcb_via.list()).toEqual(
+    controlCircuit.db.pcb_via.list(),
   )
 })
