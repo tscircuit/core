@@ -8,7 +8,7 @@ test("panel rails and manufacturing fixtures are available outside child boards"
   circuit.add(
     <panel layoutMode="grid">
       <board width="14mm" height="18mm" routingDisabled>
-        <pcbnotetext text="Rail fixtures unavailable" fontSize={0.8} />
+        <pcbnotetext text="Bare panel baseline" fontSize={0.8} />
       </board>
     </panel>,
   )
