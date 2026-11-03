@@ -22,17 +22,17 @@ export function fillPolygonWithRects(
 ): Rect[] {
   if (polygon.length < 3) return []
 
-  const { rectHeight = 0.1 } = options
+  const { rectHeight: maxRectHeight = 0.1 } = options
 
   const rects: Rect[] = []
 
   const yCoords = polygon.map((p) => p.y)
   const minY = Math.min(...yCoords)
   const maxY = Math.max(...yCoords)
+  const rectHeight = Math.min(maxRectHeight, maxY - minY)
 
   for (let y = minY; y < maxY; y += rectHeight) {
-    const height = Math.min(rectHeight, maxY - y)
-    const scanlineY = y + height / 2
+    const scanlineY = y + rectHeight / 2
     const intersections: number[] = []
 
     for (let i = 0; i < polygon.length; i++) {
@@ -65,7 +65,7 @@ export function fillPolygonWithRects(
               y: scanlineY,
             },
             width,
-            height,
+            height: rectHeight,
           })
         }
       }
