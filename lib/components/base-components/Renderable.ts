@@ -81,6 +81,7 @@ export const orderedRenderPhases = [
   "CadExplosionRender",
   "CadExplosionCollisionCheck",
   "DrawingRender",
+  "SystemBlockRender",
   "PartsEngineRender",
   "MissingManufacturerPartNumberWarning",
   "ComponentAvailabilityWarning",
@@ -99,6 +100,11 @@ export const renderPhaseIndexMap = new Map<RenderPhase, number>(
 // async effects originating in specific earlier phases to complete within the
 // current component's subtree.
 const asyncPhaseDependencies: Partial<Record<RenderPhase, RenderPhase[]>> = {
+  SystemBlockRender: [
+    "RenderIsolatedSubcircuits",
+    "PcbFootprintStringRender",
+    "FetchPartFootprint",
+  ],
   InflateSubcircuitCircuitJson: ["RenderIsolatedSubcircuits"],
   ResolveFootprintPinLabels: ["PcbFootprintStringRender", "FetchPartFootprint"],
   SimulationRender: ["PcbFootprintStringRender", "FetchPartFootprint"],
