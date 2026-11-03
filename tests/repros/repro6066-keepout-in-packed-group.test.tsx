@@ -67,7 +67,10 @@ test("repro6066: keepout inside a packed group is moved with the group", async (
     )!
     expect(groupComponent).toBeDefined()
 
-    expect(keepout.center.x).toBeCloseTo(groupComponent.center.x, 5)
-    expect(keepout.center.y).toBeCloseTo(groupComponent.center.y, 5)
+    expect("center" in keepout).toBe(true)
+    if ("center" in keepout) {
+      expect(keepout.center.x).toBeCloseTo(groupComponent.center.x, 5)
+      expect(keepout.center.y).toBeCloseTo(groupComponent.center.y, 5)
+    }
   }
 })
