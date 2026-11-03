@@ -1,6 +1,7 @@
-import type { PcbBoard, PcbCutout, PcbHoleCircle, Point } from "circuit-json"
 import * as Flatten from "@flatten-js/core"
-import { point, Polygon } from "@flatten-js/core"
+import { Polygon, point } from "@flatten-js/core"
+import type { PcbBoard, PcbCutout, PcbHoleCircle, Point } from "circuit-json"
+import { generateContinuousPanelRoutingSlots } from "./generate-continuous-panel-routing-slots"
 
 export const DEFAULT_TAB_LENGTH = 5
 export const DEFAULT_TAB_WIDTH = 2
@@ -45,6 +46,34 @@ const generateCutoutsAndMousebitesForOutline = (
 
   if (outline.length < 2) {
     return { tabCutouts, mouseBiteHoles }
+  }
+
+  if (
+    outline.some((position, outlineIndex) => {
+      const previousPosition =
+        outline[(outlineIndex - 1 + outline.length) % outline.length]!
+      const nextPosition = outline[(outlineIndex + 1) % outline.length]!
+      const incomingLength = Math.hypot(
+        position.x - previousPosition.x,
+        position.y - previousPosition.y,
+      )
+      const segmentLength = Math.hypot(
+        nextPosition.x - position.x,
+        nextPosition.y - position.y,
+      )
+      const directionCosine =
+        ((position.x - previousPosition.x) * (nextPosition.x - position.x) +
+          (position.y - previousPosition.y) * (nextPosition.y - position.y)) /
+        (incomingLength * segmentLength)
+      return (
+        incomingLength > 1e-9 &&
+        segmentLength > 1e-9 &&
+        segmentLength < gapLength + 2 * cutoutWidth &&
+        directionCosine > Math.cos(Math.PI / 12)
+      )
+    })
+  ) {
+    return generateContinuousPanelRoutingSlots(outline, options)
   }
 
   const outlinePolygon = new Flatten.Polygon(
@@ -102,7 +131,7 @@ const generateCutoutsAndMousebitesForOutline = (
       numBitesInGap * mouseBiteHoleDiameter +
       (numBitesInGap - 1) * mouseBiteHoleSpacing
 
-    let effectiveGapLength
+    let effectiveGapLength: number
     if (mouseBites) {
       effectiveGapLength = totalBitesLength
     } else {
