@@ -86,6 +86,7 @@
     "concurrently": "^9.1.2",
     "connectivity-map": "^1.0.1",
     "debug": "^4.3.6",
+    "eventemitter3": "5.0.1",
     "flatbush": "^4.5.0",
     "graphics-debug": "^0.0.95",
     "howfat": "^0.3.8",

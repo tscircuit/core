@@ -6,41 +6,49 @@ import {
 } from "@tscircuit/checks"
 import { cju } from "@tscircuit/circuit-json-util"
 import { Board } from "lib/components/normal-components/Board/Board"
-import { sourceCircuit } from "tests/fixtures/pocket-audio-player/source-circuit"
-import { pcbCircuit } from "tests/fixtures/pocket-audio-player/pcb-circuit"
+import PocketAudioPlayer from "tests/fixtures/pocket-audio-player/board/index.circuit"
 import { savedRouting } from "tests/fixtures/pocket-audio-player/btn-play-routes"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("saved audio-board BTN_PLAY pieces lose ownership during route import", async () => {
   // Saved BTN_PLAY response and placement from the earlier six-layer audio board.
   // Coordinates are board-world points in mm, +X right, +Y up, right-handed.
-  const savedBoard = [...sourceCircuit, ...pcbCircuit]
-  const savedDb = cju(savedBoard)
-  const pcbBoard = savedDb.pcb_board.list()[0]
-  const playNet = savedDb.source_net
-    .list()
-    .find((net) => net.name === "BTN_PLAY")!
-  expect(savedRouting.connectionName).toBe(playNet.source_net_id)
-  // The saved response belongs to these real component pads, without remapping.
-  for (const anchor of savedRouting.anchors) {
-    const port = savedDb.pcb_port.get(anchor.portId)!
-    expect({ x: port.x, y: port.y }).toEqual({ x: anchor.x, y: anchor.y })
-    expect(port.layers).toContain(anchor.layer)
-  }
-
   const importedCircuits = []
   for (const restoreOwnership of [false, true]) {
     const { circuit } = getTestFixture()
-    const board = new Board({
-      width: pcbBoard.width,
-      height: pcbBoard.height,
-      layers: 6,
-    })
-    circuit.add(board)
-    circuit.render()
-    circuit.db = cju(structuredClone(savedBoard))
-    board.pcb_board_id = pcbBoard.pcb_board_id
-    board.subcircuit_id = pcbBoard.subcircuit_id!
+    // Render the original component TSX. Its saved-route workaround is bypassed
+    // only in the test, so Core receives the original failing router response.
+    circuit.pcbRoutingDisabled = true
+    circuit.schematicDisabled = true
+    circuit.add(<PocketAudioPlayer />)
+    await circuit.renderUntilSettled()
+    const board = circuit.firstChild as Board
+    const playNet = circuit.db.source_net
+      .list()
+      .find((net) => net.name === "BTN_PLAY")!
+    expect(savedRouting.connectionName).toBe(playNet.source_net_id)
+    for (const anchor of savedRouting.anchors) {
+      const port = circuit.db.pcb_port.get(anchor.portId)!
+      expect({ x: port.x, y: port.y }).toEqual({ x: anchor.x, y: anchor.y })
+      expect(port.layers).toContain(anchor.layer)
+    }
+    // Isolate BTN_PLAY diagnostics from other nets and previously emitted copper.
+    // Every component, pad, source connection and board position comes from TSX.
+    circuit.db = cju(
+      circuit
+        .getCircuitJson()
+        .filter(
+          (element) =>
+            ![
+              "pcb_trace",
+              "pcb_via",
+              "pcb_copper_pour",
+              "pcb_debug_object",
+            ].includes(element.type) &&
+            !element.type.endsWith("_error") &&
+            !element.type.endsWith("_warning"),
+        ),
+    )
     const routedTraces = structuredClone(savedRouting.traces)
     if (restoreOwnership) {
       // Control: preserve every route point and supply the known net identity
@@ -137,4 +145,4 @@ test("saved audio-board BTN_PLAY pieces lose ownership during route import", asy
   expect(splitCircuit.db.pcb_via.list()).toEqual(
     controlCircuit.db.pcb_via.list(),
   )
-})
+}, 60_000)
