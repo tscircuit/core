@@ -6,6 +6,11 @@ test("keepout inside a packed group moves with the group (#6066)", async () => {
 
   circuit.add(
     <board width="30mm" height="20mm" pcbPack pcbPackGap="2mm" routingDisabled>
+      <pcbnotetext
+        text="PACKED GROUPS GA, GB, GC KEEP THEIR KEEPOUTS CENTERED"
+        pcbY={8}
+        fontSize={0.7}
+      />
       <group name="GA">
         <resistor name="R1" resistance="1k" footprint="1206" />
         <keepout
@@ -62,4 +67,6 @@ test("keepout inside a packed group moves with the group (#6066)", async () => {
       expect(keepout.center.y).toBeCloseTo(groupComp!.center.y, 3)
     }
   }
+
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
