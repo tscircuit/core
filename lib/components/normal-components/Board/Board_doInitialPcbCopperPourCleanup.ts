@@ -18,6 +18,11 @@ export const Board_doInitialPcbCopperPourCleanup = (board: Board) => {
     circuitJson,
     board._generatedStitchingViaIds,
   )
+  // Authored fixed copper must survive even when it has no component connection.
+  for (const element of circuitJson) {
+    if (element.type === "pcb_copper_pour" && element.is_static)
+      floatingPourIds.delete(element.pcb_copper_pour_id)
+  }
   for (const pourId of floatingPourIds) db.pcb_copper_pour.delete(pourId)
   for (const viaId of floatingViaIds) {
     // Preserve user-authored vias; only cleanup vias created by stitching.
