@@ -31,7 +31,8 @@ export function fillPolygonWithRects(
   const maxY = Math.max(...yCoords)
 
   for (let y = minY; y < maxY; y += rectHeight) {
-    const scanlineY = y + rectHeight / 2
+    const height = Math.min(rectHeight, maxY - y)
+    const scanlineY = y + height / 2
     const intersections: number[] = []
 
     for (let i = 0; i < polygon.length; i++) {
@@ -64,7 +65,7 @@ export function fillPolygonWithRects(
               y: scanlineY,
             },
             width,
-            height: rectHeight,
+            height,
           })
         }
       }
