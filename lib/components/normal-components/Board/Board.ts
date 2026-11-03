@@ -650,6 +650,11 @@ export class Board
       min_trace_to_hole_edge_clearance:
         subcircuitProps.minTraceToHoleEdgeClearance ??
         jlcMinTolerances.min_trace_to_hole_edge_clearance,
+      min_different_net_trace_edge_to_trace_edge_clearance:
+        (typeof props.autorouter === "object"
+          ? props.autorouter.traceClearance
+          : undefined) ??
+        pcbBoardFromCircuitJson?.min_different_net_trace_edge_to_trace_edge_clearance,
       min_trace_to_pad_edge_clearance:
         subcircuitProps.minTraceToPadEdgeClearance ??
         jlcMinTolerances.min_trace_to_pad_edge_clearance,
