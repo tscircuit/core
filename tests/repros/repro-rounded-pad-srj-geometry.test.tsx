@@ -12,7 +12,7 @@ import {
   translate,
 } from "transformation-matrix"
 
-test("repro: rounded pad copper becomes square SRJ corners", async () => {
+test("rounded pad obstacles preserve clear corners", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width={26} height={15} routingDisabled schematicDisabled>
@@ -83,7 +83,7 @@ test("repro: rounded pad copper becomes square SRJ corners", async () => {
       ),
     ).toBe(true)
   }
-  expect(occupiedEmptyCorners).toBe(5)
+  expect(occupiedEmptyCorners).toBe(0)
   expect(JSON.stringify(circuitJson)).toBe(before)
   await expect([
     ...circuitJson,

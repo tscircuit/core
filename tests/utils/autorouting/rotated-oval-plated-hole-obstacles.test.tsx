@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test"
 import { getObstaclesFromCircuitJson } from "lib/utils/obstacles/getObstaclesFromCircuitJson"
 import { Fragment } from "react"
+import { obstacleContainsPoint } from "tests/fixtures/rounded-pad-obstacles"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import {
   applyToPoint,
@@ -60,47 +61,47 @@ test("oval copper obstacles match emitted holes on both board sides", async () =
 
   for (const hole of holes) {
     if (hole.shape !== "oval") throw new Error("Expected an oval shield hole")
-    const obstacle = obstacles.find(
+    const holeObstacles = obstacles.filter(
       (obstacle) =>
         obstacle.circuitJsonMetadata?.pcb_plated_hole_id ===
         hole.pcb_plated_hole_id,
-    )!
-    expect(obstacle.center).toEqual({ x: hole.x, y: hole.y })
-    expect(obstacle.connectedTo).toEqual([hole.pcb_plated_hole_id])
-    expect(obstacle.circuitJsonMetadata).toMatchObject({
-      pcb_port_id: hole.pcb_port_id,
-    })
-    expect(obstacle.layers).toEqual(["top", "bottom"])
-
-    const rotation = hole.ccw_rotation ?? 0
-    if (Math.abs(rotation % 90) < 1e-6) {
-      // Derive board-world copper bounds from the emitted hole's local
-      // rectangle corners (mm, +X right/+Y up), rather than copying the
-      // converter's quarter-turn width/height selection.
-      const transform = compose(translate(hole.x, hole.y), rotateDEG(rotation))
-      const corners = [-1, 1].flatMap((xSign) =>
-        [-1, 1].map((ySign) =>
-          applyToPoint(transform, {
-            x: (xSign * hole.outer_width) / 2,
-            y: (ySign * hole.outer_height) / 2,
-          }),
-        ),
-      )
-      expect(obstacle.width).toBeCloseTo(
-        Math.max(...corners.map((corner) => corner.x)) -
-          Math.min(...corners.map((corner) => corner.x)),
-        8,
-      )
-      expect(obstacle.height).toBeCloseTo(
-        Math.max(...corners.map((corner) => corner.y)) -
-          Math.min(...corners.map((corner) => corner.y)),
-        8,
-      )
-      expect(obstacle.ccwRotationDegrees).toBeUndefined()
-    } else {
-      expect(obstacle.width).toBe(hole.outer_width)
-      expect(obstacle.height).toBe(hole.outer_height)
-      expect(obstacle.ccwRotationDegrees).toBe(rotation)
+    )
+    expect(holeObstacles.length).toBeGreaterThan(0)
+    for (const obstacle of holeObstacles) {
+      expect(obstacle.type).toBe("rect")
+      expect(obstacle.connectedTo).toEqual([hole.pcb_plated_hole_id])
+      expect(obstacle.circuitJsonMetadata).toMatchObject({
+        pcb_port_id: hole.pcb_port_id,
+      })
+      expect(obstacle.layers).toEqual(["top", "bottom"])
+    }
+    const transform = compose(
+      translate(hole.x, hole.y),
+      rotateDEG(hole.ccw_rotation ?? 0),
+    )
+    const radius = Math.min(hole.outer_width, hole.outer_height) / 2
+    // Sample emitted copper in its local frame, then compare against the
+    // union of SRJ primitives in board space, including both rounded ends.
+    for (
+      let x = -hole.outer_width / 2 - 0.1;
+      x <= hole.outer_width / 2 + 0.1;
+      x += 0.2
+    ) {
+      for (
+        let y = -hole.outer_height / 2 - 0.1;
+        y <= hole.outer_height / 2 + 0.1;
+        y += 0.2
+      ) {
+        const dx = Math.max(0, Math.abs(x) - (hole.outer_width / 2 - radius))
+        const dy = Math.max(0, Math.abs(y) - (hole.outer_height / 2 - radius))
+        const onCopper = Math.hypot(dx, dy) <= radius + 1e-9
+        const point = applyToPoint(transform, { x, y })
+        expect(
+          holeObstacles.some((obstacle) =>
+            obstacleContainsPoint(obstacle, point),
+          ),
+        ).toBe(onCopper)
+      }
     }
   }
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)

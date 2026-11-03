@@ -265,5 +265,7 @@ test("simple route json usb-c", async () => {
   })
 
   const obstacles = simpleRouteJson.obstacles
-  expect(obstacles).toHaveLength(18)
+  // Rounded mounting pads are unions of legal SRJ rectangles/circles.
+  expect(obstacles).toHaveLength(26)
+  expect(obstacles.every((obstacle) => obstacle.type === "rect")).toBe(true)
 })

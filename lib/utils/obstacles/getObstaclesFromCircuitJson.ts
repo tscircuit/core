@@ -7,6 +7,7 @@ import { type RotatedRect } from "./generateApproximatingRects"
 import { getAxisAlignedRectFromPolygon } from "./getAxisAlignedRectFromPolygon"
 import { getObstaclesFromPcbKeepoutOutline } from "./getObstaclesFromPcbKeepoutOutline"
 import { getObstaclesFromRoute } from "./getObstaclesFromRoute"
+import { getRoundedRectObstacles } from "./getRoundedRectObstacles"
 import { separateViaInPadObstacles } from "./separateViaInPadObstacles"
 import type { CircuitJsonMetadata, Obstacle } from "./types"
 
@@ -143,19 +144,24 @@ export const getObstaclesFromCircuitJson = (
           connectedTo: withNetId([element.pcb_smtpad_id]),
         })
       } else if (element.shape === "rect") {
-        obstacles.push({
-          circuitJsonMetadata: pcbSmtPadCircuitJsonMetadata,
-          componentId: pcbComponentId,
-          type: "rect",
-          layers: [element.layer],
-          center: {
-            x: element.x,
-            y: element.y,
-          },
-          width: element.width,
-          height: element.height,
-          connectedTo: withNetId([element.pcb_smtpad_id]),
-        })
+        obstacles.push(
+          ...getRoundedRectObstacles(
+            {
+              circuitJsonMetadata: pcbSmtPadCircuitJsonMetadata,
+              componentId: pcbComponentId,
+              type: "rect",
+              layers: [element.layer],
+              center: {
+                x: element.x,
+                y: element.y,
+              },
+              width: element.width,
+              height: element.height,
+              connectedTo: withNetId([element.pcb_smtpad_id]),
+            },
+            element.corner_radius ?? 0,
+          ),
+        )
       } else if (element.shape === "rotated_rect") {
         const rotatedRect: RotatedRect = {
           center: { x: element.x, y: element.y },
@@ -166,36 +172,46 @@ export const getObstaclesFromCircuitJson = (
         const axisAlignedRect = getAxisAlignedRectFromRotatedRect(rotatedRect)
         const rect = axisAlignedRect ?? rotatedRect
 
-        obstacles.push({
-          circuitJsonMetadata: pcbSmtPadCircuitJsonMetadata,
-          componentId: pcbComponentId,
-          type: "rect",
-          layers: [element.layer],
-          center: rect.center,
-          width: rect.width,
-          height: rect.height,
-          ccwRotationDegrees: axisAlignedRect
-            ? undefined
-            : element.ccw_rotation,
-          connectedTo: withNetId([element.pcb_smtpad_id]),
-        })
+        obstacles.push(
+          ...getRoundedRectObstacles(
+            {
+              circuitJsonMetadata: pcbSmtPadCircuitJsonMetadata,
+              componentId: pcbComponentId,
+              type: "rect",
+              layers: [element.layer],
+              center: rect.center,
+              width: rect.width,
+              height: rect.height,
+              ccwRotationDegrees: axisAlignedRect
+                ? undefined
+                : element.ccw_rotation,
+              connectedTo: withNetId([element.pcb_smtpad_id]),
+            },
+            element.corner_radius ?? 0,
+          ),
+        )
       } else if (element.shape === "pill" || element.shape === "rotated_pill") {
-        obstacles.push({
-          circuitJsonMetadata: pcbSmtPadCircuitJsonMetadata,
-          componentId: pcbComponentId,
-          type: "rect",
-          layers: [element.layer],
-          center: {
-            x: element.x,
-            y: element.y,
-          },
-          width: element.width,
-          height: element.height,
-          ...(element.shape === "rotated_pill"
-            ? { ccwRotationDegrees: element.ccw_rotation }
-            : {}),
-          connectedTo: withNetId([element.pcb_smtpad_id]),
-        })
+        obstacles.push(
+          ...getRoundedRectObstacles(
+            {
+              circuitJsonMetadata: pcbSmtPadCircuitJsonMetadata,
+              componentId: pcbComponentId,
+              type: "rect",
+              layers: [element.layer],
+              center: {
+                x: element.x,
+                y: element.y,
+              },
+              width: element.width,
+              height: element.height,
+              ...(element.shape === "rotated_pill"
+                ? { ccwRotationDegrees: element.ccw_rotation }
+                : {}),
+              connectedTo: withNetId([element.pcb_smtpad_id]),
+            },
+            Math.min(element.width, element.height) / 2,
+          ),
+        )
       } else if (element.shape === "polygon") {
         const axisAlignedRect = getAxisAlignedRectFromPolygon(element.points)
         if (axisAlignedRect) {
@@ -413,8 +429,8 @@ export const getObstaclesFromCircuitJson = (
         obstacles.push({
           circuitJsonMetadata: pcbPlatedHoleCircuitJsonMetadata,
           componentId: pcbComponentId,
-          // @ts-ignore
-          type: "oval",
+          type: "rect",
+          shape: "circle",
           layers: everyLayer,
           center: {
             x: element.x,
@@ -445,19 +461,24 @@ export const getObstaclesFromCircuitJson = (
         const axisAlignedRect = getAxisAlignedRectFromRotatedRect(rotatedRect)
         const rect = axisAlignedRect ?? rotatedRect
 
-        obstacles.push({
-          circuitJsonMetadata: pcbPlatedHoleCircuitJsonMetadata,
-          componentId: pcbComponentId,
-          type: "rect",
-          layers: everyLayer,
-          center: rect.center,
-          width: rect.width,
-          height: rect.height,
-          ccwRotationDegrees: axisAlignedRect
-            ? undefined
-            : rotatedRect.rotation,
-          connectedTo: withNetId([element.pcb_plated_hole_id]),
-        })
+        obstacles.push(
+          ...getRoundedRectObstacles(
+            {
+              circuitJsonMetadata: pcbPlatedHoleCircuitJsonMetadata,
+              componentId: pcbComponentId,
+              type: "rect",
+              layers: everyLayer,
+              center: rect.center,
+              width: rect.width,
+              height: rect.height,
+              ccwRotationDegrees: axisAlignedRect
+                ? undefined
+                : rotatedRect.rotation,
+              connectedTo: withNetId([element.pcb_plated_hole_id]),
+            },
+            element.rect_border_radius ?? 0,
+          ),
+        )
       } else if (element.shape === "oval") {
         // Outer copper dimensions are hole-local mm. The center is a
         // board-world point (+X right, +Y up); rotation is CCW about it.
@@ -470,35 +491,44 @@ export const getObstaclesFromCircuitJson = (
         const axisAlignedRect = getAxisAlignedRectFromRotatedRect(rotatedRect)
         const rect = axisAlignedRect ?? rotatedRect
 
-        obstacles.push({
-          circuitJsonMetadata: pcbPlatedHoleCircuitJsonMetadata,
-          componentId: pcbComponentId,
-          // @ts-ignore
-          type: "oval",
-          layers: everyLayer,
-          center: rect.center,
-          width: rect.width,
-          height: rect.height,
-          ccwRotationDegrees: axisAlignedRect
-            ? undefined
-            : rotatedRect.rotation,
-          connectedTo: withNetId([element.pcb_plated_hole_id]),
-        })
+        obstacles.push(
+          ...getRoundedRectObstacles(
+            {
+              circuitJsonMetadata: pcbPlatedHoleCircuitJsonMetadata,
+              componentId: pcbComponentId,
+              type: "rect",
+              layers: everyLayer,
+              center: rect.center,
+              width: rect.width,
+              height: rect.height,
+              ccwRotationDegrees: axisAlignedRect
+                ? undefined
+                : rotatedRect.rotation,
+              connectedTo: withNetId([element.pcb_plated_hole_id]),
+            },
+            Math.min(rect.width, rect.height) / 2,
+          ),
+        )
       } else if (element.shape === "pill") {
-        obstacles.push({
-          circuitJsonMetadata: pcbPlatedHoleCircuitJsonMetadata,
-          componentId: pcbComponentId,
-          type: "rect",
-          layers: everyLayer,
-          center: {
-            x: element.x,
-            y: element.y,
-          },
-          width: element.outer_width,
-          height: element.outer_height,
-          ccwRotationDegrees: element.ccw_rotation,
-          connectedTo: withNetId([element.pcb_plated_hole_id]),
-        })
+        obstacles.push(
+          ...getRoundedRectObstacles(
+            {
+              circuitJsonMetadata: pcbPlatedHoleCircuitJsonMetadata,
+              componentId: pcbComponentId,
+              type: "rect",
+              layers: everyLayer,
+              center: {
+                x: element.x,
+                y: element.y,
+              },
+              width: element.outer_width,
+              height: element.outer_height,
+              ccwRotationDegrees: element.ccw_rotation,
+              connectedTo: withNetId([element.pcb_plated_hole_id]),
+            },
+            Math.min(element.outer_width, element.outer_height) / 2,
+          ),
+        )
       } else if (element.shape === "hole_with_polygon_pad") {
         // Calculate bounding box from pad outline
         if (
