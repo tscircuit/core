@@ -100,7 +100,7 @@ async function verifyOrangeCrabDataChipSelectRouting(): Promise<void> {
   expect(physicalErrors).toEqual([])
 }
 
-test.failing(
+test(
   "routes native OrangeCrab chip-select after both data bytes without changing completed copper",
   verifyOrangeCrabDataChipSelectRouting,
   60_000,

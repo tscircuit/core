@@ -135,7 +135,7 @@ function verifyFixedCopperCoverage(): void {
   }
 }
 
-test.failing(
+test(
   "fixed diagonal obstacles cover copper and end caps without closing an adjacent clearance channel",
   verifyFixedCopperCoverage,
 )
