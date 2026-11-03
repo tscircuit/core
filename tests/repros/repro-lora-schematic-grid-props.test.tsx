@@ -36,15 +36,15 @@ export default function LoRaBatteryMonitorGrid({
   )
 }
 
-test("repro: LoRa battery monitor ignores schGridCols and schGridGap", async () => {
+test("LoRa battery monitor respects schGridCols and schGridGap", async () => {
   for (const { snapshotName, gridProps } of [
     {
-      // Expected: one column with gap 5. Actual: two columns, default gap.
+      // Both settings come from the schematic-specific props.
       snapshotName: "schematic-props",
       gridProps: { schGridCols: 1, schGridGap: 5 },
     },
     {
-      // Isolate the gap: generic gridCols works, but schGridGap is ignored.
+      // The generic column count still works with a schematic-specific gap.
       snapshotName: "schematic-gap",
       gridProps: { gridCols: 1, schGridGap: 5 },
     },
@@ -54,7 +54,16 @@ test("repro: LoRa battery monitor ignores schGridCols and schGridGap", async () 
     circuit.add(<LoRaBatteryMonitorGrid gridProps={gridProps} />)
     await circuit.renderUntilSettled()
 
-    // Capture current behavior; this reproduction does not fix the layout.
+    const schematicComponents = circuit.db.schematic_component.list()
+    const [first, second, third] = schematicComponents
+    expect(second.center.x).toBeCloseTo(first.center.x)
+    expect(third.center.x).toBeCloseTo(first.center.x)
+    const cellHeight = Math.max(
+      ...schematicComponents.map((c) => c.size.height),
+    )
+    expect(first.center.y - second.center.y - cellHeight).toBeCloseTo(5)
+    expect(second.center.y - third.center.y - cellHeight).toBeCloseTo(5)
+
     await expect(circuit).toMatchSchematicSnapshot(
       import.meta.path.replace(".test.tsx", `-${snapshotName}.test.tsx`),
       { width: 800, height: 1000, grid: { cellSize: 1, labelCells: true } },
