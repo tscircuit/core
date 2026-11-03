@@ -26,7 +26,7 @@ const circuitJson = circuit.getCircuitJson()
 
 Each assembly element emits a BOM quantity of one, independent of its number
 of CAD models. Use
-`convertCircuitJsonToAssemblyBom({ circuitJson })` from the converter PR to obtain
+`convertCircuitJsonToAssemblyBom({ circuitJson })` from `circuit-json-to-bom-csv` to obtain
 the nested display model, or pass `circuitJson` directly to Runframe's BOM UI.
 `tests/assembly/fixtures/assembly-bom.tsx` is a complete reusable TSX fixture with
 multiple CAD models for one material. An integration test renders that fixture
@@ -57,10 +57,9 @@ Purchase links and supplier SKUs are preserved independently. Core performs no
 pricing lookups. Existing electronic components still use the converter's PCB
 fallback; assembly materials do not enter manufacturing BOM/placement exports.
 
-## Review dependencies
+## Dependencies
 
-This draft uses published Circuit JSON and `@tscircuit/props@0.0.718`, including
-the assembly purchasing props merged in https://github.com/tscircuit/props/pull/973.
-Its converter integration test pins the preview from
-https://github.com/tscircuit/circuit-json-to-bom-csv/pull/47. Replace that preview
-with a published version before merging.
+Uses published Circuit JSON, `@tscircuit/props@0.0.718`, and
+`circuit-json-to-bom-csv@0.0.28`. The purchasing props and converter API were
+merged in https://github.com/tscircuit/props/pull/973 and
+https://github.com/tscircuit/circuit-json-to-bom-csv/pull/47.

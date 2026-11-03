@@ -79,7 +79,7 @@
     "calculate-elbow": "^0.0.12",
     "chokidar-cli": "^3.0.0",
     "circuit-json": "^0.0.543",
-    "circuit-json-to-bom-csv": "https://pkg.pr.new/tscircuit/circuit-json-to-bom-csv/circuit-json-to-bom-csv@606967c2042faacc2d8fb33bef372bed11e2b743",
+    "circuit-json-to-bom-csv": "^0.0.28",
     "circuit-json-to-bpc": "^0.0.13",
     "circuit-json-to-connectivity-map": "^0.0.33",
     "circuit-json-to-spice": "^0.0.45",
