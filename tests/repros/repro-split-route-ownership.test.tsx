@@ -16,7 +16,7 @@ import { Board } from "lib/components/normal-components/Board/Board"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("saved audio-board BTN_PLAY pieces lose ownership during route import", async () => {
-  // Actual historical board and router response; see fixture README for scope.
+  // Saved BTN_PLAY response and placement from the earlier six-layer audio board.
   // Coordinates are board-world points in mm, +X right, +Y up, right-handed.
   const fixtureDirectory = new URL(
     "../fixtures/pocket-audio-player/",
