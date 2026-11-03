@@ -175,6 +175,8 @@ export type SimpleRouteJson = Omit<
   minPadEdgeToPadEdgeClearance?: number
   minBoardEdgeClearance?: number
   obstacles: Obstacle[]
+  /** Keepout obstacles that allow traces to cross but forbid placing vias. */
+  allowTracesKeepoutObstacles?: Obstacle[]
   connections: SimpleRouteConnection[]
   bounds: SimpleRouteBounds
   outline?: Array<{ x: number; y: number }>

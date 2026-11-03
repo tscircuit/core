@@ -313,37 +313,47 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     })
   }
 
+  const scopedObstacleElements = [
+    ...(board ? [board] : []),
+    ...db.source_component.list(),
+    ...db.source_port.list(),
+    ...db.pcb_port.list(),
+    ...db.pcb_component.list(),
+    ...db.pcb_smtpad.list(),
+    ...db.pcb_plated_hole.list(),
+    ...db.pcb_hole.list(),
+    // Footprint copper primitives such as solder-jumper bridges are fixed.
+    ...db.pcb_trace.list().filter((trace) => !trace.source_trace_id),
+    ...db.pcb_via
+      .list()
+      .filter(
+        (via) =>
+          (!ignoreExistingTopLevelPcbRouteState ||
+            Boolean(via.subcircuit_id)) &&
+          !isPcbViaRepresentedByPreservedSrjTrace(via),
+      ),
+    ...db.pcb_keepout.list(),
+    ...db.pcb_cutout.list(),
+  ].filter(
+    (e) =>
+      e.type === "pcb_board" ||
+      (panel && "pcb_panel_id" in e && e.pcb_panel_id === panel.pcb_panel_id) ||
+      !subcircuit_id ||
+      relevantSubcircuitIds?.has(e.subcircuit_id!),
+  )
   const obstacles = getObstaclesFromCircuitJson(
-    [
-      ...(board ? [board] : []),
-      ...db.source_component.list(),
-      ...db.source_port.list(),
-      ...db.pcb_port.list(),
-      ...db.pcb_component.list(),
-      ...db.pcb_smtpad.list(),
-      ...db.pcb_plated_hole.list(),
-      ...db.pcb_hole.list(),
-      // Footprint copper primitives such as solder-jumper bridges are fixed.
-      ...db.pcb_trace.list().filter((trace) => !trace.source_trace_id),
-      ...db.pcb_via
-        .list()
-        .filter(
-          (via) =>
-            (!ignoreExistingTopLevelPcbRouteState ||
-              Boolean(via.subcircuit_id)) &&
-            !isPcbViaRepresentedByPreservedSrjTrace(via),
-        ),
-      ...db.pcb_keepout.list(),
-      ...db.pcb_cutout.list(),
-    ].filter(
-      (e) =>
-        e.type === "pcb_board" ||
-        (panel &&
-          "pcb_panel_id" in e &&
-          e.pcb_panel_id === panel.pcb_panel_id) ||
-        !subcircuit_id ||
-        relevantSubcircuitIds?.has(e.subcircuit_id!),
-    ),
+    scopedObstacleElements,
+    sharedConnMap,
+  )
+  const allowTracesKeepoutObstacles = getObstaclesFromCircuitJson(
+    scopedObstacleElements
+      .filter(
+        (e) =>
+          e.type === "pcb_keepout" &&
+          !e.warning_only &&
+          Boolean(e.allow_traces),
+      )
+      .map((e) => ({ ...e, allow_traces: false })),
     sharedConnMap,
   )
   obstacles.push(
@@ -979,6 +989,9 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     simpleRouteJson: {
       bounds,
       obstacles,
+      ...(allowTracesKeepoutObstacles.length > 0
+        ? { allowTracesKeepoutObstacles }
+        : {}),
       connections: allConns,
       differentialPairs: srjDifferentialPairs,
       ...(srjBuses ? { buses: srjBuses } : {}),

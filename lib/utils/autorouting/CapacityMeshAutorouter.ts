@@ -25,6 +25,7 @@ import type {
 } from "./GenericLocalAutorouter"
 import { getCacheProviderForLocalCacheEngine } from "./LocalCacheEngineCacheProvider"
 import type { SimpleRouteJson, SimplifiedPcbTrace } from "./SimpleRouteJson"
+import { applyAllowTracesKeepoutViaRestrictions } from "./applyAllowTracesKeepoutViaRestrictions"
 import type { AutorouterVersion } from "./autorouter-version"
 import {
   runThreadedAutorouter,
@@ -216,6 +217,7 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
             effort: 1,
           })
         : new SOLVERS[solverName](input as any, solverOptions)
+    applyAllowTracesKeepoutViaRestrictions(this.solver, input)
 
     onSolverStarted?.({
       solverName,
