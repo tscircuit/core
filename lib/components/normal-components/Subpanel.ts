@@ -74,7 +74,7 @@ export class Subpanel extends Group<typeof subpanelProps> {
       ].includes(component.lowercaseComponentName)
     ) {
       throw new Error(
-        `<${this._errorComponentName}> can contain boards, subpanels, traces, tooling rails, holes, fiducials, or silkscreen elements`,
+        `<${this._errorComponentName}> can only contain <board>, <subpanel>, <trace>, <toolingrail>, <hole>, <fiducial>, or silkscreen elements`,
       )
     }
     super.add(component)
