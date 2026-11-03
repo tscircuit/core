@@ -120,6 +120,7 @@ export const resolvePrintedPartMounts = (component: PrimitiveComponent) => {
   const roots = new Map<MountablePart, MountablePart>()
   const yawByRoot = new Map<MountablePart, number>()
   let subcircuitId: PcbBoard["subcircuit_id"] | undefined
+  const holeSubcircuits = new Map<MountablePart, PcbBoard["subcircuit_id"]>()
   const resolvePart = (
     part: MountablePart,
     path: MountablePart[] = [],
@@ -163,13 +164,16 @@ export const resolvePrintedPartMounts = (component: PrimitiveComponent) => {
         ) as Matrix4
     }
     if (part._parsedProps.mountedTo) {
-      const { part: target, face } = findTarget(
-        part,
-        part._parsedProps.mountedTo,
-        parts,
-      )
-      const targetWorld = resolvePart(target, [...path, part])
-      const sourceFace = getFace(part, part._parsedProps.mountFace!)
+      const target =
+        part.componentName === "AssemblyBolt"
+          ? findTarget(part, part._parsedProps.mountedTo, parts, true)
+          : findTarget(part, part._parsedProps.mountedTo, parts)
+      const { face } = target
+      const targetWorld =
+        "part" in target
+          ? resolvePart(target.part, [...path, part])
+          : identity()
+      const sourceFace = getFace(part, part._parsedProps.mountFace ?? "base")
       const mating = faceMatrix(face)
       mat4.translate(mating, mating, [
         part._parsedProps.mountOffset?.x ?? 0,
@@ -183,7 +187,8 @@ export const resolvePrintedPartMounts = (component: PrimitiveComponent) => {
         targetWorld,
         mat4.multiply(identity(), mating, sourceInverse),
       ) as Matrix4
-      root = roots.get(target)!
+      root = "part" in target ? roots.get(target.part)! : part
+      if ("hole" in target) holeSubcircuits.set(root, target.subcircuitId)
     }
     roots.set(part, root)
     transforms.set(part, world)
@@ -281,6 +286,8 @@ export const resolvePrintedPartMounts = (component: PrimitiveComponent) => {
     )
       subcircuitId = pcbBoard.subcircuit_id
   }
+  if (isMountablePart(component))
+    subcircuitId ??= holeSubcircuits.get(roots.get(component)!)
   return { transforms, roots, yawByRoot, subcircuitId, motorMountRoots }
 }
 

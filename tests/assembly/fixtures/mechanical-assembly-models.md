@@ -22,6 +22,9 @@ for (const [spec, filename] of [
   ["nema17_bodylength40mm_plainbackface", "nema17-body40.glb.gz"],
   ["soic8", "soic8-driver.glb.gz"],
   ["pinrow8", "pinrow8-header.glb.gz"],
+  ["hexbolt_m3_l10mm_nothreads", "hexbolt-m3.glb.gz"],
+  ["panscrew_m3_l10mm_nothreads", "panscrew-m3.glb.gz"],
+  ["flatheadscrew_m3_l10mm_nothreads", "flatheadscrew-m3.glb.gz"],
 ]) {
   const model = getJscadModelForFootprint(spec, modeling)
   const { data } = await convertJscadModelToGltf(model, {
@@ -43,3 +46,13 @@ GLB and pairs it with the relevant constraints, part colors, and dimensions.
 Additional cameras expose occluded mounting features. Camera coordinates are in
 renderer scene space (-circuit X, +circuit Z, +circuit Y); the tests assert
 placements in circuit world space (+X right, +Y top, +Z above, mm).
+
+The bolt tests use `with-local-bolt-mesh.ts` to pin all four head types after
+asserting their emitted canonical URLs. The PCB fixture uses actual plain and
+plated holes, including the virtual `.top` and `.bottom` seating surfaces. A
+bare hole selector chooses its top surface. Mechanical holes and slots use
+explicit named reference surfaces at their physical seating locations; the
+solver does not infer a hole datum from arbitrary imported meshes. The implicit
+bolt mating face is `base`, at its authored origin with outward normal -Z;
+a custom `mountFace` can override it. Standard socket/hex/pan origins are under
+the head, while countersunk model origins are at the top of the head.

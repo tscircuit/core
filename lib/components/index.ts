@@ -134,3 +134,5 @@ export { AssemblyDrawingPartView } from "./primitive-components/AssemblyDrawingP
 export { AssemblyDrawingTitleBlock } from "./primitive-components/AssemblyDrawingTitleBlock"
 
 export { AssemblyDrawingDimension } from "./primitive-components/AssemblyDrawingDimension"
+
+export { AssemblyBolt } from "./primitive-components/AssemblyBolt"

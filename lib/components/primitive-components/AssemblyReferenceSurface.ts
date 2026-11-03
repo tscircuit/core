@@ -14,12 +14,13 @@ export class AssemblyReferenceSurface extends PrimitiveComponent<
 
   doInitialSourceRender(): void {
     if (
+      this.parent?.componentName !== "AssemblyBolt" &&
       this.parent?.componentName !== "AssemblyPart" &&
       this.parent?.componentName !== "AssemblyPrintedPart" &&
       this.parent?.componentName !== "AssemblySubassembly"
     )
       throw new Error(
-        `Reference surface "${this.name}" must be a child of assembly.part, assembly.printedpart, or assembly.subassembly`,
+        `Reference surface "${this.name}" must be a child of assembly.part, assembly.printedpart, assembly.bolt, or assembly.subassembly`,
       )
   }
 

@@ -72,6 +72,7 @@ export function resolveAssemblyExplosionRecords(
               !part.shouldBeRemoved &&
               part.name === segment &&
               [
+                "AssemblyBolt",
                 "AssemblyPart",
                 "AssemblyPrintedPart",
                 "AssemblySubassembly",
