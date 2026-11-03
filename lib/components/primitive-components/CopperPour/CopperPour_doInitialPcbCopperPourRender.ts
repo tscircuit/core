@@ -83,6 +83,7 @@ const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
           : {}),
         ...(props.isStatic ? { is_static: true } : {}),
         board_edge_margin: props.boardEdgeMargin ?? clearance,
+        board_outline: resolvedPcbBoardOutline,
         board_edge_outline:
           copperPour._isImplicitCopperPour || props.clearanceRules !== undefined
             ? resolvedPcbBoardOutline
