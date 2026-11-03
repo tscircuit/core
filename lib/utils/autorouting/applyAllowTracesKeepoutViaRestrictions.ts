@@ -1,6 +1,20 @@
-import type { CapacityMeshNode } from "@tscircuit/capacity-autorouter"
 import type { Obstacle } from "../obstacles/types"
 import type { SimpleRouteBounds, SimpleRouteJson } from "./SimpleRouteJson"
+
+interface CapacityMeshNode {
+  capacityMeshNodeId: string
+  center: { x: number; y: number }
+  width: number
+  height: number
+  layer: string
+  availableZ: number[]
+  _depth?: number
+  _parent?: CapacityMeshNode
+  _containsTarget?: boolean
+  _containsObstacle?: boolean
+  _completelyInsideObstacle?: boolean
+  [key: string]: any
+}
 
 const GEOMETRIC_EPSILON = 1e-6
 const MIN_OUTSIDE_SLAB_DIMENSION_MM = 0.05
