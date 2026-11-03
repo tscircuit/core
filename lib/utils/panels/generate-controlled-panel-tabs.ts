@@ -149,6 +149,11 @@ export function generateControlledPanelTabs(
           throw new Error(
             `The ${edge.side} tabs on ${boardName} overlap. Reduce their count or tabLength.`,
           )
+        const previousTab = intervals.at(-1)
+        if (previousTab && start - previousTab.end < tabWidth - 1e-9)
+          throw new Error(
+            `The ${edge.side} tabs on ${boardName} leave insufficient router clearance. Reduce their count, tabLength, or tabWidth.`,
+          )
         intervals.push({ start, end, centre })
       }
       const edgeToWorld = compose(
