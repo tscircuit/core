@@ -13,6 +13,6 @@ test("subpanel rejects ordinary components outside child boards", () => {
       </panel>,
     ),
   ).toThrow(
-    "<subpanel> can only contain <board>, <subpanel>, <trace>, <toolingrail>, <hole>, <fiducial>, or silkscreen elements",
+    "<subpanel> can only contain <board>, <subpanel>, <trace>, <toolingrail>, <hole>, <fiducial>, or <silkscreentext> elements",
   )
 })
