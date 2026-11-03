@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 
 test("per-net copper gaps and authored fixed copper survive core rendering", async () => {
   const { circuit } = getTestFixture()
@@ -91,5 +92,21 @@ test("per-net copper gaps and authored fixed copper survive core rendering", asy
   expect(holes[2]?.minX).toBeCloseTo(4.3)
   expect(holes[2]?.maxX).toBeCloseTo(5.7)
   expect(bounds(generated.brep_shape.outer_ring.vertices).maxX).toBeCloseTo(8.6)
+  if (!circuit.firstChild) throw new Error("Missing fixture board")
+  const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
+    db: circuit.db,
+    subcircuitComponent: circuit.firstChild,
+  })
+  const fixedObstacles = simpleRouteJson.obstacles.filter(
+    (obstacle) =>
+      obstacle.type === "rect" &&
+      obstacle.center.x === 0 &&
+      Math.abs(obstacle.center.y) < 1 &&
+      obstacle.width === 1,
+  )
+  expect(fixedObstacles.length).toBeGreaterThan(0)
+  expect(
+    fixedObstacles.every((obstacle) => obstacle.isCopperPour === false),
+  ).toBe(true)
   await expect(circuit).toMatchPcbSnapshot(import.meta.path, { layer: "top" })
 })
