@@ -4,7 +4,7 @@ import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimp
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import fixture from "../assets/bluetooth-pedometer.unrouted.circuit.json"
 
-test("Bluetooth pedometer loses its requested trace clearance before routing", async () => {
+test("Bluetooth pedometer preserves its requested trace clearance before routing", async () => {
   // Real board: https://tscircuit.com/techmannih/Bluetooth-pedometer
   // Source commit: ebe6cfad63786434183a4ec6709409ade261dfff.
   // Exported after removing manual routing; PCB/source geometry is retained.
@@ -38,8 +38,8 @@ test("Bluetooth pedometer loses its requested trace clearance before routing", a
   const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({ circuitJson })
   expect(circuitJson.filter((element) => element.type === "pcb_component")).toHaveLength(61)
   expect(circuitJson.filter((element) => element.type === "pcb_trace")).toHaveLength(0)
-  expect(board.min_different_net_trace_edge_to_trace_edge_clearance).toBeUndefined()
-  expect(simpleRouteJson).not.toHaveProperty("minDifferentNetTraceEdgeToTraceEdgeClearance")
+  expect(board.min_different_net_trace_edge_to_trace_edge_clearance).toBe(0.1)
+  expect(simpleRouteJson.minDifferentNetTraceEdgeToTraceEdgeClearance).toBe(0.1)
   expect(simpleRouteJson.minTraceToPadEdgeClearance).toBe(0.05)
   circuitJson.push({
     type: "pcb_note_text",
