@@ -1,7 +1,7 @@
 {
   "name": "@tscircuit/core",
   "type": "module",
-  "version": "0.0.2260",
+  "version": "0.0.2261",
   "types": "dist/index.d.ts",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -62,7 +62,7 @@
     "@tscircuit/miniflex": "^0.0.4",
     "@tscircuit/modelprinter": "^0.0.18",
     "@tscircuit/ngspice-spice-engine": "^0.0.20",
-    "@tscircuit/props": "https://pkg.pr.new/tscircuit/props/@tscircuit/props@d8a072ab8824bcbf860f61e3324e4feb14ca1e38",
+    "@tscircuit/props": "^0.0.718",
     "@tscircuit/schematic-match-adapt": "^0.0.18",
     "@tscircuit/schematic-trace-solver": "https://jscdn.tscircuit.com/@tscircuit/schematic-trace-solver/0.0.238.tgz",
     "@tscircuit/solver-utils": "^0.0.16",
@@ -83,7 +83,7 @@
     "circuit-json-to-bpc": "^0.0.13",
     "circuit-json-to-connectivity-map": "^0.0.33",
     "circuit-json-to-spice": "^0.0.45",
-    "circuit-to-svg": "^0.0.454",
+    "circuit-to-svg": "^0.0.455",
     "concurrently": "^9.1.2",
     "connectivity-map": "^1.0.1",
     "debug": "^4.3.6",
@@ -151,11 +151,12 @@
     "jscad-planner": "^0.0.21",
     "jscad-fiber": "^0.0.93",
     "poppygl": "0.0.38",
-    "@jscad/modeling": "^2.13.0"
+    "@jscad/modeling": "^2.13.0",
+    "@dagrejs/dagre": "^2.0.4"
   },
   "overrides": {
     "@tscircuit/graphics-debug-3d": "https://jscdn.tscircuit.com/@tscircuit/graphics-debug-3d/0.0.1.tgz",
-    "@tscircuit/props": "https://pkg.pr.new/tscircuit/props/@tscircuit/props@d8a072ab8824bcbf860f61e3324e4feb14ca1e38",
+    "@tscircuit/props": "^0.0.718",
     "circuit-json": "^0.0.543",
     "@tscircuit/cableprinter": "^0.0.6"
   },

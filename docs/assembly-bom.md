@@ -59,7 +59,8 @@ fallback; assembly materials do not enter manufacturing BOM/placement exports.
 
 ## Review dependencies
 
-This draft uses the published Circuit JSON schema and pins the props preview
-from https://github.com/tscircuit/props/pull/973. Its converter integration test
-pins https://github.com/tscircuit/circuit-json-to-bom-csv/pull/47. Replace those
-preview dependencies with published versions before merging.
+This draft uses published Circuit JSON and `@tscircuit/props@0.0.718`, including
+the assembly purchasing props merged in https://github.com/tscircuit/props/pull/973.
+Its converter integration test pins the preview from
+https://github.com/tscircuit/circuit-json-to-bom-csv/pull/47. Replace that preview
+with a published version before merging.
