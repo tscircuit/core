@@ -140,11 +140,13 @@ export function Group_filterSimpleRouteJsonForPhase(
     bounds,
     outline: getSrjOutlineForRoutingBounds(simpleRouteJson, bounds),
     connections,
-    ...(simpleRouteJson.routeConstraints ? {
-      routeConstraints: simpleRouteJson.routeConstraints.filter((rule) =>
-        includedConnectionNames.has(rule.connectionName),
-      ),
-    } : {}),
+    ...(simpleRouteJson.routeConstraints
+      ? {
+          routeConstraints: simpleRouteJson.routeConstraints.filter((rule) =>
+            includedConnectionNames.has(rule.connectionName),
+          ),
+        }
+      : {}),
     differentialPairs:
       differentialPairs.length > 0 ? differentialPairs : undefined,
     buses: buses.length > 0 ? buses : undefined,
