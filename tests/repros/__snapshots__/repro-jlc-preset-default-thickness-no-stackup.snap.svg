@@ -1,25 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="760" height="380" viewBox="0 0 760 380" font-family="Arial, sans-serif">
-<rect x="0" y="0" width="760" height="380" fill="#fafafa" />
-<line x1="380" y1="12" x2="380" y2="368" stroke="#ddd" />
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="148" viewBox="0 0 760 148" font-family="Arial, sans-serif">
+<rect x="0" y="0" width="760" height="148" fill="#fafafa" />
 <text x="16" y="30" font-size="16" font-weight="700" fill="#111">thickness omitted (default 1.4mm)</text>
 <text x="16" y="52" font-size="13" fill="#444">layers={4} fabricatorPreset="jlcpcb_standard"</text>
-<rect x="16" y="72" width="348" height="280" fill="none" stroke="#c62828" stroke-width="2" stroke-dasharray="8 6" />
-<text x="190" y="204" font-size="18" font-weight="700" fill="#c62828" text-anchor="middle">no pcb_stackup emitted</text>
-<text x="190" y="230" font-size="13" fill="#c62828" text-anchor="middle">no error or warning explains why</text>
-<text x="396" y="30" font-size="16" font-weight="700" fill="#111">thickness={1.6}</text>
-<text x="396" y="52" font-size="13" fill="#444">layers={4} fabricatorPreset="jlcpcb_standard"</text>
-<rect x="396" y="72" width="348" height="22" fill="#d98c2b" stroke="#333" stroke-width="0.5" />
-<text x="404" y="87" font-size="12" fill="#111">top copper  0.035mm</text>
-<rect x="396" y="94" width="348" height="22" fill="#9ccf8f" stroke="#333" stroke-width="0.5" />
-<text x="404" y="109" font-size="12" fill="#111">3313 RC57%  0.0994mm  εr 4.1</text>
-<rect x="396" y="116" width="348" height="22" fill="#d98c2b" stroke="#333" stroke-width="0.5" />
-<text x="404" y="131" font-size="12" fill="#111">inner1 copper  0.0152mm</text>
-<rect x="396" y="138" width="348" height="139.14999999999998" fill="#5f9e6e" stroke="#333" stroke-width="0.5" />
-<text x="404" y="211.575" font-size="12" fill="#111">NP-155F core  1.265mm  εr 4.42</text>
-<rect x="396" y="277.15" width="348" height="22" fill="#d98c2b" stroke="#333" stroke-width="0.5" />
-<text x="404" y="292.15" font-size="12" fill="#111">inner2 copper  0.0152mm</text>
-<rect x="396" y="299.15" width="348" height="22" fill="#9ccf8f" stroke="#333" stroke-width="0.5" />
-<text x="404" y="314.15" font-size="12" fill="#111">3313 RC57%  0.0994mm  εr 4.1</text>
-<rect x="396" y="321.15" width="348" height="22" fill="#d98c2b" stroke="#333" stroke-width="0.5" />
-<text x="404" y="336.15" font-size="12" fill="#111">bottom copper  0.035mm</text>
+<text x="16" y="84" font-size="14" font-weight="700" fill="#c62828">pcb_stackup count: 0</text>
+<text x="16" y="116" font-size="14" font-weight="700" fill="#c62828">no error or warning mentions the stackup</text>
 </svg>
