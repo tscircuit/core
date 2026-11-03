@@ -118,7 +118,7 @@
     "@tscircuit/footprinter": "*",
     "@tscircuit/infgrid-ijump-astar": "*",
     "@tscircuit/math-utils": "*",
-    "@tscircuit/modelprinter": ">=0.0.37",
+    "@tscircuit/modelprinter": "*",
     "@tscircuit/props": "*",
     "@tscircuit/schematic-match-adapt": "*",
     "circuit-json-to-bpc": "*",
