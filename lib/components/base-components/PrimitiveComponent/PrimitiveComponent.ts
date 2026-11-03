@@ -1144,7 +1144,13 @@ export abstract class PrimitiveComponent<
     }
   }
 
+  removeCadAssemblyBomRender(): void {
+    for (const child of this.children) child.removeCadAssemblyBomRender()
+  }
+
   remove(component: PrimitiveComponent) {
+    // Detached subtrees no longer participate in render-phase traversal.
+    component.removeCadAssemblyBomRender()
     this.children = this.children.filter((c) => c !== component)
     this._childrenVersion++
     this.childrenPendingRemoval.push(component)

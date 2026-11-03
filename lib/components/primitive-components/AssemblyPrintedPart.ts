@@ -10,7 +10,7 @@ import {
   type JscadOperation,
   type NamedReferencePlane,
 } from "jscad-planner"
-import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
+import { AssemblyComponent } from "../base-components/AssemblyComponent"
 import { renderAssemblyCadModel } from "./render-assembly-cad-model"
 import { resolvePrintedPartMounts } from "./resolve-printed-part-mounts"
 import { getPartReferenceSurfaces } from "./get-part-reference-surfaces"
@@ -18,7 +18,7 @@ import { getAssemblyEulerAngles } from "./get-assembly-euler-angles"
 import { renderPartReferenceSurfaces } from "./render-part-reference-surfaces"
 
 export class AssemblyPrintedPart
-  extends PrimitiveComponent<typeof assemblyPrintedPartProps>
+  extends AssemblyComponent<typeof assemblyPrintedPartProps>
   implements AssemblyDeviceContainer
 {
   isAssemblyDeviceContainer = true as const

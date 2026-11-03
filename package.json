@@ -24,7 +24,7 @@
     "format": "biome format . --write",
     "measure-bundle": "howfat -r table .",
     "pkg-pr-new-release": "bunx pkg-pr-new publish --comment=off --peerDeps",
-    "smoke-test:dist": "bun run scripts/smoke-tests/test-dist-simple-circuit.tsx && bun run scripts/smoke-tests/check-dist-bundled-schematic-solver.ts && bun run scripts/smoke-tests/test-dist-drawing-dimensions.tsx && bun run scripts/smoke-tests/check-dist-bundled-test-point-rerouter.ts && bun run scripts/smoke-tests/check-dist-collision-runtime.ts && bun run scripts/smoke-tests/test-dist-explosion-collisions.tsx && node scripts/smoke-tests/test-dist-node-explosion-collisions.mjs",
+    "smoke-test:dist": "bun run scripts/smoke-tests/test-dist-assembly-bom.tsx && bun run scripts/smoke-tests/test-dist-simple-circuit.tsx && bun run scripts/smoke-tests/check-dist-bundled-schematic-solver.ts && bun run scripts/smoke-tests/test-dist-drawing-dimensions.tsx && bun run scripts/smoke-tests/check-dist-bundled-test-point-rerouter.ts && bun run scripts/smoke-tests/check-dist-collision-runtime.ts && bun run scripts/smoke-tests/test-dist-explosion-collisions.tsx && node scripts/smoke-tests/test-dist-node-explosion-collisions.mjs",
     "build:benchmarking": "bun build --experimental-html ./benchmarking/website/index.html --outdir ./benchmarking-dist",
     "build:benchmarking:watch": "chokidar \"./{benchmarking,lib}/**/*.{ts,tsx}\" -c 'bun build --experimental-html ./benchmarking/website/index.html --outdir ./benchmarking-dist'",
     "start:benchmarking": "concurrently \"bun run build:benchmarking:watch\" \"live-server ./benchmarking-dist\"",
@@ -62,7 +62,7 @@
     "@tscircuit/miniflex": "^0.0.4",
     "@tscircuit/modelprinter": "^0.0.18",
     "@tscircuit/ngspice-spice-engine": "^0.0.20",
-    "@tscircuit/props": "^0.0.716",
+    "@tscircuit/props": "https://pkg.pr.new/tscircuit/props/@tscircuit/props@d2fc1023d83df3e37d70fcd7199488a1ff19db3e",
     "@tscircuit/schematic-match-adapt": "^0.0.18",
     "@tscircuit/schematic-trace-solver": "https://jscdn.tscircuit.com/@tscircuit/schematic-trace-solver/0.0.238.tgz",
     "@tscircuit/solver-utils": "^0.0.16",
@@ -78,7 +78,8 @@
     "bun-match-svg": "0.0.12",
     "calculate-elbow": "^0.0.12",
     "chokidar-cli": "^3.0.0",
-    "circuit-json": "^0.0.541",
+    "circuit-json": "^0.0.543",
+    "circuit-json-to-bom-csv": "https://pkg.pr.new/tscircuit/circuit-json-to-bom-csv/circuit-json-to-bom-csv@606967c2042faacc2d8fb33bef372bed11e2b743",
     "circuit-json-to-bpc": "^0.0.13",
     "circuit-json-to-connectivity-map": "^0.0.33",
     "circuit-json-to-spice": "^0.0.45",
@@ -154,8 +155,8 @@
   },
   "overrides": {
     "@tscircuit/graphics-debug-3d": "https://jscdn.tscircuit.com/@tscircuit/graphics-debug-3d/0.0.1.tgz",
-    "@tscircuit/props": "^0.0.716",
-    "circuit-json": "^0.0.541",
+    "@tscircuit/props": "https://pkg.pr.new/tscircuit/props/@tscircuit/props@d2fc1023d83df3e37d70fcd7199488a1ff19db3e",
+    "circuit-json": "^0.0.543",
     "@tscircuit/cableprinter": "^0.0.6"
   },
   "browser": {
