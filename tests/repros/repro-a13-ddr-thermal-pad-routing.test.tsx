@@ -6,12 +6,15 @@ import {
   checkTracesAreContiguous,
   checkViaPadClearance,
   checkViaTraceClearance,
+  checkViasInPads,
 } from "@tscircuit/checks"
 import type { Port } from "lib/components/primitive-components/Port/Port"
 import { NativeA13DdrThermalPadBoard } from "tests/fixtures/a13-ddr-thermal-pad/board"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-const testName = "routes native A13 DDR D0-D3 past the exposed-pad thermal vias"
+const dataBits = [0, 1, 4, 7, 8, 9, 12, 13, 15]
+const testName =
+  "routes eighteen native A13 DDR paths past the exposed-pad thermal vias"
 
 test(testName, async (): Promise<void> => {
   const { circuit } = getTestFixture()
@@ -23,7 +26,7 @@ test(testName, async (): Promise<void> => {
   circuit.on("autorouting:start", (event) => {
     startedPhases.push(event.phaseName!)
   })
-  circuit.add(<NativeA13DdrThermalPadBoard />)
+  circuit.add(<NativeA13DdrThermalPadBoard dataBits={dataBits} />)
   await circuit.renderUntilSettled()
 
   await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
@@ -64,13 +67,15 @@ test(testName, async (): Promise<void> => {
   expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
   expect(asyncErrors).toEqual([])
   expect(startedPhases).toEqual(["DDR_DATA"])
-  expect(circuit.db.pcb_trace.list()).toHaveLength(8)
+  expect(circuit.db.pcb_trace.list()).toHaveLength(18)
 
   const json = circuit.getCircuitJson()
+  const selectedDataNets = new Set(
+    dataBits.flatMap((bit) => [`CPU_D${bit}`, `DRAM_D${bit}`]),
+  )
   const dataChannel = json.filter(
     (element) =>
-      element.type !== "source_trace" ||
-      /^(CPU|DRAM)_D[0-3]$/.test(element.name!),
+      element.type !== "source_trace" || selectedDataNets.has(element.name!),
   )
   expect(checkEachPcbPortConnectedToPcbTraces(dataChannel)).toEqual([])
   const physicalErrors = [
@@ -81,4 +86,5 @@ test(testName, async (): Promise<void> => {
     ...checkTracesAreContiguous(json),
   ].filter((finding) => finding.type.endsWith("_error"))
   expect(physicalErrors).toEqual([])
+  expect(checkViasInPads(json)).toEqual([])
 })
