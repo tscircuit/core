@@ -128,26 +128,27 @@ const generateCutoutsAndMousebitesForOutline = (
       normalVec = normalVec.multiply(-1)
     }
 
-    const numBitesInGap = 2
+    const effectiveGapLength = Math.min(gapLength, segmentLength * 0.9)
+    const holeAndSpacing = mouseBiteHoleDiameter + mouseBiteHoleSpacing
+    const numBitesInGap =
+      mouseBiteHoleDiameter > 0 && holeAndSpacing > 0
+        ? Math.max(
+            0,
+            Math.floor(
+              (effectiveGapLength - mouseBiteHoleDiameter) / holeAndSpacing,
+            ) + 1,
+          )
+        : 0
     const totalBitesLength =
       numBitesInGap * mouseBiteHoleDiameter +
       (numBitesInGap - 1) * mouseBiteHoleSpacing
-
-    let effectiveGapLength
-    if (mouseBites) {
-      effectiveGapLength = totalBitesLength
-    } else {
-      effectiveGapLength = gapLength
-    }
-    effectiveGapLength = Math.min(effectiveGapLength, segmentLength * 0.9)
 
     const gapStartDist = (segmentLength - effectiveGapLength) / 2
     const gapEndDist = gapStartDist + effectiveGapLength
 
     // Add mousebites in the gap
     if (mouseBites) {
-      const holeAndSpacing = mouseBiteHoleDiameter + mouseBiteHoleSpacing
-      if (effectiveGapLength >= totalBitesLength && holeAndSpacing > 0) {
+      if (numBitesInGap > 0 && effectiveGapLength >= totalBitesLength) {
         const firstBiteCenterOffsetInGap =
           (effectiveGapLength - totalBitesLength) / 2 +
           mouseBiteHoleDiameter / 2
@@ -300,7 +301,9 @@ export function generatePanelTabsAndMouseBites(
   for (const board of processedBoards) {
     if (board.outline && board.outline.length > 0) {
       const mouseBiteDiameter = tabWidth * 0.45
-      const mouseBiteSpacing = mouseBiteDiameter * 0.1
+      // Leave half a drill diameter of material between adjacent holes.
+      // The former 10% web was only 0.063 mm on a 14 mm board.
+      const mouseBiteSpacing = mouseBiteDiameter * 0.5
 
       const generated = generateCutoutsAndMousebitesForOutline(board.outline, {
         gapLength: tabLength,
