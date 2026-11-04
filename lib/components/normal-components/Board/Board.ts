@@ -1,6 +1,9 @@
 import { getReadablePcbFoldIssueMessage } from "lib/utils/cad/get-readable-pcb-fold-issue-message"
 import { tryCreatePcbFold, type PcbFold } from "@tscircuit/flex-utils"
-import { jlcMinTolerances } from "@tscircuit/jlcpcb-manufacturing-specs"
+import {
+  getJlcStackup,
+  jlcMinTolerances,
+} from "@tscircuit/jlcpcb-manufacturing-specs"
 import { getBoundsFromPoints } from "@tscircuit/math-utils"
 import { boardProps } from "@tscircuit/props"
 import type {
@@ -181,7 +184,17 @@ export class Board
   }
 
   get boardThickness() {
-    return this._parsedProps.thickness ?? 1.4
+    if (this._parsedProps.thickness !== undefined) {
+      return this._parsedProps.thickness
+    }
+    const { fabricatorPreset, material } = this._parsedProps
+    if (!fabricatorPreset) return 1.4
+    // JLC publishes no 1.4mm stackup for e.g. 2/4-layer boards, so preset
+    // boards fall back to its standard 1.6mm thickness to get a pcb_stackup.
+    const num_layers = this.allLayers.length
+    const hasStackup = (thickness: number) =>
+      getJlcStackup({ num_layers, thickness, material }) !== undefined
+    return !hasStackup(1.4) && hasStackup(1.6) ? 1.6 : 1.4
   }
 
   /**

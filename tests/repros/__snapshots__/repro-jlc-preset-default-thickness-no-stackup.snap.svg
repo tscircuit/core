@@ -1,10 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="760" height="212" viewBox="0 0 760 212" font-family="Arial, sans-serif">
-<rect x="0" y="0" width="760" height="212" fill="#fafafa" />
-<text x="16" y="30" font-size="16" font-weight="700" fill="#111">thickness omitted (default 1.4mm)</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="148" viewBox="0 0 760 148" font-family="Arial, sans-serif">
+<rect x="0" y="0" width="760" height="148" fill="#fafafa" />
+<text x="16" y="30" font-size="16" font-weight="700" fill="#111">thickness omitted (default 1.6mm)</text>
 <text x="16" y="52" font-size="13" fill="#444">layers={4} fabricatorPreset="jlcpcb_standard"</text>
-<text x="16" y="84" font-size="14" font-weight="700" fill="#c62828">pcb_stackup count: 0</text>
-<text x="16" y="116" font-size="14" font-weight="700" fill="#b26a00">source_property_ignored_warning</text>
-<text x="16" y="138" font-size="13" font-family="monospace" fill="#111">fabricatorPreset "jlcpcb_standard" has no stackup template for a 4-layer 1.4mm fr4 board,</text>
-<text x="16" y="156" font-size="13" font-family="monospace" fill="#111">so no pcb_stackup was emitted. Supported thicknesses for 4-layer fr4: 0.4mm, 0.6mm, 0.8mm,</text>
-<text x="16" y="174" font-size="13" font-family="monospace" fill="#111">1mm, 1.2mm, 1.6mm, 1.8mm, 2mm, 2.5mm, 3mm. Set thickness on &lt;board&gt; to one of these.</text>
+<text x="16" y="84" font-size="14" font-weight="700" fill="#2e7d32">pcb_stackup count: 1</text>
+<text x="16" y="116" font-size="14" font-weight="700" fill="#2e7d32">no error or warning mentions the stackup</text>
 </svg>
