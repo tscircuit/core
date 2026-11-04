@@ -516,11 +516,14 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     }
 
     const parentNormalComponent = this.getParentNormalComponent()
-    const parentWithPcbComponentId = this.parent?.pcb_component_id
+    const isViaPort = this.parent?.componentName === "Via"
+    const parentWithPcbComponentId = isViaPort
       ? this.parent
-      : parentNormalComponent
+      : this.parent?.pcb_component_id
+        ? this.parent
+        : parentNormalComponent
 
-    if (!parentWithPcbComponentId?.pcb_component_id) {
+    if (!parentWithPcbComponentId?.pcb_component_id && !isViaPort) {
       throw new Error(
         `${this.getString()} has no parent pcb component, cannot render pcb_port (parent: ${this.parent?.getString()}, parentNormalComponent: ${parentNormalComponent?.getString()})`,
       )
@@ -569,7 +572,9 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       const isBoardPinout = this._shouldIncludeInBoardPinout()
 
       const pcb_port = db.pcb_port.insert({
-        pcb_component_id: parentWithPcbComponentId.pcb_component_id!,
+        ...(parentWithPcbComponentId?.pcb_component_id
+          ? { pcb_component_id: parentWithPcbComponentId.pcb_component_id }
+          : {}),
         layers: this.getAvailablePcbLayers(),
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
@@ -622,14 +627,19 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     if (!matchCenter) return
 
     const parentNormalComponent = this.getParentNormalComponent()
-    const parentWithPcbComponentId = this.parent?.pcb_component_id
+    const isViaPort = this.parent?.componentName === "Via"
+    const parentWithPcbComponentId = isViaPort
       ? this.parent
-      : parentNormalComponent
+      : this.parent?.pcb_component_id
+        ? this.parent
+        : parentNormalComponent
 
     const subcircuit = this.getSubcircuit()
     const isBoardPinout = this._shouldIncludeInBoardPinout()
     const pcb_port = db.pcb_port.insert({
-      pcb_component_id: parentWithPcbComponentId?.pcb_component_id!,
+      ...(parentWithPcbComponentId?.pcb_component_id
+        ? { pcb_component_id: parentWithPcbComponentId.pcb_component_id }
+        : {}),
       layers: this.getAvailablePcbLayers(),
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
@@ -643,9 +653,10 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
   doInitialPcbPortAttachment(): void {
     if (!this.pcb_port_id && this.source_port_id) {
+      const isViaPort = this.parent?.componentName === "Via"
       const existingPcbPort = this.root?.db.pcb_port
         .list({ source_port_id: this.source_port_id })
-        .find((pcbPort) => Boolean(pcbPort.pcb_component_id))
+        .find((pcbPort) => isViaPort || Boolean(pcbPort.pcb_component_id))
       if (existingPcbPort) {
         this.pcb_port_id = existingPcbPort.pcb_port_id
         return
