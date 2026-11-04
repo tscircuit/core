@@ -5,9 +5,6 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("panel dimensions are checked against manufacturing limits", async () => {
   const sizeConstraints = { minWidth: "50mm", maxHeight: "25mm" }
-  expect(panelProps.parse({ sizeConstraints })).toMatchObject({
-    sizeConstraints: { minWidth: 50, maxHeight: 25 },
-  })
   const { circuit } = getTestFixture()
   circuit.add(
     createElement(
@@ -22,8 +19,11 @@ test("panel dimensions are checked against manufacturing limits", async () => {
     ),
   )
   await circuit.renderUntilSettled()
-  expect(circuit).toMatchPcbSnapshot(import.meta.path, {
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
     shouldDrawErrors: true,
+  })
+  expect(panelProps.parse({ sizeConstraints })).toMatchObject({
+    sizeConstraints: { minWidth: 50, maxHeight: 25 },
   })
   const errors = circuit.db.pcb_panelization_placement_error.list()
   expect(errors.map((error) => error.message).join("\n")).toContain(

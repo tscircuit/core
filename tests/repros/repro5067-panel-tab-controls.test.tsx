@@ -8,7 +8,6 @@ test("panel tab counts and keepouts preserve explicit manufacturing intent", asy
     countPerEdge: 2,
     keepouts: [{ edge: "top", from: 0, to: 7 }],
   }
-  expect(panelProps.parse({ tabPlacement })).toMatchObject({ tabPlacement })
   const { circuit } = getTestFixture()
   circuit.add(
     createElement(
@@ -25,7 +24,8 @@ test("panel tab counts and keepouts preserve explicit manufacturing intent", asy
     ),
   )
   await circuit.renderUntilSettled()
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  expect(panelProps.parse({ tabPlacement })).toMatchObject({ tabPlacement })
   // Two per edge except the first top tab, whose full span overlaps the keepout.
   const holes = circuit.db.pcb_hole.list()
   expect(holes.length).toBeGreaterThan(8)
