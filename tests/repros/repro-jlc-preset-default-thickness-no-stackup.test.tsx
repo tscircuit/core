@@ -9,7 +9,7 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 //
 // Cause: the default board thickness is 1.4mm and the JLC stackup templates
 // have no 1.4mm entry, so Board_doInitialPcbStackupRender inserts nothing.
-// Preset boards now default to JLC's standard 1.6mm thickness, which has a
+// Boards now default to the standard 1.6mm thickness, which has a JLC
 // stackup template. Explicit unsupported thicknesses still warn (see
 // board-stackup-unsupported6).
 const renderBoard = async (thickness?: number) => {

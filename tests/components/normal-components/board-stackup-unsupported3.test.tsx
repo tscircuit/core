@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getBoardStackupFixture } from "tests/fixtures/get-board-stackup-fixture"
 
-test("omitted thickness on a preset board defaults to 1.6mm with a JLC stackup", async () => {
+test("omitted thickness defaults to 1.6mm with a JLC stackup", async () => {
   const circuit = await getBoardStackupFixture({
     width: 20,
     height: 20,
