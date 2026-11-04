@@ -11,6 +11,12 @@ import {
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { Port } from "../primitive-components/Port"
 import { symbols } from "schematic-symbols"
+import { parseFootprinterDefinition } from "lib/utils/footprints/parse-footprinter-definition"
+
+const FOOTPRINTER_PUSHBUTTON_FNS = new Set<unknown>([
+  "pushbutton",
+  "smdpushbutton",
+])
 
 export class PushButton extends NormalComponent<
   typeof pushButtonProps,
@@ -26,8 +32,21 @@ export class PushButton extends NormalComponent<
     }
   }
 
+  /**
+   * Footprinter's 4-pad switch footprints number the pads so pin1/pin2 share
+   * one switch terminal and pin3/pin4 the other: the 6.5mm-apart legs of the
+   * THT `pushbutton` and the pad rows of `smdpushbutton`. Declaring that here
+   * maps the symbol to pin1/pin3 and keeps pin1/pin2 from being used as the
+   * two sides of the switch, which would be a short on the real part.
+   */
   get defaultInternallyConnectedPinNames(): string[][] {
-    return []
+    const footprintFn = parseFootprinterDefinition(this.resolveFootprint())
+      ?.parameters.fn
+    if (!FOOTPRINTER_PUSHBUTTON_FNS.has(footprintFn)) return []
+    return [
+      ["pin1", "pin2"],
+      ["pin3", "pin4"],
+    ]
   }
 
   override initPorts() {
