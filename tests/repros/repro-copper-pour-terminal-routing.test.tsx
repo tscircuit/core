@@ -4,7 +4,7 @@ import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimp
 import { getCopperPourRoutingSnapshot } from "tests/fixtures/get-copper-pour-routing-snapshot"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("SRJ requests a route between terminals already joined by copper", async () => {
+test("SRJ skips routing between terminals already joined by copper", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -53,7 +53,9 @@ test("SRJ requests a route between terminals already joined by copper", async ()
     throw new Error("Expected both GND terminals to have point IDs")
   }
 
-  expect(gndConnection.externallyConnectedPointIds).toBeUndefined()
+  expect(gndConnection.externallyConnectedPointIds).toEqual([
+    [firstPoint.pointId, secondPoint.pointId],
+  ])
 
   expect(simpleRouteJson.traces ?? []).toHaveLength(0)
   const router = new AutoroutingPipelineSolver({
@@ -65,7 +67,7 @@ test("SRJ requests a route between terminals already joined by copper", async ()
   }
   expect(router.failed).toBe(false)
   const requestedRoutes = router.srjWithPointPairs!.connections
-  expect(requestedRoutes).toHaveLength(1)
+  expect(requestedRoutes).toHaveLength(0)
 
   await expect(
     getCopperPourRoutingSnapshot({
