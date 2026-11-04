@@ -62,6 +62,7 @@ export function applyNetLabelPlacements(args: {
   routedSchematicPortIdBySchematicPortId: Map<SchematicPortId, SchematicPortId>
   solver: SchematicTracePipelineSolver
   userNetIdToConnKey: Map<string, string>
+  branchedDisplayLabelTraceConnKeys: Set<string>
   crossScopeSourceTraceIdBySchematicPortIdAndNetId: Map<
     SchematicPortId,
     Map<NetId, SourceTrace["source_trace_id"]>
@@ -82,6 +83,7 @@ export function applyNetLabelPlacements(args: {
     solver,
     connKeyToSourceNet,
     userNetIdToConnKey,
+    branchedDisplayLabelTraceConnKeys,
     crossScopeSourceTraceIdBySchematicPortIdAndNetId,
     sourceTraceIdByPortOnlyLabelSchematicPortId,
     connKeysWithExplicitPortNetTraces,
@@ -96,13 +98,52 @@ export function applyNetLabelPlacements(args: {
   // Place net labels suggested by the solver
   // The inline solver runs last and removes the anchored placement for any net
   // it labeled inline, so a net is never labeled both ways.
-  const netLabelPlacements =
-    solver.inlineNetLabelSolver?.getOutput().netLabelPlacements ??
+  const globalConnMap = solver.mspConnectionPairSolver!.globalConnMap
+  const inlineOutput = solver.inlineNetLabelSolver?.getOutput()
+  const preInlineNetLabelPlacements =
+    solver.inlineDirectTraceRecoverySolver?.getOutput().netLabelPlacements ??
+    solver.sameNetJunctionAlignmentSolver?.getOutput().netLabelPlacements ??
     solver.netLabelNetLabelCollisionSolver?.getOutput().netLabelPlacements ??
     solver.netLabelTraceCollisionSolver?.getOutput().netLabelPlacements ??
     solver.netLabelPlacementSolver?.netLabelPlacements ??
     solver.traceLabelOverlapAvoidanceSolver?.getOutput().netLabelPlacements ??
     []
+  const partiallyInlinedTraceOnlyGlobalNetIds = new Set<string>()
+  if (inlineOutput) {
+    const inlineGlobalNetIds = new Set(
+      inlineOutput.inlineNetLabelPlacements.map(
+        (placement) => placement.globalConnNetId,
+      ),
+    )
+    for (const placement of inlineOutput.netLabelPlacements) {
+      if (!inlineGlobalNetIds.has(placement.globalConnNetId)) continue
+      const placementUserNetId = globalConnMap
+        .getIdsConnectedToNet(placement.globalConnNetId)
+        .find((id: string) => userNetIdToConnKey.get(id))
+      const placementConnKey = placementUserNetId
+        ? userNetIdToConnKey.get(placementUserNetId)
+        : undefined
+      if (
+        placementConnKey &&
+        branchedDisplayLabelTraceConnKeys.has(placementConnKey)
+      ) {
+        partiallyInlinedTraceOnlyGlobalNetIds.add(placement.globalConnNetId)
+      }
+    }
+  }
+  const netLabelPlacements = inlineOutput
+    ? [
+        ...inlineOutput.netLabelPlacements.filter(
+          (placement) =>
+            !partiallyInlinedTraceOnlyGlobalNetIds.has(
+              placement.globalConnNetId,
+            ),
+        ),
+        ...preInlineNetLabelPlacements.filter((placement) =>
+          partiallyInlinedTraceOnlyGlobalNetIds.has(placement.globalConnNetId),
+        ),
+      ]
+    : preInlineNetLabelPlacements
   const dedupedNetLabelPlacements: typeof netLabelPlacements = []
   const netLabelPlacementKeys = new Set<string>()
   for (const placement of netLabelPlacements) {
@@ -139,7 +180,6 @@ export function applyNetLabelPlacements(args: {
       globalNetIdsWithPortOnlyPlacements.add(placement.globalConnNetId)
     }
   }
-  const globalConnMap = solver.mspConnectionPairSolver!.globalConnMap
   const userDefinedNetLabels: UserDefinedNetLabel[] = netLabels
     .map((label) => {
       if (!label.schematic_net_label_id) return null

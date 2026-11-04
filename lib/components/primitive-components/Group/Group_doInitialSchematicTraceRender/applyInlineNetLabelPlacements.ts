@@ -4,8 +4,12 @@ import type {
 } from "@tscircuit/schematic-trace-solver"
 import type { SourceTrace } from "circuit-json"
 import Debug from "debug"
+import { Port } from "../../Port"
 import { Group } from "../Group"
-import { createCanonicalSchematicNetLabelTextResolver } from "./createCanonicalSchematicNetLabelTextResolver"
+import {
+  type SubcircuitConnectivityMapKey,
+  createCanonicalSchematicNetLabelTextResolver,
+} from "./createCanonicalSchematicNetLabelTextResolver"
 import { type SchematicPortId, asSchematicPortId } from "./port-id-types"
 
 const debug = Debug("Group_doInitialSchematicTraceRender")
@@ -40,6 +44,7 @@ export function applyInlineNetLabelPlacements(args: {
   group: Group<any>
   solver: SchematicTracePipelineSolver
   userNetIdToConnKey: Map<string, string>
+  branchedDisplayLabelTraceConnKeys: Set<string>
   sourceTraceIdByPinPairKey: Map<string, SourceTrace["source_trace_id"]>
   crossScopeSourceTraceIdBySchematicPortIdAndNetId: Map<
     SchematicPortId,
@@ -50,6 +55,7 @@ export function applyInlineNetLabelPlacements(args: {
     group,
     solver,
     userNetIdToConnKey,
+    branchedDisplayLabelTraceConnKeys,
     sourceTraceIdByPinPairKey,
     crossScopeSourceTraceIdBySchematicPortIdAndNetId,
   } = args
@@ -62,6 +68,22 @@ export function applyInlineNetLabelPlacements(args: {
   const resolveCanonicalNetLabelText =
     createCanonicalSchematicNetLabelTextResolver(group)
   const globalConnMap = solver.mspConnectionPairSolver!.globalConnMap
+  const globalNetIdsWithAnchoredNetLabelPlacements = new Set(
+    (solver.inlineNetLabelSolver?.getOutput().netLabelPlacements ?? []).map(
+      (placement) => placement.globalConnNetId,
+    ),
+  )
+  const portsByConnKey = new Map<SubcircuitConnectivityMapKey, Port[]>()
+  for (const port of group.selectAll<Port>("port")) {
+    const portConnKey = port._getSubcircuitConnectivityKey()
+    if (!portConnKey) continue
+    const existing = portsByConnKey.get(portConnKey)
+    if (existing) {
+      existing.push(port)
+    } else {
+      portsByConnKey.set(portConnKey, [port])
+    }
+  }
 
   for (const placement of inlineNetLabelPlacements) {
     const schematicPortIds = placement.pinIds.map(asSchematicPortId)
@@ -84,6 +106,13 @@ export function applyInlineNetLabelPlacements(args: {
       (placementUserNetId
         ? userNetIdToConnKey.get(placementUserNetId)
         : undefined)
+    if (
+      connKey &&
+      branchedDisplayLabelTraceConnKeys.has(connKey) &&
+      globalNetIdsWithAnchoredNetLabelPlacements.has(placement.globalConnNetId)
+    ) {
+      continue
+    }
 
     const text =
       placement.netLabelText ??
@@ -103,20 +132,45 @@ export function applyInlineNetLabelPlacements(args: {
       crossScopeSourceTraceId ??
       sourceTraceIdByPinPairKey.get([...schematicPortIds].sort().join("::"))
     if (!sourceTraceId && connKey) {
+      const directlyConnectedTraces = [
+        ...new Set(
+          (portsByConnKey.get(connKey) ?? []).flatMap((port) =>
+            port._getDirectlyConnectedTraces(),
+          ),
+        ),
+      ]
+      const displayLabelTrace =
+        directlyConnectedTraces.find(
+          (trace) => trace._parsedProps.schDisplayLabel,
+        ) ??
+        directlyConnectedTraces.find(
+          (trace) => trace._parsedProps.displayName,
+        ) ??
+        directlyConnectedTraces.find((trace) => trace._parsedProps.name)
+
+      if (displayLabelTrace?.source_trace_id) {
+        sourceTraceId = displayLabelTrace.source_trace_id
+      }
+    }
+    if (!sourceTraceId && connKey) {
       const sourcePortIds = schematicPortIds.flatMap((schematicPortId) => {
         const sourcePortId =
           db.schematic_port.get(schematicPortId)?.source_port_id
         return sourcePortId ? [sourcePortId] : []
       })
-      sourceTraceId = db.source_trace
+      const matchingSourceTraces = db.source_trace
         .list()
-        .find(
+        .filter(
           (sourceTrace) =>
             sourceTrace.subcircuit_connectivity_map_key === connKey &&
             sourcePortIds.some((sourcePortId) =>
               sourceTrace.connected_source_port_ids.includes(sourcePortId),
             ),
-        )?.source_trace_id
+        )
+      sourceTraceId = (
+        matchingSourceTraces.find((sourceTrace) => Boolean(sourceTrace.name)) ??
+        matchingSourceTraces[0]
+      )?.source_trace_id
     }
 
     // Inline labels belong to the same sheet as the trace they annotate.
