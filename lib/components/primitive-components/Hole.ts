@@ -58,21 +58,29 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
 
     this.emitSolderMaskMarginWarning(isCoveredWithSolderMask, soldermaskMargin)
 
+    // Use the same footprint-to-board transform as SilkscreenPath. Its local
+    // +X direction gives the hole axis in the right-handed board-world frame
+    // (+X right, +Y top, +Z above, mm), including rotation and layer reflection.
+    // Direction vectors do not pick up the transform's translation.
+    const footprintLocalToBoardTransform =
+      this._computePcbGlobalTransformBeforeLayout()
+    const ccwRotationDegrees =
+      (Math.atan2(
+        footprintLocalToBoardTransform.b,
+        footprintLocalToBoardTransform.a,
+      ) *
+        180) /
+      Math.PI
+    const normalizedCcwRotationDegrees =
+      ((ccwRotationDegrees % 360) + 360) % 360
+    // Rect/oval hole records are axis-aligned. As in SmtPad's rect emission,
+    // represent quarter turns by swapping dimensions without changing props.
+    const rotationToleranceDegrees = 0.01
+    const isRotated90Degrees =
+      Math.abs(normalizedCcwRotationDegrees - 90) < rotationToleranceDegrees ||
+      Math.abs(normalizedCcwRotationDegrees - 270) < rotationToleranceDegrees
+
     if (props.shape === "pill") {
-      // Use the same footprint-to-board transform as SilkscreenPath. Its local
-      // +X direction gives the slot axis in board space (+X right, +Y top),
-      // including parent rotation and bottom-layer mirroring, in CCW degrees.
-      const footprintLocalToBoardTransform =
-        this._computePcbGlobalTransformBeforeLayout()
-      const ccwRotationDegrees =
-        (Math.atan2(
-          footprintLocalToBoardTransform.b,
-          footprintLocalToBoardTransform.a,
-        ) *
-          180) /
-        Math.PI
-      const normalizedCcwRotationDegrees =
-        ((ccwRotationDegrees % 360) + 360) % 360
       if (normalizedCcwRotationDegrees !== 0) {
         const inserted_hole = db.pcb_hole.insert({
           pcb_component_id,
@@ -110,8 +118,8 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
         pcb_component_id,
         type: "pcb_hole",
         hole_shape: "oval",
-        hole_width: props.width,
-        hole_height: props.height,
+        hole_width: isRotated90Degrees ? props.height : props.width,
+        hole_height: isRotated90Degrees ? props.width : props.height,
         x: position.x,
         y: position.y,
         soldermask_margin: soldermaskMargin,
@@ -126,8 +134,8 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
         pcb_component_id,
         type: "pcb_hole",
         hole_shape: "rect",
-        hole_width: props.width,
-        hole_height: props.height,
+        hole_width: isRotated90Degrees ? props.height : props.width,
+        hole_height: isRotated90Degrees ? props.width : props.height,
         x: position.x,
         y: position.y,
         soldermask_margin: soldermaskMargin,
@@ -162,7 +170,13 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
   } {
     const { db } = this.root!
     const hole = db.pcb_hole.get(this.pcb_hole_id!)!
-    const size = this.getPcbSize()
+    // These axis-aligned dimensions are already in board-world mm after the
+    // emitted quarter-turn swap. getPcbSize remains footprint-local because
+    // PrimitiveComponent._getPcbBoundsBeforeLayout transforms its corners.
+    const size =
+      hole.hole_shape === "rect" || hole.hole_shape === "oval"
+        ? { width: hole.hole_width, height: hole.hole_height }
+        : this.getPcbSize()
 
     return {
       center: { x: hole.x, y: hole.y },
