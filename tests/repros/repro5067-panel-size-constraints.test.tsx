@@ -15,17 +15,24 @@ test("panel dimensions are checked against manufacturing limits", async () => {
           text="Panel below min width / above max height"
           fontSize={0.5}
         />
+        <pcbnotetext text="Reported violations" pcbY={-3} fontSize={0.5} />
       </board>,
     ),
   )
   await circuit.renderUntilSettled()
+  const errors = circuit.db.pcb_panelization_placement_error.list()
+  const pcb_note_text = circuit.db.pcb_note_text
+    .list()
+    .find((pcb_note_text) => pcb_note_text.text === "Reported violations")!
+  circuit.db.pcb_note_text.update(pcb_note_text.pcb_note_text_id, {
+    text: `Manufacturing limit diagnostics: ${errors.length}`,
+  })
   await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
     shouldDrawErrors: true,
   })
   expect(panelProps.parse({ sizeConstraints })).toMatchObject({
     sizeConstraints: { minWidth: 50, maxHeight: 25 },
   })
-  const errors = circuit.db.pcb_panelization_placement_error.list()
   expect(errors.map((error) => error.message).join("\n")).toContain(
     "minimum width",
   )
