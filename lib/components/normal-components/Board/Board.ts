@@ -28,10 +28,7 @@ import { Board_updatePcbDesignRuleChecks } from "./Board_updatePcbDesignRuleChec
 import type { BoardI } from "./BoardI"
 import { Board_doInitialPcbCopperPourCleanup } from "./Board_doInitialPcbCopperPourCleanup"
 import { Board_doInitialPcbPlacementDesignRuleChecks } from "./Board_doInitialPcbPlacementDesignRuleChecks"
-import {
-  Board_doInitialPcbStackupRender,
-  findJlcpcbStackupByName,
-} from "./Board_doInitialPcbStackupRender"
+import { Board_doInitialPcbStackupRender } from "./Board_doInitialPcbStackupRender"
 
 const coreBoardProps = boardProps.extend({
   jlcpcbStackup: z
@@ -194,30 +191,21 @@ export class Board
     }
   }
 
-  private get _namedJlcpcbStackup() {
-    return findJlcpcbStackupByName(this._parsedProps.jlcpcbStackup)
-  }
-
   get boardThickness() {
     // 1.6mm is the standard board thickness and has a JLC stackup for every
     // layer count.
-    return (
-      this._parsedProps.thickness ?? this._namedJlcpcbStackup?.thickness ?? 1.6
-    )
+    return this._parsedProps.thickness ?? 1.6
   }
 
   /**
    * Get all available layers for the board
    */
   get allLayers(): ReadonlyArray<LayerRef> {
-    return getBoardAvailableLayers(this._getSubcircuitLayerCount())
+    return getBoardAvailableLayers(this._parsedProps.layers ?? 2)
   }
 
   _getSubcircuitLayerCount(): number {
-    if (this.props.layers !== undefined) {
-      return this._parsedProps.layers ?? 2
-    }
-    return this._namedJlcpcbStackup?.num_layers ?? this._parsedProps.layers ?? 2
+    return this._parsedProps.layers ?? 2
   }
 
   override _computePcbGlobalTransformBeforeLayout(): Matrix {
