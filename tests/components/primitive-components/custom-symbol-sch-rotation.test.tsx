@@ -50,15 +50,43 @@ test("schRotation rotates custom MOSFET artwork, terminals and connected nets", 
           schematic_component.source_component_id ===
           source_component.source_component_id,
       )!
+    // Show the actual emitted metadata beside the already-correct artwork.
+    // Read dynamically because the published schema does not declare this field yet.
+    const emittedCcwRotationDegrees = Reflect.get(
+      schematic_component,
+      "rotation",
+    )
+    const schematic_text = circuit.db.schematic_text
+      .list()
+      .find(
+        (schematic_text) =>
+          schematic_text.text === `schRotation = ${ccwRotationDegrees} deg`,
+      )!
+    circuit.db.schematic_text.update(schematic_text.schematic_text_id, {
+      text: `schRotation = ${ccwRotationDegrees} deg; emitted = ${emittedCcwRotationDegrees ?? "unset"}`,
+    })
+  }
+
+  await expect(circuit).toMatchSchematicSnapshot(import.meta.path, {
+    grid: false,
+    width: 1600,
+    height: 1000,
+  })
+
+  for (const [i, ccwRotationDegrees] of ccwRotationsDegrees.entries()) {
+    const source_component = circuit.db.source_component
+      .list()
+      .find((source_component) => source_component.name === `Q${i + 1}`)!
+    const schematic_component = circuit.db.schematic_component
+      .list()
+      .find(
+        (schematic_component) =>
+          schematic_component.source_component_id ===
+          source_component.source_component_id,
+      )!
     expect(schematic_component).toHaveProperty(
       "rotation",
       ((ccwRotationDegrees % 360) + 360) % 360,
     )
   }
-
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path, {
-    grid: false,
-    width: 1600,
-    height: 1000,
-  })
 })
