@@ -483,33 +483,6 @@ export class Connector<
     super.updatePartsEngineRender()
   }
 
-  doInitialCadModelRender(): void {
-    super.doInitialCadModelRender()
-    if (!this.cad_component_id) return
-    const props = this._getConnectorProps()
-    if (props.standard !== "jst_ph" && props.standard !== "jst_sh") return
-    const cad = this.root!.db.cad_component.get(this.cad_component_id)!
-    if (
-      props.cadModel !== undefined ||
-      cad.model_origin_position ||
-      cad.model_glb_url ||
-      cad.model_gltf_url ||
-      cad.model_stl_url ||
-      cad.model_obj_url ||
-      cad.model_step_url ||
-      cad.model_jscad ||
-      !/^jst\d+_(?:ph|sh)(?:_|$)/.test(cad.footprinter_string ?? "")
-    )
-      return
-    // Named PH/SH models are authored in the footprint-local right-handed
-    // mm frame (+Z above), with (0,0,0) at the footprint origin on copper.
-    // The SH tails/hold-downs are asymmetric: inferring an origin from the
-    // mesh's lowest vertices shifts the whole header away from its PCB pads.
-    this.root!.db.cad_component.update(this.cad_component_id, {
-      model_origin_position: { x: 0, y: 0, z: 0 },
-    })
-  }
-
   doInitialSchematicComponentRender(): void {
     super.doInitialSchematicComponentRender()
     if (
