@@ -44,7 +44,9 @@ export function withFixedTraces(
           center: { x: point.x, y: point.y },
           width: diameter,
           height: diameter,
-          layers: boardLayers.slice(Math.min(from, to), Math.max(from, to) + 1),
+          layers:
+            point.layers ??
+            boardLayers.slice(Math.min(from, to), Math.max(from, to) + 1),
           connectedTo,
         })
       }
@@ -62,27 +64,71 @@ export function withFixedTraces(
             ? next.width
             : input.minTraceWidth
       const layer = point.route_type === "wire" ? point.layer : point.to_layer
-      // Small axis-aligned boxes conservatively cover diagonal copper too.
-      const steps =
-        point.x === next.x || point.y === next.y
-          ? 1
-          : Math.max(
-              1,
-              Math.ceil(Math.hypot(next.x - point.x, next.y - point.y) / width),
-            )
-      for (let step = 0; step < steps; step++) {
-        const x1 = point.x + ((next.x - point.x) * step) / steps
-        const y1 = point.y + ((next.y - point.y) * step) / steps
-        const x2 = point.x + ((next.x - point.x) * (step + 1)) / steps
-        const y2 = point.y + ((next.y - point.y) * (step + 1)) / steps
+      const dx = next.x - point.x
+      const dy = next.y - point.y
+      if (dx === 0 && dy === 0) {
+        const via = [point, next].find(
+          (endpoint) => endpoint.route_type === "via",
+        )
+        if (via) {
+          const viaDiameter =
+            via.via_diameter ??
+            input.minViaPadDiameter ??
+            input.minViaDiameter ??
+            0.6
+          if (width <= viaDiameter) continue
+        }
+      }
+      if (dx === 0 || dy === 0) {
         obstacles.push({
           type: "rect",
-          center: { x: (x1 + x2) / 2, y: (y1 + y2) / 2 },
-          width: Math.abs(x2 - x1) + width,
-          height: Math.abs(y2 - y1) + width,
+          center: { x: (point.x + next.x) / 2, y: (point.y + next.y) / 2 },
+          width: Math.abs(dx) + width,
+          height: Math.abs(dy) + width,
           layers: [layer],
           connectedTo,
         })
+        continue
+      }
+
+      const segmentLength = Math.hypot(dx, dy)
+      const steps = Math.max(1, Math.ceil(segmentLength / width))
+      // Project the perpendicular stroke width onto each board axis.
+      const projectedWidthX = (Math.abs(dy) / segmentLength) * width
+      const projectedWidthY = (Math.abs(dx) / segmentLength) * width
+      for (let step = 0; step < steps; step++) {
+        obstacles.push({
+          type: "rect",
+          center: {
+            x: point.x + (dx * (step + 0.5)) / steps,
+            y: point.y + (dy * (step + 0.5)) / steps,
+          },
+          width: Math.abs(dx) / steps + projectedWidthX,
+          height: Math.abs(dy) / steps + projectedWidthY,
+          layers: [layer],
+          connectedTo,
+        })
+      }
+      // The union of these rectangles conservatively covers a round end cap.
+      for (const endpoint of [point, next]) {
+        obstacles.push(
+          {
+            type: "rect",
+            center: { x: endpoint.x, y: endpoint.y },
+            width,
+            height: width * Math.SQRT1_2,
+            layers: [layer],
+            connectedTo,
+          },
+          {
+            type: "rect",
+            center: { x: endpoint.x, y: endpoint.y },
+            width: width * Math.SQRT1_2,
+            height: width,
+            layers: [layer],
+            connectedTo,
+          },
+        )
       }
     }
   }

@@ -2221,7 +2221,12 @@ export class NormalComponent<
       model_board_normal_direction: cadModel?.modelBoardNormalDirection,
       model_origin_alignment: "center_of_component_on_board_surface",
       anchor_alignment: "center_of_component_on_board_surface",
-      model_origin_position: cadModel?.modelOriginPosition,
+      // Generated footprint models use footprint-local, right-handed mm
+      // (+Z above copper). Their authored (0,0,0) is the footprintOrigin used
+      // by cadComponentPlacement above, not the center of the mesh's contacts.
+      model_origin_position:
+        cadModel?.modelOriginPosition ??
+        (footprinterStringForCadComponent ? { x: 0, y: 0, z: 0 } : undefined),
       // The authored extent, carried on the record so consumers can read the
       // part's mechanical facts from one place instead of reaching back into
       // props -- which only works for the object form of `cadModel`.

@@ -1,3 +1,7 @@
+import {
+  PrimitiveComponent_doInitialCadExplosionCollisionCheck,
+  PrimitiveComponent_removeCadExplosionCollisionCheck,
+} from "./PrimitiveComponent_doInitialCadExplosionCollisionCheck"
 import type { Port } from "lib/components/primitive-components/Port"
 import { assertUnambiguousPhysicalPortSelection } from "lib/components/primitive-components/Port/assertUnambiguousPhysicalPortSelection"
 import { getConstructionPropsSchema } from "./get-construction-props-schema"
@@ -1061,6 +1065,18 @@ export abstract class PrimitiveComponent<
     newProps: z.infer<ZodProps>
     changedProps: string[]
   }) {}
+
+  doInitialCadExplosionCollisionCheck() {
+    PrimitiveComponent_doInitialCadExplosionCollisionCheck(this)
+  }
+
+  updateCadExplosionCollisionCheck() {
+    PrimitiveComponent_doInitialCadExplosionCollisionCheck(this)
+  }
+
+  removeCadExplosionCollisionCheck() {
+    PrimitiveComponent_removeCadExplosionCollisionCheck(this)
+  }
 
   onChildChanged(child: PrimitiveComponent) {
     this.parent?.onChildChanged?.(child)

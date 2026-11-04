@@ -20,31 +20,52 @@ export function Board_doInitialPcbStackupRender(
       element.pcb_board_id === importedPcbBoard?.pcb_board_id,
   )
   let layers = importedStackup?.layers
-  if (
-    !layers &&
-    (board._parsedProps.fabricatorPreset || board._parsedProps.jlcpcbStackup)
-  ) {
-    const { num_layers, thickness, material } =
-      importedPcbBoard ?? db.pcb_board.get(pcb_board_id)!
-    const resolvedThickness = thickness ?? board.boardThickness
-    const resolvedMaterial = material ?? "fr4"
-    const requestedStackupName = board._parsedProps.jlcpcbStackup
-
+  const { fabricatorPreset, jlcpcbStackup: requestedStackupName } =
+    board._parsedProps
+  if (!layers && (fabricatorPreset || requestedStackupName)) {
+    const {
+      num_layers,
+      thickness: boardThickness,
+      material = "fr4",
+    } = importedPcbBoard ?? db.pcb_board.get(pcb_board_id)!
+    const thickness = boardThickness ?? board.boardThickness
     if (requestedStackupName) {
       const normalizedName = requestedStackupName.toLowerCase()
       layers = jlcStackups.find(
         (stackup) =>
           stackup.name.toLowerCase() === normalizedName &&
           stackup.num_layers === num_layers &&
-          stackup.thickness === resolvedThickness &&
-          stackup.material === resolvedMaterial,
+          stackup.thickness === thickness &&
+          stackup.material === material,
       )?.layers
     } else {
-      layers = getJlcStackup({
-        num_layers,
-        thickness: resolvedThickness,
-        material,
-      })?.layers
+      layers = getJlcStackup({ num_layers, thickness, material })?.layers
+    }
+    if (!layers && fabricatorPreset && !requestedStackupName) {
+      // Explain why the preset produced no stackup instead of silently
+      // omitting it, e.g. a 2-layer 1.5mm board.
+      const supportedThicknesses = [
+        ...new Set(
+          jlcStackups
+            .filter(
+              (stackup) =>
+                stackup.num_layers === num_layers &&
+                stackup.material === material,
+            )
+            .map((stackup) => stackup.thickness),
+        ),
+      ].sort((a, b) => a - b)
+      db.source_property_ignored_warning.insert({
+        source_component_id: board.source_group_id ?? "",
+        property_name: "fabricatorPreset",
+        error_type: "source_property_ignored_warning",
+        subcircuit_id: subcircuit_id ?? undefined,
+        message:
+          `fabricatorPreset "${fabricatorPreset}" has no stackup template for a ${num_layers}-layer ${thickness}mm ${material} board, so no pcb_stackup was emitted. ` +
+          (supportedThicknesses.length > 0
+            ? `Supported thicknesses for ${num_layers}-layer ${material}: ${supportedThicknesses.map((t) => `${t}mm`).join(", ")}. Set thickness on <board> to one of these.`
+            : `No ${num_layers}-layer ${material} stackups are supported.`),
+      })
     }
   }
   if (!layers) return

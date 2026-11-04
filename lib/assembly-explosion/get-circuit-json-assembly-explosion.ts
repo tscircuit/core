@@ -230,6 +230,7 @@ export function getCircuitJsonAssemblyExplosion(
       }),
     stages: stages.map((stage) => stage.name),
     lines,
-    collisionCheckStatus: "not_implemented",
+    // Pure pose evaluation does not perform asynchronous solid checks.
+    collisionCheckStatus: "not_checked",
   }
 }

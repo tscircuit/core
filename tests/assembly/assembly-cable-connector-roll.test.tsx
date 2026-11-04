@@ -1,6 +1,9 @@
 import { expect, test } from "bun:test"
 import { assembly } from "lib"
-import { convertCircuitJsonTo3D } from "circuit-json-to-gltf"
+import {
+  convertCircuitJsonTo3D,
+  loadCadComponentMesh,
+} from "circuit-json-to-gltf"
 import { parseCableString } from "@tscircuit/cableprinter"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { expectAssemblySnapshot } from "./fixtures/expect-assembly-snapshot"
@@ -72,6 +75,54 @@ test("inferred JST pin 1 sides follow emitted pins across rotations and PCB laye
               ? cable.from_connector_pin1_position
               : cable.to_connector_pin1_position
           expect(pin1).toBeDefined()
+          const cad = circuit.db.cad_component
+            .list()
+            .find(
+              (cad) =>
+                cad.source_component_id === connector.source_component_id,
+            )!
+          const pcb = circuit.db.pcb_component.get(cad.pcb_component_id!)!
+          const mesh = await loadCadComponentMesh(cad, { pcbComponent: pcb })
+          // Measure the real header posts at their tips, in circuit-world mm
+          // (+Z above). SH solder pads are behind the internal contact row;
+          // comparing only pad-to-pad width could never detect that offset.
+          const sign = layer === "top" ? 1 : -1
+          const postTop =
+            cad.position.z + sign * (standard === "jst_ph" ? 5.5 : 3.45)
+          const tipsWithDuplicates = Array.from(
+            { length: mesh.positions.length / 3 },
+            (_, i) => ({
+              x: mesh.positions[3 * i]!,
+              y: mesh.positions[3 * i + 1]!,
+              z: mesh.positions[3 * i + 2]!,
+            }),
+          ).filter((point) => Math.abs(point.z - postTop) < 1e-5)
+          const tips = [
+            ...new Map(
+              tipsWithDuplicates.map((point) => [
+                [point.x, point.y, point.z].map((v) => v.toFixed(5)).join(","),
+                point,
+              ]),
+            ).values(),
+          ]
+          expect(tips.length).toBeGreaterThanOrEqual(24)
+          const towardPin1 = (point: { x: number; y: number }) =>
+            -(point.x * dx + point.y * dy) / length
+          const extreme = Math.max(...tips.map(towardPin1))
+          const firstTip = tips.filter(
+            (point) =>
+              extreme - towardPin1(point) <
+              (standard === "jst_ph" ? 0.51 : 0.21),
+          )
+          const centerOfTip = firstTip.reduce(
+            (sum, point) => ({
+              x: sum.x + point.x / firstTip.length,
+              y: sum.y + point.y / firstTip.length,
+            }),
+            { x: 0, y: 0 },
+          )
+          expect(pin1!.x).toBeCloseTo(centerOfTip.x, 4)
+          expect(pin1!.y).toBeCloseTo(centerOfTip.y, 4)
           const tipForPosition =
             end === "A" ? cable.path[0]! : cable.path.at(-1)!
           const adjacent = end === "A" ? cable.path[1]! : cable.path.at(-2)!
@@ -102,6 +153,11 @@ test("inferred JST pin 1 sides follow emitted pins across rotations and PCB laye
           const housing = scene.boxes.find(
             (box) => box.label === `CABLE / ${end}-housing`,
           )!
+          const housingAxial = housing.mesh!.triangles.flatMap((triangle) =>
+            triangle.vertices.map((vertex) => sign * vertex.y),
+          )
+          const socketTip = sign * postTop
+          expect(socketTip - Math.min(...housingAxial)).toBeGreaterThan(1)
           const projection = housing.mesh!.triangles.flatMap((triangle) =>
             triangle.vertices.map(
               (vertex) => (vertex.x * dx + vertex.z * dy) / length,

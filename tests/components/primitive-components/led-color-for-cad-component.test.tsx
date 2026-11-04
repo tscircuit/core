@@ -25,7 +25,11 @@ test("color for  cad model", async () => {
       "model_mtl_url": undefined,
       "model_obj_url": undefined,
       "model_origin_alignment": "center_of_component_on_board_surface",
-      "model_origin_position": undefined,
+      "model_origin_position": {
+        "x": 0,
+        "y": 0,
+        "z": 0,
+      },
       "model_step_url": undefined,
       "model_stl_url": undefined,
       "model_unit_to_mm_scale_factor": undefined,
@@ -34,7 +38,7 @@ test("color for  cad model", async () => {
       "position": {
         "x": 0,
         "y": 0,
-        "z": 0.7,
+        "z": 0.8,
       },
       "rotation": {
         "x": 0,

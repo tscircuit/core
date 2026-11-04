@@ -1,3 +1,5 @@
+import { getRenderedExplosionCollisionCheckStatus } from "lib/components/base-components/PrimitiveComponent/PrimitiveComponent_doInitialCadExplosionCollisionCheck"
+import type { AssemblyExplosionCollisionCheckStatus } from "./collision/types"
 import { getCircuitJsonAssemblyExplosion } from "./get-circuit-json-assembly-explosion"
 import type { AnyCircuitElement, CadComponent } from "circuit-json"
 import { mat3, mat4, vec3 } from "gl-matrix"
@@ -34,8 +36,8 @@ export interface AssemblyExplosionView {
   circuitJson: AnyCircuitElement[]
   stages: AssemblyExplosionStageRef[]
   lines: AssemblyExplosionLine[]
-  /** This speculative view does not establish swept-path collision clearance. */
-  collisionCheckStatus: "not_implemented"
+  /** Status of the full-program render-phase check; diagnostics remain in Circuit JSON. */
+  collisionCheckStatus: AssemblyExplosionCollisionCheckStatus
 }
 
 export const assemblyPath = (
@@ -48,6 +50,7 @@ export const assemblyPath = (
       [
         "AssemblyDevice",
         "AssemblySubassembly",
+        "AssemblyBolt",
         "AssemblyPart",
         "AssemblyPrintedPart",
         "AssemblyScreen",
@@ -180,7 +183,12 @@ export function getAssemblyExplosion(
         record.targets.some((target) => target.type === "cad_explosion_stage"),
     )
   )
-    return getCircuitJsonAssemblyExplosion(assembled, options)
+    return {
+      ...getCircuitJsonAssemblyExplosion(assembled, options),
+      collisionCheckStatus: getRenderedExplosionCollisionCheckStatus(
+        circuit.firstChild,
+      ),
+    }
   const sourceOffsets = new Map<SourceComponentId, AssemblyWorldPoint>()
   const partOffsets = new Map<PrimitiveComponent, AssemblyWorldPoint>()
   const lines: AssemblyExplosionLine[] = []
@@ -200,6 +208,7 @@ export function getAssemblyExplosion(
               !part.shouldBeRemoved &&
               part.name === segment &&
               [
+                "AssemblyBolt",
                 "AssemblyPart",
                 "AssemblyPrintedPart",
                 "AssemblySubassembly",
@@ -361,5 +370,12 @@ export function getAssemblyExplosion(
         return { ...record, position: pointPlus(record.position, offset) }
       return { ...record, center: pointPlus(record.center, offset) }
     })
-  return { circuitJson, stages, lines, collisionCheckStatus: "not_implemented" }
+  return {
+    circuitJson,
+    stages,
+    lines,
+    collisionCheckStatus: getRenderedExplosionCollisionCheckStatus(
+      circuit.firstChild,
+    ),
+  }
 }
