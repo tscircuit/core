@@ -9,8 +9,8 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 //
 // Cause: the default board thickness is 1.4mm and the JLC stackup templates
 // have no 1.4mm entry, so Board_doInitialPcbStackupRender inserts nothing.
-// board-stackup-unsupported3 covers this as intended; this repro shows what a
-// user sees: nothing explains why the preset produced no stackup.
+// board-stackup-unsupported3 covers this as intended; a
+// source_property_ignored_warning now explains why no stackup was emitted.
 const renderBoard = async (thickness?: number) => {
   const { circuit } = getTestFixture()
   circuit.add(
@@ -90,7 +90,7 @@ ${rows.join("\n")}
 </svg>`
 }
 
-test("repro: jlcpcb_standard preset with the default board thickness emits no pcb_stackup", async () => {
+test("repro: jlcpcb_standard preset with the default board thickness warns that no pcb_stackup was emitted", async () => {
   expect(
     getJlcStackup({ num_layers: 4, thickness: 1.4, material: "fr4" }),
   ).toBeUndefined()
@@ -108,14 +108,19 @@ test("repro: jlcpcb_standard preset with the default board thickness emits no pc
       type: element.type,
       message: "message" in element ? String(element.message) : "",
     }))
-  // Expected: a pcb_stackup, or an error/warning explaining that 1.4mm has
-  // no JLC template. Actual: nothing at all.
   expect(defaultThickness.db.pcb_stackup.list()).toHaveLength(0)
-  expect(stackupMessages).toHaveLength(0)
+  expect(stackupMessages).toHaveLength(1)
+  expect(stackupMessages[0].type).toBe("source_property_ignored_warning")
+  expect(stackupMessages[0].message).toMatchInlineSnapshot(
+    `"fabricatorPreset "jlcpcb_standard" has no stackup template for a 4-layer 1.4mm fr4 board, so no pcb_stackup was emitted. Supported thicknesses for 4-layer fr4: 0.4mm, 0.6mm, 0.8mm, 1mm, 1.2mm, 1.6mm, 1.8mm, 2mm, 2.5mm, 3mm. Set thickness on <board> to one of these."`,
+  )
 
   // An explicit thickness that has a JLC template works.
   const explicitThickness = await renderBoard(1.6)
   expect(explicitThickness.db.pcb_stackup.list()).toHaveLength(1)
+  expect(
+    explicitThickness.db.source_property_ignored_warning.list(),
+  ).toHaveLength(0)
 
   await expect(
     createStackupMessagesSvg({
