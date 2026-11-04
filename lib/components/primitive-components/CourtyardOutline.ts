@@ -2,8 +2,6 @@ import { courtyardOutlineProps } from "@tscircuit/props"
 import { getBoundsFromPoints } from "@tscircuit/math-utils"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { applyToPoint } from "transformation-matrix"
-import type { Point } from "circuit-json"
-import { stitchCourtyardLineSegments } from "lib/utils/stitch-courtyard-line-segments"
 
 export class CourtyardOutline extends PrimitiveComponent<
   typeof courtyardOutlineProps
@@ -16,40 +14,6 @@ export class CourtyardOutline extends PrimitiveComponent<
       componentName: "CourtyardOutline",
       zodProps: courtyardOutlineProps,
     }
-  }
-
-  _getRenderedCourtyardOutline(): Point[] | null {
-    const transformedOutline = this._parsedProps.outline.map((position) =>
-      applyToPoint(this._computePcbGlobalTransformBeforeLayout(), position),
-    )
-    if (this._parsedProps.outline.length !== 2 || !this.parent)
-      return transformedOutline
-
-    const siblings = this.parent.children.filter(
-      (sibling): sibling is CourtyardOutline =>
-        sibling instanceof CourtyardOutline &&
-        sibling._parsedProps.outline.length === 2 &&
-        (sibling._parsedProps.layer ?? "top") ===
-          (this._parsedProps.layer ?? "top"),
-    )
-    const chains = stitchCourtyardLineSegments(
-      siblings.map((sibling) =>
-        sibling._parsedProps.outline.map((position) =>
-          applyToPoint(
-            sibling._computePcbGlobalTransformBeforeLayout(),
-            position,
-          ),
-        ),
-      ),
-    )
-    const ownOutlineIndex = siblings.indexOf(this)
-    const chain = chains.find((courtyardChain) =>
-      courtyardChain.sourceOutlineIndexes.includes(ownOutlineIndex),
-    )
-    if (!chain?.closed) return transformedOutline
-    return chain.sourceOutlineIndexes[0] === ownOutlineIndex
-      ? chain.outline
-      : null
   }
 
   doInitialPcbPrimitiveRender(): void {
@@ -65,8 +29,7 @@ export class CourtyardOutline extends PrimitiveComponent<
       )
     }
 
-    const outline = this._getRenderedCourtyardOutline()
-    if (!outline) return
+    const transform = this._computePcbGlobalTransformBeforeLayout()
     const subcircuit = this.getSubcircuit()
     const pcb_component_id =
       this.parent?.pcb_component_id ??
@@ -75,7 +38,16 @@ export class CourtyardOutline extends PrimitiveComponent<
     const pcb_courtyard_outline = db.pcb_courtyard_outline.insert({
       pcb_component_id,
       layer,
-      outline,
+      outline: props.outline.map((p) => {
+        const transformedPosition = applyToPoint(transform, {
+          x: p.x,
+          y: p.y,
+        })
+        return {
+          x: transformedPosition.x,
+          y: transformedPosition.y,
+        }
+      }),
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
     })
