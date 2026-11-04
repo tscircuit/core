@@ -13,6 +13,7 @@ import type {
   SourceComponentBase,
 } from "circuit-json"
 import Debug from "debug"
+import { NormalComponent } from "lib/components/base-components/NormalComponent/NormalComponent"
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import {
   getRotatedSize,
@@ -21,6 +22,7 @@ import {
   shouldSwapOrientation,
 } from "lib/utils/schematic/getRotatedSymbolName"
 import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
+import { getSchematicBoxLabelPositions } from "lib/utils/schematic/getSchematicBoxLabelPositions"
 import type { z } from "zod"
 import type { Group } from "./Group"
 import type { AxisDirection } from "./Group_doInitialSchematicTraceRender/getSide"
@@ -1053,7 +1055,33 @@ export function applySchematicMatchPackLayoutToTree<
                       | "bottom")) || port.side_of_component
           }
 
+          const labelPositions = getSchematicBoxLabelPositions({
+            center: newCenter,
+            size: schematicComponent.size,
+            hasTopPins: ports.some((port) => port.facing_direction === "up"),
+            hasBottomPins: ports.some(
+              (port) => port.facing_direction === "down",
+            ),
+          })
           for (const text of texts) {
+            // Generated box labels stay horizontal and use the same placement
+            // rule as an unrotated box with these pin sides.
+            if (groupChild instanceof NormalComponent) {
+              if (
+                text.schematic_text_id ===
+                groupChild.schematic_component_name_text_id
+              ) {
+                text.position = labelPositions.componentName
+                continue
+              }
+              if (
+                text.schematic_text_id ===
+                groupChild.schematic_manufacturer_part_number_text_id
+              ) {
+                text.position = labelPositions.manufacturerPartNumber
+                continue
+              }
+            }
             const dx = text.position.x - newCenter.x
             const dy = text.position.y - newCenter.y
 

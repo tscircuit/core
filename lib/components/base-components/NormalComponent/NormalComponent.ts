@@ -28,6 +28,7 @@ import {
   type AnyCircuitElement,
   type LayerRef,
   type PcbComponent,
+  type SchematicText,
   type SourcePort,
   distance,
   pcb_component_invalid_layer_error,
@@ -65,6 +66,7 @@ import {
   isExplicitPinMappingArrangement,
 } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
 import { getNumericSchPinStyle } from "lib/utils/schematic/getNumericSchPinStyle"
+import { getSchematicBoxLabelPositions } from "lib/utils/schematic/getSchematicBoxLabelPositions"
 import { getPinNumberFromPinLabelsKey } from "lib/utils/schematic/getPinNumberFromPinLabelsKey"
 import { getPinsFromPortArrangement } from "lib/utils/schematic/getSizeOfSidesFromPortArrangement"
 import { isCircuitJsonSymbol } from "lib/utils/schematic/isCircuitJsonSymbol"
@@ -127,6 +129,8 @@ export type PortMap<T extends string> = {
   [K in T]: Port
 }
 
+type SchematicTextId = SchematicText["schematic_text_id"]
+
 /**
  * A NormalComponent is the base class for most components that a user will
  * interact with. It has the ability to set a footprint and discover ports.
@@ -153,6 +157,8 @@ export class NormalComponent<
   implements INormalComponent
 {
   schematicBoxDimensions: SchematicBoxDimensions | null = null
+  schematic_component_name_text_id?: SchematicTextId
+  schematic_manufacturer_part_number_text_id?: SchematicTextId
   reactSubtrees: Array<ReactSubtree> = []
   _impliedFootprint?: string | undefined
   _resolvedPcbCalcOffsetX: number | undefined
@@ -997,24 +1003,18 @@ export class NormalComponent<
       source_component_id: this.source_component_id!,
       schematic_sheet_id: this._resolveSchematicSheetId(),
     })
-    const hasTopPins = schPortArrangement?.topSide !== undefined
-    const hasTopOrBottomPins =
-      hasTopPins || schPortArrangement?.bottomSide !== undefined
-    const schematic_box_width = dimensions?.getSize().width
-    const schematic_box_height = dimensions?.getSize().height
+    const labelPositions = getSchematicBoxLabelPositions({
+      center,
+      size: dimensions.getSize(),
+      hasTopPins: schPortArrangement?.topSide !== undefined,
+      hasBottomPins: schPortArrangement?.bottomSide !== undefined,
+    })
     const manufacturer_part_number_schematic_text = db.schematic_text.insert({
       text: resolveManufacturerPartNumber(props) ?? "",
       schematic_component_id: schematic_component.schematic_component_id,
       anchor: "left",
       rotation: 0,
-      position: {
-        x: hasTopPins
-          ? center.x + (schematic_box_width ?? 0) / 2 + 0.1
-          : center.x - (schematic_box_width ?? 0) / 2,
-        y: hasTopOrBottomPins
-          ? center.y + (schematic_box_height ?? 0) / 2 + 0.35
-          : center.y - (schematic_box_height ?? 0) / 2 - 0.13,
-      },
+      position: labelPositions.manufacturerPartNumber,
       color: "#006464",
       font_size: 0.18,
       schematic_sheet_id: this._resolveSchematicSheetId(),
@@ -1024,18 +1024,15 @@ export class NormalComponent<
       schematic_component_id: schematic_component.schematic_component_id,
       anchor: "left",
       rotation: 0,
-      position: {
-        x: hasTopPins
-          ? center.x + (schematic_box_width ?? 0) / 2 + 0.1
-          : center.x - (schematic_box_width ?? 0) / 2,
-        y: hasTopOrBottomPins
-          ? center.y + (schematic_box_height ?? 0) / 2 + 0.55
-          : center.y + (schematic_box_height ?? 0) / 2 + 0.13,
-      },
+      position: labelPositions.componentName,
       color: "#006464",
       font_size: 0.18,
       schematic_sheet_id: this._resolveSchematicSheetId(),
     })
+    this.schematic_manufacturer_part_number_text_id =
+      manufacturer_part_number_schematic_text.schematic_text_id
+    this.schematic_component_name_text_id =
+      component_name_text.schematic_text_id
     this.schematic_component_id = schematic_component.schematic_component_id
   }
 
