@@ -1,13 +1,13 @@
-import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { holeProps } from "@tscircuit/props"
 import { distance } from "circuit-json"
 import type {
   PCBHole,
-  PcbHolePill,
-  PcbHoleRotatedPill,
-  PcbHoleRect,
   PcbHoleCircle,
+  PcbHolePill,
+  PcbHoleRect,
+  PcbHoleRotatedPill,
 } from "circuit-json"
+import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
 export class Hole extends PrimitiveComponent<typeof holeProps> {
   pcb_hole_id: string | null = null
@@ -18,6 +18,23 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
       componentName: "Hole",
       zodProps: holeProps,
     }
+  }
+
+  private _getResolvedCircleDiameter(): number {
+    const { _parsedProps: props } = this
+    if (props.shape && props.shape !== "circle") return 0
+    if (typeof props.diameter === "number" && Number.isFinite(props.diameter)) {
+      return props.diameter
+    }
+    const rawHoleDiameter = (this.props as { holeDiameter?: string | number })
+      ?.holeDiameter
+    if (rawHoleDiameter !== undefined) {
+      const parsed = distance.parse(rawHoleDiameter)
+      if (typeof parsed === "number" && Number.isFinite(parsed)) {
+        return parsed
+      }
+    }
+    return props.diameter
   }
 
   getPcbSize(): { width: number; height: number } {
@@ -31,16 +48,17 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
         width: props.width,
         height: props.height,
       }
-    } else if (isRect) {
+    }
+    if (isRect) {
       return {
         width: props.width,
         height: props.height,
       }
-    } else {
-      return {
-        width: props.diameter,
-        height: props.diameter,
-      }
+    }
+    const diameter = this._getResolvedCircleDiameter()
+    return {
+      width: diameter,
+      height: diameter,
     }
   }
 
@@ -138,11 +156,12 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
       this.pcb_hole_id = inserted_hole.pcb_hole_id!
     } else {
       // Circle shape (default)
+      const holeDiameter = this._getResolvedCircleDiameter()
       const inserted_hole = db.pcb_hole.insert({
         pcb_component_id,
         type: "pcb_hole",
         hole_shape: "circle",
-        hole_diameter: props.diameter,
+        hole_diameter: holeDiameter,
         x: position.x,
         y: position.y,
         soldermask_margin: soldermaskMargin,
