@@ -31,7 +31,7 @@ export function Board_doInitialPcbStackupRender(
     layers = getJlcStackup({ num_layers, thickness, material })?.layers
     if (!layers) {
       // Explain why the preset produced no stackup instead of silently
-      // omitting it, e.g. the default 1.4mm thickness has no JLC template.
+      // omitting it, e.g. a 2-layer 1.5mm board.
       const supportedThicknesses = [
         ...new Set(
           jlcStackups
