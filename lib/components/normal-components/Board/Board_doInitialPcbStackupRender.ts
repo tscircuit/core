@@ -1,6 +1,20 @@
-import { getJlcStackup } from "@tscircuit/jlcpcb-manufacturing-specs"
+import {
+  getJlcStackup,
+  jlcStackups,
+  type JlcStackup,
+} from "@tscircuit/jlcpcb-manufacturing-specs"
 import type { PcbBoard } from "circuit-json"
 import type { Board } from "./Board"
+
+export function findJlcpcbStackupByName(
+  name: string | undefined,
+): JlcStackup | undefined {
+  const normalizedName = name?.trim().toUpperCase()
+  if (!normalizedName) return undefined
+  return jlcStackups.find(
+    (stackup) => stackup.name.toUpperCase() === normalizedName,
+  )
+}
 
 export function Board_doInitialPcbStackupRender(
   board: Board,
@@ -17,7 +31,52 @@ export function Board_doInitialPcbStackupRender(
       element.pcb_board_id === importedPcbBoard?.pcb_board_id,
   )
   let layers = importedStackup?.layers
-  if (!layers && board._parsedProps.fabricatorPreset) {
+  const requestedStackupName = board._parsedProps.jlcpcbStackup
+  if (!layers && requestedStackupName) {
+    const { num_layers, thickness, material } =
+      importedPcbBoard ?? db.pcb_board.get(pcb_board_id)!
+    const effectiveThickness = thickness ?? board.boardThickness
+    const effectiveMaterial = material ?? "fr4"
+    const namedStackup = findJlcpcbStackupByName(requestedStackupName)
+
+    if (!namedStackup) {
+      const matchingNames = jlcStackups
+        .filter(
+          (stackup) =>
+            stackup.num_layers === num_layers &&
+            Math.abs(stackup.thickness - effectiveThickness) < 1e-6 &&
+            stackup.material === effectiveMaterial,
+        )
+        .map((stackup) => stackup.name)
+      const matchingSuffix =
+        matchingNames.length > 0
+          ? ` Matching JLCPCB stackups for ${num_layers}-layer ${effectiveThickness}mm ${effectiveMaterial}: ${matchingNames.join(", ")}.`
+          : ""
+      db.source_invalid_component_property_error.insert({
+        source_component_id: board.source_component_id ?? "",
+        property_name: "jlcpcbStackup",
+        error_type: "source_invalid_component_property_error",
+        message: `Unknown jlcpcbStackup "${requestedStackupName}".${matchingSuffix}`,
+      })
+      return
+    }
+
+    if (
+      namedStackup.num_layers !== num_layers ||
+      Math.abs(namedStackup.thickness - effectiveThickness) > 1e-6 ||
+      namedStackup.material !== effectiveMaterial
+    ) {
+      db.source_invalid_component_property_error.insert({
+        source_component_id: board.source_component_id ?? "",
+        property_name: "jlcpcbStackup",
+        error_type: "source_invalid_component_property_error",
+        message: `jlcpcbStackup "${namedStackup.name}" is a ${namedStackup.num_layers}-layer ${namedStackup.thickness}mm ${namedStackup.material} stackup, which does not match board construction (${num_layers}-layer ${effectiveThickness}mm ${effectiveMaterial}).`,
+      })
+      return
+    }
+
+    layers = namedStackup.layers
+  } else if (!layers && board._parsedProps.fabricatorPreset) {
     const { num_layers, thickness, material } =
       importedPcbBoard ?? db.pcb_board.get(pcb_board_id)!
     layers = getJlcStackup({
