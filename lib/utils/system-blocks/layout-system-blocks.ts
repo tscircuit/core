@@ -9,6 +9,10 @@ import type { SystemBlockPageProps } from "@tscircuit/props"
 import type { Point } from "circuit-json"
 import { applyToPoint, compose, scale, translate } from "transformation-matrix"
 import type { SystemBlockTree } from "./collect-system-blocks"
+import {
+  roundSystemBlockRoute,
+  type SystemBlockRouteObstacle,
+} from "./round-system-block-route"
 
 /**
  * Dagre works in a top-left frame (+X right, +Y down). All lengths here are mm.
@@ -86,6 +90,29 @@ export function layoutSystemBlocks(
       ] as const
     }),
   )
+  const obstacles: SystemBlockRouteObstacle[] = blocks.map((block) => {
+    const { center, width, height } = bounds.get(block)!
+    const top = center.y + height / 2
+    return {
+      minX: center.x - width / 2,
+      maxX: center.x + width / 2,
+      minY: tree.groups.some((group) => group === block)
+        ? top - 12
+        : center.y - height / 2,
+      maxY: top,
+    }
+  })
+  for (const [index, connection] of tree.connections.entries()) {
+    if (connection._parsedProps.label === undefined) continue
+    const edge = graph.edge(edges[index]) as GraphEdge & Point
+    const label = applyToPoint(toPage, { x: edge.x!, y: edge.y! })
+    obstacles.push({
+      minX: label.x - edge.width / 2 - 0.5,
+      maxX: label.x + edge.width / 2 + 0.5,
+      minY: label.y - edge.height / 2 - 0.5,
+      maxY: label.y + edge.height / 2 + 0.5,
+    })
+  }
   const routes = new Map(
     tree.connections.map((connection, index) => {
       const edge = graph.edge(edges[index]) as GraphEdge & Point
@@ -101,7 +128,13 @@ export function layoutSystemBlocks(
         connection._parsedProps.label === undefined
           ? undefined
           : applyToPoint(toPage, { x: edge.x!, y: edge.y! })
-      return [connection, { route, label_anchor_center }] as const
+      return [
+        connection,
+        {
+          route: roundSystemBlockRoute(route, obstacles),
+          label_anchor_center,
+        },
+      ] as const
     }),
   )
   return { width, height, bounds, routes }

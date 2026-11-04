@@ -43,6 +43,20 @@ centers and route points are absolute page coordinates. PCB positions and sizes
 do not affect the system layout. The SVG renderer receives resolved geometry;
 no additional graph layout is necessary.
 
+Core rounds bends with circle-derived cubic Bézier segments, targeting a radius
+of 12 diagram mm. It removes redundant collinear waypoints and reduces the radius
+when adjacent segments are short or rounding would intersect a block, group
+heading, or label. Corners with no clearance and exact reversals remain angular.
+Attachment points and label positions stay fixed; this does not reroute existing
+crossings or change Dagre's diagonal routing directions.
+
+The emitted route stores absolute `cubic_bezier_control_points` on each curved
+segment's endpoint. Arc pieces span at most 90 degrees, with matching tangent
+directions at joins and a maximum radial error of about 0.0273%. Rounded geometry
+stays within the original corner bounds, preserving the resolved page bounds.
+Use `circuit-json` 0.0.544 and `circuit-to-svg` 0.0.456 or later to retain and render
+these controls. No additional TSX props are required.
+
 Connections use component names in `from` and `to`. Their `direction` is
 `forward` (default), `both`, or `none`. Parallel connections, feedback cycles,
 self-loops, and disconnected blocks are supported. The props API's `kind`
@@ -88,6 +102,6 @@ navigation. System names are independent of physical component names.
 
 The [TSX fixtures](../tests/features/system-blocks/) include all four directions,
 nested groups, power fanout, feedback, PCB references, multiple pages, empty
-groups/pages, long text, and page updates. Snapshots use `circuit-to-svg` 0.0.455
+groups/pages, long text, and page updates. Snapshots use `circuit-to-svg` 0.0.456
 or later. Tests also validate the emitted Circuit JSON and check that routes
 terminate on block boundaries and stay within the resolved page bounds.
