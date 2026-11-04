@@ -1,10 +1,11 @@
-import type { Polygon } from "@flatten-js/core"
+import { Polygon, point } from "@flatten-js/core"
 import type {
   AnyCircuitElement,
   LayerRef,
   PcbCopperPour,
   PcbPort,
   PcbTraceRoutePoint,
+  PcbTraceRoutePointWire,
   PcbVia,
 } from "circuit-json"
 import {
@@ -58,6 +59,48 @@ const getRouteEndpoint = (
     point: routePoint[side],
     layer: side === "start" ? routePoint.start_layer : routePoint.end_layer,
   }
+}
+
+/** Explicit wire outline in right-handed board-world mm: +X right, +Y up,
+ * +Z toward the top layer. All returned vertices are positions.
+ * Match the profile and curve tessellation in circuit-to-svg's
+ * lib/pcb/get-wire-taper-polygon.ts#getWireTaperPolygon.
+ */
+const getExplicitWireTaperPolygon = (
+  start: PcbTraceRoutePointWire,
+  end: Pick<PcbTraceRoutePointWire, "x" | "y">,
+) => {
+  // Circuit JSON requires both widths whenever interpolation is specified.
+  const startWidth = start.start_width!
+  const endWidth = start.end_width!
+  const dx = end.x - start.x
+  const dy = end.y - start.y
+  const length = Math.hypot(dx, dy)
+  const delta = Math.abs(endWidth - startWidth)
+  const steps =
+    start.width_interpolation_mode === "linear"
+      ? 1
+      : Math.max(
+          1,
+          Math.ceil(Math.sqrt((delta / (1e-3 + delta * 1e-6)) * (3 / 8))),
+        )
+  const left = []
+  const right = []
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps
+    const u = startWidth <= endWidth ? t : 1 - t
+    const width =
+      start.width_interpolation_mode === "quadratic"
+        ? Math.min(startWidth, endWidth) + delta * u * u
+        : startWidth + (endWidth - startWidth) * t
+    const x = start.x + dx * t
+    const y = start.y + dy * t
+    const offsetX = (-dy / length) * (width / 2)
+    const offsetY = (dx / length) * (width / 2)
+    left.push(point(x + offsetX, y + offsetY))
+    right.push(point(x - offsetX, y - offsetY))
+  }
+  return new Polygon([...right, ...left.reverse()])
 }
 
 /** Find copper components with no same-net terminal or authored via.
@@ -214,12 +257,16 @@ export const findFloatingCopper = (
             ? next.width
             : startWidth
         add({
-          polygon: getTraceSegmentPolygon(
-            start.point,
-            end.point,
-            startWidth,
-            endWidth,
-          ),
+          polygon:
+            routePoint.route_type === "wire" &&
+            routePoint.width_interpolation_mode
+              ? getExplicitWireTaperPolygon(routePoint, end.point)
+              : getTraceSegmentPolygon(
+                  start.point,
+                  end.point,
+                  startWidth,
+                  endWidth,
+                ),
           layers: [start.layer],
           netId,
           isTerminal: false,
