@@ -78,11 +78,11 @@
     "bun-match-svg": "0.0.12",
     "calculate-elbow": "^0.0.12",
     "chokidar-cli": "^3.0.0",
-    "circuit-json": "^0.0.542",
+    "circuit-json": "^0.0.544",
     "circuit-json-to-bpc": "^0.0.13",
     "circuit-json-to-connectivity-map": "^0.0.33",
     "circuit-json-to-spice": "^0.0.45",
-    "circuit-to-svg": "^0.0.455",
+    "circuit-to-svg": "^0.0.456",
     "concurrently": "^9.1.2",
     "connectivity-map": "^1.0.1",
     "debug": "^4.3.6",
@@ -156,7 +156,7 @@
   "overrides": {
     "@tscircuit/graphics-debug-3d": "https://jscdn.tscircuit.com/@tscircuit/graphics-debug-3d/0.0.1.tgz",
     "@tscircuit/props": "^0.0.717",
-    "circuit-json": "^0.0.542",
+    "circuit-json": "^0.0.544",
     "@tscircuit/cableprinter": "^0.0.6"
   },
   "browser": {

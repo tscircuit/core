@@ -9,6 +9,11 @@ import type { SystemBlockPageProps } from "@tscircuit/props"
 import type { Point } from "circuit-json"
 import { applyToPoint, compose, scale, translate } from "transformation-matrix"
 import type { SystemBlockTree } from "./collect-system-blocks"
+import { createSystemBlockSelfLoop } from "./create-system-block-self-loop"
+import {
+  roundSystemBlockRoute,
+  type SystemBlockRouteObstacle,
+} from "./round-system-block-route"
 
 /**
  * Dagre works in a top-left frame (+X right, +Y down). All lengths here are mm.
@@ -34,11 +39,11 @@ export function layoutSystemBlocks(
       direction ?? "right"
     ],
     // Compound borders need room for the renderer's 12 mm heading area.
-    nodesep: 36,
-    ranksep: 36,
-    edgesep: 16,
-    marginx: 8,
-    marginy: 8,
+    nodesep: 24,
+    ranksep: 28,
+    edgesep: 12,
+    marginx: 6,
+    marginy: 6,
   })
   const blocks = [...tree.groups, ...tree.components]
   for (const block of blocks) {
@@ -86,6 +91,29 @@ export function layoutSystemBlocks(
       ] as const
     }),
   )
+  const obstacles: SystemBlockRouteObstacle[] = blocks.map((block) => {
+    const { center, width, height } = bounds.get(block)!
+    const top = center.y + height / 2
+    return {
+      minX: center.x - width / 2,
+      maxX: center.x + width / 2,
+      minY: tree.groups.some((group) => group === block)
+        ? top - 12
+        : center.y - height / 2,
+      maxY: top,
+    }
+  })
+  for (const [index, connection] of tree.connections.entries()) {
+    if (connection._parsedProps.label === undefined) continue
+    const edge = graph.edge(edges[index]) as GraphEdge & Point
+    const label = applyToPoint(toPage, { x: edge.x!, y: edge.y! })
+    obstacles.push({
+      minX: label.x - edge.width / 2 - 0.5,
+      maxX: label.x + edge.width / 2 + 0.5,
+      minY: label.y - edge.height / 2 - 0.5,
+      maxY: label.y + edge.height / 2 + 0.5,
+    })
+  }
   const routes = new Map(
     tree.connections.map((connection, index) => {
       const edge = graph.edge(edges[index]) as GraphEdge & Point
@@ -101,7 +129,18 @@ export function layoutSystemBlocks(
         connection._parsedProps.label === undefined
           ? undefined
           : applyToPoint(toPage, { x: edge.x!, y: edge.y! })
-      return [connection, { route, label_anchor_center }] as const
+      const { from, to } = tree.endpoints.get(connection)!
+      const selfLoop =
+        from === to
+          ? createSystemBlockSelfLoop(route, bounds.get(from)!, obstacles)
+          : undefined
+      return [
+        connection,
+        {
+          route: selfLoop ?? roundSystemBlockRoute(route, obstacles),
+          label_anchor_center,
+        },
+      ] as const
     }),
   )
   return { width, height, bounds, routes }
