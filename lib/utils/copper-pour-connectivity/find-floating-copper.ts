@@ -3,6 +3,7 @@ import type {
   AnyCircuitElement,
   LayerRef,
   PcbCopperPour,
+  PcbPort,
   PcbTraceRoutePoint,
   PcbVia,
 } from "circuit-json"
@@ -24,6 +25,7 @@ import {
 type CopperNetId = NonNullable<
   ReturnType<ConnectivityMap["getNetConnectedToId"]>
 >
+type PcbPortId = PcbPort["pcb_port_id"]
 
 // Match the pour solver's coordinate scale. Flatten's internal epsilon must
 // not collapse the sub-micron edges emitted by polygon clipping into points.
@@ -37,6 +39,7 @@ interface CopperConductor {
   netId: CopperNetId
   isTerminal: boolean
   pourId?: PcbCopperPour["pcb_copper_pour_id"]
+  pcbPortIds?: PcbPortId[]
   viaId?: PcbVia["pcb_via_id"]
 }
 
@@ -64,13 +67,20 @@ const getRouteEndpoint = (
  * layers. Generated stitching vias and broken traces cannot anchor pours.
  * Nets without terminals or authored vias retain their authored pour geometry.
  * Includes every subcircuit so a child pour can reach a parent terminal.
+ * Also returns terminal groups physically joined by a component containing
+ * a pour, using the same graph that determines which copper is floating.
  */
 export const findFloatingCopper = (
   circuitJson: AnyCircuitElement[],
   generatedStitchingViaIds: ReadonlySet<PcbVia["pcb_via_id"]> = new Set(),
 ) => {
-  const connectivity = getFullConnectivityMapFromCircuitJson(circuitJson)
+  const floatingPourIds = new Set<PcbCopperPour["pcb_copper_pour_id"]>()
+  const floatingViaIds = new Set<PcbVia["pcb_via_id"]>()
+  const copperConnectedPcbPortGroups: PcbPortId[][] = []
   const pours = circuitJson.filter((e) => e.type === "pcb_copper_pour")
+  if (pours.length === 0)
+    return { floatingPourIds, floatingViaIds, copperConnectedPcbPortGroups }
+  const connectivity = getFullConnectivityMapFromCircuitJson(circuitJson)
   const pouredNets = new Set(
     pours.flatMap((pour) =>
       pour.source_net_id
@@ -118,6 +128,7 @@ export const findFloatingCopper = (
           layers: [element.layer],
           netId,
           isTerminal: !!element.pcb_port_id,
+          pcbPortIds: element.pcb_port_id ? [element.pcb_port_id] : [],
         })
     } else if (element.type === "pcb_plated_hole") {
       const netId = connectivity.getNetConnectedToId(element.pcb_plated_hole_id)
@@ -132,6 +143,7 @@ export const findFloatingCopper = (
           layers: element.layers,
           netId,
           isTerminal: !!element.pcb_port_id,
+          pcbPortIds: element.pcb_port_id ? [element.pcb_port_id] : [],
         })
     } else if (element.type === "pcb_via") {
       const netId = connectivity.getNetConnectedToId(element.pcb_via_id)
@@ -146,6 +158,7 @@ export const findFloatingCopper = (
           netId,
           isTerminal: !generatedStitchingViaIds.has(element.pcb_via_id),
           viaId: element.pcb_via_id,
+          pcbPortIds: element.pcb_port_ids,
         })
     } else if (element.type === "pcb_trace") {
       const netId = connectivity.getNetConnectedToId(element.pcb_trace_id)
@@ -215,9 +228,8 @@ export const findFloatingCopper = (
     }
   }
 
-  const floatingPourIds = new Set<PcbCopperPour["pcb_copper_pour_id"]>()
-  const floatingViaIds = new Set<PcbVia["pcb_via_id"]>()
-  if (conductors.length === 0) return { floatingPourIds, floatingViaIds }
+  if (conductors.length === 0)
+    return { floatingPourIds, floatingViaIds, copperConnectedPcbPortGroups }
   const parent = conductors.map((_, i) => i)
   const find = (i: number): number => {
     while (parent[i] !== i) {
@@ -266,11 +278,23 @@ export const findFloatingCopper = (
       conductor.isTerminal ? [find(i)] : [],
     ),
   )
+  const pcbPortIdsByPourRoot = new Map<number, Set<PcbPortId>>()
   for (const [i, conductor] of conductors.entries()) {
-    if (!netsWithTerminals.has(conductor.netId) || terminalRoots.has(find(i)))
+    if (conductor.pourId) pcbPortIdsByPourRoot.set(find(i), new Set())
+  }
+  for (const [i, conductor] of conductors.entries()) {
+    const root = find(i)
+    const connectedPcbPortIds = pcbPortIdsByPourRoot.get(root)
+    for (const pcbPortId of conductor.pcbPortIds ?? []) {
+      connectedPcbPortIds?.add(pcbPortId)
+    }
+    if (!netsWithTerminals.has(conductor.netId) || terminalRoots.has(root))
       continue
     if (conductor.pourId) floatingPourIds.add(conductor.pourId)
     if (conductor.viaId) floatingViaIds.add(conductor.viaId)
   }
-  return { floatingPourIds, floatingViaIds }
+  for (const pcbPortIds of pcbPortIdsByPourRoot.values()) {
+    if (pcbPortIds.size > 1) copperConnectedPcbPortGroups.push([...pcbPortIds])
+  }
+  return { floatingPourIds, floatingViaIds, copperConnectedPcbPortGroups }
 }

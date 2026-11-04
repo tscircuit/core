@@ -4,7 +4,7 @@ import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimp
 import { Fragment } from "react"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("disconnected copper islands still request redundant routes within each island", async () => {
+test("disconnected same-net pours still need a route between islands", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width={16} height={10} routingDisabled>
@@ -52,7 +52,14 @@ test("disconnected copper islands still request redundant routes within each isl
     ignoreExistingTopLevelPcbRouteState: true,
   })
   const connection = simpleRouteJson.connections[0]!
-  expect(connection.externallyConnectedPointIds).toBeUndefined()
+  expect(connection.externallyConnectedPointIds).toEqual([
+    connection.pointsToConnect
+      .filter((point) => point.x < 0)
+      .map((point) => point.pointId!),
+    connection.pointsToConnect
+      .filter((point) => point.x > 0)
+      .map((point) => point.pointId!),
+  ])
   const router = new AutoroutingPipelineSolver({
     ...simpleRouteJson,
     traces: [],
@@ -61,6 +68,6 @@ test("disconnected copper islands still request redundant routes within each isl
     router.step()
   }
   expect(router.failed).toBe(false)
-  expect(router.srjWithPointPairs!.connections).toHaveLength(3)
+  expect(router.srjWithPointPairs!.connections).toHaveLength(1)
   expect(circuit).toMatchPcbSnapshot(import.meta.path, { showPcbNotes: true })
 })
