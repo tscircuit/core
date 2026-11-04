@@ -27,7 +27,7 @@ test("a cabled motor and controller mount inside one printed frame", async () =>
     .list()
     .find((cad) => cad.source_component_id === motor.source_component_id)!
   expect(cable.path[0]!.x).toBeCloseTo(
-    motorCad.position.x + 21.15 + 6 + 6.85,
+    motorCad.position.x + 21.15 + 2.6 + 6.85,
     4,
   )
   const connectorCad = circuit.db.cad_component
@@ -36,7 +36,7 @@ test("a cabled motor and controller mount inside one printed frame", async () =>
   const last = cable.path.at(-1)!
   expect(last.x).toBeCloseTo(connectorCad.position.x, 4)
   expect(last.y).toBeCloseTo(connectorCad.position.y, 4)
-  expect(last.z).toBeCloseTo(connectorCad.position.z + 6 + 6.85, 4)
+  expect(last.z).toBeCloseTo(connectorCad.position.z + 2.6 + 6.85, 4)
   expect(cable.path[1]!.x - cable.path[0]!.x).toBeCloseTo(0.1, 4)
   expect(cable.path.at(-2)!.z - last.z).toBeCloseTo(0.1, 4)
   const renderedJson = await withLocalNemaMesh(circuit.getCircuitJson())
