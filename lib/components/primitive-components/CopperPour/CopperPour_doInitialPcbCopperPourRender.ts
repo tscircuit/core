@@ -1,96 +1,33 @@
 import {
   CopperPourPipelineSolver,
-  convertCircuitJsonToInputProblem,
   initializeManifoldGeometry,
 } from "@tscircuit/copper-pour-solver"
 import type { ISubcircuit } from "../Group/Subcircuit/ISubcircuit"
-import type { Net } from "../Net"
 import type { CopperPour } from "./CopperPour"
+import {
+  collectResolvedCopperPours,
+  createCopperPourInputProblem,
+} from "./create-copper-pour-input-problem"
 import { markTraceSegmentsInsideCopperPour } from "./utils/mark-trace-segments-inside-copper-pour"
 
 // Each CopperPour queues this phase, but the solver processes every pour in a
 // subcircuit together. Share that batch across the component-owned effects.
 const pendingCopperPourRenders = new WeakMap<ISubcircuit, Promise<void>>()
-const DEFAULT_THERMAL_RELIEF_SPOKE_WIDTH_MM = 0.3
 
-const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
+const insertCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
   if (!subcircuit.root) return
 
   const { db } = subcircuit.root
-  const copperPours = subcircuit
-    .selectAll<CopperPour>("copperpour")
-    .filter((copperPour) => copperPour.getSubcircuit() === subcircuit)
-  const resolvedCopperPours: Array<{
-    copperPour: CopperPour
-    sourceNetId: string
-  }> = []
-
-  for (const copperPour of copperPours) {
-    const { _parsedProps: props } = copperPour
-    const net = subcircuit.selectOne<Net>(props.connectsTo)
-    const sourceNetId = net?.source_net_id
-    if (!sourceNetId) {
-      copperPour.renderError(
-        `Net "${props.connectsTo}" not found for copper pour`,
-      )
-      continue
-    }
-    resolvedCopperPours.push({ copperPour, sourceNetId })
-  }
-
+  const resolvedCopperPours = collectResolvedCopperPours(subcircuit, {
+    reportMissingNet: true,
+  })
   if (resolvedCopperPours.length === 0) return
 
   const circuitJson = db.toArray()
-  const boardComponent = subcircuit._getBoard()
-  const pcbBoard = boardComponent?.pcb_board_id
-    ? db.pcb_board.get(boardComponent.pcb_board_id)
-    : undefined
-  let resolvedPcbBoardOutline = pcbBoard?.outline?.length
-    ? pcbBoard.outline
-    : undefined
-  if (
-    !resolvedPcbBoardOutline &&
-    pcbBoard?.width !== undefined &&
-    pcbBoard.height !== undefined
-  ) {
-    const { center, width, height } = pcbBoard
-    resolvedPcbBoardOutline = [
-      { x: center.x - width / 2, y: center.y - height / 2 },
-      { x: center.x + width / 2, y: center.y - height / 2 },
-      { x: center.x + width / 2, y: center.y + height / 2 },
-      { x: center.x - width / 2, y: center.y + height / 2 },
-    ]
-  }
-  // warningOnly affects routing and DRC severity; pours still avoid every keepout.
-  const inputProblem = convertCircuitJsonToInputProblem(
+  const inputProblem = createCopperPourInputProblem(
+    subcircuit,
     circuitJson,
-    resolvedCopperPours.map(({ copperPour, sourceNetId }) => {
-      const { _parsedProps: props } = copperPour
-      const clearance = props.clearance ?? 0.2
-      return {
-        layer: props.layer,
-        crosshatch: props.crosshatch,
-        crosshatchPitch: props.crosshatchPitch,
-        crosshatchWidth: props.crosshatchWidth,
-        subcircuit_id: subcircuit.subcircuit_id ?? undefined,
-        source_net_id: sourceNetId,
-        pad_margin: props.padMargin ?? clearance,
-        trace_margin: props.traceMargin ?? clearance,
-        pour_margin: clearance,
-        board_edge_margin: props.boardEdgeMargin ?? clearance,
-        board_edge_outline: copperPour._isImplicitCopperPour
-          ? resolvedPcbBoardOutline
-          : undefined,
-        cutout_margin: props.cutoutMargin ?? clearance,
-        ...(props.useThermalReliefs
-          ? {
-              use_thermal_reliefs: true,
-              thermal_relief_spoke_width: DEFAULT_THERMAL_RELIEF_SPOKE_WIDTH_MM,
-            }
-          : {}),
-        outline: props.outline ?? resolvedPcbBoardOutline,
-      }
-    }),
+    resolvedCopperPours,
   )
 
   await initializeManifoldGeometry()
@@ -129,6 +66,20 @@ const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
       })
     }
   }
+}
+
+const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
+  await insertCopperPoursForSubcircuit(subcircuit)
+
+  // A signal route can cut the pour the autorouter treated as already
+  // connected. Route that board once more without the hint, then fill again.
+  const subcircuitWithRestore = subcircuit as ISubcircuit & {
+    _restoreRoutingIfPourLeftPortsOpen?: () => Promise<boolean>
+  }
+  if (!subcircuitWithRestore._restoreRoutingIfPourLeftPortsOpen) return
+  const restored =
+    await subcircuitWithRestore._restoreRoutingIfPourLeftPortsOpen()
+  if (restored) await insertCopperPoursForSubcircuit(subcircuit)
 }
 
 export function CopperPour_doInitialPcbCopperPourRender(
