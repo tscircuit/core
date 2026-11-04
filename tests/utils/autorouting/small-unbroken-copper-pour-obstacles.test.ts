@@ -16,22 +16,24 @@ test("unbroken copper smaller than a scanline retains its own routing bounds", (
       material: "fr4",
     },
     subcircuitComponent: {
-      selectAll: () => [{
-        _parsedProps: {
-          layer: "top",
-          connectsTo: "net.VDDIO",
-          unbroken: true,
-          outline: [
-            { x: 1, y: 1 },
-            { x: 1.15, y: 1 },
-            { x: 1.15, y: 1.25 },
-            { x: 1, y: 1.25 },
-          ],
+      selectAll: () => [
+        {
+          _parsedProps: {
+            layer: "top",
+            connectsTo: "net.VDDIO",
+            unbroken: true,
+            outline: [
+              { x: 1, y: 1 },
+              { x: 1.15, y: 1 },
+              { x: 1.15, y: 1.25 },
+              { x: 1, y: 1.25 },
+            ],
+          },
+          getSubcircuit: () => ({
+            selectOne: () => ({ source_net_id: "source_net_vddio" }),
+          }),
         },
-        getSubcircuit: () => ({
-          selectOne: () => ({ source_net_id: "source_net_vddio" }),
-        }),
-      }],
+      ],
     },
   })
   expect(copperObstacles).toHaveLength(1)

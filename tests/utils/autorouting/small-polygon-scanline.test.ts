@@ -10,5 +10,8 @@ test("a polygon shorter than the default scanline retains its area and bounds", 
   ])
   expect(rectangles).toHaveLength(1)
   expect(rectangles[0]!.width * rectangles[0]!.height).toBeCloseTo(0.08, 8)
-  expect(rectangles[0]!.center.y + rectangles[0]!.height / 2).toBeCloseTo(0.04, 8)
+  expect(rectangles[0]!.center.y + rectangles[0]!.height / 2).toBeCloseTo(
+    0.04,
+    8,
+  )
 })
