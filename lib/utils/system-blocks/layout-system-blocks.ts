@@ -9,6 +9,7 @@ import type { SystemBlockPageProps } from "@tscircuit/props"
 import type { Point } from "circuit-json"
 import { applyToPoint, compose, scale, translate } from "transformation-matrix"
 import type { SystemBlockTree } from "./collect-system-blocks"
+import { createSystemBlockSelfLoop } from "./create-system-block-self-loop"
 import {
   roundSystemBlockRoute,
   type SystemBlockRouteObstacle,
@@ -38,11 +39,11 @@ export function layoutSystemBlocks(
       direction ?? "right"
     ],
     // Compound borders need room for the renderer's 12 mm heading area.
-    nodesep: 36,
-    ranksep: 36,
-    edgesep: 16,
-    marginx: 8,
-    marginy: 8,
+    nodesep: 24,
+    ranksep: 28,
+    edgesep: 12,
+    marginx: 6,
+    marginy: 6,
   })
   const blocks = [...tree.groups, ...tree.components]
   for (const block of blocks) {
@@ -128,10 +129,15 @@ export function layoutSystemBlocks(
         connection._parsedProps.label === undefined
           ? undefined
           : applyToPoint(toPage, { x: edge.x!, y: edge.y! })
+      const { from, to } = tree.endpoints.get(connection)!
+      const selfLoop =
+        from === to
+          ? createSystemBlockSelfLoop(route, bounds.get(from)!, obstacles)
+          : undefined
       return [
         connection,
         {
-          route: roundSystemBlockRoute(route, obstacles),
+          route: selfLoop ?? roundSystemBlockRoute(route, obstacles),
           label_anchor_center,
         },
       ] as const

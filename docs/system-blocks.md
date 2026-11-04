@@ -36,6 +36,8 @@ layout, compound groups, edge routes, and label placement. It has no browser or
 DOM requirement. The 2.x dependency line supports the nested-group and self-loop
 fixtures in this package. Block dimensions are derived from their text; groups
 and pages are sized to contain their contents with heading space and margins.
+Layout uses 24 mm node separation, 28 mm rank separation, 12 mm edge separation,
+and 6 mm outer margins, keeping the 12 mm group heading area clear.
 
 Page `direction` is `right` (default), `left`, `down`, or `up`. Geometry is in
 diagram millimeters, centered on the page with +X right and +Y up. Nested group
@@ -47,6 +49,11 @@ Core rounds bends with circle-derived cubic Bézier segments, targeting a radius
 of 12 diagram mm. It removes redundant collinear waypoints and reduces the radius
 when adjacent segments are short or rounding would intersect a block, group
 heading, or label. Corners with no clearance and exact reversals remain angular.
+Same-block connections use parallel stems and a semicircular return, represented
+by two quarter-circle cubics, when the existing attachments, bounds, and clearance
+allow it. Otherwise they retain ordinary corner rounding. The return is checked
+against blocks, group headings, and labels, including labels inside the loop.
+
 Attachment points and label positions stay fixed; this does not reroute existing
 crossings or change Dagre's diagonal routing directions.
 
