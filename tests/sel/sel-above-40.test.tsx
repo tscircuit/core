@@ -51,4 +51,3 @@ test("sel supports designators above 40 for typed chips and conventional pins", 
   // Common nets above 40
   expect(sel.net.GPIO50).toBe("net.GPIO50")
 })
-
