@@ -16,7 +16,7 @@ test("full C2913199 custom symbol and split ground pads with routed loads", asyn
   expect(db.pcb_trace.list()).toHaveLength(3)
   expect(db.pcb_port_not_connected_error.list()).toHaveLength(1)
   const { loadGround, traces } = expectSharedNetRoutes(circuit)
-  expect(traces.some((t: any) => t.connectsTo.includes(loadGround))).toBe(false)
+  expect(traces.some((t) => t.connectsTo.includes(loadGround))).toBe(false)
   expect(circuit).toMatchPcbSnapshot(import.meta.path, {
     showPinNumbers: true,
     showErrorsInTextOverlay: true,
