@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { schematic_component as schematicComponentSchema } from "circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("chip with schematic port arrangement array syntax using string labels", async () => {
@@ -36,8 +37,11 @@ test("chip with schematic port arrangement array syntax using string labels", as
     right_side?: { pins: (number | string)[]; direction?: string }
   }
   expect(portArrangement).toBeDefined()
-  expect(portArrangement?.left_side?.pins).toEqual(["VCC", "GND"])
-  expect(portArrangement?.right_side?.pins).toEqual(["IN", "OUT"])
+  expect(portArrangement?.left_side?.pins).toEqual([1, 2])
+  expect(portArrangement?.right_side?.pins).toEqual([3, 4])
+  expect(schematicComponentSchema.safeParse(schematic_component).success).toBe(
+    true,
+  )
 
   expect(circuit.getCircuitJson()).toMatchSchematicSnapshot(import.meta.path)
 })
