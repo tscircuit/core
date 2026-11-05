@@ -1,6 +1,9 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
-import { expectSharedNetRoutes } from "./full-mcu-routed-checks"
+import {
+  expectSharedNetRoutes,
+  tracePcbPortIds,
+} from "./full-mcu-routed-checks"
 import { FullMcuRoutedFixture } from "./full-mcu-routed-fixture"
 
 test("full C2913199 custom symbol and split ground pads with routed loads", async () => {
@@ -16,7 +19,9 @@ test("full C2913199 custom symbol and split ground pads with routed loads", asyn
   expect(db.pcb_trace.list()).toHaveLength(3)
   expect(db.pcb_port_not_connected_error.list()).toHaveLength(1)
   const { loadGround, traces } = expectSharedNetRoutes(circuit)
-  expect(traces.some((t) => t.connectsTo.includes(loadGround))).toBe(false)
+  expect(traces.some((t) => tracePcbPortIds(t).includes(loadGround))).toBe(
+    false,
+  )
   expect(circuit).toMatchPcbSnapshot(import.meta.path, {
     showPinNumbers: true,
     showErrorsInTextOverlay: true,

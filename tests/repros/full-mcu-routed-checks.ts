@@ -1,5 +1,17 @@
 import { expect } from "bun:test"
+import type { PcbTrace } from "circuit-json"
 import type { RootCircuit } from "lib/RootCircuit"
+
+export function tracePcbPortIds(trace: PcbTrace): string[] {
+  const first = trace.route[0]
+  const last = trace.route.at(-1)
+  if (first?.route_type !== "wire" || last?.route_type !== "wire") {
+    throw new Error("Expected trace endpoints to be wire points")
+  }
+  return [first.start_pcb_port_id, last.end_pcb_port_id].filter(
+    (id): id is string => id !== undefined,
+  )
+}
 
 /** Assertions for existing physical endpoints, without requiring a trace per
  * internally connected pad. Works on both broken and fixed source outputs. */
@@ -27,14 +39,17 @@ export function expectSharedNetRoutes(circuit: RootCircuit) {
   const power = [port("U1", 2), port("R_LOAD", 2), port("R_PULL", 2)]
   const loadGround = port("R_LOAD", 1)
   const routeBetween = (a: string, b: string) =>
-    traces.find((t) => t.connectsTo.includes(a) && t.connectsTo.includes(b))
+    traces.find((t) => {
+      const ports = tracePcbPortIds(t)
+      return ports.includes(a) && ports.includes(b)
+    })
   expect(routeBetween(io, pullIo)).toBeDefined()
   const reached = new Set([power[0]])
   for (let i = 0; i < power.length; i++) {
     for (const trace of traces) {
-      if (trace.connectsTo.some((id: string) => reached.has(id))) {
-        for (const id of trace.connectsTo)
-          if (power.includes(id)) reached.add(id)
+      const ports = tracePcbPortIds(trace)
+      if (ports.some((id) => reached.has(id))) {
+        for (const id of ports) if (power.includes(id)) reached.add(id)
       }
     }
   }
