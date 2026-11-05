@@ -56,6 +56,62 @@ test("full C2913199 custom symbol and split ground pads with routed loads", asyn
   const groups = db.source_component_internal_connection.list()
   expect(groups).toHaveLength(1)
   expect(new Set(groups[0].source_port_ids)).toEqual(new Set(splitSourceIds))
+  const groundSourcePort = sourcePorts.find(
+    (port) =>
+      port.source_component_id === u1.source_component_id &&
+      port.pin_number === 41,
+  )!
+  const groundSchematicPort = db.schematic_port
+    .list()
+    .find((port) => port.source_port_id === groundSourcePort.source_port_id)!
+  const groundSourceTrace = db.source_trace
+    .list()
+    .find((trace) =>
+      trace.connected_source_port_ids.includes(groundSourcePort.source_port_id),
+    )
+  expect(groundSourceTrace).toBeDefined()
+  expect(groundSourceTrace!.connected_source_port_ids).toEqual([
+    groundSourcePort.source_port_id,
+  ])
+  expect(groundSourceTrace!.display_name).toBe(".U1 > .pin41 to net.GND")
+  expect(groundSchematicPort.is_connected).toBe(true)
+  const groundSchematicTrace = db.schematic_trace
+    .list()
+    .find(
+      (trace) =>
+        trace.subcircuit_connectivity_map_key ===
+          groundSourceTrace!.subcircuit_connectivity_map_key &&
+        trace.edges.some((edge) =>
+          [edge.from, edge.to].some(
+            (point) =>
+              Math.hypot(
+                point.x - groundSchematicPort.center.x,
+                point.y - groundSchematicPort.center.y,
+              ) < 1e-6,
+          ),
+        ),
+    )
+  expect(groundSchematicTrace).toBeDefined()
+  expect(
+    db.schematic_net_label
+      .list()
+      .some(
+        (label) =>
+          label.text === "GND" &&
+          groundSourceTrace!.connected_source_net_ids.includes(
+            label.source_net_id!,
+          ) &&
+          groundSchematicTrace!.edges.some((edge) =>
+            [edge.from, edge.to].some(
+              (point) =>
+                Math.hypot(
+                  point.x - label.anchor_position!.x,
+                  point.y - label.anchor_position!.y,
+                ) < 1e-6,
+            ),
+          ),
+      ),
+  ).toBe(true)
   const { loadGround, traces } = expectSharedNetRoutes(circuit)
   expect(
     traces.some(

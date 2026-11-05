@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test"
 import type { ChipPinLabels } from "@tscircuit/props"
 import type { Chip } from "lib/components/normal-components/Chip"
+import type { Port } from "lib/components/primitive-components/Port"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { ESP32_S3_WROOM_1_N16 } from "./esp32-s3-wroom-1-n16-import"
 
@@ -23,6 +24,20 @@ test("full MCU portMap selects the primary and exposes distinct split ports", as
   expect(chip.portMap.pin41._parsedProps.pinNumber).toBe(41)
   expect(chip.portMap.pin41._isPrimaryPort).toBe(true)
   expect(chip.portMap.pin41).toBe(chip.portMap.GND3)
+  expect(circuit.firstChild!.selectOne<Port>(".U1 > .pin41")).toBe(
+    chip.portMap.pin41,
+  )
+  expect(
+    circuit.firstChild!.selectOne<Port>(".U1 > .41", { type: "port" }),
+  ).toBe(chip.portMap.pin41)
+  expect(
+    circuit.firstChild!.selectOne<Port>(".U1 > .GND3", { type: "port" }),
+  ).toBe(chip.portMap.pin41)
+  expect(
+    circuit.firstChild!.selectOne<Port>(".U1 > .pin41_internal_1", {
+      type: "port",
+    }),
+  ).toBe(chip.portMap.pin41_internal_1)
   const splitIds = [
     chip.portMap.pin41.source_port_id,
     ...Array.from(
