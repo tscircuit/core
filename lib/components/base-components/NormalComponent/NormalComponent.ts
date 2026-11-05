@@ -570,9 +570,10 @@ export class NormalComponent<
     // Add ports that we know must exist because we know the pin count and
     // missing pin numbers, and they are inside the pins array of the
     // schPortArrangement
-    const requiredPinCount = hasCustomSymbolPorts
-      ? 0
-      : (opts.pinCount ?? this._getPrimaryPinCount() ?? 0)
+    const requiredPinCount =
+      (hasCustomSymbolPorts ? undefined : opts.pinCount) ??
+      this._getPrimaryPinCount() ??
+      0
     for (let pn = 1; pn <= requiredPinCount; pn++) {
       if (hasExistingOrQueuedPortWithPinNumber(pn)) continue
       if (

@@ -7,7 +7,6 @@ test("pushbutton with custom symbol renders without crash and preserves custom p
     <board width="20mm" height="20mm">
       <pushbutton
         name="SW1"
-        footprint="soic4"
         symbol={
           <symbol>
             <schematicrect width={1.2} height={0.5} strokeWidth={0.03} />
