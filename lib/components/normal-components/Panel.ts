@@ -54,22 +54,19 @@ export class Panel extends Subpanel {
     super.doInitialPanelLayout()
     if (this.root?.pcbDisabled || !this.pcb_panel_id) return
     const panel = this.root!.db.pcb_panel.get(this.pcb_panel_id)!
-    const constraints = this._parsedProps.sizeConstraints
-    if (!constraints) return
+    const { minWidth, maxWidth, minHeight, maxHeight } = this._parsedProps
     const violations = [
-      constraints.minWidth !== undefined && panel.width < constraints.minWidth
-        ? `Panel width ${panel.width} mm is below the minimum width ${constraints.minWidth} mm`
+      minWidth !== undefined && panel.width < minWidth
+        ? `Panel width ${panel.width} mm is below the minimum width ${minWidth} mm`
         : undefined,
-      constraints.maxWidth !== undefined && panel.width > constraints.maxWidth
-        ? `Panel width ${panel.width} mm exceeds the maximum width ${constraints.maxWidth} mm`
+      maxWidth !== undefined && panel.width > maxWidth
+        ? `Panel width ${panel.width} mm exceeds the maximum width ${maxWidth} mm`
         : undefined,
-      constraints.minHeight !== undefined &&
-      panel.height < constraints.minHeight
-        ? `Panel height ${panel.height} mm is below the minimum height ${constraints.minHeight} mm`
+      minHeight !== undefined && panel.height < minHeight
+        ? `Panel height ${panel.height} mm is below the minimum height ${minHeight} mm`
         : undefined,
-      constraints.maxHeight !== undefined &&
-      panel.height > constraints.maxHeight
-        ? `Panel height ${panel.height} mm exceeds the maximum height ${constraints.maxHeight} mm`
+      maxHeight !== undefined && panel.height > maxHeight
+        ? `Panel height ${panel.height} mm exceeds the maximum height ${maxHeight} mm`
         : undefined,
     ]
     for (const message of violations)

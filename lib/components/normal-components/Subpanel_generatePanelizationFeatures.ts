@@ -14,6 +14,14 @@ export function Subpanel_generatePanelizationFeatures(subpanel: Subpanel) {
 
   const { db } = subpanel.root!
   const props = subpanel._parsedProps
+  if (
+    subpanel.componentName !== "Panel" &&
+    (props.minWidth !== undefined ||
+      props.maxWidth !== undefined ||
+      props.minHeight !== undefined ||
+      props.maxHeight !== undefined)
+  )
+    throw new Error("Panel size limits must be configured on the root <panel>")
   const panelizationMethod = props.panelizationMethod ?? "none"
   // Use _getAllBoardInstances to include boards inside nested subpanels
   const childBoardInstances = subpanel._getAllBoardInstances()
@@ -62,7 +70,11 @@ export function Subpanel_generatePanelizationFeatures(subpanel: Subpanel) {
       }
     } else {
       const boardGap = props.boardGap ?? tabWidth
-      const { tabCutouts, mouseBiteHoles } = props.tabPlacement
+      const hasTabControls =
+        props.tabCountPerEdge !== undefined ||
+        props.tabs !== undefined ||
+        props.tabKeepouts !== undefined
+      const { tabCutouts, mouseBiteHoles } = hasTabControls
         ? generateControlledPanelTabs(
             boardsInPanel.map((board) => ({
               board,
@@ -73,7 +85,9 @@ export function Subpanel_generatePanelizationFeatures(subpanel: Subpanel) {
                 )?.name ?? "unnamed board",
             })),
             {
-              placement: props.tabPlacement,
+              tabCountPerEdge: props.tabCountPerEdge,
+              tabs: props.tabs,
+              tabKeepouts: props.tabKeepouts,
               tabWidth,
               tabLength: props.tabLength ?? DEFAULT_TAB_LENGTH,
               mouseBites: props.mouseBites ?? true,

@@ -15,12 +15,10 @@ test("explicit tab positions cannot silently cross keepouts or leave a board edg
           layoutMode: "grid",
           panelizationMethod: "tab-routing",
           tabLength: "3mm",
-          tabPlacement: {
-            positions: [{ boardName: "B1", edge: "top", offset }],
-            keepouts: [
-              { boardName: "B1", edge: "top", from: "2mm", to: "4mm" },
-            ],
-          },
+          tabs: [{ boardName: "B1", edge: "top", offset }],
+          tabKeepouts: [
+            { boardName: "B1", edge: "top", from: "2mm", to: "4mm" },
+          ],
         },
         <board name="B1" width="20mm" height="20mm" routingDisabled />,
       ),

@@ -1,4 +1,4 @@
-import type { PanelEdge, PanelTabPlacement } from "@tscircuit/props"
+import type { PanelEdge, PanelProps } from "@tscircuit/props"
 import type {
   PcbBoard,
   PcbCutoutRect,
@@ -25,10 +25,13 @@ interface PanelTabInterval {
   centre: number
 }
 
+/** Generate tab cutouts and drill centres in circuit-world millimetres (+X right,
+ * +Y up). Edge offsets are distances along a rectangular board edge; point
+ * transforms into world space include translation and counterclockwise rotation.
+ */
 export function generateControlledPanelTabs(
   boards: NamedPanelBoard[],
-  options: {
-    placement: PanelTabPlacement
+  options: Pick<PanelProps, "tabs" | "tabCountPerEdge" | "tabKeepouts"> & {
     tabLength: number
     tabWidth: number
     mouseBites: boolean
@@ -51,16 +54,14 @@ export function generateControlledPanelTabs(
   const drillDiameter = tabWidth * 0.45
   const drillPitch = drillDiameter * 1.5
   for (const control of [
-    ...(options.placement.positions ?? []),
-    ...(options.placement.keepouts ?? []),
+    ...(options.tabs ?? []),
+    ...(options.tabKeepouts ?? []),
   ]) {
     if (
       control.boardName &&
       !boards.some(({ boardName }) => boardName === control.boardName)
     )
-      throw new Error(
-        `Unknown board name "${control.boardName}" in panel tab placement`,
-      )
+      throw new Error(`Unknown board name "${control.boardName}" in panel tabs`)
   }
 
   for (const { board, boardName } of boards) {
@@ -102,24 +103,24 @@ export function generateControlledPanelTabs(
       },
     ]
     for (const edge of edges) {
-      const explicit = options.placement.positions
+      const explicitTabs = options.tabs
       const tabCentres =
-        explicit === undefined
+        explicitTabs === undefined
           ? Array.from(
-              { length: options.placement.countPerEdge ?? 1 },
+              { length: options.tabCountPerEdge ?? 1 },
               (_, tabIndex) =>
                 ((tabIndex + 1) * edge.length) /
-                ((options.placement.countPerEdge ?? 1) + 1),
+                ((options.tabCountPerEdge ?? 1) + 1),
             )
-          : explicit
+          : explicitTabs
               .filter(
-                (position) =>
-                  position.edge === edge.side &&
-                  (!position.boardName || position.boardName === boardName),
+                (tab) =>
+                  tab.edge === edge.side &&
+                  (!tab.boardName || tab.boardName === boardName),
               )
-              .map((position) => distance.parse(position.offset))
+              .map((tab) => distance.parse(tab.offset))
       const keepouts =
-        options.placement.keepouts?.filter(
+        options.tabKeepouts?.filter(
           (keepout) =>
             keepout.edge === edge.side &&
             (!keepout.boardName || keepout.boardName === boardName),
@@ -141,7 +142,7 @@ export function generateControlledPanelTabs(
               start <= distance.parse(keepout.to),
           )
         ) {
-          if (explicit)
+          if (explicitTabs)
             throw new Error(
               `An explicit ${edge.side} tab on ${boardName} overlaps a tab keepout`,
             )
@@ -158,7 +159,7 @@ export function generateControlledPanelTabs(
           )
         intervals.push({ start, end, centre })
       }
-      const edgeToWorld = compose(
+      const edgeToWorldTransform = compose(
         translate(edge.origin.x, edge.origin.y),
         rotateDEG(edge.ccwRotationDegrees),
       )
@@ -177,7 +178,7 @@ export function generateControlledPanelTabs(
             pcb_cutout_id: `pcb_cutout_panel_tab_${board.pcb_board_id}_${tabCutouts.length}`,
             type: "pcb_cutout",
             shape: "rect",
-            center: applyToPoint(edgeToWorld, {
+            center: applyToPoint(edgeToWorldTransform, {
               x: routeStart + routeLength / 2,
               y: (edge.outwardSign * tabWidth) / 2,
             }),
@@ -198,7 +199,7 @@ export function generateControlledPanelTabs(
           Math.floor((tabLength - drillDiameter) / drillPitch) + 1
         for (const interval of intervals) {
           for (let holeIndex = 0; holeIndex < holeCount; holeIndex++) {
-            const position = applyToPoint(edgeToWorld, {
+            const position = applyToPoint(edgeToWorldTransform, {
               x:
                 interval.centre +
                 (holeIndex - (holeCount - 1) / 2) * drillPitch,
