@@ -54,6 +54,8 @@ test("a declared ground pour allows a short connection to the plane", async () =
 
   await circuit.renderUntilSettled()
 
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
+
   expect(autoroutingStartCount).toBe(1)
   expect(circuit.db.pcb_autorouting_error.list()).toHaveLength(0)
   expect(circuit.db.pcb_trace_too_long_error.list()).toHaveLength(0)
@@ -92,5 +94,4 @@ test("a declared ground pour allows a short connection to the plane", async () =
       (point) => point.route_type === "via" && point.to_layer === "inner1",
     ),
   ).toBe(true)
-  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
