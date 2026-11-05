@@ -211,6 +211,30 @@ function getSourceIdsFromConnectedPcbTraces(
         point.route_type === "wire",
     )
 
+    for (const point of existingTrace.route) {
+      if (point.route_type === "wire") {
+        for (const endpoint of endpoints) {
+          if (
+            (!endpoint.layer || point.layer === endpoint.layer) &&
+            distance(endpoint, point) <= POINT_EPSILON
+          ) {
+            sourceIds.add(existingTrace.source_trace_id)
+          }
+        }
+      } else if (point.route_type === "via") {
+        for (const endpoint of endpoints) {
+          if (
+            (!endpoint.layer ||
+              point.from_layer === endpoint.layer ||
+              point.to_layer === endpoint.layer) &&
+            distance(endpoint, point) <= POINT_EPSILON
+          ) {
+            sourceIds.add(existingTrace.source_trace_id)
+          }
+        }
+      }
+    }
+
     for (let i = 0; i < existingRoute.length - 1; i++) {
       const segmentStart = existingRoute[i]
       const segmentEnd = existingRoute[i + 1]
@@ -282,9 +306,37 @@ export function getSourceTraceIdForRoutedTrace({
     return trace.source_trace_id
   }
 
-  const sourcePortIds = getSourcePortIdsFromRoutedTrace(db, trace)
+  let sourcePortIds = getSourcePortIdsFromRoutedTrace(db, trace)
   if (sourcePortIds.length === 0) {
-    return getSourceIdsFromConnectedPcbTraces(db, trace)[0]
+    const connectedTraceSourceId = getSourceIdsFromConnectedPcbTraces(
+      db,
+      trace,
+    )[0]
+    if (connectedTraceSourceId) return connectedTraceSourceId
+
+    const connectionName =
+      "connection_name" in trace && typeof trace.connection_name === "string"
+        ? trace.connection_name
+        : undefined
+    if (
+      connectionName &&
+      (db.source_trace.get(connectionName) ?? db.source_net.get(connectionName))
+    ) {
+      return connectionName
+    }
+
+    if ("connectsTo" in trace && Array.isArray(trace.connectsTo)) {
+      sourcePortIds = [
+        ...new Set(
+          trace.connectsTo
+            .map((id) => db.pcb_port.get(id)?.source_port_id)
+            .filter((id): id is SourcePortId => Boolean(id)),
+        ),
+      ]
+    }
+    if (sourcePortIds.length === 0) {
+      return undefined
+    }
   }
 
   const sourceTraces = db.source_trace.list()
