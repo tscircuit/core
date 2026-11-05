@@ -47,6 +47,7 @@ test("NEMA34 exports each length limit once with its original terminal scope", a
       ).toBe(true)
     }
   }
+
   expect(circuitJson).toEqual(original)
 
   circuitJson.push({
