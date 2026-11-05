@@ -56,9 +56,9 @@ test("full C2913199 custom symbol and split ground pads with routed loads", asyn
   const { loadGround, traces } = expectSharedNetRoutes(circuit)
   expect(
     traces.some(
-      (t: any) =>
+      (t) =>
         t.connectsTo.includes(loadGround) &&
-        t.connectsTo.some((id: string) => splitPcbIds.includes(id)),
+        t.connectsTo.some((id) => splitPcbIds.includes(id)),
     ),
   ).toBe(true)
   const json = circuit.getCircuitJson()
