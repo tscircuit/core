@@ -1,7 +1,7 @@
 {
   "name": "@tscircuit/core",
   "type": "module",
-  "version": "0.0.2277",
+  "version": "0.0.2280",
   "types": "dist/index.d.ts",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -40,7 +40,7 @@
     "@tscircuit/bga-fanout-solver": "github:tscircuit/bga-fanout-solver#247c835cb8d69b65e53891dcf869731079415b39",
     "@tscircuit/bus-lanes-solver": "https://jscdn.tscircuit.com/@tscircuit/bus-lanes-solver/0.0.45.tgz",
     "@tscircuit/cableprinter": "^0.0.6",
-    "@tscircuit/capacity-autorouter": "^0.0.1041",
+    "@tscircuit/capacity-autorouter": "^0.0.1044",
     "@tscircuit/checks": "^0.0.268",
     "@tscircuit/circuit-json-util": "^0.0.128",
     "@tscircuit/common": "^0.0.20",
@@ -109,7 +109,19 @@
     "@tscircuit/test-point-rerouter": "github:tscircuit/test-point-rerouter#b0ccfaca75a7e187c55ddb6f2071a1f2084e3167",
     "@tscircuit/manifold-2d": "^0.0.8",
     "typescript": "^5.9.3",
-    "@tscircuit/jscad-to-manifold": "https://jscdn.tscircuit.com/@tscircuit/jscad-to-manifold/0.0.1.tgz"
+    "@tscircuit/jscad-to-manifold": "https://jscdn.tscircuit.com/@tscircuit/jscad-to-manifold/0.0.1.tgz",
+    "circuit-json-to-3d-png": "^0.0.6",
+    "circuit-json-to-altium": "github:tscircuit/circuit-json-to-altium#1a50d0dd2c0737cf940d92c0315852dc0111dd87",
+    "circuit-json-to-fdm-component-box": "^0.0.2",
+    "circuit-json-to-footprinter": "^0.0.59",
+    "circuit-json-to-gerber": "^0.0.120",
+    "circuit-json-to-kicad": "0.0.267",
+    "circuit-json-to-readable-netlist": "^0.0.15",
+    "circuit-json-to-step": "^0.0.63",
+    "circuit-json-to-tscircuit": "^0.0.50",
+    "dsn-converter": "^0.0.90",
+    "easyeda": "^0.0.389",
+    "circuit-json-to-pnp-csv": "^0.0.20"
   },
   "peerDependencies": {
     "@tscircuit/capacity-autorouter": "*",
