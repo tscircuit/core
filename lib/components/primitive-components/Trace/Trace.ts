@@ -327,6 +327,18 @@ export class Trace
 
     this.source_trace_id = trace.source_trace_id
 
+    for (const p of ports) {
+      if (!p.port.source_port_id) continue
+      const warnings = db.source_pin_missing_trace_warning.list({
+        source_port_id: p.port.source_port_id,
+      })
+      for (const warning of warnings) {
+        db.source_pin_missing_trace_warning.delete(
+          warning.source_pin_missing_trace_warning_id,
+        )
+      }
+    }
+
     if (!props.name && nets.length === 0) {
       db.source_unnamed_trace_warning.insert({
         message: `${this.getString()} is missing a name. Add a name prop to make the trace easier to identify.`,
