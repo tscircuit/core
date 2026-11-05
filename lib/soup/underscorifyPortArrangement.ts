@@ -1,8 +1,23 @@
 import type { SchematicComponentInput } from "circuit-json"
 import type { PortArrangement } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
 
+type SideWithPins = { pins?: Array<string | number> }
+
+const resolvePins = (
+  pins: Array<string | number> | undefined,
+  getPinNumber: (label: string) => number | null,
+): Array<number> | undefined => {
+  if (!pins) return undefined
+  return pins.map((pin) => {
+    if (typeof pin === "number") return pin
+    const resolved = getPinNumber(pin)
+    return resolved ?? (Number.parseInt(pin, 10) || 0)
+  })
+}
+
 export const underscorifyPortArrangement = (
   portArrangement?: PortArrangement | undefined,
+  getPinNumber: (label: string) => number | null = () => null,
 ): SchematicComponentInput["port_arrangement"] | undefined => {
   if (!portArrangement) return undefined
   if (
@@ -12,10 +27,34 @@ export const underscorifyPortArrangement = (
     "bottomSide" in portArrangement
   ) {
     return {
-      left_side: portArrangement.leftSide,
-      right_side: portArrangement.rightSide,
-      top_side: portArrangement.topSide,
-      bottom_side: portArrangement.bottomSide,
+      left_side: {
+        ...portArrangement.leftSide,
+        pins: resolvePins(
+          (portArrangement as { leftSide?: SideWithPins }).leftSide?.pins,
+          getPinNumber,
+        ),
+      },
+      right_side: {
+        ...portArrangement.rightSide,
+        pins: resolvePins(
+          (portArrangement as { rightSide?: SideWithPins }).rightSide?.pins,
+          getPinNumber,
+        ),
+      },
+      top_side: {
+        ...portArrangement.topSide,
+        pins: resolvePins(
+          (portArrangement as { topSide?: SideWithPins }).topSide?.pins,
+          getPinNumber,
+        ),
+      },
+      bottom_side: {
+        ...portArrangement.bottomSide,
+        pins: resolvePins(
+          (portArrangement as { bottomSide?: SideWithPins }).bottomSide?.pins,
+          getPinNumber,
+        ),
+      },
     }
   }
 
