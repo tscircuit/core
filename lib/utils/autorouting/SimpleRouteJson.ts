@@ -22,6 +22,8 @@ export type SimplifiedPcbTrace = Omit<
   type: "pcb_trace"
   pcb_trace_id: string
   connection_name?: string
+  /** Preserve the supplied copper while routing additional connections. */
+  isFixed?: boolean
   connectsTo?: string[]
   route: Array<
     | {
