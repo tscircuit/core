@@ -336,6 +336,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         ),
       ...db.pcb_keepout.list(),
       ...db.pcb_cutout.list(),
+      ...db.pcb_copper_text.list(),
     ].filter(
       (e) =>
         e.type === "pcb_board" ||
