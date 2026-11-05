@@ -1,9 +1,9 @@
 import { expect, test } from "bun:test"
-import type { PcbPort, PcbTrace, SourcePort } from "circuit-json"
 import {
   checkEachPcbTraceNonOverlapping,
   checkTracesAreContiguous,
 } from "@tscircuit/checks"
+import type { PcbPort, PcbTrace, SourcePort } from "circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { ESP32_S3_WROOM_1_N16 } from "./esp32-s3-wroom-1-n16-import"
 type PcbPortId = PcbPort["pcb_port_id"]
