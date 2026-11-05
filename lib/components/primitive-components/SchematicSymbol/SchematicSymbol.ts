@@ -3,8 +3,10 @@ import { type SchSymbol, symbols } from "schematic-symbols"
 import { getPinNumberFromLabels } from "../../../utils/getPortFromHints"
 import { PrimitiveComponent } from "../../base-components/PrimitiveComponent"
 import { Port } from "../Port"
-import { SchematicSymbol_doInitialSchematicComponentRender } from "./SchematicSymbol_doInitialSchematicComponentRender"
 import { SchematicSymbol_doInitialPortMatching } from "./SchematicSymbol_doInitialPortMatching"
+import { SchematicSymbol_doInitialSchematicComponentRender } from "./SchematicSymbol_doInitialSchematicComponentRender"
+
+const DIRECTION_SUFFIXES = ["_left", "_right", "_up", "_down"] as const
 
 export class SchematicSymbol extends PrimitiveComponent<
   typeof schematicSymbolProps
@@ -18,6 +20,19 @@ export class SchematicSymbol extends PrimitiveComponent<
       schematicSymbolName: this.props.symbolName,
       zodProps: schematicSymbolProps,
     }
+  }
+
+  override _getSchematicSymbolName(): keyof typeof symbols | undefined {
+    const rawName =
+      this.props.symbolName ?? (this._parsedProps as any)?.symbolName
+    if (
+      rawName &&
+      rawName in symbols &&
+      DIRECTION_SUFFIXES.some((suffix) => rawName.endsWith(suffix))
+    ) {
+      return rawName as keyof typeof symbols
+    }
+    return super._getSchematicSymbolName()
   }
 
   initPorts(): void {
