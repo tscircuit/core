@@ -142,9 +142,25 @@ export function Group_filterSimpleRouteJsonForPhase(
     connections,
     ...(simpleRouteJson.routeConstraints
       ? {
-          routeConstraints: simpleRouteJson.routeConstraints.filter((rule) =>
-            includedConnectionNames.has(rule.connectionName),
-          ),
+          routeConstraints: simpleRouteJson.routeConstraints.flatMap((rule) => {
+            // The converter can associate this path with its full net. A phase
+            // may route an explicit branch instead; retain the complete terminal
+            // scope and bind the rule to that phase's equivalent connection.
+            const phaseConnection =
+              connections.find(
+                (connection) => connection.name === rule.connectionName,
+              ) ??
+              connections.find((connection) =>
+                rule.pointIds.every((pointId) =>
+                  connection.pointsToConnect.some(
+                    (point) => point.pointId === pointId,
+                  ),
+                ),
+              )
+            return phaseConnection
+              ? [{ ...rule, connectionName: phaseConnection.name }]
+              : []
+          }),
         }
       : {}),
     differentialPairs:

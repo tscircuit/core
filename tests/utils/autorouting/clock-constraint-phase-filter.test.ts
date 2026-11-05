@@ -16,6 +16,14 @@ test("routing phases retain only the clock rules for their included connections"
     bounds: { minX: -5, maxX: 5, minY: -5, maxY: 5 },
     connections: [
       {
+        name: "clock_net",
+        pointsToConnect: [
+          { x: 0, y: 0, layer: "top", pointId: "a" },
+          { x: 2, y: 0, layer: "top", pointId: "b" },
+          { x: 3, y: 0, layer: "top", pointId: "e" },
+        ],
+      },
+      {
         name: "clock",
         pointsToConnect: [
           { x: 0, y: 0, layer: "top", pointId: "a" },
@@ -32,7 +40,7 @@ test("routing phases retain only the clock rules for their included connections"
     ],
     routeConstraints: [
       {
-        connectionName: "clock",
+        connectionName: "clock_net",
         sourceTraceId: "clock",
         pointIds: ["a", "b"],
         maxViaCount: 0,
@@ -55,6 +63,8 @@ test("routing phases retain only the clock rules for their included connections"
   expect(phase.connections.map((connection) => connection.name)).toEqual([
     "clock",
   ])
-  expect(phase.routeConstraints).toEqual([input.routeConstraints[0]!])
+  expect(phase.routeConstraints).toEqual([
+    { ...input.routeConstraints[0]!, connectionName: "clock" },
+  ])
   expect(input).toEqual(original)
 })
