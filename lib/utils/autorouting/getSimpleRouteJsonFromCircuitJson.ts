@@ -4,6 +4,7 @@ import type {
   AnyCircuitElement,
   LayerRef,
   PcbBoard,
+  PcbCutout,
   PcbPort,
   PcbPanel,
   PcbTraceHint,
@@ -220,10 +221,21 @@ export const getSimpleRouteJsonFromCircuitJson = ({
 
   let board: PcbBoard | undefined | null = null
   let subcircuitIsBoard = false
+  let inheritedBoardCutouts: PcbCutout[] = []
   if (subcircuit_id) {
     const owningBoard = getOwningPcbBoardForSubcircuit(db, subcircuit_id)
     board = owningBoard.board
     subcircuitIsBoard = owningBoard.subcircuitIsBoard && board !== null
+    const owningBoardSubcircuitId = board?.subcircuit_id
+    if (owningBoardSubcircuitId && !subcircuitIsBoard) {
+      inheritedBoardCutouts = db.pcb_cutout
+        .list()
+        .filter(
+          (cutout) =>
+            cutout.subcircuit_id === owningBoardSubcircuitId &&
+            !relevantSubcircuitIds!.has(cutout.subcircuit_id),
+        )
+    }
   }
 
   const panel = pcb_panel_id ? db.pcb_panel.get(pcb_panel_id) : undefined
@@ -336,6 +348,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         ),
       ...db.pcb_keepout.list(),
       ...db.pcb_cutout.list(),
+      ...inheritedBoardCutouts,
     ].filter(
       (e) =>
         e.type === "pcb_board" ||
@@ -343,7 +356,8 @@ export const getSimpleRouteJsonFromCircuitJson = ({
           "pcb_panel_id" in e &&
           e.pcb_panel_id === panel.pcb_panel_id) ||
         !subcircuit_id ||
-        relevantSubcircuitIds?.has(e.subcircuit_id!),
+        relevantSubcircuitIds?.has(e.subcircuit_id!) ||
+        (e.type === "pcb_cutout" && inheritedBoardCutouts.includes(e)),
     ),
     sharedConnMap,
   )
