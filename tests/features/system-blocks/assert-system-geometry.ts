@@ -18,7 +18,7 @@ export function assertSystemGeometry(json: AnyCircuitElement[]) {
     (record) => record.type === "system_block_connection",
   )
   for (const record of [...pages, ...blocks, ...connections])
-    any_circuit_element.parse(record)
+    expect(any_circuit_element.parse(record)).toEqual(record)
   for (const page of pages) {
     for (const block of blocks.filter(
       (block) => block.system_block_page_id === page.system_block_page_id,
@@ -35,7 +35,10 @@ export function assertSystemGeometry(json: AnyCircuitElement[]) {
         connection.system_block_page_id === page.system_block_page_id,
     )) {
       for (const point of [
-        ...connection.route,
+        ...connection.route.flatMap((point) => [
+          point,
+          ...(point.cubic_bezier_control_points ?? []),
+        ]),
         ...(connection.label_anchor_center
           ? [connection.label_anchor_center]
           : []),
@@ -71,5 +74,37 @@ export function assertSystemGeometry(json: AnyCircuitElement[]) {
     )!
     expect(onBoundary(connection.route[0], from)).toBe(true)
     expect(onBoundary(connection.route.at(-1)!, to)).toBe(true)
+    // Check the emitted curves against actual block interiors, independently of
+    // the generator's conservative trim-triangle clearance check.
+    for (let index = 1; index < connection.route.length; index++) {
+      const end = connection.route[index]
+      if (!end.cubic_bezier_control_points) continue
+      const start = connection.route[index - 1]
+      const [a, b] = end.cubic_bezier_control_points
+      for (let step = 0; step <= 20; step++) {
+        const t = step / 20
+        const s = 1 - t
+        const point = {
+          x:
+            s ** 3 * start.x +
+            3 * s * s * t * a.x +
+            3 * s * t * t * b.x +
+            t ** 3 * end.x,
+          y:
+            s ** 3 * start.y +
+            3 * s * s * t * a.y +
+            3 * s * t * t * b.y +
+            t ** 3 * end.y,
+        }
+        expect(
+          components.some(
+            (block) =>
+              block.system_block_page_id === connection.system_block_page_id &&
+              Math.abs(point.x - block.center.x) < block.width / 2 - 1e-6 &&
+              Math.abs(point.y - block.center.y) < block.height / 2 - 1e-6,
+          ),
+        ).toBe(false)
+      }
+    }
   }
 }

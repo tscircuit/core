@@ -45,9 +45,12 @@ test("TSX power fanout, parallel interfaces, cycles, and self-loops", () => {
   circuit.render()
   assertSystemGeometry(circuit.getCircuitJson())
   for (const connection of circuit.db.system_block_connection.list()) {
+    expect(
+      connection.route.some((point) => point.cubic_bezier_control_points),
+    ).toBe(true)
     expect(connection.is_signal).toBe(!connection.is_power)
   }
   return expect(
     convertCircuitJsonToSystemSvg(circuit.getCircuitJson(), { width: 800 }),
-  ).toMatchSvgSnapshot(import.meta.path)
+  ).toMatchSvgSnapshot(import.meta.path, undefined, { diffThresholdPercent: 0 })
 })
