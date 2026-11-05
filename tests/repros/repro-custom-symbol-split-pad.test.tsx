@@ -24,12 +24,10 @@ test("full C2913199 custom symbol and split ground pads with routed loads", asyn
   )
   expect(circuit).toMatchPcbSnapshot(import.meta.path, {
     showPinNumbers: true,
-    showErrorsInTextOverlay: true,
   })
   expect(circuit).toMatchSchematicSnapshot(import.meta.path, {
     drawPorts: true,
     shouldDrawErrors: true,
-    showErrorsInTextOverlay: true,
     grid: { cellSize: 1, labelCells: true },
   })
 })
