@@ -45,7 +45,9 @@ export function Board_doInitialPcbStackupRender(
 
     let selectedStackup: (typeof jlcStackups)[number] | undefined
     if (requestedStackup) {
-      const normalizedReq = requestedStackup.toLowerCase().replace(/[^a-z0-9]/g, "")
+      const normalizedReq = requestedStackup
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, "")
       selectedStackup = matchingStackups.find((s) => {
         const normName = s.name.toLowerCase().replace(/[^a-z0-9]/g, "")
         return normName === normalizedReq || normName.endsWith(normalizedReq)

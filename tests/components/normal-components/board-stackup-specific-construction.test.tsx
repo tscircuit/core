@@ -73,7 +73,9 @@ test("unknown jlcpcbStackup emits a warning listing available constructions and 
   const warnings = circuit.db.source_property_ignored_warning.list()
   expect(warnings).toHaveLength(1)
   expect(warnings[0]!.property_name).toBe("jlcpcbStackup")
-  expect(warnings[0]!.message).toContain('jlcpcbStackup "UNKNOWN_STACKUP" was not found')
+  expect(warnings[0]!.message).toContain(
+    'jlcpcbStackup "UNKNOWN_STACKUP" was not found',
+  )
   expect(warnings[0]!.message).toContain("JLC04101H-3313")
 
   // Still emits fallback stackup
