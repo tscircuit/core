@@ -50,3 +50,9 @@ export type {
   AssemblyExplosionCollisionCheck,
   AssemblyExplosionCollisionCheckStatus,
 } from "./assembly-explosion/collision/types"
+export type {
+  PostRoutingHookContext,
+  PostRoutingHookFn,
+  PostRoutingPrimitiveInput,
+  PostRoutingPrimitiveTarget,
+} from "./components/normal-components/Board/Board_doInitialPcbPostRoutingHook"

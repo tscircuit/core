@@ -1,8 +1,10 @@
+import * as kiwi from "@lume/kiwi"
 import { footprintProps } from "@tscircuit/props"
+import Debug from "debug"
+import { createInstanceFromReactElement } from "lib/fiber/create-instance-from-react-element"
+import { type ReactElement, isValidElement } from "react"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import type { Constraint } from "./Constraint"
-import * as kiwi from "@lume/kiwi"
-import Debug from "debug"
 
 const debug = Debug("tscircuit:core:footprint")
 
@@ -12,6 +14,14 @@ export class Footprint extends PrimitiveComponent<typeof footprintProps> {
       componentName: "Footprint",
       zodProps: footprintProps,
     }
+  }
+
+  override add(componentOrElm: PrimitiveComponent | ReactElement) {
+    if (isValidElement(componentOrElm)) {
+      super.add(createInstanceFromReactElement(componentOrElm))
+      return
+    }
+    super.add(componentOrElm as PrimitiveComponent)
   }
 
   /**

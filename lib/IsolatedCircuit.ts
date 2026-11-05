@@ -1,5 +1,4 @@
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
-import { createCircuitJsonDatabase } from "./utils/circuit-json/create-circuit-json-database"
 import type { PlatformConfig } from "@tscircuit/props"
 import type { AnyCircuitElement } from "circuit-json"
 import Debug from "debug"
@@ -8,11 +7,13 @@ import { type Matrix, identity } from "transformation-matrix"
 import pkgJson from "../package.json"
 import type { PrimitiveComponent } from "./components/base-components/PrimitiveComponent"
 import type { RenderPhase } from "./components/base-components/Renderable"
+import { isAssemblyDeviceContainer } from "./components/base-components/is-assembly-device-container"
 import type { BoardI } from "./components/normal-components/Board/BoardI"
+import type { PostRoutingHookFn } from "./components/normal-components/Board/Board_doInitialPcbPostRoutingHook"
 import { Group } from "./components/primitive-components/Group"
 import type { RootCircuitEventName } from "./events"
 import { createInstanceFromReactElement } from "./fiber/create-instance-from-react-element"
-import { isAssemblyDeviceContainer } from "./components/base-components/is-assembly-device-container"
+import { createCircuitJsonDatabase } from "./utils/circuit-json/create-circuit-json-database"
 
 export class IsolatedCircuit {
   firstChild: PrimitiveComponent | null = null
@@ -78,6 +79,7 @@ export class IsolatedCircuit {
   projectUrl?: string
 
   _hasRenderedAtleastOnce = false
+  _postRoutingHooks: PostRoutingHookFn[] = []
   private _asyncEffectIdsByPhase = new Map<RenderPhase, Set<string>>()
   private _asyncEffectPhaseById = new Map<string, RenderPhase>()
   private _hasUnrenderedUpdatesFromAsyncEffects = false
@@ -97,11 +99,15 @@ export class IsolatedCircuit {
     projectUrl,
     cachedSubcircuits,
     pendingSubcircuitRenders,
+    onPostRouting,
+    postRoutingHook,
   }: {
     platform?: PlatformConfig
     projectUrl?: string
     cachedSubcircuits?: Map<string, AnyCircuitElement[]>
     pendingSubcircuitRenders?: Map<string, Promise<AnyCircuitElement[]>>
+    onPostRouting?: PostRoutingHookFn
+    postRoutingHook?: PostRoutingHookFn
   } = {}) {
     this.children = []
     this.db = createCircuitJsonDatabase()
@@ -111,7 +117,18 @@ export class IsolatedCircuit {
     this.pcbRoutingDisabled = platform?.routingDisabled ?? false
     this.cachedSubcircuits = cachedSubcircuits
     this.pendingSubcircuitRenders = pendingSubcircuitRenders
+    if (onPostRouting) this._postRoutingHooks.push(onPostRouting)
+    if (postRoutingHook) this._postRoutingHooks.push(postRoutingHook)
     this.root = this
+  }
+
+  addPostRoutingHook(hook: PostRoutingHookFn): this {
+    this._postRoutingHooks.push(hook)
+    return this
+  }
+
+  onPostRouting(hook: PostRoutingHookFn): this {
+    return this.addPostRoutingHook(hook)
   }
 
   add(componentOrElm: PrimitiveComponent | ReactElement) {
