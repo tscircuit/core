@@ -43,6 +43,116 @@ const updateCadRotation = ({
   cadComponent.rotation = nextRotation
 }
 
+const updatePcbHoleRotations = ({
+  db,
+  elements,
+  rotationDegrees,
+}: {
+  db: CircuitJsonUtilObjects
+  elements: any[]
+  rotationDegrees: number
+}) => {
+  if (!rotationDegrees) return
+
+  const rad = (rotationDegrees * Math.PI) / 180
+  const cos = Math.cos(rad)
+  const sin = Math.sin(rad)
+
+  for (const elm of elements) {
+    if (elm.type === "pcb_plated_hole") {
+      const updates: any = {}
+      if (
+        "ccw_rotation" in elm ||
+        elm.shape === "pill" ||
+        elm.shape === "oval" ||
+        elm.shape === "hole_with_polygon_pad"
+      ) {
+        elm.ccw_rotation = normalizeDegrees(
+          (elm.ccw_rotation ?? 0) + rotationDegrees,
+        )
+        updates.ccw_rotation = elm.ccw_rotation
+      }
+      if (
+        "rect_ccw_rotation" in elm ||
+        elm.shape === "circular_hole_with_rect_pad" ||
+        elm.shape === "rotated_pill_hole_with_rect_pad"
+      ) {
+        elm.rect_ccw_rotation = normalizeDegrees(
+          (elm.rect_ccw_rotation ?? 0) + rotationDegrees,
+        )
+        updates.rect_ccw_rotation = elm.rect_ccw_rotation
+      } else if (elm.shape === "pill_hole_with_rect_pad") {
+        elm.shape = "rotated_pill_hole_with_rect_pad"
+        elm.hole_shape = "rotated_pill"
+        elm.pad_shape = "rect"
+        elm.hole_ccw_rotation = normalizeDegrees(
+          (elm.hole_ccw_rotation ?? 0) + rotationDegrees,
+        )
+        elm.rect_ccw_rotation = normalizeDegrees(
+          (elm.rect_ccw_rotation ?? 0) + rotationDegrees,
+        )
+        updates.shape = elm.shape
+        updates.hole_shape = elm.hole_shape
+        updates.pad_shape = elm.pad_shape
+        updates.hole_ccw_rotation = elm.hole_ccw_rotation
+        updates.rect_ccw_rotation = elm.rect_ccw_rotation
+      }
+      if (
+        "hole_ccw_rotation" in elm &&
+        updates.hole_ccw_rotation === undefined
+      ) {
+        elm.hole_ccw_rotation = normalizeDegrees(
+          (elm.hole_ccw_rotation ?? 0) + rotationDegrees,
+        )
+        updates.hole_ccw_rotation = elm.hole_ccw_rotation
+      }
+      if (elm.hole_offset_x || elm.hole_offset_y) {
+        const ox = elm.hole_offset_x ?? 0
+        const oy = elm.hole_offset_y ?? 0
+        elm.hole_offset_x = ox * cos - oy * sin
+        elm.hole_offset_y = ox * sin + oy * cos
+        updates.hole_offset_x = elm.hole_offset_x
+        updates.hole_offset_y = elm.hole_offset_y
+      }
+      if (elm.pcb_plated_hole_id && db?.pcb_plated_hole?.update) {
+        db.pcb_plated_hole.update(elm.pcb_plated_hole_id, updates)
+      }
+    } else if (elm.type === "pcb_hole") {
+      const updates: any = {}
+      if ("ccw_rotation" in elm || elm.hole_shape === "rotated_pill") {
+        elm.ccw_rotation = normalizeDegrees(
+          (elm.ccw_rotation ?? 0) + rotationDegrees,
+        )
+        updates.ccw_rotation = elm.ccw_rotation
+      }
+      if ("hole_ccw_rotation" in elm) {
+        elm.hole_ccw_rotation = normalizeDegrees(
+          (elm.hole_ccw_rotation ?? 0) + rotationDegrees,
+        )
+        updates.hole_ccw_rotation = elm.hole_ccw_rotation
+      }
+      if (elm.pcb_hole_id && db?.pcb_hole?.update) {
+        db.pcb_hole.update(elm.pcb_hole_id, updates)
+      }
+    } else if (elm.type === "pcb_solder_paste") {
+      if (
+        "ccw_rotation" in elm ||
+        elm.shape === "rotated_pill" ||
+        elm.shape === "rotated_rect"
+      ) {
+        elm.ccw_rotation = normalizeDegrees(
+          (elm.ccw_rotation ?? 0) + rotationDegrees,
+        )
+        if (elm.pcb_solder_paste_id && db?.pcb_solder_paste?.update) {
+          db.pcb_solder_paste.update(elm.pcb_solder_paste_id, {
+            ccw_rotation: elm.ccw_rotation,
+          })
+        }
+      }
+    }
+  }
+}
+
 const isDescendantGroup = (
   db: any,
   groupId: string,
@@ -106,6 +216,11 @@ export const applyPackOutput = (
           rotationDegrees,
           layer: member.layer,
         })
+        updatePcbHoleRotations({
+          db,
+          elements: related,
+          rotationDegrees,
+        })
       }
       continue
     }
@@ -148,6 +263,11 @@ export const applyPackOutput = (
         pcbComponentId: componentId,
         rotationDegrees,
         layer: pcbComponent.layer,
+      })
+      updatePcbHoleRotations({
+        db,
+        elements: related,
+        rotationDegrees,
       })
       continue
     }
@@ -223,6 +343,11 @@ export const applyPackOutput = (
     }
 
     transformPCBElements(relatedElements as any, transformMatrix)
+    updatePcbHoleRotations({
+      db,
+      elements: relatedElements,
+      rotationDegrees,
+    })
     db.pcb_group.update(pcbGroup.pcb_group_id, { center })
   }
 
