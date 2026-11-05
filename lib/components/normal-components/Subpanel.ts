@@ -339,6 +339,16 @@ export class Subpanel extends Group<typeof subpanelProps> {
 
     const { db } = this.root!
     const props = this._parsedProps
+    if (
+      this.componentName !== "Panel" &&
+      (props.minWidth !== undefined ||
+        props.maxWidth !== undefined ||
+        props.minHeight !== undefined ||
+        props.maxHeight !== undefined)
+    )
+      throw new Error(
+        "Panel size limits must be configured on the root <panel>",
+      )
     const panelizationMethod = props.panelizationMethod ?? "none"
     // Use _getAllBoardInstances to include boards inside nested subpanels
     const childBoardInstances = this._getAllBoardInstances()
