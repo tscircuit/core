@@ -156,6 +156,7 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
   if (!group.root?._featureMspSchematicTraceRouting) return
   if (!group.isSubcircuit) return
   if (group.root?.schematicDisabled) return
+  if (group.root?.schematicTraceRoutingDisabled) return
 
   // A net label that targets this group can be declared in the group itself or
   // in any enclosing schematic scope (as in a board-level label targeting a
