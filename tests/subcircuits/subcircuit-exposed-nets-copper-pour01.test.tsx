@@ -74,7 +74,8 @@ test("copper pour connects to exposed net across subcircuit boundary", async () 
   await circuit.renderUntilSettled()
 
   expect(circuit.db.pcb_component_outside_board_error.list()).toEqual([])
-  expect(circuit.db.pcb_trace.list().length).toBeGreaterThan(0)
+  expect(circuit.db.pcb_port_not_connected_error.list()).toEqual([])
+  expect(circuit.db.pcb_trace.list()).toEqual([])
 
   const gndNets = circuit.db.source_net
     .list()

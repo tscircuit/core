@@ -1,10 +1,3 @@
-import { getOwningPanel } from "lib/utils/panels/get-owning-panel"
-import { TestPointAutorouter } from "lib/utils/autorouting/TestPointAutorouter"
-import {
-  materializeRoutedTestPoints,
-  type ConnectedRoutedTestPoint,
-} from "lib/utils/autorouting/materialize-routed-test-points"
-import { getAutoroutingPhasePcbTracePaths } from "./get-autorouting-phase-pcb-trace-paths"
 import {
   type SimpleRouteJson as AutorouterSimpleRouteJson,
   type RerouteRectRegion,
@@ -24,6 +17,7 @@ import {
 import {
   type AnyCircuitElement,
   type LayerRef,
+  type PcbPort,
   type PcbTrace,
   type PcbVia,
   type SchematicComponent,
@@ -32,8 +26,15 @@ import {
 } from "circuit-json"
 import Debug from "debug"
 import type { GraphicsObject } from "graphics-debug"
+import { TestPointAutorouter } from "lib/utils/autorouting/TestPointAutorouter"
+import {
+  type ConnectedRoutedTestPoint,
+  materializeRoutedTestPoints,
+} from "lib/utils/autorouting/materialize-routed-test-points"
 import { withFixedTraces } from "lib/utils/autorouting/with-fixed-traces"
+import { getOwningPanel } from "lib/utils/panels/get-owning-panel"
 import { assignSchematicNetLabelSuperscripts } from "lib/utils/schematic/assign-schematic-net-label-superscripts"
+import { getAutoroutingPhasePcbTracePaths } from "./get-autorouting-phase-pcb-trace-paths"
 
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import { isAssemblyDeviceContainer } from "lib/components/base-components/is-assembly-device-container"
@@ -46,6 +47,7 @@ import type {
   SimpleRouteJson,
   SimplifiedPcbTrace,
 } from "lib/utils/autorouting/SimpleRouteJson"
+import { assignPourConnectedPcbPortGroups } from "lib/utils/autorouting/assign-pour-connected-pcb-port-groups"
 import { pcbViasSharePhysicalHole } from "lib/utils/autorouting/compare-pcb-vias"
 import { createSourceTracesFromOffboardConnections } from "lib/utils/autorouting/createSourceTracesFromOffboardConnections"
 import {
@@ -61,6 +63,7 @@ import {
   getPresetAutoroutingConfig,
 } from "lib/utils/autorouting/getPresetAutoroutingConfig"
 import { getLocalAutoroutingStages } from "lib/utils/autorouting/local-autorouter-strategies"
+import { RoutingPhasePreparationError } from "lib/utils/autorouting/routing-phase-preparation-error"
 import { shouldSkipAutoroutingBecauseOfPlacementErrors } from "lib/utils/autorouting/should-skip-autorouting-because-of-placement-errors"
 import { shouldSkipAutoroutingBecauseOfTraceLengthViolations } from "lib/utils/autorouting/should-skip-autorouting-because-of-trace-length-violations"
 import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
@@ -105,7 +108,6 @@ import { Group_doInitialSourceAddConnectivityMapKey } from "./Group_doInitialSou
 import { Group_doInitialStandaloneSubcircuitPcbDesignRuleChecks } from "./Group_doInitialStandaloneSubcircuitPcbDesignRuleChecks"
 import { Group_getFanoutPourNetMap } from "./Group_getFanoutPourNetMap"
 import { Group_getRoutingPhasePlans } from "./Group_getRoutingPhasePlans"
-import { RoutingPhasePreparationError } from "lib/utils/autorouting/routing-phase-preparation-error"
 import {
   cacheLocalAutoroutingPhaseResult,
   getCachedLocalAutoroutingPhaseResult,
@@ -134,6 +136,7 @@ import {
   getExistingSimplifiedPcbTracesForReroute,
   getSourceTraceIdsFromRerouteName,
 } from "./region-replacement"
+import { restoreRoutingWhenPourLeavesPortsOpen } from "./restore-routing-when-pour-leaves-ports-open"
 import { splitPcbTracesOnJumperSegments } from "./split-pcb-traces-on-jumper-segments"
 import { computeCenterFromAnchorPosition } from "./utils/computeCenterFromAnchorPosition"
 
@@ -227,6 +230,20 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   subcircuit_id: string | null = null
 
   _hasStartedAsyncAutorouting = false
+
+  /** This route skipped edges because a pour already joined those pads. */
+  _routedWithPourConnectedPorts = false
+
+  _pourConnectedPcbPortIds: PcbPort["pcb_port_id"][] = []
+
+  /** The pour was cut, so this subcircuit was routed again without that hint. */
+  _didRestoreRoutingAfterCutPour = false
+
+  _autoroutedPcbTraceIds: PcbTrace["pcb_trace_id"][] = []
+
+  _autoroutedPcbViaIds: PcbVia["pcb_via_id"][] = []
+
+  _autorouteMaterializedTestPoints = false
 
   _pcbPlacementDrcErrorCount: number | null = null
 
@@ -902,6 +919,16 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         })
         simpleRouteJson.allowViaInPad =
           autorouterConfig.allowViaInPad ?? simpleRouteJson.allowViaInPad
+        // Pads already joined by a pour do not need a new trace.
+        const pourConnectedPcbPortIds = await assignPourConnectedPcbPortGroups({
+          simpleRouteJson,
+          subcircuit: this,
+          circuitJson: pcbAndSourceCircuitJson,
+        })
+        if (pourConnectedPcbPortIds.length > 0) {
+          this._routedWithPourConnectedPorts = true
+          this._pourConnectedPcbPortIds = pourConnectedPcbPortIds
+        }
 
         const { autorouting_result } = await fetchWithDebug(
           `${serverUrl}/autorouting/solve`,
@@ -1021,7 +1048,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   /**
    * Run local autorouting using the CapacityMeshAutorouter
    */
-  async _runLocalAutorouting() {
+  async _runLocalAutorouting(options?: { ignorePourConnectedPorts?: boolean }) {
     const { db } = this.root!
     const props = this._parsedProps as SubcircuitGroupProps
     const debug = Debug("tscircuit:core:_runLocalAutorouting")
@@ -1167,6 +1194,19 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         subcircuitComponent: this,
         fanoutPourNetMap,
       })
+    // Pads already joined by a pour do not need a new trace. A signal route
+    // that later cuts that copper is routed again without this hint.
+    if (!options?.ignorePourConnectedPorts) {
+      const pourConnectedPcbPortIds = await assignPourConnectedPcbPortGroups({
+        simpleRouteJson: baseSimpleRouteJson,
+        subcircuit: this,
+        circuitJson: db.toArray(),
+      })
+      if (pourConnectedPcbPortIds.length > 0) {
+        this._routedWithPourConnectedPorts = true
+        this._pourConnectedPcbPortIds = pourConnectedPcbPortIds
+      }
+    }
 
     const emitFanoutBoundsConflictWarning = (
       routingPhasePlan: RoutingPhasePlan,
@@ -2195,8 +2235,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       pcb_trace_ids_to_be_replaced: [...pcbTraceIdsToDelete],
     }
 
-    // Mark the component as needing to re-render the PCB traces
-    this._markDirty("PcbTraceRender")
+    // The caller inserts these traces itself when a cut pour is being repaired.
+    if (!options?.ignorePourConnectedPorts) {
+      this._markDirty("PcbTraceRender")
+    }
   }
 
   _startAsyncAutorouting() {
@@ -2296,6 +2338,14 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   updateSchematicSheetRender(): void {
     Group_updateSchematicSheetRender(this)
+  }
+
+  /**
+   * Signal traces can cut a pour the autorouter treated as already connected.
+   * Route once more without that hint, then the pour is filled again.
+   */
+  _restoreRoutingIfPourLeftPortsOpen(): Promise<boolean> {
+    return restoreRoutingWhenPourLeavesPortsOpen(this)
   }
 
   updatePcbTraceRender() {
@@ -2398,6 +2448,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         route: getCircuitJsonPcbTraceRoute(cjRoute as any),
         // source_trace_id: circuitTrace.source_trace_id!,
       })
+      this._autoroutedPcbTraceIds.push(pcb_trace.pcb_trace_id)
       claimSrjAssignablePcbViasTraversedByRoute({
         db,
         pcbTrace: pcb_trace,
@@ -2432,6 +2483,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const testPoints = this._asyncAutoroutingResult!.output_test_points
     if (testPoints?.length) {
       materializeRoutedTestPoints(db, testPoints, this.subcircuit_id!)
+      this._autorouteMaterializedTestPoints = true
       this._asyncAutoroutingResult!.output_test_points = []
     }
 
@@ -2537,6 +2589,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             source_trace_id: sourceTraceId,
             route: circuitJsonSegment,
           })
+          this._autoroutedPcbTraceIds.push(insertedPcbTrace.pcb_trace_id)
           claimSrjAssignablePcbViasTraversedByRoute({
             db,
             pcbTrace: insertedPcbTrace,
@@ -2623,7 +2676,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             ) {
               continue
             }
-            materializedPcbVias.push(db.pcb_via.insert(pcbVia))
+            const insertedVia = db.pcb_via.insert(pcbVia)
+            materializedPcbVias.push(insertedVia)
+            this._autoroutedPcbViaIds.push(insertedVia.pcb_via_id)
           }
         }
       }

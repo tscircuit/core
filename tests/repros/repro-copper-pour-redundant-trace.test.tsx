@@ -1,18 +1,18 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("repro: a ground pour still receives a redundant spanning trace", async () => {
+test("a ground pour does not get a trace between pads it already joins", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
     <board width="32mm" height="18mm">
       <pcbnotetext
-        text="A and B are already connected by the top GND pour"
+        text="A and B are connected by the top GND pour"
         pcbY={6.4}
         fontSize={0.48}
       />
       <pcbnotetext
-        text="The trace between A and B is unnecessary"
+        text="No trace is drawn between A and B"
         pcbY={5.2}
         fontSize={0.48}
       />
@@ -66,5 +66,6 @@ test("repro: a ground pour still receives a redundant spanning trace", async () 
 
   await circuit.renderUntilSettled()
 
+  expect(circuit.db.pcb_port_not_connected_error.list()).toEqual([])
   expect(circuit).toMatchPcbSnapshot(import.meta.path, { showPcbNotes: true })
 })
