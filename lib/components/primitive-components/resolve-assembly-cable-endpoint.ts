@@ -18,7 +18,10 @@ import { resolveMotorFaceMount } from "./resolve-motor-face-mount"
 import type { AssemblyPlacement } from "./resolve-assembly-placement"
 import { resolveAssemblyMotorPlacement } from "./resolve-assembly-motor-placement"
 import { resolveAssemblyMotorRotation } from "./resolve-assembly-motor-rotation"
-import { resolveAssemblyCablePin1Position } from "./resolve-assembly-cable-pin1-position"
+import {
+  resolveAssemblyCableContactRowCenter,
+  resolveAssemblyCablePin1Position,
+} from "./resolve-assembly-cable-pin1-position"
 
 /** Connector mating-center point and outward unit direction in right-handed
  * circuit world, mm (+X right, +Y top, +Z above). Points acquire translation;
@@ -85,7 +88,11 @@ export function resolveAssemblyCableEndpoint(
     )
     const point = vec3.transformMat4(
       vec3.create(),
-      [reference.position.x, reference.position.y, reference.position.z],
+      [
+        reference.position.x,
+        reference.position.y,
+        reference.position.z + motorConnector.contactOffsetZ,
+      ],
       orientation,
     )
     // Paired with createNemaMotorWireGeometry: contacts span local +Y before
@@ -101,7 +108,10 @@ export function resolveAssemblyCableEndpoint(
       ],
       orientation,
     )
-    // The shared header profile places the mating face beyond its body reference.
+    // The plug tip seats inside the socket, not against its outer lip.
+    // Paired with jscad-electronics' stepped JST plug and motor socket models.
+    const tipDepth =
+      motorConnector.matingDepth - motorConnector.plugInsertionDepth
 
     let board: AssemblyCableEndpoint["board"]
     if (cable._parsedProps.waypoints?.length) {
@@ -133,34 +143,25 @@ export function resolveAssemblyCableEndpoint(
       sourceComponentId: motor.source_component_id!,
       board,
       position: {
-        x:
-          point[0] +
-          placement.position.x +
-          direction[0] * motorConnector.matingDepth,
-        y:
-          point[1] +
-          placement.position.y +
-          direction[1] * motorConnector.matingDepth,
-        z:
-          point[2] +
-          placement.position.z +
-          direction[2] * motorConnector.matingDepth,
+        x: point[0] + placement.position.x + direction[0] * tipDepth,
+        y: point[1] + placement.position.y + direction[1] * tipDepth,
+        z: point[2] + placement.position.z + direction[2] * tipDepth,
       },
       pin1Position: {
         x:
           point[0] +
           placement.position.x +
-          direction[0] * motorConnector.matingDepth +
+          direction[0] * tipDepth +
           pin1Offset[0],
         y:
           point[1] +
           placement.position.y +
-          direction[1] * motorConnector.matingDepth +
+          direction[1] * tipDepth +
           pin1Offset[1],
         z:
           point[2] +
           placement.position.z +
-          direction[2] * motorConnector.matingDepth +
+          direction[2] * tipDepth +
           pin1Offset[2],
       },
       direction: { x: direction[0], y: direction[1], z: direction[2] },
@@ -214,21 +215,35 @@ export function resolveAssemblyCableEndpoint(
       : { x: 0, y: 0, z: layer === "bottom" ? -1 : 1 })
   // A 2D boundary guess is meaningful for a side-entry USB port. Stock JST
   // headers are top-entry; their mating center is over the component origin.
-  const center = Math.abs(direction.z) > 0.5 ? pcb.center : inferredCenter
+  const jstProfile =
+    props.standard === "jst_ph" || props.standard === "jst_sh"
+      ? getJstMotorConnector(
+          `jst-${props.standard === "jst_ph" ? "ph" : "sh"}-${props.pinCount}`,
+        )
+      : undefined
+  const center =
+    Math.abs(direction.z) > 0.5
+      ? (jstProfile &&
+          resolveAssemblyCableContactRowCenter(
+            cable,
+            connector,
+            direction,
+            jstProfile.pcbContactRowOffset,
+          )) ||
+        pcb.center
+      : inferredCenter
   const sign = layer === "bottom" ? -1 : 1
-  // Top-entry header mouths: JST PH BxB-PH is 6 mm; SH BMxxB is
-  // 4.25 mm above copper, paired with jscad-electronics' header models.
+  // Modelprinter distinguishes the socket lip from the seated plug tip.
+  // SH's internal contacts are offset from its PCB solder-tail row.
   const height =
     !props.standard && cableConnector
       ? Math.abs(direction.z) > 0.5
         ? cableConnector.bodyDepth
         : cableConnector.bodyHeight / 2
       : Math.abs(direction.z) > 0.5
-        ? props.standard === "jst_ph"
-          ? 6
-          : props.standard === "jst_sh"
-            ? 4.25
-            : 1.5
+        ? jstProfile
+          ? jstProfile.matingDepth - jstProfile.plugInsertionDepth
+          : 1.5
         : props.standard === "usb_c"
           ? 1.5
           : props.standard === "jst_sh"

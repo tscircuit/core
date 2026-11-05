@@ -1,7 +1,7 @@
 import { assemblySubassemblyProps } from "@tscircuit/props"
 import { createInstanceFromReactElement } from "lib/fiber/create-instance-from-react-element"
 import { isValidElement } from "react"
-import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
+import { AssemblyComponent } from "../base-components/AssemblyComponent"
 import type { AssemblyDeviceContainer } from "../base-components/is-assembly-device-container"
 import { renderAssemblyCadModel } from "./render-assembly-cad-model"
 import { resolveAssemblyPlacement } from "./resolve-assembly-placement"
@@ -10,7 +10,7 @@ import { getPartReferenceSurfaces } from "./get-part-reference-surfaces"
 import { renderPartReferenceSurfaces } from "./render-part-reference-surfaces"
 
 export class AssemblySubassembly
-  extends PrimitiveComponent<typeof assemblySubassemblyProps>
+  extends AssemblyComponent<typeof assemblySubassemblyProps>
   implements AssemblyDeviceContainer
 {
   isAssemblyDeviceContainer = true as const

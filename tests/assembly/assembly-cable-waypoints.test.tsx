@@ -113,22 +113,22 @@ test("waypoint anchor and board axes are selected independently", async () => {
   expect(startStart!.path).toContainEqual({
     x: expect.closeTo(start.x - 7),
     y: expect.closeTo(start.y + 4),
-    z: expect.closeTo(2.2),
+    z: expect.closeTo(5.6),
   })
   expect(startEnd!.path).toContainEqual({
     x: expect.closeTo(start.x + 7),
     y: expect.closeTo(start.y - 4),
-    z: expect.closeTo(2.2),
+    z: expect.closeTo(5.6),
   })
   expect(endStart!.path).toContainEqual({
     x: expect.closeTo(end.x - 7),
     y: expect.closeTo(end.y + 4),
-    z: expect.closeTo(15.8),
+    z: expect.closeTo(12.4),
   })
   expect(endEnd!.path).toContainEqual({
     x: expect.closeTo(end.x + 7),
     y: expect.closeTo(end.y - 4),
-    z: expect.closeTo(15.8),
+    z: expect.closeTo(12.4),
   })
   expect(startStart!.path[1]!.z - startStart!.path[0]!.z).toBeCloseTo(-0.1)
   expect(startStart!.path.at(-2)!.z - startStart!.path.at(-1)!.z).toBeCloseTo(

@@ -1,6 +1,6 @@
 import { assemblyBoltProps } from "@tscircuit/props"
 import { isValidElement } from "react"
-import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
+import { AssemblyComponent } from "../base-components/AssemblyComponent"
 import type { AssemblyDeviceContainer } from "../base-components/is-assembly-device-container"
 import { createInstanceFromReactElement } from "lib/fiber/create-instance-from-react-element"
 import { getPartReferenceSurfaces } from "./get-part-reference-surfaces"
@@ -10,7 +10,7 @@ import { resolveAssemblyPlacement } from "./resolve-assembly-placement"
 import { resolveAssemblyBoltModel } from "./resolve-assembly-bolt-model"
 
 export class AssemblyBolt
-  extends PrimitiveComponent<typeof assemblyBoltProps>
+  extends AssemblyComponent<typeof assemblyBoltProps>
   implements AssemblyDeviceContainer
 {
   isAssemblyDeviceContainer = true as const
