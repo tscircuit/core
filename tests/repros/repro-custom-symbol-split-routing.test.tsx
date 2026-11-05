@@ -1,10 +1,47 @@
 import { expect, test } from "bun:test"
+import type { PcbPort, PcbTrace, SourcePort } from "circuit-json"
 import {
   checkEachPcbTraceNonOverlapping,
   checkTracesAreContiguous,
 } from "@tscircuit/checks"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { ESP32_S3_WROOM_1_N16 } from "./esp32-s3-wroom-1-n16-import"
+type PcbPortId = PcbPort["pcb_port_id"]
+type SourcePortId = SourcePort["source_port_id"]
+
+function traceConnectsPcbPorts({
+  pcbTrace,
+  firstPcbPortIds,
+  secondPcbPortIds,
+}: {
+  pcbTrace: PcbTrace
+  firstPcbPortIds: PcbPortId[]
+  secondPcbPortIds: PcbPortId[]
+}) {
+  const firstRoutePoint = pcbTrace.route[0]
+  const lastRoutePoint = pcbTrace.route.at(-1)
+  if (
+    firstRoutePoint?.route_type !== "wire" ||
+    lastRoutePoint?.route_type !== "wire"
+  ) {
+    return false
+  }
+  const endpointPcbPortIds = [
+    firstRoutePoint.start_pcb_port_id,
+    lastRoutePoint.end_pcb_port_id,
+  ]
+  return (
+    endpointPcbPortIds.some(
+      (pcbPortId) =>
+        pcbPortId !== undefined && firstPcbPortIds.includes(pcbPortId),
+    ) &&
+    endpointPcbPortIds.some(
+      (pcbPortId) =>
+        pcbPortId !== undefined && secondPcbPortIds.includes(pcbPortId),
+    )
+  )
+}
+
 test("route MCU split ground and separate signal to external pads", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
@@ -43,7 +80,7 @@ test("route MCU split ground and separate signal to external pads", async () => 
         p.source_component_id === component(n).source_component_id &&
         p.pin_number === pin,
     )!
-  const pcbFor = (sourceId: string) =>
+  const pcbFor = (sourceId: SourcePortId) =>
     pcbPorts
       .filter((p) => p.source_port_id === sourceId)
       .map((p) => p.pcb_port_id)
@@ -62,27 +99,49 @@ test("route MCU split ground and separate signal to external pads", async () => 
   const extSignal = pcbFor(sourceFor("R_SIGNAL", 1).source_port_id)
   const signal = pcbFor(sourceFor("U1", 2).source_port_id)
   expect(traces).toHaveLength(2)
-  const connects = (t: any, left: string[], right: string[]) =>
-    t.connectsTo.some((x: string) => left.includes(x)) &&
-    t.connectsTo.some((x: string) => right.includes(x))
-  const g = traces.find((t) => connects(t, splitPcb, extGround))
-  const s = traces.find((t) => connects(t, signal, extSignal))
+  const g = traces.find((pcbTrace) =>
+    traceConnectsPcbPorts({
+      pcbTrace,
+      firstPcbPortIds: splitPcb,
+      secondPcbPortIds: extGround,
+    }),
+  )
+  const s = traces.find((pcbTrace) =>
+    traceConnectsPcbPorts({
+      pcbTrace,
+      firstPcbPortIds: signal,
+      secondPcbPortIds: extSignal,
+    }),
+  )
   expect(g).toBeDefined()
   expect(s).toBeDefined()
   expect(g!.pcb_trace_id).not.toBe(s!.pcb_trace_id)
   // The route must actually start and end at the named port coordinates.
-  for (const t of [g!, s!]) {
-    const first = t.route[0] as any
-    const last = t.route.at(-1) as any
-    for (const [point, id] of [
-      [first, first.start_pcb_port_id],
-      [last, last.end_pcb_port_id],
-    ] as any[]) {
-      const port = pcbPorts.find((p) => p.pcb_port_id === id)
-      expect(port).toBeDefined()
-      expect(Math.hypot(point.x - port!.x, point.y - port!.y)).toBeLessThan(
-        1e-6,
+  for (const pcbTrace of [g!, s!]) {
+    const firstRoutePoint = pcbTrace.route[0]
+    const lastRoutePoint = pcbTrace.route.at(-1)
+    expect(firstRoutePoint?.route_type).toBe("wire")
+    expect(lastRoutePoint?.route_type).toBe("wire")
+    if (
+      firstRoutePoint?.route_type !== "wire" ||
+      lastRoutePoint?.route_type !== "wire"
+    ) {
+      throw new Error(
+        "Expected wire endpoints for the ground and signal routes",
       )
+    }
+    for (const { routePoint, pcbPortId } of [
+      {
+        routePoint: firstRoutePoint,
+        pcbPortId: firstRoutePoint.start_pcb_port_id,
+      },
+      { routePoint: lastRoutePoint, pcbPortId: lastRoutePoint.end_pcb_port_id },
+    ]) {
+      const port = pcbPorts.find((pcbPort) => pcbPort.pcb_port_id === pcbPortId)
+      expect(port).toBeDefined()
+      expect(
+        Math.hypot(routePoint.x - port!.x, routePoint.y - port!.y),
+      ).toBeLessThan(1e-6)
     }
   }
   expect(db.source_ambiguous_port_reference.list()).toEqual([])
