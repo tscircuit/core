@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test.failing(
+test(
   "traces created by the connections prop do not warn about a missing name",
   () => {
     const { circuit } = getTestFixture()
