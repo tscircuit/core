@@ -1,27 +1,32 @@
-import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
-import type { Port } from "../../Port"
+import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util";
+import type { Port } from "../../Port";
 
 export const getMaxLengthFromConnectedComponents = (
-  ports: Port[],
-  { db }: { db: CircuitJsonUtilObjects },
+	ports: Port[],
+	{ db }: { db: CircuitJsonUtilObjects },
 ): number | undefined => {
-  const componentMaxLengths = ports
-    .map((port) => {
-      const sourcePort = db.source_port.get(port.source_port_id!)
-      if (!sourcePort?.source_component_id) return null
+	// A capacitor's decoupling limit describes its local connection. A path
+	// joining several ports represents a shared rail, whose total span may be
+	// much larger. Explicit trace.maxLength still applies in SourceTraceRender.
+	if (ports.length > 2) return undefined;
 
-      const sourceComponent = db.source_component.get(
-        sourcePort.source_component_id,
-      )
+	const componentMaxLengths = ports
+		.map((port) => {
+			const sourcePort = db.source_port.get(port.source_port_id!);
+			if (!sourcePort?.source_component_id) return null;
 
-      if (sourceComponent?.ftype === "simple_capacitor") {
-        return sourceComponent.max_decoupling_trace_length
-      }
+			const sourceComponent = db.source_component.get(
+				sourcePort.source_component_id,
+			);
 
-      return null
-    })
-    .filter((length): length is number => typeof length === "number")
+			if (sourceComponent?.ftype === "simple_capacitor") {
+				return sourceComponent.max_decoupling_trace_length;
+			}
 
-  if (componentMaxLengths.length === 0) return undefined
-  return Math.min(...componentMaxLengths)
-}
+			return null;
+		})
+		.filter((length): length is number => typeof length === "number");
+
+	if (componentMaxLengths.length === 0) return undefined;
+	return Math.min(...componentMaxLengths);
+};
