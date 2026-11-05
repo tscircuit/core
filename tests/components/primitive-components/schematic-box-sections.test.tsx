@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { schematic_component } from "circuit-json"
 import type { Group } from "lib/components/primitive-components/Group/Group"
 import { createSchematicTraceSolverInputProblem } from "lib/components/primitive-components/Group/Group_doInitialSchematicTraceRender/createSchematicTraceSolverInputProblem"
 import { SchematicBox } from "lib/components/primitive-components/SchematicBox/SchematicBox"
@@ -79,5 +80,16 @@ test("chip-backed schematic boxes participate in schematic sections", () => {
     "U1 Power": "power",
     "U1 I/O": "io",
   })
+  for (const schematicBox of schematicBoxes) {
+    const emittedComponent = circuit.db.schematic_component.get(
+      schematicBox.schematic_component_id!,
+    )!
+    expect(schematic_component.safeParse(emittedComponent).success).toBe(true)
+    expect(emittedComponent.port_arrangement).toMatchObject(
+      schematicBox.name === "U1 Power"
+        ? { left_side: { pins: [1, 2] } }
+        : { right_side: { pins: [1, 2] } },
+    )
+  }
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
