@@ -16,7 +16,8 @@ test("NEMA34 drops its source-trace length limits at SRJ export", async () => {
   expect(constrainedTraces).toHaveLength(220)
   expect(constrainedTraces.filter((trace) => "name" in trace)).toHaveLength(60)
   const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({ circuitJson })
-  const exportedConstraints = Reflect.get(simpleRouteJson, "routeConstraints") ?? []
+  const exportedConstraints =
+    Reflect.get(simpleRouteJson, "routeConstraints") ?? []
   expect(exportedConstraints).toHaveLength(0)
   expect(circuitJson).toEqual(original)
 
