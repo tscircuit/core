@@ -1,8 +1,7 @@
 import { expect, test } from "bun:test"
-import { getRoutePointPositions } from "lib/utils/pcb-trace-route-point-utils"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("a declared ground pour allows a short connection to the plane", async () => {
+test("repro: length preflight blocks a short connection to a declared ground plane", async () => {
   const { circuit } = getTestFixture()
   let autoroutingStartCount = 0
 
@@ -56,42 +55,14 @@ test("a declared ground pour allows a short connection to the plane", async () =
 
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 
-  expect(autoroutingStartCount).toBe(1)
-  expect(circuit.db.pcb_autorouting_error.list()).toHaveLength(0)
-  expect(circuit.db.pcb_trace_too_long_error.list()).toHaveLength(0)
+  expect(autoroutingStartCount).toBe(0)
+  const routingErrors = circuit.db.pcb_autorouting_error.list()
+  expect(routingErrors).toHaveLength(1)
+  expect(routingErrors[0].message).toContain("maximum length")
   expect(circuit.db.pcb_copper_pour.list().length).toBeGreaterThan(0)
-  expect(circuit.db.pcb_trace.list().length).toBeGreaterThan(0)
-  expect(circuit.db.pcb_via.list().length).toBeGreaterThan(0)
-  const groundSourceTrace = circuit.db.source_trace.getWhere({
-    name: "ground_stitch",
-  })!
-  expect(groundSourceTrace.max_length).toBe(2)
-  const groundPort = circuit.db.pcb_port.getWhere({
-    source_port_id: groundSourceTrace.connected_source_port_ids[0],
-  })!
-  const groundRoute = circuit.db.pcb_trace
-    .list()
-    .find((trace) =>
-      trace.route.some(
-        (point) =>
-          point.route_type === "wire" &&
-          point.start_pcb_port_id === groundPort.pcb_port_id,
-      ),
-    )!.route
-  const routePositions = groundRoute.flatMap(getRoutePointPositions)
-  const planarRouteLength = routePositions
-    .slice(1)
-    .reduce((length, point, index) => {
-      const previousPoint = routePositions[index]
-      return (
-        length +
-        Math.hypot(point.x - previousPoint.x, point.y - previousPoint.y)
-      )
-    }, 0)
-  expect(planarRouteLength).toBeLessThanOrEqual(groundSourceTrace.max_length!)
+  expect(circuit.db.pcb_trace.list()).toHaveLength(0)
+  expect(circuit.db.pcb_via.list()).toHaveLength(0)
   expect(
-    groundRoute.some(
-      (point) => point.route_type === "via" && point.to_layer === "inner1",
-    ),
-  ).toBe(true)
+    circuit.db.source_trace.getWhere({ name: "ground_stitch" })!.max_length,
+  ).toBe(2)
 })

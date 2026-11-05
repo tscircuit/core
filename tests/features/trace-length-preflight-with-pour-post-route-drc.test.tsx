@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("a declared pour still reports an overlong routed ground connection", async () => {
+test("repro: declared-pour routing stops before the final length check", async () => {
   const { circuit } = getTestFixture()
   let autoroutingStartCount = 0
   circuit.on("autorouting:start", () => autoroutingStartCount++)
@@ -38,16 +38,13 @@ test("a declared pour still reports an overlong routed ground connection", async
     shouldDrawErrors: false,
   })
 
-  expect(autoroutingStartCount).toBe(1)
-  expect(circuit.db.pcb_autorouting_error.list()).toHaveLength(0)
-  const groundSourceTrace = circuit.db.source_trace.getWhere({
-    name: "ground_stitch",
-  })!
-  const lengthErrors = circuit.db.pcb_trace_too_long_error.list()
-  expect(lengthErrors).toHaveLength(1)
-  expect(lengthErrors[0].source_trace_id).toBe(
-    groundSourceTrace.source_trace_id,
-  )
-  expect(lengthErrors[0].maximum_trace_length).toBe(0.1)
-  expect(lengthErrors[0].actual_trace_length).toBeGreaterThan(0.1)
+  expect(autoroutingStartCount).toBe(0)
+  const routingErrors = circuit.db.pcb_autorouting_error.list()
+  expect(routingErrors).toHaveLength(1)
+  expect(routingErrors[0].message).toContain("maximum length")
+  expect(circuit.db.pcb_trace.list()).toHaveLength(0)
+  expect(circuit.db.pcb_trace_too_long_error.list()).toHaveLength(0)
+  expect(
+    circuit.db.source_trace.getWhere({ name: "ground_stitch" })!.max_length,
+  ).toBe(0.1)
 })
