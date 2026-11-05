@@ -1,8 +1,10 @@
 import type { SchematicComponentInput } from "circuit-json"
 import type { PortArrangement } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
+import { parsePinNumberFromLabelsOrThrow } from "../utils/schematic/parsePinNumberFromLabelsOrThrow"
 
 export const underscorifyPortArrangement = (
   portArrangement?: PortArrangement | undefined,
+  pinLabels?: Record<string, readonly string[] | string> | null,
 ): SchematicComponentInput["port_arrangement"] | undefined => {
   if (!portArrangement) return undefined
   if (
@@ -11,11 +13,35 @@ export const underscorifyPortArrangement = (
     "topSide" in portArrangement ||
     "bottomSide" in portArrangement
   ) {
+    const normalizeSide = (side: any) => {
+      if (!side) return undefined
+      if (Array.isArray(side)) {
+        return {
+          pins: side.map((pin) =>
+            parsePinNumberFromLabelsOrThrow(pin, pinLabels),
+          ),
+        }
+      }
+      if (
+        typeof side === "object" &&
+        "pins" in side &&
+        Array.isArray(side.pins)
+      ) {
+        return {
+          ...side,
+          pins: side.pins.map((pin: any) =>
+            parsePinNumberFromLabelsOrThrow(pin, pinLabels),
+          ),
+        }
+      }
+      return side
+    }
+
     return {
-      left_side: portArrangement.leftSide,
-      right_side: portArrangement.rightSide,
-      top_side: portArrangement.topSide,
-      bottom_side: portArrangement.bottomSide,
+      left_side: normalizeSide(portArrangement.leftSide),
+      right_side: normalizeSide(portArrangement.rightSide),
+      top_side: normalizeSide(portArrangement.topSide),
+      bottom_side: normalizeSide(portArrangement.bottomSide),
     }
   }
 
