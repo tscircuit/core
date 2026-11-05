@@ -30,5 +30,5 @@ test("chip CAD component position inside offset group", () => {
   // The CAD component position should include the group's offset
   expect(cadComponent.position.x).toBeCloseTo(5, 1)
   expect(cadComponent.position.y).toBeCloseTo(3, 1)
-  expect(cadComponent.position.z).toBeCloseTo(0.7, 1) // Default board thickness/2
+  expect(cadComponent.position.z).toBeCloseTo(0.8, 1) // Default board thickness/2
 })

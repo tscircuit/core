@@ -15,7 +15,7 @@ export class MountedBoard extends Subcircuit implements BoardI {
   }
 
   get boardThickness() {
-    return 1.4
+    return 1.6
   }
 
   get allLayers() {

@@ -28,6 +28,12 @@ circuit.add(
 circuit.getCircuitJson()
 ```
 
+## System block diagrams
+
+For high-level functional diagrams, use the [`systemblock` namespace](./docs/system-blocks.md).
+Core automatically resolves block positions, sizes, routes, and label anchors into
+Circuit JSON, ready for `convertCircuitJsonToSystemSvg` from `circuit-to-svg`.
+
 ## Non-React Usage
 
 ```tsx

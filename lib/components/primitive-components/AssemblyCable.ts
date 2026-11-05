@@ -1,9 +1,9 @@
 import type { CadCable } from "circuit-json"
 import { assemblyCableProps } from "@tscircuit/props"
-import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
+import { AssemblyComponent } from "../base-components/AssemblyComponent"
 import { resolveAssemblyCable } from "./resolve-assembly-cable"
 
-export class AssemblyCable extends PrimitiveComponent<
+export class AssemblyCable extends AssemblyComponent<
   typeof assemblyCableProps
 > {
   private cadCableId?: CadCable["cad_cable_id"]
@@ -19,6 +19,7 @@ export class AssemblyCable extends PrimitiveComponent<
   }
 
   onPropsChange(): void {
+    super.onPropsChange()
     this._markDirty("CadModelRender")
   }
 
