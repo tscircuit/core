@@ -1,3 +1,4 @@
+import { isValidElement } from "react"
 import {
   pushButtonProps,
   resolveManufacturerPartNumber,
@@ -31,6 +32,19 @@ export class PushButton extends NormalComponent<
   }
 
   override initPorts() {
+    const existingChildPorts = this._getAllPortsFromChildren()
+    const hasCustomSymbol =
+      isValidElement(this.props.symbol) ||
+      this.children.some((child) => child.componentName === "Symbol") ||
+      existingChildPorts.some((port) => port._getSymbolAncestor() !== null)
+
+    if (hasCustomSymbol) {
+      super.initPorts({
+        ignoreSymbolPorts: true,
+      })
+      return
+    }
+
     super.initPorts({
       pinCount: 2,
       ignoreSymbolPorts: true,
@@ -42,7 +56,8 @@ export class PushButton extends NormalComponent<
     const symPort2 = symbol.ports.find((p) => p.labels.includes("2"))
 
     const ports = this.selectAll<Port>("port")
-    const pin1Port = ports.find((port) => port.props.pinNumber === 1)!
+    const pin1Port = ports.find((port) => port.props.pinNumber === 1)
+    if (!pin1Port) return
     pin1Port.schematicSymbolPortDef = symPort1!
 
     // Each symbol terminal has one physical owner. Other pads inherit that
