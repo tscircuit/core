@@ -4,18 +4,9 @@ import type { BoardDirectionVector } from "lib/utils/pcb/transform-footprint-ins
 import type { NormalComponent } from "../base-components/NormalComponent"
 import type { AssemblyCable } from "./AssemblyCable"
 
-/** Resolve the pin 1 mating-face point in right-handed circuit world, mm
- * (+X right, +Y top, +Z above). Emitted PCB ports already include the actual
- * footprint rotation and layer reflection; do not repeat those transforms.
- */
-export function resolveAssemblyCablePin1Position(
-  cable: AssemblyCable,
-  connector: NormalComponent,
-  matingCenter: Point3,
-  outward: BoardDirectionVector,
-): Point3 | undefined {
+function getConnectorPins(cable: AssemblyCable, connector: NormalComponent) {
   const db = cable.root!.db
-  const pins = db.source_port.list().flatMap((sourcePort) => {
+  return db.source_port.list().flatMap((sourcePort) => {
     if (sourcePort.source_component_id !== connector.source_component_id)
       return []
     const pcbPort = db.pcb_port
@@ -34,6 +25,56 @@ export function resolveAssemblyCablePin1Position(
       (hint ? Number(hint.replace(/^pin/, "")) : undefined)
     return [{ position: pcbPort, pin }]
   })
+}
+
+/** Internal contact row center in right-handed circuit-world XY, mm. The
+ * signal ports already carry the footprint rotation and layer reflection.
+ * rowOffset is toward the header hold-downs from the solder-tail row; the
+ * outward Z sign makes the perpendicular follow the physical layer flip.
+ */
+export function resolveAssemblyCableContactRowCenter(
+  cable: AssemblyCable,
+  connector: NormalComponent,
+  outward: BoardDirectionVector,
+  rowOffset: number,
+): { x: number; y: number } | undefined {
+  const pins = getConnectorPins(cable, connector)
+  const first = pins.find(({ pin }) => pin === 1)?.position
+  if (!first || pins.length < 2) return undefined
+  const center = pins.reduce(
+    (sum, { position }) => ({
+      x: sum.x + position.x / pins.length,
+      y: sum.y + position.y / pins.length,
+    }),
+    { x: 0, y: 0 },
+  )
+  const row = vec3.normalize(vec3.create(), [
+    center.x - first.x,
+    center.y - first.y,
+    0,
+  ])
+  const towardHoldDowns = vec3.cross(
+    vec3.create(),
+    [outward.x, outward.y, outward.z],
+    row,
+  )
+  return {
+    x: center.x + towardHoldDowns[0] * rowOffset,
+    y: center.y + towardHoldDowns[1] * rowOffset,
+  }
+}
+
+/** Resolve the pin 1 mating-face point in right-handed circuit world, mm
+ * (+X right, +Y top, +Z above). Emitted PCB ports already include the actual
+ * footprint rotation and layer reflection; do not repeat those transforms.
+ */
+export function resolveAssemblyCablePin1Position(
+  cable: AssemblyCable,
+  connector: NormalComponent,
+  matingCenter: Point3,
+  outward: BoardDirectionVector,
+): Point3 | undefined {
+  const pins = getConnectorPins(cable, connector)
   const pin1 = pins.find(({ pin }) => pin === 1)?.position
   if (!pin1 || pins.length < 2) return undefined
   const center = pins.reduce(

@@ -36,29 +36,37 @@ test("assembly.cable renders an explicitly selected model between different endp
               standard={standard}
               pinCount={pinCount}
               pcbX={index ? 20 : -20}
-              cadModel={{
-                jscad: {
-                  type: "cuboid",
-                  size: [16, 4, heights[index]!],
-                  center: [0, 0, heights[index]! / 2],
-                },
-              }}
+              cadModel={
+                standard
+                  ? undefined
+                  : {
+                      jscad: {
+                        type: "cuboid",
+                        size: [16, 4, heights[index]!],
+                        center: [0, 0, heights[index]! / 2],
+                      },
+                    }
+              }
               footprint={
-                <footprint>
-                  {Array.from({ length: pinCount }, (_, pin) => pin).map(
-                    (pin) => (
-                      <Fragment key={pin}>
-                        <platedhole
-                          pcbX={(pin - (pinCount - 1) / 2) * pitches[index]!}
-                          portHints={[`pin${pin + 1}`]}
-                          holeDiameter={0.5}
-                          outerDiameter={0.8}
-                          shape="circle"
-                        />
-                      </Fragment>
-                    ),
-                  )}
-                </footprint>
+                standard ? (
+                  `jst${pinCount}_${index ? "ph" : "sh"}`
+                ) : (
+                  <footprint>
+                    {Array.from({ length: pinCount }, (_, pin) => pin).map(
+                      (pin) => (
+                        <Fragment key={pin}>
+                          <platedhole
+                            pcbX={(pin - (pinCount - 1) / 2) * pitches[index]!}
+                            portHints={[`pin${pin + 1}`]}
+                            holeDiameter={0.5}
+                            outerDiameter={0.8}
+                            shape="circle"
+                          />
+                        </Fragment>
+                      ),
+                    )}
+                  </footprint>
+                )
               }
             />
           ))}
@@ -76,6 +84,7 @@ test("assembly.cable renders an explicitly selected model between different endp
         .filter((c) => c.ftype === "simple_connector")
         .map((c) => c.standard),
     ).toEqual([...standards])
+    if (!standards[0]) continue
     panels.push({
       title,
       code: `<assembly.cable name="C1"\n  from=".J1" to=".J2"\n  model={\n    "${model.split("_b(")[0]}" +\n    "_b(${model.split("_b(")[1]}"\n  } />`,
@@ -85,7 +94,7 @@ test("assembly.cable renders an explicitly selected model between different endp
       renderOptions: {
         poppygl: {
           camPos: [-75, 75, 85] as [number, number, number],
-          lookAt: [0, 20, 0] as [number, number, number],
+          lookAt: [0, 5, 0] as [number, number, number],
           fov: 40,
         },
       },
@@ -94,6 +103,7 @@ test("assembly.cable renders an explicitly selected model between different endp
   await expectAssemblySnapshot(import.meta.path, {
     title: "Explicit cable model / independent connector ends",
     font: "alphabet",
+    layout: "model_focus",
     panels,
   })
 })

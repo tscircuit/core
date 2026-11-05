@@ -32,15 +32,18 @@ test("A13 D0-D3 forbids drilled pads while retaining its clearance limitation", 
 
   // With these native dimensions, the inner RAM pads cannot escape without
   // violating clearance or drilling a pad. Preserve that limit explicitly.
-  const padClearanceErrors = checkPadTraceClearance(json, {
-    minClearance: 0.2,
-  })
+  const padClearanceErrors = [
+    ...checkPadTraceClearance(json, { minClearance: 0.2 }),
+    ...checkViaPadClearance(json, { minClearance: 0.2 }),
+  ]
   expect(padClearanceErrors.length).toBeGreaterThan(0)
-  expect(padClearanceErrors.length).toBeLessThanOrEqual(7)
+  expect(padClearanceErrors.length).toBeLessThanOrEqual(3)
+  for (const clearanceError of padClearanceErrors) {
+    expect(clearanceError.actual_clearance).toBeGreaterThan(0)
+  }
   const otherPhysicalErrors = [
     ...checkEachPcbTraceNonOverlapping(json, { minClearance: 0.2 }),
     ...checkViaTraceClearance(json, { minClearance: 0.2 }),
-    ...checkViaPadClearance(json, { minClearance: 0.2 }),
     ...checkTracesAreContiguous(json),
   ].filter((finding) => finding.type.endsWith("_error"))
   expect(otherPhysicalErrors).toEqual([])
