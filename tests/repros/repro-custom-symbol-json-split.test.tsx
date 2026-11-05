@@ -98,10 +98,11 @@ test("JSON symbol preserves separate PCB ports for a split physical pin", async 
     .map(
       (x) => ports.find((p) => p.pcb_port_id === x.pcb_port_id)?.source_port_id,
     )
+    .filter((id): id is string => id !== undefined)
 
   expect(ports).toHaveLength(3)
   expect(new Set(split).size).toBe(2)
-  expect(split.every(Boolean)).toBe(true)
+  expect(split).toHaveLength(2)
   const groups = db.source_component_internal_connection.list()
   expect(groups).toHaveLength(1)
   expect(new Set(groups[0].source_port_ids)).toEqual(new Set(split))
