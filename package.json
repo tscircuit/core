@@ -62,7 +62,7 @@
     "@tscircuit/miniflex": "^0.0.4",
     "@tscircuit/modelprinter": "^0.0.37",
     "@tscircuit/ngspice-spice-engine": "^0.0.20",
-    "@tscircuit/props": "^0.0.718",
+    "@tscircuit/props": "^0.0.719",
     "@tscircuit/schematic-match-adapt": "^0.0.18",
     "@tscircuit/schematic-trace-solver": "https://jscdn.tscircuit.com/@tscircuit/schematic-trace-solver/0.0.238.tgz",
     "@tscircuit/solver-utils": "^0.0.16",
@@ -78,7 +78,7 @@
     "bun-match-svg": "0.0.12",
     "calculate-elbow": "^0.0.12",
     "chokidar-cli": "^3.0.0",
-    "circuit-json": "^0.0.544",
+    "circuit-json": "^0.0.545",
     "circuit-json-to-bom-csv": "^0.0.28",
     "circuit-json-to-bpc": "^0.0.13",
     "circuit-json-to-connectivity-map": "^0.0.33",
@@ -115,7 +115,7 @@
     "circuit-json-to-fdm-component-box": "^0.0.2",
     "circuit-json-to-footprinter": "^0.0.59",
     "circuit-json-to-gerber": "^0.0.120",
-    "circuit-json-to-kicad": "0.0.267",
+    "circuit-json-to-kicad": "0.0.269",
     "circuit-json-to-readable-netlist": "^0.0.15",
     "circuit-json-to-step": "^0.0.63",
     "circuit-json-to-tscircuit": "^0.0.50",
@@ -168,8 +168,8 @@
   },
   "overrides": {
     "@tscircuit/graphics-debug-3d": "https://jscdn.tscircuit.com/@tscircuit/graphics-debug-3d/0.0.1.tgz",
-    "@tscircuit/props": "^0.0.718",
-    "circuit-json": "^0.0.544",
+    "@tscircuit/props": "^0.0.719",
+    "circuit-json": "^0.0.545",
     "@tscircuit/cableprinter": "^0.0.6"
   },
   "browser": {
