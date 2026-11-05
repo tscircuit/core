@@ -4,12 +4,12 @@ import { createElement } from "react"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("panel dimensions are checked against manufacturing limits", async () => {
-  const sizeConstraints = { minWidth: "50mm", maxHeight: "25mm" }
+  const sizeLimits = { minWidth: "50mm", maxHeight: "25mm" }
   const { circuit } = getTestFixture()
   circuit.add(
     createElement(
       "panel",
-      { layoutMode: "grid", sizeConstraints },
+      { layoutMode: "grid", ...sizeLimits },
       <board width="14mm" height="18mm" routingDisabled>
         <pcbnotetext
           text="Panel below min width / above max height"
@@ -30,8 +30,13 @@ test("panel dimensions are checked against manufacturing limits", async () => {
   await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
     shouldDrawErrors: true,
   })
-  expect(panelProps.parse({ sizeConstraints })).toMatchObject({
-    sizeConstraints: { minWidth: 50, maxHeight: 25 },
+  expect(panelProps.parse(sizeLimits)).toMatchObject({
+    minWidth: 50,
+    maxHeight: 25,
+  })
+  expect(circuit.db.pcb_panel.list()[0]).toMatchObject({
+    width: 24,
+    height: 28,
   })
   expect(errors.map((error) => error.message).join("\n")).toContain(
     "minimum width",
