@@ -1,3 +1,6 @@
+import { PanelTab } from "../primitive-components/PanelTab"
+import { PanelTabKeepout } from "../primitive-components/PanelTabKeepout"
+import { generateControlledPanelTabs } from "lib/utils/panels/generate-controlled-panel-tabs"
 import { getOwningPanel } from "lib/utils/panels/get-owning-panel"
 import { subpanelProps } from "@tscircuit/props"
 import { distance } from "circuit-json"
@@ -66,10 +69,12 @@ export class Subpanel extends Group<typeof subpanelProps> {
     if (
       component.lowercaseComponentName !== "board" &&
       component.lowercaseComponentName !== "subpanel" &&
-      component.lowercaseComponentName !== "trace"
+      component.lowercaseComponentName !== "trace" &&
+      component.lowercaseComponentName !== "paneltab" &&
+      component.lowercaseComponentName !== "paneltabkeepout"
     ) {
       throw new Error(
-        `<${this._errorComponentName}> can only contain <board>, <subpanel>, or <trace> elements`,
+        `<${this._errorComponentName}> can only contain <board>, <subpanel>, <trace>, <paneltab>, or <paneltabkeepout> elements`,
       )
     }
     super.add(component)
@@ -340,6 +345,22 @@ export class Subpanel extends Group<typeof subpanelProps> {
     const { db } = this.root!
     const props = this._parsedProps
     const panelizationMethod = props.panelizationMethod ?? "none"
+    const tabChildren = this.children.filter(
+      (child): child is PanelTab => child instanceof PanelTab,
+    )
+    const keepoutChildren = this.children.filter(
+      (child): child is PanelTabKeepout => child instanceof PanelTabKeepout,
+    )
+    const hasTabControls =
+      props.tabCountPerEdge !== undefined ||
+      tabChildren.length > 0 ||
+      keepoutChildren.length > 0
+    if (hasTabControls && panelizationMethod !== "tab-routing")
+      throw new Error(
+        'Panel tab controls require panelizationMethod="tab-routing"',
+      )
+    if (props.tabCountPerEdge !== undefined && tabChildren.length > 0)
+      throw new Error("Use either tabCountPerEdge or <paneltab> children")
     // Use _getAllBoardInstances to include boards inside nested subpanels
     const childBoardInstances = this._getAllBoardInstances()
 
@@ -373,15 +394,35 @@ export class Subpanel extends Group<typeof subpanelProps> {
         }
       } else {
         const boardGap = props.boardGap ?? tabWidth
-        const { tabCutouts, mouseBiteHoles } = generatePanelTabsAndMouseBites(
-          boardsInPanel,
-          {
-            boardGap,
-            tabWidth,
-            tabLength: props.tabLength ?? DEFAULT_TAB_LENGTH,
-            mouseBites: props.mouseBites ?? true,
-          },
-        )
+        const { tabCutouts, mouseBiteHoles } = hasTabControls
+          ? generateControlledPanelTabs(
+              boardsInPanel.map((board) => ({
+                board,
+                boardName:
+                  childBoardInstances.find(
+                    (childBoard) =>
+                      childBoard.pcb_board_id === board.pcb_board_id,
+                  )?.name ?? "unnamed board",
+              })),
+              {
+                tabCountPerEdge: props.tabCountPerEdge,
+                tabs: tabChildren.length
+                  ? tabChildren.map((tab) => tab._parsedProps)
+                  : undefined,
+                tabKeepouts: keepoutChildren.map(
+                  (keepout) => keepout._parsedProps,
+                ),
+                tabWidth,
+                tabLength: props.tabLength ?? DEFAULT_TAB_LENGTH,
+                mouseBites: props.mouseBites ?? true,
+              },
+            )
+          : generatePanelTabsAndMouseBites(boardsInPanel, {
+              boardGap,
+              tabWidth,
+              tabLength: props.tabLength ?? DEFAULT_TAB_LENGTH,
+              mouseBites: props.mouseBites ?? true,
+            })
 
         for (const tabCutout of tabCutouts) {
           db.pcb_cutout.insert({

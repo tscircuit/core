@@ -14,6 +14,8 @@ export interface TscircuitElements {
   drccheck: Props.DrcCheckProps
   mountedboard: Props.MountedBoardProps
   panel: Props.PanelProps
+  paneltab: Props.PanelTabProps
+  paneltabkeepout: Props.PanelTabKeepoutProps
   subpanel: Props.SubpanelProps
   jumper: Props.JumperProps
   interconnect: Props.InterconnectProps
