@@ -38,6 +38,22 @@ test("full C2913199 custom symbol and split ground pads", async () => {
   expect(groups[0].source_port_ids.toSorted()).toEqual(
     splitSourceIds.toSorted(),
   )
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+  expect(circuit).toMatchPcbSnapshot(import.meta.path, {
+    shouldDrawRatsNest: true,
+    showPinNumbers: true,
+    showErrorsInTextOverlay: true,
+  })
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path, {
+    drawPorts: true,
+    shouldDrawErrors: true,
+    showErrorsInTextOverlay: true,
+    labeledPoints: [
+      {
+        x: -1.5,
+        y: 2.9,
+        label: `Ambiguous references: ${circuit.db.source_ambiguous_port_reference.list().length}`,
+      },
+    ],
+    grid: { cellSize: 1, labelCells: true },
+  })
 })
