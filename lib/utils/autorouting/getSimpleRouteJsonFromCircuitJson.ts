@@ -898,43 +898,53 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   // Preserve source-trace scope: a capacitor's terminal-to-net length limit
   // must not become a total-length limit on the entire supply or ground net.
   const srjRouteConstraints: SimpleRouteConstraint[] = []
-  for (const srjConnection of allConns) {
-    const connectionNetKey = getSourceConnectivityKey(srjConnection.name)
-    for (const sourceTrace of sourceTraces) {
-      if (sourceTrace.max_length == null && sourceTrace.max_via_count == null)
-        continue
-      if (subcircuit_id && sourceTrace.subcircuit_id !== subcircuit_id) continue
-      if (
-        getSourceConnectivityKey(sourceTrace.source_trace_id) !==
-        connectionNetKey
+  for (const sourceTrace of sourceTraces) {
+    if (sourceTrace.max_length == null && sourceTrace.max_via_count == null)
+      continue
+    if (subcircuit_id && sourceTrace.subcircuit_id !== subcircuit_id) continue
+    const pointIds = sourceTrace.connected_source_port_ids.flatMap(
+      (sourcePortId) => {
+        const pcbPort = db.pcb_port.getWhere({ source_port_id: sourcePortId })
+        return pcbPort ? [getPcbPortRoutePoint(pcbPort).pointId] : []
+      },
+    )
+    if (
+      pointIds.length === 0 ||
+      pointIds.length !== sourceTrace.connected_source_port_ids.length
+    )
+      continue
+
+    // Emit one rule with its complete terminal scope. The same source trace
+    // can appear in both an explicit connection and a larger net connection.
+    // Prefer the full net so a one-terminal rule can reach any net terminal;
+    // never turn a two-terminal rule into a one-terminal rule on a branch.
+    const sourceConnectivityKey = getSourceConnectivityKey(
+      sourceTrace.source_trace_id,
+    )
+    const srjConnection = allConns
+      .filter(
+        (connection) =>
+          getSourceConnectivityKey(connection.name) === sourceConnectivityKey &&
+          pointIds.every((pointId) =>
+            connection.pointsToConnect.some(
+              (point) => point.pointId === pointId,
+            ),
+          ),
       )
-        continue
-      const pointIds = sourceTrace.connected_source_port_ids.flatMap(
-        (sourcePortId) => {
-          const pcbPort = db.pcb_port.getWhere({ source_port_id: sourcePortId })
-          if (!pcbPort) return []
-          const routePoint = getPcbPortRoutePoint(pcbPort)
-          return srjConnection.pointsToConnect.some(
-            (point) => point.pointId === routePoint.pointId,
-          )
-            ? [routePoint.pointId]
-            : []
-        },
-      )
-      if (pointIds.length === 0) continue
-      srjRouteConstraints.push({
-        connectionName: srjConnection.name,
-        sourceTraceId: sourceTrace.source_trace_id,
-        name: sourceTrace.display_name ?? sourceTrace.name,
-        pointIds,
-        ...(sourceTrace.max_length != null
-          ? { maxLength: sourceTrace.max_length }
-          : {}),
-        ...(sourceTrace.max_via_count != null
-          ? { maxViaCount: sourceTrace.max_via_count }
-          : {}),
-      })
-    }
+      .sort((a, b) => b.pointsToConnect.length - a.pointsToConnect.length)[0]
+    if (!srjConnection) continue
+    srjRouteConstraints.push({
+      connectionName: srjConnection.name,
+      sourceTraceId: sourceTrace.source_trace_id,
+      name: sourceTrace.display_name ?? sourceTrace.name,
+      pointIds,
+      ...(sourceTrace.max_length != null
+        ? { maxLength: sourceTrace.max_length }
+        : {}),
+      ...(sourceTrace.max_via_count != null
+        ? { maxViaCount: sourceTrace.max_via_count }
+        : {}),
+    })
   }
 
   bounds = expandSrjBoundsToIncludeConnectionPoints({
