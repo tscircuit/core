@@ -1,22 +1,23 @@
 import { expect } from "bun:test"
+import type { RootCircuit } from "lib/RootCircuit"
 
 /** Assertions for existing physical endpoints, without requiring a trace per
  * internally connected pad. Works on both broken and fixed source outputs. */
-export function expectSharedNetRoutes(circuit: any) {
+export function expectSharedNetRoutes(circuit: RootCircuit) {
   const db = circuit.db
   const components = db.source_component.list()
   const sources = db.source_port.list()
   const pcb = db.pcb_port.list()
   const traces = db.pcb_trace.list()
   const port = (component: string, pin: number): string => {
-    const owner = components.find((c: any) => c.name === component)
+    const owner = components.find((c) => c.name === component)
     const source = sources.find(
-      (p: any) =>
+      (p) =>
         p.source_component_id === owner?.source_component_id &&
         p.pin_number === pin,
     )
     const matching = pcb.filter(
-      (p: any) => p.source_port_id === source?.source_port_id,
+      (p) => p.source_port_id === source?.source_port_id,
     )
     expect(matching).toHaveLength(1)
     return matching[0].pcb_port_id
@@ -26,9 +27,7 @@ export function expectSharedNetRoutes(circuit: any) {
   const power = [port("U1", 2), port("R_LOAD", 2), port("R_PULL", 2)]
   const loadGround = port("R_LOAD", 1)
   const routeBetween = (a: string, b: string) =>
-    traces.find(
-      (t: any) => t.connectsTo.includes(a) && t.connectsTo.includes(b),
-    )
+    traces.find((t) => t.connectsTo.includes(a) && t.connectsTo.includes(b))
   expect(routeBetween(io, pullIo)).toBeDefined()
   const reached = new Set([power[0]])
   for (let i = 0; i < power.length; i++) {
@@ -42,28 +41,33 @@ export function expectSharedNetRoutes(circuit: any) {
   expect(new Set(power)).toEqual(reached)
   // Each trace is actually terminated at its advertised PCB port coordinates.
   for (const trace of traces) {
-    const first = trace.route[0] as any
-    const last = trace.route.at(-1) as any
+    const first = trace.route[0]
+    const last = trace.route.at(-1)
+    if (first?.route_type !== "wire" || last?.route_type !== "wire") {
+      throw new Error("Expected trace endpoints to be wire points")
+    }
     for (const [point, id] of [
       [first, first.start_pcb_port_id],
       [last, last.end_pcb_port_id],
-    ] as any[]) {
-      const p = pcb.find((candidate: any) => candidate.pcb_port_id === id)
+    ] as const) {
+      const p = pcb.find((candidate) => candidate.pcb_port_id === id)
       expect(p).toBeDefined()
+      if (!p) throw new Error(`Missing PCB port for trace endpoint ${id}`)
       expect(Math.hypot(point.x - p.x, point.y - p.y)).toBeLessThan(1e-6)
     }
   }
   // Signal, supply and ground endpoints must remain on distinct source nets.
   const sourceTrace = db.source_trace.list()
   const netOf = (component: string, pin: number) => {
-    const owner = components.find((c: any) => c.name === component)
+    const owner = components.find((c) => c.name === component)
     const source = sources.find(
-      (p: any) =>
+      (p) =>
         p.source_component_id === owner?.source_component_id &&
         p.pin_number === pin,
     )
-    return sourceTrace.find((t: any) =>
-      t.connected_source_port_ids.includes(source?.source_port_id),
+    if (!source) throw new Error(`Missing source port ${component}.${pin}`)
+    return sourceTrace.find((t) =>
+      t.connected_source_port_ids.includes(source.source_port_id),
     )?.connected_source_net_ids[0]
   }
   const netIds = [netOf("U1", 2), netOf("U1", 4), netOf("R_LOAD", 1)]
