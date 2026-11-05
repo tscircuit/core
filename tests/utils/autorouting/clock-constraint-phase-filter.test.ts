@@ -1,7 +1,6 @@
 import { expect, test } from "bun:test"
 import { Group_filterSimpleRouteJsonForPhase } from "lib/components/primitive-components/Group/Group_phasedAutoroutingUtils"
 import { Trace } from "lib/components/primitive-components/Trace/Trace"
-import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 
 test("routing phases retain only the clock rules for their included connections", () => {
   const trace = new Trace({
@@ -10,7 +9,7 @@ test("routing phases retain only the clock rules for their included connections"
     to: ".Y1 > .pin3",
   })
   trace.source_trace_id = "clock"
-  const input: SimpleRouteJson = {
+  const input = {
     layerCount: 2,
     minTraceWidth: 0.1,
     obstacles: [],
@@ -53,6 +52,9 @@ test("routing phases retain only the clock rules for their included connections"
     traces: [trace],
     nets: [],
   })
-  expect(phase.routeConstraints).toEqual([input.routeConstraints![0]!])
+  expect(phase.connections.map((connection) => connection.name)).toEqual([
+    "clock",
+  ])
+  expect(phase.routeConstraints).toEqual([input.routeConstraints[0]!])
   expect(input).toEqual(original)
 })
