@@ -535,35 +535,31 @@ export class NormalComponent<
       this.addAll(portsToCreate)
     }
 
-    const hasReactSymbol = isValidElement(this.props.symbol)
-    const hasCircuitJsonSymbolProp = isCircuitJsonSymbol(this.props.symbol)
-    if (!hasReactSymbol && !hasCircuitJsonSymbolProp) {
-      const portsFromFootprint = this.getPortsFromFootprint({
-        ...opts,
-        allowImplicitPinNumbers: !pinLabelsFromProps,
-        collectInferredInternallyConnectedPins: true,
-      })
-      const existingPorts = this._getAllPortsFromChildren()
-      for (const port of portsFromFootprint) {
-        if (!port._isPrimaryPort) {
-          portsToCreate.push(port)
-          continue
-        }
+    // Merge footprint ports with symbol ports; separated copper clusters still
+    // need their own internally connected physical ports.
+    const portsFromFootprint = this.getPortsFromFootprint({
+      ...opts,
+      allowImplicitPinNumbers: !pinLabelsFromProps,
+      collectInferredInternallyConnectedPins: true,
+    })
+    const existingPorts = this._getAllPortsFromChildren()
+    for (const port of portsFromFootprint) {
+      if (!port._isPrimaryPort) {
+        portsToCreate.push(port)
+        continue
+      }
 
-        const matchingPort =
-          existingPorts.find((p) => canMergePortDefinitions(p, port)) ??
-          portsToCreate.find((p) => canMergePortDefinitions(p, port))
+      const matchingPort =
+        existingPorts.find((p) => canMergePortDefinitions(p, port)) ??
+        portsToCreate.find((p) => canMergePortDefinitions(p, port))
 
-        if (matchingPort) {
-          const mergedAliases = port
-            .getNameAndAliases()
-            .filter(
-              (alias) => !matchingPort.getNameAndAliases().includes(alias),
-            )
-          matchingPort.externallyAddedAliases.push(...mergedAliases)
-        } else if (!schPortArrangement) {
-          portsToCreate.push(port)
-        }
+      if (matchingPort) {
+        const mergedAliases = port
+          .getNameAndAliases()
+          .filter((alias) => !matchingPort.getNameAndAliases().includes(alias))
+        matchingPort.externallyAddedAliases.push(...mergedAliases)
+      } else if (!schPortArrangement) {
+        portsToCreate.push(port)
       }
     }
 
@@ -778,11 +774,14 @@ export class NormalComponent<
           const symbol = this.children.find(
             (child) => child.componentName === "Symbol",
           )
-          const port = [...this.children, ...(symbol?.children ?? [])].find(
-            (child) =>
-              child.componentName === "Port" &&
-              (child as Port).isMatchingNameOrAlias(prop as string),
-          ) as Port | undefined
+          const matchingPorts = [...this.children, ...(symbol?.children ?? [])]
+            .filter((child): child is Port => child.componentName === "Port")
+            .filter((port) => port.isMatchingNameOrAlias(prop as string))
+          // Secondary physical ports share aliases with the symbol's primary
+          // port, but must not shadow it when resolving an internal connection.
+          const port =
+            matchingPorts.find((port) => port._isPrimaryPort) ??
+            matchingPorts[0]
           if (!port) {
             throw new Error(
               `There was an issue finding the port "${prop.toString()}" inside of a ${
