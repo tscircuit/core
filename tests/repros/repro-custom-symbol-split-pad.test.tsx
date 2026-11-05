@@ -4,7 +4,10 @@ import {
   checkTracesAreContiguous,
 } from "@tscircuit/checks"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
-import { expectSharedNetRoutes } from "./full-mcu-routed-checks"
+import {
+  expectSharedNetRoutes,
+  tracePcbPortIds,
+} from "./full-mcu-routed-checks"
 import { FullMcuRoutedFixture } from "./full-mcu-routed-fixture"
 
 test("full C2913199 custom symbol and split ground pads with routed loads", async () => {
@@ -57,8 +60,8 @@ test("full C2913199 custom symbol and split ground pads with routed loads", asyn
   expect(
     traces.some(
       (t) =>
-        t.connectsTo.includes(loadGround) &&
-        t.connectsTo.some((id) => splitPcbIds.includes(id)),
+        tracePcbPortIds(t).includes(loadGround) &&
+        tracePcbPortIds(t).some((id) => splitPcbIds.includes(id)),
     ),
   ).toBe(true)
   const json = circuit.getCircuitJson()
