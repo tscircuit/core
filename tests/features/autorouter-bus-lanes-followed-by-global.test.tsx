@@ -60,6 +60,11 @@ test("global routing preserves the completed selected bus phase", async () => {
     (trace) => trace.connection_name === inputs[0].connections[0].name,
   )!
   expect(preloadedDdr.isFixed).toBe(true)
+  expect(preloadedDdr.connectsTo).toEqual(
+    expect.arrayContaining(
+      inputs[0].connections[0].pointsToConnect.map((point) => point.pcb_port_id),
+    ),
+  )
   const fixedDdr = outputs[0].traces!.find(
     (t) => t.connection_name === inputs[0].connections[0].name,
   )!

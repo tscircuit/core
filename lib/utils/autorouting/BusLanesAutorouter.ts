@@ -10,6 +10,7 @@ import type {
   AutorouterProgressEvent,
 } from "./GenericLocalAutorouter"
 import type { SimpleRouteJson, SimplifiedPcbTrace } from "./SimpleRouteJson"
+import { getBusLanesTracesWithPhysicalConnections } from "./get-bus-lanes-traces-with-physical-connections"
 /** Adapter preserves board coordinates (mm, +X right, +Y up). A failed planar
  * solve emits an error; it never falls back to a router that can insert vias. */
 export class BusLanesAutorouter implements GenericLocalAutorouter {
@@ -71,7 +72,13 @@ export class BusLanesAutorouter implements GenericLocalAutorouter {
         }
         if (this.solver.solved) {
           this.isRouting = false
-          this.emit({ type: "complete", traces: this.solver.traces })
+          this.emit({
+            type: "complete",
+            traces: getBusLanesTracesWithPhysicalConnections({
+              input: this.input,
+              traces: this.solver.traces,
+            }),
+          })
           return
         }
         this.emit({
@@ -111,6 +118,9 @@ export class BusLanesAutorouter implements GenericLocalAutorouter {
     this.solver.solve()
     if (this.solver.failed)
       throw new Error(this.solver.error ?? "Bus lanes routing failed")
-    return this.solver.traces
+    return getBusLanesTracesWithPhysicalConnections({
+      input: this.input,
+      traces: this.solver.traces,
+    })
   }
 }
