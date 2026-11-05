@@ -125,7 +125,12 @@ export const Board_updatePcbDesignRuleChecks = (board: Board) => {
         () =>
           runAllRoutingChecks(circuitJson).then((results) =>
             results.filter(
-              (result) => !board._isExpectedCastellatedHoleDrcError(result),
+              (result) =>
+                !board._isExpectedCastellatedHoleDrcError(result) &&
+                !board._isExpectedSameComponentCutoutDrcError(
+                  result,
+                  circuitJson,
+                ),
             ),
           ) as Promise<AnyCircuitElement[]>,
       )
@@ -142,7 +147,12 @@ export const Board_updatePcbDesignRuleChecks = (board: Board) => {
             consolidatePcbOverlapErrors(
               circuitJson,
               results.filter(
-                (result) => !board._isExpectedCastellatedHoleDrcError(result),
+                (result) =>
+                  !board._isExpectedCastellatedHoleDrcError(result) &&
+                  !board._isExpectedSameComponentCutoutDrcError(
+                    result,
+                    circuitJson,
+                  ),
               ),
             ).filter(
               (result) =>
