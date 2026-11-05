@@ -985,7 +985,12 @@ export class NormalComponent<
       // schematic_box size
       // size: dimensions.getSizeIncludingPins(),
 
-      port_arrangement: underscorifyPortArrangement(schPortArrangement!),
+      port_arrangement: underscorifyPortArrangement(
+        schPortArrangement!,
+        props.pinLabels && !Array.isArray(props.pinLabels)
+          ? props.pinLabels
+          : primaryPortLabels,
+      ),
 
       pin_spacing: 0.2,
 
