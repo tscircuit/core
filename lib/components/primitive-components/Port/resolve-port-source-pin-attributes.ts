@@ -4,7 +4,10 @@ import {
   type SourcePort,
 } from "circuit-json"
 import type { Port } from "./Port"
-import { applyPinAttributesToSourcePort } from "./apply-pin-attributes-to-source-port"
+import {
+  applyPinAttributesToSourcePort,
+  EXPLICIT_ELECTRICAL_ROLE_Pairs,
+} from "./apply-pin-attributes-to-source-port"
 
 export const getImportedSourcePinAttributes = (
   port: Port,
@@ -36,6 +39,13 @@ export const getImportedSourcePinAttributes = (
   if (matches.length !== 1) return {}
   // Select canonical electrical fields without copying imported IDs or labels.
   const attributes = source_pin_attributes.parse(matches[0])
+  const rawMatch = matches[0] as unknown as Record<string, unknown>
+  const targetAttributes = attributes as unknown as Record<string, unknown>
+  for (const [, snakeKey] of EXPLICIT_ELECTRICAL_ROLE_Pairs) {
+    if (typeof rawMatch[snakeKey] === "boolean") {
+      targetAttributes[snakeKey] = rawMatch[snakeKey]
+    }
+  }
   for (const attributeName of Object.keys(
     attributes,
   ) as (keyof SourcePinAttributes)[]) {

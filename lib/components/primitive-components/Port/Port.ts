@@ -337,6 +337,9 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     // direct parent as a fallback for them.
     const pinAttributeOwner = this.getParentNormalComponent() ?? this.parent
     const parentProps = (pinAttributeOwner as any)?._parsedProps
+    const rawPinAttributes = (pinAttributeOwner as any)?.props?.pinAttributes as
+      | Record<string, PinAttributeMap>
+      | undefined
     const pinAttributes = parentProps?.pinAttributes as
       | Record<string, PinAttributeMap>
       | undefined
@@ -344,11 +347,13 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
     const matches: PinAttributeMap[] = []
     for (const alias of this.getNameAndAliases()) {
-      if (pinAttributes) {
-        const attributes = pinAttributes[alias]
-        if (attributes) {
-          matches.push(attributes)
-        }
+      const rawAttributes = rawPinAttributes?.[alias]
+      const parsedAttributes = pinAttributes?.[alias]
+      if (rawAttributes || parsedAttributes) {
+        matches.push({
+          ...rawAttributes,
+          ...parsedAttributes,
+        })
       }
 
       if (noConnect?.includes(alias)) {
