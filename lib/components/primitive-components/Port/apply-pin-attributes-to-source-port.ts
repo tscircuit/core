@@ -1,5 +1,32 @@
-import type { PinAttributeMap, PinCapability } from "@tscircuit/props"
+import {
+  type PinAttributeMap,
+  type PinCapability,
+  pinAttributeMap,
+} from "@tscircuit/props"
 import { type SourcePinAttributes, voltage } from "circuit-json"
+
+export const EXPLICIT_ELECTRICAL_ROLE_Pairs = [
+  ["isResetInput", "is_reset_input"],
+  ["isUsbDataPositive", "is_usb_data_positive"],
+  ["isUsbDataNegative", "is_usb_data_negative"],
+  ["isCurrentSensePositiveInput", "is_current_sense_positive_input"],
+  ["isCurrentSenseNegativeInput", "is_current_sense_negative_input"],
+  ["isMosfetGate", "is_mosfet_gate"],
+  ["isMosfetSource", "is_mosfet_source"],
+  ["isMosfetDrain", "is_mosfet_drain"],
+  ["isTransistorBase", "is_transistor_base"],
+  ["isTransistorCollector", "is_transistor_collector"],
+  ["isTransistorEmitter", "is_transistor_emitter"],
+  ["isDiodeAnode", "is_diode_anode"],
+  ["isDiodeCathode", "is_diode_cathode"],
+  ["isOpAmpInvertingInput", "is_op_amp_inverting_input"],
+  ["isOpAmpNonInvertingInput", "is_op_amp_non_inverting_input"],
+  ["isOpAmpOutput", "is_op_amp_output"],
+  ["isRelayCoil", "is_relay_coil"],
+  ["isRelayCommonContact", "is_relay_common_contact"],
+  ["isRelayNormallyOpenContact", "is_relay_normally_open_contact"],
+  ["isRelayNormallyClosedContact", "is_relay_normally_closed_contact"],
+] as const
 
 const setSupportedCapability = (
   sourcePortProps: SourcePinAttributes,
@@ -79,6 +106,15 @@ export const applyPinAttributesToSourcePort = (
   sourcePortProps: SourcePinAttributes,
   attributes: PinAttributeMap,
 ): void => {
+  const rawAttributes = attributes as Record<string, unknown>
+  const targetProps = sourcePortProps as Record<string, unknown>
+  for (const [camelKey, snakeKey] of EXPLICIT_ELECTRICAL_ROLE_Pairs) {
+    const val = rawAttributes[camelKey]
+    if (typeof val === "boolean") {
+      targetProps[snakeKey] = val
+    }
+  }
+
   if (attributes.isInput !== undefined) {
     sourcePortProps.is_input = attributes.isInput
   }
@@ -149,6 +185,12 @@ export const applyPinAttributesToSourcePort = (
   }
   if (attributes.requiresVoltage !== undefined) {
     sourcePortProps.requires_voltage = voltage.parse(attributes.requiresVoltage)
+  }
+  if (attributes.requiredVoltageTolerance !== undefined) {
+    sourcePortProps.required_voltage_tolerance =
+      pinAttributeMap.shape.requiredVoltageTolerance
+        .unwrap()
+        .parse(attributes.requiredVoltageTolerance)
   }
   if (attributes.doNotConnect !== undefined) {
     sourcePortProps.do_not_connect = attributes.doNotConnect
