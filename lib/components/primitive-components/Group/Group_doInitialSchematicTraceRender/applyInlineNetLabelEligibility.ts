@@ -24,6 +24,7 @@ type EligibleNetConnection = {
   connKey?: string
   isSameSheetCrossSectionConnection?: boolean
   isPowerOrGroundConnection?: boolean
+  isBranchedDisplayLabelTraceConnection?: boolean
 }
 
 type InlineNetLabelEligibleConnection = {
@@ -158,6 +159,7 @@ export const applyInlineNetLabelEligibility = ({
     if (
       connKey &&
       !isSameSheetCrossSectionConnection &&
+      !netConnection.isBranchedDisplayLabelTraceConnection &&
       !connKeysWithExplicitPortNetTraces.has(connKey)
     )
       continue

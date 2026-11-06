@@ -4,7 +4,7 @@ import { Port } from "../../Port"
 import { Group } from "../Group"
 import { getNetNameFromPorts } from "./getNetNameFromPorts"
 
-type SubcircuitConnectivityMapKey = NonNullable<
+export type SubcircuitConnectivityMapKey = NonNullable<
   SourcePort["subcircuit_connectivity_map_key"]
 >
 

@@ -33,6 +33,7 @@ const renderSchematicTracesForSheet = ({
     schematicPortIdsWithExternallyRoutedRepresentations,
     schPortIdToSourcePortId,
     userNetIdToConnKey,
+    branchedDisplayLabelTraceConnKeys,
     crossScopeSourceTraceIdBySchematicPortIdAndNetId,
     sourceTraceIdByPortOnlyLabelSchematicPortId,
     connKeysWithExplicitPortNetTraces,
@@ -109,6 +110,7 @@ const renderSchematicTracesForSheet = ({
     solver,
     connKeyToSourceNet,
     userNetIdToConnKey,
+    branchedDisplayLabelTraceConnKeys,
     crossScopeSourceTraceIdBySchematicPortIdAndNetId,
     sourceTraceIdByPortOnlyLabelSchematicPortId,
     connKeysWithExplicitPortNetTraces,
@@ -122,6 +124,7 @@ const renderSchematicTracesForSheet = ({
     group,
     solver,
     userNetIdToConnKey,
+    branchedDisplayLabelTraceConnKeys,
     sourceTraceIdByPinPairKey,
     crossScopeSourceTraceIdBySchematicPortIdAndNetId,
   })
