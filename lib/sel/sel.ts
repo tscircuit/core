@@ -218,6 +218,23 @@ export const sel: Sel = new Proxy(
               },
             )
           }
+          if (prop1 === "group") {
+            return new Proxy(
+              {},
+              {
+                get: (_, prop3: string) => {
+                  return new Proxy(
+                    {},
+                    {
+                      get: (_, prop4: string) => {
+                        return `group.${prop2} > .${prop3} > .${prop4}`
+                      },
+                    },
+                  )
+                },
+              },
+            )
+          }
           return `.${prop1} > .${prop2}`
         },
         // This handles function calls like...
