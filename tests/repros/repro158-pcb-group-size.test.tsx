@@ -20,7 +20,7 @@ test("repro158: PCB group size", async () => {
   expect(pcb_groups).toMatchInlineSnapshot(`
     [
       {
-        "anchor_alignment": null,
+        "anchor_alignment": undefined,
         "anchor_position": {
           "x": 0,
           "y": 0,
