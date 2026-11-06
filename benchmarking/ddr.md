@@ -33,6 +33,6 @@ collaborator may comment on a PR:
 The workflow snapshots the PR base and head, runs both sequentially on one
 Blacksmith runner using the same trusted pinned benchmark revision, and posts
 the comparison in a PR comment. It also supports manual workflow dispatch with
-a PR number. The job executing PR code has read-only permissions; a separate
+a PR number. PR comment timeouts accept 1–300 seconds per circuit. The job executing PR code has read-only permissions; a separate
 job posts results without executing PR source. `BENCHMARK_RUNNER` can override
 the default runner. Normal CI never invokes the benchmark.
