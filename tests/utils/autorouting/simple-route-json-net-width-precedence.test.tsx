@@ -41,5 +41,6 @@ test("connected nets and traces retain their largest specified width", async () 
       widths.expected,
     )
     expect(simpleRouteJson.connections[0].width).toBe(widths.expected)
+    expect(simpleRouteJson.connections[0].minTraceWidth).toBe(widths.trace)
   }
 })

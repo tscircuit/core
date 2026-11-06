@@ -92,6 +92,8 @@ export type SimpleRouteConnection = {
   mergedConnectionNames?: string[]
   isOffBoard?: boolean
   netConnectionName?: string
+  /** Explicit source-trace minimum for core's built-in Pipeline9 routing passes. */
+  minTraceWidth?: number
   nominalTraceWidth?: number
   /** @deprecated Use `nominalTraceWidth` instead. */
   width?: number
