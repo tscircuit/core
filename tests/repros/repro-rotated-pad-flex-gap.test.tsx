@@ -17,7 +17,7 @@ test("equivalent rotated pads get different PCB flex gaps", async () => {
             <chip
               name={`U${row}_${pinIndex}`}
               key={pinIndex}
-              pcbRotation={45}
+              pcbRotation={explicitShape ? 45 : 0}
               footprint={
                 <footprint>
                   {explicitShape ? (
@@ -28,12 +28,7 @@ test("equivalent rotated pads get different PCB flex gaps", async () => {
                       ccwRotation={45}
                     />
                   ) : (
-                    <smtpad
-                      shape="rect"
-                      width={8}
-                      height={1}
-                      pcbRotation={45}
-                    />
+                    <smtpad shape="rect" width={1} height={8} />
                   )}
                 </footprint>
               }
@@ -47,7 +42,7 @@ test("equivalent rotated pads get different PCB flex gaps", async () => {
         fontSize={0.7}
       />
       <pcbnotetext
-        text="Same copper using rect + pcbRotation: gap 1 mm"
+        text="Same copper using rect: gap 1 mm"
         pcbY={-1}
         fontSize={0.7}
       />
