@@ -52,6 +52,7 @@ export const dependencyRangeExceptions = new Set([
   "circuit-json-to-footprinter > circuit-json@^0.0.484",
   "circuit-json-to-footprinter > format-si-unit@^0.0.14",
   "circuit-json-to-gerber > transformation-matrix@^3.0.0",
+  // tscircuit still installs exporter 0.0.164. Remove after it adopts 0.0.165.
   "circuit-json-to-gltf > @tscircuit/footprinter@^0.0.431",
   "circuit-json-to-gltf > jscad-planner@^0.0.19",
   "circuit-json-to-spice > circuit-json-to-connectivity-map@^0.0.22",
@@ -66,5 +67,7 @@ export const dependencyRangeExceptions = new Set([
   "morgan > debug@2.6.9",
   "serve-index > debug@2.6.9",
   "snapdragon > debug@^2.2.0",
+  // Remove when tscircuit releases with the updated exporter.
+  "tscircuit > circuit-json-to-gltf@^0.0.164",
   "use-mouse-matrix-transform > transformation-matrix@^3.0.0",
 ])
