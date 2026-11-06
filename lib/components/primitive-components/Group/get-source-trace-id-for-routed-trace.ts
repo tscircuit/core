@@ -284,6 +284,17 @@ export function getSourceTraceIdForRoutedTrace({
 
   const sourcePortIds = getSourcePortIdsFromRoutedTrace(db, trace)
   if (sourcePortIds.length === 0) {
+    // A split via-to-via piece has no port endpoint. SRJ connection names can
+    // identify source traces or nets, so resolve that identity before relying
+    // on previously inserted copper (which depends on output order).
+    const connectionName =
+      "connection_name" in trace ? trace.connection_name : undefined
+    if (
+      connectionName &&
+      (db.source_trace.get(connectionName) ?? db.source_net.get(connectionName))
+    ) {
+      return connectionName
+    }
     return getSourceIdsFromConnectedPcbTraces(db, trace)[0]
   }
 
