@@ -204,24 +204,23 @@ function getSourceIdsFromConnectedPcbTraces(
       continue
     }
 
-    const existingRoute = existingTrace.route.filter(
-      (
-        point,
-      ): point is Extract<PcbTrace["route"][number], { route_type: "wire" }> =>
-        point.route_type === "wire",
-    )
-
-    for (let i = 0; i < existingRoute.length - 1; i++) {
-      const segmentStart = existingRoute[i]
-      const segmentEnd = existingRoute[i + 1]
-      if (!segmentStart || !segmentEnd) continue
+    // Keep actual route adjacency: filtering out vias or through-pad points
+    // would create wire segments that do not exist on the board.
+    for (let i = 0; i < existingTrace.route.length; i++) {
+      const segmentStart = existingTrace.route[i]
+      const segmentEnd = existingTrace.route[i + 1]
+      if (segmentStart.route_type !== "wire") continue
       for (const endpoint of endpoints) {
         if (
-          isPointOnWireSegment({
-            point: endpoint,
-            segmentStart,
-            segmentEnd,
-          })
+          // A via transition can leave just one wire point on this layer.
+          (endpoint.layer === segmentStart.layer &&
+            distance(endpoint, segmentStart) <= POINT_EPSILON) ||
+          (segmentEnd?.route_type === "wire" &&
+            isPointOnWireSegment({
+              point: endpoint,
+              segmentStart,
+              segmentEnd,
+            }))
         ) {
           sourceIds.add(existingTrace.source_trace_id)
         }
@@ -284,18 +283,18 @@ export function getSourceTraceIdForRoutedTrace({
 
   const sourcePortIds = getSourcePortIdsFromRoutedTrace(db, trace)
   if (sourcePortIds.length === 0) {
-    // A split via-to-via piece has no port endpoint. SRJ connection names can
-    // identify source traces or nets, so resolve that identity before relying
-    // on previously inserted copper (which depends on output order).
-    const connectionName =
-      "connection_name" in trace ? trace.connection_name : undefined
+    const sourceIds = getSourceIdsFromConnectedPcbTraces(db, trace)
+    // Touching different electrical nets is a short, not evidence that they
+    // share ownership. Only inherit an unambiguous source connection.
     if (
-      connectionName &&
-      (db.source_trace.get(connectionName) ?? db.source_net.get(connectionName))
+      sourceIds.length > 1 &&
+      !buildSourceConnectivityMap(db.source_trace.list()).areAllIdsConnected(
+        sourceIds,
+      )
     ) {
-      return connectionName
+      return undefined
     }
-    return getSourceIdsFromConnectedPcbTraces(db, trace)[0]
+    return sourceIds[0]
   }
 
   const sourceTraces = db.source_trace.list()

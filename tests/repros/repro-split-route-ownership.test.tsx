@@ -36,10 +36,17 @@ function getWireSegments(traces: PcbTrace[]) {
 test("split via-to-via route retains ownership with identical connected copper", async () => {
   // A deterministic router response isolates Core's import, not solver quality.
   const renderedCircuits = []
-  for (const { split, namedNet } of [
-    { split: true, namedNet: false },
-    { split: false, namedNet: false },
-    { split: true, namedNet: true },
+  for (const { split, namedNet, order } of [
+    { split: true, namedNet: false, order: [0, 1, 2] },
+    { split: false, namedNet: false, order: [0, 1, 2] },
+    { split: true, namedNet: true, order: [1, 0, 2] },
+    ...[
+      [0, 2, 1],
+      [1, 0, 2],
+      [1, 2, 0],
+      [2, 0, 1],
+      [2, 1, 0],
+    ].map((order) => ({ split: true, namedNet: false, order })),
   ]) {
     const { circuit } = getTestFixture()
     circuit.add(
@@ -119,20 +126,13 @@ test("split via-to-via route retains ownership with identical connected copper",
                 },
               ],
             ]
-            // Import the named-net bridge first so ownership cannot depend on
-            // previously inserted pieces.
-            const routes = namedNet
-              ? [parts[1], parts[0], parts[2]]
-              : split
-                ? parts
-                : [parts.flat()]
+            // No connection names or port hints: infer ownership from copper.
+            const routes = split
+              ? order.map((index) => parts[index])
+              : [parts.flat()]
             return routes.map((route, traceIndex) => ({
               type: "pcb_trace",
               pcb_trace_id: `saved_route_${traceIndex}`,
-              connection_name: connection.name,
-              connectsTo: connection.pointsToConnect.map(
-                (point) => point.pcb_port_id!,
-              ),
               route,
             }))
           })}
@@ -221,11 +221,20 @@ test("split via-to-via route retains ownership with identical connected copper",
     continuousCircuit.db.source_trace.list()[0].source_trace_id,
   )
   const netTraces = netCircuit.db.pcb_trace.list()
-  expect(netTraces[0].source_trace_id).toBe(
-    netCircuit.db.source_net.list()[0].source_net_id,
-  )
+  expect(
+    netCircuit.db.source_trace.get(netTraces[0].source_trace_id!)
+      ?.connected_source_net_ids,
+  ).toContain(netCircuit.db.source_net.list()[0].source_net_id)
   expect(netCircuit.db.pcb_trace_error.list()).toEqual([])
   expect(getWireSegments(netTraces)).toEqual(getWireSegments(splitTraces))
+  for (const circuit of renderedCircuits.slice(3)) {
+    const traces = circuit.db.pcb_trace.list()
+    expect(traces.map((trace) => trace.source_trace_id)).toEqual(
+      Array(3).fill(circuit.db.source_trace.list()[0].source_trace_id),
+    )
+    expect(circuit.db.pcb_trace_error.list()).toEqual([])
+    expect(getWireSegments(traces)).toEqual(getWireSegments(splitTraces))
+  }
   const snapshotOptions = {
     showSolderMask: false,
     showSolderPaste: false,
