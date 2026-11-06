@@ -57,12 +57,13 @@ export function withFixedTraces(
         (next.route_type !== "wire" && next.route_type !== "via")
       )
         continue
-      const width =
-        point.route_type === "wire"
+      const rawWidth =
+        point.route_type === "wire" && point.width > 0
           ? point.width
-          : next.route_type === "wire"
+          : next.route_type === "wire" && next.width > 0
             ? next.width
             : input.minTraceWidth
+      const width = rawWidth > 0 ? rawWidth : 0.1
       const layer = point.route_type === "wire" ? point.layer : point.to_layer
       const dx = next.x - point.x
       const dy = next.y - point.y
