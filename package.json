@@ -42,7 +42,7 @@
     "@tscircuit/cableprinter": "^0.0.6",
     "@tscircuit/capacity-autorouter": "^0.0.1047",
     "@tscircuit/checks": "^0.0.268",
-    "@tscircuit/circuit-json-util": "^0.0.128",
+    "@tscircuit/circuit-json-util": "^0.0.132",
     "@tscircuit/common": "^0.0.20",
     "@tscircuit/copper-pour-solver": "^0.0.67",
     "@tscircuit/create-fdm-enclosure": "0.0.4",
@@ -78,7 +78,7 @@
     "bun-match-svg": "0.0.12",
     "calculate-elbow": "^0.0.12",
     "chokidar-cli": "^3.0.0",
-    "circuit-json": "^0.0.544",
+    "circuit-json": "^0.0.546",
     "circuit-json-to-bom-csv": "^0.0.28",
     "circuit-json-to-bpc": "^0.0.13",
     "circuit-json-to-connectivity-map": "^0.0.33",
@@ -126,7 +126,7 @@
   "peerDependencies": {
     "@tscircuit/capacity-autorouter": "*",
     "@tscircuit/checks": "*",
-    "@tscircuit/circuit-json-util": "*",
+    "@tscircuit/circuit-json-util": ">=0.0.132",
     "@tscircuit/create-fdm-enclosure": "*",
     "@tscircuit/footprinter": "*",
     "@tscircuit/infgrid-ijump-astar": "*",
@@ -169,7 +169,7 @@
   "overrides": {
     "@tscircuit/graphics-debug-3d": "https://jscdn.tscircuit.com/@tscircuit/graphics-debug-3d/0.0.1.tgz",
     "@tscircuit/props": "^0.0.718",
-    "circuit-json": "^0.0.544",
+    "circuit-json": "^0.0.546",
     "@tscircuit/cableprinter": "^0.0.6"
   },
   "browser": {

@@ -6,7 +6,7 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("recomputes a cached unknown JST PH orientation using the shared row analyzer", async () => {
   const oldCacheKey = "part-orientation-analysis:v4:jlcpcb:C131334"
-  const newCacheKey = "part-orientation-analysis:v5:jlcpcb:C131334"
+  const newCacheKey = "part-orientation-analysis:v6:jlcpcb:C131334"
   const cache = new Map([
     [oldCacheKey, JSON.stringify({ pin1_location: null, pin1_polarity: null })],
   ])

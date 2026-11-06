@@ -1,4 +1,9 @@
-import { analyzePcbPin1Location } from "@tscircuit/circuit-json-util"
+import {
+  analyzePcbPin1Location,
+  getPcbFootprintOrientationPads,
+  getPcbFootprintOrientationPadsFromCircuitJson,
+  getPcbFootprintRotationOffset,
+} from "@tscircuit/circuit-json-util"
 import type {
   PartsEngine,
   SupplierName,
@@ -10,11 +15,13 @@ import {
   type PcbPin1Location,
   type SourcePort,
   type SupplierPin1LocationMap,
+  type SupplierRotationOffsetMap,
   pcb_pin1_location,
   source_component_misconfigured_error,
 } from "circuit-json"
 import { fetchPartCircuitJsonWithoutDatasheet } from "lib/utils/fetch-part-circuit-json-with-datasheet"
 import { isFootprintFlipped } from "lib/utils/pcb/transform-footprint-insertion-direction"
+import { z } from "zod"
 import type { NormalComponent } from "./NormalComponent"
 
 type SupplierPartCandidate = {
@@ -27,16 +34,26 @@ type Pin1Polarity = "anode" | "cathode"
 type SupplierPartOrientationAnalysis = {
   pin1Location: PcbPin1Location | null
   pin1Polarity: Pin1Polarity | null
+  orientationPads: ReturnType<typeof getPcbFootprintOrientationPads>
 }
 
-// v5 invalidates null two-pad frames cached before circuit-json-util 0.0.128.
+// v6 also stores supplier contact geometry for comparison with authored pads.
 type SupplierPartOrientationCacheKey =
-  `part-orientation-analysis:v5:${SupplierName}:${string}`
+  `part-orientation-analysis:v6:${SupplierName}:${string}`
 
-type CachedSupplierPartOrientationAnalysis = {
-  pin1_location: PcbPin1Location | null
-  pin1_polarity: Pin1Polarity | null
-}
+const cachedSupplierOrientation = z.object({
+  pin1_location: pcb_pin1_location.nullable(),
+  pin1_polarity: z.enum(["anode", "cathode"]).nullable(),
+  orientation_pads: z
+    .array(
+      z.object({
+        type: z.enum(["pcb_smtpad", "pcb_plated_hole"]),
+        center: z.object({ x: z.number().finite(), y: z.number().finite() }),
+        labels: z.array(z.string()),
+      }),
+    )
+    .nullable(),
+})
 
 const pendingSupplierPartOrientationAnalyses = new WeakMap<
   PartsEngine,
@@ -183,7 +200,7 @@ const getSupplierPartOrientationCacheKey = ({
   supplierName,
   supplierPartNumber,
 }: SupplierPartCandidate): SupplierPartOrientationCacheKey =>
-  `part-orientation-analysis:v5:${supplierName}:${supplierPartNumber}`
+  `part-orientation-analysis:v6:${supplierName}:${supplierPartNumber}`
 
 const readCachedSupplierPartOrientationAnalysis = async ({
   cacheKey,
@@ -200,30 +217,15 @@ const readCachedSupplierPartOrientationAnalysis = async ({
   if (!cachedValue) return { cacheHit: false }
 
   try {
-    const cached = JSON.parse(
-      cachedValue,
-    ) as CachedSupplierPartOrientationAnalysis
-    const pin1LocationResult = pcb_pin1_location.safeParse(cached.pin1_location)
-    const pin1Location =
-      cached.pin1_location === null
-        ? null
-        : pin1LocationResult.success
-          ? pin1LocationResult.data
-          : undefined
-    const pin1Polarity =
-      cached.pin1_polarity === null ||
-      cached.pin1_polarity === "anode" ||
-      cached.pin1_polarity === "cathode"
-        ? cached.pin1_polarity
-        : undefined
-
-    if (pin1Location === undefined || pin1Polarity === undefined) {
-      return { cacheHit: false }
-    }
-
+    const cached = cachedSupplierOrientation.safeParse(JSON.parse(cachedValue))
+    if (!cached.success) return { cacheHit: false }
     return {
       cacheHit: true,
-      analysis: { pin1Location, pin1Polarity },
+      analysis: {
+        pin1Location: cached.data.pin1_location,
+        pin1Polarity: cached.data.pin1_polarity,
+        orientationPads: cached.data.orientation_pads,
+      },
     }
   } catch {
     return { cacheHit: false }
@@ -252,27 +254,33 @@ const analyzeSupplierPartOrientation = async ({
 
   const analysis = (async () => {
     const supplierCircuitJson = await Promise.resolve(
-      fetchPartCircuitJsonWithoutDatasheet(partsEngine.fetchPartCircuitJson!, {
-        supplierPartNumber: supplierPartCandidate.supplierPartNumber,
-        platformFetch: component.root?.platform?.platformFetch,
-      }),
+      fetchPartCircuitJsonWithoutDatasheet(
+        partsEngine.fetchPartCircuitJson!.bind(partsEngine),
+        {
+          supplierPartNumber: supplierPartCandidate.supplierPartNumber,
+          platformFetch: component.root?.platform?.platformFetch,
+        },
+      ),
     )
     if (!supplierCircuitJson?.length) {
-      return { pin1Location: null, pin1Polarity: null }
+      return { pin1Location: null, pin1Polarity: null, orientationPads: null }
     }
 
     const pin1Location = analyzePcbPin1Location(supplierCircuitJson)
     const pin1Polarity = getPin1Polarity(getPin1SourcePort(supplierCircuitJson))
+    const orientationPads =
+      getPcbFootprintOrientationPadsFromCircuitJson(supplierCircuitJson)
     try {
       await component.root?.platform?.localCacheEngine?.setItem(
         cacheKey,
         JSON.stringify({
           pin1_location: pin1Location,
           pin1_polarity: pin1Polarity,
-        } satisfies CachedSupplierPartOrientationAnalysis),
+          orientation_pads: orientationPads,
+        } satisfies z.infer<typeof cachedSupplierOrientation>),
       )
     } catch {}
-    return { pin1Location, pin1Polarity }
+    return { pin1Location, pin1Polarity, orientationPads }
   })().finally(() => {
     pendingAnalyses.delete(cacheKey)
   })
@@ -298,7 +306,7 @@ export const NormalComponent_doInitialPartOrientationAnalysis = (
     ...db.pcb_plated_hole.list({
       pcb_component_id: component.pcb_component_id,
     }),
-  ] as AnyCircuitElement[]
+  ]
   if (pcbElements.length === 0) return
   const localPin1Location =
     getExplicitPcbPin1Location(component.resolveFootprint()) ??
@@ -324,9 +332,10 @@ export const NormalComponent_doInitialPartOrientationAnalysis = (
   const sourceComponent = db.source_component.get(
     component.source_component_id!,
   )
+  if (!sourceComponent) return
   const shouldCheckPin1Polarity =
-    sourceComponent?.ftype === "simple_diode" ||
-    sourceComponent?.ftype === "simple_led"
+    sourceComponent.ftype === "simple_diode" ||
+    sourceComponent.ftype === "simple_led"
   const localPin1SourcePort = shouldCheckPin1Polarity
     ? getPin1SourcePort(
         db.source_port.list() as AnyCircuitElement[],
@@ -335,25 +344,50 @@ export const NormalComponent_doInitialPartOrientationAnalysis = (
     : null
   const localPin1Polarity = getPin1Polarity(localPin1SourcePort)
   const supplierPartCandidates = getSupplierPartCandidates(
-    sourceComponent?.supplier_part_numbers,
+    sourceComponent.supplier_part_numbers,
   )
   if (supplierPartCandidates.length === 0) return
   if (component._hasStartedPartOrientationAnalysis) return
   component._hasStartedPartOrientationAnalysis = true
+  const authoredOrientationPads =
+    pcbComponent.layer === "top" &&
+    component._getFootprintOriginalLayer() !== "bottom"
+      ? getPcbFootprintOrientationPads(
+          pcbElements,
+          db.source_port.list({
+            source_component_id: sourceComponent.source_component_id,
+          }),
+          db.pcb_port.list({ pcb_component_id: pcbComponent.pcb_component_id }),
+          pcbComponent,
+        )
+      : null
 
   component._queueAsyncEffect("analyze-part-orientation", async () => {
     const supplierPin1LocationMap: SupplierPin1LocationMap = {}
+    const supplierRotationOffsetMap: SupplierRotationOffsetMap = {}
     for (const supplierPartCandidate of supplierPartCandidates) {
       try {
-        const { pin1Location: supplierPin1Location, pin1Polarity } =
-          await analyzeSupplierPartOrientation({
-            component,
-            partsEngine,
-            supplierPartCandidate,
-          })
+        const {
+          pin1Location: supplierPin1Location,
+          pin1Polarity,
+          orientationPads,
+        } = await analyzeSupplierPartOrientation({
+          component,
+          partsEngine,
+          supplierPartCandidate,
+        })
         if (supplierPin1Location) {
           supplierPin1LocationMap[supplierPartCandidate.supplierName] =
             supplierPin1Location
+        }
+        if (authoredOrientationPads && orientationPads) {
+          const offset = getPcbFootprintRotationOffset(
+            authoredOrientationPads,
+            orientationPads,
+          )
+          if (offset !== null)
+            supplierRotationOffsetMap[supplierPartCandidate.supplierName] =
+              offset
         }
         if (
           localPin1Polarity &&
@@ -375,6 +409,7 @@ export const NormalComponent_doInitialPartOrientationAnalysis = (
     }
 
     component._asyncSupplierPin1LocationMap = supplierPin1LocationMap
+    component._asyncSupplierRotationOffsetMap = supplierRotationOffsetMap
     component._markDirty("PartOrientationAnalysis")
   })
 }
@@ -383,16 +418,33 @@ export const NormalComponent_updatePartOrientationAnalysis = (
   component: NormalComponent<any, any>,
 ) => {
   const supplierPin1LocationMap = component._asyncSupplierPin1LocationMap
-  if (!supplierPin1LocationMap || !component.pcb_component_id) return
+  const supplierRotationOffsetMap = component._asyncSupplierRotationOffsetMap
+  if (
+    (!supplierPin1LocationMap && !supplierRotationOffsetMap) ||
+    !component.pcb_component_id
+  )
+    return
 
   const { db } = component.root!
   const pcbComponent = db.pcb_component.get(component.pcb_component_id)
-  if (!pcbComponent || Object.keys(supplierPin1LocationMap).length === 0) return
-
-  db.pcb_component.update(component.pcb_component_id, {
-    supplier_pin1_location_map: {
+  if (!pcbComponent) return
+  const update: Partial<PcbComponent> = {}
+  if (supplierPin1LocationMap && Object.keys(supplierPin1LocationMap).length) {
+    update.supplier_pin1_location_map = {
       ...pcbComponent.supplier_pin1_location_map,
       ...supplierPin1LocationMap,
-    },
-  })
+    }
+  }
+  if (
+    supplierRotationOffsetMap &&
+    Object.keys(supplierRotationOffsetMap).length
+  ) {
+    update.supplier_rotation_offset_map = {
+      ...pcbComponent.supplier_rotation_offset_map,
+      ...supplierRotationOffsetMap,
+    }
+  }
+
+  if (Object.keys(update).length)
+    db.pcb_component.update(component.pcb_component_id, update)
 }

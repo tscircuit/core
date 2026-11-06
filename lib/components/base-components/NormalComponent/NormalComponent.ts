@@ -191,6 +191,7 @@ export class NormalComponent<
   _hasStartedFootprintUrlLoad = false
   _hasStartedPartOrientationAnalysis = false
   _asyncSupplierPin1LocationMap?: import("circuit-json").SupplierPin1LocationMap
+  _asyncSupplierRotationOffsetMap?: import("circuit-json").SupplierRotationOffsetMap
   _hasStartedSupplierFootprintMismatchWarningCheck = false
   _hasInflatedCircuitJsonSymbol = false
   private _invalidFootprintPropMessages: string[] = []
