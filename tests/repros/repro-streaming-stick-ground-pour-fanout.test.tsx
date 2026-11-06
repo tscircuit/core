@@ -52,21 +52,17 @@ beforeAll(async () => {
   expect(withoutPour.db.pcb_trace.list()).toHaveLength(2)
   expect(withoutPour.db.pcb_via.list()).toHaveLength(2)
 
-  // Keep snapshot failures outside test.failing so they cannot satisfy the repro.
   await expect(
     stackSvgsHorizontally(
       [withoutPour, withPour].map((circuit) =>
         convertCircuitJsonToPcbSvg(circuit.getCircuitJson()),
       ),
     ),
-  ).toMatchSvgSnapshot(import.meta.path)
+  ).toMatchSvgSnapshot(import.meta.path, undefined, { diffThresholdPercent: 0 })
 })
 
-test.failing(
-  "adding a ground pour preserves the two BGA dogbone escapes",
-  () => {
-    expect(withPour.db.pcb_autorouting_error.list()).toEqual([])
-    expect(withPour.db.pcb_trace.list()).toHaveLength(2)
-    expect(withPour.db.pcb_via.list()).toHaveLength(2)
-  },
-)
+test("adding a ground pour preserves the two BGA dogbone escapes", () => {
+  expect(withPour.db.pcb_autorouting_error.list()).toEqual([])
+  expect(withPour.db.pcb_trace.list()).toHaveLength(2)
+  expect(withPour.db.pcb_via.list()).toHaveLength(2)
+})
