@@ -1,9 +1,4 @@
-import {
-  analyzePcbPin1Location,
-  getPcbFootprintOrientationPads,
-  getPcbFootprintOrientationPadsFromCircuitJson,
-  getPcbFootprintRotationOffset,
-} from "@tscircuit/circuit-json-util"
+import * as circuitJsonUtil from "@tscircuit/circuit-json-util"
 import type {
   PartsEngine,
   SupplierName,
@@ -24,6 +19,18 @@ import { isFootprintFlipped } from "lib/utils/pcb/transform-footprint-insertion-
 import { z } from "zod"
 import type { NormalComponent } from "./NormalComponent"
 
+const {
+  analyzePcbPin1Location,
+  getPcbFootprintOrientationPads,
+  getPcbFootprintOrientationPadsFromCircuitJson,
+  getPcbFootprintRotationOffset,
+} = circuitJsonUtil
+
+// Core supports older peer installs. Keep their pin-1 cache separate so a
+// utility upgrade fetches supplier contact geometry on the next build.
+const hasRotationMatcher = typeof getPcbFootprintRotationOffset === "function"
+const orientationCacheVersion = hasRotationMatcher ? "v6" : "v5"
+
 type SupplierPartCandidate = {
   supplierName: SupplierName
   supplierPartNumber: string
@@ -34,12 +41,12 @@ type Pin1Polarity = "anode" | "cathode"
 type SupplierPartOrientationAnalysis = {
   pin1Location: PcbPin1Location | null
   pin1Polarity: Pin1Polarity | null
-  orientationPads: ReturnType<typeof getPcbFootprintOrientationPads>
+  orientationPads?: ReturnType<typeof getPcbFootprintOrientationPads>
 }
 
 // v6 also stores supplier contact geometry for comparison with authored pads.
 type SupplierPartOrientationCacheKey =
-  `part-orientation-analysis:v6:${SupplierName}:${string}`
+  `part-orientation-analysis:${typeof orientationCacheVersion}:${SupplierName}:${string}`
 
 const cachedSupplierOrientation = z.object({
   pin1_location: pcb_pin1_location.nullable(),
@@ -52,7 +59,7 @@ const cachedSupplierOrientation = z.object({
         labels: z.array(z.string()),
       }),
     )
-    .nullable(),
+    .nullish(),
 })
 
 const pendingSupplierPartOrientationAnalyses = new WeakMap<
@@ -200,7 +207,7 @@ const getSupplierPartOrientationCacheKey = ({
   supplierName,
   supplierPartNumber,
 }: SupplierPartCandidate): SupplierPartOrientationCacheKey =>
-  `part-orientation-analysis:v6:${supplierName}:${supplierPartNumber}`
+  `part-orientation-analysis:${orientationCacheVersion}:${supplierName}:${supplierPartNumber}`
 
 const readCachedSupplierPartOrientationAnalysis = async ({
   cacheKey,
@@ -268,8 +275,9 @@ const analyzeSupplierPartOrientation = async ({
 
     const pin1Location = analyzePcbPin1Location(supplierCircuitJson)
     const pin1Polarity = getPin1Polarity(getPin1SourcePort(supplierCircuitJson))
-    const orientationPads =
-      getPcbFootprintOrientationPadsFromCircuitJson(supplierCircuitJson)
+    const orientationPads = hasRotationMatcher
+      ? getPcbFootprintOrientationPadsFromCircuitJson(supplierCircuitJson)
+      : undefined
     try {
       await component.root?.platform?.localCacheEngine?.setItem(
         cacheKey,
@@ -350,6 +358,7 @@ export const NormalComponent_doInitialPartOrientationAnalysis = (
   if (component._hasStartedPartOrientationAnalysis) return
   component._hasStartedPartOrientationAnalysis = true
   const authoredOrientationPads =
+    hasRotationMatcher &&
     pcbComponent.layer === "top" &&
     component._getFootprintOriginalLayer() !== "bottom"
       ? getPcbFootprintOrientationPads(
