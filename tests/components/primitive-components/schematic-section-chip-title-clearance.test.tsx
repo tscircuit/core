@@ -46,6 +46,19 @@ test("section titles clear chip and schematic-box reference labels", () => {
   )
   circuit.render()
 
+  // The explicitly positioned box on the supply sheet must not be shifted
+  // by sections laid out on a different sheet.
+  const supplySheet = circuit.db.schematic_sheet
+    .list()
+    .find((sheet) => sheet.name === "supply")!
+  const supplyComponent = circuit.db.schematic_component
+    .list()
+    .find(
+      (component) =>
+        component.schematic_sheet_id === supplySheet.schematic_sheet_id,
+    )!
+  expect(supplyComponent.center).toEqual({ x: 3, y: 0 })
+
   for (const [title, reference] of [
     ["RGB666 LCD", "SOC_U1A"],
     ["Power", "SOC_U1G"],
