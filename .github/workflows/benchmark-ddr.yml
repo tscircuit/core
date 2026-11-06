@@ -124,6 +124,7 @@ jobs:
       contents: read
       actions: read
       issues: write
+      pull-requests: write
     steps:
       - uses: actions/download-artifact@v4
         continue-on-error: true
