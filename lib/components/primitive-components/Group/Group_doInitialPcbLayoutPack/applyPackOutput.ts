@@ -5,7 +5,7 @@ import {
 } from "@tscircuit/circuit-json-util"
 import { normalizeDegrees } from "@tscircuit/math-utils"
 import type { PackOutput } from "calculate-packing"
-import { compose, rotate, translate } from "transformation-matrix"
+import { compose, decomposeTSR, rotate, translate } from "transformation-matrix"
 import type { Group } from "../Group"
 import type { ClusterInfo } from "./applyComponentConstraintClusters"
 
@@ -172,6 +172,16 @@ export const applyPackOutput = (
     )
 
     const relatedElements = db.toArray().filter((elm) => {
+      // Group-level keepouts have a PCB group owner but no source component.
+      if (elm.type === "pcb_keepout" && elm.pcb_group_id) {
+        const keepoutGroup = db.pcb_group.get(elm.pcb_group_id)
+        if (
+          keepoutGroup?.source_group_id &&
+          isDescendantGroup(db, keepoutGroup.source_group_id, componentId)
+        ) {
+          return true
+        }
+      }
       if ("source_group_id" in elm && elm.source_group_id) {
         if (elm.source_group_id === componentId) {
           return true
@@ -223,6 +233,21 @@ export const applyPackOutput = (
     }
 
     transformPCBElements(relatedElements as any, transformMatrix)
+
+    // circuit-json-util transforms keepout centers but does not rotate their
+    // axis-aligned dimensions. Match its pad handling for quarter-turns using
+    // the same complete board-space transform.
+    const rotation = decomposeTSR(transformMatrix).rotation.angle
+    const quarterTurns = Math.round(rotation / (Math.PI / 2))
+    if (Math.abs(quarterTurns) % 2 === 1) {
+      for (const elm of relatedElements) {
+        if (elm.type === "pcb_keepout" && elm.shape === "rect") {
+          const width = elm.width
+          elm.width = elm.height
+          elm.height = width
+        }
+      }
+    }
     db.pcb_group.update(pcbGroup.pcb_group_id, { center })
   }
 
