@@ -1,5 +1,5 @@
 import { getOwningPanel } from "lib/utils/panels/get-owning-panel"
-import { MultilayerIjump } from "@tscircuit/infgrid-ijump-astar"
+import { MultilayerIjump } from "lib/utils/autorouting/vendor/infgrid-ijump-astar/index"
 import { jlcMinTolerances } from "@tscircuit/jlcpcb-manufacturing-specs"
 import { type LayerRef, type PcbTrace, type RouteHintPoint } from "circuit-json"
 import { getFullConnectivityMapFromCircuitJson } from "circuit-json-to-connectivity-map"
