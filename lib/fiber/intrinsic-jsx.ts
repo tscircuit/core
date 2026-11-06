@@ -1,4 +1,5 @@
 import type * as Props from "@tscircuit/props"
+import type { PostRoutingHookFn } from "lib/components/normal-components/Board/Board_doInitialPcbPostRoutingHook"
 import type { Attributes } from "react"
 
 export interface TscircuitElements {
@@ -10,7 +11,10 @@ export interface TscircuitElements {
   diode: Props.DiodeProps
   fuse: Props.FuseProps
   led: Props.LedProps
-  board: Props.BoardProps
+  board: Props.BoardProps & {
+    onPostRouting?: PostRoutingHookFn
+    postRoutingHook?: PostRoutingHookFn
+  }
   drccheck: Props.DrcCheckProps
   mountedboard: Props.MountedBoardProps
   panel: Props.PanelProps
@@ -44,7 +48,10 @@ export interface TscircuitElements {
   keepout: Props.PcbKeepoutProps
   hole: Props.HoleProps
   port: Props.PortProps
-  group: Props.GroupProps
+  group: Props.GroupProps & {
+    onPostRouting?: PostRoutingHookFn
+    postRoutingHook?: PostRoutingHookFn
+  }
   netlabel: Props.NetLabelProps
   opamp: Props.OpAmpProps
   cadmodel: Exclude<Props.CadModelPropsInput, null | string>
