@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("reproduces loss of named differential sections on an ESD net", () => {
+test("preserves named differential sections through an ESD tap on a shared net", () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width={32} height={20} routingDisabled schematicDisabled>
@@ -59,13 +59,59 @@ test("reproduces loss of named differential sections on an ESD net", () => {
     </board>,
   )
   circuit.render()
-  expect(() =>
-    getSimpleRouteJsonFromCircuitJson({
-      db: circuit.db,
-      subcircuitComponent: circuit.firstChild!,
-    }),
-  ).toThrow(
-    'Could not find an SRJ connection for trace name or port selector "P_CPU" in differential pair "CPU_PAIR"',
+  const before = structuredClone(circuit.getCircuitJson())
+  const { simpleRouteJson: srj } = getSimpleRouteJsonFromCircuitJson({
+    db: circuit.db,
+    subcircuitComponent: circuit.firstChild!,
+  })
+  const sourceTrace = (name: string) =>
+    circuit.db.source_trace.getWhere({ name })!
+  const section = (name: string) =>
+    srj.connections.find(
+      (c) => c.source_trace_id === sourceTrace(name).source_trace_id,
+    )!
+  for (const name of ["P_CPU", "N_CPU", "P_PORT", "N_PORT"]) {
+    expect(section(name).width).toBe(0.18)
+    expect(
+      section(name)
+        .pointsToConnect.filter((point) => point.pcb_port_id)
+        .map((p) => circuit.db.pcb_port.get(p.pcb_port_id!)!.source_port_id),
+    ).toEqual(sourceTrace(name).connected_source_port_ids)
+  }
+  expect(srj.differentialPairs).toEqual([
+    {
+      connectionNames: [section("P_CPU").name, section("N_CPU").name],
+      lengthTolerance: 0.1,
+      traceGap: 0.15,
+      maxUncoupledLength: 0.5,
+    },
+    {
+      connectionNames: [section("P_PORT").name, section("N_PORT").name],
+      lengthTolerance: 0.2,
+      traceGap: 0.2,
+    },
+  ])
+  const positiveNet = circuit.db.source_net.getWhere({ name: "USB_P" })!
+  const negativeNet = circuit.db.source_net.getWhere({ name: "USB_N" })!
+  const branch = srj.connections.find(
+    (c) => c.name === positiveNet.source_net_id,
+  )!
+  expect(branch.pointsToConnect.filter((point) => point.pointId)).toHaveLength(
+    2,
   )
+  expect(branch.pointsToConnect.filter((point) => !point.pointId)).toHaveLength(
+    1,
+  )
+  expect(
+    section("N_CPU").pointsToConnect.filter((point) => !point.pointId),
+  ).toHaveLength(1)
+  expect(
+    branch.pointsToConnect.some((p) => p.port_selector?.startsWith("TP.")),
+  ).toBe(true)
+  expect(
+    srj.connections.some((c) => c.name === negativeNet.source_net_id),
+  ).toBe(false)
+  expect(srj.connections).toHaveLength(5)
+  expect(circuit.getCircuitJson()).toEqual(before)
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
