@@ -1,12 +1,12 @@
 import {
-  pinHeaderProps,
   type SchematicPortArrangement,
+  pinHeaderProps,
   resolveManufacturerPartNumber,
 } from "@tscircuit/props"
-import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
-import { Port } from "../primitive-components/Port"
 import type { SourceSimplePinHeader } from "circuit-json"
 import type { BaseSymbolName } from "lib/utils/constants"
+import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
+import { Port } from "../primitive-components/Port"
 
 export class PinHeader extends NormalComponent<typeof pinHeaderProps> {
   _getPcbRotationBeforeLayout(): number | null {
@@ -73,6 +73,21 @@ export class PinHeader extends NormalComponent<typeof pinHeaderProps> {
       return footprintString
     }
     return null
+  }
+
+  override resolveFootprint() {
+    const footprint = super.resolveFootprint()
+    if (
+      typeof footprint === "string" &&
+      this._parsedProps.gender === "female" &&
+      /^pinrow\d*(?:_|$)/.test(footprint)
+    ) {
+      const tokens = footprint.split("_")
+      if (!tokens.includes("female") && !tokens.includes("male")) {
+        return `${footprint}_female`
+      }
+    }
+    return footprint
   }
 
   initPorts() {
