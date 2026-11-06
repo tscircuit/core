@@ -18,6 +18,7 @@ import { Bus } from "lib/components/primitive-components/Bus"
 import { DifferentialPair } from "lib/components/primitive-components/DifferentialPair"
 import type { ISubcircuit } from "lib/components/primitive-components/Group/Subcircuit/ISubcircuit"
 import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
+import { findFloatingCopper } from "../copper-pour-connectivity/find-floating-copper"
 import { getObstaclesFromCircuitJson } from "../obstacles/getObstaclesFromCircuitJson"
 import type {
   PcbGroupId,
@@ -569,7 +570,14 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   const planeTerminatedSourceTraceLayers = getPlaneTerminatedSourceTraceLayers({
     fanoutPourNetMap,
     sourceNets: db.source_net.list(),
-    sourceTraces,
+    // Breakout connections already route these pads to their escape points.
+    // Emitting plane terminations too would duplicate them without a source pad.
+    sourceTraces: sourceTraces.filter(
+      (sourceTrace) =>
+        !sourceTrace.connected_source_port_ids.some((sourcePortId) =>
+          sourcePortIdToBreakoutPoint.has(sourcePortId),
+        ),
+    ),
     subcircuitId: subcircuit_id,
   })
   const directTraceConnections = sourceTraces
@@ -892,6 +900,45 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   for (const conn of allConns) {
     conn.nominalTraceWidth ??= nominalTraceWidth ?? defaultTraceWidth
     conn.width ??= nominalTraceWidth ?? defaultTraceWidth
+  }
+
+  // Count only copper retained in this routing problem. In particular, a
+  // discarded imported route must not join otherwise disconnected pours.
+  const retainedCopperElements = subcircuitElements.filter((element) => {
+    if (element.type === "pcb_trace") {
+      return (
+        !element.source_trace_id ||
+        preservedSrjTraceByPcbTraceId.has(element.pcb_trace_id)
+      )
+    }
+    if (element.type === "pcb_via") {
+      return (
+        !ignoreExistingTopLevelPcbRouteState || Boolean(element.subcircuit_id)
+      )
+    }
+    return true
+  })
+  const { copperConnectedPcbPortGroups } = findFloatingCopper(
+    retainedCopperElements,
+  )
+  for (const pcbPortIds of copperConnectedPcbPortGroups) {
+    const connectedPcbPortIds = new Set(pcbPortIds)
+    for (const connection of allConns) {
+      const pointIds = [
+        ...new Set(
+          connection.pointsToConnect.flatMap((point) =>
+            point.pointId &&
+            point.pcb_port_id &&
+            connectedPcbPortIds.has(point.pcb_port_id)
+              ? [point.pointId]
+              : [],
+          ),
+        ),
+      ]
+      if (pointIds.length < 2) continue
+      connection.externallyConnectedPointIds ??= []
+      connection.externallyConnectedPointIds.push(pointIds)
+    }
   }
 
   bounds = expandSrjBoundsToIncludeConnectionPoints({

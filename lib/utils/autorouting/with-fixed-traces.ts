@@ -3,7 +3,8 @@ import type {
   SimplifiedPcbTrace,
   Obstacle,
 } from "./SimpleRouteJson"
-import { getViaBoardLayers } from "../getViaSpanLayers"
+import type { LayerRef } from "circuit-json"
+import { getAutoroutedViaLayers } from "../getViaSpanLayers"
 
 type PcbTraceId = SimplifiedPcbTrace["pcb_trace_id"]
 
@@ -29,11 +30,6 @@ export function withFixedTraces(
     ]
     for (const [index, point] of trace.route.entries()) {
       if (point.route_type === "via") {
-        const boardLayers = getViaBoardLayers(input.layerCount)
-        const from = boardLayers.findIndex(
-          (layer) => layer === point.from_layer,
-        )
-        const to = boardLayers.findIndex((layer) => layer === point.to_layer)
         const diameter =
           point.via_diameter ??
           input.minViaPadDiameter ??
@@ -44,9 +40,13 @@ export function withFixedTraces(
           center: { x: point.x, y: point.y },
           width: diameter,
           height: diameter,
-          layers:
-            point.layers ??
-            boardLayers.slice(Math.min(from, to), Math.max(from, to) + 1),
+          layers: getAutoroutedViaLayers({
+            fromLayer: point.from_layer as LayerRef,
+            toLayer: point.to_layer as LayerRef,
+            layerCount: input.layerCount,
+            allowBlindAndBuriedVias: input.allowBlindAndBuriedVias,
+            physicalLayers: point.layers as LayerRef[] | undefined,
+          }),
           connectedTo,
         })
       }

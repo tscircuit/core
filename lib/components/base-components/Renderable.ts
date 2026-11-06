@@ -77,6 +77,7 @@ export const orderedRenderPhases = [
   "PcbDesignRuleChecks",
   "SilkscreenOverlapAdjustment",
   "CadModelRender",
+  "CadAssemblyBomRender",
   "CadExplosionStageRender",
   "CadExplosionRender",
   "CadExplosionCollisionCheck",
@@ -204,6 +205,11 @@ const asyncPhaseDependencies: Partial<Record<RenderPhase, RenderPhase[]>> = {
     "FetchPartFootprint",
   ],
   CadModelRender: ["PcbFootprintStringRender", "FetchPartFootprint"],
+  CadAssemblyBomRender: [
+    "PcbFootprintStringRender",
+    "FetchPartFootprint",
+    "CadModelRender",
+  ],
   CadExplosionStageRender: [
     "PcbFootprintStringRender",
     "FetchPartFootprint",
