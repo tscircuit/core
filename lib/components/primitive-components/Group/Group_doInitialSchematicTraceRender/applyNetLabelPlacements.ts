@@ -9,6 +9,7 @@ import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchem
 import type { NetLabel } from "../../NetLabel"
 import { Group } from "../Group"
 import { createCanonicalSchematicNetLabelTextResolver } from "./createCanonicalSchematicNetLabelTextResolver"
+import { getEffectiveNetLabelPlacements } from "./getEffectiveNetLabelPlacements"
 import { getNetLabelTextBounds } from "./getNetLabelTextBounds"
 import type { AxisDirection } from "./getSide"
 import { oppositeSide } from "./oppositeSide"
@@ -96,13 +97,7 @@ export function applyNetLabelPlacements(args: {
   // Place net labels suggested by the solver
   // The inline solver runs last and removes the anchored placement for any net
   // it labeled inline, so a net is never labeled both ways.
-  const netLabelPlacements =
-    solver.inlineNetLabelSolver?.getOutput().netLabelPlacements ??
-    solver.netLabelNetLabelCollisionSolver?.getOutput().netLabelPlacements ??
-    solver.netLabelTraceCollisionSolver?.getOutput().netLabelPlacements ??
-    solver.netLabelPlacementSolver?.netLabelPlacements ??
-    solver.traceLabelOverlapAvoidanceSolver?.getOutput().netLabelPlacements ??
-    []
+  const { netLabelPlacements } = getEffectiveNetLabelPlacements(solver)
   const dedupedNetLabelPlacements: typeof netLabelPlacements = []
   const netLabelPlacementKeys = new Set<string>()
   for (const placement of netLabelPlacements) {

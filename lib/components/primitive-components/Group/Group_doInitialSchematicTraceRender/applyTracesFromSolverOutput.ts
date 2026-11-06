@@ -14,6 +14,7 @@ import { Port } from "../../Port"
 import { Group } from "../Group"
 import { computeCrossings } from "./compute-crossings"
 import { computeJunctions } from "./compute-junctions"
+import { getEffectiveNetLabelPlacements } from "./getEffectiveNetLabelPlacements"
 import { type SchematicPortId, asSchematicPortId } from "./port-id-types"
 import { removeOverlappingSameNetCrossingSegments } from "./remove-overlapping-same-net-crossing-segments"
 import {
@@ -198,6 +199,8 @@ export function applyTracesFromSolverOutput(args: {
     solver.traceCleanupSolver?.getOutput().traces ??
     solver.traceLabelOverlapAvoidanceSolver?.getOutput().traces ??
     solver.schematicTraceLinesSolver?.solvedTracePaths
+  const { netLabelPlacements, fallbackConnectorEdgesByMspPairId } =
+    getEffectiveNetLabelPlacements(solver)
   const pendingTraces: Array<{
     source_trace_id: string
     edges: SchematicTrace["edges"]
@@ -336,6 +339,19 @@ export function applyTracesFromSolverOutput(args: {
       subcircuit_connectivity_map_key,
       schematic_sheet_id: schematicSheetId,
     })
+
+    const fallbackConnectorEdges =
+      fallbackConnectorEdgesByMspPairId.get(source_trace_id)
+    if (fallbackConnectorEdges) {
+      fallbackConnectorEdges.forEach((edge, index) => {
+        pendingTraces.push({
+          source_trace_id: `${source_trace_id}_net_label_connector_${index}`,
+          edges: [{ from: { ...edge.from }, to: { ...edge.to } }],
+          subcircuit_connectivity_map_key,
+          schematic_sheet_id: schematicSheetId,
+        })
+      })
+    }
   }
 
   debug(
@@ -347,13 +363,6 @@ export function applyTracesFromSolverOutput(args: {
     .filter((trace) => trace.schematic_sheet_id === schematicSheetId)
   // Preserve solver label connectors that will still be rendered. Placements
   // covered by a fixed label are omitted by applyNetLabelPlacements as well.
-  const netLabelPlacements =
-    solver.inlineNetLabelSolver?.getOutput().netLabelPlacements ??
-    solver.netLabelNetLabelCollisionSolver?.getOutput().netLabelPlacements ??
-    solver.netLabelTraceCollisionSolver?.getOutput().netLabelPlacements ??
-    solver.netLabelPlacementSolver?.netLabelPlacements ??
-    solver.traceLabelOverlapAvoidanceSolver?.getOutput().netLabelPlacements ??
-    []
   for (const placement of netLabelPlacements) {
     if (
       placement.pinIds.some((pinId) =>
