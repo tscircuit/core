@@ -125,6 +125,7 @@ import {
 } from "./add-port-ids-to-traces-at-jumper-pads"
 import { claimSrjAssignablePcbViasTraversedByRoute } from "./claim-srj-assignable-pcb-vias-traversed-by-route"
 import { findFanoutPhaseSeparationConflict } from "./find-fanout-phase-separation-conflict"
+import { routeWithTraceWidthConstraints } from "lib/utils/autorouting/route-with-trace-width-constraints"
 import { getAccumulatedPcbTracesWithStageOutputReplacements } from "./get-accumulated-pcb-traces-with-stage-output-replacements"
 import { getSourceTraceIdForRoutedTrace } from "./get-source-trace-id-for-routed-trace"
 import { insertAutoplacedJumpers } from "./insert-autoplaced-jumpers"
@@ -1912,40 +1913,49 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           if (phaseAutorouterConfig.algorithmFn) {
             autorouter =
               await phaseAutorouterConfig.algorithmFn(simpleRouteJson)
+            if (!autorouter) {
+              throw new Error("Failed to create local autorouter")
+            }
+            traces = await runAutorouter(autorouter)
           } else {
-            autorouter = localAutorouterStrategy.create({
-              simpleRouteJson,
-              onSolverEnded: (event) =>
-                this.root?.emit("solver:ended", {
-                  ...event,
-                  type: "solver:ended",
-                  componentName: this.getString(),
-                }),
-              commonAutorouterOptions,
-              busFanoutDirections: routingPhasePlan.busFanoutDirections,
-              fanoutBounds: routingPhasePlan.fanoutBounds,
-              fanoutRoutingLayers: routingPhasePlan.fanoutRoutingLayers,
-              allowBlindAndBuriedVias: simpleRouteJson.allowBlindAndBuriedVias,
-              componentNamesById: getPcbComponentNamesById(db),
-              onSolverStarted: ({
-                solverName,
-                solverParams,
-                solverConstructorArgs,
-              }) =>
-                this.root?.emit("solver:started", {
-                  type: "solver:started",
+            const route = async (routingInput: SimpleRouteJson) => {
+              autorouter = localAutorouterStrategy.create({
+                simpleRouteJson: routingInput,
+                onSolverEnded: (event) =>
+                  this.root?.emit("solver:ended", {
+                    ...event,
+                    type: "solver:ended",
+                    componentName: this.getString(),
+                  }),
+                commonAutorouterOptions,
+                busFanoutDirections: routingPhasePlan.busFanoutDirections,
+                fanoutBounds: routingPhasePlan.fanoutBounds,
+                fanoutRoutingLayers: routingPhasePlan.fanoutRoutingLayers,
+                allowBlindAndBuriedVias:
+                  simpleRouteJson.allowBlindAndBuriedVias,
+                componentNamesById: getPcbComponentNamesById(db),
+                onSolverStarted: ({
                   solverName,
                   solverParams,
                   solverConstructorArgs,
-                  componentName: this.getString(),
-                }),
-            })
+                }) =>
+                  this.root?.emit("solver:started", {
+                    type: "solver:started",
+                    solverName,
+                    solverParams,
+                    solverConstructorArgs,
+                    componentName: this.getString(),
+                  }),
+              })
+              return runAutorouter(autorouter)
+            }
+            traces =
+              localAutorouterStrategy.name === "tscircuit" &&
+              solverName?.startsWith("AutoroutingPipelineSolver9_") &&
+              !simpleRouteJson.allowJumpers
+                ? await routeWithTraceWidthConstraints(simpleRouteJson, route)
+                : await route(simpleRouteJson)
           }
-
-          if (!autorouter) {
-            throw new Error("Failed to create local autorouter")
-          }
-          traces = await runAutorouter(autorouter)
         }
 
         let transformedSimpleRouteJson =
