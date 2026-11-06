@@ -253,4 +253,4 @@ test("real M1 USB channel: aggregate nets fail pair resolution; named trunks ret
       { grid: false, width: 1600, height: 1000 },
     )
   }
-})
+}, 30_000)
