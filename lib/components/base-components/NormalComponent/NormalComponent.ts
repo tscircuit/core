@@ -999,6 +999,9 @@ export class NormalComponent<
 
       source_component_id: this.source_component_id!,
       schematic_sheet_id: this._resolveSchematicSheetId(),
+      metadata: props.kicadSymbolMetadata
+        ? { kicad_symbol: props.kicadSymbolMetadata }
+        : undefined,
     })
     const hasTopPins = schPortArrangement?.topSide !== undefined
     const hasTopOrBottomPins =
