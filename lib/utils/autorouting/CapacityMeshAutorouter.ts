@@ -42,6 +42,10 @@ export interface SolverStartedDetails {
       effort?: number
     }
   }
+  solverConstructorArgs: readonly [
+    input: SimpleRouteJson,
+    options: SolverStartedDetails["solverParams"]["options"],
+  ]
 }
 
 export interface AutorouterOptions {
@@ -209,25 +213,26 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
       cacheProvider: solverCacheProvider,
       effort,
     }
-    this.solver =
-      solverName === "AutoroutingPipelineSolver9_Networked"
-        ? new AutoroutingPipelineSolver9_Networked(input as any, {
-            ...solverOptions,
-            effort: 1,
-          })
-        : new SOLVERS[solverName](input as any, solverOptions)
+    let solverConstructorArgs: SolverStartedDetails["solverConstructorArgs"]
+    if (solverName === "AutoroutingPipelineSolver9_Networked") {
+      const networkedSolverOptions = { ...solverOptions, effort: 1 as const }
+      this.solver = new AutoroutingPipelineSolver9_Networked(
+        input as any,
+        networkedSolverOptions,
+      )
+      solverConstructorArgs = [input, networkedSolverOptions]
+    } else {
+      this.solver = new SOLVERS[solverName](input as any, solverOptions)
+      solverConstructorArgs = [input, solverOptions]
+    }
 
     onSolverStarted?.({
       solverName,
       solverParams: {
         input,
-        options: {
-          capacityDepth,
-          targetMinCapacity,
-          cacheProvider: solverCacheProvider,
-          effort,
-        },
+        options: solverConstructorArgs[1],
       },
+      solverConstructorArgs,
     })
 
     this.stepDelay = stepDelay
