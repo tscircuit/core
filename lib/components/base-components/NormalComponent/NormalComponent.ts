@@ -984,7 +984,23 @@ export class NormalComponent<
       // schematic_box size
       // size: dimensions.getSizeIncludingPins(),
 
-      port_arrangement: underscorifyPortArrangement(schPortArrangement!),
+      port_arrangement: underscorifyPortArrangement(
+        schPortArrangement!,
+        (label) => {
+          const pinLabels = this.props.pinLabels as
+            | Record<string, string | number | string[]>
+            | undefined
+          if (pinLabels && !Array.isArray(pinLabels)) {
+            for (const [pinKey, aliases] of Object.entries(pinLabels)) {
+              const pinNumber = getPinNumberFromPinLabelsKey(pinKey)
+              if (pinNumber === null) continue
+              const aliasList = Array.isArray(aliases) ? aliases : [aliases]
+              if (aliasList.includes(label)) return pinNumber
+            }
+          }
+          return getPinNumberFromLabels([label])
+        },
+      ),
 
       pin_spacing: 0.2,
 
