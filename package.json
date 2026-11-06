@@ -28,7 +28,8 @@
     "build:benchmarking": "bun build --experimental-html ./benchmarking/website/index.html --outdir ./benchmarking-dist",
     "build:benchmarking:watch": "chokidar \"./{benchmarking,lib}/**/*.{ts,tsx}\" -c 'bun build --experimental-html ./benchmarking/website/index.html --outdir ./benchmarking-dist'",
     "start:benchmarking": "concurrently \"bun run build:benchmarking:watch\" \"live-server ./benchmarking-dist\"",
-    "generate-test-plan": "bun run scripts/generate-test-plan.ts"
+    "generate-test-plan": "bun run scripts/generate-test-plan.ts",
+    "benchmark:ddr": "bun scripts/benchmark-ddr/run.ts"
   },
   "devDependencies": {
     "@tscircuit/cad-collision-checking": "https://jscdn.tscircuit.com/@tscircuit/cad-collision-checking/0.0.6.tgz",
@@ -121,7 +122,8 @@
     "circuit-json-to-tscircuit": "^0.0.50",
     "dsn-converter": "^0.0.90",
     "easyeda": "^0.0.389",
-    "circuit-json-to-pnp-csv": "^0.0.20"
+    "circuit-json-to-pnp-csv": "^0.0.20",
+    "@tscircuit/core-ddr-benchmark": "github:ShiboSoftwareDev/core-ddr-benchmark#a2879239b61b47515bf1c1506fa3802f6230c3d6"
   },
   "peerDependencies": {
     "@tscircuit/capacity-autorouter": "*",

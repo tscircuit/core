@@ -1,0 +1,144 @@
+name: Core DDR workflow benchmark
+
+on:
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Pull request to compare with its base
+        required: true
+        type: string
+      circuit:
+        description: Optional circuit name (empty runs all ten)
+        type: string
+      timeout:
+        description: Render timeout in seconds per circuit
+        default: '120'
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  resolve:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.issue.pull_request &&
+       startsWith(github.event.comment.body, '/benchmark') &&
+       github.event.comment.user.type != 'Bot' &&
+       contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association))
+    runs-on: ubuntu-latest
+    outputs:
+      base: ${{ steps.resolve.outputs.base }}
+      head: ${{ steps.resolve.outputs.head }}
+      pr: ${{ steps.resolve.outputs.pr }}
+      circuit: ${{ steps.resolve.outputs.circuit }}
+      timeout: ${{ steps.resolve.outputs.timeout }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+      - uses: actions/github-script@v7
+        id: resolve
+        with:
+          script: |
+            const { pathToFileURL } = require('node:url')
+            const { parseDdrBenchmarkCommand } = await import(pathToFileURL(`${process.env.GITHUB_WORKSPACE}/scripts/benchmark-ddr/parse-command.mjs`).href)
+            const manual = context.eventName === 'workflow_dispatch'
+            const input = context.payload.inputs || {}
+            const command = manual
+              ? `/benchmark${input.circuit ? ` --circuit ${input.circuit}` : ''} --timeout ${input.timeout || '120'}`
+              : context.payload.comment.body
+            const options = parseDdrBenchmarkCommand(command)
+            const number = manual ? input.pr_number : context.issue.number
+            if (!/^\d+$/.test(String(number))) throw new Error('Invalid PR number')
+            const { data: pr } = await github.rest.pulls.get({ ...context.repo, pull_number: Number(number) })
+            core.setOutput('base', pr.base.sha)
+            core.setOutput('head', pr.head.sha)
+            core.setOutput('pr', String(pr.number))
+            core.setOutput('circuit', options.circuit)
+            core.setOutput('timeout', String(options.timeout))
+
+  benchmark:
+    needs: resolve
+    runs-on: ${{ vars.BENCHMARK_RUNNER || 'blacksmith-8vcpu-ubuntu-2404-arm' }}
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          path: tooling
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.resolve.outputs.base }}
+          path: base
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.resolve.outputs.head }}
+          path: head
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - name: Install trusted benchmark and both core dependency sets
+        run: |
+          cd tooling
+          bun install --ignore-scripts
+          cd ../base
+          bun install --ignore-scripts
+          cd ../head
+          bun install --ignore-scripts
+      - name: Compare base and head sequentially with the same pinned fixtures
+        env:
+          CIRCUIT: ${{ needs.resolve.outputs.circuit }}
+          SAMPLE_TIMEOUT: ${{ needs.resolve.outputs.timeout }}
+        run: |
+          benchmark="$GITHUB_WORKSPACE/tooling/node_modules/@tscircuit/core-ddr-benchmark/scripts"
+          args=(--timeout "$SAMPLE_TIMEOUT")
+          if [[ -n "$CIRCUIT" ]]; then args+=(--circuit "$CIRCUIT"); fi
+          mkdir -p results
+          base_status=0
+          head_status=0
+          bun "$benchmark/run.ts" --core "$GITHUB_WORKSPACE/base" --out "$GITHUB_WORKSPACE/results/base" "${args[@]}" || base_status=$?
+          bun "$benchmark/run.ts" --core "$GITHUB_WORKSPACE/head" --out "$GITHUB_WORKSPACE/results/head" "${args[@]}" || head_status=$?
+          bun "$benchmark/report.ts" results/head/results.json results/base/results.json results/comparison.md
+          cat results/comparison.md >> "$GITHUB_STEP_SUMMARY"
+          if (( base_status != 0 || head_status != 0 )); then exit 1; fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ddr-benchmark-results
+          path: results/
+          retention-days: 14
+
+  report:
+    needs: [resolve, benchmark]
+    if: always() && needs.resolve.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      issues: write
+    steps:
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: ddr-benchmark-results
+          path: results
+      - uses: actions/github-script@v7
+        env:
+          PR_NUMBER: ${{ needs.resolve.outputs.pr }}
+          BENCHMARK_STATUS: ${{ needs.benchmark.result }}
+        with:
+          script: |
+            const fs = require('node:fs')
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`
+            const report = fs.existsSync('results/comparison.md')
+              ? fs.readFileSync('results/comparison.md', 'utf8')
+              : 'The DDR benchmark could not produce a comparison. Check the workflow logs and partial artifacts.'
+            const body = `${report.slice(0, 58000)}\n\nWorkflow status: ${process.env.BENCHMARK_STATUS}. [Logs and artifacts](${runUrl}).`
+            await github.rest.issues.createComment({ ...context.repo, issue_number: Number(process.env.PR_NUMBER), body })
