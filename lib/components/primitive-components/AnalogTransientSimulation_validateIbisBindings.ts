@@ -17,6 +17,7 @@ export function AnalogTransientSimulation_validateIbisBindings(
           model.simulation_ibis_model_id!,
         )!,
     )
+    .filter(Boolean)
   for (const selector of Object.keys(
     simulation._parsedProps.ibisPinStates ?? {},
   )) {
