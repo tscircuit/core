@@ -1,3 +1,4 @@
+import { generatePanelVScoreAnnotations } from "lib/utils/panels/generate-panel-v-score-annotations"
 import { getOwningPanel } from "lib/utils/panels/get-owning-panel"
 import { subpanelProps } from "@tscircuit/props"
 import { distance } from "circuit-json"
@@ -175,7 +176,12 @@ export class Subpanel extends Group<typeof subpanelProps> {
     if (layoutMode !== "grid") return
 
     const tabWidth = this._parsedProps.tabWidth ?? DEFAULT_TAB_WIDTH
-    const boardGap = this._parsedProps.boardGap ?? tabWidth
+    const isVScore = this._parsedProps.panelizationMethod === "v_score"
+    const boardGap = this._parsedProps.boardGap ?? (isVScore ? 0 : tabWidth)
+    if (isVScore && boardGap !== 0)
+      throw new Error(
+        "V-scoring requires boardGap={0}; routed gaps cannot be V-scored",
+      )
 
     // Calculate available space for the grid if panel dimensions are specified
     // but rows/cols are not (auto-calculate optimal grid)
@@ -357,7 +363,21 @@ export class Subpanel extends Group<typeof subpanelProps> {
 
       const tabWidth = props.tabWidth ?? DEFAULT_TAB_WIDTH
 
-      if (panelizationMethod === "outline_routing") {
+      if (panelizationMethod === "v_score") {
+        if (this.componentName !== "Panel" || !this.pcb_panel_id)
+          throw new Error("V-scoring must be configured on the root <panel>")
+        if ((props.boardGap ?? 0) !== 0)
+          throw new Error(
+            "V-scoring requires boardGap={0}; routed gaps cannot be V-scored",
+          )
+        generatePanelVScoreAnnotations(
+          {
+            boards: boardsInPanel,
+            panel: db.pcb_panel.get(this.pcb_panel_id)!,
+          },
+          this.root!,
+        )
+      } else if (panelizationMethod === "outline_routing") {
         const outlineRoutingCutouts = generatePanelOutlineRoutingCutouts(
           boardsInPanel,
           { cutoutWidth: tabWidth },
