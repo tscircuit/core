@@ -65,3 +65,4 @@ circuit.getCircuitJson() // [{ type: "board", ...}, { type: "resistor", ...}, ..
 
 - [How does core work?](./docs/DEVELOPMENT.md#overview-of-how-core-works)
 - [How to do benchmarking or debug performance](./docs/DEVELOPMENT.md#debugging-performance)
+- [Run DDR workflow benchmarks locally or on a PR](./benchmarking/ddr.md)
