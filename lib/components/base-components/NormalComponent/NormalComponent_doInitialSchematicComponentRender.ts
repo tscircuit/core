@@ -64,6 +64,12 @@ export function NormalComponent_doInitialSchematicComponentRender(
     }
   }
 
+  if (component.schematic_component_id && props.kicadSymbolMetadata) {
+    db.schematic_component.update(component.schematic_component_id, {
+      metadata: { kicad_symbol: props.kicadSymbolMetadata },
+    })
+  }
+
   const manualPlacement = component
     .getSubcircuit()
     ?._getSchematicManualPlacementForComponent(component)
