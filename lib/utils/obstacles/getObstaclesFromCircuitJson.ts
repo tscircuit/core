@@ -365,6 +365,13 @@ export const getObstaclesFromCircuitJson = (
           connectedTo: [],
         })
       } else if (element.hole_shape === "square") {
+        if (
+          typeof element.hole_diameter !== "number" ||
+          !Number.isFinite(element.hole_diameter) ||
+          element.hole_diameter <= 0
+        ) {
+          continue
+        }
         obstacles.push({
           componentId: pcbComponentId,
           obstacleId: element.pcb_hole_id,
@@ -384,6 +391,13 @@ export const getObstaclesFromCircuitJson = (
         element.hole_shape === "round" ||
         element.hole_shape === "circle"
       ) {
+        if (
+          typeof element.hole_diameter !== "number" ||
+          !Number.isFinite(element.hole_diameter) ||
+          element.hole_diameter <= 0
+        ) {
+          continue
+        }
         obstacles.push({
           componentId: pcbComponentId,
           obstacleId: element.pcb_hole_id,
