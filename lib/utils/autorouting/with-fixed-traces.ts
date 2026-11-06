@@ -57,12 +57,18 @@ export function withFixedTraces(
         (next.route_type !== "wire" && next.route_type !== "via")
       )
         continue
-      const width =
+      const candidateWidth =
         point.route_type === "wire"
           ? point.width
           : next.route_type === "wire"
             ? next.width
             : input.minTraceWidth
+      const width =
+        candidateWidth && candidateWidth > 0
+          ? candidateWidth
+          : input.minTraceWidth && input.minTraceWidth > 0
+            ? input.minTraceWidth
+            : 0.15
       const layer = point.route_type === "wire" ? point.layer : point.to_layer
       const dx = next.x - point.x
       const dy = next.y - point.y
@@ -92,7 +98,8 @@ export function withFixedTraces(
       }
 
       const segmentLength = Math.hypot(dx, dy)
-      const steps = Math.max(1, Math.ceil(segmentLength / width))
+      const steps =
+        width > 0 ? Math.max(1, Math.ceil(segmentLength / width)) : 1
       // Project the perpendicular stroke width onto each board axis.
       const projectedWidthX = (Math.abs(dy) / segmentLength) * width
       const projectedWidthY = (Math.abs(dx) / segmentLength) * width
