@@ -38,6 +38,10 @@ export function evaluateCalcString(
   const tokens = tokenize(expr, units)
   const result = parseExpression(tokens, knownVariables)
 
+  if (!Number.isFinite(result)) {
+    throw new Error("calc() expression must evaluate to a finite number")
+  }
+
   return result
 }
 
