@@ -44,6 +44,13 @@ jobs:
             -H "Authorization: token ${{ secrets.TSCIRCUIT_BOT_GITHUB_TOKEN }}" \
             https://api.github.com/repos/tscircuit/eval/actions/workflows/update-tscircuit-core.yml/dispatches \
             -d '{"ref":"main"}'
+      - name: Trigger CLI converter synchronization
+        env:
+          GH_TOKEN: ${{ secrets.TSCIRCUIT_BOT_GITHUB_TOKEN }}
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          gh workflow run update-core-converters.yml \
+            --repo tscircuit/cli --ref main -f core_version="$VERSION"
       - name: Notify release-tracker of version update
         # Continue-on-error just in case the tracker is down
         continue-on-error: true
