@@ -39,6 +39,27 @@ export function getPrimaryPortsFromPortHintGroups(
     Array<{ port: Port; component?: PrimitiveComponent }>
   >()
 
+  let maxExplicitPinNumber = 0
+  for (const group of portHintGroups) {
+    for (const hint of group.hints) {
+      const match = hint.trim().match(/^(?:pin)?(\d+)$/)
+      if (match) {
+        const pinNum = Number(match[1])
+        if (pinNum > maxExplicitPinNumber) {
+          maxExplicitPinNumber = pinNum
+        }
+      }
+    }
+  }
+  const thermalPinNumberCandidate = maxExplicitPinNumber + 1
+  const hasExplicitThermalPadPinInLabels = Array.from(
+    opts?.implicitPinNumberByHint?.entries() ?? [],
+  ).some(
+    ([hint, pinNum]) =>
+      pinNum === thermalPinNumberCandidate &&
+      /^(?:thermalpad|ep|epad|pad|gnd|agnd|pgnd|dgnd|vss)$/i.test(hint.trim()),
+  )
+
   for (const portHintGroup of portHintGroups) {
     const filteredPortHints = portHintGroup.hints.filter(
       (hint) => hint && hint.trim() !== "",
@@ -69,9 +90,28 @@ export function getPrimaryPortsFromPortHintGroups(
       const explicitPinNumber = portHintsList
         .map((hint) => opts?.implicitPinNumberByHint?.get(hint))
         .find((pinNumber): pinNumber is number => pinNumber !== undefined)
+      const isThermalPadGroup = portHintsList.some((hint) =>
+        /^(?:thermalpad|ep|epad)$/i.test(hint),
+      )
 
       if (explicitPinNumber !== undefined) {
         portHintsList = [...portHintsList, `pin${explicitPinNumber}`]
+      } else if (
+        isThermalPadGroup &&
+        maxExplicitPinNumber > 0 &&
+        (opts?.allowImplicitPinNumbers !== false ||
+          hasExplicitThermalPadPinInLabels)
+      ) {
+        const thermalPinNumber = maxExplicitPinNumber + 1
+        portHintsList = Array.from(
+          new Set([
+            ...portHintsList,
+            "thermalpad",
+            "EP",
+            "EPAD",
+            `pin${thermalPinNumber}`,
+          ]),
+        )
       } else if (opts?.allowImplicitPinNumbers === false) {
         continue
       } else {

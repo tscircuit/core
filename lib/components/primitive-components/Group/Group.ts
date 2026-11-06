@@ -53,6 +53,7 @@ import {
   type PcbTraceRoutePointWithSrjMetadata,
   getCircuitJsonPcbTraceRoute,
 } from "lib/utils/autorouting/get-circuit-json-pcb-trace-route"
+import { applyPadNeckdownToTraceRoute } from "lib/utils/autorouting/apply-pad-neckdown-to-trace-route"
 import { getFanoutBoundaryPointSpacing } from "lib/utils/autorouting/get-fanout-boundary-point-spacing"
 import { getPcbComponentNamesById } from "lib/utils/autorouting/get-pcb-component-names-by-id"
 import {
@@ -2469,6 +2470,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const materializedPcbVias = db.pcb_via.list()
     // Jumpers have been inserted above; pad geometry is fixed for this batch.
     const jumperPadInfos = getJumperPadInfos(db)
+    const pcbSmtPads = db.pcb_smtpad.list()
 
     for (const pcb_trace of output_pcb_traces) {
       // vias can be included
@@ -2521,8 +2523,11 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       // Insert each segment as a separate trace
       for (const segment of processedSegments) {
         if (segment.length > 0) {
-          const circuitJsonSegment = getCircuitJsonPcbTraceRoute(
-            segment as PcbTraceRoutePointWithSrjMetadata[],
+          const circuitJsonSegment = applyPadNeckdownToTraceRoute(
+            getCircuitJsonPcbTraceRoute(
+              segment as PcbTraceRoutePointWithSrjMetadata[],
+            ),
+            pcbSmtPads,
           )
           const sourceTraceId = getSourceTraceIdForRoutedTrace({
             db,
