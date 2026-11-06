@@ -5,6 +5,7 @@ import { fillCircleWithRects } from "./fillCircleWithRects"
 import { fillPolygonWithRects } from "./fillPolygonWithRects"
 import { type RotatedRect } from "./generateApproximatingRects"
 import { getAxisAlignedRectFromPolygon } from "./getAxisAlignedRectFromPolygon"
+import { getObstaclesFromPcbCopperText } from "./getObstaclesFromPcbCopperText"
 import { getObstaclesFromPcbKeepoutOutline } from "./getObstaclesFromPcbKeepoutOutline"
 import { getObstaclesFromRoute } from "./getObstaclesFromRoute"
 import { separateViaInPadObstacles } from "./separateViaInPadObstacles"
@@ -586,6 +587,8 @@ export const getObstaclesFromCircuitJson = (
         height: element.outer_diameter,
         netIsAssignable: netIsAssignable || undefined,
       })
+    } else if (element.type === "pcb_copper_text") {
+      obstacles.push(...getObstaclesFromPcbCopperText(element, pcbComponentId))
     }
   }
   return separateViaInPadObstacles(obstacles)
