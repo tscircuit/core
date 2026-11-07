@@ -62,7 +62,7 @@ export class SolderJumper<
       ).sort((a, b) => a - b)
     }
 
-    if (!props.bridged) return []
+    if (!props.bridged && !(props as any).netTie) return []
     return Array.from({ length: pinCount }, (_, index) => index + 1)
   }
 
@@ -293,3 +293,4 @@ export class SolderJumper<
     }
   }
 }
+
