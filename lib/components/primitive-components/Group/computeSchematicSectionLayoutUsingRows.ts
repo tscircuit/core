@@ -14,20 +14,30 @@ type ComputedSection = {
 
 const SECTION_GAP = 1.0
 const MARGIN = 1.5
+const A4_SHEET_ASPECT_RATIO = Math.SQRT2
+const A4_MAX_USABLE_ROW_WIDTH = 22.0
 
 export function computeSchematicSectionLayoutUsingRows({
   sectionBlocks,
   groupSchPositionBeforeLayout: groupOffset,
+  maxSheetWidth = A4_MAX_USABLE_ROW_WIDTH,
 }: {
   sectionBlocks: SectionLayoutInput[]
   groupSchPositionBeforeLayout: { x: number; y: number }
+  maxSheetWidth?: number
 }): Map<SectionName, { x: number; y: number }> {
+  let maxSingleSectionWidth = 0
   const totalArea = sectionBlocks.reduce((sum, block) => {
     const paddedWidth = Math.max(block.size.x, 0.5) + MARGIN * 2
     const paddedHeight = Math.max(block.size.y, 0.5) + MARGIN * 2
+    maxSingleSectionWidth = Math.max(maxSingleSectionWidth, paddedWidth)
     return sum + paddedWidth * paddedHeight
   }, 0)
-  const targetRowWidth = Math.sqrt(totalArea) * 2
+  const idealAspectWidth = Math.sqrt(totalArea * A4_SHEET_ASPECT_RATIO)
+  const targetRowWidth = Math.max(
+    maxSingleSectionWidth,
+    Math.min(idealAspectWidth, maxSheetWidth),
+  )
 
   const computedSectionsMatrix: ComputedSection[][] = []
   let currentSectionRow: ComputedSection[] = []
