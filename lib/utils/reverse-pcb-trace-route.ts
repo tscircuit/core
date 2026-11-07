@@ -2,6 +2,7 @@ import type { PcbTrace } from "circuit-json"
 
 /**
  * Reverse a Circuit JSON PCB route without changing its physical copper.
+ * Points use board-world millimeters: +X right, +Y up.
  *
  * Constant-mode wire widths are stored on the first point of each segment, so
  * they must be remapped to preserve each physical segment. Interpolated-mode
@@ -69,6 +70,11 @@ export const reversePcbTraceRoute = (
         continue
       }
 
+      // A wire-to-via segment still owns copper, even when both points are
+      // coincident. Keep its local width instead of importing the far end's
+      // width, which can expand a narrow via escape into neighboring nets.
+      if (nextReversedPoint?.route_type === "via") continue
+
       let originalRunEndIndex = route.length - reversedIndex - 1
       while (originalRunEndIndex < route.length - 1) {
         const originalRunPoint = route[originalRunEndIndex]
@@ -104,6 +110,24 @@ export const reversePcbTraceRoute = (
       end_width: start.start_width,
       width_interpolation_mode: start.width_interpolation_mode,
     })
+  }
+  // A wire immediately after a via participates in two segments. If reversing
+  // changed its outgoing width, retain a coincident wire for the via's original
+  // segment width; the following wire starts the independently sized segment.
+  if (routeThicknessMode === "constant") {
+    for (let index = reversedRoute.length - 1; index > 0; index--) {
+      const point = reversedRoute[index]
+      const previous = reversedRoute[index - 1]
+      const original = route[route.length - index - 1]
+      if (
+        point?.route_type === "wire" &&
+        previous?.route_type === "via" &&
+        original?.route_type === "wire" &&
+        point.width !== original.width
+      ) {
+        reversedRoute.splice(index, 0, { ...point, width: original.width })
+      }
+    }
   }
   return reversedRoute
 }
