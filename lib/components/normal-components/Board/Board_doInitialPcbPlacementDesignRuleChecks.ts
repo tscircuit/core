@@ -47,10 +47,57 @@ export const Board_doInitialPcbPlacementDesignRuleChecks = (board: Board) => {
         subcircuitCircuitJson,
         { consolidateOverlaps: false },
       )
+      const isSameComponentCutoutError = (result: AnyCircuitElement) => {
+        const candidate = result as Record<string, unknown>
+        const cutoutId =
+          typeof candidate.pcb_cutout_id === "string"
+            ? candidate.pcb_cutout_id
+            : Array.isArray(candidate.pcb_cutout_ids) &&
+                typeof candidate.pcb_cutout_ids[0] === "string"
+              ? candidate.pcb_cutout_ids[0]
+              : undefined
+        const cutout = cutoutId
+          ? subcircuitCircuitJson.find(
+              (el) =>
+                el.type === "pcb_cutout" &&
+                (el as { pcb_cutout_id?: string }).pcb_cutout_id === cutoutId,
+            )
+          : undefined
+        const cutoutComponentId = (cutout as { pcb_component_id?: string } | undefined)?.pcb_component_id
+        if (!cutoutComponentId) {
+          if (
+            typeof candidate.message === "string" &&
+            candidate.message.toLowerCase().includes("cutout")
+          ) {
+            const compIds = Array.isArray(candidate.pcb_component_ids)
+              ? candidate.pcb_component_ids.filter((id): id is string => typeof id === "string")
+              : []
+            if (compIds.length > 0 && new Set(compIds).size === 1) return true
+          }
+          return false
+        }
+        const padIds = [
+          ...(typeof candidate.pcb_smtpad_id === "string" ? [candidate.pcb_smtpad_id] : []),
+          ...(Array.isArray(candidate.pcb_smtpad_ids) ? candidate.pcb_smtpad_ids : []),
+          ...(typeof candidate.pcb_plated_hole_id === "string" ? [candidate.pcb_plated_hole_id] : []),
+          ...(Array.isArray(candidate.pcb_plated_hole_ids) ? candidate.pcb_plated_hole_ids : []),
+        ].filter((id): id is string => typeof id === "string")
+        if (padIds.length === 0) return false
+        return padIds.every((id) => {
+          const el = subcircuitCircuitJson.find(
+            (item) =>
+              (item.type === "pcb_smtpad" && item.pcb_smtpad_id === id) ||
+              (item.type === "pcb_plated_hole" && item.pcb_plated_hole_id === id),
+          ) as { pcb_component_id?: string } | undefined
+          return el?.pcb_component_id === cutoutComponentId
+        })
+      }
       const relevantPlacementCheckResults = consolidatePcbOverlapErrors(
         subcircuitCircuitJson,
         placementCheckResults.filter(
-          (result) => !board._isExpectedCastellatedHoleDrcError(result),
+          (result) =>
+            !board._isExpectedCastellatedHoleDrcError(result) &&
+            !isSameComponentCutoutError(result),
         ),
       )
       const newPlacementDiagnostics = relevantPlacementCheckResults.filter(
