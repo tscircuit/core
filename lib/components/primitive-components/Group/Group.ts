@@ -34,6 +34,7 @@ import {
 import Debug from "debug"
 import type { GraphicsObject } from "graphics-debug"
 import { withFixedTraces } from "lib/utils/autorouting/with-fixed-traces"
+import { preserveLengthConstrainedSrjTraces } from "lib/utils/autorouting/preserve-length-constrained-srj-traces"
 import { assignSchematicNetLabelSuperscripts } from "lib/utils/schematic/assign-schematic-net-label-superscripts"
 
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
@@ -1564,6 +1565,12 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         simpleRouteJson,
         routingPhasePlan.drcTolerances,
       )
+      if (!isReroutePhase && !usesPreviousStageOutput) {
+        simpleRouteJson = preserveLengthConstrainedSrjTraces(
+          simpleRouteJson,
+          db,
+        )
+      }
       simpleRouteJson.allowViaInPad =
         phaseAutorouterConfig.allowViaInPad ?? simpleRouteJson.allowViaInPad
 
