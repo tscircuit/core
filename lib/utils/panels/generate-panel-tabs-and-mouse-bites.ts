@@ -13,6 +13,7 @@ interface PanelOptions {
   tabWidth: number
   tabLength: number
   mouseBites: boolean
+  mouseBiteBoardEdgeOffset?: number
 }
 
 interface MouseBite {
@@ -28,6 +29,7 @@ const generateCutoutsAndMousebitesForOutline = (
     mouseBites: boolean
     mouseBiteHoleDiameter: number
     mouseBiteHoleSpacing: number
+    mouseBiteBoardEdgeOffset?: number
   },
 ): {
   tabCutouts: PcbCutout[]
@@ -153,10 +155,13 @@ const generateCutoutsAndMousebitesForOutline = (
           (effectiveGapLength - totalBitesLength) / 2 +
           mouseBiteHoleDiameter / 2
         const firstBiteDistFromP1 = gapStartDist + firstBiteCenterOffsetInGap
+        const outwardOffset = options.mouseBiteBoardEdgeOffset ?? 0
 
         for (let k = 0; k < numBitesInGap; k++) {
           const biteDist = firstBiteDistFromP1 + k * holeAndSpacing
-          const pos = p1.translate(segmentDir.multiply(biteDist))
+          const pos = p1
+            .translate(segmentDir.multiply(biteDist))
+            .translate(normalVec.multiply(outwardOffset))
           mouseBiteHoles.push({ x: pos.x, y: pos.y })
         }
       }
@@ -311,6 +316,7 @@ export function generatePanelTabsAndMouseBites(
         mouseBites: useMouseBites,
         mouseBiteHoleDiameter: mouseBiteDiameter,
         mouseBiteHoleSpacing: mouseBiteSpacing,
+        mouseBiteBoardEdgeOffset: options.mouseBiteBoardEdgeOffset,
       })
 
       finalTabCutouts.push(...generated.tabCutouts)
