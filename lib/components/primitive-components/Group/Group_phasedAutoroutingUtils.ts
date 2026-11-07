@@ -2,6 +2,7 @@ import type {
   SimpleRouteConnection,
   SimpleRouteDifferentialPair,
   SimpleRouteJson,
+  SourceTraceId,
 } from "lib/utils/autorouting/SimpleRouteJson"
 import { getSrjOutlineForRoutingBounds } from "lib/utils/autorouting/get-srj-outline-for-routing-bounds"
 import { expandSrjBoundsToIncludeConnectionPoints } from "lib/utils/autorouting/expand-srj-bounds-to-include-connection-points"
@@ -22,10 +23,7 @@ export function connectionIsInRoutingPhase(
 
   for (const trace of phasePlan.traces) {
     if (!trace.source_trace_id) continue
-    if (connection.source_trace_id === trace.source_trace_id) return true
-    if (connection.name === trace.source_trace_id) return true
-    if (connection.rootConnectionName === trace.source_trace_id) return true
-    if (connection.mergedConnectionNames?.includes(trace.source_trace_id)) {
+    if (connectionBelongsToSourceTrace(connection, trace.source_trace_id)) {
       return true
     }
   }
@@ -36,6 +34,18 @@ export function connectionIsInRoutingPhase(
   }
 
   return false
+}
+
+function connectionBelongsToSourceTrace(
+  connection: SimpleRouteConnection,
+  sourceTraceId: SourceTraceId,
+): boolean {
+  return (
+    connection.source_trace_id === sourceTraceId ||
+    connection.name === sourceTraceId ||
+    connection.rootConnectionName === sourceTraceId ||
+    connection.mergedConnectionNames?.includes(sourceTraceId) === true
+  )
 }
 
 export function Group_hasPhasedAutorouting(
@@ -146,17 +156,33 @@ export function Group_filterSimpleRouteJsonForPhase(
             // The converter can associate this path with its full net. A phase
             // may route an explicit branch instead; retain the complete terminal
             // scope and bind the rule to that phase's equivalent connection.
+            // When several phase connections contain the full terminal scope,
+            // prefer the one owned by the rule's source trace, then the
+            // tightest one, rather than whichever happens to be listed first.
             const phaseConnection =
               connections.find(
                 (connection) => connection.name === rule.connectionName,
               ) ??
-              connections.find((connection) =>
-                rule.pointIds.every((pointId) =>
-                  connection.pointsToConnect.some(
-                    (point) => point.pointId === pointId,
+              connections
+                .filter((connection) =>
+                  rule.pointIds.every((pointId) =>
+                    connection.pointsToConnect.some(
+                      (point) => point.pointId === pointId,
+                    ),
                   ),
-                ),
-              )
+                )
+                .sort((a, b) => {
+                  const aOwnsRule = connectionBelongsToSourceTrace(
+                    a,
+                    rule.sourceTraceId,
+                  )
+                  const bOwnsRule = connectionBelongsToSourceTrace(
+                    b,
+                    rule.sourceTraceId,
+                  )
+                  if (aOwnsRule !== bOwnsRule) return aOwnsRule ? -1 : 1
+                  return a.pointsToConnect.length - b.pointsToConnect.length
+                })[0]
             return phaseConnection
               ? [{ ...rule, connectionName: phaseConnection.name }]
               : []
