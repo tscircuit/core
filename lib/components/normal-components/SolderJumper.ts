@@ -62,7 +62,7 @@ export class SolderJumper<
       ).sort((a, b) => a - b)
     }
 
-    if (!props.bridged) return []
+    if (!props.bridged && !(props as any).netTie) return []
     return Array.from({ length: pinCount }, (_, index) => index + 1)
   }
 
@@ -294,21 +294,3 @@ export class SolderJumper<
   }
 }
 
-export class NetTie<
-  PinLabels extends string = never,
-> extends SolderJumper<PinLabels> {
-  get defaultInternallyConnectedPinNames(): string[][] {
-    const pins = this.children
-      .filter((c) => c.componentName === "Port")
-      .map((p) => (p as Port).name)
-    return pins.length > 0 ? [pins] : [["pin1", "pin2"]]
-  }
-
-  override resolveFootprint() {
-    const fp = super.resolveFootprint()
-    if (typeof fp === "string" && /^solderjumper2$/.test(fp)) {
-      return "solderjumper2_bridged12"
-    }
-    return fp ?? "solderjumper2_bridged12"
-  }
-}
