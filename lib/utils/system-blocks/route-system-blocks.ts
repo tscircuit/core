@@ -29,11 +29,14 @@ type Port = {
   connection: SystemBlockConnection
 }
 
+/** Total horizontal padding around connection text, in diagram mm. */
+export const SYSTEM_CONNECTION_LABEL_HORIZONTAL_PADDING = 3
+
 /** Conservative horizontal label width in diagram mm, including a text halo. */
 export function getSystemConnectionLabelWidth(label: string): number {
   // Approximate the renderer's 2.5 mm sans-serif glyphs, reserving extra space
   // for wide capitals and non-ASCII glyphs instead of assuming uniform widths.
-  let width = 3
+  let width = SYSTEM_CONNECTION_LABEL_HORIZONTAL_PADDING
   for (const character of label) {
     width += /[MW@%#&]|[^\x00-\x7f]/.test(character)
       ? 2.5

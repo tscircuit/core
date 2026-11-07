@@ -74,7 +74,11 @@ against blocks, group headings, and labels, including labels inside the loop.
 
 Rounding follows endpoint optimization and orthogonal routing. It preserves the
 chosen attachment points and label positions, and also checks neighboring wires
-so curved corners do not reintroduce crossings or crowd parallel routes.
+so curved corners do not reintroduce crossings or crowd parallel routes. Curves
+may use the label's extra horizontal padding while staying outside its estimated
+text bounds. Wire clearance targets 3 mm; where the original corner is closer,
+rounding preserves that existing clearance instead of rejecting a curve that
+moves away from its neighbor.
 
 The emitted route stores absolute `cubic_bezier_control_points` on each curved
 segment's endpoint. Arc pieces span at most 90 degrees, with matching tangent

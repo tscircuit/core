@@ -7,6 +7,7 @@ import {
 } from "./round-system-block-route"
 import {
   getSystemConnectionLabelWidth,
+  SYSTEM_CONNECTION_LABEL_HORIZONTAL_PADDING,
   type SystemBlockBounds,
   type SystemConnectionRoute,
 } from "./route-system-blocks"
@@ -39,8 +40,13 @@ export function roundSystemBlockConnections(
   for (const [connection, resolved] of routes) {
     const label = resolved.label_anchor_center
     if (!label) continue
+    // Routing reserves a 3 mm text halo. Let the fillet use that margin while
+    // protecting the estimated glyph bounds, so inline text does not pin a
+    // corner to a sharp right angle at the halo's edge.
     const halfWidth =
-      getSystemConnectionLabelWidth(connection._parsedProps.label!) / 2
+      (getSystemConnectionLabelWidth(connection._parsedProps.label!) -
+        SYSTEM_CONNECTION_LABEL_HORIZONTAL_PADDING) /
+      2
     obstacles.push({
       minX: label.x - halfWidth,
       maxX: label.x + halfWidth,
@@ -61,14 +67,22 @@ export function roundSystemBlockConnections(
           end,
         ]
         wireObstacles.push({
-          minX: Math.min(...points.map((p) => p.x)) - 3,
-          maxX: Math.max(...points.map((p) => p.x)) + 3,
-          minY: Math.min(...points.map((p) => p.y)) - 3,
-          maxY: Math.max(...points.map((p) => p.y)) + 3,
+          minX: Math.min(...points.map((p) => p.x)),
+          maxX: Math.max(...points.map((p) => p.x)),
+          minY: Math.min(...points.map((p) => p.y)),
+          maxY: Math.max(...points.map((p) => p.y)),
         })
       }
     }
-    const blocked = [...obstacles, ...wireObstacles]
+    const blocked = [
+      ...obstacles,
+      ...wireObstacles.map((wire) => ({
+        minX: wire.minX - 3,
+        maxX: wire.maxX + 3,
+        minY: wire.minY - 3,
+        maxY: wire.maxY + 3,
+      })),
+    ]
     const { from, to } = tree.endpoints.get(connection)!
     const selfLoop =
       from === to
@@ -76,7 +90,9 @@ export function roundSystemBlockConnections(
         : undefined
     rounded.set(connection, {
       ...resolved,
-      route: selfLoop ?? roundSystemBlockRoute(resolved.route, blocked),
+      route:
+        selfLoop ??
+        roundSystemBlockRoute(resolved.route, obstacles, wireObstacles),
     })
   }
   return rounded
