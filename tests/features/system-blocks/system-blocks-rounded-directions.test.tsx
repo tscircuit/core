@@ -42,12 +42,11 @@ test("rounded fanout and self-loops work in every page direction", async () => {
           connection.from_system_block_component_id ===
           connection.to_system_block_component_id,
       )!
-    // Optimized landing slots and a reserved on-wire label may require a
-    // rounded rectangular return instead of the compact semicircle. The
-    // dedicated self-loop geometry test covers the semicircle when it fits.
+    // A label beside the return must preserve the compact semicircular loop.
+    expect(loop.route).toHaveLength(5)
     expect(
       loop.route.filter((point) => point.cubic_bezier_control_points).length,
-    ).toBeGreaterThanOrEqual(2)
+    ).toBe(2)
     await expect(
       convertCircuitJsonToSystemSvg(json, { width: 700 }),
     ).toMatchSvgSnapshot(

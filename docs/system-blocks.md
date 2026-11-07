@@ -48,7 +48,11 @@ wires so adjacent routes can run separately. A final rerouting sweep shortens
 remaining detours when it improves the same score.
 
 Labels occupy reserved horizontal slots; overlapping slots are moved before
-routing. Pages expand to contain outer detours. Routing is deterministic and has
+routing. For clear straight connections and compact same-face return loops,
+labels can sit beside the wire, attached to its midpoint. Text does not force a
+horizontal detour into a vertical arrow or an extra run into a return loop.
+Horizontal wires keep inline text when there is enough room. Pages expand to
+contain labels and outer detours. Routing is deterministic and has
 no browser or DOM requirement. Optimization tries at most 64 swaps over four
 passes, followed by one rerouting sweep. Crossings and tighter spacing can still
 occur on dense graphs; these penalties are not hard routing guarantees.

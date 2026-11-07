@@ -40,6 +40,14 @@ test("pages have independent name scopes and support disconnected and empty grou
   const before = structuredClone(circuit.getCircuitJson())
   circuit.render()
   expect(circuit.getCircuitJson()).toEqual(before)
+  const detail = circuit.db.system_block_connection.list()[0]
+  // A horizontal label beside a vertical arrow must not introduce detours.
+  expect(detail.route).toHaveLength(2)
+  expect(detail.route[0].x).toBe(detail.route[1].x)
+  expect(detail.label_anchor_center!.x).toBeGreaterThan(detail.route[0].x)
+  expect(detail.label_anchor_center!.y).toBeCloseTo(
+    (detail.route[0].y + detail.route[1].y) / 2,
+  )
   for (const page of circuit.db.system_block_page.list()) {
     expect(page.width).toBeGreaterThan(0)
     expect(page.height).toBeGreaterThan(0)

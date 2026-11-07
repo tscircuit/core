@@ -156,6 +156,7 @@ export function routeSystemBlocks(
   }
   const labels = new Map<SystemBlockConnection, SystemRoutingObstacle>()
   const labelCenters = new Map<SystemBlockConnection, Point>()
+  const labelAttachments = new Map<SystemBlockConnection, Point>()
   const portObstacles = [...portsByConnection.values()]
     .flat()
     .map(({ escape }) => ({
@@ -172,6 +173,79 @@ export function routeSystemBlocks(
       // A cross-subsystem label may coincide with an internal label. Search
       // nearby slots explicitly before reserving the label as a routing obstacle.
       const occupied = [...obstacles, ...labels.values(), ...portObstacles]
+      const fits = (rectangle: SystemRoutingObstacle) =>
+        !occupied.some(
+          (r) =>
+            rectangle.left < r.right + 1 &&
+            rectangle.right > r.left - 1 &&
+            rectangle.bottom < r.top + 1 &&
+            rectangle.top > r.bottom - 1,
+        )
+      const [start, end] = portsByConnection.get(connection)!
+      const endpoints = tree.endpoints.get(connection)!
+      const selfLoop = endpoints.from === endpoints.to
+      const vertical = start.escape.x === end.escape.x
+      const horizontal = start.escape.y === end.escape.y
+      const oppositeFaces = (start.side + 2) % 4 === end.side
+      const straightAxis =
+        vertical && start.side % 2 === 1
+          ? "y"
+          : horizontal && start.side % 2 === 0
+            ? "x"
+            : undefined
+      const straight =
+        !selfLoop &&
+        oppositeFaces &&
+        straightAxis !== undefined &&
+        (end.escape[straightAxis] - start.escape[straightAxis]) *
+          (start.escape[straightAxis] - start.point[straightAxis]) >=
+          0
+      const sameFaceReturn = selfLoop && start.side === end.side
+      const textFitsHorizontalSpan =
+        horizontal &&
+        !selfLoop &&
+        Math.abs(start.escape.x - end.escape.x) >= halfWidth * 2
+      // A straight arrow or same-face return already has a simple backbone.
+      // Put text beside it instead of inserting a horizontal span into the wire.
+      // Keep a single attachment waypoint so later port swaps cannot orphan text.
+      if (
+        (straight || sameFaceReturn) &&
+        !textFitsHorizontalSpan &&
+        !obstacles.some((r) =>
+          vertical
+            ? start.escape.x > r.left &&
+              start.escape.x < r.right &&
+              Math.max(start.escape.y, end.escape.y) > r.bottom &&
+              Math.min(start.escape.y, end.escape.y) < r.top
+            : start.escape.y > r.bottom &&
+              start.escape.y < r.top &&
+              Math.max(start.escape.x, end.escape.x) > r.left &&
+              Math.min(start.escape.x, end.escape.x) < r.right,
+        )
+      ) {
+        const attachment = {
+          x: (start.escape.x + end.escape.x) / 2,
+          y: (start.escape.y + end.escape.y) / 2,
+        }
+        const signs = selfLoop ? [start.side < 2 ? 1 : -1] : [1, -1]
+        for (const sign of signs) {
+          const candidate = vertical
+            ? { x: attachment.x + sign * (halfWidth + 2), y: attachment.y }
+            : { x: attachment.x, y: attachment.y + sign * 4.5 }
+          const rectangle = {
+            left: candidate.x - halfWidth,
+            right: candidate.x + halfWidth,
+            bottom: candidate.y - 2.5,
+            top: candidate.y + 2.5,
+          }
+          if (!fits(rectangle)) continue
+          labels.set(connection, rectangle)
+          labelCenters.set(connection, candidate)
+          labelAttachments.set(connection, attachment)
+          break
+        }
+        if (labelAttachments.has(connection)) continue
+      }
       let placed = false
       for (let radius = 0; !placed; radius++) {
         const offsets =
@@ -191,16 +265,7 @@ export function routeSystemBlocks(
             bottom: candidate.y - 2.5,
             top: candidate.y + 2.5,
           }
-          if (
-            occupied.some(
-              (r) =>
-                rectangle.left < r.right + 1 &&
-                rectangle.right > r.left - 1 &&
-                rectangle.bottom < r.top + 1 &&
-                rectangle.top > r.bottom - 1,
-            )
-          )
-            continue
+          if (!fits(rectangle)) continue
           labels.set(connection, rectangle)
           labelCenters.set(connection, candidate)
           placed = true
@@ -215,12 +280,15 @@ export function routeSystemBlocks(
   ): SystemConnectionRoute => {
     const [start, end] = portsByConnection.get(connection)!
     const label = labels.get(connection)
+    const attachment = labelAttachments.get(connection)
     const blocked = [
       ...obstacles,
       ...[...labels].filter(([c]) => c !== connection).map(([, r]) => r),
     ]
     const waypoints = [start.escape]
-    if (label) {
+    if (attachment) {
+      waypoints.push(attachment)
+    } else if (label) {
       const y = labelCenters.get(connection)!.y
       const labelPorts = [
         { x: label.left, y },
@@ -234,7 +302,8 @@ export function routeSystemBlocks(
     for (let i = 1; i < waypoints.length; i++) {
       // Enter and leave a label at opposite ends. Keeping its interior blocked
       // on the other legs avoids backtracking beneath the same text or self-loop.
-      const legObstacles = label && i !== 2 ? [...blocked, label] : blocked
+      const legObstacles =
+        label && (attachment || i !== 2) ? [...blocked, label] : blocked
       const leg = findSystemOrthogonalPath(
         waypoints[i - 1],
         waypoints[i],

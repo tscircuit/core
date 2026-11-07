@@ -44,6 +44,18 @@ test("TSX power fanout, parallel interfaces, cycles, and self-loops", () => {
   )
   circuit.render()
   assertSystemGeometry(circuit.getCircuitJson())
+  const watchdog = circuit.db.system_block_connection
+    .list()
+    .find((connection) => connection.label === "Watchdog")!
+  // Two stems and two quarter-circle cubics make a compact U-turn. Text stays
+  // outside the return instead of adding another horizontal run to the loop.
+  expect(watchdog.route).toHaveLength(5)
+  expect(
+    watchdog.route.filter((point) => point.cubic_bezier_control_points),
+  ).toHaveLength(2)
+  expect(watchdog.label_anchor_center!.x).toBeGreaterThan(
+    Math.max(...watchdog.route.map((point) => point.x)),
+  )
   for (const connection of circuit.db.system_block_connection.list()) {
     expect(
       connection.route.some((point) => point.cubic_bezier_control_points),
