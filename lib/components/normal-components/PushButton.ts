@@ -31,6 +31,15 @@ export class PushButton extends NormalComponent<
   }
 
   override initPorts() {
+    const hasCustomSymbol = Boolean(
+      this.props.symbol ||
+        this._parsedProps?.symbol ||
+        this.children.some((c) => c.componentName === "Symbol"),
+    )
+    if (hasCustomSymbol) {
+      super.initPorts()
+      return
+    }
     super.initPorts({
       pinCount: 2,
       ignoreSymbolPorts: true,
