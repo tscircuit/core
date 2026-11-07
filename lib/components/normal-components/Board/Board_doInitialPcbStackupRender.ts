@@ -28,7 +28,36 @@ export function Board_doInitialPcbStackupRender(
       material = "fr4",
     } = importedPcbBoard ?? db.pcb_board.get(pcb_board_id)!
     const thickness = boardThickness ?? board.boardThickness
-    layers = getJlcStackup({ num_layers, thickness, material })?.layers
+    const parsedProps = board._parsedProps as Record<string, unknown>
+    const requestedStackupCode = (
+      (typeof parsedProps.fabricatorStackup === "string"
+        ? parsedProps.fabricatorStackup
+        : undefined) ??
+      (typeof parsedProps.jlcpcbStackup === "string"
+        ? parsedProps.jlcpcbStackup
+        : undefined) ??
+      (fabricatorPreset.includes(":")
+        ? fabricatorPreset.split(":")[1]
+        : /^JLC\d+/i.test(fabricatorPreset)
+          ? fabricatorPreset
+          : undefined)
+    )
+      ?.trim()
+      .toUpperCase()
+    const matchingConstruction = requestedStackupCode
+      ? jlcStackups.find(
+          (s: any) =>
+            s.num_layers === num_layers &&
+            Math.abs(s.thickness - thickness) < 0.05 &&
+            s.material === material &&
+            String(s.name ?? s.stackup_name ?? s.code ?? "")
+              .toUpperCase()
+              .includes(requestedStackupCode),
+        )
+      : undefined
+    layers =
+      matchingConstruction?.layers ??
+      getJlcStackup({ num_layers, thickness, material })?.layers
     if (!layers) {
       // Explain why the preset produced no stackup instead of silently
       // omitting it, e.g. a 2-layer 1.5mm board.
