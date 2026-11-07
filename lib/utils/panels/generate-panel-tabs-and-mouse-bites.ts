@@ -8,11 +8,20 @@ export const DEFAULT_TAB_WIDTH = 2
 
 export const PANEL_GRID_SPACING = DEFAULT_TAB_WIDTH
 
+export interface PanelTabPositions {
+  top?: number[]
+  bottom?: number[]
+  left?: number[]
+  right?: number[]
+}
+
 interface PanelOptions {
   boardGap: number
   tabWidth: number
   tabLength: number
   mouseBites: boolean
+  tabsPerEdge?: number
+  tabPositions?: PanelTabPositions
 }
 
 interface MouseBite {
