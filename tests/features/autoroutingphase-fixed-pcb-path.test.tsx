@@ -49,20 +49,16 @@ test("autorouting phases detour around a fixed hand-authored pcbPath", async () 
   expect(phaseInputs).toHaveLength(2)
   expect(originalManualTrace).toBeDefined()
   for (const input of phaseInputs) {
-    expect(
-      input.traces?.some(
-        (trace) =>
-          trace.connection_name === originalManualTrace!.source_trace_id,
-      ) ?? false,
-    ).toBe(false)
-    // The left wall of the U blocks both requested straight-line routes.
-    expect(input.obstacles).toContainEqual(
+    const fixedManualTrace = input.traces!.find(
+      (trace) => trace.connection_name === originalManualTrace!.source_trace_id,
+    )!
+    expect(fixedManualTrace.isFixed).toBe(true)
+    expect(originalManualTrace!.route).toMatchObject(fixedManualTrace.route)
+    // The U remains native copper instead of becoming mesh obstacles.
+    expect(input.obstacles).not.toContainEqual(
       expect.objectContaining({
         center: { x: -2, y: 0 },
         height: 6.3,
-        connectedTo: expect.arrayContaining([
-          originalManualTrace!.source_trace_id,
-        ]),
       }),
     )
   }

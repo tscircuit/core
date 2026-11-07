@@ -1536,10 +1536,62 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           }),
         }
       }
+      const getPrecomputedRoutingResult = usesPreviousStageOutput
+        ? undefined
+        : routingPhasePlan.getPrecomputedRoutingResult
+
+      const phaseIsAutoJumperPreset =
+        routingPhasePlan.autorouter !== undefined
+          ? this._isAutoJumperAutorouter(phaseAutorouterConfig)
+          : isAutoJumperPreset
+      const phaseIsLaserPrefabPreset =
+        routingPhasePlan.autorouter !== undefined
+          ? this._isLaserPrefabAutorouter(phaseAutorouterConfig)
+          : isLaserPrefabPreset
+
+      const autorouterVersion =
+        phaseAutorouterConfig.autorouterVersion ?? this.props.autorouterVersion
+      const effortLevel = this.props.autorouterEffortLevel
+      const effort = effortLevel
+        ? Number.parseInt(effortLevel.replace("x", ""), 10)
+        : undefined
+      const commonAutorouterOptions: AutorouterOptions = {
+        capacityDepth: phaseAutorouterConfig.capacityDepth,
+        targetMinCapacity: phaseAutorouterConfig.targetMinCapacity,
+        platformConfig: this.root?.platform,
+        useAssignableSolver: phaseIsLaserPrefabPreset || isSingleLayerBoard,
+        useAutoJumperSolver: phaseIsAutoJumperPreset,
+        useLaserPrefabSolver: phaseIsLaserPrefabPreset,
+        autorouterVersion,
+        effort,
+      }
+      const solverName =
+        isTestPointPhase ||
+        getPrecomputedRoutingResult ||
+        phaseAutorouterConfig.algorithmFn
+          ? undefined
+          : localAutorouterStrategy.getSolverName(commonAutorouterOptions)
+      const preservesNativePreloadedTraces =
+        solverName === "AutoroutingPipelineSolver9_PreloadedTraceGraph" ||
+        solverName === "AutoroutingPipelineSolver9_Networked"
+      if (preservesNativePreloadedTraces) {
+        // Native traces reserve hypergraph paths without splitting the mesh.
+        simpleRouteJson = {
+          ...simpleRouteJson,
+          traces: simpleRouteJson.traces?.map((trace) => {
+            if (!fixedTraceIds.has(trace.pcb_trace_id)) return trace
+            return { ...trace, isFixed: true }
+          }),
+        }
+      }
       // bus_lanes preserves prior traces verbatim and checks their exact copper
       // geometry. Rasterizing diagonal fanout traces can bury a legal exit in
       // an enlarged rectangular obstacle before the lane search even starts.
-      if (phaseAutorouterConfig.preset !== "bus_lanes" && !isTestPointPhase) {
+      if (
+        !preservesNativePreloadedTraces &&
+        phaseAutorouterConfig.preset !== "bus_lanes" &&
+        !isTestPointPhase
+      ) {
         // FanoutSolver preserves supplied trace routes and checks their exact
         // copper geometry (build-output.ts / get-routed-trace-copper.ts).
         // Keep manual copper in that representation: rectangular approximations
@@ -1565,10 +1617,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       )
       simpleRouteJson.allowViaInPad =
         phaseAutorouterConfig.allowViaInPad ?? simpleRouteJson.allowViaInPad
-
-      const getPrecomputedRoutingResult = usesPreviousStageOutput
-        ? undefined
-        : routingPhasePlan.getPrecomputedRoutingResult
 
       const preflightRoutingCheckPolicy =
         this.getInheritedProperty("preflightRoutingCheckPolicy") ?? "basic"
@@ -1610,16 +1658,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         previousStageOutputSimpleRouteJson = simpleRouteJson
         continue
       }
-
-      // Enable jumpers for auto_jumper preset
-      const phaseIsAutoJumperPreset =
-        routingPhasePlan.autorouter !== undefined
-          ? this._isAutoJumperAutorouter(phaseAutorouterConfig)
-          : isAutoJumperPreset
-      const phaseIsLaserPrefabPreset =
-        routingPhasePlan.autorouter !== undefined
-          ? this._isLaserPrefabAutorouter(phaseAutorouterConfig)
-          : isLaserPrefabPreset
 
       if (phaseIsAutoJumperPreset) {
         simpleRouteJson.allowJumpers = true
@@ -1670,22 +1708,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         ;(global as any).debugGraphics?.push(graphicsObject)
       }
 
-      const autorouterVersion =
-        phaseAutorouterConfig.autorouterVersion ?? this.props.autorouterVersion
-      const effortLevel = this.props.autorouterEffortLevel
-      const effort = effortLevel
-        ? Number.parseInt(effortLevel.replace("x", ""), 10)
-        : undefined
-      const commonAutorouterOptions: AutorouterOptions = {
-        capacityDepth: phaseAutorouterConfig.capacityDepth,
-        targetMinCapacity: phaseAutorouterConfig.targetMinCapacity,
-        platformConfig: this.root?.platform,
-        useAssignableSolver: phaseIsLaserPrefabPreset || isSingleLayerBoard,
-        useAutoJumperSolver: phaseIsAutoJumperPreset,
-        useLaserPrefabSolver: phaseIsLaserPrefabPreset,
-        autorouterVersion,
-        effort,
-      }
       const autorouterName = isTestPointPhase
         ? "test_points"
         : getPrecomputedRoutingResult
@@ -1693,12 +1715,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           : phaseAutorouterConfig.algorithmFn
             ? "custom"
             : localAutorouterStrategy.name
-      const solverName =
-        isTestPointPhase ||
-        getPrecomputedRoutingResult ||
-        phaseAutorouterConfig.algorithmFn
-          ? undefined
-          : localAutorouterStrategy.getSolverName(commonAutorouterOptions)
       const localAutoroutingCacheSolverOptions = {
         autorouterName,
         solverName,
@@ -2020,6 +2036,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
               stageOutputPcbTraces: traces,
             })
         }
+        stageOutputTraces = stageOutputTraces.map((trace) => {
+          if (!fixedTraceIds.has(trace.pcb_trace_id)) return trace
+          return { ...trace, isFixed: true }
+        })
         let eventOutputPcbTraces = stageOutputTraces
         if (
           !transformedSimpleRouteJson &&
