@@ -42,8 +42,8 @@ import type { TraceI } from "./TraceI"
 import { Trace__doInitialSchematicTraceRenderWithDisplayLabel } from "./Trace__doInitialSchematicTraceRenderWithDisplayLabel"
 import { Trace__findConnectedPorts } from "./Trace__findConnectedPorts"
 import { Trace_doInitialPcbManualTraceRender } from "./Trace_doInitialPcbManualTraceRender"
-import { Trace_doInitialPcbTraceTeardropRender } from "./Trace_doInitialPcbTraceTeardropRender"
 import { Trace_doInitialPcbTraceRender } from "./Trace_doInitialPcbTraceRender"
+import { Trace_doInitialPcbTraceTeardropRender } from "./Trace_doInitialPcbTraceTeardropRender"
 import { Trace_doInitialSchematicTraceRender } from "./Trace_doInitialSchematicTraceRender"
 import { getMaxLengthFromConnectedComponents } from "./trace-utils/get-max-length-from-connected-components"
 import { getTraceDisplayName } from "./trace-utils/get-trace-display-name"
@@ -73,6 +73,13 @@ export class Trace
   pcb_trace_id: string | null = null
   // Marks radiating copper created by Antenna, never its feed connection.
   isAntennaTrace = false
+  isCreatedFromConnectionsProp = false
+  get isFromConnections(): boolean {
+    return this.isCreatedFromConnectionsProp
+  }
+  set isFromConnections(value: boolean) {
+    this.isCreatedFromConnectionsProp = value
+  }
   schematic_trace_id: string | null = null
   _inflatedPcbTraces?: PcbTrace[]
   _inflatedPcbVias?: PcbVia[]
@@ -327,7 +334,11 @@ export class Trace
 
     this.source_trace_id = trace.source_trace_id
 
-    if (!props.name && nets.length === 0) {
+    if (
+      !props.name &&
+      nets.length === 0 &&
+      !this.isCreatedFromConnectionsProp
+    ) {
       db.source_unnamed_trace_warning.insert({
         message: `${this.getString()} is missing a name. Add a name prop to make the trace easier to identify.`,
         source_trace_id: trace.source_trace_id,
