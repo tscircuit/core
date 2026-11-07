@@ -28,7 +28,50 @@ export function Board_doInitialPcbStackupRender(
       material = "fr4",
     } = importedPcbBoard ?? db.pcb_board.get(pcb_board_id)!
     const thickness = boardThickness ?? board.boardThickness
-    layers = getJlcStackup({ num_layers, thickness, material })?.layers
+    const matchingStackups = jlcStackups.filter(
+      (s) =>
+        s.num_layers === num_layers &&
+        s.thickness === thickness &&
+        s.material === material,
+    )
+
+    const rawProps = (board.props ?? {}) as Record<string, unknown>
+    const requestedStackup =
+      typeof rawProps.jlcpcbStackup === "string"
+        ? rawProps.jlcpcbStackup.trim()
+        : typeof rawProps.fabricatorStackup === "string"
+          ? rawProps.fabricatorStackup.trim()
+          : undefined
+
+    let selectedStackup: (typeof jlcStackups)[number] | undefined
+    if (requestedStackup) {
+      const normalizedReq = requestedStackup
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, "")
+      selectedStackup = matchingStackups.find((s) => {
+        const normName = s.name.toLowerCase().replace(/[^a-z0-9]/g, "")
+        return normName === normalizedReq || normName.endsWith(normalizedReq)
+      })
+
+      if (!selectedStackup) {
+        db.source_property_ignored_warning.insert({
+          source_component_id: board.source_group_id ?? "",
+          property_name: "jlcpcbStackup",
+          error_type: "source_property_ignored_warning",
+          subcircuit_id: subcircuit_id ?? undefined,
+          message:
+            `jlcpcbStackup "${requestedStackup}" was not found for a ${num_layers}-layer ${thickness}mm ${material} board. ` +
+            (matchingStackups.length > 0
+              ? `Available constructions: ${matchingStackups.map((s) => s.name).join(", ")}.`
+              : `No matching stackups found.`),
+        })
+      }
+    }
+
+    if (!selectedStackup) {
+      selectedStackup = getJlcStackup({ num_layers, thickness, material })
+    }
+    layers = selectedStackup?.layers
     if (!layers) {
       // Explain why the preset produced no stackup instead of silently
       // omitting it, e.g. a 2-layer 1.5mm board.
