@@ -228,12 +228,18 @@ export const getObstaclesFromCircuitJson = (
         }
       }
     } else if (element.type === "pcb_keepout") {
-      if (element.warning_only || element.allow_traces) continue
+      if (element.warning_only) continue
+      // When allow_traces is true, traces are allowed on element.layers, but
+      // vias (which span all layers) are still forbidden inside the keepout.
+      const keepoutBlockedLayers = element.allow_traces
+        ? everyLayer.filter((layer) => !element.layers.includes(layer))
+        : element.layers
+      if (element.allow_traces && keepoutBlockedLayers.length === 0) continue
       if (element.shape === "circle") {
         obstacles.push({
           componentId: pcbComponentId,
           type: "rect",
-          layers: element.layers,
+          layers: keepoutBlockedLayers,
           center: {
             x: element.center.x,
             y: element.center.y,
@@ -246,7 +252,7 @@ export const getObstaclesFromCircuitJson = (
         obstacles.push({
           componentId: pcbComponentId,
           type: "rect",
-          layers: element.layers,
+          layers: keepoutBlockedLayers,
           center: {
             x: element.center.x,
             y: element.center.y,
@@ -257,7 +263,10 @@ export const getObstaclesFromCircuitJson = (
         })
       } else if (element.shape === "outline") {
         obstacles.push(
-          ...getObstaclesFromPcbKeepoutOutline(element, pcbComponentId),
+          ...getObstaclesFromPcbKeepoutOutline(
+            { ...element, layers: keepoutBlockedLayers },
+            pcbComponentId,
+          ),
         )
       }
     } else if (element.type === "pcb_cutout") {
