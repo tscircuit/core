@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import headerFootprint from "tests/fixtures/assets/jlcpcb-C6800644-header.circuit.json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("imported programming header does not render its requested PCB pin labels", async () => {
+test("imported programming header renders its requested PCB pin labels", async () => {
   const { circuit } = getTestFixture({
     platform: {
       footprintLibraryMap: {
@@ -43,6 +43,14 @@ test("imported programming header does not render its requested PCB pin labels",
   await circuit.renderUntilSettled()
 
   expect(circuit.db.pcb_plated_hole.list()).toHaveLength(6)
-  expect(circuit.db.pcb_silkscreen_text.list()).toHaveLength(0)
+  expect(
+    circuit.db.pcb_silkscreen_text.list().map((label) => label.text),
+  ).toEqual(["GND", "3V3", "TX", "RX", "BOOT", "RESET"])
+  const pin1 = circuit.db.pcb_plated_hole
+    .list()
+    .find((pad) => pad.port_hints?.includes("pin1"))!
+  const groundLabel = circuit.db.pcb_silkscreen_text.list()[0]!
+  expect(groundLabel.anchor_position.x).toBeGreaterThan(pin1.x)
+  expect(groundLabel.anchor_position.y).toBeCloseTo(pin1.y)
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
