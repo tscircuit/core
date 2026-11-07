@@ -445,7 +445,7 @@ export const getAllDimensionsForSchematicBox = (
       const label =
         params.pinLabels![`pin${pinNumber}`] ??
         params.pinLabels![`${pinNumber}`]
-      return label ? label.length * CHAR_WIDTH : 0
+      return getDisplayedPinLabel(label).length * CHAR_WIDTH
     }
 
     const leftLabels = orderedTruePorts
