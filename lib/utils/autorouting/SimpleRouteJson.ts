@@ -2,12 +2,13 @@ import type {
   SimpleRouteJson as AutorouterSimpleRouteJson,
   SimplifiedPcbTrace as AutorouterSimplifiedPcbTrace,
 } from "@tscircuit/capacity-autorouter"
-import type { PcbGroup } from "circuit-json"
+import type { PcbGroup, SourceTrace } from "circuit-json"
 import type { CircuitJsonMetadata, Obstacle } from "../obstacles/types"
 
 export type { CircuitJsonMetadata, Obstacle } from "../obstacles/types"
 
 export type PcbGroupId = PcbGroup["pcb_group_id"]
+export type SourceTraceId = SourceTrace["source_trace_id"]
 export type SimpleRouteBounds = {
   minX: number
   maxX: number
@@ -84,6 +85,17 @@ export type SingleLayerConnectionPoint = {
 /** Backward-compatible name for core's single-layer routing terminals. */
 export type SimpleRoutePoint = SingleLayerConnectionPoint
 
+/** Limits on a source trace's terminal-to-terminal or terminal-to-net path. */
+export type SimpleRouteConstraint = {
+  connectionName: SrjConnectionName
+  sourceTraceId: SourceTraceId
+  name?: string
+  /** Original routing point IDs; one point means its attachment to the net. */
+  pointIds: string[]
+  maxLength?: number
+  maxViaCount?: number
+}
+
 export type SimpleRouteConnection = {
   name: SrjConnectionName
   routingPcbGroupId?: PcbGroupId
@@ -155,6 +167,8 @@ export type SimpleRouteJson = Omit<
   | "differentialPairs"
   | "buses"
 > & {
+  routeConstraints?: SimpleRouteConstraint[]
+  boardThickness?: number
   layerCount: number
   /** Whether autorouters may use vias that do not span the full board stack. */
   allowBlindAndBuriedVias?: boolean
