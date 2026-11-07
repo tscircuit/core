@@ -44,7 +44,7 @@ export class Inductor extends NormalComponent<
     const source_component = db.source_component.insert({
       name: this.name,
       ftype: FTYPE.simple_inductor,
-      inductance: this.props.inductance,
+      inductance: props.inductance,
       max_current_rating:
         props.maxCurrentRating === undefined
           ? undefined
