@@ -36,3 +36,9 @@ jobs:
           # INPUT_PEER_DEPS_SHOULD_BE_ASTERISK: false
           # INPUT_IGNORE_PACKAGES: "circuit-json,..."
           # INPUT_ADDITIONAL_INTERNAL_PACKAGES: "circuit-json,..."
+
+      - name: Install dependency graph
+        run: bun install --linker=hoisted --ignore-scripts
+
+      - name: Check for conflicting child dependencies
+        run: bun run scripts/check-dependency-ranges.ts
