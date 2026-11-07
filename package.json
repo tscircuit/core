@@ -63,7 +63,7 @@
     "@tscircuit/miniflex": "^0.0.4",
     "@tscircuit/modelprinter": "^0.0.37",
     "@tscircuit/ngspice-spice-engine": "^0.0.20",
-    "@tscircuit/props": "^0.0.719",
+    "@tscircuit/props": "^0.0.721",
     "@tscircuit/schematic-match-adapt": "^0.0.18",
     "@tscircuit/schematic-trace-solver": "https://jscdn.tscircuit.com/@tscircuit/schematic-trace-solver/0.0.238.tgz",
     "@tscircuit/solver-utils": "^0.0.16",
@@ -91,7 +91,7 @@
     "flatbush": "^4.5.0",
     "graphics-debug": "^0.0.95",
     "howfat": "^0.3.8",
-    "kicad-to-circuit-json": "^0.0.142",
+    "kicad-to-circuit-json": "^0.0.149",
     "kicadts": "^0.0.53",
     "live-server": "^1.2.2",
     "minicssgrid": "^0.0.9",
@@ -170,7 +170,7 @@
   },
   "overrides": {
     "@tscircuit/graphics-debug-3d": "https://jscdn.tscircuit.com/@tscircuit/graphics-debug-3d/0.0.1.tgz",
-    "@tscircuit/props": "^0.0.719",
+    "@tscircuit/props": "^0.0.721",
     "circuit-json": "^0.0.547",
     "@tscircuit/cableprinter": "^0.0.6"
   },
