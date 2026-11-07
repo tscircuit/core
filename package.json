@@ -1,7 +1,7 @@
 {
   "name": "@tscircuit/core",
   "type": "module",
-  "version": "0.0.2291",
+  "version": "0.0.2300",
   "types": "dist/index.d.ts",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -28,7 +28,8 @@
     "build:benchmarking": "bun build --experimental-html ./benchmarking/website/index.html --outdir ./benchmarking-dist",
     "build:benchmarking:watch": "chokidar \"./{benchmarking,lib}/**/*.{ts,tsx}\" -c 'bun build --experimental-html ./benchmarking/website/index.html --outdir ./benchmarking-dist'",
     "start:benchmarking": "concurrently \"bun run build:benchmarking:watch\" \"live-server ./benchmarking-dist\"",
-    "generate-test-plan": "bun run scripts/generate-test-plan.ts"
+    "generate-test-plan": "bun run scripts/generate-test-plan.ts",
+    "benchmark:ddr": "bun scripts/benchmark-ddr/run.ts"
   },
   "devDependencies": {
     "@tscircuit/cad-collision-checking": "https://jscdn.tscircuit.com/@tscircuit/cad-collision-checking/0.0.6.tgz",
@@ -38,10 +39,10 @@
     "@tsci/tscircuit.ti": "github:tscircuit/ti#57e314be4b2b06bc546d4def7453e619604d1157",
     "@tscircuit/alphabet": "0.0.25",
     "@tscircuit/bga-fanout-solver": "github:tscircuit/bga-fanout-solver#247c835cb8d69b65e53891dcf869731079415b39",
-    "@tscircuit/bus-lanes-solver": "https://jscdn.tscircuit.com/@tscircuit/bus-lanes-solver/0.0.47.tgz",
+    "@tscircuit/bus-lanes-solver": "https://jscdn.tscircuit.com/@tscircuit/bus-lanes-solver/0.0.48.tgz",
     "@tscircuit/cableprinter": "^0.0.6",
-    "@tscircuit/capacity-autorouter": "^0.0.1051",
-    "@tscircuit/checks": "^0.0.268",
+    "@tscircuit/capacity-autorouter": "^0.0.1059",
+    "@tscircuit/checks": "^0.0.270",
     "@tscircuit/circuit-json-util": "^0.0.128",
     "@tscircuit/common": "^0.0.20",
     "@tscircuit/copper-pour-solver": "^0.0.67",
@@ -90,7 +91,7 @@
     "flatbush": "^4.5.0",
     "graphics-debug": "^0.0.95",
     "howfat": "^0.3.8",
-    "kicad-to-circuit-json": "^0.0.142",
+    "kicad-to-circuit-json": "^0.0.149",
     "kicadts": "^0.0.53",
     "live-server": "^1.2.2",
     "minicssgrid": "^0.0.9",
@@ -121,7 +122,8 @@
     "circuit-json-to-tscircuit": "^0.0.50",
     "dsn-converter": "^0.0.90",
     "easyeda": "^0.0.389",
-    "circuit-json-to-pnp-csv": "^0.0.20"
+    "circuit-json-to-pnp-csv": "^0.0.20",
+    "@tscircuit/core-ddr-benchmark": "github:ShiboSoftwareDev/core-ddr-benchmark#8ad0e1e2cc4c7069ce8d52e4a7d7e0ccc1cfb67c"
   },
   "peerDependencies": {
     "@tscircuit/capacity-autorouter": "*",
