@@ -83,7 +83,7 @@
     "circuit-json-to-bpc": "^0.0.13",
     "circuit-json-to-connectivity-map": "^0.0.33",
     "circuit-json-to-spice": "^0.0.45",
-    "circuit-to-svg": "github:tscircuit/circuit-to-svg#9470f3ca918e856b670eef95777fcce8d6bfe712",
+    "circuit-to-svg": "^0.0.457",
     "concurrently": "^9.1.2",
     "connectivity-map": "^1.0.1",
     "debug": "^4.3.6",
@@ -174,8 +174,5 @@
   },
   "browser": {
     "@resvg/resvg-js": false
-  },
-  "trustedDependencies": [
-    "circuit-to-svg"
-  ]
+  }
 }
