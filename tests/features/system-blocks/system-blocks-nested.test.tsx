@@ -73,5 +73,7 @@ test("TSX system blocks resolve nested groups and cross-group interfaces", () =>
   expect(circuit.db.source_trace.list()).toHaveLength(0)
   return expect(convertCircuitJsonToSystemSvg(json)).toMatchSvgSnapshot(
     import.meta.path,
+    undefined,
+    { diffThresholdPercent: 0 },
   )
 })

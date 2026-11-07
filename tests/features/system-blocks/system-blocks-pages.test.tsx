@@ -56,6 +56,8 @@ test("pages have independent name scopes and support disconnected and empty grou
         systemBlockPageId: page.system_block_page_id,
         width: 650,
       }),
-    ).toMatchSvgSnapshot(import.meta.path, `system-blocks-page-${page.name}`)
+    ).toMatchSvgSnapshot(import.meta.path, `system-blocks-page-${page.name}`, {
+      diffThresholdPercent: 0,
+    })
   }
 })

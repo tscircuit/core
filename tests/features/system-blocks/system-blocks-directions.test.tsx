@@ -56,6 +56,8 @@ test("all four page directions map to page-centered +Y-up geometry", async () =>
       convertCircuitJsonToSystemSvg(circuit.getCircuitJson(), {
         width: direction === "up" || direction === "down" ? 500 : 1000,
       }),
-    ).toMatchSvgSnapshot(import.meta.path, `system-blocks-${direction}`)
+    ).toMatchSvgSnapshot(import.meta.path, `system-blocks-${direction}`, {
+      diffThresholdPercent: 0,
+    })
   }
 })

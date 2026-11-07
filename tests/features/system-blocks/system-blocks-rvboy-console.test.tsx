@@ -62,5 +62,5 @@ test("RVBoy console: dense interfaces retain obstacle-free routes and readable l
       systemBlockPageId: page.system_block_page_id,
       width: 1400,
     }),
-  ).toMatchSvgSnapshot(import.meta.path)
+  ).toMatchSvgSnapshot(import.meta.path, undefined, { diffThresholdPercent: 0 })
 })
