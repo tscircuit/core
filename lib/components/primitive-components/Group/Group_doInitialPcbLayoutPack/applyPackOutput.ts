@@ -5,7 +5,7 @@ import {
 } from "@tscircuit/circuit-json-util"
 import { normalizeDegrees } from "@tscircuit/math-utils"
 import type { PackOutput } from "calculate-packing"
-import { compose, rotate, translate } from "transformation-matrix"
+import { applyToPoint, compose, rotate, translate } from "transformation-matrix"
 import type { Group } from "../Group"
 import type { ClusterInfo } from "./applyComponentConstraintClusters"
 
@@ -211,6 +211,18 @@ export const applyPackOutput = (
           }
         }
       }
+      if ("pcb_group_id" in elm && elm.pcb_group_id) {
+        if (elm.pcb_group_id === pcbGroup.pcb_group_id) {
+          return true
+        }
+        const elmPcbGroup = db.pcb_group.get(elm.pcb_group_id)
+        if (
+          elmPcbGroup?.source_group_id &&
+          isDescendantGroup(db, elmPcbGroup.source_group_id, componentId)
+        ) {
+          return true
+        }
+      }
       return false
     })
 
@@ -222,7 +234,18 @@ export const applyPackOutput = (
       }
     }
 
+    const keepoutCentersBefore = new Map<any, { x: number; y: number }>()
+    for (const elm of relatedElements) {
+      if (elm.type === "pcb_keepout" && "center" in elm && elm.center) {
+        keepoutCentersBefore.set(elm, { x: elm.center.x, y: elm.center.y })
+      }
+    }
     transformPCBElements(relatedElements as any, transformMatrix)
+    for (const [elm, prevCenter] of keepoutCentersBefore.entries()) {
+      if (elm.center.x === prevCenter.x && elm.center.y === prevCenter.y) {
+        elm.center = applyToPoint(transformMatrix, prevCenter)
+      }
+    }
     db.pcb_group.update(pcbGroup.pcb_group_id, { center })
   }
 
