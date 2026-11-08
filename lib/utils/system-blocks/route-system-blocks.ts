@@ -162,7 +162,8 @@ export function routeSystemBlocks(
   const labelAttachments = new Map<SystemBlockConnection, Point>()
   const portObstacles = [...portsByConnection.values()]
     .flat()
-    .map(({ escape }) => ({
+    .map(({ escape, connection }) => ({
+      connection,
       left: escape.x - 1,
       right: escape.x + 1,
       bottom: escape.y - 1,
@@ -173,20 +174,26 @@ export function routeSystemBlocks(
     const center = initialRoutes.get(connection)!.label_anchor_center
     if (label !== undefined && center) {
       const halfWidth = getSystemConnectionLabelWidth(label) / 2
-      // A cross-subsystem label may coincide with an internal label. Search
-      // nearby slots explicitly before reserving the label as a routing obstacle.
-      const occupied = [...obstacles, ...labels.values(), ...portObstacles]
-      const fits = (rectangle: SystemRoutingObstacle) =>
-        !occupied.some(
-          (r) =>
-            rectangle.left < r.right + 1 &&
-            rectangle.right > r.left - 1 &&
-            rectangle.bottom < r.top + 1 &&
-            rectangle.top > r.bottom - 1,
-        )
       const [start, end] = portsByConnection.get(connection)!
       const endpoints = tree.endpoints.get(connection)!
       const selfLoop = endpoints.from === endpoints.to
+      // A cross-subsystem label may coincide with an internal label. Search
+      // nearby slots explicitly before reserving the label as a routing obstacle.
+      const occupied = [...obstacles, ...labels.values(), ...portObstacles]
+      const fits = (rectangle: SystemRoutingObstacle, besideOwnLoop = false) =>
+        !occupied.some((r) => {
+          if (besideOwnLoop && "connection" in r && r.connection === connection)
+            return false
+          // Neighboring ports already reserve 1 mm around their escape points.
+          // A compact loop label can use that clearance without doubling it.
+          const margin = besideOwnLoop && "connection" in r ? 0 : 1
+          return (
+            rectangle.left < r.right + margin &&
+            rectangle.right > r.left - margin &&
+            rectangle.bottom < r.top + margin &&
+            rectangle.top > r.bottom - margin
+          )
+        })
       const vertical = start.escape.x === end.escape.x
       const horizontal = start.escape.y === end.escape.y
       const oppositeFaces = (start.side + 2) % 4 === end.side
@@ -232,16 +239,25 @@ export function routeSystemBlocks(
         }
         const signs = selfLoop ? [start.side < 2 ? 1 : -1] : [1, -1]
         for (const sign of signs) {
+          // The label lies outside the loop's return. Its text halo already
+          // supplies horizontal clearance; do not add the loop's own port
+          // keepouts on top of that padding.
           const candidate = vertical
-            ? { x: attachment.x + sign * (halfWidth + 2), y: attachment.y }
-            : { x: attachment.x, y: attachment.y + sign * 4.5 }
+            ? {
+                x: attachment.x + sign * (halfWidth + (selfLoop ? 0 : 2)),
+                y: attachment.y,
+              }
+            : {
+                x: attachment.x,
+                y: attachment.y + sign * (selfLoop ? 3.5 : 4.5),
+              }
           const rectangle = {
             left: candidate.x - halfWidth,
             right: candidate.x + halfWidth,
             bottom: candidate.y - 2.5,
             top: candidate.y + 2.5,
           }
-          if (!fits(rectangle)) continue
+          if (!fits(rectangle, sameFaceReturn)) continue
           labels.set(connection, rectangle)
           labelCenters.set(connection, candidate)
           labelAttachments.set(connection, attachment)
