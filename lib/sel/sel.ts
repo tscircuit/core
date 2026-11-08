@@ -100,10 +100,18 @@ type CommonNetNames =
   | "SWD"
   | `GPIO${Nums40}`
 
-type TransistorSel = Record<`Q${Nums40}` | `Q${number}`, Record<TransistorPinNames, string>>
+type TransistorSel = Record<
+  `Q${Nums40}` | `Q${number}`,
+  Record<TransistorPinNames, string>
+>
 
 type JumperSel = Record<
-  `J${Nums40}` | `J${number}` | `JP${Nums40}` | `JP${number}` | `CN${Nums40}` | `CN${number}`,
+  | `J${Nums40}`
+  | `J${number}`
+  | `JP${Nums40}`
+  | `JP${number}`
+  | `CN${Nums40}`
+  | `CN${number}`,
   Record<PinNumbers100 | CommonPinNames, string> & ChipFnSel
 >
 
@@ -121,7 +129,15 @@ type NetSel<N extends string = CommonNetNames> = Record<"net", NetSelFn<N>>
 
 type ExplicitModuleSel = Record<
   "subcircuit" | "module" | "group",
-  Record<`S${Nums40}` | `S${number}` | `M${Nums40}` | `M${number}` | `G${Nums40}` | `G${number}`, SelWithoutSubcircuit>
+  Record<
+    | `S${Nums40}`
+    | `S${number}`
+    | `M${Nums40}`
+    | `M${number}`
+    | `G${Nums40}`
+    | `G${number}`,
+    SelWithoutSubcircuit
+  >
 >
 
 export type GenericConnectionsAndSelectorsSel = Record<
