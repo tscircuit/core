@@ -1,5 +1,7 @@
 import { Group } from "./Group"
-import { getSchematicTextOnlyGroupLayout } from "./getSchematicTextOnlyGroupLayout"
+import { SchematicText } from "../SchematicText"
+import { getBoundsFromPoints } from "@tscircuit/math-utils"
+import { getSchematicTextBounds } from "./Group_doInitialSchematicTraceRender/getSchematicTextBounds"
 import { applyToPoint, translate } from "transformation-matrix"
 import type { Size } from "circuit-json"
 import {
@@ -92,9 +94,67 @@ export const Group_doInitialSchematicLayoutFlex = (group: Group) => {
         (node) => node.sourceGroup?.source_group_id === child.source_group_id,
       ),
     )
-    .flatMap((child) => {
-      const layout = getSchematicTextOnlyGroupLayout(child)
-      return layout ? [layout] : []
+    .flatMap((childGroup) => {
+      const descendants = childGroup.getDescendants()
+      if (
+        descendants.some(
+          (child) =>
+            !(child instanceof Group) && !(child instanceof SchematicText),
+        )
+      )
+        return []
+
+      const schematicGroup = db.schematic_group.get(
+        childGroup.schematic_group_id!,
+      )
+      if (!schematicGroup) return []
+      const texts = descendants
+        .filter(
+          (child): child is SchematicText => child instanceof SchematicText,
+        )
+        .flatMap((child) => {
+          const text = db.schematic_text.get(child.schematic_text_id!)
+          return text ? [text] : []
+        })
+      // Bounds and center points in right-handed schematic world space (mm, +X right, +Y up).
+      const bounds = getBoundsFromPoints(
+        texts.flatMap((text) => {
+          const bounds = getSchematicTextBounds(text)
+          return [
+            { x: bounds.minX, y: bounds.minY },
+            { x: bounds.maxX, y: bounds.maxY },
+          ]
+        }),
+      )
+      return [
+        {
+          schematicGroup,
+          texts,
+          schematicGroups: [
+            childGroup,
+            ...descendants.filter(
+              (child): child is Group => child instanceof Group,
+            ),
+          ].flatMap((child) => {
+            const schematicGroup = db.schematic_group.get(
+              child.schematic_group_id!,
+            )
+            return schematicGroup ? [schematicGroup] : []
+          }),
+          center: bounds
+            ? {
+                x: (bounds.minX + bounds.maxX) / 2,
+                y: (bounds.minY + bounds.maxY) / 2,
+              }
+            : schematicGroup.center,
+          width:
+            childGroup._parsedProps.schWidth ??
+            (bounds ? bounds.maxX - bounds.minX : 0),
+          height:
+            childGroup._parsedProps.schHeight ??
+            (bounds ? bounds.maxY - bounds.minY : 0),
+        },
+      ]
     })
   for (const layout of textOnlyGroupLayouts) {
     db.schematic_group.update(layout.schematicGroup.schematic_group_id, {
