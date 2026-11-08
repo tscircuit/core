@@ -27,14 +27,46 @@ export function resolveAssemblyExplosionRecords(
   getStageId: (stage: AssemblyExplosionStage) => StageId,
 ) {
   const ordered = resolveAssemblyExplosionStages(roots)
-  const stages: CadExplosionStage[] = ordered.map((stage, order) => ({
-    type: "cad_explosion_stage",
-    cad_explosion_stage_id: getStageId(stage),
-    name: `${assemblyPath(stage.parent!)}.${stage.name}`,
-    order,
-    cad_component_ids: [],
-    cad_reference_surface_ids: [],
-  }))
+  const stages: CadExplosionStage[] = ordered.map((stage, order) => {
+    const rawStageProps = (stage.props ?? {}) as Record<string, unknown>
+    const displayName =
+      typeof (rawStageProps.displayName ?? rawStageProps.display_name) ===
+      "string"
+        ? String(
+            rawStageProps.displayName ?? rawStageProps.display_name,
+          ).trim() || undefined
+        : undefined
+    const instructions =
+      typeof rawStageProps.instructions === "string"
+        ? rawStageProps.instructions.trim() || undefined
+        : undefined
+    const geometryState =
+      typeof (rawStageProps.geometryState ?? rawStageProps.geometry_state) ===
+      "string"
+        ? String(rawStageProps.geometryState ?? rawStageProps.geometry_state)
+        : undefined
+    const stateTransitions =
+      rawStageProps.stateTransitions ?? rawStageProps.state_transitions
+    const contactAnnotations =
+      rawStageProps.contactAnnotations ?? rawStageProps.contact_annotations
+    return {
+      type: "cad_explosion_stage",
+      cad_explosion_stage_id: getStageId(stage),
+      name: `${assemblyPath(stage.parent!)}.${stage.name}`,
+      order,
+      cad_component_ids: [],
+      cad_reference_surface_ids: [],
+      ...(displayName !== undefined ? { display_name: displayName } : {}),
+      ...(instructions !== undefined ? { instructions } : {}),
+      ...(geometryState !== undefined ? { geometry_state: geometryState } : {}),
+      ...(Array.isArray(stateTransitions)
+        ? { state_transitions: stateTransitions }
+        : {}),
+      ...(Array.isArray(contactAnnotations)
+        ? { contact_annotations: contactAnnotations }
+        : {}),
+    }
+  })
   const moves: Omit<CadExplosionMove, "cad_explosion_move_id">[] = []
   const moveComponents: AssemblyExplosionMove[] = []
   for (const [stageIndex, stage] of ordered.entries()) {
@@ -149,6 +181,16 @@ export function resolveAssemblyExplosionRecords(
         ],
         mat3.fromMat4(mat3.create(), frame),
       )
+      const rawMoveProps = (move.props ?? {}) as Record<string, unknown>
+      const moveGeometryState =
+        typeof (rawMoveProps.geometryState ?? rawMoveProps.geometry_state) ===
+        "string"
+          ? String(rawMoveProps.geometryState ?? rawMoveProps.geometry_state)
+          : undefined
+      const moveStateTransitions =
+        rawMoveProps.stateTransitions ?? rawMoveProps.state_transitions
+      const moveContactAnnotations =
+        rawMoveProps.contactAnnotations ?? rawMoveProps.contact_annotations
       moveComponents.push(move)
       moves.push({
         type: "cad_explosion_move",
@@ -160,6 +202,15 @@ export function resolveAssemblyExplosionRecords(
           y: displacement[1],
           z: displacement[2],
         },
+        ...(moveGeometryState !== undefined
+          ? { geometry_state: moveGeometryState }
+          : {}),
+        ...(Array.isArray(moveStateTransitions)
+          ? { state_transitions: moveStateTransitions }
+          : {}),
+        ...(Array.isArray(moveContactAnnotations)
+          ? { contact_annotations: moveContactAnnotations }
+          : {}),
       })
     }
   }
