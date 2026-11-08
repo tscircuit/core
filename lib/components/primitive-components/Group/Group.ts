@@ -1328,6 +1328,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     }
 
     const outputTestPoints: ConnectedRoutedTestPoint[] = []
+    let routingFailure: { error: unknown } | undefined
     const outputTraces: SimplifiedPcbTrace[] = []
     const outputJumpers: Array<{
       jumper_footprint: string
@@ -2181,7 +2182,11 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           simpleRouteJson,
         })
 
-        throw error
+        if (outputTraces.length === 0) throw error
+
+        // Publish completed phases, then propagate the failed phase as before.
+        routingFailure = { error }
+        break
       } finally {
         // Ensure the autorouter is stopped
         autorouter?.stop()
@@ -2198,6 +2203,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
     // Mark the component as needing to re-render the PCB traces
     this._markDirty("PcbTraceRender")
+
+    if (routingFailure) throw routingFailure.error
   }
 
   _startAsyncAutorouting() {

@@ -1,12 +1,11 @@
 import { expect, test } from "bun:test"
+import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("bus_lanes rejects incompatible existing fanout exits without dogboning them again", async () => {
   const { circuit } = getTestFixture()
-  const inputs: any[] = []
-  circuit.on("autorouting:start", (event: any) =>
-    inputs.push(event.simpleRouteJson),
-  )
+  const inputs: SimpleRouteJson[] = []
+  circuit.on("autorouting:start", (event) => inputs.push(event.simpleRouteJson))
   circuit.add(
     <board width={16} height={10} doubleSidedAssembly routeRemaining={false}>
       {(["top", "bottom"] as const).map((layer, i) => {
@@ -67,11 +66,18 @@ test("bus_lanes rejects incompatible existing fanout exits without dogboning the
     ),
   ).toBe(true)
   expect(json.filter((e) => e.type === "pcb_via")).toHaveLength(0)
-  const input = inputs.at(-1)
+  const input = inputs.at(-1)!
   expect(input.traces).toHaveLength(2)
   expect(
-    input.connections[0].pointsToConnect.map((p: any) => p.layer).sort(),
+    input.connections[0].pointsToConnect.map((point) => point.layer).sort(),
   ).toEqual(["bottom", "top"])
-  // The failed phase publishes no partial or layer-changing route.
-  expect(json.filter((e) => e.type === "pcb_trace")).toHaveLength(0)
+  // Keep the completed saved fanouts; the failed bus adds no new copper.
+  const completedTraces = json.filter((e) => e.type === "pcb_trace")
+  expect(completedTraces).toHaveLength(2)
+  expect(completedTraces).toMatchObject(
+    input.traces!.map((trace) => ({
+      pcb_trace_id: trace.pcb_trace_id,
+      route: trace.route,
+    })),
+  )
 })
