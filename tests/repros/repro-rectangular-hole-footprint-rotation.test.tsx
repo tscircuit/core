@@ -23,14 +23,15 @@ test("rectangular mounting hole stays horizontal when its footprint rotates", as
             footprint={
               <footprint>
                 {[-4, 4].map((x, pin) => (
-                  <smtpad
-                    key={x}
-                    shape="rect"
-                    width={0.6}
-                    height={0.6}
-                    pcbX={x}
-                    portHints={[`pin${pin + 1}`]}
-                  />
+                  <Fragment key={x}>
+                    <smtpad
+                      shape="rect"
+                      width={0.6}
+                      height={0.6}
+                      pcbX={x}
+                      portHints={[`pin${pin + 1}`]}
+                    />
+                  </Fragment>
                 ))}
                 <silkscreenpath
                   strokeWidth={0.15}
