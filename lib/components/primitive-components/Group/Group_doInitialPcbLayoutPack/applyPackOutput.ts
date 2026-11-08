@@ -211,7 +211,7 @@ export const applyPackOutput = (
           }
         }
       }
-      if ("pcb_group_id" in elm && elm.pcb_group_id) {
+      if (elm.type === "pcb_keepout" && elm.pcb_group_id) {
         if (elm.pcb_group_id === pcbGroup.pcb_group_id) {
           return true
         }
