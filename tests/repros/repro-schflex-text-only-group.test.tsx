@@ -18,7 +18,10 @@ test.failing("a text-only child group keeps schFlex geometry finite", () => {
 
   circuit.render()
 
-  // Check before SVG conversion: NaN coordinates cannot make a useful snapshot.
+  // Preserve the broken rendering: the note remains, but R1 and R2 are missing.
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+
+  // The snapshot records the symptom; this assertion captures the invalid geometry.
   for (const schematicComponent of circuit.db.schematic_component.list()) {
     expect(Number.isFinite(schematicComponent.center.x)).toBe(true)
     expect(Number.isFinite(schematicComponent.center.y)).toBe(true)
