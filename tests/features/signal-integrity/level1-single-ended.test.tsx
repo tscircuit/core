@@ -27,12 +27,12 @@ test("RFC Level 1 single-ended resolves physical pins and emits SI defaults", as
     name: "DATA",
     driver: {
       kind: "single",
-      source_port_id: circuit.selectOne<Port>(".TX > .Y")!.source_port_id,
+      source_port_id: (circuit.selectOne(".TX > .Y") as Port).source_port_id,
     },
     receivers: [
       {
         kind: "single",
-        source_port_id: circuit.selectOne<Port>(".RX > .A")!.source_port_id,
+        source_port_id: (circuit.selectOne(".RX > .A") as Port).source_port_id,
       },
     ],
     pattern: "prbs7",

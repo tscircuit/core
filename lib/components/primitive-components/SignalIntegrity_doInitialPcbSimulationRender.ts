@@ -217,7 +217,10 @@ export function SignalIntegrity_doInitialPcbSimulationRender(
         )
     for (const port of ports) {
       if (driver.ports.includes(port.source_port_id)) continue
-      const info = getPortModelInfo(port.source_port_id)
+      const receiverModel = receivers.find((receiver) =>
+        receiver.ports.includes(port.source_port_id),
+      )?.record.ibis_model_name
+      const info = getPortModelInfo(port.source_port_id, receiverModel)
       const modelName =
         info.info?.modelSelectors.get(info.modelName!) ?? info.modelName
       if (

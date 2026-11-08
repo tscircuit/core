@@ -5,9 +5,10 @@ import { getSiTestFixture } from "./fixtures/get-si-test-fixture"
 test("SI diagnostic: unmodelled-part", async () => {
   const { circuit } = getSiTestFixture()
   circuit.add(
-    <DiagnosticBoard>
-      <chip name="D5" footprint="soic2" pinLabels={{ pin1: "A", pin2: "K" }} />
-      <trace from=".TX > .Y" to=".D5 > .A" />
+    <DiagnosticBoard disconnected>
+      <diode name="D5" footprint="sod123" />
+      <trace from=".TX > .Y" to=".D5 > .anode" />
+      <trace from=".D5 > .cathode" to=".RX > .A" />
       <signalintegrity bitRate="20Mbps" unrouted="ideal">
         <signal name="DATA" driver=".TX > .Y" receiver=".RX > .A" />
       </signalintegrity>

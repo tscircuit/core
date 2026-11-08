@@ -4,8 +4,8 @@ import { getSiTestFixture } from "./fixtures/get-si-test-fixture"
 
 test("SI diagnostic: bare quiet needs an explicit level", async () => {
   const { circuit } = getSiTestFixture()
-  // @ts-expect-error Boolean quiet deliberately reproduces invalid user TSX.
   const signal = (
+    // @ts-expect-error Boolean quiet deliberately reproduces invalid user TSX.
     <signal name="DATA" driver=".TX > .Y" receiver=".RX > .A" quiet />
   )
   circuit.add(

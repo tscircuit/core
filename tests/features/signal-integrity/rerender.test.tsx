@@ -13,8 +13,8 @@ test("SI updates and removes records without duplicating runs or mutating props"
     </DiagnosticBoard>,
   )
   await circuit.renderUntilSettled()
-  const block = circuit.selectOne<SignalIntegrity>("signalintegrity")!
-  const signal = circuit.selectOne<Signal>("signal")!
+  const block = circuit.selectOne("signalintegrity") as SignalIntegrity
+  const signal = circuit.selectOne("signal") as Signal
   const originalProps = structuredClone(signal._parsedProps)
   const originalId = signal.simulation_signal_id
   signal.setProps({

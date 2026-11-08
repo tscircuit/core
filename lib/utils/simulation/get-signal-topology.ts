@@ -8,7 +8,11 @@ import type { SignalIntegrity } from "lib/components/primitive-components/Signal
 type SourceComponentId = SourceComponentBase["source_component_id"]
 type SourcePortId = SourcePort["source_port_id"]
 
-/** Source connectivity crosses only two-terminal passives away from supply rails. */
+/**
+ * Source connectivity crosses only two-terminal passives away from supply rails.
+ * PCB points are in board/world coordinates, mm, +X right/+Y up, right-handed;
+ * layers identify Z. These are positions, not directions.
+ */
 export function getSignalTopology(block: SignalIntegrity) {
   const { db } = block.root!
   const circuitJson = db.toArray()
@@ -17,6 +21,7 @@ export function getSignalTopology(block: SignalIntegrity) {
   const routed = new PcbConnectivityMap(circuitJson).connMap
   const portsByComponent = new Map<SourceComponentId, SourcePort[]>()
   const ports = db.source_port.list()
+  const components = db.source_component.list()
   const powerPorts = new Set<SourcePortId>()
   for (const port of ports) {
     if (port.source_component_id) {
@@ -40,6 +45,19 @@ export function getSignalTopology(block: SignalIntegrity) {
       for (const portId of Object.values(references))
         if (portId) powerPorts.add(portId)
   }
+  for (const component of components) {
+    if (
+      ![
+        "simple_voltage_source",
+        "simple_power_source",
+        "simple_ground",
+      ].includes(component.ftype)
+    )
+      continue
+    for (const port of portsByComponent.get(component.source_component_id) ??
+      [])
+      powerPorts.add(port.source_port_id)
+  }
   const powerNets = db.source_net
     .list()
     .filter((net) =>
@@ -57,15 +75,38 @@ export function getSignalTopology(block: SignalIntegrity) {
     )
 
   // Keep the source ID in the physical map too, including isolated/unrouted pins.
-  for (const pcbPort of db.pcb_port.list())
+  const pcbTraces = db.pcb_trace.list()
+  for (const pcbPort of db.pcb_port.list()) {
     routed.addConnections([[pcbPort.source_port_id, pcbPort.pcb_port_id]])
+    // Group autorouting can emit unannotated route points. Check the actual
+    // physical contact too, rather than assuming every route carries port IDs.
+    for (const trace of pcbTraces) {
+      if (
+        trace.route.some(
+          (point) =>
+            point.route_type === "wire" &&
+            pcbPort.layers.includes(point.layer) &&
+            Math.hypot(point.x - pcbPort.x, point.y - pcbPort.y) < 1e-6,
+        )
+      )
+        routed.addConnections([[pcbPort.pcb_port_id, trace.pcb_trace_id]])
+    }
+  }
 
-  for (const component of db.source_component.list()) {
+  for (const component of components) {
     const terminals = portsByComponent.get(component.source_component_id) ?? []
     const isPassive =
-      ["simple_resistor", "simple_capacitor", "simple_inductor"].includes(
-        component.ftype,
-      ) ||
+      [
+        "simple_resistor",
+        "simple_capacitor",
+        "simple_inductor",
+        "simple_diode",
+        "simple_led",
+        "simple_fuse",
+        "simple_connector",
+        "simple_pin_header",
+        "simple_switch",
+      ].includes(component.ftype) ||
       (terminals.length === 2 && terminals.every((port) => port.is_passive))
     if (!isPassive || terminals.length !== 2 || terminals.some(isPowerPort))
       continue

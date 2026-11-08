@@ -26,15 +26,18 @@ export class SignalIntegrity extends PrimitiveComponent<
 
   doInitialPcbSimulationRender(): void {
     if (this.getInheritedProperty("analogSimulationDisabled")) return
+    if (this._hasIncompleteAsyncEffectsInSubtreeForPhase("PcbSimulationRender"))
+      return
     // A host may make vendor files available through its existing file loader.
     // Without it the asset stays a reference, as with standalone <ibismodel>.
     const platformFetch = this.root!.platform?.platformFetch
-    const unreadModels = this.root!.db.simulation_ibis_model.list().filter(
-      (model) => !this.ibisModelInfoByUrl.has(model.ibis_model_asset.url),
+    const unreadModelUrls = new Set(
+      this.root!.db.simulation_ibis_model.list()
+        .map((model) => model.ibis_model_asset.url)
+        .filter((url) => !this.ibisModelInfoByUrl.has(url)),
     )
-    if (platformFetch && unreadModels.length) {
-      for (const model of unreadModels) {
-        const url = model.ibis_model_asset.url
+    if (platformFetch && unreadModelUrls.size) {
+      for (const url of unreadModelUrls) {
         this.ibisModelInfoByUrl.set(url, null)
         this._queueAsyncEffect("ReadSignalIntegrityIbisModel", async () => {
           try {
