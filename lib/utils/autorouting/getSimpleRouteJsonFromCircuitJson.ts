@@ -570,7 +570,14 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   const planeTerminatedSourceTraceLayers = getPlaneTerminatedSourceTraceLayers({
     fanoutPourNetMap,
     sourceNets: db.source_net.list(),
-    sourceTraces,
+    // Breakout connections already route these pads to their escape points.
+    // Emitting plane terminations too would duplicate them without a source pad.
+    sourceTraces: sourceTraces.filter(
+      (sourceTrace) =>
+        !sourceTrace.connected_source_port_ids.some((sourcePortId) =>
+          sourcePortIdToBreakoutPoint.has(sourcePortId),
+        ),
+    ),
     subcircuitId: subcircuit_id,
   })
   const directTraceConnections = sourceTraces

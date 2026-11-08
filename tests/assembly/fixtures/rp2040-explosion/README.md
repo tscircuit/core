@@ -2,11 +2,11 @@
 
 This is the unmodified 5,117-record TSX export used by
 [3d-viewer #1082](https://github.com/tscircuit/3d-viewer/pull/1082).
-The original board is [imrishabh18/rp2040-motor-controller v1.0.48](https://tscircuit.com/imrishabh18/rp2040-motor-controller),
+The board is our RP2040 motor-controller design, published as
+[imrishabh18/rp2040-motor-controller v1.0.48](https://tscircuit.com/imrishabh18/rp2040-motor-controller),
 release `bc93e130-7357-4352-a45f-c9cf65563446`. `assembly.source.tsx` preserves
 the custom TSX for the NEMA17, four spacers, four bolts, cover and four stages.
-The source board is supplied to its `board` prop. PD-Stepper attribution and
-GPL-3.0 license are retained in `PD-Stepper-LICENSE`.
+The source board is supplied to its `board` prop.
 
 The export retains all 300 routed traces, 303 vias and 117 CAD components.
 It was produced using the board's pinned core 0.0.2199 with its routing and
