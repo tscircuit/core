@@ -47,6 +47,14 @@ export * from "./assembly-explosion/serialize-assembly-explosion"
 
 export * from "./assembly-explosion/check-circuit-json-assembly-explosion-collisions"
 export type {
+  AssemblyExplosionAnnotatedContact,
   AssemblyExplosionCollisionCheck,
   AssemblyExplosionCollisionCheckStatus,
+  AssemblyExplosionPolicyOptions,
+  AssemblyExplosionPolicyResult,
+  AssemblyExplosionVerificationCategory,
+  CadExplosionContactAnnotation,
+  CadExplosionContactRegion,
+  CadGeometryStateModel,
+  ExplosionGeometryStateTransition,
 } from "./assembly-explosion/collision/types"

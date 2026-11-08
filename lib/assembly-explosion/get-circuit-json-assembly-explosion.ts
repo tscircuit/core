@@ -14,6 +14,10 @@ import type {
   AssemblyExplosionView,
   AssemblyExplosionLine,
 } from "./get-assembly-explosion"
+import {
+  applyGeometryStateToCadComponent,
+  resolveExplosionGeometryStateTransitions,
+} from "./resolve-explosion-geometry-states"
 
 type CadId = CadComponent["cad_component_id"]
 type SurfaceId = CadReferenceSurface["cad_reference_surface_id"]
@@ -160,6 +164,13 @@ export function getCircuitJsonAssemblyExplosion(
         `Invalid movement order in explosion stage "${stageById.get(stageId)!.name}"`,
       )
   }
+  const { statesByCadId, transitionsByMoveId } =
+    resolveExplosionGeometryStateTransitions({
+      assembled,
+      stages,
+      movesByStage,
+      expandTargets: expand,
+    })
   const progress = options.stageProgress ?? 1
   if (!Number.isFinite(progress) || progress < 0 || progress > 1)
     throw new Error("Explosion progress must be between zero and one")
@@ -171,6 +182,7 @@ export function getCircuitJsonAssemblyExplosion(
     throw new Error("Unknown explosion playback stage")
   const cadOffsets = new Map<CadId, Point3>()
   const surfaceOffsets = new Map<SurfaceId, Point3>()
+  const activeStates = new Map<CadId, string>()
   const lines: AssemblyExplosionLine[] = []
   for (const [stageIndex, stage] of stages.entries()) {
     if (stageIndex > stop) break
@@ -181,6 +193,14 @@ export function getCircuitJsonAssemblyExplosion(
           ? Math.max(0, Math.min(1, progress * stageMoves.length - moveIndex))
           : 1
       if (!fraction) continue
+      const moveTransitions = transitionsByMoveId.get(
+        move.cad_explosion_move_id,
+      )
+      if (moveTransitions) {
+        for (const tr of moveTransitions) {
+          activeStates.set(tr.cadComponentId, tr.toState)
+        }
+      }
       const offset = {
         x: move.translation.x * fraction,
         y: move.translation.y * fraction,
@@ -207,17 +227,38 @@ export function getCircuitJsonAssemblyExplosion(
       .filter(
         (record) =>
           record.type !== "cad_explosion_stage" &&
-          record.type !== "cad_explosion_move",
+          record.type !== "cad_explosion_move" &&
+          (record as unknown as { type: string }).type !==
+            "cad_explosion_geometry_state" &&
+          (record as unknown as { type: string }).type !==
+            "cad_explosion_contact_annotation",
       )
       .map((record) => {
-        if (record.type === "cad_component")
-          return {
+        if (record.type === "cad_component") {
+          const positioned: CadComponent = {
             ...record,
             position: plus(
               record.position,
               cadOffsets.get(record.cad_component_id) ?? zero(),
             ),
           }
+          const stateName = activeStates.get(record.cad_component_id)
+          if (!stateName) return positioned
+          if (stateName === "rest" || stateName === "nominal") {
+            return {
+              ...positioned,
+              active_geometry_state: "rest",
+            } as unknown as CadComponent
+          }
+          const stateModel = statesByCadId
+            .get(record.cad_component_id)
+            ?.get(stateName)
+          return applyGeometryStateToCadComponent(
+            positioned,
+            stateName,
+            stateModel,
+          )
+        }
         if (record.type === "cad_reference_surface")
           return {
             ...record,
