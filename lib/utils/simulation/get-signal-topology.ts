@@ -60,11 +60,7 @@ export function getSignalTopology(block: SignalIntegrity) {
   }
   const powerNets = db.source_net
     .list()
-    .filter((net) =>
-      /^(?:gnd|ground|vss\w*|vcc\w*|vdd\w*|vbus|[+-]?\d+(?:v\d*)?)$/i.test(
-        net.name,
-      ),
-    )
+    .filter((net) => net.is_ground || net.is_power)
   const isPowerPort = (port: SourcePort) =>
     powerPorts.has(port.source_port_id) ||
     [...powerPorts].some((powerPortId) =>

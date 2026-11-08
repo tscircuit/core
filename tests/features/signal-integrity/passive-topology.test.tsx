@@ -1,7 +1,10 @@
 import { Fragment } from "react"
-import { expect, test } from "bun:test"
+import { expect } from "bun:test"
 import { lvcModel, lvcPins } from "./fixtures/diagnostic-board"
-import { getSiTestFixture } from "./fixtures/get-si-test-fixture"
+import {
+  getSiTestFixture,
+  siTest as test,
+} from "./fixtures/get-si-test-fixture"
 
 test("SI topology crosses a series resistor and AC capacitor to multiple receivers", async () => {
   const { circuit } = getSiTestFixture()

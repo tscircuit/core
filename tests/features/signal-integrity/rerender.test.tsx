@@ -1,7 +1,10 @@
-import { expect, test } from "bun:test"
+import { expect } from "bun:test"
 import { Signal, SignalIntegrity } from "lib/components"
 import { DiagnosticBoard } from "./fixtures/diagnostic-board"
-import { getSiTestFixture } from "./fixtures/get-si-test-fixture"
+import {
+  getSiTestFixture,
+  siTest as test,
+} from "./fixtures/get-si-test-fixture"
 
 test("SI updates and removes records without duplicating runs or mutating props", async () => {
   const { circuit } = getSiTestFixture()

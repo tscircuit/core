@@ -5,10 +5,11 @@ export function parseIbisModelInfo(source: string) {
     {
       pinModels: Map<string, string>
       differentialPins: Map<string, string>
+      coupledPackage: boolean
     }
   >()
   const modelTypes = new Map<string, string>()
-  const modelSelectors = new Map<string, string>()
+  const modelSelectors = new Map<string, string[]>()
   let component: ReturnType<typeof components.get>
   let section = ""
   let modelName = ""
@@ -20,11 +21,20 @@ export function parseIbisModelInfo(source: string) {
     if (header) {
       section = header[1].toLowerCase()
       if (section === "component") {
-        component = { pinModels: new Map(), differentialPins: new Map() }
+        component = {
+          pinModels: new Map(),
+          differentialPins: new Map(),
+          coupledPackage: false,
+        }
         components.set(header[2], component)
       }
+      if (section === "package model" && component)
+        component.coupledPackage = true
       if (section === "model") modelName = header[2]
-      if (section === "model selector") selectorName = header[2]
+      if (section === "model selector") {
+        selectorName = header[2]
+        modelSelectors.set(selectorName, [])
+      }
       continue
     }
     const fields = line.split(/\s+/)
@@ -32,8 +42,8 @@ export function parseIbisModelInfo(source: string) {
       component.pinModels.set(fields[0], fields[2])
     if (section === "diff_pin" && component)
       component.differentialPins.set(fields[0], fields[1])
-    if (section === "model selector" && !modelSelectors.has(selectorName))
-      modelSelectors.set(selectorName, fields[0])
+    if (section === "model selector")
+      modelSelectors.get(selectorName)!.push(fields[0])
     if (section === "model" && /^model_type\s*(?:=|\s)/i.test(line))
       modelTypes.set(
         modelName,

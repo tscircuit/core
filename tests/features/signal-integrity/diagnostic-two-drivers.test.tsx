@@ -1,9 +1,12 @@
 import { Fragment } from "react"
-import { expect, test } from "bun:test"
+import { expect } from "bun:test"
 import { busModel, busPins } from "./fixtures/diagnostic-board"
-import { getSiTestFixture } from "./fixtures/get-si-test-fixture"
+import {
+  getSiTestFixture,
+  siTest as test,
+} from "./fixtures/get-si-test-fixture"
 
-test("SI diagnostic: second driving pin on the topology", async () => {
+test("Unlisted receive-capable IBIS pins receive even with a schematic output attribute", async () => {
   const { circuit } = getSiTestFixture()
   circuit.add(
     <board routingDisabled fabricatorPreset="jlcpcb_standard">
@@ -27,7 +30,6 @@ test("SI diagnostic: second driving pin on the topology", async () => {
       </signalintegrity>
     </board>,
   )
-  await expect(circuit.renderUntilSettled()).rejects.toThrow(
-    'Signal "BUS" has two drivers: .TX > .A and .U3 > .A. Exactly one pin drives a signal.',
-  )
+  await circuit.renderUntilSettled()
+  expect(circuit.db.simulation_signal.list()).toHaveLength(1)
 })

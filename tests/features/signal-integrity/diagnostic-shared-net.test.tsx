@@ -1,6 +1,9 @@
-import { expect, test } from "bun:test"
+import { expect } from "bun:test"
 import { DiagnosticBoard } from "./fixtures/diagnostic-board"
-import { getSiTestFixture } from "./fixtures/get-si-test-fixture"
+import {
+  getSiTestFixture,
+  siTest as test,
+} from "./fixtures/get-si-test-fixture"
 
 test("SI diagnostic: shared-net", async () => {
   const { circuit } = getSiTestFixture()
@@ -8,7 +11,7 @@ test("SI diagnostic: shared-net", async () => {
     <DiagnosticBoard>
       <signalintegrity bitRate="20Mbps" unrouted="ideal">
         <signal name="D0" driver=".TX > .Y" receiver=".RX > .A" />
-        <signal name="D1" driver=".RX > .A" receiver=".TX > .Y" />
+        <signal name="D1" driver=".TX > .Y" receiver=".RX > .A" />
       </signalintegrity>
     </DiagnosticBoard>,
   )

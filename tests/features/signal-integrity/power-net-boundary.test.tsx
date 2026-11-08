@@ -1,6 +1,9 @@
-import { expect, test } from "bun:test"
+import { expect } from "bun:test"
 import { DiagnosticBoard } from "./fixtures/diagnostic-board"
-import { getSiTestFixture } from "./fixtures/get-si-test-fixture"
+import {
+  getSiTestFixture,
+  siTest as test,
+} from "./fixtures/get-si-test-fixture"
 
 test("SI topology stops at a passive tied to a power net", async () => {
   const { circuit } = getSiTestFixture()

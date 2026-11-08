@@ -1,8 +1,11 @@
 import type { Port } from "lib/components/primitive-components/Port"
-import { expect, test } from "bun:test"
+import { expect } from "bun:test"
 import { any_circuit_element } from "circuit-json"
 import Board from "./fixtures/level1-single-ended"
-import { getSiTestFixture } from "./fixtures/get-si-test-fixture"
+import {
+  getSiTestFixture,
+  siTest as test,
+} from "./fixtures/get-si-test-fixture"
 
 test("RFC Level 1 single-ended resolves physical pins and emits SI defaults", async () => {
   const { circuit } = getSiTestFixture()
@@ -12,14 +15,11 @@ test("RFC Level 1 single-ended resolves physical pins and emits SI defaults", as
     {
       type: "simulation_signal_integrity",
       simulation_signal_integrity_id: "simulation_signal_integrity_0",
-      name: undefined,
       bit_rate_bps: 20e6,
-      duration_s: 143 / 20e6,
       corner: "typ",
       unlisted_nets: "passive",
       unrouted: "error",
       pdn: "ideal",
-      supply: "board",
     },
   ])
   const signal = circuit.db.simulation_signal.list()[0]
@@ -36,7 +36,7 @@ test("RFC Level 1 single-ended resolves physical pins and emits SI defaults", as
       },
     ],
     pattern: "prbs7",
-    seed: 3288857317,
+    seed: 127,
     offset_s: 0,
     probe: "local",
     mask: "ibis",

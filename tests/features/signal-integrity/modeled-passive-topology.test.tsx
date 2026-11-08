@@ -1,6 +1,9 @@
-import { expect, test } from "bun:test"
+import { expect } from "bun:test"
 import { DiagnosticBoard } from "./fixtures/diagnostic-board"
-import { getSiTestFixture } from "./fixtures/get-si-test-fixture"
+import {
+  getSiTestFixture,
+  siTest as test,
+} from "./fixtures/get-si-test-fixture"
 
 test("SI traverses a two-terminal diode with an explicit SPICE model", async () => {
   const { circuit } = getSiTestFixture()

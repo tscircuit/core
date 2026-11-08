@@ -16,6 +16,8 @@ export class SignalIntegrity extends PrimitiveComponent<
     ReturnType<typeof parseIbisModelInfo> | null
   >()
 
+  ibisModelLoadError?: Error
+
   get config() {
     return { componentName: "SignalIntegrity", zodProps: signalIntegrityProps }
   }
@@ -28,25 +30,34 @@ export class SignalIntegrity extends PrimitiveComponent<
     if (this.getInheritedProperty("analogSimulationDisabled")) return
     if (this._hasIncompleteAsyncEffectsInSubtreeForPhase("PcbSimulationRender"))
       return
-    // A host may make vendor files available through its existing file loader.
-    // Without it the asset stays a reference, as with standalone <ibismodel>.
+    if (this.ibisModelLoadError) throw this.ibisModelLoadError
     const platformFetch = this.root!.platform?.platformFetch
     const unreadModelUrls = new Set(
       this.root!.db.simulation_ibis_model.list()
         .map((model) => model.ibis_model_asset.url)
         .filter((url) => !this.ibisModelInfoByUrl.has(url)),
     )
+    if (unreadModelUrls.size && !platformFetch)
+      throw new Error(
+        "<signalintegrity> needs IBIS contents for validation; configure platformFetch to load the declared model assets.",
+      )
     if (platformFetch && unreadModelUrls.size) {
       for (const url of unreadModelUrls) {
         this.ibisModelInfoByUrl.set(url, null)
         this._queueAsyncEffect("ReadSignalIntegrityIbisModel", async () => {
           try {
             const response = await platformFetch(url)
-            if (response.ok)
-              this.ibisModelInfoByUrl.set(
-                url,
-                parseIbisModelInfo(await response.text()),
-              )
+            if (!response.ok) throw new Error("IBIS asset request failed")
+            this.ibisModelInfoByUrl.set(
+              url,
+              parseIbisModelInfo(await response.text()),
+            )
+          } catch {
+            // Throw synchronously on the next render; async-effect errors alone
+            // are logged by the renderer and do not reject renderUntilSettled.
+            this.ibisModelLoadError = new Error(
+              "<signalintegrity> could not load the declared IBIS contents for validation.",
+            )
           } finally {
             this._markDirty("PcbSimulationRender")
           }

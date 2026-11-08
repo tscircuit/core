@@ -7,7 +7,7 @@ export const lvcModel = {
     url: "./models/sn74lvc1g04.ibs",
     mimetype: "text/plain",
   },
-  ibisComponentName: "LVC1G04_DCK",
+  ibisComponentName: "LVC1G04_DBV",
   ibisPinNameToPortLabel: { "2": "A", "3": "GND", "4": "Y", "5": "VCC" },
   ibisPinNameToModelName: { "2": "LVC1G04_IN_33", "4": "LVC1G04_OUT_33" },
 } satisfies Omit<IbisModelProps, "componentRef">

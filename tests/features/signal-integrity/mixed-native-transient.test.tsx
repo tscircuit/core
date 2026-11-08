@@ -1,11 +1,14 @@
-import { expect, test } from "bun:test"
+import { expect } from "bun:test"
 import { analog } from "lib/namespaced-elements/analog"
 import { DiagnosticBoard } from "./fixtures/diagnostic-board"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import {
+  getSiTestFixture,
+  siTest as test,
+} from "./fixtures/get-si-test-fixture"
 
 test("SI declarations coexist with general SPICE transients and voltage probes", async () => {
   const netlists: string[] = []
-  const { circuit } = getTestFixture({
+  const { circuit } = getSiTestFixture({
     platform: {
       spiceEngineMap: {
         capturing: {

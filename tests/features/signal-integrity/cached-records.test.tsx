@@ -1,38 +1,40 @@
-import { expect, test } from "bun:test"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
-import { Inverter } from "./fixtures/parts"
+import { expect } from "bun:test"
+import {
+  getSiTestFixture,
+  siTest as test,
+} from "./fixtures/get-si-test-fixture"
+import { Inverter, Octal } from "./fixtures/parts"
 
 test("cached SI source records remap endpoint and forward strobe references", async () => {
-  const { circuit: original } = getTestFixture()
+  const { circuit: original } = getSiTestFixture()
   original.add(
     <board routingDisabled fabricatorPreset="jlcpcb_standard">
       <Inverter name="TX0" pcbX={-8} pcbY={2} />
-      <Inverter name="RX0" pcbX={8} pcbY={2} />
+      <Octal />
       <Inverter name="TX1" pcbX={-8} pcbY={-2} />
-      <Inverter name="RX1" pcbX={8} pcbY={-2} />
-      <trace from=".TX0 > .Y" to=".RX0 > .A" />
-      <trace from=".TX1 > .Y" to=".RX1 > .A" />
-      <signalintegrity bitRate="20Mbps" unrouted="ideal">
+      <trace from=".TX0 > .Y" to=".RX > .A1" />
+      <trace from=".TX1 > .Y" to=".RX > .A2" />
+      <signalintegrity name="WRITE" bitRate="20Mbps" unrouted="ideal">
         <signal
           name="DATA"
           driver=".TX0 > .Y"
-          receiver=".RX0 > .A"
+          receiver=".RX > .A1"
           strobe="CLK"
           mask={{ setup: "75ps" }}
         />
         <signal
           name="CLK"
           driver=".TX1 > .Y"
-          receiver=".RX1 > .A"
+          receiver=".RX > .A2"
           pattern="clock"
         />
       </signalintegrity>
     </board>,
   )
   await original.renderUntilSettled()
-  const { circuit } = getTestFixture()
+  const { circuit } = getSiTestFixture()
   circuit.add(
-    <board routingDisabled>
+    <board routingDisabled fabricatorPreset="jlcpcb_standard">
       <subcircuit name="A" pcbX={-20} circuitJson={original.getCircuitJson()} />
       <subcircuit name="B" pcbX={20} circuitJson={original.getCircuitJson()} />
     </board>,
@@ -40,7 +42,7 @@ test("cached SI source records remap endpoint and forward strobe references", as
   await circuit.renderUntilSettled()
   const blocks = circuit.db.simulation_signal_integrity.list()
   expect(blocks).toHaveLength(2)
-  expect(circuit.db.simulation_ibis_model.list()).toHaveLength(8)
+  expect(circuit.db.simulation_ibis_model.list()).toHaveLength(6)
   const driverPorts = []
   for (const block of blocks) {
     const signals = circuit.db.simulation_signal.list({

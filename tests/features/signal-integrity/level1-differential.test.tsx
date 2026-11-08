@@ -1,7 +1,10 @@
 import type { Port } from "lib/components/primitive-components/Port"
-import { expect, test } from "bun:test"
+import { expect } from "bun:test"
 import Board from "./fixtures/level1-differential"
-import { getSiTestFixture } from "./fixtures/get-si-test-fixture"
+import {
+  getSiTestFixture,
+  siTest as test,
+} from "./fixtures/get-si-test-fixture"
 
 test("RFC Level 1 differential includes the placed RTERM without a termination prop", async () => {
   const { circuit } = getSiTestFixture()

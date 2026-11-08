@@ -1,16 +1,21 @@
-import { expect, test } from "bun:test"
+import { expect } from "bun:test"
 import Board from "./fixtures/level3-three-signals"
-import { getSiTestFixture } from "./fixtures/get-si-test-fixture"
+import {
+  getSiTestFixture,
+  siTest as test,
+} from "./fixtures/get-si-test-fixture"
 
 test("RFC Level 3 emits three independent runs with stable traffic and quiet victims", async () => {
   const { circuit } = getSiTestFixture()
   circuit.add(<Board />)
   await circuit.renderUntilSettled()
-  const blocks = circuit.db.simulation_signal_integrity.list()
+  const blocks = circuit.db.simulation_signal_integrity
+    .list()
+    .sort((a, b) => a.name!.localeCompare(b.name!))
   expect(blocks.map((block) => block.name)).toEqual([
     "TRAFFIC",
-    "XTALK_LOW",
     "XTALK_HIGH",
+    "XTALK_LOW",
   ])
   const signals = blocks.map((block) =>
     circuit.db.simulation_signal.list({
@@ -18,7 +23,7 @@ test("RFC Level 3 emits three independent runs with stable traffic and quiet vic
     }),
   )
   expect(signals.map((run) => run.length)).toEqual([3, 3, 3])
-  expect(signals.map((run) => run[1].quiet)).toEqual([undefined, "low", "high"])
+  expect(signals.map((run) => run[1].quiet)).toEqual([undefined, "high", "low"])
   expect(signals[0].map((signal) => signal.seed)).toEqual(
     signals[2].map((signal) => signal.seed),
   )

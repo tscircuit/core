@@ -1,11 +1,13 @@
-import { getElementId } from "@tscircuit/circuit-json-util"
 import type {
   AnyCircuitElementInput,
   SimulationExperiment,
+  SimulationSignal,
   SourceComponentBase,
   SourceNet,
   SourcePort,
 } from "circuit-json"
+import { Signal } from "lib/components/primitive-components/Signal"
+import { SignalIntegrity } from "lib/components/primitive-components/SignalIntegrity"
 import { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import type { InflatorContext } from "../InflatorFn"
 
@@ -133,34 +135,78 @@ function restoreSimulationRecords({
     return value
   }
 
-  for (const type of simulationTypes) {
-    for (const record of injectionDb[type].list()) {
-      const primaryIdField = `${type}_id`
-      const fields = Object.fromEntries(
-        Object.entries(record).filter(
-          ([key]) =>
-            key !== primaryIdField && key !== "strobe_simulation_signal_id",
-        ),
-      )
-      // Only identifiers change; all other circuit-json fields are preserved.
-      const restored = db.insert(
-        remapReferences(fields, "") as AnyCircuitElementInput,
-      )
-      restoredIds.set(getElementId(record), getElementId(restored))
-    }
+  for (const record of injectionDb.simulation_ibis_model.list()) {
+    const { simulation_ibis_model_id, ...fields } = record
+    db.insert(remapReferences(fields, "") as AnyCircuitElementInput)
   }
-  // Strobes may refer forwards in the signal list.
-  for (const signal of injectionDb.simulation_signal.list()) {
-    if (!signal.strobe_simulation_signal_id) continue
-    db.simulation_signal.update(
-      remapId(signal.simulation_signal_id, "simulation_signal_id"),
-      {
-        strobe_simulation_signal_id: remapId(
-          signal.strobe_simulation_signal_id,
-          "strobe_simulation_signal_id",
+  const endpointSelector = (endpoint: SimulationSignal["driver"]) => {
+    const describe = (portId: SourcePort["source_port_id"]) => {
+      const port = db.source_port.get(portId)!
+      const chip = db.source_component.get(port.source_component_id!)!
+      return `.${chip.name} > .${port.name}`
+    }
+    const pin =
+      endpoint.kind === "single"
+        ? describe(endpoint.source_port_id)
+        : {
+            p: describe(endpoint.p_source_port_id),
+            n: describe(endpoint.n_source_port_id),
+          }
+    return pin
+  }
+  for (const record of injectionDb.simulation_signal_integrity.list()) {
+    const block = new SignalIntegrity({
+      name: record.name,
+      bitRate: record.bit_rate_bps,
+      duration: record.duration_s,
+      corner: record.corner,
+      unlistedNets: record.unlisted_nets,
+      unrouted: record.unrouted,
+      pdn: record.pdn,
+    })
+    subcircuit.add(block)
+    for (const recordSignal of injectionDb.simulation_signal.list({
+      simulation_signal_integrity_id: record.simulation_signal_integrity_id,
+    })) {
+      const endpoints = {
+        driver: remapReferences(
+          recordSignal.driver,
+          "",
+        ) as SimulationSignal["driver"],
+        receivers: recordSignal.receivers.map(
+          (receiver) =>
+            remapReferences(receiver, "") as SimulationSignal["driver"],
         ),
-      },
-    )
+      }
+      const mask = recordSignal.mask
+      const signal = new Signal({
+        name: recordSignal.name,
+        driver: endpointSelector(endpoints.driver),
+        receiver: endpoints.receivers.map(endpointSelector),
+        bitRate: recordSignal.bit_rate_bps,
+        pattern: recordSignal.pattern,
+        seed: recordSignal.seed,
+        offset: recordSignal.offset_s,
+        quiet: recordSignal.quiet,
+        probe: recordSignal.probe,
+        mask:
+          mask === "ibis"
+            ? mask
+            : {
+                vih: mask.vih_v,
+                vil: mask.vil_v,
+                setup: mask.setup_s,
+                hold: mask.hold_s,
+              },
+        strobe: recordSignal.strobe_simulation_signal_id
+          ? injectionDb.simulation_signal.get(
+              recordSignal.strobe_simulation_signal_id,
+            )!.name
+          : undefined,
+      })
+      signal.restoredEndpoints = endpoints
+      block.add(signal)
+    }
   }
 }
 

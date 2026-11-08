@@ -1,6 +1,9 @@
-import { expect, test } from "bun:test"
+import { expect } from "bun:test"
 import Board from "./fixtures/level2-two-signals"
-import { getSiTestFixture } from "./fixtures/get-si-test-fixture"
+import {
+  getSiTestFixture,
+  siTest as test,
+} from "./fixtures/get-si-test-fixture"
 
 test("RFC Level 2 emits two signals in one coupled block with distinct seeds", async () => {
   const { circuit } = getSiTestFixture()
