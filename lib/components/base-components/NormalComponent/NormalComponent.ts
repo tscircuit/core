@@ -1,3 +1,4 @@
+import { formatPcbDisplayOffset } from "lib/utils/format-pcb-display-offset"
 import { NormalComponent_doInitialSourcePinSpecificationChecks } from "./NormalComponent_doInitialSourcePinSpecificationChecks"
 import {
   getNumericPinLabels,
@@ -535,35 +536,31 @@ export class NormalComponent<
       this.addAll(portsToCreate)
     }
 
-    const hasReactSymbol = isValidElement(this.props.symbol)
-    const hasCircuitJsonSymbolProp = isCircuitJsonSymbol(this.props.symbol)
-    if (!hasReactSymbol && !hasCircuitJsonSymbolProp) {
-      const portsFromFootprint = this.getPortsFromFootprint({
-        ...opts,
-        allowImplicitPinNumbers: !pinLabelsFromProps,
-        collectInferredInternallyConnectedPins: true,
-      })
-      const existingPorts = this._getAllPortsFromChildren()
-      for (const port of portsFromFootprint) {
-        if (!port._isPrimaryPort) {
-          portsToCreate.push(port)
-          continue
-        }
+    // Merge footprint ports with symbol ports; separated copper clusters still
+    // need their own internally connected physical ports.
+    const portsFromFootprint = this.getPortsFromFootprint({
+      ...opts,
+      allowImplicitPinNumbers: !pinLabelsFromProps,
+      collectInferredInternallyConnectedPins: true,
+    })
+    const existingPorts = this._getAllPortsFromChildren()
+    for (const port of portsFromFootprint) {
+      if (!port._isPrimaryPort) {
+        portsToCreate.push(port)
+        continue
+      }
 
-        const matchingPort =
-          existingPorts.find((p) => canMergePortDefinitions(p, port)) ??
-          portsToCreate.find((p) => canMergePortDefinitions(p, port))
+      const matchingPort =
+        existingPorts.find((p) => canMergePortDefinitions(p, port)) ??
+        portsToCreate.find((p) => canMergePortDefinitions(p, port))
 
-        if (matchingPort) {
-          const mergedAliases = port
-            .getNameAndAliases()
-            .filter(
-              (alias) => !matchingPort.getNameAndAliases().includes(alias),
-            )
-          matchingPort.externallyAddedAliases.push(...mergedAliases)
-        } else if (!schPortArrangement) {
-          portsToCreate.push(port)
-        }
+      if (matchingPort) {
+        const mergedAliases = port
+          .getNameAndAliases()
+          .filter((alias) => !matchingPort.getNameAndAliases().includes(alias))
+        matchingPort.externallyAddedAliases.push(...mergedAliases)
+      } else if (!schPortArrangement) {
+        portsToCreate.push(port)
       }
     }
 
@@ -778,11 +775,14 @@ export class NormalComponent<
           const symbol = this.children.find(
             (child) => child.componentName === "Symbol",
           )
-          const port = [...this.children, ...(symbol?.children ?? [])].find(
-            (child) =>
-              child.componentName === "Port" &&
-              (child as Port).isMatchingNameOrAlias(prop as string),
-          ) as Port | undefined
+          const matchingPorts = [...this.children, ...(symbol?.children ?? [])]
+            .filter((child): child is Port => child.componentName === "Port")
+            .filter((port) => port.isMatchingNameOrAlias(prop as string))
+          // Secondary physical ports share aliases with the symbol's primary
+          // port, but must not shadow it when resolving an internal connection.
+          const port =
+            matchingPorts.find((port) => port._isPrimaryPort) ??
+            matchingPorts[0]
           if (!port) {
             throw new Error(
               `There was an issue finding the port "${prop.toString()}" inside of a ${
@@ -985,7 +985,10 @@ export class NormalComponent<
       // schematic_box size
       // size: dimensions.getSizeIncludingPins(),
 
-      port_arrangement: underscorifyPortArrangement(schPortArrangement!),
+      port_arrangement: underscorifyPortArrangement(
+        schPortArrangement!,
+        Array.isArray(props.pinLabels) ? undefined : props.pinLabels,
+      ),
 
       pin_spacing: 0.2,
 
@@ -996,6 +999,9 @@ export class NormalComponent<
 
       source_component_id: this.source_component_id!,
       schematic_sheet_id: this._resolveSchematicSheetId(),
+      metadata: props.kicadSymbolMetadata
+        ? { kicad_symbol: props.kicadSymbolMetadata }
+        : undefined,
     })
     const hasTopPins = schPortArrangement?.topSide !== undefined
     const hasTopOrBottomPins =
@@ -2221,7 +2227,12 @@ export class NormalComponent<
       model_board_normal_direction: cadModel?.modelBoardNormalDirection,
       model_origin_alignment: "center_of_component_on_board_surface",
       anchor_alignment: "center_of_component_on_board_surface",
-      model_origin_position: cadModel?.modelOriginPosition,
+      // Generated footprint models use footprint-local, right-handed mm
+      // (+Z above copper). Their authored (0,0,0) is the footprintOrigin used
+      // by cadComponentPlacement above, not the center of the mesh's contacts.
+      model_origin_position:
+        cadModel?.modelOriginPosition ??
+        (footprinterStringForCadComponent ? { x: 0, y: 0, z: 0 } : undefined),
       // The authored extent, carried on the record so consumers can read the
       // part's mechanical facts from one place instead of reaching back into
       // props -- which only works for the object form of `cadModel`.
@@ -2611,8 +2622,8 @@ export class NormalComponent<
       position_mode: "relative_to_group_anchor",
       positioned_relative_to_pcb_group_id: positionedRelativeToGroupId,
       positioned_relative_to_pcb_board_id: positionedRelativeToBoardId,
-      display_offset_x: resolvedPcbX as any,
-      display_offset_y: resolvedPcbY as any,
+      display_offset_x: formatPcbDisplayOffset(resolvedPcbX),
+      display_offset_y: formatPcbDisplayOffset(resolvedPcbY),
     })
   }
 

@@ -1,5 +1,9 @@
 export { NormalComponent } from "./base-components/NormalComponent/NormalComponent"
 export { PrimitiveComponent } from "./base-components/PrimitiveComponent"
+export { SystemBlockPage } from "./primitive-components/SystemBlockPage/SystemBlockPage"
+export { SystemBlockGroup } from "./primitive-components/SystemBlockGroup"
+export { SystemBlockComponent } from "./primitive-components/SystemBlockComponent"
+export { SystemBlockConnection } from "./primitive-components/SystemBlockConnection"
 export { Renderable, type IRenderable } from "./base-components/Renderable"
 export { Board } from "./normal-components/Board/Board"
 export { MountedBoard } from "./normal-components/MountedBoard"
@@ -134,3 +138,5 @@ export { AssemblyDrawingPartView } from "./primitive-components/AssemblyDrawingP
 export { AssemblyDrawingTitleBlock } from "./primitive-components/AssemblyDrawingTitleBlock"
 
 export { AssemblyDrawingDimension } from "./primitive-components/AssemblyDrawingDimension"
+
+export { AssemblyBolt } from "./primitive-components/AssemblyBolt"

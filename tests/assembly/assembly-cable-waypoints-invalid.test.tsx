@@ -35,6 +35,9 @@ test("authored waypoints reject coincident points and reversing bends", async ()
     </assembly.device>,
   )
   await circuit.renderUntilSettled()
+  const rendered = circuit.db.cad_cable.list()[0]!
+  const tangentHeight =
+    rendered.path[1]!.z - rendered.from_connector_pin1_position!.z
   const harness = circuit.selectOne(".HARNESS")
   if (!(harness instanceof AssemblyCable)) throw new Error("Missing cable")
   harness.setProps({
@@ -71,8 +74,10 @@ test("authored waypoints reject coincident points and reversing bends", async ()
   harness.setProps({
     ...harness.props,
     waypoints: [
-      { x: 1.1e-11, y: 0, z: 6.9499989 },
-      { x: 1.1e-11, y: 0, z: 5.95 },
+      // Input knots clear the 1e-6 separation guard, but the near-reversing
+      // cubic still collapses two samples below the path schema's 1e-8 limit.
+      { x: 1.1e-11, y: 0, z: tangentHeight - 1.1e-6 },
+      { x: 1.1e-11, y: 0, z: tangentHeight - 1 },
     ],
   })
   expect(() => resolveAssemblyCable(harness)).toThrow(

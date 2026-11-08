@@ -69,7 +69,7 @@ test("board-owned connector alignment uses finalized PCB geometry on either face
           ? bounds.max[sceneAxis] - center
           : center - bounds.min[sceneAxis],
       ).toBeCloseTo(27.15, 3)
-      expect(cad.position.z).toBeCloseTo(sign * 44.7, 3)
+      expect(cad.position.z).toBeCloseTo(sign * 44.8, 3)
       expect(
         sign > 0
           ? bounds.max[1] - cad.position.z

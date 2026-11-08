@@ -198,3 +198,4 @@ debug-outputs
 
 # Declarations emitted from the source-only rerouter during the build
 .build/
+ddr-benchmark-results/

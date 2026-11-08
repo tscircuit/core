@@ -199,8 +199,10 @@ export class Board
   }
 
   get boardThickness() {
+    // 1.6mm is the standard board thickness and has a JLC stackup for every
+    // layer count.
     return (
-      this._parsedProps.thickness ?? this._namedJlcpcbStackup?.thickness ?? 1.4
+      this._parsedProps.thickness ?? this._namedJlcpcbStackup?.thickness ?? 1.6
     )
   }
 

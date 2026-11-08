@@ -1,12 +1,12 @@
 import { assemblyDeviceProps } from "@tscircuit/props"
 import { type Matrix, identity } from "transformation-matrix"
 import type { AssemblyDeviceContainer } from "../base-components/is-assembly-device-container"
-import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
+import { AssemblyComponent } from "../base-components/AssemblyComponent"
 import { resolveAssemblyModel } from "./resolve-assembly-model"
 import { renderAssemblyCadModel } from "./render-assembly-cad-model"
 
 export class AssemblyDevice
-  extends PrimitiveComponent<typeof assemblyDeviceProps>
+  extends AssemblyComponent<typeof assemblyDeviceProps>
   implements AssemblyDeviceContainer
 {
   isAssemblyDeviceContainer = true as const
@@ -26,6 +26,16 @@ export class AssemblyDevice
 
   override _computePcbGlobalTransformBeforeLayout(): Matrix {
     return identity()
+  }
+
+  protected get shouldRenderAssemblyBom() {
+    const props = this._parsedProps
+    return (
+      props.model !== undefined ||
+      props.modelUrl !== undefined ||
+      props.purchaseUrls !== undefined ||
+      props.supplierPartNumbers !== undefined
+    )
   }
 
   doInitialSourceRender(): void {

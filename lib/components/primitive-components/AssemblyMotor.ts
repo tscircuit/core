@@ -3,14 +3,14 @@ import {
   parseModelString,
 } from "@tscircuit/modelprinter"
 import { assemblyMotorProps } from "@tscircuit/props"
-import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
+import { AssemblyComponent } from "../base-components/AssemblyComponent"
 import { renderAssemblyCadModel } from "./render-assembly-cad-model"
 import { resolveAssemblyModel } from "./resolve-assembly-model"
 import { resolveAssemblyMotorRotation } from "./resolve-assembly-motor-rotation"
 import { resolveAssemblyMotorPlacement } from "./resolve-assembly-motor-placement"
 import { resolveMotorFaceMount } from "./resolve-motor-face-mount"
 
-export class AssemblyMotor extends PrimitiveComponent<
+export class AssemblyMotor extends AssemblyComponent<
   typeof assemblyMotorProps
 > {
   get config() {
