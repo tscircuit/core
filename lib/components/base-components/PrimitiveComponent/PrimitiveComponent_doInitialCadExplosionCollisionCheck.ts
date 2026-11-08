@@ -22,6 +22,8 @@ const collisionInput = (records: AnyCircuitElement[]) =>
       "cad_reference_surface",
       "cad_explosion_stage",
       "cad_explosion_move",
+      "cad_explosion_geometry_state",
+      "cad_explosion_contact_annotation",
       "pcb_board",
       "pcb_hole",
       "pcb_plated_hole",
@@ -30,7 +32,7 @@ const collisionInput = (records: AnyCircuitElement[]) =>
       "pcb_bend",
       "pcb_component",
       "source_component",
-    ].includes(record.type),
+    ].includes((record as { type: string }).type),
   )
 
 export const getRenderedExplosionCollisionCheckStatus = (
@@ -88,7 +90,9 @@ export function PrimitiveComponent_doInitialCadExplosionCollisionCheck(
       } catch {
         check = {
           status: "incomplete" as const,
+          verificationCategory: "incomplete" as const,
           errors: [],
+          annotatedContacts: [],
           warnings: [
             cad_explosion_collision_check_warning.parse({
               type: "cad_explosion_collision_check_warning",
@@ -113,6 +117,19 @@ export function PrimitiveComponent_doInitialCadExplosionCollisionCheck(
       for (const error of check.errors)
         state.errorIds.push(
           root.db.cad_explosion_collision_error.insert(error)
+            .cad_explosion_collision_error_id,
+        )
+      for (const contact of check.annotatedContacts)
+        state.errorIds.push(
+          root.db.cad_explosion_collision_error.insert({
+            ...contact.diagnostic,
+            verification_status: "annotated_unverified_contact",
+            is_annotated_contact: true,
+            contact_annotation_id: contact.annotationId,
+            rationale: contact.rationale,
+            ...(contact.operation ? { operation: contact.operation } : {}),
+            measured_bounds: contact.measuredBounds,
+          } as unknown as CadExplosionCollisionError)
             .cad_explosion_collision_error_id,
         )
       for (const warning of check.warnings)
