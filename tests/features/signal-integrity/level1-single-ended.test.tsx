@@ -18,7 +18,7 @@ test("RFC Level 1 single-ended resolves physical pins and emits SI defaults", as
       corner: "typ",
       unlisted_nets: "passive",
       unrouted: "error",
-      pdn: "extracted",
+      pdn: "ideal",
       supply: "board",
     },
   ])
