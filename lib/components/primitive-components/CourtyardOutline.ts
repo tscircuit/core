@@ -29,6 +29,18 @@ export class CourtyardOutline extends PrimitiveComponent<
       )
     }
 
+    let signedArea2 = 0
+    for (let i = 0; i < props.outline.length; i++) {
+      const a = props.outline[i]!
+      const b = props.outline[(i + 1) % props.outline.length]!
+      signedArea2 += a.x * b.y - b.x * a.y
+    }
+    if (props.outline.length < 3 || Math.abs(signedArea2) <= 1e-9) {
+      throw new Error(
+        "CourtyardOutline outline must contain at least 3 non-collinear points enclosing a non-zero area.",
+      )
+    }
+
     const transform = this._computePcbGlobalTransformBeforeLayout()
     const subcircuit = this.getSubcircuit()
     const pcb_component_id =
