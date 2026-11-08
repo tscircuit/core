@@ -44,16 +44,7 @@ const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
   const pcbBoard = boardComponent?.pcb_board_id
     ? db.pcb_board.get(boardComponent.pcb_board_id)
     : undefined
-  // The converter resolves the board boundary from the first pcb_board.
-  // Keep the owning board so panels cannot clip a pour to a sibling board.
-  const circuitJson = db
-    .toArray()
-    .filter(
-      (element) =>
-        element.type !== "pcb_board" ||
-        !pcbBoard ||
-        element.pcb_board_id === pcbBoard.pcb_board_id,
-    )
+  const circuitJson = db.toArray()
   let resolvedPcbBoardOutline = pcbBoard?.outline?.length
     ? pcbBoard.outline
     : undefined
@@ -77,6 +68,7 @@ const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
       const { _parsedProps: props } = copperPour
       const clearance = props.clearance ?? 0.2
       return {
+        pcb_board_id: pcbBoard?.pcb_board_id,
         layer: props.layer,
         crosshatch: props.crosshatch,
         crosshatchPitch: props.crosshatchPitch,
