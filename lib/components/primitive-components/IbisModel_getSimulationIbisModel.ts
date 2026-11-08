@@ -92,8 +92,6 @@ export function IbisModel_getSimulationIbisModel(
     source_component_id: chip.source_component_id!,
     ibis_model_asset: props.ibisModelAsset,
     ibis_component_name: props.ibisComponentName,
-    model_value_corner: props.modelValueCorner,
-    include_package_parasitics: props.includePackageParasitics,
     ibis_pin_name_to_model_name: props.ibisPinNameToModelName,
     ibis_pin_name_to_source_port_id: pinMap,
     ibis_pin_name_to_reference_source_port_ids: references,

@@ -21,8 +21,6 @@ test("IBIS models reject missing and ambiguous physical component or pin selecto
           }}
           ibisComponentName="BUFFER"
           ibisPinNameToPortLabel={{ "1": "MISSING" }}
-          modelValueCorner="typical"
-          includePackageParasitics={false}
         />
       </board>,
     )

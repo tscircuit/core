@@ -15,8 +15,6 @@ test("IBIS pin names cannot bind the same physical port through aliases", async 
         }}
         ibisComponentName="DRIVER"
         ibisPinNameToPortLabel={{ "1": "pin1", "2": "DATA" }}
-        modelValueCorner="typical"
-        includePackageParasitics={false}
       />
     </board>,
   )

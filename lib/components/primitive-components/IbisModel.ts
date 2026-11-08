@@ -2,7 +2,7 @@ import { ibisModelProps } from "@tscircuit/props"
 import type { SimulationIbisModel } from "circuit-json"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { IbisModel_getSimulationIbisModel } from "./IbisModel_getSimulationIbisModel"
-import type { AnalogTransientSimulation } from "./AnalogTransientSimulation"
+import type { SignalIntegrity } from "./SignalIntegrity"
 
 type SimulationIbisModelId = SimulationIbisModel["simulation_ibis_model_id"]
 
@@ -24,11 +24,11 @@ export class IbisModel extends PrimitiveComponent<typeof ibisModelProps> {
     for (let node = this.parent; node; node = node.parent) {
       if (!node.isSubcircuit) continue
       const subcircuit = node.getSubcircuit()
-      for (const simulation of subcircuit.selectAll<AnalogTransientSimulation>(
-        "analogtransientsimulation",
+      for (const simulation of subcircuit.selectAll<SignalIntegrity>(
+        "signalintegrity",
       )) {
         if (simulation.getSubcircuit() === subcircuit)
-          simulation._markDirty("SimulationSpiceEngineRender")
+          simulation._markDirty("PcbSimulationRender")
       }
     }
   }

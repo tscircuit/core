@@ -105,8 +105,8 @@ export interface TscircuitElements {
   copperpour: Props.CopperPourProps
   analogsimulation: Props.AnalogSimulationProps
   analogtransientsimulation: Props.AnalogTransientSimulationProps
-  analogdigitalstimulus: Props.AnalogDigitalStimulusProps
-  analogeyediagram: Props.AnalogEyeDiagramProps
+  signalintegrity: Props.SignalIntegrityProps & Attributes
+  signal: Props.SignalProps & Attributes
   ibismodel: Props.IbisModelProps
   analogdcoperatingpointsimulation: Props.AnalogDcOperatingPointSimulationProps
   analogdcsweepsimulation: Props.AnalogDcSweepSimulationProps

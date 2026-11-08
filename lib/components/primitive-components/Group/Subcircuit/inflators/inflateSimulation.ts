@@ -9,18 +9,10 @@ import type {
 import { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import type { InflatorContext } from "../InflatorFn"
 
-const ibisSimulationTypes = [
-  "simulation_ibis_model",
-  "simulation_ibis_pin_state",
-  "simulation_digital_stimulus",
-  "simulation_eye_diagram",
-] as const
-
-// Dependencies must precede records that reference them.
 const simulationTypes = [
-  "simulation_experiment",
-  "simulation_voltage_probe",
-  ...ibisSimulationTypes,
+  "simulation_ibis_model",
+  "simulation_signal_integrity",
+  "simulation_signal",
 ] as const
 
 type SimulationReferenceId =
@@ -51,15 +43,6 @@ function restoreSimulationRecords({
   groupsMap,
 }: InflatorContext) {
   const { db } = subcircuit.root!
-  const eyes = injectionDb.simulation_eye_diagram.list()
-  const experimentIds = new Set(
-    [
-      ...injectionDb.simulation_ibis_pin_state.list(),
-      ...injectionDb.simulation_digital_stimulus.list(),
-      ...eyes,
-    ].map((record) => record.simulation_experiment_id),
-  )
-  const probeIds = new Set(eyes.map((eye) => eye.simulation_voltage_probe_id))
   const restoredIds = new Map<SimulationReferenceId, SimulationReferenceId>()
 
   const remapId = (
@@ -152,17 +135,12 @@ function restoreSimulationRecords({
 
   for (const type of simulationTypes) {
     for (const record of injectionDb[type].list()) {
-      // Main ignores cached simulation records. Restore only IBIS dependencies.
-      if (
-        (record.type === "simulation_experiment" &&
-          !experimentIds.has(record.simulation_experiment_id)) ||
-        (record.type === "simulation_voltage_probe" &&
-          !probeIds.has(record.simulation_voltage_probe_id))
-      )
-        continue
       const primaryIdField = `${type}_id`
       const fields = Object.fromEntries(
-        Object.entries(record).filter(([key]) => key !== primaryIdField),
+        Object.entries(record).filter(
+          ([key]) =>
+            key !== primaryIdField && key !== "strobe_simulation_signal_id",
+        ),
       )
       // Only identifiers change; all other circuit-json fields are preserved.
       const restored = db.insert(
@@ -171,11 +149,24 @@ function restoreSimulationRecords({
       restoredIds.set(getElementId(record), getElementId(restored))
     }
   }
+  // Strobes may refer forwards in the signal list.
+  for (const signal of injectionDb.simulation_signal.list()) {
+    if (!signal.strobe_simulation_signal_id) continue
+    db.simulation_signal.update(
+      remapId(signal.simulation_signal_id, "simulation_signal_id"),
+      {
+        strobe_simulation_signal_id: remapId(
+          signal.strobe_simulation_signal_id,
+          "strobe_simulation_signal_id",
+        ),
+      },
+    )
+  }
 }
 
 export function inflateSimulation(inflationCtx: InflatorContext) {
   if (
-    !ibisSimulationTypes.some(
+    !simulationTypes.some(
       (type) => inflationCtx.injectionDb[type].list().length > 0,
     )
   )

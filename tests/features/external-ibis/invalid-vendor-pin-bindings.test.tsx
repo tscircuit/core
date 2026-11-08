@@ -23,8 +23,6 @@ test("IBIS references and model selections must name mapped vendor pins", async 
           }}
           ibisComponentName="BUFFER"
           ibisPinNameToPortLabel={{ "1": "DATA" }}
-          modelValueCorner="typical"
-          includePackageParasitics={false}
           {...invalidBinding}
         />
       </board>,
