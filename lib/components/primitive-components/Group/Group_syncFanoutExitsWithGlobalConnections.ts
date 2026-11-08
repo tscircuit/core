@@ -10,13 +10,14 @@ import {
   srjPointsReferToSameEndpoint,
 } from "lib/utils/autorouting/compare-srj-points"
 import type { RoutingPhasePlan } from "./GroupRoutingPhasePlan"
+import { connectionIsInRoutingPhase } from "./Group_phasedAutoroutingUtils"
 
-const removeCompletedFanoutConnections = (
+const filterSimpleRouteJsonConnections = (
   simpleRouteJson: SimpleRouteJson,
-  routingPcbGroupId: string,
+  shouldIncludeConnection: (connection: SimpleRouteConnection) => boolean,
 ): SimpleRouteJson => {
   const connections = simpleRouteJson.connections.filter(
-    (connection) => connection.routingPcbGroupId !== routingPcbGroupId,
+    shouldIncludeConnection,
   )
   const includedConnectionNames = new Set(
     connections.map((connection) => connection.name),
@@ -55,6 +56,15 @@ const removeCompletedFanoutConnections = (
   }
 }
 
+const removeCompletedFanoutConnections = (
+  simpleRouteJson: SimpleRouteJson,
+  routingPcbGroupId: string,
+): SimpleRouteJson =>
+  filterSimpleRouteJsonConnections(
+    simpleRouteJson,
+    (connection) => connection.routingPcbGroupId !== routingPcbGroupId,
+  )
+
 const connectFanoutTracesToBreakoutPoints = (
   simpleRouteJson: SimpleRouteJson,
   breakoutPointIdByConnectionName: ReadonlyMap<string, string>,
@@ -89,31 +99,101 @@ export function Group_syncFanoutExitsWithGlobalConnections({
   fanoutOutputSimpleRouteJson,
   baseSimpleRouteJson,
   routingPhasePlan,
+  laterRoutingPhasePlans = [],
 }: {
   fanoutInputSimpleRouteJson: SimpleRouteJson
   fanoutOutputSimpleRouteJson: SimpleRouteJson
   baseSimpleRouteJson: SimpleRouteJson
   routingPhasePlan: RoutingPhasePlan
+  laterRoutingPhasePlans?: RoutingPhasePlan[]
 }): {
   downstreamSimpleRouteJson: SimpleRouteJson
   baseSimpleRouteJson: SimpleRouteJson
   synchronizedBreakoutPoints: SynchronizedBreakoutPoint[]
 } {
   const routingPcbGroupId = routingPhasePlan.routingPcbGroupId
-  if (!routingPcbGroupId) {
-    return {
-      downstreamSimpleRouteJson: fanoutOutputSimpleRouteJson,
-      baseSimpleRouteJson,
-      synchronizedBreakoutPoints: [],
-    }
-  }
-
   const outputConnectionByName = new Map(
     fanoutOutputSimpleRouteJson.connections.map((connection) => [
       connection.name,
       connection,
     ]),
   )
+  const newFanoutSourceKeepouts = fanoutOutputSimpleRouteJson.obstacles.filter(
+    (obstacle) =>
+      obstacle.isFanoutSourceKeepout === true &&
+      obstacle.componentId !== undefined,
+  )
+  const completedSourceComponentIds = new Set(
+    newFanoutSourceKeepouts.flatMap((obstacle) =>
+      obstacle.componentId === undefined ? [] : [obstacle.componentId],
+    ),
+  )
+
+  if (!routingPcbGroupId) {
+    const hasConnectionsInLaterPhases =
+      fanoutOutputSimpleRouteJson.connections.some((connection) =>
+        laterRoutingPhasePlans.some((laterPlan) =>
+          connectionIsInRoutingPhase(connection, laterPlan),
+        ),
+      )
+    if (!hasConnectionsInLaterPhases) {
+      return {
+        downstreamSimpleRouteJson: fanoutOutputSimpleRouteJson,
+        baseSimpleRouteJson,
+        synchronizedBreakoutPoints: [],
+      }
+    }
+
+    const inputConnectionNames = new Set(
+      fanoutInputSimpleRouteJson.connections.map(
+        (connection) => connection.name,
+      ),
+    )
+    const baseConnections: SimpleRouteConnection[] =
+      baseSimpleRouteJson.connections.flatMap((connection) => {
+        if (!inputConnectionNames.has(connection.name)) {
+          return [
+            {
+              ...connection,
+              pointsToConnect: connection.pointsToConnect.map((point) => ({
+                ...point,
+              })),
+            },
+          ]
+        }
+        const outputConnection = outputConnectionByName.get(connection.name)
+        if (!outputConnection) return []
+        return [
+          {
+            ...outputConnection,
+            pointsToConnect: outputConnection.pointsToConnect.map((point) => ({
+              ...point,
+            })),
+          },
+        ]
+      })
+    const retainedBaseObstacles = baseSimpleRouteJson.obstacles.filter(
+      (obstacle) =>
+        !obstacle.componentId ||
+        !completedSourceComponentIds.has(obstacle.componentId),
+    )
+
+    return {
+      downstreamSimpleRouteJson: filterSimpleRouteJsonConnections(
+        fanoutOutputSimpleRouteJson,
+        (connection) =>
+          !laterRoutingPhasePlans.some((laterPlan) =>
+            connectionIsInRoutingPhase(connection, laterPlan),
+          ),
+      ),
+      baseSimpleRouteJson: {
+        ...baseSimpleRouteJson,
+        connections: baseConnections,
+        obstacles: [...retainedBaseObstacles, ...newFanoutSourceKeepouts],
+      },
+      synchronizedBreakoutPoints: [],
+    }
+  }
   const baseConnections: SimpleRouteConnection[] =
     baseSimpleRouteJson.connections.map((connection) => ({
       ...connection,
@@ -221,16 +301,6 @@ export function Group_syncFanoutExitsWithGlobalConnections({
   // FanoutAutorouter replaces the completed source footprint's individual pad
   // obstacles with one keepout. Mirror that transformation into the base SRJ
   // used by later phases, while leaving fanout copper represented by traces.
-  const newFanoutSourceKeepouts = fanoutOutputSimpleRouteJson.obstacles.filter(
-    (obstacle) =>
-      obstacle.isFanoutSourceKeepout === true &&
-      obstacle.componentId !== undefined,
-  )
-  const completedSourceComponentIds = new Set(
-    newFanoutSourceKeepouts.flatMap((obstacle) =>
-      obstacle.componentId === undefined ? [] : [obstacle.componentId],
-    ),
-  )
   const retainedBaseObstacles = baseSimpleRouteJson.obstacles.filter(
     (obstacle) =>
       !obstacle.componentId ||
