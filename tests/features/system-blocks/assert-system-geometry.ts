@@ -106,5 +106,33 @@ export function assertSystemGeometry(json: AnyCircuitElement[]) {
         ).toBe(false)
       }
     }
+
+    for (let i = 1; i < connection.route.length; i++) {
+      const a = connection.route[i - 1],
+        b = connection.route[i]
+      if (b.cubic_bezier_control_points) continue
+      expect(a.x === b.x || a.y === b.y).toBe(true)
+      // Check actual wire segments against block interiors, including endpoint
+      // blocks; merely checking the vertices misses wires through a third block.
+      for (const block of components.filter(
+        (c) => c.system_block_page_id === connection.system_block_page_id,
+      )) {
+        const left = block.center.x - block.width / 2 + 1e-6
+        const right = block.center.x + block.width / 2 - 1e-6
+        const bottom = block.center.y - block.height / 2 + 1e-6
+        const top = block.center.y + block.height / 2 - 1e-6
+        const intersects =
+          a.x === b.x
+            ? a.x > left &&
+              a.x < right &&
+              Math.max(a.y, b.y) > bottom &&
+              Math.min(a.y, b.y) < top
+            : a.y > bottom &&
+              a.y < top &&
+              Math.max(a.x, b.x) > left &&
+              Math.min(a.x, b.x) < right
+        expect(intersects).toBe(false)
+      }
+    }
   }
 }
