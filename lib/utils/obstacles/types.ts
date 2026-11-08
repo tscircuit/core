@@ -23,6 +23,8 @@ export type Obstacle = {
   center: { x: number; y: number }
   width: number
   height: number
+  /** Physical circular drill diameter, independent of the copper outline. */
+  holeDiameter?: number
   ccwRotationDegrees?: number
   connectedTo: string[]
   isCopperPour?: boolean

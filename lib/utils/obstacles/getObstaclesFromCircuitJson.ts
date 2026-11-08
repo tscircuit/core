@@ -584,6 +584,7 @@ export const getObstaclesFromCircuitJson = (
         connectedTo: withNetId([element.pcb_via_id]),
         width: element.outer_diameter,
         height: element.outer_diameter,
+        holeDiameter: element.hole_diameter,
         netIsAssignable: netIsAssignable || undefined,
       })
     }
