@@ -3,7 +3,7 @@ import { getSourceTraceIdForRoutedTrace } from "lib/components/primitive-compone
 import type { SimpleRouteJson } from "./SimpleRouteJson"
 
 /**
- * Preserve completed, length-constrained copper during later routing phases.
+ * Preserve completed, length- or width-constrained copper during later routing phases.
  * Routes stay as exact board-world geometry in mm (+X right, +Y up), without
  * conversion to rectangular obstacles or any coordinate transformation.
  */
@@ -17,10 +17,14 @@ export const preserveLengthConstrainedSrjTraces = (
     const sourceTrace = sourceTraceId
       ? db.source_trace.get(sourceTraceId)
       : undefined
-    // A later phase has no length constraint for an earlier connection. Keep
-    // the route completed by that connection's own phase instead of allowing
-    // unconstrained clearance repair to turn a short bypass into a long detour.
-    if (sourceTrace?.max_length === undefined) return trace
+    // Later phases do not carry the earlier connection's length or width
+    // requirement. Keep its completed copper so clearance repair cannot turn
+    // a short bypass into a detour or shrink a power feed to signal width.
+    const hasLengthConstraint = sourceTrace?.max_length !== undefined
+    const hasWidthConstraint =
+      sourceTrace?.min_trace_thickness !== undefined &&
+      sourceTrace.min_trace_thickness > srj.minTraceWidth + 1e-6
+    if (!hasLengthConstraint && !hasWidthConstraint) return trace
     return { ...trace, isFixed: true }
   }),
 })
