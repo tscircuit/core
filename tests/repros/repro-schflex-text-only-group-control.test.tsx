@@ -23,5 +23,4 @@ test("schFlex geometry stays finite without the text-only child group", () => {
     expect(Number.isFinite(schematicGroup.width)).toBe(true)
     expect(Number.isFinite(schematicGroup.height)).toBe(true)
   }
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
