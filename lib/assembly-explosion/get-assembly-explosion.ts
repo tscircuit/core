@@ -175,13 +175,38 @@ export function getAssemblyExplosion(
   if (options.throughStageRef !== undefined && stop < 0)
     throw new Error(`Unknown explosion stage "${options.throughStageRef}"`)
   const assembled = circuit.getCircuitJson()
-  // Stage targets use the same explicit membership program as JSON consumers.
+  // Stage targets and authored geometry-state transitions use the same explicit
+  // membership and state-evaluation program as JSON consumers.
   if (
-    assembled.some(
-      (record) =>
-        record.type === "cad_explosion_move" &&
-        record.targets.some((target) => target.type === "cad_explosion_stage"),
-    )
+    assembled.some((record) => {
+      const raw = record as unknown as Record<string, unknown>
+      if (raw.type === "cad_explosion_geometry_state") return true
+      if (
+        record.type === "cad_component" &&
+        (raw.geometry_states !== undefined || raw.geometryStates !== undefined)
+      )
+        return true
+      if (record.type === "cad_explosion_stage") {
+        return (
+          raw.state_transitions !== undefined ||
+          raw.stateTransitions !== undefined ||
+          raw.geometry_state !== undefined ||
+          raw.geometryState !== undefined
+        )
+      }
+      if (record.type === "cad_explosion_move") {
+        return (
+          record.targets.some(
+            (target) => target.type === "cad_explosion_stage",
+          ) ||
+          raw.state_transitions !== undefined ||
+          raw.stateTransitions !== undefined ||
+          raw.geometry_state !== undefined ||
+          raw.geometryState !== undefined
+        )
+      }
+      return false
+    })
   )
     return {
       ...getCircuitJsonAssemblyExplosion(assembled, options),
