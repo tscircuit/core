@@ -3,7 +3,7 @@ import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimp
 import { differentialPairPathPads } from "tests/fixtures/differential-pair-path-pads"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("reproduces unrouted disjoint pair sections on shared nets", async () => {
+test("keeps a residual net connection between disjoint explicit pair paths", async () => {
   const { circuit } = getTestFixture()
   const board = (routingDisabled: boolean) => (
     <board
@@ -113,14 +113,36 @@ test("reproduces unrouted disjoint pair sections on shared nets", async () => {
   )
   circuit.add(board(true))
   circuit.render()
-  expect(() =>
-    getSimpleRouteJsonFromCircuitJson({
-      db: circuit.db,
-      subcircuitComponent: circuit.firstChild!,
-    }),
-  ).toThrow(
-    'Could not find an SRJ connection for trace name or port selector ".A > .pin8" in differential pair "AB"',
-  )
+  const { simpleRouteJson: srj } = getSimpleRouteJsonFromCircuitJson({
+    db: circuit.db,
+    subcircuitComponent: circuit.firstChild!,
+  })
+  expect(srj.connections).toHaveLength(6)
+  for (const polarity of ["P", "N"]) {
+    const net = circuit.db.source_net.getWhere({ name: polarity })!
+    const residual = srj.connections.find(
+      (connection) => connection.name === net.source_net_id,
+    )!
+    const endpointSets = ["AB", "CD"].map((suffix) => {
+      const trace = circuit.db.source_trace.getWhere({
+        name: `${polarity}_${suffix}`,
+      })!
+      const connection = srj.connections.find(
+        (connection) => connection.source_trace_id === trace.source_trace_id,
+      )!
+      return new Set(connection.pointsToConnect.map((point) => point.pointId))
+    })
+    expect(residual.pointsToConnect).toHaveLength(2)
+    for (const endpoints of endpointSets) {
+      expect(
+        residual.pointsToConnect.filter((point) =>
+          endpoints.has(point.pointId),
+        ),
+      ).toHaveLength(1)
+    }
+    expect(residual.externallyConnectedPointIds).toBeUndefined()
+  }
+  expect(srj.differentialPairs).toHaveLength(2)
   const { circuit: routed } = getTestFixture()
   const asyncErrors: string[] = []
   routed.on("asyncEffect:end", (event) => {
@@ -128,12 +150,12 @@ test("reproduces unrouted disjoint pair sections on shared nets", async () => {
   })
   routed.add(board(false))
   await routed.renderUntilSettled()
-  expect(asyncErrors).toEqual([
-    'Error: Could not find an SRJ connection for trace name or port selector ".A > .pin8" in differential pair "AB"',
-  ])
-  expect(routed.db.pcb_trace.list()).toHaveLength(0)
-  // Snapshot the actual failed render without asking the helper to rerender it.
-  await expect(routed.getCircuitJson()).toMatchPcbSnapshot(import.meta.path, {
+  expect(asyncErrors).toEqual([])
+  expect(
+    routed.getCircuitJson().filter((e) => e.type.endsWith("_error")),
+  ).toEqual([])
+  expect(routed.db.pcb_trace.list()).toHaveLength(6)
+  await expect(routed).toMatchPcbSnapshot(import.meta.path, {
     width: 1200,
     height: 800,
     showDebugObjects: false,

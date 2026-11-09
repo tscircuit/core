@@ -35,6 +35,8 @@ import {
   getBusesForSimpleRouteJson,
   getPlaneTerminatedSourceTraceLayers,
 } from "./getBusesForSimpleRouteJson"
+import { getDifferentialPairSourceTraceIds } from "./getDifferentialPairSourceTraceIds"
+import { reduceNetConnectionPointsForDifferentialPairPaths } from "./reduceNetConnectionPointsForDifferentialPairPaths"
 import { getDifferentialPairsForSimpleRouteJson } from "./getDifferentialPairsForSimpleRouteJson"
 import { getPreservedRoutedSubcircuitTraces } from "./getPreservedRoutedSubcircuitTraces"
 import { getUnbrokenCopperPourObstacles } from "./getUnbrokenCopperPourObstacles"
@@ -567,6 +569,24 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   // For cross-boundary traces, add breakout points as additional
   // waypoints so the autorouter routes through the boundary.
   const sourceTraces = db.source_trace.list()
+  const differentialPairs: DifferentialPair[] =
+    subcircuitComponent?.selectAll<DifferentialPair>("differentialpair") ?? []
+  const differentialPairSourceTraceIds = getDifferentialPairSourceTraceIds({
+    differentialPairs,
+    sourceTraces,
+    subcircuitId: subcircuit_id,
+  })
+  // Preserve explicit two-terminal sections, not an arbitrary multi-terminal
+  // net as a differential conductor. Unspecified branch topology stays rejected.
+  const differentialPairPathSourceTraceIds = new Set(
+    sourceTraces
+      .filter(
+        (trace) =>
+          differentialPairSourceTraceIds.has(trace.source_trace_id) &&
+          trace.connected_source_port_ids.length === 2,
+      )
+      .map((trace) => trace.source_trace_id),
+  )
   const planeTerminatedSourceTraceLayers = getPlaneTerminatedSourceTraceLayers({
     fanoutPourNetMap,
     sourceNets: db.source_net.list(),
@@ -590,10 +610,11 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         !subcircuit_id || (trace as any).subcircuit_id === subcircuit_id,
     )
     // Net-attached traces contribute their terminals to connectionsFromNets.
-    // Netless traces and plane terminations require their own SRJ connection.
+    // Named pair paths, netless traces and plane terminations retain their own connection.
     .filter(
       (sourceTrace) =>
         sourceTrace.connected_source_net_ids.length === 0 ||
+        differentialPairPathSourceTraceIds.has(sourceTrace.source_trace_id) ||
         planeTerminatedSourceTraceLayers.has(sourceTrace.source_trace_id),
     )
     .map((trace) => {
@@ -648,6 +669,19 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       } as SimpleRouteConnection
     })
     .filter((c): c is SimpleRouteConnection => c !== null)
+
+  const differentialPairPathConnections = directTraceConnections.filter(
+    (connection) =>
+      connection.source_trace_id !== undefined &&
+      differentialPairPathSourceTraceIds.has(connection.source_trace_id),
+  )
+  const differentialPairPathSourcePortIds = new Set(
+    differentialPairPathConnections.flatMap(
+      (connection) =>
+        sourceTraceById.get(connection.source_trace_id!)!
+          .connected_source_port_ids,
+    ),
+  )
 
   const source_nets = db.source_net
     .list()
@@ -773,6 +807,17 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       )
     }
 
+    // Pair sections preserve path identity, but still inherit net width rules.
+    const connectedSourceTraceIds = new Set(
+      connectedSourceTraces.map((trace) => trace.source_trace_id),
+    )
+    for (const connection of differentialPairPathConnections) {
+      if (!connectedSourceTraceIds.has(connection.source_trace_id!)) continue
+      connection.netConnectionName = net.source_net_id
+      connection.nominalTraceWidth = nominalTraceWidthForConnection
+      connection.width = nominalTraceWidthForConnection
+    }
+
     const pointsToConnect: SimpleRouteConnection["pointsToConnect"] = []
     const addedPointIds = new Set<string>()
     const connectedPcbPorts: PcbPort[] = []
@@ -790,7 +835,13 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       }
     }
     pointsToConnect.push(
-      ...getSrjConnectionPointsFromPcbTraceHints(connectedPcbPorts, traceHints),
+      // Hints at paired terminals already belong to their explicit paths.
+      ...getSrjConnectionPointsFromPcbTraceHints(
+        connectedPcbPorts.filter(
+          (port) => !differentialPairPathSourcePortIds.has(port.source_port_id),
+        ),
+        traceHints,
+      ),
     )
 
     const connection: SimpleRouteConnection = {
@@ -883,6 +934,11 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     }
   }
 
+  reduceNetConnectionPointsForDifferentialPairPaths({
+    netConnections: connectionsFromNets,
+    differentialPairConnections: differentialPairPathConnections,
+  })
+
   // Plane-terminated one-point traces are emitted by directTraceConnections.
   // A net-derived connection needs at least two physical points; breakout-point
   // processing above may have supplied the second point.
@@ -945,9 +1001,6 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     bounds,
     connections: allConns,
   })
-
-  const differentialPairs: DifferentialPair[] =
-    subcircuitComponent?.selectAll<DifferentialPair>("differentialpair") ?? []
 
   const buses: Bus[] = subcircuitComponent?.selectAll<Bus>("bus") ?? []
 
