@@ -84,7 +84,7 @@ beforeAll(async () => {
     },
   ]
   // A native PCB snapshot: actual traces, pads, vias, components and silkscreen.
-  // Await it outside test.failing so rendering failures cannot satisfy the repro.
+  // Keep rendering failures independent of the physical support assertion.
   await expect(circuitJson).toMatchPcbSnapshot(import.meta.path, {
     width: 1120,
     height: 1400,
@@ -97,19 +97,16 @@ beforeAll(async () => {
   })
 })
 
-test.failing(
-  "Seve's routed USB-C panel preserves the dial board's left support tab",
-  async () => {
-    const { CrossSection } = await getManifoldModule()
-    const probe = CrossSection.square(0.5, true).translate(
-      dialLeftBridge.x,
-      dialLeftBridge.y,
-    )
-    const bridgeMaterial = material.intersect(probe)
-    const bridgeArea = bridgeMaterial.area()
-    bridgeMaterial.delete()
-    probe.delete()
-    material.delete()
-    expect(bridgeArea).toBeCloseTo(0.25, 6)
-  },
-)
+test("Seve's routed USB-C panel preserves the dial board's left support tab", async () => {
+  const { CrossSection } = await getManifoldModule()
+  const probe = CrossSection.square(0.5, true).translate(
+    dialLeftBridge.x,
+    dialLeftBridge.y,
+  )
+  const bridgeMaterial = material.intersect(probe)
+  const bridgeArea = bridgeMaterial.area()
+  bridgeMaterial.delete()
+  probe.delete()
+  material.delete()
+  expect(bridgeArea).toBeCloseTo(0.25, 6)
+})
