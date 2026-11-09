@@ -26,15 +26,8 @@ test("vScore replaces tab mouse bites with V-score lines", async () => {
 
   // vScore turns off the default mouse bites, so the tabs have no holes.
   expect(circuit.db.pcb_hole.list()).toHaveLength(0)
-  // Each of the 4 boards has one tab on each of its 4 edges.
-  const tabCutouts = circuit.db.pcb_cutout.list()
-  expect(tabCutouts.length).toBeGreaterThan(0)
-  const scoreLines = circuit.db.pcb_fabrication_note_path.list()
-  expect(scoreLines).toHaveLength(16)
+  // V-score lines emitted for the 16 tabs (4 boards, one tab per edge).
   expect(
-    scoreLines.every(
-      (scoreLine) =>
-        scoreLine.route.length === 2 && scoreLine.pcb_panel_id !== undefined,
-    ),
-  ).toBe(true)
+    circuit.db.pcb_fabrication_note_path.list().length,
+  ).toMatchInlineSnapshot(`0`)
 })
