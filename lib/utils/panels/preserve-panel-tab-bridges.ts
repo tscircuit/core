@@ -48,20 +48,20 @@ function getRoutingSlotPolygon(
       }),
     )
   }
-  // The same local rectangle -> circuit-world transform used for cutout props:
-  // rotate counterclockwise about its center, then translate (mm, +X right/+Y up).
-  const transform = compose(
+  // Cutout.doInitialPcbPrimitiveRender (primitive-components/Cutout.ts) emits
+  // a counterclockwise world rotation and a world center for rectangle cutouts.
+  const cutoutLocalToCircuitWorldTransform = compose(
     translate(cutout.center.x, cutout.center.y),
     rotateDEG(cutout.rotation ?? 0),
   )
   return polygon.transform(
     new Flatten.Matrix(
-      transform.a,
-      transform.b,
-      transform.c,
-      transform.d,
-      transform.e,
-      transform.f,
+      cutoutLocalToCircuitWorldTransform.a,
+      cutoutLocalToCircuitWorldTransform.b,
+      cutoutLocalToCircuitWorldTransform.c,
+      cutoutLocalToCircuitWorldTransform.d,
+      cutoutLocalToCircuitWorldTransform.e,
+      cutoutLocalToCircuitWorldTransform.f,
     ),
   )
 }
@@ -71,9 +71,9 @@ function getRoutingSlotPolygon(
 function getSlotPolygonsWithoutHoles(
   polygon: Flatten.Polygon,
 ): Flatten.Polygon[] {
-  const hole = [...polygon.faces].find(
+  const hole: Flatten.Face | undefined = [...polygon.faces].find(
     (face: Flatten.Face) => face.orientation() === Flatten.ORIENTATION.CW,
-  ) as Flatten.Face | undefined
+  )
   if (!hole) return polygon.splitToIslands()
   // Circuit JSON cutouts have one ring. Split through an enclosed bridge so
   // each resulting cutout can describe the same removed material with one ring.

@@ -27,7 +27,7 @@ test("offset tabs span overlapping routing channels at different gaps and board 
         >
           {dimensions.map(({ width, height, x, y }, boardIndex) => (
             <board
-              key={boardIndex}
+              key={`${x},${y}`}
               width={width * scale}
               height={height * scale}
               pcbX={x}
@@ -55,11 +55,11 @@ test("offset tabs span overlapping routing channels at different gaps and board 
           mouseBites: true,
         },
       )
-      const material = await getPanelMaterial(
-        circuit.db.pcb_panel.list()[0]!,
-        tabCutouts,
-        mouseBiteHoles,
-      )
+      const material = await getPanelMaterial({
+        panel: circuit.db.pcb_panel.list()[0]!,
+        cutouts: tabCutouts,
+        holes: mouseBiteHoles,
+      })
       const regions = material.decompose().sort((a, b) => b.area() - a.area())
       const centerProbe = CrossSection.square(1, true)
       const attachedCenter = regions[0]!.intersect(centerProbe)

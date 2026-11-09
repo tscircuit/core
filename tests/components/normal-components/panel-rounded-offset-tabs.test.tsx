@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test"
-import { point, Polygon } from "@flatten-js/core"
+import { Polygon, point } from "@flatten-js/core"
 import { getManifoldModule } from "@tscircuit/manifold-2d"
 import { generatePanelTabsAndMouseBites } from "lib/utils/panels/generate-panel-tabs-and-mouse-bites"
 import { getPanelMaterial } from "tests/fixtures/get-panel-material"
@@ -46,15 +46,18 @@ test("curved outlines preserve offset tabs in either winding and every quarter t
   // Transform emitted world positions, including the subpanel translation.
   // The patch is midway across the first board's right-hand tab, away from drills.
   for (const reverseWinding of [false, true]) {
-    for (const rotation of [0, 90, 180, 270]) {
-      const transform = compose(translate(60, -35), rotateDEG(rotation))
+    for (const ccwRotationDegrees of [0, 90, 180, 270]) {
+      const circuitWorldToTestWorldTransform = compose(
+        translate(60, -35),
+        rotateDEG(ccwRotationDegrees),
+      )
       const transformedBoards = boards.map((board) => {
         const outline = board.outline!.map((position) =>
-          applyToPoint(transform, position),
+          applyToPoint(circuitWorldToTestWorldTransform, position),
         )
         return {
           ...board,
-          center: applyToPoint(transform, board.center),
+          center: applyToPoint(circuitWorldToTestWorldTransform, board.center),
           outline: reverseWinding ? outline.reverse() : outline,
         }
       })
@@ -68,17 +71,17 @@ test("curved outlines preserve offset tabs in either winding and every quarter t
             mouseBites,
           },
         )
-        const material = await getPanelMaterial(
-          {
+        const material = await getPanelMaterial({
+          panel: {
             ...circuit.db.pcb_panel.list()[0]!,
             center: { x: 60, y: -35 },
             width: 200,
             height: 200,
           },
-          tabCutouts,
-          mouseBiteHoles,
-        )
-        const bridgeCenter = applyToPoint(transform, {
+          cutouts: tabCutouts,
+          holes: mouseBiteHoles,
+        })
+        const bridgeCenter = applyToPoint(circuitWorldToTestWorldTransform, {
           x: boards[0]!.center.x + 11,
           y: boards[0]!.center.y,
         })

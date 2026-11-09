@@ -74,27 +74,36 @@ function getOutwardSlotBoundary(
   })
 }
 
-/** Outline span in circuit-world mm, +X right/+Y up; entries are positions. */
-function getOutlineSpan(
-  edges: OutlineEdge[],
-  start: number,
-  end: number,
-): Point[] {
+/** Circuit-world positions in mm: +X right, +Y up, right-handed +Z above. */
+function getOutlineSpan({
+  edges,
+  startPerimeterDistance,
+  endPerimeterDistance,
+}: {
+  edges: OutlineEdge[]
+  startPerimeterDistance: number
+  endPerimeterDistance: number
+}): Point[] {
   const perimeter = edges.at(-1)!.perimeterStart + edges.at(-1)!.length
-  const route = [getPointAlongOutline(edges, start)]
+  const route = [getPointAlongOutline(edges, startPerimeterDistance)]
   for (const lap of [0, 1]) {
     for (const edge of edges) {
       const vertexDistance = edge.perimeterStart + lap * perimeter
-      if (vertexDistance > start + 1e-9 && vertexDistance < end - 1e-9)
+      if (
+        vertexDistance > startPerimeterDistance + 1e-9 &&
+        vertexDistance < endPerimeterDistance - 1e-9
+      )
         route.push(edge.start)
     }
   }
-  route.push(getPointAlongOutline(edges, end))
+  route.push(getPointAlongOutline(edges, endPerimeterDistance))
   return route
 }
 
 /** Buffer continuous outline spans, placing tabs on usable edges rather than
- * placing a new tab and rounded rectangle on every tessellated arc chord. */
+ * placing a new tab and rounded rectangle on every tessellated arc chord.
+ * Input/output vertices are circuit-world positions in mm: +X right, +Y up,
+ * right-handed +Z above. */
 export function generateContinuousPanelRoutingSlots(
   outline: Point[],
   options: {
@@ -150,7 +159,11 @@ export function generateContinuousPanelRoutingSlots(
       (tabIndex === tabCenters.length - 1 ? perimeter : 0)
     const routeStart = tabCenter + gapLength / 2
     const routeEnd = nextTabCenter - gapLength / 2
-    const route = getOutlineSpan(edges, routeStart, routeEnd)
+    const route = getOutlineSpan({
+      edges,
+      startPerimeterDistance: routeStart,
+      endPerimeterDistance: routeEnd,
+    })
     const outerBoundary = getOutwardSlotBoundary(route, {
       width: options.cutoutWidth,
       winding: Math.sign(twiceSignedArea),
@@ -163,11 +176,11 @@ export function generateContinuousPanelRoutingSlots(
     })
 
     if (gapLength > 1e-6) {
-      const tabRoute = getOutlineSpan(
+      const tabRoute = getOutlineSpan({
         edges,
-        tabCenter - gapLength / 2,
-        tabCenter + gapLength / 2,
-      )
+        startPerimeterDistance: tabCenter - gapLength / 2,
+        endPerimeterDistance: tabCenter + gapLength / 2,
+      })
       const tabOuterBoundary = getOutwardSlotBoundary(tabRoute, {
         // Reach through the neighboring routing band as well as our own.
         width: 2 * options.cutoutWidth,

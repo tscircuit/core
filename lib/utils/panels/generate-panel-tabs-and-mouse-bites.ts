@@ -1,3 +1,5 @@
+import * as Flatten from "@flatten-js/core"
+import { Polygon, point } from "@flatten-js/core"
 import type {
   PcbBoard,
   PcbCutout,
@@ -6,8 +8,6 @@ import type {
   PcbHoleCircle,
   Point,
 } from "circuit-json"
-import * as Flatten from "@flatten-js/core"
-import { point, Polygon } from "@flatten-js/core"
 import { generateContinuousPanelRoutingSlots } from "./generate-continuous-panel-routing-slots"
 import { preservePanelTabBridges } from "./preserve-panel-tab-bridges"
 
@@ -260,6 +260,9 @@ const generateCutoutsAndMousebitesForOutline = (
   return { tabCutouts, mouseBiteHoles, tabBridges }
 }
 
+/** Generate slots and breakaway drills from circuit-world board positions in
+ * mm: +X right, +Y up, right-handed +Z above. Preserve each tab against all
+ * neighboring routing bands, with tabLength along an edge and tabWidth outward. */
 export function generatePanelTabsAndMouseBites(
   boards: PcbBoard[],
   options: PanelOptions,
