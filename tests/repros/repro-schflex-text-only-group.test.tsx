@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test.failing("a text-only child group keeps schFlex geometry finite", () => {
+test("a text-only child group keeps schFlex geometry finite", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -18,10 +18,10 @@ test.failing("a text-only child group keeps schFlex geometry finite", () => {
 
   circuit.render()
 
-  // Preserve the broken rendering: the note remains, but R1 and R2 are missing.
+  // Both resistors and the note must remain visible after flex layout.
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 
-  // The snapshot records the symptom; this assertion captures the invalid geometry.
+  // Layout must also produce finite geometry for downstream routing.
   for (const schematicComponent of circuit.db.schematic_component.list()) {
     expect(Number.isFinite(schematicComponent.center.x)).toBe(true)
     expect(Number.isFinite(schematicComponent.center.y)).toBe(true)
