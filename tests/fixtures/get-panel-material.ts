@@ -1,5 +1,5 @@
 import { getManifoldModule, type CrossSection } from "@tscircuit/manifold-2d"
-import type { PcbCutout, PcbHoleCircle, PcbPanel } from "circuit-json"
+import type { PcbCutout, PcbHole, PcbPanel } from "circuit-json"
 import {
   applyToPoint,
   compose,
@@ -12,12 +12,14 @@ import {
 export async function getPanelMaterial(
   panel: PcbPanel,
   cutouts: PcbCutout[],
-  holes: PcbHoleCircle[],
+  holes: PcbHole[],
 ): Promise<CrossSection> {
   const { CrossSection } = await getManifoldModule()
   const cuts = cutouts.map((cutout) => {
     if (cutout.shape === "polygon") {
-      return CrossSection.ofPolygons([cutout.points.map(({ x, y }) => [x, y])])
+      return CrossSection.ofPolygons([
+        cutout.points.map(({ x, y }) => [x, y] as [number, number]),
+      ])
     }
     if (cutout.shape === "circle") {
       return CrossSection.circle(cutout.radius, 96).translate(
@@ -54,6 +56,9 @@ export async function getPanelMaterial(
     return CrossSection.ofPolygons([points])
   })
   for (const hole of holes) {
+    if (hole.hole_shape !== "circle") {
+      throw new Error("Panel material fixture only supports circular drills")
+    }
     cuts.push(
       CrossSection.circle(hole.hole_diameter / 2, 96).translate(hole.x, hole.y),
     )

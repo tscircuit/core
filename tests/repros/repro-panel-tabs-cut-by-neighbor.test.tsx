@@ -58,7 +58,7 @@ beforeAll(async () => {
   material = await getPanelMaterial(
     circuit.db.pcb_panel.list()[0]!,
     circuit.db.pcb_cutout.list(),
-    circuit.db.pcb_hole.list().filter((hole) => hole.hole_shape === "circle"),
+    circuit.db.pcb_hole.list(),
   )
 
   // Show the actual substrate after every emitted slot and drill is removed.
