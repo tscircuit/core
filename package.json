@@ -43,7 +43,7 @@
     "@tscircuit/cableprinter": "^0.0.6",
     "@tscircuit/capacity-autorouter": "^0.0.1066",
     "@tscircuit/checks": "^0.0.270",
-    "@tscircuit/circuit-json-util": "^0.0.128",
+    "@tscircuit/circuit-json-util": "^0.0.131",
     "@tscircuit/common": "^0.0.20",
     "@tscircuit/copper-pour-solver": "^0.0.74",
     "@tscircuit/create-fdm-enclosure": "0.0.6",
