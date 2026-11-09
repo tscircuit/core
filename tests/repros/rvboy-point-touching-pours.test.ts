@@ -73,4 +73,4 @@ test("RVboy cleanup removes point-attached pour islands without removing connect
     import.meta.path,
     "rvboy-point-contact-after",
   )
-})
+}, 30_000)

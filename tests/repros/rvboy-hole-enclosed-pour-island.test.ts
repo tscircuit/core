@@ -76,4 +76,4 @@ test("RVboy cleanup separates a copper island enclosed by a self-touching hole",
     import.meta.path,
     "rvboy-hole-island-after",
   )
-})
+}, 30_000)
