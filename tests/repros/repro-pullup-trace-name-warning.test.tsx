@@ -25,7 +25,5 @@ test("traces created by a resistor pullup do not warn about a missing name", () 
 
   const warnings = circuit.db.source_unnamed_trace_warning.list()
 
-  // The pullup traces are derived from the resistor props, so there is no
-  // element for the user to have named.
   expect(warnings).toHaveLength(0)
 })

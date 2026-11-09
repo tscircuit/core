@@ -3,7 +3,7 @@ import { chipProps, resolveManufacturerPartNumber } from "@tscircuit/props"
 import { pcb_component_invalid_layer_error } from "circuit-json"
 import { NormalComponent } from "lib/components/base-components/NormalComponent"
 import { Port } from "lib/components/primitive-components/Port"
-import { PropGeneratedTrace } from "lib/components/primitive-components/Trace/Trace"
+import { PropGeneratedTrace } from "lib/components/primitive-components/Trace/PropGeneratedTrace"
 import { parseFootprinterDefinition } from "lib/utils/footprints/parse-footprinter-definition"
 import { Chip_doInitialPcbPlacementDesignRuleChecks } from "./Chip_doInitialPcbPlacementDesignRuleChecks"
 
@@ -187,11 +187,12 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
 
     if (props.externallyConnectedPins) {
       for (const [pin1, pin2] of props.externallyConnectedPins) {
-        const externallyConnectedTrace = new PropGeneratedTrace({
-          from: `${this.getSubcircuitSelector()} > port.${pin1}`,
-          to: `${this.getSubcircuitSelector()} > port.${pin2}`,
-        })
-        this.add(externallyConnectedTrace)
+        this.add(
+          new PropGeneratedTrace({
+            from: `${this.getSubcircuitSelector()} > port.${pin1}`,
+            to: `${this.getSubcircuitSelector()} > port.${pin2}`,
+          }),
+        )
       }
     }
 

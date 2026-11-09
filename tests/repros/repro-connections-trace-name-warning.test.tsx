@@ -24,7 +24,5 @@ test("traces created by the connections prop do not warn about a missing name", 
 
   const warnings = circuit.db.source_unnamed_trace_warning.list()
 
-  // The trace is synthesised from the connections prop, so there is no
-  // element for the user to have named.
   expect(warnings).toHaveLength(0)
 })

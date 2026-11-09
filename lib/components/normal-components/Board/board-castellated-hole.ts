@@ -6,7 +6,7 @@ import {
 } from "circuit-json"
 import { PlatedHole } from "../../primitive-components/PlatedHole"
 import { Port } from "../../primitive-components/Port"
-import { PropGeneratedTrace } from "../../primitive-components/Trace/Trace"
+import { PropGeneratedTrace } from "../../primitive-components/Trace/PropGeneratedTrace"
 import type { Trace } from "../../primitive-components/Trace/Trace"
 import type { Board } from "./Board"
 

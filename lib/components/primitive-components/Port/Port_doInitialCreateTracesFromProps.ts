@@ -1,4 +1,5 @@
-import { PropGeneratedTrace, Trace } from "../Trace/Trace"
+import { PropGeneratedTrace } from "../Trace/PropGeneratedTrace"
+import { Trace } from "../Trace/Trace"
 import type { Port } from "./Port"
 
 const getConnectionTargets = (

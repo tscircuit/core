@@ -259,6 +259,10 @@ export class Trace
     return allIds.join(",")
   }
 
+  _shouldWarnIfUnnamed(): boolean {
+    return true
+  }
+
   doInitialSourceTraceRender(): void {
     const { db } = this.root!
     const { _parsedProps: props, parent } = this
@@ -327,11 +331,7 @@ export class Trace
 
     this.source_trace_id = trace.source_trace_id
 
-    if (
-      !props.name &&
-      !(this instanceof PropGeneratedTrace) &&
-      nets.length === 0
-    ) {
+    if (!props.name && this._shouldWarnIfUnnamed() && nets.length === 0) {
       db.source_unnamed_trace_warning.insert({
         message: `${this.getString()} is missing a name. Add a name prop to make the trace easier to identify.`,
         source_trace_id: trace.source_trace_id,
@@ -425,6 +425,3 @@ export class Trace
     Trace_doInitialSchematicTraceRender(this)
   }
 }
-
-// Marks prop-generated traces so the unnamed-trace warning skips them; user-authored traces still warn.
-export class PropGeneratedTrace extends Trace {}
