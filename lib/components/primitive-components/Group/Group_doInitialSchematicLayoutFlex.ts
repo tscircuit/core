@@ -1,4 +1,8 @@
-import type { Group } from "./Group"
+import { Group } from "./Group"
+import { SchematicText } from "../SchematicText"
+import { getBoundsFromPoints } from "@tscircuit/math-utils"
+import { getSchematicTextBounds } from "./Group_doInitialSchematicTraceRender/getSchematicTextBounds"
+import { applyToPoint, translate } from "transformation-matrix"
 import type { Size } from "circuit-json"
 import {
   getCircuitJsonTree,
@@ -45,6 +49,8 @@ const getSizeOfTreeNodeChild = (
       schematic_group_id: schGroup?.schematic_group_id,
     })
 
+    if (groupComponents.length === 0) return { width: 0, height: 0 }
+
     let minX = Infinity
     let maxX = -Infinity
     let minY = Infinity
@@ -79,6 +85,84 @@ export const Group_doInitialSchematicLayoutFlex = (group: Group) => {
   const tree = getCircuitJsonTree(db.toArray(), {
     source_group_id: group.source_group_id!,
   })
+
+  const textOnlyGroupLayouts = group
+    .getDescendants()
+    .filter((child): child is Group => child instanceof Group)
+    .filter((child) =>
+      tree.childNodes.some(
+        (node) => node.sourceGroup?.source_group_id === child.source_group_id,
+      ),
+    )
+    .flatMap((childGroup) => {
+      const descendants = childGroup.getDescendants()
+      if (
+        descendants.some(
+          (child) =>
+            !(child instanceof Group) && !(child instanceof SchematicText),
+        )
+      )
+        return []
+
+      const schematicGroup = db.schematic_group.get(
+        childGroup.schematic_group_id!,
+      )
+      if (!schematicGroup) return []
+      const texts = descendants
+        .filter(
+          (child): child is SchematicText => child instanceof SchematicText,
+        )
+        .flatMap((child) => {
+          const text = db.schematic_text.get(child.schematic_text_id!)
+          return text ? [text] : []
+        })
+      // Bounds and center points in right-handed schematic world space (mm, +X right, +Y up).
+      const bounds = getBoundsFromPoints(
+        texts.flatMap((text) => {
+          const bounds = getSchematicTextBounds(text)
+          return [
+            { x: bounds.minX, y: bounds.minY },
+            { x: bounds.maxX, y: bounds.maxY },
+          ]
+        }),
+      )
+      return [
+        {
+          schematicGroup,
+          texts,
+          schematicGroups: [
+            childGroup,
+            ...descendants.filter(
+              (child): child is Group => child instanceof Group,
+            ),
+          ].flatMap((child) => {
+            const schematicGroup = db.schematic_group.get(
+              child.schematic_group_id!,
+            )
+            return schematicGroup ? [schematicGroup] : []
+          }),
+          center: bounds
+            ? {
+                x: (bounds.minX + bounds.maxX) / 2,
+                y: (bounds.minY + bounds.maxY) / 2,
+              }
+            : schematicGroup.center,
+          width:
+            childGroup._parsedProps.schWidth ??
+            (bounds ? bounds.maxX - bounds.minX : 0),
+          height:
+            childGroup._parsedProps.schHeight ??
+            (bounds ? bounds.maxY - bounds.minY : 0),
+        },
+      ]
+    })
+  for (const layout of textOnlyGroupLayouts) {
+    db.schematic_group.update(layout.schematicGroup.schematic_group_id, {
+      center: layout.center,
+      width: layout.width,
+      height: layout.height,
+    })
+  }
 
   const rawJustify = props.schJustifyContent ?? props.justifyContent
   const rawAlign = props.schAlignItems ?? props.alignItems
@@ -220,6 +304,37 @@ export const Group_doInitialSchematicLayoutFlex = (group: Group) => {
         source_group_id: sourceGroup.source_group_id,
       })
       if (!schGroup) continue
+      const textOnlyLayout = textOnlyGroupLayouts.find(
+        (layout) =>
+          layout.schematicGroup.source_group_id === sourceGroup.source_group_id,
+      )
+      if (textOnlyLayout) {
+        // Unattached schematic text is not included by the generic group mover.
+        const transform = translate(
+          child.position.x +
+            child.size.width / 2 +
+            offset.x -
+            textOnlyLayout.center.x,
+          child.position.y +
+            child.size.height / 2 +
+            offset.y -
+            textOnlyLayout.center.y,
+        )
+        for (const text of textOnlyLayout.texts) {
+          db.schematic_text.update(text.schematic_text_id, {
+            position: applyToPoint(transform, text.position),
+          })
+        }
+        for (const schematicGroup of textOnlyLayout.schematicGroups) {
+          const currentGroup = db.schematic_group.get(
+            schematicGroup.schematic_group_id,
+          )!
+          db.schematic_group.update(schematicGroup.schematic_group_id, {
+            center: applyToPoint(transform, currentGroup.center),
+          })
+        }
+        continue
+      }
       repositionSchematicGroupTo(allCircuitJson, sourceGroup.source_group_id, {
         x: child.position.x + child.size.width / 2 + offset.x,
         y: child.position.y + child.size.height / 2 + offset.y,
