@@ -71,7 +71,7 @@ export class BusLanesAutorouter implements GenericLocalAutorouter {
         }
         if (this.solver.solved) {
           this.isRouting = false
-          this.emit({ type: "complete", traces: this.solver.traces })
+          this.emit({ type: "complete", traces: this.getOutputTraces() })
           return
         }
         this.emit({
@@ -107,10 +107,32 @@ export class BusLanesAutorouter implements GenericLocalAutorouter {
     this.isRouting = false
     this.cancelScheduledTick?.()
   }
+  private getOutputTraces(): SimplifiedPcbTrace[] {
+    return this.solver.traces.map((trace) => {
+      const connection = this.input.connections.find(
+        (candidate) => candidate.name === trace.connection_name,
+      )
+      if (!connection) throw new Error("Planar route has no input connection")
+      const endpoints = [trace.route[0]!, trace.route.at(-1)!]
+      // The next native phase collapses already-routed terminals using SRJ
+      // connectsTo. Associate only physical endpoints, never the entire net.
+      const connectsTo = connection.pointsToConnect
+        .filter((point) =>
+          endpoints.some(
+            (endpoint) =>
+              endpoint.route_type === "wire" &&
+              endpoint.layer === point.layer &&
+              Math.hypot(endpoint.x - point.x, endpoint.y - point.y) < 1e-6,
+          ),
+        )
+        .flatMap((point) => (point.pointId ? [point.pointId] : []))
+      return { ...trace, connectsTo }
+    })
+  }
   solveSync(): SimplifiedPcbTrace[] {
     this.solver.solve()
     if (this.solver.failed)
       throw new Error(this.solver.error ?? "Bus lanes routing failed")
-    return this.solver.traces
+    return this.getOutputTraces()
   }
 }

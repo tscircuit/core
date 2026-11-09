@@ -303,6 +303,23 @@ export function getSourceTraceIdForRoutedTrace({
       : undefined
   if (exactSourceTrace) return exactSourceTrace.source_trace_id
 
+  const connectionName =
+    "connection_name" in trace ? trace.connection_name : undefined
+  const declaredSourceTrace = connectionName
+    ? db.source_trace.get(connectionName)
+    : undefined
+  if (
+    declaredSourceTrace?.connected_source_net_ids.length &&
+    endpointNetIds.length > 0 &&
+    endpointNetIds.every(
+      (netId) =>
+        netId ===
+        connMap.getNetConnectedToId(declaredSourceTrace.source_trace_id),
+    )
+  ) {
+    return declaredSourceTrace.source_trace_id
+  }
+
   const sourceTracesInEndpointNets = sourceTraces.filter((sourceTrace) => {
     const sourceTraceNetId = connMap.getNetConnectedToId(
       sourceTrace.source_trace_id,
@@ -322,9 +339,17 @@ export function getSourceTraceIdForRoutedTrace({
       : sourceTracesInEndpointNets
   if (candidates.length === 0) return undefined
 
+  // A branch to a third terminal belongs to the shared net, not to a specific
+  // two-terminal connection that merely shares one endpoint. Otherwise its
+  // length and width are charged to an unrelated preserved bypass or bus lane.
+  const netCandidates = candidates.filter(
+    (sourceTrace) => sourceTrace.connected_source_net_ids.length > 0,
+  )
+  const matchingCandidates =
+    netCandidates.length > 0 ? netCandidates : candidates
   return (
-    candidates.find(
+    matchingCandidates.find(
       (sourceTrace) => sourceTrace.subcircuit_id === subcircuit_id,
-    ) ?? candidates[0]
+    ) ?? matchingCandidates[0]
   )?.source_trace_id
 }
