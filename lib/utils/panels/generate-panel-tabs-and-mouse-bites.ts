@@ -13,6 +13,7 @@ interface PanelOptions {
   tabWidth: number
   tabLength: number
   mouseBites: boolean
+  vScore: boolean
 }
 
 interface MouseBite {
@@ -28,10 +29,12 @@ const generateCutoutsAndMousebitesForOutline = (
     mouseBites: boolean
     mouseBiteHoleDiameter: number
     mouseBiteHoleSpacing: number
+    vScore: boolean
   },
 ): {
   tabCutouts: PcbCutout[]
   mouseBiteHoles: Point[]
+  vScoreLines: Point[][]
 } => {
   const {
     gapLength,
@@ -39,13 +42,15 @@ const generateCutoutsAndMousebitesForOutline = (
     mouseBites,
     mouseBiteHoleDiameter,
     mouseBiteHoleSpacing,
+    vScore,
   } = options
 
   const tabCutouts: PcbCutout[] = []
   const mouseBiteHoles: Point[] = []
+  const vScoreLines: Point[][] = []
 
   if (outline.length < 2) {
-    return { tabCutouts, mouseBiteHoles }
+    return { tabCutouts, mouseBiteHoles, vScoreLines }
   }
 
   if (
@@ -75,7 +80,14 @@ const generateCutoutsAndMousebitesForOutline = (
       )
     })
   ) {
-    return generateContinuousPanelRoutingSlots(outline, options)
+    if (vScore)
+      throw new Error(
+        "V-scored panel tabs require straight board edges; curved board outlines cannot be V-scored",
+      )
+    return {
+      ...generateContinuousPanelRoutingSlots(outline, options),
+      vScoreLines,
+    }
   }
 
   const outlinePolygon = new Flatten.Polygon(
@@ -162,6 +174,17 @@ const generateCutoutsAndMousebitesForOutline = (
       }
     }
 
+    // A V-scored tab is scored along the board edge across the tab span,
+    // where mouse bites would otherwise be drilled.
+    if (vScore && effectiveGapLength > 1e-6) {
+      const scoreStart = p1.translate(segmentDir.multiply(gapStartDist))
+      const scoreEnd = p1.translate(segmentDir.multiply(gapEndDist))
+      vScoreLines.push([
+        { x: scoreStart.x, y: scoreStart.y },
+        { x: scoreEnd.x, y: scoreEnd.y },
+      ])
+    }
+
     // Check convexity of start and end points of the segment for corner extension
     const p_prev_ = outline[(i - 1 + outline.length) % outline.length]!
     const p_next_ = outline[(i + 2) % outline.length]!
@@ -231,7 +254,7 @@ const generateCutoutsAndMousebitesForOutline = (
     }
   }
 
-  return { tabCutouts, mouseBiteHoles }
+  return { tabCutouts, mouseBiteHoles, vScoreLines }
 }
 
 export function generatePanelTabsAndMouseBites(
@@ -240,11 +263,13 @@ export function generatePanelTabsAndMouseBites(
 ): {
   tabCutouts: PcbCutout[]
   mouseBiteHoles: PcbHoleCircle[]
+  vScoreLines: Point[][]
 } {
   const finalTabCutouts: PcbCutout[] = []
   const allMouseBites: MouseBite[] = []
+  const vScoreLines: Point[][] = []
 
-  let { tabWidth, tabLength, mouseBites: useMouseBites } = options
+  let { tabWidth, tabLength, mouseBites: useMouseBites, vScore } = options
 
   // Scale tab sizes based on board dimensions for small boards
   const boardDimensions: number[] = []
@@ -311,10 +336,12 @@ export function generatePanelTabsAndMouseBites(
         mouseBites: useMouseBites,
         mouseBiteHoleDiameter: mouseBiteDiameter,
         mouseBiteHoleSpacing: mouseBiteSpacing,
+        vScore,
       })
 
       finalTabCutouts.push(...generated.tabCutouts)
       allMouseBites.push(...generated.mouseBiteHoles)
+      vScoreLines.push(...generated.vScoreLines)
     }
   }
 
@@ -336,6 +363,7 @@ export function generatePanelTabsAndMouseBites(
   return {
     tabCutouts,
     mouseBiteHoles,
+    vScoreLines,
   }
 }
 
@@ -395,6 +423,7 @@ export function generatePanelOutlineRoutingCutouts(
         mouseBites: false,
         mouseBiteHoleDiameter: 0,
         mouseBiteHoleSpacing: 0,
+        vScore: false,
       },
     )
 

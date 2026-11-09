@@ -27,10 +27,7 @@ export function AnalogTransientSimulation_getPcbSpiceChannel(
           .getSubcircuit()
           .selectAll<NormalComponent>(selector)
           .filter((component) => component.source_component_id)
-        if (
-          components.length !== 1 ||
-          components[0].getSubcircuit() !== declaration.getSubcircuit()
-        ) {
+        if (components.length !== 1) {
           throw new Error(
             `PCB SPICE passive component selector "${selector}" must identify one component in this subcircuit.`,
           )

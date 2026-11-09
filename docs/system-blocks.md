@@ -31,13 +31,31 @@ const svg = convertCircuitJsonToSystemSvg(circuit.getCircuitJson())
 
 ## Layout and connections
 
-Core uses [Dagre](https://github.com/dagrejs/dagre) for synchronous directed graph
-layout, compound groups, edge routes, and label placement. It has no browser or
-DOM requirement. The 2.x dependency line supports the nested-group and self-loop
-fixtures in this package. Block dimensions are derived from their text; groups
-and pages are sized to contain their contents with heading space and margins.
-Layout uses 24 mm node separation, 28 mm rank separation, 12 mm edge separation,
-and 6 mm outer margins, keeping the 12 mm group heading area clear.
+Core uses [Dagre](https://github.com/dagrejs/dagre) synchronously to lay out each
+subsystem's contents, then arranges the subsystem boxes. This keeps unrelated
+subsystems from stretching each other's internal ranks. Bidirectional interfaces
+favor the more connected endpoint for ranking, while emitted routes always retain
+the declared from/to order. Block dimensions are derived from their text.
+
+A rectilinear visibility-grid router avoids component interiors, group headings,
+and other connection labels. Endpoints initially face their label slot or target
+and are ordered by approach angle. A bounded optimization pass swaps neighboring
+landing slots, including slots across block corners, and reroutes the affected
+connections. It accepts swaps only when the complete diagram's score improves:
+crossings, shared segments, and crowded parallel runs carry larger penalties than
+bends or extra length. The visibility grid includes lanes 3 mm from existing
+wires so adjacent routes can run separately. A final rerouting sweep shortens
+remaining detours when it improves the same score.
+
+Labels occupy reserved horizontal slots; overlapping slots are moved before
+routing. For clear straight connections and compact same-face return loops,
+labels can sit beside the wire, attached to its midpoint. Text does not force a
+horizontal detour into a vertical arrow or an extra run into a return loop.
+Horizontal wires keep inline text when there is enough room. Pages expand to
+contain labels and outer detours. Routing is deterministic and has
+no browser or DOM requirement. Optimization tries at most 64 swaps over four
+passes, followed by one rerouting sweep. Crossings and tighter spacing can still
+occur on dense graphs; these penalties are not hard routing guarantees.
 
 Page `direction` is `right` (default), `left`, `down`, or `up`. Geometry is in
 diagram millimeters, centered on the page with +X right and +Y up. Nested group
@@ -54,8 +72,13 @@ by two quarter-circle cubics, when the existing attachments, bounds, and clearan
 allow it. Otherwise they retain ordinary corner rounding. The return is checked
 against blocks, group headings, and labels, including labels inside the loop.
 
-Attachment points and label positions stay fixed; this does not reroute existing
-crossings or change Dagre's diagonal routing directions.
+Rounding follows endpoint optimization and orthogonal routing. It preserves the
+chosen attachment points and label positions, and also checks neighboring wires
+so curved corners do not reintroduce crossings or crowd parallel routes. Curves
+may use the label's extra horizontal padding while staying outside its estimated
+text bounds. Wire clearance targets 3 mm; where the original corner is closer,
+rounding preserves that existing clearance instead of rejecting a curve that
+moves away from its neighbor.
 
 The emitted route stores absolute `cubic_bezier_control_points` on each curved
 segment's endpoint. Arc pieces span at most 90 degrees, with matching tangent
@@ -70,6 +93,23 @@ self-loops, and disconnected blocks are supported. The props API's `kind`
 (`signal` by default or `power`) becomes the required `is_signal` and `is_power`
 booleans in Circuit JSON. Every supplied label has a resolved
 `label_anchor_center`. Connections do not create electrical traces or nets.
+
+### Connection colors and line patterns
+
+```tsx
+<systemblock.connection from="mcu" to="display" label="I2C"
+  direction="both" color="#16856b" lineStyle="solid" />
+<systemblock.connection from="debug" to="mcu" label="Recovery"
+  color="#64748b" lineStyle="dotted" />
+```
+
+`color` accepts a trimmed `#RGB` or `#RRGGBB` string, preserved without conversion,
+and overrides the renderer's theme for the connection stroke, arrows, and label.
+`lineStyle` accepts `solid`, `dashed`, or `dotted`, overriding the pattern selected
+by `kind`. These are independent, optional props with no aliases or conflicts.
+They emit `color` and `line_style` in Circuit JSON. Omit them to keep the existing
+signal/power styles; existing TSX and Circuit JSON need no migration. Labels use
+a background-colored halo so nearby wires do not obscure their text.
 
 ![Power and feedback TSX example](../tests/features/system-blocks/__snapshots__/system-blocks-power-feedback.snap.svg)
 
@@ -111,4 +151,9 @@ The [TSX fixtures](../tests/features/system-blocks/) include all four directions
 nested groups, power fanout, feedback, PCB references, multiple pages, empty
 groups/pages, long text, and page updates. Snapshots use `circuit-to-svg` 0.0.456
 or later. Tests also validate the emitted Circuit JSON and check that routes
-terminate on block boundaries and stay within the resolved page bounds.
+terminate on block boundaries, stay within the resolved page bounds, and never
+pass through component interiors. The RVBoy console and power fixtures exercise
+dense two-way interfaces and cross-subsystem power fanout. Independent geometry
+checks require no wire intersections and at least 3 mm between overlapping
+parallel runs on both RVBoy pages; the console test also locks down the CPU
+landing order for the USB, audio, and debug connections.

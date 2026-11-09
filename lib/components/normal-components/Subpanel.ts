@@ -1,4 +1,3 @@
-import { generatePanelVScoreAnnotations } from "lib/utils/panels/generate-panel-v-score-annotations"
 import { getOwningPanel } from "lib/utils/panels/get-owning-panel"
 import { subpanelProps } from "@tscircuit/props"
 import { distance } from "circuit-json"
@@ -176,12 +175,7 @@ export class Subpanel extends Group<typeof subpanelProps> {
     if (layoutMode !== "grid") return
 
     const tabWidth = this._parsedProps.tabWidth ?? DEFAULT_TAB_WIDTH
-    const isVScore = this._parsedProps.panelizationMethod === "v_score"
-    const boardGap = this._parsedProps.boardGap ?? (isVScore ? 0 : tabWidth)
-    if (isVScore && boardGap !== 0)
-      throw new Error(
-        "V-scoring requires boardGap={0}; routed gaps cannot be V-scored",
-      )
+    const boardGap = this._parsedProps.boardGap ?? tabWidth
 
     // Calculate available space for the grid if panel dimensions are specified
     // but rows/cols are not (auto-calculate optimal grid)
@@ -363,21 +357,7 @@ export class Subpanel extends Group<typeof subpanelProps> {
 
       const tabWidth = props.tabWidth ?? DEFAULT_TAB_WIDTH
 
-      if (panelizationMethod === "v_score") {
-        if (this.componentName !== "Panel" || !this.pcb_panel_id)
-          throw new Error("V-scoring must be configured on the root <panel>")
-        if ((props.boardGap ?? 0) !== 0)
-          throw new Error(
-            "V-scoring requires boardGap={0}; routed gaps cannot be V-scored",
-          )
-        generatePanelVScoreAnnotations(
-          {
-            boards: boardsInPanel,
-            panel: db.pcb_panel.get(this.pcb_panel_id)!,
-          },
-          this.root!,
-        )
-      } else if (panelizationMethod === "outline_routing") {
+      if (panelizationMethod === "outline_routing") {
         const outlineRoutingCutouts = generatePanelOutlineRoutingCutouts(
           boardsInPanel,
           { cutoutWidth: tabWidth },
@@ -393,15 +373,14 @@ export class Subpanel extends Group<typeof subpanelProps> {
         }
       } else {
         const boardGap = props.boardGap ?? tabWidth
-        const { tabCutouts, mouseBiteHoles } = generatePanelTabsAndMouseBites(
-          boardsInPanel,
-          {
+        const { tabCutouts, mouseBiteHoles, vScoreLines } =
+          generatePanelTabsAndMouseBites(boardsInPanel, {
             boardGap,
             tabWidth,
             tabLength: props.tabLength ?? DEFAULT_TAB_LENGTH,
             mouseBites: props.mouseBites ?? true,
-          },
-        )
+            vScore: props.vScore ?? false,
+          })
 
         for (const tabCutout of tabCutouts) {
           db.pcb_cutout.insert({
@@ -415,6 +394,16 @@ export class Subpanel extends Group<typeof subpanelProps> {
           db.pcb_hole.insert({
             ...mouseBiteHole,
             subcircuit_id: this.subcircuit_id ?? undefined,
+          })
+        }
+
+        for (const route of vScoreLines) {
+          db.pcb_fabrication_note_path.insert({
+            route,
+            layer: "top",
+            stroke_width: 0.1,
+            subcircuit_id: this.subcircuit_id ?? undefined,
+            pcb_panel_id: getOwningPanel(this)?.pcb_panel_id ?? undefined,
           })
         }
       }
