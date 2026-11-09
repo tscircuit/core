@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("rejects a merged branched net as a replacement for a named differential trunk", () => {
+test("rejects a multi-terminal differential path without explicit paired sections", () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width={24} height={18} routingDisabled schematicDisabled>
@@ -11,9 +11,8 @@ test("rejects a merged branched net as a replacement for a named differential tr
       <resistor name="RT" resistance={100} footprint="0402" pcbY={5} />
       <trace
         name="CK_P_TRUNK"
-        path={[".U1 > .pin8", ".U2 > .pin1", "net.CK_P"]}
+        path={[".U1 > .pin8", ".U2 > .pin1", ".RT > .pin1", "net.CK_P"]}
       />
-      <trace name="CK_P_TAP" from="net.CK_P" to=".RT > .pin1" />
       <trace name="CK_N_TRUNK" from=".U1 > .pin7" to=".U2 > .pin2" />
       <differentialpair
         name="CK_PAIR"
@@ -24,7 +23,7 @@ test("rejects a merged branched net as a replacement for a named differential tr
   )
   circuit.render()
   const trunk = circuit.db.source_trace.getWhere({ name: "CK_P_TRUNK" })!
-  expect(trunk.connected_source_port_ids).toHaveLength(2)
+  expect(trunk.connected_source_port_ids).toHaveLength(3)
   expect(trunk.connected_source_net_ids).toHaveLength(1)
   expect(() =>
     getSimpleRouteJsonFromCircuitJson({

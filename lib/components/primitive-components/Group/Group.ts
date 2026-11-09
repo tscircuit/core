@@ -1,3 +1,4 @@
+import { formatPcbDisplayOffset } from "lib/utils/format-pcb-display-offset"
 import { getOwningPanel } from "lib/utils/panels/get-owning-panel"
 import { TestPointAutorouter } from "lib/utils/autorouting/TestPointAutorouter"
 import {
@@ -552,7 +553,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             trace_clearance: props.autorouter.traceClearance,
           }
         : undefined,
-      anchor_alignment: props.pcbAnchorAlignment ?? null,
+      anchor_alignment: props.pcbAnchorAlignment ?? "center",
     })
     this.pcb_group_id = pcb_group.pcb_group_id
 
@@ -1327,6 +1328,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     }
 
     const outputTestPoints: ConnectedRoutedTestPoint[] = []
+    let routingError: Error | undefined
     const outputTraces: SimplifiedPcbTrace[] = []
     const outputJumpers: Array<{
       jumper_footprint: string
@@ -1786,6 +1788,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
                 debug(
                   `[${this.getString()}] local autorouting error: ${event.error.message}`,
                 )
+                routingError = event.error
                 reject(event.error)
               })
             },
@@ -2180,7 +2183,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           simpleRouteJson,
         })
 
-        throw error
+        if (outputTraces.length === 0 || !routingError) throw error
+
+        // Publish completed phases, then propagate the failed phase as before.
+        break
       } finally {
         // Ensure the autorouter is stopped
         autorouter?.stop()
@@ -2197,6 +2203,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
     // Mark the component as needing to re-render the PCB traces
     this._markDirty("PcbTraceRender")
+
+    if (routingError) throw routingError
   }
 
   _startAsyncAutorouting() {
@@ -2636,7 +2644,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const { _parsedProps: props } = this
     const schematic_group = db.schematic_group.insert({
       is_subcircuit: this.isSubcircuit,
-      subcircuit_id: this.subcircuit_id!,
+      subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
       name: this.name,
       center: this._getGlobalSchematicPositionBeforeLayout(),
       width: 0,
@@ -2851,8 +2859,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           position_mode: "relative_to_group_anchor",
           positioned_relative_to_pcb_group_id: pcbParentGroupId,
           positioned_relative_to_pcb_board_id: positionedRelativeToBoardId,
-          display_offset_x: props.pcbX,
-          display_offset_y: props.pcbY,
+          display_offset_x: formatPcbDisplayOffset(props.pcbX),
+          display_offset_y: formatPcbDisplayOffset(props.pcbY),
         })
       }
     }
