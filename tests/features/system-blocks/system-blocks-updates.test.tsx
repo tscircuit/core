@@ -31,7 +31,9 @@ test("system page updates replace geometry and clean up removed records", async 
   circuit.render()
   await expect(
     convertCircuitJsonToSystemSvg(circuit.getCircuitJson()),
-  ).toMatchSvgSnapshot(import.meta.path, "system-blocks-before-update")
+  ).toMatchSvgSnapshot(import.meta.path, "system-blocks-before-update", {
+    diffThresholdPercent: 0,
+  })
   page.setProps({ direction: "down" })
   controller.setProps({
     displayName: "Updated controller",
@@ -45,9 +47,14 @@ test("system page updates replace geometry and clean up removed records", async 
   expect(circuit.db.system_block_page.list()).toHaveLength(1)
   expect(circuit.db.system_block_component.list()).toHaveLength(2)
   expect(circuit.db.system_block_connection.list()).toHaveLength(1)
+  const connection = circuit.db.system_block_connection.list()[0]
+  expect(connection.route).toHaveLength(2)
+  expect(connection.route[0].x).toBe(connection.route[1].x)
   await expect(
     convertCircuitJsonToSystemSvg(circuit.getCircuitJson(), { width: 500 }),
-  ).toMatchSvgSnapshot(import.meta.path, "system-blocks-after-update")
+  ).toMatchSvgSnapshot(import.meta.path, "system-blocks-after-update", {
+    diffThresholdPercent: 0,
+  })
   page.shouldBeRemoved = true
   circuit.render()
   expect(

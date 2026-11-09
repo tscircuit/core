@@ -17,10 +17,13 @@ const EPSILON = 1e-8
  * +Y up (right-handed XY, +Z out of page). Internal unit vectors are directions.
  * Fillets stay inside each corner's trim triangle, so page bounds cannot grow.
  * Obstacle checks conservatively use that triangle's axis-aligned bounds.
+ * Neighboring wire bounds retain up to 3 mm clearance, capped by the existing
+ * corner's clearance so a nearby wire does not prevent rounding away from it.
  */
 export function roundSystemBlockRoute(
   route: Point[],
   obstacles: SystemBlockRouteObstacle[],
+  wireObstacles: SystemBlockRouteObstacle[] = [],
 ): SystemBlockRoutePoint[] {
   const points: Point[] = []
   for (const point of route) {
@@ -53,6 +56,27 @@ export function roundSystemBlockRoute(
     const previous = points[index - 1]
     const corner = points[index]
     const next = points[index + 1]
+    const cornerObstacles = [
+      ...obstacles,
+      ...wireObstacles.map((wire) => {
+        const clearance = Math.min(
+          3,
+          Math.max(
+            0,
+            wire.minX - corner.x,
+            corner.x - wire.maxX,
+            wire.minY - corner.y,
+            corner.y - wire.maxY,
+          ),
+        )
+        return {
+          minX: wire.minX - clearance,
+          maxX: wire.maxX + clearance,
+          minY: wire.minY - clearance,
+          maxY: wire.maxY + clearance,
+        }
+      }),
+    ]
     const incoming = unitDirection(previous, corner)
     const outgoing = unitDirection(corner, next)
     const turn = Math.atan2(
@@ -82,7 +106,7 @@ export function roundSystemBlockRoute(
       const maxX = Math.max(start.x, corner.x, end.x)
       const minY = Math.min(start.y, corner.y, end.y)
       const maxY = Math.max(start.y, corner.y, end.y)
-      const blocked = obstacles.some(
+      const blocked = cornerObstacles.some(
         (obstacle) =>
           minX < obstacle.maxX &&
           maxX > obstacle.minX &&

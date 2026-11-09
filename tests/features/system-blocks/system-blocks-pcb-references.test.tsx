@@ -91,6 +91,6 @@ test("PCB associations resolve literal names in the owning or explicit subcircui
     convertCircuitJsonToSystemSvg(circuit.getCircuitJson(), {
       systemBlockPageId: overview.system_block_page_id,
     }),
-  ).toMatchSvgSnapshot(import.meta.path)
+  ).toMatchSvgSnapshot(import.meta.path, undefined, { diffThresholdPercent: 0 })
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
