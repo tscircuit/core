@@ -345,6 +345,24 @@ export function getSourceTraceIdForRoutedTrace({
   const netCandidates = candidates.filter(
     (sourceTrace) => sourceTrace.connected_source_net_ids.length > 0,
   )
+  if (
+    netCandidates.length === 0 &&
+    sourcePortIds.length >= 2 &&
+    endpointNetIds.length === sourcePortIds.length
+  ) {
+    // A branch between two local bypass pads can have no net-attached trace at
+    // either endpoint. It belongs to their shared net, not to one bypass's
+    // two-port connection and its local length or width requirement.
+    const sharedSourceNet = db.source_net.list().find((sourceNet) => {
+      const sourceNetConnectivityId = connMap.getNetConnectedToId(
+        sourceNet.source_net_id,
+      )
+      return endpointNetIds.every(
+        (endpointNetId) => endpointNetId === sourceNetConnectivityId,
+      )
+    })
+    if (sharedSourceNet) return sharedSourceNet.source_net_id
+  }
   const matchingCandidates =
     netCandidates.length > 0 ? netCandidates : candidates
   return (
