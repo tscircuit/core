@@ -1,6 +1,6 @@
-import { signalintegrity } from "lib/namespaced-elements"
+import { simulation } from "lib/namespaced-elements"
 import type { ReactNode } from "react"
-import type { SignalIntegrityIbisModelProps } from "@tscircuit/props"
+import type { SimulationIbisModelProps } from "@tscircuit/props"
 
 export const lvcModel = {
   ibisModelAsset: {
@@ -11,7 +11,7 @@ export const lvcModel = {
   ibisComponentName: "LVC1G04_DBV",
   ibisPinNameToPortLabel: { "2": "A", "3": "GND", "4": "Y", "5": "VCC" },
   ibisPinNameToModelName: { "2": "LVC1G04_IN_33", "4": "LVC1G04_OUT_33" },
-} satisfies Omit<SignalIntegrityIbisModelProps, "componentRef">
+} satisfies Omit<SimulationIbisModelProps, "componentRef">
 
 export const busModel = {
   ibisModelAsset: {
@@ -22,7 +22,7 @@ export const busModel = {
   ibisComponentName: "SN65HVD72D",
   ibisPinNameToPortLabel: { "5": "GND", "6": "A", "7": "B", "8": "VCC" },
   ibisPinNameToModelName: { "6": "a_b_p", "7": "a_b_n" },
-} satisfies Omit<SignalIntegrityIbisModelProps, "componentRef">
+} satisfies Omit<SimulationIbisModelProps, "componentRef">
 
 export const lvcPins = {
   pin1: "NC",
@@ -63,10 +63,10 @@ export function DiagnosticBoard({
       <chip name="TX" footprint="sot23_5" pcbX={-12} pinLabels={lvcPins} />
       <chip name="RX" footprint="sot23_5" pcbX={12} pinLabels={lvcPins} />
       {missingModel !== "TX" && (
-        <signalintegrity.ibismodel componentRef=".TX" {...lvcModel} />
+        <simulation.ibismodel componentRef=".TX" {...lvcModel} />
       )}
       {missingModel !== "RX" && (
-        <signalintegrity.ibismodel componentRef=".RX" {...lvcModel} />
+        <simulation.ibismodel componentRef=".RX" {...lvcModel} />
       )}
       {!disconnected && <trace from=".TX > .Y" to=".RX > .A" />}
       {children}

@@ -1,4 +1,4 @@
-import { signalintegrity } from "lib/namespaced-elements"
+import { simulation } from "lib/namespaced-elements"
 import { expect } from "bun:test"
 import {
   getSiTestFixture,
@@ -10,13 +10,16 @@ test("cached SI records enforce destination board block naming", async () => {
   const { circuit: original } = getSiTestFixture()
   original.add(
     <DiagnosticBoard>
-      <signalintegrity.simulation bitRate="20Mbps" unrouted="ideal">
-        <signalintegrity.signal
+      <simulation.pcbtransientchannelsimulation
+        bitRate="20Mbps"
+        unrouted="ideal"
+      >
+        <simulation.pcbchannel
           name="DATA"
           driverRef=".TX > .Y"
           receiverRef=".RX > .A"
         />
-      </signalintegrity.simulation>
+      </simulation.pcbtransientchannelsimulation>
     </DiagnosticBoard>,
   )
   await original.renderUntilSettled()
@@ -40,7 +43,7 @@ test("cached SI records enforce destination board block naming", async () => {
       </board>,
     )
     await expect(circuit.renderUntilSettled()).rejects.toThrow(
-      "This board has 2 <signalintegrity.simulation> blocks; give each a name.",
+      "This board has 2 <simulation.pcbtransientchannelsimulation> blocks; give each a name.",
     )
   }
 })

@@ -1,4 +1,4 @@
-import { signalintegrity } from "lib/namespaced-elements"
+import { simulation } from "lib/namespaced-elements"
 import { expect } from "bun:test"
 import { DiagnosticBoard, lvcModel } from "./fixtures/diagnostic-board"
 import {
@@ -12,19 +12,19 @@ test("endpoint selection diagnoses ambiguous, invalid and non-receiving IBIS mod
     circuit.add(
       <DiagnosticBoard missingModel={kind === "ambiguous" ? "TX" : undefined}>
         {kind === "ambiguous" && (
-          <signalintegrity.ibismodel
+          <simulation.ibismodel
             componentRef=".TX"
             {...lvcModel}
             ibisPinNameToModelName={{}}
           />
         )}
         {kind === "role" && <trace from=".TX > .Y" to=".RX > .Y" />}
-        <signalintegrity.simulation
+        <simulation.pcbtransientchannelsimulation
           bitRate="20Mbps"
           unrouted="ideal"
           pdn={kind === "pdn" ? "extracted" : "ideal"}
         >
-          <signalintegrity.signal
+          <simulation.pcbchannel
             name="DATA"
             driverRef={
               kind === "invalid"
@@ -33,7 +33,7 @@ test("endpoint selection diagnoses ambiguous, invalid and non-receiving IBIS mod
             }
             receiverRef={kind === "role" ? ".RX > .Y" : ".RX > .A"}
           />
-        </signalintegrity.simulation>
+        </simulation.pcbtransientchannelsimulation>
       </DiagnosticBoard>,
     )
     await expect(circuit.renderUntilSettled()).rejects.toThrow(

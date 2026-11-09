@@ -1,4 +1,4 @@
-import { signalintegrity } from "lib/namespaced-elements"
+import { simulation } from "lib/namespaced-elements"
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
@@ -15,7 +15,7 @@ test("IBIS references and model selections must name mapped vendor pins", async 
           footprint="soic4"
           pinLabels={{ pin1: "DATA", pin2: "VCC" }}
         />
-        <signalintegrity.ibismodel
+        <simulation.ibismodel
           componentRef=".U1"
           ibisModelAsset={{
             project_relative_path: "models/model.ibs",

@@ -1,9 +1,6 @@
-import { signalintegrity } from "lib/namespaced-elements"
+import { simulation } from "lib/namespaced-elements"
 import { expect } from "bun:test"
-import {
-  SignalIntegritySignal,
-  SignalIntegritySimulation,
-} from "lib/components"
+import { PcbChannel, PcbTransientChannelSimulation } from "lib/components"
 import { DiagnosticBoard } from "./fixtures/diagnostic-board"
 import {
   getSiTestFixture,
@@ -14,22 +11,23 @@ test("SI updates and removes records without duplicating runs or mutating props"
   const { circuit } = getSiTestFixture()
   circuit.add(
     <DiagnosticBoard>
-      <signalintegrity.simulation bitRate="20Mbps" unrouted="ideal">
-        <signalintegrity.signal
+      <simulation.pcbtransientchannelsimulation
+        bitRate="20Mbps"
+        unrouted="ideal"
+      >
+        <simulation.pcbchannel
           name="DATA"
           driverRef=".TX > .Y"
           receiverRef=".RX > .A"
         />
-      </signalintegrity.simulation>
+      </simulation.pcbtransientchannelsimulation>
     </DiagnosticBoard>,
   )
   await circuit.renderUntilSettled()
   const block = circuit.selectOne(
-    "signalintegritysimulation",
-  ) as SignalIntegritySimulation
-  const signal = circuit.selectOne(
-    "signalintegritysignal",
-  ) as SignalIntegritySignal
+    "pcbtransientchannelsimulation",
+  ) as PcbTransientChannelSimulation
+  const signal = circuit.selectOne("pcbchannel") as PcbChannel
   const originalProps = structuredClone(signal._parsedProps)
   const originalId = signal.simulation_signal_id
   signal.setProps({
@@ -55,7 +53,7 @@ test("SI updates and removes records without duplicating runs or mutating props"
   })
   expect(circuit.db.simulation_signal_integrity.list()[0]).toMatchObject({
     duration_s: 20 / 10e6,
-    corner: "min",
+    corner: "minimum",
   })
   expect(originalProps).toMatchObject({ pattern: "prbs7", offset: "0UI" })
   block.shouldBeRemoved = true

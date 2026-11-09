@@ -1,4 +1,4 @@
-import { signalintegrity } from "lib/namespaced-elements"
+import { simulation } from "lib/namespaced-elements"
 import { expect } from "bun:test"
 import { any_circuit_element } from "circuit-json"
 import { DiagnosticBoard } from "./fixtures/diagnostic-board"
@@ -13,46 +13,46 @@ test("PRBS phases use sorted board-wide names, retain quiet phases and pass expl
     circuit.add(
       <DiagnosticBoard>
         {["C", "A", "B"].map((name) => (
-          <signalintegrity.simulation
+          <simulation.pcbtransientchannelsimulation
             key={name}
             name={name}
             bitRate="20Mbps"
             unrouted="ideal"
           >
-            <signalintegrity.signal
+            <simulation.pcbchannel
               name={name}
               driverRef=".TX > .Y"
               receiverRef=".RX > .A"
               pattern={pattern}
               quiet={name === "B" ? "low" : undefined}
             />
-          </signalintegrity.simulation>
+          </simulation.pcbtransientchannelsimulation>
         ))}
-        <signalintegrity.simulation
+        <simulation.pcbtransientchannelsimulation
           name="REPEAT"
           bitRate="20Mbps"
           unrouted="ideal"
         >
-          <signalintegrity.signal
+          <simulation.pcbchannel
             name="B"
             driverRef=".TX > .Y"
             receiverRef=".RX > .A"
             pattern={pattern}
           />
-        </signalintegrity.simulation>
-        <signalintegrity.simulation
+        </simulation.pcbtransientchannelsimulation>
+        <simulation.pcbtransientchannelsimulation
           name="OVERRIDE"
           bitRate="20Mbps"
           unrouted="ideal"
         >
-          <signalintegrity.signal
+          <simulation.pcbchannel
             name="A"
             driverRef=".TX > .Y"
             receiverRef=".RX > .A"
             pattern={pattern}
             seed={1}
           />
-        </signalintegrity.simulation>
+        </simulation.pcbtransientchannelsimulation>
       </DiagnosticBoard>,
     )
     await circuit.renderUntilSettled()

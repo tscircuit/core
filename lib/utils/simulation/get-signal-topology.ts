@@ -3,7 +3,7 @@ import {
   getSourcePortConnectivityMapFromCircuitJson,
   PcbConnectivityMap,
 } from "circuit-json-to-connectivity-map"
-import type { SignalIntegritySimulation } from "lib/components/primitive-components/SignalIntegritySimulation"
+import type { PcbTransientChannelSimulation } from "lib/components/primitive-components/PcbTransientChannelSimulation"
 
 type SourceComponentId = SourceComponentBase["source_component_id"]
 type SourcePortId = SourcePort["source_port_id"]
@@ -13,7 +13,7 @@ type SourcePortId = SourcePort["source_port_id"]
  * PCB points are in board/world coordinates, mm, +X right/+Y up, right-handed;
  * layers identify Z. These are positions, not directions.
  */
-export function getSignalTopology(block: SignalIntegritySimulation) {
+export function getSignalTopology(block: PcbTransientChannelSimulation) {
   const { db } = block.root!
   const circuitJson = db.toArray()
   const copper = getSourcePortConnectivityMapFromCircuitJson(circuitJson)

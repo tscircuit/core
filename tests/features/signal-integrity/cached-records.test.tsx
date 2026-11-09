@@ -1,4 +1,4 @@
-import { signalintegrity } from "lib/namespaced-elements"
+import { simulation } from "lib/namespaced-elements"
 import { expect } from "bun:test"
 import {
   getSiTestFixture,
@@ -6,7 +6,7 @@ import {
 } from "./fixtures/get-si-test-fixture"
 import { Inverter, Octal } from "./fixtures/parts"
 
-test("cached SI source records remap endpoint and forward strobe references", async () => {
+test("cached SI source records remap endpoint references and spelled-out corners", async () => {
   const { circuit: original } = getSiTestFixture()
   original.add(
     <board routingDisabled fabricatorPreset="jlcpcb_standard">
@@ -15,26 +15,24 @@ test("cached SI source records remap endpoint and forward strobe references", as
       <Inverter name="TX1" pcbX={-8} pcbY={-2} />
       <trace from=".TX0 > .Y" to=".RX > .A1" />
       <trace from=".TX1 > .Y" to=".RX > .A2" />
-      <signalintegrity.simulation
+      <simulation.pcbtransientchannelsimulation
         name="WRITE"
         bitRate="20Mbps"
         unrouted="ideal"
         corner="minimum"
       >
-        <signalintegrity.signal
+        <simulation.pcbchannel
           name="DATA"
           driverRef=".TX0 > .Y"
           receiverRef=".RX > .A1"
-          strobeRef="CLK"
-          mask={{ setup: "75ps" }}
         />
-        <signalintegrity.signal
+        <simulation.pcbchannel
           name="CLK"
           driverRef=".TX1 > .Y"
           receiverRef=".RX > .A2"
           pattern="clock"
         />
-      </signalintegrity.simulation>
+      </simulation.pcbtransientchannelsimulation>
     </board>,
   )
   await original.renderUntilSettled()
@@ -51,14 +49,11 @@ test("cached SI source records remap endpoint and forward strobe references", as
   expect(circuit.db.simulation_ibis_model.list()).toHaveLength(6)
   const driverPorts = []
   for (const block of blocks) {
-    expect(block.corner).toBe("min")
+    expect(block.corner).toBe("minimum")
     const signals = circuit.db.simulation_signal.list({
       simulation_signal_integrity_id: block.simulation_signal_integrity_id,
     })
     expect(signals.map((signal) => signal.name)).toEqual(["DATA", "CLK"])
-    expect(signals[0].strobe_simulation_signal_id).toBe(
-      signals[1].simulation_signal_id,
-    )
     for (const signal of signals) {
       if (signal.driver.kind !== "single")
         throw new Error("Expected a single-ended fixture")

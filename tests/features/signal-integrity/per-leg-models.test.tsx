@@ -1,4 +1,4 @@
-import { signalintegrity } from "lib/namespaced-elements"
+import { simulation } from "lib/namespaced-elements"
 import { expect } from "bun:test"
 import { any_circuit_element } from "circuit-json"
 import { busModel, busPins } from "./fixtures/diagnostic-board"
@@ -14,13 +14,16 @@ test("differential model overrides emit independent p/n fields and survive cache
       {["TX", "RX"].map((name) => (
         <group key={name}>
           <chip name={name} footprint="soic8" pinLabels={busPins} />
-          <signalintegrity.ibismodel componentRef={`.${name}`} {...busModel} />
+          <simulation.ibismodel componentRef={`.${name}`} {...busModel} />
         </group>
       ))}
       <trace from=".TX > .A" to=".RX > .A" />
       <trace from=".TX > .B" to=".RX > .B" />
-      <signalintegrity.simulation bitRate="250kbps" unrouted="ideal">
-        <signalintegrity.signal
+      <simulation.pcbtransientchannelsimulation
+        bitRate="250kbps"
+        unrouted="ideal"
+      >
+        <simulation.pcbchannel
           name="BUS"
           quiet="off"
           driverRef={{
@@ -32,7 +35,7 @@ test("differential model overrides emit independent p/n fields and survive cache
             model: { p: "a_b_p", n: "a_b_n" },
           }}
         />
-      </signalintegrity.simulation>
+      </simulation.pcbtransientchannelsimulation>
     </board>,
   )
   await original.renderUntilSettled()

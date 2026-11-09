@@ -1,4 +1,4 @@
-import { signalintegrity } from "lib/namespaced-elements"
+import { simulation } from "lib/namespaced-elements"
 import { expect } from "bun:test"
 import { analog } from "lib/namespaced-elements/analog"
 import { DiagnosticBoard } from "./fixtures/diagnostic-board"
@@ -36,13 +36,16 @@ test("SI declarations coexist with general SPICE transients and voltage probes",
         duration="1ms"
         timePerStep="100us"
       />
-      <signalintegrity.simulation bitRate="20Mbps" unrouted="ideal">
-        <signalintegrity.signal
+      <simulation.pcbtransientchannelsimulation
+        bitRate="20Mbps"
+        unrouted="ideal"
+      >
+        <simulation.pcbchannel
           name="DATA"
           driverRef=".TX > .Y"
           receiverRef=".RX > .A"
         />
-      </signalintegrity.simulation>
+      </simulation.pcbtransientchannelsimulation>
     </DiagnosticBoard>,
   )
   await circuit.renderUntilSettled()

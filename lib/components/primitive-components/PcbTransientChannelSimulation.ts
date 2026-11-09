@@ -1,12 +1,12 @@
-import { signalIntegritySimulationProps } from "@tscircuit/props"
+import { pcbTransientChannelSimulationProps } from "@tscircuit/props"
 import type { SimulationSignalIntegrity } from "circuit-json"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
-import { SignalIntegritySimulation_doInitialPcbSimulationRender } from "./SignalIntegritySimulation_doInitialPcbSimulationRender"
+import { PcbTransientChannelSimulation_doInitialPcbSimulationRender } from "./PcbTransientChannelSimulation_doInitialPcbSimulationRender"
 import { parseIbisModelInfo } from "lib/utils/simulation/parse-ibis-model-info"
 
 /** Declares a coupled SI run; solvers consume its Circuit JSON separately. */
-export class SignalIntegritySimulation extends PrimitiveComponent<
-  typeof signalIntegritySimulationProps
+export class PcbTransientChannelSimulation extends PrimitiveComponent<
+  typeof pcbTransientChannelSimulationProps
 > {
   simulation_signal_integrity_id:
     | SimulationSignalIntegrity["simulation_signal_integrity_id"]
@@ -20,8 +20,8 @@ export class SignalIntegritySimulation extends PrimitiveComponent<
 
   get config() {
     return {
-      componentName: "SignalIntegritySimulation",
-      zodProps: signalIntegritySimulationProps,
+      componentName: "PcbTransientChannelSimulation",
+      zodProps: pcbTransientChannelSimulationProps,
     }
   }
 
@@ -42,12 +42,12 @@ export class SignalIntegritySimulation extends PrimitiveComponent<
     )
     if (unreadModelUrls.size && !platformFetch)
       throw new Error(
-        "<signalintegrity.simulation> needs IBIS contents for validation; configure platformFetch to load the declared model assets.",
+        "<simulation.pcbtransientchannelsimulation> needs IBIS contents for validation; configure platformFetch to load the declared model assets.",
       )
     if (platformFetch && unreadModelUrls.size) {
       for (const url of unreadModelUrls) {
         this.ibisModelInfoByUrl.set(url, null)
-        this._queueAsyncEffect("ReadSignalIntegrityIbisModel", async () => {
+        this._queueAsyncEffect("ReadSimulationIbisModel", async () => {
           try {
             const response = await platformFetch(url)
             if (!response.ok) throw new Error("IBIS asset request failed")
@@ -59,7 +59,7 @@ export class SignalIntegritySimulation extends PrimitiveComponent<
             // Throw synchronously on the next render; async-effect errors alone
             // are logged by the renderer and do not reject renderUntilSettled.
             this.ibisModelLoadError = new Error(
-              "<signalintegrity.simulation> could not load the declared IBIS contents for validation.",
+              "<simulation.pcbtransientchannelsimulation> could not load the declared IBIS contents for validation.",
             )
           } finally {
             this._markDirty("PcbSimulationRender")
@@ -68,7 +68,7 @@ export class SignalIntegritySimulation extends PrimitiveComponent<
       }
       return
     }
-    SignalIntegritySimulation_doInitialPcbSimulationRender(this)
+    PcbTransientChannelSimulation_doInitialPcbSimulationRender(this)
   }
 
   updatePcbSimulationRender(): void {

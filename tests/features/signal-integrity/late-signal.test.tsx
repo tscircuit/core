@@ -1,4 +1,4 @@
-import { signalintegrity } from "lib/namespaced-elements"
+import { simulation } from "lib/namespaced-elements"
 import { expect } from "bun:test"
 import { createInstanceFromReactElement } from "lib/fiber/create-instance-from-react-element"
 import { Fragment } from "react"
@@ -15,25 +15,28 @@ test("adding a signal after initial render must emit its record", async () => {
       {["TX0", "RX0", "TX1", "RX1"].map((name) => (
         <Fragment key={name}>
           <chip name={name} footprint="sot23_5" pinLabels={lvcPins} />
-          <signalintegrity.ibismodel componentRef={`.${name}`} {...lvcModel} />
+          <simulation.ibismodel componentRef={`.${name}`} {...lvcModel} />
         </Fragment>
       ))}
       <trace from=".TX0 > .Y" to=".RX0 > .A" />
       <trace from=".TX1 > .Y" to=".RX1 > .A" />
-      <signalintegrity.simulation bitRate="20Mbps" unrouted="ideal">
-        <signalintegrity.signal
+      <simulation.pcbtransientchannelsimulation
+        bitRate="20Mbps"
+        unrouted="ideal"
+      >
+        <simulation.pcbchannel
           name="D0"
           driverRef=".TX0 > .Y"
           receiverRef=".RX0 > .A"
         />
-      </signalintegrity.simulation>
+      </simulation.pcbtransientchannelsimulation>
     </board>,
   )
   await circuit.renderUntilSettled()
-  const block = circuit.selectOne("signalintegritysimulation")!
+  const block = circuit.selectOne("pcbtransientchannelsimulation")!
   block.add(
     createInstanceFromReactElement(
-      <signalintegrity.signal
+      <simulation.pcbchannel
         name="D1"
         driverRef=".TX1 > .Y"
         receiverRef=".RX1 > .A"

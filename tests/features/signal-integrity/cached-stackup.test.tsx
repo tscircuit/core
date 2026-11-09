@@ -1,4 +1,4 @@
-import { signalintegrity } from "lib/namespaced-elements"
+import { simulation } from "lib/namespaced-elements"
 import { expect } from "bun:test"
 import { DiagnosticBoard } from "./fixtures/diagnostic-board"
 import {
@@ -10,17 +10,17 @@ test("cached SI declarations require the destination board stackup", async () =>
   const { circuit: original } = getSiTestFixture()
   original.add(
     <DiagnosticBoard>
-      <signalintegrity.simulation
+      <simulation.pcbtransientchannelsimulation
         name="WRITE"
         bitRate="20Mbps"
         unrouted="ideal"
       >
-        <signalintegrity.signal
+        <simulation.pcbchannel
           name="DATA"
           driverRef=".TX > .Y"
           receiverRef=".RX > .A"
         />
-      </signalintegrity.simulation>
+      </simulation.pcbtransientchannelsimulation>
     </DiagnosticBoard>,
   )
   await original.renderUntilSettled()
@@ -31,7 +31,7 @@ test("cached SI declarations require the destination board stackup", async () =>
     </board>,
   )
   await expect(circuit.renderUntilSettled()).rejects.toThrow(
-    "<signalintegrity.simulation> needs a stackup: set fabricatorPreset or define one.",
+    "<simulation.pcbtransientchannelsimulation> needs a stackup: set fabricatorPreset or define one.",
   )
   expect(circuit.db.simulation_signal.list()).toHaveLength(0)
 })

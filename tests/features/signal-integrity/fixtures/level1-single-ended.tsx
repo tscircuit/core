@@ -1,4 +1,4 @@
-import { signalintegrity } from "lib/namespaced-elements"
+import { simulation } from "lib/namespaced-elements"
 const ibisFile = {
   project_relative_path: "models/sn74lvc1g04.ibs",
   url: "./models/sn74lvc1g04.ibs",
@@ -48,8 +48,8 @@ export default () => (
       pinLabels={pins}
     />
 
-    <signalintegrity.ibismodel componentRef=".TX" {...lvc1g04} />
-    <signalintegrity.ibismodel componentRef=".RX" {...lvc1g04} />
+    <simulation.ibismodel componentRef=".TX" {...lvc1g04} />
+    <simulation.ibismodel componentRef=".RX" {...lvc1g04} />
 
     <voltagesource
       name="V3V3"
@@ -65,12 +65,12 @@ export default () => (
 
     <copperpour connectsTo="net.GND" layer="bottom" />
 
-    <signalintegrity.simulation bitRate="20Mbps">
-      <signalintegrity.signal
+    <simulation.pcbtransientchannelsimulation bitRate="20Mbps">
+      <simulation.pcbchannel
         name="DATA"
         driverRef=".TX > .Y"
         receiverRef=".RX > .A"
       />
-    </signalintegrity.simulation>
+    </simulation.pcbtransientchannelsimulation>
   </board>
 )

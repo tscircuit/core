@@ -1,4 +1,4 @@
-import { signalintegrity } from "lib/namespaced-elements"
+import { simulation } from "lib/namespaced-elements"
 /* LEVEL 4: AM335x -> W631GG6MB-12 DDR3 lower-byte write illustration, not JEDEC compliance.
  * Currently stops with: .CPU: coupled [Package Model] not implemented yet; scalar fallback is forbidden.
  * Typ corner is 1.5 V. DQS is delayed 0.5 UI to centre-align write sampling.
@@ -58,7 +58,7 @@ export default () => (
       footprint={`bga96_grid9x16_p0.8mm_pad0.4mm_missing(${missing})_tlorigin_pinnumbering(ballcoords)`}
       pinLabels={dramPins}
     />
-    <signalintegrity.ibismodel
+    <simulation.ibismodel
       componentRef=".CPU"
       ibisModelAsset={{
         project_relative_path: "models/sprm552c.ibs",
@@ -76,7 +76,7 @@ export default () => (
         "VSS",
       )}
     />
-    <signalintegrity.ibismodel
+    <simulation.ibismodel
       componentRef=".DRAM"
       ibisModelAsset={{
         project_relative_path: "models/W631GG6MB-12.ibs",
@@ -113,8 +113,12 @@ export default () => (
     />
     <copperpour connectsTo="net.GND" layer="inner1" />
 
-    <signalintegrity.simulation name="WRITE" bitRate="800Mbps" corner="typical">
-      <signalintegrity.signal
+    <simulation.pcbtransientchannelsimulation
+      name="WRITE"
+      bitRate="800Mbps"
+      corner="typical"
+    >
+      <simulation.pcbchannel
         name="DQS"
         driverRef={{
           pin: { p: ".CPU > .DDR_DQS0", n: ".CPU > .DDR_DQSN0" },
@@ -128,15 +132,13 @@ export default () => (
         offset="0.5UI"
       />
       {cpuDq.map((_, i) => (
-        <signalintegrity.signal
+        <simulation.pcbchannel
           key={i}
           name={`DQ${i}`}
           driverRef={{ pin: `.CPU > .DDR_D${i}`, model: "Model_257" }}
           receiverRef={{ pin: `.DRAM > .DQL${i}`, model: "ODT_off" }}
-          strobeRef="DQS"
-          mask={{ setup: "10ps", hold: "45ps" }}
         />
       ))}
-    </signalintegrity.simulation>
+    </simulation.pcbtransientchannelsimulation>
   </board>
 )

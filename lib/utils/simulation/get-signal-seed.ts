@@ -1,11 +1,11 @@
 import { getSignalIntegrityBlocks } from "./get-signal-integrity-blocks"
-import type { SignalIntegritySignal } from "lib/components/primitive-components/SignalIntegritySignal"
-import type { SignalIntegritySimulation } from "lib/components/primitive-components/SignalIntegritySimulation"
+import type { PcbChannel } from "lib/components/primitive-components/PcbChannel"
+import type { PcbTransientChannelSimulation } from "lib/components/primitive-components/PcbTransientChannelSimulation"
 
 /** RFC phase plan, shared by name/order across every block on the board. */
 export function getSignalSeed(
-  block: SignalIntegritySimulation,
-  signal: SignalIntegritySignal,
+  block: PcbTransientChannelSimulation,
+  signal: PcbChannel,
 ) {
   const { pattern, seed, name } = signal._parsedProps
   if (!/^prbs(7|15|31)$/.test(pattern)) return undefined
@@ -21,7 +21,7 @@ export function getSignalSeed(
   const names = [
     ...new Set(
       getSignalIntegrityBlocks(block._getBoard())
-        .flatMap((candidate) => candidate.children as SignalIntegritySignal[])
+        .flatMap((candidate) => candidate.children as PcbChannel[])
         .filter(
           (candidate) =>
             !candidate.shouldBeRemoved &&

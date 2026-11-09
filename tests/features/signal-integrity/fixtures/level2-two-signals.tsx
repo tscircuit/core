@@ -1,4 +1,4 @@
-import { signalintegrity } from "lib/namespaced-elements"
+import { simulation } from "lib/namespaced-elements"
 import { Inverter, Supply } from "./parts"
 
 export default () => (
@@ -18,17 +18,17 @@ export default () => (
     <trace from=".TX1 > .Y" to=".RX1 > .A" />
     <copperpour connectsTo="net.GND" layer="bottom" />
 
-    <signalintegrity.simulation bitRate="20Mbps">
-      <signalintegrity.signal
+    <simulation.pcbtransientchannelsimulation bitRate="20Mbps">
+      <simulation.pcbchannel
         name="D0"
         driverRef=".TX0 > .Y"
         receiverRef=".RX0 > .A"
       />
-      <signalintegrity.signal
+      <simulation.pcbchannel
         name="D1"
         driverRef=".TX1 > .Y"
         receiverRef=".RX1 > .A"
       />
-    </signalintegrity.simulation>
+    </simulation.pcbtransientchannelsimulation>
   </board>
 )

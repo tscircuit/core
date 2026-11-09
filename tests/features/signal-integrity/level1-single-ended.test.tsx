@@ -16,7 +16,7 @@ test("RFC Level 1 single-ended resolves physical pins and emits SI defaults", as
       type: "simulation_signal_integrity",
       simulation_signal_integrity_id: "simulation_signal_integrity_0",
       bit_rate_bps: 20e6,
-      corner: "typ",
+      corner: "typical",
       unlisted_nets: "passive",
       unrouted: "error",
       pdn: "ideal",
@@ -39,7 +39,6 @@ test("RFC Level 1 single-ended resolves physical pins and emits SI defaults", as
     seed: 127,
     offset_s: 0,
     probe: "local",
-    mask: "ibis",
   })
   for (const record of [
     ...circuit.db.simulation_signal_integrity.list(),

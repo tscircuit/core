@@ -1,27 +1,25 @@
 import { getSignalIntegrityBlocks } from "lib/utils/simulation/get-signal-integrity-blocks"
-import { signalIntegritySignalProps } from "@tscircuit/props"
+import { pcbChannelProps } from "@tscircuit/props"
 import type { SimulationSignal } from "circuit-json"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
 /** One driven or quiet signal, rendered by its containing SI block. */
-export class SignalIntegritySignal extends PrimitiveComponent<
-  typeof signalIntegritySignalProps
-> {
+export class PcbChannel extends PrimitiveComponent<typeof pcbChannelProps> {
   simulation_signal_id: SimulationSignal["simulation_signal_id"] | null = null
 
   restoredEndpoints?: Pick<SimulationSignal, "driver" | "receivers">
 
   get config() {
     return {
-      componentName: "SignalIntegritySignal",
-      zodProps: signalIntegritySignalProps,
+      componentName: "PcbChannel",
+      zodProps: pcbChannelProps,
     }
   }
 
   doInitialSourceDesignRuleChecks(): void {
-    if (this.parent?.componentName !== "SignalIntegritySimulation")
+    if (this.parent?.componentName !== "PcbTransientChannelSimulation")
       throw new Error(
-        "<signalintegrity.signal> must be inside <signalintegrity.simulation>.",
+        "<simulation.pcbchannel> must be inside <simulation.pcbtransientchannelsimulation>.",
       )
     this.onPropsChange()
   }

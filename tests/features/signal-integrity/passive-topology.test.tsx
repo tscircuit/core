@@ -1,4 +1,4 @@
-import { signalintegrity } from "lib/namespaced-elements"
+import { simulation } from "lib/namespaced-elements"
 import { Fragment } from "react"
 import { expect } from "bun:test"
 import { lvcModel, lvcPins } from "./fixtures/diagnostic-board"
@@ -24,7 +24,7 @@ test("SI topology crosses a series resistor and AC capacitor to multiple receive
             pcbX={i * 12 - 12}
             pinLabels={lvcPins}
           />
-          <signalintegrity.ibismodel componentRef={`.${name}`} {...lvcModel} />
+          <simulation.ibismodel componentRef={`.${name}`} {...lvcModel} />
         </Fragment>
       ))}
       <resistor name="RS" resistance="33" footprint="0402" pcbX={-6} />
@@ -33,8 +33,11 @@ test("SI topology crosses a series resistor and AC capacitor to multiple receive
       <trace from=".RS > .pin2" to=".AC > .pin1" />
       <trace from=".AC > .pin2" to=".RX > .A" />
       <trace from=".RX > .A" to=".RX2 > .A" />
-      <signalintegrity.simulation bitRate="20Mbps" unrouted="ideal">
-        <signalintegrity.signal
+      <simulation.pcbtransientchannelsimulation
+        bitRate="20Mbps"
+        unrouted="ideal"
+      >
+        <simulation.pcbchannel
           name="DATA"
           driverRef=".TX > .Y"
           receiverRef={[
@@ -42,7 +45,7 @@ test("SI topology crosses a series resistor and AC capacitor to multiple receive
             { pin: ".RX2 > .A", model: "LVC1G04_IN_33" },
           ]}
         />
-      </signalintegrity.simulation>
+      </simulation.pcbtransientchannelsimulation>
     </board>,
   )
   await circuit.renderUntilSettled()

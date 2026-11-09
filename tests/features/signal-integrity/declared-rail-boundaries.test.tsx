@@ -1,4 +1,4 @@
-import { signalintegrity } from "lib/namespaced-elements"
+import { simulation } from "lib/namespaced-elements"
 import { expect } from "bun:test"
 import { DiagnosticBoard } from "./fixtures/diagnostic-board"
 import { Inverter } from "./fixtures/parts"
@@ -20,13 +20,16 @@ test("explicit ground/power rails stop shunt traversal and keep signals separate
           connections={{ pin1: ".TX > .Y", pin2: "net.CUSTOM_RAIL" }}
         />
         <trace from=".RX > .A" to="net.CUSTOM_RAIL" />
-        <signalintegrity.simulation bitRate="20Mbps" unrouted="ideal">
-          <signalintegrity.signal
+        <simulation.pcbtransientchannelsimulation
+          bitRate="20Mbps"
+          unrouted="ideal"
+        >
+          <simulation.pcbchannel
             name="DATA"
             driverRef=".TX > .Y"
             receiverRef=".RX > .A"
           />
-        </signalintegrity.simulation>
+        </simulation.pcbtransientchannelsimulation>
       </DiagnosticBoard>,
     )
     await expect(circuit.renderUntilSettled()).rejects.toThrow(
@@ -61,18 +64,21 @@ test("explicit ground/power rails stop shunt traversal and keep signals separate
         pcbY={9}
         fontSize={1}
       />
-      <signalintegrity.simulation bitRate="20Mbps" unrouted="ideal">
-        <signalintegrity.signal
+      <simulation.pcbtransientchannelsimulation
+        bitRate="20Mbps"
+        unrouted="ideal"
+      >
+        <simulation.pcbchannel
           name="D0"
           driverRef=".TX0 > .Y"
           receiverRef=".RX0 > .A"
         />
-        <signalintegrity.signal
+        <simulation.pcbchannel
           name="D1"
           driverRef=".TX1 > .Y"
           receiverRef=".RX1 > .A"
         />
-      </signalintegrity.simulation>
+      </simulation.pcbtransientchannelsimulation>
     </board>,
   )
   await circuit.renderUntilSettled()

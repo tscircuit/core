@@ -114,7 +114,7 @@ export { SymbolComponent as Symbol } from "./primitive-components/Symbol"
 export { AnalogSimulation } from "./primitive-components/AnalogSimulation"
 export { AnalogAnalysisSimulation } from "./primitive-components/AnalogAnalysisSimulation"
 export { AnalogTransientSimulation } from "./primitive-components/AnalogTransientSimulation"
-export { SignalIntegrityIbisModel } from "./primitive-components/SignalIntegrityIbisModel"
+export { SimulationIbisModel } from "./primitive-components/SimulationIbisModel"
 export { AnalogDcOperatingPointSimulation } from "./primitive-components/AnalogDcOperatingPointSimulation"
 export { AnalogDcSweepSimulation } from "./primitive-components/AnalogDcSweepSimulation"
 export { AnalogAcSweepSimulation } from "./primitive-components/AnalogAcSweepSimulation"
@@ -139,5 +139,5 @@ export { AssemblyDrawingDimension } from "./primitive-components/AssemblyDrawing
 
 export { AssemblyBolt } from "./primitive-components/AssemblyBolt"
 
-export { SignalIntegritySimulation } from "./primitive-components/SignalIntegritySimulation"
-export { SignalIntegritySignal } from "./primitive-components/SignalIntegritySignal"
+export { PcbTransientChannelSimulation } from "./primitive-components/PcbTransientChannelSimulation"
+export { PcbChannel } from "./primitive-components/PcbChannel"

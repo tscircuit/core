@@ -1,4 +1,4 @@
-import { signalintegrity } from "lib/namespaced-elements"
+import { simulation } from "lib/namespaced-elements"
 import { expect } from "bun:test"
 import { DiagnosticBoard } from "./fixtures/diagnostic-board"
 import {
@@ -10,12 +10,15 @@ test("SI diagnostic: bare quiet needs an explicit level", async () => {
   const { circuit } = getSiTestFixture()
   const props = { name: "DATA", driverRef: ".TX > .Y", receiverRef: ".RX > .A" }
   // @ts-expect-error Boolean quiet deliberately reproduces invalid user TSX.
-  const signal = <signalintegrity.signal {...props} quiet />
+  const signal = <simulation.pcbchannel {...props} quiet />
   circuit.add(
     <DiagnosticBoard>
-      <signalintegrity.simulation bitRate="20Mbps" unrouted="ideal">
+      <simulation.pcbtransientchannelsimulation
+        bitRate="20Mbps"
+        unrouted="ideal"
+      >
         {signal}
-      </signalintegrity.simulation>
+      </simulation.pcbtransientchannelsimulation>
     </DiagnosticBoard>,
   )
   await expect(circuit.renderUntilSettled()).rejects.toThrow(

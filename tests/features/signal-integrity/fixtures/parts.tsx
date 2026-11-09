@@ -1,4 +1,4 @@
-import { signalintegrity } from "lib/namespaced-elements"
+import { simulation } from "lib/namespaced-elements"
 export const Inverter = (props: {
   name: string
   pcbX: number
@@ -13,7 +13,7 @@ export const Inverter = (props: {
       pcbY={props.pcbY ?? 0}
       pinLabels={{ pin1: "NC", pin2: "A", pin3: "GND", pin4: "Y", pin5: "VCC" }}
     />
-    <signalintegrity.ibismodel
+    <simulation.ibismodel
       componentRef={`.${props.name}`}
       ibisModelAsset={{
         project_relative_path: "models/sn74lvc1g04.ibs",
@@ -51,7 +51,7 @@ export const Supply = () => (
   />
 )
 
-/** Real TI eight-bit transceiver: a common receiving chip for data/strobe. */
+/** Real TI eight-bit transceiver: a common receiving chip for multiple channels. */
 export const Octal = ({
   name = "RX",
   pcbX = 12,
@@ -69,7 +69,7 @@ export const Octal = ({
           Object.entries(pins).map(([pin, label]) => [`pin${pin}`, label]),
         )}
       />
-      <signalintegrity.ibismodel
+      <simulation.ibismodel
         componentRef={`.${name}`}
         ibisComponentName="LVC8T245_PW"
         ibisModelAsset={{

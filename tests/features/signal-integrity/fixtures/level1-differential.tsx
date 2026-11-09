@@ -1,4 +1,4 @@
-import { signalintegrity } from "lib/namespaced-elements"
+import { simulation } from "lib/namespaced-elements"
 const sn65hvd72 = {
   ibisModelAsset: {
     project_relative_path: "models/sn65hvd72.ibs",
@@ -65,8 +65,8 @@ export default () => (
       pcbX={20}
       pinLabels={pins}
     />
-    <signalintegrity.ibismodel componentRef=".TX" {...sn65hvd72} />
-    <signalintegrity.ibismodel componentRef=".RX" {...sn65hvd72} />
+    <simulation.ibismodel componentRef=".TX" {...sn65hvd72} />
+    <simulation.ibismodel componentRef=".RX" {...sn65hvd72} />
 
     <resistor name="RTERM" resistance="120" footprint="0603" pcbX={26} />
 
@@ -87,12 +87,12 @@ export default () => (
     <differentialpair positiveConnection="BUS_P" negativeConnection="BUS_N" />
     <copperpour connectsTo="net.GND" layer="bottom" />
 
-    <signalintegrity.simulation bitRate="250kbps">
-      <signalintegrity.signal
+    <simulation.pcbtransientchannelsimulation bitRate="250kbps">
+      <simulation.pcbchannel
         name="BUS"
         driverRef={{ p: ".TX > .A", n: ".TX > .B" }}
         receiverRef={{ p: ".RX > .A", n: ".RX > .B" }}
       />
-    </signalintegrity.simulation>
+    </simulation.pcbtransientchannelsimulation>
   </board>
 )

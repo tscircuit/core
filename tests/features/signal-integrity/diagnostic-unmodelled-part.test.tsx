@@ -1,4 +1,4 @@
-import { signalintegrity } from "lib/namespaced-elements"
+import { simulation } from "lib/namespaced-elements"
 import { expect } from "bun:test"
 import { DiagnosticBoard } from "./fixtures/diagnostic-board"
 import {
@@ -13,13 +13,16 @@ test("SI diagnostic: unmodelled-part", async () => {
       <diode name="D5" footprint="sod123" />
       <trace from=".TX > .Y" to=".D5 > .anode" />
       <trace from=".D5 > .cathode" to=".RX > .A" />
-      <signalintegrity.simulation bitRate="20Mbps" unrouted="ideal">
-        <signalintegrity.signal
+      <simulation.pcbtransientchannelsimulation
+        bitRate="20Mbps"
+        unrouted="ideal"
+      >
+        <simulation.pcbchannel
           name="DATA"
           driverRef=".TX > .Y"
           receiverRef=".RX > .A"
         />
-      </signalintegrity.simulation>
+      </simulation.pcbtransientchannelsimulation>
     </DiagnosticBoard>,
   )
   await expect(circuit.renderUntilSettled()).rejects.toThrow(

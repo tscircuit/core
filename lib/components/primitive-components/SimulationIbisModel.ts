@@ -1,21 +1,22 @@
-import { signalIntegrityIbisModelProps } from "@tscircuit/props"
-import type { SimulationIbisModel } from "circuit-json"
+import { simulationIbisModelProps } from "@tscircuit/props"
+import type { SimulationIbisModel as SimulationIbisModelRecord } from "circuit-json"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
-import { SignalIntegrityIbisModel_getSimulationIbisModel } from "./SignalIntegrityIbisModel_getSimulationIbisModel"
-import type { SignalIntegritySimulation } from "./SignalIntegritySimulation"
+import { SimulationIbisModel_getSimulationIbisModel } from "./SimulationIbisModel_getSimulationIbisModel"
+import type { PcbTransientChannelSimulation } from "./PcbTransientChannelSimulation"
 
-type SimulationIbisModelId = SimulationIbisModel["simulation_ibis_model_id"]
+type SimulationIbisModelId =
+  SimulationIbisModelRecord["simulation_ibis_model_id"]
 
 /** Declares a vendor source and physical pin mapping without fetching model files. */
-export class SignalIntegrityIbisModel extends PrimitiveComponent<
-  typeof signalIntegrityIbisModelProps
+export class SimulationIbisModel extends PrimitiveComponent<
+  typeof simulationIbisModelProps
 > {
   simulation_ibis_model_id: SimulationIbisModelId | null = null
 
   get config() {
     return {
-      componentName: "SignalIntegrityIbisModel",
-      zodProps: signalIntegrityIbisModelProps,
+      componentName: "SimulationIbisModel",
+      zodProps: simulationIbisModelProps,
     }
   }
 
@@ -29,8 +30,8 @@ export class SignalIntegrityIbisModel extends PrimitiveComponent<
     for (let node = this.parent; node; node = node.parent) {
       if (!node.isSubcircuit) continue
       const subcircuit = node.getSubcircuit()
-      for (const simulation of subcircuit.selectAll<SignalIntegritySimulation>(
-        "signalintegritysimulation",
+      for (const simulation of subcircuit.selectAll<PcbTransientChannelSimulation>(
+        "pcbtransientchannelsimulation",
       )) {
         if (simulation.getSubcircuit() === subcircuit)
           simulation._markDirty("PcbSimulationRender")
@@ -41,7 +42,7 @@ export class SignalIntegrityIbisModel extends PrimitiveComponent<
   doInitialSimulationRender(): void {
     if (this.getInheritedProperty("analogSimulationDisabled")) return
 
-    const model = SignalIntegrityIbisModel_getSimulationIbisModel(this)
+    const model = SimulationIbisModel_getSimulationIbisModel(this)
     if (this.simulation_ibis_model_id)
       this.root!.db.simulation_ibis_model.update(
         this.simulation_ibis_model_id,

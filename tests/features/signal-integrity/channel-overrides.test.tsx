@@ -1,4 +1,4 @@
-import { signalintegrity } from "lib/namespaced-elements"
+import { simulation } from "lib/namespaced-elements"
 import { expect } from "bun:test"
 import { any_circuit_element } from "circuit-json"
 import { Inverter, Octal } from "./fixtures/parts"
@@ -7,7 +7,7 @@ import {
   siTest as test,
 } from "./fixtures/get-si-test-fixture"
 
-test("SI supports forward strobe references, per-signal units, masks and more than three signals", async () => {
+test("channels support per-signal units, model overrides and more than three channels", async () => {
   const { circuit } = getSiTestFixture()
   circuit.add(
     <board
@@ -23,14 +23,14 @@ test("SI supports forward strobe references, per-signal units, masks and more th
         </group>
       ))}
       <Octal />
-      <signalintegrity.simulation
+      <simulation.pcbtransientchannelsimulation
         name="WRITE"
         bitRate="20Mbps"
         unrouted="ideal"
         corner="maximum"
         pdn="ideal"
       >
-        <signalintegrity.signal
+        <simulation.pcbchannel
           name="DQ0"
           driverRef={{ pin: ".TX0 > .Y", model: "LVC1G04_OUT_33" }}
           receiverRef=".RX > .A1"
@@ -39,11 +39,9 @@ test("SI supports forward strobe references, per-signal units, masks and more th
           seed={42}
           offset="2UI"
           probe="global"
-          strobeRef="DQS"
-          mask={{ vih: "2V", vil: "0.8V", setup: "75ps", hold: "100ps" }}
         />
         {Array.from({ length: 6 }, (_, i) => (
-          <signalintegrity.signal
+          <simulation.pcbchannel
             key={i}
             name={`DQ${i + 1}`}
             driverRef={`.TX${i + 1} > .Y`}
@@ -51,14 +49,14 @@ test("SI supports forward strobe references, per-signal units, masks and more th
             pattern="prbs15"
           />
         ))}
-        <signalintegrity.signal
+        <simulation.pcbchannel
           name="DQS"
           driverRef=".TX7 > .Y"
           receiverRef=".RX > .A8"
           pattern="clock"
           offset="3ns"
         />
-      </signalintegrity.simulation>
+      </simulation.pcbtransientchannelsimulation>
     </board>,
   )
   await circuit.renderUntilSettled()
@@ -69,12 +67,10 @@ test("SI supports forward strobe references, per-signal units, masks and more th
     bit_rate_bps: 10e6,
     offset_s: 2 / 10e6,
     probe: "global",
-    strobe_simulation_signal_id: signals[7].simulation_signal_id,
-    mask: { vih_v: 2, vil_v: 0.8, setup_s: 75e-12, hold_s: 100e-12 },
   })
   expect(signals[7].offset_s).toBeCloseTo(3e-9, 15)
   expect(circuit.db.simulation_signal_integrity.list()[0]).toMatchObject({
-    corner: "max",
+    corner: "maximum",
     pdn: "ideal",
   })
   expect(signals[0]).not.toHaveProperty("seed")
