@@ -65,7 +65,7 @@ beforeAll(async () => {
 
   // Show the actual substrate after every emitted slot and drill is removed.
   // Red islands have no connection to the outer frame. Keep snapshot failures
-  // outside test.failing so the reproduction cannot hide a rendering error.
+  // independent of the connectivity assertion so rendering errors stay visible.
   const regions = material.decompose().sort((a, b) => b.area() - a.area())
   const paths = regions
     .map((region, regionIndex) => {
@@ -94,27 +94,24 @@ beforeAll(async () => {
   await expect(svg).toMatchSvgSnapshot(import.meta.path)
 })
 
-test.failing(
-  "neighboring router slots preserve every board's connection to the panel frame",
-  async () => {
-    const { CrossSection } = await getManifoldModule()
-    const regions = material.decompose().sort((a, b) => b.area() - a.area())
-    const frame = regions[0]!
-    try {
-      for (const board of circuit.db.pcb_board.list()) {
-        const center = CrossSection.square(1, true).translate(
-          board.center.x,
-          board.center.y,
-        )
-        const attachedCenter = frame.intersect(center)
-        const attachedArea = attachedCenter.area()
-        center.delete()
-        attachedCenter.delete()
-        expect(attachedArea).toBeCloseTo(1, 6)
-      }
-    } finally {
-      for (const region of regions) region.delete()
-      material.delete()
+test("neighboring router slots preserve every board's connection to the panel frame", async () => {
+  const { CrossSection } = await getManifoldModule()
+  const regions = material.decompose().sort((a, b) => b.area() - a.area())
+  const frame = regions[0]!
+  try {
+    for (const board of circuit.db.pcb_board.list()) {
+      const center = CrossSection.square(1, true).translate(
+        board.center.x,
+        board.center.y,
+      )
+      const attachedCenter = frame.intersect(center)
+      const attachedArea = attachedCenter.area()
+      center.delete()
+      attachedCenter.delete()
+      expect(attachedArea).toBeCloseTo(1, 6)
     }
-  },
-)
+  } finally {
+    for (const region of regions) region.delete()
+    material.delete()
+  }
+})
