@@ -79,7 +79,8 @@ export function SystemBlockPage_doInitialSystemBlockRender(
   }
   for (const connection of tree.connections) {
     const { from, to } = tree.endpoints.get(connection)!
-    const { name, kind, direction, label } = connection._parsedProps
+    const { name, kind, direction, label, color, lineStyle } =
+      connection._parsedProps
     db.system_block_connection.insert({
       system_block_page_id: page.system_block_page_id,
       from_system_block_component_id: componentIds.get(from)!,
@@ -87,6 +88,8 @@ export function SystemBlockPage_doInitialSystemBlockRender(
       name,
       label,
       direction,
+      color,
+      line_style: lineStyle,
       is_signal: kind === "signal",
       is_power: kind === "power",
       ...layout.routes.get(connection)!,

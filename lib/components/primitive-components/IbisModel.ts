@@ -19,12 +19,17 @@ export class IbisModel extends PrimitiveComponent<typeof ibisModelProps> {
   }
 
   private markIbisBindingsDirty(): void {
-    const subcircuit = this.getSubcircuit()
-    for (const simulation of subcircuit.selectAll<AnalogTransientSimulation>(
-      "analogtransientsimulation",
-    )) {
-      if (simulation.getSubcircuit() === subcircuit)
-        simulation._markDirty("SimulationSpiceEngineRender")
+    // Simulations in this subcircuit and in any enclosing subcircuit can bind
+    // this model's pins.
+    for (let node = this.parent; node; node = node.parent) {
+      if (!node.isSubcircuit) continue
+      const subcircuit = node.getSubcircuit()
+      for (const simulation of subcircuit.selectAll<AnalogTransientSimulation>(
+        "analogtransientsimulation",
+      )) {
+        if (simulation.getSubcircuit() === subcircuit)
+          simulation._markDirty("SimulationSpiceEngineRender")
+      }
     }
   }
 
