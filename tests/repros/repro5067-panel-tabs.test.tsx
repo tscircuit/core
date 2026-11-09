@@ -20,7 +20,7 @@ test("panel tabs express their own manufacturing feature", async () => {
         </board>,
         createElement("paneltabkeepout", {
           boardName: "B1",
-          edge: "top",
+          boardEdge: "top",
           from: "0mm",
           to: "7mm",
         }),
