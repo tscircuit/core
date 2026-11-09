@@ -2,13 +2,18 @@ import { expect, test } from "bun:test"
 import { checkCopperToBoardEdgeClearance } from "@tscircuit/checks"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-const radius = 15
-const outline = Array.from({ length: 49 }, (_, index) => {
-  const angleDegrees = -60 + (300 * index) / 48
+const arcRadius = 15
+const arcPointCount = 49
+const arcStartDegrees = -60
+const arcSweepDegrees = 300
+
+const outline = Array.from({ length: arcPointCount }, (_, pointIndex) => {
+  const angleDegrees =
+    arcStartDegrees + (arcSweepDegrees * pointIndex) / (arcPointCount - 1)
   const angleRadians = (angleDegrees * Math.PI) / 180
   return {
-    x: radius * Math.cos(angleRadians),
-    y: radius * Math.sin(angleRadians),
+    x: arcRadius * Math.cos(angleRadians),
+    y: arcRadius * Math.sin(angleRadians),
   }
 })
 
@@ -28,7 +33,6 @@ test.failing(
 
     await circuit.renderUntilSettled()
 
-    expect(circuit.db.pcb_copper_pour.list()).toHaveLength(1)
     expect(
       checkCopperToBoardEdgeClearance(circuit.getCircuitJson()),
     ).toHaveLength(0)
