@@ -1,9 +1,8 @@
 import * as Components from "./components"
 import { extendCatalogue } from "./fiber/catalogue"
 
-// Register all components, generally you don't need to manually
-// register a component, as long as it's exported from lib/components
-// it'll automatically be registered!
+// Register ordinary components directly; transient channel elements use only
+// their simulation namespace hosts below.
 const {
   PcbTransientChannelSimulation,
   PcbChannel,
@@ -30,10 +29,9 @@ extendCatalogue({
   "assembly.screen": Components.AssemblyScreen,
   "assembly.subassembly": Components.AssemblySubassembly,
   "assembly.cadassembly": Components.AssemblySubassembly,
-  "simulation.pcbtransientchannelsimulation":
-    Components.PcbTransientChannelSimulation,
-  "simulation.pcbchannel": Components.PcbChannel,
-  "simulation.ibismodel": Components.SimulationIbisModel,
+  "simulation.pcbtransientchannelsimulation": PcbTransientChannelSimulation,
+  "simulation.pcbchannel": PcbChannel,
+  "simulation.ibismodel": SimulationIbisModel,
   Bug: Components.Chip,
   "enclosure.cutoutaperture": Components.EnclosureCutoutAperture,
   "enclosure.fdm.box": Components.EnclosureFdmBox,
