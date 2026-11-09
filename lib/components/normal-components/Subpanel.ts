@@ -63,14 +63,21 @@ export class Subpanel extends Group<typeof subpanelProps> {
 
   add(component: PrimitiveComponent) {
     // Panel-level traces connect ports across the contained boards.
+    // Tooling rails sit in the root panel's edge padding, so only <panel>
+    // accepts them.
+    const acceptsToolingRail = this.componentName === "Panel"
     if (
       component.lowercaseComponentName !== "board" &&
       component.lowercaseComponentName !== "subpanel" &&
       component.lowercaseComponentName !== "trace" &&
-      component.lowercaseComponentName !== "toolingrail"
+      !(
+        acceptsToolingRail && component.lowercaseComponentName === "toolingrail"
+      )
     ) {
       throw new Error(
-        `<${this._errorComponentName}> can only contain <board>, <subpanel>, <trace>, or <toolingrail> elements`,
+        acceptsToolingRail
+          ? `<${this._errorComponentName}> can only contain <board>, <subpanel>, <trace>, or <toolingrail> elements`
+          : `<${this._errorComponentName}> can only contain <board>, <subpanel>, or <trace> elements`,
       )
     }
     super.add(component)

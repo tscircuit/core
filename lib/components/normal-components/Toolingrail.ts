@@ -1,5 +1,5 @@
 import { toolingrailProps } from "@tscircuit/props"
-import { distance, pcb_group } from "circuit-json"
+import { pcb_group } from "circuit-json"
 import { getOwningPanel } from "lib/utils/panels/get-owning-panel"
 import {
   applyToPoint,
@@ -31,23 +31,15 @@ export class Toolingrail extends Group<typeof toolingrailProps> {
   _getRailGeometry() {
     const panel = getOwningPanel(this)
     if (!panel) return
-    const props = panel.props
-    const padding = distance.parse(props.edgePadding ?? 5)
-    const left = distance.parse(props.edgePaddingLeft ?? padding)
-    const right = distance.parse(props.edgePaddingRight ?? padding)
-    const top = distance.parse(props.edgePaddingTop ?? padding)
-    const bottom = distance.parse(props.edgePaddingBottom ?? padding)
-    const width =
-      props.width === undefined
-        ? panel._cachedGridWidth + left + right
-        : distance.parse(props.width)
-    const height =
-      props.height === undefined
-        ? panel._cachedGridHeight + top + bottom
-        : distance.parse(props.height)
+    const panelSize = panel._getPanelSize()
+    if (!panelSize)
+      throw new Error(
+        '<toolingrail> needs a panel with a known size. Use layoutMode="grid" or set the panel width and height.',
+      )
+    const { width, height } = panelSize
     const railWidth = this._parsedProps.width
     const side = this._parsedProps.panelSide
-    const availablePadding = { left, right, top, bottom }[side]
+    const availablePadding = panel._getEdgePadding()[side]
     if (railWidth > availablePadding)
       throw new Error(
         `Tooling rail width ${railWidth} mm exceeds the ${side} edge padding of ${availablePadding} mm. Increase that panel edge padding.`,
@@ -71,15 +63,17 @@ export class Toolingrail extends Group<typeof toolingrailProps> {
   }
 
   override _computePcbGlobalTransformBeforeLayout(): Matrix {
-    const baseTransform = super._computePcbGlobalTransformBeforeLayout()
+    const railToWorldTransform = super._computePcbGlobalTransformBeforeLayout()
     const rail = this._getRailGeometry()
-    if (!rail || !this.parent) return baseTransform
-    const panelTransform = this.parent._computePcbGlobalTransformBeforeLayout()
+    if (!rail || !this.parent) return railToWorldTransform
+    const panelToWorldTransform =
+      this.parent._computePcbGlobalTransformBeforeLayout()
+    const worldToPanelTransform = inverse(panelToWorldTransform)
     return compose(
-      panelTransform,
+      panelToWorldTransform,
       translate(rail.x, rail.y),
-      inverse(panelTransform),
-      baseTransform,
+      worldToPanelTransform,
+      railToWorldTransform,
     )
   }
 
