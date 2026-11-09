@@ -14,10 +14,7 @@ export function IbisModel_getSimulationIbisModel(
     .getSubcircuit()
     .selectAll<NormalComponent>(props.componentRef)
     .filter((chip) => chip.source_component_id)
-  if (
-    chips.length !== 1 ||
-    chips[0].getSubcircuit() !== declaration.getSubcircuit()
-  ) {
+  if (chips.length !== 1) {
     throw new Error(
       `IBIS component selector "${props.componentRef}" must identify one component in this subcircuit.`,
     )

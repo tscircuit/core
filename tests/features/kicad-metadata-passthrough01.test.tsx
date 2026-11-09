@@ -74,6 +74,10 @@ test("kicad metadata props are passed through to circuit-json", async () => {
 
   const circuitJson = circuit.getCircuitJson()
 
+  expect(
+    circuit.db.schematic_component.list()[0]!.metadata?.kicad_symbol,
+  ).toBeUndefined()
+
   // Verify pcb_component has kicad_footprint metadata
   const pcbComponent = circuitJson.find(
     (el: any) => el.type === "pcb_component",
