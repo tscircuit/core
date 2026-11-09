@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { Fragment } from "react"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
@@ -79,14 +80,15 @@ test("reproduces loss of named differential sections on an ESD net", async () =>
         '"P_CPU" in differential pair "CPU_PAIR"',
       ].map((text, index) =>
         text ? (
-          <pcbnotetext
-            key={index}
-            pcbX={-22}
-            pcbY={-index * 1.5}
-            anchorAlignment="top_left"
-            text={text}
-            fontSize={0.65}
-          />
+          <Fragment key={index}>
+            <pcbnotetext
+              pcbX={-22}
+              pcbY={-index * 1.5}
+              anchorAlignment="top_left"
+              text={text}
+              fontSize={0.65}
+            />
+          </Fragment>
         ) : null,
       )}
     </board>,
