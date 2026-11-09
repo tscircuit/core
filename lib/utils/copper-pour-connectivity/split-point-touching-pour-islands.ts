@@ -27,8 +27,8 @@ function splitRing(ring: Ring): Ring[] {
   return [ring]
 }
 
-export function splitPointTouchingPourIslands(shape: BRepShape): BRepShape[] {
-  const vertices = shape.outer_ring.vertices
+function splitRingAtTouchingVertices(ring: Ring): Ring[] {
+  const vertices = ring.vertices
   // Manifold can emit a touching vertex in only one of the incident edges.
   // Insert that existing point into the other edge before separating loops.
   const joinedVertices = vertices.flatMap((start, index) => {
@@ -51,32 +51,64 @@ export function splitPointTouchingPourIslands(shape: BRepShape): BRepShape[] {
       .sort((a, b) => a.t - b.t)
     return [start, ...touches.map(({ vertex }) => vertex)]
   })
-  const outerRings = splitRing({ vertices: joinedVertices })
-  if (outerRings.length === 1) return [shape]
-  const holes = shape.inner_rings.flatMap(splitRing)
-  const result = outerRings.map((outer_ring) => {
-    const polygon = getPourPolygon({
+  return splitRing({ vertices: joinedVertices })
+}
+
+// Native Manifold pour boundaries contain straight edges. Signed area retains
+// the distinction between a hole and an island enclosed by a self-touching hole.
+function signedArea(ring: Ring): number {
+  return (
+    ring.vertices.reduce((area, vertex, index) => {
+      const next = ring.vertices[(index + 1) % ring.vertices.length]!
+      return area + vertex.x * next.y - next.x * vertex.y
+    }, 0) / 2
+  )
+}
+
+export function splitPointTouchingPourIslands(shape: BRepShape): BRepShape[] {
+  const inputRings = [shape.outer_ring, ...shape.inner_rings]
+  const rings = inputRings.flatMap(splitRingAtTouchingVertices)
+  if (rings.length === inputRings.length) return [shape]
+  const outerOrientation = Math.sign(signedArea(shape.outer_ring))
+  const outerRings = rings.filter(
+    (ring) => Math.sign(signedArea(ring)) === outerOrientation,
+  )
+  const holes = rings.filter(
+    (ring) => Math.sign(signedArea(ring)) !== outerOrientation,
+  )
+  const boundaries = outerRings.map((outer_ring) => ({
+    outer_ring,
+    area: Math.abs(signedArea(outer_ring)),
+    polygon: getPourPolygon({
       type: "pcb_copper_pour",
       pcb_copper_pour_id: "split_boundary",
       layer: "top",
       covered_with_solder_mask: true,
       shape: "brep",
       brep_shape: { outer_ring, inner_rings: [] },
-    })
-    return {
-      outer_ring,
-      inner_rings: holes.filter((ring) =>
-        ring.vertices.every((vertex) =>
+    }),
+    inner_rings: [] as Ring[],
+  }))
+  for (const hole of holes) {
+    const containing = boundaries
+      .filter(({ polygon }) =>
+        hole.vertices.every((vertex) =>
           polygon.contains(point(vertex.x, vertex.y)),
         ),
-      ),
+      )
+      .sort((a, b) => a.area - b.area)
+    if (
+      !containing.length ||
+      (containing[1] && containing[0]!.area === containing[1].area)
+    ) {
+      throw new Error("Split copper pour has an ambiguous hole boundary")
     }
-  })
-  if (
-    result.reduce((count, island) => count + island.inner_rings.length, 0) !==
-    holes.length
-  ) {
-    throw new Error("Split copper pour has an ambiguous hole boundary")
+    // A nested copper island may itself have holes; assign each hole to its
+    // smallest enclosing outer boundary rather than also to every ancestor.
+    containing[0]!.inner_rings.push(hole)
   }
-  return result
+  return boundaries.map(({ outer_ring, inner_rings }) => ({
+    outer_ring,
+    inner_rings,
+  }))
 }
