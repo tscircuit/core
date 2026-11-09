@@ -9,19 +9,31 @@ import { getAutoroutedViaLayers } from "../getViaSpanLayers"
 type PcbTraceId = SimplifiedPcbTrace["pcb_trace_id"]
 
 /**
- * Represent manual and saved copper as obstacles so subsequent solvers cannot simplify
- * it. All positions are board-world points in mm (+X right, +Y up, +Z above,
- * right-handed). Rectangles enclose each segment, including its end caps.
+ * Protect manual and completed copper in the representation supported by the
+ * selected solver. The preloaded-trace graph accepts exact traces with isFixed;
+ * older solvers require obstacle rectangles enclosing the copper and end caps.
+ * Positions are board-world points in mm (+X right, +Y up, +Z above; right-handed).
  */
 export function withFixedTraces(
   input: SimpleRouteJson,
   fixedTraceIds: ReadonlySet<PcbTraceId>,
+  representation: "traces" | "obstacles" = "obstacles",
 ): SimpleRouteJson {
   if (fixedTraceIds.size === 0) return input
   const fixedTraces = (input.traces ?? []).filter((trace) =>
     fixedTraceIds.has(trace.pcb_trace_id),
   )
   if (fixedTraces.length === 0) return input
+  if (representation === "traces") {
+    return {
+      ...input,
+      traces: input.traces?.map((trace) =>
+        fixedTraceIds.has(trace.pcb_trace_id)
+          ? { ...trace, isFixed: true }
+          : trace,
+      ),
+    }
+  }
   const obstacles: Obstacle[] = []
   for (const trace of fixedTraces) {
     const connectedTo = [

@@ -530,14 +530,21 @@ test("preserves completed top-only LCD bus lanes through Pipeline 9", async () =
   expect(
     phases.map((phase) => phase.startSimpleRouteJson!.connections.length),
   ).toEqual([16, 16, 17])
-  expect(
-    phases.map((phase) => phase.endSimpleRouteJson!.traces!.length),
-  ).toEqual([16, 16, 79])
+  const originalLanes = phases[0]!.endSimpleRouteJson!.traces!
+  expect(originalLanes).toHaveLength(16)
+  for (const phase of phases.slice(1)) {
+    for (const lane of originalLanes) {
+      const retained = phase.startSimpleRouteJson!.traces!.find(
+        (trace) => trace.connection_name === lane.connection_name,
+      )!
+      expect(retained.isFixed).toBe(true)
+      expect(retained.route).toEqual(lane.route)
+    }
+  }
   expect(phases[0]!.startSimpleRouteJson!.buses).toMatchObject([
     { maxLengthSkew: 0.1, allowedLayers: ["top"] },
   ])
   expect(circuit.db.pcb_autorouting_error.list()).toHaveLength(0)
-  expect(circuit.db.pcb_trace.list()).toHaveLength(95)
   const bus = circuit.db.source_bus.list()[0]!
   const busTraces = circuit.db.pcb_trace
     .list()

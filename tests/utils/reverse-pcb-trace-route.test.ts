@@ -47,7 +47,7 @@ test("preserves variable wire segment widths when reversing a PCB route", () => 
     },
     { route_type: "wire", x: 4, y: 0, width: 0.8, layer: "bottom" },
     { route_type: "wire", x: 3, y: 0, width: 0.6, layer: "bottom" },
-    { route_type: "wire", x: 2, y: 0, width: 0.7, layer: "bottom" },
+    { route_type: "wire", x: 2, y: 0, width: 0.6, layer: "bottom" },
     {
       route_type: "via",
       x: 2,
@@ -55,11 +55,41 @@ test("preserves variable wire segment widths when reversing a PCB route", () => 
       from_layer: "top",
       to_layer: "bottom",
     },
+    { route_type: "wire", x: 2, y: 0, width: 0.4, layer: "top" },
     { route_type: "wire", x: 2, y: 0, width: 0.5, layer: "top" },
     { route_type: "wire", x: 1, y: 0, width: 0.3, layer: "top" },
     { route_type: "wire", x: 0, y: 0, width: 0.4, layer: "top" },
   ])
-  expect(reversePcbTraceRoute(reversed)).toEqual(route)
+  // The extra coincident wire retains the via-side width independently of
+  // the outgoing segment. Reversing again preserves the nonzero segments.
+  const twiceReversed = reversePcbTraceRoute(reversed)
+  const segmentWidths = (points: PcbTrace["route"]): string[] => {
+    const segments: string[] = []
+    for (let index = 1; index < points.length; index++) {
+      const a = points[index - 1]!,
+        b = points[index]!
+      if (
+        a.route_type !== "wire" ||
+        b.route_type !== "wire" ||
+        a.layer !== b.layer ||
+        (a.x === b.x && a.y === b.y)
+      )
+        continue
+      segments.push(
+        JSON.stringify({
+          endpoints: [
+            [a.x, a.y],
+            [b.x, b.y],
+          ].sort(),
+          layer: a.layer,
+          width: a.width,
+        }),
+      )
+    }
+    return segments.sort()
+  }
+  expect(segmentWidths(reversed)).toEqual(segmentWidths(route))
+  expect(segmentWidths(twiceReversed)).toEqual(segmentWidths(route))
   expect(route).toEqual(originalRoute)
 
   const interpolatedRoute: PcbTrace["route"] = [

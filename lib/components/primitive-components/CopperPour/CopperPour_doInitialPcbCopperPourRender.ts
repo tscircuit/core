@@ -7,6 +7,7 @@ import type { ISubcircuit } from "../Group/Subcircuit/ISubcircuit"
 import type { Net } from "../Net"
 import type { CopperPour } from "./CopperPour"
 import { markTraceSegmentsInsideCopperPour } from "./utils/mark-trace-segments-inside-copper-pour"
+import { splitPointTouchingPourIslands } from "lib/utils/copper-pour-connectivity/split-point-touching-pour-islands"
 
 // Each CopperPour queues this phase, but the solver processes every pour in a
 // subcircuit together. Share that batch across the component-owned effects.
@@ -114,7 +115,9 @@ const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
     const { _parsedProps: props } = copperPour
     const coveredWithSolderMask = props.coveredWithSolderMask ?? false
 
-    for (const brepShape of brep_shapes_by_region[regionIndex] ?? []) {
+    for (const brepShape of (brep_shapes_by_region[regionIndex] ?? []).flatMap(
+      splitPointTouchingPourIslands,
+    )) {
       const insertedPour = db.pcb_copper_pour.insert({
         shape: "brep",
         layer: props.layer,
