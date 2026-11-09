@@ -1,3 +1,4 @@
+import { signalintegrity } from "lib/namespaced-elements"
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { DiagnosticBoard } from "./fixtures/diagnostic-board"
@@ -23,9 +24,13 @@ test("SI fails loudly without IBIS bytes or when the host loader fails", async (
     const { circuit } = getTestFixture({ platform })
     circuit.add(
       <DiagnosticBoard>
-        <signalintegrity bitRate="20Mbps" unrouted="ideal">
-          <signal name="DATA" driver=".TX > .Y" receiver=".RX > .A" />
-        </signalintegrity>
+        <signalintegrity.simulation bitRate="20Mbps" unrouted="ideal">
+          <signalintegrity.signal
+            name="DATA"
+            driverRef=".TX > .Y"
+            receiverRef=".RX > .A"
+          />
+        </signalintegrity.simulation>
       </DiagnosticBoard>,
     )
     await expect(circuit.renderUntilSettled()).rejects.toThrow(

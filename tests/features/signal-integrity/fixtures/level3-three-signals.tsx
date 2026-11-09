@@ -1,3 +1,4 @@
+import { signalintegrity } from "lib/namespaced-elements"
 import { Inverter, Supply } from "./parts"
 
 export default () => (
@@ -20,22 +21,60 @@ export default () => (
     <trace from=".TX2 > .Y" to=".RX2 > .A" />
     <copperpour connectsTo="net.GND" layer="bottom" />
 
-    <signalintegrity name="TRAFFIC" bitRate="20Mbps">
-      <signal name="D0" driver=".TX0 > .Y" receiver=".RX0 > .A" />
-      <signal name="D1" driver=".TX1 > .Y" receiver=".RX1 > .A" />
-      <signal name="D2" driver=".TX2 > .Y" receiver=".RX2 > .A" />
-    </signalintegrity>
+    <signalintegrity.simulation name="TRAFFIC" bitRate="20Mbps">
+      <signalintegrity.signal
+        name="D0"
+        driverRef=".TX0 > .Y"
+        receiverRef=".RX0 > .A"
+      />
+      <signalintegrity.signal
+        name="D1"
+        driverRef=".TX1 > .Y"
+        receiverRef=".RX1 > .A"
+      />
+      <signalintegrity.signal
+        name="D2"
+        driverRef=".TX2 > .Y"
+        receiverRef=".RX2 > .A"
+      />
+    </signalintegrity.simulation>
 
-    <signalintegrity name="XTALK_LOW" bitRate="20Mbps">
-      <signal name="D0" driver=".TX0 > .Y" receiver=".RX0 > .A" />
-      <signal name="D1" driver=".TX1 > .Y" receiver=".RX1 > .A" quiet="low" />
-      <signal name="D2" driver=".TX2 > .Y" receiver=".RX2 > .A" />
-    </signalintegrity>
+    <signalintegrity.simulation name="XTALK_LOW" bitRate="20Mbps">
+      <signalintegrity.signal
+        name="D0"
+        driverRef=".TX0 > .Y"
+        receiverRef=".RX0 > .A"
+      />
+      <signalintegrity.signal
+        name="D1"
+        driverRef=".TX1 > .Y"
+        receiverRef=".RX1 > .A"
+        quiet="low"
+      />
+      <signalintegrity.signal
+        name="D2"
+        driverRef=".TX2 > .Y"
+        receiverRef=".RX2 > .A"
+      />
+    </signalintegrity.simulation>
 
-    <signalintegrity name="XTALK_HIGH" bitRate="20Mbps">
-      <signal name="D0" driver=".TX0 > .Y" receiver=".RX0 > .A" />
-      <signal name="D1" driver=".TX1 > .Y" receiver=".RX1 > .A" quiet="high" />
-      <signal name="D2" driver=".TX2 > .Y" receiver=".RX2 > .A" />
-    </signalintegrity>
+    <signalintegrity.simulation name="XTALK_HIGH" bitRate="20Mbps">
+      <signalintegrity.signal
+        name="D0"
+        driverRef=".TX0 > .Y"
+        receiverRef=".RX0 > .A"
+      />
+      <signalintegrity.signal
+        name="D1"
+        driverRef=".TX1 > .Y"
+        receiverRef=".RX1 > .A"
+        quiet="high"
+      />
+      <signalintegrity.signal
+        name="D2"
+        driverRef=".TX2 > .Y"
+        receiverRef=".RX2 > .A"
+      />
+    </signalintegrity.simulation>
   </board>
 )

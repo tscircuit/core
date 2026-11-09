@@ -1,17 +1,22 @@
-import { ibisModelProps } from "@tscircuit/props"
+import { signalIntegrityIbisModelProps } from "@tscircuit/props"
 import type { SimulationIbisModel } from "circuit-json"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
-import { IbisModel_getSimulationIbisModel } from "./IbisModel_getSimulationIbisModel"
-import type { SignalIntegrity } from "./SignalIntegrity"
+import { SignalIntegrityIbisModel_getSimulationIbisModel } from "./SignalIntegrityIbisModel_getSimulationIbisModel"
+import type { SignalIntegritySimulation } from "./SignalIntegritySimulation"
 
 type SimulationIbisModelId = SimulationIbisModel["simulation_ibis_model_id"]
 
 /** Declares a vendor source and physical pin mapping without fetching model files. */
-export class IbisModel extends PrimitiveComponent<typeof ibisModelProps> {
+export class SignalIntegrityIbisModel extends PrimitiveComponent<
+  typeof signalIntegrityIbisModelProps
+> {
   simulation_ibis_model_id: SimulationIbisModelId | null = null
 
   get config() {
-    return { componentName: "IbisModel", zodProps: ibisModelProps }
+    return {
+      componentName: "SignalIntegrityIbisModel",
+      zodProps: signalIntegrityIbisModelProps,
+    }
   }
 
   onPropsChange(): void {
@@ -24,8 +29,8 @@ export class IbisModel extends PrimitiveComponent<typeof ibisModelProps> {
     for (let node = this.parent; node; node = node.parent) {
       if (!node.isSubcircuit) continue
       const subcircuit = node.getSubcircuit()
-      for (const simulation of subcircuit.selectAll<SignalIntegrity>(
-        "signalintegrity",
+      for (const simulation of subcircuit.selectAll<SignalIntegritySimulation>(
+        "signalintegritysimulation",
       )) {
         if (simulation.getSubcircuit() === subcircuit)
           simulation._markDirty("PcbSimulationRender")
@@ -36,7 +41,7 @@ export class IbisModel extends PrimitiveComponent<typeof ibisModelProps> {
   doInitialSimulationRender(): void {
     if (this.getInheritedProperty("analogSimulationDisabled")) return
 
-    const model = IbisModel_getSimulationIbisModel(this)
+    const model = SignalIntegrityIbisModel_getSimulationIbisModel(this)
     if (this.simulation_ibis_model_id)
       this.root!.db.simulation_ibis_model.update(
         this.simulation_ibis_model_id,

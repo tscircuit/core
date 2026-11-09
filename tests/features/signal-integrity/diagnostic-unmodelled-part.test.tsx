@@ -1,3 +1,4 @@
+import { signalintegrity } from "lib/namespaced-elements"
 import { expect } from "bun:test"
 import { DiagnosticBoard } from "./fixtures/diagnostic-board"
 import {
@@ -12,9 +13,13 @@ test("SI diagnostic: unmodelled-part", async () => {
       <diode name="D5" footprint="sod123" />
       <trace from=".TX > .Y" to=".D5 > .anode" />
       <trace from=".D5 > .cathode" to=".RX > .A" />
-      <signalintegrity bitRate="20Mbps" unrouted="ideal">
-        <signal name="DATA" driver=".TX > .Y" receiver=".RX > .A" />
-      </signalintegrity>
+      <signalintegrity.simulation bitRate="20Mbps" unrouted="ideal">
+        <signalintegrity.signal
+          name="DATA"
+          driverRef=".TX > .Y"
+          receiverRef=".RX > .A"
+        />
+      </signalintegrity.simulation>
     </DiagnosticBoard>,
   )
   await expect(circuit.renderUntilSettled()).rejects.toThrow(

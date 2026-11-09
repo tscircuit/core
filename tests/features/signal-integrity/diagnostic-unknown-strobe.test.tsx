@@ -1,3 +1,4 @@
+import { signalintegrity } from "lib/namespaced-elements"
 import { expect } from "bun:test"
 import { DiagnosticBoard } from "./fixtures/diagnostic-board"
 import {
@@ -9,9 +10,18 @@ test("SI diagnostic: unknown-strobe", async () => {
   const { circuit } = getSiTestFixture()
   circuit.add(
     <DiagnosticBoard>
-      <signalintegrity name="WRITE" bitRate="20Mbps" unrouted="ideal">
-        <signal name="DQ0" driver=".TX > .Y" receiver=".RX > .A" strobe="DQS" />
-      </signalintegrity>
+      <signalintegrity.simulation
+        name="WRITE"
+        bitRate="20Mbps"
+        unrouted="ideal"
+      >
+        <signalintegrity.signal
+          name="DQ0"
+          driverRef=".TX > .Y"
+          receiverRef=".RX > .A"
+          strobeRef="DQS"
+        />
+      </signalintegrity.simulation>
     </DiagnosticBoard>,
   )
   await expect(circuit.renderUntilSettled()).rejects.toThrow(

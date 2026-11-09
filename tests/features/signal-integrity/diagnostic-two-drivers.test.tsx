@@ -1,3 +1,4 @@
+import { signalintegrity } from "lib/namespaced-elements"
 import { Fragment } from "react"
 import { expect } from "bun:test"
 import { busModel, busPins } from "./fixtures/diagnostic-board"
@@ -20,14 +21,18 @@ test("Unlisted receive-capable IBIS pins receive even with a schematic output at
               name === "U3" ? { A: { isOutput: true } } : undefined
             }
           />
-          <ibismodel componentRef={`.${name}`} {...busModel} />
+          <signalintegrity.ibismodel componentRef={`.${name}`} {...busModel} />
         </Fragment>
       ))}
       <trace from=".TX > .A" to=".RX > .A" />
       <trace from=".TX > .A" to=".U3 > .A" />
-      <signalintegrity bitRate="250kbps" unrouted="ideal">
-        <signal name="BUS" driver=".TX > .A" receiver=".RX > .A" />
-      </signalintegrity>
+      <signalintegrity.simulation bitRate="250kbps" unrouted="ideal">
+        <signalintegrity.signal
+          name="BUS"
+          driverRef=".TX > .A"
+          receiverRef=".RX > .A"
+        />
+      </signalintegrity.simulation>
     </board>,
   )
   await circuit.renderUntilSettled()

@@ -1,3 +1,4 @@
+import { signalintegrity } from "lib/namespaced-elements"
 import { expect } from "bun:test"
 import { DiagnosticBoard } from "./fixtures/diagnostic-board"
 import {
@@ -12,16 +13,16 @@ test("every PRBS order rejects fractional, nonfinite, zero and out-of-range expl
       const { circuit } = getSiTestFixture()
       circuit.add(
         <DiagnosticBoard>
-          <signalintegrity bitRate="20Mbps" unrouted="ideal">
-            <signal
+          <signalintegrity.simulation bitRate="20Mbps" unrouted="ideal">
+            <signalintegrity.signal
               name="DATA"
-              driver=".TX > .Y"
-              receiver=".RX > .A"
+              driverRef=".TX > .Y"
+              receiverRef=".RX > .A"
               pattern={`prbs${order}`}
               seed={seed}
               quiet="low"
             />
-          </signalintegrity>
+          </signalintegrity.simulation>
         </DiagnosticBoard>,
       )
       await expect(circuit.renderUntilSettled()).rejects.toThrow(

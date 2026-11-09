@@ -1,3 +1,4 @@
+import { signalintegrity } from "lib/namespaced-elements"
 import { expect } from "bun:test"
 import { lvcModel, lvcPins } from "./fixtures/diagnostic-board"
 import {
@@ -14,12 +15,16 @@ test("SI subcircuits use their destination board with isolation caching enabled 
           <subcircuit name="SI">
             <chip name="TX" footprint="sot23_5" pinLabels={lvcPins} pcbX={-5} />
             <chip name="RX" footprint="sot23_5" pinLabels={lvcPins} pcbX={5} />
-            <ibismodel componentRef=".TX" {...lvcModel} />
-            <ibismodel componentRef=".RX" {...lvcModel} />
+            <signalintegrity.ibismodel componentRef=".TX" {...lvcModel} />
+            <signalintegrity.ibismodel componentRef=".RX" {...lvcModel} />
             <trace from=".TX > .Y" to=".RX > .A" />
-            <signalintegrity bitRate="20Mbps" unrouted="ideal">
-              <signal name="DATA" driver=".TX > .Y" receiver=".RX > .A" />
-            </signalintegrity>
+            <signalintegrity.simulation bitRate="20Mbps" unrouted="ideal">
+              <signalintegrity.signal
+                name="DATA"
+                driverRef=".TX > .Y"
+                receiverRef=".RX > .A"
+              />
+            </signalintegrity.simulation>
           </subcircuit>
         </subcircuit>
       </board>,

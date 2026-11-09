@@ -4,14 +4,14 @@ import type { SimulationSignal, SourcePort } from "circuit-json"
 import { resolveExternalSimulationPort } from "lib/utils/simulation/resolveExternalSimulation"
 import { getSignalTopology } from "lib/utils/simulation/get-signal-topology"
 import { getSignalSeed } from "lib/utils/simulation/get-signal-seed"
-import type { Signal } from "./Signal"
-import type { SignalIntegrity } from "./SignalIntegrity"
+import type { SignalIntegritySignal } from "./SignalIntegritySignal"
+import type { SignalIntegritySimulation } from "./SignalIntegritySimulation"
 
 type SourcePortId = SourcePort["source_port_id"]
 
 /** All IBIS declarations and PCB routes have finished before this phase. */
-export function SignalIntegrity_doInitialPcbSimulationRender(
-  block: SignalIntegrity,
+export function SignalIntegritySimulation_doInitialPcbSimulationRender(
+  block: SignalIntegritySimulation,
 ): void {
   const { db } = block.root!
   const props = block._parsedProps
@@ -20,13 +20,13 @@ export function SignalIntegrity_doInitialPcbSimulationRender(
   if (
     block.children.some(
       (child) =>
-        child.props.componentType === "signal" &&
+        child.props.componentType === "signalintegrity.signal" &&
         typeof child.props.quiet === "boolean",
     )
   )
     throw new Error('quiet needs a level: "low", "high" or "off".')
   for (const child of block.children) {
-    if (child.props.componentType !== "signal") continue
+    if (child.props.componentType !== "signalintegrity.signal") continue
     const pattern = child.props.pattern ?? "prbs7"
     const order = /^prbs(7|15|31)$/.exec(pattern)?.[1]
     const seed = child.props.seed
@@ -46,33 +46,35 @@ export function SignalIntegrity_doInitialPcbSimulationRender(
     blocks.some((candidate) => !candidate._parsedProps.name)
   )
     throw new Error(
-      `This board has ${blocks.length} <signalintegrity> blocks; give each a name.`,
+      `This board has ${blocks.length} <signalintegrity.simulation> blocks; give each a name.`,
     )
   if (
     !board?.pcb_board_id ||
     !db.pcb_stackup.getWhere({ pcb_board_id: board.pcb_board_id })
   )
     throw new Error(
-      "<signalintegrity> needs a stackup: set fabricatorPreset or define one.",
+      "<signalintegrity.simulation> needs a stackup: set fabricatorPreset or define one.",
     )
 
   if (props.pdn === "extracted")
     throw new Error('pdn="extracted" is not implemented yet.')
 
   const signals = block.children.filter(
-    (child): child is Signal =>
-      child.componentName === "Signal" && !child.shouldBeRemoved,
+    (child): child is SignalIntegritySignal =>
+      child.componentName === "SignalIntegritySignal" && !child.shouldBeRemoved,
   )
   if (
     signals.length !==
       block.children.filter((child) => !child.shouldBeRemoved).length ||
     signals.length === 0
   )
-    throw new Error("<signalintegrity> must contain <signal> elements.")
+    throw new Error(
+      "<signalintegrity.simulation> must contain <signalintegrity.signal> elements.",
+    )
   const names = signals.map((signal) => signal._parsedProps.name)
   if (new Set(names).size !== names.length)
     throw new Error(
-      "Signal names must be unique within a <signalintegrity> block.",
+      "Signal names must be unique within a <signalintegrity.simulation> block.",
     )
   const topology = getSignalTopology(block)
   const models = db.simulation_ibis_model.list()
@@ -127,7 +129,7 @@ export function SignalIntegrity_doInitialPcbSimulationRender(
     }
   }
   const resolveEndpoint = (
-    signal: Signal,
+    signal: SignalIntegritySignal,
     endpoint: SignalEndpointProps,
     role: "driver" | "receiver",
     restored?: SimulationSignal["driver"],
@@ -161,7 +163,7 @@ export function SignalIntegrity_doInitialPcbSimulationRender(
       const info = getPortModelInfo(portId, overrides[leg])
       if (!info)
         throw new Error(
-          `Signal "${signal._parsedProps.name}" ${role} ${selectors[leg]} has no <ibismodel>.`,
+          `Signal "${signal._parsedProps.name}" ${role} ${selectors[leg]} has no <signalintegrity.ibismodel>.`,
         )
       const receives = [
         "input",
@@ -241,17 +243,17 @@ export function SignalIntegrity_doInitialPcbSimulationRender(
   }
   const resolved = signals.map((signal) => {
     const signalProps = signal._parsedProps
-    if (signalProps.strobe && !names.includes(signalProps.strobe))
+    if (signalProps.strobeRef && !names.includes(signalProps.strobeRef))
       throw new Error(
-        `Signal "${signalProps.name}" strobe "${signalProps.strobe}" is not a signal in block "${props.name ?? "unnamed"}".`,
+        `Signal "${signalProps.name}" strobe "${signalProps.strobeRef}" is not a signal in block "${props.name ?? "unnamed"}".`,
       )
     if (
-      !signalProps.strobe &&
+      !signalProps.strobeRef &&
       signalProps.mask !== "ibis" &&
       (signalProps.mask.setup !== undefined ||
         signalProps.mask.hold !== undefined)
     )
-      throw new Error("mask.setup and mask.hold need a strobe.")
+      throw new Error("mask.setup and mask.hold need a strobeRef.")
     const seed = getSignalSeed(block, signal)
     const quiet =
       signalProps.quiet ??
@@ -262,14 +264,14 @@ export function SignalIntegrity_doInitialPcbSimulationRender(
           : undefined)
     const driver = resolveEndpoint(
       signal,
-      signalProps.driver,
+      signalProps.driverRef,
       "driver",
       signal.restoredEndpoints?.driver,
     )
     const receivers = (
-      Array.isArray(signalProps.receiver)
-        ? signalProps.receiver
-        : [signalProps.receiver]
+      Array.isArray(signalProps.receiverRef)
+        ? signalProps.receiverRef
+        : [signalProps.receiverRef]
     ).map((receiver, i) =>
       resolveEndpoint(
         signal,
@@ -375,7 +377,7 @@ export function SignalIntegrity_doInitialPcbSimulationRender(
   }
 
   for (const data of resolved) {
-    const { name, strobe } = data.signal._parsedProps
+    const { name, strobeRef: strobe } = data.signal._parsedProps
     if (!strobe) continue
     const seen = new Set([name])
     let next: string | undefined = strobe
@@ -387,7 +389,7 @@ export function SignalIntegrity_doInitialPcbSimulationRender(
       seen.add(next)
       next = resolved.find(
         (candidate) => candidate.signal._parsedProps.name === next,
-      )?.signal._parsedProps.strobe
+      )?.signal._parsedProps.strobeRef
     }
     const clock = resolved.find(
       (candidate) => candidate.signal._parsedProps.name === strobe,
@@ -414,7 +416,10 @@ export function SignalIntegrity_doInitialPcbSimulationRender(
     ...(props.name === undefined ? {} : { name: props.name }),
     bit_rate_bps: props.bitRate,
     ...(props.duration === undefined ? {} : { duration_s: props.duration }),
-    corner: props.corner,
+    // Keep the Circuit JSON/IBIS corner representation at this boundary.
+    corner: ({ typical: "typ", minimum: "min", maximum: "max" } as const)[
+      props.corner
+    ],
     unlisted_nets: props.unlistedNets,
     unrouted: props.unrouted,
     pdn: props.pdn,
@@ -480,12 +485,14 @@ export function SignalIntegrity_doInitialPcbSimulationRender(
     const record = db.simulation_signal.get(signal.simulation_signal_id!)!
     if (seed === undefined) delete record.seed
     if (quiet === undefined) delete record.quiet
-    if (!signal._parsedProps.strobe) delete record.strobe_simulation_signal_id
+    if (!signal._parsedProps.strobeRef)
+      delete record.strobe_simulation_signal_id
   }
   // Resolve forward references after all signals have stable IDs.
   for (const signal of signals) {
     const strobe = signals.find(
-      (candidate) => candidate._parsedProps.name === signal._parsedProps.strobe,
+      (candidate) =>
+        candidate._parsedProps.name === signal._parsedProps.strobeRef,
     )
     if (strobe)
       db.simulation_signal.update(signal.simulation_signal_id!, {

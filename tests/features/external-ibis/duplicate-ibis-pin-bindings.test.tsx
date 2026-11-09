@@ -1,3 +1,4 @@
+import { signalintegrity } from "lib/namespaced-elements"
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
@@ -6,7 +7,7 @@ test("IBIS pin names cannot bind the same physical port through aliases", async 
   circuit.add(
     <board routingDisabled>
       <chip name="U1" footprint="soic4" pinLabels={{ pin1: "DATA" }} />
-      <ibismodel
+      <signalintegrity.ibismodel
         componentRef=".U1"
         ibisModelAsset={{
           project_relative_path: "models/chip.ibs",

@@ -6,8 +6,8 @@ import type {
   SourceNet,
   SourcePort,
 } from "circuit-json"
-import { Signal } from "lib/components/primitive-components/Signal"
-import { SignalIntegrity } from "lib/components/primitive-components/SignalIntegrity"
+import { SignalIntegritySignal } from "lib/components/primitive-components/SignalIntegritySignal"
+import { SignalIntegritySimulation } from "lib/components/primitive-components/SignalIntegritySimulation"
 import { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import type { InflatorContext } from "../InflatorFn"
 
@@ -155,11 +155,13 @@ function restoreSimulationRecords({
     return pin
   }
   for (const record of injectionDb.simulation_signal_integrity.list()) {
-    const block = new SignalIntegrity({
+    const block = new SignalIntegritySimulation({
       name: record.name,
       bitRate: record.bit_rate_bps,
       duration: record.duration_s,
-      corner: record.corner,
+      corner: ({ typ: "typical", min: "minimum", max: "maximum" } as const)[
+        record.corner
+      ],
       unlistedNets: record.unlisted_nets,
       unrouted: record.unrouted,
       pdn: record.pdn,
@@ -179,10 +181,10 @@ function restoreSimulationRecords({
         ),
       }
       const mask = recordSignal.mask
-      const signal = new Signal({
+      const signal = new SignalIntegritySignal({
         name: recordSignal.name,
-        driver: endpointSelector(endpoints.driver),
-        receiver: endpoints.receivers.map(endpointSelector),
+        driverRef: endpointSelector(endpoints.driver),
+        receiverRef: endpoints.receivers.map(endpointSelector),
         bitRate: recordSignal.bit_rate_bps,
         pattern: recordSignal.pattern,
         seed: recordSignal.seed,
@@ -198,7 +200,7 @@ function restoreSimulationRecords({
                 setup: mask.setup_s,
                 hold: mask.hold_s,
               },
-        strobe: recordSignal.strobe_simulation_signal_id
+        strobeRef: recordSignal.strobe_simulation_signal_id
           ? injectionDb.simulation_signal.get(
               recordSignal.strobe_simulation_signal_id,
             )!.name

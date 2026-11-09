@@ -1,3 +1,4 @@
+import { signalintegrity } from "lib/namespaced-elements"
 export const Inverter = (props: {
   name: string
   pcbX: number
@@ -12,7 +13,7 @@ export const Inverter = (props: {
       pcbY={props.pcbY ?? 0}
       pinLabels={{ pin1: "NC", pin2: "A", pin3: "GND", pin4: "Y", pin5: "VCC" }}
     />
-    <ibismodel
+    <signalintegrity.ibismodel
       componentRef={`.${props.name}`}
       ibisModelAsset={{
         project_relative_path: "models/sn74lvc1g04.ibs",
@@ -68,7 +69,7 @@ export const Octal = ({
           Object.entries(pins).map(([pin, label]) => [`pin${pin}`, label]),
         )}
       />
-      <ibismodel
+      <signalintegrity.ibismodel
         componentRef={`.${name}`}
         ibisComponentName="LVC8T245_PW"
         ibisModelAsset={{

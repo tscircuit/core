@@ -1,3 +1,4 @@
+import { signalintegrity } from "lib/namespaced-elements"
 import { expect } from "bun:test"
 import { StrobeBoard } from "./fixtures/strobe-board"
 import { Octal } from "./fixtures/parts"
@@ -13,20 +14,26 @@ test("each data receiver needs exactly one physical strobe receiver on its chip"
       <StrobeBoard>
         <Octal name="OTHER" pcbX={20} />
         <trace from=".TX1 > .Y" to=".OTHER > .A2" />
-        <signalintegrity name="WRITE" bitRate="20Mbps" unrouted="ideal">
-          <signal
+        <signalintegrity.simulation
+          name="WRITE"
+          bitRate="20Mbps"
+          unrouted="ideal"
+        >
+          <signalintegrity.signal
             name="DQ0"
-            driver=".TX0 > .Y"
-            receiver=".RX > .A1"
-            strobe="DQS"
+            driverRef=".TX0 > .Y"
+            receiverRef=".RX > .A1"
+            strobeRef="DQS"
           />
-          <signal
+          <signalintegrity.signal
             name="DQS"
-            driver=".TX1 > .Y"
-            receiver={ambiguous ? [".RX > .A2", ".RX > .A2"] : ".OTHER > .A2"}
+            driverRef=".TX1 > .Y"
+            receiverRef={
+              ambiguous ? [".RX > .A2", ".RX > .A2"] : ".OTHER > .A2"
+            }
             pattern="clock"
           />
-        </signalintegrity>
+        </signalintegrity.simulation>
       </StrobeBoard>,
     )
     await expect(circuit.renderUntilSettled()).rejects.toThrow(

@@ -1,12 +1,12 @@
-import { signalIntegrityProps } from "@tscircuit/props"
+import { signalIntegritySimulationProps } from "@tscircuit/props"
 import type { SimulationSignalIntegrity } from "circuit-json"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
-import { SignalIntegrity_doInitialPcbSimulationRender } from "./SignalIntegrity_doInitialPcbSimulationRender"
+import { SignalIntegritySimulation_doInitialPcbSimulationRender } from "./SignalIntegritySimulation_doInitialPcbSimulationRender"
 import { parseIbisModelInfo } from "lib/utils/simulation/parse-ibis-model-info"
 
 /** Declares a coupled SI run; solvers consume its Circuit JSON separately. */
-export class SignalIntegrity extends PrimitiveComponent<
-  typeof signalIntegrityProps
+export class SignalIntegritySimulation extends PrimitiveComponent<
+  typeof signalIntegritySimulationProps
 > {
   simulation_signal_integrity_id:
     | SimulationSignalIntegrity["simulation_signal_integrity_id"]
@@ -19,7 +19,10 @@ export class SignalIntegrity extends PrimitiveComponent<
   ibisModelLoadError?: Error
 
   get config() {
-    return { componentName: "SignalIntegrity", zodProps: signalIntegrityProps }
+    return {
+      componentName: "SignalIntegritySimulation",
+      zodProps: signalIntegritySimulationProps,
+    }
   }
 
   onPropsChange(): void {
@@ -39,7 +42,7 @@ export class SignalIntegrity extends PrimitiveComponent<
     )
     if (unreadModelUrls.size && !platformFetch)
       throw new Error(
-        "<signalintegrity> needs IBIS contents for validation; configure platformFetch to load the declared model assets.",
+        "<signalintegrity.simulation> needs IBIS contents for validation; configure platformFetch to load the declared model assets.",
       )
     if (platformFetch && unreadModelUrls.size) {
       for (const url of unreadModelUrls) {
@@ -56,7 +59,7 @@ export class SignalIntegrity extends PrimitiveComponent<
             // Throw synchronously on the next render; async-effect errors alone
             // are logged by the renderer and do not reject renderUntilSettled.
             this.ibisModelLoadError = new Error(
-              "<signalintegrity> could not load the declared IBIS contents for validation.",
+              "<signalintegrity.simulation> could not load the declared IBIS contents for validation.",
             )
           } finally {
             this._markDirty("PcbSimulationRender")
@@ -65,7 +68,7 @@ export class SignalIntegrity extends PrimitiveComponent<
       }
       return
     }
-    SignalIntegrity_doInitialPcbSimulationRender(this)
+    SignalIntegritySimulation_doInitialPcbSimulationRender(this)
   }
 
   updatePcbSimulationRender(): void {

@@ -1,3 +1,4 @@
+import { signalintegrity } from "lib/namespaced-elements"
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
@@ -12,7 +13,7 @@ test("IBIS models reject missing and ambiguous physical component or pin selecto
       <board routingDisabled>
         <chip name="U1" footprint="soic4" pinLabels={{ pin1: "DATA" }} />
         <chip name="U2" footprint="soic4" />
-        <ibismodel
+        <signalintegrity.ibismodel
           componentRef={componentRef}
           ibisModelAsset={{
             project_relative_path: "models/model.ibs",

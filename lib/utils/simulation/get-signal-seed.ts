@@ -1,9 +1,12 @@
 import { getSignalIntegrityBlocks } from "./get-signal-integrity-blocks"
-import type { Signal } from "lib/components/primitive-components/Signal"
-import type { SignalIntegrity } from "lib/components/primitive-components/SignalIntegrity"
+import type { SignalIntegritySignal } from "lib/components/primitive-components/SignalIntegritySignal"
+import type { SignalIntegritySimulation } from "lib/components/primitive-components/SignalIntegritySimulation"
 
 /** RFC phase plan, shared by name/order across every block on the board. */
-export function getSignalSeed(block: SignalIntegrity, signal: Signal) {
+export function getSignalSeed(
+  block: SignalIntegritySimulation,
+  signal: SignalIntegritySignal,
+) {
   const { pattern, seed, name } = signal._parsedProps
   if (!/^prbs(7|15|31)$/.test(pattern)) return undefined
   const order = Number(pattern.slice(4))
@@ -18,7 +21,7 @@ export function getSignalSeed(block: SignalIntegrity, signal: Signal) {
   const names = [
     ...new Set(
       getSignalIntegrityBlocks(block._getBoard())
-        .flatMap((candidate) => candidate.children as Signal[])
+        .flatMap((candidate) => candidate.children as SignalIntegritySignal[])
         .filter(
           (candidate) =>
             !candidate.shouldBeRemoved &&

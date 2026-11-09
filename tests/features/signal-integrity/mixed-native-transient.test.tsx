@@ -1,3 +1,4 @@
+import { signalintegrity } from "lib/namespaced-elements"
 import { expect } from "bun:test"
 import { analog } from "lib/namespaced-elements/analog"
 import { DiagnosticBoard } from "./fixtures/diagnostic-board"
@@ -35,9 +36,13 @@ test("SI declarations coexist with general SPICE transients and voltage probes",
         duration="1ms"
         timePerStep="100us"
       />
-      <signalintegrity bitRate="20Mbps" unrouted="ideal">
-        <signal name="DATA" driver=".TX > .Y" receiver=".RX > .A" />
-      </signalintegrity>
+      <signalintegrity.simulation bitRate="20Mbps" unrouted="ideal">
+        <signalintegrity.signal
+          name="DATA"
+          driverRef=".TX > .Y"
+          receiverRef=".RX > .A"
+        />
+      </signalintegrity.simulation>
     </DiagnosticBoard>,
   )
   await circuit.renderUntilSettled()

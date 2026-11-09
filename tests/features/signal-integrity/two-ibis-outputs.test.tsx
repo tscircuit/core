@@ -1,3 +1,4 @@
+import { signalintegrity } from "lib/namespaced-elements"
 import { expect } from "bun:test"
 import { DiagnosticBoard, lvcModel, lvcPins } from "./fixtures/diagnostic-board"
 import {
@@ -10,11 +11,15 @@ test("SI detects an additional Output-only pin from the real TI IBIS model", asy
   circuit.add(
     <DiagnosticBoard>
       <chip name="U3" footprint="sot23_5" pinLabels={lvcPins} />
-      <ibismodel componentRef=".U3" {...lvcModel} />
+      <signalintegrity.ibismodel componentRef=".U3" {...lvcModel} />
       <trace from=".TX > .Y" to=".U3 > .Y" />
-      <signalintegrity bitRate="20Mbps" unrouted="ideal">
-        <signal name="DATA" driver=".TX > .Y" receiver=".RX > .A" />
-      </signalintegrity>
+      <signalintegrity.simulation bitRate="20Mbps" unrouted="ideal">
+        <signalintegrity.signal
+          name="DATA"
+          driverRef=".TX > .Y"
+          receiverRef=".RX > .A"
+        />
+      </signalintegrity.simulation>
     </DiagnosticBoard>,
   )
   await expect(circuit.renderUntilSettled()).rejects.toThrow(

@@ -1,4 +1,4 @@
-These TSX fixtures adapt the Level 1–3 boards and the AM335x/Winbond DDR3 write example from [RFC #28](https://github.com/tscircuit/rfc/pull/28), pinned at `ae2c01a336534386886bfe6d3bb916c18c0c445b`. The differential board routes trunks before termination/supply taps. The inverter is the SOT23-5 DBV package (`LVC1G04_DBV`).
+These TSX fixtures adapt the Level 1–3 boards and the AM335x/Winbond DDR3 write example from [RFC #28](https://github.com/tscircuit/rfc/pull/28), pinned at `d79a8d14d40765b2dda7db557e45e101f2aa62ba`. The differential board routes trunks before termination/supply taps. The inverter is the SOT23-5 DBV package (`LVC1G04_DBV`).
 
 Vendor files are not redistributed. Download/extract the real model files into one directory (symlinks work), then run:
 
@@ -17,3 +17,12 @@ The fixture provides real model contents through `platformFetch`. Model-dependen
 Assertions cover the exact source schemas, omitted automatic duration, explicit duration bounds, PRBS phase planning and validation, constant-to-quiet normalization, per-leg model overrides, strobe dependencies and receiving-chip identity, rail/shunt boundaries, late signals, and cached imports. SI-bearing subcircuits render on the destination board instead of using isolated caching. Cached source declarations are reconstructed and revalidated after inflation.
 
 The DDR3 test renders the RFC TSX with string trace keys (required by core) and routing disabled by the test host. It reaches the documented coupled-package-model error; it does not claim a working DDR simulation. No test invokes an SI solver. Duration coverage, DC threshold/mask calculations, ideal rail compatibility, placed-model lowering, physical graph limitations, and result generation are checked by the separate pipeline.
+
+Import `signalintegrity` from `@tscircuit/core` for the `.simulation`, `.signal`
+and `.ibismodel` elements, following the existing `assembly.*` mechanism.
+Selectors on `.signal` are `driverRef`, `receiverRef` and `strobeRef`.
+Corners are `typical` (default), `minimum` and `maximum`. The renderer maps
+those to the existing Circuit JSON `typ`/`min`/`max` corner data and reverses
+that mapping when restoring cached declarations; record names and fields are
+unchanged. Namespaced IBIS declarations have a dedicated real-IBIS regression
+at every corner. Removed top-level hosts have no catalogue or JSX aliases.

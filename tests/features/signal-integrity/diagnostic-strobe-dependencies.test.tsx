@@ -1,3 +1,4 @@
+import { signalintegrity } from "lib/namespaced-elements"
 import { expect } from "bun:test"
 import { StrobeBoard } from "./fixtures/strobe-board"
 import {
@@ -10,22 +11,26 @@ test("self-strobes, cycles and quiet strobes are rejected including constant pat
     const { circuit } = getSiTestFixture()
     circuit.add(
       <StrobeBoard>
-        <signalintegrity name="WRITE" bitRate="20Mbps" unrouted="ideal">
-          <signal
+        <signalintegrity.simulation
+          name="WRITE"
+          bitRate="20Mbps"
+          unrouted="ideal"
+        >
+          <signalintegrity.signal
             name="DQ0"
-            driver=".TX0 > .Y"
-            receiver=".RX > .A1"
-            strobe={kind === "self" ? "DQ0" : "DQS"}
+            driverRef=".TX0 > .Y"
+            receiverRef=".RX > .A1"
+            strobeRef={kind === "self" ? "DQ0" : "DQS"}
           />
-          <signal
+          <signalintegrity.signal
             name="DQS"
-            driver=".TX1 > .Y"
-            receiver=".RX > .A2"
-            strobe={kind === "cycle" ? "DQ0" : undefined}
+            driverRef=".TX1 > .Y"
+            receiverRef=".RX > .A2"
+            strobeRef={kind === "cycle" ? "DQ0" : undefined}
             quiet={kind === "quiet" ? "low" : undefined}
             pattern={kind === "constant" ? "000" : "clock"}
           />
-        </signalintegrity>
+        </signalintegrity.simulation>
       </StrobeBoard>,
     )
     await expect(circuit.renderUntilSettled()).rejects.toThrow(

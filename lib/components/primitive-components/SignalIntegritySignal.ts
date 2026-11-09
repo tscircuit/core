@@ -1,21 +1,28 @@
 import { getSignalIntegrityBlocks } from "lib/utils/simulation/get-signal-integrity-blocks"
-import { signalProps } from "@tscircuit/props"
+import { signalIntegritySignalProps } from "@tscircuit/props"
 import type { SimulationSignal } from "circuit-json"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
 /** One driven or quiet signal, rendered by its containing SI block. */
-export class Signal extends PrimitiveComponent<typeof signalProps> {
+export class SignalIntegritySignal extends PrimitiveComponent<
+  typeof signalIntegritySignalProps
+> {
   simulation_signal_id: SimulationSignal["simulation_signal_id"] | null = null
 
   restoredEndpoints?: Pick<SimulationSignal, "driver" | "receivers">
 
   get config() {
-    return { componentName: "Signal", zodProps: signalProps }
+    return {
+      componentName: "SignalIntegritySignal",
+      zodProps: signalIntegritySignalProps,
+    }
   }
 
   doInitialSourceDesignRuleChecks(): void {
-    if (this.parent?.componentName !== "SignalIntegrity")
-      throw new Error("<signal> must be inside <signalintegrity>.")
+    if (this.parent?.componentName !== "SignalIntegritySimulation")
+      throw new Error(
+        "<signalintegrity.signal> must be inside <signalintegrity.simulation>.",
+      )
     this.onPropsChange()
   }
 

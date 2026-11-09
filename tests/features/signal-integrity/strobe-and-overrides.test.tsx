@@ -1,3 +1,4 @@
+import { signalintegrity } from "lib/namespaced-elements"
 import { expect } from "bun:test"
 import { any_circuit_element } from "circuit-json"
 import { Inverter, Octal } from "./fixtures/parts"
@@ -22,42 +23,42 @@ test("SI supports forward strobe references, per-signal units, masks and more th
         </group>
       ))}
       <Octal />
-      <signalintegrity
+      <signalintegrity.simulation
         name="WRITE"
         bitRate="20Mbps"
         unrouted="ideal"
-        corner="max"
+        corner="maximum"
         pdn="ideal"
       >
-        <signal
+        <signalintegrity.signal
           name="DQ0"
-          driver={{ pin: ".TX0 > .Y", model: "LVC1G04_OUT_33" }}
-          receiver=".RX > .A1"
+          driverRef={{ pin: ".TX0 > .Y", model: "LVC1G04_OUT_33" }}
+          receiverRef=".RX > .A1"
           bitRate="10Mbps"
           pattern="0011010"
           seed={42}
           offset="2UI"
           probe="global"
-          strobe="DQS"
+          strobeRef="DQS"
           mask={{ vih: "2V", vil: "0.8V", setup: "75ps", hold: "100ps" }}
         />
         {Array.from({ length: 6 }, (_, i) => (
-          <signal
+          <signalintegrity.signal
             key={i}
             name={`DQ${i + 1}`}
-            driver={`.TX${i + 1} > .Y`}
-            receiver={`.RX > .A${i + 2}`}
+            driverRef={`.TX${i + 1} > .Y`}
+            receiverRef={`.RX > .A${i + 2}`}
             pattern="prbs15"
           />
         ))}
-        <signal
+        <signalintegrity.signal
           name="DQS"
-          driver=".TX7 > .Y"
-          receiver=".RX > .A8"
+          driverRef=".TX7 > .Y"
+          receiverRef=".RX > .A8"
           pattern="clock"
           offset="3ns"
         />
-      </signalintegrity>
+      </signalintegrity.simulation>
     </board>,
   )
   await circuit.renderUntilSettled()

@@ -1,5 +1,9 @@
+import { signalintegrity } from "lib/namespaced-elements"
 import { expect } from "bun:test"
-import { Signal, SignalIntegrity } from "lib/components"
+import {
+  SignalIntegritySignal,
+  SignalIntegritySimulation,
+} from "lib/components"
 import { DiagnosticBoard } from "./fixtures/diagnostic-board"
 import {
   getSiTestFixture,
@@ -10,14 +14,22 @@ test("SI updates and removes records without duplicating runs or mutating props"
   const { circuit } = getSiTestFixture()
   circuit.add(
     <DiagnosticBoard>
-      <signalintegrity bitRate="20Mbps" unrouted="ideal">
-        <signal name="DATA" driver=".TX > .Y" receiver=".RX > .A" />
-      </signalintegrity>
+      <signalintegrity.simulation bitRate="20Mbps" unrouted="ideal">
+        <signalintegrity.signal
+          name="DATA"
+          driverRef=".TX > .Y"
+          receiverRef=".RX > .A"
+        />
+      </signalintegrity.simulation>
     </DiagnosticBoard>,
   )
   await circuit.renderUntilSettled()
-  const block = circuit.selectOne("signalintegrity") as SignalIntegrity
-  const signal = circuit.selectOne("signal") as Signal
+  const block = circuit.selectOne(
+    "signalintegritysimulation",
+  ) as SignalIntegritySimulation
+  const signal = circuit.selectOne(
+    "signalintegritysignal",
+  ) as SignalIntegritySignal
   const originalProps = structuredClone(signal._parsedProps)
   const originalId = signal.simulation_signal_id
   signal.setProps({
@@ -30,7 +42,7 @@ test("SI updates and removes records without duplicating runs or mutating props"
     ...block.props,
     bitRate: "10Mbps",
     duration: "20UI",
-    corner: "min",
+    corner: "minimum",
   })
   await circuit.renderUntilSettled()
   expect(signal.simulation_signal_id).toBe(originalId)

@@ -1,3 +1,4 @@
+import { signalintegrity } from "lib/namespaced-elements"
 import { expect } from "bun:test"
 import { DiagnosticBoard } from "./fixtures/diagnostic-board"
 import {
@@ -9,10 +10,18 @@ test("SI diagnostic: shared-net", async () => {
   const { circuit } = getSiTestFixture()
   circuit.add(
     <DiagnosticBoard>
-      <signalintegrity bitRate="20Mbps" unrouted="ideal">
-        <signal name="D0" driver=".TX > .Y" receiver=".RX > .A" />
-        <signal name="D1" driver=".TX > .Y" receiver=".RX > .A" />
-      </signalintegrity>
+      <signalintegrity.simulation bitRate="20Mbps" unrouted="ideal">
+        <signalintegrity.signal
+          name="D0"
+          driverRef=".TX > .Y"
+          receiverRef=".RX > .A"
+        />
+        <signalintegrity.signal
+          name="D1"
+          driverRef=".TX > .Y"
+          receiverRef=".RX > .A"
+        />
+      </signalintegrity.simulation>
     </DiagnosticBoard>,
   )
   await expect(circuit.renderUntilSettled()).rejects.toThrow(

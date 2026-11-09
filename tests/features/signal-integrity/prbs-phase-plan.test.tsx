@@ -1,3 +1,4 @@
+import { signalintegrity } from "lib/namespaced-elements"
 import { expect } from "bun:test"
 import { any_circuit_element } from "circuit-json"
 import { DiagnosticBoard } from "./fixtures/diagnostic-board"
@@ -12,38 +13,46 @@ test("PRBS phases use sorted board-wide names, retain quiet phases and pass expl
     circuit.add(
       <DiagnosticBoard>
         {["C", "A", "B"].map((name) => (
-          <signalintegrity
+          <signalintegrity.simulation
             key={name}
             name={name}
             bitRate="20Mbps"
             unrouted="ideal"
           >
-            <signal
+            <signalintegrity.signal
               name={name}
-              driver=".TX > .Y"
-              receiver=".RX > .A"
+              driverRef=".TX > .Y"
+              receiverRef=".RX > .A"
               pattern={pattern}
               quiet={name === "B" ? "low" : undefined}
             />
-          </signalintegrity>
+          </signalintegrity.simulation>
         ))}
-        <signalintegrity name="REPEAT" bitRate="20Mbps" unrouted="ideal">
-          <signal
+        <signalintegrity.simulation
+          name="REPEAT"
+          bitRate="20Mbps"
+          unrouted="ideal"
+        >
+          <signalintegrity.signal
             name="B"
-            driver=".TX > .Y"
-            receiver=".RX > .A"
+            driverRef=".TX > .Y"
+            receiverRef=".RX > .A"
             pattern={pattern}
           />
-        </signalintegrity>
-        <signalintegrity name="OVERRIDE" bitRate="20Mbps" unrouted="ideal">
-          <signal
+        </signalintegrity.simulation>
+        <signalintegrity.simulation
+          name="OVERRIDE"
+          bitRate="20Mbps"
+          unrouted="ideal"
+        >
+          <signalintegrity.signal
             name="A"
-            driver=".TX > .Y"
-            receiver=".RX > .A"
+            driverRef=".TX > .Y"
+            receiverRef=".RX > .A"
             pattern={pattern}
             seed={1}
           />
-        </signalintegrity>
+        </signalintegrity.simulation>
       </DiagnosticBoard>,
     )
     await circuit.renderUntilSettled()

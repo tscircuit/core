@@ -1,3 +1,4 @@
+import { signalintegrity } from "lib/namespaced-elements"
 import { expect } from "bun:test"
 import {
   getSiTestFixture,
@@ -14,21 +15,26 @@ test("cached SI source records remap endpoint and forward strobe references", as
       <Inverter name="TX1" pcbX={-8} pcbY={-2} />
       <trace from=".TX0 > .Y" to=".RX > .A1" />
       <trace from=".TX1 > .Y" to=".RX > .A2" />
-      <signalintegrity name="WRITE" bitRate="20Mbps" unrouted="ideal">
-        <signal
+      <signalintegrity.simulation
+        name="WRITE"
+        bitRate="20Mbps"
+        unrouted="ideal"
+        corner="minimum"
+      >
+        <signalintegrity.signal
           name="DATA"
-          driver=".TX0 > .Y"
-          receiver=".RX > .A1"
-          strobe="CLK"
+          driverRef=".TX0 > .Y"
+          receiverRef=".RX > .A1"
+          strobeRef="CLK"
           mask={{ setup: "75ps" }}
         />
-        <signal
+        <signalintegrity.signal
           name="CLK"
-          driver=".TX1 > .Y"
-          receiver=".RX > .A2"
+          driverRef=".TX1 > .Y"
+          receiverRef=".RX > .A2"
           pattern="clock"
         />
-      </signalintegrity>
+      </signalintegrity.simulation>
     </board>,
   )
   await original.renderUntilSettled()
@@ -45,6 +51,7 @@ test("cached SI source records remap endpoint and forward strobe references", as
   expect(circuit.db.simulation_ibis_model.list()).toHaveLength(6)
   const driverPorts = []
   for (const block of blocks) {
+    expect(block.corner).toBe("min")
     const signals = circuit.db.simulation_signal.list({
       simulation_signal_integrity_id: block.simulation_signal_integrity_id,
     })

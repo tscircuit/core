@@ -1,13 +1,13 @@
 import type { SimulationIbisModelInput } from "circuit-json"
 import type { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { resolveExternalSimulationPort } from "lib/utils/simulation/resolveExternalSimulation"
-import type { IbisModel } from "./IbisModel"
+import type { SignalIntegrityIbisModel } from "./SignalIntegrityIbisModel"
 
 type SourcePortId =
   SimulationIbisModelInput["ibis_pin_name_to_source_port_id"][string]
 
-export function IbisModel_getSimulationIbisModel(
-  declaration: IbisModel,
+export function SignalIntegrityIbisModel_getSimulationIbisModel(
+  declaration: SignalIntegrityIbisModel,
 ): SimulationIbisModelInput {
   const props = declaration._parsedProps
   const chips = declaration

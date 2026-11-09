@@ -1,3 +1,4 @@
+import { signalintegrity } from "lib/namespaced-elements"
 import { Fragment } from "react"
 import { expect } from "bun:test"
 import { busModel, busPins } from "./fixtures/diagnostic-board"
@@ -13,18 +14,18 @@ test("SI diagnostic: swapped legs in TI SN65HVD72 [Diff_pin]", async () => {
       {["TX", "RX"].map((name) => (
         <Fragment key={name}>
           <chip name={name} footprint="soic8" pinLabels={busPins} />
-          <ibismodel componentRef={`.${name}`} {...busModel} />
+          <signalintegrity.ibismodel componentRef={`.${name}`} {...busModel} />
         </Fragment>
       ))}
       <trace from=".TX > .A" to=".RX > .A" />
       <trace from=".TX > .B" to=".RX > .B" />
-      <signalintegrity bitRate="250kbps" unrouted="ideal">
-        <signal
+      <signalintegrity.simulation bitRate="250kbps" unrouted="ideal">
+        <signalintegrity.signal
           name="BUS"
-          driver={{ p: ".TX > .B", n: ".TX > .A" }}
-          receiver={{ p: ".RX > .A", n: ".RX > .B" }}
+          driverRef={{ p: ".TX > .B", n: ".TX > .A" }}
+          receiverRef={{ p: ".RX > .A", n: ".RX > .B" }}
         />
-      </signalintegrity>
+      </signalintegrity.simulation>
     </board>,
   )
   await expect(circuit.renderUntilSettled()).rejects.toThrow(

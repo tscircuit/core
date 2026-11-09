@@ -1,3 +1,4 @@
+import { signalintegrity } from "lib/namespaced-elements"
 import { expect } from "bun:test"
 import { any_circuit_element } from "circuit-json"
 import { DiagnosticBoard } from "./fixtures/diagnostic-board"
@@ -11,30 +12,34 @@ test("constant bit strings normalize to quiet while explicit quiet takes precede
   circuit.add(
     <DiagnosticBoard>
       {["0", "1", "000", "111", "clock", "00110"].map((pattern) => (
-        <signalintegrity
+        <signalintegrity.simulation
           key={pattern}
           name={pattern}
           bitRate="20Mbps"
           unrouted="ideal"
         >
-          <signal
+          <signalintegrity.signal
             name="DATA"
-            driver=".TX > .Y"
-            receiver=".RX > .A"
+            driverRef=".TX > .Y"
+            receiverRef=".RX > .A"
             pattern={pattern}
             seed={42}
           />
-        </signalintegrity>
+        </signalintegrity.simulation>
       ))}
-      <signalintegrity name="EXPLICIT" bitRate="20Mbps" unrouted="ideal">
-        <signal
+      <signalintegrity.simulation
+        name="EXPLICIT"
+        bitRate="20Mbps"
+        unrouted="ideal"
+      >
+        <signalintegrity.signal
           name="DATA"
-          driver=".TX > .Y"
-          receiver=".RX > .A"
+          driverRef=".TX > .Y"
+          receiverRef=".RX > .A"
           pattern="111"
           quiet="low"
         />
-      </signalintegrity>
+      </signalintegrity.simulation>
     </DiagnosticBoard>,
   )
   await circuit.renderUntilSettled()
