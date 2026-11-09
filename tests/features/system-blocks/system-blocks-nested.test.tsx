@@ -51,6 +51,25 @@ test("TSX system blocks resolve nested groups and cross-group interfaces", () =>
   circuit.render()
   const json = circuit.getCircuitJson()
   assertSystemGeometry(json)
+  // Every segment joins tangentially, including the bends beside inline labels
+  // and the closely spaced connections at the microcontroller.
+  for (const { route } of circuit.db.system_block_connection.list()) {
+    for (let index = 1; index < route.length - 1; index++) {
+      const corner = route[index]
+      const before = corner.cubic_bezier_control_points?.[1] ?? route[index - 1]
+      const after =
+        route[index + 1].cubic_bezier_control_points?.[0] ?? route[index + 1]
+      const incoming = { x: corner.x - before.x, y: corner.y - before.y }
+      const outgoing = { x: after.x - corner.x, y: after.y - corner.y }
+      expect(incoming.x * outgoing.y - incoming.y * outgoing.x).toBeCloseTo(
+        0,
+        8,
+      )
+      expect(incoming.x * outgoing.x + incoming.y * outgoing.y).toBeGreaterThan(
+        0,
+      )
+    }
+  }
   const groups = circuit.db.system_block_group.list()
   const processing = groups.find((group) => group.name === "processing")!
   expect(processing.parent_system_block_group_id).toBe(
@@ -73,5 +92,7 @@ test("TSX system blocks resolve nested groups and cross-group interfaces", () =>
   expect(circuit.db.source_trace.list()).toHaveLength(0)
   return expect(convertCircuitJsonToSystemSvg(json)).toMatchSvgSnapshot(
     import.meta.path,
+    undefined,
+    { diffThresholdPercent: 0 },
   )
 })

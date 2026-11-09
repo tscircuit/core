@@ -1,4 +1,5 @@
 import { getImportedInternallyConnectedPinNames } from "./get-imported-internally-connected-pin-names"
+import { joinImportedCourtyardOutlines } from "./join-imported-courtyard-outlines"
 import { getUnitVectorFromDirection } from "@tscircuit/math-utils"
 import type { PcbSoldermaskOpeningProps, PinLabelsProp } from "@tscircuit/props"
 import {
@@ -142,6 +143,10 @@ export const createComponentsFromCircuitJson = (
   },
   circuitJson: AnyCircuitElement[],
 ): PrimitiveComponent[] => {
+  const joinedCourtyards = joinImportedCourtyardOutlines(
+    circuitJson.filter((elm) => elm.type === "pcb_courtyard_outline"),
+    componentName,
+  )
   const importedSourcePorts = circuitJson.filter(
     (elm) => elm.type === "source_port",
   )
@@ -932,9 +937,14 @@ export const createComponentsFromCircuitJson = (
         }),
       )
     } else if (elm.type === "pcb_courtyard_outline") {
+      // Older KiCad imports store one courtyard edge per record. The props API
+      // requires a complete polygon; emit each joined loop only at its first edge.
+      const outline =
+        elm.outline.length === 2 ? joinedCourtyards.get(elm) : elm.outline
+      if (!outline) continue
       components.push(
         new CourtyardOutline({
-          outline: elm.outline,
+          outline,
           layer: elm.layer,
         }),
       )

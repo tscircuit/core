@@ -13,7 +13,7 @@ test("panel rails express their own manufacturing feature", async () => {
         </board>
         {createElement(
           "toolingrail",
-          { name: "LEFT_RAIL", side: "left", width: "5mm" },
+          { name: "LEFT_RAIL", panelSide: "left", width: "5mm" },
           <pcbnotetext text="LEFT RAIL" pcbRotation={90} fontSize={0.6} />,
         )}
       </panel>,

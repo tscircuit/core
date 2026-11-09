@@ -21,13 +21,7 @@ export function resolveExternalSimulationPort({
       `Simulation pin selector "${selector}" must identify exactly one physical source pin.`,
     )
   }
-  const port = ports[0]
-  if (port.getSubcircuit() !== declaration.getSubcircuit()) {
-    throw new Error(
-      `Simulation pin "${selector}" must belong to the same subcircuit as its declaration.`,
-    )
-  }
-  return port
+  return ports[0]
 }
 
 export function resolveExternalTransientSimulation({
@@ -43,12 +37,9 @@ export function resolveExternalTransientSimulation({
     .filter(
       (simulation) => simulation.componentName === "AnalogTransientSimulation",
     )
-  if (
-    simulations.length !== 1 ||
-    simulations[0].getSubcircuit() !== declaration.getSubcircuit()
-  ) {
+  if (simulations.length !== 1) {
     throw new Error(
-      `Simulation selector "${selector}" must identify one transient in the same subcircuit.`,
+      `Simulation selector "${selector}" must identify one transient in this subcircuit.`,
     )
   }
   const simulation = simulations[0]
