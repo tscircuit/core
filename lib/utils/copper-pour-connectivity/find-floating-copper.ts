@@ -22,6 +22,7 @@ import {
   getTraceSegmentPolygon,
   getViaPolygon,
 } from "@tscircuit/circuit-json-util"
+import { hasConductivePolygonContact } from "./has-conductive-polygon-contact"
 
 type CopperNetId = NonNullable<
   ReturnType<ConnectivityMap["getNetConnectedToId"]>
@@ -306,7 +307,9 @@ export const findFloatingCopper = (
       )
         continue
       if (
-        copperPolygonsTouch(
+        (conductor.pourId && neighbor.pourId
+          ? hasConductivePolygonContact
+          : copperPolygonsTouch)(
           conductor.polygon,
           neighbor.polygon,
           CONTACT_TOLERANCE,
