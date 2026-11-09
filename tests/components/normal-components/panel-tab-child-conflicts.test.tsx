@@ -37,8 +37,8 @@ test("panel tab children reject conflicting modes and overlapping keepouts", asy
         panelizationMethod={method}
       >
         <board name="B1" width="20mm" height="20mm" routingDisabled />
-        <paneltab boardName="B1" edge="top" offset={offset} />
-        <paneltabkeepout boardName="B1" edge="top" from="2mm" to="4mm" />
+        <paneltab boardName="B1" boardEdge="top" offset={offset} />
+        <paneltabkeepout boardName="B1" boardEdge="top" from="2mm" to="4mm" />
       </panel>,
     )
     await expect(circuit.renderUntilSettled()).rejects.toThrow(message)

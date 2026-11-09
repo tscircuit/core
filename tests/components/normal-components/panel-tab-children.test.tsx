@@ -8,7 +8,7 @@ test("explicit paneltab children replace automatic tabs", async () => {
       <board name="B1" width="20mm" height="20mm" routingDisabled>
         <pcbnotetext text="Only right edge: explicit paneltab" fontSize={0.5} />
       </board>
-      <paneltab boardName="B1" edge="right" offset="6mm" />
+      <paneltab boardName="B1" boardEdge="right" offset="6mm" />
     </panel>,
   )
   await circuit.renderUntilSettled()

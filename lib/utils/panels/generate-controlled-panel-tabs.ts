@@ -122,14 +122,14 @@ export function generateControlledPanelTabs(
           : explicitTabs
               .filter(
                 (tab) =>
-                  tab.edge === edge.side &&
+                  tab.boardEdge === edge.side &&
                   (!tab.boardName || tab.boardName === boardName),
               )
               .map((tab) => distance.parse(tab.offset))
       const keepouts =
         options.tabKeepouts?.filter(
           (keepout) =>
-            keepout.edge === edge.side &&
+            keepout.boardEdge === edge.side &&
             (!keepout.boardName || keepout.boardName === boardName),
         ) ?? []
       const intervals: PanelTabInterval[] = []
