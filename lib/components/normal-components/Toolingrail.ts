@@ -46,7 +46,7 @@ export class Toolingrail extends Group<typeof toolingrailProps> {
         ? panel._cachedGridHeight + top + bottom
         : distance.parse(props.height)
     const railWidth = this._parsedProps.width
-    const side = this._parsedProps.side
+    const side = this._parsedProps.panelSide
     const availablePadding = { left, right, top, bottom }[side]
     if (railWidth > availablePadding)
       throw new Error(
