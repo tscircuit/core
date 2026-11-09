@@ -2590,7 +2590,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         let subcircuitConnectivityMapKey: string | undefined
         if (sourceTraceId) {
           subcircuitConnectivityMapKey =
-            db.source_trace.get(sourceTraceId)?.subcircuit_connectivity_map_key
+            db.source_trace.get(sourceTraceId)
+              ?.subcircuit_connectivity_map_key ??
+            db.source_net.get(sourceTraceId)?.subcircuit_connectivity_map_key
         }
         if (!subcircuitConnectivityMapKey && inputConnectionName) {
           const sourceNet = db.source_net.get(inputConnectionName)
