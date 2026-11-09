@@ -49,6 +49,7 @@ export function withFixedTraces(
           0.6
         obstacles.push({
           type: "rect",
+          shape: "circle",
           center: { x: point.x, y: point.y },
           width: diameter,
           height: diameter,
