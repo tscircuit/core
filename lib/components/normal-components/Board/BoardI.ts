@@ -9,5 +9,6 @@ export interface BoardI {
   _generatedStitchingViaIds?: Set<PcbVia["pcb_via_id"]>
   allLayers: ReadonlyArray<LayerRef>
   _getBoardCalcVariables(): Record<string, number>
+  _getResolvedMinViaDiameters?(): { holeDiameter: number; padDiameter: number }
   pcb_board_id?: string | null
 }
