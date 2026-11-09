@@ -1,4 +1,8 @@
-import { getManifoldModule, type CrossSection } from "@tscircuit/manifold-2d"
+import {
+  type CrossSection,
+  type Vec2,
+  getManifoldModule,
+} from "@tscircuit/manifold-2d"
 import type { PcbCutout, PcbHole, PcbPanel } from "circuit-json"
 import {
   applyToPoint,
@@ -9,16 +13,20 @@ import {
 
 /** Remaining substrate in right-handed circuit-world XY, mm: +X right,
  * +Y up, +Z above. All centers and polygon vertices are positions. */
-export async function getPanelMaterial(
-  panel: PcbPanel,
-  cutouts: PcbCutout[],
-  holes: PcbHole[],
-): Promise<CrossSection> {
+export async function getPanelMaterial({
+  panel,
+  cutouts,
+  holes,
+}: {
+  panel: PcbPanel
+  cutouts: PcbCutout[]
+  holes: PcbHole[]
+}): Promise<CrossSection> {
   const { CrossSection } = await getManifoldModule()
   const cuts = cutouts.map((cutout) => {
     if (cutout.shape === "polygon") {
       return CrossSection.ofPolygons([
-        cutout.points.map(({ x, y }) => [x, y] as [number, number]),
+        cutout.points.map(({ x, y }): Vec2 => [x, y]),
       ])
     }
     if (cutout.shape === "circle") {
@@ -33,24 +41,24 @@ export async function getPanelMaterial(
     const halfWidth = cutout.width / 2
     const halfHeight = cutout.height / 2
     const radius = Math.min(cutout.corner_radius ?? 0, halfWidth, halfHeight)
-    const transform = compose(
+    const cutoutLocalToCircuitWorldTransform = compose(
       translate(cutout.center.x, cutout.center.y),
       rotateDEG(cutout.rotation ?? 0),
     )
-    const corners = [
+    const corners: Vec2[] = [
       [halfWidth - radius, halfHeight - radius],
       [-halfWidth + radius, halfHeight - radius],
       [-halfWidth + radius, -halfHeight + radius],
       [halfWidth - radius, -halfHeight + radius],
     ]
     const points = corners.flatMap(([x, y], cornerIndex) =>
-      Array.from({ length: 25 }, (_, arcIndex) => {
+      Array.from({ length: 25 }, (_, arcIndex): Vec2 => {
         const angle = (cornerIndex + arcIndex / 24) * (Math.PI / 2)
-        const position = applyToPoint(transform, {
-          x: x! + radius * Math.cos(angle),
-          y: y! + radius * Math.sin(angle),
+        const position = applyToPoint(cutoutLocalToCircuitWorldTransform, {
+          x: x + radius * Math.cos(angle),
+          y: y + radius * Math.sin(angle),
         })
-        return [position.x, position.y] as [number, number]
+        return [position.x, position.y]
       }),
     )
     return CrossSection.ofPolygons([points])

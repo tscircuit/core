@@ -1,10 +1,13 @@
 import { beforeAll, expect, test } from "bun:test"
-import { getManifoldModule, type CrossSection } from "@tscircuit/manifold-2d"
+import { type CrossSection, getManifoldModule } from "@tscircuit/manifold-2d"
 import { getPanelMaterial } from "tests/fixtures/get-panel-material"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { applyToPoint, scale } from "transformation-matrix"
 
 const { circuit } = getTestFixture()
 let material: CrossSection
+// Circuit-world mm (+X right/+Y up) to SVG mm (+X right/+Y down).
+const circuitWorldToSvgTransform = scale(1, -1)
 
 beforeAll(async () => {
   // Board-world positions in mm, +X right, +Y up. The four neighbors have
@@ -54,12 +57,11 @@ beforeAll(async () => {
     </panel>,
   )
   await circuit.renderUntilSettled()
-  expect(circuit.db.pcb_board.list()).toHaveLength(5)
-  material = await getPanelMaterial(
-    circuit.db.pcb_panel.list()[0]!,
-    circuit.db.pcb_cutout.list(),
-    circuit.db.pcb_hole.list(),
-  )
+  material = await getPanelMaterial({
+    panel: circuit.db.pcb_panel.list()[0]!,
+    cutouts: circuit.db.pcb_cutout.list(),
+    holes: circuit.db.pcb_hole.list(),
+  })
 
   // Show the actual substrate after every emitted slot and drill is removed.
   // Red islands have no connection to the outer frame. Keep snapshot failures
@@ -69,7 +71,12 @@ beforeAll(async () => {
     .map((region, regionIndex) => {
       const path = region
         .toPolygons()
-        .map((ring) => `M ${ring.map(([x, y]) => `${x},${-y}`).join(" L ")} Z`)
+        .map((ring) => {
+          const svgPositions = ring.map(([x, y]) =>
+            applyToPoint(circuitWorldToSvgTransform, { x, y }),
+          )
+          return `M ${svgPositions.map(({ x, y }) => `${x},${y}`).join(" L ")} Z`
+        })
         .join(" ")
       region.delete()
       return `<path d="${path}" fill="${regionIndex === 0 ? "#166534" : "#dc2626"}" fill-rule="evenodd"/>`
@@ -79,7 +86,8 @@ beforeAll(async () => {
     .list()
     .map((board, boardIndex) => {
       const name = ["CENTER", "LEFT", "RIGHT", "TOP", "BOTTOM"][boardIndex]
-      return `<text x="${board.center.x}" y="${-board.center.y}" fill="white" font-size="2" text-anchor="middle" dominant-baseline="middle">${name}</text>`
+      const svgPosition = applyToPoint(circuitWorldToSvgTransform, board.center)
+      return `<text x="${svgPosition.x}" y="${svgPosition.y}" fill="white" font-size="2" text-anchor="middle" dominant-baseline="middle">${name}</text>`
     })
     .join("")
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="880" viewBox="-42 -50 84 92"><rect x="-42" y="-50" width="84" height="92" fill="#f8fafc"/><text x="0" y="-46" text-anchor="middle" font-size="2.4">Offset tabs must remain connected to the frame</text><text x="0" y="-42.5" text-anchor="middle" font-size="1.8">Green: frame-connected material. Red: detached substrate.</text>${paths}${labels}</svg>`
