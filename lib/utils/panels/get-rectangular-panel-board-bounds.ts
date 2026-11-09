@@ -35,7 +35,7 @@ export function getRectangularPanelBoardBounds(board: PcbBoard) {
       )
     )
       throw new Error(
-        "V-scoring and explicit panel tab controls require axis-aligned rectangular board outlines",
+        "Panel tab controls require axis-aligned rectangular board outlines",
       )
     return { minX, maxX, minY, maxY }
   }
@@ -46,7 +46,7 @@ export function getRectangularPanelBoardBounds(board: PcbBoard) {
     board.height <= 0
   )
     throw new Error(
-      "V-scoring and explicit panel tab controls require positive rectangular board dimensions",
+      "Panel tab controls require positive rectangular board dimensions",
     )
   return {
     minX: board.center.x - board.width / 2,

@@ -361,6 +361,10 @@ export class Subpanel extends Group<typeof subpanelProps> {
       )
     if (props.tabCountPerEdge !== undefined && tabChildren.length > 0)
       throw new Error("Use either tabCountPerEdge or <paneltab> children")
+    if (hasTabControls && props.vScore)
+      throw new Error(
+        "vScore is not supported with tabCountPerEdge, <paneltab> or <paneltabkeepout>",
+      )
     // Use _getAllBoardInstances to include boards inside nested subpanels
     const childBoardInstances = this._getAllBoardInstances()
 
