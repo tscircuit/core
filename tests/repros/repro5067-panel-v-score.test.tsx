@@ -29,5 +29,5 @@ test("vScore replaces tab mouse bites with V-score lines", async () => {
   // V-score lines emitted for the 16 tabs (4 boards, one tab per edge).
   expect(
     circuit.db.pcb_fabrication_note_path.list().length,
-  ).toMatchInlineSnapshot(`0`)
+  ).toMatchInlineSnapshot(`16`)
 })

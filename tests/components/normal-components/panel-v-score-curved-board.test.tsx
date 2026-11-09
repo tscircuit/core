@@ -9,7 +9,9 @@ test("vScore rejects tabs on curved board outlines", async () => {
     </panel>,
   )
 
-  await expect(circuit.renderUntilSettled()).rejects.toThrow(
-    "V-scored panel tabs require straight board edges",
+  await expect(
+    circuit.renderUntilSettled(),
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `"V-scored panel tabs require straight board edges; curved board outlines cannot be V-scored"`,
   )
 })
