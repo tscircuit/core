@@ -1,6 +1,9 @@
 import type { PcbPort, SourcePort, SourceTrace } from "circuit-json"
 import { ConnectivityMap } from "circuit-json-to-connectivity-map"
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
+import type { CopperPour } from "lib/components/primitive-components/CopperPour/CopperPour"
+import type { ISubcircuit } from "lib/components/primitive-components/Group/Subcircuit/ISubcircuit"
+import type { Net } from "lib/components/primitive-components/Net"
 
 type SourcePortId = SourcePort["source_port_id"]
 type PcbEndpoint = Pick<PcbPort, "pcb_port_id" | "source_port_id" | "x" | "y">
@@ -68,7 +71,7 @@ export const getStraightLineTraceLengthViolations = ({
   subcircuit,
 }: {
   component: PrimitiveComponent
-  subcircuit: { subcircuit_id: string | null }
+  subcircuit: Pick<ISubcircuit, "subcircuit_id" | "selectAll">
 }): StraightLineTraceLengthViolation[] => {
   const { db } = component.root!
   const subcircuitSourceTraces = db.source_trace
@@ -84,6 +87,22 @@ export const getStraightLineTraceLengthViolations = ({
       ...sourceTrace.connected_source_net_ids,
     ]),
   )
+  // PcbTraceRender runs before PcbCopperPourRender. A declared pour can be a
+  // closer destination than another port on the net, even before it has PCB
+  // geometry. Leave those lengths to the post-routing checks.
+  const declaredPourSourceNetIds = subcircuit
+    .selectAll<CopperPour>("copperpour")
+    .filter(
+      (copperPour) =>
+        copperPour.getSubcircuit().subcircuit_id === subcircuit.subcircuit_id,
+    )
+    .map(
+      (copperPour) =>
+        copperPour
+          .getSubcircuit()
+          .selectOne<Net>(copperPour._parsedProps.connectsTo)?.source_net_id,
+    )
+
   const pcbPortsBySourcePortId = new Map<SourcePortId, PcbEndpoint>()
   for (const pcbPort of db.pcb_port.list()) {
     if (
@@ -136,19 +155,28 @@ export const getStraightLineTraceLengthViolations = ({
         .filter((pcbPort): pcbPort is PcbEndpoint => Boolean(pcbPort))
       if (targetPcbEndpoints.length === 0) continue
 
-      const networkHasPlane = db
-        .toArray()
-        .some(
-          (element) =>
-            (element.type === "source_pcb_ground_plane" ||
-              element.type === "pcb_ground_plane" ||
-              element.type === "pcb_copper_pour") &&
-            typeof element.source_net_id === "string" &&
+      const networkHasPlane =
+        declaredPourSourceNetIds.some(
+          (sourceNetId) =>
+            sourceNetId &&
             sourceConnectivityMap.areIdsConnected(
               sourceTrace.source_trace_id,
-              element.source_net_id,
+              sourceNetId,
             ),
-        )
+        ) ||
+        db
+          .toArray()
+          .some(
+            (element) =>
+              (element.type === "source_pcb_ground_plane" ||
+                element.type === "pcb_ground_plane" ||
+                element.type === "pcb_copper_pour") &&
+              typeof element.source_net_id === "string" &&
+              sourceConnectivityMap.areIdsConnected(
+                sourceTrace.source_trace_id,
+                element.source_net_id,
+              ),
+          )
       if (networkHasPlane) continue
 
       straightLineDistance = getClosestEndpointDistance(
@@ -179,7 +207,7 @@ export const shouldSkipAutoroutingBecauseOfTraceLengthViolations = ({
   subcircuit,
 }: {
   component: PrimitiveComponent
-  subcircuit: { subcircuit_id: string | null }
+  subcircuit: Pick<ISubcircuit, "subcircuit_id" | "selectAll">
 }): boolean => {
   const violations = getStraightLineTraceLengthViolations({
     component,

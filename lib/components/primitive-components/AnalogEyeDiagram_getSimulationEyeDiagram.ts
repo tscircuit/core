@@ -16,10 +16,7 @@ export function AnalogEyeDiagram_getSimulationEyeDiagram(
     .getSubcircuit()
     .selectAll<VoltageProbe>(props.probeRef)
     .filter((probe) => probe.componentName === "VoltageProbe")
-  if (
-    probes.length !== 1 ||
-    probes[0].getSubcircuit() !== declaration.getSubcircuit()
-  ) {
+  if (probes.length !== 1) {
     throw new Error(
       `Eye probe selector "${props.probeRef}" must identify one voltage probe in this subcircuit.`,
     )

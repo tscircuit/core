@@ -131,6 +131,23 @@ test("circle-derived routes preserve tangency, clearance, endpoints, and tight-s
     { x: 0, y: 0 },
   ]
   expect(roundSystemBlockRoute(reversal, [])).toEqual(reversal)
+  // The neighboring wire is only 2 mm below the original corner. Rounding
+  // upward preserves that clearance even though the preferred gap is 3 mm.
+  const besideWire = roundSystemBlockRoute(
+    [
+      { x: 0, y: 0 },
+      { x: 4, y: 0 },
+      { x: 4, y: 8 },
+    ],
+    [],
+    [{ minX: -2, maxX: 6, minY: -2, maxY: -2 }],
+  )
+  expect(besideWire).toHaveLength(4)
+  expect(besideWire[2].cubic_bezier_control_points).toBeDefined()
+  for (let step = 0; step <= 100; step++) {
+    const p = evaluate(besideWire[1], besideWire[2], step / 100)
+    expect(p.y + 2).toBeGreaterThanOrEqual(2)
+  }
   expect(
     roundSystemBlockRoute(original, [
       { minX: 23, maxX: 25, minY: -1, maxY: 1 },
