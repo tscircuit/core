@@ -1,30 +1,58 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("panel dimensions are checked against manufacturing limits", async () => {
+test("panel size limits drive the grid layout", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
-    <panel layoutMode="grid" minWidth="50mm" maxHeight="25mm">
-      <board width="14mm" height="18mm" routingDisabled>
-        <pcbnotetext
-          text="Panel below min width / above max height"
-          fontSize={0.5}
-        />
-      </board>
+    <panel layoutMode="grid" maxWidth="30mm" minHeight="100mm">
+      {["B1", "B2", "B3", "B4"].map((name) => (
+        <board
+          key={name}
+          name={name}
+          width="14mm"
+          height="18mm"
+          routingDisabled
+        >
+          <pcbnotetext text={name} fontSize={1} />
+        </board>
+      ))}
     </panel>,
   )
   await circuit.renderUntilSettled()
 
-  await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
-    shouldDrawErrors: true,
-  })
-  expect(circuit.db.pcb_panel.list()[0]).toMatchObject({
-    width: 24,
-    height: 28,
-  })
-  expect(
-    circuit.db.pcb_panelization_placement_error
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  const [panel] = circuit.db.pcb_panel.list()
+  expect({
+    panelSize: { width: panel!.width, height: panel!.height },
+    boardCentres: circuit.db.pcb_board.list().map((board) => board.center),
+    errors: circuit.db.pcb_panelization_placement_error
       .list()
       .map((error) => error.message),
-  ).toMatchInlineSnapshot(`[]`)
+  }).toMatchInlineSnapshot(`
+    {
+      "boardCentres": [
+        {
+          "x": -8,
+          "y": -10,
+        },
+        {
+          "x": 8,
+          "y": -10,
+        },
+        {
+          "x": -8,
+          "y": 10,
+        },
+        {
+          "x": 8,
+          "y": 10,
+        },
+      ],
+      "errors": [],
+      "panelSize": {
+        "height": 48,
+        "width": 40,
+      },
+    }
+  `)
 })
