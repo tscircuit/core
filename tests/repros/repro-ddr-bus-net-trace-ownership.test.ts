@@ -102,4 +102,11 @@ test("the full board capture exposes DDR data route ownership", async () => {
   ).toMatchSvgSnapshot(import.meta.path, "ddr-bus-net-trace-ownership-detail", {
     diffThresholdPercent: 0,
   })
+  expect(
+    dataRouteOwnership.map(
+      ({ resolvedSourceTraceId }) => resolvedSourceTraceId,
+    ),
+  ).toEqual(
+    dataRouteOwnership.map(({ sourceTrace }) => sourceTrace.source_trace_id),
+  )
 })

@@ -62,6 +62,12 @@ test("bus routes through named nets retain source trace ownership", async () => 
       pcbTrace.source_trace_id &&
       circuit.db.source_trace.get(pcbTrace.source_trace_id),
   )
+  expect(pcbTraces.map((pcbTrace) => pcbTrace.source_trace_id).sort()).toEqual(
+    circuit.db.source_trace
+      .list()
+      .map((sourceTrace) => sourceTrace.source_trace_id)
+      .sort(),
+  )
   circuit.db.pcb_note_text.insert({
     font: "tscircuit2024",
     text: `${ownedPcbTraces.length}/${pcbTraces.length} DDR routes linked to source traces`,
