@@ -31,6 +31,6 @@ it("throws when a differential pair references a missing trace", (): void => {
       subcircuitComponent,
     })
   }).toThrow(
-    'Could not find source trace for trace name or port selector "USB_P_MISSING" in differential pair "USB"',
+    'Could not resolve differential pair selector "USB_P_MISSING" in differential pair "USB": expected a trace name, port selector, or net selector with connected traces',
   )
 })

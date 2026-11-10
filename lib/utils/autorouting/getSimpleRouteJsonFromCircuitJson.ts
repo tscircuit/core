@@ -35,7 +35,7 @@ import {
   getBusesForSimpleRouteJson,
   getPlaneTerminatedSourceTraceLayers,
 } from "./getBusesForSimpleRouteJson"
-import { getDifferentialPairSourceTraceIds } from "./getDifferentialPairSourceTraceIds"
+import { getDifferentialPairMembers } from "./getDifferentialPairMembers"
 import { reduceNetConnectionPointsForDifferentialPairPaths } from "./reduceNetConnectionPointsForDifferentialPairPaths"
 import { getDifferentialPairsForSimpleRouteJson } from "./getDifferentialPairsForSimpleRouteJson"
 import { getPreservedRoutedSubcircuitTraces } from "./getPreservedRoutedSubcircuitTraces"
@@ -233,12 +233,13 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     board = db.pcb_board.list()[0]
   }
 
+  // Transparent groups can leave source components without subcircuit_id.
+  // Keep their names available while scoping the routing geometry below.
+  const sourceComponents = db.source_component
   db = su(subcircuitElements)
   const getPortSelector = (sourcePort: SourcePort | null | undefined) => {
     if (!sourcePort?.source_component_id) return undefined
-    const sourceComponent = db.source_component.get(
-      sourcePort.source_component_id,
-    )
+    const sourceComponent = sourceComponents.get(sourcePort.source_component_id)
     if (!sourceComponent?.name) return undefined
     return `${sourceComponent.name}.${sourcePort.name}`
   }
@@ -571,21 +572,25 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   const sourceTraces = db.source_trace.list()
   const differentialPairs: DifferentialPair[] =
     subcircuitComponent?.selectAll<DifferentialPair>("differentialpair") ?? []
-  const differentialPairSourceTraceIds = getDifferentialPairSourceTraceIds({
+  const differentialPairMembers = getDifferentialPairMembers({
     differentialPairs,
     sourceTraces,
     subcircuitId: subcircuit_id,
   })
-  // Preserve explicit two-terminal sections, not an arbitrary multi-terminal
-  // net as a differential conductor. Unspecified branch topology stays rejected.
+  // Only trace selections preserve physical paths. Net selections aggregate
+  // every connected terminal, including netless traces joined to the net.
   const differentialPairPathSourceTraceIds = new Set(
-    sourceTraces
-      .filter(
-        (trace) =>
-          differentialPairSourceTraceIds.has(trace.source_trace_id) &&
-          trace.connected_source_port_ids.length === 2,
-      )
-      .map((trace) => trace.source_trace_id),
+    differentialPairMembers.flatMap((member) => {
+      if (member.kind !== "trace") return []
+      if (member.sourceTrace.connected_source_port_ids.length !== 2) return []
+      return [member.sourceTrace.source_trace_id]
+    }),
+  )
+  const differentialPairNetConnectivityKeys = new Set(
+    differentialPairMembers.flatMap((member) => {
+      if (member.kind !== "net") return []
+      return [member.sourceNet.subcircuit_connectivity_map_key]
+    }),
   )
   const planeTerminatedSourceTraceLayers = getPlaneTerminatedSourceTraceLayers({
     fanoutPourNetMap,
@@ -608,6 +613,12 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     .filter(
       (trace) =>
         !subcircuit_id || (trace as any).subcircuit_id === subcircuit_id,
+    )
+    .filter(
+      (sourceTrace) =>
+        !differentialPairNetConnectivityKeys.has(
+          sourceTrace.subcircuit_connectivity_map_key,
+        ),
     )
     // Net-attached traces contribute their terminals to connectionsFromNets.
     // Named pair paths, netless traces and plane terminations retain their own connection.
@@ -869,6 +880,9 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       y: bp.y,
       layer: bp.layer ?? "top",
       pointId: bp.pcb_breakout_point_id,
+      port_selector: bpSourcePortId
+        ? getPortSelector(db.source_port.get(bpSourcePortId))
+        : undefined,
     }
 
     if (bpSourcePortId) {
