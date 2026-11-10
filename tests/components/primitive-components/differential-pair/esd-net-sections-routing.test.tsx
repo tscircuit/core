@@ -201,5 +201,7 @@ test("routes net-attached CPU and connector pair sections through the same ESD p
     width: 1200,
     height: 750,
     showDebugObjects: false,
+    shouldDrawRatsNest: true,
+    showErrorsInTextOverlay: true,
   })
 }, 30_000)

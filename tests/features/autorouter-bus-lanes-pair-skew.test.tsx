@@ -2,10 +2,6 @@ import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 test("bus_lanes rejects ordered differential pairs instead of silently ignoring skew", async () => {
   const { circuit } = getTestFixture()
-  const inputs: any[] = []
-  circuit.on("autorouting:start", (event: any) =>
-    inputs.push(event.simpleRouteJson),
-  )
   circuit.add(
     <board width={14} height={10}>
       <autoroutingphase
@@ -36,13 +32,13 @@ test("bus_lanes rejects ordered differential pairs instead of silently ignoring 
         pcbX={0}
         pcbY={-3.2}
         fontSize={0.32}
-        text="bus_lanes selects A0.pin2 and A1.pin2; all copper is top."
+        text="bus_lanes cannot preserve differential-pair hop ownership."
       />
       <pcbnotetext
         pcbX={0}
         pcbY={-3.85}
         fontSize={0.32}
-        text="A1-B1 is 1mm shorter: add only 0.5mm, leaving permitted skew."
+        text="Fail before routing; no pair copper is accepted."
       />
       <pcbnotetext
         pcbX={0}
