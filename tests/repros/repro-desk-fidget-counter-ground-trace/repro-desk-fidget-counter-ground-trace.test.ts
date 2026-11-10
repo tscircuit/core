@@ -46,6 +46,9 @@ test("desk fidget counter ground continuation with copper pours hidden", async (
     (point) => point.route_type === "wire" && point.is_inside_copper_pour,
   )
 
+  expect(padConnectionVisible, "C1 ground pad connection").toBe(true)
+  expect(continuationVisible, "GND continuation").toBe(true)
+
   const labels: PcbNoteText[] = [
     "Desk fidget counter / pours hidden",
     padConnectionVisible ? "C1 pad connected" : "BUG: C1 pad connection hidden",
