@@ -3,7 +3,7 @@ import type { AutoroutingEndEvent, AutoroutingProgressEvent } from "lib/events"
 import {
   createComputeCostAutorouter,
   computeCost,
-} from "tests/fixtures/createComputeCostAutorouter"
+} from "tests/fixtures/create-compute-cost-autorouter"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("routing progress and completion carry computeCost, including completion without progress", async () => {

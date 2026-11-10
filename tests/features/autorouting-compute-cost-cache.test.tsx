@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import type { AutoroutingEndEvent } from "lib/events"
 import type { LocalCacheEngine } from "lib/local-cache-engine"
-import { computeCost } from "tests/fixtures/createComputeCostAutorouter"
+import { computeCost } from "tests/fixtures/create-compute-cost-autorouter"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("a cached routing stage replays stored computeCost on completion", async () => {

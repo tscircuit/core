@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import type { AutoroutingPipelineSolver9_PreloadedTraceGraph } from "@tscircuit/capacity-autorouter"
 import type { AutoroutingProgressEvent } from "lib/events"
 import { TscircuitAutorouter } from "lib/utils/autorouting/CapacityMeshAutorouter"
-import { computeCost } from "tests/fixtures/createComputeCostAutorouter"
+import { computeCost } from "tests/fixtures/create-compute-cost-autorouter"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("capacity mesh forwards optional solver computeCost in stepped and threaded progress", async () => {
