@@ -886,8 +886,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     )
 
     // Copper pours render after routing, so raw Circuit JSON cannot carry
-    // unbroken-plane intent yet. Build SRJ from the live component tree and
-    // supply it as the routing input in every remote mode.
+    // unbroken-plane intent yet. Build SRJ from the live component tree so
+    // remote requests with plane reservations can carry that intent.
     const preferredTraceWidth =
       props.defaultTraceWidth ?? props.nominalTraceWidth
     const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
@@ -901,10 +901,13 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     })
     simpleRouteJson.allowViaInPad =
       autorouterConfig.allowViaInPad ?? simpleRouteJson.allowViaInPad
+    const hasUnbrokenCopperPour = simpleRouteJson.obstacles.some(
+      (obstacle) => obstacle.isCopperPour,
+    )
 
     if (serverMode === "solve-endpoint") {
       // Legacy solve endpoint mode
-      if (autorouterConfig.inputFormat === "simplified") {
+      if (this.props.autorouter?.inputFormat === "simplified") {
         const { autorouting_result } = await fetchWithDebug(
           `${serverUrl}/autorouting/solve`,
           {
@@ -929,7 +932,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           method: "POST",
           body: JSON.stringify({
             input_circuit_json: pcbAndSourceCircuitJson,
-            input_simple_route_json: simpleRouteJson,
+            input_simple_route_json: hasUnbrokenCopperPour
+              ? simpleRouteJson
+              : undefined,
             subcircuit_id: this.subcircuit_id!,
           }),
           headers: {
@@ -948,7 +953,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         method: "POST",
         body: JSON.stringify({
           input_circuit_json: pcbAndSourceCircuitJson,
-          input_simple_route_json: simpleRouteJson,
+          input_simple_route_json: hasUnbrokenCopperPour
+            ? simpleRouteJson
+            : undefined,
           provider: "freerouting",
           autostart: true,
           display_name: this.root?.name,

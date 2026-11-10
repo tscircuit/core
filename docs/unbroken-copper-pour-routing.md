@@ -21,8 +21,9 @@ board. Use an unbroken pour for a reference plane. Ordinary pours without
 `unbroken` are filled after routing and do not reserve their layer beforehand.
 
 Local routing receives these reservations as Simple Route JSON obstacles with
-`isCopperPour: true`. Remote solve and job requests also include
-`input_simple_route_json`, built before routing from the live component tree.
+`isCopperPour: true`. Remote solve and job requests containing these reservations
+also include `input_simple_route_json`, built before routing from the live
+component tree. Requests without reservations keep their existing input format.
 Remote servers must use this field for routing when supplied; reconstructing
 the problem from `input_circuit_json` loses the plane intent because copper
 pours have not rendered yet. Raw Circuit JSON remains available on requests
