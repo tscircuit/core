@@ -53,7 +53,7 @@ test("routes only the selected pin's tied net", () => {
     const port = ports.find((p) => p.pcb_port_id === id)!
     const sourcePort = circuit.db.source_port.get(port.source_port_id)!
     const component = circuit.db.source_component.get(
-      sourcePort.source_component_id,
+      sourcePort.source_component_id!,
     )!
     return `${component.name}.pin${sourcePort.pin_number}`
   })
