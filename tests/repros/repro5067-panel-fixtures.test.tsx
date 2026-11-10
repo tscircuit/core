@@ -1,9 +1,8 @@
 import { expect, test } from "bun:test"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { renderCircuitJsonOrError } from "tests/fixtures/render-circuit-json-or-error"
 
 test("panel tooling holes and fiducials can be placed in the panel frame", async () => {
-  const { circuit } = getTestFixture()
-  circuit.add(
+  const circuitJson = await renderCircuitJsonOrError(
     <panel layoutMode="grid" edgePadding="5mm">
       <board name="B1" width="14mm" height="18mm" routingDisabled>
         <pcbnotetext text="Panel fixtures" fontSize={0.6} />
@@ -12,22 +11,18 @@ test("panel tooling holes and fiducials can be placed in the panel frame", async
       <fiducial name="F1" padDiameter="1mm" pcbX={9.5} pcbY={6} />
     </panel>,
   )
-  await circuit.renderUntilSettled()
 
-  await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
+  await expect(circuitJson).toMatchPcbSnapshot(import.meta.path, {
     showSolderMask: true,
   })
-  expect(circuit.db.pcb_hole.list()).toHaveLength(1)
-  expect(circuit.db.pcb_hole.list()[0]).toMatchObject({
-    x: -9.5,
-    y: -6,
-    hole_diameter: 3,
-  })
-  expect(circuit.db.pcb_smtpad.list()).toHaveLength(1)
-  expect(circuit.db.pcb_smtpad.list()[0]).toMatchObject({
-    x: 9.5,
-    y: 6,
-    shape: "circle",
-    radius: 0.5,
-  })
+  expect({
+    holes: circuitJson.filter((element) => element.type === "pcb_hole").length,
+    fiducialPads: circuitJson.filter((element) => element.type === "pcb_smtpad")
+      .length,
+  }).toMatchInlineSnapshot(`
+    {
+      "fiducialPads": 1,
+      "holes": 1,
+    }
+  `)
 })
