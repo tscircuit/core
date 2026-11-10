@@ -1,0 +1,16 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`mixed-side connector pads and plated slot follow the footprint mounting side 1`] = `
+{
+  "padLayers": [
+    "top",
+    "top",
+    "bottom",
+    "bottom",
+  ],
+  "slotAxes": [
+    40,
+    160,
+  ],
+}
+`;
