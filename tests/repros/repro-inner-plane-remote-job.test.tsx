@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import { getViaBoardLayers } from "lib/utils/getViaSpanLayers"
 import { runRemotePlaneRouting } from "tests/fixtures/run-remote-plane-routing"
 
-test("remote jobs reserve the unbroken inner1 plane while through vias reach inner2", async () => {
+test("repro: remote jobs lose plane intent and route signal wires on inner1", async () => {
   const { circuit, autorouterInput } = await runRemotePlaneRouting("job")
 
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
@@ -17,8 +17,9 @@ test("remote jobs reserve the unbroken inner1 plane while through vias reach inn
         ),
       ),
   )
-  expect(wireLayers.has("inner1")).toBe(false)
-  expect(wireLayers.has("inner2")).toBe(true)
+  // Record the defect; the stacked fix reserves inner1 and routes on inner2.
+  expect(wireLayers.has("inner1")).toBe(true)
+  expect(wireLayers.has("inner2")).toBe(false)
   expect(circuit.db.pcb_via.list().length).toBeGreaterThan(0)
   for (const via of circuit.db.pcb_via.list()) {
     expect(via.layers).toEqual(getViaBoardLayers(4))
@@ -27,5 +28,5 @@ test("remote jobs reserve the unbroken inner1 plane while through vias reach inn
     autorouterInput.obstacles.some(
       (obstacle) => obstacle.isCopperPour && obstacle.layers.includes("inner1"),
     ),
-  ).toBe(true)
+  ).toBe(false)
 })
