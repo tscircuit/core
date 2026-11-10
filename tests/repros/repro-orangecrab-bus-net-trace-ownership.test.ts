@@ -82,7 +82,7 @@ test("the full OrangeCrab capture exposes DDR data route ownership", async () =>
     ramD5.sourceTrace.connected_source_port_ids.map((sourcePortId) => {
       const sourcePort = db.source_port.get(sourcePortId)!
       const sourceComponent = db.source_component.get(
-        sourcePort.source_component_id,
+        sourcePort.source_component_id!,
       )!
       return `${sourceComponent.name}.${sourcePort.name}`
     }),
