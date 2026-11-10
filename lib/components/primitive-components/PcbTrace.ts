@@ -1,9 +1,5 @@
 import { pcbTraceProps as publicPcbTraceProps } from "@tscircuit/props"
-import {
-  type PcbTraceRoutePoint,
-  layer_ref,
-  pcb_trace_route_point,
-} from "circuit-json"
+import type { PcbTraceRoutePoint } from "circuit-json"
 import { applyToPoint } from "transformation-matrix"
 import { z } from "zod"
 import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
@@ -11,14 +7,6 @@ import { getViaDiameterDefaults } from "lib/utils/pcbStyle/getViaDiameterDefault
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
 export const pcbTraceProps = publicPcbTraceProps.extend({
-  layer: layer_ref.optional(),
-  route: z.array(
-    z.union([
-      pcb_trace_route_point,
-      // Reject malformed explicit points instead of stripping their route_type.
-      publicPcbTraceProps.shape.route.element.strict(),
-    ]),
-  ),
   // If this primitive PcbTrace needs to be associated with a source_trace_id
   // it can be added as a prop here. For footprints, it's often not needed.
   source_trace_id: z.string().optional(),
@@ -42,21 +30,6 @@ const resolvePcbTraceRoute = (props: PcbTraceProps): PcbTraceRoutePoint[] => {
             ? point.to_layer
             : point.end_layer
       return point
-    }
-
-    if (point.via) {
-      // Match route-hint layer preference: top, then bottom, excluding the
-      // current layer. Inner-layer transitions use an explicit to_layer.
-      const fromLayer = currentLayer
-      currentLayer =
-        point.to_layer ?? (currentLayer === "top" ? "bottom" : "top")
-      return {
-        route_type: "via",
-        x: point.x,
-        y: point.y,
-        from_layer: fromLayer,
-        to_layer: currentLayer,
-      }
     }
 
     return {

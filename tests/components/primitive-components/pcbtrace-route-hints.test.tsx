@@ -17,19 +17,41 @@ test("pcbtrace renders public route hints with widths and layer transitions", as
         thickness="0.2mm"
         route={[
           { x: -6, y: 3, trace_width: "0.3mm" },
-          { x: -2, y: 3, via: true, to_layer: "inner1" },
+          {
+            route_type: "via",
+            x: -2,
+            y: 3,
+            from_layer: "top",
+            to_layer: "inner1",
+          },
           { x: 2, y: 3, trace_width: "0.4mm" },
-          { x: 4, y: 3, via: true, to_layer: "bottom" },
+          {
+            route_type: "via",
+            x: 4,
+            y: 3,
+            from_layer: "inner1",
+            to_layer: "bottom",
+          },
           { x: 6, y: 3 },
         ]}
       />
-      <pcbnotetext text="DEFAULT VIA: BOTTOM -> TOP" pcbY={-1} fontSize={0.6} />
+      <pcbnotetext
+        text="EXPLICIT VIA: BOTTOM -> TOP"
+        pcbY={-1}
+        fontSize={0.6}
+      />
       <pcbtrace
         layer="bottom"
         thickness="0.25mm"
         route={[
           { x: -6, y: -4 },
-          { x: 0, y: -4, via: true },
+          {
+            route_type: "via",
+            x: 0,
+            y: -4,
+            from_layer: "bottom",
+            to_layer: "top",
+          },
           { x: 6, y: -4, trace_width: "0.5mm" },
         ]}
       />

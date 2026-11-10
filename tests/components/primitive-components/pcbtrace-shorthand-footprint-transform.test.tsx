@@ -40,9 +40,21 @@ test("pcbtrace shorthand follows its footprint pads on both sides at every quart
                   thickness="0.25mm"
                   route={[
                     { x: "-3mm", y: "-1mm" },
-                    { x: "-2mm", y: "-0.6mm", via: true },
+                    {
+                      route_type: "via",
+                      x: "-2mm",
+                      y: "-0.6mm",
+                      from_layer: "top",
+                      to_layer: "bottom",
+                    },
                     { x: "-0.5mm", y: "0mm" },
-                    { x: "1mm", y: "0.6mm", via: true },
+                    {
+                      route_type: "via",
+                      x: "1mm",
+                      y: "0.6mm",
+                      from_layer: "bottom",
+                      to_layer: "top",
+                    },
                     { x: "2mm", y: "1mm" },
                   ]}
                 />
