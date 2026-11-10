@@ -1,4 +1,3 @@
-/** Geometry uses board-world points in mm: +X right, +Y up, +Z above (right handed). */
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import type {
   PcbCopperPour,
@@ -126,8 +125,7 @@ const isSegmentFullyInsideCopperPour = (
     return false
   }
 
-  // Rectangles are convex; endpoint containment is sufficient. BReps may have
-  // narrow holes or concave notches between any fixed set of sample points.
+  // Rectangles are convex; endpoint containment is sufficient.
   if (pour.shape === "rect") return true
   if (pour.shape !== "brep") return false
 
@@ -222,8 +220,7 @@ export const markTraceSegmentsInsideCopperPour = ({
       }),
     }))
 
-  // The router may split adjacent spans into separate PCB and source traces.
-  // A shared point stays exposed if any span on this net and layer is uncovered.
+  // Include neighbours saved in separate trace records on the same net and layer.
   const exposedPoints = new Set<WirePointKey>()
   for (const { trace, coveredSegments } of traceCoverage) {
     for (const [routeIndex, point] of trace.route.entries()) {
