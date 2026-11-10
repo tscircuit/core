@@ -1,29 +1,47 @@
 import { expect, test } from "bun:test"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { createElement } from "react"
+import { renderCircuitJsonOrError } from "tests/fixtures/render-circuit-json-or-error"
 
 test("a tooling rail sits in the panel edge padding", async () => {
-  const { circuit } = getTestFixture()
-  circuit.add(
+  const circuitJson = await renderCircuitJsonOrError(
     <panel layoutMode="grid" edgePadding="5mm">
       <board name="B1" width="14mm" height="18mm" routingDisabled>
         <pcbnotetext text="Panel rails" fontSize={0.6} />
       </board>
-      <toolingrail name="LEFT_RAIL" panelSide="left" width="5mm">
-        <pcbnotetext text="LEFT RAIL" pcbRotation={90} fontSize={0.6} />
-      </toolingrail>
+      {createElement(
+        "toolingrail",
+        { name: "LEFT_RAIL", panelSide: "left", width: "5mm" },
+        <pcbnotetext text="LEFT RAIL" pcbRotation={90} fontSize={0.6} />,
+      )}
     </panel>,
   )
-  await circuit.renderUntilSettled()
 
-  await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
+  await expect(circuitJson).toMatchPcbSnapshot(import.meta.path, {
     showSolderMask: true,
     showPcbGroups: true,
   })
   expect(
-    circuit.db.pcb_group.list().find((group) => group.name === "LEFT_RAIL"),
-  ).toMatchObject({
-    center: { x: -9.5, y: 0 },
-    width: 5,
-    height: 28,
-  })
+    circuitJson.flatMap((element) =>
+      element.type === "pcb_group" && element.name === "LEFT_RAIL"
+        ? [
+            {
+              center: element.center,
+              width: element.width,
+              height: element.height,
+            },
+          ]
+        : [],
+    ),
+  ).toMatchInlineSnapshot(`
+    [
+      {
+        "center": {
+          "x": -9.5,
+          "y": 0,
+        },
+        "height": 28,
+        "width": 5,
+      },
+    ]
+  `)
 })
