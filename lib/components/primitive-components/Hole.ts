@@ -8,6 +8,7 @@ import type {
   PcbHoleRect,
   PcbHoleCircle,
 } from "circuit-json"
+import { getAxisAlignedSizeFromRotatedRect } from "lib/utils/pcb/get-axis-aligned-size-from-rotated-rect"
 
 export class Hole extends PrimitiveComponent<typeof holeProps> {
   pcb_hole_id: string | null = null
@@ -58,21 +59,32 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
 
     this.emitSolderMaskMarginWarning(isCoveredWithSolderMask, soldermaskMargin)
 
+    // Use the same footprint-to-board transform as SilkscreenPath. Its local
+    // +X direction gives the slot axis in board space (+X right, +Y top),
+    // including parent rotation, direct pcbRotation, and bottom-layer mirroring,
+    // in CCW degrees.
+    const footprintLocalToBoardTransform =
+      this._computePcbGlobalTransformBeforeLayout()
+    const ccwRotationDegrees =
+      (Math.atan2(
+        footprintLocalToBoardTransform.b,
+        footprintLocalToBoardTransform.a,
+      ) *
+        180) /
+      Math.PI
+    const normalizedCcwRotationDegrees =
+      ((ccwRotationDegrees % 360) + 360) % 360
+    const rotationTolerance = 0.01
+    const isAxisAligned =
+      Math.abs(normalizedCcwRotationDegrees) < rotationTolerance ||
+      Math.abs(normalizedCcwRotationDegrees - 180) < rotationTolerance ||
+      Math.abs(normalizedCcwRotationDegrees - 360) < rotationTolerance
+    const isRotated90Degrees =
+      Math.abs(normalizedCcwRotationDegrees - 90) < rotationTolerance ||
+      Math.abs(normalizedCcwRotationDegrees - 270) < rotationTolerance
+    const hasNonOrthogonalRotation = !isAxisAligned && !isRotated90Degrees
+
     if (props.shape === "pill") {
-      // Use the same footprint-to-board transform as SilkscreenPath. Its local
-      // +X direction gives the slot axis in board space (+X right, +Y top),
-      // including parent rotation and bottom-layer mirroring, in CCW degrees.
-      const footprintLocalToBoardTransform =
-        this._computePcbGlobalTransformBeforeLayout()
-      const ccwRotationDegrees =
-        (Math.atan2(
-          footprintLocalToBoardTransform.b,
-          footprintLocalToBoardTransform.a,
-        ) *
-          180) /
-        Math.PI
-      const normalizedCcwRotationDegrees =
-        ((ccwRotationDegrees % 360) + 360) % 360
       if (normalizedCcwRotationDegrees !== 0) {
         const inserted_hole = db.pcb_hole.insert({
           pcb_component_id,
@@ -110,10 +122,13 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
         pcb_component_id,
         type: "pcb_hole",
         hole_shape: "oval",
-        hole_width: props.width,
-        hole_height: props.height,
+        hole_width: isRotated90Degrees ? props.height : props.width,
+        hole_height: isRotated90Degrees ? props.width : props.height,
         x: position.x,
         y: position.y,
+        ...(hasNonOrthogonalRotation
+          ? { ccw_rotation: normalizedCcwRotationDegrees }
+          : {}),
         soldermask_margin: soldermaskMargin,
         is_covered_with_solder_mask: isCoveredWithSolderMask,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
@@ -126,10 +141,13 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
         pcb_component_id,
         type: "pcb_hole",
         hole_shape: "rect",
-        hole_width: props.width,
-        hole_height: props.height,
+        hole_width: isRotated90Degrees ? props.height : props.width,
+        hole_height: isRotated90Degrees ? props.width : props.height,
         x: position.x,
         y: position.y,
+        ...(hasNonOrthogonalRotation
+          ? { ccw_rotation: normalizedCcwRotationDegrees }
+          : {}),
         soldermask_margin: soldermaskMargin,
         is_covered_with_solder_mask: isCoveredWithSolderMask,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
@@ -162,7 +180,21 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
   } {
     const { db } = this.root!
     const hole = db.pcb_hole.get(this.pcb_hole_id!)!
-    const size = this.getPcbSize()
+    let size = this.getPcbSize()
+    if ("hole_width" in hole && "hole_height" in hole) {
+      const ccwRotation =
+        "ccw_rotation" in hole && typeof hole.ccw_rotation === "number"
+          ? hole.ccw_rotation
+          : 0
+      size =
+        ccwRotation !== 0
+          ? getAxisAlignedSizeFromRotatedRect({
+              width: hole.hole_width,
+              height: hole.hole_height,
+              ccwRotationDegrees: ccwRotation,
+            })
+          : { width: hole.hole_width, height: hole.hole_height }
+    }
 
     return {
       center: { x: hole.x, y: hole.y },
