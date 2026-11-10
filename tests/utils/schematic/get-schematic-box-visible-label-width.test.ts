@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getAllDimensionsForSchematicBox } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
 
-test("repro: minimum box width counts aliases instead of displayed text", () => {
+test("minimum box width ignores hidden aliases and preserves explicit width", () => {
   const getSize = (pinLabel: string | readonly string[], schWidth?: number) =>
     getAllDimensionsForSchematicBox({
       pinCount: 1,
@@ -14,14 +14,11 @@ test("repro: minimum box width counts aliases instead of displayed text", () => 
     }).getSize()
 
   const aliases = ["A", ...Array.from({ length: 20 }, (_, n) => `alias_${n}`)]
-  // Record current incorrect widths; controls below preserve explicit sizing.
-  expect(getSize(aliases).width).toBeCloseTo(3.2)
-  expect(getSize("A").width).toBeCloseTo(1.2)
-  expect(getSize(["ALERT"]).width).toBeCloseTo(1.2)
+  expect(getSize(aliases)).toEqual(getSize("A"))
+  expect(getSize(["ALERT"])).toEqual(getSize("ALERT"))
   expect(getSize("ALERT").width).toBe(1.6)
   expect(getSize(["ALERT"], 2.5).width).toBe(2.5)
   expect(getSize([], 2.5).width).toBe(2.5)
   expect(getSize([]).width).toBe(0.5)
-  expect(getSize(["𝑉"]).width).toBeCloseTo(1.2)
-  expect(getSize("𝑉").width).toBeCloseTo(1.3)
+  expect(getSize(["𝑉"]).width).toBe(getSize("𝑉").width)
 })
