@@ -2042,6 +2042,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           ? outputSimpleRouteJson
           : undefined
 
+        const computeCostSummary = cachedResult
+          ? cachedResult.computeCostSummary
+          : autorouter?.getComputeCostSummary?.()
         if (!cachedResult && cacheKey) {
           await cacheLocalAutoroutingPhaseResult({
             cacheEngine,
@@ -2049,6 +2052,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             result: {
               ...simpleRouteJson,
               traces,
+              ...(computeCostSummary !== undefined
+                ? { computeCostSummary }
+                : {}),
             },
           })
         }
@@ -2070,6 +2076,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         })
         this.root?.emit("autorouting:end", {
           ...savedPhasePaths,
+          ...(computeCostSummary !== undefined ? { computeCostSummary } : {}),
           type: "autorouting:end",
           subcircuit_id: this.subcircuit_id,
           componentDisplayName: this.getString(),
@@ -2165,7 +2172,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           message: error instanceof Error ? error.message : String(error),
         })
 
+        const computeCostSummary = autorouter?.getComputeCostSummary?.()
         this.root?.emit("autorouting:error", {
+          ...(computeCostSummary !== undefined ? { computeCostSummary } : {}),
           type: "autorouting:error",
           subcircuit_id: this.subcircuit_id,
           componentDisplayName: this.getString(),
