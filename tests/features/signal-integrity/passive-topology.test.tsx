@@ -35,7 +35,7 @@ test("SI topology crosses a series resistor and AC capacitor to multiple receive
       <trace from=".RX > .A" to=".RX2 > .A" />
       <simulation.pcbtransientchannelsimulation
         bitRate="20Mbps"
-        unrouted="ideal"
+        allowUnroutedTraces
       >
         <simulation.pcbchannel
           name="DATA"
@@ -50,8 +50,8 @@ test("SI topology crosses a series resistor and AC capacitor to multiple receive
   )
   await circuit.renderUntilSettled()
   expect(circuit.db.simulation_signal.list()[0].receivers).toMatchObject([
-    { kind: "single" },
-    { kind: "single", ibis_model_name: "LVC1G04_IN_33" },
+    { source_port_id: expect.any(String) },
+    { source_port_id: expect.any(String), ibis_model_name: "LVC1G04_IN_33" },
   ])
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

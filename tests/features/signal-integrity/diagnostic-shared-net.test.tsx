@@ -12,7 +12,7 @@ test("SI diagnostic: shared-net", async () => {
     <DiagnosticBoard>
       <simulation.pcbtransientchannelsimulation
         bitRate="20Mbps"
-        unrouted="ideal"
+        allowUnroutedTraces
       >
         <simulation.pcbchannel
           name="D0"

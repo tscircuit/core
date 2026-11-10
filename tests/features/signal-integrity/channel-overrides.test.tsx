@@ -26,9 +26,7 @@ test("channels support per-signal units, model overrides and more than three cha
       <simulation.pcbtransientchannelsimulation
         name="WRITE"
         bitRate="20Mbps"
-        unrouted="ideal"
-        corner="maximum"
-        pdn="ideal"
+        allowUnroutedTraces
       >
         <simulation.pcbchannel
           name="DQ0"
@@ -38,7 +36,6 @@ test("channels support per-signal units, model overrides and more than three cha
           pattern="0011010"
           seed={42}
           offset="2UI"
-          probe="global"
         />
         {Array.from({ length: 6 }, (_, i) => (
           <simulation.pcbchannel
@@ -66,12 +63,10 @@ test("channels support per-signal units, model overrides and more than three cha
     driver: { ibis_model_name: "LVC1G04_OUT_33" },
     bit_rate_bps: 10e6,
     offset_s: 2 / 10e6,
-    probe: "global",
   })
   expect(signals[7].offset_s).toBeCloseTo(3e-9, 15)
   expect(circuit.db.simulation_signal_integrity.list()[0]).toMatchObject({
-    corner: "maximum",
-    pdn: "ideal",
+    allow_unrouted_traces: true,
   })
   expect(signals[0]).not.toHaveProperty("seed")
   expect(signals[7]).not.toHaveProperty("seed")

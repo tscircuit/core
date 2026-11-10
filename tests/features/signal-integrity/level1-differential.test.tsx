@@ -15,13 +15,11 @@ test("RFC Level 1 differential includes the placed RTERM without a termination p
     name: "BUS",
     bit_rate_bps: 250e3,
     driver: {
-      kind: "differential",
       p_source_port_id: (circuit.selectOne(".TX > .A") as Port).source_port_id,
       n_source_port_id: (circuit.selectOne(".TX > .B") as Port).source_port_id,
     },
     receivers: [
       {
-        kind: "differential",
         p_source_port_id: (circuit.selectOne(".RX > .A") as Port)
           .source_port_id,
         n_source_port_id: (circuit.selectOne(".RX > .B") as Port)

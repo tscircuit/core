@@ -12,7 +12,7 @@ test("SI diagnostic: missing-driver-model", async () => {
     <DiagnosticBoard missingModel="TX">
       <simulation.pcbtransientchannelsimulation
         bitRate="20Mbps"
-        unrouted="ideal"
+        allowUnroutedTraces
       >
         <simulation.pcbchannel
           name="D0"

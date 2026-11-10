@@ -146,7 +146,7 @@ function restoreSimulationRecords({
       return `.${chip.name} > .${port.name}`
     }
     const pin =
-      endpoint.kind === "single"
+      "source_port_id" in endpoint
         ? describe(endpoint.source_port_id)
         : {
             p: describe(endpoint.p_source_port_id),
@@ -159,10 +159,7 @@ function restoreSimulationRecords({
       name: record.name,
       bitRate: record.bit_rate_bps,
       duration: record.duration_s,
-      corner: record.corner,
-      unlistedNets: record.unlisted_nets,
-      unrouted: record.unrouted,
-      pdn: record.pdn,
+      allowUnroutedTraces: record.allow_unrouted_traces,
     })
     subcircuit.add(block)
     for (const recordSignal of injectionDb.simulation_signal.list({
@@ -186,8 +183,7 @@ function restoreSimulationRecords({
         pattern: recordSignal.pattern,
         seed: recordSignal.seed,
         offset: recordSignal.offset_s,
-        quiet: recordSignal.quiet,
-        probe: recordSignal.probe,
+        driverDisabled: recordSignal.driver_disabled,
       })
       signal.restoredEndpoints = endpoints
       block.add(signal)

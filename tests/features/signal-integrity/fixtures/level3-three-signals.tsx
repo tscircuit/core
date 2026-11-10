@@ -49,7 +49,7 @@ export default () => (
         name="D1"
         driverRef=".TX1 > .Y"
         receiverRef=".RX1 > .A"
-        quiet="low"
+        pattern="0"
       />
       <simulation.pcbchannel
         name="D2"
@@ -71,7 +71,7 @@ export default () => (
         name="D1"
         driverRef=".TX1 > .Y"
         receiverRef=".RX1 > .A"
-        quiet="high"
+        pattern="1"
       />
       <simulation.pcbchannel
         name="D2"

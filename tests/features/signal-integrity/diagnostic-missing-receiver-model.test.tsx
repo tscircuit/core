@@ -12,7 +12,7 @@ test("SI diagnostic: missing-receiver-model", async () => {
     <DiagnosticBoard missingModel="RX">
       <simulation.pcbtransientchannelsimulation
         bitRate="20Mbps"
-        unrouted="ideal"
+        allowUnroutedTraces
       >
         <simulation.pcbchannel
           name="DATA"

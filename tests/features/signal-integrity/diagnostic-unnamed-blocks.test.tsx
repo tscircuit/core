@@ -15,7 +15,7 @@ test("SI diagnostic: unnamed-blocks", async () => {
           key={name ?? "unnamed"}
           name={name}
           bitRate="20Mbps"
-          unrouted="ideal"
+          allowUnroutedTraces
         >
           <simulation.pcbchannel
             name="DATA"

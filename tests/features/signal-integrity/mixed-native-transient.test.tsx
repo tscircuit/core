@@ -38,7 +38,7 @@ test("SI declarations coexist with general SPICE transients and voltage probes",
       />
       <simulation.pcbtransientchannelsimulation
         bitRate="20Mbps"
-        unrouted="ideal"
+        allowUnroutedTraces
       >
         <simulation.pcbchannel
           name="DATA"

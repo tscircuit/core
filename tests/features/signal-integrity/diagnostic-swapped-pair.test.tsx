@@ -21,7 +21,7 @@ test("SI diagnostic: swapped legs in TI SN65HVD72 [Diff_pin]", async () => {
       <trace from=".TX > .B" to=".RX > .B" />
       <simulation.pcbtransientchannelsimulation
         bitRate="250kbps"
-        unrouted="ideal"
+        allowUnroutedTraces
       >
         <simulation.pcbchannel
           name="BUS"

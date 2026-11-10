@@ -7,7 +7,7 @@ import {
   siTest as test,
 } from "./fixtures/get-si-test-fixture"
 
-test("namespaced IBIS models work with signals at every corner", async () => {
+test("namespaced IBIS models work with the no-enums channel API", async () => {
   for (const removedHost of [
     "ibismodel",
     "signalintegrity",
@@ -23,27 +23,26 @@ test("namespaced IBIS models work with signals at every corner", async () => {
   ]) {
     expect(catalogue).not.toHaveProperty(removedHost)
   }
-  for (const corner of ["typical", "minimum", "maximum"] as const) {
-    const { circuit } = getSiTestFixture()
-    circuit.add(
-      <DiagnosticBoard missingModel="TX">
-        <simulation.ibismodel componentRef=".TX" {...lvcModel} />
-        <simulation.pcbtransientchannelsimulation
-          bitRate="20Mbps"
-          unrouted="ideal"
-          corner={corner}
-        >
-          <simulation.pcbchannel
-            name="DATA"
-            driverRef=".TX > .Y"
-            receiverRef=".RX > .A"
-          />
-        </simulation.pcbtransientchannelsimulation>
-      </DiagnosticBoard>,
-    )
-    await circuit.renderUntilSettled()
-    expect(circuit.db.simulation_ibis_model.list()).toHaveLength(2)
-    expect(circuit.db.simulation_signal.list()).toHaveLength(1)
-    expect(circuit.db.simulation_signal_integrity.list()[0].corner).toBe(corner)
-  }
+  const { circuit } = getSiTestFixture()
+  circuit.add(
+    <DiagnosticBoard missingModel="TX">
+      <simulation.ibismodel componentRef=".TX" {...lvcModel} />
+      <simulation.pcbtransientchannelsimulation
+        bitRate="20Mbps"
+        allowUnroutedTraces
+      >
+        <simulation.pcbchannel
+          name="DATA"
+          driverRef=".TX > .Y"
+          receiverRef=".RX > .A"
+        />
+      </simulation.pcbtransientchannelsimulation>
+    </DiagnosticBoard>,
+  )
+  await circuit.renderUntilSettled()
+  expect(circuit.db.simulation_ibis_model.list()).toHaveLength(2)
+  expect(circuit.db.simulation_signal.list()).toHaveLength(1)
+  expect(circuit.db.simulation_signal_integrity.list()[0]).not.toHaveProperty(
+    "corner",
+  )
 })

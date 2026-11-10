@@ -26,7 +26,7 @@ test("SI fails loudly without IBIS bytes or when the host loader fails", async (
       <DiagnosticBoard>
         <simulation.pcbtransientchannelsimulation
           bitRate="20Mbps"
-          unrouted="ideal"
+          allowUnroutedTraces
         >
           <simulation.pcbchannel
             name="DATA"

@@ -20,7 +20,7 @@ test("SI subcircuits use their destination board with isolation caching enabled 
             <trace from=".TX > .Y" to=".RX > .A" />
             <simulation.pcbtransientchannelsimulation
               bitRate="20Mbps"
-              unrouted="ideal"
+              allowUnroutedTraces
             >
               <simulation.pcbchannel
                 name="DATA"

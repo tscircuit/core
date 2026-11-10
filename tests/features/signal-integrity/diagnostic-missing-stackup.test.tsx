@@ -12,7 +12,7 @@ test("SI diagnostic: missing-stackup", async () => {
     <DiagnosticBoard stackup={false}>
       <simulation.pcbtransientchannelsimulation
         bitRate="20Mbps"
-        unrouted="ideal"
+        allowUnroutedTraces
       >
         <simulation.pcbchannel
           name="DATA"

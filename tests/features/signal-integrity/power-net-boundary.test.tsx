@@ -21,7 +21,7 @@ test("SI topology stops at a passive tied to a power net", async () => {
       <trace from=".RX > .A" to="net.CUSTOM_SUPPLY" />
       <simulation.pcbtransientchannelsimulation
         bitRate="20Mbps"
-        unrouted="ideal"
+        allowUnroutedTraces
       >
         <simulation.pcbchannel
           name="DATA"

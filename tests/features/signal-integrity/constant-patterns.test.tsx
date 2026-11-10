@@ -7,7 +7,7 @@ import {
   siTest as test,
 } from "./fixtures/get-si-test-fixture"
 
-test("constant bit strings normalize to quiet while explicit quiet takes precedence", async () => {
+test("constant bit strings remain literals without legacy signal fields", async () => {
   const { circuit } = getSiTestFixture()
   circuit.add(
     <DiagnosticBoard>
@@ -16,7 +16,7 @@ test("constant bit strings normalize to quiet while explicit quiet takes precede
           key={pattern}
           name={pattern}
           bitRate="20Mbps"
-          unrouted="ideal"
+          allowUnroutedTraces
         >
           <simulation.pcbchannel
             name="DATA"
@@ -27,19 +27,6 @@ test("constant bit strings normalize to quiet while explicit quiet takes precede
           />
         </simulation.pcbtransientchannelsimulation>
       ))}
-      <simulation.pcbtransientchannelsimulation
-        name="EXPLICIT"
-        bitRate="20Mbps"
-        unrouted="ideal"
-      >
-        <simulation.pcbchannel
-          name="DATA"
-          driverRef=".TX > .Y"
-          receiverRef=".RX > .A"
-          pattern="111"
-          quiet="low"
-        />
-      </simulation.pcbtransientchannelsimulation>
     </DiagnosticBoard>,
   )
   await circuit.renderUntilSettled()
@@ -47,13 +34,10 @@ test("constant bit strings normalize to quiet while explicit quiet takes precede
     const signal = circuit.db.simulation_signal.list({
       simulation_signal_integrity_id: block.simulation_signal_integrity_id,
     })[0]
-    const quiet =
-      block.name === "EXPLICIT" || /^0+$/.test(block.name!)
-        ? "low"
-        : /^1+$/.test(block.name!)
-          ? "high"
-          : undefined
-    expect(signal.quiet).toBe(quiet)
+    expect(signal.pattern).toBe(block.name!)
+    expect(signal).not.toHaveProperty("quiet")
+    expect(signal).not.toHaveProperty("probe")
+    expect(signal).not.toHaveProperty("driver_disabled")
     expect(signal).not.toHaveProperty("seed")
     expect(block).not.toHaveProperty("duration_s")
     expect(block).not.toHaveProperty("supply")

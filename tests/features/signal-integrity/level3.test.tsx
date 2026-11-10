@@ -23,9 +23,10 @@ test("RFC Level 3 emits three independent runs with stable traffic and quiet vic
     }),
   )
   expect(signals.map((run) => run.length)).toEqual([3, 3, 3])
-  expect(signals.map((run) => run[1].quiet)).toEqual([undefined, "high", "low"])
-  expect(signals[0].map((signal) => signal.seed)).toEqual(
-    signals[2].map((signal) => signal.seed),
-  )
+  expect(signals.map((run) => run[1].pattern)).toEqual(["prbs7", "1", "0"])
+  expect([signals[0][0].seed, signals[0][2].seed]).toEqual([
+    signals[2][0].seed,
+    signals[2][2].seed,
+  ])
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

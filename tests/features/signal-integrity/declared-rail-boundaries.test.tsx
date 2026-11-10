@@ -22,7 +22,7 @@ test("explicit ground/power rails stop shunt traversal and keep signals separate
         <trace from=".RX > .A" to="net.CUSTOM_RAIL" />
         <simulation.pcbtransientchannelsimulation
           bitRate="20Mbps"
-          unrouted="ideal"
+          allowUnroutedTraces
         >
           <simulation.pcbchannel
             name="DATA"
@@ -66,7 +66,7 @@ test("explicit ground/power rails stop shunt traversal and keep signals separate
       />
       <simulation.pcbtransientchannelsimulation
         bitRate="20Mbps"
-        unrouted="ideal"
+        allowUnroutedTraces
       >
         <simulation.pcbchannel
           name="D0"

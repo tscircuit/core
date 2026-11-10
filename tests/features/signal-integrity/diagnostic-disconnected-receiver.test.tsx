@@ -12,7 +12,7 @@ test("SI diagnostic: disconnected-receiver", async () => {
     <DiagnosticBoard disconnected>
       <simulation.pcbtransientchannelsimulation
         bitRate="20Mbps"
-        unrouted="ideal"
+        allowUnroutedTraces
       >
         <simulation.pcbchannel
           name="DATA"

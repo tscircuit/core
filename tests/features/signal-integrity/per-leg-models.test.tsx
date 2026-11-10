@@ -21,11 +21,12 @@ test("differential model overrides emit independent p/n fields and survive cache
       <trace from=".TX > .B" to=".RX > .B" />
       <simulation.pcbtransientchannelsimulation
         bitRate="250kbps"
-        unrouted="ideal"
+        allowUnroutedTraces
       >
         <simulation.pcbchannel
           name="BUS"
-          quiet="off"
+          driverDisabled
+          pattern="101"
           driverRef={{
             pin: { p: ".TX > .A", n: ".TX > .B" },
             model: { p: "a_b_p", n: "a_b_n" },
@@ -48,10 +49,11 @@ test("differential model overrides emit independent p/n fields and survive cache
   await circuit.renderUntilSettled()
   for (const rendered of [original, circuit]) {
     const signal = rendered.db.simulation_signal.list()[0]
-    expect(signal.quiet).toBe("off")
+    expect(signal.driver_disabled).toBe(true)
+    expect(signal.pattern).toBe("101")
+    expect(signal).not.toHaveProperty("seed")
     for (const endpoint of [signal.driver, ...signal.receivers]) {
       expect(endpoint).toMatchObject({
-        kind: "differential",
         p_ibis_model_name: "a_b_p",
         n_ibis_model_name: "a_b_n",
       })

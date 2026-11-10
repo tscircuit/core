@@ -22,7 +22,7 @@ test("adding a signal after initial render must emit its record", async () => {
       <trace from=".TX1 > .Y" to=".RX1 > .A" />
       <simulation.pcbtransientchannelsimulation
         bitRate="20Mbps"
-        unrouted="ideal"
+        allowUnroutedTraces
       >
         <simulation.pcbchannel
           name="D0"

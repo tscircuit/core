@@ -6,7 +6,7 @@ import {
 } from "./fixtures/get-si-test-fixture"
 import { Inverter, Octal } from "./fixtures/parts"
 
-test("cached SI source records remap endpoint references and spelled-out corners", async () => {
+test("cached SI source records remap endpoints and preserve boolean routing options", async () => {
   const { circuit: original } = getSiTestFixture()
   original.add(
     <board routingDisabled fabricatorPreset="jlcpcb_standard">
@@ -18,8 +18,7 @@ test("cached SI source records remap endpoint references and spelled-out corners
       <simulation.pcbtransientchannelsimulation
         name="WRITE"
         bitRate="20Mbps"
-        unrouted="ideal"
-        corner="minimum"
+        allowUnroutedTraces
       >
         <simulation.pcbchannel
           name="DATA"
@@ -49,13 +48,13 @@ test("cached SI source records remap endpoint references and spelled-out corners
   expect(circuit.db.simulation_ibis_model.list()).toHaveLength(6)
   const driverPorts = []
   for (const block of blocks) {
-    expect(block.corner).toBe("minimum")
+    expect(block.allow_unrouted_traces).toBe(true)
     const signals = circuit.db.simulation_signal.list({
       simulation_signal_integrity_id: block.simulation_signal_integrity_id,
     })
     expect(signals.map((signal) => signal.name)).toEqual(["DATA", "CLK"])
     for (const signal of signals) {
-      if (signal.driver.kind !== "single")
+      if (!("source_port_id" in signal.driver))
         throw new Error("Expected a single-ended fixture")
       driverPorts.push(signal.driver.source_port_id)
       expect(

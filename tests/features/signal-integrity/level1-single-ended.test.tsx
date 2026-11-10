@@ -16,29 +16,23 @@ test("RFC Level 1 single-ended resolves physical pins and emits SI defaults", as
       type: "simulation_signal_integrity",
       simulation_signal_integrity_id: "simulation_signal_integrity_0",
       bit_rate_bps: 20e6,
-      corner: "typical",
-      unlisted_nets: "passive",
-      unrouted: "error",
-      pdn: "ideal",
+      allow_unrouted_traces: false,
     },
   ])
   const signal = circuit.db.simulation_signal.list()[0]
   expect(signal).toMatchObject({
     name: "DATA",
     driver: {
-      kind: "single",
       source_port_id: (circuit.selectOne(".TX > .Y") as Port).source_port_id,
     },
     receivers: [
       {
-        kind: "single",
         source_port_id: (circuit.selectOne(".RX > .A") as Port).source_port_id,
       },
     ],
     pattern: "prbs7",
     seed: 127,
     offset_s: 0,
-    probe: "local",
   })
   for (const record of [
     ...circuit.db.simulation_signal_integrity.list(),

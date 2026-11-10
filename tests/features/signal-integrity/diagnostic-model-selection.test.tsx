@@ -7,7 +7,7 @@ import {
 } from "./fixtures/get-si-test-fixture"
 
 test("endpoint selection diagnoses ambiguous, invalid and non-receiving IBIS models", async () => {
-  for (const kind of ["ambiguous", "invalid", "role", "pdn"]) {
+  for (const kind of ["ambiguous", "invalid", "role"]) {
     const { circuit } = getSiTestFixture()
     circuit.add(
       <DiagnosticBoard missingModel={kind === "ambiguous" ? "TX" : undefined}>
@@ -21,8 +21,7 @@ test("endpoint selection diagnoses ambiguous, invalid and non-receiving IBIS mod
         {kind === "role" && <trace from=".TX > .Y" to=".RX > .Y" />}
         <simulation.pcbtransientchannelsimulation
           bitRate="20Mbps"
-          unrouted="ideal"
-          pdn={kind === "pdn" ? "extracted" : "ideal"}
+          allowUnroutedTraces
         >
           <simulation.pcbchannel
             name="DATA"
@@ -42,7 +41,6 @@ test("endpoint selection diagnoses ambiguous, invalid and non-receiving IBIS mod
           ".TX > .Y: choose an IBIS model from LVC1G04_OUT_18, LVC1G04_OUT_25, LVC1G04_OUT_33, LVC1G04_OUT_50.",
         invalid: ".TX > .Y: selected model is not valid for this pin.",
         role: ".RX > .Y: selected model does not support receiving on this pin.",
-        pdn: 'pdn="extracted" is not implemented yet.',
       }[kind],
     )
   }

@@ -15,7 +15,7 @@ test("SI diagnostic: unmodelled-part", async () => {
       <trace from=".D5 > .cathode" to=".RX > .A" />
       <simulation.pcbtransientchannelsimulation
         bitRate="20Mbps"
-        unrouted="ideal"
+        allowUnroutedTraces
       >
         <simulation.pcbchannel
           name="DATA"

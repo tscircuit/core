@@ -15,7 +15,7 @@ test("every PRBS order rejects fractional, nonfinite, zero and out-of-range expl
         <DiagnosticBoard>
           <simulation.pcbtransientchannelsimulation
             bitRate="20Mbps"
-            unrouted="ideal"
+            allowUnroutedTraces
           >
             <simulation.pcbchannel
               name="DATA"
@@ -23,7 +23,6 @@ test("every PRBS order rejects fractional, nonfinite, zero and out-of-range expl
               receiverRef=".RX > .A"
               pattern={`prbs${order}`}
               seed={seed}
-              quiet="low"
             />
           </simulation.pcbtransientchannelsimulation>
         </DiagnosticBoard>,

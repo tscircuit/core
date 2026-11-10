@@ -6,22 +6,24 @@ import {
   siTest as test,
 } from "./fixtures/get-si-test-fixture"
 
-test("SI diagnostic: bare quiet needs an explicit level", async () => {
+test("driverDisabled requires a disabled IBIS driver state", async () => {
   const { circuit } = getSiTestFixture()
-  const props = { name: "DATA", driverRef: ".TX > .Y", receiverRef: ".RX > .A" }
-  // @ts-expect-error Boolean quiet deliberately reproduces invalid user TSX.
-  const signal = <simulation.pcbchannel {...props} quiet />
   circuit.add(
     <DiagnosticBoard>
       <simulation.pcbtransientchannelsimulation
         bitRate="20Mbps"
-        unrouted="ideal"
+        allowUnroutedTraces
       >
-        {signal}
+        <simulation.pcbchannel
+          name="DATA"
+          driverRef=".TX > .Y"
+          receiverRef=".RX > .A"
+          driverDisabled
+        />
       </simulation.pcbtransientchannelsimulation>
     </DiagnosticBoard>,
   )
   await expect(circuit.renderUntilSettled()).rejects.toThrow(
-    'quiet needs a level: "low", "high" or "off".',
+    'Signal "DATA": .TX > .Y model LVC1G04_OUT_33 has no disabled state.',
   )
 })

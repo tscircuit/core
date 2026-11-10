@@ -13,7 +13,7 @@ test("cached SI declarations require the destination board stackup", async () =>
       <simulation.pcbtransientchannelsimulation
         name="WRITE"
         bitRate="20Mbps"
-        unrouted="ideal"
+        allowUnroutedTraces
       >
         <simulation.pcbchannel
           name="DATA"

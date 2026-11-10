@@ -113,11 +113,7 @@ export default () => (
     />
     <copperpour connectsTo="net.GND" layer="inner1" />
 
-    <simulation.pcbtransientchannelsimulation
-      name="WRITE"
-      bitRate="800Mbps"
-      corner="typical"
-    >
+    <simulation.pcbtransientchannelsimulation name="WRITE" bitRate="800Mbps">
       <simulation.pcbchannel
         name="DQS"
         driverRef={{

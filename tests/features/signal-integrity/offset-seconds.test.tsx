@@ -22,7 +22,7 @@ test("numeric offsets are seconds and UI offsets use the channel rate", async ()
           name={name}
           bitRate="20Mbps"
           duration="1ns"
-          unrouted="ideal"
+          allowUnroutedTraces
         >
           <simulation.pcbchannel
             name="DATA"

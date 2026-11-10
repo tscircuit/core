@@ -13,7 +13,7 @@ test("explicit duration stays a user bound and clearing it restores absence", as
     <DiagnosticBoard>
       <simulation.pcbtransientchannelsimulation
         bitRate="20Mbps"
-        unrouted="ideal"
+        allowUnroutedTraces
         duration="2UI"
       >
         <simulation.pcbchannel

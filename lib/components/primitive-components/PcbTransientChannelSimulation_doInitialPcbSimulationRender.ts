@@ -16,15 +16,7 @@ export function PcbTransientChannelSimulation_doInitialPcbSimulationRender(
   const { db } = block.root!
   const props = block._parsedProps
   // Invalid JSX props become ErrorPlaceholders in the reconciler. Preserve the
-  // RFC diagnostic instead of replacing it with an empty-block error.
-  if (
-    block.children.some(
-      (child) =>
-        child.props.componentType === "simulation.pcbchannel" &&
-        typeof child.props.quiet === "boolean",
-    )
-  )
-    throw new Error('quiet needs a level: "low", "high" or "off".')
+  // seed diagnostic instead of replacing it with an empty-block error.
   for (const child of block.children) {
     if (child.props.componentType !== "simulation.pcbchannel") continue
     const pattern = child.props.pattern ?? "prbs7"
@@ -55,9 +47,6 @@ export function PcbTransientChannelSimulation_doInitialPcbSimulationRender(
     throw new Error(
       "<simulation.pcbtransientchannelsimulation> needs a stackup: set fabricatorPreset or define one.",
     )
-
-  if (props.pdn === "extracted")
-    throw new Error('pdn="extracted" is not implemented yet.')
 
   const signals = block.children.filter(
     (child): child is PcbChannel =>
@@ -144,7 +133,7 @@ export function PcbTransientChannelSimulation_doInitialPcbSimulationRender(
         : undefined
     const selectors = typeof pin === "string" ? [pin] : [pin.p, pin.n]
     const ports = restored
-      ? restored.kind === "single"
+      ? "source_port_id" in restored
         ? [restored.source_port_id]
         : [restored.p_source_port_id, restored.n_source_port_id]
       : selectors.map(
@@ -153,7 +142,7 @@ export function PcbTransientChannelSimulation_doInitialPcbSimulationRender(
               .source_port_id!,
         )
     const overrides = restored
-      ? restored.kind === "single"
+      ? "source_port_id" in restored
         ? [restored.ibis_model_name]
         : [restored.p_ibis_model_name, restored.n_ibis_model_name]
       : typeof override === "object"
@@ -189,7 +178,7 @@ export function PcbTransientChannelSimulation_doInitialPcbSimulationRender(
         )
       if (
         role === "driver" &&
-        signal._parsedProps.quiet === "off" &&
+        signal._parsedProps.driverDisabled &&
         ![
           "3-state",
           "i/o",
@@ -199,7 +188,7 @@ export function PcbTransientChannelSimulation_doInitialPcbSimulationRender(
         ].includes(info.modelType)
       )
         throw new Error(
-          `Signal "${signal._parsedProps.name}": ${selectors[leg]} model ${info.modelName} has no disabled state; use quiet="low" or "high".`,
+          `Signal "${signal._parsedProps.name}": ${selectors[leg]} model ${info.modelName} has no disabled state.`,
         )
       return info
     })
@@ -228,12 +217,10 @@ export function PcbTransientChannelSimulation_doInitialPcbSimulationRender(
     const record: SimulationSignal["driver"] =
       ports.length === 1
         ? {
-            kind: "single",
             source_port_id: ports[0],
             ...(overrides[0] ? { ibis_model_name: overrides[0] } : {}),
           }
         : {
-            kind: "differential",
             p_source_port_id: ports[0],
             n_source_port_id: ports[1],
             ...(overrides[0] ? { p_ibis_model_name: overrides[0] } : {}),
@@ -244,13 +231,6 @@ export function PcbTransientChannelSimulation_doInitialPcbSimulationRender(
   const resolved = signals.map((signal) => {
     const signalProps = signal._parsedProps
     const seed = getSignalSeed(block, signal)
-    const quiet =
-      signalProps.quiet ??
-      (/^0+$/.test(signalProps.pattern)
-        ? "low"
-        : /^1+$/.test(signalProps.pattern)
-          ? "high"
-          : undefined)
     const driver = resolveEndpoint(
       signal,
       signalProps.driverRef,
@@ -275,14 +255,14 @@ export function PcbTransientChannelSimulation_doInitialPcbSimulationRender(
       )
     )
       throw new Error(
-        `Signal "${signalProps.name}" driver and receivers must use the same endpoint kind.`,
+        `Signal "${signalProps.name}" driver and receivers must use the same endpoint shape.`,
       )
     const ports = topology.ports.filter((port) =>
       driver.ports.some((driverId) =>
         topology.connected(driverId, port.source_port_id),
       ),
     )
-    return { signal, driver, receivers, ports, seed, quiet }
+    return { signal, driver, receivers, ports, seed }
   })
 
   for (let i = 0; i < resolved.length; i++) {
@@ -314,7 +294,7 @@ export function PcbTransientChannelSimulation_doInitialPcbSimulationRender(
             `Receiver ${receiver.selectors[leg]} is not connected to the copper of signal "${name}".`,
           )
         if (
-          props.unrouted === "error" &&
+          !props.allowUnroutedTraces &&
           !topology.routed.areIdsConnected(
             driver.ports[leg],
             receiver.ports[leg],
@@ -325,7 +305,7 @@ export function PcbTransientChannelSimulation_doInitialPcbSimulationRender(
           )
       }
     }
-    if (props.unrouted === "error") {
+    if (!props.allowUnroutedTraces) {
       const unroutedPort = ports.find(
         (port) =>
           port.source_component_id &&
@@ -369,10 +349,7 @@ export function PcbTransientChannelSimulation_doInitialPcbSimulationRender(
     ...(props.name === undefined ? {} : { name: props.name }),
     bit_rate_bps: props.bitRate,
     ...(props.duration === undefined ? {} : { duration_s: props.duration }),
-    corner: props.corner,
-    unlisted_nets: props.unlistedNets,
-    unrouted: props.unrouted,
-    pdn: props.pdn,
+    allow_unrouted_traces: props.allowUnroutedTraces,
   }
   if (block.simulation_signal_integrity_id)
     db.simulation_signal_integrity.update(
@@ -392,7 +369,7 @@ export function PcbTransientChannelSimulation_doInitialPcbSimulationRender(
     delete db.simulation_signal_integrity.get(
       block.simulation_signal_integrity_id,
     )!.name
-  for (const { signal, driver, receivers, seed, quiet } of resolved) {
+  for (const { signal, driver, receivers, seed } of resolved) {
     const { _parsedProps: signalProps } = signal
     const bitRate = signalProps.bitRate ?? props.bitRate
     const record = {
@@ -407,22 +384,19 @@ export function PcbTransientChannelSimulation_doInitialPcbSimulationRender(
         typeof signalProps.offset === "string"
           ? Number.parseFloat(signalProps.offset) / bitRate
           : signalProps.offset,
-      ...(quiet === undefined ? {} : { quiet }),
-      probe: signalProps.probe,
+      ...(signalProps.driverDisabled ? { driver_disabled: true } : {}),
     }
     if (signal.simulation_signal_id)
       db.simulation_signal.update(signal.simulation_signal_id, {
         ...record,
         seed,
-        quiet,
+        driver_disabled: signalProps.driverDisabled || undefined,
       })
     else
       signal.simulation_signal_id =
         db.simulation_signal.insert(record).simulation_signal_id
-  }
-  for (const { signal, seed, quiet } of resolved) {
-    const record = db.simulation_signal.get(signal.simulation_signal_id!)!
-    if (seed === undefined) delete record.seed
-    if (quiet === undefined) delete record.quiet
+    const stored = db.simulation_signal.get(signal.simulation_signal_id!)!
+    if (seed === undefined) delete stored.seed
+    if (!signalProps.driverDisabled) delete stored.driver_disabled
   }
 }

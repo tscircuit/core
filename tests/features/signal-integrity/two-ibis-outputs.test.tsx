@@ -15,7 +15,7 @@ test("SI detects an additional Output-only pin from the real TI IBIS model", asy
       <trace from=".TX > .Y" to=".U3 > .Y" />
       <simulation.pcbtransientchannelsimulation
         bitRate="20Mbps"
-        unrouted="ideal"
+        allowUnroutedTraces
       >
         <simulation.pcbchannel
           name="DATA"

@@ -28,7 +28,7 @@ test("Unlisted receive-capable IBIS pins receive even with a schematic output at
       <trace from=".TX > .A" to=".U3 > .A" />
       <simulation.pcbtransientchannelsimulation
         bitRate="250kbps"
-        unrouted="ideal"
+        allowUnroutedTraces
       >
         <simulation.pcbchannel
           name="BUS"

@@ -20,7 +20,7 @@ test("removed measurement props reject TSX channels instead of emitting source r
       <DiagnosticBoard>
         <simulation.pcbtransientchannelsimulation
           bitRate="20Mbps"
-          unrouted="ideal"
+          allowUnroutedTraces
         >
           <simulation.pcbchannel
             name="DATA"
