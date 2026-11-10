@@ -1,4 +1,3 @@
-import { getBoardNominalTraceWidth } from "lib/utils/pcb/get-board-nominal-trace-width"
 import { getReadablePcbFoldIssueMessage } from "lib/utils/cad/get-readable-pcb-fold-issue-message"
 import { tryCreatePcbFold, type PcbFold } from "@tscircuit/flex-utils"
 import { jlcMinTolerances } from "@tscircuit/jlcpcb-manufacturing-specs"
@@ -607,7 +606,7 @@ export class Board
     const nominalTraceWidth =
       props.defaultTraceWidth ??
       props.nominalTraceWidth ??
-      getBoardNominalTraceWidth(pcbBoardFromCircuitJson)
+      pcbBoardFromCircuitJson?.nominal_trace_width
     const pcb_board = db.pcb_board.insert({
       ...(nominalTraceWidth !== undefined && {
         nominal_trace_width: nominalTraceWidth,

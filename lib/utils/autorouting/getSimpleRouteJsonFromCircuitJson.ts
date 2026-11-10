@@ -1,4 +1,3 @@
-import { getBoardNominalTraceWidth } from "lib/utils/pcb/get-board-nominal-trace-width"
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import { su } from "@tscircuit/circuit-json-util"
 import type {
@@ -954,8 +953,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     ...connectionsFromBreakoutPoints,
   ]
   const defaultTraceWidth = minTraceWidth ?? board?.min_trace_width ?? 0.1
-  const preferredTraceWidth =
-    nominalTraceWidth ?? getBoardNominalTraceWidth(board)
+  const preferredTraceWidth = nominalTraceWidth ?? board?.nominal_trace_width
   const hasMultipleBoards = !subcircuit_id && db.pcb_board.list().length > 1
   const boardsBySubcircuit = new Map<
     NonNullable<PcbBoard["subcircuit_id"]>,
@@ -980,7 +978,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         }
         const owner = boardsBySubcircuit.get(ownerId)
         connectionDefaultWidth =
-          getBoardNominalTraceWidth(owner) ??
+          owner?.nominal_trace_width ??
           minTraceWidth ??
           owner?.min_trace_width ??
           defaultTraceWidth
