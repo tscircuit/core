@@ -1,3 +1,4 @@
+import { getBoardNominalTraceWidth } from "lib/utils/pcb/get-board-nominal-trace-width"
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import { su } from "@tscircuit/circuit-json-util"
 import type {
@@ -953,9 +954,11 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     ...connectionsFromBreakoutPoints,
   ]
   const defaultTraceWidth = minTraceWidth ?? board?.min_trace_width ?? 0.1
+  const preferredTraceWidth =
+    nominalTraceWidth ?? getBoardNominalTraceWidth(board)
   for (const conn of allConns) {
-    conn.nominalTraceWidth ??= nominalTraceWidth ?? defaultTraceWidth
-    conn.width ??= nominalTraceWidth ?? defaultTraceWidth
+    conn.nominalTraceWidth ??= preferredTraceWidth ?? defaultTraceWidth
+    conn.width ??= preferredTraceWidth ?? defaultTraceWidth
   }
 
   // Count only copper retained in this routing problem. In particular, a
@@ -1107,7 +1110,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         resolvedMinPlatedHoleDrillEdgeToDrillEdgeClearance,
       minPadEdgeToPadEdgeClearance: resolvedMinPadEdgeToPadEdgeClearance,
       minBoardEdgeClearance: resolvedMinBoardEdgeClearance,
-      nominalTraceWidth,
+      nominalTraceWidth: preferredTraceWidth,
       outline: getSrjOutlineForRoutingBounds(
         {
           bounds: boardBounds ?? bounds,

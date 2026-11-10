@@ -1,3 +1,4 @@
+import { getBoardNominalTraceWidth } from "lib/utils/pcb/get-board-nominal-trace-width"
 import type { BoardProps } from "@tscircuit/props"
 import type { PcbBoard } from "circuit-json"
 import { Board } from "lib/components/normal-components/Board/Board"
@@ -26,6 +27,8 @@ export function inflatePcbBoard(
   // Create board props from PCB data
   const boardProps: BoardProps = {
     name: "inflated_board",
+    nominalTraceWidth: getBoardNominalTraceWidth(pcbBoard),
+    minTraceWidth: pcbBoard.min_trace_width,
   }
 
   // Add PCB-specific properties
