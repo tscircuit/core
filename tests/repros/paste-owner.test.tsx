@@ -41,6 +41,10 @@ test("plated-hole paste apertures keep their connector as the component owner", 
         layer: paste.layer,
         belongsToConnector: paste.pcb_component_id === hole.pcb_component_id,
       }))
+    expect(ownerBySide).toEqual([
+      { layer: "top", belongsToConnector: true },
+      { layer: "bottom", belongsToConnector: true },
+    ])
     expect(ownerBySide).toMatchSnapshot()
   }
 })

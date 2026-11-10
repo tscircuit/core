@@ -3,11 +3,11 @@
 exports[`plated-hole paste apertures keep their connector as the component owner 1`] = `
 [
   {
-    "belongsToConnector": false,
+    "belongsToConnector": true,
     "layer": "top",
   },
   {
-    "belongsToConnector": false,
+    "belongsToConnector": true,
     "layer": "bottom",
   },
 ]
@@ -16,11 +16,11 @@ exports[`plated-hole paste apertures keep their connector as the component owner
 exports[`plated-hole paste apertures keep their connector as the component owner 2`] = `
 [
   {
-    "belongsToConnector": false,
+    "belongsToConnector": true,
     "layer": "top",
   },
   {
-    "belongsToConnector": false,
+    "belongsToConnector": true,
     "layer": "bottom",
   },
 ]
