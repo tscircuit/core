@@ -2042,6 +2042,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           ? outputSimpleRouteJson
           : undefined
 
+        const routeEffort = cachedResult
+          ? cachedResult.routeEffort
+          : autorouter?.getRouteEffort?.()
         if (!cachedResult && cacheKey) {
           await cacheLocalAutoroutingPhaseResult({
             cacheEngine,
@@ -2049,6 +2052,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             result: {
               ...simpleRouteJson,
               traces,
+              ...(routeEffort !== undefined ? { routeEffort } : {}),
             },
           })
         }
@@ -2070,6 +2074,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         })
         this.root?.emit("autorouting:end", {
           ...savedPhasePaths,
+          ...(routeEffort !== undefined ? { routeEffort } : {}),
           type: "autorouting:end",
           subcircuit_id: this.subcircuit_id,
           componentDisplayName: this.getString(),
@@ -2165,7 +2170,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           message: error instanceof Error ? error.message : String(error),
         })
 
+        const routeEffort = autorouter?.getRouteEffort?.()
         this.root?.emit("autorouting:error", {
+          ...(routeEffort !== undefined ? { routeEffort } : {}),
           type: "autorouting:error",
           subcircuit_id: this.subcircuit_id,
           componentDisplayName: this.getString(),

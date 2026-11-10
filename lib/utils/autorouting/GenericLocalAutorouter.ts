@@ -1,4 +1,5 @@
 import type { GraphicsObject } from "graphics-debug"
+import type { AutorouterRouteEffort } from "lib/events"
 import type { SimpleRouteJson, SimplifiedPcbTrace } from "./SimpleRouteJson"
 
 export type AutorouterCompleteEvent = {
@@ -18,6 +19,7 @@ export type AutorouterProgressEvent = {
   phase?: string
   iterationsPerSecond?: number
   debugGraphics?: GraphicsObject
+  routeEffort?: AutorouterRouteEffort
 }
 
 export type AutorouterEvent =
@@ -37,6 +39,8 @@ export interface GenericLocalAutorouter {
   on(event: "progress", callback: (ev: AutorouterProgressEvent) => void): void
 
   solveSync(): SimplifiedPcbTrace[]
+
+  getRouteEffort?(): AutorouterRouteEffort | undefined
 
   /**
    * Return a transformed routing problem for a subsequent autorouting phase.
