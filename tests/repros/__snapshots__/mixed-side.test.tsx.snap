@@ -4,13 +4,13 @@ exports[`mixed-side connector pads and plated slot follow the footprint mounting
 {
   "padLayers": [
     "top",
+    "bottom",
+    "bottom",
     "top",
-    "bottom",
-    "bottom",
   ],
   "slotAxes": [
     40,
-    160,
+    20,
   ],
 }
 `;

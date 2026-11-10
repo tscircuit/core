@@ -64,6 +64,13 @@ test("mixed-side connector pads and plated slot follow the footprint mounting si
     if (hole.shape !== "pill") throw new Error("Expected plated slot")
     return Math.round((hole.ccw_rotation ?? 0) % 180)
   })
+  expect(padLayers).toEqual(["top", "bottom", "bottom", "top"])
+  expect(slotAxes).toEqual([40, 20])
+  for (const pad of circuit.db.pcb_smtpad.list()) {
+    expect(circuit.db.pcb_port.get(pad.pcb_port_id!)?.layers).toEqual([
+      pad.layer,
+    ])
+  }
   expect({ padLayers, slotAxes }).toMatchSnapshot()
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
