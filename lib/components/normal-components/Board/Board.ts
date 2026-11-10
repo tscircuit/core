@@ -603,7 +603,14 @@ export class Board
           ? configuredViaHoleDiameter +
             DEFAULT_VIA_PAD_DIAMETER_OVER_HOLE_DIAMETER_MM
           : jlcMinTolerances.min_via_pad_diameter)
+    const nominalTraceWidth =
+      props.defaultTraceWidth ??
+      props.nominalTraceWidth ??
+      pcbBoardFromCircuitJson?.nominal_trace_width
     const pcb_board = db.pcb_board.insert({
+      ...(nominalTraceWidth !== undefined && {
+        nominal_trace_width: nominalTraceWidth,
+      }),
       source_board_id: this.source_board_id,
       subcircuit_id: this.subcircuit_id ?? undefined,
       center,

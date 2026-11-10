@@ -26,6 +26,8 @@ export function inflatePcbBoard(
   // Create board props from PCB data
   const boardProps: BoardProps = {
     name: "inflated_board",
+    nominalTraceWidth: pcbBoard.nominal_trace_width,
+    minTraceWidth: pcbBoard.min_trace_width,
   }
 
   // Add PCB-specific properties
