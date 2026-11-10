@@ -11,7 +11,7 @@ import type {
   PcbHoleRotatedPillWithRectPad,
   PcbHoleWithPolygonPad,
 } from "circuit-json"
-import { decomposeTSR } from "transformation-matrix"
+import { applyToPoint, decomposeTSR } from "transformation-matrix"
 import { selectPortForPcbPrimitive } from "./Port/selectPortForPcbPrimitive"
 
 export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
@@ -147,9 +147,18 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
       props.shape === "pill_hole_with_rect_pad"
     const mirroredSlot =
       isSlot && transform.a * transform.d - transform.b * transform.c < 0
-    const slotOffsetX = "holeOffsetX" in props ? props.holeOffsetX : undefined
-    const transformedSlotOffsetX =
-      mirroredSlot && slotOffsetX !== undefined ? -slotOffsetX : slotOffsetX
+    // Circuit JSON drill offsets are displacements in board XY (mm). Apply
+    // the direction transform without the hole center's translation.
+    const slotOffset =
+      "holeOffsetX" in props || "holeOffsetY" in props
+        ? applyToPoint(
+            { ...transform, e: 0, f: 0 },
+            {
+              x: props.holeOffsetX ?? 0,
+              y: props.holeOffsetY ?? 0,
+            },
+          )
+        : undefined
     const decomposedTransform = decomposeTSR(transform, false, mirroredSlot)
     const rotationDegrees = (decomposedTransform.rotation.angle * 180) / Math.PI
     const normalizedRotationDegrees = ((rotationDegrees % 360) + 360) % 360
@@ -223,8 +232,8 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         rect_ccw_rotation: finalRotationDegrees,
         rect_pad_width: props.outerWidth,
         rect_pad_height: props.outerHeight,
-        hole_offset_x: transformedSlotOffsetX,
-        hole_offset_y: props.holeOffsetY,
+        hole_offset_x: slotOffset?.x,
+        hole_offset_y: slotOffset?.y,
       } as Omit<PcbHoleRotatedPillWithRectPad, "pcb_plated_hole_id">)
 
       this.pcb_plated_hole_id = pcb_plated_hole.pcb_plated_hole_id
@@ -330,8 +339,8 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
           hole_height: props.holeHeight,
           rect_pad_width: props.rectPadWidth,
           rect_pad_height: props.rectPadHeight,
-          hole_offset_x: transformedSlotOffsetX,
-          hole_offset_y: props.holeOffsetY,
+          hole_offset_x: slotOffset?.x,
+          hole_offset_y: slotOffset?.y,
           shape: "rotated_pill_hole_with_rect_pad" as const,
           type: "pcb_plated_hole",
           hole_shape: "rotated_pill",
@@ -357,8 +366,8 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
           hole_height: props.holeHeight,
           rect_pad_width: props.rectPadWidth,
           rect_pad_height: props.rectPadHeight,
-          hole_offset_x: transformedSlotOffsetX,
-          hole_offset_y: props.holeOffsetY,
+          hole_offset_x: slotOffset?.x,
+          hole_offset_y: slotOffset?.y,
           shape: "pill_hole_with_rect_pad" as const,
           rect_border_radius: props.rectBorderRadius,
           port_hints: this.getNameAndAliases(),
