@@ -2,11 +2,11 @@ import { expect, test } from "bun:test"
 import type { AutoroutingEndEvent, AutoroutingProgressEvent } from "lib/events"
 import {
   createComputeCostAutorouter,
-  computeCost,
+  computeCostSummary,
 } from "tests/fixtures/create-compute-cost-autorouter"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("routing progress and completion carry computeCost, including completion without progress", async () => {
+test("routing progress and completion carry computeCostSummary, including completion without progress", async () => {
   for (const emitProgress of [true, false]) {
     const { circuit } = getTestFixture()
     const progress: AutoroutingProgressEvent[] = []
@@ -27,10 +27,12 @@ test("routing progress and completion carry computeCost, including completion wi
       </board>,
     )
     await circuit.renderUntilSettled()
-    expect(progress.map((event) => event.computeCost)).toEqual(
-      emitProgress ? [computeCost] : [],
+    expect(progress.map((event) => event.computeCostSummary)).toEqual(
+      emitProgress ? [computeCostSummary] : [],
     )
-    expect(ends.map((event) => event.computeCost)).toEqual([computeCost])
+    expect(ends.map((event) => event.computeCostSummary)).toEqual([
+      computeCostSummary,
+    ])
     expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
   }
 })

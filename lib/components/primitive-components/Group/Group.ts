@@ -2042,9 +2042,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           ? outputSimpleRouteJson
           : undefined
 
-        const computeCost = cachedResult
-          ? cachedResult.computeCost
-          : autorouter?.getComputeCost?.()
+        const computeCostSummary = cachedResult
+          ? cachedResult.computeCostSummary
+          : autorouter?.getComputeCostSummary?.()
         if (!cachedResult && cacheKey) {
           await cacheLocalAutoroutingPhaseResult({
             cacheEngine,
@@ -2052,7 +2052,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             result: {
               ...simpleRouteJson,
               traces,
-              ...(computeCost !== undefined ? { computeCost } : {}),
+              ...(computeCostSummary !== undefined
+                ? { computeCostSummary }
+                : {}),
             },
           })
         }
@@ -2074,7 +2076,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         })
         this.root?.emit("autorouting:end", {
           ...savedPhasePaths,
-          ...(computeCost !== undefined ? { computeCost } : {}),
+          ...(computeCostSummary !== undefined ? { computeCostSummary } : {}),
           type: "autorouting:end",
           subcircuit_id: this.subcircuit_id,
           componentDisplayName: this.getString(),
@@ -2170,9 +2172,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           message: error instanceof Error ? error.message : String(error),
         })
 
-        const computeCost = autorouter?.getComputeCost?.()
+        const computeCostSummary = autorouter?.getComputeCostSummary?.()
         this.root?.emit("autorouting:error", {
-          ...(computeCost !== undefined ? { computeCost } : {}),
+          ...(computeCostSummary !== undefined ? { computeCostSummary } : {}),
           type: "autorouting:error",
           subcircuit_id: this.subcircuit_id,
           componentDisplayName: this.getString(),

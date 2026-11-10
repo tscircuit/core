@@ -64,24 +64,20 @@ export interface AutoroutingStartEvent extends AutoroutingExecutionMetadata {
 export type Iterations = number
 
 /**
- * Routing compute cost of one stage, mirrored from the autorouter. Compare
- * values only for the same board stage and autorouter settings: there, higher
- * means harder to route.
+ * Which connections were hardest to route in one stage, mirrored from the
+ * autorouter: each pair's solo search iterations, highest first.
  */
-export interface AutorouterComputeCost {
-  /** Solo search iterations summed over every measured pair. */
-  readonly value: Iterations
-  readonly summary: {
-    readonly metric: "hypergraph_route_search_iterations"
-    readonly measuredPairCount: number
-    /** The most expensive pairs, highest first; at most 25. */
-    readonly topPairs: readonly {
-      readonly connectionName: string
-      readonly rootConnectionNames: readonly string[]
-      readonly pcbPortIds: readonly [string | null, string | null]
-      readonly iterations: Iterations
-    }[]
-  }
+export interface AutorouterComputeCostSummary {
+  readonly metric: "hypergraph_route_search_iterations"
+  /** Every pair that was measured, including those cut from topPairs. */
+  readonly measuredPairCount: number
+  /** The most expensive pairs, highest first; at most 25. */
+  readonly topPairs: readonly {
+    readonly connectionName: string
+    readonly rootConnectionNames: readonly string[]
+    readonly pcbPortIds: readonly [string | null, string | null]
+    readonly iterations: Iterations
+  }[]
 }
 
 export interface AutoroutingErrorEvent extends AutoroutingExecutionMetadata {
@@ -94,7 +90,7 @@ export interface AutoroutingErrorEvent extends AutoroutingExecutionMetadata {
   error?: { message: string; stack?: string }
   simpleRouteJson?: SimpleRouteJson
   debugGraphics?: any
-  computeCost?: AutorouterComputeCost
+  computeCostSummary?: AutorouterComputeCostSummary
 }
 
 export interface AutoroutingProgressEvent extends AutoroutingExecutionMetadata {
@@ -107,7 +103,7 @@ export interface AutoroutingProgressEvent extends AutoroutingExecutionMetadata {
   progress: number
   iterationsPerSecond?: number
   debugGraphics?: any
-  computeCost?: AutorouterComputeCost
+  computeCostSummary?: AutorouterComputeCostSummary
 }
 
 export interface AutoroutingEndEvent extends AutoroutingExecutionMetadata {
@@ -127,7 +123,7 @@ export interface AutoroutingEndEvent extends AutoroutingExecutionMetadata {
   phaseStageIndex?: number
   phaseStageCount?: number
   simpleRouteJson: SimpleRouteJson
-  computeCost?: AutorouterComputeCost
+  computeCostSummary?: AutorouterComputeCostSummary
 }
 
 export interface PackingStartEvent {

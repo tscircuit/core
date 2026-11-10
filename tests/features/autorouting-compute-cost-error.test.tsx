@@ -2,11 +2,11 @@ import { expect, test } from "bun:test"
 import type { AutoroutingErrorEvent } from "lib/events"
 import {
   createComputeCostAutorouter,
-  computeCost,
+  computeCostSummary,
 } from "tests/fixtures/create-compute-cost-autorouter"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("routing failure carries computeCost even when no progress was emitted", async () => {
+test("routing failure carries computeCostSummary even when no progress was emitted", async () => {
   const { circuit } = getTestFixture()
   const errors: AutoroutingErrorEvent[] = []
   let progressCount = 0
@@ -28,6 +28,6 @@ test("routing failure carries computeCost even when no progress was emitted", as
   expect(errors).toHaveLength(1)
   expect(errors[0]).toMatchObject({
     error: { message: "test routing failure" },
-    computeCost,
+    computeCostSummary,
   })
 })

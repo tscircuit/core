@@ -2,10 +2,10 @@ import { expect, test } from "bun:test"
 import type { AutoroutingPipelineSolver9_PreloadedTraceGraph } from "@tscircuit/capacity-autorouter"
 import type { AutoroutingProgressEvent } from "lib/events"
 import { TscircuitAutorouter } from "lib/utils/autorouting/CapacityMeshAutorouter"
-import { computeCost } from "tests/fixtures/create-compute-cost-autorouter"
+import { computeCostSummary } from "tests/fixtures/create-compute-cost-autorouter"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("capacity mesh forwards optional solver computeCost in stepped and threaded progress", async () => {
+test("capacity mesh forwards optional solver computeCostSummary in stepped and threaded progress", async () => {
   for (const autorouterThreads of [1, 2]) {
     for (const measured of [true, false]) {
       const { circuit } = getTestFixture()
@@ -27,7 +27,9 @@ test("capacity mesh forwards optional solver computeCost in stepped and threaded
                 }
               ).solver
               Object.assign(solver, {
-                getComputeCost: measured ? () => computeCost : undefined,
+                getComputeCostSummary: measured
+                  ? () => computeCostSummary
+                  : undefined,
               })
               if (autorouterThreads > 1) {
                 // Keep a fast solve alive until the 250ms progress timer ticks.
@@ -51,13 +53,14 @@ test("capacity mesh forwards optional solver computeCost in stepped and threaded
       )
       await circuit.renderUntilSettled()
       expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
-      expect(autorouter!.getComputeCost()).toEqual(
-        measured ? computeCost : undefined,
+      expect(autorouter!.getComputeCostSummary()).toEqual(
+        measured ? computeCostSummary : undefined,
       )
       expect(progress.length).toBeGreaterThan(0)
       for (const event of progress) {
-        if (measured) expect(event.computeCost).toEqual(computeCost)
-        else expect(event).not.toHaveProperty("computeCost")
+        if (measured)
+          expect(event.computeCostSummary).toEqual(computeCostSummary)
+        else expect(event).not.toHaveProperty("computeCostSummary")
       }
     }
   }

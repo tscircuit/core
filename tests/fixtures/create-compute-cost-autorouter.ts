@@ -1,22 +1,19 @@
-import type { AutorouterComputeCost } from "lib/events"
+import type { AutorouterComputeCostSummary } from "lib/events"
 import type { GenericLocalAutorouter } from "lib/utils/autorouting/GenericLocalAutorouter"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import { createBasicAutorouter } from "./createBasicAutorouter"
 
-export const computeCost: AutorouterComputeCost = {
-  value: 40,
-  summary: {
-    metric: "hypergraph_route_search_iterations",
-    measuredPairCount: 1,
-    topPairs: [
-      {
-        connectionName: "R2_connection",
-        rootConnectionNames: ["source_trace_0", "source_trace_1"],
-        pcbPortIds: ["pcb_port_0", null],
-        iterations: 40,
-      },
-    ],
-  },
+export const computeCostSummary: AutorouterComputeCostSummary = {
+  metric: "hypergraph_route_search_iterations",
+  measuredPairCount: 1,
+  topPairs: [
+    {
+      connectionName: "R2_connection",
+      rootConnectionNames: ["source_trace_0", "source_trace_1"],
+      pcbPortIds: ["pcb_port_0", null],
+      iterations: 40,
+    },
+  ],
 }
 
 export const createComputeCostAutorouter =
@@ -29,11 +26,11 @@ export const createComputeCostAutorouter =
     const on = autorouter.on.bind(autorouter)
     return {
       ...autorouter,
-      getComputeCost: () => computeCost,
+      getComputeCostSummary: () => computeCostSummary,
       on(event: "complete" | "error" | "progress", callback: any) {
         if (event === "progress") {
           on(event, (progress) => {
-            if (emitProgress) callback({ ...progress, computeCost })
+            if (emitProgress) callback({ ...progress, computeCostSummary })
           })
         } else if (event === "complete") {
           on(event, callback)

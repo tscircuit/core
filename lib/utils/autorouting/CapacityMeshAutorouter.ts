@@ -15,7 +15,7 @@ import {
 } from "@tscircuit/capacity-autorouter"
 import type { PlatformConfig } from "@tscircuit/props"
 import { AutorouterError } from "lib/errors/AutorouterError"
-import type { AutorouterComputeCost } from "lib/events"
+import type { AutorouterComputeCostSummary } from "lib/events"
 import { SOLVERS, type SolverName } from "lib/solvers"
 import type {
   AutorouterCompleteEvent,
@@ -268,11 +268,11 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
         run,
         (progress) => {
           this.cycleCount++
-          const computeCost = this.getComputeCost()
+          const computeCostSummary = this.getComputeCostSummary()
           this.emitEvent({
             ...progress,
             steps: this.cycleCount,
-            ...(computeCost !== undefined ? { computeCost } : {}),
+            ...(computeCostSummary !== undefined ? { computeCostSummary } : {}),
           })
         },
       )
@@ -364,7 +364,7 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
 
       // Report progress
       const progress = this.solver.progress
-      const computeCost = this.getComputeCost()
+      const computeCostSummary = this.getComputeCostSummary()
 
       this.emitEvent({
         type: "progress",
@@ -377,7 +377,7 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
             : (this.solver.activeSubSolver?.getSolverName() ??
               this.solver.getSolverName()),
         debugGraphics,
-        ...(computeCost !== undefined ? { computeCost } : {}),
+        ...(computeCostSummary !== undefined ? { computeCostSummary } : {}),
       })
 
       // Schedule the next step
@@ -491,13 +491,13 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
     return this.solver.getOutputSimplifiedPcbTraces() as SimplifiedPcbTrace[]
   }
 
-  getComputeCost(): AutorouterComputeCost | undefined {
+  getComputeCostSummary(): AutorouterComputeCostSummary | undefined {
     // Duck-type the upcoming autorouter API without requiring a package update.
     return (
       this.solver as {
-        getComputeCost?(): AutorouterComputeCost | undefined
+        getComputeCostSummary?(): AutorouterComputeCostSummary | undefined
       }
-    ).getComputeCost?.()
+    ).getComputeCostSummary?.()
   }
 
   /**
