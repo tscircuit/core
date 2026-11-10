@@ -956,9 +956,38 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   const defaultTraceWidth = minTraceWidth ?? board?.min_trace_width ?? 0.1
   const preferredTraceWidth =
     nominalTraceWidth ?? getBoardNominalTraceWidth(board)
+  const hasMultipleBoards = !subcircuit_id && db.pcb_board.list().length > 1
+  const boardsBySubcircuit = new Map<
+    NonNullable<PcbBoard["subcircuit_id"]>,
+    PcbBoard | null
+  >()
   for (const conn of allConns) {
-    conn.nominalTraceWidth ??= preferredTraceWidth ?? defaultTraceWidth
-    conn.width ??= preferredTraceWidth ?? defaultTraceWidth
+    let connectionDefaultWidth = preferredTraceWidth ?? defaultTraceWidth
+    if (hasMultipleBoards && nominalTraceWidth === undefined) {
+      const ownerId =
+        (conn.source_trace_id &&
+          sourceTraceById.get(conn.source_trace_id)?.subcircuit_id) ||
+        db.source_net.get(conn.name)?.subcircuit_id ||
+        db.source_port.get(conn.name)?.subcircuit_id ||
+        db.pcb_port.get(conn.pointsToConnect[0]?.pcb_port_id ?? "")
+          ?.subcircuit_id
+      if (ownerId) {
+        if (!boardsBySubcircuit.has(ownerId)) {
+          boardsBySubcircuit.set(
+            ownerId,
+            getOwningPcbBoardForSubcircuit(db, ownerId).board,
+          )
+        }
+        const owner = boardsBySubcircuit.get(ownerId)
+        connectionDefaultWidth =
+          getBoardNominalTraceWidth(owner) ??
+          minTraceWidth ??
+          owner?.min_trace_width ??
+          defaultTraceWidth
+      }
+    }
+    conn.nominalTraceWidth ??= connectionDefaultWidth
+    conn.width ??= connectionDefaultWidth
   }
 
   // Count only copper retained in this routing problem. In particular, a
