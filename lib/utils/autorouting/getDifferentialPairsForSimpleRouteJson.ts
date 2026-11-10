@@ -1,10 +1,11 @@
+import { matchDifferentialPairSrjConnections } from "./matchDifferentialPairSrjConnections"
+import { validateDifferentialPairNetMembers } from "./validateDifferentialPairNetMembers"
 import type { SourceTrace } from "circuit-json"
 import type { DifferentialPair } from "lib/components/primitive-components/DifferentialPair"
 import type {
   PcbGroupId,
   SimpleRouteConnection,
   SimpleRouteDifferentialPair,
-  SrjConnectionName,
 } from "./SimpleRouteJson"
 
 import {
@@ -24,7 +25,7 @@ type GetDifferentialPairsParams = {
 /** Breakouts have one global connection and one connection per routing PCB group. */
 type DifferentialPairSrjConnectionCohort = PcbGroupId | undefined
 
-const getDifferentialPairSrjConnectionNamesByCohortOrThrow = ({
+const getDifferentialPairSrjConnectionsByCohortOrThrow = ({
   srjConnections,
   differentialPair,
   sourceTraces,
@@ -36,7 +37,7 @@ const getDifferentialPairSrjConnectionNamesByCohortOrThrow = ({
   sourceTraces: SourceTrace[]
   member: DifferentialPairMember
   connectionSelector: string
-}): Map<DifferentialPairSrjConnectionCohort, SrjConnectionName> => {
+}): Map<DifferentialPairSrjConnectionCohort, SimpleRouteConnection[]> => {
   const connectivityKey =
     member.kind === "net"
       ? member.sourceNet.subcircuit_connectivity_map_key
@@ -101,13 +102,14 @@ const getDifferentialPairSrjConnectionNamesByCohortOrThrow = ({
       `Could not find an SRJ connection for trace name or port selector "${connectionSelector}" in differential pair "${differentialPair.name}"`,
     )
   }
-  const connectionNamesByCohort = new Map<
+  const connectionsByCohort = new Map<
     DifferentialPairSrjConnectionCohort,
-    SrjConnectionName
+    SimpleRouteConnection[]
   >()
   for (const srjConnection of matchingSrjConnections) {
     const cohort = srjConnection.routingPcbGroupId
-    if (connectionNamesByCohort.has(cohort)) {
+    const cohortConnections = connectionsByCohort.get(cohort) ?? []
+    if (member.kind === "trace" && cohortConnections.length > 0) {
       const cohortLabel =
         cohort === undefined
           ? "the global routing cohort"
@@ -116,9 +118,10 @@ const getDifferentialPairSrjConnectionNamesByCohortOrThrow = ({
         `${selectorDescription} matches multiple SRJ connections in ${cohortLabel} for differential pair "${differentialPair.name}"`,
       )
     }
-    connectionNamesByCohort.set(cohort, srjConnection.name)
+    cohortConnections.push(srjConnection)
+    connectionsByCohort.set(cohort, cohortConnections)
   }
-  return connectionNamesByCohort
+  return connectionsByCohort
 }
 
 const getDifferentialPairCohortLabel = (
@@ -161,16 +164,16 @@ export const getDifferentialPairsForSimpleRouteJson = ({
       differentialPairSourceTraces,
       negativeTraceNameOrPortSelector,
     )
-    const positiveSrjConnectionNamesByCohort =
-      getDifferentialPairSrjConnectionNamesByCohortOrThrow({
+    const positiveSrjConnectionsByCohort =
+      getDifferentialPairSrjConnectionsByCohortOrThrow({
         srjConnections,
         differentialPair,
         sourceTraces: differentialPairSourceTraces,
         member: positiveMember,
         connectionSelector: positiveTraceNameOrPortSelector,
       })
-    const negativeSrjConnectionNamesByCohort =
-      getDifferentialPairSrjConnectionNamesByCohortOrThrow({
+    const negativeSrjConnectionsByCohort =
+      getDifferentialPairSrjConnectionsByCohortOrThrow({
         srjConnections,
         differentialPair,
         sourceTraces: differentialPairSourceTraces,
@@ -178,46 +181,64 @@ export const getDifferentialPairsForSimpleRouteJson = ({
         connectionSelector: negativeTraceNameOrPortSelector,
       })
 
+    validateDifferentialPairNetMembers(
+      differentialPair,
+      positiveMember,
+      negativeMember,
+    )
+
     // Note: SRJ names this value lengthTolerance, but it carries
     // maxLengthSkew unchanged.
     const lengthTolerance: number =
       differentialPair._parsedProps.maxLengthSkew ?? 0.1
-    for (const cohort of positiveSrjConnectionNamesByCohort.keys()) {
-      if (negativeSrjConnectionNamesByCohort.has(cohort)) continue
+    for (const cohort of positiveSrjConnectionsByCohort.keys()) {
+      if (negativeSrjConnectionsByCohort.has(cohort)) continue
       throw new Error(
         `Differential pair "${differentialPair.name}" has a positive SRJ connection in ${getDifferentialPairCohortLabel(cohort)} without a matching negative SRJ connection`,
       )
     }
-    for (const cohort of negativeSrjConnectionNamesByCohort.keys()) {
-      if (positiveSrjConnectionNamesByCohort.has(cohort)) continue
+    for (const cohort of negativeSrjConnectionsByCohort.keys()) {
+      if (positiveSrjConnectionsByCohort.has(cohort)) continue
       throw new Error(
         `Differential pair "${differentialPair.name}" has a negative SRJ connection in ${getDifferentialPairCohortLabel(cohort)} without a matching positive SRJ connection`,
       )
     }
     for (const [
       cohort,
-      positiveSrjConnectionName,
-    ] of positiveSrjConnectionNamesByCohort) {
-      const negativeSrjConnectionName =
-        negativeSrjConnectionNamesByCohort.get(cohort)!
-      if (positiveSrjConnectionName === negativeSrjConnectionName) {
-        throw new Error(
-          `Differential pair "${differentialPair.name}" positiveConnection="${positiveTraceNameOrPortSelector}" and negativeConnection="${negativeTraceNameOrPortSelector}" must resolve to different electrical nets`,
-        )
+      positiveSrjConnections,
+    ] of positiveSrjConnectionsByCohort) {
+      const negativeSrjConnections = negativeSrjConnectionsByCohort.get(cohort)!
+      const pairedConnectionNames = matchDifferentialPairSrjConnections(
+        positiveSrjConnections,
+        negativeSrjConnections,
+        differentialPair.name,
+      )
+      for (const [
+        positiveSrjConnectionName,
+        negativeSrjConnectionName,
+      ] of pairedConnectionNames) {
+        if (positiveSrjConnectionName === negativeSrjConnectionName) {
+          throw new Error(
+            `Differential pair "${differentialPair.name}" positiveConnection="${positiveTraceNameOrPortSelector}" and negativeConnection="${negativeTraceNameOrPortSelector}" must resolve to different electrical nets`,
+          )
+        }
+        srjDifferentialPairs.push({
+          connectionNames: [
+            positiveSrjConnectionName,
+            negativeSrjConnectionName,
+          ],
+          lengthTolerance,
+          ...(differentialPair._parsedProps.pcbTraceGap !== undefined
+            ? { traceGap: differentialPair._parsedProps.pcbTraceGap }
+            : {}),
+          ...(differentialPair._parsedProps.maxUncoupledLength !== undefined
+            ? {
+                maxUncoupledLength:
+                  differentialPair._parsedProps.maxUncoupledLength,
+              }
+            : {}),
+        })
       }
-      srjDifferentialPairs.push({
-        connectionNames: [positiveSrjConnectionName, negativeSrjConnectionName],
-        lengthTolerance,
-        ...(differentialPair._parsedProps.pcbTraceGap !== undefined
-          ? { traceGap: differentialPair._parsedProps.pcbTraceGap }
-          : {}),
-        ...(differentialPair._parsedProps.maxUncoupledLength !== undefined
-          ? {
-              maxUncoupledLength:
-                differentialPair._parsedProps.maxUncoupledLength,
-            }
-          : {}),
-      })
     }
   }
 

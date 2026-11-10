@@ -1,8 +1,15 @@
 import { expect, test } from "bun:test"
+import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("differential pair over nets routes through an ESD chip", async () => {
   const { circuit } = getTestFixture()
+  const inputs: SimpleRouteJson[] = []
+  const asyncErrors: string[] = []
+  circuit.on("autorouting:start", (event) => inputs.push(event.simpleRouteJson))
+  circuit.on("asyncEffect:end", (event) => {
+    if (event.error) asyncErrors.push(String(event.error))
+  })
   const usb = { DP: "net.USB_DP", DM: "net.USB_DM" }
 
   circuit.add(
@@ -37,9 +44,34 @@ test("differential pair over nets routes through an ESD chip", async () => {
 
   await circuit.renderUntilSettled()
 
+  expect(inputs).toHaveLength(1)
+  expect(inputs[0].differentialPairs).toEqual([
+    {
+      connectionNames: [
+        circuit.db.source_net.getWhere({ name: "USB_DP" })!.source_net_id,
+        circuit.db.source_net.getWhere({ name: "USB_DM" })!.source_net_id,
+      ],
+      lengthTolerance: 0.1,
+    },
+  ])
+  expect(inputs[0].connections).toHaveLength(2)
+  for (const connection of inputs[0].connections) {
+    expect(connection.pointsToConnect).toHaveLength(3)
+    expect(
+      connection.pointsToConnect
+        .map((point) => point.port_selector?.split(".")[0])
+        .sort(),
+    ).toEqual(["ESD", "J1", "MCU"])
+  }
+  expect(circuit.db.source_property_ignored_warning.list()).toEqual([])
+  expect(circuit.db.source_bus.list()).toHaveLength(1)
+  // Keep the routing assertion red until the multi-terminal autorouter fix ships.
+  // Preparation failures must not pass as an empty routing result.
+  expect(asyncErrors).toEqual([])
   expect(
     circuit.db.pcb_autorouting_error.list().map((error) => error.message),
   ).toEqual([])
+  expect(circuit.db.pcb_trace.list()).toHaveLength(4)
   await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
     shouldDrawRatsNest: true,
     showErrorsInTextOverlay: true,
