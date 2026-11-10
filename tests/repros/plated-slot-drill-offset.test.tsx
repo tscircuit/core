@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { Fragment } from "react"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("an offset plated slot follows a reference pad through each mounting transform", async () => {
@@ -8,34 +9,41 @@ test("an offset plated slot follows a reference pad through each mounting transf
     <board width={44} height={18} routingDisabled schematicDisabled>
       {(["top", "bottom"] as const).flatMap((layer, row) =>
         rotations.map((rotation, i) => (
-          <chip
-            key={`${layer}-${rotation}`}
-            name={`J${row * 5 + i + 1}`}
-            layer={layer}
-            pcbRotation={rotation}
-            pcbX={(i - 2) * 8}
-            pcbY={4 - row * 8}
-            footprint={
-              <footprint originalLayer="top">
-                <platedhole
-                  shape="pill_hole_with_rect_pad"
-                  holeWidth={1}
-                  holeHeight={0.5}
-                  rectPadWidth={2.5}
-                  rectPadHeight={1.5}
-                  holeOffsetX={0.5}
-                  holeOffsetY={0.2}
-                />
-                <smtpad
-                  shape="circle"
-                  radius={0.12}
-                  pcbX={0.5}
-                  pcbY={0.2}
-                  layer="bottom"
-                />
-              </footprint>
-            }
-          />
+          <Fragment key={`${layer}-${rotation}`}>
+            <chip
+              name={`J${row * 5 + i + 1}`}
+              layer={layer}
+              pcbRotation={rotation}
+              pcbX={(i - 2) * 8}
+              pcbY={4 - row * 8}
+              footprint={
+                <footprint originalLayer="top">
+                  <platedhole
+                    shape="pill_hole_with_rect_pad"
+                    holeWidth={1}
+                    holeHeight={0.5}
+                    rectPadWidth={2.5}
+                    rectPadHeight={1.5}
+                    holeOffsetX={0.5}
+                    holeOffsetY={0.2}
+                  />
+                  <smtpad
+                    shape="circle"
+                    radius={0.12}
+                    pcbX={0.5}
+                    pcbY={0.2}
+                    layer="bottom"
+                  />
+                </footprint>
+              }
+            />
+            <pcbnotetext
+              pcbX={(i - 2) * 8}
+              pcbY={2 - row * 8}
+              text={`${layer} ${rotation} deg`}
+              fontSize={0.5}
+            />
+          </Fragment>
         )),
       )}
     </board>,
@@ -51,7 +59,9 @@ test("an offset plated slot follows a reference pad through each mounting transf
       throw new Error("Expected a plated slot")
     const reference = circuit.db.pcb_smtpad
       .list()
-      .find((pad) => pad.pcb_component_id === hole.pcb_component_id)!
+      .find((pad) => pad.pcb_component_id === hole.pcb_component_id)
+    if (reference?.shape !== "circle")
+      throw new Error("Expected the circular drill-center reference pad")
     expect(hole.x + hole.hole_offset_x).toBeCloseTo(reference.x, 8)
     expect(hole.y + hole.hole_offset_y).toBeCloseTo(reference.y, 8)
   }

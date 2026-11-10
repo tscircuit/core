@@ -77,6 +77,8 @@ test("mixed-side connector pads and plated slot follow the footprint mounting si
   for (const [index, { layer }] of mounts.entries()) {
     const contact = pads[index * 2]!
     const latch = pads[index * 2 + 1]!
+    if (!("x" in contact) || !("x" in latch))
+      throw new Error("Expected the two rectangular connector pads")
     expect([contact.layer, latch.layer]).toEqual([
       layer,
       layer === "top" ? "bottom" : "top",
