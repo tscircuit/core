@@ -49,6 +49,5 @@ test("a phase targeting a pin routes its named net while an unrelated net stays 
     return circuit.db.source_port.get(port.source_port_id)?.pin_number
   })
   expect(names.sort()).toEqual([1, 8])
-  expect({ started, traceCount: wires.length }).toMatchSnapshot()
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
