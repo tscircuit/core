@@ -2,6 +2,9 @@ import { panelProps } from "@tscircuit/props"
 import { distance } from "circuit-json"
 import { Subpanel } from "./Subpanel"
 
+/** Edge padding (mm) on each side of a panel that sets none. */
+const DEFAULT_PANEL_EDGE_PADDING = 5
+
 /**
  * Panel is the root-level panel component for organizing multiple boards.
  * It extends Subpanel but uses pcb_panel instead of pcb_group for the
@@ -48,6 +51,39 @@ export class Panel extends Subpanel {
     })
 
     this.pcb_panel_id = inserted.pcb_panel_id
+  }
+
+  /** Edge padding on each side of the panel, in mm. */
+  _getEdgePadding() {
+    const {
+      edgePadding = DEFAULT_PANEL_EDGE_PADDING,
+      edgePaddingLeft = edgePadding,
+      edgePaddingRight = edgePadding,
+      edgePaddingTop = edgePadding,
+      edgePaddingBottom = edgePadding,
+    } = this._parsedProps
+    return {
+      left: edgePaddingLeft,
+      right: edgePaddingRight,
+      top: edgePaddingTop,
+      bottom: edgePaddingBottom,
+    }
+  }
+
+  /** The board grid must leave room for edge padding inside maxWidth/maxHeight. */
+  override _getMaxGridSize() {
+    const { maxWidth, maxHeight } = this._parsedProps
+    const edgePadding = this._getEdgePadding()
+    return {
+      width:
+        maxWidth === undefined
+          ? Infinity
+          : maxWidth - edgePadding.left - edgePadding.right,
+      height:
+        maxHeight === undefined
+          ? Infinity
+          : maxHeight - edgePadding.top - edgePadding.bottom,
+    }
   }
 
   override doInitialPanelLayout() {
@@ -114,13 +150,18 @@ export class Panel extends Subpanel {
         edgePaddingBottomProp ?? edgePadding,
       )
 
+      // An auto-sized panel grows to minWidth/minHeight around the centred grid.
+      const { minWidth = 0, minHeight = 0 } = this._parsedProps
       db.pcb_panel.update(this.pcb_panel_id, {
         width: hasExplicitWidth
           ? distance.parse(this._parsedProps.width)
-          : gridWidth + edgePaddingLeft + edgePaddingRight,
+          : Math.max(gridWidth + edgePaddingLeft + edgePaddingRight, minWidth),
         height: hasExplicitHeight
           ? distance.parse(this._parsedProps.height)
-          : gridHeight + edgePaddingTop + edgePaddingBottom,
+          : Math.max(
+              gridHeight + edgePaddingTop + edgePaddingBottom,
+              minHeight,
+            ),
       })
     }
   }
