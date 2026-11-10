@@ -260,6 +260,7 @@ test("copper-pour trace visibility across boundary cases", async () => {
         )
       }),
     )
+    expect(hiddenSegments, scenario.name).toEqual(scenario.hidden)
     expect(
       annotatedTraces.map(({ route }) =>
         getTraceRouteWithoutPourAnnotations(route),
