@@ -22,13 +22,27 @@ export const getImportedInternallyConnectedPinNames = (
         ),
       )
       if (resolved.some((port) => !port)) return []
-      return [
-        resolved.map((port) =>
-          port!.pin_number !== undefined
-            ? `pin${port!.pin_number}`
-            : port!.name,
-        ),
-      ]
+      const seenPinNames = new Set<string>()
+      const pinNames: string[] = []
+      let internalIndex = 1
+      for (const port of resolved) {
+        const baseName =
+          port!.pin_number !== undefined ? `pin${port!.pin_number}` : port!.name
+        if (!seenPinNames.has(baseName)) {
+          seenPinNames.add(baseName)
+          pinNames.push(baseName)
+        } else {
+          const qualifiedName =
+            port!.name &&
+            port!.name !== String(port!.pin_number) &&
+            port!.name !== baseName
+              ? port!.name
+              : `${baseName}_internal_${internalIndex++}`
+          seenPinNames.add(qualifiedName)
+          pinNames.push(qualifiedName)
+        }
+      }
+      return [pinNames]
     }),
   )
 }

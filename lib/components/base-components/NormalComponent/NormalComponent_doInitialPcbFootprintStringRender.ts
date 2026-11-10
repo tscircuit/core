@@ -3,8 +3,8 @@ import {
   type PartsEngine,
   type SupplierName,
   type SupplierPartNumbers,
-  supplierProps,
   resolveManufacturerPartNumber,
+  supplierProps,
 } from "@tscircuit/props"
 import {
   type AnyCircuitElement,
@@ -14,8 +14,8 @@ import {
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import { Footprint } from "lib/components/primitive-components/Footprint"
 import { extractCadModelFromCircuitJson } from "lib/utils/connectors/extractCadModelFromCircuitJson"
-import { fetchPartCircuitJsonWithDatasheet } from "lib/utils/fetch-part-circuit-json-with-datasheet"
 import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromCircuitJson"
+import { fetchPartCircuitJsonWithDatasheet } from "lib/utils/fetch-part-circuit-json-with-datasheet"
 import { resolveStaticFileImport } from "lib/utils/resolveStaticFileImport"
 import { isValidElement as isReactElement } from "react"
 import { NormalComponent } from "./NormalComponent"
@@ -127,7 +127,17 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
           },
           result.footprintCircuitJson,
         )
-        component.addAll(fpComponents)
+        const fpWrapper = new Footprint({ src: footprintUrl })
+        const componentsOutsideFootprint: typeof fpComponents = []
+        for (const c of fpComponents) {
+          if (shouldAddOutsideFootprintWrapper(c)) {
+            componentsOutsideFootprint.push(c)
+          } else {
+            fpWrapper.add(c)
+          }
+        }
+        component.add(fpWrapper)
+        component.addAll(componentsOutsideFootprint)
         // Existing ports may have rendered before the async pads arrived.
         for (const child of component.children) {
           if (child.componentName === "Port") {
@@ -140,9 +150,7 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
         const db = component.root?.db
         if (db && component.source_component_id && component.pcb_component_id) {
           const subcircuit = component.getSubcircuit()
-          const errorMsg =
-            `${component.getString()} failed to load footprint "${footprintUrl}": ` +
-            (err instanceof Error ? err.message : String(err))
+          const errorMsg = `${component.getString()} failed to load footprint "${footprintUrl}": ${err instanceof Error ? err.message : String(err)}`
           const errorObj = external_footprint_load_error.parse({
             type: "external_footprint_load_error",
             message: errorMsg,
@@ -181,16 +189,29 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
           },
           soup as any,
         )
-        component.addAll(fpComponents)
+        const fpWrapper = new Footprint({ src: url })
+        const componentsOutsideFootprint: typeof fpComponents = []
+        for (const c of fpComponents) {
+          if (shouldAddOutsideFootprintWrapper(c)) {
+            componentsOutsideFootprint.push(c)
+          } else {
+            fpWrapper.add(c)
+          }
+        }
+        component.add(fpWrapper)
+        component.addAll(componentsOutsideFootprint)
+        for (const child of component.children) {
+          if (child.componentName === "Port") {
+            child._markDirty?.("PcbPortRender")
+          }
+        }
         component._markDirty("ResolveFootprintPinLabels")
         component._markDirty("InitializePortsFromChildren")
       } catch (err) {
         const db = component.root?.db
         if (db && component.source_component_id && component.pcb_component_id) {
           const subcircuit = component.getSubcircuit()
-          const errorMsg =
-            `${component.getString()} failed to load external footprint "${url}": ` +
-            (err instanceof Error ? err.message : String(err))
+          const errorMsg = `${component.getString()} failed to load external footprint "${url}": ${err instanceof Error ? err.message : String(err)}`
           const errorObj = external_footprint_load_error.parse({
             type: "external_footprint_load_error",
             message: errorMsg,
@@ -293,9 +314,7 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
         const db = component.root?.db
         if (db && component.source_component_id && component.pcb_component_id) {
           const subcircuit = component.getSubcircuit()
-          const errorMsg =
-            `${component.getString()} failed to load external footprint "${footprint}": ` +
-            (err instanceof Error ? err.message : String(err))
+          const errorMsg = `${component.getString()} failed to load external footprint "${footprint}": ${err instanceof Error ? err.message : String(err)}`
           const errorObj = external_footprint_load_error.parse({
             type: "external_footprint_load_error",
             message: errorMsg,
@@ -337,14 +356,29 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
         },
         footprint,
       )
-      component.addAll(fpComponents)
+      const fpWrapper = new Footprint({})
+      const componentsOutsideFootprint: typeof fpComponents = []
+      for (const c of fpComponents) {
+        if (shouldAddOutsideFootprintWrapper(c)) {
+          componentsOutsideFootprint.push(c)
+        } else {
+          fpWrapper.add(c)
+        }
+      }
+      component.add(fpWrapper)
+      component.addAll(componentsOutsideFootprint)
+      for (const child of component.children) {
+        if (child.componentName === "Port") {
+          child._markDirty?.("PcbPortRender")
+        }
+      }
+      component._markDirty("ResolveFootprintPinLabels")
+      component._markDirty("InitializePortsFromChildren")
     } catch (err) {
       const db = component.root?.db
       if (db && component.source_component_id && component.pcb_component_id) {
         const subcircuit = component.getSubcircuit()
-        const errorMsg =
-          `${component.getString()} failed to load json footprint: ` +
-          (err instanceof Error ? err.message : String(err))
+        const errorMsg = `${component.getString()} failed to load json footprint: ${err instanceof Error ? err.message : String(err)}`
         const errorObj = circuit_json_footprint_load_error.parse({
           type: "circuit_json_footprint_load_error",
           message: errorMsg,

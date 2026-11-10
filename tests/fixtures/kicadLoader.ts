@@ -1,4 +1,5 @@
 import jstPhSm4Footprint from "./assets/external-jst-ph-sm4-footprint.json"
+import keystone3002Footprint from "./assets/external-keystone-3002-footprint.json"
 import usb3AFootprint from "./assets/external-usb3-a-footprint.json"
 
 export const kicadLoader = async (footprintName: string) => {
@@ -11,6 +12,12 @@ export const kicadLoader = async (footprintName: string) => {
     rawFootprint = jstPhSm4Footprint
   } else if (footprintName === "Connector_USB/USB3_A_Molex_48393-001") {
     rawFootprint = usb3AFootprint
+  } else if (
+    footprintName === "Battery/BatteryHolder_Keystone_3002_1x2032" ||
+    footprintName === "Battery_Holders/BatteryHolder_Keystone_3002_1x2032" ||
+    footprintName === "BatteryHolder_Keystone_3002_1x2032"
+  ) {
+    rawFootprint = keystone3002Footprint
   }
 
   if (rawFootprint) {
