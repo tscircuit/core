@@ -4,11 +4,12 @@ import type {
   AnyCircuitElement,
   LayerRef,
   PcbBoard,
-  PcbPort,
   PcbPanel,
+  PcbPort,
   PcbTraceHint,
   PcbVia,
   SourcePort,
+  SourceTrace,
 } from "circuit-json"
 import {
   ConnectivityMap,
@@ -17,6 +18,7 @@ import {
 import { Bus } from "lib/components/primitive-components/Bus"
 import { DifferentialPair } from "lib/components/primitive-components/DifferentialPair"
 import type { ISubcircuit } from "lib/components/primitive-components/Group/Subcircuit/ISubcircuit"
+import type { Trace } from "lib/components/primitive-components/Trace/Trace"
 import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
 import { findFloatingCopper } from "../copper-pour-connectivity/find-floating-copper"
 import { getObstaclesFromCircuitJson } from "../obstacles/getObstaclesFromCircuitJson"
@@ -26,6 +28,8 @@ import type {
   SimpleRouteDifferentialPair,
   SimpleRouteJson,
   SingleLayerConnectionPoint,
+  SrjConnectionName,
+  SrjPointId,
 } from "./SimpleRouteJson"
 import { expandSrjBoundsToIncludeConnectionPoints } from "./expand-srj-bounds-to-include-connection-points"
 import { getSrjOutlineForRoutingBounds } from "./get-srj-outline-for-routing-bounds"
@@ -35,11 +39,11 @@ import {
   getBusesForSimpleRouteJson,
   getPlaneTerminatedSourceTraceLayers,
 } from "./getBusesForSimpleRouteJson"
-import { getDifferentialPairSourceTraceIds } from "./getDifferentialPairSourceTraceIds"
-import { reduceNetConnectionPointsForDifferentialPairPaths } from "./reduceNetConnectionPointsForDifferentialPairPaths"
+import { getDifferentialPairSourceTraceIdPairs } from "./getDifferentialPairSourceTraceIdPairs"
 import { getDifferentialPairsForSimpleRouteJson } from "./getDifferentialPairsForSimpleRouteJson"
 import { getPreservedRoutedSubcircuitTraces } from "./getPreservedRoutedSubcircuitTraces"
 import { getUnbrokenCopperPourObstacles } from "./getUnbrokenCopperPourObstacles"
+import { reduceNetConnectionPointsForDifferentialPairPaths } from "./reduceNetConnectionPointsForDifferentialPairPaths"
 
 /**
  * Converts PCB trace-hint route points to SRJ connection points. Both inputs
@@ -571,19 +575,75 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   const sourceTraces = db.source_trace.list()
   const differentialPairs: DifferentialPair[] =
     subcircuitComponent?.selectAll<DifferentialPair>("differentialpair") ?? []
-  const differentialPairSourceTraceIds = getDifferentialPairSourceTraceIds({
-    differentialPairs,
-    sourceTraces,
-    subcircuitId: subcircuit_id,
-  })
-  // Preserve explicit two-terminal sections, not an arbitrary multi-terminal
-  // net as a differential conductor. Unspecified branch topology stays rejected.
+  const differentialPairSourceTraceIdPairs =
+    getDifferentialPairSourceTraceIdPairs({
+      differentialPairs,
+      sourceTraces,
+      subcircuitId: subcircuit_id,
+    })
+  const differentialPairSourceTraceIds = new Set(
+    differentialPairSourceTraceIdPairs.flat(),
+  )
+  const traceComponents = subcircuitComponent?.selectAll<Trace>("trace") ?? []
+  const declaredPathPointIdsBySourceTraceId = new Map<
+    SourceTrace["source_trace_id"],
+    SrjPointId[]
+  >()
+  for (const trace of traceComponents) {
+    const sourceTraceId = trace.source_trace_id
+    if (!sourceTraceId || !differentialPairSourceTraceIds.has(sourceTraceId))
+      continue
+    const sourceTrace = sourceTraceById.get(sourceTraceId)
+    // Only the declaration that supplied the source row determines its order.
+    if (
+      !sourceTrace ||
+      sourceTrace.name !== trace._parsedProps.name ||
+      !("path" in trace.props) ||
+      sourceTrace.connected_source_port_ids.length <= 2 ||
+      sourceTraceIdsAlreadyPreservedAsSrjTraces.has(sourceTraceId)
+    )
+      continue
+    const pointIds = sourceTrace.connected_source_port_ids.flatMap(
+      (source_port_id) => {
+        const port = db.pcb_port.getWhere({ source_port_id })
+        return port ? [getPcbPortRoutePoint(port).pointId] : []
+      },
+    )
+    if (
+      pointIds.length === sourceTrace.connected_source_port_ids.length &&
+      new Set(pointIds).size === pointIds.length
+    ) {
+      declaredPathPointIdsBySourceTraceId.set(sourceTraceId, pointIds)
+    }
+  }
+  const orderedPathPointIdsByConnectionName = new Map<
+    SrjConnectionName,
+    SrjPointId[]
+  >()
+  // Direct SRJ connections are named by source trace ID. Preserve an inline
+  // path only when both members have the same number of declared pad stations.
+  for (const [
+    positiveSourceTraceId,
+    negativeSourceTraceId,
+  ] of differentialPairSourceTraceIdPairs) {
+    const positive = declaredPathPointIdsBySourceTraceId.get(
+      positiveSourceTraceId,
+    )
+    const negative = declaredPathPointIdsBySourceTraceId.get(
+      negativeSourceTraceId,
+    )
+    if (!positive || !negative || positive.length !== negative.length) continue
+    orderedPathPointIdsByConnectionName.set(positiveSourceTraceId, positive)
+    orderedPathPointIdsByConnectionName.set(negativeSourceTraceId, negative)
+  }
+  // Preserve explicit pair paths before aggregating the rest of each net.
   const differentialPairPathSourceTraceIds = new Set(
     sourceTraces
       .filter(
         (trace) =>
           differentialPairSourceTraceIds.has(trace.source_trace_id) &&
-          trace.connected_source_port_ids.length === 2,
+          (trace.connected_source_port_ids.length === 2 ||
+            orderedPathPointIdsByConnectionName.has(trace.source_trace_id)),
       )
       .map((trace) => trace.source_trace_id),
   )
@@ -701,13 +761,9 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     .list()
     .filter((trace) => !subcircuit_id || trace.subcircuit_id === subcircuit_id)
   const exposedBridgeSourceTraceIds = new Set(
-    (subcircuitComponent?.selectAll("trace") ?? []).flatMap((trace) => {
-      const candidate = trace as {
-        source_trace_id?: string | null
-        _exposesSubcircuitConnection?: boolean
-      }
-      return candidate._exposesSubcircuitConnection && candidate.source_trace_id
-        ? [candidate.source_trace_id]
+    traceComponents.flatMap((trace) => {
+      return trace._exposesSubcircuitConnection && trace.source_trace_id
+        ? [trace.source_trace_id]
         : []
     }),
   )
@@ -1009,6 +1065,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       srjConnections: allConns,
       differentialPairs,
       sourceTraces: db.source_trace.list(),
+      orderedPathPointIdsByConnectionName,
       subcircuitId: subcircuit_id,
     })
 

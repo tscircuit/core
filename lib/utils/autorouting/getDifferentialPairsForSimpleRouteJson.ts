@@ -6,6 +6,7 @@ import type {
   SimpleRouteConnection,
   SimpleRouteDifferentialPair,
   SrjConnectionName,
+  SrjPointId,
 } from "./SimpleRouteJson"
 
 type SourceTraceId = SourceTrace["source_trace_id"]
@@ -20,6 +21,10 @@ type GetDifferentialPairsParams = {
   srjConnections: SimpleRouteConnection[]
   differentialPairs: DifferentialPair[]
   sourceTraces: SourceTrace[]
+  orderedPathPointIdsByConnectionName?: ReadonlyMap<
+    SrjConnectionName,
+    SrjPointId[]
+  >
   subcircuitId?: SubcircuitId | null
 }
 
@@ -206,6 +211,7 @@ export const getDifferentialPairsForSimpleRouteJson = ({
   srjConnections,
   differentialPairs,
   sourceTraces,
+  orderedPathPointIdsByConnectionName,
   subcircuitId,
 }: GetDifferentialPairsParams): SimpleRouteDifferentialPair[] | undefined => {
   const srjDifferentialPairs: SimpleRouteDifferentialPair[] = []
@@ -278,9 +284,18 @@ export const getDifferentialPairsForSimpleRouteJson = ({
     ] of positiveSrjConnectionNamesByCohort) {
       const negativeSrjConnectionName =
         negativeSrjConnectionNamesByCohort.get(cohort)!
+      const positive = orderedPathPointIdsByConnectionName?.get(
+        positiveSrjConnectionName,
+      )
+      const negative = orderedPathPointIdsByConnectionName?.get(
+        negativeSrjConnectionName,
+      )
       srjDifferentialPairs.push({
         connectionNames: [positiveSrjConnectionName, negativeSrjConnectionName],
         lengthTolerance,
+        ...(positive && negative && positive.length === negative.length
+          ? { paths: { positive, negative } }
+          : {}),
         ...(differentialPair._parsedProps.pcbTraceGap !== undefined
           ? { traceGap: differentialPair._parsedProps.pcbTraceGap }
           : {}),
