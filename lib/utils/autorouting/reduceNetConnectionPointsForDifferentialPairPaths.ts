@@ -1,4 +1,9 @@
-import type { SimpleRouteConnection, SrjPointId } from "./SimpleRouteJson"
+import type {
+  SimpleRouteConnection,
+  SingleLayerConnectionPoint,
+} from "./SimpleRouteJson"
+
+type SrjPointId = NonNullable<SingleLayerConnectionPoint["pointId"]>
 
 /**
  * Keep one net terminal per connected set of explicitly requested pair paths.

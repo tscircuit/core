@@ -1,11 +1,11 @@
 import type { SourcePort, SourceTrace } from "circuit-json"
 import type { DifferentialPair } from "lib/components/primitive-components/DifferentialPair"
 import type { Port } from "lib/components/primitive-components/Port/Port"
+import type { Trace } from "lib/components/primitive-components/Trace/Trace"
 import type {
   PcbGroupId,
   SimpleRouteConnection,
   SimpleRouteDifferentialPair,
-  SrjConnectionName,
   SrjPointId,
 } from "./SimpleRouteJson"
 
@@ -21,10 +21,6 @@ type GetDifferentialPairsParams = {
   srjConnections: SimpleRouteConnection[]
   differentialPairs: DifferentialPair[]
   sourceTraces: SourceTrace[]
-  orderedPathPointIdsByConnectionName?: ReadonlyMap<
-    SrjConnectionName,
-    SrjPointId[]
-  >
   subcircuitId?: SubcircuitId | null
 }
 
@@ -129,7 +125,7 @@ export const getDifferentialPairSourceTraceOrThrow = ({
   }
 }
 
-const getDifferentialPairSrjConnectionNamesByCohortOrThrow = ({
+const getDifferentialPairSrjConnectionsByCohortOrThrow = ({
   srjConnections,
   differentialPairName,
   differentialPairSourceTraces,
@@ -138,7 +134,7 @@ const getDifferentialPairSrjConnectionNamesByCohortOrThrow = ({
   traceNameOrPortSelector,
 }: GetDifferentialPairSrjConnectionNamesByCohortOrThrowParams): Map<
   DifferentialPairSrjConnectionCohort,
-  SrjConnectionName
+  SimpleRouteConnection
 > => {
   const differentialPairSourcePortIds = new Set<SourcePortId>()
   const differentialPairSourceNetIds = new Set<SourceNetId>()
@@ -178,13 +174,13 @@ const getDifferentialPairSrjConnectionNamesByCohortOrThrow = ({
     )
   }
 
-  const connectionNamesByCohort = new Map<
+  const connectionsByCohort = new Map<
     DifferentialPairSrjConnectionCohort,
-    SrjConnectionName
+    SimpleRouteConnection
   >()
   for (const srjConnection of matchingSrjConnections) {
     const cohort = srjConnection.routingPcbGroupId
-    if (connectionNamesByCohort.has(cohort)) {
+    if (connectionsByCohort.has(cohort)) {
       const cohortLabel =
         cohort === undefined
           ? "the global routing cohort"
@@ -193,10 +189,36 @@ const getDifferentialPairSrjConnectionNamesByCohortOrThrow = ({
         `Trace name or port selector "${traceNameOrPortSelector}" matches multiple SRJ connections in ${cohortLabel} for differential pair "${differentialPairName}"`,
       )
     }
-    connectionNamesByCohort.set(cohort, srjConnection.name)
+    connectionsByCohort.set(cohort, srjConnection)
   }
 
-  return connectionNamesByCohort
+  return connectionsByCohort
+}
+
+const getDeclaredSrjPathPointIds = (
+  traceComponents: Trace[],
+  connection: SimpleRouteConnection,
+): SrjPointId[] | undefined => {
+  if (!connection.source_trace_id) return undefined
+  const trace = traceComponents.find(
+    (trace) => trace.source_trace_id === connection.source_trace_id,
+  )
+  if (!trace || !("path" in trace.props)) return undefined
+
+  const ports = trace._findConnectedPorts().ports
+  if (!ports || ports.length < 3) return undefined
+  const connectionPointIds = new Set(
+    connection.pointsToConnect.map((point) => point.pointId),
+  )
+  const pathPointIds: SrjPointId[] = []
+  for (const port of ports) {
+    if (!port.pcb_port_id || !connectionPointIds.has(port.pcb_port_id))
+      return undefined
+    pathPointIds.push(port.pcb_port_id)
+  }
+  return new Set(pathPointIds).size === pathPointIds.length
+    ? pathPointIds
+    : undefined
 }
 
 const getDifferentialPairCohortLabel = (
@@ -211,13 +233,13 @@ export const getDifferentialPairsForSimpleRouteJson = ({
   srjConnections,
   differentialPairs,
   sourceTraces,
-  orderedPathPointIdsByConnectionName,
   subcircuitId,
 }: GetDifferentialPairsParams): SimpleRouteDifferentialPair[] | undefined => {
   const srjDifferentialPairs: SimpleRouteDifferentialPair[] = []
   for (const differentialPair of differentialPairs) {
+    const differentialPairSubcircuit = differentialPair.getSubcircuit()
     const differentialPairSubcircuitId =
-      differentialPair.getSubcircuit().subcircuit_id
+      differentialPairSubcircuit.subcircuit_id
     if (subcircuitId && differentialPairSubcircuitId !== subcircuitId) {
       continue
     }
@@ -241,8 +263,8 @@ export const getDifferentialPairsForSimpleRouteJson = ({
       traceNameOrPortSelector: negativeTraceNameOrPortSelector,
     })
 
-    const positiveSrjConnectionNamesByCohort =
-      getDifferentialPairSrjConnectionNamesByCohortOrThrow({
+    const positiveSrjConnectionsByCohort =
+      getDifferentialPairSrjConnectionsByCohortOrThrow({
         srjConnections,
         differentialPairName: differentialPair.name,
         differentialPairSourceTraces,
@@ -251,8 +273,8 @@ export const getDifferentialPairsForSimpleRouteJson = ({
           positiveSourceTrace.subcircuitConnectivityMapKey,
         traceNameOrPortSelector: positiveTraceNameOrPortSelector,
       })
-    const negativeSrjConnectionNamesByCohort =
-      getDifferentialPairSrjConnectionNamesByCohortOrThrow({
+    const negativeSrjConnectionsByCohort =
+      getDifferentialPairSrjConnectionsByCohortOrThrow({
         srjConnections,
         differentialPairName: differentialPair.name,
         differentialPairSourceTraces,
@@ -266,32 +288,41 @@ export const getDifferentialPairsForSimpleRouteJson = ({
     // maxLengthSkew unchanged.
     const lengthTolerance: number =
       differentialPair._parsedProps.maxLengthSkew ?? 0.1
-    for (const cohort of positiveSrjConnectionNamesByCohort.keys()) {
-      if (negativeSrjConnectionNamesByCohort.has(cohort)) continue
+    for (const cohort of positiveSrjConnectionsByCohort.keys()) {
+      if (negativeSrjConnectionsByCohort.has(cohort)) continue
       throw new Error(
         `Differential pair "${differentialPair.name}" has a positive SRJ connection in ${getDifferentialPairCohortLabel(cohort)} without a matching negative SRJ connection`,
       )
     }
-    for (const cohort of negativeSrjConnectionNamesByCohort.keys()) {
-      if (positiveSrjConnectionNamesByCohort.has(cohort)) continue
+    for (const cohort of negativeSrjConnectionsByCohort.keys()) {
+      if (positiveSrjConnectionsByCohort.has(cohort)) continue
       throw new Error(
         `Differential pair "${differentialPair.name}" has a negative SRJ connection in ${getDifferentialPairCohortLabel(cohort)} without a matching positive SRJ connection`,
       )
     }
     for (const [
       cohort,
-      positiveSrjConnectionName,
-    ] of positiveSrjConnectionNamesByCohort) {
-      const negativeSrjConnectionName =
-        negativeSrjConnectionNamesByCohort.get(cohort)!
-      const positive = orderedPathPointIdsByConnectionName?.get(
-        positiveSrjConnectionName,
+      positiveSrjConnection,
+    ] of positiveSrjConnectionsByCohort) {
+      const negativeSrjConnection = negativeSrjConnectionsByCohort.get(cohort)!
+      const traceComponents =
+        positiveSrjConnection.pointsToConnect.length > 2 &&
+        negativeSrjConnection.pointsToConnect.length > 2
+          ? differentialPairSubcircuit.selectAll<Trace>("trace")
+          : []
+      const positive = getDeclaredSrjPathPointIds(
+        traceComponents,
+        positiveSrjConnection,
       )
-      const negative = orderedPathPointIdsByConnectionName?.get(
-        negativeSrjConnectionName,
+      const negative = getDeclaredSrjPathPointIds(
+        traceComponents,
+        negativeSrjConnection,
       )
       srjDifferentialPairs.push({
-        connectionNames: [positiveSrjConnectionName, negativeSrjConnectionName],
+        connectionNames: [
+          positiveSrjConnection.name,
+          negativeSrjConnection.name,
+        ],
         lengthTolerance,
         ...(positive && negative && positive.length === negative.length
           ? { paths: { positive, negative } }
