@@ -1,7 +1,6 @@
 import { expect, test } from "bun:test"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
-// Use the canonical schema from circuit-json #989 until its nominal-width field ships.
-import { any_circuit_element } from "circuit-json-width-preview"
+import { any_circuit_element } from "circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("validated board widths survive save, load and subcircuit inflation", async () => {
