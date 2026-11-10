@@ -65,11 +65,6 @@ const getDifferentialPairSrjConnectionNamesByCohortOrThrow = ({
         `${selectorDescription} has fewer than two routable terminals in differential pair "${differentialPair.name}"`,
       )
     }
-    if (sourcePortIds.size !== 2) {
-      throw new Error(
-        `${selectorDescription} must have exactly two terminals in differential pair "${differentialPair.name}"`,
-      )
-    }
     const connectedTraceIds = new Set(
       connectedTraces.map((trace) => trace.source_trace_id),
     )
