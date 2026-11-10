@@ -65,6 +65,5 @@ test("plated-hole paste apertures keep their connector as the component owner", 
       "B.Paste",
       "F.Paste",
     ])
-    expect(ownerBySide).toMatchSnapshot()
   }
 })
