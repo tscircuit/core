@@ -5,7 +5,6 @@ import {
   doBoundsOverlap,
   getBoundingBox,
 } from "@tscircuit/math-utils"
-import type { PcbStyle } from "@tscircuit/props"
 import type { SilkscreenText } from "lib/components/primitive-components/SilkscreenText"
 import type { NormalComponent } from "./NormalComponent"
 import { getPcbTextBounds } from "./utils/getPcbTextBounds"
@@ -36,9 +35,7 @@ const doTextBoundsOverlapSignificantly = (
 export function NormalComponent_doInitialSilkscreenOverlapAdjustment(
   component: NormalComponent<any, any>,
 ): void {
-  const inheritedPcbStyle = component.getInheritedProperty("pcbStyle") as
-    | PcbStyle
-    | undefined
+  const inheritedPcbStyle = component.getInheritedProperty("pcbStyle")
   const silkscreenTextPosition = inheritedPcbStyle?.silkscreenTextPosition
 
   if (
@@ -50,12 +47,11 @@ export function NormalComponent_doInitialSilkscreenOverlapAdjustment(
     return
   }
 
+  const isExplicitOutsideMode = silkscreenTextPosition === "outside"
+
   // Only adjust silkscreen for components that have this feature enabled
   // or when pcbStyle.silkscreenTextPosition === "outside" is set
-  if (
-    !component._adjustSilkscreenTextAutomatically &&
-    silkscreenTextPosition !== "outside"
-  ) {
+  if (!component._adjustSilkscreenTextAutomatically && !isExplicitOutsideMode) {
     return
   }
 
@@ -107,14 +103,20 @@ export function NormalComponent_doInitialSilkscreenOverlapAdjustment(
     return getBoundingBox(box)
   })
 
-  const board = db.pcb_board.list()[0]
+  const boards = db.pcb_board.list()
+  const board = boards.length === 1 ? boards[0] : undefined
   const rawBoardBounds =
-    board && board.width > 0 && board.height > 0
+    board &&
+    (board.width ?? 0) > 0 &&
+    (board.height ?? 0) > 0 &&
+    (!board.outline || board.outline.length === 0)
       ? getBoardBounds(board)
       : undefined
-  // Only enforce board bounds when the component itself lies inside the board
+  // Only enforce board bounds in explicit outside mode when the component itself lies inside the board
   const boardBounds =
-    rawBoardBounds && isInsideBounds(ownComponentBounds, rawBoardBounds)
+    isExplicitOutsideMode &&
+    rawBoardBounds &&
+    isInsideBounds(ownComponentBounds, rawBoardBounds)
       ? rawBoardBounds
       : undefined
 
@@ -166,15 +168,16 @@ export function NormalComponent_doInitialSilkscreenOverlapAdjustment(
         }
       })
 
-    const isPositionClear = (candidateBounds: Bounds): boolean => {
+    const hasComponentOverlap = (candidateBounds: Bounds): boolean =>
+      obstacleBounds.some((obstacle) =>
+        doBoundsOverlap(candidateBounds, obstacle),
+      )
+
+    const isPositionClearStrict = (candidateBounds: Bounds): boolean => {
       if (boardBounds && !isInsideBounds(candidateBounds, boardBounds)) {
         return false
       }
-      if (
-        obstacleBounds.some((obstacle) =>
-          doBoundsOverlap(candidateBounds, obstacle),
-        )
-      ) {
+      if (hasComponentOverlap(candidateBounds)) {
         return false
       }
       if (
@@ -187,8 +190,11 @@ export function NormalComponent_doInitialSilkscreenOverlapAdjustment(
       return true
     }
 
-    // Check if current text position is already clear
-    if (isPositionClear(textBoundsBox)) {
+    const currentNeedsAdjustment = isExplicitOutsideMode
+      ? !isPositionClearStrict(textBoundsBox)
+      : hasComponentOverlap(textBoundsBox)
+
+    if (!currentNeedsAdjustment) {
       continue
     }
 
@@ -202,7 +208,11 @@ export function NormalComponent_doInitialSilkscreenOverlapAdjustment(
       height: textBounds.height,
     })
 
-    if (isPositionClear(flippedTextBounds)) {
+    const flippedIsClear = isExplicitOutsideMode
+      ? isPositionClearStrict(flippedTextBounds)
+      : !hasComponentOverlap(flippedTextBounds)
+
+    if (flippedIsClear) {
       db.pcb_silkscreen_text.update(silkscreenText.pcb_silkscreen_text_id, {
         anchor_position: {
           x: flippedX,
@@ -212,24 +222,7 @@ export function NormalComponent_doInitialSilkscreenOverlapAdjustment(
       continue
     }
 
-    // When simple flip is also blocked, try orthogonal/diagonal candidate positions
-    // if pcbStyle.silkscreenTextPosition === "outside", or if text collides with
-    // board edge / another silkscreen label, or if an unrotated label is sandwiched
-    const hasBoardOrLabelCollision =
-      (boardBounds !== undefined &&
-        (!isInsideBounds(textBoundsBox, boardBounds) ||
-          !isInsideBounds(flippedTextBounds, boardBounds))) ||
-      otherTextBounds.some(
-        (other) =>
-          doTextBoundsOverlapSignificantly(textBoundsBox, other) ||
-          doTextBoundsOverlapSignificantly(flippedTextBounds, other),
-      )
-
-    if (
-      silkscreenTextPosition !== "outside" &&
-      !hasBoardOrLabelCollision &&
-      (silkscreenText.ccw_rotation ?? 0) % 180 !== 0
-    ) {
+    if (!isExplicitOutsideMode) {
       continue
     }
 
@@ -281,7 +274,7 @@ export function NormalComponent_doInitialSilkscreenOverlapAdjustment(
       }
       if (
         !doBoundsOverlap(candidateBounds, ownComponentBounds) &&
-        isPositionClear(candidateBounds)
+        isPositionClearStrict(candidateBounds)
       ) {
         db.pcb_silkscreen_text.update(silkscreenText.pcb_silkscreen_text_id, {
           anchor_position: {

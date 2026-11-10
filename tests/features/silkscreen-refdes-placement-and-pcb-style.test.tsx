@@ -7,7 +7,11 @@ test("moves refdes label to orthogonal side when both default and flipped positi
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="20mm" height="20mm">
+    <board
+      width="20mm"
+      height="20mm"
+      pcbStyle={{ silkscreenTextPosition: "outside" }}
+    >
       <resistor name="R1" resistance="10k" footprint="0402" pcbX={0} pcbY={0} />
       <resistor
         name="R_TOP"
@@ -41,7 +45,11 @@ test("avoids colliding with another component's silkscreen label and stays insid
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="12mm" height="6mm">
+    <board
+      width="12mm"
+      height="6mm"
+      pcbStyle={{ silkscreenTextPosition: "outside" }}
+    >
       {/* Near top board edge (y = +3mm): default top label would extend outside board */}
       <resistor
         name="R_EDGE"

@@ -79,9 +79,7 @@ export class SilkscreenText extends PrimitiveComponent<
       component: this,
     })
 
-    const inheritedPcbStyle = this.getInheritedProperty("pcbStyle") as
-      | PcbStyle
-      | undefined
+    const inheritedPcbStyle = this.getInheritedProperty("pcbStyle")
     const silkscreenTextPosition = inheritedPcbStyle?.silkscreenTextPosition
 
     const resolvedPcbSxVisibility = resolvePcbProperty({
@@ -103,7 +101,7 @@ export class SilkscreenText extends PrimitiveComponent<
     const fontSize =
       props.fontSize ??
       resolvedPcbSxFontSize ??
-      inheritedPcbStyle?.silkscreenFontSize ??
+      this.getInheritedProperty("pcbStyle")?.silkscreenFontSize ??
       this._footprinterFontSize ??
       1
 
@@ -143,8 +141,16 @@ export class SilkscreenText extends PrimitiveComponent<
               typeof silkscreenTextPosition === "object" &&
               silkscreenTextPosition !== null
             ? applyToPoint(parentTransform, {
-                x: (props.pcbX ?? 0) + silkscreenTextPosition.offsetX,
-                y: (props.pcbY ?? 0) + silkscreenTextPosition.offsetY,
+                x:
+                  this.resolvePcbCoordinate({
+                    rawValue: props.pcbX ?? 0,
+                    axis: "pcbX",
+                  }) + silkscreenTextPosition.offsetX,
+                y:
+                  this.resolvePcbCoordinate({
+                    rawValue: props.pcbY ?? 0,
+                    axis: "pcbY",
+                  }) + silkscreenTextPosition.offsetY,
               })
             : this._getGlobalPcbPositionBeforeLayout()
 
