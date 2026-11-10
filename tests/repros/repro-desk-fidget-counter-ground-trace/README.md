@@ -13,3 +13,5 @@ bun test tests/repros/repro-desk-fidget-counter-ground-trace
 ```
 
 The reproduction branch intentionally records the current incorrect display. The dependent fix branch corrects core's containment test and updates this same snapshot to show the continuation. Fixture source: `dist/index/circuit.json` from v6.0.3, SHA-256 `3cb22ecf107f556705a7776302eec3a1c8fe70da766bf196ae2bbbc8d74f0a75`; board source repository [rushabhcodes/desk-fidget-counter](https://github.com/rushabhcodes/desk-fidget-counter), MIT license.
+
+The same reproduction PR also includes `tests/components/primitive-components/copperpour-trace-visibility.test.ts` and its SVG snapshot. Those ten cases show the existing flags and label incorrect hiding explicitly. They assert copper preservation while recording the original display; the fix layer adds assertions for the expected visibility and updates the same SVG to show the correction.
