@@ -1,6 +1,5 @@
 import type { PcbTraceRoutePoint } from "circuit-json"
 
-/** Remove only derived visibility flags, preserving every physical route field. */
 export const getTraceRouteWithoutPourAnnotations = (
   route: PcbTraceRoutePoint[],
 ) =>

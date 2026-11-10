@@ -6,7 +6,6 @@ import { convertCircuitJsonToPcbSvg } from "circuit-to-svg"
 import { markTraceSegmentsInsideCopperPour } from "lib/components/primitive-components/CopperPour/utils/mark-trace-segments-inside-copper-pour"
 import { getTraceRouteWithoutPourAnnotations } from "tests/fixtures/get-trace-route-without-pour-annotations"
 
-/** Board-world points in mm: +X right, +Y up, +Z above the PCB (right handed). */
 test("desk fidget counter ground continuation with copper pours hidden", async () => {
   const circuitJson: AnyCircuitElement[] = JSON.parse(
     readFileSync(
@@ -32,7 +31,6 @@ test("desk fidget counter ground continuation with copper pours hidden", async (
 
   const continuation = db.pcb_trace.get("pcb_trace_external_236")!
   const diagonal = db.pcb_trace.get("pcb_trace_external_235")!
-  // This same-layer copper junction exists even when its continuation is hidden.
   const junction = { x: 17.4804, y: 27.1958, layer: "top" }
   expect(continuation.route[1]).toMatchObject(junction)
   expect(diagonal.route[0]).toMatchObject(junction)
@@ -63,7 +61,7 @@ test("desk fidget counter ground continuation with copper pours hidden", async (
     color: "#cbd5e1",
     text,
   }))
-  // Classify against the full board, then hide pours only in the rendered copy.
+  // Hide pour fills only after classification.
   const drawing = db
     .toArray()
     .filter((record) => record.type !== "pcb_copper_pour")

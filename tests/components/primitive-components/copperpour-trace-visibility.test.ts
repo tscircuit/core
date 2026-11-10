@@ -260,9 +260,6 @@ test("copper-pour trace visibility across boundary cases", async () => {
         )
       }),
     )
-    // This branch records existing visibility, including the known false flags.
-    // The dependent fix adds assertions against the expected visibility.
-    // The annotation operation must preserve every physical route field.
     expect(
       annotatedTraces.map(({ route }) =>
         getTraceRouteWithoutPourAnnotations(route),
@@ -289,7 +286,6 @@ test("copper-pour trace visibility across boundary cases", async () => {
         text,
       }),
     )
-    // Translate rendering copies into a grid; all classification uses original points.
     const caseDrawing: AnyCircuitElement[] = [
       ...annotatedTraces.map((trace, traceIndex) => ({
         ...trace,
