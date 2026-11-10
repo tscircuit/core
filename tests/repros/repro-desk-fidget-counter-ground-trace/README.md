@@ -4,7 +4,7 @@ This fixture preserves all source and PCB records from the public [desk-fidget-c
 
 The diagonal near C1 joins a vertical GND continuation at (17.4804, 27.1958) on the top layer. The continuation reaches (17.4804, 14.0995), so the physical junction is continuous. Core's five equally spaced containment samples all lie inside the pour, but the line crosses an actual 0.500697 mm notch between Y=24.249652 and Y=24.750348. Both endpoints receive an inside-pour flag and the renderer skips the entire continuation.
 
-The snapshot shows the full board and a close-up with pour fills hidden, matching the reported viewing condition. Classification still uses every original pour polygon before fills are removed from the rendering copy. The test separately verifies that annotation never changes the actual circuit geometry.
+The snapshot focuses on the reported C1 trace with pour fills hidden. The complete board remains in the fixture. Classification still uses every original pour polygon before fills are removed from the rendering copy. The test separately verifies that annotation never changes the actual circuit geometry.
 
 Run with the repository's Bun version:
 

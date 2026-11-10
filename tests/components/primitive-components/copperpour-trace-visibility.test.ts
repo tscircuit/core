@@ -1,16 +1,19 @@
 import { expect, test } from "bun:test"
-import { su } from "@tscircuit/circuit-json-util"
+import { su, transformPcbElements } from "@tscircuit/circuit-json-util"
 import type {
+  AnyCircuitElement,
   PcbCopperPourBRep,
   PcbCopperPourRect,
-  PcbNoteLine,
+  PcbNotePath,
+  PcbNoteText,
   PcbTrace,
   PcbTraceRoutePointWire,
+  Point,
   SourceTrace,
 } from "circuit-json"
 import { convertCircuitJsonToPcbSvg } from "circuit-to-svg"
 import { markTraceSegmentsInsideCopperPour } from "lib/components/primitive-components/CopperPour/utils/mark-trace-segments-inside-copper-pour"
-import { stackSvgsHorizontally, stackSvgsVertically } from "stack-svgs"
+import { getTraceRouteWithoutPourAnnotations } from "tests/fixtures/get-trace-route-without-pour-annotations"
 import {
   applyToPoint,
   compose,
@@ -46,52 +49,44 @@ const pour = (
   brep_shape: { outer_ring: ring(outer), inner_rings: holes.map(ring) },
 })
 
-/** Draw pour boundaries as notes in board-world XY mm (+X right, +Y up, +Z above). */
+/** Render-only board-world points in mm: +X right, +Y up, +Z above (right handed). */
 const getPourBoundaryNotes = (
   copperPour: PcbCopperPourBRep | PcbCopperPourRect,
-): PcbNoteLine[] => {
-  const rectangleTransform =
-    copperPour.shape === "rect"
-      ? compose(
-          translate(copperPour.center.x, copperPour.center.y),
-          rotateDEG(copperPour.rotation ?? 0),
-        )
-      : undefined
-  const boundaryRings =
-    copperPour.shape === "brep"
-      ? [
-          copperPour.brep_shape.outer_ring.vertices,
-          ...copperPour.brep_shape.inner_rings.map((hole) => hole.vertices),
-        ]
-      : [
-          [
-            [-1, -1],
-            [1, -1],
-            [1, 1],
-            [-1, 1],
-          ].map(([x, y]) =>
-            applyToPoint(rectangleTransform!, {
-              x: (x * copperPour.width) / 2,
-              y: (y * copperPour.height) / 2,
-            }),
-          ),
-        ]
-  return boundaryRings.flatMap((boundary, ringIndex) =>
-    boundary.map((start, edgeIndex) => {
-      const end = boundary[(edgeIndex + 1) % boundary.length]
-      return {
-        type: "pcb_note_line",
-        pcb_note_line_id: `boundary_${ringIndex}_${edgeIndex}`,
-        layer: "top",
-        x1: start.x,
-        y1: start.y,
-        x2: end.x,
-        y2: end.y,
-        stroke_width: 0.06,
-        color: "#64748b",
-      }
-    }),
-  )
+  caseIndex: number,
+): PcbNotePath[] => {
+  let boundaries: Point[][]
+  if (copperPour.shape === "brep") {
+    boundaries = [
+      copperPour.brep_shape.outer_ring.vertices,
+      ...copperPour.brep_shape.inner_rings.map((hole) => hole.vertices),
+    ]
+  } else {
+    const transform = compose(
+      translate(copperPour.center.x, copperPour.center.y),
+      rotateDEG(copperPour.rotation ?? 0),
+    )
+    boundaries = [
+      [
+        [-1, -1],
+        [1, -1],
+        [1, 1],
+        [-1, 1],
+      ].map(([x, y]) =>
+        applyToPoint(transform, {
+          x: (x * copperPour.width) / 2,
+          y: (y * copperPour.height) / 2,
+        }),
+      ),
+    ]
+  }
+  return boundaries.map((boundary, ringIndex) => ({
+    type: "pcb_note_path",
+    pcb_note_path_id: `boundary_${caseIndex}_${ringIndex}`,
+    layer: "top",
+    route: [...boundary, boundary[0]].map(({ x, y }) => ({ x, y })),
+    stroke_width: 0.06,
+    color: "#64748b",
+  }))
 }
 
 test("copper-pour trace visibility across boundary cases", async () => {
@@ -200,8 +195,8 @@ test("copper-pour trace visibility across boundary cases", async () => {
       hidden: [false, false],
     },
   ]
-  const panels: string[] = []
-  for (const scenario of cases) {
+  const drawing: AnyCircuitElement[] = []
+  for (const [caseIndex, scenario] of cases.entries()) {
     const sourceTrace: SourceTrace = {
       type: "source_trace",
       source_trace_id: "supply_trace",
@@ -231,54 +226,49 @@ test("copper-pour trace visibility across boundary cases", async () => {
     // This branch records existing visibility, including the known false flags.
     // The dependent fix adds assertions against the expected visibility.
     // The annotation operation must preserve every physical route field.
-    const unannotatedRoute = annotatedRoute.map((routePoint) => {
-      if (routePoint.route_type !== "wire" && routePoint.route_type !== "via")
-        return routePoint
-      const { is_inside_copper_pour, copper_pour_id, ...physicalRoutePoint } =
-        routePoint
-      return physicalRoutePoint
-    })
-    expect(unannotatedRoute, scenario.name).toEqual(scenario.route)
+    expect(
+      getTraceRouteWithoutPourAnnotations(annotatedRoute),
+      scenario.name,
+    ).toEqual(scenario.route)
 
-    // Show the actual flags with fills hidden, as in the reported PCB view.
-    // Boundary notes explain the geometry without masking another net/layer.
-    const svg = convertCircuitJsonToPcbSvg(
-      [
-        ...db.toArray().filter((element) => element.type !== "pcb_copper_pour"),
-        ...getPourBoundaryNotes(scenario.copperPour),
-      ],
-      {
-        width: 420,
-        height: 320,
-        includeVersion: false,
-        viewport: { minX: -1, maxX: 13, minY: -1, maxY: 11 },
-      },
-    )
     const correctVisibility = hiddenSegments.every(
-      (hidden, segmentIndex) => hidden === scenario.hidden[segmentIndex],
+      (hidden, index) => hidden === scenario.hidden[index],
     )
-    const description = !correctVisibility
-      ? "BUG: exposed wire is hidden"
-      : hiddenSegments.some(Boolean)
-        ? "Covered: may hide wire"
-        : "Visible: must not hide wire"
-    const caption = `<svg xmlns="http://www.w3.org/2000/svg" width="420" height="78">
-      <rect width="420" height="78" fill="#172131" />
-      <text x="12" y="28" fill="white" font-size="17">${scenario.name}</text>
-      <text x="12" y="57" fill="#cbd5e1" font-size="13">${description}</text>
-    </svg>`
-    const clippedSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="420" height="320">${svg.replace("<svg ", '<svg overflow="hidden" ')}</svg>`
-    panels.push(
-      stackSvgsVertically([caption, clippedSvg], {
-        gap: 0,
-        normalizeSize: false,
+    let description = "visible"
+    if (!correctVisibility) description = "BUG: hidden"
+    else if (hiddenSegments.some(Boolean)) description = "covered"
+    const labels: PcbNoteText[] = [scenario.name, description].map(
+      (text, line) => ({
+        type: "pcb_note_text",
+        pcb_note_text_id: `case_${caseIndex}_label_${line}`,
+        layer: "top",
+        font: "tscircuit2024",
+        font_size: line === 0 ? 0.85 : 0.6,
+        anchor_position: { x: 6, y: 12 - line * 0.95 },
+        anchor_alignment: "center",
+        color: "#cbd5e1",
+        text,
       }),
     )
+    // Translate rendering copies into a grid; all classification uses original points.
+    const caseDrawing: AnyCircuitElement[] = [
+      { ...db.pcb_trace.get("trace")!, pcb_trace_id: `case_${caseIndex}` },
+      ...getPourBoundaryNotes(scenario.copperPour, caseIndex),
+      ...labels,
+    ]
+    drawing.push(
+      ...transformPcbElements(
+        structuredClone(caseDrawing),
+        translate((caseIndex % 5) * 15, -Math.floor(caseIndex / 5) * 16),
+      ),
+    )
   }
-  const rows = [panels.slice(0, 5), panels.slice(5)].map((row) =>
-    stackSvgsHorizontally(row, { gap: 12, normalizeSize: false }),
-  )
   await expect(
-    stackSvgsVertically(rows, { gap: 12, normalizeSize: false }),
+    convertCircuitJsonToPcbSvg(drawing, {
+      width: 1400,
+      height: 570,
+      includeVersion: false,
+      viewport: { minX: -1, maxX: 73, minY: -17, maxY: 13 },
+    }),
   ).toMatchSvgSnapshot(import.meta.path, undefined, { diffThresholdPercent: 0 })
 })
