@@ -1,9 +1,9 @@
 import { expect, test } from "bun:test"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { createElement } from "react"
+import { renderCircuitJsonOrError } from "tests/fixtures/render-circuit-json-or-error"
 
 test("panel tab count and keepouts control where tabs are placed", async () => {
-  const { circuit } = getTestFixture()
-  circuit.add(
+  const circuitJson = await renderCircuitJsonOrError(
     <panel
       layoutMode="grid"
       panelizationMethod="tab-routing"
@@ -13,15 +13,22 @@ test("panel tab count and keepouts control where tabs are placed", async () => {
       <board name="B1" width="20mm" height="20mm" routingDisabled>
         <pcbnotetext text="2 tabs/edge; top keepout 0–7 mm" fontSize={0.6} />
       </board>
-      <paneltabkeepout boardName="B1" boardEdge="top" from="0mm" to="7mm" />
+      {createElement("paneltabkeepout", {
+        boardName: "B1",
+        boardEdge: "top",
+        from: "0mm",
+        to: "7mm",
+      })}
     </panel>,
   )
-  await circuit.renderUntilSettled()
 
-  await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
+  await expect(circuitJson).toMatchPcbSnapshot(import.meta.path, {
     showSolderMask: true,
     showPcbGroups: false,
   })
-  // Two tabs on each edge, except the first top tab whose span hits the keepout.
-  expect(circuit.db.pcb_hole.list()).toHaveLength(14)
+  // Mouse-bite holes: 2 per tab, for 2 tabs on each of 4 edges minus the
+  // top tab inside the keepout.
+  expect(
+    circuitJson.filter((element) => element.type === "pcb_hole").length,
+  ).toMatchInlineSnapshot(`14`)
 })
