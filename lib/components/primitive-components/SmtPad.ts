@@ -12,7 +12,12 @@ import {
   type PcbSmtPadRotatedPill,
   type PcbSolderPastePolygon,
 } from "circuit-json"
-import { applyToPoint, decomposeTSR } from "transformation-matrix"
+import {
+  applyToPoint,
+  compose,
+  decomposeTSR,
+  rotate,
+} from "transformation-matrix"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import type { Port } from "./Port"
 import { selectPortForPcbPrimitive } from "./Port/selectPortForPcbPrimitive"
@@ -86,17 +91,44 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
   }
 
   /**
-   * Polygon vertices are pad-local points in mm (+X right, +Y top). Return
-   * their axis-aligned bounds in the right-handed board-world PCB frame.
+   * Polygon vertices and rotated pad shapes use pad-local points in mm
+   * (+X right, +Y top). Return their axis-aligned bounds in the right-handed
+   * board-world PCB frame without double-applying local ccwRotation.
    */
   _getPcbBoundsBeforeLayout() {
     const { _parsedProps: props } = this
-    if (props.shape !== "polygon") return super._getPcbBoundsBeforeLayout()
+    let localPoints: Array<{ x: number; y: number }>
+    let localRotationDegrees = 0
 
-    // Same paired transform as doInitialPcbPrimitiveRender: a polygon's
-    // authored origin need not be the center of its vertices.
-    const padToBoardTransform = this._computePcbGlobalTransformBeforeLayout()
-    const boardPoints = props.points.map((point) =>
+    if (props.shape === "polygon") {
+      // Same paired transform as doInitialPcbPrimitiveRender: a polygon's
+      // authored origin need not be the center of its vertices.
+      localPoints = props.points
+    } else if (
+      props.shape === "rotated_rect" ||
+      props.shape === "rotated_pill"
+    ) {
+      // Compose local ccwRotation with the parent transform once; delegating
+      // to super would rotate getPcbSize()'s already-rotated AABB a second time.
+      const halfWidth = props.width! / 2
+      const halfHeight = props.height! / 2
+      localPoints = [
+        { x: -halfWidth, y: -halfHeight },
+        { x: halfWidth, y: -halfHeight },
+        { x: halfWidth, y: halfHeight },
+        { x: -halfWidth, y: halfHeight },
+      ]
+      localRotationDegrees = props.ccwRotation ?? 0
+    } else {
+      return super._getPcbBoundsBeforeLayout()
+    }
+
+    const baseTransform = this._computePcbGlobalTransformBeforeLayout()
+    const padToBoardTransform =
+      localRotationDegrees !== 0
+        ? compose(baseTransform, rotate((localRotationDegrees * Math.PI) / 180))
+        : baseTransform
+    const boardPoints = localPoints.map((point) =>
       applyToPoint(padToBoardTransform, point),
     )
     const bounds = getBoundsFromPoints(boardPoints)!
