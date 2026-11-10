@@ -109,7 +109,9 @@ export function getAutoroutingPhasePcbTracePaths({
             continue
           const port = portsByPcbPortId.get(terminal.pcb_port_id)
           if (!port || usedPorts.has(port)) continue
-          const selector = terminal.port_selector ?? port.getPortSelector()
+          // SRJ labels identify autorouter terminals; saved paths use the
+          // physical port's canonical selector, including its alias checks.
+          const selector = port.getPortSelector()
           if (subcircuit.selectOne(selector, { type: "port" }) !== port) {
             throw new Error(`PCB port selector is not unique: ${selector}`)
           }
