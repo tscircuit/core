@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test.failing(
-  "pcbtrace infers wire fields from its layer and thickness props",
+  "pcbtrace infers wire fields from component-level layer and thickness props",
   async () => {
     const { circuit } = getTestFixture()
     circuit.add(
