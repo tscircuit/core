@@ -1,7 +1,19 @@
-import type { PcbBoard, PcbCutout, PcbHoleCircle, Point } from "circuit-json"
 import * as Flatten from "@flatten-js/core"
-import { point, Polygon } from "@flatten-js/core"
+import { Polygon, point } from "@flatten-js/core"
+import type {
+  PcbBoard,
+  PcbCutout,
+  PcbCutoutPolygon,
+  PcbCutoutRect,
+  PcbHoleCircle,
+  Point,
+} from "circuit-json"
 import { generateContinuousPanelRoutingSlots } from "./generate-continuous-panel-routing-slots"
+import {
+  type PanelTabMouseBite,
+  getPanelMouseBitePositions,
+} from "./get-panel-mouse-bite-positions"
+import { preservePanelTabBridges } from "./preserve-panel-tab-bridges"
 
 export const DEFAULT_TAB_LENGTH = 5
 export const DEFAULT_TAB_WIDTH = 2
@@ -53,11 +65,6 @@ interface PanelOptions {
   mouseBites: boolean
 }
 
-interface MouseBite {
-  x: number
-  y: number
-}
-
 const generateCutoutsAndMousebitesForOutline = (
   outline: Point[],
   options: {
@@ -68,22 +75,24 @@ const generateCutoutsAndMousebitesForOutline = (
     mouseBiteHoleSpacing: number
   },
 ): {
-  tabCutouts: PcbCutout[]
-  mouseBiteHoles: Point[]
+  tabCutouts: (PcbCutoutRect | PcbCutoutPolygon)[]
+  mouseBites: PanelTabMouseBite[]
+  tabBridges: Point[][]
 } => {
   const {
     gapLength,
     cutoutWidth,
-    mouseBites,
+    mouseBites: useMouseBites,
     mouseBiteHoleDiameter,
     mouseBiteHoleSpacing,
   } = options
 
-  const tabCutouts: PcbCutout[] = []
-  const mouseBiteHoles: Point[] = []
+  const tabCutouts: (PcbCutoutRect | PcbCutoutPolygon)[] = []
+  const mouseBites: PanelTabMouseBite[] = []
+  const tabBridges: Point[][] = []
 
   if (outline.length < 2) {
-    return { tabCutouts, mouseBiteHoles }
+    return { tabCutouts, mouseBites, tabBridges }
   }
 
   if (
@@ -183,9 +192,21 @@ const generateCutoutsAndMousebitesForOutline = (
 
     const gapStartDist = (segmentLength - effectiveGapLength) / 2
     const gapEndDist = gapStartDist + effectiveGapLength
+    const extrusion = normalVec.multiply(cutoutWidth)
+    const tabStart = p1.translate(segmentDir.multiply(gapStartDist))
+    const tabEnd = p1.translate(segmentDir.multiply(gapEndDist))
+    const bridgeOutline = [
+      tabStart,
+      tabEnd,
+      // Two overlapping routing bands can occupy the entire board gap.
+      // Reach beyond both bands so the bridge joins a neighbor or the web.
+      tabEnd.translate(extrusion.multiply(2)),
+      tabStart.translate(extrusion.multiply(2)),
+    ].map(({ x, y }) => ({ x, y }))
+    if (effectiveGapLength > 1e-6) tabBridges.push(bridgeOutline)
 
     // Add mousebites in the gap
-    if (mouseBites) {
+    if (useMouseBites) {
       if (numBitesInGap > 0 && effectiveGapLength >= totalBitesLength) {
         const firstBiteCenterOffsetInGap =
           (effectiveGapLength - totalBitesLength) / 2 +
@@ -195,7 +216,11 @@ const generateCutoutsAndMousebitesForOutline = (
         for (let k = 0; k < numBitesInGap; k++) {
           const biteDist = firstBiteDistFromP1 + k * holeAndSpacing
           const pos = p1.translate(segmentDir.multiply(biteDist))
-          mouseBiteHoles.push({ x: pos.x, y: pos.y })
+          mouseBites.push({
+            boardEdge: { x: pos.x, y: pos.y },
+            outwardNormal: normalVec,
+            bridgeOutline,
+          })
         }
       }
     }
@@ -242,8 +267,6 @@ const generateCutoutsAndMousebitesForOutline = (
             { start: gapEndDist, end: segmentLength + end_ext },
           ]
 
-    const extrusion = normalVec.multiply(cutoutWidth)
-
     for (const part of cutoutParts) {
       const partLength = part.end - part.start
       if (partLength < 1e-6) continue
@@ -259,19 +282,23 @@ const generateCutoutsAndMousebitesForOutline = (
 
       tabCutouts.push({
         type: "pcb_cutout",
+        pcb_cutout_id: "panel_tab_slot",
         shape: "rect",
         center: { x: center.x, y: center.y },
         width,
         height,
         rotation: rotationDeg,
         corner_radius: cutoutWidth / 2,
-      } as any)
+      })
     }
   }
 
-  return { tabCutouts, mouseBiteHoles }
+  return { tabCutouts, mouseBites, tabBridges }
 }
 
+/** Generate slots and breakaway drills from circuit-world board positions in
+ * mm: +X right, +Y up, right-handed +Z above. Preserve each tab against all
+ * neighboring routing bands, with tabLength along an edge and tabWidth outward. */
 export function generatePanelTabsAndMouseBites(
   boards: PcbBoard[],
   options: PanelOptions,
@@ -279,8 +306,9 @@ export function generatePanelTabsAndMouseBites(
   tabCutouts: PcbCutout[]
   mouseBiteHoles: PcbHoleCircle[]
 } {
-  const finalTabCutouts: PcbCutout[] = []
-  const allMouseBites: MouseBite[] = []
+  const finalTabCutouts: (PcbCutoutRect | PcbCutoutPolygon)[] = []
+  const allMouseBites: PanelTabMouseBite[] = []
+  const tabBridges: Point[][] = []
 
   let { tabWidth, tabLength, mouseBites: useMouseBites } = options
 
@@ -330,37 +358,52 @@ export function generatePanelTabsAndMouseBites(
     return board
   })
 
+  const { diameter: mouseBiteDiameter, spacing: mouseBiteSpacing } =
+    getMouseBiteSize({ tabWidth })
   for (const board of processedBoards) {
     if (board.outline && board.outline.length > 0) {
-      const mouseBiteSize = getMouseBiteSize({ tabWidth })
-
       const generated = generateCutoutsAndMousebitesForOutline(board.outline, {
         gapLength: tabLength,
         cutoutWidth: tabWidth,
         mouseBites: useMouseBites,
-        mouseBiteHoleDiameter: mouseBiteSize.diameter,
-        mouseBiteHoleSpacing: mouseBiteSize.spacing,
+        mouseBiteHoleDiameter: mouseBiteDiameter,
+        mouseBiteHoleSpacing: mouseBiteSpacing,
       })
 
       finalTabCutouts.push(...generated.tabCutouts)
-      allMouseBites.push(...generated.mouseBiteHoles)
+      allMouseBites.push(...generated.mouseBites)
+      tabBridges.push(...generated.tabBridges)
     }
   }
 
-  const tabCutouts: PcbCutout[] = finalTabCutouts.map((tab, index) => ({
+  const tabCutouts: PcbCutout[] = preservePanelTabBridges(
+    finalTabCutouts,
+    tabBridges,
+  ).map((tab, index) => ({
     ...tab,
     pcb_cutout_id: `panel_tab_${index}`,
   }))
 
-  const mouseBiteDiameter = getMouseBiteSize({ tabWidth }).diameter
-  const mouseBiteHoles: PcbHoleCircle[] = allMouseBites.map((bite, index) => ({
-    type: "pcb_hole",
-    pcb_hole_id: `panel_mouse_bite_${index}`,
-    hole_shape: "circle",
-    hole_diameter: mouseBiteDiameter,
-    x: bite.x,
-    y: bite.y,
-  }))
+  let mouseBitePositions: Point[] = []
+  if (useMouseBites) {
+    mouseBitePositions = getPanelMouseBitePositions({
+      mouseBites: allMouseBites,
+      routingCutouts: generatePanelOutlineRoutingCutouts(processedBoards, {
+        cutoutWidth: tabWidth,
+      }),
+      minimumDrillPitch: mouseBiteDiameter + mouseBiteSpacing,
+    })
+  }
+  const mouseBiteHoles: PcbHoleCircle[] = mouseBitePositions.map(
+    (bite, index) => ({
+      type: "pcb_hole",
+      pcb_hole_id: `panel_mouse_bite_${index}`,
+      hole_shape: "circle",
+      hole_diameter: mouseBiteDiameter,
+      x: bite.x,
+      y: bite.y,
+    }),
+  )
 
   return {
     tabCutouts,
@@ -379,7 +422,7 @@ export function generatePanelTabsAndMouseBites(
 export function generatePanelOutlineRoutingCutouts(
   boards: PcbBoard[],
   options: { cutoutWidth: number },
-): PcbCutout[] {
+): (PcbCutoutRect | PcbCutoutPolygon)[] {
   const boardsWithOutlines = boards.map((board) => {
     if (
       (!board.outline || board.outline.length === 0) &&
