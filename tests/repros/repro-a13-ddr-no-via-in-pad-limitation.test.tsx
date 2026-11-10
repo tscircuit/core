@@ -30,16 +30,37 @@ test("A13 D0-D3 forbids drilled pads while retaining its clearance limitation", 
   expect(checkEachPcbPortConnectedToPcbTraces(dataChannel)).toEqual([])
   expect(checkViasInPads(json)).toEqual([])
 
-  // With these native dimensions, the inner RAM pads cannot escape without
-  // violating clearance or drilling a pad. Preserve that limit explicitly.
-  const padClearanceErrors = [
-    ...checkPadTraceClearance(json, { minClearance: 0.2 }),
-    ...checkViaPadClearance(json, { minClearance: 0.2 }),
+  // This negative fixture cannot escape the inner RAM pads at 0.2mm without
+  // drilling a pad. Circular-pad repair trades two tighter gaps for four wider
+  // ones. Limit exceptions to these escapes and require gaps above 0.06mm
+  // (the old minimum was 0.0607mm); unrelated violations must still fail.
+  const knownClearanceLimitations = [
+    { component: "U200", pad: "BALL_D3", trace: "DRAM_D2" },
+    { component: "U200", pad: "BALL_E2", trace: "DRAM_D2" },
+    { component: "U200", pad: "BALL_E3", trace: "DRAM_D2" },
+    { component: "U200", pad: "BALL_F9", trace: "DRAM_D3" },
   ]
+  const padClearanceErrors = checkPadTraceClearance(json, { minClearance: 0.2 })
+  expect(checkViaPadClearance(json, { minClearance: 0.2 })).toEqual([])
   expect(padClearanceErrors.length).toBeGreaterThan(0)
-  expect(padClearanceErrors.length).toBeLessThanOrEqual(3)
+  expect(padClearanceErrors.length).toBeLessThanOrEqual(
+    knownClearanceLimitations.length,
+  )
   for (const clearanceError of padClearanceErrors) {
-    expect(clearanceError.actual_clearance).toBeGreaterThan(0)
+    const pad = circuit.db.pcb_smtpad.get(clearanceError.pcb_pad_id)!
+    const pcbPort = circuit.db.pcb_port.get(pad.pcb_port_id!)!
+    const sourcePort = circuit.db.source_port.get(pcbPort.source_port_id)!
+    const sourceComponent = circuit.db.source_component.get(
+      sourcePort.source_component_id!,
+    )!
+    const pcbTrace = circuit.db.pcb_trace.get(clearanceError.pcb_trace_id)!
+    const sourceTrace = circuit.db.source_trace.get(pcbTrace.source_trace_id!)!
+    expect(knownClearanceLimitations).toContainEqual({
+      component: sourceComponent.name,
+      pad: sourcePort.name,
+      trace: sourceTrace.name!,
+    })
+    expect(clearanceError.actual_clearance).toBeGreaterThan(0.06)
   }
   const otherPhysicalErrors = [
     ...checkEachPcbTraceNonOverlapping(json, { minClearance: 0.2 }),
