@@ -27,8 +27,5 @@ test("routing input regenerated from serialized board data keeps the authored wi
   expect(
     srj.connections.map((connection) => connection.nominalTraceWidth),
   ).toEqual([0.35, 0.55])
-  expect({
-    minimum: srj.minTraceWidth,
-    widths: srj.connections.map((connection) => connection.nominalTraceWidth),
-  }).toMatchSnapshot()
+  expect(srj.minTraceWidth).toBe(0.1)
 })
