@@ -1,14 +1,20 @@
-import { netProps } from "@tscircuit/props"
-import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
-import type { Port } from "./Port"
-import { Trace } from "./Trace/Trace"
-import { pairs } from "lib/utils/pairs"
+import { netProps as baseNetProps } from "@tscircuit/props"
+import { layer_ref } from "circuit-json"
+import { z } from "zod"
+
+const netProps = baseNetProps.extend({
+  pcbAllowedLayers: z.array(layer_ref).min(1).optional(),
+})
+import { autoroute } from "@tscircuit/infgrid-ijump-astar"
+import type { AnyCircuitElement, SourceTrace } from "circuit-json"
 import {
   GROUND_NET_REGEX,
   POWER_NET_REGEX,
 } from "lib/utils/gnd-power-net-regex"
-import type { AnyCircuitElement, SourceTrace } from "circuit-json"
-import { autoroute } from "@tscircuit/infgrid-ijump-astar"
+import { pairs } from "lib/utils/pairs"
+import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
+import type { Port } from "./Port"
+import { Trace } from "./Trace/Trace"
 
 export class Net extends PrimitiveComponent<typeof netProps> {
   source_net_id?: string
@@ -26,12 +32,18 @@ export class Net extends PrimitiveComponent<typeof netProps> {
   }
 
   doInitialCreateTracesFromProps(): void {
-    let { connectsTo } = this._parsedProps
+    let { connectsTo, pcbAllowedLayers } = this._parsedProps
     if (!connectsTo) return
     if (typeof connectsTo === "string") connectsTo = [connectsTo]
 
     for (const connection of connectsTo) {
-      this.add(new Trace({ from: connection, to: this.getPortSelector() }))
+      this.add(
+        new Trace({
+          from: connection,
+          to: this.getPortSelector(),
+          ...(pcbAllowedLayers ? { pcbAllowedLayers } : {}),
+        }),
+      )
     }
   }
 

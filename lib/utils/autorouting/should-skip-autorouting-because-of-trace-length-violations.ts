@@ -102,6 +102,28 @@ export const getStraightLineTraceLengthViolations = ({
           .getSubcircuit()
           .selectOne<Net>(copperPour._parsedProps.connectsTo)?.source_net_id,
     )
+    .concat(
+      Object.values(
+        ((component._getBoard?.() ?? subcircuit) as any)?._parsedProps
+          ?.planeLayers ?? {},
+      )
+        .flatMap((rawNets) =>
+          Array.isArray(rawNets)
+            ? rawNets
+            : typeof rawNets === "string"
+              ? [rawNets]
+              : [],
+        )
+        .flatMap((rawNet) => {
+          const bareName = rawNet.trim().replace(/^net\./, "")
+          return db.source_net
+            .list()
+            .filter(
+              (net) => net.name === bareName || net.name === rawNet.trim(),
+            )
+            .map((net) => net.source_net_id)
+        }),
+    )
 
   const pcbPortsBySourcePortId = new Map<SourcePortId, PcbEndpoint>()
   for (const pcbPort of db.pcb_port.list()) {

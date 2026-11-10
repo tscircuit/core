@@ -1,4 +1,5 @@
 import type * as Props from "@tscircuit/props"
+import type { LayerRef, LayerRefInput } from "circuit-json"
 import type { Attributes } from "react"
 
 export interface TscircuitElements {
@@ -10,7 +11,10 @@ export interface TscircuitElements {
   diode: Props.DiodeProps
   fuse: Props.FuseProps
   led: Props.LedProps
-  board: Props.BoardProps
+  board: Props.BoardProps & {
+    routingLayers?: LayerRefInput[]
+    planeLayers?: Partial<Record<Extract<LayerRef, string>, string | string[]>>
+  }
   drccheck: Props.DrcCheckProps
   mountedboard: Props.MountedBoardProps
   panel: Props.PanelProps
@@ -49,8 +53,12 @@ export interface TscircuitElements {
   opamp: Props.OpAmpProps
   cadmodel: Exclude<Props.CadModelPropsInput, null | string>
   cadassembly: Props.CadAssemblyProps
-  net: Props.NetProps
-  trace: Props.TraceProps
+  net: Props.NetProps & {
+    pcbAllowedLayers?: LayerRefInput[]
+  }
+  trace: Props.TraceProps & {
+    pcbAllowedLayers?: LayerRefInput[]
+  }
   bus: Props.BusProps
   differentialpair: Props.DifferentialPairProps
   breakout: Props.BreakoutProps

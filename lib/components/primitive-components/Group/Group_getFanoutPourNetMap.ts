@@ -52,7 +52,12 @@ export const Group_getFanoutPourNetMap = (
   let scope: PrimitiveComponent | null = group
   while (scope) {
     if (scope.isSubcircuit) {
-      const subcircuit = scope as unknown as ISubcircuit
+      const subcircuit = scope as unknown as ISubcircuit & {
+        _parsedProps?: { planeLayers?: FanoutPourNetMap }
+      }
+      if (subcircuit._parsedProps?.planeLayers) {
+        addPourNetMap(netsByLayer, subcircuit._parsedProps.planeLayers)
+      }
       const copperPours = subcircuit.selectAll<CopperPour>("copperpour")
       for (const copperPour of copperPours) {
         if (copperPour.getSubcircuit() !== subcircuit) continue

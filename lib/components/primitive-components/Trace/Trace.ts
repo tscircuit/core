@@ -1,5 +1,6 @@
 import { MultilayerIjump } from "@tscircuit/infgrid-ijump-astar"
-import { traceProps } from "@tscircuit/props"
+import { traceProps as baseTraceProps } from "@tscircuit/props"
+import { layer_ref } from "circuit-json"
 import {
   type LayerRef,
   type PcbTrace,
@@ -42,11 +43,25 @@ import type { TraceI } from "./TraceI"
 import { Trace__doInitialSchematicTraceRenderWithDisplayLabel } from "./Trace__doInitialSchematicTraceRenderWithDisplayLabel"
 import { Trace__findConnectedPorts } from "./Trace__findConnectedPorts"
 import { Trace_doInitialPcbManualTraceRender } from "./Trace_doInitialPcbManualTraceRender"
-import { Trace_doInitialPcbTraceTeardropRender } from "./Trace_doInitialPcbTraceTeardropRender"
 import { Trace_doInitialPcbTraceRender } from "./Trace_doInitialPcbTraceRender"
+import { Trace_doInitialPcbTraceTeardropRender } from "./Trace_doInitialPcbTraceTeardropRender"
 import { Trace_doInitialSchematicTraceRender } from "./Trace_doInitialSchematicTraceRender"
 import { getMaxLengthFromConnectedComponents } from "./trace-utils/get-max-length-from-connected-components"
 import { getTraceDisplayName } from "./trace-utils/get-trace-display-name"
+
+const traceProps = z.union(
+  (baseTraceProps as any)._def.options.map((option: z.ZodObject<any>) =>
+    option.extend({
+      pcbAllowedLayers: z.array(layer_ref).min(1).optional(),
+    }),
+  ) as [z.ZodTypeAny, z.ZodTypeAny, ...z.ZodTypeAny[]],
+) as unknown as z.ZodType<
+  z.output<typeof baseTraceProps> & { pcbAllowedLayers?: LayerRef[] },
+  z.ZodTypeDef,
+  z.input<typeof baseTraceProps> & {
+    pcbAllowedLayers?: Array<z.input<typeof layer_ref>>
+  }
+>
 
 function getNetsConnectedThroughViaPorts(
   connectedTracePorts: Array<{ port: Port }>,
