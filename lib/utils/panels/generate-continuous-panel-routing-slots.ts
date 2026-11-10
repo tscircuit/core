@@ -74,8 +74,36 @@ function getOutwardSlotBoundary(
   })
 }
 
+/** Circuit-world positions in mm: +X right, +Y up, right-handed +Z above. */
+function getOutlineSpan({
+  edges,
+  startPerimeterDistance,
+  endPerimeterDistance,
+}: {
+  edges: OutlineEdge[]
+  startPerimeterDistance: number
+  endPerimeterDistance: number
+}): Point[] {
+  const perimeter = edges.at(-1)!.perimeterStart + edges.at(-1)!.length
+  const route = [getPointAlongOutline(edges, startPerimeterDistance)]
+  for (const lap of [0, 1]) {
+    for (const edge of edges) {
+      const vertexDistance = edge.perimeterStart + lap * perimeter
+      if (
+        vertexDistance > startPerimeterDistance + 1e-9 &&
+        vertexDistance < endPerimeterDistance - 1e-9
+      )
+        route.push(edge.start)
+    }
+  }
+  route.push(getPointAlongOutline(edges, endPerimeterDistance))
+  return route
+}
+
 /** Buffer continuous outline spans, placing tabs on usable edges rather than
- * placing a new tab and rounded rectangle on every tessellated arc chord. */
+ * placing a new tab and rounded rectangle on every tessellated arc chord.
+ * Input/output vertices are circuit-world positions in mm: +X right, +Y up,
+ * right-handed +Z above. */
 export function generateContinuousPanelRoutingSlots(
   outline: Point[],
   options: {
@@ -85,7 +113,11 @@ export function generateContinuousPanelRoutingSlots(
     mouseBiteHoleDiameter: number
     mouseBiteHoleSpacing: number
   },
-): { tabCutouts: PcbCutoutPolygon[]; mouseBiteHoles: Point[] } {
+): {
+  tabCutouts: PcbCutoutPolygon[]
+  mouseBiteHoles: Point[]
+  tabBridges: Point[][]
+} {
   const edges: OutlineEdge[] = []
   let perimeter = 0
   let twiceSignedArea = 0
@@ -99,7 +131,7 @@ export function generateContinuousPanelRoutingSlots(
     twiceSignedArea += start.x * end.y - end.x * start.y
   }
   if (edges.length < 3 || Math.abs(twiceSignedArea) < 1e-9)
-    return { tabCutouts: [], mouseBiteHoles: [] }
+    return { tabCutouts: [], mouseBiteHoles: [], tabBridges: [] }
 
   const requestedGapLength = options.gapLength
   let tabCenters = edges
@@ -118,6 +150,7 @@ export function generateContinuousPanelRoutingSlots(
   )
   const tabCutouts: PcbCutoutPolygon[] = []
   const mouseBiteHoles: Point[] = []
+  const tabBridges: Point[][] = []
 
   for (let tabIndex = 0; tabIndex < tabCenters.length; tabIndex++) {
     const tabCenter = tabCenters[tabIndex]!
@@ -126,18 +159,11 @@ export function generateContinuousPanelRoutingSlots(
       (tabIndex === tabCenters.length - 1 ? perimeter : 0)
     const routeStart = tabCenter + gapLength / 2
     const routeEnd = nextTabCenter - gapLength / 2
-    const route = [getPointAlongOutline(edges, routeStart)]
-    for (const lap of [0, 1]) {
-      for (const edge of edges) {
-        const vertexDistance = edge.perimeterStart + lap * perimeter
-        if (
-          vertexDistance > routeStart + 1e-9 &&
-          vertexDistance < routeEnd - 1e-9
-        )
-          route.push(edge.start)
-      }
-    }
-    route.push(getPointAlongOutline(edges, routeEnd))
+    const route = getOutlineSpan({
+      edges,
+      startPerimeterDistance: routeStart,
+      endPerimeterDistance: routeEnd,
+    })
     const outerBoundary = getOutwardSlotBoundary(route, {
       width: options.cutoutWidth,
       winding: Math.sign(twiceSignedArea),
@@ -148,6 +174,20 @@ export function generateContinuousPanelRoutingSlots(
       shape: "polygon",
       points: [...route, ...outerBoundary.reverse()],
     })
+
+    if (gapLength > 1e-6) {
+      const tabRoute = getOutlineSpan({
+        edges,
+        startPerimeterDistance: tabCenter - gapLength / 2,
+        endPerimeterDistance: tabCenter + gapLength / 2,
+      })
+      const tabOuterBoundary = getOutwardSlotBoundary(tabRoute, {
+        // Reach through the neighboring routing band as well as our own.
+        width: 2 * options.cutoutWidth,
+        winding: Math.sign(twiceSignedArea),
+      })
+      tabBridges.push([...tabRoute, ...tabOuterBoundary.reverse()])
+    }
 
     if (
       options.mouseBites &&
@@ -163,5 +203,5 @@ export function generateContinuousPanelRoutingSlots(
       }
     }
   }
-  return { tabCutouts, mouseBiteHoles }
+  return { tabCutouts, mouseBiteHoles, tabBridges }
 }
