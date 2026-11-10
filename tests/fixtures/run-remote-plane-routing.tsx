@@ -75,13 +75,13 @@ export const runRemotePlaneRouting = async (
         <net name="GND" />
         <copperpour layer="inner1" connectsTo="net.GND" unbroken />
         <pcbnotetext
-          pcbY={4.5}
+          pcbY={7}
           text="INNER1: GND PLANE / NO SIGNAL WIRES"
           fontSize={0.55}
           anchorAlignment="center"
         />
         <pcbnotetext
-          pcbY={-4.5}
+          pcbY={-7}
           text="THROUGH VIAS MAY CROSS THE PLANE"
           fontSize={0.55}
           anchorAlignment="center"
