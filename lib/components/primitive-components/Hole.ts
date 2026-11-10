@@ -1,5 +1,6 @@
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
-import { holeProps } from "@tscircuit/props"
+import { holeProps as baseHoleProps } from "@tscircuit/props"
+import { z } from "zod"
 import { distance } from "circuit-json"
 import type {
   PCBHole,
@@ -8,6 +9,42 @@ import type {
   PcbHoleRect,
   PcbHoleCircle,
 } from "circuit-json"
+
+const holeProps = z
+  .preprocess((rawProps) => {
+    if (
+      rawProps &&
+      typeof rawProps === "object" &&
+      "holeDiameter" in rawProps &&
+      (rawProps as Record<string, unknown>).diameter === undefined &&
+      (rawProps as Record<string, unknown>).holeDiameter !== undefined
+    ) {
+      return {
+        ...rawProps,
+        diameter: (rawProps as Record<string, unknown>).holeDiameter,
+      }
+    }
+    return rawProps
+  }, baseHoleProps)
+  .superRefine((parsed, ctx) => {
+    if (
+      (!parsed.shape || parsed.shape === "circle") &&
+      (!Number.isFinite(parsed.diameter) || parsed.diameter <= 0)
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["diameter"],
+        message:
+          "Circle <hole> requires a positive diameter, holeDiameter, or radius",
+      })
+    }
+  }) as unknown as z.ZodType<
+  z.output<typeof baseHoleProps> & { holeDiameter?: number },
+  z.ZodTypeDef,
+  z.input<typeof baseHoleProps> & {
+    holeDiameter?: z.input<typeof distance>
+  }
+>
 
 export class Hole extends PrimitiveComponent<typeof holeProps> {
   pcb_hole_id: string | null = null
