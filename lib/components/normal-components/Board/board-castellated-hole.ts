@@ -6,8 +6,7 @@ import {
 } from "circuit-json"
 import { PlatedHole } from "../../primitive-components/PlatedHole"
 import { Port } from "../../primitive-components/Port"
-import { PropGeneratedTrace } from "../../primitive-components/Trace/PropGeneratedTrace"
-import type { Trace } from "../../primitive-components/Trace/Trace"
+import { Trace } from "../../primitive-components/Trace/Trace"
 import type { Board } from "./Board"
 
 const CASTELLATED_HOLE_ENDPOINT_TOLERANCE_MM = 1e-6
@@ -54,10 +53,13 @@ export class BoardCastellatedHole extends PlatedHole {
     this.padDiameter = padDiameter
     this.port = connectionTargets.length > 0 ? new Port({ name }) : null
     this.trace = this.port
-      ? new PropGeneratedTrace({
-          path: [`port.${name}`, ...connectionTargets],
-          displayName: `Castellated hole ${outlinePointIndex + 1} connectivity`,
-        })
+      ? new Trace(
+          {
+            path: [`port.${name}`, ...connectionTargets],
+            displayName: `Castellated hole ${outlinePointIndex + 1} connectivity`,
+          },
+          { suppressUnnamedTraceWarning: true },
+        )
       : null
   }
 

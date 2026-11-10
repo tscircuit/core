@@ -38,7 +38,7 @@ import {
   source_part_not_found_warning,
 } from "circuit-json"
 import Debug from "debug"
-import { PropGeneratedTrace } from "lib/components/primitive-components/Trace/PropGeneratedTrace"
+import { Trace } from "lib/components/primitive-components/Trace/Trace"
 import {
   type ReactSubtree,
   createInstanceFromReactElement,
@@ -2455,10 +2455,13 @@ export class NormalComponent<
         const targets = Array.isArray(target) ? target : [target]
         for (const targetPath of targets) {
           this.add(
-            new PropGeneratedTrace({
-              from: `.${this.name} > .${pinName}`,
-              to: String(targetPath),
-            }),
+            new Trace(
+              {
+                from: `.${this.name} > .${pinName}`,
+                to: String(targetPath),
+              },
+              { suppressUnnamedTraceWarning: true },
+            ),
           )
         }
       }
