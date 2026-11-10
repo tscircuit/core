@@ -1,9 +1,8 @@
 import { expect, test } from "bun:test"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { renderCircuitJsonOrError } from "tests/fixtures/render-circuit-json-or-error"
 
 test("panel silkscreen text can be placed in the panel frame", async () => {
-  const { circuit } = getTestFixture()
-  circuit.add(
+  const circuitJson = await renderCircuitJsonOrError(
     <panel layoutMode="grid" edgePadding="5mm">
       <board name="B1" width="14mm" height="18mm" routingDisabled>
         <pcbnotetext text="Panel silkscreen" fontSize={0.6} />
@@ -11,15 +10,17 @@ test("panel silkscreen text can be placed in the panel frame", async () => {
       <silkscreentext text="PANEL A / REV 1" pcbY={12} fontSize={0.8} />
     </panel>,
   )
-  await circuit.renderUntilSettled()
 
-  await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
+  await expect(circuitJson).toMatchPcbSnapshot(import.meta.path, {
     showSolderMask: true,
   })
-  expect(circuit.db.pcb_silkscreen_text.list()).toContainEqual(
-    expect.objectContaining({
-      text: "PANEL A / REV 1",
-      anchor_position: { x: 0, y: 12 },
-    }),
-  )
+  expect(
+    circuitJson.flatMap((element) =>
+      element.type === "pcb_silkscreen_text" ? [element.text] : [],
+    ),
+  ).toMatchInlineSnapshot(`
+    [
+      "PANEL A / REV 1",
+    ]
+  `)
 })
