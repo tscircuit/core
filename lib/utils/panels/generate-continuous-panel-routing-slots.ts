@@ -1,3 +1,4 @@
+import { point, vector } from "@flatten-js/core"
 import type { PcbCutoutPolygon, Point } from "circuit-json"
 import {
   applyToPoint,
@@ -5,6 +6,7 @@ import {
   rotateDEG,
   translate,
 } from "transformation-matrix"
+import type { PanelTabMouseBite } from "./get-panel-mouse-bite-positions"
 
 interface OutlineEdge {
   start: Point
@@ -15,7 +17,10 @@ interface OutlineEdge {
 
 function getPointAlongOutline(
   edges: OutlineEdge[],
-  perimeterDistance: number,
+  {
+    perimeterDistance,
+    leftOffsetMm = 0,
+  }: { perimeterDistance: number; leftOffsetMm?: number },
 ): Point {
   const perimeter = edges.at(-1)!.perimeterStart + edges.at(-1)!.length
   const wrappedDistance =
@@ -33,7 +38,7 @@ function getPointAlongOutline(
       translate(edge.start.x, edge.start.y),
       rotateDEG(ccwRotationDegrees),
     ),
-    { x: wrappedDistance - edge.perimeterStart, y: 0 },
+    { x: wrappedDistance - edge.perimeterStart, y: leftOffsetMm },
   )
 }
 
@@ -85,7 +90,9 @@ function getOutlineSpan({
   endPerimeterDistance: number
 }): Point[] {
   const perimeter = edges.at(-1)!.perimeterStart + edges.at(-1)!.length
-  const route = [getPointAlongOutline(edges, startPerimeterDistance)]
+  const route = [
+    getPointAlongOutline(edges, { perimeterDistance: startPerimeterDistance }),
+  ]
   for (const lap of [0, 1]) {
     for (const edge of edges) {
       const vertexDistance = edge.perimeterStart + lap * perimeter
@@ -96,7 +103,9 @@ function getOutlineSpan({
         route.push(edge.start)
     }
   }
-  route.push(getPointAlongOutline(edges, endPerimeterDistance))
+  route.push(
+    getPointAlongOutline(edges, { perimeterDistance: endPerimeterDistance }),
+  )
   return route
 }
 
@@ -115,7 +124,7 @@ export function generateContinuousPanelRoutingSlots(
   },
 ): {
   tabCutouts: PcbCutoutPolygon[]
-  mouseBiteHoles: Point[]
+  mouseBites: PanelTabMouseBite[]
   tabBridges: Point[][]
 } {
   const edges: OutlineEdge[] = []
@@ -131,7 +140,7 @@ export function generateContinuousPanelRoutingSlots(
     twiceSignedArea += start.x * end.y - end.x * start.y
   }
   if (edges.length < 3 || Math.abs(twiceSignedArea) < 1e-9)
-    return { tabCutouts: [], mouseBiteHoles: [], tabBridges: [] }
+    return { tabCutouts: [], mouseBites: [], tabBridges: [] }
 
   const requestedGapLength = options.gapLength
   let tabCenters = edges
@@ -149,7 +158,7 @@ export function generateContinuousPanelRoutingSlots(
     perimeter / (2 * tabCenters.length),
   )
   const tabCutouts: PcbCutoutPolygon[] = []
-  const mouseBiteHoles: Point[] = []
+  const mouseBites: PanelTabMouseBite[] = []
   const tabBridges: Point[][] = []
 
   for (let tabIndex = 0; tabIndex < tabCenters.length; tabIndex++) {
@@ -186,22 +195,37 @@ export function generateContinuousPanelRoutingSlots(
         width: 2 * options.cutoutWidth,
         winding: Math.sign(twiceSignedArea),
       })
-      tabBridges.push([...tabRoute, ...tabOuterBoundary.reverse()])
-    }
+      const bridgeOutline = [...tabRoute, ...tabOuterBoundary.reverse()]
+      tabBridges.push(bridgeOutline)
 
-    if (
-      options.mouseBites &&
-      options.mouseBiteHoleDiameter > 0 &&
-      gapLength >= options.mouseBiteHoleDiameter
-    ) {
-      const pitch = options.mouseBiteHoleDiameter + options.mouseBiteHoleSpacing
-      const holeCount =
-        Math.floor((gapLength - options.mouseBiteHoleDiameter) / pitch) + 1
-      for (let holeIndex = 0; holeIndex < holeCount; holeIndex++) {
-        const offset = (holeIndex - (holeCount - 1) / 2) * pitch
-        mouseBiteHoles.push(getPointAlongOutline(edges, tabCenter + offset))
+      if (
+        options.mouseBites &&
+        options.mouseBiteHoleDiameter > 0 &&
+        gapLength >= options.mouseBiteHoleDiameter
+      ) {
+        const pitch =
+          options.mouseBiteHoleDiameter + options.mouseBiteHoleSpacing
+        const holeCount =
+          Math.floor((gapLength - options.mouseBiteHoleDiameter) / pitch) + 1
+        for (let holeIndex = 0; holeIndex < holeCount; holeIndex++) {
+          const offset = (holeIndex - (holeCount - 1) / 2) * pitch
+          const perimeterDistance = tabCenter + offset
+          const boardEdge = getPointAlongOutline(edges, { perimeterDistance })
+          const routingEdge = getPointAlongOutline(edges, {
+            perimeterDistance,
+            leftOffsetMm: -Math.sign(twiceSignedArea) * options.cutoutWidth,
+          })
+          mouseBites.push({
+            boardEdge,
+            outwardNormal: vector(
+              point(boardEdge.x, boardEdge.y),
+              point(routingEdge.x, routingEdge.y),
+            ).normalize(),
+            bridgeOutline,
+          })
+        }
       }
     }
   }
-  return { tabCutouts, mouseBiteHoles, tabBridges }
+  return { tabCutouts, mouseBites, tabBridges }
 }
