@@ -1,0 +1,90 @@
+import type { ReactElement } from "react"
+import { NativeA13Part } from "./native-a13-part"
+import source from "./source-data.json"
+
+/** Native A13 DDR subsystem in board-world mm: +X right, +Y top, +Z above.
+ * All parts retain their pinned native placement in this right-handed frame.
+ * Selected data paths use the native resistor arrays; other DDR paths remain.
+ */
+export function NativeA13DdrThermalPadBoard({
+  dataBits = [0, 1, 2, 3],
+  routingNote,
+}: {
+  dataBits?: number[]
+  routingNote?: string
+} = {}): ReactElement {
+  const selectedDataNets = dataBits.flatMap((bit) => [
+    {
+      nativeNet: `/DDR3 Memory/d${String(bit).padStart(2, "0")}`,
+      name: `CPU_D${bit}`,
+    },
+    { nativeNet: `/DDR3 Memory/ddr-d${bit}`, name: `DRAM_D${bit}` },
+  ])
+  return (
+    <board
+      title="Native A13 DDR: exposed pad and thermal vias"
+      width={source.width}
+      height={source.height}
+      layers={4}
+      minTraceWidth={Math.min(...source.rules.widths)}
+      minTraceToPadEdgeClearance={source.rules.appliedGlobalClearance}
+      minViaEdgeToPadEdgeClearance={source.rules.appliedGlobalClearance}
+      minViaPadDiameter={source.rules.viaPad}
+      minViaHoleDiameter={source.rules.viaDrill}
+      isViaInPadAllowed={false}
+      routeRemaining={false}
+      schematicDisabled
+    >
+      {source.parts.map((part) => (
+        <NativeA13Part key={part.name} part={part} />
+      ))}
+      <autoroutingphase
+        name="DDR_DATA"
+        phaseIndex={0}
+        autorouter="auto"
+        connections={selectedDataNets.map((net) => net.name)}
+      />
+      {source.traces.map((trace) => {
+        const selectedName = selectedDataNets.find(
+          (net) => net.nativeNet === trace.nativeNet,
+        )?.name
+        const name = selectedName ?? trace.name
+        const routingPhaseIndex = selectedName ? 0 : undefined
+        return (
+          <trace
+            key={trace.name}
+            name={name}
+            from={trace.from}
+            to={trace.to}
+            thickness={trace.width}
+            routingPhaseIndex={routingPhaseIndex}
+          />
+        )
+      })}
+      <pcbnotetext
+        pcbX={10}
+        pcbY={19}
+        fontSize={0.8}
+        text={`A13 DDR: ${dataBits.length * 2} requested paths through series resistors`}
+      />
+      <pcbnotetext
+        pcbX={10}
+        pcbY={17.5}
+        fontSize={0.65}
+        text="U100.GND_EP: 6mm exposed pad + nine thermal vias (pin 177)"
+      />
+      <pcbnotetext pcbX={-4} pcbY={10.5} fontSize={0.7} text="U200: DDR3L" />
+      <pcbnotetext pcbX={21} pcbY={-1.9} fontSize={0.7} text="U100: A13" />
+      <pcbnotetext pcbX={12} pcbY={10.8} fontSize={0.55} text="RN4" />
+      <pcbnotetext
+        pcbX={10}
+        pcbY={-19}
+        fontSize={0.65}
+        text={`Selected data: D${dataBits.join(", D")}; 96 source paths retained`}
+      />
+      {routingNote && (
+        <pcbnotetext pcbX={10} pcbY={-20.2} fontSize={0.6} text={routingNote} />
+      )}
+    </board>
+  )
+}

@@ -1,4 +1,3 @@
-import { poppyglExplosionLines } from "./fixtures/poppygl-explosion-lines"
 import { expectAssemblySnapshot } from "./fixtures/expect-assembly-snapshot"
 import { expect, test } from "bun:test"
 import { Circuit, assembly, getCircuitJsonAssemblyExplosion } from "lib"
@@ -144,11 +143,6 @@ test("render phases own stable explosion IDs and update dependent membership, or
         camPos: [-35, 26, 30],
         poppygl: {
           lookAt: [-10, 7, 0],
-          explosionLines: poppyglExplosionLines(
-            getCircuitJsonAssemblyExplosion(
-              panel.circuit as import("circuit-json").AnyCircuitElement[],
-            ),
-          ),
         },
         gltf: { explosion: {} },
       },

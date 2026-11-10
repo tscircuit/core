@@ -6,6 +6,7 @@ import type {
   AssemblyExplosionStagePropsInput,
   AssemblyExplosionMovePropsInput,
   AssemblyCablePropsInput,
+  AssemblyBoltPropsInput,
   AssemblyDevicePropsInput,
   AssemblyMotorPropsInput,
   AssemblyPartPropsInput,
@@ -64,6 +65,7 @@ export const assembly = {
   referencesurface: createNamespacedElement<AssemblyReferenceSurfacePropsInput>(
     "assembly.referencesurface",
   ),
+  bolt: createNamespacedElement<AssemblyBoltPropsInput>("assembly.bolt"),
   part: createNamespacedElement<AssemblyPartJsxProps>("assembly.part"),
   cable: createNamespacedElement<AssemblyCableJsxProps>("assembly.cable"),
   printedpart: createNamespacedElement<AssemblyPrintedPartJsxProps>(

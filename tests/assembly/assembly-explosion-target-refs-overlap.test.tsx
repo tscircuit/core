@@ -4,15 +4,28 @@ import type { CadComponent, CadReferenceSurface } from "circuit-json"
 import { vec3 } from "gl-matrix"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { expectAssemblySnapshot } from "./fixtures/expect-assembly-snapshot"
-import { poppyglExplosionLines } from "./fixtures/poppygl-explosion-lines"
+
+import {
+  mechanicalPlan,
+  EnclosureTray,
+  EnclosureCover,
+  loadMechanicalModel,
+} from "./fixtures/mechanical-assembly-models"
 
 test("overlapping targetRefs share one mounted-frame translation and retain pre-move guide anchors", async () => {
   const { circuit } = getTestFixture()
+  const bolt = await loadMechanicalModel("m3_socket_head")
   circuit.add(
     <assembly.device name="FRAME">
       <assembly.part
         name="BASE"
-        cadModel={{ jscad: { type: "cuboid", size: [24, 10, 4] } }}
+        cadModel={{
+          jscad: mechanicalPlan(
+            <jscad.rotate angles={[-Math.PI / 2, 0, 0]}>
+              <EnclosureTray />
+            </jscad.rotate>,
+          ),
+        }}
       >
         <assembly.referencesurface
           name="face"
@@ -24,8 +37,7 @@ test("overlapping targetRefs share one mounted-frame translation and retain pre-
         name="CARRIER"
         mountedTo="BASE.face"
         mountFace="back"
-        color="#436f8b"
-        jscad={<jscad.cuboid size={[12, 12, 4]} center={[0, 0, 2]} />}
+        jscad={<EnclosureCover />}
       >
         <assembly.referencesurface name="back" normalDirection="z-" />
         <assembly.referencesurface name="axes" />
@@ -34,15 +46,22 @@ test("overlapping targetRefs share one mounted-frame translation and retain pre-
             <assembly.part
               name="A"
               cadModel={{
-                jscad: { type: "sphere", radius: 3, center: [-5, 0, 8] },
+                ...bolt,
+                positionOffset: { x: -20, y: -12, z: 4 },
               }}
             >
-              <assembly.referencesurface name="tip" centerZOffset="11mm" />
+              <assembly.referencesurface
+                name="tip"
+                centerXOffset={-20}
+                centerYOffset={-12}
+                centerZOffset={7}
+              />
             </assembly.part>
             <assembly.part
               name="B"
               cadModel={{
-                jscad: { type: "cuboid", size: [5, 5, 5], center: [5, 0, 8] },
+                ...bolt,
+                positionOffset: { x: 20, y: 12, z: 4 },
               }}
             />
           </assembly.subassembly>
@@ -147,33 +166,58 @@ test("overlapping targetRefs share one mounted-frame translation and retain pre-
   ).toEqual(prepared)
   await expectAssemblySnapshot(import.meta.path, {
     title:
-      "Overlapping explosion targets move once in the emitted mounting frame",
-    columns: 2,
+      "Enclosure fasteners: overlapping explosion selections move each screw once",
+    layout: "model_focus",
     panels: [
       {
-        title: "Prepare: A moves independently",
-        circuit: prepared.circuitJson,
-        code: '<assembly.printedpart name="CARRIER"\n  mountedTo="BASE.face" mountFace="back">\n  <assembly.subassembly name="OWNER">\n    <assembly.explosion.stage name="prepare">\n      <assembly.explosion.move\n        targetRef="MODULE.A" offZ="4mm" />\n    </assembly.explosion.stage>\n  </assembly.subassembly>\n</assembly.printedpart>',
-        annotation: "The carrier's mounted face points along world +Y.",
+        title: "Prepare: loosen screw A by 4 mm; screw B stays seated",
+        circuit: assembled,
+        code: '// Orange lid mounted to tray\nmountedTo="BASE.face"\nmountFace="back"\n\n<assembly.explosion.move\n  targetRef="MODULE.A"\n  offZ="4mm" />',
+        annotation:
+          "A and B are real JSCAD Electronics M3 socket-head screws. A starts at upper right, B at lower left.\nThe cover's local +Z points outward along world +Y. Guides start at each screw's CAD origin.",
+        legend: [
+          { color: "#475565", label: "Enclosure tray" },
+          { color: "#df7929", label: "Vented cover" },
+          { color: "#a9b6c1", label: "A / B: M3 socket-head screws" },
+        ],
+        callouts: [
+          { label: "A: +4 mm", at: [0.72, 0.25], target: [0.62, 0.43] },
+          { label: "B: seated", at: [0.08, 0.64], target: [0.375, 0.58] },
+        ],
         renderOptions: {
-          camPos: [45, 35, 45],
+          camPos: [65, 45, 100],
           poppygl: {
-            lookAt: [0, 7, 0],
-            explosionLines: poppyglExplosionLines(prepared),
+            lookAt: [0, 0, 3],
+          },
+          gltf: {
+            explosion: { throughStageRef: "FRAME.CARRIER.OWNER.prepare" },
           },
         },
       },
       {
-        title: "Half progress: overlapping selections move once",
-        circuit: halfway.circuitJson,
+        title: "Half progress: both screws move once along the cover frame",
+        circuit: assembled,
         code: '<assembly.explosion.move\n  targetRefs={["MODULE", "MODULE.A",\n    "MODULE.A", "MODULE.B"]}\n  offX="6mm" offY="8mm" offZ="10mm" />\n\ngetAssemblyExplosion(circuit, {\n  throughStageRef:\n    "FRAME.CARRIER.OWNER.move",\n  stageProgress: 0.5,\n})',
         annotation:
-          "A and B share one half displacement; duplicate selection adds no motion.",
+          "MODULE, MODULE.A (twice), and MODULE.B overlap: A and B each receive one [3,4,5] mm local move.\nThe tray and cover remain fixed; A retains its earlier 4 mm outward displacement.",
+        legend: [
+          { color: "#475565", label: "Tray + cover stay fixed" },
+          { color: "#a9b6c1", label: "Screws A + B move together" },
+        ],
+        callouts: [
+          { label: "A: moved once", at: [0.72, 0.25], target: [0.57, 0.49] },
+          { label: "B: moved once", at: [0.08, 0.72], target: [0.34, 0.62] },
+        ],
         renderOptions: {
-          camPos: [45, 35, 45],
+          camPos: [65, 45, 100],
           poppygl: {
-            lookAt: [0, 7, 0],
-            explosionLines: poppyglExplosionLines(halfway),
+            lookAt: [0, 0, 3],
+          },
+          gltf: {
+            explosion: {
+              throughStageRef: "FRAME.CARRIER.OWNER.move",
+              stageProgress: 0.5,
+            },
           },
         },
       },

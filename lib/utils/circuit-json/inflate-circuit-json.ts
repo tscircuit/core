@@ -13,6 +13,7 @@ import { inflateSourceChip } from "../../components/primitive-components/Group/S
 import { inflateSourceConnector } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceConnector"
 import { inflateSourceDiode } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceDiode"
 import { inflateSourceFiducial } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceFiducial"
+import { inflateSourceFuse } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceFuse"
 import { inflateSourceGroup } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceGroup"
 import { inflateSourceInductor } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceInductor"
 import { inflateSourceLed } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceLed"
@@ -21,6 +22,7 @@ import { inflateSourcePort } from "../../components/primitive-components/Group/S
 import { inflateSourcePushButton } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourcePushButton"
 import { inflateSourceResistor } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceResistor"
 import { inflateSourceSwitch } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceSwitch"
+import { inflateSourceTestPoint } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceTestPoint"
 import { inflateSourceTrace } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceTrace"
 import { inflateSourceTransistor } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceTransistor"
 import { inflateStandalonePcbPrimitives } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateStandalonePcbPrimitives"
@@ -85,6 +87,9 @@ export const inflateCircuitJson = (
       case "simple_resistor":
         inflateSourceResistor(sourceComponent, inflationCtx)
         break
+      case "simple_fuse":
+        inflateSourceFuse(sourceComponent, inflationCtx)
+        break
       case "simple_capacitor":
         inflateSourceCapacitor(sourceComponent, inflationCtx)
         break
@@ -117,6 +122,9 @@ export const inflateCircuitJson = (
         break
       case "simple_switch":
         inflateSourceSwitch(sourceComponent, inflationCtx)
+        break
+      case "simple_test_point":
+        inflateSourceTestPoint(sourceComponent, inflationCtx)
         break
       default:
         throw new Error(

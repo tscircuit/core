@@ -1,4 +1,3 @@
-import { poppyglExplosionLines } from "./fixtures/poppygl-explosion-lines"
 import { expectAssemblySnapshot } from "./fixtures/expect-assembly-snapshot"
 import { expect, test } from "bun:test"
 import {
@@ -104,9 +103,6 @@ test("serialized movements preserve resolved local frames and nested physical as
         camPos: [-26, 22, 27],
         poppygl: {
           lookAt: [0, 0, 0],
-          explosionLines: poppyglExplosionLines(
-            getCircuitJsonAssemblyExplosion(json),
-          ),
         },
         gltf: { explosion: {} },
       },

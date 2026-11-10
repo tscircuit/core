@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="148" viewBox="0 0 760 148" font-family="Arial, sans-serif">
+<rect x="0" y="0" width="760" height="148" fill="#fafafa" />
+<text x="16" y="30" font-size="16" font-weight="700" fill="#111">thickness omitted (default 1.6mm)</text>
+<text x="16" y="52" font-size="13" fill="#444">layers={4} fabricatorPreset="jlcpcb_standard"</text>
+<text x="16" y="84" font-size="14" font-weight="700" fill="#2e7d32">pcb_stackup count: 1</text>
+<text x="16" y="116" font-size="14" font-weight="700" fill="#2e7d32">no error or warning mentions the stackup</text>
+</svg>

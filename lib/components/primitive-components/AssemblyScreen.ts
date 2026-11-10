@@ -1,10 +1,10 @@
 import { assemblyScreenProps } from "@tscircuit/props"
-import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
+import { AssemblyComponent } from "../base-components/AssemblyComponent"
 import type { AssemblyDeviceContainer } from "../base-components/is-assembly-device-container"
 import { AssemblyScreen_doInitialCadModelRender } from "./AssemblyScreen_doInitialCadModelRender"
 
 export class AssemblyScreen
-  extends PrimitiveComponent<typeof assemblyScreenProps>
+  extends AssemblyComponent<typeof assemblyScreenProps>
   implements AssemblyDeviceContainer
 {
   isAssemblyDeviceContainer = true as const

@@ -17,6 +17,7 @@ extendCatalogue({
   "assembly.explosion.stage": Components.AssemblyExplosionStage,
   "assembly.explosion.move": Components.AssemblyExplosionMove,
   "assembly.motor": Components.AssemblyMotor,
+  "assembly.bolt": Components.AssemblyBolt,
   "assembly.part": Components.AssemblyPart,
   "assembly.referencesurface": Components.AssemblyReferenceSurface,
   "assembly.printedpart": Components.AssemblyPrintedPart,

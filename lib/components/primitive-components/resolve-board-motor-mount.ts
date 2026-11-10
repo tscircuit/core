@@ -8,7 +8,10 @@ import {
   resolvePrintedPartMounts,
 } from "./resolve-printed-part-mounts"
 
-import { matchesAssemblyIdentity } from "./matches-assembly-identity"
+import {
+  isAssemblyMountPart,
+  resolveAssemblyMountTarget,
+} from "./resolve-assembly-face-reference"
 export { matchesAssemblyIdentity } from "./matches-assembly-identity"
 
 export const resolveBoardMotorMount = (
@@ -27,25 +30,21 @@ export const resolveBoardMotorMount = (
       )
     return
   }
-  const separator = mountedTo.lastIndexOf(".")
-  const motorName = mountedTo.slice(0, separator)
-  const face = mountedTo.slice(separator + 1)
-  if (separator < 1 || face !== "backface") {
+  const target = resolveAssemblyMountTarget(
+    board,
+    mountedTo,
+    getComponentsInAssemblyScope(board).filter(isAssemblyMountPart),
+  )
+  const motorName = target.part.name
+  if (
+    target.part.componentName !== "AssemblyMotor" ||
+    target.face.name !== "backface"
+  ) {
     throw new Error(
       `board "${board.name}" mountedTo "${mountedTo}" must name a motor backface, e.g. "NEMA17.backface"`,
     )
   }
-  const motors = getComponentsInAssemblyScope(board).filter(
-    (motor): motor is AssemblyMotor =>
-      motor.componentName === "AssemblyMotor" &&
-      matchesAssemblyIdentity(motor, motorName),
-  )
-  if (motors.length !== 1) {
-    throw new Error(
-      `board "${board.name}" mountedTo "${mountedTo}" matched ${motors.length} motors; expected exactly one in the assembly device`,
-    )
-  }
-  const motor = motors[0]!
+  const motor = target.part as AssemblyMotor
   if (motor._parsedProps.mountedTo) {
     resolvePrintedPartMounts(board)
     return

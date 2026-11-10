@@ -1,4 +1,3 @@
-import { poppyglExplosionLines } from "./fixtures/poppygl-explosion-lines"
 import { getAssemblyExplosionFrames } from "circuit-json-to-gltf"
 import { expectAssemblySnapshot } from "./fixtures/expect-assembly-snapshot"
 import { expect, test } from "bun:test"
@@ -181,11 +180,6 @@ stageProgress: 0.5`,
         camPos: [-35, 28, 40],
         poppygl: {
           lookAt: [-10, 7, 0],
-          explosionLines: pose.explosion
-            ? poppyglExplosionLines(
-                getCircuitJsonAssemblyExplosion(json, pose.explosion),
-              )
-            : [],
         },
         gltf: { explosion: pose.explosion },
       },

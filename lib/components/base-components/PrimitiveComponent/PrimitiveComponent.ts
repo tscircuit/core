@@ -1,3 +1,7 @@
+import {
+  PrimitiveComponent_doInitialCadExplosionCollisionCheck,
+  PrimitiveComponent_removeCadExplosionCollisionCheck,
+} from "./PrimitiveComponent_doInitialCadExplosionCollisionCheck"
 import type { Port } from "lib/components/primitive-components/Port"
 import { assertUnambiguousPhysicalPortSelection } from "lib/components/primitive-components/Port/assertUnambiguousPhysicalPortSelection"
 import { getConstructionPropsSchema } from "./get-construction-props-schema"
@@ -1062,6 +1066,18 @@ export abstract class PrimitiveComponent<
     changedProps: string[]
   }) {}
 
+  doInitialCadExplosionCollisionCheck() {
+    PrimitiveComponent_doInitialCadExplosionCollisionCheck(this)
+  }
+
+  updateCadExplosionCollisionCheck() {
+    PrimitiveComponent_doInitialCadExplosionCollisionCheck(this)
+  }
+
+  removeCadExplosionCollisionCheck() {
+    PrimitiveComponent_removeCadExplosionCollisionCheck(this)
+  }
+
   onChildChanged(child: PrimitiveComponent) {
     this.parent?.onChildChanged?.(child)
   }
@@ -1128,7 +1144,13 @@ export abstract class PrimitiveComponent<
     }
   }
 
+  removeCadAssemblyBomRender(): void {
+    for (const child of this.children) child.removeCadAssemblyBomRender()
+  }
+
   remove(component: PrimitiveComponent) {
+    // Detached subtrees no longer participate in render-phase traversal.
+    component.removeCadAssemblyBomRender()
     this.children = this.children.filter((c) => c !== component)
     this._childrenVersion++
     this.childrenPendingRemoval.push(component)
@@ -1348,7 +1370,7 @@ export abstract class PrimitiveComponent<
     if (options?.port) {
       options.type = "port"
     }
-    let result: T | null = null
+    let result: PrimitiveComponent | null = null
     if (options?.type) {
       const allMatching = selectAll(
         selector,
@@ -1358,37 +1380,35 @@ export abstract class PrimitiveComponent<
       const matchingComponents = allMatching.filter(
         (n) => n.lowercaseComponentName === options.type,
       )
-      if (options.type === "port") {
-        assertUnambiguousPhysicalPortSelection(
-          matchingComponents as Port[],
-          selectorRaw,
-        )
-      }
-      result = (matchingComponents[0] ?? null) as T | null
+      result = matchingComponents[0] ?? null
     }
 
     if (!options?.type) {
-      result ??= selectOne(
-        selector,
-        this,
-        cssSelectOptionsInsideSubcircuit,
-      ) as T | null
+      result ??= selectOne(selector, this, cssSelectOptionsInsideSubcircuit)
     }
 
     if (result) {
-      if (
-        !options?.type &&
-        (result as unknown as PrimitiveComponent).componentName === "Port"
-      ) {
-        assertUnambiguousPhysicalPortSelection(
-          this.selectAll(selectorRaw).filter(
-            (component) => component.componentName === "Port",
-          ) as Port[],
-          selectorRaw,
+      if (result.componentName === "Port") {
+        const matchingPorts = this.selectAll(selectorRaw).filter(
+          (component): component is Port => component.componentName === "Port",
         )
+        assertUnambiguousPhysicalPortSelection(matchingPorts, selectorRaw)
+        const selectedPort = matchingPorts.find((port) => port === result)!
+        // A split physical pad can precede its logical schematic endpoint.
+        // Resolve a shared alias to the primary port of that same chip pin.
+        if (!selectedPort._isPrimaryPort) {
+          const primaryPort = matchingPorts.find(
+            (port) =>
+              port._isPrimaryPort &&
+              port._parsedProps.pinNumber === selectedPort._primaryPinNumber &&
+              port.getParentNormalComponent() ===
+                selectedPort.getParentNormalComponent(),
+          )
+          if (primaryPort) result = primaryPort
+        }
       }
-      this._cachedSelectOneQueries.set(selectorRaw, result as any)
-      return result
+      this._cachedSelectOneQueries.set(selectorRaw, result)
+      return result as T
     }
 
     // If we didn't find anything, check for a subcircuit query
@@ -1399,9 +1419,9 @@ export abstract class PrimitiveComponent<
 
     if (!subcircuit) return null
 
-    result = subcircuit.selectOne(rest.join(" "), options) as T | null
-    this._cachedSelectOneQueries.set(selectorRaw, result as any)
-    return result
+    result = subcircuit.selectOne(rest.join(" "), options)
+    this._cachedSelectOneQueries.set(selectorRaw, result)
+    return result as T | null
   }
 
   getAvailablePcbLayers(): string[] {

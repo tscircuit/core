@@ -4,7 +4,6 @@ import { Circuit, getAssemblyExplosion } from "lib"
 import { convertCircuitJsonToGltf } from "circuit-json-to-gltf"
 import { renderGLTFToPNGFromGLB } from "poppygl"
 import { ExplosionLamp } from "tests/assembly/fixtures/explosion-lamp"
-import { poppyglExplosionLines } from "tests/assembly/fixtures/poppygl-explosion-lines"
 
 // Run: bun scripts/render-assembly-explosion.tsx [output-directory]
 const outputDirectory = process.argv[2] ?? "work/assembly-explosion-preview"
@@ -23,7 +22,8 @@ const views = [
 ]
 for (const { name, options } of views) {
   const view = getAssemblyExplosion(circuit, options)
-  const glb = (await convertCircuitJsonToGltf(view.circuitJson, {
+  const glb = (await convertCircuitJsonToGltf(circuit.getCircuitJson(), {
+    explosion: options,
     includeModels: true,
     format: "glb",
     showBoundingBoxes: false,
@@ -37,7 +37,6 @@ for (const { name, options } of views) {
     lookAt: [-40, 100, 0],
     backgroundColor: [1, 1, 1],
     grid: false,
-    explosionLines: poppyglExplosionLines(view),
   })
   writeFileSync(join(outputDirectory, `${name}.glb`), new Uint8Array(glb))
   writeFileSync(join(outputDirectory, `${name}.png`), png)

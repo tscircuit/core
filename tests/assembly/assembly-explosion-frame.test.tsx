@@ -4,7 +4,6 @@ import type { CadComponent, CadReferenceSurface } from "circuit-json"
 import { vec3 } from "gl-matrix"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { expectAssemblySnapshot } from "./fixtures/expect-assembly-snapshot"
-import { poppyglExplosionLines } from "./fixtures/poppygl-explosion-lines"
 
 test("explosion directions follow emitted mounting frames including tilted and inverted faces", async () => {
   const panels = []
@@ -83,15 +82,15 @@ test("explosion directions follow emitted mounting frames including tilted and i
     }
     panels.push({
       title: `Mounted face normal: ${normalDirection}`,
-      circuit: exploded.circuitJson,
+      circuit: assembled,
       code: `<assembly.printedpart name="CARRIER"\n  mountedTo="BASE.face" mountFace="back">\n  <assembly.subassembly name="MODULE">\n    <assembly.explosion.stage name="move-marker">\n      <assembly.explosion.move targetRef="MARKER"\n        offX="5mm" offY="7mm" offZ="11mm" />\n    </assembly.explosion.stage>\n  </assembly.subassembly>\n</assembly.printedpart>`,
       annotation:
         "Offsets follow the emitted mounting-frame axes; all axes move together.",
       renderOptions: {
+        gltf: { explosion: {} },
         camPos: [45, 35, 45] as [number, number, number],
         poppygl: {
           lookAt: [0, 5, 0] as [number, number, number],
-          explosionLines: poppyglExplosionLines(exploded),
         },
       },
     })

@@ -1,3 +1,4 @@
+import type { AssemblyBolt } from "./AssemblyBolt"
 import { normalizeDegrees } from "@tscircuit/math-utils"
 import type { CadComponent, PcbComponent } from "circuit-json"
 import type { Matrix4 } from "jscad-planner"
@@ -14,6 +15,7 @@ import type { AssemblySubassembly } from "./AssemblySubassembly"
 import { getAssemblyTarget } from "./get-assembly-target"
 
 type Assembly =
+  | AssemblyBolt
   | AssemblyScreen
   | AssemblySubassembly
   | AssemblyPrintedPart
@@ -35,6 +37,7 @@ export interface AssemblyPlacement {
 export const isPositionedAssembly = (
   component: PrimitiveComponent,
 ): component is Assembly =>
+  component.componentName === "AssemblyBolt" ||
   component.componentName === "AssemblyPart" ||
   component.componentName === "AssemblyPrintedPart" ||
   component.componentName === "AssemblyScreen" ||
@@ -66,17 +69,23 @@ export const resolveAssemblyPlacement = (
     )
   }
   if (
+    component.componentName === "AssemblyBolt" ||
     component.componentName === "AssemblyPrintedPart" ||
-    component.componentName === "AssemblyPart"
+    component.componentName === "AssemblyBolt" ||
+    component.componentName === "AssemblyPart" ||
+    component.componentName === "AssemblySubassembly"
   ) {
-    const part = component as AssemblyPrintedPart | AssemblyPart
+    const part = component as
+      | AssemblyBolt
+      | AssemblyPrintedPart
+      | AssemblyPart
+      | AssemblySubassembly
     const { transforms, subcircuitId } = resolvePrintedPartMounts(part)
     const transform = transforms.get(part)!
-    if (part.componentName === "AssemblyPart")
+    if (part.componentName !== "AssemblyPrintedPart")
       return {
         ...getMountTransformPlacement(transform),
-        worldTransform:
-          Math.abs(Math.abs(transform[10]) - 1) > 1e-6 ? transform : undefined,
+        worldTransform: transform,
         subcircuit_id: subcircuitId,
       }
     return {
@@ -97,7 +106,11 @@ export const resolveInheritedAssemblyPlacement = (
   component: Assembly,
   path: Assembly[] = [],
   resolvePartPlacement?: (
-    part: AssemblyPart | AssemblyPrintedPart,
+    part:
+      | AssemblyPart
+      | AssemblyPrintedPart
+      | AssemblySubassembly
+      | AssemblyBolt,
   ) => AssemblyPlacement,
 ): AssemblyPlacement => {
   if (path.includes(component)) {
@@ -117,10 +130,18 @@ export const resolveInheritedAssemblyPlacement = (
     return { position: { x: 0, y: 0, z: 0 }, pcbRotation: 0, layer: "top" }
   if (
     resolvePartPlacement &&
-    (target.componentName === "AssemblyPart" ||
-      target.componentName === "AssemblyPrintedPart")
+    (target.componentName === "AssemblyBolt" ||
+      target.componentName === "AssemblyPart" ||
+      target.componentName === "AssemblyPrintedPart" ||
+      target.componentName === "AssemblySubassembly")
   )
-    return resolvePartPlacement(target as AssemblyPart | AssemblyPrintedPart)
+    return resolvePartPlacement(
+      target as
+        | AssemblyPart
+        | AssemblyPrintedPart
+        | AssemblySubassembly
+        | AssemblyBolt,
+    )
   if (resolvePartPlacement && isPositionedAssembly(target))
     return resolveInheritedAssemblyPlacement(
       target,
