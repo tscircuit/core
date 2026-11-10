@@ -35,6 +35,19 @@ test("a phase targeting a pin routes its named net while an unrelated net stays 
   )
   await circuit.renderUntilSettled()
   const wires = circuit.db.pcb_trace.list()
+  expect(started).toEqual(["DATA_ONLY"])
+  expect(wires).toHaveLength(1)
+  const ports = circuit.db.pcb_port.list()
+  const endPortIds = wires[0]!.route.flatMap((point) =>
+    point.route_type === "wire"
+      ? [point.start_pcb_port_id, point.end_pcb_port_id].filter(Boolean)
+      : [],
+  )
+  const names = endPortIds.map((id) => {
+    const port = ports.find((p) => p.pcb_port_id === id)!
+    return circuit.db.source_port.get(port.source_port_id)?.pin_number
+  })
+  expect(names.sort()).toEqual([1, 8])
   expect({ started, traceCount: wires.length }).toMatchSnapshot()
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

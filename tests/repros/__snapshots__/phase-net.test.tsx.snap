@@ -2,7 +2,9 @@
 
 exports[`a phase targeting a pin routes its named net while an unrelated net stays deferred 1`] = `
 {
-  "started": [],
-  "traceCount": 0,
+  "started": [
+    "DATA_ONLY",
+  ],
+  "traceCount": 1,
 }
 `;
