@@ -385,6 +385,17 @@ export function Group_getRoutingPhasePlans(
     ).traces.push(trace)
   }
 
+  const isFanoutPhaseIndex = (phaseIndex: number | null): boolean => {
+    const autorouter = autoroutersByPhaseIndex.get(phaseIndex)
+    const config =
+      autorouter !== undefined
+        ? getPresetAutoroutingConfig(autorouter, group.root?.platform)
+        : group._getAutorouterConfig()
+    return ["fanout", "single_layer_fanout", "dogbone"].includes(
+      config.preset ?? "",
+    )
+  }
+
   for (const [phaseIndex, phaseProps] of phasePropsByPhaseIndex) {
     const connectionSelectors =
       getConnectionSelectorsFromAutoroutingPhaseProps(phaseProps)
@@ -398,6 +409,16 @@ export function Group_getRoutingPhasePlans(
           if (!phaseProps.reroute) {
             for (const existingPlan of plansByPhaseIndex.values()) {
               if (existingPlan === plan) continue
+              const preservesEarlierFanout =
+                (isFanoutPhaseIndex(existingPlan.routingPhaseIndex) &&
+                  !isFanoutPhaseIndex(phaseIndex) &&
+                  getPhaseSortValue(existingPlan.routingPhaseIndex) <
+                    getPhaseSortValue(phaseIndex)) ||
+                (isFanoutPhaseIndex(phaseIndex) &&
+                  !isFanoutPhaseIndex(existingPlan.routingPhaseIndex) &&
+                  getPhaseSortValue(phaseIndex) <
+                    getPhaseSortValue(existingPlan.routingPhaseIndex))
+              if (preservesEarlierFanout) continue
               existingPlan.traces = existingPlan.traces.filter(
                 (existingTrace) => existingTrace !== trace,
               )
@@ -411,6 +432,36 @@ export function Group_getRoutingPhasePlans(
 
     if (phaseProps.reroute || phaseProps.pcbTracePaths !== undefined) {
       getOrCreateRoutingPhasePlan(plansByPhaseIndex, phaseIndex)
+    }
+  }
+
+  for (const [phaseIndex, phaseProps] of phasePropsByPhaseIndex) {
+    const connectionSelectors =
+      getConnectionSelectorsFromAutoroutingPhaseProps(phaseProps)
+    if (
+      connectionSelectors.length === 0 &&
+      !phaseProps.reroute &&
+      phaseProps.pcbTracePaths === undefined &&
+      isFanoutPhaseIndex(phaseIndex)
+    ) {
+      const plan = getOrCreateRoutingPhasePlan(plansByPhaseIndex, phaseIndex)
+      if (plan.traces.length === 0) {
+        for (const otherPlan of plansByPhaseIndex.values()) {
+          if (
+            otherPlan === plan ||
+            isFanoutPhaseIndex(otherPlan.routingPhaseIndex) ||
+            getPhaseSortValue(otherPlan.routingPhaseIndex) <=
+              getPhaseSortValue(phaseIndex)
+          ) {
+            continue
+          }
+          for (const trace of otherPlan.traces) {
+            if (!plan.traces.includes(trace)) {
+              plan.traces.push(trace)
+            }
+          }
+        }
+      }
     }
   }
 

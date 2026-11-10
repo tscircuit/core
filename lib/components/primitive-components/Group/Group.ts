@@ -2006,6 +2006,83 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
               layer: synchronizedPoint.fanoutExitPoint.layer as LayerRef,
             })
           }
+        } else if (
+          transformedSimpleRouteJson &&
+          !usesPreviousStageOutput &&
+          ["fanout", "single_layer_fanout", "dogbone"].includes(
+            phaseAutorouterConfig.preset ?? "",
+          )
+        ) {
+          const currentPhaseOrder = routingPhasePlans.indexOf(routingPhasePlan)
+          const subsequentRoutingPhasePlans =
+            currentPhaseOrder >= 0
+              ? routingPhasePlans
+                  .slice(currentPhaseOrder + 1)
+                  .filter(
+                    (laterPlan) =>
+                      !laterPlan.reroute && !laterPlan.testPointOptions,
+                  )
+              : []
+          const connectionNamesOwnedBySubsequentPhases = new Set(
+            simpleRouteJson.connections
+              .filter((connection) =>
+                subsequentRoutingPhasePlans.some((laterPlan) =>
+                  connectionIsInRoutingPhase(connection, laterPlan),
+                ),
+              )
+              .map((connection) => connection.name),
+          )
+          if (connectionNamesOwnedBySubsequentPhases.size > 0) {
+            const outputConnectionByName = new Map(
+              transformedSimpleRouteJson.connections.map((connection) => [
+                connection.name,
+                connection,
+              ]),
+            )
+            baseSimpleRouteJson = {
+              ...baseSimpleRouteJson,
+              connections: baseSimpleRouteJson.connections.flatMap(
+                (connection) => {
+                  if (
+                    !connectionNamesOwnedBySubsequentPhases.has(connection.name)
+                  ) {
+                    return [connection]
+                  }
+                  const updatedConnection = outputConnectionByName.get(
+                    connection.name,
+                  )
+                  return updatedConnection ? [updatedConnection] : []
+                },
+              ),
+              obstacles: transformedSimpleRouteJson.obstacles,
+            }
+            const remainingConnections =
+              transformedSimpleRouteJson.connections.filter(
+                (connection) =>
+                  !connectionNamesOwnedBySubsequentPhases.has(connection.name),
+              )
+            const remainingConnectionNames = new Set(
+              remainingConnections.map((connection) => connection.name),
+            )
+            transformedSimpleRouteJson = {
+              ...transformedSimpleRouteJson,
+              connections: remainingConnections,
+              buses: transformedSimpleRouteJson.buses
+                ?.map((bus) => ({
+                  ...bus,
+                  connectionNames: bus.connectionNames.filter((name) =>
+                    remainingConnectionNames.has(name),
+                  ),
+                }))
+                .filter((bus) => bus.connectionNames.length > 0),
+              differentialPairs:
+                transformedSimpleRouteJson.differentialPairs?.filter((pair) =>
+                  pair.connectionNames.every((name) =>
+                    remainingConnectionNames.has(name),
+                  ),
+                ),
+            }
+          }
         }
         // A transformed routing problem hands completed copper to the next
         // stage; preserve it instead of treating it as a rerouting seed.
