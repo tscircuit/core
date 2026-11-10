@@ -495,9 +495,9 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
     // Duck-type the upcoming autorouter API without requiring a package update.
     return (
       this.solver as {
-        getComputeCostSummary?(): AutorouterComputeCost | undefined
+        getComputeCost?(): AutorouterComputeCost | undefined
       }
-    ).getComputeCostSummary?.()
+    ).getComputeCost?.()
   }
 
   /**

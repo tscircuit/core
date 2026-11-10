@@ -27,7 +27,7 @@ test("capacity mesh forwards optional solver computeCost in stepped and threaded
                 }
               ).solver
               Object.assign(solver, {
-                getComputeCostSummary: measured ? () => computeCost : undefined,
+                getComputeCost: measured ? () => computeCost : undefined,
               })
               if (autorouterThreads > 1) {
                 // Keep a fast solve alive until the 250ms progress timer ticks.

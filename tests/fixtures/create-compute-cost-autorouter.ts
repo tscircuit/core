@@ -4,18 +4,19 @@ import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import { createBasicAutorouter } from "./createBasicAutorouter"
 
 export const computeCost: AutorouterComputeCost = {
-  metric: "solo_search_iterations",
-  totalIterations: 40,
-  measuredPairCount: 1,
-  pairs: [
-    {
-      connectionName: "R2_connection",
-      rootConnectionNames: ["source_trace_0", "source_trace_1"],
-      pcbPortIds: ["pcb_port_0", null],
-      iterations: 40,
-      share: 1,
-    },
-  ],
+  value: 40,
+  summary: {
+    metric: "hypergraph_route_search_iterations",
+    measuredPairCount: 1,
+    topPairs: [
+      {
+        connectionName: "R2_connection",
+        rootConnectionNames: ["source_trace_0", "source_trace_1"],
+        pcbPortIds: ["pcb_port_0", null],
+        iterations: 40,
+      },
+    ],
+  },
 }
 
 export const createComputeCostAutorouter =

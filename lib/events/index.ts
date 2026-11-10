@@ -60,17 +60,28 @@ export interface AutoroutingStartEvent extends AutoroutingExecutionMetadata {
   simpleRouteJson: SimpleRouteJson
 }
 
+/** Hypergraph route search iterations. */
+export type Iterations = number
+
+/**
+ * Routing compute cost of one stage, mirrored from the autorouter. Compare
+ * values only for the same board stage and autorouter settings: there, higher
+ * means harder to route.
+ */
 export interface AutorouterComputeCost {
-  metric: "solo_search_iterations"
-  totalIterations: number
-  measuredPairCount: number
-  pairs: Array<{
-    connectionName: string
-    rootConnectionNames: string[]
-    pcbPortIds: [string | null, string | null]
-    iterations: number
-    share: number
-  }>
+  /** Solo search iterations summed over every measured pair. */
+  readonly value: Iterations
+  readonly summary: {
+    readonly metric: "hypergraph_route_search_iterations"
+    readonly measuredPairCount: number
+    /** The most expensive pairs, highest first; at most 25. */
+    readonly topPairs: readonly {
+      readonly connectionName: string
+      readonly rootConnectionNames: readonly string[]
+      readonly pcbPortIds: readonly [string | null, string | null]
+      readonly iterations: Iterations
+    }[]
+  }
 }
 
 export interface AutoroutingErrorEvent extends AutoroutingExecutionMetadata {
