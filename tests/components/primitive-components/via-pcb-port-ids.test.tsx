@@ -33,13 +33,13 @@ test("manual vias reference only their own layer ports", async () => {
     [
       {
         "from_layer": "bottom",
-        "hole_diameter": 0.2,
+        "hole_diameter": 0.3,
         "layers": [
           "top",
           "bottom",
         ],
         "net_is_assignable": undefined,
-        "outer_diameter": 0.3,
+        "outer_diameter": 0.6,
         "pcb_group_id": undefined,
         "pcb_port_ids": [
           "pcb_port_0",
@@ -58,13 +58,13 @@ test("manual vias reference only their own layer ports", async () => {
       },
       {
         "from_layer": "bottom",
-        "hole_diameter": 0.2,
+        "hole_diameter": 0.3,
         "layers": [
           "top",
           "bottom",
         ],
         "net_is_assignable": undefined,
-        "outer_diameter": 0.3,
+        "outer_diameter": 0.6,
         "pcb_group_id": undefined,
         "pcb_port_ids": [
           "pcb_port_2",
