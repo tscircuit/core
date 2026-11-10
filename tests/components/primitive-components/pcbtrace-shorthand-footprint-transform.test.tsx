@@ -2,7 +2,12 @@ import { expect, test } from "bun:test"
 import { Fragment } from "react"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("pcbtrace shorthand follows its footprint pads on both sides at every quarter turn", async () => {
+test(
+  "pcbtrace shorthand follows its footprint pads on both sides at every quarter turn",
+  testPcbTraceFootprintTransforms,
+)
+
+async function testPcbTraceFootprintTransforms() {
   const { circuit } = getTestFixture()
   circuit.add(
     <board
@@ -80,6 +85,10 @@ test("pcbtrace shorthand follows its footprint pads on both sides at every quart
     </board>,
   )
   await circuit.renderUntilSettled()
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
+    showPcbNotes: true,
+    shouldDrawErrors: false,
+  })
 
   const traces = circuit.db.pcb_trace.list()
   expect(traces).toHaveLength(8)
@@ -140,8 +149,4 @@ test("pcbtrace shorthand follows its footprint pads on both sides at every quart
     expect(wires[1].layer).not.toBe(endpoints[0].layer)
   }
   expect(circuit.db.pcb_via.list()).toHaveLength(16)
-  await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
-    showPcbNotes: true,
-    shouldDrawErrors: false,
-  })
-})
+}
