@@ -55,7 +55,7 @@ test("footprint circuitjson rehydrates schematic symbol", async () => {
       width: 2,
       height: 0.7,
       stroke_width: 0.08,
-      color: "rgba(132, 0, 0)",
+      color: "rgb(132, 0, 0)",
       is_dashed: false,
     },
   ] as const
