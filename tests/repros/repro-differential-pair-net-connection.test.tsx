@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("differential pair over nets is not routed", async () => {
+test("differential pair over nets is routed", async () => {
   const { circuit } = getTestFixture()
   const usb = { DP: "net.USB_DP", DM: "net.USB_DM" }
 
@@ -31,8 +31,8 @@ test("differential pair over nets is not routed", async () => {
 
   await circuit.renderUntilSettled()
 
-  // Bug: "net.USB_DP" is not resolved, so the autorouter never runs.
-  expect(circuit.db.pcb_trace.list()).toHaveLength(0)
+  expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
+  expect(circuit.db.pcb_trace.list()).toHaveLength(2)
   await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
     shouldDrawRatsNest: true,
     showErrorsInTextOverlay: true,

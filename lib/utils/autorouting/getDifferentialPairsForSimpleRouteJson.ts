@@ -1,5 +1,6 @@
 import type { SourcePort, SourceTrace } from "circuit-json"
 import type { DifferentialPair } from "lib/components/primitive-components/DifferentialPair"
+import type { Net } from "lib/components/primitive-components/Net"
 import type { Port } from "lib/components/primitive-components/Port/Port"
 import type {
   PcbGroupId,
@@ -85,12 +86,25 @@ export const getDifferentialPairSourceTraceOrThrow = ({
       : null
   const selectedSourcePortId: SourcePortId | undefined =
     selectedPort?.source_port_id ?? undefined
+  const selectedSourceNetId =
+    sourceTracesWithMatchingName.length === 0 && !selectedPort
+      ? differentialPairSubcircuit.selectOne<Net>(traceNameOrPortSelector, {
+          type: "net",
+        })?.source_net_id
+      : undefined
   const matchingSourceTraces = selectedSourcePortId
     ? getDifferentialPairSourceTracesByPortId(
         differentialPairSourceTraces,
         selectedSourcePortId,
       )
-    : sourceTracesWithMatchingName
+    : selectedSourceNetId
+      ? // Every trace on a net shares its connectivity key, so any one identifies it.
+        differentialPairSourceTraces
+          .filter((sourceTrace) =>
+            sourceTrace.connected_source_net_ids.includes(selectedSourceNetId),
+          )
+          .slice(0, 1)
+      : sourceTracesWithMatchingName
 
   if (matchingSourceTraces.length === 0) {
     throw new Error(
