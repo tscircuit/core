@@ -901,40 +901,26 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     })
     simpleRouteJson.allowViaInPad =
       autorouterConfig.allowViaInPad ?? simpleRouteJson.allowViaInPad
-    const hasUnbrokenCopperPour = simpleRouteJson.obstacles.some(
+    const unbrokenPlaneRouteJson = simpleRouteJson.obstacles.some(
       (obstacle) => obstacle.isCopperPour,
     )
+      ? simpleRouteJson
+      : undefined
 
     if (serverMode === "solve-endpoint") {
-      // Legacy solve endpoint mode
-      if (this.props.autorouter?.inputFormat === "simplified") {
-        const { autorouting_result } = await fetchWithDebug(
-          `${serverUrl}/autorouting/solve`,
-          {
-            method: "POST",
-            body: JSON.stringify({
-              input_simple_route_json: simpleRouteJson,
-              subcircuit_id: this.subcircuit_id!,
-            }),
-            headers: {
-              "Content-Type": "application/json",
-            },
-          },
-        ).then((r) => r.json())
-        this._asyncAutoroutingResult = autorouting_result
-        this._markDirty("PcbTraceRender")
-        return
-      }
-
+      const simplifiedInput =
+        this.props.autorouter?.inputFormat === "simplified"
       const { autorouting_result } = await fetchWithDebug(
         `${serverUrl}/autorouting/solve`,
         {
           method: "POST",
           body: JSON.stringify({
-            input_circuit_json: pcbAndSourceCircuitJson,
-            input_simple_route_json: hasUnbrokenCopperPour
+            input_circuit_json: simplifiedInput
+              ? undefined
+              : pcbAndSourceCircuitJson,
+            input_simple_route_json: simplifiedInput
               ? simpleRouteJson
-              : undefined,
+              : unbrokenPlaneRouteJson,
             subcircuit_id: this.subcircuit_id!,
           }),
           headers: {
@@ -953,9 +939,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         method: "POST",
         body: JSON.stringify({
           input_circuit_json: pcbAndSourceCircuitJson,
-          input_simple_route_json: hasUnbrokenCopperPour
-            ? simpleRouteJson
-            : undefined,
+          input_simple_route_json: unbrokenPlaneRouteJson,
           provider: "freerouting",
           autostart: true,
           display_name: this.root?.name,

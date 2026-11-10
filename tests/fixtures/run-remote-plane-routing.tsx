@@ -1,5 +1,4 @@
 import { serve } from "bun"
-import type { CopperPourProps } from "@tscircuit/props"
 import type { AnyCircuitElement } from "circuit-json"
 import { TscircuitAutorouter } from "lib/utils/autorouting/CapacityMeshAutorouter"
 import type {
@@ -15,16 +14,12 @@ type RemoteRoutingRequest = {
 }
 
 /**
- * Runs a remote four-layer routing fixture. Optional outline vertices are
- * board-world points in mm: +X right, +Y up, +Z toward the top copper layer
- * (right-handed). Vertices represent positions, not directions.
+ * Runs a four-layer fixture in board-world mm (+X right, +Y up, +Z toward
+ * top copper; right-handed). PCB coordinates are points, not directions.
  */
 export const runRemotePlaneRouting = async (
   serverMode: "solve-endpoint" | "job",
-  {
-    unbroken = true,
-    outline,
-  }: Pick<CopperPourProps, "unbroken" | "outline"> = {},
+  unbroken = true,
 ) => {
   const { circuit } = getTestFixture({
     platform: { allowLegacyAutorouters: true },
@@ -83,21 +78,10 @@ export const runRemotePlaneRouting = async (
         }}
       >
         <net name="GND" />
-        <copperpour
-          layer="inner1"
-          connectsTo="net.GND"
-          unbroken={unbroken}
-          outline={outline}
-        />
+        <copperpour layer="inner1" connectsTo="net.GND" unbroken={unbroken} />
         <pcbnotetext
           pcbY={7}
-          text={
-            !unbroken
-              ? "INNER1: ORDINARY POUR / WIRES ALLOWED"
-              : outline
-                ? "INNER1: RESERVED ABOVE / WIRES BELOW"
-                : "INNER1: GND PLANE / NO SIGNAL WIRES"
-          }
+          text="INNER1: GND PLANE / NO SIGNAL WIRES"
           fontSize={0.55}
           anchorAlignment="center"
         />
