@@ -67,44 +67,65 @@ const getDifferentialPairSourceTracesByPortId = (
     sourceTrace.connected_source_port_ids.includes(sourcePortId),
   )
 
-export const getDifferentialPairSourceTraceOrThrow = ({
+/**
+ * Looks up the source traces a differential pair member refers to. The value is
+ * tried as a trace name first, then as a port selector, then as a net selector.
+ */
+const findDifferentialPairSourceTraces = ({
   differentialPair,
   differentialPairSourceTraces,
   traceNameOrPortSelector,
-}: GetDifferentialPairSourceTraceOrThrowParams): DifferentialPairSourceTraceSelection => {
-  const differentialPairSubcircuit = differentialPair.getSubcircuit()
+}: GetDifferentialPairSourceTraceOrThrowParams): SourceTrace[] => {
   const sourceTracesWithMatchingName =
     getDifferentialPairSourceTracesByTraceName(
       differentialPairSourceTraces,
       traceNameOrPortSelector,
     )
-  const selectedPort =
-    sourceTracesWithMatchingName.length === 0
-      ? differentialPairSubcircuit.selectOne<Port>(traceNameOrPortSelector, {
-          type: "port",
-        })
-      : null
-  const selectedSourcePortId: SourcePortId | undefined =
-    selectedPort?.source_port_id ?? undefined
-  const selectedSourceNetId =
-    sourceTracesWithMatchingName.length === 0 && !selectedPort
-      ? differentialPairSubcircuit.selectOne<Net>(traceNameOrPortSelector, {
-          type: "net",
-        })?.source_net_id
-      : undefined
-  const matchingSourceTraces = selectedSourcePortId
-    ? getDifferentialPairSourceTracesByPortId(
-        differentialPairSourceTraces,
-        selectedSourcePortId,
-      )
-    : selectedSourceNetId
-      ? // Every trace on a net shares its connectivity key, so any one identifies it.
-        differentialPairSourceTraces
-          .filter((sourceTrace) =>
-            sourceTrace.connected_source_net_ids.includes(selectedSourceNetId),
-          )
-          .slice(0, 1)
-      : sourceTracesWithMatchingName
+  if (sourceTracesWithMatchingName.length > 0) {
+    return sourceTracesWithMatchingName
+  }
+
+  const differentialPairSubcircuit = differentialPair.getSubcircuit()
+
+  const selectedPort = differentialPairSubcircuit.selectOne<Port>(
+    traceNameOrPortSelector,
+    { type: "port" },
+  )
+  if (selectedPort?.source_port_id) {
+    return getDifferentialPairSourceTracesByPortId(
+      differentialPairSourceTraces,
+      selectedPort.source_port_id,
+    )
+  }
+
+  const selectedNet = differentialPairSubcircuit.selectOne<Net>(
+    traceNameOrPortSelector,
+    { type: "net" },
+  )
+  const selectedSourceNetId = selectedNet?.source_net_id
+  if (selectedSourceNetId) {
+    const sourceTracesOnNet = differentialPairSourceTraces.filter(
+      (sourceTrace) =>
+        sourceTrace.connected_source_net_ids.includes(selectedSourceNetId),
+    )
+    // Every trace on a net shares the net's connectivity key, so a single
+    // trace is enough to identify the whole net.
+    return sourceTracesOnNet.slice(0, 1)
+  }
+
+  return []
+}
+
+export const getDifferentialPairSourceTraceOrThrow = ({
+  differentialPair,
+  differentialPairSourceTraces,
+  traceNameOrPortSelector,
+}: GetDifferentialPairSourceTraceOrThrowParams): DifferentialPairSourceTraceSelection => {
+  const matchingSourceTraces = findDifferentialPairSourceTraces({
+    differentialPair,
+    differentialPairSourceTraces,
+    traceNameOrPortSelector,
+  })
 
   if (matchingSourceTraces.length === 0) {
     throw new Error(
