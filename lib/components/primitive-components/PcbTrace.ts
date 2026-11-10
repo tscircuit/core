@@ -1,18 +1,53 @@
-import { type PcbTraceRoutePoint, pcb_trace_route_point } from "circuit-json"
+import {
+  type PcbTraceRoutePoint,
+  distance,
+  layer_ref,
+  pcb_trace_route_point,
+} from "circuit-json"
 import { applyToPoint } from "transformation-matrix"
 import { z } from "zod"
 import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
 import { getViaDiameterDefaults } from "lib/utils/pcbStyle/getViaDiameterDefaults"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
+const shorthandWirePoint = z
+  .object({
+    route_type: z.literal("wire").optional(),
+    x: distance,
+    y: distance,
+    width: distance.optional(),
+    layer: layer_ref.optional(),
+  })
+  .strict()
+
 export const pcbTraceProps = z.object({
-  route: z.array(pcb_trace_route_point),
+  layer: layer_ref.optional(),
+  thickness: distance.optional(),
+  route: z.array(z.union([pcb_trace_route_point, shorthandWirePoint])),
   // If this primitive PcbTrace needs to be associated with a source_trace_id
   // it can be added as a prop here. For footprints, it's often not needed.
   source_trace_id: z.string().optional(),
 })
 
 export type PcbTraceProps = z.infer<typeof pcbTraceProps>
+
+/**
+ * Resolve positions in the footprint-local, right-handed PCB frame: +X right,
+ * +Y toward the board top, +Z above. Coordinates and widths are in mm. Parent
+ * transforms are applied later; the supplied route and props stay unchanged.
+ */
+const resolvePcbTraceRoute = (props: PcbTraceProps): PcbTraceRoutePoint[] =>
+  props.route.map((point) => {
+    if (point.route_type === "via" || point.route_type === "through_pad") {
+      return point
+    }
+    return {
+      ...point,
+      route_type: "wire",
+      width: point.width ?? props.thickness ?? 0.1,
+      layer: point.layer ?? props.layer ?? "top",
+    }
+  })
 
 export class PcbTrace extends PrimitiveComponent<typeof pcbTraceProps> {
   pcb_trace_id: string | null = null
@@ -40,7 +75,7 @@ export class PcbTrace extends PrimitiveComponent<typeof pcbTraceProps> {
     const { isFlipped, maybeFlipLayer } = this._getPcbPrimitiveFlippedHelpers()
     const parentTransform = this._computePcbGlobalTransformBeforeLayout()
 
-    const transformedRoute = props.route.map((point) => {
+    const transformedRoute = resolvePcbTraceRoute(props).map((point) => {
       if (point.route_type === "wire") {
         const { x, y, ...restOfPoint } = point
         const transformedPoint = applyToPoint(parentTransform, { x, y })
@@ -133,8 +168,8 @@ export class PcbTrace extends PrimitiveComponent<typeof pcbTraceProps> {
     top: number
     bottom: number
   } {
-    const { _parsedProps: props } = this
-    if (!props.route || props.route.length === 0) {
+    const route = resolvePcbTraceRoute(this._parsedProps)
+    if (route.length === 0) {
       return { left: 0, right: 0, top: 0, bottom: 0 }
     }
 
@@ -143,7 +178,7 @@ export class PcbTrace extends PrimitiveComponent<typeof pcbTraceProps> {
     let minY = Infinity
     let maxY = -Infinity
 
-    for (const point of props.route) {
+    for (const point of route) {
       if (point.route_type === "through_pad") {
         minX = Math.min(minX, point.start.x, point.end.x)
         maxX = Math.max(maxX, point.start.x, point.end.x)
