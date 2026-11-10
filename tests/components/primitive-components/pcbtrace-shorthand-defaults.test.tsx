@@ -40,7 +40,7 @@ test("pcbtrace resolves defaults and point overrides without modifying its input
         thickness: 0.2,
         route: [
           { route_type: "wire", x: -5, y: -5, width: 0.4, layer: "bottom" },
-          { route_type: "wire", x: 5, y: -5, width: 0.4, layer: "bottom" },
+          { x: 5, y: -5, trace_width: 0.4 },
         ],
       },
       width: 0.4,

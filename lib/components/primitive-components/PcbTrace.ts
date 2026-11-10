@@ -7,38 +7,32 @@ import { getViaDiameterDefaults } from "lib/utils/pcbStyle/getViaDiameterDefault
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
 export const pcbTraceProps = publicPcbTraceProps.extend({
-  // If this primitive PcbTrace needs to be associated with a source_trace_id
-  // it can be added as a prop here. For footprints, it's often not needed.
+  // Optional internal association with a Circuit JSON source trace.
   source_trace_id: z.string().optional(),
 })
 
 export type PcbTraceProps = z.infer<typeof pcbTraceProps>
 
 /**
- * Resolve positions in the footprint-local, right-handed PCB frame: +X right,
- * +Y toward the board top, +Z above. Coordinates and widths are in mm. Parent
- * transforms are applied later; the supplied route and props stay unchanged.
+ * Resolve footprint-local points (mm, right-handed: +X right, +Y top, +Z above)
+ * before placement transforms, without changing the supplied props.
  */
 const resolvePcbTraceRoute = (props: PcbTraceProps): PcbTraceRoutePoint[] => {
   let currentLayer = props.layer ?? "top"
   return props.route.map((point): PcbTraceRoutePoint => {
-    if ("route_type" in point) {
-      currentLayer =
-        point.route_type === "wire"
-          ? point.layer
-          : point.route_type === "via"
-            ? point.to_layer
-            : point.end_layer
-      return point
+    if (!("route_type" in point)) {
+      return {
+        route_type: "wire",
+        x: point.x,
+        y: point.y,
+        width: point.trace_width ?? props.thickness ?? 0.1,
+        layer: currentLayer,
+      }
     }
-
-    return {
-      route_type: "wire",
-      x: point.x,
-      y: point.y,
-      width: point.trace_width ?? props.thickness ?? 0.1,
-      layer: currentLayer,
-    }
+    if (point.route_type === "wire") currentLayer = point.layer
+    else if (point.route_type === "via") currentLayer = point.to_layer
+    else currentLayer = point.end_layer
+    return point
   })
 }
 
