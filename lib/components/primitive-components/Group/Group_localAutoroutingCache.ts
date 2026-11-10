@@ -1,4 +1,4 @@
-import type { AutorouterRouteEffort } from "lib/events"
+import type { AutorouterComputeCost } from "lib/events"
 import type { LocalCacheEngine } from "lib/local-cache-engine"
 import type { AutorouterOptions } from "lib/utils/autorouting/CapacityMeshAutorouter"
 import type {
@@ -42,7 +42,7 @@ export type LocalAutoroutingCacheSolverOptions = Pick<
 
 type CachedAutoroutingPhaseResult = SimpleRouteJson & {
   traces: SimplifiedPcbTrace[]
-  routeEffort?: AutorouterRouteEffort
+  computeCost?: AutorouterComputeCost
 }
 
 export const getLocalAutoroutingCacheKey = (

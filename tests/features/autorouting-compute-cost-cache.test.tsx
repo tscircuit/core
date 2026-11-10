@@ -1,10 +1,10 @@
 import { expect, test } from "bun:test"
 import type { AutoroutingEndEvent } from "lib/events"
 import type { LocalCacheEngine } from "lib/local-cache-engine"
-import { routeEffort } from "tests/fixtures/createRouteEffortAutorouter"
+import { computeCost } from "tests/fixtures/createComputeCostAutorouter"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("a cached routing stage replays stored effort on completion", async () => {
+test("a cached routing stage replays stored computeCost on completion", async () => {
   const cache = new Map<string, string>()
   const localCacheEngine: LocalCacheEngine = {
     getItem: (key) => cache.get(key) ?? null,
@@ -32,15 +32,15 @@ test("a cached routing stage replays stored effort on completion", async () => {
     expect(cache.size).toBe(1)
     if (run === 0) {
       // Custom algorithms bypass this cache, and the published solver does not
-      // measure effort yet. Seed its real cache entry with the future payload.
+      // measure computeCost yet. Seed its real cache entry with the future payload.
       const [cacheKey, cachedResult] = [...cache.entries()][0]!
       cache.set(
         cacheKey,
-        JSON.stringify({ ...JSON.parse(cachedResult), routeEffort }),
+        JSON.stringify({ ...JSON.parse(cachedResult), computeCost }),
       )
     } else {
       expect(progressCount).toBe(0)
-      expect(ends[0]!.routeEffort).toEqual(routeEffort)
+      expect(ends[0]!.computeCost).toEqual(computeCost)
     }
   }
 })

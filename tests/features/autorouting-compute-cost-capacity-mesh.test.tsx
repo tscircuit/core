@@ -2,10 +2,10 @@ import { expect, test } from "bun:test"
 import type { AutoroutingPipelineSolver9_PreloadedTraceGraph } from "@tscircuit/capacity-autorouter"
 import type { AutoroutingProgressEvent } from "lib/events"
 import { TscircuitAutorouter } from "lib/utils/autorouting/CapacityMeshAutorouter"
-import { routeEffort } from "tests/fixtures/createRouteEffortAutorouter"
+import { computeCost } from "tests/fixtures/createComputeCostAutorouter"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("capacity mesh forwards optional solver effort in stepped and threaded progress", async () => {
+test("capacity mesh forwards optional solver computeCost in stepped and threaded progress", async () => {
   for (const autorouterThreads of [1, 2]) {
     for (const measured of [true, false]) {
       const { circuit } = getTestFixture()
@@ -27,7 +27,7 @@ test("capacity mesh forwards optional solver effort in stepped and threaded prog
                 }
               ).solver
               Object.assign(solver, {
-                getRouteEffortSummary: measured ? () => routeEffort : undefined,
+                getComputeCostSummary: measured ? () => computeCost : undefined,
               })
               if (autorouterThreads > 1) {
                 // Keep a fast solve alive until the 250ms progress timer ticks.
@@ -51,13 +51,13 @@ test("capacity mesh forwards optional solver effort in stepped and threaded prog
       )
       await circuit.renderUntilSettled()
       expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
-      expect(autorouter!.getRouteEffort()).toEqual(
-        measured ? routeEffort : undefined,
+      expect(autorouter!.getComputeCost()).toEqual(
+        measured ? computeCost : undefined,
       )
       expect(progress.length).toBeGreaterThan(0)
       for (const event of progress) {
-        if (measured) expect(event.routeEffort).toEqual(routeEffort)
-        else expect(event).not.toHaveProperty("routeEffort")
+        if (measured) expect(event.computeCost).toEqual(computeCost)
+        else expect(event).not.toHaveProperty("computeCost")
       }
     }
   }

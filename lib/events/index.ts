@@ -60,7 +60,7 @@ export interface AutoroutingStartEvent extends AutoroutingExecutionMetadata {
   simpleRouteJson: SimpleRouteJson
 }
 
-export interface AutorouterRouteEffort {
+export interface AutorouterComputeCost {
   metric: "solo_search_iterations"
   totalIterations: number
   measuredPairCount: number
@@ -83,7 +83,7 @@ export interface AutoroutingErrorEvent extends AutoroutingExecutionMetadata {
   error?: { message: string; stack?: string }
   simpleRouteJson?: SimpleRouteJson
   debugGraphics?: any
-  routeEffort?: AutorouterRouteEffort
+  computeCost?: AutorouterComputeCost
 }
 
 export interface AutoroutingProgressEvent extends AutoroutingExecutionMetadata {
@@ -96,7 +96,7 @@ export interface AutoroutingProgressEvent extends AutoroutingExecutionMetadata {
   progress: number
   iterationsPerSecond?: number
   debugGraphics?: any
-  routeEffort?: AutorouterRouteEffort
+  computeCost?: AutorouterComputeCost
 }
 
 export interface AutoroutingEndEvent extends AutoroutingExecutionMetadata {
@@ -116,7 +116,7 @@ export interface AutoroutingEndEvent extends AutoroutingExecutionMetadata {
   phaseStageIndex?: number
   phaseStageCount?: number
   simpleRouteJson: SimpleRouteJson
-  routeEffort?: AutorouterRouteEffort
+  computeCost?: AutorouterComputeCost
 }
 
 export interface PackingStartEvent {

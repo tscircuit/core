@@ -1,9 +1,9 @@
-import type { AutorouterRouteEffort } from "lib/events"
+import type { AutorouterComputeCost } from "lib/events"
 import type { GenericLocalAutorouter } from "lib/utils/autorouting/GenericLocalAutorouter"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import { createBasicAutorouter } from "./createBasicAutorouter"
 
-export const routeEffort: AutorouterRouteEffort = {
+export const computeCost: AutorouterComputeCost = {
   metric: "solo_search_iterations",
   totalIterations: 40,
   measuredPairCount: 1,
@@ -18,7 +18,7 @@ export const routeEffort: AutorouterRouteEffort = {
   ],
 }
 
-export const createRouteEffortAutorouter =
+export const createComputeCostAutorouter =
   ({ fail = false, emitProgress = true } = {}) =>
   async (input: SimpleRouteJson): Promise<GenericLocalAutorouter> => {
     const autorouter = await createBasicAutorouter(async () => {
@@ -28,11 +28,11 @@ export const createRouteEffortAutorouter =
     const on = autorouter.on.bind(autorouter)
     return {
       ...autorouter,
-      getRouteEffort: () => routeEffort,
+      getComputeCost: () => computeCost,
       on(event: "complete" | "error" | "progress", callback: any) {
         if (event === "progress") {
           on(event, (progress) => {
-            if (emitProgress) callback({ ...progress, routeEffort })
+            if (emitProgress) callback({ ...progress, computeCost })
           })
         } else if (event === "complete") {
           on(event, callback)

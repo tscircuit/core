@@ -15,7 +15,7 @@ import {
 } from "@tscircuit/capacity-autorouter"
 import type { PlatformConfig } from "@tscircuit/props"
 import { AutorouterError } from "lib/errors/AutorouterError"
-import type { AutorouterRouteEffort } from "lib/events"
+import type { AutorouterComputeCost } from "lib/events"
 import { SOLVERS, type SolverName } from "lib/solvers"
 import type {
   AutorouterCompleteEvent,
@@ -268,11 +268,11 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
         run,
         (progress) => {
           this.cycleCount++
-          const routeEffort = this.getRouteEffort()
+          const computeCost = this.getComputeCost()
           this.emitEvent({
             ...progress,
             steps: this.cycleCount,
-            ...(routeEffort !== undefined ? { routeEffort } : {}),
+            ...(computeCost !== undefined ? { computeCost } : {}),
           })
         },
       )
@@ -364,7 +364,7 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
 
       // Report progress
       const progress = this.solver.progress
-      const routeEffort = this.getRouteEffort()
+      const computeCost = this.getComputeCost()
 
       this.emitEvent({
         type: "progress",
@@ -377,7 +377,7 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
             : (this.solver.activeSubSolver?.getSolverName() ??
               this.solver.getSolverName()),
         debugGraphics,
-        ...(routeEffort !== undefined ? { routeEffort } : {}),
+        ...(computeCost !== undefined ? { computeCost } : {}),
       })
 
       // Schedule the next step
@@ -491,13 +491,13 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
     return this.solver.getOutputSimplifiedPcbTraces() as SimplifiedPcbTrace[]
   }
 
-  getRouteEffort(): AutorouterRouteEffort | undefined {
+  getComputeCost(): AutorouterComputeCost | undefined {
     // Duck-type the upcoming autorouter API without requiring a package update.
     return (
       this.solver as {
-        getRouteEffortSummary?(): AutorouterRouteEffort | undefined
+        getComputeCostSummary?(): AutorouterComputeCost | undefined
       }
-    ).getRouteEffortSummary?.()
+    ).getComputeCostSummary?.()
   }
 
   /**
