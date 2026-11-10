@@ -1,69 +1,29 @@
 import { expect, test } from "bun:test"
-import { Fragment } from "react"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("rectangular mounting hole stays horizontal when its footprint rotates", async () => {
+test("rectangular hole ignores footprint rotation", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
-    <board width={28} height={16} routingDisabled>
-      {[0, 90].map((rotation, column) => (
-        <Fragment key={rotation}>
-          <pcbnotetext
-            text={
-              rotation === 0 ? "0 DEG CONTROL" : "90 DEG: HOLE STAYS HORIZONTAL"
-            }
-            pcbX={column === 0 ? -7 : 7}
-            pcbY={6}
-            fontSize={0.5}
-          />
-          <chip
-            name={`J${column + 1}`}
-            pcbX={column === 0 ? -7 : 7}
-            pcbRotation={rotation}
-            footprint={
-              <footprint>
-                {[-4, 4].map((x, pin) => (
-                  <Fragment key={x}>
-                    <smtpad
-                      shape="rect"
-                      width={0.6}
-                      height={0.6}
-                      pcbX={x}
-                      portHints={[`pin${pin + 1}`]}
-                    />
-                  </Fragment>
-                ))}
-                <silkscreenpath
-                  strokeWidth={0.15}
-                  route={[
-                    { x: -3, y: -1 },
-                    { x: 3, y: -1 },
-                    { x: 3, y: 1 },
-                    { x: -3, y: 1 },
-                    { x: -3, y: -1 },
-                  ]}
-                />
-                <hole shape="rect" width={6} height={2} />
-              </footprint>
-            }
-          />
-        </Fragment>
-      ))}
+    <board width={12} height={12} routingDisabled>
+      <chip
+        name="J1"
+        pcbRotation={90}
+        footprint={
+          <footprint>
+            <hole shape="rect" width={6} height={2} />
+            <silkscreenrect width={6} height={2} strokeWidth={0.15} />
+          </footprint>
+        }
+      />
       <pcbnotetext
-        text="YELLOW = EXPECTED HOLE OUTLINE; PINK = ACTUAL HOLE"
-        pcbY={-6}
-        fontSize={0.5}
+        text="90 DEG: HOLE SHOULD FOLLOW YELLOW OUTLINE"
+        pcbY={4.5}
+        fontSize={0.4}
       />
     </board>,
   )
-
   await circuit.renderUntilSettled()
   await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
-    width: 1200,
-    height: 700,
     showPcbNotes: true,
-    shouldDrawRatsNest: false,
-    shouldDrawErrors: false,
-    showErrorsInTextOverlay: false,
   })
 })
