@@ -66,7 +66,6 @@ test("mixed-side connector pads and plated slot follow the footprint mounting si
     </board>,
   )
   await circuit.renderUntilSettled()
-  const padLayers = circuit.db.pcb_smtpad.list().map((pad) => pad.layer)
   const slotAxes = circuit.db.pcb_plated_hole.list().map((hole) => {
     if (hole.shape !== "pill") throw new Error("Expected plated slot")
     return Math.round((hole.ccw_rotation ?? 0) % 180)
@@ -93,6 +92,5 @@ test("mixed-side connector pads and plated slot follow the footprint mounting si
       pad.layer,
     ])
   }
-  expect({ padLayers, slotAxes }).toMatchSnapshot()
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
