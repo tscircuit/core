@@ -1,10 +1,10 @@
-import type { AnySourceComponent } from "circuit-json"
+import type { SourceComponentBase } from "circuit-json"
 import type {
   SimpleRouteConnection,
   SrjConnectionName,
 } from "./SimpleRouteJson"
 
-type TerminalComponentName = AnySourceComponent["name"]
+type TerminalComponentName = SourceComponentBase["name"]
 
 const getBreakoutTerminalComponentOrThrow = (
   connection: SimpleRouteConnection,
