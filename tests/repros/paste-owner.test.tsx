@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { CircuitJsonToKicadPcbConverter } from "circuit-json-to-kicad"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("plated-hole paste apertures keep their connector as the component owner", async () => {
@@ -44,6 +45,25 @@ test("plated-hole paste apertures keep their connector as the component owner", 
     expect(ownerBySide).toEqual([
       { layer: "top", belongsToConnector: true },
       { layer: "bottom", belongsToConnector: true },
+    ])
+    const converter = new CircuitJsonToKicadPcbConverter(
+      circuit.getCircuitJson(),
+    )
+    converter.runUntilFinished()
+    const footprints = converter.getOutput().footprints
+    expect(footprints).toHaveLength(1)
+    const connector = footprints[0]!
+    expect(
+      connector.properties.some(
+        (property) => property.key === "Reference" && property.value === "J1",
+      ),
+    ).toBe(true)
+    const platedHolePaste = connector.fpPads.filter(
+      (pad) => pad.shape === "circle" && pad.layers?.layers.length === 1,
+    )
+    expect(platedHolePaste.map((pad) => pad.layers!.layers[0]).sort()).toEqual([
+      "B.Paste",
+      "F.Paste",
     ])
     expect(ownerBySide).toMatchSnapshot()
   }
