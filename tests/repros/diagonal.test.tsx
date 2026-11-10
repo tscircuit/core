@@ -34,11 +34,11 @@ test("an existing diagonal copper segment can be an obstacle for the next routin
     </board>,
   )
   await circuit.renderUntilSettled()
-  expect({
-    diagonalError: failures.some((error) =>
+  expect(
+    failures.some((error) =>
       error.includes("only supports horizontal and vertical"),
     ),
-    traceCount: circuit.db.pcb_trace.list().length,
-  }).toMatchSnapshot()
+  ).toBe(true)
+  expect(circuit.db.pcb_trace.list()).toHaveLength(1)
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
