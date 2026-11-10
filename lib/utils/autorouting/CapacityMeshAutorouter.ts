@@ -12,7 +12,10 @@ import {
   AutoroutingPipelineSolver9_Networked,
   AutoroutingPipelineSolver11_Simplification,
   type CacheProvider,
+  type RoutingFailure,
+  getRoutingFailure,
 } from "@tscircuit/capacity-autorouter"
+import { getDifferentialPairRoutingFailure } from "./getDifferentialPairRoutingFailure"
 import type { PlatformConfig } from "@tscircuit/props"
 import { AutorouterError } from "lib/errors/AutorouterError"
 import type { AutorouterComputeCostSummary } from "lib/events"
@@ -138,6 +141,7 @@ function getCapacityAutorouterCacheProvider(
 export class TscircuitAutorouter implements GenericLocalAutorouter {
   input: SimpleRouteJson
   isRouting = false
+  routingFailure?: RoutingFailure
   private solver:
     | AutoroutingPipelineSolver
     | AssignableAutoroutingPipeline2
@@ -209,6 +213,22 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
       targetMinCapacity,
       cacheProvider: solverCacheProvider,
       effort,
+    }
+    if (
+      input.differentialPairs?.length &&
+      ![
+        "AutoroutingPipelineSolver9_PreloadedTraceGraph",
+        "AutoroutingPipelineSolver7_MultiGraph",
+      ].includes(solverName)
+    ) {
+      throw new AutorouterError(
+        "This autorouter does not support differential pairs",
+        {
+          reason: "unsupported_routing_scope",
+          pairIndex: 0,
+          detail: "Use the local Pipeline9 or Pipeline7 router",
+        },
+      )
     }
     this.solver =
       solverName === "AutoroutingPipelineSolver9_Networked"
@@ -283,22 +303,15 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
         return
       }
       this.isRouting = false
-      if (this.solver.failed) {
-        throw new AutorouterError(this.solver.error || "Routing failed")
-      }
-      this.emitEvent({
-        type: "complete",
-        traces:
-          this.solver.getOutputSimplifiedPcbTraces() as SimplifiedPcbTrace[],
-      })
+      this.emitCompletion()
     } catch (error) {
       if (run.stopped) return
       this.isRouting = false
       this.emitEvent({
         type: "error",
-        error: new AutorouterError(
-          error instanceof Error ? error.message : String(error),
-        ),
+        failure: (this.routingFailure = getRoutingFailure(error)),
+        error:
+          error instanceof Error ? error : new AutorouterError(String(error)),
       })
     } finally {
       this.threadedRun = undefined
@@ -326,18 +339,7 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
     try {
       // If already solved or failed, complete the routing
       if (this.solver.solved || this.solver.failed) {
-        if (this.solver.failed) {
-          this.emitEvent({
-            type: "error",
-            error: new AutorouterError(this.solver.error || "Routing failed"),
-          })
-        } else {
-          this.emitEvent({
-            type: "complete",
-            traces:
-              this.solver.getOutputSimplifiedPcbTraces() as SimplifiedPcbTrace[],
-          })
-        }
+        this.emitCompletion()
         this.isRouting = false
         return
       }
@@ -397,10 +399,9 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
       // Handle any errors during the step
       this.emitEvent({
         type: "error",
+        failure: (this.routingFailure = getRoutingFailure(error)),
         error:
-          error instanceof Error
-            ? new AutorouterError(error.message)
-            : new AutorouterError(String(error)),
+          error instanceof Error ? error : new AutorouterError(String(error)),
       })
       this.isRouting = false
     }
@@ -482,22 +483,47 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
         "Cannot solve synchronously while autorouting is active",
       )
     }
-    this.solver.solve()
-
-    if (this.solver.failed) {
-      throw new AutorouterError(this.solver.error || "Routing failed")
+    try {
+      this.solver.solve()
+      return this.getSolvedTraces()
+    } catch (error) {
+      this.routingFailure = getRoutingFailure(error)
+      throw new AutorouterError(
+        error instanceof Error ? error.message : String(error),
+        this.routingFailure,
+      )
     }
-
-    return this.solver.getOutputSimplifiedPcbTraces() as SimplifiedPcbTrace[]
   }
 
   getComputeCostSummary(): AutorouterComputeCostSummary | undefined {
-    // Duck-type the upcoming autorouter API without requiring a package update.
     return (
       this.solver as {
         getComputeCostSummary?(): AutorouterComputeCostSummary | undefined
       }
     ).getComputeCostSummary?.()
+  }
+
+  private getSolvedTraces(): SimplifiedPcbTrace[] {
+    if ("getResult" in this.solver) {
+      const result = this.solver.getResult()
+      if (result.status === "failed") {
+        this.routingFailure = result.failure
+        throw new AutorouterError("Routing failed", result.failure)
+      }
+    } else if (this.solver.failed) {
+      throw new AutorouterError(this.solver.error || "Routing failed")
+    }
+    const traces =
+      this.solver.getOutputSimplifiedPcbTraces() as SimplifiedPcbTrace[]
+    const failure = getDifferentialPairRoutingFailure(this.input, traces)
+    if (failure)
+      throw new AutorouterError("Differential pair routing failed", failure)
+    return traces
+  }
+
+  private emitCompletion(): void {
+    const traces = this.getSolvedTraces()
+    this.emitEvent({ type: "complete", traces })
   }
 
   /**

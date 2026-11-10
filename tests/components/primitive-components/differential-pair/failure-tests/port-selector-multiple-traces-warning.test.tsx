@@ -1,12 +1,13 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("stores a warning when a differential pair port selector matches multiple traces", (): void => {
+test("rejects an ambiguous port instead of warning", (): void => {
   const { circuit } = getTestFixture()
 
   circuit.add(
     <board width="20mm" height="14mm" routingDisabled>
       <differentialpair
+        maxLengthSkew={0.1}
         name="USB"
         positiveConnection=".R1 > .pin1"
         negativeConnection="USB_N"
@@ -28,22 +29,5 @@ test("stores a warning when a differential pair port selector matches multiple t
     </board>,
   )
 
-  circuit.render()
-
-  const pointToPointWarning =
-    circuit.db.source_property_ignored_warning.getWhere({
-      property_name: "positiveConnection",
-    })
-  expect(pointToPointWarning).toMatchObject({
-    type: "source_property_ignored_warning",
-    error_type: "source_property_ignored_warning",
-    property_name: "positiveConnection",
-  })
-  expect(pointToPointWarning?.message).toContain(
-    'positiveConnection=".R1 > .pin1" is not point-to-point: expected exactly 2 terminal pins, found 3',
-  )
-  expect(pointToPointWarning?.message).not.toContain(
-    "Remove the extra connection",
-  )
-  expect(pointToPointWarning?.message).not.toContain("prefer a pin selector")
+  expect(() => circuit.render()).toThrow("matches multiple source traces")
 })

@@ -1,231 +1,142 @@
-import type { SourcePort, SourceTrace } from "circuit-json"
-import type { DifferentialPair } from "./DifferentialPair"
+import type { DifferentialPairConnection } from "@tscircuit/props"
+import type { SourceTrace } from "circuit-json"
+import { getFullConnectivityMapFromCircuitJson } from "circuit-json-to-connectivity-map"
+import { validateDifferentialPairSourceBuses } from "lib/utils/autorouting/validateDifferentialPairSourceBuses"
+import type { Net } from "./Net"
 import type { Port } from "./Port/Port"
+import type { DifferentialPair } from "./DifferentialPair"
 
-type ConnectionPolarity = "positive" | "negative"
-type SourceComponentId = NonNullable<SourcePort["source_component_id"]>
-
-type ResolvedPointToPointConnection = {
-  sourceTraceIds: SourceTrace["source_trace_id"][]
-  sourcePorts: SourcePort[]
-  sourceTraceName?: string
-}
-
-const resolvePointToPointConnection = (
-  differentialPair: DifferentialPair,
-  connectionSelector: string,
-): ResolvedPointToPointConnection | undefined => {
-  const { db } = differentialPair.root!
-  const subcircuit = differentialPair.getSubcircuit()
-  const subcircuitSourceTraces = db.source_trace
-    .list()
-    .filter(
-      (sourceTrace) => sourceTrace.subcircuit_id === subcircuit.subcircuit_id,
-    )
-  const matchingSourceTraces = subcircuitSourceTraces.filter(
-    (sourceTrace) => sourceTrace.name === connectionSelector,
-  )
-
-  // A named two-terminal trunk may share its net with termination taps. Its
-  // differential constraint applies to that path, not to every net branch.
-  const namedSourceTrace = matchingSourceTraces[0]
-  if (
-    matchingSourceTraces.length === 1 &&
-    namedSourceTrace?.connected_source_port_ids.length === 2
-  ) {
-    return {
-      sourceTraceIds: [namedSourceTrace.source_trace_id],
-      sourcePorts: db.source_port
-        .list()
-        .filter((sourcePort) =>
-          namedSourceTrace.connected_source_port_ids.includes(
-            sourcePort.source_port_id,
-          ),
-        ),
-      sourceTraceName: connectionSelector,
-    }
-  }
-  const connectivityMapKeys = new Set<string>()
-
-  if (matchingSourceTraces.length > 0) {
-    for (const sourceTrace of matchingSourceTraces) {
-      if (sourceTrace.subcircuit_connectivity_map_key) {
-        connectivityMapKeys.add(sourceTrace.subcircuit_connectivity_map_key)
-      }
-    }
-  } else {
-    const selectedPort = subcircuit.selectOne<Port>(connectionSelector, {
-      type: "port",
-    })
-    if (selectedPort?.source_port_id) {
-      const sourcePort = db.source_port.get(selectedPort.source_port_id)
-      if (sourcePort?.subcircuit_connectivity_map_key) {
-        connectivityMapKeys.add(sourcePort.subcircuit_connectivity_map_key)
-      }
-    }
-  }
-
-  if (connectivityMapKeys.size !== 1) return undefined
-  const connectivityMapKey = connectivityMapKeys.values().next().value
-  if (!connectivityMapKey) return undefined
-
-  const sourcePorts = db.source_port
-    .list()
-    .filter(
-      (sourcePort) =>
-        sourcePort.subcircuit_connectivity_map_key === connectivityMapKey,
-    )
-  return {
-    sourceTraceIds: subcircuitSourceTraces
-      .filter(
-        (trace) => trace.subcircuit_connectivity_map_key === connectivityMapKey,
-      )
-      .map((trace) => trace.source_trace_id),
-    sourcePorts,
-    sourceTraceName:
-      matchingSourceTraces.length > 0 ? connectionSelector : undefined,
-  }
-}
-
-const formatTerminalPinList = (terminalPinSelectors: string[]): string => {
-  if (terminalPinSelectors.length <= 1) return terminalPinSelectors.join("")
-  if (terminalPinSelectors.length === 2) {
-    return `${terminalPinSelectors[0]} and ${terminalPinSelectors[1]}`
-  }
-  return `${terminalPinSelectors.slice(0, -1).join(", ")}, and ${terminalPinSelectors.at(-1)}`
-}
-
-const getTerminalPinSelector = (
-  sourcePort: SourcePort,
-  sourceComponentsById: Map<SourceComponentId, { name: string }>,
-): string => {
-  let sourceComponent: { name: string } | undefined
-  if (sourcePort.source_component_id) {
-    sourceComponent = sourceComponentsById.get(sourcePort.source_component_id)
-  }
-  if (!sourceComponent?.name) return sourcePort.source_port_id
-
-  const portName =
-    sourcePort.most_frequently_referenced_by_name ?? sourcePort.name
-  return `.${sourceComponent.name} > .${portName}`
-}
-
-const getPointToPointWarningMessage = ({
-  differentialPairName,
-  connectionPolarity,
-  connectionSelector,
-  sourceTraceName,
-  terminalPinSelectors,
-}: {
-  differentialPairName: string
-  connectionPolarity: ConnectionPolarity
-  connectionSelector: string
-  sourceTraceName?: string
-  terminalPinSelectors: string[]
-}): string => {
-  const terminalList = formatTerminalPinList(terminalPinSelectors)
-  const terminalListDescription = terminalList ? `: ${terminalList}` : ""
-
-  if (sourceTraceName && terminalPinSelectors.length > 2) {
-    return `Differential pair "${differentialPairName}" ${connectionPolarity}Connection uses the ambiguous trace name "${sourceTraceName}": its connection has more than 2 terminal pins${terminalListDescription}.`
-  }
-
-  return `Differential pair "${differentialPairName}" ${connectionPolarity}Connection="${connectionSelector}" is not point-to-point: expected exactly 2 terminal pins, found ${terminalPinSelectors.length}${terminalListDescription}.`
-}
-
+/** Resolve authoring selectors once; every exported lane member is a real hop. */
 export const DifferentialPair_doInitialSourceDesignRuleChecks = (
-  differentialPair: DifferentialPair,
+  pair: DifferentialPair,
 ): void => {
-  const { db } = differentialPair.root!
-
-  const sourceComponentsById = new Map<SourceComponentId, { name: string }>()
-  for (const sourceComponent of db.source_component.list()) {
-    sourceComponentsById.set(sourceComponent.source_component_id, {
-      name: sourceComponent.name,
-    })
+  const { db } = pair.root!
+  const subcircuit = pair.getSubcircuit()
+  const subcircuit_id = subcircuit.subcircuit_id!
+  const traces = db.source_trace
+    .list()
+    .filter((trace) => trace.subcircuit_id === subcircuit_id)
+  const connectivity = getFullConnectivityMapFromCircuitJson(db.toArray())
+  const fail = (detail: string): never => {
+    throw new Error(
+      `Differential pair "${pair.name || "unnamed pair"}": ${detail}`,
+    )
   }
 
-  const memberTraceIds: SourceTrace["source_trace_id"][] = []
-  const pointToPointTraceIds: Partial<
-    Record<ConnectionPolarity, SourceTrace["source_trace_id"]>
-  > = {}
-  let resolvedPolarityCount = 0
-  for (const connectionPolarity of ["positive", "negative"] as const) {
-    let connectionSelector = differentialPair._parsedProps.negativeConnection
-    if (connectionPolarity === "positive") {
-      connectionSelector = differentialPair._parsedProps.positiveConnection
-    }
-
-    const resolvedConnection = resolvePointToPointConnection(
-      differentialPair,
-      connectionSelector,
-    )
-    if (!resolvedConnection) continue
-    resolvedPolarityCount++
-    memberTraceIds.push(...resolvedConnection.sourceTraceIds)
-
-    const terminalSourcePorts = resolvedConnection.sourcePorts
-    if (terminalSourcePorts.length === 2) {
-      // A conductor may consist of multiple source traces joined through a net.
-      // One resolved member identifies its polarity; source_trace_ids retains
-      // every fragment for connectivity consumers.
-      pointToPointTraceIds[connectionPolarity] =
-        resolvedConnection.sourceTraceIds[0]
-      continue
-    }
-    let warningSourceComponentId = ""
-    const firstTerminalSourcePort = terminalSourcePorts[0]
-    if (firstTerminalSourcePort) {
-      if (!firstTerminalSourcePort.source_component_id) {
-        throw new Error(
-          `Differential pair "${differentialPair.name}" resolved terminal port "${firstTerminalSourcePort.source_port_id}" without a source_component_id`,
+  const resolve = (
+    connection: DifferentialPairConnection,
+  ): [string, ...string[]] => {
+    const resolveHop = (
+      selector: string,
+      traceNamesOnly: boolean,
+    ): SourceTrace => {
+      const named = traces.filter((trace) => trace.name === selector)
+      if (traceNamesOnly) {
+        if (/[\s.>#:[\],*+~='"|]/.test(selector))
+          fail("arrays must contain trace names only, not selectors")
+        if (named.length !== 1)
+          fail(`trace name "${selector}" must resolve to exactly one trace`)
+        return named[0]!
+      }
+      const selected = subcircuit.selectAll(selector)
+      if (named.length && /[\s.>#:[\],*+~='"|]/.test(selector))
+        fail(
+          `"${selector}" is ambiguous between a trace name and selector syntax`,
+        )
+      if (named.length === 1) return named[0]!
+      if (named.length > 1 || selected.length > 1)
+        fail(
+          `trace name or port selector "${selector}" matches multiple source traces or terminals`,
+        )
+      const terminal = selected[0]
+      let connectivityId: string | undefined
+      if (terminal?.lowercaseComponentName === "port") {
+        const sourcePortId = (terminal as Port).source_port_id!
+        const matching = traces.filter((trace) =>
+          trace.connected_source_port_ids.includes(sourcePortId),
+        )
+        if (matching.length !== 1)
+          fail(
+            `port selector "${selector}" must resolve to one source trace; it matches multiple source traces or has no connected trace`,
+          )
+        if (matching[0]!.connected_source_port_ids.length === 2)
+          return matching[0]!
+        connectivityId = connectivity.getNetConnectedToId(sourcePortId)
+      } else if (terminal?.lowercaseComponentName === "net") {
+        connectivityId = connectivity.getNetConnectedToId(
+          (terminal as Net).source_net_id!,
+        )
+      } else {
+        fail(
+          `could not find source trace for trace name or port selector "${selector}"; expected a trace name, unambiguous port selector or two-pad net.X`,
         )
       }
-      warningSourceComponentId = firstTerminalSourcePort.source_component_id
-    }
-
-    const terminalPinSelectors = terminalSourcePorts
-      .map((sourcePort) =>
-        getTerminalPinSelector(sourcePort, sourceComponentsById),
+      const ports = db.source_port
+        .list()
+        .filter(
+          (port) =>
+            connectivityId &&
+            connectivity.getNetConnectedToId(port.source_port_id) ===
+              connectivityId,
+        )
+      if (ports.length !== 2)
+        fail(
+          `${selector} has ${ports.length} pads; list the traces in order, e.g. positiveConnection={["DP1","DP2"]}`,
+        )
+      const ids = ports.map((port) => port.source_port_id)
+      const canonical = traces.find(
+        (trace) =>
+          trace.connected_source_port_ids.length === 2 &&
+          ids.every((id) => trace.connected_source_port_ids.includes(id)),
       )
-      .sort((selectorA, selectorB) => selectorA.localeCompare(selectorB))
-    db.source_property_ignored_warning.insert({
-      source_component_id: warningSourceComponentId,
-      property_name: `${connectionPolarity}Connection`,
-      error_type: "source_property_ignored_warning",
-      message: getPointToPointWarningMessage({
-        differentialPairName: differentialPair.name,
-        connectionPolarity,
-        connectionSelector,
-        sourceTraceName: resolvedConnection.sourceTraceName,
-        terminalPinSelectors,
-      }),
-      subcircuit_id:
-        differentialPair.getSubcircuit().subcircuit_id ?? undefined,
-    })
+      if (canonical) return canonical
+      const fragments = traces.filter(
+        (trace) =>
+          connectivity.getNetConnectedToId(trace.source_trace_id) ===
+          connectivityId,
+      )
+      const hop = db.source_trace.insert({
+        connected_source_port_ids: ids,
+        connected_source_net_ids: [
+          ...new Set(
+            fragments.flatMap((trace) => trace.connected_source_net_ids),
+          ),
+        ],
+        subcircuit_connectivity_map_key:
+          fragments[0]?.subcircuit_connectivity_map_key,
+        min_trace_thickness:
+          Math.max(
+            0,
+            ...fragments.map((trace) => trace.min_trace_thickness ?? 0),
+          ) || undefined,
+        subcircuit_id,
+      })
+      traces.push(hop)
+      return hop
+    }
+    const selectors = typeof connection === "string" ? [connection] : connection
+    if (!selectors.length) fail("lanes must not be empty")
+    return selectors.map(
+      (selector) =>
+        resolveHop(selector, Array.isArray(connection)).source_trace_id,
+    ) as [string, ...string[]]
   }
-  // Export resolved membership for Circuit JSON consumers such as net inspection.
-  // Both polarities must resolve; existing validation still handles invalid selectors.
-  if (resolvedPolarityCount === 2 && memberTraceIds.length > 0) {
-    db.source_bus.insert({
-      name: differentialPair.name,
-      source_trace_ids: [...new Set(memberTraceIds)],
-      max_length_skew: differentialPair._parsedProps.maxLengthSkew,
-      target_differential_impedance:
-        differentialPair._parsedProps.targetDifferentialImpedance,
-      ...(pointToPointTraceIds.positive && pointToPointTraceIds.negative
-        ? {
-            differential_pair: {
-              positive_source_trace_id: pointToPointTraceIds.positive,
-              negative_source_trace_id: pointToPointTraceIds.negative,
-              trace_gap: differentialPair._parsedProps.pcbTraceGap,
-              max_uncoupled_length:
-                differentialPair._parsedProps.maxUncoupledLength,
-            },
-          }
-        : {}),
-      subcircuit_id:
-        differentialPair.getSubcircuit().subcircuit_id ?? undefined,
-    })
-  }
+
+  const positive_source_trace_ids = resolve(
+    pair._parsedProps.positiveConnection,
+  )
+  const negative_source_trace_ids = resolve(
+    pair._parsedProps.negativeConnection,
+  )
+  db.source_bus.insert({
+    name: pair.name,
+    subcircuit_id,
+    source_trace_ids: [
+      ...positive_source_trace_ids,
+      ...negative_source_trace_ids,
+    ],
+    max_length_skew: pair._parsedProps.maxLengthSkew,
+    differential_pair: { positive_source_trace_ids, negative_source_trace_ids },
+  })
+  validateDifferentialPairSourceBuses(db)
 }

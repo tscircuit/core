@@ -74,10 +74,10 @@ it("registers a differential pair using port selectors", async (): Promise<void>
   expect(simpleRouteJson.differentialPairs).toEqual([
     {
       connectionNames: [
-        positiveTrace.source_trace_id,
-        negativeTrace.source_trace_id,
+        [positiveTrace.source_trace_id],
+        [negativeTrace.source_trace_id],
       ],
-      lengthTolerance: 0.1,
+      maxLengthSkewMm: 0.1,
     },
   ])
 

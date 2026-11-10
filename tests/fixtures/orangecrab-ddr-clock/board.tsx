@@ -108,7 +108,6 @@ export function OrangeCrabDdrClockBoard({
         positiveConnection="CK_P_TRUNK"
         negativeConnection="CK_N_TRUNK"
         maxLengthSkew={0.1}
-        pcbTraceGap={0.089}
       />
       <pcbnotetext
         pcbX={1.3}

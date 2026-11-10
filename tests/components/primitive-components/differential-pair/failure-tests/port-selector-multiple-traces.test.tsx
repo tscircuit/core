@@ -8,6 +8,7 @@ it("throws when a differential pair port selector matches multiple traces", (): 
   circuit.add(
     <board width="20mm" height="14mm" routingDisabled>
       <differentialpair
+        maxLengthSkew={0.1}
         name="USB"
         positiveConnection=".R1 > .pin1"
         negativeConnection="USB_N"
@@ -29,19 +30,5 @@ it("throws when a differential pair port selector matches multiple traces", (): 
     </board>,
   )
 
-  circuit.render()
-
-  const boardSubcircuit = circuit.firstChild
-  if (!boardSubcircuit) {
-    throw new Error("Expected the circuit to contain a board")
-  }
-
-  expect((): void => {
-    getSimpleRouteJsonFromCircuitJson({
-      circuitJson: circuit.getCircuitJson(),
-      subcircuitComponent: boardSubcircuit,
-    })
-  }).toThrow(
-    'Trace name or port selector ".R1 > .pin1" matches multiple source traces for differential pair "USB"',
-  )
+  expect(() => circuit.render()).toThrow("port selector")
 })

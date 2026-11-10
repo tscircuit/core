@@ -20,9 +20,6 @@ test("emits resolved DDR bus and differential-pair constraints", (): void => {
         positiveConnection="DQS_P"
         negativeConnection="DQS_N"
         maxLengthSkew="100um"
-        targetDifferentialImpedance="100ohm"
-        pcbTraceGap="100um"
-        maxUncoupledLength="500um"
       />
       <chip name="U1" footprint="soic8" pcbX={-7} />
       <chip name="U2" footprint="soic8" pcbX={7} />
@@ -71,9 +68,7 @@ test("emits resolved DDR bus and differential-pair constraints", (): void => {
   expect(simpleRouteJson.differentialPairs).toEqual([
     {
       connectionNames: [sourceTraceIds[1], sourceTraceIds[2]],
-      lengthTolerance: 0.1,
-      traceGap: 0.1,
-      maxUncoupledLength: 0.5,
+      maxLengthSkewMm: 0.1,
     },
   ])
   expect(circuit).toMatchPcbSnapshot(import.meta.path)

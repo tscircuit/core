@@ -1,4 +1,5 @@
 import type {
+  DifferentialPair as SimpleRouteDifferentialPair,
   SimpleRouteJson as AutorouterSimpleRouteJson,
   SimplifiedPcbTrace as AutorouterSimplifiedPcbTrace,
 } from "@tscircuit/capacity-autorouter"
@@ -100,13 +101,7 @@ export type SimpleRouteConnection = {
   externallyConnectedPointIds?: string[][]
 }
 
-/** Length-matching constraints for two connections in Simple Route JSON. */
-export type SimpleRouteDifferentialPair = {
-  connectionNames: [SrjConnectionName, SrjConnectionName]
-  lengthTolerance: number
-  traceGap?: number
-  maxUncoupledLength?: number
-}
+export type { SimpleRouteDifferentialPair }
 
 /** A group of connections that an autorouter should keep together. */
 export type SimpleRouteBusTermination =

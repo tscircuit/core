@@ -41,9 +41,45 @@ export class Bus extends PrimitiveComponent<typeof busProps> {
         `Bus "${this.name}" resolves multiple entries to one trace`,
       )
     }
+    const comparisonSelectors =
+      this._parsedProps.lengthMatchTo === undefined
+        ? []
+        : typeof this._parsedProps.lengthMatchTo === "string"
+          ? [this._parsedProps.lengthMatchTo]
+          : this._parsedProps.lengthMatchTo
+    const length_match_source_trace_ids = comparisonSelectors.flatMap(
+      (selector) => {
+        const declaration = this.getSubcircuit().selectOne(selector)
+        const namedPair = this.getSubcircuit()
+          .selectAll("differentialpair")
+          .find((pair) => pair.name === selector)
+        if (
+          declaration?.lowercaseComponentName === "differentialpair" ||
+          namedPair
+        )
+          throw new Error(
+            `Bus "${this.name}" lengthMatchTo references differential pair "${namedPair?.name || declaration?.name || "unnamed pair"}"; matching buses to differential pairs is unsupported`,
+          )
+        const comparedBus = this.getSubcircuit()
+          .selectAll<Bus>("bus")
+          .find((bus) => bus.name === selector || bus === declaration)
+        return (
+          comparedBus ? comparedBus._parsedProps.connections : [selector]
+        ).map((traceNameOrPortSelector) =>
+          getBusSourceTraceIdOrThrow({
+            bus: this,
+            busSourceTraces,
+            traceNameOrPortSelector,
+          }),
+        )
+      },
+    )
     const sourceBus = db.source_bus.insert({
       name: this._parsedProps.name,
       source_trace_ids,
+      ...(length_match_source_trace_ids.length
+        ? { length_match_source_trace_ids }
+        : {}),
       max_length_skew: this._parsedProps.maxLengthSkew,
       min_length: getSourceBusRouteLength({
         bus: this,

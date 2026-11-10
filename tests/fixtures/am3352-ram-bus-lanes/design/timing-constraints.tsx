@@ -29,7 +29,6 @@ export function TimingConstraints() {
             positiveConnection={pin(`DDR_DQS${byte}`)}
             negativeConnection={pin(`DDR_DQSn${byte}`)}
             maxLengthSkew={0.127}
-            pcbTraceGap={0.12}
           />
         </Fragment>
       ))}
@@ -38,7 +37,6 @@ export function TimingConstraints() {
         positiveConnection={pin("DDR_CK")}
         negativeConnection={pin("DDR_CKn")}
         maxLengthSkew={0.127}
-        pcbTraceGap={0.12}
       />
     </>
   )

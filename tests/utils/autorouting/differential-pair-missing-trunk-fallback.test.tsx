@@ -1,3 +1,4 @@
+import { validateDifferentialPairSourceBuses } from "lib/utils/autorouting/validateDifferentialPairSourceBuses"
 import { expect, test } from "bun:test"
 import type { DifferentialPair } from "lib/components/primitive-components/DifferentialPair"
 import { getDifferentialPairsForSimpleRouteJson } from "lib/utils/autorouting/getDifferentialPairsForSimpleRouteJson"
@@ -33,11 +34,8 @@ test("does not substitute an OrangeCrab termination tap for a missing clock trun
     expect(() =>
       getDifferentialPairsForSimpleRouteJson({
         srjConnections: connectionsWithoutTrunk,
-        differentialPairs,
-        sourceTraces: circuit.db.source_trace.list(),
+        sourcePairs: validateDifferentialPairSourceBuses(circuit.db),
       }),
-    ).toThrow(
-      `Could not find an SRJ connection for trace name or port selector "${trunkName}"`,
-    )
+    ).toThrow("each hop needs exactly two routable terminals")
   }
 })

@@ -1,12 +1,13 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("stores a property warning for a branched differential pair", (): void => {
+test("rejects a named fragment instead of warning about ambiguous net membership", (): void => {
   const { circuit } = getTestFixture()
 
   circuit.add(
     <board width="20mm" height="14mm" routingDisabled>
       <differentialpair
+        maxLengthSkew={0.1}
         name="USB_DATA"
         positiveConnection="DP_FROM_J1"
         negativeConnection="DM"
@@ -21,17 +22,5 @@ test("stores a property warning for a branched differential pair", (): void => {
     </board>,
   )
 
-  circuit.render()
-
-  const pointToPointWarnings = circuit.db.source_property_ignored_warning.list()
-  expect(pointToPointWarnings).toHaveLength(1)
-  expect(pointToPointWarnings[0]).toMatchObject({
-    type: "source_property_ignored_warning",
-    error_type: "source_property_ignored_warning",
-    property_name: "positiveConnection",
-  })
-  expect(pointToPointWarnings[0]?.source_component_id).toBeDefined()
-  expect(pointToPointWarnings[0]?.message).toBe(
-    'Differential pair "USB_DATA" positiveConnection uses the ambiguous trace name "DP_FROM_J1": its connection has more than 2 terminal pins: .J1 > .pin1, .TP1 > .pin1, and .U1 > .pin1.',
-  )
+  expect(() => circuit.render()).toThrow("exactly two distinct ports")
 })

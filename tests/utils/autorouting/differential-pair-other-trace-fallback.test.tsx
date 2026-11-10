@@ -1,3 +1,4 @@
+import { validateDifferentialPairSourceBuses } from "lib/utils/autorouting/validateDifferentialPairSourceBuses"
 import { expect, test } from "bun:test"
 import type { DifferentialPair } from "lib/components/primitive-components/DifferentialPair"
 import { getDifferentialPairsForSimpleRouteJson } from "lib/utils/autorouting/getDifferentialPairsForSimpleRouteJson"
@@ -14,6 +15,7 @@ test("does not substitute a different named path even when the net has only two 
       <trace name="CK_P_ALTERNATE" from=".U1 > .pin8" to=".U2 > .pin1" />
       <trace name="CK_N_TRUNK" from=".U1 > .pin7" to=".U2 > .pin2" />
       <differentialpair
+        maxLengthSkew={0.1}
         name="CK_PAIR"
         positiveConnection="CK_P_TRUNK"
         negativeConnection="CK_N_TRUNK"
@@ -44,10 +46,7 @@ test("does not substitute a different named path even when the net has only two 
   expect(() =>
     getDifferentialPairsForSimpleRouteJson({
       srjConnections: connectionsWithoutTrunk,
-      differentialPairs: board.selectAll<DifferentialPair>("differentialpair"),
-      sourceTraces: circuit.db.source_trace.list(),
+      sourcePairs: validateDifferentialPairSourceBuses(circuit.db),
     }),
-  ).toThrow(
-    'Could not find an SRJ connection for trace name or port selector "CK_P_TRUNK"',
-  )
+  ).toThrow("each hop needs exactly two routable terminals")
 })

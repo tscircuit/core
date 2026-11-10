@@ -23,6 +23,7 @@ test("differential pair over nets is not routed", async () => {
         connections={usb}
       />
       <differentialpair
+        maxLengthSkew={0.1}
         positiveConnection="net.USB_DP"
         negativeConnection="net.USB_DM"
       />

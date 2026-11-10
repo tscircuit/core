@@ -55,16 +55,16 @@ test("keeps a residual net connection between disjoint explicit pair paths", asy
         path={[".C > .pin7", ".D > .pin2", "net.N"]}
       />
       <differentialpair
+        maxLengthSkew={0.1}
         name="AB"
         positiveConnection=".A > .pin8"
         negativeConnection="N_AB"
-        pcbTraceGap={0.85}
       />
       <differentialpair
+        maxLengthSkew={0.1}
         name="CD"
         positiveConnection="P_CD"
         negativeConnection="N_CD"
-        pcbTraceGap={0.85}
       />
       <autoroutingphase
         name="FIRST_PAIR"

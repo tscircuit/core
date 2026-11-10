@@ -177,5 +177,13 @@
   },
   "browser": {
     "@resvg/resvg-js": false
-  }
+  },
+  "TODO:differential-pair-releases": [
+    "Release and bump circuit-json after tscircuit/circuit-json#996 (source_bus union and error payloads)",
+    "Release and bump @tscircuit/props after tscircuit/props#1002 (strict pair props)",
+    "Release and bump @tscircuit/checks after tscircuit/checks#553 (pair lane-sum DRC)",
+    "Release @tscircuit/length-matching-solver after #88 -> #89, then bump it in the autorouter",
+    "Release and bump @tscircuit/capacity-autorouter after tscircuit/tscircuit-autorouter#3661 -> #3662",
+    "Then release core: #5386 -> this fix. Keep this PR draft until pins are bumped and the ESD repros pass."
+  ]
 }

@@ -276,9 +276,9 @@ export function getSavedAutoroutingPhaseTracesFromPaths({
             }))
             .filter((bus) => bus.connectionNames.length > 0),
           differentialPairs: input.differentialPairs?.filter((pair) =>
-            pair.connectionNames.every((name) =>
-              remainingConnectionNames.has(name),
-            ),
+            pair.connectionNames
+              .flat()
+              .every((name) => remainingConnectionNames.has(name)),
           ),
           traces: [...(input.traces ?? []), ...traces],
         }

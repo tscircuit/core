@@ -130,10 +130,31 @@ const localAutorouterStrategies = new Map<string, LocalAutorouterStrategy>([
         onSolverStarted,
         onSolverEnded,
       }) => {
-        return new DogboneAutorouter(
-          { input: simpleRouteJson, fanoutRoutingLayers },
+        if (simpleRouteJson.differentialPairs?.length)
+          throw new Error("Differential pairs do not support dogbone routing")
+        const autorouter = new DogboneAutorouter(
+          {
+            input: { ...simpleRouteJson, differentialPairs: undefined },
+            fanoutRoutingLayers,
+          },
           { onSolverStarted, onSolverEnded },
         )
+        return {
+          input: simpleRouteJson,
+          get isRouting() {
+            return autorouter.isRouting
+          },
+          start: () => autorouter.start(),
+          stop: () => autorouter.stop(),
+          on: autorouter.on.bind(autorouter),
+          solveSync: () => autorouter.solveSync(),
+          getOutputSimpleRouteJson: () => {
+            const output = autorouter.getOutputSimpleRouteJson()
+            return output
+              ? { ...output, differentialPairs: undefined }
+              : undefined
+          },
+        }
       },
     },
   ],

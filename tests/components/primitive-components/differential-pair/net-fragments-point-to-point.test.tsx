@@ -8,6 +8,7 @@ test("does not warn for a two-terminal conductor split through a source net", ()
   circuit.add(
     <board width="20mm" height="14mm" routingDisabled>
       <differentialpair
+        maxLengthSkew={0.1}
         name="USB_DATA"
         positiveConnection=".J1 > .pin1"
         negativeConnection="DM"
@@ -23,13 +24,16 @@ test("does not warn for a two-terminal conductor split through a source net", ()
   circuit.render()
 
   const exportedPair = circuit.db.source_bus.getWhere({ name: "USB_DATA" })!
-  expect(exportedPair.source_trace_ids).toHaveLength(3)
+  expect(exportedPair.source_trace_ids).toHaveLength(2)
+  const canonical = circuit.db.source_trace.get(
+    exportedPair.source_trace_ids[0]!,
+  )!
+  expect(canonical.connected_source_port_ids).toHaveLength(2)
   expect(exportedPair.differential_pair).toEqual({
-    positive_source_trace_id: circuit.db.source_trace.getWhere({
-      name: "DP_FROM_J1",
-    })!.source_trace_id,
-    negative_source_trace_id: circuit.db.source_trace.getWhere({ name: "DM" })!
-      .source_trace_id,
+    positive_source_trace_ids: [canonical.source_trace_id],
+    negative_source_trace_ids: [
+      circuit.db.source_trace.getWhere({ name: "DM" })!.source_trace_id,
+    ],
   })
 
   expect(
@@ -51,10 +55,10 @@ test("does not warn for a two-terminal conductor split through a source net", ()
   expect(simpleRouteJson.differentialPairs).toEqual([
     {
       connectionNames: [
-        circuit.db.source_net.getWhere({ name: "DP" })!.source_net_id,
-        circuit.db.source_trace.getWhere({ name: "DM" })!.source_trace_id,
+        [canonical.source_trace_id],
+        [circuit.db.source_trace.getWhere({ name: "DM" })!.source_trace_id],
       ],
-      lengthTolerance: 0.1,
+      maxLengthSkewMm: 0.1,
     },
   ])
 })

@@ -1,9 +1,10 @@
+import { expectDifferentialPairLengths } from "tests/fixtures/expect-differential-pair-lengths"
 import { expect, test } from "bun:test"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import { differentialPairPathPads } from "tests/fixtures/differential-pair-path-pads"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("BUG: ordered USB trace arrays are rejected instead of constraining J1-ESD-MCU", async () => {
+test("ordered USB trace arrays constrain J1-ESD-MCU lane sums", async () => {
   const { circuit } = getTestFixture()
   const inputs: SimpleRouteJson[] = []
   circuit.on("autorouting:start", (event) => inputs.push(event.simpleRouteJson))
@@ -39,9 +40,7 @@ test("BUG: ordered USB trace arrays are rejected instead of constraining J1-ESD-
       <trace name="DM2" from=".ESD > .DM" to=".MCU > .DM" />
       <differentialpair
         name="USB"
-        // @ts-expect-error BUG: props accepts only a scalar; the decided API accepts ordered trace names.
         positiveConnection={["DP1", "DP2"]}
-        // @ts-expect-error BUG: remove this suppression when negative trace arrays are supported.
         negativeConnection={["DM1", "DM2"]}
         maxLengthSkew={0.1}
       />
@@ -52,7 +51,7 @@ test("BUG: ordered USB trace arrays are rejected instead of constraining J1-ESD-
       />
       <pcbnotetext
         pcbY={-3}
-        text="BUG: [DP1, DP2] / [DM1, DM2] rejected as non-string props"
+        text="USB: ordered DP / DM hops; maximum lane skew 0.1mm"
         fontSize={0.45}
       />
       <pcbnotetext pcbX={-3} pcbY={-1.5} text="J1" fontSize={0.5} />
@@ -61,19 +60,21 @@ test("BUG: ordered USB trace arrays are rejected instead of constraining J1-ESD-
     </board>,
   )
   await circuit.renderUntilSettled()
-  const errors = circuit.db.source_failed_to_create_component_error.list()
-  expect(errors).toHaveLength(1)
-  expect(errors[0].message).toContain(
-    "positiveConnection (Expected string, received array)",
-  )
-  expect(errors[0].message).toContain(
-    "negativeConnection (Expected string, received array)",
-  )
-  // BUG: rendering continues with ordinary, unconstrained hop requests after
-  // replacing the invalid differentialpair with an error placeholder.
-  // Flip to one nested hop-list constraint and no source error in the fix PR.
+  expect(circuit.db.source_failed_to_create_component_error.list()).toEqual([])
   expect(inputs).toHaveLength(1)
-  expect(inputs[0].differentialPairs).toBeUndefined()
+  const [dp1, dp2, dm1, dm2] = ["DP1", "DP2", "DM1", "DM2"].map(
+    (name) => circuit.db.source_trace.getWhere({ name })!.source_trace_id,
+  )
+  expect(inputs[0].differentialPairs).toEqual([
+    {
+      connectionNames: [
+        [dp1!, dp2!],
+        [dm1!, dm2!],
+      ],
+      maxLengthSkewMm: 0.1,
+    },
+  ])
+  expectDifferentialPairLengths(circuit)
   expect(
     inputs[0].connections.map((connection) => connection.source_trace_id),
   ).toEqual(

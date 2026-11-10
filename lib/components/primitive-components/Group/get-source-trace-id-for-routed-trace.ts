@@ -12,6 +12,7 @@ import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
 import { applyToPoint, rotateDEG } from "transformation-matrix"
 
 type RoutedTrace = (PcbTrace | SimplifiedPcbTrace) & {
+  connection_name?: string
   source_trace_id?: string
 }
 type SourcePortId = SourcePort["source_port_id"]
@@ -274,6 +275,15 @@ export function getSourceTraceIdForRoutedTrace({
   trace: RoutedTrace
   subcircuit_id?: string | null
 }) {
+  const ownedPairTrace = db.source_bus
+    .list()
+    .some(
+      (bus) =>
+        bus.differential_pair &&
+        bus.source_trace_ids.includes(trace.connection_name ?? ""),
+    )
+  if (ownedPairTrace) return trace.connection_name
+
   if (trace.source_trace_id && db.source_trace.get(trace.source_trace_id)) {
     return trace.source_trace_id
   }

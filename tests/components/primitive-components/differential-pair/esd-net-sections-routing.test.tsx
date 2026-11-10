@@ -93,14 +93,12 @@ test("routes net-attached CPU and connector pair sections through the same ESD p
         positiveConnection="P_CPU"
         negativeConnection="N_CPU"
         maxLengthSkew={0.1}
-        pcbTraceGap={0.15}
       />
       <differentialpair
         name="PORT_PAIR"
         positiveConnection="P_PORT"
         negativeConnection="N_PORT"
         maxLengthSkew={0.1}
-        pcbTraceGap={0.15}
       />
       <bus
         name="CPU_BUS"
@@ -145,7 +143,7 @@ test("routes net-attached CPU and connector pair sections through the same ESD p
         pcbY={-6.1}
         fontSize={0.35}
         text={
-          '<differentialpair positiveConnection="P_CPU" negativeConnection="N_CPU" />'
+          '<differentialpair maxLengthSkew={0.1} positiveConnection="P_CPU" negativeConnection="N_CPU" />'
         }
       />
       <pcbnotetext
@@ -173,8 +171,7 @@ test("routes net-attached CPU and connector pair sections through the same ESD p
     expect(phaseInput.differentialPairs).toEqual([
       {
         connectionNames: [traceIds[0], traceIds[1]],
-        lengthTolerance: 0.1,
-        traceGap: 0.15,
+        maxLengthSkewMm: 0.1,
       },
     ])
     expect(

@@ -15,7 +15,6 @@ import {
   getFullConnectivityMapFromCircuitJson,
 } from "circuit-json-to-connectivity-map"
 import { Bus } from "lib/components/primitive-components/Bus"
-import { DifferentialPair } from "lib/components/primitive-components/DifferentialPair"
 import type { ISubcircuit } from "lib/components/primitive-components/Group/Subcircuit/ISubcircuit"
 import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
 import { findFloatingCopper } from "../copper-pour-connectivity/find-floating-copper"
@@ -23,7 +22,6 @@ import { getObstaclesFromCircuitJson } from "../obstacles/getObstaclesFromCircui
 import type {
   PcbGroupId,
   SimpleRouteConnection,
-  SimpleRouteDifferentialPair,
   SimpleRouteJson,
   SingleLayerConnectionPoint,
 } from "./SimpleRouteJson"
@@ -35,7 +33,7 @@ import {
   getBusesForSimpleRouteJson,
   getPlaneTerminatedSourceTraceLayers,
 } from "./getBusesForSimpleRouteJson"
-import { getDifferentialPairSourceTraceIds } from "./getDifferentialPairSourceTraceIds"
+import { validateDifferentialPairSourceBuses } from "./validateDifferentialPairSourceBuses"
 import { reduceNetConnectionPointsForDifferentialPairPaths } from "./reduceNetConnectionPointsForDifferentialPairPaths"
 import { getDifferentialPairsForSimpleRouteJson } from "./getDifferentialPairsForSimpleRouteJson"
 import { getPreservedRoutedSubcircuitTraces } from "./getPreservedRoutedSubcircuitTraces"
@@ -162,7 +160,11 @@ export const getSimpleRouteJsonFromCircuitJson = ({
    * Routed child-subcircuit traces and vias remain fixed routing geometry.
    */
   ignoreExistingTopLevelPcbRouteState?: boolean
-}): { simpleRouteJson: SimpleRouteJson; connMap: ConnectivityMap } => {
+}): {
+  simpleRouteJson: SimpleRouteJson
+  connMap: ConnectivityMap
+  differentialPairSourceBusIds: string[]
+} => {
   if (!db && circuitJson) {
     db = su(circuitJson)
   }
@@ -171,6 +173,15 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     throw new Error("db or circuitJson is required")
   }
 
+  const sourcePairs = validateDifferentialPairSourceBuses(db).filter(
+    (pair) => !subcircuit_id || pair.subcircuit_id === subcircuit_id,
+  )
+  const differentialPairPathSourceTraceIds = new Set(
+    sourcePairs.flatMap((pair) => pair.source_trace_ids),
+  )
+  const differentialPairSourceBusIds = sourcePairs.map(
+    (pair) => pair.source_bus_id,
+  )
   const traceHints = db.pcb_trace_hint.list()
 
   const relevantSubcircuitIds: Set<string> | null = subcircuit_id
@@ -569,24 +580,27 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   // For cross-boundary traces, add breakout points as additional
   // waypoints so the autorouter routes through the boundary.
   const sourceTraces = db.source_trace.list()
-  const differentialPairs: DifferentialPair[] =
-    subcircuitComponent?.selectAll<DifferentialPair>("differentialpair") ?? []
-  const differentialPairSourceTraceIds = getDifferentialPairSourceTraceIds({
-    differentialPairs,
-    sourceTraces,
-    subcircuitId: subcircuit_id,
-  })
-  // Preserve explicit two-terminal sections, not an arbitrary multi-terminal
-  // net as a differential conductor. Unspecified branch topology stays rejected.
-  const differentialPairPathSourceTraceIds = new Set(
-    sourceTraces
-      .filter(
-        (trace) =>
-          differentialPairSourceTraceIds.has(trace.source_trace_id) &&
-          trace.connected_source_port_ids.length === 2,
-      )
-      .map((trace) => trace.source_trace_id),
-  )
+  for (const pair of sourcePairs) {
+    for (const id of pair.source_trace_ids) {
+      const trace = db.source_trace.get(id)!
+      if (
+        sourceTraceIdsAlreadyPreservedAsSrjTraces.has(id) ||
+        trace.connected_source_port_ids.some((portId) =>
+          sourcePortIdToBreakoutPoint.has(portId),
+        ) ||
+        breakoutPoints.some(
+          (point) =>
+            point.source_trace_id === id ||
+            (point.source_net_id &&
+              trace.connected_source_net_ids.includes(point.source_net_id)),
+        )
+      ) {
+        throw new Error(
+          `Differential pair "${pair.name || "unnamed pair"}": phased, preserved and breakout splitting is unsupported`,
+        )
+      }
+    }
+  }
   const planeTerminatedSourceTraceLayers = getPlaneTerminatedSourceTraceLayers({
     fanoutPourNetMap,
     sourceNets: db.source_net.list(),
@@ -663,7 +677,9 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         // source trace endpoint in the autorouter input.
         pointsToConnect: [
           firstConnectedPortRoutePoint,
-          ...srjTraceHintConnectionPoints,
+          ...(differentialPairPathSourceTraceIds.has(trace.source_trace_id)
+            ? []
+            : srjTraceHintConnectionPoints),
           ...remainingPortRoutePoints,
         ],
       } as SimpleRouteConnection
@@ -1004,13 +1020,10 @@ export const getSimpleRouteJsonFromCircuitJson = ({
 
   const buses: Bus[] = subcircuitComponent?.selectAll<Bus>("bus") ?? []
 
-  const srjDifferentialPairs: SimpleRouteDifferentialPair[] | undefined =
-    getDifferentialPairsForSimpleRouteJson({
-      srjConnections: allConns,
-      differentialPairs,
-      sourceTraces: db.source_trace.list(),
-      subcircuitId: subcircuit_id,
-    })
+  const srjDifferentialPairs = getDifferentialPairsForSimpleRouteJson({
+    srjConnections: allConns,
+    sourcePairs,
+  })
 
   const srjBuses = getBusesForSimpleRouteJson({
     srjConnections: allConns,
@@ -1117,5 +1130,6 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       ),
     },
     connMap: sharedConnMap,
+    differentialPairSourceBusIds,
   }
 }
