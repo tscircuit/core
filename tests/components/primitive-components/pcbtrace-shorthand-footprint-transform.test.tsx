@@ -40,6 +40,9 @@ test("pcbtrace shorthand follows its footprint pads on both sides at every quart
                   thickness="0.25mm"
                   route={[
                     { x: "-3mm", y: "-1mm" },
+                    { x: "-2mm", y: "-0.6mm", via: true },
+                    { x: "-0.5mm", y: "0mm" },
+                    { x: "1mm", y: "0.6mm", via: true },
                     { x: "2mm", y: "1mm" },
                   ]}
                 />
@@ -73,8 +76,9 @@ test("pcbtrace shorthand follows its footprint pads on both sides at every quart
       .filter((pad) => pad.shape === "rect")
       .filter((pad) => pad.pcb_component_id === trace.pcb_component_id)
     const wires = trace.route.filter((point) => point.route_type === "wire")
-    expect(wires).toHaveLength(2)
-    for (const [pinIndex, wire] of wires.entries()) {
+    expect(wires).toHaveLength(3)
+    const endpoints = [wires[0], wires[2]]
+    for (const [pinIndex, wire] of endpoints.entries()) {
       const pad = pads.find((pad) =>
         pad.port_hints?.includes(`pin${pinIndex + 1}`),
       )!
@@ -83,7 +87,24 @@ test("pcbtrace shorthand follows its footprint pads on both sides at every quart
       expect(wire.layer).toBe(pad.layer)
       expect(wire.width).toBe(0.25)
     }
+    const vias = trace.route.filter((point) => point.route_type === "via")
+    expect(vias).toHaveLength(2)
+    for (const [viaIndex, via] of vias.entries()) {
+      const fraction = viaIndex === 0 ? 0.2 : 0.8
+      expect(via.x).toBeCloseTo(
+        endpoints[0].x + (endpoints[1].x - endpoints[0].x) * fraction,
+        8,
+      )
+      expect(via.y).toBeCloseTo(
+        endpoints[0].y + (endpoints[1].y - endpoints[0].y) * fraction,
+        8,
+      )
+      expect(via.from_layer).toBe(wires[viaIndex].layer)
+      expect(via.to_layer).toBe(wires[viaIndex + 1].layer)
+    }
+    expect(wires[1].layer).not.toBe(endpoints[0].layer)
   }
+  expect(circuit.db.pcb_via.list()).toHaveLength(16)
   await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
     showPcbNotes: true,
     shouldDrawErrors: false,

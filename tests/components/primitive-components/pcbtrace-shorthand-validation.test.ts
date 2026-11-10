@@ -7,6 +7,10 @@ test("pcbtrace shorthand does not let malformed explicit routes bypass validatio
     { ...wire, route_type: "unknown" },
     { ...wire, width: false },
     { ...wire, layer: "middle" },
+    { x: 0, y: 0, via: "yes" },
+    { x: 0, y: 0, to_layer: "middle" },
+    { x: 0, y: 0, trace_width: false },
+    { route_type: "wire", x: 0, y: 0 },
     { route_type: "via", x: 0, y: 0 },
     {
       ...wire,

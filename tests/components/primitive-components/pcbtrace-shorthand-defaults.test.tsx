@@ -23,11 +23,11 @@ test("pcbtrace resolves defaults and point overrides without modifying its input
     },
     {
       props: {
-        layer: "top",
+        layer: "bottom",
         thickness: 0.2,
         route: [
-          { x: -5, y: 0, width: 0.6, layer: "bottom" },
-          { x: 5, y: 0, width: 0.6, layer: "bottom" },
+          { x: -5, y: 0, trace_width: 0.6 },
+          { x: 5, y: 0, trace_width: 0.6 },
         ],
       },
       width: 0.6,
@@ -36,16 +36,16 @@ test("pcbtrace resolves defaults and point overrides without modifying its input
     },
     {
       props: {
-        layer: "bottom",
-        thickness: 0.4,
+        layer: "top",
+        thickness: 0.2,
         route: [
-          { route_type: "wire", x: -5, y: -5 },
-          { route_type: "wire", x: 5, y: -5 },
+          { route_type: "wire", x: -5, y: -5, width: 0.4, layer: "bottom" },
+          { route_type: "wire", x: 5, y: -5, width: 0.4, layer: "bottom" },
         ],
       },
       width: 0.4,
       layer: "bottom",
-      label: "PARTIAL WIRE: BOTTOM / 0.4mm",
+      label: "EXPLICIT: BOTTOM / 0.4mm",
     },
   ] satisfies Array<{
     props: PcbTraceProps
