@@ -16,15 +16,18 @@ test("bus routes through named nets retain source trace ownership", async () => 
           pinLabels={{ pin1: "DQ0", pin2: "DQ1" }}
           footprint={
             <footprint>
-              {[2, -2].map((pcbY, padIndex) => (
-                <smtpad
-                  key={padIndex}
-                  portHints={[`pin${padIndex + 1}`]}
-                  pcbY={pcbY}
-                  shape="circle"
-                  radius={0.3}
-                />
-              ))}
+              <smtpad
+                portHints={["pin1"]}
+                pcbY={2}
+                shape="circle"
+                radius={0.3}
+              />
+              <smtpad
+                portHints={["pin2"]}
+                pcbY={-2}
+                shape="circle"
+                radius={0.3}
+              />
             </footprint>
           }
         />
