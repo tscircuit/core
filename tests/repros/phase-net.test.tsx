@@ -1,9 +1,10 @@
-import { expect, test } from "bun:test"
+import { beforeAll, expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("a phase targeting a pin routes its named net while an unrelated net stays deferred", async () => {
-  const { circuit } = getTestFixture()
-  const started: string[] = []
+const { circuit } = getTestFixture()
+const started: string[] = []
+
+beforeAll(async () => {
   circuit.on("autorouting:start", (event) =>
     started.push(event.phaseName ?? "remaining"),
   )
@@ -35,6 +36,10 @@ test("a phase targeting a pin routes its named net while an unrelated net stays 
     </board>,
   )
   await circuit.renderUntilSettled()
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
+})
+
+test("routes only the selected pin's tied net", () => {
   const wires = circuit.db.pcb_trace.list()
   expect(started).toEqual(["DATA_ONLY"])
   expect(wires).toHaveLength(1)
@@ -46,8 +51,11 @@ test("a phase targeting a pin routes its named net while an unrelated net stays 
   )
   const names = endPortIds.map((id) => {
     const port = ports.find((p) => p.pcb_port_id === id)!
-    return circuit.db.source_port.get(port.source_port_id)?.pin_number
+    const sourcePort = circuit.db.source_port.get(port.source_port_id)!
+    const component = circuit.db.source_component.get(
+      sourcePort.source_component_id,
+    )!
+    return `${component.name}.pin${sourcePort.pin_number}`
   })
-  expect(names.sort()).toEqual([1, 8])
-  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  expect(names.sort()).toEqual(["U1.pin8", "U2.pin1"])
 })
