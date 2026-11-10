@@ -4,12 +4,7 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 test("bus routes through named nets retain source trace ownership", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
-    <board
-      width={24}
-      height={14}
-      schematicDisabled
-      routeRemaining={false}
-    >
+    <board width={24} height={14} schematicDisabled routeRemaining={false}>
       <autoroutingphase name="DDR_DATA" phaseIndex={0} autorouter="bus_lanes" />
       <net name="DQ0" routingPhaseIndex={0} />
       <net name="DQ1" routingPhaseIndex={0} />
