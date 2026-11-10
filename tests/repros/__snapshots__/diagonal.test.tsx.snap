@@ -1,8 +1,0 @@
-// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
-
-exports[`an existing diagonal copper segment can be an obstacle for the next routing pass 1`] = `
-{
-  "diagonalError": true,
-  "traceCount": 1,
-}
-`;
