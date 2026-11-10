@@ -33,10 +33,21 @@ function getWireSegments(traces: PcbTrace[]) {
     .sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)))
 }
 
-test("split via-to-via route loses ownership despite identical connected copper", async () => {
+test("split via-to-via route retains ownership with identical connected copper", async () => {
   // A deterministic router response isolates Core's import, not solver quality.
   const renderedCircuits = []
-  for (const split of [true, false]) {
+  for (const { split, namedNet, order } of [
+    { split: true, namedNet: false, order: [0, 1, 2] },
+    { split: false, namedNet: false, order: [0, 1, 2] },
+    { split: true, namedNet: true, order: [1, 0, 2] },
+    ...[
+      [0, 2, 1],
+      [1, 0, 2],
+      [1, 2, 0],
+      [2, 0, 1],
+      [2, 1, 0],
+    ].map((order) => ({ split: true, namedNet: false, order })),
+  ]) {
     const { circuit } = getTestFixture()
     circuit.add(
       <board width={18} height={12} schLayout={{ layoutMode: "none" }}>
@@ -54,7 +65,15 @@ test("split via-to-via route loses ownership despite identical connected copper"
           pcbX={4}
           layer="bottom"
         />
-        <trace from="R1.pin1" to="R2.pin1" />
+        {namedNet ? (
+          <>
+            <net name="GND" />
+            <trace from="R1.pin1" to="net.GND" />
+            <trace from="R2.pin1" to="net.GND" />
+          </>
+        ) : (
+          <trace from="R1.pin1" to="R2.pin1" />
+        )}
         <autoroutingphase
           name="saved-route"
           algorithmFn={createBasicAutorouter(async (input) => {
@@ -107,23 +126,27 @@ test("split via-to-via route loses ownership despite identical connected copper"
                 },
               ],
             ]
-            return (split ? parts : [parts.flat()]).map(
-              (route, traceIndex) => ({
-                type: "pcb_trace",
-                pcb_trace_id: `saved_route_${traceIndex}`,
-                connection_name: connection.name,
-                connectsTo: connection.pointsToConnect.map(
-                  (point) => point.pcb_port_id!,
-                ),
-                route,
-              }),
-            )
+            // No connection names or port hints: infer ownership from copper.
+            const routes = split
+              ? order.map((index) => parts[index])
+              : [parts.flat()]
+            return routes.map((route, traceIndex) => ({
+              type: "pcb_trace",
+              pcb_trace_id: `saved_route_${traceIndex}`,
+              route,
+            }))
           })}
         />
         <pcbnotetext
           pcbY={4.7}
           fontSize={0.65}
-          text={split ? "SPLIT ROUTE: 3 pieces" : "CONTROL: 1 continuous piece"}
+          text={
+            namedNet
+              ? "GND: bridge imported first"
+              : split
+                ? "SPLIT ROUTE: 3 pieces"
+                : "CONTROL: 1 continuous piece"
+          }
         />
         <pcbnotetext
           pcbY={3.4}
@@ -133,11 +156,7 @@ test("split via-to-via route loses ownership despite identical connected copper"
         <pcbnotetext
           pcbY={2.2}
           fontSize={0.45}
-          text={
-            split
-              ? "Top bridge: connection identity missing"
-              : "Top bridge: connection identity retained"
-          }
+          text="Top bridge: connection identity retained"
         />
         <pcbnotetext
           pcbY={-2}
@@ -147,11 +166,7 @@ test("split via-to-via route loses ownership despite identical connected copper"
         <pcbnotetext
           pcbY={-3.4}
           fontSize={0.5}
-          text={
-            split
-              ? "Actual: 8 false contact / endpoint errors"
-              : "Actual: 0 errors; ownership retained"
-          }
+          text="Actual: 0 errors; ownership retained"
         />
         <pcbnotetext
           pcbY={-4.7}
@@ -164,7 +179,7 @@ test("split via-to-via route loses ownership despite identical connected copper"
     renderedCircuits.push(circuit)
   }
 
-  const [splitCircuit, continuousCircuit] = renderedCircuits
+  const [splitCircuit, continuousCircuit, netCircuit] = renderedCircuits
   const splitTraces = splitCircuit.db.pcb_trace.list()
   const continuousTraces = continuousCircuit.db.pcb_trace.list()
   expect(splitTraces).toHaveLength(3)
@@ -195,32 +210,32 @@ test("split via-to-via route loses ownership despite identical connected copper"
       })),
   )
   const sourceTraceId = splitCircuit.db.source_trace.list()[0].source_trace_id
-  // Pin current broken behavior. A fix should retain ownership on all pieces
-  // and remove these diagnostics without changing any copper geometry.
   expect(splitTraces.map((trace) => trace.source_trace_id)).toEqual([
     sourceTraceId,
-    undefined,
+    sourceTraceId,
     sourceTraceId,
   ])
-  const errors = splitCircuit.db.pcb_trace_error.list()
-  expect(errors).toHaveLength(8)
-  expect(
-    errors.filter((error) => error.message.includes("accidental contact")),
-  ).toHaveLength(4)
-  expect(
-    errors.filter((error) => error.message.includes("disconnected endpoint")),
-  ).toHaveLength(2)
-  expect(
-    errors.filter((error) => error.message.includes("dangling endpoint")),
-  ).toHaveLength(2)
+  expect(splitCircuit.db.pcb_trace_error.list()).toEqual([])
   expect(continuousCircuit.db.pcb_trace_error.list()).toEqual([])
   expect(continuousTraces[0].source_trace_id).toBe(
     continuousCircuit.db.source_trace.list()[0].source_trace_id,
   )
-  // The eight coincident native error labels obscure the bridge. Keep the
-  // asserted diagnostic totals in PCB notes and show the unchanged copper.
+  const netTraces = netCircuit.db.pcb_trace.list()
+  expect(
+    netCircuit.db.source_trace.get(netTraces[0].source_trace_id!)
+      ?.connected_source_net_ids,
+  ).toContain(netCircuit.db.source_net.list()[0].source_net_id)
+  expect(netCircuit.db.pcb_trace_error.list()).toEqual([])
+  expect(getWireSegments(netTraces)).toEqual(getWireSegments(splitTraces))
+  for (const circuit of renderedCircuits.slice(3)) {
+    const traces = circuit.db.pcb_trace.list()
+    expect(traces.map((trace) => trace.source_trace_id)).toEqual(
+      Array(3).fill(circuit.db.source_trace.list()[0].source_trace_id),
+    )
+    expect(circuit.db.pcb_trace_error.list()).toEqual([])
+    expect(getWireSegments(traces)).toEqual(getWireSegments(splitTraces))
+  }
   const snapshotOptions = {
-    shouldDrawErrors: false,
     showSolderMask: false,
     showSolderPaste: false,
     showDebugObjects: false,
@@ -232,6 +247,10 @@ test("split via-to-via route loses ownership despite identical connected copper"
   )
   await expect(continuousCircuit).toMatchPcbSnapshot(
     `${snapshotPath}-continuous`,
+    snapshotOptions,
+  )
+  await expect(netCircuit).toMatchPcbSnapshot(
+    `${snapshotPath}-net`,
     snapshotOptions,
   )
 })

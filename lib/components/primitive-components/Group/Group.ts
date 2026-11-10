@@ -2476,6 +2476,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const materializedPcbVias = db.pcb_via.list()
     // Jumpers have been inserted above; pad geometry is fixed for this batch.
     const jumperPadInfos = getJumperPadInfos(db)
+    let unownedPcbTraces: PcbTrace[] = []
 
     for (const pcb_trace of output_pcb_traces) {
       // vias can be included
@@ -2545,6 +2546,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             source_trace_id: sourceTraceId,
             route: circuitJsonSegment,
           })
+          if (!sourceTraceId) unownedPcbTraces.push(insertedPcbTrace)
           claimSrjAssignablePcbViasTraversedByRoute({
             db,
             pcbTrace: insertedPcbTrace,
@@ -2552,6 +2554,29 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           })
         }
       }
+    }
+
+    // A portless piece can arrive before its pad-connected neighbors. Resolve
+    // these pieces after the whole batch exists, until no further ownership
+    // can be recovered. Disconnected or ambiguous pieces remain unassigned.
+    while (unownedPcbTraces.length > 0) {
+      const unresolvedPcbTraces: PcbTrace[] = []
+      for (const trace of unownedPcbTraces) {
+        const sourceTraceId = getSourceTraceIdForRoutedTrace({
+          db,
+          trace,
+          subcircuit_id: this.subcircuit_id,
+        })
+        if (sourceTraceId) {
+          db.pcb_trace.update(trace.pcb_trace_id, {
+            source_trace_id: sourceTraceId,
+          })
+        } else {
+          unresolvedPcbTraces.push(trace)
+        }
+      }
+      if (unresolvedPcbTraces.length === unownedPcbTraces.length) break
+      unownedPcbTraces = unresolvedPcbTraces
     }
 
     // Create vias for layer transitions (this shouldn't be necessary, but
