@@ -36,20 +36,29 @@ test("desk fidget counter ground continuation with copper pours hidden", async (
   const junction = { x: 17.4804, y: 27.1958, layer: "top" }
   expect(continuation.route[1]).toMatchObject(junction)
   expect(diagonal.route[0]).toMatchObject(junction)
+  const padConnection = db.pcb_trace.get("pcb_trace_external_233")!
+  const elbow = db.pcb_trace.get("pcb_trace_external_234")!
+  const padJunction = { x: 10.8, y: 33.5033, layer: "top" }
+  expect(padConnection.route[0]).toMatchObject(padJunction)
+  expect(elbow.route[1]).toMatchObject(padJunction)
+  const padConnectionVisible = !padConnection.route.every(
+    (point) => point.route_type === "wire" && point.is_inside_copper_pour,
+  )
   const continuationVisible = !continuation.route.every(
     (point) => point.route_type === "wire" && point.is_inside_copper_pour,
   )
 
   const labels: PcbNoteText[] = [
-    "C1 GND / pours hidden",
+    "Desk fidget counter / pours hidden",
+    padConnectionVisible ? "C1 pad connected" : "BUG: C1 pad connection hidden",
     continuationVisible ? "Continuation visible" : "BUG: continuation hidden",
   ].map((text, line) => ({
     type: "pcb_note_text",
     pcb_note_text_id: `continuation_label_${line}`,
     layer: "top",
     font: "tscircuit2024",
-    font_size: 0.38,
-    anchor_position: { x: 11.2, y: 26.5 - line * 0.7 },
+    font_size: 1,
+    anchor_position: { x: 0, y: 47 - line * 1.6 },
     anchor_alignment: "center",
     color: "#cbd5e1",
     text,
@@ -61,10 +70,10 @@ test("desk fidget counter ground continuation with copper pours hidden", async (
   await expect(
     convertCircuitJsonToPcbSvg([...drawing, ...labels], {
       layer: "top",
-      width: 600,
-      height: 600,
+      width: 1200,
+      height: 1500,
       includeVersion: false,
-      viewport: { minX: 6, maxX: 19, minY: 23, maxY: 36 },
+      viewport: { minX: -38, maxX: 38, minY: -46, maxY: 49 },
     }),
   ).toMatchSvgSnapshot(import.meta.path, undefined, { diffThresholdPercent: 0 })
 })

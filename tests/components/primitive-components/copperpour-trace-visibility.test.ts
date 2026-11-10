@@ -105,6 +105,7 @@ test("copper-pour trace visibility across boundary cases", async () => {
   const cases: {
     name: string
     route: PcbTrace["route"]
+    connectedRoutes?: PcbTrace["route"][]
     copperPour: PcbCopperPourBRep | PcbCopperPourRect
     hidden: boolean[]
     otherNet?: boolean
@@ -194,42 +195,80 @@ test("copper-pour trace visibility across boundary cases", async () => {
       copperPour: pour(),
       hidden: [false, false],
     },
+    {
+      name: "Split trace neighbours",
+      route: [wire(1, 5), wire(3, 5)],
+      connectedRoutes: [
+        [wire(3, 5), wire(7, 5)],
+        [wire(7, 5), wire(9, 5)],
+      ],
+      copperPour: pour(square, [
+        [
+          [4, 4],
+          [6, 4],
+          [6, 6],
+          [4, 6],
+        ],
+      ]),
+      hidden: [false, false, false],
+    },
+    {
+      name: "Covered split traces",
+      route: [wire(1, 5), wire(3, 5)],
+      connectedRoutes: [
+        [wire(3, 5), wire(7, 5)],
+        [wire(7, 5), wire(9, 5)],
+      ],
+      copperPour: pour(),
+      hidden: [true, true, true],
+    },
   ]
   const drawing: AnyCircuitElement[] = []
   for (const [caseIndex, scenario] of cases.entries()) {
-    const sourceTrace: SourceTrace = {
-      type: "source_trace",
-      source_trace_id: "supply_trace",
-      connected_source_port_ids: [],
-      connected_source_net_ids: [scenario.otherNet ? "vbus" : "gnd"],
-    }
-    const trace: PcbTrace = {
-      type: "pcb_trace",
-      pcb_trace_id: "trace",
-      source_trace_id: sourceTrace.source_trace_id,
-      route: structuredClone(scenario.route),
-    }
-    const db = su([sourceTrace, trace, structuredClone(scenario.copperPour)])
+    const routes = [scenario.route, ...(scenario.connectedRoutes ?? [])]
+    const sourceTraces = routes.map(
+      (_, traceIndex): SourceTrace => ({
+        type: "source_trace",
+        source_trace_id: `source_trace_${traceIndex}`,
+        connected_source_port_ids: [],
+        connected_source_net_ids: [scenario.otherNet ? "vbus" : "gnd"],
+      }),
+    )
+    const traces = routes.map(
+      (route, traceIndex): PcbTrace => ({
+        type: "pcb_trace",
+        pcb_trace_id: `trace_${traceIndex}`,
+        source_trace_id: sourceTraces[traceIndex].source_trace_id,
+        route: structuredClone(route),
+      }),
+    )
+    const db = su([
+      ...sourceTraces,
+      ...traces,
+      structuredClone(scenario.copperPour),
+    ])
     markTraceSegmentsInsideCopperPour({ db, copperPour: scenario.copperPour })
-    const annotatedRoute = db.pcb_trace.get("trace")!.route
-    const hiddenSegments = annotatedRoute
-      .slice(0, -1)
-      .map((start, segmentIndex) => {
-        const end = annotatedRoute[segmentIndex + 1]
+    const annotatedTraces = db.pcb_trace.list()
+    const hiddenSegments = annotatedTraces.flatMap(({ route }) =>
+      route.slice(0, -1).map((start, segmentIndex) => {
+        const end = route[segmentIndex + 1]
         return (
           start.route_type === "wire" &&
           end.route_type === "wire" &&
           start.is_inside_copper_pour === true &&
           end.is_inside_copper_pour === true
         )
-      })
+      }),
+    )
     // This branch records existing visibility, including the known false flags.
     // The dependent fix adds assertions against the expected visibility.
     // The annotation operation must preserve every physical route field.
     expect(
-      getTraceRouteWithoutPourAnnotations(annotatedRoute),
+      annotatedTraces.map(({ route }) =>
+        getTraceRouteWithoutPourAnnotations(route),
+      ),
       scenario.name,
-    ).toEqual(scenario.route)
+    ).toEqual(routes)
 
     const correctVisibility = hiddenSegments.every(
       (hidden, index) => hidden === scenario.hidden[index],
@@ -252,23 +291,26 @@ test("copper-pour trace visibility across boundary cases", async () => {
     )
     // Translate rendering copies into a grid; all classification uses original points.
     const caseDrawing: AnyCircuitElement[] = [
-      { ...db.pcb_trace.get("trace")!, pcb_trace_id: `case_${caseIndex}` },
+      ...annotatedTraces.map((trace, traceIndex) => ({
+        ...trace,
+        pcb_trace_id: `case_${caseIndex}_trace_${traceIndex}`,
+      })),
       ...getPourBoundaryNotes(scenario.copperPour, caseIndex),
       ...labels,
     ]
     drawing.push(
       ...transformPcbElements(
         structuredClone(caseDrawing),
-        translate((caseIndex % 5) * 15, -Math.floor(caseIndex / 5) * 16),
+        translate((caseIndex % 6) * 15, -Math.floor(caseIndex / 6) * 16),
       ),
     )
   }
   await expect(
     convertCircuitJsonToPcbSvg(drawing, {
-      width: 1400,
+      width: 1680,
       height: 570,
       includeVersion: false,
-      viewport: { minX: -1, maxX: 73, minY: -17, maxY: 13 },
+      viewport: { minX: -1, maxX: 88, minY: -17, maxY: 13 },
     }),
   ).toMatchSvgSnapshot(import.meta.path, undefined, { diffThresholdPercent: 0 })
 })
