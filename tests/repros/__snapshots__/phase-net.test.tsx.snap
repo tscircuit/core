@@ -1,8 +1,0 @@
-// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
-
-exports[`a phase targeting a pin routes its named net while an unrelated net stays deferred 1`] = `
-{
-  "started": [],
-  "traceCount": 0,
-}
-`;
