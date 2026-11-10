@@ -7,6 +7,7 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import {
   applyToPoint,
   compose,
+  inverse,
   rotateDEG,
   translate,
 } from "transformation-matrix"
@@ -46,10 +47,13 @@ test("curved outlines preserve offset tabs in either winding and every quarter t
   // Transform emitted world positions, including the subpanel translation.
   // The patch is midway across the first board's right-hand tab, away from drills.
   for (const reverseWinding of [false, true]) {
-    for (const ccwRotationDegrees of [0, 90, 180, 270]) {
+    for (const ccwRotationDegrees of [0, 37, 90, 180, 270]) {
       const circuitWorldToTestWorldTransform = compose(
         translate(60, -35),
         rotateDEG(ccwRotationDegrees),
+      )
+      const testWorldToCircuitWorldTransform = inverse(
+        circuitWorldToTestWorldTransform,
       )
       const transformedBoards = boards.map((board) => {
         const outline = board.outline!.map((position) =>
@@ -71,6 +75,34 @@ test("curved outlines preserve offset tabs in either winding and every quarter t
             mouseBites,
           },
         )
+        if (mouseBites) {
+          const circuitWorldDrills = mouseBiteHoles.map((hole) =>
+            applyToPoint(testWorldToCircuitWorldTransform, hole),
+          )
+          const boardEdgeX = boards[0]!.center.x + boards[0]!.width! / 2
+          const boardEdgeRow = circuitWorldDrills.filter(
+            (position) =>
+              Math.abs(position.x - boardEdgeX) < 1e-6 &&
+              Math.abs(position.y - boards[0]!.center.y) < 3,
+          )
+          const neighboringEdgeRow = circuitWorldDrills.filter(
+            (position) =>
+              Math.abs(position.x - boardEdgeX - 2) < 1e-6 &&
+              Math.abs(position.y - boards[0]!.center.y) < 3,
+          )
+          expect(boardEdgeRow).toHaveLength(4)
+          expect(
+            neighboringEdgeRow
+              .map((position) => Number(position.y.toFixed(6)))
+              .sort(),
+          ).toEqual(
+            boardEdgeRow
+              .map((position) => Number(position.y.toFixed(6)))
+              .sort(),
+          )
+        } else {
+          expect(mouseBiteHoles).toHaveLength(0)
+        }
         const material = await getPanelMaterial({
           panel: {
             ...circuit.db.pcb_panel.list()[0]!,
