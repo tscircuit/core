@@ -58,9 +58,8 @@ async function verifyOrangeCrabClockTrunks(): Promise<void> {
   ])
   expect(inputs[0].differentialPairs).toEqual([
     {
-      connectionNames: [clockSourceTraceIds[0], clockSourceTraceIds[1]],
-      lengthTolerance: 0.1,
-      traceGap: 0.089,
+      connectionNames: [[clockSourceTraceIds[0]], [clockSourceTraceIds[1]]],
+      maxLengthSkewMm: 0.1,
     },
   ])
   expect(

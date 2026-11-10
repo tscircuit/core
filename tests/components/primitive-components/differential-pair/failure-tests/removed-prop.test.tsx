@@ -5,12 +5,12 @@ import { DifferentialPairValidationBoard } from "tests/fixtures/differential-pai
 test("reports invalid removed prop props as a source creation error", () => {
   const { circuit } = getTestFixture()
   const pair = (
-    // @ts-expect-error Intentional invalid authoring input.
     <differentialpair
       name="USB"
       positiveConnection="DP1"
       negativeConnection="DM1"
       maxLengthSkew={0.1}
+      // @ts-expect-error Intentional invalid authoring input.
       pcbTraceGap={0.2}
     />
   )

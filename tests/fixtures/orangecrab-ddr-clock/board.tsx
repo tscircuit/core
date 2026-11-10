@@ -32,7 +32,7 @@ export function OrangeCrabDdrClockBoard({
       <autoroutingphase
         name="CLOCK_TRUNKS"
         phaseIndex={0}
-        autorouter="bus_lanes"
+        autorouter="auto_local"
       />
       {routeTerminations && (
         <autoroutingphase
@@ -96,13 +96,6 @@ export function OrangeCrabDdrClockBoard({
             />
           </Fragment>
         ))}
-      <bus
-        name="DDR_CLOCK"
-        connections={["CK_P_TRUNK", "CK_N_TRUNK"]}
-        routingPhaseIndex={0}
-        pcbAllowedLayers={["inner3"]}
-        maxLengthSkew={0.1}
-      />
       <differentialpair
         name="CK_PAIR"
         positiveConnection="CK_P_TRUNK"

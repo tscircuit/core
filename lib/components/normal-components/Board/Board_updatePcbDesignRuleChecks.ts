@@ -130,7 +130,14 @@ export const Board_updatePcbDesignRuleChecks = (board: Board) => {
               return !circuitJson.some(
                 (error) =>
                   error.type === "pcb_autorouting_error" &&
-                  error.subcircuit_id === element.subcircuit_id,
+                  error.subcircuit_id === element.subcircuit_id &&
+                  !element.source_trace_ids.every((id) =>
+                    circuitJson.some(
+                      (copper) =>
+                        copper.type === "pcb_trace" &&
+                        copper.source_trace_id === id,
+                    ),
+                  ),
               )
             }),
           ).then((results) =>

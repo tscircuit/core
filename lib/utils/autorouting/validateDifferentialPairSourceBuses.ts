@@ -1,7 +1,8 @@
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import {
-  source_differential_pair_bus,
+  source_bus,
   type SourceDifferentialPairBus,
+  type OrdinarySourceBus,
   type SourcePort,
   type SourceTrace,
 } from "circuit-json"
@@ -13,8 +14,19 @@ type SourceTraceId = SourceTrace["source_trace_id"]
 /** Validate source intent before any routing-scope filtering, including saved JSON. */
 export function validateDifferentialPairSourceBuses(
   db: CircuitJsonUtilObjects,
+  comparisonBuses: Pick<OrdinarySourceBus, "name" | "source_trace_ids">[] = [],
 ): SourceDifferentialPairBus[] {
-  const pairs = db.source_bus.list().filter((bus) => bus.differential_pair)
+  const sourceBuses = db.source_bus.list().map((bus) => {
+    const parsed = source_bus.safeParse(bus)
+    if (!parsed.success)
+      throw new Error(
+        `Source bus "${bus.name || "unnamed bus"}": invalid source_bus; differential pairs require ordered unique lane membership and an explicit finite nonnegative max_length_skew; only lane-length skew is supported`,
+      )
+    return parsed.data
+  })
+  const pairs = sourceBuses.filter((bus): bus is SourceDifferentialPairBus =>
+    Boolean(bus.differential_pair),
+  )
   if (!pairs.length) return []
   const connectivity = getFullConnectivityMapFromCircuitJson(db.toArray())
   const sourceTraces = db.source_trace.list()
@@ -23,21 +35,12 @@ export function validateDifferentialPairSourceBuses(
     SourceTraceId,
     SourceDifferentialPairBus
   >()
-  const validatedPairs: SourceDifferentialPairBus[] = []
 
-  for (const rawPair of pairs) {
-    const label = `Differential pair "${rawPair.name || "unnamed pair"}"`
+  for (const pair of pairs) {
+    const label = `Differential pair "${pair.name || "unnamed pair"}"`
     const fail = (detail: string): never => {
       throw new Error(`${label}: ${detail}`)
     }
-    const parsed = source_differential_pair_bus.safeParse(rawPair)
-    if (!parsed.success) {
-      fail(
-        "invalid source_bus; use nonempty, unique ordered lanes, exactly their combined membership and an explicit finite nonnegative max_length_skew; only lane-length skew is supported",
-      )
-    }
-    const pair = parsed.data!
-    validatedPairs.push(pair)
     const lanes = [
       pair.differential_pair.positive_source_trace_ids,
       pair.differential_pair.negative_source_trace_ids,
@@ -62,7 +65,10 @@ export function validateDifferentialPairSourceBuses(
           fail(`${traceLabel} must have exactly two distinct ports`)
         if (
           hop.connected_source_port_ids.some(
-            (id) => !db.source_port.get(id)?.source_component_id,
+            (id) =>
+              !db.source_component.get(
+                db.source_port.get(id)?.source_component_id ?? "",
+              ),
           )
         )
           fail(
@@ -153,17 +159,41 @@ export function validateDifferentialPairSourceBuses(
       )
   }
 
-  for (const bus of db.source_bus.list()) {
-    if (bus.differential_pair) continue
-    const references = [
-      ...bus.source_trace_ids,
-      ...(bus.length_match_source_trace_ids ?? []),
-      ...[bus.min_length, bus.max_length, bus.target_length].flatMap(
-        (length) =>
-          typeof length === "object" ? (length.source_trace_ids ?? []) : [],
+  // A normalized two-pad net's one-port declarations are connectivity aliases
+  // of its canonical hop. They cannot acquire ordinary bus length constraints.
+  for (const trace of sourceTraces) {
+    if (trace.connected_source_port_ids.length >= 2) continue
+    const key = connectivity.getNetConnectedToId(trace.source_trace_id)
+    if (
+      !key ||
+      sourcePorts.filter(
+        (port) => connectivity.getNetConnectedToId(port.source_port_id) === key,
+      ).length !== 2
+    )
+      continue
+    const owner = pairs.find((pair) =>
+      pair.source_trace_ids.some(
+        (id) => connectivity.getNetConnectedToId(id) === key,
       ),
-    ]
-    for (const id of references) {
+    )
+    if (owner) ownerBySourceTraceId.set(trace.source_trace_id, owner)
+  }
+
+  const ordinaryBuses = sourceBuses
+    .filter((bus) => !bus.differential_pair)
+    .map((bus) => ({
+      name: bus.name,
+      source_trace_ids: [
+        ...bus.source_trace_ids,
+        ...(bus.length_match_source_trace_ids ?? []),
+        ...[bus.min_length, bus.max_length, bus.target_length].flatMap(
+          (length) =>
+            typeof length === "object" ? (length.source_trace_ids ?? []) : [],
+        ),
+      ],
+    }))
+  for (const bus of [...ordinaryBuses, ...comparisonBuses]) {
+    for (const id of bus.source_trace_ids) {
       const pair = ownerBySourceTraceId.get(id)
       if (pair)
         throw new Error(
@@ -171,5 +201,5 @@ export function validateDifferentialPairSourceBuses(
         )
     }
   }
-  return validatedPairs
+  return pairs
 }

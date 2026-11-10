@@ -17,7 +17,12 @@ export function recordRoutingFailure({
   let message: string
   let differential_pair_length_skew
   if (failure.reason === "routing_failed") {
-    message = failure.message
+    const pairNames = sourceBusIds.map(
+      (id) => `"${db.source_bus.get(id)?.name || "unnamed pair"}"`,
+    )
+    message = pairNames.length
+      ? `Autorouting for differential pair${pairNames.length > 1 ? "s" : ""} ${pairNames.join(", ")} could not complete`
+      : failure.message
   } else {
     const pair = db.source_bus.get(sourceBusIds[failure.pairIndex]!)
     if (!pair?.differential_pair)
@@ -49,7 +54,7 @@ export function recordRoutingFailure({
         ownership_violation: "a hop lost its declared endpoints or ownership",
         invalid_differential_pair: "invalid differential pair routing request",
         unsupported_routing_scope:
-          "phased, preserved or breakout routing is unsupported",
+          "this autorouter or routing scope does not support the requested pair",
       }
       message = `${label}: ${reasons[failure.reason]}${hop}`
     }

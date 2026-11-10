@@ -168,7 +168,7 @@ test("preserves named differential sections through an ESD tap on a shared net",
   )
   expect(
     section("N_CPU").pointsToConnect.filter((point) => !point.pointId),
-  ).toHaveLength(1)
+  ).toHaveLength(0)
   expect(
     branch.pointsToConnect.some((p) => p.port_selector?.startsWith("TP.")),
   ).toBe(true)

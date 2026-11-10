@@ -21,7 +21,25 @@ export function getDifferentialPairRoutingFailure(
           (hop) => hop.name === connectionName,
         )!
         const route = routes[0]!
-        const points = route.route
+        const points = route.route.flatMap(
+          (point): SimplifiedPcbTrace["route"] =>
+            point.route_type === "through_obstacle"
+              ? [
+                  {
+                    route_type: "wire",
+                    ...point.start,
+                    layer: point.from_layer,
+                    width: point.width,
+                  },
+                  {
+                    route_type: "wire",
+                    ...point.end,
+                    layer: point.to_layer,
+                    width: point.width,
+                  },
+                ]
+              : [point],
+        )
         const matches = (
           point: (typeof points)[number],
           terminal: (typeof connection.pointsToConnect)[number],

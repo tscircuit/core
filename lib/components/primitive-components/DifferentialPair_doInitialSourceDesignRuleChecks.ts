@@ -1,3 +1,4 @@
+import type { Bus } from "./Bus"
 import type { DifferentialPairConnection } from "@tscircuit/props"
 import type { SourceTrace } from "circuit-json"
 import { getFullConnectivityMapFromCircuitJson } from "circuit-json-to-connectivity-map"
@@ -5,6 +6,8 @@ import { validateDifferentialPairSourceBuses } from "lib/utils/autorouting/valid
 import type { Net } from "./Net"
 import type { Port } from "./Port/Port"
 import type { DifferentialPair } from "./DifferentialPair"
+
+type SourceTraceId = SourceTrace["source_trace_id"]
 
 /** Resolve authoring selectors once; every exported lane member is a real hop. */
 export const DifferentialPair_doInitialSourceDesignRuleChecks = (
@@ -19,13 +22,13 @@ export const DifferentialPair_doInitialSourceDesignRuleChecks = (
   const connectivity = getFullConnectivityMapFromCircuitJson(db.toArray())
   const fail = (detail: string): never => {
     throw new Error(
-      `Differential pair "${pair.name || "unnamed pair"}": ${detail}`,
+      `Differential pair "${pair._parsedProps.name || "unnamed pair"}": ${detail}`,
     )
   }
 
   const resolve = (
     connection: DifferentialPairConnection,
-  ): [string, ...string[]] => {
+  ): [SourceTraceId, ...SourceTraceId[]] => {
     const resolveHop = (
       selector: string,
       traceNamesOnly: boolean,
@@ -38,7 +41,13 @@ export const DifferentialPair_doInitialSourceDesignRuleChecks = (
           fail(`trace name "${selector}" must resolve to exactly one trace`)
         return named[0]!
       }
-      const selected = subcircuit.selectAll(selector)
+      const selected = subcircuit
+        .selectAll(selector)
+        .filter(
+          (terminal) =>
+            terminal.lowercaseComponentName === "port" ||
+            terminal.lowercaseComponentName === "net",
+        )
       if (named.length && /[\s.>#:[\],*+~='"|]/.test(selector))
         fail(
           `"${selector}" is ambiguous between a trace name and selector syntax`,
@@ -119,7 +128,7 @@ export const DifferentialPair_doInitialSourceDesignRuleChecks = (
     return selectors.map(
       (selector) =>
         resolveHop(selector, Array.isArray(connection)).source_trace_id,
-    ) as [string, ...string[]]
+    ) as [SourceTraceId, ...SourceTraceId[]]
   }
 
   const positive_source_trace_ids = resolve(
@@ -129,7 +138,7 @@ export const DifferentialPair_doInitialSourceDesignRuleChecks = (
     pair._parsedProps.negativeConnection,
   )
   db.source_bus.insert({
-    name: pair.name,
+    name: pair._parsedProps.name,
     subcircuit_id,
     source_trace_ids: [
       ...positive_source_trace_ids,
@@ -138,5 +147,11 @@ export const DifferentialPair_doInitialSourceDesignRuleChecks = (
     max_length_skew: pair._parsedProps.maxLengthSkew,
     differential_pair: { positive_source_trace_ids, negative_source_trace_ids },
   })
-  validateDifferentialPairSourceBuses(db)
+  validateDifferentialPairSourceBuses(
+    db,
+    subcircuit.selectAll<Bus>("bus").map((bus) => ({
+      name: bus.name,
+      source_trace_ids: bus.lengthMatchSourceTraceIds,
+    })),
+  )
 }

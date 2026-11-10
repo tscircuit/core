@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("differential pair over nets is not routed", async () => {
+test("two-pad USB net selectors route with explicit lane skew", async () => {
   const { circuit } = getTestFixture()
   const usb = { DP: "net.USB_DP", DM: "net.USB_DM" }
 
@@ -23,6 +23,7 @@ test("differential pair over nets is not routed", async () => {
         connections={usb}
       />
       <differentialpair
+        name="USB"
         maxLengthSkew={0.1}
         positiveConnection="net.USB_DP"
         negativeConnection="net.USB_DM"
@@ -31,11 +32,12 @@ test("differential pair over nets is not routed", async () => {
   )
 
   await circuit.renderUntilSettled()
-
-  // Bug: "net.USB_DP" is not resolved, so the autorouter never runs.
-  expect(circuit.db.pcb_trace.list()).toHaveLength(0)
   await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
     shouldDrawRatsNest: true,
     showErrorsInTextOverlay: true,
   })
+
+  // Two-pad selectors normalize to exact owned source hops.
+  expect(circuit.db.pcb_trace.list()).toHaveLength(2)
+  expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
 })

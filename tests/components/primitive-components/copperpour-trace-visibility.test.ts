@@ -296,10 +296,10 @@ test("copper-pour trace visibility across boundary cases", async () => {
       ...labels,
     ]
     drawing.push(
-      ...transformPcbElements(
+      ...(transformPcbElements(
         structuredClone(caseDrawing),
         translate((caseIndex % 6) * 15, -Math.floor(caseIndex / 6) * 16),
-      ),
+      ) as typeof caseDrawing),
     )
   }
   await expect(

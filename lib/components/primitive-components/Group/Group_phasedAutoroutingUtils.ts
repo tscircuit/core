@@ -43,7 +43,8 @@ export function connectionIsInRoutingPhase(
     if (!net.source_net_id) continue
     if (
       connection.name === net.source_net_id ||
-      connection.netConnectionName === net.source_net_id
+      (!net.root?.db.source_trace.get(connection.source_trace_id ?? "")?.name &&
+        connection.netConnectionName === net.source_net_id)
     )
       return true
   }

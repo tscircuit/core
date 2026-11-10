@@ -77,6 +77,12 @@ test("ESD pair hops preserve ownership alongside an uncounted test-point tap", a
     </board>,
   )
   await circuit.renderUntilSettled()
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
+    width: 1600,
+    height: 1200,
+    shouldDrawRatsNest: true,
+    showErrorsInTextOverlay: true,
+  })
   expect(inputs).toHaveLength(1)
   const srj = inputs[0]
   const [dp1, dp2, dm1, dm2, tap] = ["DP1", "DP2", "DM1", "DM2", "TAP"].map(
@@ -104,10 +110,4 @@ test("ESD pair hops preserve ownership alongside an uncounted test-point tap", a
   ])
   expect(circuit.db.pcb_trace.list()).toHaveLength(5)
   expectDifferentialPairLengths(circuit)
-  await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
-    width: 1600,
-    height: 1200,
-    shouldDrawRatsNest: true,
-    showErrorsInTextOverlay: true,
-  })
 })

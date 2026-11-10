@@ -1,8 +1,8 @@
 import { expect } from "bun:test"
-import type { Circuit } from "lib/Circuit"
+import type { RootCircuit } from "lib/RootCircuit"
 
 /** Measure final emitted planar copper by exact source ownership. */
-export function expectDifferentialPairLengths(circuit: Circuit) {
+export function expectDifferentialPairLengths(circuit: RootCircuit) {
   expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
   expect(circuit.db.pcb_bus_length_skew_error.list()).toEqual([])
   for (const pair of circuit.db.source_bus.list()) {
@@ -21,19 +21,19 @@ export function expectDifferentialPairLengths(circuit: Circuit) {
           copper.reduce(
             (sum, trace) =>
               sum +
-              trace.route.reduce((length, point, index) => {
-                const previous = trace.route[index - 1]
-                if (
-                  !previous ||
-                  point.route_type === "jumper" ||
-                  previous.route_type === "jumper"
+              trace.route
+                .flatMap((point) =>
+                  point.route_type === "through_pad"
+                    ? [point.start, point.end]
+                    : [point],
                 )
-                  return length
-                return (
-                  length +
-                  Math.hypot(point.x - previous.x, point.y - previous.y)
-                )
-              }, 0),
+                .reduce((length, point, index, points) => {
+                  const previous = points[index - 1]
+                  return previous
+                    ? length +
+                        Math.hypot(point.x - previous.x, point.y - previous.y)
+                    : length
+                }, 0),
             0,
           )
         )

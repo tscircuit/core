@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
-test("bus_lanes honors differential pair maxLengthSkew through SRJ lengthTolerance", async () => {
+test("bus_lanes rejects ordered differential pairs instead of silently ignoring skew", async () => {
   const { circuit } = getTestFixture()
   const inputs: any[] = []
   circuit.on("autorouting:start", (event: any) =>
@@ -48,36 +48,20 @@ test("bus_lanes honors differential pair maxLengthSkew through SRJ lengthToleran
         pcbX={0}
         pcbY={-4.5}
         fontSize={0.32}
-        text="Pair maxLengthSkew maps to SRJ lengthTolerance: 0.5mm, zero vias."
+        text="Ordered differential pairs require auto_local routing."
       />
     </board>,
   )
   await circuit.renderUntilSettled()
-  const json = circuit.getCircuitJson(),
-    traces = json.filter((e) => e.type === "pcb_trace")
-  expect(
-    inputs.some((input) =>
-      input.differentialPairs?.some(
-        (pair: any) => pair.lengthTolerance === 0.5,
-      ),
-    ),
-  ).toBe(true)
-  expect(traces).toHaveLength(2)
-  const lengths = traces.map((trace) =>
-    trace.route.slice(1).reduce((length, point, i) => {
-      const previous = trace.route[i]
-      if (point.route_type !== "wire" || previous.route_type !== "wire")
-        throw new Error("Bus lanes must contain only wire segments")
-      return length + Math.hypot(point.x - previous.x, point.y - previous.y)
-    }, 0),
-  )
-  expect(Math.max(...lengths) - Math.min(...lengths)).toBeCloseTo(0.5, 7)
-  expect(
-    traces
-      .flatMap((t) => t.route)
-      .every((p) => p.route_type === "wire" && p.layer === "top"),
-  ).toBe(true)
-  expect(json.filter((e) => e.type === "pcb_via")).toHaveLength(0)
-  expect(json.filter((e) => e.type === "pcb_autorouting_error")).toHaveLength(0)
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  expect(circuit.db.pcb_trace.list()).toHaveLength(0)
+  expect(circuit.db.pcb_autorouting_error.list()).toEqual([
+    expect.objectContaining({
+      message:
+        'Differential pair "DATA_PAIR": this autorouter or routing scope does not support the requested pair',
+    }),
+  ])
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
+    shouldDrawRatsNest: true,
+    showErrorsInTextOverlay: true,
+  })
 })

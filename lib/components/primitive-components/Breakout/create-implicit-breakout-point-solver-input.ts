@@ -721,6 +721,7 @@ export const createImplicitBreakoutPointSolverContext = (
           ],
         ),
       ),
+      atomicGroups: [],
       buses,
       busFanoutDirections,
       fallbackEdge: solverRegions[0]!.edge,

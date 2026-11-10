@@ -1994,6 +1994,22 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             pairFailure,
           )
 
+        // Each phase's router may restart its PCB IDs. Owned hops retain unique
+        // physical identities so a later, unrelated phase cannot replace them.
+        const ownedHopNames = new Set(
+          (simpleRouteJson.differentialPairs ?? []).flatMap((pair) =>
+            pair.connectionNames.flat(),
+          ),
+        )
+        traces = traces.map((trace) =>
+          ownedHopNames.has(trace.connection_name ?? "")
+            ? {
+                ...trace,
+                pcb_trace_id: `${trace.pcb_trace_id}_${trace.connection_name}`,
+              }
+            : trace,
+        )
+
         let transformedSimpleRouteJson =
           precomputedOutputSimpleRouteJson ??
           autorouter?.getOutputSimpleRouteJson?.()

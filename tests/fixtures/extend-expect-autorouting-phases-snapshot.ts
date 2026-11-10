@@ -185,7 +185,10 @@ expect.extend({
     if (circuit) {
       const circuitJson = circuit.getCircuitJson()
       const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
-        circuitJson,
+        circuitJson: circuitJson.filter(
+          (element) =>
+            element.type !== "pcb_trace" && element.type !== "pcb_via",
+        ),
       })
       const pcbTraces = circuitJson.filter((e: any) => e.type === "pcb_trace")
       simpleRouteJson.traces = pcbTraces as SimplifiedPcbTrace[]

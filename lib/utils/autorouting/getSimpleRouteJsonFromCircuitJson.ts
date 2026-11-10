@@ -9,6 +9,7 @@ import type {
   PcbTraceHint,
   PcbVia,
   SourcePort,
+  SourceBus,
 } from "circuit-json"
 import {
   ConnectivityMap,
@@ -163,7 +164,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
 }): {
   simpleRouteJson: SimpleRouteJson
   connMap: ConnectivityMap
-  differentialPairSourceBusIds: string[]
+  differentialPairSourceBusIds: SourceBus["source_bus_id"][]
 } => {
   if (!db && circuitJson) {
     db = su(circuitJson)
@@ -583,6 +584,20 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   for (const pair of sourcePairs) {
     for (const id of pair.source_trace_ids) {
       const trace = db.source_trace.get(id)!
+      if (
+        trace.connected_source_port_ids.some(
+          (sourcePortId) =>
+            db.pcb_port
+              .list()
+              .filter((port) => port.source_port_id === sourcePortId).length !==
+            1,
+        )
+      ) {
+        throw new Error(
+          `Differential pair "${pair.name || "unnamed pair"}": trace "${trace.name || "unnamed trace"}" needs exactly two routable terminals, one PCB port per source pad`,
+        )
+      }
+
       if (
         sourceTraceIdsAlreadyPreservedAsSrjTraces.has(id) ||
         trace.connected_source_port_ids.some((portId) =>

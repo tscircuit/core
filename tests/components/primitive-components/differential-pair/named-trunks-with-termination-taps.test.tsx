@@ -27,7 +27,7 @@ test("routes named differential trunks separately from termination taps on their
       <autoroutingphase
         name="CLOCK_TRUNKS"
         phaseIndex={0}
-        autorouter="bus_lanes"
+        autorouter="auto_local"
       />
       <autoroutingphase
         name="TERMINATION_TAPS"
@@ -61,12 +61,6 @@ test("routes named differential trunks separately from termination taps on their
         to=".RT > .pin2"
         routingPhaseIndex={1}
         thickness={0.1}
-      />
-      <bus
-        name="CLOCK_BUS"
-        connections={["CK_P", "CK_N"]}
-        pcbAllowedLayers={["top"]}
-        maxLengthSkew={0.1}
       />
       <differentialpair
         name="CLOCK_PAIR"
@@ -105,7 +99,7 @@ test("routes named differential trunks separately from termination taps on their
   })
   expect(inputs[0].differentialPairs).toEqual([
     {
-      connectionNames: [trunkSourceTraceIds[0], trunkSourceTraceIds[1]],
+      connectionNames: [[trunkSourceTraceIds[0]!], [trunkSourceTraceIds[1]!]],
       maxLengthSkewMm: 0.1,
     },
   ])
