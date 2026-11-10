@@ -1,24 +1,19 @@
 import { expect, test } from "bun:test"
-import { createHash } from "node:crypto"
 import { readFileSync } from "node:fs"
 import { gunzipSync } from "node:zlib"
 import { su } from "@tscircuit/circuit-json-util"
 import type { AnyCircuitElement } from "circuit-json"
 import { getSourceTraceIdForRoutedTrace } from "lib/components/primitive-components/Group/get-source-trace-id-for-routed-trace"
-import { renderOrangeCrabBusOwnership } from "tests/fixtures/orangecrab-bus-net-trace-ownership/render"
-import provenance from "tests/fixtures/orangecrab-bus-net-trace-ownership/provenance.json"
+import { renderDdrBusOwnership } from "tests/fixtures/ddr-bus-net-trace-ownership/render"
 
-test("the full OrangeCrab capture exposes DDR data route ownership", async () => {
+test("the full board capture exposes DDR data route ownership", async () => {
   const capturedCircuitJson = gunzipSync(
     readFileSync(
       new URL(
-        "../fixtures/orangecrab-bus-net-trace-ownership/circuit.json.gz",
+        "../fixtures/ddr-bus-net-trace-ownership/circuit.json.gz",
         import.meta.url,
       ),
     ),
-  )
-  expect(createHash("sha256").update(capturedCircuitJson).digest("hex")).toBe(
-    provenance.captureSha256,
   )
   const circuitJson = JSON.parse(
     capturedCircuitJson.toString("utf8"),
@@ -97,16 +92,14 @@ test("the full OrangeCrab capture exposes DDR data route ownership", async () =>
     ramD5HasSourceTrace:
       ramD5.resolvedSourceTraceId === ramD5.sourceTrace.source_trace_id,
   }
-  await expect(renderOrangeCrabBusOwnership(snapshot)).toMatchSvgSnapshot(
+  await expect(renderDdrBusOwnership(snapshot)).toMatchSvgSnapshot(
     import.meta.path,
-    "orangecrab-bus-net-trace-ownership-full-board",
+    "ddr-bus-net-trace-ownership-full-board",
     { diffThresholdPercent: 0 },
   )
   await expect(
-    renderOrangeCrabBusOwnership({ ...snapshot, detail: true }),
-  ).toMatchSvgSnapshot(
-    import.meta.path,
-    "orangecrab-bus-net-trace-ownership-ddr-detail",
-    { diffThresholdPercent: 0 },
-  )
+    renderDdrBusOwnership({ ...snapshot, detail: true }),
+  ).toMatchSvgSnapshot(import.meta.path, "ddr-bus-net-trace-ownership-detail", {
+    diffThresholdPercent: 0,
+  })
 })

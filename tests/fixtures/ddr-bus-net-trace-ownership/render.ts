@@ -4,7 +4,7 @@ import { convertCircuitJsonToPcbSvg } from "circuit-to-svg"
 /** Renders board-world points in mm (+X right, +Y up, +Z above, right handed).
  * circuit-to-svg owns the PCB-to-screen transform. The surrounding captions use
  * screen pixels (+X right, +Y down) and do not modify the captured geometry. */
-export function renderOrangeCrabBusOwnership({
+export function renderDdrBusOwnership({
   circuitJson,
   matchingDataRouteCount,
   ramD5,
@@ -32,8 +32,8 @@ export function renderOrangeCrabBusOwnership({
     includeVersion: false,
   })
   const title = detail
-    ? "OrangeCrab DDR detail: RAM_D5, U3.B13 to U4.H8"
-    : "OrangeCrab rev 0.2.1: full captured reference circuit"
+    ? "DDR data detail: RAM_D5, U3.B13 to U4.H8"
+    : "DDR reference board: full captured circuit"
   const status = detail
     ? ramD5HasSourceTrace
       ? "RAM_D5 resolves to its matching source trace"
