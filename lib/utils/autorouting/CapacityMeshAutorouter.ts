@@ -15,6 +15,7 @@ import {
 } from "@tscircuit/capacity-autorouter"
 import type { PlatformConfig } from "@tscircuit/props"
 import { AutorouterError } from "lib/errors/AutorouterError"
+import type { AutorouterComputeCostSummary } from "lib/events"
 import { SOLVERS, type SolverName } from "lib/solvers"
 import type {
   AutorouterCompleteEvent,
@@ -267,7 +268,12 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
         run,
         (progress) => {
           this.cycleCount++
-          this.emitEvent({ ...progress, steps: this.cycleCount })
+          const computeCostSummary = this.getComputeCostSummary()
+          this.emitEvent({
+            ...progress,
+            steps: this.cycleCount,
+            ...(computeCostSummary !== undefined ? { computeCostSummary } : {}),
+          })
         },
       )
       if (run.stopped) return
@@ -358,6 +364,7 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
 
       // Report progress
       const progress = this.solver.progress
+      const computeCostSummary = this.getComputeCostSummary()
 
       this.emitEvent({
         type: "progress",
@@ -370,6 +377,7 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
             : (this.solver.activeSubSolver?.getSolverName() ??
               this.solver.getSolverName()),
         debugGraphics,
+        ...(computeCostSummary !== undefined ? { computeCostSummary } : {}),
       })
 
       // Schedule the next step
@@ -481,6 +489,15 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
     }
 
     return this.solver.getOutputSimplifiedPcbTraces() as SimplifiedPcbTrace[]
+  }
+
+  getComputeCostSummary(): AutorouterComputeCostSummary | undefined {
+    // Duck-type the upcoming autorouter API without requiring a package update.
+    return (
+      this.solver as {
+        getComputeCostSummary?(): AutorouterComputeCostSummary | undefined
+      }
+    ).getComputeCostSummary?.()
   }
 
   /**
