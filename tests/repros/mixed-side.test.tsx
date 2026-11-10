@@ -1,61 +1,68 @@
 import { expect, test } from "bun:test"
+import { Fragment } from "react"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("mixed-side connector pads and plated slot follow the footprint mounting side", async () => {
   const { circuit } = getTestFixture()
+  const mounts = (["top", "bottom"] as const).flatMap((layer, row) =>
+    [0, 90, 180, 270, 30].map((rotation, column) => ({
+      layer,
+      rotation,
+      x: (column - 2) * 8,
+      y: 4 - row * 8,
+    })),
+  )
   circuit.add(
-    <board width={26} height={14} routingDisabled schematicDisabled>
-      {(["top", "bottom"] as const).map((layer, index) => (
-        <chip
-          key={layer}
-          name={`J${index + 1}`}
-          layer={layer}
-          pcbX={index * 12 - 6}
-          pcbRotation={30}
-          pinLabels={{ 1: "CONTACT", 2: "LATCH" }}
-          footprint={
-            <footprint originalLayer="top">
-              <smtpad
-                portHints={["pin1"]}
-                layer="top"
-                shape="rect"
-                pcbX={-2}
-                width={1.5}
-                height={1}
-              />
-              <smtpad
-                portHints={["pin2"]}
-                layer="bottom"
-                shape="rect"
-                pcbX={2}
-                width={1.5}
-                height={1}
-              />
-              <platedhole
-                shape="pill"
-                pcbY={2}
-                outerWidth={3.1}
-                outerHeight={1.1}
-                holeWidth={2.3}
-                holeHeight={0.7}
-                pcbRotation={10}
-              />
-            </footprint>
-          }
-        />
+    <board width={42} height={19} routingDisabled schematicDisabled>
+      {mounts.map(({ layer, rotation, x, y }, index) => (
+        <Fragment key={`${layer}-${rotation}`}>
+          <chip
+            name={`J${index + 1}`}
+            layer={layer}
+            pcbX={x}
+            pcbY={y}
+            pcbRotation={rotation}
+            pinLabels={{ 1: "CONTACT", 2: "LATCH" }}
+            footprint={
+              <footprint originalLayer="top">
+                <smtpad
+                  portHints={["pin1"]}
+                  layer="top"
+                  shape="rect"
+                  pcbX={-2}
+                  pcbY={-0.352654}
+                  width={1.5}
+                  height={1}
+                />
+                <smtpad
+                  portHints={["pin2"]}
+                  layer="bottom"
+                  shape="rect"
+                  pcbX={2}
+                  pcbY={0.352654}
+                  width={1.5}
+                  height={1}
+                />
+                <platedhole
+                  shape="pill"
+                  pcbY={2}
+                  outerWidth={3.1}
+                  outerHeight={1.1}
+                  holeWidth={2.3}
+                  holeHeight={0.7}
+                  pcbRotation={10}
+                />
+              </footprint>
+            }
+          />
+          <pcbnotetext
+            pcbX={x}
+            pcbY={y - 3.1}
+            text={`${layer} ${rotation} deg`}
+            fontSize={0.48}
+          />
+        </Fragment>
       ))}
-      <pcbnotetext
-        pcbX={-6}
-        pcbY={-4}
-        text="J1 top / slot 40 deg"
-        fontSize={0.55}
-      />
-      <pcbnotetext
-        pcbX={6}
-        pcbY={-4}
-        text="J2 bottom / slot 20 deg"
-        fontSize={0.55}
-      />
     </board>,
   )
   await circuit.renderUntilSettled()
