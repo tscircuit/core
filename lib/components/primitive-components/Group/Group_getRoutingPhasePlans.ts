@@ -400,11 +400,13 @@ export function Group_getRoutingPhasePlans(
           // (e.g. explicit differential-pair sections) retain path ownership.
           const connectedNets =
             trace._findConnectedPorts().ports?.length === 1
-              ? trace
-                  ._findConnectedNets()
-                  .nets.filter(
-                    (net) => !breakoutByNet.has(net) && nets.includes(net),
-                  )
+              ? nets.filter(
+                  (net) =>
+                    !breakoutByNet.has(net) &&
+                    trace.subcircuit_connectivity_map_key !== null &&
+                    net.subcircuit_connectivity_map_key ===
+                      trace.subcircuit_connectivity_map_key,
+                )
               : []
           for (const net of connectedNets) {
             if (!plan.nets.includes(net)) plan.nets.push(net)

@@ -18,13 +18,14 @@ test("a phase targeting a pin routes its named net while an unrelated net stays 
       <chip name="U1" pcbX={-6} footprint="soic8" />
       <chip name="U2" pcbX={6} footprint="soic8" />
       <trace from=".U1 > .pin8" to="net.DATA" />
-      <trace from=".U2 > .pin1" to="net.DATA" />
+      <trace from=".U2 > .pin1" to="net.DATA_ALIAS" />
+      <trace from="net.DATA" to="net.DATA_ALIAS" />
       <trace from=".U1 > .pin7" to="net.LATER" />
       <trace from=".U2 > .pin2" to="net.LATER" />
       <autoroutingphase
         name="DATA_ONLY"
         phaseIndex={0}
-        connections={[".U1 > .pin8"]}
+        connections={[".U2 > .pin1"]}
       />
       <pcbnotetext
         pcbY={-4.5}
