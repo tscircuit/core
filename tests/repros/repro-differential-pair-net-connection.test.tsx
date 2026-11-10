@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { expectDifferentialPairLengths } from "tests/fixtures/expect-differential-pair-lengths"
 
 test("two-pad USB net selectors route with explicit lane skew", async () => {
   const { circuit } = getTestFixture()
@@ -40,4 +41,5 @@ test("two-pad USB net selectors route with explicit lane skew", async () => {
   // Two-pad selectors normalize to exact owned source hops.
   expect(circuit.db.pcb_trace.list()).toHaveLength(2)
   expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
+  expectDifferentialPairLengths(circuit)
 })
