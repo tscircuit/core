@@ -885,25 +885,26 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       },
     )
 
+    // Copper pours render after routing, so raw Circuit JSON cannot carry
+    // unbroken-plane intent yet. Build SRJ from the live component tree and
+    // supply it as the routing input in every remote mode.
+    const preferredTraceWidth =
+      props.defaultTraceWidth ?? props.nominalTraceWidth
+    const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
+      pcb_panel_id: getOwningPanel(this)?.pcb_panel_id ?? undefined,
+      db,
+      minTraceWidth: Number(props.minTraceWidth ?? 0.15),
+      nominalTraceWidth:
+        preferredTraceWidth != null ? Number(preferredTraceWidth) : undefined,
+      subcircuit_id: this.subcircuit_id,
+      subcircuitComponent: this,
+    })
+    simpleRouteJson.allowViaInPad =
+      autorouterConfig.allowViaInPad ?? simpleRouteJson.allowViaInPad
+
     if (serverMode === "solve-endpoint") {
       // Legacy solve endpoint mode
-      if (this.props.autorouter?.inputFormat === "simplified") {
-        const preferredTraceWidth =
-          props.defaultTraceWidth ?? props.nominalTraceWidth
-        const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
-          pcb_panel_id: getOwningPanel(this)?.pcb_panel_id ?? undefined,
-          db,
-          minTraceWidth: Number(props.minTraceWidth ?? 0.15),
-          nominalTraceWidth:
-            preferredTraceWidth != null
-              ? Number(preferredTraceWidth)
-              : undefined,
-          subcircuit_id: this.subcircuit_id,
-          subcircuitComponent: this,
-        })
-        simpleRouteJson.allowViaInPad =
-          autorouterConfig.allowViaInPad ?? simpleRouteJson.allowViaInPad
-
+      if (autorouterConfig.inputFormat === "simplified") {
         const { autorouting_result } = await fetchWithDebug(
           `${serverUrl}/autorouting/solve`,
           {
@@ -928,6 +929,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           method: "POST",
           body: JSON.stringify({
             input_circuit_json: pcbAndSourceCircuitJson,
+            input_simple_route_json: simpleRouteJson,
             subcircuit_id: this.subcircuit_id!,
           }),
           headers: {
@@ -946,6 +948,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         method: "POST",
         body: JSON.stringify({
           input_circuit_json: pcbAndSourceCircuitJson,
+          input_simple_route_json: simpleRouteJson,
           provider: "freerouting",
           autostart: true,
           display_name: this.root?.name,

@@ -61,6 +61,7 @@ circuit.getCircuitJson() // [{ type: "board", ...}, { type: "resistor", ...}, ..
 
 ## Development
 
+- [Reserve reference planes while allowing through vias](./docs/unbroken-copper-pour-routing.md)
 - [Declare PCB return-current experiments in TSX](./docs/pcb-return-current-simulation.md)
 
 - [How does core work?](./docs/DEVELOPMENT.md#overview-of-how-core-works)
