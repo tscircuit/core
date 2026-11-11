@@ -110,6 +110,7 @@ const getOwningPcbBoardForSubcircuit = (
 export const getSimpleRouteJsonFromCircuitJson = ({
   db,
   circuitJson,
+  allowViaInPad,
   subcircuit_id,
   minTraceWidth,
   minTraceToPadEdgeClearance,
@@ -130,6 +131,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
 }: {
   db?: CircuitJsonUtilObjects
   circuitJson?: AnyCircuitElement[]
+  allowViaInPad?: boolean
   subcircuit_id?: string | null
   minTraceWidth?: number
   nominalTraceWidth?: number
@@ -1088,7 +1090,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
           : undefined,
       layerCount: board?.num_layers ?? 2,
       allowBlindAndBuriedVias: board?.allow_blind_and_buried_vias ?? false,
-      allowViaInPad: board?.is_via_in_pad_allowed ?? false,
+      allowViaInPad: allowViaInPad ?? board?.is_via_in_pad_allowed ?? false,
       minTraceWidth: Math.min(
         defaultTraceWidth,
         ...allConns.map((c) => c.width!),

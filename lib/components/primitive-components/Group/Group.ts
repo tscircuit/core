@@ -893,14 +893,13 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
       pcb_panel_id: getOwningPanel(this)?.pcb_panel_id ?? undefined,
       db,
+      allowViaInPad: autorouterConfig.allowViaInPad,
       minTraceWidth: Number(props.minTraceWidth ?? 0.15),
       nominalTraceWidth:
         preferredTraceWidth != null ? Number(preferredTraceWidth) : undefined,
       subcircuit_id: this.subcircuit_id,
       subcircuitComponent: this,
     })
-    simpleRouteJson.allowViaInPad =
-      autorouterConfig.allowViaInPad ?? simpleRouteJson.allowViaInPad
     const unbrokenPlaneRouteJson = simpleRouteJson.obstacles.some(
       (obstacle) => obstacle.isCopperPour,
     )
