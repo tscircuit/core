@@ -43,7 +43,7 @@ for (const cached of [false, true]) {
       pcb = converter.getOutput()
     })
 
-    test.failing("exports both plated-hole paste apertures in J1", () => {
+    test("exports both plated-hole paste apertures in J1", () => {
       const hole = circuit.db.pcb_plated_hole.list()[0]!
       expect(hole.pcb_component_id).toBeTruthy()
       const owners = circuit.db.pcb_solder_paste
