@@ -1,8 +1,15 @@
 import { expect, test } from "bun:test"
+import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("differential pair over nets is not routed", async () => {
+test("differential pair over nets is routed", async () => {
   const { circuit } = getTestFixture()
+  const inputs: SimpleRouteJson[] = []
+  const asyncErrors: string[] = []
+  circuit.on("autorouting:start", (event) => inputs.push(event.simpleRouteJson))
+  circuit.on("asyncEffect:end", (event) => {
+    if (event.error) asyncErrors.push(String(event.error))
+  })
   const usb = { DP: "net.USB_DP", DM: "net.USB_DM" }
 
   circuit.add(
@@ -31,8 +38,19 @@ test("differential pair over nets is not routed", async () => {
 
   await circuit.renderUntilSettled()
 
-  // Bug: "net.USB_DP" is not resolved, so the autorouter never runs.
-  expect(circuit.db.pcb_trace.list()).toHaveLength(0)
+  expect(asyncErrors).toEqual([])
+  expect(inputs).toHaveLength(1)
+  expect(inputs[0].differentialPairs).toEqual([
+    {
+      connectionNames: [
+        circuit.db.source_net.getWhere({ name: "USB_DP" })!.source_net_id,
+        circuit.db.source_net.getWhere({ name: "USB_DM" })!.source_net_id,
+      ],
+      lengthTolerance: 0.1,
+    },
+  ])
+  expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
+  expect(circuit.db.pcb_trace.list()).toHaveLength(2)
   await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
     shouldDrawRatsNest: true,
     showErrorsInTextOverlay: true,

@@ -32,6 +32,6 @@ it("throws when a differential pair port selector has no trace", (): void => {
       subcircuitComponent: boardSubcircuit,
     })
   }).toThrow(
-    'Could not find source trace for trace name or port selector ".R1 > .pin1" in differential pair "USB"',
+    'Could not resolve differential pair selector ".R1 > .pin1" in differential pair "USB": expected a trace name, port selector, or net selector with connected traces',
   )
 })

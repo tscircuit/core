@@ -1,6 +1,6 @@
 import type { SourcePort, SourceTrace } from "circuit-json"
 import type { DifferentialPair } from "./DifferentialPair"
-import type { Port } from "./Port/Port"
+import { findDifferentialPairMember } from "lib/utils/autorouting/resolveDifferentialPairMember"
 
 type ConnectionPolarity = "positive" | "negative"
 type SourceComponentId = NonNullable<SourcePort["source_component_id"]>
@@ -22,14 +22,25 @@ const resolvePointToPointConnection = (
     .filter(
       (sourceTrace) => sourceTrace.subcircuit_id === subcircuit.subcircuit_id,
     )
-  const matchingSourceTraces = subcircuitSourceTraces.filter(
+  const memberMatch = findDifferentialPairMember(
+    differentialPair,
+    subcircuitSourceTraces,
+    connectionSelector,
+  )
+  const matchingSourceTraces =
+    memberMatch.kind === "trace" ? memberMatch.sourceTraces : []
+
+  const sourceTraceName = matchingSourceTraces.some(
     (sourceTrace) => sourceTrace.name === connectionSelector,
   )
+    ? connectionSelector
+    : undefined
 
   // A named two-terminal trunk may share its net with termination taps. Its
   // differential constraint applies to that path, not to every net branch.
   const namedSourceTrace = matchingSourceTraces[0]
   if (
+    sourceTraceName &&
     matchingSourceTraces.length === 1 &&
     namedSourceTrace?.connected_source_port_ids.length === 2
   ) {
@@ -42,7 +53,7 @@ const resolvePointToPointConnection = (
             sourcePort.source_port_id,
           ),
         ),
-      sourceTraceName: connectionSelector,
+      sourceTraceName,
     }
   }
   const connectivityMapKeys = new Set<string>()
@@ -53,16 +64,10 @@ const resolvePointToPointConnection = (
         connectivityMapKeys.add(sourceTrace.subcircuit_connectivity_map_key)
       }
     }
-  } else {
-    const selectedPort = subcircuit.selectOne<Port>(connectionSelector, {
-      type: "port",
-    })
-    if (selectedPort?.source_port_id) {
-      const sourcePort = db.source_port.get(selectedPort.source_port_id)
-      if (sourcePort?.subcircuit_connectivity_map_key) {
-        connectivityMapKeys.add(sourcePort.subcircuit_connectivity_map_key)
-      }
-    }
+  } else if (memberMatch.kind === "net") {
+    const connectivityKey =
+      memberMatch.sourceNet.subcircuit_connectivity_map_key
+    if (connectivityKey) connectivityMapKeys.add(connectivityKey)
   }
 
   if (connectivityMapKeys.size !== 1) return undefined
@@ -82,8 +87,7 @@ const resolvePointToPointConnection = (
       )
       .map((trace) => trace.source_trace_id),
     sourcePorts,
-    sourceTraceName:
-      matchingSourceTraces.length > 0 ? connectionSelector : undefined,
+    sourceTraceName,
   }
 }
 
