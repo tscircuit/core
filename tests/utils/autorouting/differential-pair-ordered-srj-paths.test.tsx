@@ -22,27 +22,41 @@ test("exports the declared order of both differential pair paths", () => {
     subcircuitComponent: circuit.firstChild!,
   })
 
-  expect(simpleRouteJson.differentialPairs).toMatchInlineSnapshot(`
-    [
-      {
-        "connectionNames": [
-          "source_trace_0",
-          "source_trace_1",
-        ],
-        "lengthTolerance": 0.1,
-        "paths": {
-          "negative": [
-            "pcb_port_1",
-            "pcb_port_3",
-            "pcb_port_5",
-          ],
-          "positive": [
+  expect({
+    connections: simpleRouteJson.connections.map(({ name, path }) => ({
+      name,
+      path,
+    })),
+    differentialPairs: simpleRouteJson.differentialPairs,
+  }).toMatchInlineSnapshot(`
+    {
+      "connections": [
+        {
+          "name": "source_trace_0",
+          "path": [
             "pcb_port_0",
             "pcb_port_2",
             "pcb_port_4",
           ],
         },
-      },
-    ]
+        {
+          "name": "source_trace_1",
+          "path": [
+            "pcb_port_1",
+            "pcb_port_3",
+            "pcb_port_5",
+          ],
+        },
+      ],
+      "differentialPairs": [
+        {
+          "connectionNames": [
+            "source_trace_0",
+            "source_trace_1",
+          ],
+          "lengthTolerance": 0.1,
+        },
+      ],
+    }
   `)
 })

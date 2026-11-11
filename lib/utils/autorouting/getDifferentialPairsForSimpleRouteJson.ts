@@ -1,13 +1,11 @@
 import type { SourcePort, SourceTrace } from "circuit-json"
 import type { DifferentialPair } from "lib/components/primitive-components/DifferentialPair"
 import type { Port } from "lib/components/primitive-components/Port/Port"
-import type { Trace } from "lib/components/primitive-components/Trace/Trace"
 import type {
   PcbGroupId,
   SimpleRouteConnection,
   SimpleRouteDifferentialPair,
   SrjConnectionName,
-  SrjPointId,
 } from "./SimpleRouteJson"
 
 type SourceTraceId = SourceTrace["source_trace_id"]
@@ -203,32 +201,6 @@ const getDifferentialPairCohortLabel = (
     ? "the global routing cohort"
     : `routing PCB group "${cohort}"`
 
-const getDeclaredSrjPathPointIds = (
-  traceComponents: Trace[],
-  connection: SimpleRouteConnection | undefined,
-): SrjPointId[] | undefined => {
-  if (!connection?.source_trace_id) return undefined
-  const trace = traceComponents.find(
-    (trace) => trace.source_trace_id === connection.source_trace_id,
-  )
-  if (!trace || !("path" in trace.props)) return undefined
-
-  const ports = trace._findConnectedPorts().ports
-  if (!ports || ports.length < 3) return undefined
-  const connectionPointIds = new Set(
-    connection.pointsToConnect.map((point) => point.pointId),
-  )
-  const pathPointIds: SrjPointId[] = []
-  for (const port of ports) {
-    if (!port.pcb_port_id || !connectionPointIds.has(port.pcb_port_id))
-      return undefined
-    pathPointIds.push(port.pcb_port_id)
-  }
-  return new Set(pathPointIds).size === pathPointIds.length
-    ? pathPointIds
-    : undefined
-}
-
 /** Converts differential-pair trace names or port selectors into SRJ constraints. */
 export const getDifferentialPairsForSimpleRouteJson = ({
   srjConnections,
@@ -306,43 +278,9 @@ export const getDifferentialPairsForSimpleRouteJson = ({
     ] of positiveSrjConnectionNamesByCohort) {
       const negativeSrjConnectionName =
         negativeSrjConnectionNamesByCohort.get(cohort)!
-      const findPathConnection = (
-        connectionName: SrjConnectionName,
-        sourceTraceId: SourceTraceId,
-      ) =>
-        srjConnections.find(
-          (connection) =>
-            connection.name === connectionName &&
-            connection.source_trace_id === sourceTraceId &&
-            connection.routingPcbGroupId === cohort &&
-            connection.pointsToConnect.length > 2,
-        )
-      const positiveSrjConnection = findPathConnection(
-        positiveSrjConnectionName,
-        positiveSourceTrace.sourceTraceId,
-      )
-      const negativeSrjConnection = findPathConnection(
-        negativeSrjConnectionName,
-        negativeSourceTrace.sourceTraceId,
-      )
-      const traceComponents =
-        positiveSrjConnection && negativeSrjConnection
-          ? differentialPair.getSubcircuit().selectAll<Trace>("trace")
-          : []
-      const positive = getDeclaredSrjPathPointIds(
-        traceComponents,
-        positiveSrjConnection,
-      )
-      const negative = getDeclaredSrjPathPointIds(
-        traceComponents,
-        negativeSrjConnection,
-      )
       srjDifferentialPairs.push({
         connectionNames: [positiveSrjConnectionName, negativeSrjConnectionName],
         lengthTolerance,
-        ...(positive && negative && positive.length === negative.length
-          ? { paths: { positive, negative } }
-          : {}),
         ...(differentialPair._parsedProps.pcbTraceGap !== undefined
           ? { traceGap: differentialPair._parsedProps.pcbTraceGap }
           : {}),

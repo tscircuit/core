@@ -63,7 +63,6 @@ export type SimplifiedPcbTrace = Omit<
 
 /** A connection identifier in Simple Route JSON. */
 export type SrjConnectionName = string
-export type SrjPointId = NonNullable<SingleLayerConnectionPoint["pointId"]>
 
 /** Core emits fixed-layer routing terminals, not multilayer connection points. */
 export type SingleLayerConnectionPoint = {
@@ -97,6 +96,8 @@ export type SimpleRouteConnection = {
   /** @deprecated Use `nominalTraceWidth` instead. */
   width?: number
   pointsToConnect: SingleLayerConnectionPoint[]
+  /** Ordered point IDs on an explicitly declared trace path. */
+  path?: NonNullable<SingleLayerConnectionPoint["pointId"]>[]
   /** @deprecated DO NOT USE **/
   externallyConnectedPointIds?: string[][]
 }
@@ -105,14 +106,6 @@ export type SimpleRouteConnection = {
 export type SimpleRouteDifferentialPair = {
   connectionNames: [SrjConnectionName, SrjConnectionName]
   lengthTolerance: number
-  /**
-   * Ordered pointIds on the respective connections. The two lists have equal
-   * length, and corresponding entries define paired pads.
-   */
-  paths?: {
-    positive: SrjPointId[]
-    negative: SrjPointId[]
-  }
   traceGap?: number
   maxUncoupledLength?: number
 }

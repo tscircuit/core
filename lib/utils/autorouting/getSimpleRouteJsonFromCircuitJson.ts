@@ -4,8 +4,8 @@ import type {
   AnyCircuitElement,
   LayerRef,
   PcbBoard,
-  PcbPort,
   PcbPanel,
+  PcbPort,
   PcbTraceHint,
   PcbVia,
   SourcePort,
@@ -17,6 +17,7 @@ import {
 import { Bus } from "lib/components/primitive-components/Bus"
 import { DifferentialPair } from "lib/components/primitive-components/DifferentialPair"
 import type { ISubcircuit } from "lib/components/primitive-components/Group/Subcircuit/ISubcircuit"
+import type { Trace } from "lib/components/primitive-components/Trace/Trace"
 import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
 import { findFloatingCopper } from "../copper-pour-connectivity/find-floating-copper"
 import { getObstaclesFromCircuitJson } from "../obstacles/getObstaclesFromCircuitJson"
@@ -36,10 +37,10 @@ import {
   getPlaneTerminatedSourceTraceLayers,
 } from "./getBusesForSimpleRouteJson"
 import { getDifferentialPairSourceTraceIds } from "./getDifferentialPairSourceTraceIds"
-import { reduceNetConnectionPointsForDifferentialPairPaths } from "./reduceNetConnectionPointsForDifferentialPairPaths"
 import { getDifferentialPairsForSimpleRouteJson } from "./getDifferentialPairsForSimpleRouteJson"
 import { getPreservedRoutedSubcircuitTraces } from "./getPreservedRoutedSubcircuitTraces"
 import { getUnbrokenCopperPourObstacles } from "./getUnbrokenCopperPourObstacles"
+import { reduceNetConnectionPointsForDifferentialPairPaths } from "./reduceNetConnectionPointsForDifferentialPairPaths"
 
 /**
  * Converts PCB trace-hint route points to SRJ connection points. Both inputs
@@ -576,6 +577,9 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     sourceTraces,
     subcircuitId: subcircuit_id,
   })
+  const pairTraceComponents = differentialPairSourceTraceIds.size
+    ? (subcircuitComponent?.selectAll<Trace>("trace") ?? [])
+    : []
   // Preserve explicit two-terminal sections, not an arbitrary multi-terminal
   // net as a differential conductor. Unspecified branch topology stays rejected.
   const differentialPairPathSourceTraceIds = new Set(
@@ -649,6 +653,19 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       const connectedPortRoutePoints = connectedPcbPorts.map((port) =>
         getPcbPortRoutePoint(port),
       )
+      const path =
+        connectedPortRoutePoints.length > 2 &&
+        connectedPortRoutePoints.length ===
+          trace.connected_source_port_ids.length &&
+        differentialPairSourceTraceIds.has(trace.source_trace_id) &&
+        pairTraceComponents.some(
+          (pairTrace) =>
+            pairTrace.source_trace_id === trace.source_trace_id &&
+            pairTrace._parsedProps.name === trace.name &&
+            "path" in pairTrace.props,
+        )
+          ? connectedPortRoutePoints.map((point) => point.pointId)
+          : undefined
       const [firstConnectedPortRoutePoint, ...remainingPortRoutePoints] =
         connectedPortRoutePoints
       return {
@@ -666,6 +683,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
           ...srjTraceHintConnectionPoints,
           ...remainingPortRoutePoints,
         ],
+        ...(path && new Set(path).size === path.length ? { path } : {}),
       } as SimpleRouteConnection
     })
     .filter((c): c is SimpleRouteConnection => c !== null)
