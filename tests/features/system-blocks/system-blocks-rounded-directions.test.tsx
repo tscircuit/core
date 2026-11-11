@@ -42,23 +42,21 @@ test("rounded fanout and self-loops work in every page direction", async () => {
           connection.from_system_block_component_id ===
           connection.to_system_block_component_id,
       )!
+    // A label beside the return must preserve the compact semicircular loop.
     expect(loop.route).toHaveLength(5)
     expect(
-      loop.route.filter((point) => point.cubic_bezier_control_points),
-    ).toHaveLength(2)
-    const departure = {
-      x: loop.route[1].x - loop.route[0].x,
-      y: loop.route[1].y - loop.route[0].y,
-    }
-    const arrival = {
-      x: loop.route[4].x - loop.route[3].x,
-      y: loop.route[4].y - loop.route[3].y,
-    }
-    expect(departure.x).toBeCloseTo(-arrival.x, 10)
-    expect(departure.y).toBeCloseTo(-arrival.y, 10)
-    expect(
-      direction === "down" || direction === "up" ? departure.y : departure.x,
-    ).toBe(0)
+      loop.route.filter((point) => point.cubic_bezier_control_points).length,
+    ).toBe(2)
+    // Keep the label close to the circular return in both orientations. The
+    // horizontal distance includes half of the unrotated "Watchdog" text.
+    const tip = loop.route[2]
+    const label = loop.label_anchor_center!
+    const sideFacing = loop.route[0].x === loop.route.at(-1)!.x
+    const axis = sideFacing ? "x" : "y"
+    const gap =
+      (label[axis] - tip[axis]) * Math.sign(tip[axis] - loop.route[0][axis])
+    expect(gap).toBeGreaterThan(0)
+    expect(gap).toBeLessThanOrEqual(sideFacing ? 8 : 3.5)
     await expect(
       convertCircuitJsonToSystemSvg(json, { width: 700 }),
     ).toMatchSvgSnapshot(

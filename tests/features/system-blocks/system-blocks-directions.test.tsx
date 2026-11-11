@@ -39,6 +39,9 @@ test("all four page directions map to page-centered +Y-up geometry", async () =>
     )
     circuit.render()
     assertSystemGeometry(circuit.getCircuitJson())
+    for (const connection of circuit.db.system_block_connection.list()) {
+      expect(connection.route).toHaveLength(2)
+    }
     const blocks = circuit.db.system_block_component.list()
     const first = blocks.find((block) => block.name === "input")!
     const last = blocks.find((block) => block.name === "output")!
@@ -53,6 +56,8 @@ test("all four page directions map to page-centered +Y-up geometry", async () =>
       convertCircuitJsonToSystemSvg(circuit.getCircuitJson(), {
         width: direction === "up" || direction === "down" ? 500 : 1000,
       }),
-    ).toMatchSvgSnapshot(import.meta.path, `system-blocks-${direction}`)
+    ).toMatchSvgSnapshot(import.meta.path, `system-blocks-${direction}`, {
+      diffThresholdPercent: 0,
+    })
   }
 })

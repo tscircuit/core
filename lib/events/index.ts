@@ -60,6 +60,26 @@ export interface AutoroutingStartEvent extends AutoroutingExecutionMetadata {
   simpleRouteJson: SimpleRouteJson
 }
 
+/** Hypergraph route search iterations. */
+export type Iterations = number
+
+/**
+ * Which connections were hardest to route in one stage, mirrored from the
+ * autorouter: each pair's solo search iterations, highest first.
+ */
+export interface AutorouterComputeCostSummary {
+  readonly metric: "hypergraph_route_search_iterations"
+  /** Every pair that was measured, including those cut from topPairs. */
+  readonly measuredPairCount: number
+  /** The most expensive pairs, highest first; at most 25. */
+  readonly topPairs: readonly {
+    readonly connectionName: string
+    readonly rootConnectionNames: readonly string[]
+    readonly pcbPortIds: readonly [string | null, string | null]
+    readonly iterations: Iterations
+  }[]
+}
+
 export interface AutoroutingErrorEvent extends AutoroutingExecutionMetadata {
   type: "autorouting:error"
   subcircuit_id: string
@@ -70,6 +90,7 @@ export interface AutoroutingErrorEvent extends AutoroutingExecutionMetadata {
   error?: { message: string; stack?: string }
   simpleRouteJson?: SimpleRouteJson
   debugGraphics?: any
+  computeCostSummary?: AutorouterComputeCostSummary
 }
 
 export interface AutoroutingProgressEvent extends AutoroutingExecutionMetadata {
@@ -82,6 +103,7 @@ export interface AutoroutingProgressEvent extends AutoroutingExecutionMetadata {
   progress: number
   iterationsPerSecond?: number
   debugGraphics?: any
+  computeCostSummary?: AutorouterComputeCostSummary
 }
 
 export interface AutoroutingEndEvent extends AutoroutingExecutionMetadata {
@@ -101,6 +123,7 @@ export interface AutoroutingEndEvent extends AutoroutingExecutionMetadata {
   phaseStageIndex?: number
   phaseStageCount?: number
   simpleRouteJson: SimpleRouteJson
+  computeCostSummary?: AutorouterComputeCostSummary
 }
 
 export interface PackingStartEvent {
