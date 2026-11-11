@@ -1,18 +1,38 @@
-import { type PcbTraceRoutePoint, pcb_trace_route_point } from "circuit-json"
+import { pcbTraceProps } from "@tscircuit/props"
+import type { PcbTraceRoutePoint } from "circuit-json"
 import { applyToPoint } from "transformation-matrix"
-import { z } from "zod"
+import type { z } from "zod"
 import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
 import { getViaDiameterDefaults } from "lib/utils/pcbStyle/getViaDiameterDefaults"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
-export const pcbTraceProps = z.object({
-  route: z.array(pcb_trace_route_point),
-  // If this primitive PcbTrace needs to be associated with a source_trace_id
-  // it can be added as a prop here. For footprints, it's often not needed.
-  source_trace_id: z.string().optional(),
-})
+export { pcbTraceProps }
 
 export type PcbTraceProps = z.infer<typeof pcbTraceProps>
+
+/**
+ * Resolve positions and widths in footprint-local PCB mm: right-handed,
+ * +X right, +Y top, +Z above. Placement transforms apply after resolution.
+ */
+const resolvePcbTraceRoute = (props: PcbTraceProps): PcbTraceRoutePoint[] => {
+  let layer = props.layer ?? "top"
+  return props.route.map((point): PcbTraceRoutePoint => {
+    if ("route_type" in point) {
+      if (point.route_type === "wire") layer = point.layer
+      else if (point.route_type === "via") layer = point.to_layer
+      else layer = point.end_layer
+      return point
+    }
+
+    return {
+      route_type: "wire",
+      x: point.x,
+      y: point.y,
+      width: point.trace_width ?? props.thickness ?? 0.1,
+      layer,
+    }
+  })
+}
 
 export class PcbTrace extends PrimitiveComponent<typeof pcbTraceProps> {
   pcb_trace_id: string | null = null
@@ -40,7 +60,7 @@ export class PcbTrace extends PrimitiveComponent<typeof pcbTraceProps> {
     const { isFlipped, maybeFlipLayer } = this._getPcbPrimitiveFlippedHelpers()
     const parentTransform = this._computePcbGlobalTransformBeforeLayout()
 
-    const transformedRoute = props.route.map((point) => {
+    const transformedRoute = resolvePcbTraceRoute(props).map((point) => {
       if (point.route_type === "wire") {
         const { x, y, ...restOfPoint } = point
         const transformedPoint = applyToPoint(parentTransform, { x, y })
@@ -79,7 +99,6 @@ export class PcbTrace extends PrimitiveComponent<typeof pcbTraceProps> {
 
     const pcb_trace = db.pcb_trace.insert({
       pcb_component_id: container.pcb_component_id!,
-      source_trace_id: props.source_trace_id,
       route: transformedRoute,
       is_antenna_trace: this.isAntennaTrace,
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
@@ -133,8 +152,8 @@ export class PcbTrace extends PrimitiveComponent<typeof pcbTraceProps> {
     top: number
     bottom: number
   } {
-    const { _parsedProps: props } = this
-    if (!props.route || props.route.length === 0) {
+    const route = resolvePcbTraceRoute(this._parsedProps)
+    if (route.length === 0) {
       return { left: 0, right: 0, top: 0, bottom: 0 }
     }
 
@@ -143,7 +162,7 @@ export class PcbTrace extends PrimitiveComponent<typeof pcbTraceProps> {
     let minY = Infinity
     let maxY = -Infinity
 
-    for (const point of props.route) {
+    for (const point of route) {
       if (point.route_type === "through_pad") {
         minX = Math.min(minX, point.start.x, point.end.x)
         maxX = Math.max(maxX, point.start.x, point.end.x)
