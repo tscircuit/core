@@ -1,12 +1,22 @@
+import type { PcbTrace } from "circuit-json"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import { stackSvgsHorizontally, stackSvgsVertically } from "stack-svgs"
 
-// Render only the top-layer rectangles captured at autorouting:start.
-// The PCB trace and the connection line would obscure the routing input here.
+type PcbTraceId = PcbTrace["pcb_trace_id"]
+
+/**
+ * Draw the top-layer obstacle rectangles captured at autorouting:start.
+ * Centers are points in right-handed board-world millimeters (+X right, +Y up,
+ * +Z toward the viewer above the board). Width and height are in millimeters,
+ * and rotation is counterclockwise from +X in degrees about each center.
+ * SVG pixels have +X right and +Y down. Scaling by (31, -31) px/mm reverses
+ * the XY handedness. The panel origin offsets center points only. Direction
+ * vectors receive the same scale and reflection without the panel offset.
+ */
 export function renderRoutingObstacleComparison(
   control: SimpleRouteJson,
   withTrace: SimpleRouteJson | undefined,
-  fixedTraceId: string,
+  fixedTraceId: PcbTraceId,
 ) {
   const panel = (title: string, srj: SimpleRouteJson | undefined) => {
     const obstacles =
@@ -24,7 +34,6 @@ export function renderRoutingObstacleComparison(
         <text x="200" y="49" font-size="14">${subtitle}</text>
       </g>
     </svg>`
-    // 31 px/mm in both panels, with PCB positive Y pointing up.
     const shapes = obstacles.map(
       ({ center, width, height, ccwRotationDegrees, connectedTo }) =>
         `<rect x="${-width / 2}" y="${-height / 2}" width="${width}" height="${height}"
