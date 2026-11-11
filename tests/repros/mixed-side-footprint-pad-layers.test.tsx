@@ -78,30 +78,25 @@ beforeAll(async () => {
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
 
-test.failing(
-  "mixed-side footprints preserve pad, port, and paste layers",
-  () => {
-    for (const [name, layers] of [
-      ["U1", ["top", "bottom"]],
-      ["U2", ["bottom", "top"]],
-    ] as const) {
-      for (const [pinIndex, layer] of layers.entries()) {
-        const smtpad = circuit.selectOne(
-          `.${name} smtpad.pin${pinIndex + 1}`,
-        ) as SmtPad
-        const pad = circuit.db.pcb_smtpad.get(smtpad.pcb_smtpad_id!)!
-        expect(pad.layer).toBe(layer)
-        expect(smtpad.getAvailablePcbLayers()).toEqual([layer])
-        expect(circuit.db.pcb_port.get(pad.pcb_port_id!)!.layers).toEqual([
-          layer,
-        ])
-        expect(
-          circuit.db.pcb_solder_paste
-            .list()
-            .filter((paste) => paste.pcb_smtpad_id === pad.pcb_smtpad_id)
-            .map((paste) => paste.layer),
-        ).toEqual([layer])
-      }
+test("mixed-side footprints preserve pad, port, and paste layers", () => {
+  for (const [name, layers] of [
+    ["U1", ["top", "bottom"]],
+    ["U2", ["bottom", "top"]],
+  ] as const) {
+    for (const [pinIndex, layer] of layers.entries()) {
+      const smtpad = circuit.selectOne(
+        `.${name} smtpad.pin${pinIndex + 1}`,
+      ) as SmtPad
+      const pad = circuit.db.pcb_smtpad.get(smtpad.pcb_smtpad_id!)!
+      expect(pad.layer).toBe(layer)
+      expect(smtpad.getAvailablePcbLayers()).toEqual([layer])
+      expect(circuit.db.pcb_port.get(pad.pcb_port_id!)!.layers).toEqual([layer])
+      expect(
+        circuit.db.pcb_solder_paste
+          .list()
+          .filter((paste) => paste.pcb_smtpad_id === pad.pcb_smtpad_id)
+          .map((paste) => paste.layer),
+      ).toEqual([layer])
     }
-  },
-)
+  }
+})
