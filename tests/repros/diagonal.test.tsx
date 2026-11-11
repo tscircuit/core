@@ -30,9 +30,22 @@ async function routeBetweenResistors(withFixedCopper: boolean) {
       )}
       <trace from=".R1 > .pin2" to=".R2 > .pin1" />
       <pcbnotetext
-        pcbY={-4}
-        text="R1 to R2 across existing 45-degree copper"
-        fontSize={0.48}
+        pcbY={4.9}
+        fontSize={0.94}
+        color="#ffae92"
+        text="Repro - R1 to R2 unrouted"
+      />
+      <pcbnotetext
+        pcbY={-3.45}
+        fontSize={0.76}
+        color="#f2f4f7"
+        text="Thick diagonal = existing copper"
+      />
+      <pcbnotetext
+        pcbY={-4.85}
+        fontSize={0.73}
+        color="#c5d4e2"
+        text="Routing stops at the diagonal"
       />
     </board>,
   )
