@@ -14,13 +14,16 @@ type ComputedSection = {
 
 const SECTION_GAP = 1.0
 const MARGIN = 1.5
+const SECTION_DIVIDER_OVERHANG = 1.0
 
 export function computeSchematicSectionLayoutUsingRows({
   sectionBlocks,
   groupSchPositionBeforeLayout: groupOffset,
+  maxRowWidth,
 }: {
   sectionBlocks: SectionLayoutInput[]
   groupSchPositionBeforeLayout: { x: number; y: number }
+  maxRowWidth?: number
 }): Map<SectionName, { x: number; y: number }> {
   const totalArea = sectionBlocks.reduce((sum, block) => {
     const paddedWidth = Math.max(block.size.x, 0.5) + MARGIN * 2
@@ -40,8 +43,13 @@ export function computeSchematicSectionLayoutUsingRows({
       currentRowSectionWidth > 0
         ? currentRowSectionWidth + SECTION_GAP + paddedWidth
         : paddedWidth
+    const rowRenderedWidth = neededWidth - MARGIN * 2 + SECTION_DIVIDER_OVERHANG
 
-    if (currentSectionRow.length > 0 && neededWidth > targetRowWidth) {
+    if (
+      currentSectionRow.length > 0 &&
+      (neededWidth > targetRowWidth ||
+        (maxRowWidth !== undefined && rowRenderedWidth > maxRowWidth))
+    ) {
       computedSectionsMatrix.push(currentSectionRow)
       currentSectionRow = []
       currentRowSectionWidth = 0
