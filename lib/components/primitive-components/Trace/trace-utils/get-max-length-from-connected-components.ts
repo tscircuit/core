@@ -5,6 +5,11 @@ export const getMaxLengthFromConnectedComponents = (
   ports: Port[],
   { db }: { db: CircuitJsonUtilObjects },
 ): number | undefined => {
+  // A capacitor's decoupling limit describes its local connection. A path
+  // joining several ports represents a shared rail, whose total span may be
+  // much larger. Explicit trace.maxLength still applies in SourceTraceRender.
+  if (ports.length > 2) return undefined
+
   const componentMaxLengths = ports
     .map((port) => {
       const sourcePort = db.source_port.get(port.source_port_id!)

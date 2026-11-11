@@ -2,8 +2,10 @@ import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 // U1.pin15 is an inner ball of a 6x6, 0.8mm-pitch BGA at (-0.4, -0.4). Its
-// 0.6mm pads leave no room for a trace between balls on the top layer.
+// 0.6mm pads block top-layer channels. A 0.45mm via also cannot fit in the
+// diagonal gaps, forcing the existing in-pad via to be used.
 const PAD_CENTER = { x: -0.4, y: -0.4 }
+const VIA_PAD_DIAMETER = 0.45
 
 test("a BGA ball escapes through the via drilled into its pad", async () => {
   const { circuit } = getTestFixture()
@@ -15,8 +17,8 @@ test("a BGA ball escapes through the via drilled into its pad", async () => {
       layers={4}
       isViaInPadAllowed
       minViaHoleDiameter={0.15}
-      minViaPadDiameter={0.3}
-      pcbStyle={{ viaHoleDiameter: 0.15, viaPadDiameter: 0.3 }}
+      minViaPadDiameter={VIA_PAD_DIAMETER}
+      pcbStyle={{ viaHoleDiameter: 0.15, viaPadDiameter: VIA_PAD_DIAMETER }}
     >
       <chip
         name="U1"
@@ -31,7 +33,7 @@ test("a BGA ball escapes through the via drilled into its pad", async () => {
         pcbX={PAD_CENTER.x}
         pcbY={PAD_CENTER.y}
         holeDiameter={0.15}
-        outerDiameter={0.3}
+        outerDiameter={VIA_PAD_DIAMETER}
         fromLayer="top"
         toLayer="bottom"
         connectsTo=".U1 > .pin15"

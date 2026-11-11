@@ -33,9 +33,9 @@ export function Group_doInitialSchematicLayoutGrid(group: Group<any>) {
   if (maxCellHeight === 0 && schematicChildren.length > 0) maxCellHeight = 1 // Default cell height if all children have no height
 
   // 3. Get grid configuration (cols, rows, gap)
-  let gridColsOption = props.gridCols
+  let gridColsOption = props.schGridCols ?? props.gridCols
   let gridRowsOption: number | undefined = undefined // Not directly supported by old props, but can be via schLayout
-  let gridGapOption = props.gridGap
+  let gridGapOption = props.schGridGap ?? props.gridGap
   let gridRowGapOption = props.gridRowGap
   let gridColumnGapOption = props.gridColumnGap
 

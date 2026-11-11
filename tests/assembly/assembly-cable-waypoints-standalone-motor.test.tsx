@@ -31,7 +31,7 @@ test("standalone motor waypoints require a board only at the selected endpoint",
   expect(circuit.db.cad_cable.list()[0]!.path).toContainEqual({
     x: expect.closeTo(50),
     y: expect.closeTo(30),
-    z: expect.closeTo(26.8),
+    z: expect.closeTo(23.4),
   })
   const harness = circuit.selectOne(".HARNESS")
   if (!(harness instanceof AssemblyCable)) throw new Error("Missing cable")

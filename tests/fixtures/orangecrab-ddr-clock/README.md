@@ -19,11 +19,11 @@ The snapshot renders core's published Circuit JSON with `toMatchPcbSnapshot`.
 
 ![Published OrangeCrab clock-phase output](../../repros/__snapshots__/repro-orangecrab-ddr-clock-trunks-pcb.snap.svg)
 
-## Remaining failure
+## Clock and termination routing
 
-The second test enables `routeTerminations` on the same circuit. The clock phase can complete after the fix, but the next termination phase fails at a BGA routing region. Core publishes zero final traces when that later phase fails. This test and its snapshot preserve that limitation; completing the first clock phase does not establish a routed DDR subsystem.
+The second test enables `routeTerminations` on the same circuit. With capacity-autorouter 0.0.1029, both phases complete and core publishes six traces: two clock trunks and four termination connections. The test checks physical clearance and skew errors. Other DDR signals remain pending; this does not establish a fully routed DDR subsystem.
 
-![Clock plus termination phases, still incomplete](../../repros/__snapshots__/repro-orangecrab-ddr-clock-termination-pcb.snap.svg)
+![Completed clock and termination phases](../../repros/__snapshots__/repro-orangecrab-ddr-clock-termination-pcb.snap.svg)
 
 ## Source and conversion
 

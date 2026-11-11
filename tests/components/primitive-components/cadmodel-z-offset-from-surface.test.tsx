@@ -26,7 +26,7 @@ test("cadmodel primitive respects zOffsetFromSurface on top layer", () => {
 
   const cadComponents = circuit.db.cad_component.list()
   expect(cadComponents).toHaveLength(1)
-  expect(cadComponents[0].position.z).toBeCloseTo(1.4 / 2 + 1, 5)
+  expect(cadComponents[0].position.z).toBeCloseTo(1.6 / 2 + 1, 5)
 })
 
 test("cadmodel primitive respects zOffsetFromSurface on bottom layer", () => {
@@ -53,7 +53,7 @@ test("cadmodel primitive respects zOffsetFromSurface on bottom layer", () => {
 
   const cadComponents = circuit.db.cad_component.list()
   expect(cadComponents).toHaveLength(1)
-  expect(cadComponents[0].position.z).toBeCloseTo(-(1.4 / 2 + 1), 5)
+  expect(cadComponents[0].position.z).toBeCloseTo(-(1.6 / 2 + 1), 5)
 })
 
 test("cadmodel primitive uses board thickness when zOffsetFromSurface provided", () => {

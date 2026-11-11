@@ -1,9 +1,11 @@
-import type { Polygon } from "@flatten-js/core"
+import { Polygon, point } from "@flatten-js/core"
 import type {
   AnyCircuitElement,
   LayerRef,
   PcbCopperPour,
+  PcbPort,
   PcbTraceRoutePoint,
+  PcbTraceRoutePointWire,
   PcbVia,
 } from "circuit-json"
 import {
@@ -24,6 +26,7 @@ import {
 type CopperNetId = NonNullable<
   ReturnType<ConnectivityMap["getNetConnectedToId"]>
 >
+type PcbPortId = PcbPort["pcb_port_id"]
 
 // Match the pour solver's coordinate scale. Flatten's internal epsilon must
 // not collapse the sub-micron edges emitted by polygon clipping into points.
@@ -37,6 +40,7 @@ interface CopperConductor {
   netId: CopperNetId
   isTerminal: boolean
   pourId?: PcbCopperPour["pcb_copper_pour_id"]
+  pcbPortIds?: PcbPortId[]
   viaId?: PcbVia["pcb_via_id"]
 }
 
@@ -57,6 +61,48 @@ const getRouteEndpoint = (
   }
 }
 
+/** Explicit wire outline in right-handed board-world mm: +X right, +Y up,
+ * +Z toward the top layer. All returned vertices are positions.
+ * Match the profile and curve tessellation in circuit-to-svg's
+ * lib/pcb/get-wire-taper-polygon.ts#getWireTaperPolygon.
+ */
+const getExplicitWireTaperPolygon = (
+  start: PcbTraceRoutePointWire,
+  end: Pick<PcbTraceRoutePointWire, "x" | "y">,
+) => {
+  // Circuit JSON requires both widths whenever interpolation is specified.
+  const startWidth = start.start_width!
+  const endWidth = start.end_width!
+  const dx = end.x - start.x
+  const dy = end.y - start.y
+  const length = Math.hypot(dx, dy)
+  const delta = Math.abs(endWidth - startWidth)
+  const steps =
+    start.width_interpolation_mode === "linear"
+      ? 1
+      : Math.max(
+          1,
+          Math.ceil(Math.sqrt((delta / (1e-3 + delta * 1e-6)) * (3 / 8))),
+        )
+  const left = []
+  const right = []
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps
+    const u = startWidth <= endWidth ? t : 1 - t
+    const width =
+      start.width_interpolation_mode === "quadratic"
+        ? Math.min(startWidth, endWidth) + delta * u * u
+        : startWidth + (endWidth - startWidth) * t
+    const x = start.x + dx * t
+    const y = start.y + dy * t
+    const offsetX = (-dy / length) * (width / 2)
+    const offsetY = (dx / length) * (width / 2)
+    left.push(point(x + offsetX, y + offsetY))
+    right.push(point(x - offsetX, y - offsetY))
+  }
+  return new Polygon([...right, ...left.reverse()])
+}
+
 /** Find copper components with no same-net terminal or authored via.
  * All polygons are board-world points in mm (+X right, +Y up, right-handed).
  * Net membership only permits a contact; it never creates a physical edge.
@@ -64,13 +110,20 @@ const getRouteEndpoint = (
  * layers. Generated stitching vias and broken traces cannot anchor pours.
  * Nets without terminals or authored vias retain their authored pour geometry.
  * Includes every subcircuit so a child pour can reach a parent terminal.
+ * Also returns terminal groups physically joined by a component containing
+ * a pour, using the same graph that determines which copper is floating.
  */
 export const findFloatingCopper = (
   circuitJson: AnyCircuitElement[],
   generatedStitchingViaIds: ReadonlySet<PcbVia["pcb_via_id"]> = new Set(),
 ) => {
-  const connectivity = getFullConnectivityMapFromCircuitJson(circuitJson)
+  const floatingPourIds = new Set<PcbCopperPour["pcb_copper_pour_id"]>()
+  const floatingViaIds = new Set<PcbVia["pcb_via_id"]>()
+  const copperConnectedPcbPortGroups: PcbPortId[][] = []
   const pours = circuitJson.filter((e) => e.type === "pcb_copper_pour")
+  if (pours.length === 0)
+    return { floatingPourIds, floatingViaIds, copperConnectedPcbPortGroups }
+  const connectivity = getFullConnectivityMapFromCircuitJson(circuitJson)
   const pouredNets = new Set(
     pours.flatMap((pour) =>
       pour.source_net_id
@@ -118,6 +171,7 @@ export const findFloatingCopper = (
           layers: [element.layer],
           netId,
           isTerminal: !!element.pcb_port_id,
+          pcbPortIds: element.pcb_port_id ? [element.pcb_port_id] : [],
         })
     } else if (element.type === "pcb_plated_hole") {
       const netId = connectivity.getNetConnectedToId(element.pcb_plated_hole_id)
@@ -132,6 +186,7 @@ export const findFloatingCopper = (
           layers: element.layers,
           netId,
           isTerminal: !!element.pcb_port_id,
+          pcbPortIds: element.pcb_port_id ? [element.pcb_port_id] : [],
         })
     } else if (element.type === "pcb_via") {
       const netId = connectivity.getNetConnectedToId(element.pcb_via_id)
@@ -146,6 +201,7 @@ export const findFloatingCopper = (
           netId,
           isTerminal: !generatedStitchingViaIds.has(element.pcb_via_id),
           viaId: element.pcb_via_id,
+          pcbPortIds: element.pcb_port_ids,
         })
     } else if (element.type === "pcb_trace") {
       const netId = connectivity.getNetConnectedToId(element.pcb_trace_id)
@@ -201,12 +257,16 @@ export const findFloatingCopper = (
             ? next.width
             : startWidth
         add({
-          polygon: getTraceSegmentPolygon(
-            start.point,
-            end.point,
-            startWidth,
-            endWidth,
-          ),
+          polygon:
+            routePoint.route_type === "wire" &&
+            routePoint.width_interpolation_mode
+              ? getExplicitWireTaperPolygon(routePoint, end.point)
+              : getTraceSegmentPolygon(
+                  start.point,
+                  end.point,
+                  startWidth,
+                  endWidth,
+                ),
           layers: [start.layer],
           netId,
           isTerminal: false,
@@ -215,9 +275,8 @@ export const findFloatingCopper = (
     }
   }
 
-  const floatingPourIds = new Set<PcbCopperPour["pcb_copper_pour_id"]>()
-  const floatingViaIds = new Set<PcbVia["pcb_via_id"]>()
-  if (conductors.length === 0) return { floatingPourIds, floatingViaIds }
+  if (conductors.length === 0)
+    return { floatingPourIds, floatingViaIds, copperConnectedPcbPortGroups }
   const parent = conductors.map((_, i) => i)
   const find = (i: number): number => {
     while (parent[i] !== i) {
@@ -266,11 +325,23 @@ export const findFloatingCopper = (
       conductor.isTerminal ? [find(i)] : [],
     ),
   )
+  const pcbPortIdsByPourRoot = new Map<number, Set<PcbPortId>>()
   for (const [i, conductor] of conductors.entries()) {
-    if (!netsWithTerminals.has(conductor.netId) || terminalRoots.has(find(i)))
+    if (conductor.pourId) pcbPortIdsByPourRoot.set(find(i), new Set())
+  }
+  for (const [i, conductor] of conductors.entries()) {
+    const root = find(i)
+    const connectedPcbPortIds = pcbPortIdsByPourRoot.get(root)
+    for (const pcbPortId of conductor.pcbPortIds ?? []) {
+      connectedPcbPortIds?.add(pcbPortId)
+    }
+    if (!netsWithTerminals.has(conductor.netId) || terminalRoots.has(root))
       continue
     if (conductor.pourId) floatingPourIds.add(conductor.pourId)
     if (conductor.viaId) floatingViaIds.add(conductor.viaId)
   }
-  return { floatingPourIds, floatingViaIds }
+  for (const pcbPortIds of pcbPortIdsByPourRoot.values()) {
+    if (pcbPortIds.size > 1) copperConnectedPcbPortGroups.push([...pcbPortIds])
+  }
+  return { floatingPourIds, floatingViaIds, copperConnectedPcbPortGroups }
 }
