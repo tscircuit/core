@@ -38,12 +38,48 @@ test("an explicit mounting side collapses all five Amphenol 132289 lands onto on
     <board width={18} height={16} routingDisabled schematicDisabled>
       <Amphenol132289 name="J1" layer="top" pcbX={-6.46} />
       <Amphenol132289 name="J2" layer="bottom" pcbX={6.46} />
-      <pcbnotetext text="J1  top mount" pcbX={-6} pcbY={-6.5} fontSize={0.65} />
       <pcbnotetext
+        pcbY={7.12}
+        fontSize={0.86}
+        color="#ffae92"
+        text="Repro - SMA pads on one face"
+      />
+      <pcbnotetext
+        pcbY={5.91}
+        fontSize={0.62}
+        color="#c5d4e2"
+        text="Top view - ground belongs on both faces"
+      />
+      <pcbnotetext pcbY={4.25} fontSize={0.64} color="#c5d4e2" text="GND" />
+      <pcbnotetext pcbY={0} fontSize={0.64} color="#c5d4e2" text="SIGNAL" />
+      <pcbnotetext pcbY={-4.25} fontSize={0.64} color="#c5d4e2" text="GND" />
+      <pcbnotetext
+        pcbX={-4.65}
+        pcbY={-6.02}
+        fontSize={0.72}
+        color="#f2f4f7"
+        text="J1  top mount"
+      />
+      <pcbnotetext
+        pcbX={4.65}
+        pcbY={-6.02}
+        fontSize={0.72}
+        color="#f2f4f7"
         text="J2  bottom mount"
-        pcbX={6}
-        pcbY={-6.5}
-        fontSize={0.65}
+      />
+      <pcbnotetext
+        pcbX={-4.65}
+        pcbY={-7.24}
+        fontSize={0.7}
+        color="#ffae92"
+        text="5 top / 0 bottom"
+      />
+      <pcbnotetext
+        pcbX={4.65}
+        pcbY={-7.24}
+        fontSize={0.7}
+        color="#ffae92"
+        text="0 top / 5 bottom"
       />
     </board>,
   )

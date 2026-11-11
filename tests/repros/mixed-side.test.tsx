@@ -14,6 +14,18 @@ test("mixed-side connector pads and plated slot follow the footprint mounting si
   )
   circuit.add(
     <board width={42} height={19} routingDisabled schematicDisabled>
+      <pcbnotetext
+        pcbY={8.55}
+        fontSize={1.32}
+        color="#ffae92"
+        text="Repro - both pads on the mount face"
+      />
+      <pcbnotetext
+        pcbY={-8.68}
+        fontSize={1.08}
+        color="#f2f4f7"
+        text="Bottom 30 deg - slot 160 deg (expected 20)"
+      />
       {mounts.map(({ layer, rotation, x, y }, index) => (
         <Fragment key={`${layer}-${rotation}`}>
           <chip
@@ -58,8 +70,9 @@ test("mixed-side connector pads and plated slot follow the footprint mounting si
           <pcbnotetext
             pcbX={x}
             pcbY={y - 3.1}
-            text={`${layer} ${rotation} deg`}
-            fontSize={0.48}
+            text={rotation === 0 ? `${layer} 0 deg` : `${rotation} deg`}
+            color="#c5d4e2"
+            fontSize={0.82}
           />
         </Fragment>
       ))}
