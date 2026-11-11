@@ -477,15 +477,15 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
 
   private resolvePcbLayer(): LayerRef {
     const { maybeFlipLayer } = this._getPcbPrimitiveFlippedHelpers()
+    if (this._parsedProps.layer !== undefined) {
+      return maybeFlipLayer(this._parsedProps.layer)
+    }
     const primitiveContainer = this.getPrimitiveContainer()
     const primitiveContainerLayer =
       primitiveContainer?.props?.layer !== undefined
         ? primitiveContainer?._parsedProps.layer
         : undefined
-    return (
-      primitiveContainerLayer ??
-      maybeFlipLayer(this._parsedProps.layer ?? "top")
-    )
+    return primitiveContainerLayer ?? maybeFlipLayer("top")
   }
 
   getAvailablePcbLayers(): LayerRef[] {
