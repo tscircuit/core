@@ -77,6 +77,8 @@ test("ESD pair hops preserve ownership alongside an uncounted test-point tap", a
     </board>,
   )
   await circuit.renderUntilSettled()
+  expect(circuit.db.pcb_trace.list()).toHaveLength(5)
+  expectDifferentialPairLengths(circuit)
   await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
     width: 1600,
     height: 1200,
@@ -108,6 +110,4 @@ test("ESD pair hops preserve ownership alongside an uncounted test-point tap", a
       maxLengthSkewMm: 0.1,
     },
   ])
-  expect(circuit.db.pcb_trace.list()).toHaveLength(5)
-  expectDifferentialPairLengths(circuit)
 })

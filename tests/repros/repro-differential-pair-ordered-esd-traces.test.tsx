@@ -60,6 +60,8 @@ test("ordered USB trace arrays constrain J1-ESD-MCU lane sums", async () => {
     </board>,
   )
   await circuit.renderUntilSettled()
+  expect(circuit.db.pcb_trace.list()).toHaveLength(4)
+  expectDifferentialPairLengths(circuit)
   await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
     width: 1600,
     height: 1200,
@@ -80,7 +82,6 @@ test("ordered USB trace arrays constrain J1-ESD-MCU lane sums", async () => {
       maxLengthSkewMm: 0.1,
     },
   ])
-  expectDifferentialPairLengths(circuit)
   expect(
     inputs[0].connections.map((connection) => connection.source_trace_id),
   ).toEqual(
