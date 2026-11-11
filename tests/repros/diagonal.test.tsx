@@ -1,6 +1,8 @@
 import { expect, test } from "bun:test"
 import { segmentToSegmentMinDistance } from "@tscircuit/math-utils"
 import type { PcbTrace, PcbTraceRoutePoint } from "circuit-json"
+import { createAutoroutingPhaseIoStack } from "tests/fixtures/create-autorouting-phase-io-stack"
+import { renderRoutingObstacleComparison } from "tests/fixtures/render-routing-obstacle-comparison"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 const fixedRoute = [
@@ -10,6 +12,7 @@ const fixedRoute = [
 
 async function routeBetweenResistors(withFixedCopper: boolean) {
   const { circuit } = getTestFixture()
+  const phases = createAutoroutingPhaseIoStack(circuit)
   const failures: string[] = []
   circuit.on("asyncEffect:end", (event) => {
     if (event.error) failures.push(String(event.error))
@@ -50,7 +53,12 @@ async function routeBetweenResistors(withFixedCopper: boolean) {
     </board>,
   )
   await circuit.renderUntilSettled()
-  return { circuit, failures, traces: circuit.db.pcb_trace.list() }
+  return {
+    circuit,
+    failures,
+    input: phases[0]?.startSimpleRouteJson,
+    traces: circuit.db.pcb_trace.list(),
+  }
 }
 
 // Minimum edge-to-edge gap to the frozen trace, on its copper layer.
@@ -83,13 +91,25 @@ test("route R1 to R2 past a frozen top-layer diagonal", async () => {
   expect(control.traces).toHaveLength(1)
   expect(gapToFixedCopper(control.traces[0]!)).toBeLessThan(0)
 
-  const { circuit, failures, traces } = await routeBetweenResistors(true)
+  const { circuit, failures, input, traces } = await routeBetweenResistors(true)
   expect(
     failures.some((error) =>
       error.includes("only supports horizontal and vertical"),
     ),
   ).toBe(true)
   expect(traces).toHaveLength(1)
-  expect(traces[0]!.route).toMatchObject(fixedRoute)
+  expect(input).toBeUndefined()
+  const fixedTrace = traces[0]!
+  expect(fixedTrace.route).toMatchObject(fixedRoute)
+  expect(control.input).toBeDefined()
+  await expect(
+    renderRoutingObstacleComparison(
+      control.input!,
+      input,
+      fixedTrace.pcb_trace_id,
+    ),
+  ).toMatchSvgSnapshot(import.meta.path, "diagonal-router-obstacles", {
+    diffThresholdPercent: 0,
+  })
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
