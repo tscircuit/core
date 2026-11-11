@@ -6,6 +6,8 @@ The supplied `.kicad_mod` is unmodified. It defines three SMT pads on `F.Cu` (si
 
 The fixture converts the legacy KiCad 5 module to Circuit JSON and loads it through core's normal `kicad:` footprint-library path. Only the legacy module root and zero-valued 3D-model `at` token are normalized for the converter. Pad geometry, numbering, and copper layers are imported unchanged.
 
-The regression renders the SMA on both component layers alongside ordinary 0402 resistor controls. Separate, explicitly titled top/bottom copper views expose the coincident ground pads. It checks the same output with subcircuit caching enabled, including copper, ports, paste, and pad geometry.
+The regression renders the SMA on both component layers alongside ordinary 0402 resistor controls. One three-pane snapshot combines the PCB view, a 3D top view, and a 3D bottom view, including the real connector models. J1 mounts on the right edge and J2 on the left edge of a 41.08 mm wide board: each footprint's board-edge line is 2.54 mm outboard of its origin. The test checks the same output with subcircuit caching enabled, including copper, ports, paste, and pad geometry.
 
-The KiCad source is licensed under CC-BY-SA 4.0 with the KiCad Libraries Exception; see [LICENSE.md](LICENSE.md).
+The unmodified [KiCad STEP model](https://gitlab.com/kicad/libraries/kicad-packages3D/-/blob/77236890410eb655ba2e63e23f59a85cf45af290/Connector_Coaxial.3dshapes/SMA_Amphenol_132289_EdgeMount.step), contributed by Martin Sotirov, is checked in at `../assets/models/SMA_Amphenol_132289_EdgeMount.step` and served locally during tests. Its Git blob SHA is `e7e2ed5dd8d522b310bb829bd11e3369c397a7b3`. It uses the footprint-local origin in mm, +X right, +Y up, +Z above the PCB; `modelOriginPosition` preserves that origin. Core places and flips the model normally. The shared 3D renderer and camera fitter render the emitted geometry without additional transforms.
+
+The KiCad footprint and STEP model are licensed under CC-BY-SA 4.0 with the KiCad Libraries Exception; see [LICENSE.md](LICENSE.md).
