@@ -59,7 +59,7 @@
     "@tscircuit/krt-wasm": "^0.1.1",
     "@tscircuit/log-soup": "^1.0.2",
     "@tscircuit/matchpack": "^0.0.100",
-    "@tscircuit/math-utils": "^0.0.36",
+    "@tscircuit/math-utils": "0.0.39",
     "@tscircuit/miniflex": "^0.0.4",
     "@tscircuit/modelprinter": "^0.0.37",
     "@tscircuit/ngspice-spice-engine": "^0.0.20",
