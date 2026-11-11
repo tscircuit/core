@@ -1,5 +1,5 @@
 import type { Bus } from "./Bus"
-import type { DifferentialPairConnection } from "@tscircuit/props"
+import type { DifferentialPairProps } from "@tscircuit/props"
 import type { SourceTrace } from "circuit-json"
 import { getFullConnectivityMapFromCircuitJson } from "circuit-json-to-connectivity-map"
 import { validateDifferentialPairSourceBuses } from "lib/utils/autorouting/validateDifferentialPairSourceBuses"
@@ -27,7 +27,7 @@ export const DifferentialPair_doInitialSourceDesignRuleChecks = (
   }
 
   const resolve = (
-    connection: DifferentialPairConnection,
+    connection: DifferentialPairProps["positiveConnection"],
   ): [SourceTraceId, ...SourceTraceId[]] => {
     const resolveHop = (
       selector: string,
@@ -130,7 +130,7 @@ export const DifferentialPair_doInitialSourceDesignRuleChecks = (
       return hop
     }
     const selectors = typeof connection === "string" ? [connection] : connection
-    if (!selectors.length) fail("lanes must not be empty")
+    if (!selectors.length) fail("a connection list must not be empty")
     return selectors.map(
       (selector) =>
         resolveHop(selector, Array.isArray(connection)).source_trace_id,

@@ -20,7 +20,7 @@ export function validateDifferentialPairSourceBuses(
     const parsed = source_bus.safeParse(bus)
     if (!parsed.success)
       throw new Error(
-        `Source bus "${bus.name || "unnamed bus"}": invalid source_bus; differential pairs require ordered unique lane membership and an explicit finite nonnegative max_length_skew; only lane-length skew is supported`,
+        `Source bus "${bus.name || "unnamed bus"}": invalid source_bus; a differential pair must list its positive trace ids, then its negative trace ids, and set a nonnegative max_length_skew`,
       )
     return parsed.data
   })
@@ -53,6 +53,7 @@ export function validateDifferentialPairSourceBuses(
         const hop = trace!
         const traceLabel = `trace "${hop.name || "unnamed trace"}"`
         const owner = ownerBySourceTraceId.get(sourceTraceId)
+        if (owner === pair) fail(`${traceLabel} is listed more than once`)
         if (owner)
           fail(
             `${traceLabel} is already owned by differential pair "${owner.name || "unnamed pair"}"`,

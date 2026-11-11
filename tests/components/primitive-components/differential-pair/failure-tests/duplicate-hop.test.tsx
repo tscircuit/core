@@ -14,5 +14,5 @@ test("rejects duplicate hop before routing", () => {
       />
     </DifferentialPairValidationBoard>,
   )
-  expect(() => circuit.render()).toThrow("invalid source_bus")
+  expect(() => circuit.render()).toThrow('trace "DP1" is listed more than once')
 })

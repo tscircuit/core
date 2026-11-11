@@ -20,5 +20,5 @@ test("rejects saved skew at the saved JSON boundary", () => {
   pair.max_length_skew = Number.NaN
   expect(() =>
     getSimpleRouteJsonFromCircuitJson({ circuitJson: circuit.db.toArray() }),
-  ).toThrow("finite nonnegative")
+  ).toThrow("nonnegative max_length_skew")
 })

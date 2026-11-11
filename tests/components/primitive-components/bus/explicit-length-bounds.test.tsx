@@ -101,12 +101,15 @@ test("resolves independent bus bounds and intersects target windows", async () =
     expect(getBusTargetLengthBounds(bus)).toEqual(expected)
     const minLength = bus._parsedProps.minLength
     if (typeof minLength === "object") {
-      expect(circuit.db.source_bus.list()[0].min_length).toEqual({
-        reference: "longest_manhattan",
-        offset: minLength.offset,
-        source_trace_ids: [
-          circuit.db.source_trace.getWhere({ name: "SHORT" })!.source_trace_id,
-        ],
+      expect(circuit.db.source_bus.list()[0]).toMatchObject({
+        min_length: {
+          reference: "longest_manhattan",
+          offset: minLength.offset,
+          source_trace_ids: [
+            circuit.db.source_trace.getWhere({ name: "SHORT" })!
+              .source_trace_id,
+          ],
+        },
       })
     }
   }

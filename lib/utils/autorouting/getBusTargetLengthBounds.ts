@@ -9,6 +9,7 @@ export const getBusTargetLengthBounds = (
   if (!bus.source_bus_id) return {}
   const { db } = bus.root!
   const sourceBus = db.source_bus.get(bus.source_bus_id)!
+  if (sourceBus.differential_pair) return {}
   const resolveLength = (
     routeLength: SourceBusRouteLength | undefined,
     property: "minLength" | "maxLength" | "targetLength",
