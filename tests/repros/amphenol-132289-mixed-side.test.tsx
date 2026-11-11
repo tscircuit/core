@@ -32,7 +32,7 @@ function Amphenol132289({
   )
 }
 
-test("an explicit mounting side collapses all five Amphenol 132289 lands onto one face", async () => {
+test("an Amphenol 132289 edge-launch SMA has ground lands on both faces", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width={18} height={16} routingDisabled schematicDisabled>
@@ -41,8 +41,8 @@ test("an explicit mounting side collapses all five Amphenol 132289 lands onto on
       <pcbnotetext
         pcbY={7.12}
         fontSize={0.86}
-        color="#ffae92"
-        text="Repro - SMA pads on one face"
+        color="#8de2b3"
+        text="Fix - SMA pads on both faces"
       />
       <pcbnotetext
         pcbY={5.91}
@@ -71,15 +71,15 @@ test("an explicit mounting side collapses all five Amphenol 132289 lands onto on
         pcbX={-4.65}
         pcbY={-7.24}
         fontSize={0.7}
-        color="#ffae92"
-        text="5 top / 0 bottom"
+        color="#8de2b3"
+        text="3 top / 2 bottom"
       />
       <pcbnotetext
         pcbX={4.65}
         pcbY={-7.24}
         fontSize={0.7}
-        color="#ffae92"
-        text="0 top / 5 bottom"
+        color="#8de2b3"
+        text="2 top / 3 bottom"
       />
     </board>,
   )
@@ -99,11 +99,15 @@ test("an explicit mounting side collapses all five Amphenol 132289 lands onto on
         .sort()
     return [layersAt(-4.25), layersAt(0), layersAt(4.25)]
   }
-  expect(contacts("J1")).toEqual([["top", "top"], ["top"], ["top", "top"]])
+  expect(contacts("J1")).toEqual([
+    ["bottom", "top"],
+    ["top"],
+    ["bottom", "top"],
+  ])
   expect(contacts("J2")).toEqual([
-    ["bottom", "bottom"],
+    ["bottom", "top"],
     ["bottom"],
-    ["bottom", "bottom"],
+    ["bottom", "top"],
   ])
   await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
     layer: "top",

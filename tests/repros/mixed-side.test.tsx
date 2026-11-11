@@ -17,14 +17,14 @@ test("mixed-side connector pads and plated slot follow the footprint mounting si
       <pcbnotetext
         pcbY={8.55}
         fontSize={1.32}
-        color="#ffae92"
-        text="Repro - both pads on the mount face"
+        color="#8de2b3"
+        text="Fix - one pad on each face"
       />
       <pcbnotetext
         pcbY={-8.68}
         fontSize={1.08}
         color="#f2f4f7"
-        text="Bottom 30 deg - slot 160 deg (expected 20)"
+        text="Bottom 30 deg - slot aligns at 20 deg"
       />
       {mounts.map(({ layer, rotation, x, y }, index) => (
         <Fragment key={`${layer}-${rotation}`}>
@@ -79,12 +79,31 @@ test("mixed-side connector pads and plated slot follow the footprint mounting si
     </board>,
   )
   await circuit.renderUntilSettled()
-  const padLayers = circuit.db.pcb_smtpad.list().map((pad) => pad.layer)
   const slotAxes = circuit.db.pcb_plated_hole.list().map((hole) => {
     if (hole.shape !== "pill") throw new Error("Expected plated slot")
     return Math.round((hole.ccw_rotation ?? 0) % 180)
   })
-  expect(padLayers).toEqual(mounts.flatMap(({ layer }) => [layer, layer]))
-  expect(slotAxes).toEqual([10, 100, 10, 100, 40, 10, 100, 10, 100, 160])
+  const pads = circuit.db.pcb_smtpad.list()
+  expect(pads).toHaveLength(mounts.length * 2)
+  expect(slotAxes).toHaveLength(mounts.length)
+  for (const [index, { layer }] of mounts.entries()) {
+    const contact = pads[index * 2]!
+    const latch = pads[index * 2 + 1]!
+    if (!("x" in contact) || !("x" in latch))
+      throw new Error("Expected the two rectangular connector pads")
+    expect([contact.layer, latch.layer]).toEqual([
+      layer,
+      layer === "top" ? "bottom" : "top",
+    ])
+    // The pad centers mark a line parallel to the physical slot in board-world XY.
+    const axis =
+      (Math.atan2(latch.y - contact.y, latch.x - contact.x) * 180) / Math.PI
+    expect(slotAxes[index]).toBe(Math.round((axis + 180) % 180))
+  }
+  for (const pad of circuit.db.pcb_smtpad.list()) {
+    expect(circuit.db.pcb_port.get(pad.pcb_port_id!)?.layers).toEqual([
+      pad.layer,
+    ])
+  }
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

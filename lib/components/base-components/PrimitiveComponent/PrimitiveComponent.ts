@@ -555,7 +555,7 @@ export abstract class PrimitiveComponent<
     )
   }
 
-  private _getEnclosingFootprint(): PrimitiveComponent | null {
+  protected _getEnclosingFootprint(): PrimitiveComponent | null {
     let current: PrimitiveComponent | null = this.parent
     while (current) {
       if (current.componentName === "Footprint") {
