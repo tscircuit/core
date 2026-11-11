@@ -1,6 +1,6 @@
 import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
 import { expect, test } from "bun:test"
-import { getDifferentialPairRoutingFailure } from "@tscircuit/capacity-autorouter"
+import { getDifferentialPairRoutingFailure } from "lib/utils/autorouting/getDifferentialPairRoutingFailure"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { createBasicAutorouter } from "tests/fixtures/createBasicAutorouter"
 import { differentialPairPathPads } from "tests/fixtures/differential-pair-path-pads"
@@ -12,7 +12,12 @@ test("custom router shared stems reject all copper with an ownership error", asy
       pcb_trace_id: `copper_${c.name}`,
       connection_name: c.name,
       source_trace_id: c.source_trace_id,
-      connectsTo: c.pointsToConnect.map((p) => p.pointId ?? p.pcb_port_id),
+      connectsTo: c.pointsToConnect.map((p) => {
+        const pointId = p.pointId ?? p.pcb_port_id
+        if (!pointId)
+          throw new Error("Shared-stem fixture is missing a terminal")
+        return pointId
+      }),
       route: c.pointsToConnect.map((p, i) => ({
         route_type: "wire",
         x: p.x,

@@ -47,7 +47,7 @@ export async function runThreadedAutorouter(
       } catch (error) {
         progressThrew = true
         progressError = error
-        run.disposal ??= runtime.dispose()
+        run.disposal ??= Promise.resolve(runtime.dispose())
         // The solve below observes disposal and owns the resulting failure.
         void run.disposal.catch(() => {})
       }
@@ -66,7 +66,7 @@ export async function runThreadedAutorouter(
   } finally {
     if (progressTimer !== undefined) clearInterval(progressTimer)
     if (run.runtime) {
-      run.disposal ??= run.runtime.dispose()
+      run.disposal ??= Promise.resolve(run.runtime.dispose())
       await run.disposal
     }
   }

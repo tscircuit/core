@@ -418,7 +418,7 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
       const run = this.threadedRun
       run.stopped = true
       if (run.runtime) {
-        run.disposal ??= run.runtime.dispose()
+        run.disposal ??= Promise.resolve(run.runtime.dispose())
         // The pending solve awaits this same disposal; stop suppresses its events.
         void run.disposal.catch(() => {})
       }
