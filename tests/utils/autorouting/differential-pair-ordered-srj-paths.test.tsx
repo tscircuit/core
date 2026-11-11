@@ -10,8 +10,8 @@ test("exports the declared order of both differential pair paths", () => {
       <pinheader name="B" pinCount={2} pcbX={6} pcbRotation={90} />
       <pinheader name="C" pinCount={2} pcbRotation={90} />
 
-      <trace name="D_P" path={["A.pin1", "B.pin1", "C.pin1"]} />
-      <trace name="D_N" path={["A.pin2", "B.pin2", "C.pin2"]} />
+      <trace name="D_P" path={["C.pin1", "A.pin1", "B.pin1"]} />
+      <trace name="D_N" path={["C.pin2", "A.pin2", "B.pin2"]} />
       <differentialpair positiveConnection="D_P" negativeConnection="D_N" />
     </board>,
   )
@@ -34,17 +34,17 @@ test("exports the declared order of both differential pair paths", () => {
         {
           "name": "source_trace_0",
           "path": [
+            "pcb_port_4",
             "pcb_port_0",
             "pcb_port_2",
-            "pcb_port_4",
           ],
         },
         {
           "name": "source_trace_1",
           "path": [
+            "pcb_port_5",
             "pcb_port_1",
             "pcb_port_3",
-            "pcb_port_5",
           ],
         },
       ],
