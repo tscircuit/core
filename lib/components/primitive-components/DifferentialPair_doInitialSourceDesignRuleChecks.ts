@@ -88,9 +88,15 @@ export const DifferentialPair_doInitialSourceDesignRuleChecks = (
             connectivity.getNetConnectedToId(port.source_port_id) ===
               connectivityId,
         )
-      if (ports.length !== 2)
+      if (ports.length > 2)
         fail(
-          `${selector} has ${ports.length} pads; list the traces in order, e.g. positiveConnection={["DP1","DP2"]}`,
+          `${selector} has ${ports.length} pads, so the signal order between them is ambiguous. ` +
+            "Differential pairs on nets with more than 2 pads aren't supported yet; " +
+            'list the traces in signal order instead, e.g. positiveConnection={["DP1","DP2"]}',
+        )
+      if (ports.length < 2)
+        fail(
+          `${selector} has ${ports.length} pads; a differential pair connection needs exactly 2 pads`,
         )
       const ids = ports.map((port) => port.source_port_id)
       const canonical = traces.find(
