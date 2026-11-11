@@ -7,11 +7,40 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("phase filtering retains complete multi-hop pairs and rejects a partially selected lane", () => {
   const { circuit } = getTestFixture()
-  circuit.add(<DifferentialPairValidationBoard><differentialpair name="USB" positiveConnection={["DP1", "DP2"]} negativeConnection={["DM1", "DM2"]} maxLengthSkew={0.1} /></DifferentialPairValidationBoard>)
+  circuit.add(
+    <DifferentialPairValidationBoard>
+      <differentialpair
+        name="USB"
+        positiveConnection={["DP1", "DP2"]}
+        negativeConnection={["DM1", "DM2"]}
+        maxLengthSkew={0.1}
+      />
+    </DifferentialPairValidationBoard>,
+  )
   circuit.render()
-  const srj = getSimpleRouteJsonFromCircuitJson({ db: circuit.db }).simpleRouteJson
+  const srj = getSimpleRouteJsonFromCircuitJson({
+    db: circuit.db,
+  }).simpleRouteJson
   const traces = circuit.firstChild!.selectAll<Trace>("trace")
-  expect(Group_filterSimpleRouteJsonForPhase(srj, { routingPhaseIndex: 0, traces, nets: [] }).differentialPairs).toEqual(srj.differentialPairs)
-  expect(Group_filterSimpleRouteJsonForPhase(srj, { routingPhaseIndex: 1, traces: [], nets: [] }).differentialPairs).toBeUndefined()
-  expect(() => Group_filterSimpleRouteJsonForPhase(srj, { routingPhaseIndex: 0, traces: traces.slice(0, 1), nets: [] })).toThrow("cannot be split across autorouting phases")
+  expect(
+    Group_filterSimpleRouteJsonForPhase(srj, {
+      routingPhaseIndex: 0,
+      traces,
+      nets: [],
+    }).differentialPairs,
+  ).toEqual(srj.differentialPairs)
+  expect(
+    Group_filterSimpleRouteJsonForPhase(srj, {
+      routingPhaseIndex: 1,
+      traces: [],
+      nets: [],
+    }).differentialPairs,
+  ).toBeUndefined()
+  expect(() =>
+    Group_filterSimpleRouteJsonForPhase(srj, {
+      routingPhaseIndex: 0,
+      traces: traces.slice(0, 1),
+      nets: [],
+    }),
+  ).toThrow("cannot be split across autorouting phases")
 })

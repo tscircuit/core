@@ -39,7 +39,7 @@ test("throws when a differential-pair terminal has no source component ID", (): 
   const differentialPair = circuit.selectOne(
     "differentialpair",
   ) as DifferentialPair
-  expect(() =>
-    validateDifferentialPairSourceBuses(circuit.db),
-  ).toThrow("terminal without an owning component")
+  expect(() => validateDifferentialPairSourceBuses(circuit.db)).toThrow(
+    "terminal without an owning component",
+  )
 })

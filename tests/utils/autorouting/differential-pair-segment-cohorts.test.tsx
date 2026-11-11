@@ -27,7 +27,17 @@ test("rejects differential SRJ segment cohorts", () => {
   circuit.render()
 
   const sourcePairs = validateDifferentialPairSourceBuses(circuit.db)
-  const srj = getSimpleRouteJsonFromCircuitJson({ db: circuit.db }).simpleRouteJson
-  const splitConnections = srj.connections.flatMap((connection) => [connection, { ...connection, routingPcbGroupId: "local" }])
-  expect(() => getDifferentialPairsForSimpleRouteJson({ srjConnections: splitConnections, sourcePairs })).toThrow("phased, preserved and breakout splitting is unsupported")
+  const srj = getSimpleRouteJsonFromCircuitJson({
+    db: circuit.db,
+  }).simpleRouteJson
+  const splitConnections = srj.connections.flatMap((connection) => [
+    connection,
+    { ...connection, routingPcbGroupId: "local" },
+  ])
+  expect(() =>
+    getDifferentialPairsForSimpleRouteJson({
+      srjConnections: splitConnections,
+      sourcePairs,
+    }),
+  ).toThrow("phased, preserved and breakout splitting is unsupported")
 })
