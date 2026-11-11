@@ -1,15 +1,17 @@
 import { expect, test } from "bun:test"
-import { CopperTextGroupRotationBoard } from "tests/fixtures/copper-text-group-rotation-board"
+import BenchSupplyStatusIndicator from "tests/fixtures/bench-supply-status-indicator"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test.failing("copper supply labels should inherit group rotation", async () => {
-  const { circuit } = getTestFixture()
-  circuit.add(<CopperTextGroupRotationBoard />)
-  await circuit.renderUntilSettled()
+test.failing(
+  "the bench supply copper legend should inherit its 90 degree group rotation",
+  async () => {
+    const { circuit } = getTestFixture()
+    circuit.add(<BenchSupplyStatusIndicator />)
+    await circuit.renderUntilSettled()
 
-  const copperLabels = circuit.db.pcb_copper_text.list()
-  const normalizedRotations = copperLabels.map(
-    (label) => (((label.ccw_rotation ?? 0) % 360) + 360) % 360,
-  )
-  expect(normalizedRotations).toEqual([0, 90, 180, 270])
-})
+    const normalizedRotations = circuit.db.pcb_copper_text
+      .list()
+      .map((label) => (((label.ccw_rotation ?? 0) % 360) + 360) % 360)
+    expect(normalizedRotations).toEqual([90])
+  },
+)
