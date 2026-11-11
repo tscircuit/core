@@ -18,6 +18,7 @@ export function joinImportedCourtyardOutlines(
   while (pending.length) {
     const first = pending.shift()!
     const outline = [...first.outline]
+    let failed = false
     while (!samePoint(outline[0], outline.at(-1)!)) {
       const end = outline.at(-1)!
       const nextIndex = pending.findIndex(
@@ -27,20 +28,20 @@ export function joinImportedCourtyardOutlines(
           candidate.outline.some((point) => samePoint(point, end)),
       )
       if (nextIndex === -1) {
-        throw new Error(
-          `Imported courtyard for "${componentName}" has disconnected line segments; provide a complete closed polygon.`,
-        )
+        failed = true
+        break
       }
       const [next] = pending.splice(nextIndex, 1)
       outline.push(
         samePoint(next.outline[0], end) ? next.outline[1] : next.outline[0],
       )
     }
+    if (failed) {
+      continue
+    }
     outline.pop()
     if (outline.length < 3) {
-      throw new Error(
-        `Imported courtyard for "${componentName}" needs at least three polygon vertices.`,
-      )
+      continue
     }
     polygons.set(first, outline)
   }
