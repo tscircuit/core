@@ -274,21 +274,36 @@ export function getSourceTraceIdForRoutedTrace({
   trace: RoutedTrace
   subcircuit_id?: string | null
 }) {
-  if (
-    trace.source_trace_id &&
-    (db.source_trace.get(trace.source_trace_id) ??
-      db.source_net.get(trace.source_trace_id))
-  ) {
+  if (trace.source_trace_id && db.source_trace.get(trace.source_trace_id)) {
     return trace.source_trace_id
   }
 
-  const sourcePortIds = getSourcePortIdsFromRoutedTrace(db, trace)
-  if (sourcePortIds.length === 0) {
-    return getSourceIdsFromConnectedPcbTraces(db, trace)[0]
-  }
-
+  const routedSourceNet = trace.source_trace_id
+    ? db.source_net.get(trace.source_trace_id)
+    : undefined
   const sourceTraces = db.source_trace.list()
   const connMap = buildSourceConnectivityMap(sourceTraces)
+  const routedSourceNetConnectivityId = routedSourceNet
+    ? connMap.getNetConnectedToId(routedSourceNet.source_net_id)
+    : undefined
+  const routedNetSourceTraces = routedSourceNetConnectivityId
+    ? sourceTraces.filter(
+        (sourceTrace) =>
+          connMap.getNetConnectedToId(sourceTrace.source_trace_id) ===
+          routedSourceNetConnectivityId,
+      )
+    : []
+  const soleRoutedNetSourceTrace =
+    routedNetSourceTraces.length === 1 ? routedNetSourceTraces[0] : undefined
+  const sourcePortIds = getSourcePortIdsFromRoutedTrace(db, trace)
+  if (sourcePortIds.length === 0) {
+    return (
+      soleRoutedNetSourceTrace?.source_trace_id ??
+      routedSourceNet?.source_net_id ??
+      getSourceIdsFromConnectedPcbTraces(db, trace)[0]
+    )
+  }
+
   const endpointNetIds = sourcePortIds
     .map((sourcePortId) => connMap.getNetConnectedToId(sourcePortId))
     .filter((netId): netId is string => Boolean(netId))
@@ -302,6 +317,11 @@ export function getSourceTraceIdForRoutedTrace({
         )
       : undefined
   if (exactSourceTrace) return exactSourceTrace.source_trace_id
+
+  // A sole source trace also owns split pieces without both terminals.
+  if (soleRoutedNetSourceTrace) return soleRoutedNetSourceTrace.source_trace_id
+  // Shared branches must not inherit one of several local traces' constraints.
+  if (routedSourceNet) return routedSourceNet.source_net_id
 
   const sourceTracesInEndpointNets = sourceTraces.filter((sourceTrace) => {
     const sourceTraceNetId = connMap.getNetConnectedToId(
