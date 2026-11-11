@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("exports the declared order of both differential pair paths", () => {
+test("exports the declared order of both differential pair paths", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width={19} height={11} routingDisabled schematicDisabled>
@@ -13,6 +13,11 @@ test("exports the declared order of both differential pair paths", () => {
       <trace name="D_P" path={["C.pin1", "A.pin1", "B.pin1"]} />
       <trace name="D_N" path={["C.pin2", "A.pin2", "B.pin2"]} />
       <differentialpair positiveConnection="D_P" negativeConnection="D_N" />
+      <pcbnotetext
+        pcbY={-3.5}
+        fontSize={0.45}
+        text="Both signals follow C to A to B."
+      />
     </board>,
   )
   circuit.render()
@@ -59,4 +64,5 @@ test("exports the declared order of both differential pair paths", () => {
       ],
     }
   `)
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("preserves net-attached differential paths and their separate tap", () => {
+test("preserves net-attached differential paths and their separate tap", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width={19} height={11} routingDisabled schematicDisabled>
@@ -16,6 +16,16 @@ test("preserves net-attached differential paths and their separate tap", () => {
       <trace name="D_N" path={["A.pin2", "B.pin2", "C.pin2", "net.DATA_N"]} />
       <trace from="net.DATA_P" to="TP.pin1" />
       <differentialpair positiveConnection="D_P" negativeConnection="D_N" />
+      <pcbnotetext
+        pcbY={-3.5}
+        fontSize={0.45}
+        text="DATA_P and DATA_N follow A to B to C."
+      />
+      <pcbnotetext
+        pcbY={-4.4}
+        fontSize={0.4}
+        text="TP is a separate DATA_P tap."
+      />
     </board>,
   )
   circuit.render()
@@ -61,4 +71,5 @@ test("preserves net-attached differential paths and their separate tap", () => {
     "pcb_port_0",
     "pcb_port_6",
   ])
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
