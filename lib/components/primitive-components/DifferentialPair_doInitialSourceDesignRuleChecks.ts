@@ -5,16 +5,17 @@ import { findDifferentialPairMember } from "lib/utils/autorouting/resolveDiffere
 type ConnectionPolarity = "positive" | "negative"
 type SourceComponentId = NonNullable<SourcePort["source_component_id"]>
 
-type ResolvedPointToPointConnection = {
+type ResolvedDifferentialPairConnection = {
+  kind: "trace" | "net"
   sourceTraceIds: SourceTrace["source_trace_id"][]
   sourcePorts: SourcePort[]
   sourceTraceName?: string
 }
 
-const resolvePointToPointConnection = (
+const resolveDifferentialPairConnection = (
   differentialPair: DifferentialPair,
   connectionSelector: string,
-): ResolvedPointToPointConnection | undefined => {
+): ResolvedDifferentialPairConnection | undefined => {
   const { db } = differentialPair.root!
   const subcircuit = differentialPair.getSubcircuit()
   const subcircuitSourceTraces = db.source_trace
@@ -45,6 +46,7 @@ const resolvePointToPointConnection = (
     namedSourceTrace?.connected_source_port_ids.length === 2
   ) {
     return {
+      kind: "trace",
       sourceTraceIds: [namedSourceTrace.source_trace_id],
       sourcePorts: db.source_port
         .list()
@@ -81,6 +83,7 @@ const resolvePointToPointConnection = (
         sourcePort.subcircuit_connectivity_map_key === connectivityMapKey,
     )
   return {
+    kind: memberMatch.kind,
     sourceTraceIds: subcircuitSourceTraces
       .filter(
         (trace) => trace.subcircuit_connectivity_map_key === connectivityMapKey,
@@ -150,7 +153,7 @@ export const DifferentialPair_doInitialSourceDesignRuleChecks = (
   }
 
   const memberTraceIds: SourceTrace["source_trace_id"][] = []
-  const pointToPointTraceIds: Partial<
+  const polarityAnchorTraceIds: Partial<
     Record<ConnectionPolarity, SourceTrace["source_trace_id"]>
   > = {}
   let resolvedPolarityCount = 0
@@ -160,7 +163,7 @@ export const DifferentialPair_doInitialSourceDesignRuleChecks = (
       connectionSelector = differentialPair._parsedProps.positiveConnection
     }
 
-    const resolvedConnection = resolvePointToPointConnection(
+    const resolvedConnection = resolveDifferentialPairConnection(
       differentialPair,
       connectionSelector,
     )
@@ -169,11 +172,15 @@ export const DifferentialPair_doInitialSourceDesignRuleChecks = (
     memberTraceIds.push(...resolvedConnection.sourceTraceIds)
 
     const terminalSourcePorts = resolvedConnection.sourcePorts
-    if (terminalSourcePorts.length === 2) {
+    if (
+      terminalSourcePorts.length === 2 ||
+      (resolvedConnection.kind === "net" && terminalSourcePorts.length > 2)
+    ) {
       // A conductor may consist of multiple source traces joined through a net.
-      // One resolved member identifies its polarity; source_trace_ids retains
+      // The singular source_bus fields anchor polarity metadata only; routing
+      // resolves the full net identity. source_trace_ids retains
       // every fragment for connectivity consumers.
-      pointToPointTraceIds[connectionPolarity] =
+      polarityAnchorTraceIds[connectionPolarity] =
         resolvedConnection.sourceTraceIds[0]
       continue
     }
@@ -217,11 +224,11 @@ export const DifferentialPair_doInitialSourceDesignRuleChecks = (
       max_length_skew: differentialPair._parsedProps.maxLengthSkew,
       target_differential_impedance:
         differentialPair._parsedProps.targetDifferentialImpedance,
-      ...(pointToPointTraceIds.positive && pointToPointTraceIds.negative
+      ...(polarityAnchorTraceIds.positive && polarityAnchorTraceIds.negative
         ? {
             differential_pair: {
-              positive_source_trace_id: pointToPointTraceIds.positive,
-              negative_source_trace_id: pointToPointTraceIds.negative,
+              positive_source_trace_id: polarityAnchorTraceIds.positive,
+              negative_source_trace_id: polarityAnchorTraceIds.negative,
               trace_gap: differentialPair._parsedProps.pcbTraceGap,
               max_uncoupled_length:
                 differentialPair._parsedProps.maxUncoupledLength,
