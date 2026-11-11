@@ -80,7 +80,7 @@ beforeAll(async () => {
   await expect(snapshot).toMatchSvgSnapshot(import.meta.path)
 }, 60_000)
 
-test.failing("USB-C slots align with model tabs on both faces", async () => {
+test("USB-C slots align with model tabs on both faces", async () => {
   for (const name of ["USB_TOP", "USB_BOTTOM"]) {
     const connector = circuit.selectOne(`.${name}`)!
     const holes = circuit.db.pcb_plated_hole
