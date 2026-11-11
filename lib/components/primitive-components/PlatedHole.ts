@@ -138,8 +138,13 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
 
     this.emitSolderMaskMarginWarning(isCoveredWithSolderMask, soldermaskMargin)
 
+    const { isFlipped } = this._getPcbPrimitiveFlippedHelpers()
+    // _computePcbGlobalTransformBeforeLayout composes flipY() for flipped
+    // footprints; account for that reflection before extracting the angle.
     const decomposedTransform = decomposeTSR(
       this._computePcbGlobalTransformBeforeLayout(),
+      false,
+      isFlipped,
     )
     const rotationDegrees = (decomposedTransform.rotation.angle * 180) / Math.PI
     const normalizedRotationDegrees = ((rotationDegrees % 360) + 360) % 360
