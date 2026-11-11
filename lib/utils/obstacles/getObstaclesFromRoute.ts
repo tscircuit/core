@@ -12,6 +12,15 @@ interface PointWithLayer {
 
 const isCloseTo = (a: number, b: number) => Math.abs(a - b) < 0.0001
 
+/**
+ * Convert PCB route segments and vias into obstacles in the same board frame.
+ * Route points must already be placed in right-handed board-world coordinates
+ * (+X right, +Y up, +Z above the board). Point coordinates, obstacle centers,
+ * widths, heights and diameters are in millimeters.
+ * A segment's end minus its start is a direction vector, so translating the
+ * route moves the obstacle center without changing that vector. Its angle is
+ * measured counterclockwise from +X in degrees, viewed from above the board.
+ */
 export const getObstaclesFromRoute = (
   route: PointWithLayer[],
   source_trace_id: string,
@@ -55,7 +64,7 @@ export const getObstaclesFromRoute = (
       connectedTo: [source_trace_id],
     }
     if (!isHorz && !isVert) {
-      // Board-world angle in degrees. Include the copper at both round end caps.
+      // Include the copper at both round end caps.
       const thickness = start.width ?? end.width ?? 0.1
       obstacle.width = Math.hypot(dx, dy) + thickness
       obstacle.height = thickness
