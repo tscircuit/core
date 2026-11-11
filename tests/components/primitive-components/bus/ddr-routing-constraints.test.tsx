@@ -9,7 +9,7 @@ test("emits resolved DDR bus and differential-pair constraints", (): void => {
     <board width="24mm" height="14mm" routingDisabled>
       <bus
         name="DDR_BYTE_LANE_0"
-        connections={["DQ0", "DQS_P", "DQS_N", "DQ1"]}
+        connections={["DQ0", "DQ1"]}
         maxLengthSkew="250um"
         targetImpedance="50ohm"
         pcbTraceWidth="120um"
@@ -20,9 +20,6 @@ test("emits resolved DDR bus and differential-pair constraints", (): void => {
         positiveConnection="DQS_P"
         negativeConnection="DQS_N"
         maxLengthSkew="100um"
-        targetDifferentialImpedance="100ohm"
-        pcbTraceGap="100um"
-        maxUncoupledLength="500um"
       />
       <chip name="U1" footprint="soic8" pcbX={-7} />
       <chip name="U2" footprint="soic8" pcbX={7} />
@@ -34,7 +31,7 @@ test("emits resolved DDR bus and differential-pair constraints", (): void => {
         pcbX={0}
         pcbY={-5}
         fontSize={0.65}
-        text="Resolved DDR SRJ: 0.12mm width, 0.10mm DQS gap, top/inner1"
+        text="DDR: DQ bus with 0.12mm width; separate DQS pair with 0.1mm skew"
       />
     </board>,
   )
@@ -62,7 +59,7 @@ test("emits resolved DDR bus and differential-pair constraints", (): void => {
     {
       busId: "DDR_BYTE_LANE_0",
       name: "DDR_BYTE_LANE_0",
-      connectionNames: sourceTraceIds,
+      connectionNames: [sourceTraceIds[0], sourceTraceIds[3]],
       maxLengthSkew: 0.25,
       traceWidth: 0.12,
       allowedLayers: ["top", "inner1"],
@@ -70,10 +67,8 @@ test("emits resolved DDR bus and differential-pair constraints", (): void => {
   ])
   expect(simpleRouteJson.differentialPairs).toEqual([
     {
-      connectionNames: [sourceTraceIds[1], sourceTraceIds[2]],
-      lengthTolerance: 0.1,
-      traceGap: 0.1,
-      maxUncoupledLength: 0.5,
+      connectionNames: [[sourceTraceIds[1]!], [sourceTraceIds[2]!]],
+      maxLengthSkewMm: 0.1,
     },
   ])
   expect(circuit).toMatchPcbSnapshot(import.meta.path)

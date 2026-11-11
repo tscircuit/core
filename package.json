@@ -177,5 +177,13 @@
   },
   "browser": {
     "@resvg/resvg-js": false
-  }
+  },
+  "TODO:differential-pair-releases": [
+    "Release and bump circuit-json after tscircuit/circuit-json#996 (source_bus union and error payloads)",
+    "Release and bump @tscircuit/props after tscircuit/props#1002 (strict pair props)",
+    "Release and bump @tscircuit/checks after tscircuit/checks#553 (pair lane-sum DRC)",
+    "Release @tscircuit/length-matching-solver after #88 -> #89, then bump it in the autorouter",
+    "Release and pin the first @tscircuit/capacity-autorouter 0.0.x containing tscircuit/tscircuit-autorouter#3662, including getRoutingFailure and getDifferentialPairRoutingFailure exports. The current ^0.0.1071 pin (and 0.0.1072 base) cannot provide this API; a 0.0.x caret does not select the required later release.",
+    "Then release core: #5386 -> this fix. Keep this PR draft until pins are bumped and all pair repros and regression checks pass."
+  ]
 }

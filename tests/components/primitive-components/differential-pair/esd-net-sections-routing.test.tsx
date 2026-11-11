@@ -61,7 +61,7 @@ test("routes net-attached CPU and connector pair sections through the same ESD p
       <autoroutingphase
         name="CPU_TO_ESD"
         phaseIndex={0}
-        autorouter="bus_lanes"
+        autorouter="auto_local"
       />
       <autoroutingphase
         name="ESD_TO_USB"
@@ -93,25 +93,11 @@ test("routes net-attached CPU and connector pair sections through the same ESD p
         positiveConnection="P_CPU"
         negativeConnection="N_CPU"
         maxLengthSkew={0.1}
-        pcbTraceGap={0.15}
       />
       <differentialpair
         name="PORT_PAIR"
         positiveConnection="P_PORT"
         negativeConnection="N_PORT"
-        maxLengthSkew={0.1}
-        pcbTraceGap={0.15}
-      />
-      <bus
-        name="CPU_BUS"
-        connections={["P_CPU", "N_CPU"]}
-        pcbAllowedLayers={["top"]}
-        maxLengthSkew={0.1}
-      />
-      <bus
-        name="PORT_BUS"
-        connections={["P_PORT", "N_PORT"]}
-        pcbAllowedLayers={["top"]}
         maxLengthSkew={0.1}
       />
       <pcbnotetext pcbX={-6} pcbY={-1.4} text="SOC P/N" fontSize={0.35} />
@@ -145,13 +131,13 @@ test("routes net-attached CPU and connector pair sections through the same ESD p
         pcbY={-6.1}
         fontSize={0.35}
         text={
-          '<differentialpair positiveConnection="P_CPU" negativeConnection="N_CPU" />'
+          '<differentialpair maxLengthSkew={0.1} positiveConnection="P_CPU" negativeConnection="N_CPU" />'
         }
       />
       <pcbnotetext
         pcbY={-6.9}
         fontSize={0.35}
-        text="N follows the same path. CPU: bus-lanes; USB: auto-local."
+        text="N follows the same path. Each complete pair uses one auto-local phase."
       />
     </board>,
   )
@@ -172,9 +158,8 @@ test("routes net-attached CPU and connector pair sections through the same ESD p
     expect(phaseInput.connections.map((c) => c.name)).toEqual(traceIds)
     expect(phaseInput.differentialPairs).toEqual([
       {
-        connectionNames: [traceIds[0], traceIds[1]],
-        lengthTolerance: 0.1,
-        traceGap: 0.15,
+        connectionNames: [[traceIds[0]!], [traceIds[1]!]],
+        maxLengthSkewMm: 0.1,
       },
     ])
     expect(
@@ -216,5 +201,7 @@ test("routes net-attached CPU and connector pair sections through the same ESD p
     width: 1200,
     height: 750,
     showDebugObjects: false,
+    shouldDrawRatsNest: true,
+    showErrorsInTextOverlay: true,
   })
 }, 30_000)

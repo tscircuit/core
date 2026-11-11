@@ -1,12 +1,13 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("stores a warning for a differential-pair connection with no terminal pins", (): void => {
+test("rejects a zero-terminal hop before routing", (): void => {
   const { circuit } = getTestFixture()
 
   circuit.add(
     <board width="20mm" height="14mm" routingDisabled>
       <differentialpair
+        maxLengthSkew={0.1}
         name="USB_DATA"
         positiveConnection="DP_EMPTY"
         negativeConnection="DM"
@@ -18,18 +19,5 @@ test("stores a warning for a differential-pair connection with no terminal pins"
     </board>,
   )
 
-  circuit.render()
-
-  const warning = circuit.db.source_property_ignored_warning.getWhere({
-    property_name: "positiveConnection",
-  })
-  expect(warning).toMatchObject({
-    type: "source_property_ignored_warning",
-    source_component_id: "",
-    error_type: "source_property_ignored_warning",
-    property_name: "positiveConnection",
-  })
-  expect(warning?.message).toBe(
-    'Differential pair "USB_DATA" positiveConnection="DP_EMPTY" is not point-to-point: expected exactly 2 terminal pins, found 0.',
-  )
+  expect(() => circuit.render()).toThrow("exactly two distinct ports")
 })

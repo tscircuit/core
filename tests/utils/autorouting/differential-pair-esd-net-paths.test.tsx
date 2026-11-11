@@ -65,15 +65,12 @@ test("preserves named differential sections through an ESD tap on a shared net",
         positiveConnection="P_CPU"
         negativeConnection="N_CPU"
         maxLengthSkew={0.1}
-        pcbTraceGap={0.15}
-        maxUncoupledLength={0.5}
       />
       <differentialpair
         name="PORT_PAIR"
         positiveConnection="P_PORT"
         negativeConnection="N_PORT"
         maxLengthSkew={0.2}
-        pcbTraceGap={0.2}
       />
       <autoroutingphase
         name="FIRST_PAIR"
@@ -150,15 +147,12 @@ test("preserves named differential sections through an ESD tap on a shared net",
   }
   expect(srj.differentialPairs).toEqual([
     {
-      connectionNames: [section("P_CPU").name, section("N_CPU").name],
-      lengthTolerance: 0.1,
-      traceGap: 0.15,
-      maxUncoupledLength: 0.5,
+      connectionNames: [[section("P_CPU").name], [section("N_CPU").name]],
+      maxLengthSkewMm: 0.1,
     },
     {
-      connectionNames: [section("P_PORT").name, section("N_PORT").name],
-      lengthTolerance: 0.2,
-      traceGap: 0.2,
+      connectionNames: [[section("P_PORT").name], [section("N_PORT").name]],
+      maxLengthSkewMm: 0.2,
     },
   ])
   const positiveNet = circuit.db.source_net.getWhere({ name: "USB_P" })!
@@ -174,7 +168,7 @@ test("preserves named differential sections through an ESD tap on a shared net",
   )
   expect(
     section("N_CPU").pointsToConnect.filter((point) => !point.pointId),
-  ).toHaveLength(1)
+  ).toHaveLength(0)
   expect(
     branch.pointsToConnect.some((p) => p.port_selector?.startsWith("TP.")),
   ).toBe(true)

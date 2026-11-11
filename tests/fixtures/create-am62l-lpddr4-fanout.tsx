@@ -3242,16 +3242,25 @@ export const renderAm62lLpddr4Fanout = async ({
       expect(dmi1Bus?.connectionNames).toEqual([dmi1PhaseConnection.name])
       expect(fanoutInput.differentialPairs).toEqual([
         {
-          connectionNames: [clockConnectionNames[0]!, clockConnectionNames[1]!],
-          lengthTolerance: CLOCK_MAX_FANOUT_SKEW,
+          connectionNames: [
+            [clockConnectionNames[0]!],
+            [clockConnectionNames[1]!],
+          ],
+          maxLengthSkewMm: CLOCK_MAX_FANOUT_SKEW,
         },
         {
-          connectionNames: [dqs0ConnectionNames[0]!, dqs0ConnectionNames[1]!],
-          lengthTolerance: DQS0_MAX_FANOUT_SKEW,
+          connectionNames: [
+            [dqs0ConnectionNames[0]!],
+            [dqs0ConnectionNames[1]!],
+          ],
+          maxLengthSkewMm: DQS0_MAX_FANOUT_SKEW,
         },
         {
-          connectionNames: [dqs1ConnectionNames[0]!, dqs1ConnectionNames[1]!],
-          lengthTolerance: DQS1_MAX_FANOUT_SKEW,
+          connectionNames: [
+            [dqs1ConnectionNames[0]!],
+            [dqs1ConnectionNames[1]!],
+          ],
+          maxLengthSkewMm: DQS1_MAX_FANOUT_SKEW,
         },
       ])
     }
@@ -3689,16 +3698,25 @@ export const renderAm62lLpddr4Fanout = async ({
     }) as [string, string]
     expect(globalPhaseInput.differentialPairs).toEqual([
       {
-        connectionNames: clockGlobalConnectionNames,
-        lengthTolerance: CLOCK_MAX_FANOUT_SKEW,
+        connectionNames: [
+          [clockGlobalConnectionNames[0]!],
+          [clockGlobalConnectionNames[1]!],
+        ],
+        maxLengthSkewMm: CLOCK_MAX_FANOUT_SKEW,
       },
       {
-        connectionNames: dqs0GlobalConnectionNames,
-        lengthTolerance: DQS0_MAX_FANOUT_SKEW,
+        connectionNames: [
+          [dqs0GlobalConnectionNames[0]!],
+          [dqs0GlobalConnectionNames[1]!],
+        ],
+        maxLengthSkewMm: DQS0_MAX_FANOUT_SKEW,
       },
       {
-        connectionNames: dqs1GlobalConnectionNames,
-        lengthTolerance: DQS1_MAX_FANOUT_SKEW,
+        connectionNames: [
+          [dqs1GlobalConnectionNames[0]!],
+          [dqs1GlobalConnectionNames[1]!],
+        ],
+        maxLengthSkewMm: DQS1_MAX_FANOUT_SKEW,
       },
     ])
   }

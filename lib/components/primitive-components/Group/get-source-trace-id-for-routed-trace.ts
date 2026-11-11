@@ -12,6 +12,7 @@ import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
 import { applyToPoint, rotateDEG } from "transformation-matrix"
 
 type RoutedTrace = (PcbTrace | SimplifiedPcbTrace) & {
+  connection_name?: string
   source_trace_id?: string
 }
 type SourcePortId = SourcePort["source_port_id"]
@@ -274,14 +275,33 @@ export function getSourceTraceIdForRoutedTrace({
   trace: RoutedTrace
   subcircuit_id?: string | null
 }) {
-  if (trace.source_trace_id && db.source_trace.get(trace.source_trace_id)) {
+  const ownedSourceTraceIds = new Set(
+    db.source_bus
+      .list()
+      .flatMap((bus) => (bus.differential_pair ? bus.source_trace_ids : [])),
+  )
+  if (trace.connection_name && ownedSourceTraceIds.has(trace.connection_name))
+    return trace.connection_name
+  if (
+    trace.source_trace_id &&
+    !ownedSourceTraceIds.has(trace.source_trace_id) &&
+    db.source_trace.get(trace.source_trace_id)
+  ) {
     return trace.source_trace_id
   }
 
-  const routedSourceNet = trace.source_trace_id
-    ? db.source_net.get(trace.source_trace_id)
-    : undefined
-  const sourceTraces = db.source_trace.list()
+  const routedSourceNet = db.source_net.get(
+    trace.source_trace_id ??
+      (ownedSourceTraceIds.size ? trace.connection_name : undefined) ??
+      "",
+  )
+  // Ordinary residual net routes/taps must never acquire an owned hop merely
+  // because they touch it or share its connectivity key.
+  const sourceTraces = db.source_trace
+    .list()
+    .filter(
+      (sourceTrace) => !ownedSourceTraceIds.has(sourceTrace.source_trace_id),
+    )
   const connMap = buildSourceConnectivityMap(sourceTraces)
   const routedSourceNetConnectivityId = routedSourceNet
     ? connMap.getNetConnectedToId(routedSourceNet.source_net_id)

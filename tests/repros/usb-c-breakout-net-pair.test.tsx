@@ -135,24 +135,10 @@ function UsbBreakoutBoard() {
   )
 }
 
-test("USB-C breakout pair wired through named nets", async () => {
+test("USB-C net wiring rejects an ambiguous scalar port selector before routing", () => {
   const { circuit } = getTestFixture()
-  const phases = createAutoroutingPhaseIoStack(circuit)
   circuit.add(<UsbBreakoutBoard />)
-  await circuit.renderUntilSettled()
-  expect(circuit.db.source_failed_to_create_component_error.list()).toEqual([])
-  expect(circuit.db.source_trace_not_connected_error.list()).toEqual([])
-  expect(circuit.db.pcb_component_outside_board_error.list()).toEqual([])
-  expect(phases).toHaveLength(2)
-  expect(phases[0]?.startSimpleRouteJson?.differentialPairs).toHaveLength(1)
-  expect(phases[0]?.endSimpleRouteJson?.traces).toHaveLength(2)
-  expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
-  expect(circuit.db.pcb_trace_error.list()).toEqual([])
-  expect(circuit.db.pcb_port_not_connected_error.list()).toEqual([])
-  await expect(phases).toMatchAutoroutingPhaseIoStackSnapshot(
-    import.meta.path,
-    "usb-c-breakout-routing-phases",
-    circuit,
+  expect(() => circuit.render()).toThrow(
+    'trace name or port selector ".R3 > .pin1" matches multiple source traces or terminals',
   )
-  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
-}, 30_000)
+})

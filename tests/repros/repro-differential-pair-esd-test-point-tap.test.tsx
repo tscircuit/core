@@ -1,9 +1,10 @@
+import { expectDifferentialPairLengths } from "tests/fixtures/expect-differential-pair-lengths"
 import { expect, test } from "bun:test"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import { differentialPairPathPads } from "tests/fixtures/differential-pair-path-pads"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("BUG: same-request ESD pair hops and test-point tap fail after shared-pad decomposition", async () => {
+test("ESD pair hops preserve ownership alongside an uncounted test-point tap", async () => {
   const { circuit } = getTestFixture()
   const inputs: SimpleRouteJson[] = []
   circuit.on("autorouting:start", (event) => inputs.push(event.simpleRouteJson))
@@ -53,17 +54,11 @@ test("BUG: same-request ESD pair hops and test-point tap fail after shared-pad d
       <trace name="DM1" from=".J1 > .DM" to=".ESD > .DM" />
       <trace name="DM2" from=".ESD > .DM" to=".MCU > .DM" />
       <trace name="TAP" from=".ESD > .DP" to=".TP > .pin1" />
-      {/* Scalar section declarations get past today's array rejection.
-          Both hops and the ordinary tap deliberately share one routing request. */}
       <differentialpair
-        name="USB_IN"
-        positiveConnection="DP1"
-        negativeConnection="DM1"
-      />
-      <differentialpair
-        name="USB_OUT"
-        positiveConnection="DP2"
-        negativeConnection="DM2"
+        name="USB"
+        positiveConnection={["DP1", "DP2"]}
+        negativeConnection={["DM1", "DM2"]}
+        maxLengthSkew={0.1}
       />
       <pcbnotetext
         pcbY={7.5}
@@ -72,7 +67,7 @@ test("BUG: same-request ESD pair hops and test-point tap fail after shared-pad d
       />
       <pcbnotetext
         pcbY={-3}
-        text="BUG: same-request shared ESD pad loses pair-hop ownership"
+        text="USB: exact hop ownership; test-point copper excluded from skew"
         fontSize={0.45}
       />
       <pcbnotetext pcbX={-3} pcbY={-1.5} text="J1" fontSize={0.5} />
@@ -82,6 +77,14 @@ test("BUG: same-request ESD pair hops and test-point tap fail after shared-pad d
     </board>,
   )
   await circuit.renderUntilSettled()
+  expect(circuit.db.pcb_trace.list()).toHaveLength(5)
+  expectDifferentialPairLengths(circuit)
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
+    width: 1600,
+    height: 1200,
+    shouldDrawRatsNest: true,
+    showErrorsInTextOverlay: true,
+  })
   expect(inputs).toHaveLength(1)
   const srj = inputs[0]
   const [dp1, dp2, dm1, dm2, tap] = ["DP1", "DP2", "DM1", "DM2", "TAP"].map(
@@ -99,21 +102,12 @@ test("BUG: same-request ESD pair hops and test-point tap fail after shared-pad d
   expect(dp1.pointsToConnect[1].pointId).toBe(dp2.pointsToConnect[0].pointId)
   expect(tap.pointsToConnect[0].pointId).toBe(dp1.pointsToConnect[1].pointId)
   expect(srj.differentialPairs).toEqual([
-    { connectionNames: [dp1.name, dm1.name], lengthTolerance: 0.1 },
-    { connectionNames: [dp2.name, dm2.name], lengthTolerance: 0.1 },
+    {
+      connectionNames: [
+        [dp1.name, dp2.name],
+        [dm1.name, dm2.name],
+      ],
+      maxLengthSkewMm: 0.1,
+    },
   ])
-  // BUG: core emits the real shared-pad hops and ordinary tap together, but
-  // the router merges their identities. Flip to preserved hops, connected TP,
-  // no routing error and one aggregate pair when the fix lands.
-  expect(circuit.db.pcb_autorouting_error.list()).toHaveLength(1)
-  expect(circuit.db.pcb_autorouting_error.list()[0].message).toContain(
-    "must resolve to exactly one final point-pair connection, got 3",
-  )
-  expect(circuit.db.pcb_trace.list()).toHaveLength(0)
-  await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
-    width: 1600,
-    height: 1200,
-    shouldDrawRatsNest: true,
-    showErrorsInTextOverlay: true,
-  })
 })

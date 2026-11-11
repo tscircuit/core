@@ -12,7 +12,6 @@ import { getFanoutBoundaryPointSpacing } from "../../../utils/autorouting/get-fa
 import { getBoardAvailableLayers } from "../../../utils/getViaSpanLayers"
 import { AutoplacedBreakoutPoint } from "../AutoplacedBreakoutPoint"
 import type { Bus } from "../Bus"
-import type { DifferentialPair } from "../DifferentialPair"
 import type { Group } from "../Group/Group"
 import type { Port } from "../Port"
 import {
@@ -32,12 +31,6 @@ interface BreakoutRegionGeometry {
   center: { x: number; y: number }
   endpointBySourceTraceId: ReadonlyMap<SourceTraceId, ConnectionEndpoint>
   sourcePortIdBySourceTraceId: ReadonlyMap<SourceTraceId, SourcePortId>
-}
-
-interface DifferentialPairSourceTraces {
-  differentialPair: DifferentialPair
-  positiveSourceTraceId: SourceTraceId
-  negativeSourceTraceId: SourceTraceId
 }
 
 export interface ImplicitBreakoutPointSolverContext {
@@ -484,42 +477,6 @@ const getImplicitBreakoutSolverBuses = ({
   return solverBuses
 }
 
-const getDifferentialPairSourceTraces = ({
-  routingScope,
-  sourceTraces,
-}: {
-  routingScope: Group<z.ZodType>
-  sourceTraces: readonly SourceTrace[]
-}): DifferentialPairSourceTraces[] => {
-  const subcircuitId = routingScope.getSubcircuit().subcircuit_id
-  const pairs: DifferentialPairSourceTraces[] = []
-  for (const differentialPair of routingScope.selectAll(
-    "differentialpair",
-  ) as DifferentialPair[]) {
-    if (differentialPair.getSubcircuit().subcircuit_id !== subcircuitId) {
-      continue
-    }
-    const positiveSourceTrace = getSourceTraceForConnectionOrThrow({
-      connectionOwner: differentialPair,
-      connectionOwnerLabel: `differential pair "${differentialPair.name}"`,
-      connectionSelector: differentialPair._parsedProps.positiveConnection,
-      sourceTraces,
-    })
-    const negativeSourceTrace = getSourceTraceForConnectionOrThrow({
-      connectionOwner: differentialPair,
-      connectionOwnerLabel: `differential pair "${differentialPair.name}"`,
-      connectionSelector: differentialPair._parsedProps.negativeConnection,
-      sourceTraces,
-    })
-    pairs.push({
-      differentialPair,
-      positiveSourceTraceId: positiveSourceTrace.source_trace_id,
-      negativeSourceTraceId: negativeSourceTrace.source_trace_id,
-    })
-  }
-  return pairs
-}
-
 const getBoundaryPointSpacing = (breakout: Breakout): number => {
   const board = breakout.root?.db.pcb_board.list()[0]
   const traceWidth = board?.min_trace_width ?? 0.15
@@ -685,63 +642,22 @@ export const createImplicitBreakoutPointSolverContext = (
     )
   }
 
-  const differentialPairBySourceTraceId = new Map<
-    SourceTraceId,
-    DifferentialPairSourceTraces
-  >()
-  for (const pair of getDifferentialPairSourceTraces({
-    routingScope,
-    sourceTraces,
-  })) {
-    const positiveIsCoordinated = sourceTraceIds.has(pair.positiveSourceTraceId)
-    const negativeIsCoordinated = sourceTraceIds.has(pair.negativeSourceTraceId)
-    if (positiveIsCoordinated !== negativeIsCoordinated) {
+  for (const pair of routingScope.root!.db.source_bus.list()) {
+    if (
+      pair.differential_pair &&
+      pair.source_trace_ids.some((id) => sourceTraceIds.has(id))
+    ) {
       throw new Error(
-        `Differential pair "${pair.differentialPair.name}" is missing one coordinated member`,
+        `Differential pair "${pair.name || "unnamed pair"}" does not support breakout splitting; route all owned hops in one ordinary routing phase`,
       )
     }
-    if (!positiveIsCoordinated) continue
-    if (
-      differentialPairBySourceTraceId.has(pair.positiveSourceTraceId) ||
-      differentialPairBySourceTraceId.has(pair.negativeSourceTraceId)
-    ) {
-      throw new Error("A connection belongs to multiple differential pairs")
-    }
-    differentialPairBySourceTraceId.set(pair.positiveSourceTraceId, pair)
-    differentialPairBySourceTraceId.set(pair.negativeSourceTraceId, pair)
   }
-
-  const connections: ConnectionOrDifferentialPair[] = []
-  const addedDifferentialPairs = new Set<DifferentialPair>()
-  for (const sourceTraceId of sortedSourceTraceIds) {
-    const differentialPair = differentialPairBySourceTraceId.get(sourceTraceId)
-    if (!differentialPair) {
-      connections.push({
-        connectionId: sourceTraceId,
-        endpoints: endpointsBySourceTraceId.get(sourceTraceId)!,
-      })
-      continue
-    }
-    if (addedDifferentialPairs.has(differentialPair.differentialPair)) continue
-    addedDifferentialPairs.add(differentialPair.differentialPair)
-    connections.push({
-      type: "differential",
-      connections: [
-        {
-          connectionId: differentialPair.positiveSourceTraceId,
-          endpoints: endpointsBySourceTraceId.get(
-            differentialPair.positiveSourceTraceId,
-          )!,
-        },
-        {
-          connectionId: differentialPair.negativeSourceTraceId,
-          endpoints: endpointsBySourceTraceId.get(
-            differentialPair.negativeSourceTraceId,
-          )!,
-        },
-      ],
-    })
-  }
+  const connections: ConnectionOrDifferentialPair[] = sortedSourceTraceIds.map(
+    (connectionId) => ({
+      connectionId,
+      endpoints: endpointsBySourceTraceId.get(connectionId)!,
+    }),
+  )
 
   const sourcePortIdByConnectionIdByRegionId = new Map<
     PcbGroupId,
@@ -805,9 +721,7 @@ export const createImplicitBreakoutPointSolverContext = (
           ],
         ),
       ),
-      atomicGroups: [...new Set(differentialPairBySourceTraceId.values())].map(
-        (pair) => [pair.positiveSourceTraceId, pair.negativeSourceTraceId],
-      ),
+      atomicGroups: [],
       buses,
       busFanoutDirections,
       fallbackEdge: solverRegions[0]!.edge,

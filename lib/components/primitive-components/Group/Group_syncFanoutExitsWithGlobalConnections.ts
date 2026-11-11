@@ -1,6 +1,5 @@
 import type {
   SimpleRouteConnection,
-  SimpleRouteDifferentialPair,
   SimpleRouteJson,
   SingleLayerConnectionPoint,
 } from "lib/utils/autorouting/SimpleRouteJson"
@@ -21,21 +20,16 @@ const removeCompletedFanoutConnections = (
   const includedConnectionNames = new Set(
     connections.map((connection) => connection.name),
   )
-  const differentialPairs: SimpleRouteDifferentialPair[] = []
-  for (const differentialPair of simpleRouteJson.differentialPairs ?? []) {
-    const positiveConnectionIncluded = includedConnectionNames.has(
-      differentialPair.connectionNames[0],
+  if (
+    simpleRouteJson.differentialPairs?.some((pair) =>
+      pair.connectionNames
+        .flat()
+        .some((name) => !includedConnectionNames.has(name)),
     )
-    const negativeConnectionIncluded = includedConnectionNames.has(
-      differentialPair.connectionNames[1],
-    )
-    if (positiveConnectionIncluded !== negativeConnectionIncluded) {
-      throw new Error(
-        `Differential pair "${differentialPair.connectionNames.join("/")}" cannot be split at a breakout boundary`,
-      )
-    }
-    if (positiveConnectionIncluded) differentialPairs.push(differentialPair)
+  ) {
+    throw new Error("Differential pairs cannot be split at a breakout boundary")
   }
+  const differentialPairs = simpleRouteJson.differentialPairs ?? []
 
   const buses = (simpleRouteJson.buses ?? [])
     .map((bus) => ({

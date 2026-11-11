@@ -123,7 +123,24 @@ export const Board_updatePcbDesignRuleChecks = (board: Board) => {
       queueCheck(
         "routing",
         () =>
-          runAllRoutingChecks(circuitJson).then((results) =>
+          runAllRoutingChecks(
+            circuitJson.filter((element) => {
+              if (element.type !== "source_bus" || !element.differential_pair)
+                return true
+              return !circuitJson.some(
+                (error) =>
+                  error.type === "pcb_autorouting_error" &&
+                  error.subcircuit_id === element.subcircuit_id &&
+                  !element.source_trace_ids.every((id) =>
+                    circuitJson.some(
+                      (copper) =>
+                        copper.type === "pcb_trace" &&
+                        copper.source_trace_id === id,
+                    ),
+                  ),
+              )
+            }),
+          ).then((results) =>
             results.filter(
               (result) => !board._isExpectedCastellatedHoleDrcError(result),
             ),

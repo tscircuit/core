@@ -8,6 +8,7 @@ it("throws when a differential pair uses a component selector", (): void => {
   circuit.add(
     <board width="20mm" height="10mm" routingDisabled>
       <differentialpair
+        maxLengthSkew={0.1}
         name="USB"
         positiveConnection="TP1"
         negativeConnection="USB_N"
@@ -21,19 +22,5 @@ it("throws when a differential pair uses a component selector", (): void => {
     </board>,
   )
 
-  circuit.render()
-
-  const boardSubcircuit = circuit.firstChild
-  if (!boardSubcircuit) {
-    throw new Error("Expected the circuit to contain a board")
-  }
-
-  expect((): void => {
-    getSimpleRouteJsonFromCircuitJson({
-      circuitJson: circuit.getCircuitJson(),
-      subcircuitComponent: boardSubcircuit,
-    })
-  }).toThrow(
-    'Could not find source trace for trace name or port selector "TP1" in differential pair "USB"',
-  )
+  expect(() => circuit.render()).toThrow("could not find source trace")
 })

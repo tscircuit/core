@@ -1,3 +1,4 @@
+import type { RoutingFailure } from "@tscircuit/capacity-autorouter"
 import type { GraphicsObject } from "graphics-debug"
 import type { AutorouterComputeCostSummary } from "lib/events"
 import type { SimpleRouteJson, SimplifiedPcbTrace } from "./SimpleRouteJson"
@@ -9,6 +10,7 @@ export type AutorouterCompleteEvent = {
 
 export type AutorouterErrorEvent = {
   type: "error"
+  failure?: RoutingFailure
   error: Error
 }
 
@@ -30,6 +32,7 @@ export type AutorouterEvent =
 export interface GenericLocalAutorouter {
   input: SimpleRouteJson
   isRouting: boolean
+  routingFailure?: RoutingFailure
 
   start(): void
   stop(): void

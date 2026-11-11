@@ -27,7 +27,7 @@ test("routes named differential trunks separately from termination taps on their
       <autoroutingphase
         name="CLOCK_TRUNKS"
         phaseIndex={0}
-        autorouter="bus_lanes"
+        autorouter="auto_local"
       />
       <autoroutingphase
         name="TERMINATION_TAPS"
@@ -62,18 +62,11 @@ test("routes named differential trunks separately from termination taps on their
         routingPhaseIndex={1}
         thickness={0.1}
       />
-      <bus
-        name="CLOCK_BUS"
-        connections={["CK_P", "CK_N"]}
-        pcbAllowedLayers={["top"]}
-        maxLengthSkew={0.1}
-      />
       <differentialpair
         name="CLOCK_PAIR"
         positiveConnection="CK_P"
         negativeConnection="CK_N"
         maxLengthSkew={0.1}
-        pcbTraceGap={0.1}
       />
       <pcbnotetext
         pcbY={-4}
@@ -101,14 +94,13 @@ test("routes named differential trunks separately from termination taps on their
   const pairBus = circuit.db.source_bus.getWhere({ name: "CLOCK_PAIR" })!
   expect(pairBus.source_trace_ids).toEqual(trunkSourceTraceIds)
   expect(pairBus.differential_pair).toMatchObject({
-    positive_source_trace_id: trunkSourceTraceIds[0],
-    negative_source_trace_id: trunkSourceTraceIds[1],
+    positive_source_trace_ids: [trunkSourceTraceIds[0]],
+    negative_source_trace_ids: [trunkSourceTraceIds[1]],
   })
   expect(inputs[0].differentialPairs).toEqual([
     {
-      connectionNames: [trunkSourceTraceIds[0], trunkSourceTraceIds[1]],
-      lengthTolerance: 0.1,
-      traceGap: 0.1,
+      connectionNames: [[trunkSourceTraceIds[0]!], [trunkSourceTraceIds[1]!]],
+      maxLengthSkewMm: 0.1,
     },
   ])
   const trunkLengths = trunkSourceTraceIds.map((source_trace_id) => {

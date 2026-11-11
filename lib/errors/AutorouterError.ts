@@ -1,3 +1,4 @@
+import type { RoutingFailure } from "@tscircuit/capacity-autorouter"
 import packageJson from "@tscircuit/capacity-autorouter/package.json" with {
   type: "json",
 }
@@ -5,7 +6,10 @@ import packageJson from "@tscircuit/capacity-autorouter/package.json" with {
 const autorouterVersion = packageJson.version ?? "unknown"
 
 export class AutorouterError extends Error {
-  constructor(message: string) {
+  constructor(
+    message: string,
+    public readonly routingFailure?: RoutingFailure,
+  ) {
     super(`${message} (capacity-autorouter@${autorouterVersion})`)
     this.name = "AutorouterError"
   }

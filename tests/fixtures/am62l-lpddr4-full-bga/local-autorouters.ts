@@ -43,7 +43,12 @@ const solveFixedTargetBgaFanout = async (
     }
   }
 
-  const solver = new FixedTargetBgaFanoutSolver(solverInput)
+  if (solverInput.differentialPairs?.length)
+    throw new Error("Differential pairs do not support BGA fanout")
+  const solver = new FixedTargetBgaFanoutSolver({
+    ...solverInput,
+    differentialPairs: undefined,
+  })
   solver.solve()
   if (solver.failed || !solver.solved) {
     throw new Error(solver.error ?? "Fixed-target BGA fanout failed")

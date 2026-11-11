@@ -1,3 +1,4 @@
+import { AutorouterError } from "lib/errors/AutorouterError"
 import {
   BusLanesPipelineSolver,
   type SimpleRouteJson as BusLanesInput,
@@ -21,6 +22,15 @@ export class BusLanesAutorouter implements GenericLocalAutorouter {
     callback: (event: AutorouterEvent) => void
   }> = []
   constructor(public input: SimpleRouteJson) {
+    if (input.differentialPairs?.length)
+      throw new AutorouterError(
+        "bus_lanes does not support ordered differential pairs; use auto_local",
+        {
+          reason: "unsupported_routing_scope",
+          pairIndex: 0,
+          detail: "Use auto_local for ordered differential pairs",
+        },
+      )
     // The solver validates unsupported SRJ route primitives at its input boundary.
     this.solver = new BusLanesPipelineSolver(input as unknown as BusLanesInput)
   }

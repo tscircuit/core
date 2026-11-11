@@ -1,298 +1,40 @@
-import type { SourcePort, SourceTrace } from "circuit-json"
-import type { DifferentialPair } from "lib/components/primitive-components/DifferentialPair"
-import type { Port } from "lib/components/primitive-components/Port/Port"
+import type { SourceDifferentialPairBus } from "circuit-json"
 import type {
-  PcbGroupId,
   SimpleRouteConnection,
   SimpleRouteDifferentialPair,
-  SrjConnectionName,
 } from "./SimpleRouteJson"
 
-type SourceTraceId = SourceTrace["source_trace_id"]
-type SourceNetId = NonNullable<SourceTrace["connected_source_net_ids"]>[number]
-type SourcePortId = NonNullable<SourcePort["source_port_id"]>
-type SubcircuitId = NonNullable<SourceTrace["subcircuit_id"]>
-type SubcircuitConnectivityMapKey = NonNullable<
-  SourceTrace["subcircuit_connectivity_map_key"]
->
-
-type GetDifferentialPairsParams = {
-  srjConnections: SimpleRouteConnection[]
-  differentialPairs: DifferentialPair[]
-  sourceTraces: SourceTrace[]
-  subcircuitId?: SubcircuitId | null
-}
-
-type GetDifferentialPairSourceTraceOrThrowParams = {
-  differentialPair: DifferentialPair
-  differentialPairSourceTraces: SourceTrace[]
-  traceNameOrPortSelector: string
-}
-
-type DifferentialPairSourceTraceSelection = {
-  sourceTraceId: SourceTraceId
-  subcircuitConnectivityMapKey: SubcircuitConnectivityMapKey
-}
-
-type GetDifferentialPairSrjConnectionNamesByCohortOrThrowParams = {
-  srjConnections: SimpleRouteConnection[]
-  differentialPairName: string
-  differentialPairSourceTraces: SourceTrace[]
-  sourceTraceId: SourceTraceId
-  traceSubcircuitConnectivityMapKey: SubcircuitConnectivityMapKey
-  traceNameOrPortSelector: string
-}
-
-/**
- * Automatic breakouts split one source trace into a global SRJ connection and
- * one local connection per routing PCB group. `undefined` identifies the
- * global cohort.
- */
-type DifferentialPairSrjConnectionCohort = PcbGroupId | undefined
-
-const getDifferentialPairSourceTracesByTraceName = (
-  differentialPairSourceTraces: SourceTrace[],
-  traceName: string,
-): SourceTrace[] =>
-  differentialPairSourceTraces.filter(
-    (sourceTrace) => sourceTrace.name === traceName,
-  )
-
-const getDifferentialPairSourceTracesByPortId = (
-  differentialPairSourceTraces: SourceTrace[],
-  sourcePortId: SourcePortId,
-): SourceTrace[] =>
-  differentialPairSourceTraces.filter((sourceTrace) =>
-    sourceTrace.connected_source_port_ids.includes(sourcePortId),
-  )
-
-export const getDifferentialPairSourceTraceOrThrow = ({
-  differentialPair,
-  differentialPairSourceTraces,
-  traceNameOrPortSelector,
-}: GetDifferentialPairSourceTraceOrThrowParams): DifferentialPairSourceTraceSelection => {
-  const differentialPairSubcircuit = differentialPair.getSubcircuit()
-  const sourceTracesWithMatchingName =
-    getDifferentialPairSourceTracesByTraceName(
-      differentialPairSourceTraces,
-      traceNameOrPortSelector,
-    )
-  const selectedPort =
-    sourceTracesWithMatchingName.length === 0
-      ? differentialPairSubcircuit.selectOne<Port>(traceNameOrPortSelector, {
-          type: "port",
-        })
-      : null
-  const selectedSourcePortId: SourcePortId | undefined =
-    selectedPort?.source_port_id ?? undefined
-  const matchingSourceTraces = selectedSourcePortId
-    ? getDifferentialPairSourceTracesByPortId(
-        differentialPairSourceTraces,
-        selectedSourcePortId,
-      )
-    : sourceTracesWithMatchingName
-
-  if (matchingSourceTraces.length === 0) {
-    throw new Error(
-      `Could not find source trace for trace name or port selector "${traceNameOrPortSelector}" in differential pair "${differentialPair.name}"`,
-    )
-  }
-  if (matchingSourceTraces.length > 1) {
-    throw new Error(
-      `Trace name or port selector "${traceNameOrPortSelector}" matches multiple source traces for differential pair "${differentialPair.name}"`,
-    )
-  }
-
-  const sourceTrace = matchingSourceTraces[0]
-  if (!sourceTrace) {
-    throw new Error(
-      `Expected one source trace for trace name or port selector "${traceNameOrPortSelector}" in differential pair "${differentialPair.name}"`,
-    )
-  }
-
-  const subcircuitConnectivityMapKey =
-    sourceTrace.subcircuit_connectivity_map_key
-  if (!subcircuitConnectivityMapKey) {
-    throw new Error(
-      `Source trace "${traceNameOrPortSelector}" does not have a subcircuit connectivity map key for differential pair "${differentialPair.name}"`,
-    )
-  }
-
-  return {
-    sourceTraceId: sourceTrace.source_trace_id,
-    subcircuitConnectivityMapKey,
-  }
-}
-
-const getDifferentialPairSrjConnectionNamesByCohortOrThrow = ({
-  srjConnections,
-  differentialPairName,
-  differentialPairSourceTraces,
-  sourceTraceId,
-  traceSubcircuitConnectivityMapKey,
-  traceNameOrPortSelector,
-}: GetDifferentialPairSrjConnectionNamesByCohortOrThrowParams): Map<
-  DifferentialPairSrjConnectionCohort,
-  SrjConnectionName
-> => {
-  const differentialPairSourcePortIds = new Set<SourcePortId>()
-  const differentialPairSourceNetIds = new Set<SourceNetId>()
-  for (const sourceTrace of differentialPairSourceTraces) {
-    if (
-      sourceTrace.subcircuit_connectivity_map_key ===
-      traceSubcircuitConnectivityMapKey
-    ) {
-      for (const sourcePortId of sourceTrace.connected_source_port_ids) {
-        differentialPairSourcePortIds.add(sourcePortId)
-      }
-      for (const sourceNetId of sourceTrace.connected_source_net_ids ?? []) {
-        differentialPairSourceNetIds.add(sourceNetId)
-      }
-    }
-  }
-
-  // A shared electrical net does not identify the selected physical path.
-  let matchingSrjConnections = srjConnections.filter(
-    (connection) => connection.source_trace_id === sourceTraceId,
-  )
-  if (
-    matchingSrjConnections.length === 0 &&
-    differentialPairSourcePortIds.size === 2
-  ) {
-    // Net-attached fragments may be represented by one net-level connection.
-    // This is safe only for a two-terminal conductor, never another branch's
-    // source_trace_id or an aggregate net containing termination terminals.
-    matchingSrjConnections = srjConnections.filter((connection) =>
-      differentialPairSourceNetIds.has(connection.name),
-    )
-  }
-
-  if (matchingSrjConnections.length === 0) {
-    throw new Error(
-      `Could not find an SRJ connection for trace name or port selector "${traceNameOrPortSelector}" in differential pair "${differentialPairName}"`,
-    )
-  }
-
-  const connectionNamesByCohort = new Map<
-    DifferentialPairSrjConnectionCohort,
-    SrjConnectionName
-  >()
-  for (const srjConnection of matchingSrjConnections) {
-    const cohort = srjConnection.routingPcbGroupId
-    if (connectionNamesByCohort.has(cohort)) {
-      const cohortLabel =
-        cohort === undefined
-          ? "the global routing cohort"
-          : "one local routing region"
-      throw new Error(
-        `Trace name or port selector "${traceNameOrPortSelector}" matches multiple SRJ connections in ${cohortLabel} for differential pair "${differentialPairName}"`,
-      )
-    }
-    connectionNamesByCohort.set(cohort, srjConnection.name)
-  }
-
-  return connectionNamesByCohort
-}
-
-const getDifferentialPairCohortLabel = (
-  cohort: DifferentialPairSrjConnectionCohort,
-): string =>
-  cohort === undefined
-    ? "the global routing cohort"
-    : `routing PCB group "${cohort}"`
-
-/** Converts differential-pair trace names or port selectors into SRJ constraints. */
+/** Circuit JSON is authoritative: copy exact hop ownership and lane order. */
 export const getDifferentialPairsForSimpleRouteJson = ({
   srjConnections,
-  differentialPairs,
-  sourceTraces,
-  subcircuitId,
-}: GetDifferentialPairsParams): SimpleRouteDifferentialPair[] | undefined => {
-  const srjDifferentialPairs: SimpleRouteDifferentialPair[] = []
-  for (const differentialPair of differentialPairs) {
-    const differentialPairSubcircuitId =
-      differentialPair.getSubcircuit().subcircuit_id
-    if (subcircuitId && differentialPairSubcircuitId !== subcircuitId) {
-      continue
-    }
-
-    const differentialPairSourceTraces = sourceTraces.filter(
-      (sourceTrace) =>
-        sourceTrace.subcircuit_id === differentialPairSubcircuitId,
-    )
-    const positiveTraceNameOrPortSelector =
-      differentialPair._parsedProps.positiveConnection
-    const negativeTraceNameOrPortSelector =
-      differentialPair._parsedProps.negativeConnection
-    const positiveSourceTrace = getDifferentialPairSourceTraceOrThrow({
-      differentialPair,
-      differentialPairSourceTraces,
-      traceNameOrPortSelector: positiveTraceNameOrPortSelector,
-    })
-    const negativeSourceTrace = getDifferentialPairSourceTraceOrThrow({
-      differentialPair,
-      differentialPairSourceTraces,
-      traceNameOrPortSelector: negativeTraceNameOrPortSelector,
-    })
-
-    const positiveSrjConnectionNamesByCohort =
-      getDifferentialPairSrjConnectionNamesByCohortOrThrow({
-        srjConnections,
-        differentialPairName: differentialPair.name,
-        differentialPairSourceTraces,
-        sourceTraceId: positiveSourceTrace.sourceTraceId,
-        traceSubcircuitConnectivityMapKey:
-          positiveSourceTrace.subcircuitConnectivityMapKey,
-        traceNameOrPortSelector: positiveTraceNameOrPortSelector,
-      })
-    const negativeSrjConnectionNamesByCohort =
-      getDifferentialPairSrjConnectionNamesByCohortOrThrow({
-        srjConnections,
-        differentialPairName: differentialPair.name,
-        differentialPairSourceTraces,
-        sourceTraceId: negativeSourceTrace.sourceTraceId,
-        traceSubcircuitConnectivityMapKey:
-          negativeSourceTrace.subcircuitConnectivityMapKey,
-        traceNameOrPortSelector: negativeTraceNameOrPortSelector,
-      })
-
-    // Note: SRJ names this value lengthTolerance, but it carries
-    // maxLengthSkew unchanged.
-    const lengthTolerance: number =
-      differentialPair._parsedProps.maxLengthSkew ?? 0.1
-    for (const cohort of positiveSrjConnectionNamesByCohort.keys()) {
-      if (negativeSrjConnectionNamesByCohort.has(cohort)) continue
-      throw new Error(
-        `Differential pair "${differentialPair.name}" has a positive SRJ connection in ${getDifferentialPairCohortLabel(cohort)} without a matching negative SRJ connection`,
+  sourcePairs,
+}: {
+  srjConnections: SimpleRouteConnection[]
+  sourcePairs: SourceDifferentialPairBus[]
+}): SimpleRouteDifferentialPair[] | undefined => {
+  if (!sourcePairs.length) return undefined
+  return sourcePairs.map((pair) => {
+    for (const id of pair.source_trace_ids) {
+      const connections = srjConnections.filter(
+        (connection) =>
+          connection.name === id && connection.source_trace_id === id,
       )
+      if (
+        connections.length !== 1 ||
+        connections[0]!.pointsToConnect.length !== 2 ||
+        connections[0]!.routingPcbGroupId
+      ) {
+        throw new Error(
+          `Differential pair "${pair.name || "unnamed pair"}": each hop needs exactly two routable terminals; phased, preserved and breakout splitting is unsupported`,
+        )
+      }
     }
-    for (const cohort of negativeSrjConnectionNamesByCohort.keys()) {
-      if (positiveSrjConnectionNamesByCohort.has(cohort)) continue
-      throw new Error(
-        `Differential pair "${differentialPair.name}" has a negative SRJ connection in ${getDifferentialPairCohortLabel(cohort)} without a matching positive SRJ connection`,
-      )
+    return {
+      connectionNames: [
+        pair.differential_pair.positive_source_trace_ids,
+        pair.differential_pair.negative_source_trace_ids,
+      ],
+      maxLengthSkewMm: pair.max_length_skew,
     }
-    for (const [
-      cohort,
-      positiveSrjConnectionName,
-    ] of positiveSrjConnectionNamesByCohort) {
-      const negativeSrjConnectionName =
-        negativeSrjConnectionNamesByCohort.get(cohort)!
-      srjDifferentialPairs.push({
-        connectionNames: [positiveSrjConnectionName, negativeSrjConnectionName],
-        lengthTolerance,
-        ...(differentialPair._parsedProps.pcbTraceGap !== undefined
-          ? { traceGap: differentialPair._parsedProps.pcbTraceGap }
-          : {}),
-        ...(differentialPair._parsedProps.maxUncoupledLength !== undefined
-          ? {
-              maxUncoupledLength:
-                differentialPair._parsedProps.maxUncoupledLength,
-            }
-          : {}),
-      })
-    }
-  }
-
-  return srjDifferentialPairs.length > 0 ? srjDifferentialPairs : undefined
+  })
 }

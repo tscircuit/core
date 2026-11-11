@@ -1,3 +1,7 @@
+import { getRoutingFailure } from "@tscircuit/capacity-autorouter"
+import { AutorouterError } from "lib/errors/AutorouterError"
+import { recordRoutingFailure } from "lib/utils/autorouting/recordRoutingFailure"
+import { getDifferentialPairRoutingFailure } from "lib/utils/autorouting/getDifferentialPairRoutingFailure"
 import { formatPcbDisplayOffset } from "lib/utils/format-pcb-display-offset"
 import { getOwningPanel } from "lib/utils/panels/get-owning-panel"
 import { TestPointAutorouter } from "lib/utils/autorouting/TestPointAutorouter"
@@ -38,7 +42,6 @@ import { assignSchematicNetLabelSuperscripts } from "lib/utils/schematic/assign-
 
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import { isAssemblyDeviceContainer } from "lib/components/base-components/is-assembly-device-container"
-import { AutorouterError } from "lib/errors/AutorouterError"
 import type { AutorouterOptions } from "lib/utils/autorouting/CapacityMeshAutorouter"
 import { FanoutAutorouter } from "lib/utils/autorouting/FanoutAutorouter"
 import type { GenericLocalAutorouter } from "lib/utils/autorouting/GenericLocalAutorouter"
@@ -1158,7 +1161,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const fanoutPourNetMap = hasFanoutStage
       ? Group_getFanoutPourNetMap(this, routingPhasePlans)
       : undefined
-    let { simpleRouteJson: baseSimpleRouteJson } =
+    let { simpleRouteJson: baseSimpleRouteJson, differentialPairSourceBusIds } =
       getSimpleRouteJsonFromCircuitJson({
         pcb_panel_id: getOwningPanel(this)?.pcb_panel_id ?? undefined,
         db,
@@ -1168,6 +1171,34 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         subcircuitComponent: this,
         fanoutPourNetMap,
       })
+
+    // Validate the complete plan before a phase can filter away a whole lane.
+    for (const pair of baseSimpleRouteJson.differentialPairs ?? []) {
+      const pairNames = new Set(pair.connectionNames.flat())
+      const stages = routingStages.filter(({ routingPhasePlan }) =>
+        baseSimpleRouteJson.connections.some(
+          (connection) =>
+            pairNames.has(connection.name) &&
+            connectionIsInRoutingPhase(connection, routingPhasePlan),
+        ),
+      )
+      if (
+        stages.length !== 1 ||
+        stages.some(({ autorouterConfig }) =>
+          [
+            "fanout",
+            "single_layer_fanout",
+            "dogbone",
+            "simplify",
+            "test_points",
+          ].includes(autorouterConfig.preset ?? ""),
+        )
+      ) {
+        throw new RoutingPhasePreparationError(
+          "Differential pairs cannot be split across autorouting phases, preserved copper or breakouts; assign every hop to one ordinary routing phase",
+        )
+      }
+    }
 
     const emitFanoutBoundsConflictWarning = (
       routingPhasePlan: RoutingPhasePlan,
@@ -1788,8 +1819,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
                 debug(
                   `[${this.getString()}] local autorouting error: ${event.error.message}`,
                 )
-                routingError = event.error
-                reject(event.error)
+                routingError = event.failure
+                  ? new AutorouterError("Routing failed", event.failure)
+                  : event.error
+                reject(routingError)
               })
             },
           )
@@ -1950,6 +1983,32 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           }
           traces = await runAutorouter(autorouter)
         }
+
+        const pairFailure = getDifferentialPairRoutingFailure(
+          simpleRouteJson,
+          traces,
+        )
+        if (pairFailure)
+          throw new AutorouterError(
+            "Differential pair routing failed",
+            pairFailure,
+          )
+
+        // Each phase's router may restart its PCB IDs. Owned hops retain unique
+        // physical identities so a later, unrelated phase cannot replace them.
+        const ownedHopNames = new Set(
+          (simpleRouteJson.differentialPairs ?? []).flatMap((pair) =>
+            pair.connectionNames.flat(),
+          ),
+        )
+        traces = traces.map((trace) =>
+          ownedHopNames.has(trace.connection_name ?? "")
+            ? {
+                ...trace,
+                pcb_trace_id: `${trace.pcb_trace_id}_${trace.connection_name}`,
+              }
+            : trace,
+        )
 
         let transformedSimpleRouteJson =
           precomputedOutputSimpleRouteJson ??
@@ -2165,11 +2224,18 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         }
       } catch (error) {
         const { db } = this.root!
-        // Record the error
-        db.pcb_autorouting_error.insert({
-          pcb_error_id: `pcb_autorouter_error_subcircuit_${this.subcircuit_id}`,
-          error_type: "pcb_autorouting_error",
-          message: error instanceof Error ? error.message : String(error),
+        const sourceBusIds = (simpleRouteJson.differentialPairs ?? []).map(
+          (pair) => {
+            const sourceIndex =
+              baseSimpleRouteJson.differentialPairs!.indexOf(pair)
+            return differentialPairSourceBusIds[sourceIndex]!
+          },
+        )
+        const message = recordRoutingFailure({
+          db,
+          failure: getRoutingFailure(error),
+          sourceBusIds,
+          subcircuitId: this.subcircuit_id,
         })
 
         const computeCostSummary = autorouter?.getComputeCostSummary?.()
@@ -2187,7 +2253,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             : {}),
           ...autoroutingMetadata,
           error: {
-            message: error instanceof Error ? error.message : String(error),
+            message,
           },
           simpleRouteJson,
         })

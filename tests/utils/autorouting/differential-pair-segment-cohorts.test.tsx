@@ -1,10 +1,12 @@
+import { validateDifferentialPairSourceBuses } from "lib/utils/autorouting/validateDifferentialPairSourceBuses"
+import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 import { expect, test } from "bun:test"
 import type { DifferentialPair } from "lib/components/primitive-components/DifferentialPair"
 import type { SimpleRouteConnection } from "lib/utils/autorouting/SimpleRouteJson"
 import { getDifferentialPairsForSimpleRouteJson } from "lib/utils/autorouting/getDifferentialPairsForSimpleRouteJson"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("pairs differential SRJ segments by routing PCB group", () => {
+test("rejects differential SRJ segment cohorts", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -14,8 +16,6 @@ test("pairs differential SRJ segments by routing PCB group", () => {
         positiveConnection="CK_t"
         negativeConnection="CK_c"
         maxLengthSkew="50um"
-        pcbTraceGap="100um"
-        maxUncoupledLength="500um"
       />
       <chip name="U1" footprint="soic8" pcbX={-5} />
       <chip name="U2" footprint="soic8" pcbX={5} />
@@ -26,105 +26,18 @@ test("pairs differential SRJ segments by routing PCB group", () => {
 
   circuit.render()
 
-  const routingScope = circuit.firstChild
-  if (!routingScope) throw new Error("Expected a board routing scope")
-  const differentialPairs =
-    routingScope.selectAll<DifferentialPair>("differentialpair")
-  const positiveSourceTrace = circuit.db.source_trace.getWhere({ name: "CK_t" })
-  const negativeSourceTrace = circuit.db.source_trace.getWhere({ name: "CK_c" })
-  if (!positiveSourceTrace || !negativeSourceTrace) {
-    throw new Error("Expected both DDR clock source traces")
-  }
-
-  const srjConnections: SimpleRouteConnection[] = [
-    {
-      name: "global_positive",
-      source_trace_id: positiveSourceTrace.source_trace_id,
-      pointsToConnect: [],
-    },
-    {
-      name: "soc_positive",
-      routingPcbGroupId: "pcb_group_soc_fanout",
-      source_trace_id: positiveSourceTrace.source_trace_id,
-      pointsToConnect: [],
-    },
-    {
-      name: "dram_positive",
-      routingPcbGroupId: "pcb_group_dram_fanout",
-      source_trace_id: positiveSourceTrace.source_trace_id,
-      pointsToConnect: [],
-    },
-    {
-      name: "global_negative",
-      source_trace_id: negativeSourceTrace.source_trace_id,
-      pointsToConnect: [],
-    },
-    {
-      name: "dram_negative",
-      routingPcbGroupId: "pcb_group_dram_fanout",
-      source_trace_id: negativeSourceTrace.source_trace_id,
-      pointsToConnect: [],
-    },
-    {
-      name: "soc_negative",
-      routingPcbGroupId: "pcb_group_soc_fanout",
-      source_trace_id: negativeSourceTrace.source_trace_id,
-      pointsToConnect: [],
-    },
-  ]
-  const getConstraints = (connections: SimpleRouteConnection[]) =>
-    getDifferentialPairsForSimpleRouteJson({
-      srjConnections: connections,
-      differentialPairs,
-      sourceTraces: circuit.db.source_trace.list(),
-    })
-
-  expect(getConstraints(srjConnections)).toEqual([
-    {
-      connectionNames: ["global_positive", "global_negative"],
-      lengthTolerance: 0.05,
-      traceGap: 0.1,
-      maxUncoupledLength: 0.5,
-    },
-    {
-      connectionNames: ["soc_positive", "soc_negative"],
-      lengthTolerance: 0.05,
-      traceGap: 0.1,
-      maxUncoupledLength: 0.5,
-    },
-    {
-      connectionNames: ["dram_positive", "dram_negative"],
-      lengthTolerance: 0.05,
-      traceGap: 0.1,
-      maxUncoupledLength: 0.5,
-    },
+  const sourcePairs = validateDifferentialPairSourceBuses(circuit.db)
+  const srj = getSimpleRouteJsonFromCircuitJson({
+    db: circuit.db,
+  }).simpleRouteJson
+  const splitConnections = srj.connections.flatMap((connection) => [
+    connection,
+    { ...connection, routingPcbGroupId: "local" },
   ])
-
   expect(() =>
-    getConstraints(
-      srjConnections.filter(
-        (connection) => connection.name !== "dram_negative",
-      ),
-    ),
-  ).toThrow(
-    /positive SRJ connection in routing PCB group "pcb_group_dram_fanout" without a matching negative SRJ connection/,
-  )
-  expect(() =>
-    getConstraints(
-      srjConnections.filter((connection) => connection.name !== "soc_positive"),
-    ),
-  ).toThrow(
-    /negative SRJ connection in routing PCB group "pcb_group_soc_fanout" without a matching positive SRJ connection/,
-  )
-  expect(() =>
-    getConstraints([
-      ...srjConnections,
-      {
-        name: "duplicate_soc_positive",
-        routingPcbGroupId: "pcb_group_soc_fanout",
-        source_trace_id: positiveSourceTrace.source_trace_id,
-        pointsToConnect: [],
-      },
-    ]),
-  ).toThrow(/multiple SRJ connections in one local routing region/)
+    getDifferentialPairsForSimpleRouteJson({
+      srjConnections: splitConnections,
+      sourcePairs,
+    }),
+  ).toThrow("phased, preserved and breakout splitting is unsupported")
 })
