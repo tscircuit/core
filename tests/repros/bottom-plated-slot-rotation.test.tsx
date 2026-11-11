@@ -1,92 +1,165 @@
 import { beforeAll, expect, test } from "bun:test"
+import type { AnyCircuitElement } from "circuit-json"
+import { loadCadComponentMesh } from "circuit-json-to-gltf"
+import usbCC165948CircuitJson from "tests/fixtures/assets/usb-c-C165948.circuit.json"
+import { createPcbWithTopBottom3dSnapshot } from "tests/fixtures/create-pcb-with-top-bottom-3d-snapshot"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { applyToPoint, compose, rotate, translate } from "transformation-matrix"
 
-const { circuit } = getTestFixture()
+const { circuit, staticAssetsServerUrl } = getTestFixture({
+  withStaticAssetsServer: true,
+})
 
 beforeAll(async () => {
-  const footprint = (
-    <footprint>
-      <platedhole
-        shape="pill"
-        outerWidth={4}
-        outerHeight={1.4}
-        holeWidth={3}
-        holeHeight={0.6}
-      />
-      <smtpad shape="circle" radius={0.2} pcbX={-3} />
-      <smtpad shape="circle" radius={0.2} pcbX={3} />
-    </footprint>
+  // This fixture was regenerated with easyeda@0.0.389 and the OBJ metadata,
+  // including the native model bounds and origin fixed by easyeda-converter#540.
+  // Only the OBJ URL changes to the checked-in copy, avoiding a network dependency.
+  const partCircuitJson = (usbCC165948CircuitJson as AnyCircuitElement[]).map(
+    (element) =>
+      element.type === "cad_component"
+        ? {
+            ...element,
+            model_obj_url: `${staticAssetsServerUrl}/models/C165948.obj`,
+          }
+        : element,
   )
 
   circuit.add(
-    <board width={24} height={10} routingDisabled schematicDisabled>
+    <board
+      width={30}
+      height={18}
+      routingDisabled
+      schematicDisabled
+      partsEngine={{
+        findPart: async () => ({ jlcpcb: ["C165948"] }),
+        fetchPartCircuitJson: async () => partCircuitJson,
+      }}
+    >
       <pcbnotetext
-        text="Each slot should align with its two round reference pads"
-        pcbY={4}
+        text="USB-C C165948: pill mounting holes, both ports at 30deg"
+        pcbY={7.5}
         fontSize={0.6}
         color="white"
       />
       <pcbnotetext
-        text="U1: TOP, 30deg"
-        pcbX={-5.5}
-        pcbY={2.6}
-        fontSize={0.5}
+        text="USB_TOP: TOP"
+        pcbX={-7}
+        pcbY={-6.5}
+        fontSize={0.6}
         color="white"
       />
-      <chip
-        name="U1"
+      <connector
+        name="USB_TOP"
+        standard="usb_c"
         layer="top"
-        isSmt
-        pcbX={-5.5}
+        pcbX={-7}
         pcbRotation={30}
-        footprint={footprint}
       />
       <pcbnotetext
-        text="U2: BOTTOM, 30deg"
-        pcbX={5.5}
-        pcbY={2.6}
-        fontSize={0.5}
+        text="USB_BOTTOM: BOTTOM"
+        pcbX={7}
+        pcbY={-6.5}
+        fontSize={0.6}
         color="white"
       />
-      <chip
-        name="U2"
+      <connector
+        name="USB_BOTTOM"
+        standard="usb_c"
         layer="bottom"
-        isSmt
-        pcbX={5.5}
+        pcbX={7}
         pcbRotation={30}
-        footprint={footprint}
       />
     </board>,
   )
   await circuit.renderUntilSettled()
 
   // Keep snapshot failures outside test.failing so they still fail CI.
-  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
-})
+  const snapshot = await createPcbWithTopBottom3dSnapshot(
+    circuit.getCircuitJson(),
+  )
+  await expect(snapshot).toMatchSvgSnapshot(import.meta.path)
+}, 60_000)
 
-test.failing("plated slots follow their footprint axis on both sides", () => {
-  for (const hole of circuit.db.pcb_plated_hole.list()) {
-    if (hole.shape !== "pill") throw new Error("Expected a pill-shaped slot")
-    const [start, end] = circuit.db.pcb_smtpad
+test.failing("USB-C slots align with model tabs on both faces", async () => {
+  for (const name of ["USB_TOP", "USB_BOTTOM"]) {
+    const connector = circuit.selectOne(`.${name}`)!
+    const holes = circuit.db.pcb_plated_hole
       .list()
-      .filter((pad) => pad.shape === "circle")
-      .filter((pad) => pad.pcb_component_id === hole.pcb_component_id)
+      .filter((hole) => hole.pcb_component_id === connector.pcb_component_id)
+    expect(holes).toHaveLength(4)
+    const firstShell = holes.find((hole) =>
+      hole.port_hints?.includes("SHELL1"),
+    )!
+    const secondShell = holes.find((hole) =>
+      hole.port_hints?.includes("SHELL2"),
+    )!
 
-    // Derive the board-world axis from emitted reference-pad points in mm
-    // (+X right, +Y up). This is a direction; translation cancels out. A slot
-    // is symmetric under a 180-degree turn, including after a PCB side flip.
+    // C165948's first two shell slots share a footprint-local X and run along
+    // Y. Their emitted centers give the connector's long-slot direction in
+    // board-world mm (+X right, +Y up). Translation cancels for this direction.
     const axisDegrees =
-      (Math.atan2(end.y - start.y, end.x - start.x) * 180) / Math.PI
+      (Math.atan2(secondShell.y - firstShell.y, secondShell.x - firstShell.x) *
+        180) /
+      Math.PI
     const expectedAxis = ((axisDegrees % 180) + 180) % 180
-    expect((hole.ccw_rotation ?? 0) % 180).toBeCloseTo(expectedAxis, 6)
 
-    for (const paste of circuit.db.pcb_solder_paste.list()) {
-      if (
-        paste.pcb_component_id === hole.pcb_component_id &&
-        paste.shape === "rotated_pill"
-      ) {
-        expect(paste.ccw_rotation % 180).toBeCloseTo(expectedAxis, 6)
+    const cad = circuit.db.cad_component
+      .list()
+      .find((cad) => cad.pcb_component_id === connector.pcb_component_id)!
+    const pcbComponent = circuit.db.pcb_component.get(
+      connector.pcb_component_id!,
+    )!
+    const mesh = await loadCadComponentMesh(cad, { pcbComponent })
+    // Actual renderer mesh points in right-handed board-world mm (+X right,
+    // +Y up the PCB, +Z above). The deepest mounting-tab tips are nearest the
+    // opposite PCB face: minimum Z for a top port, maximum Z for a bottom port.
+    const modelVertices = Array.from(
+      { length: mesh.positions.length / 3 },
+      (_, vertexIndex) => ({
+        x: mesh.positions[vertexIndex * 3]!,
+        y: mesh.positions[vertexIndex * 3 + 1]!,
+        z: mesh.positions[vertexIndex * 3 + 2]!,
+      }),
+    )
+    const tipZ =
+      pcbComponent.layer === "top"
+        ? Math.min(...modelVertices.map((vertex) => vertex.z))
+        : Math.max(...modelVertices.map((vertex) => vertex.z))
+    const tabTips = modelVertices.filter(
+      (vertex) => Math.abs(vertex.z - tipZ) < 1e-6,
+    )
+    const unmatchedTabTips = new Set(tabTips)
+
+    for (const hole of holes) {
+      if (hole.shape !== "pill") {
+        throw new Error("Expected the USB-C pill-shaped mounting slot")
       }
+      // The imported slots are taller than they are wide,
+      // so their long axis starts at 90 degrees before placement rotation.
+      expect(((hole.ccw_rotation ?? 0) + 90) % 180).toBeCloseTo(expectedAxis, 6)
+
+      // Transform mesh points into the emitted slot's local frame. A pill is
+      // the set of points within hole_width/2 of its vertical center segment.
+      const worldToSlot = compose(
+        rotate((-(hole.ccw_rotation ?? 0) * Math.PI) / 180),
+        translate(-hole.x, -hole.y),
+      )
+      const radius = hole.hole_width / 2
+      const halfSegmentLength = (hole.hole_height - hole.hole_width) / 2
+      let containedTipCount = 0
+      for (const tip of tabTips) {
+        const localTip = applyToPoint(worldToSlot, tip)
+        const distanceToSegment = Math.hypot(
+          localTip.x,
+          Math.max(0, Math.abs(localTip.y) - halfSegmentLength),
+        )
+        if (distanceToSegment <= radius + 0.01) {
+          containedTipCount += 1
+          unmatchedTabTips.delete(tip)
+        }
+      }
+      expect(containedTipCount).toBeGreaterThan(0)
     }
+    expect(unmatchedTabTips.size).toBe(0)
   }
 })
