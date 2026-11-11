@@ -16,21 +16,17 @@ beforeAll(async () => {
   }
 })
 
-test.failing(
-  "remote jobs reserve the unbroken inner1 plane while through vias reach inner2",
-  () => {
-    const { circuit, autorouterInput } = routingResult
-    const wireLayers = circuit.db.pcb_trace
-      .list()[0]!
-      .route.filter((point) => point.route_type === "wire")
-      .map((point) => point.layer)
-    expect(wireLayers).not.toContain("inner1")
-    expect(wireLayers).toContain("inner2")
-    expect(
-      autorouterInput.obstacles.some(
-        (obstacle) =>
-          obstacle.isCopperPour && obstacle.layers.includes("inner1"),
-      ),
-    ).toBe(true)
-  },
-)
+test("remote jobs reserve the unbroken inner1 plane while through vias reach inner2", () => {
+  const { circuit, autorouterInput } = routingResult
+  const wireLayers = circuit.db.pcb_trace
+    .list()[0]!
+    .route.filter((point) => point.route_type === "wire")
+    .map((point) => point.layer)
+  expect(wireLayers).not.toContain("inner1")
+  expect(wireLayers).toContain("inner2")
+  expect(
+    autorouterInput.obstacles.some(
+      (obstacle) => obstacle.isCopperPour && obstacle.layers.includes("inner1"),
+    ),
+  ).toBe(true)
+})

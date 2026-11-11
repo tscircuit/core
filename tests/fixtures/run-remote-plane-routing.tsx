@@ -13,8 +13,13 @@ type RemoteRoutingRequest = {
   input_simple_route_json?: SimpleRouteJson
 }
 
+/**
+ * Runs a four-layer fixture in board-world mm (+X right, +Y up, +Z toward
+ * top copper; right-handed). PCB coordinates are points, not directions.
+ */
 export const runRemotePlaneRouting = async (
   serverMode: "solve-endpoint" | "job",
+  unbroken = true,
 ) => {
   const { circuit } = getTestFixture({
     platform: { allowLegacyAutorouters: true },
@@ -73,7 +78,7 @@ export const runRemotePlaneRouting = async (
         }}
       >
         <net name="GND" />
-        <copperpour layer="inner1" connectsTo="net.GND" unbroken />
+        <copperpour layer="inner1" connectsTo="net.GND" unbroken={unbroken} />
         <pcbnotetext
           pcbY={7}
           text="INNER1: GND PLANE / NO SIGNAL WIRES"
