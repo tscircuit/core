@@ -35,8 +35,8 @@ async function routeBetweenResistors(withFixedCopper: boolean) {
       <pcbnotetext
         pcbY={4.9}
         fontSize={0.94}
-        color="#ffae92"
-        text="Repro - R1 to R2 unrouted"
+        color="#8de2b3"
+        text="Fix - R1 to R2 connected"
       />
       <pcbnotetext
         pcbY={-3.45}
@@ -48,7 +48,7 @@ async function routeBetweenResistors(withFixedCopper: boolean) {
         pcbY={-4.85}
         fontSize={0.73}
         color="#c5d4e2"
-        text="Routing stops at the diagonal"
+        text="Thin trace goes around the copper"
       />
     </board>,
   )
@@ -92,15 +92,24 @@ test("route R1 to R2 past a frozen top-layer diagonal", async () => {
   expect(gapToFixedCopper(control.traces[0]!)).toBeLessThan(0)
 
   const { circuit, failures, input, traces } = await routeBetweenResistors(true)
-  expect(
-    failures.some((error) =>
-      error.includes("only supports horizontal and vertical"),
-    ),
-  ).toBe(true)
-  expect(traces).toHaveLength(1)
-  expect(input).toBeUndefined()
-  const fixedTrace = traces[0]!
+  expect(failures).toEqual([])
+  expect(traces).toHaveLength(2)
+  const fixedTrace = traces.find((trace) => !trace.source_trace_id)!
+  const newTrace = traces.find((trace) => trace.source_trace_id)!
   expect(fixedTrace.route).toMatchObject(fixedRoute)
+  const gap = gapToFixedCopper(newTrace)
+  expect(Number.isFinite(gap)).toBe(true)
+  expect(gap).toBeGreaterThan(0)
+  expect(input).toBeDefined()
+  const fixedObstacles = input!.obstacles.filter((obstacle) =>
+    obstacle.connectedTo.includes(fixedTrace.pcb_trace_id),
+  )
+  expect(fixedObstacles).toHaveLength(1)
+  const [segment] = fixedObstacles
+  expect(segment!.ccwRotationDegrees).toBeCloseTo(45)
+  expect(segment!.width).toBeCloseTo(Math.hypot(4, 4) + 0.4)
+  expect(segment!.height).toBeCloseTo(0.4)
+  expect(segment).toMatchObject({ center: { x: 0, y: 0 }, layers: ["top"] })
   expect(control.input).toBeDefined()
   await expect(
     renderRoutingObstacleComparison(
