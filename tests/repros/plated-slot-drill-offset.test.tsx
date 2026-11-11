@@ -7,6 +7,12 @@ test("an offset plated slot follows a reference pad through each mounting transf
   const rotations = [0, 90, 180, 270, 30]
   circuit.add(
     <board width={44} height={18} routingDisabled schematicDisabled>
+      <pcbnotetext
+        pcbY={7.65}
+        fontSize={1.28}
+        color="#8de2b3"
+        text="Fix - drill aligns with the reference pad"
+      />
       {(["top", "bottom"] as const).flatMap((layer, row) =>
         rotations.map((rotation, i) => (
           <Fragment key={`${layer}-${rotation}`}>
@@ -40,8 +46,9 @@ test("an offset plated slot follows a reference pad through each mounting transf
             <pcbnotetext
               pcbX={(i - 2) * 8}
               pcbY={2 - row * 8}
-              text={`${layer} ${rotation} deg`}
-              fontSize={0.5}
+              text={rotation === 0 ? `${layer} 0 deg` : `${rotation} deg`}
+              color="#c5d4e2"
+              fontSize={0.82}
             />
           </Fragment>
         )),
