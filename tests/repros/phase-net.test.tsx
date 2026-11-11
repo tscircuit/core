@@ -39,7 +39,7 @@ beforeAll(async () => {
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
 
-test.failing("routes only the selected pin's tied net", () => {
+test("routes only the selected pin's tied net", () => {
   const wires = circuit.db.pcb_trace.list()
   expect(started).toEqual(["DATA_ONLY"])
   expect(wires).toHaveLength(1)
