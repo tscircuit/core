@@ -730,6 +730,8 @@ export const createComponentsFromCircuitJson = (
         components.push(silkscreenText)
       }
     } else if (elm.type === "pcb_trace") {
+      // Imported source trace IDs are not mapped to the destination circuit here.
+      // Keep footprint copper unassociated rather than copying a foreign ID.
       const pcbTrace = new PcbTrace({ route: elm.route })
       for (const [routeIndex, point] of elm.route.entries()) {
         if (point.route_type !== "via") continue
