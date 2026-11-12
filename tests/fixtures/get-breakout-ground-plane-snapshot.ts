@@ -1,40 +1,28 @@
 import type { SimpleRouteConnection } from "@tscircuit/capacity-autorouter"
 import { su } from "@tscircuit/circuit-json-util"
-import type { AnyCircuitElement, LayerRef } from "circuit-json"
-import { convertCircuitJsonToPcbSvg } from "circuit-to-svg"
+import type { AnyCircuitElement } from "circuit-json"
+import { convertCircuitJsonToPcbSvg, type PcbSvgOptions } from "circuit-to-svg"
 import { stackSvgsHorizontally, stackSvgsVertically } from "stack-svgs"
 
-const panelWidth = 600
 const connectedColor = "#5eead4"
 const requestColor = "#ff59b7"
+const detailColor = "#64b5ff"
+const background = "#172131"
+const fullWidth = 480
+const detailWidth = 340
+const totalWidth = fullWidth + detailWidth * 2 + 32
 
-const caption = ({
-  title,
-  detail,
-  color = "#ffffff",
-}: {
-  title: string
-  detail: string
-  color?: string
-}) => `<svg xmlns="http://www.w3.org/2000/svg" width="${panelWidth}" height="100">
-  <rect width="${panelWidth}" height="100" fill="#172131" />
-  <text x="24" y="40" fill="${color}" font-family="Arial, sans-serif" font-size="30" font-weight="bold">${title}</text>
-  <text x="24" y="76" fill="#e2e8f0" font-family="Arial, sans-serif" font-size="20">${detail}</text>
-</svg>`
-
-const layerLabel = (text: string) =>
-  `<svg xmlns="http://www.w3.org/2000/svg" width="${panelWidth}" height="40">
-    <rect width="${panelWidth}" height="40" fill="#172131" />
-    <text x="24" y="28" fill="#ffffff" font-family="Arial, sans-serif" font-size="20">${text}</text>
+const caption = ({ width, lines }: { width: number; lines: string[] }) =>
+  `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${lines.length * 32 + 12}">
+    <rect width="${width}" height="100%" fill="${background}" />
+    ${lines.map((line, index) => `<text x="16" y="${index * 32 + 29}" fill="#ffffff" font-family="Arial, sans-serif" font-size="19">${line}</text>`).join("")}
   </svg>`
 
 /**
- * Expected/actual comparison of the same native PCB, with its top and inner1
- * layers aligned in both columns. All note positions are points in right-handed
- * board-world mm (+X right, +Y up, +Z toward top). The renderer handles the
- * projection. Captions use screen pixels (+X right, +Y down). Notes are
- * overlays on rendered copies, never router input. The expected column shows
- * existing copper without requests; only the actual column uses native requests.
+ * Full imported U70 footprint plus two aligned layer close-ups. All geometry
+ * and note positions are points in right-handed board-world mm (+X right,
+ * +Y up, +Z above). circuit-to-svg owns the projection. Captions use screen
+ * pixels (+X right, +Y down). Notes never enter the router's input.
  */
 export const getBreakoutGroundPlaneSnapshot = ({
   circuitJson,
@@ -46,172 +34,174 @@ export const getBreakoutGroundPlaneSnapshot = ({
   requestedRoutes: SimpleRouteConnection[]
 }) => {
   const db = su(circuitJson)
-  const viaLabels: AnyCircuitElement[] = []
+  const detailViewport = { minX: -4.5, maxX: -1.3, minY: 15.2, maxY: 18.4 }
+  const viaMarkers: AnyCircuitElement[] = []
   const padLabels: AnyCircuitElement[] = []
-  for (const [index, terminal] of gndConnection.pointsToConnect.entries()) {
-    const breakout = db.pcb_breakout_point.get(terminal.pointId!)!
-    const sourcePort = db.source_port.get(breakout.source_port_id!)!
-    const component = db.source_component.get(sourcePort.source_component_id!)!
-    const pad = db.pcb_port
-      .list()
-      .find((port) => port.source_port_id === sourcePort.source_port_id)!
-    viaLabels.push(
-      {
-        type: "pcb_note_rect",
-        pcb_note_rect_id: `via_marker_${index}`,
-        layer: "top",
-        center: { x: terminal.x, y: terminal.y },
-        width: 0.65,
-        height: 0.65,
-        stroke_width: 0.045,
-        is_filled: false,
-        color: connectedColor,
-      },
-      {
-        type: "pcb_note_line",
-        pcb_note_line_id: `via_leader_${index}`,
-        layer: "top",
-        x1: terminal.x,
-        y1: terminal.y - 0.4,
-        x2: terminal.x,
-        y2: -1.7,
-        stroke_width: 0.025,
-        color: connectedColor,
-      },
-      {
-        type: "pcb_note_text",
-        pcb_note_text_id: `via_label_${index}`,
-        layer: "top",
-        font: "tscircuit2024",
-        anchor_position: { x: terminal.x, y: -2.15 },
-        anchor_alignment: "center",
-        text: `Via ${String.fromCharCode(65 + index)}`,
-        font_size: 0.43,
-        color: connectedColor,
-      },
-    )
-    padLabels.push(
-      {
-        type: "pcb_note_line",
-        pcb_note_line_id: `pad_leader_${index}`,
-        layer: "top",
-        x1: pad.x,
-        y1: pad.y + 0.3,
-        x2: pad.x - 0.8,
-        y2: 1.9,
-        stroke_width: 0.025,
-        color: "#ffffff",
-      },
-      {
-        type: "pcb_note_text",
-        pcb_note_text_id: `pad_label_${index}`,
-        layer: "top",
-        font: "tscircuit2024",
-        anchor_position: { x: pad.x - 0.4, y: 2.35 },
-        anchor_alignment: "center",
-        text: `${component.name}.GND`,
-        font_size: 0.48,
-        color: "#ffffff",
-      },
-    )
+  const planeLabels: AnyCircuitElement[] = []
+  for (const ballName of ["F7", "G6"]) {
+    const sourcePort = db.source_port.getWhere({ name: `${ballName}_VSS` })!
+    const pad = db.pcb_port.getWhere({
+      source_port_id: sourcePort.source_port_id,
+    })!
+    const breakout = db.pcb_breakout_point.getWhere({
+      source_port_id: sourcePort.source_port_id,
+    })!
+    viaMarkers.push({
+      type: "pcb_note_rect",
+      pcb_note_rect_id: `via_marker_${ballName}`,
+      layer: "top",
+      center: { x: breakout.x, y: breakout.y },
+      width: 0.4,
+      height: 0.4,
+      stroke_width: 0.025,
+      is_filled: false,
+      color: connectedColor,
+    })
+    padLabels.push({
+      type: "pcb_note_text",
+      pcb_note_text_id: `pad_label_${ballName}`,
+      layer: "top",
+      font: "tscircuit2024",
+      anchor_position: { x: pad.x, y: pad.y },
+      anchor_alignment: "center",
+      text: ballName,
+      font_size: 0.16,
+      color: "#ffffff",
+    })
+    planeLabels.push({
+      type: "pcb_note_text",
+      pcb_note_text_id: `via_label_${ballName}`,
+      layer: "top",
+      font: "tscircuit2024",
+      anchor_position: { x: breakout.x + 0.25, y: breakout.y + 0.15 },
+      anchor_alignment: "bottom_left",
+      text: `${ballName} via`,
+      font_size: 0.16,
+      color: connectedColor,
+    })
   }
-
-  const requestNotes: AnyCircuitElement[] = requestedRoutes.flatMap(
+  const requestNotes: AnyCircuitElement[] = requestedRoutes.map(
     (connection, index) => {
       const [start, end] = connection.pointsToConnect
-      return [
-        {
-          type: "pcb_note_line",
-          pcb_note_line_id: `extra_request_${index}`,
-          layer: "top",
-          x1: start.x,
-          y1: start.y,
-          x2: end.x,
-          y2: end.y,
-          stroke_width: 0.09,
-          is_dashed: true,
-          color: requestColor,
-        },
-        {
-          type: "pcb_note_text",
-          pcb_note_text_id: `extra_request_label_${index}`,
-          layer: "top",
-          font: "tscircuit2024",
-          anchor_position: {
-            x: (start.x + end.x) / 2,
-            y: (start.y + end.y) / 2 + 0.65,
-          },
-          anchor_alignment: "center",
-          text: "Unnecessary request",
-          font_size: 0.42,
-          color: requestColor,
-        },
-      ]
+      return {
+        type: "pcb_note_line",
+        pcb_note_line_id: `extra_request_${index}`,
+        layer: "top",
+        x1: start.x,
+        y1: start.y,
+        x2: end.x,
+        y2: end.y,
+        stroke_width: 0.025,
+        is_dashed: true,
+        color: requestColor,
+      }
     },
   )
-  const renderBoard = (layer: LayerRef, notes: AnyCircuitElement[]) =>
-    convertCircuitJsonToPcbSvg([...circuitJson, ...viaLabels, ...notes], {
-      width: panelWidth,
-      height: 300,
-      viewport: { minX: -6.5, maxX: 6.5, minY: -3.25, maxY: 3.25 },
-      layer,
+  const detailBox: AnyCircuitElement = {
+    type: "pcb_note_rect",
+    pcb_note_rect_id: "detail_region",
+    layer: "top",
+    center: {
+      x: (detailViewport.minX + detailViewport.maxX) / 2,
+      y: (detailViewport.minY + detailViewport.maxY) / 2,
+    },
+    width: detailViewport.maxX - detailViewport.minX,
+    height: detailViewport.maxY - detailViewport.minY,
+    stroke_width: 0.08,
+    is_filled: false,
+    color: detailColor,
+  }
+  const renderBoard = ({
+    notes,
+    ...options
+  }: PcbSvgOptions & { notes: AnyCircuitElement[] }) => {
+    const svg = convertCircuitJsonToPcbSvg([...circuitJson, ...notes], {
       includeVersion: false,
       showPinNumbers: false,
+      showCourtyards: false,
+      ...options,
     })
+    // stack-svgs unwraps the outer SVG. Keep a nested viewport so the full
+    // native board is clipped to the close-up without deleting any copper.
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="${options.width}" height="${options.height}">${svg}</svg>`
+  }
   const panel = (sections: string[]) =>
     stackSvgsVertically(sections, { gap: 0, normalizeSize: false })
   const requests = requestedRoutes.length
-  const planeNotes: AnyCircuitElement[] = [
-    {
-      type: "pcb_note_text",
-      pcb_note_text_id: "ground_plane_label",
-      layer: "top",
-      font: "tscircuit2024",
-      anchor_position: { x: 0, y: 1.6 },
-      anchor_alignment: "center",
-      text: "SHARED GND COPPER",
-      font_size: 0.55,
-      color: "#ffffff",
-    },
-  ]
+  const headline = `<svg xmlns="http://www.w3.org/2000/svg" width="${totalWidth}" height="116">
+    <rect width="${totalWidth}" height="116" fill="${background}" />
+    <text x="20" y="38" fill="#ffffff" font-family="Arial, sans-serif" font-size="29" font-weight="bold">STM32MP157DAB1: ground-plane connectivity</text>
+    <text x="20" y="84" fill="${connectedColor}" font-family="Arial, sans-serif" font-size="27" font-weight="bold">EXPECTED: 0 new routes</text>
+    <text x="500" y="84" fill="${requests ? requestColor : connectedColor}" font-family="Arial, sans-serif" font-size="27" font-weight="bold">ACTUAL: ${requests} ${requests ? "unnecessary requests" : "requests — fixed"}</text>
+  </svg>`
   const panels = stackSvgsHorizontally(
     [
       panel([
         caption({
-          title: "EXPECTED: 0 new routes",
-          detail: "Both GND pads are already connected.",
-          color: connectedColor,
+          width: fullWidth,
+          lines: [
+            `FULL U70 · ${db.pcb_smtpad.list().length} pads / ${gndConnection.pointsToConnect.length} GND escapes`,
+          ],
         }),
-        layerLabel("TOP LAYER · Each GND pad connects to a via"),
-        renderBoard("top", padLabels),
-        layerLabel("INNER1 LAYER · The ground copper joins both vias"),
-        renderBoard("inner1", planeNotes),
+        renderBoard({
+          width: fullWidth,
+          height: fullWidth,
+          layer: "top",
+          viewport: { minX: -9, maxX: 9, minY: 11, maxY: 29 },
+          notes: [detailBox],
+        }),
       ]),
       panel([
         caption({
-          title: `ACTUAL: ${requests} ${requests === 1 ? "route" : "routes"} requested`,
-          detail: requests
-            ? "BUG: core asks to connect them again."
-            : "FIXED: core recognizes the existing connection.",
-          color: requests ? requestColor : connectedColor,
+          width: detailWidth,
+          lines: ["DETAIL · TOP copper + requests"],
         }),
-        layerLabel("TOP LAYER · Same pads, traces and vias"),
-        renderBoard("top", [...padLabels, ...requestNotes]),
-        layerLabel("INNER1 LAYER · Same ground copper"),
-        renderBoard("inner1", planeNotes),
+        renderBoard({
+          width: detailWidth,
+          height: detailWidth,
+          layer: "top",
+          viewport: detailViewport,
+          notes: [...viaMarkers, ...padLabels, ...requestNotes],
+        }),
+        caption({
+          width: detailWidth,
+          lines: [
+            "F7 and G6 are GND pads.",
+            "Teal boxes mark their vias.",
+            requests
+              ? "Pink dashes = extra requests."
+              : "No extra requests remain.",
+            "Request lines are not copper.",
+          ],
+        }),
+      ]),
+      panel([
+        caption({ width: detailWidth, lines: ["SAME DETAIL · INNER1 copper"] }),
+        renderBoard({
+          width: detailWidth,
+          height: detailWidth,
+          layer: "inner1",
+          viewport: detailViewport,
+          notes: [...viaMarkers, ...planeLabels],
+        }),
+        caption({
+          width: detailWidth,
+          lines: [
+            "Brown = one GND plane.",
+            "Both vias already touch it.",
+            "The plane connects the pads.",
+            "No extra route is needed.",
+          ],
+        }),
       ]),
     ],
     { gap: 16, normalizeSize: false },
   )
-  const width = panelWidth * 2 + 16
-  const explanation = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="136">
-    <rect width="${width}" height="136" fill="#172131" />
-    <text x="24" y="34" fill="#ffffff" font-family="Arial, sans-serif" font-size="24" font-weight="bold">Existing connection: U1.GND → via A → ground copper → via B → U2.GND</text>
-    <text x="24" y="70" fill="#e2e8f0" font-family="Arial, sans-serif" font-size="21">Each column shows the same board. Vias are plated holes joining its copper layers.</text>
-    <text x="24" y="108" fill="${requests ? requestColor : connectedColor}" font-family="Arial, sans-serif" font-size="22">${requests ? "Pink dashed line = unnecessary routing request, not a copper trace." : "No pink line: the fix removes the extra request. The copper stays unchanged."}</text>
+  const explanation = `<svg xmlns="http://www.w3.org/2000/svg" width="${totalWidth}" height="100">
+    <rect width="${totalWidth}" height="100" fill="${background}" />
+    <text x="20" y="32" fill="${detailColor}" font-family="Arial, sans-serif" font-size="21">Blue box = the region enlarged on the right. Both close-ups show identical coordinates.</text>
+    <text x="20" y="65" fill="#ffffff" font-family="Arial, sans-serif" font-size="20">Full imported footprint + all 104 motherboard GND assignments. Other nets are omitted in this test.</text>
+    <text x="20" y="92" fill="#cbd5e1" font-family="Arial, sans-serif" font-size="18">Native dogbone → ground pour → core export → native point-pair requests. No saved or injected routes.</text>
   </svg>`
-  return stackSvgsVertically([panels, explanation], {
-    gap: 16,
-    normalizeSize: false,
-  })
+  return panel([headline, panels, explanation])
 }
