@@ -133,7 +133,12 @@ function computeHash(data: any): string {
 export function Subcircuit_getSubcircuitPropHash(
   subcircuit: ISubcircuit,
 ): string {
+  const defaultSolderPasteMarginRatio =
+    subcircuit._getBoardSolderPasteMarginRatio()
   const hashableData = {
+    ...(defaultSolderPasteMarginRatio !== undefined
+      ? { defaultSolderPasteMarginRatio }
+      : {}),
     props: getHashableProps(subcircuit.props ?? {}),
     children: getChildrenHashData(subcircuit.children),
   }

@@ -1033,6 +1033,13 @@ export abstract class PrimitiveComponent<
     return applyToPoint(this.computeSchematicGlobalTransform(), { x: 0, y: 0 })
   }
 
+  _getBoardSolderPasteMarginRatio(): number | undefined {
+    const board = this._getBoard()
+    return board
+      ? board._parsedProps.defaultSolderPasteMarginRatio
+      : this.root?.inheritedSolderPasteMarginRatio
+  }
+
   _getBoard(): (PrimitiveComponent & BoardI) | undefined {
     let current: PrimitiveComponent | Renderable | null = this
     while (current) {

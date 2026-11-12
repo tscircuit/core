@@ -1,3 +1,4 @@
+import type { SolderPasteMarginRatio } from "@tscircuit/props"
 import Flatten from "@flatten-js/core"
 import { getBoundsFromPoints } from "@tscircuit/math-utils"
 import type { PcbSolderPastePolygon, Point } from "circuit-json"
@@ -15,10 +16,33 @@ const createPolygon = (points: Point[]) => {
 export function getPolygonSolderPasteContours({
   points,
   solderPasteMargin,
+  solderPasteMarginRatio,
 }: {
   points: Point[]
   solderPasteMargin?: number
+  solderPasteMarginRatio?: SolderPasteMarginRatio
 }): Pick<PcbSolderPastePolygon, "points" | "holes">[] {
+  if (solderPasteMarginRatio !== undefined) {
+    const { x, y } =
+      typeof solderPasteMarginRatio === "number"
+        ? { x: solderPasteMarginRatio, y: solderPasteMarginRatio }
+        : solderPasteMarginRatio
+    const bounds = getBoundsFromPoints(points)!
+    if (bounds.maxX <= bounds.minX || bounds.maxY <= bounds.minY) return []
+    // Apply the absolute offset to the contour after sizing each local axis.
+    const scaleX = 1 + 2 * x
+    const scaleY = 1 + 2 * y
+    if (scaleX <= 0 || scaleY <= 0) return []
+    const cx = (bounds.minX + bounds.maxX) / 2
+    const cy = (bounds.minY + bounds.maxY) / 2
+    const transform = compose(
+      translate(cx, cy),
+      scale(scaleX, scaleY),
+      translate(-cx, -cy),
+    )
+    points = points.map((p) => applyToPoint(transform, p))
+    solderPasteMargin ??= 0
+  }
   if (solderPasteMargin === 0) return [{ points }]
   const copper = createPolygon(points)
   let paste = copper

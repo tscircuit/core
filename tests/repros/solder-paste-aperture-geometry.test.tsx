@@ -22,7 +22,7 @@ test("stencil geometry for a rotated rectangle, saved oval and rectangular SMT p
         width={4}
         height={1}
         pcbX={-7}
-        {...{ pcbRotation: 35 }}
+        pcbRotation={35}
       />
       <subcircuit name="Imported" circuitJson={[oval]} />
       <chip
@@ -36,7 +36,7 @@ test("stencil geometry for a rotated rectangle, saved oval and rectangular SMT p
               height={2}
               portHints={["1"]}
               solderPasteMargin={0}
-              {...{ solderPasteMarginRatio: { x: -0.1, y: -0.25 } }}
+              solderPasteMarginRatio={{ x: -0.1, y: -0.25 }}
             />
           </footprint>
         }
@@ -58,15 +58,19 @@ test("stencil geometry for a rotated rectangle, saved oval and rectangular SMT p
   )
   await circuit.renderUntilSettled()
   const openings = circuit.db.pcb_solder_paste.list()
-  expect(openings.find((p) => !p.pcb_smtpad_id)).toMatchObject({
-    shape: "rect",
+  expect(openings.find((p) => p.shape === "rotated_rect")).toMatchObject({
+    shape: "rotated_rect",
+    ccw_rotation: expect.closeTo(35),
     width: 4,
     height: 1,
   })
-  expect(openings.some((p) => p.shape === "oval")).toBe(false)
-  expect(openings.find((p) => p.pcb_smtpad_id)).toMatchObject({
+  expect(openings.find((p) => p.shape === "oval")).toMatchObject({
     width: 4,
-    height: 2,
+    height: 1.5,
+  })
+  expect(openings.find((p) => p.pcb_smtpad_id)).toMatchObject({
+    width: 3.2,
+    height: 1,
   })
   await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
     showSolderPaste: true,

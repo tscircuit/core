@@ -275,7 +275,11 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
           subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
           pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
         })
-      } else if (props.shape === "oval" && shouldCreateSolderPaste) {
+      } else if (
+        props.shape === "oval" &&
+        shouldCreateSolderPaste &&
+        !subcircuit._isInflatedFromCircuitJson
+      ) {
         db.pcb_solder_paste.insert({
           pcb_component_id: pcb_component_id ?? undefined,
           layer: "top",

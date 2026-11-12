@@ -88,6 +88,9 @@ export function Subcircuit_doInitialRenderIsolatedSubcircuits(
         pendingSubcircuitRenders,
       })
 
+      isolatedCircuit.inheritedSolderPasteMarginRatio =
+        subcircuit._getBoardSolderPasteMarginRatio()
+
       for (const child of childrenToRender) {
         isolatedCircuit.add(child)
       }

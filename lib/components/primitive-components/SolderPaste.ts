@@ -1,16 +1,22 @@
-import { type SolderPasteProps, solderPasteProps } from "@tscircuit/props"
+import { solderPasteProps } from "@tscircuit/props"
 import type {
   AnyCircuitElement,
   PcbSolderPaste,
   PcbSolderPasteCircle,
+  PcbSolderPasteOval,
+  PcbSolderPastePolygon,
   PcbSolderPasteRect,
   PcbSolderPasteRotatedRect,
 } from "circuit-json"
+import { getBoundsFromPoints } from "@tscircuit/math-utils"
+import { getOvalPasteContour } from "lib/utils/pcb/get-oval-paste-contour"
 import { applyToPoint, decomposeTSR } from "transformation-matrix"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
 type PcbSolderPasteId = PcbSolderPaste["pcb_solder_paste_id"]
 type StandalonePcbSolderPaste =
+  | PcbSolderPasteOval
+  | PcbSolderPastePolygon
   | PcbSolderPasteCircle
   | PcbSolderPasteRect
   | PcbSolderPasteRotatedRect
@@ -20,7 +26,9 @@ export const isStandalonePcbSolderPaste = (
 ): element is StandalonePcbSolderPaste =>
   element.type === "pcb_solder_paste" &&
   !element.pcb_smtpad_id &&
-  (element.shape === "circle" ||
+  (element.shape === "oval" ||
+    element.shape === "polygon" ||
+    element.shape === "circle" ||
     element.shape === "rect" ||
     element.shape === "rotated_rect")
 
@@ -32,53 +40,69 @@ export const isStandalonePcbSolderPaste = (
 export class SolderPaste extends PrimitiveComponent<typeof solderPasteProps> {
   pcb_solder_paste_id: PcbSolderPasteId | null = null
   isPcbPrimitive = true
-  private circuitJsonRotation = 0
 
   /**
    * Reconstruct an aperture already in its parent's local PCB frame (+X right,
    * +Y top, +Z above, right-handed, mm). Its center is a point and its rotation
    * is in CCW degrees; coordinate transforms happen before this import.
-   * Cached records may carry rotation even though the authored props expose
-   * only axis-aligned shapes. Keep that derived state separate from props.
    */
   static fromCircuitJson(aperture: StandalonePcbSolderPaste): SolderPaste {
+    if (aperture.shape === "polygon") {
+      return new SolderPaste({
+        shape: "polygon",
+        layer: aperture.layer,
+        points: aperture.points,
+        holes: aperture.holes,
+      })
+    }
     const placement = {
       pcbX: aperture.x,
       pcbY: aperture.y,
       layer: aperture.layer,
     }
-    let props: SolderPasteProps
     if (aperture.shape === "circle") {
-      props = { ...placement, shape: "circle", radius: aperture.radius }
-    } else {
-      props = {
+      return new SolderPaste({
         ...placement,
-        shape: "rect",
-        width: aperture.width,
-        height: aperture.height,
-      }
+        shape: "circle",
+        radius: aperture.radius,
+      })
     }
-    const paste = new SolderPaste(props)
-    if (aperture.shape === "rotated_rect") {
-      paste.circuitJsonRotation = aperture.ccw_rotation
-    }
-    return paste
-  }
-
-  _getPcbRotationBeforeLayout(): number {
-    return this.circuitJsonRotation
+    return new SolderPaste({
+      ...placement,
+      shape: aperture.shape === "oval" ? "oval" : "rect",
+      width: aperture.width,
+      height: aperture.height,
+      pcbRotation:
+        aperture.shape === "rotated_rect" ? aperture.ccw_rotation : 0,
+    })
   }
 
   get config() {
     return { componentName: "SolderPaste", zodProps: solderPasteProps }
   }
 
-  getPcbSize() {
+  _getPcbLocalBoundsBeforeLayout() {
     const props = this._parsedProps
-    if (props.shape === "circle") {
-      return { width: props.radius * 2, height: props.radius * 2 }
+    if (props.shape === "polygon") {
+      const { minX, maxX, minY, maxY } = getBoundsFromPoints(props.points)!
+      return { left: minX, right: maxX, bottom: minY, top: maxY }
     }
-    return { width: props.width, height: props.height }
+    const width = props.shape === "circle" ? 2 * props.radius : props.width
+    const height = props.shape === "circle" ? 2 * props.radius : props.height
+    return {
+      left: -width / 2,
+      right: width / 2,
+      bottom: -height / 2,
+      top: height / 2,
+    }
+  }
+
+  getPcbSize() {
+    const bounds = this._getPcbLocalBoundsBeforeLayout()
+    return {
+      width: bounds.right - bounds.left,
+      height: bounds.top - bounds.bottom,
+    }
   }
 
   doInitialPcbPrimitiveRender(): void {
@@ -102,7 +126,6 @@ export class SolderPaste extends PrimitiveComponent<typeof solderPasteProps> {
     const rotation =
       (decomposeTSR(transform, false, isFlipped).rotation.angle * 180) / Math.PI
     const base = {
-      ...center,
       layer: maybeFlipLayer(authoredLayer) as "top" | "bottom",
       pcb_component_id:
         this.parent?.pcb_component_id ??
@@ -115,12 +138,48 @@ export class SolderPaste extends PrimitiveComponent<typeof solderPasteProps> {
     if (props.shape === "circle") {
       aperture = db.pcb_solder_paste.insert({
         ...base,
+        ...center,
         shape: "circle",
         radius: props.radius,
       })
+    } else if (props.shape === "polygon") {
+      aperture = db.pcb_solder_paste.insert({
+        ...base,
+        shape: "polygon",
+        points: props.points.map((point) => applyToPoint(transform, point)),
+        holes: props.holes?.map((hole) =>
+          hole.map((point) => applyToPoint(transform, point)),
+        ),
+      })
+    } else if (props.shape === "oval") {
+      // Circuit JSON ovals have no rotation field. Keep axis-aligned ellipses
+      // analytic; for oblique axes, use the same 64-vertex ellipse as Gerber.
+      const quarterTurns = Math.round(rotation / 90)
+      if (Math.abs(rotation - quarterTurns * 90) < 1e-8) {
+        const swapAxes = Math.abs(quarterTurns) % 2 === 1
+        aperture = db.pcb_solder_paste.insert({
+          ...base,
+          ...center,
+          shape: "oval",
+          width: swapAxes ? props.height : props.width,
+          height: swapAxes ? props.width : props.height,
+        })
+      } else {
+        const points = getOvalPasteContour(
+          { x: 0, y: 0 },
+          props.width,
+          props.height,
+        ).map((point) => applyToPoint(transform, point))
+        aperture = db.pcb_solder_paste.insert({
+          ...base,
+          shape: "polygon",
+          points,
+        })
+      }
     } else if (Math.abs(rotation) < 1e-8) {
       aperture = db.pcb_solder_paste.insert({
         ...base,
+        ...center,
         shape: "rect",
         width: props.width,
         height: props.height,
@@ -128,6 +187,7 @@ export class SolderPaste extends PrimitiveComponent<typeof solderPasteProps> {
     } else {
       aperture = db.pcb_solder_paste.insert({
         ...base,
+        ...center,
         shape: "rotated_rect",
         ccw_rotation: rotation,
         width: props.width,
@@ -143,14 +203,20 @@ export class SolderPaste extends PrimitiveComponent<typeof solderPasteProps> {
   }: { deltaX: number; deltaY: number }): void {
     if (!this.pcb_solder_paste_id) return
     const { db } = this.root!
-    // This primitive only emits centered circle/rectangle records.
-    const aperture = db.pcb_solder_paste.get(
-      this.pcb_solder_paste_id,
-    )! as StandalonePcbSolderPaste
-    db.pcb_solder_paste.update(this.pcb_solder_paste_id, {
-      x: aperture.x + deltaX,
-      y: aperture.y + deltaY,
+    const aperture = db.pcb_solder_paste.get(this.pcb_solder_paste_id)!
+    const translatePoint = (p: { x: number; y: number }) => ({
+      x: p.x + deltaX,
+      y: p.y + deltaY,
     })
+    db.pcb_solder_paste.update(
+      this.pcb_solder_paste_id,
+      aperture.shape === "polygon"
+        ? {
+            points: aperture.points.map(translatePoint),
+            holes: aperture.holes?.map((h) => h.map(translatePoint)),
+          }
+        : translatePoint(aperture),
+    )
   }
 
   removePcbPrimitiveRender(): void {

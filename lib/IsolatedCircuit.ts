@@ -34,6 +34,9 @@ export class IsolatedCircuit {
    */
   pendingSubcircuitRenders?: Map<string, Promise<AnyCircuitElement[]>>
 
+  /** Board stencil setting carried into a detached subcircuit render. */
+  inheritedSolderPasteMarginRatio?: number
+
   private _schematicDisabledOverride: boolean | undefined
   get schematicDisabled(): boolean {
     if (this._schematicDisabledOverride !== undefined) {
