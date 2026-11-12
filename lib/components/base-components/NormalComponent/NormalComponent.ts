@@ -1,3 +1,4 @@
+import { formatPcbDisplayOffset } from "lib/utils/format-pcb-display-offset"
 import { NormalComponent_doInitialSourcePinSpecificationChecks } from "./NormalComponent_doInitialSourcePinSpecificationChecks"
 import {
   getNumericPinLabels,
@@ -984,7 +985,10 @@ export class NormalComponent<
       // schematic_box size
       // size: dimensions.getSizeIncludingPins(),
 
-      port_arrangement: underscorifyPortArrangement(schPortArrangement!),
+      port_arrangement: underscorifyPortArrangement(
+        schPortArrangement!,
+        Array.isArray(props.pinLabels) ? undefined : props.pinLabels,
+      ),
 
       pin_spacing: 0.2,
 
@@ -995,6 +999,9 @@ export class NormalComponent<
 
       source_component_id: this.source_component_id!,
       schematic_sheet_id: this._resolveSchematicSheetId(),
+      metadata: props.kicadSymbolMetadata
+        ? { kicad_symbol: props.kicadSymbolMetadata }
+        : undefined,
     })
     const hasTopPins = schPortArrangement?.topSide !== undefined
     const hasTopOrBottomPins =
@@ -2615,8 +2622,8 @@ export class NormalComponent<
       position_mode: "relative_to_group_anchor",
       positioned_relative_to_pcb_group_id: positionedRelativeToGroupId,
       positioned_relative_to_pcb_board_id: positionedRelativeToBoardId,
-      display_offset_x: resolvedPcbX as any,
-      display_offset_y: resolvedPcbY as any,
+      display_offset_x: formatPcbDisplayOffset(resolvedPcbX),
+      display_offset_y: formatPcbDisplayOffset(resolvedPcbY),
     })
   }
 

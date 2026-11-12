@@ -13,18 +13,25 @@ test("mouse-bite rows use the requested tab span and leave a drillable web", asy
       panelizationMethod="tab-routing"
       tabLength="3mm"
     >
-      {Array.from({ length: 9 }, (_, boardIndex) => (
-        <board key={boardIndex} width="14mm" height="18mm" schematicDisabled>
-          <resistor name="R1" resistance="1k" footprint="0402" pcbX={-2} />
-          <capacitor name="C1" capacitance="100nF" footprint="0402" pcbX={2} />
-          <trace from=".R1 > .pin2" to=".C1 > .pin1" />
-          <pcbnotetext
-            text="3 mm tab / 0.63 mm drill"
-            fontSize={0.6}
-            pcbY={5}
-          />
-        </board>
-      ))}
+      {["A1", "A2", "A3", "B1", "B2", "B3", "C1", "C2", "C3"].map(
+        (cellName) => (
+          <board key={cellName} width="14mm" height="18mm" schematicDisabled>
+            <resistor name="R1" resistance="1k" footprint="0402" pcbX={-2} />
+            <capacitor
+              name="C1"
+              capacitance="100nF"
+              footprint="0402"
+              pcbX={2}
+            />
+            <trace from=".R1 > .pin2" to=".C1 > .pin1" />
+            <pcbnotetext
+              text="3 mm tab / 0.63 mm drill"
+              fontSize={0.6}
+              pcbY={5}
+            />
+          </board>
+        ),
+      )}
     </panel>,
   )
   await circuit.renderUntilSettled()
@@ -46,5 +53,7 @@ test("mouse-bite rows use the requested tab span and leave a drillable web", asy
   // Ray's native KiCad DRC uses ~0.25 mm drill clearance. This is a
   // regression threshold for that fixture, not a universal fab requirement.
   expect(minimumWeb).toBeGreaterThanOrEqual(0.25)
-  expect(holes).toHaveLength(108)
+  // Shared board edges reuse the neighboring row. The 12 outer edges each
+  // gain a three-drill frame-side row: 108 existing + 36 opposite-end holes.
+  expect(holes).toHaveLength(144)
 })
