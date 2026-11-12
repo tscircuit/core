@@ -138,8 +138,13 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
 
     this.emitSolderMaskMarginWarning(isCoveredWithSolderMask, soldermaskMargin)
 
+    const { isFlipped } = this._getPcbPrimitiveFlippedHelpers()
+    // _computePcbGlobalTransformBeforeLayout composes flipY() for flipped
+    // footprints; account for that reflection before extracting the angle.
     const decomposedTransform = decomposeTSR(
       this._computePcbGlobalTransformBeforeLayout(),
+      false,
+      isFlipped,
     )
     const rotationDegrees = (decomposedTransform.rotation.angle * 180) / Math.PI
     const normalizedRotationDegrees = ((rotationDegrees % 360) + 360) % 360
@@ -164,11 +169,11 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
       })
 
       this.pcb_plated_hole_id = pcb_plated_hole.pcb_plated_hole_id
-      // Cached circular apertures are restored by inflateStandalonePcbPrimitives
-      // as SolderPaste components. Preserve that geometry (or its absence)
-      // instead of generating another pair from the inflated hole.
+      // Cached apertures are restored as SolderPaste components. Preserve
+      // their geometry or absence when inflating the hole.
       if (shouldCreateSolderPaste && !subcircuit._isInflatedFromCircuitJson) {
         db.pcb_solder_paste.insert({
+          pcb_component_id: pcb_component_id ?? undefined,
           layer: "top",
           shape: "circle",
           // @ts-ignore: no idea why this is triggering
@@ -179,6 +184,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
           pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
         })
         db.pcb_solder_paste.insert({
+          pcb_component_id: pcb_component_id ?? undefined,
           layer: "bottom",
           shape: "circle",
           // @ts-ignore: no idea why this is triggering
@@ -244,6 +250,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
       this.pcb_plated_hole_id = pcb_plated_hole.pcb_plated_hole_id
       if (props.shape === "pill" && shouldCreateSolderPaste) {
         db.pcb_solder_paste.insert({
+          pcb_component_id: pcb_component_id ?? undefined,
           layer: "top",
           shape: "rotated_pill",
           radius: Math.min(props.outerWidth, props.outerHeight) / 2,
@@ -256,6 +263,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
           pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
         })
         db.pcb_solder_paste.insert({
+          pcb_component_id: pcb_component_id ?? undefined,
           layer: "bottom",
           shape: "rotated_pill",
           radius: Math.min(props.outerWidth, props.outerHeight) / 2,
@@ -269,6 +277,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         })
       } else if (props.shape === "oval" && shouldCreateSolderPaste) {
         db.pcb_solder_paste.insert({
+          pcb_component_id: pcb_component_id ?? undefined,
           layer: "top",
           shape: "oval",
           width: props.outerWidth,
@@ -279,6 +288,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
           pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
         })
         db.pcb_solder_paste.insert({
+          pcb_component_id: pcb_component_id ?? undefined,
           layer: "bottom",
           shape: "oval",
           width: props.outerWidth,

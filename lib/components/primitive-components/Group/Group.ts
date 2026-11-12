@@ -885,49 +885,41 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       },
     )
 
+    // Copper pours render after routing, so raw Circuit JSON cannot carry
+    // unbroken-plane intent yet. Build SRJ from the live component tree so
+    // remote requests with plane reservations can carry that intent.
+    const preferredTraceWidth =
+      props.defaultTraceWidth ?? props.nominalTraceWidth
+    const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
+      pcb_panel_id: getOwningPanel(this)?.pcb_panel_id ?? undefined,
+      db,
+      allowViaInPad: autorouterConfig.allowViaInPad,
+      minTraceWidth: Number(props.minTraceWidth ?? 0.15),
+      nominalTraceWidth:
+        preferredTraceWidth != null ? Number(preferredTraceWidth) : undefined,
+      subcircuit_id: this.subcircuit_id,
+      subcircuitComponent: this,
+    })
+    const unbrokenPlaneRouteJson = simpleRouteJson.obstacles.some(
+      (obstacle) => obstacle.isCopperPour,
+    )
+      ? simpleRouteJson
+      : undefined
+
     if (serverMode === "solve-endpoint") {
-      // Legacy solve endpoint mode
-      if (this.props.autorouter?.inputFormat === "simplified") {
-        const preferredTraceWidth =
-          props.defaultTraceWidth ?? props.nominalTraceWidth
-        const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
-          pcb_panel_id: getOwningPanel(this)?.pcb_panel_id ?? undefined,
-          db,
-          minTraceWidth: Number(props.minTraceWidth ?? 0.15),
-          nominalTraceWidth:
-            preferredTraceWidth != null
-              ? Number(preferredTraceWidth)
-              : undefined,
-          subcircuit_id: this.subcircuit_id,
-          subcircuitComponent: this,
-        })
-        simpleRouteJson.allowViaInPad =
-          autorouterConfig.allowViaInPad ?? simpleRouteJson.allowViaInPad
-
-        const { autorouting_result } = await fetchWithDebug(
-          `${serverUrl}/autorouting/solve`,
-          {
-            method: "POST",
-            body: JSON.stringify({
-              input_simple_route_json: simpleRouteJson,
-              subcircuit_id: this.subcircuit_id!,
-            }),
-            headers: {
-              "Content-Type": "application/json",
-            },
-          },
-        ).then((r) => r.json())
-        this._asyncAutoroutingResult = autorouting_result
-        this._markDirty("PcbTraceRender")
-        return
-      }
-
+      const simplifiedInput =
+        this.props.autorouter?.inputFormat === "simplified"
       const { autorouting_result } = await fetchWithDebug(
         `${serverUrl}/autorouting/solve`,
         {
           method: "POST",
           body: JSON.stringify({
-            input_circuit_json: pcbAndSourceCircuitJson,
+            input_circuit_json: simplifiedInput
+              ? undefined
+              : pcbAndSourceCircuitJson,
+            input_simple_route_json: simplifiedInput
+              ? simpleRouteJson
+              : unbrokenPlaneRouteJson,
             subcircuit_id: this.subcircuit_id!,
           }),
           headers: {
@@ -946,6 +938,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         method: "POST",
         body: JSON.stringify({
           input_circuit_json: pcbAndSourceCircuitJson,
+          input_simple_route_json: unbrokenPlaneRouteJson,
           provider: "freerouting",
           autostart: true,
           display_name: this.root?.name,
@@ -2042,6 +2035,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           ? outputSimpleRouteJson
           : undefined
 
+        const computeCostSummary = cachedResult
+          ? cachedResult.computeCostSummary
+          : autorouter?.getComputeCostSummary?.()
         if (!cachedResult && cacheKey) {
           await cacheLocalAutoroutingPhaseResult({
             cacheEngine,
@@ -2049,6 +2045,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             result: {
               ...simpleRouteJson,
               traces,
+              ...(computeCostSummary !== undefined
+                ? { computeCostSummary }
+                : {}),
             },
           })
         }
@@ -2070,6 +2069,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         })
         this.root?.emit("autorouting:end", {
           ...savedPhasePaths,
+          ...(computeCostSummary !== undefined ? { computeCostSummary } : {}),
           type: "autorouting:end",
           subcircuit_id: this.subcircuit_id,
           componentDisplayName: this.getString(),
@@ -2165,7 +2165,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           message: error instanceof Error ? error.message : String(error),
         })
 
+        const computeCostSummary = autorouter?.getComputeCostSummary?.()
         this.root?.emit("autorouting:error", {
+          ...(computeCostSummary !== undefined ? { computeCostSummary } : {}),
           type: "autorouting:error",
           subcircuit_id: this.subcircuit_id,
           componentDisplayName: this.getString(),
