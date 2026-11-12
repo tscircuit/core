@@ -66,7 +66,7 @@ const getDifferentialPairSourceTracesByPortId = (
     sourceTrace.connected_source_port_ids.includes(sourcePortId),
   )
 
-const getDifferentialPairSourceTraceOrThrow = ({
+export const getDifferentialPairSourceTraceOrThrow = ({
   differentialPair,
   differentialPairSourceTraces,
   traceNameOrPortSelector,

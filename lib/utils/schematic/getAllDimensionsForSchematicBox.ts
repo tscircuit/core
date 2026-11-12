@@ -388,8 +388,8 @@ export const getAllDimensionsForSchematicBox = (
 
     const labelWidth = params.pinLabels
       ? Math.max(
-          ...Object.values(params.pinLabels).map(
-            (label) => label.length * ESTIMATED_PIN_LABEL_CHARACTER_WIDTH,
+          ...Object.values(params.pinLabels).map((label) =>
+            getEstimatedPinLabelWidth(label),
           ),
         )
       : 0
