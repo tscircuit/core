@@ -395,9 +395,34 @@ export function Group_getRoutingPhasePlans(
       for (const trace of traces) {
         if (breakoutByTrace.has(trace)) continue
         if (selectedTracesByPhaseIndex.get(phaseIndex)!.has(trace)) {
+          // A pin-to-net leg contributes a port to a single SRJ net connection.
+          // Move that routing target with its selected trace; multi-port traces
+          // (e.g. explicit differential-pair sections) retain path ownership.
+          const connectedNets =
+            trace._findConnectedPorts().ports?.length === 1
+              ? nets.filter(
+                  (net) =>
+                    !breakoutByNet.has(net) &&
+                    trace.subcircuit_connectivity_map_key !== null &&
+                    net.subcircuit_connectivity_map_key ===
+                      trace.subcircuit_connectivity_map_key,
+                )
+              : []
+          for (const net of connectedNets) {
+            if (!plan.nets.includes(net)) plan.nets.push(net)
+          }
           if (!phaseProps.reroute) {
             for (const existingPlan of plansByPhaseIndex.values()) {
               if (existingPlan === plan) continue
+              if (
+                !phasePropsByPhaseIndex.get(existingPlan.routingPhaseIndex)
+                  ?.reroute &&
+                connectedNets.length > 0
+              ) {
+                existingPlan.nets = existingPlan.nets.filter(
+                  (net) => !connectedNets.includes(net),
+                )
+              }
               existingPlan.traces = existingPlan.traces.filter(
                 (existingTrace) => existingTrace !== trace,
               )
