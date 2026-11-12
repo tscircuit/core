@@ -11,7 +11,11 @@ test("vScore is rejected together with panel tab controls", async () => {
       vScore
     >
       <board name="B1" width="20mm" height="20mm" routingDisabled />
-      <paneltab boardName="B1" boardEdge="right" offset="6mm" />
+      <paneltab
+        boardName="B1"
+        boardEdge="right"
+        centerOffsetFromBoardBottomEdge="6mm"
+      />
     </panel>,
   )
 

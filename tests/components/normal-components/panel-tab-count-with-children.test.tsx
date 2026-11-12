@@ -11,7 +11,11 @@ test("tabCountPerEdge cannot be combined with <paneltab> children", async () => 
       panelizationMethod="tab-routing"
     >
       <board name="B1" width="20mm" height="20mm" routingDisabled />
-      <paneltab boardName="B1" boardEdge="top" offset={6} />
+      <paneltab
+        boardName="B1"
+        boardEdge="top"
+        centerOffsetFromBoardLeftEdge={6}
+      />
     </panel>,
   )
 

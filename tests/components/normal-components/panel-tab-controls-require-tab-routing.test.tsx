@@ -6,7 +6,11 @@ test("panel tab controls require tab-routing", async () => {
   circuit.add(
     <panel layoutMode="grid" tabLength="3mm" panelizationMethod="none">
       <board name="B1" width="20mm" height="20mm" routingDisabled />
-      <paneltab boardName="B1" boardEdge="top" offset={6} />
+      <paneltab
+        boardName="B1"
+        boardEdge="top"
+        centerOffsetFromBoardLeftEdge={6}
+      />
     </panel>,
   )
 

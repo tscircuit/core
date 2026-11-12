@@ -6,7 +6,11 @@ test("an explicit <paneltab> cannot overlap a <paneltabkeepout>", async () => {
   circuit.add(
     <panel layoutMode="grid" tabLength="3mm" panelizationMethod="tab-routing">
       <board name="B1" width="20mm" height="20mm" routingDisabled />
-      <paneltab boardName="B1" boardEdge="top" offset={3} />
+      <paneltab
+        boardName="B1"
+        boardEdge="top"
+        centerOffsetFromBoardLeftEdge={3}
+      />
       <paneltabkeepout boardName="B1" boardEdge="top" from="2mm" to="4mm" />
     </panel>,
   )

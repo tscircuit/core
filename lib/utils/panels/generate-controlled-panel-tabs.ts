@@ -21,6 +21,7 @@ import {
   getScaledPanelTabSize,
 } from "./generate-panel-tabs-and-mouse-bites"
 import { getRectangularPanelBoardBounds } from "./get-rectangular-panel-board-bounds"
+import { preservePanelTabBridges } from "./preserve-panel-tab-bridges"
 
 type ParsedPanelTab = z.output<typeof panelTabProps>
 type ParsedPanelTabKeepout = z.output<typeof panelTabKeepoutProps>
@@ -34,6 +35,35 @@ interface PanelTabInterval {
   start: number
   end: number
   centre: number
+}
+
+/** A tab's centre and span (mm) along its board edge. */
+interface PanelTabPlacement {
+  centre: number
+  length: number
+}
+
+/**
+ * Tab centre along a board edge (mm), in edge coordinates that run left to
+ * right on top and bottom edges and bottom to top on left and right edges.
+ * Props guarantees exactly one center offset that matches the tab's edge.
+ */
+const getPanelTabCentreAlongEdge = ({
+  tab,
+  edgeLength,
+}: {
+  tab: ParsedPanelTab
+  edgeLength: number
+}): number => {
+  if (tab.boardEdge === "top" || tab.boardEdge === "bottom")
+    return (
+      tab.centerOffsetFromBoardLeftEdge ??
+      edgeLength - tab.centerOffsetFromBoardRightEdge!
+    )
+  return (
+    tab.centerOffsetFromBoardBottomEdge ??
+    edgeLength - tab.centerOffsetFromBoardTopEdge!
+  )
 }
 
 /** Generate tab cutouts and drill centres in circuit-world millimetres (+X right,
@@ -53,6 +83,7 @@ export function generateControlledPanelTabs(
 ) {
   const tabCutouts: PcbCutoutRect[] = []
   const mouseBiteHoles: PcbHoleCircle[] = []
+  const tabBridges: Point[][] = []
   const dimensions = boards.map(({ board }) =>
     getRectangularPanelBoardBounds(board),
   )
@@ -122,13 +153,16 @@ export function generateControlledPanelTabs(
     let boardTabCount = 0
     for (const edge of edges) {
       const explicitTabs = options.tabs
-      const tabCentres =
+      const tabPlacements: PanelTabPlacement[] =
         explicitTabs === undefined
           ? Array.from(
               { length: options.tabCountPerEdge ?? 1 },
-              (_, tabIndex) =>
-                ((tabIndex + 1) * edge.length) /
-                ((options.tabCountPerEdge ?? 1) + 1),
+              (_, tabIndex) => ({
+                centre:
+                  ((tabIndex + 1) * edge.length) /
+                  ((options.tabCountPerEdge ?? 1) + 1),
+                length: tabLength,
+              }),
             )
           : explicitTabs
               .filter(
@@ -136,7 +170,13 @@ export function generateControlledPanelTabs(
                   tab.boardEdge === edge.side &&
                   (!tab.boardName || tab.boardName === boardName),
               )
-              .map((tab) => tab.offset)
+              .map((tab) => ({
+                centre: getPanelTabCentreAlongEdge({
+                  tab,
+                  edgeLength: edge.length,
+                }),
+                length: tab.tabWidth ?? tabLength,
+              }))
       const keepouts =
         options.tabKeepouts?.filter(
           (keepout) =>
@@ -144,11 +184,11 @@ export function generateControlledPanelTabs(
             (!keepout.boardName || keepout.boardName === boardName),
         ) ?? []
       const intervals: PanelTabInterval[] = []
-      for (const centre of tabCentres.sort(
-        (firstCentreMm, secondCentreMm) => firstCentreMm - secondCentreMm,
+      for (const { centre, length } of tabPlacements.sort(
+        (firstTab, secondTab) => firstTab.centre - secondTab.centre,
       )) {
-        const start = centre - tabLength / 2
-        const end = centre + tabLength / 2
+        const start = centre - length / 2
+        const end = centre + length / 2
         if (start < 0 || end > edge.length)
           throw new Error(
             `A ${edge.side} tab on ${boardName} extends beyond the board edge. Reduce tabLength or move the tab.`,
@@ -178,6 +218,18 @@ export function generateControlledPanelTabs(
         translate(edge.origin.x, edge.origin.y),
         rotateDEG(edge.ccwRotationDegrees),
       )
+      for (const interval of intervals) {
+        // The bridge reaches across both boards' routing bands so a
+        // neighbouring board's slot cannot cut this tab.
+        tabBridges.push(
+          [
+            { x: interval.start, y: 0 },
+            { x: interval.end, y: 0 },
+            { x: interval.end, y: edge.outwardSign * 2 * tabWidth },
+            { x: interval.start, y: edge.outwardSign * 2 * tabWidth },
+          ].map((point) => applyToPoint(edgeToWorldTransform, point)),
+        )
+      }
       let routeStart = -tabWidth
       for (const interval of [
         ...intervals,
@@ -205,14 +257,12 @@ export function generateControlledPanelTabs(
         }
         routeStart = interval.end
       }
-      if (
-        options.mouseBites &&
-        drillDiameter > 0 &&
-        tabLength >= drillDiameter
-      ) {
-        const holeCount =
-          Math.floor((tabLength - drillDiameter) / drillPitch) + 1
+      if (options.mouseBites && drillDiameter > 0) {
         for (const interval of intervals) {
+          const intervalLength = interval.end - interval.start
+          if (intervalLength < drillDiameter) continue
+          const holeCount =
+            Math.floor((intervalLength - drillDiameter) / drillPitch) + 1
           for (let holeIndex = 0; holeIndex < holeCount; holeIndex++) {
             const position = applyToPoint(edgeToWorldTransform, {
               x:
@@ -236,5 +286,13 @@ export function generateControlledPanelTabs(
         `${boardName} has no panel tabs and would be cut free of the panel. Add a <paneltab> for it or narrow its <paneltabkeepout>.`,
       )
   }
-  return { tabCutouts, mouseBiteHoles }
+  return {
+    tabCutouts: preservePanelTabBridges(tabCutouts, tabBridges).map(
+      (cutout, cutoutIndex) => ({
+        ...cutout,
+        pcb_cutout_id: `pcb_cutout_panel_tab_${cutoutIndex}`,
+      }),
+    ),
+    mouseBiteHoles,
+  }
 }

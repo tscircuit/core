@@ -7,7 +7,11 @@ test("a board that no <paneltab> names would be cut free of the panel", async ()
     <panel layoutMode="grid" tabLength="3mm" panelizationMethod="tab-routing">
       <board name="B1" width="20mm" height="20mm" routingDisabled />
       <board name="B2" width="20mm" height="20mm" routingDisabled />
-      <paneltab boardName="B1" boardEdge="right" offset="6mm" />
+      <paneltab
+        boardName="B1"
+        boardEdge="right"
+        centerOffsetFromBoardBottomEdge="6mm"
+      />
     </panel>,
   )
 

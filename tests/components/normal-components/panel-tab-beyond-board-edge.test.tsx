@@ -6,7 +6,11 @@ test("a <paneltab> cannot extend beyond its board edge", async () => {
   circuit.add(
     <panel layoutMode="grid" tabLength="3mm" panelizationMethod="tab-routing">
       <board name="B1" width="20mm" height="20mm" routingDisabled />
-      <paneltab boardName="B1" boardEdge="top" offset={1} />
+      <paneltab
+        boardName="B1"
+        boardEdge="top"
+        centerOffsetFromBoardLeftEdge={1}
+      />
     </panel>,
   )
 
