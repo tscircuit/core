@@ -345,23 +345,30 @@ export function PcbTransientChannelSimulation_doInitialPcbSimulationRender(
     }
   }
 
+  // Durations in UI resolve at the block bit rate, like signal offsets.
+  const durationS =
+    typeof props.duration === "string"
+      ? Number.parseFloat(props.duration) / props.bitRate
+      : props.duration
+  if (durationS !== undefined && !(durationS > 0 && Number.isFinite(durationS)))
+    throw new Error("duration must be finite and greater than zero.")
   const blockRecord = {
     ...(props.name === undefined ? {} : { name: props.name }),
     bit_rate_bps: props.bitRate,
-    ...(props.duration === undefined ? {} : { duration_s: props.duration }),
+    ...(durationS === undefined ? {} : { duration_s: durationS }),
     allow_unrouted_traces: props.allowUnroutedTraces,
   }
   if (block.simulation_signal_integrity_id)
     db.simulation_signal_integrity.update(
       block.simulation_signal_integrity_id,
-      { ...blockRecord, name: props.name, duration_s: props.duration },
+      { ...blockRecord, name: props.name, duration_s: durationS },
     )
   else
     block.simulation_signal_integrity_id =
       db.simulation_signal_integrity.insert(
         blockRecord,
       ).simulation_signal_integrity_id
-  if (props.duration === undefined)
+  if (durationS === undefined)
     delete db.simulation_signal_integrity.get(
       block.simulation_signal_integrity_id,
     )!.duration_s
