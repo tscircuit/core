@@ -198,6 +198,15 @@ export function createSchematicTraceSolverInputProblem(
         opts.schematicSheetId === undefined ||
         component.schematic_sheet_id === opts.schematicSheetId,
     )
+  const schematicGroupPorts = db.schematic_port
+    .list()
+    .filter(
+      (port) =>
+        !port.schematic_component_id &&
+        port.schematic_group_id === group.schematic_group_id &&
+        port.boundary_position &&
+        port.schematic_sheet_id === opts.schematicSheetId,
+    )
   const schematicComponentIds = new Set(
     schematicComponents.map((component) => component.schematic_component_id),
   )
@@ -321,6 +330,40 @@ export function createSchematicTraceSolverInputProblem(
     })
   }
 
+  // A boundary is not a component-sized routing obstacle. Each public terminal
+  // is a tiny obstacle outside the frame, facing inward. Coordinates are points
+  // in schematic-world mm (+X right, +Y up); directions do not pick up translation.
+  for (const port of schematicGroupPorts) {
+    const outward = port.facing_direction ?? "left"
+    const inward = { left: "right", right: "left", up: "down", down: "up" }[
+      outward
+    ]
+    chips.push({
+      chipId: port.schematic_port_id,
+      center: {
+        x:
+          port.center.x +
+          (outward === "left" ? -0.05 : outward === "right" ? 0.05 : 0),
+        y:
+          port.center.y +
+          (outward === "up" ? 0.05 : outward === "down" ? -0.05 : 0),
+      },
+      width: 0.1,
+      height: 0.1,
+      pins: [
+        {
+          pinId: port.schematic_port_id,
+          displayName: port.display_pin_label,
+          x: port.center.x,
+          y: port.center.y,
+          _facingDirection: convertFacingDirectionToElbowDirection(
+            inward as "left" | "right" | "up" | "down",
+          ),
+        },
+      ],
+    })
+  }
+
   // Maps for ports within this scope
   const schematicPortIdsInScope = new Set<SchematicPortId>()
   const schPortIdToSourcePortId = new Map<SchematicPortId, SourcePortId>()
@@ -347,6 +390,13 @@ export function createSchematicTraceSolverInputProblem(
         sourcePortIdToSchPortId.set(sourcePortId, schematicPortId)
       }
     }
+  }
+  for (const port of schematicGroupPorts) {
+    const schematicPortId = asSchematicPortId(port.schematic_port_id)
+    const sourcePortId = asSourcePortId(port.source_port_id)
+    schematicPortIdsInScope.add(schematicPortId)
+    schPortIdToSourcePortId.set(schematicPortId, sourcePortId)
+    sourcePortIdToSchPortId.set(sourcePortId, schematicPortId)
   }
   const sourcePortIdsInSchematicScope = new Set(sourcePortIdToSchPortId.keys())
   const netLabelsInScope = (opts.netLabels ?? []).filter((netLabel) =>
