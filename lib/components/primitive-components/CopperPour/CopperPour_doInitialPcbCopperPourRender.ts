@@ -68,6 +68,7 @@ const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
       const { _parsedProps: props } = copperPour
       const clearance = props.clearance ?? 0.2
       return {
+        pcb_board_id: pcbBoard?.pcb_board_id,
         layer: props.layer,
         crosshatch: props.crosshatch,
         crosshatchPitch: props.crosshatchPitch,

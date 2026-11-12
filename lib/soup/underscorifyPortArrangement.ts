@@ -1,8 +1,30 @@
 import type { SchematicComponentInput } from "circuit-json"
 import type { PortArrangement } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
+import { parsePinNumberFromLabelsOrThrow } from "lib/utils/schematic/parsePinNumberFromLabelsOrThrow"
+
+type Side = { pins: Array<number | string>; direction?: string } | undefined
+
+/** circuit-json stores side pins as pin numbers; props also accept labels. */
+const withPinNumbers = <T extends Side>(
+  side: T,
+  pinLabels?: Record<string, readonly string[] | string> | null,
+): T => {
+  if (!side?.pins) return side
+  return {
+    ...side,
+    pins: side.pins.map((pin) => {
+      try {
+        return parsePinNumberFromLabelsOrThrow(pin, pinLabels)
+      } catch {
+        return pin
+      }
+    }),
+  }
+}
 
 export const underscorifyPortArrangement = (
   portArrangement?: PortArrangement | undefined,
+  pinLabels?: Record<string, readonly string[] | string> | null,
 ): SchematicComponentInput["port_arrangement"] | undefined => {
   if (!portArrangement) return undefined
   if (
@@ -12,10 +34,10 @@ export const underscorifyPortArrangement = (
     "bottomSide" in portArrangement
   ) {
     return {
-      left_side: portArrangement.leftSide,
-      right_side: portArrangement.rightSide,
-      top_side: portArrangement.topSide,
-      bottom_side: portArrangement.bottomSide,
+      left_side: withPinNumbers(portArrangement.leftSide, pinLabels),
+      right_side: withPinNumbers(portArrangement.rightSide, pinLabels),
+      top_side: withPinNumbers(portArrangement.topSide, pinLabels),
+      bottom_side: withPinNumbers(portArrangement.bottomSide, pinLabels),
     }
   }
 
