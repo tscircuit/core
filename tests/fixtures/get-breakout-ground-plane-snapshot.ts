@@ -4,7 +4,7 @@ import type { AnyCircuitElement, LayerRef } from "circuit-json"
 import { convertCircuitJsonToPcbSvg } from "circuit-to-svg"
 import { stackSvgsHorizontally, stackSvgsVertically } from "stack-svgs"
 
-const panelWidth = 560
+const panelWidth = 600
 const connectedColor = "#5eead4"
 const requestColor = "#ff59b7"
 
@@ -16,17 +16,25 @@ const caption = ({
   title: string
   detail: string
   color?: string
-}) => `<svg xmlns="http://www.w3.org/2000/svg" width="${panelWidth}" height="94">
-  <rect width="${panelWidth}" height="94" fill="#172131" />
-  <text x="20" y="35" fill="${color}" font-family="Arial, sans-serif" font-size="24" font-weight="bold">${title}</text>
-  <text x="20" y="68" fill="#e2e8f0" font-family="Arial, sans-serif" font-size="18">${detail}</text>
+}) => `<svg xmlns="http://www.w3.org/2000/svg" width="${panelWidth}" height="100">
+  <rect width="${panelWidth}" height="100" fill="#172131" />
+  <text x="24" y="40" fill="${color}" font-family="Arial, sans-serif" font-size="30" font-weight="bold">${title}</text>
+  <text x="24" y="76" fill="#e2e8f0" font-family="Arial, sans-serif" font-size="20">${detail}</text>
 </svg>`
 
+const layerLabel = (text: string) =>
+  `<svg xmlns="http://www.w3.org/2000/svg" width="${panelWidth}" height="40">
+    <rect width="${panelWidth}" height="40" fill="#172131" />
+    <text x="24" y="28" fill="#ffffff" font-family="Arial, sans-serif" font-size="20">${text}</text>
+  </svg>`
+
 /**
- * Three views of the same native PCB: top escapes, inner1 ground plane, and
- * the native point-pair requests. All note positions are points in right-handed
+ * Expected/actual comparison of the same native PCB, with its top and inner1
+ * layers aligned in both columns. All note positions are points in right-handed
  * board-world mm (+X right, +Y up, +Z toward top). The renderer handles the
- * projection. Notes are overlays on rendered copies, never router input.
+ * projection. Captions use screen pixels (+X right, +Y down). Notes are
+ * overlays on rendered copies, never router input. The expected column shows
+ * existing copper without requests; only the actual column uses native requests.
  */
 export const getBreakoutGroundPlaneSnapshot = ({
   circuitJson,
@@ -101,34 +109,50 @@ export const getBreakoutGroundPlaneSnapshot = ({
         font: "tscircuit2024",
         anchor_position: { x: pad.x - 0.4, y: 2.35 },
         anchor_alignment: "center",
-        text: `${component.name} GND pad`,
-        font_size: 0.4,
+        text: `${component.name}.GND`,
+        font_size: 0.48,
         color: "#ffffff",
       },
     )
   }
 
-  const requestLines: AnyCircuitElement[] = requestedRoutes.map(
+  const requestNotes: AnyCircuitElement[] = requestedRoutes.flatMap(
     (connection, index) => {
       const [start, end] = connection.pointsToConnect
-      return {
-        type: "pcb_note_line",
-        pcb_note_line_id: `extra_request_${index}`,
-        layer: "top",
-        x1: start.x,
-        y1: start.y,
-        x2: end.x,
-        y2: end.y,
-        stroke_width: 0.09,
-        is_dashed: true,
-        color: requestColor,
-      }
+      return [
+        {
+          type: "pcb_note_line",
+          pcb_note_line_id: `extra_request_${index}`,
+          layer: "top",
+          x1: start.x,
+          y1: start.y,
+          x2: end.x,
+          y2: end.y,
+          stroke_width: 0.09,
+          is_dashed: true,
+          color: requestColor,
+        },
+        {
+          type: "pcb_note_text",
+          pcb_note_text_id: `extra_request_label_${index}`,
+          layer: "top",
+          font: "tscircuit2024",
+          anchor_position: {
+            x: (start.x + end.x) / 2,
+            y: (start.y + end.y) / 2 + 0.65,
+          },
+          anchor_alignment: "center",
+          text: "Unnecessary request",
+          font_size: 0.42,
+          color: requestColor,
+        },
+      ]
     },
   )
   const renderBoard = (layer: LayerRef, notes: AnyCircuitElement[]) =>
     convertCircuitJsonToPcbSvg([...circuitJson, ...viaLabels, ...notes], {
       width: panelWidth,
-      height: 280,
+      height: 300,
       viewport: { minX: -6.5, maxX: 6.5, minY: -3.25, maxY: 3.25 },
       layer,
       includeVersion: false,
@@ -137,71 +161,54 @@ export const getBreakoutGroundPlaneSnapshot = ({
   const panel = (sections: string[]) =>
     stackSvgsVertically(sections, { gap: 0, normalizeSize: false })
   const requests = requestedRoutes.length
+  const planeNotes: AnyCircuitElement[] = [
+    {
+      type: "pcb_note_text",
+      pcb_note_text_id: "ground_plane_label",
+      layer: "top",
+      font: "tscircuit2024",
+      anchor_position: { x: 0, y: 1.6 },
+      anchor_alignment: "center",
+      text: "SHARED GND COPPER",
+      font_size: 0.55,
+      color: "#ffffff",
+    },
+  ]
   const panels = stackSvgsHorizontally(
     [
       panel([
         caption({
-          title: "1. Pads connect to vias",
-          detail: "TOP copper: short native escape traces.",
+          title: "EXPECTED: 0 new routes",
+          detail: "Both GND pads are already connected.",
+          color: connectedColor,
         }),
+        layerLabel("TOP LAYER · Each GND pad connects to a via"),
         renderBoard("top", padLabels),
-        caption({
-          title: "Pad → short trace → via",
-          detail: "Teal markers identify the same vias in every view.",
-          color: connectedColor,
-        }),
+        layerLabel("INNER1 LAYER · The ground copper joins both vias"),
+        renderBoard("inner1", planeNotes),
       ]),
       panel([
         caption({
-          title: "2. Vias share one ground plane",
-          detail: "INNER1 copper: both vias already touch GND.",
-        }),
-        renderBoard("inner1", [
-          {
-            type: "pcb_note_text",
-            pcb_note_text_id: "ground_plane_label",
-            layer: "top",
-            font: "tscircuit2024",
-            anchor_position: { x: 0, y: 1.6 },
-            anchor_alignment: "center",
-            text: "ONE CONTINUOUS GND PLANE",
-            font_size: 0.43,
-            color: "#ffffff",
-          },
-        ]),
-        caption({
-          title: "Via A → GND plane → Via B",
-          detail: "Brown fill is existing copper, joining both vias.",
-          color: connectedColor,
-        }),
-      ]),
-      panel([
-        caption({
-          title: requests
-            ? "3. Core asks to connect again"
-            : "3. Core keeps the connection",
-          detail: `${requests ? "BUG" : "FIXED"}: ${requests} extra ${requests === 1 ? "connection" : "connections"} requested; expected 0.`,
-          color: requests ? requestColor : connectedColor,
-        }),
-        renderBoard("top", [...padLabels, ...requestLines]),
-        caption({
-          title: requests
-            ? "This extra connection is unnecessary"
-            : "No extra connection is requested",
+          title: `ACTUAL: ${requests} ${requests === 1 ? "route" : "routes"} requested`,
           detail: requests
-            ? "Pink dashed line = a request, NOT existing copper."
-            : "The same copper already connects both GND pads.",
+            ? "BUG: core asks to connect them again."
+            : "FIXED: core recognizes the existing connection.",
           color: requests ? requestColor : connectedColor,
         }),
+        layerLabel("TOP LAYER · Same pads, traces and vias"),
+        renderBoard("top", [...padLabels, ...requestNotes]),
+        layerLabel("INNER1 LAYER · Same ground copper"),
+        renderBoard("inner1", planeNotes),
       ]),
     ],
     { gap: 16, normalizeSize: false },
   )
-  const width = panelWidth * 3 + 32
-  const explanation = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="112">
-    <rect width="${width}" height="112" fill="#172131" />
-    <text x="24" y="38" fill="#ffffff" font-family="Arial, sans-serif" font-size="24" font-weight="bold">Already connected: U1 GND pad → via A → ground plane → via B → U2 GND pad.</text>
-    <text x="24" y="76" fill="${requests ? requestColor : connectedColor}" font-family="Arial, sans-serif" font-size="22">${requests ? "Bug: core forgets this plane connection when passing the breakout targets to the global router." : "Fixed: core tells the global router that these breakout targets are already connected by copper."}</text>
+  const width = panelWidth * 2 + 16
+  const explanation = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="136">
+    <rect width="${width}" height="136" fill="#172131" />
+    <text x="24" y="34" fill="#ffffff" font-family="Arial, sans-serif" font-size="24" font-weight="bold">Existing connection: U1.GND → via A → ground copper → via B → U2.GND</text>
+    <text x="24" y="70" fill="#e2e8f0" font-family="Arial, sans-serif" font-size="21">Each column shows the same board. Vias are plated holes joining its copper layers.</text>
+    <text x="24" y="108" fill="${requests ? requestColor : connectedColor}" font-family="Arial, sans-serif" font-size="22">${requests ? "Pink dashed line = unnecessary routing request, not a copper trace." : "No pink line: the fix removes the extra request. The copper stays unchanged."}</text>
   </svg>`
   return stackSvgsVertically([panels, explanation], {
     gap: 16,
