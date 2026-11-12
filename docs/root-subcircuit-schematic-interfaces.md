@@ -4,17 +4,24 @@ Render a `<subcircuit>` as the sole root element to show its internal schematic
 inside a boundary with its public terminals. Existing declarations define the
 interface; no additional TSX prop is required:
 
+The integration fixture adapts the actual
+[CC2340R5 reference design](https://tscircuit.com/ShiboSoftwareDev/cc2340r5-reference-design/customize?package_release_id=bff7bbb1-c0df-4b3e-8cb2-5f5c706caa87&preview_file=dist%2Findex%2Fcircuit.json#schematic).
+It preserves all 27 components and 16 nets, including the regulator, decoupling,
+crystals, RF matching/antenna, reset, and SWD circuit. The added module interface
+exports the existing `VDDS`, `GND`, `RESET_N`, `SWDIO`, and `SWCLK` nets.
+
 ```tsx
-circuit.add(
-  <subcircuit name="FILTER" exposedNets={["GND"]}>
-    <port name="IN" direction="left" connectsTo="R1.pin1" />
-    <port name="OUT" direction="right" connectsTo="R1.pin2" />
-    <resistor name="R1" resistance="1k" schX={-1} />
-    <capacitor name="C1" capacitance="100nF" schX={1}
-      connections={{ pin1: "R1.pin2", pin2: "net.GND" }} />
-  </subcircuit>,
-)
+import Cc2340Reference from "./tests/fixtures/cc2340r5-reference"
+
+// The fixture uses real reference-design contents in a root <subcircuit>.
+// "nets" declares exposedNets; "ports" uses direct <port connectsTo="net.…">.
+circuit.add(<Cc2340Reference interfaceMode="nets" />)
 ```
+
+The wrapper uses `schPinArrangement` to put VDDS above, GND below, RESET_N
+on the left, and SWDIO/SWCLK on the right. The package originally publishes a
+board; these exports are the proposed module adaptation. Provenance and the
+exact changes are recorded in the fixture's README.
 
 Direct `<port>` children are public interface terminals. `exposedNets` adds
 public ports connected to the named local nets; `exposeNets` includes all local
@@ -47,6 +54,8 @@ does not infer the interface. Update the schema and converter dependencies to
 their published versions before merging. The regression snapshots were rendered
 with both companion branches linked locally.
 
-`tests/subcircuits/root-subcircuit-bq24074.test.tsx` provides a TI BQ24074 charger
-example with ten exported ports, three capacitors, and three configuration
-resistors. It is an interface-rendering fixture, not a validated charger design.
+`tests/subcircuits/root-subcircuit-cc2340r5.test.tsx` verifies the real reference
+against the published circuit JSON's electrical signature. Related tests cover
+exposed nets, translated placement, nested use, and the collapsed representation.
+Schematic sections remain active when the reference is rendered without a board,
+so inter-section connections keep their net-label representation.

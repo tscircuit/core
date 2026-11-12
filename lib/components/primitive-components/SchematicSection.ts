@@ -24,13 +24,13 @@ export class SchematicSection extends PrimitiveComponent<
 
   // Pass null to compute bounds for components with no schSectionName
   _computeSectionBounds(
-    board: PrimitiveComponent,
+    schematicRoot: PrimitiveComponent,
     sectionName: string | null,
     schematicSheetId: SchematicSheetId | undefined,
   ): Bounds | null {
     const { db } = this.root!
 
-    const members = board
+    const members = schematicRoot
       .getDescendants()
       .filter((c) => c.getSchematicSectionName() === sectionName)
 
@@ -75,14 +75,18 @@ export class SchematicSection extends PrimitiveComponent<
   doInitialSchematicSectionRender(): void {
     if (this.root?.schematicDisabled) return
 
-    const board = this.root?._getBoard()
-    if (!board) return
+    // Standalone subcircuits retain the same section-based routing as boards.
+    const root = this.root
+    const schematicRoot =
+      root?._getBoard() ??
+      (root?.firstChild?.isSubcircuit ? root.firstChild : undefined)
+    if (!schematicRoot) return
 
     const schematicSheetId = this._resolveSchematicSheetId()
 
     // Only the first SchematicSection on each sheet renders that sheet's
     // sections. Sheetless sections continue to share the implicit sheet.
-    const allSections = board
+    const allSections = schematicRoot
       .getDescendants()
       .filter(
         (component): component is SchematicSection =>
@@ -101,7 +105,7 @@ export class SchematicSection extends PrimitiveComponent<
     const namedSectionsWithBounds = allSections
       .map((section) => {
         const bounds = section._computeSectionBounds(
-          board,
+          schematicRoot,
           section._parsedProps.name,
           schematicSheetId,
         )
@@ -122,7 +126,7 @@ export class SchematicSection extends PrimitiveComponent<
 
     // Include unsectioned components (no schSectionName) as a virtual section
     const unsectionedBounds = this._computeSectionBounds(
-      board,
+      schematicRoot,
       null,
       schematicSheetId,
     )

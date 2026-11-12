@@ -243,8 +243,8 @@ export function createSchematicTraceSolverInputProblem(
     SchematicComponentId,
     SectionId
   >()
-  const boardDescendants = group._getBoard()?.getDescendants() ?? []
-  for (const component of boardDescendants) {
+  const schematicDescendants = (group._getBoard() ?? group).getDescendants()
+  for (const component of schematicDescendants) {
     const schematicComponentId = component.schematic_component_id
     const sectionId = component.getSchematicSectionName()
     if (schematicComponentId && sectionId) {

@@ -1,0 +1,205 @@
+{
+  "components": [
+    {
+      "name": "ANT1",
+      "ftype": "simple_chip",
+      "manufacturer_part_number": "2450AT18A100E"
+    },
+    {
+      "name": "C1",
+      "ftype": "simple_capacitor",
+      "capacitance": 1e-7
+    },
+    {
+      "name": "C14",
+      "ftype": "simple_capacitor",
+      "capacitance": 1.2e-11
+    },
+    {
+      "name": "C15",
+      "ftype": "simple_capacitor",
+      "capacitance": 1.5e-11
+    },
+    {
+      "name": "C19",
+      "ftype": "simple_capacitor",
+      "manufacturer_part_number": "CL05B104KO5NNNC",
+      "capacitance": 1e-7
+    },
+    {
+      "name": "C2",
+      "ftype": "simple_capacitor",
+      "capacitance": 1e-5
+    },
+    {
+      "name": "C20",
+      "ftype": "simple_capacitor",
+      "manufacturer_part_number": "GRM033R61A104KE15D",
+      "capacitance": 1e-7
+    },
+    {
+      "name": "C21",
+      "ftype": "simple_capacitor",
+      "manufacturer_part_number": "GRM188Z71A106KA73D",
+      "capacitance": 1e-5
+    },
+    {
+      "name": "C22",
+      "ftype": "simple_capacitor",
+      "manufacturer_part_number": "CL05B104KO5NNNC",
+      "capacitance": 1e-7
+    },
+    {
+      "name": "C23",
+      "ftype": "simple_capacitor",
+      "manufacturer_part_number": "CL05A105KA5NQNC",
+      "capacitance": 1e-6
+    },
+    {
+      "name": "C24",
+      "ftype": "simple_capacitor",
+      "manufacturer_part_number": "CL05B104KO5NNNC",
+      "capacitance": 1e-7
+    },
+    {
+      "name": "C25",
+      "ftype": "simple_capacitor",
+      "manufacturer_part_number": "CL05B104KO5NNNC",
+      "capacitance": 1e-7
+    },
+    {
+      "name": "C26",
+      "ftype": "simple_capacitor",
+      "manufacturer_part_number": "GJM0335C1H1R5BB01D",
+      "capacitance": 1.5e-12
+    },
+    {
+      "name": "C27",
+      "ftype": "simple_capacitor",
+      "manufacturer_part_number": "GJM0335C1H1R5BB01D",
+      "capacitance": 1.5e-12
+    },
+    {
+      "name": "C28",
+      "ftype": "simple_capacitor",
+      "manufacturer_part_number": "GJM1555C1H1R0BB01D",
+      "capacitance": 1e-12
+    },
+    {
+      "name": "J1",
+      "ftype": "simple_pin_header",
+      "manufacturer_part_number": "TSW-102-07-G-S"
+    },
+    {
+      "name": "J4",
+      "ftype": "simple_connector",
+      "manufacturer_part_number": "BM05B-SRSS-TB(LF)(SN)"
+    },
+    {
+      "name": "L1",
+      "ftype": "simple_inductor",
+      "manufacturer_part_number": "LQM18DN100M70L",
+      "inductance": "10uH"
+    },
+    {
+      "name": "L2",
+      "ftype": "simple_inductor",
+      "manufacturer_part_number": "LQP03TN2N8B02D",
+      "inductance": "2.8nH"
+    },
+    {
+      "name": "L3",
+      "ftype": "simple_inductor",
+      "manufacturer_part_number": "LQG15HS2N7S02D",
+      "inductance": "2.7nH"
+    },
+    {
+      "name": "L4",
+      "ftype": "simple_inductor",
+      "manufacturer_part_number": "LQG15HS3N9S02D",
+      "inductance": "3.9nH"
+    },
+    {
+      "name": "R14",
+      "ftype": "simple_resistor",
+      "resistance": 100000
+    },
+    {
+      "name": "TP1",
+      "ftype": "simple_test_point"
+    },
+    {
+      "name": "TP2",
+      "ftype": "simple_test_point"
+    },
+    {
+      "name": "U1",
+      "ftype": "simple_chip",
+      "manufacturer_part_number": "CC2340R52E0RGER"
+    },
+    {
+      "name": "Y1",
+      "ftype": "simple_crystal",
+      "manufacturer_part_number": "ABS07_32_768KHZ_7_T",
+      "frequency": 32768
+    },
+    {
+      "name": "Y2",
+      "ftype": "simple_crystal",
+      "manufacturer_part_number": "ABM11W-48.0000MHZ-8-D1X-T3",
+      "frequency": 48000000
+    }
+  ],
+  "nets": {
+    "DCDC": ["L1.1", "U1.17"],
+    "GND": [
+      "C1.2",
+      "C14.2",
+      "C15.2",
+      "C19.2",
+      "C2.2",
+      "C20.2",
+      "C21.2",
+      "C22.2",
+      "C23.2",
+      "C24.2",
+      "C25.2",
+      "C26.2",
+      "C27.2",
+      "J1.2",
+      "J4.4",
+      "J4.6",
+      "J4.7",
+      "L3.2",
+      "U1.23",
+      "U1.25",
+      "Y2.2",
+      "Y2.4"
+    ],
+    "HF_N": ["U1.22", "Y2.3"],
+    "HF_P": ["U1.21", "Y2.1"],
+    "LF_N": ["C15.1", "U1.15", "Y1.2"],
+    "LF_P": ["C14.1", "U1.14", "Y1.1"],
+    "RESET_N": ["C24.1", "J4.5", "R14.2", "U1.13"],
+    "RF_50": ["C27.1", "C28.1", "L2.1"],
+    "RF_ANT": ["ANT1.1", "L4.2"],
+    "RF_IC": ["C26.1", "L2.2", "U1.1"],
+    "RF_MATCH": ["C28.2", "L3.1", "L4.1"],
+    "SWCLK": ["J4.3", "TP2.1", "U1.8"],
+    "SWDIO": ["J4.2", "TP1.1", "U1.7"],
+    "VDDD": ["C23.1", "U1.16"],
+    "VDDR": ["C21.1", "C22.1", "C25.1", "L1.2", "U1.2", "U1.20"],
+    "VDDS": [
+      "C1.1",
+      "C19.1",
+      "C2.1",
+      "C20.1",
+      "J1.1",
+      "J4.1",
+      "R14.1",
+      "U1.11",
+      "U1.18",
+      "U1.24"
+    ]
+  }
+}
