@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="490" viewBox="0 0 720 490">
+    <rect width="720" height="490" fill="white"/><g font-family="sans-serif" text-anchor="middle" fill="#16344e">
+    <g transform="translate(0 0)">
+      <text x="180" y="25" font-size="16" font-weight="bold">Horizontal wire · 0.80 mm</text>
+      <g transform="translate(180 108) scale(28 -28)">
+        <rect x="-2" y="-0.05" width="4" height="0.1" fill="#cb641d"/>
+        <rect x="-2.4" y="-0.4" width="4.8" height="0.8" fill="none" stroke="#254766" stroke-width=".055" stroke-dasharray=".16 .11"/>
+      </g>
+      <text x="180" y="194" font-size="14">Emitted: 4.00 × 0.10 mm</text>
+      <text x="180" y="212" font-size="13">Layers: top</text>
+    </g><g transform="translate(360 0)">
+      <text x="180" y="25" font-size="16" font-weight="bold">Vertical wire · 0.60 mm</text>
+      <g transform="translate(180 108) scale(28 -28)">
+        <rect x="-0.05" y="-2" width="0.1" height="4" fill="#cb641d"/>
+        <rect x="-0.3" y="-2.3" width="0.6" height="4.6" fill="none" stroke="#254766" stroke-width=".055" stroke-dasharray=".16 .11"/>
+      </g>
+      <text x="180" y="194" font-size="14">Emitted: 0.10 × 4.00 mm</text>
+      <text x="180" y="212" font-size="13">Layers: top</text>
+    </g><g transform="translate(0 225)">
+      <text x="180" y="25" font-size="16" font-weight="bold">Interpolated wire · 0.20 to 1.00 mm</text>
+      <g transform="translate(180 108) scale(28 -28)">
+        <rect x="-2" y="-0.05" width="4" height="0.1" fill="#cb641d"/>
+        <rect x="-2.5" y="-0.5" width="5" height="1" fill="none" stroke="#254766" stroke-width=".055" stroke-dasharray=".16 .11"/>
+      </g>
+      <text x="180" y="194" font-size="14">Emitted: 4.00 × 0.10 mm</text>
+      <text x="180" y="212" font-size="13">Layers: top</text>
+    </g><g transform="translate(360 225)">
+      <text x="180" y="25" font-size="16" font-weight="bold">Through pad · 0.70 mm, top to bottom</text>
+      <g transform="translate(180 108) scale(28 -28)">
+        <rect x="-2" y="-0.05" width="4" height="0.1" fill="#cb641d"/>
+        <rect x="-2.35" y="-0.35" width="4.7" height="0.7" fill="none" stroke="#254766" stroke-width=".055" stroke-dasharray=".16 .11"/>
+      </g>
+      <text x="180" y="194" font-size="14">Emitted: 4.00 × 0.10 mm</text>
+      <text x="180" y="212" font-size="13">Layers: top</text>
+    </g><text x="360" y="473" font-size="15">Orange: emitted obstacle     ·     Dashed: required copper envelope</text></g></svg>
