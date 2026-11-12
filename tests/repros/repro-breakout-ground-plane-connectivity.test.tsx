@@ -1,5 +1,8 @@
 import { expect, test } from "bun:test"
-import { AutoroutingPipelineSolver } from "@tscircuit/capacity-autorouter"
+import {
+  AutoroutingPipelineSolver,
+  type SimpleRouteJson as AutorouterSimpleRouteJson,
+} from "@tscircuit/capacity-autorouter"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 import { getCopperPourRoutingSnapshot } from "tests/fixtures/get-copper-pour-routing-snapshot"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
@@ -104,7 +107,9 @@ test("breakout vias lose their existing ground-plane connection in SRJ", async (
       .map((point) => point.pcb_breakout_point_id),
   )
 
-  const router = new AutoroutingPipelineSolver(simpleRouteJson)
+  const router = new AutoroutingPipelineSolver(
+    simpleRouteJson as AutorouterSimpleRouteJson,
+  )
   while (!router.srjWithPointPairs && !router.failed && !router.solved) {
     router.step()
   }

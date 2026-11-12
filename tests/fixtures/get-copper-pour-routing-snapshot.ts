@@ -32,6 +32,8 @@ const createLegend = (firstLine: string, secondLine: string) =>
  * are board-world points in mm (+X right, +Y up), passed to the PCB renderer so
  * it applies the same SVG transform to pads, labels, and routing requests.
  * Notes are added only to the rendered copies, never to the router's input.
+ * Notes render as overlays; their outer-layer field stays top even when the
+ * PCB viewport selects an inner copper layer.
  */
 export const getCopperPourRoutingSnapshot = ({
   circuitJson,
@@ -63,7 +65,9 @@ export const getCopperPourRoutingSnapshot = ({
       .find((point) => point.pcb_breakout_point_id === terminal.pointId)
     const sourcePortId =
       pcbPort?.source_port_id ?? breakoutPoint?.source_port_id
-    const sourcePort = sourcePortId && db.source_port.get(sourcePortId)
+    const sourcePort = sourcePortId
+      ? db.source_port.get(sourcePortId)
+      : undefined
     const sourceComponent = sourcePort?.source_component_id
       ? db.source_component.get(sourcePort.source_component_id)
       : undefined
@@ -76,7 +80,7 @@ export const getCopperPourRoutingSnapshot = ({
     terminalAnnotations.push(
       {
         type: "pcb_note_rect",
-        layer,
+        layer: "top",
         pcb_note_rect_id: `gnd_terminal_${terminalIndex}`,
         center: { x: terminal.x, y: terminal.y },
         width: 1.3,
@@ -87,7 +91,7 @@ export const getCopperPourRoutingSnapshot = ({
       },
       {
         type: "pcb_note_line",
-        layer,
+        layer: "top",
         pcb_note_line_id: `gnd_terminal_label_${terminalIndex}`,
         x1: terminal.x,
         y1: terminal.y - 1,
@@ -98,7 +102,7 @@ export const getCopperPourRoutingSnapshot = ({
       },
       {
         type: "pcb_note_text",
-        layer,
+        layer: "top",
         font: "tscircuit2024",
         pcb_note_text_id: `gnd_terminal_name_${terminalIndex}`,
         anchor_position: { x: terminal.x, y: terminal.y - 2.5 },
@@ -115,7 +119,7 @@ export const getCopperPourRoutingSnapshot = ({
     ...terminalAnnotations,
     {
       type: "pcb_note_text",
-      layer,
+      layer: "top",
       font: "tscircuit2024",
       pcb_note_text_id: "existing_gnd_pour_label",
       anchor_position: { x: 0, y: 4 },
@@ -132,7 +136,7 @@ export const getCopperPourRoutingSnapshot = ({
       const [start, end] = connection.pointsToConnect
       return {
         type: "pcb_note_line",
-        layer,
+        layer: "top",
         pcb_note_line_id: `requested_route_${routeIndex}`,
         x1: start.x,
         y1: start.y,
