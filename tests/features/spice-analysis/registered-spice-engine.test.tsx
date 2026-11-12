@@ -2,7 +2,7 @@ import { expect, mock, test } from "bun:test"
 import { analog } from "lib/namespaced-elements/analog"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("transient simulation calls a registered registered_native engine", async () => {
+test("transient simulation calls the registered_native engine", async () => {
   const simulate = mock(async (_netlist: string) => ({
     simulationResultCircuitJson: [],
   }))
