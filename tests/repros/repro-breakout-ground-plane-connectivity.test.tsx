@@ -4,7 +4,7 @@ import {
   type SimpleRouteJson as AutorouterSimpleRouteJson,
 } from "@tscircuit/capacity-autorouter"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
-import { getCopperPourRoutingSnapshot } from "tests/fixtures/get-copper-pour-routing-snapshot"
+import { getBreakoutGroundPlaneSnapshot } from "tests/fixtures/get-breakout-ground-plane-snapshot"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 const GroundChip = ({ name, pcbX }: { name: string; pcbX: number }) => (
@@ -63,8 +63,8 @@ test("breakout vias lose their existing ground-plane connection in SRJ", async (
   const { circuit } = getTestFixture()
   circuit.add(
     <board
-      width={20}
-      height={12}
+      width={12}
+      height={6}
       layers={4}
       routeRemaining={false}
       minTraceWidth={0.1}
@@ -118,11 +118,10 @@ test("breakout vias lose their existing ground-plane connection in SRJ", async (
   // Reproduction: both vias already touch GND, but a global route is requested.
   expect(requestedRoutes).toHaveLength(1)
   await expect(
-    getCopperPourRoutingSnapshot({
+    getBreakoutGroundPlaneSnapshot({
       circuitJson,
       gndConnection,
       requestedRoutes,
-      layer: "inner1",
     }),
   ).toMatchSvgSnapshot(import.meta.path, undefined, { diffThresholdPercent: 0 })
 })

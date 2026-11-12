@@ -1,6 +1,6 @@
 import type { SimpleRouteConnection } from "@tscircuit/capacity-autorouter"
 import { su } from "@tscircuit/circuit-json-util"
-import type { AnyCircuitElement, LayerRef } from "circuit-json"
+import type { AnyCircuitElement } from "circuit-json"
 import { convertCircuitJsonToPcbSvg } from "circuit-to-svg"
 import { stackSvgsHorizontally, stackSvgsVertically } from "stack-svgs"
 
@@ -32,26 +32,17 @@ const createLegend = (firstLine: string, secondLine: string) =>
  * are board-world points in mm (+X right, +Y up), passed to the PCB renderer so
  * it applies the same SVG transform to pads, labels, and routing requests.
  * Notes are added only to the rendered copies, never to the router's input.
- * Notes render as overlays; their outer-layer field stays top even when the
- * PCB viewport selects an inner copper layer.
  */
 export const getCopperPourRoutingSnapshot = ({
   circuitJson,
   gndConnection,
   requestedRoutes,
-  layer = "top",
 }: {
   circuitJson: AnyCircuitElement[]
   gndConnection: SimpleRouteConnection
   requestedRoutes: SimpleRouteConnection[]
-  layer?: LayerRef
 }) => {
   const db = su(circuitJson)
-  const hasBreakoutEndpoints = gndConnection.pointsToConnect.some((terminal) =>
-    db.pcb_breakout_point
-      .list()
-      .some((point) => point.pcb_breakout_point_id === terminal.pointId),
-  )
   const terminalAnnotations: AnyCircuitElement[] = []
   for (const [
     terminalIndex,
@@ -60,14 +51,7 @@ export const getCopperPourRoutingSnapshot = ({
     const pcbPort = db.pcb_port
       .list()
       .find((port) => port.pcb_port_id === terminal.pointId)
-    const breakoutPoint = db.pcb_breakout_point
-      .list()
-      .find((point) => point.pcb_breakout_point_id === terminal.pointId)
-    const sourcePortId =
-      pcbPort?.source_port_id ?? breakoutPoint?.source_port_id
-    const sourcePort = sourcePortId
-      ? db.source_port.get(sourcePortId)
-      : undefined
+    const sourcePort = pcbPort && db.source_port.get(pcbPort.source_port_id)
     const sourceComponent = sourcePort?.source_component_id
       ? db.source_component.get(sourcePort.source_component_id)
       : undefined
@@ -107,7 +91,7 @@ export const getCopperPourRoutingSnapshot = ({
         pcb_note_text_id: `gnd_terminal_name_${terminalIndex}`,
         anchor_position: { x: terminal.x, y: terminal.y - 2.5 },
         anchor_alignment: "center",
-        text: `${sourceComponent.name} pin ${sourcePort.pin_number}${breakoutPoint ? " via" : ""} = GND`,
+        text: `${sourceComponent.name} pin ${sourcePort.pin_number} = GND`,
         font_size: 0.48,
         color: connectedColor,
       },
@@ -124,9 +108,7 @@ export const getCopperPourRoutingSnapshot = ({
       pcb_note_text_id: "existing_gnd_pour_label",
       anchor_position: { x: 0, y: 4 },
       anchor_alignment: "center",
-      text: hasBreakoutEndpoints
-        ? `ONE CONTINUOUS ${layer.toUpperCase()} GND PLANE`
-        : "ONE CONTINUOUS GND COPPER POUR",
+      text: "ONE CONTINUOUS GND COPPER POUR",
       font_size: 0.52,
       color: "#ffffff",
     },
@@ -156,7 +138,6 @@ export const getCopperPourRoutingSnapshot = ({
       showPinNumbers: true,
       includeVersion: false,
       viewport: { minX: -11, maxX: 11, minY: -6.6, maxY: 6.6 },
-      layer,
     })
 
   const expectedPanel = stackSvgsVertically(
@@ -164,16 +145,12 @@ export const getCopperPourRoutingSnapshot = ({
       createCaption(
         "EXPECTED / PHYSICAL CONNECTION",
         "0 new routes needed",
-        hasBreakoutEndpoints
-          ? `Both GND escape vias already touch the same ${layer} plane.`
-          : "Both highlighted GND pads already touch the same copper.",
+        "Both highlighted GND pads already touch the same copper.",
         connectedColor,
       ),
       renderBoard(),
       createLegend(
-        hasBreakoutEndpoints
-          ? "Filled area = GND plane. Teal boxes = GND escape vias."
-          : "Red area = existing copper. Teal boxes = connected GND pads.",
+        "Red area = existing copper. Teal boxes = connected GND pads.",
         "The pour carries the connection; an extra track is unnecessary.",
       ),
     ],
@@ -185,9 +162,7 @@ export const getCopperPourRoutingSnapshot = ({
         "ACTUAL / AUTOROUTER POINT-PAIR STAGE",
         `${remainingRouteCount} ${remainingRouteCount === 1 ? "extra route requested" : "extra routes requested"}`,
         remainingRouteCount > 0
-          ? hasBreakoutEndpoints
-            ? "The router asks to join vias already connected by the plane."
-            : "The router asks to connect pads that are already connected."
+          ? "The router asks to connect pads that are already connected."
           : "The router recognizes the connection through existing copper.",
         remainingRouteCount > 0 ? requestColor : connectedColor,
       ),
