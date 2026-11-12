@@ -2,12 +2,12 @@ import { expect, mock, test } from "bun:test"
 import { analog } from "lib/namespaced-elements/analog"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("transient simulation calls a registered pcb_spice engine", async () => {
+test("transient simulation calls a registered registered_native engine", async () => {
   const simulate = mock(async (_netlist: string) => ({
     simulationResultCircuitJson: [],
   }))
   const { circuit } = getTestFixture({
-    platform: { spiceEngineMap: { pcb_spice: { simulate } } },
+    platform: { spiceEngineMap: { registered_native: { simulate } } },
   })
 
   circuit.add(
@@ -25,7 +25,7 @@ test("transient simulation calls a registered pcb_spice engine", async () => {
       />
       <voltageprobe name="out" connectsTo=".C1 > .pin1" />
       <analog.transientsimulation
-        spiceEngine="pcb_spice"
+        spiceEngine="registered_native"
         duration="1ms"
         timePerStep="100us"
       />

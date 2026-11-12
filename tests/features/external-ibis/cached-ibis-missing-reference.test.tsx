@@ -19,8 +19,6 @@ test("restoring an IBIS model with an unmappable reference fails loudly", async 
             },
             ibis_component_name: "DRIVER",
             ibis_pin_name_to_source_port_id: { "1": "source_port_missing" },
-            model_value_corner: "typical",
-            include_package_parasitics: true,
           },
         ]}
       />
