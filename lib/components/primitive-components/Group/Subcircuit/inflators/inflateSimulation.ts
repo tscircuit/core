@@ -1,4 +1,3 @@
-import { getElementId } from "@tscircuit/circuit-json-util"
 import type {
   AnyCircuitElementInput,
   SimulationExperiment,
@@ -12,18 +11,10 @@ import { PcbTransientChannelSimulation } from "lib/components/primitive-componen
 import { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import type { InflatorContext } from "../InflatorFn"
 
-const ibisSimulationTypes = [
-  "simulation_ibis_model",
-  "simulation_ibis_pin_state",
-  "simulation_digital_stimulus",
-  "simulation_eye_diagram",
-] as const
-
-// Dependencies must precede records that reference them.
 const simulationTypes = [
-  "simulation_experiment",
-  "simulation_voltage_probe",
-  ...ibisSimulationTypes,
+  "simulation_ibis_model",
+  "simulation_signal_integrity",
+  "simulation_signal",
 ] as const
 
 type SimulationReferenceId =
@@ -54,15 +45,6 @@ function restoreSimulationRecords({
   groupsMap,
 }: InflatorContext) {
   const { db } = subcircuit.root!
-  const eyes = injectionDb.simulation_eye_diagram.list()
-  const experimentIds = new Set(
-    [
-      ...injectionDb.simulation_ibis_pin_state.list(),
-      ...injectionDb.simulation_digital_stimulus.list(),
-      ...eyes,
-    ].map((record) => record.simulation_experiment_id),
-  )
-  const probeIds = new Set(eyes.map((eye) => eye.simulation_voltage_probe_id))
   const restoredIds = new Map<SimulationReferenceId, SimulationReferenceId>()
 
   const remapId = (
@@ -153,26 +135,9 @@ function restoreSimulationRecords({
     return value
   }
 
-  for (const type of simulationTypes) {
-    for (const record of injectionDb[type].list()) {
-      // Main ignores cached simulation records. Restore only IBIS dependencies.
-      if (
-        (record.type === "simulation_experiment" &&
-          !experimentIds.has(record.simulation_experiment_id)) ||
-        (record.type === "simulation_voltage_probe" &&
-          !probeIds.has(record.simulation_voltage_probe_id))
-      )
-        continue
-      const primaryIdField = `${type}_id`
-      const fields = Object.fromEntries(
-        Object.entries(record).filter(([key]) => key !== primaryIdField),
-      )
-      // Only identifiers change; all other circuit-json fields are preserved.
-      const restored = db.insert(
-        remapReferences(fields, "") as AnyCircuitElementInput,
-      )
-      restoredIds.set(getElementId(record), getElementId(restored))
-    }
+  for (const record of injectionDb.simulation_ibis_model.list()) {
+    const { simulation_ibis_model_id, ...fields } = record
+    db.insert(remapReferences(fields, "") as AnyCircuitElementInput)
   }
   const endpointSelector = (endpoint: SimulationSignal["driver"]) => {
     const describe = (portId: SourcePort["source_port_id"]) => {
@@ -230,9 +195,7 @@ function restoreSimulationRecords({
 
 export function inflateSimulation(inflationCtx: InflatorContext) {
   if (
-    !inflationCtx.injectionDb.simulation_signal_integrity.list().length &&
-    !inflationCtx.injectionDb.simulation_signal.list().length &&
-    !ibisSimulationTypes.some(
+    !simulationTypes.some(
       (type) => inflationCtx.injectionDb[type].list().length > 0,
     )
   )

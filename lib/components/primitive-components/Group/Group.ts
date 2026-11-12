@@ -247,8 +247,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   get _isIsolatedSubcircuit(): boolean {
     // SI depends on the destination board's stackup, copper and other blocks.
     // Keep these declarations in that board instead of caching an isolated run.
-    if (getSignalIntegrityBlocks(this).length > 0) return false
-    return Boolean(this.getInheritedProperty("_subcircuitCachingEnabled"))
+    return (
+      Boolean(this.getInheritedProperty("_subcircuitCachingEnabled")) &&
+      getSignalIntegrityBlocks(this).length === 0
+    )
   }
 
   _normalComponentNameMap: Map<string, NormalComponent[]> | null = null

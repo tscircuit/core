@@ -1,15 +1,8 @@
-import { ibisModelProps } from "@tscircuit/props"
+import { simulationIbisModelProps } from "@tscircuit/props"
 import type { SimulationIbisModel as SimulationIbisModelRecord } from "circuit-json"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { SimulationIbisModel_getSimulationIbisModel } from "./SimulationIbisModel_getSimulationIbisModel"
 import type { PcbTransientChannelSimulation } from "./PcbTransientChannelSimulation"
-
-// The additions release retains the existing configurable IBIS declaration.
-// Channel simulation fixes these values without exposing the legacy controls.
-const simulationIbisModelProps = ibisModelProps.omit({
-  modelValueCorner: true,
-  includePackageParasitics: true,
-})
 
 type SimulationIbisModelId =
   SimulationIbisModelRecord["simulation_ibis_model_id"]
