@@ -1,10 +1,16 @@
 import { getImportedInternallyConnectedPinNames } from "./get-imported-internally-connected-pin-names"
 import { joinImportedCourtyardOutlines } from "./join-imported-courtyard-outlines"
 import { getUnitVectorFromDirection } from "@tscircuit/math-utils"
-import type { PcbSoldermaskOpeningProps, PinLabelsProp } from "@tscircuit/props"
+import type {
+  PcbSoldermaskOpeningProps,
+  PinLabelsProp,
+  SmtPadProps,
+} from "@tscircuit/props"
 import {
   type AnyCircuitElement,
   type PcbSolderPastePolygon,
+  type PcbSmtPad,
+  type PcbSolderPaste,
   type SchematicComponent,
   layer_ref,
   pcb_via,
@@ -296,6 +302,33 @@ export const createComponentsFromCircuitJson = (
     components.push(primitive)
   }
 
+  const cachedPasteByPad = new Map<PcbSmtPad["pcb_smtpad_id"], PcbSolderPaste>()
+  if (preserveSolderPaste) {
+    for (const element of circuitJson) {
+      if (element.type === "pcb_solder_paste" && element.pcb_smtpad_id)
+        cachedPasteByPad.set(element.pcb_smtpad_id, element)
+    }
+  }
+  function createSmtPad(pad: PcbSmtPad, props: SmtPadProps) {
+    const smtpad = new SmtPad(props)
+    const paste = cachedPasteByPad.get(pad.pcb_smtpad_id)
+    if (paste?.shape === "circle") {
+      smtpad._inflatedPasteSize = { radius: paste.radius }
+    } else if (paste && "width" in paste && "width" in pad) {
+      // A localized rectangular aperture can retain a quarter-turn while its
+      // pad is represented by swapped width/height. Compare their local axes.
+      const padAngle = "ccw_rotation" in pad ? pad.ccw_rotation : 0
+      const pasteAngle = "ccw_rotation" in paste ? paste.ccw_rotation : 0
+      const swap = Math.abs(Math.round((pasteAngle - padAngle) / 90)) % 2 === 1
+      smtpad._inflatedPasteSize = {
+        x: swap ? paste.height : paste.width,
+        y: swap ? paste.width : paste.height,
+        radius: "radius" in paste ? paste.radius : undefined,
+      }
+    }
+    return smtpad
+  }
+
   for (const elm of circuitJson) {
     let resolvedPortHints: string[] | undefined
     if ("port_hints" in elm) {
@@ -308,24 +341,11 @@ export const createComponentsFromCircuitJson = (
       }
     }
 
-    // When rebuilding rendered copper, do not recreate an automatic aperture
-    // that was deliberately suppressed (for example, for a windowed stencil).
-    let solderPasteMargin: number | undefined
-    if (
+    // A missing cached aperture stays closed even if the board expands paste.
+    const noSolderPaste =
       preserveSolderPaste &&
       elm.type === "pcb_smtpad" &&
-      !circuitJson.some(
-        (paste) =>
-          paste.type === "pcb_solder_paste" &&
-          paste.pcb_smtpad_id === elm.pcb_smtpad_id,
-      )
-    ) {
-      if (elm.shape === "circle") {
-        solderPasteMargin = -elm.radius
-      } else if (elm.shape !== "polygon") {
-        solderPasteMargin = -Math.min(elm.width, elm.height) / 2
-      }
-    }
+      !cachedPasteByPad.has(elm.pcb_smtpad_id)
 
     if (isStandalonePcbSolderPaste(elm)) {
       components.push(SolderPaste.fromCircuitJson(elm))
@@ -363,7 +383,7 @@ export const createComponentsFromCircuitJson = (
       components.push(new PcbSoldermaskOpening(openingProps))
     } else if (elm.type === "pcb_smtpad" && elm.shape === "rect") {
       components.push(
-        new SmtPad({
+        createSmtPad(elm, {
           pcbX: elm.x,
           pcbY: elm.y,
           layer: elm.layer,
@@ -372,28 +392,28 @@ export const createComponentsFromCircuitJson = (
           width: elm.width,
           portHints: resolvedPortHints,
           rectBorderRadius: elm.rect_border_radius,
-          solderPasteMargin,
+          noSolderPaste,
           coveredWithSolderMask: elm.is_covered_with_solder_mask,
           solderMaskMargin: elm.soldermask_margin,
         }),
       )
     } else if (elm.type === "pcb_smtpad" && elm.shape === "circle") {
       components.push(
-        new SmtPad({
+        createSmtPad(elm, {
           pcbX: elm.x,
           pcbY: elm.y,
           layer: elm.layer,
           shape: "circle",
           radius: elm.radius,
           portHints: resolvedPortHints,
-          solderPasteMargin,
+          noSolderPaste,
           coveredWithSolderMask: elm.is_covered_with_solder_mask,
           solderMaskMargin: elm.soldermask_margin,
         }),
       )
     } else if (elm.type === "pcb_smtpad" && elm.shape === "pill") {
       components.push(
-        new SmtPad({
+        createSmtPad(elm, {
           shape: "pill",
           height: elm.height,
           width: elm.width,
@@ -402,14 +422,14 @@ export const createComponentsFromCircuitJson = (
           pcbX: elm.x,
           pcbY: elm.y,
           layer: elm.layer,
-          solderPasteMargin,
+          noSolderPaste,
           coveredWithSolderMask: elm.is_covered_with_solder_mask,
           solderMaskMargin: elm.soldermask_margin,
         }),
       )
     } else if (elm.type === "pcb_smtpad" && elm.shape === "rotated_pill") {
       components.push(
-        new SmtPad({
+        createSmtPad(elm, {
           shape: "rotated_pill",
           height: elm.height,
           width: elm.width,
@@ -419,13 +439,13 @@ export const createComponentsFromCircuitJson = (
           pcbY: elm.y,
           layer: elm.layer,
           ccwRotation: elm.ccw_rotation,
-          solderPasteMargin,
+          noSolderPaste,
           coveredWithSolderMask: elm.is_covered_with_solder_mask,
           solderMaskMargin: elm.soldermask_margin,
         }),
       )
     } else if (elm.type === "pcb_smtpad" && elm.shape === "rotated_rect") {
-      const smtpad = new SmtPad({
+      const smtpad = createSmtPad(elm, {
         pcbX: elm.x,
         pcbY: elm.y,
         layer: elm.layer,
@@ -435,14 +455,14 @@ export const createComponentsFromCircuitJson = (
         ccwRotation: elm.ccw_rotation,
         cornerRadius: elm.corner_radius,
         portHints: resolvedPortHints,
-        solderPasteMargin,
+        noSolderPaste,
         coveredWithSolderMask: elm.is_covered_with_solder_mask,
         solderMaskMargin: elm.soldermask_margin,
       })
       smtpad._importedRectBorderRadius = elm.rect_border_radius
       components.push(smtpad)
     } else if (elm.type === "pcb_smtpad" && elm.shape === "polygon") {
-      const smtpad = new SmtPad({
+      const smtpad = createSmtPad(elm, {
         shape: "polygon",
         points: elm.points,
         portHints: resolvedPortHints,

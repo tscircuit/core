@@ -29,6 +29,8 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
    * right-handed). An empty array preserves an explicitly absent aperture.
    */
   _inflatedPcbSolderPaste?: PcbSolderPastePolygon[]
+  /** Final opening dimensions along the cached pad's local axes (mm). */
+  _inflatedPasteSize?: { x?: number; y?: number; radius?: number }
 
   // Imported rotated rectangles can carry this separately from corner_radius,
   // while rotatedRectSmtPadProps currently only exposes cornerRadius.
@@ -137,12 +139,26 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
       !props.noSolderPaste && !isCoveredWithSolderMask && this._getIsSmt()
     const soldermaskMargin = props.solderMaskMargin
     const solderPasteMargin = props.solderPasteMargin
-    // solderPasteMargin is absolute per side; without it the aperture keeps
-    // the default 0.7 scale
-    const getSolderPasteSize = (padSize: number, marginScale = 2): number =>
-      solderPasteMargin !== undefined
-        ? Math.max(padSize + marginScale * solderPasteMargin, 0)
-        : padSize * 0.7
+    const ratio =
+      props.solderPasteMarginRatio ?? this._getBoardSolderPasteMarginRatio()
+    const getSolderPasteSize = (
+      padSize: number,
+      axis: "x" | "y" | "radius",
+      marginScale = 2,
+    ): number => {
+      const cachedSize = this._inflatedPasteSize?.[axis]
+      if (cachedSize !== undefined) return cachedSize
+      if (ratio === undefined && solderPasteMargin === undefined)
+        return padSize * 0.7
+      const axisRatio =
+        typeof ratio === "number"
+          ? ratio
+          : (ratio?.[axis === "radius" ? "x" : axis] ?? 0)
+      return Math.max(
+        0,
+        padSize * (1 + 2 * axisRatio) + marginScale * (solderPasteMargin ?? 0),
+      )
+    }
 
     this.emitSolderMaskMarginWarning(isCoveredWithSolderMask, soldermaskMargin)
 
@@ -195,7 +211,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         y: position.y,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       } as PcbSmtPadCircle) as PcbSmtPadCircle
-      const pasteRadius = getSolderPasteSize(pcb_smtpad.radius, 1)
+      const pasteRadius = getSolderPasteSize(pcb_smtpad.radius, "radius", 1)
       if (shouldCreateSolderPaste && pasteRadius > 0)
         db.pcb_solder_paste.insert({
           layer: pcb_smtpad.layer,
@@ -248,8 +264,14 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
           pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
         } as PcbSmtPadRect) as PcbSmtPadRect
       }
-      const pasteWidth = getSolderPasteSize(pcb_smtpad.width)
-      const pasteHeight = getSolderPasteSize(pcb_smtpad.height)
+      const pasteWidth = getSolderPasteSize(
+        pcb_smtpad.width,
+        isRotated90Degrees ? "y" : "x",
+      )
+      const pasteHeight = getSolderPasteSize(
+        pcb_smtpad.height,
+        isRotated90Degrees ? "x" : "y",
+      )
       if (shouldCreateSolderPaste && pasteWidth > 0 && pasteHeight > 0) {
         if (pcb_smtpad.shape === "rect") {
           db.pcb_solder_paste.insert({
@@ -307,8 +329,8 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
       } as PcbSmtPadRotatedRect) as PcbSmtPadRotatedRect
 
-      const pasteWidth = getSolderPasteSize(pcb_smtpad.width)
-      const pasteHeight = getSolderPasteSize(pcb_smtpad.height)
+      const pasteWidth = getSolderPasteSize(pcb_smtpad.width, "x")
+      const pasteHeight = getSolderPasteSize(pcb_smtpad.height, "y")
       if (shouldCreateSolderPaste && pasteWidth > 0 && pasteHeight > 0)
         db.pcb_solder_paste.insert({
           layer: pcbLayer,
@@ -350,6 +372,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
           getPolygonSolderPasteContours({
             points: localPoints,
             solderPasteMargin,
+            solderPasteMarginRatio: ratio,
           })
         for (const contour of pasteContours) {
           db.pcb_solder_paste.insert({
@@ -434,8 +457,8 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
       shouldCreateSolderPaste &&
       (pcb_smtpad?.shape === "pill" || pcb_smtpad?.shape === "rotated_pill")
     ) {
-      const pasteWidth = getSolderPasteSize(pcb_smtpad.width)
-      const pasteHeight = getSolderPasteSize(pcb_smtpad.height)
+      const pasteWidth = getSolderPasteSize(pcb_smtpad.width, "x")
+      const pasteHeight = getSolderPasteSize(pcb_smtpad.height, "y")
       if (pasteWidth > 0 && pasteHeight > 0) {
         // Reuse emitted pad geometry in board-world mm (+X right, +Y up),
         // including its transformed center, layer, and counterclockwise rotation.
@@ -444,7 +467,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
           y: pcb_smtpad.y,
           width: pasteWidth,
           height: pasteHeight,
-          radius: getSolderPasteSize(pcb_smtpad.radius, 1),
+          radius: getSolderPasteSize(pcb_smtpad.radius, "radius", 1),
           layer: pcb_smtpad.layer,
           pcb_component_id: pcb_smtpad.pcb_component_id,
           pcb_smtpad_id: pcb_smtpad.pcb_smtpad_id,

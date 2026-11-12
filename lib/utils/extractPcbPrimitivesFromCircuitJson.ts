@@ -1,6 +1,7 @@
 import { transformPCBElements } from "@tscircuit/circuit-json-util"
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
-import type { PcbComponent } from "circuit-json"
+import { getOvalPasteContour } from "./pcb/get-oval-paste-contour"
+import type { AnyCircuitElement, PcbComponent } from "circuit-json"
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromCircuitJson"
 import { compose, inverse, rotate, translate } from "transformation-matrix"
@@ -45,7 +46,24 @@ export const extractPcbPrimitivesFromCircuitJson = ({
         elm.pcb_component_id === pcbComponent.pcb_component_id,
     )
 
-  const clonedRelativeElements = structuredClone(relativeElements)
+  // An oval has no angle field. A rotated footprint needs the whole aperture
+  // in local coordinates, so transform its contour along with the other polygons.
+  const clonedRelativeElements = structuredClone(relativeElements).map(
+    (element): AnyCircuitElement => {
+      if (
+        element.type !== "pcb_solder_paste" ||
+        element.shape !== "oval" ||
+        componentRotation % 180 === 0
+      )
+        return element
+      const { width, height, x, y, ...paste } = element
+      return {
+        ...paste,
+        shape: "polygon",
+        points: getOvalPasteContour({ x, y }, width, height),
+      }
+    },
+  )
 
   // Transform all PCB elements using the standard transformation utility
   transformPCBElements(
