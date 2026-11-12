@@ -9,7 +9,8 @@ test("routes the AM62L and LPDDR4 with the real decoupling network present", asy
     includePowerPlaneFanout: true,
     snapshotPath: import.meta.path,
   })
-  // Checks 0.0.223 additionally detects the existing different-net via gaps.
+  // Record the default checker diagnostics separately from the authored fanout
+  // clearance rules validated by renderAm62lLpddr4Fanout before it returns.
   expect(
     circuit.db.pcb_via_clearance_error.list().map(({ message }) => message),
   ).toMatchInlineSnapshot(`
@@ -46,7 +47,11 @@ test("routes the AM62L and LPDDR4 with the real decoupling network present", asy
       "Vias unnamed via and unnamed via from different nets are too close together (gap: 0.085mm)",
       "Vias unnamed via and unnamed via from different nets are too close together (gap: 0.085mm)",
       "Vias unnamed via and unnamed via from different nets are too close together (gap: 0.085mm)",
-      "Vias unnamed via and unnamed via from different nets are too close together (gap: 0.085mm)",
+      "Vias unnamed via and unnamed via from different nets are too close together (gap: 0.094mm)",
+      "Vias unnamed via and unnamed via from different nets are too close together (gap: 0.094mm)",
+      "Vias unnamed via and unnamed via from different nets are too close together (gap: 0.094mm)",
+      "Vias unnamed via and unnamed via from different nets are too close together (gap: 0.094mm)",
+      "Vias unnamed via and unnamed via from different nets are too close together (gap: 0.094mm)",
     ]
   `)
   expect(
