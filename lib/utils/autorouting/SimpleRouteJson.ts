@@ -96,6 +96,8 @@ export type SimpleRouteConnection = {
   /** @deprecated Use `nominalTraceWidth` instead. */
   width?: number
   pointsToConnect: SingleLayerConnectionPoint[]
+  /** Ordered point IDs on an explicitly declared trace path. */
+  path?: NonNullable<SingleLayerConnectionPoint["pointId"]>[]
   /** @deprecated DO NOT USE **/
   externallyConnectedPointIds?: string[][]
 }
