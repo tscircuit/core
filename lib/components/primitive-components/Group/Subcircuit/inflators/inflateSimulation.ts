@@ -19,11 +19,6 @@ const ibisSimulationTypes = [
   "simulation_eye_diagram",
 ] as const
 
-const siSimulationTypes = [
-  "simulation_signal_integrity",
-  "simulation_signal",
-] as const
-
 // Dependencies must precede records that reference them.
 const simulationTypes = [
   "simulation_experiment",
@@ -185,14 +180,22 @@ function restoreSimulationRecords({
       const chip = db.source_component.get(port.source_component_id!)!
       return `.${chip.name} > .${port.name}`
     }
-    const pin =
-      "source_port_id" in endpoint
-        ? describe(endpoint.source_port_id)
-        : {
-            p: describe(endpoint.p_source_port_id),
-            n: describe(endpoint.n_source_port_id),
-          }
-    return pin
+    if ("source_port_id" in endpoint) return describe(endpoint.source_port_id)
+    return {
+      p: describe(endpoint.p_source_port_id),
+      n: describe(endpoint.n_source_port_id),
+    }
+  }
+  const remapEndpoint = (endpoint: SimulationSignal["driver"]) => {
+    const portId = (id: SourcePort["source_port_id"]) =>
+      remapId(id, "source_port_id")
+    if ("source_port_id" in endpoint)
+      return { ...endpoint, source_port_id: portId(endpoint.source_port_id) }
+    return {
+      ...endpoint,
+      p_source_port_id: portId(endpoint.p_source_port_id),
+      n_source_port_id: portId(endpoint.n_source_port_id),
+    }
   }
   for (const record of injectionDb.simulation_signal_integrity.list()) {
     const block = new PcbTransientChannelSimulation({
@@ -206,14 +209,8 @@ function restoreSimulationRecords({
       simulation_signal_integrity_id: record.simulation_signal_integrity_id,
     })) {
       const endpoints = {
-        driver: remapReferences(
-          recordSignal.driver,
-          "",
-        ) as SimulationSignal["driver"],
-        receivers: recordSignal.receivers.map(
-          (receiver) =>
-            remapReferences(receiver, "") as SimulationSignal["driver"],
-        ),
+        driver: remapEndpoint(recordSignal.driver),
+        receivers: recordSignal.receivers.map(remapEndpoint),
       }
       const signal = new PcbChannel({
         name: recordSignal.name,
@@ -233,9 +230,8 @@ function restoreSimulationRecords({
 
 export function inflateSimulation(inflationCtx: InflatorContext) {
   if (
-    !siSimulationTypes.some(
-      (type) => inflationCtx.injectionDb[type].list().length > 0,
-    ) &&
+    !inflationCtx.injectionDb.simulation_signal_integrity.list().length &&
+    !inflationCtx.injectionDb.simulation_signal.list().length &&
     !ibisSimulationTypes.some(
       (type) => inflationCtx.injectionDb[type].list().length > 0,
     )

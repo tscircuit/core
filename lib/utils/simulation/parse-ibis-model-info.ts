@@ -1,3 +1,7 @@
+function splitWhitespace(line: string) {
+  return line.split("\t").join(" ").split(" ").filter(Boolean)
+}
+
 /** Only metadata needed for render-time validation, never numerical IBIS data. */
 export function parseIbisModelInfo(source: string) {
   const components = new Map<
@@ -14,41 +18,53 @@ export function parseIbisModelInfo(source: string) {
   let section = ""
   let modelName = ""
   let selectorName = ""
-  for (const rawLine of source.split(/\r?\n/)) {
+  for (const rawLine of source.split("\n")) {
     const line = rawLine.split("|")[0].trim()
     if (!line) continue
-    const header = line.match(/^\[([^\]]+)\]\s*(.*)/)
-    if (header) {
-      section = header[1].toLowerCase()
-      if (section === "component") {
-        component = {
-          pinModels: new Map(),
-          differentialPins: new Map(),
-          coupledPackage: false,
-        }
-        components.set(header[2], component)
-      }
-      if (section === "package model" && component)
-        component.coupledPackage = true
-      if (section === "model") modelName = header[2]
-      if (section === "model selector") {
-        selectorName = header[2]
-        modelSelectors.set(selectorName, [])
+    const headerEnd = line.indexOf("]")
+    if (line.startsWith("[") && headerEnd !== -1) {
+      section = line.slice(1, headerEnd).toLowerCase()
+      const name = line.slice(headerEnd + 1).trim()
+      switch (section) {
+        case "component":
+          component = {
+            pinModels: new Map(),
+            differentialPins: new Map(),
+            coupledPackage: false,
+          }
+          components.set(name, component)
+          break
+        case "package model":
+          if (component) component.coupledPackage = true
+          break
+        case "model":
+          modelName = name
+          break
+        case "model selector":
+          selectorName = name
+          modelSelectors.set(name, [])
+          break
       }
       continue
     }
-    const fields = line.split(/\s+/)
-    if (section === "pin" && component)
-      component.pinModels.set(fields[0], fields[2])
-    if (section === "diff_pin" && component)
-      component.differentialPins.set(fields[0], fields[1])
-    if (section === "model selector")
-      modelSelectors.get(selectorName)!.push(fields[0])
-    if (section === "model" && /^model_type\s*(?:=|\s)/i.test(line))
-      modelTypes.set(
-        modelName,
-        line.replace(/^model_type\s*=?\s*/i, "").toLowerCase(),
-      )
+    const fields = splitWhitespace(line)
+    switch (section) {
+      case "pin":
+        component?.pinModels.set(fields[0], fields[2])
+        break
+      case "diff_pin":
+        component?.differentialPins.set(fields[0], fields[1])
+        break
+      case "model selector":
+        modelSelectors.get(selectorName)!.push(fields[0])
+        break
+      case "model": {
+        const [keyword, ...value] = splitWhitespace(line.replace("=", " "))
+        if (keyword.toLowerCase() === "model_type")
+          modelTypes.set(modelName, value.join(" ").toLowerCase())
+        break
+      }
+    }
   }
   return { components, modelTypes, modelSelectors }
 }

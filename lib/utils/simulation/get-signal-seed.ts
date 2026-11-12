@@ -1,5 +1,6 @@
+import { getPrbsOrder } from "./get-prbs-order"
 import { getSignalIntegrityBlocks } from "./get-signal-integrity-blocks"
-import type { PcbChannel } from "lib/components/primitive-components/PcbChannel"
+import { PcbChannel } from "lib/components/primitive-components/PcbChannel"
 import type { PcbTransientChannelSimulation } from "lib/components/primitive-components/PcbTransientChannelSimulation"
 
 /** RFC phase plan, shared by name/order across every block on the board. */
@@ -8,20 +9,14 @@ export function getSignalSeed(
   signal: PcbChannel,
 ) {
   const { pattern, seed, name } = signal._parsedProps
-  if (!/^prbs(7|15|31)$/.test(pattern)) return undefined
-  const order = Number(pattern.slice(4))
+  const order = getPrbsOrder(pattern)
+  if (!order) return undefined
   const period = 2 ** order - 1
-  if (
-    seed !== undefined &&
-    (!Number.isInteger(seed) || seed < 1 || seed > period)
-  )
-    throw new Error(
-      `Signal "${name}": ${pattern} seed must be an integer in 1..${period}.`,
-    )
   const names = [
     ...new Set(
       getSignalIntegrityBlocks(block._getBoard())
-        .flatMap((candidate) => candidate.children as PcbChannel[])
+        .flatMap((candidate) => candidate.children)
+        .filter((candidate) => candidate instanceof PcbChannel)
         .filter(
           (candidate) =>
             !candidate.shouldBeRemoved &&
