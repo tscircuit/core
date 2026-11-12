@@ -1,3 +1,4 @@
+import { formatPcbDisplayOffset } from "lib/utils/format-pcb-display-offset"
 import { getOwningPanel } from "lib/utils/panels/get-owning-panel"
 import { TestPointAutorouter } from "lib/utils/autorouting/TestPointAutorouter"
 import {
@@ -552,7 +553,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             trace_clearance: props.autorouter.traceClearance,
           }
         : undefined,
-      anchor_alignment: props.pcbAnchorAlignment ?? null,
+      anchor_alignment: props.pcbAnchorAlignment ?? "center",
     })
     this.pcb_group_id = pcb_group.pcb_group_id
 
@@ -884,49 +885,41 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       },
     )
 
+    // Copper pours render after routing, so raw Circuit JSON cannot carry
+    // unbroken-plane intent yet. Build SRJ from the live component tree so
+    // remote requests with plane reservations can carry that intent.
+    const preferredTraceWidth =
+      props.defaultTraceWidth ?? props.nominalTraceWidth
+    const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
+      pcb_panel_id: getOwningPanel(this)?.pcb_panel_id ?? undefined,
+      db,
+      allowViaInPad: autorouterConfig.allowViaInPad,
+      minTraceWidth: Number(props.minTraceWidth ?? 0.15),
+      nominalTraceWidth:
+        preferredTraceWidth != null ? Number(preferredTraceWidth) : undefined,
+      subcircuit_id: this.subcircuit_id,
+      subcircuitComponent: this,
+    })
+    const unbrokenPlaneRouteJson = simpleRouteJson.obstacles.some(
+      (obstacle) => obstacle.isCopperPour,
+    )
+      ? simpleRouteJson
+      : undefined
+
     if (serverMode === "solve-endpoint") {
-      // Legacy solve endpoint mode
-      if (this.props.autorouter?.inputFormat === "simplified") {
-        const preferredTraceWidth =
-          props.defaultTraceWidth ?? props.nominalTraceWidth
-        const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
-          pcb_panel_id: getOwningPanel(this)?.pcb_panel_id ?? undefined,
-          db,
-          minTraceWidth: Number(props.minTraceWidth ?? 0.15),
-          nominalTraceWidth:
-            preferredTraceWidth != null
-              ? Number(preferredTraceWidth)
-              : undefined,
-          subcircuit_id: this.subcircuit_id,
-          subcircuitComponent: this,
-        })
-        simpleRouteJson.allowViaInPad =
-          autorouterConfig.allowViaInPad ?? simpleRouteJson.allowViaInPad
-
-        const { autorouting_result } = await fetchWithDebug(
-          `${serverUrl}/autorouting/solve`,
-          {
-            method: "POST",
-            body: JSON.stringify({
-              input_simple_route_json: simpleRouteJson,
-              subcircuit_id: this.subcircuit_id!,
-            }),
-            headers: {
-              "Content-Type": "application/json",
-            },
-          },
-        ).then((r) => r.json())
-        this._asyncAutoroutingResult = autorouting_result
-        this._markDirty("PcbTraceRender")
-        return
-      }
-
+      const simplifiedInput =
+        this.props.autorouter?.inputFormat === "simplified"
       const { autorouting_result } = await fetchWithDebug(
         `${serverUrl}/autorouting/solve`,
         {
           method: "POST",
           body: JSON.stringify({
-            input_circuit_json: pcbAndSourceCircuitJson,
+            input_circuit_json: simplifiedInput
+              ? undefined
+              : pcbAndSourceCircuitJson,
+            input_simple_route_json: simplifiedInput
+              ? simpleRouteJson
+              : unbrokenPlaneRouteJson,
             subcircuit_id: this.subcircuit_id!,
           }),
           headers: {
@@ -945,6 +938,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         method: "POST",
         body: JSON.stringify({
           input_circuit_json: pcbAndSourceCircuitJson,
+          input_simple_route_json: unbrokenPlaneRouteJson,
           provider: "freerouting",
           autostart: true,
           display_name: this.root?.name,
@@ -1327,6 +1321,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     }
 
     const outputTestPoints: ConnectedRoutedTestPoint[] = []
+    let routingError: Error | undefined
     const outputTraces: SimplifiedPcbTrace[] = []
     const outputJumpers: Array<{
       jumper_footprint: string
@@ -1786,6 +1781,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
                 debug(
                   `[${this.getString()}] local autorouting error: ${event.error.message}`,
                 )
+                routingError = event.error
                 reject(event.error)
               })
             },
@@ -2039,6 +2035,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           ? outputSimpleRouteJson
           : undefined
 
+        const computeCostSummary = cachedResult
+          ? cachedResult.computeCostSummary
+          : autorouter?.getComputeCostSummary?.()
         if (!cachedResult && cacheKey) {
           await cacheLocalAutoroutingPhaseResult({
             cacheEngine,
@@ -2046,6 +2045,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             result: {
               ...simpleRouteJson,
               traces,
+              ...(computeCostSummary !== undefined
+                ? { computeCostSummary }
+                : {}),
             },
           })
         }
@@ -2067,6 +2069,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         })
         this.root?.emit("autorouting:end", {
           ...savedPhasePaths,
+          ...(computeCostSummary !== undefined ? { computeCostSummary } : {}),
           type: "autorouting:end",
           subcircuit_id: this.subcircuit_id,
           componentDisplayName: this.getString(),
@@ -2162,7 +2165,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           message: error instanceof Error ? error.message : String(error),
         })
 
+        const computeCostSummary = autorouter?.getComputeCostSummary?.()
         this.root?.emit("autorouting:error", {
+          ...(computeCostSummary !== undefined ? { computeCostSummary } : {}),
           type: "autorouting:error",
           subcircuit_id: this.subcircuit_id,
           componentDisplayName: this.getString(),
@@ -2180,7 +2185,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           simpleRouteJson,
         })
 
-        throw error
+        if (outputTraces.length === 0 || !routingError) throw error
+
+        // Publish completed phases, then propagate the failed phase as before.
+        break
       } finally {
         // Ensure the autorouter is stopped
         autorouter?.stop()
@@ -2197,6 +2205,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
     // Mark the component as needing to re-render the PCB traces
     this._markDirty("PcbTraceRender")
+
+    if (routingError) throw routingError
   }
 
   _startAsyncAutorouting() {
@@ -2636,7 +2646,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const { _parsedProps: props } = this
     const schematic_group = db.schematic_group.insert({
       is_subcircuit: this.isSubcircuit,
-      subcircuit_id: this.subcircuit_id!,
+      subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
       name: this.name,
       center: this._getGlobalSchematicPositionBeforeLayout(),
       width: 0,
@@ -2851,8 +2861,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           position_mode: "relative_to_group_anchor",
           positioned_relative_to_pcb_group_id: pcbParentGroupId,
           positioned_relative_to_pcb_board_id: positionedRelativeToBoardId,
-          display_offset_x: props.pcbX,
-          display_offset_y: props.pcbY,
+          display_offset_x: formatPcbDisplayOffset(props.pcbX),
+          display_offset_y: formatPcbDisplayOffset(props.pcbY),
         })
       }
     }
