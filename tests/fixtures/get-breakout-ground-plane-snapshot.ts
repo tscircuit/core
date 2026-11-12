@@ -19,8 +19,10 @@ const caption = ({ width, lines }: { width: number; lines: string[] }) =>
   </svg>`
 
 /**
- * Full imported U70 footprint plus two aligned layer close-ups. All geometry
- * and note positions are points in right-handed board-world mm (+X right,
+ * Full imported U70 footprint, two copper close-ups, and a separate request view.
+ * Copper panels do not depend on requestedRoutes, so the before/after images
+ * show the same physical connection. Requests are annotations, never tracks.
+ * Geometry and note positions are points in right-handed board-world mm (+X right,
  * +Y up, +Z above). circuit-to-svg owns the projection. Captions use screen
  * pixels (+X right, +Y down). Notes never enter the router's input.
  */
@@ -128,11 +130,12 @@ export const getBreakoutGroundPlaneSnapshot = ({
   const panel = (sections: string[]) =>
     stackSvgsVertically(sections, { gap: 0, normalizeSize: false })
   const requests = requestedRoutes.length
-  const headline = `<svg xmlns="http://www.w3.org/2000/svg" width="${totalWidth}" height="116">
-    <rect width="${totalWidth}" height="116" fill="${background}" />
+  const headline = `<svg xmlns="http://www.w3.org/2000/svg" width="${totalWidth}" height="148">
+    <rect width="${totalWidth}" height="148" fill="${background}" />
     <text x="20" y="38" fill="#ffffff" font-family="Arial, sans-serif" font-size="29" font-weight="bold">STM32MP157DAB1: ground-plane connectivity</text>
     <text x="20" y="84" fill="${connectedColor}" font-family="Arial, sans-serif" font-size="27" font-weight="bold">EXPECTED: 0 new routes</text>
     <text x="500" y="84" fill="${requests ? requestColor : connectedColor}" font-family="Arial, sans-serif" font-size="27" font-weight="bold">ACTUAL: ${requests} ${requests ? "unnecessary requests" : "requests — fixed"}</text>
+    <text x="20" y="124" fill="#ffffff" font-family="Arial, sans-serif" font-size="20">Existing copper below is identical before and after the fix. Only the exported connectivity changes.</text>
   </svg>`
   const panels = stackSvgsHorizontally(
     [
@@ -154,29 +157,30 @@ export const getBreakoutGroundPlaneSnapshot = ({
       panel([
         caption({
           width: detailWidth,
-          lines: ["DETAIL · TOP copper + requests"],
+          lines: ["1 · TOP: short traces + vias"],
         }),
         renderBoard({
           width: detailWidth,
           height: detailWidth,
           layer: "top",
           viewport: detailViewport,
-          notes: [...viaMarkers, ...padLabels, ...requestNotes],
+          notes: [...viaMarkers, ...padLabels],
         }),
         caption({
           width: detailWidth,
           lines: [
-            "F7 and G6 are GND pads.",
-            "Teal boxes mark their vias.",
-            requests
-              ? "Pink dashes = extra requests."
-              : "No extra requests remain.",
-            "Request lines are not copper.",
+            "Dogbone generated this copper.",
+            "Each pad has a short trace",
+            "to its highlighted through-via.",
+            "These are actual PCB tracks.",
           ],
         }),
       ]),
       panel([
-        caption({ width: detailWidth, lines: ["SAME DETAIL · INNER1 copper"] }),
+        caption({
+          width: detailWidth,
+          lines: ["2 · INNER1: shared GND plane"],
+        }),
         renderBoard({
           width: detailWidth,
           height: detailWidth,
@@ -187,21 +191,72 @@ export const getBreakoutGroundPlaneSnapshot = ({
         caption({
           width: detailWidth,
           lines: [
-            "Brown = one GND plane.",
-            "Both vias already touch it.",
-            "The plane connects the pads.",
-            "No extra route is needed.",
+            "The pour solver filled this plane.",
+            "Brown copper touches both vias.",
+            "It already joins F7 to G6.",
+            "All 104 GND vias share it.",
           ],
         }),
       ]),
     ],
     { gap: 16, normalizeSize: false },
   )
-  const explanation = `<svg xmlns="http://www.w3.org/2000/svg" width="${totalWidth}" height="100">
-    <rect width="${totalWidth}" height="100" fill="${background}" />
-    <text x="20" y="32" fill="${detailColor}" font-family="Arial, sans-serif" font-size="21">Blue box = the region enlarged on the right. Both close-ups show identical coordinates.</text>
-    <text x="20" y="65" fill="#ffffff" font-family="Arial, sans-serif" font-size="20">Full imported footprint + all 104 motherboard GND assignments. Other nets are omitted in this test.</text>
-    <text x="20" y="92" fill="#cbd5e1" font-family="Arial, sans-serif" font-size="18">Native dogbone → ground pour → core export → native point-pair requests. No saved or injected routes.</text>
-  </svg>`
-  return panel([headline, panels, explanation])
+  const explanation = caption({
+    width: fullWidth + detailWidth + 16,
+    lines: [
+      "ALREADY CONNECTED THROUGH EXISTING COPPER",
+      "F7 pad → short trace → F7 via → INNER1 ground plane",
+      "           → G6 via → short trace → G6 pad",
+      "",
+      "3 · CORE EXPORT → NATIVE CONNECTION REQUESTS (right)",
+      requests
+        ? "Core misses the via-to-plane connection; the router requests it again."
+        : "Core recognizes the via-to-plane connection; no extra request remains.",
+      "Pink dashes mean: connect these escape endpoints.",
+      "They are NOT copper and do NOT prescribe the actual route shape.",
+      "The inner3 view shows the same through-vias and detail coordinates.",
+      "",
+      "TEST FLOW: dogbone → generated pour → export → connection requests.",
+      "Full-board routing is skipped here so the pour can be generated.",
+      "This tests a later export, not the motherboard's initial routing failure.",
+    ],
+  })
+  const exportCheck = stackSvgsHorizontally(
+    [
+      explanation,
+      panel([
+        caption({
+          width: detailWidth,
+          lines: ["3 · INNER3: requested connections"],
+        }),
+        renderBoard({
+          width: detailWidth,
+          height: detailWidth,
+          layer: "inner3",
+          viewport: detailViewport,
+          notes: [...viaMarkers, ...planeLabels, ...requestNotes],
+        }),
+        caption({
+          width: detailWidth,
+          lines: [
+            requests
+              ? "Pink dashes = requests, not copper."
+              : "No new connection requested.",
+          ],
+        }),
+      ]),
+    ],
+    { gap: 16, normalizeSize: false },
+  )
+  return panel([
+    headline,
+    panels,
+    caption({
+      width: totalWidth,
+      lines: [
+        "Blue box = detail region. Full imported footprint + all 104 motherboard GND assignments; other nets omitted.",
+      ],
+    }),
+    exportCheck,
+  ])
 }
