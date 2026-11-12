@@ -117,6 +117,7 @@ export { AnalogTransientSimulation } from "./primitive-components/AnalogTransien
 export { AnalogDigitalStimulus } from "./primitive-components/AnalogDigitalStimulus"
 export { AnalogEyeDiagram } from "./primitive-components/AnalogEyeDiagram"
 export { IbisModel } from "./primitive-components/IbisModel"
+export { SimulationIbisModel } from "./primitive-components/SimulationIbisModel"
 export { AnalogDcOperatingPointSimulation } from "./primitive-components/AnalogDcOperatingPointSimulation"
 export { AnalogDcSweepSimulation } from "./primitive-components/AnalogDcSweepSimulation"
 export { AnalogAcSweepSimulation } from "./primitive-components/AnalogAcSweepSimulation"
@@ -140,3 +141,6 @@ export { AssemblyDrawingTitleBlock } from "./primitive-components/AssemblyDrawin
 export { AssemblyDrawingDimension } from "./primitive-components/AssemblyDrawingDimension"
 
 export { AssemblyBolt } from "./primitive-components/AssemblyBolt"
+
+export { PcbTransientChannelSimulation } from "./primitive-components/PcbTransientChannelSimulation"
+export { PcbChannel } from "./primitive-components/PcbChannel"
