@@ -1,6 +1,10 @@
 import * as Flatten from "@flatten-js/core"
 import { expect, test } from "bun:test"
-import type { PcbCutout, PcbHoleCircle } from "circuit-json"
+import type {
+  PcbCutoutPolygon,
+  PcbCutoutRect,
+  PcbHoleCircle,
+} from "circuit-json"
 import { getPanelRoutingSlotPolygon } from "lib/utils/panels/get-panel-routing-slot-polygon"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
@@ -59,7 +63,9 @@ test("center offsets place tabs on every edge without neighbouring slots cutting
   // board's routing slot would otherwise cut the other board's tab.
   const routingSlots = circuit.db.pcb_cutout
     .list()
-    .map((cutout) => getPanelRoutingSlotPolygon(cutout as PcbCutout))
+    .map((cutout) =>
+      getPanelRoutingSlotPolygon(cutout as PcbCutoutRect | PcbCutoutPolygon),
+    )
   const mouseBiteHoles = circuit.db.pcb_hole.list() as PcbHoleCircle[]
   expect(mouseBiteHoles).toHaveLength(16)
   expect(
