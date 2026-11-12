@@ -246,9 +246,11 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     if (!sourceComponent?.name) return undefined
     return `${sourceComponent.name}.${sourcePort.name}`
   }
+  // Ordinary child groups share the board's subcircuit ID. They must not
+  // supply the board's routing/plane bounds unless explicitly selected.
   const pcbGroup = routingPcbGroupId
     ? db.pcb_group.get(routingPcbGroupId)
-    : subcircuit_id
+    : subcircuit_id && !subcircuitIsBoard
       ? db.pcb_group.getWhere({ subcircuit_id })
       : undefined
   let activeRoutingPcbGroupId = subcircuitComponent?.pcb_group_id

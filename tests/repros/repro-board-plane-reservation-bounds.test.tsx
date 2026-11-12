@@ -11,7 +11,7 @@ const caption = (lines: string[]) =>
     ${lines.map((line, index) => `<text x="20" y="${30 + index * 28}" fill="#f1f5f9" font-family="Arial, sans-serif" font-size="18">${line}</text>`).join("")}
   </svg>`
 
-test("a child group shrinks the board's unbroken plane reservation", async () => {
+test("child groups do not shrink the board's unbroken plane reservation", async () => {
   const panels: string[] = []
   for (const grouped of [false, true]) {
     const { circuit } = getTestFixture()
@@ -66,12 +66,12 @@ test("a child group shrinks the board's unbroken plane reservation", async () =>
     const planes = input.obstacles.filter((obstacle) => obstacle.isCopperPour)
     expect(input.bounds).toEqual({ minX: -15, maxX: 15, minY: -10, maxY: 10 })
     expect(planes).toHaveLength(1)
-    // Record the bug on the repro branch; the fix must restore board bounds.
-    expect(planes[0]).toMatchObject(
-      grouped
-        ? { center: { x: 5, y: 0 }, width: 8, height: 6, layers: ["inner1"] }
-        : { center: { x: 0, y: 0 }, width: 30, height: 20, layers: ["inner1"] },
-    )
+    expect(planes[0]).toMatchObject({
+      center: board.center,
+      width: board.width,
+      height: board.height,
+      layers: ["inner1"],
+    })
 
     if (group) {
       // Explicitly requested group routing must retain its local reservation.
