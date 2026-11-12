@@ -1,12 +1,13 @@
+import { expectWiredInterface } from "tests/fixtures/cc2340r5-reference/expect-wired-interface"
 import { expect, test } from "bun:test"
 import Cc2340Reference, {
   exportedNets,
 } from "tests/fixtures/cc2340r5-reference"
 import { getElectricalSignature } from "tests/fixtures/cc2340r5-reference/electrical-signature"
-import publishedSignature from "tests/fixtures/cc2340r5-reference/published-electrical-signature.json"
+import moduleSignature from "tests/fixtures/cc2340r5-reference/module-electrical-signature"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("standalone CC2340R5 reference exports its real supply and SWD interface", async () => {
+test("standalone CC2340R5 reference exports its real GPIO, supply and SWD interface", async () => {
   const { circuit } = getTestFixture({ platform: { pcbDisabled: true } })
   circuit.add(<Cc2340Reference />)
   await circuit.renderUntilSettled()
@@ -26,15 +27,9 @@ test("standalone CC2340R5 reference exports its real supply and SWD interface", 
       .find((component) => component.name === "U1")?.manufacturer_part_number,
   ).toBe("CC2340R52E0RGER")
   expect(getElectricalSignature(circuit.getCircuitJson())).toEqual(
-    publishedSignature,
+    moduleSignature,
   )
-  expect(ports.map((port) => port.facing_direction)).toEqual([
-    "left",
-    "right",
-    "right",
-    "up",
-    "down",
-  ])
+  expect(ports.every((port) => port.facing_direction === "left")).toBe(true)
   for (const port of ports) {
     const boundary = port.boundary_position!
     const xOnEdge =
@@ -69,6 +64,7 @@ test("standalone CC2340R5 reference exports its real supply and SWD interface", 
   const before = circuit.getCircuitJson()
   await circuit.renderUntilSettled()
   expect(circuit.getCircuitJson()).toEqual(before)
+  expectWiredInterface(circuit)
   expect(circuit).toMatchSchematicSnapshot(import.meta.path, {
     width: 1600,
     height: 1250,

@@ -5,6 +5,7 @@ import {
 } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
 import { Port } from "../../Port"
 import type { Subcircuit } from "./Subcircuit"
+import { getSchematicGroupPortTarget } from "./getSchematicGroupPortTarget"
 
 type FacingDirection = NonNullable<SchematicPort["facing_direction"]>
 
@@ -152,17 +153,53 @@ export function Subcircuit_doInitialSchematicGroupPortLayout(
   })
   for (const direction of ["left", "right", "up", "down"] as const) {
     const sidePorts = sides[direction]
-    for (const [index, port] of sidePorts.entries()) {
-      const vertical = direction === "left" || direction === "right"
+    const vertical = direction === "left" || direction === "right"
+    const targets = sidePorts.map((port) =>
+      getSchematicGroupPortTarget(port, direction),
+    )
+    // Keep declared order while aligning terminals with the actual internal pins
+    // when there is room. This avoids a fan of long wires across the module.
+    const positions = targets.map((target, index) => {
       const offset =
         (index - (sidePorts.length - 1) / 2) *
         (vertical ? 0.8 : horizontalPitch)
+      return target
+        ? vertical
+          ? target.center.y
+          : target.center.x
+        : vertical
+          ? center.y - offset
+          : center.x + offset
+    })
+    const pitch = vertical ? 0.35 : horizontalPitch
+    for (let index = 1; index < positions.length; index++) {
+      positions[index] = vertical
+        ? Math.min(positions[index], positions[index - 1] - pitch)
+        : Math.max(positions[index], positions[index - 1] + pitch)
+    }
+    const min = (vertical ? center.y - height / 2 : center.x - width / 2) + 0.5
+    const max = (vertical ? center.y + height / 2 : center.x + width / 2) - 0.5
+    if (
+      positions.length &&
+      Math.max(...positions) - Math.min(...positions) > max - min
+    ) {
+      for (let index = 0; index < positions.length; index++) {
+        positions[index] = vertical
+          ? max - (index * (max - min)) / Math.max(1, positions.length - 1)
+          : min + (index * (max - min)) / Math.max(1, positions.length - 1)
+      }
+    }
+    const shift = positions.length
+      ? Math.max(0, min - Math.min(...positions)) -
+        Math.max(0, Math.max(...positions) - max)
+      : 0
+    for (const [index, port] of sidePorts.entries()) {
       const boundaryPosition = {
         x: vertical
           ? center.x + (direction === "left" ? -width / 2 : width / 2)
-          : center.x + offset,
+          : positions[index] + shift,
         y: vertical
-          ? center.y - offset
+          ? positions[index] + shift
           : center.y + (direction === "up" ? height / 2 : -height / 2),
       }
       const terminal = {

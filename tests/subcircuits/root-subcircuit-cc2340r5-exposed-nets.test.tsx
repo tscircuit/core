@@ -1,12 +1,13 @@
+import { expectWiredInterface } from "tests/fixtures/cc2340r5-reference/expect-wired-interface"
 import { expect, test } from "bun:test"
 import Cc2340Reference, {
   exportedNets,
 } from "tests/fixtures/cc2340r5-reference"
 import { getElectricalSignature } from "tests/fixtures/cc2340r5-reference/electrical-signature"
-import publishedSignature from "tests/fixtures/cc2340r5-reference/published-electrical-signature.json"
+import moduleSignature from "tests/fixtures/cc2340r5-reference/module-electrical-signature"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("exposedNets exports the CC2340R5 supply and SWD nets without changing the circuit", async () => {
+test("exposedNets exports the CC2340R5 GPIO, supply and SWD nets while preserving the reference support circuit", async () => {
   const { circuit } = getTestFixture({ platform: { pcbDisabled: true } })
   circuit.add(<Cc2340Reference interfaceMode="nets" schX={4} schY={-2} />)
   await circuit.renderUntilSettled()
@@ -35,10 +36,11 @@ test("exposedNets exports the CC2340R5 supply and SWD nets without changing the 
     ).toBe(true)
   }
   expect(getElectricalSignature(circuit.getCircuitJson())).toEqual(
-    publishedSignature,
+    moduleSignature,
   )
   expect(group.center.x).toBeGreaterThan(4)
   expect(group.center.y).toBeLessThan(-2)
+  expectWiredInterface(circuit)
   expect(circuit).toMatchSchematicSnapshot(import.meta.path, {
     width: 1600,
     height: 1250,

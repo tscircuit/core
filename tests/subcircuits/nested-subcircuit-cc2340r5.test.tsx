@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import Cc2340Reference from "tests/fixtures/cc2340r5-reference"
 import { getElectricalSignature } from "tests/fixtures/cc2340r5-reference/electrical-signature"
-import publishedSignature from "tests/fixtures/cc2340r5-reference/published-electrical-signature.json"
+import moduleSignature from "tests/fixtures/cc2340r5-reference/module-electrical-signature"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("board-nested CC2340R5 reference retains its expanded rendering", async () => {
@@ -19,7 +19,7 @@ test("board-nested CC2340R5 reference retains its expanded rendering", async () 
     circuit.db.schematic_port.list().some((port) => port.boundary_position),
   ).toBe(false)
   expect(getElectricalSignature(circuit.getCircuitJson())).toEqual(
-    publishedSignature,
+    moduleSignature,
   )
   expect(circuit).toMatchSchematicSnapshot(import.meta.path, {
     width: 1600,

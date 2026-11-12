@@ -3,10 +3,10 @@ import Cc2340Reference, {
   exportedNets,
 } from "tests/fixtures/cc2340r5-reference"
 import { getElectricalSignature } from "tests/fixtures/cc2340r5-reference/electrical-signature"
-import publishedSignature from "tests/fixtures/cc2340r5-reference/published-electrical-signature.json"
+import moduleSignature from "tests/fixtures/cc2340r5-reference/module-electrical-signature"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("collapsed CC2340R5 reference preserves the same five-terminal electrical interface", async () => {
+test("collapsed CC2340R5 reference preserves the same 13-terminal electrical interface", async () => {
   const { circuit } = getTestFixture({ platform: { pcbDisabled: true } })
   circuit.add(<Cc2340Reference collapsed />)
   await circuit.renderUntilSettled()
@@ -18,7 +18,7 @@ test("collapsed CC2340R5 reference preserves the same five-terminal electrical i
     .filter((port) => port.source_group_id)
   expect(publicPorts.map((port) => port.name)).toEqual([...exportedNets])
   expect(getElectricalSignature(circuit.getCircuitJson())).toEqual(
-    publishedSignature,
+    moduleSignature,
   )
   expect(circuit).toMatchSchematicSnapshot(import.meta.path, {
     width: 1600,

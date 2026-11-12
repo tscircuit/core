@@ -42,13 +42,22 @@ const schematic = Object.fromEntries(
 // Coordinates are redrawn for this standalone MCU reference; the PMIC, gauge,
 // accelerometer, USB and display circuits are deliberately outside this package.
 // Adapted from the pinned published reference; see README.md for provenance.
-export const exportedNets = [
-  "VDDS",
-  "GND",
-  "RESET_N",
-  "SWDIO",
-  "SWCLK",
+export const modulePorts = [
+  { name: "VDDS", pin: 11 },
+  { name: "DIO8", pin: 3 },
+  { name: "DIO11", pin: 4 },
+  { name: "DIO12", pin: 5 },
+  { name: "DIO13", pin: 6 },
+  { name: "DIO20_A11", pin: 9 },
+  { name: "DIO21_A10", pin: 10 },
+  { name: "DIO24_A7", pin: 12 },
+  { name: "DIO6_A1", pin: 19 },
+  { name: "SWDIO", pin: 7 },
+  { name: "SWCLK", pin: 8 },
+  { name: "RESET_N", pin: 13 },
+  { name: "GND", pin: 23 },
 ] as const
+export const exportedNets = modulePorts.map((port) => port.name)
 
 export default function Cc2340Reference({
   interfaceMode = "ports",
@@ -111,6 +120,14 @@ export default function Cc2340Reference({
     RF_ANT: ["L4.2", "ANT1.1"],
     SWDIO: ["U1.7", "TP1.1"],
     SWCLK: ["U1.8", "TP2.1"],
+    DIO8: ["U1.3"],
+    DIO11: ["U1.4"],
+    DIO12: ["U1.5"],
+    DIO13: ["U1.6"],
+    DIO20_A11: ["U1.9"],
+    DIO21_A10: ["U1.10"],
+    DIO24_A7: ["U1.12"],
+    DIO6_A1: ["U1.19"],
   }
   if (externalLfCrystal) {
     nets.LF_P = ["U1.14", "Y1.1", "C14.1"]
@@ -125,19 +142,10 @@ export default function Cc2340Reference({
     nets.RESET_N.push("J4.5")
   }
 
+  // The eight previously unused GPIOs are now the module's external IO.
   const unusedPins: NonNullable<
     Parameters<typeof CC2340R52E0RGER>[0]["noConnect"]
-  > = [
-    "pin3",
-    "pin4",
-    "pin5",
-    "pin6",
-    "pin9",
-    "pin10",
-    "pin12",
-    "pin19",
-    ...(!externalLfCrystal ? (["pin14", "pin15"] as const) : []),
-  ]
+  > = []
   const inductorParts = [
     ["L1", "10uH", LQM18DN100M70L, 7, 5, -10, -5, 0],
     ["L2", "2.8nH", LQP03TN2N8B02D, -6.8, 3.25, 5.5, 7, 0],
@@ -210,24 +218,14 @@ export default function Cc2340Reference({
         defaultPassiveSize: "md",
         defaultCapacitorOrientation: "vertical",
       }}
-      schPinArrangement={
-        interfaceMode === "none"
-          ? undefined
-          : {
-              leftSide: { pins: ["RESET_N"], direction: "top-to-bottom" },
-              rightSide: {
-                pins: ["SWDIO", "SWCLK"],
-                direction: "top-to-bottom",
-              },
-              topSide: { pins: ["VDDS"], direction: "left-to-right" },
-              bottomSide: { pins: ["GND"], direction: "left-to-right" },
-            }
-      }
+      schPinArrangement={{
+        leftSide: { pins: exportedNets, direction: "top-to-bottom" },
+      }}
     >
       {interfaceMode === "ports" &&
-        exportedNets.map((name) => (
+        modulePorts.map(({ name, pin }) => (
           <Fragment key={name}>
-            <port name={name} connectsTo={`net.${name}`} />
+            <port name={name} connectsTo={`U1.pin${pin}`} />
           </Fragment>
         ))}
       {Object.keys(sectionMembers).map((name) => (
@@ -250,9 +248,9 @@ export default function Cc2340Reference({
         fontSize={0.3}
       />
       <Note
-        text="01  MCU"
+        text="01  MCU / EXPORTED IO"
         schX={-11.7}
-        schY={7.02}
+        schY={7.5}
         anchor="left"
         fontSize={0.34}
       />
@@ -289,11 +287,11 @@ export default function Cc2340Reference({
         name="U1"
         {...schematic.U1}
         schX={-6.5}
-        schY={2.665}
+        schY={3.2}
         pcbX={0}
         pcbY={2}
         schWidth={4.2}
-        schHeight={5}
+        schHeight={8}
         schPinStyle={Object.fromEntries(
           Array.from({ length: 25 }, (_, i) => [
             `pin${i + 1}`,
@@ -308,26 +306,6 @@ export default function Cc2340Reference({
         schPinArrangement={{
           leftSide: [
             "VDDS1",
-            "VDDS2",
-            "VDDS3",
-            "VDDR1",
-            "VDDR2",
-            "VDDD",
-            "DCDC",
-            "GND",
-            "EP",
-          ],
-          rightSide: [
-            "ANT",
-            "X48P",
-            "X48N",
-            "DIO3_X32P",
-            "DIO4_X32N",
-            "RSTN",
-            "DIO16_SWDIO",
-            "DIO17_SWDCK",
-          ],
-          bottomSide: [
             "DIO8",
             "DIO11",
             "DIO12",
@@ -336,6 +314,24 @@ export default function Cc2340Reference({
             "DIO21_A10",
             "DIO24_A7",
             "DIO6_A1",
+            "DIO16_SWDIO",
+            "DIO17_SWDCK",
+            "RSTN",
+            "GND",
+          ],
+          rightSide: [
+            "ANT",
+            "X48P",
+            "X48N",
+            "DIO3_X32P",
+            "DIO4_X32N",
+            "VDDS2",
+            "VDDS3",
+            "VDDR1",
+            "VDDR2",
+            "VDDD",
+            "DCDC",
+            "EP",
           ],
         }}
         noConnect={unusedPins}

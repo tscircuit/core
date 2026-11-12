@@ -17,6 +17,7 @@ import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSche
 import type { NetLabel } from "../../NetLabel"
 import { Port } from "../../Port"
 import { Group } from "../Group"
+import { getSchematicGroupPortTarget } from "../Subcircuit/getSchematicGroupPortTarget"
 import { applyInlineNetLabelEligibility } from "./applyInlineNetLabelEligibility"
 import { createCanonicalSchematicNetLabelTextResolver } from "./createCanonicalSchematicNetLabelTextResolver"
 import { getNetNameFromPorts } from "./getNetNameFromPorts"
@@ -1038,6 +1039,56 @@ export function createSchematicTraceSolverInputProblem(
     },
     resolveCanonicalNetLabelText,
   })
+
+  // Public interfaces must have a visible connection to an internal endpoint.
+  // Attach the boundary pin to that endpoint's section instead of allowing the
+  // section splitter to replace the entire interface with disconnected labels.
+  for (const boundaryPort of schematicGroupPorts) {
+    const port = componentPortBySchematicPortId.get(
+      asSchematicPortId(boundaryPort.schematic_port_id),
+    )
+    if (!port) continue
+    const target = getSchematicGroupPortTarget(
+      port,
+      boundaryPort.facing_direction,
+    )
+    if (
+      !target ||
+      !schematicPortIdsInScope.has(asSchematicPortId(target.schematic_port_id))
+    )
+      continue
+    const boundaryChip = chips.find(
+      (chip) => chip.chipId === boundaryPort.schematic_port_id,
+    )!
+    boundaryChip.sectionId = sectionIdBySchematicComponentId.get(
+      target.schematic_component_id!,
+    )
+    const pair: [SchematicPortId, SchematicPortId] = [
+      asSchematicPortId(boundaryPort.schematic_port_id),
+      asSchematicPortId(target.schematic_port_id),
+    ]
+    const pairKey = [...pair].sort().join("::")
+    const sourceTrace = tracesInScope.find((trace) =>
+      trace.connected_source_port_ids.includes(boundaryPort.source_port_id),
+    )
+    if (!sourceTrace) continue
+    const connKey = port._getSubcircuitConnectivityKey()!
+    const sourceNet = connKeyToSourceNet.get(connKey)
+    const netId = sourceNet?.name ?? sourceTrace.source_trace_id
+    userNetIdToConnKey.set(netId, connKey)
+    sourceTraceIdByPinPairKey.set(pairKey, sourceTrace.source_trace_id)
+    // Replace any earlier label-eligible direct edge with an ordinary wire.
+    for (let index = directConnections.length - 1; index >= 0; index--) {
+      if (directConnections[index].schematicPortIds.includes(pair[0]))
+        directConnections.splice(index, 1)
+    }
+    for (const connection of netConnections) {
+      connection.schematicPortIds = connection.schematicPortIds.filter(
+        (id) => id !== pair[0],
+      )
+    }
+    directConnections.push({ schematicPortIds: pair, netId, connKey })
+  }
 
   // Available net label orientations from source_net naming conventions
   const availableNetLabelOrientations: Record<string, AxisDirection[]> =
