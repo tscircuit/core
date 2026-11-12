@@ -1012,18 +1012,16 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     }
     return true
   })
-  const { copperConnectedPcbPortGroups } = findFloatingCopper(
+  const { copperConnectedPointGroups } = findFloatingCopper(
     retainedCopperElements,
   )
-  for (const pcbPortIds of copperConnectedPcbPortGroups) {
-    const connectedPcbPortIds = new Set(pcbPortIds)
+  for (const copperPointIds of copperConnectedPointGroups) {
+    const connectedPointIds = new Set(copperPointIds)
     for (const connection of allConns) {
       const pointIds = [
         ...new Set(
           connection.pointsToConnect.flatMap((point) =>
-            point.pointId &&
-            point.pcb_port_id &&
-            connectedPcbPortIds.has(point.pcb_port_id)
+            point.pointId && connectedPointIds.has(point.pointId)
               ? [point.pointId]
               : [],
           ),
