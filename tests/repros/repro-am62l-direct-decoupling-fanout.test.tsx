@@ -46,7 +46,11 @@ test("routes the AM62L and LPDDR4 with the real decoupling network present", asy
       "Vias unnamed via and unnamed via from different nets are too close together (gap: 0.085mm)",
       "Vias unnamed via and unnamed via from different nets are too close together (gap: 0.085mm)",
       "Vias unnamed via and unnamed via from different nets are too close together (gap: 0.085mm)",
-      "Vias unnamed via and unnamed via from different nets are too close together (gap: 0.085mm)",
+      "Vias unnamed via and unnamed via from different nets are too close together (gap: 0.094mm)",
+      "Vias unnamed via and unnamed via from different nets are too close together (gap: 0.094mm)",
+      "Vias unnamed via and unnamed via from different nets are too close together (gap: 0.094mm)",
+      "Vias unnamed via and unnamed via from different nets are too close together (gap: 0.094mm)",
+      "Vias unnamed via and unnamed via from different nets are too close together (gap: 0.094mm)",
     ]
   `)
   expect(
