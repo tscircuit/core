@@ -575,12 +575,11 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   const sourceTraces = db.source_trace.list()
   const differentialPairs: DifferentialPair[] =
     subcircuitComponent?.selectAll<DifferentialPair>("differentialpair") ?? []
-  const pairedSourceTraceIds = getDifferentialPairSourceTraceIds({
+  const differentialPairSourceTraceIds = getDifferentialPairSourceTraceIds({
     differentialPairs,
     sourceTraces,
     subcircuitId: subcircuit_id,
   })
-  const differentialPairSourceTraceIds = new Set(pairedSourceTraceIds.flat())
   const exposedBridgeSourceTraceIds = new Set<SourceTrace["source_trace_id"]>()
   const orderedPathsBySourceTraceId = new Map<
     SourceTrace["source_trace_id"],
@@ -593,7 +592,6 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       exposedBridgeSourceTraceIds.add(sourceTraceId)
     }
     if (
-      !differentialPairSourceTraceIds.has(sourceTraceId) ||
       sourceTraceIdsAlreadyPreservedAsSrjTraces.has(sourceTraceId) ||
       !("path" in trace.props)
     )
@@ -608,6 +606,8 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       sourceTrace.connected_source_port_ids.length <= 2
     )
       continue
+    // The path lists ports only. A `net.X` entry attaches the chain to that
+    // net through the net connection; it is not a position in the chain.
     const path = sourceTrace.connected_source_port_ids.flatMap(
       (source_port_id) => {
         const port = db.pcb_port.getWhere({ source_port_id })
@@ -622,32 +622,18 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       orderedPathsBySourceTraceId.set(sourceTraceId, path)
     }
   }
-  // Preserve two-terminal sections and matching explicit multi-pad paths
+  // Preserve two-terminal pair sections and every ordered multi-port path
   // before reducing the rest of each net.
-  const differentialPairPathSourceTraceIds = new Set(
-    sourceTraces
+  const explicitPathSourceTraceIds = new Set([
+    ...sourceTraces
       .filter(
         (trace) =>
           differentialPairSourceTraceIds.has(trace.source_trace_id) &&
           trace.connected_source_port_ids.length === 2,
       )
       .map((trace) => trace.source_trace_id),
-  )
-  for (const [
-    positiveSourceTraceId,
-    negativeSourceTraceId,
-  ] of pairedSourceTraceIds) {
-    const positivePath = orderedPathsBySourceTraceId.get(positiveSourceTraceId)
-    const negativePath = orderedPathsBySourceTraceId.get(negativeSourceTraceId)
-    if (
-      !positivePath ||
-      !negativePath ||
-      positivePath.length !== negativePath.length
-    )
-      continue
-    differentialPairPathSourceTraceIds.add(positiveSourceTraceId)
-    differentialPairPathSourceTraceIds.add(negativeSourceTraceId)
-  }
+    ...orderedPathsBySourceTraceId.keys(),
+  ])
   const planeTerminatedSourceTraceLayers = getPlaneTerminatedSourceTraceLayers({
     fanoutPourNetMap,
     sourceNets: db.source_net.list(),
@@ -671,11 +657,11 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         !subcircuit_id || (trace as any).subcircuit_id === subcircuit_id,
     )
     // Net-attached traces contribute their terminals to connectionsFromNets.
-    // Named pair paths, netless traces and plane terminations retain their own connection.
+    // Explicit paths, netless traces and plane terminations retain their own connection.
     .filter(
       (sourceTrace) =>
         sourceTrace.connected_source_net_ids.length === 0 ||
-        differentialPairPathSourceTraceIds.has(sourceTrace.source_trace_id) ||
+        explicitPathSourceTraceIds.has(sourceTrace.source_trace_id) ||
         planeTerminatedSourceTraceLayers.has(sourceTrace.source_trace_id),
     )
     .map((trace) => {
@@ -733,13 +719,13 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     })
     .filter((c): c is SimpleRouteConnection => c !== null)
 
-  const differentialPairPathConnections = directTraceConnections.filter(
+  const explicitPathConnections = directTraceConnections.filter(
     (connection) =>
       connection.source_trace_id !== undefined &&
-      differentialPairPathSourceTraceIds.has(connection.source_trace_id),
+      explicitPathSourceTraceIds.has(connection.source_trace_id),
   )
-  const differentialPairPathSourcePortIds = new Set(
-    differentialPairPathConnections.flatMap(
+  const explicitPathSourcePortIds = new Set(
+    explicitPathConnections.flatMap(
       (connection) =>
         sourceTraceById.get(connection.source_trace_id!)!
           .connected_source_port_ids,
@@ -859,11 +845,11 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       )
     }
 
-    // Pair sections preserve path identity, but still inherit net width rules.
+    // Explicit paths preserve their identity, but still inherit net width rules.
     const connectedSourceTraceIds = new Set(
       connectedSourceTraces.map((trace) => trace.source_trace_id),
     )
-    for (const connection of differentialPairPathConnections) {
+    for (const connection of explicitPathConnections) {
       if (!connectedSourceTraceIds.has(connection.source_trace_id!)) continue
       connection.netConnectionName = net.source_net_id
       connection.nominalTraceWidth = nominalTraceWidthForConnection
@@ -887,10 +873,10 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       }
     }
     pointsToConnect.push(
-      // Hints at paired terminals already belong to their explicit paths.
+      // Hints at explicit path terminals already belong to those paths.
       ...getSrjConnectionPointsFromPcbTraceHints(
         connectedPcbPorts.filter(
-          (port) => !differentialPairPathSourcePortIds.has(port.source_port_id),
+          (port) => !explicitPathSourcePortIds.has(port.source_port_id),
         ),
         traceHints,
       ),
@@ -988,7 +974,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
 
   reduceNetConnectionPointsForDifferentialPairPaths({
     netConnections: connectionsFromNets,
-    differentialPairConnections: differentialPairPathConnections,
+    differentialPairConnections: explicitPathConnections,
   })
 
   // Plane-terminated one-point traces are emitted by directTraceConnections.

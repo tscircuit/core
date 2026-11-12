@@ -95,7 +95,13 @@ test("PMP23653 TSX topology emits one autorouter connection per net", async () =
       0,
     ),
   ).toBe(18)
-  expect(new Set(autorouterInput?.connections.map(({ name }) => name))).toEqual(
+  expect(
+    new Set(
+      autorouterInput?.connections.map(
+        ({ netConnectionName }) => netConnectionName,
+      ),
+    ),
+  ).toEqual(
     new Set(
       circuit.db.source_net.list().map((sourceNet) => sourceNet.source_net_id),
     ),

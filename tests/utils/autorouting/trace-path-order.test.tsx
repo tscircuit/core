@@ -14,7 +14,7 @@ const PathParts = () => (
   </>
 )
 
-test.failing("exports the written order of every trace path", () => {
+test("exports the written order of every trace path", () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width={19} height={13} routingDisabled schematicDisabled>
@@ -44,7 +44,9 @@ test.failing("exports the written order of every trace path", () => {
   ])
 })
 
-test.failing("routes a trace path in the written order", async () => {
+// TODO: passes once @tscircuit/capacity-autorouter is bumped to a release
+// with tscircuit/tscircuit-autorouter#3708 (ordered `path` point pairs).
+test("routes a trace path in the written order", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width={19} height={13} schematicDisabled autorouter="auto_local">
