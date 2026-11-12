@@ -1,14 +1,9 @@
 import { expect, test } from "bun:test"
 import { segmentToSegmentMinDistance } from "@tscircuit/math-utils"
-import type { PcbTrace, PcbTraceRoutePoint } from "circuit-json"
+import type { PcbTrace, PcbTraceRoutePointWire } from "circuit-json"
 import { createAutoroutingPhaseIoStack } from "tests/fixtures/create-autorouting-phase-io-stack"
 import { renderRoutingObstacleComparison } from "tests/fixtures/render-routing-obstacle-comparison"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
-
-const fixedRoute = [
-  { route_type: "wire", layer: "top", width: 0.4, x: -2, y: -2 },
-  { route_type: "wire", layer: "top", width: 0.4, x: 2, y: 2 },
-] satisfies PcbTraceRoutePoint[]
 
 async function routeBetweenResistors(withFixedCopper: boolean) {
   const { circuit } = getTestFixture()
@@ -26,7 +21,19 @@ async function routeBetweenResistors(withFixedCopper: boolean) {
           name="FIXED"
           footprint={
             <footprint>
-              <pcbtrace route={fixedRoute} />
+              <pcbtrace
+                route={[
+                  { x: -2, y: -2 },
+                  { x: 2, y: 2 },
+                ].map(
+                  (point): PcbTraceRoutePointWire => ({
+                    ...point,
+                    route_type: "wire",
+                    layer: "top",
+                    width: 0.4,
+                  }),
+                )}
+              />
             </footprint>
           }
         />
@@ -61,8 +68,14 @@ async function routeBetweenResistors(withFixedCopper: boolean) {
   }
 }
 
-// Minimum edge-to-edge gap to the frozen trace, on its copper layer.
-function gapToFixedCopper(trace: PcbTrace) {
+/** Minimum edge-to-edge gap (mm) between top-layer wires in board-world XY.
+ * Endpoints are positions in a right-handed frame (+X right, +Y up, +Z above).
+ */
+function gapToFixedCopper(trace: PcbTrace, fixedTrace: PcbTrace) {
+  const [start, end] = fixedTrace.route
+  if (start?.route_type !== "wire" || end?.route_type !== "wire") {
+    throw new Error("Expected two wire endpoints on the fixed trace")
+  }
   let gap = Infinity
   for (let i = 1; i < trace.route.length; i++) {
     const a = trace.route[i - 1]!
@@ -74,13 +87,8 @@ function gapToFixedCopper(trace: PcbTrace) {
       b.layer !== "top"
     )
       continue
-    const distance = segmentToSegmentMinDistance(
-      a,
-      b,
-      fixedRoute[0]!,
-      fixedRoute[1]!,
-    )
-    gap = Math.min(gap, distance - (a.width + fixedRoute[0]!.width) / 2)
+    const distance = segmentToSegmentMinDistance(a, b, start, end)
+    gap = Math.min(gap, distance - (a.width + start.width) / 2)
   }
   return gap
 }
@@ -89,7 +97,6 @@ test("route R1 to R2 past a frozen top-layer diagonal", async () => {
   const control = await routeBetweenResistors(false)
   expect(control.failures).toEqual([])
   expect(control.traces).toHaveLength(1)
-  expect(gapToFixedCopper(control.traces[0]!)).toBeLessThan(0)
 
   const { circuit, failures, input, traces } = await routeBetweenResistors(true)
   expect(
@@ -100,7 +107,11 @@ test("route R1 to R2 past a frozen top-layer diagonal", async () => {
   expect(traces).toHaveLength(1)
   expect(input).toBeUndefined()
   const fixedTrace = traces[0]!
-  expect(fixedTrace.route).toMatchObject(fixedRoute)
+  expect(fixedTrace.route).toMatchObject([
+    { route_type: "wire", layer: "top", width: 0.4, x: -2, y: -2 },
+    { route_type: "wire", layer: "top", width: 0.4, x: 2, y: 2 },
+  ])
+  expect(gapToFixedCopper(control.traces[0]!, fixedTrace)).toBeLessThan(0)
   expect(control.input).toBeDefined()
   await expect(
     renderRoutingObstacleComparison(
