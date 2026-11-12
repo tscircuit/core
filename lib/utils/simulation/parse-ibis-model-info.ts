@@ -23,7 +23,8 @@ export function parseIbisModelInfo(source: string) {
     if (!line) continue
     const headerEnd = line.indexOf("]")
     if (line.startsWith("[") && headerEnd !== -1) {
-      section = line.slice(1, headerEnd).toLowerCase()
+      // IBIS keywords treat "_" and " " alike, e.g. [Diff Pin] and [Diff_Pin].
+      section = line.slice(1, headerEnd).toLowerCase().replaceAll("_", " ")
       const name = line.slice(headerEnd + 1).trim()
       switch (section) {
         case "component":
@@ -52,7 +53,7 @@ export function parseIbisModelInfo(source: string) {
       case "pin":
         component?.pinModels.set(fields[0], fields[2])
         break
-      case "diff_pin":
+      case "diff pin":
         component?.differentialPins.set(fields[0], fields[1])
         break
       case "model selector":

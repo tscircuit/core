@@ -124,8 +124,13 @@ function validateSignals(
         throw new Error(
           `Signals "${name}" and "${other.signal._parsedProps.name}" are on the same net; one signal per net.`,
         )
+    // Endpoints were already validated with their own model overrides.
+    const endpointPortIds = new Set([
+      ...driver.ports,
+      ...receivers.flatMap((receiver) => receiver.ports),
+    ])
     for (const port of ports) {
-      if (driver.ports.includes(port.source_port_id)) continue
+      if (endpointPortIds.has(port.source_port_id)) continue
       const info = getSignalPortModelInfo(block, port.source_port_id)
       if (info?.modelType === "output")
         throw new Error(
