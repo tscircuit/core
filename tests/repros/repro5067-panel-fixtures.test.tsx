@@ -21,8 +21,8 @@ test("panel tooling holes and fiducials can be placed in the panel frame", async
       .length,
   }).toMatchInlineSnapshot(`
     {
-      "fiducialPads": 0,
-      "holes": 0,
+      "fiducialPads": 1,
+      "holes": 1,
     }
   `)
 })
