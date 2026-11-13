@@ -2,7 +2,10 @@ import { expect, test } from "bun:test"
 import { createAutoroutingPhaseIoStack } from "tests/fixtures/create-autorouting-phase-io-stack"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("fanout drops top and bottom ground pads onto a six-layer board with two GND planes", async () => {
+async function routeGroundPads(fanoutPourNetMap?: {
+  inner1?: string
+  inner4?: string
+}) {
   const { circuit } = getTestFixture()
   const phases = createAutoroutingPhaseIoStack(circuit)
   const failures: string[] = []
@@ -21,7 +24,7 @@ test("fanout drops top and bottom ground pads onto a six-layer board with two GN
     >
       <autoroutingphase
         autorouter="fanout"
-        fanoutPourNetMap={{ inner4: "net.GND", inner1: "net.GND" }}
+        fanoutPourNetMap={fanoutPourNetMap}
       />
       {(["top", "bottom"] as const).map((side, i) => (
         <chip
@@ -48,13 +51,69 @@ test("fanout drops top and bottom ground pads onto a six-layer board with two GN
     </board>,
   )
   await circuit.renderUntilSettled()
+  return { circuit, failures, input: phases[0]?.startSimpleRouteJson }
+}
+
+test("fanout drops top and bottom ground pads onto a six-layer board with two GND planes", async () => {
+  // Reverse stack order to catch accidentally choosing the first authored plane.
+  const explicit = await routeGroundPads({
+    inner4: "net.GND",
+    inner1: "net.GND",
+  })
+  const inferred = await routeGroundPads()
+  const override = await routeGroundPads({ inner1: "net.GND" })
+  for (const result of [explicit, inferred, override]) {
+    const { circuit, failures, input } = result
+    const bottomTarget = result === override ? "inner1" : "inner4"
+    expect(failures).toEqual([])
+    expect(input?.buses).toHaveLength(2)
+    expect(input?.buses).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          busId: "GND_TOP",
+          termination: { type: "plane", layer: "inner1" },
+        }),
+        expect.objectContaining({
+          busId: "GND_BOTTOM",
+          termination: { type: "plane", layer: bottomTarget },
+        }),
+      ]),
+    )
+    const vias = circuit.db.pcb_via.list()
+    expect(vias).toHaveLength(2)
+    expect(vias).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ from_layer: "top", to_layer: "inner1" }),
+        expect.objectContaining({
+          from_layer: "bottom",
+          to_layer: bottomTarget,
+        }),
+      ]),
+    )
+    for (const via of vias) {
+      expect(via.layers).toEqual([
+        "top",
+        "inner1",
+        "inner2",
+        "inner3",
+        "inner4",
+        "bottom",
+      ])
+    }
+    expect(
+      circuit.db.pcb_copper_pour
+        .list()
+        .map((pour) => pour.layer)
+        .sort(),
+    ).toEqual(["inner1", "inner4"])
+    expect(
+      circuit
+        .getCircuitJson()
+        .filter((element) => element.type.endsWith("_error")),
+    ).toEqual([])
+  }
+  const { circuit } = explicit
   const vias = circuit.db.pcb_via.list()
-  expect(failures).toHaveLength(1)
-  expect(failures[0]).toContain(
-    'Fanout plane net "GND" maps to multiple layers',
-  )
-  expect(phases).toHaveLength(0)
-  expect(vias).toHaveLength(0)
   for (const [side, x] of [
     ["top", -3],
     ["bottom", 3],
