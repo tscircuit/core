@@ -1,13 +1,17 @@
 import { expect, test } from "bun:test"
+import type { PcbTrace } from "circuit-json"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("pcbStraightLine copper exists before and is preserved during autorouting", async () => {
   const { circuit } = getTestFixture()
   let autorouterInput: SimpleRouteJson | undefined
+  let initialStraightLine: PcbTrace | undefined
   circuit.on("autorouting:start", ({ simpleRouteJson }) => {
     autorouterInput = structuredClone(simpleRouteJson)
-    expect(circuit.db.pcb_trace.list()).toHaveLength(1)
+    const pcbTraces = circuit.db.pcb_trace.list()
+    expect(pcbTraces).toHaveLength(1)
+    initialStraightLine = structuredClone(pcbTraces[0])
   })
 
   circuit.add(
@@ -75,18 +79,17 @@ test("pcbStraightLine copper exists before and is preserved during autorouting",
 
   expect(autorouterInput).toBeDefined()
   expect(autorouterInput?.connections).toHaveLength(1)
-  expect(autorouterInput?.traces).toHaveLength(1)
-
-  const [preservedStraightLine] = autorouterInput?.traces ?? []
-  expect(preservedStraightLine?.route).toHaveLength(2)
+  expect(autorouterInput?.traces ?? []).toHaveLength(0)
+  expect(initialStraightLine).toBeDefined()
+  expect(initialStraightLine?.route).toHaveLength(2)
   expect(
-    circuit.db.pcb_trace
-      .list()
-      .some(
-        (pcbTrace) =>
-          pcbTrace.pcb_trace_id === preservedStraightLine?.pcb_trace_id,
-      ),
+    autorouterInput?.obstacles.some((obstacle) =>
+      obstacle.connectedTo.includes(initialStraightLine!.source_trace_id!),
+    ),
   ).toBe(true)
+  expect(
+    circuit.db.pcb_trace.get(initialStraightLine!.pcb_trace_id)?.route,
+  ).toEqual(initialStraightLine?.route)
   expect(circuit.db.pcb_trace.list()).toHaveLength(2)
   expect(circuit.db.pcb_trace_error.list()).toEqual([])
 
