@@ -144,3 +144,5 @@ export { AssemblyBolt } from "./primitive-components/AssemblyBolt"
 export { PanelTab } from "./primitive-components/PanelTab"
 
 export { PanelTabKeepout } from "./primitive-components/PanelTabKeepout"
+
+export { Toolingrail } from "./normal-components/Toolingrail"

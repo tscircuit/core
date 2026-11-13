@@ -16,6 +16,7 @@ export interface TscircuitElements {
   panel: Props.PanelProps
   paneltab: Props.PanelTabProps
   paneltabkeepout: Props.PanelTabKeepoutProps
+  toolingrail: Props.ToolingrailProps
   subpanel: Props.SubpanelProps
   jumper: Props.JumperProps
   interconnect: Props.InterconnectProps
