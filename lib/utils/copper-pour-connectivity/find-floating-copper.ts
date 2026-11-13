@@ -2,6 +2,7 @@ import { Polygon, point } from "@flatten-js/core"
 import type {
   AnyCircuitElement,
   LayerRef,
+  PcbBreakoutPoint,
   PcbCopperPour,
   PcbPort,
   PcbTraceRoutePoint,
@@ -27,6 +28,7 @@ type CopperNetId = NonNullable<
   ReturnType<ConnectivityMap["getNetConnectedToId"]>
 >
 type PcbPortId = PcbPort["pcb_port_id"]
+type CopperPointId = PcbPortId | PcbBreakoutPoint["pcb_breakout_point_id"]
 
 // Match the pour solver's coordinate scale. Flatten's internal epsilon must
 // not collapse the sub-micron edges emitted by polygon clipping into points.
@@ -42,6 +44,8 @@ interface CopperConductor {
   pourId?: PcbCopperPour["pcb_copper_pour_id"]
   pcbPortIds?: PcbPortId[]
   viaId?: PcbVia["pcb_via_id"]
+  /** Via center in right-handed board-world mm (+X right, +Y up). */
+  viaCenter?: Pick<PcbVia, "x" | "y">
 }
 
 const getRouteEndpoint = (
@@ -110,7 +114,7 @@ const getExplicitWireTaperPolygon = (
  * layers. Generated stitching vias and broken traces cannot anchor pours.
  * Nets without terminals or authored vias retain their authored pour geometry.
  * Includes every subcircuit so a child pour can reach a parent terminal.
- * Also returns terminal groups physically joined by a component containing
+ * Also returns port/breakout groups physically joined by a component containing
  * a pour, using the same graph that determines which copper is floating.
  */
 export const findFloatingCopper = (
@@ -119,10 +123,10 @@ export const findFloatingCopper = (
 ) => {
   const floatingPourIds = new Set<PcbCopperPour["pcb_copper_pour_id"]>()
   const floatingViaIds = new Set<PcbVia["pcb_via_id"]>()
-  const copperConnectedPcbPortGroups: PcbPortId[][] = []
+  const copperConnectedPointGroups: CopperPointId[][] = []
   const pours = circuitJson.filter((e) => e.type === "pcb_copper_pour")
   if (pours.length === 0)
-    return { floatingPourIds, floatingViaIds, copperConnectedPcbPortGroups }
+    return { floatingPourIds, floatingViaIds, copperConnectedPointGroups }
   const connectivity = getFullConnectivityMapFromCircuitJson(circuitJson)
   const pouredNets = new Set(
     pours.flatMap((pour) =>
@@ -201,6 +205,7 @@ export const findFloatingCopper = (
           netId,
           isTerminal: !generatedStitchingViaIds.has(element.pcb_via_id),
           viaId: element.pcb_via_id,
+          viaCenter: element,
           pcbPortIds: element.pcb_port_ids,
         })
     } else if (element.type === "pcb_trace") {
@@ -237,6 +242,7 @@ export const findFloatingCopper = (
               }),
             netId,
             isTerminal: false,
+            viaCenter: routePoint,
           })
         }
         const next = element.route[i + 1]
@@ -276,7 +282,7 @@ export const findFloatingCopper = (
   }
 
   if (conductors.length === 0)
-    return { floatingPourIds, floatingViaIds, copperConnectedPcbPortGroups }
+    return { floatingPourIds, floatingViaIds, copperConnectedPointGroups }
   const parent = conductors.map((_, i) => i)
   const find = (i: number): number => {
     while (parent[i] !== i) {
@@ -325,23 +331,76 @@ export const findFloatingCopper = (
       conductor.isTerminal ? [find(i)] : [],
     ),
   )
-  const pcbPortIdsByPourRoot = new Map<number, Set<PcbPortId>>()
+  const pointIdsByPourRoot = new Map<number, Set<CopperPointId>>()
   for (const [i, conductor] of conductors.entries()) {
-    if (conductor.pourId) pcbPortIdsByPourRoot.set(find(i), new Set())
+    if (conductor.pourId) pointIdsByPourRoot.set(find(i), new Set())
   }
   for (const [i, conductor] of conductors.entries()) {
     const root = find(i)
-    const connectedPcbPortIds = pcbPortIdsByPourRoot.get(root)
+    const connectedPointIds = pointIdsByPourRoot.get(root)
     for (const pcbPortId of conductor.pcbPortIds ?? []) {
-      connectedPcbPortIds?.add(pcbPortId)
+      connectedPointIds?.add(pcbPortId)
     }
     if (!netsWithTerminals.has(conductor.netId) || terminalRoots.has(root))
       continue
     if (conductor.pourId) floatingPourIds.add(conductor.pourId)
     if (conductor.viaId) floatingViaIds.add(conductor.viaId)
   }
-  for (const pcbPortIds of pcbPortIdsByPourRoot.values()) {
-    if (pcbPortIds.size > 1) copperConnectedPcbPortGroups.push([...pcbPortIds])
+  const pcbPortsBySourcePortId = new Map(
+    circuitJson
+      .filter((element) => element.type === "pcb_port")
+      .map((port) => [port.source_port_id, port]),
+  )
+  for (const breakout of circuitJson) {
+    if (breakout.type !== "pcb_breakout_point") continue
+    const sourceId =
+      breakout.source_port_id ??
+      breakout.source_net_id ??
+      breakout.source_trace_id
+    if (!sourceId) continue
+    const netId = connectivity.getNetConnectedToId(sourceId) ?? sourceId
+    const sourcePcbPort = breakout.source_port_id
+      ? pcbPortsBySourcePortId.get(breakout.source_port_id)
+      : undefined
+    const layer = breakout.layer ?? sourcePcbPort?.layers[0] ?? "top"
+    const position = point(
+      breakout.x * GEOMETRY_SCALE,
+      breakout.y * GEOMETRY_SCALE,
+    )
+    for (const i of spatialIndex.search(
+      position.x - CONTACT_TOLERANCE,
+      position.y - CONTACT_TOLERANCE,
+      position.x + CONTACT_TOLERANCE,
+      position.y + CONTACT_TOLERANCE,
+    )) {
+      const conductor = conductors[i]!
+      const connectedPointIds = pointIdsByPourRoot.get(find(i))
+      if (
+        !connectedPointIds ||
+        conductor.netId !== netId ||
+        !conductor.layers.includes(layer)
+      )
+        continue
+      // A breakout is only a routing target, not copper or an anchor for a
+      // floating pour. Match retained copper at its own position and layer;
+      // the source pad's plane connection does not imply the escape is routed.
+      // Via endpoints sit at the drill center, inside the annulus's hole.
+      const atViaCenter =
+        conductor.viaCenter &&
+        Math.hypot(
+          position.x - conductor.viaCenter.x * GEOMETRY_SCALE,
+          position.y - conductor.viaCenter.y * GEOMETRY_SCALE,
+        ) <= CONTACT_TOLERANCE
+      if (
+        atViaCenter ||
+        conductor.polygon.contains(position) ||
+        position.distanceTo(conductor.polygon)[0] <= CONTACT_TOLERANCE
+      )
+        connectedPointIds.add(breakout.pcb_breakout_point_id)
+    }
   }
-  return { floatingPourIds, floatingViaIds, copperConnectedPcbPortGroups }
+  for (const pointIds of pointIdsByPourRoot.values()) {
+    if (pointIds.size > 1) copperConnectedPointGroups.push([...pointIds])
+  }
+  return { floatingPourIds, floatingViaIds, copperConnectedPointGroups }
 }

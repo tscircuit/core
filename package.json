@@ -1,7 +1,7 @@
 {
   "name": "@tscircuit/core",
   "type": "module",
-  "version": "0.0.2346",
+  "version": "0.0.2360",
   "types": "dist/index.d.ts",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -39,10 +39,10 @@
     "@tsci/tscircuit.ti": "github:tscircuit/ti#57e314be4b2b06bc546d4def7453e619604d1157",
     "@tscircuit/alphabet": "0.0.25",
     "@tscircuit/bga-fanout-solver": "github:tscircuit/bga-fanout-solver#247c835cb8d69b65e53891dcf869731079415b39",
-    "@tscircuit/bus-lanes-solver": "https://jscdn.tscircuit.com/@tscircuit/bus-lanes-solver/0.0.52.tgz",
+    "@tscircuit/bus-lanes-solver": "https://jscdn.tscircuit.com/@tscircuit/bus-lanes-solver/0.0.55.tgz",
     "@tscircuit/cableprinter": "^0.0.6",
-    "@tscircuit/capacity-autorouter": "^0.0.1078",
-    "@tscircuit/checks": "^0.0.273",
+    "@tscircuit/capacity-autorouter": "^0.0.1087",
+    "@tscircuit/checks": "^0.0.277",
     "@tscircuit/circuit-json-util": "^0.0.131",
     "@tscircuit/common": "^0.0.20",
     "@tscircuit/copper-pour-solver": "^0.0.74",
@@ -50,7 +50,7 @@
     "@tscircuit/dogbone-solver": "https://jscdn.tscircuit.com/@tscircuit/dogbone-solver/0.0.4.tgz",
     "@tscircuit/fanout-solver": "0.0.84",
     "@tscircuit/flex-utils": "https://jscdn.tscircuit.com/@tscircuit/flex-utils/0.0.8.tgz",
-    "@tscircuit/footprinter": "^0.0.450",
+    "@tscircuit/footprinter": "^0.0.451",
     "@tscircuit/image-utils": "^0.0.8",
     "@tscircuit/implicit-copper-pour-solver": "github:tscircuit/implicit-copper-pour-solver#a5cbbda0cd65fd4707c5c1af25779837c25aba92",
     "@tscircuit/infer-cable-insertion-point": "^0.0.5",
@@ -123,7 +123,7 @@
     "dsn-converter": "^0.0.90",
     "easyeda": "^0.0.389",
     "circuit-json-to-pnp-csv": "^0.0.20",
-    "@tscircuit/core-ddr-benchmark": "github:ShiboSoftwareDev/core-ddr-benchmark#8ad0e1e2cc4c7069ce8d52e4a7d7e0ccc1cfb67c"
+    "@tscircuit/core-ddr-benchmark": "github:ShiboSoftwareDev/core-ddr-benchmark#7b05251f6e868954adead2275a26c95b163c4813"
   },
   "peerDependencies": {
     "@tscircuit/capacity-autorouter": "*",
