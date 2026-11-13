@@ -335,7 +335,7 @@ export class NormalComponent<
 
     this._inferredInternallyConnectedPinNames = []
     const { config } = this
-    const portsToCreate: Port[] = []
+    let portsToCreate: Port[] = []
     const pinLabels = this._resolvePinLabels() ?? opts.implicitPinLabels
     const propsPinLabels = this._parsedProps.pinLabels
     const pinLabelsFromProps =
@@ -626,6 +626,27 @@ export class NormalComponent<
         ),
       )
     }
+
+    // Arrangement-only pins can gain their primary port in the loop above.
+    // Once all primary ports are known, discard extra pad ports whose pin
+    // was omitted, along with inferred connections that reference them.
+    const omittedInternalPortNames = new Set<string>()
+    portsToCreate = portsToCreate.filter((port) => {
+      if (
+        port._isPrimaryPort ||
+        port._primaryPinNumber === null ||
+        hasExistingOrQueuedPortWithPinNumber(port._primaryPinNumber)
+      ) {
+        return true
+      }
+      omittedInternalPortNames.add(port.props.name!)
+      return false
+    })
+    this._inferredInternallyConnectedPinNames =
+      this._inferredInternallyConnectedPinNames.filter(
+        (pinNames) =>
+          !pinNames.some((pinName) => omittedInternalPortNames.has(pinName)),
+      )
 
     inferInternallyConnectedPinNamesFromPorts(
       Array.from(
