@@ -2,10 +2,13 @@ import { getElementId } from "@tscircuit/circuit-json-util"
 import type {
   AnyCircuitElementInput,
   SimulationExperiment,
+  SimulationSignal,
   SourceComponentBase,
   SourceNet,
   SourcePort,
 } from "circuit-json"
+import { PcbChannel } from "lib/components/primitive-components/PcbChannel"
+import { PcbTransientChannelSimulation } from "lib/components/primitive-components/PcbTransientChannelSimulation"
 import { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import type { InflatorContext } from "../InflatorFn"
 
@@ -171,10 +174,64 @@ function restoreSimulationRecords({
       restoredIds.set(getElementId(record), getElementId(restored))
     }
   }
+  const endpointSelector = (endpoint: SimulationSignal["driver"]) => {
+    const describe = (portId: SourcePort["source_port_id"]) => {
+      const port = db.source_port.get(portId)!
+      const chip = db.source_component.get(port.source_component_id!)!
+      return `.${chip.name} > .${port.name}`
+    }
+    if ("source_port_id" in endpoint) return describe(endpoint.source_port_id)
+    return {
+      p: describe(endpoint.p_source_port_id),
+      n: describe(endpoint.n_source_port_id),
+    }
+  }
+  const remapEndpoint = (endpoint: SimulationSignal["driver"]) => {
+    const portId = (id: SourcePort["source_port_id"]) =>
+      remapId(id, "source_port_id")
+    if ("source_port_id" in endpoint)
+      return { ...endpoint, source_port_id: portId(endpoint.source_port_id) }
+    return {
+      ...endpoint,
+      p_source_port_id: portId(endpoint.p_source_port_id),
+      n_source_port_id: portId(endpoint.n_source_port_id),
+    }
+  }
+  for (const record of injectionDb.simulation_signal_integrity.list()) {
+    const block = new PcbTransientChannelSimulation({
+      name: record.name,
+      bitRate: record.bit_rate_bps,
+      duration: record.duration_s,
+      allowUnroutedTraces: record.allow_unrouted_traces,
+    })
+    subcircuit.add(block)
+    for (const recordSignal of injectionDb.simulation_signal.list({
+      simulation_signal_integrity_id: record.simulation_signal_integrity_id,
+    })) {
+      const endpoints = {
+        driver: remapEndpoint(recordSignal.driver),
+        receivers: recordSignal.receivers.map(remapEndpoint),
+      }
+      const signal = new PcbChannel({
+        name: recordSignal.name,
+        driverRef: endpointSelector(endpoints.driver),
+        receiverRef: endpoints.receivers.map(endpointSelector),
+        bitRate: recordSignal.bit_rate_bps,
+        pattern: recordSignal.pattern,
+        seed: recordSignal.seed,
+        offset: recordSignal.offset_s,
+        driverDisabled: recordSignal.driver_disabled,
+      })
+      signal.restoredEndpoints = endpoints
+      block.add(signal)
+    }
+  }
 }
 
 export function inflateSimulation(inflationCtx: InflatorContext) {
   if (
+    !inflationCtx.injectionDb.simulation_signal_integrity.list().length &&
+    !inflationCtx.injectionDb.simulation_signal.list().length &&
     !ibisSimulationTypes.some(
       (type) => inflationCtx.injectionDb[type].list().length > 0,
     )
