@@ -140,3 +140,5 @@ export { AssemblyDrawingTitleBlock } from "./primitive-components/AssemblyDrawin
 export { AssemblyDrawingDimension } from "./primitive-components/AssemblyDrawingDimension"
 
 export { AssemblyBolt } from "./primitive-components/AssemblyBolt"
+
+export { Toolingrail } from "./normal-components/Toolingrail"
