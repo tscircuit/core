@@ -1,8 +1,7 @@
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import { stackSvgsHorizontally, stackSvgsVertically } from "stack-svgs"
 
-// Render only the top-layer rectangles captured at autorouting:start.
-// The PCB trace and the connection line would obscure the routing input here.
+// Render the pads and existing copper from the captured SRJ, before routing.
 export function renderRoutingObstacleComparison(
   control: SimpleRouteJson,
   withTrace: SimpleRouteJson | undefined,
@@ -11,11 +10,10 @@ export function renderRoutingObstacleComparison(
   const panel = (title: string, srj: SimpleRouteJson | undefined) => {
     const obstacles =
       srj?.obstacles.filter((o) => o.layers.includes("top")) ?? []
-    const traceCount = obstacles.filter((o) =>
-      o.connectedTo.includes(fixedTraceId),
-    ).length
+    const traces =
+      srj?.traces?.filter((trace) => trace.pcb_trace_id === fixedTraceId) ?? []
     const subtitle = srj
-      ? `${obstacles.length} top-layer obstacles, ${traceCount} from fixed copper`
+      ? `${obstacles.length} pad obstacles, ${traces.length} fixed ${traces.length === 1 ? "trace" : "traces"}`
       : "Conversion failed before the router received input"
     const label = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="62">
       <rect width="400" height="62" fill="white"/>
@@ -26,11 +24,25 @@ export function renderRoutingObstacleComparison(
     </svg>`
     // 31 px/mm in both panels, with PCB positive Y pointing up.
     const shapes = obstacles.map(
-      ({ center, width, height, ccwRotationDegrees, connectedTo }) =>
+      ({ center, width, height, ccwRotationDegrees }) =>
         `<rect x="${-width / 2}" y="${-height / 2}" width="${width}" height="${height}"
         transform="translate(${center.x} ${center.y}) rotate(${ccwRotationDegrees ?? 0})"
-        fill="${connectedTo.includes(fixedTraceId) ? "#c55218" : "#3a739d"}"/>`,
+        fill="#3a739d"/>`,
     )
+    for (const trace of traces) {
+      for (const [i, a] of trace.route.entries()) {
+        const b = trace.route[i + 1]
+        if (
+          a.route_type === "wire" &&
+          b?.route_type === "wire" &&
+          a.layer === "top" &&
+          b.layer === "top"
+        ) {
+          shapes.push(`<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}"
+            stroke="#c55218" stroke-width="${a.width}" stroke-linecap="round"/>`)
+        }
+      }
+    }
     const content = srj
       ? `<g transform="translate(200 110) scale(31 -31)">${shapes.join("")}</g>`
       : '<text x="200" y="116" text-anchor="middle" font-family="sans-serif" font-size="17" fill="#783610">No obstacle list emitted</text>'
@@ -53,7 +65,7 @@ export function renderRoutingObstacleComparison(
     <rect width="808" height="34" fill="white"/>
     <g font-family="sans-serif" font-size="15" fill="#172536">
       <rect x="161" y="10" width="14" height="14" fill="#3a739d"/><text x="183" y="22">Resistor pad obstacle</text>
-      <rect x="403" y="10" width="14" height="14" fill="#c55218"/><text x="425" y="22">Fixed trace obstacle</text>
+      <rect x="403" y="10" width="14" height="14" fill="#c55218"/><text x="425" y="22">Fixed copper in SRJ traces</text>
     </g>
   </svg>`
   return stackSvgsVertically([panels, key], { gap: 0, normalizeSize: false })

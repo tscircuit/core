@@ -41,8 +41,8 @@ async function routeBetweenResistors(withFixedCopper: boolean) {
       <pcbnotetext
         pcbY={4.9}
         fontSize={0.94}
-        color="#ffae92"
-        text="Repro - R1 to R2 unrouted"
+        color="#8de2b3"
+        text="Fix - R1 to R2 connected"
       />
       <pcbnotetext
         pcbY={-3.45}
@@ -54,7 +54,7 @@ async function routeBetweenResistors(withFixedCopper: boolean) {
         pcbY={-4.85}
         fontSize={0.73}
         color="#c5d4e2"
-        text="Routing stops at the diagonal"
+        text="R1 to R2 passes under the diagonal"
       />
     </board>,
   )
@@ -95,20 +95,38 @@ test("route R1 to R2 past a frozen top-layer diagonal", async () => {
   expect(control.traces).toHaveLength(1)
 
   const { circuit, failures, input, traces } = await routeBetweenResistors(true)
-  expect(
-    failures.some((error) =>
-      error.includes("only supports horizontal and vertical"),
-    ),
-  ).toBe(true)
-  expect(traces).toHaveLength(1)
-  expect(input).toBeUndefined()
-  const fixedTrace = traces[0]!
+  expect(failures).toEqual([])
+  expect(traces).toHaveLength(2)
+  const fixedTrace = traces.find((trace) => !trace.source_trace_id)!
+  const newTrace = traces.find((trace) => trace.source_trace_id)!
   expect(fixedTrace.route).toMatchObject([
     { route_type: "wire", layer: "top", width: 0.4, x: -2, y: -2 },
     { route_type: "wire", layer: "top", width: 0.4, x: 2, y: 2 },
   ])
   expect(gapToFixedCopper(control.traces[0]!, fixedTrace)).toBeLessThan(0)
+  const gap = gapToFixedCopper(newTrace, fixedTrace)
+  expect(Number.isFinite(gap)).toBe(true)
+  expect(gap).toBeGreaterThan(0)
+  expect(input).toBeDefined()
   expect(control.input).toBeDefined()
+  expect(input!.traces).toMatchObject([
+    {
+      pcb_trace_id: fixedTrace.pcb_trace_id,
+      isFixed: true,
+      route: [
+        { route_type: "wire", layer: "top", width: 0.4, x: -2, y: -2 },
+        { route_type: "wire", layer: "top", width: 0.4, x: 2, y: 2 },
+      ],
+    },
+  ])
+  expect(input!.obstacles).toEqual(control.input!.obstacles)
+  const endpoints = [newTrace.route[0], newTrace.route.at(-1)]
+  expect(input!.connections).toHaveLength(1)
+  for (const pad of input!.connections[0]!.pointsToConnect) {
+    expect(endpoints).toContainEqual(
+      expect.objectContaining({ route_type: "wire", x: pad.x, y: pad.y }),
+    )
+  }
   await expect(
     renderRoutingObstacleComparison(
       control.input!,

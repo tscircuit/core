@@ -85,9 +85,8 @@ const getSimpleRouteForPreservedTrace = (
  * Converts PCB traces that already exist when autorouting starts into SRJ
  * `traces`. This includes manual copper rendered in an earlier render phase
  * and routed child-subcircuit copper.
- * Footprint copper without a source trace is already represented as obstacles
- * by getSimpleRouteJsonFromCircuitJson. It must not also become a preloaded
- * route that the autorouter can reshape or validate against its own keepout.
+ * A source-less trace owned by a footprint is authored copper. Mark it fixed
+ * so routing another connection cannot move or replace it.
  *
  * `connectsTo` is physical routing state, not electrical-net metadata. It must
  * contain only the PCB points joined by this exact copper trace so the parent
@@ -104,8 +103,9 @@ export const getPreservedRoutedSubcircuitTraces = ({
   scopedDb.pcb_trace
     .list()
     .filter((trace) => {
-      if (!trace.subcircuit_id) return false
-      if (trace.pcb_component_id && !trace.source_trace_id) return false
+      if (!trace.subcircuit_id) {
+        return !trace.source_trace_id && relevantSubcircuitIds === null
+      }
       return (
         relevantSubcircuitIds === null ||
         relevantSubcircuitIds.has(trace.subcircuit_id)
@@ -114,13 +114,25 @@ export const getPreservedRoutedSubcircuitTraces = ({
     .map((trace) => {
       const preservedTrace = trace as PreservedTrace
       const connectionName = getPreservedTraceConnectionName(preservedTrace)
+      const isFixed =
+        !trace.source_trace_id &&
+        (Boolean(trace.pcb_component_id) || !preservedTrace.connection_name)
       return {
         type: "pcb_trace" as const,
         pcb_trace_id: trace.pcb_trace_id,
         source_trace_id: trace.source_trace_id,
         connection_name: connectionName,
+        ...(isFixed ? { isFixed: true } : {}),
         connectsTo: getPhysicalConnectionIdsForPreservedTrace(preservedTrace),
         route: getSimpleRouteForPreservedTrace(preservedTrace),
       }
     })
-    .filter((trace) => trace.route.length >= 2)
+    .filter(
+      (trace) =>
+        trace.route.length >= 2 ||
+        trace.route.some(
+          (point) =>
+            point.route_type === "through_obstacle" ||
+            point.route_type === "via",
+        ),
+    )
