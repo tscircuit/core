@@ -42,7 +42,9 @@ export interface TscircuitElements {
   solderpaste: Props.SolderPasteProps & Attributes
   platedhole: Props.PlatedHoleProps
   keepout: Props.PcbKeepoutProps
-  hole: Props.HoleProps
+  hole: Props.HoleProps & {
+    holeDiameter?: number | string
+  }
   port: Props.PortProps
   group: Props.GroupProps
   netlabel: Props.NetLabelProps

@@ -314,6 +314,14 @@ export const getObstaclesFromCircuitJson = (
       }
     } else if (element.type === "pcb_hole") {
       if (element.hole_shape === "oval") {
+        if (
+          !Number.isFinite(element.hole_width) ||
+          !Number.isFinite(element.hole_height) ||
+          element.hole_width <= 0 ||
+          element.hole_height <= 0
+        ) {
+          continue
+        }
         obstacles.push({
           componentId: pcbComponentId,
           obstacleId: element.pcb_hole_id,
@@ -332,6 +340,14 @@ export const getObstaclesFromCircuitJson = (
         element.hole_shape === "pill" ||
         element.hole_shape === "rotated_pill"
       ) {
+        if (
+          !Number.isFinite(element.hole_width) ||
+          !Number.isFinite(element.hole_height) ||
+          element.hole_width <= 0 ||
+          element.hole_height <= 0
+        ) {
+          continue
+        }
         obstacles.push({
           componentId: pcbComponentId,
           obstacleId: element.pcb_hole_id,
@@ -350,6 +366,14 @@ export const getObstaclesFromCircuitJson = (
           connectedTo: [],
         })
       } else if (element.hole_shape === "rect") {
+        if (
+          !Number.isFinite(element.hole_width) ||
+          !Number.isFinite(element.hole_height) ||
+          element.hole_width <= 0 ||
+          element.hole_height <= 0
+        ) {
+          continue
+        }
         obstacles.push({
           componentId: pcbComponentId,
           obstacleId: element.pcb_hole_id,
@@ -365,6 +389,12 @@ export const getObstaclesFromCircuitJson = (
           connectedTo: [],
         })
       } else if (element.hole_shape === "square") {
+        if (
+          !Number.isFinite(element.hole_diameter) ||
+          element.hole_diameter <= 0
+        ) {
+          continue
+        }
         obstacles.push({
           componentId: pcbComponentId,
           obstacleId: element.pcb_hole_id,
@@ -384,6 +414,12 @@ export const getObstaclesFromCircuitJson = (
         element.hole_shape === "round" ||
         element.hole_shape === "circle"
       ) {
+        if (
+          !Number.isFinite(element.hole_diameter) ||
+          element.hole_diameter <= 0
+        ) {
+          continue
+        }
         obstacles.push({
           componentId: pcbComponentId,
           obstacleId: element.pcb_hole_id,
