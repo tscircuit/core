@@ -278,6 +278,17 @@ export const getDifferentialPairsForSimpleRouteJson = ({
     ] of positiveSrjConnectionNamesByCohort) {
       const negativeSrjConnectionName =
         negativeSrjConnectionNamesByCohort.get(cohort)!
+      const getTerminalCount = (connectionName: SrjConnectionName) =>
+        srjConnections.find(({ name }) => name === connectionName)?.path
+          ?.length ?? 2
+      if (
+        getTerminalCount(positiveSrjConnectionName) !==
+        getTerminalCount(negativeSrjConnectionName)
+      ) {
+        throw new Error(
+          `Differential pair "${differentialPair.name}" members have paths with different numbers of terminals`,
+        )
+      }
       srjDifferentialPairs.push({
         connectionNames: [positiveSrjConnectionName, negativeSrjConnectionName],
         lengthTolerance,
