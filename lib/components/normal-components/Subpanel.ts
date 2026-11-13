@@ -17,6 +17,11 @@ import type { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { Group } from "../primitive-components/Group/Group"
 import { Board } from "./Board/Board"
 
+/** Fabrication layer that carries V-score lines. */
+const V_SCORE_LINE_LAYER = "top"
+/** Stroke width (mm) of a V-score line on the fabrication layer. */
+const V_SCORE_LINE_STROKE_WIDTH = 0.1
+
 /**
  * Subpanel is a nested panel that can be placed inside a Panel.
  * It allows organizing boards into groups within a larger panel.
@@ -72,11 +77,14 @@ export class Subpanel extends Group<typeof subpanelProps> {
       component.lowercaseComponentName !== "trace" &&
       component.lowercaseComponentName !== "hole" &&
       component.lowercaseComponentName !== "fiducial" &&
+      component.lowercaseComponentName !== "hole" &&
+      component.lowercaseComponentName !== "fiducial" &&
+      component.lowercaseComponentName !== "silkscreentext" &&
       component.lowercaseComponentName !== "paneltab" &&
       component.lowercaseComponentName !== "paneltabkeepout"
     ) {
       throw new Error(
-        `<${this._errorComponentName}> can only contain <board>, <subpanel>, <trace>, <hole>, <fiducial>, <paneltab>, or <paneltabkeepout> elements`,
+        `<${this._errorComponentName}> can only contain <board>, <subpanel>, <trace>, <hole>, <fiducial>, <silkscreentext>, <paneltab>, or <paneltabkeepout> elements`,
       )
     }
     super.add(component)
@@ -400,34 +408,39 @@ export class Subpanel extends Group<typeof subpanelProps> {
         }
       } else {
         const boardGap = props.boardGap ?? tabWidth
-        const { tabCutouts, mouseBiteHoles } = hasTabControls
-          ? generateControlledPanelTabs(
-              boardsInPanel.map((board) => ({
-                board,
-                boardName:
-                  childBoardInstances.find(
-                    (childBoard) =>
-                      childBoard.pcb_board_id === board.pcb_board_id,
-                  )?.name ?? "unnamed board",
-              })),
-              {
-                tabCountPerEdge: props.tabCountPerEdge,
-                tabs: tabChildren.length
-                  ? tabChildren.map((tab) => tab._parsedProps)
-                  : undefined,
-                tabKeepouts: keepoutChildren.map(
-                  (keepout) => keepout._parsedProps,
-                ),
-                tabWidth,
-                tabLength: props.tabLength ?? DEFAULT_TAB_LENGTH,
-                mouseBites: props.mouseBites ?? true,
-              },
-            )
+        const { tabCutouts, mouseBiteHoles, vScoreLines } = hasTabControls
+          ? {
+              ...generateControlledPanelTabs(
+                boardsInPanel.map((board) => ({
+                  board,
+                  boardName:
+                    childBoardInstances.find(
+                      (childBoard) =>
+                        childBoard.pcb_board_id === board.pcb_board_id,
+                    )?.name ?? "unnamed board",
+                })),
+                {
+                  tabCountPerEdge: props.tabCountPerEdge,
+                  tabs: tabChildren.length
+                    ? tabChildren.map((tab) => tab._parsedProps)
+                    : undefined,
+                  tabKeepouts: keepoutChildren.map(
+                    (keepout) => keepout._parsedProps,
+                  ),
+                  tabWidth,
+                  tabLength: props.tabLength ?? DEFAULT_TAB_LENGTH,
+                  mouseBites: props.mouseBites ?? true,
+                },
+              ),
+              // vScore with tab controls is rejected above.
+              vScoreLines: [],
+            }
           : generatePanelTabsAndMouseBites(boardsInPanel, {
               boardGap,
               tabWidth,
               tabLength: props.tabLength ?? DEFAULT_TAB_LENGTH,
               mouseBites: props.mouseBites ?? true,
+              vScore: props.vScore ?? false,
             })
 
         for (const tabCutout of tabCutouts) {
@@ -442,6 +455,16 @@ export class Subpanel extends Group<typeof subpanelProps> {
           db.pcb_hole.insert({
             ...mouseBiteHole,
             subcircuit_id: this.subcircuit_id ?? undefined,
+          })
+        }
+
+        for (const route of vScoreLines) {
+          db.pcb_fabrication_note_path.insert({
+            route,
+            layer: V_SCORE_LINE_LAYER,
+            stroke_width: V_SCORE_LINE_STROKE_WIDTH,
+            subcircuit_id: this.subcircuit_id ?? undefined,
+            pcb_panel_id: getOwningPanel(this)?.pcb_panel_id ?? undefined,
           })
         }
       }

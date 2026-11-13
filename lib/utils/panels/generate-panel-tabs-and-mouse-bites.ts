@@ -63,6 +63,8 @@ interface PanelOptions {
   tabWidth: number
   tabLength: number
   mouseBites: boolean
+  /** Score each tab along the board edge instead of drilling mouse bites. */
+  vScore?: boolean
 }
 
 const generateCutoutsAndMousebitesForOutline = (
@@ -73,11 +75,13 @@ const generateCutoutsAndMousebitesForOutline = (
     mouseBites: boolean
     mouseBiteHoleDiameter: number
     mouseBiteHoleSpacing: number
+    vScore: boolean
   },
 ): {
   tabCutouts: (PcbCutoutRect | PcbCutoutPolygon)[]
   mouseBites: PanelTabMouseBite[]
   tabBridges: Point[][]
+  vScoreLines: Point[][]
 } => {
   const {
     gapLength,
@@ -85,14 +89,16 @@ const generateCutoutsAndMousebitesForOutline = (
     mouseBites: useMouseBites,
     mouseBiteHoleDiameter,
     mouseBiteHoleSpacing,
+    vScore,
   } = options
 
   const tabCutouts: (PcbCutoutRect | PcbCutoutPolygon)[] = []
   const mouseBites: PanelTabMouseBite[] = []
   const tabBridges: Point[][] = []
+  const vScoreLines: Point[][] = []
 
   if (outline.length < 2) {
-    return { tabCutouts, mouseBites, tabBridges }
+    return { tabCutouts, mouseBites, tabBridges, vScoreLines }
   }
 
   if (
@@ -122,7 +128,14 @@ const generateCutoutsAndMousebitesForOutline = (
       )
     })
   ) {
-    return generateContinuousPanelRoutingSlots(outline, options)
+    if (vScore)
+      throw new Error(
+        "V-scored panel tabs require straight board edges; curved board outlines cannot be V-scored",
+      )
+    return {
+      ...generateContinuousPanelRoutingSlots(outline, options),
+      vScoreLines,
+    }
   }
 
   const outlinePolygon = new Flatten.Polygon(
@@ -204,6 +217,14 @@ const generateCutoutsAndMousebitesForOutline = (
       tabStart.translate(extrusion.multiply(2)),
     ].map(({ x, y }) => ({ x, y }))
     if (effectiveGapLength > 1e-6) tabBridges.push(bridgeOutline)
+
+    // A V-scored tab is scored along the board edge across the tab span,
+    // where mouse bites would otherwise be drilled.
+    if (vScore && effectiveGapLength > 1e-6)
+      vScoreLines.push([
+        { x: tabStart.x, y: tabStart.y },
+        { x: tabEnd.x, y: tabEnd.y },
+      ])
 
     // Add mousebites in the gap
     if (useMouseBites) {
@@ -293,7 +314,7 @@ const generateCutoutsAndMousebitesForOutline = (
     }
   }
 
-  return { tabCutouts, mouseBites, tabBridges }
+  return { tabCutouts, mouseBites, tabBridges, vScoreLines }
 }
 
 /** Generate slots and breakaway drills from circuit-world board positions in
@@ -305,12 +326,19 @@ export function generatePanelTabsAndMouseBites(
 ): {
   tabCutouts: PcbCutout[]
   mouseBiteHoles: PcbHoleCircle[]
+  vScoreLines: Point[][]
 } {
   const finalTabCutouts: (PcbCutoutRect | PcbCutoutPolygon)[] = []
   const allMouseBites: PanelTabMouseBite[] = []
   const tabBridges: Point[][] = []
+  const vScoreLines: Point[][] = []
 
-  let { tabWidth, tabLength, mouseBites: useMouseBites } = options
+  let {
+    tabWidth,
+    tabLength,
+    mouseBites: useMouseBites,
+    vScore = false,
+  } = options
 
   // Scale tab sizes based on board dimensions for small boards
   const boardDimensions: number[] = []
@@ -368,11 +396,13 @@ export function generatePanelTabsAndMouseBites(
         mouseBites: useMouseBites,
         mouseBiteHoleDiameter: mouseBiteDiameter,
         mouseBiteHoleSpacing: mouseBiteSpacing,
+        vScore,
       })
 
       finalTabCutouts.push(...generated.tabCutouts)
       allMouseBites.push(...generated.mouseBites)
       tabBridges.push(...generated.tabBridges)
+      vScoreLines.push(...generated.vScoreLines)
     }
   }
 
@@ -408,6 +438,7 @@ export function generatePanelTabsAndMouseBites(
   return {
     tabCutouts,
     mouseBiteHoles,
+    vScoreLines,
   }
 }
 
@@ -467,6 +498,7 @@ export function generatePanelOutlineRoutingCutouts(
         mouseBites: false,
         mouseBiteHoleDiameter: 0,
         mouseBiteHoleSpacing: 0,
+        vScore: false,
       },
     )
 
