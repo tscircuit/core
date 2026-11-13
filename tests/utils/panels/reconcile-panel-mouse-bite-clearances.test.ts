@@ -64,6 +64,27 @@ test("mouse bites stay in their tab, preserve both rows, and report unresolvable
       expect(db.pcb_hole.list()).toHaveLength(2)
       expect(db.pcb_hole.get(farHole.pcb_hole_id)).toEqual(farHole)
       expect(db.pcb_placement_error.list()).toHaveLength(0)
+
+      // Imported footprint labels can cover the entire tab channel. Keep
+      // copper clearance feasible even when the estimated ink cannot clear.
+      db.pcb_hole.update(hole.pcb_hole_id, { x: hole.x, y: hole.y })
+      db.pcb_silkscreen_text.insert({
+        text: "R1",
+        anchor_position: placePoint({ x: 0.5, y: 0 }),
+        anchor_alignment: "center",
+        font: "tscircuit2024",
+        font_size: 4,
+        layer,
+        ccw_rotation: rotation,
+      })
+      reconcilePanelMouseBiteClearances(db, candidates, true)
+      expect(
+        computeClearanceBetweenElements(
+          db.pcb_hole.get(hole.pcb_hole_id)!,
+          trace,
+        ),
+      ).toBeGreaterThanOrEqual(0.2 - 1e-6)
+      expect(db.pcb_placement_error.list()).toHaveLength(0)
       const adjustedHoles = structuredClone(db.pcb_hole.list())
       reconcilePanelMouseBiteClearances(db, candidates, true)
       expect(db.pcb_hole.list()).toEqual(adjustedHoles)

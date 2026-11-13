@@ -142,6 +142,9 @@ export function reconcilePanelMouseBiteClearances(
     for (const [copperClearance, silkClearance] of [
       [0.25, 0.12],
       [0.2, 0.1],
+      // Copper and drill clearance take priority when an estimated ink
+      // envelope covers the available tab channel.
+      [0.2, 0],
     ] as const) {
       const steps = Math.ceil(Math.max(0, maximumShift - minimumShift) / 0.025)
       for (let step = 0; step <= steps; step++) {
@@ -216,7 +219,7 @@ export function reconcilePanelMouseBiteClearances(
         db.pcb_hole.update(hole.pcb_hole_id, { x: resolved.x, y: resolved.y })
       }
     } else if (reportConflicts) {
-      const message = `Mouse-bite hole at (${hole.x.toFixed(2)}, ${hole.y.toFixed(2)}) mm cannot clear nearby copper, silkscreen, or drills within its tab. Increase the tab width or move the nearby geometry.`
+      const message = `Mouse-bite hole at (${hole.x.toFixed(2)}, ${hole.y.toFixed(2)}) mm cannot clear nearby copper or drills within its tab. Increase the tab width or move the nearby geometry.`
       if (
         !db.pcb_placement_error
           .list()
