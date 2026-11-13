@@ -31,6 +31,6 @@ test("rejects a multi-terminal differential path without explicit paired section
       subcircuitComponent: circuit.firstChild!,
     }),
   ).toThrow(
-    'Could not find an SRJ connection for trace name or port selector "CK_P_TRUNK"',
+    'Differential pair "CK_PAIR" members have paths with different numbers of terminals',
   )
 })
