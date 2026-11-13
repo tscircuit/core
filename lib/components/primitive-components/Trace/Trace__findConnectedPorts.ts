@@ -50,7 +50,11 @@ export function Trace__findConnectedPorts(trace: Trace):
       let portToken: string
       const dotIndex = selector.lastIndexOf(".")
       if (dotIndex !== -1 && dotIndex > selector.lastIndexOf(" ")) {
-        parentSelector = selector.slice(0, dotIndex)
+        // ".U1 > .SDA" leaves ".U1 > ", which would select U1's first child
+        parentSelector = selector
+          .slice(0, dotIndex)
+          .replace(/\s*>\s*$/, "")
+          .trim()
         portToken = selector.slice(dotIndex + 1)
       } else {
         const match = selector.match(/^(.*[ >])?([^ >]+)$/)
@@ -102,7 +106,10 @@ export function Trace__findConnectedPorts(trace: Trace):
         detail = `It has [${labelList}]`
       }
 
-      const errorMessage = `Could not find port for selector "${selector}". Component "${targetComponent.props.name ?? parentSelector}" found, but does not have pin "${portLabel}". ${detail}`
+      const componentName = targetComponent.props.name ?? parentSelector
+      const errorMessage = portNames.includes(portLabel)
+        ? `Could not find port for selector "${selector}". Component "${componentName}" has pin "${portLabel}", but the selector did not match it. Use "${componentName}.${portLabel}" or ".${componentName} > .${portLabel}"`
+        : `Could not find port for selector "${selector}". Component "${componentName}" found, but does not have pin "${portLabel}". ${detail}`
 
       const subcircuit = trace.getSubcircuit()
       const sourceGroup = subcircuit.getGroup()
