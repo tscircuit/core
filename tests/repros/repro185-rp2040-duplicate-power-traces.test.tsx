@@ -138,9 +138,9 @@ test("repro185: RP2040 duplicate power traces", async () => {
   const iovdd2Port = circuit.db.schematic_port.getWhere({ pin_number: 42 })!
   const vregInPort = circuit.db.schematic_port.getWhere({ pin_number: 44 })!
 
-  // Current bug: two V3V3 vertical routes span pins 42–44 just 0.04 mm apart.
+  // The redundant parallel V3V3 rail is removed by the schematic solver.
   // These are offsets from the pin endpoint in schematic coordinates
-  // (mm, +X right, +Y up). Update this assertion and snapshot when fixed.
+  // (mm, +X right, +Y up).
   const parallelRouteOffsets = circuit.db.schematic_trace
     .list()
     .filter(
@@ -159,7 +159,7 @@ test("repro185: RP2040 duplicate power traces", async () => {
     )
     .map(({ from }) => Number((from.x - iovdd2Port.center.x).toFixed(3)))
     .sort((a, b) => a - b)
-  expect(parallelRouteOffsets).toEqual([0.16])
+  expect(parallelRouteOffsets).toEqual([])
 
   await expect(circuit).toMatchSchematicSnapshot(import.meta.path, {
     width: 900,
