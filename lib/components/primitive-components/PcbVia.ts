@@ -5,12 +5,17 @@ import {
   layer_ref,
 } from "circuit-json"
 import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
-import { getViaTenting } from "lib/utils/getViaTenting"
+import {
+  type ViaTentingInput,
+  getViaTenting,
+  viaTentingProp,
+} from "lib/utils/getViaTenting"
 import { z } from "zod"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
 export const pcbViaProps = viaProps
   .extend({
+    tented: viaTentingProp.optional(),
     layers: z.array(layer_ref).optional(),
     /** @deprecated Use tentedOnTop and tentedOnBottom instead. */
     isTented: z.boolean().optional(),
@@ -22,7 +27,8 @@ export const pcbViaProps = viaProps
     toLayer: true,
   })
 
-export interface PcbViaProps extends Partial<ViaProps> {
+export interface PcbViaProps extends Omit<Partial<ViaProps>, "tented"> {
+  tented?: ViaTentingInput
   layers?: LayerRef[]
   /** @deprecated Use tentedOnTop and tentedOnBottom instead. */
   isTented?: boolean

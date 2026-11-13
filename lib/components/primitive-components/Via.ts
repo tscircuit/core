@@ -2,16 +2,21 @@ import { type PcbStyle, viaProps } from "@tscircuit/props"
 import type { LayerRef, PcbVia } from "circuit-json"
 import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
 import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
+import { getViaTenting, viaTentingProp } from "lib/utils/getViaTenting"
 import { getViaDiameterDefaultsWithOverrides } from "lib/utils/pcbStyle/getViaDiameterDefaults"
-import { getViaTenting } from "lib/utils/getViaTenting"
-import { z } from "zod"
+import type { z } from "zod"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { Net } from "./Net"
 import { Port } from "./Port"
 import { isPcbPrimitiveContainedWithinBeforeRender } from "./Port/pcbPrimitiveOverlapBeforeRender"
 import type { SmtPad } from "./SmtPad"
 import type { Trace } from "./Trace/Trace"
-export class Via extends PrimitiveComponent<typeof viaProps> {
+
+const extendedViaProps = viaProps.extend({
+  tented: viaTentingProp.optional(),
+})
+
+export class Via extends PrimitiveComponent<typeof extendedViaProps> {
   pcb_via_id: string | null = null
   matchedPort: Port | null = null
   isPcbPrimitive = true
@@ -19,7 +24,7 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
   source_trace_id: string | null = null
   subcircuit_connectivity_map_key: string | null = null
 
-  constructor(props: z.input<typeof viaProps>) {
+  constructor(props: z.input<typeof extendedViaProps>) {
     super(props)
     const layers = this._getLayers()
     ;(this._parsedProps as any).layers = layers
@@ -28,7 +33,7 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
   get config() {
     return {
       componentName: "Via",
-      zodProps: viaProps,
+      zodProps: extendedViaProps,
     }
   }
 
