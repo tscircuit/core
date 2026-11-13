@@ -1655,14 +1655,15 @@ export class NormalComponent<
       implicitPinNumberByHint,
     }
     let footprint = this.resolveFootprint()
-    if (
-      typeof footprint === "string" &&
-      parseLibraryFootprintRef(footprint) &&
-      this.children.some((c) => c.componentName === "Footprint")
-    ) {
-      footprint = this.children.find((c) => c.componentName === "Footprint")
-    } else if (!footprint || isValidElement(footprint)) {
-      footprint = this.children.find((c) => c.componentName === "Footprint")
+    const footprintChild = this.children.find(
+      (child) => child.componentName === "Footprint",
+    )
+    // Infer contacts from the rendered copper for every imported footprint,
+    // including file URLs and Circuit JSON arrays.
+    if (footprintChild) {
+      footprint = footprintChild
+    } else if (isValidElement(footprint)) {
+      footprint = undefined
     }
 
     if (typeof footprint === "string") {

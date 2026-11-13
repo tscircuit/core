@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs"
-import type { ChipProps } from "@tscircuit/props"
+import type { ChipProps, FootprintSoupElements } from "@tscircuit/props"
 import { KicadFootprintToCircuitJsonConverter } from "kicad-to-circuit-json"
 import { Fragment } from "react"
 
@@ -21,7 +21,8 @@ export function getKeystone3002Footprint() {
     ),
   )
   converter.runUntilFinished()
-  return converter.getOutput()
+  // The converter's general return type also permits non-footprint records.
+  return converter.getOutput() as FootprintSoupElements[]
 }
 
 export const keystone3002Connections = [

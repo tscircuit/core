@@ -35,6 +35,32 @@ const supplierNames = supplierProps.shape.supplierPartNumbers.unwrap().keySchema
 const shouldAddOutsideFootprintWrapper = (component: PrimitiveComponent) =>
   component.componentName === "Symbol" || component.isSchematicPrimitive
 
+const addImportedFootprintComponents = (
+  component: NormalComponent<any, any>,
+  fpComponents: PrimitiveComponent[],
+  src?: string,
+) => {
+  const footprint = new Footprint({ src })
+  const componentsOutsideFootprint: PrimitiveComponent[] = []
+  for (const fpComponent of fpComponents) {
+    if (shouldAddOutsideFootprintWrapper(fpComponent)) {
+      componentsOutsideFootprint.push(fpComponent)
+    } else {
+      footprint.add(fpComponent)
+    }
+  }
+  component.add(footprint)
+  component.addAll(componentsOutsideFootprint)
+
+  // Ports declared before an async footprint arrives must be attached to its
+  // copper after the separated physical contacts have been initialized.
+  for (const port of component._getAllPortsFromChildren()) {
+    port._markDirty("PcbPortRender")
+  }
+  component._markDirty("ResolveFootprintPinLabels")
+  component._markDirty("InitializePortsFromChildren")
+}
+
 const getSupplierPartCircuitJsonResolver = (
   component: NormalComponent<any, any>,
   footprintLibrary: string,
@@ -127,15 +153,7 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
           },
           result.footprintCircuitJson,
         )
-        component.addAll(fpComponents)
-        // Existing ports may have rendered before the async pads arrived.
-        for (const child of component.children) {
-          if (child.componentName === "Port") {
-            child._markDirty("PcbPortRender")
-          }
-        }
-        component._markDirty("ResolveFootprintPinLabels")
-        component._markDirty("InitializePortsFromChildren")
+        addImportedFootprintComponents(component, fpComponents, footprintUrl)
       } catch (err) {
         const db = component.root?.db
         if (db && component.source_component_id && component.pcb_component_id) {
@@ -181,9 +199,7 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
           },
           soup as any,
         )
-        component.addAll(fpComponents)
-        component._markDirty("ResolveFootprintPinLabels")
-        component._markDirty("InitializePortsFromChildren")
+        addImportedFootprintComponents(component, fpComponents, url)
       } catch (err) {
         const db = component.root?.db
         if (db && component.source_component_id && component.pcb_component_id) {
@@ -264,31 +280,10 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
           },
           circuitJson,
         )
-        // Wrap in a Footprint with src so pcbSx selectors like
-        // "& footprint[src^='kicad:'] silkscreentext" can match
-        const fpWrapper = new Footprint({ src: footprint })
-        const componentsOutsideFootprint: typeof fpComponents = []
-        for (const c of fpComponents) {
-          // TODO: Remove this when we have a schematic symbol render and don't need to add in here
-          if (shouldAddOutsideFootprintWrapper(c)) {
-            componentsOutsideFootprint.push(c)
-          } else {
-            fpWrapper.add(c)
-          }
-        }
-        component.add(fpWrapper)
-        component.addAll(componentsOutsideFootprint)
+        addImportedFootprintComponents(component, fpComponents, footprint)
         component._asyncFootprintCadModel =
           (!Array.isArray(result) && result.cadModel) ||
           extractCadModelFromCircuitJson(circuitJson)
-        // Ensure existing Ports re-run PcbPortRender now that pads exist
-        for (const child of component.children) {
-          if (child.componentName === "Port") {
-            child._markDirty?.("PcbPortRender")
-          }
-        }
-        component._markDirty("ResolveFootprintPinLabels")
-        component._markDirty("InitializePortsFromChildren")
       } catch (err) {
         const db = component.root?.db
         if (db && component.source_component_id && component.pcb_component_id) {
@@ -337,7 +332,7 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
         },
         footprint,
       )
-      component.addAll(fpComponents)
+      addImportedFootprintComponents(component, fpComponents)
     } catch (err) {
       const db = component.root?.db
       if (db && component.source_component_id && component.pcb_component_id) {
