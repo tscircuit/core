@@ -75,19 +75,21 @@ test("pcbStraightLine copper exists before and is preserved during autorouting",
 
   expect(autorouterInput).toBeDefined()
   expect(autorouterInput?.connections).toHaveLength(1)
-  expect(autorouterInput?.traces).toHaveLength(1)
-
-  const [preservedStraightLine] = autorouterInput?.traces ?? []
-  expect(preservedStraightLine?.route).toHaveLength(2)
+  expect(autorouterInput?.traces ?? []).toHaveLength(0)
   expect(
-    circuit.db.pcb_trace
-      .list()
-      .some(
-        (pcbTrace) =>
-          pcbTrace.pcb_trace_id === preservedStraightLine?.pcb_trace_id,
-      ),
+    autorouterInput?.obstacles.some(
+      (obstacle) =>
+        obstacle.center.x === 0 &&
+        obstacle.center.y === 0 &&
+        obstacle.height === 0.3,
+    ),
   ).toBe(true)
-  expect(circuit.db.pcb_trace.list()).toHaveLength(2)
+
+  const traces = circuit.db.pcb_trace.list()
+  expect(traces).toHaveLength(2)
+  const fixedTrace = traces.find((t) => t.source_trace_id === "source_trace_0")
+  expect(fixedTrace?.route).toHaveLength(2)
+  expect((fixedTrace as any)?.__replaces_pcb_trace_id).toBeUndefined()
   expect(circuit.db.pcb_trace_error.list()).toEqual([])
 
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
