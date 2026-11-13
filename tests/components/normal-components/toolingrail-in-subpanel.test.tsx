@@ -13,6 +13,6 @@ test("a <toolingrail> cannot be placed inside a <subpanel>", () => {
       </panel>,
     ),
   ).toThrowErrorMatchingInlineSnapshot(
-    `"<subpanel> can only contain <board>, <subpanel>, <trace>, <hole>, <fiducial>, or <silkscreentext> elements"`,
+    `"<subpanel> can only contain <board>, <subpanel>, <trace>, <hole>, <fiducial>, <silkscreentext>, <paneltab>, or <paneltabkeepout> elements"`,
   )
 })

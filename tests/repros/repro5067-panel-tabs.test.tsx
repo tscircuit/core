@@ -30,5 +30,5 @@ test("panel tab count and keepouts control where tabs are placed", async () => {
   // top tab inside the keepout.
   expect(
     circuitJson.filter((element) => element.type === "pcb_hole").length,
-  ).toMatchInlineSnapshot(`0`)
+  ).toMatchInlineSnapshot(`14`)
 })

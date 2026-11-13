@@ -20,6 +20,44 @@ export const DEFAULT_TAB_WIDTH = 2
 
 export const PANEL_GRID_SPACING = DEFAULT_TAB_WIDTH
 
+/** Boards smaller than this size (mm) get proportionally smaller tabs. */
+const TAB_SCALE_REFERENCE_BOARD_SIZE = 20
+/** Tabs never shrink below this fraction of the default tab size. */
+const MIN_TAB_SCALE = 0.3
+/** Mouse-bite drill diameter as a fraction of the tab (router) width. */
+const MOUSE_BITE_DIAMETER_TO_TAB_WIDTH = 0.45
+/**
+ * Material left between adjacent mouse-bite holes, as a fraction of the
+ * drill diameter. The former 10% web was only 0.063 mm on a 14 mm board.
+ */
+const MOUSE_BITE_SPACING_TO_DIAMETER = 0.5
+
+/** Shrink the requested tab width and length (mm) to suit small boards. */
+export function getScaledPanelTabSize({
+  minimumBoardDimension,
+  tabWidth,
+  tabLength,
+}: {
+  minimumBoardDimension: number
+  tabWidth: number
+  tabLength: number
+}) {
+  const scale = Math.max(
+    minimumBoardDimension / TAB_SCALE_REFERENCE_BOARD_SIZE,
+    MIN_TAB_SCALE,
+  )
+  return {
+    tabWidth: Math.min(tabWidth, DEFAULT_TAB_WIDTH * scale),
+    tabLength: Math.min(tabLength, DEFAULT_TAB_LENGTH * scale),
+  }
+}
+
+/** Mouse-bite drill diameter and the web between holes (mm) for a tab width. */
+export function getMouseBiteSize({ tabWidth }: { tabWidth: number }) {
+  const diameter = tabWidth * MOUSE_BITE_DIAMETER_TO_TAB_WIDTH
+  return { diameter, spacing: diameter * MOUSE_BITE_SPACING_TO_DIAMETER }
+}
+
 interface PanelOptions {
   boardGap: number
   tabWidth: number
@@ -320,17 +358,11 @@ export function generatePanelTabsAndMouseBites(
   }
 
   if (boardDimensions.length > 0) {
-    const minBoardDimension = Math.min(...boardDimensions)
-
-    const scaleFactor = minBoardDimension / 20 // mm
-    tabWidth = Math.min(
+    ;({ tabWidth, tabLength } = getScaledPanelTabSize({
+      minimumBoardDimension: Math.min(...boardDimensions),
       tabWidth,
-      DEFAULT_TAB_WIDTH * Math.max(scaleFactor, 0.3),
-    )
-    tabLength = Math.min(
       tabLength,
-      DEFAULT_TAB_LENGTH * Math.max(scaleFactor, 0.3),
-    )
+    }))
   }
 
   const processedBoards: PcbBoard[] = boards.map((board) => {
@@ -354,10 +386,8 @@ export function generatePanelTabsAndMouseBites(
     return board
   })
 
-  const mouseBiteDiameter = tabWidth * 0.45
-  // Leave half a drill diameter of material between adjacent holes.
-  // The former 10% web was only 0.063 mm on a 14 mm board.
-  const mouseBiteSpacing = mouseBiteDiameter * 0.5
+  const { diameter: mouseBiteDiameter, spacing: mouseBiteSpacing } =
+    getMouseBiteSize({ tabWidth })
   for (const board of processedBoards) {
     if (board.outline && board.outline.length > 0) {
       const generated = generateCutoutsAndMousebitesForOutline(board.outline, {
