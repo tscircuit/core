@@ -1,6 +1,6 @@
-import { getOwningPanel } from "lib/utils/panels/get-owning-panel"
 import { subpanelProps } from "@tscircuit/props"
 import { distance } from "circuit-json"
+import { getOwningPanel } from "lib/utils/panels/get-owning-panel"
 import type { Matrix } from "transformation-matrix"
 import { compose, identity, translate } from "transformation-matrix"
 import {
@@ -10,7 +10,15 @@ import {
   generatePanelTabsAndMouseBites,
 } from "../../utils/panels/generate-panel-tabs-and-mouse-bites"
 import { packIntoGrid } from "../../utils/panels/pack-into-grid"
+import {
+  type TrackedPanelMouseBite,
+  reconcilePanelMouseBiteClearances,
+} from "../../utils/panels/reconcile-panel-mouse-bite-clearances"
 import type { PrimitiveComponent } from "../base-components/PrimitiveComponent"
+import {
+  type RenderPhase,
+  orderedRenderPhases,
+} from "../base-components/Renderable"
 import { Group } from "../primitive-components/Group/Group"
 import { Board } from "./Board/Board"
 
@@ -24,6 +32,7 @@ import { Board } from "./Board/Board"
 export class Subpanel extends Group<typeof subpanelProps> {
   pcb_panel_id: string | null = null
   _panelizationFeaturesGenerated = false
+  _panelMouseBites: TrackedPanelMouseBite[] = []
 
   get config() {
     return {
@@ -373,15 +382,13 @@ export class Subpanel extends Group<typeof subpanelProps> {
         }
       } else {
         const boardGap = props.boardGap ?? tabWidth
-        const { tabCutouts, mouseBiteHoles } = generatePanelTabsAndMouseBites(
-          boardsInPanel,
-          {
+        const { tabCutouts, mouseBiteHoles, mouseBiteCandidates } =
+          generatePanelTabsAndMouseBites(boardsInPanel, {
             boardGap,
             tabWidth,
             tabLength: props.tabLength ?? DEFAULT_TAB_LENGTH,
             mouseBites: props.mouseBites ?? true,
-          },
-        )
+          })
 
         for (const tabCutout of tabCutouts) {
           db.pcb_cutout.insert({
@@ -391,16 +398,48 @@ export class Subpanel extends Group<typeof subpanelProps> {
           })
         }
 
-        for (const mouseBiteHole of mouseBiteHoles) {
-          db.pcb_hole.insert({
+        for (const [biteIndex, mouseBiteHole] of mouseBiteHoles.entries()) {
+          const insertedHole = db.pcb_hole.insert({
             ...mouseBiteHole,
             subcircuit_id: this.subcircuit_id ?? undefined,
+          })
+          this._panelMouseBites.push({
+            ...mouseBiteCandidates[biteIndex]!,
+            pcb_hole_id: insertedHole.pcb_hole_id,
           })
         }
       }
     }
 
     this._panelizationFeaturesGenerated = true
+  }
+
+  override runRenderPhaseForChildren(phase: RenderPhase): void {
+    if (
+      this.root &&
+      !this.root.pcbDisabled &&
+      this._panelMouseBites.length > 0 &&
+      (phase === "PcbPlacementDesignRuleChecks" ||
+        phase === "PcbDesignRuleChecks") &&
+      !orderedRenderPhases
+        .slice(0, orderedRenderPhases.indexOf(phase))
+        .some((dependency) =>
+          this._hasIncompleteAsyncEffectsForPhase(dependency),
+        )
+    ) {
+      // Child boards need the adjusted holes before they construct routing
+      // obstacles or take a snapshot of their final geometry for DRC.
+      reconcilePanelMouseBiteClearances(
+        this.root.db,
+        this._panelMouseBites,
+        phase === "PcbDesignRuleChecks" &&
+          !(
+            this.root.platform?.drcChecksDisabled ??
+            this.getInheritedProperty("drcChecksDisabled")
+          ),
+      )
+    }
+    super.runRenderPhaseForChildren(phase)
   }
 
   /**

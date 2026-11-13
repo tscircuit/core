@@ -22,6 +22,7 @@ import type { Trace } from "lib/components/primitive-components/Trace/Trace"
 import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
 import { findFloatingCopper } from "../copper-pour-connectivity/find-floating-copper"
 import { getObstaclesFromCircuitJson } from "../obstacles/getObstaclesFromCircuitJson"
+import { getPanelMouseBiteHolesForBoard } from "../panels/get-panel-mouse-bite-holes-for-board"
 import type {
   PcbGroupId,
   SimpleRouteConnection,
@@ -218,12 +219,6 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       ? { ...element, subcircuit_id: inheritedSubcircuitId }
       : element
   })
-  const subcircuitElements = scopedElements.filter(
-    (e) =>
-      !subcircuit_id ||
-      ("subcircuit_id" in e && relevantSubcircuitIds!.has(e.subcircuit_id!)),
-  )
-
   let board: PcbBoard | undefined | null = null
   let subcircuitIsBoard = false
   if (subcircuit_id) {
@@ -236,6 +231,24 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   if (!board && !panel) {
     board = db.pcb_board.list()[0]
   }
+
+  const panelMouseBiteHoleIds = new Set(
+    board
+      ? getPanelMouseBiteHolesForBoard(scopedElements, board).map(
+          (hole) => hole.pcb_hole_id,
+        )
+      : [],
+  )
+  const isPanelMouseBiteOnBoard = (element: AnyCircuitElement) =>
+    element.type === "pcb_hole" &&
+    panelMouseBiteHoleIds.has(element.pcb_hole_id)
+  const subcircuitElements = scopedElements.filter(
+    (element) =>
+      !subcircuit_id ||
+      isPanelMouseBiteOnBoard(element) ||
+      ("subcircuit_id" in element &&
+        relevantSubcircuitIds!.has(element.subcircuit_id!)),
+  )
 
   db = su(subcircuitElements)
   const getPortSelector = (sourcePort: SourcePort | null | undefined) => {
@@ -347,6 +360,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     ].filter(
       (e) =>
         e.type === "pcb_board" ||
+        isPanelMouseBiteOnBoard(e) ||
         (panel &&
           "pcb_panel_id" in e &&
           e.pcb_panel_id === panel.pcb_panel_id) ||
