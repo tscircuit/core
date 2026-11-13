@@ -200,6 +200,9 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     }
 
     const { schX, schY } = this._parsedProps
+    if (this._getSymbolAncestor()) {
+      return true
+    }
     if (schX !== undefined && schY !== undefined) {
       return true
     }
@@ -232,14 +235,13 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
   _getGlobalSchematicPositionBeforeLayout(): { x: number; y: number } {
     const { schX, schY } = this._parsedProps
+    if (this._getSymbolAncestor()) {
+      return applyToPoint(this.computeSchematicGlobalTransform(), {
+        x: 0,
+        y: 0,
+      })
+    }
     if (schX !== undefined && schY !== undefined) {
-      if (this._getSymbolAncestor()) {
-        return applyToPoint(this.computeSchematicGlobalTransform(), {
-          x: 0,
-          y: 0,
-        })
-      }
-
       return { x: schX, y: schY }
     }
 
@@ -697,8 +699,9 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     const { _parsedProps: props } = this
 
     const { schX, schY } = props
+    const isExplicitCustomSymbolPort = Boolean(this._getSymbolAncestor())
     const container =
-      schX !== undefined && schY !== undefined
+      isExplicitCustomSymbolPort || (schX !== undefined && schY !== undefined)
         ? this.getParentNormalComponent()
         : this.getPrimitiveContainer()
 
@@ -726,9 +729,6 @@ export class Port extends PrimitiveComponent<typeof portProps> {
         label: "obstacle",
       } as any) // TODO issue with discriminated union
     }
-
-    const isExplicitCustomSymbolPort =
-      schX !== undefined && schY !== undefined && !!this._getSymbolAncestor()
 
     if (isExplicitCustomSymbolPort && props.direction) {
       this.facingDirection = props.direction
