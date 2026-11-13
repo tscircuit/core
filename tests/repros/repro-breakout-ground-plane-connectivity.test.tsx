@@ -8,6 +8,7 @@ import {
   getPourPolygon,
   getViaPolygon,
 } from "@tscircuit/circuit-json-util"
+import type { AnyCircuitElement } from "circuit-json"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 import { getBreakoutGroundPlaneSnapshot } from "tests/fixtures/get-breakout-ground-plane-snapshot"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
@@ -16,7 +17,7 @@ import {
   stm32GroundConnections,
 } from "tests/fixtures/stm32mp157dab1"
 
-test("breakout vias lose their existing ground-plane connection in SRJ", async () => {
+test("breakout vias retain their existing ground-plane connection in SRJ", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board
@@ -100,6 +101,9 @@ test("breakout vias lose their existing ground-plane connection in SRJ", async (
       .list()
       .map((point) => point.pcb_breakout_point_id),
   )
+  expect(gndConnection.externallyConnectedPointIds).toEqual([
+    gndConnection.pointsToConnect.map((point) => point.pointId!),
+  ])
 
   const router = new AutoroutingPipelineSolver(
     simpleRouteJson as AutorouterSimpleRouteJson,
@@ -109,9 +113,8 @@ test("breakout vias lose their existing ground-plane connection in SRJ", async (
   }
   expect(router.failed).toBe(false)
   const requestedRoutes = router.srjWithPointPairs!.connections
-  // Reproduction: all 104 GND escapes touch one plane, yet core requests
-  // 103 extra links. This is the chip's complete motherboard ground network.
-  expect(requestedRoutes).toHaveLength(103)
+  // All 104 GND escapes already touch the same plane; no extra routes remain.
+  expect(requestedRoutes).toHaveLength(0)
   await expect(
     getBreakoutGroundPlaneSnapshot({
       circuitJson,
@@ -119,4 +122,43 @@ test("breakout vias lose their existing ground-plane connection in SRJ", async (
       requestedRoutes,
     }),
   ).toMatchSvgSnapshot(import.meta.path, undefined, { diffThresholdPercent: 0 })
+
+  // Removing escape copper leaves inner3 endpoints disconnected from inner1.
+  // Even when the original top pads touch a pour, their remote breakout
+  // endpoints must not inherit that connection without retained copper.
+  const withoutEscapes = circuitJson.filter(
+    (element) => element.type !== "pcb_trace" && element.type !== "pcb_via",
+  )
+  const padsOnTopPour: AnyCircuitElement[] = withoutEscapes.map((element) =>
+    element.type === "pcb_copper_pour" ? { ...element, layer: "top" } : element,
+  )
+  for (const disconnectedCircuitJson of [withoutEscapes, padsOnTopPour]) {
+    const { simpleRouteJson: disconnected } = getSimpleRouteJsonFromCircuitJson(
+      {
+        circuitJson: disconnectedCircuitJson,
+        subcircuit_id: gndNet.subcircuit_id,
+        ignoreExistingTopLevelPcbRouteState: true,
+      },
+    )
+    expect(
+      disconnected.connections.find(
+        (connection) => connection.name === gndNet.source_net_id,
+      )!.externallyConnectedPointIds,
+    ).toBeUndefined()
+  }
+  // Prove the second control really does connect the original pads: removing
+  // only the routing targets exposes that connection to the global router.
+  const { simpleRouteJson: originalPads } = getSimpleRouteJsonFromCircuitJson({
+    circuitJson: padsOnTopPour.filter(
+      (element) => element.type !== "pcb_breakout_point",
+    ),
+    subcircuit_id: gndNet.subcircuit_id,
+    ignoreExistingTopLevelPcbRouteState: true,
+  })
+  const originalGndConnection = originalPads.connections.find(
+    (connection) => connection.name === gndNet.source_net_id,
+  )!
+  expect(originalGndConnection.externallyConnectedPointIds).toEqual([
+    originalGndConnection.pointsToConnect.map((point) => point.pointId!),
+  ])
 })
