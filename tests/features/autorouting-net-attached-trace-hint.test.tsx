@@ -3,7 +3,7 @@ import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import { createBasicAutorouter } from "tests/fixtures/createBasicAutorouter"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("trace hints stay with a net-owned autorouter connection", async () => {
+test("trace hints stay with a net-attached trace path connection", async () => {
   const { circuit } = getTestFixture({
     platform: { schematicDisabled: true },
   })
@@ -34,7 +34,7 @@ test("trace hints stay with a net-owned autorouter connection", async () => {
   await circuit.renderUntilSettled()
 
   expect(autorouterInput?.connections).toHaveLength(1)
-  expect(autorouterInput?.connections[0].source_trace_id).toBeUndefined()
+  expect(autorouterInput?.connections[0].path).toHaveLength(3)
   expect(autorouterInput?.connections[0].pointsToConnect).toContainEqual({
     x: 0,
     y: 3,
