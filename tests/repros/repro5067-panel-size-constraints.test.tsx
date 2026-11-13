@@ -32,26 +32,26 @@ test("panel size limits drive the grid layout", async () => {
     {
       "boardCentres": [
         {
-          "x": -8,
+          "x": 0,
+          "y": -30,
+        },
+        {
+          "x": 0,
           "y": -10,
         },
         {
-          "x": 8,
-          "y": -10,
-        },
-        {
-          "x": -8,
+          "x": 0,
           "y": 10,
         },
         {
-          "x": 8,
-          "y": 10,
+          "x": 0,
+          "y": 30,
         },
       ],
       "errors": [],
       "panelSize": {
-        "height": 48,
-        "width": 40,
+        "height": 100,
+        "width": 24,
       },
     }
   `)

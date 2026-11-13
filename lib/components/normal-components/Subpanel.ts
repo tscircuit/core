@@ -102,6 +102,14 @@ export class Subpanel extends Group<typeof subpanelProps> {
   _cachedGridHeight = 0
   _panelPositionOffset: { x: number; y: number } | null = null
 
+  /**
+   * Largest board grid (mm) that fits the panel's size limits. Only the root
+   * <panel> accepts size limits, so a subpanel's grid is unlimited.
+   */
+  _getMaxGridSize(): { width: number; height: number } {
+    return { width: Infinity, height: Infinity }
+  }
+
   override _computePcbGlobalTransformBeforeLayout(): Matrix {
     // If we have a panel-computed offset, incorporate it into the transform
     if (this._panelPositionOffset) {
@@ -238,7 +246,7 @@ export class Subpanel extends Group<typeof subpanelProps> {
     }
 
     // Pack all layoutable children into a grid
-    const { positions, gridWidth, gridHeight } = packIntoGrid({
+    const packingOptions = {
       items: gridItems,
       row: this._parsedProps.row,
       col: this._parsedProps.col,
@@ -247,7 +255,34 @@ export class Subpanel extends Group<typeof subpanelProps> {
       boardGap,
       availablePanelHeight,
       availablePanelWidth,
-    })
+    }
+    let packedGrid = packIntoGrid(packingOptions)
+
+    // A root panel's maxWidth/maxHeight choose the column count when the
+    // author leaves rows, columns and panel dimensions to the layout.
+    const maxGridSize = this._getMaxGridSize()
+    const fitsMaxGridSize = (grid: { gridWidth: number; gridHeight: number }) =>
+      grid.gridWidth <= maxGridSize.width &&
+      grid.gridHeight <= maxGridSize.height
+    if (
+      !hasExplicitRowOrCol &&
+      !hasExplicitWidth &&
+      !hasExplicitHeight &&
+      !fitsMaxGridSize(packedGrid)
+    ) {
+      const fittingGrids = gridItems
+        .map((_, columnIndex) =>
+          packIntoGrid({ ...packingOptions, col: columnIndex + 1 }),
+        )
+        .filter(fitsMaxGridSize)
+        .sort(
+          (firstGrid, secondGrid) =>
+            firstGrid.gridWidth * firstGrid.gridHeight -
+            secondGrid.gridWidth * secondGrid.gridHeight,
+        )
+      if (fittingGrids[0]) packedGrid = fittingGrids[0]
+    }
+    const { positions, gridWidth, gridHeight } = packedGrid
 
     this._cachedGridWidth = gridWidth
     this._cachedGridHeight = gridHeight
@@ -362,6 +397,16 @@ export class Subpanel extends Group<typeof subpanelProps> {
 
     const { db } = this.root!
     const props = this._parsedProps
+    if (
+      this.componentName !== "Panel" &&
+      (props.minWidth !== undefined ||
+        props.maxWidth !== undefined ||
+        props.minHeight !== undefined ||
+        props.maxHeight !== undefined)
+    )
+      throw new Error(
+        "Panel size limits must be configured on the root <panel>",
+      )
     const panelizationMethod = props.panelizationMethod ?? "none"
     const tabChildren = this.children.filter(
       (child): child is PanelTab => child instanceof PanelTab,

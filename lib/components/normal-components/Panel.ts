@@ -70,21 +70,74 @@ export class Panel extends Subpanel {
     }
   }
 
+  /** The board grid must leave room for edge padding inside maxWidth/maxHeight. */
+  override _getMaxGridSize() {
+    const { maxWidth, maxHeight } = this._parsedProps
+    const edgePadding = this._getEdgePadding()
+    return {
+      width:
+        maxWidth === undefined
+          ? Infinity
+          : maxWidth - edgePadding.left - edgePadding.right,
+      height:
+        maxHeight === undefined
+          ? Infinity
+          : maxHeight - edgePadding.top - edgePadding.bottom,
+    }
+  }
+
+  override doInitialPanelLayout() {
+    super.doInitialPanelLayout()
+    if (this.root?.pcbDisabled || !this.pcb_panel_id) return
+    const panel = this.root!.db.pcb_panel.get(this.pcb_panel_id)!
+    const { minWidth, maxWidth, minHeight, maxHeight } = this._parsedProps
+    const violations = [
+      minWidth !== undefined && panel.width < minWidth
+        ? `Panel width ${panel.width} mm is below the minimum width ${minWidth} mm`
+        : undefined,
+      maxWidth !== undefined && panel.width > maxWidth
+        ? `Panel width ${panel.width} mm exceeds the maximum width ${maxWidth} mm`
+        : undefined,
+      minHeight !== undefined && panel.height < minHeight
+        ? `Panel height ${panel.height} mm is below the minimum height ${minHeight} mm`
+        : undefined,
+      maxHeight !== undefined && panel.height > maxHeight
+        ? `Panel height ${panel.height} mm exceeds the maximum height ${maxHeight} mm`
+        : undefined,
+    ]
+    for (const message of violations)
+      if (message)
+        this.root!.db.pcb_panelization_placement_error.insert({
+          message,
+          pcb_panel_id: this.pcb_panel_id,
+          error_type: "pcb_panelization_placement_error",
+        })
+  }
+
   /**
    * Finished panel width and height in mm: explicit dimensions, or the grid
-   * size plus edge padding. Undefined when neither is available, e.g. a
-   * "pack" or "none" layout without explicit dimensions.
+   * size plus edge padding, grown to minWidth/minHeight around the centred
+   * grid. Undefined when neither is available, e.g. a "pack" or "none" layout
+   * without explicit dimensions.
    */
   _getPanelSize(): { width: number; height: number } | undefined {
-    const { width, height } = this._parsedProps
+    const { width, height, minWidth = 0, minHeight = 0 } = this._parsedProps
     if (width !== undefined && height !== undefined) return { width, height }
     if (this._cachedGridWidth <= 0 && this._cachedGridHeight <= 0) return
     const edgePadding = this._getEdgePadding()
     return {
       width:
-        width ?? this._cachedGridWidth + edgePadding.left + edgePadding.right,
+        width ??
+        Math.max(
+          this._cachedGridWidth + edgePadding.left + edgePadding.right,
+          minWidth,
+        ),
       height:
-        height ?? this._cachedGridHeight + edgePadding.top + edgePadding.bottom,
+        height ??
+        Math.max(
+          this._cachedGridHeight + edgePadding.top + edgePadding.bottom,
+          minHeight,
+        ),
     }
   }
 
