@@ -18,5 +18,9 @@ test("panel silkscreen text can be placed in the panel frame", async () => {
     circuitJson.flatMap((element) =>
       element.type === "pcb_silkscreen_text" ? [element.text] : [],
     ),
-  ).toMatchInlineSnapshot(`[]`)
+  ).toMatchInlineSnapshot(`
+    [
+      "PANEL A / REV 1",
+    ]
+  `)
 })
