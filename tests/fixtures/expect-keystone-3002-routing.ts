@@ -14,6 +14,7 @@ export function expectKeystone3002Routing(circuit: RootCircuit) {
   })
   expect(holderPads).toHaveLength(3)
   expect(holderPads.every((pad) => Boolean(pad.pcb_port_id))).toBe(true)
+  expect(new Set(holderPads.map((pad) => pad.pcb_port_id)).size).toBe(3)
   expect(circuit.db.source_ambiguous_port_reference.list()).toEqual([])
   expect(circuit.db.source_trace_not_connected_error.list()).toEqual([])
   expect(circuit.db.pcb_trace_error.list()).toEqual([])
@@ -34,4 +35,13 @@ export function expectKeystone3002Routing(circuit: RootCircuit) {
       ),
     ).toBe(true)
   }
+
+  const positivePort = circuit.selectOne(".BT1 > .POS") as Port
+  const negativePort = circuit.selectOne(".BT1 > .NEG") as Port
+  expect(
+    connectivity.connMap.areIdsConnected(
+      positivePort.pcb_port_id!,
+      negativePort.pcb_port_id!,
+    ),
+  ).toBe(false)
 }
